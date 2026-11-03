@@ -607,6 +607,25 @@ Module not found: Error: Can't resolve 'style-loader'
 
 This is because those versions of Yarn have different package resolution rules than Yarn v1.x. If this is the case for you, please install the package directly.
 
+## Component documentation
+
+Storybook 11 reads React component props on the server by default, with the [`typescript`](../../configure/integration/typescript.mdx) package (TypeScript 5.9 or 6, also in JavaScript projects). New projects need no docgen configuration and no extra packages.
+
+<Callout variant="info">
+
+The Storybook 10 builder-based docgen is still available, but deprecated and removed in Storybook 12. It runs only when you set [`features.docgenServer: false`](../../api/main-config/main-config-features.mdx#docgenserver), and `@storybook/nextjs` does not install its packages. Add the ones for your [`typescript.reactDocgen`](../../api/main-config/main-config-typescript.mdx#reactdocgen) mode to your devDependencies:
+
+| `typescript.reactDocgen`    | Packages to install                                                                                                                                 |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'react-docgen'` (default)  | `react-docgen`                                                                                                                                      |
+| `'react-docgen-typescript'` | `@storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0` (this exact version; its `latest` tag is older) and `react-docgen-typescript` |
+
+When one is missing, Storybook stops and prints the install command. To run without docgen instead, set `typescript.reactDocgen: false`.
+
+If your project uses TypeScript 7.0, which has no compiler API, Storybook cannot use server-side docgen yet and falls back to the builder docgen with `react-docgen`. Until Storybook supports TypeScript 7.1, `storybook init` and `storybook upgrade` add `react-docgen` for you. To use server-side docgen today, install [TypeScript 6 side by side](../../configure/integration/typescript.mdx#typescript-7).
+
+</Callout>
+
 ## FAQ
 
 ### How do I manually install the Next.js framework?

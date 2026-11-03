@@ -3,45 +3,9 @@ import type {
   TypescriptOptions as TypescriptOptionsBase,
   WebpackConfiguration as WebpackConfigurationBase,
 } from '@storybook/core-webpack';
+import type { ReactDocgenTypescriptParserOptions } from '@storybook/react';
 
 export type { BuilderResult } from '@storybook/core-webpack';
-
-/**
- * The `react-docgen-typescript` parser options, copied from its type declarations.
- *
- * Builder docgen packages are optional peer dependencies, so published types must not import them:
- * a `.d.ts` import of a missing package fails `tsc` with TS2307 without `skipLibCheck`. TypeScript
- * types are written structurally too, because the TypeScript 7 `typescript` package has no
- * compiler API types. A type test keeps these shapes assignable both ways with the originals.
- */
-export interface ReactDocgenTypescriptParserOptions {
-  propFilter?:
-    | { skipPropsWithName?: string[] | string; skipPropsWithoutDoc?: boolean }
-    | ((
-        props: {
-          name: string;
-          required: boolean;
-          type: { name: string; value?: any; raw?: string };
-          description: string;
-          defaultValue: any;
-          parent?: { name: string; fileName: string };
-          declarations?: { name: string; fileName: string }[];
-          tags?: {};
-        },
-        component: { name: string }
-      ) => boolean);
-  /** Receives a TypeScript `Symbol` and `SourceFile`. */
-  componentNameResolver?: (exp: any, source: any) => string | undefined | null | false;
-  shouldExtractLiteralValuesFromEnum?: boolean;
-  shouldRemoveUndefinedFromOptional?: boolean;
-  shouldExtractValuesFromUnion?: boolean;
-  shouldSortUnions?: boolean;
-  skipChildrenPropWithoutDoc?: boolean;
-  savePropValueAsString?: boolean;
-  shouldIncludePropTagMap?: boolean;
-  shouldIncludeExpression?: boolean;
-  customComponentTypes?: string[];
-}
 
 /** Options of `@storybook/react-docgen-typescript-plugin`, copied from its declarations. */
 export type ReactDocgenTypescriptOptions = ReactDocgenTypescriptParserOptions & {

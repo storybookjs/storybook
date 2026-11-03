@@ -1053,7 +1053,7 @@ Storybook loads them only when builder docgen runs. When your main config sets `
 | `'react-docgen'` (default) | `react-docgen` |
 | `'react-docgen-typescript'` | Vite: `@joshwooding/vite-plugin-react-docgen-typescript` and `react-docgen-typescript`. Webpack: `@storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0` (this exact version; the `latest` tag is older) and `react-docgen-typescript` |
 
-Projects without a usable `typescript` (no `typescript` package, or TypeScript 7 without the [side-by-side setup](#typescript-59-or-newer)) no longer get docgen from the `react-docgen` fallback, unless `react-docgen` happens to be installed: Controls and the Docs args table show no props until you set up TypeScript 6, which enables server-side docgen.
+Projects without a usable `typescript` (no `typescript` package, or TypeScript 7 without the [side-by-side setup](#typescript-59-or-newer)) only get docgen from the `react-docgen` fallback when `react-docgen` is installed. Until Storybook supports TypeScript 7.1, `storybook init` and the `typescript-7-react-docgen` automigration add `react-docgen` to React projects on TypeScript 7.0 and list it under `storybook.temporaryDependencies` in `package.json`. A later Storybook update removes the packages listed there once TypeScript 7 projects can use server-side docgen. Setting up TypeScript 6 side by side gives you server-side docgen today.
 
 In `react-docgen-typescript` mode, `react-docgen` is optional and only documents JavaScript files. Without it, JavaScript components get no props, and Storybook does not warn about that.
 

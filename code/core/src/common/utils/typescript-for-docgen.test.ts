@@ -14,7 +14,7 @@ import {
 } from '../../server-errors.ts';
 import * as find from 'empathic/find';
 import {
-  checkReactBuilderDocgenPackages,
+  checkBuilderDocgenPackages,
   getTypeScriptForDocgenError,
   isTypeScriptReadyForDocgen,
   loadTypeScriptCompilerApi,
@@ -124,7 +124,9 @@ describe('isTypeScriptReadyForDocgen', () => {
   });
 
   describe('with a builder docgen fallback', () => {
-    const fallback = { builderDocgenFallbackPackage: 'react-docgen' } as const;
+    const fallback = {
+      builderDocgenFallback: { packageName: 'react-docgen', range: '^8.0.2' },
+    };
 
     beforeEach(() => {
       installTypeScript('7.0.2');
@@ -212,17 +214,22 @@ describe('loadTypeScriptCompilerApi', () => {
   });
 });
 
-describe('checkReactBuilderDocgenPackages', () => {
+describe('checkBuilderDocgenPackages', () => {
   const options = { configDir: '/project/.storybook' };
   const check = (
     installed: string[],
-    packages: Parameters<typeof checkReactBuilderDocgenPackages>[0]['packages'] = ['react-docgen']
+    packages: Record<string, string> = { 'react-docgen': '^8.0.2' },
+    note?: string
   ) =>
-    checkReactBuilderDocgenPackages({
-      reactDocgen: 'react-docgen',
+    checkBuilderDocgenPackages({
       packages,
       resolve: resolveWith(installed),
       options,
+      builderDocgen: "typescript.reactDocgen: 'react-docgen'",
+      disableBuilderDocgen: 'typescript.reactDocgen: false',
+      documentation:
+        'https://storybook.js.org/docs/api/main-config/main-config-typescript#reactdocgen',
+      getNote: note ? () => note : undefined,
     });
 
   beforeEach(() => {
@@ -246,18 +253,19 @@ describe('checkReactBuilderDocgenPackages', () => {
     });
 
     it('throws with the install command when packages are missing', async () => {
-      const packages = [
-        '@joshwooding/vite-plugin-react-docgen-typescript',
-        'react-docgen-typescript',
-      ] as const;
+      const packages = {
+        '@joshwooding/vite-plugin-react-docgen-typescript': '^0.7.0 || ^0.9.0',
+        'react-docgen-typescript': '^2.2.2',
+      };
 
-      const result = check([], packages);
+      const result = check([], packages, 'A renderer note.');
 
       await expect(result).rejects.toThrow(BuilderDocgenPackagesMissingError);
       await expect(result).rejects.toThrow(
         'npm install -D "@joshwooding/vite-plugin-react-docgen-typescript@^0.9.0" "react-docgen-typescript@^2.2.2"'
       );
       await expect(result).rejects.toThrow('typescript.reactDocgen: false');
+      await expect(result).rejects.toThrow('A renderer note.');
       expect(once.warn).not.toHaveBeenCalled();
     });
 

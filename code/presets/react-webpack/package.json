@@ -39,6 +39,7 @@
   ],
   "dependencies": {
     "@storybook/core-webpack": "workspace:*",
+    "@storybook/react": "workspace:*",
     "webpack": "5"
   },
   "devDependencies": {

@@ -15,6 +15,8 @@ const packageManagerWith = (typescriptVersion?: string) =>
   ({
     isDependencyInstalled: (name: string) => name === 'typescript' && !!typescriptVersion,
     getDeclaredVersionSpecifier: async () => typescriptVersion ?? null,
+    primaryPackageJson: { packageJson: {}, operationDir: '/project' },
+    writePackageJson: vi.fn(),
   }) as unknown as JsPackageManager;
 
 const run = async ({
@@ -35,12 +37,13 @@ const run = async ({
     trackPromptCancel: vi.fn(),
   } as unknown as TelemetryService;
   const dependencyCollector = new DependencyCollector();
+  const packageManager = packageManagerWith(typescriptVersion);
   const result = await new TypeScriptDependencyCommand(
     { packageManager: PackageManagerName.NPM, ...options },
     telemetryService,
     () => interactive
   ).execute({
-    packageManager: packageManagerWith(typescriptVersion),
+    packageManager,
     framework,
     renderer,
     dependencyCollector,
@@ -49,6 +52,7 @@ const run = async ({
     result,
     devDependencies: dependencyCollector.getAllPackages().devDependencies,
     telemetryService,
+    packageManager,
   };
 };
 
@@ -119,34 +123,39 @@ describe('TypeScriptDependencyCommand', () => {
   });
 
   it('warns with the side-by-side setup when the project is on TypeScript 7', async () => {
-    const { result, devDependencies } = await run({ typescriptVersion: '7.0.2' });
+    const { result } = await run({ typescriptVersion: '7.0.2' });
 
     expect(result).toBe('without-compiler-api');
-    expect(devDependencies).toEqual([]);
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('"typescript": "npm:@typescript/typescript6@^6.0.2"')
     );
   });
 
-  it('tells a React project on TypeScript 7 that it has no docgen until it switches', async () => {
-    await run({ typescriptVersion: '7.0.2' });
+  // TEMPORARY until Storybook supports TypeScript 7.1: see `typescript-7-react-docgen-fallback.ts`.
+  it('adds react-docgen to a React project on TypeScript 7 and records it as temporary', async () => {
+    const { devDependencies, packageManager } = await run({ typescriptVersion: '7.0.2' });
 
+    expect(devDependencies).toEqual(['react-docgen@^8.0.2']);
+    expect(packageManager.primaryPackageJson.packageJson).toEqual({
+      storybook: { temporaryDependencies: ['react-docgen'] },
+    });
+    expect(packageManager.writePackageJson).toHaveBeenCalledOnce();
     expect(logger.warn).toHaveBeenCalledOnce();
     expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('Controls and the Docs args table show no props')
+      expect.stringContaining('falls back to the deprecated builder docgen with `react-docgen`')
     );
-    expect(logger.warn).toHaveBeenCalledWith(expect.not.stringContaining('react-docgen'));
   });
 
   it('does not mention builder docgen to a Vue project on TypeScript 7', async () => {
-    await run({
+    const { devDependencies } = await run({
       typescriptVersion: '7.0.2',
       framework: SupportedFramework.VUE3_VITE,
       renderer: SupportedRenderer.VUE3,
     });
 
+    expect(devDependencies).toEqual([]);
     expect(logger.warn).toHaveBeenCalledOnce();
-    expect(logger.warn).toHaveBeenCalledWith(expect.not.stringContaining('show no props'));
+    expect(logger.warn).toHaveBeenCalledWith(expect.not.stringContaining('builder docgen'));
   });
 
   it('warns when the project declares TypeScript 7 but has not installed it yet', async () => {

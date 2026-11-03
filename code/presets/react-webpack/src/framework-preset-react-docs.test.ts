@@ -1,22 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  checkReactBuilderDocgenPackages,
-  getTypeScriptForDocgenError,
-  isBuilderDocgenPackageInstalled,
-} from 'storybook/internal/common';
-import {
-  BuilderDocgenPackagesMissingError,
-  TypeScriptWithoutCompilerApiError,
-} from 'storybook/internal/server-errors';
+import { BuilderDocgenPackagesMissingError } from 'storybook/internal/server-errors';
 
+import {
+  isReactBuilderDocgenPackageInstalled,
+  prepareReactBuilderDocgen,
+} from '@storybook/react/internal/builder-docgen';
 import ReactDocgenTypescriptPlugin from '@storybook/react-docgen-typescript-plugin';
 
 import type { Configuration } from 'webpack';
 
 import * as preset from './framework-preset-react-docs.ts';
 
-vi.mock('storybook/internal/common', { spy: true });
+vi.mock('@storybook/react/internal/builder-docgen', { spy: true });
 
 const run = (typescript: Record<string, unknown>, features = { docgenServer: false }) =>
   preset.webpackFinal?.(
@@ -37,81 +33,90 @@ const docgenLoaderRule = (test: RegExp) =>
     loader: expect.stringContaining('react-docgen-loader'),
   });
 
+const missingPackagesError = new BuilderDocgenPackagesMissingError({
+  builderDocgen: "typescript.reactDocgen: 'react-docgen'",
+  disableBuilderDocgen: 'typescript.reactDocgen: false',
+  documentation: 'https://storybook.js.org/docs/api/main-config/main-config-typescript#reactdocgen',
+  packages: ['react-docgen'],
+  installCommand: 'npm install -D "react-docgen@^8.0.2"',
+  docgenServerDisabledInMainConfig: true,
+  typescriptUsable: true,
+});
+
 describe('framework-preset-react-docs', () => {
   beforeEach(() => {
-    vi.mocked(checkReactBuilderDocgenPackages).mockResolvedValue([]);
-    vi.mocked(getTypeScriptForDocgenError).mockReturnValue(undefined);
-    vi.mocked(isBuilderDocgenPackageInstalled).mockReturnValue(true);
+    vi.mocked(isReactBuilderDocgenPackageInstalled).mockReturnValue(true);
   });
 
   it('leaves the config alone on the docgen server', async () => {
     const config = await run({ reactDocgen: 'react-docgen' }, { docgenServer: true });
 
     expect(config).toEqual({ plugins: [] });
-    expect(checkReactBuilderDocgenPackages).not.toHaveBeenCalled();
+    expect(prepareReactBuilderDocgen).not.toHaveBeenCalled();
   });
 
   it('leaves the config alone when docgen is disabled', async () => {
     await expect(run({ reactDocgen: false })).resolves.toEqual({ plugins: [] });
   });
 
-  it('adds the react-docgen loader for every file', async () => {
-    const config = await run({ reactDocgen: 'react-docgen' });
-
-    expect(config?.module?.rules).toEqual([docgenLoaderRule(/\.(cjs|mjs|tsx?|jsx?)$/)]);
-    expect(checkReactBuilderDocgenPackages).toHaveBeenCalledWith(
-      expect.objectContaining({ packages: ['react-docgen'] })
-    );
-  });
-
-  it('adds the react-docgen-typescript plugin, and react-docgen for JavaScript files', async () => {
-    const config = await run({ reactDocgen: 'react-docgen-typescript' });
-
-    expect(config?.plugins).toEqual([expect.any(ReactDocgenTypescriptPlugin)]);
-    expect(config?.module?.rules).toEqual([docgenLoaderRule(/\.(cjs|mjs|jsx?)$/)]);
-    expect(checkReactBuilderDocgenPackages).toHaveBeenCalledWith(
-      expect.objectContaining({
-        packages: ['@storybook/react-docgen-typescript-plugin', 'react-docgen-typescript'],
-      })
-    );
-  });
-
-  it('skips the JavaScript pass in react-docgen-typescript mode without react-docgen', async () => {
-    vi.mocked(isBuilderDocgenPackageInstalled).mockReturnValue(false);
-
-    const config = await run({ reactDocgen: 'react-docgen-typescript' });
-
-    expect(config?.plugins).toEqual([expect.any(ReactDocgenTypescriptPlugin)]);
-    expect(config?.module?.rules).toEqual([]);
-  });
-
-  it('uses react-docgen for every file without a usable typescript', async () => {
-    vi.mocked(getTypeScriptForDocgenError).mockReturnValue(
-      new TypeScriptWithoutCompilerApiError({ version: '7.0.2' })
-    );
-
-    const config = await run({ reactDocgen: 'react-docgen-typescript' });
-
-    expect(config?.plugins).toEqual([]);
-    expect(config?.module?.rules).toEqual([docgenLoaderRule(/\.(cjs|mjs|tsx?|jsx?)$/)]);
-  });
-
-  it('leaves the config alone when packages are missing', async () => {
-    vi.mocked(checkReactBuilderDocgenPackages).mockResolvedValue(['react-docgen']);
-
-    await expect(run({ reactDocgen: 'react-docgen' })).resolves.toEqual({ plugins: [] });
-  });
-
-  it('fails with the error from the package check', async () => {
-    const error = new BuilderDocgenPackagesMissingError({
-      reactDocgen: 'react-docgen',
-      packages: ['react-docgen'],
-      installCommand: 'npm install -D "react-docgen@^8.0.2"',
-      docgenServerDisabledInMainConfig: true,
-      typescriptUsable: true,
+  describe('in react-docgen mode', () => {
+    beforeEach(() => {
+      vi.mocked(prepareReactBuilderDocgen).mockResolvedValue('react-docgen');
     });
-    vi.mocked(checkReactBuilderDocgenPackages).mockRejectedValue(error);
 
-    await expect(run({ reactDocgen: 'react-docgen' })).rejects.toBe(error);
+    it('adds the react-docgen loader for every file', async () => {
+      const config = await run({ reactDocgen: 'react-docgen' });
+
+      expect(config?.module?.rules).toEqual([docgenLoaderRule(/\.(cjs|mjs|tsx?|jsx?)$/)]);
+      expect(prepareReactBuilderDocgen).toHaveBeenCalledWith(
+        expect.objectContaining({ reactDocgen: 'react-docgen', builder: 'webpack' })
+      );
+    });
+  });
+
+  describe('in react-docgen-typescript mode', () => {
+    beforeEach(() => {
+      vi.mocked(prepareReactBuilderDocgen).mockResolvedValue('react-docgen-typescript');
+    });
+
+    it('adds the react-docgen-typescript plugin, and react-docgen for JavaScript files', async () => {
+      const config = await run({ reactDocgen: 'react-docgen-typescript' });
+
+      expect(config?.plugins).toEqual([expect.any(ReactDocgenTypescriptPlugin)]);
+      expect(config?.module?.rules).toEqual([docgenLoaderRule(/\.(cjs|mjs|jsx?)$/)]);
+    });
+
+    describe('without react-docgen', () => {
+      beforeEach(() => {
+        vi.mocked(isReactBuilderDocgenPackageInstalled).mockReturnValue(false);
+      });
+
+      it('skips the JavaScript pass', async () => {
+        const config = await run({ reactDocgen: 'react-docgen-typescript' });
+
+        expect(config?.plugins).toEqual([expect.any(ReactDocgenTypescriptPlugin)]);
+        expect(config?.module?.rules).toEqual([]);
+      });
+    });
+  });
+
+  describe('when builder docgen must not run', () => {
+    beforeEach(() => {
+      vi.mocked(prepareReactBuilderDocgen).mockResolvedValue(undefined);
+    });
+
+    it('leaves the config alone', async () => {
+      await expect(run({ reactDocgen: 'react-docgen' })).resolves.toEqual({ plugins: [] });
+    });
+  });
+
+  describe('when the package check fails', () => {
+    beforeEach(() => {
+      vi.mocked(prepareReactBuilderDocgen).mockRejectedValue(missingPackagesError);
+    });
+
+    it('fails with its error', async () => {
+      await expect(run({ reactDocgen: 'react-docgen' })).rejects.toBe(missingPackagesError);
+    });
   });
 });

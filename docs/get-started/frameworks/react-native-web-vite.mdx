@@ -104,6 +104,25 @@ After installation, you'll see instructions for both environments:
 
 However, you can install them separately if one version is installed. You can add a React Native Web Storybook alongside an existing React Native Storybook by running the install command and selecting "React Native Web" in the setup wizard, and vice versa.
 
+## Component documentation
+
+Storybook 11 reads React component props on the server by default, with the [`typescript`](../../configure/integration/typescript.mdx) package (TypeScript 5.9 or 6, also in JavaScript projects). New projects need no docgen configuration and no extra packages.
+
+<Callout variant="info">
+
+The Storybook 10 builder-based docgen is still available, but deprecated and removed in Storybook 12. It runs only when you set [`features.docgenServer: false`](../../api/main-config/main-config-features.mdx#docgenserver), and `@storybook/react-native-web-vite` does not install its packages. Add the ones for your [`typescript.reactDocgen`](../../api/main-config/main-config-typescript.mdx#reactdocgen) mode to your devDependencies:
+
+| `typescript.reactDocgen`    | Packages to install                                                              |
+| --------------------------- | -------------------------------------------------------------------------------- |
+| `'react-docgen'` (default)  | `react-docgen`                                                                   |
+| `'react-docgen-typescript'` | `@joshwooding/vite-plugin-react-docgen-typescript` and `react-docgen-typescript` |
+
+When one is missing, Storybook stops and prints the install command. To run without docgen instead, set `typescript.reactDocgen: false`.
+
+If your project uses TypeScript 7.0, which has no compiler API, Storybook cannot use server-side docgen yet and falls back to the builder docgen with `react-docgen`. Until Storybook supports TypeScript 7.1, `storybook init` and `storybook upgrade` add `react-docgen` for you. To use server-side docgen today, install [TypeScript 6 side by side](../../configure/integration/typescript.mdx#typescript-7).
+
+</Callout>
+
 ## FAQ
 
 ### How do I migrate from the React Native Web addon?

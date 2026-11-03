@@ -1,12 +1,9 @@
 import { fileURLToPath } from 'node:url';
 
 import {
-  type ReactDocgenOption,
-  checkReactBuilderDocgenPackages,
-  getReactBuilderDocgenPackages,
-  getTypeScriptForDocgenError,
-  isBuilderDocgenPackageInstalled,
-} from 'storybook/internal/common';
+  isReactBuilderDocgenPackageInstalled,
+  prepareReactBuilderDocgen,
+} from '@storybook/react/internal/builder-docgen';
 
 import type { Configuration } from 'webpack';
 
@@ -28,7 +25,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
   }
 
   const typescriptOptions = await options.presets.apply<{
-    reactDocgen?: ReactDocgenOption;
+    reactDocgen?: 'react-docgen' | 'react-docgen-typescript' | false;
     reactDocgenTypescriptOptions?: Record<string, unknown>;
   }>('typescript', {});
   const debug = options.loglevel === 'debug';
@@ -39,25 +36,18 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
     return config;
   }
 
-  // react-docgen-typescript runs the TypeScript compiler API, so it falls back to react-docgen
-  // without a usable `typescript`.
-  const useReactDocgenTypescript =
-    reactDocgen === 'react-docgen-typescript' && !getTypeScriptForDocgenError(resolve);
-
   // Builder docgen packages are optional peers: the loader and plugin import them only once
   // builder docgen runs, so projects on the docgen server never resolve them.
-  const missingPackages = await checkReactBuilderDocgenPackages({
+  const mode = await prepareReactBuilderDocgen({
     reactDocgen,
-    packages: getReactBuilderDocgenPackages(
-      useReactDocgenTypescript ? 'react-docgen-typescript' : 'react-docgen',
-      'webpack'
-    ),
+    builder: 'webpack',
     resolve,
     options,
   });
-  if (missingPackages.length > 0) {
+  if (!mode) {
     return config;
   }
+  const useReactDocgenTypescript = mode === 'react-docgen-typescript';
 
   if (!useReactDocgenTypescript) {
     return {
@@ -85,7 +75,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
   const { ReactDocgenTypeScriptPlugin } = await import('@storybook/react-docgen-typescript-plugin');
 
   // In react-docgen-typescript mode, react-docgen is optional and only covers JavaScript files.
-  const javaScriptDocgenRules = isBuilderDocgenPackageInstalled(resolve, 'react-docgen')
+  const javaScriptDocgenRules = isReactBuilderDocgenPackageInstalled(resolve, 'react-docgen')
     ? [
         {
           test: /\.(cjs|mjs|jsx?)$/,

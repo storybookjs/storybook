@@ -412,8 +412,14 @@ export class TypeScriptWithoutCompilerApiError extends StorybookError {
 export class BuilderDocgenPackagesMissingError extends StorybookError {
   constructor(
     public data: {
-      /** The `typescript.reactDocgen` option that selected the builder docgen. */
-      reactDocgen: string;
+      /** The main config option that selects the builder docgen, e.g. `typescript.reactDocgen: 'react-docgen'`. */
+      builderDocgen: string;
+      /** The main config option that turns builder docgen off, e.g. `typescript.reactDocgen: false`. */
+      disableBuilderDocgen: string;
+      /** A renderer-specific explanation to add, if any. */
+      note?: string;
+      /** The renderer's documentation for its builder docgen option. */
+      documentation: string;
       /** The packages that builder docgen needs and that do not resolve. */
       packages: string[];
       /** The command that adds the missing packages to the project. */
@@ -438,22 +444,19 @@ export class BuilderDocgenPackagesMissingError extends StorybookError {
       name: 'BuilderDocgenPackagesMissingError',
       category: Category.CORE_COMMON,
       code: 35,
-      documentation:
-        'https://storybook.js.org/docs/api/main-config/main-config-typescript#reactdocgen',
+      documentation: data.documentation,
       message: [
         dedent`
-          Storybook's builder docgen (\`typescript.reactDocgen: '${data.reactDocgen}'\`) needs ${packageList}, which ${data.packages.length === 1 ? 'is' : 'are'} not installed${data.foundVersions && Object.keys(data.foundVersions).length > 0 ? ' in a supported version' : ''}. ${
+          Storybook's builder docgen (\`${data.builderDocgen}\`) needs ${packageList}, which ${data.packages.length === 1 ? 'is' : 'are'} not installed${data.foundVersions && Object.keys(data.foundVersions).length > 0 ? ' in a supported version' : ''}. ${
             data.docgenServerDisabledInMainConfig
               ? `Install ${them}, then start Storybook again:`
               : `Controls and the Docs args table show no props until you install ${them}:`
           }
 
             ${data.installCommand}`,
-        data.reactDocgen === 'react-docgen-typescript' &&
-          !data.typescriptUsable &&
-          '`react-docgen-typescript` needs the TypeScript compiler API, which your `typescript` package does not have, so builder docgen uses `react-docgen` instead.',
+        data.note,
         data.docgenServerDisabledInMainConfig &&
-          'To run without docgen instead, set `typescript.reactDocgen: false` in your Storybook main config.',
+          `To run without docgen instead, set \`${data.disableBuilderDocgen}\` in your Storybook main config.`,
         !data.docgenServerDisabledInMainConfig
           ? 'Builder docgen is deprecated and will be removed in Storybook 12.'
           : data.typescriptUsable

@@ -11,6 +11,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { Options, PresetProperty } from 'storybook/internal/types';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
+import { REACT_BUILDER_DOCGEN_PACKAGES } from './builder-docgen.ts';
 import { aliasReactInWebpack, prependReactDedupePlugin } from './preview-react-alias.ts';
 import type {
   GetArgTypesDataOptions,
@@ -39,7 +40,10 @@ export const isDocgenProviderEnabled = async (_existing: unknown, options: Optio
   const { reactDocgen } =
     (await options.presets?.apply<TypescriptOptionsWithDocgen>('typescript', {})) ?? {};
   return isTypeScriptReadyForDocgen((specifier) => import.meta.resolve(specifier), options, {
-    builderDocgenFallbackPackage: reactDocgen === false ? undefined : 'react-docgen',
+    builderDocgenFallback:
+      reactDocgen === false
+        ? undefined
+        : { packageName: 'react-docgen', range: REACT_BUILDER_DOCGEN_PACKAGES['react-docgen'] },
   });
 };
 

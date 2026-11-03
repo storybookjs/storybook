@@ -12,12 +12,11 @@ import {
   TypeScriptWithoutCompilerApiError,
 } from '../../server-errors.ts';
 import {
-  type BuilderDocgenPackage,
-  type ReactDocgenOption,
-  getAddBuilderDocgenPackagesCommand,
+  type BuilderDocgenPackages,
+  getAddDevDependenciesCommand,
+  getResolvedPackageVersion,
   isModuleNotFoundError,
-  getResolvedBuilderDocgenPackageVersion,
-  isBuilderDocgenPackageInstalled,
+  isPackageInstalledInRange,
 } from './builder-docgen-packages.ts';
 import { loadMainConfig } from './load-main-config.ts';
 
@@ -66,9 +65,9 @@ export function getTypeScriptForDocgenError(
  */
 function getBuilderDocgenFallback(
   resolve: (specifier: string) => string,
-  packageName: BuilderDocgenPackage
+  { packageName, range }: { packageName: string; range: string }
 ): BuilderDocgenFallback {
-  return { packageName, installed: isBuilderDocgenPackageInstalled(resolve, packageName) };
+  return { packageName, installed: isPackageInstalledInRange(resolve, packageName, range) };
 }
 
 /** Return the `features.docgenServer` value the project's main config sets, if any. */
@@ -104,14 +103,19 @@ export async function isDocgenServerDisabledInMainConfig(
  * `typescript` keeps builder docgen. A project that sets `features.docgenServer: false` gets no
  * warning.
  *
- * Pass `builderDocgenFallbackPackage` when builder docgen needs an optional package, such as React's
+ * Pass `builderDocgenFallback` when builder docgen needs an optional package, such as React's
  * `react-docgen`. The warning then says whether docgen still runs. It does not suggest installing
  * the package: the way forward is the docgen server.
  */
 export async function isTypeScriptReadyForDocgen(
   resolve: (specifier: string) => string,
   options: Pick<Options, 'configDir'>,
-  { builderDocgenFallbackPackage }: { builderDocgenFallbackPackage?: BuilderDocgenPackage } = {}
+  {
+    builderDocgenFallback: fallbackPackage,
+  }: {
+    /** The package builder docgen needs, with its supported range, such as React's `react-docgen`. */
+    builderDocgenFallback?: { packageName: string; range: string };
+  } = {}
 ): Promise<boolean> {
   const error = getTypeScriptForDocgenError(resolve);
   if (!error) {
@@ -123,8 +127,8 @@ export async function isTypeScriptReadyForDocgen(
   }
   // With `docgenServer: true` in the main config, builder docgen does not run as a fallback.
   const builderDocgenFallback =
-    builderDocgenFallbackPackage && docgenServer !== true
-      ? getBuilderDocgenFallback(resolve, builderDocgenFallbackPackage)
+    fallbackPackage && docgenServer !== true
+      ? getBuilderDocgenFallback(resolve, fallbackPackage)
       : undefined;
   const warning = !builderDocgenFallback
     ? error
@@ -166,33 +170,46 @@ export async function loadTypeScriptCompilerApi<TypeScript extends { version: st
 /**
  * Check that the packages builder docgen needs are installed, and report it once when they are not.
  *
- * Call it from a framework preset once builder docgen is active, with the packages from
- * {@link getReactBuilderDocgenPackages}. It reports one thing per cause:
+ * Call it from a renderer once builder docgen is active, with the packages its mode needs. It
+ * reports one thing per cause:
  *
  * - The main config sets `features.docgenServer: false`, so the user chose builder docgen: it throws
  *   a {@link BuilderDocgenPackagesMissingError} when packages are missing, so Storybook does not start
  *   with a configuration it cannot honor. Otherwise it warns about the deprecation.
  * - `typescript` is unusable, so the docgen server is off by default: nothing, because the
- *   `isDocgenProviderEnabled` preset already warned that Controls stay empty.
+ *   `isDocgenProviderEnabled` preset already warned about it.
  * - Anything else that turned the docgen server off: a {@link BuilderDocgenPackagesMissingError}
  *   warning when packages are missing.
  *
- * @returns The packages that do not resolve. Builder docgen must not run when this is non-empty.
+ * @returns The packages that do not resolve in a supported version. Builder docgen must not run
+ *   when this is non-empty.
  * @throws {BuilderDocgenPackagesMissingError} When the main config sets `docgenServer: false` and
  *   packages are missing.
  */
-export async function checkReactBuilderDocgenPackages({
-  reactDocgen,
+export async function checkBuilderDocgenPackages({
   packages,
   resolve,
   options,
+  builderDocgen,
+  disableBuilderDocgen,
+  documentation,
+  getNote,
 }: {
-  reactDocgen: Exclude<ReactDocgenOption, false>;
-  packages: readonly BuilderDocgenPackage[];
+  packages: BuilderDocgenPackages;
+  /** Resolve from the package that declares the packages as optional peers. */
   resolve: (specifier: string) => string;
   options: Pick<Options, 'configDir'>;
-}): Promise<BuilderDocgenPackage[]> {
-  const missing = packages.filter((name) => !isBuilderDocgenPackageInstalled(resolve, name));
+  /** The main config option that selects builder docgen, e.g. `typescript.reactDocgen: 'react-docgen'`. */
+  builderDocgen: string;
+  /** The main config option that turns builder docgen off, e.g. `typescript.reactDocgen: false`. */
+  disableBuilderDocgen: string;
+  documentation: string;
+  /** A renderer-specific explanation for the error, if any. */
+  getNote?: (context: { typescriptUsable: boolean }) => string | undefined;
+}): Promise<string[]> {
+  const missing = Object.keys(packages).filter(
+    (name) => !isPackageInstalledInRange(resolve, name, packages[name])
+  );
   const docgenServerDisabledInMainConfig = await isDocgenServerDisabledInMainConfig(options);
 
   if (missing.length > 0) {
@@ -203,14 +220,19 @@ export async function checkReactBuilderDocgenPackages({
     }
     const foundVersions = Object.fromEntries(
       missing.flatMap((name) => {
-        const version = getResolvedBuilderDocgenPackageVersion(resolve, name);
+        const version = getResolvedPackageVersion(resolve, name);
         return version ? [[name, version]] : [];
       })
     );
     const error = new BuilderDocgenPackagesMissingError({
-      reactDocgen,
+      builderDocgen,
+      disableBuilderDocgen,
+      documentation,
+      note: getNote?.({ typescriptUsable }),
       packages: missing,
-      installCommand: getAddBuilderDocgenPackagesCommand(missing),
+      installCommand: getAddDevDependenciesCommand(
+        Object.fromEntries(missing.map((name) => [name, packages[name]]))
+      ),
       docgenServerDisabledInMainConfig,
       typescriptUsable,
       foundVersions,
@@ -224,7 +246,7 @@ export async function checkReactBuilderDocgenPackages({
 
   if (docgenServerDisabledInMainConfig) {
     once.warn(
-      `Builder docgen (\`typescript.reactDocgen: '${reactDocgen}'\`) is deprecated and will be removed in Storybook 12. ` +
+      `Builder docgen (\`${builderDocgen}\`) is deprecated and will be removed in Storybook 12. ` +
         `It runs because your Storybook main config sets \`features.docgenServer: false\`. Remove that setting to use server-side docgen.`
     );
   }

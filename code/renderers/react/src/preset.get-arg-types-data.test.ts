@@ -1,5 +1,3 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { expect, test, vi } from 'vitest';
@@ -10,6 +8,7 @@ import { internal_getArgTypesData } from './preset.ts';
 
 // Ghost stories infer the required args of components with this preset. On the docgen server it
 // must not need the optional builder docgen packages.
+// A factory that throws is the only way to fail on import; `spy: true` mocks still load the module.
 vi.mock('react-docgen', () => {
   throw new Error('react-docgen must not load on the docgen server');
 });
@@ -32,22 +31,15 @@ test('infers required args with the docgen server engine', async () => {
 }, 60_000);
 
 test('infers required args of a default export', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'sb-ghost-default-'));
-  writeFileSync(
-    join(dir, 'tsconfig.json'),
-    JSON.stringify({ compilerOptions: { jsx: 'react-jsx', strict: true }, include: ['*.tsx'] })
-  );
-  writeFileSync(
-    join(dir, 'Card.tsx'),
-    'export default function Card({ title }: { title: string; subtitle?: string }) { return <h1>{title}</h1>; }'
-  );
-
   const argTypes = await internal_getArgTypesData(null, {
-    componentFilePath: join(dir, 'Card.tsx'),
+    componentFilePath: join(
+      import.meta.dirname,
+      'componentManifest/__testfixtures__/DefaultExport.ts'
+    ),
     componentExportName: 'default',
     presets,
   });
 
-  expect(argTypes?.title).toMatchObject({ type: { required: true } });
-  expect(argTypes?.subtitle).toMatchObject({ type: { required: false } });
+  expect(argTypes?.name).toMatchObject({ type: { required: true } });
+  expect(argTypes?.size).toMatchObject({ type: { required: false } });
 }, 60_000);

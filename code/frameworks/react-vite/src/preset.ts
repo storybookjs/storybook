@@ -1,11 +1,9 @@
-import {
-  type ReactDocgenOption,
-  checkReactBuilderDocgenPackages,
-  getReactBuilderDocgenPackages,
-  getTypeScriptForDocgenError,
-  isBuilderDocgenPackageInstalled,
-} from 'storybook/internal/common';
 import type { PresetProperty } from 'storybook/internal/types';
+
+import {
+  isReactBuilderDocgenPackageInstalled,
+  prepareReactBuilderDocgen,
+} from '@storybook/react/internal/builder-docgen';
 
 import type { StorybookConfig } from './types.ts';
 
@@ -28,7 +26,7 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
   }
 
   const { reactDocgen: reactDocgenOption, reactDocgenTypescriptOptions } = await presets.apply<{
-    reactDocgen?: ReactDocgenOption;
+    reactDocgen?: 'react-docgen' | 'react-docgen-typescript' | false;
     reactDocgenTypescriptOptions?: Record<string, unknown>;
   }>('typescript', {});
 
@@ -36,25 +34,18 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
     return config;
   }
 
-  // react-docgen-typescript runs the TypeScript compiler API, so it falls back to react-docgen
-  // without a usable `typescript`.
-  const useReactDocgenTypescript =
-    reactDocgenOption === 'react-docgen-typescript' && !getTypeScriptForDocgenError(resolve);
-
   // Builder docgen packages are optional peers: import them only once builder docgen runs, so
   // projects on the docgen server never resolve them.
-  const missingPackages = await checkReactBuilderDocgenPackages({
+  const mode = await prepareReactBuilderDocgen({
     reactDocgen: reactDocgenOption,
-    packages: getReactBuilderDocgenPackages(
-      useReactDocgenTypescript ? 'react-docgen-typescript' : 'react-docgen',
-      'vite'
-    ),
+    builder: 'vite',
     resolve,
     options,
   });
-  if (missingPackages.length > 0) {
+  if (!mode) {
     return config;
   }
+  const useReactDocgenTypescript = mode === 'react-docgen-typescript';
 
   const plugins = [...(config?.plugins ?? [])];
 
@@ -70,7 +61,7 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
 
   // react-docgen reads every file, except TypeScript files when react-docgen-typescript reads them.
   // In react-docgen-typescript mode, react-docgen is optional and only covers JavaScript files.
-  if (!useReactDocgenTypescript || isBuilderDocgenPackageInstalled(resolve, 'react-docgen')) {
+  if (!useReactDocgenTypescript || isReactBuilderDocgenPackageInstalled(resolve, 'react-docgen')) {
     const { reactDocgen } = await import('./plugins/react-docgen.ts');
     // Needs to run before the react plugin, so add to the front
     plugins.unshift(

@@ -22,6 +22,7 @@ import {
   matchComponentDoc,
   parseWithReactDocgenTypescript,
 } from './reactDocgenTypescript.ts';
+import type { ReactDocgenConfig } from './reactDocgen/utils.ts';
 import { getImportTag, matchPath } from './resolveComponentPath.ts';
 import type { ComponentRef } from './types.ts';
 import { cachedResolveImport } from './utils.ts';
@@ -36,7 +37,7 @@ const isReactDocgenTypescriptResolvable = () => {
   }
 };
 
-export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript' | false;
+export type { ReactDocgenConfig };
 export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
 
 export interface TypescriptOptions extends TypescriptOptionsBase {

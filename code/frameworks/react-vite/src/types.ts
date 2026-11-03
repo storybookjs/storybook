@@ -5,43 +5,7 @@ import type {
 } from 'storybook/internal/types';
 
 import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
-
-/**
- * The `react-docgen-typescript` parser options, copied from its type declarations.
- *
- * Builder docgen packages are optional peer dependencies, so published types must not import them:
- * a `.d.ts` import of a missing package fails `tsc` with TS2307 without `skipLibCheck`. TypeScript
- * types are written structurally too, because the TypeScript 7 `typescript` package has no
- * compiler API types. A type test keeps these shapes assignable both ways with the originals.
- */
-export interface ReactDocgenTypescriptParserOptions {
-  propFilter?:
-    | { skipPropsWithName?: string[] | string; skipPropsWithoutDoc?: boolean }
-    | ((
-        props: {
-          name: string;
-          required: boolean;
-          type: { name: string; value?: any; raw?: string };
-          description: string;
-          defaultValue: any;
-          parent?: { name: string; fileName: string };
-          declarations?: { name: string; fileName: string }[];
-          tags?: {};
-        },
-        component: { name: string }
-      ) => boolean);
-  /** Receives a TypeScript `Symbol` and `SourceFile`. */
-  componentNameResolver?: (exp: any, source: any) => string | undefined | null | false;
-  shouldExtractLiteralValuesFromEnum?: boolean;
-  shouldRemoveUndefinedFromOptional?: boolean;
-  shouldExtractValuesFromUnion?: boolean;
-  shouldSortUnions?: boolean;
-  skipChildrenPropWithoutDoc?: boolean;
-  savePropValueAsString?: boolean;
-  shouldIncludePropTagMap?: boolean;
-  shouldIncludeExpression?: boolean;
-  customComponentTypes?: string[];
-}
+import type { ReactDocgenTypescriptParserOptions } from '@storybook/react';
 
 /**
  * Options of `@joshwooding/vite-plugin-react-docgen-typescript` 0.7 to 0.9, copied from its

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import { type AngularVitestOptions, COMPILER_SETUP, storybookAngularVitest } from './vitest.ts';
+import { type AngularVitestOptions, storybookAngularVitest } from './vitest.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   logger: { warn: vi.fn() },
@@ -73,17 +73,18 @@ describe('storybookAngularVitest', () => {
   it('registers the compiler wrapper as a setup file, not the bare @angular/compiler specifier', () => {
     const config = (storybookAngularVitest().config as () => { test: { setupFiles: string[] } })();
 
-    // Vitest re-imports setup files under a fresh URL per test file; a bare specifier would
-    // re-evaluate the compiler each time.
-    expect(config.test.setupFiles).toEqual([COMPILER_SETUP]);
-    expect(config.test.setupFiles).not.toContain('@angular/compiler');
+    // See src/client/vitest-compiler-setup.ts for why it must not be the bare specifier.
+    expect(config.test.setupFiles).toEqual([
+      '@storybook/angular-vite/internal/vitest-compiler-setup',
+    ]);
   });
 
   it('maps the setup specifier to the built compiler wrapper', () => {
     const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
-    const subpath = COMPILER_SETUP.replace('@storybook/angular-vite', '.');
 
-    expect(pkg.exports[subpath]).toBe('./dist/client/vitest-compiler-setup.js');
+    expect(pkg.exports['./internal/vitest-compiler-setup']).toBe(
+      './dist/client/vitest-compiler-setup.js'
+    );
   });
 
   it('evaluates @angular/compiler once when the setup file is re-imported under fresh URLs', async () => {
@@ -94,7 +95,7 @@ describe('storybookAngularVitest', () => {
     });
     const wrapperUrl = new URL('../client/vitest-compiler-setup.ts', import.meta.url).href;
 
-    // Vitest's browser tester re-imports setup files this way, with a fresh query per test file.
+    // The way Vitest's browser tester re-imports setup files.
     await import(/* @vite-ignore */ `${wrapperUrl}?browserv=1`);
     await import(/* @vite-ignore */ `${wrapperUrl}?browserv=2`);
 

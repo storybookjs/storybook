@@ -37,12 +37,10 @@ export const findNodeModulesRoots = (startDir: string): string[] => {
  * like `@angular/common` (PlatformLocation), they fall back to JIT at that point. Importing
  * `@angular/compiler` as a `setupFiles` entry runs early enough (a preview annotation does not).
  *
- * The entry is a wrapper module rather than the bare `@angular/compiler` specifier: Vitest re-imports
- * setup files under a fresh `?browserv=` URL before every test file, so the bare specifier
- * re-evaluated the whole compiler per test file, and with `browser.isolate: false` kept every copy.
- * The wrapper's own import of the compiler keeps a stable URL, so it is evaluated once.
+ * The entry is a wrapper module rather than the bare specifier, so the compiler is evaluated once
+ * per page; `src/client/vitest-compiler-setup.ts` explains why.
  */
-export const COMPILER_SETUP = '@storybook/angular-vite/internal/vitest-compiler-setup';
+const COMPILER_SETUP = '@storybook/angular-vite/internal/vitest-compiler-setup';
 
 /**
  * Angular build options that influence how stories compile under Vitest.
@@ -106,7 +104,7 @@ export function storybookAngularVitest(options: AngularVitestOptions = {}): Plug
     // `node_modules` (with `@angular/compiler`) lives at the workspace root. Vite only treats
     // `pnpm-workspace.yaml`, `lerna.json`, or a `workspaces` field as workspace-root markers, so a
     // plain Angular workspace resolves the root to the library folder — and the `@angular/compiler`
-    // setup file above falls outside `server.fs.allow`, failing to load in the browser with
+    // module that the setup file imports falls outside `server.fs.allow`, failing to load in the browser with
     // "Failed to fetch dynamically imported module". Allow every ancestor that contains
     // `node_modules`. `configureServer` is required: Vitest builds the browser server's allow-list
     // itself, so entries added via the `config` hook or static config never reach it.

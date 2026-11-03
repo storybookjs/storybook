@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   checkReactBuilderDocgenPackages,
   getTypeScriptForDocgenError,
-  isPackageResolvable,
+  isBuilderDocgenPackageInstalled,
 } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 
@@ -27,7 +27,7 @@ describe('viteFinal with builder docgen', () => {
   beforeEach(() => {
     vi.mocked(checkReactBuilderDocgenPackages).mockResolvedValue([]);
     vi.mocked(getTypeScriptForDocgenError).mockReturnValue(undefined);
-    vi.mocked(isPackageResolvable).mockReturnValue(true);
+    vi.mocked(isBuilderDocgenPackageInstalled).mockReturnValue(true);
   });
 
   it('adds the react-docgen plugin', async () => {
@@ -56,7 +56,7 @@ describe('viteFinal with builder docgen', () => {
   });
 
   it('skips the react-docgen pass over JavaScript files when react-docgen is missing', async () => {
-    vi.mocked(isPackageResolvable).mockReturnValue(false);
+    vi.mocked(isBuilderDocgenPackageInstalled).mockReturnValue(false);
 
     const config = await viteFinal({}, optionsWith({ reactDocgen: 'react-docgen-typescript' }));
 

@@ -5,7 +5,7 @@ import {
   checkReactBuilderDocgenPackages,
   getReactBuilderDocgenPackages,
   getTypeScriptForDocgenError,
-  isPackageResolvable,
+  isBuilderDocgenPackageInstalled,
 } from 'storybook/internal/common';
 
 import type { Configuration } from 'webpack';
@@ -85,7 +85,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
   const { ReactDocgenTypeScriptPlugin } = await import('@storybook/react-docgen-typescript-plugin');
 
   // In react-docgen-typescript mode, react-docgen is optional and only covers JavaScript files.
-  const javaScriptDocgenRules = isPackageResolvable(resolve, 'react-docgen')
+  const javaScriptDocgenRules = isBuilderDocgenPackageInstalled(resolve, 'react-docgen')
     ? [
         {
           test: /\.(cjs|mjs|jsx?)$/,

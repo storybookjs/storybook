@@ -3,7 +3,7 @@ import {
   checkReactBuilderDocgenPackages,
   getReactBuilderDocgenPackages,
   getTypeScriptForDocgenError,
-  isPackageResolvable,
+  isBuilderDocgenPackageInstalled,
 } from 'storybook/internal/common';
 import type { PresetProperty } from 'storybook/internal/types';
 
@@ -70,7 +70,7 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
 
   // react-docgen reads every file, except TypeScript files when react-docgen-typescript reads them.
   // In react-docgen-typescript mode, react-docgen is optional and only covers JavaScript files.
-  if (!useReactDocgenTypescript || isPackageResolvable(resolve, 'react-docgen')) {
+  if (!useReactDocgenTypescript || isBuilderDocgenPackageInstalled(resolve, 'react-docgen')) {
     const { reactDocgen } = await import('./plugins/react-docgen.ts');
     // Needs to run before the react plugin, so add to the front
     plugins.unshift(

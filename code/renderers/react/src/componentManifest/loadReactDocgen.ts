@@ -10,7 +10,7 @@ let reactDocgenPromise: Promise<ReactDocgenModule | undefined> | undefined;
  *
  * `react-docgen` is an optional peer dependency that only the deprecated builder docgen uses, so
  * nothing imports it until builder docgen runs. Resolves to `undefined` when it is not installed;
- * the framework preset warns about that once.
+ * the framework preset then stops Storybook when the main config sets `docgenServer: false`.
  */
 export function loadReactDocgen(): Promise<ReactDocgenModule | undefined> {
   return (reactDocgenPromise ??= import('./reactDocgen.ts').catch((error: unknown) => {

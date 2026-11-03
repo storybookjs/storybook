@@ -89,7 +89,9 @@ export class TypeScriptDependencyCommand {
       return 'added';
     }
     logger.info(
-      `Server-side docgen stays off until you add ${TYPESCRIPT_FOR_DOCGEN_PACKAGE} to your devDependencies.`
+      renderer === SupportedRenderer.REACT
+        ? `Server-side docgen stays off until you add ${TYPESCRIPT_FOR_DOCGEN_PACKAGE} to your devDependencies. Until then, Controls and the Docs args table show no props.`
+        : `Server-side docgen stays off until you add ${TYPESCRIPT_FOR_DOCGEN_PACKAGE} to your devDependencies.`
     );
     return 'declined';
   }

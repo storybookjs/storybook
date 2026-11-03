@@ -26,6 +26,16 @@ import { getImportTag, matchPath } from './resolveComponentPath.ts';
 import type { ComponentRef } from './types.ts';
 import { cachedResolveImport } from './utils.ts';
 
+/** `react-docgen-typescript` is an optional peer dependency of this package. */
+const isReactDocgenTypescriptResolvable = () => {
+  try {
+    import.meta.resolve('react-docgen-typescript');
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript' | false;
 export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
 
@@ -187,7 +197,7 @@ export const getComponents = async ({
               logger.debug(`react-docgen-typescript failed for ${path}: ${message}`);
               // A missing `typescript` also fails the import, but has its own startup warning.
               reactDocgenTypescriptError =
-                isModuleNotFoundError(e) && message.includes("'react-docgen-typescript'")
+                isModuleNotFoundError(e) && !isReactDocgenTypescriptResolvable()
                   ? getDocgenPackageMissingError('react-docgen-typescript')
                   : {
                       name: 'react-docgen-typescript parse error',

@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { once } from 'storybook/internal/node-logger';
 
@@ -60,6 +60,10 @@ beforeEach(() => {
   // No lockfile and no package manager user agent: install hints use npm.
   vi.mocked(find.up).mockReturnValue(undefined);
   vi.stubEnv('npm_config_user_agent', '');
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 describe('getTypeScriptForDocgenError', () => {

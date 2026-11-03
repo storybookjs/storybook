@@ -1,11 +1,22 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
 import {
   BUILDER_DOCGEN_PACKAGES,
+  findPackageManagerForInstallHint,
   getAddBuilderDocgenPackagesCommand,
+  isBuilderDocgenPackageInstalled,
 } from './builder-docgen-packages.ts';
 import { PackageManagerName } from '../js-package-manager/JsPackageManager.ts';
 
@@ -31,6 +42,40 @@ describe('BUILDER_DOCGEN_PACKAGES', () => {
     ],
     [
       'presets/react-webpack',
+      ['react-docgen', 'react-docgen-typescript', '@storybook/react-docgen-typescript-plugin'],
+    ],
+    // Frameworks pass the peers through, because strict package managers (Yarn with the pnpm
+    // linker or PnP) only give a package the peers its direct parent provides.
+    [
+      'frameworks/nextjs-vite',
+      [
+        'react-docgen',
+        'react-docgen-typescript',
+        '@joshwooding/vite-plugin-react-docgen-typescript',
+      ],
+    ],
+    [
+      'frameworks/react-native-web-vite',
+      [
+        'react-docgen',
+        'react-docgen-typescript',
+        '@joshwooding/vite-plugin-react-docgen-typescript',
+      ],
+    ],
+    [
+      'frameworks/tanstack-react',
+      [
+        'react-docgen',
+        'react-docgen-typescript',
+        '@joshwooding/vite-plugin-react-docgen-typescript',
+      ],
+    ],
+    [
+      'frameworks/nextjs',
+      ['react-docgen', 'react-docgen-typescript', '@storybook/react-docgen-typescript-plugin'],
+    ],
+    [
+      'frameworks/react-webpack5',
       ['react-docgen', 'react-docgen-typescript', '@storybook/react-docgen-typescript-plugin'],
     ],
   ] as const)('match the optional peer dependencies of %s', (dir, packages) => {
@@ -90,10 +135,66 @@ describe('published declarations', () => {
         const source = readFileSync(file, 'utf-8');
         for (const name of builderDocgenPackages) {
           expect(source, `${file} imports ${name}`).not.toMatch(
-            new RegExp(`from ['"]${name.replace('/', '\\/')}['"]`)
+            new RegExp(`(from |import\\()['"]${name.replace('/', '\\/')}['"]`)
           );
         }
       }
     }
   );
+});
+
+describe('findPackageManagerForInstallHint', () => {
+  const project = (files: string[]) => {
+    const root = mkdtempSync(join(tmpdir(), 'sb-install-hint-'));
+    for (const file of files) {
+      mkdirSync(join(root, file, '..'), { recursive: true });
+      writeFileSync(join(root, file), '');
+    }
+    return root;
+  };
+
+  it('uses the closest lockfile', () => {
+    const root = project(['yarn.lock', 'apps/web/pnpm-lock.yaml']);
+
+    expect(
+      findPackageManagerForInstallHint({ cwd: join(root, 'apps/web'), last: root, userAgent: '' })
+    ).toBe(PackageManagerName.PNPM);
+  });
+
+  it('falls back to the user agent, then to npm', () => {
+    const root = project([]);
+
+    expect(
+      findPackageManagerForInstallHint({ cwd: root, last: root, userAgent: 'bun/1.2.0 npm/?' })
+    ).toBe(PackageManagerName.BUN);
+    expect(findPackageManagerForInstallHint({ cwd: root, last: root, userAgent: '' })).toBe(
+      PackageManagerName.NPM
+    );
+  });
+});
+
+describe('isBuilderDocgenPackageInstalled', () => {
+  const resolveTo = (version: string | undefined) => (specifier: string) => {
+    if (!version) {
+      throw Object.assign(new Error(`Cannot find package '${specifier}'`), {
+        code: 'ERR_MODULE_NOT_FOUND',
+      });
+    }
+    const dir = mkdtempSync(join(tmpdir(), 'sb-docgen-package-'));
+    mkdirSync(join(dir, 'dist'));
+    writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: specifier, version }));
+    return pathToFileURL(join(dir, 'dist', 'main.js')).href;
+  };
+
+  it('accepts a version in the peer range', () => {
+    expect(isBuilderDocgenPackageInstalled(resolveTo('8.0.4'), 'react-docgen')).toBe(true);
+  });
+
+  it('rejects an older major that another dependency hoisted', () => {
+    expect(isBuilderDocgenPackageInstalled(resolveTo('5.4.3'), 'react-docgen')).toBe(false);
+  });
+
+  it('rejects a package that does not resolve', () => {
+    expect(isBuilderDocgenPackageInstalled(resolveTo(undefined), 'react-docgen')).toBe(false);
+  });
 });

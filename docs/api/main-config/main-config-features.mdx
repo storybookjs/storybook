@@ -245,7 +245,7 @@ Type: `boolean`
 
 Default: `true` when the framework ships a server-side docgen provider: every React and Vue 3 framework, `@storybook/angular-vite`, and `@storybook/web-components-vite`. `false` otherwise.
 
-React and Vue 3 extract component metadata with TypeScript, so for them the default is only `true` when the `typescript` package is installed. A JavaScript project without it keeps builder docgen.
+React and Vue 3 extract component metadata with TypeScript, so for them the default is only `true` when the `typescript` package is installed. A Vue 3 project without it keeps builder docgen. A React project without it only keeps builder docgen when `react-docgen` is installed; otherwise Controls and the Docs args table show no props.
 
 Enable server-side docgen. Storybook extracts component metadata on the dev server using the TypeScript Language Service instead of injecting docgen into the preview bundle. This provides faster startup, more accurate [Controls](../../essentials/controls.mdx) and ArgTypes tables in [autodocs](../../writing-docs/autodocs.mdx), and improved static code snippets in docs and the Code panel. [Manifests](../../ai/manifests.mdx) and the [MCP server](../../ai/mcp/overview.mdx) use an optimized, ref-based format that loads faster for AI agents.
 

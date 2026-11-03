@@ -422,9 +422,17 @@ export class BuilderDocgenPackagesMissingError extends StorybookError {
       docgenServerDisabledInMainConfig: boolean;
       /** Whether `typescript` has the compiler API the docgen server needs. */
       typescriptUsable: boolean;
+      /** Versions of missing packages that resolve, but outside the supported range. */
+      foundVersions?: Record<string, string>;
     }
   ) {
-    const packageList = data.packages.map((name) => `\`${name}\``).join(' and ');
+    const packageList = data.packages
+      .map((name) =>
+        data.foundVersions?.[name]
+          ? `\`${name}\` (found ${data.foundVersions[name]}, which is not supported)`
+          : `\`${name}\``
+      )
+      .join(' and ');
     const them = data.packages.length === 1 ? 'it' : 'them';
     super({
       name: 'BuilderDocgenPackagesMissingError',
@@ -434,7 +442,7 @@ export class BuilderDocgenPackagesMissingError extends StorybookError {
         'https://storybook.js.org/docs/api/main-config/main-config-typescript#reactdocgen',
       message: [
         dedent`
-          Storybook's builder docgen (\`typescript.reactDocgen: '${data.reactDocgen}'\`) needs ${packageList}, which ${data.packages.length === 1 ? 'is' : 'are'} not installed. ${
+          Storybook's builder docgen (\`typescript.reactDocgen: '${data.reactDocgen}'\`) needs ${packageList}, which ${data.packages.length === 1 ? 'is' : 'are'} not installed${data.foundVersions && Object.keys(data.foundVersions).length > 0 ? ' in a supported version' : ''}. ${
             data.docgenServerDisabledInMainConfig
               ? `Install ${them}, then start Storybook again:`
               : `Controls and the Docs args table show no props until you install ${them}:`

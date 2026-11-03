@@ -56,10 +56,24 @@
     "@types/node": "^22.19.1"
   },
   "peerDependencies": {
+    "@storybook/react-docgen-typescript-plugin": "1.0.6--canary.9.0c3f3b7.0",
     "react": "^18.0.0 || ^19.0.0",
+    "react-docgen": "^8.0.2",
+    "react-docgen-typescript": "^2.2.2",
     "react-dom": "^18.0.0 || ^19.0.0",
     "storybook": "workspace:^",
     "typescript": "^5.9.0 || ^6.0.0 || ^7.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@storybook/react-docgen-typescript-plugin": {
+      "optional": true
+    },
+    "react-docgen": {
+      "optional": true
+    },
+    "react-docgen-typescript": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

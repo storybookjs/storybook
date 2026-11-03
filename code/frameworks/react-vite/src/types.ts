@@ -6,14 +6,13 @@ import type {
 
 import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
 
-import type ts from 'typescript';
-
 /**
  * The `react-docgen-typescript` parser options, copied from its type declarations.
  *
  * Builder docgen packages are optional peer dependencies, so published types must not import them:
- * a `.d.ts` import of a missing package fails `tsc` with TS2307 without `skipLibCheck`. A type test
- * keeps these shapes assignable both ways with the originals.
+ * a `.d.ts` import of a missing package fails `tsc` with TS2307 without `skipLibCheck`. TypeScript
+ * types are written structurally too, because the TypeScript 7 `typescript` package has no
+ * compiler API types. A type test keeps these shapes assignable both ways with the originals.
  */
 export interface ReactDocgenTypescriptParserOptions {
   propFilter?:
@@ -31,10 +30,8 @@ export interface ReactDocgenTypescriptParserOptions {
         },
         component: { name: string }
       ) => boolean);
-  componentNameResolver?: (
-    exp: ts.Symbol,
-    source: ts.SourceFile
-  ) => string | undefined | null | false;
+  /** Receives a TypeScript `Symbol` and `SourceFile`. */
+  componentNameResolver?: (exp: any, source: any) => string | undefined | null | false;
   shouldExtractLiteralValuesFromEnum?: boolean;
   shouldRemoveUndefinedFromOptional?: boolean;
   shouldExtractValuesFromUnion?: boolean;
@@ -51,7 +48,8 @@ export type ReactDocgenTypescriptOptions = ReactDocgenTypescriptParserOptions & 
   setDisplayName?: boolean;
   typePropName?: string;
   tsconfigPath?: string;
-  compilerOptions?: ts.CompilerOptions;
+  /** TypeScript `CompilerOptions`. */
+  compilerOptions?: Record<string, any>;
   exclude?: string[];
   include?: string[];
   fileSystemCache?: boolean | { enabled?: boolean; directory?: string };

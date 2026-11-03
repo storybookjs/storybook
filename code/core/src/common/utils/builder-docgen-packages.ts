@@ -1,4 +1,9 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'pathe';
+import { fileURLToPath } from 'node:url';
+
 import * as find from 'empathic/find';
+import { satisfies } from 'semver';
 
 import { PackageManagerName } from '../js-package-manager/JsPackageManager.ts';
 import {
@@ -57,19 +62,53 @@ export function getReactBuilderDocgenPackages(
 }
 
 /**
- * Return whether a package resolves.
+ * Return the version of a builder docgen package as it resolves, or `undefined` when it does not
+ * resolve. The version is `null` when no package.json for it can be read.
  *
  * `resolve` must resolve from the package that declares the optional peer dependency, for example
  * `(specifier) => import.meta.resolve(specifier)`, because strict package managers only expose a
  * peer to the packages that declare it.
  */
-export function isPackageResolvable(resolve: (specifier: string) => string, packageName: string) {
+export function getResolvedBuilderDocgenPackageVersion(
+  resolve: (specifier: string) => string,
+  packageName: BuilderDocgenPackage
+): string | null | undefined {
+  let entry: string;
   try {
-    resolve(packageName);
-    return true;
+    entry = fileURLToPath(resolve(packageName));
   } catch {
-    return false;
+    return undefined;
   }
+  // Not every package exports its package.json, so walk up from the resolved entry instead.
+  for (let dir = dirname(entry); dir !== dirname(dir); dir = dirname(dir)) {
+    try {
+      const packageJson = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf-8'));
+      if (packageJson.name === packageName) {
+        return typeof packageJson.version === 'string' ? packageJson.version : null;
+      }
+    } catch {
+      // No package.json in this directory.
+    }
+  }
+  return null;
+}
+
+/**
+ * Return whether a builder docgen package resolves in a version that satisfies its peer range.
+ *
+ * An older major hoisted by another dependency, such as `react-docgen@5`, does not count: Storybook
+ * would crash on its API instead of reporting the missing package.
+ */
+export function isBuilderDocgenPackageInstalled(
+  resolve: (specifier: string) => string,
+  packageName: BuilderDocgenPackage
+): boolean {
+  const version = getResolvedBuilderDocgenPackageVersion(resolve, packageName);
+  return (
+    version !== undefined &&
+    (version === null ||
+      satisfies(version, BUILDER_DOCGEN_PACKAGES[packageName], { includePrerelease: true }))
+  );
 }
 
 /** Return whether an import failed because a module or package could not be found. */
@@ -94,7 +133,12 @@ const LOCKFILE_PACKAGE_MANAGERS: [string, PackageManagerName][] = [
   [NPM_LOCKFILE, PackageManagerName.NPM],
 ];
 
-let detectedPackageManager: PackageManagerName | undefined;
+const USER_AGENT_PACKAGE_MANAGERS: Record<string, PackageManagerName> = {
+  npm: PackageManagerName.NPM,
+  pnpm: PackageManagerName.PNPM,
+  yarn: PackageManagerName.YARN2,
+  bun: PackageManagerName.BUN,
+};
 
 /**
  * Guess the project's package manager for an install hint, from the closest lockfile and then the
@@ -102,41 +146,44 @@ let detectedPackageManager: PackageManagerName | undefined;
  *
  * Unlike `JsPackageManagerFactory.getPackageManagerType`, it spawns no package manager to check
  * its version: presets call it while Storybook starts, where that costs about half a second. Yarn
- * 1 and Yarn Berry share the same `add` command, so telling them apart is not needed. The result is
- * cached for the process.
+ * 1 and Yarn Berry share the same `add` command, so telling them apart is not needed.
  */
-export function detectPackageManagerForInstallHint(): PackageManagerName {
-  if (detectedPackageManager) {
-    return detectedPackageManager;
-  }
+export function findPackageManagerForInstallHint({
+  cwd = process.cwd(),
+  last = getProjectRoot(),
+  userAgent = process.env.npm_config_user_agent,
+}: { cwd?: string; last?: string; userAgent?: string } = {}): PackageManagerName {
   let closest: { dir: string; packageManager: PackageManagerName } | undefined;
-  try {
-    const last = getProjectRoot();
-    for (const [lockfile, packageManager] of LOCKFILE_PACKAGE_MANAGERS) {
-      const found = find.up(lockfile, { last });
-      const dir = found?.slice(0, -lockfile.length);
-      if (dir && (!closest || dir.length > closest.dir.length)) {
-        closest = { dir, packageManager };
-      }
+  for (const [lockfile, packageManager] of LOCKFILE_PACKAGE_MANAGERS) {
+    const found = find.up(lockfile, { cwd, last });
+    const dir = found ? dirname(found) : undefined;
+    if (dir && (!closest || dir.length > closest.dir.length)) {
+      closest = { dir, packageManager };
     }
-  } catch {
-    // Fall through to the user agent.
   }
-  const userAgent = process.env.npm_config_user_agent?.split('/')[0];
-  const fromUserAgent = (
-    {
-      npm: PackageManagerName.NPM,
-      pnpm: PackageManagerName.PNPM,
-      yarn: PackageManagerName.YARN2,
-      bun: PackageManagerName.BUN,
-    } as Record<string, PackageManagerName>
-  )[userAgent ?? ''];
-  detectedPackageManager = closest?.packageManager ?? fromUserAgent ?? PackageManagerName.NPM;
-  return detectedPackageManager;
+  return (
+    closest?.packageManager ??
+    USER_AGENT_PACKAGE_MANAGERS[userAgent?.split('/')[0] ?? ''] ??
+    PackageManagerName.NPM
+  );
 }
 
-/** Return `name@range` for each package, as `addDependencies` and install commands take them. */
-export const getBuilderDocgenPackageSpecifiers = (packages: readonly BuilderDocgenPackage[]) =>
+let detectedPackageManager: PackageManagerName | undefined;
+
+/** {@link findPackageManagerForInstallHint} for the current project, cached for the process. */
+const detectPackageManagerForInstallHint = () => {
+  if (!detectedPackageManager) {
+    try {
+      detectedPackageManager = findPackageManagerForInstallHint();
+    } catch {
+      detectedPackageManager = PackageManagerName.NPM;
+    }
+  }
+  return detectedPackageManager;
+};
+
+/** Return `name@range` for each package, as install commands take them. */
+const getBuilderDocgenPackageSpecifiers = (packages: readonly BuilderDocgenPackage[]) =>
   packages.map((name) => `${name}@${BUILDER_DOCGEN_PACKAGES[name]}`);
 
 /**

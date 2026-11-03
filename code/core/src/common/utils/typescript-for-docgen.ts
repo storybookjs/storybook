@@ -16,7 +16,8 @@ import {
   type ReactDocgenOption,
   getAddBuilderDocgenPackagesCommand,
   isModuleNotFoundError,
-  isPackageResolvable,
+  getResolvedBuilderDocgenPackageVersion,
+  isBuilderDocgenPackageInstalled,
 } from './builder-docgen-packages.ts';
 import { loadMainConfig } from './load-main-config.ts';
 
@@ -42,33 +43,32 @@ export const hasTypeScriptCompilerApi = (version: string) => Number(version.spli
  * `typescript` to the packages that declare it.
  */
 export function getTypeScriptForDocgenError(
-  resolve: (specifier: string) => string,
-  { builderDocgenFallback }: { builderDocgenFallback?: BuilderDocgenFallback } = {}
+  resolve: (specifier: string) => string
 ): TypeScriptMissingForDocgenError | TypeScriptWithoutCompilerApiError | undefined {
   let version: unknown;
   try {
     const packageJsonPath = fileURLToPath(resolve('typescript/package.json'));
     ({ version } = JSON.parse(readFileSync(packageJsonPath, 'utf-8')));
   } catch (cause) {
-    return new TypeScriptMissingForDocgenError({ cause, builderDocgenFallback });
+    return new TypeScriptMissingForDocgenError({ cause });
   }
   if (typeof version !== 'string') {
-    return new TypeScriptMissingForDocgenError({ builderDocgenFallback });
+    return new TypeScriptMissingForDocgenError();
   }
   return hasTypeScriptCompilerApi(version)
     ? undefined
-    : new TypeScriptWithoutCompilerApiError({ version, builderDocgenFallback });
+    : new TypeScriptWithoutCompilerApiError({ version });
 }
 
 /**
  * Describe the builder docgen package a renderer falls back to without a usable `typescript`, so
- * TypeScript warnings can say whether docgen still runs and how to keep it running.
+ * the TypeScript warning can say whether docgen still runs.
  */
-export function getBuilderDocgenFallback(
+function getBuilderDocgenFallback(
   resolve: (specifier: string) => string,
   packageName: BuilderDocgenPackage
 ): BuilderDocgenFallback {
-  return { packageName, installed: isPackageResolvable(resolve, packageName) };
+  return { packageName, installed: isBuilderDocgenPackageInstalled(resolve, packageName) };
 }
 
 /** Return the `features.docgenServer` value the project's main config sets, if any. */
@@ -105,8 +105,8 @@ export async function isDocgenServerDisabledInMainConfig(
  * warning.
  *
  * Pass `builderDocgenFallbackPackage` when builder docgen needs an optional package, such as React's
- * `react-docgen`. The warning then says whether docgen still runs, and how to install the package
- * when it does not.
+ * `react-docgen`. The warning then says whether docgen still runs. It does not suggest installing
+ * the package: the way forward is the docgen server.
  */
 export async function isTypeScriptReadyForDocgen(
   resolve: (specifier: string) => string,
@@ -173,7 +173,7 @@ export async function loadTypeScriptCompilerApi<TypeScript extends { version: st
  *   a {@link BuilderDocgenPackagesMissingError} when packages are missing, so Storybook does not start
  *   with a configuration it cannot honor. Otherwise it warns about the deprecation.
  * - `typescript` is unusable, so the docgen server is off by default: nothing, because the
- *   `isDocgenProviderEnabled` preset already warned and named the missing packages.
+ *   `isDocgenProviderEnabled` preset already warned that Controls stay empty.
  * - Anything else that turned the docgen server off: a {@link BuilderDocgenPackagesMissingError}
  *   warning when packages are missing.
  *
@@ -192,7 +192,13 @@ export async function checkReactBuilderDocgenPackages({
   resolve: (specifier: string) => string;
   options: Pick<Options, 'configDir'>;
 }): Promise<BuilderDocgenPackage[]> {
-  const missing = packages.filter((name) => !isPackageResolvable(resolve, name));
+  const missing = packages.filter((name) => !isBuilderDocgenPackageInstalled(resolve, name));
+  const foundVersions = Object.fromEntries(
+    missing.flatMap((name) => {
+      const version = getResolvedBuilderDocgenPackageVersion(resolve, name);
+      return version ? [[name, version]] : [];
+    })
+  );
   const docgenServerDisabledInMainConfig = await isDocgenServerDisabledInMainConfig(options);
 
   if (missing.length > 0) {
@@ -203,6 +209,7 @@ export async function checkReactBuilderDocgenPackages({
       installCommand: getAddBuilderDocgenPackagesCommand(missing),
       docgenServerDisabledInMainConfig,
       typescriptUsable,
+      foundVersions,
     });
     if (docgenServerDisabledInMainConfig) {
       throw error;

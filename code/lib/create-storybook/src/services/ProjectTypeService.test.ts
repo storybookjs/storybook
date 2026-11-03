@@ -165,6 +165,17 @@ describe('ProjectTypeService', () => {
       expect(result).toBe(ProjectType.WEB_COMPONENTS);
     });
 
+    it('detects ASTRO via astro, ahead of the UI library it integrates', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { astro: '^5.5.3', '@astrojs/react': '^4.2.3', react: '^19.0.0' },
+      };
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+      expect(result).toBe(ProjectType.ASTRO);
+    });
+
     it('detects SOLID via solid-js', async () => {
       (pm as any).primaryPackageJson.packageJson = {
         dependencies: { 'solid-js': '^1.8.0' },

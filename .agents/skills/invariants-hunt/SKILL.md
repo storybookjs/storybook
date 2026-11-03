@@ -21,7 +21,7 @@ Run it after [`code-review`](../code-review/SKILL.md) is quiet: fixes from that 
 
 4. **Gate on evidence.** A finding enters judgement only with all five parts: the invariant, the minimal input, the observed state on this head, the expected state, and a test that fails on this head. Send anything less back with "reproduce or drop". Judge each survivor:
    - **Valid:** fix it.
-   - **Out of scope:** it breaks "Real inputs only" in the [code-review rules](../code-review/rules.md). Drop it and say why.
+   - **No producer:** the finding names no producer of its input. Judge it with the whole repo in view, as "Edge cases and guards" in the [code-review rules](../code-review/rules.md) says: fix it when you find a producer, and otherwise say why you leave it.
    - **Design-level:** the fix changes a rule the spec states. That is the user's decision: keep it out of the commits, and present it in one paragraph with a recommendation and the reproduction.
    - **Wrong:** say why.
 
@@ -63,12 +63,13 @@ Practical rules:
   <patch path> (git diff plus new files via `git add -N`) before reverting. Do not commit, push, or
   touch branches. Do not touch <off-limits paths>.
 
-Stay with inputs real projects produce. Do not report a break that needs a state no user, editor,
-build tool or framework creates (a hand-corrupted file, an impossible event order, a value the types
-rule out); a guard against an imaginary edge case is code to maintain for nothing. If you are unsure
-whether an input is realistic, name where it would come from in real life, or drop it.
+Explore what can reach the changed code before you decide what is impossible: user files and config,
+CLI arguments, channel messages, a file system left behind by an interrupted run, events that arrive
+out of order, concurrent runs, rejected promises. For each break, name its producer: the user action,
+editor, build tool, framework or earlier Storybook run that creates the input. When you cannot name
+a producer, keep the finding, say so, and rank it last.
 
-Report only what you reproduced. For each finding: the invariant, the minimal input, the observed
+Report only what you reproduced. For each finding: the invariant, the minimal input and its producer, the observed
 state on this head, the expected state, and a test that fails on this head. Propose the source fix,
 apply all fixes together, confirm the focused suites pass with them and that exactly your new tests
 fail without them. List what you tried that held under "Held", one line each. Report nothing you

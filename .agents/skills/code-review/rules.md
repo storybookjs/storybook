@@ -2,12 +2,15 @@
 
 The reference of the [`code-review` skill](./SKILL.md). Every review follows it: a human review, a review skill, a subagent, or a reply to a review bot.
 
-## Real inputs only
+## Edge cases and guards
 
-Report a finding only when its input happens in real projects: something a user, an editor, a build tool or a framework produces.
-For each finding, name where that input comes from in real life. If you cannot, drop the finding and say why.
-Do not ask for a guard, a fallback or a test against a hand-built state (a hand-corrupted file, an impossible event order, a value the types rule out). A guard for an imaginary input is code to maintain and review for nothing.
-Apply the same rule when you act on findings from someone else.
+Explore what can reach the changed code before you decide what is impossible: user files and config,
+CLI arguments, channel messages, a file system left behind by an interrupted run, events that arrive
+out of order, concurrent runs, rejected promises. Each of these is a real input in this codebase.
+
+A finding names the scenario and its producer: the user action, editor, build tool, framework or
+earlier Storybook run that creates the input. When you cannot name a producer, keep the finding,
+say so, and rank it last. The person acting on the findings has the whole repo and can judge.
 
 ## Scope and evidence
 

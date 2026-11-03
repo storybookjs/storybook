@@ -25,7 +25,7 @@ A change can pass one axis and fail the other. Each axis runs in its own subagen
 
 3. **List the standards.** [The review rules](./rules.md), `AGENTS.md`, and each guideline in `.agents/guidelines/` that the diff touches (the `AGENTS.md` table says which one owns which topic). Also any `AGENTS.md` or README in a changed package.
 
-4. **Run both subagents in parallel**, in the foreground. Each brief has the diff command, the commit list, and the rule "Real inputs only" from [the review rules](./rules.md), pasted in full.
+4. **Run both subagents in parallel**, in the foreground. Each brief has the diff command, the commit list, and the section "Edge cases and guards" from [the review rules](./rules.md), pasted in full.
    - **Standards brief:** the list from step 3. "For each place where the diff breaks a documented rule, cite the file and the rule, and quote the hunk. Mark each finding as a hard break or a judgement call. Skip what lint, format or type checks already enforce. At most 400 words."
    - **Spec brief:** the spec file. "Report: (a) what the spec asks for that is missing or partial; (b) behaviour in the diff the spec did not ask for; (c) what looks implemented but wrong. Quote the spec line for each finding. At most 400 words."
 
@@ -33,4 +33,4 @@ A change can pass one axis and fail the other. Each axis runs in its own subagen
 
 Done when both axes have reported, or the Spec axis has reported "no spec".
 
-When the user asks you to fix the findings, judge each one first: fix the valid ones, and drop the ones that break "Real inputs only", with the reason.
+When the user asks you to fix the findings, judge each one with the whole repo in view: fix the valid ones, and say why you leave the others.

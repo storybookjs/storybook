@@ -4,9 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-props-ts-enum--props-as-written": {
-      "argCode": {
-        "severity": "Severity.Warning",
-      },
       "description": undefined,
       "id": "forms-props-ts-enum--props-as-written",
       "name": "Props As Written",
@@ -23,7 +20,7 @@ import TsEnumProps from './TsEnumProps.vue';
 </script>
 
 <template>
-  <TsEnumProps⟦attr level level ~%20⟧⟦props -default -level -severity ~%20⟧ />
+  <TsEnumProps⟦attr level level ~%20⟫:level="1"⟧⟦props * default ~%20⟫⟧ />
 </template>",
       "warning": "Incomplete snippet: `severity: Severity.Warning` could not be resolved statically.",
     },

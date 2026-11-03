@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-setup-ref-plus-handler--primary": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-setup-ref-plus-handler--primary",
       "name": "Primary",
@@ -33,7 +32,7 @@ const increment = () => {
 </script>
 
 <template>
-  <SetupRefPlusHandler⟦attr label label bound ~%20⟧ :count="count" @increment="increment" />
+  <SetupRefPlusHandler⟦attr label label ~%20⟫label="Count"⟧ :count="count" @increment="increment" />
 </template>",
     },
   },

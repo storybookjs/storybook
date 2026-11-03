@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-v-model--primary": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-v-model--primary",
       "name": "Primary",
@@ -25,13 +24,13 @@ const modelValue = ref('Accepted');
 import { ref } from "vue";
 import ModelToggle from './ModelToggle.vue';
 
-const checked = ref(⟦value checked script ?⟧);
+const checked = ref(⟦value checked script⟫true⟧);
 
-const modelValue = ref(⟦value modelValue script ?⟧);
+const modelValue = ref(⟦value modelValue script⟫'Accepted'⟧);
 </script>
 
 <template>
-  <ModelToggle v-model:checked="checked" v-model="modelValue"⟦props -checked -modelValue ~%20⟧ />
+  <ModelToggle v-model:checked="checked" v-model="modelValue"⟦props * ~%20⟫⟧ />
 </template>",
     },
   },

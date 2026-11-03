@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-props-basic-types--props-as-written": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-props-basic-types--props-as-written",
       "name": "Props As Written",
@@ -21,17 +20,10 @@ import PropsBasicTypes from './PropsBasicTypes.vue';
 </script>
 
 <template>
-  <PropsBasicTypes⟦attr big big ~%20⟧⟦attr config config ~%20⟧⟦attr count count ~%20⟧⟦attr enabled enabled ~%20⟧⟦attr formatter formatter ~%20⟧⟦attr label label ~%20⟧⟦attr tags tags ~%20⟧⟦attr token token ~%20⟧⟦props -big -config -count -enabled -formatter -label -tags -token ~%20⟧ />
+  <PropsBasicTypes⟦attr count count ~%20⟫:count="2"⟧⟦attr enabled enabled ~%20⟫enabled⟧⟦attr label label ~%20⟫label="Hello"⟧⟦props * ~%20⟫⟧ />
 </template>",
     },
     "forms-props-basic-types--unrepresentable-args": {
-      "argCode": {
-        "big": "BigInt('9007199254740993')",
-        "config": "{ theme: 'dark', dense: true }",
-        "formatter": "(value: number) => `#${value}`",
-        "tags": "['alpha', 'beta']",
-        "token": "Symbol('fixture')",
-      },
       "description": undefined,
       "id": "forms-props-basic-types--unrepresentable-args",
       "name": "Unrepresentable Args",
@@ -56,19 +48,19 @@ const token = Symbol('fixture');
       "template": "<script lang="ts" setup>
 import PropsBasicTypes from './PropsBasicTypes.vue';
 
-const big = ⟦value big script⟧;
+const big = ⟦value big script⟫BigInt('9007199254740993')⟧;
 
-const config = ⟦value config script⟧;
+const config = ⟦value config script⟫{ theme: 'dark', dense: true }⟧;
 
-const formatter = ⟦value formatter script⟧;
+const formatter = ⟦value formatter script⟫(value: number) => `#${value}`⟧;
 
-const tags = ⟦value tags script⟧;
+const tags = ⟦value tags script⟫['alpha', 'beta']⟧;
 
-const token = ⟦value token script⟧;
+const token = ⟦value token script⟫Symbol('fixture')⟧;
 </script>
 
 <template>
-  <PropsBasicTypes :big="big" :config="config"⟦attr count count ~%20⟧⟦attr enabled enabled ~%20⟧ :formatter="formatter"⟦attr label label ~%20⟧ :tags="tags" :token="token"⟦props -big -config -count -enabled -formatter -label -tags -token ~%20⟧ />
+  <PropsBasicTypes :big="big" :config="config" :formatter="formatter"⟦attr label label ~%20⟫label="Formatted"⟧ :tags="tags" :token="token"⟦props * ~%20⟫⟧ />
 </template>",
     },
   },

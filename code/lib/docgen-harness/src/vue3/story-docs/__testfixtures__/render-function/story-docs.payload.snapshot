@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-render-function--args-member": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-render-function--args-member",
       "name": "Args Member",
@@ -24,12 +23,11 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 
 <template>
   <div>
-    <RenderFunctionButton⟦attr label label bound ~%20⟧ />
+    <RenderFunctionButton⟦attr label label ~%20⟫label="From args"⟧ />
   </div>
 </template>",
     },
     "forms-render-function--args-on-wrapper-and-component": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-render-function--args-on-wrapper-and-component",
       "name": "Args On Wrapper And Component",
@@ -48,13 +46,12 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 </script>
 
 <template>
-  <section class="toolbar"⟦attr label label ~%20⟧⟦props -class -label ~%20⟧>
-    <RenderFunctionButton⟦attr label label ~%20⟧⟦props -label ~%20⟧ />
+  <section class="toolbar"⟦attr label label ~%20⟫label="Confirm"⟧⟦props * class ~%20⟫⟧>
+    <RenderFunctionButton⟦attr label label ~%20⟫label="Confirm"⟧⟦props * ~%20⟫⟧ />
   </section>
 </template>",
     },
     "forms-render-function--nested": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-render-function--nested",
       "name": "Nested",
@@ -77,13 +74,12 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 <template>
   <section class="toolbar">
     <h2>Actions</h2>
-    <RenderFunctionButton⟦attr label label ~%20⟧⟦props -label ~%20⟧ />
+    <RenderFunctionButton⟦attr label label ~%20⟫label="Confirm"⟧⟦props * ~%20⟫⟧ />
     <RenderFunctionButton label="Cancel" />
   </section>
 </template>",
     },
     "forms-render-function--primary": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-render-function--primary",
       "name": "Primary",
@@ -100,11 +96,10 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 </script>
 
 <template>
-  <RenderFunctionButton⟦attr label label ~%20⟧⟦props -label ~%20⟧ />
+  <RenderFunctionButton⟦attr label label ~%20⟫label="Render"⟧⟦props * ~%20⟫⟧ />
 </template>",
     },
     "forms-render-function--slot-children": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-render-function--slot-children",
       "name": "Slot Children",
@@ -126,7 +121,7 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 </script>
 
 <template>
-  <RenderFunctionButton⟦attr label label ~%20⟧⟦props -label ~%20⟧>
+  <RenderFunctionButton⟦attr label label ~%20⟫label="Confirm"⟧⟦props * ~%20⟫⟧>
     <span>Extra</span>
     <template #footer>
       <strong>Note</strong>
@@ -135,7 +130,6 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 </template>",
     },
     "forms-render-function--spread-override": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-render-function--spread-override",
       "name": "Spread Override",
@@ -152,7 +146,7 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 </script>
 
 <template>
-  <RenderFunctionButton⟦props -label ~%20⟧ label="Overridden" />
+  <RenderFunctionButton⟦props * label ~%20⟫⟧ label="Overridden" />
 </template>",
     },
   },

@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-template-escaped-interpolation--primary": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-template-escaped-interpolation--primary",
       "name": "Primary",
@@ -21,7 +20,7 @@ import TemplateEscapedInterpolation from './TemplateEscapedInterpolation.vue';
 </script>
 
 <template>
-  <TemplateEscapedInterpolation>⟦text label⟧</TemplateEscapedInterpolation>
+  <TemplateEscapedInterpolation>⟦text label⟫&lt;em&gt;1 &amp; 2&lt;/em&gt;⟧</TemplateEscapedInterpolation>
 </template>",
     },
   },

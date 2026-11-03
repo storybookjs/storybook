@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { sanitize, storyNameFromExport } from 'storybook/internal/csf';
-import { UnprintableArgError, writtenArg } from 'storybook/internal/docs-tools';
+import { UnprintableArgError, fillTemplate, stripHoles } from 'storybook/internal/docs-tools';
 import type { Args, IndexEntry } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
@@ -16,7 +16,7 @@ import * as Vue from 'vue';
 import { compileScript, compileTemplate, parse } from 'vue/compiler-sfc';
 import { renderToString } from 'vue/server-renderer';
 
-import { fillTemplate } from '../../../../../renderers/vue3/src/docs/fill-template.ts';
+import { printHole } from '../../../../../renderers/vue3/src/docs/print-hole.ts';
 import { parseArgTypesSnapshot } from '../../compare/parse-snapshot.ts';
 import TemplateSharedValues from './__testfixtures__/template-shared-values/TemplateSharedValues.vue';
 import * as sharedValuesStories from './__testfixtures__/template-shared-values/input.stories.ts';
@@ -246,15 +246,13 @@ const liveStories = (
           join(fixtureCase.testDir, STORIES_FILE)
         );
         const composed = Object.entries(composeStories(stories) as Record<string, { args: Args }>);
-        return Object.values(payload?.stories ?? {}).flatMap(
-          ({ id, snippet, template, argCode = {} }) => {
-            // A composed story is named after its export, so it is found by the id that name makes.
-            const args = composed.find(([name]) =>
-              id.endsWith(`--${sanitize(storyNameFromExport(name))}`)
-            )?.[1].args;
-            return template !== undefined && args ? [{ id, snippet, template, args, argCode }] : [];
-          }
-        );
+        return Object.values(payload?.stories ?? {}).flatMap(({ id, snippet, template }) => {
+          // A composed story is named after its export, so it is found by the id that name makes.
+          const args = composed.find(([name]) =>
+            id.endsWith(`--${sanitize(storyNameFromExport(name))}`)
+          )?.[1].args;
+          return template !== undefined && args ? [{ id, snippet, template, args }] : [];
+        });
       })
   )
 ).flat();
@@ -275,9 +273,9 @@ function compileErrors(code: string): string[] {
 }
 
 // A story whose args the snippet cannot show falls back to its static snippet.
-function fill({ template, args }: { template: string; args: Args }): string | undefined {
+function fill(template: string, initialArgs: Args, unmappedArgs: Args): string | undefined {
   try {
-    return fillTemplate(template, args);
+    return fillTemplate(template, { initialArgs, unmappedArgs }, printHole);
   } catch (error) {
     if (error instanceof UnprintableArgError) {
       return undefined;
@@ -309,17 +307,12 @@ function changed(value: unknown): unknown {
 }
 
 describe('vue3 story templates', () => {
-  it.each(liveStories)('$id is its snippet when filled with its args, as written', (story) => {
-    const written = Object.entries(story.argCode).map(([name, code]) => [name, writtenArg(code)]);
-    const filled = fillTemplate(story.template, {
-      ...story.args,
-      ...Object.fromEntries(written),
-    });
-    expect(filled).toBe(story.snippet);
+  it.each(liveStories)('$id prints its snippet while no arg changes', (story) => {
+    expect(stripHoles(story.template)).toBe(story.snippet);
   });
 
   it.each(liveStories)('$id compiles when filled with changed args', (story) => {
-    const filled = fill({ template: story.template, args: changed(story.args) as Args });
+    const filled = fill(story.template, story.args, changed(story.args) as Args);
     expect(filled === undefined ? [] : compileErrors(filled)).toEqual([]);
   });
 });
@@ -368,7 +361,12 @@ describe('vue3 filled story templates', () => {
     const [, story] = Object.entries(payload?.stories ?? {}).find(([id]) =>
       id.endsWith(`--${sanitize(storyNameFromExport(name))}`)
     )!;
-    const filled = fillTemplate(story.template!, structuredClone(args));
+    const initialArgs = composeStories(sharedValuesStories)[name].args;
+    const filled = fillTemplate(
+      story.template!,
+      { initialArgs, unmappedArgs: { ...initialArgs, ...structuredClone(args) } },
+      printHole
+    );
     const render = sharedValuesStories[name].render!(structuredClone(args), {} as never);
     expect(await renderHtml(snippetComponent(filled))).toBe(
       await renderHtml(compiled(render as { template: string }))

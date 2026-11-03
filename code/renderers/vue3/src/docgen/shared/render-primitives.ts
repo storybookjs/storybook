@@ -2,11 +2,10 @@ import {
   type ESTreeNode as Node,
   type ImportBinding,
   buildImportStatements,
-  isStringLiteral,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 
-import { defaultWord, legacyHole as hole, holeWord } from 'storybook/internal/docs-tools';
+import type { TemplateHole, hole } from 'storybook/internal/docs-tools';
 
 import type {
   ClassifiedArg,
@@ -15,7 +14,6 @@ import type {
   RenderableValuePlan,
 } from '../story-docs/classify-args/classify-args.ts';
 import {
-  type SnippetValue,
   attributeOrder,
   printAttribute,
   quoteAttributeValue,
@@ -49,16 +47,11 @@ export interface RenderContext {
   componentImports: Set<string>;
   /** Setup statements forwarded into `<script setup>`, printed after the hoisted consts. */
   statements: string[];
-  /**
-   * Whether the snippet is the story's template: a hole wherever it fills in an arg's value, for
-   * the preview to fill with the current args; see `fillTemplate`.
-   */
-  holes: boolean;
+  /** For the story's template, wraps each place an arg prints in its hole; see `printHole`. */
+  mark?: typeof hole;
 }
 
 interface RenderPropValueInput {
-  /** Whether the template binds the arg itself, `:name="args.x"`, where next prints no `''`. */
-  bound?: boolean;
   /** Vue template attribute name. */
   attributeName: string;
   /** JavaScript identifier referenced by hoisted values. */
@@ -101,8 +94,8 @@ function partitionArgsByRole(args: ClassifiedArg[]): {
   };
 }
 
-/** Create an isolated hoist context for one generated snippet, or with `holes` for its template. */
-export function createRenderContext(holes = false): RenderContext {
+/** Create an isolated hoist context for one generated snippet, or with `mark` for its template. */
+export function createRenderContext(mark?: typeof hole): RenderContext {
   return {
     imports: {},
     // `ref` is reserved up front so no hoisted arg can shadow the Vue import a v-model may need.
@@ -111,24 +104,21 @@ export function createRenderContext(holes = false): RenderContext {
     hoistedArgs: new Map(),
     componentImports: new Set(),
     statements: [],
-    holes,
+    mark,
   };
 }
 
-/** An arg's value as code in `<script setup>`, or in a template its hole there. */
-export function scriptValue(name: string, value: Node, ctx: RenderContext): string {
-  return ctx.holes
-    ? hole('value', holeWord(name), 'script', ...quoteWords(value))
-    : printValue(unwrapExpression(value));
-}
+/** `text` as the snippet prints it in a place, which a template wraps in the place's hole. */
+export const marked = (ctx: RenderContext, place: TemplateHole, text: string, space?: string) =>
+  ctx.mark ? ctx.mark(place, text, space) : text;
 
-/**
- * The words of a value hole for an arg the story writes as a string in double quotes, which the
- * snippet prints as written, so the preview prints the arg's strings in them too.
- */
-export function quoteWords(value: Node): string[] {
-  const written = unwrapExpression(value);
-  return isStringLiteral(written) && printValue(written).startsWith('"') ? ['"'] : [];
+/** An arg's value as code in `<script setup>`. */
+export function scriptValue(name: string, value: Node, ctx: RenderContext): string {
+  return marked(
+    ctx,
+    { kind: 'value', arg: name, words: ['script'] },
+    printValue(unwrapExpression(value))
+  );
 }
 
 /** Wrap prepared template markup with the shared SFC block assembly. */
@@ -164,18 +154,13 @@ function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): Rende
     return hoistedProp(input, ctx, scriptValue(input.variableName, value, ctx));
   }
 
-  if (ctx.holes) {
-    return {
-      attrName: hole(
-        'attr',
-        holeWord(input.attributeName),
-        holeWord(input.variableName),
-        ...(input.bound ? ['bound'] : [])
-      ),
-    };
-  }
-
-  return { attrName: attribute };
+  return {
+    attrName: marked(
+      ctx,
+      { kind: 'attr', arg: input.variableName, words: [input.attributeName] },
+      attribute
+    ),
+  };
 }
 
 /** Arg-value hoists share one const per arg name, so every reference keeps the same identity. */
@@ -216,21 +201,18 @@ export function renderSlotContent(
 ): string {
   const value = unwrapExpression(arg.value);
   // The content a slot function returns is no arg's value, so it has no hole.
-  const holes = ctx.holes && !arg.returned;
+  const own = arg.returned ? { ...ctx, mark: undefined } : ctx;
 
   if (plan.kind === 'inline') {
-    const printed = snippetValueOf(value);
-    const content = slotContent(printed);
+    const content = slotContent(snippetValueOf(value));
     // Vue's whitespace condensing would alter padded text, so it hoists to an interpolation.
     if (content !== undefined) {
-      return holes
-        ? hole('text', holeWord(arg.name), 'slot', ...writtenTextWords(printed))
-        : content;
+      return marked(own, { kind: 'text', arg: arg.name, words: ['slot'] }, content);
     }
   }
 
   const bindingName = allocateBindingName(arg.name, ctx);
-  ctx.variables.set(bindingName, scriptValue(arg.name, value, { ...ctx, holes }));
+  ctx.variables.set(bindingName, scriptValue(arg.name, value, own));
   return `{{ ${bindingName} }}`;
 }
 
@@ -246,16 +228,6 @@ export function inlinePrimitiveSource(node: Node): string | undefined {
     : typeof value.value === 'number' || typeof value.value === 'boolean'
       ? String(value.value)
       : undefined;
-}
-
-/**
- * The words of a text hole for a number the story writes other than as it prints, such as `1e3`:
- * the text it shows while the arg holds it, as the preview passes its code then.
- */
-export function writtenTextWords(value: SnippetValue): string[] {
-  return value.kind === 'number' && value.code !== String(value.value)
-    ? [holeWord(`=${String(value.value)}`)]
-    : [];
 }
 
 function renderScript(ctx: RenderContext): string | undefined {
@@ -336,8 +308,6 @@ export interface ArgsBindingExpansion {
 }
 
 export interface RenderArgsBindingExpansionOptions {
-  /** In a template, the component's props the story leaves unset, each a hole where it sorts. */
-  unsetProps?: readonly string[];
   /** Upgrade model args to `v-model` bindings and slot args to slot children (story tag only). */
   roleAware: boolean;
   /** Renders one slot arg's children; `undefined` content bails the whole expansion. */
@@ -363,23 +333,14 @@ export function renderArgsBindingExpansion(
     return undefined;
   }
 
-  const props = [
-    ...partitioned.props.map((arg) => ({
-      name: arg.name,
-      prop: options.roleAware
-        ? renderPropLikeArg(arg, ctx)
-        : renderPropValue(
-            { attributeName: arg.name, variableName: arg.name, value: arg.value, plan: arg.plan },
-            ctx
-          ),
-    })),
-    ...(options.unsetProps ?? []).map((name) => ({
-      name,
-      prop: { attrName: hole('attr', holeWord(name), holeWord(name)) },
-    })),
-  ]
-    .sort((a, b) => attributeOrder(a.name, b.name))
-    .map(({ prop }) => prop);
+  const props = partitioned.props.map((arg) =>
+    options.roleAware
+      ? renderPropLikeArg(arg, ctx)
+      : renderPropValue(
+          { attributeName: arg.name, variableName: arg.name, value: arg.value, plan: arg.plan },
+          ctx
+        )
+  );
   const events = partitioned.events.map((arg) => renderEventArg(arg, ctx));
 
   const slotChildren: string[] = [];
@@ -402,7 +363,7 @@ export function renderBoundArgAttribute(
 ): string {
   return formatRenderedProp(
     renderPropValue(
-      { attributeName, variableName: arg.name, value: arg.value, plan: arg.plan, bound: true },
+      { attributeName, variableName: arg.name, value: arg.value, plan: arg.plan },
       ctx
     )
   );
@@ -426,10 +387,11 @@ export function hoistArgValue(name: string, value: Node, ctx: RenderContext): st
 export function hoistModelRef(name: string, value: Node | undefined, ctx: RenderContext): string {
   (ctx.imports[VUE_PACKAGE] ??= new Set()).add('ref');
   const bindingName = allocateBindingName(name, ctx);
-  const initial = ctx.holes
-    ? hole('value', holeWord(name), 'script', defaultWord(''))
-    : value && printValue(unwrapExpression(value));
-  ctx.variables.set(bindingName, `ref(${initial ?? ''})`);
+  const initial = value ? printValue(unwrapExpression(value)) : '';
+  ctx.variables.set(
+    bindingName,
+    `ref(${marked(ctx, { kind: 'value', arg: name, words: ['script'] }, initial)})`
+  );
   return bindingName;
 }
 

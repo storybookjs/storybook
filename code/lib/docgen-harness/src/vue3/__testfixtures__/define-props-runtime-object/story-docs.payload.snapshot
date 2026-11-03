@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-define-props-runtime-object--props-as-written": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-define-props-runtime-object--props-as-written",
       "name": "Props As Written",
@@ -21,7 +20,7 @@ import RuntimeObjectProps from './RuntimeObjectProps.vue';
 </script>
 
 <template>
-  <RuntimeObjectProps⟦attr count count ~%20⟧⟦attr format format ~%20⟧⟦attr label label ~%20⟧⟦props -count -format -label ~%20⟧ />
+  <RuntimeObjectProps⟦attr count count ~%20⟫:count="3"⟧⟦attr label label ~%20⟫label="Total"⟧⟦props * ~%20⟫⟧ />
 </template>",
     },
   },

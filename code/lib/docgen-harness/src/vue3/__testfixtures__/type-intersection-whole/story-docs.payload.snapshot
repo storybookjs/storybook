@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-type-intersection-whole--props-as-written": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-type-intersection-whole--props-as-written",
       "name": "Props As Written",
@@ -21,7 +20,7 @@ import TypeIntersectionWhole from './TypeIntersectionWhole.vue';
 </script>
 
 <template>
-  <TypeIntersectionWhole⟦attr id id ~%20⟧⟦attr size size ~%20⟧⟦props -default -id -size ~%20⟧ />
+  <TypeIntersectionWhole⟦attr id id ~%20⟫id="save-button"⟧⟦attr size size ~%20⟫size="medium"⟧⟦props * default ~%20⟫⟧ />
 </template>",
     },
   },

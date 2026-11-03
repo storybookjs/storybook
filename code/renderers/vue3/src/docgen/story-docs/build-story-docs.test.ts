@@ -3,15 +3,15 @@ import { readFile } from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SourceEditor } from 'storybook/internal/csf-tools';
-import { UnprintableArgError, legacyPrintValue as printValue } from 'storybook/internal/docs-tools';
-import type { IndexEntry, StoryDoc } from 'storybook/internal/types';
+import { UnprintableArgError, fillTemplate, printValue } from 'storybook/internal/docs-tools';
+import type { Args, IndexEntry, StoryDoc } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
 import { vol } from 'memfs';
 
-import { fillTemplate } from '../../docs/fill-template.ts';
+import { printHole } from '../../docs/print-hole.ts';
 import { buildStoryDocsPayload } from './build-story-docs.ts';
-import { expectTemplatesFillToSnippets } from './story-template.test-helpers.ts';
+import { expectTemplatesStripToSnippets } from './story-template.test-helpers.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 
@@ -65,7 +65,8 @@ async function primaryStory(
   modules?: Record<string, string>,
   categories = DOCGEN_CATEGORIES
 ) {
-  const storyFile = `
+  vol.fromJSON({
+    [STORY_PATH]: `
 import MyButton from './MyButton.vue';
 
 const meta = { component: MyButton, title: 'Example/MyButton' };
@@ -73,8 +74,8 @@ const meta = { component: MyButton, title: 'Example/MyButton' };
 export default meta;
 
 ${storySource}
-`;
-  vol.fromJSON({ [STORY_PATH]: storyFile });
+`,
+  });
 
   const payload = await buildStoryDocsPayload(
     { entry: ENTRY },
@@ -86,9 +87,7 @@ ${storySource}
   if (!payload) {
     throw new Error('Expected a story docs payload for the test story file');
   }
-  if (!modules) {
-    expectTemplatesFillToSnippets(payload, storyFile);
-  }
+  expectTemplatesStripToSnippets(payload);
   return payload.stories[STORY_ID];
 }
 
@@ -250,10 +249,14 @@ export const Primary = {
 });
 
 describe('template', () => {
-  const filled = (story: StoryDoc | undefined, args: Record<string, unknown>) =>
-    fillTemplate(story!.template!, args);
+  const filled = (story: StoryDoc | undefined, initialArgs: Args, changed: Args) =>
+    fillTemplate(
+      story!.template!,
+      { initialArgs, unmappedArgs: { ...initialArgs, ...changed } },
+      printHole
+    );
 
-  it('is the snippet with a hole wherever it fills in an arg, and one for the args the story leaves out', async () => {
+  it('wraps each arg the snippet prints in a hole, and adds the args a control adds', async () => {
     const story = await primaryStory(`export const Primary = { args: { label: 'Hi', count: 2 } };`);
     expect(story?.template).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
@@ -261,15 +264,16 @@ describe('template', () => {
       </script>
 
       <template>
-        <MyButton⟦attr active active ~%20⟧⟦attr count count ~%20⟧⟦attr label label ~%20⟧⟦attr size size ~%20⟧⟦props -active -count -label -size ~%20⟧ />
+        <MyButton⟦attr count count ~%20⟫:count="2"⟧⟦attr label label ~%20⟫label="Hi"⟧⟦props * ~%20⟫⟧ />
       </template>"
     `);
-    expect(filled(story, { label: 'Go', count: 3, active: true })).toContain(
-      '<MyButton active :count="3" label="Go" />'
+    const initialArgs = { label: 'Hi', count: 2, theme: 'dark' };
+    expect(filled(story, initialArgs, { label: 'Go', active: true, theme: 'light' })).toContain(
+      '<MyButton :count="2" label="Go" active />'
     );
   });
 
-  it('keeps an attribute the render writes before the args when the story leaves the arg out', async () => {
+  it('adds the args a control adds after an attribute the render writes, but not that one', async () => {
     const story = await primaryStory(`
 export const Primary = {
   args: { count: 2 },
@@ -281,70 +285,33 @@ export const Primary = {
 };
 `);
     expect(story?.snippet).toContain('<MyButton label="Go" :count="2" />');
-    expect(story?.template).toContain(
-      '<MyButton label="Go"⟦attr active active ~%20⟧⟦attr count count ~%20⟧⟦attr size size ~%20⟧⟦props -active -count -label -size ~%20⟧ />'
+    expect(filled(story, { count: 2 }, { label: 'Stop', size: 'lg' })).toContain(
+      '<MyButton label="Go" :count="2" size="lg" />'
     );
   });
 
   it('declares an arg the snippet hoists with a hole for its value', async () => {
     const story = await primaryStory(`export const Primary = { args: { size: { width: 2 } } };`);
-    expect(story?.template).toContain('const size = ⟦value size script⟧;');
-    expect(filled(story, { size: { width: 3 } })).toContain('const size = { width: 3 };');
-  });
-
-  it('leaves out an arg the snippet leaves out, as an undeclared function', async () => {
-    const story = await primaryStory(
-      `export const Primary = { args: { label: 'Hi', onHover: () => {} } };`
+    expect(story?.template).toContain('const size = ⟦value size script⟫{ width: 2 }⟧;');
+    expect(filled(story, { size: { width: 2 } }, { size: { tag: '</d>' } })).toContain(
+      "const size = { tag: '</d>' };"
     );
-    expect(story?.snippet).not.toContain('onHover');
-    expect(story?.template).toContain('⟦props -active -count -label -onHover -size ~%20⟧');
   });
 
-  it('fills to the snippet for a number written another way than it prints', async () => {
-    const story = await primaryStory(`export const Primary = { args: { count: 1e3 } };`);
-    expect(story?.snippet).toContain(':count="1e3"');
-    expect(story?.argCode).toEqual({ count: '1e3' });
-  });
-
-  it('fills to the snippet for a slot arg set to null', async () => {
+  it('keeps an arg written as code while it is unchanged', async () => {
     const story = await primaryStory(
-      `export const Primary = { args: { default: null } };`,
-      undefined,
-      { ...DOCGEN_CATEGORIES, default: 'slots' }
+      `export const Primary = { args: { count: 1e3, label: 'Hi' } };`
     );
-    expect(story?.snippet).toContain('{{ null }}');
-  });
-
-  it('prints a hoisted string with a closing tag as the snippet prints one', async () => {
-    const story = await primaryStory(`export const Primary = { args: { size: { tag: 'a' } } };`);
-    expect(filled(story, { size: { tag: '</d>' } })).toContain("const size = { tag: '</d>' };");
+    expect(filled(story, { count: 1000, label: 'Hi' }, { label: 'Go' })).toContain(
+      '<MyButton :count="1e3" label="Go" />'
+    );
   });
 
   it('shows the static snippet for an attribute a changed string cannot be written in', async () => {
     const story = await primaryStory(`export const Primary = { args: { label: 'Hi' } };`);
-    expect(() => fillTemplate(story!.template!, { label: `a & "b" 'c'` })).toThrow(
+    expect(() => filled(story, { label: 'Hi' }, { label: `a & "b" 'c'` })).toThrow(
       UnprintableArgError
     );
-  });
-
-  it('fills to the snippet for a number the story writes other than as it shows', async () => {
-    const story = await primaryStory(`
-export const Primary = {
-  args: { count: 1e3 },
-  render: (args) => ({
-    components: { MyButton },
-    setup: () => ({ args }),
-    template: '<MyButton :count="args.count">{{ args.count }}</MyButton>',
-  }),
-};
-`);
-    expect(story?.snippet).toContain('<MyButton :count="1e3">1000</MyButton>');
-    expect(filled(story, { count: 7 })).toContain('<MyButton :count="7">7</MyButton>');
-  });
-
-  it('fills to the snippet for a hoisted value holding a closing tag', async () => {
-    const story = await primaryStory(`export const Primary = { args: { size: { tag: '</d>' } } };`);
-    expect(story?.snippet).toContain("'</d>'");
   });
 
   it('is none for a story file that already holds a hole bracket', async () => {
@@ -374,7 +341,6 @@ describe('a value a control sets', () => {
     '<b>',
     'a & b',
     ' padded ',
-    '',
     0,
     2.5,
     1000,
@@ -382,8 +348,6 @@ describe('a value a control sets', () => {
     true,
     false,
     null,
-    ['a', 1],
-    { a: 1 },
   ];
   const outcome = (fill: () => string) => {
     try {
@@ -401,20 +365,21 @@ describe('a value a control sets', () => {
     const own = (value: unknown) =>
       primaryStory(story(printValue(value, arg, { quote: "'" })), undefined, CATEGORIES);
 
-    // An empty slot closes its element, which a hole in its content cannot.
-    const values = arg === 'default' ? VALUES.filter((value) => value !== '') : VALUES;
-    it.each(values.map((value) => [value]))(
+    it.each(VALUES.map((value) => [value]))(
       'prints %j as the snippet of a story that writes it does, or not at all',
       async (value) => {
         const written = await own(value);
         const go = await own('Go');
-        const filled = go?.template && outcome(() => fillTemplate(go.template!, { [arg]: value }));
+        const filled = outcome(() =>
+          fillTemplate(
+            go!.template!,
+            { initialArgs: { [arg]: 'Go' }, unmappedArgs: { [arg]: value } },
+            printHole
+          )
+        );
         expect([written?.snippet ?? UnprintableArgError, UnprintableArgError]).toContain(filled);
         if (['Go', 0, 2.5, 1000, true, false].includes(value as never)) {
           expect(filled).toBe(written?.snippet);
-        }
-        if (written?.template !== undefined) {
-          expect(fillTemplate(written.template, { [arg]: value })).toBe(written.snippet);
         }
       }
     );

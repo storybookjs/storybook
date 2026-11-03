@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-define-props-destructured--props-as-written": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-define-props-destructured--props-as-written",
       "name": "Props As Written",
@@ -21,7 +20,7 @@ import DestructuredProps from './DestructuredProps.vue';
 </script>
 
 <template>
-  <DestructuredProps⟦attr label label ~%20⟧⟦attr size size ~%20⟧⟦props -label -size ~%20⟧ />
+  <DestructuredProps⟦attr label label ~%20⟫label="Sized"⟧⟦attr size size ~%20⟫size="large"⟧⟦props * ~%20⟫⟧ />
 </template>",
     },
   },

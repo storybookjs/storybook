@@ -4,9 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-template-shared-values--for-each-item": {
-      "argCode": {
-        "items": "[{ id: 1 }, { id: 2 }]",
-      },
       "description": undefined,
       "id": "forms-template-shared-values--for-each-item",
       "name": "For Each Item",
@@ -19,7 +16,7 @@ const items = [{ id: 1 }, { id: 2 }];
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
-const items = ⟦value items script⟧;
+const items = ⟦value items script⟫[{ id: 1 }, { id: 2 }]⟧;
 </script>
 
 <template>
@@ -27,9 +24,6 @@ const items = ⟦value items script⟧;
 </template>",
     },
     "forms-template-shared-values--setup-mutation": {
-      "argCode": {
-        "items": "['a']",
-      },
       "description": undefined,
       "id": "forms-template-shared-values--setup-mutation",
       "name": "Setup Mutation",
@@ -48,7 +42,7 @@ items?.push('b');
       "template": "<script lang="ts" setup>
 import TemplateSharedValues from './TemplateSharedValues.vue';
 
-const items = ⟦value items script⟧;
+const items = ⟦value items script⟫['a']⟧;
 
 items?.push('b');
 </script>
@@ -58,7 +52,6 @@ items?.push('b');
 </template>",
     },
     "forms-template-shared-values--spread-with-class": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-template-shared-values--spread-with-class",
       "name": "Spread With Class",
@@ -75,7 +68,7 @@ import TemplateSharedValues from './TemplateSharedValues.vue';
 </script>
 
 <template>
-  <TemplateSharedValues⟦attr items items ~%20⟧⟦attr label label ~%20⟧⟦props -class -items -label -style ~%20⟧ class="own" style="color: red" />
+  <TemplateSharedValues⟦attr label label ~%20⟫label="Go"⟧⟦props * class style ~%20⟫⟧ class="own" style="color: red" />
 </template>",
     },
   },

@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-props-union-enum--props-as-written": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-props-union-enum--props-as-written",
       "name": "Props As Written",
@@ -21,7 +20,7 @@ import PropsUnionEnum from './PropsUnionEnum.vue';
 </script>
 
 <template>
-  <PropsUnionEnum⟦attr size size ~%20⟧⟦attr status status ~%20⟧⟦props -size -status ~%20⟧ />
+  <PropsUnionEnum⟦attr size size ~%20⟫size="medium"⟧⟦attr status status ~%20⟫status="ok"⟧⟦props * ~%20⟫⟧ />
 </template>",
     },
   },

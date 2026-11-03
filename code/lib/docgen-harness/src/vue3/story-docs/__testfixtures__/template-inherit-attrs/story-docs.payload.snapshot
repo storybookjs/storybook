@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-template-inherit-attrs--primary": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-template-inherit-attrs--primary",
       "name": "Primary",
@@ -21,7 +20,7 @@ import InheritAttrsPanel from './InheritAttrsPanel.vue';
 </script>
 
 <template>
-  <InheritAttrsPanel⟦attr label label bound ~%20⟧ />
+  <InheritAttrsPanel⟦attr label label ~%20⟫label="Panel"⟧ />
 </template>",
     },
   },

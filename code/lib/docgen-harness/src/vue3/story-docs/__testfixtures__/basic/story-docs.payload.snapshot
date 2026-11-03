@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-basic--primary": {
-      "argCode": {},
       "description": "Primary button description.",
       "id": "forms-basic--primary",
       "name": "Primary",
@@ -21,7 +20,7 @@ import BasicButton from './BasicButton.vue';
 </script>
 
 <template>
-  <BasicButton⟦attr label label ~%20⟧⟦props -label ~%20⟧ />
+  <BasicButton⟦attr label label ~%20⟫label="Submit"⟧⟦props * ~%20⟫⟧ />
 </template>",
     },
   },

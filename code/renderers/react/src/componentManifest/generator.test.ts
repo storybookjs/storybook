@@ -1359,7 +1359,7 @@ test('should extract story description and summary from JSDoc comments', async (
   `);
 });
 
-test('leaves the template and its argCode out of the legacy manifest', async () => {
+test('leaves the template out of the legacy manifest', async () => {
   const code = withCSF3(dedent`
     function shout(text) { return text.toUpperCase(); }
     export const Primary = { args: { format: shout, primary: true } };
@@ -1367,5 +1367,4 @@ test('leaves the template and its argCode out of the legacy manifest', async () 
   const [story] = (await getManifestForStory(code))!.stories;
   expect(story).toHaveProperty('warning');
   expect(story).not.toHaveProperty('template');
-  expect(story).not.toHaveProperty('argCode');
 });

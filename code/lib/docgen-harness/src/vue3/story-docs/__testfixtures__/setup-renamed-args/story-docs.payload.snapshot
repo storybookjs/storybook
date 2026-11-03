@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-setup-renamed-args--primary": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-setup-renamed-args--primary",
       "name": "Primary",
@@ -22,12 +21,12 @@ const title = heading;
       "template": "<script lang="ts" setup>
 import SetupRenamedArgs from './SetupRenamedArgs.vue';
 
-const heading = ⟦value label script op⟧;
+const heading = ⟦value label script⟫'Renamed'⟧;
 const title = heading;
 </script>
 
 <template>
-  <SetupRenamedArgs⟦attr label label bound ~%20⟧ :title="title" />
+  <SetupRenamedArgs⟦attr label label ~%20⟫label="Renamed"⟧ :title="title" />
 </template>",
     },
   },

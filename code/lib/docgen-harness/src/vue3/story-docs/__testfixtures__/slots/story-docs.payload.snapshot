@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-slots--primary": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-slots--primary",
       "name": "Primary",
@@ -26,8 +25,10 @@ import SlotsPanel from './SlotsPanel.vue';
 </script>
 
 <template>
-  <SlotsPanel⟦attr footer footer ~%20⟧⟦props -default -footer -header ~%20⟧>⟦text default slot ~%0A%20%20%20%20⟧
-    <template #header>⟦text header slot ~%0A%20%20%20%20%20%20⟧
+  <SlotsPanel⟦attr footer footer ~%20⟫:footer="42"⟧⟦props * default header ~%20⟫⟧>
+    ⟦text default slot⟫Body copy⟧
+    <template #header>
+      ⟦text header slot⟫Header copy⟧
     </template>
   </SlotsPanel>
 </template>",

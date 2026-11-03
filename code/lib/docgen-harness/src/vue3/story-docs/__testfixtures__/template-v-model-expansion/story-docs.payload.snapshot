@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-template-v-model-expansion--primary": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-template-v-model-expansion--primary",
       "name": "Primary",
@@ -23,11 +22,11 @@ const modelValue = ref('Draft text');
 import { ref } from "vue";
 import TemplateVModelExpansion from './TemplateVModelExpansion.vue';
 
-const modelValue = ref(⟦value modelValue script ?⟧);
+const modelValue = ref(⟦value modelValue script⟫'Draft text'⟧);
 </script>
 
 <template>
-  <TemplateVModelExpansion⟦attr label label ~%20⟧ v-model="modelValue"⟦props -label -modelValue ~%20⟧ />
+  <TemplateVModelExpansion⟦attr label label ~%20⟫label="Message"⟧ v-model="modelValue"⟦props * ~%20⟫⟧ />
 </template>",
     },
   },

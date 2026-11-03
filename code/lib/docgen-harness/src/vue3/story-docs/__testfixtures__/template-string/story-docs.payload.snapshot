@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-template-string--assigned-args": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-template-string--assigned-args",
       "name": "Assigned Args",
@@ -21,11 +20,10 @@ import TemplateStringButton from './TemplateStringButton.vue';
 </script>
 
 <template>
-  <TemplateStringButton⟦attr label label ~%20⟧⟦props -label ~%20⟧ />
+  <TemplateStringButton⟦attr label label ~%20⟫label="Assigned template"⟧⟦props * ~%20⟫⟧ />
 </template>",
     },
     "forms-template-string--primary": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-template-string--primary",
       "name": "Primary",
@@ -44,7 +42,7 @@ import TemplateStringButton from './TemplateStringButton.vue';
 </script>
 
 <template>
-  <div class="wrap"><TemplateStringBadge text="New" /><TemplateStringButton⟦attr label label ~%20⟧⟦props -label ~%20⟧ /></div>
+  <div class="wrap"><TemplateStringBadge text="New" /><TemplateStringButton⟦attr label label ~%20⟫label="Template"⟧⟦props * ~%20⟫⟧ /></div>
 </template>",
     },
   },

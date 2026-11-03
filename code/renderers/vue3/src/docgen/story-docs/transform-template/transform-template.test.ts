@@ -10,7 +10,7 @@ import type { DocgenPayload } from 'storybook/open-service';
 
 import { buildStoryDocsPayload } from '../build-story-docs.ts';
 import type { ClassifiedArg } from '../classify-args/classify-args.ts';
-import { expectTemplatesFillToSnippets } from '../story-template.test-helpers.ts';
+import { expectTemplatesStripToSnippets } from '../story-template.test-helpers.ts';
 import { transformTemplate } from './transform-template.ts';
 
 vi.mock('node:fs/promises', { spy: true });
@@ -87,7 +87,7 @@ ${storySource}
   if (!payload) {
     throw new Error('Expected a story docs payload for the test story file');
   }
-  expectTemplatesFillToSnippets(payload, storyFile);
+  expectTemplatesStripToSnippets(payload);
   return payload;
 }
 

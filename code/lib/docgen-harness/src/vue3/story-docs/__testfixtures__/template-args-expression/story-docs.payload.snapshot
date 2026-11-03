@@ -4,10 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-template-args-expression--collapsed": {
-      "argCode": {
-        "release": "{ tag: 'v1.2.3', name: 'Release 1.2.3' }",
-        "status": "{ state: 'available', version: '1.2.3' }",
-      },
       "description": undefined,
       "id": "forms-template-args-expression--collapsed",
       "name": "Collapsed",
@@ -34,28 +30,24 @@ const status = { state: 'available', version: '1.2.3' };
       "template": "<script lang="ts" setup>
 import TemplateArgsExpression from './TemplateArgsExpression.vue';
 
-const release = ⟦value release script⟧;
+const release = ⟦value release script⟫{ tag: 'v1.2.3', name: 'Release 1.2.3' }⟧;
 
-const status = ⟦value status script⟧;
+const status = ⟦value status script⟫{ state: 'available', version: '1.2.3' }⟧;
 </script>
 
 <template>
   <div
     :style="{
       '--sidebar-width-collapsed': '52px',
-      width: ⟦value isCollapsed op⟧ ? '52px' : '176px',
+      width: ⟦value isCollapsed⟫true⟧ ? '52px' : '176px',
       overflow: 'hidden'
     }"
   >
-    <TemplateArgsExpression⟦attr isCollapsed isCollapsed ~%20⟧ :release="release" :status="status"⟦attr updateProgressInfo updateProgressInfo ~%20⟧⟦props -isCollapsed -release -status -updateProgressInfo ~%20⟧ />
+    <TemplateArgsExpression⟦attr isCollapsed isCollapsed ~%20⟫isCollapsed⟧ :release="release" :status="status"⟦attr updateProgressInfo updateProgressInfo ~%20⟫:updateProgressInfo="null"⟧⟦props * ~%20⟫⟧ />
   </div>
 </template>",
     },
     "forms-template-args-expression--primary": {
-      "argCode": {
-        "release": "{ tag: 'v1.2.3', name: 'Release 1.2.3' }",
-        "status": "{ state: 'available', version: '1.2.3' }",
-      },
       "description": undefined,
       "id": "forms-template-args-expression--primary",
       "name": "Primary",
@@ -82,20 +74,20 @@ const status = { state: 'available', version: '1.2.3' };
       "template": "<script lang="ts" setup>
 import TemplateArgsExpression from './TemplateArgsExpression.vue';
 
-const release = ⟦value release script⟧;
+const release = ⟦value release script⟫{ tag: 'v1.2.3', name: 'Release 1.2.3' }⟧;
 
-const status = ⟦value status script⟧;
+const status = ⟦value status script⟫{ state: 'available', version: '1.2.3' }⟧;
 </script>
 
 <template>
   <div
     :style="{
       '--sidebar-width-collapsed': '52px',
-      width: ⟦value isCollapsed op⟧ ? '52px' : '176px',
+      width: ⟦value isCollapsed⟫false⟧ ? '52px' : '176px',
       overflow: 'hidden'
     }"
   >
-    <TemplateArgsExpression⟦attr isCollapsed isCollapsed ~%20⟧ :release="release" :status="status"⟦attr updateProgressInfo updateProgressInfo ~%20⟧⟦props -isCollapsed -release -status -updateProgressInfo ~%20⟧ />
+    <TemplateArgsExpression⟦attr isCollapsed isCollapsed ~%20⟫:isCollapsed="false"⟧ :release="release" :status="status"⟦attr updateProgressInfo updateProgressInfo ~%20⟫:updateProgressInfo="null"⟧⟦props * ~%20⟫⟧ />
   </div>
 </template>",
     },

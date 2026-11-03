@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-expose-event-collision--primary": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-expose-event-collision--primary",
       "name": "Primary",
@@ -21,7 +20,7 @@ import ExposeEventCollision from './ExposeEventCollision.vue';
 </script>
 
 <template>
-  <ExposeEventCollision⟦attr label label ~%20⟧⟦attr onboarding onboarding ~%20⟧⟦props -label -onboarding ~%20⟧ />
+  <ExposeEventCollision⟦attr label label ~%20⟫label="Name"⟧⟦props * ~%20⟫⟧ />
 </template>",
     },
   },

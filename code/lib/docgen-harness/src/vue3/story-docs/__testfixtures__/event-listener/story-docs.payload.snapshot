@@ -4,11 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-event-listener--primary": {
-      "argCode": {
-        "default": "() => 'Submit now'",
-        "formatter": "(value: string) => value.toUpperCase()",
-        "onSubmit": "(payload: { value: string }) => console.log(payload)",
-      },
       "description": undefined,
       "id": "forms-event-listener--primary",
       "name": "Primary",
@@ -29,13 +24,13 @@ const onSubmit = (payload: { value: string }) => console.log(payload);
       "template": "<script lang="ts" setup>
 import EventListenerForm from './EventListenerForm.vue';
 
-const formatter = ⟦value formatter script⟧;
+const formatter = ⟦value formatter script⟫(value: string) => value.toUpperCase()⟧;
 
-const onSubmit = ⟦value onSubmit script⟧;
+const onSubmit = ⟦value onSubmit script⟫(payload: { value: string }) => console.log(payload)⟧;
 </script>
 
 <template>
-  <EventListenerForm :formatter="formatter"⟦attr label label ~%20⟧ @submit="onSubmit"⟦props -default -formatter -label -onSubmit ~%20⟧>
+  <EventListenerForm :formatter="formatter"⟦attr label label ~%20⟫label="Send"⟧ @submit="onSubmit"⟦props * default ~%20⟫⟧>
     Submit now
   </EventListenerForm>
 </template>",

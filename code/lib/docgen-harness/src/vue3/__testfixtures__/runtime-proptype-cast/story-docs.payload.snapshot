@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-runtime-proptype-cast--props-as-written": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-runtime-proptype-cast--props-as-written",
       "name": "Props As Written",
@@ -21,7 +20,7 @@ import RuntimePropTypeCast from './RuntimePropTypeCast.vue';
 </script>
 
 <template>
-  <RuntimePropTypeCast⟦attr kind kind ~%20⟧⟦attr measure measure ~%20⟧⟦props -kind -measure ~%20⟧ />
+  <RuntimePropTypeCast⟦attr kind kind ~%20⟫kind="secondary"⟧⟦attr measure measure ~%20⟫:measure="42"⟧⟦props * ~%20⟫⟧ />
 </template>",
     },
   },

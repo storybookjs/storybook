@@ -166,7 +166,7 @@ export function printHFragment(
 
 // The values an `h()` tree writes are no args, so a template prints them as the snippet does, into
 // the same `<script setup>`.
-const writtenValues = (ctx: RenderContext): RenderContext => ({ ...ctx, holes: false });
+const writtenValues = (ctx: RenderContext): RenderContext => ({ ...ctx, mark: undefined });
 
 // h('div', { class: 'row' }, 'Hi') -> <div class="row">Hi</div>
 function printNode(node: Node, options: PrintOptions): string | undefined {

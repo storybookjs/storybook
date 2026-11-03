@@ -11,7 +11,6 @@
       "warning": "No static snippet: a slot function could not be resolved statically.",
     },
     "forms-slots--string-child": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-slots--string-child",
       "name": "String Child",
@@ -30,15 +29,12 @@ import SlotsShowcase from './SlotsShowcase.vue';
 </script>
 
 <template>
-  <SlotsShowcase⟦attr heading heading ~%20⟧⟦props -default -header -heading -item ~%20⟧>⟦text default slot ~%0A%20%20%20%20⟧
+  <SlotsShowcase⟦attr heading heading ~%20⟫heading="Plain"⟧⟦props * default header item ~%20⟫⟧>
+    ⟦text default slot⟫Plain text content⟧
   </SlotsShowcase>
 </template>",
     },
     "forms-slots--v-node-child": {
-      "argCode": {
-        "default": "() => h('p', { class: 'body' }, 'Body content')",
-        "header": "() => h('strong', 'Header content')",
-      },
       "description": undefined,
       "id": "forms-slots--v-node-child",
       "name": "V Node Child",
@@ -60,7 +56,7 @@ import SlotsShowcase from './SlotsShowcase.vue';
 </script>
 
 <template>
-  <SlotsShowcase⟦attr heading heading ~%20⟧⟦props -default -header -heading -item ~%20⟧>
+  <SlotsShowcase⟦attr heading heading ~%20⟫heading="Structured"⟧⟦props * default header item ~%20⟫⟧>
     <p class="body">Body content</p>
     <template #header>
       <strong>Header content</strong>

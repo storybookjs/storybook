@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-csf1-legacy--assigned-args": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-csf1-legacy--assigned-args",
       "name": "Assigned Args",
@@ -21,11 +20,10 @@ import CsfOneButton from './CsfOneButton.vue';
 </script>
 
 <template>
-  <CsfOneButton⟦attr label label ~%20⟧⟦props -label ~%20⟧ />
+  <CsfOneButton⟦attr label label ~%20⟫label="Assigned"⟧⟦props * ~%20⟫⟧ />
 </template>",
     },
     "forms-csf1-legacy--assigned-args-override-inline": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-csf1-legacy--assigned-args-override-inline",
       "name": "Assigned Args Override Inline",
@@ -42,7 +40,7 @@ import CsfOneButton from './CsfOneButton.vue';
 </script>
 
 <template>
-  <CsfOneButton⟦attr label label ~%20⟧⟦props -label ~%20⟧ />
+  <CsfOneButton⟦attr label label ~%20⟫label="Assigned wins"⟧⟦props * ~%20⟫⟧ />
 </template>",
     },
     "forms-csf1-legacy--primary": {

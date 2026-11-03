@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-import-override--primary": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-import-override--primary",
       "name": "Primary",
@@ -21,7 +20,7 @@ import { ImportOverride as ImportOverrideButton } from 'my-design-system';
 </script>
 
 <template>
-  <ImportOverrideButton⟦attr label label ~%20⟧⟦props -label ~%20⟧ />
+  <ImportOverrideButton⟦attr label label ~%20⟫label="Override"⟧⟦props * ~%20⟫⟧ />
 </template>",
     },
   },

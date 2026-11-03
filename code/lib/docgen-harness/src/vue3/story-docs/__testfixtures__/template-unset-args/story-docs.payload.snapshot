@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-template-unset-args--primary": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-template-unset-args--primary",
       "name": "Primary",
@@ -27,11 +26,11 @@ const modelValue = ref();
 import { ref } from "vue";
 import TemplateUnsetArgs from './TemplateUnsetArgs.vue';
 
-const modelValue = ref(⟦value modelValue script ?⟧);
+const modelValue = ref(⟦value modelValue script⟫⟧);
 </script>
 
 <template>
-  <TemplateUnsetArgs⟦attr id id bound ~%0A%20%20%20%20⟧⟦attr label label bound ~%0A%20%20%20%20⟧⟦attr hint hint bound ~%0A%20%20%20%20⟧
+  <TemplateUnsetArgs⟦attr id id ~%20⟫⟧⟦attr label label ~%0A%20%20%20%20⟫label="Ready"⟧⟦attr hint hint ~%0A%20%20%20%20⟫hint="Optional hint"⟧
     v-model="modelValue"
   />
 </template>",

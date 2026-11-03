@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-prop-slot-name-collision--icon-prop-as-written": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-prop-slot-name-collision--icon-prop-as-written",
       "name": "Icon Prop As Written",
@@ -21,7 +20,7 @@ import PropSlotNameCollision from './PropSlotNameCollision.vue';
 </script>
 
 <template>
-  <PropSlotNameCollision⟦attr icon icon ~%20⟧⟦props -default -icon ~%20⟧ />
+  <PropSlotNameCollision⟦attr icon icon ~%20⟫icon="pi pi-check"⟧⟦props * default ~%20⟫⟧ />
 </template>",
     },
   },

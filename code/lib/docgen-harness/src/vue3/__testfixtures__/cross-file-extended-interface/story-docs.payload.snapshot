@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-cross-file-extended-interface--props-as-written": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-cross-file-extended-interface--props-as-written",
       "name": "Props As Written",
@@ -21,7 +20,7 @@ import ExtendedInterfaceProps from './ExtendedInterfaceProps.vue';
 </script>
 
 <template>
-  <ExtendedInterfaceProps⟦attr extra extra ~%20⟧⟦attr id id ~%20⟧⟦attr name name ~%20⟧⟦props -extra -id -name ~%20⟧ />
+  <ExtendedInterfaceProps⟦attr extra extra ~%20⟫extra⟧⟦attr id id ~%20⟫:id="7"⟧⟦attr name name ~%20⟫name="Chained"⟧⟦props * ~%20⟫⟧ />
 </template>",
     },
   },

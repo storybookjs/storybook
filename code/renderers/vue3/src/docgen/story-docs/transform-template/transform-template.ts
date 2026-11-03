@@ -7,7 +7,6 @@ import {
   type TemplateChildNode,
 } from '@vue/compiler-dom';
 
-import { legacyHole as hole, holeWord } from 'storybook/internal/docs-tools';
 import {
   type ESTree as E,
   type ESTreeNode as Node,
@@ -29,13 +28,11 @@ import {
   hoistArgValue,
   hoistModelRef,
   importStatementForBinding,
-  quoteWords,
-  scriptValue,
+  marked,
   renderArgsBindingExpansion,
   renderBoundArgAttribute,
   renderPreparedSfcSnippet,
   wrapSlotContent,
-  writtenTextWords,
   type RenderContext,
 } from '../../shared/render-primitives.ts';
 import { expressionCode, fitsBraces, interpolatedText, operand } from '../../../snippet-values.ts';
@@ -78,14 +75,8 @@ export interface TransformTemplateInput {
   componentImports: Map<string, string>;
   /** Story component tag; role-aware args expansion applies only to it. */
   componentName?: string;
-  /** The story component's slots, which a `v-bind="args"` hole leaves out. */
+  /** The story component's slots, which a `v-bind="args"` passes as no prop. */
   slots?: ReadonlySet<string>;
-  /** Every arg the story writes, which a `v-bind="args"` hole leaves out, as the snippet shows it. */
-  storyArgs?: readonly string[];
-  /** The story component's props, which a `v-bind="args"` gives a hole each where they sort. */
-  props?: ReadonlySet<string>;
-  /** The story component's props with an `update:` event, which `v-bind="args"` binds as `v-model`. */
-  models?: ReadonlySet<string>;
   /** Import bindings from the CSF module, for components a function slot renders. */
   importBindings?: Map<string, ImportBinding>;
   /** Pre-seeded context carrying imports and hoists an upstream printer collected. */
@@ -113,9 +104,6 @@ interface TransformState {
   componentImports: Map<string, string>;
   componentName?: string;
   slots: ReadonlySet<string>;
-  storyArgs: readonly string[];
-  props: ReadonlySet<string>;
-  models: ReadonlySet<string>;
   importBindings: Map<string, ImportBinding>;
   template: string;
 }
@@ -235,9 +223,6 @@ export function transformTemplate(
     componentImports: input.componentImports,
     componentName: input.componentName,
     slots: input.slots ?? new Set(),
-    storyArgs: input.storyArgs ?? [],
-    props: input.props ?? new Set(),
-    models: input.models ?? new Set(),
     importBindings: input.importBindings ?? new Map(),
     template,
   };
@@ -290,21 +275,27 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
     let text = statement.source;
     for (const read of [...statement.argsReads].sort((a, b) => b.start - a.start)) {
       const arg = state.argsByName.get(read.name);
+      const inline = !arg || arg.plan.kind === 'inline';
       const rendered = arg
         ? arg.role === 'prop'
           ? arg.plan.kind === 'inline'
-            ? scriptValue(arg.name, arg.value, state.ctx)
+            ? printValue(unwrapExpression(arg.value))
             : hoistArgValue(arg.name, arg.value, state.ctx)
           : undefined
         : state.unsetArgs.has(read.name)
-          ? state.ctx.holes
-            ? valueHole(read.name, ['script'])
-            : 'undefined'
+          ? 'undefined'
           : undefined;
       if (rendered === undefined) {
         return false;
       }
-      const wrapped = wrapSubstitution(rendered, text.slice(read.end));
+      const following = text.slice(read.end);
+      const wrapped = inline
+        ? marked(
+            state.ctx,
+            { kind: 'value', arg: read.name, words: ['script', ...readsOn(following)] },
+            wrapSubstitution(rendered, following)
+          )
+        : rendered;
       text = text.slice(0, read.start) + wrapped + text.slice(read.end);
     }
     state.ctx.statements.push(dedentBy(text, statement.column));
@@ -319,17 +310,11 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
  * lexes the dot into the number
  */
 function wrapSubstitution(text: string, following: string): string {
-  // The preview wraps the value a hole prints here, an `op` word, as code reads on after a `.`.
-  if (VALUE_HOLE_REGEXP.test(text)) {
-    return `${text.slice(0, -1)} op${following.startsWith('.') ? ' .' : ''}⟧`;
-  }
   return operand(text, following.startsWith('.'));
 }
 
-const VALUE_HOLE_REGEXP = /^⟦value [^⟧]*⟧$/;
-
-/** A hole for the value of the arg `name`, with the words that say where it stands. */
-const valueHole = (name: string, words: string[]) => hole('value', holeWord(name), ...words);
+// The `.` word of a value hole followed by a `.`, where a number needs parentheses.
+const readsOn = (following: string) => (following.startsWith('.') ? ['.'] : []);
 
 // Continuation lines keep the story file's nesting; strip the statement's own column from them.
 function dedentBy(source: string, column: number): string {
@@ -387,9 +372,9 @@ function transformInterpolation(
     ...(state.template[start - 1] === '{' ? ['{<'] : []),
     ...(state.template[end] === '{' ? ['{>'] : []),
   ];
-  const textHole = (words: string[]) => hole('text', holeWord(argName), ...braces, ...words);
+  const place = { kind: 'text', arg: argName, words: braces };
   if (!arg && state.unsetArgs.has(argName)) {
-    state.edits.push({ start, end, text: state.ctx.holes ? textHole([]) : '' });
+    state.edits.push({ start, end, text: marked(state.ctx, place, '') });
     return true;
   }
   if (!arg) {
@@ -404,11 +389,7 @@ function transformInterpolation(
     return false;
   }
 
-  state.edits.push({
-    start,
-    end,
-    text: state.ctx.holes ? textHole(writtenTextWords(value)) : text,
-  });
+  state.edits.push({ start, end, text: marked(state.ctx, place, text) });
   return true;
 }
 
@@ -533,16 +514,8 @@ function expandArgsBinding(
   element: ElementContext,
   state: TransformState
 ): boolean {
-  const taken = new Set(takenArgs(attributesByName, state));
-  // On the story tag each prop the story leaves unset is a hole where it sorts. A model needs a
-  // `ref` in the script, which no hole can add, so it has none.
-  const unsetProps =
-    state.ctx.holes && element.storyTag
-      ? [...state.props].filter((name) => !taken.has(name) && !state.models.has(name))
-      : [];
   const rendered = renderArgsBindingExpansion(surviving, state.ctx, {
     roleAware: element.storyTag,
-    unsetProps,
     renderSlotArg: (slot) =>
       renderSlotArgContent(slot, state.ctx, state.importBindings, state.componentImports),
   });
@@ -551,28 +524,14 @@ function expandArgsBinding(
   }
 
   element.slotChildren.push(...rendered.slotChildren);
-  const attributes = state.ctx.holes
-    ? [
-        ...rendered.attributes,
-        restOfArgsHole([...taken, ...(element.storyTag ? [...state.props, ...state.models] : [])]),
-      ]
-    : rendered.attributes;
-  state.edits.push(replacementFor(directive, attributes.join(' '), state.template));
+  // The args a control adds go after the args the story writes, but those the element writes
+  // itself and its slots.
+  const written = [...[...attributesByName.keys()].flatMap(spellings), ...state.slots];
+  const added = marked(state.ctx, { kind: 'props', words: [...new Set(written)] }, '', ' ');
+  const edit = replacementFor(directive, rendered.attributes.join(' '), state.template);
+  state.edits.push({ ...edit, text: edit.text + added });
   return true;
 }
-
-// The args a `v-bind="args"` leaves to the story or the element: the story's own, the element's
-// attributes and the component's slots.
-const takenArgs = (attributesByName: Map<string, ElementProp[]>, state: TransformState) => [
-  ...state.storyArgs,
-  ...state.argsByName.keys(),
-  ...[...attributesByName.keys()].flatMap(spellings),
-  ...state.slots,
-];
-
-/** The args a `v-bind="args"` passes that no other hole prints, as a control can set them. */
-const restOfArgsHole = (taken: string[]) =>
-  hole('props', ...[...new Set(taken)].sort().map((name) => holeWord(`-${name}`)));
 
 // The arg names that set the same prop as an attribute: `max-count` and `maxCount`.
 const spellings = (name: string) => [
@@ -608,10 +567,9 @@ function transformDirective(
     }
     if (!arg && state.unsetArgs.has(argName)) {
       // Vue resolves a prop bound to undefined to its declared default, exactly as an absent attribute does.
-      const text = state.ctx.holes
-        ? hole('attr', holeWord(boundProp), holeWord(argName), 'bound')
-        : '';
-      state.edits.push(replacementFor(directive, text, state.template));
+      const edit = replacementFor(directive, '', state.template);
+      const place = { kind: 'attr', arg: argName, words: [boundProp] };
+      state.edits.push({ ...edit, text: marked(state.ctx, place, '', ' ') });
       return true;
     }
     if (!arg) {
@@ -725,7 +683,7 @@ function substituteArgsExpression(
     return undefined;
   }
 
-  const replacements = new Map<string, string>();
+  const replacements = new Map<string, Replacement>();
   for (const reference of references) {
     const replacement =
       replacements.get(reference.name) ?? replacementForArgsReference(reference, quote, state);
@@ -735,14 +693,24 @@ function substituteArgsExpression(
     replacements.set(reference.name, replacement);
   }
 
+  // A value the template writes inline is a hole that says how it is quoted and read on.
+  const quoteWords = quote === "'" ? ["'"] : quote === undefined ? ['{{'] : [];
   const text = references
     .sort((a, b) => b.start - a.start)
     .reduce((expression, reference) => {
-      const wrapped = wrapSubstitution(
-        replacements.get(reference.name)!,
+      const { text: replacement, inline } = replacements.get(reference.name)!;
+      const following = expression.slice(reference.end);
+      const wrapped = wrapSubstitution(replacement, following);
+      const place = {
+        kind: 'value',
+        arg: reference.name,
+        words: [...quoteWords, ...readsOn(following)],
+      };
+      return (
+        expression.slice(0, reference.start) +
+        (inline ? marked(state.ctx, place, wrapped) : wrapped) +
         expression.slice(reference.end)
       );
-      return expression.slice(0, reference.start) + wrapped + expression.slice(reference.end);
     }, exp.content);
 
   return { start: exp.loc.start.offset, end: exp.loc.end.offset, text };
@@ -922,15 +890,18 @@ function isAllowedArgsObject(node: Node, parent: Node | null): boolean {
   return parent?.type === 'MemberExpression' && parent.object === node && !parent.computed;
 }
 
+// What an args read is replaced with, which is `inline` where it is the value rather than the
+// name of a const the script declares it as.
+type Replacement = { text: string; inline: boolean };
+
 function replacementForArgsReference(
   reference: ArgsReference,
   quote: '"' | "'" | undefined,
   state: TransformState
-): string | undefined {
+): Replacement | undefined {
   const arg = state.argsByName.get(reference.name);
-  const words = quote === "'" ? ["'"] : quote === undefined ? ['{{'] : [];
   if (!arg && state.unsetArgs.has(reference.name)) {
-    return state.ctx.holes ? valueHole(reference.name, words) : 'undefined';
+    return { text: 'undefined', inline: true };
   }
   if (!arg) {
     return undefined;
@@ -950,9 +921,7 @@ function replacementForArgsReference(
     return undefined;
   }
 
-  return state.ctx.holes && arg.plan.kind === 'inline'
-    ? valueHole(reference.name, [...words, ...quoteWords(arg.value)])
-    : text;
+  return { text, inline: arg.plan.kind === 'inline' };
 }
 
 /**

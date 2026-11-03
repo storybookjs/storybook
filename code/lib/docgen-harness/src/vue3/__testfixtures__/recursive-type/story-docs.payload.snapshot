@@ -4,12 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-recursive-type--props-as-written": {
-      "argCode": {
-        "node": "{
-  value: 'root',
-  children: [{ value: 'leaf', children: [] }],
-}",
-      },
       "description": undefined,
       "id": "forms-recursive-type--props-as-written",
       "name": "Props As Written",
@@ -29,11 +23,14 @@ const node = {
       "template": "<script lang="ts" setup>
 import RecursiveTree from './RecursiveTree.vue';
 
-const node = ⟦value node script⟧;
+const node = ⟦value node script⟫{
+  value: 'root',
+  children: [{ value: 'leaf', children: [] }],
+}⟧;
 </script>
 
 <template>
-  <RecursiveTree :node="node"⟦props -node ~%20⟧ />
+  <RecursiveTree :node="node"⟦props * ~%20⟫⟧ />
 </template>",
     },
   },

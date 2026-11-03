@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-args-references--identifier-arg": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-args-references--identifier-arg",
       "name": "Identifier Arg",
@@ -21,16 +20,10 @@ import ArgsReferencesButton from './ArgsReferencesButton.vue';
 </script>
 
 <template>
-  <ArgsReferencesButton⟦attr label label ~%20⟧⟦props -label ~%20⟧ />
+  <ArgsReferencesButton⟦attr label label ~%20⟫label="Declared label"⟧⟦props * ~%20⟫⟧ />
 </template>",
     },
     "forms-args-references--spread-object-arg": {
-      "argCode": {
-        "options": "{
-  size: 'md',
-  tone: 'neutral',
-}",
-      },
       "description": undefined,
       "id": "forms-args-references--spread-object-arg",
       "name": "Spread Object Arg",
@@ -50,11 +43,14 @@ const options = {
       "template": "<script lang="ts" setup>
 import ArgsReferencesButton from './ArgsReferencesButton.vue';
 
-const options = ⟦value options script⟧;
+const options = ⟦value options script⟫{
+  size: 'md',
+  tone: 'neutral',
+}⟧;
 </script>
 
 <template>
-  <ArgsReferencesButton :options="options"⟦props -options ~%20⟧ />
+  <ArgsReferencesButton :options="options"⟦props * ~%20⟫⟧ />
 </template>",
     },
     "forms-args-references--unreadable-spread-arg": {

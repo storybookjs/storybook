@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-define-expose--props-as-written": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-define-expose--props-as-written",
       "name": "Props As Written",
@@ -21,7 +20,7 @@ import DefineExpose from './DefineExpose.vue';
 </script>
 
 <template>
-  <DefineExpose⟦attr count count ~%20⟧⟦attr label label ~%20⟧⟦attr reset reset ~%20⟧⟦props -count -label -reset ~%20⟧ />
+  <DefineExpose⟦attr label label ~%20⟫label="Increment"⟧⟦props * ~%20⟫⟧ />
 </template>",
     },
   },

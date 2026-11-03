@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-prop-slot-collision--primary": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-prop-slot-collision--primary",
       "name": "Primary",
@@ -21,7 +20,7 @@ import PropSlotCollision from './PropSlotCollision.vue';
 </script>
 
 <template>
-  <PropSlotCollision⟦attr default default ~%20⟧⟦attr icon icon ~%20⟧⟦props -default -icon ~%20⟧ />
+  <PropSlotCollision⟦attr default default ~%20⟫default="fallback text"⟧⟦attr icon icon ~%20⟫icon="pi pi-check"⟧⟦props * ~%20⟫⟧ />
 </template>",
     },
   },

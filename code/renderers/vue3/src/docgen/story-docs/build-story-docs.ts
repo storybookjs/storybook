@@ -15,7 +15,6 @@ import {
   type RenderFunction,
   type StoryArgsResolver,
   type StoryReferenceResolver,
-  argCode,
   buildImportStatements,
   collectImportBindings,
   createStoryArgsResolver,
@@ -35,10 +34,7 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import {
-  hasHoleBracket,
-  legacyWithHoleSpace as withHoleSpace,
-} from 'storybook/internal/docs-tools';
+import { hasHoleBracket, hole, withHoleSpace } from 'storybook/internal/docs-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 
@@ -115,8 +111,6 @@ type StaticStoryRenderer =
 type StorySnippetResult = { snippet: string };
 type StaticStoryArgs = {
   classified: ClassifyArgsResult;
-  /** The args as the story writes them. */
-  args: Record<string, Node>;
   /** Source text of everything reading the args statically could not account for. */
   unresolved: string[];
 };
@@ -357,35 +351,22 @@ function enrichStoryDoc(
     return withWarning(noSnippetWarning(unresolved));
   }
 
-  // The snippet printed with the story's args, and its template, printed the same with a hole
-  // wherever it fills one in.
-  const print = (holes: boolean) =>
-    renderStaticStorySnippet(
-      renderer,
-      classified,
-      componentName,
-      docgenArgInfo,
-      options,
-      resolved.args,
-      holes
-    );
-  const rendered = print(false);
+  // The snippet, and its template: the same print with each place an arg prints wrapped in a hole.
+  const print = (mark?: typeof hole) =>
+    renderStaticStorySnippet(renderer, classified, componentName, docgenArgInfo, options, mark);
+  const rendered = print();
   if (!rendered) {
     return withWarning(UNRENDERED_WARNINGS[renderer.kind]);
   }
-  const warning = unresolved.length > 0 ? unresolvedWarning(unresolved) : undefined;
   // Holes written in code that already holds a hole bracket could not be found again.
-  const holes = hasHoleBracket(options.source) ? undefined : print(true)?.snippet;
-  const template = holes === undefined ? undefined : withHoleSpace(holes, takesSpace);
+  const holes = hasHoleBracket(options.source) ? undefined : print(hole)?.snippet;
 
   return {
     ...storyDoc,
     snippet: rendered.snippet,
-    ...(template && {
-      template,
-      argCode: argCode(resolved.args),
-    }),
-    ...(warning && { warning }),
+    // An attribute a control clears leaves no gap.
+    ...(holes && { template: withHoleSpace(holes, (kind) => kind === 'attr') }),
+    ...(unresolved.length > 0 ? { warning: unresolvedWarning(unresolved) } : {}),
   };
 }
 
@@ -440,7 +421,6 @@ function resolveStaticStoryArgs(
   const resolved = options.resolver.resolve(storyExport);
   return {
     classified: classifyArgs(resolved.args, docgenArgInfo),
-    args: resolved.args,
     unresolved: resolved.unresolved,
   };
 }
@@ -451,17 +431,12 @@ function renderStaticStorySnippet(
   componentName: string,
   docgenArgInfo: VueDocgenArgInfo,
   options: StoryDocsContext,
-  storyArgNodes: Record<string, Node>,
-  holes: boolean
+  mark: typeof hole | undefined
 ): StorySnippetResult | undefined {
   const componentImportStatement = options.snippet?.componentImportStatement;
   const { args } = classified;
-  const ctx = createRenderContext(holes);
+  const ctx = createRenderContext(mark);
   const slots = docgenArgInfo.slots;
-  const storyArgs = Object.keys(storyArgNodes);
-  const models = new Set(
-    [...docgenArgInfo.props].filter((name) => docgenArgInfo.events.has(`update:${name}`))
-  );
 
   // A story without a render function shows the component receiving the args directly.
   if (renderer.kind === 'sfc') {
@@ -473,9 +448,6 @@ function renderStaticStorySnippet(
           ctx,
           importBindings: options.importBindings,
           slots,
-          storyArgs,
-          props: docgenArgInfo.props,
-          models,
           template: `<${componentName} v-bind="args" />`,
           unsetArgs: classified.unset,
         })
@@ -491,9 +463,6 @@ function renderStaticStorySnippet(
       importBindings: options.importBindings,
       setup: renderer.setup,
       slots,
-      storyArgs,
-      props: docgenArgInfo.props,
-      models,
       template: renderer.template,
       unsetArgs: classified.unset,
     });
@@ -519,9 +488,6 @@ function renderStaticStorySnippet(
     ctx,
     importBindings: options.importBindings,
     slots,
-    storyArgs,
-    props: docgenArgInfo.props,
-    models,
     template: printed.template,
     unsetArgs: classified.unset,
   });
@@ -576,7 +542,3 @@ function argsParameterName(renderFunction: RenderFunction): string | undefined {
   const [parameter] = renderFunction.params;
   return parameter?.type === 'Identifier' ? parameter.name : undefined;
 }
-
-// An attribute that prints nothing leaves no gap, and no hole leaves an empty line.
-const takesSpace = (kind: string, space: string) =>
-  kind === 'attr' || kind === 'props' || space.includes('\n');

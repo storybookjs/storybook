@@ -4,11 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "forms-args-formatting--primary": {
-      "argCode": {
-        "items": "['one', 'two']",
-        "onSubmit": "() => undefined",
-        "options": "{ tone: 'neutral', compact: true }",
-      },
       "description": undefined,
       "id": "forms-args-formatting--primary",
       "name": "Primary",
@@ -29,19 +24,18 @@ const quotationLabel = 'She said "hi" and it\'s fine';
       "template": "<script lang="ts" setup>
 import ArgsFormattingButton from './ArgsFormattingButton.vue';
 
-const items = ⟦value items script⟧;
+const items = ⟦value items script⟫['one', 'two']⟧;
 
-const options = ⟦value options script⟧;
+const options = ⟦value options script⟫{ tone: 'neutral', compact: true }⟧;
 
-const quotationLabel = ⟦value quotationLabel script⟧;
+const quotationLabel = ⟦value quotationLabel script⟫'She said "hi" and it\'s fine'⟧;
 </script>
 
 <template>
-  <ArgsFormattingButton⟦attr count count ~%20⟧⟦attr disabled disabled ~%20⟧⟦attr enabled enabled ~%20⟧ :items="items"⟦attr label label ~%20⟧ :options="options" :quotationLabel="quotationLabel"⟦props -count -disabled -emptyLabel -enabled -items -label -onSubmit -options -quotationLabel ~%20⟧ />
+  <ArgsFormattingButton⟦attr count count ~%20⟫:count="3"⟧⟦attr disabled disabled ~%20⟫:disabled="false"⟧⟦attr enabled enabled ~%20⟫enabled⟧ :items="items"⟦attr label label ~%20⟫label="Formatted"⟧ :options="options" :quotationLabel="quotationLabel"⟦props * ~%20⟫⟧ />
 </template>",
     },
     "forms-args-formatting--unset-arg": {
-      "argCode": {},
       "description": undefined,
       "id": "forms-args-formatting--unset-arg",
       "name": "Unset Arg",
@@ -58,7 +52,7 @@ import ArgsFormattingButton from './ArgsFormattingButton.vue';
 </script>
 
 <template>
-  <ArgsFormattingButton⟦attr count count ~%20⟧⟦props -count -label ~%20⟧ />
+  <ArgsFormattingButton⟦attr count count ~%20⟫:count="3"⟧⟦props * ~%20⟫⟧ />
 </template>",
     },
   },

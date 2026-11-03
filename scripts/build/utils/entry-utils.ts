@@ -14,6 +14,13 @@ export type BuildEntry = {
   // Replace the esbuild runtime bundle with a Rolldown build under dist/<entry dir>.
   chunkedRuntime?: true;
   /**
+   * For a chunked runtime: bare specifiers of third-party modules it also emits as stable entries
+   * (`dist/<entry dir>/vendor/<name>.js`, each in chunks of only those packages). The package's
+   * browser entries import these instead of bundling another copy. Not in watch mode, which builds
+   * the runtime without chunks.
+   */
+  sharedModules?: string[];
+  /**
    * Bundle this entry's d.ts in an isolated single-entry pass, producing one flat self-contained
    * file instead of sharing type chunks with the package's other entries. For entries other
    * packages bundle into their own dist, where a shared chunk would drag unrelated type surfaces

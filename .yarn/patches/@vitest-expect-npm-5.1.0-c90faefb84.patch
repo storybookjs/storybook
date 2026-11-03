@@ -1,0 +1,53 @@
+diff --git a/dist/index.js b/dist/index.js
+index dc5c106ee3a3d29452f2b9079e088f45df59a64b..f2550885e8acee10a856ad4e6a018cf800d6eec3 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -59,7 +59,9 @@ const ChaiStyleAssertions = (chai, utils) => {
+ };
+ 
+ const MATCHERS_OBJECT = Symbol.for("matchers-object");
+-const JEST_MATCHERS_OBJECT = Symbol.for("$$jest-matchers-object");
++// Patched for storybook: a storybook-specific symbol, so that storybook/test can be used in a jest
++// environment as well. Otherwise, it overrides the global jest matchers and crashes.
++const JEST_MATCHERS_OBJECT = Symbol.for("$$jest-matchers-object-storybook");
+ const GLOBAL_EXPECT = Symbol.for("expect-global");
+ const ASYMMETRIC_MATCHERS_OBJECT = Symbol.for("asymmetric-matchers-object");
+ 
+@@ -765,11 +767,11 @@ function isStandardSchema(obj) {
+ 	return !!obj && (typeof obj === "object" || typeof obj === "function") && obj["~standard"] && typeof obj["~standard"].validate === "function";
+ }
+ 
++// Patched for storybook: register each global independently, so that storybook/test still registers
++// its own (renamed) jest matchers object when another expect (e.g. Vitest's) already registered the
++// shared matcher state.
+ if (!Object.hasOwn(globalThis, MATCHERS_OBJECT)) {
+ 	const globalState = new WeakMap();
+-	const matchers = Object.create(null);
+-	const customEqualityTesters = [];
+-	const asymmetricMatchers = Object.create(null);
+ 	// `configurable` so that vm pools can strip the accessors from a disposed
+ 	// context: the getters capture the expect state, which would otherwise keep
+ 	// the whole test-file world reachable from the leaked context shell
+@@ -777,14 +779,21 @@ if (!Object.hasOwn(globalThis, MATCHERS_OBJECT)) {
+ 		configurable: true,
+ 		get: () => globalState
+ 	});
++}
++if (!Object.hasOwn(globalThis, JEST_MATCHERS_OBJECT)) {
++	const matchers = Object.create(null);
++	const customEqualityTesters = [];
+ 	Object.defineProperty(globalThis, JEST_MATCHERS_OBJECT, {
+ 		configurable: true,
+ 		get: () => ({
+-			state: globalState.get(globalThis[GLOBAL_EXPECT]),
++			state: globalThis[MATCHERS_OBJECT].get(globalThis[GLOBAL_EXPECT]),
+ 			matchers,
+ 			customEqualityTesters
+ 		})
+ 	});
++}
++if (!Object.hasOwn(globalThis, ASYMMETRIC_MATCHERS_OBJECT)) {
++	const asymmetricMatchers = Object.create(null);
+ 	Object.defineProperty(globalThis, ASYMMETRIC_MATCHERS_OBJECT, {
+ 		configurable: true,
+ 		get: () => asymmetricMatchers

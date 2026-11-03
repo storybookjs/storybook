@@ -46,8 +46,8 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 </script>
 
 <template>
-  <section class="toolbar"⟦attr label label ~%20⟫label="Confirm"⟧⟦props * ~%20⟫⟧>
-    <RenderFunctionButton⟦attr label label ~%20⟫label="Confirm"⟧⟦props * ~%20⟫⟧ />
+  <section class="toolbar"⟦attr label label ~%20⟫label="Confirm"⟧⟦guard class⟫⟧⟦props * class label ~%20⟫⟧>
+    <RenderFunctionButton⟦attr label label ~%20⟫label="Confirm"⟧⟦props * label ~%20⟫⟧ />
   </section>
 </template>",
     },
@@ -74,7 +74,7 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 <template>
   <section class="toolbar">
     <h2>Actions</h2>
-    <RenderFunctionButton⟦attr label label ~%20⟫label="Confirm"⟧⟦props * ~%20⟫⟧ />
+    <RenderFunctionButton⟦attr label label ~%20⟫label="Confirm"⟧⟦props * label ~%20⟫⟧ />
     <RenderFunctionButton label="Cancel" />
   </section>
 </template>",
@@ -96,7 +96,7 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 </script>
 
 <template>
-  <RenderFunctionButton⟦attr label label ~%20⟫label="Render"⟧⟦props * ~%20⟫⟧ />
+  <RenderFunctionButton⟦attr label label ~%20⟫label="Render"⟧⟦props * label ~%20⟫⟧ />
 </template>",
     },
     "forms-render-function--slot-children": {
@@ -121,7 +121,7 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 </script>
 
 <template>
-  <RenderFunctionButton⟦attr label label ~%20⟫label="Confirm"⟧⟦props * ~%20⟫⟧>
+  <RenderFunctionButton⟦attr label label ~%20⟫label="Confirm"⟧⟦props * label ~%20⟫⟧>
     <span>Extra</span>
     <template #footer>
       <strong>Note</strong>

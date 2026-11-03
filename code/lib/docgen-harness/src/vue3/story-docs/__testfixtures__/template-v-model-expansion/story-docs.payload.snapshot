@@ -26,7 +26,7 @@ const modelValue = ref(⟦value modelValue script⟫'Draft text'⟧);
 </script>
 
 <template>
-  <TemplateVModelExpansion⟦attr label label ~%20⟫label="Message"⟧ v-model="modelValue"⟦props * ~%20⟫⟧ />
+  <TemplateVModelExpansion⟦attr label label ~%20⟫label="Message"⟧ v-model="modelValue"⟦props * modelValue label ~%20⟫⟧ />
 </template>",
     },
   },

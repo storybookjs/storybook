@@ -1,7 +1,12 @@
 import { describe, expect, it, test } from 'vitest';
 
 import { type CsfFile, loadCsf } from 'storybook/internal/csf-tools';
-import { fillTemplate, printValue, stripHoles } from 'storybook/internal/docs-tools';
+import {
+  UnprintableArgError,
+  fillTemplate,
+  printValue,
+  stripHoles,
+} from 'storybook/internal/docs-tools';
 import type { Args } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
@@ -1283,6 +1288,45 @@ describe('template', () => {
     );
   });
 
+  it('passes an arg the spread passes, also where another place reads it', () => {
+    const code = withCSF3(
+      `export const S = { args: { size: 'sm' }, render: (args) => <Button {...args}>{args.label}</Button> };`
+    );
+    const initialArgs = { size: 'sm' };
+    expect(fill(code, initialArgs, { ...initialArgs, label: 'Go' })).toBe(
+      'const S = (args) => <Button size="sm" label="Go">Go</Button>;'
+    );
+  });
+
+  it('cannot follow an attribute before the spread that reads another arg', () => {
+    const code = withCSF3(
+      `export const S = { args: { label: 'Go' }, render: (args) => <Button title={args.label} {...args} /> };`
+    );
+    const initialArgs = { label: 'Go' };
+    expect(fill(code, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(
+      'const S = () => <Button title="Stop" label="Stop">Click me</Button>;'
+    );
+    expect(() => fill(code, initialArgs, { ...initialArgs, title: 'X' })).toThrow(
+      UnprintableArgError
+    );
+  });
+
+  it('passes the args a control sets to a bound story, but those it writes', () => {
+    const code = withCSF3(dedent`
+      import { Template } from './template';
+      export const S = Template.bind({});
+      S.args = { label: 'Go' };
+    `);
+    const initialArgs = { label: 'Go' };
+    expect(fill(code, initialArgs, { label: 'Stop', size: 'lg' })).toMatchInlineSnapshot(`
+      "const S = () => Template.bind({})({
+          "children": 'Click me',
+          "label": "Stop",
+          "size": "lg"
+      });"
+    `);
+  });
+
   it('shows only the args that changed: no project, action or unresolved arg appears unchanged', () => {
     const code = withCSF3(dedent`
       import { base } from './base';
@@ -1312,7 +1356,7 @@ describe('template', () => {
       'const S = () => <Button label="Go" onClick={() => {}} theme="light">Click me</Button>;'
     );
     expect(templateOf(code)).toBe(
-      'const S = () => <Button⟦attr label label ~%20⟫label="Go"⟧⟦attr onClick onClick ~%20⟫onClick={() => {}}⟧⟦attrs * children⟫⟧⟦close children Button⟫>Click me</Button>⟧;'
+      'const S = () => <Button⟦attr label label ~%20⟫label="Go"⟧⟦attr onClick onClick ~%20⟫onClick={() => {}}⟧⟦attrs * label onClick children⟫⟧⟦close children Button⟫>Click me</Button>⟧;'
     );
   });
 

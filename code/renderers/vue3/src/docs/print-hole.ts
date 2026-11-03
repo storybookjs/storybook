@@ -18,7 +18,7 @@ import {
 // the static snippet is printed with:
 //
 // - `⟦attr arg name⟫…⟧`: the attribute `name`, left out while the arg is unset.
-// - `⟦props * name…⟫⟧`: the args a control added to an args binding, but those it names.
+// - `⟦props * name…⟫⟧`: the args a control set, as an args binding passes them, but those it names.
 // - `⟦text arg⟫…⟧`: the text of an interpolation, with `{<` and `{>` for a `{` the template writes
 //   before or after it; with `slot`, a slot's content.
 // - `⟦value arg⟫…⟧`: code in a template expression, in an attribute quoted with `'` (a `'` word) or

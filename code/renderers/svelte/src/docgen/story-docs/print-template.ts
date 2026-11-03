@@ -148,6 +148,7 @@ export function printTemplate({
           : [[key, printProp(key, printed)]];
       });
       const spread = spreadPlace(code, at(node), props, [
+        ...props.map(([key]) => key),
         ...writtenProps,
         ...destructured,
         ...Object.keys(snippets),
@@ -287,23 +288,23 @@ function propValue(value: Node): PropValue {
 // The edit of a `{...args}` spread, which prints the props one a line when they are long. It
 // replaces the whitespace before the spread too: the spread's line when it prints no props and is
 // alone on it, else the spaces before it. In the template each prop is a hole, followed by one for
-// the args a control adds, except the `written` names.
+// the args a control sets, except the `printed` names.
 function spreadPlace(
   code: string,
   span: Span,
   props: [string, string][],
-  written: string[]
+  printed: string[]
 ): Place {
-  const printed = props.map(([, prop]) => prop);
-  const onePerLine = printed.join(' ').length > 50;
+  const values = props.map(([, prop]) => prop);
+  const onePerLine = values.join(' ').length > 50;
   const separator = onePerLine ? '\n  ' : ' ';
   const holes = props.map(([arg, prop]) => hole({ kind: 'prop', arg, words: [] }, prop));
-  const added = (space: string) => hole({ kind: 'props', words: written }, '', space);
+  const added = (space: string) => hole({ kind: 'props', words: printed }, '', space);
   const { end } = span;
   let { start } = span;
   if (onePerLine) while (start > 0 && /[ \t]/.test(code[start - 1])) start--;
   if (props.length) {
-    const [value, marked] = [printed, holes].map((pieces) => pieces.join(separator));
+    const [value, marked] = [values, holes].map((pieces) => pieces.join(separator));
     return onePerLine
       ? {
           start,

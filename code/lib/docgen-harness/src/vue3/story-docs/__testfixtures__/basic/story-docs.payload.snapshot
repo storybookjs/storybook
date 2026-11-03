@@ -20,7 +20,7 @@ import BasicButton from './BasicButton.vue';
 </script>
 
 <template>
-  <BasicButton⟦attr label label ~%20⟫label="Submit"⟧⟦props * ~%20⟫⟧ />
+  <BasicButton⟦attr label label ~%20⟫label="Submit"⟧⟦props * label ~%20⟫⟧ />
 </template>",
     },
   },

@@ -30,7 +30,7 @@ const node = ⟦value node script⟫{
 </script>
 
 <template>
-  <RecursiveTree :node="node"⟦props * ~%20⟫⟧ />
+  <RecursiveTree :node="node"⟦props * node ~%20⟫⟧ />
 </template>",
     },
   },

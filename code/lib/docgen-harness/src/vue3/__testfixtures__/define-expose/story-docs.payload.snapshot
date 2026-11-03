@@ -20,7 +20,7 @@ import DefineExpose from './DefineExpose.vue';
 </script>
 
 <template>
-  <DefineExpose⟦attr label label ~%20⟫label="Increment"⟧⟦props * ~%20⟫⟧ />
+  <DefineExpose⟦attr label label ~%20⟫label="Increment"⟧⟦props * label ~%20⟫⟧ />
 </template>",
     },
   },

@@ -26,7 +26,7 @@ describe('fillTemplate', () => {
     const initialArgs = { label: 'Go', theme: 'dark' };
     expect(
       fillTemplate(template, { unmappedArgs: { ...initialArgs, label: 'Stop' }, initialArgs }, echo)
-    ).toBe('<Button[attr label label="Stop"] />');
+    ).toBe('<Button[attr label label="Stop"][attrs * ={"label":"Stop"}] />');
     expect(fillTemplate(template, { unmappedArgs: { theme: 'dark' }, initialArgs }, echo)).toBe(
       '<Button[attr label label=undefined] />'
     );
@@ -39,11 +39,11 @@ describe('fillTemplate', () => {
     ).toBe('[1]');
   });
 
-  it('gives a hole without an arg the args a control set that no other hole reads', () => {
+  it('gives a hole without an arg every arg a control set', () => {
     const initialArgs = { label: 'Go', theme: 'dark', onClick: () => {} };
     const unmappedArgs = { ...initialArgs, label: 'Stop', size: 'lg', unset: undefined };
     expect(fillTemplate(template, { unmappedArgs, initialArgs }, echo)).toBe(
-      '<Button[attr label label="Stop"][attrs * ={"size":"lg"}] />'
+      '<Button[attr label label="Stop"][attrs * ={"label":"Stop","size":"lg"}] />'
     );
     expect(
       fillTemplate(

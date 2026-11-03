@@ -20,7 +20,7 @@ import PropsBasicTypes from './PropsBasicTypes.vue';
 </script>
 
 <template>
-  <PropsBasicTypes⟦attr count count ~%20⟫:count="2"⟧⟦attr enabled enabled ~%20⟫enabled⟧⟦attr label label ~%20⟫label="Hello"⟧⟦props * ~%20⟫⟧ />
+  <PropsBasicTypes⟦attr count count ~%20⟫:count="2"⟧⟦attr enabled enabled ~%20⟫enabled⟧⟦attr label label ~%20⟫label="Hello"⟧⟦props * label count enabled ~%20⟫⟧ />
 </template>",
     },
     "forms-props-basic-types--unrepresentable-args": {
@@ -60,7 +60,7 @@ const token = ⟦value token script⟫Symbol('fixture')⟧;
 </script>
 
 <template>
-  <PropsBasicTypes :big="big" :config="config" :formatter="formatter"⟦attr label label ~%20⟫label="Formatted"⟧ :tags="tags" :token="token"⟦props * ~%20⟫⟧ />
+  <PropsBasicTypes :big="big" :config="config" :formatter="formatter"⟦attr label label ~%20⟫label="Formatted"⟧ :tags="tags" :token="token"⟦props * label tags config formatter token big ~%20⟫⟧ />
 </template>",
     },
   },

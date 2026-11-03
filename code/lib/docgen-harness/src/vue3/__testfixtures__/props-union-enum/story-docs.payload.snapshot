@@ -20,7 +20,7 @@ import PropsUnionEnum from './PropsUnionEnum.vue';
 </script>
 
 <template>
-  <PropsUnionEnum⟦attr size size ~%20⟫size="medium"⟧⟦attr status status ~%20⟫status="ok"⟧⟦props * ~%20⟫⟧ />
+  <PropsUnionEnum⟦attr size size ~%20⟫size="medium"⟧⟦attr status status ~%20⟫status="ok"⟧⟦props * size status ~%20⟫⟧ />
 </template>",
     },
   },

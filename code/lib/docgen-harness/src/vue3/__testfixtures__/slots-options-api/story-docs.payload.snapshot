@@ -32,7 +32,7 @@ import OptionsApiSlots from './OptionsApiSlots.vue';
 </script>
 
 <template>
-  <OptionsApiSlots⟦attr heading heading ~%20⟫heading="Entries"⟧⟦props * default header item ~%20⟫⟧>
+  <OptionsApiSlots⟦attr heading heading ~%20⟫heading="Entries"⟧⟦props * heading default header item ~%20⟫⟧>
     ⟦text default slot⟫Plain text content⟧
     <template #header>
       ⟦text header slot⟫Header text⟧

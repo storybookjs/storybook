@@ -17,7 +17,7 @@ import {
 // `docgen/story-docs/print-template.ts`, with the printers the static snippet is printed with:
 //
 // - `⟦prop arg⟫…⟧`: one prop a `{...args}` spread passes, left out while the arg is unset.
-// - `⟦props * name…⟫⟧`: the args a control added, as a spread passes them, but those it names.
+// - `⟦props * name…⟫⟧`: the args a control set, as a spread passes them, but those it names.
 // - `⟦spreadattr arg⟫…⟧`: an attribute a later spread writes over.
 // - `⟦value arg⟫…⟧` and `⟦property arg name⟫…⟧`: a read in code, and a shorthand property.
 // - `⟦attrvalue arg name pre post⟫…⟧`, `⟦quoted arg pre post⟫…⟧`, `⟦fragment arg pre post⟫…⟧` and

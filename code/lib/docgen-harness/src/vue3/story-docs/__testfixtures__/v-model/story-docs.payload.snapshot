@@ -30,7 +30,7 @@ const modelValue = ref(⟦value modelValue script⟫'Accepted'⟧);
 </script>
 
 <template>
-  <ModelToggle v-model:checked="checked" v-model="modelValue"⟦props * ~%20⟫⟧ />
+  <ModelToggle v-model:checked="checked" v-model="modelValue"⟦props * modelValue checked ~%20⟫⟧ />
 </template>",
     },
   },

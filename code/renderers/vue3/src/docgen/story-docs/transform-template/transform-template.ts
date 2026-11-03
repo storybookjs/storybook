@@ -422,7 +422,9 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
       continue;
     }
     if (plan.directive && prop === plan.directive) {
-      if (!expandArgsBinding(plan.directive, attributesByName, plan.surviving, element, state)) {
+      if (
+        !expandArgsBinding({ ...plan, directive: plan.directive }, attributesByName, element, state)
+      ) {
         return false;
       }
       continue;
@@ -525,9 +527,12 @@ function planArgsBindingExpansion(
 }
 
 function expandArgsBinding(
-  directive: DirectiveNode,
+  {
+    directive,
+    surviving,
+    removed,
+  }: { directive: DirectiveNode; surviving: ClassifiedArg[]; removed: Set<ElementProp> },
   attributesByName: Map<string, ElementProp[]>,
-  surviving: ClassifiedArg[],
   element: ElementContext,
   state: TransformState
 ): boolean {
@@ -541,15 +546,29 @@ function expandArgsBinding(
   }
 
   element.slotChildren.push(...rendered.slotChildren);
-  // The args a control sets go after the args the story writes, but those the element writes
-  // after the binding, which win over it, and its slots.
-  const after = [...attributesByName.entries()].filter(([, props]) =>
-    props.some((prop) => prop.loc.start.offset > directive.loc.start.offset)
+  // The args a control sets go after the args the story writes, but those the element prints
+  // itself and its slots. A binding or a `class` or `style` written before the args binding
+  // cannot follow the arg that sets it, so it is a guard.
+  const printed = [
+    ...[...attributesByName.keys()].flatMap(spellings),
+    ...surviving.map((arg) => arg.name),
+    ...state.slots,
+  ];
+  const guards = [...attributesByName.entries()].flatMap(([name, props]) =>
+    props.some(
+      (prop) =>
+        prop.loc.start.offset < directive.loc.start.offset &&
+        !removed.has(prop) &&
+        (prop.type === NodeTypes.DIRECTIVE
+          ? prop.name === 'bind'
+          : prop.name === 'class' || prop.name === 'style')
+    )
+      ? [marked(state.ctx, { kind: 'guard', arg: spellings(name)[1]!, words: [] }, '')]
+      : []
   );
-  const written = [...after.flatMap(([name]) => spellings(name)), ...state.slots];
-  const added = marked(state.ctx, { kind: 'props', words: [...new Set(written)] }, '', ' ');
+  const added = marked(state.ctx, { kind: 'props', words: [...new Set(printed)] }, '', ' ');
   const edit = replacementFor(directive, rendered.attributes.join(' '), state.template);
-  state.edits.push({ ...edit, text: edit.text + added });
+  state.edits.push({ ...edit, text: edit.text + guards.join('') + added });
   return true;
 }
 

@@ -24,7 +24,7 @@ const items = ⟦value items script⟫['alpha', 'beta']⟧;
 </script>
 
 <template>
-  <PropsGeneric :items="items"⟦attr selected selected ~%20⟫selected="alpha"⟧⟦props * ~%20⟫⟧ />
+  <PropsGeneric :items="items"⟦attr selected selected ~%20⟫selected="alpha"⟧⟦props * items selected ~%20⟫⟧ />
 </template>",
     },
   },

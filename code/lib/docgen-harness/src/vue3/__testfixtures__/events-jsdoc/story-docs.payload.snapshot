@@ -28,7 +28,7 @@ const onSave = ⟦value onSave script⟫() => {}⟧;
 </script>
 
 <template>
-  <EventsJsdoc⟦attr label label ~%20⟫label="Save"⟧ @cancel="onCancel" @save="onSave"⟦props * ~%20⟫⟧ />
+  <EventsJsdoc⟦attr label label ~%20⟫label="Save"⟧ @cancel="onCancel" @save="onSave"⟦props * label onSave onCancel ~%20⟫⟧ />
 </template>",
     },
   },

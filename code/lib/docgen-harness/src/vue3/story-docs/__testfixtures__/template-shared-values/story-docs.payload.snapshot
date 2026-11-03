@@ -68,7 +68,7 @@ import TemplateSharedValues from './TemplateSharedValues.vue';
 </script>
 
 <template>
-  <TemplateSharedValues⟦attr label label ~%20⟫label="Go"⟧⟦props * class style ~%20⟫⟧ class="own" style="color: red" />
+  <TemplateSharedValues⟦attr label label ~%20⟫label="Go"⟧⟦props * class style label ~%20⟫⟧ class="own" style="color: red" />
 </template>",
     },
   },

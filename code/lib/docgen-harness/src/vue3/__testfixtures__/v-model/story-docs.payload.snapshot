@@ -30,7 +30,7 @@ const modelValue = ref(⟦value modelValue script⟫'typed text'⟧);
 </script>
 
 <template>
-  <VModelInput v-model:checked="checked" v-model="modelValue"⟦props * ~%20⟫⟧ />
+  <VModelInput v-model:checked="checked" v-model="modelValue"⟦props * modelValue checked ~%20⟫⟧ />
 </template>",
     },
   },

@@ -1,4 +1,4 @@
-import { type PrintHole, printValue } from 'storybook/internal/docs-tools';
+import { type PrintHole, UnprintableArgError, printValue } from 'storybook/internal/docs-tools';
 import type { Args } from 'storybook/internal/types';
 
 import {
@@ -18,8 +18,10 @@ import {
 // - `⟦text arg⟫…⟧`: the arg as content.
 // - `⟦close children Button⟫…⟧`: the end of the element, with the `children` arg as content.
 // - `⟦value arg⟫…⟧`: the arg as an expression.
-// - `⟦attrs * name…⟫⟧`: the args a control added, as attributes, but those its words name.
-// - `⟦entries *⟫⟧` and `⟦object *⟫{}⟧`: the args a control added to the args of a bound story.
+// - `⟦attrs * name…⟫⟧`: the args a control set, as attributes, but those its words name.
+// - `⟦entries * name…⟫⟧` and `⟦object *⟫{}⟧`: the args a control set, as the args of a bound
+//   story, but those its words name.
+// - `⟦guard arg⟫⟧`: an arg the snippet cannot follow.
 export const printHole: PrintHole = ({ kind, arg = '', words }, value) => {
   switch (kind) {
     case 'attr':
@@ -39,10 +41,13 @@ export const printHole: PrintHole = ({ kind, arg = '', words }, value) => {
     }
     case 'entries':
       return codes(value as Args)
+        .filter(([name]) => !words.includes(name))
         .map((entry) => `,\n${printArgsEntry(entry)}`)
         .join('');
     case 'object':
       return printArgsObject(codes(value as Args));
+    case 'guard':
+      throw new UnprintableArgError(arg);
     default:
       throw new Error(`Unknown hole ⟦${kind}⟧`);
   }

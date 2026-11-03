@@ -290,7 +290,7 @@ describe('printTemplate template', () => {
 
   it('wraps each place an arg prints in a hole that holds what it prints there', () => {
     expect(template('<Panel {...args} />', "{ label: 'Go' }")).toBe(
-      '<Panel⟦prop label ~%20⟫label="Go"⟧⟦props * ~%20⟫⟧ />'
+      '<Panel⟦prop label ~%20⟫label="Go"⟧⟦props * label ~%20⟫⟧ />'
     );
     expect(template('<h1>{args.title}</h1>', "{ title: 'Save' }")).toBe(
       '<h1>⟦fragment title { }⟫Save⟧</h1>'
@@ -309,6 +309,13 @@ describe('printTemplate template', () => {
     const initialArgs = { label: 'A label that is long enough to wrap the spread' };
     expect(fill(wrapped, initialArgs, { ...initialArgs, count: 3 })).toBe(
       '<Panel\n  label="A label that is long enough to wrap the spread"\n  count={3}\n />'
+    );
+  });
+
+  it('passes an arg the spread passes, also where another place reads it', () => {
+    const written = template('<Panel {...args}>{args.label}</Panel>', "{ size: 'sm' }");
+    expect(fill(written, { size: 'sm' }, { size: 'sm', label: 'Go' })).toBe(
+      '<Panel size="sm" label="Go">Go</Panel>'
     );
   });
 

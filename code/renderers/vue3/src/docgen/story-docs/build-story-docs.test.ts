@@ -264,7 +264,7 @@ describe('template', () => {
       </script>
 
       <template>
-        <MyButton⟦attr count count ~%20⟫:count="2"⟧⟦attr label label ~%20⟫label="Hi"⟧⟦props * ~%20⟫⟧ />
+        <MyButton⟦attr count count ~%20⟫:count="2"⟧⟦attr label label ~%20⟫label="Hi"⟧⟦props * label count ~%20⟫⟧ />
       </template>"
     `);
     const initialArgs = { label: 'Hi', count: 2, theme: 'dark' };
@@ -327,6 +327,25 @@ export const Primary = {
 `);
     expect(filled(story, { count: 2 }, { label: 'Stop' })).toContain(
       '<MyButton label="Stop" :count="2" />'
+    );
+  });
+
+  it('cannot follow a binding written before the args binding that reads another arg', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton :size="args.label" v-bind="args" />',
+  }),
+};
+`);
+    expect(filled(story, { label: 'Hi' }, { label: 'Ho' })).toContain(
+      '<MyButton size="Ho" label="Ho" />'
+    );
+    expect(() => filled(story, { label: 'Hi' }, { label: 'Hi', size: 'lg' })).toThrow(
+      'The snippet cannot show the current value of the `size` arg.'
     );
   });
 

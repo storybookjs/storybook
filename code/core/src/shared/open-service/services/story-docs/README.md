@@ -24,7 +24,7 @@ const Primary = () => <Button⟦attr label label ~%20⟫label="Go"⟧⟦attr onC
 ```
 
 A hole is `⟦kind arg word…⟫text⟧`. `text` is what the snippet prints in that place, `arg` the arg
-the place reads, or `*` for the args a spread passes that no other hole reads, and `kind` and the
+the place reads, or `*` for the args a control set, as a spread passes them, and `kind` and the
 other words are the renderer's. Core owns only this contract, in `snippetTemplate.ts`:
 
 - An arg that holds its initial value (deep-equal) prints the hole's `text`, so nothing the
@@ -33,7 +33,8 @@ other words are the renderer's. Core owns only this contract, in `snippetTemplat
 - A changed arg prints what the renderer's `PrintHole`, set as `parameters.docs.source.printHole`,
   prints for the hole and the value. A cleared arg prints what it prints for `undefined`, such as
   nothing for an attribute.
-- A `*` hole prints the args a control set that no other hole reads. Project-level args, actions
+- A `*` hole gets every arg a control set, and the renderer prints those its place does not print
+  already, which the hole's words name. Project-level args, actions
   Storybook adds and args the server could not resolve show only once a control changes them.
 - A `~space` word is text, such as the whitespace before an attribute, printed before the hole's
   print unless that is empty; `withHoleSpace` moves the whitespace before the holes a provider

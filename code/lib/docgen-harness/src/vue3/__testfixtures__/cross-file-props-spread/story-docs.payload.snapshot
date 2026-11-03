@@ -20,7 +20,7 @@ import CrossFilePropsSpread from './CrossFilePropsSpread.vue';
 </script>
 
 <template>
-  <CrossFilePropsSpread⟦attr label label ~%20⟫label="Text label"⟧⟦attr optional optional ~%20⟫:optional="false"⟧⟦attr value value ~%20⟫value="hello"⟧⟦props * ~%20⟫⟧ />
+  <CrossFilePropsSpread⟦attr label label ~%20⟫label="Text label"⟧⟦attr optional optional ~%20⟫:optional="false"⟧⟦attr value value ~%20⟫value="hello"⟧⟦props * value label optional ~%20⟫⟧ />
 </template>",
     },
   },

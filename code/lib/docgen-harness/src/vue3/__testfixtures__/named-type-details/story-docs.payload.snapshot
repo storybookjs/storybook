@@ -64,7 +64,7 @@ const user = ⟦value user script⟫{ name: 'Ada', age: 36 }⟧;
 </script>
 
 <template>
-  <NamedTypeDetails :big="big" :builtin="builtin" :cyclic="cyclic" :dict="dict" :inlined="inlined" :localDate="localDate" :namespaced="namespaced" :partialed="partialed" :picked="picked" :prefs="prefs"⟦attr scalarAlias scalarAlias ~%20⟫scalarAlias="abc-123"⟧⟦attr shapes shapes ~%20⟫shapes="circle"⟧ :user="user"⟦props * ~%20⟫⟧ />
+  <NamedTypeDetails :big="big" :builtin="builtin" :cyclic="cyclic" :dict="dict" :inlined="inlined" :localDate="localDate" :namespaced="namespaced" :partialed="partialed" :picked="picked" :prefs="prefs"⟦attr scalarAlias scalarAlias ~%20⟫scalarAlias="abc-123"⟧⟦attr shapes shapes ~%20⟫shapes="circle"⟧ :user="user"⟦props * user scalarAlias shapes cyclic big builtin inlined namespaced dict prefs localDate picked partialed ~%20⟫⟧ />
 </template>",
       "warning": "Incomplete snippet: `color: Color.Red`, `level: Level.High` could not be resolved statically.",
     },

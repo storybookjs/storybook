@@ -30,7 +30,7 @@ const onSubmit = ⟦value onSubmit script⟫(payload: { value: string }) => cons
 </script>
 
 <template>
-  <EventListenerForm :formatter="formatter"⟦attr label label ~%20⟫label="Send"⟧ @submit="onSubmit"⟦props * default ~%20⟫⟧>
+  <EventListenerForm :formatter="formatter"⟦attr label label ~%20⟫label="Send"⟧ @submit="onSubmit"⟦props * label default formatter onSubmit ~%20⟫⟧>
     Submit now
   </EventListenerForm>
 </template>",

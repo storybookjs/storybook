@@ -311,6 +311,7 @@ const resolveAttribute = (
     }
     if (value.kind === 'function') {
       state.unresolved.add(oneLineTextOf(expression));
+      guardMarkers(attribute.value, state);
       return undefined;
     }
     if (value.kind === 'nothing') {
@@ -318,11 +319,13 @@ const resolveAttribute = (
     }
     if (value.kind === 'unresolved') {
       state.unresolved.add(value.source);
+      guardMarkers(attribute.value, state);
       return undefined;
     }
     const resolved = attributeValue(value, state.context, state.referenced);
     if (resolved.kind === 'unresolved') {
       state.unresolved.add(resolved.source);
+      guardMarkers(attribute.value, state);
       return undefined;
     }
     if (

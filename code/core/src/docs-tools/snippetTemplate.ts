@@ -8,8 +8,8 @@ import type { Args } from 'storybook/internal/types';
  *
  * A template is the story's static snippet with each place an arg prints wrapped in a hole,
  * `⟦kind arg word…⟫text⟧`. `text` is what the static snippet prints there. `arg` is the arg the
- * place reads, or `*` for the args a control set that no other hole reads, as a spread passes
- * them. `kind` and the other words are the renderer's, for its {@link PrintHole}. Words are
+ * place reads, or `*` for the args a control set, as a spread passes them, which the renderer
+ * prints but those its words name. `kind` and the other words are the renderer's, for its {@link PrintHole}. Words are
  * separated by one space, and one that starts with `%` is the rest of it URI-encoded. A `~space`
  * word is text, such as the whitespace before an attribute, that is printed before the hole's
  * print unless that is empty; see {@link withHoleSpace}.
@@ -20,14 +20,14 @@ import type { Args } from 'storybook/internal/types';
  */
 export interface TemplateHole {
   kind: string;
-  /** The arg the place reads, or `undefined` for the args a control set that no hole reads. */
+  /** The arg the place reads, or `undefined` for the args a control set. */
   arg?: string;
   words: string[];
 }
 
 /**
  * Prints an arg value a control changed for the place `hole` describes, or, for a hole without an
- * `arg`, the args a control set that no other hole reads. The renderer sets it as
+ * `arg`, the args a control set, but those the place already prints. The renderer sets it as
  * `parameters.docs.source.printHole`.
  *
  * @throws {UnprintableArgError} For a value the snippet cannot show.
@@ -91,7 +91,8 @@ export const stripHoles = (template: string) => printHoles(template, (_, text) =
 /**
  * Fills a template with the args a story renders with before they are mapped: a hole whose arg
  * holds its initial value prints its `text`, and every other hole what `printHole` prints for it.
- * A hole without an arg gets the args a control set that no other hole of the template reads.
+ * A hole without an arg gets every arg a control set; its renderer leaves out those its place
+ * already prints, which the hole's words name.
  *
  * @throws {UnprintableArgError} When `printHole` cannot print a value.
  */
@@ -102,12 +103,8 @@ export const fillTemplate = (
 ) => {
   const own = (args: Args, name: string) => (Object.hasOwn(args, name) ? args[name] : undefined);
   const changed = (name: string) => !isEqual(own(unmappedArgs, name), own(initialArgs, name));
-  const read = new Set<string>();
-  printHoles(template, ({ arg }) => (arg === undefined ? '' : (read.add(arg), '')));
   const added = Object.fromEntries(
-    Object.entries(unmappedArgs).filter(
-      ([name, value]) => value !== undefined && !read.has(name) && changed(name)
-    )
+    Object.entries(unmappedArgs).filter(([name, value]) => value !== undefined && changed(name))
   );
   return printHoles(template, (hole, text) => {
     if (hole.arg === undefined) {

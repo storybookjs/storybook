@@ -20,7 +20,7 @@ import RuntimeMultiConstructor from './RuntimeMultiConstructor.vue';
 </script>
 
 <template>
-  <RuntimeMultiConstructor⟦attr width width ~%20⟫:width="200"⟧⟦props * ~%20⟫⟧ />
+  <RuntimeMultiConstructor⟦attr width width ~%20⟫:width="200"⟧⟦props * width ~%20⟫⟧ />
 </template>",
     },
   },

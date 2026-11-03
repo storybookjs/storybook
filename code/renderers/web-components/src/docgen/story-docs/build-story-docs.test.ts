@@ -804,6 +804,21 @@ describe('the template', () => {
     );
   });
 
+  it('cannot follow an arg an attribute reads next to code it cannot resolve', async () => {
+    const { template } = await firstTemplate(`
+      import { html } from 'lit';
+      import { suffix } from './suffix';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { label: 'Go' },
+        render: (args) => html\`<test-element title="\${args.label} \${suffix}"></test-element>\`,
+      };
+    `);
+    expect(() => fill(template!, { label: 'Go' }, { label: 'Stop' })).toThrow(
+      'The snippet cannot show the current value of the `label` arg.'
+    );
+  });
+
   it('is not there where next prints no snippet', async () => {
     const { snippet, template } = await firstTemplate(`
       export default { title: 'Example/TestElement', component: 'test-element' };

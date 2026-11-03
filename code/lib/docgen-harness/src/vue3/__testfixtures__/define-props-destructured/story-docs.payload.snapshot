@@ -20,7 +20,7 @@ import DestructuredProps from './DestructuredProps.vue';
 </script>
 
 <template>
-  <DestructuredProps⟦attr label label ~%20⟫label="Sized"⟧⟦attr size size ~%20⟫size="large"⟧⟦props * ~%20⟫⟧ />
+  <DestructuredProps⟦attr label label ~%20⟫label="Sized"⟧⟦attr size size ~%20⟫size="large"⟧⟦props * label size ~%20⟫⟧ />
 </template>",
     },
   },

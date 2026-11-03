@@ -139,7 +139,8 @@ function importedBoundStory(
     const values = entries.map(([key, value]) =>
       printArgsEntry([key, mark({ kind: 'value', arg: key, words: [] }, print(value))])
     );
-    return `{\n${values.join(',\n')}${mark({ kind: 'entries', words: [] }, '')}\n}`;
+    const keys = entries.map(([key]) => key);
+    return `{\n${values.join(',\n')}${mark({ kind: 'entries', words: keys }, '')}\n}`;
   };
   return {
     print: (mark) => `const ${storyName} = () => ${bound}(${argsObject(mark)});`,
@@ -216,7 +217,8 @@ function buildSnippet(
   const attrs = injectedAttributes(merged, new Set(), print, mark);
   const children = toJsxChildren(merged.children, print);
   const end = children ? printClose(componentName, children) : ' />';
-  const element = `<${[componentName, ...attrs].join(' ')}${addedAttributes(new Set(), mark)}${closeHole(componentName, end, mark)}`;
+  const added = addedAttributes(new Set(injectedNames(merged, new Set())), mark);
+  const element = `<${[componentName, ...attrs].join(' ')}${added}${closeHole(componentName, end, mark)}`;
   return `const ${storyName} = () => ${element};`;
 }
 
@@ -343,6 +345,12 @@ const describe = (node: Node, print: ValuePrinter): JsxValue => {
 const toAttr = (key: string, value: Node, print: ValuePrinter) =>
   printAttribute(key, describe(value, print));
 
+// The args `injectedAttributes` prints.
+const injectedNames = (merged: Args, existing: ReadonlySet<string>) =>
+  Object.entries(merged)
+    .filter(([k, v]) => v != null && k !== 'children' && !existing.has(k))
+    .map(([k]) => k);
+
 // Attributes for every arg not already set by name, with invalid names collected in a spread.
 const injectedAttributes = (
   merged: Args,
@@ -357,10 +365,10 @@ const injectedAttributes = (
     mark
   );
 
-// Where a spread passes the args a control adds, but those written by name next to it and
+// Where a spread passes the args a control sets, but those the element prints by name, and
 // `children`, which the element ends with; see `closeHole`.
-const addedAttributes = (existing: ReadonlySet<string>, mark: Mark | undefined) =>
-  mark ? mark({ kind: 'attrs', words: [...existing, 'children'] }, '') : '';
+const addedAttributes = (printed: ReadonlySet<string>, mark: Mark | undefined) =>
+  mark ? mark({ kind: 'attrs', words: [...printed, 'children'] }, '') : '';
 
 // The end of an element the args pass `children` to: `end` as the snippet prints it.
 const closeHole = (name: string, end: string, mark: Mark | undefined) =>
@@ -420,30 +428,33 @@ function rewriteJsx(
       const print = printAt(attrs[firstSpread].start);
       const pieces = injectedAttributes(merged, existing, print).join(' ');
       // An attribute written before a spread is the spread's arg once a control sets it, so it is
-      // a hole of its own; one written after it wins over the spread.
+      // a hole of its own; one that reads another arg cannot follow it, so it is a guard.
       const lastSpread = attrs.findLastIndex(isArgsSpread);
-      const after = new Set(
-        attrs.flatMap((a, index) =>
-          index > lastSpread && a.type === 'JSXAttribute' && a.name.type === 'JSXIdentifier'
-            ? [a.name.name]
-            : []
-        )
-      );
+      const guards: string[] = [];
       attrs.slice(0, lastSpread).forEach((a) => {
-        if (
-          mark &&
-          a.type === 'JSXAttribute' &&
-          a.name.type === 'JSXIdentifier' &&
-          !(a.value?.type === 'JSXExpressionContainer' && getArgsMemberKey(a.value.expression))
-        ) {
-          const written = code.slice(a.start, a.end);
-          const place = { kind: 'attr', arg: a.name.name, words: [a.name.name] };
-          edits.push({ start: a.start, end: a.end, marked: mark(place, written) });
+        if (!mark || a.type !== 'JSXAttribute' || a.name.type !== 'JSXIdentifier') {
+          return;
+        }
+        const name = a.name.name;
+        const read =
+          a.value?.type === 'JSXExpressionContainer' ? getArgsMemberKey(a.value.expression) : null;
+        if (read === null) {
+          const place = { kind: 'attr', arg: name, words: [name] };
+          edits.push({
+            start: a.start,
+            end: a.end,
+            marked: mark(place, code.slice(a.start, a.end)),
+          });
+        } else if (read !== name) {
+          guards.push(mark({ kind: 'guard', arg: name, words: [] }, ''));
         }
       });
+      const printed = new Set([...existing, ...injectedNames(merged, existing)]);
       const marked =
         mark &&
-        injectedAttributes(merged, existing, print, mark).join(' ') + addedAttributes(after, mark);
+        injectedAttributes(merged, existing, print, mark).join(' ') +
+          guards.join('') +
+          addedAttributes(printed, mark);
       attrs.forEach((a, index) => {
         if (!isArgsSpread(a)) {
           return;

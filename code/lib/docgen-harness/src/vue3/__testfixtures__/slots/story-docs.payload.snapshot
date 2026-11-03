@@ -29,7 +29,7 @@ import SlotsShowcase from './SlotsShowcase.vue';
 </script>
 
 <template>
-  <SlotsShowcase⟦attr heading heading ~%20⟫heading="Plain"⟧⟦props * default header item ~%20⟫⟧>
+  <SlotsShowcase⟦attr heading heading ~%20⟫heading="Plain"⟧⟦props * heading default header item ~%20⟫⟧>
     ⟦text default slot⟫Plain text content⟧
   </SlotsShowcase>
 </template>",
@@ -56,7 +56,7 @@ import SlotsShowcase from './SlotsShowcase.vue';
 </script>
 
 <template>
-  <SlotsShowcase⟦attr heading heading ~%20⟫heading="Structured"⟧⟦props * default header item ~%20⟫⟧>
+  <SlotsShowcase⟦attr heading heading ~%20⟫heading="Structured"⟧⟦props * heading header default item ~%20⟫⟧>
     <p class="body">Body content</p>
     <template #header>
       <strong>Header content</strong>

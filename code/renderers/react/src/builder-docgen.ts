@@ -91,8 +91,8 @@ export async function prepareReactBuilderDocgen({
     disableBuilderDocgen: 'typescript.reactDocgen: false',
     documentation:
       'https://storybook.js.org/docs/api/main-config/main-config-typescript#reactdocgen',
-    getNote: ({ typescriptUsable }) =>
-      reactDocgen === 'react-docgen-typescript' && !typescriptUsable
+    note:
+      mode !== reactDocgen
         ? '`react-docgen-typescript` needs the TypeScript compiler API, which your `typescript` package does not have, so builder docgen uses `react-docgen` instead.'
         : undefined,
   });

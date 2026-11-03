@@ -1,4 +1,10 @@
+import { join } from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import * as TsconfigPaths from 'tsconfig-paths';
+
+import { RESOLVE_EXTENSIONS } from './docgen-resolver.ts';
 
 import { getReactDocgenImporter } from './react-docgen.ts';
 
@@ -69,5 +75,15 @@ describe('getReactDocgenImporter function', () => {
       undefined,
       expect.arrayContaining(['.ts', '.tsx'])
     );
+  });
+
+  it('resolves an alias to a TypeScript file with the extensions it passes', () => {
+    const root = join(import.meta.dirname, '__testfixtures__/alias');
+    const matchPath = TsconfigPaths.createMatchPath(root, { '@/*': ['./src/*'] });
+
+    expect(matchPath('@/components/types', undefined, undefined, RESOLVE_EXTENSIONS)).toBe(
+      join(root, 'src/components/types')
+    );
+    expect(matchPath('@/components/types')).toBeUndefined();
   });
 });

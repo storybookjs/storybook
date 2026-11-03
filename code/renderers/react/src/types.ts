@@ -36,7 +36,11 @@ export interface ReactTypes extends ReactRenderer {
 
 export type StoryFnReactReturnType = JSX.Element;
 
-/** A prop as `react-docgen-typescript` passes it to a `propFilter` function. */
+/**
+ * A prop as `react-docgen-typescript` passes it to a `propFilter` function.
+ *
+ * @deprecated Builder docgen is removed in Storybook 12. Use `features.docgenServer`.
+ */
 export interface ReactDocgenTypescriptPropItem {
   name: string;
   required: boolean;
@@ -57,6 +61,8 @@ export interface ReactDocgenTypescriptPropItem {
  * TypeScript symbol and source file are typed structurally, because the TypeScript 7 `typescript`
  * package has no compiler API types. Type tests in the frameworks keep this assignable both ways
  * with the originals.
+ *
+ * @deprecated Builder docgen is removed in Storybook 12. Use `features.docgenServer`.
  */
 export interface ReactDocgenTypescriptParserOptions {
   propFilter?:

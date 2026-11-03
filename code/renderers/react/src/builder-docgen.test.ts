@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  REACT_DOCGEN_FALLBACK_PACKAGE,
+  REACT_DOCGEN_FALLBACK_RANGE,
   checkBuilderDocgenPackages,
   getTypeScriptForDocgenError,
 } from 'storybook/internal/common';
@@ -56,11 +56,9 @@ describe('REACT_BUILDER_DOCGEN_PACKAGES', () => {
     }
   });
 
-  // TEMPORARY until Storybook supports TypeScript 7.1: see `typescript-7-react-docgen-fallback.ts`.
+  // TEMPORARY(ts-7.1): see `typescript-7-react-docgen-fallback.ts` in core.
   it('match the react-docgen that init and upgrade add on TypeScript 7.0', () => {
-    expect(REACT_DOCGEN_FALLBACK_PACKAGE).toBe(
-      `react-docgen@${REACT_BUILDER_DOCGEN_PACKAGES['react-docgen']}`
-    );
+    expect(REACT_DOCGEN_FALLBACK_RANGE).toBe(REACT_BUILDER_DOCGEN_PACKAGES['react-docgen']);
   });
 });
 
@@ -180,9 +178,9 @@ describe('prepareReactBuilderDocgen', () => {
           options,
         })
       ).resolves.toBe('react-docgen');
-      const [{ packages, getNote }] = vi.mocked(checkBuilderDocgenPackages).mock.calls[0];
+      const [{ packages, note }] = vi.mocked(checkBuilderDocgenPackages).mock.calls[0];
       expect(packages).toEqual({ 'react-docgen': '^8.0.2' });
-      expect(getNote?.({ typescriptUsable: false })).toContain('TypeScript compiler API');
+      expect(note).toContain('TypeScript compiler API');
     });
   });
 

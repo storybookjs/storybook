@@ -193,7 +193,7 @@ export async function checkBuilderDocgenPackages({
   builderDocgen,
   disableBuilderDocgen,
   documentation,
-  getNote,
+  note,
 }: {
   packages: BuilderDocgenPackages;
   /** Resolve from the package that declares the packages as optional peers. */
@@ -205,7 +205,7 @@ export async function checkBuilderDocgenPackages({
   disableBuilderDocgen: string;
   documentation: string;
   /** A renderer-specific explanation for the error, if any. */
-  getNote?: (context: { typescriptUsable: boolean }) => string | undefined;
+  note?: string;
 }): Promise<string[]> {
   const missing = Object.keys(packages).filter(
     (name) => !isPackageInstalledInRange(resolve, name, packages[name])
@@ -228,7 +228,7 @@ export async function checkBuilderDocgenPackages({
       builderDocgen,
       disableBuilderDocgen,
       documentation,
-      note: getNote?.({ typescriptUsable }),
+      note,
       packages: missing,
       installCommand: getAddDevDependenciesCommand(
         Object.fromEntries(missing.map((name) => [name, packages[name]]))

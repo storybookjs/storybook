@@ -1,11 +1,10 @@
 import {
   type JsPackageManager,
-  REACT_DOCGEN_FALLBACK_PACKAGE,
   RENDERERS_WITH_TYPESCRIPT_DOCGEN,
   TYPESCRIPT_FOR_DOCGEN_PACKAGE,
+  addReactDocgenFallback,
   hasTypeScriptCompilerApi,
   isCI,
-  recordTemporaryDependency,
 } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { TypeScriptWithoutCompilerApiError } from 'storybook/internal/server-errors';
@@ -51,10 +50,12 @@ export class TypeScriptDependencyCommand {
     if (result === 'added') {
       dependencyCollector.addDevDependencies([TYPESCRIPT_FOR_DOCGEN_PACKAGE]);
     }
-    if (this.needsReactDocgenFallback(result, renderer, packageManager)) {
-      // TEMPORARY until Storybook supports TypeScript 7.1: see `typescript-7-react-docgen-fallback.ts`.
-      dependencyCollector.addDevDependencies([REACT_DOCGEN_FALLBACK_PACKAGE]);
-      recordTemporaryDependency(packageManager, 'react-docgen');
+    if (result === 'without-compiler-api') {
+      this.warnWithoutCompilerApi(
+        packageManager,
+        renderer,
+        await this.getTypeScriptVersion(packageManager)
+      );
     }
     if (result !== 'not-needed') {
       await this.telemetryService.trackTypeScriptDependency(result);
@@ -72,19 +73,8 @@ export class TypeScriptDependencyCommand {
     }
 
     if (packageManager.isDependencyInstalled('typescript')) {
-      const version = coerce(
-        await packageManager.getDeclaredVersionSpecifier('typescript')
-      )?.version;
+      const version = await this.getTypeScriptVersion(packageManager);
       if (version && !hasTypeScriptCompilerApi(version)) {
-        // React falls back to builder docgen. Until Storybook supports TypeScript 7.1, init adds its
-        // optional `react-docgen` peer (see `execute`), so the fallback runs.
-        const builderDocgenFallback =
-          renderer === SupportedRenderer.REACT
-            ? { packageName: 'react-docgen', installed: true }
-            : undefined;
-        logger.warn(
-          new TypeScriptWithoutCompilerApiError({ version, builderDocgenFallback }).message
-        );
         return 'without-compiler-api';
       }
       return 'already-installed';
@@ -101,21 +91,26 @@ export class TypeScriptDependencyCommand {
     return 'declined';
   }
 
-  /**
-   * TEMPORARY until Storybook supports TypeScript 7.1, which gives TypeScript 7 projects the docgen
-   * server: a React project on TypeScript 7.0 gets `react-docgen`, so it has docgen at all. See
-   * `typescript-7-react-docgen-fallback.ts` in core.
-   */
-  private needsReactDocgenFallback(
-    result: TypeScriptDependencyResult,
+  private async getTypeScriptVersion(packageManager: JsPackageManager) {
+    return coerce(await packageManager.getDeclaredVersionSpecifier('typescript'))?.version;
+  }
+
+  /** Warn that the TypeScript version has no compiler API, and say what docgen does meanwhile. */
+  private warnWithoutCompilerApi(
+    packageManager: JsPackageManager,
     renderer: SupportedRenderer,
-    packageManager: JsPackageManager
+    version = ''
   ) {
-    return (
-      result === 'without-compiler-api' &&
-      renderer === SupportedRenderer.REACT &&
-      !packageManager.isDependencyInstalled('react-docgen')
-    );
+    let builderDocgenFallback;
+    if (renderer === SupportedRenderer.REACT) {
+      // TEMPORARY(ts-7.1): React falls back to builder docgen, so add its optional `react-docgen`
+      // peer. See `typescript-7-react-docgen-fallback.ts` in core.
+      const installed =
+        packageManager.isDependencyInstalled('react-docgen') ||
+        addReactDocgenFallback(packageManager);
+      builderDocgenFallback = { packageName: 'react-docgen', installed };
+    }
+    logger.warn(new TypeScriptWithoutCompilerApiError({ version, builderDocgenFallback }).message);
   }
 
   private async shouldAddTypeScript(): Promise<boolean> {

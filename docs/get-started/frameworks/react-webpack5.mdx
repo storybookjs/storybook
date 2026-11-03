@@ -65,7 +65,7 @@ Storybook 11 reads React component props on the server by default, with the [`ty
 
 <Callout variant="info">
 
-The Storybook 10 builder-based docgen is still available, but deprecated and removed in Storybook 12. It runs only when you set [`features.docgenServer: false`](../../api/main-config/main-config-features.mdx#docgenserver), and `@storybook/react-webpack5` does not install its packages. Add the ones for your [`typescript.reactDocgen`](../../api/main-config/main-config-typescript.mdx#reactdocgen) mode to your devDependencies:
+The Storybook 10 builder-based docgen is still available, but deprecated and removed in Storybook 12. It runs when you set [`features.docgenServer: false`](../../api/main-config/main-config-features.mdx#docgenserver), and `@storybook/react-webpack5` does not install its packages. Add the ones for your [`typescript.reactDocgen`](../../api/main-config/main-config-typescript.mdx#reactdocgen) mode to your devDependencies:
 
 | `typescript.reactDocgen`    | Packages to install                                                                                                                                 |
 | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -74,7 +74,8 @@ The Storybook 10 builder-based docgen is still available, but deprecated and rem
 
 When one is missing, Storybook stops and prints the install command. To run without docgen instead, set `typescript.reactDocgen: false`.
 
-If your project uses TypeScript 7.0, which has no compiler API, Storybook cannot use server-side docgen yet and falls back to the builder docgen with `react-docgen`. Until Storybook supports TypeScript 7.1, `storybook init` and `storybook upgrade` add `react-docgen` for you. To use server-side docgen today, install [TypeScript 6 side by side](../../configure/integration/typescript.mdx#typescript-7).
+{/* TEMPORARY(ts-7.1): update once Storybook supports TypeScript 7.1. */}
+Projects on TypeScript 7.0 cannot use server-side docgen yet. See [TypeScript 7](../../configure/integration/typescript.mdx#typescript-7).
 
 </Callout>
 

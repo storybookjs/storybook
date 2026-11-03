@@ -11,9 +11,11 @@ import { TypeScriptDependencyCommand } from './TypeScriptDependencyCommand.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 
-const packageManagerWith = (typescriptVersion?: string) =>
+const packageManagerWith = (typescriptVersion?: string, reactDocgenInstalled = false) =>
   ({
-    isDependencyInstalled: (name: string) => name === 'typescript' && !!typescriptVersion,
+    isDependencyInstalled: (name: string) =>
+      (name === 'typescript' && !!typescriptVersion) ||
+      (name === 'react-docgen' && reactDocgenInstalled),
     getDeclaredVersionSpecifier: async () => typescriptVersion ?? null,
     primaryPackageJson: { packageJson: {}, operationDir: '/project' },
     writePackageJson: vi.fn(),
@@ -24,12 +26,14 @@ const run = async ({
   framework = SupportedFramework.REACT_VITE,
   renderer = SupportedRenderer.REACT,
   typescriptVersion,
+  reactDocgenInstalled = false,
   interactive = true,
 }: {
   options?: Partial<CommandOptions>;
   framework?: SupportedFramework | null;
   renderer?: SupportedRenderer;
   typescriptVersion?: string;
+  reactDocgenInstalled?: boolean;
   interactive?: boolean;
 } = {}) => {
   const telemetryService = {
@@ -37,7 +41,7 @@ const run = async ({
     trackPromptCancel: vi.fn(),
   } as unknown as TelemetryService;
   const dependencyCollector = new DependencyCollector();
-  const packageManager = packageManagerWith(typescriptVersion);
+  const packageManager = packageManagerWith(typescriptVersion, reactDocgenInstalled);
   const result = await new TypeScriptDependencyCommand(
     { packageManager: PackageManagerName.NPM, ...options },
     telemetryService,
@@ -131,13 +135,13 @@ describe('TypeScriptDependencyCommand', () => {
     );
   });
 
-  // TEMPORARY until Storybook supports TypeScript 7.1: see `typescript-7-react-docgen-fallback.ts`.
+  // TEMPORARY(ts-7.1): see `typescript-7-react-docgen-fallback.ts` in core.
   it('adds react-docgen to a React project on TypeScript 7 and records it as temporary', async () => {
-    const { devDependencies, packageManager } = await run({ typescriptVersion: '7.0.2' });
+    const { packageManager } = await run({ typescriptVersion: '7.0.2' });
 
-    expect(devDependencies).toEqual(['react-docgen@^8.0.2']);
     expect(packageManager.primaryPackageJson.packageJson).toEqual({
-      storybook: { temporaryDependencies: ['react-docgen'] },
+      devDependencies: { 'react-docgen': '^8.0.2' },
+      storybook: { temporaryDependencies: { 'react-docgen': 'typescript-7.0-docgen-fallback' } },
     });
     expect(packageManager.writePackageJson).toHaveBeenCalledOnce();
     expect(logger.warn).toHaveBeenCalledOnce();
@@ -146,14 +150,27 @@ describe('TypeScriptDependencyCommand', () => {
     );
   });
 
+  // TEMPORARY(ts-7.1): see `typescript-7-react-docgen-fallback.ts` in core.
+  it('leaves a react-docgen the project already declares alone', async () => {
+    const { packageManager } = await run({
+      typescriptVersion: '7.0.2',
+      reactDocgenInstalled: true,
+    });
+
+    expect(packageManager.writePackageJson).not.toHaveBeenCalled();
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('falls back to the deprecated builder docgen with `react-docgen`')
+    );
+  });
+
   it('does not mention builder docgen to a Vue project on TypeScript 7', async () => {
-    const { devDependencies } = await run({
+    const { packageManager } = await run({
       typescriptVersion: '7.0.2',
       framework: SupportedFramework.VUE3_VITE,
       renderer: SupportedRenderer.VUE3,
     });
 
-    expect(devDependencies).toEqual([]);
+    expect(packageManager.writePackageJson).not.toHaveBeenCalled();
     expect(logger.warn).toHaveBeenCalledOnce();
     expect(logger.warn).toHaveBeenCalledWith(expect.not.stringContaining('builder docgen'));
   });

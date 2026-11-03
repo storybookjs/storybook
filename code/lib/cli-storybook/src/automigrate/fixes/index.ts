@@ -56,7 +56,7 @@ export const allFixes: Fix[] = [
   docgenServer,
   typescriptDependency,
   typescriptCompilerApi,
-  // TEMPORARY until Storybook supports TypeScript 7.1: see `typescript-7-react-docgen.ts`.
+  // TEMPORARY(ts-7.1): see `typescript-7-react-docgen.ts`.
   typescript7ReactDocgen,
 ];
 

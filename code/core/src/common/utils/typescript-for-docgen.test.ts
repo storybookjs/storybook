@@ -229,7 +229,7 @@ describe('checkBuilderDocgenPackages', () => {
       disableBuilderDocgen: 'typescript.reactDocgen: false',
       documentation:
         'https://storybook.js.org/docs/api/main-config/main-config-typescript#reactdocgen',
-      getNote: note ? () => note : undefined,
+      note,
     });
 
   beforeEach(() => {

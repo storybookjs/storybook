@@ -7,7 +7,7 @@ import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
 import type { CheckOptions, RunOptions } from '../types.ts';
 import { typescript7ReactDocgen } from './typescript-7-react-docgen.ts';
 
-// TEMPORARY until Storybook supports TypeScript 7.1: delete together with the fix.
+// TEMPORARY(ts-7.1): delete together with the fix.
 
 const packageManagerWith = (dependencies: Record<string, string>) =>
   ({
@@ -79,6 +79,16 @@ describe('typescript-7-react-docgen', () => {
     ).resolves.toBeNull();
   });
 
+  it('applies within Storybook 11 when requested by id', async () => {
+    await expect(
+      check(
+        { framework: '@storybook/react-vite' },
+        { typescript: '~7.0.2' },
+        { storybookVersion: '11.0.1', requested: true }
+      )
+    ).resolves.toBe(true);
+  });
+
   it('adds react-docgen and records it as temporary', async () => {
     const packageManager = packageManagerWith({ typescript: '~7.0.2' });
 
@@ -91,12 +101,10 @@ describe('typescript-7-react-docgen', () => {
       storybookVersion: '11.0.0',
     } as unknown as Omit<RunOptions<true>, 'files'>);
 
-    expect(packageManager.addDependencies).toHaveBeenCalledWith(
-      { type: 'devDependencies', skipInstall: true },
-      ['react-docgen@^8.0.2']
-    );
     expect(packageManager.primaryPackageJson.packageJson).toEqual({
-      storybook: { temporaryDependencies: ['react-docgen'] },
+      devDependencies: { 'react-docgen': '^8.0.2' },
+      storybook: { temporaryDependencies: { 'react-docgen': 'typescript-7.0-docgen-fallback' } },
     });
+    expect(packageManager.writePackageJson).toHaveBeenCalledOnce();
   });
 });

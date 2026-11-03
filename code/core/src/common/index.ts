@@ -53,6 +53,7 @@ export * from './utils/select-component-entry.ts';
 export * from './utils/lazy-docgen-middleware.ts';
 export * from './utils/typescript-for-docgen.ts';
 export * from './utils/builder-docgen-packages.ts';
+// TEMPORARY(ts-7.1): see `typescript-7-react-docgen-fallback.ts`.
 export * from './utils/typescript-7-react-docgen-fallback.ts';
 export * from './utils/posix.ts';
 export * from './utils/sync-main-preview-addons.ts';

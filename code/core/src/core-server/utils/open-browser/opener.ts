@@ -10,7 +10,6 @@ import { accessSync, constants } from 'node:fs';
 import { logger } from 'storybook/internal/node-logger';
 
 import spawn from 'cross-spawn';
-import defaultBrowserId from 'default-browser-id';
 import isInsideContainer from 'is-inside-container';
 import open, { type Options } from 'open';
 import { delimiter, join } from 'pathe';
@@ -19,6 +18,9 @@ import { isWsl } from 'wsl-utils';
 
 import { resolvePackageDir } from '../../../common/index.ts';
 import { StorybookError } from '../../../storybook-error.ts';
+
+// https://github.com/sindresorhus/open#app
+const OSX_CHROME = 'google chrome';
 
 enum Actions {
   NONE = 0,
@@ -170,73 +172,57 @@ function executeShellScript(scriptPath: string, url: string) {
   return true;
 }
 
-// macOS bundle IDs of the Chromium browsers that `openBrowser.applescript` can drive, mapped to
-// their application names. Bundle names differ from those, for example "Chrome". The IDs are
-// lowercase because LaunchServices may store them that way.
-const CHROMIUM_BROWSERS_BY_BUNDLE_ID: Record<string, string> = {
-  'com.google.chrome.canary': 'Google Chrome Canary',
-  'com.google.chrome.dev': 'Google Chrome Dev',
-  'com.google.chrome.beta': 'Google Chrome Beta',
-  'com.google.chrome': 'Google Chrome',
-  'com.microsoft.edgemac': 'Microsoft Edge',
-  'com.brave.browser': 'Brave Browser',
-  'com.vivaldi.vivaldi': 'Vivaldi',
-  'org.chromium.chromium': 'Chromium',
-};
-
-// The tab-reusing AppleScript only runs for the browser that would open anyway: the Chromium
-// browser named in BROWSER (any case), or else the default browser when it is Chromium-based.
-// Probing every running Chromium browser ignored the default browser (#15316, #22929) and could
-// start a Parallels VM through its "Microsoft Edge" app (#34631). `default-browser-id` only reads
-// a LaunchServices plist; `default-browser` would also script Finder, which can prompt for access.
-async function getAppleScriptBrowser(browser: string | undefined) {
-  if (typeof browser === 'string') {
-    return Object.values(CHROMIUM_BROWSERS_BY_BUNDLE_ID).find(
-      (name) => name.toLowerCase() === browser.toLowerCase()
-    );
-  }
-  try {
-    return CHROMIUM_BROWSERS_BY_BUNDLE_ID[(await defaultBrowserId()).toLowerCase()];
-  } catch {
-    return undefined;
-  }
-}
-
-async function startBrowserProcess(browser: string | undefined, url: string, args: string[]) {
-  // If we're on OS X, try opening a Chromium browser with AppleScript. This lets us reuse an
+function startBrowserProcess(browser: string | undefined, url: string, args: string[]) {
+  // If we're on OS X, the user hasn't specifically
+  // requested a different browser, we can try opening
+  // Chrome with AppleScript. This lets us reuse an
   // existing tab when possible instead of creating a new one.
-  const chromiumBrowser =
-    process.platform === 'darwin' ? await getAppleScriptBrowser(browser) : undefined;
+  const shouldTryOpenChromiumWithAppleScript =
+    process.platform === 'darwin' && (typeof browser !== 'string' || browser === OSX_CHROME);
 
-  if (chromiumBrowser) {
-    try {
-      // Try our best to reuse existing tab
-      // on OSX Chromium-based browser with AppleScript
-      execSync(`ps cax | grep "${chromiumBrowser}"`);
-      const pathToApplescript = join(
-        resolvePackageDir('storybook'),
-        'assets',
-        'server',
-        'openBrowser.applescript'
-      );
+  if (shouldTryOpenChromiumWithAppleScript) {
+    // Will use the first open browser found from list
+    const supportedChromiumBrowsers = [
+      'Google Chrome Canary',
+      'Google Chrome Dev',
+      'Google Chrome Beta',
+      'Google Chrome',
+      'Microsoft Edge',
+      'Brave Browser',
+      'Vivaldi',
+      'Chromium',
+    ];
 
-      const command = `osascript "${pathToApplescript}" \"`
-        .concat(encodeURI(url), '" "')
-        .concat(
-          process.env.OPEN_MATCH_HOST_ONLY === 'true'
-            ? encodeURI(new URL(url).origin)
-            : encodeURI(url),
-          '" "'
-        )
-        .concat(chromiumBrowser, '"');
+    for (const chromiumBrowser of supportedChromiumBrowsers) {
+      try {
+        // Try our best to reuse existing tab
+        // on OSX Chromium-based browser with AppleScript
+        execSync(`ps cax | grep "${chromiumBrowser}"`);
+        const pathToApplescript = join(
+          resolvePackageDir('storybook'),
+          'assets',
+          'server',
+          'openBrowser.applescript'
+        );
 
-      execSync(command, {
-        cwd: __dirname,
-      });
+        const command = `osascript "${pathToApplescript}" \"`
+          .concat(encodeURI(url), '" "')
+          .concat(
+            process.env.OPEN_MATCH_HOST_ONLY === 'true'
+              ? encodeURI(new URL(url).origin)
+              : encodeURI(url),
+            '" "'
+          )
+          .concat(chromiumBrowser, '"');
 
-      return true;
-    } catch {
-      // Ignore errors.
+        execSync(command, {
+          cwd: __dirname,
+        });
+
+        return true;
+      } catch {
+        // Ignore errors.
+      }
     }
   }
 
@@ -270,7 +256,7 @@ async function startBrowserProcess(browser: string | undefined, url: string, arg
  * Reads the BROWSER environment variable and decides what to do with it. Returns true if it opened
  * a browser or ran a node.js script, otherwise false.
  */
-export async function openBrowser(url: string) {
+export function openBrowser(url: string) {
   const { action, value, args } = getBrowserEnv();
   // Returns win32 on PowerShell and Linux on WSL. Matches conditions when `sh` can be invoked.
   const canRunShell = process.platform !== 'win32';
@@ -292,7 +278,7 @@ export async function openBrowser(url: string) {
       );
     }
     case Actions.BROWSER: {
-      return await startBrowserProcess(value, url, args);
+      return startBrowserProcess(value, url, args);
     }
     default: {
       throw new BrowserEnvError('Not implemented.');

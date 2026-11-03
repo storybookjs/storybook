@@ -8,7 +8,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logger } from 'storybook/internal/node-logger';
 
 import spawn from 'cross-spawn';
-import defaultBrowserId from 'default-browser-id';
 import isInsideContainer from 'is-inside-container';
 import open from 'open';
 
@@ -19,7 +18,6 @@ const wsl = vi.hoisted(() => ({ isWsl: false }));
 
 vi.mock('open', { spy: true });
 vi.mock('cross-spawn', { spy: true });
-vi.mock('default-browser-id', { spy: true });
 vi.mock('is-inside-container', { spy: true });
 vi.mock('wsl-utils', () => ({
   get isWsl() {
@@ -49,7 +47,6 @@ describe('openBrowser BROWSER script handling', () => {
     vi.mocked(spawn).mockImplementation(() => child);
     vi.mocked(accessSync).mockImplementation(() => {});
     vi.mocked(isInsideContainer).mockReturnValue(false);
-    vi.mocked(defaultBrowserId).mockResolvedValue('com.apple.Safari');
     vi.mocked(execSync).mockImplementation(() => Buffer.from(''));
     vi.mocked(logger.warn).mockImplementation(() => {});
     wsl.isWsl = false;
@@ -104,7 +101,7 @@ describe('openBrowser BROWSER script handling', () => {
     process.env.BROWSER = '/tmp/customBrowser.sh';
     platformSpy.mockReturnValue('win32');
 
-    await expect(openBrowser('http://localhost:6006/')).rejects.toThrow(BrowserEnvError);
+    expect(() => openBrowser('http://localhost:6006/')).toThrow(BrowserEnvError);
   });
 
   it('executes a shell script on Linux when BROWSER is a shell script', async () => {
@@ -221,8 +218,13 @@ describe('openBrowser BROWSER script handling', () => {
       vi.mocked(resolvePackageDir).mockReturnValue('/node_modules/storybook');
     });
 
-    it('reuses a tab in the default browser when it is Chromium-based', async () => {
-      vi.mocked(defaultBrowserId).mockResolvedValue('com.brave.Browser');
+    it('reuses a tab in the first running Chromium browser, whatever the default browser is', async () => {
+      vi.mocked(execSync).mockImplementation((command) => {
+        if (String(command).startsWith('ps cax') && !String(command).includes('"Brave Browser"')) {
+          throw new Error('not running');
+        }
+        return Buffer.from('');
+      });
 
       expect(await openBrowser('http://localhost:6006/')).toBe(true);
 
@@ -231,61 +233,13 @@ describe('openBrowser BROWSER script handling', () => {
       expect(vi.mocked(open)).not.toHaveBeenCalled();
     });
 
-    it('opens a non-Chromium default browser, even when Chrome is running (#15316)', async () => {
-      await openBrowser('http://localhost:6006/');
-
-      expect(appleScriptCalls()).toHaveLength(0);
-      expect(vi.mocked(open)).toHaveBeenCalledWith('http://localhost:6006/', {
-        app: undefined,
-        wait: false,
-        url: true,
-      });
-    });
-
-    it('does not probe other running Chromium browsers, such as a Parallels Edge (#34631)', async () => {
-      vi.mocked(defaultBrowserId).mockResolvedValue('com.google.Chrome');
-
-      await openBrowser('http://localhost:6006/');
-
-      expect(appleScriptCalls()).toHaveLength(1);
-      expect(String(appleScriptCalls()[0][0])).toContain('"Google Chrome"');
-      expect(String(appleScriptCalls()[0][0])).not.toContain('Microsoft Edge');
-    });
-
-    it('falls back to open when the default browser cannot be detected', async () => {
-      vi.mocked(defaultBrowserId).mockRejectedValue(new Error('no plist'));
-
-      await openBrowser('http://localhost:6006/');
-
-      expect(appleScriptCalls()).toHaveLength(0);
-      expect(vi.mocked(open)).toHaveBeenCalled();
-    });
-
-    it.each([
-      ['google chrome', 'Google Chrome'],
-      ['Google Chrome', 'Google Chrome'],
-      ['brave browser', 'Brave Browser'],
-    ])('reuses a tab in the Chromium browser named by BROWSER=%j', async (browser, appName) => {
-      process.env.BROWSER = browser;
-
-      await openBrowser('http://localhost:6006/');
-
-      expect(String(appleScriptCalls()[0][0])).toContain(`"${appName}"`);
-      expect(vi.mocked(defaultBrowserId)).not.toHaveBeenCalled();
-    });
-
-    it('opens the default Chromium browser normally when it is not running', async () => {
-      vi.mocked(defaultBrowserId).mockResolvedValue('com.google.Chrome');
-      vi.mocked(execSync).mockImplementation((command) => {
-        if (String(command).startsWith('ps cax')) {
-          throw new Error('grep found nothing');
-        }
-        return Buffer.from('');
+    it('opens the default browser with open when no Chromium browser is running', async () => {
+      vi.mocked(execSync).mockImplementation(() => {
+        throw new Error('not running');
       });
 
       await openBrowser('http://localhost:6006/');
 
-      expect(appleScriptCalls()).toHaveLength(0);
       expect(vi.mocked(open)).toHaveBeenCalledWith('http://localhost:6006/', {
         app: undefined,
         wait: false,

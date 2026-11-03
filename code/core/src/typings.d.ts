@@ -41,10 +41,6 @@ declare var __STORYBOOK_VITEST_MOCKER__: any;
 
 declare module '@aw-web-design/x-default-browser';
 declare module 'ansi-to-html';
-declare module 'default-browser-id' {
-  /** Resolves to the macOS bundle ID of the default browser, such as `com.google.Chrome`. */
-  export default function defaultBrowserId(): Promise<string>;
-}
 declare module 'lazy-universal-dotenv';
 declare module 'react-inspector';
 // CLI-only entry with no "types" condition in package.json exports.

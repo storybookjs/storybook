@@ -459,7 +459,11 @@ The docs manifest is generated for every framework. The components manifest is g
 
 <If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
 
-The components manifest needs [`docgenServer`](../../api/main-config/main-config-features.mdx#docgenserver), which Storybook turns on by default for these frameworks when your project has TypeScript installed. If you turn off `docgenServer`, Storybook doesn't generate a components manifest. Vue setups other than `@storybook/vue3-vite`, including `@nuxtjs/storybook`, generate no components manifest.
+For Angular, Vue, Svelte, and Web Components, the components manifest needs [`docgenServer`](../../api/main-config/main-config-features.mdx#docgenserver), which Storybook turns on by default for these frameworks when your project has TypeScript installed. If you turn off `docgenServer`, these frameworks don't generate a components manifest.
+
+React generates one either way. See [Components manifest](#components-manifest).
+
+Vue setups other than `@storybook/vue3-vite`, including `@nuxtjs/storybook`, generate no components manifest.
 
 To turn the components manifest on or off, set [`componentsManifest`](../../api/main-config/main-config-features.mdx#componentsmanifest) in your `.storybook/main.js|ts`:
 

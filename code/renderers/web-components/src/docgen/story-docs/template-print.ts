@@ -6,12 +6,12 @@ import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts'
 import { fieldDefault, pairedAttribute } from './classify-args.ts';
 import type { HtmlAttribute, HtmlNode } from './html-tree.ts';
 import { parseHtml, printHtml } from './html-tree.ts';
-import { printAttribute, printRootListenerScript } from './print-element.ts';
+import { boundText, childText, escapeText, printAttribute } from '../../snippet-values.ts';
+import { printRootListenerScript } from './print-element.ts';
 import type { HoleContext, HoleValue } from './template-holes.ts';
 import {
   attributeValue,
   collectReferencedArgs,
-  escapeText,
   isIfDefinedCall,
   isTruthyAttributeValue,
   listenerHandler,
@@ -251,9 +251,7 @@ const resolveAttribute = (
     if (resolved.value === false && fieldDefault(property, state.context.declaration) === 'true') {
       state.falseDefaults.add(property);
     }
-    const printed = attributeFromPrinted(
-      printAttribute({ name: paired, value: resolved.value, viaField: true })
-    );
+    const printed = attributeFromPrinted(printAttribute(paired, resolved.value, true));
     // `.prop=${args.x}` prints the attribute the field reflects: `⟦attr name arg field⟧`.
     const arg = singleArg(attribute.value, value, state);
     return arg === undefined
@@ -320,8 +318,7 @@ const resolveAttribute = (
     ) {
       return undefined;
     }
-    const valueText =
-      resolved.value === null || resolved.value === undefined ? '' : String(resolved.value);
+    const valueText = boundText(resolved.value);
     text = text.replace(marker, valueText);
     holeText = holeText.replace(
       marker,
@@ -353,7 +350,7 @@ const resolveTextNode = (text: string, state: TemplatePrintState): HtmlNode[] =>
     if (expression && arg !== undefined) {
       // Next prints the text of a lit template, and the html of a string template.
       nodes.push({
-        hole: state.lit ? hole('text', holeWord(arg)) : hole('slot', 'default', holeWord(arg)),
+        hole: state.lit ? hole('text', holeWord(arg)) : hole('html', holeWord(arg)),
         kind: 'hole',
         nodes: nodesForChildValue(resolveMarkerValue(expression, state), state),
       });
@@ -397,17 +394,13 @@ const nodesForChildValue = (value: HoleValue, state: TemplatePrintState): HtmlNo
     case 'unresolved':
       state.unresolved.add(value.source);
       return [];
-    case 'value':
-      if (value.value === null || value.value === undefined || value.value === '') {
+    case 'value': {
+      const text = childText(value.value);
+      if (text === '') {
         return [];
       }
-      if (Array.isArray(value.value)) {
-        const text = value.value.map((item) => item ?? '').join('');
-        return state.lit ? [{ kind: 'text', text: escapeText(text) }] : parseHtml(text);
-      }
-      return state.lit
-        ? [{ kind: 'text', text: escapeText(String(value.value)) }]
-        : parseHtml(String(value.value));
+      return state.lit ? [{ kind: 'text', text: escapeText(text) }] : parseHtml(text);
+    }
     default: {
       const exhaustive: never = value;
       return exhaustive;

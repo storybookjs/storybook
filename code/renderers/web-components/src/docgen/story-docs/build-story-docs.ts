@@ -519,6 +519,6 @@ const joinWarnings = (parts: (string | undefined)[]): { warning?: string } => {
   return warning === '' ? {} : { warning };
 };
 
-// An attribute that prints nothing leaves no gap, and no hole leaves an empty line.
-const takesSpace = (kind: string, space: string) =>
+/** An attribute that prints nothing leaves no gap, and no hole leaves an empty line. */
+export const takesSpace = (kind: string, space: string) =>
   kind === 'attr' || kind === 'bool' || space.includes('\n');

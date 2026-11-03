@@ -11,8 +11,11 @@ import type {
   ManifestClassField,
   ManifestDeclaration,
 } from '../component-docgen/manifest/types.ts';
+import { withHoleSpace } from 'storybook/internal/docs-tools';
+
 import { fillTemplate } from '../../docs/fill-template.ts';
 import { evaluateArgValue } from './arg-values.ts';
+import { takesSpace } from './build-story-docs.ts';
 import { printHtmlTemplate } from './template-print.ts';
 import { resolveHtmlTemplate } from './template-scope.ts';
 
@@ -62,7 +65,7 @@ const renderTemplate = (storySource: string) => {
   const args = resolver.resolve(story).args;
   const { template: holes, ...printed } = printHtmlTemplate(template!, args, declaration);
   // The template filled with the story's own args is its snippet.
-  expect(fillTemplate(holes, ownArgs(args))).toBe(printed.snippet);
+  expect(fillTemplate(withHoleSpace(holes, takesSpace), ownArgs(args))).toBe(printed.snippet);
   return printed;
 };
 
@@ -260,6 +263,23 @@ describe('html template story snippets', () => {
         properties: [],
         referenced: ['count', 'disabled'],
         snippet: '<template-element count="2" disabled></template-element>',
+        unresolved: [],
+      },
+    },
+    {
+      name: 'string template html',
+      source: `
+        export default { component: 'template-element' };
+        export const Primary = {
+          args: { label: ['<b>', 'Go', '</b>'] },
+          render: (args) => \`<template-element>\${args.label}</template-element>\`,
+        };
+      `,
+      expected: {
+        listeners: [],
+        properties: [],
+        referenced: ['label'],
+        snippet: '<template-element>\n  <b>Go</b>\n</template-element>',
         unresolved: [],
       },
     },

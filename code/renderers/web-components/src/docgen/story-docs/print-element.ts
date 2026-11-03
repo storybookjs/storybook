@@ -1,5 +1,13 @@
 import { hole, holeWord } from 'storybook/internal/docs-tools';
 
+import {
+  attributeText,
+  cssDeclarations,
+  slotPlacement,
+  slotText,
+  slottedHtml,
+  styleText,
+} from '../../snippet-values.ts';
 import type { HtmlAttribute, HtmlNode } from './html-tree.ts';
 import { parseHtml, printHtml } from './html-tree.ts';
 
@@ -22,11 +30,6 @@ export interface ElementSnippet {
   listeners: { event: string; handler: string; tag: string }[];
   slots: { name: string; html: unknown; arg?: string }[];
   styleRules: { selector: string; declarations: string | undefined; arg?: string }[];
-}
-
-export function escapeAttribute(value: string, quote: '"' | "'" = '"'): string {
-  const escaped = value.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-  return quote === "'" ? escaped.replace(/'/g, '&#39;') : escaped.replace(/"/g, '&quot;');
 }
 
 /**
@@ -126,9 +129,7 @@ const styleNodes = (rules: { selector: string; declarations: string }[]): HtmlNo
           closed: true,
           kind: 'rawText',
           name: 'style',
-          text: `\n${rules
-            .map(({ selector, declarations }) => `  ${selector} { ${declarations} }`)
-            .join('\n')}\n`,
+          text: styleText(rules),
         },
       ];
 
@@ -153,7 +154,7 @@ const elementAttributes = (snippet: ElementSnippet): HtmlAttribute[] => {
       },
     ];
   });
-  const style = printCssProperties(snippet.cssProperties);
+  const style = cssDeclarations(snippet.cssProperties);
   const styleArgs = snippet.cssProperties.filter((property) => property.arg !== undefined);
   const styleHole =
     styleArgs.length > 0
@@ -180,59 +181,22 @@ const elementAttributes = (snippet: ElementSnippet): HtmlAttribute[] => {
   ];
 };
 
-export function printAttribute({
-  name,
-  value,
-  viaField,
-}: ElementSnippet['attributes'][number]): string | undefined {
-  if (value === true) {
-    return name;
-  }
-  if (value === '') {
-    return viaField ? `${name}=""` : undefined;
-  }
-  if (value === false || value === null || value === undefined) {
-    return undefined;
-  }
-  const text = typeof value === 'object' ? JSON.stringify(value) : String(value);
-  return `${name}="${escapeAttribute(text)}"`;
-}
-
-const printCssProperties = (properties: ElementSnippet['cssProperties']): string | undefined => {
-  const declarations = properties
-    .filter(({ value }) => value !== null && value !== undefined && value !== '')
-    .map(({ name, value }) => `${name}: ${String(value)};`);
-  return declarations.length === 0 ? undefined : declarations.join(' ');
-};
-
 const attributeNode = ({
   name,
   value,
   viaField,
 }: ElementSnippet['attributes'][number]): HtmlAttribute | undefined => {
-  if (value === true) {
-    return { name, value: undefined };
-  }
-  if (value === '') {
-    return viaField ? { name, value: '' } : undefined;
-  }
-  if (value === false || value === null || value === undefined) {
-    return undefined;
-  }
-  const text = typeof value === 'object' ? JSON.stringify(value) : String(value);
-  return { name, value: text };
+  const text = attributeText(value, viaField);
+  return text === undefined ? undefined : { name, value: text === true ? undefined : text };
 };
-
-const hasSlotContent = ({ html }: ElementSnippet['slots'][number]): boolean =>
-  html !== null && html !== undefined && html !== '';
 
 // The html of each slot an arg sets is a hole in the template, `⟦slot name arg⟧`.
 const slotNodes = (slots: ElementSnippet['slots']): HtmlNode[] => {
   let content = 0;
   return slots.flatMap((slot): HtmlNode[] => {
-    const shown = hasSlotContent(slot);
-    const separator = shown && content++ > 0 ? [slotSeparatorNode()] : [];
-    const nodes = shown ? nodesForSlot(slot.name, String(slot.html)) : [];
+    const html = slotText(slot.html);
+    const separator = html !== '' && content++ > 0 ? [slotSeparatorNode()] : [];
+    const nodes = html !== '' ? nodesForSlot(slot.name, html) : [];
     return slot.arg === undefined
       ? [...separator, ...nodes]
       : [
@@ -244,35 +208,21 @@ const slotNodes = (slots: ElementSnippet['slots']): HtmlNode[] => {
 
 const slotSeparatorNode = (): HtmlNode => ({ kind: 'text', text: '\n' });
 
-const nodesForSlot = (name: string, content: string): HtmlNode[] => {
-  const nodes = parseHtml(content);
-  if (name === 'default') {
-    return nodes;
-  }
-  const [only] = nodes;
-  if (
-    nodes.length === 1 &&
-    only?.kind === 'element' &&
-    !only.selfClosing &&
-    !hasSlotAttribute(only)
-  ) {
-    only.attributes.push({ name: 'slot', value: name });
-    return nodes;
-  }
-  return [
-    {
-      attributes: [{ name: 'slot', value: name }],
-      children: nodes,
-      closed: true,
-      kind: 'element',
-      name: 'span',
-      selfClosing: false,
-    },
-  ];
-};
-
-const hasSlotAttribute = (node: Extract<HtmlNode, { kind: 'element' }>): boolean =>
-  node.attributes.some((attribute) => attribute.name === 'slot');
+// A `<span>` takes the `slot` attribute as a node around the html's own nodes, which html that
+// does not close each element it opens keeps.
+const nodesForSlot = (name: string, content: string): HtmlNode[] =>
+  slotPlacement(name, content) === 'span'
+    ? [
+        {
+          attributes: [{ name: 'slot', value: name }],
+          children: parseHtml(content),
+          closed: true,
+          kind: 'element',
+          name: 'span',
+          selfClosing: false,
+        },
+      ]
+    : parseHtml(slottedHtml(name, content));
 
 const escapeScriptString = (value: string): string =>
   value.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/</g, '\\x3C');

@@ -1,4 +1,4 @@
-import { escapeAttribute } from './print-element.ts';
+import { escapeAttribute, inlineText, quotedAttribute } from '../../snippet-values.ts';
 
 export interface HtmlAttribute {
   name: string;
@@ -541,9 +541,10 @@ const printHtmlAttribute = (
     return hole;
   }
   if (holes && holeValue !== undefined) {
+    // The holes in the value print what `⟦quoted⟧` prints, escaped as the text around them.
     return `${name}="${escapeAttribute(holeValue)}"`;
   }
-  return value === undefined ? name : `${name}="${escapeAttribute(value)}"`;
+  return value === undefined ? name : quotedAttribute(name, value);
 };
 
 const decodeAttribute = (value: string): string =>
@@ -564,17 +565,6 @@ const textHole = (hole: string, trimStart: boolean, trimEnd: boolean): string =>
     ? `${hole.slice(0, -1)}${trimStart ? ' ^' : ''}${trimEnd ? ' $' : ''}⟧`
     : hole;
 
-const inlineText = (text: string, first: boolean, last: boolean): string => {
-  let collapsed = text.replace(/\s+/g, ' ');
-  if (first) {
-    collapsed = collapsed.trimStart();
-  }
-  if (last) {
-    collapsed = collapsed.trimEnd();
-  }
-  return collapsed;
-};
-
 const hasSelfClosingSlash = (rest: string): boolean => {
   let index = rest.length - 1;
   while (index >= 0 && /\s/.test(rest[index])) {
@@ -586,7 +576,7 @@ const hasSelfClosingSlash = (rest: string): boolean => {
   return index === 0 || /\s/.test(rest[index - 1]);
 };
 
-const findTagEnd = (source: string, start: number): number | undefined => {
+export const findTagEnd = (source: string, start: number): number | undefined => {
   let quote: '"' | "'" | undefined;
   let canOpenQuote = false;
   for (let index = start + 1; index < source.length; index += 1) {

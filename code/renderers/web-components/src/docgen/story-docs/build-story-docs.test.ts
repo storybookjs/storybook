@@ -762,7 +762,7 @@ describe('the template', () => {
     expect(snippet).toBe('<test-element label="Meta" count="2" disabled>Hi</test-element>');
     expect(template).toBe(
       '⟦style test-element::part(panel)=panel-part test-element:state(active)=active-state⟧' +
-        '<test-element ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr is-open isOpen field⟧ ⟦attr active active field⟧ ⟦attr variant variant⟧ ⟦attr heading heading field⟧ ⟦attr style - css --accent=--accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</test-element>'
+        '<test-element⟦attr label label field ~%20⟧⟦attr count count field ~%20⟧⟦attr disabled disabled field ~%20⟧⟦attr is-open isOpen field ~%20⟧⟦attr active active field ~%20⟧⟦attr variant variant ~%20⟧⟦attr heading heading field ~%20⟧⟦attr style - css --accent=--accent ~%20⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</test-element>'
     );
     expect(
       fillTemplate(template!, { label: 'Meta', count: 2, disabled: true, 'default-slot': 'Hi' })
@@ -783,7 +783,7 @@ describe('the template', () => {
     `);
     expect(snippet).toBe('<test-element label="Go">Go</test-element>');
     expect(template).toBe(
-      '<test-element ⟦attr label label bind⟧ ⟦bool disabled disabled⟧>⟦text label ^ $⟧</test-element>'
+      '<test-element⟦attr label label bind ~%20⟧⟦bool disabled disabled ~%20⟧>⟦text label ^ $⟧</test-element>'
     );
     expect(fillTemplate(template!, { label: 'Go', disabled: false })).toBe(snippet);
   });

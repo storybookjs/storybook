@@ -127,9 +127,6 @@ export const attributeValue = (
 export const listenerHandler = (value: HoleValue): string =>
   value.kind === 'function' ? value.handler : '() => {}';
 
-export const escapeText = (value: string): string =>
-  value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
 const resolveArg = (arg: string, node: Node | undefined): HoleValue => {
   if (!node) {
     return { kind: 'value', arg, value: undefined };

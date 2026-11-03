@@ -128,7 +128,7 @@ These automigrations are new in Storybook 11. To run one again later, use `npx s
 | `addon-svelte-csf-to-core`        | Replaces `@storybook/addon-svelte-csf` with imports from your Svelte framework                                                  |
 | `argtypes-default-value`          | Deletes `argTypes.<name>.defaultValue`, which has not set an arg's value since Storybook 7                                      |
 | `component-subtitle`              | Moves `parameters.componentSubtitle` to `parameters.docs.subtitle`                                                              |
-| `csf-next-mocked-args`            | Wraps mock API calls on args in `mocked()` in CSF Next stories                                                                  |
+| `csf-next-mocked-args`            | Wraps mock API calls on args in `mocked()` in CSF 4 (aka CSF Next) stories                                                      |
 | `docgen-server`                   | Renames `features.experimentalDocgenServer` to `docgenServer`                                                                   |
 | `remove-change-detection-flag`    | Deletes the removed `features.changeDetection` flag                                                                             |
 | `remove-experimental-review`      | Deletes the removed `features.experimentalReview` flag                                                                          |
@@ -208,7 +208,7 @@ Rows are grouped by where the change happens: `.storybook/main`, `.storybook/pre
 
 | If you…                                                                                   | Do this                                                                                                                                                                                                                                                                               |
 | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Set meta args in CSF 4 that are not component props                                       | Declare them with `preview.type<{ args }>()`. See the [CSF Next notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#csf-next-every-key-in-meta-args-must-be-an-arg).                                                                                               |
+| Set meta args in CSF 4 that are not component props                                       | Declare them with `preview.type<{ args }>()`. See the [CSF 4 (aka CSF Next) notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#csf-next-every-key-in-meta-args-must-be-an-arg).                                                                                   |
 | Read `argTypes` in a loader, `beforeEach`, `play`, or `afterEach` function                | Read `args` instead. Reading `argTypes` there throws an error. See the [`argTypes` notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-removed-from-loaders-beforeeach-play-and-aftereach).                                                               |
 | Type a decorator or `render` helper's context as `StoryContext` and read `argTypes`       | Change the type to `StoryContextForRender`. Decorators and `render` functions still receive `argTypes`, so keep those reads. See the [`argTypes` notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-removed-from-loaders-beforeeach-play-and-aftereach). |
 | Read `kind` or `story` from a story context, or use the `LinkTo` `kind` and `story` props | Use `title` and `name`. Also replace the removed type aliases, such as `PlayFunctionContext`. See the [type alias notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#deprecated-csf-and-manager-type-aliases-removed).                                            |
@@ -256,13 +256,13 @@ To upgrade all of your CSF 3 stories automatically, run:
 
 <CodeSnippets path="csf-factories-automigrate.md" />
 
-For monorepos and manual upgrade steps, see [Upgrade to CSF Next](../api/csf/csf-next.mdx#upgrade-to-csf-next).
+For monorepos and manual upgrade steps, see [Upgrade to CSF 4](../writing-stories/csf/upgrade.mdx).
 
 ### Builder docgen to server-side docgen
 
 Builder docgen is deprecated. This covers React's `react-docgen` and `react-docgen-typescript`, the Vue 3 Vite `docgen` option, and the Svelte `docgen` option. It only runs when you set `features.docgenServer: false`, and Storybook then prints a deprecation warning. Remove that setting to use [server-side docgen](#server-side-docgen-is-on-by-default). See the [builder docgen notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#builder-docgen-is-deprecated).
 
-`angular-vite` projects may opt-in to server-side docgen by setting `features.experimentalDocgenServer: true` in `.storybook/main.js|ts`. For more details, see the [framework documentation](../get-started/frameworks/angular-vite#component-documentation).
+`angular-vite` projects may opt-in to server-side docgen by setting `features.experimentalDocgenServer: true` in `.storybook/main.js|ts`. For more details, see the [framework documentation](../get-started/frameworks/angular-vite.mdx#component-documentation).
 
 ### Next.js Webpack to Next.js Vite
 

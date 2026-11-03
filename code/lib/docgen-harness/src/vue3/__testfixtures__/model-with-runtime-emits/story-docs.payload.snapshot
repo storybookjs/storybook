@@ -27,7 +27,7 @@ const modelValue = ref(⟦value modelValue script ?⟧);
 </script>
 
 <template>
-  <ModelWithRuntimeEmits v-model="modelValue" ⟦props -modelValue⟧ />
+  <ModelWithRuntimeEmits v-model="modelValue"⟦props -modelValue ~%20⟧ />
 </template>",
     },
   },

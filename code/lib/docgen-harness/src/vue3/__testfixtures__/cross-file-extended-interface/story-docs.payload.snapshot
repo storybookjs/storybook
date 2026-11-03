@@ -21,7 +21,7 @@ import ExtendedInterfaceProps from './ExtendedInterfaceProps.vue';
 </script>
 
 <template>
-  <ExtendedInterfaceProps ⟦attr extra extra⟧ ⟦attr id id⟧ ⟦attr name name⟧ ⟦props -extra -id -name⟧ />
+  <ExtendedInterfaceProps⟦attr extra extra ~%20⟧⟦attr id id ~%20⟧⟦attr name name ~%20⟧⟦props -extra -id -name ~%20⟧ />
 </template>",
     },
   },

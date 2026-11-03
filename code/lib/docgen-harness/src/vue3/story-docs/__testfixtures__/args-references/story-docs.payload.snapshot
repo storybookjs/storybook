@@ -21,7 +21,7 @@ import ArgsReferencesButton from './ArgsReferencesButton.vue';
 </script>
 
 <template>
-  <ArgsReferencesButton ⟦attr label label⟧ ⟦props -label⟧ />
+  <ArgsReferencesButton⟦attr label label ~%20⟧⟦props -label ~%20⟧ />
 </template>",
     },
     "forms-args-references--spread-object-arg": {
@@ -54,7 +54,7 @@ const options = ⟦value options script⟧;
 </script>
 
 <template>
-  <ArgsReferencesButton :options="options" ⟦props -options⟧ />
+  <ArgsReferencesButton :options="options"⟦props -options ~%20⟧ />
 </template>",
     },
     "forms-args-references--unreadable-spread-arg": {

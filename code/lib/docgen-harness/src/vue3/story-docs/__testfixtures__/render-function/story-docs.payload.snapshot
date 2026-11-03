@@ -24,7 +24,7 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 
 <template>
   <div>
-    <RenderFunctionButton ⟦attr label label⟧ />
+    <RenderFunctionButton⟦attr label label ~%20⟧ />
   </div>
 </template>",
     },
@@ -48,8 +48,8 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 </script>
 
 <template>
-  <section class="toolbar" ⟦attr label label⟧ ⟦props -class -label⟧>
-    <RenderFunctionButton ⟦attr label label⟧ ⟦props -label⟧ />
+  <section class="toolbar"⟦attr label label ~%20⟧⟦props -class -label ~%20⟧>
+    <RenderFunctionButton⟦attr label label ~%20⟧⟦props -label ~%20⟧ />
   </section>
 </template>",
     },
@@ -77,7 +77,7 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 <template>
   <section class="toolbar">
     <h2>Actions</h2>
-    <RenderFunctionButton ⟦attr label label⟧ ⟦props -label⟧ />
+    <RenderFunctionButton⟦attr label label ~%20⟧⟦props -label ~%20⟧ />
     <RenderFunctionButton label="Cancel" />
   </section>
 </template>",
@@ -100,7 +100,7 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 </script>
 
 <template>
-  <RenderFunctionButton ⟦attr label label⟧ ⟦props -label⟧ />
+  <RenderFunctionButton⟦attr label label ~%20⟧⟦props -label ~%20⟧ />
 </template>",
     },
     "forms-render-function--slot-children": {
@@ -126,7 +126,7 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 </script>
 
 <template>
-  <RenderFunctionButton ⟦attr label label⟧ ⟦props -label⟧>
+  <RenderFunctionButton⟦attr label label ~%20⟧⟦props -label ~%20⟧>
     <span>Extra</span>
     <template #footer>
       <strong>Note</strong>
@@ -152,7 +152,7 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 </script>
 
 <template>
-  <RenderFunctionButton ⟦props -label⟧ label="Overridden" />
+  <RenderFunctionButton⟦props -label ~%20⟧ label="Overridden" />
 </template>",
     },
   },

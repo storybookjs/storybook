@@ -23,7 +23,7 @@ describe('fillTemplate', () => {
   });
 
   it('leaves out an argsToTemplate binding for an unset arg, with the space before it', () => {
-    const template = '<x a="1" ⟦prop label⟧ ⟦prop size⟧></x>';
+    const template = '<x a="1"⟦prop label ~%20⟧⟦prop size ~%20⟧></x>';
     expect(fillTemplate(template, { label: 'Go' })).toBe(`<x a="1" [label]="'Go'"></x>`);
     expect(fillTemplate(template, { label: undefined, size: 2 })).toBe('<x a="1" [size]="2"></x>');
   });

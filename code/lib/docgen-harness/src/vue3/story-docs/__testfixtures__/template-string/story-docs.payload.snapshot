@@ -21,7 +21,7 @@ import TemplateStringButton from './TemplateStringButton.vue';
 </script>
 
 <template>
-  <TemplateStringButton ⟦attr label label⟧ ⟦props -label⟧ />
+  <TemplateStringButton⟦attr label label ~%20⟧⟦props -label ~%20⟧ />
 </template>",
     },
     "forms-template-string--primary": {
@@ -44,7 +44,7 @@ import TemplateStringButton from './TemplateStringButton.vue';
 </script>
 
 <template>
-  <div class="wrap"><TemplateStringBadge text="New" /><TemplateStringButton ⟦attr label label⟧ ⟦props -label⟧ /></div>
+  <div class="wrap"><TemplateStringBadge text="New" /><TemplateStringButton⟦attr label label ~%20⟧⟦props -label ~%20⟧ /></div>
 </template>",
     },
   },

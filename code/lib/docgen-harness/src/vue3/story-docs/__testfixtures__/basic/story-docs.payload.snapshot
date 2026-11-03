@@ -21,7 +21,7 @@ import BasicButton from './BasicButton.vue';
 </script>
 
 <template>
-  <BasicButton ⟦attr label label⟧ ⟦props -label⟧ />
+  <BasicButton⟦attr label label ~%20⟧⟦props -label ~%20⟧ />
 </template>",
     },
   },

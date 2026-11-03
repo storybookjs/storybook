@@ -35,7 +35,7 @@ const onSubmit = ⟦value onSubmit script⟧;
 </script>
 
 <template>
-  <EventListenerForm :formatter="formatter" ⟦attr label label⟧ @submit="onSubmit" ⟦props -default -formatter -label -onSubmit⟧>
+  <EventListenerForm :formatter="formatter"⟦attr label label ~%20⟧ @submit="onSubmit"⟦props -default -formatter -label -onSubmit ~%20⟧>
     Submit now
   </EventListenerForm>
 </template>",

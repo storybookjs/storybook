@@ -16,7 +16,7 @@
       "id": "webcomponentsstorydocs-csf-shapes--imported-items",
       "name": "Imported Items",
       "snippet": "<csf-shapes label="Meta"></csf-shapes>",
-      "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr style - css --csf-shapes-accent=--csf-shapes-accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
+      "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes⟦attr label label field ~%20⟧⟦attr count count field ~%20⟧⟦attr disabled disabled field ~%20⟧⟦attr style - css --csf-shapes-accent=--csf-shapes-accent ~%20⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
       "templateWarning": "Incomplete snippet: properties without an attribute: `items`.",
       "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
@@ -35,7 +35,7 @@
     host.addEventListener('shape-change', () => {});
   }
 </script>",
-      "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr style - css --csf-shapes-accent=--csf-shapes-accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>
+      "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes⟦attr label label field ~%20⟧⟦attr count count field ~%20⟧⟦attr disabled disabled field ~%20⟧⟦attr style - css --csf-shapes-accent=--csf-shapes-accent ~%20⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
@@ -51,13 +51,13 @@
   csf-shapes:state(active) { outline: 1px solid; }
 </style>
 <csf-shapes label="Meta" style="--csf-shapes-accent: teal;"></csf-shapes>",
-      "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr style - css --csf-shapes-accent=--csf-shapes-accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
+      "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes⟦attr label label field ~%20⟧⟦attr count count field ~%20⟧⟦attr disabled disabled field ~%20⟧⟦attr style - css --csf-shapes-accent=--csf-shapes-accent ~%20⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
     },
     "webcomponentsstorydocs-csf-shapes--render-fallback": {
       "id": "webcomponentsstorydocs-csf-shapes--render-fallback",
       "name": "Render Fallback",
       "snippet": "<csf-shapes label="Fallback"></csf-shapes>",
-      "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr style - css --csf-shapes-accent=--csf-shapes-accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
+      "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes⟦attr label label field ~%20⟧⟦attr count count field ~%20⟧⟦attr disabled disabled field ~%20⟧⟦attr style - css --csf-shapes-accent=--csf-shapes-accent ~%20⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
       "templateWarning": "Incomplete snippet: `() => document.createElement('csf-shapes')` could not be resolved statically.",
       "warning": "Incomplete snippet: `() => document.createElement('csf-shapes')` could not be resolved statically.",
     },
@@ -68,22 +68,20 @@
   Body <b>text</b>
   <button slot="actions">Go</button>
 </csf-shapes>",
-      "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr style - css --csf-shapes-accent=--csf-shapes-accent⟧>
-  ⟦slot default default-slot⟧
-  ⟦slot actions actions-slot⟧
+      "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes⟦attr label label field ~%20⟧⟦attr count count field ~%20⟧⟦attr disabled disabled field ~%20⟧⟦attr style - css --csf-shapes-accent=--csf-shapes-accent ~%20⟧>⟦slot default default-slot ~%0A%20%20⟧⟦slot actions actions-slot ~%0A%20%20⟧
 </csf-shapes>",
     },
     "webcomponentsstorydocs-csf-shapes--spread-args": {
       "id": "webcomponentsstorydocs-csf-shapes--spread-args",
       "name": "Spread Args",
       "snippet": "<csf-shapes label="Shared" count="2"></csf-shapes>",
-      "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr style - css --csf-shapes-accent=--csf-shapes-accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
+      "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes⟦attr label label field ~%20⟧⟦attr count count field ~%20⟧⟦attr disabled disabled field ~%20⟧⟦attr style - css --csf-shapes-accent=--csf-shapes-accent ~%20⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
     },
     "webcomponentsstorydocs-csf-shapes--unknown-arg": {
       "id": "webcomponentsstorydocs-csf-shapes--unknown-arg",
       "name": "Unknown Arg",
       "snippet": "<csf-shapes label="Meta"></csf-shapes>",
-      "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr style - css --csf-shapes-accent=--csf-shapes-accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
+      "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes⟦attr label label field ~%20⟧⟦attr count count field ~%20⟧⟦attr disabled disabled field ~%20⟧⟦attr style - css --csf-shapes-accent=--csf-shapes-accent ~%20⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
       "templateWarning": "Incomplete snippet: args not declared by `csf-shapes`: `nope`.",
       "warning": "Incomplete snippet: args not declared by `csf-shapes`: `nope`.",
     },
@@ -91,7 +89,7 @@
       "id": "webcomponentsstorydocs-csf-shapes--unset",
       "name": "Unset",
       "snippet": "<csf-shapes disabled></csf-shapes>",
-      "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes ⟦attr disabled disabled field⟧ ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr style - css --csf-shapes-accent=--csf-shapes-accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
+      "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes⟦attr disabled disabled field ~%20⟧⟦attr label label field ~%20⟧⟦attr count count field ~%20⟧⟦attr style - css --csf-shapes-accent=--csf-shapes-accent ~%20⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
     },
   },
 }

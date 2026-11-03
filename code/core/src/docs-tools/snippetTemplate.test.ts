@@ -2,15 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import {
   UnprintableArgError,
-  defaultCode,
-  defaultWord,
   fillHoles,
+  findHoles,
   hole,
   holeWord,
-  printValue,
-  spreadArgs,
-  writtenArg,
+  withHoleSpace,
 } from './snippetTemplate.ts';
+import { defaultCode, defaultWord } from './snippetValues.ts';
 
 describe('fillHoles', () => {
   it('fills every hole with what the filler prints for its kind and words', () => {
@@ -24,24 +22,20 @@ describe('fillHoles', () => {
     expect(fillHoles(`a ? ${hole('value', 'x')} : b`, () => '1')).toBe('a ? 1 : b');
   });
 
-  it('drops the whitespace before an attribute hole that prints nothing', () => {
-    const template = `<Button ${hole('attr', 'size', 'size')}\n  ${hole('props')} />`;
-    expect(fillHoles(template, () => '')).toBe('<Button />');
+  it('reads nothing but the hole: the code around it is kept as written', () => {
+    const fill = (kind: string, words: string[]) => (kind === 'empty' ? '' : words.join(','));
+    for (const around of ['', ' ', '\n  ', 'a ', '<x>\n', '⟧ ']) {
+      const filled = fillHoles(`${around}${hole('empty')}${around}|${hole('v', '1')}`, fill);
+      expect(filled).toBe(`${around}${around}|1`);
+    }
   });
 
-  it('keeps the whitespace on its line before any other hole that prints nothing', () => {
-    expect(fillHoles(`Hello ${hole('text', 'name')}!`, () => '')).toBe('Hello !');
-    expect(fillHoles(`f(a, ${hole('value', 'b')})`, () => '')).toBe('f(a, )');
-  });
-
-  it('drops the line of any other hole that prints nothing on a line of its own', () => {
-    const template = `<Button>\n  ${hole('text', 'children')}\n</Button>`;
-    expect(fillHoles(template, () => '')).toBe('<Button>\n</Button>');
-  });
-
-  it('fills a template with a long run of whitespace in linear time', () => {
-    const template = `${' '.repeat(200_000)}x${hole('attr', 'a', 'a')}`;
-    expect(fillHoles(template, () => '')).toBe(`${' '.repeat(200_000)}x`);
+  it('prints a space word before a value, and leaves it out with an empty one', () => {
+    const template = `<Button${hole('attr', 'size', '~%20')}${hole('text', 'x', '~%0A%20%20')}`;
+    expect(fillHoles(template, (kind) => (kind === 'attr' ? 'size="sm"' : ''))).toBe(
+      '<Button size="sm"'
+    );
+    expect(fillHoles(template, (kind) => (kind === 'attr' ? '' : 'Go'))).toBe('<Button\n  Go');
   });
 
   it('passes a word holeWord encoded as the text it was given', () => {
@@ -53,6 +47,53 @@ describe('fillHoles', () => {
   it('passes a default word on as written, for defaultCode to read', () => {
     const template = hole('value', 'size', defaultWord("'50 %'"));
     expect(fillHoles(template, (_, [, word]) => defaultCode(word)!)).toBe("'50 %'");
+  });
+});
+
+describe('findHoles', () => {
+  it('finds each hole with where it is, its kind and its words as written', () => {
+    expect(findHoles(`a${hole('attr', 'x', '%a%20b')}b`)).toEqual([
+      { start: 1, end: 16, kind: 'attr', words: ['x', '%a%20b'] },
+    ]);
+  });
+});
+
+describe('withHoleSpace', () => {
+  const takesSpace = (kind: string, space: string) =>
+    kind === 'attr' || kind === 'props' || space.includes('\n');
+
+  it('moves the whitespace before an attribute hole into it', () => {
+    const template = `<Button ${hole('attr', 'size', 'size')}\n  ${hole('props')} />`;
+    expect(withHoleSpace(template, takesSpace)).toBe(
+      '<Button⟦attr size size ~%20⟧⟦props ~%0A%20%20⟧ />'
+    );
+    expect(fillHoles(withHoleSpace(template, takesSpace), () => '')).toBe('<Button />');
+  });
+
+  it('keeps the whitespace on its line before any other hole', () => {
+    expect(withHoleSpace(`Hello ${hole('text', 'name')}!`, takesSpace)).toBe(
+      `Hello ${hole('text', 'name')}!`
+    );
+    expect(fillHoles(withHoleSpace(`f(a, ${hole('value', 'b')})`, takesSpace), () => '')).toBe(
+      'f(a, )'
+    );
+  });
+
+  it('moves a line break before any other hole into it', () => {
+    const template = withHoleSpace(
+      `<Button>\n  ${hole('text', 'children')}\n</Button>`,
+      takesSpace
+    );
+    expect(template).toBe('<Button>⟦text children ~%0A%20%20⟧\n</Button>');
+    expect(fillHoles(template, () => '')).toBe('<Button>\n</Button>');
+    expect(fillHoles(template, () => 'Go')).toBe('<Button>\n  Go\n</Button>');
+  });
+
+  it('moves a long run of whitespace in linear time', () => {
+    const template = `${' '.repeat(200_000)}x${hole('attr', 'a', 'a')}`;
+    expect(fillHoles(withHoleSpace(template, takesSpace), () => '')).toBe(
+      `${' '.repeat(200_000)}x`
+    );
   });
 });
 
@@ -68,65 +109,12 @@ describe('holeWord', () => {
     ]);
   });
 
-  it('encodes a word with a space, a hole bracket or a leading percent sign', () => {
-    expect(['a b', 'x⟧', '%'].map(holeWord)).toEqual(['%a%20b', '%x%E2%9F%A7', '%%25']);
-  });
-});
-
-describe('defaultWord', () => {
-  it('writes code after a question mark, URI-encoded, which defaultCode reads back', () => {
-    expect(defaultWord("{ size: 'md' }")).toBe("?%7B%20size%3A%20'md'%20%7D");
-    expect(defaultCode(defaultWord("{ size: 'md' }"))).toBe("{ size: 'md' }");
-  });
-
-  it('reads no code from any other word', () => {
-    expect(defaultCode('label')).toBeUndefined();
-    expect(defaultCode(undefined)).toBeUndefined();
-  });
-});
-
-describe('spreadArgs', () => {
-  it('passes every arg but those the element writes', () => {
-    expect(spreadArgs({ a: 1, b: 2 }, ['-b'])).toEqual([['a', 1]]);
-  });
-});
-
-describe('printValue', () => {
-  it('prints a written arg as its code, whatever the value would print as', () => {
-    expect(printValue(writtenArg('fn((o) => o.name)'), 'select')).toBe('fn((o) => o.name)');
-    expect(printValue(writtenArg(`new FormControl('x')`), 'control', { quote: "'" })).toBe(
-      `new FormControl('x')`
-    );
-  });
-
-  it('prints primitives as literals', () => {
-    expect(printValue('Go', 'label')).toBe('"Go"');
-    expect(printValue('it\'s "x"\n', 'label', { quote: "'" })).toBe("'it\\'s \"x\"\\n'");
-    expect(printValue(3, 'n')).toBe('3');
-    expect(printValue(false, 'b')).toBe('false');
-    expect(printValue(null, 'x')).toBe('null');
-    expect(printValue(undefined, 'x')).toBe('undefined');
-  });
-
-  it('prints plain data as array and object literals', () => {
-    expect(printValue({ a: 1, 'b-c': ['x'], d: undefined, e: {} }, 'data')).toBe(
-      '{ a: 1, "b-c": ["x"], e: {} }'
-    );
-  });
-
-  it('prints a literal of any length', () => {
-    expect(printValue('x'.repeat(5000), 'text')).toHaveLength(5002);
-  });
-
-  it('throws for a value with no literal', () => {
-    expect(() => printValue(() => {}, 'onClick')).toThrow(new UnprintableArgError('onClick'));
-    expect(() => printValue([new Date(0)], 'dates')).toThrow(UnprintableArgError);
-  });
-
-  it('throws for a value opaque matches, at any depth', () => {
-    const opaque = (value: unknown) => Object(value).secret === true;
-    expect(() => printValue({ a: [{ secret: true }] }, 'data', { opaque })).toThrow(
-      new UnprintableArgError('data')
-    );
+  it('encodes a word with a space, a hole bracket or a leading percent sign or tilde', () => {
+    expect(['a b', 'x⟧', '%', '~x'].map(holeWord)).toEqual([
+      '%a%20b',
+      '%x%E2%9F%A7',
+      '%%25',
+      '%~x',
+    ]);
   });
 });

@@ -21,7 +21,7 @@ import RuntimePropTypeCast from './RuntimePropTypeCast.vue';
 </script>
 
 <template>
-  <RuntimePropTypeCast ⟦attr kind kind⟧ ⟦attr measure measure⟧ ⟦props -kind -measure⟧ />
+  <RuntimePropTypeCast⟦attr kind kind ~%20⟧⟦attr measure measure ~%20⟧⟦props -kind -measure ~%20⟧ />
 </template>",
     },
   },

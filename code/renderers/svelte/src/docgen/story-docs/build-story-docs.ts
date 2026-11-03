@@ -21,7 +21,7 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import { hasHoleBracket, writtenArg } from 'storybook/internal/docs-tools';
+import { hasHoleBracket, withHoleSpace, writtenArg } from 'storybook/internal/docs-tools';
 import type {
   Args,
   StoryDoc,
@@ -194,7 +194,7 @@ function storySnippet(
     ...(holes === undefined
       ? {}
       : {
-          template: withImports(holes),
+          template: withImports(withHoleSpace(holes, takesSpace)),
           argCode: argCode(resolved.args),
           // Every warning is about code the snippet leaves out, which the filled snippet leaves out
           // as well.
@@ -307,3 +307,6 @@ function ownArgs(args: Record<string, Node>): Args {
     ])
   );
 }
+
+// A hole that prints nothing leaves no empty line; a spread hole holds the space around it.
+const takesSpace = (_kind: string, space: string) => space.includes('\n');

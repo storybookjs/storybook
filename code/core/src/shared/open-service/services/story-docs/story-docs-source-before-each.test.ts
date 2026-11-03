@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
-import { printValue } from '../../../../docs-tools/snippetTemplate.ts';
+import { printValue } from '../../../../docs-tools/snippetValues.ts';
 import type { StoryDocsService } from './definition.ts';
 import { getFillTemplate, selectLiveSnippetForStory } from './live-snippet.ts';
 import { prependImportToSnippet, selectSnippetForStory, selectWarningForStory } from './snippet.ts';

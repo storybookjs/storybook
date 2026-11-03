@@ -27,7 +27,7 @@ const mixed = ⟦value mixed script⟧;
 </script>
 
 <template>
-  <IntersectionProps :mixed="mixed" ⟦props -mixed⟧ />
+  <IntersectionProps :mixed="mixed"⟦props -mixed ~%20⟧ />
 </template>",
     },
   },

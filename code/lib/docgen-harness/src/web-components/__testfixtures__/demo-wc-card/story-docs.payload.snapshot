@@ -9,7 +9,7 @@
       "snippet": "<demo-wc-card back-side rows="[]">
   <span slot="prefix"></span>A simple card
 </demo-wc-card>",
-      "template": "<demo-wc-card ⟦attr back-side backSide field⟧ ⟦attr header header field⟧ ⟦attr rows rows field⟧>
+      "template": "<demo-wc-card⟦attr back-side backSide field ~%20⟧⟦attr header header field ~%20⟧⟦attr rows rows field ~%20⟧>
   <span slot="prefix">⟦text prefix⟧</span>A simple card
 </demo-wc-card>",
     },
@@ -17,7 +17,7 @@
       "id": "webcomponentsfixtures-demo-wc-card--front",
       "name": "Front",
       "snippet": "<demo-wc-card rows="[]"><span slot="prefix"></span>A simple card</demo-wc-card>",
-      "template": "<demo-wc-card ⟦attr back-side backSide field⟧ ⟦attr header header field⟧ ⟦attr rows rows field⟧><span slot="prefix">⟦text prefix⟧</span>A simple card</demo-wc-card>",
+      "template": "<demo-wc-card⟦attr back-side backSide field ~%20⟧⟦attr header header field ~%20⟧⟦attr rows rows field ~%20⟧><span slot="prefix">⟦text prefix⟧</span>A simple card</demo-wc-card>",
     },
     "webcomponentsfixtures-demo-wc-card--prefix": {
       "id": "webcomponentsfixtures-demo-wc-card--prefix",
@@ -25,7 +25,7 @@
       "snippet": "<demo-wc-card header="my header" rows="[]">
   <span slot="prefix">prefix:</span>A simple card
 </demo-wc-card>",
-      "template": "<demo-wc-card ⟦attr back-side backSide field⟧ ⟦attr header header field⟧ ⟦attr rows rows field⟧>
+      "template": "<demo-wc-card⟦attr back-side backSide field ~%20⟧⟦attr header header field ~%20⟧⟦attr rows rows field ~%20⟧>
   <span slot="prefix">⟦text prefix ^ $⟧</span>A simple card
 </demo-wc-card>",
     },

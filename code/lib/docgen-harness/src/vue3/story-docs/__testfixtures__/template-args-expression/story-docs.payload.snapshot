@@ -47,7 +47,7 @@ const status = ⟦value status script⟧;
       overflow: 'hidden'
     }"
   >
-    <TemplateArgsExpression ⟦attr isCollapsed isCollapsed⟧ :release="release" :status="status" ⟦attr updateProgressInfo updateProgressInfo⟧ ⟦props -isCollapsed -release -status -updateProgressInfo⟧ />
+    <TemplateArgsExpression⟦attr isCollapsed isCollapsed ~%20⟧ :release="release" :status="status"⟦attr updateProgressInfo updateProgressInfo ~%20⟧⟦props -isCollapsed -release -status -updateProgressInfo ~%20⟧ />
   </div>
 </template>",
     },
@@ -95,7 +95,7 @@ const status = ⟦value status script⟧;
       overflow: 'hidden'
     }"
   >
-    <TemplateArgsExpression ⟦attr isCollapsed isCollapsed⟧ :release="release" :status="status" ⟦attr updateProgressInfo updateProgressInfo⟧ ⟦props -isCollapsed -release -status -updateProgressInfo⟧ />
+    <TemplateArgsExpression⟦attr isCollapsed isCollapsed ~%20⟧ :release="release" :status="status"⟦attr updateProgressInfo updateProgressInfo ~%20⟧⟦props -isCollapsed -release -status -updateProgressInfo ~%20⟧ />
   </div>
 </template>",
     },

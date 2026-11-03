@@ -18,6 +18,7 @@ import {
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
+import { withHoleSpace } from 'storybook/internal/docs-tools';
 
 import { resolve } from 'node:path';
 
@@ -166,7 +167,7 @@ const baseStoryDoc = (
     ...(result.snippet === undefined || result.template === undefined
       ? {}
       : {
-          template: result.template,
+          template: withHoleSpace(result.template, takesSpace),
           // What the snippet leaves out, code it cannot read or args it cannot show, it still
           // leaves out once filled.
           ...(result.warning === undefined ? {} : { templateWarning: result.warning }),
@@ -517,3 +518,7 @@ const joinWarnings = (parts: (string | undefined)[]): { warning?: string } => {
   const warning = [...new Set(parts.filter((part) => part !== undefined))].join('\n');
   return warning === '' ? {} : { warning };
 };
+
+// An attribute that prints nothing leaves no gap, and no hole leaves an empty line.
+const takesSpace = (kind: string, space: string) =>
+  kind === 'attr' || kind === 'bool' || space.includes('\n');

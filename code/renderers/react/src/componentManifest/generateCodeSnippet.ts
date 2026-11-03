@@ -22,7 +22,13 @@ import {
   unresolvedWarning,
   walk,
 } from 'storybook/internal/csf-tools';
-import { defaultWord, hasHoleBracket, hole, holeWord } from 'storybook/internal/docs-tools';
+import {
+  defaultWord,
+  hasHoleBracket,
+  hole,
+  holeWord,
+  withHoleSpace,
+} from 'storybook/internal/docs-tools';
 
 import { invariant } from './utils.ts';
 
@@ -76,7 +82,7 @@ export function getCodeSnippet(
   const warning = unresolvedWarning(unresolved);
   return {
     snippet: printed.snippet,
-    template: printed.template,
+    template: withHoleSpace(printed.template, takesSpace),
     argCode: writtenArgs(args, importedBind !== undefined),
     ...(warning === undefined ? {} : { templateWarning: warning }),
     ...needs,
@@ -572,3 +578,7 @@ function rewriteJsx(
 
   return changed;
 }
+
+// An attribute that prints nothing leaves no gap, and no hole leaves an empty line.
+const takesSpace = (kind: string, space: string) =>
+  kind === 'attr' || kind === 'props' || space.includes('\n');

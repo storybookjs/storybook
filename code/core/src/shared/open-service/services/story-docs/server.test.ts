@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { printValue } from '../../../../docs-tools/snippetTemplate.ts';
+import { printValue } from '../../../../docs-tools/snippetValues.ts';
 import type { Args } from '../../../../types/modules/csf.ts';
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
 import { clearRegistry, getService } from '../../server.ts';

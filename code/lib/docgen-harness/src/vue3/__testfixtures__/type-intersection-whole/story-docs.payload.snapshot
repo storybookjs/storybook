@@ -21,7 +21,7 @@ import TypeIntersectionWhole from './TypeIntersectionWhole.vue';
 </script>
 
 <template>
-  <TypeIntersectionWhole ⟦attr id id⟧ ⟦attr size size⟧ ⟦props -default -id -size⟧ />
+  <TypeIntersectionWhole⟦attr id id ~%20⟧⟦attr size size ~%20⟧⟦props -default -id -size ~%20⟧ />
 </template>",
     },
   },

@@ -46,7 +46,7 @@ import { AsCastComponent } from './as-cast.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [AsCastComponent],
-  template: `<sb-as-cast [label]="⟦bind label⟧" ⟦prop tone⟧ />`,
+  template: `<sb-as-cast [label]="⟦bind label⟧"⟦prop tone ~%20⟧ />`,
 })
 export class DemoComponent {}",
     },

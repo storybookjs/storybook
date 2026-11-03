@@ -19,7 +19,7 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import { fillHoles } from 'storybook/internal/docs-tools';
+import { fillHoles, withHoleSpace } from 'storybook/internal/docs-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
@@ -271,7 +271,7 @@ const storyTemplate = async (
   const argCode = Object.fromEntries(
     Object.entries(written).filter(([name]) => holeArgs.has(name))
   );
-  return { template, argCode };
+  return { template: withHoleSpace(template, takesSpace), argCode };
 };
 
 type RenderedSnippet = HostComponentSnippet & {
@@ -611,3 +611,6 @@ const isUndefinedValue = (node: Node): boolean => {
     (unwrapped.type === 'UnaryExpression' && unwrapped.operator === 'void')
   );
 };
+
+// A binding that prints nothing leaves no gap, and no hole leaves an empty line.
+const takesSpace = (kind: string, space: string) => kind === 'prop' || space.includes('\n');

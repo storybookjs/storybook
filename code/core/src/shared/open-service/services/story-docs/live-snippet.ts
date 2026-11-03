@@ -1,7 +1,8 @@
 import { isEqual } from 'es-toolkit/predicate';
 
 import { logger } from 'storybook/internal/client-logger';
-import { type FillSnippetTemplate, asWrittenArgs } from '../../../../docs-tools/snippetTemplate.ts';
+import type { FillSnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
+import { asWrittenArgs } from '../../../../docs-tools/snippetValues.ts';
 import type { Args, Parameters } from 'storybook/internal/types';
 
 import { prependImportToSnippet, selectSnippetForStory, selectWarningForStory } from './snippet.ts';

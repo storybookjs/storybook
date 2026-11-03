@@ -37,7 +37,7 @@ const quotationLabel = ⟦value quotationLabel script⟧;
 </script>
 
 <template>
-  <ArgsFormattingButton ⟦attr count count⟧ ⟦attr disabled disabled⟧ ⟦attr enabled enabled⟧ :items="items" ⟦attr label label⟧ :options="options" :quotationLabel="quotationLabel" ⟦props -count -disabled -emptyLabel -enabled -items -label -onSubmit -options -quotationLabel⟧ />
+  <ArgsFormattingButton⟦attr count count ~%20⟧⟦attr disabled disabled ~%20⟧⟦attr enabled enabled ~%20⟧ :items="items"⟦attr label label ~%20⟧ :options="options" :quotationLabel="quotationLabel"⟦props -count -disabled -emptyLabel -enabled -items -label -onSubmit -options -quotationLabel ~%20⟧ />
 </template>",
     },
     "forms-args-formatting--unset-arg": {
@@ -58,7 +58,7 @@ import ArgsFormattingButton from './ArgsFormattingButton.vue';
 </script>
 
 <template>
-  <ArgsFormattingButton ⟦attr count count⟧ ⟦props -count -label⟧ />
+  <ArgsFormattingButton⟦attr count count ~%20⟧⟦props -count -label ~%20⟧ />
 </template>",
     },
   },

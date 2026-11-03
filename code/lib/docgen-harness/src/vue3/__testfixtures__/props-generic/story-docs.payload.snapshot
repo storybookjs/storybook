@@ -27,7 +27,7 @@ const items = ⟦value items script⟧;
 </script>
 
 <template>
-  <PropsGeneric :items="items" ⟦attr selected selected⟧ ⟦props -items -selected⟧ />
+  <PropsGeneric :items="items"⟦attr selected selected ~%20⟧⟦props -items -selected ~%20⟧ />
 </template>",
     },
   },

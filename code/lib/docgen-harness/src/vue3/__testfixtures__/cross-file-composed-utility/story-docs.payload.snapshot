@@ -21,7 +21,7 @@ import UtilityComposedProps from './UtilityComposedProps.vue';
 </script>
 
 <template>
-  <UtilityComposedProps ⟦attr label label⟧ ⟦props -label⟧ />
+  <UtilityComposedProps⟦attr label label ~%20⟧⟦props -label ~%20⟧ />
 </template>",
     },
   },

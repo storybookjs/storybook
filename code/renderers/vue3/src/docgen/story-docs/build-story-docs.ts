@@ -35,7 +35,7 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import { hasHoleBracket } from 'storybook/internal/docs-tools';
+import { hasHoleBracket, withHoleSpace } from 'storybook/internal/docs-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 
@@ -372,7 +372,8 @@ function enrichStoryDoc(
   }
   const warning = unresolved.length > 0 ? unresolvedWarning(unresolved) : undefined;
   // Holes written in code that already holds a hole bracket could not be found again.
-  const template = hasHoleBracket(options.source) ? undefined : print(true)?.snippet;
+  const holes = hasHoleBracket(options.source) ? undefined : print(true)?.snippet;
+  const template = holes === undefined ? undefined : withHoleSpace(holes, takesSpace);
 
   return {
     ...storyDoc,
@@ -564,3 +565,7 @@ function argsParameterName(renderFunction: RenderFunction): string | undefined {
   const [parameter] = renderFunction.params;
   return parameter?.type === 'Identifier' ? parameter.name : undefined;
 }
+
+// An attribute that prints nothing leaves no gap, and no hole leaves an empty line.
+const takesSpace = (kind: string, space: string) =>
+  kind === 'attr' || kind === 'props' || space.includes('\n');

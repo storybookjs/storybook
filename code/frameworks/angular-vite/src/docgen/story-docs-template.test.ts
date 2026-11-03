@@ -102,7 +102,7 @@ describe('story-docs templates', () => {
       };
     `);
     expect(story!.template).toContain(
-      '<sb-button ⟦prop label⟧ ⟦prop size⟧ ⟦prop config⟧ ⟦prop formatter⟧></sb-button>'
+      '<sb-button⟦prop label ~%20⟧⟦prop size ~%20⟧⟦prop config ~%20⟧⟦prop formatter ~%20⟧></sb-button>'
     );
     const own = { label: 'Go', size: 'lg' };
     expect(fill(story!, own)).toBe(story!.snippet);

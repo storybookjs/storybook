@@ -26,6 +26,8 @@ export const EXISTING_RESOLUTIONS = new Set([
   'aria-query@5.3.0',
   'buffer-equal-constant-time@npm:1.0.1',
   'caniuse-lite',
+  'dom-accessibility-api@npm:^0.5.14',
+  'dom-accessibility-api@npm:^0.5.9',
   'esbuild',
   'playwright',
   'playwright-core',

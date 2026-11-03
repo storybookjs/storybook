@@ -60,6 +60,8 @@
     "aria-query@5.3.0": "^5.3.0",
     "buffer-equal-constant-time@npm:1.0.1": "patch:buffer-equal-constant-time@npm%3A1.0.1#~/.yarn/patches/buffer-equal-constant-time-npm-1.0.1-41826f3419.patch",
     "caniuse-lite": "1.0.30001810",
+    "dom-accessibility-api@npm:^0.5.14": "^0.6.3",
+    "dom-accessibility-api@npm:^0.5.9": "^0.6.3",
     "esbuild": "^0.28.0",
     "playwright": "1.58.2",
     "playwright-core": "1.58.2",

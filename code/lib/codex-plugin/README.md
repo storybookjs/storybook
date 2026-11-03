@@ -72,7 +72,7 @@ For each of these tasks, invoke its Storybook skill first, before you edit any f
 
 Storybook replaces the text between the markers when you upgrade. To change when the agent uses the skills, for example to leave out the review, remove both markers and edit the section. Remove the whole section to stop the agent from using them on its own. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
 
-The agent will use the plugin to automatically open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/agentic-review) in the ADE preview, so you can review the agent's work.
+The agent will use the plugin to automatically open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/skills/agentic-review) in the ADE preview, so you can review the agent's work.
 
 ## Skills
 
@@ -92,7 +92,7 @@ Looks up the components of your Storybook, with their props and usage examples, 
 
 ### `ui-workflow`
 
-The workflow for UI changes: the agent looks up the components to reuse, writes and updates stories for every component it changes, runs the story tests, and publishes an [agentic review](https://storybook.js.org/docs/ai/agentic-review) of the result.
+The workflow for UI changes: the agent looks up the components to reuse, writes and updates stories for every component it changes, runs the story tests, and publishes an [agentic review](https://storybook.js.org/docs/ai/skills/agentic-review) of the result.
 
 ### `upgrade`
 

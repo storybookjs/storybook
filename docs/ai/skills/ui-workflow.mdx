@@ -33,7 +33,7 @@ For example, you ask your agent to "Build a login form". The agent:
 3. **Mocks what the stories need.** It mocks [network requests](../../writing-stories/mocking-data-and-modules/mocking-network-requests.mdx) with MSW and sets up MSW if your project doesn't have it. For other dependencies, it uses [module mocks](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx).
 4. **Runs the story tests.** It runs [component tests](../../writing-tests/index.mdx) with [accessibility checks](../../writing-tests/accessibility-testing.mdx) after each change, and one full run before it finishes. It fixes failures and doesn't finish with failing tests.
 5. **Finds every affected story.** It finds the stories for the components it changed, and the stories of other components that use them, such as a `LoginPage` that renders the form.
-6. **Publishes a review.** It groups those stories into a [review](../agentic-review.mdx) and ends its reply with a link to it.
+6. **Publishes a review.** It groups those stories into a [review](./agentic-review.mdx) and ends its reply with a link to it.
 
 The agent follows your project's conventions. For example, it writes stories in the [story format](../../api/csf/index.mdx) that your project uses, and it doesn't rewrite your existing stories to match its own rules.
 
@@ -43,7 +43,7 @@ If you are using the [accessibility addon](../../writing-tests/accessibility-tes
 
 ### Requests to see UI
 
-When you ask to see something, such as "Show me the Button in all its states", the agent publishes a [review](../agentic-review.mdx) of those stories without changing any files.
+When you ask to see something, such as "Show me the Button in all its states", the agent publishes a [review](./agentic-review.mdx) of those stories without changing any files.
 
 ## The dev server
 
@@ -70,5 +70,5 @@ The review needs a running Storybook dev server. The other steps don't. The agen
 - [Connect your agent](../connect.mdx)
 - [Setup](./setup.mdx)
 - [Component docs](./component-docs.mdx)
-- [Agentic review](../agentic-review.mdx)
+- [Agentic review](./agentic-review.mdx)
 - [Best practices for using Storybook with AI](../best-practices.mdx)

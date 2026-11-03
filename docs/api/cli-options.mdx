@@ -352,16 +352,16 @@ storybook tools [options] [toolset] [tool] [args...]
 
 Most tools load your Storybook configuration and run without a dev server. Tools marked "requires running Storybook" need a running dev server. Start it first.
 
-| Command                     | Description                                                                   | Runs                       |
-| --------------------------- | ----------------------------------------------------------------------------- | -------------------------- |
-| `docs list`                 | Lists all components and docs entries, with their IDs.                        | Local                      |
-| `docs show`                 | Shows the props and usage examples of one component or docs entry.            | Local                      |
-| `docs show-story`           | Shows the code and documentation of one story.                                | Local                      |
-| `stories changed`           | Lists the stories that are new, modified, or affected by uncommitted changes. | Local                      |
-| `stories find-by-component` | Lists the stories that render the given component files.                      | Local                      |
-| `stories preview`           | Returns preview URLs for the given stories.                                   | Requires running Storybook |
-| `review create`             | Publishes an [agentic review](../ai/agentic-review.mdx) of the given stories. | Requires running Storybook |
-| `test run`                  | Runs story tests, with accessibility checks if set up.                        | Local                      |
+| Command                     | Description                                                                          | Runs                       |
+| --------------------------- | ------------------------------------------------------------------------------------ | -------------------------- |
+| `docs list`                 | Lists all components and docs entries, with their IDs.                               | Local                      |
+| `docs show`                 | Shows the props and usage examples of one component or docs entry.                   | Local                      |
+| `docs show-story`           | Shows the code and documentation of one story.                                       | Local                      |
+| `stories changed`           | Lists the stories that are new, modified, or affected by uncommitted changes.        | Local                      |
+| `stories find-by-component` | Lists the stories that render the given component files.                             | Local                      |
+| `stories preview`           | Returns preview URLs for the given stories.                                          | Requires running Storybook |
+| `review create`             | Publishes an [agentic review](../ai/skills/agentic-review.mdx) of the given stories. | Requires running Storybook |
+| `test run`                  | Runs story tests, with accessibility checks if set up.                               | Local                      |
 
 Pass tool arguments as `--key value` flags, or all at once as a JSON object with `--input`. Run `storybook tools <toolset> <tool> --help` to see a tool's description, arguments, and `--json` output.
 

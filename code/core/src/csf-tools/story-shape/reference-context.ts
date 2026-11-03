@@ -42,7 +42,7 @@ export function createStoryReferenceResolver(
     extensions: [...(options.extensions ?? []), ...jsTsSourceExtensions],
     mainFields: ['module', 'main'],
     tsconfig: 'auto',
-    extensionAlias: typeScriptExtensionAlias,
+    fallbackExtensionAlias: typeScriptExtensionAlias,
   });
 
   return function openStoryReferences(): StoryReferenceResolver {

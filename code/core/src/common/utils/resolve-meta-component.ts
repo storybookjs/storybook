@@ -63,7 +63,7 @@ export function createMetaComponentResolver(options: MetaComponentResolverOption
     extensions: [...(options.extensions ?? []), ...jsTsSourceExtensions],
     mainFields: ['module', 'main'],
     tsconfig: 'auto',
-    extensionAlias: typeScriptExtensionAlias,
+    fallbackExtensionAlias: typeScriptExtensionAlias,
   });
 
   const resolveFile = (fromFile: string, specifier: string): string | undefined => {
@@ -152,7 +152,7 @@ export function createMetaComponentResolver(options: MetaComponentResolverOption
     const node = componentNode ?? csf._metaAnnotations.component;
     const storyModule: ReferenceModule = { editor: csf.editor, filePath: storyPath };
     if (!node) {
-      return componentNode ? { reason: 'no-meta-component' } : fromSpread(csf, storyModule);
+      return fromSpread(csf, storyModule);
     }
 
     const expression = unwrapComponentExpression(node);

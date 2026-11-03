@@ -82,7 +82,8 @@ export const propCode = (
     if (within(binding.identifier, root)) {
       return;
     }
-    if (binding.scope.node === fn) {
+    // A function body has a block scope of its own, which declares what the function does.
+    if (binding.scope.node === fn || binding.scope.node === fn.body) {
       const arg = names.defaulted.has(name) ? undefined : names.argBindings.get(name);
       const except = names.argsExpansions.get(name);
       const [member] = ancestors;

@@ -30,6 +30,17 @@ ${story}`;
 };
 
 describe(getStoryArgNodes.name, () => {
+  it('dedents a value that spans lines as the file indents it', async () => {
+    expect(
+      await argCodeOf(
+        `{ items: [
+      'a',
+    ] }`,
+        `<Story name="A" />`
+      )
+    ).toEqual({ items: `[\n    'a',\n  ]` });
+  });
+
   it('reads the meta args, overridden by the story args', async () => {
     expect(
       await argCodeOf(

@@ -46,7 +46,12 @@ export function getStoryArgNodes({ stories, defineMeta, originalCode }: Params) 
       continue;
     }
     // Parsed as TypeScript without JSX, as a `.svelte` script is written, so `<number>x` is a cast.
-    const [statement] = parseModule(`(${originalCode.slice(start, end)})`, 'args.ts').program.body;
+    // Behind the indentation of its first line, so a value spanning lines dedents as in the file.
+    const indent = /^[ \t]*/.exec(
+      originalCode.slice(originalCode.lastIndexOf('\n', start - 1) + 1)
+    )![0];
+    const [statement] = parseModule(`${indent}(${originalCode.slice(start, end)})`, 'args.ts')
+      .program.body;
     const object =
       statement?.type === 'ExpressionStatement'
         ? unwrapExpression(statement.expression)

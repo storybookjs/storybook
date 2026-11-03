@@ -2914,3 +2914,89 @@ describe('buildStoryDocsPayload', () => {
     });
   });
 });
+
+describe('props a render computes from args', () => {
+  const countDocgen = async (): Promise<AngularDocgenPayload> => ({
+    id: 'example-button',
+    name: 'ButtonComponent',
+    path: STORY_PATH,
+    jsDocTags: {},
+    angularComponentMeta: {
+      name: 'ButtonComponent',
+      selector: 'sb-button',
+      standalone: true,
+      inputs: ['label', 'count', 'disabled'],
+      outputs: [],
+      enums: [],
+    },
+  });
+
+  it('keeps the parentheses the story writes an arg in, next to an operator', async () => {
+    const story = await soleStory(
+      `
+      import { ButtonComponent } from './button.component';
+      export default { title: 'Example/Button', component: ButtonComponent };
+      export const S = {
+        args: { onClick: (() => null), count: (1 + 2) },
+        render: (args) => ({
+          props: { off: !args.onClick, total: args.count * 2 },
+          template: '<sb-button [disabled]="off" [count]="total" />',
+        }),
+      };
+      `,
+      countDocgen
+    );
+    expect(story.argCode).toEqual({ onClick: '(() => null)', count: '(1 + 2)' });
+    expect(story.snippet).toContain('off = !(() => null);');
+    expect(story.snippet).toContain('total = (1 + 2) * 2;');
+  });
+
+  it('marks an optional read of an arg next to an operator as an operand', async () => {
+    const story = await soleStory(
+      `
+      import { ButtonComponent } from './button.component';
+      export default { title: 'Example/Button', component: ButtonComponent };
+      export const S = {
+        args: { count: -1 },
+        render: (args) => ({ props: { total: -args?.count }, template: '<sb-button [count]="total" />' }),
+      };
+      `,
+      countDocgen
+    );
+    expect(story.snippet).toContain('total = -(-1);');
+  });
+
+  it('binds an arg the render destructures in its body', async () => {
+    const story = await soleStory(
+      `
+      import { ButtonComponent } from './button.component';
+      export default { title: 'Example/Button', component: ButtonComponent };
+      export const S = {
+        args: { label: 'Go' },
+        render: (args) => {
+          const { label } = args;
+          return { props: { text: label.toUpperCase() }, template: '<sb-button [label]="text" />' };
+        },
+      };
+      `,
+      countDocgen
+    );
+    expect(story.snippet).toContain(`text = 'Go'.toUpperCase();`);
+    expect(story.warning).toBeUndefined();
+  });
+
+  it('keeps a comma expression arg', async () => {
+    const story = await soleStory(
+      `
+      import { ButtonComponent } from './button.component';
+      export default { title: 'Example/Button', component: ButtonComponent };
+      export const S = {
+        args: { label: (0, 1_000) },
+        render: (args) => ({ props: { text: args.label }, template: '<sb-button [label]="text" />' }),
+      };
+      `,
+      countDocgen
+    );
+    expect(story.snippet).toContain('text = (0, 1000);');
+  });
+});

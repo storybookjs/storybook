@@ -112,7 +112,8 @@ function argEdits(
         (reference) =>
           (reference.type === 'Identifier' || reference.type === 'JSXIdentifier') &&
           reference !== identifier &&
-          !isAssigned(reference, parentOf(reference))
+          !isAssigned(reference, parentOf(reference)) &&
+          !isDestructuredTarget(reference, parentOf)
       );
 
   const startsOperand = (read: Node, written?: Node) => {
@@ -124,7 +125,10 @@ function argEdits(
   };
 
   // `label={args.label}`, `{args.label}` as a child, or `args.label` in code, written as `written`.
-  const readEdit = (read: Node, arg: string, fallback: string, written?: Node): Edit => {
+  const readEdit = (member: Node, arg: string, fallback: string, written?: Node): Edit => {
+    // `args?.label` is read as the chain around it.
+    const chain = parentOf(member);
+    const read = chain?.type === 'ChainExpression' && chain.expression === member ? chain : member;
     const container = parentOf(read);
     if (container?.type === 'JSXExpressionContainer') {
       const attribute = parentOf(container);
@@ -410,6 +414,37 @@ function contentEdit(element: E.JSXElement, tag: string, code: string): Edit {
 const isAssigned = (node: Node, parent: Node | undefined) =>
   (parent?.type === 'AssignmentExpression' && parent.left === node) ||
   parent?.type === 'UpdateExpression';
+
+// Whether an identifier is written by a destructuring assignment or a loop head, as `label` in
+// `[label] = ['y']` or `for (label of labels)`.
+const isDestructuredTarget = (node: Node, parentOf: (node: Node) => Node | undefined): boolean => {
+  let child = node;
+  for (let parent = parentOf(node); parent; child = parent, parent = parentOf(parent)) {
+    switch (parent.type) {
+      case 'ArrayPattern':
+      case 'ObjectPattern':
+      case 'RestElement':
+        continue;
+      case 'Property':
+        if (parent.value !== child) {
+          return false;
+        }
+        continue;
+      case 'AssignmentPattern':
+        if (parent.left !== child) {
+          return false;
+        }
+        continue;
+      case 'AssignmentExpression':
+      case 'ForOfStatement':
+      case 'ForInStatement':
+        return parent.left === child;
+      default:
+        return false;
+    }
+  }
+  return false;
+};
 
 const isWritten = (node: Node, parent: Node | undefined) =>
   isAssigned(node, parent) || (parent?.type === 'UnaryExpression' && parent.operator === 'delete');

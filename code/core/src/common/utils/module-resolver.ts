@@ -10,11 +10,13 @@ export interface ModuleResolverOptions {
   conditionNames?: string[];
   /** Honor `paths`/`baseUrl` from a tsconfig. `'auto'` walks up from the resolution origin. */
   tsconfig?: 'auto' | { configFile: string };
+  /** Extensions to try in place of a written one, such as `{ '.js': ['.ts', '.js'] }`. */
+  extensionAlias?: Record<string, string[]>;
   /**
    * Extensions tried in place of the one a specifier ends in, in order, once the file it names
-   * does not exist. Like Vite, a file in `node_modules` is never found by an alias.
+   * does not exist. Like Vite, a file in `node_modules` is never found by such an alias.
    */
-  extensionAlias?: Record<string, string[]>;
+  fallbackExtensionAlias?: Record<string, string[]>;
 }
 
 export interface ModuleResolver {
@@ -45,7 +47,7 @@ export const typeScriptExtensionAlias: Record<string, string[]> = {
 export const defaultResolveConditionNames = ['storybook', 'import', 'module', 'default'];
 
 export function createModuleResolver({
-  extensionAlias,
+  fallbackExtensionAlias,
   ...options
 }: ModuleResolverOptions = {}): ModuleResolver {
   const resolveOptions = {
@@ -53,7 +55,9 @@ export function createModuleResolver({
     conditionNames: options.conditionNames ?? defaultResolveConditionNames,
   };
   const factory = new ResolverFactory(resolveOptions);
-  const aliased = extensionAlias && factory.cloneWithOptions({ ...resolveOptions, extensionAlias });
+  const aliased =
+    fallbackExtensionAlias &&
+    factory.cloneWithOptions({ ...resolveOptions, extensionAlias: fallbackExtensionAlias });
 
   const resolve = (
     resolveWith: (resolver: ResolverFactory) => ResolveResult,

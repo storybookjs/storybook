@@ -87,8 +87,8 @@ export function fillStoryTemplate(
   };
 }
 
-// The code of a node as the story wrote it, with the parentheses around it, at no indentation.
-const writtenCode = (node: Node): string => {
+/** The code of a node as the story wrote it, with the parentheses around it, at no indentation. */
+export const writtenCode = (node: Node): string => {
   const outer = outerSpan(node);
   const module = moduleOf(node);
   if (outer === node || !module) {

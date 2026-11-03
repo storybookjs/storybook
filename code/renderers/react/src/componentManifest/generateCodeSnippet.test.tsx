@@ -969,7 +969,7 @@ test('a meta-level spread that may carry args is reported', () => {
   `);
 });
 
-test('a body still reading args after a partial inline keeps the parameter', () => {
+test('a body reading an arg the story does not set drops that attribute', () => {
   const input = withCSF3(dedent`
     export function Usage(args) {
       return <Button {...args} title={args.notAnArg} />;
@@ -1748,4 +1748,28 @@ test('template: none for a story file that already holds a hole bracket', () => 
   const { snippet, template } = getCodeSnippet(csf, 'Bracket', 'Button');
   expect(template).toBeUndefined();
   expect(snippet).toBe('const Bracket = () => <Button label="⟦x⟧">Click me</Button>;');
+});
+
+test('template: an optional read of an arg is a hole like any other read', () => {
+  const input = withCSF3(dedent`
+    export const Neg = { args: { count: -1 }, render: (args) => <Button>{-args?.count}</Button> };
+    export const Attr = { args: { label: 'Hi' }, render: (args) => <Button label={args?.label} /> };
+  `);
+  expect(template(input, 'Neg')).toContain('-⟦operand count⟧');
+  expect(generateExample(input)).not.toContain('--1');
+  expect(template(input, 'Attr')).toContain('⟦attr label label⟧');
+  expect(filled(input, 'Attr', {})).not.toContain('label=');
+});
+
+test('template: a destructured arg the render writes over stays a name where it is written', () => {
+  const input = withCSF3(dedent`
+    export const Written = {
+      args: { label: 'x' },
+      render: ({ label }) => {
+        [label] = ['y'];
+        return <Button label={label} />;
+      },
+    };
+  `);
+  expect(generateExample(input)).toContain(`[label] = ['y'];`);
 });

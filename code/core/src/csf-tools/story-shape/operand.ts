@@ -10,8 +10,12 @@ import { type Node, isNumericLiteral, outerSpan, unwrapExpression } from '../est
  * an operator, as in `!args.onClick`, `args.onClick || noop` or `args.onChange as Listener`. A
  * snippet template marks such a place as an `⟦operand⟧` hole.
  */
-export function isOperand(node: Node, ancestors: Node[], written?: Node) {
+export function isOperand(node: Node, ancestors: Node[], written?: Node): boolean {
   const [parent] = ancestors;
+  // `args?.x` is read as the chain around it, which is what an operator next to it takes part of.
+  if (parent?.type === 'ChainExpression' && parent.expression === node) {
+    return isOperand(parent, ancestors.slice(1), written);
+  }
   return (
     (parent?.type === 'MemberExpression' && parent.object === node) ||
     ((parent?.type === 'CallExpression' || parent?.type === 'NewExpression') &&

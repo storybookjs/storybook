@@ -7,9 +7,9 @@ import {
   staticKey,
   parseModule,
   reindent,
-  textOf,
   unwrapExpression,
   walk,
+  writtenCode,
 } from 'storybook/internal/csf-tools';
 
 import type { SnippetEnum } from './build-docgen.ts';
@@ -57,10 +57,19 @@ export const writtenValue = (node: Node, enums: SnippetEnum[]): Node => {
   if (literal !== undefined) {
     return parseExpression(literal);
   }
-  // Read again on its own, so its offsets index into its text at no indentation.
-  const own = parseExpression(detachedTextOf(node));
-  const code = ' '.repeat(own.start) + textOf(own);
-  return parseExpression(expandTabs(writtenText(own, code, enums) ?? textOf(own)));
+  // Read again on its own, with the parentheses the story wrote, so its offsets index into the
+  // `(${text}\n)` the fragment is parsed from.
+  const text = writtenCode(node);
+  const own = parseExpression(text);
+  const code = `(${text}\n)`;
+  const replaced = writtenText(own, code, enums);
+  return parseExpression(
+    expandTabs(
+      replaced === undefined
+        ? text
+        : code.slice(1, own.start) + replaced + code.slice(own.end, code.length - 2)
+    )
+  );
 };
 
 // The code of `node` with each part that evaluates as its value, or `undefined` when no part does.

@@ -33,6 +33,9 @@ const expression = (code: string) => {
 
 describe('isOperand', () => {
   it.each([
+    '-args?.n',
+    'a - args?.n',
+    '(args?.n).toFixed()',
     'a - args.n',
     'a-args.n',
     '-args.n',
@@ -66,6 +69,7 @@ describe('isOperand', () => {
   it.each([
     '!args.f',
     'x = args.f || noop',
+    'x = args?.f || noop',
     'x = args.f ? a : b',
     'a + args.f',
     'typeof args.f',

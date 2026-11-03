@@ -4,7 +4,13 @@ export {
   type ComponentImportRef,
   type ImportRef,
 } from './import-statements.ts';
-export { argCode, fillStoryTemplate, fillWithStoryArgs, type StoryTemplate } from './arg-code.ts';
+export {
+  argCode,
+  fillStoryTemplate,
+  fillWithStoryArgs,
+  writtenCode,
+  type StoryTemplate,
+} from './arg-code.ts';
 export { authoredSource, type AuthoredSource } from './authored-source.ts';
 export {
   collectImportBindings,

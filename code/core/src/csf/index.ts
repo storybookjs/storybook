@@ -4,7 +4,6 @@
  * preview-api and storybook/test (and their browser dependencies) into the module graph.
  */
 export * from './csf-utils.ts';
-export { includeConditionalArg } from './includeConditionalArg.ts';
 export * from './story.ts';
 export * from './csf-factories.ts';
 export * from './core-annotations.ts';

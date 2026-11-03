@@ -62,15 +62,15 @@ Storybook 11 raises these minimum versions. Upgrade any that apply before you up
 | Visual Tests addon (`@chromatic-com/storybook`) | 5.5.0                                          |
 | Browsers for the Storybook UI                   | Chrome 147, Edge 150, Firefox 152, Safari 26.5 |
 
-Storybook accepts prerelease Node.js builds when their version meets the minimum. For example, Node.js `26.1.0-rc.0` is supported, but `22.12.0-rc.0` is not.
-
 For the framework-specific details, see the [full migration notes][full-migration-notes].
 
 ### TypeScript
 
-`typescript` is now a required peer dependency of the React, Vue 3, Svelte, and Web Components renderers and frameworks. This applies to JavaScript projects too, because [server-side docgen](#server-side-docgen-is-on-by-default) uses TypeScript to read your components.
+`typescript` is now a required peer dependency of the React, Vue 3, Svelte, and Web Components renderers and frameworks. This applies to JavaScript projects too (`typescript` will be installed, but does not need to be used for compiling). This is because [server-side docgen](#server-side-docgen-is-on-by-default) uses TypeScript to read the JSDoc and type annotations in your components.
 
-Yarn does not install a missing peer dependency. npm and pnpm do, but they install TypeScript 7, which docgen cannot use.
+Additionally, the latest version of TypeScript, 7.0, does not include the compiler API that Storybook uses to generate Controls and the args table. Therefore, Storybook cannot use TypeScript 7 for these purposes and requires TypeScript 5.9 or 6.x.
+
+Package managers vary in their peer dependency handling. Yarn does not install a missing peer dependency. npm and pnpm do, but they install TypeScript 7, which docgen cannot use.
 
 If your project has no `typescript` dependency, run this command to add `typescript@^6` for you:
 
@@ -78,7 +78,7 @@ If your project has no `typescript` dependency, run this command to add `typescr
 npx storybook@next automigrate typescript-dependency
 ```
 
-TypeScript 7 does not include the compiler API that Storybook uses to generate Controls and the args table. To use TypeScript 6 for Storybook while keeping TypeScript 7 for `tsc`, point the `typescript` package at TypeScript 6:
+ To use TypeScript 6 for Storybook while keeping TypeScript 7 for `tsc` (i.e. for your app), point the `typescript` package at TypeScript 6:
 
 ```json title="package.json"
 {
@@ -141,7 +141,7 @@ These automigrations are new in Storybook 11. To run one again later, use `npx s
 | `vitest-setup-file`               | Removes `setProjectAnnotations` calls from Vitest setup files                                                                   |
 | `web-components-runtime-manifest` | Replaces `setCustomElementsManifest()` with `framework.options.customElementsManifest`                                          |
 
-An automigration stops when it cannot safely edit a file. It prints instructions for you to manually make changes, and lists affected files in `automigrations-summary.md`.
+An automigration stops when it cannot safely edit a file. It then prints instructions for you to make the necessary changes manually, and lists affected files in `automigrations-summary.md`.
 
 ## What changes after you upgrade
 
@@ -170,10 +170,10 @@ It replaces React's `typescript.reactDocgen` and Vue's `framework.options.docgen
 Check your Controls panel, docs pages, and args tables after you upgrade:
 
 - Story snippets and the code panel are static and do not update after changing controls. Dynamic snippets are expected in Storybook 11.1.
-- React props come from TypeScript types. Defaults come from destructuring and `defaultProps`, with destructuring taking precedence. Storybook no longer reads `propTypes`, so a component that declares props only with `propTypes` shows no props.
 - Builder docgen options such as `propFilter` have no server-side equivalent. Unlike before, we now read prop types from `node_modules` by default, but we have heuristics in place to avoid picking up unnecessary types.
-- Web Components event, slot, and part argType keys get a suffix, such as `my-change-event`. See [Manual migrations](#web-components).
-- Svelte `Snippet` and callback props [move to the slots and events categories](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte).
+- **React** props come from TypeScript types. Defaults come from destructuring and `defaultProps`, with destructuring taking precedence. Storybook no longer reads `propTypes`, so a component that declares props only with `propTypes` shows no props.
+- **Web Components** event, slot, and part argType keys get a suffix, such as `my-change-event`. See [Manual migrations](#web-components).
+- **Svelte** `Snippet` and callback props [move to the slots and events categories](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte).
 
 To keep builder docgen, set `features.docgenServer: false` in `.storybook/main.js|ts`. Builder docgen is [deprecated](#builder-docgen-to-server-side-docgen) and will be removed in Storybook 12.
 
@@ -261,6 +261,8 @@ For monorepos and manual upgrade steps, see [Upgrade to CSF Next](../api/csf/csf
 ### Builder docgen to server-side docgen
 
 Builder docgen is deprecated. This covers React's `react-docgen` and `react-docgen-typescript`, the Vue 3 Vite `docgen` option, and the Svelte `docgen` option. It only runs when you set `features.docgenServer: false`, and Storybook then prints a deprecation warning. Remove that setting to use [server-side docgen](#server-side-docgen-is-on-by-default). See the [builder docgen notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#builder-docgen-is-deprecated).
+
+`angular-vite` projects may opt-in to server-side docgen by setting `features.experimentalDocgenServer: true` in `.storybook/main.js|ts`. For more details, see the [framework documentation](../get-started/frameworks/angular-vite#component-documentation).
 
 ### Next.js Webpack to Next.js Vite
 

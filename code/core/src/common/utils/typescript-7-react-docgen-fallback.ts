@@ -1,8 +1,10 @@
 /**
  * TEMPORARY(ts-7.1): TypeScript 7.0 fallback for React docgen. Once Storybook supports TypeScript
  * 7.1 (stable on 2026-11-24), which gives TypeScript 7 projects the docgen server, delete every
- * `TEMPORARY(ts-7.1)` occurrence (`grep -rn 'TEMPORARY(ts-7.1)'`): this file, the
- * `typescript-7-react-docgen` automigration, the init step and their docs.
+ * `TEMPORARY(ts-7.1)` occurrence (`grep -rn 'TEMPORARY(ts-7.1)'`): the `typescript-7-react-docgen`
+ * automigration, the init step and their docs. Move `readTemporaryDependencies`,
+ * `getTemporaryDependenciesPath` and `TYPESCRIPT_7_DOCGEN_FALLBACK_REASON` to the TypeScript 7.1
+ * automigration that removes the recorded packages, then delete the rest of this file.
  *
  * TypeScript 7.0 has no compiler API, so the docgen server cannot run and React falls back to
  * builder docgen. `react-docgen` is an optional peer dependency, so without help a new React project
@@ -17,9 +19,9 @@
  * Removal rule for the TypeScript 7.1 automigration (keep it when deleting this file): remove each
  * package recorded there with the reason `typescript-7.0-docgen-fallback`, but only once the
  * project's `typescript` is 7.1 or newer (or 5.9 / 6) and its main config does not set
- * `features.docgenServer: false`. Without the record (a fresh clone, CI, a deleted `node_modules`),
- * keep `react-docgen`: it may have been installed by the user, and an unused devDependency is
- * harmless.
+ * `features.docgenServer: false`, and offer it as a prompt. Without the record (a fresh clone, CI,
+ * `npm ci`, a first Yarn install, a deleted `node_modules`), keep `react-docgen`: it may have been
+ * installed by the user, and an unused devDependency is harmless.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
@@ -34,45 +36,41 @@ export const REACT_DOCGEN_FALLBACK_RANGE = '^8.0.2';
 /** Why Storybook added a temporary dependency, as recorded in `temporary-dependencies.json`. */
 export const TYPESCRIPT_7_DOCGEN_FALLBACK_REASON = 'typescript-7.0-docgen-fallback';
 
-/** The unversioned Storybook cache file that records temporary dependencies. */
-export const getTemporaryDependenciesPath = (cwd = process.cwd()) =>
+/**
+ * The unversioned Storybook cache file that records temporary dependencies, for the project whose
+ * package.json is in `projectDir` (in a monorepo, the workspace package, not the repository root).
+ */
+export const getTemporaryDependenciesPath = (projectDir: string) =>
   join(
-    pkg.cache('storybook', { cwd }) ?? join(cwd, 'node_modules', '.cache', 'storybook'),
+    pkg.cache('storybook', { cwd: projectDir }) ??
+      join(projectDir, 'node_modules', '.cache', 'storybook'),
     'temporary-dependencies.json'
   );
 
-/** Return the temporary dependencies Storybook recorded, by package name with their reason. */
-export function readTemporaryDependencies(cwd?: string): Record<string, string> {
+/** Return the temporary dependencies Storybook recorded for a project, by name with their reason. */
+export function readTemporaryDependencies(projectDir: string): Record<string, string> {
   try {
-    const recorded = JSON.parse(readFileSync(getTemporaryDependenciesPath(cwd), 'utf-8'));
-    return recorded && typeof recorded === 'object' ? recorded : {};
+    const recorded = JSON.parse(readFileSync(getTemporaryDependenciesPath(projectDir), 'utf-8'));
+    return recorded && typeof recorded === 'object' && !Array.isArray(recorded) ? recorded : {};
   } catch {
     return {};
   }
 }
 
 /**
- * Add `react-docgen` to the project's devDependencies as a temporary TypeScript 7.0 fallback, and
- * record it in the Storybook cache. The caller installs dependencies afterwards.
+ * Record that Storybook added `react-docgen` as a temporary TypeScript 7.0 fallback.
  *
  * Failing to record only means that the TypeScript 7.1 automigration keeps `react-docgen`.
  */
-export function addReactDocgenFallback(packageManager: JsPackageManager) {
-  const { packageJson, operationDir } = packageManager.primaryPackageJson;
-  packageJson.devDependencies = {
-    ...packageJson.devDependencies,
-    'react-docgen': REACT_DOCGEN_FALLBACK_RANGE,
-  };
-  packageManager.writePackageJson(packageJson, operationDir);
-
+export function recordReactDocgenFallback(projectDir: string) {
   try {
-    const path = getTemporaryDependenciesPath(operationDir);
+    const path = getTemporaryDependenciesPath(projectDir);
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(
       path,
       JSON.stringify(
         {
-          ...readTemporaryDependencies(operationDir),
+          ...readTemporaryDependencies(projectDir),
           'react-docgen': TYPESCRIPT_7_DOCGEN_FALLBACK_REASON,
         },
         null,
@@ -82,4 +80,19 @@ export function addReactDocgenFallback(packageManager: JsPackageManager) {
   } catch {
     // Without the record, the TypeScript 7.1 automigration keeps `react-docgen`, which is safe.
   }
+}
+
+/**
+ * Add `react-docgen` to the project's devDependencies as a temporary TypeScript 7.0 fallback, and
+ * record it. For automigrations, which install dependencies afterwards; `storybook init` adds it to
+ * its dependency collector instead and calls {@link recordReactDocgenFallback}.
+ */
+export function addReactDocgenFallback(packageManager: JsPackageManager) {
+  const { packageJson, operationDir } = packageManager.primaryPackageJson;
+  packageJson.devDependencies = {
+    ...packageJson.devDependencies,
+    'react-docgen': REACT_DOCGEN_FALLBACK_RANGE,
+  };
+  packageManager.writePackageJson(packageJson, operationDir);
+  recordReactDocgenFallback(operationDir);
 }

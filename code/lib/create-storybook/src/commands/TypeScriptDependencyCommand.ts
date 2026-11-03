@@ -2,7 +2,8 @@ import {
   type JsPackageManager,
   RENDERERS_WITH_TYPESCRIPT_DOCGEN,
   TYPESCRIPT_FOR_DOCGEN_PACKAGE,
-  addReactDocgenFallback,
+  REACT_DOCGEN_FALLBACK_RANGE,
+  recordReactDocgenFallback,
   hasTypeScriptCompilerApi,
   isCI,
 } from 'storybook/internal/common';
@@ -51,11 +52,7 @@ export class TypeScriptDependencyCommand {
       dependencyCollector.addDevDependencies([TYPESCRIPT_FOR_DOCGEN_PACKAGE]);
     }
     if (result === 'without-compiler-api') {
-      this.warnWithoutCompilerApi(
-        packageManager,
-        renderer,
-        await this.getTypeScriptVersion(packageManager)
-      );
+      await this.handleTypeScriptWithoutCompilerApi(packageManager, renderer, dependencyCollector);
     }
     if (result !== 'not-needed') {
       await this.telemetryService.trackTypeScriptDependency(result);
@@ -96,20 +93,24 @@ export class TypeScriptDependencyCommand {
   }
 
   /** Warn that the TypeScript version has no compiler API, and say what docgen does meanwhile. */
-  private warnWithoutCompilerApi(
+  private async handleTypeScriptWithoutCompilerApi(
     packageManager: JsPackageManager,
     renderer: SupportedRenderer,
-    version = ''
+    dependencyCollector: DependencyCollector
   ) {
     let builderDocgenFallback;
     if (renderer === SupportedRenderer.REACT) {
+      let installed = packageManager.isDependencyInstalled('react-docgen');
       // TEMPORARY(ts-7.1): React falls back to builder docgen, so add its optional `react-docgen`
       // peer. See `typescript-7-react-docgen-fallback.ts` in core.
-      if (!packageManager.isDependencyInstalled('react-docgen')) {
-        addReactDocgenFallback(packageManager);
+      if (!installed) {
+        dependencyCollector.addDevDependencies([`react-docgen@${REACT_DOCGEN_FALLBACK_RANGE}`]);
+        recordReactDocgenFallback(packageManager.primaryPackageJson.operationDir);
+        installed = true;
       }
-      builderDocgenFallback = { packageName: 'react-docgen', installed: true };
+      builderDocgenFallback = { packageName: 'react-docgen', installed };
     }
+    const version = (await this.getTypeScriptVersion(packageManager)) ?? '';
     logger.warn(new TypeScriptWithoutCompilerApiError({ version, builderDocgenFallback }).message);
   }
 

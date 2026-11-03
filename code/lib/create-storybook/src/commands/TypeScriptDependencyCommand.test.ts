@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   type JsPackageManager,
   PackageManagerName,
-  addReactDocgenFallback,
+  recordReactDocgenFallback,
 } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
@@ -22,6 +22,7 @@ const packageManagerWith = (typescriptVersion?: string, reactDocgenInstalled = f
       (name === 'typescript' && !!typescriptVersion) ||
       (name === 'react-docgen' && reactDocgenInstalled),
     getDeclaredVersionSpecifier: async () => typescriptVersion ?? null,
+    primaryPackageJson: { packageJson: {}, operationDir: '/project' },
   }) as unknown as JsPackageManager;
 
 const run = async ({
@@ -64,7 +65,7 @@ const run = async ({
 };
 
 beforeEach(() => {
-  vi.mocked(addReactDocgenFallback).mockImplementation(() => {});
+  vi.mocked(recordReactDocgenFallback).mockImplementation(() => {});
   vi.mocked(prompt.confirm).mockResolvedValue(true);
   vi.mocked(logger.warn).mockImplementation(() => {});
   vi.mocked(logger.info).mockImplementation(() => {});
@@ -141,9 +142,10 @@ describe('TypeScriptDependencyCommand', () => {
 
   // TEMPORARY(ts-7.1): see `typescript-7-react-docgen-fallback.ts` in core.
   it('adds react-docgen to a React project on TypeScript 7 and records it as temporary', async () => {
-    const { packageManager } = await run({ typescriptVersion: '7.0.2' });
+    const { devDependencies } = await run({ typescriptVersion: '7.0.2' });
 
-    expect(addReactDocgenFallback).toHaveBeenCalledExactlyOnceWith(packageManager);
+    expect(devDependencies).toEqual(['react-docgen@^8.0.2']);
+    expect(recordReactDocgenFallback).toHaveBeenCalledExactlyOnceWith('/project');
     expect(logger.warn).toHaveBeenCalledOnce();
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('falls back to the deprecated builder docgen with `react-docgen`')
@@ -152,9 +154,13 @@ describe('TypeScriptDependencyCommand', () => {
 
   // TEMPORARY(ts-7.1): see `typescript-7-react-docgen-fallback.ts` in core.
   it('leaves a react-docgen the project already declares alone', async () => {
-    await run({ typescriptVersion: '7.0.2', reactDocgenInstalled: true });
+    const { devDependencies } = await run({
+      typescriptVersion: '7.0.2',
+      reactDocgenInstalled: true,
+    });
 
-    expect(addReactDocgenFallback).not.toHaveBeenCalled();
+    expect(devDependencies).toEqual([]);
+    expect(recordReactDocgenFallback).not.toHaveBeenCalled();
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('falls back to the deprecated builder docgen with `react-docgen`')
     );
@@ -167,7 +173,7 @@ describe('TypeScriptDependencyCommand', () => {
       renderer: SupportedRenderer.VUE3,
     });
 
-    expect(addReactDocgenFallback).not.toHaveBeenCalled();
+    expect(recordReactDocgenFallback).not.toHaveBeenCalled();
     expect(logger.warn).toHaveBeenCalledOnce();
     expect(logger.warn).toHaveBeenCalledWith(expect.not.stringContaining('builder docgen'));
   });

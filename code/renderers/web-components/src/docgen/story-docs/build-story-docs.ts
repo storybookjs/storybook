@@ -18,7 +18,7 @@ import {
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
-import { withHoleSpace } from 'storybook/internal/docs-tools';
+import { hole, withHoleSpace } from 'storybook/internal/docs-tools';
 
 import { resolve } from 'node:path';
 
@@ -49,10 +49,8 @@ interface StoryDocDeps {
   tag: string;
 }
 
-/**
- * A story's snippet, and its `template`: the same html with a hole wherever it prints an arg, which
- * the preview fills with the args as the controls change them.
- */
+// A story's snippet, and its `template`: the same html with a hole wherever it prints an arg, which
+// the preview fills with the args as the controls change them.
 type SnippetResult = { snippet?: string; template?: string; warning?: string };
 type ResolvedStoryArgs = ReturnType<StoryArgsResolver['resolve']>;
 type AuthoredFallback = (resolved: ResolvedStoryArgs) => SnippetResult;
@@ -373,21 +371,22 @@ const argsSnippet = (
     ...(printed
       ? {
           snippet: printElementSnippet(snippet),
-          template: printElementSnippet(withUnsetArgs(snippet, args, argTypes, declaration), true),
+          template: elementTemplate(snippet, args, argTypes, declaration),
         }
       : {}),
     ...joinWarnings(warnings),
   };
 };
 
-// The snippet with each arg the story does not set where it would print it if it were set, as
-// the template has a hole there too.
-const withUnsetArgs = (
+// The template of the element, with a hole for each arg the story does not set where it would
+// print it if it were set, and a `guard` hole for one it would not print, such as a property
+// without an attribute.
+const elementTemplate = (
   snippet: ElementSnippet,
   args: Record<string, Node>,
   argTypes: WebComponentsDocgenPayload['argTypes'],
   declaration: ManifestDeclaration
-): ElementSnippet => {
+): string => {
   const unset = [
     ...Object.keys(args).filter((key) => evaluateArgValue(args[key]).kind === 'unset'),
     ...Object.keys(argTypes ?? {}).filter((key) => !Object.hasOwn(args, key)),
@@ -399,6 +398,7 @@ const withUnsetArgs = (
     slots: [...snippet.slots],
     styleRules: [...snippet.styleRules],
   };
+  const guards: string[] = [];
   for (const key of new Set(unset)) {
     const binding = classifyArg(key, false, argTypes ?? {}, declaration);
     switch (binding.kind) {
@@ -409,11 +409,15 @@ const withUnsetArgs = (
       case 'cssState':
         addBoundValue(template, binding, key, undefined, snippet.tag, true);
         break;
+      case 'property':
+      case 'unknown':
+        guards.push(hole({ kind: 'guard', arg: key, words: [] }, ''));
+        break;
       default:
         break;
     }
   }
-  return template;
+  return guards.join('') + printElementSnippet(template, true);
 };
 
 // Each value is the arg `source`'s, so the template prints a hole for it. An unset arg is only

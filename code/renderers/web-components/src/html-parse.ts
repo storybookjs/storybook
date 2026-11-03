@@ -7,11 +7,11 @@ export interface HtmlAttribute {
   name: string;
   quoted?: boolean;
   value: string | undefined;
-  /** The place a template wraps the whole attribute in, as it prints an arg. */
+  // The place a template wraps the whole attribute in, as it prints an arg.
   hole?: TemplateHole;
-  /** The value a template prints, with a hole around each part of it that prints an arg. */
+  // The value a template prints, with a hole around each part of it that prints an arg.
   holeValue?: string;
-  /** Not printed for the args of the static snippet, but its `hole` is in the template. */
+  // Not printed for the args of the static snippet, but its `hole` is in the template.
   omitted?: boolean;
 }
 
@@ -28,7 +28,7 @@ export type HtmlNode =
   | { kind: 'malformed'; text: string }
   | { attributes: HtmlAttribute[]; closed: boolean; kind: 'rawText'; name: string; text: string }
   | { kind: 'text'; text: string }
-  /** The nodes of a value the static snippet prints for an arg, which a template wraps in `hole`. */
+  // The nodes of a value the static snippet prints for an arg, which a template wraps in `hole`.
   | { hole: TemplateHole; kind: 'hole'; nodes: HtmlNode[] };
 
 export type ElementNode = Extract<HtmlNode, { kind: 'element' }>;

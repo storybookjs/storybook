@@ -268,12 +268,12 @@ describe('template', () => {
       </template>"
     `);
     const initialArgs = { label: 'Hi', count: 2, theme: 'dark' };
-    expect(filled(story, initialArgs, { label: 'Go', active: true, theme: 'light' })).toContain(
+    expect(filled(story, initialArgs, { label: 'Go', active: true })).toContain(
       '<MyButton :count="2" label="Go" active />'
     );
   });
 
-  it('adds the args a control adds after an attribute the render writes, but not that one', async () => {
+  it('adds the args a control sets after an attribute the render writes before them', async () => {
     const story = await primaryStory(`
 export const Primary = {
   args: { count: 2 },
@@ -286,7 +286,7 @@ export const Primary = {
 `);
     expect(story?.snippet).toContain('<MyButton label="Go" :count="2" />');
     expect(filled(story, { count: 2 }, { label: 'Stop', size: 'lg' })).toContain(
-      '<MyButton label="Go" :count="2" size="lg" />'
+      '<MyButton label="Stop" :count="2" size="lg" />'
     );
   });
 
@@ -311,6 +311,33 @@ export const Primary = {
     const story = await primaryStory(`export const Primary = { args: { label: 'Hi' } };`);
     expect(() => filled(story, { label: 'Hi' }, { label: `a & "b" 'c'` })).toThrow(
       UnprintableArgError
+    );
+  });
+
+  it('follows an attribute written before the args binding, which the binding writes over', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { count: 2 },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton label="Go" v-bind="args" />',
+  }),
+};
+`);
+    expect(filled(story, { count: 2 }, { label: 'Stop' })).toContain(
+      '<MyButton label="Stop" :count="2" />'
+    );
+  });
+
+  it('cannot follow a slot a control sets that the story leaves unset', async () => {
+    const story = await primaryStory(
+      `export const Primary = { args: { label: 'Hi' } };`,
+      undefined,
+      { ...DOCGEN_CATEGORIES, default: 'slots' }
+    );
+    expect(() => filled(story, { label: 'Hi' }, { default: 'Slot text' })).toThrow(
+      'The snippet cannot show the current value of the `default` arg.'
     );
   });
 

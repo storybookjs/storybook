@@ -35,7 +35,7 @@ export type StoryTemplateAnalysis = (
       errors: string[];
     }
 ) & {
-  /** Where `markup` puts each `argsToTemplate` expansion; see {@link materializeLike}. */
+  // Where `markup` puts each `argsToTemplate` expansion; see `materializeLike`.
   replacements: readonly Replacement[];
 };
 
@@ -44,7 +44,7 @@ interface Replacement {
   start: number;
   end: number;
   text: string;
-  /** The output bindings `text` holds, which an output the element binds itself leaves out. */
+  // The output bindings `text` holds, which an output the element binds itself leaves out.
   outputs: readonly string[];
 }
 
@@ -56,11 +56,9 @@ const expansionText = (expansion: TemplateExpansion, outputs: readonly string[])
       .map(({ markup }) => markup),
   ].join(' ');
 
-/**
- * The markup `analysis` materialized, from `markup` and `expansions` of the same shape: a story's
- * template printed with placeholders for the values its analyzed print holds. Each expansion is
- * found by its marker, as a placeholder can be wider than the value it stands for.
- */
+// The markup `analysis` materialized, from `markup` and `expansions` of the same shape: a story's
+// template printed with placeholders for the values its analyzed print holds. Each expansion is
+// found by its marker, as a placeholder can be wider than the value it stands for.
 export const materializeLike = (
   analysis: StoryTemplateAnalysis,
   markup: string,

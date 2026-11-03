@@ -8,11 +8,11 @@ import type { Args } from 'storybook/internal/types';
  *
  * A template is the story's static snippet with each place an arg prints wrapped in a hole,
  * `⟦kind arg word…⟫text⟧`. `text` is what the static snippet prints there. `arg` is the arg the
- * place reads, or `*` for the args a control adds, which are not among the story's initial args.
- * `kind` and the other words are the renderer's, for its {@link PrintHole}. Words are separated by
- * one space, and one that starts with `%` is the rest of it URI-encoded, see {@link holeWord}. A
- * `~space` word is text, such as the whitespace before an attribute, that is printed before the
- * hole's print unless that is empty; see {@link withHoleSpace}.
+ * place reads, or `*` for the args a control set that no other hole reads, as a spread passes
+ * them. `kind` and the other words are the renderer's, for its {@link PrintHole}. Words are
+ * separated by one space, and one that starts with `%` is the rest of it URI-encoded. A `~space`
+ * word is text, such as the whitespace before an attribute, that is printed before the hole's
+ * print unless that is empty; see {@link withHoleSpace}.
  *
  * {@link fillTemplate} prints a hole whose arg still holds its initial value as its `text`, so
  * nothing the controls did not change moves. The renderer prints only a changed value, for the
@@ -20,14 +20,15 @@ import type { Args } from 'storybook/internal/types';
  */
 export interface TemplateHole {
   kind: string;
-  /** The arg the place reads, or `undefined` for the args a control adds. */
+  /** The arg the place reads, or `undefined` for the args a control set that no hole reads. */
   arg?: string;
   words: string[];
 }
 
 /**
  * Prints an arg value a control changed for the place `hole` describes, or, for a hole without an
- * `arg`, the args a control added. The renderer sets it as `parameters.docs.source.printHole`.
+ * `arg`, the args a control set that no other hole reads. The renderer sets it as
+ * `parameters.docs.source.printHole`.
  *
  * @throws {UnprintableArgError} For a value the snippet cannot show.
  */
@@ -42,6 +43,11 @@ export class UnprintableArgError extends Error {
   }
 }
 
+const isHoleWord = (word: string) => /^[^\s⟦⟧⟫%~*][^\s⟦⟧⟫]*$/.test(word);
+
+// `word` as a hole writes it: as it is where it can be, else URI-encoded after a `%`.
+const holeWord = (word: string) => (isHoleWord(word) ? word : `%${encodeURIComponent(word)}`);
+
 /**
  * A hole that prints `text` in the static snippet, and `space` before what it prints once its arg
  * changes, unless that is empty; see {@link TemplateHole}.
@@ -50,12 +56,6 @@ export const hole = ({ kind, arg, words }: TemplateHole, text: string, space?: s
   const header = [kind, arg === undefined ? '*' : holeWord(arg), ...words.map(holeWord)];
   return `⟦${[...header, ...(space ? [`~${encodeURIComponent(space)}`] : [])].join(' ')}⟫${text}⟧`;
 };
-
-const isHoleWord = (word: string) => /^[^\s⟦⟧⟫%~*][^\s⟦⟧⟫]*$/.test(word);
-
-/** `word` as a hole writes it: as it is where it can be, else URI-encoded after a `%`. */
-export const holeWord = (word: string) =>
-  isHoleWord(word) ? word : `%${encodeURIComponent(word)}`;
 
 /** Whether code already holds a hole bracket, so holes written in it could not be found again. */
 export const hasHoleBracket = (code: string) => /[⟦⟧⟫]/.test(code);
@@ -91,6 +91,7 @@ export const stripHoles = (template: string) => printHoles(template, (_, text) =
 /**
  * Fills a template with the args a story renders with before they are mapped: a hole whose arg
  * holds its initial value prints its `text`, and every other hole what `printHole` prints for it.
+ * A hole without an arg gets the args a control set that no other hole of the template reads.
  *
  * @throws {UnprintableArgError} When `printHole` cannot print a value.
  */
@@ -100,17 +101,19 @@ export const fillTemplate = (
   printHole: PrintHole
 ) => {
   const own = (args: Args, name: string) => (Object.hasOwn(args, name) ? args[name] : undefined);
+  const changed = (name: string) => !isEqual(own(unmappedArgs, name), own(initialArgs, name));
+  const read = new Set<string>();
+  printHoles(template, ({ arg }) => (arg === undefined ? '' : (read.add(arg), '')));
   const added = Object.fromEntries(
     Object.entries(unmappedArgs).filter(
-      ([name, value]) => value !== undefined && !Object.hasOwn(initialArgs, name)
+      ([name, value]) => value !== undefined && !read.has(name) && changed(name)
     )
   );
   return printHoles(template, (hole, text) => {
     if (hole.arg === undefined) {
       return Object.keys(added).length === 0 ? text : printHole(hole, added);
     }
-    const value = own(unmappedArgs, hole.arg);
-    return isEqual(value, own(initialArgs, hole.arg)) ? text : printHole(hole, value);
+    return changed(hole.arg) ? printHole(hole, own(unmappedArgs, hole.arg)) : text;
   });
 };
 

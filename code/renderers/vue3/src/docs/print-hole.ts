@@ -24,6 +24,7 @@ import {
 // - `⟦value arg⟫…⟧`: code in a template expression, in an attribute quoted with `'` (a `'` word) or
 //   `"`, or in an interpolation (`{{`); with `script`, in `<script setup>`. A `.` word says the
 //   code reads on after it, as `(5).toFixed()` does.
+// - `⟦guard arg⟫⟧`: an arg the snippet has no place for, such as a slot the story leaves unset.
 export const printHole: PrintHole = ({ kind, arg = '', words }, value) => {
   switch (kind) {
     case 'attr':
@@ -42,6 +43,8 @@ export const printHole: PrintHole = ({ kind, arg = '', words }, value) => {
         : expression(arg, value, words);
       return operand(printed, words.includes('.'));
     }
+    case 'guard':
+      throw new UnprintableArgError(arg);
     default:
       throw new Error(`Unknown hole ⟦${kind}⟧`);
   }

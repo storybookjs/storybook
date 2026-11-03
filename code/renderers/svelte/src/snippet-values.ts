@@ -1,15 +1,15 @@
-// How next's Svelte snippet prints one arg value in each place it prints one. The story-docs
-// provider prints the static snippet with these, and the filler a value a control changed, so the
+// How the Svelte snippet prints one arg value in each place it prints one. The story-docs
+// provider prints the static snippet with these, and `printHole` a value a control changed, so the
 // two print a value alike. The callers say what the value is: the provider from the code the
-// story writes, the filler from the value itself.
+// story writes, `printHole` from the value itself.
 
 // An arg a spread passes: unset, `true`, or code, which a `string` it holds may print as text.
 export type PropValue = undefined | true | { string?: string; code: string };
 
 // A string that reads the same in a quoted attribute as in an expression.
-export const isPlain = (value: string) => !/[{}<>"\\&\r\n\t]/.test(value);
+const isPlain = (value: string) => !/[{}<>"\\&\r\n\t]/.test(value);
 
-export const escapeAttribute = (value: string) =>
+const escapeAttribute = (value: string) =>
   value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 
 // One attribute as a `{...args}` spread prints an arg: nothing while unset, the name alone for

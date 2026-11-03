@@ -11,11 +11,9 @@ import {
 import { type HtmlAttribute, type HtmlNode, parseHtml } from '../../html-parse.ts';
 import { printHtml } from './html-tree.ts';
 
-/**
- * What the element of a story without a render prints. The template wraps an entry with an `arg`
- * in a hole; one whose value is `undefined` (or, for a style rule, whose declarations are) is an
- * arg the story does not set, which only the template has.
- */
+// What the element of a story without a render prints. The template wraps an entry with an `arg`
+// in a hole; one whose value is `undefined` (or, for a style rule, whose declarations are) is an
+// arg the story does not set, which only the template has.
 export interface ElementSnippet {
   tag: string;
   attributes: {
@@ -32,10 +30,8 @@ export interface ElementSnippet {
   styleRules: { selector: string; declarations: string | undefined; arg?: string }[];
 }
 
-/**
- * The element with its args. With `holes`, its template: the same html with each value an arg
- * prints wrapped in a hole.
- */
+// The element with its args. With `holes`, its template: the same html with each value an arg
+// prints wrapped in a hole.
 export function printElementSnippet(snippet: ElementSnippet, holes = false): string {
   const rules = snippet.styleRules.filter(
     (rule): rule is { selector: string; declarations: string; arg?: string } =>

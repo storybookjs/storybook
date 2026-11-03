@@ -47,7 +47,7 @@ export interface RenderContext {
   componentImports: Set<string>;
   /** Setup statements forwarded into `<script setup>`, printed after the hoisted consts. */
   statements: string[];
-  /** For the story's template, wraps each place an arg prints in its hole; see `printHole`. */
+  // For the story's template, wraps each place an arg prints in its hole; see `printHole`.
   mark?: typeof hole;
 }
 
@@ -94,7 +94,7 @@ function partitionArgsByRole(args: ClassifiedArg[]): {
   };
 }
 
-/** Create an isolated hoist context for one generated snippet, or with `mark` for its template. */
+// Create an isolated hoist context for one generated snippet, or with `mark` for its template.
 export function createRenderContext(mark?: typeof hole): RenderContext {
   return {
     imports: {},
@@ -108,11 +108,11 @@ export function createRenderContext(mark?: typeof hole): RenderContext {
   };
 }
 
-/** `text` as the snippet prints it in a place, which a template wraps in the place's hole. */
+// `text` as the snippet prints it in a place, which a template wraps in the place's hole.
 export const marked = (ctx: RenderContext, place: TemplateHole, text: string, space?: string) =>
   ctx.mark ? ctx.mark(place, text, space) : text;
 
-/** An arg's value as code in `<script setup>`. */
+// An arg's value as code in `<script setup>`.
 export function scriptValue(name: string, value: Node, ctx: RenderContext): string {
   return marked(
     ctx,

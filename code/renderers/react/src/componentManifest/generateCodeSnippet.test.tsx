@@ -17,7 +17,13 @@ function expectTemplatesStripToSnippets(csf: CsfFile) {
   for (const name of Object.keys(csf._storyExports)) {
     let printed;
     try {
-      printed = getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle');
+      printed = getCodeSnippet(
+        csf,
+        name,
+        csf._meta?.component ?? 'ComponentTitle',
+        undefined,
+        true
+      );
     } catch {
       continue;
     }
@@ -1137,7 +1143,7 @@ const snippetOf = (code: string, story = 'S') =>
   getCodeSnippet(load(code), story, 'Button').snippet;
 
 const templateOf = (code: string, story = 'S') =>
-  getCodeSnippet(load(code), story, 'Button').template!;
+  getCodeSnippet(load(code), story, 'Button', undefined, true).template!;
 
 const fill = (code: string, initialArgs: Args, unmappedArgs: Args, story = 'S') =>
   fillTemplate(templateOf(code, story), { initialArgs, unmappedArgs }, printHole);
@@ -1267,7 +1273,17 @@ describe('template', () => {
     expect(cleared('element end')).toBe('const S = () => <Button />;');
   });
 
-  it('shows only the arg that changed: no project, action or unresolved arg appears', () => {
+  it('follows an attribute written before the spread, which the spread writes over', () => {
+    const code = withCSF3(
+      `export const S = { args: { label: 'Go' }, render: (args) => <Button size="small" {...args} title="T" /> };`
+    );
+    const initialArgs = { children: 'Click me', label: 'Go' };
+    expect(fill(code, initialArgs, { ...initialArgs, size: 'large', title: 'X' })).toBe(
+      'const S = () => <Button size="large" label="Go" title="T">Click me</Button>;'
+    );
+  });
+
+  it('shows only the args that changed: no project, action or unresolved arg appears unchanged', () => {
     const code = withCSF3(dedent`
       import { base } from './base';
       export const S = {
@@ -1288,8 +1304,12 @@ describe('template', () => {
     expect(snippetOf(code)).toBe(
       'const S = () => <Button label="Go" onClick={() => {}}>Click me</Button>;'
     );
-    expect(fill(code, initialArgs, { ...initialArgs, label: 'Stop', theme: 'light' })).toBe(
+    expect(fill(code, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(
       'const S = () => <Button label="Stop" onClick={() => {}}>Click me</Button>;'
+    );
+    // The spread passes a project-level arg a control changes, so the snippet shows it.
+    expect(fill(code, initialArgs, { ...initialArgs, theme: 'light' })).toBe(
+      'const S = () => <Button label="Go" onClick={() => {}} theme="light">Click me</Button>;'
     );
     expect(templateOf(code)).toBe(
       'const S = () => <Button⟦attr label label ~%20⟫label="Go"⟧⟦attr onClick onClick ~%20⟫onClick={() => {}}⟧⟦attrs * children⟫⟧⟦close children Button⟫>Click me</Button>⟧;'

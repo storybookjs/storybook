@@ -7,25 +7,21 @@ import { hole } from 'storybook/internal/docs-tools';
 
 import type { TemplateLayout } from '../template-grammar.ts';
 
-/**
- * Where a snippet prints an arg's value, which decides how the preview prints a new one there:
- *
- * - `bind`: the expression of a `[name]="…"` binding.
- * - `prop`: a whole `[name]="…"` binding `argsToTemplate` expands, which an unset arg leaves out.
- * - `field`: the code of a host component field.
- * - `text`: text the story's markup interpolates.
- */
-export type HoleKind = 'bind' | 'prop' | 'field' | 'text';
+// Where a snippet prints an arg's value, which decides how the preview prints a new one there:
+//
+// - `bind`: the expression of a `[name]="…"` binding.
+// - `prop`: a whole `[name]="…"` binding `argsToTemplate` expands, which an unset arg leaves out.
+// - `field`: the code of a host component field.
+// - `text`: text the story's markup interpolates.
+type HoleKind = 'bind' | 'prop' | 'field' | 'text';
 
-/** Prints an arg's value where the snippet shows it. */
+// Prints an arg's value where the snippet shows it.
 export interface ArgPrinter {
   show(arg: string, kind: HoleKind, value: string): string;
-  /**
-   * What stands where the snippet would print an arg the story does not set, once a control sets
-   * it: nothing in a print with values, a mark the layout ignores in a print with placeholders.
-   */
+  // What stands where the snippet would print an arg the story does not set, once a control sets
+  // it: nothing in a print with values, a mark the layout ignores in a print with placeholders.
   unset(arg: string, kind: HoleKind): string | undefined;
-  /** How the layout measures this print; next's own measure where `undefined`. */
+  // How the layout measures this print; the static snippet's own measure where `undefined`.
   layout?: TemplateLayout;
 }
 
@@ -48,12 +44,10 @@ const PLACEHOLDER_LAYOUT: TemplateLayout = {
   isEmpty: (text) => text.replace(HOLE_MARK, '') === '',
 };
 
-export interface PlaceholderPrinter extends ArgPrinter {
-  /**
-   * The template of `snippet`, from its print with this printer: each run of placeholders is the
-   * text of the snippet there wrapped in its hole, and each mark an empty hole. `undefined` when the
-   * two prints do not line up, as where the print lost a hole past the private-use range.
-   */
+interface PlaceholderPrinter extends ArgPrinter {
+  // The template of `snippet`, from its print with this printer: each run of placeholders is the
+  // text of the snippet there wrapped in its hole, and each mark an empty hole. `undefined` when the
+  // two prints do not line up, as where the print lost a hole past the private-use range.
   template(printed: string, snippet: string): string | undefined;
 }
 

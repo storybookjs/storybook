@@ -27,7 +27,7 @@ import TemplateOnlySlots from './TemplateOnlySlots.vue';
   </TemplateOnlySlots>
 </template>",
       "summary": undefined,
-      "template": "<script lang="ts" setup>
+      "template": "⟦guard item⟫⟧<script lang="ts" setup>
 import TemplateOnlySlots from './TemplateOnlySlots.vue';
 </script>
 

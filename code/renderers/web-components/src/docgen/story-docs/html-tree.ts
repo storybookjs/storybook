@@ -12,11 +12,9 @@ type InlineText = { hasText: boolean; text: string };
 
 const INLINE_LIMIT = 80;
 const INDENT = '  ';
-/**
- * Html laid out in 80 columns. With `holes`, the template of the same html: each `hole` node and
- * attribute wraps what it prints in its hole. A value that prints nothing goes at the end of the
- * content it stands in, and an attribute that does at the end of the start tag.
- */
+// Html laid out in 80 columns. With `holes`, the template of the same html: each `hole` node and
+// attribute wraps what it prints in its hole. A value that prints nothing goes at the end of the
+// content it stands in, and an attribute that does at the end of the start tag.
 export function printHtml(nodes: HtmlNode[], holes = false): string {
   const expanded = expandHoles(nodes);
   const lines = expanded.filter(isPrintable).map((node) => printNode(node, 0, holes));
@@ -26,10 +24,10 @@ export function printHtml(nodes: HtmlNode[], holes = false): string {
 
 interface HoleTag {
   hole: TemplateHole;
-  /** Whether the node opens the hole, and whether it closes it. */
+  // Whether the node opens the hole, and whether it closes it.
   first: boolean;
   last: boolean;
-  /** A value that prints nothing, which only the template shows, as its hole. */
+  // A value that prints nothing, which only the template shows, as its hole.
   placeholder?: boolean;
 }
 

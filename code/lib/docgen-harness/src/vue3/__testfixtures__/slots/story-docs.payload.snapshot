@@ -24,7 +24,7 @@ import SlotsShowcase from './SlotsShowcase.vue';
   </SlotsShowcase>
 </template>",
       "summary": undefined,
-      "template": "<script lang="ts" setup>
+      "template": "⟦guard header⟫⟧⟦guard item⟫⟧<script lang="ts" setup>
 import SlotsShowcase from './SlotsShowcase.vue';
 </script>
 
@@ -51,7 +51,7 @@ import SlotsShowcase from './SlotsShowcase.vue';
   </SlotsShowcase>
 </template>",
       "summary": undefined,
-      "template": "<script lang="ts" setup>
+      "template": "⟦guard item⟫⟧<script lang="ts" setup>
 import SlotsShowcase from './SlotsShowcase.vue';
 </script>
 

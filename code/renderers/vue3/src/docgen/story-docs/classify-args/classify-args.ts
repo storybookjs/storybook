@@ -52,7 +52,7 @@ export interface ClassifiedSlotArg {
   value: Node;
   role: 'slot';
   plan: RenderableValuePlan | FunctionSlotPlan;
-  /** Whether `value` is what a slot function the story writes returns, which no control changes. */
+  // Whether `value` is what a slot function the story writes returns, which no control changes.
   returned?: true;
 }
 

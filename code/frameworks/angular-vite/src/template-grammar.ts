@@ -115,11 +115,9 @@ const ELEMENT_AND_ATTRIBUTES = /(\S+)(.*)/;
 // Width past which the bindings go one per line, with the tag's end on a line of its own.
 const MAX_SINGLE_LINE = 80;
 
-/**
- * How the layout measures text: its width, and whether a binding or attribute is empty. The
- * story-docs build passes its own while it prints a template, where marks stand for holes that
- * print nothing; every other print measures text as it is.
- */
+// How the layout measures text: its width, and whether a binding or attribute is empty. The
+// story-docs build passes its own while it prints a template, where marks stand for holes that
+// print nothing; every other print measures text as it is.
 export interface TemplateLayout {
   length(text: string): number;
   isEmpty(text: string): boolean;

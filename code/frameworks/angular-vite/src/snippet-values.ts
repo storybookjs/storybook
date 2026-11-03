@@ -12,13 +12,11 @@ const quoteExpressionString = (value: string): string =>
     .replace(/\n/g, '\\n')
     .replace(/\r/g, '\\r')}'`;
 
-/**
- * Renders an arg value as the template expression or class field code a story-docs snippet holds
- * for it, losslessly for strings carrying quotes. The story-docs build prints the values it
- * evaluates from the story with it, as next does. The preview prints a value a control changed
- * with it and passes `unprintable`, which a value with no such code calls: a function, a symbol, a
- * class instance or a cycle.
- */
+// Renders an arg value as the template expression or class field code a story-docs snippet holds
+// for it, losslessly for strings carrying quotes. The story-docs build prints the values it
+// evaluates from the story with it, as next does. The preview prints a value a control changed
+// with it and passes `unprintable`, which a value with no such code calls: a function, a symbol, a
+// class instance or a cycle.
 export const printExpressionValue = (value: unknown, unprintable?: () => never): string =>
   unprintable ? printStrict(value, unprintable, new Set()) : printEvaluated(value, new Set());
 
@@ -73,28 +71,22 @@ const printStrict = (value: unknown, unprintable: () => never, parents: Set<unkn
   return printed;
 };
 
-/**
- * Escapes an expression for the double-quoted attribute it lands in: the delimiter and text
- * Angular's lexer would decode as a character reference survive the round-trip unchanged.
- */
+// Escapes an expression for the double-quoted attribute it lands in: the delimiter and text
+// Angular's lexer would decode as a character reference survive the round-trip unchanged.
 export const escapeAttributeExpression = (expression: string): string =>
   expression.replace(/&(?=#|\w+;)/g, '&amp;').replace(/"/g, '&quot;');
 
-/**
- * A template literal is the only quoting that survives a multi-line template carrying both quote
- * characters, so the three sequences that would end or escape it are neutralized.
- */
+// A template literal is the only quoting that survives a multi-line template carrying both quote
+// characters, so the three sequences that would end or escape it are neutralized.
 export const escapeTemplateLiteral = (template: string): string =>
   template.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
 
-/** An `[input]` binding of `expression`, as the snippet writes one. */
+// An `[input]` binding of `expression`, as the snippet writes one.
 export const inputBinding = (name: string, expression: string): string =>
   `[${name}]="${expression}"`;
 
-/**
- * The text a value prints as where the story's markup interpolates it, as written, or `undefined`
- * for a value that is no text.
- */
+// The text a value prints as where the story's markup interpolates it, as written, or `undefined`
+// for a value that is no text.
 export const textValue = (value: unknown): string | undefined => {
   if (typeof value === 'string') {
     return value;
@@ -102,6 +94,6 @@ export const textValue = (value: unknown): string | undefined => {
   return typeof value === 'number' || typeof value === 'boolean' ? String(value) : undefined;
 };
 
-/** Code over several lines, its lines after the first indented by `indent`. */
+// Code over several lines, its lines after the first indented by `indent`.
 export const indentLines = (code: string, indent: string): string =>
   code.split('\n').join(`\n${indent}`);

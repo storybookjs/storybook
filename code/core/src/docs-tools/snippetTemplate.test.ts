@@ -39,12 +39,19 @@ describe('fillTemplate', () => {
     ).toBe('[1]');
   });
 
-  it('gives a hole without an arg only the args a control added', () => {
+  it('gives a hole without an arg the args a control set that no other hole reads', () => {
     const initialArgs = { label: 'Go', theme: 'dark', onClick: () => {} };
-    const unmappedArgs = { ...initialArgs, theme: 'light', size: 'lg', unset: undefined };
+    const unmappedArgs = { ...initialArgs, label: 'Stop', size: 'lg', unset: undefined };
     expect(fillTemplate(template, { unmappedArgs, initialArgs }, echo)).toBe(
-      '<Button label="Go"[attrs * ={"size":"lg"}] />'
+      '<Button[attr label label="Stop"][attrs * ={"size":"lg"}] />'
     );
+    expect(
+      fillTemplate(
+        template,
+        { unmappedArgs: { ...initialArgs, theme: 'light' }, initialArgs },
+        echo
+      )
+    ).toBe('<Button label="Go"[attrs * ={"theme":"light"}] />');
   });
 
   it('prints the space word before a print, and leaves it out with an empty one', () => {

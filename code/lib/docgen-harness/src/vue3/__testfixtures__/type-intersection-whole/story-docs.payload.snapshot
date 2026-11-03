@@ -15,7 +15,7 @@ import TypeIntersectionWhole from './TypeIntersectionWhole.vue';
   <TypeIntersectionWhole id="save-button" size="medium" />
 </template>",
       "summary": undefined,
-      "template": "<script lang="ts" setup>
+      "template": "⟦guard default⟫⟧<script lang="ts" setup>
 import TypeIntersectionWhole from './TypeIntersectionWhole.vue';
 </script>
 

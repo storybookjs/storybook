@@ -27,10 +27,8 @@ export interface HtmlTemplateRenderResult {
   properties: string[];
   referenced: string[];
   snippet: string;
-  /**
-   * The snippet with each value it prints of an arg the template reads whole wrapped in a hole,
-   * after a `guard` hole for each arg it reads another way, which it cannot follow.
-   */
+  // The snippet with each value it prints of an arg the template reads whole wrapped in a hole,
+  // after a `guard` hole for each arg it reads another way, which it cannot follow.
   template: string;
   unresolved: string[];
 }
@@ -43,7 +41,7 @@ interface TemplatePrintState {
   context: PrintContext;
   listeners: HtmlTemplateRenderResult['listeners'];
   falseDefaults: Set<string>;
-  /** The args the template reads where the snippet prints no hole. */
+  // The args the template reads where the snippet prints no hole.
   guarded: Set<string>;
   listenersNotShown: Set<string>;
   lit: boolean;
@@ -333,6 +331,7 @@ const resolveAttribute = (
       resolved.value === undefined &&
       text.startsWith(marker)
     ) {
+      guardMarkers(attribute.value, state);
       return undefined;
     }
     const valueText = boundText(resolved.value);
@@ -419,11 +418,9 @@ const nodesForChildValue = (value: HoleValue, state: TemplatePrintState): HtmlNo
   }
 };
 
-/**
- * The arg an expression reads whole, as `args.x` or a name a destructured parameter binds, whose
- * value the snippet prints as it is: a value of the story's, or none. An arg the story writes as
- * a function, or that a static pass cannot read, has no hole, as next prints no value for it.
- */
+// The arg an expression reads whole, as `args.x` or a name a destructured parameter binds, whose
+// value the snippet prints as it is: a value of the story's, or none. An arg the story writes as a
+// function, or that a static pass cannot read, has no hole, as the snippet prints no value for it.
 const wholeArg = (expression: E.Expression, state: TemplatePrintState): string | undefined => {
   const arg = argReferenceForExpression(expression, state.context.scope);
   if (!arg || arg.path.length > 0) {

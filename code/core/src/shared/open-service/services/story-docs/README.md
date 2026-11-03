@@ -24,8 +24,8 @@ const Primary = () => <Button⟦attr label label ~%20⟫label="Go"⟧⟦attr onC
 ```
 
 A hole is `⟦kind arg word…⟫text⟧`. `text` is what the snippet prints in that place, `arg` the arg
-the place reads, or `*` for the args a control adds, and `kind` and the other words are the
-renderer's. Core owns only this contract, in `snippetTemplate.ts`:
+the place reads, or `*` for the args a spread passes that no other hole reads, and `kind` and the
+other words are the renderer's. Core owns only this contract, in `snippetTemplate.ts`:
 
 - An arg that holds its initial value (deep-equal) prints the hole's `text`, so nothing the
   controls did not change moves: an arg written as code, such as `fn()` or `shout`, stays as
@@ -33,18 +33,18 @@ renderer's. Core owns only this contract, in `snippetTemplate.ts`:
 - A changed arg prints what the renderer's `PrintHole`, set as `parameters.docs.source.printHole`,
   prints for the hole and the value. A cleared arg prints what it prints for `undefined`, such as
   nothing for an attribute.
-- A `*` hole prints the args that are not among the story's initial args, and only once a control
-  sets one. Project-level args, actions Storybook adds and args the server could not resolve are
-  initial args, so they never show.
+- A `*` hole prints the args a control set that no other hole reads. Project-level args, actions
+  Storybook adds and args the server could not resolve show only once a control changes them.
 - A `~space` word is text, such as the whitespace before an attribute, printed before the hole's
   print unless that is empty; `withHoleSpace` moves the whitespace before the holes a provider
   names into them.
 - A renderer throws an `UnprintableArgError` for a value it cannot print, and the static snippet
-  is shown with a warning that names the arg.
+  is shown with a warning that names the arg. Once the args change, a story with no template
+  shows its static snippet with a warning that it does not follow them.
 
 `stripHoles(template)` is the snippet, which the service checks: it drops a template that does not
 print its snippet, or whose snippet holds a hole bracket. Each renderer registers its `printHole`
-only with `docgenServer` on, so with it off the parameters are next's. It prints a value with its
+only with `docgenServer` on, so with it off the parameters do not change. It prints a value with its
 `snippet-values.ts`, the module its provider prints the static snippet with too.
 
 The Code panel, Canvas › Show code and the `Source` block show the static `snippet` while a story
@@ -59,7 +59,7 @@ Renderers contribute payloads through the `experimental_storyDocsProvider` prese
 A renderer whose snippets depend on its own docgen worker builds that preset with `createWorkerGatedStoryDocsProvider` from `storybook/internal/core-server`.
 The helper skips the renderer when its worker is not registered, reads only matching story files, logs a file it cannot read at debug level and hands it to the next provider, and merges its payload over the next provider's.
 Vue, Svelte and Web Components use it; React and Angular have no worker gate and keep their own presets.
-Each renderer that emits a `template` sets the matching `printHole` in its `entry-preview-docs`.
+Each renderer that emits a `template` sets the matching `printHole` in its preview annotations.
 
 ## Components spread over several story files
 

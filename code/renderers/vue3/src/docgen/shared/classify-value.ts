@@ -91,7 +91,7 @@ export function classifyValue(node: Node): ValuePlan {
   return isResolvable(value) ? { kind: 'hoist' } : { kind: 'unrepresentable' };
 }
 
-/** An arg value as the snippet prints it: a boolean, string or number literal, or its code. */
+// An arg value as the snippet prints it: a boolean, string or number literal, or its code.
 export function snippetValueOf(node: Node): SnippetValue {
   const value = unwrapExpression(node);
   if (value.type === 'Literal' && typeof value.value === 'boolean') {

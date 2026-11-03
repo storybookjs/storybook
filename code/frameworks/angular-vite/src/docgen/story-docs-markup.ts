@@ -34,7 +34,7 @@ export interface StoryShape {
   args: Record<string, Node>;
   /** Source text of everything hiding args from this pass; empty when the merged args are known. */
   unresolvedArgs: string[];
-  /** Prints an arg's value where the markup shows it; the value itself when unset. */
+  // Prints an arg's value where the markup shows it; the value itself when unset.
   printer?: ArgPrinter;
 }
 
@@ -42,10 +42,8 @@ export { oneLineTextOf };
 
 /** Bindings the generated snippet would carry, which is also what `argsToTemplate` expands to. */
 export interface Bindings {
-  /**
-   * `attribute` is the whole `[name]="expression"` binding, as the snippet prints it; `unset` marks
-   * the hole of an input the story does not set, which represents no arg.
-   */
+  // `attribute` is the whole `[name]="expression"` binding, as the snippet prints it; `unset` marks
+  // the hole of an input the story does not set, which represents no arg.
   inputs: { name: string; expression: string; attribute?: string; unset?: true }[];
   outputs: string[];
 }

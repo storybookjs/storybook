@@ -40,8 +40,8 @@ interface Reads {
   argsComplete: boolean;
 }
 
-// An edit next makes, `value`, which is the code as written where next keeps it, and `marked`, the
-// same code with the places an arg prints in it wrapped in holes for the template.
+// An edit the static snippet makes, `value`, which is the code as written where it keeps it, and
+// `marked`, the same code with the places an arg prints in it wrapped in holes for the template.
 type Place = Edit & { marked?: string };
 
 // Write a story's args into its markup: spread `{...args}` into attributes, and replace each
@@ -239,8 +239,8 @@ export function printTemplate({
         const range = at(expression);
         const replaced = replaceArgsReads(written(range), reads);
         if (replaced === undefined) continue;
-        // `class:active` reads `active`, so a substituted value needs the long form, which next
-        // writes once it substitutes one.
+        // `class:active` reads `active`, so a substituted value needs the long form, which the
+        // snippet writes once it substitutes one.
         const shorthand =
           'name' in node &&
           node.type.endsWith('Directive') &&
@@ -284,10 +284,10 @@ function propValue(value: Node): PropValue {
   };
 }
 
-// The edit of a `{...args}` spread, which prints the props one a line when they are long, and
-// takes the whitespace along that next takes along with it: the spread's line when it prints none
-// and is alone on it, else the spaces before it. In the template each prop is a hole, followed by
-// one for the args a control adds, but those `written` names.
+// The edit of a `{...args}` spread, which prints the props one a line when they are long. It
+// replaces the whitespace before the spread too: the spread's line when it prints no props and is
+// alone on it, else the spaces before it. In the template each prop is a hole, followed by one for
+// the args a control adds, except the `written` names.
 function spreadPlace(
   code: string,
   span: Span,
@@ -299,7 +299,8 @@ function spreadPlace(
   const separator = onePerLine ? '\n  ' : ' ';
   const holes = props.map(([arg, prop]) => hole({ kind: 'prop', arg, words: [] }, prop));
   const added = (space: string) => hole({ kind: 'props', words: written }, '', space);
-  let { start, end } = span;
+  const { end } = span;
+  let { start } = span;
   if (onePerLine) while (start > 0 && /[ \t]/.test(code[start - 1])) start--;
   if (props.length) {
     const [value, marked] = [printed, holes].map((pieces) => pieces.join(separator));
@@ -382,7 +383,7 @@ function replaceArgsReads(
   // The parentheses let an object literal or a sequence parse as one expression.
   const editor = new SourceEditor(`(${expression})`, scriptFile(typescript));
   const edits: (Edit & { node?: Node; marked: string; arg: string; kind: string })[] = [];
-  // A read of `arg` from `start` to `end`, which next prints as `read`, or keeps as written.
+  // A read of `arg` from `start` to `end`, which the snippet prints as `read`, or keeps as written.
   const push = (
     arg: string,
     start: number,

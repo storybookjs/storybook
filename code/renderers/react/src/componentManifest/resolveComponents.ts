@@ -157,7 +157,8 @@ export function extractStorySnippets(
   csf: ParsedCsf,
   componentName: string | undefined,
   filterStoryIds?: ReadonlySet<string>,
-  references?: StoryReferences
+  references?: StoryReferences,
+  withTemplate = false
 ): ExtractedStorySnippets {
   const imports: ImportRef[] = [];
   const resolver = createStoryArgsResolver(csf, references);
@@ -174,7 +175,7 @@ export function extractStorySnippets(
           imports: needs,
           unresolved,
           ...snippet
-        } = getCodeSnippet(csf, storyExport, componentName, resolver);
+        } = getCodeSnippet(csf, storyExport, componentName, resolver, withTemplate);
         imports.push(...needs);
         const warning = unresolvedWarning(unresolved);
 

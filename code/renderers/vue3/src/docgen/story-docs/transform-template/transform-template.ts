@@ -75,7 +75,7 @@ export interface TransformTemplateInput {
   componentImports: Map<string, string>;
   /** Story component tag; role-aware args expansion applies only to it. */
   componentName?: string;
-  /** The story component's slots, which a `v-bind="args"` passes as no prop. */
+  // The story component's slots, which a `v-bind="args"` passes as no prop.
   slots?: ReadonlySet<string>;
   /** Import bindings from the CSF module, for components a function slot renders. */
   importBindings?: Map<string, ImportBinding>;
@@ -427,6 +427,23 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
       }
       continue;
     }
+    // An attribute written before the args binding is the binding's arg once a control sets it.
+    if (
+      plan.directive &&
+      prop.type === NodeTypes.ATTRIBUTE &&
+      prop.loc.start.offset < plan.directive.loc.start.offset &&
+      prop.name !== 'class' &&
+      prop.name !== 'style'
+    ) {
+      const place = { kind: 'attr', arg: spellings(prop.name)[1]!, words: [prop.name] };
+      const { start, end } = { start: prop.loc.start.offset, end: prop.loc.end.offset };
+      state.edits.push({
+        start,
+        end,
+        text: marked(state.ctx, place, state.template.slice(start, end)),
+      });
+      continue;
+    }
     if (
       prop.type === NodeTypes.DIRECTIVE &&
       !transformDirective(prop, attributesByName, element, state)
@@ -524,9 +541,12 @@ function expandArgsBinding(
   }
 
   element.slotChildren.push(...rendered.slotChildren);
-  // The args a control adds go after the args the story writes, but those the element writes
-  // itself and its slots.
-  const written = [...[...attributesByName.keys()].flatMap(spellings), ...state.slots];
+  // The args a control sets go after the args the story writes, but those the element writes
+  // after the binding, which win over it, and its slots.
+  const after = [...attributesByName.entries()].filter(([, props]) =>
+    props.some((prop) => prop.loc.start.offset > directive.loc.start.offset)
+  );
+  const written = [...after.flatMap(([name]) => spellings(name)), ...state.slots];
   const added = marked(state.ctx, { kind: 'props', words: [...new Set(written)] }, '', ' ');
   const edit = replacementFor(directive, rendered.attributes.join(' '), state.template);
   state.edits.push({ ...edit, text: edit.text + added });

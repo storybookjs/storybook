@@ -15,7 +15,7 @@ import PropSlotNameCollision from './PropSlotNameCollision.vue';
   <PropSlotNameCollision icon="pi pi-check" />
 </template>",
       "summary": undefined,
-      "template": "<script lang="ts" setup>
+      "template": "⟦guard default⟫⟧<script lang="ts" setup>
 import PropSlotNameCollision from './PropSlotNameCollision.vue';
 </script>
 

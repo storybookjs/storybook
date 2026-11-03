@@ -18,7 +18,7 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "⟦style base-part lit-toolkit-shapes::part(base)⟫⟧⟦style active-state lit-toolkit-shapes:state(active)⟫⟧<lit-toolkit-shapes⟦attr size size field ~%0A%20%20⟫size="small"⟧⟦attr level level field ~%0A%20%20⟫level="3"⟧⟦attr tags tags field ~%0A%20%20⟫tags="[&quot;b&quot;]"⟧⟦attr label label field ~%0A%20%20⟫label="Default render"⟧⟦attr oldSize old-size field ~%0A%20%20⟫⟧⟦attr target target field ~%0A%20%20⟫⟧⟦attr when when field ~%0A%20%20⟫⟧⟦cssattr --toolkit-color --toolkit-color ~%0A%20%20⟫⟧⟦cssattr --toolkit-scale --toolkit-scale ~%0A%20%20⟫⟧⟦cssattr --toolkit-font --toolkit-font ~%0A%20%20⟫⟧⟦cssattr --toolkit-gap --toolkit-gap ~%0A%20%20⟫⟧
+      "template": "⟦guard computed⟫⟧⟦guard version⟫⟧⟦guard pressed⟫⟧⟦guard onSelect⟫⟧⟦style base-part lit-toolkit-shapes::part(base)⟫⟧⟦style active-state lit-toolkit-shapes:state(active)⟫⟧<lit-toolkit-shapes⟦attr size size field ~%0A%20%20⟫size="small"⟧⟦attr level level field ~%0A%20%20⟫level="3"⟧⟦attr tags tags field ~%0A%20%20⟫tags="[&quot;b&quot;]"⟧⟦attr label label field ~%0A%20%20⟫label="Default render"⟧⟦attr oldSize old-size field ~%0A%20%20⟫⟧⟦attr target target field ~%0A%20%20⟫⟧⟦attr when when field ~%0A%20%20⟫⟧⟦cssattr --toolkit-color --toolkit-color ~%0A%20%20⟫⟧⟦cssattr --toolkit-scale --toolkit-scale ~%0A%20%20⟫⟧⟦cssattr --toolkit-font --toolkit-font ~%0A%20%20⟫⟧⟦cssattr --toolkit-gap --toolkit-gap ~%0A%20%20⟫⟧
 >⟦slot default-slot default⟫⟧⟦slot label-slot label⟫⟧</lit-toolkit-shapes>
 <script>
   {
@@ -42,7 +42,7 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "⟦style base-part lit-toolkit-shapes::part(base)⟫⟧⟦style active-state lit-toolkit-shapes:state(active)⟫⟧<lit-toolkit-shapes⟦attr size size field ~%0A%20%20⟫size="large"⟧⟦attr level level field ~%0A%20%20⟫level="2"⟧⟦attr tags tags field ~%0A%20%20⟫tags="[&quot;b&quot;]"⟧⟦attr label label field ~%0A%20%20⟫label="Shaped"⟧⟦attr oldSize old-size field ~%0A%20%20⟫⟧⟦attr target target field ~%0A%20%20⟫⟧⟦attr when when field ~%0A%20%20⟫⟧⟦cssattr --toolkit-color --toolkit-color ~%0A%20%20⟫⟧⟦cssattr --toolkit-scale --toolkit-scale ~%0A%20%20⟫⟧⟦cssattr --toolkit-font --toolkit-font ~%0A%20%20⟫⟧⟦cssattr --toolkit-gap --toolkit-gap ~%0A%20%20⟫⟧
+      "template": "⟦guard computed⟫⟧⟦guard version⟫⟧⟦guard pressed⟫⟧⟦guard onSelect⟫⟧⟦style base-part lit-toolkit-shapes::part(base)⟫⟧⟦style active-state lit-toolkit-shapes:state(active)⟫⟧<lit-toolkit-shapes⟦attr size size field ~%0A%20%20⟫size="large"⟧⟦attr level level field ~%0A%20%20⟫level="2"⟧⟦attr tags tags field ~%0A%20%20⟫tags="[&quot;b&quot;]"⟧⟦attr label label field ~%0A%20%20⟫label="Shaped"⟧⟦attr oldSize old-size field ~%0A%20%20⟫⟧⟦attr target target field ~%0A%20%20⟫⟧⟦attr when when field ~%0A%20%20⟫⟧⟦cssattr --toolkit-color --toolkit-color ~%0A%20%20⟫⟧⟦cssattr --toolkit-scale --toolkit-scale ~%0A%20%20⟫⟧⟦cssattr --toolkit-font --toolkit-font ~%0A%20%20⟫⟧⟦cssattr --toolkit-gap --toolkit-gap ~%0A%20%20⟫⟧
 >⟦slot default-slot default⟫⟧⟦slot label-slot label⟫⟧</lit-toolkit-shapes>
 <script>
   {

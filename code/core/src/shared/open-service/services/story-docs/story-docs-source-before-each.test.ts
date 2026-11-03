@@ -59,10 +59,8 @@ const printHole = (_: unknown, value: unknown) => `label="${String(value)}"`;
 // The story's args once `label` changed to `Go` from the `hi` it is written with.
 const changed = { unmappedArgs: { label: 'Go' }, initialArgs: { label: 'hi' } };
 
-/**
- * Builds a minimal `core/story-docs` service mock whose `storyDocs.loaded` resolves with `loaded`,
- * which `storyDocs.get` reads from then on.
- */
+// Builds a minimal `core/story-docs` service mock whose `storyDocs.loaded` resolves with `loaded`,
+// which `storyDocs.get` reads from then on.
 function mockStoryDocsService(loaded: () => Promise<StoryDocsPayload>) {
   let state: StoryDocsPayload | undefined;
   const storyDocs = {
@@ -73,7 +71,7 @@ function mockStoryDocsService(loaded: () => Promise<StoryDocsPayload>) {
   return storyDocs;
 }
 
-/** Runs the hook for one render and lets its snippet load settle before the story is torn down. */
+// Runs the hook for one render and lets its snippet load settle before the story is torn down.
 async function render(context: StoryContext) {
   const cleanup = storyDocsSourceBeforeEach(context);
   await new Promise((resolve) => setTimeout(resolve));
@@ -112,17 +110,15 @@ describe('selectLiveSnippetForStory', () => {
     });
   });
 
-  it('selects the static snippet and its warning without a hole printer', () => {
+  it('selects the static snippet with a warning that it does not follow without a hole printer or a template', () => {
+    const stale = `${warning} The snippet does not follow the changed args.`;
     expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, changed, undefined)).toEqual({
       snippet: serviceSnippet,
-      warning,
+      warning: stale,
     });
-  });
-
-  it('selects the static snippet and its warning without a template', () => {
     expect(selectLiveSnippetForStory(payloadWithWarning, storyId, changed, printHole)).toEqual({
       snippet: serviceSnippet,
-      warning,
+      warning: stale,
     });
   });
 
@@ -135,7 +131,7 @@ describe('selectLiveSnippetForStory', () => {
       const args = { ...changed, unmappedArgs: { label } };
       expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, args, throwing)).toEqual({
         snippet: serviceSnippet,
-        warning,
+        warning: `${warning} The snippet does not follow the changed args.`,
       });
     }
     expect(warn).toHaveBeenCalledOnce();
@@ -155,7 +151,7 @@ describe('selectLiveSnippetForStory', () => {
     });
     expect(selectLiveSnippetForStory(payload, storyId, changed, unprintable)).toEqual({
       snippet: serviceSnippet,
-      warning: undefined,
+      warning: 'The snippet does not follow the changed args.',
     });
     expect(warn).not.toHaveBeenCalled();
   });

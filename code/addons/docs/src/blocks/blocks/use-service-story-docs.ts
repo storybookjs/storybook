@@ -54,10 +54,8 @@ export function useServiceStoryDoc(storyId: string): QueryState<StoryDoc | undef
   return useServiceStory(storyId, selectStoryDoc);
 }
 
-/**
- * One story's display snippet with its `args` filled into its template by the story's renderer, or
- * its static snippet and warning while it has the args it is written with or no template.
- */
+// One story's display snippet with its `args` filled into its template by the story's renderer, or
+// its static snippet and warning while it has the args it is written with or no template.
 export function useServiceStoryLiveSnippet(
   story: PreparedStory,
   args: StoryArgs | undefined

@@ -51,7 +51,7 @@ function renderFunctionOf(resolution: RenderResolution) {
 export interface CodeSnippet {
   /** Source of a `const` or `function` declaration named after the story. */
   snippet: string;
-  /** The snippet with each place an arg prints wrapped in a hole; see `StoryDoc.template`. */
+  // The snippet with each place an arg prints wrapped in a hole; see `StoryDoc.template`.
   template?: string;
   /** Imports the snippet needs beyond the component, from arg values that kept a name. */
   imports: ImportRef[];
@@ -63,7 +63,8 @@ export function getCodeSnippet(
   csf: CsfFile,
   storyName: string,
   componentName?: string,
-  resolver: StoryArgsResolver = createStoryArgsResolver(csf)
+  resolver: StoryArgsResolver = createStoryArgsResolver(csf),
+  withTemplate = false
 ): CodeSnippet {
   const { args, imports, unresolved } = resolver.resolve(storyName);
   const importedBind = importedBoundStory(csf, storyName, args);
@@ -75,10 +76,11 @@ export function getCodeSnippet(
   return {
     snippet: print(),
     // Marks in code that already holds a hole bracket could not be found again.
-    ...(!hasHoleBracket(csf.editor.code) && {
-      // An attribute a control clears leaves no gap or empty line.
-      template: withHoleSpace(marks.unmark(print(marks.mark)), (kind) => kind === 'attr'),
-    }),
+    ...(withTemplate &&
+      !hasHoleBracket(csf.editor.code) && {
+        // An attribute a control clears leaves no gap or empty line.
+        template: withHoleSpace(marks.unmark(print(marks.mark)), (kind) => kind === 'attr'),
+      }),
     imports: importedBind ? [...imports, importedBind.importRef] : imports,
     unresolved,
   };
@@ -417,10 +419,31 @@ function rewriteJsx(
       );
       const print = printAt(attrs[firstSpread].start);
       const pieces = injectedAttributes(merged, existing, print).join(' ');
+      // An attribute written before a spread is the spread's arg once a control sets it, so it is
+      // a hole of its own; one written after it wins over the spread.
+      const lastSpread = attrs.findLastIndex(isArgsSpread);
+      const after = new Set(
+        attrs.flatMap((a, index) =>
+          index > lastSpread && a.type === 'JSXAttribute' && a.name.type === 'JSXIdentifier'
+            ? [a.name.name]
+            : []
+        )
+      );
+      attrs.slice(0, lastSpread).forEach((a) => {
+        if (
+          mark &&
+          a.type === 'JSXAttribute' &&
+          a.name.type === 'JSXIdentifier' &&
+          !(a.value?.type === 'JSXExpressionContainer' && getArgsMemberKey(a.value.expression))
+        ) {
+          const written = code.slice(a.start, a.end);
+          const place = { kind: 'attr', arg: a.name.name, words: [a.name.name] };
+          edits.push({ start: a.start, end: a.end, marked: mark(place, written) });
+        }
+      });
       const marked =
         mark &&
-        injectedAttributes(merged, existing, print, mark).join(' ') +
-          addedAttributes(existing, mark);
+        injectedAttributes(merged, existing, print, mark).join(' ') + addedAttributes(after, mark);
       attrs.forEach((a, index) => {
         if (!isArgsSpread(a)) {
           return;

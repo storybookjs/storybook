@@ -131,7 +131,7 @@ const firstStory = async (
   return story;
 };
 
-/** The template of the first story, and its snippet. */
+// The template of the first story, and its snippet.
 const firstTemplate = async (source: string) => {
   const { storyPath } = writeFixture(source);
   const result = await buildStoryDocsPayload(
@@ -778,6 +778,16 @@ describe('the template', () => {
     expect(
       fill(template!, { label: 'Go', disabled: false }, { label: 'a < b', disabled: true })
     ).toBe('<test-element label="a &lt; b" disabled>a &lt; b</test-element>');
+  });
+
+  it('cannot follow a property without an attribute a control sets', async () => {
+    const { template } = await firstTemplate(`
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: { label: 'Go' } };
+    `);
+    expect(() => fill(template!, { label: 'Go' }, { items: [1, 2] })).toThrow(
+      'The snippet cannot show the current value of the `items` arg.'
+    );
   });
 
   it('cannot follow an arg a conditional reads', async () => {

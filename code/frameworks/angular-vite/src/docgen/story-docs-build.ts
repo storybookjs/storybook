@@ -234,10 +234,8 @@ interface StoryTemplate {
   template: string;
 }
 
-/**
- * The story's template: its static snippet with each value of an arg it prints wrapped in a hole,
- * from the same print with a placeholder there, or nothing where the two prints do not line up.
- */
+// The story's template: its static snippet with each value of an arg it prints wrapped in a hole,
+// from the same print with a placeholder there, or nothing where the two prints do not line up.
 const storyTemplate = async (
   snippetMeta: AngularComponentSnippetMeta,
   shape: StoryShape,
@@ -262,7 +260,7 @@ const storyTemplate = async (
 };
 
 type RenderedSnippet = HostComponentSnippet & {
-  /** The analysis of the story's own markup, which a print with placeholders reuses. */
+  // The analysis of the story's own markup, which a print with placeholders reuses.
   analysis?: StoryTemplateAnalysis;
 };
 
@@ -513,10 +511,8 @@ const componentBindings = (
   return { bindings: { inputs, outputs: snippetMeta.outputs }, fields };
 };
 
-/**
- * A binding hole for each input `isUnset` names, where a control that sets it puts it, after those
- * the story sets: nothing in the print with values.
- */
+// A binding hole for each input `isUnset` names, where a control that sets it puts it, after those
+// the story sets: nothing in the print with values.
 const unsetInputs = (
   snippetMeta: AngularComponentSnippetMeta,
   shape: StoryShape,

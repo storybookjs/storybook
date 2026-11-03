@@ -358,8 +358,14 @@ function enrichStoryDoc(
   if (!rendered) {
     return withWarning(UNRENDERED_WARNINGS[renderer.kind]);
   }
-  // Holes written in code that already holds a hole bracket could not be found again.
-  const holes = hasHoleBracket(options.source) ? undefined : print(hole)?.snippet;
+  // Holes written in code that already holds a hole bracket could not be found again. A slot of
+  // the component the story leaves unset, which a control can set, has no place in the snippet.
+  const set = new Set(args.map((arg) => arg.name));
+  const unsetSlots =
+    renderer.kind === 'sfc' ? [...docgenArgInfo.slots].filter((slot) => !set.has(slot)) : [];
+  const guards = unsetSlots.map((arg) => hole({ kind: 'guard', arg, words: [] }, '')).join('');
+  const printed = hasHoleBracket(options.source) ? undefined : print(hole)?.snippet;
+  const holes = printed === undefined ? undefined : guards + printed;
 
   return {
     ...storyDoc,

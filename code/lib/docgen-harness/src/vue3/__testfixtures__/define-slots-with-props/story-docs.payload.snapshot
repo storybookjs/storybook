@@ -15,7 +15,7 @@ import DefineSlotsWithProps from './DefineSlotsWithProps.vue';
   <DefineSlotsWithProps disabled label="Save" />
 </template>",
       "summary": undefined,
-      "template": "<script lang="ts" setup>
+      "template": "⟦guard default⟫⟧⟦guard icon⟫⟧<script lang="ts" setup>
 import DefineSlotsWithProps from './DefineSlotsWithProps.vue';
 </script>
 

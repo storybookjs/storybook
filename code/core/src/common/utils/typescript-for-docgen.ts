@@ -68,13 +68,7 @@ export function getBuilderDocgenFallback(
   resolve: (specifier: string) => string,
   packageName: BuilderDocgenPackage
 ): BuilderDocgenFallback {
-  return isPackageResolvable(resolve, packageName)
-    ? { packageName, installed: true }
-    : {
-        packageName,
-        installed: false,
-        installCommand: getAddBuilderDocgenPackagesCommand([packageName]),
-      };
+  return { packageName, installed: isPackageResolvable(resolve, packageName) };
 }
 
 /** Return the `features.docgenServer` value the project's main config sets, if any. */

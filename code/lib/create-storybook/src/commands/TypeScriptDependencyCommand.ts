@@ -2,7 +2,6 @@ import {
   type JsPackageManager,
   RENDERERS_WITH_TYPESCRIPT_DOCGEN,
   TYPESCRIPT_FOR_DOCGEN_PACKAGE,
-  getAddBuilderDocgenPackagesCommand,
   hasTypeScriptCompilerApi,
   isCI,
 } from 'storybook/internal/common';
@@ -76,10 +75,6 @@ export class TypeScriptDependencyCommand {
             ? {
                 packageName: 'react-docgen',
                 installed: packageManager.isDependencyInstalled('react-docgen'),
-                installCommand: getAddBuilderDocgenPackagesCommand(
-                  ['react-docgen'],
-                  packageManager.type
-                ),
               }
             : undefined;
         logger.warn(

@@ -1046,14 +1046,14 @@ The packages that only React builder docgen uses are now optional peer dependenc
 - `@joshwooding/vite-plugin-react-docgen-typescript` in `@storybook/react-vite`
 - `@storybook/react-docgen-typescript-plugin` in `@storybook/preset-react-webpack`
 
-Storybook loads them only when builder docgen runs. When your main config sets `features.docgenServer: false` and a package is missing, `storybook dev` and `storybook build` fail with the install command for your package manager. Set `typescript.reactDocgen: false` to run without docgen instead. When builder docgen only runs because `typescript` is missing or TypeScript 7, Storybook keeps starting without docgen and the TypeScript warning names both ways out:
+Storybook loads them only when builder docgen runs. When your main config sets `features.docgenServer: false` and a package is missing, `storybook dev` and `storybook build` fail with the install command for your package manager. Set `typescript.reactDocgen: false` to run without docgen instead, or better, remove `docgenServer: false` to use server-side docgen:
 
-| Builder docgen runs because                                                      | Add to devDependencies                                                                                                      |
-| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `features.docgenServer: false` with the default `typescript.reactDocgen`        | `react-docgen`                                                                                                              |
-| `features.docgenServer: false` with `typescript.reactDocgen: 'react-docgen-typescript'` | Vite: `@joshwooding/vite-plugin-react-docgen-typescript` and `react-docgen-typescript`. Webpack: `@storybook/react-docgen-typescript-plugin` and `react-docgen-typescript` |
-| `typescript` is TypeScript 7 without the [side-by-side setup](#typescript-59-or-newer) | `react-docgen`, or better, install TypeScript 6 side by side to use server-side docgen                                     |
-| No `typescript` package | `react-docgen`, or better, add `typescript@^6` to use server-side docgen (the `typescript-dependency` automigration does this) |
+| `typescript.reactDocgen` | Add to devDependencies |
+| --- | --- |
+| `'react-docgen'` (default) | `react-docgen` |
+| `'react-docgen-typescript'` | Vite: `@joshwooding/vite-plugin-react-docgen-typescript` and `react-docgen-typescript`. Webpack: `@storybook/react-docgen-typescript-plugin` and `react-docgen-typescript` |
+
+Projects without a usable `typescript` (no `typescript` package, or TypeScript 7 without the [side-by-side setup](#typescript-59-or-newer)) no longer get docgen from the `react-docgen` fallback, unless `react-docgen` happens to be installed: Controls and the Docs args table show no props until you set up TypeScript 6, which enables server-side docgen.
 
 In `react-docgen-typescript` mode, `react-docgen` is optional and only documents JavaScript files. Without it, JavaScript components get no props, and Storybook does not warn about that.
 

@@ -339,20 +339,12 @@ export class OpenServiceCyclicStateError extends StorybookError {
  * The deprecated builder docgen a renderer falls back to when the docgen server cannot run, for
  * example React's `react-docgen`.
  */
-export type BuilderDocgenFallback =
-  | {
-      /** The package builder docgen needs, such as `react-docgen`. */
-      packageName: string;
-      /** The package resolves, so builder docgen runs. */
-      installed: true;
-    }
-  | {
-      packageName: string;
-      /** The package does not resolve, so there is no docgen. */
-      installed: false;
-      /** The command that adds the package, such as `npm install -D "react-docgen@^8.0.2"`. */
-      installCommand: string;
-    };
+export interface BuilderDocgenFallback {
+  /** The package builder docgen needs, such as `react-docgen`. */
+  packageName: string;
+  /** Whether the package resolves, so builder docgen runs instead of the docgen server. */
+  installed: boolean;
+}
 
 const describeBuilderDocgenFallback = (fallback: BuilderDocgenFallback | undefined) => {
   if (!fallback) {
@@ -362,10 +354,8 @@ const describeBuilderDocgenFallback = (fallback: BuilderDocgenFallback | undefin
     return dedent`
       Until then, Storybook falls back to the deprecated builder docgen with \`${fallback.packageName}\`, which will be removed in Storybook 12.`;
   }
-  return dedent`
-    Until then, Controls and the Docs args table show no props. Storybook falls back to the deprecated builder docgen, but it needs \`${fallback.packageName}\`, which is not installed. If you cannot change your TypeScript setup yet, install it instead (builder docgen will be removed in Storybook 12):
-
-      ${fallback.installCommand}`;
+  // The docgen server is the way forward, so do not suggest installing the builder docgen package.
+  return 'Until then, Controls and the Docs args table show no props.';
 };
 
 const withBuilderDocgenFallback = (message: string, fallback: BuilderDocgenFallback | undefined) =>

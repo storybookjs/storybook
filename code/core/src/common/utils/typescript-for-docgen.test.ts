@@ -148,14 +148,14 @@ describe('isTypeScriptReadyForDocgen', () => {
       );
     });
 
-    it('names both ways out when react-docgen is not installed', async () => {
+    it('only points at the TypeScript fix when react-docgen is not installed', async () => {
       await isTypeScriptReadyForDocgen(resolveWith([]), options, fallback);
 
       expect(once.warn).toHaveBeenCalledOnce();
       const [message] = vi.mocked(once.warn).mock.calls[0];
       expect(message).toContain('"typescript": "npm:@typescript/typescript6@^6.0.2"');
       expect(message).toContain('Controls and the Docs args table show no props');
-      expect(message).toContain('npm install -D "react-docgen@^8.0.2"');
+      expect(message).not.toContain('react-docgen');
     });
   });
 

@@ -129,22 +129,23 @@ describe('TypeScriptDependencyCommand', () => {
     );
   });
 
-  it('tells a React project on TypeScript 7 how to keep builder docgen with react-docgen', async () => {
+  it('tells a React project on TypeScript 7 that it has no docgen until it switches', async () => {
     await run({ typescriptVersion: '7.0.2' });
 
     expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('pnpm add -D "react-docgen@^8.0.2"')
+      expect.stringContaining('Controls and the Docs args table show no props')
     );
+    expect(logger.warn).toHaveBeenCalledWith(expect.not.stringContaining('npm install'));
   });
 
-  it('does not mention react-docgen to a Vue project on TypeScript 7', async () => {
+  it('does not mention builder docgen to a Vue project on TypeScript 7', async () => {
     await run({
       typescriptVersion: '7.0.2',
       framework: SupportedFramework.VUE3_VITE,
       renderer: SupportedRenderer.VUE3,
     });
 
-    expect(logger.warn).toHaveBeenCalledWith(expect.not.stringContaining('react-docgen'));
+    expect(logger.warn).toHaveBeenCalledWith(expect.not.stringContaining('show no props'));
   });
 
   it('warns when the project declares TypeScript 7 but has not installed it yet', async () => {

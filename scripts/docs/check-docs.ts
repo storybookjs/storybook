@@ -57,6 +57,7 @@ export async function checkRelativeLinks(docsDir: string): Promise<RelativeLinkE
 
   for (const file of mdxFiles) {
     const lines = await readFileLines(file);
+    const contexts = getLineContexts(lines);
     await Promise.all(
       lines.map(async (line, idx) => {
         // Create a new regex per line to avoid shared lastIndex state across concurrent promises
@@ -93,6 +94,24 @@ export async function checkRelativeLinks(docsDir: string): Promise<RelativeLinkE
                 message: `Broken fragment: ${relPath}${anchor} (heading "#${fragment}" not found in target)`,
               });
             }
+          }
+        }
+
+        // Same-page fragments, such as `[text](#heading)`. Code examples are not links.
+        if (contexts[idx] !== 'content') return;
+        const samePageRegex = /\[[^\]]+\]\(#([^)\s]+)\)/g;
+        while ((match = samePageRegex.exec(line))) {
+          const fragment = match[1];
+          if (!slugCache.has(file)) {
+            slugCache.set(file, await getHeadingSlugs(file));
+          }
+          if (!slugCache.get(file)!.has(fragment)) {
+            errors.push({
+              file,
+              line: idx + 1,
+              link: match[0],
+              message: `Broken fragment: #${fragment} (heading not found on this page)`,
+            });
           }
         }
       })

@@ -119,6 +119,43 @@ describe('check-docs', () => {
       const errors = await checkRelativeLinks(docsDir);
       expect(errors).toEqual([]);
     });
+    it('passes for same-page links to existing headings', async () => {
+      await writeFile(path.join(docsDir, 'bar.mdx'), '## My section\n\nSee [above](#my-section).');
+      const errors = await checkRelativeLinks(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('errors for same-page links to non-existent headings', async () => {
+      await writeFile(path.join(docsDir, 'bar.mdx'), '## My section\n\nSee [below](#missing).');
+      const errors = await checkRelativeLinks(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].message).toContain('#missing');
+    });
+    it('ignores same-page links inside code blocks', async () => {
+      await writeFile(path.join(docsDir, 'bar.mdx'), '```md\n[example](#missing)\n```');
+      const errors = await checkRelativeLinks(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('numbers repeated headings like rehype-slug', async () => {
+      await writeFile(
+        path.join(docsDir, 'bar.mdx'),
+        '## Mock files\n\n## Mock files\n\n[first](#mock-files) [second](#mock-files-1)'
+      );
+      const errors = await checkRelativeLinks(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('keeps underscores in SNAKE_CASE headings', async () => {
+      await writeFile(
+        path.join(docsDir, 'bar.mdx'),
+        '#### `HIGHLIGHT_MENU_CLICK`\n\n[event](#highlight_menu_click)'
+      );
+      const errors = await checkRelativeLinks(docsDir);
+      expect(errors).toEqual([]);
+    });
+    it('ignores headings inside code blocks', async () => {
+      await writeFile(path.join(docsDir, 'bar.mdx'), '```md\n## Example\n```\n\n[link](#example)');
+      const errors = await checkRelativeLinks(docsDir);
+      expect(errors.length).toBe(1);
+    });
   });
 
   describe('checkCodeSnippetPaths', () => {

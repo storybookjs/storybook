@@ -38,7 +38,10 @@ export function webpackIncludeRegexp(specifier: NormalizedStoriesSpecifier) {
   return new RegExp(webpackIncludeRegexpWithCaret.source.replace(/^\^/, ''));
 }
 
-export function toImportFnPart(specifier: NormalizedStoriesSpecifier, workingDir = process.cwd()) {
+export function toImportFnPart(
+  specifier: NormalizedStoriesSpecifier,
+  { workingDir = process.cwd() }: { workingDir?: string } = {}
+) {
   const { directory, importPathMatcher } = specifier;
   const prefixes = JSON.stringify(getSpecifierPathPrefixes(specifier, workingDir));
 
@@ -80,7 +83,7 @@ export function toImportFn(
     ${pipelinedImport}
 
     const importers = [
-      ${stories.map((specifier) => toImportFnPart(specifier, workingDir)).join(',\n')}
+      ${stories.map((specifier) => toImportFnPart(specifier, { workingDir })).join(',\n')}
     ];
 
     export async function importFn(path) {

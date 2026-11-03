@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 
-import { toImportFn, webpackIncludeRegexp } from './to-importFn.ts';
+import { toImportFn, toImportFnPart, webpackIncludeRegexp } from './to-importFn.ts';
 
 const testCases: [string, string[], string[]][] = [
   [
@@ -341,5 +341,22 @@ describe('toImportFn - working dir inside the specifier directory', () => {
     const importFn = loadImportFn(toImportFn([specifier], { workingDir }));
 
     await expect(importFn('./lib/Button.stories.ts')).resolves.toBeUndefined();
+  });
+});
+
+describe('toImportFnPart - used as an array callback', () => {
+  it('ignores the array index passed as the second argument', () => {
+    const stories = [
+      '../src/**/*.stories.ts',
+      '../lib/**/*.stories.ts',
+      '../app/**/*.stories.ts',
+    ].map((glob) =>
+      normalizeStoriesEntry(glob, { configDir: '/repo/.storybook', workingDir: process.cwd() })
+    );
+
+    // Untyped callers (plain JS) can still pass the array index as the second argument.
+    const untypedPart = toImportFnPart as unknown as (specifier: unknown, index: number) => string;
+
+    expect(stories.map(untypedPart)).toEqual(stories.map((specifier) => toImportFnPart(specifier)));
   });
 });

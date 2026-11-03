@@ -14,13 +14,12 @@ import { CopyIcon, EditorIcon, EllipsisIcon } from '@storybook/icons';
 import type { API } from 'storybook/manager-api';
 import { useStorybookApi } from 'storybook/manager-api';
 
-import type { MenuItem } from '../../container/Menu.tsx';
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import { isStoryRow } from '../../utils/tree.ts';
 
 import { Shortcut } from '../Shortcut.tsx';
 import { ContextMenuButton } from './ContextMenuButton.tsx';
-import { type SidebarMenuItem, SidebarMenuList } from './Menu.tsx';
+import { type MenuItem, type SidebarMenuItem, SidebarMenuList } from './Menu.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 
 /** How the user opened a context menu. A keyboard open prepends a nav link item and autofocuses it. */

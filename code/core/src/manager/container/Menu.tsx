@@ -1,4 +1,4 @@
-import React, { type ReactNode, type SyntheticEvent, useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 
 import { ActionList, ProgressSpinner } from 'storybook/internal/components';
 import { STORIES_COLLAPSE_ALL } from 'storybook/internal/core-events';
@@ -17,27 +17,8 @@ import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming/emotion';
 
 import { Shortcut } from '../components/Shortcut.tsx';
+import type { MenuItem } from '../components/sidebar/Menu.tsx';
 import { useChecklist } from '../components/sidebar/useChecklist.ts';
-
-export interface MenuItem {
-  id: string;
-  title?: ReactNode;
-  center?: ReactNode;
-  ariaLabel?: string;
-  right?: ReactNode;
-  icon?: ReactNode;
-  input?: ReactNode;
-  active?: boolean;
-  disabled?: boolean;
-  href?: string;
-  onClick?: (
-    event: SyntheticEvent,
-    item: Pick<MenuItem, 'id' | 'active' | 'disabled' | 'title' | 'href'>
-  ) => void;
-  closeOnClick?: boolean;
-  internal?: boolean;
-  autoFocus?: boolean;
-}
 
 const ProgressCircle = styled(ProgressSpinner)(({ theme }) => ({
   color: theme.color.secondary,

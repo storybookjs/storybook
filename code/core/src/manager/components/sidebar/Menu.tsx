@@ -1,4 +1,4 @@
-import type { ComponentProps, FC, ReactNode } from 'react';
+import type { ComponentProps, FC, ReactNode, SyntheticEvent } from 'react';
 import React, { useState } from 'react';
 
 import { ActionList, Button, PopoverProvider, ToggleButton } from 'storybook/internal/components';
@@ -9,10 +9,28 @@ import { transparentize } from 'polished';
 import { useStorybookApi } from 'storybook/manager-api';
 import { type Theme, css, styled } from 'storybook/theming/emotion';
 
-import type { MenuItem, useMenu } from '../../container/Menu.tsx';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 
-export type MenuList = ReturnType<typeof useMenu>;
+export interface MenuItem {
+  id: string;
+  title?: ReactNode;
+  center?: ReactNode;
+  right?: ReactNode;
+  icon?: ReactNode;
+  input?: ReactNode;
+  active?: boolean;
+  disabled?: boolean;
+  href?: string;
+  onClick?: (
+    event: SyntheticEvent,
+    item: Pick<MenuItem, 'id' | 'active' | 'disabled' | 'title' | 'href'>
+  ) => void;
+  closeOnClick?: boolean;
+  internal?: boolean;
+  autoFocus?: boolean;
+}
+
+export type MenuList = MenuItem[][];
 
 const buttonStyleAdditions = ({
   highlighted,
@@ -125,7 +143,7 @@ export const SidebarMenuList: FC<{
                 <ActionList.Item key={link.id} active={link.active}>
                   <ActionList.Action
                     asChild={!!link.href}
-                    ariaLabel={link.ariaLabel ?? false}
+                    ariaLabel={false}
                     id={`list-item-${link.id}`}
                     disabled={link.disabled}
                     autoFocus={link.autoFocus}

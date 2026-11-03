@@ -85,35 +85,84 @@ describe('storybook/test declaration contract', () => {
     ).toEqual([]);
   });
 
-  it.runIf(VENDOR_BUILT)(
-    'imports the test libraries from the preview runtime instead of bundling a copy',
-    () => {
-      // `sharedModules` of the preview runtime in build-config.ts: the browser entries import its
-      // vendor entries by a relative path that the build only assumes, so check each one resolves.
-      const distDirectory = join(import.meta.dirname, '../../dist');
-      const vendorImports = readdirSync(distDirectory, { recursive: true, encoding: 'utf-8' })
-        .filter((file) => file.endsWith('.js'))
-        .flatMap((file) =>
-          [
-            ...readFileSync(join(distDirectory, file), 'utf-8').matchAll(
-              /from "(\.[^"]*\/preview\/vendor\/[^"]+)"/g
-            ),
-          ].map(([, specifier]) => ({ file, specifier }))
-        );
+  describe.runIf(VENDOR_BUILT)('shares the test libraries with the preview runtime', () => {
+    // `sharedModules` of the preview runtime in build-config.ts.
+    const distDirectory = join(import.meta.dirname, '../../dist');
+    const read = (file: string) => readFileSync(join(distDirectory, file), 'utf-8');
+    const jsFiles = readdirSync(distDirectory, { recursive: true, encoding: 'utf-8' }).filter(
+      (file) => file.endsWith('.js')
+    );
+    const relativeImports = (file: string) =>
+      [...read(file).matchAll(/(?:from|import) "(\.\.?\/[^"]+)"/g)].map(([, specifier]) =>
+        join(dirname(file), specifier)
+      );
+    // The files that loading `file` evaluates, by its static relative imports.
+    const reachableFrom = (file: string, seen = new Set<string>()) => {
+      if (!seen.has(file)) {
+        seen.add(file);
+        relativeImports(file).forEach((imported) => reachableFrom(imported, seen));
+      }
+      return seen;
+    };
+    const testLibraries =
+      /node_modules\/(chai|@vitest\/(expect|spy|utils|pretty-format)|@testing-library\/|aria-query|dom-accessibility-api|pretty-format)\//;
+    const vendorEntries = jsFiles.filter((file) => file.startsWith('preview/vendor/'));
+
+    it('imports them from paths that exist', () => {
+      // The browser entries import the vendor entries by a path that the build only assumes.
+      const vendorImports = jsFiles.flatMap((file) =>
+        relativeImports(file)
+          .filter(
+            (imported) => imported.startsWith('preview/vendor/') && !file.startsWith('preview/')
+          )
+          .map((imported) => ({ file, imported }))
+      );
 
       expect(vendorImports.map(({ file }) => file)).toContain('test/index.js');
       expect(
-        vendorImports.filter(
-          ({ file, specifier }) => !existsSync(join(distDirectory, dirname(file), specifier))
+        vendorImports.filter(({ imported }) => !existsSync(join(distDirectory, imported)))
+      ).toEqual([]);
+    });
+
+    it('bundles no copy of them outside the runtimes', () => {
+      // esbuild marks each bundled module with a `// <path>` comment.
+      const copies = jsFiles
+        .filter((file) => /^(test|instrumenter|_browser-chunks)\//.test(file))
+        .flatMap((file) =>
+          read(file)
+            .split('\n')
+            .filter((line) => line.startsWith('// ') && testLibraries.test(line))
+            .map((line) => `${file}: ${line}`)
+        );
+
+      expect(copies).toEqual([]);
+    });
+
+    it('runs no runtime code when a vendor entry is imported', () => {
+      expect(vendorEntries).not.toEqual([]);
+      const runtimeCode = vendorEntries.flatMap((entry) =>
+        [...reachableFrom(entry)]
+          .filter((file) => /^\/\/#region src\//m.test(read(file)))
+          .map((file) => `${entry} -> ${file}`)
+      );
+
+      expect(runtimeCode).toEqual([]);
+    });
+
+    it('loads only the libraries the instrumenter uses with it', () => {
+      // It needs `@vitest/utils/error`; webpack previews bundle it through `storybook/internal/csf`.
+      const regions = [...reachableFrom('instrumenter/index.js')].flatMap((file) =>
+        [...read(file).matchAll(/^\/\/#region (\S+)/gm)].map(([, region]) => region)
+      );
+
+      expect(regions.some((region) => region.includes('node_modules/@vitest/utils/'))).toBe(true);
+      expect(
+        regions.filter((region) =>
+          /node_modules\/(chai|@vitest\/(expect|spy)|@testing-library\/|aria-query)\//.test(region)
         )
       ).toEqual([]);
-      expect(
-        readFileSync(join(distDirectory, 'test/index.js'), 'utf-8').match(
-          /^\/\/ .*node_modules\/.*$/gm
-        )
-      ).toBeNull();
-    }
-  );
+    });
+  });
 
   it.runIf(DTS_BUILT)(
     'compiles the public test API consumer fixture with the workspace compiler',

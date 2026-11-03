@@ -33,8 +33,8 @@ describe('collectPackageDirs', () => {
     expect(new Set(names).size).toBe(names.length);
   });
 
-  it('skips specifiers that do not resolve', () => {
-    expect(collectPackageDirs(['does-not-exist-anywhere'], CORE_DIR)).toEqual([]);
+  it('throws for a specifier that does not resolve', () => {
+    expect(() => collectPackageDirs(['does-not-exist-anywhere'], CORE_DIR)).toThrow();
   });
 });
 

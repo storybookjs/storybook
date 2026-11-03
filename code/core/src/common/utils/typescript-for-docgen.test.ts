@@ -255,7 +255,7 @@ describe('checkReactBuilderDocgenPackages', () => {
 
       await expect(result).rejects.toThrow(BuilderDocgenPackagesMissingError);
       await expect(result).rejects.toThrow(
-        'npm install -D "@joshwooding/vite-plugin-react-docgen-typescript@^0.7.0" "react-docgen-typescript@^2.2.2"'
+        'npm install -D "@joshwooding/vite-plugin-react-docgen-typescript@^0.9.0" "react-docgen-typescript@^2.2.2"'
       );
       await expect(result).rejects.toThrow('typescript.reactDocgen: false');
       expect(once.warn).not.toHaveBeenCalled();

@@ -27,7 +27,7 @@ import { getProjectRoot } from './paths.ts';
 export const BUILDER_DOCGEN_PACKAGES = {
   'react-docgen': '^8.0.2',
   'react-docgen-typescript': '^2.2.2',
-  '@joshwooding/vite-plugin-react-docgen-typescript': '^0.7.0',
+  '@joshwooding/vite-plugin-react-docgen-typescript': '^0.7.0 || ^0.8.0 || ^0.9.0',
   '@storybook/react-docgen-typescript-plugin': '1.0.6--canary.9.0c3f3b7.0',
 } as const;
 
@@ -182,9 +182,12 @@ const detectPackageManagerForInstallHint = () => {
   return detectedPackageManager;
 };
 
-/** Return `name@range` for each package, as install commands take them. */
+/**
+ * Return `name@range` for each package, as install commands take them. A range with alternatives
+ * installs its newest one, such as `^0.9.0` for `^0.7.0 || ^0.8.0 || ^0.9.0`.
+ */
 const getBuilderDocgenPackageSpecifiers = (packages: readonly BuilderDocgenPackage[]) =>
-  packages.map((name) => `${name}@${BUILDER_DOCGEN_PACKAGES[name]}`);
+  packages.map((name) => `${name}@${BUILDER_DOCGEN_PACKAGES[name].split('||').at(-1)!.trim()}`);
 
 /**
  * Return the command that adds builder docgen packages to the project's devDependencies.
@@ -198,5 +201,21 @@ export function getAddBuilderDocgenPackagesCommand(
   const specifiers = getBuilderDocgenPackageSpecifiers(packages).map((specifier) =>
     /^[\w@/.-]+$/.test(specifier) ? specifier : `"${specifier}"`
   );
-  return [ADD_DEV_DEPENDENCY_COMMANDS[packageManager], ...specifiers].join(' ');
+  // pnpm refuses to add a dependency to a workspace root without `-w`.
+  const workspaceRootFlag =
+    packageManager === PackageManagerName.PNPM && isPnpmWorkspaceRoot() ? ['-w'] : [];
+  return [ADD_DEV_DEPENDENCY_COMMANDS[packageManager], ...workspaceRootFlag, ...specifiers].join(
+    ' '
+  );
+}
+
+/** Return whether the package that contains `cwd` is the root of a pnpm workspace. */
+export function isPnpmWorkspaceRoot(cwd = process.cwd()) {
+  try {
+    const workspaceFile = find.up('pnpm-workspace.yaml', { cwd, last: getProjectRoot() });
+    const packageJson = find.up('package.json', { cwd });
+    return !!workspaceFile && !!packageJson && dirname(workspaceFile) === dirname(packageJson);
+  } catch {
+    return false;
+  }
 }

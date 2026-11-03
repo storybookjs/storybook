@@ -43,8 +43,12 @@ export interface ReactDocgenTypescriptParserOptions {
   customComponentTypes?: string[];
 }
 
-/** Options of `@joshwooding/vite-plugin-react-docgen-typescript`, copied from its declarations. */
+/**
+ * Options of `@joshwooding/vite-plugin-react-docgen-typescript` 0.7 to 0.9, copied from its
+ * declarations. Its TypeScript 7.1 `native` mode is left out: Storybook uses the docgen server there.
+ */
 export type ReactDocgenTypescriptOptions = ReactDocgenTypescriptParserOptions & {
+  docgenMode?: 'legacy' | 'project-service';
   setDisplayName?: boolean;
   typePropName?: string;
   tsconfigPath?: string;

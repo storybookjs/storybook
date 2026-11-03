@@ -17,6 +17,7 @@ import {
   findPackageManagerForInstallHint,
   getAddBuilderDocgenPackagesCommand,
   isBuilderDocgenPackageInstalled,
+  isPnpmWorkspaceRoot,
 } from './builder-docgen-packages.ts';
 import { PackageManagerName } from '../js-package-manager/JsPackageManager.ts';
 
@@ -196,5 +197,44 @@ describe('isBuilderDocgenPackageInstalled', () => {
 
   it('rejects a package that does not resolve', () => {
     expect(isBuilderDocgenPackageInstalled(resolveTo(undefined), 'react-docgen')).toBe(false);
+  });
+});
+
+describe('builder docgen helpers', () => {
+  // Only builder docgen uses these, so the packages bundle them into their lazy docgen code.
+  it.each([
+    ['frameworks/react-vite', ['@rollup/pluginutils', 'magic-string', 'resolve', 'tsconfig-paths']],
+    ['presets/react-webpack', ['magic-string', 'resolve', 'tsconfig-paths']],
+  ] as const)('are bundled into %s instead of installed', (dir, helpers) => {
+    const packageJson = readPackageJson(dir);
+    for (const name of helpers) {
+      expect(packageJson.dependencies?.[name], name).toBeUndefined();
+    }
+  });
+
+  it('stay out of the React Vite preset entry, which loads them lazily', () => {
+    const preset = join(CODE_DIR, 'frameworks/react-vite/dist/preset.js');
+    if (!existsSync(preset)) {
+      expect(process.env.CI, 'the React Vite preset is built in CI').toBeFalsy();
+      return;
+    }
+    const staticImports = readFileSync(preset, 'utf-8')
+      .split('\n')
+      .filter((line) => /^import\s/.test(line))
+      .join('\n');
+    expect(staticImports).not.toMatch(/react-docgen|magic-string|tsconfig-paths|pluginutils/);
+  });
+});
+
+describe('isPnpmWorkspaceRoot', () => {
+  it('is true only in the package at the workspace root', () => {
+    const root = mkdtempSync(join(tmpdir(), 'sb-pnpm-workspace-'));
+    mkdirSync(join(root, 'apps/web'), { recursive: true });
+    writeFileSync(join(root, 'pnpm-workspace.yaml'), 'packages: [apps/*]');
+    writeFileSync(join(root, 'package.json'), '{}');
+    writeFileSync(join(root, 'apps/web/package.json'), '{}');
+
+    expect(isPnpmWorkspaceRoot(root)).toBe(true);
+    expect(isPnpmWorkspaceRoot(join(root, 'apps/web'))).toBe(false);
   });
 });

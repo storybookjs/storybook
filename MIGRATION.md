@@ -1051,7 +1051,7 @@ Storybook loads them only when builder docgen runs. When your main config sets `
 | `typescript.reactDocgen` | Add to devDependencies |
 | --- | --- |
 | `'react-docgen'` (default) | `react-docgen` |
-| `'react-docgen-typescript'` | Vite: `@joshwooding/vite-plugin-react-docgen-typescript` and `react-docgen-typescript`. Webpack: `@storybook/react-docgen-typescript-plugin` and `react-docgen-typescript` |
+| `'react-docgen-typescript'` | Vite: `@joshwooding/vite-plugin-react-docgen-typescript` and `react-docgen-typescript`. Webpack: `@storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0` (this exact version; the `latest` tag is older) and `react-docgen-typescript` |
 
 Projects without a usable `typescript` (no `typescript` package, or TypeScript 7 without the [side-by-side setup](#typescript-59-or-newer)) no longer get docgen from the `react-docgen` fallback, unless `react-docgen` happens to be installed: Controls and the Docs args table show no props until you set up TypeScript 6, which enables server-side docgen.
 

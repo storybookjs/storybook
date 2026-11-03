@@ -193,16 +193,20 @@ export async function checkReactBuilderDocgenPackages({
   options: Pick<Options, 'configDir'>;
 }): Promise<BuilderDocgenPackage[]> {
   const missing = packages.filter((name) => !isBuilderDocgenPackageInstalled(resolve, name));
-  const foundVersions = Object.fromEntries(
-    missing.flatMap((name) => {
-      const version = getResolvedBuilderDocgenPackageVersion(resolve, name);
-      return version ? [[name, version]] : [];
-    })
-  );
   const docgenServerDisabledInMainConfig = await isDocgenServerDisabledInMainConfig(options);
 
   if (missing.length > 0) {
     const typescriptUsable = !getTypeScriptForDocgenError(resolve);
+    if (!docgenServerDisabledInMainConfig && !typescriptUsable) {
+      // The `isDocgenProviderEnabled` preset already warned about the unusable `typescript`.
+      return missing;
+    }
+    const foundVersions = Object.fromEntries(
+      missing.flatMap((name) => {
+        const version = getResolvedBuilderDocgenPackageVersion(resolve, name);
+        return version ? [[name, version]] : [];
+      })
+    );
     const error = new BuilderDocgenPackagesMissingError({
       reactDocgen,
       packages: missing,
@@ -214,9 +218,7 @@ export async function checkReactBuilderDocgenPackages({
     if (docgenServerDisabledInMainConfig) {
       throw error;
     }
-    if (typescriptUsable) {
-      once.warn(error.message);
-    }
+    once.warn(error.message);
     return missing;
   }
 

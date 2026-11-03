@@ -63,7 +63,7 @@ describe('getReactDocgenImporter function', () => {
     writeFileSync(join(root, 'src/components/types.ts'), 'export interface Props {}');
     const matchPath = TsconfigPaths.createMatchPath(root, { '@/*': ['./src/*'] });
     // Like the real lookup, resolve the extensionless path that tsconfig-paths returns.
-    reactDocgenResolverMock.defaultLookupModule.mockImplementation((filen: string) =>
+    reactDocgenResolverMock.defaultLookupModule.mockImplementationOnce((filen: string) =>
       filen.startsWith(root) ? `${filen}.ts` : filen
     );
 

@@ -449,6 +449,9 @@ export class BuilderDocgenPackagesMissingError extends StorybookError {
           }
 
             ${data.installCommand}`,
+        data.reactDocgen === 'react-docgen-typescript' &&
+          !data.typescriptUsable &&
+          '`react-docgen-typescript` needs the TypeScript compiler API, which your `typescript` package does not have, so builder docgen uses `react-docgen` instead.',
         data.docgenServerDisabledInMainConfig &&
           'To run without docgen instead, set `typescript.reactDocgen: false` in your Storybook main config.',
         !data.docgenServerDisabledInMainConfig

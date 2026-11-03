@@ -1,3 +1,5 @@
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { expect, test, vi } from 'vitest';
@@ -15,11 +17,11 @@ vi.mock('react-docgen-typescript', () => {
   throw new Error('react-docgen-typescript must not load on the docgen server');
 });
 
-test('infers required args with the docgen server engine', async () => {
-  const presets = {
-    apply: async (name: string) => (name === 'features' ? { docgenServer: true } : {}),
-  } as unknown as Options['presets'];
+const presets = {
+  apply: async (name: string) => (name === 'features' ? { docgenServer: true } : {}),
+} as unknown as Options['presets'];
 
+test('infers required args with the docgen server engine', async () => {
   const argTypes = await internal_getArgTypesData(null, {
     componentFilePath: join(import.meta.dirname, '../template/cli/ts/Button.tsx'),
     componentExportName: 'Button',
@@ -27,4 +29,25 @@ test('infers required args with the docgen server engine', async () => {
   });
 
   expect(argTypes?.label).toMatchObject({ name: 'label', type: { required: true } });
+}, 60_000);
+
+test('infers required args of a default export', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'sb-ghost-default-'));
+  writeFileSync(
+    join(dir, 'tsconfig.json'),
+    JSON.stringify({ compilerOptions: { jsx: 'react-jsx', strict: true }, include: ['*.tsx'] })
+  );
+  writeFileSync(
+    join(dir, 'Card.tsx'),
+    'export default function Card({ title }: { title: string; subtitle?: string }) { return <h1>{title}</h1>; }'
+  );
+
+  const argTypes = await internal_getArgTypesData(null, {
+    componentFilePath: join(dir, 'Card.tsx'),
+    componentExportName: 'default',
+    presets,
+  });
+
+  expect(argTypes?.title).toMatchObject({ type: { required: true } });
+  expect(argTypes?.subtitle).toMatchObject({ type: { required: false } });
 }, 60_000);

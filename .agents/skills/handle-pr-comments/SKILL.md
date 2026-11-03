@@ -25,4 +25,6 @@ Evaluate review comments on the PR (from the current branch, or a PR number/URL 
 
 ## Bot comments
 
-For comments from review bots (Greptile, Copilot), do not ask the user. Judge each comment against the [code-review rules](../code-review/rules.md), including "Edge cases and guards". Then fix it, or decide not to and say why. Reply in the thread with what you did, and resolve the thread. Fold the fixes into the commits that own them, as the [`pr` skill](../pr/SKILL.md) "Commit history" section says. The bots review again on each push, so fetch the threads again after you push.
+For comments from review bots (Greptile, Copilot), do not ask the user. Judge each comment against the [code-review rules](../code-review/rules.md), including "Edge cases and guards". Then fix it, or decide not to and say why. Reply in the thread with what you did, and resolve the thread.
+
+A human makes the final decision when you disagree with a high-severity finding (for example Greptile P0 or P1). Reply in the thread with your reasoning, leave the thread unresolved, and ask the user to decide, with the bot's reasoning and yours side by side. Fold the fixes into the commits that own them, as the [`pr` skill](../pr/SKILL.md) "Commit history" section says. The bots review again on each push, so fetch the threads again after you push.

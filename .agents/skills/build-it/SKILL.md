@@ -8,7 +8,7 @@ metadata:
 
 # Build it
 
-Takes a change from a spec to a draft PR that is ready for a human. Steps 1 to 9 run without the user: ask only for a design-level decision (a fix that changes a rule the spec states). Invoking this skill authorizes the draft PR, the review request on it, and the replies on bot threads.
+Takes a change from a spec to a draft PR that is ready for a human. Steps 1 to 9 run without the user. Hold the decisions that belong to the user for step 9: a design-level fix (one that changes a rule the spec states), and a high-severity bot finding you disagree with. Invoking this skill authorizes the draft PR, the review request on it, and the replies on bot threads.
 
 Each step names the skill that does the work. Read that skill when you reach the step, not before.
 
@@ -31,9 +31,9 @@ Each step names the skill that does the work. Read that skill when you reach the
    - Ask Greptile for a review, as [Pull requests](../../guidelines/pull-requests.md) says.
    - Run [`second-opinion`](../second-opinion/SKILL.md) on the PR.
 
-8. **Act on the reviews.** Handle each bot thread as the [`handle-pr-comments`](../handle-pr-comments/SKILL.md) "Bot comments" section says, and fix the confirmed findings of the second opinion. Push, and wait for Greptile to review the new head. Repeat until the bots are quiet. Then list the unresolved review threads of every open PR in the stack, not only this one: the bots review again on each push. Done when no bot thread is unresolved.
+8. **Act on the reviews.** Handle each bot thread as the [`handle-pr-comments`](../handle-pr-comments/SKILL.md) "Bot comments" section says, and fix the confirmed findings of the second opinion. Push, and wait for Greptile to review the new head. Repeat until the bots are quiet. Then list the unresolved review threads of every open PR in the stack, not only this one: the bots review again on each push. Done when the only unresolved bot threads are the high-severity findings you disagree with.
 
-9. **Hand over.** Tell the user the PR is ready for review. Give the PR link, the labels you chose, and, per reviewer (code review, hunt, real-world QA, Greptile, second opinion), what it found, what you fixed, and what you dropped and why. Present each held design-level decision with a recommendation.
+9. **Hand over.** Tell the user the PR is ready for review. Give the PR link, the labels you chose, and, per reviewer (code review, hunt, real-world QA, Greptile, second opinion), what it found, what you fixed, and what you dropped and why. Present each held decision with a recommendation: the design-level fixes, and each high-severity bot finding you disagree with, with the bot's reasoning and yours side by side.
 
 ## After the hand-over
 

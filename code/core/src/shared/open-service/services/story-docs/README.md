@@ -37,21 +37,25 @@ Keep it to these rules:
   plain data.
 
 The renderer fills the holes in the browser with the current args through
-`parameters.docs.source.fillTemplate`, a `FillSnippetTemplate` from `storybook/internal/docs-tools`,
-where `snippetTemplate.ts` lists the shared hole kinds. It registers it only with `docgenServer` on.
+`parameters.docs.source.fillTemplate`, a `FillSnippetTemplate` from `storybook/internal/docs-tools`.
+It registers it only with `docgenServer` on.
 `selectLiveSnippetForStory` passes it the unmapped args, as the static snippet reads them, and each
 arg whose value is still its initial value (`===`) and that has `argCode` as a `writtenArg`, which
 `printValue` prints as its code.
 
-An attribute hole (`⟦props⟧`, `⟦attr⟧`, `⟦bool⟧` or `⟦prop⟧`) that prints nothing takes the
-whitespace before it along, so an unset attribute leaves no gap or empty line. Any other hole keeps
-it, unless it holds a line break, where it would leave an empty line.
+Core owns only the hole contract, in `snippetTemplate.ts`: how a hole is written (`hole`,
+`holeWord`), found (`findHoles`) and replaced (`fillHoles`). A hole is a kind and words, separated by
+one space. A word that starts with `%` is the rest of it URI-encoded, so an arg named
+`Render header?` is the word `%Render%20header%3F`. A `~` word is the whitespace before the hole,
+which `fillHoles` prints before a value that is not empty, so an unset attribute leaves no gap or
+empty line. The provider decides which holes take it with `withHoleSpace`. `fillHoles` gives the
+filler a hole's kind and words and nothing else, so a filler cannot read the code around a hole.
 
-A hole is a kind and words, separated by one space. A word that starts with `%` is the rest of it
-URI-encoded, so an arg named `Render header?` is the word `%Render%20header%3F`. A hole for one arg
-may end in a `?` word, the code to print while the arg is unset, also URI-encoded. `holeWord`,
-`defaultWord` and `defaultCode` write and read these words. Each renderer adds holes and words of
-its own, which the comment on its `fill-template.ts` documents.
+Each framework owns its kinds and words, documented on its `fill-template.ts`, and prints every
+value with one module, its `snippet-values.ts`, which its provider prints the static snippet with
+too. `snippetValues.ts` holds JavaScript printing helpers that several fillers share, such as
+`printValue`, `writtenArg` and the `?` default word; they are not part of the contract.
+`code/lib/docgen-harness/src/fill-template-structure.test.ts` checks each filler against these rules.
 
 The Code panel, Canvas › Show code and the `Source` block show the static `snippet` while a story
 has the args it is written with, and fill the template once the args change, in dev and in static

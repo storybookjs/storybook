@@ -219,8 +219,18 @@ export async function generateBundle({
       ])
     );
     // Shared modules are entries of their own, in chunks that contain only their packages, so that
-    // importing one doesn't evaluate any runtime code.
-    const sharedPackageDirs = collectPackageDirs(sharedModules, DIR_CWD);
+    // importing one doesn't evaluate any runtime code. Each gets a group of its own packages, the
+    // smallest first, so that it doesn't load the packages of another (the instrumenter only needs
+    // `@vitest/utils/error`); packages that several of them use go to the smallest.
+    const vendorGroups = sharedModules
+      .map((specifier) => ({ specifier, dirs: collectPackageDirs([specifier], DIR_CWD) }))
+      .sort((a, b) => a.dirs.length - b.dirs.length)
+      .map(({ specifier, dirs }, index, all) => ({
+        name: `vendor-${sharedModuleName(specifier)}`,
+        test: isInPackageDirs(dirs),
+        priority: all.length - index,
+        maxSize: 500 * 1024,
+      }));
     const build = await rolldown({
       cwd: DIR_CWD,
       input: {
@@ -251,16 +261,7 @@ export async function generateBundle({
       strictExecutionOrder: true,
       codeSplitting: {
         groups: [
-          ...(sharedPackageDirs.length
-            ? [
-                {
-                  name: 'vendor',
-                  test: isInPackageDirs(sharedPackageDirs),
-                  priority: 1,
-                  maxSize: 500 * 1024,
-                },
-              ]
-            : []),
+          ...vendorGroups,
           { name, maxSize: 500 * 1024 },
         ],
       },

@@ -40,7 +40,10 @@ export function sharedRuntimeModulesPlugin({
   };
 }
 
-/** The packages behind `specifiers` and all their dependencies, as package directories. */
+/**
+ * The packages behind `specifiers` and all their dependencies, as package directories. Throws if one
+ * doesn't resolve, rather than leaving it out of the shared chunks.
+ */
 export function collectPackageDirs(specifiers: readonly string[], cwd: string): string[] {
   const dirs = new Set<string>();
   const packageDirOf = (resolved: string, name: string) => {
@@ -51,17 +54,18 @@ export function collectPackageDirs(specifiers: readonly string[], cwd: string): 
   const packageName = (specifier: string) =>
     specifier.split('/').slice(0, specifier.startsWith('@') ? 2 : 1).join('/');
 
-  const visit = (name: string, from: string) => {
-    let resolved: string;
+  const resolve = (name: string, from: string) => {
+    const require = createRequire(join(from, 'noop.js'));
     try {
-      resolved = normalize(createRequire(join(from, 'noop.js')).resolve(`${name}/package.json`));
+      return normalize(require.resolve(`${name}/package.json`));
     } catch {
-      try {
-        resolved = normalize(createRequire(join(from, 'noop.js')).resolve(name));
-      } catch {
-        return;
-      }
+      // Its `exports` don't expose package.json.
+      return normalize(require.resolve(name));
     }
+  };
+
+  const visit = (name: string, from: string) => {
+    const resolved = resolve(name, from);
     const dir = packageDirOf(resolved, name);
     if (!dir || dirs.has(dir)) {
       return;

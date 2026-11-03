@@ -31,6 +31,12 @@ describe('applyChunkedPreviewRuntime', () => {
     expect(
       manualChunks.manualChunks('/abs/storybook/dist/preview/_chunks/runtime-abc.js', {} as never)
     ).toBe('runtime-abc');
+    expect(
+      manualChunks.manualChunks('/abs/storybook/dist/preview/vendor/chai.js', {} as never)
+    ).toBe('vendor-chai');
+    expect(
+      manualChunks.manualChunks('C:\\storybook\\dist\\preview\\vendor\\chai.js', {} as never)
+    ).toBe('vendor-chai');
     expect(manualChunks.manualChunks('/abs/src/Button.tsx', {} as never)).toBe('vendor');
     expect(previous).toHaveBeenCalledOnce();
   });

@@ -1,4 +1,4 @@
-import { basename } from 'node:path';
+import { basename } from 'pathe';
 
 import type { UserConfig } from 'vite';
 import { version } from 'vite';
@@ -33,7 +33,8 @@ export function ensureRolldownOptions(config: UserConfig) {
 
 // Headroom under the ~1MB response limit.
 const MAX_CHUNK_BYTES = 500 * 1024;
-const PREVIEW_CHUNK = /[/\\]preview[/\\]_chunks[/\\]/;
+// The preview runtime's chunks, and its vendor entries that storybook/test shares.
+const PREVIEW_CHUNK = /[/\\]preview[/\\](_chunks|vendor)[/\\]/;
 
 type ChunkOutput = {
   strictExecutionOrder?: boolean;
@@ -91,8 +92,10 @@ export function applyChunkedPreviewRuntime(
 
     const previous = output.manualChunks;
     output.manualChunks = (id, meta) => {
-      if (PREVIEW_CHUNK.test(id)) {
-        return basename(id, '.js');
+      const previewChunk = PREVIEW_CHUNK.exec(id);
+      if (previewChunk) {
+        const name = basename(id, '.js');
+        return previewChunk[1] === 'vendor' ? `vendor-${name}` : name;
       }
       return previous?.(id, meta);
     };

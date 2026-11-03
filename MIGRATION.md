@@ -17,7 +17,9 @@
   - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
   - [Deprecated CSF and manager type aliases removed](#deprecated-csf-and-manager-type-aliases-removed)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
+    - [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
+    - [Svelte](#svelte)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or newer](#typescript-59-or-newer)
   - [CSF Next: meta args no longer need `as const`](#csf-next-meta-args-no-longer-need-as-const)
@@ -43,8 +45,11 @@
   - [`storySort` in the preview replaced by `storySorts` in main](#storysort-in-the-preview-replaced-by-storysorts-in-main)
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
   - [Next.js: `@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
-  - [Create React App support removed](#create-react-app-support-removed)
   - [`storybook/internal/babel` removed; `csf-tools` uses ESTree](#storybookinternalbabel-removed-csf-tools-uses-estree)
+    - [Behavior that changes for every project](#behavior-that-changes-for-every-project)
+    - [Community packages that need a release](#community-packages-that-need-a-release)
+    - [Changes for tooling that imports Storybook's internal entry points](#changes-for-tooling-that-imports-storybooks-internal-entry-points)
+  - [Create React App support removed](#create-react-app-support-removed)
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
   - [`storybook add` and `storybook remove` leave an `addons` they cannot edit safely](#storybook-add-and-storybook-remove-leave-an-addons-they-cannot-edit-safely)
   - [Internal CSF tools use the unified mutation API](#internal-csf-tools-use-the-unified-mutation-api)
@@ -278,7 +283,7 @@
       - [Require Vue 3 and up](#require-vue-3-and-up)
     - [Angular](#angular)
       - [Require Angular 15 and up](#require-angular-15-and-up)
-    - [Svelte](#svelte)
+    - [Svelte](#svelte-1)
       - [Require Svelte 4 and up](#require-svelte-4-and-up)
     - [Preact](#preact)
       - [Require Preact 10 and up](#require-preact-10-and-up)
@@ -1016,6 +1021,15 @@ RDT options such as `propFilter` and a Vue docgen `tsconfig` have no server equi
 Set `features.docgenServer: false` to keep builder extraction.
 For Angular-Vite, `framework.options.compodoc: false` does not disable the docgen server; use the feature flag to opt out.
 
+#### Temporary regressions on source snippet generation
+
+With server-side docgen, React, Angular, Vue 3 and Web Components build story source snippets on the server from the story file.
+
+In Storybook 11.0, server-side source snippets do not update dynamically when you change a story's args. This is a known limitation and it will be fixed in Storybook 11.1 at the latest.
+
+Set `features.docgenServer: false` to restore runtime snippets and runtime docgen, if your Storybook is affected by these limitations.
+
+
 ### Builder docgen is deprecated
 
 Client-side docgen that runs in the builder is deprecated and will be removed in Storybook 12.
@@ -1740,6 +1754,7 @@ The `--renderer` flag of `storybook automigrate` is also removed. Only the remov
 ### Web Components: server-side docgen suffixes event, slot and part argType keys
 
 With server-side docgen, which is on by default (see [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)), `@storybook/web-components-vite` builds argTypes from the Custom Elements Manifest on the Storybook server.
+Story source snippets are built on the server too; see [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation).
 Events, slots and CSS shadow parts are keyed with their category as a suffix, the same keys `@wc-toolkit/storybook-helpers` uses:
 
 | Manifest item     | Runtime docgen key | Server docgen key |

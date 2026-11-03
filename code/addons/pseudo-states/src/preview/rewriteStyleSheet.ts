@@ -195,17 +195,7 @@ const extractPseudoStates = (selector: string) => {
   withoutPseudoStates += selector.slice(cursor);
 
   // If a selector list was left with blank items (e.g. ", foo, , bar, "), remove the extra commas/spaces.
-  withoutPseudoStates = withoutPseudoStates.replaceAll(/([\s(]),\s+|(,\s+)+(?=\))/g, '$1');
-  const vacuousWhereRanges = findWhereRanges(withoutPseudoStates).filter(
-    ([start, end]) =>
-      withoutPseudoStates.slice(start, end) === ':where(*)' &&
-      start > 0 &&
-      !selectorStartPattern.test(withoutPseudoStates[start - 1])
-  );
-  for (const [start, end] of vacuousWhereRanges.reverse()) {
-    withoutPseudoStates = withoutPseudoStates.slice(0, start) + withoutPseudoStates.slice(end);
-  }
-  withoutPseudoStates ||= '*';
+  withoutPseudoStates = withoutPseudoStates.replaceAll(/([\s(]),\s+|(,\s+)+(?=\))/g, '$1') || '*';
 
   for (const state of nonZeroSpecificityStates) {
     zeroSpecificityStates.delete(state);

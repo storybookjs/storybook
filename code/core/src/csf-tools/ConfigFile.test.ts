@@ -8,6 +8,8 @@ import { formatConfig, loadConfig, printConfig } from './ConfigFile.ts';
 import type { CsfExpression } from './CsfObject.ts';
 import { parseExpression, textOf } from './estree/ast.ts';
 
+vi.mock('storybook/internal/node-logger', { spy: true });
+
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
   test: (val) => true,
@@ -31,17 +33,17 @@ const appendToArray = (path: string[], value: any, source: string) => {
 };
 
 describe('ConfigFile', () => {
+  beforeEach(() => {
+    vi.mocked(logger.debug).mockImplementation(() => {});
+    vi.mocked(logger.warn).mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.mocked(logger.debug).mockReset();
+    vi.mocked(logger.warn).mockReset();
+  });
+
   describe('imported default export diagnostics', () => {
-    beforeEach(() => {
-      vi.spyOn(logger, 'debug').mockImplementation(() => {});
-      vi.spyOn(logger, 'warn').mockImplementation(() => {});
-    });
-
-    afterEach(() => {
-      vi.mocked(logger.debug).mockRestore();
-      vi.mocked(logger.warn).mockRestore();
-    });
-
     it.each([
       "import { config } from './shared'; export default config;",
       "import { config as preview } from './shared'; export default preview;",
@@ -55,11 +57,11 @@ describe('ConfigFile', () => {
       const before = printConfig(config).code;
       config.parse();
 
-      expect(logger.debug).toHaveBeenCalledExactlyOnceWith(dedent`
+      expect(vi.mocked(logger.debug)).toHaveBeenCalledExactlyOnceWith(dedent`
         Cannot statically read the default export in 'preview.ts': its value comes from './shared'.
         Storybook does not follow imports when analyzing this config file.
       `);
-      expect(logger.warn).not.toHaveBeenCalled();
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
       expect(config.mutationDiagnostics).toEqual([]);
       expect(config.getValue(['tags'])).toBeUndefined();
       expect(config.set(['tags'], ['audit'])).toMatchObject({ ok: false, changed: false });
@@ -69,7 +71,7 @@ describe('ConfigFile', () => {
 
     it('describes the config without inventing a file name', () => {
       loadConfig("import config from './another-module'; export default config;").parse();
-      expect(logger.debug).toHaveBeenCalledExactlyOnceWith(dedent`
+      expect(vi.mocked(logger.debug)).toHaveBeenCalledExactlyOnceWith(dedent`
         Cannot statically read the default export in a config file: its value comes from './another-module'.
         Storybook does not follow imports when analyzing this config file.
       `);
@@ -84,10 +86,10 @@ describe('ConfigFile', () => {
       "import config from './shared'; const local = config; export default local;",
     ])('retains the existing diagnostic for unsupported expressions: %s', (source) => {
       loadConfig(source).parse();
-      expect(logger.debug).toHaveBeenCalledExactlyOnceWith(
+      expect(vi.mocked(logger.debug)).toHaveBeenCalledExactlyOnceWith(
         expect.stringContaining('CSF Parsing error in a config file:')
       );
-      expect(logger.warn).not.toHaveBeenCalled();
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -97,8 +99,8 @@ describe('ConfigFile', () => {
       "export { default } from './shared';",
     ])('keeps re-exports silent and unmodified: %s', (source) => {
       const config = loadConfig(source).parse();
-      expect(logger.debug).not.toHaveBeenCalled();
-      expect(logger.warn).not.toHaveBeenCalled();
+      expect(vi.mocked(logger.debug)).not.toHaveBeenCalled();
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
       expect(config.changed).toBe(false);
       expect(printConfig(config).code).toBe(source);
     });
@@ -111,8 +113,8 @@ describe('ConfigFile', () => {
     ])('keeps local config values readable without a diagnostic: %s', (source) => {
       const config = loadConfig(source).parse();
       expect(config.getValue(['tags'])).toEqual(['autodocs']);
-      expect(logger.debug).not.toHaveBeenCalled();
-      expect(logger.warn).not.toHaveBeenCalled();
+      expect(vi.mocked(logger.debug)).not.toHaveBeenCalled();
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
     });
   });
 

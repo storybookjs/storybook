@@ -185,9 +185,23 @@ describe('fillTemplate, for any value a control sets', () => {
     }
   };
 
+  // An args binding leaves out an empty string, and the snippet indents a line break as the
+  // template's own.
+  const multiline = (value: unknown) => typeof value === 'string' && value.includes('\n');
+
   it.each(values)('prints %j as an attribute as the snippet does', (value, printed) => {
     expect(outcome(() => fillTemplate('⟦attr label x⟧', { x: value }))).toBe(
-      printed ? (printAttribute('label', printed) ?? UnprintableArgError) : UnprintableArgError
+      value === ''
+        ? ''
+        : printed && !multiline(value)
+          ? (printAttribute('label', printed) ?? UnprintableArgError)
+          : UnprintableArgError
+    );
+  });
+
+  it("shows the static snippet for '' where the template binds the arg itself", () => {
+    expect(outcome(() => fillTemplate('⟦attr label x bound⟧', { x: '' }))).toBe(
+      UnprintableArgError
     );
   });
 
@@ -195,7 +209,7 @@ describe('fillTemplate, for any value a control sets', () => {
     expect(outcome(() => fillTemplate('⟦text x slot⟧', { x: value }))).toBe(
       value === ''
         ? ''
-        : printed
+        : printed && !multiline(value)
           ? (slotContent(printed) ?? UnprintableArgError)
           : UnprintableArgError
     );
@@ -203,11 +217,9 @@ describe('fillTemplate, for any value a control sets', () => {
 
   it.each(values)('prints %j as interpolated text as the snippet does', (value, printed) => {
     expect(outcome(() => fillTemplate('⟦text x⟧', { x: value }))).toBe(
-      value === ''
-        ? ''
-        : printed
-          ? (interpolatedText(printed) ?? UnprintableArgError)
-          : UnprintableArgError
+      value !== '' && printed && !multiline(value)
+        ? (interpolatedText(printed) ?? UnprintableArgError)
+        : UnprintableArgError
     );
   });
 
@@ -219,7 +231,7 @@ describe('fillTemplate, for any value a control sets', () => {
           ? printed.code
           : printValue(printed.value, 'x', { quote: "'" });
     expect(outcome(() => fillTemplate('⟦value x op⟧', { x: value }))).toBe(
-      code === undefined
+      code === undefined || value === ''
         ? UnprintableArgError
         : (() => {
             const fits = expressionCode(code, '"');
@@ -230,7 +242,9 @@ describe('fillTemplate, for any value a control sets', () => {
 
   it.each(values)('prints %j in the script as a literal', (value) => {
     expect(outcome(() => fillTemplate('⟦value x script⟧', { x: value }))).toBe(
-      outcome(() => printValue(value, 'x', { quote: "'", opaque: isVNode }))
+      value === ''
+        ? UnprintableArgError
+        : outcome(() => printValue(value, 'x', { quote: "'", opaque: isVNode }))
     );
   });
 });

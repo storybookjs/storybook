@@ -57,6 +57,8 @@ export interface RenderContext {
 }
 
 interface RenderPropValueInput {
+  /** Whether the template binds the arg itself, `:name="args.x"`, where next prints no `''`. */
+  bound?: boolean;
   /** Vue template attribute name. */
   attributeName: string;
   /** JavaScript identifier referenced by hoisted values. */
@@ -163,7 +165,14 @@ function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): Rende
   }
 
   if (ctx.holes) {
-    return { attrName: hole('attr', holeWord(input.attributeName), holeWord(input.variableName)) };
+    return {
+      attrName: hole(
+        'attr',
+        holeWord(input.attributeName),
+        holeWord(input.variableName),
+        ...(input.bound ? ['bound'] : [])
+      ),
+    };
   }
 
   return { attrName: attribute };
@@ -327,6 +336,8 @@ export interface ArgsBindingExpansion {
 }
 
 export interface RenderArgsBindingExpansionOptions {
+  /** In a template, the component's props the story leaves unset, each a hole where it sorts. */
+  unsetProps?: readonly string[];
   /** Upgrade model args to `v-model` bindings and slot args to slot children (story tag only). */
   roleAware: boolean;
   /** Renders one slot arg's children; `undefined` content bails the whole expansion. */
@@ -352,14 +363,23 @@ export function renderArgsBindingExpansion(
     return undefined;
   }
 
-  const props = partitioned.props.map((arg) =>
-    options.roleAware
-      ? renderPropLikeArg(arg, ctx)
-      : renderPropValue(
-          { attributeName: arg.name, variableName: arg.name, value: arg.value, plan: arg.plan },
-          ctx
-        )
-  );
+  const props = [
+    ...partitioned.props.map((arg) => ({
+      name: arg.name,
+      prop: options.roleAware
+        ? renderPropLikeArg(arg, ctx)
+        : renderPropValue(
+            { attributeName: arg.name, variableName: arg.name, value: arg.value, plan: arg.plan },
+            ctx
+          ),
+    })),
+    ...(options.unsetProps ?? []).map((name) => ({
+      name,
+      prop: { attrName: hole('attr', holeWord(name), holeWord(name)) },
+    })),
+  ]
+    .sort((a, b) => attributeOrder(a.name, b.name))
+    .map(({ prop }) => prop);
   const events = partitioned.events.map((arg) => renderEventArg(arg, ctx));
 
   const slotChildren: string[] = [];
@@ -382,7 +402,7 @@ export function renderBoundArgAttribute(
 ): string {
   return formatRenderedProp(
     renderPropValue(
-      { attributeName, variableName: arg.name, value: arg.value, plan: arg.plan },
+      { attributeName, variableName: arg.name, value: arg.value, plan: arg.plan, bound: true },
       ctx
     )
   );

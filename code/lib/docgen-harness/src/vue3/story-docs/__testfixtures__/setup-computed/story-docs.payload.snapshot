@@ -27,7 +27,7 @@ const upper = computed(() => ⟦value label script op .⟧.toUpperCase());
 </script>
 
 <template>
-  <SetupComputed⟦attr label label ~%20⟧ :hint="upper" />
+  <SetupComputed⟦attr label label bound ~%20⟧ :hint="upper" />
 </template>",
     },
   },

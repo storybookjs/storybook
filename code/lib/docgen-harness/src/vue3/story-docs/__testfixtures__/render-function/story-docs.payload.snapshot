@@ -24,7 +24,7 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 
 <template>
   <div>
-    <RenderFunctionButton⟦attr label label ~%20⟧ />
+    <RenderFunctionButton⟦attr label label bound ~%20⟧ />
   </div>
 </template>",
     },

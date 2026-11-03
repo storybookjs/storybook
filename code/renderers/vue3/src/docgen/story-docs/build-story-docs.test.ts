@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SourceEditor } from 'storybook/internal/csf-tools';
-import { UnprintableArgError } from 'storybook/internal/docs-tools';
+import { UnprintableArgError, printValue } from 'storybook/internal/docs-tools';
 import type { IndexEntry, StoryDoc } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
@@ -261,11 +261,11 @@ describe('template', () => {
       </script>
 
       <template>
-        <MyButton⟦attr count count ~%20⟧⟦attr label label ~%20⟧⟦props -count -label ~%20⟧ />
+        <MyButton⟦attr active active ~%20⟧⟦attr count count ~%20⟧⟦attr label label ~%20⟧⟦attr size size ~%20⟧⟦props -active -count -label -size ~%20⟧ />
       </template>"
     `);
     expect(filled(story, { label: 'Go', count: 3, active: true })).toContain(
-      '<MyButton :count="3" label="Go" active />'
+      '<MyButton active :count="3" label="Go" />'
     );
   });
 
@@ -282,7 +282,7 @@ export const Primary = {
 `);
     expect(story?.snippet).toContain('<MyButton label="Go" :count="2" />');
     expect(story?.template).toContain(
-      '<MyButton label="Go"⟦attr count count ~%20⟧⟦props -count -label ~%20⟧ />'
+      '<MyButton label="Go"⟦attr active active ~%20⟧⟦attr count count ~%20⟧⟦attr size size ~%20⟧⟦props -active -count -label -size ~%20⟧ />'
     );
   });
 
@@ -297,7 +297,7 @@ export const Primary = {
       `export const Primary = { args: { label: 'Hi', onHover: () => {} } };`
     );
     expect(story?.snippet).not.toContain('onHover');
-    expect(story?.template).toContain('⟦props -label -onHover ~%20⟧');
+    expect(story?.template).toContain('⟦props -active -count -label -onHover -size ~%20⟧');
   });
 
   it('fills to the snippet for a number written another way than it prints', async () => {
@@ -353,3 +353,79 @@ export const Primary = {
     expect(story?.template).toBeUndefined();
   });
 });
+
+describe('a value a control sets', () => {
+  const PLACES: Record<string, (label: string) => string> = {
+    'an args binding': (label) => `export const Primary = { args: { label: ${label} } };`,
+    'a bound attribute': (label) => rendered(label, '<MyButton :label="args.label" />'),
+    'an interpolation': (label) => rendered(label, '<MyButton>{{ args.label }}</MyButton>'),
+    'an expression': (label) => rendered(label, `<MyButton :title="args.label + '!'" />`),
+    'a slot': (label) => `export const Primary = { args: { default: ${label} } };`,
+  };
+  const CATEGORIES = { ...DOCGEN_CATEGORIES, default: 'slots' };
+  const VALUES: unknown[] = [
+    'Go',
+    'say "hi"',
+    "it's",
+    `a "b" 'c'`,
+    '{x}',
+    '{{ x }}',
+    'a}}b',
+    '<b>',
+    'a & b',
+    ' padded ',
+    '',
+    0,
+    2.5,
+    1000,
+    -3,
+    true,
+    false,
+    null,
+    ['a', 1],
+    { a: 1 },
+  ];
+  const outcome = (fill: () => string) => {
+    try {
+      return fill();
+    } catch (error) {
+      if (error instanceof UnprintableArgError) {
+        return UnprintableArgError;
+      }
+      throw error;
+    }
+  };
+
+  describe.each(Object.entries(PLACES))('in %s', (_place, story) => {
+    const arg = story('x').includes('default:') ? 'default' : 'label';
+    const own = (value: unknown) =>
+      primaryStory(story(printValue(value, arg, { quote: "'" })), undefined, CATEGORIES);
+
+    // An empty slot closes its element, which a hole in its content cannot.
+    const values = arg === 'default' ? VALUES.filter((value) => value !== '') : VALUES;
+    it.each(values.map((value) => [value]))(
+      'prints %j as the snippet of a story that writes it does, or not at all',
+      async (value) => {
+        const written = await own(value);
+        const go = await own('Go');
+        const filled = go?.template && outcome(() => fillTemplate(go.template!, { [arg]: value }));
+        expect([written?.snippet ?? UnprintableArgError, UnprintableArgError]).toContain(filled);
+        if (['Go', 0, 2.5, 1000, true, false].includes(value as never)) {
+          expect(filled).toBe(written?.snippet);
+        }
+        if (written?.template !== undefined) {
+          expect(fillTemplate(written.template, { [arg]: value })).toBe(written.snippet);
+        }
+      }
+    );
+  });
+});
+
+function rendered(label: string, template: string) {
+  return `
+export const Primary = {
+  args: { label: ${label} },
+  render: (args) => ({ components: { MyButton }, setup: () => ({ args }), template: \`${template}\` }),
+};
+`;
+}

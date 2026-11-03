@@ -31,7 +31,7 @@ const modelValue = ref(⟦value modelValue script ?⟧);
 </script>
 
 <template>
-  <TemplateUnsetArgs⟦attr id id ~%0A%20%20%20%20⟧⟦attr label label ~%0A%20%20%20%20⟧⟦attr hint hint ~%0A%20%20%20%20⟧
+  <TemplateUnsetArgs⟦attr id id bound ~%0A%20%20%20%20⟧⟦attr label label bound ~%0A%20%20%20%20⟧⟦attr hint hint bound ~%0A%20%20%20%20⟧
     v-model="modelValue"
   />
 </template>",

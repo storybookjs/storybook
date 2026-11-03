@@ -82,6 +82,10 @@ export interface TransformTemplateInput {
   slots?: ReadonlySet<string>;
   /** Every arg the story writes, which a `v-bind="args"` hole leaves out, as the snippet shows it. */
   storyArgs?: readonly string[];
+  /** The story component's props, which a `v-bind="args"` gives a hole each where they sort. */
+  props?: ReadonlySet<string>;
+  /** The story component's props with an `update:` event, which `v-bind="args"` binds as `v-model`. */
+  models?: ReadonlySet<string>;
   /** Import bindings from the CSF module, for components a function slot renders. */
   importBindings?: Map<string, ImportBinding>;
   /** Pre-seeded context carrying imports and hoists an upstream printer collected. */
@@ -110,6 +114,8 @@ interface TransformState {
   componentName?: string;
   slots: ReadonlySet<string>;
   storyArgs: readonly string[];
+  props: ReadonlySet<string>;
+  models: ReadonlySet<string>;
   importBindings: Map<string, ImportBinding>;
   template: string;
 }
@@ -230,6 +236,8 @@ export function transformTemplate(
     componentName: input.componentName,
     slots: input.slots ?? new Set(),
     storyArgs: input.storyArgs ?? [],
+    props: input.props ?? new Set(),
+    models: input.models ?? new Set(),
     importBindings: input.importBindings ?? new Map(),
     template,
   };
@@ -525,8 +533,16 @@ function expandArgsBinding(
   element: ElementContext,
   state: TransformState
 ): boolean {
+  const taken = new Set(takenArgs(attributesByName, state));
+  // On the story tag each prop the story leaves unset is a hole where it sorts. A model needs a
+  // `ref` in the script, which no hole can add, so it has none.
+  const unsetProps =
+    state.ctx.holes && element.storyTag
+      ? [...state.props].filter((name) => !taken.has(name) && !state.models.has(name))
+      : [];
   const rendered = renderArgsBindingExpansion(surviving, state.ctx, {
     roleAware: element.storyTag,
+    unsetProps,
     renderSlotArg: (slot) =>
       renderSlotArgContent(slot, state.ctx, state.importBindings, state.componentImports),
   });
@@ -536,30 +552,27 @@ function expandArgsBinding(
 
   element.slotChildren.push(...rendered.slotChildren);
   const attributes = state.ctx.holes
-    ? [...rendered.attributes, restOfArgsHole(directive, attributesByName, state)]
+    ? [
+        ...rendered.attributes,
+        restOfArgsHole([...taken, ...(element.storyTag ? [...state.props, ...state.models] : [])]),
+      ]
     : rendered.attributes;
   state.edits.push(replacementFor(directive, attributes.join(' '), state.template));
   return true;
 }
 
-/**
- * The args a `v-bind="args"` passes that the story does not write, as a control can set them: every
- * arg but the story's own, each shown as the snippet shows it, the element's attributes and the
- * component's slots.
- */
-function restOfArgsHole(
-  directive: DirectiveNode,
-  attributesByName: Map<string, ElementProp[]>,
-  state: TransformState
-): string {
-  const taken = [
-    ...state.storyArgs,
-    ...state.argsByName.keys(),
-    ...[...attributesByName.keys()].flatMap(spellings),
-    ...state.slots,
-  ];
-  return hole('props', ...[...new Set(taken)].sort().map((name) => holeWord(`-${name}`)));
-}
+// The args a `v-bind="args"` leaves to the story or the element: the story's own, the element's
+// attributes and the component's slots.
+const takenArgs = (attributesByName: Map<string, ElementProp[]>, state: TransformState) => [
+  ...state.storyArgs,
+  ...state.argsByName.keys(),
+  ...[...attributesByName.keys()].flatMap(spellings),
+  ...state.slots,
+];
+
+/** The args a `v-bind="args"` passes that no other hole prints, as a control can set them. */
+const restOfArgsHole = (taken: string[]) =>
+  hole('props', ...[...new Set(taken)].sort().map((name) => holeWord(`-${name}`)));
 
 // The arg names that set the same prop as an attribute: `max-count` and `maxCount`.
 const spellings = (name: string) => [
@@ -595,7 +608,9 @@ function transformDirective(
     }
     if (!arg && state.unsetArgs.has(argName)) {
       // Vue resolves a prop bound to undefined to its declared default, exactly as an absent attribute does.
-      const text = state.ctx.holes ? hole('attr', holeWord(boundProp), holeWord(argName)) : '';
+      const text = state.ctx.holes
+        ? hole('attr', holeWord(boundProp), holeWord(argName), 'bound')
+        : '';
       state.edits.push(replacementFor(directive, text, state.template));
       return true;
     }

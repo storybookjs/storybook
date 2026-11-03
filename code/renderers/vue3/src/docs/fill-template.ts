@@ -24,7 +24,9 @@ import {
 
 // Fills a template of the Vue story-docs provider, printing each hole's value with the printers the
 // static snippet is printed with, as its words state:
-// - `⟦attr name arg⟧`: the attribute `name`, left out while the arg is unset.
+// - `⟦attr name arg⟧`: the attribute `name`, left out while the arg is unset or `''`, as an args
+//   binding leaves out an empty string; with `bound`, the template's own `:name="args.x"`, where
+//   next prints no snippet for `''`.
 // - `⟦props -name…⟧`: the args an args binding passes, but those the words name, in name order.
 // - `⟦text arg⟧`: the text of an interpolation, with `{<` and `{>` for a `{` the template writes
 //   before or after it; with `slot`, a slot's content; `=text` is the text while the arg holds the
@@ -33,6 +35,8 @@ import {
 //   `"`, or in an interpolation (`{{`); with `script`, in `<script setup>`. `op` puts it in
 //   parentheses where the code around it reads it otherwise, as after a `.` word; a `"` word quotes
 //   strings in `"`, as the story does; `?code` is the code while the arg is unset.
+// Next prints no snippet where an expression, an interpolation or a bound attribute reads an
+// empty string, so `''` is unprintable there.
 export const fillTemplate: FillSnippetTemplate = (template, args) =>
   fillHoles(template, (kind, words) => {
     const [first = '', ...rest] = words;
@@ -40,18 +44,26 @@ export const fillTemplate: FillSnippetTemplate = (template, args) =>
     switch (kind) {
       case 'props':
         return spreadArgs(args, words)
-          .filter(([, value]) => value !== undefined && !isAction(value))
+          .filter(([, value]) => value !== undefined && value !== '' && !isAction(value))
           .sort(([a], [b]) => attributeOrder(a, b))
           .map(([name, value]) => attribute(name, value))
           .join(' ');
       case 'attr': {
         const value = arg(rest[0]!);
-        return value === undefined || isAction(value) ? '' : attribute(first, value);
+        if (value === '' && rest.includes('bound')) {
+          throw new UnprintableArgError(rest[0]!);
+        }
+        return value === undefined || value === '' || isAction(value)
+          ? ''
+          : attribute(first, value);
       }
       case 'text':
         return text(first, arg(first), rest);
       case 'value': {
         const value = arg(first);
+        if (value === '') {
+          throw new UnprintableArgError(first);
+        }
         const unset =
           value === undefined ? defaultCode(rest.find((w) => w.startsWith('?'))) : undefined;
         if (unset !== undefined) {
@@ -92,15 +104,22 @@ function snippetValue(name: string, value: unknown): SnippetValue {
   throw new UnprintableArgError(name);
 }
 
+// The snippet indents the lines of a string over several lines as the template's own, which only
+// the static snippet knows.
+const isMultiline = (value: unknown) => typeof value === 'string' && value.includes('\n');
+
 function attribute(name: string, value: unknown): string {
   const printed = printAttribute(name, snippetValue(name, value));
-  if (printed === undefined) {
+  if (printed === undefined || isMultiline(value)) {
     throw new UnprintableArgError(name);
   }
   return printed;
 }
 
 function text(name: string, value: unknown, words: string[]): string {
+  if ((value === '' && !words.includes('slot')) || isMultiline(value)) {
+    throw new UnprintableArgError(name);
+  }
   if (value === undefined || value === '') {
     return '';
   }

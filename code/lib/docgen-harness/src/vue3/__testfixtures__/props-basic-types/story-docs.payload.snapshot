@@ -21,7 +21,7 @@ import PropsBasicTypes from './PropsBasicTypes.vue';
 </script>
 
 <template>
-  <PropsBasicTypes⟦attr count count ~%20⟧⟦attr enabled enabled ~%20⟧⟦attr label label ~%20⟧⟦props -count -enabled -label ~%20⟧ />
+  <PropsBasicTypes⟦attr big big ~%20⟧⟦attr config config ~%20⟧⟦attr count count ~%20⟧⟦attr enabled enabled ~%20⟧⟦attr formatter formatter ~%20⟧⟦attr label label ~%20⟧⟦attr tags tags ~%20⟧⟦attr token token ~%20⟧⟦props -big -config -count -enabled -formatter -label -tags -token ~%20⟧ />
 </template>",
     },
     "forms-props-basic-types--unrepresentable-args": {
@@ -68,7 +68,7 @@ const token = ⟦value token script⟧;
 </script>
 
 <template>
-  <PropsBasicTypes :big="big" :config="config" :formatter="formatter"⟦attr label label ~%20⟧ :tags="tags" :token="token"⟦props -big -config -formatter -label -tags -token ~%20⟧ />
+  <PropsBasicTypes :big="big" :config="config"⟦attr count count ~%20⟧⟦attr enabled enabled ~%20⟧ :formatter="formatter"⟦attr label label ~%20⟧ :tags="tags" :token="token"⟦props -big -config -count -enabled -formatter -label -tags -token ~%20⟧ />
 </template>",
     },
   },

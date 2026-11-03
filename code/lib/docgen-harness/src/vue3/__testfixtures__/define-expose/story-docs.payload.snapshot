@@ -21,7 +21,7 @@ import DefineExpose from './DefineExpose.vue';
 </script>
 
 <template>
-  <DefineExpose⟦attr label label ~%20⟧⟦props -label ~%20⟧ />
+  <DefineExpose⟦attr count count ~%20⟧⟦attr label label ~%20⟧⟦attr reset reset ~%20⟧⟦props -count -label -reset ~%20⟧ />
 </template>",
     },
   },

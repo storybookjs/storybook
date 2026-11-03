@@ -21,7 +21,7 @@ import SetupRenderButton from './SetupRenderButton.vue';
 </script>
 
 <template>
-  <SetupRenderButton⟦attr label label ~%20⟧ />
+  <SetupRenderButton⟦attr label label bound ~%20⟧ />
 </template>",
     },
   },

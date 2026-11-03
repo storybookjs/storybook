@@ -456,6 +456,9 @@ function renderStaticStorySnippet(
   const ctx = createRenderContext(holes);
   const slots = docgenArgInfo.slots;
   const storyArgs = Object.keys(storyArgNodes);
+  const models = new Set(
+    [...docgenArgInfo.props].filter((name) => docgenArgInfo.events.has(`update:${name}`))
+  );
 
   // A story without a render function shows the component receiving the args directly.
   if (renderer.kind === 'sfc') {
@@ -468,6 +471,8 @@ function renderStaticStorySnippet(
           importBindings: options.importBindings,
           slots,
           storyArgs,
+          props: docgenArgInfo.props,
+          models,
           template: `<${componentName} v-bind="args" />`,
           unsetArgs: classified.unset,
         })
@@ -484,6 +489,8 @@ function renderStaticStorySnippet(
       setup: renderer.setup,
       slots,
       storyArgs,
+      props: docgenArgInfo.props,
+      models,
       template: renderer.template,
       unsetArgs: classified.unset,
     });
@@ -510,6 +517,8 @@ function renderStaticStorySnippet(
     importBindings: options.importBindings,
     slots,
     storyArgs,
+    props: docgenArgInfo.props,
+    models,
     template: printed.template,
     unsetArgs: classified.unset,
   });

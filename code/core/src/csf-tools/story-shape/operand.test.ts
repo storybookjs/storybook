@@ -1,29 +1,34 @@
 import { describe, expect, it } from 'vitest';
 
-import { type NodePath, types as t } from 'storybook/internal/babel';
-
-import { babelParseFile } from '../CsfFile.ts';
+import { type ESTree, type ESTreeNode, parseModule, walk } from '../index.ts';
 import { isOperand } from './operand.ts';
 
 const readsArg = (code: string, written?: string) => {
-  let read: NodePath<t.MemberExpression> | undefined;
-  babelParseFile({ code, filename: 'x.ts' }).path.traverse({
-    MemberExpression(path) {
-      if (t.isIdentifier(path.node.object, { name: 'args' })) {
-        read ??= path;
-      }
-    },
+  let read: ESTree.MemberExpression | undefined;
+  const parents = new Map<ESTreeNode, ESTreeNode | null>();
+  walk(parseModule(code, 'x.ts').program, (node, parent) => {
+    parents.set(node, parent);
+    if (
+      !read &&
+      node.type === 'MemberExpression' &&
+      node.object.type === 'Identifier' &&
+      node.object.name === 'args'
+    ) {
+      read = node;
+    }
   });
-  const ancestors = read!
-    .getAncestry()
-    .slice(1)
-    .map((path) => path.node);
-  return isOperand(read!.node, ancestors, written === undefined ? undefined : expression(written));
+  const ancestors: ESTreeNode[] = [];
+  for (let parent = parents.get(read!); parent; parent = parents.get(parent)) {
+    ancestors.push(parent);
+  }
+  return isOperand(read!, ancestors, written === undefined ? undefined : expression(written));
 };
 
+// Parsed in a module, as `parseExpression` does not keep the parentheses around a whole fragment.
 const expression = (code: string) => {
-  const [statement] = babelParseFile({ code: `x = ${code}`, filename: 'x.ts' }).path.node.body;
-  return ((statement as t.ExpressionStatement).expression as t.AssignmentExpression).right;
+  const [statement] = parseModule(`x = ${code}`, 'x.ts').program.body;
+  return ((statement as ESTree.ExpressionStatement).expression as ESTree.AssignmentExpression)
+    .right;
 };
 
 describe('isOperand', () => {

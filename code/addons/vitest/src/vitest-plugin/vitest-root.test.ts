@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { mergeConfig } from 'vitest/config';
 import type { InlineConfig } from 'vitest/node';
 
 import { validateConfigurationFiles } from 'storybook/internal/common';
@@ -139,6 +140,21 @@ describe('internal setup files', () => {
     expect([...project.config.setupFiles, ...(test.setupFiles as string[])]).toEqual([
       '/repo/my-own-setup.ts',
       resolve('@storybook/addon-vitest/internal/setup-file.browser.4'),
+      '@storybook/addon-vitest/internal/setup-file',
+      '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
+    ]);
+  });
+
+  it.each([
+    ['a string', '/repo/my-own-setup.ts'],
+    ['an array', ['/repo/my-own-setup.ts']],
+  ])("keeps the user's setup file exactly once when it is %s", async (_kind, setupFiles) => {
+    const { test } = await getPluginConfig(PACKAGE_ROOT, { setupFiles });
+
+    const merged = mergeConfig({ test: { setupFiles } }, { test });
+
+    expect(merged.test.setupFiles).toEqual([
+      '/repo/my-own-setup.ts',
       '@storybook/addon-vitest/internal/setup-file',
       '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
     ]);

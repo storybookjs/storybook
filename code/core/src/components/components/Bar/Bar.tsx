@@ -2,7 +2,7 @@ import React, { Children, forwardRef } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
 
-import { type CSSObject, styled } from 'storybook/theming';
+import { type CSSObject, styled } from 'storybook/theming/emotion';
 
 export interface BarProps {
   backgroundColor?: string;

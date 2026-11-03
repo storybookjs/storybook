@@ -3,11 +3,10 @@ import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 import type { Presets } from 'storybook/internal/types';
 
 import { registerService } from '../../server.ts';
-import { registerModuleGraphIndexService } from '../module-graph-index/server.ts';
 import { moduleGraphServiceDef, type ChangeDetectionReadinessResult } from './definition.ts';
 import type { ChangeDetectionAdapter } from './engine/adapters/types.ts';
 import { ModuleGraphEngine, type ModuleGraphEngineOptions } from './engine/module-graph-engine.ts';
-import { errorToErrorLike } from './types.ts';
+import { errorToErrorLike, lookupStoriesForFiles } from './types.ts';
 
 export type RegisterModuleGraphServiceOptions = {
   channel: ChannelLike;
@@ -62,10 +61,10 @@ export function resetChangeDetectionAdapterForTests(): void {
 }
 
 /**
- * Registers `core/module-graph-index` then `core/module-graph`, constructs the graph engine, wires
- * state mirroring into the service commands, and listens for story-index invalidation on the server
- * channel. The engine starts once {@link resolveChangeDetectionAdapter} provides the builder adapter,
- * or once the first `_waitForSettledEngine` call obtains one through
+ * Registers `core/module-graph`, constructs the graph engine, wires state mirroring into the service
+ * commands, and listens for story-index invalidation on the server channel. The engine starts once
+ * {@link resolveChangeDetectionAdapter} provides the builder adapter, or once the first
+ * `_waitForSettledEngine` call obtains one through
  * {@link RegisterModuleGraphServiceOptions.getAdapter}.
  *
  * The engine lives for the entire dev-server process, so there is no teardown path: the OS reclaims
@@ -78,8 +77,6 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
   let engineStarted = false;
   let obtainAdapter: Promise<void> | undefined;
 
-  const indexRuntime = registerModuleGraphIndexService(workingDir);
-
   const runtime = registerService(
     {
       ...moduleGraphServiceDef,
@@ -90,12 +87,14 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
     },
     {
       commands: {
-        _waitForSettledEngine: {
-          handler: async () => {
-            await ensureAdapter();
-            applyAdapter(await adapterPromise);
-            await engine!.whenSettled();
+        storiesForFiles: {
+          handler: async (input) => {
+            await waitForSettledEngine();
+            return lookupStoriesForFiles(engine!, input.files, workingDir);
           },
+        },
+        _waitForSettledEngine: {
+          handler: waitForSettledEngine,
         },
         _waitForChangeDetectionReadiness: {
           handler: async (_input, ctx) => {
@@ -139,10 +138,9 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
     getIndex: options.getIndex,
     workingDir,
     presets: options.presets,
-    onSnapshot: (storiesByFile) => {
-      void runtime.commands._applyGraphSnapshot({ storiesByFile });
+    onSnapshot: (storyFiles) => {
+      void runtime.commands._applyGraphSnapshot({ storyFiles });
     },
-    onIndex: (storiesByFile) => indexRuntime.commands._applyIndex({ storiesByFile }),
     onBump: (bumpedStoryFiles, changedAt) =>
       runtime.commands._applyGraphUpdate({ bumpedStoryFiles, changedAt }),
     onError: (error) => {
@@ -170,6 +168,12 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
       return;
     }
     engine!.start(adapter);
+  }
+
+  async function waitForSettledEngine() {
+    await ensureAdapter();
+    applyAdapter(await adapterPromise);
+    await engine!.whenSettled();
   }
 
   async function ensureAdapter() {

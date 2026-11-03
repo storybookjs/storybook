@@ -1,15 +1,22 @@
-import { type NodePath, traverse, types as t } from 'storybook/internal/babel';
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
-import type { CsfFile, StoryArgsResolver, StoryReferences } from 'storybook/internal/csf-tools';
+import type {
+  CsfFile,
+  ESTreeNode as Node,
+  StoryArgsResolver,
+  StoryReferences,
+} from 'storybook/internal/csf-tools';
 import {
+  SourceEditor,
   authoredSource,
   createStoryArgsResolver,
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
   fillStoryTemplate,
   noSnippetWarning,
-  sourceOf,
+  oneLineTextOf,
+  resolveEffectiveRender,
+  textOf,
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
@@ -29,14 +36,14 @@ import {
   parseStoryFile,
   resolveStoryComponent,
 } from '../component-docgen/resolve-component/resolve-component.ts';
-import { evaluateArgValue } from './arg-values.ts';
-import { classifyArg } from './classify-args.ts';
-import { printRootListenerScript } from './print-element.ts';
 import { fillTemplate } from '../../docs/fill-template.ts';
+import { evaluateArgValue, isFunctionNode } from './arg-values.ts';
+import { classifyArg } from './classify-args.ts';
 import { printHtml } from './html-tree.ts';
+import { printRootListenerScript } from './print-element.ts';
+import { handlerText } from './template-holes.ts';
 import { ownFill, printHtmlTemplate } from './template-print.ts';
 import { TEMPLATE_TAG_SOURCES, resolveHtmlTemplate } from './template-scope.ts';
-import { resolveEffectiveRender } from '../../../../../core/src/csf-tools/story-shape/render.ts';
 
 export interface BuildStoryDocsContext {
   getDocgenPayload: (componentId: string) => Promise<WebComponentsDocgenPayload | undefined>;
@@ -160,7 +167,10 @@ const baseStoryDoc = (
   story: CsfFile['_stories'][string],
   result: SnippetResult
 ): StoryDoc => {
-  const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[exportName]);
+  const { description, summary } = extractStoryJSDocInfo(
+    csf._storyStatements[exportName],
+    csf.editor
+  );
   return {
     id: story.id,
     name: story.name ?? storyNameFromExport(exportName),
@@ -239,7 +249,7 @@ const renderedArgsSnippet = (
   const render = resolveEffectiveRender(deps.csf, exportName, deps.resolveStoryArgs.ctx);
   const ctx = deps.resolveStoryArgs.ctx;
   if (render.kind === 'resolved') {
-    const template = resolveHtmlTemplate(render.path, deps.csf);
+    const template = resolveHtmlTemplate(render.node, deps.csf);
     if (template) {
       // Next prints the html the render returns, with a hole wherever it prints an arg.
       const printed = printHtmlTemplate(template, resolved.args, deps.declaration);
@@ -273,7 +283,7 @@ const renderedArgsSnippet = (
   const { warning } = joinWarnings([
     unresolvedWarning(
       render.kind === 'resolved'
-        ? [sourceOf(render.path.node)]
+        ? [oneLineTextOf(render.node)]
         : render.kind === 'unresolved'
           ? unresolvedRenderSource(render, resolved)
           : []
@@ -322,8 +332,8 @@ const withTemplate = (
   const free = new Set(
     written.flatMap((name) =>
       freeNames(resolved.args[name]!).filter((free) => {
-        const declared = ctx.program.scope.getBinding(free)?.path;
-        return declared && !isLitImport(declared);
+        const declared = ctx.editor.scopes.program.bindings.get(free);
+        return declared !== undefined && !isLitImport(declared.declaration);
       })
     )
   );
@@ -343,29 +353,19 @@ const withTemplate = (
 };
 
 /** Whether a name is declared by an import from lit, which a lit snippet has. */
-const isLitImport = (declared: NodePath) =>
-  !!declared.parentPath?.isImportDeclaration() &&
-  TEMPLATE_TAG_SOURCES.includes(declared.parentPath.node.source.value);
+const isLitImport = (declaration: Node | undefined) =>
+  declaration?.type === 'ImportDeclaration' &&
+  TEMPLATE_TAG_SOURCES.includes(declaration.source.value);
 
-// The names code reads from outside itself, such as `ITEMS` or `fn`, but for ES globals.
-const freeNames = (node: t.Node): string[] => {
-  const names: string[] = [];
-  const expression = t.isObjectMethod(node) ? t.objectExpression([node]) : node;
-  if (t.isExpression(expression)) {
-    // A clone, so the traversal binds no scope to the story file's own nodes.
-    traverse(t.file(t.program([t.expressionStatement(t.cloneNode(expression, true))])), {
-      ReferencedIdentifier(path) {
-        if (!path.scope.hasBinding(path.node.name)) {
-          names.push(path.node.name);
-        }
-      },
-    });
-  }
-  return names;
+// The names code reads from outside itself, such as `ITEMS` or `fn`. A method is read as the object
+// member it is written as.
+const freeNames = (node: Node): string[] => {
+  const code = node.type === 'Property' ? `({ ${textOf(node)} })` : `(${textOf(node)})`;
+  return [...new SourceEditor(code).scopes.unbound];
 };
 
 const unboundTemplateArgs = (
-  args: Record<string, t.Node>,
+  args: Record<string, Node>,
   referenced: readonly string[]
 ): string | undefined => {
   const bound = new Set(referenced);
@@ -382,8 +382,8 @@ const unresolvedRenderSource = (
   const node =
     resolved.storyMembers.properties.render ??
     resolved.metaMembers.properties.render ??
-    render.shadowedRender?.node;
-  return node ? [sourceOf(node)] : [];
+    render.shadowedRender;
+  return node ? [oneLineTextOf(node)] : [];
 };
 
 /**
@@ -395,7 +395,7 @@ const unresolvedRenderSource = (
  * shows a value of the story's args, and `unread` the code of those it shows that next cannot read.
  */
 const argsElement = (
-  args: Record<string, t.Node>,
+  args: Record<string, Node>,
   declaration: ManifestDeclaration,
   argTypes: WebComponentsDocgenPayload['argTypes'],
   tag: string
@@ -497,10 +497,8 @@ const argsElement = (
   };
 };
 
-const listenerHandler = (node: t.Node): string => {
-  const unwrapped = t.isExpression(node) ? unwrapExpression(node) : node;
-  return t.isFunction(unwrapped) ? sourceOf(node) : '() => {}';
-};
+const listenerHandler = (node: Node): string =>
+  isFunctionNode(unwrapExpression(node)) ? handlerText(node) : '() => {}';
 
 const incompleteList = (names: string[], suffix: string): string | undefined =>
   names.length === 0

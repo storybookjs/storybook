@@ -42,3 +42,4 @@ Key points:
 | `DEBUG`                       | Enable debug logging                            |
 | `FIX_ON_COMMIT`               | Force autofix for fmt & lint in pre-commit hook |
 | `NX_CLOUD_ACCESS_TOKEN`       | Authenticate the NX Cloud remote cache          |
+| `NX_ISOLATE_PLUGINS`          | `false` in `.env`: plugins load in-process      |

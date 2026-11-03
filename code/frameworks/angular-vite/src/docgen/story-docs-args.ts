@@ -1,7 +1,16 @@
 // Turns a resolved arg node into the Angular template expression a binding carries. Reading the args
 // themselves - following spreads and names - is the shared CSF pass in `story-shape`.
-import { babelParse, babelPrint, types as t } from 'storybook/internal/babel';
-import { keyOf, unwrapExpression } from 'storybook/internal/csf-tools';
+import {
+  type ESTreeNode as Node,
+  detachedTextOf,
+  parseExpression,
+  staticKey,
+  parseModule,
+  reindent,
+  textOf,
+  unwrapExpression,
+  walk,
+} from 'storybook/internal/csf-tools';
 
 import type { SnippetEnum } from './build-docgen.ts';
 import { isValidIdentifier } from '../template-grammar.ts';
@@ -16,18 +25,12 @@ const EVAL_FAILED = Symbol('story-docs-eval-failed');
  */
 export const createArgExternalizer =
   (enums: SnippetEnum[]) =>
-  (node: t.Node): t.Node | undefined => {
+  (node: Node): Node | undefined => {
     const value = evaluateNode(node, enums);
-    return value === EVAL_FAILED ? undefined : t.valueToNode(value);
+    return value === EVAL_FAILED
+      ? undefined
+      : parseExpression(printExpressionValue(value, new Set()));
   };
-
-// An arg no static evaluation could reduce to a value falls back to its source text. Every
-// expression is escaped for the attribute position it lands in: the double-quote delimiter and
-// text Angular's lexer would decode as a character reference survive the round-trip unchanged.
-export const evaluateArgExpression = (node: t.Node, enums: SnippetEnum[]): string => {
-  const literal = evaluateArgLiteral(node, enums);
-  return escapeAttributeExpression(literal ?? printArgSource(unwrapExpression(node)));
-};
 
 /**
  * The arg's value as a standalone expression, or `undefined` when it needs the story to run.
@@ -36,52 +39,100 @@ export const evaluateArgExpression = (node: t.Node, enums: SnippetEnum[]): strin
  * to produce code rather than an attribute can tell a real value from a name only the story file
  * knows. The two positions share a printer, so a value reads the same wherever it lands.
  */
-export const evaluateArgLiteral = (node: t.Node, enums: SnippetEnum[]): string | undefined => {
+export const evaluateArgLiteral = (node: Node, enums: SnippetEnum[]): string | undefined => {
   const value = evaluateNode(unwrapExpression(node), enums);
   return value === EVAL_FAILED ? undefined : printExpressionValue(value, new Set());
 };
 
-export const argFieldValue = (node: t.Node): string => printArgSource(unwrapExpression(node));
+export const argFieldValue = (node: Node): string =>
+  expandTabs(detachedTextOf(unwrapExpression(node)));
 
 /**
  * The arg as the story writes it, but each part that evaluates, at any depth, as its value: an
- * Angular binding reads neither the host's enums nor TypeScript, comments or numeric separators.
+ * Angular binding reads neither the host's enums nor TypeScript or numeric separators. Its tabs are
+ * spaces, as in {@link argFieldValue}.
  */
-export const writtenValue = (node: t.Node, enums: SnippetEnum[]): t.Node => {
+export const writtenValue = (node: Node, enums: SnippetEnum[]): Node => {
   const literal = evaluateArgLiteral(node, enums);
   if (literal !== undefined) {
-    // Parsed, so recast prints the literal as it is written here.
-    const statement = babelParse(`[${literal}]`).program.body[0] as t.ExpressionStatement;
-    return (statement.expression as t.ArrayExpression).elements[0]!;
+    return parseExpression(literal);
   }
-  let copy: Record<string, unknown> | undefined;
-  // A tag reads its template literal, which is no value.
-  const keys = (t.VISITOR_KEYS[node.type] ?? []).filter(
-    (key) => !(t.isTaggedTemplateExpression(node) && key === 'quasi')
-  );
-  for (const key of keys) {
-    const child = (node as unknown as Record<string, unknown>)[key];
-    const written = Array.isArray(child)
-      ? child.map((item: t.Node | null) => item && writtenValue(item, enums))
-      : child && writtenValue(child as t.Node, enums);
-    const changed = Array.isArray(child)
-      ? (written as unknown[]).some((item, index) => item !== child[index])
-      : written !== child;
-    if (changed) {
-      // A copy keeps the node recast parsed it from, so recast reprints only what changed.
-      copy ??= Object.defineProperty({ ...node }, 'original', {
-        value: (node as { original?: unknown }).original,
-      });
-      copy[key] = written;
-    }
-  }
-  return (copy as unknown as t.Node | undefined) ?? node;
+  // Read again on its own, so its offsets index into its text at no indentation.
+  const own = parseExpression(detachedTextOf(node));
+  const code = ' '.repeat(own.start) + textOf(own);
+  return parseExpression(expandTabs(writtenText(own, code, enums) ?? textOf(own)));
 };
 
-// recast reprints a node it parsed straight from the file's own text, comments and indentation
-// included. A clone drops the bookkeeping that path relies on and is formatted from the AST
-// instead, which is what leaves a binding holding the expression and nothing else.
-const printArgSource = (node: t.Node): string => babelPrint(t.cloneNode(node, true));
+// The code of `node` with each part that evaluates as its value, or `undefined` when no part does.
+const writtenText = (node: Node, code: string, enums: SnippetEnum[]): string | undefined => {
+  // A binding reads a string literal in either quote as written.
+  if (node.type === 'Literal' && typeof node.value === 'string') {
+    return undefined;
+  }
+  const literal = evaluateArgLiteral(node, enums);
+  if (literal !== undefined) {
+    return literal;
+  }
+  let text = '';
+  let cursor = node.start;
+  walk(node, (child, parent) => {
+    if (child === node) {
+      return;
+    }
+    // A tag reads its template literal, which is no value.
+    const replaced =
+      parent?.type === 'TaggedTemplateExpression' && parent.quasi === child
+        ? undefined
+        : writtenText(child, code, enums);
+    if (replaced !== undefined) {
+      text += code.slice(cursor, child.start) + replaced;
+      cursor = child.end;
+    }
+    return false;
+  });
+  return cursor === node.start ? undefined : text + code.slice(cursor, node.end);
+};
+
+// An arg no static evaluation could reduce to a value falls back to its source text, without the
+// comments a template expression cannot take (a class field keeps them). Every expression is
+// escaped for the attribute position it lands in: the double-quote delimiter and text Angular's
+// lexer would decode as a character reference survive the round-trip unchanged.
+export const evaluateArgExpression = (node: Node, enums: SnippetEnum[]): string => {
+  const literal = evaluateArgLiteral(node, enums);
+  return escapeAttributeExpression(
+    literal ?? expandTabs(withoutComments(detachedTextOf(unwrapExpression(node))))
+  );
+};
+
+// Tabs on code lines become spaces, deepest first so each line is converted once. Lines inside
+// template literals are values and keep theirs.
+const expandTabs = (code: string): string => {
+  let result = code;
+  const deepest = Math.max(0, ...result.split('\n').map((line) => /^\t*/.exec(line)![0].length));
+  for (let depth = deepest; depth > 0; depth--) {
+    result = reindent(result, '\t'.repeat(depth), '  '.repeat(depth));
+  }
+  return result;
+};
+
+const withoutComments = (code: string): string => {
+  const { code: wrapped, comments } = parseModule(`(${code}\n)`);
+  let result = '';
+  let cursor = 0;
+  for (const comment of comments) {
+    result += wrapped.slice(cursor, comment.start);
+    cursor = comment.end + /^[ \t]*/.exec(wrapped.slice(comment.end))![0].length;
+    if (wrapped[cursor] === '\n') {
+      // A comment that ended its line takes the whitespace before it along.
+      result = result.replace(/[ \t]+$/, '');
+    } else if (/[\w$]$/.test(result) && /[\w$]/.test(wrapped[cursor])) {
+      // `a/* c */instanceof B` stays two tokens.
+      result += ' ';
+    }
+  }
+  result += wrapped.slice(cursor);
+  return result.slice(1, -2);
+};
 
 // Angular expression strings support backslash escapes, so quoting stays lossless.
 const quoteExpressionString = (value: string): string =>
@@ -119,38 +170,36 @@ const printExpressionValue = (value: unknown, seen: Set<unknown>): string => {
 const escapeAttributeExpression = (expression: string): string =>
   expression.replace(/&(?=#|\w+;)/g, '&amp;').replace(/"/g, '&quot;');
 
-const evaluateNode = (node: t.Node, enums: SnippetEnum[]): unknown => {
+const evaluateNode = (node: Node, enums: SnippetEnum[]): unknown => {
   const unwrapped = unwrapExpression(node);
-  if (
-    t.isStringLiteral(unwrapped) ||
-    t.isNumericLiteral(unwrapped) ||
-    t.isBooleanLiteral(unwrapped)
-  ) {
-    return unwrapped.value;
+  if (unwrapped.type === 'Literal') {
+    const { value } = unwrapped;
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      return value;
+    }
+    return 'regex' in unwrapped || 'bigint' in unwrapped ? EVAL_FAILED : null;
   }
-  if (t.isNullLiteral(unwrapped)) {
-    return null;
-  }
-  if (t.isIdentifier(unwrapped) && unwrapped.name === 'undefined') {
+  if (unwrapped.type === 'Identifier' && unwrapped.name === 'undefined') {
     return undefined;
   }
-  if (t.isUnaryExpression(unwrapped) && unwrapped.operator === 'void') {
+  if (unwrapped.type === 'UnaryExpression' && unwrapped.operator === 'void') {
     return undefined;
   }
   if (
-    t.isUnaryExpression(unwrapped) &&
+    unwrapped.type === 'UnaryExpression' &&
     unwrapped.operator === '-' &&
-    t.isNumericLiteral(unwrapped.argument)
+    unwrapped.argument.type === 'Literal' &&
+    typeof unwrapped.argument.value === 'number'
   ) {
     return -unwrapped.argument.value;
   }
-  if (t.isTemplateLiteral(unwrapped) && unwrapped.expressions.length === 0) {
+  if (unwrapped.type === 'TemplateLiteral' && unwrapped.expressions.length === 0) {
     return unwrapped.quasis[0]?.value.cooked ?? EVAL_FAILED;
   }
-  if (t.isArrayExpression(unwrapped)) {
+  if (unwrapped.type === 'ArrayExpression') {
     const values: unknown[] = [];
     for (const element of unwrapped.elements) {
-      if (element === null || t.isSpreadElement(element)) {
+      if (element === null || element.type === 'SpreadElement') {
         return EVAL_FAILED;
       }
       const value = evaluateNode(element, enums);
@@ -161,14 +210,14 @@ const evaluateNode = (node: t.Node, enums: SnippetEnum[]): unknown => {
     }
     return values;
   }
-  if (t.isObjectExpression(unwrapped)) {
+  if (unwrapped.type === 'ObjectExpression') {
     const value: Record<string, unknown> = {};
     for (const property of unwrapped.properties) {
-      if (!t.isObjectProperty(property)) {
+      if (property.type !== 'Property' || property.method || property.kind !== 'init') {
         return EVAL_FAILED;
       }
-      const key = keyOf(property);
-      if (key === null) {
+      const key = staticKey(property);
+      if (key === undefined) {
         return EVAL_FAILED;
       }
       const propertyValue = evaluateNode(property.value, enums);
@@ -182,10 +231,10 @@ const evaluateNode = (node: t.Node, enums: SnippetEnum[]): unknown => {
   // `Enum.Member`: the analyzer collects referenced enums, so the member's value - what the
   // runtime generator would see - is recoverable statically.
   if (
-    t.isMemberExpression(unwrapped) &&
+    unwrapped.type === 'MemberExpression' &&
     !unwrapped.computed &&
-    t.isIdentifier(unwrapped.object) &&
-    t.isIdentifier(unwrapped.property)
+    unwrapped.object.type === 'Identifier' &&
+    unwrapped.property.type === 'Identifier'
   ) {
     const objectName = unwrapped.object.name;
     const propertyName = unwrapped.property.name;

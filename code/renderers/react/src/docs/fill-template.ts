@@ -26,7 +26,23 @@ export const fillTemplate: FillSnippetTemplate = (template, args) => {
   });
 };
 
-const indent = (code: string, prefix: string) => code.replace(/\n(?=.)/g, `\n${prefix}`);
+// The lines of a template literal are its value, so they keep their indentation as written.
+const indent = (code: string, prefix: string) => {
+  let literal = false;
+  let text = '';
+  for (let index = 0; index < code.length; index++) {
+    const char = code[index]!;
+    text += char;
+    if (char === '\\') {
+      text += code[++index] ?? '';
+    } else if (char === '`') {
+      literal = !literal;
+    } else if (char === '\n' && !literal && /./.test(code[index + 1] ?? '')) {
+      text += prefix;
+    }
+  }
+  return text;
+};
 
 function fill(kind: string, words: string[], args: Args, ownLine: boolean): string {
   const [first = '', second = ''] = words;

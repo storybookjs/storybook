@@ -1,19 +1,30 @@
-import { recast, types as t } from 'storybook/internal/babel';
 import type { Args } from 'storybook/internal/types';
 
 import { type FillSnippetTemplate, writtenArg } from '../../docs-tools/snippetTemplate.ts';
-import { unwrapExpression } from './utils.ts';
+import {
+  type Node,
+  isBooleanLiteral,
+  isIdentifier,
+  isNullLiteral,
+  isNumericLiteral,
+  isStringLiteral,
+  moduleOf,
+  outerSpan,
+  sourceOf,
+  unwrapExpression,
+} from '../estree/ast.ts';
+import { detachedTextOf, lineIndent, reindent } from '../estree/editor.ts';
 
 /**
  * The code a story writes each arg with, as `StoryDoc.argCode` holds it: every arg but a plain
  * string, number, boolean, `null` or `undefined`, which prints as its value. An `⟦operand⟧` hole
  * puts the code in parentheses where it needs them, as in `(MB * 5).toFixed(0)`; see `asOperand`.
  */
-export function argCode(args: Record<string, t.Node>): Record<string, string> {
+export function argCode(args: Record<string, Node>): Record<string, string> {
   const code: Record<string, string> = {};
   for (const [name, node] of Object.entries(args)) {
     if (!literalOf(node)) {
-      code[name] = recast.print(unwrapExpression(node)).code;
+      code[name] = writtenCode(unwrapExpression(node));
     }
   }
   return code;
@@ -26,7 +37,7 @@ export function argCode(args: Record<string, t.Node>): Record<string, string> {
  */
 export function fillWithStoryArgs(
   template: string,
-  args: Record<string, t.Node>,
+  args: Record<string, Node>,
   fill: FillSnippetTemplate
 ): string {
   const code = argCode(args);
@@ -54,7 +65,7 @@ export interface StoryTemplate {
  */
 export function fillStoryTemplate(
   template: string,
-  args: Record<string, t.Node>,
+  args: Record<string, Node>,
   fill: FillSnippetTemplate,
   warning?: string
 ): StoryTemplate | undefined {
@@ -76,16 +87,30 @@ export function fillStoryTemplate(
   };
 }
 
-const literalOf = (node: t.Node): { value: unknown } | undefined => {
+// The code of a node as the story wrote it, with the parentheses around it, at no indentation.
+const writtenCode = (node: Node): string => {
+  const outer = outerSpan(node);
+  const module = moduleOf(node);
+  if (outer === node || !module) {
+    return detachedTextOf(node);
+  }
+  return reindent(sourceOf(module.code, outer), lineIndent(module.code, outer.start), '');
+};
+
+const literalOf = (node: Node): { value: unknown } | undefined => {
   const value = unwrapExpression(node);
-  if (t.isStringLiteral(value) || t.isNumericLiteral(value) || t.isBooleanLiteral(value)) {
+  if (isStringLiteral(value) || isNumericLiteral(value) || isBooleanLiteral(value)) {
     return { value: value.value };
   }
-  if (t.isUnaryExpression(value, { operator: '-' }) && t.isNumericLiteral(value.argument)) {
+  if (
+    value.type === 'UnaryExpression' &&
+    value.operator === '-' &&
+    isNumericLiteral(value.argument)
+  ) {
     return { value: -value.argument.value };
   }
-  if (t.isNullLiteral(value)) {
+  if (isNullLiteral(value)) {
     return { value: null };
   }
-  return t.isIdentifier(value, { name: 'undefined' }) ? { value: undefined } : undefined;
+  return isIdentifier(value, 'undefined') ? { value: undefined } : undefined;
 };

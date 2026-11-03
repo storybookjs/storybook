@@ -1,7 +1,11 @@
-import { types as t } from 'storybook/internal/babel';
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
-import type { CsfFile, StoryArgsResolver, StoryReferences } from 'storybook/internal/csf-tools';
+import type {
+  CsfFile,
+  ESTreeNode as Node,
+  StoryArgsResolver,
+  StoryReferences,
+} from 'storybook/internal/csf-tools';
 import {
   argCode,
   buildImportStatements,
@@ -40,7 +44,7 @@ import {
   writtenValue,
 } from './story-docs-args.ts';
 import type { Bindings, RenderedProps, StoryShape } from './story-docs-markup.ts';
-import { renderedProps, sourceOf, userTemplate } from './story-docs-markup.ts';
+import { oneLineTextOf, renderedProps, userTemplate } from './story-docs-markup.ts';
 import type { StoryNgModules } from './story-docs-ng-modules.ts';
 import { ngModulesFromDecorators, storyNgModules } from './story-docs-ng-modules.ts';
 import type { PropCode } from './story-docs-prop-code.ts';
@@ -101,7 +105,7 @@ export const buildStoryDocsPayload = async (
   };
 
   const componentName = componentNameOf(componentNode);
-  const importBindings = collectImportBindings(csf._file.path);
+  const importBindings = collectImportBindings(csf.program);
   const deps: StoryDocDeps = {
     csf,
     resolveStoryArgs: createStoryArgsResolver(csf, references),
@@ -153,9 +157,9 @@ const createImportStatement = (
 
 // Mirrors the resolver's reading of `meta.component`, keeping the payload named after the story
 // file's component when docgen is unavailable.
-const componentNameOf = (node: t.Node | undefined): string | undefined => {
-  const identifier = node && t.isTSInstantiationExpression(node) ? node.expression : node;
-  return identifier && t.isIdentifier(identifier) ? identifier.name : undefined;
+const componentNameOf = (node: Node | undefined): string | undefined => {
+  const identifier = node?.type === 'TSInstantiationExpression' ? node.expression : node;
+  return identifier?.type === 'Identifier' ? identifier.name : undefined;
 };
 
 interface StoryDocDeps {
@@ -180,9 +184,11 @@ const buildStoryDoc = async (
   const { csf } = deps;
   const name = story.name ?? storyNameFromExport(exportName);
   try {
-    const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[exportName]);
-    const shape = storyShape(exportName, deps);
-    const rendered = await renderedSnippet(shape, deps);
+    const { description, summary } = extractStoryJSDocInfo(
+      csf._storyStatements[exportName],
+      csf.editor
+    );
+    const rendered = await renderedSnippet(storyShape(exportName, deps), deps);
 
     return {
       id: story.id,
@@ -247,7 +253,7 @@ const renderedSnippet = async (
 // host component the snippet ships, so a name that component does not have reads as `undefined`
 // there rather than failing to compile. An enum member still resolves, and an expression that only
 // names what it declares itself - a handler's own parameters - needs nothing from the host.
-const isUnread = (node: t.Node, enums: AngularComponentSnippetMeta['enums']) =>
+const isUnread = (node: Node, enums: AngularComponentSnippetMeta['enums']) =>
   evaluateArgLiteral(node, enums) === undefined && !isSelfContained(node);
 
 const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
@@ -256,7 +262,7 @@ const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
   const unresolved = [...resolved.unresolved];
   for (const value of Object.values(resolved.args)) {
     if (isUnread(value, enums)) {
-      unresolved.push(sourceOf(value));
+      unresolved.push(oneLineTextOf(value));
     }
   }
 
@@ -284,7 +290,7 @@ const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
 const renderStorySnippet = async (
   snippetMeta: AngularComponentSnippetMeta,
   shape: StoryShape,
-  storyDecorators: t.Node | undefined,
+  storyDecorators: Node | undefined,
   deps: StoryDocDeps
 ): Promise<HostComponentSnippet> => {
   const { componentImport } = deps;
@@ -430,7 +436,7 @@ const renderStorySnippet = async (
   // args it could not see may still be bound to nothing.
   const unread = [...new Set([...holeInputs, ...fieldArgs])].flatMap((name) => {
     const node = shape.args[name];
-    return node && isUnread(node, enums) ? [sourceOf(node)] : [];
+    return node && isUnread(node, enums) ? [oneLineTextOf(node)] : [];
   });
   const markup = buildTemplate(selector, {
     inputs,
@@ -458,7 +464,7 @@ const renderStorySnippet = async (
  * holes could not be found again; its snippet is still filled, reading that bracket as a hole.
  */
 const withTemplate = (
-  args: Record<string, t.Node>,
+  args: Record<string, Node>,
   template: HostComponentSnippet,
   warnings: (string | undefined)[],
   templateWarnings: (string | undefined)[]
@@ -481,7 +487,7 @@ const withTemplate = (
 };
 
 // Each arg the story sets as the code it writes it with, its `argCode` or the literal it is.
-const writtenCode = (args: Record<string, t.Node>, code: Record<string, string>) =>
+const writtenCode = (args: Record<string, Node>, code: Record<string, string>) =>
   Object.fromEntries(
     Object.entries(args).map(([name, node]) => {
       const literal = code[name] ?? evaluateArgLiteral(node, []);
@@ -543,7 +549,7 @@ const holeField = (
 // The hole for an arg, with the code it prints while the arg is unset where a prop holds one.
 const argHole = (
   arg: string,
-  code: t.Node | undefined,
+  code: Node | undefined,
   enums: AngularComponentSnippetMeta['enums']
 ) => {
   const written = code && (evaluateArgLiteral(code, enums) ?? argFieldValue(code));
@@ -583,7 +589,7 @@ const referencedArgFields = (
       for (const arg of computed.args) {
         const written = shape.args[arg];
         if (written && isUnread(written, enums)) {
-          unresolved.push({ name, source: sourceOf(written) });
+          unresolved.push({ name, source: oneLineTextOf(written) });
         }
       }
       if (!taken.has(name)) {
@@ -604,7 +610,7 @@ const referencedArgFields = (
     // A host field is TypeScript, which can hold what the story writes, such as a `Date`; one that
     // names what the snippet lacks is warned about.
     if (value === undefined && !isSelfContained(node)) {
-      unresolved.push({ name, source: sourceOf(node) });
+      unresolved.push({ name, source: oneLineTextOf(node) });
     }
     fields.push({
       name,
@@ -728,7 +734,7 @@ const componentBindings = (
     } else if (computed) {
       bound.push({ name, position, field: { name, value: computed.template, computed } });
     } else if (code && isUnread(code, enums)) {
-      unresolved.push(sourceOf(code));
+      unresolved.push(oneLineTextOf(code));
     } else if (code && evaluateArgLiteral(code, enums) === undefined) {
       bound.push({ name, position, field: { name, value: argFieldValue(code) } });
     } else if (code) {
@@ -768,15 +774,19 @@ const argsExpansion = (snippetMeta: AngularComponentSnippetMeta, shape: StorySha
   return { inputs, outputs };
 };
 
-const isFunctionValue = (node: t.Node): boolean => {
-  const unwrapped = unwrapExpression(node);
-  return t.isFunction(unwrapped);
-};
-
-const isUndefinedValue = (node: t.Node): boolean => {
+const isFunctionValue = (node: Node): boolean => {
   const unwrapped = unwrapExpression(node);
   return (
-    (t.isIdentifier(unwrapped) && unwrapped.name === 'undefined') ||
-    t.isUnaryExpression(unwrapped, { operator: 'void' })
+    unwrapped.type === 'ArrowFunctionExpression' ||
+    unwrapped.type === 'FunctionExpression' ||
+    unwrapped.type === 'FunctionDeclaration'
+  );
+};
+
+const isUndefinedValue = (node: Node): boolean => {
+  const unwrapped = unwrapExpression(node);
+  return (
+    (unwrapped.type === 'Identifier' && unwrapped.name === 'undefined') ||
+    (unwrapped.type === 'UnaryExpression' && unwrapped.operator === 'void')
   );
 };

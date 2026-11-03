@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-import { babelParse, type types as t } from 'storybook/internal/babel';
-
 import {
   type FillSnippetTemplate,
   asOperand,
@@ -9,15 +7,15 @@ import {
   fillHoles,
   printValue,
 } from '../../docs-tools/snippetTemplate.ts';
+import { type ESTree, type ESTreeNode, parseExpression } from '../index.ts';
 import { argCode, fillStoryTemplate, fillWithStoryArgs } from './arg-code.ts';
 
-const argsOf = (code: string): Record<string, t.Node> => {
-  const statement = babelParse(`(${code})`).program.body[0] as t.ExpressionStatement;
-  const object = statement.expression as t.ObjectExpression;
+const argsOf = (code: string): Record<string, ESTreeNode> => {
+  const object = parseExpression(code) as ESTree.ObjectExpression;
   return Object.fromEntries(
     object.properties.map((property) => {
-      const { key, value } = property as t.ObjectProperty;
-      return [(key as t.Identifier).name, value];
+      const { key, value } = property as ESTree.ObjectProperty;
+      return [(key as ESTree.IdentifierName).name, value];
     })
   );
 };

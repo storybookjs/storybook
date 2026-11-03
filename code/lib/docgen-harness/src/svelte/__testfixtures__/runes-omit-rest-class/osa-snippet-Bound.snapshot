@@ -1,0 +1,16 @@
+<script lang="ts">
+  import Input from './Input.svelte';
+
+  let el = $state<HTMLInputElement | undefined>();
+  let value = $state('');
+</script>
+
+<Input
+  bind:value
+  bind:input={el}
+  placeholder={`multi\nline`}
+  error={null}
+  font="mono" disabled
+/>
+
+warning: Identifier not resolved: `HTMLInputElement`.

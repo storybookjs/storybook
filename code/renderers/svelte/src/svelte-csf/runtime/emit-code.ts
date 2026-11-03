@@ -21,6 +21,7 @@ type Params = {
  * it. Without a template, or with an arg the template cannot show, it emits the raw code.
  */
 export const emitCode = (params: Params) => {
+  if (globalThis.FEATURES?.docgenServer) return;
   const { storyContext } = params;
 
   if (skipSourceRender(storyContext)) {
@@ -41,8 +42,7 @@ export const emitCode = (params: Params) => {
     }
   }
 
-  // Using setTimeout here to ensure we're emitting after the base @storybook/svelte emits its version of the code
-  // TODO: fix this in @storybook/svelte, don't emit when using stories.svelte files
+  // The source decorator also emits a snippet for `.stories.svelte` stories, so emit after it to replace it.
   setTimeout(() => {
     addons.getChannel().emit(SNIPPET_RENDERED, {
       id: storyContext.id,
@@ -52,7 +52,7 @@ export const emitCode = (params: Params) => {
   });
 };
 
-// Copied from @storybook/svelte at https://github.com/storybookjs/storybook/blob/17b7512c60256c739b890b3d85aaac992806dee6/code/renderers/svelte/src/docs/sourceDecorator.ts#L16-L33
+// Same rules as `skipSourceRender` in `docs/sourceDecorator.ts`
 const skipSourceRender = (context: Params['storyContext']) => {
   const sourceParams = context?.parameters.docs?.source;
   const isArgsStory = context?.parameters.__isArgsStory;

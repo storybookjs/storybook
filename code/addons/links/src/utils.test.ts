@@ -32,8 +32,8 @@ describe('preview', () => {
       handler();
 
       expect(channel.emit).toHaveBeenCalledWith(SELECT_STORY, {
-        kind: 'title',
-        story: 'name',
+        title: 'title',
+        name: 'name',
       });
     });
 
@@ -42,7 +42,7 @@ describe('preview', () => {
       handler();
 
       expect(channel.emit).toHaveBeenCalledWith(SELECT_STORY, {
-        kind: 'title',
+        title: 'title',
       });
     });
 
@@ -53,7 +53,7 @@ describe('preview', () => {
       handler();
 
       expect(channel.emit).toHaveBeenCalledWith(SELECT_STORY, {
-        story: 'name',
+        name: 'name',
       });
     });
 
@@ -76,8 +76,8 @@ describe('preview', () => {
       expect(channel.emit.mock.calls).toContainEqual([
         SELECT_STORY,
         {
-          kind: 'titlename',
-          story: 'nametitle',
+          title: 'titlename',
+          name: 'nametitle',
         },
       ]);
     });

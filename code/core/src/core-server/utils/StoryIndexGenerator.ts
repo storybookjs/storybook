@@ -232,8 +232,7 @@ export class StoryIndexGenerator {
       this.specifierToCache.set(specifier, cache)
     );
 
-    const previewCode = await this.getPreviewCode();
-    const projectTags = this.getProjectTags(previewCode);
+    const projectTags = this.getProjectTags(await this.getPreviewFile());
 
     // Extract stories for each file
     await this.ensureExtracted({ projectTags });
@@ -751,8 +750,7 @@ export class StoryIndexGenerator {
       throw this.lastError;
     }
 
-    const previewCode = await this.getPreviewCode();
-    const projectTags = this.getProjectTags(previewCode);
+    const projectTags = this.getProjectTags(await this.getPreviewFile());
 
     // Extract any entries that are currently missing
     // Pull out each file's stories into a list of stories, to be composed and sorted
@@ -876,27 +874,28 @@ export class StoryIndexGenerator {
     };
   }
 
-  async getPreviewCode() {
+  async getPreviewFile(): Promise<{ path: string; code: string } | undefined> {
     const previewFile = ['js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'mts']
       .map((ext) => join(this.options.configDir, `preview.${ext}`))
       .find((fname) => existsSync(fname));
 
-    return previewFile && (await readFile(previewFile, { encoding: 'utf8' })).toString();
+    return previewFile
+      ? { path: previewFile, code: (await readFile(previewFile, { encoding: 'utf8' })).toString() }
+      : undefined;
   }
 
-  getProjectTags(previewCode?: string) {
+  getProjectTags(preview?: { path: string; code: string }) {
     let projectTags = [] as Tag[];
     const defaultTags = [Tag.DEV, Tag.TEST, Tag.MANIFEST];
-    if (previewCode) {
+    if (preview) {
       try {
-        const projectAnnotations = loadConfig(previewCode).parse();
-        const tags = projectAnnotations.getValue(['tags']) ?? [];
+        const projectAnnotations = loadConfig(preview.code, preview.path).parse();
+        const tags =
+          projectAnnotations.inspect(['tags']).kind === 'value'
+            ? projectAnnotations.getValue(['tags'])
+            : [];
         invariant(
-          !projectAnnotations.mutationDiagnostics.some(
-            ({ code }) => code === 'unsupported-value'
-          ) &&
-            Array.isArray(tags) &&
-            tags.every((tag) => typeof tag === 'string'),
+          Array.isArray(tags) && tags.every((tag) => typeof tag === 'string'),
           'Preview tags must be a static array of strings'
         );
         projectTags = tags;
@@ -912,7 +911,7 @@ export class StoryIndexGenerator {
 
           Received:
 
-          ${previewCode}
+          ${preview.code}
         `);
       }
     }

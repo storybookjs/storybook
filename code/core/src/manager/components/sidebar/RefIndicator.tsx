@@ -15,7 +15,7 @@ import {
 } from '@storybook/icons';
 
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming';
+import { styled, useTheme } from 'storybook/theming/emotion';
 
 import type { NormalLink } from '../../../components/components/tooltip/TooltipLinkList.tsx';
 import type { getStateType } from '../../utils/tree.ts';

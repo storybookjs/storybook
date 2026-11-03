@@ -1,7 +1,8 @@
 import { extractDeclaredSubcomponents } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
-import type { ImportRef, StoryReferences } from 'storybook/internal/csf-tools';
 import {
+  type ImportRef,
+  type StoryReferences,
   createStoryArgsResolver,
   extractStoryJSDocInfo,
   loadCsf,
@@ -112,7 +113,10 @@ export async function resolveStoryFileComponents(options: {
   const { storyPath, title, typescriptOptions, docgenEngine } = options;
 
   const storyFile = cachedReadTextFileSync(storyPath);
-  const csf = loadCsf(storyFile, { makeTitle: () => title }).parse();
+  const csf = loadCsf(storyFile, {
+    makeTitle: () => title,
+    fileName: storyPath,
+  }).parse();
   const componentName = csf._meta?.component;
 
   const declaredSubcomponents = extractDeclaredSubcomponents(csf);
@@ -132,7 +136,15 @@ export async function resolveStoryFileComponents(options: {
     component: findExactComponentMatch(allComponents, declared.componentName),
   }));
 
-  return { storyPath, storyFile, csf, componentName, allComponents, component, subcomponents };
+  return {
+    storyPath,
+    storyFile,
+    csf,
+    componentName,
+    allComponents,
+    component,
+    subcomponents,
+  };
 }
 
 /** Snippet + metadata for one story, before output-specific shaping. */
@@ -165,7 +177,10 @@ export function extractStorySnippets(
     .map(([storyExport, story]): ResolvedStory => {
       const name = story.name ?? storyNameFromExport(storyExport);
       try {
-        const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[storyExport]);
+        const { description, summary } = extractStoryJSDocInfo(
+          csf._storyStatements[storyExport],
+          csf.editor
+        );
         const {
           imports: needs,
           unresolved,
@@ -184,7 +199,11 @@ export function extractStorySnippets(
         };
       } catch (e) {
         const err = e instanceof Error ? e : new Error(String(e));
-        return { id: story.id, name, error: { name: err.name, message: err.message } };
+        return {
+          id: story.id,
+          name,
+          error: { name: err.name, message: err.message },
+        };
       }
     });
 

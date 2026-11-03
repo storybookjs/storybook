@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { recast } from 'storybook/internal/babel';
-
 import { dedent } from 'ts-dedent';
 
-import { babelParseFile, loadCsf } from '../CsfFile.ts';
+import { loadCsf } from '../CsfFile.ts';
+import { textOf } from '../estree/ast.ts';
+import { SourceEditor } from '../estree/editor.ts';
 import { authoredSource } from './authored-source.ts';
 import { resolveEffectiveRender } from './render.ts';
 import { isSelfContained } from './resolve-arg-value.ts';
-import { sourceOf } from './resolve-members.ts';
 import { createStoryArgsResolver } from './resolve-story-args.ts';
 import { rebaseSpecifier, resolveSpreadMeta } from './spread-meta.ts';
 
@@ -43,7 +42,7 @@ const storyFile = (
       const code = modules[filePath];
       return code === undefined
         ? undefined
-        : { program: babelParseFile({ code, filename: filePath }).path, filePath };
+        : { editor: new SourceEditor(code, filePath), filePath };
     },
   });
   return { csf, resolver };
@@ -58,7 +57,7 @@ describe('resolveSpreadMeta', () => {
     `);
     const spread = resolveSpreadMeta(csf, resolver.ctx);
     expect(spread?.ctx.filePath).toBe('/stories/base.stories');
-    expect(sourceOf(spread!.own)).toBe("{ title: 'Button/Interactions' }");
+    expect(spread!.own.properties.map(textOf)).toEqual(["title: 'Button/Interactions'"]);
   });
 
   it.each([
@@ -84,7 +83,7 @@ describe('a story file whose meta spreads another story file meta', () => {
     `);
     const { args, imports, unresolved } = resolver.resolve('A');
     expect(
-      Object.fromEntries(Object.entries(args).map(([key, node]) => [key, sourceOf(node)]))
+      Object.fromEntries(Object.entries(args).map(([key, node]) => [key, textOf(node)]))
     ).toEqual({ label: "'A'", icon: 'Icon', onClick: 'fn()' });
     expect(imports).toEqual([
       { localImportName: 'Icon', importId: '../../icons/icon', importName: 'Icon' },
@@ -114,7 +113,7 @@ describe('a story file whose meta spreads another story file meta', () => {
       export const A = {};
     `);
     const render = resolveEffectiveRender(csf, 'A', resolver.ctx);
-    expect(render.kind === 'resolved' && recast.print(render.path.node).code).toBe(
+    expect(render.kind === 'resolved' && textOf(render.node)).toBe(
       '(args) => <Button {...args} />'
     );
   });
@@ -126,7 +125,7 @@ describe('a story file whose meta spreads another story file meta', () => {
       export const A = {};
     `);
     const render = resolveEffectiveRender(csf, 'A', resolver.ctx);
-    expect(render.kind === 'resolved' && recast.print(render.path.node).code).toBe(`() => 'own'`);
+    expect(render.kind === 'resolved' && textOf(render.node)).toBe(`() => 'own'`);
   });
 });
 

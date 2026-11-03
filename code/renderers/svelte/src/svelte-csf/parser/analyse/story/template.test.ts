@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { dedent } from 'ts-dedent';
 
-import { babelParse, type types as t } from 'storybook/internal/babel';
+import { type ESTree, parseModule } from 'storybook/internal/csf-tools';
 import { writtenArg } from 'storybook/internal/docs-tools';
 
 import { fillTemplate } from '../../../../docs/fill-template.ts';
@@ -67,8 +67,8 @@ describe(getStoryContentTemplate.name, () => {
   it('keeps written code apart next to an operator, but not plain data', () => {
     const written = (code: string) =>
       (
-        (babelParse(`x = ${code}`).program.body[0] as t.ExpressionStatement)
-          .expression as t.AssignmentExpression
+        (parseModule(`x = ${code}`, 'x.ts').program.body[0] as ESTree.ExpressionStatement)
+          .expression as ESTree.AssignmentExpression
       ).right;
     const [onclick, count] = [written('() => null'), written('5')];
     const template = getStoryContentTemplate(

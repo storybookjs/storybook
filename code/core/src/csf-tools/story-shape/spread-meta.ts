@@ -1,20 +1,20 @@
-import { dirname, relative, resolve } from 'node:path';
-
-import { type NodePath, types as t } from 'storybook/internal/babel';
+import { dirname, relative, resolve } from 'pathe';
 
 import type { CsfFile } from '../CsfFile.ts';
+import { type E, type Node, unwrapExpression } from '../estree/ast.ts';
+import type { SourceEditor } from '../estree/editor.ts';
 import { importedName, isTypeSpecifier } from './imports.ts';
 import type { ReferenceContext } from './resolve-members.ts';
-import { metaObjectPath, pathForNode, unwrapExpression } from './utils.ts';
+import { metaObject } from './utils.ts';
 
 /** The meta of another story file that a story file's meta spreads, read in the file it is in. */
 export interface SpreadMeta {
   /** The other file's meta object. */
-  path: NodePath<t.ObjectExpression>;
-  /** The other file, which the names in `path` resolve in. */
+  object: E.ObjectExpression;
+  /** The other file, which the names in `object` resolve in. */
   ctx: ReferenceContext;
-  /** The members the story file's meta writes over it. */
-  own: t.ObjectExpression;
+  /** The story file's meta with only the members it writes over the spread one. */
+  own: E.ObjectExpression;
 }
 
 /**
@@ -23,19 +23,25 @@ export interface SpreadMeta {
  * './button.stories'` does. `undefined` for any other meta, or one that spreads anything else.
  */
 export function resolveSpreadMeta(csf: CsfFile, ctx: ReferenceContext): SpreadMeta | undefined {
-  const meta = metaObjectPath(csf)?.node;
+  const meta = metaObject(csf);
   const [first, ...rest] = meta?.properties ?? [];
-  if (!t.isSpreadElement(first) || rest.some((property) => t.isSpreadElement(property))) {
+  if (
+    first?.type !== 'SpreadElement' ||
+    rest.some((property) => property.type === 'SpreadElement')
+  ) {
     return undefined;
   }
   const argument = unwrapExpression(first.argument);
-  const binding = t.isIdentifier(argument) && ctx.program.scope.getBinding(argument.name);
-  const specifier = binding && binding.kind === 'module' ? binding.path.node : undefined;
-  const declaration = binding ? binding.path.parent : undefined;
+  const binding =
+    argument.type === 'Identifier'
+      ? ctx.editor.scopes.program.bindings.get(argument.name)
+      : undefined;
+  const specifier = binding?.kind === 'import' ? binding.node : undefined;
+  const declaration = binding?.declaration;
   if (
-    !t.isImportDeclaration(declaration) ||
+    declaration?.type !== 'ImportDeclaration' ||
     declaration.importKind === 'type' ||
-    !(t.isImportDefaultSpecifier(specifier) || t.isImportSpecifier(specifier)) ||
+    !(specifier?.type === 'ImportDefaultSpecifier' || specifier?.type === 'ImportSpecifier') ||
     isTypeSpecifier(specifier)
   ) {
     return undefined;
@@ -44,13 +50,11 @@ export function resolveSpreadMeta(csf: CsfFile, ctx: ReferenceContext): SpreadMe
   if (!module) {
     return undefined;
   }
-  const exportName = t.isImportDefaultSpecifier(specifier)
-    ? 'default'
-    : importedName(specifier.imported);
-  const object = exportedObject(module.program, exportName);
-  const path = object && pathForNode(module.program, object);
-  return path?.isObjectExpression()
-    ? { path, ctx: { ...ctx, ...module }, own: t.objectExpression(rest) }
+  const exportName =
+    specifier.type === 'ImportDefaultSpecifier' ? 'default' : importedName(specifier.imported);
+  const object = exportedObject(module.editor, exportName);
+  return object
+    ? { object, ctx: { ...ctx, ...module }, own: { ...meta!, properties: rest } }
     : undefined;
 }
 
@@ -62,34 +66,33 @@ export const rebaseSpecifier = (specifier: string, fromFile: string, toFile: str
   if (!specifier.startsWith('.')) {
     return specifier;
   }
-  const rebased = relative(dirname(toFile), resolve(dirname(fromFile), specifier))
-    .split('\\')
-    .join('/');
+  const rebased = relative(dirname(toFile), resolve(dirname(fromFile), specifier));
   return rebased.startsWith('.') ? rebased : `./${rebased}`;
 };
 
 // The object literal a module exports under `exportName`, written out or as a `const`.
-function exportedObject(
-  program: NodePath<t.Program>,
-  exportName: string
-): t.ObjectExpression | undefined {
-  const objectOf = (node: t.Node | null | undefined): t.ObjectExpression | undefined => {
+function exportedObject(editor: SourceEditor, exportName: string): E.ObjectExpression | undefined {
+  const objectOf = (node: Node | null | undefined): E.ObjectExpression | undefined => {
     const value = node && unwrapExpression(node);
-    if (t.isObjectExpression(value)) {
+    if (value?.type === 'ObjectExpression') {
       return value;
     }
-    const binding = t.isIdentifier(value) ? program.scope.getBinding(value.name) : undefined;
-    return binding?.constant && t.isVariableDeclarator(binding.path.node)
-      ? objectOf(binding.path.node.init)
+    const binding =
+      value?.type === 'Identifier' ? editor.scopes.program.bindings.get(value.name) : undefined;
+    return binding?.constant && binding.node.type === 'VariableDeclarator'
+      ? objectOf(binding.node.init)
       : undefined;
   };
-  for (const statement of program.node.body) {
-    if (t.isExportDefaultDeclaration(statement) && exportName === 'default') {
-      return objectOf(statement.declaration);
+  for (const statement of editor.program.body) {
+    if (statement.type === 'ExportDefaultDeclaration' && exportName === 'default') {
+      return objectOf(statement.declaration as Node);
     }
-    if (t.isExportNamedDeclaration(statement) && t.isVariableDeclaration(statement.declaration)) {
-      const declarator = statement.declaration.declarations.find((candidate) =>
-        t.isIdentifier(candidate.id, { name: exportName })
+    if (
+      statement.type === 'ExportNamedDeclaration' &&
+      statement.declaration?.type === 'VariableDeclaration'
+    ) {
+      const declarator = statement.declaration.declarations.find(
+        (candidate) => candidate.id.type === 'Identifier' && candidate.id.name === exportName
       );
       if (declarator) {
         return objectOf(declarator.init);

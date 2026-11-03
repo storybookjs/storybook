@@ -7,14 +7,19 @@ import {
   type TemplateChildNode,
 } from '@vue/compiler-dom';
 
-import { babelParseExpression, parser, types as t } from 'storybook/internal/babel';
 import {
+  type ESTree as E,
+  type ESTreeNode as Node,
+  type ImportBinding,
   argCode,
   isOperand,
-  keyOf,
+  isStringLiteral,
+  normalizeLineEndings,
+  parseModule,
   propertyValue,
+  staticKey,
   unwrapExpression,
-  type ImportBinding,
+  walk,
 } from 'storybook/internal/csf-tools';
 import { defaultWord, hasHoleBracket, hole, holeWord } from 'storybook/internal/docs-tools';
 
@@ -78,7 +83,7 @@ export interface TransformTemplateInput {
   /** Merged and classified CSF args for the story. */
   args?: ClassifiedArg[];
   /** The node the story writes each arg with, which decides where its code needs parentheses. */
-  written?: Record<string, t.Node>;
+  written?: Record<string, Node>;
   /** Pre-seeded context carrying imports and hoists an upstream printer collected. */
   ctx?: RenderContext;
   /** Setup statements to forward into the snippet's script. */
@@ -86,6 +91,8 @@ export interface TransformTemplateInput {
 }
 
 type Edit = { start: number; end: number; text: string };
+
+type Spanned = { start: number; end: number };
 
 const SETUP_PROPERTY = 'setup';
 
@@ -96,7 +103,7 @@ const COMPONENTS_UNREADABLE_WARNING =
 
 /** Read a transformable template-render object without resolving the render function itself. */
 export function readTemplateRenderConfig(
-  renderObject: t.ObjectExpression,
+  renderObject: E.ObjectExpression,
   importBindings: Map<string, ImportBinding>,
   options: ReadTemplateRenderConfigOptions = {}
 ): TemplateRenderResolution {
@@ -160,7 +167,9 @@ export function readTemplateRenderConfig(
  * arg with, which decides where its code needs parentheses; see `isOperand`.
  */
 export function transformTemplate(input: TransformTemplateInput): string | undefined {
-  const { template, componentImports, slots, setup, args = [], written = {} } = input;
+  const { componentImports, slots, setup, args = [], written = {} } = input;
+  // `parseModule` normalizes line endings, so template expressions must already use `\n`.
+  const template = normalizeLineEndings(input.template);
   const statements = setup?.statements ?? [];
   let invalid = [template, ...statements.map(({ source }) => source)].some(hasHoleBracket);
   const root = parse(template, { onError: () => (invalid = true) });
@@ -331,7 +340,7 @@ export function componentTemplate(
   importStatement: string,
   slots: string[],
   args: ClassifiedArg[],
-  written: Record<string, t.Node>,
+  written: Record<string, Node>,
   importBindings: Map<string, ImportBinding>
 ): StoryTemplateCode | undefined {
   const ctx = createRenderContext();
@@ -397,7 +406,7 @@ function spreadAttributes(
     return (
       arg.role !== 'prop' ||
       arg.plan.kind === 'hoist' ||
-      (t.isStringLiteral(value) && quoteAttributeValue(value.value) === undefined)
+      (isStringLiteral(value) && quoteAttributeValue(value.value) === undefined)
     );
   };
   const byName = new Map(args.map((arg) => [arg.name, arg]));
@@ -446,61 +455,64 @@ function argHoles(
   template: string,
   quote: string | undefined,
   constFor: (name: string) => string | undefined,
-  writtenAs: (name: string) => t.Node | undefined,
-  whole: (name: string) => Edit | undefined
+  writtenAs: (name: string) => Node | undefined,
+  wholeEdit: (name: string) => Edit | undefined
 ): Edit[] | undefined {
   const offset = exp.loc.start.offset;
   if (!/\bargs\b/.test(exp.content)) {
     return [];
   }
-  let ast: t.Expression;
-  try {
-    ast = babelParseExpression(exp.content);
-  } catch {
+  const ast = parseTemplateExpression(exp.content);
+  if (!ast) {
     return undefined;
   }
   // Vue decodes entities in an attribute, which would shift the offsets.
   if (template.slice(offset, exp.loc.end.offset) !== exp.content) {
     return undefined;
   }
+  // `args?.label` is a read the whole expression is, as `args.label` is.
+  const whole = ast.type === 'ChainExpression' ? ast.expression : ast;
   const holes: (Edit | undefined)[] = [];
-  t.traverse(ast, (node, ancestors) => {
-    const parent = ancestors.at(-1)?.node;
-    if (
-      !t.isIdentifier(node, { name: 'args' }) ||
-      (parent && !t.isReferenced(node, parent, ancestors.at(-2)?.node))
-    ) {
+  const parents = new Map<Node, Node | null>();
+  walk(ast, (node, parent) => {
+    parents.set(node, parent);
+    if (node.type !== 'Identifier' || node.name !== 'args' || !isReferenced(node, parent)) {
       return;
     }
+    const member =
+      parent?.type === 'MemberExpression' && parent.object === node ? parent : undefined;
     const name =
-      (t.isMemberExpression(parent, { object: node }) ||
-        t.isOptionalMemberExpression(parent, { object: node })) &&
-      (!parent.computed && t.isIdentifier(parent.property)
-        ? parent.property.name
-        : parent.computed && t.isStringLiteral(parent.property) && parent.property.value);
-    const around = ancestors.slice(0, -1).map((ancestor) => ancestor.node);
-    const [above] = around.reverse();
+      member &&
+      (!member.computed && member.property.type === 'Identifier'
+        ? member.property.name
+        : member.computed && isStringLiteral(member.property) && member.property.value);
+    const around: Node[] = [];
+    for (let above = member && parents.get(member); above; above = parents.get(above)) {
+      around.push(above);
+    }
+    const [above] = around;
     // The target of a write, as in `args.count++`, is no read and stays as written.
     if (
       name &&
-      (t.isAssignmentExpression(above, { left: parent }) ||
-        t.isUpdateExpression(above) ||
-        t.isUnaryExpression(above, { operator: 'delete' }))
+      ((above?.type === 'AssignmentExpression' && above.left === member) ||
+        above?.type === 'UpdateExpression' ||
+        (above?.type === 'UnaryExpression' && above.operator === 'delete'))
     ) {
       return;
     }
-    if (!name) {
+    if (!name || !member) {
       holes.push(undefined);
       return;
     }
-    const kind = isOperand(parent!, around, writtenAs(name)) ? 'operand' : 'value';
-    const at = { start: offset + parent.start!, end: offset + parent.end! };
+    const kind = isOperand(member, around, writtenAs(name)) ? 'operand' : 'value';
+    const { start, end } = member as E.MemberExpression & Spanned;
+    const at = { start: offset + start, end: offset + end };
     const binding = constFor(name);
     const words = QUOTE_WORDS[quote ?? ''];
     holes.push(
       binding !== undefined
         ? { ...at, text: binding }
-        : (parent === ast && whole(name)) ||
+        : (member === whole && wholeEdit(name)) ||
             (words ? { ...at, text: hole(kind, holeWord(name), ...words) } : undefined)
     );
   });
@@ -626,24 +638,25 @@ export function collectTemplateScopeBindings(
 // as `item` in `args.items.filter((item) => item.id !== args.item.id)`. Code that does not parse
 // declares nothing the snippet could keep.
 function reserveDeclaredNames(code: string, ctx: RenderContext) {
-  let ast: t.File;
+  let program: E.Program;
   try {
-    ast = parser.parse(code, { plugins: ['typescript'], errorRecovery: true });
+    ({ program } = parseModule(code));
   } catch {
     return;
   }
-  t.traverseFast(ast, (node) => {
-    const patterns = t.isFunction(node)
-      ? node.params
-      : t.isVariableDeclarator(node)
-        ? [node.id]
-        : t.isCatchClause(node) && node.param
-          ? [node.param]
-          : [];
+  walk(program, (node) => {
+    const patterns =
+      node.type === 'FunctionDeclaration' ||
+      node.type === 'FunctionExpression' ||
+      node.type === 'ArrowFunctionExpression'
+        ? node.params
+        : node.type === 'VariableDeclarator'
+          ? [node.id]
+          : node.type === 'CatchClause' && node.param
+            ? [node.param]
+            : [];
     for (const pattern of patterns) {
-      for (const name of Object.keys(t.getBindingIdentifiers(pattern))) {
-        ctx.bindings.add(name);
-      }
+      addBindingNames(pattern, ctx.bindings);
     }
   });
 }
@@ -664,24 +677,98 @@ function bindingPatternForDirective(directive: DirectiveNode): string | undefine
 }
 
 function addBindingPattern(pattern: string, ctx: RenderContext): boolean {
-  let ast: t.Expression;
-  try {
-    ast = babelParseExpression(`${arrowParamsForPattern(pattern)} => 0`);
-  } catch {
-    return false;
-  }
-
-  if (!t.isArrowFunctionExpression(ast)) {
+  const ast = parseTemplateExpression(`${arrowParamsForPattern(pattern)} => 0`);
+  if (ast?.type !== 'ArrowFunctionExpression') {
     return false;
   }
 
   for (const param of ast.params) {
-    for (const name of Object.keys(t.getBindingIdentifiers(param))) {
-      ctx.bindings.add(name);
-    }
+    addBindingNames(param, ctx.bindings);
   }
 
   return true;
+}
+
+// ({ a, b: [c] }, ...rest) -> a, c, rest
+function addBindingNames(pattern: Node, into: Set<string>): void {
+  switch (pattern.type) {
+    case 'Identifier':
+      into.add(pattern.name);
+      break;
+    case 'AssignmentPattern':
+      addBindingNames(pattern.left, into);
+      break;
+    case 'RestElement':
+      addBindingNames(pattern.argument, into);
+      break;
+    case 'ObjectPattern':
+      for (const property of pattern.properties) {
+        addBindingNames(property.type === 'RestElement' ? property.argument : property.value, into);
+      }
+      break;
+    case 'ArrayPattern':
+      for (const element of pattern.elements) {
+        if (element) {
+          addBindingNames(element, into);
+        }
+      }
+      break;
+  }
+}
+
+// Offsets index into `code`; `undefined` unless `code` is exactly one expression.
+function parseTemplateExpression(code: string): E.Expression | undefined {
+  let program: E.Program;
+  try {
+    ({ program } = parseModule(`(${code}\n)`));
+  } catch {
+    return undefined;
+  }
+  const [statement, ...rest] = program.body;
+  // An expression that closed the wrapping paren, as in `a) + (b`, starts at the paren itself.
+  // Whitespace and outer parentheses (which the parser drops) make a valid expression start later.
+  if (
+    rest.length > 0 ||
+    statement?.type !== 'ExpressionStatement' ||
+    (statement.expression as E.Expression & Spanned).start === 0
+  ) {
+    return undefined;
+  }
+  walk(statement.expression, (node) => {
+    const span = node as Node & Spanned;
+    span.start -= 1;
+    span.end -= 1;
+  });
+  return statement.expression;
+}
+
+// Whether an identifier reads a value, rather than naming a member, a key or a binding.
+function isReferenced(node: Node, parent: Node | null): boolean {
+  switch (parent?.type) {
+    case 'MemberExpression':
+      return parent.object === node || parent.computed;
+    case 'Property':
+      return parent.value === node || (parent.key === node && parent.computed);
+    case 'MethodDefinition':
+    case 'PropertyDefinition':
+      return parent.key !== node || parent.computed;
+    case 'VariableDeclarator':
+      return parent.init === node;
+    case 'FunctionDeclaration':
+    case 'FunctionExpression':
+    case 'ArrowFunctionExpression':
+      return parent.id !== node && !(parent.params as Node[]).includes(node);
+    case 'CatchClause':
+      return parent.param !== node;
+    case 'LabeledStatement':
+    case 'BreakStatement':
+    case 'ContinueStatement':
+      return false;
+    case 'MetaProperty':
+      return false;
+    default:
+      return true;
+  }
 }
 
 function arrowParamsForPattern(pattern: string): string {
@@ -706,25 +793,25 @@ function pascalCase(tag: string): string {
 }
 
 // '<MyButton />' or `<MyButton />` without substitutions
-function staticTemplateSource(node: t.Node | undefined): string | undefined {
-  if (t.isStringLiteral(node)) {
+function staticTemplateSource(node: Node | undefined): string | undefined {
+  if (isStringLiteral(node)) {
     return node.value;
   }
-  if (t.isTemplateLiteral(node) && node.expressions.length === 0) {
-    return node.quasis[0]?.value.cooked;
+  if (node?.type === 'TemplateLiteral' && node.expressions.length === 0) {
+    return node.quasis[0]?.value.cooked ?? undefined;
   }
   return undefined;
 }
 
 // { components: { Button }, setup: () => ({ args }), template: '<Button />' }
-function hasOnlySupportedRenderProperties(renderObject: t.ObjectExpression): boolean {
+function hasOnlySupportedRenderProperties(renderObject: E.ObjectExpression): boolean {
   return renderObject.properties.every((property) => {
     // { ...baseRender, template: '<Button />' }
-    if (t.isSpreadElement(property)) {
+    if (property.type === 'SpreadElement') {
       return false;
     }
 
-    const key = keyOf(property);
+    const key = staticKey(property);
     // `inheritAttrs` only tunes runtime attribute fallthrough; the markup stays faithful without it.
     return (
       key === 'components' || key === SETUP_PROPERTY || key === 'template' || key === 'inheritAttrs'
@@ -734,7 +821,7 @@ function hasOnlySupportedRenderProperties(renderObject: t.ObjectExpression): boo
 
 // { Button, 'my-button': Button }
 function readComponentImports(
-  value: t.Node | undefined,
+  value: Node | undefined,
   importBindings: Map<string, ImportBinding>,
   options: ReadTemplateRenderConfigOptions
 ): Map<string, string> | undefined {
@@ -745,18 +832,18 @@ function readComponentImports(
   if (!value) {
     return componentImports;
   }
-  if (!t.isObjectExpression(value)) {
+  if (value.type !== 'ObjectExpression') {
     return undefined;
   }
 
   for (const property of value.properties) {
-    if (!t.isObjectProperty(property)) {
+    if (property.type !== 'Property' || property.method || property.kind !== 'init') {
       return undefined;
     }
 
-    const tagName = keyOf(property);
+    const tagName = staticKey(property);
     const component = unwrapExpression(property.value);
-    if (!tagName || !t.isIdentifier(component)) {
+    if (!tagName || component.type !== 'Identifier') {
       return undefined;
     }
 
@@ -775,13 +862,9 @@ function readComponentImports(
 }
 
 // setup() { return { args }; }
-function setupProperty(
-  renderObject: t.ObjectExpression
-): t.ObjectMethod | t.ObjectProperty | undefined {
-  return renderObject.properties.find((property): property is t.ObjectMethod | t.ObjectProperty => {
-    if (!t.isObjectMethod(property) && !t.isObjectProperty(property)) {
-      return false;
-    }
-    return keyOf(property) === SETUP_PROPERTY;
-  });
+function setupProperty(renderObject: E.ObjectExpression): E.ObjectProperty | undefined {
+  return renderObject.properties.find(
+    (property): property is E.ObjectProperty =>
+      property.type === 'Property' && staticKey(property) === SETUP_PROPERTY
+  );
 }

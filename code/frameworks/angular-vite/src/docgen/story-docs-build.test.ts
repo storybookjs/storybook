@@ -1525,42 +1525,43 @@ describe('buildStoryDocsPayload', () => {
         `  label = (value) => {\n    return value.replace('a', 'b');\n  };`
       );
       expect(crlf.snippet).toBe(lf.snippet);
-      // The field prints the arg as the story writes it, its indentation included.
-      expect(tabs.snippet).toContain(
-        `  label = (value) => {\n      return value.replace('a', 'b');\n  };`
-      );
+      // The field prints the arg as the story writes it, each tab as two spaces.
+      expect(tabs.snippet).toBe(lf.snippet);
     });
 
     it.each([
       [
         'above the arg',
         `label:\n          // why\n          (value) => value.trim(),`,
-        'label = // why\n  (value) => value.trim();',
+        `label = (value) => value.trim();`,
       ],
       [
         'before the arg',
         `label: /* why */ (value) => value.trim(),`,
-        'label = /* why */ (value) => value.trim();',
+        `label = (value) => value.trim();`,
       ],
       [
         'inside the arg',
         `label: (value) => /* why */ value.trim(),`,
-        'label = (value) => /* why */ value.trim();',
+        `label = (value) => /* why */ value.trim();`,
       ],
       [
         'inside the parameter list',
         `label: (/* why */ value) => value.trim(),`,
-        'label = (/* why */ value) => value.trim();',
+        `label = (/* why */ value) => value.trim();`,
       ],
-    ])('leaves a comment %s out of the binding, in the field', async (_name, property, field) => {
-      const story = await soleStory(`
+    ])(
+      'binds an arg with a comment %s through a field, as the arg is written',
+      async (_name, property, field) => {
+        const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
         export const Default = { args: { ${property} } };
       `);
-      expect(story.snippet).toContain('[label]="label"');
-      expect(story.snippet).toContain(field);
-    });
+        expect(story.snippet).toContain('[label]="label"');
+        expect(story.snippet).toContain(field);
+      }
+    );
 
     const configDocgen = async (): Promise<AngularDocgenPayload> => ({
       ...(await buttonDocgen()()),
@@ -1796,7 +1797,7 @@ describe('buildStoryDocsPayload', () => {
           template: \`<sb-button [value]="value" />\`,
         })
         export class DemoComponent {
-          value = (text) => text.replace('"', '\\'');
+          value = (text) => text.replace('"', "'");
         }"
       `);
       expect(story.snippet).not.toContain('&quot;');
@@ -2536,7 +2537,7 @@ describe('buildStoryDocsPayload', () => {
         };
       `);
       expect(story.snippet).toContain(
-        "export class DemoComponent {\n  label = 'Go';\n  a = function() {\n    return this.x;\n  };\n  b = shout;\n}"
+        "export class DemoComponent {\n  label = 'Go';\n  a = function () { return this.x; };\n  b = shout;\n}"
       );
       expect(story.warning).toBe('Incomplete snippet: `shout` could not be resolved statically.');
     });

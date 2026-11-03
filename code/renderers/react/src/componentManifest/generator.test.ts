@@ -289,11 +289,14 @@ test('manifests generates correct id, name, description and examples ', async ()
   );
 });
 
-async function getManifestForStory(code: string) {
+async function getManifestForStory(
+  code: string,
+  packageJson: Record<string, unknown> = { name: 'some-package' }
+) {
   vol.fromJSON(
     {
-      ['./package.json']: JSON.stringify({ name: 'some-package' }),
-      ['./src/stories/Button.stories.ts']: code,
+      ['./package.json']: JSON.stringify(packageJson),
+      ['./src/stories/Button.stories.tsx']: code,
       ['./src/stories/Button.tsx']: dedent`
         import React from 'react';
         export interface ButtonProps {
@@ -323,7 +326,7 @@ async function getManifestForStory(code: string) {
       id: 'example-button--primary',
       name: 'Primary',
       title: 'Example/Button',
-      importPath: './src/stories/Button.stories.ts',
+      importPath: './src/stories/Button.stories.tsx',
       componentPath: './src/stories/Button.tsx',
       tags: [Tag.DEV, Tag.TEST, 'vitest', Tag.AUTODOCS, Tag.MANIFEST],
       exportName: 'Primary',
@@ -372,7 +375,7 @@ test('fall back to index title when no component name', async () => {
       "import": "import { Button } from 'some-package';",
       "jsDocTags": {},
       "name": "Button",
-      "path": "./src/stories/Button.stories.ts",
+      "path": "./src/stories/Button.stories.tsx",
       "reactComponentMeta": undefined,
       "reactDocgen": {
         "actualName": "Button",
@@ -410,6 +413,53 @@ test('fall back to index title when no component name', async () => {
   `);
 });
 
+test('keeps the story import for a component in a private app package', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+
+  const manifest = await getManifestForStory(code, {
+    name: 'my-app',
+    private: true,
+  });
+
+  expect(manifest?.import).toBe("import { Button } from './Button';");
+});
+
+test('imports a component in a private workspace package by its package name', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+
+  const manifest = await getManifestForStory(code, {
+    name: '@acme/ui',
+    private: true,
+    main: './src/index.ts',
+  });
+
+  expect(manifest?.import).toBe("import { Button } from '@acme/ui';");
+});
+
+test('imports a component in a private package that exports its root by its package name', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+
+  const manifest = await getManifestForStory(code, {
+    name: '@acme/ui',
+    private: true,
+    exports: { '.': './src/index.ts' },
+  });
+
+  expect(manifest?.import).toBe("import { Button } from '@acme/ui';");
+});
+
+test('keeps the story import for a private package that exports only subpaths', async () => {
+  const code = withCSF3('export const Primary = () => <Button />;');
+
+  const manifest = await getManifestForStory(code, {
+    name: '@acme/ui',
+    private: true,
+    exports: { './components/*': './src/components/*.tsx' },
+  });
+
+  expect(manifest?.import).toBe("import { Button } from './Button';");
+});
+
 test('component exported from other file', async () => {
   const code = withCSF3(dedent`
     export { Primary } from './other-file';
@@ -422,7 +472,7 @@ test('component exported from other file', async () => {
       "import": "import { Button } from 'some-package';",
       "jsDocTags": {},
       "name": "Button",
-      "path": "./src/stories/Button.stories.ts",
+      "path": "./src/stories/Button.stories.tsx",
       "reactComponentMeta": undefined,
       "reactDocgen": {
         "actualName": "Button",
@@ -450,10 +500,9 @@ test('component exported from other file', async () => {
         {
           "error": {
             "message": "Expected story to be a function or variable declaration
-       9 | export default meta;
-      10 |
+    /app/src/stories/Button.stories.tsx: (11:0)
     > 11 | export { Primary } from './other-file';
-         | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+         | ^",
             "name": "SyntaxError",
           },
           "id": "example-button--primary",
@@ -477,7 +526,7 @@ test('unknown expressions', async () => {
       "import": "import { Button } from 'some-package';",
       "jsDocTags": {},
       "name": "Button",
-      "path": "./src/stories/Button.stories.ts",
+      "path": "./src/stories/Button.stories.tsx",
       "reactComponentMeta": undefined,
       "reactDocgen": {
         "actualName": "Button",
@@ -505,10 +554,9 @@ test('unknown expressions', async () => {
         {
           "error": {
             "message": "Expected story to be csf factory, function or an object expression
-       9 | export default meta;
-      10 |
+    /app/src/stories/Button.stories.tsx: (11:23)
     > 11 | export const Primary = someWeirdExpression;
-         |                        ^^^^^^^^^^^^^^^^^^^",
+         |                        ^",
             "name": "SyntaxError",
           },
           "id": "example-button--primary",

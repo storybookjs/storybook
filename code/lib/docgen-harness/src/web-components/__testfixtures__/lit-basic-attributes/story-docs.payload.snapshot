@@ -16,7 +16,7 @@
       "name": "Dom Node",
       "snippet": "<lit-basic-attributes label="Open panel" count="7" is-open></lit-basic-attributes>",
       "template": "<lit-basic-attributes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr is-open isOpen field⟧></lit-basic-attributes>",
-      "warning": "Incomplete snippet: `args => { const el = document.createElement('lit-basic-attributes'); el.setAttribute('label', String(args.label)); el.setAttribute('count', String(args.count)); if (args.disabled) { el.setAttribute('disabled', ''); } if (args.isOpen) { el.setAttribute('is-open', ''); } return el; }` could not be resolved statically.",
+      "warning": "Incomplete snippet: `(args) => { const el = document.createElement('lit-basic-attributes'); el.setAttribute('label', String(args.label)); el.setAttribute('count', String(args.count)); if (args.disabled) { el.setAttribute('disabled', ''); } if (args.isOpen) { el.setAttribute('is-open', ''); } return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-lit-basic-attributes--lit-template": {
       "argCode": {},

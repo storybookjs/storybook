@@ -1,0 +1,10 @@
+<script>
+  import Panel from './Panel.svelte';
+</script>
+
+<Panel
+  label="All values"
+  count={3}
+  primary
+  title="Panel title"
+ />

@@ -9,7 +9,7 @@
       "name": "Branching Helper",
       "snippet": "<lit-template-shapes label="Alpha" disabled></lit-template-shapes>",
       "template": "<lit-template-shapes ⟦attr label label field⟧ ⟦attr disabled disabled field⟧ ⟦attr count count field⟧ ⟦attr heading heading field⟧ ⟦attr open open field⟧>⟦slot default default-slot⟧</lit-template-shapes>",
-      "warning": "Incomplete snippet: `args => { if (args.disabled) { return html`<lit-template-shapes disabled></lit-template-shapes>`; } return Card(args); }` could not be resolved statically.",
+      "warning": "Incomplete snippet: `(args) => { if (args.disabled) { return html`<lit-template-shapes disabled></lit-template-shapes>`; } return Card(args); }` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--csf-2-helper": {
       "argCode": {},
@@ -25,7 +25,7 @@
       "name": "Helper Call",
       "snippet": "<lit-template-shapes label="Alpha" count="2"></lit-template-shapes>",
       "template": "<lit-template-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr heading heading field⟧ ⟦attr open open field⟧>⟦slot default default-slot⟧</lit-template-shapes>",
-      "warning": "Incomplete snippet: `args => Card(args)` could not be resolved statically.",
+      "warning": "Incomplete snippet: `(args) => Card(args)` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--helper-defaults": {
       "argCode": {},
@@ -33,7 +33,7 @@
       "name": "Helper Defaults",
       "snippet": "<lit-template-shapes heading="Head"></lit-template-shapes>",
       "template": "<lit-template-shapes ⟦attr heading heading field⟧ ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr open open field⟧>⟦slot default default-slot⟧</lit-template-shapes>",
-      "warning": "Incomplete snippet: `args => Card({ ...args, count: 5 }, html`<b>${args.heading}</b>`)` could not be resolved statically.",
+      "warning": "Incomplete snippet: `(args) => Card({ ...args, count: 5 }, html`<b>${args.heading}</b>`)` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--helper-in-html": {
       "argCode": {},
@@ -41,7 +41,7 @@
       "name": "Helper In Html",
       "snippet": "<lit-template-shapes label="Alpha" count="2"></lit-template-shapes>",
       "template": "<lit-template-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr heading heading field⟧ ⟦attr open open field⟧>⟦slot default default-slot⟧</lit-template-shapes>",
-      "warning": "Incomplete snippet: `args => html`<section>${List(args)}</section>`` could not be resolved statically.",
+      "warning": "Incomplete snippet: `(args) => html`<section>${List(args)}</section>`` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--re-exported-html": {
       "argCode": {},
@@ -49,7 +49,7 @@
       "name": "Re Exported Html",
       "snippet": "<lit-template-shapes label="Alpha"></lit-template-shapes>",
       "template": "<lit-template-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr heading heading field⟧ ⟦attr open open field⟧>⟦slot default default-slot⟧</lit-template-shapes>",
-      "warning": "Incomplete snippet: `args => html`<lit-template-shapes label=${args.label}></lit-template-shapes>`` could not be resolved statically.",
+      "warning": "Incomplete snippet: `(args) => html`<lit-template-shapes label=${args.label}></lit-template-shapes>`` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--spread-directive": {
       "argCode": {},
@@ -57,7 +57,7 @@
       "name": "Spread Directive",
       "snippet": "<lit-template-shapes label="Alpha" count="2" disabled></lit-template-shapes>",
       "template": "<lit-template-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr heading heading field⟧ ⟦attr open open field⟧>⟦slot default default-slot⟧</lit-template-shapes>",
-      "warning": "Incomplete snippet: `args => html`<lit-template-shapes ${spreadProps(args)}></lit-template-shapes>`` could not be resolved statically.",
+      "warning": "Incomplete snippet: `(args) => html`<lit-template-shapes ${spreadProps(args)}></lit-template-shapes>`` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute": {
       "argCode": {},
@@ -65,9 +65,7 @@
       "name": "Spread Next To Attribute",
       "snippet": "<lit-template-shapes count="2"></lit-template-shapes>",
       "template": "<lit-template-shapes ⟦attr count count field⟧ ⟦attr label label field⟧ ⟦attr disabled disabled field⟧ ⟦attr heading heading field⟧ ⟦attr open open field⟧>⟦slot default default-slot⟧</lit-template-shapes>",
-      "warning": "Incomplete snippet: `({ heading, ...rest }) => html`<lit-template-shapes label="Written" ${spreadProps(rest)}
-      >${heading}</lit-template-shapes
-    >`` could not be resolved statically.",
+      "warning": "Incomplete snippet: `({ heading, ...rest }) => html`<lit-template-shapes label="Written" ${spreadProps(rest)} >${heading}</lit-template-shapes >`` could not be resolved statically.",
     },
   },
 }

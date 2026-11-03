@@ -6,7 +6,7 @@ import { Badge, Button, Collapsible } from 'storybook/internal/components';
 import { SyncIcon, UnfoldIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 const Container = styled.div(({ theme }) => ({
   display: 'flex',

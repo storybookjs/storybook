@@ -4,8 +4,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { vol } from 'memfs';
 
-import { babelParse, types as t } from 'storybook/internal/babel';
-import { fillWithStoryArgs } from 'storybook/internal/csf-tools';
+import {
+  type ESTreeNode as Node,
+  fillWithStoryArgs,
+  parseExpression,
+} from 'storybook/internal/csf-tools';
 import { writtenArg } from 'storybook/internal/docs-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
@@ -468,10 +471,9 @@ export const Primary = {
     `);
   });
 
-  it('takes the whole CRLF line when the dropped binding was written on its own', async () => {
+  it('prints a CRLF template with LF, taking the whole line of a dropped binding', async () => {
     expect(
-      (
-        await primarySnippet(`
+      await primarySnippet(`
 export const Primary = {
   args: {
     label: 'Hi',
@@ -485,7 +487,6 @@ export const Primary = {
   }),
 };
 `)
-      )?.replaceAll('\r\n', '\n')
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
       import MyButton from './MyButton.vue';
@@ -495,6 +496,41 @@ export const Primary = {
         <MyButton
           label="Hi"
         />
+      </template>"
+    `);
+  });
+
+  it('resolves bindings with leading whitespace, line breaks and outer parentheses', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi', active: true },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: \`<MyButton
+      :label="
+        args.label
+      "
+      :active="(args.active)"
+      :class="(args.active ? 'on' : 'off')"
+      v-if=" args.active "
+    >{{ (args.label) }}</MyButton>\`,
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton
+              label="Hi"
+              active
+              :class="(true ? 'on' : 'off')"
+              v-if=" true "
+            >Hi</MyButton>
       </template>"
     `);
   });
@@ -1910,7 +1946,7 @@ import Child from './Child.vue';
   it('interpolates a hoisted slot value', () => {
     const snippet = render([slot('default', `['a']`, 'hoist')]);
 
-    expect(snippet).toContain('const _default = ["a"];');
+    expect(snippet).toContain("const _default = ['a'];");
     expect(snippet).toContain('{{ _default }}');
   });
 
@@ -1947,6 +1983,21 @@ const onSubmit = () => null;
 <template>
   <C @submit="onSubmit" />
 </template>`);
+  });
+
+  it('substitutes an arg in an expression across the lines of a CRLF template', () => {
+    const args = [prop('label', `'Hi'`)];
+    const template = transformTemplate({
+      args,
+      componentImports: new Map([['C', `import C from './C.vue';`]]),
+      slots: [],
+      template: `<C :title="'x' +\r\n  args.label" />`,
+      written: writtenArgs(args),
+    })!;
+
+    expect(fillWithStoryArgs(template, writtenArgs(args), fillTemplate)).toContain(
+      `<C :title="'x' +\n    'Hi'" />`
+    );
   });
 
   it('sorts event attributes after prop attributes', () => {
@@ -2018,11 +2069,6 @@ function event(name: string, eventName: string, code: string): ClassifiedArg {
   };
 }
 
-function expression(code: string): t.Node {
-  const file = babelParse(`const value = ${code}`);
-  const statement = file.program.body[0];
-  if (!t.isVariableDeclaration(statement) || !statement.declarations[0]?.init) {
-    throw new Error(`Not an expression: ${code}`);
-  }
-  return t.removePropertiesDeep(t.cloneNode(statement.declarations[0].init, true, true));
+function expression(code: string): Node {
+  return parseExpression(code);
 }

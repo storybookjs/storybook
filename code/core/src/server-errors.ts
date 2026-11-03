@@ -335,6 +335,46 @@ export class OpenServiceCyclicStateError extends StorybookError {
   }
 }
 
+export class TypeScriptMissingForDocgenError extends StorybookError {
+  constructor(public data: { cause?: unknown } = {}) {
+    super({
+      name: 'TypeScriptMissingForDocgenError',
+      category: Category.CORE_COMMON,
+      code: 33,
+      cause: data.cause,
+      documentation: 'https://storybook.js.org/docs/configure/integration/typescript',
+      message: dedent`
+        Storybook cannot find the \`typescript\` package. Storybook uses TypeScript to read your component types for Controls and the Docs args table, also in JavaScript projects.
+
+        Add \`typescript@^6\` to the devDependencies in package.json, install it with your package manager, then restart Storybook.`,
+    });
+  }
+}
+
+export class TypeScriptWithoutCompilerApiError extends StorybookError {
+  constructor(public data: { version: string }) {
+    super({
+      name: 'TypeScriptWithoutCompilerApiError',
+      category: Category.CORE_COMMON,
+      code: 34,
+      documentation: 'https://storybook.js.org/docs/configure/integration/typescript#typescript-7',
+      message: dedent`
+        Storybook found TypeScript ${data.version} as the \`typescript\` package. TypeScript 7 does not include the compiler API that Storybook uses to read your component types for Controls and the Docs args table.
+
+        If package.json has no \`typescript\` entry, your package manager installed TypeScript 7 for Storybook's peer dependency. Add \`typescript@^6\` to the devDependencies in package.json.
+
+        If your project uses TypeScript 7, install TypeScript 7 and TypeScript 6 side by side. In package.json, replace the \`typescript\` entry in devDependencies with these two entries:
+
+          "@typescript/native": "npm:typescript@^${data.version}",
+          "typescript": "npm:@typescript/typescript6@^6.0.2"
+
+        \`tsc\` stays on TypeScript 7, and the \`typescript\` package is TypeScript 6. Both entries are necessary.
+
+        Then install dependencies and restart Storybook.`,
+    });
+  }
+}
+
 export class OpenServiceOperationNameCollisionError extends StorybookError {
   constructor(public data: { serviceId: ServiceId; operationName: string }) {
     super({
@@ -502,6 +542,21 @@ export class OpenServiceDuplicateToolNameError extends StorybookError {
         data.transport === 'mcp'
           ? `Derived MCP tool name "${data.derivedName}" collides between "${data.first}" and "${data.second}". Rename one toolset id or method key.`
           : `Derived CLI method name "${data.derivedName}" collides between "${data.first}" and "${data.second}" in the same toolset. Rename one method key.`,
+    });
+  }
+}
+
+export class InvalidBasePathError extends StorybookError {
+  constructor(public data: { basePath: string }) {
+    super({
+      name: 'InvalidBasePathError',
+      category: Category.CORE_COMMON,
+      code: 20,
+      message: dedent`
+        Invalid Storybook base path: ${JSON.stringify(data.basePath)}.
+
+        The base path is the URL path prefix Storybook is served from, such as "/__storybook".
+        It cannot be a full URL, and cannot contain a query string or a fragment.`,
     });
   }
 }
@@ -1327,6 +1382,29 @@ export class NuxtModuleAddFailedError extends StorybookError {
         Failed to add @nuxtjs/storybook to the Nuxt project via nuxi.
 
         ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class ReactNativeOnDevicePeerMismatchError extends StorybookError {
+  constructor(
+    public data: {
+      cliVersion: string;
+      mismatches: { packageName: string; version: string; storybookPeer: string }[];
+    }
+  ) {
+    super({
+      name: 'ReactNativeOnDevicePeerMismatchError',
+      category: Category.CLI_INIT,
+      code: 18,
+      message: dedent`
+        These React Native Storybook packages do not support Storybook ${data.cliVersion}:
+        ${data.mismatches
+          .map(
+            ({ packageName, version, storybookPeer }) =>
+              `- ${packageName}@${version} peers storybook@${storybookPeer}`
+          )
+          .join('\n')}`,
     });
   }
 }

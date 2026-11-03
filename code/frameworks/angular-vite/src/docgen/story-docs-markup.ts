@@ -1,12 +1,18 @@
 // Reads the markup a story supplies itself - `template`, a `render` that returns one, or the CSF2
 // function form - so a snippet shows the story as written. Which members the story and its meta hold
 // is the shared CSF pass in `story-shape`, spreads and names already followed.
-import { type NodePath, types as t } from 'storybook/internal/babel';
-import type { CsfFile, ResolvedMembers } from 'storybook/internal/csf-tools';
+import type {
+  CsfFile,
+  ESTree as E,
+  ESTreeNode as Node,
+  ResolvedMembers,
+} from 'storybook/internal/csf-tools';
 import {
+  importedName,
   isCanonicalCsf2BindCall,
-  isCsfFactoryCall,
-  sourceOf,
+  isStringLiteral,
+  oneLineTextOf,
+  staticKey,
   templateParts,
   type TemplateParts,
   unwrapExpression,
@@ -14,7 +20,7 @@ import {
 
 import { evaluateArgLiteral } from './story-docs-args.ts';
 import type { PropCode } from './story-docs-prop-code.ts';
-import { functionPath, propCode } from './story-docs-prop-code.ts';
+import { propCode } from './story-docs-prop-code.ts';
 import { formatPropInTemplate } from '../template-grammar.ts';
 
 /** One story, as much of it as reading the markup it supplies needs. */
@@ -26,14 +32,14 @@ export interface StoryShape {
   /** The meta's config members, spreads and names followed. */
   metaMembers: ResolvedMembers;
   /** Meta args merged under story args, keyed by arg name. */
-  args: Record<string, t.Node>;
+  args: Record<string, Node>;
   /** Source text of everything hiding args from this pass; empty when the merged args are known. */
   unresolvedArgs: string[];
   /** Those of `unresolvedArgs` that hide which args there are, rather than one arg's value. */
   hidingArgs: string[];
 }
 
-export { sourceOf };
+export { oneLineTextOf };
 
 /** Bindings the generated snippet would carry, which is also what `argsToTemplate` expands to. */
 export interface Bindings {
@@ -130,7 +136,7 @@ interface FunctionScope {
    */
   argsExpansions: ReadonlyMap<string, readonly string[]>;
   /** Names among `argBindings` with a default, which they hold while the arg is unset. */
-  defaulted: ReadonlyMap<string, t.Node>;
+  defaulted: ReadonlyMap<string, Node>;
 }
 
 const NO_SCOPE: FunctionScope = {
@@ -161,7 +167,7 @@ export const userTemplate = (
   if (csf2) {
     const templateProperty = resolvedProperty(csf2.returned, 'template');
     if (templateProperty.kind === 'unresolvable') {
-      return { kind: 'unresolvable', source: sourceOf(csf2.returned) };
+      return { kind: 'unresolvable', source: oneLineTextOf(csf2.returned) };
     }
     const fromCsf2 = templateFrom(
       templateProperty.kind === 'value' ? templateProperty.node : undefined,
@@ -185,7 +191,10 @@ const shapeTemplate = (
 ): TemplateResult | undefined => {
   const template = resolvedMember(members, 'template');
   if (template.kind === 'unresolvable') {
-    return { kind: 'unresolvable', ...(template.node ? { source: sourceOf(template.node) } : {}) };
+    return {
+      kind: 'unresolvable',
+      ...(template.node ? { source: oneLineTextOf(template.node) } : {}),
+    };
   }
   if (template.kind === 'value') {
     const own = templateFrom(declaredValue(shape, template.node), shape, bindings, NO_SCOPE);
@@ -201,17 +210,17 @@ const shapeTemplate = (
   // A story whose `render` exists but cannot be read must not inherit the meta's markup, which is
   // for code the story never runs.
   if (render.kind === 'unresolvable') {
-    return { kind: 'unresolvable', ...(render.node ? { source: sourceOf(render.node) } : {}) };
+    return { kind: 'unresolvable', ...(render.node ? { source: oneLineTextOf(render.node) } : {}) };
   }
 
   const fn = declaredValue(shape, render.node);
   const returned = returnedObject(fn);
   if (!returned) {
-    return { kind: 'unresolvable', source: `render: ${sourceOf(render.node)}` };
+    return { kind: 'unresolvable', source: `render: ${oneLineTextOf(render.node)}` };
   }
   const templateProperty = resolvedProperty(returned, 'template');
   return templateProperty.kind === 'unresolvable'
-    ? { kind: 'unresolvable', source: `render: ${sourceOf(render.node)}` }
+    ? { kind: 'unresolvable', source: `render: ${oneLineTextOf(render.node)}` }
     : templateFrom(
         templateProperty.kind === 'value' ? templateProperty.node : undefined,
         shape,
@@ -221,19 +230,19 @@ const shapeTemplate = (
 };
 
 const templateFrom = (
-  node: t.Node | undefined,
+  node: Node | undefined,
   shape: StoryShape,
   bindings: Bindings | undefined,
   scope: FunctionScope
 ): TemplateResult | undefined => {
   if (
     node === undefined ||
-    t.isNullLiteral(node) ||
-    (t.isIdentifier(node) && node.name === 'undefined')
+    isNullLiteral(node) ||
+    (node.type === 'Identifier' && node.name === 'undefined')
   ) {
     return undefined;
   }
-  if (t.isStringLiteral(node)) {
+  if (isStringLiteral(node)) {
     return literalTemplate(node.value, new Set(), [], []);
   }
   const parts = templateParts(node);
@@ -243,10 +252,10 @@ const templateFrom = (
     const texts: TextInterpolation[] = [];
     const markup = interpolate(parts, shape, bindings, scope, representedArgs, expansions, texts);
     return markup === undefined
-      ? { kind: 'unresolvable', source: sourceOf(node) }
+      ? { kind: 'unresolvable', source: oneLineTextOf(node) }
       : literalTemplate(markup, representedArgs, expansions, texts);
   }
-  return { kind: 'unresolvable', source: sourceOf(node) };
+  return { kind: 'unresolvable', source: oneLineTextOf(node) };
 };
 
 const literalTemplate = (
@@ -318,7 +327,7 @@ const interpolate = (
  * read, followed the same way `template: HOISTED` is.
  */
 const substituteExpression = (
-  expression: t.Node,
+  expression: Node,
   shape: StoryShape,
   bindings: Bindings | undefined,
   scope: FunctionScope,
@@ -328,11 +337,12 @@ const substituteExpression = (
   textMarker: string,
   texts: TextInterpolation[]
 ): string | undefined => {
-  if (t.isCallExpression(expression) && isImportedArgsToTemplate(expression, shape)) {
+  if (expression.type === 'CallExpression' && isImportedArgsToTemplate(expression, shape)) {
     // Only the args parameter (whole, or as a rest binding) has a knowable expansion; a derived
     // object expands to whatever the story computes at runtime.
     const argument = expression.arguments[0];
-    const excluded = t.isIdentifier(argument) ? scope.argsExpansions.get(argument.name) : undefined;
+    const excluded =
+      argument?.type === 'Identifier' ? scope.argsExpansions.get(argument.name) : undefined;
     if (!bindings || excluded === undefined) {
       return undefined;
     }
@@ -349,7 +359,7 @@ const substituteExpression = (
     return marker;
   }
 
-  if (!t.isIdentifier(expression)) {
+  if (expression.type !== 'Identifier') {
     return undefined;
   }
   const argName = scope.argBindings.get(expression.name);
@@ -380,34 +390,32 @@ const substituteExpression = (
 
 const ARGS_TO_TEMPLATE_MODULES = new Set(['@storybook/angular', '@storybook/angular-vite']);
 
-const isImportedArgsToTemplate = (call: t.CallExpression, shape: StoryShape): boolean => {
-  if (!t.isIdentifier(call.callee)) {
+const isImportedArgsToTemplate = (call: E.CallExpression, shape: StoryShape): boolean => {
+  if (call.callee.type !== 'Identifier') {
     return false;
   }
-  const binding = shape.csf._file.path.scope.getBinding(call.callee.name);
-  if (!binding?.referencePaths.some((path) => path.node === call.callee)) {
+  const binding = shape.csf.editor.scopes.bindingOf(call.callee);
+  const specifier = binding?.node;
+  const declaration = binding?.declaration;
+  if (specifier?.type !== 'ImportSpecifier' || declaration?.type !== 'ImportDeclaration') {
     return false;
   }
-  const specifier = binding?.path.node;
-  const declaration = binding?.path.findParent((path) => t.isImportDeclaration(path.node))?.node;
-  if (!t.isImportSpecifier(specifier) || !t.isImportDeclaration(declaration)) {
-    return false;
-  }
-  const importedName = t.isIdentifier(specifier.imported)
-    ? specifier.imported.name
-    : specifier.imported.value;
   return (
-    importedName === 'argsToTemplate' && ARGS_TO_TEMPLATE_MODULES.has(declaration.source.value)
+    importedName(specifier.imported) === 'argsToTemplate' &&
+    ARGS_TO_TEMPLATE_MODULES.has(declaration.source.value)
   );
 };
 
 /** Filter for `argsToTemplate` options, or `undefined` when the options need the story to run. */
-const bindingFilterOf = (options: t.Node | undefined): BindingFilter | undefined => {
+const bindingFilterOf = (options: Node | undefined): BindingFilter | undefined => {
   if (options === undefined) {
     return {};
   }
   const unwrapped = unwrapExpression(options);
-  if (!t.isObjectExpression(unwrapped) || unwrapped.properties.some(t.isSpreadElement)) {
+  if (
+    unwrapped.type !== 'ObjectExpression' ||
+    unwrapped.properties.some((property) => property.type === 'SpreadElement')
+  ) {
     return undefined;
   }
 
@@ -429,30 +437,35 @@ const bindingFilterOf = (options: t.Node | undefined): BindingFilter | undefined
 };
 
 /** String array literal, for `argsToTemplate`'s `include` / `exclude` options. */
-const stringArray = (node: t.Node | undefined): string[] | undefined =>
-  t.isArrayExpression(node) && node.elements.every((element) => t.isStringLiteral(element))
-    ? node.elements.map((element) => (element as t.StringLiteral).value)
+const stringArray = (node: Node | undefined): string[] | undefined =>
+  node?.type === 'ArrayExpression' && node.elements.every(isStringLiteral)
+    ? node.elements.map((element) => (element as E.StringLiteral).value)
     : undefined;
 
 /** Text an interpolated arg contributes, for slot content like `<span>${footer}</span>`. */
-const literalText = (node: t.Node | undefined): string | undefined => {
+const literalText = (node: Node | undefined): string | undefined => {
   const unwrapped = node && unwrapExpression(node);
-  if (t.isStringLiteral(unwrapped)) {
-    return unwrapped.value;
+  if (unwrapped?.type !== 'Literal') {
+    return undefined;
   }
-  return t.isNumericLiteral(unwrapped) || t.isBooleanLiteral(unwrapped)
-    ? String(unwrapped.value)
-    : undefined;
+  const { value } = unwrapped;
+  if (typeof value === 'string') {
+    return value;
+  }
+  return typeof value === 'number' || typeof value === 'boolean' ? String(value) : undefined;
 };
 
+const isNullLiteral = (node: Node): boolean =>
+  node.type === 'Literal' && node.value === null && !('regex' in node) && !('bigint' in node);
+
 type AnnotationResolution =
-  | { kind: 'value'; node: t.Node }
+  | { kind: 'value'; node: Node }
   | { kind: 'missing' }
-  | { kind: 'unresolvable'; node?: t.Node };
+  | { kind: 'unresolvable'; node?: Node };
 
 type PropertyResolution =
   | Exclude<AnnotationResolution, { kind: 'unresolvable' }>
-  | { kind: 'unresolvable'; node: t.Node };
+  | { kind: 'unresolvable'; node: Node };
 
 /**
  * A named member of a resolved config record.
@@ -473,17 +486,19 @@ export const resolvedMember = (members: ResolvedMembers, key: string): Annotatio
 };
 
 /** A named property of an object literal, for options a call site writes out inline. */
-export const resolvedProperty = (object: t.ObjectExpression, key: string): PropertyResolution => {
-  let found: t.ObjectMethod | t.ObjectProperty | undefined;
-  let opaqueAfter: t.ObjectExpression['properties'][number] | undefined;
+export const resolvedProperty = (object: E.ObjectExpression, key: string): PropertyResolution => {
+  let found: E.ObjectProperty | undefined;
+  let opaqueAfter: E.ObjectExpression['properties'][number] | undefined;
   object.properties.forEach((property) => {
-    const isMember = t.isObjectProperty(property) || t.isObjectMethod(property);
-    if (isMember && keyNameOf(property) === key) {
-      found = property;
-      opaqueAfter = undefined;
+    if (property.type === 'SpreadElement') {
+      opaqueAfter = property;
       return;
     }
-    if (t.isSpreadElement(property) || (isMember && keyNameOf(property) === undefined)) {
+    const name = staticKey(property);
+    if (name === key) {
+      found = property;
+      opaqueAfter = undefined;
+    } else if (name === undefined) {
       opaqueAfter = property;
     }
   });
@@ -494,53 +509,30 @@ export const resolvedProperty = (object: t.ObjectExpression, key: string): Prope
   if (opaqueAfter) {
     return { kind: 'unresolvable', node: opaqueAfter };
   }
-  if (t.isObjectMethod(found)) {
-    return found.kind === 'method' && !found.generator
+  if (found.method || found.kind !== 'init') {
+    return isPlainMethod(found)
       ? { kind: 'value', node: found }
       : { kind: 'unresolvable', node: found };
   }
   return { kind: 'value', node: found.value };
 };
 
-// A string-literal computed key has the exact runtime semantics of a plain string key.
-export const keyNameOf = (property: t.ObjectMethod | t.ObjectProperty): string | undefined => {
-  if (t.isIdentifier(property.key) && !property.computed) {
-    return property.key.name;
-  }
-  return t.isStringLiteral(property.key) ? property.key.value : undefined;
-};
+const isPlainMethod = (node: Node | undefined): node is E.ObjectProperty & { value: E.Function } =>
+  node?.type === 'Property' &&
+  node.method &&
+  node.kind === 'init' &&
+  node.value.type === 'FunctionExpression' &&
+  !node.value.generator;
 
-/**
- * The story's own config object literal: the export's initializer, the statement a re-export
- * resolved to, or the argument of a `meta.story(...)` factory call.
- */
-export const storyConfigObject = (
-  shape: Pick<StoryShape, 'csf' | 'exportName'>
-): t.ObjectExpression | undefined => {
-  const declared = shape.csf._storyExports[shape.exportName];
-  const candidates = [
-    t.isVariableDeclarator(declared) ? declared.init : declared,
-    shape.csf._storyStatements[shape.exportName],
-  ];
-  for (const candidate of candidates) {
-    const unwrapped = candidate ? unwrapExpression(candidate) : undefined;
-    if (unwrapped && t.isObjectExpression(unwrapped)) {
-      return unwrapped;
-    }
-    if (unwrapped && isCsfFactoryCall(unwrapped)) {
-      const argument = unwrapped.arguments[0];
-      const config = argument && unwrapExpression(argument);
-      if (config && t.isObjectExpression(config)) {
-        return config;
-      }
-    }
+const functionOf = (node: Node | undefined): E.Function | E.ArrowFunctionExpression | undefined => {
+  if (isPlainMethod(node)) {
+    return node.value;
   }
-  return undefined;
-};
-
-export const metaConfigObject = (csf: CsfFile): t.ObjectExpression | undefined => {
-  const node = csf._metaNode;
-  return node && t.isObjectExpression(node) ? node : undefined;
+  return node?.type === 'ArrowFunctionExpression' ||
+    node?.type === 'FunctionExpression' ||
+    node?.type === 'FunctionDeclaration'
+    ? node
+    : undefined;
 };
 
 /**
@@ -549,35 +541,33 @@ export const metaConfigObject = (csf: CsfFile): t.ObjectExpression | undefined =
  * Only a single-exit body is readable: any statement that could return earlier (a conditional, a
  * loop) means the markup depends on which branch the story takes at runtime.
  */
-const returnedObject = (fn: t.Node | undefined): t.ObjectExpression | undefined => {
-  const isPlainMethod = t.isObjectMethod(fn) && fn.kind === 'method' && !fn.generator;
-  if (
-    !t.isArrowFunctionExpression(fn) &&
-    !t.isFunctionExpression(fn) &&
-    !t.isFunctionDeclaration(fn) &&
-    !isPlainMethod
-  ) {
+const returnedObject = (node: Node | undefined): E.ObjectExpression | undefined => {
+  const fn = functionOf(node);
+  if (!fn?.body) {
     return undefined;
   }
 
-  if (!t.isBlockStatement(fn.body)) {
+  if (fn.body.type !== 'BlockStatement') {
     const unwrapped = unwrapExpression(fn.body);
-    return t.isObjectExpression(unwrapped) ? unwrapped : undefined;
+    return unwrapped.type === 'ObjectExpression' ? unwrapped : undefined;
   }
 
   const statements = fn.body.body;
   const last = statements.at(-1);
-  if (!t.isReturnStatement(last) || !last.argument) {
+  if (last?.type !== 'ReturnStatement' || !last.argument) {
     return undefined;
   }
   const singleExit = statements
     .slice(0, -1)
-    .every((statement) => t.isVariableDeclaration(statement) || t.isExpressionStatement(statement));
+    .every(
+      (statement) =>
+        statement.type === 'VariableDeclaration' || statement.type === 'ExpressionStatement'
+    );
   if (!singleExit) {
     return undefined;
   }
   const unwrapped = unwrapExpression(last.argument);
-  return t.isObjectExpression(unwrapped) ? unwrapped : undefined;
+  return unwrapped.type === 'ObjectExpression' ? unwrapped : undefined;
 };
 
 /**
@@ -587,7 +577,7 @@ const returnedObject = (fn: t.Node | undefined): t.ObjectExpression | undefined 
  */
 export interface RenderedProp {
   arg?: string;
-  code?: t.Node;
+  code?: Node;
   /** The code where it reads args and the snippet can carry it; see {@link propCode}. */
   computed?: PropCode;
 }
@@ -608,30 +598,32 @@ export const renderedProps = (shape: StoryShape): RenderedProps | undefined => {
   if (!csf2 && !render) {
     return ARGS_AS_PROPS;
   }
-  const fn = csf2?.fn ?? (render?.kind === 'value' ? declaredValue(shape, render.node) : undefined);
-  const returned = csf2?.returned ?? returnedObject(fn);
+  const declared =
+    csf2?.fn ?? (render?.kind === 'value' ? declaredValue(shape, render.node) : undefined);
+  const fn = functionOf(declared);
+  const returned = csf2?.returned ?? returnedObject(declared);
   const props = returned && resolvedProperty(returned, 'props');
-  if (!t.isFunction(fn) || !props || props.kind === 'unresolvable') {
+  if (!fn || !props || props.kind === 'unresolvable') {
     return undefined;
   }
   const scope = functionScope(fn);
-  const value = props.kind === 'value' ? unwrapExpression(props.node as t.Expression) : undefined;
-  const properties =
+  const value = props.kind === 'value' ? unwrapExpression(props.node) : undefined;
+  const properties: (E.ObjectProperty | { type: 'SpreadElement'; argument: Node })[] =
     value === undefined
       ? []
-      : t.isObjectExpression(value)
+      : value.type === 'ObjectExpression'
         ? value.properties
-        : [t.spreadElement(value as t.Expression)];
+        : [{ type: 'SpreadElement', argument: value }];
 
   // The args a spread passes on under their own name: all but those destructured off before it.
   let spreadExcept: readonly string[] | undefined;
-  let fnPath: ReturnType<typeof functionPath>;
   const named = new Map<string, RenderedProp>();
   for (const property of properties) {
-    if (t.isSpreadElement(property)) {
-      const except = t.isIdentifier(property.argument)
-        ? scope.argsExpansions.get(property.argument.name)
-        : undefined;
+    if (property.type === 'SpreadElement') {
+      const except =
+        property.argument.type === 'Identifier'
+          ? scope.argsExpansions.get(property.argument.name)
+          : undefined;
       if (except === undefined) {
         return undefined;
       }
@@ -648,14 +640,13 @@ export const renderedProps = (shape: StoryShape): RenderedProps | undefined => {
       }
       continue;
     }
-    const name = keyNameOf(property);
-    if (name === undefined || (t.isObjectProperty(property) && property.computed)) {
+    const name = property.computed ? undefined : staticKey(property);
+    if (name === undefined) {
       return undefined;
     }
-    const arg = t.isObjectProperty(property) ? argRead(property.value, scope) : undefined;
-    const defaulted = t.isObjectProperty(property)
-      ? defaultedRead(property.value, scope)
-      : undefined;
+    const plain = !property.method && property.kind === 'init';
+    const arg = plain ? argRead(property.value, scope) : undefined;
+    const defaulted = plain ? defaultedRead(property.value, scope) : undefined;
     if (arg !== undefined) {
       named.set(name, { arg });
       continue;
@@ -664,18 +655,10 @@ export const renderedProps = (shape: StoryShape): RenderedProps | undefined => {
       named.set(name, defaulted);
       continue;
     }
-    const code = propertyValue(property);
-    fnPath ??= functionPath(shape.csf._file.path, fn);
-    const computed =
-      fnPath && t.isObjectProperty(property)
-        ? propCode(
-            fnPath,
-            unwrapExpression(property.value as t.Expression),
-            scope,
-            shape.csf._file.code,
-            shape.args
-          )
-        : undefined;
+    const code = property.method || property.kind !== 'init' ? property : property.value;
+    const computed = plain
+      ? propCode(fn, unwrapExpression(property.value), scope, shape.csf.editor, shape.args)
+      : undefined;
     named.set(name, computed ? { code, computed } : { code });
   }
 
@@ -683,44 +666,42 @@ export const renderedProps = (shape: StoryShape): RenderedProps | undefined => {
     named.get(name) ?? (spreadExcept && !spreadExcept.includes(name) ? { arg: name } : undefined);
 };
 
-const propertyValue = (property: t.ObjectMethod | t.ObjectProperty): t.Node =>
-  t.isObjectProperty(property) ? property.value : property;
-
 /** The arg an expression reads and passes on unchanged: `label`, `args.label` or `args['label']`. */
-const argRead = (node: t.Node, scope: FunctionScope): string | undefined => {
-  const unwrapped = unwrapExpression(node as t.Expression);
-  if (t.isIdentifier(unwrapped)) {
+const argRead = (node: Node, scope: FunctionScope): string | undefined => {
+  const unwrapped = unwrapExpression(node);
+  if (unwrapped.type === 'Identifier') {
     return scope.defaulted.has(unwrapped.name) ? undefined : scope.argBindings.get(unwrapped.name);
   }
-  if (!t.isMemberExpression(unwrapped) || !t.isIdentifier(unwrapped.object)) {
+  if (unwrapped.type !== 'MemberExpression' || unwrapped.object.type !== 'Identifier') {
     return undefined;
   }
   const except = scope.argsExpansions.get(unwrapped.object.name);
   const name =
-    !unwrapped.computed && t.isIdentifier(unwrapped.property)
+    !unwrapped.computed && unwrapped.property.type === 'Identifier'
       ? unwrapped.property.name
-      : t.isStringLiteral(unwrapped.property)
+      : isStringLiteral(unwrapped.property)
         ? unwrapped.property.value
         : undefined;
   return name !== undefined && except && !except.includes(name) ? name : undefined;
 };
 
 // An arg destructured with a literal default, which the prop holds while the arg is unset.
-const defaultedRead = (node: t.Node, scope: FunctionScope): RenderedProp | undefined => {
-  const unwrapped = unwrapExpression(node as t.Expression);
-  const code = t.isIdentifier(unwrapped) ? scope.defaulted.get(unwrapped.name) : undefined;
+const defaultedRead = (node: Node, scope: FunctionScope): RenderedProp | undefined => {
+  const unwrapped = unwrapExpression(node);
+  const code = unwrapped.type === 'Identifier' ? scope.defaulted.get(unwrapped.name) : undefined;
   return code && evaluateArgLiteral(code, []) !== undefined
-    ? { arg: scope.argBindings.get((unwrapped as t.Identifier).name), code }
+    ? { arg: scope.argBindings.get((unwrapped as E.IdentifierReference).name), code }
     : undefined;
 };
 
 /** The CSF2 function story and the object it returns, for `export const S = () => ({ template })`. */
-const csf2Shape = (shape: StoryShape): { fn: t.Node; returned: t.ObjectExpression } | undefined => {
+const csf2Shape = (shape: StoryShape): { fn: Node; returned: E.ObjectExpression } | undefined => {
   const declared = shape.csf._storyExports[shape.exportName];
-  const candidates: (t.Node | undefined | null)[] = t.isVariableDeclarator(declared)
-    ? [declared.init]
-    : // `export { S }` records no declarator; the statement is the initializer it resolved to.
-      [declared, shape.csf._storyStatements[shape.exportName]];
+  const candidates: (Node | undefined | null)[] =
+    declared?.type === 'VariableDeclarator'
+      ? [declared.init]
+      : // `export { S }` records no declarator; the statement is the initializer it resolved to.
+        [declared, shape.csf._storyStatements[shape.exportName]];
 
   for (const candidate of candidates) {
     let fn = candidate ? unwrapExpression(candidate) : undefined;
@@ -737,53 +718,51 @@ const csf2Shape = (shape: StoryShape): { fn: t.Node; returned: t.ObjectExpressio
 };
 
 /** What a render function binds, as far as it can be enumerated statically. */
-const functionScope = (fn: t.Node | undefined): FunctionScope => {
-  if (
-    !t.isArrowFunctionExpression(fn) &&
-    !t.isFunctionExpression(fn) &&
-    !t.isFunctionDeclaration(fn) &&
-    !t.isObjectMethod(fn)
-  ) {
+const functionScope = (node: Node | undefined): FunctionScope => {
+  const fn = functionOf(node?.type === 'Property' ? node.value : node);
+  if (!fn) {
     return NO_SCOPE;
   }
 
   const [firstParam] = fn.params;
-  const argsPattern = t.isAssignmentPattern(firstParam) ? firstParam.left : firstParam;
+  const argsPattern = firstParam?.type === 'AssignmentPattern' ? firstParam.left : firstParam;
   const parameterNames = new Set<string>();
   fn.params.forEach((param) => collectPatternNames(param, parameterNames));
   const argBindings = new Map<string, string>();
-  const defaulted = new Map<string, t.Node>();
-  const bindArgs = (pattern: t.ObjectPattern) => {
+  const defaulted = new Map<string, Node>();
+  const bindArgs = (pattern: E.ObjectPattern) => {
     for (const property of pattern.properties) {
-      if (!t.isObjectProperty(property) || property.computed) {
+      if (property.type !== 'Property' || property.computed) {
         continue;
       }
-      const argName = keyNameOf(property);
-      const local = t.isAssignmentPattern(property.value) ? property.value.left : property.value;
-      if (argName !== undefined && t.isIdentifier(local)) {
+      const argName = staticKey(property);
+      const local =
+        property.value.type === 'AssignmentPattern' ? property.value.left : property.value;
+      if (argName !== undefined && local.type === 'Identifier') {
         argBindings.set(local.name, argName);
-        if (t.isAssignmentPattern(property.value)) {
+        if (property.value.type === 'AssignmentPattern') {
           defaulted.set(local.name, property.value.right);
         }
       }
     }
   };
-  if (t.isObjectPattern(argsPattern)) {
+  if (argsPattern?.type === 'ObjectPattern') {
     bindArgs(argsPattern);
   }
 
   const bodyDeclared = new Set<string>();
-  if (t.isBlockStatement(fn.body)) {
+  if (fn.body?.type === 'BlockStatement') {
     for (const statement of fn.body.body) {
-      if (t.isVariableDeclaration(statement)) {
+      if (statement.type === 'VariableDeclaration') {
         for (const declarator of statement.declarations) {
           collectPatternNames(declarator.id, bodyDeclared);
           // `const { label } = args;` binds the arg as destructuring the parameter does.
           if (
             statement.kind === 'const' &&
-            t.isObjectPattern(declarator.id) &&
-            t.isIdentifier(argsPattern) &&
-            t.isIdentifier(declarator.init, { name: argsPattern.name })
+            declarator.id.type === 'ObjectPattern' &&
+            argsPattern?.type === 'Identifier' &&
+            declarator.init?.type === 'Identifier' &&
+            declarator.init.name === argsPattern.name
           ) {
             bindArgs(declarator.id);
           }
@@ -793,17 +772,17 @@ const functionScope = (fn: t.Node | undefined): FunctionScope => {
   }
 
   const argsExpansions = new Map<string, readonly string[]>();
-  if (t.isIdentifier(argsPattern)) {
+  if (argsPattern?.type === 'Identifier') {
     argsExpansions.set(argsPattern.name, []);
-  } else if (t.isObjectPattern(argsPattern)) {
+  } else if (argsPattern?.type === 'ObjectPattern') {
     const destructured: string[] = [];
     let rest: string | undefined;
     let knownKeys = true;
     for (const property of argsPattern.properties) {
-      if (t.isRestElement(property) && t.isIdentifier(property.argument)) {
+      if (property.type === 'RestElement' && property.argument.type === 'Identifier') {
         rest = property.argument.name;
-      } else if (t.isObjectProperty(property)) {
-        const key = property.computed ? undefined : keyNameOf(property);
+      } else if (property.type === 'Property') {
+        const key = property.computed ? undefined : staticKey(property);
         if (key !== undefined) {
           destructured.push(key);
         } else {
@@ -819,18 +798,21 @@ const functionScope = (fn: t.Node | undefined): FunctionScope => {
   return { argBindings, parameterNames, bodyDeclared, argsExpansions, defaulted };
 };
 
-const collectPatternNames = (pattern: t.Node, into: Set<string>): void => {
-  if (t.isIdentifier(pattern)) {
+const collectPatternNames = (pattern: Node, into: Set<string>): void => {
+  if (pattern.type === 'Identifier') {
     into.add(pattern.name);
-  } else if (t.isObjectPattern(pattern)) {
+  } else if (pattern.type === 'ObjectPattern') {
     for (const property of pattern.properties) {
-      collectPatternNames(t.isRestElement(property) ? property.argument : property.value, into);
+      collectPatternNames(
+        property.type === 'RestElement' ? property.argument : property.value,
+        into
+      );
     }
-  } else if (t.isArrayPattern(pattern)) {
+  } else if (pattern.type === 'ArrayPattern') {
     pattern.elements.forEach((element) => element && collectPatternNames(element, into));
-  } else if (t.isAssignmentPattern(pattern)) {
+  } else if (pattern.type === 'AssignmentPattern') {
     collectPatternNames(pattern.left, into);
-  } else if (t.isRestElement(pattern)) {
+  } else if (pattern.type === 'RestElement') {
     collectPatternNames(pattern.argument, into);
   }
 };
@@ -844,51 +826,61 @@ const collectPatternNames = (pattern: t.Node, into: Set<string>): void => {
  */
 const declaredValue = (
   shape: StoryShape,
-  node: t.Node | undefined,
-  followed = new Set<t.Node>()
-): t.Node | undefined => {
-  if (t.isMemberExpression(node)) {
+  node: Node | undefined,
+  followed = new Set<Node>()
+): Node | undefined => {
+  if (node?.type === 'MemberExpression') {
     return declaredMember(shape, node, followed) ?? node;
   }
-  if (!t.isIdentifier(node)) {
+  if (node?.type !== 'Identifier') {
     return node;
   }
-  const program: NodePath<t.Program> = shape.csf._file.path;
-  const binding = program.scope.getBinding(node.name);
+  const binding = shape.csf.editor.scopes.program.bindings.get(node.name);
   // A reassigned binding's value at render time is not its initializer.
   if (!binding?.constant) {
     return node;
   }
-  const declaration = binding.path.node;
-  if (t.isVariableDeclarator(declaration)) {
+  const declaration = binding.node;
+  if (declaration.type === 'VariableDeclarator') {
     return declaration.init ?? node;
   }
-  return t.isFunctionDeclaration(declaration) ? declaration : node;
+  return declaration.type === 'FunctionDeclaration' ? declaration : node;
 };
 
 // `render: Primary.render` is what the other story wrote, unless something assigns to it later or
 // it leads back to itself.
 const declaredMember = (
   shape: StoryShape,
-  node: t.MemberExpression,
-  followed: Set<t.Node>
-): t.Node | undefined => {
+  node: E.MemberExpression,
+  followed: Set<Node>
+): Node | undefined => {
   const { object, property } = node;
-  if (followed.has(node) || node.computed || !t.isIdentifier(object) || !t.isIdentifier(property)) {
+  if (
+    followed.has(node) ||
+    node.computed ||
+    object.type !== 'Identifier' ||
+    property.type !== 'Identifier'
+  ) {
     return undefined;
   }
   followed.add(node);
-  const binding = shape.csf._file.path.scope.getBinding(object.name);
-  const written = binding?.referencePaths.some(
-    ({ parentPath }) =>
-      parentPath?.isMemberExpression() &&
-      parentPath.parentPath.isAssignmentExpression({ left: parentPath.node }) &&
-      (parentPath.node.computed ||
-        t.isIdentifier(parentPath.node.property, { name: property.name }))
-  );
+  const { editor } = shape.csf;
+  const binding = editor.scopes.program.bindings.get(object.name);
+  const written = binding?.references.some((reference) => {
+    const member = editor.parentOf(reference);
+    const assignment = member && editor.parentOf(member);
+    return (
+      member?.type === 'MemberExpression' &&
+      member.object === reference &&
+      assignment?.type === 'AssignmentExpression' &&
+      assignment.left === member &&
+      (member.computed ||
+        (member.property.type === 'Identifier' && member.property.name === property.name))
+    );
+  });
   const declared = declaredValue(shape, object);
   const literal = declared && declared !== object ? unwrapExpression(declared) : undefined;
-  if (written || !t.isObjectExpression(literal)) {
+  if (written || literal?.type !== 'ObjectExpression') {
     return undefined;
   }
   const member = resolvedProperty(literal, property.name);

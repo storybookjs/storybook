@@ -118,7 +118,12 @@ export class PropertyExtractor implements NgModuleMetadata {
       return [true];
     }
 
-    const ngModuleName = (ngModule as unknown as { name?: string } | undefined)?.name;
+    // Bundlers may rename the class binding, so compare the normalized name:
+    // a leading underscore run (e.g. `_BrowserAnimationsModule`) or a numeric suffix
+    // (e.g. `BrowserAnimationsModule$1`, as emitted by Vite 8's Rolldown bundler).
+    const ngModuleName = (ngModule as unknown as { name?: string } | undefined)?.name
+      ?.replace(/^_+/, '')
+      .replace(/\$\d+$/, '');
 
     if (ngModuleName === 'BrowserAnimationsModule' || ngModuleName === 'NoopAnimationsModule') {
       const provideFn =

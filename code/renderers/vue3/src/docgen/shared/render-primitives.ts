@@ -1,8 +1,9 @@
-import { types as t } from 'storybook/internal/babel';
 import {
-  buildImportStatements,
-  unwrapExpression,
+  type ESTreeNode as Node,
   type ImportBinding,
+  buildImportStatements,
+  isStringLiteral,
+  unwrapExpression,
 } from 'storybook/internal/csf-tools';
 
 import type {
@@ -46,7 +47,7 @@ interface RenderPropValueInput {
   /** JavaScript identifier referenced by hoisted values. */
   variableName: string;
   /** CSF arg value expression. */
-  value: t.Node;
+  value: Node;
   /** Render plan the value was classified with. */
   plan: RenderableValuePlan;
 }
@@ -101,13 +102,13 @@ function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): Rende
     return hoistedProp(input, ctx, printValue(value));
   }
 
-  if (value.type === 'BooleanLiteral') {
+  if (value.type === 'Literal' && typeof value.value === 'boolean') {
     return value.value
       ? { attrName: input.attributeName }
       : { attrName: `:${input.attributeName}`, value: 'false' };
   }
 
-  if (value.type === 'StringLiteral') {
+  if (isStringLiteral(value)) {
     const quoted = quoteAttributeValue(value.value);
     return quoted === undefined
       ? hoistedProp(input, ctx, printValue(value))
@@ -172,18 +173,17 @@ export function renderSlotContent(
 }
 
 /** Source text of a primitive arg value that can appear directly in template text, unescaped. */
-export function inlinePrimitiveSource(node: t.Node): string | undefined {
+export function inlinePrimitiveSource(node: Node): string | undefined {
   const value = unwrapExpression(node);
 
-  switch (value.type) {
-    case 'StringLiteral':
-      return value.value;
-    case 'NumericLiteral':
-    case 'BooleanLiteral':
-      return String(value.value);
-    default:
-      return undefined;
+  if (value.type !== 'Literal') {
+    return undefined;
   }
+  return typeof value.value === 'string'
+    ? value.value
+    : typeof value.value === 'number' || typeof value.value === 'boolean'
+      ? String(value.value)
+      : undefined;
 }
 
 /**
@@ -224,7 +224,7 @@ ${sections.join('\n\n')}
 }
 
 function allocateBindingName(name: string, ctx: RenderContext): string {
-  const baseName = t.toIdentifier(name);
+  const baseName = toIdentifier(name);
   let bindingName = baseName;
   let suffix = 2;
 
@@ -235,6 +235,25 @@ function allocateBindingName(name: string, ctx: RenderContext): string {
 
   ctx.bindings.add(bindingName);
   return bindingName;
+}
+
+const RESERVED_WORDS = new Set(
+  (
+    'break case catch class const continue debugger default delete do else enum export extends ' +
+    'false finally for function if import in instanceof new null return super switch this throw ' +
+    'true try typeof var void while with implements interface let package private protected ' +
+    'public static yield await arguments eval'
+  ).split(' ')
+);
+
+// Same output as Babel's `toIdentifier`, which earlier snippets were generated with.
+function toIdentifier(input: string): string {
+  const name = [...input]
+    .map((char) => (/[\p{ID_Continue}$\u200C\u200D]/u.test(char) ? char : '-'))
+    .join('')
+    .replace(/^[-0-9]+/, '')
+    .replace(/[-\s]+(.)?/g, (_, next?: string) => (next ? next.toUpperCase() : ''));
+  return name && !RESERVED_WORDS.has(name) ? name : `_${name}`;
 }
 
 /** Quoted attribute value, or `undefined` when both quote styles occur and it must be hoisted. */

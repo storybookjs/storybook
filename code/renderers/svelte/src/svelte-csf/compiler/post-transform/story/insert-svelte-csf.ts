@@ -11,6 +11,7 @@ import { getStoryContentTemplate } from '../../../parser/analyse/story/template.
 import { getStoryArgNodes } from '../../../parser/analyse/story/arg-nodes.ts';
 import { argCode } from 'storybook/internal/csf-tools';
 import type { ESTreeAST } from '../../../parser/ast.ts';
+import type { StoryContent } from '../../../parser/analyse/story/extend.ts';
 import {
   appendASTProperty,
   createASTObjectExpression,
@@ -23,19 +24,17 @@ interface Params {
       svelte: SvelteASTNodes['storyComponents'][number];
       compiled: Awaited<ReturnType<typeof extractStoriesNodesFromExportDefaultFn>>[number];
     };
+    content?: StoryContent;
     svelte: Awaited<ReturnType<typeof extractSvelteASTNodes>>;
   };
   filename?: string;
   originalCode: string;
 }
 
-/**
- * Insert addon's internal object `__svelteCsf`
- * to `parameters` of every `<Story />` component **into the compiled code**.
- */
+// Adds `parameters.__svelteCsf.rawCode`, the story's Svelte source that the docs code snippet shows.
 export function insertSvelteCSFToStoryParameters(params: Params) {
   const { nodes, filename, originalCode } = params;
-  const { component, svelte } = nodes;
+  const { component, content, svelte } = nodes;
 
   const storyPropsObjectExpression = getStoryPropsObjectExpression({
     node: component.compiled,
@@ -57,13 +56,15 @@ export function insertSvelteCSFToStoryParameters(params: Params) {
 
   const rawCode = getStoryContentRawCode({
     nodes: {
-      component: component.svelte.component,
+      component: content?.component ?? component.svelte.component,
       svelte,
     },
+    asChild: content?.asChild,
+    filename,
     originalCode,
   });
   const args = getStoryArgNodes({
-    component: component.svelte.component,
+    stories: content?.chain ?? [component.svelte.component],
     defineMeta: svelte.defineMetaVariableDeclaration,
     originalCode,
   });

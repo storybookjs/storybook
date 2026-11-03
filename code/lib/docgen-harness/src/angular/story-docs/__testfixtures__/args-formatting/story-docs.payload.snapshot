@@ -6,7 +6,7 @@
     "storydocs-args-formatting--every-value-shape": {
       "argCode": {
         "data": "{ id: 7, nested: { deep: true } }",
-        "formatter": "(value) => value.replace('"', '\'')",
+        "formatter": "(value) => value.replace('"', "'")",
         "tags": "['a', 'b']",
       },
       "id": "storydocs-args-formatting--every-value-shape",
@@ -29,7 +29,7 @@ import { ArgsFormattingComponent } from './args-formatting.component.ts';
     />`,
 })
 export class DemoComponent {
-  formatter = (value) => value.replace('"', '\'');
+  formatter = (value) => value.replace('"', "'");
 }",
       "template": "import { Component } from '@angular/core';
 import { ArgsFormattingComponent } from './args-formatting.component.ts';

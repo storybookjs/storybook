@@ -1,5 +1,4 @@
-import type { types as t } from 'storybook/internal/babel';
-import { isOperand } from 'storybook/internal/csf-tools';
+import { type ESTreeNode, isOperand } from 'storybook/internal/csf-tools';
 import { hasHoleBracket, hole, holeWord } from 'storybook/internal/docs-tools';
 import { type AST, parse } from 'svelte/compiler';
 import { walk } from 'zimmerframe';
@@ -21,7 +20,7 @@ interface Edit {
  */
 export function getStoryContentTemplate(
   rawCode: string,
-  args: Record<string, t.Node> = {}
+  args: Record<string, ESTreeNode> = {}
 ): string | undefined {
   if (hasHoleBracket(rawCode)) {
     return undefined;
@@ -53,7 +52,7 @@ export function getStoryContentTemplate(
 }
 
 // The edit for an `args` reference: none for a write, or for `args` read whole, which stays as written.
-function argEdit(node: Node, path: Node[], args: Record<string, t.Node>): Edit[] {
+function argEdit(node: Node, path: Node[], args: Record<string, ESTreeNode>): Edit[] {
   const [grandparent, parent] = path.slice(-2);
   if (parent?.type === 'SpreadAttribute') {
     return [spreadEdit(parent, grandparent!)];
@@ -82,7 +81,10 @@ function argEdit(node: Node, path: Node[], args: Record<string, t.Node>): Edit[]
     return [{ start: tag.start, end: tag.end, text: hole('text', holeWord(arg)) }];
   }
   const written = Object.hasOwn(args, arg) ? args[arg] : undefined;
-  const kind = isOperand(read as never, ancestors as never, written) ? 'operand' : 'value';
+  // Svelte's markup expressions are ESTree, the shape `isOperand` reads.
+  const kind = isOperand(read as ESTreeNode, ancestors as ESTreeNode[], written)
+    ? 'operand'
+    : 'value';
   return [{ start: read.start, end: read.end, text: hole(kind, holeWord(arg)) }];
 }
 

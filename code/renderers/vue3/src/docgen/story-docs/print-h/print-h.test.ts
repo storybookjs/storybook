@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { types as t } from 'storybook/internal/babel';
 import {
+  type ESTreeNode as Node,
+  type ReferenceContext,
   collectImportBindings,
   fillWithStoryArgs,
   loadCsf,
-  metaObjectPath,
+  metaObject,
   normalizeStoryDeclaration,
-  type ReferenceContext,
   resolveArgsRecord,
   resolveBindingMembers,
   resolveObjectMembers,
@@ -30,9 +30,9 @@ const DEFAULT_DOCGEN: VueDocgenArgInfo = { props: new Set(), events: new Set(), 
 interface ParsedRender {
   args: ClassifiedArg[];
   /** The node the story writes each arg with. */
-  written: Record<string, t.Node>;
+  written: Record<string, Node>;
   argsParam?: string;
-  expression?: t.Node;
+  expression?: Node;
   importBindings: ReturnType<typeof collectImportBindings>;
 }
 
@@ -129,15 +129,16 @@ ${storySource}
 `,
     { makeTitle: () => 'Example/MyButton' }
   ).parse();
-  const normalized = normalizeStoryDeclaration(csf._storyDeclarationPath.Primary);
+  csf.editor.parentOf(csf.program);
+  const normalized = normalizeStoryDeclaration(csf._storyExports.Primary, csf.editor);
 
   if (normalized.type !== 'config') {
     throw new Error('Expected a config story');
   }
 
-  const metaPath = metaObjectPath(csf);
-  const references: ReferenceContext = { program: csf._file.path, filePath: 'entry.ts' };
-  const metaMembers = metaPath ? resolveObjectMembers(metaPath.node, references) : undefined;
+  const meta = metaObject(csf);
+  const references: ReferenceContext = { editor: csf.editor, filePath: 'entry.ts' };
+  const metaMembers = meta ? resolveObjectMembers(meta, references) : undefined;
   const written = {
     ...resolveArgsRecord(metaMembers?.properties.args, references).properties,
     ...resolveArgsRecord(resolveBindingMembers(references, 'Primary')?.properties.args, references)
@@ -145,27 +146,25 @@ ${storySource}
   };
   const classified = classifyArgs(written, docgen);
   // Mirrors resolveEffectiveRender in build-story-docs: story render wins, meta is the fallback.
-  const storyRender = resolveRenderFunction(normalized.path, csf._storyDeclarationPath.Primary);
+  const storyRender = resolveRenderFunction(normalized.node, csf.editor);
   const renderResolution =
-    storyRender.kind !== 'missing'
-      ? storyRender
-      : resolveRenderFunction(metaPath, csf._storyDeclarationPath.Primary);
+    storyRender.kind !== 'missing' ? storyRender : resolveRenderFunction(meta, csf.editor);
 
   if (renderResolution.kind !== 'resolved') {
     return {
       args: classified.args,
       written,
-      importBindings: collectImportBindings(csf._file.path),
+      importBindings: collectImportBindings(csf.program),
     };
   }
 
-  const [parameter] = renderResolution.path.node.params;
+  const [parameter] = renderResolution.node.params;
   return {
     args: classified.args,
     written,
-    argsParam: t.isIdentifier(parameter) ? parameter.name : undefined,
-    expression: returnedExpression(renderResolution.path.node),
-    importBindings: collectImportBindings(csf._file.path),
+    argsParam: parameter?.type === 'Identifier' ? parameter.name : undefined,
+    expression: returnedExpression(renderResolution.node),
+    importBindings: collectImportBindings(csf.program),
   };
 }
 

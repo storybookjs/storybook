@@ -21,7 +21,11 @@ ${story}`;
   });
   const [{ component }] = nodes.storyComponents;
   return argCode(
-    getStoryArgNodes({ component, defineMeta: nodes.defineMetaVariableDeclaration, originalCode })
+    getStoryArgNodes({
+      stories: [component],
+      defineMeta: nodes.defineMetaVariableDeclaration,
+      originalCode,
+    })
   );
 };
 
@@ -33,6 +37,32 @@ describe(getStoryArgNodes.name, () => {
         `<Story name="A" args={{ onclick: handler }} />`
       )
     ).toEqual({ onclick: 'handler', size: 'sizes.sm' });
+  });
+
+  it('reads the args of the stories a story extends, under its own', async () => {
+    const originalCode = `<script module lang="ts">
+  import { defineMeta } from '@storybook/svelte';
+  import Button from './Button.svelte';
+  const { Story } = defineMeta({ component: Button, args: { size: sizes.sm } });
+</script>
+
+<Story name="Base" args={{ onclick: handler, label: base }} />
+<Story name="Extended" extend="Base" args={{ label: own }} />`;
+    const filename = '/tmp/Button.stories.svelte';
+    const nodes = await extractSvelteASTNodes({
+      ast: getSvelteAST({ code: originalCode, filename }),
+      filename,
+    });
+    const [base, extended] = nodes.storyComponents.map(({ component }) => component);
+    expect(
+      argCode(
+        getStoryArgNodes({
+          stories: [extended, base],
+          defineMeta: nodes.defineMetaVariableDeclaration,
+          originalCode,
+        })
+      )
+    ).toEqual({ size: 'sizes.sm', onclick: 'handler', label: 'own' });
   });
 
   it('parses args as TypeScript without JSX', async () => {

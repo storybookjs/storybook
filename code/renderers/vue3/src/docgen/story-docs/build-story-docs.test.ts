@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { babelParseFile } from 'storybook/internal/csf-tools';
+import { SourceEditor } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 import { type DocgenPayload, selectLiveSnippetForStory } from 'storybook/open-service';
 
@@ -57,9 +57,12 @@ const ENTRY: IndexEntry = {
 const referencesFor = (modules: Record<string, string>) => ({
   resolveModule: (_fromFile: string, specifier: string) => {
     const code = modules[specifier];
-    return code === undefined
-      ? undefined
-      : { program: babelParseFile({ code, filename: specifier }).path, filePath: specifier };
+    if (code === undefined) {
+      return undefined;
+    }
+    const editor = new SourceEditor(code, specifier);
+    editor.parentOf(editor.program);
+    return { editor, filePath: specifier };
   },
 });
 
@@ -275,8 +278,7 @@ export default {
           resolveModule: (_fromFile, specifier) =>
             specifier === './base/Base.stories'
               ? {
-                  program: babelParseFile({ code: base, filename: '/stories/base/Base.stories.ts' })
-                    .path,
+                  editor: new SourceEditor(base, '/stories/base/Base.stories.ts'),
                   filePath: '/stories/base/Base.stories.ts',
                 }
               : undefined,
@@ -331,8 +333,7 @@ export default {
           resolveModule: (_fromFile, specifier) =>
             specifier === './base/Base.stories'
               ? {
-                  program: babelParseFile({ code: base, filename: '/stories/base/Base.stories.ts' })
-                    .path,
+                  editor: new SourceEditor(base, '/stories/base/Base.stories.ts'),
                   filePath: '/stories/base/Base.stories.ts',
                 }
               : undefined,

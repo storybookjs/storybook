@@ -52,12 +52,16 @@ export const parseKind = (kind: string, { rootSeparator, groupSeparator }: Separ
   };
 };
 
-/** Combine a set of project / meta / story tags, removing duplicates and handling negations. */
+/**
+ * Combine a set of project / meta / story tags, removing duplicates, handling negations and
+ * ignoring empty or whitespace-only tags.
+ */
 export const combineTags = (...tags: string[]): string[] => {
   const result = tags.reduce((acc, tag) => {
     if (tag.startsWith('!')) {
       acc.delete(tag.slice(1));
-    } else {
+    } else if (tag.trim()) {
+      // Skip empty tags, they would show up as blank entries in the tag filter.
       acc.add(tag);
     }
     return acc;

@@ -60,6 +60,6 @@ describe('createStoryReferenceResolver', () => {
       join(FIXTURES, 'x.stories.ts'),
       './esm.mjs'
     );
-    expect(resolved?.program.node.body).toHaveLength(1);
+    expect(resolved?.editor.program.body).toHaveLength(1);
   });
 });

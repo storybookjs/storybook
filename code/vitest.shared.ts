@@ -1,7 +1,7 @@
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 
-import type { Plugin } from 'vite';
+import { type Plugin, defaultClientConditions, defaultServerConditions } from 'vite';
 import { defineConfig } from 'vitest/config';
 
 const require = createRequire(import.meta.url);
@@ -21,6 +21,15 @@ export const textAssetLoaderPlugins: Plugin[] = ['.md', '.html'].map((extension)
 }));
 
 export const vitestCommonConfig = defineConfig({
+  resolve: {
+    // Projects that resolve the `browser` condition, such as Svelte's, would get the WASM build of
+    // oxc-parser, which is not installed. Storybook parses in Node, with the native binding.
+    alias: [{ find: /^oxc-parser$/, replacement: require.resolve('oxc-parser') }],
+    // Resolve workspace packages to their source, as TypeScript's `customConditions` does, so tests
+    // need no build and `vitest related` follows imports across packages.
+    conditions: ['code', ...defaultClientConditions],
+  },
+  ssr: { resolve: { conditions: ['code', ...defaultServerConditions] } },
   test: {
     passWithNoTests: true,
     clearMocks: true,

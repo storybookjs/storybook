@@ -21,7 +21,7 @@ A change can pass one axis and fail the other. Each axis runs in its own subagen
 
 1. **Pin the fixed point.** Use the one the user gave. If there is none, use the merge-base with `origin/next`. Confirm it with `git rev-parse`. Record the diff command (`git diff <fixed-point>...HEAD`) and the commit list (`git log --oneline <fixed-point>..HEAD`). Stop here if the diff is empty.
 
-2. **Find the spec.** In this order: the issue the user named; a Linear key (`SB-1234`) or `Closes #N` in the branch name, the commits or the PR body; the PR body itself. Fetch the issue with the Linear or GitHub tools, including its comments: a later comment can overrule the description. Write the spec to a temporary file, with the overruling decisions in a dated section at the top. The subagent cannot read the tracker. If there is no spec, the Spec axis reports "no spec".
+2. **Find the spec.** In this order: a spec file or the issue the user named; a Linear key (`SB-1234`) or `Closes #N` in the branch name, the commits or the PR body; the PR body itself. Fetch the issue with the Linear or GitHub tools, including its comments: a later comment can overrule the description. Write the spec to a temporary file, with the overruling decisions in a dated section at the top. The subagent cannot read the tracker. If there is no spec, the Spec axis reports "no spec".
 
 3. **List the standards.** [The review rules](./rules.md), `AGENTS.md`, and each guideline in `.agents/guidelines/` that the diff touches (the `AGENTS.md` table says which one owns which topic). Also any `AGENTS.md` or README in a changed package.
 

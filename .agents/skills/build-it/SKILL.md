@@ -14,7 +14,7 @@ Each step names the skill that does the work. Read that skill when you reach the
 
 ## Steps
 
-1. **Pin the spec.** The Linear issue the user named, or the decisions from this conversation. When the spec lives only in the conversation, write it into the Linear issue first, so the reviews in steps 3 and 7 can read it. Branch from `origin/next` and record the base SHA: `origin/next` moves during a session.
+1. **Pin the spec.** The problem to solve: an issue the user named (Linear, GitHub), a prompt, or a problem from earlier in this conversation. Write it to a spec file outside the checkout, with the decisions made so far, and give that file as the spec to the reviews in steps 3, 4 and 7: a subagent cannot read this conversation. Branch from `origin/next` and record the base SHA: `origin/next` moves during a session.
 
 2. **Implement.** Follow `AGENTS.md` and the guidelines it points to. Run the focused tests and `cd code && yarn fmt:write`. Done when the focused tests pass and the tree has only the change.
 

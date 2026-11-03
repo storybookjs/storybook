@@ -27,7 +27,7 @@ Run it after [`code-review`](../code-review/SKILL.md) is quiet: fixes from that 
 
 5. **Apply.** Apply the accepted hunks from the saved patch by hand, without the held ones. Run the focused suites. Commit them as the [`pr` skill](../pr/SKILL.md) "Commit history" section says.
 
-6. **Record.** Add a dated comment on the tracker issue for each accepted rule change, and for each held design decision, marked open. The next hunt on this change takes the deferrals as invariants in step 2.
+6. **Record.** Add a dated note for each accepted rule change, and for each held design decision, marked open: as a comment on the tracker issue when the spec has one, else in the spec file. The next hunt on this change takes the deferrals as invariants in step 2.
 
 Done when every finding has a verdict, the accepted fixes are committed, and the focused suites pass.
 

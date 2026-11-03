@@ -5,7 +5,9 @@
  * directory of this source tree.
  */
 import { execSync } from 'node:child_process';
-import { join } from 'node:path';
+import { accessSync, constants } from 'node:fs';
+import { release } from 'node:os';
+import { delimiter, join } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 
@@ -71,6 +73,29 @@ function getBrowserEnv():
   }
 
   return { action: Actions.BROWSER, value, args };
+}
+
+// `open` is bundled into Storybook, so it cannot reach the copy of `xdg-open` that it ships with and
+// runs the system one instead. Without it, `open` crashes Storybook with an unhandled ENOENT
+// (#32949). This mirrors when `open` picks `xdg-open`: not macOS, Windows or WSL, and no app.
+export function isSystemXdgOpenMissing(app?: string) {
+  const usesXdgOpen =
+    !['darwin', 'win32', 'android'].includes(process.platform) &&
+    !app &&
+    !release().toLowerCase().includes('microsoft');
+
+  if (!usesXdgOpen) {
+    return false;
+  }
+
+  return !(process.env.PATH ?? '').split(delimiter).some((dir) => {
+    try {
+      accessSync(join(dir, 'xdg-open'), constants.X_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  });
 }
 
 export class BrowserEnvError extends StorybookError {
@@ -179,6 +204,14 @@ function startBrowserProcess(browser: string | undefined, url: string, args: str
   // https://github.com/facebook/create-react-app/pull/1690#issuecomment-283518768
   if (process.platform === 'darwin' && browser === 'open') {
     browser = undefined;
+  }
+
+  if (isSystemXdgOpenMissing(browser)) {
+    logger.warn(
+      `Could not open ${url} in a browser, because xdg-open is not installed. Install xdg-utils, or set the BROWSER environment variable.`
+    );
+    // Handled: returning false would mean BROWSER=none, and throwing would retry with `open`.
+    return true;
   }
 
   // Fallback to open

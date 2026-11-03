@@ -3,7 +3,7 @@ import { logger } from 'storybook/internal/node-logger';
 import open from 'open';
 import { dedent } from 'ts-dedent';
 
-import { openBrowser } from './opener.ts';
+import { isSystemXdgOpenMissing, openBrowser } from './opener.ts';
 
 export async function openInBrowser(address: string) {
   let errorOccurred = false;
@@ -22,7 +22,7 @@ export async function openInBrowser(address: string) {
   }
 
   try {
-    if (errorOccurred) {
+    if (errorOccurred && !isSystemXdgOpenMissing()) {
       await open(address);
       errorOccurred = false;
     }

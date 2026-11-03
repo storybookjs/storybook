@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -32,14 +32,22 @@ describe('storybook/test declaration contract', () => {
     expect(DTS_BUILT).toBe(true);
   });
 
-  it.runIf(DTS_BUILT)('uses public dependencies compatible with TypeScript 5.9', () => {
-    const declarations = readFileSync(DTS_ARTIFACT, 'utf-8');
+  it.runIf(DTS_BUILT)('inlines the types of the test libraries it bundles', () => {
+    // The test types also land in chunks shared with other entries, so check every declaration.
+    const distDirectory = join(import.meta.dirname, '../../dist');
+    const declarationFiles = readdirSync(distDirectory, { recursive: true, encoding: 'utf-8' })
+      .filter((file) => file.endsWith('.d.ts'))
+      .map((file) => ({ file, declarations: readFileSync(join(distDirectory, file), 'utf-8') }));
 
-    expect(declarations).toContain('/// <reference types="chai" preserve="true" />');
-    expect(declarations).toContain('from "@testing-library/jest-dom/matchers"');
-    expect(declarations).toContain('from "@vitest/expect"');
-    expect(declarations).not.toContain('@testing-library/jest-dom/types/');
-    expect(declarations).not.toContain('Chai.');
+    // These packages are devDependencies of storybook, so users don't have them installed.
+    const testLibraryImport =
+      /from "(@testing-library\/|@vitest\/|chai"|@types\/chai|tinyspy|aria-query)|typeof import\("(@testing-library|@vitest)\/|reference types="chai"/;
+    expect(
+      declarationFiles.filter(({ declarations }) => testLibraryImport.test(declarations))
+    ).toEqual([]);
+
+    // Chai's types are global; inlining them would declare globals in the user's project.
+    expect(readFileSync(DTS_ARTIFACT, 'utf-8')).not.toContain('declare global');
   });
 
   it.runIf(DTS_BUILT)(

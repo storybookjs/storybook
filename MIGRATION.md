@@ -34,6 +34,7 @@
   - ['Create new story' UI feature removed](#create-new-story-ui-feature-removed)
   - [Sidebar: standalone docs pages are no longer wrapped in a component](#sidebar-standalone-docs-pages-are-no-longer-wrapped-in-a-component)
   - [Test runner support ended](#test-runner-support-ended)
+  - [`storybook/test` is based on Vitest 5 and no longer installs its test libraries](#storybooktest-is-based-on-vitest-5-and-no-longer-installs-its-test-libraries)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
@@ -1270,6 +1271,16 @@ The Vitest addon requires a Vite-based framework. If your Storybook uses Webpack
 - Other Webpack-based frameworks: see [migrating from Webpack to Vite](https://storybook.js.org/docs/builders/vite#migrating-from-webpack).
 
 If you cannot switch to a Vite-based framework and Vitest, you can continue using the test runner without official support. Another option is to switch to plain Playwright with [a minimal setup that generates tests from stories](https://gist.github.com/AriPerkkio/99b9eedc7d8f71ff6e6770f9425a4be4).
+
+### `storybook/test` is based on Vitest 5 and no longer installs its test libraries
+
+`fn`, `spyOn` and `expect` from `storybook/test` are now based on `@vitest/spy` and `@vitest/expect` 5 (previously 3.2.4), and the DOM matchers on `@testing-library/jest-dom` 7. Some mock behavior follows [Vitest 4's changes to mocks](https://vitest.dev/guide/migration.html#vitest-4):
+
+- A mock called with `new` uses its implementation as a constructor, so that implementation must be a `function` or a `class`, not an arrow function. `fn()` also accepts a class.
+- The default name of a mock created with `fn()` is `vi.fn()` instead of `spy`. Calls of mocks with that name are not logged as actions, as before.
+- `mockReset()` also resets the name given with `mockName()`. `resetAllMocks()` and `restoreAllMocks()` from `storybook/test`, which Storybook calls between stories, keep the names.
+
+`storybook/test` bundles `@testing-library/dom`, `@testing-library/user-event`, `@testing-library/jest-dom`, `@vitest/expect`, `@vitest/spy` and `chai`, including their types, so `storybook` no longer installs them (or `@types/chai`) as dependencies. If your project imports any of these packages directly, add them to your own `devDependencies`.
 
 ### Vitest Addon: requires Vitest 4.0 or higher
 

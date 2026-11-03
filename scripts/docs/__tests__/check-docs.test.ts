@@ -356,6 +356,11 @@ describe('check-docs', () => {
       expect((await checkResourcesSkillsIndex(docsDir)).length).toBe(1);
     });
 
+    it('ignores a resources list inside a code block', async () => {
+      await writeFile(page, '```md\n**More AI resources**\n\n- [Skills](./skills/index.mdx)\n```');
+      expect(await checkResourcesSkillsIndex(docsDir)).toEqual([]);
+    });
+
     it('ignores links to the skills index outside a resources list', async () => {
       await writeFile(
         page,

@@ -372,9 +372,15 @@ export async function checkResourcesSkillsIndex(docsDir: string): Promise<DocLin
 
   for (const file of mdxFiles) {
     const lines = await readFileLines(file);
+    const contexts = getLineContexts(lines);
     let inResources = false;
 
     for (let i = 0; i < lines.length; i++) {
+      // Code blocks can show an example list, which is not a real resources list
+      if (contexts[i] !== 'content') {
+        inResources = false;
+        continue;
+      }
       const line = lines[i];
       if (/^\*\*More .*resources\*\*\s*$/i.test(line)) {
         inResources = true;

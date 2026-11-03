@@ -29,6 +29,77 @@ describe('get-known-packages', () => {
   });
 
   describe('analyzeEcosystemPackages', () => {
+    it('reports general test runners separately from image snapshot testing', async () => {
+      const result = await analyzeEcosystemPackages({
+        devDependencies: {
+          '@playwright/test': '^1.0.0',
+          jest: '^1.0.0',
+          'jest-image-snapshot': '^1.0.0',
+        },
+      });
+
+      expect(result.testPackages).toEqual({
+        '@playwright/test': '1.0.0',
+        jest: '1.0.0',
+      });
+      expect(result.vrtPackages).toEqual({ 'jest-image-snapshot': '1.0.0' });
+    });
+
+    it('reports VRT packages across dependency groups with resolved versions', async () => {
+      const result = await analyzeEcosystemPackages({
+        dependencies: { '@percy/cli': '^1.0.0' },
+        devDependencies: { chromatic: '^2.0.0', '@vizzly-testing/vitest': '^1.0.0' },
+        peerDependencies: { '@vizzly-testing/honeydiff': '^3.0.0' },
+      });
+
+      expect(result.vrtPackages).toEqual({
+        '@percy/cli': '1.0.0',
+        chromatic: '1.0.0',
+        '@vizzly-testing/honeydiff': '1.0.0',
+        '@vizzly-testing/vitest': '1.0.0',
+      });
+      expect(result.testPackages).not.toHaveProperty('chromatic');
+    });
+
+    it('reports Chromatic packages in the VRT group without adding a test group', async () => {
+      const result = await analyzeEcosystemPackages({
+        devDependencies: { chromatic: '^2.0.0', '@chromatic-com/storybook': '^1.0.0' },
+      });
+
+      expect(result).toEqual({
+        vrtPackages: { chromatic: '1.0.0', '@chromatic-com/storybook': '1.0.0' },
+      });
+    });
+
+    it('falls back to sanitized declared versions for unresolved VRT packages', async () => {
+      vi.mocked(getActualPackageVersion).mockImplementation(async (name) => ({
+        name,
+        version: null,
+      }));
+
+      const result = await analyzeEcosystemPackages({
+        devDependencies: {
+          '@percy/cli': '^1.2.3',
+          'happo.io': 'workspace:*',
+          'lost-pixel': 'latest',
+        },
+      });
+
+      expect(result.vrtPackages).toEqual({
+        '@percy/cli': '^1.2.3',
+        'happo.io': 'custom-protocol',
+        'lost-pixel': 'latest',
+      });
+    });
+
+    it('omits the VRT group when no VRT packages match', async () => {
+      const result = await analyzeEcosystemPackages({
+        devDependencies: { vitest: '^1.0.0', '@percy-extra/cli': '^1.0.0' },
+      });
+
+      expect(result).not.toHaveProperty('vrtPackages');
+    });
+
     it('should analyze test packages with actual versions', async () => {
       const packageJson: PackageJson = {
         dependencies: {

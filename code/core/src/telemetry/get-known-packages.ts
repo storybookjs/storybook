@@ -11,6 +11,7 @@ import {
   STYLING_PACKAGES,
   TEST_PACKAGES,
   UI_LIBRARY_PACKAGES,
+  VRT_PACKAGES,
   matchesPackagePattern,
 } from '../shared/utils/ecosystem-identifier.ts';
 import { getActualPackageVersion } from './package-json.ts';
@@ -19,6 +20,7 @@ type PackageGroupResult = Record<string, string | null | undefined>;
 
 export type KnownPackagesList = {
   testPackages?: PackageGroupResult;
+  vrtPackages?: PackageGroupResult;
   bundlerPackages?: PackageGroupResult;
   /**
    * Installed versions of the active renderer's UI framework runtime packages. Unlike the other
@@ -119,6 +121,7 @@ export async function analyzeEcosystemPackages(
   };
 
   const testPackages = await pickResolvedDepsObject(TEST_PACKAGES);
+  const vrtPackages = await pickResolvedDepsObject(VRT_PACKAGES);
   const bundlerPackages = await pickResolvedDepsObject(BUNDLER_PACKAGES);
 
   const stylingPackages = pickDepsObject(STYLING_PACKAGES);
@@ -130,6 +133,7 @@ export async function analyzeEcosystemPackages(
 
   return {
     ...(testPackages && { testPackages: testPackages }),
+    ...(vrtPackages && { vrtPackages }),
     ...(bundlerPackages && { bundlerPackages: bundlerPackages }),
     ...(stylingPackages && { stylingPackages: stylingPackages }),
     ...(stateManagementPackages && {

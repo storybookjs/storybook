@@ -89,6 +89,7 @@ const ActionBar = styled(Bar)({
   marginBottom: 40,
   marginInline: -FOCUS_RING_INSET,
   width: 'auto',
+  background: 'transparent',
 });
 
 const TrailingSnippetWarning = styled(SnippetWarning)({

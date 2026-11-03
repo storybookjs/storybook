@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Deprecated addon UI APIs removed](#deprecated-addon-ui-apis-removed)
   - [Theming imports](#theming-imports)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging)
@@ -17,7 +18,9 @@
   - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
   - [Deprecated CSF and manager type aliases removed](#deprecated-csf-and-manager-type-aliases-removed)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
+    - [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
+    - [Svelte](#svelte)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or newer](#typescript-59-or-newer)
   - [CSF Next: meta args no longer need `as const`](#csf-next-meta-args-no-longer-need-as-const)
@@ -43,8 +46,11 @@
   - [`storySort` in the preview replaced by `storySorts` in main](#storysort-in-the-preview-replaced-by-storysorts-in-main)
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
   - [Next.js: `@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
-  - [Create React App support removed](#create-react-app-support-removed)
   - [`storybook/internal/babel` removed; `csf-tools` uses ESTree](#storybookinternalbabel-removed-csf-tools-uses-estree)
+    - [Behavior that changes for every project](#behavior-that-changes-for-every-project)
+    - [Community packages that need a release](#community-packages-that-need-a-release)
+    - [Changes for tooling that imports Storybook's internal entry points](#changes-for-tooling-that-imports-storybooks-internal-entry-points)
+  - [Create React App support removed](#create-react-app-support-removed)
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
   - [`storybook add` and `storybook remove` leave an `addons` they cannot edit safely](#storybook-add-and-storybook-remove-leave-an-addons-they-cannot-edit-safely)
   - [Internal CSF tools use the unified mutation API](#internal-csf-tools-use-the-unified-mutation-api)
@@ -278,7 +284,7 @@
       - [Require Vue 3 and up](#require-vue-3-and-up)
     - [Angular](#angular)
       - [Require Angular 15 and up](#require-angular-15-and-up)
-    - [Svelte](#svelte)
+    - [Svelte](#svelte-1)
       - [Require Svelte 4 and up](#require-svelte-4-and-up)
     - [Preact](#preact)
       - [Require Preact 10 and up](#require-preact-10-and-up)
@@ -631,6 +637,117 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 10.x to 11.0.0
+
+### Deprecated addon UI APIs removed
+
+Storybook 11 removes the deprecated UI APIs from `storybook/internal/components`. Update addons to the replacements below. `TooltipProvider`, `Tooltip`, `TooltipNote`, `PopoverProvider`, `Popover`, `ActionList`, `Select`, and the current tab components remain available.
+
+| Removed API | Replacement |
+| --- | --- |
+| `WithTooltip`, `WithTooltipPure`, and the legacy `WithToolTipState` implementation | `TooltipProvider` for noninteractive content shown on hover or focus |
+| `TooltipMessage` | `PopoverProvider` with `Popover` or custom content |
+| `TooltipLinkList`, `TooltipLinkListLink`, `ListItem` | `PopoverProvider` with `ActionList` for actions; `Select` for choosing a value |
+| `Tabs`, `TabsState`, `TabWrapper` | `TabsView`, or `TabList` and `TabPanel` with `useTabsState` |
+| `TabButton`, `TabBar` | Let `TabsView` or `TabList` render tab controls |
+| `IconButton` | `Button` with `variant="ghost"`, `padding="small"`, and `ariaLabel` |
+| `Button.active` | `ToggleButton.pressed` for a toggle, or `Select` for selection |
+| `FlexBar` | `Bar` with `innerStyle={{ justifyContent: 'space-between' }}` |
+| `Modal.onEscapeKeyDown` | `dismissOnEscape` |
+| `Modal.onInteractOutside` | `dismissOnClickOutside` |
+| `Modal.Dialog.Close`, `Modal.CloseButton` | `Modal.Close` |
+| `Link.isButton` | Omit `href` to render a button; provide `href` to render a link |
+
+`Button.ariaLabel` is now required. Use an action label for icon-only buttons or buttons whose text depends on visual context. Use `ariaLabel={false}` only when the visible text already names the action. `Modal.ariaLabel` and `PopoverProvider.ariaLabel` are also required and must describe the dialog's purpose.
+
+Addons that also support Storybook 10 can adopt these replacements before upgrading.
+`TooltipProvider`, `Tooltip`, `PopoverProvider`, `ActionList`, `TabsView`, `TabList`, `TabPanel`, `ToggleButton`, `Button.ariaLabel`, and `Bar.innerStyle` are available from Storybook 10.1.
+From Storybook 10.3, `Link` renders a button when `href` is absent and `PopoverProvider` accepts `ariaLabel`.
+Storybook 10.1 and 10.2 ignore `PopoverProvider.ariaLabel` and render `Link` without `href` as a plain anchor.
+
+```tsx
+import { Button, ToggleButton } from 'storybook/internal/components';
+import { RefreshIcon } from '@storybook/icons';
+
+<Button variant="ghost" padding="small" ariaLabel="Refresh results" onClick={refresh}>
+  <RefreshIcon />
+</Button>;
+
+<ToggleButton ariaLabel="Show outlines" pressed={showOutlines} onClick={toggleOutlines}>
+  Outlines
+</ToggleButton>;
+```
+
+For tooltips, use `TooltipProvider`, not the transitional `WithTooltipNew` name mentioned in older guidance. Replace `startOpen` with `defaultVisible`. Controlled tooltips use `visible` and `onVisibleChange`.
+
+The legacy props `trigger`, `svg`, `strategy`, `withArrows`, `mutationObserverOptions`, `hasChrome`, `closeOnTriggerHidden`, `followCursor`, `closeOnOutsideClick`, and `interactive` are not supported by `TooltipProvider`. Put tooltip styling on `Tooltip` or use `TooltipNote`. The trigger must be one focusable element that forwards refs. Use `triggerOnFocusOnly` only for keyboard navigation hints. For interactive content or click activation, use `PopoverProvider` instead.
+
+```tsx
+import { TooltipNote, TooltipProvider } from 'storybook/internal/components';
+
+<TooltipProvider tooltip={<TooltipNote note="Inspect the selected story" />} placement="top">
+  <button type="button" onClick={inspectStory}>Inspect story</button>
+</TooltipProvider>;
+```
+
+The current menu replacement is `ActionList`. There are no public `WithMenu` or `MenuItem` components. Convert each old link to an `ActionList.Item` containing an `ActionList.Action` or `ActionList.Link`. Use `ActionList.Icon` and `ActionList.Text` for content. For example, an addon action menu can close after running an action:
+
+```tsx
+import { ActionList, Button, PopoverProvider } from 'storybook/internal/components';
+
+<PopoverProvider
+  ariaLabel="Result actions"
+  padding={0}
+  popover={({ onHide }) => (
+    <ActionList>
+      <ActionList.Item>
+        <ActionList.Action ariaLabel={false} onClick={() => { refresh(); onHide(); }}>
+          <ActionList.Text>Refresh results</ActionList.Text>
+        </ActionList.Action>
+      </ActionList.Item>
+      <ActionList.Item>
+        <ActionList.Link ariaLabel={false} href="https://example.com/help">
+          <ActionList.Text>Help</ActionList.Text>
+        </ActionList.Link>
+      </ActionList.Item>
+    </ActionList>
+  )}
+>
+  <Button ariaLabel={false}>Result actions</Button>
+</PopoverProvider>;
+```
+
+Replace child-based legacy tabs with a `tabs` array. `defaultSelected` sets the initial tab. Use `selected` and `onSelectionChange` for controlled selection. Navigation links cannot be mixed with tabs; put them outside the tab list.
+
+`TabsView` renders only the selected panel, so switching tabs unmounts the others and discards their local state. The legacy `Tabs` kept inactive panels mounted. Pass `panelProps={{ renderAllChildren: true }}` to keep that behavior, for example when a panel holds form input. Omit it when panels are cheap to re-render and hold no state.
+
+```tsx
+import { TabsView } from 'storybook/internal/components';
+
+<TabsView
+  defaultSelected="results"
+  panelProps={{ renderAllChildren: true }}
+  tabs={[
+    { id: 'results', title: 'Results', children: <Results /> },
+    { id: 'settings', title: 'Settings', children: <Settings /> },
+  ]}
+/>;
+```
+
+Modal dismissal callbacks are removed. Replace callback vetoes such as `event.preventDefault()` with `dismissOnEscape={false}` or `dismissOnClickOutside={false}`. Use `onOpenChange` to track visibility. `Modal.Close` closes automatically, including when `asChild` wraps a custom button.
+
+```tsx
+import { Button, Modal } from 'storybook/internal/components';
+
+<Modal ariaLabel="Addon settings" open={open} onOpenChange={setOpen} dismissOnClickOutside={false}>
+  <Modal.Content>
+    <Modal.Header><Modal.Title>Addon settings</Modal.Title></Modal.Header>
+    <Settings />
+    <Modal.Close asChild><Button ariaLabel={false}>Done</Button></Modal.Close>
+  </Modal.Content>
+</Modal>;
+```
+
+`Bar` now applies `backgroundColor` or the theme's bar background regardless of `border`. To keep a transparent bar, set `backgroundColor="transparent"`. Existing serializable toolbar icon names in `globalTypes` remain supported; they do not require importing React components into preview configuration.
 
 ### Theming imports
 
@@ -1010,11 +1127,20 @@ The `docgen-server` automigration renames `experimentalDocgenServer` to `docgenS
 You can also run it with `storybook automigrate docgen-server`.
 
 Server-side docgen replaces React's `typescript.reactDocgen` and Vue's `framework.options.docgen`.
-For React it reads props from TypeScript types and inline destructuring defaults.
-It does not read `propTypes` or `defaultProps`, so a component that declares its props only through `propTypes` shows no props, and defaults set through `defaultProps` are not shown.
+For React it reads props from TypeScript types, and defaults from inline destructuring and `defaultProps`, with destructuring taking precedence.
+It does not read `propTypes`, so a component that declares its props only through `propTypes` shows no props.
 RDT options such as `propFilter` and a Vue docgen `tsconfig` have no server equivalent.
 Set `features.docgenServer: false` to keep builder extraction.
 For Angular-Vite, `framework.options.compodoc: false` does not disable the docgen server; use the feature flag to opt out.
+
+#### Temporary regressions on source snippet generation
+
+With server-side docgen, React, Angular, Vue 3 and Web Components build story source snippets on the server from the story file.
+
+In Storybook 11.0, server-side source snippets do not update dynamically when you change a story's args. This is a known limitation and it will be fixed in Storybook 11.1 at the latest.
+
+Set `features.docgenServer: false` to restore runtime snippets and runtime docgen, if your Storybook is affected by these limitations.
+
 
 ### Builder docgen is deprecated
 
@@ -1740,6 +1866,7 @@ The `--renderer` flag of `storybook automigrate` is also removed. Only the remov
 ### Web Components: server-side docgen suffixes event, slot and part argType keys
 
 With server-side docgen, which is on by default (see [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)), `@storybook/web-components-vite` builds argTypes from the Custom Elements Manifest on the Storybook server.
+Story source snippets are built on the server too; see [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation).
 Events, slots and CSS shadow parts are keyed with their category as a suffix, the same keys `@wc-toolkit/storybook-helpers` uses:
 
 | Manifest item     | Runtime docgen key | Server docgen key |

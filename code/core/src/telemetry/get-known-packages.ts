@@ -106,10 +106,10 @@ export async function analyzeEcosystemPackages(
 
   // Groups whose exact installed version matters are resolved from the install tree, with the
   // declared specifier as a fallback.
-  const pickResolvedDepsObject = async (packages: readonly string[]) => {
+  const resolveDeps = async (names: string[]) => {
     const result = Object.fromEntries(
       await Promise.all(
-        pickMatches(packages).map(async (dep) => {
+        names.map(async (dep) => {
           const resolved = (await getActualPackageVersion(dep))?.version ?? allDependencies[dep];
 
           const version = getSafeVersionSpecifier(resolved);
@@ -120,9 +120,16 @@ export async function analyzeEcosystemPackages(
     return Object.keys(result).length === 0 ? null : result;
   };
 
-  const testPackages = await pickResolvedDepsObject(TEST_PACKAGES);
-  const vrtPackages = await pickResolvedDepsObject(VRT_PACKAGES);
-  const bundlerPackages = await pickResolvedDepsObject(BUNDLER_PACKAGES);
+  const vrtNames = pickMatches(VRT_PACKAGES);
+  const vrtNameSet = new Set(vrtNames);
+  // *playwright* and *vitest* also match VRT adapters. Those stay in the VRT group.
+  const testNames = pickMatches(TEST_PACKAGES).filter((dep) => !vrtNameSet.has(dep));
+
+  const [testPackages, vrtPackages, bundlerPackages] = await Promise.all([
+    resolveDeps(testNames),
+    resolveDeps(vrtNames),
+    resolveDeps(pickMatches(BUNDLER_PACKAGES)),
+  ]);
 
   const stylingPackages = pickDepsObject(STYLING_PACKAGES);
   const stateManagementPackages = pickDepsObject(STATE_MANAGEMENT_PACKAGES);

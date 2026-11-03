@@ -58,7 +58,32 @@ describe('get-known-packages', () => {
         '@vizzly-testing/honeydiff': '1.0.0',
         '@vizzly-testing/vitest': '1.0.0',
       });
-      expect(result.testPackages).not.toHaveProperty('chromatic');
+      expect(result.testPackages).toBeUndefined();
+    });
+
+    it('keeps playwright and vitest VRT adapters out of the test group', async () => {
+      const result = await analyzeEcosystemPackages({
+        devDependencies: {
+          '@playwright/test': '^1.0.0',
+          vitest: '^1.0.0',
+          '@chromatic-com/vitest': '^1.0.0',
+          '@vizzly-testing/vitest': '^1.0.0',
+          '@percy/playwright': '^1.0.0',
+          '@lambdatest/playwright-node-sdk': '^1.0.0',
+          '@saucelabs/testcomposer': '^1.0.0',
+        },
+      });
+
+      expect(result.testPackages).toEqual({
+        '@playwright/test': '1.0.0',
+        vitest: '1.0.0',
+        '@lambdatest/playwright-node-sdk': '1.0.0',
+      });
+      expect(result.vrtPackages).toEqual({
+        '@chromatic-com/vitest': '1.0.0',
+        '@vizzly-testing/vitest': '1.0.0',
+        '@percy/playwright': '1.0.0',
+      });
     });
 
     it('reports Chromatic packages in the VRT group without adding a test group', async () => {
@@ -107,7 +132,6 @@ describe('get-known-packages', () => {
           vitest: '1.0.0',
           playwright: '1.30.0',
           '@testing-library/react': '1.0.0',
-          '@chromatic-com/vitest': '1.0.0',
         },
       };
 
@@ -120,7 +144,6 @@ describe('get-known-packages', () => {
         vitest: '1.0.0',
         playwright: '1.0.0',
         '@testing-library/react': '1.0.0',
-        '@chromatic-com/vitest': '1.0.0',
       });
     });
 

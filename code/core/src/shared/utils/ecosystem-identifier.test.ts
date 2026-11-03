@@ -61,6 +61,11 @@ describe('ecosystem-identifier', () => {
       '@percy-extra/cli',
       '@vizzly-testing-extra/cli',
       'percy/cli',
+      '@lambdatest/node-tunnel',
+      '@lambdatest/selenium-driver',
+      '@lambdatest/playwright-node-sdk',
+      '@saucelabs/testcomposer',
+      '@saucelabs/bin-wrapper',
     ])('does not match %s', (name) => {
       expect(matchesPackagePattern(name, VRT_PACKAGES)).toBe(false);
     });

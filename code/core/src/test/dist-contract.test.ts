@@ -39,11 +39,39 @@ describe('storybook/test declaration contract', () => {
       .filter((file) => file.endsWith('.d.ts'))
       .map((file) => ({ file, declarations: readFileSync(join(distDirectory, file), 'utf-8') }));
 
-    // These packages are devDependencies of storybook, so users don't have them installed.
-    const testLibraryImport =
-      /from "(@testing-library\/|@vitest\/|chai"|@types\/chai|tinyspy|aria-query)|import\("(@testing-library\/|@vitest\/|chai")|reference types="chai"/;
+    // The test libraries storybook bundles, and the packages their declarations import. They are
+    // not dependencies of storybook, so users don't have them installed.
+    const inlinedPackages = [
+      '@testing-library/dom',
+      '@testing-library/jest-dom',
+      '@testing-library/user-event',
+      '@vitest/expect',
+      '@vitest/pretty-format',
+      '@vitest/spy',
+      '@vitest/utils',
+      '@standard-schema/spec',
+      '@types/aria-query',
+      '@types/chai',
+      '@types/deep-eql',
+      'aria-query',
+      'chai',
+      'dom-accessibility-api',
+      'pretty-format',
+      'tinyrainbow',
+      'tinyspy',
+    ];
+    const imported = (declarations: string) =>
+      [...declarations.matchAll(/(?:from |import\(|reference types=)"([^"]+)"/g)].map(
+        ([, specifier]) => specifier
+      );
     expect(
-      declarationFiles.filter(({ declarations }) => testLibraryImport.test(declarations))
+      declarationFiles.flatMap(({ file, declarations }) =>
+        imported(declarations)
+          .filter((specifier) =>
+            inlinedPackages.some((name) => specifier === name || specifier.startsWith(`${name}/`))
+          )
+          .map((specifier) => `${file}: ${specifier}`)
+      )
     ).toEqual([]);
 
     // Chai's types are global; inlining them would declare globals in the user's project.

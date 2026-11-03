@@ -5,7 +5,7 @@ import {
   type MaybePartiallyMocked,
   type MaybePartiallyMockedDeep,
   type Constructable,
-  type Mock,
+  type Mock as VitestMock,
   type Procedure,
   createMockInstance as vitestCreateMockInstance,
   isMockFunction,
@@ -66,22 +66,26 @@ export const spyOn = ((...args: unknown[]) => {
 }) as typeof vitestSpyOn;
 
 /**
- * The mock `fn()` returns for a function. It has the shape of Vitest 3's `Mock`: Vitest 4 made
- * `Mock<T>` a conditional type, which TypeScript can neither infer `T` from (e.g. from the type of
- * the arg a `fn()` is assigned to) nor carry the type parameters of a generic implementation
- * through. It is assignable to `Mock<T>`.
+ * The mock of a function, as `fn()` returns it. It keeps the shape of Vitest 3's `Mock`, which
+ * storybook/test exported before: Vitest 4 made `Mock<T>` a conditional type, which TypeScript can
+ * neither infer `T` from (e.g. from the type of the arg a `fn()` is assigned to) nor carry the type
+ * parameters of a generic implementation through. It is assignable to Vitest's `Mock<T>` and back.
  */
-export interface FunctionMock<T extends Procedure = Procedure> extends MockInstance<T> {
+export interface Mock<T extends Procedure = Procedure> extends MockInstance<T> {
   new (...args: Parameters<T>): ReturnType<T>;
   (...args: Parameters<T>): ReturnType<T>;
 }
 
-export function fn<T extends Procedure = Procedure>(implementation?: T): FunctionMock<T>;
-export function fn<T extends Constructable>(implementation: T): Mock<T>;
+export function fn<T extends Procedure = Procedure>(implementation?: T): Mock<T>;
+export function fn<T extends Constructable>(implementation: T): VitestMock<T>;
 // Repeats the first overload last, so `ReturnType<typeof fn>` is the mock of a function.
-export function fn<T extends Procedure = Procedure>(implementation?: T): FunctionMock<T>;
+export function fn<T extends Procedure = Procedure>(implementation?: T): Mock<T>;
 export function fn(implementation?: Procedure | Constructable) {
   const mock = implementation ? vitestFn(implementation) : vitestFn();
+  // Like before Vitest 4, a mock is named after its named implementation, e.g. in actions.
+  if (implementation?.name) {
+    mock.mockName(implementation.name);
+  }
   mocks.add(mock);
   return reactiveMock(mock);
 }
@@ -94,8 +98,39 @@ storybookGlobals.__STORYBOOK_CREATE_MOCK_INSTANCE__ = (options) => {
   // Registered like `fn()` and `spyOn()` mocks, so the helpers below reset them between stories,
   // including mocks of nested functions, which the automock code doesn't register.
   mocks.add(mock);
+  if (options?.prototypeMembers?.length) {
+    classMemberNames.set(mock, options.prototypeMembers);
+  }
   return reactiveMock(mock);
 };
+
+/**
+ * The prototype members of automocked classes. `@vitest/spy` mocks these members on every
+ * constructed instance itself, past `__STORYBOOK_CREATE_MOCK_INSTANCE__`. (Their calls are also
+ * recorded on the mocks of the prototype members, which are reactive.)
+ */
+const classMemberNames = new WeakMap<MockInstance, (string | symbol)[]>();
+
+/** Adds the member mocks of the instances of automocked classes to `mocks`. */
+function registerInstanceMemberMocks() {
+  for (const mock of mocks) {
+    const memberNames = classMemberNames.get(mock);
+    if (!memberNames) {
+      continue;
+    }
+    for (const instance of mock.mock.instances as (
+      | Record<string | symbol, unknown>
+      | undefined
+    )[]) {
+      for (const memberName of memberNames) {
+        const member = instance?.[memberName];
+        if (isMockFunction(member)) {
+          mocks.add(member);
+        }
+      }
+    }
+  }
+}
 
 const reactiveMocks = new WeakSet<MockInstance>();
 
@@ -167,6 +202,7 @@ function keepingMockName(spy: MockInstance, reset: () => void) {
  * It is useful if you need to clean up mock between different assertions.
  */
 export function clearAllMocks() {
+  registerInstanceMemberMocks();
   mocks.forEach((spy) => spy.mockClear());
   moduleMockSpies.forEach((spy) => spy.mockClear());
 }
@@ -179,6 +215,7 @@ export function clearAllMocks() {
  * This is useful when you want to completely reset a mock to the default state.
  */
 export function resetAllMocks() {
+  registerInstanceMemberMocks();
   mocks.forEach((spy) => keepingMockName(spy, () => spy.mockReset()));
   moduleMockSpies.forEach((spy) => keepingMockName(spy, () => spy.mockReset()));
 }
@@ -188,6 +225,7 @@ export function resetAllMocks() {
  * will restore all original implementations.
  */
 export function restoreAllMocks() {
+  registerInstanceMemberMocks();
   // Module mocks created by storybook/test's module mocker are in `mocks` too. They have nothing to
   // restore, so `mockRestore()` resets them and they stay active for subsequent stories.
   mocks.forEach((spy) => keepingMockName(spy, () => spy.mockRestore()));

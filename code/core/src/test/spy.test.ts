@@ -4,7 +4,17 @@ import type { Mock } from '@vitest/spy';
 
 import { logger } from 'storybook/internal/client-logger';
 
-import { fn, mocks, onMockCall, resetAllMocks, restoreAllMocks, spyOn } from './spy.ts';
+import { mockObject } from '@vitest/mocker';
+
+import {
+  clearAllMocks,
+  fn,
+  mocks,
+  onMockCall,
+  resetAllMocks,
+  restoreAllMocks,
+  spyOn,
+} from './spy.ts';
 
 const vitestSpy = vi.fn();
 
@@ -113,18 +123,48 @@ it('creates reactive, named module mocks for the module mocker runtime', () => {
   expect(createModuleMock({ name: '' }).getMockName()).toBe('vi.fn()');
 });
 
-it('resets module mocks, including nested ones, between stories', () => {
-  const automocked = createModuleMock({ name: 'get' });
-  const autospied = createModuleMock({ name: 'fetchData', originalImplementation: () => 'data' });
-  automocked.mockReturnValue('mocked');
-  autospied.mockReturnValue('mocked');
-  automocked();
+it('resets module mocks, including nested ones and those of class instances', () => {
+  class Service {
+    get() {
+      return 'real';
+    }
+  }
+  const mocked = mockObject(
+    {
+      type: 'automock',
+      globalConstructors: { Object, Function, Array, Map, RegExp },
+      createMockInstance: createModuleMock as never,
+    },
+    { __esModule: true, fetchData: () => 'data', api: { get: () => 'data' }, Service }
+  ) as {
+    fetchData: Mock<() => string>;
+    api: { get: Mock<() => string> };
+    Service: new () => { get: Mock<() => string> };
+  };
+  const instance = new mocked.Service();
+  for (const mock of [mocked.fetchData, mocked.api.get, instance.get]) {
+    mock.mockReturnValue('mocked');
+    mock();
+  }
+
+  clearAllMocks();
+  expect([mocked.fetchData, mocked.api.get, instance.get].map((mock) => mock.mock.calls)).toEqual([
+    [],
+    [],
+    [],
+  ]);
 
   restoreAllMocks();
+  expect([mocked.fetchData(), mocked.api.get(), instance.get()]).toEqual([
+    undefined,
+    undefined,
+    undefined,
+  ]);
+});
 
-  expect(automocked()).toBeUndefined();
-  expect(autospied()).toBe('data');
-  expect(automocked.mock.calls).toEqual([[]]);
+it('names a mock after its named implementation', () => {
+  expect(fn(function save() {}).getMockName()).toBe('save');
+  expect(fn().getMockName()).toBe('vi.fn()');
 });
 
 it('keeps recording the call when a listener throws', () => {

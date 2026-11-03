@@ -20,7 +20,9 @@ const config: BuildEntries = {
       // they inline mention them. A module-local `Chai` namespace satisfies those mentions without
       // requiring `@types/chai` or declaring globals in the user's project.
       const chaiTypes = [...new Set(code.match(/(?<=\bChai\.)\w+/g))];
-      return `${code}\ndeclare namespace Chai {\n${chaiTypes.map((name) => `  interface ${name} {}`).join('\n')}\n}\n`;
+      // The members are untyped, e.g. of the experimental `this.assertion` in custom matchers.
+      const stubs = chaiTypes.map((name) => `  interface ${name} { [key: string]: any }`);
+      return `${code}\ndeclare namespace Chai {\n${stubs.join('\n')}\n}\n`;
     }
     return null;
   },

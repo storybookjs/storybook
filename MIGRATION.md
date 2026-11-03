@@ -644,7 +644,6 @@ Storybook 11 removes the deprecated UI APIs from `storybook/internal/components`
 | `Tabs`, `TabsState`, `TabWrapper` | `TabsView`, or `TabList` and `TabPanel` with `useTabsState` |
 | `TabButton`, `TabBar` | Let `TabsView` or `TabList` render tab controls |
 | `IconButton` | `Button` with `variant="ghost"`, `padding="small"`, and `ariaLabel` |
-| Legacy `Icons` and `Symbols` implementations | Named components from `@storybook/icons` |
 | `Button.active` | `ToggleButton.pressed` for a toggle, or `Select` for selection |
 | `FlexBar` | `Bar` with `innerStyle={{ justifyContent: 'space-between' }}` |
 | `Modal.onEscapeKeyDown` | `dismissOnEscape` |
@@ -713,11 +712,14 @@ import { ActionList, Button, PopoverProvider } from 'storybook/internal/componen
 
 Replace child-based legacy tabs with a `tabs` array. `defaultSelected` sets the initial tab. Use `selected` and `onSelectionChange` for controlled selection. Navigation links cannot be mixed with tabs; put them outside the tab list.
 
+`TabsView` renders only the selected panel, so switching tabs unmounts the others and discards their local state. The legacy `Tabs` kept inactive panels mounted. Pass `panelProps={{ renderAllChildren: true }}` to keep that behavior, for example when a panel holds form input. Omit it when panels are cheap to re-render and hold no state.
+
 ```tsx
 import { TabsView } from 'storybook/internal/components';
 
 <TabsView
   defaultSelected="results"
+  panelProps={{ renderAllChildren: true }}
   tabs={[
     { id: 'results', title: 'Results', children: <Results /> },
     { id: 'settings', title: 'Settings', children: <Settings /> },

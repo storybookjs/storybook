@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  UnprintableArgError,
-  fillHoles,
-  findHoles,
-  hole,
-  holeWord,
-  withHoleSpace,
-} from './snippetTemplate.ts';
+import { fillHoles, findHoles, hole, holeWord, withHoleSpace } from './snippetTemplate.ts';
 import { defaultCode, defaultWord } from './snippetValues.ts';
 
 describe('fillHoles', () => {

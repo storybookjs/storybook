@@ -5,6 +5,7 @@ import {
   fillHoles,
   isAction,
   printValue,
+  writtenCode,
 } from 'storybook/internal/docs-tools';
 
 /**
@@ -110,15 +111,13 @@ function prop(name: string, value: unknown, quote: '"' | "'"): string {
 // read stood unless it keeps its meaning there without them.
 function read(name: string, value: unknown, parens: boolean, quote: '"' | "'"): string {
   const printed = printValue(value, name, { quote });
-  const needs = isWritten(value)
-    ? parens
-    : (typeof value === 'number' && !(value >= 0)) ||
-      (typeof value === 'object' && value !== null && !Array.isArray(value));
+  const needs =
+    writtenCode(value) !== undefined
+      ? parens
+      : (typeof value === 'number' && !(value >= 0)) ||
+        (typeof value === 'object' && value !== null && !Array.isArray(value));
   return needs ? `(${printed})` : printed;
 }
-
-const isWritten = (value: unknown) =>
-  typeof value === 'object' && value !== null && Symbol.for('storybook/written-arg') in value;
 
 // A string that reads the same in a quoted attribute as in an expression.
 const isPlain = (value: string) => !/[{}<>"\\&\r\n\t]/.test(value);

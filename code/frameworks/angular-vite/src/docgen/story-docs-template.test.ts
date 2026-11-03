@@ -101,12 +101,63 @@ describe('story-docs templates', () => {
         render: (args) => ({ props: args, template: \`<sb-button \${argsToTemplate(args)}></sb-button>\` }),
       };
     `);
-    expect(story!.template).toContain('<sb-button ⟦prop label⟧ ⟦prop size⟧></sb-button>');
+    expect(story!.template).toContain(
+      '<sb-button ⟦prop label⟧ ⟦prop size⟧ ⟦prop config⟧ ⟦prop formatter⟧></sb-button>'
+    );
     const own = { label: 'Go', size: 'lg' };
     expect(fill(story!, own)).toBe(story!.snippet);
     expect(fill(story!, own, { label: 'Go', size: undefined })).toContain(
       `<sb-button [label]="'Go'"></sb-button>`
     );
+  });
+
+  it('gives an input the story does not set a binding hole, which a control fills', async () => {
+    const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = {
+        args: { label: 'Go' },
+        render: (args) => ({ props: args, template: \`<sb-button \${argsToTemplate(args)}></sb-button>\` }),
+      };
+    `);
+    const own = { label: 'Go' };
+    expect(fill(story!, own)).toBe(story!.snippet);
+    expect(fill(story!, own, { label: 'Go', size: 'lg' })).toContain(
+      `<sb-button [label]="'Go'" [size]="'lg'"></sb-button>`
+    );
+  });
+
+  it('gives an input a story without a render does not set a binding hole', async () => {
+    const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = { args: { label: 'Go' } };
+    `);
+    const own = { label: 'Go' };
+    expect(fill(story!, own)).toBe(story!.snippet);
+    expect(fill(story!, own, { label: 'Go', size: 'lg' })).toContain(`[size]="'lg'"`);
+  });
+
+  it('lays out a template with unset inputs as its snippet', async () => {
+    const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = {
+        args: { label: 'A label long enough that the bindings go one per line', size: 'lg' },
+      };
+    `);
+    const own = { label: 'A label long enough that the bindings go one per line', size: 'lg' };
+    expect(fill(story!, own)).toBe(story!.snippet);
+  });
+
+  it('gives text the story sets to an empty string a hole', async () => {
+    const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = {
+        args: { label: '' },
+        render: ({ label }) => ({ template: \`<sb-button>\${label}</sb-button>\` }),
+      };
+    `);
+    expect(story!.template).toContain('<sb-button>⟦text label⟧</sb-button>');
+    expect(fill(story!, { label: '' })).toBe(story!.snippet);
+    expect(fill(story!, { label: '' }, { label: 'Stop' })).toContain('<sb-button>Stop</sb-button>');
   });
 
   it('fills text the markup interpolates', async () => {

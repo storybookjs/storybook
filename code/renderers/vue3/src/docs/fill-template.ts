@@ -71,9 +71,10 @@ function checkName(name: string) {
   }
 }
 
-// Text Vue would read as markup is escaped, and a value that is no text an interpolation.
+// Text Vue would read as markup is escaped, and a value that is no text, `null` too, an
+// interpolation, as the static snippet prints them.
 function text(name: string, arg: unknown): string {
-  if (arg === undefined || arg === null || arg === '') {
+  if (arg === undefined || arg === '') {
     return '';
   }
   if (['string', 'number', 'boolean'].includes(typeof arg)) {
@@ -87,15 +88,15 @@ function text(name: string, arg: unknown): string {
 }
 
 // A literal in an attribute value or an interpolation, both of which decode entities, in an
-// attribute in the quote it is not, and `<\/` keeps a string in the `<script>` from ending the
-// block. A VNode is a plain object, but no literal renders it. In an interpolation, `}\}` keeps
+// attribute in the quote it is not. In the `<script>` it prints as the static snippet prints it,
+// but `<\/script` keeps a string from ending the block. A VNode is a plain object, but no literal renders it. In an interpolation, `}\}` keeps
 // a string's `}}` from ending it, and a space other code's, such as `{a:{b:1}}` the story wrote.
 function value(name: string, arg: unknown, words: string[] = []) {
   const singleQuoted = words.includes("'");
   const quote = singleQuoted || words.includes('"') ? '"' : "'";
   const printed = printValue(arg, name, { quote, opaque: isVNode });
   if (words.includes('script')) {
-    return printed.replaceAll('</', '<\\/');
+    return printed.replace(/<\/(?=script)/gi, '<\\/');
   }
   if (words.includes('{{')) {
     return printed

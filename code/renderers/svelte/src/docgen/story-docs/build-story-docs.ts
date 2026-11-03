@@ -39,8 +39,9 @@ const RENDER_WARNING = 'The render function is not reflected in this snippet.';
 
 export async function buildStoryDocsPayload(
   input: StoryDocsProviderInput,
-  // For tests: the args each story is written with, as the preview fills its template with them.
-  { onStoryArgs }: { onStoryArgs?: (id: string, args: Args) => void } = {}
+  // Test-only: hands over the args each story is written with, as the preview fills its template
+  // with them, so a test can check that they fill it to the static snippet.
+  { testOnlyOnStoryArgs }: { testOnlyOnStoryArgs?: (id: string, args: Args) => void } = {}
 ): Promise<StoryDocsPayload | undefined> {
   const path = getStoryImportPathFromEntry(input.entry);
   if (!path) return undefined;
@@ -94,7 +95,7 @@ export async function buildStoryDocsPayload(
     try {
       const resolved = resolver.resolve(exportName);
       stories[id] = { ...doc, ...storySnippet(exportName, resolved, context) };
-      onStoryArgs?.(id, ownArgs(resolved.args));
+      testOnlyOnStoryArgs?.(id, ownArgs(resolved.args));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       stories[id] = { ...doc, warning: `No static snippet: ${message}` };
@@ -186,12 +187,19 @@ function storySnippet(
     renders ? RENDER_WARNING : undefined,
   ].filter(Boolean);
   const withImports = (code: string) => (imported.block ? `${imported.block}\n\n${code}` : code);
+  const warning = warnings.length ? warnings.join(' ') : undefined;
   return {
     snippet: withImports(markup),
-    ...(warnings.length ? { warning: warnings.join(' ') } : {}),
+    ...(warning === undefined ? {} : { warning }),
     ...(holes === undefined
       ? {}
-      : { template: withImports(holes), argCode: argCode(resolved.args) }),
+      : {
+          template: withImports(holes),
+          argCode: argCode(resolved.args),
+          // Every warning is about code the snippet leaves out, which the filled snippet leaves out
+          // as well.
+          ...(warning === undefined ? {} : { templateWarning: warning }),
+        }),
   };
 }
 
@@ -199,6 +207,11 @@ function storySnippet(
  * The code a story writes each arg with, which the preview fills a template with while the arg
  * keeps that value: every arg but a string, `true`, `false`, `null`, `undefined` or a number written
  * as the preview prints it, which print as their value.
+ *
+ * Not core's `argCode`: next's Svelte printer writes an arg's source text as it stands in the file,
+ * without its parentheses (it adds its own where a read needs them, the `p` word) and without
+ * dedenting it, so this code is that text. A string is never code either, as the `'` word keeps
+ * its quotes.
  */
 export function argCode(args: Record<string, Node>): Record<string, string> {
   const code: Record<string, string> = {};

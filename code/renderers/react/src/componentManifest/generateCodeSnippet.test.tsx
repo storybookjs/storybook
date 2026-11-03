@@ -1172,7 +1172,7 @@ test('template: a story without a render function is the component with every ar
   );
 });
 
-test('template: an arg next fills in is a hole, and one it leaves as written stays', () => {
+test('template: an arg next fills in is a hole, and one the story does not set prints as written until a control sets it', () => {
   const input = withCSF3(dedent`
     export const Card: Story = {
       args: { title: 'Hi' },
@@ -1180,10 +1180,13 @@ test('template: an arg next fills in is a hole, and one it leaves as written sta
     };
   `);
   expect(template(input, 'Card')).toBe(
-    'const Card = (args) => <Card ⟦attr title title⟧ label={args.label}>⟦text children⟧</Card>;'
+    'const Card = (args) => <Card ⟦attr title title⟧ ⟦attr label label ?label%3D%7Bargs.label%7D⟧>⟦text children⟧</Card>;'
   );
   expect(filled(input, 'Card', { title: 'Bye', children: 'Save' })).toBe(
     'const Card = (args) => <Card title="Bye" label={args.label}>Save</Card>;'
+  );
+  expect(filled(input, 'Card', { title: 'Bye', label: 'Go', children: 'Save' })).toBe(
+    'const Card = (args) => <Card title="Bye" label="Go">Save</Card>;'
   );
 });
 
@@ -1372,4 +1375,101 @@ test('template: none for a story file that already holds a hole bracket', () => 
   const { snippet, template } = getCodeSnippet(csf, 'Bracket', 'Button');
   expect(template).toBeUndefined();
   expect(snippet).toBe('const Bracket = () => <Button label="⟦x⟧">Click me</Button>;');
+});
+
+test('template: an element that closes on its own line fills to the snippet, also with content', () => {
+  const input = withCSF3(dedent`
+    export const OwnLine: Story = {
+      args: { label: 'Go' },
+      render: (args) => (
+        <Button
+          {...args}
+          onClick={() => alert('clicked')}
+        />
+      ),
+    };
+    export const OwnLineChildren: Story = {
+      args: { children: <span>
+        hi
+      </span> },
+      render: (args) => (
+        <div>
+          <Button
+            {...args}
+          />
+        </div>
+      ),
+    };
+  `);
+  // `generateExample` checks that each template filled with the story's own args is its snippet.
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const OwnLine = () => <Button
+      label="Go"
+      onClick={() => alert('clicked')}>Click me</Button>;
+    const OwnLineChildren = () => <div>
+      <Button><span>
+        hi
+      </span></Button>
+    </div>;"
+  `);
+  expect(filled(input, 'OwnLine', { label: 'Stop' })).toContain(`label="Stop"`);
+});
+
+test('template: an element without children that closes on its own line keeps that line', () => {
+  const input = dedent`
+    import { Button } from './Button';
+    export default { component: Button };
+    export const OwnLine = {
+      args: { label: 'Go' },
+      render: (args) => (
+        <Button
+          {...args}
+          onClick={() => alert('clicked')}
+        />
+      ),
+    };
+  `;
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const OwnLine = () => <Button
+      label="Go"
+      onClick={() => alert('clicked')}
+    />;"
+  `);
+  expect(filled(input, 'OwnLine', { label: 'Stop' })).toContain(`  label="Stop"`);
+});
+
+test('template: children print as the snippet prints them', () => {
+  const input = withCSF3(dedent`
+    export const Empty: Story = { args: { children: '' } };
+    export const Spaced: Story = { args: { children: ' Hello ' } };
+    export const SpreadEmpty: Story = { args: { children: '' }, render: (args) => <Button {...args} /> };
+    export const Count: Story = { args: { children: 5, label: 'a' } };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Empty = () => <Button />;
+    const Spaced = () => <Button> Hello </Button>;
+    const SpreadEmpty = () => <Button></Button>;
+    const Count = () => <Button label="a">{5}</Button>;"
+  `);
+  expect(filled(input, 'Count', { label: 'b', children: 6 })).toBe(
+    'const Count = () => <Button label="b">{6}</Button>;'
+  );
+  expect(filled(input, 'Count', { label: 'b', children: true })).toBe(
+    'const Count = () => <Button label="b">{true}</Button>;'
+  );
+});
+
+test('template: an arg the story does not set is a hole that prints the read as written', () => {
+  const input = withCSF3(dedent`
+    export const Unset: Story = {
+      args: { size: 'sm' },
+      render: (args) => <Button size={args.size} label={args.label} />,
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Unset = (args) => <Button size="sm" label={args.label} />;"`
+  );
+  expect(filled(input, 'Unset', { size: 'sm', label: 'Go' })).toBe(
+    'const Unset = (args) => <Button size="sm" label="Go" />;'
+  );
 });

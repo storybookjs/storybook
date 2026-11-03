@@ -8,6 +8,7 @@
       "name": "Args Default Render",
       "snippet": "<fast-attributes label="Default count" size="large" max-count="2"></fast-attributes>",
       "template": "<fast-attributes ⟦attr label label field⟧ ⟦attr size size field⟧ ⟦attr disabled disabled field⟧ ⟦attr max-count maxCount field⟧></fast-attributes>",
+      "templateWarning": "Incomplete snippet: properties without an attribute: `items`.",
       "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
     "webcomponentsfixtures-fast-attributes--dom-node": {
@@ -15,6 +16,8 @@
       "name": "Dom Node",
       "snippet": "<fast-attributes label="Count" size="large" max-count="5"></fast-attributes>",
       "template": "<fast-attributes ⟦attr label label field⟧ ⟦attr size size field⟧ ⟦attr disabled disabled field⟧ ⟦attr max-count maxCount field⟧></fast-attributes>",
+      "templateWarning": "Incomplete snippet: `(args) => { const el = document.createElement('fast-attributes'); el.setAttribute('label', String(args.label)); el.setAttribute('size', String(args.size)); if (args.disabled) { el.setAttribute('disabled', ''); } el.setAttribute('max-count', String(args.maxCount)); (el as HTMLElement & { items: string[] }).items = args.items as string[]; return el; }` could not be resolved statically.
+Incomplete snippet: properties without an attribute: `items`.",
       "warning": "Incomplete snippet: `(args) => { const el = document.createElement('fast-attributes'); el.setAttribute('label', String(args.label)); el.setAttribute('size', String(args.size)); if (args.disabled) { el.setAttribute('disabled', ''); } el.setAttribute('max-count', String(args.maxCount)); (el as HTMLElement & { items: string[] }).items = args.items as string[]; return el; }` could not be resolved statically.
 Incomplete snippet: properties without an attribute: `items`.",
     },
@@ -23,6 +26,7 @@ Incomplete snippet: properties without an attribute: `items`.",
       "name": "Lit Template",
       "snippet": "<fast-attributes label="Count" size="large" max-count="5"></fast-attributes>",
       "template": "<fast-attributes ⟦attr label label bind⟧ ⟦attr size size bind⟧ ⟦bool disabled disabled⟧ ⟦attr max-count maxCount bind⟧></fast-attributes>",
+      "templateWarning": "Incomplete snippet: properties without an attribute: `items`.",
       "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
   },

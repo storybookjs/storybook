@@ -12,8 +12,9 @@ import type { Args } from 'storybook/internal/types';
 // template filled with the story's own args is its static snippet. Besides the shared holes,
 // `⟦element Button⟧` is the component with every arg and `⟦args⟧` the args as an object, both
 // without their `-name` words, and `⟦close Button ?code⟧` ends an element whose children a spread
-// passes, with them as content, or as the story writes it, `code`, without.
-// A hole that prints more than one line is indented as the line it is on.
+// passes, with them as content indented as its `^indent` word, or as the story writes it, `code`,
+// without. A `?code` word is the code a hole prints, as written, while its arg is unset.
+// A value that prints more than one line is indented as the line its hole is on.
 export const fillTemplate: FillSnippetTemplate = (template, args) => {
   const lines = [...template.matchAll(/⟦[^⟧]*⟧/g)].map(({ index }) =>
     template.slice(template.lastIndexOf('\n', index) + 1, index)
@@ -21,9 +22,13 @@ export const fillTemplate: FillSnippetTemplate = (template, args) => {
   let hole = 0;
   return fillHoles(template, (kind, words) => {
     const line = lines[hole++]!;
-    return indent(fill(kind, words, args), /^\s*/.exec(line)![0]);
+    const printed = fill(kind, words, args);
+    return typeof printed === 'string' ? indent(printed, /^\s*/.exec(line)![0]) : printed.code;
   });
 };
+
+// Code a hole prints as it is, already indented as the snippet has it.
+type Written = { code: string };
 
 const indent = (code: string, prefix: string) => {
   let literal = false;
@@ -42,25 +47,34 @@ const indent = (code: string, prefix: string) => {
   return text;
 };
 
-function fill(kind: string, words: string[], args: Args): string {
+function fill(kind: string, words: string[], args: Args): string | Written {
   const [first = '', second = ''] = words;
+  // Only an arg's own value: a name every object inherits, such as `constructor`, is no arg.
+  const arg = (name: string) => (Object.hasOwn(args, name) ? args[name] : undefined);
+  const unset = (name: string) => {
+    const code = arg(name) === undefined ? defaultCode(words.at(-1)) : undefined;
+    return code === undefined ? undefined : { code };
+  };
   switch (kind) {
     case 'element': {
       const { children, ...props } = Object.fromEntries(spreadArgs(args, words.slice(1)));
       return element(first, attributesOf(props), text('children', children));
     }
     case 'close': {
-      const content = text('children', args.children);
-      return content ? `>${content}</${first}>` : (defaultCode(second) ?? ' />');
+      if (arg('children') === undefined) {
+        return { code: defaultCode(words.at(-1)) ?? ' />' };
+      }
+      const prefix = words.find((word) => word.startsWith('^'))?.slice(1) ?? '';
+      return { code: `>${indent(text('children', arg('children')), prefix)}</${first}>` };
     }
     case 'props':
       return attributesOf(Object.fromEntries(spreadArgs(args, words))).join(' ');
     case 'args':
       return boundArgs(spreadArgs(args, words));
     case 'attr':
-      return attribute(first, args[second]);
+      return unset(second) ?? attribute(first, arg(second));
     case 'text':
-      return text(first, args[first]);
+      return unset(first) ?? text(first, arg(first));
     default:
       throw new Error(`Unknown hole ⟦${kind}⟧`);
   }
@@ -117,15 +131,14 @@ const object = (entries: [string, unknown][]) => {
   return properties.length === 0 ? '{}' : `{ ${properties.join(', ')} }`;
 };
 
-// JSX collapses whitespace in text and reads `{`, `<` and `&` as code.
+// Content as the printer writes it: a string JSX text can hold as it is, and any other value as an
+// expression, as JSX reads `{`, `<` and `&` in text as code and folds line breaks.
 function text(name: string, value: unknown): string {
-  if (value === undefined || value === null || typeof value === 'boolean' || value === '') {
+  if (value === undefined) {
     return '';
   }
-  const plain =
-    typeof value === 'number' || (typeof value === 'string' && /^\S(.*\S)?$/.test(value));
-  if (plain && !/[{}<>&]/.test(String(value))) {
-    return String(value);
+  if (typeof value === 'string' && !/[{}<>&\r\n]/.test(value)) {
+    return value;
   }
   // JSX the story writes as an arg is content as it is.
   const printed = printValue(value, name);

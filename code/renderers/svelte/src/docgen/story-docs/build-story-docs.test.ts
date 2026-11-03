@@ -82,6 +82,24 @@ export const Default = { args: { label: 'Save' } };`,
   });
 });
 
+it('keeps the warning once the template is filled, as it is about code the snippet leaves out', async () => {
+  const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
+  vol.fromJSON({
+    [svelteEntry.importPath]: `<script module>
+      import { defineMeta } from '@storybook/svelte';
+      import Button from './Button.svelte';
+      const { Story } = defineMeta({ title: 'Example', component: Button });
+    </script>
+    <Story name="Default" args={{ label: 'Go' }}>
+      {#snippet template(args)}<Button {...args} value={missing} />{/snippet}
+    </Story>`,
+  });
+  const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories['example--default'];
+  expect(story?.template).toBeDefined();
+  expect(story?.warning).toBe('Identifier not resolved: `missing`.');
+  expect(story?.templateWarning).toBe(story?.warning);
+});
+
 it('warns about an unknown identifier in the final markup', async () => {
   const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
   vol.fromJSON({

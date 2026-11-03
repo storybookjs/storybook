@@ -295,7 +295,8 @@ const printNode = (node: HtmlNode, depth: number, holes: boolean): string => {
   const indent = INDENT.repeat(depth);
   const tag = holes ? holeTags.get(node) : undefined;
   if (tag) {
-    return tag.first ? `${indent}${indentedHole(tag.hole, indent)}` : '';
+    const printed = node.kind === 'text' ? textHole(tag.hole, true, true) : tag.hole;
+    return tag.first ? `${indent}${indentedHole(printed, indent)}` : '';
   }
   switch (node.kind) {
     case 'comment':
@@ -437,7 +438,11 @@ const inlineChildrenText = (children: HtmlNode[], holes: boolean): InlineText | 
     hasText ||= part.hasText;
     if (tag) {
       if (tag.first) {
-        parts.push(tag.hole);
+        parts.push(
+          child.kind === 'text'
+            ? textHole(tag.hole, child === shown[0], child === shown.at(-1))
+            : tag.hole
+        );
       }
       continue;
     }
@@ -551,6 +556,13 @@ const decodeAttribute = (value: string): string =>
 const printableChildren = (children: HtmlNode[]): HtmlNode[] => children.filter(isPrintable);
 
 const collapseText = (text: string): string => text.trim().replace(/\s+/g, ' ');
+
+// A text hole with where the snippet trims the text it prints: `^` at its start, `$` at its end. The
+// filler collapses the whitespace in it as a text node prints.
+const textHole = (hole: string, trimStart: boolean, trimEnd: boolean): string =>
+  hole.startsWith('⟦text ')
+    ? `${hole.slice(0, -1)}${trimStart ? ' ^' : ''}${trimEnd ? ' $' : ''}⟧`
+    : hole;
 
 const inlineText = (text: string, first: boolean, last: boolean): string => {
   let collapsed = text.replace(/\s+/g, ' ');

@@ -5,6 +5,8 @@
 // both prints.
 import { hole, holeWord } from 'storybook/internal/docs-tools';
 
+import { HOLE_MARKS } from '../template-grammar.ts';
+
 /**
  * Where a snippet prints an arg's value, which decides how the preview prints a new one there:
  *
@@ -19,14 +21,22 @@ export type HoleKind = 'bind' | 'prop' | 'field' | 'text';
 export interface ArgPrinter {
   /** `code` is the code the story writes the arg with, when `value` is that code. */
   show(arg: string, kind: HoleKind, value: string, code?: string): string;
+  /**
+   * What stands where the snippet would print an arg the story does not set, once a control sets
+   * it: nothing in a print with values, a mark the layout ignores in a print with placeholders.
+   */
+  unset(arg: string, kind: HoleKind): string | undefined;
 }
 
-export const printValues: ArgPrinter = { show: (_arg, _kind, value) => value };
+export const printValues: ArgPrinter = {
+  show: (_arg, _kind, value) => value,
+  unset: () => undefined,
+};
 
-// One private-use character per hole. The 6400 of the basic plane are far more than any story
-// shows.
+// One private-use character per hole that prints a value, and one mark, which the layout reads as
+// nothing, per hole that prints none: an empty value, or an arg the story does not set.
 const FIRST = 0xe000;
-const LAST = 0xf8ff;
+const LAST = HOLE_MARKS.first - 1;
 
 export interface PlaceholderPrinter extends ArgPrinter {
   /**
@@ -39,29 +49,46 @@ export interface PlaceholderPrinter extends ArgPrinter {
 }
 
 export const printPlaceholders = (): PlaceholderPrinter => {
-  const holes: { arg: string; kind: HoleKind }[] = [];
+  const holes: { arg: string; kind: HoleKind; char: string }[] = [];
   const code: Record<string, string> = {};
   let conflicting = false;
+  let marks = 0;
+  const mark = (arg: string, kind: HoleKind) => {
+    const id = HOLE_MARKS.first + marks++;
+    if (id > HOLE_MARKS.last) {
+      // An overflow prints nothing, which `template` then finds no hole for.
+      return '';
+    }
+    holes.push({ arg, kind, char: String.fromCharCode(id) });
+    return String.fromCharCode(id);
+  };
+  let values = 0;
   return {
     show(arg, kind, value, written) {
       if (written !== undefined) {
         conflicting ||= Object.hasOwn(code, arg) && code[arg] !== written;
         code[arg] = written;
       }
-      const id = FIRST + holes.length;
-      holes.push({ arg, kind });
-      // An overflow prints the value itself, which `template` then finds no hole for.
-      return id > LAST ? value : value.replace(/[^\n]/g, String.fromCharCode(id));
+      if (value === '') {
+        return mark(arg, kind);
+      }
+      const id = FIRST + values++;
+      if (id > LAST) {
+        // An overflow prints the value itself, which `template` then finds no hole for.
+        return value;
+      }
+      holes.push({ arg, kind, char: String.fromCharCode(id) });
+      return value.replace(/[^\n]/g, String.fromCharCode(id));
     },
+    unset: mark,
     template(printed) {
       let template = printed;
-      for (const [index, { arg, kind }] of holes.entries()) {
-        const char = String.fromCharCode(FIRST + index);
+      for (const { arg, kind, char } of holes) {
         // A value over several lines: the printer may indent the lines after the first, by the
         // same width each, which the preview indents a new value by too.
         const runs = [...printed.matchAll(new RegExp(`${char}+(?:\\n([ \\t]*)${char}+)*`, 'g'))];
         if (runs.length !== 1) {
-          // Printed nowhere, as an empty value is, or twice.
+          // Printed nowhere, as a mark the layout dropped is, or twice.
           if (runs.length > 1) {
             return undefined;
           }
@@ -73,7 +100,7 @@ export const printPlaceholders = (): PlaceholderPrinter => {
           hole(kind, holeWord(arg), ...(indent ? [`+${indent.length}`] : []))
         );
       }
-      return /[-]/.test(template) ? undefined : template;
+      return /[\ue000-\uf8ff]/.test(template) ? undefined : template;
     },
     argCode: () => (conflicting ? undefined : code),
   };

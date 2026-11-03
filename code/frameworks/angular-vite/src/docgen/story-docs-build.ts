@@ -19,26 +19,19 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import { fillHoles, writtenArg } from 'storybook/internal/docs-tools';
-import type {
-  Args,
-  StoryDoc,
-  StoryDocsPayload,
-  StoryDocsProviderInput,
-} from 'storybook/internal/types';
+import { fillHoles } from 'storybook/internal/docs-tools';
+import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
 
 import type { AngularComponentSnippetMeta, AngularDocgenPayload } from './build-docgen.ts';
 import { parseStoryFile } from './resolve-component.ts';
-import { fillTemplate } from '../client/docs/fill-template.ts';
 import {
   argExpressionCode,
   argFieldValue,
   createArgExternalizer,
   evaluateArgExpression,
   evaluateArgLiteral,
-  evaluateArgValue,
 } from './story-docs-args.ts';
 import { type ArgPrinter, printPlaceholders, printValues } from './story-docs-holes.ts';
 import type { Bindings, StoryShape } from './story-docs-markup.ts';
@@ -250,8 +243,7 @@ interface StoryTemplate {
 
 /**
  * The story's template: the same print as its static snippet, with a hole wherever that prints an
- * arg's value. A story whose template, filled with the args it is written with, would not give its
- * static snippet has none, so the preview keeps the static snippet.
+ * arg's value, or nothing where a hole cannot be told apart, such as a value printed twice.
  */
 const storyTemplate = async (
   snippetMeta: AngularComponentSnippetMeta,
@@ -279,23 +271,7 @@ const storyTemplate = async (
   const argCode = Object.fromEntries(
     Object.entries(written).filter(([name]) => holeArgs.has(name))
   );
-  // As the preview fills the template while no control changed the args.
-  const ownArgs: Args = {};
-  for (const [name, node] of Object.entries(shape.args)) {
-    if (Object.hasOwn(argCode, name)) {
-      ownArgs[name] = writtenArg(argCode[name]!);
-      continue;
-    }
-    const evaluated = evaluateArgValue(node, snippetMeta.enums);
-    if (evaluated.found) {
-      ownArgs[name] = evaluated.value;
-    }
-  }
-  try {
-    return fillTemplate(template, ownArgs) === derived.snippet ? { template, argCode } : {};
-  } catch {
-    return {};
-  }
+  return { template, argCode };
 };
 
 type RenderedSnippet = HostComponentSnippet & {
@@ -553,8 +529,27 @@ const componentBindings = (
       ),
     });
   }
+  inputs.push(...unsetInputs(snippetMeta, shape, printer, (name) => !(name in shape.args)));
   return { bindings: { inputs, outputs: snippetMeta.outputs }, fields };
 };
+
+/**
+ * A binding hole for each input `isUnset` names, where a control that sets it puts it, after those
+ * the story sets: nothing in the print with values.
+ */
+const unsetInputs = (
+  snippetMeta: AngularComponentSnippetMeta,
+  shape: StoryShape,
+  printer: ArgPrinter,
+  isUnset: (name: string) => boolean
+): Bindings['inputs'] =>
+  snippetMeta.inputs.flatMap((name) => {
+    if (!isUnset(name)) {
+      return [];
+    }
+    const attribute = printer.unset(name, 'prop');
+    return attribute === undefined ? [] : [{ name, expression: '', attribute }];
+  });
 
 const argsExpansion = (
   snippetMeta: AngularComponentSnippetMeta,
@@ -588,6 +583,15 @@ const argsExpansion = (
       });
     }
   }
+  // `argsToTemplate` leaves out an arg set to `undefined` too.
+  inputs.push(
+    ...unsetInputs(
+      snippetMeta,
+      shape,
+      printer,
+      (name) => !(name in shape.args) || isUndefinedValue(shape.args[name]!)
+    )
+  );
   return { inputs, outputs };
 };
 

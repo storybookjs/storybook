@@ -16,7 +16,8 @@ import type { Args } from 'storybook/internal/types';
 //   `name=${ifDefined(arg)}`, left out while unset.
 // - `css`, with words `property=arg`: the `style` attribute of the custom properties.
 // `⟦bool name arg⟧` is lit's `?name=${arg}`, `⟦quoted arg⟧` text in a quoted attribute value,
-// `⟦text arg⟧` the text of a lit template, `⟦slot name arg⟧` the html of a slot, and
+// `⟦text arg⟧` the text of a lit template, its whitespace collapsed and trimmed at a `^` start or
+// `$` end as the snippet prints a text node there, `⟦slot name arg⟧` the html of a slot, and
 // `⟦style selector=arg…⟧` the `<style>` of part and state args.
 export const fillTemplate: FillSnippetTemplate = (template, args) =>
   fillHoles(template, (kind, words) => fill(kind, words, args));
@@ -34,8 +35,8 @@ function fill(kind: string, words: string[], args: Args): string {
       return escape(textOf(arg, args[arg]), QUOTED);
     }
     case 'text': {
-      const [arg = ''] = words;
-      return escape(textOf(arg, args[arg]), TEXT);
+      const [arg = '', ...trims] = words;
+      return escape(collapse(textOf(arg, args[arg]), trims), TEXT);
     }
     case 'slot': {
       const [name = '', arg = ''] = words;
@@ -86,8 +87,13 @@ function slot(name: string, html: string): string {
     return html;
   }
   const only = /^<([A-Za-z][^\s/>]*)(\s[^>]*)?>[\s\S]*<\/\1>$/.exec(html);
+  // The snippet adds the attribute after those the element has.
   return only && !/\sslot=/.test(only[2] ?? '') && !html.slice(1).includes(`<${only[1]}`)
-    ? html.replace(/^<[^\s/>]+/, (start) => `${start} slot="${escape(name, QUOTED)}"`)
+    ? html.replace(
+        /^<([^\s/>]+)(\s[^>]*)?>/,
+        (_, tag: string, attributes = '') =>
+          `<${tag}${attributes.trimEnd()} slot="${escape(name, QUOTED)}">`
+      )
     : `<span slot="${escape(name, QUOTED)}">${html}</span>`;
 }
 
@@ -107,6 +113,18 @@ function textOf(arg: string, value: unknown): string {
     return '';
   }
   return Array.isArray(printed) ? printed.map((item) => item ?? '').join('') : String(printed);
+}
+
+// Whitespace collapsed to one space, as a text node prints, and trimmed where `trims` says.
+function collapse(text: string, trims: string[]): string {
+  let collapsed = text.replace(/\s+/g, ' ');
+  if (trims.includes('^')) {
+    collapsed = collapsed.trimStart();
+  }
+  if (trims.includes('$')) {
+    collapsed = collapsed.trimEnd();
+  }
+  return collapsed;
 }
 
 const QUOTED = /[&<"]/g;

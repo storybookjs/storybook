@@ -8,6 +8,7 @@
       "name": "Args Default Render",
       "snippet": "<lit-property-only label="Default render"></lit-property-only>",
       "template": "<lit-property-only ⟦attr label label field⟧></lit-property-only>",
+      "templateWarning": "Incomplete snippet: properties without an attribute: `items`, `config`.",
       "warning": "Incomplete snippet: properties without an attribute: `items`, `config`.",
     },
     "webcomponentsfixtures-lit-property-only--dom-node": {
@@ -15,6 +16,8 @@
       "name": "Dom Node",
       "snippet": "<lit-property-only label="Configured"></lit-property-only>",
       "template": "<lit-property-only ⟦attr label label field⟧></lit-property-only>",
+      "templateWarning": "Incomplete snippet: `(args) => { const el = document.createElement('lit-property-only') as HTMLElement & { config?: unknown; items?: unknown; }; el.setAttribute('label', String(args.label)); el.items = args.items; el.config = args.config; return el; }` could not be resolved statically.
+Incomplete snippet: properties without an attribute: `items`, `config`.",
       "warning": "Incomplete snippet: `(args) => { const el = document.createElement('lit-property-only') as HTMLElement & { config?: unknown; items?: unknown; }; el.setAttribute('label', String(args.label)); el.items = args.items; el.config = args.config; return el; }` could not be resolved statically.
 Incomplete snippet: properties without an attribute: `items`, `config`.",
     },
@@ -23,6 +26,7 @@ Incomplete snippet: properties without an attribute: `items`, `config`.",
       "name": "Lit Template",
       "snippet": "<lit-property-only label="Configured"></lit-property-only>",
       "template": "<lit-property-only ⟦attr label label bind⟧></lit-property-only>",
+      "templateWarning": "Incomplete snippet: properties without an attribute: `items`, `config`.",
       "warning": "Incomplete snippet: properties without an attribute: `items`, `config`.",
     },
   },

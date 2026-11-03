@@ -95,7 +95,7 @@ describe('svelte story-docs server snippets', () => {
         const ownArgs = new Map<string, Record<string, unknown>>();
         const payload = await buildStoryDocsPayload(
           { entry },
-          { onStoryArgs: (id, args) => ownArgs.set(id, args) }
+          { testOnlyOnStoryArgs: (id, args) => ownArgs.set(id, args) }
         );
         const storyDoc = payload?.stories[story.id];
         if (storyDoc?.snippet !== undefined) {

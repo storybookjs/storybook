@@ -17,6 +17,7 @@
       "name": "Imported Items",
       "snippet": "<csf-shapes label="Meta"></csf-shapes>",
       "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr style - css --csf-shapes-accent=--csf-shapes-accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
+      "templateWarning": "Incomplete snippet: properties without an attribute: `items`.",
       "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
     "webcomponentsstorydocs-csf-shapes--imported-label": {
@@ -57,6 +58,7 @@
       "name": "Render Fallback",
       "snippet": "<csf-shapes label="Fallback"></csf-shapes>",
       "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr style - css --csf-shapes-accent=--csf-shapes-accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
+      "templateWarning": "Incomplete snippet: `() => document.createElement('csf-shapes')` could not be resolved statically.",
       "warning": "Incomplete snippet: `() => document.createElement('csf-shapes')` could not be resolved statically.",
     },
     "webcomponentsstorydocs-csf-shapes--slots": {
@@ -82,6 +84,7 @@
       "name": "Unknown Arg",
       "snippet": "<csf-shapes label="Meta"></csf-shapes>",
       "template": "⟦style csf-shapes::part(panel)=panel-part csf-shapes:state(active)=active-state⟧<csf-shapes ⟦attr label label field⟧ ⟦attr count count field⟧ ⟦attr disabled disabled field⟧ ⟦attr style - css --csf-shapes-accent=--csf-shapes-accent⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</csf-shapes>",
+      "templateWarning": "Incomplete snippet: args not declared by `csf-shapes`: `nope`.",
       "warning": "Incomplete snippet: args not declared by `csf-shapes`: `nope`.",
     },
     "webcomponentsstorydocs-csf-shapes--unset": {

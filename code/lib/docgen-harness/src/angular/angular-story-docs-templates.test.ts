@@ -187,7 +187,7 @@ describe('angular story-docs templates', () => {
     for (const { name, template, snippet, args, argCode } of (await buildFixture(fixtureCase))
       .stories) {
       expect(
-        fillOrSkip(template, asWritten(args, argCode)) ?? snippet,
+        fillTemplate(template, asWritten(args, argCode)),
         `${name} filled with its own args`
       ).toBe(snippet);
       for (const set of argSets(args)) {
@@ -214,6 +214,11 @@ describe('angular story-docs templates', () => {
         }
       }
     }
+  });
+
+  it.each(cases)('%s has a template for every story with a snippet', async (fixtureCase) => {
+    const { snippets, stories } = await buildFixture(fixtureCase);
+    expect(stories.map(({ name }) => name)).toEqual(snippets.map(({ name }) => name));
   });
 
   it('fills a meaningful number of stories', async () => {

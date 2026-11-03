@@ -24,13 +24,13 @@ const DOCGEN_CATEGORIES: Record<string, string> = {
   size: 'props',
 };
 
-const docgen = (id: string): DocgenPayload => ({
+const docgen = (id: string, categories = DOCGEN_CATEGORIES): DocgenPayload => ({
   id,
   name: 'MyButton',
   path: STORY_PATH,
   jsDocTags: {},
   argTypes: Object.fromEntries(
-    Object.entries(DOCGEN_CATEGORIES).map(([name, category]) => [
+    Object.entries(categories).map(([name, category]) => [
       name,
       { name, table: { category }, type: { name: 'other', value: 'unknown' } },
     ])
@@ -59,7 +59,11 @@ const referencesFor = (modules: Record<string, string>) => ({
   },
 });
 
-async function primaryStory(storySource: string, modules?: Record<string, string>) {
+async function primaryStory(
+  storySource: string,
+  modules?: Record<string, string>,
+  categories = DOCGEN_CATEGORIES
+) {
   const storyFile = `
 import MyButton from './MyButton.vue';
 
@@ -74,7 +78,7 @@ ${storySource}
   const payload = await buildStoryDocsPayload(
     { entry: ENTRY },
     {
-      readDocgen: async (id) => docgen(id),
+      readDocgen: async (id) => docgen(id, categories),
       ...(modules ? { references: referencesFor(modules) } : {}),
     }
   );
@@ -293,6 +297,31 @@ export const Primary = {
     );
     expect(story?.snippet).not.toContain('onHover');
     expect(story?.template).toContain('⟦props -label -onHover⟧');
+  });
+
+  it('fills to the snippet for a number written another way than it prints', async () => {
+    const story = await primaryStory(`export const Primary = { args: { count: 1e3 } };`);
+    expect(story?.snippet).toContain(':count="1e3"');
+    expect(story?.argCode).toEqual({ count: '1e3' });
+  });
+
+  it('fills to the snippet for a slot arg set to null', async () => {
+    const story = await primaryStory(
+      `export const Primary = { args: { default: null } };`,
+      undefined,
+      { ...DOCGEN_CATEGORIES, default: 'slots' }
+    );
+    expect(story?.snippet).toContain('{{ null }}');
+  });
+
+  it('keeps a hoisted string from ending the script block once a control changes it', async () => {
+    const story = await primaryStory(`export const Primary = { args: { size: { tag: 'a' } } };`);
+    expect(filled(story, { size: { tag: '</script>' } })).toContain(`'<\\/script>'`);
+  });
+
+  it('fills to the snippet for a hoisted value holding a closing tag', async () => {
+    const story = await primaryStory(`export const Primary = { args: { size: { tag: '</d>' } } };`);
+    expect(story?.snippet).toContain("'</d>'");
   });
 
   it('is none for a story file that already holds a hole bracket', async () => {

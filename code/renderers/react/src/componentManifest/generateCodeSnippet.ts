@@ -113,7 +113,7 @@ const writtenArgs = (args: Args, everyArg = false): Record<string, string> =>
 
 const printsAsValue = (key: string, node: Node) =>
   key === 'children'
-    ? isStringLiteral(node) && !/[{}<>&\r\n]/.test(node.value) && /^\S(.*\S)?$/.test(node.value)
+    ? isStringLiteral(node) && !/[{}<>&\r\n]/.test(node.value)
     : isValidJsxAttrName(key) &&
       ((node.type === 'Literal' && typeof node.value === 'boolean') ||
         (isStringLiteral(node) && !/["&\r\n]/.test(node.value)));
@@ -274,15 +274,17 @@ function functionSnippet(
     }
   }
 
-  let unchanged: string;
-  if (fn.type === 'FunctionDeclaration' && fn.body) {
-    unchanged = `${asyncPrefix}function${fn.generator ? '*' : ''} ${storyName}(${params}) ${printRange(code, fn.body, [], false)}`;
-  } else if (method && fn.body) {
-    unchanged = `const ${storyName} = ${asyncPrefix}(${params}) => ${printRange(code, fn.body, [], false)};`;
-  } else {
-    unchanged = `const ${storyName} = ${printRange(code, fn, [], false)};`;
-  }
-  return { snippet: unchanged, template: unchanged };
+  // The story as written; an arg it reads but does not set is still a hole in the template.
+  const unchanged = (holes: boolean) => {
+    if (fn.type === 'FunctionDeclaration' && fn.body) {
+      return `${asyncPrefix}function${fn.generator ? '*' : ''} ${storyName}(${params}) ${printRange(code, fn.body, edits, holes)}`;
+    }
+    if (method && fn.body) {
+      return `const ${storyName} = ${asyncPrefix}(${params}) => ${printRange(code, fn.body, edits, holes)};`;
+    }
+    return `const ${storyName} = ${printRange(code, fn, edits, holes)};`;
+  };
+  return both(unchanged);
 }
 
 const isJsx = (node: Node | null | undefined): node is E.JSXElement | E.JSXFragment =>
@@ -419,7 +421,8 @@ function getArgsMemberKey(expr: Node) {
   return null;
 }
 
-// Records edits expanding `{...args}` and inlining `args.foo` reads; returns whether any were made.
+// Records edits expanding `{...args}` and inlining `args.foo` reads; returns whether the snippet
+// changes. A read of an arg the story does not set is a hole only, with the read as its default.
 function rewriteJsx(
   code: string,
   node: E.JSXElement | E.JSXFragment,
@@ -476,8 +479,16 @@ function rewriteJsx(
           : undefined;
         const lastEnd = attrs.length > 0 ? attrs[attrs.length - 1].end : tagEnd;
         // Without children the element ends as the story writes it.
-        const close = (end: number) => (dedent: (code: string) => string) =>
-          hole('close', holeWord(name), defaultWord(dedent(code.slice(lastEnd, end))));
+        // Content is indented as the line the element opens on, as the snippet prints it.
+        const close = (end: number) => (dedent: (code: string) => string) => {
+          const indent = dedent(`\n${lineIndent(code, opening.start)}`).slice(1);
+          return hole(
+            'close',
+            holeWord(name),
+            ...(indent ? [holeWord(`^${indent}`)] : []),
+            defaultWord(dedent(code.slice(lastEnd, end)))
+          );
+        };
         if (opening.selfClosing) {
           edits.push({
             start: lastEnd,
@@ -503,14 +514,32 @@ function rewriteJsx(
         continue;
       }
       const key = getArgsMemberKey(a.value.expression);
-      if (key !== null && Object.hasOwn(merged, key)) {
+      if (key === null) {
+        continue;
+      }
+      const name = a.name.name;
+      if (Object.hasOwn(merged, key)) {
         edits.push({
           start: a.start,
           end: a.end,
-          value: toAttr(a.name.name, merged[key], printAt(a.start)),
-          hole: hole('attr', holeWord(a.name.name), holeWord(key)),
+          value: toAttr(name, merged[key], printAt(a.start)),
+          hole: hole('attr', holeWord(name), holeWord(key)),
         });
         changed = true;
+      } else {
+        // The snippet keeps the read as written while the story does not set the arg.
+        const { start, end } = a;
+        edits.push({
+          start,
+          end,
+          hole: (dedent) =>
+            hole(
+              'attr',
+              holeWord(name),
+              holeWord(key),
+              defaultWord(dedent(code.slice(start, end)))
+            ),
+        });
       }
     }
   }
@@ -520,16 +549,24 @@ function rewriteJsx(
       changed = rewriteJsx(code, child, merged, edits) || changed;
     } else if (
       child.type === 'JSXExpressionContainer' &&
-      getArgsMemberKey(child.expression) === 'children' &&
-      merged.children
+      getArgsMemberKey(child.expression) === 'children'
     ) {
-      edits.push({
-        start: child.start,
-        end: child.end,
-        value: toJsxChildren(merged.children, printAt(child.start)),
-        hole: hole('text', 'children'),
-      });
-      changed = true;
+      const { start, end } = child;
+      if (merged.children) {
+        edits.push({
+          start,
+          end,
+          value: toJsxChildren(merged.children, printAt(start)),
+          hole: hole('text', 'children'),
+        });
+        changed = true;
+      } else {
+        edits.push({
+          start,
+          end,
+          hole: (dedent) => hole('text', 'children', defaultWord(dedent(code.slice(start, end)))),
+        });
+      }
     }
   }
 

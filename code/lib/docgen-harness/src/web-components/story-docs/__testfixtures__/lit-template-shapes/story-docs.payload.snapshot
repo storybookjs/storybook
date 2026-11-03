@@ -10,7 +10,7 @@
   <b>Aliased</b>
 </lit-template-shapes>",
       "template": "<lit-template-shapes ⟦attr label label bind⟧ ⟦attr count count bind⟧ ⟦attr heading heading field⟧>
-  <b>⟦text label⟧</b>
+  <b>⟦text label ^ $⟧</b>
 </lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--attributes": {
@@ -24,6 +24,7 @@
       "name": "Class Map",
       "snippet": "<lit-template-shapes></lit-template-shapes>",
       "template": "<lit-template-shapes></lit-template-shapes>",
+      "templateWarning": "Incomplete snippet: `classMap({ active: Boolean(args.active) })` could not be resolved statically.",
       "warning": "Incomplete snippet: `classMap({ active: Boolean(args.active) })` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-template-shapes--destructured": {
@@ -75,7 +76,7 @@
   <span>Nested</span>
 </lit-template-shapes>",
       "template": "<lit-template-shapes>
-  <span>⟦text label⟧</span>
+  <span>⟦text label ^ $⟧</span>
 </lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--nested-listener": {
@@ -99,6 +100,7 @@
     host.addEventListener('shape-change', () => {});
   }
 </script>",
+      "templateWarning": "Incomplete snippet: listeners not shown: `@click`.",
       "warning": "Incomplete snippet: listeners not shown: `@click`.",
     },
     "webcomponentsstorydocs-lit-template-shapes--nothing": {
@@ -118,6 +120,7 @@
       "name": "Property Only",
       "snippet": "<lit-template-shapes></lit-template-shapes>",
       "template": "<lit-template-shapes></lit-template-shapes>",
+      "templateWarning": "Incomplete snippet: properties without an attribute: `items`.",
       "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
     "webcomponentsstorydocs-lit-template-shapes--property-paired": {
@@ -143,6 +146,7 @@
       "name": "Unbound Arg",
       "snippet": "<lit-template-shapes label="Bound"></lit-template-shapes>",
       "template": "<lit-template-shapes ⟦attr label label bind⟧></lit-template-shapes>",
+      "templateWarning": "Incomplete snippet: args not bound by the render template: `count`.",
       "warning": "Incomplete snippet: args not bound by the render template: `count`.",
     },
   },

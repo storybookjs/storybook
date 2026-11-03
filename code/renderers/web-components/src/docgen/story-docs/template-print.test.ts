@@ -96,6 +96,24 @@ describe('html template story snippets', () => {
       },
     },
     {
+      name: 'text with whitespace',
+      source: `
+        import { html } from 'lit';
+        export default { component: 'template-element' };
+        export const Primary = {
+          args: { label: '  spaced   text ' },
+          render: (args) => html\`<template-element>\${args.label}</template-element>\`,
+        };
+      `,
+      expected: {
+        listeners: [],
+        properties: [],
+        referenced: ['label'],
+        snippet: '<template-element>spaced text</template-element>',
+        unresolved: [],
+      },
+    },
+    {
       name: 'boolean, property, and listener prefixes',
       source: `
         import { html } from 'lit';

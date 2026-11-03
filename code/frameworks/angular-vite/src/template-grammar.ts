@@ -148,6 +148,8 @@ export interface TemplateInputBinding {
   name: string;
   // The template expression the `[input]` binding is given, e.g. from `formatInputValue`.
   expression: string;
+  // The whole binding, where it is not `[name]="expression"`, such as the mark of a hole.
+  attribute?: string;
 }
 
 export interface BuildTemplateInput {
@@ -175,13 +177,28 @@ const ELEMENT_AND_ATTRIBUTES = /(\S+)(.*)/;
 // Width past which the bindings go one per line, with the tag's end on a line of its own.
 const MAX_SINGLE_LINE = 80;
 
+/**
+ * Private-use characters the story-docs build prints where a hole prints nothing, such as an input
+ * the story does not set. The layout reads each, with the space before it, as nothing, so a print
+ * with them is laid out as the print without them.
+ */
+export const HOLE_MARKS = { first: 0xf700, last: 0xf8ff };
+
+const HOLE_MARK = / ?[\uf700-\uf8ff]/g;
+
+// The width of text as the layout reads it, without the marks of holes that print nothing.
+const layoutLength = (text: string) => text.replace(HOLE_MARK, '').length;
+
+// Whether text is only the mark of a hole that prints nothing.
+const isMark = (text: string) => layoutLength(text) === 0;
+
 // Expands a component selector into the element a story renders, carrying its bindings.
 export const buildTemplate = (
   selector: string,
   { inputs, outputs, innerTemplate = '', selfClosing = false }: BuildTemplateInput
 ) => {
   const bindings = [
-    ...inputs.map(({ name, expression }) => `[${name}]="${expression}"`),
+    ...inputs.map(({ name, expression, attribute }) => attribute ?? `[${name}]="${expression}"`),
     ...outputs.map((name) => `(${name})="${formatPropInTemplate(name)}($event)"`),
   ];
 
@@ -203,7 +220,7 @@ export const buildTemplate = (
 
     const inlineTag = `<${element}${attributes}${bindings.map((binding) => ` ${binding}`).join('')}`;
     const inline = closesItself ? `${inlineTag} />` : `${inlineTag}>${innerTemplate}</${element}>`;
-    if (inline.length <= MAX_SINGLE_LINE || bindings.length === 0) {
+    if (layoutLength(inline) <= MAX_SINGLE_LINE || bindings.every(isMark)) {
       return inline;
     }
 
@@ -298,7 +315,7 @@ const MARKUP_ATTRIBUTE = /[^\s=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|\S+))?/g;
 const openTagLines = (node: MarkupElement, pad: string, forceAttrBreak: boolean): string[] => {
   const inlineOpen = `${pad}${node.rawOpen}`;
   const attrs = node.attrText.match(MARKUP_ATTRIBUTE) ?? [];
-  if ((inlineOpen.length <= MAX_SINGLE_LINE && !forceAttrBreak) || attrs.length === 0) {
+  if ((layoutLength(inlineOpen) <= MAX_SINGLE_LINE && !forceAttrBreak) || attrs.every(isMark)) {
     return [inlineOpen];
   }
   const bracket = node.closed ? ' />' : '>';
@@ -317,7 +334,7 @@ const printMarkup = (markup: string, node: MarkupElement | string, depth: number
   }
   const hasElementChild = node.children.some((child) => typeof child !== 'string');
   const verbatim = markup.slice(node.start, node.end);
-  if (!hasElementChild && pad.length + verbatim.length <= MAX_SINGLE_LINE) {
+  if (!hasElementChild && pad.length + layoutLength(verbatim) <= MAX_SINGLE_LINE) {
     return [`${pad}${verbatim}`];
   }
   // A childless element broke on length alone, so keeping its attribute run inline gains nothing.

@@ -54,12 +54,24 @@ describe('fillTemplate', () => {
     expect(fillTemplate('<b>⟦text items⟧</b>', { items: ['a', null, 'b'] })).toBe('<b>ab</b>');
   });
 
+  it('collapses the whitespace of text, trimmed where the snippet trims it', () => {
+    expect(fillTemplate('<x-el>⟦text a ^ $⟧</x-el>', { a: '  spaced   text ' })).toBe(
+      '<x-el>spaced text</x-el>'
+    );
+    expect(fillTemplate('<x-el>Hi ⟦text a $⟧</x-el>', { a: '  spaced   text ' })).toBe(
+      '<x-el>Hi  spaced text</x-el>'
+    );
+  });
+
   it('puts named slot html in the slot, on its one element or in a span', () => {
     expect(fillTemplate('<x-el>⟦slot actions a⟧</x-el>', { a: '<button>Go</button>' })).toBe(
       '<x-el><button slot="actions">Go</button></x-el>'
     );
     expect(fillTemplate('<x-el>⟦slot actions a⟧</x-el>', { a: 'Go <b>now</b>' })).toBe(
       '<x-el><span slot="actions">Go <b>now</b></span></x-el>'
+    );
+    expect(fillTemplate('<x-el>⟦slot header a⟧</x-el>', { a: '<b class="x">Hi</b>' })).toBe(
+      '<x-el><b class="x" slot="header">Hi</b></x-el>'
     );
     expect(fillTemplate('<x-el>⟦slot default a⟧</x-el>', { a: 'Go <b>now</b>' })).toBe(
       '<x-el>Go <b>now</b></x-el>'

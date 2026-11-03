@@ -2,6 +2,7 @@ import {
   type FillSnippetTemplate,
   UnprintableArgError,
   fillHoles,
+  writtenCode,
 } from 'storybook/internal/docs-tools';
 
 import {
@@ -9,9 +10,6 @@ import {
   escapeTemplateLiteral,
   printExpressionValue,
 } from '../../template-grammar.ts';
-
-// The symbol `writtenArg` marks an arg with, shared across bundles; see `StoryDoc.argCode`.
-const WRITTEN = Symbol.for('storybook/written-arg');
 
 /**
  * Fills a template from the story-docs build with the story's current args. Each hole is where
@@ -57,11 +55,6 @@ export const fillTemplate: FillSnippetTemplate = (template, args) =>
   });
 
 const TEXT_ESCAPES: Record<string, string> = { '{': "{{ '{' }}", '}': "{{ '}' }}", '@': '&#64;' };
-
-const writtenCode = (value: unknown): string | undefined =>
-  typeof value === 'object' && value !== null && WRITTEN in value
-    ? (value[WRITTEN] as string)
-    : undefined;
 
 const expression = (value: unknown, arg: string): string => {
   const code = writtenCode(value);

@@ -26,7 +26,7 @@
   <span slot="prefix">prefix:</span>A simple card
 </demo-wc-card>",
       "template": "<demo-wc-card ⟦attr back-side backSide field⟧ ⟦attr header header field⟧ ⟦attr rows rows field⟧>
-  <span slot="prefix">⟦text prefix⟧</span>A simple card
+  <span slot="prefix">⟦text prefix ^ $⟧</span>A simple card
 </demo-wc-card>",
     },
   },

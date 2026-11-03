@@ -125,7 +125,11 @@ const firstStory = async (
   );
   expect(result).toBeDefined();
   // The template is next's snippet with holes; these cases are about the snippet.
-  const { template: _template, ...story } = Object.values(result!.stories)[0];
+  const {
+    template: _template,
+    templateWarning: _templateWarning,
+    ...story
+  } = Object.values(result!.stories)[0];
   return story;
 };
 
@@ -136,8 +140,8 @@ const firstTemplate = async (source: string) => {
     { entry: { ...entry, importPath: storyPath } },
     { getDocgenPayload: getDocgenPayload(), resolvePath: (path) => path }
   );
-  const { snippet, template } = Object.values(result!.stories)[0];
-  return { snippet, template };
+  const { snippet, template, templateWarning, warning } = Object.values(result!.stories)[0];
+  return { snippet, template, templateWarning, warning };
 };
 
 describe('buildStoryDocsPayload', () => {
@@ -737,6 +741,19 @@ describe('buildStoryDocsPayload', () => {
 });
 
 describe('the template', () => {
+  it('keeps the warning once filled, as the filled snippet leaves out the same code', async () => {
+    const { template, templateWarning, warning } = await firstTemplate(`
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { label: 'Fallback' },
+        render: () => document.createElement('test-element'),
+      };
+    `);
+    expect(template).toBeDefined();
+    expect(warning).toContain('could not be resolved statically');
+    expect(templateWarning).toBe(warning);
+  });
+
   it('is the snippet with a hole wherever it prints an arg, and one for each declared arg', async () => {
     const { snippet, template } = await firstTemplate(`
       export default { title: 'Example/TestElement', component: 'test-element', args: { label: 'Meta' } };
@@ -766,7 +783,7 @@ describe('the template', () => {
     `);
     expect(snippet).toBe('<test-element label="Go">Go</test-element>');
     expect(template).toBe(
-      '<test-element ⟦attr label label bind⟧ ⟦bool disabled disabled⟧>⟦text label⟧</test-element>'
+      '<test-element ⟦attr label label bind⟧ ⟦bool disabled disabled⟧>⟦text label ^ $⟧</test-element>'
     );
     expect(fillTemplate(template!, { label: 'Go', disabled: false })).toBe(snippet);
   });

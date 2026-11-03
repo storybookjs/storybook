@@ -51,9 +51,9 @@ describe('fillHoles', () => {
 });
 
 describe('findHoles', () => {
-  it('finds each hole with where it is, its kind and its words as written', () => {
+  it('finds each hole with where it is, its kind and its words decoded', () => {
     expect(findHoles(`a${hole('attr', 'x', '%a%20b')}b`)).toEqual([
-      { start: 1, end: 16, kind: 'attr', words: ['x', '%a%20b'] },
+      { start: 1, end: 16, kind: 'attr', words: ['x', 'a b'] },
     ]);
   });
 });

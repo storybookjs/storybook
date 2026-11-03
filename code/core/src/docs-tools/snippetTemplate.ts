@@ -46,7 +46,7 @@ export const hasHoleBracket = (code: string) => /[⟦⟧]/.test(code);
 
 const HOLE = /⟦([^⟧]*)⟧/g;
 
-/** A hole {@link findHoles} found: where it is, its kind, and its words as written. */
+/** A hole {@link findHoles} found: where it is, its kind, and its words as {@link holeWord} took them. */
 export interface Hole {
   start: number;
   end: number;
@@ -54,11 +54,18 @@ export interface Hole {
   words: string[];
 }
 
+const decodeWord = (word: string) => (word.startsWith('%') ? decodeURIComponent(word.slice(1)) : word);
+
 /** Every hole in a template, for the server and tests; a filler uses {@link fillHoles}. */
 export const findHoles = (template: string): Hole[] =>
   [...template.matchAll(HOLE)].map((match) => {
     const [kind = '', ...words] = match[1]!.split(' ');
-    return { start: match.index, end: match.index + match[0].length, kind, words };
+    return {
+      start: match.index,
+      end: match.index + match[0].length,
+      kind,
+      words: words.map(decodeWord),
+    };
   });
 
 /**
@@ -74,7 +81,7 @@ export const fillHoles = (template: string, fill: (kind: string, words: string[]
       kind,
       words
         .filter((word) => word !== space)
-        .map((word) => (word.startsWith('%') ? decodeURIComponent(word.slice(1)) : word))
+        .map(decodeWord)
     );
     return printed && space ? decodeURIComponent(space.slice(1)) + printed : printed;
   });
@@ -90,14 +97,15 @@ export const withHoleSpace = (
 ) => {
   let moved = '';
   let end = 0;
-  for (const { start, end: holeEnd, kind, words } of findHoles(template)) {
+  for (const { start, end: holeEnd, kind } of findHoles(template)) {
     const before = template.slice(end, start);
     const code = before.trimEnd();
     const space = before.slice(code.length);
+    const written = template.slice(start, holeEnd);
     moved +=
       space !== '' && takesSpace(kind, space)
-        ? code + hole(kind, ...words, `~${encodeURIComponent(space)}`)
-        : before + template.slice(start, holeEnd);
+        ? `${code}${written.slice(0, -1)} ~${encodeURIComponent(space)}⟧`
+        : before + written;
     end = holeEnd;
   }
   return moved + template.slice(end);

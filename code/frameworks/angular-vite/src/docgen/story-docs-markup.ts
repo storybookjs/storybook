@@ -18,6 +18,7 @@ import {
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 
+import { inputBinding, textValue } from '../snippet-values.ts';
 import { formatPropInTemplate } from '../template-grammar.ts';
 import type { ArgPrinter } from './story-docs-holes.ts';
 
@@ -78,7 +79,7 @@ const bindingAttributes = (
   representedOutputs.forEach((name) => representedArgs.add(name));
   return {
     inputAttributes: representedInputs.map(
-      ({ name, expression, attribute }) => attribute ?? `[${name}]="${expression}"`
+      ({ name, expression, attribute }) => attribute ?? inputBinding(name, expression)
     ),
     outputAttributes: representedOutputs.map((name) => ({
       name,
@@ -409,11 +410,7 @@ const literalText = (node: Node | undefined): string | undefined => {
   if (unwrapped?.type !== 'Literal') {
     return undefined;
   }
-  const { value } = unwrapped;
-  if (typeof value === 'string') {
-    return value;
-  }
-  return typeof value === 'number' || typeof value === 'boolean' ? String(value) : undefined;
+  return textValue(unwrapped.value);
 };
 
 const isNullLiteral = (node: Node): boolean =>

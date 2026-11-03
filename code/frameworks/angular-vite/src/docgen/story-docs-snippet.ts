@@ -1,7 +1,7 @@
 // Wraps a story's template in the host component a reader would have to write to run it, so the
 // snippet is copy-pasteable on its own. Server-side only: the preview renderer still emits the bare
 // template, which is what the legacy runtime generator produced.
-import { escapeTemplateLiteral, isValidIdentifier } from '../template-grammar.ts';
+import { escapeTemplateLiteral, indentLines, isValidIdentifier } from '../snippet-values.ts';
 
 const HOST_SELECTOR = 'app-demo';
 const HOST_CLASS = 'DemoComponent';
@@ -43,7 +43,7 @@ const unescapeTemplateLiteral = (template: string): string =>
 // Mirrors `formatPropInTemplate`, which reaches a non-identifier output through `this['name']`.
 const memberName = (name: string): string => (isValidIdentifier(name) ? name : `['${name}']`);
 
-const memberValue = (value: string): string => value.split('\n').join('\n  ');
+const memberValue = (value: string): string => indentLines(value, '  ');
 
 // Tells the reader what the snippet could not resolve on its own: a known non-standalone
 // component, an unresolvable standalone status, or a story-file-local component that has no

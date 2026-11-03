@@ -11,7 +11,7 @@ import {
 } from 'storybook/internal/csf-tools';
 
 import type { SnippetEnum } from './build-docgen.ts';
-import { escapeAttributeExpression, printExpressionValue } from '../template-grammar.ts';
+import { escapeAttributeExpression, printExpressionValue } from '../snippet-values.ts';
 
 const EVAL_FAILED = Symbol('story-docs-eval-failed');
 

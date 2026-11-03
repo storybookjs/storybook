@@ -19,7 +19,7 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import { fillHoles, withHoleSpace } from 'storybook/internal/docs-tools';
+import { findHoles, withHoleSpace } from 'storybook/internal/docs-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
@@ -48,6 +48,7 @@ import {
   formatPropInTemplate,
   formatTemplateMarkup,
 } from '../template-grammar.ts';
+import { inputBinding } from '../snippet-values.ts';
 
 export interface BuildStoryDocsContext {
   /**
@@ -266,8 +267,7 @@ const storyTemplate = async (
   if (template === undefined || written === undefined) {
     return {};
   }
-  const holeArgs = new Set<string>();
-  fillHoles(template, (_kind, [arg = '']) => (holeArgs.add(arg), ''));
+  const holeArgs = new Set(findHoles(template).map(({ words: [arg = ''] }) => arg));
   const argCode = Object.fromEntries(
     Object.entries(written).filter(([name]) => holeArgs.has(name))
   );
@@ -577,7 +577,7 @@ const argsExpansion = (
         attribute: printer.show(
           name,
           'prop',
-          `[${name}]="${expression}"`,
+          inputBinding(name, expression),
           literal === undefined ? argExpressionCode(node) : undefined
         ),
       });

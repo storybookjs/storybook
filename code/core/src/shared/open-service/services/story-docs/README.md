@@ -38,7 +38,7 @@ Keep it to these rules:
 
 The renderer fills the holes in the browser with the current args through
 `parameters.docs.source.fillTemplate`, a `FillSnippetTemplate` from `storybook/internal/docs-tools`.
-It registers it only with `docgenServer` on.
+It registers it only with `docgenServer` on, so with it off the parameters are next's.
 `selectLiveSnippetForStory` passes it the unmapped args, as the static snippet reads them, and each
 arg whose value is still its initial value (`===`) and that has `argCode` as a `writtenArg`, which
 `printValue` prints as its code.

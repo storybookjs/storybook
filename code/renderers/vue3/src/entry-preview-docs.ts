@@ -5,8 +5,5 @@ const isDocgenServerEnabled = globalThis.FEATURES?.docgenServer;
 
 export const decorators = isDocgenServerEnabled ? [] : [sourceDecorator];
 
-export const parameters = {
-  docs: {
-    source: { fillTemplate },
-  },
-};
+// Under the docgen server, the story-docs `template` follows the controls, filled with the args.
+export const parameters = isDocgenServerEnabled ? { docs: { source: { fillTemplate } } } : {};

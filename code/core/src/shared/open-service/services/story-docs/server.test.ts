@@ -82,6 +82,31 @@ describe('story-docs open service', () => {
     expect(provider).toHaveBeenCalledWith({ entry });
   });
 
+  it('drops the template of a snippet that already holds a hole bracket', async () => {
+    const entry = makeStoryEntry('button--primary', 'Button');
+    const payload = makeStoryDocsPayload({
+      stories: {
+        'button--primary': {
+          id: 'button--primary',
+          name: 'Primary',
+          snippet: '<Button label="⟦x⟧" />',
+          template: '<Button label="⟦x⟧" />',
+          argCode: {},
+        },
+      },
+    });
+    const service = registerStoryDocsService({
+      getIndex: makeGetIndex([entry]),
+      storyDocsProvider: async () => payload,
+    });
+    await service.commands.extractStoryDocs({ id: 'button' });
+    expect(service.queries.storyDocs.get({ id: 'button' })?.stories['button--primary']).toEqual({
+      id: 'button--primary',
+      name: 'Primary',
+      snippet: '<Button label="⟦x⟧" />',
+    });
+  });
+
   it('keeps the template and its arg code through the query, so the filled snippet shows them', async () => {
     const entry = makeStoryEntry('button--primary', 'Button');
     const payload = makeStoryDocsPayload({

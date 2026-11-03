@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
 import { UnprintableArgError } from './snippetTemplate.ts';
-import { defaultCode, defaultWord, printValue, spreadArgs, writtenArg } from './snippetValues.ts';
+import {
+  asWrittenArgs,
+  defaultCode,
+  defaultWord,
+  printValue,
+  spreadArgs,
+  writtenArg,
+  writtenCode,
+} from './snippetValues.ts';
 
 describe('defaultWord', () => {
   it('writes code after a question mark, URI-encoded, which defaultCode reads back', () => {
@@ -58,5 +66,29 @@ describe('printValue', () => {
     expect(() => printValue({ a: [{ secret: true }] }, 'data', { opaque })).toThrow(
       new UnprintableArgError('data')
     );
+  });
+});
+
+describe('asWrittenArgs', () => {
+  it('keeps an initial arg the args store dropped as the code the story writes it with', () => {
+    const initialArgs = { thing: undefined, label: 'Go' };
+    const unmappedArgs = { label: 'Stop' };
+    const args = asWrittenArgs(
+      { args: unmappedArgs, unmappedArgs, initialArgs },
+      {
+        thing: 'undefined',
+      }
+    );
+    expect(printValue(args.thing, 'thing')).toBe('undefined');
+    expect(writtenCode(args.thing)).toBe('undefined');
+    expect(args.label).toBe('Stop');
+  });
+
+  it('passes an arg a control changed as its value', () => {
+    const initialArgs = { onClick: 1 };
+    const unmappedArgs = { onClick: 2 };
+    expect(
+      asWrittenArgs({ args: unmappedArgs, unmappedArgs, initialArgs }, { onClick: 'fn()' })
+    ).toEqual({ onClick: 2 });
   });
 });

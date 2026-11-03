@@ -17,7 +17,7 @@ export const parameters = {
     source: {
       type: SourceType.DYNAMIC,
       language: 'html',
-      fillTemplate,
+      ...(useStaticServiceSnippets ? { fillTemplate } : {}),
     },
     story: { inline: true },
   },

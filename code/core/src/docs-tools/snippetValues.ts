@@ -27,14 +27,18 @@ export const asWrittenArgs = (
   argCode: Record<string, string> = {}
 ): Args =>
   // The unmapped args, as the static snippet reads them: an `argTypes` mapping changes only what
-  // the story renders with.
+  // the story renders with. An initial arg the args store dropped, as it drops one set to
+  // `undefined`, is still the story's.
   Object.fromEntries(
-    Object.entries(unmappedArgs).map(([name, value]) => [
-      name,
-      Object.hasOwn(argCode, name) && value === initialArgs[name]
-        ? writtenArg(argCode[name]!)
-        : value,
-    ])
+    [...new Set([...Object.keys(initialArgs), ...Object.keys(unmappedArgs)])].map((name) => {
+      const value = unmappedArgs[name];
+      return [
+        name,
+        Object.hasOwn(argCode, name) && value === initialArgs[name]
+          ? writtenArg(argCode[name]!)
+          : value,
+      ];
+    })
   );
 
 /** The code a {@link writtenArg} holds, or `undefined` for any other value. */

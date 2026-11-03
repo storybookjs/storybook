@@ -16,6 +16,6 @@ export { applyDecorators } from './docs/applyDecorators.ts';
 export const parameters = {
   docs: {
     story: { inline: true },
-    source: { fillTemplate },
+    ...(useStaticServiceSnippets ? { source: { fillTemplate } } : {}),
   },
 };

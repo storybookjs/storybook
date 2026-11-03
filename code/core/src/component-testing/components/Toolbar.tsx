@@ -19,7 +19,6 @@ import type { Controls } from './InteractionsPanel.tsx';
 import { type PlayStatus, StatusBadge } from './StatusBadge.tsx';
 
 const ToolbarWrapper = styled.div(({ theme }) => ({
-  boxShadow: `${theme.appBorderColor} 0 -1px 0 0 inset`,
   background: theme.background.app,
   position: 'sticky',
   top: 0,
@@ -120,6 +119,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   return (
     <ToolbarWrapper>
       <SharedToolbar
+        border
         backgroundColor={theme.background.app}
         innerStyle={{ gap: 6, paddingInline: 15 }}
         aria-label="Component test playback controls"

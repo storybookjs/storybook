@@ -159,6 +159,7 @@ export async function configurePreview(options: ConfigurePreviewOptions) {
       ? dedent`
     ${prefix}${prefix.length > 0 ? '\n' : ''}
     export default definePreview({
+      addons: [],
       parameters: {
         controls: {
           matchers: {

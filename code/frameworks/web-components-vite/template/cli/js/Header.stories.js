@@ -22,4 +22,6 @@ export const LoggedIn = meta.story({
   },
 });
 
-export const LoggedOut = meta.story();
+export const LoggedOut = meta.story({
+  args: {},
+});

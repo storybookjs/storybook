@@ -43,6 +43,10 @@ export function supportsCsfFactories(framework: SupportedFramework): boolean {
     // already ships definePreview; blocked on exporting defineMain from ./node
     case SupportedFramework.SOLID:
       return false;
+    default: {
+      const exhaustive: never = framework;
+      return exhaustive;
+    }
   }
 }
 

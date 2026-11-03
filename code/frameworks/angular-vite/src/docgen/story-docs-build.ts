@@ -368,7 +368,7 @@ const renderStorySnippet = async (
       printer
     );
     const rendered = withWarnings(
-      host(formatTemplateMarkup(markup), false, boundOutputs, hostArgs.fields),
+      host(formatTemplateMarkup(markup, printer.layout), false, boundOutputs, hostArgs.fields),
       unresolvedWarning([
         ...shape.metaMembers.unresolved,
         ...shape.members.unresolved,
@@ -397,7 +397,7 @@ const renderStorySnippet = async (
   const { bindings, fields } = componentBindings(snippetMeta, shape, printer);
   return withWarnings(
     host(
-      buildTemplate(snippetMeta.selector, { ...bindings, selfClosing: true }),
+      buildTemplate(snippetMeta.selector, { ...bindings, selfClosing: true }, printer.layout),
       false,
       snippetMeta.outputs,
       fields
@@ -547,7 +547,7 @@ const unsetInputs = (
       return [];
     }
     const attribute = printer.unset(name, 'prop');
-    return attribute === undefined ? [] : [{ name, expression: '', attribute }];
+    return attribute === undefined ? [] : [{ name, expression: '', attribute, unset: true }];
   });
 
 const argsExpansion = (

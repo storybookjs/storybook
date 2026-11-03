@@ -189,6 +189,63 @@ describe('story-docs templates', () => {
     );
   });
 
+  it('keeps the layout of an argsToTemplate call after empty text', async () => {
+    const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = {
+        args: { label: '', size: 'lg' },
+        render: ({ label, ...rest }) => ({
+          props: rest,
+          template: \`<p>\${label}</p><sb-button \${argsToTemplate(rest)}></sb-button>\`,
+        }),
+      };
+    `);
+    const own = { label: '', size: 'lg' };
+    expect(fill(story!, own)).toBe(story!.snippet);
+    expect(fill(story!, own, { label: '', size: 'sm' })).toContain(
+      `<sb-button [size]="'sm'"></sb-button>`
+    );
+  });
+
+  it('gives each argsToTemplate call its own holes', async () => {
+    const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = {
+        args: { label: 'Go' },
+        render: (args) => ({
+          props: args,
+          template: \`<sb-button \${argsToTemplate(args)}></sb-button><sb-button \${argsToTemplate(args)}></sb-button>\`,
+        }),
+      };
+    `);
+    expect(fill(story!, { label: 'Go' })).toBe(story!.snippet);
+    expect(fill(story!, { label: 'Go' }, { label: 'Stop' }).match(/'Stop'/g)).toHaveLength(2);
+  });
+
+  it('keeps the field of an arg the markup reads and the story sets to undefined', async () => {
+    const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = {
+        args: { label: 'Go', size: undefined },
+        render: (args) => ({
+          props: args,
+          template: \`<sb-button \${argsToTemplate(args)}>{{ size }}</sb-button>\`,
+        }),
+      };
+    `);
+    expect(story!.snippet).toContain('size = undefined;');
+    expect(fill(story!, { label: 'Go', size: undefined })).toBe(story!.snippet);
+  });
+
+  it('prints an object with a __proto__ key as next does', async () => {
+    const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = { args: { config: { __proto__: { a: 1 } } } };
+    `);
+    expect(story!.snippet).toContain(`[config]="{}"`);
+    expect(fill(story!, { config: {} })).toBe(story!.snippet);
+  });
+
   it('has no template where next prints the author code', async () => {
     const [story] = await storyDocs(`
       ${IMPORTS}
@@ -200,4 +257,41 @@ describe('story-docs templates', () => {
     expect(story!.snippet).toBe('<sb-button />');
     expect(story!.template).toBeUndefined();
   });
+});
+
+describe('a value a control sets', () => {
+  const VALUES: unknown[] = [
+    'Go',
+    `it's "q"`,
+    'a & b &amp; c',
+    'line\nbreak',
+    '`tick` ${x} \\',
+    '',
+    0,
+    -1,
+    1e3,
+    1.5,
+    true,
+    false,
+    null,
+    undefined,
+    [1, 'a', null],
+    { a: 1, 'b-c': ['x'] },
+  ];
+
+  it.each(VALUES.map((value) => [value]))(
+    '%s fills as the static snippet of a story setting it',
+    async (value) => {
+      const literal = value === undefined ? 'undefined' : JSON.stringify(value);
+      const [written] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = { args: { label: ${literal} } };
+    `);
+      const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = { args: { label: 'Go' } };
+    `);
+      expect(fill(story!, { label: 'Go' }, { label: value })).toBe(written!.snippet);
+    }
+  );
 });

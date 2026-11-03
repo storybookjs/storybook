@@ -14,22 +14,17 @@ const quoteExpressionString = (value: string): string =>
 
 /**
  * Renders an arg value as the template expression or class field code a story-docs snippet holds
- * for it, losslessly for strings carrying quotes. The story-docs build prints the args it
- * evaluates with it, and the preview the args a control changed, so the two print alike. A value
- * with no such code, such as a function or a class instance, is `unprintable`.
+ * for it, losslessly for strings carrying quotes. The story-docs build prints the values it
+ * evaluates from the story with it, as next does. The preview prints a value a control changed
+ * with it and passes `unprintable`, which a value with no such code calls: a function, a symbol, a
+ * class instance or a cycle.
  */
-export const printExpressionValue = (
-  value: unknown,
-  unprintable: () => never = () => {
-    throw new TypeError('The value has no expression');
-  },
-  seen = new Set<unknown>()
-): string => {
+export const printExpressionValue = (value: unknown, unprintable?: () => never): string =>
+  unprintable ? printStrict(value, unprintable, new Set()) : printEvaluated(value, new Set());
+
+const printEvaluated = (value: unknown, seen: Set<unknown>): string => {
   if (typeof value === 'string') {
     return quoteExpressionString(value);
-  }
-  if (typeof value === 'function' || typeof value === 'symbol' || typeof value === 'bigint') {
-    return unprintable();
   }
   if (typeof value !== 'object' || value === null) {
     return `${value}`;
@@ -37,21 +32,45 @@ export const printExpressionValue = (
   if (seen.has(value)) {
     return quoteExpressionString('[Circular]');
   }
-  const prototype = Object.getPrototypeOf(value);
-  if (!Array.isArray(value) && prototype !== Object.prototype && prototype !== null) {
-    return unprintable();
-  }
   seen.add(value);
   if (Array.isArray(value)) {
-    return `[${value.map((element) => printExpressionValue(element ?? null, unprintable, seen)).join(', ')}]`;
+    return `[${value.map((element) => printEvaluated(element ?? null, seen)).join(', ')}]`;
   }
   const entries = Object.entries(value)
     .filter(([, entryValue]) => entryValue !== undefined)
     .map(
       ([key, entryValue]) =>
-        `${isValidIdentifier(key) ? key : quoteExpressionString(key)}: ${printExpressionValue(entryValue, unprintable, seen)}`
+        `${isValidIdentifier(key) ? key : quoteExpressionString(key)}: ${printEvaluated(entryValue, seen)}`
     );
   return `{${entries.join(', ')}}`;
+};
+
+const printStrict = (value: unknown, unprintable: () => never, parents: Set<unknown>): string => {
+  if (typeof value === 'function' || typeof value === 'symbol' || typeof value === 'bigint') {
+    return unprintable();
+  }
+  if (typeof value !== 'object' || value === null) {
+    return printEvaluated(value, parents);
+  }
+  const prototype = Object.getPrototypeOf(value);
+  if (
+    parents.has(value) ||
+    (!Array.isArray(value) && prototype !== Object.prototype && prototype !== null)
+  ) {
+    return unprintable();
+  }
+  parents.add(value);
+  const printed = Array.isArray(value)
+    ? `[${value.map((element) => printStrict(element ?? null, unprintable, parents)).join(', ')}]`
+    : `{${Object.entries(value)
+        .filter(([, entryValue]) => entryValue !== undefined)
+        .map(
+          ([key, entryValue]) =>
+            `${isValidIdentifier(key) ? key : quoteExpressionString(key)}: ${printStrict(entryValue, unprintable, parents)}`
+        )
+        .join(', ')}}`;
+  parents.delete(value);
+  return printed;
 };
 
 /**

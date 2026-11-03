@@ -52,7 +52,7 @@ export const fillTemplate: FillSnippetTemplate = (template, args) =>
       case 'text':
         return indentLines(escapeTemplateLiteral(text(value, arg)), indent);
       default:
-        throw new UnprintableArgError(arg);
+        throw new Error(`Unknown hole ⟦${kind}⟧`);
     }
   });
 

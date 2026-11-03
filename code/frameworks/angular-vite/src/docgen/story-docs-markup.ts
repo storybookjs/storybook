@@ -42,8 +42,11 @@ export { oneLineTextOf };
 
 /** Bindings the generated snippet would carry, which is also what `argsToTemplate` expands to. */
 export interface Bindings {
-  /** `attribute` is the whole `[name]="expression"` binding, as the snippet prints it. */
-  inputs: { name: string; expression: string; attribute?: string }[];
+  /**
+   * `attribute` is the whole `[name]="expression"` binding, as the snippet prints it; `unset` marks
+   * the hole of an input the story does not set, which represents no arg.
+   */
+  inputs: { name: string; expression: string; attribute?: string; unset?: true }[];
   outputs: string[];
 }
 
@@ -75,7 +78,11 @@ const bindingAttributes = (
     filter.include ? filter.include.includes(name) : !filter.exclude?.includes(name);
   const representedInputs = inputs.filter(({ name }) => allowed(name));
   const representedOutputs = outputs.filter(allowed);
-  representedInputs.forEach(({ name }) => representedArgs.add(name));
+  representedInputs.forEach(({ name, unset }) => {
+    if (!unset) {
+      representedArgs.add(name);
+    }
+  });
   representedOutputs.forEach((name) => representedArgs.add(name));
   return {
     inputAttributes: representedInputs.map(

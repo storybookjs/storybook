@@ -58,7 +58,8 @@ const expansionText = (expansion: TemplateExpansion, outputs: readonly string[])
 
 /**
  * The markup `analysis` materialized, from `markup` and `expansions` of the same shape: a story's
- * template printed with placeholders for the values its analyzed print holds, at the same offsets.
+ * template printed with placeholders for the values its analyzed print holds. Each expansion is
+ * found by its marker, as a placeholder can be wider than the value it stands for.
  */
 export const materializeLike = (
   analysis: StoryTemplateAnalysis,
@@ -68,10 +69,15 @@ export const materializeLike = (
   const byMarker = new Map(expansions.map((expansion) => [expansion.marker, expansion]));
   return applyReplacements(
     markup,
-    analysis.replacements.map((replacement) => ({
-      ...replacement,
-      text: expansionText(byMarker.get(replacement.marker)!, replacement.outputs),
-    }))
+    analysis.replacements.map((replacement) => {
+      const start = markup.indexOf(replacement.marker);
+      return {
+        ...replacement,
+        start,
+        end: start + replacement.end - replacement.start,
+        text: expansionText(byMarker.get(replacement.marker)!, replacement.outputs),
+      };
+    })
   );
 };
 

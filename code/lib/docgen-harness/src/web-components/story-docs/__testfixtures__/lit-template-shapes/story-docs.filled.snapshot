@@ -1,12 +1,10 @@
 {
-  "Aliased": "<lit-template-shapes label="Aliased" count="7" heading="Head">
-  <b>Aliased</b>
-</lit-template-shapes>",
-  "Attributes": "<lit-template-shapes label="Alpha" count="2" disabled></lit-template-shapes>",
-  "ClassMap": "<lit-template-shapes></lit-template-shapes>",
-  "Destructured": "<lit-template-shapes label="Destructured" count="6"></lit-template-shapes>",
-  "DisabledFalse": "<lit-template-shapes label="Beta" count="3"></lit-template-shapes>",
-  "IfDefined": "<lit-template-shapes count="4"></lit-template-shapes>",
+  "Aliased": "UnprintableArgError: The snippet cannot show the current value of the `label` arg.",
+  "Attributes": "<lit-template-shapes label="Alpha &amp; &lt;changed>" count="3"></lit-template-shapes>",
+  "ClassMap": "UnprintableArgError: The snippet cannot show the current value of the `active` arg.",
+  "Destructured": "<lit-template-shapes label="Destructured &amp; &lt;changed>" count="7"></lit-template-shapes>",
+  "DisabledFalse": "<lit-template-shapes label="Beta &amp; &lt;changed>" count="4" disabled></lit-template-shapes>",
+  "IfDefined": "<lit-template-shapes count="5"></lit-template-shapes>",
   "Listener": "<lit-template-shapes></lit-template-shapes>
 <script>
   {
@@ -15,9 +13,7 @@
   }
 </script>",
   "MemberPath": "<lit-template-shapes label="Bob">guest</lit-template-shapes>",
-  "Nested": "<lit-template-shapes>
-  <span>Nested</span>
-</lit-template-shapes>",
+  "Nested": "UnprintableArgError: The snippet cannot show the current value of the `label` arg.",
   "NestedListener": "<lit-template-shapes>
   <button>Go</button>
 </lit-template-shapes>
@@ -27,11 +23,11 @@
     host.addEventListener('shape-change', () => {});
   }
 </script>",
-  "Nothing": "<lit-template-shapes label="Set"></lit-template-shapes>",
-  "PrefixedClass": "<lit-template-shapes class="btn-large"></lit-template-shapes>",
+  "Nothing": "UnprintableArgError: The snippet cannot show the current value of the `label` arg.",
+  "PrefixedClass": "<lit-template-shapes class="btn-large &amp; &lt;changed>"></lit-template-shapes>",
   "PropertyOnly": "<lit-template-shapes></lit-template-shapes>",
-  "PropertyPaired": "<lit-template-shapes heading="Heading" open></lit-template-shapes>",
-  "PropertyPairedFalse": "<lit-template-shapes heading="Closed"></lit-template-shapes>",
-  "QuotedAndMultiHole": "<lit-template-shapes class="card warm large" label="Quoted"></lit-template-shapes>",
-  "UnboundArg": "<lit-template-shapes label="Bound"></lit-template-shapes>",
+  "PropertyPaired": "<lit-template-shapes heading="Heading &amp; &lt;changed>"></lit-template-shapes>",
+  "PropertyPairedFalse": "<lit-template-shapes heading="Closed &amp; &lt;changed>" open></lit-template-shapes>",
+  "QuotedAndMultiHole": "<lit-template-shapes class="card warm &amp; &lt;changed> large &amp; &lt;changed>" label="Quoted &amp; &lt;changed>"></lit-template-shapes>",
+  "UnboundArg": "<lit-template-shapes label="Bound &amp; &lt;changed>"></lit-template-shapes>",
 }

@@ -13,14 +13,16 @@
   Body <b>text</b>
   <button slot="actions">Confirm</button>
 </lit-slots-and-css>",
-      "template": "⟦style lit-slots-and-css::part(panel)=panel-part⟧<lit-slots-and-css⟦attr heading heading field ~%20⟧⟦attr style - css --slot-panel-color=--slot-panel-color ~%20⟧>⟦slot default default-slot ~%0A%20%20⟧⟦slot actions actions-slot ~%0A%20%20⟧
+      "template": "<style>⟦rule panel-part lit-slots-and-css::part(panel) ~%0A⟫  lit-slots-and-css::part(panel) { color: rebeccapurple; }⟧
+</style>
+<lit-slots-and-css⟦attr heading heading field ~%20⟫heading="Default render"⟧ style="⟦css --slot-panel-color --slot-panel-color⟫--slot-panel-color: teal;⟧">⟦slot default-slot default ~%0A%20%20⟫Body <b>text</b>⟧⟦slot actions-slot actions ~%0A%20%20⟫<button slot="actions">Confirm</button>⟧
 </lit-slots-and-css>",
     },
     "webcomponentsfixtures-lit-slots-and-css--dom-node": {
       "id": "webcomponentsfixtures-lit-slots-and-css--dom-node",
       "name": "Dom Node",
       "snippet": "<lit-slots-and-css heading="Projected"></lit-slots-and-css>",
-      "template": "⟦style lit-slots-and-css::part(panel)=panel-part⟧<lit-slots-and-css⟦attr heading heading field ~%20⟧⟦attr style - css --slot-panel-color=--slot-panel-color ~%20⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</lit-slots-and-css>",
+      "template": "⟦style panel-part lit-slots-and-css::part(panel)⟫⟧<lit-slots-and-css⟦attr heading heading field ~%20⟫heading="Projected"⟧⟦cssattr --slot-panel-color --slot-panel-color ~%20⟫⟧>⟦slot default-slot default⟫⟧⟦slot actions-slot actions⟫⟧</lit-slots-and-css>",
       "warning": "Incomplete snippet: `(args) => { const el = document.createElement('lit-slots-and-css'); el.setAttribute('heading', String(args.heading)); const body = document.createElement('p'); body.textContent = 'Default slot content'; const action = document.createElement('button'); action.slot = 'actions'; action.textContent = 'Confirm'; el.append(body, action); return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-lit-slots-and-css--lit-template": {
@@ -30,7 +32,7 @@
   <p>Default slot content</p>
   <button slot="actions">Confirm</button>
 </lit-slots-and-css>",
-      "template": "<lit-slots-and-css⟦attr heading heading bind ~%20⟧>
+      "template": "<lit-slots-and-css⟦attr heading heading bind ~%20⟫heading="Projected"⟧>
   <p>Default slot content</p>
   <button slot="actions">Confirm</button>
 </lit-slots-and-css>",

@@ -1,10 +1,10 @@
 {
   "ArgsDefaultRender": "<stencil-props
-  value="1"
-  max="5"
-  variant="full"
-  aria-label-text="Default rating"
+  value="2"
+  max="6"
+  variant="full &amp; &lt;changed>"
+  aria-label-text="Default rating &amp; &lt;changed>"
 ></stencil-props>",
-  "DomNode": "<stencil-props value="3" max="5" variant="compact" aria-label-text="Rating"></stencil-props>",
-  "LitTemplate": "<stencil-props value="3" max="5" variant="compact" aria-label-text="Rating"></stencil-props>",
+  "DomNode": "<stencil-props value="4" max="6" variant="compact &amp; &lt;changed>" aria-label-text="Rating &amp; &lt;changed>"></stencil-props>",
+  "LitTemplate": "<stencil-props value="4" max="6" variant="compact &amp; &lt;changed>" aria-label-text="Rating &amp; &lt;changed>"></stencil-props>",
 }

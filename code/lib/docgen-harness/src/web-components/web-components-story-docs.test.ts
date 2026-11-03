@@ -10,12 +10,12 @@ import {
   createStoryReferenceResolver,
   loadCsf,
 } from 'storybook/internal/csf-tools';
-import { UnprintableArgError } from 'storybook/internal/docs-tools';
+import { UnprintableArgError, fillTemplate, stripHoles } from 'storybook/internal/docs-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { buildStoryDocsPayload } from '../../../../renderers/web-components/src/docgen/story-docs/build-story-docs.ts';
 import { evaluateArgValue } from '../../../../renderers/web-components/src/docgen/story-docs/arg-values.ts';
-import { fillTemplate } from '../../../../renderers/web-components/src/docs/fill-template.ts';
+import { printHole } from '../../../../renderers/web-components/src/docs/print-hole.ts';
 import { createFixtureDocgen } from './story-docs/docgen-fixture.ts';
 import {
   expectNoStaleSnippets,
@@ -103,14 +103,18 @@ async function build({ testDir, title }: Case) {
     filePath: storyPath,
     resolveModule: createStoryReferenceResolver()().resolveModule,
   });
-  // Each template filled with the args of its story as the preview has them before a control
-  // changes, or the error that keeps the static snippet.
+  // Each template filled once a control changed every arg the story writes, or the error that
+  // keeps the static snippet.
   const filled: Record<string, string> = {};
   for (const [exportName, story] of storyExports) {
     const template = payload?.stories[story.id]?.template;
     if (template !== undefined) {
+      const initialArgs = ownArgs(resolver.resolve(exportName).args);
+      const unmappedArgs = Object.fromEntries(
+        Object.entries(initialArgs).map(([key, value]) => [key, changed(value)])
+      );
       try {
-        filled[exportName] = fillTemplate(template, ownArgs(resolver.resolve(exportName).args));
+        filled[exportName] = fillTemplate(template, { initialArgs, unmappedArgs }, printHole);
       } catch (error) {
         if (!(error instanceof UnprintableArgError)) {
           throw error;
@@ -121,6 +125,17 @@ async function build({ testDir, title }: Case) {
   }
   return { storyExports, payload, filled };
 }
+
+// A value as a control changes it: a string to one that needs escaping, a number and a boolean to
+// another one.
+const changed = (value: unknown): unknown =>
+  typeof value === 'string'
+    ? `${value} & <changed>`
+    : typeof value === 'number'
+      ? value + 1
+      : typeof value === 'boolean'
+        ? !value
+        : value;
 
 describe('web-components story-docs server snippets', () => {
   it.each(cases)('$fixtureCase', async (testCase) => {
@@ -162,14 +177,13 @@ describe('web-components story-docs server snippets', () => {
     await expect(filled).toMatchFileSnapshot(join(testDir, 'story-docs.filled.snapshot'));
   });
 
-  it('fills each template with its story args to the snippet, where its layout allows', async () => {
+  it('gives each snippet a template that prints it while no arg changes', async () => {
     const results = await Promise.all(cases.map(buildOnce));
-    const stories = results.flatMap(({ storyExports, payload, filled }) =>
-      storyExports.map(([exportName, story]) => ({
+    const stories = results.flatMap(({ storyExports, payload }) =>
+      storyExports.map(([, story]) => ({
         id: story.id,
         snippet: payload?.stories[story.id]?.snippet,
         template: payload?.stories[story.id]?.template,
-        filled: filled[exportName],
       }))
     );
     const withSnippet = stories.filter((story) => story.snippet !== undefined);
@@ -179,10 +193,11 @@ describe('web-components story-docs server snippets', () => {
       'webcomponentsstorydocs-csf-shapes--authored-code',
       'webcomponentsstorydocs-no-component--authored',
     ]);
-    // Filled with its story's own args, each template is the snippet.
     expect(
       withSnippet
-        .filter((story) => story.template !== undefined && story.filled !== story.snippet)
+        .filter(
+          (story) => story.template !== undefined && stripHoles(story.template) !== story.snippet
+        )
         .map((story) => story.id)
     ).toEqual([]);
   });

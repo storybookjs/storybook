@@ -1,9 +1,9 @@
 {
   "ArgsDefaultRender": "<lit-toolkit-shapes
-  size="small"
-  level="3"
+  size="small &amp; &lt;changed>"
+  level="4"
   tags="[&quot;b&quot;]"
-  label="Default render"
+  label="Default render &amp; &lt;changed>"
 ></lit-toolkit-shapes>
 <script>
   {
@@ -12,10 +12,10 @@
   }
 </script>",
   "DomNode": "<lit-toolkit-shapes
-  size="large"
-  level="2"
+  size="large &amp; &lt;changed>"
+  level="3"
   tags="[&quot;b&quot;]"
-  label="Shaped"
+  label="Shaped &amp; &lt;changed>"
 ></lit-toolkit-shapes>
 <script>
   {
@@ -24,10 +24,10 @@
   }
 </script>",
   "LitTemplate": "<lit-toolkit-shapes
-  size="large"
-  level="2"
+  size="large &amp; &lt;changed>"
+  level="3"
   tags="[&quot;b&quot;]"
-  label="Shaped"
+  label="Shaped &amp; &lt;changed>"
 ></lit-toolkit-shapes>
 <script>
   {

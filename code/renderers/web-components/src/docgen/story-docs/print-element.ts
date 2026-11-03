@@ -1,4 +1,4 @@
-import { legacyHole as hole, holeWord } from 'storybook/internal/docs-tools';
+import { hole } from 'storybook/internal/docs-tools';
 
 import {
   attributeText,
@@ -12,9 +12,9 @@ import { type HtmlAttribute, type HtmlNode, parseHtml } from '../../html-parse.t
 import { printHtml } from './html-tree.ts';
 
 /**
- * What the element of a story without a render prints. An entry with an `arg` prints a hole in the
- * template; one whose value is `undefined` (or, for a style rule, whose declarations are) is an arg
- * the story does not set, which only the template has.
+ * What the element of a story without a render prints. The template wraps an entry with an `arg`
+ * in a hole; one whose value is `undefined` (or, for a style rule, whose declarations are) is an
+ * arg the story does not set, which only the template has.
  */
 export interface ElementSnippet {
   tag: string;
@@ -33,12 +33,13 @@ export interface ElementSnippet {
 }
 
 /**
- * The element with its args. With `holes`, its template: the same html with a hole wherever it
- * prints an arg, laid out as the html is.
+ * The element with its args. With `holes`, its template: the same html with each value an arg
+ * prints wrapped in a hole.
  */
 export function printElementSnippet(snippet: ElementSnippet, holes = false): string {
   const rules = snippet.styleRules.filter(
-    (rule): rule is { selector: string; declarations: string } => rule.declarations !== undefined
+    (rule): rule is { selector: string; declarations: string; arg?: string } =>
+      rule.declarations !== undefined
   );
   const element: HtmlNode = {
     attributes: elementAttributes(snippet),
@@ -55,14 +56,23 @@ export function printElementSnippet(snippet: ElementSnippet, holes = false): str
       [...(rules.length > 0 ? [styleElement(rules)] : []), printHtml([element])].join('\n')
     );
   }
-  // The `<style>` of the part and state args fills to its html and a line break, or to nothing.
-  const styleArgs = snippet.styleRules.filter((rule) => rule.arg !== undefined);
+  // Each part and state rule is a hole in the `<style>`; one the story leaves unset goes in it, or
+  // is a `<style>` of its own while there is none.
+  const unset = snippet.styleRules.filter((rule) => rule.declarations === undefined);
+  const rule = ({ selector, arg }: { selector: string; arg?: string }) => ({
+    kind: rules.length > 0 ? 'rule' : 'style',
+    arg,
+    words: [selector],
+  });
   const style =
-    styleArgs.length > 0
-      ? hole('style', ...styleArgs.map((rule) => holeWord(`${rule.selector}=${rule.arg}`)))
-      : rules.length > 0
-        ? `${styleElement(rules)}\n`
-        : '';
+    rules.length > 0
+      ? `<style>\n${rules
+          .map((written) => {
+            const text = `  ${written.selector} { ${written.declarations} }`;
+            return written.arg === undefined ? text : hole(rule(written), text);
+          })
+          .join('\n')}${unset.map((arg) => hole(rule(arg), '', '\n')).join('')}\n</style>\n`
+      : unset.map((arg) => hole(rule(arg), '')).join('');
   return withScript(`${style}${printHtml([element], true)}`);
 }
 
@@ -122,51 +132,55 @@ const uniqueListenersByEvent = (
   });
 };
 
-// Each attribute an arg prints is a hole in the template: `⟦attr name arg⟧`, or `⟦attr name arg
-// field⟧` for one a field reflects, and `⟦attr style - css property=arg…⟧` for the custom properties.
+// The template wraps each attribute an arg prints in a hole, `⟦attr arg name⟫…⟧`, or `⟦attr arg
+// name field⟫…⟧` for one a field reflects, and each custom property in the `style` attribute in
+// `⟦css arg name⟫…⟧`. While none is set, each is a `style` attribute of its own,
+// `⟦cssattr arg name⟫⟧`.
 const elementAttributes = (snippet: ElementSnippet): HtmlAttribute[] => {
   const attributes = snippet.attributes.flatMap((attribute): HtmlAttribute[] => {
     const node = attributeNode(attribute);
     if (attribute.arg === undefined) {
       return node ? [node] : [];
     }
-    const attributeHole = hole(
-      'attr',
-      holeWord(attribute.name),
-      holeWord(attribute.arg),
-      ...(attribute.viaField ? ['field'] : [])
-    );
+    const place = {
+      kind: 'attr',
+      arg: attribute.arg,
+      words: [attribute.name, ...(attribute.viaField ? ['field'] : [])],
+    };
     return [
-      {
-        ...(node ?? { name: attribute.name, value: undefined, omitted: true }),
-        hole: attributeHole,
-      },
+      { ...(node ?? { name: attribute.name, value: undefined, omitted: true }), hole: place },
     ];
   });
   const style = cssDeclarations(snippet.cssProperties);
-  const styleArgs = snippet.cssProperties.filter((property) => property.arg !== undefined);
-  const styleHole =
-    styleArgs.length > 0
-      ? hole(
-          'attr',
-          'style',
-          '-',
-          'css',
-          ...styleArgs.map((property) => holeWord(`${property.name}=${property.arg}`))
-        )
-      : undefined;
+  // A declaration the story leaves unset goes after the others, after a space once it prints.
+  const declaration = ({ name, value, arg }: ElementSnippet['cssProperties'][number]) => {
+    const text = cssDeclarations([{ name, value }]) ?? '';
+    return arg === undefined
+      ? text
+      : hole({ kind: 'css', arg, words: [name] }, text, text ? undefined : ' ');
+  };
+  const set = snippet.cssProperties.filter((property) => cssDeclarations([property]));
+  const unset = snippet.cssProperties.filter(
+    (property) => property.arg !== undefined && !cssDeclarations([property])
+  );
+  if (style === undefined) {
+    return [
+      ...attributes,
+      ...unset.map((property) => ({
+        name: 'style',
+        value: undefined,
+        omitted: true,
+        hole: { kind: 'cssattr', arg: property.arg, words: [property.name] },
+      })),
+    ];
+  }
   return [
     ...attributes,
-    ...(style || styleHole
-      ? [
-          {
-            name: 'style',
-            value: style,
-            ...(style ? {} : { omitted: true }),
-            ...(styleHole ? { hole: styleHole } : {}),
-          },
-        ]
-      : []),
+    {
+      name: 'style',
+      value: style,
+      holeValue: [set.map(declaration).join(' '), ...unset.map(declaration)].join(''),
+    },
   ];
 };
 
@@ -179,7 +193,7 @@ const attributeNode = ({
   return text === undefined ? undefined : { name, value: text === true ? undefined : text };
 };
 
-// The html of each slot an arg sets is a hole in the template, `⟦slot name arg⟧`.
+// The template wraps the html of each slot an arg sets in a hole, `⟦slot arg name⟫…⟧`.
 const slotNodes = (slots: ElementSnippet['slots']): HtmlNode[] => {
   let content = 0;
   return slots.flatMap((slot): HtmlNode[] => {
@@ -190,7 +204,7 @@ const slotNodes = (slots: ElementSnippet['slots']): HtmlNode[] => {
       ? [...separator, ...nodes]
       : [
           ...separator,
-          { hole: hole('slot', holeWord(slot.name), holeWord(slot.arg)), kind: 'hole', nodes },
+          { hole: { kind: 'slot', arg: slot.arg, words: [slot.name] }, kind: 'hole', nodes },
         ];
   });
 };

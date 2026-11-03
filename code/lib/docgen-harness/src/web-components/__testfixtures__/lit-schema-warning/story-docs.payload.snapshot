@@ -7,7 +7,7 @@
       "id": "webcomponentsfixtures-lit-schema-warning--args-default-render",
       "name": "Args Default Render",
       "snippet": "<lit-schema-warning label="Hello" count="2"></lit-schema-warning>",
-      "template": "<lit-schema-warning⟦attr label label field ~%20⟧⟦attr count count field ~%20⟧></lit-schema-warning>",
+      "template": "<lit-schema-warning⟦attr label label field ~%20⟫label="Hello"⟧⟦attr count count field ~%20⟫count="2"⟧></lit-schema-warning>",
     },
   },
 }

@@ -1,4 +1,4 @@
-import type { IndexEntry } from 'storybook/internal/types';
+import type { Args, IndexEntry } from 'storybook/internal/types';
 
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -12,7 +12,9 @@ import type {
   ManifestClassField,
   ManifestDeclaration,
 } from '../component-docgen/manifest/types.ts';
-import { fillTemplate } from '../../docs/fill-template.ts';
+import { fillTemplate, stripHoles } from 'storybook/internal/docs-tools';
+
+import { printHole } from '../../docs/print-hole.ts';
 import { buildStoryDocsPayload, type BuildStoryDocsContext } from './build-story-docs.ts';
 
 const declaration = {
@@ -737,25 +739,30 @@ describe('buildStoryDocsPayload', () => {
 });
 
 describe('the template', () => {
-  it('is the snippet with a hole wherever it prints an arg, and one for each declared arg', async () => {
+  const fill = (template: string, initialArgs: Args, changed: Args) =>
+    fillTemplate(
+      template,
+      { initialArgs, unmappedArgs: { ...initialArgs, ...changed } },
+      printHole
+    );
+
+  it('wraps each value an arg prints in a hole, with one for each declared arg it leaves unset', async () => {
     const { snippet, template } = await firstTemplate(`
       export default { title: 'Example/TestElement', component: 'test-element', args: { label: 'Meta' } };
       export const Primary = { args: { count: 2, disabled: true, 'default-slot': 'Hi' } };
     `);
     expect(snippet).toBe('<test-element label="Meta" count="2" disabled>Hi</test-element>');
-    expect(template).toBe(
-      '⟦style test-element::part(panel)=panel-part test-element:state(active)=active-state⟧' +
-        '<test-element⟦attr label label field ~%20⟧⟦attr count count field ~%20⟧⟦attr disabled disabled field ~%20⟧⟦attr is-open isOpen field ~%20⟧⟦attr active active field ~%20⟧⟦attr variant variant ~%20⟧⟦attr heading heading field ~%20⟧⟦attr style - css --accent=--accent ~%20⟧>⟦slot default default-slot⟧⟦slot actions actions-slot⟧</test-element>'
+    expect(stripHoles(template!)).toBe(snippet);
+    const initialArgs = { label: 'Meta', count: 2, disabled: true, 'default-slot': 'Hi' };
+    expect(fill(template!, initialArgs, { label: 'Changed', variant: 'primary', theme: 'x' })).toBe(
+      '<test-element label="Changed" count="2" disabled variant="primary">Hi</test-element>'
     );
-    expect(
-      fillTemplate(template!, { label: 'Meta', count: 2, disabled: true, 'default-slot': 'Hi' })
-    ).toBe(snippet);
-    expect(fillTemplate(template!, { label: 'Changed', variant: 'primary' })).toBe(
-      '<test-element label="Changed" variant="primary"></test-element>'
+    expect(fill(template!, initialArgs, { '--accent': 'red', 'panel-part': 'color: red' })).toBe(
+      '<style>\n  test-element::part(panel) { color: red }\n</style>\n<test-element label="Meta" count="2" disabled style="--accent: red;">Hi</test-element>'
     );
   });
 
-  it('is the lit template of the render with a hole wherever it prints an arg', async () => {
+  it('wraps each value the lit template of the render prints of an arg in a hole', async () => {
     const { snippet, template } = await firstTemplate(`
       import { html } from 'lit';
       export default { title: 'Example/TestElement', component: 'test-element' };
@@ -766,9 +773,25 @@ describe('the template', () => {
     `);
     expect(snippet).toBe('<test-element label="Go">Go</test-element>');
     expect(template).toBe(
-      '<test-element⟦attr label label bind ~%20⟧⟦bool disabled disabled ~%20⟧>⟦text label ^ $⟧</test-element>'
+      '<test-element⟦attr label label bind ~%20⟫label="Go"⟧⟦bool disabled disabled ~%20⟫⟧>⟦text label ^ $⟫Go⟧</test-element>'
     );
-    expect(fillTemplate(template!, { label: 'Go', disabled: false })).toBe(snippet);
+    expect(
+      fill(template!, { label: 'Go', disabled: false }, { label: 'a < b', disabled: true })
+    ).toBe('<test-element label="a &lt; b" disabled>a &lt; b</test-element>');
+  });
+
+  it('cannot follow an arg a conditional reads', async () => {
+    const { template } = await firstTemplate(`
+      import { html } from 'lit';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { label: 'Go', open: true },
+        render: (args) => html\`<test-element label=\${args.open ? args.label : 'Closed'}></test-element>\`,
+      };
+    `);
+    expect(() => fill(template!, { label: 'Go', open: true }, { open: false })).toThrow(
+      'The snippet cannot show the current value of the `open` arg.'
+    );
   });
 
   it('is not there where next prints no snippet', async () => {

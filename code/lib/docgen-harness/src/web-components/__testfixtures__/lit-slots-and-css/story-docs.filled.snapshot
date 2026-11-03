@@ -1,13 +1,13 @@
 {
   "ArgsDefaultRender": "<style>
-  lit-slots-and-css::part(panel) { color: rebeccapurple; }
+  lit-slots-and-css::part(panel) { color: rebeccapurple; & <changed> }
 </style>
-<lit-slots-and-css heading="Default render" style="--slot-panel-color: teal;">
-  Body <b>text</b>
-  <button slot="actions">Confirm</button>
+<lit-slots-and-css heading="Default render &amp; &lt;changed>" style="--slot-panel-color: teal &amp; &lt;changed>;">
+  Body <b>text</b> & <changed>
+  <span slot="actions"><button>Confirm</button> & <changed></span>
 </lit-slots-and-css>",
-  "DomNode": "<lit-slots-and-css heading="Projected"></lit-slots-and-css>",
-  "LitTemplate": "<lit-slots-and-css heading="Projected">
+  "DomNode": "<lit-slots-and-css heading="Projected &amp; &lt;changed>"></lit-slots-and-css>",
+  "LitTemplate": "<lit-slots-and-css heading="Projected &amp; &lt;changed>">
   <p>Default slot content</p>
   <button slot="actions">Confirm</button>
 </lit-slots-and-css>",

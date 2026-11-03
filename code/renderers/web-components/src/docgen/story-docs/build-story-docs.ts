@@ -18,7 +18,7 @@ import {
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
-import { legacyWithHoleSpace as withHoleSpace } from 'storybook/internal/docs-tools';
+import { withHoleSpace } from 'storybook/internal/docs-tools';
 
 import { resolve } from 'node:path';
 
@@ -167,7 +167,9 @@ const baseStoryDoc = (
     ...(result.snippet === undefined || result.template === undefined
       ? {}
       : {
-          template: withHoleSpace(result.template, takesSpace),
+          // A value a control clears leaves no gap or empty line; text in a quoted value keeps the
+          // text around it as written.
+          template: withHoleSpace(result.template, (kind) => kind !== 'quoted'),
         }),
     ...(result.warning === undefined ? {} : { warning: result.warning }),
     ...(description ? { description } : {}),
@@ -515,7 +517,3 @@ const joinWarnings = (parts: (string | undefined)[]): { warning?: string } => {
   const warning = [...new Set(parts.filter((part) => part !== undefined))].join('\n');
   return warning === '' ? {} : { warning };
 };
-
-/** An attribute that prints nothing leaves no gap, and no hole leaves an empty line. */
-export const takesSpace = (kind: string, space: string) =>
-  kind === 'attr' || kind === 'bool' || space.includes('\n');

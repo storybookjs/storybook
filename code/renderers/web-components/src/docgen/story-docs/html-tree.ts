@@ -1,3 +1,5 @@
+import { type TemplateHole, hole } from 'storybook/internal/docs-tools';
+
 import {
   type ElementNode,
   type HtmlAttribute,
@@ -12,20 +14,21 @@ const INLINE_LIMIT = 80;
 const INDENT = '  ';
 /**
  * Html laid out in 80 columns. With `holes`, the template of the same html: each `hole` node and
- * attribute prints its hole, where the layout is that of the values the html prints.
+ * attribute wraps what it prints in its hole. A value that prints nothing goes at the end of the
+ * content it stands in, and an attribute that does at the end of the start tag.
  */
 export function printHtml(nodes: HtmlNode[], holes = false): string {
   const expanded = expandHoles(nodes);
-  const lines = expanded
-    .filter((node) => isPrintable(node) || (holes && isPlaceholder(node)))
-    .map((node) => printNode(node, 0, holes));
-  return (holes ? lines.filter((line) => line !== '') : lines).join('\n');
+  const lines = expanded.filter(isPrintable).map((node) => printNode(node, 0, holes));
+  const html = lines.join('\n');
+  return holes ? html + placeholderHoles(expanded, html ? '\n' : '') : html;
 }
 
 interface HoleTag {
-  hole: string;
-  /** Whether the node prints the hole; the other nodes of the value print nothing. */
+  hole: TemplateHole;
+  /** Whether the node opens the hole, and whether it closes it. */
   first: boolean;
+  last: boolean;
   /** A value that prints nothing, which only the template shows, as its hole. */
   placeholder?: boolean;
 }
@@ -43,13 +46,19 @@ const expandHoles = (nodes: HtmlNode[]): HtmlNode[] =>
       return [node];
     }
     const inner = expandHoles(node.nodes);
-    const first = inner.find(isPrintable);
-    if (!first) {
+    const printable = inner.filter(isPrintable);
+    if (printable.length === 0) {
       const placeholder: HtmlNode = { kind: 'text', text: '' };
-      holeTags.set(placeholder, { hole: node.hole, first: true, placeholder: true });
+      holeTags.set(placeholder, { hole: node.hole, first: true, last: true, placeholder: true });
       return [placeholder];
     }
-    inner.forEach((child) => holeTags.set(child, { hole: node.hole, first: child === first }));
+    inner.forEach((child) =>
+      holeTags.set(child, {
+        hole: node.hole,
+        first: child === printable[0],
+        last: child === printable.at(-1),
+      })
+    );
     return inner;
   });
 
@@ -58,23 +67,43 @@ const isPlaceholder = (node: HtmlNode): boolean => holeTags.get(node)?.placehold
 const isPrintable = (node: HtmlNode): boolean =>
   node.kind !== 'text' || collapseText(node.text) !== '';
 
-// The holes of the values that print nothing among `children`.
-const placeholderHoles = (children: HtmlNode[]): string =>
+// The holes of the values that print nothing among `children`, each after `space` once it prints.
+const placeholderHoles = (children: HtmlNode[], space: string): string =>
   children
     .filter(isPlaceholder)
-    .map((child) => holeTags.get(child)!.hole)
+    .map((child) => hole(holeTags.get(child)!.hole, '', space))
     .join('');
 
-// A hole that spans lines, such as the template of a nested template, indented where it goes.
-const indentedHole = (hole: string, indent: string): string => hole.split('\n').join(`\n${indent}`);
-
-const printNode = (node: HtmlNode, depth: number, holes: boolean): string => {
-  const indent = INDENT.repeat(depth);
-  const tag = holes ? holeTags.get(node) : undefined;
-  if (tag) {
-    const printed = node.kind === 'text' ? textHole(tag.hole, true, true) : tag.hole;
-    return tag.first ? `${indent}${indentedHole(printed, indent)}` : '';
+// `printed` with the hole of its node opened before it, after its indent, and closed after it. A
+// text hole says where the snippet trims the text it prints: `^` at its start, `$` at its end.
+const wrapInHole = (
+  printed: string,
+  tag: HoleTag | undefined,
+  trim: { start: boolean; end: boolean }
+): string => {
+  if (!tag) {
+    return printed;
   }
+  const place =
+    tag.hole.kind === 'text'
+      ? {
+          ...tag.hole,
+          words: [...tag.hole.words, ...(trim.start ? ['^'] : []), ...(trim.end ? ['$'] : [])],
+        }
+      : tag.hole;
+  const [open] = hole(place, '').split('⟫');
+  const indent = printed.match(/^\s*/)![0];
+  return `${indent}${tag.first ? `${open}⟫` : ''}${printed.slice(indent.length)}${tag.last ? '⟧' : ''}`;
+};
+
+const printNode = (node: HtmlNode, depth: number, holes: boolean): string =>
+  wrapInHole(printNodeText(node, depth, holes), holes ? holeTags.get(node) : undefined, {
+    start: true,
+    end: true,
+  });
+
+const printNodeText = (node: HtmlNode, depth: number, holes: boolean): string => {
+  const indent = INDENT.repeat(depth);
   switch (node.kind) {
     case 'comment':
       return `${indent}${node.text}`;
@@ -87,7 +116,7 @@ const printNode = (node: HtmlNode, depth: number, holes: boolean): string => {
     case 'text':
       return `${indent}${collapseText(node.text)}`;
     case 'hole':
-      return printNode({ ...node, kind: 'text', text: '' }, depth, holes);
+      return '';
     default: {
       const exhaustive: never = node;
       return exhaustive;
@@ -108,7 +137,7 @@ const printElement = (node: ElementNode, depth: number, holes: boolean): string 
 
   const children = printableChildren(node.children);
   if (children.length === 0) {
-    const content = holes ? placeholderHoles(node.children) : '';
+    const content = holes ? placeholderHoles(node.children, '') : '';
     return node.closed ? `${startTag}${content}</${node.name}>` : `${startTag}${content}`;
   }
 
@@ -119,7 +148,9 @@ const printElement = (node: ElementNode, depth: number, holes: boolean): string 
     }
   }
 
-  const body = printChildLines(node.children, depth + 1, holes).join('\n');
+  const body =
+    printChildLines(node.children, depth + 1, holes).join('\n') +
+    (holes ? placeholderHoles(node.children, `\n${INDENT.repeat(depth + 1)}`) : '');
   return node.closed ? `${startTag}\n${body}\n${indent}</${node.name}>` : `${startTag}\n${body}`;
 };
 
@@ -141,12 +172,7 @@ const printChildLines = (children: HtmlNode[], depth: number, holes: boolean): s
   };
 
   for (const child of children) {
-    // A value that prints nothing is no node of the static snippet, so it takes no part in the
-    // layout; the template prints its hole among the nodes next to it.
     if (isPlaceholder(child)) {
-      if (holes) {
-        group.push(child);
-      }
       continue;
     }
     if (child.kind === 'text' && collapseText(child.text) === '') {
@@ -161,7 +187,7 @@ const printChildLines = (children: HtmlNode[], depth: number, holes: boolean): s
     lines.push(printNode(child, depth, holes));
   }
   flushGroup();
-  return holes ? lines.filter((line) => line.trim() !== '') : lines;
+  return lines;
 };
 
 const inlineElementText = (
@@ -176,61 +202,37 @@ const inlineElementText = (
   if (node.selfClosing) {
     return { hasText: false, text: `${printCompactStartTag(node, holes)}</${node.name}>` };
   }
+  const content = holes ? placeholderHoles(node.children, '') : '';
   const children = printableChildren(node.children);
   if (children.length === 0) {
-    const content = holes ? placeholderHoles(node.children) : '';
     const text = node.closed
       ? `${printCompactStartTag(node, holes)}${content}</${node.name}>`
       : `${printCompactStartTag(node, holes)}${content}`;
     return { hasText: false, text };
   }
-  const decided = inlineChildrenText(node.children, false);
-  const childrenText = holes ? inlineChildrenText(node.children, true) : decided;
-  return decided === undefined || childrenText === undefined || (requireText && !decided.hasText)
+  const childrenText = inlineChildrenText(node.children, holes);
+  return childrenText === undefined || (requireText && !childrenText.hasText)
     ? undefined
     : {
-        hasText: decided.hasText,
-        text: `${printCompactStartTag(node, holes)}${childrenText.text}</${node.name}>`,
+        hasText: childrenText.hasText,
+        text: `${printCompactStartTag(node, holes)}${childrenText.text}${content}</${node.name}>`,
       };
 };
 
 const inlineChildrenText = (children: HtmlNode[], holes: boolean): InlineText | undefined => {
   const parts: string[] = [];
   let hasText = false;
-  // The values that print nothing are no nodes of the static snippet, so the first and the last
-  // node are among the others.
   const shown = children.filter((child) => !isPlaceholder(child));
-  for (const child of children) {
-    const tag = holes ? holeTags.get(child) : undefined;
-    if (isPlaceholder(child)) {
-      if (tag) {
-        parts.push(tag.hole);
-      }
-      continue;
-    }
-    const part = inlineChildText(child, false);
+  for (const child of shown) {
+    const part = inlineChildText(child, holes);
     if (part === undefined) {
       return undefined;
     }
     hasText ||= part.hasText;
-    if (tag) {
-      if (tag.first) {
-        parts.push(
-          child.kind === 'text'
-            ? textHole(tag.hole, child === shown[0], child === shown.at(-1))
-            : tag.hole
-        );
-      }
-      continue;
-    }
-    if (part.text !== '') {
-      parts.push(
-        child.kind === 'text'
-          ? inlineText(child.text, child === shown[0], child === shown.at(-1))
-          : holes
-            ? inlineChildText(child, true)!.text
-            : part.text
-      );
+    const trim = { start: child === shown[0], end: child === shown.at(-1) };
+    const text = child.kind === 'text' ? inlineText(child.text, trim.start, trim.end) : part.text;
+    if (text !== '') {
+      parts.push(wrapInHole(text, holes ? holeTags.get(child) : undefined, trim));
     }
   }
   return { hasText, text: parts.join('') };
@@ -272,7 +274,6 @@ const printRawTextElement = (
   return node.closed ? `${startTag}${node.text}</${node.name}>` : `${startTag}${node.text}`;
 };
 
-// An attribute the template prints on a line of its own fills to nothing with its line.
 const printStartTag = (
   node: Pick<ElementNode, 'attributes' | 'name'>,
   depth: number,
@@ -280,16 +281,17 @@ const printStartTag = (
 ): string => {
   const indent = INDENT.repeat(depth);
   const compact = printCompactStartTag(node, false);
-  if (indent.length + compact.length <= INLINE_LIMIT) {
+  if (indent.length + compact.length <= INLINE_LIMIT || shown(node.attributes).length === 0) {
     return `${indent}${holes ? printCompactStartTag(node, true) : compact}`;
   }
-  const attributes = shownAttributes(node.attributes, holes);
-  if (node.attributes.every((attribute) => attribute.omitted)) {
-    return `${indent}${holes ? printCompactStartTag(node, true) : `<${node.name}>`}`;
-  }
+  const lines = shown(node.attributes).map(
+    (attribute) => `${indent}${INDENT}${printHtmlAttribute(attribute, holes)}`
+  );
+  const omitted = holes ? omittedHoles(node.attributes, `\n${indent}${INDENT}`) : '';
   return [
     `${indent}<${node.name}`,
-    ...attributes.map((attr) => `${indent}${INDENT}${printHtmlAttribute(attr, holes)}`),
+    ...lines.slice(0, -1),
+    lines.at(-1) + omitted,
     `${indent}>`,
   ].join('\n');
 };
@@ -298,43 +300,37 @@ const printCompactStartTag = (
   node: Pick<ElementNode, 'attributes' | 'name'>,
   holes: boolean
 ): string => {
-  const attrs = shownAttributes(node.attributes, holes)
+  const attrs = shown(node.attributes)
     .map((attribute) => printHtmlAttribute(attribute, holes))
     .join(' ');
-  const suffix = attrs ? ` ${attrs}` : '';
-  return `<${node.name}${suffix}>`;
+  const omitted = holes ? omittedHoles(node.attributes, ' ') : '';
+  return `<${node.name}${attrs ? ` ${attrs}` : ''}${omitted}>`;
 };
 
-const shownAttributes = (attributes: HtmlAttribute[], holes: boolean): HtmlAttribute[] =>
-  holes
-    ? attributes.filter((attribute) => !attribute.omitted || attribute.hole !== undefined)
-    : attributes.filter((attribute) => !attribute.omitted);
+const shown = (attributes: HtmlAttribute[]): HtmlAttribute[] =>
+  attributes.filter((attribute) => !attribute.omitted);
 
-const printHtmlAttribute = (
-  { hole, holeValue, name, value }: HtmlAttribute,
-  holes: boolean
-): string => {
-  if (holes && hole !== undefined) {
-    return hole;
-  }
+// The holes of the attributes that print nothing, each after `space` once it prints.
+const omittedHoles = (attributes: HtmlAttribute[], space: string): string =>
+  attributes
+    .filter((attribute) => attribute.omitted && attribute.hole)
+    .map((attribute) => hole(attribute.hole!, '', space))
+    .join('');
+
+const printHtmlAttribute = (attribute: HtmlAttribute, holes: boolean): string => {
+  const { hole: place, holeValue, name, value } = attribute;
   if (holes && holeValue !== undefined) {
-    // The text around the holes is escaped; each hole prints its value escaped by the filler.
+    // The holes stay as they are; the text in and around them is escaped as the value is.
     const escaped = holeValue
-      .split(/(⟦[^⟧]*⟧)/)
+      .split(/(⟦[^⟫⟧]*⟫|⟧)/)
       .map((part, index) => (index % 2 === 1 ? part : escapeAttribute(part)))
       .join('');
     return `${name}="${escaped}"`;
   }
-  return value === undefined ? name : quotedAttribute(name, value);
+  const printed = value === undefined ? name : quotedAttribute(name, value);
+  return holes && place ? hole(place, printed) : printed;
 };
 
 const printableChildren = (children: HtmlNode[]): HtmlNode[] => children.filter(isPrintable);
 
 const collapseText = (text: string): string => text.trim().replace(/\s+/g, ' ');
-
-// A text hole with where the snippet trims the text it prints: `^` at its start, `$` at its end. The
-// filler collapses the whitespace in it as a text node prints.
-const textHole = (hole: string, trimStart: boolean, trimEnd: boolean): string =>
-  hole.startsWith('⟦text ')
-    ? `${hole.slice(0, -1)}${trimStart ? ' ^' : ''}${trimEnd ? ' $' : ''}⟧`
-    : hole;

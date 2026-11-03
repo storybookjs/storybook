@@ -1,5 +1,5 @@
 {
-  "ArgsDefaultRender": "<lit-events value="default event"></lit-events>
+  "ArgsDefaultRender": "<lit-events value="default event &amp; &lt;changed>"></lit-events>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
@@ -7,7 +7,7 @@
     host.addEventListener('my-close', () => {});
   }
 </script>",
-  "DomNode": "<lit-events value="changed"></lit-events>
+  "DomNode": "<lit-events value="changed &amp; &lt;changed>"></lit-events>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
@@ -15,7 +15,7 @@
     host.addEventListener('my-close', () => {});
   }
 </script>",
-  "LitTemplate": "<lit-events value="changed"></lit-events>
+  "LitTemplate": "<lit-events value="changed &amp; &lt;changed>"></lit-events>
 <script>
   {
     const host = document.currentScript.previousElementSibling;

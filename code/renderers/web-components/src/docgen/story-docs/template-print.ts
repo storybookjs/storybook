@@ -1,6 +1,6 @@
 import type { ESTree as E, ESTreeNode as Node } from 'storybook/internal/csf-tools';
 import { oneLineTextOf } from 'storybook/internal/csf-tools';
-import { legacyHole as hole, holeWord } from 'storybook/internal/docs-tools';
+import { hole } from 'storybook/internal/docs-tools';
 
 import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
 import { fieldDefault, pairedAttribute } from './classify-args.ts';
@@ -27,7 +27,10 @@ export interface HtmlTemplateRenderResult {
   properties: string[];
   referenced: string[];
   snippet: string;
-  /** The snippet with a hole wherever it prints an arg the template reads whole. */
+  /**
+   * The snippet with each value it prints of an arg the template reads whole wrapped in a hole,
+   * after a `guard` hole for each arg it reads another way, which it cannot follow.
+   */
   template: string;
   unresolved: string[];
 }
@@ -40,6 +43,8 @@ interface TemplatePrintState {
   context: PrintContext;
   listeners: HtmlTemplateRenderResult['listeners'];
   falseDefaults: Set<string>;
+  /** The args the template reads where the snippet prints no hole. */
+  guarded: Set<string>;
   listenersNotShown: Set<string>;
   lit: boolean;
   markers: Map<string, E.Expression>;
@@ -85,6 +90,7 @@ const printTemplateWithListeners = (
   const state: TemplatePrintState = {
     context: scopedContext,
     falseDefaults: new Set(),
+    guarded: new Set(),
     listeners: [],
     listenersNotShown: new Set(),
     lit: template.lit,
@@ -111,7 +117,8 @@ const printTemplateWithListeners = (
   }
   const script = printRootListenerScript(state.listeners);
   const snippet = printHtml(nodes);
-  const holes = printHtml(nodes, true);
+  const guards = [...state.guarded].map((arg) => hole({ kind: 'guard', arg, words: [] }, ''));
+  const holes = guards.join('') + printHtml(nodes, true);
 
   return {
     ...(state.falseDefaults.size === 0 ? {} : { falseDefaults: [...state.falseDefaults] }),
@@ -189,6 +196,7 @@ const resolveAttribute = (
 ): HtmlAttribute | undefined => {
   if (containsMarker(attribute.name, state)) {
     unresolvedMarkers(attribute.name, state);
+    guardMarkers(attribute.name, state);
     return undefined;
   }
   if (attribute.value === undefined || !containsMarker(attribute.value, state)) {
@@ -200,16 +208,17 @@ const resolveAttribute = (
     const value = resolveFirstMarker(attribute.value, state);
     const name = attribute.name.slice(1);
     const shown = value && isTruthyAttributeValue(value);
-    // `?name=${args.x}` is the attribute while the arg is truthy: `⟦bool name arg⟧`.
+    // `?name=${args.x}` is the attribute while the arg is truthy: `⟦bool arg name⟫…⟧`.
     const arg = singleArg(attribute.value, value, state);
     if (arg !== undefined) {
       return {
         name,
         value: undefined,
-        hole: hole('bool', holeWord(name), holeWord(arg)),
+        hole: { kind: 'bool', arg, words: [name] },
         ...(shown ? {} : { omitted: true }),
       };
     }
+    guardMarkers(attribute.value, state);
     return shown ? { name, value: undefined } : undefined;
   }
   if (prefix === '@') {
@@ -230,6 +239,7 @@ const resolveAttribute = (
     const paired = pairedAttribute(property, state.context.declaration);
     if (!paired) {
       state.properties.add(property);
+      guardMarkers(attribute.value, state);
       return undefined;
     }
     const markers = markersIn(attribute.value, state);
@@ -237,6 +247,10 @@ const resolveAttribute = (
       markers.length === 1 && attribute.value === markers[0]
         ? resolveFirstMarker(attribute.value, state)
         : undefined;
+    const arg = value && singleArg(attribute.value, value, state);
+    if (arg === undefined) {
+      guardMarkers(attribute.value, state);
+    }
     if (!value || value.kind === 'unresolved') {
       state.unresolved.add(
         value?.kind === 'unresolved' ? value.source : markerSources(markers, state)
@@ -252,30 +266,30 @@ const resolveAttribute = (
       state.falseDefaults.add(property);
     }
     const printed = attributeFromPrinted(printAttribute(paired, resolved.value, true));
-    // `.prop=${args.x}` prints the attribute the field reflects: `⟦attr name arg field⟧`.
-    const arg = singleArg(attribute.value, value, state);
+    // `.prop=${args.x}` prints the attribute the field reflects: `⟦attr arg name field⟫…⟧`.
     return arg === undefined
       ? printed
       : {
           ...(printed ?? { name: paired, value: undefined, omitted: true }),
-          hole: hole('attr', holeWord(paired), holeWord(arg), 'field'),
+          hole: { kind: 'attr', arg, words: [paired, 'field'] },
         };
   }
 
   const markers = markersIn(attribute.value, state);
   const singleDynamicValue = markers.length === 1 && attribute.value === markers[0];
-  // `name=${args.x}` is the attribute with the arg's text as its value, `⟦attr name arg bind⟧`;
-  // `name=${ifDefined(args.x)}` is it while the arg is set, `⟦attr name arg defined⟧`.
+  // `name=${args.x}` is the attribute with the arg's text as its value, `⟦attr arg name bind⟫…⟧`;
+  // `name=${ifDefined(args.x)}` is it while the arg is set, `⟦attr arg name defined⟫…⟧`.
   const only = singleDynamicValue ? state.markers.get(markers[0]!) : undefined;
   const definedArg =
     only && isIfDefinedCall(only, state.context.bindings)
       ? wholeArg(only.arguments[0], state)
       : undefined;
+  const boundArg = only && definedArg === undefined ? wholeArg(only, state) : undefined;
   const singleHole =
     definedArg !== undefined
-      ? hole('attr', holeWord(attribute.name), holeWord(definedArg), 'defined')
-      : only && wholeArg(only, state) !== undefined
-        ? hole('attr', holeWord(attribute.name), holeWord(wholeArg(only, state)!), 'bind')
+      ? { kind: 'attr', arg: definedArg, words: [attribute.name, 'defined'] }
+      : boundArg !== undefined
+        ? { kind: 'attr', arg: boundArg, words: [attribute.name, 'bind'] }
         : undefined;
   const withHole = (printed: HtmlAttribute | undefined): HtmlAttribute | undefined =>
     singleHole === undefined
@@ -285,7 +299,7 @@ const resolveAttribute = (
           hole: singleHole,
         };
   let text = attribute.value;
-  // The value with a hole for each arg it reads whole, `⟦quoted arg⟧`.
+  // The value with a hole around each arg it reads whole, `⟦quoted arg⟫…⟧`.
   let holeText: string | undefined = attribute.value;
   for (const marker of markers) {
     const expression = state.markers.get(marker);
@@ -294,6 +308,9 @@ const resolveAttribute = (
     }
     const value = resolveMarkerValue(expression, state);
     const arg = singleHole === undefined ? wholeArg(expression, state) : undefined;
+    if (singleHole === undefined && arg === undefined) {
+      guard(expression, state);
+    }
     if (value.kind === 'function') {
       state.unresolved.add(oneLineTextOf(expression));
       return undefined;
@@ -322,7 +339,7 @@ const resolveAttribute = (
     text = text.replace(marker, valueText);
     holeText = holeText.replace(
       marker,
-      arg === undefined ? valueText : hole('quoted', holeWord(arg))
+      arg === undefined ? valueText : hole({ kind: 'quoted', arg, words: [] }, valueText)
     );
   }
   return withHole({
@@ -350,11 +367,12 @@ const resolveTextNode = (text: string, state: TemplatePrintState): HtmlNode[] =>
     if (expression && arg !== undefined) {
       // Next prints the text of a lit template, and the html of a string template.
       nodes.push({
-        hole: state.lit ? hole('text', holeWord(arg)) : hole('html', holeWord(arg)),
+        hole: { kind: state.lit ? 'text' : 'html', arg, words: [] },
         kind: 'hole',
         nodes: nodesForChildValue(resolveMarkerValue(expression, state), state),
       });
     } else if (expression) {
+      guard(expression, state);
       nodes.push(...nodesForChildValue(resolveMarkerValue(expression, state), state));
     }
     rest = after ?? '';
@@ -379,17 +397,10 @@ const nodesForChildValue = (value: HoleValue, state: TemplatePrintState): HtmlNo
       nested.referenced.forEach((arg) => state.referenced.add(arg));
       nested.unresolved.forEach((source) => state.unresolved.add(source));
       nested.listenersNotShown?.forEach((listener) => state.listenersNotShown.add(listener));
-      const nodes = parseHtml(nested.snippet.replace(/<script>[\s\S]*<\/script>$/, ''));
-      // A nested template with holes is its template where its html goes.
-      return nested.template === nested.snippet
-        ? nodes
-        : [
-            {
-              hole: nested.template.replace(/<script>[\s\S]*<\/script>$/, ''),
-              kind: 'hole',
-              nodes,
-            },
-          ];
+      // The html of a nested template is printed again where it goes, so its holes are lost: the
+      // template cannot follow the args it reads.
+      nested.referenced.forEach((arg) => state.guarded.add(arg));
+      return parseHtml(nested.snippet.replace(/<script>[\s\S]*<\/script>$/, ''));
     }
     case 'unresolved':
       state.unresolved.add(value.source);
@@ -452,7 +463,14 @@ const resolveFirstMarker = (text: string, state: TemplatePrintState): HoleValue 
   return expression ? resolveMarkerValue(expression, state) : undefined;
 };
 
+const guard = (expression: E.Expression, state: TemplatePrintState): void =>
+  collectReferencedArgs(expression, state.context.scope).forEach((arg) => state.guarded.add(arg));
+
+const guardMarkers = (text: string, state: TemplatePrintState): void =>
+  markersIn(text, state).forEach((marker) => guard(state.markers.get(marker)!, state));
+
 const removeUnsupportedMarkers = (text: string, state: TemplatePrintState): string => {
+  guardMarkers(text, state);
   let next = text;
   for (const marker of markersIn(text, state)) {
     const expression = state.markers.get(marker);

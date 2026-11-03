@@ -18,8 +18,8 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "⟦style lit-toolkit-shapes::part(base)=base-part lit-toolkit-shapes:state(active)=active-state⟧<lit-toolkit-shapes⟦attr size size field ~%0A%20%20⟧⟦attr level level field ~%0A%20%20⟧⟦attr tags tags field ~%0A%20%20⟧⟦attr label label field ~%0A%20%20⟧⟦attr old-size oldSize field ~%0A%20%20⟧⟦attr target target field ~%0A%20%20⟧⟦attr when when field ~%0A%20%20⟧⟦attr style - css --toolkit-color=--toolkit-color --toolkit-scale=--toolkit-scale --toolkit-font=--toolkit-font --toolkit-gap=--toolkit-gap ~%0A%20%20⟧
->⟦slot default default-slot⟧⟦slot label label-slot⟧</lit-toolkit-shapes>
+      "template": "⟦style base-part lit-toolkit-shapes::part(base)⟫⟧⟦style active-state lit-toolkit-shapes:state(active)⟫⟧<lit-toolkit-shapes⟦attr size size field ~%0A%20%20⟫size="small"⟧⟦attr level level field ~%0A%20%20⟫level="3"⟧⟦attr tags tags field ~%0A%20%20⟫tags="[&quot;b&quot;]"⟧⟦attr label label field ~%0A%20%20⟫label="Default render"⟧⟦attr oldSize old-size field ~%0A%20%20⟫⟧⟦attr target target field ~%0A%20%20⟫⟧⟦attr when when field ~%0A%20%20⟫⟧⟦cssattr --toolkit-color --toolkit-color ~%0A%20%20⟫⟧⟦cssattr --toolkit-scale --toolkit-scale ~%0A%20%20⟫⟧⟦cssattr --toolkit-font --toolkit-font ~%0A%20%20⟫⟧⟦cssattr --toolkit-gap --toolkit-gap ~%0A%20%20⟫⟧
+>⟦slot default-slot default⟫⟧⟦slot label-slot label⟫⟧</lit-toolkit-shapes>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
@@ -42,8 +42,8 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "⟦style lit-toolkit-shapes::part(base)=base-part lit-toolkit-shapes:state(active)=active-state⟧<lit-toolkit-shapes⟦attr size size field ~%0A%20%20⟧⟦attr level level field ~%0A%20%20⟧⟦attr tags tags field ~%0A%20%20⟧⟦attr label label field ~%0A%20%20⟧⟦attr old-size oldSize field ~%0A%20%20⟧⟦attr target target field ~%0A%20%20⟧⟦attr when when field ~%0A%20%20⟧⟦attr style - css --toolkit-color=--toolkit-color --toolkit-scale=--toolkit-scale --toolkit-font=--toolkit-font --toolkit-gap=--toolkit-gap ~%0A%20%20⟧
->⟦slot default default-slot⟧⟦slot label label-slot⟧</lit-toolkit-shapes>
+      "template": "⟦style base-part lit-toolkit-shapes::part(base)⟫⟧⟦style active-state lit-toolkit-shapes:state(active)⟫⟧<lit-toolkit-shapes⟦attr size size field ~%0A%20%20⟫size="large"⟧⟦attr level level field ~%0A%20%20⟫level="2"⟧⟦attr tags tags field ~%0A%20%20⟫tags="[&quot;b&quot;]"⟧⟦attr label label field ~%0A%20%20⟫label="Shaped"⟧⟦attr oldSize old-size field ~%0A%20%20⟫⟧⟦attr target target field ~%0A%20%20⟫⟧⟦attr when when field ~%0A%20%20⟫⟧⟦cssattr --toolkit-color --toolkit-color ~%0A%20%20⟫⟧⟦cssattr --toolkit-scale --toolkit-scale ~%0A%20%20⟫⟧⟦cssattr --toolkit-font --toolkit-font ~%0A%20%20⟫⟧⟦cssattr --toolkit-gap --toolkit-gap ~%0A%20%20⟫⟧
+>⟦slot default-slot default⟫⟧⟦slot label-slot label⟫⟧</lit-toolkit-shapes>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
@@ -67,7 +67,7 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "<lit-toolkit-shapes⟦attr size size bind ~%0A%20%20⟧⟦attr level level bind ~%0A%20%20⟧⟦attr tags tags field ~%0A%20%20⟧⟦attr label label bind ~%0A%20%20⟧
+      "template": "<lit-toolkit-shapes⟦attr size size bind ~%0A%20%20⟫size="large"⟧⟦attr level level bind ~%0A%20%20⟫level="2"⟧⟦attr tags tags field ~%0A%20%20⟫tags="[&quot;b&quot;]"⟧⟦attr label label bind ~%0A%20%20⟫label="Shaped"⟧
 ></lit-toolkit-shapes>
 <script>
   {

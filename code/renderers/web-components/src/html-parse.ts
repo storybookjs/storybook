@@ -1,3 +1,5 @@
+import type { TemplateHole } from 'storybook/internal/docs-tools';
+
 // Html as a tree of nodes, read the way a story-docs snippet prints html. The story-docs build
 // and the preview's slot rule read html with it, so it stays free of anything server-only.
 
@@ -5,12 +7,9 @@ export interface HtmlAttribute {
   name: string;
   quoted?: boolean;
   value: string | undefined;
-  /**
-   * The hole a template prints in place of the whole attribute, as it prints an arg. A hole fills to
-   * the attribute or to nothing.
-   */
-  hole?: string;
-  /** The value a template prints, with a hole where the value prints an arg. */
+  /** The place a template wraps the whole attribute in, as it prints an arg. */
+  hole?: TemplateHole;
+  /** The value a template prints, with a hole around each part of it that prints an arg. */
   holeValue?: string;
   /** Not printed for the args of the static snippet, but its `hole` is in the template. */
   omitted?: boolean;
@@ -29,11 +28,8 @@ export type HtmlNode =
   | { kind: 'malformed'; text: string }
   | { attributes: HtmlAttribute[]; closed: boolean; kind: 'rawText'; name: string; text: string }
   | { kind: 'text'; text: string }
-  /**
-   * The nodes of a value the static snippet prints for an arg, and the `hole` a template prints in
-   * their place. It is laid out as its nodes are, so the template has the static snippet's layout.
-   */
-  | { hole: string; kind: 'hole'; nodes: HtmlNode[] };
+  /** The nodes of a value the static snippet prints for an arg, which a template wraps in `hole`. */
+  | { hole: TemplateHole; kind: 'hole'; nodes: HtmlNode[] };
 
 export type ElementNode = Extract<HtmlNode, { kind: 'element' }>;
 type Token =

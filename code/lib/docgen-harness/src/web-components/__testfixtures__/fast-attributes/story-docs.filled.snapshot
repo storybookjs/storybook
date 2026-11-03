@@ -1,5 +1,5 @@
 {
-  "ArgsDefaultRender": "<fast-attributes label="Default count" size="large" max-count="2"></fast-attributes>",
-  "DomNode": "<fast-attributes label="Count" size="large" max-count="5"></fast-attributes>",
-  "LitTemplate": "<fast-attributes label="Count" size="large" max-count="5"></fast-attributes>",
+  "ArgsDefaultRender": "<fast-attributes label="Default count &amp; &lt;changed>" size="large &amp; &lt;changed>" max-count="3" disabled></fast-attributes>",
+  "DomNode": "<fast-attributes label="Count &amp; &lt;changed>" size="large &amp; &lt;changed>" max-count="6" disabled></fast-attributes>",
+  "LitTemplate": "<fast-attributes label="Count &amp; &lt;changed>" size="large &amp; &lt;changed>" max-count="6" disabled></fast-attributes>",
 }

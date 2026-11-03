@@ -357,7 +357,7 @@ const describeBuilderDocgenFallback = (fallback: BuilderDocgenFallback | undefin
       Until then, Storybook falls back to the deprecated builder docgen with \`${fallback.packageName}\`, which will be removed in Storybook 12.`;
   }
   return dedent`
-    Until then, Controls and the Docs args table show no props: the fallback, the deprecated builder docgen, needs \`${fallback.packageName}\`, which is not installed. If you cannot change your TypeScript setup yet, install it instead (builder docgen will be removed in Storybook 12):
+    Until then, Controls and the Docs args table show no props. Storybook falls back to the deprecated builder docgen, but it needs \`${fallback.packageName}\`, which is not installed. If you cannot change your TypeScript setup yet, install it instead (builder docgen will be removed in Storybook 12):
 
       ${fallback.installCommand}`;
 };
@@ -440,7 +440,7 @@ export class BuilderDocgenPackagesMissingError extends StorybookError {
 
             ${data.installCommand}`,
         data.docgenServerDisabledInMainConfig
-          ? 'Builder docgen is deprecated and will be removed in Storybook 12. It runs because your Storybook main config sets `features.docgenServer: false`. Remove that setting to use server-side docgen, which needs none of these packages.'
+          ? `Builder docgen is deprecated and will be removed in Storybook 12. It runs because your Storybook main config sets \`features.docgenServer: false\`. Remove that setting to use server-side docgen, which does not need ${them}.`
           : 'Builder docgen is deprecated and will be removed in Storybook 12.',
       ].join('\n\n'),
     });

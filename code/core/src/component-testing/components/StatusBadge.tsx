@@ -57,7 +57,12 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   const badgeNote = StatusNoteMapping[status];
   return (
     <TooltipProvider placement="top" tooltip={<TooltipNote note={badgeNote} />}>
-      <StyledBadge tabIndex={0} aria-label={`Story status: ${badgeText}`} status={status}>
+      <StyledBadge
+        role="img"
+        tabIndex={0}
+        aria-label={`Story status: ${badgeText}`}
+        status={status}
+      >
         {badgeText}
       </StyledBadge>
     </TooltipProvider>

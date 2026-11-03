@@ -317,12 +317,11 @@ export const Checklist = ({
                     <SectionHeading>{title}</SectionHeading>
                     <Actions>
                       <ToggleButton
-                        ariaLabel={title}
+                        ariaLabel={`${isCollapsed ? 'Expand' : 'Collapse'} ${title}`}
                         {...toggleProps}
                         data-target-id={`toggle-${id}`}
                         variant="ghost"
                         padding="small"
-                        aria-label={title}
                       >
                         <ChevronSmallDownIcon />
                       </ToggleButton>

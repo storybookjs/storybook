@@ -25,6 +25,7 @@ export function supportsCsfFactories(framework: SupportedFramework): boolean {
     case SupportedFramework.VUE3_RSBUILD:
     case SupportedFramework.WEB_COMPONENTS_RSBUILD:
       return true;
+    // on-device RN is not in this enum; its generator skips this helper and stays CSF3 until @storybook/react-native 11 is what init installs
     // no definePreview, and no tracker for adding it
     case SupportedFramework.EMBER:
     // no definePreview, and no tracker for adding it

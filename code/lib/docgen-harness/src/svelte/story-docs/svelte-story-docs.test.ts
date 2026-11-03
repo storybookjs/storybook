@@ -8,12 +8,9 @@ import { storyNameFromExport, toId } from 'storybook/internal/csf';
 import { loadCsf } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
-import {
-  buildStoryDocsPayload,
-  readStoryFile,
-} from '../../../../../renderers/svelte/src/docgen/story-docs/build-story-docs.ts';
-import { ownArgs } from '../../../../../renderers/svelte/src/docgen/story-docs/own-args.test-helpers.ts';
-import { fillTemplate } from '../../../../../renderers/svelte/src/docs/fill-template.ts';
+import { stripHoles } from 'storybook/internal/docs-tools';
+
+import { buildStoryDocsPayload } from '../../../../../renderers/svelte/src/docgen/story-docs/build-story-docs.ts';
 import { createIndexer } from '../../../../../renderers/svelte/src/svelte-csf/indexer/index.ts';
 import { expectCurrentOrBetter } from '../../compare/expect-current-or-better.ts';
 import {
@@ -102,9 +99,7 @@ describe('svelte story-docs server snippets', () => {
           expect(storyDoc.template, `${story.exportName} has no template`).toBeDefined();
         }
         if (storyDoc?.template !== undefined) {
-          // The template filled with the args the story is written with is its static snippet.
-          const written = (await readStoryFile({ entry }))!.resolver.resolve(story.exportName).args;
-          expect(fillTemplate(storyDoc.template, ownArgs(written))).toBe(storyDoc.snippet);
+          expect(stripHoles(storyDoc.template)).toBe(storyDoc.snippet);
         }
         expect(payload?.import).toBeUndefined();
         expect(storyDoc?.snippet).toMatch(/^<script(?: lang="ts")?>\n/);

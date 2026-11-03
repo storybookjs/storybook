@@ -42,9 +42,14 @@ export class UnprintableArgError extends Error {
   }
 }
 
-/** A hole that prints `text` in the static snippet; see {@link TemplateHole}. */
-export const hole = ({ kind, arg, words }: TemplateHole, text: string) =>
-  `⟦${[kind, arg === undefined ? '*' : holeWord(arg), ...words.map(holeWord)].join(' ')}⟫${text}⟧`;
+/**
+ * A hole that prints `text` in the static snippet, and `space` before what it prints once its arg
+ * changes, unless that is empty; see {@link TemplateHole}.
+ */
+export const hole = ({ kind, arg, words }: TemplateHole, text: string, space?: string) => {
+  const header = [kind, arg === undefined ? '*' : holeWord(arg), ...words.map(holeWord)];
+  return `⟦${[...header, ...(space ? [`~${encodeURIComponent(space)}`] : [])].join(' ')}⟫${text}⟧`;
+};
 
 const isHoleWord = (word: string) => /^[^\s⟦⟧⟫%~*][^\s⟦⟧⟫]*$/.test(word);
 

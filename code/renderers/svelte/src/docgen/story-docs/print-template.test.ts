@@ -3,10 +3,10 @@ import { describe, expect, it } from 'vitest';
 
 import { type ESTreeNode as Node, parseExpression, staticKey } from 'storybook/internal/csf-tools';
 
-import { writtenArg } from 'storybook/internal/docs-tools';
+import { fillTemplate, stripHoles } from 'storybook/internal/docs-tools';
+import type { Args } from 'storybook/internal/types';
 
-import { fillTemplate } from '../../docs/fill-template.ts';
-import { ownArgs } from './own-args.test-helpers.ts';
+import { printHole } from '../../docs/print-hole.ts';
 import { type TemplateParameter, printTemplate } from './print-template.ts';
 
 const args = (source: string): Record<string, Node> => {
@@ -19,13 +19,11 @@ const args = (source: string): Record<string, Node> => {
   );
 };
 
-// Prints a template with values, and checks that the template with holes, filled with the same
-// args, prints the same code.
+// Prints the snippet, and checks that its template prints it while no arg changes.
 const printChecked = (options: Parameters<typeof printTemplate>[0]) => {
-  const printed = printTemplate(options);
-  const template = printTemplate({ ...options, holes: true });
-  expect(fillTemplate(template, ownArgs(options.args))).toBe(printed);
-  return printed;
+  const { snippet, template } = printTemplate(options);
+  expect(stripHoles(template)).toBe(snippet);
+  return snippet;
 };
 
 const print = (code: string, source = '{}', typescript = false, parameter?: TemplateParameter) =>
@@ -284,102 +282,83 @@ describe('printTemplate', () => {
   });
 });
 
-describe('printTemplate with holes', () => {
-  const template = (code: string, source = '{}') =>
-    printTemplate({ code, args: args(source), typescript: false, holes: true });
+describe('printTemplate template', () => {
+  const template = (code: string, source = '{}', parameter?: TemplateParameter) =>
+    printTemplate({ code, args: args(source), typescript: false, parameter }).template;
+  const fill = (written: string, initialArgs: Args, unmappedArgs: Args) =>
+    fillTemplate(written, { initialArgs, unmappedArgs }, printHole);
 
-  it('prints a hole wherever it prints an arg', () => {
+  it('wraps each place an arg prints in a hole that holds what it prints there', () => {
     expect(template('<Panel {...args} />', "{ label: 'Go' }")).toBe(
-      "<Panel⟦spread 'label <%20 |%20 > ?⟧ />"
+      '<Panel⟦prop label ~%20⟫label="Go"⟧⟦props * ~%20⟫⟧ />'
     );
     expect(template('<h1>{args.title}</h1>', "{ title: 'Save' }")).toBe(
-      "<h1>⟦fragment title ' <%7B >%7D⟧</h1>"
+      '<h1>⟦fragment title { }⟫Save⟧</h1>'
     );
   });
 
-  it('lays a spread out as next lays out the args the story is written with', () => {
-    const changed = {
-      label: 'A label long enough to wrap the spread',
-      count: 3,
-      onclick: undefined,
-    };
-    // The story's own args fit on the line, so the template keeps the spread on it.
-    expect(fillTemplate(template('<Panel {...args} />', "{ label: 'Go' }"), changed)).toBe(
-      '<Panel label="A label long enough to wrap the spread" count={3} />'
+  it('adds the args a control adds after the props of the spread, but those the element writes', () => {
+    const written = template('<Panel {...args} title="T" />', "{ label: 'Go' }");
+    expect(fill(written, { label: 'Go' }, { label: 'Go', count: 3, title: 'X' })).toBe(
+      '<Panel label="Go" count={3} title="T" />'
     );
-    // Past 50 characters next prints them one per line, so the template does.
     const wrapped = template(
       '<Panel {...args} />',
       "{ label: 'A label that is long enough to wrap the spread' }"
     );
-    expect(wrapped).toBe("<Panel⟦spread 'label <%0A%20%20 |%0A%20%20 >%0A ?⟧ />");
-    expect(fillTemplate(wrapped, { label: 'Go', count: 3 })).toBe(
-      '<Panel\n  label="Go"\n  count={3}\n />'
+    const initialArgs = { label: 'A label that is long enough to wrap the spread' };
+    expect(fill(wrapped, initialArgs, { ...initialArgs, count: 3 })).toBe(
+      '<Panel\n  label="A label that is long enough to wrap the spread"\n  count={3}\n />'
     );
-    expect(fillTemplate(wrapped, {})).toBe('<Panel />');
   });
 
-  it('removes the line of a spread alone on it while it passes no args', () => {
+  it('adds the args a control adds on the line of a spread that passes none', () => {
     const written = template('<Button\n  {...args}\n  primary\n/>');
-    expect(written).toBe('<Button\n⟦spread -primary <%20%20 |%20 >%0A ?⟧  primary\n/>');
-    expect(fillTemplate(written, {})).toBe('<Button\n  primary\n/>');
-    expect(fillTemplate(written, { label: 'Go' })).toBe('<Button\n  label="Go"\n  primary\n/>');
+    expect(stripHoles(written)).toBe('<Button\n  primary\n/>');
+    expect(fill(written, {}, { label: 'Go' })).toBe('<Button\n  label="Go"\n  primary\n/>');
+    expect(fill(template('<Button {...args} />'), {}, { label: 'Go' })).toBe(
+      '<Button label="Go" />'
+    );
   });
 
-  it('prints an arg the story does not set where a control sets it', () => {
-    const code = '<Panel title={args.title}>{args.label}</Panel>';
-    const written = template(code, "{ label: 'Go' }");
-    expect(fillTemplate(written, { label: 'Go' })).toBe('<Panel title={args.title}>Go</Panel>');
-    expect(fillTemplate(written, { label: 'Go', title: 'Hi' })).toBe(
+  it('leaves out a prop a control clears', () => {
+    const written = template('<Panel {...args} />', "{ label: 'Go', count: 3 }");
+    expect(fill(written, { label: 'Go', count: 3 }, { count: 3 })).toBe('<Panel count={3} />');
+  });
+
+  it('keeps the read of an arg the story does not set until a control sets it', () => {
+    const written = template('<Panel title={args.title}>{args.label}</Panel>', "{ label: 'Go' }");
+    expect(fill(written, { label: 'Go' }, { label: 'Stop' })).toBe(
+      '<Panel title={args.title}>Stop</Panel>'
+    );
+    expect(fill(written, { label: 'Go' }, { label: 'Go', title: 'Hi' })).toBe(
       '<Panel title="Hi">Go</Panel>'
     );
   });
 
-  it('fills an action Storybook adds as an unset arg', () => {
-    const action = Object.assign(() => {}, { isAction: true });
+  it('keeps an arg written as code while it is unchanged', () => {
     const written = template(
-      '<Panel onclick={args.onclick} label={args.label} />',
-      "{ label: 'Go' }"
+      '<Button onclick={args.onclick} label={args.label} />',
+      "{ onclick: () => alert('hi'), label: 'Go' }"
     );
-    expect(fillTemplate(written, { label: 'Stop', onclick: action })).toBe(
-      '<Panel onclick={args.onclick} label="Stop" />'
+    const initialArgs = { onclick: () => {}, label: 'Go' };
+    expect(fill(written, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(
+      '<Button onclick={(() => alert(\'hi\'))} label="Stop" />'
     );
   });
 
   it('writes the long form of a directive shorthand once a control sets its arg', () => {
-    const parameter = { aliases: { active: 'active' } };
-    expect(print('<div class:active>{active}</div>', "{ label: 'Go' }", false, parameter)).toBe(
-      '<div class:active>{active}</div>'
-    );
-    const written = printTemplate({
-      code: '<div class:active>{active}</div>',
-      args: args("{ label: 'Go' }"),
-      typescript: false,
-      parameter,
-      holes: true,
+    const written = template('<div class:active>{active}</div>', "{ label: 'Go' }", {
+      aliases: { active: 'active' },
     });
-    expect(fillTemplate(written, { label: 'Go', active: true })).toBe(
-      '<div class:active={true}>{true}</div>'
+    expect(stripHoles(written)).toBe('<div class:active>{active}</div>');
+    expect(fill(written, {}, { active: true })).toBe('<div class:active={true}>{true}</div>');
+  });
+
+  it('cannot follow a read of a member of an arg', () => {
+    const written = template('<p>{args.user.name}</p>', "{ user: { name: 'Jane' } }");
+    expect(() => fill(written, { user: { name: 'Jane' } }, { user: { name: 'John' } })).toThrow(
+      'The snippet cannot show the current value of the `user` arg.'
     );
-  });
-
-  it('spreads an arg whose name is no identifier', () => {
-    expect(print('<Panel {...args} />', "{ 'a.b': 'x' }")).toBe('<Panel a.b="x" />');
-  });
-
-  it('puts a value in parentheses where the code it prints as needs them', () => {
-    const written = template('<Panel onclick={() => go(args.x)} />', '{ x: 1 }');
-    expect(fillTemplate(written, { x: Number.NaN })).toBe('<Panel onclick={() => go(NaN)} />');
-    expect(fillTemplate(written, { x: -1 })).toBe('<Panel onclick={() => go((-1))} />');
-    expect(fillTemplate(written, { x: { a: 1 } })).toBe('<Panel onclick={() => go(({ a: 1 }))} />');
-  });
-
-  it('prints the code an unchanged arg is written with, and a changed one as its value', () => {
-    const written = template('<Button onclick={args.onclick} />', "{ onclick: () => alert('hi') }");
-    // As next prints it: code that is no name, call or literal gets parentheses where a read stood.
-    expect(fillTemplate(written, { onclick: writtenArg("() => alert('hi')") })).toBe(
-      "<Button onclick={(() => alert('hi'))} />"
-    );
-    expect(fillTemplate(written, { onclick: 'go' })).toBe('<Button onclick="go" />');
   });
 });

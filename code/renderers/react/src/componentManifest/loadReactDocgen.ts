@@ -25,5 +25,5 @@ export function loadReactDocgen(): Promise<ReactDocgenModule | undefined> {
 /** The docgen error a component gets when builder docgen needs a package that is not installed. */
 export const getDocgenPackageMissingError = (packageName: string) => ({
   name: `${packageName} is not installed`,
-  message: `Builder docgen (\`typescript.reactDocgen: '${packageName}'\`) needs the \`${packageName}\` package. Install it, or remove \`features.docgenServer: false\` from your main config to use server-side docgen.`,
+  message: `Builder docgen needs the \`${packageName}\` package, which is not installed. Storybook prints how to fix this when it starts.`,
 });

@@ -29,6 +29,12 @@ Your editor uses the package named `typescript` by default, so its language serv
 
 If your project depends on TypeScript 7 directly, including a new Vite app, replace that `typescript` dependency with the two entries above.
 
+<If renderer="react">
+
+Until you do, a React project falls back to the deprecated builder docgen, which needs the `react-docgen` package. Storybook does not install it, so Controls and the Docs args table show no props unless you add it to your devDependencies. Builder docgen will be removed in Storybook 12, so prefer the side-by-side setup.
+
+</If>
+
 ## Configure Storybook with TypeScript
 
 Storybook's configuration file (i.e., `main.ts`) is defined as an ESM module written in TypeScript, providing you with the baseline configuration to support your existing framework while enabling you stricter type-checking and autocompletion in your editor. Below is an abridged configuration file.

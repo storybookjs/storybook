@@ -1053,8 +1053,9 @@ Storybook loads them only when builder docgen runs. When builder docgen runs wit
 | `features.docgenServer: false` with the default `typescript.reactDocgen`        | `react-docgen`                                                                                                              |
 | `features.docgenServer: false` with `typescript.reactDocgen: 'react-docgen-typescript'` | Vite: `@joshwooding/vite-plugin-react-docgen-typescript` and `react-docgen-typescript`. Webpack: `@storybook/react-docgen-typescript-plugin` and `react-docgen-typescript` |
 | `typescript` is TypeScript 7 without the [side-by-side setup](#typescript-59-or-newer) | `react-docgen`, or better, install TypeScript 6 side by side to use server-side docgen                                     |
+| No `typescript` package | `react-docgen`, or better, add `typescript@^6` to use server-side docgen (the `typescript-dependency` automigration does this) |
 
-In `react-docgen-typescript` mode, `react-docgen` is optional and only documents JavaScript files.
+In `react-docgen-typescript` mode, `react-docgen` is optional and only documents JavaScript files. Without it, JavaScript components get no props, and Storybook does not warn about that.
 
 The `builder-docgen-packages` automigration adds the packages your configuration needs when you upgrade.
 You can also run it with `storybook automigrate builder-docgen-packages`.

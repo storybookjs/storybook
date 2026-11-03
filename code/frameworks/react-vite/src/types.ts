@@ -6,7 +6,34 @@ import type {
 
 import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
 
-import type docgenTypescript from '@joshwooding/vite-plugin-react-docgen-typescript';
+/**
+ * Options of the deprecated builder docgen plugin for `react-docgen-typescript`.
+ *
+ * Declared here instead of imported, because the plugin is an optional peer dependency: the
+ * published types must not import a package that is not installed.
+ */
+export interface ReactDocgenTypescriptOptions {
+  /** Glob patterns of the files to parse. */
+  include?: string[];
+  /** Glob patterns of the files to skip. */
+  exclude?: string[];
+  /** Path to the tsconfig.json to read compiler options from. */
+  tsconfigPath?: string;
+  /** TypeScript compiler options, used instead of `tsconfigPath`. */
+  compilerOptions?: Record<string, unknown>;
+  /** Filter out props, for example those from `node_modules`. */
+  propFilter?: ((prop: any, component: any) => boolean) | Record<string, unknown>;
+  shouldExtractLiteralValuesFromEnum?: boolean;
+  shouldExtractValuesFromUnion?: boolean;
+  shouldRemoveUndefinedFromOptional?: boolean;
+  shouldIncludePropTagMap?: boolean;
+  shouldIncludeExpression?: boolean;
+  skipChildrenPropWithoutDoc?: boolean;
+  savePropValueAsString?: boolean;
+  componentNameResolver?: (exp: any, source: any) => string | undefined | null | false;
+  customComponentTypes?: string[];
+  [option: string]: unknown;
+}
 
 type FrameworkName = CompatibleString<'@storybook/react-vite'>;
 type BuilderName = CompatibleString<'@storybook/builder-vite'>;
@@ -54,7 +81,7 @@ type TypescriptOptions = TypescriptOptionsBase & {
    *
    * @deprecated Builder docgen is removed in Storybook 12. Use `features.docgenServer`.
    */
-  reactDocgenTypescriptOptions: Parameters<typeof docgenTypescript>[0];
+  reactDocgenTypescriptOptions: ReactDocgenTypescriptOptions;
 };
 
 /** The interface for Storybook configuration in `main.ts` files. */

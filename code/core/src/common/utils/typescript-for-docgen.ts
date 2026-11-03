@@ -68,12 +68,27 @@ export function getBuilderDocgenFallback(
   resolve: (specifier: string) => string,
   packageName: BuilderDocgenPackage
 ): BuilderDocgenFallback {
-  const installed = isPackageResolvable(resolve, packageName);
-  return {
-    packageName,
-    installed,
-    installCommand: installed ? '' : getAddBuilderDocgenPackagesCommand([packageName]),
-  };
+  return isPackageResolvable(resolve, packageName)
+    ? { packageName, installed: true }
+    : {
+        packageName,
+        installed: false,
+        installCommand: getAddBuilderDocgenPackagesCommand([packageName]),
+      };
+}
+
+/** Return the `features.docgenServer` value the project's main config sets, if any. */
+async function getDocgenServerInMainConfig({
+  configDir,
+}: Pick<Options, 'configDir'>): Promise<boolean | undefined> {
+  try {
+    const { features } = await loadMainConfig({ configDir });
+    return typeof features === 'object' && typeof features.docgenServer === 'boolean'
+      ? features.docgenServer
+      : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -82,15 +97,10 @@ export function getBuilderDocgenFallback(
  * The `features` default already turns the docgen server off when `typescript` is unusable, so
  * only the main config tells a deliberate opt-out apart from that default.
  */
-export async function isDocgenServerDisabledInMainConfig({
-  configDir,
-}: Pick<Options, 'configDir'>): Promise<boolean> {
-  try {
-    const { features } = await loadMainConfig({ configDir });
-    return typeof features === 'object' && features.docgenServer === false;
-  } catch {
-    return false;
-  }
+export async function isDocgenServerDisabledInMainConfig(
+  options: Pick<Options, 'configDir'>
+): Promise<boolean> {
+  return (await getDocgenServerInMainConfig(options)) === false;
 }
 
 /**
@@ -100,26 +110,34 @@ export async function isDocgenServerDisabledInMainConfig({
  * `typescript` keeps builder docgen. A project that sets `features.docgenServer: false` gets no
  * warning.
  *
- * Pass `builderDocgenFallback` when builder docgen needs an optional package, such as React's
+ * Pass `builderDocgenFallbackPackage` when builder docgen needs an optional package, such as React's
  * `react-docgen`. The warning then says whether docgen still runs, and how to install the package
  * when it does not.
  */
 export async function isTypeScriptReadyForDocgen(
   resolve: (specifier: string) => string,
   options: Pick<Options, 'configDir'>,
-  { builderDocgenFallback }: { builderDocgenFallback?: BuilderDocgenPackage } = {}
+  { builderDocgenFallbackPackage }: { builderDocgenFallbackPackage?: BuilderDocgenPackage } = {}
 ): Promise<boolean> {
-  if (!getTypeScriptForDocgenError(resolve)) {
+  const error = getTypeScriptForDocgenError(resolve);
+  if (!error) {
     return true;
   }
-  if (!(await isDocgenServerDisabledInMainConfig(options))) {
-    const error = getTypeScriptForDocgenError(resolve, {
-      builderDocgenFallback: builderDocgenFallback
-        ? getBuilderDocgenFallback(resolve, builderDocgenFallback)
-        : undefined,
-    });
-    once.warn(error!.message);
+  const docgenServer = await getDocgenServerInMainConfig(options);
+  if (docgenServer === false) {
+    return false;
   }
+  // With `docgenServer: true` in the main config, builder docgen does not run as a fallback.
+  const builderDocgenFallback =
+    builderDocgenFallbackPackage && docgenServer !== true
+      ? getBuilderDocgenFallback(resolve, builderDocgenFallbackPackage)
+      : undefined;
+  const warning = !builderDocgenFallback
+    ? error
+    : error instanceof TypeScriptWithoutCompilerApiError
+      ? new TypeScriptWithoutCompilerApiError({ ...error.data, builderDocgenFallback })
+      : new TypeScriptMissingForDocgenError({ ...error.data, builderDocgenFallback });
+  once.warn(warning.message);
   return false;
 }
 
@@ -182,13 +200,15 @@ export async function checkReactBuilderDocgenPackages({
   const docgenServerDisabledInMainConfig = await isDocgenServerDisabledInMainConfig(options);
 
   if (missing.length > 0) {
-    if (docgenServerDisabledInMainConfig || !getTypeScriptForDocgenError(resolve)) {
+    const typescriptUsable = !getTypeScriptForDocgenError(resolve);
+    if (docgenServerDisabledInMainConfig || typescriptUsable) {
       once.warn(
         new BuilderDocgenPackagesMissingError({
           reactDocgen,
           packages: missing,
           installCommand: getAddBuilderDocgenPackagesCommand(missing),
           docgenServerDisabledInMainConfig,
+          typescriptUsable,
         }).message
       );
     }

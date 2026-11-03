@@ -185,12 +185,14 @@ export const getComponents = async ({
             } catch (e) {
               const message = e instanceof Error ? e.message : String(e);
               logger.debug(`react-docgen-typescript failed for ${path}: ${message}`);
-              reactDocgenTypescriptError = isModuleNotFoundError(e)
-                ? getDocgenPackageMissingError('react-docgen-typescript')
-                : {
-                    name: 'react-docgen-typescript parse error',
-                    message: `File: ${path}\n${message}`,
-                  };
+              // A missing `typescript` also fails the import, but has its own startup warning.
+              reactDocgenTypescriptError =
+                isModuleNotFoundError(e) && message.includes("'react-docgen-typescript'")
+                  ? getDocgenPackageMissingError('react-docgen-typescript')
+                  : {
+                      name: 'react-docgen-typescript parse error',
+                      message: `File: ${path}\n${message}`,
+                    };
             }
             let reactDocgenTypescriptDoc: ComponentDocWithExportName | undefined;
             let componentJsDocTags = reactDocgenTypescript?.componentJsDocTags;

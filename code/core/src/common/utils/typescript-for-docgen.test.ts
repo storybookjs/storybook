@@ -12,8 +12,7 @@ import {
   TypeScriptMissingForDocgenError,
   TypeScriptWithoutCompilerApiError,
 } from '../../server-errors.ts';
-import { PackageManagerName } from '../js-package-manager/JsPackageManager.ts';
-import { JsPackageManagerFactory } from '../js-package-manager/JsPackageManagerFactory.ts';
+import * as find from 'empathic/find';
 import {
   checkReactBuilderDocgenPackages,
   getTypeScriptForDocgenError,
@@ -25,7 +24,7 @@ import { loadMainConfig } from './load-main-config.ts';
 vi.mock('node:fs', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('./load-main-config.ts', { spy: true });
-vi.mock('../js-package-manager/JsPackageManagerFactory.ts', { spy: true });
+vi.mock('empathic/find', { spy: true });
 
 const PACKAGE_JSON = '/project/node_modules/typescript/package.json';
 
@@ -58,7 +57,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   vol.reset();
   vi.mocked(fs.readFileSync).mockImplementation(memfs.readFileSync as typeof fs.readFileSync);
-  vi.mocked(JsPackageManagerFactory.getPackageManagerType).mockReturnValue(PackageManagerName.NPM);
+  // No lockfile and no package manager user agent: install hints use npm.
+  vi.mocked(find.up).mockReturnValue(undefined);
+  vi.stubEnv('npm_config_user_agent', '');
 });
 
 describe('getTypeScriptForDocgenError', () => {
@@ -119,7 +120,7 @@ describe('isTypeScriptReadyForDocgen', () => {
   });
 
   describe('with a builder docgen fallback', () => {
-    const fallback = { builderDocgenFallback: 'react-docgen' } as const;
+    const fallback = { builderDocgenFallbackPackage: 'react-docgen' } as const;
 
     beforeEach(() => {
       installTypeScript('7.0.2');
@@ -131,6 +132,19 @@ describe('isTypeScriptReadyForDocgen', () => {
       expect(once.warn).toHaveBeenCalledOnce();
       expect(once.warn).toHaveBeenCalledWith(
         expect.stringContaining('falls back to the deprecated builder docgen with `react-docgen`')
+      );
+    });
+
+    it('leaves the fallback out when the main config sets docgenServer: true', async () => {
+      vi.mocked(loadMainConfig).mockResolvedValue({
+        stories: [],
+        features: { docgenServer: true },
+      });
+
+      await isTypeScriptReadyForDocgen(resolveWith([]), options, fallback);
+
+      expect(once.warn).toHaveBeenCalledWith(
+        new TypeScriptWithoutCompilerApiError({ version: '7.0.2' }).message
       );
     });
 
@@ -242,6 +256,7 @@ describe('checkReactBuilderDocgenPackages', () => {
           installCommand:
             'npm install -D "@joshwooding/vite-plugin-react-docgen-typescript@^0.7.0" "react-docgen-typescript@^2.2.2"',
           docgenServerDisabledInMainConfig: true,
+          typescriptUsable: true,
         }).message
       );
     });

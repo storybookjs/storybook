@@ -73,6 +73,11 @@ export const builderDocgenPackages: Fix<BuilderDocgenPackagesResult> = {
       return null;
     }
 
+    // Without a `typescript` dependency, the `typescript-dependency` fix adds `typescript@^6`,
+    // which enables the docgen server, even when TypeScript 7 is installed transitively.
+    if (!packageManager.isDependencyInstalled('typescript')) {
+      return null;
+    }
     const typescriptVersion = coerce(
       await packageManager.getDeclaredVersionSpecifier('typescript')
     )?.version;
@@ -80,7 +85,11 @@ export const builderDocgenPackages: Fix<BuilderDocgenPackagesResult> = {
       !!typescriptVersion && !hasTypeScriptCompilerApi(typescriptVersion);
 
     let reason: BuilderDocgenPackagesResult['reason'];
-    if (mainConfig.features?.docgenServer === false) {
+    // Every check runs before any fix applies, so `docgen-server` has not yet renamed the old flag.
+    const features = mainConfig.features as
+      | { docgenServer?: boolean; experimentalDocgenServer?: boolean }
+      | undefined;
+    if ((features?.docgenServer ?? features?.experimentalDocgenServer) === false) {
       reason = 'docgen-server-disabled';
     } else if (typescriptWithoutCompilerApi) {
       reason = 'typescript-without-compiler-api';

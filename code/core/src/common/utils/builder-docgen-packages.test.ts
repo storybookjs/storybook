@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -62,4 +62,34 @@ describe('getAddBuilderDocgenPackagesCommand', () => {
       )
     ).toBe('npm install -D @storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0');
   });
+});
+
+describe('published declarations', () => {
+  const builderDocgenPackages = Object.keys(BUILDER_DOCGEN_PACKAGES);
+  const listDts = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) =>
+      entry.isDirectory()
+        ? listDts(join(dir, entry.name))
+        : entry.name.endsWith('.d.ts')
+          ? [join(dir, entry.name)]
+          : []
+    );
+
+  // An optional peer may be missing, so a `.d.ts` that imports one fails `tsc` with TS2307 in
+  // projects that type-check their `.storybook/main.ts` without `skipLibCheck`.
+  it.each(['renderers/react', 'frameworks/react-vite', 'presets/react-webpack'])(
+    'of %s do not import the builder docgen packages',
+    (dir) => {
+      const dist = join(CODE_DIR, dir, 'dist');
+      const files = existsSync(dist) ? listDts(dist) : [];
+      for (const file of files) {
+        const source = readFileSync(file, 'utf-8');
+        for (const name of builderDocgenPackages) {
+          expect(source, `${file} imports ${name}`).not.toMatch(
+            new RegExp(`from ['"]${name.replace('/', '\\/')}['"]`)
+          );
+        }
+      }
+    }
+  );
 });

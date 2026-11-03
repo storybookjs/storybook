@@ -1,5 +1,14 @@
+import * as find from 'empathic/find';
+
 import { PackageManagerName } from '../js-package-manager/JsPackageManager.ts';
-import { JsPackageManagerFactory } from '../js-package-manager/JsPackageManagerFactory.ts';
+import {
+  BUN_LOCKFILE,
+  BUN_LOCKFILE_BINARY,
+  NPM_LOCKFILE,
+  PNPM_LOCKFILE,
+  YARN_LOCKFILE,
+} from '../js-package-manager/constants.ts';
+import { getProjectRoot } from './paths.ts';
 
 /**
  * Packages that only the deprecated builder docgen (`features.docgenServer: false`) uses, with the
@@ -77,14 +86,54 @@ const ADD_DEV_DEPENDENCY_COMMANDS: Record<PackageManagerName, string> = {
   [PackageManagerName.BUN]: 'bun add -D',
 };
 
-const detectPackageManager = () => {
-  try {
-    return JsPackageManagerFactory.getPackageManagerType();
-  } catch {
-    // Fall back to npm, which every Node.js installation ships with.
-    return PackageManagerName.NPM;
+const LOCKFILE_PACKAGE_MANAGERS: [string, PackageManagerName][] = [
+  [PNPM_LOCKFILE, PackageManagerName.PNPM],
+  [YARN_LOCKFILE, PackageManagerName.YARN2],
+  [BUN_LOCKFILE, PackageManagerName.BUN],
+  [BUN_LOCKFILE_BINARY, PackageManagerName.BUN],
+  [NPM_LOCKFILE, PackageManagerName.NPM],
+];
+
+let detectedPackageManager: PackageManagerName | undefined;
+
+/**
+ * Guess the project's package manager for an install hint, from the closest lockfile and then the
+ * user agent of the running command.
+ *
+ * Unlike `JsPackageManagerFactory.getPackageManagerType`, it spawns no package manager to check
+ * its version: presets call it while Storybook starts, where that costs about half a second. Yarn
+ * 1 and Yarn Berry share the same `add` command, so telling them apart is not needed. The result is
+ * cached for the process.
+ */
+export function detectPackageManagerForInstallHint(): PackageManagerName {
+  if (detectedPackageManager) {
+    return detectedPackageManager;
   }
-};
+  let closest: { dir: string; packageManager: PackageManagerName } | undefined;
+  try {
+    const last = getProjectRoot();
+    for (const [lockfile, packageManager] of LOCKFILE_PACKAGE_MANAGERS) {
+      const found = find.up(lockfile, { last });
+      const dir = found?.slice(0, -lockfile.length);
+      if (dir && (!closest || dir.length > closest.dir.length)) {
+        closest = { dir, packageManager };
+      }
+    }
+  } catch {
+    // Fall through to the user agent.
+  }
+  const userAgent = process.env.npm_config_user_agent?.split('/')[0];
+  const fromUserAgent = (
+    {
+      npm: PackageManagerName.NPM,
+      pnpm: PackageManagerName.PNPM,
+      yarn: PackageManagerName.YARN2,
+      bun: PackageManagerName.BUN,
+    } as Record<string, PackageManagerName>
+  )[userAgent ?? ''];
+  detectedPackageManager = closest?.packageManager ?? fromUserAgent ?? PackageManagerName.NPM;
+  return detectedPackageManager;
+}
 
 /** Return `name@range` for each package, as `addDependencies` and install commands take them. */
 export const getBuilderDocgenPackageSpecifiers = (packages: readonly BuilderDocgenPackage[]) =>
@@ -97,7 +146,7 @@ export const getBuilderDocgenPackageSpecifiers = (packages: readonly BuilderDocg
  */
 export function getAddBuilderDocgenPackagesCommand(
   packages: readonly BuilderDocgenPackage[],
-  packageManager = detectPackageManager()
+  packageManager = detectPackageManagerForInstallHint()
 ) {
   const specifiers = getBuilderDocgenPackageSpecifiers(packages).map((specifier) =>
     /^[\w@/.-]+$/.test(specifier) ? specifier : `"${specifier}"`

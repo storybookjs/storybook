@@ -33,11 +33,15 @@ export { enrichCsf as experimental_enrichCsf } from './enrichCsf.ts';
 export { experimental_docgenProvider } from './docgen/preset.ts';
 
 // Default for `features.docgenServer`; a project without a usable `typescript` keeps builder docgen,
-// which needs the optional `react-docgen` package.
-export const isDocgenProviderEnabled = (_existing: unknown, options: Options) =>
-  isTypeScriptReadyForDocgen((specifier) => import.meta.resolve(specifier), options, {
-    builderDocgenFallback: 'react-docgen',
+// which needs the optional `react-docgen` package, unless `typescript.reactDocgen` turns it off
+// (as `storybook build --test` does).
+export const isDocgenProviderEnabled = async (_existing: unknown, options: Options) => {
+  const { reactDocgen } =
+    (await options.presets?.apply<TypescriptOptionsWithDocgen>('typescript', {})) ?? {};
+  return isTypeScriptReadyForDocgen((specifier) => import.meta.resolve(specifier), options, {
+    builderDocgenFallbackPackage: reactDocgen === false ? undefined : 'react-docgen',
   });
+};
 
 export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
 

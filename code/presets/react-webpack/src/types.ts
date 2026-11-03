@@ -3,9 +3,37 @@ import type {
   TypescriptOptions as TypescriptOptionsBase,
   WebpackConfiguration as WebpackConfigurationBase,
 } from '@storybook/core-webpack';
-import type { PluginOptions as ReactDocgenTypescriptOptions } from '@storybook/react-docgen-typescript-plugin';
 
 export type { BuilderResult } from '@storybook/core-webpack';
+
+/**
+ * Options of the deprecated builder docgen plugin for `react-docgen-typescript`.
+ *
+ * Declared here instead of imported, because the plugin is an optional peer dependency: the
+ * published types must not import a package that is not installed.
+ */
+export interface ReactDocgenTypescriptOptions {
+  /** Glob patterns of the files to parse. */
+  include?: string[];
+  /** Glob patterns of the files to skip. */
+  exclude?: string[];
+  /** Path to the tsconfig.json to read compiler options from. */
+  tsconfigPath?: string;
+  /** TypeScript compiler options, used instead of `tsconfigPath`. */
+  compilerOptions?: Record<string, unknown>;
+  /** Filter out props, for example those from `node_modules`. */
+  propFilter?: ((prop: any, component: any) => boolean) | Record<string, unknown>;
+  shouldExtractLiteralValuesFromEnum?: boolean;
+  shouldExtractValuesFromUnion?: boolean;
+  shouldRemoveUndefinedFromOptional?: boolean;
+  shouldIncludePropTagMap?: boolean;
+  shouldIncludeExpression?: boolean;
+  skipChildrenPropWithoutDoc?: boolean;
+  savePropValueAsString?: boolean;
+  componentNameResolver?: (exp: any, source: any) => string | undefined | null | false;
+  customComponentTypes?: string[];
+  [option: string]: unknown;
+}
 
 export interface ReactOptions {
   strictMode?: boolean;

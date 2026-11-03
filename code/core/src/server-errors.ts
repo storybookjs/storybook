@@ -339,14 +339,20 @@ export class OpenServiceCyclicStateError extends StorybookError {
  * The deprecated builder docgen a renderer falls back to when the docgen server cannot run, for
  * example React's `react-docgen`.
  */
-export interface BuilderDocgenFallback {
-  /** The package builder docgen needs, such as `react-docgen`. */
-  packageName: string;
-  /** Whether that package resolves from the renderer. */
-  installed: boolean;
-  /** The command that adds the package to the project, such as `npm install -D react-docgen@8`. */
-  installCommand: string;
-}
+export type BuilderDocgenFallback =
+  | {
+      /** The package builder docgen needs, such as `react-docgen`. */
+      packageName: string;
+      /** The package resolves, so builder docgen runs. */
+      installed: true;
+    }
+  | {
+      packageName: string;
+      /** The package does not resolve, so there is no docgen. */
+      installed: false;
+      /** The command that adds the package, such as `npm install -D "react-docgen@^8.0.2"`. */
+      installCommand: string;
+    };
 
 const describeBuilderDocgenFallback = (fallback: BuilderDocgenFallback | undefined) => {
   if (!fallback) {
@@ -424,6 +430,8 @@ export class BuilderDocgenPackagesMissingError extends StorybookError {
       installCommand: string;
       /** Whether the main config turns the docgen server off with `features.docgenServer: false`. */
       docgenServerDisabledInMainConfig: boolean;
+      /** Whether `typescript` has the compiler API the docgen server needs. */
+      typescriptUsable: boolean;
     }
   ) {
     const packageList = data.packages.map((name) => `\`${name}\``).join(' and ');
@@ -439,9 +447,11 @@ export class BuilderDocgenPackagesMissingError extends StorybookError {
           Storybook's builder docgen (\`typescript.reactDocgen: '${data.reactDocgen}'\`) needs ${packageList}, which ${data.packages.length === 1 ? 'is' : 'are'} not installed. Controls and the Docs args table show no props until you install ${them}:
 
             ${data.installCommand}`,
-        data.docgenServerDisabledInMainConfig
-          ? `Builder docgen is deprecated and will be removed in Storybook 12. It runs because your Storybook main config sets \`features.docgenServer: false\`. Remove that setting to use server-side docgen, which does not need ${them}.`
-          : 'Builder docgen is deprecated and will be removed in Storybook 12.',
+        !data.docgenServerDisabledInMainConfig
+          ? 'Builder docgen is deprecated and will be removed in Storybook 12.'
+          : data.typescriptUsable
+            ? `Builder docgen is deprecated and will be removed in Storybook 12. It runs because your Storybook main config sets \`features.docgenServer: false\`. Remove that setting to use server-side docgen, which does not need ${them}.`
+            : `Builder docgen is deprecated and will be removed in Storybook 12. It runs because your Storybook main config sets \`features.docgenServer: false\`. Server-side docgen does not need ${them}, but it needs TypeScript 5.9 or 6 as the \`typescript\` package: remove that setting and install \`typescript@^6\`, side by side with TypeScript 7 if your project uses it.`,
       ].join('\n\n'),
     });
   }

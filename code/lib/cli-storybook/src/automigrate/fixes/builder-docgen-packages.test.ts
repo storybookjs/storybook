@@ -10,10 +10,18 @@ import {
   builderDocgenPackages,
 } from './builder-docgen-packages.ts';
 
-const packageManagerWith = (dependencies: Record<string, string>) =>
+/**
+ * `getDeclaredVersionSpecifier` returns the installed version before the declared range, like the
+ * real package managers do.
+ */
+const packageManagerWith = (
+  dependencies: Record<string, string>,
+  installed: Record<string, string> = {}
+) =>
   ({
     isDependencyInstalled: (name: string) => name in dependencies,
-    getDeclaredVersionSpecifier: async (name: string) => dependencies[name] ?? null,
+    getDeclaredVersionSpecifier: async (name: string) =>
+      installed[name] ?? dependencies[name] ?? null,
     addDependencies: vi.fn().mockResolvedValue(undefined),
   }) as unknown as JsPackageManager;
 
@@ -22,11 +30,12 @@ const upgrade = { beforeVersion: '10.3.0', storybookVersion: '11.0.0' };
 const check = (
   mainConfig: Record<string, unknown>,
   dependencies: Record<string, string>,
-  versions: Partial<CheckOptions> = upgrade
+  versions: Partial<CheckOptions> = upgrade,
+  installed: Record<string, string> = {}
 ) =>
   checkFix(builderDocgenPackages, {
     mainConfig: mainConfig as unknown as StorybookConfigRaw,
-    packageManager: packageManagerWith(dependencies),
+    packageManager: packageManagerWith(dependencies, installed),
     ...versions,
   } as CheckOptions);
 
@@ -102,11 +111,34 @@ describe('builder-docgen-packages', () => {
   });
 
   it.each([
-    ['TypeScript 6', { typescript: '^6.0.3' }],
-    ['TypeScript 6 side by side with TypeScript 7', { typescript: '6.0.3' }],
-    ['no TypeScript, which typescript-dependency adds', {}],
-  ])('stays quiet on the docgen server with %s', async (_name, dependencies) => {
-    await expect(check({ framework: '@storybook/react-vite' }, dependencies)).resolves.toBeNull();
+    ['TypeScript 6', { typescript: '^6.0.3' }, {}],
+    [
+      'TypeScript 6 side by side with TypeScript 7',
+      {
+        '@typescript/native': 'npm:typescript@^7.0.2',
+        typescript: 'npm:@typescript/typescript6@^6.0.2',
+      },
+      { typescript: '6.0.3' },
+    ],
+    ['no TypeScript, which typescript-dependency adds', {}, {}],
+    [
+      'TypeScript 7 installed only for the peer, which typescript-dependency fixes',
+      {},
+      { typescript: '7.0.2' },
+    ],
+  ])('stays quiet on the docgen server with %s', async (_name, dependencies, installed) => {
+    await expect(
+      check({ framework: '@storybook/react-vite' }, dependencies, upgrade, installed)
+    ).resolves.toBeNull();
+  });
+
+  it('reads the experimentalDocgenServer flag that docgen-server renames later', async () => {
+    const result = await check(
+      { framework: '@storybook/react-vite', features: { experimentalDocgenServer: false } },
+      { typescript: '^6.0.3' }
+    );
+
+    expect(result?.reason).toBe('docgen-server-disabled');
   });
 
   it('skips packages the project already declares', async () => {

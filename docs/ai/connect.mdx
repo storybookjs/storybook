@@ -34,7 +34,7 @@ To install the skills at any other time, run this command from the root of your 
 
 Every install method adds the same files:
 
-- The skills: `storybook-init`, [`storybook-setup`](./skills/setup.mdx), `storybook-upgrade`, [`ui-workflow`](./skills/ui-workflow.mdx), and [`component-docs`](./skills/component-docs.mdx). They're installed for Claude Code (`.claude/skills/`) and for other agents (`.agents/skills/`).
+- The skills: `storybook-init`, [`storybook-setup`](./skills/setup.mdx), `storybook-upgrade`, [`ui-workflow`](./skills/ui-workflow.mdx), and [`component-docs`](./skills/reuse-components.mdx). They're installed for Claude Code (`.claude/skills/`) and for other agents (`.agents/skills/`).
 - `skills-lock.json`, which records the installed version.
 - A Storybook section in `AGENTS.md` (see below)
 
@@ -95,14 +95,14 @@ You can also connect your agent to a published Storybook instead of running it l
 
 Skills are available for these frameworks:
 
-| Renderer                | Frameworks                                          | [Setup](./skills/setup.mdx) | [UI workflow](./skills/ui-workflow.mdx) | [Component docs](./skills/component-docs.mdx) |
-| ----------------------- | --------------------------------------------------- | --------------------------- | --------------------------------------- | --------------------------------------------- |
-| React (Setup supported) | `react-vite`, `nextjs-vite`, `tanstack-react`       | Yes                         | Yes                                     | Yes                                           |
-| React (other)           | `react-webpack5`, `nextjs`, `react-native-web-vite` | No                          | Yes                                     | Yes                                           |
-| Vue 3                   | `vue3-vite`                                         | Yes                         | Yes                                     | Yes                                           |
-| Angular                 | `angular-vite`                                      | Yes                         | Yes                                     | Yes                                           |
-| Svelte                  | `svelte-vite`, `sveltekit`                          | No                          | Yes                                     | Yes                                           |
-| Web Components          | `web-components-vite`                               | No                          | Yes                                     | Yes                                           |
+| Renderer                | Frameworks                                          | [Setup](./skills/setup.mdx) | [UI workflow](./skills/ui-workflow.mdx) | [Reuse components](./skills/reuse-components.mdx) |
+| ----------------------- | --------------------------------------------------- | --------------------------- | --------------------------------------- | ------------------------------------------------- |
+| React (Setup supported) | `react-vite`, `nextjs-vite`, `tanstack-react`       | Yes                         | Yes                                     | Yes                                               |
+| React (other)           | `react-webpack5`, `nextjs`, `react-native-web-vite` | No                          | Yes                                     | Yes                                               |
+| Vue 3                   | `vue3-vite`                                         | Yes                         | Yes                                     | Yes                                               |
+| Angular                 | `angular-vite`                                      | Yes                         | Yes                                     | Yes                                               |
+| Svelte                  | `svelte-vite`, `sveltekit`                          | No                          | Yes                                     | Yes                                               |
+| Web Components          | `web-components-vite`                               | No                          | Yes                                     | Yes                                               |
 
 The `storybook-init` and `storybook-upgrade` skills work with every framework in this table.
 The [MCP server](./reference/mcp-server.mdx) supports the same renderers.

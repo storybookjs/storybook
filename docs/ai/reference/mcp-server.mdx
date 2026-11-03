@@ -44,15 +44,9 @@ Update the port in the URL if yours is different. When prompted, give the server
 
 [Host validation](../../api/main-config/main-config-core.mdx#allowedhosts) applies to the MCP server. If your agent reaches Storybook through a hostname other than `localhost`, such as a reverse proxy, add that hostname to `core.allowedHosts`.
 
-### 4. Tell your agent when to use the MCP server
+### 4. Check the connection
 
-Add instructions to your project's `AGENTS.md` that tell your agent when to use the MCP server. Replace `my-project-storybook` with the name you chose in the previous step.
-
-{/* TODO: Replace with the recommended MCP instructions for AGENTS.md once they are final. */}
-
-```md title="AGENTS.md"
-<!-- Placeholder: recommended instructions for the Storybook MCP server -->
-```
+The MCP server tells your agent when to use its tools, so you don't need to add instructions to `AGENTS.md`.
 
 To check the connection, start Storybook, then ask your agent to "List all documented components". The agent should call the `docs-list` tool and list the components in your Storybook.
 

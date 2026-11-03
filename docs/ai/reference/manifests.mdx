@@ -55,11 +55,15 @@ On `@storybook/vue3-vite`, the components manifest requires both [`componentsMan
 
 </If>
 
-<If renderer={['svelte', 'web-components']}>
+<If renderer="svelte">
 
-{/* TODO: Describe how Svelte and Web Components extract the component API. */}
+On `@storybook/svelte-vite` and `@storybook/sveltekit`, the default [`docgenServer`](../../api/main-config/main-config-features.mdx#docgenserver) reads your component API with `svelte2tsx` and the TypeScript compiler. Your project needs TypeScript installed.
 
-See [framework support](#framework-support) for the frameworks that generate a components manifest.
+</If>
+
+<If renderer="web-components">
+
+On `@storybook/web-components-vite`, Storybook reads your elements from your [Custom Elements Manifest](../../get-started/frameworks/web-components-vite.mdx#custom-elements-manifest), if your project has one. Otherwise, it reads them from your source code with the TypeScript compiler, including Lit elements. The components manifest is off by default for Web Components. See [framework support](#framework-support).
 
 </If>
 
@@ -445,8 +449,6 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 The docs manifest is generated for every framework. The components manifest is generated only by these frameworks:
 
-{/* TODO: Confirm the Web Components row. The renderer generates manifests, but its preset doesn't turn on `componentsManifest` by default. */}
-
 | Framework                                                                                                                  | Components manifest         |
 | -------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
 | Every React framework (`react-vite`, `react-webpack5`, `nextjs`, `nextjs-vite`, `tanstack-react`, `react-native-web-vite`) | On by default               |
@@ -469,7 +471,7 @@ To turn the components manifest on or off, set [`componentsManifest`](../../api/
 
 <CodeSnippets path="main-config-features-components-manifest.md" />
 
-The [skills](../connect.mdx#install-the-skills) can read the components manifest even when `componentsManifest` is off. The [MCP server](./mcp-server.mdx) and [published Storybooks](../published-storybook.mdx) need it on.
+The [skills](../connect.mdx#install-the-skills) can read the components manifest even when `componentsManifest` is off. The [MCP server](./mcp-server.mdx) and [published Storybooks](../published-storybook.mdx) need it on. Installing `@storybook/addon-mcp` turns it on.
 
 </If>
 

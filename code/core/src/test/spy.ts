@@ -82,8 +82,9 @@ export function fn<T extends Constructable>(implementation: T): VitestMock<T>;
 export function fn<T extends Procedure = Procedure>(implementation?: T): Mock<T>;
 export function fn(implementation?: Procedure | Constructable) {
   const mock = implementation ? vitestFn(implementation) : vitestFn();
-  // Like before Vitest 4, a mock is named after its named implementation, e.g. in actions.
-  if (implementation?.name) {
+  // Like before Vitest 4, a mock is named after its named implementation, e.g. in actions. Since
+  // Vitest 4, `fn(mock)` returns that mock itself, which keeps its name.
+  if (implementation?.name && !isMockFunction(implementation)) {
     mock.mockName(implementation.name);
   }
   mocks.add(mock);

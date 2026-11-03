@@ -15,7 +15,7 @@ Two axes, reported side by side:
 - **Standards**: does the change follow this repo's documented rules?
 - **Spec**: does the change do what the issue asked, and nothing else?
 
-A change can pass one axis and fail the other. Each axis runs in its own subagent, so one cannot hide the other. Based on Matt Pocock's [`code-review` skill](https://github.com/mattpocock/skills).
+A change can pass one axis and fail the other. Each axis runs in its own subagent, so one cannot hide the other. Both follow the [review rules](./rules.md).
 
 ## Steps
 
@@ -23,9 +23,9 @@ A change can pass one axis and fail the other. Each axis runs in its own subagen
 
 2. **Find the spec.** In this order: the issue the user named; a Linear key (`SB-1234`) or `Closes #N` in the branch name, the commits or the PR body; the PR body itself. Fetch the issue with the Linear or GitHub tools, including its comments: a later comment can overrule the description. Write the spec to a temporary file, with the overruling decisions in a dated section at the top. The subagent cannot read the tracker. If there is no spec, the Spec axis reports "no spec".
 
-3. **List the standards.** `AGENTS.md`, [`.agents/guidelines/code-review.md`](../../guidelines/code-review.md), and each other guideline in `.agents/guidelines/` that the diff touches (the `AGENTS.md` table says which one owns which topic). Also any `AGENTS.md` or README in a changed package.
+3. **List the standards.** [The review rules](./rules.md), `AGENTS.md`, and each guideline in `.agents/guidelines/` that the diff touches (the `AGENTS.md` table says which one owns which topic). Also any `AGENTS.md` or README in a changed package.
 
-4. **Run both subagents in parallel**, in the foreground. Each brief has the diff command, the commit list, and the rule from `code-review.md` "Real inputs only", pasted in full.
+4. **Run both subagents in parallel**, in the foreground. Each brief has the diff command, the commit list, and the rule "Real inputs only" from [the review rules](./rules.md), pasted in full.
    - **Standards brief:** the list from step 3. "For each place where the diff breaks a documented rule, cite the file and the rule, and quote the hunk. Mark each finding as a hard break or a judgement call. Skip what lint, format or type checks already enforce. At most 400 words."
    - **Spec brief:** the spec file. "Report: (a) what the spec asks for that is missing or partial; (b) behaviour in the diff the spec did not ask for; (c) what looks implemented but wrong. Quote the spec line for each finding. At most 400 words."
 

@@ -21,7 +21,7 @@ Run it after [`code-review`](../code-review/SKILL.md) is quiet: fixes from that 
 
 4. **Gate on evidence.** A finding enters judgement only with all five parts: the invariant, the minimal input, the observed state on this head, the expected state, and a test that fails on this head. Send anything less back with "reproduce or drop". Judge each survivor:
    - **Valid:** fix it.
-   - **Out of scope:** it breaks "Real inputs only" in [`.agents/guidelines/code-review.md`](../../guidelines/code-review.md). Drop it and say why.
+   - **Out of scope:** it breaks "Real inputs only" in the [code-review rules](../code-review/rules.md). Drop it and say why.
    - **Design-level:** the fix changes a rule the spec states. That is the user's decision: keep it out of the commits, and present it in one paragraph with a recommendation and the reproduction.
    - **Wrong:** say why.
 

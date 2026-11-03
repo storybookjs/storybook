@@ -1,6 +1,6 @@
-# Code review
+# Code review rules
 
-Every review follows this document: a human review, a review skill, a subagent, or a reply to a review bot.
+The reference of the [`code-review` skill](./SKILL.md). Every review follows it: a human review, a review skill, a subagent, or a reply to a review bot.
 
 ## Real inputs only
 
@@ -53,7 +53,7 @@ Include a command a maintainer can rerun with the finding.
 
 ### React UI and accessibility
 
-- Follow [Testing](./testing.md).
+- Follow [Testing](../../guidelines/testing.md).
 - Check keyboard and pointer interaction, accessible names and descriptions, and the consumers of the surrounding component.
 - Review fresh-page and first-attempt behavior when tests depend on focus, hover, timers, or retained state.
 
@@ -72,7 +72,7 @@ Check whether these changes add complexity without serving the new behavior. Rep
 
 ## Verification
 
-Read [Testing](./testing.md) when reviewing tests in the diff.
+Read [Testing](../../guidelines/testing.md) when reviewing tests in the diff.
 
 ### Bug fixes
 

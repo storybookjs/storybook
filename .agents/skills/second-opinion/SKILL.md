@@ -21,7 +21,7 @@ A second opinion is a **blind review**: a model from another provider, in a fres
    - **Context:** what the change is for, in two or three sentences, and the spec (the issue, or the PR body).
    - **Change:** the refs and the diff command, or the PR URL.
    - **Known and accepted:** findings already judged and left on purpose, so the reviewer skips them.
-   - **Rule:** "Real inputs only" from [`.agents/guidelines/code-review.md`](../../guidelines/code-review.md), pasted in full.
+   - **Rule:** "Real inputs only" from the [code-review rules](../code-review/rules.md), pasted in full.
    - **Scope**, verbatim: "You may read files and run read-only commands. Change nothing, and post nothing to GitHub: this is a review."
    - **Output**, verbatim: "Reply with a one-line verdict, then numbered findings, most severe first. For each: severity (blocker, major, minor, nit), file:line, the problem, a concrete failure scenario (inputs, then the wrong result), and your confidence. End with the files and commands you checked."
 

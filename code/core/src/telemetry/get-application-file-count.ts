@@ -1,6 +1,3 @@
-// eslint-disable-next-line no-restricted-imports -- builds git pathspecs with path.sep
-import { sep } from 'node:path';
-
 import { execCommandCountLines } from './exec-command-count-lines.ts';
 import { runTelemetryOperation } from './run-telemetry-operation.ts';
 
@@ -15,7 +12,7 @@ export const getApplicationFilesCountUncached = async (basePath: string) => {
   ]);
 
   const globs = bothCasesNameMatches.flatMap((match) =>
-    extensions.map((extension) => `${basePath}${sep}*${match}*.${extension}`)
+    extensions.map((extension) => `${basePath}/*${match}*.${extension}`)
   );
 
   try {

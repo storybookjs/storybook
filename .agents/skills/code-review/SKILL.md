@@ -1,6 +1,9 @@
 ---
 name: code-review
-description: Reviews the changes since a fixed point (commit, branch or merge-base) on two axes, in parallel subagents. Standards: does the code follow this repo's guidelines? Spec: does it do what the issue asked? Use when the user asks to review a branch, a PR or work in progress, or to "review since X".
+description: >-
+  Reviews the changes since a fixed point (commit, branch or merge-base) on two axes, in parallel
+  subagents. Standards: does the code follow this repo's guidelines? Spec: does it do what the issue
+  asked? Use when the user asks to review a branch, a PR or work in progress, or to "review since X".
 metadata:
   internal: true
 ---

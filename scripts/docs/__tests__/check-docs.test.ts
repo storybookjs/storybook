@@ -15,6 +15,7 @@ import {
   checkNoBodyH1,
   checkRedundantSidebarTitle,
   checkRelativeLinks,
+  checkResourcesSkillsIndex,
   checkSnippetCsf3Deprecation,
   checkSnippetCsfOrder,
   checkSnippetLegacyCsfTitle,
@@ -323,6 +324,44 @@ describe('check-docs', () => {
       );
       const errors = await checkRedundantSidebarTitle(docsDir);
       expect(errors).toEqual([]);
+    });
+  });
+
+  describe('checkResourcesSkillsIndex', () => {
+    const page = path.join(docsDir, 'ai/connect.mdx');
+
+    it('passes when a resources list links to skill pages', async () => {
+      await writeFile(
+        page,
+        '**More AI resources**\n\n- [Setup](./skills/setup.mdx)\n- [UI workflow](./skills/ui-workflow.mdx)'
+      );
+      expect(await checkResourcesSkillsIndex(docsDir)).toEqual([]);
+    });
+
+    it('errors when a resources list links to the skills index', async () => {
+      await writeFile(
+        page,
+        '**More AI resources**\n\n- [Setup](./skills/setup.mdx)\n- [Skills](./skills/index.mdx)'
+      );
+      const errors = await checkResourcesSkillsIndex(docsDir);
+      expect(errors.length).toBe(1);
+      expect(errors[0].line).toBe(4);
+    });
+
+    it('errors for a relative path from another folder', async () => {
+      await writeFile(
+        path.join(docsDir, 'ai/reference/mcp-server.mdx'),
+        '**More AI resources**\n\n- [Skills](../skills/index.mdx#install)'
+      );
+      expect((await checkResourcesSkillsIndex(docsDir)).length).toBe(1);
+    });
+
+    it('ignores links to the skills index outside a resources list', async () => {
+      await writeFile(
+        page,
+        'See the [skills](./skills/index.mdx).\n\n**More AI resources**\n\n- [Setup](./skills/setup.mdx)\n\nThe [skills](./skills/index.mdx) again.'
+      );
+      expect(await checkResourcesSkillsIndex(docsDir)).toEqual([]);
     });
   });
 

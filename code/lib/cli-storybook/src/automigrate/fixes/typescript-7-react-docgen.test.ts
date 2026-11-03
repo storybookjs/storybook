@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, addReactDocgenFallback } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
@@ -9,13 +9,13 @@ import { typescript7ReactDocgen } from './typescript-7-react-docgen.ts';
 
 // TEMPORARY(ts-7.1): delete together with the fix.
 
+vi.mock('storybook/internal/common', { spy: true });
+
 const packageManagerWith = (dependencies: Record<string, string>) =>
   ({
     isDependencyInstalled: (name: string) => name in dependencies,
     getDeclaredVersionSpecifier: async (name: string) => dependencies[name] ?? null,
     addDependencies: vi.fn().mockResolvedValue(undefined),
-    primaryPackageJson: { packageJson: {}, operationDir: '/project' },
-    writePackageJson: vi.fn(),
   }) as unknown as JsPackageManager;
 
 const upgrade = { beforeVersion: '10.3.0', storybookVersion: '11.0.0' };
@@ -34,6 +34,7 @@ const check = (
 describe('typescript-7-react-docgen', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(addReactDocgenFallback).mockImplementation(() => {});
   });
 
   it.each(['@storybook/react-vite', '@storybook/nextjs', '@storybook/nextjs-vite'])(
@@ -89,7 +90,7 @@ describe('typescript-7-react-docgen', () => {
     ).resolves.toBe(true);
   });
 
-  it('adds react-docgen and records it as temporary', async () => {
+  it('adds react-docgen as a temporary fallback', async () => {
     const packageManager = packageManagerWith({ typescript: '~7.0.2' });
 
     await runFix(typescript7ReactDocgen, {
@@ -101,10 +102,6 @@ describe('typescript-7-react-docgen', () => {
       storybookVersion: '11.0.0',
     } as unknown as Omit<RunOptions<true>, 'files'>);
 
-    expect(packageManager.primaryPackageJson.packageJson).toEqual({
-      devDependencies: { 'react-docgen': '^8.0.2' },
-      storybook: { temporaryDependencies: { 'react-docgen': 'typescript-7.0-docgen-fallback' } },
-    });
-    expect(packageManager.writePackageJson).toHaveBeenCalledOnce();
+    expect(addReactDocgenFallback).toHaveBeenCalledExactlyOnceWith(packageManager);
   });
 });

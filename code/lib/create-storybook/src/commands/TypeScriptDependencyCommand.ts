@@ -105,10 +105,10 @@ export class TypeScriptDependencyCommand {
     if (renderer === SupportedRenderer.REACT) {
       // TEMPORARY(ts-7.1): React falls back to builder docgen, so add its optional `react-docgen`
       // peer. See `typescript-7-react-docgen-fallback.ts` in core.
-      const installed =
-        packageManager.isDependencyInstalled('react-docgen') ||
+      if (!packageManager.isDependencyInstalled('react-docgen')) {
         addReactDocgenFallback(packageManager);
-      builderDocgenFallback = { packageName: 'react-docgen', installed };
+      }
+      builderDocgenFallback = { packageName: 'react-docgen', installed: true };
     }
     logger.warn(new TypeScriptWithoutCompilerApiError({ version, builderDocgenFallback }).message);
   }

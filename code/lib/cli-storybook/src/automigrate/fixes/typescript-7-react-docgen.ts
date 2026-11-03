@@ -11,7 +11,7 @@ import { upgradesAcrossPeerChange } from './typescript-dependency.ts';
 /**
  * TEMPORARY(ts-7.1): delete this fix once Storybook supports TypeScript 7.1, which gives TypeScript
  * 7 projects the docgen server. The TypeScript 7.1 automigration then removes what this fix records
- * under `storybook.temporaryDependencies`. See `typescript-7-react-docgen-fallback.ts` in core.
+ * in the Storybook cache. See `typescript-7-react-docgen-fallback.ts` in core.
  *
  * Storybook 10 installed `react-docgen` for every React project. Storybook 11 makes it an optional
  * peer, and a project on TypeScript 7.0 cannot use the docgen server, so without `react-docgen` it

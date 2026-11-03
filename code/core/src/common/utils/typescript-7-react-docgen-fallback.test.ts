@@ -1,54 +1,74 @@
+import * as fs from 'node:fs';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import * as pkg from 'empathic/package';
+import { fs as memfs, vol } from 'memfs';
+
 import type { JsPackageManager } from '../js-package-manager/JsPackageManager.ts';
-import { addReactDocgenFallback } from './typescript-7-react-docgen-fallback.ts';
+import {
+  addReactDocgenFallback,
+  readTemporaryDependencies,
+} from './typescript-7-react-docgen-fallback.ts';
 
 // TEMPORARY(ts-7.1): delete together with `typescript-7-react-docgen-fallback.ts`.
 
-const packageManagerWith = (packageJson: Record<string, unknown>) =>
-  ({
-    primaryPackageJson: { packageJson, operationDir: '/project' },
-    writePackageJson: vi.fn(),
-  }) as unknown as JsPackageManager;
+vi.mock('node:fs', { spy: true });
+vi.mock('empathic/package', { spy: true });
+
+const RECORD = '/project/node_modules/.cache/storybook/temporary-dependencies.json';
 
 describe('addReactDocgenFallback', () => {
   let packageJson: Record<string, unknown>;
+  let packageManager: JsPackageManager;
 
   beforeEach(() => {
-    packageJson = {
-      devDependencies: { typescript: '~7.0.2' },
-      storybook: { url: 'https://example.com/storybook' },
-    };
+    vol.reset();
+    vi.mocked(fs.readFileSync).mockImplementation(memfs.readFileSync as typeof fs.readFileSync);
+    vi.mocked(fs.writeFileSync).mockImplementation(memfs.writeFileSync as typeof fs.writeFileSync);
+    vi.mocked(fs.mkdirSync).mockImplementation(memfs.mkdirSync as typeof fs.mkdirSync);
+    vi.mocked(pkg.cache).mockReturnValue('/project/node_modules/.cache/storybook');
+    packageJson = { devDependencies: { typescript: '~7.0.2' } };
+    packageManager = {
+      primaryPackageJson: { packageJson, operationDir: '/project' },
+      writePackageJson: vi.fn(),
+    } as unknown as JsPackageManager;
   });
 
-  it('adds react-docgen and records why, in one write', () => {
-    const packageManager = packageManagerWith(packageJson);
+  it('adds react-docgen to devDependencies', () => {
+    addReactDocgenFallback(packageManager);
 
-    expect(addReactDocgenFallback(packageManager)).toBe(true);
-    expect(packageManager.writePackageJson).toHaveBeenCalledOnce();
     expect(packageJson).toEqual({
       devDependencies: { typescript: '~7.0.2', 'react-docgen': '^8.0.2' },
-      storybook: {
-        url: 'https://example.com/storybook',
-        temporaryDependencies: { 'react-docgen': 'typescript-7.0-docgen-fallback' },
-      },
+    });
+    expect(packageManager.writePackageJson).toHaveBeenCalledExactlyOnceWith(
+      packageJson,
+      '/project'
+    );
+  });
+
+  it('records it in the unversioned Storybook cache, next to earlier records', () => {
+    vol.fromNestedJSON({ [RECORD]: JSON.stringify({ other: 'some-reason' }) });
+
+    addReactDocgenFallback(packageManager);
+
+    expect(readTemporaryDependencies('/project')).toEqual({
+      other: 'some-reason',
+      'react-docgen': 'typescript-7.0-docgen-fallback',
     });
   });
 
-  describe('when the storybook field is not an object', () => {
+  describe('when the cache cannot be written', () => {
     beforeEach(() => {
-      packageJson = { devDependencies: { typescript: '~7.0.2' }, storybook: 'see docs' };
+      vi.mocked(fs.writeFileSync).mockImplementation(() => {
+        throw new Error('EACCES');
+      });
     });
 
-    it('adds nothing, so react-docgen never exists without its record', () => {
-      const packageManager = packageManagerWith(packageJson);
-
-      expect(addReactDocgenFallback(packageManager)).toBe(false);
-      expect(packageManager.writePackageJson).not.toHaveBeenCalled();
-      expect(packageJson).toEqual({
-        devDependencies: { typescript: '~7.0.2' },
-        storybook: 'see docs',
-      });
+    it('still adds react-docgen, which the TypeScript 7.1 automigration then keeps', () => {
+      expect(() => addReactDocgenFallback(packageManager)).not.toThrow();
+      expect(packageManager.writePackageJson).toHaveBeenCalledOnce();
+      expect(readTemporaryDependencies('/project')).toEqual({});
     });
   });
 });

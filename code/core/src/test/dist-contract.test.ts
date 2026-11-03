@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
@@ -10,6 +10,8 @@ const CONSUMER_FIXTURE = join(import.meta.dirname, '__testfixtures__/typescript-
 const TYPESCRIPT = createRequire(import.meta.url).resolve('typescript/bin/tsc');
 const TYPESCRIPT_5 = createRequire(import.meta.url).resolve('typescript-5/bin/tsc');
 const DTS_BUILT = existsSync(DTS_ARTIFACT);
+// Watch builds bundle the runtime without its vendor entries (see `BuildEntry.sharedModules`).
+const VENDOR_BUILT = existsSync(join(import.meta.dirname, '../../dist/preview/vendor'));
 const REPOSITORY_ROOT = join(import.meta.dirname, '../../../..');
 const TSC_OPTIONS = [
   '--module',
@@ -30,6 +32,7 @@ const TSC_OPTIONS = [
 describe('storybook/test declaration contract', () => {
   it.runIf(process.env.CI)('is built before this suite runs', () => {
     expect(DTS_BUILT).toBe(true);
+    expect(VENDOR_BUILT).toBe(true);
   });
 
   it.runIf(DTS_BUILT)('inlines the types of the test libraries it bundles', () => {
@@ -81,6 +84,36 @@ describe('storybook/test declaration contract', () => {
       )
     ).toEqual([]);
   });
+
+  it.runIf(VENDOR_BUILT)(
+    'imports the test libraries from the preview runtime instead of bundling a copy',
+    () => {
+      // `sharedModules` of the preview runtime in build-config.ts: the browser entries import its
+      // vendor entries by a relative path that the build only assumes, so check each one resolves.
+      const distDirectory = join(import.meta.dirname, '../../dist');
+      const vendorImports = readdirSync(distDirectory, { recursive: true, encoding: 'utf-8' })
+        .filter((file) => file.endsWith('.js'))
+        .flatMap((file) =>
+          [
+            ...readFileSync(join(distDirectory, file), 'utf-8').matchAll(
+              /from "(\.[^"]*\/preview\/vendor\/[^"]+)"/g
+            ),
+          ].map(([, specifier]) => ({ file, specifier }))
+        );
+
+      expect(vendorImports.map(({ file }) => file)).toContain('test/index.js');
+      expect(
+        vendorImports.filter(
+          ({ file, specifier }) => !existsSync(join(distDirectory, dirname(file), specifier))
+        )
+      ).toEqual([]);
+      expect(
+        readFileSync(join(distDirectory, 'test/index.js'), 'utf-8').match(
+          /^\/\/ .*node_modules\/.*$/gm
+        )
+      ).toBeNull();
+    }
+  );
 
   it.runIf(DTS_BUILT)(
     'compiles the public test API consumer fixture with the workspace compiler',

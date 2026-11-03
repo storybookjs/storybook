@@ -167,6 +167,13 @@ it('names a mock after its named implementation', () => {
   expect(fn().getMockName()).toBe('vi.fn()');
 });
 
+it('keeps the name of a mock passed to fn', () => {
+  const onClick = fn().mockName('onClick');
+  expect(fn(onClick)).toBe(onClick);
+  expect(onClick.getMockName()).toBe('onClick');
+  expect(fn(fn()).getMockName()).toBe('vi.fn()');
+});
+
 it('keeps recording the call when a listener throws', () => {
   const unsubscribe = onMockCall(() => {
     throw new Error('listener failed');

@@ -24,6 +24,13 @@ import {
   getExternal,
 } from './entry-utils.ts';
 import { tiePreviewRuntimeSetup } from './preview-runtime-entry.ts';
+import {
+  type SharedRuntimeModules,
+  collectPackageDirs,
+  isInPackageDirs,
+  sharedModuleName,
+  sharedRuntimeModulesPlugin,
+} from './shared-runtime-modules.ts';
 
 // repo root/bench/esbuild-metafiles/core
 const DIR_METAFILE_BASE = join(
@@ -196,11 +203,13 @@ export async function generateBundle({
     outDir,
     chunkDir,
     useGlobals,
+    sharedModules = [],
   }: {
     entryPoint: string;
     outDir: string;
     chunkDir: string;
     useGlobals: boolean;
+    sharedModules?: readonly string[];
   }) => {
     const name = basename(entryPoint).replace(/\.[^.]+$/, '');
     const alias = Object.fromEntries(
@@ -209,9 +218,18 @@ export async function generateBundle({
         value.startsWith('.') ? join(DIR_CWD, value) : value,
       ])
     );
+    // Shared modules are entries of their own, in chunks that contain only their packages, so that
+    // importing one doesn't evaluate any runtime code.
+    const sharedPackageDirs = collectPackageDirs(sharedModules, DIR_CWD);
     const build = await rolldown({
       cwd: DIR_CWD,
-      input: { [name]: entryPoint },
+      input: {
+        [name]: entryPoint,
+        ...Object.fromEntries(
+          sharedModules.map((specifier) => [`vendor/${sharedModuleName(specifier)}`, specifier])
+        ),
+      },
+      preserveEntrySignatures: sharedModules.length ? 'strict' : undefined,
       platform: 'browser',
       plugins: useGlobals ? [rolldownGlobalExternalsPlugin()] : [],
       resolve: {
@@ -232,7 +250,19 @@ export async function generateBundle({
       chunkFileNames: `${outDir}/${chunkDir}/${name}-[hash].js`,
       strictExecutionOrder: true,
       codeSplitting: {
-        groups: [{ name, maxSize: 500 * 1024 }],
+        groups: [
+          ...(sharedPackageDirs.length
+            ? [
+                {
+                  name: 'vendor',
+                  test: isInPackageDirs(sharedPackageDirs),
+                  priority: 1,
+                  maxSize: 500 * 1024,
+                },
+              ]
+            : []),
+          { name, maxSize: 500 * 1024 },
+        ],
       },
     });
     await build.close();
@@ -294,6 +324,16 @@ export async function generateBundle({
     );
   }
 
+  // Watch mode builds the runtimes with esbuild, without the shared modules' entries.
+  const sharedRuntimeModules: SharedRuntimeModules[] = isWatch
+    ? []
+    : (entries.runtime ?? [])
+        .filter((entry) => entry.chunkedRuntime && entry.sharedModules?.length)
+        .map((entry) => ({
+          outDir: basename(dirname(entry.entryPoint)),
+          specifiers: entry.sharedModules!,
+        }));
+
   if (entries.browser) {
     contexts.push(
       esbuild.context({
@@ -308,6 +348,7 @@ export async function generateBundle({
         target: BROWSER_TARGETS,
         supported: SUPPORTED_FEATURES,
         plugins: [
+          ...sharedRuntimeModules.map(sharedRuntimeModulesPlugin),
           ...sharedOptions.plugins,
           metafileWriterPlugin('browser', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
@@ -318,13 +359,18 @@ export async function generateBundle({
   const regularRuntimeEntries = entries.runtime?.filter((entry) => !entry.chunkedRuntime) ?? [];
   const chunkedRuntimeEntries = entries.runtime?.filter((entry) => entry.chunkedRuntime) ?? [];
 
-  const chunkedRuntimeOutput = (entryPoint: string, useGlobals: boolean) => {
+  const chunkedRuntimeOutput = (
+    entryPoint: string,
+    useGlobals: boolean,
+    sharedModules?: readonly string[]
+  ) => {
     const outDir = basename(dirname(entryPoint));
     return {
       entryPoint,
       outDir,
       chunkDir: outDir === 'manager' ? '_manager-chunks' : '_chunks',
       useGlobals,
+      sharedModules,
     };
   };
 
@@ -363,8 +409,8 @@ export async function generateBundle({
   const compile = await Promise.all(contexts);
   if (!isWatch) {
     await Promise.all([
-      ...chunkedRuntimeEntries.map(({ entryPoint }) =>
-        buildChunkedRuntimeEntry(chunkedRuntimeOutput(entryPoint, false))
+      ...chunkedRuntimeEntries.map(({ entryPoint, sharedModules }) =>
+        buildChunkedRuntimeEntry(chunkedRuntimeOutput(entryPoint, false, sharedModules))
       ),
       ...(entries.globalizedRuntime ?? []).map(({ entryPoint }) =>
         buildChunkedRuntimeEntry(chunkedRuntimeOutput(entryPoint, true))

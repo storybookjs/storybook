@@ -19,6 +19,7 @@ describe('resolveCompositionSources', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it('strips a trailing slash from ref URLs before probing and in the resolved source', async () => {
@@ -144,17 +145,24 @@ describe('resolveCompositionSources', () => {
     );
   });
 
-  it('skips an unreachable ref and warns with the network error and a restart hint', async () => {
+  it('skips an unreachable ref and logs the gate disarm at error level after the retries', async () => {
+    vi.useFakeTimers();
+    const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
+
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')));
 
-    const result = await resolveCompositionSources(
+    const resultPromise = resolveCompositionSources(
       optionsWithRefs({ ds: { title: 'Design System', url: 'https://ds.example.com' } })
     );
+    await vi.advanceTimersByTimeAsync(10_000);
+    const result = await resultPromise;
 
     expect(result.sources?.map((source) => source.id)).toEqual(['local']);
-    expect(logger.warn).toHaveBeenCalledTimes(1);
-    expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringMatching(/"Design System".*could not be reached.*ECONNREFUSED.*restart/s)
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringMatching(
+        /"Design System".*could not be reached after 3 attempts.*ECONNREFUSED.*DISARMED.*restart/s
+      )
     );
   });
 

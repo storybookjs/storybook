@@ -838,7 +838,56 @@ describe('CompositionAuth', () => {
       expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('DISARMED'));
     });
 
+    it('retries a transient boot-probe failure and arms the gate when the ref recovers', async () => {
+      vi.useFakeTimers();
+      const auth = new CompositionAuth();
+
+      const mockFetch = vi
+        .fn()
+        // First attempt: the probe chain hits a transient network error
+        .mockRejectedValueOnce(new Error('fetch failed'))
+        // Second attempt: the ref has recovered — 401 + WWW-Authenticate chain
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          headers: new Headers({
+            'WWW-Authenticate':
+              'Bearer resource_metadata="https://example.com/.well-known/oauth-protected-resource"',
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              resource: 'https://example.com/mcp',
+              authorization_servers: ['https://auth.example.com'],
+            }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              issuer: 'https://auth.example.com',
+              authorization_endpoint: 'https://auth.example.com/authorize',
+              token_endpoint: 'https://auth.example.com/token',
+            }),
+        });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const initPromise = auth.initialize([
+        { id: 'private', title: 'private', url: 'https://private.example.com' },
+      ]);
+      await vi.advanceTimersByTimeAsync(10_000);
+      await initPromise;
+
+      // 1 failed attempt + the recovered chain (manifest, resource metadata, server metadata)
+      expect(mockFetch).toHaveBeenCalledTimes(4);
+      expect(auth.requiresAuth).toBe(true);
+      expect(auth.authUrls).toContain('https://private.example.com');
+    });
+
     it('warns when OAuth resource metadata fetch fails', async () => {
+      vi.useFakeTimers();
       const auth = new CompositionAuth();
       const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
@@ -862,7 +911,11 @@ describe('CompositionAuth', () => {
           })
       );
 
-      await auth.initialize([{ id: 'broken', title: 'Broken', url: 'https://broken.example.com' }]);
+      const initPromise = auth.initialize([
+        { id: 'broken', title: 'Broken', url: 'https://broken.example.com' },
+      ]);
+      await vi.advanceTimersByTimeAsync(10_000);
+      await initPromise;
 
       expect(auth.requiresAuth).toBe(false);
       expect(warnSpy).toHaveBeenCalledWith(
@@ -871,6 +924,7 @@ describe('CompositionAuth', () => {
     });
 
     it('warns when OAuth server metadata fetch fails', async () => {
+      vi.useFakeTimers();
       const auth = new CompositionAuth();
       const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
@@ -903,7 +957,11 @@ describe('CompositionAuth', () => {
           })
       );
 
-      await auth.initialize([{ id: 'broken', title: 'Broken', url: 'https://broken.example.com' }]);
+      const initPromise = auth.initialize([
+        { id: 'broken', title: 'Broken', url: 'https://broken.example.com' },
+      ]);
+      await vi.advanceTimersByTimeAsync(10_000);
+      await initPromise;
 
       expect(auth.requiresAuth).toBe(false);
       expect(warnSpy).toHaveBeenCalledWith(

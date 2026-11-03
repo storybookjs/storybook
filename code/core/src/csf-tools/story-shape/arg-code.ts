@@ -8,14 +8,16 @@ import {
   moduleOf,
   outerSpan,
   sourceOf,
+  textOf,
   unwrapExpression,
 } from '../estree/ast.ts';
 import { detachedTextOf, lineIndent, reindent } from '../estree/editor.ts';
 
 /**
  * The code a story writes each arg with, as `StoryDoc.argCode` holds it: every arg but a plain
- * string, number, boolean, `null` or `undefined`, which prints as its value. An `⟦operand⟧` hole
- * puts the code in parentheses where it needs them, as in `(MB * 5).toFixed(0)`; see `asOperand`.
+ * string, boolean, `null`, `undefined` or a number written as it prints, which prints as its value.
+ * A number written another way, such as `1e3` or `1_000`, keeps its code, as the static snippet
+ * shows it so.
  */
 export function argCode(args: Record<string, Node>): Record<string, string> {
   const code: Record<string, string> = {};
@@ -39,13 +41,17 @@ const writtenCode = (node: Node): string => {
 
 const literalOf = (node: Node): { value: unknown } | undefined => {
   const value = unwrapExpression(node);
-  if (isStringLiteral(value) || isNumericLiteral(value) || isBooleanLiteral(value)) {
+  if (isStringLiteral(value) || isBooleanLiteral(value)) {
+    return { value: value.value };
+  }
+  if (isNumericLiteral(value) && textOf(value) === String(value.value)) {
     return { value: value.value };
   }
   if (
     value.type === 'UnaryExpression' &&
     value.operator === '-' &&
-    isNumericLiteral(value.argument)
+    isNumericLiteral(value.argument) &&
+    textOf(value.argument) === String(value.argument.value)
   ) {
     return { value: -value.argument.value };
   }

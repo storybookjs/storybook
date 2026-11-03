@@ -211,7 +211,7 @@ describe('selectLiveSnippetForStory with written args', () => {
     ).toBe('import { Button } from \'./Button\';\n\n<Button "Go" shout />');
   });
 
-  it('fills the args after mapping, comparing those before mapping', () => {
+  it('fills the args before mapping, as the static snippet reads them', () => {
     const icon = { mapped: true };
     expect(
       selectLiveSnippetForStory(
@@ -225,7 +225,7 @@ describe('selectLiveSnippetForStory with written args', () => {
         { args: { icon }, unmappedArgs: { icon: 'star' }, initialArgs: { icon: 'none' } },
         fill
       ).snippet
-    ).toContain('{ mapped: true }');
+    ).toContain('"star"');
   });
 });
 

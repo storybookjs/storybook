@@ -3,18 +3,16 @@ import type { Args } from 'storybook/internal/types';
 /**
  * Fills a story-docs `template` with the current args, so the story's snippet follows the controls.
  *
- * A template is the story's code with a hole, `⟦kind word…⟧`, wherever it reads an arg. The
- * story-docs provider writes the holes, as it knows what each arg reference is, and the renderer's
- * filler prints each one with the current args:
+ * A template is the story's static snippet, printed by the same printer, with a hole,
+ * `⟦kind word…⟧`, wherever that printer writes an arg's value. The story-docs provider writes the
+ * holes, and the renderer's filler prints each one with the current args, without parsing or laying
+ * out the code around it:
  *
  * - `⟦props …⟧`: the args a spread passes, as attributes, but those its `-name` words name; see
  *   {@link spreadArgs}.
  * - `⟦attr name arg⟧`: one attribute, left out while the arg is unset.
  * - `⟦text arg⟧`: the arg as content.
  * - `⟦value arg⟧`: the arg as a literal in code.
- * - `⟦operand arg⟧`: a value the code reads on, as in `args.n.toFixed()`, that starts an arrow
- *   body or a statement, or code the story writes the arg with next to an operator, as in
- *   `!args.onClick`, in parentheses where it needs them; see `isOperand` and {@link asOperand}.
  *
  * Words are separated by one space. A word that starts with `%` is the rest of it URI-encoded, so
  * any arg name can be a word; see {@link holeWord}. A hole for one arg may end in a `?code` word,
@@ -67,20 +65,22 @@ export const writtenArg = (code: string): object => ({ [WRITTEN]: code });
  * value.
  */
 export const asWrittenArgs = (
-  { args, unmappedArgs, initialArgs }: { args: Args; unmappedArgs: Args; initialArgs: Args },
+  { unmappedArgs, initialArgs }: { args: Args; unmappedArgs: Args; initialArgs: Args },
   argCode: Record<string, string> = {}
 ): Args =>
+  // The unmapped args, as the static snippet reads them: an `argTypes` mapping changes only what
+  // the story renders with.
   Object.fromEntries(
-    Object.entries(args).map(([name, value]) => [
+    Object.entries(unmappedArgs).map(([name, value]) => [
       name,
-      Object.hasOwn(argCode, name) && unmappedArgs[name] === initialArgs[name]
+      Object.hasOwn(argCode, name) && value === initialArgs[name]
         ? writtenArg(argCode[name]!)
         : value,
     ])
   );
 
 /** The code a {@link writtenArg} holds, or `undefined` for any other value. */
-const writtenCode = (value: unknown): string | undefined =>
+export const writtenCode = (value: unknown): string | undefined =>
   typeof value === 'object' && value !== null && WRITTEN in value
     ? (value[WRITTEN] as string)
     : undefined;
@@ -97,7 +97,7 @@ export const isAction = (value: unknown) =>
 export const hole = (kind: string, ...words: string[]) => `⟦${[kind, ...words].join(' ')}⟧`;
 
 /** Whether `word`, such as an arg name, can be written in a hole as it is. */
-export const isHoleWord = (word: string) => /^[^\s⟦⟧%][^\s⟦⟧]*$/.test(word);
+const isHoleWord = (word: string) => /^[^\s⟦⟧%][^\s⟦⟧]*$/.test(word);
 
 /** `word` as a hole writes it: as it is where it can be, else URI-encoded after a `%`. */
 export const holeWord = (word: string) =>
@@ -138,53 +138,12 @@ export const fillHoles = (template: string, fill: (kind: string, words: string[]
 const ATTRIBUTE_HOLES = new Set(['props', 'attr', 'bool', 'prop']);
 
 /**
- * A printed value or the code the story writes an arg with, in parentheses unless code reading on
- * reads it the same: a name or a chain of names, a string, or code one pair of brackets encloses,
- * such as an array. So `5`, `-1`, `{ a: 1 }`, `() => null` and `MB * 5` get them, where `5.x`,
- * `--1`, `{ a: 1 }` as an arrow body or `MB * 5.toFixed()` would read differently.
- */
-export const asOperand = (printed: string) =>
-  /^[A-Za-z_$][\w$]*(?:\??\.[A-Za-z_$][\w$]*)*$/.test(printed) ||
-  /^(["'])(?:\\.|(?!\1)[^\\\n])*\1$/.test(printed) ||
-  enclosed(printed)
-    ? printed
-    : `(${printed})`;
-
-// Whether the bracket `code` starts with closes at its end, as in `[1, [2]]`. Code whose brackets
-// a template literal, a regex, a comment or JSX text could hold is not.
-function enclosed(code: string) {
-  const bare = code.replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, '""');
-  if (!/^[[(]/.test(bare) || /[`/<]/.test(bare)) {
-    return false;
-  }
-  let depth = 0;
-  for (let index = 0; index < bare.length; index++) {
-    depth += '([{'.includes(bare[index]!) ? 1 : ')]}'.includes(bare[index]!) ? -1 : 0;
-    if (depth === 0) {
-      return index === bare.length - 1;
-    }
-  }
-  return false;
-}
-
-/**
  * The args a `⟦props …⟧` spread passes: every arg but those its `-name` words name, which the
  * element writes itself.
  */
 export function spreadArgs(args: Args, words: string[]): [string, unknown][] {
   const written = new Set(words.map((word) => word.slice(1)));
   return Object.entries(args).filter(([name]) => !written.has(name));
-}
-
-/**
- * Code cut from a story file at `column`, without the indentation its lines after the first share
- * there, as the first starts where the cut does.
- */
-export function dedentStoryCode(text: string, column = Infinity): string {
-  const [first, ...rest] = text.split('\n');
-  const indents = rest.filter((line) => line.trim()).map((line) => /^\s*/.exec(line)![0].length);
-  const indent = Math.min(column, ...indents);
-  return [first, ...rest.map((line) => line.slice(indent))].join('\n');
 }
 
 /**

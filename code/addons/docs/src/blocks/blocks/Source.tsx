@@ -212,8 +212,8 @@ const SourceWithStoryDocsSnippet: FC<
     story: PreparedStory;
   }
 > = ({ story, docsContext, sourceContext, ...props }) => {
-  // The story context holds the args after mapping, as the story renders them; `argsUpdate` only
-  // signals when to read it again.
+  // The story context holds the args before and after mapping; the snippet fills those before, as
+  // the static snippet reads them. `argsUpdate` only signals when to read it again.
   const [argsUpdate] = useArgs(story, docsContext);
   const args = useMemo(
     () => {

@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import {
   UnprintableArgError,
-  asOperand,
-  dedentStoryCode,
   defaultCode,
   defaultWord,
   fillHoles,
@@ -90,49 +88,6 @@ describe('defaultWord', () => {
 describe('spreadArgs', () => {
   it('passes every arg but those the element writes', () => {
     expect(spreadArgs({ a: 1, b: 2 }, ['-b'])).toEqual([['a', 1]]);
-  });
-});
-
-describe('asOperand', () => {
-  it('leaves a name, a chain of names, a string or code one pair of brackets encloses', () => {
-    for (const code of [
-      'args',
-      'icons.arrow',
-      'a?.b',
-      'null',
-      '"a"',
-      "'it\\'s'",
-      '["a)", [1]]',
-      '(MB * 5)',
-    ]) {
-      expect(asOperand(code)).toBe(code);
-    }
-  });
-
-  it('wraps any other value or code', () => {
-    for (const code of [
-      '5',
-      '-1',
-      '{ a: 1 }',
-      '() => null',
-      'MB * 5',
-      '"a" + "b"',
-      '(a) + (b)',
-      'fn()',
-    ]) {
-      expect(asOperand(code)).toBe(`(${code})`);
-    }
-    // Brackets a template literal, a regex or JSX text holds are not counted.
-    for (const code of ['[`]`]', '[/]/]', '[<p>]</p>]']) {
-      expect(asOperand(code)).toBe(`(${code})`);
-    }
-  });
-});
-
-describe('dedentStoryCode', () => {
-  it('keeps the indentation lines have past the column the cut starts at', () => {
-    expect(dedentStoryCode('a\n      ? b\n      : c', 4)).toBe('a\n  ? b\n  : c');
-    expect(dedentStoryCode('{\n      b\n    }', 20)).toBe('{\n  b\n}');
   });
 });
 

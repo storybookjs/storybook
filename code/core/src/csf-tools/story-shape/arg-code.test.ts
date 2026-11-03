@@ -44,7 +44,7 @@ describe('argCode', () => {
     });
   });
 
-  it('adds no parentheses, which an operand hole adds where it needs them', () => {
+  it('adds no parentheses the story does not write', () => {
     expect(argCode(argsOf(`{ a: MB * 5, b: (o) => o.name, c: on ? 1 : 2, d: new Foo }`))).toEqual({
       a: 'MB * 5',
       b: '(o) => o.name',

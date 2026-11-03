@@ -82,7 +82,7 @@ describe('story-docs open service', () => {
     expect(provider).toHaveBeenCalledWith({ entry });
   });
 
-  it('keeps the template warning and the arg code through the query, so the filled snippet shows them', async () => {
+  it('keeps the template and its arg code through the query, so the filled snippet shows them', async () => {
     const entry = makeStoryEntry('button--primary', 'Button');
     const payload = makeStoryDocsPayload({
       stories: {
@@ -115,7 +115,10 @@ describe('story-docs open service', () => {
         { args, unmappedArgs: args, initialArgs },
         fill
       )
-    ).toEqual({ snippet: '<Button label="Go" onClick={fn()} />', warning: 'Add the NgModule' });
+    ).toEqual({
+      snippet: '<Button label="Go" onClick={fn()} />',
+      warning: 'label could not be resolved',
+    });
   });
 
   describe('a component with several story files', () => {

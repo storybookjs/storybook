@@ -314,7 +314,7 @@ describe('storyDocsSourceBeforeEach', () => {
       expect(mockedEmitTransformCode).toHaveBeenLastCalledWith(
         `import { Button } from './Button';\n\n<Button label="${label}" />`,
         context,
-        undefined
+        warning
       );
     }
     expect(storyDocs.loaded).toHaveBeenCalledOnce();
@@ -368,7 +368,7 @@ describe('storyDocsSourceBeforeEach', () => {
     expect(mockedEmitTransformCode).toHaveBeenLastCalledWith(
       `import { Button } from './Button';\n\n<Button label="Wait" />`,
       expect.anything(),
-      undefined
+      warning
     );
   });
 

@@ -7,6 +7,7 @@
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging)
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
   - [Tag filtering API](#tag-filtering-api)
+  - [`storybook/test` is no longer a manager global](#storybooktest-is-no-longer-a-manager-global)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`useThemeParameters` removed](#usethemeparameters-removed)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
@@ -871,6 +872,10 @@ Storybook 11 removes the experimental and undocumented tag filtering names. They
 `sidebar.filters` in `manager.ts` is removed and is not rewritten. Replace a tag exclusion with `hideFromSidebar`. Replace a custom filter function with `setFilter`. Automigration prints a notice when it finds `sidebar.filters`.
 
 `storybook automigrate` rewrites the tag option keys in `main.ts`, including when the value is an expression, and renames `experimental_setFilter` / `experimental_setFilters` identifiers in `.storybook` and story files. A call written as `api['experimental_setFilters']` is left unchanged. Rename those calls yourself in addon source outside `.storybook` and story files.
+
+### `storybook/test` is no longer a manager global
+
+The manager no longer provides `storybook/test` as a global (`__STORYBOOK_TEST__`), so the browser no longer downloads its test libraries with every manager load. `storybook/test` is for stories and their tests, and no known manager addon imported it. If your addon's manager entry imports `storybook/test` anyway, it still builds, but the addon then bundles its own copy. Move that code to the addon's preview entry, or drop the import.
 
 ### Addon `TAB` registration removed
 

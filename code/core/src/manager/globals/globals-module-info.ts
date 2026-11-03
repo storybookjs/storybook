@@ -26,7 +26,6 @@ const duplicatedKeys = [
   'storybook/theming',
   'storybook/theming/create',
   'storybook/manager-api',
-  'storybook/test',
   'storybook/actions',
   'storybook/highlight',
   'storybook/viewport',

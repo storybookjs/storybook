@@ -24,10 +24,13 @@ describe('docgen paths', () => {
     expect(componentIdToStaticName('addons-docs-codepanel')).toBe('addons-docs-codepanel');
   });
 
-  it('encodes non-ASCII component ids into ASCII-safe snapshot names', () => {
-    expect(componentIdToStaticName('😀')).toBe('%F0%9F%98%80');
-    expect(docgenQueryStaticPath('😀')).toBe('%F0%9F%98%80.json');
-    expect(docgenStaticStorePath('😀')).toBe('core/docgen/%F0%9F%98%80.json');
+  it('maps non-ASCII component ids to portable snapshot names', () => {
+    // '😀' is the component id of the unicode template story
+    // (code/core/template/stories/unicode.stories.ts) whose raw-emoji snapshots broke
+    // Windows unpacking.
+    expect(componentIdToStaticName('😀')).toMatch(/^id-[0-9a-f]{16}$/);
+    expect(docgenQueryStaticPath('😀')).toMatch(/^id-[0-9a-f]{16}\.json$/);
+    expect(docgenStaticStorePath('😀')).toMatch(/^core\/docgen\/id-[0-9a-f]{16}\.json$/);
   });
 
   it('keeps writer, loader, and manifest refs in lockstep for non-ASCII ids', () => {
@@ -40,11 +43,30 @@ describe('docgen paths', () => {
     }
 
     // Writer and browser loader both resolve the on-disk name through the definition's
-    // `staticPath` hook; the manifest `$ref` must name the same encoded file.
+    // `staticPath` hook; the manifest `$ref` must name the same file.
     expect(resolveStaticPath('core/docgen', 'docgen', { staticPath }, { id: '😀' })).toBe(
       storePath
     );
     expect(docgenManifestRef('😀')).toBe(`../services/${storePath}#/components/😀`);
-    expect(decodeURIComponent(docgenQueryStaticPath('😀'))).toBe('😀.json');
+  });
+
+  it('derives snapshot names that survive URL decoding and filesystem limits', () => {
+    for (const id of ['button', '😀', 'Кнопки', 'a b', '界'.repeat(30)]) {
+      const name = componentIdToStaticName(id);
+
+      // Static hosts percent-decode request paths before their filesystem lookup, so a
+      // literal `%` on disk would be unreachable through any fetch.
+      expect(decodeURIComponent(name)).toBe(name);
+      // Printable ASCII keeps the name extractable on every platform's tar tooling.
+      expect(name).toMatch(/^[A-Za-z0-9._!~*'()-]+$/);
+      // `.json` must still fit under the 255-byte per-component filename limit.
+      expect(name.length).toBeLessThanOrEqual(250);
+    }
+
+    // Digest names are deterministic and distinct per id.
+    expect(componentIdToStaticName('界'.repeat(30))).toBe(componentIdToStaticName('界'.repeat(30)));
+    expect(componentIdToStaticName('界'.repeat(30))).not.toBe(
+      componentIdToStaticName('界'.repeat(31))
+    );
   });
 });

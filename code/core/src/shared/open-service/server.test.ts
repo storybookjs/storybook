@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 
 import * as v from 'valibot';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -19,6 +19,7 @@ import {
   type MutableRecordLookupService,
   mutableRecordLookupServiceDef,
 } from './fixtures.ts';
+import { componentIdToStaticName } from './services/shared/paths.ts';
 
 // Spy-only mock: keep the real `node:fs/promises` module shape, then redirect the calls used by
 // the static-files writer (and this test's own `readFile` assertions) to `memfs` so disk state
@@ -36,6 +37,9 @@ beforeEach(async () => {
   );
   vi.mocked(readFile).mockImplementation(
     memfs.fs.promises.readFile as unknown as typeof import('node:fs/promises').readFile
+  );
+  vi.mocked(readdir).mockImplementation(
+    memfs.fs.promises.readdir as unknown as typeof import('node:fs/promises').readdir
   );
 });
 
@@ -293,9 +297,13 @@ describe('server static builds', () => {
       registerService(customPathServiceDef);
 
       await expect(buildStaticFiles()).resolves.toEqual({
-        'internal-fixture/custom-static-paths/nested/value.json': { value: 'dot' },
+        'internal-fixture/custom-static-paths/nested/value.json': {
+          value: 'dot',
+        },
         'internal-fixture/custom-static-paths/rooted.json': { value: 'rooted' },
-        'internal-fixture/custom-static-paths/windows/style.json': { value: 'windows' },
+        'internal-fixture/custom-static-paths/windows/style.json': {
+          value: 'windows',
+        },
       });
     });
 
@@ -478,6 +486,78 @@ describe('server static builds', () => {
           'utf8'
         )
       ).resolves.toBe(JSON.stringify({ value: 'windows' }, null, 2));
+    });
+
+    it('writes non-ASCII-id snapshots under names a decoded fetch can resolve', async () => {
+      const outputDir = '/app/dist';
+      const unicodeServiceDef = defineService({
+        id: 'internal-fixture/unicode-static-names',
+        description: 'Writes snapshots keyed by non-ASCII component ids.',
+        initialState: { value: null as string | null },
+        queries: {
+          value: {
+            description: 'Stores one custom value per component id.',
+            input: v.object({ id: v.string(), value: v.string() }),
+            output: v.nullable(v.string()),
+            handler: (_input, ctx) => ctx.self.state.value,
+            load: async (input, ctx) => {
+              await ctx.self.commands.setValue(input);
+            },
+            staticPath: (input) => `snapshots/${componentIdToStaticName(input.id)}.json`,
+            staticInputs: async () => [
+              { id: '😀', value: 'emoji' },
+              { id: '界'.repeat(30), value: 'long' },
+            ],
+          },
+        },
+        commands: {
+          setValue: {
+            description: 'Stores one value before the snapshot is written to disk.',
+            input: v.object({ id: v.string(), value: v.string() }),
+            output: v.undefined(),
+            handler: async (input, ctx) => {
+              ctx.self.setState((state) => {
+                state.value = input.value;
+              });
+
+              return undefined;
+            },
+          },
+        },
+      });
+
+      registerService(unicodeServiceDef);
+
+      await writeOpenServiceStaticFiles(outputDir);
+
+      const snapshotDir = join(
+        outputDir,
+        'services',
+        'internal-fixture',
+        'unicode-static-names',
+        'snapshots'
+      );
+      const written = await readdir(snapshotDir);
+
+      // The writer must land on the same names the loader and manifest `$ref`s derive.
+      expect(new Set(written)).toEqual(
+        new Set([
+          `${componentIdToStaticName('😀')}.json`,
+          `${componentIdToStaticName('界'.repeat(30))}.json`,
+        ])
+      );
+
+      // And the names must survive the fetch round-trip: static hosts percent-decode
+      // request paths before their filesystem lookup, so a literal `%` on disk would be
+      // unreachable through any fetch.
+      for (const name of written) {
+        expect(decodeURIComponent(name)).toBe(name);
+        expect(name.length).toBeLessThanOrEqual(250);
+      }
+
+      await expect(
+        readFile(join(snapshotDir, `${componentIdToStaticName('😀')}.json`), 'utf8')
+      ).resolves.toBe(JSON.stringify({ value: 'emoji' }, null, 2));
     });
   });
 });

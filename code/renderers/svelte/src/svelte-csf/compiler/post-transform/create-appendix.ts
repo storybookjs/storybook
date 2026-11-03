@@ -1,4 +1,5 @@
 import { print } from 'esrap';
+import ts from 'esrap/languages/ts';
 import type MagicString from 'magic-string';
 
 import { createExportOrderVariableDeclaration } from './appendix/create-export-order.ts';
@@ -56,7 +57,7 @@ export async function createAppendix(params: Params) {
     })
   );
 
-  const appendix = print({
+  const appendix: ESTreeAST.Program = {
     type: 'Program',
     sourceType: 'module',
     body: [
@@ -71,9 +72,9 @@ export async function createAppendix(params: Params) {
       ...storiesVariableDeclarations,
       createNamedExportStories({ storiesIdentifiers: stories }),
     ],
-  });
+  };
 
-  code.append('\n' + appendix.code);
+  code.append('\n' + print(appendix, ts()).code);
 }
 
 function createExportDefaultMeta(): ESTreeAST.ExportDefaultDeclaration {

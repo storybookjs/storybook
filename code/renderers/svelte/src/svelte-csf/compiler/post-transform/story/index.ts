@@ -1,4 +1,5 @@
 import { print } from 'esrap';
+import ts from 'esrap/languages/ts';
 import type MagicString from 'magic-string';
 
 import { insertStoryHTMLCommentAsDescription } from './insert-description.ts';
@@ -40,5 +41,5 @@ export function transformStory(params: Params): void {
   const { compiled } = component;
   const { start, end } = span(compiled);
 
-  code.update(start, end, print(compiled).code);
+  code.update(start, end, print(compiled, ts()).code);
 }

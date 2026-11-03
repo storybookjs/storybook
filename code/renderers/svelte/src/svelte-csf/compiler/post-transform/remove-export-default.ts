@@ -1,4 +1,5 @@
 import { print } from 'esrap';
+import ts from 'esrap/languages/ts';
 import type MagicString from 'magic-string';
 
 import type { CompiledASTNodes } from '../../parser/extract/compiled/nodes.ts';
@@ -19,7 +20,7 @@ export function removeExportDefault(params: Params) {
     const { start, end } = span(exportDefault);
 
     // NOTE: It updates code by removing `export default` from the stories function declaration.
-    code.update(start, end, print(storiesFunctionDeclaration).code);
+    code.update(start, end, print(storiesFunctionDeclaration, ts()).code);
   }
 
   if (exportDefault.declaration.type === 'Identifier') {

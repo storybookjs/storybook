@@ -1,4 +1,5 @@
 import { print } from 'esrap';
+import ts from 'esrap/languages/ts';
 import type MagicString from 'magic-string';
 
 import { replaceDefineMetaArgument } from './replace-argument.ts';
@@ -37,8 +38,8 @@ export function transformDefineMeta(params: Params): void {
   const { defineMetaVariableDeclaration } = compiled;
   const { start, end } = span(defineMetaVariableDeclaration);
 
-  code.update(start, end, print(defineMetaVariableDeclaration).code);
-  code.appendLeft(start, print(metaVariableDeclaration).code + '\n');
+  code.update(start, end, print(defineMetaVariableDeclaration, ts()).code);
+  code.appendLeft(start, print(metaVariableDeclaration, ts()).code + '\n');
 }
 
 // Names the meta `$__meta`, unless the file already does, so that the stories can call `meta.story()`
@@ -50,11 +51,11 @@ function transformFactoryMeta(params: Params): void {
   let printed = '';
 
   if (!metaIdentifier && declarator.init) {
-    printed += print(createMetaVariableDeclaration({ init: declarator.init })).code + '\n';
+    printed += print(createMetaVariableDeclaration({ init: declarator.init }), ts()).code + '\n';
     declarator.init = createASTIdentifier(STORYBOOK_META_IDENTIFIER);
   }
 
-  code.update(start, end, printed + print(defineMetaVariableDeclaration).code);
+  code.update(start, end, printed + print(defineMetaVariableDeclaration, ts()).code);
 }
 
 export function createMetaVariableDeclaration({

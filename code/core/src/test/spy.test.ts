@@ -2,6 +2,8 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 import type { Mock } from '@vitest/spy';
 
+import { logger } from 'storybook/internal/client-logger';
+
 import { fn, mocks, onMockCall, resetAllMocks, restoreAllMocks, spyOn } from './spy.ts';
 
 const vitestSpy = vi.fn();
@@ -90,23 +92,58 @@ it('keeps generic implementations generic', () => {
   expect([text, count]).toEqual(['value', 1]);
 });
 
-it('creates reactive, named module mocks for the module mocker runtime', () => {
-  const createMockInstance = (
-    globalThis as typeof globalThis & {
-      __STORYBOOK_CREATE_MOCK_INSTANCE__: (options: {
-        name: string;
-        originalImplementation?: (...args: any[]) => any;
-      }) => Mock<() => string>;
-    }
-  ).__STORYBOOK_CREATE_MOCK_INSTANCE__;
+type CreateMockInstance = (options: {
+  name?: string;
+  originalImplementation?: (...args: any[]) => any;
+}) => Mock<(...args: any[]) => any>;
+const createModuleMock = (
+  globalThis as typeof globalThis & { __STORYBOOK_CREATE_MOCK_INSTANCE__: CreateMockInstance }
+).__STORYBOOK_CREATE_MOCK_INSTANCE__;
 
-  const moduleSpy = createMockInstance({ name: 'fetchData', originalImplementation: () => 'data' });
+it('creates reactive, named module mocks for the module mocker runtime', () => {
+  const moduleSpy = createModuleMock({ name: 'fetchData', originalImplementation: () => 'data' });
   expect(moduleSpy()).toBe('data');
   expect(moduleSpy.getMockName()).toBe('fetchData');
   expect(vitestSpy).toHaveBeenCalledWith(moduleSpy, []);
 
   moduleSpy.mockReset();
   expect(moduleSpy.getMockName()).toBe('fetchData');
+
+  // An anonymous export keeps the default name, so its calls are not logged as actions.
+  expect(createModuleMock({ name: '' }).getMockName()).toBe('vi.fn()');
+});
+
+it('resets module mocks, including nested ones, between stories', () => {
+  const automocked = createModuleMock({ name: 'get' });
+  const autospied = createModuleMock({ name: 'fetchData', originalImplementation: () => 'data' });
+  automocked.mockReturnValue('mocked');
+  autospied.mockReturnValue('mocked');
+  automocked();
+
+  restoreAllMocks();
+
+  expect(automocked()).toBeUndefined();
+  expect(autospied()).toBe('data');
+  expect(automocked.mock.calls).toEqual([[]]);
+});
+
+it('keeps recording the call when a listener throws', () => {
+  const unsubscribe = onMockCall(() => {
+    throw new Error('listener failed');
+  });
+  const error = vi.spyOn(logger, 'error').mockImplementation(() => {});
+  const mock = fn(() => 'value');
+
+  expect(mock()).toBe('value');
+  unsubscribe();
+
+  expect(mock.mock.results).toEqual([{ type: 'return', value: 'value' }]);
+  expect(error).toHaveBeenCalledWith(new Error('listener failed'));
+});
+
+it('types the return value of fn as the mock of a function', () => {
+  const mock: ReturnType<typeof fn> = fn();
+  mock();
 });
 
 it('keeps mock names when all mocks are reset or restored', () => {

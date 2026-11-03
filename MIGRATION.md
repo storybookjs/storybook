@@ -1279,8 +1279,10 @@ If you cannot switch to a Vite-based framework and Vitest, you can continue usin
 - A mock called with `new` uses its implementation as a constructor, so that implementation must be a `function` or a `class`, not an arrow function. `fn()` also accepts a class.
 - The default name of a mock created with `fn()` is `vi.fn()` instead of `spy`. Calls of mocks with that name are not logged as actions, as before.
 - `mockReset()` also resets the name given with `mockName()`. `resetAllMocks()` and `restoreAllMocks()` from `storybook/test`, which Storybook calls between stories, keep the names.
+- `mockReturnValue()`, `mockResolvedValue()` and similar shorthands throw when the mock is called with `new`. Use `mockImplementation()` with a `class` instead.
+- Type augmentations of `@vitest/expect` or of the global `jest.Matchers` no longer reach the `expect` of `storybook/test`. Augment its `Assertion` interface with `declare module 'storybook/test'` instead.
 
-`storybook/test` bundles `@testing-library/dom`, `@testing-library/user-event`, `@testing-library/jest-dom`, `@vitest/expect`, `@vitest/spy` and `chai`, including their types, so `storybook` no longer installs them (or `@types/chai`) as dependencies. If your project imports any of these packages directly, add them to your own `devDependencies`.
+`storybook/test` bundles `@testing-library/dom`, `@testing-library/user-event`, `@testing-library/jest-dom`, `@vitest/expect`, `@vitest/spy` and `chai`, including their types, so `storybook` no longer installs them (or `@types/chai`) as dependencies. If your project imports any of these packages directly, add them to your own `devDependencies`. In Vitest browser mode, the queries of `storybook/test` no longer share `configure()` with a `@testing-library/dom` you install yourself: call `configure` from `storybook/test`.
 
 ### Vitest Addon: requires Vitest 4.0 or higher
 

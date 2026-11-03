@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { it, expect as vitestExpect } from 'vitest';
 
 import { expect } from './expect.ts';
+import { fn } from './spy.ts';
 
 const JEST_MATCHERS_OBJECT = Symbol.for('$$jest-matchers-object');
 const STORYBOOK_JEST_MATCHERS_OBJECT = Symbol.for('$$jest-matchers-object-storybook');
@@ -60,4 +61,16 @@ it('can be loaded after Jest defined its non-configurable jest matchers object',
   });
 
   vitestExpect(JSON.parse(output)).toEqual([]);
+});
+
+it('supports the Jest aliases of the mock matchers', async () => {
+  const mock = fn((value: number) => value * 2);
+  mock(1);
+  mock(2);
+
+  await expect(mock).lastCalledWith(2);
+  await expect(mock).nthCalledWith(1, 1);
+  await expect(mock).lastReturnedWith(4);
+  await expect(mock).nthReturnedWith(1, 2);
+  await expect(mock).not.lastCalledWith(1);
 });

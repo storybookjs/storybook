@@ -41,13 +41,17 @@ describe('storybook/test declaration contract', () => {
 
     // These packages are devDependencies of storybook, so users don't have them installed.
     const testLibraryImport =
-      /from "(@testing-library\/|@vitest\/|chai"|@types\/chai|tinyspy|aria-query)|typeof import\("(@testing-library|@vitest)\/|reference types="chai"/;
+      /from "(@testing-library\/|@vitest\/|chai"|@types\/chai|tinyspy|aria-query)|import\("(@testing-library\/|@vitest\/|chai")|reference types="chai"/;
     expect(
       declarationFiles.filter(({ declarations }) => testLibraryImport.test(declarations))
     ).toEqual([]);
 
     // Chai's types are global; inlining them would declare globals in the user's project.
-    expect(readFileSync(DTS_ARTIFACT, 'utf-8')).not.toContain('declare global');
+    expect(
+      declarationFiles.filter(({ declarations }) =>
+        /declare global\s*\{\s*namespace (Chai|jest)\b/.test(declarations)
+      )
+    ).toEqual([]);
   });
 
   it.runIf(DTS_BUILT)(

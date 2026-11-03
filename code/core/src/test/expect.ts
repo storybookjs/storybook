@@ -4,6 +4,7 @@ import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers'
 
 import type {
   AsymmetricMatchersContaining,
+  ChaiMockAssertion,
   ExpectStatic,
   JestAssertion,
   MatcherState,
@@ -25,6 +26,7 @@ import * as chai from 'chai';
 // `resolves` and `rejects` are redefined by `Assertion` below, and Vitest's own types for them are
 // based on Chai's assertion type.
 type Matchers<T> = Omit<JestAssertion<Promise<void>, T>, 'resolves' | 'rejects'> &
+  Pick<ChaiMockAssertion<Promise<void>, T>, keyof typeof jestAliases> &
   TestingLibraryMatchers<
     ReturnType<AsymmetricMatchersContaining['stringContaining']>,
     Promise<void>
@@ -53,10 +55,33 @@ export interface Expect extends AsymmetricMatchersContaining {
   not: AsymmetricMatchersContaining;
 }
 
+/**
+ * Jest's aliases of mock matchers. Vitest 4 moved them from `JestChaiExpect` into its Chai-style
+ * assertions, which storybook/test does not register: those also add getters such as `called`.
+ */
+const jestAliases = {
+  lastCalledWith: 'toHaveBeenLastCalledWith',
+  nthCalledWith: 'toHaveBeenNthCalledWith',
+  lastReturnedWith: 'toHaveLastReturnedWith',
+  nthReturnedWith: 'toHaveNthReturnedWith',
+} as const;
+
+const JestAliases: Chai.ChaiPlugin = (chai, utils) => {
+  for (const [alias, matcher] of Object.entries(jestAliases)) {
+    utils.addMethod(chai.Assertion.prototype, alias, function (this: object, ...args: unknown[]) {
+      return (chai.Assertion.prototype as unknown as Record<string, Function>)[matcher].apply(
+        this,
+        args
+      );
+    });
+  }
+};
+
 export function createExpect() {
   chai.use(JestExtend);
   chai.use(JestChaiExpect);
   chai.use(JestAsymmetricMatchers);
+  chai.use(JestAliases);
 
   const expect = ((value: unknown, message?: string) => {
     const { assertionCalls } = getState(expect);

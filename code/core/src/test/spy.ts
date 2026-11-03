@@ -13,6 +13,8 @@ import {
   spyOn as vitestSpyOn,
 } from '@vitest/spy';
 
+import { logger } from 'storybook/internal/client-logger';
+
 export type * from '@vitest/spy';
 
 export { isMockFunction };
@@ -76,16 +78,24 @@ export interface FunctionMock<T extends Procedure = Procedure> extends MockInsta
 
 export function fn<T extends Procedure = Procedure>(implementation?: T): FunctionMock<T>;
 export function fn<T extends Constructable>(implementation: T): Mock<T>;
+// Repeats the first overload last, so `ReturnType<typeof fn>` is the mock of a function.
+export function fn<T extends Procedure = Procedure>(implementation?: T): FunctionMock<T>;
 export function fn(implementation?: Procedure | Constructable) {
   const mock = implementation ? vitestFn(implementation) : vitestFn();
   mocks.add(mock);
   return reactiveMock(mock);
 }
 
-storybookGlobals.__STORYBOOK_CREATE_MOCK_INSTANCE__ = (options) =>
-  // `resetToMockName` names the mock after the mocked export (like `spyOn` does), so calls of
-  // module mocks show up as actions, and keeps that name when the mock is reset.
-  reactiveMock(vitestCreateMockInstance({ ...options, resetToMockName: true }));
+storybookGlobals.__STORYBOOK_CREATE_MOCK_INSTANCE__ = (options) => {
+  // `resetToMockName` names the mock after the mocked function (like `spyOn` does), so calls of
+  // module mocks show up as actions, and keeps that name when the mock is reset. Anonymous functions
+  // keep the default name, which isn't logged.
+  const mock = vitestCreateMockInstance({ ...options, resetToMockName: Boolean(options?.name) });
+  // Registered like `fn()` and `spyOn()` mocks, so the helpers below reset them between stories,
+  // including mocks of nested functions, which the automock code doesn't register.
+  mocks.add(mock);
+  return reactiveMock(mock);
+};
 
 const reactiveMocks = new WeakSet<MockInstance>();
 
@@ -112,7 +122,15 @@ function reactiveMock<T extends MockInstance>(mock: T): T {
       value(...newCalls: unknown[][]) {
         const length = Array.prototype.push.apply(calls, newCalls);
         for (const args of newCalls) {
-          listeners.forEach((listener) => listener(mock, args));
+          listeners.forEach((listener) => {
+            // The mock records its call after this push returns: a failing listener must not
+            // leave the call half-recorded.
+            try {
+              listener(mock, args);
+            } catch (error) {
+              logger.error(error);
+            }
+          });
         }
         return length;
       },
@@ -170,8 +188,11 @@ export function resetAllMocks() {
  * will restore all original implementations.
  */
 export function restoreAllMocks() {
+  // Module mocks created by storybook/test's module mocker are in `mocks` too. They have nothing to
+  // restore, so `mockRestore()` resets them and they stay active for subsequent stories.
   mocks.forEach((spy) => keepingMockName(spy, () => spy.mockRestore()));
-  // For module mock spies, we only clear call history (not restore), because:
+  // Module mock spies created by another `@vitest/spy` instance (e.g. Vitest's module mocker) only
+  // get their call history cleared, because:
   // - mockRestore() would try to undo the spyOn on the module export object, which is not
   //   meaningful for automocked modules where the spy reference is captured at module load time
   // - The spy needs to remain active for subsequent stories

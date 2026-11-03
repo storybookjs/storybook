@@ -16,13 +16,13 @@ Each step names the skill that does the work. Read that skill when you reach the
 
 1. **Pin the spec.** The problem to solve: an issue the user named (Linear, GitHub), a prompt, or a problem from earlier in this conversation. Write it to a spec file outside the checkout, with the decisions made so far, and give that file as the spec to the reviews in steps 3, 4 and 7: a subagent cannot read this conversation. Branch from `origin/next` and record the base SHA: `origin/next` moves during a session.
 
-2. **Implement.** Follow `AGENTS.md` and the guidelines it points to. Run the focused tests and `cd code && yarn fmt:write`. Done when the focused tests pass and the tree has only the change.
+2. **Implement.** Follow `AGENTS.md` and the guidelines it points to. Run the focused tests and `cd code && yarn fmt:write`, then commit. The reviews compare commits, so they do not see uncommitted work; commit each later fix too, and step 6 shapes the history. Done when the focused tests pass and the working tree is clean.
 
-3. **Review.** Run [`code-review`](../code-review/SKILL.md) since the base SHA. Fix the valid findings, and run it again until only findings judged and left on purpose remain.
+3. **Review.** Run [`code-review`](../code-review/SKILL.md) since the base SHA. Fix the valid findings, commit the fixes, and run it again until only findings judged and left on purpose remain.
 
 4. **Hunt.** Run [`invariants-hunt`](../invariants-hunt/SKILL.md) since the base SHA. Fix what survives the evidence gate. Hold the design-level findings for step 9.
 
-5. **QA in the real world.** Run [`real-world-qa`](../real-world-qa/SKILL.md). Fix the findings, and keep the evidence for the PR body.
+5. **QA in the real world.** Run [`real-world-qa`](../real-world-qa/SKILL.md). Fix and commit the findings, and keep the evidence for the PR body.
 
 6. **Shape the history.** Rebuild the commits as the [`pr` skill](../pr/SKILL.md) "Commit history" section says.
 

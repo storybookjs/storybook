@@ -1,7 +1,7 @@
 ---
 title: Tags
 sidebar:
-  order: 6
+  order: 7
 ---
 
 Tags allow you to control which stories are included in your Storybook, enabling many different uses of the same total set of stories. For example, you can use tags to include/exclude tests from the [Vitest addon](../writing-tests/integrations/vitest-addon/index.mdx#including-excluding-or-skipping-tests). For more complex use cases, see the [recipes](#recipes) section, below.
@@ -17,7 +17,7 @@ The following tags are available in every Storybook project:
 | `test`     | Yes                 | Stories tagged with `test` are included in [Vitest addon](../writing-tests/integrations/vitest-addon/index.mdx#including-excluding-or-skipping-tests) runs.                                                           |
 | `autodocs` | No                  | Stories tagged with `autodocs` are included in the [docs page](../writing-docs/autodocs.mdx). If a CSF file does not contain at least one story tagged with `autodocs`, that component will not generate a docs page. |
 | `play-fn`  | No                  | Applied automatically to stories with a [play function](./play-function.mdx) defined.                                                                                                                                 |
-| `test-fn`  | No                  | Applied automatically to tests defined using the [experimental `.test` method on CSF Factories](../api/csf/csf-next.mdx#storytest).                                                                                   |
+| `test-fn`  | No                  | Applied automatically to tests defined using the [experimental `.test` method on CSF 4](./csf/api.mdx#storytest).                                                                                                     |
 
 The `dev`, `manifest`, and `test` tags are automatically, implicitly applied to every story in your Storybook project.
 
@@ -123,6 +123,6 @@ For a component with many variants, like a Button, a grid of those variants all 
 
 (⚠️ **Experimental**: While this API is available for all tags, the built-in `_test` tag is experimental)
 
-If you're using the [experimental `.test` method on CSF Factories](https://github.com/storybookjs/storybook/discussions/30119), you can alter the default behavior of the `_test` tag to exclude tests from the sidebar by default. This reduces clutter in the sidebar while still allowing you to run tests for all stories, or adjust the filter to show tests when needed.
+If you're using the [experimental `.test` method on CSF 4](https://github.com/storybookjs/storybook/discussions/30119), you can alter the default behavior of the `_test` tag to exclude tests from the sidebar by default. This reduces clutter in the sidebar while still allowing you to run tests for all stories, or adjust the filter to show tests when needed.
 
 <CodeSnippets path="main-config-tags-test-fn-exclude.md" />

@@ -231,7 +231,7 @@ export const experimental_devServer: PresetPropertyFn<
     } else if (!docsFeatureEnabled) {
       docsNotice = `<div class="toolset-notice">
 				This toolset requires enabling the component manifest feature.
-				<a target="_blank" href="https://github.com/storybookjs/storybook/tree/next/code/addons/mcp">Learn how to enable it</a>
+				<a target="_blank" href="https://storybook.js.org/docs/ai/reference/manifests#framework-support">Learn how to enable it</a>
 			</div>`;
     }
 

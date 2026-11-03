@@ -7,9 +7,19 @@ import {
   unwrapExpression,
   walk as walkEstree,
 } from 'storybook/internal/csf-tools';
-import { defaultWord, hole, holeWord } from 'storybook/internal/docs-tools';
+import { defaultWord, hole, holeWord, withHoleSpace } from 'storybook/internal/docs-tools';
 import { walk } from 'zimmerframe';
 
+import {
+  type PropValue,
+  attributeText,
+  fragmentText,
+  printProp,
+  printRead,
+  printSpreadAttribute,
+  quotedText,
+  readText,
+} from '../../snippet-values.ts';
 import type { SvelteAST } from '../../svelte-csf/parser/ast.ts';
 import { type Edit, type Span, applyEdits, parseMarkup, scriptFile, span } from './markup.ts';
 
@@ -116,7 +126,7 @@ export function printTemplate({
       if (spreadAfter && node.name in args) {
         edits.push({
           ...at(node),
-          value: printProp(node.name, args[node.name])[0] ?? `${node.name}={undefined}`,
+          value: printSpreadAttribute(node.name, propValue(args[node.name])),
         });
         return;
       }
@@ -149,7 +159,7 @@ export function printTemplate({
       ]);
       const passed = (key: string) => !written.has(key) && !destructured.has(key);
       const props = Object.entries(args).flatMap(([key, value]) =>
-        key in snippets || !passed(key) ? [] : printProp(key, value)
+        key in snippets || !passed(key) ? [] : printPropOf(key, value)
       );
       const spread = spreadEdit(code, at(node), props);
       edits.push(
@@ -160,7 +170,8 @@ export function printTemplate({
               [...written, ...destructured, ...Object.keys(snippets)],
               Object.entries(args).flatMap(([key, value]) =>
                 quoteWords(value).length ? [`'${encodeURIComponent(key)}`] : []
-              )
+              ),
+              spread.value.startsWith('\n')
             )
           : spread
       );
@@ -195,21 +206,22 @@ export function printTemplate({
       const text = replaced.text;
       const quoted =
         parent?.type === 'Attribute' && /=\s*["']/.test(code.slice(at(parent).start, range.start));
-      if (
-        parent?.type === 'Attribute' &&
-        parent.value === node &&
-        text !== undefined &&
-        isPlain(text)
-      ) {
-        // `title={args.title}` and `{title}` print a string as a spread prints it: `title="Save"`.
-        edits.push({ ...at(parent), value: `${parent.name}="${text}"` });
+      // `title={args.title}` and `{title}` print a string as a spread prints it: `title="Save"`.
+      const asAttribute =
+        parent?.type === 'Attribute' && parent.value === node
+          ? attributeText(parent.name, text)
+          : undefined;
+      const asQuoted = quoted ? quotedText(text) : undefined;
+      const asFragment = parent?.type === 'Fragment' ? fragmentText(text) : undefined;
+      if (asAttribute !== undefined) {
+        edits.push({ ...at(parent!), value: asAttribute });
       } else if (parent?.type === 'Attribute' && code[at(parent).start] === '{') {
         // `{label}` names the attribute after the variable it reads.
         edits.push({ ...at(parent), value: `${parent.name}={${replaced.value}}` });
-      } else if (text !== undefined && quoted && !/[{}]/.test(text)) {
-        edits.push({ ...at(node), value: escapeAttribute(text) });
-      } else if (text !== undefined && parent?.type === 'Fragment' && !/[{}<>"\\&]/.test(text)) {
-        edits.push({ ...at(node), value: text });
+      } else if (asQuoted !== undefined) {
+        edits.push({ ...at(node), value: asQuoted });
+      } else if (asFragment !== undefined) {
+        edits.push({ ...at(node), value: asFragment });
       } else {
         edits.push({ ...range, value: replaced.value });
       }
@@ -243,17 +255,27 @@ export function printTemplate({
     },
   });
 
-  return applyEdits(code, edits);
+  const printed = applyEdits(code, edits);
+  return holes ? withHoleSpace(printed, takesSpace) : printed;
 }
 
-function printProp(key: string, value: Node): string[] {
+// A hole that prints nothing leaves no empty line. A spread hole holds the space around it.
+const takesSpace = (kind: string, space: string) => kind !== 'spread' && space.includes('\n');
+
+// An arg as a spread prints it, from the code the story writes it with.
+function propValue(value: Node): PropValue {
   const node = unwrapExpression(value);
-  if (node.type === 'Identifier' && node.name === 'undefined') return [];
-  if (node.type === 'Literal' && node.value === true) return [key];
-  if (node.type === 'Literal' && typeof node.value === 'string' && isPlain(node.value)) {
-    return [`${key}="${node.value}"`];
-  }
-  return [`${key}={${textOf(value)}}`];
+  if (node.type === 'Identifier' && node.name === 'undefined') return undefined;
+  if (node.type === 'Literal' && node.value === true) return true;
+  return {
+    ...(node.type === 'Literal' && typeof node.value === 'string' ? { string: node.value } : {}),
+    code: textOf(value),
+  };
+}
+
+function printPropOf(key: string, value: Node): string[] {
+  const printed = propValue(value);
+  return printed === undefined ? [] : [printProp(key, printed)];
 }
 
 function spreadEdit(code: string, span: Span, props: string[]): Edit {
@@ -345,7 +367,7 @@ function replaceArgsReads(
     if (node.type !== 'Identifier' || editor.scopes.bindingOf(node)) return undefined;
     const key = aliases[node.name];
     if (key === undefined) return undefined;
-    if (key in args) return printRead(args[key], []);
+    if (key in args) return printMemberRead(args[key], []);
     return argsComplete ? { value: 'undefined' } : undefined;
   };
   const aliasOf = (node: Node) =>
@@ -366,7 +388,7 @@ function replaceArgsReads(
       edits.push({
         start: node.start - 1,
         end: node.end - 1,
-        ...printRead(args[keys[0]], keys.slice(1)),
+        ...printMemberRead(args[keys[0]], keys.slice(1)),
       });
       return false;
     }
@@ -406,11 +428,8 @@ function replaceArgsReads(
     return { value: only.value, single: only.hole };
   }
   const text =
-    whole &&
-    only.node?.type === 'Literal' &&
-    typeof only.node.value === 'string' &&
-    only.node.value.trim()
-      ? only.node.value
+    whole && only.node?.type === 'Literal' && typeof only.node.value === 'string'
+      ? readText(only.node.value)
       : undefined;
   return { value: applyEdits(expression, edits), ...(text !== undefined ? { text } : {}) };
 }
@@ -475,34 +494,44 @@ function readPlaceHole(
   return words('code', tagSpan, pre, post);
 }
 
-// The hole for a `{...args}` spread, spanning the whitespace next takes along: the spread's line
-// when it is alone on it, else the spaces before it. Its words name the args the element writes
-// itself (`-`), the args the story quotes with `'`, and the code before (`<`) and after (`>`).
-function spreadHole(code: string, span: Span, written: string[], quoted: string[]): Edit {
+// The hole for a `{...args}` spread, which spans the whitespace next takes along with it: the
+// spread's line when it is alone on it, else the spaces before it. Its words name the args the
+// element writes itself (`-`) and the args the story quotes with `'`, and lay the spread out as
+// next lays out the story's own args: the code before (`<`) and after (`>`) the props, the
+// separator between them (`|`), and the code that stands for a spread that passes none (`?`).
+function spreadHole(
+  code: string,
+  span: Span,
+  written: string[],
+  quoted: string[],
+  onePerLine: boolean
+): Edit {
   const lineStart = code.lastIndexOf('\n', span.start - 1) + 1;
   const lineEnd = code.indexOf('\n', span.end);
   const alone =
     lineEnd !== -1 &&
     !code.slice(lineStart, span.start).trim() &&
     !code.slice(span.end, lineEnd).trim();
-  let start = span.start;
-  let end = span.end;
-  if (alone) {
-    start = lineStart > 0 ? lineStart - 1 : 0;
-    end = lineStart > 0 ? lineEnd : lineEnd + 1;
-  } else {
-    while (start > 0 && /[ \t]/.test(code[start - 1])) start--;
-  }
+  let trimmed = span.start;
+  while (trimmed > 0 && /[ \t]/.test(code[trimmed - 1])) trimmed--;
+  const start = alone ? lineStart : trimmed;
+  const end = alone ? lineEnd + 1 : span.end;
+  // Where next removes a spread that passes nothing: its line, or the space before it.
+  const emptyStart = alone ? lineStart : code[span.start - 1] === ' ' ? span.start - 1 : span.start;
+  const before = code.slice(start, onePerLine ? trimmed : span.start);
+  const after = code.slice(span.end, end);
+  const word = (prefix: string, text: string) => `${prefix}${encodeURIComponent(text)}`;
   return {
     start,
     end,
     value: hole(
       'spread',
-      ...[...new Set(written)].map((key) => `-${encodeURIComponent(key)}`),
+      ...[...new Set(written)].map((key) => word('-', key)),
       ...quoted,
-      `<${encodeURIComponent(code.slice(start, span.start))}`,
-      `>${encodeURIComponent(code.slice(span.end, end))}`,
-      ...(alone ? ['line'] : [])
+      word('<', onePerLine ? `${before}\n  ` : before),
+      word('|', onePerLine ? '\n  ' : ' '),
+      word('>', onePerLine ? `\n${after}` : after),
+      defaultWord(code.slice(start, emptyStart) + code.slice(alone ? lineEnd + 1 : span.end, end))
     ),
   };
 }
@@ -527,7 +556,7 @@ function argsPath(node: Node, editor: SourceEditor, name: string): string[] | un
 
 // Static members of an object literal print as the value they hold; any other read keeps its
 // member access on the value source. `node` is the value when the whole read resolved.
-function printRead(value: Node, keys: string[]): { value: string; node?: Node } {
+function printMemberRead(value: Node, keys: string[]): { value: string; node?: Node } {
   let node = unwrapExpression(value);
   let rest = keys;
   while (rest.length) {
@@ -540,7 +569,7 @@ function printRead(value: Node, keys: string[]): { value: string; node?: Node } 
     .map((key) => (/^[A-Za-z_$][\w$]*$/.test(key) ? `.${key}` : `[${JSON.stringify(key)}]`))
     .join('');
   return {
-    value: isPrimary(node) ? `${textOf(node)}${accessors}` : `(${textOf(node)})${accessors}`,
+    value: printRead(textOf(node), !isPrimary(node)) + accessors,
     ...(rest.length ? {} : { node }),
   };
 }
@@ -576,13 +605,4 @@ function isPrimary(node: Node): boolean {
     default:
       return false;
   }
-}
-
-// A string that reads the same in a quoted attribute as in an expression.
-function isPlain(value: string): boolean {
-  return !/[{}<>"\\&\r\n\t]/.test(value);
-}
-
-function escapeAttribute(value: string): string {
-  return value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
 }

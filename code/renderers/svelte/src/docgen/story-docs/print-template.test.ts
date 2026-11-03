@@ -6,7 +6,7 @@ import { type ESTreeNode as Node, parseExpression, staticKey } from 'storybook/i
 import { writtenArg } from 'storybook/internal/docs-tools';
 
 import { fillTemplate } from '../../docs/fill-template.ts';
-import { argCode, literalOf } from './build-story-docs.ts';
+import { ownArgs } from './own-args.test-helpers.ts';
 import { type TemplateParameter, printTemplate } from './print-template.ts';
 
 const args = (source: string): Record<string, Node> => {
@@ -16,17 +16,6 @@ const args = (source: string): Record<string, Node> => {
     object.properties.flatMap((property) =>
       property.type === 'Property' ? [[staticKey(property)!, property.value]] : []
     )
-  );
-};
-
-// The args a story is written with, as the preview fills a template with them.
-const ownArgs = (written: Record<string, Node>) => {
-  const code = argCode(written);
-  return Object.fromEntries(
-    Object.entries(written).map(([name, node]) => [
-      name,
-      Object.hasOwn(code, name) ? writtenArg(code[name]!) : literalOf(node)!.value,
-    ])
   );
 };
 
@@ -301,22 +290,40 @@ describe('printTemplate with holes', () => {
 
   it('prints a hole wherever it prints an arg', () => {
     expect(template('<Panel {...args} />', "{ label: 'Go' }")).toBe(
-      "<Panel⟦spread 'label <%20 >⟧ />"
+      "<Panel⟦spread 'label <%20 |%20 > ?⟧ />"
     );
     expect(template('<h1>{args.title}</h1>', "{ title: 'Save' }")).toBe(
       "<h1>⟦fragment title ' <%7B >%7D⟧</h1>"
     );
   });
 
-  it('fills a spread with the args a control changed, past 50 characters one per line', () => {
-    const filled = fillTemplate(template('<Panel {...args} />', "{ label: 'Go' }"), {
+  it('lays a spread out as next lays out the args the story is written with', () => {
+    const changed = {
       label: 'A label long enough to wrap the spread',
       count: 3,
       onclick: undefined,
-    });
-    expect(filled).toBe(
-      '<Panel\n  label="A label long enough to wrap the spread"\n  count={3}\n />'
+    };
+    // The story's own args fit on the line, so the template keeps the spread on it.
+    expect(fillTemplate(template('<Panel {...args} />', "{ label: 'Go' }"), changed)).toBe(
+      '<Panel label="A label long enough to wrap the spread" count={3} />'
     );
+    // Past 50 characters next prints them one per line, so the template does.
+    const wrapped = template(
+      '<Panel {...args} />',
+      "{ label: 'A label that is long enough to wrap the spread' }"
+    );
+    expect(wrapped).toBe("<Panel⟦spread 'label <%0A%20%20 |%0A%20%20 >%0A ?⟧ />");
+    expect(fillTemplate(wrapped, { label: 'Go', count: 3 })).toBe(
+      '<Panel\n  label="Go"\n  count={3}\n />'
+    );
+    expect(fillTemplate(wrapped, {})).toBe('<Panel />');
+  });
+
+  it('removes the line of a spread alone on it while it passes no args', () => {
+    const written = template('<Button\n  {...args}\n  primary\n/>');
+    expect(written).toBe('<Button\n⟦spread -primary <%20%20 |%20 >%0A ?⟧  primary\n/>');
+    expect(fillTemplate(written, {})).toBe('<Button\n  primary\n/>');
+    expect(fillTemplate(written, { label: 'Go' })).toBe('<Button\n  label="Go"\n  primary\n/>');
   });
 
   it('prints an arg the story does not set where a control sets it', () => {

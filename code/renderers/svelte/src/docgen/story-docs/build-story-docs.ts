@@ -21,13 +21,8 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import { hasHoleBracket, withHoleSpace, writtenArg } from 'storybook/internal/docs-tools';
-import type {
-  Args,
-  StoryDoc,
-  StoryDocsPayload,
-  StoryDocsProviderInput,
-} from 'storybook/internal/types';
+import { hasHoleBracket } from 'storybook/internal/docs-tools';
+import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
 import { printTemplate } from './print-template.ts';
 import { buildSnippetImportBlock } from './snippet-imports.ts';
@@ -38,11 +33,59 @@ const openStoryReferences = createStoryReferenceResolver({ extensions: ['.svelte
 const RENDER_WARNING = 'The render function is not reflected in this snippet.';
 
 export async function buildStoryDocsPayload(
-  input: StoryDocsProviderInput,
-  // Test-only: hands over the args each story is written with, as the preview fills its template
-  // with them, so a test can check that they fill it to the static snippet.
-  { testOnlyOnStoryArgs }: { testOnlyOnStoryArgs?: (id: string, args: Args) => void } = {}
+  input: StoryDocsProviderInput
 ): Promise<StoryDocsPayload | undefined> {
+  const read = await readStoryFile(input);
+  if (!read) return undefined;
+  const { path, file, svelte, csf, resolver } = read;
+  const meta = metaObject(csf);
+  const component = propertyValue(meta, 'component');
+  const componentName =
+    component && /^[A-Z][\w$]*(?:\.[\w$]+)*$/.test(textOf(component))
+      ? textOf(component)
+      : undefined;
+  const importStatement = meta ? jsDocTagsForNode(meta, csf.editor).import?.[0] : undefined;
+  const context: StoryContext = {
+    file,
+    bindings: collectImportBindings(csf.program),
+    importOverride:
+      componentName && importStatement
+        ? { name: componentName, statement: importStatement }
+        : undefined,
+    componentName: svelte ? undefined : componentName,
+  };
+
+  const stories: Record<string, StoryDoc> = {};
+  for (const [exportName, story] of Object.entries(csf._stories)) {
+    const id = svelte
+      ? toId(csf.meta.id ?? csf.meta.title ?? input.entry.title, storyNameFromExport(exportName))
+      : story.id;
+    const doc: StoryDoc = {
+      id,
+      name: story.name ?? storyNameFromExport(exportName),
+      ...extractStoryJSDocInfo(csf._storyStatements[exportName], csf.editor),
+      ...(file.stories.get(exportName)?.description
+        ? { description: file.stories.get(exportName)!.description }
+        : {}),
+    };
+    try {
+      const resolved = resolver.resolve(exportName);
+      stories[id] = { ...doc, ...storySnippet(exportName, resolved, context) };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      stories[id] = { ...doc, warning: `No static snippet: ${message}` };
+    }
+  }
+  return {
+    id: getComponentIdFromEntry(input.entry),
+    name: componentName ?? input.entry.title.split('/').at(-1)!,
+    path,
+    stories,
+  };
+}
+
+/** The story file of an index entry, parsed, with the resolver of its stories' args. */
+export async function readStoryFile(input: StoryDocsProviderInput) {
   const path = getStoryImportPathFromEntry(input.entry);
   if (!path) return undefined;
   const filename = resolve(path);
@@ -61,52 +104,8 @@ export async function buildStoryDocsPayload(
     makeTitle: () => input.entry.title,
     fileName: svelte ? `${filename}.${file.typescript ? 'ts' : 'js'}` : filename,
   }).parse();
-  const meta = metaObject(csf);
-  const component = propertyValue(meta, 'component');
-  const componentName =
-    component && /^[A-Z][\w$]*(?:\.[\w$]+)*$/.test(textOf(component))
-      ? textOf(component)
-      : undefined;
-  const importStatement = meta ? jsDocTagsForNode(meta, csf.editor).import?.[0] : undefined;
-  const context: StoryContext = {
-    file,
-    bindings: collectImportBindings(csf.program),
-    importOverride:
-      componentName && importStatement
-        ? { name: componentName, statement: importStatement }
-        : undefined,
-    componentName: svelte ? undefined : componentName,
-  };
   const resolver = createStoryArgsResolver(csf, { filePath: filename, ...openStoryReferences() });
-
-  const stories: Record<string, StoryDoc> = {};
-  for (const [exportName, story] of Object.entries(csf._stories)) {
-    const id = svelte
-      ? toId(csf.meta.id ?? csf.meta.title ?? input.entry.title, storyNameFromExport(exportName))
-      : story.id;
-    const doc: StoryDoc = {
-      id,
-      name: story.name ?? storyNameFromExport(exportName),
-      ...extractStoryJSDocInfo(csf._storyStatements[exportName], csf.editor),
-      ...(file.stories.get(exportName)?.description
-        ? { description: file.stories.get(exportName)!.description }
-        : {}),
-    };
-    try {
-      const resolved = resolver.resolve(exportName);
-      stories[id] = { ...doc, ...storySnippet(exportName, resolved, context) };
-      testOnlyOnStoryArgs?.(id, ownArgs(resolved.args));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      stories[id] = { ...doc, warning: `No static snippet: ${message}` };
-    }
-  }
-  return {
-    id: getComponentIdFromEntry(input.entry),
-    name: componentName ?? input.entry.title.split('/').at(-1)!,
-    path,
-    stories,
-  };
+  return { path, file, svelte, csf, resolver };
 }
 
 interface StoryContext {
@@ -194,7 +193,7 @@ function storySnippet(
     ...(holes === undefined
       ? {}
       : {
-          template: withImports(withHoleSpace(holes, takesSpace)),
+          template: withImports(holes),
           argCode: argCode(resolved.args),
           // Every warning is about code the snippet leaves out, which the filled snippet leaves out
           // as well.
@@ -293,20 +292,3 @@ function snippetArg(
   }
   return undefined;
 }
-
-// The args a story is written with, as the preview has them before a control changes one: each
-// with `argCode` as that code, any other as its value.
-function ownArgs(args: Record<string, Node>): Args {
-  const code = argCode(args);
-  return Object.fromEntries(
-    Object.entries(args).map(([name, node]) => [
-      name,
-      Object.hasOwn(code, name)
-        ? writtenArg(code[name]!)
-        : literalOf(unwrapExpression(node))!.value,
-    ])
-  );
-}
-
-// A hole that prints nothing leaves no empty line; a spread hole holds the space around it.
-const takesSpace = (_kind: string, space: string) => space.includes('\n');

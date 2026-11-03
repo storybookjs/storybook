@@ -19,3 +19,5 @@ For a pkg.pr.new canary, follow the [canary skill](../skills/canary/SKILL.md) an
 ## Greptile review
 
 Greptile does not review a draft PR by itself. To ask for a review, comment `@greptileai review` on the PR (`gh pr comment <number> --body "@greptileai review"`). Greptile reacts with 👀, starts a "Greptile Review" check on the head commit, and posts a summary comment and inline comments after about five minutes. It reviews the head at the time of the comment, so push first. A local `greptile review` CLI run does not replace the review on the PR.
+
+To wait for the review and work through its comments, use the [`check-pr` skill](../skills/check-pr/SKILL.md). It is a copy of Greptile's skill from [greptileai/skills](https://github.com/greptileai/skills) (MIT, version in its header); update it from there, not by hand. It does not ask Greptile for a review, so comment first on a draft.

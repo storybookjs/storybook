@@ -1,7 +1,7 @@
 import { type Dirent, lstatSync, readdirSync } from 'node:fs';
 import { basename, join, relative, resolve } from 'node:path';
 
-import { commonGlobOptions, getSpecifierImportPath } from 'storybook/internal/common';
+import { commonGlobOptions, matchesSpecifier } from 'storybook/internal/common';
 import type { NormalizedStoriesSpecifier, Path } from 'storybook/internal/types';
 
 import * as pathe from 'pathe';
@@ -71,7 +71,7 @@ export function watchStorySpecifiers(
     const importPath = toImportPath(absolutePath);
 
     const matchingSpecifier = specifiers.find((ns) =>
-      ns.importPathMatcher.exec(getSpecifierImportPath(ns, absolutePath, options.workingDir))
+      matchesSpecifier(ns, importPath, options.workingDir)
     );
     if (matchingSpecifier) {
       onInvalidate(importPath, removed);
@@ -113,11 +113,7 @@ export function watchStorySpecifiers(
             addedFiles.forEach((filePath: Path) => {
               const fileImportPath = toImportPath(filePath);
 
-              if (
-                specifier.importPathMatcher.exec(
-                  getSpecifierImportPath(specifier, filePath, options.workingDir)
-                )
-              ) {
+              if (matchesSpecifier(specifier, fileImportPath, options.workingDir)) {
                 onInvalidate(fileImportPath, removed);
               }
             });

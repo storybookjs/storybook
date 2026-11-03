@@ -5,9 +5,10 @@ import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:
 import {
   commonGlobOptions,
   getProjectRoot,
-  getSpecifierImportPath,
   getTsconfigPathsBaseDir,
+  matchesSpecifier,
   normalizeStoryPath,
+  toSpecifierPath,
 } from 'storybook/internal/common';
 import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
 import { loadConfig } from 'storybook/internal/csf-tools';
@@ -406,7 +407,7 @@ export class StoryIndexGenerator {
     const importPath = slash(normalizeStoryPath(relativePath));
     const defaultMakeTitle = (userTitle?: string) => {
       const title = userOrAutoTitleFromSpecifier(
-        getSpecifierImportPath(specifier, absolutePath, this.options.workingDir),
+        toSpecifierPath(specifier, importPath, this.options.workingDir),
         specifier,
         userTitle
       );
@@ -610,7 +611,7 @@ export class StoryIndexGenerator {
       const title =
         csfEntry?.title ||
         userOrAutoTitleFromSpecifier(
-          getSpecifierImportPath(specifier, absolutePath, this.options.workingDir),
+          toSpecifierPath(specifier, importPath, this.options.workingDir),
           specifier,
           result.title
         );
@@ -828,7 +829,7 @@ export class StoryIndexGenerator {
   invalidate(importPath: Path, removed: boolean) {
     const absolutePath = slash(resolve(this.options.workingDir, importPath));
     const specifier = Array.from(this.specifierToCache.keys()).find((ns) =>
-      ns.importPathMatcher.exec(getSpecifierImportPath(ns, absolutePath, this.options.workingDir))
+      matchesSpecifier(ns, importPath, this.options.workingDir)
     );
     if (!specifier) {
       // not a story file

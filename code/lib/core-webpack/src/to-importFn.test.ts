@@ -276,3 +276,70 @@ describe('toImportFn - generated code', () => {
     expect(generated.match(/async \(path\) =>/g)?.length).toBe(2);
   });
 });
+
+describe('toImportFn - working dir inside the specifier directory', () => {
+  const configDir = '/repo/.storybook';
+
+  const loadImportFn = (code: string) =>
+    new Function(
+      'request',
+      code
+        .replace('export async function importFn', 'return async function importFn')
+        .replaceAll('import(', 'request(')
+    )((request: string) => request) as (path: string) => Promise<string | undefined>;
+
+  it.each([
+    [
+      '../src/**/*.stories.ts',
+      '/repo',
+      './src/Button.stories.ts',
+      './src/Button.stories.ts',
+      '/repo/src/Button.stories.ts',
+    ],
+    [
+      '../packages/@(core|other)/src/**/*.stories.ts',
+      '/repo/packages/core',
+      './src/Button.stories.ts',
+      '../core/src/Button.stories.ts',
+      '/repo/packages/core/src/Button.stories.ts',
+    ],
+    [
+      '../packages/@(core|other)/src/**/*.stories.ts',
+      '/repo/packages/core',
+      '../other/src/Card.stories.ts',
+      '../other/src/Card.stories.ts',
+      '/repo/packages/other/src/Card.stories.ts',
+    ],
+    [
+      '../**/*.stories.ts',
+      '/repo/packages/core',
+      './src/Button.stories.ts',
+      '../../packages/core/src/Button.stories.ts',
+      '/repo/packages/core/src/Button.stories.ts',
+    ],
+    [
+      '../**/*.stories.ts',
+      '/repo/packages/core',
+      '../other/src/Card.stories.ts',
+      '../../packages/other/src/Card.stories.ts',
+      '/repo/packages/other/src/Card.stories.ts',
+    ],
+  ])('%s from %s: imports %s as %s', async (glob, workingDir, importPath, request, file) => {
+    const specifier = normalizeStoriesEntry(glob, { configDir, workingDir });
+    const importFn = loadImportFn(toImportFn([specifier], { workingDir }));
+
+    await expect(importFn(importPath)).resolves.toBe(request);
+    expect(webpackIncludeRegexp(specifier).test(file)).toBe(true);
+  });
+
+  it('skips import paths outside the specifier', async () => {
+    const workingDir = '/repo/packages/core';
+    const specifier = normalizeStoriesEntry('../packages/@(core|other)/src/**/*.stories.ts', {
+      configDir,
+      workingDir,
+    });
+    const importFn = loadImportFn(toImportFn([specifier], { workingDir }));
+
+    await expect(importFn('./lib/Button.stories.ts')).resolves.toBeUndefined();
+  });
+});

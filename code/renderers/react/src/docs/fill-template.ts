@@ -43,7 +43,10 @@ function fill(kind: string, words: string[], args: Args): string {
   // Only an arg's own value: a name every object inherits, such as `constructor`, is no arg.
   const arg = (name: string) => (Object.hasOwn(args, name) ? args[name] : undefined);
   const value = (name: string) => describe(name, arg(name), words);
-  const unset = (name: string) => (arg(name) === undefined ? defaultCode(words.at(-1)) : undefined);
+  // An action Storybook adds, as `argTypesRegex` does, is no value the snippet prints, so a hole
+  // prints it as an unset arg: as the story writes the read, or nothing.
+  const absent = (name: string) => arg(name) === undefined || isAction(arg(name));
+  const unset = (name: string) => (absent(name) ? defaultCode(words.at(-1)) : undefined);
   const spread = () =>
     spreadArgs(
       args,
@@ -62,7 +65,7 @@ function fill(kind: string, words: string[], args: Args): string {
       );
     }
     case 'close':
-      return arg('children') === undefined
+      return absent('children')
         ? (defaultCode(words.at(-1)) ?? ' />')
         : printClose(first, printChildren(value('children')));
     case 'props':
@@ -70,14 +73,9 @@ function fill(kind: string, words: string[], args: Args): string {
     case 'args':
       return printArgsObject(spread().map(([name]) => [name, value(name)]));
     case 'attr':
-      return (
-        unset(second) ??
-        (arg(second) === undefined || isAction(arg(second))
-          ? ''
-          : printAttribute(first, value(second)))
-      );
+      return unset(second) ?? (absent(second) ? '' : printAttribute(first, value(second)));
     case 'text':
-      return unset(first) ?? (arg(first) === undefined ? '' : printChildren(value(first)));
+      return unset(first) ?? (absent(first) ? '' : printChildren(value(first)));
     default:
       throw new Error(`Unknown hole ⟦${kind}⟧`);
   }

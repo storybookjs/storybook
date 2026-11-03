@@ -537,25 +537,27 @@ function rewriteJsx(
         const lastEnd = attrs.length > 0 ? attrs[attrs.length - 1].end : tagEnd;
         // Without children the element ends as the story writes it.
         // Content is indented as the line the element opens on, as the snippet prints it.
-        const close = (end: number) => (dedent: Dedent) =>
+        const close = (start: number, end: number) => (dedent: Dedent) =>
           hole(
             'close',
             holeWord(name),
             ...childrenWords(merged, printAt(opening.start), dedent),
-            defaultWord(dedent(code.slice(lastEnd, end), `<${name}`, ''))
+            defaultWord(dedent(code.slice(start, end), `<${name}`, ''))
           );
         if (opening.selfClosing) {
           edits.push({
             start: lastEnd,
             end: opening.end,
             value: children === undefined ? undefined : printClose(name, children),
-            hole: close(opening.end),
+            hole: close(lastEnd, opening.end),
           });
         } else {
+          // The snippet keeps the code before the `>` as written, and puts the content after it.
           if (children !== undefined) {
             edits.push({ start: opening.end, end: opening.end, value: children });
           }
-          edits.push({ start: lastEnd, end: node.end, hole: close(node.end) });
+          const tagClose = opening.end - 1;
+          edits.push({ start: tagClose, end: node.end, hole: close(tagClose, node.end) });
         }
       }
     }
@@ -646,6 +648,6 @@ const childrenWords = (merged: Args, print: ValuePrinter, dedent: Dedent) =>
       ]
     : [];
 
-// An attribute that prints nothing leaves no gap, and no hole leaves an empty line.
-const takesSpace = (kind: string, space: string) =>
-  kind === 'attr' || kind === 'props' || space.includes('\n');
+// An attribute that prints nothing leaves no gap or empty line. Any other hole keeps the code before
+// it, as the snippet does where its value is empty.
+const takesSpace = (kind: string) => kind === 'attr' || kind === 'props';

@@ -1,7 +1,7 @@
-import { expect, test, vi } from 'vitest';
+import { describe, expect, it, test, vi } from 'vitest';
 
 import { type ESTreeNode, createStoryArgsResolver, loadCsf } from 'storybook/internal/csf-tools';
-import { UnprintableArgError, writtenArg } from 'storybook/internal/docs-tools';
+import { UnprintableArgError, printValue, writtenArg } from 'storybook/internal/docs-tools';
 import { selectLiveSnippetForStory } from 'storybook/open-service';
 
 import { dedent } from 'ts-dedent';
@@ -1615,4 +1615,139 @@ test('template: a string arg prints as text where a place holds it, and as its c
   expect(template(input, 'Quoted')).toMatchInlineSnapshot(
     `"const Quoted = () => <Button⟦attr title children ~%20⟧>⟦text children %%22children%3Dsay%20%22hi%22⟧</Button>;"`
   );
+});
+
+test('template: content a spread passes keeps the code before the `>`, and empty content keeps its line', () => {
+  const input = withCSF3(dedent`
+    export const Open: Story = {
+      args: { children: 'Hi' },
+      render: (args) => (
+        <Button
+          {...args}
+        ></Button>
+      ),
+    };
+    export const Empty: Story = {
+      args: { children: '' },
+      render: (args) => (
+        <div>
+          {args.children}
+        </div>
+      ),
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Open = () => <Button
+    >Hi</Button>;
+    const Empty = () => <div>
+      
+    </div>;"
+  `);
+});
+
+test('template: an action Storybook adds fills as the read the story writes', () => {
+  const input = withCSF3(dedent`
+    export const Read: Story = {
+      args: { label: 'Go' },
+      render: (args) => <Button onClick={args.onClick} label={args.label}>{args.icon}</Button>,
+    };
+  `);
+  // As `argTypesRegex` or an `action` argType adds them, in the browser only.
+  const action = Object.assign(() => {}, { isAction: true });
+  const args = { children: 'Click me', label: 'Stop', onClick: action, icon: action };
+  expect(filled(input, 'Read', args)).toMatchInlineSnapshot(
+    `"const Read = (args) => <Button onClick={args.onClick} label="Stop">{args.icon}</Button>;"`
+  );
+});
+
+describe('template: a changed value fills as the static snippet of a story that writes it', () => {
+  const VALUES: [string, unknown][] = [
+    ['a plain string', 'Go'],
+    ['a string with quotes', `say "hi" it's`],
+    ['a string with braces', '{x}'],
+    ['a string with a tag', '<b>'],
+    ['a string with an entity', 'a & b'],
+    ['a string over two lines', 'a\nb'],
+    ['an empty string', ''],
+    ['zero', 0],
+    ['a negative number', -1],
+    ['an exponent', 1e3],
+    ['a fraction', 1.5],
+    ['true', true],
+    ['false', false],
+    ['null', null],
+    ['an array', [1, 'a', null]],
+    ['an object', { a: 1, 'b c': [2] }],
+  ];
+
+  // Each place a value prints in, as a story that writes the arg `x` or `children` with `literal`.
+  const PLACES: [
+    string,
+    (literal: string) => string,
+    (value: unknown) => Record<string, unknown>,
+  ][] = [
+    [
+      'an attribute',
+      (literal) =>
+        `export const S = { args: { x: ${literal} }, render: (args) => <Button title={args.x} /> };`,
+      (value) => ({ x: value }),
+    ],
+    [
+      'content',
+      (literal) =>
+        `export const S = { args: { children: ${literal} }, render: (args) => <Button>{args.children}</Button> };`,
+      (value) => ({ children: value }),
+    ],
+    [
+      'a spread',
+      (literal) =>
+        `export const S = { args: { x: ${literal} }, render: (args) => <Button {...args} /> };`,
+      (value) => ({ x: value }),
+    ],
+    [
+      'the element of a story without a render',
+      (literal) => `export const S = { args: { x: ${literal}, children: ${literal} } };`,
+      (value) => ({ x: value, children: value }),
+    ],
+    [
+      'the content a spread passes',
+      (literal) =>
+        `export const S = { args: { children: ${literal} }, render: (args) => <Button {...args} /> };`,
+      (value) => ({ children: value }),
+    ],
+    [
+      'the args of a bound story',
+      (literal) => `export const S = Match.bind({});\nS.args = { x: ${literal} };`,
+      (value) => ({ x: value }),
+    ],
+  ];
+
+  const snippetOf = (story: string) => {
+    const csf = loadCsf(
+      dedent`
+        import { Button } from '@design-system/button';
+        import { renderMatch as Match } from './match-helper';
+        export default { component: Button };
+      ` + `\n${story}`,
+      { makeTitle: () => 'T' }
+    ).parse();
+    return getCodeSnippet(csf, 'S', 'Button');
+  };
+
+  describe.each(PLACES)('in %s', (_, story, args) => {
+    it.each(VALUES)('prints %s', (_, value) => {
+      const printed = snippetOf(story(printValue(value, 'x')));
+      expect(fillTemplate(printed.template!, args(value))).toBe(printed.snippet);
+    });
+
+    it('throws for a value with no literal', () => {
+      const printed = snippetOf(story('1'));
+      expect(() =>
+        fillTemplate(
+          printed.template!,
+          args(() => {})
+        )
+      ).toThrow(UnprintableArgError);
+    });
+  });
 });

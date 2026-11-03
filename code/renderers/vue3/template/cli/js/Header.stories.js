@@ -1,9 +1,8 @@
-import preview from '../../.storybook/preview';
 import { fn } from 'storybook/test';
 
 import MyHeader from './Header.vue';
 
-const meta = preview.meta({
+export default {
   title: 'Example/Header',
   component: MyHeader,
   // This component will have an automatically generated Autodocs entry: https://storybook.js.org/docs/writing-docs/autodocs
@@ -32,18 +31,18 @@ const meta = preview.meta({
     onLogout: fn(),
     onCreateAccount: fn(),
   },
-});
+};
 
-export const LoggedIn = meta.story({
+export const LoggedIn = {
   args: {
     user: {
       name: 'Jane Doe',
     },
   },
-});
+};
 
-export const LoggedOut = meta.story({
+export const LoggedOut = {
   args: {
     user: null,
   },
-});
+};

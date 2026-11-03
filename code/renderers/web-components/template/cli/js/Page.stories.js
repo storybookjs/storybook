@@ -1,21 +1,20 @@
-import preview from '../../.storybook/preview';
 import * as HeaderStories from './Header.stories';
 import { Page } from './Page';
 
-const meta = preview.meta({
+export default {
   title: 'Example/Page',
   render: (args) => Page(args),
-});
+};
 
-export const LoggedIn = meta.story({
+export const LoggedIn = {
   args: {
     // More on composing args: https://storybook.js.org/docs/writing-stories/args#args-composition
-    ...HeaderStories.LoggedIn.input.args,
+    ...HeaderStories.LoggedIn.args,
   },
-});
+};
 
-export const LoggedOut = meta.story({
+export const LoggedOut = {
   args: {
-    ...HeaderStories.LoggedOut.input.args,
+    ...HeaderStories.LoggedOut.args,
   },
-});
+};

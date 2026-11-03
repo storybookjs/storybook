@@ -1,10 +1,9 @@
-import preview from '../../.storybook/preview';
 import { fn } from 'storybook/test';
 
 import { Button } from './Button';
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories
-const meta = preview.meta({
+export default {
   title: 'Example/Button',
   tags: ['autodocs'],
   render: (args) => Button(args),
@@ -16,32 +15,32 @@ const meta = preview.meta({
     },
   },
   args: { onClick: fn() },
-});
+};
 
 // More on writing stories with args: https://storybook.js.org/docs/writing-stories/args
-export const Primary = meta.story({
+export const Primary = {
   args: {
     primary: true,
     label: 'Button',
   },
-});
+};
 
-export const Secondary = meta.story({
+export const Secondary = {
   args: {
     label: 'Button',
   },
-});
+};
 
-export const Large = meta.story({
+export const Large = {
   args: {
     size: 'large',
     label: 'Button',
   },
-});
+};
 
-export const Small = meta.story({
+export const Small = {
   args: {
     size: 'small',
     label: 'Button',
   },
-});
+};

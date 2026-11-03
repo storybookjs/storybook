@@ -1,21 +1,20 @@
-import preview from '../../.storybook/preview';
 import { expect, userEvent, within } from 'storybook/test';
 
 import { Page } from './Page';
 
-const meta = preview.meta({
+export default {
   title: 'Example/Page',
   component: Page,
   parameters: {
     // More on how to position stories at: https://storybook.js.org/docs/configure/story-layout
     layout: 'fullscreen',
   },
-});
+};
 
-export const LoggedOut = meta.story();
+export const LoggedOut = {};
 
 // More on component testing: https://storybook.js.org/docs/writing-tests/interaction-testing
-export const LoggedIn = meta.story({
+export const LoggedIn = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const loginButton = canvas.getByRole('button', { name: /Log in/i });
@@ -26,4 +25,4 @@ export const LoggedIn = meta.story({
     const logoutButton = canvas.getByRole('button', { name: /Log out/i });
     await expect(logoutButton).toBeInTheDocument();
   },
-});
+};

@@ -5,7 +5,6 @@ import { inputBinding, isValidIdentifier } from './snippet-values.ts';
 
 export { isValidIdentifier };
 
-
 export const formatPropInTemplate = (propertyName: string) =>
   isValidIdentifier(propertyName) ? propertyName : `this['${propertyName}']`;
 

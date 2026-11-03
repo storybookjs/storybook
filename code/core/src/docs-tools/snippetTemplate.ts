@@ -54,7 +54,8 @@ export interface Hole {
   words: string[];
 }
 
-const decodeWord = (word: string) => (word.startsWith('%') ? decodeURIComponent(word.slice(1)) : word);
+const decodeWord = (word: string) =>
+  word.startsWith('%') ? decodeURIComponent(word.slice(1)) : word;
 
 /** Every hole in a template, for the server and tests; a filler uses {@link fillHoles}. */
 export const findHoles = (template: string): Hole[] =>
@@ -77,12 +78,7 @@ export const fillHoles = (template: string, fill: (kind: string, words: string[]
   template.replace(HOLE, (_, inside: string) => {
     const [kind = '', ...words] = inside.split(' ');
     const space = words.find((word) => word.startsWith('~'));
-    const printed = fill(
-      kind,
-      words
-        .filter((word) => word !== space)
-        .map(decodeWord)
-    );
+    const printed = fill(kind, words.filter((word) => word !== space).map(decodeWord));
     return printed && space ? decodeURIComponent(space.slice(1)) + printed : printed;
   });
 

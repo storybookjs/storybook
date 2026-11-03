@@ -108,9 +108,7 @@ describe('selectLiveSnippetForStory', () => {
   });
 
   it('fills the template with the args, with the warning', () => {
-    expect(
-      selectLiveSnippetForStory(payloadWithTemplate, storyId, changed, fillTemplate)
-    ).toEqual({
+    expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, changed, fillTemplate)).toEqual({
       snippet: 'import { Button } from \'./Button\';\n\n<Button label="Go" />',
       warning,
     });

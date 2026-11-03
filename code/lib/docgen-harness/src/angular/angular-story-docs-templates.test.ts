@@ -156,12 +156,7 @@ const buildStories = async (fixtureCase: string) => {
     Annotations | undefined
   >;
   const snippets = Object.entries(csf._stories).flatMap(([exportName, story]) => {
-    const {
-      template = '',
-      snippet,
-      warning,
-      argCode,
-    } = payload!.stories[story.id]!;
+    const { template = '', snippet, warning, argCode } = payload!.stories[story.id]!;
     const args = { ...argsOf(storiesModule.default), ...argsOf(storiesModule[exportName]) };
     return snippet === undefined
       ? []

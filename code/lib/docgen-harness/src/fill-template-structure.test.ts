@@ -138,7 +138,9 @@ describe.each(FRAMEWORKS)('the $name filler', ({ filler, values, server, runtime
   it('imports nothing but the hole contract, its value printers and its runtime', () => {
     for (const { source } of imports(filler)) {
       expect(
-        BROWSER_SAFE.includes(source) || runtime.includes(source) || resolves(filler, source, values),
+        BROWSER_SAFE.includes(source) ||
+          runtime.includes(source) ||
+          resolves(filler, source, values),
         source
       ).toBe(true);
     }

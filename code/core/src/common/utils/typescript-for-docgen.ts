@@ -6,9 +6,18 @@ import type { Options } from 'storybook/internal/types';
 import { SupportedRenderer } from 'storybook/internal/types';
 
 import {
+  type BuilderDocgenFallback,
+  BuilderDocgenPackagesMissingError,
   TypeScriptMissingForDocgenError,
   TypeScriptWithoutCompilerApiError,
 } from '../../server-errors.ts';
+import {
+  type BuilderDocgenPackage,
+  type ReactDocgenOption,
+  getAddBuilderDocgenPackagesCommand,
+  isModuleNotFoundError,
+  isPackageResolvable,
+} from './builder-docgen-packages.ts';
 import { loadMainConfig } from './load-main-config.ts';
 
 /** Renderers whose docgen needs `typescript`, which they declare as a peer dependency. */
@@ -25,11 +34,6 @@ export const TYPESCRIPT_FOR_DOCGEN_PACKAGE = 'typescript@^6';
 /** Return whether a TypeScript version has the compiler API (`ts.*`) that docgen is built on. */
 export const hasTypeScriptCompilerApi = (version: string) => Number(version.split('.')[0]) < 7;
 
-const isModuleNotFound = (error: unknown) =>
-  error instanceof Error &&
-  'code' in error &&
-  (error.code === 'ERR_MODULE_NOT_FOUND' || error.code === 'MODULE_NOT_FOUND');
-
 /**
  * Check whether `typescript` resolves to a version with the compiler API that docgen needs.
  *
@@ -38,21 +42,38 @@ const isModuleNotFound = (error: unknown) =>
  * `typescript` to the packages that declare it.
  */
 export function getTypeScriptForDocgenError(
-  resolve: (specifier: string) => string
+  resolve: (specifier: string) => string,
+  { builderDocgenFallback }: { builderDocgenFallback?: BuilderDocgenFallback } = {}
 ): TypeScriptMissingForDocgenError | TypeScriptWithoutCompilerApiError | undefined {
   let version: unknown;
   try {
     const packageJsonPath = fileURLToPath(resolve('typescript/package.json'));
     ({ version } = JSON.parse(readFileSync(packageJsonPath, 'utf-8')));
   } catch (cause) {
-    return new TypeScriptMissingForDocgenError({ cause });
+    return new TypeScriptMissingForDocgenError({ cause, builderDocgenFallback });
   }
   if (typeof version !== 'string') {
-    return new TypeScriptMissingForDocgenError();
+    return new TypeScriptMissingForDocgenError({ builderDocgenFallback });
   }
   return hasTypeScriptCompilerApi(version)
     ? undefined
-    : new TypeScriptWithoutCompilerApiError({ version });
+    : new TypeScriptWithoutCompilerApiError({ version, builderDocgenFallback });
+}
+
+/**
+ * Describe the builder docgen package a renderer falls back to without a usable `typescript`, so
+ * TypeScript warnings can say whether docgen still runs and how to keep it running.
+ */
+export function getBuilderDocgenFallback(
+  resolve: (specifier: string) => string,
+  packageName: BuilderDocgenPackage
+): BuilderDocgenFallback {
+  const installed = isPackageResolvable(resolve, packageName);
+  return {
+    packageName,
+    installed,
+    installCommand: installed ? '' : getAddBuilderDocgenPackagesCommand([packageName]),
+  };
 }
 
 /**
@@ -78,16 +99,28 @@ export async function isDocgenServerDisabledInMainConfig({
  * Use it as a renderer's `isDocgenProviderEnabled` preset, so a project without a usable
  * `typescript` keeps builder docgen. A project that sets `features.docgenServer: false` gets no
  * warning.
+ *
+ * Pass `builderDocgenFallback` when builder docgen needs an optional package, such as React's
+ * `react-docgen`. The warning then says whether docgen still runs, and how to install the package
+ * when it does not.
  */
 export async function isTypeScriptReadyForDocgen(
   resolve: (specifier: string) => string,
-  options: Pick<Options, 'configDir'>
+  options: Pick<Options, 'configDir'>,
+  { builderDocgenFallback }: { builderDocgenFallback?: BuilderDocgenPackage } = {}
 ): Promise<boolean> {
-  const error = getTypeScriptForDocgenError(resolve);
-  if (error && !(await isDocgenServerDisabledInMainConfig(options))) {
-    once.warn(error.message);
+  if (!getTypeScriptForDocgenError(resolve)) {
+    return true;
   }
-  return !error;
+  if (!(await isDocgenServerDisabledInMainConfig(options))) {
+    const error = getTypeScriptForDocgenError(resolve, {
+      builderDocgenFallback: builderDocgenFallback
+        ? getBuilderDocgenFallback(resolve, builderDocgenFallback)
+        : undefined,
+    });
+    once.warn(error!.message);
+  }
+  return false;
 }
 
 /**
@@ -107,7 +140,7 @@ export async function loadTypeScriptCompilerApi<TypeScript extends { version: st
     const imported = await importTypeScript();
     typescript = imported.default ?? imported;
   } catch (cause) {
-    if (isModuleNotFound(cause)) {
+    if (isModuleNotFoundError(cause)) {
       throw new TypeScriptMissingForDocgenError({ cause });
     }
     throw cause;
@@ -116,4 +149,57 @@ export async function loadTypeScriptCompilerApi<TypeScript extends { version: st
     throw new TypeScriptWithoutCompilerApiError({ version: typescript.version });
   }
   return typescript;
+}
+
+/**
+ * Check that the packages builder docgen needs are installed, and warn once when it can run or when
+ * it cannot.
+ *
+ * Call it from a framework preset once builder docgen is active, with the packages from
+ * {@link getReactBuilderDocgenPackages}. It prints one warning per cause:
+ *
+ * - The main config sets `features.docgenServer: false`: the builder docgen deprecation, or, when
+ *   packages are missing, a {@link BuilderDocgenPackagesMissingError} that also covers it.
+ * - `typescript` is unusable, so the docgen server is off by default: nothing, because the
+ *   `isDocgenProviderEnabled` preset already warned and named the missing packages.
+ * - Anything else that turned the docgen server off: a {@link BuilderDocgenPackagesMissingError} when
+ *   packages are missing.
+ *
+ * @returns The packages that do not resolve. Builder docgen must not run when this is non-empty.
+ */
+export async function checkReactBuilderDocgenPackages({
+  reactDocgen,
+  packages,
+  resolve,
+  options,
+}: {
+  reactDocgen: Exclude<ReactDocgenOption, false>;
+  packages: readonly BuilderDocgenPackage[];
+  resolve: (specifier: string) => string;
+  options: Pick<Options, 'configDir'>;
+}): Promise<BuilderDocgenPackage[]> {
+  const missing = packages.filter((name) => !isPackageResolvable(resolve, name));
+  const docgenServerDisabledInMainConfig = await isDocgenServerDisabledInMainConfig(options);
+
+  if (missing.length > 0) {
+    if (docgenServerDisabledInMainConfig || !getTypeScriptForDocgenError(resolve)) {
+      once.warn(
+        new BuilderDocgenPackagesMissingError({
+          reactDocgen,
+          packages: missing,
+          installCommand: getAddBuilderDocgenPackagesCommand(missing),
+          docgenServerDisabledInMainConfig,
+        }).message
+      );
+    }
+    return missing;
+  }
+
+  if (docgenServerDisabledInMainConfig) {
+    once.warn(
+      `Builder docgen (\`typescript.reactDocgen: '${reactDocgen}'\`) is deprecated and will be removed in Storybook 12. ` +
+        `It runs because your Storybook main config sets \`features.docgenServer: false\`. Remove that setting to use server-side docgen.`
+    );
+  }
+  return missing;
 }

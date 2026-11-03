@@ -19,6 +19,7 @@
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
     - [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
+    - [React: `react-docgen` and `react-docgen-typescript` are optional peer dependencies](#react-react-docgen-and-react-docgen-typescript-are-optional-peer-dependencies)
     - [Svelte](#svelte)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or newer](#typescript-59-or-newer)
@@ -1036,6 +1037,27 @@ Client-side docgen that runs in the builder is deprecated and will be removed in
 This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`, and the Svelte `docgen` framework option in `@storybook/svelte-vite` and `@storybook/sveltekit` (including the sveltedoc-shaped `__docgen`).
 Builder docgen only runs when `features.docgenServer` is `false`. Storybook prints a deprecation warning when your `.storybook/main.ts` sets `docgenServer: false`. When server-side docgen is off because TypeScript is missing or unusable, Storybook prints the TypeScript warning instead. For no docgen and no warnings, also turn builder docgen off: `typescript.reactDocgen: false` for React, and the `docgen: false` framework option for Vue 3 and Svelte.
 Install the `typescript` package and remove `docgenServer: false` to use server-side docgen.
+
+#### React: `react-docgen` and `react-docgen-typescript` are optional peer dependencies
+
+The packages that only React builder docgen uses are now optional peer dependencies, so projects on server-side docgen no longer install them, nor the Babel toolchain that `react-docgen` brings along:
+
+- `react-docgen` and `react-docgen-typescript` in `@storybook/react`, `@storybook/react-vite` and `@storybook/preset-react-webpack`
+- `@joshwooding/vite-plugin-react-docgen-typescript` in `@storybook/react-vite`
+- `@storybook/react-docgen-typescript-plugin` in `@storybook/preset-react-webpack`
+
+Storybook loads them only when builder docgen runs. When builder docgen runs without them, Storybook keeps starting, Controls and the Docs args table show no props, and Storybook prints one warning with the install command for your package manager:
+
+| Builder docgen runs because                                                      | Add to devDependencies                                                                                                      |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `features.docgenServer: false` with the default `typescript.reactDocgen`        | `react-docgen`                                                                                                              |
+| `features.docgenServer: false` with `typescript.reactDocgen: 'react-docgen-typescript'` | Vite: `@joshwooding/vite-plugin-react-docgen-typescript` and `react-docgen-typescript`. Webpack: `@storybook/react-docgen-typescript-plugin` and `react-docgen-typescript` |
+| `typescript` is TypeScript 7 without the [side-by-side setup](#typescript-59-or-newer) | `react-docgen`, or better, install TypeScript 6 side by side to use server-side docgen                                     |
+
+In `react-docgen-typescript` mode, `react-docgen` is optional and only documents JavaScript files.
+
+The `builder-docgen-packages` automigration adds the packages your configuration needs when you upgrade.
+You can also run it with `storybook automigrate builder-docgen-packages`.
 
 #### Svelte
 

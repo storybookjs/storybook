@@ -9,18 +9,20 @@ import {
   resolveComponentImport,
   walk,
 } from 'storybook/internal/csf-tools';
+import { isModuleNotFoundError } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { TypescriptOptions as TypescriptOptionsBase } from 'storybook/internal/types';
 
 import type { ParserOptions } from 'react-docgen-typescript';
 
-import { getImportTag, getReactDocgen, matchPath } from './reactDocgen.ts';
+import { getDocgenPackageMissingError, loadReactDocgen } from './loadReactDocgen.ts';
 import {
   type ComponentDocWithExportName,
   getReactDocgenTypescriptError,
   matchComponentDoc,
   parseWithReactDocgenTypescript,
 } from './reactDocgenTypescript.ts';
+import { getImportTag, matchPath } from './resolveComponentPath.ts';
 import type { ComponentRef } from './types.ts';
 import { cachedResolveImport } from './utils.ts';
 
@@ -183,10 +185,12 @@ export const getComponents = async ({
             } catch (e) {
               const message = e instanceof Error ? e.message : String(e);
               logger.debug(`react-docgen-typescript failed for ${path}: ${message}`);
-              reactDocgenTypescriptError = {
-                name: 'react-docgen-typescript parse error',
-                message: `File: ${path}\n${message}`,
-              };
+              reactDocgenTypescriptError = isModuleNotFoundError(e)
+                ? getDocgenPackageMissingError('react-docgen-typescript')
+                : {
+                    name: 'react-docgen-typescript parse error',
+                    message: `File: ${path}\n${message}`,
+                  };
             }
             let reactDocgenTypescriptDoc: ComponentDocWithExportName | undefined;
             let componentJsDocTags = reactDocgenTypescript?.componentJsDocTags;
@@ -209,7 +213,10 @@ export const getComponents = async ({
           }
 
           if (docgenEngine === 'react-docgen') {
-            const reactDocgen = getReactDocgen(path, componentWithPackage);
+            const reactDocgenEngine = await loadReactDocgen();
+            const reactDocgen = reactDocgenEngine
+              ? reactDocgenEngine.getReactDocgen(path, componentWithPackage)
+              : { type: 'error' as const, error: getDocgenPackageMissingError('react-docgen') };
             return {
               ...componentWithPackage,
               path,

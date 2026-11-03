@@ -13,6 +13,7 @@ vi.mock('storybook/internal/node-logger', { spy: true });
 
 const packageManagerWith = (typescriptVersion?: string) =>
   ({
+    type: PackageManagerName.PNPM,
     isDependencyInstalled: (name: string) => name === 'typescript' && !!typescriptVersion,
     getDeclaredVersionSpecifier: async () => typescriptVersion ?? null,
   }) as unknown as JsPackageManager;
@@ -126,6 +127,24 @@ describe('TypeScriptDependencyCommand', () => {
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('"typescript": "npm:@typescript/typescript6@^6.0.2"')
     );
+  });
+
+  it('tells a React project on TypeScript 7 how to keep builder docgen with react-docgen', async () => {
+    await run({ typescriptVersion: '7.0.2' });
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining('pnpm add -D "react-docgen@^8.0.2"')
+    );
+  });
+
+  it('does not mention react-docgen to a Vue project on TypeScript 7', async () => {
+    await run({
+      typescriptVersion: '7.0.2',
+      framework: SupportedFramework.VUE3_VITE,
+      renderer: SupportedRenderer.VUE3,
+    });
+
+    expect(logger.warn).toHaveBeenCalledWith(expect.not.stringContaining('react-docgen'));
   });
 
   it('warns when the project declares TypeScript 7 but has not installed it yet', async () => {

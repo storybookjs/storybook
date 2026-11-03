@@ -335,30 +335,66 @@ export class OpenServiceCyclicStateError extends StorybookError {
   }
 }
 
+/**
+ * The deprecated builder docgen a renderer falls back to when the docgen server cannot run, for
+ * example React's `react-docgen`.
+ */
+export interface BuilderDocgenFallback {
+  /** The package builder docgen needs, such as `react-docgen`. */
+  packageName: string;
+  /** Whether that package resolves from the renderer. */
+  installed: boolean;
+  /** The command that adds the package to the project, such as `npm install -D react-docgen@8`. */
+  installCommand: string;
+}
+
+const describeBuilderDocgenFallback = (fallback: BuilderDocgenFallback | undefined) => {
+  if (!fallback) {
+    return '';
+  }
+  if (fallback.installed) {
+    return dedent`
+      Until then, Storybook falls back to the deprecated builder docgen with \`${fallback.packageName}\`, which will be removed in Storybook 12.`;
+  }
+  return dedent`
+    Until then, Controls and the Docs args table show no props: the fallback, the deprecated builder docgen, needs \`${fallback.packageName}\`, which is not installed. If you cannot change your TypeScript setup yet, install it instead (builder docgen will be removed in Storybook 12):
+
+      ${fallback.installCommand}`;
+};
+
+const withBuilderDocgenFallback = (message: string, fallback: BuilderDocgenFallback | undefined) =>
+  [message, describeBuilderDocgenFallback(fallback)].filter(Boolean).join('\n\n');
+
 export class TypeScriptMissingForDocgenError extends StorybookError {
-  constructor(public data: { cause?: unknown } = {}) {
+  constructor(
+    public data: { cause?: unknown; builderDocgenFallback?: BuilderDocgenFallback } = {}
+  ) {
     super({
       name: 'TypeScriptMissingForDocgenError',
       category: Category.CORE_COMMON,
       code: 33,
       cause: data.cause,
       documentation: 'https://storybook.js.org/docs/configure/integration/typescript',
-      message: dedent`
-        Storybook cannot find the \`typescript\` package. Storybook uses TypeScript to read your component types for Controls and the Docs args table, also in JavaScript projects.
+      message: withBuilderDocgenFallback(
+        dedent`
+          Storybook cannot find the \`typescript\` package. Storybook uses TypeScript to read your component types for Controls and the Docs args table, also in JavaScript projects.
 
-        Add \`typescript@^6\` to the devDependencies in package.json, install it with your package manager, then restart Storybook.`,
+          Add \`typescript@^6\` to the devDependencies in package.json, install it with your package manager, then restart Storybook.`,
+        data.builderDocgenFallback
+      ),
     });
   }
 }
 
 export class TypeScriptWithoutCompilerApiError extends StorybookError {
-  constructor(public data: { version: string }) {
+  constructor(public data: { version: string; builderDocgenFallback?: BuilderDocgenFallback }) {
     super({
       name: 'TypeScriptWithoutCompilerApiError',
       category: Category.CORE_COMMON,
       code: 34,
       documentation: 'https://storybook.js.org/docs/configure/integration/typescript#typescript-7',
-      message: dedent`
+      message: withBuilderDocgenFallback(
+        dedent`
         Storybook found TypeScript ${data.version} as the \`typescript\` package. TypeScript 7 does not include the compiler API that Storybook uses to read your component types for Controls and the Docs args table.
 
         If package.json has no \`typescript\` entry, your package manager installed TypeScript 7 for Storybook's peer dependency. Add \`typescript@^6\` to the devDependencies in package.json.
@@ -371,6 +407,42 @@ export class TypeScriptWithoutCompilerApiError extends StorybookError {
         \`tsc\` stays on TypeScript 7, and the \`typescript\` package is TypeScript 6. Both entries are necessary.
 
         Then install dependencies and restart Storybook.`,
+        data.builderDocgenFallback
+      ),
+    });
+  }
+}
+
+export class BuilderDocgenPackagesMissingError extends StorybookError {
+  constructor(
+    public data: {
+      /** The `typescript.reactDocgen` option that selected the builder docgen. */
+      reactDocgen: string;
+      /** The packages that builder docgen needs and that do not resolve. */
+      packages: string[];
+      /** The command that adds the missing packages to the project. */
+      installCommand: string;
+      /** Whether the main config turns the docgen server off with `features.docgenServer: false`. */
+      docgenServerDisabledInMainConfig: boolean;
+    }
+  ) {
+    const packageList = data.packages.map((name) => `\`${name}\``).join(' and ');
+    const them = data.packages.length === 1 ? 'it' : 'them';
+    super({
+      name: 'BuilderDocgenPackagesMissingError',
+      category: Category.CORE_COMMON,
+      code: 35,
+      documentation:
+        'https://storybook.js.org/docs/api/main-config/main-config-typescript#reactdocgen',
+      message: [
+        dedent`
+          Storybook's builder docgen (\`typescript.reactDocgen: '${data.reactDocgen}'\`) needs ${packageList}, which ${data.packages.length === 1 ? 'is' : 'are'} not installed. Controls and the Docs args table show no props until you install ${them}:
+
+            ${data.installCommand}`,
+        data.docgenServerDisabledInMainConfig
+          ? 'Builder docgen is deprecated and will be removed in Storybook 12. It runs because your Storybook main config sets `features.docgenServer: false`. Remove that setting to use server-side docgen, which needs none of these packages.'
+          : 'Builder docgen is deprecated and will be removed in Storybook 12.',
+      ].join('\n\n'),
     });
   }
 }

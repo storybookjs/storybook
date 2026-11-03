@@ -2,12 +2,13 @@ import {
   type JsPackageManager,
   RENDERERS_WITH_TYPESCRIPT_DOCGEN,
   TYPESCRIPT_FOR_DOCGEN_PACKAGE,
+  getAddBuilderDocgenPackagesCommand,
   hasTypeScriptCompilerApi,
   isCI,
 } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { TypeScriptWithoutCompilerApiError } from 'storybook/internal/server-errors';
-import type { SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
+import { type SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import { coerce } from 'semver';
 
@@ -69,7 +70,21 @@ export class TypeScriptDependencyCommand {
         await packageManager.getDeclaredVersionSpecifier('typescript')
       )?.version;
       if (version && !hasTypeScriptCompilerApi(version)) {
-        logger.warn(new TypeScriptWithoutCompilerApiError({ version }).message);
+        // React falls back to builder docgen, whose `react-docgen` package is an optional peer.
+        const builderDocgenFallback =
+          renderer === SupportedRenderer.REACT
+            ? {
+                packageName: 'react-docgen',
+                installed: packageManager.isDependencyInstalled('react-docgen'),
+                installCommand: getAddBuilderDocgenPackagesCommand(
+                  ['react-docgen'],
+                  packageManager.type
+                ),
+              }
+            : undefined;
+        logger.warn(
+          new TypeScriptWithoutCompilerApiError({ version, builderDocgenFallback }).message
+        );
         return 'without-compiler-api';
       }
       return 'already-installed';

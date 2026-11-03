@@ -25,18 +25,21 @@ export function supportsCsfFactories(framework: SupportedFramework): boolean {
     case SupportedFramework.VUE3_RSBUILD:
     case SupportedFramework.WEB_COMPONENTS_RSBUILD:
       return true;
-    // Ember, HTML, Preact, Server: no definePreview, and no tracker for adding it.
-    // Nuxt SB11 (re-exports Vue definePreview, still no ./node defineMain):
-    // https://github.com/nuxt-modules/storybook/issues/1097
-    // Qwik SB11 (no factories yet): https://github.com/literalpie/storybook-framework-qwik/issues/96
-    // Solid already ships definePreview; blocked on exporting defineMain from ./node.
+    // no definePreview, and no tracker for adding it
     case SupportedFramework.EMBER:
+    // no definePreview, and no tracker for adding it
     case SupportedFramework.HTML_VITE:
+    // no definePreview, and no tracker for adding it
     case SupportedFramework.PREACT_VITE:
+    // no definePreview, and no tracker for adding it
     case SupportedFramework.SERVER_WEBPACK5:
+    // no definePreview, and no tracker for adding it
     case SupportedFramework.HTML_RSBUILD:
+    // https://github.com/nuxt-modules/storybook/issues/1097 — re-exports Vue definePreview; still no ./node defineMain
     case SupportedFramework.NUXT:
+    // https://github.com/literalpie/storybook-framework-qwik/issues/96 — no factories yet
     case SupportedFramework.QWIK:
+    // already ships definePreview; blocked on exporting defineMain from ./node
     case SupportedFramework.SOLID:
       return false;
   }

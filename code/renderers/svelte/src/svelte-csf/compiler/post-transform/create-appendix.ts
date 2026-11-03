@@ -99,7 +99,7 @@ function getStoryTags(params: GetStoryTagsParams): ESTreeAST.ArrayExpression | u
   const { value } = tags;
   // A `tags` attribute is either `true` (no value), a single `{...}` expression tag, or an array of
   // text/expression tags for quoted strings. Only the expression tag holds `.expression`.
-  if (typeof value !== 'object' || Array.isArray(value)) return;
+  if (value === true || Array.isArray(value)) return;
 
   return value.expression as ESTreeAST.ArrayExpression;
 }

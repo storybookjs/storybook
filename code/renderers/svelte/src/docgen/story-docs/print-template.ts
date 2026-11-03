@@ -137,7 +137,11 @@ export function printTemplate({
         });
       } else {
         const close = code.lastIndexOf('</', end - 1);
-        edits.push({ start: close, end: close, value: `${children.join('\n')}\n` });
+        edits.push({
+          start: close,
+          end: close,
+          value: `${children.join('\n')}\n`,
+        });
       }
     },
     ExpressionTag(node, { path }) {
@@ -159,7 +163,10 @@ export function printTemplate({
         edits.push({ ...at(parent), value: `${parent.name}="${text}"` });
       } else if (parent?.type === 'Attribute' && code[at(parent).start] === '{') {
         // `{label}` names the attribute after the variable it reads.
-        edits.push({ ...at(parent), value: `${parent.name}={${replaced.value}}` });
+        edits.push({
+          ...at(parent),
+          value: `${parent.name}={${replaced.value}}`,
+        });
       } else if (text !== undefined && quoted && !/[{}]/.test(text)) {
         edits.push({ ...at(node), value: escapeAttribute(text) });
       } else if (text !== undefined && parent?.type === 'Fragment' && !/[{}<>"\\&]/.test(text)) {
@@ -235,7 +242,6 @@ function blockExpressions(node: SvelteAST.SvelteNode): object[] {
     case 'HtmlTag':
     case 'RenderTag':
     case 'SpreadAttribute':
-      return [node.expression];
     case 'AttachTag':
       return [node.expression];
     case 'ConstTag':
@@ -249,10 +255,6 @@ function blockExpressions(node: SvelteAST.SvelteNode): object[] {
     case 'AnimateDirective':
       // `on:`, `use:`, `transition:` and `animate:` may omit their parameter expression.
       return node.expression ? [node.expression] : [];
-    // A style directive carries `value`, not `expression`; its old read of the nonexistent
-    // `expression` property always yielded `undefined`, so it never contributed an expression.
-    case 'StyleDirective':
-      return [];
     default:
       return [];
   }
@@ -282,7 +284,11 @@ function replaceArgsReads(
       if (!keys?.length) return;
       if (!(keys[0] in args)) {
         if (!argsComplete) return;
-        edits.push({ start: node.start - 1, end: node.end - 1, value: 'undefined' });
+        edits.push({
+          start: node.start - 1,
+          end: node.end - 1,
+          value: 'undefined',
+        });
         return false;
       }
       edits.push({
@@ -319,7 +325,10 @@ function replaceArgsReads(
     only.node.value.trim()
       ? only.node.value
       : undefined;
-  return { value: applyEdits(expression, edits), ...(text !== undefined ? { text } : {}) };
+  return {
+    value: applyEdits(expression, edits),
+    ...(text !== undefined ? { text } : {}),
+  };
 }
 
 // `['a', 'b']` for `args.a.b`, when `args` is the story args and not a local binding.

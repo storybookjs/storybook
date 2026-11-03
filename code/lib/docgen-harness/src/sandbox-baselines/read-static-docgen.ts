@@ -1,7 +1,10 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import type { DocgenPayload } from '../../../../core/src/shared/open-service/services/docgen/types.ts';
+import type {
+  DocgenPayload,
+  DocgenSubcomponent,
+} from '../../../../core/src/shared/open-service/services/docgen/types.ts';
 
 // Where `build-storybook` writes one docgen snapshot per component under the static output dir.
 export const DOCGEN_SNAPSHOT_DIR = join('services', 'core', 'docgen');
@@ -22,6 +25,18 @@ const PORTABLE_FIELDS = [
   'subcomponents',
   'error',
 ] as const satisfies readonly (keyof DocgenPayload)[];
+
+// A subcomponent keeps the same fields, so its `apiDescription` stays out as the component's does.
+const PORTABLE_SUBCOMPONENT_FIELDS = [
+  'name',
+  'path',
+  'description',
+  'summary',
+  'import',
+  'jsDocTags',
+  'argTypes',
+  'error',
+] as const satisfies readonly (keyof DocgenSubcomponent)[];
 
 export type SandboxBaseline = Pick<DocgenPayload, (typeof PORTABLE_FIELDS)[number]>;
 
@@ -49,13 +64,23 @@ const normalizeDeep = (value: unknown, sandboxDir: string): unknown => {
   return value;
 };
 
-export const toBaseline = (payload: DocgenPayload, sandboxDir: string): SandboxBaseline =>
+const pick = (value: Record<string, unknown>, fields: readonly string[]) =>
   Object.fromEntries(
-    PORTABLE_FIELDS.filter((field) => payload[field] !== undefined).map((field) => [
-      field,
-      normalizeDeep(payload[field], sandboxDir),
-    ])
-  ) as SandboxBaseline;
+    fields.filter((field) => value[field] !== undefined).map((field) => [field, value[field]])
+  );
+
+export const toBaseline = (payload: DocgenPayload, sandboxDir: string): SandboxBaseline => {
+  const baseline = pick(payload, PORTABLE_FIELDS);
+  if (payload.subcomponents) {
+    baseline.subcomponents = Object.fromEntries(
+      Object.entries(payload.subcomponents).map(([name, subcomponent]) => [
+        name,
+        pick(subcomponent, PORTABLE_SUBCOMPONENT_FIELDS),
+      ])
+    );
+  }
+  return normalizeDeep(baseline, sandboxDir) as SandboxBaseline;
+};
 
 // The monorepo's shared template stories reference their component through a global, so there is no
 // import for the resolver to follow and every one of them is an error payload by construction.

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { expect, test, vi } from 'vitest';
 
 import { Tag } from 'storybook/internal/core-server';
-import type { IndexEntry } from 'storybook/internal/types';
+import type { ComponentManifest, IndexEntry } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
@@ -13,8 +13,7 @@ import { type ComponentDocWithExportName, invalidateParser } from './reactDocgen
 import { invalidateCache } from './utils.ts';
 
 const repoRoot = process.cwd();
-type ManifestComponentWithReactDocgenTypescript = {
-  error?: { name: string; message: string };
+type ManifestComponentWithReactDocgenTypescript = ComponentManifest & {
   reactDocgenTypescript?: ComponentDocWithExportName;
 };
 
@@ -42,6 +41,14 @@ test(
       expect(button?.reactDocgenTypescript?.props.primary).toMatchObject({
         required: false,
       });
+      // react-docgen-typescript strips @tags from description; they must still reach the manifest.
+      expect(button?.summary).toBe('For user interactions that do not navigate to another route.');
+      expect(button?.jsDocTags?.summary).toEqual([
+        'For user interactions that do not navigate to another route.',
+      ]);
+      expect(button?.jsDocTags?.example).toEqual(['Primary usage', 'With primary flag']);
+      expect(button?.description).toBe('Primary UI component for user interaction');
+      expect(button?.import).toBe("import { Button } from '@design-system/components/override';");
     } finally {
       cwdSpy.mockRestore();
       invalidateCache();
@@ -154,7 +161,14 @@ function createTempProject() {
         primary?: boolean;
       }
 
-      /** Primary UI component for user interaction */
+      /**
+       * Primary UI component for user interaction
+       *
+       * @summary For user interactions that do not navigate to another route.
+       * @example Primary usage
+       * @example With primary flag
+       * @import import { Button } from '@design-system/components/override';
+       */
       export const Button = ({ label, primary = false }: ButtonProps) => (
         <button data-primary={primary}>{label}</button>
       );

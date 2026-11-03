@@ -1,5 +1,4 @@
 import type { AddonTypes, StoryContext } from 'storybook/internal/csf';
-import { combineTags } from 'storybook/internal/csf';
 import type {
   Args,
   ComponentAnnotations,
@@ -368,7 +367,8 @@ function defineStory<
             ...normalizeArrays(input.loaders ?? []),
           ],
           parameters: combineParameters(this.input.parameters, input.parameters),
-          tags: combineTags(...(this.input.tags ?? []), ...(input.tags ?? [])),
+          // Composing the story combines the tags, after the tags of the meta
+          tags: [...(this.input.tags ?? []), ...(input.tags ?? [])],
         },
         this.meta
       );

@@ -18,14 +18,16 @@ interface Params {
   filename?: string;
 }
 
-/**
- * Attempt to transform compiled `defineMeta()` when necessary.
- * And in the end, update the compiled code using {@link MagicString}.
- */
 export function transformDefineMeta(params: Params): void {
   const { code, nodes, filename } = params;
 
   insertDefineMetaParameters({ nodes, filename });
+
+  if (nodes.compiled.isFactory) {
+    transformFactoryMeta(params);
+    return;
+  }
+
   const metaObjectExpression = replaceDefineMetaArgument({ nodes, filename });
   const metaVariableDeclaration = createMetaVariableDeclaration({ init: metaObjectExpression });
 
@@ -37,10 +39,26 @@ export function transformDefineMeta(params: Params): void {
   code.appendLeft(start as number, print(metaVariableDeclaration).code + '\n');
 }
 
+// Names the meta `$__meta`, unless the file already does, so that the stories can call `meta.story()`
+function transformFactoryMeta(params: Params): void {
+  const { code, nodes } = params;
+  const { defineMetaVariableDeclaration, metaIdentifier } = nodes.compiled;
+  const { start, end } = defineMetaVariableDeclaration;
+  const [declarator] = defineMetaVariableDeclaration.declarations;
+  let printed = '';
+
+  if (!metaIdentifier && declarator.init) {
+    printed += print(createMetaVariableDeclaration({ init: declarator.init })).code + '\n';
+    declarator.init = createASTIdentifier(STORYBOOK_META_IDENTIFIER);
+  }
+
+  code.update(start as number, end as number, printed + print(defineMetaVariableDeclaration).code);
+}
+
 export function createMetaVariableDeclaration({
   init,
 }: {
-  init: ESTreeAST.ObjectExpression;
+  init: ESTreeAST.Expression;
 }): ESTreeAST.VariableDeclaration {
   return {
     type: 'VariableDeclaration',

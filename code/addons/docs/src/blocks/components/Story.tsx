@@ -5,7 +5,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ErrorFormatter, Loader } from 'storybook/internal/components';
 import type { DocsContextProps, PreparedStory } from 'storybook/internal/types';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { getStoryHref } from '../getStoryHref';
 import { IFrame } from './IFrame';

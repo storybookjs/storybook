@@ -9,7 +9,6 @@ import { describe, it } from 'vitest';
 import { removeExportDefault } from './remove-export-default.ts';
 
 import { extractCompiledASTNodes } from '../../parser/extract/compiled/nodes.ts';
-import { StorybookSvelteCSFError } from '../../utils/error.ts';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
@@ -35,8 +34,7 @@ describe(removeExportDefault.name, () => {
       `
       [SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0003 (NoExportDefaultError): Could not find 'export default' in the compiled output of the stories file: <path not specified>
 
-      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0003
-      ]
+      This is a bug in Storybook. Please report it at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml, and include the stories file.]
     `
     );
   });

@@ -201,75 +201,90 @@ describe('experimental_devServer', () => {
     );
   });
 
-  it('should use localhost manifests for the local source when refs are configured', async () => {
-    const handlers: Record<string, any> = {};
-    mockApp.get = vi.fn((path: string, handler: any) => {
-      handlers[path] = handler;
-    });
+  it.each([
+    {
+      name: 'default basePath',
+      basePath: undefined,
+      expected: 'http://localhost:6006/manifests/components.json',
+    },
+    {
+      name: 'non-root basePath',
+      basePath: '/__storybook/',
+      expected: 'http://localhost:6006/__storybook/manifests/components.json',
+    },
+  ])(
+    'should fetch local manifests from the base URL when refs are configured ($name)',
+    async ({ basePath, expected }) => {
+      const handlers: Record<string, any> = {};
+      mockApp.get = vi.fn((path: string, handler: any) => {
+        handlers[path] = handler;
+      });
 
-    const mcpServerHandler = vi
-      .spyOn(mcpHandlerModule, 'mcpServerHandler')
-      .mockResolvedValue(undefined);
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      text: () => Promise.resolve('{"v":1,"components":{}}'),
-    });
-    vi.stubGlobal('fetch', fetchMock);
+      const mcpServerHandler = vi
+        .spyOn(mcpHandlerModule, 'mcpServerHandler')
+        .mockResolvedValue(undefined);
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('{"v":1,"components":{}}'),
+      });
+      vi.stubGlobal('fetch', fetchMock);
 
-    const optionsWithRefs = {
-      ...mockOptions,
-      port: 6006,
-      endpoint: '/custom-mcp',
-      presets: {
-        apply: vi.fn((key: string) => {
-          if (key === 'refs') {
-            return Promise.resolve({
-              'design-system': {
-                title: 'Design System',
-                url: 'https://ds.example.com/storybook',
-              },
-            });
-          }
-          if (key === 'features') {
-            return Promise.resolve({ componentsManifest: false });
-          }
-          return Promise.resolve(undefined);
-        }),
-      },
-    } as unknown as Options;
+      const optionsWithRefs = {
+        ...mockOptions,
+        port: 6006,
+        basePath,
+        endpoint: '/custom-mcp',
+        presets: {
+          apply: vi.fn((key: string) => {
+            if (key === 'refs') {
+              return Promise.resolve({
+                'design-system': {
+                  title: 'Design System',
+                  url: 'https://ds.example.com/storybook',
+                },
+              });
+            }
+            if (key === 'features') {
+              return Promise.resolve({ componentsManifest: false });
+            }
+            return Promise.resolve(undefined);
+          }),
+        },
+      } as unknown as Options;
 
-    await (experimental_devServer as any)(mockApp, optionsWithRefs);
-    await handlers['/custom-mcp'](
-      {
-        headers: { accept: 'application/json' },
-      },
-      {}
-    );
+      await (experimental_devServer as any)(mockApp, optionsWithRefs);
+      await handlers['/custom-mcp'](
+        {
+          headers: { accept: 'application/json' },
+        },
+        {}
+      );
 
-    const firstCall = mcpServerHandler.mock.calls[0];
-    if (!firstCall) {
-      throw new Error('Expected mcpServerHandler to be called');
+      const firstCall = mcpServerHandler.mock.calls[0];
+      if (!firstCall) {
+        throw new Error('Expected mcpServerHandler to be called');
+      }
+      const { manifestProvider } = firstCall[0];
+      if (!manifestProvider) {
+        throw new Error('Expected refs to create a manifest provider');
+      }
+
+      await manifestProvider(
+        new Request('http://localhost:6006/custom-mcp?transport=sse'),
+        './manifests/components.json',
+        { id: 'local', title: 'Local' }
+      );
+
+      expect(fetchMock).toHaveBeenLastCalledWith(
+        expected,
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Accept: 'application/json',
+          }),
+        })
+      );
     }
-    const { manifestProvider } = firstCall[0];
-    if (!manifestProvider) {
-      throw new Error('Expected refs to create a manifest provider');
-    }
-
-    await manifestProvider(
-      new Request('http://localhost:6006/custom-mcp?transport=sse'),
-      './manifests/components.json',
-      { id: 'local', title: 'Local' }
-    );
-
-    expect(fetchMock).toHaveBeenLastCalledWith(
-      'http://localhost:6006/manifests/components.json',
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          Accept: 'application/json',
-        }),
-      })
-    );
-  });
+  );
 
   it('should keep direct unauthenticated requests on the OAuth challenge path', async () => {
     const mcpServerHandler = vi
@@ -295,6 +310,51 @@ describe('experimental_devServer', () => {
     );
     expect(mockRes.end).toHaveBeenCalledWith('401 - Unauthorized');
     expect(mcpServerHandler).not.toHaveBeenCalled();
+  });
+
+  it('should advertise the basePath-prefixed resource metadata in the OAuth challenge', async () => {
+    vi.spyOn(mcpHandlerModule, 'mcpServerHandler').mockResolvedValue(undefined);
+    stubPrivateRefDiscovery();
+
+    await (experimental_devServer as any)(mockApp, {
+      ...createOptionsWithPrivateRef(),
+      port: 5173,
+      basePath: '/__storybook/',
+    } as unknown as Options);
+
+    const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
+    await mcpHandler({ headers: {} }, mockRes);
+
+    expect(mockRes.writeHead).toHaveBeenCalledWith(
+      401,
+      expect.objectContaining({
+        'WWW-Authenticate': expect.stringContaining(
+          'resource_metadata="http://localhost:5173/__storybook/.well-known/oauth-protected-resource"'
+        ),
+      })
+    );
+  });
+
+  it('should advertise the configured endpoint under the basePath as the protected resource', async () => {
+    const handlers: Record<string, any> = {};
+    mockApp.get = vi.fn((path: string, handler: any) => {
+      handlers[path] = handler;
+    });
+    stubPrivateRefDiscovery();
+
+    await (experimental_devServer as any)(mockApp, {
+      ...createOptionsWithPrivateRef(),
+      port: 5173,
+      basePath: '/__storybook/',
+      endpoint: '/custom-mcp',
+    } as unknown as Options);
+
+    const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
+    handlers['/.well-known/oauth-protected-resource']({}, mockRes);
+
+    expect(JSON.parse(mockRes.end.mock.calls[0][0]).resource).toBe(
+      'http://localhost:5173/__storybook/custom-mcp'
+    );
   });
 
   it('should serve HTML for browser GET requests', async () => {

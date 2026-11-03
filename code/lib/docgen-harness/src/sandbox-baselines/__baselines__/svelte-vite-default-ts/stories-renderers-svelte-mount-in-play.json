@@ -1,0 +1,27 @@
+{
+  "argTypes": {
+    "text": {
+      "control": {
+        "type": "text"
+      },
+      "name": "text",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "\"You clicked\""
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    }
+  },
+  "id": "stories-renderers-svelte-mount-in-play",
+  "jsDocTags": {},
+  "name": "Button",
+  "path": "./src/stories/renderers/svelte/mount-in-play.stories.ts"
+}

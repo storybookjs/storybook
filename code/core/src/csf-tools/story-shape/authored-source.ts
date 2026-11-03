@@ -1,10 +1,9 @@
-import { types as t } from 'storybook/internal/babel';
-
+import { type Node, isStringLiteral, unwrapExpression } from '../estree/ast.ts';
 import type { ReferenceContext, ResolvedMembers } from './resolve-members.ts';
-import { resolveObjectMembers, sourceOf } from './resolve-members.ts';
+import { oneLineTextOf, resolveObjectMembers } from './resolve-members.ts';
 import { resolveArgValue } from './resolve-arg-value.ts';
 import type { ResolvedStoryArgs } from './resolve-story-args.ts';
-import { templateParts, unwrapExpression } from './utils.ts';
+import { templateParts } from './utils.ts';
 
 export type AuthoredSource =
   | { kind: 'missing' }
@@ -15,7 +14,7 @@ export type AuthoredSource =
 type AuthoredSourceShape = Pick<ResolvedStoryArgs, 'storyMembers' | 'metaMembers'>;
 
 type MemberPathResolution =
-  | { kind: 'value'; node: t.Node }
+  | { kind: 'value'; node: Node }
   | { kind: 'missing' }
   | { kind: 'masked' }
   | { kind: 'unresolvable'; source: string };
@@ -38,23 +37,24 @@ export const authoredSource = (
 
     const resolved = resolveArgValue(code.node, ctx);
     const value = unwrapExpression(resolved.node);
-    if (t.isIdentifier(value, { name: 'undefined' })) {
+    if (isUndefined(value)) {
       continue;
     }
-    if (t.isUnaryExpression(value, { operator: 'void' })) {
-      continue;
-    }
-    if (t.isNullLiteral(value)) {
+    if (
+      value.type === 'Literal' &&
+      value.value === null &&
+      !('regex' in value || 'bigint' in value)
+    ) {
       return { kind: 'disabled' };
     }
-    if (t.isStringLiteral(value)) {
+    if (isStringLiteral(value)) {
       return { kind: 'code', code: value.value };
     }
     const parts = templateParts(value);
     if (parts && parts.expressions.length === 0) {
       return { kind: 'code', code: parts.quasis[0] ?? '' };
     }
-    return { kind: 'unresolvable', source: sourceOf(code.node) };
+    return { kind: 'unresolvable', source: oneLineTextOf(code.node) };
   }
   return { kind: 'missing' };
 };
@@ -72,15 +72,12 @@ const memberAt = (
     }
     const original = result.node;
     const object = unwrapExpression(resolveArgValue(original, ctx).node);
-    if (!t.isObjectExpression(object)) {
-      if (
-        t.isIdentifier(object, { name: 'undefined' }) ||
-        t.isUnaryExpression(object, { operator: 'void' })
-      ) {
+    if (object.type !== 'ObjectExpression') {
+      if (isUndefined(object)) {
         return { kind: 'missing' };
       }
       if (isOpaqueValue(object)) {
-        return { kind: 'unresolvable', source: sourceOf(original) };
+        return { kind: 'unresolvable', source: oneLineTextOf(original) };
       }
       return depth === 0 ? { kind: 'missing' } : { kind: 'masked' };
     }
@@ -101,5 +98,15 @@ const memberOf = (members: ResolvedMembers, key: string): MemberPathResolution =
   return { kind: 'missing' };
 };
 
-const isOpaqueValue = (node: t.Node): boolean =>
-  !t.isLiteral(node) && !t.isArrayExpression(node) && !t.isFunction(node);
+const isUndefined = (node: Node): boolean =>
+  (node.type === 'Identifier' && node.name === 'undefined') ||
+  (node.type === 'UnaryExpression' && node.operator === 'void');
+
+const isOpaqueValue = (node: Node): boolean =>
+  node.type !== 'Literal' &&
+  node.type !== 'TemplateLiteral' &&
+  node.type !== 'ArrayExpression' &&
+  node.type !== 'ArrowFunctionExpression' &&
+  node.type !== 'FunctionExpression' &&
+  node.type !== 'FunctionDeclaration' &&
+  !(node.type === 'Property' && node.method);

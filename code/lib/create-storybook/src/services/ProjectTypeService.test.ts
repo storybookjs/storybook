@@ -67,6 +67,20 @@ describe('ProjectTypeService', () => {
       expect(result).toBe(ProjectType.NEXTJS);
     });
 
+    it('detects VUE3 when vue is the next tag and nothing is installed', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { vue: 'next' },
+      };
+      (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => null);
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+
+      await expect(service.autoDetectProjectType({ html: false } as CommandOptions)).resolves.toBe(
+        ProjectType.VUE3
+      );
+    });
+
     it('detects VUE3 when vue major is 3', async () => {
       (pm as any).primaryPackageJson.packageJson = {
         dependencies: { vue: '^3.2.0' },
@@ -76,6 +90,57 @@ describe('ProjectTypeService', () => {
       vi.spyOn(service, 'isNxProject').mockReturnValue(false);
       const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
       expect(result).toBe(ProjectType.VUE3);
+    });
+
+    it('detects VUE3 when pnpm resolves a Vue catalog range to version 3', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { vue: 'catalog:' },
+      };
+      (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => '3.5.44');
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+
+      const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
+
+      expect(result).toBe(ProjectType.VUE3);
+      expect(pm.getDeclaredVersionSpecifier).toHaveBeenCalledWith('vue');
+    });
+
+    it('resolves catalog ranges for any dependency with a version matcher', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { 'example-renderer': 'catalog:renderers' },
+      };
+      (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => '^3.1.0');
+      const service = new ProjectTypeService(pm);
+      vi.spyOn(service, 'getSupportedTemplates').mockReturnValue([
+        {
+          preset: ProjectType.REACT,
+          dependencies: { 'example-renderer': (version) => version === '^3.1.0' },
+          matcherFunction: ({ dependencies }) => dependencies?.some(Boolean) ?? false,
+        },
+      ]);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+
+      await expect(service.autoDetectProjectType({ html: false } as CommandOptions)).resolves.toBe(
+        ProjectType.REACT
+      );
+      expect(pm.getDeclaredVersionSpecifier).toHaveBeenCalledWith('example-renderer');
+    });
+
+    it('does not detect VUE3 when the Vue catalog resolves to version 2', async () => {
+      (pm as any).primaryPackageJson.packageJson = {
+        dependencies: { vue: 'catalog:legacy' },
+      };
+      (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => '2.7.16');
+      const service = new ProjectTypeService(pm);
+      // @ts-expect-error private method spy
+      vi.spyOn(service, 'isNxProject').mockReturnValue(false);
+
+      await expect(
+        service.autoDetectProjectType({ html: false } as CommandOptions)
+      ).rejects.toThrowError('Storybook failed to detect your project type');
     });
 
     it('detects SVELTEKIT via @sveltejs/kit', async () => {
@@ -230,6 +295,64 @@ describe('ProjectTypeService', () => {
       vi.spyOn(service, 'isNxProject').mockReturnValue(false);
       const result = await service.autoDetectProjectType({ html: false } as CommandOptions);
       expect(result).toBe(ProjectType.NUXT);
+    });
+
+    describe('Remix', () => {
+      beforeEach(() => {
+        // @ts-expect-error private method spy
+        vi.spyOn(ProjectTypeService.prototype, 'isNxProject').mockReturnValue(false);
+      });
+
+      const detect = (packageJson: Record<string, unknown>) => {
+        (pm as any).primaryPackageJson.packageJson = packageJson;
+        return new ProjectTypeService(pm).autoDetectProjectType({ html: false } as CommandOptions);
+      };
+
+      it('detects Remix 3 as the HTML renderer', async () => {
+        await expect(detect({ dependencies: { remix: '^3.0.0' } })).resolves.toBe(ProjectType.HTML);
+      });
+
+      it('detects Remix 3 from devDependencies', async () => {
+        await expect(detect({ devDependencies: { remix: '3.0.0' } })).resolves.toBe(
+          ProjectType.HTML
+        );
+      });
+
+      it('prefers the HTML renderer when Remix 3 is installed next to React', async () => {
+        await expect(detect({ dependencies: { remix: '^3.0.0', react: '^19.0.0' } })).resolves.toBe(
+          ProjectType.HTML
+        );
+      });
+
+      it('does not treat Remix 2 (@remix-run/dev) as Remix 3', async () => {
+        await expect(
+          detect({ dependencies: { '@remix-run/dev': '^2.15.0', react: '^18.2.0' } })
+        ).resolves.toBe(ProjectType.REACT);
+      });
+
+      it('does not treat remix@2 as Remix 3', async () => {
+        await expect(detect({ dependencies: { remix: '^2.0.0', react: '^18.2.0' } })).resolves.toBe(
+          ProjectType.REACT
+        );
+      });
+
+      it.each(['latest', 'next'])(
+        'detects Remix 3 when %s is installed as version 3',
+        async (tag) => {
+          (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => '3.2.0');
+
+          await expect(detect({ dependencies: { remix: tag } })).resolves.toBe(ProjectType.HTML);
+          expect(pm.getDeclaredVersionSpecifier).toHaveBeenCalledWith('remix');
+        }
+      );
+
+      it('does not treat a remix dist-tag as Remix 3 when version 2 is installed', async () => {
+        (pm.getDeclaredVersionSpecifier as any) = vi.fn(async () => '2.15.0');
+
+        await expect(detect({ dependencies: { remix: 'latest', react: '^18.2.0' } })).resolves.toBe(
+          ProjectType.REACT
+        );
+      });
     });
 
     it('detects REACT via peerDependencies', async () => {

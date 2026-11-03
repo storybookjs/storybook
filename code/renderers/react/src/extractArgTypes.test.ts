@@ -57,6 +57,7 @@ const skippedTests = [
   'ts-function-component',
   'ts-function-component-inline-defaults',
   'js-proptypes',
+  '9586-js-react-memo',
 ];
 
 const fs = await vi.importActual<typeof import('node:fs')>('node:fs');

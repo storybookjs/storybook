@@ -19,20 +19,13 @@ async function loader(this: LoaderContext, content: string, map: any) {
     // The file can be gone by now, e.g. when it is deleted while a rebuild is running
     const sourceCode = await readFile(id, 'utf-8');
     const makeTitle = (userTitle: string) => userTitle || 'default';
-    const csf = loadCsf(content, { makeTitle }).parse();
-    const csfSource = loadCsf(sourceCode, { makeTitle }).parse();
+    const csf = loadCsf(content, { makeTitle, fileName: id }).parse();
+    const csfSource = loadCsf(sourceCode, { makeTitle, fileName: id }).parse();
     await enrichCsf(csf, csfSource, options);
-    const formattedCsf = formatCsf(
-      csf,
-      { sourceMaps: true, inputSourceMap: map, sourceFileName: id },
-      content
-    );
-
-    if (typeof formattedCsf === 'string') {
-      return callback(null, formattedCsf, map);
-    }
-
-    callback(null, formattedCsf.code, formattedCsf.map);
+    // An incoming map that cannot be read only costs the mapping: the enrichment is kept.
+    const formattedCsf = formatCsf(csf, { sourceMaps: true, inputSourceMap: map ?? undefined });
+    // webpack's map type requires `file`, which `formatCsf` leaves unset.
+    callback(null, formattedCsf.code, { ...formattedCsf.map, file: id });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     if (!message.startsWith('CSF:')) {

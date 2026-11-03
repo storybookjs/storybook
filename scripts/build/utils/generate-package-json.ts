@@ -42,13 +42,11 @@ export async function generatePackageJsonFile(cwd: string, data: BuildEntries) {
     return;
   }
 
-  // Package builds run concurrently, and every build's boot resolves modules
-  // under every other package's directory (entry-configs.ts imports each
-  // package's build-config.ts), which makes Node's ESM loader read these
-  // package.json files for package-scope detection. A plain writeFile briefly
-  // truncates the file, and a concurrent reader then crashes with
-  // ERR_INVALID_PACKAGE_CONFIG. Write-then-rename keeps the file valid at
-  // every instant.
+  // Package builds run concurrently, and a build that resolves modules under
+  // another package's directory makes Node's ESM loader read that package.json
+  // for package-scope detection. A plain writeFile briefly truncates the file,
+  // and a concurrent reader then crashes with ERR_INVALID_PACKAGE_CONFIG.
+  // Write-then-rename keeps the file valid at every instant.
   const tempLocation = join(cwd, `.package.json.${process.pid}.tmp`);
   await writeFile(tempLocation, updated);
   await rename(tempLocation, location);

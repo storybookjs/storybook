@@ -187,7 +187,7 @@ export class AngularComponentMetaProject extends ProgramBackedProject<
       const declaration = target.declarations?.find((candidate): candidate is ts.ClassDeclaration =>
         isClassDeclaration(candidate)
       );
-      if (!declaration?.name || declaration.getSourceFile().isDeclarationFile) {
+      if (!declaration?.name) {
         continue;
       }
       const declarationFile = declaration.getSourceFile();

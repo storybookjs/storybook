@@ -31,6 +31,7 @@ import {
   executeGeneratorExecution,
   executePreflightCheck,
   executeProjectDetection,
+  executeTypeScriptDependency,
   executeUserPreferences,
 } from './commands/index.ts';
 import { DependencyCollector } from './dependency-collector.ts';
@@ -134,6 +135,14 @@ export async function doInitiate(options: CommandOptions): Promise<
     selectedFeatures.delete(Feature.AI);
   }
 
+  await executeTypeScriptDependency({
+    options,
+    packageManager,
+    framework,
+    renderer,
+    dependencyCollector,
+  });
+
   // Step 5: Execute generator with dependency collector (now with frameworkInfo)
 
   const { configDir, storybookCommand, shouldRunDev, extraAddons, postInstall } =
@@ -177,7 +186,8 @@ export async function doInitiate(options: CommandOptions): Promise<
     options,
   });
 
-  // Step 8: Install the official Storybook skills for AI agents
+  // Step 8: Install the official Storybook skills for AI agents, and tell agents in AGENTS.md when
+  // to use them
   const hasAiFeature = selectedFeatures.has(Feature.AI);
   if (hasAiFeature) {
     await telemetryService.trackSkills(

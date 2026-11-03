@@ -7,7 +7,7 @@ import {
   toExtractionError,
 } from '../extraction-service.server.ts';
 import { storyDocsServiceDef } from './definition.ts';
-import { hasHoleBracket } from '../../../../docs-tools/snippetTemplate.ts';
+import { hasHoleBracket, stripHoles } from '../../../../docs-tools/snippetTemplate.ts';
 import { prependImportToSnippet } from './snippet.ts';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProvider } from './types.ts';
 
@@ -26,20 +26,26 @@ export type RegisterStoryDocsServiceOptions = {
 
 type FileResult = PromiseSettledResult<StoryDocsPayload | undefined>;
 
-// Holes in a snippet that already holds a hole bracket could not be found again.
-function withFindableTemplate(story: StoryDoc): StoryDoc {
-  if (story.template === undefined || !hasHoleBracket(story.snippet ?? '')) {
+// A template the preview can fill: its holes can be found, as the snippet holds no hole bracket, and
+// it prints the snippet while no arg changes.
+function withFillableTemplate(story: StoryDoc): StoryDoc {
+  const { template, ...doc } = story;
+  if (
+    template === undefined ||
+    (story.snippet !== undefined &&
+      !hasHoleBracket(story.snippet) &&
+      stripHoles(template) === story.snippet)
+  ) {
     return story;
   }
-  const { template: _template, argCode: _argCode, ...doc } = story;
   return doc;
 }
 
-const withFindableTemplates = (payload: StoryDocsPayload | undefined) =>
+const withFillableTemplates = (payload: StoryDocsPayload | undefined) =>
   payload && {
     ...payload,
     stories: Object.fromEntries(
-      Object.entries(payload.stories).map(([id, story]) => [id, withFindableTemplate(story)])
+      Object.entries(payload.stories).map(([id, story]) => [id, withFillableTemplate(story)])
     ),
   };
 
@@ -66,12 +72,12 @@ function withStoriesFromEveryFile(provider: StoryDocsProvider) {
       ...new Map(storyEntries.map((storyEntry) => [storyEntry.importPath, storyEntry])).values(),
     ];
     if (fileEntries.length < 2) {
-      return withFindableTemplates(await provider({ entry }));
+      return withFillableTemplates(await provider({ entry }));
     }
 
     const results = await Promise.allSettled(
       fileEntries.map(async (fileEntry) =>
-        withFindableTemplates(await provider({ entry: fileEntry }))
+        withFillableTemplates(await provider({ entry: fileEntry }))
       )
     );
     const resultByFile = Object.fromEntries(

@@ -1,8 +1,7 @@
 import { isEqual } from 'es-toolkit/predicate';
 
 import { logger } from 'storybook/internal/client-logger';
-import type { FillSnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
-import { asWrittenArgs } from '../../../../docs-tools/snippetValues.ts';
+import { type PrintHole, fillTemplate } from '../../../../docs-tools/snippetTemplate.ts';
 import type { Args, Parameters } from 'storybook/internal/types';
 
 import { prependImportToSnippet, selectSnippetForStory, selectWarningForStory } from './snippet.ts';
@@ -11,42 +10,44 @@ import type { StoryDocsPayload } from './types.ts';
 // The preview side of story snippets, which fills a story's template with its current args. Kept
 // apart from `snippet.ts`, which the server imports too.
 
-/** The renderer's template filler, which it sets as `parameters.docs.source.fillTemplate`. */
-export function getFillTemplate(
-  parameters: Parameters | undefined
-): FillSnippetTemplate | undefined {
-  const fill = parameters?.docs?.source?.fillTemplate;
-  return typeof fill === 'function' ? fill : undefined;
+/** The renderer's hole printer, which it sets as `parameters.docs.source.printHole`. */
+export function getPrintHole(parameters: Parameters | undefined): PrintHole | undefined {
+  const print = parameters?.docs?.source?.printHole;
+  return typeof print === 'function' ? print : undefined;
 }
 
-// Story ids whose filler failed; filling runs on every args change, so each warns once.
+// Story ids whose renderer failed; filling runs on every args change, so each warns once.
 const storiesWarnedAbout = new Set<string>();
 
-/** The args a story renders with, before they are mapped, and those it is written with. */
-export type StoryArgs = { args: Args; unmappedArgs: Args; initialArgs: Args };
+/**
+ * The args a story renders with before they are mapped, as the static snippet reads them, and
+ * those it is written with.
+ */
+export type StoryArgs = { unmappedArgs: Args; initialArgs: Args };
 
 /**
  * Resolves the display snippet for one story with its args filled into its `template`. While the
- * story still has the args it is written with, without a template or a filler, or when filling
- * throws, it is the static snippet. Either comes with the story's `warning`, as the filled snippet
- * leaves out what the static one does.
+ * story still has the args it is written with, or without a template or a hole printer, it is the
+ * static snippet. Either comes with the story's `warning`; when the snippet cannot show a value, it
+ * is the static snippet with a warning that names the arg.
  */
 export function selectLiveSnippetForStory(
   payload: StoryDocsPayload | undefined,
   storyId: string,
   args: StoryArgs | undefined,
-  fill: FillSnippetTemplate | undefined
+  printHole: PrintHole | undefined
 ): { snippet?: string; warning?: string } {
-  const staticSnippet = () => ({
+  const staticSnippet = (unprintable?: string) => ({
     snippet: selectSnippetForStory(payload, storyId),
-    warning: selectWarningForStory(payload, storyId),
+    warning:
+      [selectWarningForStory(payload, storyId), unprintable].filter(Boolean).join(' ') || undefined,
   });
   const story = payload?.stories[storyId];
   if (
     args === undefined ||
     isEqual(args.unmappedArgs, args.initialArgs) ||
     story?.template === undefined ||
-    fill === undefined
+    printHole === undefined
   ) {
     return staticSnippet();
   }
@@ -54,14 +55,16 @@ export function selectLiveSnippetForStory(
     return {
       snippet: prependImportToSnippet(
         payload?.import,
-        fill(story.template, asWrittenArgs(args, story.argCode))
+        fillTemplate(story.template, args, printHole)
       ),
       warning: story.warning,
     };
   } catch (error) {
-    // An unprintable value is expected; anything else is a bug in the filler.
-    const unprintable = error instanceof Error && error.name === 'UnprintableArgError';
-    if (!unprintable && !storiesWarnedAbout.has(storyId)) {
+    // By name: a renderer may bundle its own copy of the error class.
+    if (error instanceof Error && error.name === 'UnprintableArgError') {
+      return staticSnippet(error.message);
+    }
+    if (!storiesWarnedAbout.has(storyId)) {
       storiesWarnedAbout.add(storyId);
       logger.warn(`Could not fill the snippet of ${storyId} with its args: ${String(error)}`);
     }

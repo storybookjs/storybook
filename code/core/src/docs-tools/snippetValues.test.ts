@@ -1,42 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { UnprintableArgError } from './snippetTemplate.ts';
-import {
-  asWrittenArgs,
-  defaultCode,
-  defaultWord,
-  printValue,
-  spreadArgs,
-  writtenArg,
-  writtenCode,
-} from './snippetValues.ts';
-
-describe('defaultWord', () => {
-  it('writes code after a question mark, URI-encoded, which defaultCode reads back', () => {
-    expect(defaultWord("{ size: 'md' }")).toBe("?%7B%20size%3A%20'md'%20%7D");
-    expect(defaultCode(defaultWord("{ size: 'md' }"))).toBe("{ size: 'md' }");
-  });
-
-  it('reads no code from any other word', () => {
-    expect(defaultCode('label')).toBeUndefined();
-    expect(defaultCode(undefined)).toBeUndefined();
-  });
-});
-
-describe('spreadArgs', () => {
-  it('passes every arg but those the element writes', () => {
-    expect(spreadArgs({ a: 1, b: 2 }, ['-b'])).toEqual([['a', 1]]);
-  });
-});
+import { printValue } from './snippetValues.ts';
 
 describe('printValue', () => {
-  it('prints a written arg as its code, whatever the value would print as', () => {
-    expect(printValue(writtenArg('fn((o) => o.name)'), 'select')).toBe('fn((o) => o.name)');
-    expect(printValue(writtenArg(`new FormControl('x')`), 'control', { quote: "'" })).toBe(
-      `new FormControl('x')`
-    );
-  });
-
   it('prints primitives as literals', () => {
     expect(printValue('Go', 'label')).toBe('"Go"');
     expect(printValue('it\'s "x"\n', 'label', { quote: "'" })).toBe("'it\\'s \"x\"\\n'");
@@ -66,29 +33,5 @@ describe('printValue', () => {
     expect(() => printValue({ a: [{ secret: true }] }, 'data', { opaque })).toThrow(
       new UnprintableArgError('data')
     );
-  });
-});
-
-describe('asWrittenArgs', () => {
-  it('keeps an initial arg the args store dropped as the code the story writes it with', () => {
-    const initialArgs = { thing: undefined, label: 'Go' };
-    const unmappedArgs = { label: 'Stop' };
-    const args = asWrittenArgs(
-      { args: unmappedArgs, unmappedArgs, initialArgs },
-      {
-        thing: 'undefined',
-      }
-    );
-    expect(printValue(args.thing, 'thing')).toBe('undefined');
-    expect(writtenCode(args.thing)).toBe('undefined');
-    expect(args.label).toBe('Stop');
-  });
-
-  it('passes an arg a control changed as its value', () => {
-    const initialArgs = { onClick: 1 };
-    const unmappedArgs = { onClick: 2 };
-    expect(
-      asWrittenArgs({ args: unmappedArgs, unmappedArgs, initialArgs }, { onClick: 'fn()' })
-    ).toEqual({ onClick: 2 });
   });
 });

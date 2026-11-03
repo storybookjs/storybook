@@ -18,7 +18,7 @@ import {
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
-import { withHoleSpace } from 'storybook/internal/docs-tools';
+import { legacyWithHoleSpace as withHoleSpace } from 'storybook/internal/docs-tools';
 
 import { resolve } from 'node:path';
 

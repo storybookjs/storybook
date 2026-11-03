@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { type ESTreeNode as Node, parseExpression, staticKey } from 'storybook/internal/csf-tools';
-import { UnprintableArgError, printValue, writtenArg } from 'storybook/internal/docs-tools';
+import {
+  UnprintableArgError,
+  legacyPrintValue as printValue,
+  writtenArg,
+} from 'storybook/internal/docs-tools';
 
 import { printTemplate } from '../docgen/story-docs/print-template.ts';
 import { fillTemplate } from './fill-template.ts';

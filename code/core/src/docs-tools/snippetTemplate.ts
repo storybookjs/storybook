@@ -1,108 +1,124 @@
+import { isEqual } from 'es-toolkit/predicate';
+
 import type { Args } from 'storybook/internal/types';
 
 /**
- * Fills a story-docs `template` with the current args, so the story's snippet follows the controls.
+ * The contract between a story-docs provider, which writes a story's `template`, and the preview,
+ * which fills it with the story's current args so its snippet follows the controls.
  *
- * A template is the story's static snippet, printed by the same printer, with a hole,
- * `⟦kind word…⟧`, wherever that printer writes an arg's value. This module is the contract every
- * framework shares: how a hole is written ({@link hole}, {@link holeWord}), found
- * ({@link findHoles}) and replaced ({@link fillHoles}). Which kinds and words a framework writes,
- * and how its filler prints each, is the framework's own, documented on its filler.
+ * A template is the story's static snippet with each place an arg prints wrapped in a hole,
+ * `⟦kind arg word…⟫text⟧`. `text` is what the static snippet prints there. `arg` is the arg the
+ * place reads, or `*` for the args a control adds, which are not among the story's initial args.
+ * `kind` and the other words are the renderer's, for its {@link PrintHole}. Words are separated by
+ * one space, and one that starts with `%` is the rest of it URI-encoded, see {@link holeWord}. A
+ * `~space` word is text, such as the whitespace before an attribute, that is printed before the
+ * hole's print unless that is empty; see {@link withHoleSpace}.
  *
- * Words are separated by one space. A word that starts with `%` is the rest of it URI-encoded, so
- * any arg name can be a word. A `~space` word is the whitespace before the hole, which is printed
- * before a value that is not empty, so an unset attribute leaves no gap or empty line; the
- * framework decides which holes take it, see {@link withHoleSpace}. The filler reads nothing but
- * the hole.
- *
- * A renderer sets its filler as `parameters.docs.source.fillTemplate`. It throws an
- * {@link UnprintableArgError} for a value the snippet cannot show, and the static snippet is shown
- * instead. `snippetValues.ts` holds JavaScript printing helpers several fillers share, which are not
- * part of this contract.
+ * {@link fillTemplate} prints a hole whose arg still holds its initial value as its `text`, so
+ * nothing the controls did not change moves. The renderer prints only a changed value, for the
+ * place its hole describes.
  */
-export type FillSnippetTemplate = (template: string, args: Args) => string;
+export interface TemplateHole {
+  kind: string;
+  /** The arg the place reads, or `undefined` for the args a control adds. */
+  arg?: string;
+  words: string[];
+}
 
-/** Thrown by a {@link FillSnippetTemplate} for an arg whose value the snippet cannot show. */
+/**
+ * Prints an arg value a control changed for the place `hole` describes, or, for a hole without an
+ * `arg`, the args a control added. The renderer sets it as `parameters.docs.source.printHole`.
+ *
+ * @throws {UnprintableArgError} For a value the snippet cannot show.
+ */
+export type PrintHole = (hole: TemplateHole, value: unknown) => string;
+
+/** Thrown by a {@link PrintHole} for an arg whose value the snippet cannot show. */
 export class UnprintableArgError extends Error {
   override readonly name = 'UnprintableArgError';
 
   constructor(readonly argName: string) {
-    super(`The snippet cannot show the value of the \`${argName}\` arg.`);
+    super(`The snippet cannot show the current value of the \`${argName}\` arg.`);
   }
 }
 
-/** A template hole; each word is one {@link isHoleWord} or written with {@link holeWord}. */
-export const hole = (kind: string, ...words: string[]) => `⟦${[kind, ...words].join(' ')}⟧`;
+/** A hole that prints `text` in the static snippet; see {@link TemplateHole}. */
+export const hole = ({ kind, arg, words }: TemplateHole, text: string) =>
+  `⟦${[kind, arg === undefined ? '*' : holeWord(arg), ...words.map(holeWord)].join(' ')}⟫${text}⟧`;
 
-/** Whether `word`, such as an arg name, can be written in a hole as it is. */
-const isHoleWord = (word: string) => /^[^\s⟦⟧%~][^\s⟦⟧]*$/.test(word);
+const isHoleWord = (word: string) => /^[^\s⟦⟧⟫%~*][^\s⟦⟧⟫]*$/.test(word);
 
 /** `word` as a hole writes it: as it is where it can be, else URI-encoded after a `%`. */
 export const holeWord = (word: string) =>
   isHoleWord(word) ? word : `%${encodeURIComponent(word)}`;
 
 /** Whether code already holds a hole bracket, so holes written in it could not be found again. */
-export const hasHoleBracket = (code: string) => /[⟦⟧]/.test(code);
+export const hasHoleBracket = (code: string) => /[⟦⟧⟫]/.test(code);
 
-const HOLE = /⟦([^⟧]*)⟧/g;
-
-/** A hole {@link findHoles} found: where it is, its kind, and its words as {@link holeWord} took them. */
-export interface Hole {
-  start: number;
-  end: number;
-  kind: string;
-  words: string[];
-}
+const HOLE = /⟦([^⟫⟧]*)⟫([^⟧]*)⟧/g;
 
 const decodeWord = (word: string) =>
   word.startsWith('%') ? decodeURIComponent(word.slice(1)) : word;
 
-/** Every hole in a template, for the server and tests; a filler uses {@link fillHoles}. */
-export const findHoles = (template: string): Hole[] =>
-  [...template.matchAll(HOLE)].map((match) => {
-    const [kind = '', ...words] = match[1]!.split(' ');
-    return {
-      start: match.index,
-      end: match.index + match[0].length,
-      kind,
-      words: words.map(decodeWord),
-    };
-  });
-
-/**
- * Replaces every hole in a template with what `fill` prints for its kind and words, with `%` words
- * decoded and the `~space` word printed before a value that is not empty. `fill` gets nothing
- * else, so it cannot read the code around a hole.
- */
-export const fillHoles = (template: string, fill: (kind: string, words: string[]) => string) =>
-  template.replace(HOLE, (_, inside: string) => {
-    const [kind = '', ...words] = inside.split(' ');
+// Each hole of a template replaced by what `print` prints for it, after its `~space` word unless
+// that is empty.
+const printHoles = (
+  template: string,
+  print: (hole: TemplateHole, text: string) => string
+): string =>
+  template.replace(HOLE, (_, header: string, text: string) => {
+    const [kind = '', arg = '', ...words] = header.split(' ');
     const space = words.find((word) => word.startsWith('~'));
-    const printed = fill(kind, words.filter((word) => word !== space).map(decodeWord));
+    const printed = print(
+      {
+        kind,
+        arg: arg === '*' ? undefined : decodeWord(arg),
+        words: words.filter((word) => word !== space).map(decodeWord),
+      },
+      text
+    );
     return printed && space ? decodeURIComponent(space.slice(1)) + printed : printed;
   });
 
+/** The static snippet a template is written from. */
+export const stripHoles = (template: string) => printHoles(template, (_, text) => text);
+
+/**
+ * Fills a template with the args a story renders with before they are mapped: a hole whose arg
+ * holds its initial value prints its `text`, and every other hole what `printHole` prints for it.
+ *
+ * @throws {UnprintableArgError} When `printHole` cannot print a value.
+ */
+export const fillTemplate = (
+  template: string,
+  { unmappedArgs, initialArgs }: { unmappedArgs: Args; initialArgs: Args },
+  printHole: PrintHole
+) => {
+  const own = (args: Args, name: string) => (Object.hasOwn(args, name) ? args[name] : undefined);
+  const added = Object.fromEntries(
+    Object.entries(unmappedArgs).filter(
+      ([name, value]) => value !== undefined && !Object.hasOwn(initialArgs, name)
+    )
+  );
+  return printHoles(template, (hole, text) => {
+    if (hole.arg === undefined) {
+      return Object.keys(added).length === 0 ? text : printHole(hole, added);
+    }
+    const value = own(unmappedArgs, hole.arg);
+    return isEqual(value, own(initialArgs, hole.arg)) ? text : printHole(hole, value);
+  });
+};
+
 /**
  * The template with the whitespace before each hole `takesSpace` names moved into it, as a
- * `~space` word. The framework's story-docs provider calls it on the template it writes, naming
- * the holes that leave nothing behind while they print nothing, such as an attribute.
+ * `~space` word, so the place leaves no gap or empty line while it prints nothing, as an attribute
+ * does whose arg a control cleared. A hole that prints no text keeps the whitespace before it.
  */
-export const withHoleSpace = (
-  template: string,
-  takesSpace: (kind: string, space: string) => boolean
-) => {
-  let moved = '';
-  let end = 0;
-  for (const { start, end: holeEnd, kind } of findHoles(template)) {
-    const before = template.slice(end, start);
-    const code = before.trimEnd();
-    const space = before.slice(code.length);
-    const written = template.slice(start, holeEnd);
-    moved +=
-      space !== '' && takesSpace(kind, space)
-        ? `${code}${written.slice(0, -1)} ~${encodeURIComponent(space)}⟧`
-        : before + written;
-    end = holeEnd;
-  }
-  return moved + template.slice(end);
-};
+export const withHoleSpace = (template: string, takesSpace: (kind: string) => boolean) =>
+  template.replace(
+    /(\s+)⟦([^⟫⟧]*)⟫([^⟧]*)⟧/g,
+    (written, space: string, header: string, text: string) =>
+      text !== '' && takesSpace(header.split(' ')[0]!)
+        ? `⟦${header} ~${encodeURIComponent(space)}⟫${text}⟧`
+        : written
+  );

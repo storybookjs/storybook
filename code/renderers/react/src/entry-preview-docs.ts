@@ -1,6 +1,6 @@
 import type { DecoratorFunction } from 'storybook/internal/types';
 
-import { fillTemplate } from './docs/fill-template.ts';
+import { printHole } from './docs/print-hole.ts';
 import { jsxDecorator } from './docs/jsxDecorator.tsx';
 import type { ReactRenderer } from './types.ts';
 
@@ -16,6 +16,6 @@ export { applyDecorators } from './docs/applyDecorators.ts';
 export const parameters = {
   docs: {
     story: { inline: true },
-    ...(useStaticServiceSnippets ? { source: { fillTemplate } } : {}),
+    ...(useStaticServiceSnippets ? { source: { printHole } } : {}),
   },
 };

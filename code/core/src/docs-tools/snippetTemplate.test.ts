@@ -1,113 +1,103 @@
 import { describe, expect, it } from 'vitest';
 
-import { fillHoles, findHoles, hole, holeWord, withHoleSpace } from './snippetTemplate.ts';
-import { defaultCode, defaultWord } from './snippetValues.ts';
+import {
+  type PrintHole,
+  UnprintableArgError,
+  fillTemplate,
+  hole,
+  stripHoles,
+  withHoleSpace,
+} from './snippetTemplate.ts';
 
-describe('fillHoles', () => {
-  it('fills every hole with what the filler prints for its kind and words', () => {
-    const template = `<Button${hole('attr', 'label', 'text')}>${hole('text', 'children')}</Button>`;
-    expect(fillHoles(template, (kind, words) => `[${kind}:${words.join(',')}]`)).toBe(
-      '<Button[attr:label,text]>[text:children]</Button>'
+const echo: PrintHole = ({ kind, arg, words }, value) =>
+  `[${kind} ${arg ?? '*'} ${words.join(',')}=${JSON.stringify(value)}]`;
+
+describe('fillTemplate', () => {
+  const template = `<Button${hole({ kind: 'attr', arg: 'label', words: ['label'] }, ' label="Go"')}${hole({ kind: 'attrs', words: [] }, '')} />`;
+
+  it('prints the text of a hole whose arg holds its initial value', () => {
+    const args = { label: 'Go', theme: 'dark', onClick: () => {} };
+    expect(fillTemplate(template, { unmappedArgs: args, initialArgs: args }, echo)).toBe(
+      '<Button label="Go" />'
     );
   });
 
-  it('keeps the code between the holes as written', () => {
-    expect(fillHoles(`a ? ${hole('value', 'x')} : b`, () => '1')).toBe('a ? 1 : b');
+  it('asks the renderer for a changed or cleared value only', () => {
+    const initialArgs = { label: 'Go', theme: 'dark' };
+    expect(
+      fillTemplate(template, { unmappedArgs: { ...initialArgs, label: 'Stop' }, initialArgs }, echo)
+    ).toBe('<Button[attr label label="Stop"] />');
+    expect(fillTemplate(template, { unmappedArgs: { theme: 'dark' }, initialArgs }, echo)).toBe(
+      '<Button[attr label label=undefined] />'
+    );
   });
 
-  it('reads nothing but the hole: the code around it is kept as written', () => {
-    const fill = (kind: string, words: string[]) => (kind === 'empty' ? '' : words.join(','));
-    for (const around of ['', ' ', '\n  ', 'a ', '<x>\n', '⟧ ']) {
-      const filled = fillHoles(`${around}${hole('empty')}${around}|${hole('v', '1')}`, fill);
-      expect(filled).toBe(`${around}${around}|1`);
+  it('compares values deeply, so a copy of the initial value is unchanged', () => {
+    const items = hole({ kind: 'value', arg: 'items', words: [] }, '[1]');
+    expect(
+      fillTemplate(items, { unmappedArgs: { items: [1] }, initialArgs: { items: [1] } }, echo)
+    ).toBe('[1]');
+  });
+
+  it('gives a hole without an arg only the args a control added', () => {
+    const initialArgs = { label: 'Go', theme: 'dark', onClick: () => {} };
+    const unmappedArgs = { ...initialArgs, theme: 'light', size: 'lg', unset: undefined };
+    expect(fillTemplate(template, { unmappedArgs, initialArgs }, echo)).toBe(
+      '<Button label="Go"[attrs * ={"size":"lg"}] />'
+    );
+  });
+
+  it('prints the space word before a print, and leaves it out with an empty one', () => {
+    const spaced = withHoleSpace(template, (kind) => kind === 'attr');
+    const clear: PrintHole = () => '';
+    const initialArgs = { label: 'Go' };
+    expect(fillTemplate(spaced, { unmappedArgs: {}, initialArgs }, clear)).toBe('<Button />');
+    expect(fillTemplate(spaced, { unmappedArgs: initialArgs, initialArgs }, clear)).toBe(
+      '<Button label="Go" />'
+    );
+  });
+
+  it('passes on what the renderer cannot print', () => {
+    const fail: PrintHole = ({ arg }) => {
+      throw new UnprintableArgError(arg!);
+    };
+    expect(() =>
+      fillTemplate(template, { unmappedArgs: { label: 'Stop' }, initialArgs: {} }, fail)
+    ).toThrow(new UnprintableArgError('label'));
+  });
+
+  it('reads an arg named as hole syntax as that arg, and words as written', () => {
+    for (const arg of ['*', 'a b', '%x', '~y', 'z⟫']) {
+      const written = hole({ kind: 'value', arg, words: ['a b', '-c'] }, 'x');
+      expect(fillTemplate(written, { unmappedArgs: { [arg]: 1 }, initialArgs: {} }, echo)).toBe(
+        `[value ${arg} a b,-c=1]`
+      );
     }
-  });
-
-  it('prints a space word before a value, and leaves it out with an empty one', () => {
-    const template = `<Button${hole('attr', 'size', '~%20')}${hole('text', 'x', '~%0A%20%20')}`;
-    expect(fillHoles(template, (kind) => (kind === 'attr' ? 'size="sm"' : ''))).toBe(
-      '<Button size="sm"'
-    );
-    expect(fillHoles(template, (kind) => (kind === 'attr' ? '' : 'Go'))).toBe('<Button\n  Go');
-  });
-
-  it('passes a word holeWord encoded as the text it was given', () => {
-    const template = hole('attr', 'showHeader', holeWord('Render header?'), holeWord('%x'));
-    expect(template).toBe('⟦attr showHeader %Render%20header%3F %%25x⟧');
-    expect(fillHoles(template, (_, words) => words.join('|'))).toBe('showHeader|Render header?|%x');
-  });
-
-  it('passes a default word on as written, for defaultCode to read', () => {
-    const template = hole('value', 'size', defaultWord("'50 %'"));
-    expect(fillHoles(template, (_, [, word]) => defaultCode(word)!)).toBe("'50 %'");
   });
 });
 
-describe('findHoles', () => {
-  it('finds each hole with where it is, its kind and its words decoded', () => {
-    expect(findHoles(`a${hole('attr', 'x', '%a%20b')}b`)).toEqual([
-      { start: 1, end: 16, kind: 'attr', words: ['x', 'a b'] },
-    ]);
+describe('stripHoles', () => {
+  it('is the static snippet the template is written from', () => {
+    const snippet = '<Button\n  label="Go"\n  size="lg"\n/>';
+    const template = withHoleSpace(
+      `<Button\n  ${hole({ kind: 'attr', arg: 'label', words: [] }, 'label="Go"')}\n  ${hole({ kind: 'attr', arg: 'size', words: [] }, 'size="lg"')}${hole({ kind: 'attrs', words: [] }, '')}\n/>`,
+      () => true
+    );
+    expect(template).toContain('~%0A%20%20⟫');
+    expect(stripHoles(template)).toBe(snippet);
   });
 });
 
 describe('withHoleSpace', () => {
-  const takesSpace = (kind: string, space: string) =>
-    kind === 'attr' || kind === 'props' || space.includes('\n');
-
-  it('moves the whitespace before an attribute hole into it', () => {
-    const template = `<Button ${hole('attr', 'size', 'size')}\n  ${hole('props')} />`;
-    expect(withHoleSpace(template, takesSpace)).toBe(
-      '<Button⟦attr size size ~%20⟧⟦props ~%0A%20%20⟧ />'
-    );
-    expect(fillHoles(withHoleSpace(template, takesSpace), () => '')).toBe('<Button />');
-  });
-
-  it('keeps the whitespace on its line before any other hole', () => {
-    expect(withHoleSpace(`Hello ${hole('text', 'name')}!`, takesSpace)).toBe(
-      `Hello ${hole('text', 'name')}!`
-    );
-    expect(fillHoles(withHoleSpace(`f(a, ${hole('value', 'b')})`, takesSpace), () => '')).toBe(
-      'f(a, )'
+  it('moves the whitespace before a hole it names into it', () => {
+    const template = `<B ${hole({ kind: 'attr', arg: 'a', words: [] }, 'a')}>\n  ${hole({ kind: 'text', arg: 'b', words: [] }, 'b')}`;
+    expect(withHoleSpace(template, (kind) => kind === 'attr')).toBe(
+      '<B⟦attr a ~%20⟫a⟧>\n  ⟦text b⟫b⟧'
     );
   });
 
-  it('moves a line break before any other hole into it', () => {
-    const template = withHoleSpace(
-      `<Button>\n  ${hole('text', 'children')}\n</Button>`,
-      takesSpace
-    );
-    expect(template).toBe('<Button>⟦text children ~%0A%20%20⟧\n</Button>');
-    expect(fillHoles(template, () => '')).toBe('<Button>\n</Button>');
-    expect(fillHoles(template, () => 'Go')).toBe('<Button>\n  Go\n</Button>');
-  });
-
-  it('moves a long run of whitespace in linear time', () => {
-    const template = `${' '.repeat(200_000)}x${hole('attr', 'a', 'a')}`;
-    expect(fillHoles(withHoleSpace(template, takesSpace), () => '')).toBe(
-      `${' '.repeat(200_000)}x`
-    );
-  });
-});
-
-describe('holeWord', () => {
-  it('writes a word that can stand in a hole as it is', () => {
-    expect(['label', '-children', '^size', 'a%b', '?x', 'label=label'].map(holeWord)).toEqual([
-      'label',
-      '-children',
-      '^size',
-      'a%b',
-      '?x',
-      'label=label',
-    ]);
-  });
-
-  it('encodes a word with a space, a hole bracket or a leading percent sign or tilde', () => {
-    expect(['a b', 'x⟧', '%', '~x'].map(holeWord)).toEqual([
-      '%a%20b',
-      '%x%E2%9F%A7',
-      '%%25',
-      '%~x',
-    ]);
+  it('keeps the whitespace before a hole that prints no text', () => {
+    const template = `<B ${hole({ kind: 'attrs', words: [] }, '')}/>`;
+    expect(withHoleSpace(template, () => true)).toBe(template);
   });
 });

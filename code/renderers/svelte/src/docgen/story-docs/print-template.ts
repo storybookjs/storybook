@@ -7,7 +7,12 @@ import {
   unwrapExpression,
   walk as walkEstree,
 } from 'storybook/internal/csf-tools';
-import { defaultWord, hole, holeWord, withHoleSpace } from 'storybook/internal/docs-tools';
+import {
+  defaultWord,
+  legacyHole as hole,
+  holeWord,
+  legacyWithHoleSpace as withHoleSpace,
+} from 'storybook/internal/docs-tools';
 import { walk } from 'zimmerframe';
 
 import {

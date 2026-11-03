@@ -5,7 +5,7 @@ import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePan
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
-import { getFillTemplate, selectLiveSnippetForStory } from './live-snippet.ts';
+import { getPrintHole, selectLiveSnippetForStory } from './live-snippet.ts';
 
 export { shouldSkipStoryDocsEmit };
 
@@ -67,12 +67,8 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
       const { snippet, warning } = selectLiveSnippetForStory(
         query.get({ id: componentId }),
         storyId,
-        {
-          args: context.args,
-          unmappedArgs: context.unmappedArgs,
-          initialArgs: context.initialArgs,
-        },
-        getFillTemplate(context.parameters)
+        { unmappedArgs: context.unmappedArgs, initialArgs: context.initialArgs },
+        getPrintHole(context.parameters)
       );
       const source = snippet ?? context.parameters?.docs?.source?.originalSource;
       if (source === undefined) {

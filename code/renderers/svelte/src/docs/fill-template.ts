@@ -3,7 +3,7 @@ import {
   defaultCode,
   fillHoles,
   isAction,
-  printValue,
+  legacyPrintValue as printValue,
   writtenCode,
 } from 'storybook/internal/docs-tools';
 import type { Args } from 'storybook/internal/types';

@@ -3,7 +3,7 @@
 // the template the preview fills. A placeholder is as wide as the value it stands for and keeps its
 // whitespace, so the layout breaks lines and attributes as it does for the value. Markup or
 // whitespace the layout reads inside a text value is not kept; see `show` below.
-import { hole, holeWord } from 'storybook/internal/docs-tools';
+import { legacyHole as hole, holeWord } from 'storybook/internal/docs-tools';
 
 import type { TemplateLayout } from '../template-grammar.ts';
 

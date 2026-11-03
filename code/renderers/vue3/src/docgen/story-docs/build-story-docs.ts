@@ -35,7 +35,10 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import { hasHoleBracket, withHoleSpace } from 'storybook/internal/docs-tools';
+import {
+  hasHoleBracket,
+  legacyWithHoleSpace as withHoleSpace,
+} from 'storybook/internal/docs-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 

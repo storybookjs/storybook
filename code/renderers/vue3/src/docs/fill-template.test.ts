@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import { h, isVNode } from 'vue';
 
-import { UnprintableArgError, printValue, writtenArg } from 'storybook/internal/docs-tools';
+import {
+  UnprintableArgError,
+  legacyPrintValue as printValue,
+  writtenArg,
+} from 'storybook/internal/docs-tools';
 
 import {
   type SnippetValue,

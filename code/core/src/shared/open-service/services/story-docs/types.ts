@@ -24,20 +24,13 @@ export interface StoryDoc {
   name: string;
   snippet?: string;
   /**
-   * The static `snippet`, printed by the same printer, with a hole, `⟦kind word…⟧`, wherever that
-   * printer writes an arg's value, such as `<Button ⟦attr label label⟧ />`; see
-   * `FillSnippetTemplate`. Once the args differ from the story's initial args, the preview fills it
-   * through the renderer's `parameters.docs.source.fillTemplate`, so the snippet follows the
-   * controls. Filled with the story's own args, it is `snippet`.
+   * The static `snippet` with each place an arg prints wrapped in a hole that holds what the
+   * snippet prints there, such as `<Button⟦attr label label ~%20⟫label="Go"⟧ />`; see
+   * `TemplateHole`. Once the args differ from the story's initial args, the preview fills it
+   * through the renderer's `parameters.docs.source.printHole`, so the snippet follows the controls.
    */
   template?: string;
-  /**
-   * The code the static snippet prints an arg with where it prints the story's code rather than a
-   * value, such as `shout`, `fn((o) => o.name)` or `MB * 5`. Which args have it is the provider's
-   * choice, as it follows its printer. The preview fills an arg that still holds the value the story
-   * is written with as this code, so the filled snippet keeps it as written; an arg a control
-   * changed prints its value.
-   */
+  /** Read by the legacy hole contract only, until every provider writes wrapping holes. */
   argCode?: Record<string, string>;
   description?: string;
   summary?: string;

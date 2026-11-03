@@ -133,7 +133,8 @@ describe('buildStoryDocsPayload', () => {
     );
     expect(primary).toMatchObject({
       snippet: 'const Primary = () => <Button label="Save" primary />;',
-      template: 'const Primary = () => ⟦element Button⟧;',
+      template:
+        'const Primary = () => <Button⟦attr label label ~%20⟫label="Save"⟧⟦attr primary primary ~%20⟫primary⟧⟦attrs * children⟫⟧⟦close children Button⟫ />⟧;',
     });
     expect(fixed).toMatchObject({
       snippet: 'const Fixed = () => <Button label="Fixed" />;',

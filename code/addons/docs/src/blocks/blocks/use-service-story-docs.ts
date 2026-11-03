@@ -5,7 +5,7 @@ import type { PreparedStory, StoryDoc, StoryDocsPayload } from 'storybook/intern
 import {
   type QueryState,
   type StoryArgs,
-  getFillTemplate,
+  getPrintHole,
   selectLiveSnippetForStory,
   selectStoryDoc,
 } from 'storybook/open-service';
@@ -65,10 +65,10 @@ export function useServiceStoryLiveSnippet(
   // The selector is stable, so an args change fills the template again without a new subscription,
   // which would load the story docs again.
   const state = useServiceStory(story.id, selectStoryPayload);
-  const fill = getFillTemplate(story.parameters);
+  const printHole = getPrintHole(story.parameters);
   const data = useMemo(
-    () => selectLiveSnippetForStory(state.data, story.id, args, fill),
-    [state.data, story.id, args, fill]
+    () => selectLiveSnippetForStory(state.data, story.id, args, printHole),
+    [state.data, story.id, args, printHole]
   );
   return useMemo(() => ({ ...state, data }), [state, data]);
 }

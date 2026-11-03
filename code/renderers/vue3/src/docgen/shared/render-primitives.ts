@@ -6,7 +6,7 @@ import {
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 
-import { defaultWord, hole, holeWord } from 'storybook/internal/docs-tools';
+import { defaultWord, legacyHole as hole, holeWord } from 'storybook/internal/docs-tools';
 
 import type {
   ClassifiedArg,

@@ -1,6 +1,6 @@
 import type { ESTree as E, ESTreeNode as Node } from 'storybook/internal/csf-tools';
 import { oneLineTextOf } from 'storybook/internal/csf-tools';
-import { hole, holeWord } from 'storybook/internal/docs-tools';
+import { legacyHole as hole, holeWord } from 'storybook/internal/docs-tools';
 
 import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
 import { fieldDefault, pairedAttribute } from './classify-args.ts';

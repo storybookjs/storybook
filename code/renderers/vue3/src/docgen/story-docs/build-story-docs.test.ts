@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SourceEditor } from 'storybook/internal/csf-tools';
-import { UnprintableArgError, printValue } from 'storybook/internal/docs-tools';
+import { UnprintableArgError, legacyPrintValue as printValue } from 'storybook/internal/docs-tools';
 import type { IndexEntry, StoryDoc } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 

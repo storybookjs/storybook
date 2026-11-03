@@ -6,9 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
-import { printValue } from '../../../../docs-tools/snippetValues.ts';
 import type { StoryDocsService } from './definition.ts';
-import { getFillTemplate, selectLiveSnippetForStory } from './live-snippet.ts';
+import { getPrintHole, selectLiveSnippetForStory } from './live-snippet.ts';
 import { prependImportToSnippet, selectSnippetForStory, selectWarningForStory } from './snippet.ts';
 import {
   shouldSkipStoryDocsEmit,
@@ -49,17 +48,16 @@ const serviceSnippet = 'import { Button } from \'./Button\';\n\n<Button label="h
 const payloadWithTemplate: StoryDocsPayload = {
   ...payload,
   stories: {
-    [storyId]: { ...payload.stories[storyId]!, template: '<Button label={args.label} />', warning },
+    [storyId]: {
+      ...payload.stories[storyId]!,
+      template: '<Button ⟦attr label⟫label="hi"⟧ />',
+      warning,
+    },
   },
 };
-const fillTemplate = (template: string, args: Record<string, unknown>) =>
-  template.replace('{args.label}', `"${String(args.label)}"`);
+const printHole = (_: unknown, value: unknown) => `label="${String(value)}"`;
 // The story's args once `label` changed to `Go` from the `hi` it is written with.
-const changed = {
-  args: { label: 'Go' },
-  unmappedArgs: { label: 'Go' },
-  initialArgs: { label: 'hi' },
-};
+const changed = { unmappedArgs: { label: 'Go' }, initialArgs: { label: 'hi' } };
 
 /**
  * Builds a minimal `core/story-docs` service mock whose `storyDocs.loaded` resolves with `loaded`,
@@ -108,13 +106,13 @@ describe('selectLiveSnippetForStory', () => {
   });
 
   it('fills the template with the args, with the warning', () => {
-    expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, changed, fillTemplate)).toEqual({
+    expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, changed, printHole)).toEqual({
       snippet: 'import { Button } from \'./Button\';\n\n<Button label="Go" />',
       warning,
     });
   });
 
-  it('selects the static snippet and its warning without a filler', () => {
+  it('selects the static snippet and its warning without a hole printer', () => {
     expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, changed, undefined)).toEqual({
       snippet: serviceSnippet,
       warning,
@@ -122,19 +120,19 @@ describe('selectLiveSnippetForStory', () => {
   });
 
   it('selects the static snippet and its warning without a template', () => {
-    expect(selectLiveSnippetForStory(payloadWithWarning, storyId, changed, fillTemplate)).toEqual({
+    expect(selectLiveSnippetForStory(payloadWithWarning, storyId, changed, printHole)).toEqual({
       snippet: serviceSnippet,
       warning,
     });
   });
 
-  it('selects the static snippet and warns once when the filler throws', () => {
+  it('selects the static snippet and warns once when the hole printer throws', () => {
     const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
     const throwing = () => {
       throw new Error('unexpected value');
     };
     for (const label of ['Go', 'Stop']) {
-      const args = { ...changed, args: { label }, unmappedArgs: { label } };
+      const args = { ...changed, unmappedArgs: { label } };
       expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, args, throwing)).toEqual({
         snippet: serviceSnippet,
         warning,
@@ -146,84 +144,39 @@ describe('selectLiveSnippetForStory', () => {
     );
   });
 
-  it('selects the static snippet without a warning for an arg value it cannot show', () => {
+  it('selects the static snippet with a warning that names an arg it cannot show', () => {
     const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
     const unprintable = () => {
       throw new UnprintableArgError('label');
     };
     expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, changed, unprintable)).toEqual({
       snippet: serviceSnippet,
-      warning,
+      warning: `${warning} The snippet cannot show the current value of the \`label\` arg.`,
+    });
+    expect(selectLiveSnippetForStory(payload, storyId, changed, unprintable)).toEqual({
+      snippet: serviceSnippet,
+      warning: undefined,
     });
     expect(warn).not.toHaveBeenCalled();
   });
-});
 
-describe('selectLiveSnippetForStory with written args', () => {
-  const shout = (text: string) => text.toUpperCase();
-  const initialArgs = { label: 'hi', formatter: shout };
-  const payloadWithArgCode: StoryDocsPayload = {
-    ...payload,
-    stories: {
-      [storyId]: {
-        ...payload.stories[storyId]!,
-        template: '<Button ⟦value label⟧ ⟦value formatter⟧ />',
-        argCode: { label: "'hi'", formatter: 'shout' },
-      },
-    },
-  };
-  const fill = (template: string, args: Record<string, unknown>) =>
-    template.replace(/⟦value (\w+)⟧/g, (_, name: string) => printValue(args[name], name));
-
-  it('fills nothing while the story has the args it is written with', () => {
-    expect(
-      selectLiveSnippetForStory(
-        payloadWithArgCode,
-        storyId,
-        { args: { ...initialArgs }, unmappedArgs: { ...initialArgs }, initialArgs },
-        fill
-      )
-    ).toEqual({ snippet: serviceSnippet, warning: undefined });
-  });
-
-  it('prints an arg that still holds its written value as its code, and a changed one as its value', () => {
-    const args = { ...initialArgs, label: 'Go' };
-    expect(
-      selectLiveSnippetForStory(
-        payloadWithArgCode,
-        storyId,
-        { args, unmappedArgs: args, initialArgs },
-        fill
-      ).snippet
-    ).toBe('import { Button } from \'./Button\';\n\n<Button "Go" shout />');
-  });
-
-  it('fills the args before mapping, as the static snippet reads them', () => {
-    const icon = { mapped: true };
-    expect(
-      selectLiveSnippetForStory(
-        {
-          ...payloadWithArgCode,
-          stories: {
-            [storyId]: { ...payloadWithArgCode.stories[storyId]!, template: '⟦value icon⟧' },
-          },
-        },
-        storyId,
-        { args: { icon }, unmappedArgs: { icon: 'star' }, initialArgs: { icon: 'none' } },
-        fill
-      ).snippet
-    ).toContain('"star"');
+  it('selects the static snippet while the story has the args it is written with', () => {
+    const args = { unmappedArgs: { label: 'hi' }, initialArgs: { label: 'hi' } };
+    expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, args, printHole)).toEqual({
+      snippet: serviceSnippet,
+      warning,
+    });
   });
 });
 
-describe('getFillTemplate', () => {
-  it('reads the filler the renderer sets on the docs source parameters', () => {
-    expect(getFillTemplate({ docs: { source: { fillTemplate } } })).toBe(fillTemplate);
+describe('getPrintHole', () => {
+  it('reads the hole printer the renderer sets on the docs source parameters', () => {
+    expect(getPrintHole({ docs: { source: { printHole } } })).toBe(printHole);
   });
 
-  it('ignores a missing or invalid filler', () => {
-    expect(getFillTemplate(undefined)).toBeUndefined();
-    expect(getFillTemplate({ docs: { source: { fillTemplate: 'nope' } } })).toBeUndefined();
+  it('ignores a missing or invalid hole printer', () => {
+    expect(getPrintHole(undefined)).toBeUndefined();
+    expect(getPrintHole({ docs: { source: { printHole: 'nope' } } })).toBeUndefined();
   });
 });
 
@@ -288,7 +241,7 @@ describe('storyDocsSourceBeforeEach', () => {
       args: { label: 'hi' },
       unmappedArgs: { label: 'hi' },
       initialArgs: { label: 'hi' },
-      parameters: { __isArgsStory: true, docs: { source: { fillTemplate } } },
+      parameters: { __isArgsStory: true, docs: { source: { printHole } } },
     } as unknown as StoryContext;
 
     await render(context);
@@ -298,7 +251,7 @@ describe('storyDocsSourceBeforeEach', () => {
 
   it('fills the template once the args change, loading the story docs once', async () => {
     const storyDocs = mockStoryDocsService(() => Promise.resolve(payloadWithTemplate));
-    const parameters = { __isArgsStory: true, docs: { source: { fillTemplate } } };
+    const parameters = { __isArgsStory: true, docs: { source: { printHole } } };
     const withLabel = (label: string) =>
       ({
         id: storyId,
@@ -327,7 +280,7 @@ describe('storyDocsSourceBeforeEach', () => {
       args: { label: 'Go' },
       unmappedArgs: { label: 'Go' },
       initialArgs: { label: 'hi' },
-      parameters: { __isArgsStory: true, docs: { source: { fillTemplate } } },
+      parameters: { __isArgsStory: true, docs: { source: { printHole } } },
     } as unknown as StoryContext;
 
     await render(context);
@@ -345,7 +298,7 @@ describe('storyDocsSourceBeforeEach', () => {
     mockedEmitTransformCode.mockReturnValueOnce(
       new Promise<void>((resolve) => (finishTransform = resolve))
     );
-    const parameters = { __isArgsStory: true, docs: { source: { fillTemplate } } };
+    const parameters = { __isArgsStory: true, docs: { source: { printHole } } };
     const withLabel = (label: string) =>
       ({
         id: storyId,

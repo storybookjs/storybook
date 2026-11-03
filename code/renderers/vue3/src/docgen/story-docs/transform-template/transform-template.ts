@@ -7,7 +7,7 @@ import {
   type TemplateChildNode,
 } from '@vue/compiler-dom';
 
-import { hole, holeWord } from 'storybook/internal/docs-tools';
+import { legacyHole as hole, holeWord } from 'storybook/internal/docs-tools';
 import {
   type ESTree as E,
   type ESTreeNode as Node,

@@ -217,8 +217,8 @@ const SourceWithStoryDocsSnippet: FC<
   const [argsUpdate] = useArgs(story, docsContext);
   const args = useMemo(
     () => {
-      const { args, unmappedArgs, initialArgs } = docsContext.getStoryContext(story);
-      return { args, unmappedArgs, initialArgs };
+      const { unmappedArgs, initialArgs } = docsContext.getStoryContext(story);
+      return { unmappedArgs, initialArgs };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `argsUpdate` is the trigger
     [argsUpdate, story, docsContext]

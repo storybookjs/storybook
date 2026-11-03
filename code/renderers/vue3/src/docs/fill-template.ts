@@ -4,7 +4,7 @@ import {
   defaultCode,
   fillHoles,
   isAction,
-  printValue,
+  legacyPrintValue as printValue,
   spreadArgs,
   writtenCode,
 } from 'storybook/internal/docs-tools';

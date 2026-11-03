@@ -19,7 +19,10 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import { findHoles, withHoleSpace } from 'storybook/internal/docs-tools';
+import {
+  legacyFindHoles as findHoles,
+  legacyWithHoleSpace as withHoleSpace,
+} from 'storybook/internal/docs-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';

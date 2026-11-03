@@ -11,7 +11,7 @@ import type {
   ManifestClassField,
   ManifestDeclaration,
 } from '../component-docgen/manifest/types.ts';
-import { withHoleSpace } from 'storybook/internal/docs-tools';
+import { legacyWithHoleSpace as withHoleSpace } from 'storybook/internal/docs-tools';
 
 import { fillTemplate } from '../../docs/fill-template.ts';
 import { evaluateArgValue } from './arg-values.ts';

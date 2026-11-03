@@ -1,4 +1,4 @@
-import { hole, holeWord } from 'storybook/internal/docs-tools';
+import { legacyHole as hole, holeWord } from 'storybook/internal/docs-tools';
 
 import {
   attributeText,

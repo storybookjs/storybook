@@ -158,11 +158,18 @@ describe('resolveCompositionSources', () => {
     const result = await resultPromise;
 
     expect(result.sources?.map((source) => source.id)).toEqual(['local']);
-    expect(errorSpy).toHaveBeenCalledTimes(1);
-    expect(errorSpy).toHaveBeenCalledWith(
+    // Two error logs for a single unreachable ref: the per-ref skip (which
+    // never claims the gate state) and the final-state disarm report.
+    expect(errorSpy).toHaveBeenCalledTimes(2);
+    expect(errorSpy).toHaveBeenNthCalledWith(
+      1,
       expect.stringMatching(
-        /"Design System".*could not be reached after 3 attempts.*ECONNREFUSED.*DISARMED.*restart/s
+        /"Design System".*could not be reached after 3 attempts.*ECONNREFUSED.*restart/s
       )
+    );
+    expect(errorSpy).toHaveBeenNthCalledWith(
+      2,
+      expect.stringMatching(/DISARMED.*\/mcp will be served without authentication/s)
     );
   });
 

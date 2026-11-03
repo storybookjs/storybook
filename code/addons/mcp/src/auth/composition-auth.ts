@@ -43,6 +43,15 @@ interface AuthRequirement {
 
 type NoManifestReason = 'manifest-not-found' | 'manifest-invalid';
 
+/**
+ * Per-ref probe outcome: a definitive result or the final retry error. Errors
+ * are captured per ref instead of rejecting, so all refs can probe
+ * concurrently and be applied in configuration order.
+ */
+type ProbeOutcome =
+  | { ref: ComposedRef; ok: true; result: 'public' | NoManifestReason | AuthRequirement }
+  | { ref: ComposedRef; ok: false; error: unknown };
+
 export type ManifestProvider = (
   request: Request | undefined,
   path: string,
@@ -93,47 +102,73 @@ export class CompositionAuth {
 
   /** Initialize by checking which refs require authentication and have manifests. */
   async initialize(refs: ComposedRef[]): Promise<void> {
-    for (const ref of refs) {
-      try {
-        const result = await this.#probeRefWithRetry(ref);
-        if (result === 'manifest-not-found') {
-          logger.warn(
-            `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): components manifest not found at ${ref.url}/manifests/components.json. Enable the \`componentsManifest\` feature on that Storybook to compose it into MCP.`
-          );
-          continue;
-        }
-        if (result === 'manifest-invalid') {
-          logger.warn(
-            `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): its components manifest failed validation. This usually means a version mismatch between the composed Storybook and this one — upgrade the older side.`
-          );
-          continue;
-        }
+    // Probe all refs concurrently: the probes are independent network calls,
+    // and retry backoff must not stack serially at boot — N unreachable refs
+    // would otherwise add N × backoff before the dev server opens its port.
+    const outcomes: ProbeOutcome[] = await Promise.all(
+      refs.map((ref) =>
+        this.#probeRefWithRetry(ref).then(
+          (result): ProbeOutcome => ({ ref, ok: true, result }),
+          (error): ProbeOutcome => ({ ref, ok: false, error })
+        )
+      )
+    );
 
-        this.#refsWithManifests.push(ref);
-
-        if (result === 'public') continue;
-
-        // Auth required
-        this.#authRequiredUrls.push(ref.url);
-        if (!this.#authRequirement) {
-          this.#authRequirement = result;
-        } else {
-          const existingServer = this.#authRequirement.resourceMetadata.authorization_servers[0];
-          const newServer = result.resourceMetadata.authorization_servers[0];
-          if (existingServer !== newServer) {
-            logger.warn(
-              `[addon-mcp] Composed ref "${ref.title}" uses a different OAuth server (${newServer}) than the first authenticated ref (${existingServer}). Only the first OAuth server will be used for authentication.`
-            );
-          }
-        }
-      } catch (error) {
-        // Fail-open by design: an unreachable ref silently disarms the auth gate,
-        // so /mcp serves 200 where clients expect 401. Log at error level so the
-        // disarm is visible in CI logs instead of passing as a routine warning.
+    let unreachableCount = 0;
+    for (const outcome of outcomes) {
+      const { ref } = outcome;
+      if (!outcome.ok) {
+        unreachableCount++;
+        // Fail-open by design: a ref that stays unreachable is skipped. Log at
+        // error level so the silent gate change is visible in CI logs instead
+        // of passing as a routine warning. The gate state is reported after
+        // all refs are checked, since a healthy sibling ref can still arm it.
         logger.error(
-          `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): the ref could not be reached after ${BOOT_PROBE_ATTEMPTS} attempts (${error instanceof Error ? error.message : String(error)}). The MCP auth gate is DISARMED — /mcp will be served without authentication until the next dev-server boot. Refs are only checked at dev-server boot — restart Storybook once the ref is reachable.`
+          `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): the ref could not be reached after ${BOOT_PROBE_ATTEMPTS} attempts (${outcome.error instanceof Error ? outcome.error.message : String(outcome.error)}). It will not require authentication for this session — refs are only checked at dev-server boot, so restart Storybook once the ref is reachable.`
         );
+        continue;
       }
+
+      const result = outcome.result;
+      if (result === 'manifest-not-found') {
+        logger.warn(
+          `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): components manifest not found at ${ref.url}/manifests/components.json. Enable the \`componentsManifest\` feature on that Storybook to compose it into MCP.`
+        );
+        continue;
+      }
+      if (result === 'manifest-invalid') {
+        logger.warn(
+          `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): its components manifest failed validation. This usually means a version mismatch between the composed Storybook and this one — upgrade the older side.`
+        );
+        continue;
+      }
+
+      this.#refsWithManifests.push(ref);
+
+      if (result === 'public') continue;
+
+      // Auth required
+      this.#authRequiredUrls.push(ref.url);
+      if (!this.#authRequirement) {
+        this.#authRequirement = result;
+      } else {
+        const existingServer = this.#authRequirement.resourceMetadata.authorization_servers[0];
+        const newServer = result.resourceMetadata.authorization_servers[0];
+        if (existingServer !== newServer) {
+          logger.warn(
+            `[addon-mcp] Composed ref "${ref.title}" uses a different OAuth server (${newServer}) than the first authenticated ref (${existingServer}). Only the first OAuth server will be used for authentication.`
+          );
+        }
+      }
+    }
+
+    // Report the final authentication state, not the per-ref failure: an
+    // unreachable ref only disarms the gate when no other ref established
+    // authentication.
+    if (unreachableCount > 0 && !this.requiresAuth) {
+      logger.error(
+        `[addon-mcp] ${unreachableCount} composed ref(s) could not be reached and none established authentication — the MCP auth gate is DISARMED and /mcp will be served without authentication until the next dev-server boot. Refs are only checked at dev-server boot — restart Storybook once the refs are reachable.`
+      );
     }
   }
 

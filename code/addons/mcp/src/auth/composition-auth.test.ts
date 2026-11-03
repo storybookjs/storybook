@@ -748,62 +748,64 @@ describe('CompositionAuth', () => {
       const auth = new CompositionAuth();
       const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
+      // Keyed by URL, not call order: refs are probed concurrently, so queued
+      // single-use responses would land on the wrong call.
+      const jsonResponse = (body: object) => ({ ok: true, json: () => Promise.resolve(body) });
+      const oauth401 = (resourceMetadataUrl: string) => ({
+        ok: false,
+        status: 401,
+        headers: new Headers({
+          'WWW-Authenticate': `Bearer resource_metadata="${resourceMetadataUrl}"`,
+        }),
+      });
       vi.stubGlobal(
         'fetch',
-        vi
-          .fn()
-          // First ref: manifest returns 401
-          .mockResolvedValueOnce({
-            ok: false,
-            status: 401,
-            headers: new Headers({
-              'WWW-Authenticate':
-                'Bearer resource_metadata="https://chromatic.com/.well-known/oauth-protected-resource"',
-            }),
-          })
-          .mockResolvedValueOnce({
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                resource: 'https://chromatic.com/mcp',
-                authorization_servers: ['https://www.chromatic.com'],
-              }),
-          })
-          .mockResolvedValueOnce({
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                issuer: 'https://www.chromatic.com',
-                authorization_endpoint: 'https://www.chromatic.com/authorize',
-                token_endpoint: 'https://www.chromatic.com/token',
-              }),
-          })
-          // Second ref: manifest returns 401 with different server
-          .mockResolvedValueOnce({
-            ok: false,
-            status: 401,
-            headers: new Headers({
-              'WWW-Authenticate':
-                'Bearer resource_metadata="https://other.example.com/.well-known/oauth-protected-resource"',
-            }),
-          })
-          .mockResolvedValueOnce({
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                resource: 'https://other.example.com/mcp',
-                authorization_servers: ['https://other.example.com'],
-              }),
-          })
-          .mockResolvedValueOnce({
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                issuer: 'https://other.example.com',
-                authorization_endpoint: 'https://other.example.com/authorize',
-                token_endpoint: 'https://other.example.com/token',
-              }),
-          })
+        vi.fn((url: string) => {
+          switch (url) {
+            // First ref — Chromatic OAuth server
+            case 'https://private.chromatic.com/manifests/components.json':
+              return Promise.resolve(
+                oauth401('https://chromatic.com/.well-known/oauth-protected-resource')
+              );
+            case 'https://chromatic.com/.well-known/oauth-protected-resource':
+              return Promise.resolve(
+                jsonResponse({
+                  resource: 'https://chromatic.com/mcp',
+                  authorization_servers: ['https://www.chromatic.com'],
+                })
+              );
+            case 'https://www.chromatic.com/.well-known/oauth-authorization-server':
+              return Promise.resolve(
+                jsonResponse({
+                  issuer: 'https://www.chromatic.com',
+                  authorization_endpoint: 'https://www.chromatic.com/authorize',
+                  token_endpoint: 'https://www.chromatic.com/token',
+                })
+              );
+            // Second ref — different OAuth server
+            case 'https://other.example.com/manifests/components.json':
+              return Promise.resolve(
+                oauth401('https://other.example.com/.well-known/oauth-protected-resource')
+              );
+            case 'https://other.example.com/.well-known/oauth-protected-resource':
+              return Promise.resolve(
+                jsonResponse({
+                  resource: 'https://other.example.com/mcp',
+                  authorization_servers: ['https://other.example.com'],
+                })
+              );
+            case 'https://other.example.com/.well-known/oauth-authorization-server':
+              return Promise.resolve(
+                jsonResponse({
+                  issuer: 'https://other.example.com',
+                  authorization_endpoint: 'https://other.example.com/authorize',
+                  token_endpoint: 'https://other.example.com/token',
+                })
+              );
+            default:
+              throw new Error(`Unexpected fetch in test: ${url}`);
+          }
+        })
       );
 
       await auth.initialize([
@@ -832,10 +834,21 @@ describe('CompositionAuth', () => {
       expect(mockFetch).toHaveBeenCalledTimes(3);
       expect(auth.requiresAuth).toBe(false);
       expect(auth.authUrls).toHaveLength(0);
-      expect(errorSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Skipping composed ref "Down Service"')
+      // Per-ref error names the ref and the retry budget without claiming the
+      // gate state; the final-state error reports the true (disarmed) gate.
+      expect(errorSpy).toHaveBeenCalledTimes(2);
+      expect(errorSpy).toHaveBeenNthCalledWith(
+        1,
+        expect.stringMatching(
+          /Skipping composed ref "Down Service".*could not be reached after 3 attempts.*Network error: ECONNREFUSED.*restart Storybook/s
+        )
       );
-      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('DISARMED'));
+      expect(errorSpy).toHaveBeenNthCalledWith(
+        2,
+        expect.stringMatching(
+          /1 composed ref\(s\).*DISARMED.*\/mcp will be served without authentication/s
+        )
+      );
     });
 
     it('retries a transient boot-probe failure and arms the gate when the ref recovers', async () => {
@@ -884,6 +897,70 @@ describe('CompositionAuth', () => {
       expect(mockFetch).toHaveBeenCalledTimes(4);
       expect(auth.requiresAuth).toBe(true);
       expect(auth.authUrls).toContain('https://private.example.com');
+    });
+
+    it('probes refs concurrently and reports the true gate state when a sibling ref arms it', async () => {
+      vi.useFakeTimers();
+      const auth = new CompositionAuth();
+      const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
+
+      const mockFetch = vi
+        .fn()
+        // Ref A (unreachable) — attempt 1 rejects and parks in its 1s backoff
+        .mockRejectedValueOnce(new Error('fetch failed'))
+        // Ref B (healthy private ref) — its whole probe chain answers without
+        // needing any timer to advance
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 401,
+          headers: new Headers({
+            'WWW-Authenticate':
+              'Bearer resource_metadata="https://b.example.com/.well-known/oauth-protected-resource"',
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              resource: 'https://b.example.com/mcp',
+              authorization_servers: ['https://auth-b.example.com'],
+            }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              issuer: 'https://auth-b.example.com',
+              authorization_endpoint: 'https://auth-b.example.com/authorize',
+              token_endpoint: 'https://auth-b.example.com/token',
+            }),
+        });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const initPromise = auth.initialize([
+        { id: 'a', title: 'Unreachable', url: 'https://a.example.com' },
+        { id: 'b', title: 'Private', url: 'https://b.example.com' },
+      ]);
+      // Flush microtasks WITHOUT advancing timers: ref B's full chain completes
+      // while ref A is parked in backoff — probes run concurrently, so one
+      // unreachable ref does not delay the others.
+      await vi.advanceTimersByTimeAsync(0);
+      expect(mockFetch).toHaveBeenCalledTimes(4);
+
+      await vi.advanceTimersByTimeAsync(10_000);
+      await initPromise;
+
+      // The healthy ref armed the gate despite the unreachable sibling...
+      expect(auth.requiresAuth).toBe(true);
+      expect(auth.authUrls).toEqual(['https://b.example.com']);
+      // ...and the dead ref is logged at error level without claiming DISARMED.
+      expect(errorSpy).toHaveBeenCalledTimes(1);
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringMatching(
+          /Skipping composed ref "Unreachable".*could not be reached after 3 attempts/s
+        )
+      );
+      expect(errorSpy).toHaveBeenCalledWith(expect.not.stringContaining('DISARMED'));
     });
 
     it('warns when OAuth resource metadata fetch fails', async () => {

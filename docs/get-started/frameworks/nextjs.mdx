@@ -74,7 +74,7 @@ Storybook for Next.js supports many Next.js features including:
 - 🔀 [Routing and navigation](#nextjs-routing)
 - 🌐 [`next/head`](#nextjs-head)
 - ⤵️ [Absolute imports](#imports)
-- 🎨 [Styling](#styling)
+- 🎨 [Styling](#nextjs-styling)
 - 🎭 [Module mocking](#mocking-modules)
 - ☁️ [React Server Component (experimental)](#react-server-components-rsc)
 
@@ -721,7 +721,7 @@ The `@storybook/nextjs` package exports several modules that enable you to [mock
 
 Type: `{ getPackageAliases: ({ useESM?: boolean }) => void }`
 
-`getPackageAliases` is a helper for generating the aliases needed to set up [portable stories](#portable-stories).
+`getPackageAliases` is a helper for generating the aliases needed to set up [portable stories](../../api/portable-stories/portable-stories-jest.mdx).
 
 ```ts title="jest.config.ts"
 import type { Config } from 'jest';

@@ -1057,8 +1057,7 @@ Storybook loads them only when builder docgen runs. When your main config sets `
 
 In `react-docgen-typescript` mode, `react-docgen` is optional and only documents JavaScript files. Without it, JavaScript components get no props, and Storybook does not warn about that.
 
-The `builder-docgen-packages` automigration adds the packages your configuration needs when you upgrade.
-You can also run it with `storybook automigrate builder-docgen-packages`.
+Storybook does not add these packages for you when you upgrade. If you keep `features.docgenServer: false`, install the packages from the table yourself.
 
 #### Svelte
 

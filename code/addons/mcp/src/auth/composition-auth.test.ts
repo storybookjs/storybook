@@ -10,6 +10,7 @@ describe('CompositionAuth', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   describe('extractBearerToken', () => {
@@ -813,21 +814,28 @@ describe('CompositionAuth', () => {
       expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('different OAuth server'));
     });
 
-    it('gracefully skips refs that fail during auth discovery', async () => {
+    it('skips a ref that stays unreachable and logs the gate disarm at error level', async () => {
+      vi.useFakeTimers();
       const auth = new CompositionAuth();
-      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
-      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error: ECONNREFUSED')));
+      const mockFetch = vi.fn().mockRejectedValue(new Error('Network error: ECONNREFUSED'));
+      vi.stubGlobal('fetch', mockFetch);
 
-      await auth.initialize([
+      const initPromise = auth.initialize([
         { id: 'down', title: 'Down Service', url: 'http://unreachable.example.com' },
       ]);
+      await vi.advanceTimersByTimeAsync(10_000);
+      await initPromise;
 
+      // Bounded retries — fail-open design preserved, exactly three attempts
+      expect(mockFetch).toHaveBeenCalledTimes(3);
       expect(auth.requiresAuth).toBe(false);
       expect(auth.authUrls).toHaveLength(0);
-      expect(warnSpy).toHaveBeenCalledWith(
+      expect(errorSpy).toHaveBeenCalledWith(
         expect.stringContaining('Skipping composed ref "Down Service"')
       );
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('DISARMED'));
     });
 
     it('warns when OAuth resource metadata fetch fails', async () => {

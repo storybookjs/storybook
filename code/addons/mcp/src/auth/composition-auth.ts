@@ -53,6 +53,23 @@ type RemoteSource = Source & { url: string };
 const MANIFEST_CACHE_TTL = 60 * 60 * 1000; // 60 minutes
 const REVALIDATION_TTL = 60 * 1000; // 60 seconds
 
+/**
+ * Boot-probe resilience: refs are only probed once per dev-server boot, so a
+ * single degraded response (slow CDN, network blip) would otherwise silently
+ * disarm the MCP auth gate for the whole session. A short backoff rides
+ * through transient windows before a ref is skipped; a ref that stays
+ * unreachable still skips after the attempts are exhausted (fail-open
+ * semantics unchanged).
+ */
+const BOOT_PROBE_ATTEMPTS = 3;
+const BOOT_PROBE_BACKOFF_MS = 1_000;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 interface CacheEntry {
   text: string;
   timestamp: number;
@@ -78,7 +95,7 @@ export class CompositionAuth {
   async initialize(refs: ComposedRef[]): Promise<void> {
     for (const ref of refs) {
       try {
-        const result = await this.#checkRef(ref.url);
+        const result = await this.#probeRefWithRetry(ref);
         if (result === 'manifest-not-found') {
           logger.warn(
             `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): components manifest not found at ${ref.url}/manifests/components.json. Enable the \`componentsManifest\` feature on that Storybook to compose it into MCP.`
@@ -110,8 +127,11 @@ export class CompositionAuth {
           }
         }
       } catch (error) {
-        logger.warn(
-          `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): the ref could not be reached (${error instanceof Error ? error.message : String(error)}). Refs are only checked at dev-server boot — restart Storybook once the ref is reachable.`
+        // Fail-open by design: an unreachable ref silently disarms the auth gate,
+        // so /mcp serves 200 where clients expect 401. Log at error level so the
+        // disarm is visible in CI logs instead of passing as a routine warning.
+        logger.error(
+          `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): the ref could not be reached after ${BOOT_PROBE_ATTEMPTS} attempts (${error instanceof Error ? error.message : String(error)}). The MCP auth gate is DISARMED — /mcp will be served without authentication until the next dev-server boot. Refs are only checked at dev-server boot — restart Storybook once the ref is reachable.`
         );
       }
     }
@@ -277,6 +297,28 @@ export class CompositionAuth {
     throw new Error(
       `Invalid manifest response from ${url}: expected valid JSON manifest but got unexpected content.`
     );
+  }
+
+  /**
+   * Probe a ref with short backoff between attempts, so one degraded response
+   * at boot no longer skips a ref that would answer on the next attempt.
+   * Rethrows the last error once all attempts are exhausted.
+   */
+  async #probeRefWithRetry(
+    ref: ComposedRef
+  ): Promise<'public' | NoManifestReason | AuthRequirement> {
+    let lastError: unknown;
+    for (let attempt = 1; attempt <= BOOT_PROBE_ATTEMPTS; attempt++) {
+      try {
+        return await this.#checkRef(ref.url);
+      } catch (error) {
+        lastError = error;
+        if (attempt < BOOT_PROBE_ATTEMPTS) {
+          await delay(BOOT_PROBE_BACKOFF_MS * attempt);
+        }
+      }
+    }
+    throw lastError;
   }
 
   /**

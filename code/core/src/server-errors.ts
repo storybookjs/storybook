@@ -444,15 +444,23 @@ export class BuilderDocgenPackagesMissingError extends StorybookError {
         'https://storybook.js.org/docs/api/main-config/main-config-typescript#reactdocgen',
       message: [
         dedent`
-          Storybook's builder docgen (\`typescript.reactDocgen: '${data.reactDocgen}'\`) needs ${packageList}, which ${data.packages.length === 1 ? 'is' : 'are'} not installed. Controls and the Docs args table show no props until you install ${them}:
+          Storybook's builder docgen (\`typescript.reactDocgen: '${data.reactDocgen}'\`) needs ${packageList}, which ${data.packages.length === 1 ? 'is' : 'are'} not installed. ${
+            data.docgenServerDisabledInMainConfig
+              ? `Install ${them}, then start Storybook again:`
+              : `Controls and the Docs args table show no props until you install ${them}:`
+          }
 
             ${data.installCommand}`,
+        data.docgenServerDisabledInMainConfig &&
+          'To run without docgen instead, set `typescript.reactDocgen: false` in your Storybook main config.',
         !data.docgenServerDisabledInMainConfig
           ? 'Builder docgen is deprecated and will be removed in Storybook 12.'
           : data.typescriptUsable
             ? `Builder docgen is deprecated and will be removed in Storybook 12. It runs because your Storybook main config sets \`features.docgenServer: false\`. Remove that setting to use server-side docgen, which does not need ${them}.`
             : `Builder docgen is deprecated and will be removed in Storybook 12. It runs because your Storybook main config sets \`features.docgenServer: false\`. Server-side docgen does not need ${them}, but it needs TypeScript 5.9 or 6 as the \`typescript\` package: remove that setting and install \`typescript@^6\`, side by side with TypeScript 7 if your project uses it.`,
-      ].join('\n\n'),
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
     });
   }
 }

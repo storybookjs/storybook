@@ -77,7 +77,7 @@ Storybook does not install the libraries for builder docgen. Add them to your de
 - `'react-docgen-typescript'` with Vite: `@joshwooding/vite-plugin-react-docgen-typescript` and `react-docgen-typescript`
 - `'react-docgen-typescript'` with Webpack: `@storybook/react-docgen-typescript-plugin` and `react-docgen-typescript`
 
-When one is missing, Storybook prints the install command and Controls and the Docs args table show no props.
+When one is missing, Storybook stops with the install command. Set `reactDocgen: false` to run without docgen instead.
 
 <CodeSnippets path="main-config-typescript-react-docgen.md" />
 

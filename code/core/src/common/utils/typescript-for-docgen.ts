@@ -170,20 +170,22 @@ export async function loadTypeScriptCompilerApi<TypeScript extends { version: st
 }
 
 /**
- * Check that the packages builder docgen needs are installed, and warn once when it can run or when
- * it cannot.
+ * Check that the packages builder docgen needs are installed, and report it once when they are not.
  *
  * Call it from a framework preset once builder docgen is active, with the packages from
- * {@link getReactBuilderDocgenPackages}. It prints one warning per cause:
+ * {@link getReactBuilderDocgenPackages}. It reports one thing per cause:
  *
- * - The main config sets `features.docgenServer: false`: the builder docgen deprecation, or, when
- *   packages are missing, a {@link BuilderDocgenPackagesMissingError} that also covers it.
+ * - The main config sets `features.docgenServer: false`, so the user chose builder docgen: it throws
+ *   a {@link BuilderDocgenPackagesMissingError} when packages are missing, so Storybook does not start
+ *   with a configuration it cannot honor. Otherwise it warns about the deprecation.
  * - `typescript` is unusable, so the docgen server is off by default: nothing, because the
  *   `isDocgenProviderEnabled` preset already warned and named the missing packages.
- * - Anything else that turned the docgen server off: a {@link BuilderDocgenPackagesMissingError} when
- *   packages are missing.
+ * - Anything else that turned the docgen server off: a {@link BuilderDocgenPackagesMissingError}
+ *   warning when packages are missing.
  *
  * @returns The packages that do not resolve. Builder docgen must not run when this is non-empty.
+ * @throws {BuilderDocgenPackagesMissingError} When the main config sets `docgenServer: false` and
+ *   packages are missing.
  */
 export async function checkReactBuilderDocgenPackages({
   reactDocgen,
@@ -201,16 +203,18 @@ export async function checkReactBuilderDocgenPackages({
 
   if (missing.length > 0) {
     const typescriptUsable = !getTypeScriptForDocgenError(resolve);
-    if (docgenServerDisabledInMainConfig || typescriptUsable) {
-      once.warn(
-        new BuilderDocgenPackagesMissingError({
-          reactDocgen,
-          packages: missing,
-          installCommand: getAddBuilderDocgenPackagesCommand(missing),
-          docgenServerDisabledInMainConfig,
-          typescriptUsable,
-        }).message
-      );
+    const error = new BuilderDocgenPackagesMissingError({
+      reactDocgen,
+      packages: missing,
+      installCommand: getAddBuilderDocgenPackagesCommand(missing),
+      docgenServerDisabledInMainConfig,
+      typescriptUsable,
+    });
+    if (docgenServerDisabledInMainConfig) {
+      throw error;
+    }
+    if (typescriptUsable) {
+      once.warn(error.message);
     }
     return missing;
   }

@@ -1046,7 +1046,7 @@ The packages that only React builder docgen uses are now optional peer dependenc
 - `@joshwooding/vite-plugin-react-docgen-typescript` in `@storybook/react-vite`
 - `@storybook/react-docgen-typescript-plugin` in `@storybook/preset-react-webpack`
 
-Storybook loads them only when builder docgen runs. When builder docgen runs without them, Storybook keeps starting, Controls and the Docs args table show no props, and Storybook prints one warning with the install command for your package manager:
+Storybook loads them only when builder docgen runs. When your main config sets `features.docgenServer: false` and a package is missing, `storybook dev` and `storybook build` fail with the install command for your package manager. Set `typescript.reactDocgen: false` to run without docgen instead. When builder docgen only runs because `typescript` is missing or TypeScript 7, Storybook keeps starting without docgen and the TypeScript warning names both ways out:
 
 | Builder docgen runs because                                                      | Add to devDependencies                                                                                                      |
 | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |

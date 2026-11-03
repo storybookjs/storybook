@@ -241,24 +241,26 @@ describe('checkReactBuilderDocgenPackages', () => {
       expect(once.warn).toHaveBeenCalledWith(expect.stringContaining('is deprecated'));
     });
 
-    it('warns once with the install command when packages are missing', async () => {
+    it('throws with the install command when packages are missing', async () => {
       const packages = [
         '@joshwooding/vite-plugin-react-docgen-typescript',
         'react-docgen-typescript',
       ] as const;
 
-      await expect(check([], packages)).resolves.toEqual(packages);
-      expect(once.warn).toHaveBeenCalledOnce();
-      expect(once.warn).toHaveBeenCalledWith(
-        new BuilderDocgenPackagesMissingError({
-          reactDocgen: 'react-docgen',
-          packages: [...packages],
-          installCommand:
-            'npm install -D "@joshwooding/vite-plugin-react-docgen-typescript@^0.7.0" "react-docgen-typescript@^2.2.2"',
-          docgenServerDisabledInMainConfig: true,
-          typescriptUsable: true,
-        }).message
+      const result = check([], packages);
+
+      await expect(result).rejects.toThrow(BuilderDocgenPackagesMissingError);
+      await expect(result).rejects.toThrow(
+        'npm install -D "@joshwooding/vite-plugin-react-docgen-typescript@^0.7.0" "react-docgen-typescript@^2.2.2"'
       );
+      await expect(result).rejects.toThrow('typescript.reactDocgen: false');
+      expect(once.warn).not.toHaveBeenCalled();
+    });
+
+    it('throws on TypeScript 7 too, and says the docgen server needs TypeScript 6', async () => {
+      installTypeScript('7.0.2');
+
+      await expect(check([])).rejects.toThrow('install `typescript@^6`');
     });
   });
 

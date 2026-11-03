@@ -9,6 +9,7 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { buildStoryDocsPayload } from '../../../../../renderers/svelte/src/docgen/story-docs/build-story-docs.ts';
+import { fillTemplate } from '../../../../../renderers/svelte/src/docs/fill-template.ts';
 import { createIndexer } from '../../../../../renderers/svelte/src/svelte-csf/indexer/index.ts';
 import { expectCurrentOrBetter } from '../../compare/expect-current-or-better.ts';
 import {
@@ -91,8 +92,19 @@ describe('svelte story-docs server snippets', () => {
           subtype: 'story',
           importPath: storyPath,
         };
-        const payload = await buildStoryDocsPayload({ entry });
+        const ownArgs = new Map<string, Record<string, unknown>>();
+        const payload = await buildStoryDocsPayload(
+          { entry },
+          { onStoryArgs: (id, args) => ownArgs.set(id, args) }
+        );
         const storyDoc = payload?.stories[story.id];
+        if (storyDoc?.snippet !== undefined) {
+          expect(storyDoc.template, `${story.exportName} has no template`).toBeDefined();
+        }
+        if (storyDoc?.template !== undefined) {
+          // The template filled with the args the story is written with is its static snippet.
+          expect(fillTemplate(storyDoc.template, ownArgs.get(story.id)!)).toBe(storyDoc.snippet);
+        }
         expect(payload?.import).toBeUndefined();
         expect(storyDoc?.snippet).toMatch(/^<script(?: lang="ts")?>\n/);
         if (payload !== undefined) {

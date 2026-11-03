@@ -12,34 +12,30 @@ import {
   type ESTree as E,
   type ESTreeNode as Node,
   type ImportBinding,
-  type ReferenceContext,
   type RenderFunction,
-  type SourceEditor,
   type StoryArgsResolver,
   type StoryReferenceResolver,
+  argCode,
   buildImportStatements,
   collectImportBindings,
   createStoryArgsResolver,
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
-  fillStoryTemplate,
   jsDocTagsForNode,
+  staticKey,
   loadCsf,
   metaObject,
   noSnippetWarning,
   normalizeStoryDeclaration,
   propertyValue,
-  rebaseSpecifier,
   resolveComponentImport,
   resolveEffectiveRender,
-  resolveSpreadMeta,
   resolveReturnedObjectExpression,
   returnedExpression,
-  staticKey,
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import { writtenArg, type FillSnippetTemplate } from 'storybook/internal/docs-tools';
+import { hasHoleBracket } from 'storybook/internal/docs-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 
@@ -50,13 +46,10 @@ import {
 } from './classify-args/classify-args.ts';
 import type { ForwardableSetup } from './transform-template/forward-setup.ts';
 import { printH } from './print-h/print-h.ts';
-import { fillTemplate } from '../../docs/fill-template.ts';
 import { createRenderContext } from '../shared/render-primitives.ts';
 import {
-  componentTemplate,
   readTemplateRenderConfig,
   transformTemplate,
-  type StoryTemplateCode,
   type TemplateRenderConfig,
 } from './transform-template/transform-template.ts';
 
@@ -79,8 +72,6 @@ interface StoryDocsContext {
   /** Present only when the component identifier and docgen data can synthesize snippets. */
   snippet: StorySnippetContext | undefined;
   importBindings: Map<string, ImportBinding>;
-  /** The file render functions are read in, whose program names their helpers. */
-  editor: SourceEditor;
   /** Resolves each story's args, following a spread or a name out of the story file. */
   resolver: StoryArgsResolver;
   /** Story file source, for forwarding setup statements verbatim. */
@@ -93,7 +84,8 @@ const openStoryReferences = createStoryReferenceResolver({ extensions: ['.vue'] 
 
 const RENDER_UNRESOLVED_WARNING =
   'No static snippet: the `render` function could not be resolved statically.';
-const ARG_UNPRINTABLE_WARNING = 'No static snippet: an arg could not be printed in the snippet.';
+const SLOT_UNRESOLVED_WARNING =
+  'No static snippet: a slot function could not be resolved statically.';
 const IMPORT_UNRESOLVED_WARNING =
   "No static snippet: the component's import could not be resolved statically.";
 const TEMPLATE_UNRESOLVED_WARNING =
@@ -101,7 +93,7 @@ const TEMPLATE_UNRESOLVED_WARNING =
 const UNRENDERED_WARNINGS: Record<Exclude<StaticStoryRenderer, { kind: 'bail' }>['kind'], string> =
   {
     h: RENDER_UNRESOLVED_WARNING,
-    sfc: ARG_UNPRINTABLE_WARNING,
+    sfc: SLOT_UNRESOLVED_WARNING,
     template: TEMPLATE_UNRESOLVED_WARNING,
   };
 
@@ -117,10 +109,11 @@ type StaticStoryRenderer =
       template: string;
       setup?: ForwardableSetup;
     };
+type StorySnippetResult = { snippet: string };
 type StaticStoryArgs = {
-  /** The args the story is written with, each read through to its value. */
-  args: Record<string, Node>;
   classified: ClassifyArgsResult;
+  /** The args as the story writes them. */
+  args: Record<string, Node>;
   /** Source text of everything reading the args statically could not account for. */
   unresolved: string[];
 };
@@ -165,16 +158,11 @@ export async function buildStoryDocsPayload(
   } catch {
     // Docgen is optional here: without it the payload is still built, just without snippets.
   }
+  const componentName = resolveMetaComponentIdentifier(meta);
   const importBindings = collectImportBindings(csf.program);
-  const resolver = createStoryArgsResolver(csf, {
-    filePath: storyPath,
-    ...(context.references ?? openStoryReferences()),
-  });
-  const component = metaComponent(csf, meta, importBindings, resolver.ctx);
-  const componentName = component?.name;
   const importStatement = createImportStatement(
     componentName,
-    component?.importBindings ?? importBindings,
+    importBindings,
     jsDocTagsForNode(meta, csf.editor),
     docgenPayload
   );
@@ -187,8 +175,10 @@ export async function buildStoryDocsPayload(
   const extracted = extractStories(csf, {
     snippet,
     importBindings,
-    editor: csf.editor,
-    resolver,
+    resolver: createStoryArgsResolver(csf, {
+      filePath: storyPath,
+      ...(context.references ?? openStoryReferences()),
+    }),
     source: csf._code,
   });
 
@@ -206,44 +196,14 @@ function fallbackTitle(title: string): string {
 }
 
 /**
- * The component the meta names, with the import bindings that name it: the story file's, or for a
- * meta that spreads another story file's, as `{ ...meta, title }` does, that file's, rewritten to
- * resolve from the story file.
- */
-function metaComponent(
-  csf: ParsedCsf,
-  meta: E.ObjectExpression | undefined,
-  importBindings: Map<string, ImportBinding>,
-  ctx: ReferenceContext
-): { name: string; importBindings: Map<string, ImportBinding> } | undefined {
-  const name = resolveMetaComponentIdentifier(meta);
-  if (name || propertyValue(meta, 'component')) {
-    return name ? { name, importBindings } : undefined;
-  }
-  const spreadMeta = resolveSpreadMeta(csf, ctx);
-  const spreadName = spreadMeta && resolveMetaComponentIdentifier(spreadMeta.object);
-  if (!spreadMeta || !spreadName) {
-    return undefined;
-  }
-  const binding = collectImportBindings(spreadMeta.ctx.editor.program).get(spreadName);
-  const rebased = binding && {
-    ...binding,
-    importId: rebaseSpecifier(binding.importId, spreadMeta.ctx.filePath, ctx.filePath),
-  };
-  return { name: spreadName, importBindings: new Map(rebased ? [[spreadName, rebased]] : []) };
-}
-
-/**
  * Name of the identifier assigned to the meta `component` property, used as payload name,
  * import-binding lookup key, and snippet tag so all three stay coherent.
  *
- * @example `component: MyButton as Meta['component']` → `'MyButton'`; `component: UI.Button` →
- * `undefined`
+ * @example `component: MyButton` → `'MyButton'`; `component: UI.Button` → `undefined`
  */
 function resolveMetaComponentIdentifier(meta: E.ObjectExpression | undefined): string | undefined {
   const value = propertyValue(meta, 'component');
-  const component = value && unwrapExpression(value);
-  return component?.type === 'Identifier' ? component.name : undefined;
+  return value?.type === 'Identifier' ? value.name : undefined;
 }
 
 /**
@@ -350,7 +310,7 @@ function enrichStoryDoc(
   if (!options.snippet) {
     return plain;
   }
-  const { componentImportStatement, docgenArgInfo } = options.snippet;
+  const { componentName, componentImportStatement, docgenArgInfo } = options.snippet;
 
   let normalized;
   try {
@@ -364,11 +324,9 @@ function enrichStoryDoc(
   }
 
   const effectiveRender = resolveEffectiveRender(csf, storyExport, options.resolver.ctx);
-  const renderOptions =
-    effectiveRender.kind === 'resolved' ? inFileOf(effectiveRender.node, csf, options) : options;
   const renderer =
     effectiveRender.kind === 'resolved'
-      ? staticRendererForRenderFunction(effectiveRender.node, renderOptions)
+      ? staticRendererForRenderFunction(effectiveRender.node, options)
       : effectiveRender.kind === 'missing'
         ? { kind: 'sfc' as const }
         : undefined;
@@ -380,7 +338,7 @@ function enrichStoryDoc(
   }
 
   // The SFC renderer needs the component's import statement; without one, the bail below would
-  // otherwise blame an arg that was never involved.
+  // otherwise blame a slot that was never involved.
   if (renderer.kind === 'sfc' && !componentImportStatement) {
     return withWarning(IMPORT_UNRESOLVED_WARNING);
   }
@@ -396,103 +354,46 @@ function enrichStoryDoc(
     return withWarning(noSnippetWarning(unresolved));
   }
 
-  // The static snippet is the template filled with the args the story is written with, a slot the
-  // provider prints as that code.
-  const storyArgs = resolved.args;
-  const template = storyTemplate(renderer, options.snippet, args, storyArgs, renderOptions);
-  const warning = unresolvedWarning(unresolved);
-  const code = template?.argCode ?? {};
-  const fill: FillSnippetTemplate = (filled, values) =>
-    fillTemplate(filled, { ...values, ...mapValues(code, writtenArg) });
-  const filled = template && fillStoryTemplate(template.template, storyArgs, fill, warning);
-  if (!filled?.snippet) {
+  // The snippet printed with the story's args, and its template, printed the same with a hole
+  // wherever it fills one in.
+  const print = (holes: boolean) =>
+    renderStaticStorySnippet(
+      renderer,
+      classified,
+      componentName,
+      docgenArgInfo,
+      options,
+      resolved.args,
+      holes
+    );
+  const rendered = print(false);
+  if (!rendered) {
     return withWarning(UNRENDERED_WARNINGS[renderer.kind]);
   }
+  const warning = unresolved.length > 0 ? unresolvedWarning(unresolved) : undefined;
+  // Holes written in code that already holds a hole bracket could not be found again.
+  const template = hasHoleBracket(options.source) ? undefined : print(true)?.snippet;
 
   return {
     ...storyDoc,
-    ...filled,
-    argCode: { ...filled.argCode, ...code },
-    ...(warning === undefined ? {} : { warning }),
+    snippet: rendered.snippet,
+    ...(template && {
+      template,
+      argCode: argCode(resolved.args),
+      ...(warning && { templateWarning: warning }),
+    }),
+    ...(warning && { warning }),
   };
-}
-
-/**
- * The context to read a render function in: the story file's, or for one another story file
- * declares, as the meta a story file spreads does, that file's code and imports, rewritten to
- * resolve from the story file.
- */
-function inFileOf(
-  render: RenderFunction,
-  csf: ParsedCsf,
-  options: StoryDocsContext
-): StoryDocsContext {
-  if (csf.editor.parentOf(render) !== null) {
-    return options;
-  }
-  const { ctx } = options.resolver;
-  const other = resolveSpreadMeta(csf, ctx)?.ctx;
-  if (!other || other.editor.parentOf(render) === null) {
-    return options;
-  }
-  const importBindings = new Map(options.importBindings);
-  for (const [name, binding] of collectImportBindings(other.editor.program)) {
-    importBindings.set(name, {
-      ...binding,
-      importId: rebaseSpecifier(binding.importId, other.filePath, ctx.filePath),
-    });
-  }
-  return { ...options, importBindings, editor: other.editor, source: other.editor.code };
-}
-
-/**
- * The story as written, with a hole for each arg it reads: Storybook's render of the component for
- * a story without a render function, the template a render function returns, or the markup its
- * `h()` tree prints.
- */
-function storyTemplate(
-  renderer: Exclude<StaticStoryRenderer, { kind: 'bail' }>,
-  { componentName, componentImportStatement, docgenArgInfo }: StorySnippetContext,
-  args: ClassifyArgsResult['args'],
-  written: Record<string, Node>,
-  options: StoryDocsContext
-): StoryTemplateCode | undefined {
-  const slots = [...docgenArgInfo.slots];
-  if (renderer.kind === 'sfc') {
-    return componentImportStatement
-      ? componentTemplate(
-          componentName,
-          componentImportStatement,
-          slots,
-          args,
-          written,
-          options.importBindings
-        )
-      : undefined;
-  }
-  if (renderer.kind === 'template') {
-    const template = transformTemplate({ ...renderer, slots, args, written });
-    return template === undefined ? undefined : { template };
-  }
-  const ctx = createRenderContext();
-  const printed = printH({
-    argsParam: renderer.argsParam,
-    componentImportStatement,
-    componentName,
-    ctx,
-    docgen: docgenArgInfo,
-    importBindings: options.importBindings,
-    node: renderer.expression,
-  });
-  const template = printed && transformTemplate({ ...printed, slots, args, written, ctx });
-  return template === undefined ? undefined : { template };
 }
 
 function staticRendererForRenderFunction(
   renderFunction: RenderFunction,
   options: StoryDocsContext
 ): StaticStoryRenderer | undefined {
-  const renderObject = resolveReturnedObjectExpression(renderFunction, options.editor.program);
+  const renderObject = resolveReturnedObjectExpression(
+    renderFunction,
+    options.resolver.ctx.editor.program
+  );
   if (renderObject) {
     const resolution = readTemplateRenderConfig(renderObject, options.importBindings, {
       argsParam: argsParameterName(renderFunction),
@@ -535,10 +436,83 @@ function resolveStaticStoryArgs(
   // A name another module owns stays as written, for the classifier to report.
   const resolved = options.resolver.resolve(storyExport);
   return {
-    args: resolved.args,
     classified: classifyArgs(resolved.args, docgenArgInfo),
+    args: resolved.args,
     unresolved: resolved.unresolved,
   };
+}
+
+function renderStaticStorySnippet(
+  renderer: Exclude<StaticStoryRenderer, { kind: 'bail' }>,
+  classified: ClassifyArgsResult,
+  componentName: string,
+  docgenArgInfo: VueDocgenArgInfo,
+  options: StoryDocsContext,
+  storyArgNodes: Record<string, Node>,
+  holes: boolean
+): StorySnippetResult | undefined {
+  const componentImportStatement = options.snippet?.componentImportStatement;
+  const { args } = classified;
+  const ctx = createRenderContext(holes);
+  const slots = docgenArgInfo.slots;
+  const storyArgs = Object.keys(storyArgNodes);
+
+  // A story without a render function shows the component receiving the args directly.
+  if (renderer.kind === 'sfc') {
+    return componentImportStatement
+      ? transformTemplate({
+          args,
+          componentImports: new Map([[componentName, componentImportStatement]]),
+          componentName,
+          ctx,
+          importBindings: options.importBindings,
+          slots,
+          storyArgs,
+          template: `<${componentName} v-bind="args" />`,
+          unsetArgs: classified.unset,
+        })
+      : undefined;
+  }
+
+  if (renderer.kind === 'template') {
+    return transformTemplate({
+      args,
+      componentImports: renderer.componentImports,
+      componentName,
+      ctx,
+      importBindings: options.importBindings,
+      setup: renderer.setup,
+      slots,
+      storyArgs,
+      template: renderer.template,
+      unsetArgs: classified.unset,
+    });
+  }
+
+  const printed = printH({
+    argsParam: renderer.argsParam,
+    componentImportStatement,
+    componentName,
+    ctx,
+    docgen: docgenArgInfo,
+    importBindings: options.importBindings,
+    node: renderer.expression,
+  });
+  if (!printed) {
+    return undefined;
+  }
+
+  return transformTemplate({
+    args,
+    componentImports: printed.componentImports,
+    componentName,
+    ctx,
+    importBindings: options.importBindings,
+    slots,
+    storyArgs,
+    template: printed.template,
+    unsetArgs: classified.unset,
+  });
 }
 
 /**
@@ -590,6 +564,3 @@ function argsParameterName(renderFunction: RenderFunction): string | undefined {
   const [parameter] = renderFunction.params;
   return parameter?.type === 'Identifier' ? parameter.name : undefined;
 }
-
-const mapValues = <T, U>(record: Record<string, T>, map: (value: T) => U): Record<string, U> =>
-  Object.fromEntries(Object.entries(record).map(([key, value]) => [key, map(value)]));

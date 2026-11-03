@@ -5,9 +5,7 @@
   "stories": {
     "storydocs-args-formatting--every-value-shape": {
       "argCode": {
-        "data": "{ id: 7, nested: { deep: true } }",
         "formatter": "(value) => value.replace('"', "'")",
-        "tags": "['a', 'b']",
       },
       "id": "storydocs-args-formatting--every-value-shape",
       "name": "Every Value Shape",
@@ -22,7 +20,7 @@ import { ArgsFormattingComponent } from './args-formatting.component.ts';
         [label]="undefined"
         [kind]="'secondary'"
         [offset]="-4"
-        [data]="{ id: 7, nested: { deep: true } }"
+        [data]="{id: 7, nested: {deep: true}}"
         [tags]="['a', 'b']"
         [greeting]="'hello'"
         [formatter]="formatter"
@@ -39,12 +37,17 @@ import { ArgsFormattingComponent } from './args-formatting.component.ts';
   imports: [ArgsFormattingComponent],
   template: `
     <sb-args-formatting
-        ⟦props = label kind offset data tags greeting⟧
+        [label]="⟦bind label⟧"
+        [kind]="⟦bind kind⟧"
+        [offset]="⟦bind offset⟧"
+        [data]="⟦bind data⟧"
+        [tags]="⟦bind tags⟧"
+        [greeting]="⟦bind greeting⟧"
         [formatter]="formatter"
     />`,
 })
 export class DemoComponent {
-  formatter = ⟦value formatter⟧;
+  formatter = ⟦field formatter⟧;
 }",
     },
   },

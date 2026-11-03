@@ -7,26 +7,17 @@ import type {
   StoryReferences,
 } from 'storybook/internal/csf-tools';
 import {
-  SourceEditor,
   authoredSource,
   createStoryArgsResolver,
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
-  fillStoryTemplate,
   noSnippetWarning,
-  oneLineTextOf,
   resolveEffectiveRender,
-  textOf,
-  unresolvedWarning,
+  oneLineTextOf,
   unwrapExpression,
+  unresolvedWarning,
 } from 'storybook/internal/csf-tools';
-import { hole, holeWord } from 'storybook/internal/docs-tools';
-import type {
-  Args,
-  StoryDoc,
-  StoryDocsPayload,
-  StoryDocsProviderInput,
-} from 'storybook/internal/types';
+import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
 
@@ -36,14 +27,13 @@ import {
   parseStoryFile,
   resolveStoryComponent,
 } from '../component-docgen/resolve-component/resolve-component.ts';
-import { fillTemplate } from '../../docs/fill-template.ts';
 import { evaluateArgValue, isFunctionNode } from './arg-values.ts';
-import { classifyArg } from './classify-args.ts';
-import { printHtml } from './html-tree.ts';
-import { printRootListenerScript } from './print-element.ts';
+import { classifyArg, type ArgBinding } from './classify-args.ts';
+import type { ElementSnippet } from './print-element.ts';
+import { printElementSnippet } from './print-element.ts';
 import { handlerText } from './template-holes.ts';
-import { ownFill, printHtmlTemplate } from './template-print.ts';
-import { TEMPLATE_TAG_SOURCES, resolveHtmlTemplate } from './template-scope.ts';
+import { printHtmlTemplate } from './template-print.ts';
+import { resolveHtmlTemplate } from './template-scope.ts';
 
 export interface BuildStoryDocsContext {
   getDocgenPayload: (componentId: string) => Promise<WebComponentsDocgenPayload | undefined>;
@@ -58,13 +48,11 @@ interface StoryDocDeps {
   tag: string;
 }
 
-type SnippetResult = {
-  snippet?: string;
-  template?: string;
-  argCode?: Record<string, string>;
-  templateWarning?: string;
-  warning?: string;
-};
+/**
+ * A story's snippet, and its `template`: the same html with a hole wherever it prints an arg, which
+ * the preview fills with the args as the controls change them.
+ */
+type SnippetResult = { snippet?: string; template?: string; warning?: string };
 type ResolvedStoryArgs = ReturnType<StoryArgsResolver['resolve']>;
 type AuthoredFallback = (resolved: ResolvedStoryArgs) => SnippetResult;
 
@@ -175,12 +163,9 @@ const baseStoryDoc = (
     id: story.id,
     name: story.name ?? storyNameFromExport(exportName),
     ...(result.snippet === undefined ? {} : { snippet: result.snippet }),
-    ...(result.template === undefined
+    ...(result.snippet === undefined || result.template === undefined
       ? {}
-      : { template: result.template, argCode: result.argCode }),
-    ...(result.template === undefined || result.templateWarning === undefined
-      ? {}
-      : { templateWarning: result.templateWarning }),
+      : { template: result.template }),
     ...(result.warning === undefined ? {} : { warning: result.warning }),
     ...(description ? { description } : {}),
     ...(summary === undefined ? {} : { summary }),
@@ -246,122 +231,45 @@ const renderedArgsSnippet = (
   resolved: ResolvedStoryArgs,
   deps: StoryDocDeps
 ): SnippetResult => {
+  const warnings: (string | undefined)[] = [];
   const render = resolveEffectiveRender(deps.csf, exportName, deps.resolveStoryArgs.ctx);
-  const ctx = deps.resolveStoryArgs.ctx;
   if (render.kind === 'resolved') {
     const template = resolveHtmlTemplate(render.node, deps.csf);
     if (template) {
-      // Next prints the html the render returns, with a hole wherever it prints an arg.
       const printed = printHtmlTemplate(template, resolved.args, deps.declaration);
       const unresolved = [...resolved.unresolved, ...printed.unresolved];
-      const incomplete = [
-        incompleteList(printed.properties, 'properties without an attribute'),
-        incompleteList(printed.falseDefaults ?? [], 'false values that HTML cannot express'),
-        incompleteList(printed.listenersNotShown ?? [], 'listeners not shown'),
-        unboundTemplateArgs(resolved.args, printed.referenced),
-      ];
-      // As next, no snippet when it prints nothing and leaves out code it cannot read.
-      if (printed.template === '' && (unresolved.length > 0 || printed.properties.length > 0)) {
-        return joinWarnings([
-          unresolvedWarning(unresolved),
-          ...incomplete,
-          noSnippetWarning(unresolved),
-        ]);
-      }
-      const { warning } = joinWarnings([unresolvedWarning(printed.unresolved), ...incomplete]);
-      return withTemplate({ warning }, printed.template, resolved, ctx, warning);
+      warnings.push(unresolvedWarning(unresolved));
+      warnings.push(incompleteList(printed.properties, 'properties without an attribute'));
+      warnings.push(
+        incompleteList(printed.falseDefaults ?? [], 'false values that HTML cannot express')
+      );
+      warnings.push(incompleteList(printed.listenersNotShown ?? [], 'listeners not shown'));
+      warnings.push(unboundTemplateArgs(resolved.args, printed.referenced));
+      const hasFailedHole = unresolved.length > 0 || printed.properties.length > 0;
+      const hasSnippet = printed.snippet !== '' || !hasFailedHole;
+      return {
+        ...(hasSnippet ? { snippet: printed.snippet, template: printed.template } : {}),
+        ...joinWarnings(hasSnippet ? warnings : [...warnings, noSnippetWarning(unresolved)]),
+      };
     }
+    warnings.push(unresolvedWarning([oneLineTextOf(render.node)]));
+  } else if (render.kind === 'unresolved') {
+    warnings.push(unresolvedWarning(unresolvedRenderSource(render, resolved)));
   }
 
-  // Without a lit template it reads, next's printer writes the element with the args on it.
-  const element = argsElement(
+  const args = argsSnippet(
     resolved.args,
     deps.declaration,
     deps.docgenPayload.argTypes ?? {},
-    deps.tag
+    deps.tag,
+    resolved.unresolved
   );
-  const { warning } = joinWarnings([
-    unresolvedWarning(
-      render.kind === 'resolved'
-        ? [oneLineTextOf(render.node)]
-        : render.kind === 'unresolved'
-          ? unresolvedRenderSource(render, resolved)
-          : []
-    ),
-    element.warning,
-  ]);
-  // As next, no snippet when it shows none of the args and the story has args it cannot read.
-  const unread = [...resolved.unresolved, ...element.unread];
-  return !element.printed && unread.length > 0
-    ? joinWarnings([warning, noSnippetWarning(unread)])
-    : withTemplate({ warning }, element.template, resolved, ctx, warning);
-};
+  warnings.push(args.warning);
 
-/**
- * The story's template, and as its static snippet the template filled with the args the story is
- * written with, with the `incomplete` warning of code the template leaves out. Where the filler
- * cannot print an arg, the story has neither.
- */
-const withTemplate = (
-  own: SnippetResult,
-  template: string,
-  resolved: ResolvedStoryArgs,
-  ctx: StoryArgsResolver['ctx'],
-  incomplete?: string
-): SnippetResult => {
-  // The args the filler reads.
-  const printed = new Set<string>();
-  const reads = (args: Args) =>
-    new Proxy(args, {
-      get: (target, name) => {
-        if (typeof name === 'string' && name !== '') {
-          printed.add(name);
-        }
-        return Reflect.get(target, name);
-      },
-    });
-  const filled = fillStoryTemplate(template, resolved.args, (text, args) =>
-    fillTemplate(text, reads(args))
-  );
-  if (!filled) {
-    return own;
-  }
-  const code = filled.argCode;
-  // The args it prints as their code, whose names the story file binds the snippet has to declare.
-  const written = [...printed].filter((name) => Object.hasOwn(code, name));
-  const free = new Set(
-    written.flatMap((name) =>
-      freeNames(resolved.args[name]!).filter((free) => {
-        const declared = ctx.editor.scopes.program.bindings.get(free);
-        return declared !== undefined && !isLitImport(declared.declaration);
-      })
-    )
-  );
-  const { warning } = joinWarnings([
-    incompleteList([...free], 'names the snippet does not import or declare'),
-  ]);
-  // What the file cannot read, but for the names the warning names already.
-  const unread = unresolvedWarning(resolved.unresolved.filter((source) => !free.has(source)));
-  // The warning hangs on the args the fill printed, so it is known only after it.
   return {
-    snippet: filled.snippet,
-    ...joinWarnings([incomplete, unread, warning]),
-    template: filled.template,
-    argCode: code,
-    ...(warning === undefined ? {} : { templateWarning: warning }),
+    ...(args.snippet ? { snippet: args.snippet, template: args.template } : {}),
+    ...joinWarnings(warnings),
   };
-};
-
-/** Whether a name is declared by an import from lit, which a lit snippet has. */
-const isLitImport = (declaration: Node | undefined) =>
-  declaration?.type === 'ImportDeclaration' &&
-  TEMPLATE_TAG_SOURCES.includes(declaration.source.value);
-
-// The names code reads from outside itself, such as `ITEMS` or `fn`. A method is read as the object
-// member it is written as.
-const freeNames = (node: Node): string[] => {
-  const code = node.type === 'Property' ? `({ ${textOf(node)} })` : `(${textOf(node)})`;
-  return [...new SourceEditor(code).scopes.unbound];
 };
 
 const unboundTemplateArgs = (
@@ -386,116 +294,211 @@ const unresolvedRenderSource = (
   return node ? [oneLineTextOf(node)] : [];
 };
 
-/**
- * The element with the story's args on it, as next prints it, with a hole wherever it prints an
- * arg: an attribute, a custom property in its `style`, a slot as its content, and a part or state
- * in a `<style>` before it. A listener the story writes is a script after it, as written, as no
- * control sets it. Next leaves out a property without an attribute, a method and an arg the
- * element does not declare, and the warning names those the story sets. `printed` is whether it
- * shows a value of the story's args, and `unread` the code of those it shows that next cannot read.
- */
-const argsElement = (
+const argsSnippet = (
   args: Record<string, Node>,
   declaration: ManifestDeclaration,
   argTypes: WebComponentsDocgenPayload['argTypes'],
-  tag: string
-): { template: string; printed: boolean; unread: string[]; warning?: string } => {
-  const attributes = new Map<string, string>();
-  const [css, slots, styles]: string[][] = [[], [], []];
-  const listeners: { event: string; handler: string }[] = [];
-  const [inexpressible, falseDefaults, properties, unknown]: string[][] = [[], [], [], []];
-  const unread: string[] = [];
-  let printed = false;
-  for (const key of new Set([...Object.keys(args), ...Object.keys(argTypes ?? {})])) {
-    const value = Object.hasOwn(args, key)
-      ? evaluateArgValue(args[key]!)
-      : ({ kind: 'unset' } as const);
-    const set = value.kind !== 'unset';
+  tag: string,
+  unresolvedArgs: readonly string[]
+): SnippetResult => {
+  const snippet: ElementSnippet = {
+    tag,
+    attributes: [],
+    cssProperties: [],
+    listeners: [],
+    slots: [],
+    styleRules: [],
+  };
+  const unresolved: string[] = [];
+  const listeners: string[] = [];
+  const properties: string[] = [];
+  const unknown: string[] = [];
+
+  for (const [key, node] of Object.entries(args)) {
+    const value = evaluateArgValue(node);
+    if (value.kind === 'unset') {
+      continue;
+    }
     const binding = classifyArg(key, value.kind === 'function', argTypes ?? {}, declaration);
-    const word = holeWord(key);
     switch (binding.kind) {
       case 'listener':
-        if (set && binding.event) {
-          listeners.push({ event: binding.event, handler: listenerHandler(args[key]!) });
-        } else if (set) {
-          inexpressible.push(key);
+        if (binding.event) {
+          snippet.listeners.push({ event: binding.event, handler: listenerHandler(node), tag });
+        } else {
+          listeners.push(key);
         }
         break;
       case 'property':
-        properties.push(...(set ? [key] : []));
-        break;
-      case 'unknown':
-        unknown.push(...(set ? [key] : []));
+        properties.push(key);
         break;
       case 'method':
         break;
+      case 'unknown':
+        unknown.push(key);
+        break;
       case 'attribute':
-        // As next, the last arg the story sets for an attribute is its value.
-        if (set || !attributes.has(binding.name)) {
-          const field = binding.viaField ? ['field'] : [];
-          attributes.set(binding.name, hole('attr', holeWord(binding.name), word, ...field));
-        }
-        if (value.kind === 'value' && value.value === false && binding.defaultValue === 'true') {
-          falseDefaults.push(key);
-        }
-        break;
       case 'cssProperty':
-        css.push(holeWord(`${binding.name}=${key}`));
-        break;
       case 'slot':
-        slots.push(hole('slot', holeWord(binding.name), word));
-        break;
       case 'cssPart':
-        styles.push(holeWord(`::part(${binding.name})=${key}`));
-        break;
       case 'cssState':
-        styles.push(holeWord(`:state(${binding.name})=${key}`));
+        if (value.kind === 'value') {
+          addBoundValue(snippet, binding, key, value.value, tag);
+        } else if (value.kind === 'unresolved') {
+          unresolved.push(value.source);
+        }
         break;
       default: {
         const exhaustive: never = binding;
         return exhaustive;
       }
     }
-    const shown =
-      binding.kind === 'listener'
-        ? binding.event !== undefined
-        : !['property', 'unknown', 'method'].includes(binding.kind);
-    printed ||= shown && (binding.kind === 'listener' ? set : value.kind === 'value');
-    unread.push(...(shown && value.kind === 'unresolved' ? [value.source] : []));
   }
-  const style = styles.length > 0 ? hole('style', holeWord(tag), ...styles) : '';
-  const custom = css.length > 0 ? [['style', hole('css', ...css)] as const] : [];
-  // Laid out as next lays out the element with the story's own args.
-  const element = printHtml(
-    [
-      {
-        attributes: [...attributes, ...custom].map(([name, hole]) => ({
-          hole,
-          name,
-          value: undefined,
-        })),
-        children: slots.map((text) => ({ kind: 'text', text })),
-        closed: true,
-        kind: 'element',
-        name: tag,
-        selfClosing: false,
-      },
-    ],
-    ownFill(args)
-  );
-  const script = printRootListenerScript(listeners);
+
+  const warnings = [
+    incompleteList(listeners, 'listeners the HTML snippet cannot express'),
+    incompleteList(properties, 'properties without an attribute'),
+    incompleteList(unknown, `args not declared by \`${tag}\``),
+    incompleteList(falseDefaultAttributes(snippet), 'false values that HTML cannot express'),
+  ];
+  const allUnresolved = [...unresolvedArgs, ...unresolved];
+  const printed = hasSnippetContent(snippet) || allUnresolved.length === 0;
+  warnings.push(printed ? unresolvedWarning(allUnresolved) : noSnippetWarning(allUnresolved));
+
   return {
-    template: `${style}${element}${script ? `\n${script}` : ''}`,
-    printed,
-    unread,
-    ...joinWarnings([
-      incompleteList(inexpressible, 'listeners the HTML snippet cannot express'),
-      incompleteList(falseDefaults, 'false values that HTML cannot express'),
-      incompleteList(properties, 'properties without an attribute'),
-      incompleteList(unknown, `args not declared by \`${tag}\``),
-    ]),
+    ...(printed
+      ? {
+          snippet: printElementSnippet(snippet),
+          template: printElementSnippet(withUnsetArgs(snippet, args, argTypes, declaration), true),
+        }
+      : {}),
+    ...joinWarnings(warnings),
   };
 };
+
+// The snippet with each arg the story does not set where it would print it if it were set, as
+// the template has a hole there too.
+const withUnsetArgs = (
+  snippet: ElementSnippet,
+  args: Record<string, Node>,
+  argTypes: WebComponentsDocgenPayload['argTypes'],
+  declaration: ManifestDeclaration
+): ElementSnippet => {
+  const unset = [
+    ...Object.keys(args).filter((key) => evaluateArgValue(args[key]).kind === 'unset'),
+    ...Object.keys(argTypes ?? {}).filter((key) => !Object.hasOwn(args, key)),
+  ];
+  const template: ElementSnippet = {
+    ...snippet,
+    attributes: [...snippet.attributes],
+    cssProperties: [...snippet.cssProperties],
+    slots: [...snippet.slots],
+    styleRules: [...snippet.styleRules],
+  };
+  for (const key of new Set(unset)) {
+    const binding = classifyArg(key, false, argTypes ?? {}, declaration);
+    switch (binding.kind) {
+      case 'attribute':
+      case 'cssProperty':
+      case 'slot':
+      case 'cssPart':
+      case 'cssState':
+        addBoundValue(template, binding, key, undefined, snippet.tag, true);
+        break;
+      default:
+        break;
+    }
+  }
+  return template;
+};
+
+// Each value is the arg `source`'s, so the template prints a hole for it. An unset arg is only
+// added where no other arg already sets the same attribute, slot or rule.
+const addBoundValue = (
+  snippet: ElementSnippet,
+  binding: Exclude<ArgBinding, { kind: 'listener' | 'property' | 'method' | 'unknown' }>,
+  source: string,
+  value: unknown,
+  tag: string,
+  unset = false
+): void => {
+  const upsert = unset ? addIfAbsent : upsertByName;
+  switch (binding.kind) {
+    case 'attribute':
+      upsert(snippet.attributes, {
+        name: binding.name,
+        value,
+        viaField: binding.viaField,
+        defaultValue: binding.defaultValue,
+        source,
+        arg: source,
+      });
+      break;
+    case 'cssProperty':
+      upsert(snippet.cssProperties, { name: binding.name, value, arg: source });
+      break;
+    case 'slot':
+      upsert(snippet.slots, { name: binding.name, html: value, arg: source });
+      break;
+    case 'cssPart':
+    case 'cssState': {
+      const selector =
+        binding.kind === 'cssPart'
+          ? `${tag}::part(${binding.name})`
+          : `${tag}:state(${binding.name})`;
+      const rule = {
+        selector,
+        declarations: unset ? undefined : String(value),
+        arg: source,
+      };
+      if (!unset) {
+        upsertBySelector(snippet.styleRules, rule);
+      } else if (!snippet.styleRules.some((existing) => existing.selector === selector)) {
+        snippet.styleRules.push(rule);
+      }
+      break;
+    }
+    default: {
+      const exhaustive: never = binding;
+      return exhaustive;
+    }
+  }
+};
+
+const upsertByName = <T extends { name: string }>(items: T[], next: T): void => {
+  const index = items.findIndex((item) => item.name === next.name);
+  if (index === -1) {
+    items.push(next);
+    return;
+  }
+  items[index] = next;
+};
+
+const addIfAbsent = <T extends { name: string }>(items: T[], next: T): void => {
+  if (!items.some((item) => item.name === next.name)) {
+    items.push(next);
+  }
+};
+
+const upsertBySelector = <T extends { selector: string }>(items: T[], next: T): void => {
+  const index = items.findIndex((item) => item.selector === next.selector);
+  if (index === -1) {
+    items.push(next);
+    return;
+  }
+  items[index] = next;
+};
+
+const falseDefaultAttributes = (snippet: ElementSnippet): string[] =>
+  snippet.attributes
+    .filter(({ value, defaultValue }) => value === false && defaultValue === 'true')
+    .map(({ source, name }) => source ?? name);
+
+const hasSnippetContent = (snippet: ElementSnippet): boolean =>
+  snippet.attributes.length > 0 ||
+  snippet.cssProperties.length > 0 ||
+  snippet.listeners.length > 0 ||
+  snippet.slots.length > 0 ||
+  snippet.styleRules.length > 0;
 
 const listenerHandler = (node: Node): string =>
   isFunctionNode(unwrapExpression(node)) ? handlerText(node) : '() => {}';

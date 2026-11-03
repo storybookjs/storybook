@@ -3,6 +3,10 @@ import { describe, expect, it } from 'vitest';
 
 import { type ESTreeNode as Node, parseExpression, staticKey } from 'storybook/internal/csf-tools';
 
+import { writtenArg } from 'storybook/internal/docs-tools';
+
+import { fillTemplate } from '../../docs/fill-template.ts';
+import { argCode, literalOf } from './build-story-docs.ts';
 import { type TemplateParameter, printTemplate } from './print-template.ts';
 
 const args = (source: string): Record<string, Node> => {
@@ -15,8 +19,28 @@ const args = (source: string): Record<string, Node> => {
   );
 };
 
+// The args a story is written with, as the preview fills a template with them.
+const ownArgs = (written: Record<string, Node>) => {
+  const code = argCode(written);
+  return Object.fromEntries(
+    Object.entries(written).map(([name, node]) => [
+      name,
+      Object.hasOwn(code, name) ? writtenArg(code[name]!) : literalOf(node)!.value,
+    ])
+  );
+};
+
+// Prints a template with values, and checks that the template with holes, filled with the same
+// args, prints the same code.
+const printChecked = (options: Parameters<typeof printTemplate>[0]) => {
+  const printed = printTemplate(options);
+  const template = printTemplate({ ...options, holes: true });
+  expect(fillTemplate(template, ownArgs(options.args))).toBe(printed);
+  return printed;
+};
+
 const print = (code: string, source = '{}', typescript = false, parameter?: TemplateParameter) =>
-  printTemplate({ code, args: args(source), typescript, parameter });
+  printChecked({ code, args: args(source), typescript, parameter });
 
 describe('printTemplate', () => {
   it('spreads every arg, including the ones that equal a default', () => {
@@ -164,7 +188,7 @@ describe('printTemplate', () => {
 
   it('prints undefined for an arg the story does not set, when all args are known', () => {
     const printComplete = (code: string, source: string, parameter?: TemplateParameter) =>
-      printTemplate({ code, args: args(source), typescript: false, parameter, argsComplete: true });
+      printChecked({ code, args: args(source), typescript: false, parameter, argsComplete: true });
 
     expect(
       printComplete(
@@ -268,5 +292,48 @@ describe('printTemplate', () => {
     expect(print('<Input bind:value={args.value} />', "{ value: 'Hello' }")).toBe(
       '<Input bind:value={args.value} />'
     );
+  });
+});
+
+describe('printTemplate with holes', () => {
+  const template = (code: string, source = '{}') =>
+    printTemplate({ code, args: args(source), typescript: false, holes: true });
+
+  it('prints a hole wherever it prints an arg', () => {
+    expect(template('<Panel {...args} />', "{ label: 'Go' }")).toBe(
+      "<Panel⟦spread 'label <%20 >⟧ />"
+    );
+    expect(template('<h1>{args.title}</h1>', "{ title: 'Save' }")).toBe(
+      "<h1>⟦fragment title ' <%7B >%7D⟧</h1>"
+    );
+  });
+
+  it('fills a spread with the args a control changed, past 50 characters one per line', () => {
+    const filled = fillTemplate(template('<Panel {...args} />', "{ label: 'Go' }"), {
+      label: 'A label long enough to wrap the spread',
+      count: 3,
+      onclick: undefined,
+    });
+    expect(filled).toBe(
+      '<Panel\n  label="A label long enough to wrap the spread"\n  count={3}\n />'
+    );
+  });
+
+  it('prints an arg the story does not set where a control sets it', () => {
+    const code = '<Panel title={args.title}>{args.label}</Panel>';
+    const written = template(code, "{ label: 'Go' }");
+    expect(fillTemplate(written, { label: 'Go' })).toBe('<Panel title={args.title}>Go</Panel>');
+    expect(fillTemplate(written, { label: 'Go', title: 'Hi' })).toBe(
+      '<Panel title="Hi">Go</Panel>'
+    );
+  });
+
+  it('prints the code an unchanged arg is written with, and a changed one as its value', () => {
+    const written = template('<Button onclick={args.onclick} />', "{ onclick: () => alert('hi') }");
+    // As next prints it: code that is no name, call or literal gets parentheses where a read stood.
+    expect(fillTemplate(written, { onclick: writtenArg("() => alert('hi')") })).toBe(
+      "<Button onclick={(() => alert('hi'))} />"
+    );
+    expect(fillTemplate(written, { onclick: 'go' })).toBe('<Button onclick="go" />');
   });
 });

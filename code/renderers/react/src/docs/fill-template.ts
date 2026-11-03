@@ -1,6 +1,5 @@
 import {
   type FillSnippetTemplate,
-  asOperand,
   defaultCode,
   fillHoles,
   isAction,
@@ -9,11 +8,11 @@ import {
 } from 'storybook/internal/docs-tools';
 import type { Args } from 'storybook/internal/types';
 
-// Fills a template from `getCodeSnippet`. Besides the shared holes, `⟦element Button⟧` is the
-// component with every arg and `⟦args⟧` the args as an object, both without their `-name` words,
-// and `⟦close Button⟧` ends a self-closing element whose children a spread passes, with them as
-// content.
-// A hole for one arg may end in a default word, the code that stands for the arg while it is unset.
+// Fills a template from `getCodeSnippet`, printing each hole as its printer prints that arg, so the
+// template filled with the story's own args is its static snippet. Besides the shared holes,
+// `⟦element Button⟧` is the component with every arg and `⟦args⟧` the args as an object, both
+// without their `-name` words, and `⟦close Button ?code⟧` ends an element whose children a spread
+// passes, with them as content, or as the story writes it, `code`, without.
 // A hole that prints more than one line is indented as the line it is on.
 export const fillTemplate: FillSnippetTemplate = (template, args) => {
   const lines = [...template.matchAll(/⟦[^⟧]*⟧/g)].map(({ index }) =>
@@ -22,11 +21,10 @@ export const fillTemplate: FillSnippetTemplate = (template, args) => {
   let hole = 0;
   return fillHoles(template, (kind, words) => {
     const line = lines[hole++]!;
-    return indent(fill(kind, words, args, !line.trim()), /^\s*/.exec(line)![0]);
+    return indent(fill(kind, words, args), /^\s*/.exec(line)![0]);
   });
 };
 
-// The lines of a template literal are its value, so they keep their indentation as written.
 const indent = (code: string, prefix: string) => {
   let literal = false;
   let text = '';
@@ -44,10 +42,8 @@ const indent = (code: string, prefix: string) => {
   return text;
 };
 
-function fill(kind: string, words: string[], args: Args, ownLine: boolean): string {
+function fill(kind: string, words: string[], args: Args): string {
   const [first = '', second = ''] = words;
-  const at = kind === 'attr' ? 2 : 1;
-  const unset = args[words[at - 1]!] === undefined && defaultCode(words[at]);
   switch (kind) {
     case 'element': {
       const { children, ...props } = Object.fromEntries(spreadArgs(args, words.slice(1)));
@@ -55,30 +51,35 @@ function fill(kind: string, words: string[], args: Args, ownLine: boolean): stri
     }
     case 'close': {
       const content = text('children', args.children);
-      return content ? `>${content}</${first}>` : ownLine ? '/>' : ' />';
+      return content ? `>${content}</${first}>` : (defaultCode(second) ?? ' />');
     }
     case 'props':
-      return attributesOf(Object.fromEntries(spreadArgs(args, words))).join(ownLine ? '\n' : ' ');
+      return attributesOf(Object.fromEntries(spreadArgs(args, words))).join(' ');
     case 'args':
-      return object(spreadArgs(args, words));
+      return boundArgs(spreadArgs(args, words));
     case 'attr':
-      return unset ? `${first}={${unset}}` : attribute(first, args[second]);
+      return attribute(first, args[second]);
     case 'text':
-      return unset ? `{${unset}}` : text(first, args[first]);
-    case 'operand':
-      return unset || asOperand(printValue(args[first], first));
+      return text(first, args[first]);
     default:
-      return unset || printValue(args[first], first);
+      throw new Error(`Unknown hole ⟦${kind}⟧`);
   }
 }
 
-// One attribute a line once the element is long, or one of them is more than a line.
+// The element on one line, as the printer writes it.
 function element(name: string, attributes: string[], content: string) {
-  const long = [name, ...attributes].join(' ').length > 80 || attributes.join('').includes('\n');
-  const open = long
-    ? `${name}${attributes.map((attribute) => `\n  ${indent(attribute, '  ')}`).join('')}\n`
-    : [name, ...attributes].join(' ');
-  return content ? `<${open}>${content}</${name}>` : `<${open}${long ? '' : ' '}/>`;
+  const open = [name, ...attributes].join(' ');
+  return content ? `<${open}>${content}</${name}>` : `<${open} />`;
+}
+
+// The args a bound story is called with, one a line, as the printer writes them.
+function boundArgs(entries: [string, unknown][]) {
+  const properties = entries
+    .filter(([, value]) => value !== undefined && !isAction(value))
+    .map(
+      ([name, value]) => `    ${JSON.stringify(name)}: ${indent(printValue(value, name), '    ')}`
+    );
+  return properties.length === 0 ? '{}' : `{\n${properties.join(',\n')}\n}`;
 }
 
 // An arg whose name no attribute can have goes in a spread after the attributes, as the printed
@@ -112,10 +113,7 @@ function attribute(name: string, value: unknown): string {
 const object = (entries: [string, unknown][]) => {
   const properties = entries
     .filter(([, value]) => value !== undefined && !isAction(value))
-    .map(
-      ([name, value]) =>
-        `${/^[A-Za-z_$][\w$]*$/.test(name) ? name : printValue(name, name)}: ${printValue(value, name)}`
-    );
+    .map(([name, value]) => `${JSON.stringify(name)}: ${printValue(value, name)}`);
   return properties.length === 0 ? '{}' : `{ ${properties.join(', ')} }`;
 };
 
@@ -126,5 +124,10 @@ function text(name: string, value: unknown): string {
   }
   const plain =
     typeof value === 'number' || (typeof value === 'string' && /^\S(.*\S)?$/.test(value));
-  return plain && !/[{}<>&]/.test(String(value)) ? String(value) : `{${printValue(value, name)}}`;
+  if (plain && !/[{}<>&]/.test(String(value))) {
+    return String(value);
+  }
+  // JSX the story writes as an arg is content as it is.
+  const printed = printValue(value, name);
+  return printed.startsWith('<') ? printed : `{${printed}}`;
 }

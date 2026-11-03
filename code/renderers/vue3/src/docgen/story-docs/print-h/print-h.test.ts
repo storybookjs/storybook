@@ -4,7 +4,6 @@ import {
   type ESTreeNode as Node,
   type ReferenceContext,
   collectImportBindings,
-  fillWithStoryArgs,
   loadCsf,
   metaObject,
   normalizeStoryDeclaration,
@@ -18,35 +17,35 @@ import {
 import {
   classifyArgs,
   type ClassifiedArg,
+  type ClassifiedSlotArg,
   type VueDocgenArgInfo,
 } from '../classify-args/classify-args.ts';
 import { printH } from './print-h.ts';
-import { fillTemplate } from '../../../docs/fill-template.ts';
 import { createRenderContext } from '../../shared/render-primitives.ts';
-import { transformTemplate } from '../transform-template/transform-template.ts';
+import { renderSlotArgContent } from '../transform-template/render-slot-content.ts';
+import {
+  transformTemplate,
+  type TransformTemplateResult,
+} from '../transform-template/transform-template.ts';
 
 const DEFAULT_DOCGEN: VueDocgenArgInfo = { props: new Set(), events: new Set(), slots: new Set() };
 
 interface ParsedRender {
   args: ClassifiedArg[];
-  /** The node the story writes each arg with. */
-  written: Record<string, Node>;
+  unsetArgs: ReadonlySet<string>;
   argsParam?: string;
   expression?: Node;
   importBindings: ReturnType<typeof collectImportBindings>;
 }
 
-/**
- * Runs the real snippet pipeline for an h-render story: print the tree, put a hole at each arg it
- * reads, and fill the holes with the story's own args.
- */
+/** Runs the real snippet pipeline for an h-render story: print the tree, then transform it. */
 function renderStory(
   storySource: string,
   docgen: VueDocgenArgInfo = DEFAULT_DOCGEN,
   importSource = "import MyButton from './MyButton.vue';",
   metaRender?: string,
   componentImportStatement = "import MyButton from './MyButton.vue';"
-): { snippet: string } | undefined {
+): TransformTemplateResult | undefined {
   const parsed = parseRender(storySource, docgen, importSource, metaRender);
   if (!parsed.expression) {
     return undefined;
@@ -66,16 +65,15 @@ function renderStory(
     return undefined;
   }
 
-  const template = transformTemplate({
-    ...printed,
+  return transformTemplate({
     args: parsed.args,
+    componentImports: printed.componentImports,
+    componentName: 'MyButton',
     ctx,
-    slots: [...docgen.slots],
-    written: parsed.written,
+    importBindings: parsed.importBindings,
+    template: printed.template,
+    unsetArgs: parsed.unsetArgs,
   });
-  return template === undefined
-    ? undefined
-    : { snippet: fillWithStoryArgs(template, parsed.written, fillTemplate) };
 }
 
 /** The markup the printer emits before the engine substitutes args. */
@@ -139,12 +137,16 @@ ${storySource}
   const meta = metaObject(csf);
   const references: ReferenceContext = { editor: csf.editor, filePath: 'entry.ts' };
   const metaMembers = meta ? resolveObjectMembers(meta, references) : undefined;
-  const written = {
-    ...resolveArgsRecord(metaMembers?.properties.args, references).properties,
-    ...resolveArgsRecord(resolveBindingMembers(references, 'Primary')?.properties.args, references)
-      .properties,
-  };
-  const classified = classifyArgs(written, docgen);
+  const classified = classifyArgs(
+    {
+      ...resolveArgsRecord(metaMembers?.properties.args, references).properties,
+      ...resolveArgsRecord(
+        resolveBindingMembers(references, 'Primary')?.properties.args,
+        references
+      ).properties,
+    },
+    docgen
+  );
   // Mirrors resolveEffectiveRender in build-story-docs: story render wins, meta is the fallback.
   const storyRender = resolveRenderFunction(normalized.node, csf.editor);
   const renderResolution =
@@ -153,7 +155,7 @@ ${storySource}
   if (renderResolution.kind !== 'resolved') {
     return {
       args: classified.args,
-      written,
+      unsetArgs: classified.unset,
       importBindings: collectImportBindings(csf.program),
     };
   }
@@ -161,7 +163,7 @@ ${storySource}
   const [parameter] = renderResolution.node.params;
   return {
     args: classified.args,
-    written,
+    unsetArgs: classified.unset,
     argsParam: parameter?.type === 'Identifier' ? parameter.name : undefined,
     expression: returnedExpression(renderResolution.node),
     importBindings: collectImportBindings(csf.program),
@@ -459,7 +461,7 @@ export const Primary = {
     ).toBeUndefined();
   });
 
-  it('binds a slot read through an args member as the story writes it', () => {
+  it('renders a slot forwarded through an explicit args member read', () => {
     expect(
       renderStory(
         `
@@ -475,11 +477,14 @@ export const Primary = {
       )?.snippet
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
+      import ChildButton from './ChildButton.vue';
       import MyButton from './MyButton.vue';
       </script>
 
       <template>
-        <MyButton :default="() => h(ChildButton, { label: 'Click me' })" />
+        <MyButton>
+          <ChildButton label="Click me" />
+        </MyButton>
       </template>"
     `);
   });
@@ -520,19 +525,27 @@ export const Primary = {
   });
 
   it('renders zero-argument h slot functions with imports', () => {
-    const snippet = renderStory(
+    const parsed = parseRender(
       `
 export const Primary = {
-  render: () => h(MyButton, { default: () => h(ChildButton, { label: 'Click me' }) }),
+  args: {
+    default: () => h(ChildButton, { label: 'Click me' }),
+  },
+  render: (args) => h(MyButton, args),
 };
 `,
       { props: new Set(), events: new Set(), slots: new Set(['default']) },
       "import ChildButton from './ChildButton.vue';\nimport MyButton from './MyButton.vue';"
-    )?.snippet;
+    );
+    const arg = parsed.args.find(
+      (candidate): candidate is ClassifiedSlotArg => candidate.role === 'slot'
+    );
+    const ctx = createRenderContext();
+    const content = arg ? renderSlotArgContent(arg, ctx, parsed.importBindings) : undefined;
 
-    expect(snippet).toContain('<MyButton>\n    <ChildButton label="Click me" />\n  </MyButton>');
-    // The slot's own component import lands in the snippet's script.
-    expect(snippet).toContain("import ChildButton from './ChildButton.vue';");
+    expect(content).toBe('<ChildButton label="Click me" />');
+    // The slot's own component import lands in the context the snippet is being assembled in.
+    expect([...ctx.componentImports]).toEqual(["import ChildButton from './ChildButton.vue';"]);
   });
 
   it.each([

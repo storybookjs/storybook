@@ -1,9 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-import {
-  createModuleResolver,
-  typeScriptExtensionAlias,
-} from '../../common/utils/module-resolver.ts';
+import { createModuleResolver } from '../../common/utils/module-resolver.ts';
 import { jsTsSourceExtensions } from '../../shared/constants/extensions.ts';
 import type { Node } from '../estree/ast.ts';
 import { SourceEditor } from '../estree/editor.ts';
@@ -42,7 +39,6 @@ export function createStoryReferenceResolver(
     extensions: [...(options.extensions ?? []), ...jsTsSourceExtensions],
     mainFields: ['module', 'main'],
     tsconfig: 'auto',
-    fallbackExtensionAlias: typeScriptExtensionAlias,
   });
 
   return function openStoryReferences(): StoryReferenceResolver {

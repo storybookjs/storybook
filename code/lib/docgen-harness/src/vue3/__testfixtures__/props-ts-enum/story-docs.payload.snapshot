@@ -15,7 +15,7 @@ import TsEnumProps from './TsEnumProps.vue';
 </script>
 
 <template>
-  <TsEnumProps :level="1" :severity="Severity.Warning" />
+  <TsEnumProps :level="1" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
@@ -23,7 +23,7 @@ import TsEnumProps from './TsEnumProps.vue';
 </script>
 
 <template>
-  <TsEnumProps ⟦attr level level⟧ ⟦attr severity severity⟧ ⟦props -default -level -severity⟧⟦slots TsEnumProps default⟧
+  <TsEnumProps ⟦attr level level⟧ ⟦props -default -level -severity⟧ />
 </template>",
       "templateWarning": "Incomplete snippet: `severity: Severity.Warning` could not be resolved statically.",
       "warning": "Incomplete snippet: `severity: Severity.Warning` could not be resolved statically.",

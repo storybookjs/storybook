@@ -21,7 +21,13 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
+import { hasHoleBracket, writtenArg } from 'storybook/internal/docs-tools';
+import type {
+  Args,
+  StoryDoc,
+  StoryDocsPayload,
+  StoryDocsProviderInput,
+} from 'storybook/internal/types';
 
 import { printTemplate } from './print-template.ts';
 import { buildSnippetImportBlock } from './snippet-imports.ts';
@@ -32,7 +38,9 @@ const openStoryReferences = createStoryReferenceResolver({ extensions: ['.svelte
 const RENDER_WARNING = 'The render function is not reflected in this snippet.';
 
 export async function buildStoryDocsPayload(
-  input: StoryDocsProviderInput
+  input: StoryDocsProviderInput,
+  // For tests: the args each story is written with, as the preview fills its template with them.
+  { onStoryArgs }: { onStoryArgs?: (id: string, args: Args) => void } = {}
 ): Promise<StoryDocsPayload | undefined> {
   const path = getStoryImportPathFromEntry(input.entry);
   if (!path) return undefined;
@@ -84,7 +92,9 @@ export async function buildStoryDocsPayload(
         : {}),
     };
     try {
-      stories[id] = { ...doc, ...storySnippet(exportName, resolver.resolve(exportName), context) };
+      const resolved = resolver.resolve(exportName);
+      stories[id] = { ...doc, ...storySnippet(exportName, resolved, context) };
+      onStoryArgs?.(id, ownArgs(resolved.args));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       stories[id] = { ...doc, warning: `No static snippet: ${message}` };
@@ -110,7 +120,7 @@ function storySnippet(
   exportName: string,
   resolved: ResolvedStoryArgs,
   { file, bindings, importOverride, componentName }: StoryContext
-): Pick<StoryDoc, 'snippet' | 'warning'> {
+): Pick<StoryDoc, 'snippet' | 'warning' | 'template' | 'argCode'> {
   const story = file.stories.get(exportName);
   const template =
     story?.template ?? (componentName ? `<${componentName} {...args} />` : undefined);
@@ -125,14 +135,20 @@ function storySnippet(
     if (snippet !== undefined) snippets[key] = snippet;
   }
 
-  let markup = printTemplate({
-    code: template,
-    args: resolved.args,
-    typescript: file.typescript,
-    parameter: story?.parameter,
-    snippets,
-    argsComplete: resolved.unresolved.length === 0,
-  });
+  const print = (holes: boolean) =>
+    printTemplate({
+      code: template,
+      args: resolved.args,
+      typescript: file.typescript,
+      parameter: story?.parameter,
+      snippets,
+      argsComplete: resolved.unresolved.length === 0,
+      holes,
+    });
+  let markup = print(false);
+  // The same markup with a hole wherever it prints an arg's value, which the preview fills with
+  // the current args; code that already holds a hole bracket has no template.
+  let holes = hasHoleBracket(template) ? undefined : print(true);
   const importBlock = () =>
     buildSnippetImportBlock(markup, {
       bindings,
@@ -155,7 +171,9 @@ function storySnippet(
     for (const name of missing) {
       declared.add(name);
       const { parameters, body } = file.snippets.get(name)!;
-      markup += `\n\n{#snippet ${name}(${parameters})}${body}{/snippet}`;
+      const declaration = `\n\n{#snippet ${name}(${parameters})}${body}{/snippet}`;
+      markup += declaration;
+      holes &&= holes + declaration;
     }
     imported = importBlock();
   }
@@ -167,10 +185,52 @@ function storySnippet(
     unresolvedWarning(resolved.unresolved.filter((name) => !imported.declared.includes(name))),
     renders ? RENDER_WARNING : undefined,
   ].filter(Boolean);
+  const withImports = (code: string) => (imported.block ? `${imported.block}\n\n${code}` : code);
   return {
-    snippet: imported.block ? `${imported.block}\n\n${markup}` : markup,
+    snippet: withImports(markup),
     ...(warnings.length ? { warning: warnings.join(' ') } : {}),
+    ...(holes === undefined
+      ? {}
+      : { template: withImports(holes), argCode: argCode(resolved.args) }),
   };
+}
+
+/**
+ * The code a story writes each arg with, which the preview fills a template with while the arg
+ * keeps that value: every arg but a string, `true`, `false`, `null`, `undefined` or a number written
+ * as the preview prints it, which print as their value.
+ */
+export function argCode(args: Record<string, Node>): Record<string, string> {
+  const code: Record<string, string> = {};
+  for (const [name, value] of Object.entries(args)) {
+    const node = unwrapExpression(value);
+    if (literalOf(node) === undefined) {
+      code[name] = textOf(node);
+    }
+  }
+  return code;
+}
+
+/** The value of an arg written as a literal the preview prints as written, as `{ value }`. */
+export function literalOf(node: Node): { value: unknown } | undefined {
+  if (node.type === 'Identifier' && node.name === 'undefined') return { value: undefined };
+  if (node.type === 'Literal') {
+    const { value } = node;
+    if (typeof value === 'string' || typeof value === 'boolean' || value === null) {
+      return { value };
+    }
+    return typeof value === 'number' && textOf(node) === String(value) ? { value } : undefined;
+  }
+  if (
+    node.type === 'UnaryExpression' &&
+    node.operator === '-' &&
+    node.argument.type === 'Literal' &&
+    typeof node.argument.value === 'number' &&
+    textOf(node) === String(-node.argument.value)
+  ) {
+    return { value: -node.argument.value };
+  }
+  return undefined;
 }
 
 // Print an arg that holds a snippet as a `{#snippet}` child: a snippet the story file declares,
@@ -219,4 +279,18 @@ function snippetArg(
     }
   }
   return undefined;
+}
+
+// The args a story is written with, as the preview has them before a control changes one: each
+// with `argCode` as that code, any other as its value.
+function ownArgs(args: Record<string, Node>): Args {
+  const code = argCode(args);
+  return Object.fromEntries(
+    Object.entries(args).map(([name, node]) => [
+      name,
+      Object.hasOwn(code, name)
+        ? writtenArg(code[name]!)
+        : literalOf(unwrapExpression(node))!.value,
+    ])
+  );
 }

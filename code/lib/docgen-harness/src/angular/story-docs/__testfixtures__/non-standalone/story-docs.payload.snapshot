@@ -22,7 +22,7 @@ export class DemoComponent {
 @Component({
   selector: 'app-demo',
   imports: [],
-  template: `<sb-non-standalone ⟦props = label⟧ (pressed)="pressed($event)" />`,
+  template: `<sb-non-standalone [label]="⟦bind label⟧" (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}

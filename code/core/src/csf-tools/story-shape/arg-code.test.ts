@@ -1,14 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  type FillSnippetTemplate,
-  asOperand,
-  UnprintableArgError,
-  fillHoles,
-  printValue,
-} from '../../docs-tools/snippetTemplate.ts';
 import { type ESTree, type ESTreeNode, parseExpression } from '../index.ts';
-import { argCode, fillStoryTemplate, fillWithStoryArgs } from './arg-code.ts';
+import { argCode } from './arg-code.ts';
 
 const argsOf = (code: string): Record<string, ESTreeNode> => {
   const object = parseExpression(code) as ESTree.ObjectExpression;
@@ -19,12 +12,6 @@ const argsOf = (code: string): Record<string, ESTreeNode> => {
     })
   );
 };
-
-const fill: FillSnippetTemplate = (template, args) =>
-  fillHoles(template, (kind, [name = '']) => {
-    const printed = printValue(args[name], name);
-    return kind === 'operand' ? asOperand(printed) : printed;
-  });
 
 describe('argCode', () => {
   it('leaves out a plain string, number, boolean, null or undefined, which prints as its value', () => {
@@ -73,54 +60,5 @@ describe('argCode', () => {
       c: '(<>Hi</>)',
       d: '<>Hi</>',
     });
-  });
-});
-
-describe('fillWithStoryArgs', () => {
-  it('fills the template with the code of each arg that has it and the value of any other', () => {
-    expect(
-      fillWithStoryArgs(
-        'label(⟦value label⟧, ⟦operand max⟧.toFixed(0), ⟦value onClick⟧)',
-        argsOf(`{ label: 'Go', max: MB * 5, onClick: () => null }`),
-        fill
-      )
-    ).toBe('label("Go", (MB * 5).toFixed(0), () => null)');
-  });
-
-  it('prints the value of an arg named as an Object member, such as constructor', () => {
-    expect(fillWithStoryArgs('⟦value constructor⟧', argsOf("{ constructor: 'Line' }"), fill)).toBe(
-      '"Line"'
-    );
-  });
-});
-
-describe('fillStoryTemplate', () => {
-  it('returns the static snippet with the template, its argCode and the warning', () => {
-    expect(
-      fillStoryTemplate('f(⟦value format⟧)', argsOf(`{ format: shout }`), fill, 'Uses `shout`.')
-    ).toEqual({
-      snippet: 'f(shout)',
-      template: 'f(⟦value format⟧)',
-      argCode: { format: 'shout' },
-      templateWarning: 'Uses `shout`.',
-    });
-  });
-
-  it('returns nothing where the filler cannot print an arg', () => {
-    const unprintable: FillSnippetTemplate = () => {
-      throw new UnprintableArgError('format');
-    };
-    expect(fillStoryTemplate('f(⟦value format⟧)', argsOf(`{ format: 1 }`), unprintable)).toBe(
-      undefined
-    );
-  });
-
-  it('throws any other error of the filler', () => {
-    const broken: FillSnippetTemplate = () => {
-      throw new TypeError('bug');
-    };
-    expect(() => fillStoryTemplate('f(⟦value format⟧)', argsOf(`{ format: 1 }`), broken)).toThrow(
-      'bug'
-    );
   });
 });

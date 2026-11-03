@@ -28,7 +28,7 @@ import { MetaRenderComponent } from './meta-render.component.ts';
   template: `<sb-meta-render [label]="label"></sb-meta-render>`,
 })
 export class DemoComponent {
-  label = ⟦value label⟧;
+  label = ⟦field label⟧;
 }",
     },
   },

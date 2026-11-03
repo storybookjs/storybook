@@ -4,10 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsfixtures-lit-property-only--args-default-render": {
-      "argCode": {
-        "config": "{ dense: true, theme: 'dark' }",
-        "items": "[{ name: 'Alpha' }, { name: 'Beta' }]",
-      },
       "id": "webcomponentsfixtures-lit-property-only--args-default-render",
       "name": "Args Default Render",
       "snippet": "<lit-property-only label="Default render"></lit-property-only>",
@@ -15,10 +11,6 @@
       "warning": "Incomplete snippet: properties without an attribute: `items`, `config`.",
     },
     "webcomponentsfixtures-lit-property-only--dom-node": {
-      "argCode": {
-        "config": "{ dense: true, theme: 'dark' }",
-        "items": "[{ name: 'Alpha' }, { name: 'Beta' }]",
-      },
       "id": "webcomponentsfixtures-lit-property-only--dom-node",
       "name": "Dom Node",
       "snippet": "<lit-property-only label="Configured"></lit-property-only>",
@@ -27,14 +19,10 @@
 Incomplete snippet: properties without an attribute: `items`, `config`.",
     },
     "webcomponentsfixtures-lit-property-only--lit-template": {
-      "argCode": {
-        "config": "{ dense: true, theme: 'dark' }",
-        "items": "[{ name: 'Alpha' }, { name: 'Beta' }]",
-      },
       "id": "webcomponentsfixtures-lit-property-only--lit-template",
       "name": "Lit Template",
       "snippet": "<lit-property-only label="Configured"></lit-property-only>",
-      "template": "<lit-property-only label="⟦quoted label⟧"></lit-property-only>",
+      "template": "<lit-property-only ⟦attr label label bind⟧></lit-property-only>",
       "warning": "Incomplete snippet: properties without an attribute: `items`, `config`.",
     },
   },

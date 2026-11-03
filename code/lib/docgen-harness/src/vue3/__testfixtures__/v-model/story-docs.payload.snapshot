@@ -31,7 +31,7 @@ const modelValue = ref(⟦value modelValue script ?⟧);
 </script>
 
 <template>
-  <VModelInput v-model:checked="checked" v-model="modelValue" ⟦props -checked -modelValue⟧⟦slots VModelInput⟧
+  <VModelInput v-model:checked="checked" v-model="modelValue" ⟦props -checked -modelValue⟧ />
 </template>",
     },
   },

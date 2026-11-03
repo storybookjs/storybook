@@ -38,8 +38,7 @@ export type AliasValue =
   | { kind: 'template'; source?: string; template: HtmlTemplate }
   | { kind: 'value'; value: unknown };
 
-/** The modules a story imports lit's `html` from. */
-export const TEMPLATE_TAG_SOURCES = ['lit', 'lit-html', 'lit-element'];
+const TEMPLATE_TAG_SOURCES = ['lit', 'lit-html', 'lit-element'];
 
 export function resolveHtmlTemplate(
   renderFunction: RenderFunction,

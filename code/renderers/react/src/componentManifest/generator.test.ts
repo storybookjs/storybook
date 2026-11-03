@@ -254,12 +254,7 @@ test('manifests generates correct id, name, description and examples ', async ()
               "description": undefined,
               "id": "example-header--logged-in",
               "name": "Logged In",
-              "snippet": "const LoggedIn = () => <Header
-      onLogin={fn()}
-      onLogout={fn()}
-      onCreateAccount={fn()}
-      user={{ name: 'Jane Doe' }}
-    />;",
+              "snippet": "const LoggedIn = () => <Header onLogin={fn()} onLogout={fn()} onCreateAccount={fn()} user={{ name: 'Jane Doe' }} />;",
               "summary": undefined,
             },
             {
@@ -416,10 +411,7 @@ test('fall back to index title when no component name', async () => {
 test('keeps the story import for a component in a private app package', async () => {
   const code = withCSF3('export const Primary = () => <Button />;');
 
-  const manifest = await getManifestForStory(code, {
-    name: 'my-app',
-    private: true,
-  });
+  const manifest = await getManifestForStory(code, { name: 'my-app', private: true });
 
   expect(manifest?.import).toBe("import { Button } from './Button';");
 });

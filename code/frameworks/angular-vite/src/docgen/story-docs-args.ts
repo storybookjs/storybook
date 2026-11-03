@@ -8,12 +8,10 @@ import {
   parseModule,
   reindent,
   unwrapExpression,
-  walk,
-  writtenCode,
 } from 'storybook/internal/csf-tools';
 
 import type { SnippetEnum } from './build-docgen.ts';
-import { isValidIdentifier } from '../template-grammar.ts';
+import { escapeAttributeExpression, printExpressionValue } from '../template-grammar.ts';
 
 const EVAL_FAILED = Symbol('story-docs-eval-failed');
 
@@ -27,9 +25,7 @@ export const createArgExternalizer =
   (enums: SnippetEnum[]) =>
   (node: Node): Node | undefined => {
     const value = evaluateNode(node, enums);
-    return value === EVAL_FAILED
-      ? undefined
-      : parseExpression(printExpressionValue(value, new Set()));
+    return value === EVAL_FAILED ? undefined : parseExpression(printExpressionValue(value));
   };
 
 /**
@@ -41,76 +37,33 @@ export const createArgExternalizer =
  */
 export const evaluateArgLiteral = (node: Node, enums: SnippetEnum[]): string | undefined => {
   const value = evaluateNode(unwrapExpression(node), enums);
-  return value === EVAL_FAILED ? undefined : printExpressionValue(value, new Set());
+  return value === EVAL_FAILED ? undefined : printExpressionValue(value);
 };
 
 export const argFieldValue = (node: Node): string =>
   expandTabs(detachedTextOf(unwrapExpression(node)));
 
-/**
- * The arg as the story writes it, but each part that evaluates, at any depth, as its value: an
- * Angular binding reads neither the host's enums nor TypeScript or numeric separators. Its tabs are
- * spaces, as in {@link argFieldValue}.
- */
-export const writtenValue = (node: Node, enums: SnippetEnum[]): Node => {
-  const literal = evaluateArgLiteral(node, enums);
-  if (literal !== undefined) {
-    return parseExpression(literal);
-  }
-  // Read again on its own, with the parentheses the story wrote, so its offsets index into the
-  // `(${text}\n)` the fragment is parsed from.
-  const text = writtenCode(node);
-  const own = parseExpression(text);
-  const code = `(${text}\n)`;
-  const replaced = writtenText(own, code, enums);
-  return parseExpression(
-    expandTabs(
-      replaced === undefined
-        ? text
-        : code.slice(1, own.start) + replaced + code.slice(own.end, code.length - 2)
-    )
-  );
-};
-
-// The code of `node` with each part that evaluates as its value, or `undefined` when no part does.
-const writtenText = (node: Node, code: string, enums: SnippetEnum[]): string | undefined => {
-  // A binding reads a string literal in either quote as written.
-  if (node.type === 'Literal' && typeof node.value === 'string') {
-    return undefined;
-  }
-  const literal = evaluateArgLiteral(node, enums);
-  if (literal !== undefined) {
-    return literal;
-  }
-  let text = '';
-  let cursor = node.start;
-  walk(node, (child, parent) => {
-    if (child === node) {
-      return;
-    }
-    // A tag reads its template literal, which is no value.
-    const replaced =
-      parent?.type === 'TaggedTemplateExpression' && parent.quasi === child
-        ? undefined
-        : writtenText(child, code, enums);
-    if (replaced !== undefined) {
-      text += code.slice(cursor, child.start) + replaced;
-      cursor = child.end;
-    }
-    return false;
-  });
-  return cursor === node.start ? undefined : text + code.slice(cursor, node.end);
-};
-
 // An arg no static evaluation could reduce to a value falls back to its source text, without the
 // comments a template expression cannot take (a class field keeps them). Every expression is
 // escaped for the attribute position it lands in: the double-quote delimiter and text Angular's
 // lexer would decode as a character reference survive the round-trip unchanged.
-export const evaluateArgExpression = (node: Node, enums: SnippetEnum[]): string => {
-  const literal = evaluateArgLiteral(node, enums);
-  return escapeAttributeExpression(
-    literal ?? expandTabs(withoutComments(detachedTextOf(unwrapExpression(node))))
-  );
+export const evaluateArgExpression = (node: Node, enums: SnippetEnum[]): string =>
+  escapeAttributeExpression(evaluateArgLiteral(node, enums) ?? argExpressionCode(node));
+
+/** The code an arg is written with, as a binding carries it before its attribute escaping. */
+export const argExpressionCode = (node: Node): string =>
+  expandTabs(withoutComments(detachedTextOf(unwrapExpression(node))));
+
+/**
+ * The value an arg evaluates to, as the preview holds it while no control changed it, or
+ * `undefined` in `found: false` when it needs the story to run.
+ */
+export const evaluateArgValue = (
+  node: Node,
+  enums: SnippetEnum[]
+): { found: true; value: unknown } | { found: false } => {
+  const value = evaluateNode(unwrapExpression(node), enums);
+  return value === EVAL_FAILED ? { found: false } : { found: true, value };
 };
 
 // Tabs on code lines become spaces, deepest first so each line is converted once. Lines inside
@@ -142,42 +95,6 @@ const withoutComments = (code: string): string => {
   result += wrapped.slice(cursor);
   return result.slice(1, -2);
 };
-
-// Angular expression strings support backslash escapes, so quoting stays lossless.
-const quoteExpressionString = (value: string): string =>
-  `'${value
-    .replace(/\\/g, '\\\\')
-    .replace(/'/g, "\\'")
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '\\r')}'`;
-
-// Renders an evaluated arg as a template expression, in the shape the live snippet's `printValue`
-// prints it, but losslessly for strings carrying quotes.
-const printExpressionValue = (value: unknown, seen: Set<unknown>): string => {
-  if (typeof value === 'string') {
-    return quoteExpressionString(value);
-  }
-  if (typeof value !== 'object' || value === null) {
-    return `${value}`;
-  }
-  if (seen.has(value)) {
-    return quoteExpressionString('[Circular]');
-  }
-  seen.add(value);
-  if (Array.isArray(value)) {
-    return `[${value.map((element) => printExpressionValue(element ?? null, seen)).join(', ')}]`;
-  }
-  const entries = Object.entries(value)
-    .filter(([, entryValue]) => entryValue !== undefined)
-    .map(
-      ([key, entryValue]) =>
-        `${isValidIdentifier(key) ? key : quoteExpressionString(key)}: ${printExpressionValue(entryValue, seen)}`
-    );
-  return entries.length === 0 ? '{}' : `{ ${entries.join(', ')} }`;
-};
-
-const escapeAttributeExpression = (expression: string): string =>
-  expression.replace(/&(?=#|\w+;)/g, '&amp;').replace(/"/g, '&quot;');
 
 const evaluateNode = (node: Node, enums: SnippetEnum[]): unknown => {
   const unwrapped = unwrapExpression(node);

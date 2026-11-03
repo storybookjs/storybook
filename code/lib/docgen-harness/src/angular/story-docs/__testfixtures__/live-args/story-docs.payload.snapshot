@@ -15,9 +15,7 @@ import { LiveArgsComponent } from './live-args.component.ts';
   imports: [LiveArgsComponent],
   template: `<sb-live-args [label]="describe()"></sb-live-args>`,
 })
-export class DemoComponent {
-  describe = () => 'Go' || 'none';
-}",
+export class DemoComponent {}",
       "template": "import { Component } from '@angular/core';
 import { LiveArgsComponent } from './live-args.component.ts';
 
@@ -26,9 +24,9 @@ import { LiveArgsComponent } from './live-args.component.ts';
   imports: [LiveArgsComponent],
   template: `<sb-live-args [label]="describe()"></sb-live-args>`,
 })
-export class DemoComponent {
-  describe = () => ⟦operand label⟧ || 'none';
-}",
+export class DemoComponent {}",
+      "templateWarning": "Incomplete snippet: `describe` could not be provided, since the story declares no such arg.",
+      "warning": "Incomplete snippet: `describe` could not be provided, since the story declares no such arg.",
     },
     "storydocs-live-args--imported-control": {
       "argCode": {
@@ -53,7 +51,7 @@ import { LiveArgsComponent } from './live-args.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [LiveArgsComponent],
-  template: `<sb-live-args ⟦props = control formatter label⟧ (pressed)="pressed($event)" />`,
+  template: `<sb-live-args [control]="⟦bind control⟧" (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}
@@ -84,7 +82,7 @@ import { LiveArgsComponent } from './live-args.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [LiveArgsComponent],
-  template: `<sb-live-args ⟦props = label formatter control⟧ (pressed)="pressed($event)" />`,
+  template: `<sb-live-args [label]="⟦bind label⟧" [formatter]="⟦bind formatter⟧" (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}
@@ -113,16 +111,14 @@ import { LiveArgsComponent } from './live-args.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [LiveArgsComponent],
-  template: `<sb-live-args ⟦props = label control formatter⟧ (pressed)="pressed($event)" />`,
+  template: `<sb-live-args [label]="⟦bind label⟧" (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}
 }",
     },
     "storydocs-live-args--own-markup-function": {
-      "argCode": {
-        "formatter": "(value) => value.trim()",
-      },
+      "argCode": {},
       "id": "storydocs-live-args--own-markup-function",
       "name": "Own Markup Function",
       "snippet": "import { Component } from '@angular/core';
@@ -135,7 +131,6 @@ import { LiveArgsComponent } from './live-args.component.ts';
 })
 export class DemoComponent {
   label = 'Save';
-  formatter = (value) => value.trim();
 }",
       "template": "import { Component } from '@angular/core';
 import { LiveArgsComponent } from './live-args.component.ts';
@@ -146,9 +141,10 @@ import { LiveArgsComponent } from './live-args.component.ts';
   template: `<sb-live-args [label]="label" [formatter]="formatter"></sb-live-args>`,
 })
 export class DemoComponent {
-  label = ⟦value label⟧;
-  formatter = ⟦value formatter⟧;
+  label = ⟦field label⟧;
 }",
+      "templateWarning": "Incomplete snippet: `(value) => value.trim()` could not be resolved statically.",
+      "warning": "Incomplete snippet: `(value) => value.trim()` could not be resolved statically.",
     },
   },
 }

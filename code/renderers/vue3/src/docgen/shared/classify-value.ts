@@ -53,8 +53,6 @@ export const RESOLVABLE_GLOBALS = new Set([
   'URLSearchParams',
   'WeakMap',
   'WeakSet',
-  'clearInterval',
-  'clearTimeout',
   'console',
   'decodeURI',
   'decodeURIComponent',
@@ -64,8 +62,6 @@ export const RESOLVABLE_GLOBALS = new Set([
   'isNaN',
   'parseFloat',
   'parseInt',
-  'setInterval',
-  'setTimeout',
   'undefined',
 ]);
 

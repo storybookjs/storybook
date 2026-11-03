@@ -4,9 +4,7 @@
 import type { CsfFile } from '../CsfFile.ts';
 import type { Node } from '../estree/ast.ts';
 import { type ImportRef } from './import-statements.ts';
-import { collectImportBindings } from './imports.ts';
-import { isSelfContained, resolveArgValue } from './resolve-arg-value.ts';
-import { rebaseSpecifier, resolveSpreadMeta } from './spread-meta.ts';
+import { resolveArgValue } from './resolve-arg-value.ts';
 import {
   type ReferenceContext,
   type ResolvedMembers,
@@ -27,11 +25,7 @@ export interface ResolvedStoryArgs {
   unresolved: string[];
   /** The story's own config members, spreads and names followed. */
   storyMembers: ResolvedMembers;
-  /**
-   * The meta's config members, spreads and names followed. A member the meta of another story file
-   * supplies, through `{ ...meta }`, is `shadowed` when its value names anything, as those names
-   * resolve in that file; its `args` are read there, into `args`.
-   */
+  /** The meta's config members, spreads and names followed. */
   metaMembers: ResolvedMembers;
 }
 
@@ -58,57 +52,10 @@ export function createStoryArgsResolver(
   };
 
   const metaNode = csf._metaNodeIsSynthetic ? undefined : csf._metaNode;
-  const spreadMeta = resolveSpreadMeta(csf, ctx);
-  const ownMembers = metaNode
-    ? resolveObjectMembers(spreadMeta?.own ?? metaNode, ctx)
+  const metaMembers = metaNode
+    ? resolveObjectMembers(metaNode, ctx)
     : { properties: {}, shadowed: [], unresolved: [] };
-  const baseMembers = spreadMeta && resolveObjectMembers(spreadMeta.object, spreadMeta.ctx);
-  const elsewhere = Object.entries(baseMembers?.properties ?? {})
-    .filter(([key, node]) => key !== 'args' && !isSelfContained(node))
-    .map(([key]) => key);
-  const metaMembers: ResolvedMembers = baseMembers
-    ? {
-        properties: { ...baseMembers.properties, ...ownMembers.properties },
-        shadowed: [...new Set([...baseMembers.shadowed, ...elsewhere])].filter(
-          (key) => !(key in ownMembers.properties)
-        ),
-        unresolved: [...baseMembers.unresolved, ...ownMembers.unresolved],
-      }
-    : ownMembers;
-  // Meta args another story file writes resolve in that file, and so do the imports they need.
-  const metaCtx = spreadMeta && !('args' in ownMembers.properties) ? spreadMeta.ctx : ctx;
-  const metaArgs = resolveArgsRecord(metaMembers.properties.args, metaCtx);
-  const storyImports = collectImportBindings(ctx.editor.program);
-  // A name the story file binds to something else cannot also import the other file's value.
-  const clashes = (ref: ImportRef): ref is ImportRef & { localImportName: string } => {
-    if (ref.localImportName === undefined) {
-      return false;
-    }
-    const own = storyImports.get(ref.localImportName);
-    return own
-      ? own.importId !== ref.importId || own.importName !== ref.importName
-      : ctx.editor.scopes.program.bindings.has(ref.localImportName);
-  };
-  const readArg = (node: Node, inMeta: boolean) => {
-    const value = resolveArgValue(node, inMeta ? metaCtx : ctx);
-    if (!inMeta || metaCtx === ctx) {
-      return value;
-    }
-    const imports: ImportRef[] = [];
-    const unresolved = [...value.unresolved];
-    for (const ref of value.imports) {
-      const rebased = {
-        ...ref,
-        importId: ref.importId && rebaseSpecifier(ref.importId, metaCtx.filePath, ctx.filePath),
-      };
-      if (clashes(rebased)) {
-        unresolved.push(rebased.localImportName);
-      } else {
-        imports.push(rebased);
-      }
-    }
-    return { ...value, imports, unresolved };
-  };
+  const metaArgs = resolveArgsRecord(metaMembers.properties.args, ctx);
 
   return {
     ctx,
@@ -139,7 +86,7 @@ export function createStoryArgsResolver(
         ...metaArgs.properties,
         ...storyArgs.properties,
       })) {
-        const value = readArg(node, !(key in storyArgs.properties));
+        const value = resolveArgValue(node, ctx);
         args[key] = value.node;
         imports.push(...value.imports);
         unresolved.push(...value.unresolved);

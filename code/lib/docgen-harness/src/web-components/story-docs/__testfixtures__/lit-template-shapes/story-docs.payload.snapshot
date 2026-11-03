@@ -4,25 +4,22 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsstorydocs-lit-template-shapes--aliased": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--aliased",
       "name": "Aliased",
       "snippet": "<lit-template-shapes label="Aliased" count="7" heading="Head">
   <b>Aliased</b>
 </lit-template-shapes>",
-      "template": "<lit-template-shapes label="⟦quoted label⟧" count="⟦quoted count⟧" ⟦attr heading heading field⟧>
+      "template": "<lit-template-shapes ⟦attr label label bind⟧ ⟦attr count count bind⟧ ⟦attr heading heading field⟧>
   <b>⟦text label⟧</b>
 </lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--attributes": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--attributes",
       "name": "Attributes",
       "snippet": "<lit-template-shapes label="Alpha" count="2" disabled></lit-template-shapes>",
-      "template": "<lit-template-shapes label="⟦quoted label⟧" count="⟦quoted count⟧" ⟦bool disabled disabled⟧></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr label label bind⟧ ⟦attr count count bind⟧ ⟦bool disabled disabled⟧></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--class-map": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--class-map",
       "name": "Class Map",
       "snippet": "<lit-template-shapes></lit-template-shapes>",
@@ -30,30 +27,24 @@
       "warning": "Incomplete snippet: `classMap({ active: Boolean(args.active) })` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-template-shapes--destructured": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--destructured",
       "name": "Destructured",
       "snippet": "<lit-template-shapes label="Destructured" count="6"></lit-template-shapes>",
-      "template": "<lit-template-shapes label="⟦quoted label⟧" count="⟦quoted count⟧"></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr label label bind⟧ ⟦attr count count bind⟧></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--disabled-false": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--disabled-false",
       "name": "Disabled False",
       "snippet": "<lit-template-shapes label="Beta" count="3"></lit-template-shapes>",
-      "template": "<lit-template-shapes label="⟦quoted label⟧" count="⟦quoted count⟧" ⟦bool disabled disabled⟧></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr label label bind⟧ ⟦attr count count bind⟧ ⟦bool disabled disabled⟧></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--if-defined": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--if-defined",
       "name": "If Defined",
       "snippet": "<lit-template-shapes count="4"></lit-template-shapes>",
       "template": "<lit-template-shapes ⟦attr label label defined⟧ ⟦attr count count defined⟧></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--listener": {
-      "argCode": {
-        "onShapeChange": "() => {}",
-      },
       "id": "webcomponentsstorydocs-lit-template-shapes--listener",
       "name": "Listener",
       "snippet": "<lit-template-shapes></lit-template-shapes>
@@ -72,16 +63,12 @@
 </script>",
     },
     "webcomponentsstorydocs-lit-template-shapes--member-path": {
-      "argCode": {
-        "user": "{ name: 'Bob', admin: false }",
-      },
       "id": "webcomponentsstorydocs-lit-template-shapes--member-path",
       "name": "Member Path",
       "snippet": "<lit-template-shapes label="Bob">guest</lit-template-shapes>",
       "template": "<lit-template-shapes label="Bob">guest</lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--nested": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--nested",
       "name": "Nested",
       "snippet": "<lit-template-shapes>
@@ -92,10 +79,6 @@
 </lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--nested-listener": {
-      "argCode": {
-        "onInnerClick": "() => {}",
-        "onShapeChange": "() => {}",
-      },
       "id": "webcomponentsstorydocs-lit-template-shapes--nested-listener",
       "name": "Nested Listener",
       "snippet": "<lit-template-shapes>
@@ -119,23 +102,18 @@
       "warning": "Incomplete snippet: listeners not shown: `@click`.",
     },
     "webcomponentsstorydocs-lit-template-shapes--nothing": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--nothing",
       "name": "Nothing",
       "snippet": "<lit-template-shapes label="Set"></lit-template-shapes>",
       "template": "<lit-template-shapes label="Set"></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--prefixed-class": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--prefixed-class",
       "name": "Prefixed Class",
       "snippet": "<lit-template-shapes class="btn-large"></lit-template-shapes>",
       "template": "<lit-template-shapes class="btn-⟦quoted size⟧"></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--property-only": {
-      "argCode": {
-        "items": "[{ name: 'Alpha' }]",
-      },
       "id": "webcomponentsstorydocs-lit-template-shapes--property-only",
       "name": "Property Only",
       "snippet": "<lit-template-shapes></lit-template-shapes>",
@@ -143,32 +121,28 @@
       "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
     "webcomponentsstorydocs-lit-template-shapes--property-paired": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--property-paired",
       "name": "Property Paired",
       "snippet": "<lit-template-shapes heading="Heading" open></lit-template-shapes>",
       "template": "<lit-template-shapes ⟦attr heading heading field⟧ ⟦attr open open field⟧></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--property-paired-false": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--property-paired-false",
       "name": "Property Paired False",
       "snippet": "<lit-template-shapes heading="Closed"></lit-template-shapes>",
       "template": "<lit-template-shapes ⟦attr heading heading field⟧ ⟦attr open open field⟧></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--quoted-and-multi-hole": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--quoted-and-multi-hole",
       "name": "Quoted And Multi Hole",
       "snippet": "<lit-template-shapes class="card warm large" label="Quoted"></lit-template-shapes>",
-      "template": "<lit-template-shapes class="card ⟦quoted tone⟧ ⟦quoted size⟧" label="⟦quoted label⟧"></lit-template-shapes>",
+      "template": "<lit-template-shapes class="card ⟦quoted tone⟧ ⟦quoted size⟧" ⟦attr label label bind⟧></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--unbound-arg": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-template-shapes--unbound-arg",
       "name": "Unbound Arg",
       "snippet": "<lit-template-shapes label="Bound"></lit-template-shapes>",
-      "template": "<lit-template-shapes label="⟦quoted label⟧"></lit-template-shapes>",
+      "template": "<lit-template-shapes ⟦attr label label bind⟧></lit-template-shapes>",
       "warning": "Incomplete snippet: args not bound by the render template: `count`.",
     },
   },

@@ -246,13 +246,15 @@ const liveStories = (
           join(fixtureCase.testDir, STORIES_FILE)
         );
         const composed = Object.entries(composeStories(stories) as Record<string, { args: Args }>);
-        return Object.values(payload?.stories ?? {}).flatMap(({ id, template, argCode = {} }) => {
-          // A composed story is named after its export, so it is found by the id that name makes.
-          const args = composed.find(([name]) =>
-            id.endsWith(`--${sanitize(storyNameFromExport(name))}`)
-          )?.[1].args;
-          return template !== undefined && args ? [{ id, template, args, argCode }] : [];
-        });
+        return Object.values(payload?.stories ?? {}).flatMap(
+          ({ id, snippet, template, argCode = {} }) => {
+            // A composed story is named after its export, so it is found by the id that name makes.
+            const args = composed.find(([name]) =>
+              id.endsWith(`--${sanitize(storyNameFromExport(name))}`)
+            )?.[1].args;
+            return template !== undefined && args ? [{ id, snippet, template, args, argCode }] : [];
+          }
+        );
       })
   )
 ).flat();
@@ -307,13 +309,13 @@ function changed(value: unknown): unknown {
 }
 
 describe('vue3 story templates', () => {
-  it.each(liveStories)('$id compiles when filled with its args, as written', (story) => {
+  it.each(liveStories)('$id is its snippet when filled with its args, as written', (story) => {
     const written = Object.entries(story.argCode).map(([name, code]) => [name, writtenArg(code)]);
-    const filled = fill({
-      template: story.template,
-      args: { ...story.args, ...Object.fromEntries(written) },
+    const filled = fillTemplate(story.template, {
+      ...story.args,
+      ...Object.fromEntries(written),
     });
-    expect(filled === undefined ? [] : compileErrors(filled)).toEqual([]);
+    expect(filled).toBe(story.snippet);
   });
 
   it.each(liveStories)('$id compiles when filled with changed args', (story) => {
@@ -359,7 +361,6 @@ describe('vue3 filled story templates', () => {
 
   it.each<[Exclude<keyof typeof sharedValuesStories, 'default'>, Record<string, unknown>]>([
     ['ForEachItem', { items: [{ id: 3 }, { id: 4 }, { id: 5 }] }],
-    ['FilterByItem', { items: [{ id: 1 }, { id: 2 }], item: { id: 1 } }],
     ['SetupMutation', { items: ['x', 'y'] }],
     ['SpreadWithClass', { label: HOSTILE }],
   ])('%s renders as its story', async (name, args) => {

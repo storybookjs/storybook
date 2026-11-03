@@ -1,17 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  type ESTreeNode,
   createStoryArgsResolver,
-  fillWithStoryArgs,
   loadCsf,
   resolveEffectiveRender,
 } from 'storybook/internal/csf-tools';
 
-import { fillTemplate } from '../../docs/fill-template.ts';
 import type {
   ManifestClassField,
   ManifestDeclaration,
 } from '../component-docgen/manifest/types.ts';
+import { fillTemplate } from '../../docs/fill-template.ts';
+import { evaluateArgValue } from './arg-values.ts';
 import { printHtmlTemplate } from './template-print.ts';
 import { resolveHtmlTemplate } from './template-scope.ts';
 
@@ -58,11 +59,21 @@ const renderTemplate = (storySource: string) => {
   }
   const template = resolveHtmlTemplate(render.node, csf);
   expect(template).toBeDefined();
-  const { args } = resolver.resolve(story);
-  // The snippet is the template filled with the story's own args.
-  const { template: printed, ...rest } = printHtmlTemplate(template!, args, declaration);
-  return { ...rest, snippet: fillWithStoryArgs(printed, args, fillTemplate) };
+  const args = resolver.resolve(story).args;
+  const { template: holes, ...printed } = printHtmlTemplate(template!, args, declaration);
+  // The template filled with the story's own args is its snippet.
+  expect(fillTemplate(holes, ownArgs(args))).toBe(printed.snippet);
+  return printed;
 };
+
+// The args as the story is written with them, as the preview has them before a control changes.
+const ownArgs = (args: Record<string, ESTreeNode>) =>
+  Object.fromEntries(
+    Object.entries(args).flatMap(([key, node]) => {
+      const value = evaluateArgValue(node);
+      return value.kind === 'value' ? [[key, value.value]] : [];
+    })
+  );
 
 describe('html template story snippets', () => {
   it.each([

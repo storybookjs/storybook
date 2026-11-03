@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsstorydocs-lit-helper-shapes--branching-helper": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--branching-helper",
       "name": "Branching Helper",
       "snippet": "<lit-template-shapes label="Alpha" disabled></lit-template-shapes>",
@@ -12,7 +11,6 @@
       "warning": "Incomplete snippet: `(args) => { if (args.disabled) { return html`<lit-template-shapes disabled></lit-template-shapes>`; } return Card(args); }` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--csf-2-helper": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--csf-2-helper",
       "name": "Csf 2 Helper",
       "snippet": "<lit-template-shapes label="Alpha"></lit-template-shapes>",
@@ -20,7 +18,6 @@
       "warning": "Incomplete snippet: `(args: CardArgs) => Card({ ...args, disabled: true })` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--helper-call": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--helper-call",
       "name": "Helper Call",
       "snippet": "<lit-template-shapes label="Alpha" count="2"></lit-template-shapes>",
@@ -28,7 +25,6 @@
       "warning": "Incomplete snippet: `(args) => Card(args)` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--helper-defaults": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--helper-defaults",
       "name": "Helper Defaults",
       "snippet": "<lit-template-shapes heading="Head"></lit-template-shapes>",
@@ -36,7 +32,6 @@
       "warning": "Incomplete snippet: `(args) => Card({ ...args, count: 5 }, html`<b>${args.heading}</b>`)` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--helper-in-html": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--helper-in-html",
       "name": "Helper In Html",
       "snippet": "<lit-template-shapes label="Alpha" count="2"></lit-template-shapes>",
@@ -44,7 +39,6 @@
       "warning": "Incomplete snippet: `(args) => html`<section>${List(args)}</section>`` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--re-exported-html": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--re-exported-html",
       "name": "Re Exported Html",
       "snippet": "<lit-template-shapes label="Alpha"></lit-template-shapes>",
@@ -52,7 +46,6 @@
       "warning": "Incomplete snippet: `(args) => html`<lit-template-shapes label=${args.label}></lit-template-shapes>`` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--spread-directive": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--spread-directive",
       "name": "Spread Directive",
       "snippet": "<lit-template-shapes label="Alpha" count="2" disabled></lit-template-shapes>",
@@ -60,7 +53,6 @@
       "warning": "Incomplete snippet: `(args) => html`<lit-template-shapes ${spreadProps(args)}></lit-template-shapes>`` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute": {
-      "argCode": {},
       "id": "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute",
       "name": "Spread Next To Attribute",
       "snippet": "<lit-template-shapes count="2"></lit-template-shapes>",

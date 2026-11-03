@@ -107,8 +107,6 @@ export interface StoryContent {
   component: SvelteAST.Component;
   // Whether the story renders the children without the component
   asChild: boolean;
-  // The `<Story>` and the stories it extends, nearest first
-  chain: SvelteAST.Component[];
 }
 
 // A story renders its own content, or else the content of the nearest story it extends that has
@@ -127,7 +125,6 @@ export function getStoryContent(
   return {
     component: chain.find(hasStoryContent) ?? chain[0],
     asChild: asChild !== undefined && isTrue(asChild),
-    chain,
   };
 }
 

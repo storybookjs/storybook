@@ -21,7 +21,7 @@ import OptionsApiEmits from './OptionsApiEmits.vue';
 </script>
 
 <template>
-  <OptionsApiEmits ⟦attr step step⟧ ⟦props -step⟧⟦slots OptionsApiEmits⟧
+  <OptionsApiEmits ⟦attr step step⟧ ⟦props -step⟧ />
 </template>",
     },
   },

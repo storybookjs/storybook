@@ -5,15 +5,16 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import {
+  type ESTreeNode,
   createStoryArgsResolver,
   createStoryReferenceResolver,
-  fillWithStoryArgs,
   loadCsf,
 } from 'storybook/internal/csf-tools';
 import { UnprintableArgError } from 'storybook/internal/docs-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { buildStoryDocsPayload } from '../../../../renderers/web-components/src/docgen/story-docs/build-story-docs.ts';
+import { evaluateArgValue } from '../../../../renderers/web-components/src/docgen/story-docs/arg-values.ts';
 import { fillTemplate } from '../../../../renderers/web-components/src/docs/fill-template.ts';
 import { createFixtureDocgen } from './story-docs/docgen-fixture.ts';
 import {
@@ -71,6 +72,15 @@ const buildOnce = (testCase: Case) => {
   return built.get(testCase.fixtureCase)!;
 };
 
+// The args a story is written with, as their values, which is how the preview has them.
+const ownArgs = (args: Record<string, ESTreeNode>) =>
+  Object.fromEntries(
+    Object.entries(args).flatMap(([key, node]) => {
+      const value = evaluateArgValue(node);
+      return value.kind === 'value' ? [[key, value.value]] : [];
+    })
+  );
+
 async function build({ testDir, title }: Case) {
   const storyPath = join(testDir, 'input.stories.ts');
   const csf = loadCsf(readFileSync(storyPath, 'utf8'), { makeTitle: () => title }).parse();
@@ -94,17 +104,13 @@ async function build({ testDir, title }: Case) {
     resolveModule: createStoryReferenceResolver()().resolveModule,
   });
   // Each template filled with the args of its story as the preview has them before a control
-  // changes, each written as its code, or the error that keeps the static snippet.
+  // changes, or the error that keeps the static snippet.
   const filled: Record<string, string> = {};
   for (const [exportName, story] of storyExports) {
     const template = payload?.stories[story.id]?.template;
     if (template !== undefined) {
       try {
-        filled[exportName] = fillWithStoryArgs(
-          template,
-          resolver.resolve(exportName).args,
-          fillTemplate
-        );
+        filled[exportName] = fillTemplate(template, ownArgs(resolver.resolve(exportName).args));
       } catch (error) {
         if (!(error instanceof UnprintableArgError)) {
           throw error;
@@ -141,7 +147,6 @@ describe('web-components story-docs server snippets', () => {
         recorded,
         legacyParity,
         declaredOmissions: DECLARED_OMISSIONS[`${fixtureCase}/${exportName}`],
-        ownCode: storyDoc?.snippet !== undefined && storyDoc.snippet === filled[exportName],
       });
     }
 
@@ -157,11 +162,28 @@ describe('web-components story-docs server snippets', () => {
     await expect(filled).toMatchFileSnapshot(join(testDir, 'story-docs.filled.snapshot'));
   });
 
-  it('fills a meaningful number of templates with their story args', async () => {
+  it('fills each template with its story args to the snippet, where its layout allows', async () => {
     const results = await Promise.all(cases.map(buildOnce));
-    const filled = results.flatMap((result) => Object.values(result.filled));
-    expect(filled.filter((text) => !text.startsWith('UnprintableArgError')).length).toBeGreaterThan(
-      20
+    const stories = results.flatMap(({ storyExports, payload, filled }) =>
+      storyExports.map(([exportName, story]) => ({
+        id: story.id,
+        snippet: payload?.stories[story.id]?.snippet,
+        template: payload?.stories[story.id]?.template,
+        filled: filled[exportName],
+      }))
     );
+    const withSnippet = stories.filter((story) => story.snippet !== undefined);
+    // A story gets a template exactly where next prints a snippet from its args; a snippet the
+    // story writes itself, as `parameters.docs.source.code`, reads no arg.
+    expect(withSnippet.filter((story) => story.template === undefined).map((s) => s.id)).toEqual([
+      'webcomponentsstorydocs-csf-shapes--authored-code',
+      'webcomponentsstorydocs-no-component--authored',
+    ]);
+    // Filled with its story's own args, each template is the snippet.
+    expect(
+      withSnippet
+        .filter((story) => story.template !== undefined && story.filled !== story.snippet)
+        .map((story) => story.id)
+    ).toEqual([]);
   });
 });

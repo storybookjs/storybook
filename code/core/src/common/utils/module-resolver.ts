@@ -1,4 +1,4 @@
-import { type ResolveResult, ResolverFactory } from 'oxc-resolver';
+import { ResolverFactory } from 'oxc-resolver';
 
 /**
  * Module resolution options, declared locally so consumers don't depend on the underlying resolver
@@ -8,15 +8,10 @@ export interface ModuleResolverOptions {
   extensions?: string[];
   mainFields?: string[];
   conditionNames?: string[];
-  /** Honor `paths`/`baseUrl` from a tsconfig. `'auto'` walks up from the resolution origin. */
-  tsconfig?: 'auto' | { configFile: string };
   /** Extensions to try in place of a written one, such as `{ '.js': ['.ts', '.js'] }`. */
   extensionAlias?: Record<string, string[]>;
-  /**
-   * Extensions tried in place of the one a specifier ends in, in order, once the file it names
-   * does not exist. Like Vite, a file in `node_modules` is never found by such an alias.
-   */
-  fallbackExtensionAlias?: Record<string, string[]>;
+  /** Honor `paths`/`baseUrl` from a tsconfig. `'auto'` walks up from the resolution origin. */
+  tsconfig?: 'auto' | { configFile: string };
 }
 
 export interface ModuleResolver {
@@ -27,17 +22,6 @@ export interface ModuleResolver {
 }
 
 /**
- * Resolves a specifier that names TypeScript source by the file it compiles to, as `./button.js`
- * for `button.ts` under `NodeNext`, where no `button.js` exists.
- */
-export const typeScriptExtensionAlias: Record<string, string[]> = {
-  '.js': ['.ts', '.tsx'],
-  '.jsx': ['.tsx'],
-  '.mjs': ['.mts'],
-  '.cjs': ['.cts'],
-};
-
-/**
  * Resolve the same files the preview bundles: the browser build's resolve conditions, trimmed to
  * what oxc-resolver understands.
  *
@@ -46,39 +30,27 @@ export const typeScriptExtensionAlias: Record<string, string[]> = {
  */
 export const defaultResolveConditionNames = ['storybook', 'import', 'module', 'default'];
 
-export function createModuleResolver({
-  fallbackExtensionAlias,
-  ...options
-}: ModuleResolverOptions = {}): ModuleResolver {
-  const resolveOptions = {
+export function createModuleResolver(options: ModuleResolverOptions = {}): ModuleResolver {
+  const factory = new ResolverFactory({
     ...options,
     conditionNames: options.conditionNames ?? defaultResolveConditionNames,
-  };
-  const factory = new ResolverFactory(resolveOptions);
-  const aliased =
-    fallbackExtensionAlias &&
-    factory.cloneWithOptions({ ...resolveOptions, extensionAlias: fallbackExtensionAlias });
+  });
 
-  const resolve = (
-    resolveWith: (resolver: ResolverFactory) => ResolveResult,
+  const unwrap = (
+    result: { path?: string | null; error?: string | null },
     specifier: string,
     from: string
   ) => {
-    const result = resolveWith(factory);
     if (result.path) {
       return result.path;
-    }
-    const alias = aliased && resolveWith(aliased).path;
-    if (alias && !alias.split(/[\\/]/).includes('node_modules')) {
-      return alias;
     }
     throw new Error(result.error ?? `Cannot resolve module '${specifier}' from '${from}'`);
   };
 
   return {
     resolveFileSync: (fromFile, specifier) =>
-      resolve((resolver) => resolver.resolveFileSync(fromFile, specifier), specifier, fromFile),
+      unwrap(factory.resolveFileSync(fromFile, specifier), specifier, fromFile),
     resolveSync: (fromDirectory, specifier) =>
-      resolve((resolver) => resolver.sync(fromDirectory, specifier), specifier, fromDirectory),
+      unwrap(factory.sync(fromDirectory, specifier), specifier, fromDirectory),
   };
 }

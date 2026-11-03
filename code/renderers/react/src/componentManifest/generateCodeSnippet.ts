@@ -10,7 +10,6 @@ import {
   collectImportBindings,
   createStoryArgsResolver,
   detachedTextOf,
-  fillStoryTemplate,
   isCanonicalCsf2BindCall,
   isStringLiteral,
   lineIndent,
@@ -19,15 +18,12 @@ import {
   parseModule,
   reindent,
   resolveRenderFunction,
-  resolveSpreadMeta,
   storyShapeError,
   unresolvedWarning,
   walk,
 } from 'storybook/internal/csf-tools';
-import { hasHoleBracket, hole, holeWord } from 'storybook/internal/docs-tools';
+import { defaultWord, hasHoleBracket, hole, holeWord } from 'storybook/internal/docs-tools';
 
-import { fillTemplate } from '../docs/fill-template.ts';
-import { buildStoryTemplate } from './storyTemplate.ts';
 import { invariant } from './utils.ts';
 
 function renderFunctionOf(resolution: RenderResolution) {
@@ -45,14 +41,21 @@ export interface CodeSnippet {
   imports: ImportRef[];
   /** What a static pass could not read, in the source text it was written as. */
   unresolved: string[];
-  /** The story with a hole wherever it reads an arg, for the preview to fill; see `StoryDoc.template`. */
+  /**
+   * The same printer's output with a hole wherever it prints an arg, for the preview to fill; see
+   * `StoryDoc.template`.
+   */
   template?: string;
-  /** The code the story writes each arg with; see `StoryDoc.argCode`. */
+  /** The code the story writes each arg with, as the snippet prints it; see `StoryDoc.argCode`. */
   argCode?: Record<string, string>;
   /** What the filled `template` leaves out; see `StoryDoc.templateWarning`. */
   templateWarning?: string;
 }
 
+/**
+ * The story's snippet, printed once with its args and once with a hole wherever the printer writes
+ * an arg. Both prints make every decision the same way, so the template has the snippet's form.
+ */
 export function getCodeSnippet(
   csf: CsfFile,
   storyName: string,
@@ -60,46 +63,67 @@ export function getCodeSnippet(
   resolver: StoryArgsResolver = createStoryArgsResolver(csf)
 ): CodeSnippet {
   const { args, imports, unresolved } = resolver.resolve(storyName);
-  const bound = importedBoundStory(csf, storyName);
-  const story = bound ? undefined : findStoryFunction(csf, storyName, resolver);
+  const importedBind = importedBoundStory(csf, storyName, args);
+  const printed = importedBind ?? buildSnippet(csf, storyName, componentName, args, resolver);
   const needs = {
-    imports: bound ? [...imports, bound.importRef] : imports,
+    imports: importedBind ? [...imports, importedBind.importRef] : imports,
     unresolved,
   };
-  // The story printed with its args filled in, or with `holes`, a hole wherever it fills one in.
-  const print = (holes: boolean) =>
-    bound
-      ? boundStorySnippet(storyName, bound.callee, args, holes)
-      : buildSnippet(storyName, story, componentName, args, holes);
   // Holes written in code that already holds a hole bracket could not be found again.
   if (hasHoleBracket(csf.editor.code)) {
-    return { snippet: print(false), ...needs };
+    return { snippet: printed.snippet, ...needs };
   }
-  // The story as written where a hole stands for each arg it reads, else as printed. A render
-  // function from another file has no source in this one to keep as written.
-  const template =
-    (story && story.editor === csf.editor
-      ? buildStoryTemplate(storyName, story.fn, story.editor, args)
-      : undefined) ?? closeHoles(print(true));
-  const filled = fillStoryTemplate(template, args, fillTemplate, unresolvedWarning(unresolved));
-  // Each arg the story writes is a literal or its code as written, which the filler always prints.
-  invariant(filled, `Could not fill the template of ${storyName} with its own args`);
-  return { ...filled, ...needs };
+  const warning = unresolvedWarning(unresolved);
+  return {
+    snippet: printed.snippet,
+    template: printed.template,
+    argCode: writtenArgs(args, importedBind !== undefined),
+    ...(warning === undefined ? {} : { templateWarning: warning }),
+    ...needs,
+  };
 }
 
 type Args = Record<string, Node>;
 
+/** The snippet printed with the args, and the template printed with holes in their place. */
+interface Printed {
+  snippet: string;
+  template: string;
+}
+
+// An edit the printer makes with the args, `value`, and with holes, `hole`. `undefined` leaves the
+// code as written in that print. A hole can take the code it replaces, without the indentation
+// the snippet drops, as the code it prints for an unset arg.
 interface Edit {
   start: number;
   end: number;
-  text: string;
+  value?: string;
+  hole?: string | ((dedent: (code: string) => string) => string);
 }
+
+// The code of each arg the printer writes as the story writes it, for the filler to print the same
+// while the arg is unchanged: every arg but a boolean or a string it prints as an attribute or text,
+// or, as the args of a bound story, every arg.
+const writtenArgs = (args: Args, everyArg = false): Record<string, string> =>
+  Object.fromEntries(
+    Object.entries(args)
+      .filter(([key, node]) => everyArg || !printsAsValue(key, node))
+      .map(([key, node]) => [key, detachedTextOf(node)])
+  );
+
+const printsAsValue = (key: string, node: Node) =>
+  key === 'children'
+    ? isStringLiteral(node) && !/[{}<>&\r\n]/.test(node.value) && /^\S(.*\S)?$/.test(node.value)
+    : isValidJsxAttrName(key) &&
+      ((node.type === 'Literal' && typeof node.value === 'boolean') ||
+        (isStringLiteral(node) && !/["&\r\n]/.test(node.value)));
 
 // `Story = helper.bind({})` with `helper` imported: the snippet calls the bound helper with the args.
 function importedBoundStory(
   csf: CsfFile,
-  storyName: string
-): { callee: string; importRef: ImportRef } | undefined {
+  storyName: string,
+  args: Args
+): (Printed & { importRef: ImportRef }) | undefined {
   const declaration = csf._storyExports[storyName];
   if (declaration?.type !== 'VariableDeclarator' || !isCanonicalCsf2BindCall(declaration.init)) {
     return undefined;
@@ -110,8 +134,16 @@ function importedBoundStory(
     return undefined;
   }
 
+  const print = valuePrinter('    ');
+  const values = Object.entries(args).map(
+    ([key, value]) => `    ${JSON.stringify(key)}: ${print(value)}`
+  );
+  const argsObject = values.length ? `{\n${values.join(',\n')}\n}` : '{}';
+  const bound = textOf(declaration.init);
+  const call = (values: string) => `const ${storyName} = () => ${bound}(${values});`;
   return {
-    callee: textOf(declaration.init),
+    snippet: call(argsObject),
+    template: call(hole('args')),
     importRef: {
       localImportName: local,
       importId: binding.importId,
@@ -121,30 +153,13 @@ function importedBoundStory(
   };
 }
 
-function boundStorySnippet(storyName: string, callee: string, args: Args, holes: boolean) {
-  if (holes) {
-    return `const ${storyName} = () => ${callee}(${hole('args')});`;
-  }
-  const print = valuePrinter('    ');
-  const values = Object.entries(args).map(
-    ([key, value]) => `    ${JSON.stringify(key)}: ${print(value)}`
-  );
-  const argsObject = values.length ? `{\n${values.join(',\n')}\n}` : '{}';
-  return `const ${storyName} = () => ${callee}(${argsObject});`;
-}
-
-/** A story function and the source it is written in, which is another file's for a spread meta. */
-interface StoryFunction {
-  fn: FunctionNode;
-  editor: CsfFile['editor'];
-}
-
-/** The story function itself, its own `render`, or the meta `render` it falls back to. */
-function findStoryFunction(
+function buildSnippet(
   csf: CsfFile,
   storyName: string,
+  componentName: string | undefined,
+  merged: Args,
   resolver: StoryArgsResolver
-): StoryFunction | undefined {
+): Printed {
   const editor = csf.editor;
   const storyDeclaration = csf._storyExports[storyName];
 
@@ -183,53 +198,28 @@ function findStoryFunction(
       renderFunctionOf(storyRender) ??
       (storyRender.kind === 'missing' ? renderFunctionOf(metaRender) : undefined);
   }
-  if (!storyFn) {
-    return undefined;
-  }
-  // A render the meta takes from the meta of another story file is written in that file.
-  const source =
-    editor.parentOf(storyFn) === null ? resolveSpreadMeta(csf, resolver.ctx)?.ctx.editor : editor;
-  invariant(source, `Could not find the source of the render function of ${storyName}`);
-  return { fn: storyFn, editor: source };
-}
 
-// An element whose children a spread passes ends in `>⟦close⟧</Button>` as printed, for a
-// `⟦close Button⟧` that ends it with them as content, or as self-closing without.
-const closeHoles = (template: string) =>
-  template.replace(/>⟦close⟧<\/([^>]+)>/g, (_, name: string) => hole('close', holeWord(name)));
-
-// The story printed with its args filled in wherever it spreads them, reads one in an attribute or
-// as children, or has no function to print. With `holes`, each of those is a hole.
-function buildSnippet(
-  storyName: string,
-  story: StoryFunction | undefined,
-  componentName: string | undefined,
-  merged: Args,
-  holes: boolean
-): string {
-  if (story) {
-    const { fn, editor } = story;
+  if (storyFn) {
     return functionSnippet(
       editor.code,
       storyName,
-      fn,
-      isMethod(editor.parentOf(fn)),
-      merged,
-      holes
+      storyFn,
+      isMethod(editor.parentOf(storyFn)),
+      merged
     );
   }
 
   // No function: synthesize `<Component {...attrs}/>`
   invariant(componentName, 'Could not generate snippet without component name.');
-  if (holes) {
-    return `const ${storyName} = () => ${hole('element', holeWord(componentName))};`;
-  }
   const print = valuePrinter('');
   const attrs = injectedAttributes(merged, new Set(), print);
   const children = toJsxChildren(merged.children, print);
   const opening = [componentName, ...attrs].join(' ');
   const element = children ? `<${opening}>${children}</${componentName}>` : `<${opening} />`;
-  return `const ${storyName} = () => ${element};`;
+  return {
+    snippet: `const ${storyName} = () => ${element};`,
+    template: `const ${storyName} = () => ${hole('element', holeWord(componentName))};`,
+  };
 }
 
 const isMethod = (parent: Node | null) =>
@@ -241,67 +231,106 @@ function functionSnippet(
   storyName: string,
   fn: FunctionNode,
   method: boolean,
-  merged: Args,
-  holes: boolean
-): string {
+  merged: Args
+): Printed {
   const asyncPrefix = fn.async ? 'async ' : '';
   const params = fn.params.length
     ? code.slice(fn.params[0].start, fn.params[fn.params.length - 1].end)
     : '';
   const edits: Edit[] = [];
+  const both = (print: (holes: boolean) => string): Printed => ({
+    snippet: print(false),
+    template: print(true),
+  });
 
   if (fn.type === 'ArrowFunctionExpression' && isJsx(fn.body)) {
-    if (rewriteJsx(code, fn.body, merged, edits, holes)) {
-      const body = printRange(code, fn.body, edits);
-      const kept = readsArgs(`${asyncPrefix}() => (${body});`) ? params : '';
-      return `const ${storyName} = ${asyncPrefix}(${kept}) => ${body};`;
+    if (rewriteJsx(code, fn.body, merged, edits)) {
+      const body = fn.body;
+      // Whether the snippet keeps the parameter is decided once, by the snippet.
+      const kept = readsArgs(`${asyncPrefix}() => (${printRange(code, body, edits, false)});`)
+        ? params
+        : '';
+      return both(
+        (holes) =>
+          `const ${storyName} = ${asyncPrefix}(${kept}) => ${printRange(code, body, edits, holes)};`
+      );
     }
   } else if (fn.body?.type === 'BlockStatement') {
     let changed = false;
     for (const statement of fn.body.body) {
       if (statement.type === 'ReturnStatement' && isJsx(statement.argument)) {
-        changed = rewriteJsx(code, statement.argument, merged, edits, holes) || changed;
+        changed = rewriteJsx(code, statement.argument, merged, edits) || changed;
       }
     }
     if (changed) {
-      const body = printRange(code, fn.body, edits);
+      const body = fn.body;
       const head = `${asyncPrefix}function${fn.generator ? '*' : ''}`;
-      const kept = readsArgs(`${head} f() ${body}`) ? params : '';
-      return fn.type === 'FunctionDeclaration'
-        ? `${asyncPrefix}function${fn.generator ? '*' : ''} ${storyName}(${kept}) ${body}`
-        : `const ${storyName} = ${asyncPrefix}(${kept}) => ${body};`;
+      const kept = readsArgs(`${head} f() ${printRange(code, body, edits, false)}`) ? params : '';
+      return both((holes) =>
+        fn.type === 'FunctionDeclaration'
+          ? `${head} ${storyName}(${kept}) ${printRange(code, body, edits, holes)}`
+          : `const ${storyName} = ${asyncPrefix}(${kept}) => ${printRange(code, body, edits, holes)};`
+      );
     }
   }
 
+  let unchanged: string;
   if (fn.type === 'FunctionDeclaration' && fn.body) {
-    return `${asyncPrefix}function${fn.generator ? '*' : ''} ${storyName}(${params}) ${printRange(code, fn.body, [])}`;
+    unchanged = `${asyncPrefix}function${fn.generator ? '*' : ''} ${storyName}(${params}) ${printRange(code, fn.body, [], false)}`;
+  } else if (method && fn.body) {
+    unchanged = `const ${storyName} = ${asyncPrefix}(${params}) => ${printRange(code, fn.body, [], false)};`;
+  } else {
+    unchanged = `const ${storyName} = ${printRange(code, fn, [], false)};`;
   }
-  if (method && fn.body) {
-    return `const ${storyName} = ${asyncPrefix}(${params}) => ${printRange(code, fn.body, [])};`;
-  }
-  return `const ${storyName} = ${printRange(code, fn, [])};`;
+  return { snippet: unchanged, template: unchanged };
 }
 
 const isJsx = (node: Node | null | undefined): node is E.JSXElement | E.JSXFragment =>
   node?.type === 'JSXElement' || node?.type === 'JSXFragment';
 
 // Dedents continuation lines so the snippet does not carry the story file's nesting.
-function printRange(code: string, range: { start: number; end: number }, edits: Edit[]): string {
+function printRange(
+  code: string,
+  range: { start: number; end: number },
+  edits: Edit[],
+  holes: boolean
+): string {
+  // Holes do not parse, and dedenting reads the code to keep template literal lines as written, so
+  // each hole is a name that parses in its place until then: an attribute, text, or for `⟦close⟧`
+  // the end of a self-closing element.
+  const placeholders: string[] = [];
+  const dedent = (text: string) => {
+    const from = lineIndent(code, range.start);
+    return text.replaceAll(`\n${from}`, '\n');
+  };
+  const placeholder = (written: NonNullable<Edit['hole']>) => {
+    const hole = typeof written === 'string' ? written : written(dedent);
+    const name = `__storybook_hole_${placeholders.push(hole) - 1}__`;
+    return hole.startsWith('⟦close') ? ` ${name} />` : name;
+  };
   let text = '';
   let cursor = range.start;
-  for (const edit of [...edits].sort((a, b) => a.start - b.start || a.end - b.end)) {
-    text += code.slice(cursor, edit.start) + edit.text;
+  const applied = edits.filter((edit) => (holes ? edit.hole : edit.value) !== undefined);
+  for (const edit of applied.sort((a, b) => a.start - b.start || a.end - b.end)) {
+    text += code.slice(cursor, edit.start) + (holes ? placeholder(edit.hole!) : edit.value);
     cursor = edit.end;
   }
   text += code.slice(cursor, range.end);
 
-  return reindent(text, lineIndent(code, range.start), '');
+  return placeholders.reduce(
+    (printed, hole, index) =>
+      printed.replace(
+        hole.startsWith('⟦close')
+          ? ` __storybook_hole_${index}__ />`
+          : `__storybook_hole_${index}__`,
+        () => hole
+      ),
+    reindent(text, lineIndent(code, range.start), '')
+  );
 }
 
-// Whether code still reads the `args` parameter, so the snippet has to keep declaring it. A hole
-// reads as a name, which stands wherever one can: as an attribute, as JSX text, or as a value.
-function readsArgs(code: string): boolean {
-  const source = code.replace(/⟦[^⟧]*⟧/g, '_');
+// Whether code still reads the `args` parameter, so the snippet has to keep declaring it.
+function readsArgs(source: string): boolean {
   // A key or a member name spelled `args` names a property, not the parameter.
   const named = new Set<Node>();
   let reads = false;
@@ -395,8 +424,7 @@ function rewriteJsx(
   code: string,
   node: E.JSXElement | E.JSXFragment,
   merged: Args,
-  edits: Edit[],
-  holes: boolean
+  edits: Edit[]
 ): boolean {
   let changed = false;
   const printAt = (offset: number) => valuePrinter(lineIndent(code, offset));
@@ -419,38 +447,49 @@ function rewriteJsx(
         )
       );
       const print = printAt(attrs[firstSpread].start);
-      const pieces = holes
-        ? hole('props', ...[...new Set([...existing, 'children'])].map((n) => holeWord(`-${n}`)))
-        : injectedAttributes(merged, existing, print).join(' ');
+      const pieces = injectedAttributes(merged, existing, print).join(' ');
+      // The spread passes every arg but the attributes written next to it, and `children` passes
+      // as content.
+      const props = hole(
+        'props',
+        ...[...new Set([...existing, 'children'])].map((name) => holeWord(`-${name}`))
+      );
       attrs.forEach((a, index) => {
         if (!isArgsSpread(a)) {
           return;
         }
-        if (index === firstSpread && pieces) {
-          edits.push({ start: a.start, end: a.end, text: pieces });
+        const remove = { start: index > 0 ? attrs[index - 1].end : tagEnd, end: a.end };
+        if (index !== firstSpread) {
+          edits.push({ ...remove, value: '', hole: '' });
+        } else if (pieces) {
+          edits.push({ start: a.start, end: a.end, value: pieces, hole: props });
         } else {
-          edits.push({
-            start: index > 0 ? attrs[index - 1].end : tagEnd,
-            end: a.end,
-            text: '',
-          });
+          edits.push({ ...remove, value: '' }, { start: a.start, end: a.end, hole: props });
         }
       });
 
-      if (node.children.length === 0 && (holes || merged.children)) {
-        const children = holes
-          ? hole('close')
-          : toJsxChildren(merged.children, printAt(opening.start));
+      if (node.children.length === 0) {
+        // `⟦close Button⟧` ends the element with the `children` arg as content, or self-closing.
+        const name = code.slice(opening.name.start, opening.name.end);
+        const children = merged.children
+          ? toJsxChildren(merged.children, printAt(opening.start))
+          : undefined;
+        const lastEnd = attrs.length > 0 ? attrs[attrs.length - 1].end : tagEnd;
+        // Without children the element ends as the story writes it.
+        const close = (end: number) => (dedent: (code: string) => string) =>
+          hole('close', holeWord(name), defaultWord(dedent(code.slice(lastEnd, end))));
         if (opening.selfClosing) {
-          const name = code.slice(opening.name.start, opening.name.end);
-          const lastEnd = attrs.length > 0 ? attrs[attrs.length - 1].end : tagEnd;
           edits.push({
             start: lastEnd,
             end: opening.end,
-            text: `>${children}</${name}>`,
+            value: children === undefined ? undefined : `>${children}</${name}>`,
+            hole: close(opening.end),
           });
         } else {
-          edits.push({ start: opening.end, end: opening.end, text: children });
+          if (children !== undefined) {
+            edits.push({ start: opening.end, end: opening.end, value: children });
+          }
+          edits.push({ start: lastEnd, end: node.end, hole: close(node.end) });
         }
       }
     }
@@ -468,9 +507,8 @@ function rewriteJsx(
         edits.push({
           start: a.start,
           end: a.end,
-          text: holes
-            ? hole('attr', holeWord(a.name.name), holeWord(key))
-            : toAttr(a.name.name, merged[key], printAt(a.start)),
+          value: toAttr(a.name.name, merged[key], printAt(a.start)),
+          hole: hole('attr', holeWord(a.name.name), holeWord(key)),
         });
         changed = true;
       }
@@ -479,7 +517,7 @@ function rewriteJsx(
 
   for (const child of node.children) {
     if (isJsx(child)) {
-      changed = rewriteJsx(code, child, merged, edits, holes) || changed;
+      changed = rewriteJsx(code, child, merged, edits) || changed;
     } else if (
       child.type === 'JSXExpressionContainer' &&
       getArgsMemberKey(child.expression) === 'children' &&
@@ -488,9 +526,8 @@ function rewriteJsx(
       edits.push({
         start: child.start,
         end: child.end,
-        text: holes
-          ? hole('text', 'children')
-          : toJsxChildren(merged.children, printAt(child.start)),
+        value: toJsxChildren(merged.children, printAt(child.start)),
+        hole: hole('text', 'children'),
       });
       changed = true;
     }

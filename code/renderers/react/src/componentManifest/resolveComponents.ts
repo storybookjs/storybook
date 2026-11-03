@@ -113,10 +113,7 @@ export async function resolveStoryFileComponents(options: {
   const { storyPath, title, typescriptOptions, docgenEngine } = options;
 
   const storyFile = cachedReadTextFileSync(storyPath);
-  const csf = loadCsf(storyFile, {
-    makeTitle: () => title,
-    fileName: storyPath,
-  }).parse();
+  const csf = loadCsf(storyFile, { makeTitle: () => title, fileName: storyPath }).parse();
   const componentName = csf._meta?.component;
 
   const declaredSubcomponents = extractDeclaredSubcomponents(csf);
@@ -136,15 +133,7 @@ export async function resolveStoryFileComponents(options: {
     component: findExactComponentMatch(allComponents, declared.componentName),
   }));
 
-  return {
-    storyPath,
-    storyFile,
-    csf,
-    componentName,
-    allComponents,
-    component,
-    subcomponents,
-  };
+  return { storyPath, storyFile, csf, componentName, allComponents, component, subcomponents };
 }
 
 /** Snippet + metadata for one story, before output-specific shaping. */

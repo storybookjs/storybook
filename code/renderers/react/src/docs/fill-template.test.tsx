@@ -2,8 +2,6 @@ import { describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 
-import { dedent } from 'ts-dedent';
-
 import { UnprintableArgError, writtenArg } from 'storybook/internal/docs-tools';
 
 import { fillTemplate } from './fill-template.ts';
@@ -46,13 +44,7 @@ describe('fillTemplate', () => {
       '<Chart format={shout} />'
     );
     expect(fillTemplate('<p>⟦text formatter⟧</p>', { formatter })).toBe('<p>{shout}</p>');
-    expect(fillTemplate('use(⟦args⟧)', { formatter })).toBe('use({ formatter: shout })');
-  });
-
-  it('puts written code in parentheses only where code reads on', () => {
-    const max = writtenArg('MB * 5');
-    expect(fillTemplate('⟦operand max⟧.toFixed(0)', { max })).toBe('(MB * 5).toFixed(0)');
-    expect(fillTemplate('<Chart ⟦attr max max⟧ />', { max })).toBe('<Chart max={MB * 5} />');
+    expect(fillTemplate('use(⟦args⟧)', { formatter })).toBe('use({\n    "formatter": shout\n})');
   });
 
   it('leaves out the args a props hole names', () => {
@@ -83,17 +75,22 @@ describe('fillTemplate', () => {
     );
   });
 
-  it('prints the args as an object, without an action and the args it names', () => {
+  it('prints the args as an object, one a line, without an action and the args it names', () => {
     const args = { label: 'Go', 'data-id': 1, onClick: vi.fn(), unset: undefined };
-    expect(fillTemplate('use(⟦args⟧)', args)).toBe('use({ label: "Go", "data-id": 1 })');
-    expect(fillTemplate('use(⟦args -label⟧)', args)).toBe('use({ "data-id": 1 })');
+    expect(fillTemplate('use(⟦args⟧)', args)).toBe(
+      'use({\n    "label": "Go",\n    "data-id": 1\n})'
+    );
+    expect(fillTemplate('use(⟦args -label⟧)', args)).toBe('use({\n    "data-id": 1\n})');
     expect(fillTemplate('use(⟦args⟧)', {})).toBe('use({})');
   });
 
-  it('prints written code as it is, in braces as content', () => {
+  it('prints written code as it is, in braces, and written JSX as content as it is', () => {
     const args = { render: writtenArg('(() => null)'), children: writtenArg('<Icon />') };
     expect(fillTemplate('⟦element Chart⟧', args)).toBe(
-      '<Chart render={(() => null)}>{<Icon />}</Chart>'
+      '<Chart render={(() => null)}><Icon /></Chart>'
+    );
+    expect(fillTemplate('⟦element Chart⟧', { children: writtenArg('f()') })).toBe(
+      '<Chart>{f()}</Chart>'
     );
   });
 
@@ -103,44 +100,27 @@ describe('fillTemplate', () => {
     expect(fillTemplate(template, { children: 'Save' })).toBe('<Button size="sm">Save</Button>');
   });
 
-  it('breaks a long element into a line per attribute, indented as the line it is on', () => {
+  it('ends an element without children as the story writes it', () => {
+    const template = '<Button ⟦props -children⟧⟦close Button ?%0A%2F%3E⟧';
+    expect(fillTemplate(template, { label: 'Go' })).toBe('<Button label="Go"\n/>');
+  });
+
+  it('prints an element on one line, a value of more lines indented as the line it is on', () => {
     const args = {
       title: 'A title long enough',
       description: 'to make the element too long',
       n: 1,
     };
-    expect(fillTemplate('<div>\n  ⟦element Card⟧\n</div>', args)).toBe(dedent`
-      <div>
-        <Card
-          title="A title long enough"
-          description="to make the element too long"
-          n={1}
-        />
-      </div>
-    `);
+    expect(fillTemplate('<div>\n  ⟦element Card⟧\n</div>', args)).toBe(
+      '<div>\n  <Card title="A title long enough" description="to make the element too long" n={1} />\n</div>'
+    );
     expect(fillTemplate('<Card\n  ⟦props⟧\n/>', { a: 'x', b: writtenArg('[\n  1,\n]') })).toBe(
-      '<Card\n  a="x"\n  b={[\n    1,\n  ]}\n/>'
+      '<Card\n  a="x" b={[\n    1,\n  ]}\n/>'
     );
-  });
-
-  it("prints a default word's code for an unset arg", () => {
-    const template =
-      "<a ⟦attr size size ?'md'⟧>⟦text label ?a%20%3D%20b⟧</a> ⟦value n ?1⟧ ⟦operand n ?(1)⟧";
-    expect(fillTemplate(template, {})).toBe("<a size={'md'}>{a = b}</a> 1 (1)");
-    expect(fillTemplate(template, { size: 'lg', label: 'Go', n: 2 })).toBe(
-      '<a size="lg">Go</a> 2 (2)'
-    );
-    expect(fillTemplate(template, { size: null, label: null, n: null })).toBe(
-      '<a size={null}></a> null null'
-    );
-  });
-
-  it('prints a value hole as a literal in the code around it', () => {
-    expect(fillTemplate('⟦value loading⟧ ? a : b', { loading: true })).toBe('true ? a : b');
   });
 
   it('throws for an arg it cannot print', () => {
-    expect(() => fillTemplate('⟦value onClick⟧', { onClick: () => {} })).toThrow(
+    expect(() => fillTemplate('⟦element Chart⟧', { onClick: () => {} })).toThrow(
       UnprintableArgError
     );
     expect(() => fillTemplate('<p>⟦text icon⟧</p>', { icon: <span /> })).toThrow(

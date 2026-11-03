@@ -4,7 +4,6 @@
   "path": "__PATH__",
   "stories": {
     "webcomponentsfixtures-vanilla-multi-definition--args-default-render": {
-      "argCode": {},
       "id": "webcomponentsfixtures-vanilla-multi-definition--args-default-render",
       "name": "Args Default Render",
       "snippet": "<multi-beta></multi-beta>",
@@ -12,7 +11,6 @@
       "warning": "Incomplete snippet: properties without an attribute: `betaLabel`.",
     },
     "webcomponentsfixtures-vanilla-multi-definition--dom-node": {
-      "argCode": {},
       "id": "webcomponentsfixtures-vanilla-multi-definition--dom-node",
       "name": "Dom Node",
       "snippet": "<multi-beta></multi-beta>",
@@ -21,11 +19,10 @@
 Incomplete snippet: properties without an attribute: `betaLabel`.",
     },
     "webcomponentsfixtures-vanilla-multi-definition--lit-template": {
-      "argCode": {},
       "id": "webcomponentsfixtures-vanilla-multi-definition--lit-template",
       "name": "Lit Template",
       "snippet": "<multi-beta beta-label="Beta"></multi-beta>",
-      "template": "<multi-beta beta-label="⟦quoted betaLabel⟧"></multi-beta>",
+      "template": "<multi-beta ⟦attr beta-label betaLabel bind⟧></multi-beta>",
     },
   },
 }

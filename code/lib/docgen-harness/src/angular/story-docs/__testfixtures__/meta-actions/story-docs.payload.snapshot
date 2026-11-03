@@ -26,12 +26,12 @@ import { MetaActionsComponent } from './meta-actions.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [MetaActionsComponent],
-  template: `<sb-meta-actions ⟦props = label primary⟧ (onClick)="onClick($event)" />`,
+  template: `<sb-meta-actions [label]="⟦bind label⟧" (onClick)="onClick($event)" />`,
 })
 export class DemoComponent {
   onClick(event: unknown) {}
 }",
-      "templateWarning": "Incomplete snippet: `SHARED_LABEL` could not be resolved statically.",
+      "templateWarning": "Incomplete snippet: `fn()`, `SHARED_LABEL` could not be resolved statically.",
       "warning": "Incomplete snippet: `fn()`, `SHARED_LABEL` could not be resolved statically.",
     },
     "storydocs-meta-actions--primary": {
@@ -62,13 +62,15 @@ import { MetaActionsComponent } from './meta-actions.component.ts';
   imports: [MetaActionsComponent],
   template: `
     <sb-meta-actions
-        ⟦props = primary label⟧
+        [primary]="⟦bind primary⟧"
+        [label]="⟦bind label⟧"
         (onClick)="onClick($event)"
     />`,
 })
 export class DemoComponent {
   onClick(event: unknown) {}
 }",
+      "templateWarning": "Incomplete snippet: `fn()` could not be resolved statically.",
       "warning": "Incomplete snippet: `fn()` could not be resolved statically.",
     },
   },

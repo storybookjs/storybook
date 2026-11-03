@@ -92,9 +92,10 @@ const memberOf = (members: ResolvedMembers, key: string): MemberPathResolution =
   if (node !== undefined && !members.shadowed.includes(key)) {
     return { kind: 'value', node };
   }
-  // A member shadowed with nothing left unresolved names things in another file than this one.
-  const source = members.unresolved.at(-1) ?? (node && oneLineTextOf(node));
-  return source === undefined ? { kind: 'missing' } : { kind: 'unresolvable', source };
+  if (members.unresolved.length > 0) {
+    return { kind: 'unresolvable', source: members.unresolved.at(-1)! };
+  }
+  return { kind: 'missing' };
 };
 
 const isUndefined = (node: Node): boolean =>

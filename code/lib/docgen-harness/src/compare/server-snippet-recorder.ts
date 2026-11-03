@@ -24,7 +24,6 @@ export async function recordServerSnippet({
   legacyParity,
   declaredOmissions,
   normalize = (snippet) => snippet,
-  ownCode,
 }: {
   testDir: string;
   framework: Framework;
@@ -36,17 +35,11 @@ export async function recordServerSnippet({
   legacyParity: boolean;
   declaredOmissions?: readonly string[];
   normalize?: (snippet: string) => string;
-  /**
-   * The snippet is the story's template filled with its args: the story's code as written, which no
-   * snippet of an element Storybook guessed is a measure of.
-   */
-  ownCode?: boolean;
 }): Promise<void> {
   const snippetPath = join(testDir, `${prefix}${exportName}.snapshot`);
   const committedSnippet = readCommitted(snippetPath);
 
   if (
-    !ownCode &&
     committedSnippet !== undefined &&
     snippet !== undefined &&
     !committedSnippet.startsWith(NO_SNIPPET_PREFIX)
@@ -70,15 +63,13 @@ export async function recordServerSnippet({
     if (committedLegacySnippet === undefined) {
       return;
     }
-    if (!ownCode) {
-      expectCurrentOrBetter({
-        kind: 'snippet',
-        framework,
-        baseline: normalize(committedLegacySnippet),
-        candidate: normalize(snippet),
-        declaredOmissions,
-      });
-    }
+    expectCurrentOrBetter({
+      kind: 'snippet',
+      framework,
+      baseline: normalize(committedLegacySnippet),
+      candidate: normalize(snippet),
+      declaredOmissions,
+    });
   }
 
   await expect(recorded).toMatchFileSnapshot(snippetPath);

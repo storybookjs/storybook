@@ -1,1 +1,6 @@
-<BindableRest value="Accepted" checked disabled placeholder="ignored" />
+<BindableRest 
+  value="Accepted"
+  checked
+  disabled
+  placeholder="ignored"
+ />

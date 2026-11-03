@@ -3,7 +3,8 @@
   lit-slots-and-css::part(panel) { color: rebeccapurple; }
 </style>
 <lit-slots-and-css heading="Default render" style="--slot-panel-color: teal;">
-  Body <b>text</b><span slot="actions"><button>Confirm</button></span>
+  Body <b>text</b>
+  <button slot="actions">Confirm</button>
 </lit-slots-and-css>",
   "DomNode": "<lit-slots-and-css heading="Projected"></lit-slots-and-css>",
   "LitTemplate": "<lit-slots-and-css heading="Projected">

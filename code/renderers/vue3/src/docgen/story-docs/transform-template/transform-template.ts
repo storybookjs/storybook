@@ -7,45 +7,39 @@ import {
   type TemplateChildNode,
 } from '@vue/compiler-dom';
 
+import { hole, holeWord } from 'storybook/internal/docs-tools';
 import {
   type ESTree as E,
   type ESTreeNode as Node,
   type ImportBinding,
-  argCode,
-  isOperand,
   isStringLiteral,
+  staticKey,
   normalizeLineEndings,
   parseModule,
   propertyValue,
-  staticKey,
   unwrapExpression,
   walk,
 } from 'storybook/internal/csf-tools';
-import { defaultWord, hasHoleBracket, hole, holeWord } from 'storybook/internal/docs-tools';
 
-import type {
-  ClassifiedArg,
-  ClassifiedPropLikeArg,
-  ClassifiedSlotArg,
-} from '../classify-args/classify-args.ts';
-import { printHFragment } from '../print-h/print-h.ts';
-import { isFunctionExpression } from '../../shared/classify-value.ts';
-import {
-  readForwardableSetup,
-  type ForwardableSetup,
-  type ForwardableStatement,
-  type ArgsRead,
-} from './forward-setup.ts';
+import type { ClassifiedArg } from '../classify-args/classify-args.ts';
+import { isFunctionExpression, printValue } from '../../shared/classify-value.ts';
+import { readForwardableSetup, type ForwardableSetup } from './forward-setup.ts';
 import {
   createRenderContext,
-  hoistArgCode,
+  escapeTextContent,
+  hoistArgValue,
   hoistModelRef,
   importStatementForBinding,
-  quoteAttributeValue,
+  quoteWords,
+  scriptValue,
+  inlinePrimitiveSource,
+  renderArgsBindingExpansion,
+  renderBoundArgAttribute,
   renderPreparedSfcSnippet,
-  renderSlotContent,
+  wrapSlotContent,
   type RenderContext,
 } from '../../shared/render-primitives.ts';
+import { renderSlotArgContent } from './render-slot-content.ts';
 
 export interface TemplateRenderConfig {
   /** Static Vue template string returned from the render function. */
@@ -74,26 +68,82 @@ export interface ReadTemplateRenderConfigOptions {
 }
 
 export interface TransformTemplateInput {
-  /** Static Vue template markup from a render object, or printed from an `h()` tree. */
+  /** Static Vue template markup from a render object. */
   template: string;
+  /** Merged and classified CSF args for the story. */
+  args: ClassifiedArg[];
+  /** Arg names explicitly set to undefined; their bindings render as if never written. */
+  unsetArgs: ReadonlySet<string>;
   /** Component tag name to import statement from the render object's components map. */
   componentImports: Map<string, string>;
-  /** The story component's slots, which `v-bind="args"` does not pass. */
-  slots: string[];
-  /** Merged and classified CSF args for the story. */
-  args?: ClassifiedArg[];
-  /** The node the story writes each arg with, which decides where its code needs parentheses. */
-  written?: Record<string, Node>;
+  /** Story component tag; role-aware args expansion applies only to it. */
+  componentName?: string;
+  /** The story component's slots, which a `v-bind="args"` hole leaves out. */
+  slots?: ReadonlySet<string>;
+  /** Every arg the story writes, which a `v-bind="args"` hole leaves out, as the snippet shows it. */
+  storyArgs?: readonly string[];
+  /** Import bindings from the CSF module, for components a function slot renders. */
+  importBindings?: Map<string, ImportBinding>;
   /** Pre-seeded context carrying imports and hoists an upstream printer collected. */
   ctx?: RenderContext;
   /** Setup statements to forward into the snippet's script. */
   setup?: ForwardableSetup;
 }
 
-type Edit = { start: number; end: number; text: string };
+export interface TransformTemplateResult {
+  /** Vue SFC snippet for the docs payload. */
+  snippet: string;
+}
 
-type Spanned = { start: number; end: number };
+interface Edit {
+  start: number;
+  end: number;
+  text: string;
+}
 
+interface TransformState {
+  argsByName: Map<string, ClassifiedArg>;
+  unsetArgs: ReadonlySet<string>;
+  ctx: RenderContext;
+  edits: Edit[];
+  componentImports: Map<string, string>;
+  componentName?: string;
+  slots: ReadonlySet<string>;
+  storyArgs: readonly string[];
+  importBindings: Map<string, ImportBinding>;
+  template: string;
+}
+
+type ElementProp = ElementNode['props'][number];
+
+interface ElementContext {
+  /** Whether the element is the story component tag, where role-aware expansion applies. */
+  storyTag: boolean;
+  /** Wrapped slot children waiting to be spliced into the element. */
+  slotChildren: string[];
+}
+
+interface ArgsExpansionPlan {
+  /** The `v-bind="args"` directive to expand, when the element carries exactly one. */
+  directive?: DirectiveNode;
+  /** Args surviving later-wins collision resolution against the element's own attributes. */
+  surviving: ClassifiedArg[];
+  /** Author attributes the expansion overrides, removed because the expansion comes later. */
+  removed: Set<ElementProp>;
+}
+
+interface ArgsReference {
+  start: number;
+  end: number;
+  name: string;
+}
+
+type ExpressionContext = 'directive' | 'interpolation';
+
+const ARGS_NAME = 'args';
+const ARGS_IDENTIFIER_REGEXP = /(^|[^\w$])args([^\w$]|$)/;
+const ARGS_MEMBER_REGEXP = /^args\.([A-Za-z_$][\w$]*)$/;
+const BLANK_REGEXP = /[ \t]/;
 const SETUP_PROPERTY = 'setup';
 
 const TEMPLATE_UNREADABLE_WARNING =
@@ -151,438 +201,130 @@ export function readTemplateRenderConfig(
 }
 
 /**
- * The story's template: the Vue template markup and the statements of its `setup` as written, with
- * a hole wherever they read an arg, for `fillTemplate`. The static snippet is this template filled
- * with the story's own args.
+ * Transform Vue template markup into a static SFC snippet.
  *
- * This is the single args-semantics engine: author-written render templates and markup printed from
- * `h()` trees both pass through here. The template is parsed with Vue's own parser, and only the
- * ranges that read an arg are replaced, so every other author byte survives verbatim. It is
- * `undefined` when the code reads the args in a way no hole stands for, such as `args` passed
- * whole or a read in an event handler, or when Vue itself refuses to parse it.
- *
- * An arg the story sets to more than a literal, such as an object or an array, is a `const` with a
- * hole for its value, so every read of it is the same value, as in the story. A listener bound to an
- * arg, as `@click="args.onClick"`, is a `const` too. `written` holds the node the story writes each
- * arg with, which decides where its code needs parentheses; see `isOperand`.
+ * This is the single args-semantics engine: author-written render templates, markup printed from
+ * `h()` trees, and the synthesized template for render-less stories all pass through here. The
+ * template is parsed with Vue's own parser, and only understood args ranges are spliced in the
+ * original source, so every untouched author byte survives verbatim. Args usage that cannot be
+ * substituted safely, and anything Vue itself refuses to parse, bails to the runtime source
+ * fallback.
  */
-export function transformTemplate(input: TransformTemplateInput): string | undefined {
-  const { componentImports, slots, setup, args = [], written = {} } = input;
+export function transformTemplate(
+  input: TransformTemplateInput
+): TransformTemplateResult | undefined {
   // `parseModule` normalizes line endings, so template expressions must already use `\n`.
   const template = normalizeLineEndings(input.template);
-  const statements = setup?.statements ?? [];
-  let invalid = [template, ...statements.map(({ source }) => source)].some(hasHoleBracket);
-  const root = parse(template, { onError: () => (invalid = true) });
-  const ctx = input.ctx ?? createRenderContext();
-  const edits: Edit[] = [];
-  // A `setup` binding or a `v-for` variable named `args` is not the story's args.
-  if (
-    (setup && !seedForwardedSetup(setup, ctx)) ||
-    !collectTemplateScopeBindings(root.children, ctx) ||
-    ctx.bindings.has('args')
-  ) {
+  let invalid = false;
+  const ast = parse(template, { onError: () => (invalid = true) });
+  if (invalid) {
     return undefined;
   }
-  const hoisted = new Set(
-    args.filter((arg) => arg.role !== 'slot' && arg.plan.kind === 'hoist').map((arg) => arg.name)
-  );
-  const writtenAs = (name: string) => (Object.hasOwn(written, name) ? written[name] : undefined);
-  const scriptValue = (name: string) => hole('value', holeWord(name), 'script');
-  const constFor = (name: string) =>
-    hoisted.has(name) ? hoistArgCode(name, scriptValue(name), ctx) : undefined;
 
-  const visit = (node: TemplateChildNode): boolean => {
-    if (node.type === NodeTypes.INTERPOLATION) {
-      // `{{ args.label }}` is the arg as content.
-      const { start, end } = node.loc;
-      const holes = argHoles(
-        node.content as SimpleExpressionNode,
-        template,
-        '{{',
-        constFor,
-        writtenAs,
-        (name) => ({
-          start: start.offset,
-          end: end.offset,
-          text: hole('text', holeWord(name)),
-        })
-      );
-      edits.push(...(holes ?? []));
-      return holes !== undefined;
-    }
-    if (node.type !== NodeTypes.ELEMENT) {
-      return true;
-    }
-    const importStatement = componentImportForTag(node.tag, componentImports);
-    if (importStatement) {
-      ctx.componentImports.add(importStatement);
-    }
-    for (const [index, prop] of node.props.entries()) {
-      if (prop.type !== NodeTypes.DIRECTIVE) {
-        continue;
-      }
-      const arg = prop.arg as SimpleExpressionNode | undefined;
-      // A dynamic argument, as in `:[args.key]`, reads an arg where no hole can stand.
-      if (arg && !arg.isStatic && /\bargs\b/.test(arg.content)) {
-        return false;
-      }
-      if (!prop.exp) {
-        continue;
-      }
-      const exp = prop.exp as SimpleExpressionNode;
-      const { start, end } = prop.loc;
-      // `v-bind="args"` passes every arg but the slots and the attributes written after it, which
-      // win; see `spreadArgs`.
-      if (prop.name === 'bind' && !arg && exp.content.trim() === 'args') {
-        const attributes = node.props.map(attributeName);
-        const names = (props: (string | undefined)[]) =>
-          props.flatMap((name) => (name === undefined ? [] : spellings(name)));
-        const own = [...slots, ...names(attributes.slice(index + 1))];
-        const words = [
-          ...names(attributes.slice(0, index)).map((name) => `^${name}`),
-          ...own.map((name) => `-${name}`),
-        ];
-        edits.push({
-          start: start.offset,
-          end: end.offset,
-          text: spreadAttributes(args, words, ctx, Object.keys(written)),
-        });
-        continue;
-      }
-      const read = ARGS_MEMBER_REGEXP.exec(exp.content.trim())?.[1];
-      // `v-model="args.open"` binds a ref that starts as the arg, empty while it is unset, and
-      // `@click="args.onClick"` the listener the arg holds, each as the static snippet writes it. An
-      // arg the story leaves unset attaches no listener, as an absent one does.
-      if (read && prop.name === 'on' && arg && !args.some(({ name }) => name === read)) {
-        const before = template.slice(0, start.offset).trimEnd().length;
-        edits.push({ start: before, end: end.offset, text: '' });
-        continue;
-      }
-      if (read && (prop.name === 'model' || (prop.name === 'on' && arg))) {
-        const text =
-          prop.name === 'model'
-            ? hoistModelRef(read, modelValue(read), ctx)
-            : hoistArgCode(read, scriptValue(read), ctx);
-        edits.push({ start: exp.loc.start.offset, end: exp.loc.end.offset, text });
-        continue;
-      }
-      // `:label="args.label"` is one attribute, unless a modifier changes how it binds or the
-      // element writes `label` itself too, as `class` next to `:class`.
-      const name =
-        prop.name === 'bind' && arg?.isStatic && prop.modifiers.length === 0
-          ? arg.content
-          : undefined;
-      const owned = node.props.every(
-        (other) => other === prop || other.type !== NodeTypes.ATTRIBUTE || other.name !== name
-      );
-      const quote = template[exp.loc.start.offset - 1];
-      const holes = argHoles(exp, template, quote, constFor, writtenAs, (word) =>
-        name !== undefined && owned
-          ? { start: start.offset, end: end.offset, text: hole('attr', name, holeWord(word)) }
-          : undefined
-      );
-      const unusual = prop.name === 'on' || prop.name === 'model' || (arg && !arg.isStatic);
-      if (!holes || (holes.length > 0 && unusual)) {
-        return false;
-      }
-      edits.push(...holes);
-    }
-    return node.children.every(visit);
+  const state: TransformState = {
+    argsByName: new Map(input.args.map((arg) => [arg.name, arg])),
+    unsetArgs: input.unsetArgs,
+    ctx: input.ctx ?? createRenderContext(),
+    edits: [],
+    componentImports: input.componentImports,
+    componentName: input.componentName,
+    slots: input.slots ?? new Set(),
+    storyArgs: input.storyArgs ?? [],
+    importBindings: input.importBindings ?? new Map(),
+    template,
   };
 
-  if (!root.children.every(visit) || invalid) {
+  if (input.setup && !seedForwardedSetup(input.setup, state)) {
     return undefined;
   }
-  let templateCode = template;
-  for (const { start, end, text } of edits.sort((a, b) => b.start - a.start)) {
-    templateCode = templateCode.slice(0, start) + text + templateCode.slice(end);
-  }
-  // A statement reads its args as code in the `<script>`, which the `script` word says, and `;`
-  // that it starts the statement after one without a `;`.
-  ctx.statements.push(
-    ...statements.map((statement, index) =>
-      setupStatementCode(
-        statement,
-        statements[index - 1],
-        ({ name, operand }, _, startsLine) =>
-          constFor(name) ??
-          hole(
-            operand(writtenAs(name)) ? 'operand' : 'value',
-            holeWord(name),
-            'script',
-            ...(startsLine ? [';'] : [])
-          )
-      )
-    )
-  );
-  return renderPreparedSfcSnippet({ templateCode, ctx });
-}
 
-/** A story's template, with the code an arg the story writes as more than a literal prints. */
-export interface StoryTemplateCode {
-  template: string;
-  /** Code that replaces the arg's `argCode`, for a slot whose content the provider prints. */
-  argCode?: Record<string, string>;
-}
-
-/**
- * A story without a render function is Storybook's render of the component: `v-bind="args"` as
- * `spreadAttributes` writes it, and the slots as content, default first.
- *
- * A slot the story writes as more than a literal is content the provider prints once, as the
- * static snippet shows it: a function's `h()` tree as markup, with the imports it needs, or its
- * returned value as text. That is the slot's `argCode`, which the `⟦slots⟧` hole prints as it is
- * while the arg is unchanged. It is `undefined` for a slot function no markup stands for, such as
- * one that reads its slot props.
- */
-export function componentTemplate(
-  name: string,
-  importStatement: string,
-  slots: string[],
-  args: ClassifiedArg[],
-  written: Record<string, Node>,
-  importBindings: Map<string, ImportBinding>
-): StoryTemplateCode | undefined {
-  const ctx = createRenderContext();
-  ctx.componentImports.add(importStatement);
-  const attributes = spreadAttributes(
-    args,
-    slots.map((slot) => `-${slot}`),
-    ctx,
-    Object.keys(written)
-  );
-  const code = argCode(written);
-  const slotCode: Record<string, string> = {};
-  for (const slot of slots.filter((slot) => Object.hasOwn(code, slot))) {
-    const arg = args.find(
-      (candidate): candidate is ClassifiedSlotArg =>
-        candidate.role === 'slot' && candidate.name === slot
-    );
-    // A slot arg that is no content, as an empty string or a value the snippet cannot declare,
-    // shows nothing.
-    const content = !arg
-      ? ''
-      : arg.plan.kind === 'function-slot'
-        ? isFunctionExpression(arg.value)
-          ? printHFragment(arg.value, {
-              componentImportStatements: new Map([[name, importStatement]]),
-              ctx,
-              importBindings,
-            })
-          : undefined
-        : renderSlotContent(arg, arg.plan, ctx);
-    if (content === undefined) {
-      return undefined;
-    }
-    slotCode[slot] = content;
+  if (!collectTemplateScopeBindings(ast.children, state.ctx)) {
+    return undefined;
   }
-  const ordered = [...slots].sort((a, b) =>
-    a === 'default' ? -1 : b === 'default' ? 1 : a.localeCompare(b)
-  );
+
+  if (!ast.children.every((child) => transformNode(child, state))) {
+    return undefined;
+  }
+
+  if (input.setup && !appendSetupStatements(input.setup, state)) {
+    return undefined;
+  }
+
   return {
-    template: renderPreparedSfcSnippet({
-      templateCode: `<${name} ${attributes}${hole('slots', name, ...ordered.map(holeWord))}`,
-      ctx,
+    snippet: renderPreparedSfcSnippet({
+      templateCode: applyEdits(template, state.edits),
+      ctx: state.ctx,
     }),
-    argCode: slotCode,
   };
-}
-
-/**
- * `v-bind="args"` as the static snippet writes it, for the args a `⟦props⟧` hole with `words` would
- * pass: each arg the story writes in name order, then its listeners. An arg it hoists to a `const`,
- * a model arg as the `v-model` of a `ref` and an event as a listener each have a hole for its
- * value, any other arg an `⟦attr⟧` hole, and a `⟦props⟧` hole passes the args the story does not
- * write.
- */
-function spreadAttributes(
-  args: ClassifiedArg[],
-  words: string[],
-  ctx: RenderContext,
-  storyArgs: string[]
-): string {
-  const hoists = (arg: ClassifiedPropLikeArg) => {
-    const value = unwrapExpression(arg.value);
-    return (
-      arg.role !== 'prop' ||
-      arg.plan.kind === 'hoist' ||
-      (isStringLiteral(value) && quoteAttributeValue(value.value) === undefined)
-    );
-  };
-  const byName = new Map(args.map((arg) => [arg.name, arg]));
-  const names = [...new Set([...storyArgs, ...byName.keys()])]
-    .filter((name) => /^[A-Za-z_][\w-]*$/.test(name) && byName.get(name)?.role !== 'slot')
-    .filter((name) => !words.some((word) => word.slice(1) === name))
-    .sort((a, b) => a.localeCompare(b));
-  const value = (name: string) => hole('value', holeWord(name), 'script');
-  const listeners: string[] = [];
-  const attributes = names.flatMap((name) => {
-    const arg = byName.get(name) as ClassifiedPropLikeArg | undefined;
-    if (!arg || !hoists(arg)) {
-      return [hole('attr', name, name)];
-    }
-    if (arg.role === 'model') {
-      const directive = name === 'modelValue' ? 'v-model' : `v-model:${name}`;
-      return [`${directive}="${hoistModelRef(name, modelValue(name), ctx)}"`];
-    }
-    if (arg.role === 'event') {
-      listeners.push(name);
-      return [];
-    }
-    return [`:${name}="${hoistArgCode(name, value(name), ctx)}"`];
-  });
-  const events = listeners.map((name) => {
-    const arg = byName.get(name) as ClassifiedPropLikeArg;
-    return `@${arg.eventName}="${hoistArgCode(name, value(name), ctx)}"`;
-  });
-  const omitted = [...words, ...names.map((name) => `-${name}`)];
-  return [...attributes, hole('props', ...omitted.map(holeWord)), ...events].join(' ');
-}
-
-/** The value a `v-model` ref starts as: the arg, or nothing while it is unset, as `ref()`. */
-const modelValue = (name: string) => hole('value', holeWord(name), 'script', defaultWord(''));
-
-const ARGS_MEMBER_REGEXP = /^args\.([A-Za-z_$][\w$]*)$/;
-
-const QUOTE_WORDS: Record<string, string[]> = { '"': [], "'": ["'"], '{{': ['{{'] };
-
-// A value hole for each `args.label` an expression reads, its `const` for an arg that has one, or
-// the `whole` edit when it is nothing but that read; `undefined` when it reads `args` another way.
-// A hole in an attribute value written in single quotes says so with a `'` word, and one in an
-// interpolation, which `quote` gives as `{{`, with a `{{` word.
-function argHoles(
-  exp: SimpleExpressionNode,
-  template: string,
-  quote: string | undefined,
-  constFor: (name: string) => string | undefined,
-  writtenAs: (name: string) => Node | undefined,
-  wholeEdit: (name: string) => Edit | undefined
-): Edit[] | undefined {
-  const offset = exp.loc.start.offset;
-  if (!/\bargs\b/.test(exp.content)) {
-    return [];
-  }
-  const ast = parseTemplateExpression(exp.content);
-  if (!ast) {
-    return undefined;
-  }
-  // Vue decodes entities in an attribute, which would shift the offsets.
-  if (template.slice(offset, exp.loc.end.offset) !== exp.content) {
-    return undefined;
-  }
-  // `args?.label` is a read the whole expression is, as `args.label` is.
-  const whole = ast.type === 'ChainExpression' ? ast.expression : ast;
-  const holes: (Edit | undefined)[] = [];
-  const parents = new Map<Node, Node | null>();
-  walk(ast, (node, parent) => {
-    parents.set(node, parent);
-    if (node.type !== 'Identifier' || node.name !== 'args' || !isReferenced(node, parent)) {
-      return;
-    }
-    const member =
-      parent?.type === 'MemberExpression' && parent.object === node ? parent : undefined;
-    const name =
-      member &&
-      (!member.computed && member.property.type === 'Identifier'
-        ? member.property.name
-        : member.computed && isStringLiteral(member.property) && member.property.value);
-    const around: Node[] = [];
-    for (let above = member && parents.get(member); above; above = parents.get(above)) {
-      around.push(above);
-    }
-    const [above] = around;
-    // The target of a write, as in `args.count++`, is no read and stays as written.
-    if (
-      name &&
-      ((above?.type === 'AssignmentExpression' && above.left === member) ||
-        above?.type === 'UpdateExpression' ||
-        (above?.type === 'UnaryExpression' && above.operator === 'delete'))
-    ) {
-      return;
-    }
-    if (!name || !member) {
-      holes.push(undefined);
-      return;
-    }
-    const kind = isOperand(member, around, writtenAs(name)) ? 'operand' : 'value';
-    const { start, end } = member as E.MemberExpression & Spanned;
-    const at = { start: offset + start, end: offset + end };
-    const binding = constFor(name);
-    const words = QUOTE_WORDS[quote ?? ''];
-    holes.push(
-      binding !== undefined
-        ? { ...at, text: binding }
-        : (member === whole && wholeEdit(name)) ||
-            (words ? { ...at, text: hole(kind, holeWord(name), ...words) } : undefined)
-    );
-  });
-  return holes.every((edit) => edit !== undefined) ? holes : undefined;
-}
-
-// The arg names that set the same prop as an attribute: `max-count` and `maxCount`.
-const spellings = (name: string) => [
-  ...new Set([
-    name,
-    name.replace(/-(\w)/g, (_, letter: string) => letter.toUpperCase()),
-    name.replace(/\B([A-Z])/g, '-$1').toLowerCase(),
-  ]),
-];
-
-function attributeName(prop: ElementNode['props'][number]): string | undefined {
-  if (prop.type === NodeTypes.ATTRIBUTE) {
-    return prop.name;
-  }
-  const arg = prop.arg as SimpleExpressionNode | undefined;
-  if (prop.name === 'model') {
-    return arg?.content ?? 'modelValue';
-  }
-  // `@click` sets the `onClick` arg.
-  if (prop.name === 'on' && arg) {
-    return `on${arg.content.charAt(0).toUpperCase()}${arg.content.slice(1)}`;
-  }
-  return prop.name === 'bind' && arg ? arg.content : undefined;
 }
 
 /** Reserve setup names and route forwarded imports before any hoist can collide with them. */
-export function seedForwardedSetup(setup: ForwardableSetup, ctx: RenderContext): boolean {
+function seedForwardedSetup(setup: ForwardableSetup, state: TransformState): boolean {
   for (const name of setup.bindings) {
-    ctx.bindings.add(name);
-  }
-  for (const statement of setup.statements) {
-    reserveDeclaredNames(statement.source, ctx);
+    state.ctx.bindings.add(name);
   }
   for (const { localName, binding } of setup.imports) {
     if (binding.importName === localName) {
-      (ctx.imports[binding.importId] ??= new Set()).add(localName);
+      (state.ctx.imports[binding.importId] ??= new Set()).add(localName);
     } else {
       const statement = importStatementForBinding(localName, binding);
       if (!statement) {
         return false;
       }
-      ctx.componentImports.add(statement);
+      state.ctx.componentImports.add(statement);
     }
   }
   return true;
 }
 
-/**
- * A forwarded setup statement as `<script setup>` code, each args read as `print` writes it.
- * `startsLine` is set for a read that starts the statement right after one without a `;`, where a
- * literal starting with `(` or `[` would continue that statement.
- */
-export function setupStatementCode(
-  statement: ForwardableStatement,
-  previous: ForwardableStatement | undefined,
-  print: (read: ArgsRead, following: string, startsLine: boolean) => string
-): string {
-  const afterOpenStatement = previous !== undefined && !/;\s*$/.test(previous.source);
-  let text = statement.source;
-  for (const read of [...statement.argsReads].sort((a, b) => b.start - a.start)) {
-    const printed = print(read, text.slice(read.end), afterOpenStatement && read.start === 0);
-    text = text.slice(0, read.start) + printed + text.slice(read.end);
+function appendSetupStatements(setup: ForwardableSetup, state: TransformState): boolean {
+  for (const statement of setup.statements) {
+    let text = statement.source;
+    for (const read of [...statement.argsReads].sort((a, b) => b.start - a.start)) {
+      const arg = state.argsByName.get(read.name);
+      const rendered = arg
+        ? arg.role === 'prop'
+          ? arg.plan.kind === 'inline'
+            ? scriptValue(arg.name, arg.value, state.ctx)
+            : hoistArgValue(arg.name, arg.value, state.ctx)
+          : undefined
+        : state.unsetArgs.has(read.name)
+          ? state.ctx.holes
+            ? valueHole(read.name, ['script'])
+            : 'undefined'
+          : undefined;
+      if (rendered === undefined) {
+        return false;
+      }
+      const wrapped = wrapSubstitution(rendered, text.slice(read.end));
+      text = text.slice(0, read.start) + wrapped + text.slice(read.end);
+    }
+    state.ctx.statements.push(dedentBy(text, statement.column));
   }
-  return dedentBy(text.replace(/\r\n?/g, '\n'), statement.column);
+  return true;
 }
+
+/**
+ * Parenthesize substituted text that would fuse with the surrounding expression.
+ *
+ * @example `-2` before ` ** 2` → `(-2)`; `5` before `.toFixed(1)` → `(5)`, since `5.toFixed`
+ * lexes the dot into the number
+ */
+function wrapSubstitution(text: string, following: string): string {
+  // The preview wraps the value a hole prints, which a `.` word says code reads on.
+  if (VALUE_HOLE_REGEXP.test(text)) {
+    return following.startsWith('.') ? `${text.slice(0, -1)} .⟧` : text;
+  }
+  if (text.startsWith('-') || (following.startsWith('.') && /^\d/.test(text))) {
+    return `(${text})`;
+  }
+  return text;
+}
+
+const VALUE_HOLE_REGEXP = /^⟦value [^⟧]*⟧$/;
+
+/** A hole for the value of the arg `name`, with the words that say where it stands. */
+const valueHole = (name: string, words: string[]) => hole('value', holeWord(name), ...words);
 
 // Continuation lines keep the story file's nesting; strip the statement's own column from them.
 function dedentBy(source: string, column: number): string {
@@ -596,18 +338,406 @@ function dedentBy(source: string, column: number): string {
     .join('\n');
 }
 
-/**
- * Reserves the names `v-for` and slot scopes declare, and those an expression declares, such as the
- * parameter of `(item) => …`; `false` for a `v-for` or slot scope that cannot be read.
- */
-export function collectTemplateScopeBindings(
-  nodes: TemplateChildNode[],
-  ctx: RenderContext
+function transformNode(node: TemplateChildNode, state: TransformState): boolean {
+  if (node.type === NodeTypes.INTERPOLATION) {
+    return transformInterpolation(node, state);
+  }
+
+  if (node.type === NodeTypes.ELEMENT) {
+    return transformElement(node, state);
+  }
+
+  return true;
+}
+
+// <p>{{ args.label }}</p> -> <p>Hello</p>
+function transformInterpolation(
+  node: Extract<TemplateChildNode, { type: NodeTypes.INTERPOLATION }>,
+  state: TransformState
 ): boolean {
-  for (const node of nodes) {
-    if (node.type === NodeTypes.INTERPOLATION) {
-      reserveDeclaredNames((node.content as SimpleExpressionNode).content, ctx);
+  const expressionNode =
+    node.content.type === NodeTypes.SIMPLE_EXPRESSION ? node.content : undefined;
+  const expression = expressionNode?.content.trim() ?? '';
+  const argName = exactArgsMemberName(expression);
+
+  if (!argName) {
+    if (!expressionNode || !valueReferencesArgs(expression)) {
+      return true;
     }
+
+    const edit = substituteArgsExpression(expressionNode, state, 'interpolation');
+    if (!edit) {
+      return false;
+    }
+    state.edits.push(edit);
+    return true;
+  }
+
+  const arg = state.argsByName.get(argName);
+  const textHole = hole('text', holeWord(argName));
+  if (!arg && state.unsetArgs.has(argName)) {
+    const text = state.ctx.holes ? textHole : '';
+    state.edits.push({ start: node.loc.start.offset, end: node.loc.end.offset, text });
+    return true;
+  }
+  if (!arg) {
+    return false;
+  }
+
+  const rendered = inlinePrimitiveSource(arg.value);
+  if (rendered === undefined) {
+    return false;
+  }
+
+  // Runtime interpolation renders escaped text, so markup and mustache characters in the value
+  // are entity-escaped to decode back to the same text when the snippet re-parses.
+  const text = escapeTextContent(rendered);
+
+  // A value edge touching an author '{' would concatenate into a new '{{'.
+  const start = node.loc.start.offset;
+  const end = node.loc.end.offset;
+  if (
+    (text.startsWith('{') && state.template[start - 1] === '{') ||
+    (text.endsWith('{') && state.template[end] === '{')
+  ) {
+    return false;
+  }
+
+  state.edits.push({ start, end, text: state.ctx.holes ? textHole : text });
+  return true;
+}
+
+function transformElement(node: ElementNode, state: TransformState): boolean {
+  // Vue reads either spelling as the built-in dynamic component only when an `is` binding is
+  // present; a snippet cannot re-create the registration context that binding resolves against.
+  // Without one, the tag resolves like any other component, including one named `Component`.
+  if ((node.tag === 'component' || node.tag === 'Component') && hasIsBinding(node)) {
+    return false;
+  }
+
+  const importStatement = componentImportForTag(node.tag, state.componentImports);
+  if (importStatement) {
+    state.ctx.componentImports.add(importStatement);
+  }
+
+  const element: ElementContext = {
+    storyTag: node.tag === state.componentName,
+    slotChildren: [],
+  };
+  const attributesByName = attributePropsByName(node);
+  const plan = planArgsBindingExpansion(node, attributesByName, state);
+  if (!plan) {
+    return false;
+  }
+
+  for (const prop of node.props) {
+    if (plan.removed.has(prop)) {
+      state.edits.push(replacementFor(prop, '', state.template));
+      continue;
+    }
+    if (plan.directive && prop === plan.directive) {
+      if (!expandArgsBinding(plan.directive, attributesByName, plan.surviving, element, state)) {
+        return false;
+      }
+      continue;
+    }
+    if (
+      prop.type === NodeTypes.DIRECTIVE &&
+      !transformDirective(prop, attributesByName, element, state)
+    ) {
+      return false;
+    }
+  }
+
+  if (element.slotChildren.length > 0) {
+    // Slot children joining an element that already renders its own content would reorder or
+    // duplicate what the story shows, so only an empty element takes them.
+    if (hasNonWhitespaceChildren(node)) {
+      return false;
+    }
+    const edit = slotChildrenEdit(node, element.slotChildren, state.template);
+    if (!edit) {
+      return false;
+    }
+    state.edits.push(edit);
+  }
+
+  return node.children.every((child) => transformNode(child, state));
+}
+
+/**
+ * Collision resolution for a `v-bind="args"` expansion, mirroring Vue's own merge order: the
+ * binding that appears later in the source wins.
+ *
+ * @example `<C v-bind="args" label="x" />` drops the `label` arg;
+ * `<C label="x" v-bind="args" />` removes the attribute
+ */
+function planArgsBindingExpansion(
+  node: ElementNode,
+  attributesByName: Map<string, ElementProp[]>,
+  state: TransformState
+): ArgsExpansionPlan | undefined {
+  const directives = node.props.filter(
+    (prop): prop is DirectiveNode =>
+      prop.type === NodeTypes.DIRECTIVE &&
+      prop.name === 'bind' &&
+      !prop.arg &&
+      prop.exp?.type === NodeTypes.SIMPLE_EXPRESSION &&
+      prop.exp.content.trim() === ARGS_NAME
+  );
+  if (directives.length === 0) {
+    return { surviving: [], removed: new Set() };
+  }
+  // Two expansions of the same args cannot both win the element.
+  if (directives.length > 1) {
+    return undefined;
+  }
+
+  const [directive] = directives;
+  const removed = new Set<ElementProp>();
+  const surviving: ClassifiedArg[] = [];
+
+  for (const arg of state.argsByName.values()) {
+    const attributeName = arg.role === 'event' ? (arg.eventName ?? arg.name) : arg.name;
+    const competitors = attributesByName.get(attributeName) ?? [];
+    if (competitors.length === 0) {
+      surviving.push(arg);
+      continue;
+    }
+    // Vue merges class and style from every source, runs every colliding listener, and pairs a
+    // v-model with an update listener; none of those reduce to a single later-wins winner.
+    if (attributeName === 'class' || attributeName === 'style' || arg.role !== 'prop') {
+      return undefined;
+    }
+    if (competitors.some((prop) => prop.loc.start.offset > directive.loc.start.offset)) {
+      continue;
+    }
+    for (const prop of competitors) {
+      removed.add(prop);
+    }
+    surviving.push(arg);
+  }
+
+  return { directive, surviving, removed };
+}
+
+function expandArgsBinding(
+  directive: DirectiveNode,
+  attributesByName: Map<string, ElementProp[]>,
+  surviving: ClassifiedArg[],
+  element: ElementContext,
+  state: TransformState
+): boolean {
+  const rendered = renderArgsBindingExpansion(surviving, state.ctx, {
+    roleAware: element.storyTag,
+    renderSlotArg: (slot) =>
+      renderSlotArgContent(slot, state.ctx, state.importBindings, state.componentImports),
+  });
+  if (!rendered) {
+    return false;
+  }
+
+  element.slotChildren.push(...rendered.slotChildren);
+  const attributes = state.ctx.holes
+    ? [...rendered.attributes, restOfArgsHole(directive, attributesByName, state)]
+    : rendered.attributes;
+  state.edits.push(replacementFor(directive, attributes.join(' '), state.template));
+  return true;
+}
+
+/**
+ * The args a `v-bind="args"` passes that the story does not write, as a control can set them: every
+ * arg but the story's own, each shown as the snippet shows it, the element's attributes and the
+ * component's slots.
+ */
+function restOfArgsHole(
+  directive: DirectiveNode,
+  attributesByName: Map<string, ElementProp[]>,
+  state: TransformState
+): string {
+  const taken = [
+    ...state.storyArgs,
+    ...state.argsByName.keys(),
+    ...[...attributesByName.keys()].flatMap(spellings),
+    ...state.slots,
+  ];
+  return hole('props', ...[...new Set(taken)].sort().map((name) => holeWord(`-${name}`)));
+}
+
+// The arg names that set the same prop as an attribute: `max-count` and `maxCount`.
+const spellings = (name: string) => [
+  name,
+  name.replace(/-(\w)/g, (_, letter: string) => letter.toUpperCase()),
+  name.replace(/\B([A-Z])/g, '-$1').toLowerCase(),
+];
+
+function transformDirective(
+  directive: DirectiveNode,
+  attributesByName: Map<string, ElementProp[]>,
+  element: ElementContext,
+  state: TransformState
+): boolean {
+  // A dynamic argument (`:[args.key]`, `#[args.slotName]`) reads a binding the snippet's script
+  // never declares, so it would throw where the story renders.
+  if (directive.arg && !staticDirectiveArg(directive)) {
+    return false;
+  }
+
+  const expressionNode =
+    directive.exp?.type === NodeTypes.SIMPLE_EXPRESSION ? directive.exp : undefined;
+  const expression = expressionNode?.content.trim();
+
+  const boundProp = staticDirectiveArg(directive);
+  const argName = expression === undefined ? undefined : exactArgsMemberName(expression);
+
+  // <MyButton :label="args.label" />
+  if (directive.name === 'bind' && boundProp && directive.modifiers.length === 0 && argName) {
+    const arg = state.argsByName.get(argName);
+    if ((attributesByName.get(boundProp)?.length ?? 0) > 1) {
+      return false;
+    }
+    if (!arg && state.unsetArgs.has(argName)) {
+      // Vue resolves a prop bound to undefined to its declared default, exactly as an absent attribute does.
+      const text = state.ctx.holes ? hole('attr', holeWord(boundProp), holeWord(argName)) : '';
+      state.edits.push(replacementFor(directive, text, state.template));
+      return true;
+    }
+    if (!arg) {
+      return false;
+    }
+    // <MyButton :header="args.header" /> fills the slot the binding names.
+    if (arg.role === 'slot') {
+      if (!element.storyTag) {
+        return false;
+      }
+      const content = renderSlotArgContent(
+        arg,
+        state.ctx,
+        state.importBindings,
+        state.componentImports
+      );
+      if (content === undefined) {
+        return false;
+      }
+      element.slotChildren.push(wrapSlotContent(boundProp, content));
+      state.edits.push(replacementFor(directive, '', state.template));
+      return true;
+    }
+    state.edits.push({
+      start: directive.loc.start.offset,
+      end: directive.loc.end.offset,
+      text: renderBoundArgAttribute(boundProp, arg, state.ctx),
+    });
+    return true;
+  }
+
+  // <MyButton @click="args.onClick" />
+  if (directive.name === 'on' && boundProp && argName && expressionNode) {
+    const arg = state.argsByName.get(argName);
+    if (!arg && state.unsetArgs.has(argName)) {
+      // An undefined handler attaches no listener, exactly as an absent binding does.
+      state.edits.push(replacementFor(directive, '', state.template));
+      return true;
+    }
+    if (!arg) {
+      return false;
+    }
+    if (!isFunctionExpression(arg.value)) {
+      return false;
+    }
+    state.edits.push({
+      start: expressionNode.loc.start.offset,
+      end: expressionNode.loc.end.offset,
+      text: hoistArgValue(argName, arg.value, state.ctx),
+    });
+    return true;
+  }
+
+  // <MyButton v-model="args.modelValue" />
+  if (directive.name === 'model' && argName && expressionNode) {
+    const arg = state.argsByName.get(argName);
+    if (!arg && !state.unsetArgs.has(argName)) {
+      return false;
+    }
+    if (arg && (arg.role === 'slot' || arg.role === 'event')) {
+      return false;
+    }
+    // Dropping the binding would drop the two-way flow the story demonstrates, so it starts its ref empty.
+    state.edits.push({
+      start: expressionNode.loc.start.offset,
+      end: expressionNode.loc.end.offset,
+      text: hoistModelRef(argName, arg?.value, state.ctx),
+    });
+    return true;
+  }
+
+  if (!expressionNode || !expression || !valueReferencesArgs(expression)) {
+    return true;
+  }
+
+  if (directive.name === 'on' || directive.name === 'model' || directive.name === 'slot') {
+    return false;
+  }
+
+  const edit = substituteArgsExpression(expressionNode, state, 'directive');
+  if (!edit) {
+    return false;
+  }
+  state.edits.push(edit);
+  return true;
+}
+
+function substituteArgsExpression(
+  exp: SimpleExpressionNode,
+  state: TransformState,
+  context: ExpressionContext
+): Edit | undefined {
+  const source = state.template.slice(exp.loc.start.offset, exp.loc.end.offset);
+  if (source !== exp.content) {
+    return undefined;
+  }
+
+  const ast = parseTemplateExpression(exp.content);
+  if (!ast) {
+    return undefined;
+  }
+
+  const references = collectArgsReferences(ast);
+  if (!references) {
+    return undefined;
+  }
+
+  const quote =
+    context === 'directive' ? surroundingAttributeQuote(exp, state.template) : undefined;
+  if (context === 'directive' && !quote) {
+    return undefined;
+  }
+
+  const replacements = new Map<string, string>();
+  for (const reference of references) {
+    const replacement =
+      replacements.get(reference.name) ?? replacementForArgsReference(reference, quote, state);
+    if (!replacement) {
+      return undefined;
+    }
+    replacements.set(reference.name, replacement);
+  }
+
+  const text = references
+    .sort((a, b) => b.start - a.start)
+    .reduce((expression, reference) => {
+      const wrapped = wrapSubstitution(
+        replacements.get(reference.name)!,
+        expression.slice(reference.end)
+      );
+      return expression.slice(0, reference.start) + wrapped + expression.slice(reference.end);
+    }, exp.content);
+
+  return { start: exp.loc.start.offset, end: exp.loc.end.offset, text };
+}
+
+function collectTemplateScopeBindings(nodes: TemplateChildNode[], ctx: RenderContext): boolean {
+  for (const node of nodes) {
     if (node.type !== NodeTypes.ELEMENT) {
       continue;
     }
@@ -615,9 +745,6 @@ export function collectTemplateScopeBindings(
     for (const prop of node.props) {
       if (prop.type !== NodeTypes.DIRECTIVE) {
         continue;
-      }
-      if (prop.exp?.type === NodeTypes.SIMPLE_EXPRESSION) {
-        reserveDeclaredNames(prop.exp.content, ctx);
       }
 
       const pattern = bindingPatternForDirective(prop);
@@ -632,33 +759,6 @@ export function collectTemplateScopeBindings(
   }
 
   return true;
-}
-
-// A hoisted const named as a name the code declares would be read as that name inside its scope,
-// as `item` in `args.items.filter((item) => item.id !== args.item.id)`. Code that does not parse
-// declares nothing the snippet could keep.
-function reserveDeclaredNames(code: string, ctx: RenderContext) {
-  let program: E.Program;
-  try {
-    ({ program } = parseModule(code));
-  } catch {
-    return;
-  }
-  walk(program, (node) => {
-    const patterns =
-      node.type === 'FunctionDeclaration' ||
-      node.type === 'FunctionExpression' ||
-      node.type === 'ArrowFunctionExpression'
-        ? node.params
-        : node.type === 'VariableDeclarator'
-          ? [node.id]
-          : node.type === 'CatchClause' && node.param
-            ? [node.param]
-            : [];
-    for (const pattern of patterns) {
-      addBindingNames(pattern, ctx.bindings);
-    }
-  });
 }
 
 function bindingPatternForDirective(directive: DirectiveNode): string | undefined {
@@ -730,45 +830,16 @@ function parseTemplateExpression(code: string): E.Expression | undefined {
   if (
     rest.length > 0 ||
     statement?.type !== 'ExpressionStatement' ||
-    (statement.expression as E.Expression & Spanned).start === 0
+    (statement.expression as E.Expression & { start: number }).start === 0
   ) {
     return undefined;
   }
   walk(statement.expression, (node) => {
-    const span = node as Node & Spanned;
+    const span = node as Node & { start: number; end: number };
     span.start -= 1;
     span.end -= 1;
   });
   return statement.expression;
-}
-
-// Whether an identifier reads a value, rather than naming a member, a key or a binding.
-function isReferenced(node: Node, parent: Node | null): boolean {
-  switch (parent?.type) {
-    case 'MemberExpression':
-      return parent.object === node || parent.computed;
-    case 'Property':
-      return parent.value === node || (parent.key === node && parent.computed);
-    case 'MethodDefinition':
-    case 'PropertyDefinition':
-      return parent.key !== node || parent.computed;
-    case 'VariableDeclarator':
-      return parent.init === node;
-    case 'FunctionDeclaration':
-    case 'FunctionExpression':
-    case 'ArrowFunctionExpression':
-      return parent.id !== node && !(parent.params as Node[]).includes(node);
-    case 'CatchClause':
-      return parent.param !== node;
-    case 'LabeledStatement':
-    case 'BreakStatement':
-    case 'ContinueStatement':
-      return false;
-    case 'MetaProperty':
-      return false;
-    default:
-      return true;
-  }
 }
 
 function arrowParamsForPattern(pattern: string): string {
@@ -776,11 +847,254 @@ function arrowParamsForPattern(pattern: string): string {
   return trimmed.startsWith('(') && trimmed.endsWith(')') ? trimmed : `(${trimmed})`;
 }
 
+function surroundingAttributeQuote(
+  exp: SimpleExpressionNode,
+  template: string
+): '"' | "'" | undefined {
+  const quote = template[exp.loc.start.offset - 1];
+  return quote === '"' || quote === "'" ? quote : undefined;
+}
+
+function collectArgsReferences(expression: E.Expression): ArgsReference[] | undefined {
+  const references: ArgsReference[] = [];
+  let invalid = false;
+
+  walk(expression, (node, parent) => {
+    if (invalid) {
+      return false;
+    }
+
+    if (
+      node.type === 'AssignmentExpression' ||
+      node.type === 'UpdateExpression' ||
+      (node.type === 'UnaryExpression' && node.operator === 'delete')
+    ) {
+      invalid = true;
+      return false;
+    }
+
+    const reference = argsReference(node);
+    if (reference) {
+      references.push(reference);
+    }
+
+    if (
+      node.type === 'Identifier' &&
+      node.name === ARGS_NAME &&
+      !isAllowedArgsObject(node, parent)
+    ) {
+      invalid = true;
+      return false;
+    }
+  });
+
+  return invalid ? undefined : references;
+}
+
+function argsReference(node: Node): ArgsReference | undefined {
+  if (
+    node.type !== 'MemberExpression' ||
+    node.computed ||
+    node.object.type !== 'Identifier' ||
+    node.object.name !== ARGS_NAME ||
+    node.property.type !== 'Identifier'
+  ) {
+    return undefined;
+  }
+
+  const { start, end } = node as E.MemberExpression & { start: number; end: number };
+  return { start, end, name: node.property.name };
+}
+
+function isAllowedArgsObject(node: Node, parent: Node | null): boolean {
+  return parent?.type === 'MemberExpression' && parent.object === node && !parent.computed;
+}
+
+function replacementForArgsReference(
+  reference: ArgsReference,
+  quote: '"' | "'" | undefined,
+  state: TransformState
+): string | undefined {
+  const arg = state.argsByName.get(reference.name);
+  const words = quote === "'" ? ["'"] : quote === undefined ? ['{{'] : [];
+  if (!arg && state.unsetArgs.has(reference.name)) {
+    return state.ctx.holes ? valueHole(reference.name, words) : 'undefined';
+  }
+  if (!arg) {
+    return undefined;
+  }
+  if (arg.role === 'slot') {
+    return undefined;
+  }
+
+  // Non-slot args are typed with renderable plans only, so no 'function-slot' check is needed.
+  const text =
+    arg.plan.kind === 'inline'
+      ? printValue(unwrapExpression(arg.value))
+      : hoistArgValue(arg.name, arg.value, state.ctx);
+
+  // Vue entity-decodes generated markup on re-parse, so `&` cannot be substituted faithfully.
+  if ((quote && text.includes(quote)) || text.includes('}}') || text.includes('&')) {
+    return undefined;
+  }
+
+  return state.ctx.holes && arg.plan.kind === 'inline'
+    ? valueHole(reference.name, [...words, ...quoteWords(arg.value)])
+    : text;
+}
+
+/**
+ * Removing an attribute outright must also consume the whitespace that separated it from its
+ * neighbors, so `<MyButton v-bind="args" />` with nothing to expand stays `<MyButton />`.
+ */
+function replacementFor(prop: { loc: ElementProp['loc'] }, text: string, template: string): Edit {
+  const start = prop.loc.start.offset;
+  const end = prop.loc.end.offset;
+  if (text !== '') {
+    return { start, end, text };
+  }
+
+  const lineStart = blankRunStart(template, start);
+  const lineEnd = blankRunEnd(template, end);
+  if (template[lineStart - 1] === '\n' && template[lineEnd] === '\n') {
+    return { start: lineStart - 1, end: lineEnd, text };
+  }
+  return { start: lineStart, end, text };
+}
+
+function blankRunStart(template: string, index: number): number {
+  let cursor = index;
+  while (cursor > 0 && BLANK_REGEXP.test(template[cursor - 1])) {
+    cursor -= 1;
+  }
+  return cursor;
+}
+
+function blankRunEnd(template: string, index: number): number {
+  let cursor = index;
+  while (cursor < template.length && BLANK_REGEXP.test(template[cursor])) {
+    cursor += 1;
+  }
+  return cursor;
+}
+
+/**
+ * Splices slot children into an element, opening a self-closing tag when needed.
+ *
+ * Children always sit on their own indented lines: slot text is whitespace-safe by construction,
+ * because padded strings hoist to interpolations before they get here.
+ *
+ * @example `<C label="Hi" />` + `Body` → `<C label="Hi">\n  Body\n</C>`
+ */
+function slotChildrenEdit(
+  node: ElementNode,
+  children: string[],
+  template: string
+): Edit | undefined {
+  const baseIndent = ' '.repeat(Math.max(node.loc.start.column - 1, 0));
+  const joined = `\n${children
+    .map((child) => indentBy(child, `${baseIndent}  `))
+    .join('\n')}\n${baseIndent}`;
+
+  if (node.isSelfClosing) {
+    let start = node.loc.end.offset - 2;
+    while (start > 0 && template[start - 1] === ' ') {
+      start -= 1;
+    }
+    return { start, end: node.loc.end.offset, text: `>${joined}</${node.tag}>` };
+  }
+
+  if (node.children.length > 0) {
+    const start = node.children[0].loc.start.offset;
+    const end = node.children[node.children.length - 1].loc.end.offset;
+    return { start, end, text: joined };
+  }
+
+  const innerStart = openTagEndOffset(node, template);
+  return innerStart === undefined
+    ? undefined
+    : { start: innerStart, end: innerStart, text: joined };
+}
+
+function hasNonWhitespaceChildren(node: ElementNode): boolean {
+  return node.children.some(
+    (child) => child.type !== NodeTypes.TEXT || child.content.trim() !== ''
+  );
+}
+
+// After the last attribute only whitespace and the tag close remain, so scanning for '>' is safe.
+function openTagEndOffset(node: ElementNode, template: string): number | undefined {
+  const lastProp = node.props.at(-1);
+  let offset = lastProp ? lastProp.loc.end.offset : node.loc.start.offset + 1 + node.tag.length;
+  while (offset < template.length && template[offset] !== '>') {
+    offset += 1;
+  }
+  return template[offset] === '>' ? offset + 1 : undefined;
+}
+
+function indentBy(source: string, indentation: string): string {
+  return source
+    .split('\n')
+    .map((line) => `${indentation}${line}`)
+    .join('\n');
+}
+
+function applyEdits(template: string, edits: Edit[]): string {
+  return edits
+    .sort((a, b) => b.start - a.start)
+    .reduce(
+      (source, edit) => source.slice(0, edit.start) + edit.text + source.slice(edit.end),
+      template
+    );
+}
+
+// ':label' or 'v-bind:label' -> 'label'; dynamic args ('[key]') have no static name
+function staticDirectiveArg(directive: DirectiveNode): string | undefined {
+  return directive.arg?.type === NodeTypes.SIMPLE_EXPRESSION && directive.arg.isStatic
+    ? directive.arg.content
+    : undefined;
+}
+
+// <component is="x">, <component :is="x">, or the legacy <component v-is="x">
+function hasIsBinding(node: ElementNode): boolean {
+  return node.props.some((prop) => {
+    if (prop.type === NodeTypes.ATTRIBUTE) {
+      return prop.name === 'is';
+    }
+    return prop.name === 'is' || (prop.name === 'bind' && staticDirectiveArg(prop) === 'is');
+  });
+}
+
+/**
+ * The element's attributes grouped by the prop or event name each one binds, counting a directive
+ * by its static argument. Callers consult positions to resolve name collisions the way Vue does.
+ */
+function attributePropsByName(node: ElementNode): Map<string, ElementProp[]> {
+  const byName = new Map<string, ElementProp[]>();
+  const add = (name: string | undefined, prop: ElementProp): void => {
+    if (name) {
+      byName.set(name, [...(byName.get(name) ?? []), prop]);
+    }
+  };
+
+  for (const prop of node.props) {
+    if (prop.type === NodeTypes.ATTRIBUTE) {
+      add(prop.name, prop);
+    } else if (prop.name === 'model' && !prop.arg) {
+      add('modelValue', prop);
+    } else {
+      add(staticDirectiveArg(prop), prop);
+    }
+  }
+
+  return byName;
+}
+
 /**
  * Import statement for a template tag, matched the way Vue resolves components: the literal tag
  * first, then its PascalCase form (`<my-button>` -> `MyButton`).
  */
-export function componentImportForTag(
+function componentImportForTag(
   tag: string,
   componentImports: Map<string, string>
 ): string | undefined {
@@ -790,6 +1104,15 @@ export function componentImportForTag(
 function pascalCase(tag: string): string {
   const camel = tag.replace(/-(\w)/g, (_match, char: string) => char.toUpperCase());
   return camel.charAt(0).toUpperCase() + camel.slice(1);
+}
+
+// 'args.label' -> 'label'
+function exactArgsMemberName(value: string): string | undefined {
+  return ARGS_MEMBER_REGEXP.exec(value)?.[1];
+}
+
+function valueReferencesArgs(value: string): boolean {
+  return ARGS_IDENTIFIER_REGEXP.test(value);
 }
 
 // '<MyButton />' or `<MyButton />` without substitutions

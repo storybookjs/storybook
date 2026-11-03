@@ -120,7 +120,7 @@ const isComponentName = (name: string): boolean => /^[A-Z]/.test(name);
 
 /**
  * Prints a statically decidable `h()` tree as template markup, preserving story args as `args`
- * expressions for `transformTemplate` to put a hole at.
+ * expressions for the template engine to substitute.
  *
  * @example `h(C, { ...args, label: args.label })` → `<C v-bind="args" :label="args.label" />`
  */
@@ -143,7 +143,7 @@ export function printH(input: PrintHInput): PrintHResult | undefined {
     argsParam: input.argsParam,
     componentName: input.componentName,
     componentImports,
-    ctx: input.ctx,
+    ctx: writtenValues(input.ctx),
     docgen: input.docgen,
     importBindings: input.importBindings,
   });
@@ -158,11 +158,15 @@ export function printHFragment(
 ): string | undefined {
   return printFragmentFunction(node, {
     componentImports: options.componentImportStatements ?? new Map(),
-    ctx: options.ctx,
+    ctx: writtenValues(options.ctx),
     docgen: NO_DOCGEN,
     importBindings: options.importBindings,
   });
 }
+
+// The values an `h()` tree writes are no args, so a template prints them as the snippet does, into
+// the same `<script setup>`.
+const writtenValues = (ctx: RenderContext): RenderContext => ({ ...ctx, holes: false });
 
 // h('div', { class: 'row' }, 'Hi') -> <div class="row">Hi</div>
 function printNode(node: Node, options: PrintOptions): string | undefined {

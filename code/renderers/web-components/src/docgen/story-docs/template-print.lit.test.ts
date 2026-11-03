@@ -16,7 +16,6 @@ import type {
   ManifestDeclaration,
 } from '../component-docgen/manifest/types.ts';
 import { parseHtml } from './html-tree.ts';
-import { fillTemplate } from '../../docs/fill-template.ts';
 import { printHtmlTemplate } from './template-print.ts';
 import { resolveHtmlTemplate } from './template-scope.ts';
 
@@ -130,7 +129,7 @@ const renderSnippet = (attrs: readonly AttributeSlot[]): string => {
   }
   const template = resolveHtmlTemplate(renderFunction.node, csf);
   expect(template).toBeDefined();
-  return fillTemplate(printHtmlTemplate(template!, {}, declaration).template, {});
+  return printHtmlTemplate(template!, {}, declaration).snippet;
 };
 
 const renderLitAttributes = (attrs: readonly AttributeSlot[]): [string, string][] => {

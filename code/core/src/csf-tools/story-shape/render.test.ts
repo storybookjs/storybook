@@ -22,20 +22,6 @@ const resolveStoryRender = (code: string) => {
   );
 };
 
-/** {@link resolveStoryRender}, reading the spreads in the story file. */
-const resolveStoryRenderThroughSpreads = (code: string) => {
-  const source = `export default { title: 'T' };\n${dedent(code)}`;
-  const csf = loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();
-  editor = csf.editor;
-  const normalized = normalizeStoryDeclaration(csf._storyExports['A'], csf.editor);
-
-  return resolveRenderFunction(
-    normalized.type === 'config' ? normalized.node : undefined,
-    csf.editor,
-    { editor: csf.editor, filePath: 'entry.ts' }
-  );
-};
-
 let editor: SourceEditor;
 
 const printed = (node: Node) => {
@@ -159,28 +145,6 @@ describe('resolveRenderFunction', () => {
     expect(() => resolveStoryRender(`export const A = { render: { nested: true } };`)).toThrow(
       /Expected render to be an arrow function or function expression/
     );
-  });
-});
-
-describe('resolveRenderFunction through a spread', () => {
-  it('reads the render of a story the spread copies', () => {
-    expect(
-      printedBody(
-        resolveStoryRenderThroughSpreads(`
-          export const Base = { render: () => 'base' };
-          export const A = { ...Base, args: { label: 'a' } };
-        `)
-      )
-    ).toBe(`() => 'base'`);
-  });
-
-  it('reports a spread of what a helper returns as unresolved, as the helper is not run', () => {
-    expect(
-      resolveStoryRenderThroughSpreads(`
-        const createStory = (variant) => ({ args: { variant }, render: () => 'made' });
-        export const A = { ...createStory('primary'), args: { label: 'a' } };
-      `)
-    ).toEqual({ kind: 'unresolved' });
   });
 });
 

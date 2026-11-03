@@ -2,7 +2,6 @@ import type { CsfFile } from '../CsfFile.ts';
 import { type E, type Node, staticKey } from '../estree/ast.ts';
 import type { SourceEditor } from '../estree/editor.ts';
 import { normalizeStoryDeclaration, storyShapeError } from './normalize-story.ts';
-import { resolveSpreadMeta } from './spread-meta.ts';
 import {
   type ReferenceContext,
   type ResolvedMembers,
@@ -101,18 +100,7 @@ export function resolveEffectiveRender(
   }
 
   const metaRender = readRender(metaObject(csf), csf.editor, references);
-  // A meta that spreads another story file's meta renders with that one's render, read in its file.
-  const spreadMeta =
-    metaRender.kind === 'unresolved' && references ? resolveSpreadMeta(csf, references) : undefined;
-  const baseRender =
-    spreadMeta &&
-    !spreadMeta.own.properties.some(
-      (property) => property.type !== 'SpreadElement' && staticKey(property) === 'render'
-    )
-      ? readRender(spreadMeta.object, spreadMeta.ctx.editor, spreadMeta.ctx)
-      : undefined;
-  const render = baseRender ?? metaRender;
-  return render.kind === 'invalid' ? { kind: 'unresolved' } : render;
+  return metaRender.kind === 'invalid' ? { kind: 'unresolved' } : metaRender;
 }
 
 const readRender = (

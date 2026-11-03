@@ -2,7 +2,6 @@ import {
   type ESTree as E,
   type ESTreeNode as Node,
   type ImportBinding,
-  isOperand,
   staticKey,
   unwrapExpression,
   walk,
@@ -42,11 +41,6 @@ export interface ArgsRead {
   start: number;
   end: number;
   name: string;
-  /**
-   * Whether code in its place needs parentheses, given the node the story writes the arg with; see
-   * `isOperand`.
-   */
-  operand: (written?: Node) => boolean;
 }
 
 export type ForwardableSetupResolution =
@@ -219,7 +213,6 @@ export function readForwardableSetup(
         start: read.start - start,
         end: read.end - start,
         name: read.name,
-        operand: read.operand,
       })),
     });
   }
@@ -279,13 +272,24 @@ function collectArgsReads(statement: E.Statement, argsParam: string | undefined)
 
   const reads: ArgsRead[] = [];
   let blocked: string | undefined;
-  const parents = new Map<Node, Node | null>();
 
   walk(statement, (node, parent) => {
     if (blocked) {
       return false;
     }
-    parents.set(node, parent);
+
+    // A mutation whose target roots at the args parameter has no substitutable value form.
+    const mutationTarget =
+      node.type === 'AssignmentExpression'
+        ? node.left
+        : node.type === 'UpdateExpression' ||
+            (node.type === 'UnaryExpression' && node.operator === 'delete')
+          ? node.argument
+          : undefined;
+    if (mutationTarget && rootIdentifierName(mutationTarget) === argsParam) {
+      blocked = argsParam;
+      return false;
+    }
 
     if (node.type !== 'Identifier' || node.name !== argsParam || isNamePosition(node, parent)) {
       return;
@@ -298,29 +302,20 @@ function collectArgsReads(statement: E.Statement, argsParam: string | undefined)
       blocked = argsParam;
       return false;
     }
-    const around: Node[] = [];
-    for (let above = parents.get(member); above; above = parents.get(above)) {
-      around.push(above);
-    }
-    // The target of a write, as in `args.count++`, is no read and stays as written.
-    const [above] = around;
-    if (
-      (above?.type === 'AssignmentExpression' && above.left === member) ||
-      above?.type === 'UpdateExpression' ||
-      (above?.type === 'UnaryExpression' && above.operator === 'delete')
-    ) {
-      return;
-    }
     const { start, end } = member as E.MemberExpression & Spanned;
-    reads.push({
-      start,
-      end,
-      name: member.property.name,
-      operand: (written) => isOperand(member, around, written),
-    });
+    reads.push({ start, end, name: member.property.name });
   });
 
   return blocked ? { ok: false, reference: blocked } : { ok: true, reads };
+}
+
+// args.theme.color -> 'args'
+function rootIdentifierName(node: Node): string | undefined {
+  let current: Node = node;
+  while (current.type === 'MemberExpression' || current.type === 'ChainExpression') {
+    current = current.type === 'MemberExpression' ? current.object : current.expression;
+  }
+  return current.type === 'Identifier' ? current.name : undefined;
 }
 
 // args.label -> 'label' and { label: 1 } -> 'label' are name positions, not references

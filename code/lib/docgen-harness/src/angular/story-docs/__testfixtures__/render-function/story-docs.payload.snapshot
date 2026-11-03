@@ -28,7 +28,7 @@ import { RenderFunctionComponent } from './render-function.component.ts';
   template: `<sb-render-function [label]="label"></sb-render-function>`,
 })
 export class DemoComponent {
-  label = ⟦value label⟧;
+  label = ⟦field label⟧;
 }",
     },
     "storydocs-render-function--no-render": {
@@ -50,7 +50,7 @@ import { RenderFunctionComponent } from './render-function.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [RenderFunctionComponent],
-  template: `<sb-render-function ⟦props = label⟧ />`,
+  template: `<sb-render-function [label]="⟦bind label⟧" />`,
 })
 export class DemoComponent {}",
     },

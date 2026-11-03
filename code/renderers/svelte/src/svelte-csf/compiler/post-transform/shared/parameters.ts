@@ -49,8 +49,6 @@ export const getParametersPropertyValue = (
     if (property.value.body.body[0].argument) {
       properties.push({
         type: 'SpreadElement',
-        start: 0,
-        end: 0,
         argument: property.value.body.body[0].argument,
       });
     }

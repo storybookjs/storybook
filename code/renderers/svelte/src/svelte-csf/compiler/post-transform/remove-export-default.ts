@@ -2,6 +2,7 @@ import { print } from 'esrap';
 import type MagicString from 'magic-string';
 
 import type { CompiledASTNodes } from '../../parser/extract/compiled/nodes.ts';
+import { span } from '../../parser/ast.ts';
 
 interface Params {
   code: MagicString;
@@ -15,13 +16,15 @@ export function removeExportDefault(params: Params) {
   const { exportDefault, storiesFunctionDeclaration } = nodes;
 
   if (exportDefault.declaration.type === 'FunctionDeclaration') {
-    const { start, end } = exportDefault;
+    const { start, end } = span(exportDefault);
 
     // NOTE: It updates code by removing `export default` from the stories function declaration.
     code.update(start, end, print(storiesFunctionDeclaration).code);
   }
 
   if (exportDefault.declaration.type === 'Identifier') {
-    code.remove(exportDefault.start, exportDefault.end);
+    const { start, end } = span(exportDefault);
+
+    code.remove(start, end);
   }
 }

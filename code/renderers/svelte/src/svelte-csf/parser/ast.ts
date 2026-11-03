@@ -16,9 +16,6 @@ export function getSvelteAST(options: GetSvelteASTOptions) {
   return ast;
 }
 
-// All nodes these factories build are synthetic: they are printed by esrap and appended to the
-// file, so nothing reads their position in the original source. `0, 0` satisfies the required
-// estree `start`/`end` fields without pretending to be a real offset.
 export function createASTProperty(
   name: string,
   value: ESTreeAST.Property['value']
@@ -26,16 +23,12 @@ export function createASTProperty(
   return {
     type: 'Property',
     kind: 'init',
-    start: 0,
-    end: 0,
     computed: false,
     method: false,
     shorthand: false,
     key: {
       type: 'Identifier',
       name,
-      start: 0,
-      end: 0,
     },
     value,
   };
@@ -46,8 +39,6 @@ export function createASTArrayExpression(
 ): ESTreeAST.ArrayExpression {
   return {
     type: 'ArrayExpression',
-    start: 0,
-    end: 0,
     elements,
   };
 }
@@ -57,8 +48,6 @@ export function createASTObjectExpression(
 ): ESTreeAST.ObjectExpression {
   return {
     type: 'ObjectExpression',
-    start: 0,
-    end: 0,
     properties,
   };
 }
@@ -74,8 +63,6 @@ export function appendASTProperty(
 export function createASTIdentifier(name: string): ESTreeAST.Identifier {
   return {
     type: 'Identifier',
-    start: 0,
-    end: 0,
     name,
   };
 }
@@ -90,11 +77,26 @@ export function createASTExportSpecifier({
 }: ExportSpecifierOptions): ESTreeAST.ExportSpecifier {
   return {
     type: 'ExportSpecifier',
-    start: 0,
-    end: 0,
     local: createASTIdentifier(local),
     exported: createASTIdentifier(exported ?? local),
   };
+}
+
+export type Span = { start: number; end: number };
+
+// Returns the source positions of a node parsed by the Svelte compiler. Throws on missing
+// positions instead of defaulting to 0, because a fabricated offset silently edits offset 0 of
+// the MagicString.
+export function span(node: object): Span {
+  if (
+    'start' in node &&
+    typeof node.start === 'number' &&
+    'end' in node &&
+    typeof node.end === 'number'
+  ) {
+    return { start: node.start, end: node.end };
+  }
+  throw new TypeError('Svelte AST node has no source positions');
 }
 
 export type { ESTreeAST, SvelteAST };

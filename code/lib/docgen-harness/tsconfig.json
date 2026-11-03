@@ -8,9 +8,6 @@
     "src/**/*",
     "../../renderers/vue3/src/typings.d.ts",
     "../../renderers/svelte/src/typings.d.ts",
-    // Compiles the Svelte CSF sources, whose estree nodes carry required `start`/`end` (see
-    // svelte-csf/estree.d.ts); the renderer's own program picks the augmentation up implicitly.
-    "../../renderers/svelte/src/svelte-csf/estree.d.ts",
     "../../frameworks/angular-vite/src/typings.d.ts"
   ],
   // These import angular-vite source (client runtime and preset), which is authored

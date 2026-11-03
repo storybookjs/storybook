@@ -129,8 +129,6 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
     createASTProperty('story', {
       type: 'Literal',
       value: dedent(comment.data).trim(),
-      start: 0,
-      end: 0,
     })
   );
 

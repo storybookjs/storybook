@@ -12,18 +12,12 @@ describe(createVariableFromRuntimeStoriesCall.name, () => {
           id: {
             type: 'Identifier',
             name: 'Example_stories',
-            start: 0,
-            end: 0,
           },
           body: {
             type: 'BlockStatement',
             body: [],
-            start: 0,
-            end: 0,
           },
           params: [],
-          start: 0,
-          end: 0,
         },
       })
     ).code;

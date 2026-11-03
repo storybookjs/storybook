@@ -5,7 +5,7 @@ import { replaceDefineMetaArgument } from './replace-argument.ts';
 import { insertDefineMetaParameters } from './insert-parameters.ts';
 
 import { STORYBOOK_META_IDENTIFIER } from '../../../constants.ts';
-import { createASTIdentifier, type ESTreeAST } from '../../../parser/ast.ts';
+import { createASTIdentifier, span, type ESTreeAST } from '../../../parser/ast.ts';
 import type { CompiledASTNodes } from '../../../parser/extract/compiled/nodes.ts';
 import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.ts';
 
@@ -29,11 +29,13 @@ export function transformDefineMeta(params: Params): void {
   }
 
   const metaObjectExpression = replaceDefineMetaArgument({ nodes, filename });
-  const metaVariableDeclaration = createMetaVariableDeclaration({ init: metaObjectExpression });
+  const metaVariableDeclaration = createMetaVariableDeclaration({
+    init: metaObjectExpression,
+  });
 
   const { compiled } = nodes;
   const { defineMetaVariableDeclaration } = compiled;
-  const { start, end } = defineMetaVariableDeclaration;
+  const { start, end } = span(defineMetaVariableDeclaration);
 
   code.update(start, end, print(defineMetaVariableDeclaration).code);
   code.appendLeft(start, print(metaVariableDeclaration).code + '\n');
@@ -43,7 +45,7 @@ export function transformDefineMeta(params: Params): void {
 function transformFactoryMeta(params: Params): void {
   const { code, nodes } = params;
   const { defineMetaVariableDeclaration, metaIdentifier } = nodes.compiled;
-  const { start, end } = defineMetaVariableDeclaration;
+  const { start, end } = span(defineMetaVariableDeclaration);
   const [declarator] = defineMetaVariableDeclaration.declarations;
   let printed = '';
 
@@ -63,13 +65,9 @@ export function createMetaVariableDeclaration({
   return {
     type: 'VariableDeclaration',
     kind: 'const',
-    start: 0,
-    end: 0,
     declarations: [
       {
         type: 'VariableDeclarator',
-        start: 0,
-        end: 0,
         id: createASTIdentifier(STORYBOOK_META_IDENTIFIER),
         init,
       },

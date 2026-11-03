@@ -19,26 +19,18 @@ export function createExportOrderVariableDeclaration(
 
   return {
     type: 'ExportNamedDeclaration',
-    start: 0,
-    end: 0,
     specifiers: [specifier],
     declaration: {
       type: 'VariableDeclaration',
       kind: 'const',
-      start: 0,
-      end: 0,
       declarations: [
         {
           type: 'VariableDeclarator',
-          start: 0,
-          end: 0,
           id: specifier.local as ESTreeAST.Identifier,
           init: createASTArrayExpression(
             storyIdentifiers.map(({ exportName }) => ({
               type: 'Literal',
               value: exportName,
-              start: 0,
-              end: 0,
             }))
           ),
         },

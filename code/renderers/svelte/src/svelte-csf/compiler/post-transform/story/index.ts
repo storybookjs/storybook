@@ -5,6 +5,7 @@ import { insertStoryHTMLCommentAsDescription } from './insert-description.ts';
 import { insertSvelteCSFToStoryParameters } from './insert-svelte-csf.ts';
 
 import type { extractStoriesNodesFromExportDefaultFn } from '../../../parser/extract/compiled/stories.ts';
+import { span } from '../../../parser/ast.ts';
 import type { StoryContent } from '../../../parser/analyse/story/extend.ts';
 import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.ts';
 
@@ -37,7 +38,7 @@ export function transformStory(params: Params): void {
   });
 
   const { compiled } = component;
-  const { start, end } = compiled;
+  const { start, end } = span(compiled);
 
   code.update(start, end, print(compiled).code);
 }

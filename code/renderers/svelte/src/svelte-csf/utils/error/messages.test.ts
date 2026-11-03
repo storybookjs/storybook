@@ -27,7 +27,7 @@ const attribute = (node: SvelteAST.Component, name: string) =>
   )!;
 
 const identifierProperty = (name: string) =>
-  createASTProperty(name, { type: 'Identifier', name: 'value', start: 0, end: 0 });
+  createASTProperty(name, { type: 'Identifier', name: 'value' });
 
 const cases: [string, () => Error][] = [
   ['MissingModuleTagError', () => new svelte.MissingModuleTagError(filename)],
@@ -43,7 +43,10 @@ const cases: [string, () => Error][] = [
   [
     'NoStoryComponentDestructuredError',
     () =>
-      new svelte.NoStoryComponentDestructuredError({ filename, metaFunctionName: 'preview.meta' }),
+      new svelte.NoStoryComponentDestructuredError({
+        filename,
+        metaFunctionName: 'preview.meta',
+      }),
   ],
   ['GetDefineMetaFirstArgumentError', () => new svelte.GetDefineMetaFirstArgumentError(filename)],
   [
@@ -56,7 +59,10 @@ const cases: [string, () => Error][] = [
   ],
   [
     'IndexerParseError',
-    () => new svelte.IndexerParseError(filename, { cause: new SyntaxError('Unexpected token') }),
+    () =>
+      new svelte.IndexerParseError(filename, {
+        cause: new SyntaxError('Unexpected token'),
+      }),
   ],
   ['MixedMetaError', () => new svelte.MixedMetaError(filename)],
   ['PreviewNotImportedError', () => new svelte.PreviewNotImportedError(filename)],
@@ -86,8 +92,6 @@ const cases: [string, () => Error][] = [
         componentProperty: createASTProperty('component', {
           type: 'Literal',
           value: 'Button',
-          start: 0,
-          end: 0,
         }),
       }),
   ],
@@ -98,19 +102,25 @@ const cases: [string, () => Error][] = [
         filename,
         defineMetaVariableDeclarator: {
           type: 'VariableDeclarator',
-          start: 0,
-          end: 0,
-          id: { type: 'Identifier', name: 'Story', start: 0, end: 0 },
+          id: { type: 'Identifier', name: 'Story' },
         },
       }),
   ],
   [
     'NoStringLiteralError',
-    () => new defineMeta.NoStringLiteralError({ filename, property: identifierProperty('title') }),
+    () =>
+      new defineMeta.NoStringLiteralError({
+        filename,
+        property: identifierProperty('title'),
+      }),
   ],
   [
     'NoArrayExpressionError',
-    () => new defineMeta.NoArrayExpressionError({ filename, property: identifierProperty('tags') }),
+    () =>
+      new defineMeta.NoArrayExpressionError({
+        filename,
+        property: identifierProperty('tags'),
+      }),
   ],
   [
     'ArrayElementNotStringError',
@@ -120,10 +130,8 @@ const cases: [string, () => Error][] = [
         property: createASTProperty('tags', {
           type: 'ArrayExpression',
           elements: [],
-          start: 0,
-          end: 0,
         }),
-        element: { type: 'Identifier', name: 'tag', start: 0, end: 0 },
+        element: { type: 'Identifier', name: 'tag' },
       }),
   ],
   [
@@ -134,10 +142,8 @@ const cases: [string, () => Error][] = [
         renderProperty: createASTProperty('render', {
           type: 'ArrowFunctionExpression',
           params: [],
-          body: { type: 'BlockStatement', body: [], start: 0, end: 0 },
+          body: { type: 'BlockStatement', body: [] },
           expression: false,
-          start: 0,
-          end: 0,
         }),
       }),
   ],
@@ -167,7 +173,7 @@ const cases: [string, () => Error][] = [
         filename,
         component: componentWithTagsArray,
         attribute: attribute(componentWithTagsArray, 'tags'),
-        element: { type: 'Identifier', name: 'tag', start: 0, end: 0 },
+        element: { type: 'Identifier', name: 'tag' },
       }),
   ],
   ['NoStoryIdentifierError', () => new story.NoStoryIdentifierError(filename)],
@@ -212,11 +218,21 @@ const cases: [string, () => Error][] = [
   ],
   [
     'StoryExtendUnnamedError',
-    () => new story.StoryExtendUnnamedError({ filename, component, extend: 'Primary' }),
+    () =>
+      new story.StoryExtendUnnamedError({
+        filename,
+        component,
+        extend: 'Primary',
+      }),
   ],
   [
     'StoryExtendDuplicateNameError',
-    () => new story.StoryExtendDuplicateNameError({ filename, component, extend: 'Primary' }),
+    () =>
+      new story.StoryExtendDuplicateNameError({
+        filename,
+        component,
+        extend: 'Primary',
+      }),
   ],
   [
     'StoryExtendCycleError',

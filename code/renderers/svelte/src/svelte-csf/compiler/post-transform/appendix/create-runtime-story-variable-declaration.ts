@@ -27,22 +27,18 @@ export function createRuntimeStoryVariableDeclaration(
 ): ESTreeAST.VariableDeclaration {
   const tags = createASTArrayExpression([
     ...(params.nodes.tags?.elements ?? []),
-    { type: 'Literal', value: SVELTE_CSF_V5_TAG, start: 0, end: 0 },
+    { type: 'Literal', value: SVELTE_CSF_V5_TAG },
   ]);
 
   const annotations = createASTObjectExpression([
     {
       type: 'SpreadElement',
-      start: 0,
-      end: 0,
       argument: {
         type: 'MemberExpression',
         computed: true,
         optional: false,
-        start: 0,
-        end: 0,
         object: params.nodes.variable.declarations[0].id as ESTreeAST.Identifier,
-        property: { type: 'Literal', value: params.exportName, start: 0, end: 0 },
+        property: { type: 'Literal', value: params.exportName },
       },
     },
     createASTProperty('tags', tags),
@@ -61,26 +57,18 @@ export function createRuntimeStoryVariableDeclaration(
   return {
     type: 'VariableDeclaration',
     kind: 'const',
-    start: 0,
-    end: 0,
     declarations: [
       {
         type: 'VariableDeclarator',
-        start: 0,
-        end: 0,
         id: createASTIdentifier(`${STORYBOOK_INTERNAL_PREFIX}${params.exportName}`),
         init: factory
           ? {
               type: 'CallExpression',
               optional: false,
-              start: 0,
-              end: 0,
               callee: {
                 type: 'MemberExpression',
                 computed: false,
                 optional: false,
-                start: 0,
-                end: 0,
                 object: factory.object,
                 property: createASTIdentifier(factory.method),
               },

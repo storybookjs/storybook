@@ -59,14 +59,15 @@ export async function createAppendix(params: Params) {
   const appendix = print({
     type: 'Program',
     sourceType: 'module',
-    start: 0,
-    end: 0,
     body: [
       createRuntimeStoriesImport(),
       variableFromRuntimeStoriesCall,
       // A CSF factories file has no default export: core finds the meta through the stories
       ...(factoryMeta ? [] : [createExportDefaultMeta()]),
-      createExportOrderVariableDeclaration({ storiesIdentifiers: stories, filename }),
+      createExportOrderVariableDeclaration({
+        storiesIdentifiers: stories,
+        filename,
+      }),
       ...storiesVariableDeclarations,
       createNamedExportStories({ storiesIdentifiers: stories }),
     ],
@@ -78,8 +79,6 @@ export async function createAppendix(params: Params) {
 function createExportDefaultMeta(): ESTreeAST.ExportDefaultDeclaration {
   return {
     type: 'ExportDefaultDeclaration',
-    start: 0,
-    end: 0,
     declaration: createASTIdentifier(STORYBOOK_META_IDENTIFIER),
   };
 }

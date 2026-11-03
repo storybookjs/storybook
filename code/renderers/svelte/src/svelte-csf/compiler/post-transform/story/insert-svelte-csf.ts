@@ -72,8 +72,6 @@ export function insertSvelteCSFToStoryParameters(params: Params) {
         createASTProperty('rawCode', {
           type: 'Literal',
           value: rawCode,
-          start: 0,
-          end: 0,
         }),
       ])
     )

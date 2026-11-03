@@ -195,9 +195,6 @@ function storySnippet(
       : {
           template: withImports(holes),
           argCode: argCode(resolved.args),
-          // Every warning is about code the snippet leaves out, which the filled snippet leaves out
-          // as well.
-          ...(warning === undefined ? {} : { templateWarning: warning }),
         }),
   };
 }

@@ -14,7 +14,6 @@
       "name": "Dom Node",
       "snippet": "<lit-inheritance-mixin base-label="Inherited" mixed-active count="5"></lit-inheritance-mixin>",
       "template": "<lit-inheritance-mixin⟦attr base-label baseLabel field ~%20⟧⟦attr mixed-active mixedActive field ~%20⟧⟦attr count count field ~%20⟧></lit-inheritance-mixin>",
-      "templateWarning": "Incomplete snippet: `(args) => { const el = document.createElement('lit-inheritance-mixin'); el.setAttribute('base-label', String(args.baseLabel)); if (args.mixedActive) { el.setAttribute('mixed-active', ''); } el.setAttribute('count', String(args.count)); return el; }` could not be resolved statically.",
       "warning": "Incomplete snippet: `(args) => { const el = document.createElement('lit-inheritance-mixin'); el.setAttribute('base-label', String(args.baseLabel)); if (args.mixedActive) { el.setAttribute('mixed-active', ''); } el.setAttribute('count', String(args.count)); return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-lit-inheritance-mixin--lit-template": {

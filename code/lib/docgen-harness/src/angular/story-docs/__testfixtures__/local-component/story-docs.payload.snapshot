@@ -23,7 +23,6 @@ export class DemoComponent {}",
   template: `<sb-local-component [heading]="⟦bind heading⟧" />`,
 })
 export class DemoComponent {}",
-      "templateWarning": "LocalComponent is declared in the story file, so the snippet references it without importing it.",
       "warning": "LocalComponent is declared in the story file, so the snippet references it without importing it.",
     },
   },

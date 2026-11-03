@@ -168,9 +168,6 @@ const baseStoryDoc = (
       ? {}
       : {
           template: withHoleSpace(result.template, takesSpace),
-          // What the snippet leaves out, code it cannot read or args it cannot show, it still
-          // leaves out once filled.
-          ...(result.warning === undefined ? {} : { templateWarning: result.warning }),
         }),
     ...(result.warning === undefined ? {} : { warning: result.warning }),
     ...(description ? { description } : {}),

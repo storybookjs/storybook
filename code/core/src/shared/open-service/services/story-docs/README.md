@@ -60,10 +60,9 @@ too. `snippetValues.ts` holds JavaScript printing helpers that several fillers s
 The Code panel, Canvas › Show code and the `Source` block show the static `snippet` while a story
 has the args it is written with, and fill the template once the args change, in dev and in static
 builds alike. The story docs load once per version of a story, so an args change makes no request.
-The `warning` belongs to the static snippet; a provider also sets `templateWarning` to what the
-filled snippet still leaves out, which is shown with it instead. A filler throws for a value it
-cannot print; a missing template, a missing filler or a filler that throws falls back to the static
-`snippet` and its `warning`.
+The `warning` says what the snippet leaves out, which the filled snippet leaves out too, so it is
+shown with either. A filler throws for a value it cannot print; a missing template, a missing filler
+or a filler that throws falls back to the static `snippet`.
 
 ## Providers
 

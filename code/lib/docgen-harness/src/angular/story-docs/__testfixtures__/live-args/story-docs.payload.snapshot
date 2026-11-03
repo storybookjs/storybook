@@ -25,7 +25,6 @@ import { LiveArgsComponent } from './live-args.component.ts';
   template: `<sb-live-args [label]="describe()"></sb-live-args>`,
 })
 export class DemoComponent {}",
-      "templateWarning": "Incomplete snippet: `describe` could not be provided, since the story declares no such arg.",
       "warning": "Incomplete snippet: `describe` could not be provided, since the story declares no such arg.",
     },
     "storydocs-live-args--imported-control": {
@@ -56,7 +55,6 @@ import { LiveArgsComponent } from './live-args.component.ts';
 export class DemoComponent {
   pressed(event: unknown) {}
 }",
-      "templateWarning": "Incomplete snippet: `SHARED_CONTROL` could not be resolved statically.",
       "warning": "Incomplete snippet: `SHARED_CONTROL` could not be resolved statically.",
     },
     "storydocs-live-args--imported-formatter": {
@@ -87,7 +85,6 @@ import { LiveArgsComponent } from './live-args.component.ts';
 export class DemoComponent {
   pressed(event: unknown) {}
 }",
-      "templateWarning": "Incomplete snippet: `shout` could not be resolved statically.",
       "warning": "Incomplete snippet: `shout` could not be resolved statically.",
     },
     "storydocs-live-args--null-label": {
@@ -143,7 +140,6 @@ import { LiveArgsComponent } from './live-args.component.ts';
 export class DemoComponent {
   label = ⟦field label⟧;
 }",
-      "templateWarning": "Incomplete snippet: `(value) => value.trim()` could not be resolved statically.",
       "warning": "Incomplete snippet: `(value) => value.trim()` could not be resolved statically.",
     },
   },

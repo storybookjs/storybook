@@ -381,7 +381,6 @@ function enrichStoryDoc(
     ...(template && {
       template,
       argCode: argCode(resolved.args),
-      ...(warning && { templateWarning: warning }),
     }),
     ...(warning && { warning }),
   };

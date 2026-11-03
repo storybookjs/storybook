@@ -31,7 +31,6 @@ import { MetaActionsComponent } from './meta-actions.component.ts';
 export class DemoComponent {
   onClick(event: unknown) {}
 }",
-      "templateWarning": "Incomplete snippet: `fn()`, `SHARED_LABEL` could not be resolved statically.",
       "warning": "Incomplete snippet: `fn()`, `SHARED_LABEL` could not be resolved statically.",
     },
     "storydocs-meta-actions--primary": {
@@ -70,7 +69,6 @@ import { MetaActionsComponent } from './meta-actions.component.ts';
 export class DemoComponent {
   onClick(event: unknown) {}
 }",
-      "templateWarning": "Incomplete snippet: `fn()` could not be resolved statically.",
       "warning": "Incomplete snippet: `fn()` could not be resolved statically.",
     },
   },

@@ -52,11 +52,6 @@ const payloadWithTemplate: StoryDocsPayload = {
     [storyId]: { ...payload.stories[storyId]!, template: '<Button label={args.label} />', warning },
   },
 };
-const templateWarning = 'Button needs the NgModule that declares it, which the snippet leaves out.';
-const payloadWithTemplateWarning: StoryDocsPayload = {
-  ...payloadWithTemplate,
-  stories: { [storyId]: { ...payloadWithTemplate.stories[storyId]!, templateWarning } },
-};
 const fillTemplate = (template: string, args: Record<string, unknown>) =>
   template.replace('{args.label}', `"${String(args.label)}"`);
 // The story's args once `label` changed to `Go` from the `hi` it is written with.
@@ -112,18 +107,12 @@ describe('selectLiveSnippetForStory', () => {
     vi.restoreAllMocks();
   });
 
-  it('fills the template with the args, without the static warning', () => {
-    expect(selectLiveSnippetForStory(payloadWithTemplate, storyId, changed, fillTemplate)).toEqual({
-      snippet: 'import { Button } from \'./Button\';\n\n<Button label="Go" />',
-    });
-  });
-
-  it('fills the template with the args, with its templateWarning', () => {
+  it('fills the template with the args, with the warning', () => {
     expect(
-      selectLiveSnippetForStory(payloadWithTemplateWarning, storyId, changed, fillTemplate)
+      selectLiveSnippetForStory(payloadWithTemplate, storyId, changed, fillTemplate)
     ).toEqual({
       snippet: 'import { Button } from \'./Button\';\n\n<Button label="Go" />',
-      warning: templateWarning,
+      warning,
     });
   });
 
@@ -333,8 +322,8 @@ describe('storyDocsSourceBeforeEach', () => {
     expect(storyDocs.loaded).toHaveBeenCalledOnce();
   });
 
-  it('emits the filled template with its templateWarning', async () => {
-    mockStoryDocsService(() => Promise.resolve(payloadWithTemplateWarning));
+  it('emits the filled template with the warning', async () => {
+    mockStoryDocsService(() => Promise.resolve(payloadWithTemplate));
     const context = {
       id: storyId,
       args: { label: 'Go' },
@@ -348,7 +337,7 @@ describe('storyDocsSourceBeforeEach', () => {
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(
       `import { Button } from './Button';\n\n<Button label="Go" />`,
       context,
-      templateWarning
+      warning
     );
   });
 

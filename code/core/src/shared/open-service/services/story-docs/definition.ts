@@ -20,7 +20,6 @@ const storyDocSchema = v.object({
   snippet: v.optional(v.string()),
   template: v.optional(v.string()),
   argCode: v.optional(v.record(v.string(), v.string())),
-  templateWarning: v.optional(v.string()),
   description: v.optional(v.string()),
   summary: v.optional(v.string()),
   warning: v.optional(v.string()),

@@ -14,7 +14,6 @@
       "name": "Dom Node",
       "snippet": "<vanilla-basic label="Vanilla" count="4" disabled></vanilla-basic>",
       "template": "<vanilla-basic⟦attr label label ~%20⟧⟦attr count count ~%20⟧⟦attr disabled disabled ~%20⟧⟦attr legacy-label legacy-label ~%20⟧></vanilla-basic>",
-      "templateWarning": "Incomplete snippet: `(args) => { const el = document.createElement('vanilla-basic'); el.setAttribute('label', String(args.label)); el.setAttribute('count', String(args.count)); if (args.disabled) { el.setAttribute('disabled', ''); } return el; }` could not be resolved statically.",
       "warning": "Incomplete snippet: `(args) => { const el = document.createElement('vanilla-basic'); el.setAttribute('label', String(args.label)); el.setAttribute('count', String(args.count)); if (args.disabled) { el.setAttribute('disabled', ''); } return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-vanilla-basic--lit-template": {

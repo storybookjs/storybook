@@ -20,7 +20,6 @@
       "name": "Dom Node",
       "snippet": "<stencil-props value="3" max="5" variant="compact" aria-label-text="Rating"></stencil-props>",
       "template": "<stencil-props⟦attr value value field ~%20⟧⟦attr max max field ~%20⟧⟦attr variant variant field ~%20⟧⟦attr aria-label-text labelText field ~%20⟧⟦attr labels labels field ~%20⟧></stencil-props>",
-      "templateWarning": "Incomplete snippet: `(args) => { const el = document.createElement('stencil-props'); el.setAttribute('value', String(args.value)); el.setAttribute('max', String(args.max)); el.setAttribute('variant', String(args.variant)); el.setAttribute('aria-label-text', String(args.labelText)); return el; }` could not be resolved statically.",
       "warning": "Incomplete snippet: `(args) => { const el = document.createElement('stencil-props'); el.setAttribute('value', String(args.value)); el.setAttribute('max', String(args.max)); el.setAttribute('variant', String(args.variant)); el.setAttribute('aria-label-text', String(args.labelText)); return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-stencil-props--lit-template": {

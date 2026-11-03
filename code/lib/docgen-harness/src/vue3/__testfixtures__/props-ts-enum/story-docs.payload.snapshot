@@ -25,7 +25,6 @@ import TsEnumProps from './TsEnumProps.vue';
 <template>
   <TsEnumProps⟦attr level level ~%20⟧⟦props -default -level -severity ~%20⟧ />
 </template>",
-      "templateWarning": "Incomplete snippet: `severity: Severity.Warning` could not be resolved statically.",
       "warning": "Incomplete snippet: `severity: Severity.Warning` could not be resolved statically.",
     },
   },

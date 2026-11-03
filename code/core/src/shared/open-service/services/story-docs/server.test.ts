@@ -93,7 +93,6 @@ describe('story-docs open service', () => {
           template: '<Button ⟦label⟧ ⟦onClick⟧ />',
           argCode: { onClick: 'fn()' },
           warning: 'label could not be resolved',
-          templateWarning: 'Add the NgModule',
         },
       },
     });

@@ -191,7 +191,6 @@ const buildStoryDoc = async (
         : {
             template: rendered.template,
             argCode: rendered.argCode,
-            ...(rendered.warning === undefined ? {} : { templateWarning: rendered.warning }),
           }),
       ...(description ? { description } : {}),
       ...(summary === undefined ? {} : { summary }),

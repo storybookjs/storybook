@@ -97,7 +97,6 @@ it('keeps the warning once the template is filled, as it is about code the snipp
   const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories['example--default'];
   expect(story?.template).toBeDefined();
   expect(story?.warning).toBe('Identifier not resolved: `missing`.');
-  expect(story?.templateWarning).toBe(story?.warning);
 });
 
 it('warns about an unknown identifier in the final markup', async () => {

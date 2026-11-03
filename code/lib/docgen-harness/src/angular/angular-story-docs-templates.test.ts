@@ -119,7 +119,6 @@ interface FilledStory {
   template: string;
   snippet: string;
   warning?: string;
-  templateWarning?: string;
   argCode?: Record<string, string>;
   args: Record<string, unknown>;
 }
@@ -161,7 +160,6 @@ const buildStories = async (fixtureCase: string) => {
       template = '',
       snippet,
       warning,
-      templateWarning,
       argCode,
     } = payload!.stories[story.id]!;
     const args = { ...argsOf(storiesModule.default), ...argsOf(storiesModule[exportName]) };
@@ -173,7 +171,6 @@ const buildStories = async (fixtureCase: string) => {
             template,
             snippet,
             warning,
-            templateWarning,
             argCode,
             args,
           },
@@ -201,16 +198,12 @@ describe('angular story-docs templates', () => {
 
   it.each(cases)('%s declares every name its markup reads, or warns', async (fixtureCase) => {
     const { snippets } = await buildFixture(fixtureCase);
-    for (const { name, template, snippet, warning, templateWarning, args } of snippets) {
+    for (const { name, template, snippet, warning, args } of snippets) {
       expectDeclaresWhatItReads(snippet, warning, `${name}'s static snippet`);
       for (const set of template === '' ? [] : argSets(args)) {
         const filled = fillOrSkip(template, set);
         if (filled !== undefined) {
-          expectDeclaresWhatItReads(
-            filled,
-            templateWarning,
-            `${name} filled with ${JSON.stringify(set)}`
-          );
+          expectDeclaresWhatItReads(filled, warning, `${name} filled with ${JSON.stringify(set)}`);
         }
       }
     }

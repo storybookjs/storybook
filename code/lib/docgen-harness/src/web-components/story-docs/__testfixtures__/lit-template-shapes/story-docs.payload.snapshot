@@ -24,7 +24,6 @@
       "name": "Class Map",
       "snippet": "<lit-template-shapes></lit-template-shapes>",
       "template": "<lit-template-shapes></lit-template-shapes>",
-      "templateWarning": "Incomplete snippet: `classMap({ active: Boolean(args.active) })` could not be resolved statically.",
       "warning": "Incomplete snippet: `classMap({ active: Boolean(args.active) })` could not be resolved statically.",
     },
     "webcomponentsstorydocs-lit-template-shapes--destructured": {
@@ -100,7 +99,6 @@
     host.addEventListener('shape-change', () => {});
   }
 </script>",
-      "templateWarning": "Incomplete snippet: listeners not shown: `@click`.",
       "warning": "Incomplete snippet: listeners not shown: `@click`.",
     },
     "webcomponentsstorydocs-lit-template-shapes--nothing": {
@@ -120,7 +118,6 @@
       "name": "Property Only",
       "snippet": "<lit-template-shapes></lit-template-shapes>",
       "template": "<lit-template-shapes></lit-template-shapes>",
-      "templateWarning": "Incomplete snippet: properties without an attribute: `items`.",
       "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
     "webcomponentsstorydocs-lit-template-shapes--property-paired": {
@@ -146,7 +143,6 @@
       "name": "Unbound Arg",
       "snippet": "<lit-template-shapes label="Bound"></lit-template-shapes>",
       "template": "<lit-template-shapes⟦attr label label bind ~%20⟧></lit-template-shapes>",
-      "templateWarning": "Incomplete snippet: args not bound by the render template: `count`.",
       "warning": "Incomplete snippet: args not bound by the render template: `count`.",
     },
   },

@@ -26,9 +26,10 @@ const storiesWarnedAbout = new Set<string>();
 export type StoryArgs = { args: Args; unmappedArgs: Args; initialArgs: Args };
 
 /**
- * Resolves the display snippet for one story with its args filled into its `template`, with its
- * `templateWarning`. While the story still has the args it is written with, without a template or a
- * filler, or when filling throws, it is the static snippet with its `warning`.
+ * Resolves the display snippet for one story with its args filled into its `template`. While the
+ * story still has the args it is written with, without a template or a filler, or when filling
+ * throws, it is the static snippet. Either comes with the story's `warning`, as the filled snippet
+ * leaves out what the static one does.
  */
 export function selectLiveSnippetForStory(
   payload: StoryDocsPayload | undefined,
@@ -55,7 +56,7 @@ export function selectLiveSnippetForStory(
         payload?.import,
         fill(story.template, asWrittenArgs(args, story.argCode))
       ),
-      warning: story.templateWarning,
+      warning: story.warning,
     };
   } catch (error) {
     // An unprintable value is expected; anything else is a bug in the filler.

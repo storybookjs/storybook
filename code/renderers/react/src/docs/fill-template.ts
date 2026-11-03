@@ -5,142 +5,108 @@ import {
   isAction,
   printValue,
   spreadArgs,
+  writtenCode,
 } from 'storybook/internal/docs-tools';
 import type { Args } from 'storybook/internal/types';
 
-// Fills a template from `getCodeSnippet`, printing each hole as its printer prints that arg, so the
-// template filled with the story's own args is its static snippet. Besides the shared holes,
-// `⟦element Button⟧` is the component with every arg and `⟦args⟧` the args as an object, both
-// without their `-name` words, and `⟦close Button ?code⟧` ends an element whose children a spread
-// passes, with them as content indented as its `^indent` word, or as the story writes it, `code`,
-// without. A `?code` word is the code a hole prints, as written, while its arg is unset.
-// A value that prints more than one line is indented as the line its hole is on.
-export const fillTemplate: FillSnippetTemplate = (template, args) => {
-  const lines = [...template.matchAll(/⟦[^⟧]*⟧/g)].map(({ index }) =>
-    template.slice(template.lastIndexOf('\n', index) + 1, index)
-  );
-  let hole = 0;
-  return fillHoles(template, (kind, words) => {
-    const line = lines[hole++]!;
-    const printed = fill(kind, words, args);
-    return typeof printed === 'string' ? indent(printed, /^\s*/.exec(line)![0]) : printed.code;
-  });
-};
+import {
+  type JsxValue,
+  printArgsObject,
+  printAttribute,
+  printAttributes,
+  printChildren,
+  printClose,
+  printElement,
+} from '../snippet-values.ts';
 
-// Code a hole prints as it is, already indented as the snippet has it.
-type Written = { code: string };
+// Fills a template from `getCodeSnippet`, printing each hole with the printers the static snippet
+// is printed with, so the template filled with the story's own args is its static snippet:
+//
+// - `⟦element Button⟧`: the component with every arg, `children` as content.
+// - `⟦props⟧`: the args a spread passes, as attributes.
+// - `⟦args⟧`: the args of a bound story, as an object.
+// - `⟦attr name arg⟧`: one attribute, left out while the arg is unset.
+// - `⟦text children⟧`: the `children` arg as content.
+// - `⟦close Button⟧`: the end of an element a spread passes `children` to, with them as content.
+//
+// A `-name` word names an arg the element writes itself, which a spread leaves out. A `=name=code`
+// word is the code a written arg prints in this place, where it is not its `argCode`, such as a
+// value over several lines indented as the place is. A `"name=text` word is a written string this
+// place prints as that text, which another place prints as code. `jsx` says the written `children`
+// arg is JSX, which content prints as it is. A last `?code` word is the code the hole prints while
+// its arg is unset.
+export const fillTemplate: FillSnippetTemplate = (template, args) =>
+  fillHoles(template, (kind, words) => fill(kind, words, args));
 
-const indent = (code: string, prefix: string) => {
-  let literal = false;
-  let text = '';
-  for (let index = 0; index < code.length; index++) {
-    const char = code[index]!;
-    text += char;
-    if (char === '\\') {
-      text += code[++index] ?? '';
-    } else if (char === '`') {
-      literal = !literal;
-    } else if (char === '\n' && !literal && /./.test(code[index + 1] ?? '')) {
-      text += prefix;
-    }
-  }
-  return text;
-};
-
-function fill(kind: string, words: string[], args: Args): string | Written {
+function fill(kind: string, words: string[], args: Args): string {
   const [first = '', second = ''] = words;
   // Only an arg's own value: a name every object inherits, such as `constructor`, is no arg.
   const arg = (name: string) => (Object.hasOwn(args, name) ? args[name] : undefined);
-  const unset = (name: string) => {
-    const code = arg(name) === undefined ? defaultCode(words.at(-1)) : undefined;
-    return code === undefined ? undefined : { code };
-  };
+  const value = (name: string) => describe(name, arg(name), words);
+  const unset = (name: string) => (arg(name) === undefined ? defaultCode(words.at(-1)) : undefined);
+  const spread = () =>
+    spreadArgs(
+      args,
+      words.filter((word) => word.startsWith('-'))
+    ).filter(([, passed]) => passed !== undefined && !isAction(passed));
   switch (kind) {
     case 'element': {
-      const { children, ...props } = Object.fromEntries(spreadArgs(args, words.slice(1)));
-      return element(first, attributesOf(props), text('children', children));
+      const passed = spread();
+      const children = passed.find(([name]) => name === 'children');
+      return printElement(
+        first,
+        printAttributes(
+          passed.filter(([name]) => name !== 'children').map(([name]) => [name, value(name)])
+        ),
+        children ? printChildren(value('children')) : ''
+      );
     }
-    case 'close': {
-      if (arg('children') === undefined) {
-        return { code: defaultCode(words.at(-1)) ?? ' />' };
-      }
-      const prefix = words.find((word) => word.startsWith('^'))?.slice(1) ?? '';
-      return { code: `>${indent(text('children', arg('children')), prefix)}</${first}>` };
-    }
+    case 'close':
+      return arg('children') === undefined
+        ? (defaultCode(words.at(-1)) ?? ' />')
+        : printClose(first, printChildren(value('children')));
     case 'props':
-      return attributesOf(Object.fromEntries(spreadArgs(args, words))).join(' ');
+      return printAttributes(spread().map(([name]) => [name, value(name)])).join(' ');
     case 'args':
-      return boundArgs(spreadArgs(args, words));
+      return printArgsObject(spread().map(([name]) => [name, value(name)]));
     case 'attr':
-      return unset(second) ?? attribute(first, arg(second));
+      return (
+        unset(second) ??
+        (arg(second) === undefined || isAction(arg(second))
+          ? ''
+          : printAttribute(first, value(second)))
+      );
     case 'text':
-      return unset(first) ?? text(first, arg(first));
+      return unset(first) ?? (arg(first) === undefined ? '' : printChildren(value(first)));
     default:
       throw new Error(`Unknown hole ⟦${kind}⟧`);
   }
 }
 
-// The element on one line, as the printer writes it.
-function element(name: string, attributes: string[], content: string) {
-  const open = [name, ...attributes].join(' ');
-  return content ? `<${open}>${content}</${name}>` : `<${open} />`;
-}
-
-// The args a bound story is called with, one a line, as the printer writes them.
-function boundArgs(entries: [string, unknown][]) {
-  const properties = entries
-    .filter(([, value]) => value !== undefined && !isAction(value))
-    .map(
-      ([name, value]) => `    ${JSON.stringify(name)}: ${indent(printValue(value, name), '    ')}`
-    );
-  return properties.length === 0 ? '{}' : `{\n${properties.join(',\n')}\n}`;
-}
-
-// An arg whose name no attribute can have goes in a spread after the attributes, as the printed
-// snippet has it: `{...{ "my label": "Go" }}`.
-function attributesOf(args: Args) {
-  const entries = Object.entries(args);
-  const unnamed = entries.filter(([name]) => !/^[A-Za-z_][\w:-]*$/.test(name));
-  const spread = object(unnamed);
-  return [
-    ...entries
-      .filter((entry) => !unnamed.includes(entry))
-      .map(([name, value]) => attribute(name, value)),
-    spread === '{}' ? '' : `{...${spread}}`,
-  ].filter(Boolean);
-}
-
-function attribute(name: string, value: unknown): string {
-  if (value === undefined || isAction(value)) {
-    return '';
+// A current arg as the printers read it: a written arg as the code it prints in this place, and a
+// changed one as its value.
+function describe(name: string, value: unknown, words: string[]): JsxValue {
+  const written = writtenCode(value);
+  const text = words.find((word) => word.startsWith(`"${encodeURIComponent(name)}=`));
+  if (written !== undefined && text !== undefined) {
+    return {
+      kind: 'string',
+      value: text.slice(encodeURIComponent(name).length + 2),
+      code: written,
+    };
   }
-  if (value === true) {
-    return name;
+  if (written !== undefined) {
+    const prefix = `=${encodeURIComponent(name)}=`;
+    const here = words.find((word) => word.startsWith(prefix))?.slice(prefix.length);
+    return {
+      kind: name === 'children' && words.includes('jsx') ? 'jsx' : 'code',
+      code: here ?? written,
+    };
   }
-  // JSX decodes `&` entities in an attribute string, and it cannot hold its own quote. A line break
-  // would take the indentation of the line it is on.
-  return typeof value === 'string' && !/["&\n\r]/.test(value)
-    ? `${name}="${value}"`
-    : `${name}={${printValue(value, name)}}`;
-}
-
-const object = (entries: [string, unknown][]) => {
-  const properties = entries
-    .filter(([, value]) => value !== undefined && !isAction(value))
-    .map(([name, value]) => `${JSON.stringify(name)}: ${printValue(value, name)}`);
-  return properties.length === 0 ? '{}' : `{ ${properties.join(', ')} }`;
-};
-
-// Content as the printer writes it: a string JSX text can hold as it is, and any other value as an
-// expression, as JSX reads `{`, `<` and `&` in text as code and folds line breaks.
-function text(name: string, value: unknown): string {
-  if (value === undefined) {
-    return '';
+  if (typeof value === 'boolean') {
+    return { kind: 'boolean', value };
   }
-  if (typeof value === 'string' && !/[{}<>&\r\n]/.test(value)) {
-    return value;
-  }
-  // JSX the story writes as an arg is content as it is.
-  const printed = printValue(value, name);
-  return printed.startsWith('<') ? printed : `{${printed}}`;
+  return typeof value === 'string'
+    ? { kind: 'string', value, code: printValue(value, name) }
+    : { kind: 'code', code: printValue(value, name) };
 }

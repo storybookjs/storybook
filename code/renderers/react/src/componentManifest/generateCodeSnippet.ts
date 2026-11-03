@@ -19,7 +19,6 @@ import {
   reindent,
   resolveRenderFunction,
   storyShapeError,
-  unresolvedWarning,
   walk,
 } from 'storybook/internal/csf-tools';
 import {
@@ -30,6 +29,18 @@ import {
   withHoleSpace,
 } from 'storybook/internal/docs-tools';
 
+import {
+  type JsxValue,
+  isAttributeName,
+  isAttributeText,
+  isChildText,
+  printArgsObject,
+  printAttribute,
+  printAttributes,
+  printChildren,
+  printClose,
+  printElement,
+} from '../snippet-values.ts';
 import { invariant } from './utils.ts';
 
 function renderFunctionOf(resolution: RenderResolution) {
@@ -54,8 +65,6 @@ export interface CodeSnippet {
   template?: string;
   /** The code the story writes each arg with, as the snippet prints it; see `StoryDoc.argCode`. */
   argCode?: Record<string, string>;
-  /** What the filled `template` leaves out; see `StoryDoc.templateWarning`. */
-  templateWarning?: string;
 }
 
 /**
@@ -79,12 +88,10 @@ export function getCodeSnippet(
   if (hasHoleBracket(csf.editor.code)) {
     return { snippet: printed.snippet, ...needs };
   }
-  const warning = unresolvedWarning(unresolved);
   return {
     snippet: printed.snippet,
     template: withHoleSpace(printed.template, takesSpace),
     argCode: writtenArgs(args, importedBind !== undefined),
-    ...(warning === undefined ? {} : { templateWarning: warning }),
     ...needs,
   };
 }
@@ -98,14 +105,18 @@ interface Printed {
 }
 
 // An edit the printer makes with the args, `value`, and with holes, `hole`. `undefined` leaves the
-// code as written in that print. A hole can take the code it replaces, without the indentation
-// the snippet drops, as the code it prints for an unset arg.
+// code as written in that print. A hole that prints code, such as the code it prints for an unset
+// arg, gets it as the snippet prints it there from `dedent`; see `printRange`.
 interface Edit {
   start: number;
   end: number;
   value?: string;
-  hole?: string | ((dedent: (code: string) => string) => string);
+  hole?: string | ((dedent: Dedent) => string);
 }
+
+// Code as the snippet prints it, without the indentation the snippet drops: `before` and `after`
+// put it in the place it stands, so its literals read as they do there.
+type Dedent = (code: string, before: string, after: string) => string;
 
 // The code of each arg the printer writes as the story writes it, for the filler to print the same
 // while the arg is unchanged: every arg but a boolean or a string it prints as an attribute or text,
@@ -117,12 +128,22 @@ const writtenArgs = (args: Args, everyArg = false): Record<string, string> =>
       .map(([key, node]) => [key, detachedTextOf(node)])
   );
 
+// A boolean prints as its value in every place, and a string where every place it can stand in
+// prints it as text: `children` as content or as an attribute another name reads it into.
 const printsAsValue = (key: string, node: Node) =>
-  key === 'children'
-    ? isStringLiteral(node) && !/[{}<>&\r\n]/.test(node.value)
-    : isValidJsxAttrName(key) &&
-      ((node.type === 'Literal' && typeof node.value === 'boolean') ||
-        (isStringLiteral(node) && !/["&\r\n]/.test(node.value)));
+  (node.type === 'Literal' && typeof node.value === 'boolean') ||
+  (isStringLiteral(node) &&
+    (key === 'children'
+      ? isChildText(node.value) && isAttributeText(node.value)
+      : isAttributeName(key) && isAttributeText(node.value)));
+
+// The word of a hole for the code a written arg prints there, where it is not the arg's `argCode`,
+// as a value over several lines is indented as its place.
+const codeWord = (name: string, code: string) => holeWord(`=${encodeURIComponent(name)}=${code}`);
+
+// The word of a hole for a written string arg that this place prints as text, though another
+// place prints its code.
+const textWord = (name: string, text: string) => holeWord(`"${encodeURIComponent(name)}=${text}`);
 
 // `Story = helper.bind({})` with `helper` imported: the snippet calls the bound helper with the args.
 function importedBoundStory(
@@ -141,15 +162,20 @@ function importedBoundStory(
   }
 
   const print = valuePrinter('    ');
-  const values = Object.entries(args).map(
-    ([key, value]) => `    ${JSON.stringify(key)}: ${print(value)}`
-  );
-  const argsObject = values.length ? `{\n${values.join(',\n')}\n}` : '{}';
+  const entries = Object.entries(args);
   const bound = textOf(declaration.init);
   const call = (values: string) => `const ${storyName} = () => ${bound}(${values});`;
   return {
-    snippet: call(argsObject),
-    template: call(hole('args')),
+    snippet: call(printArgsObject(entries.map(([key, value]) => [key, describe(value, print)]))),
+    // Every arg of a bound story is written, so each prints its code in the template too.
+    template: call(
+      hole(
+        'args',
+        ...entries.flatMap(([key, value]) =>
+          print(value) === detachedTextOf(value) ? [] : [codeWord(key, print(value))]
+        )
+      )
+    ),
     importRef: {
       localImportName: local,
       importId: binding.importId,
@@ -219,12 +245,10 @@ function buildSnippet(
   invariant(componentName, 'Could not generate snippet without component name.');
   const print = valuePrinter('');
   const attrs = injectedAttributes(merged, new Set(), print);
-  const children = toJsxChildren(merged.children, print);
-  const opening = [componentName, ...attrs].join(' ');
-  const element = children ? `<${opening}>${children}</${componentName}>` : `<${opening} />`;
+  const element = printElement(componentName, attrs, toJsxChildren(merged.children, print));
   return {
     snippet: `const ${storyName} = () => ${element};`,
-    template: `const ${storyName} = () => ${hole('element', holeWord(componentName))};`,
+    template: `const ${storyName} = () => ${hole('element', holeWord(componentName), ...placeWords([['children', merged.children]], isChildText), ...jsxWord(merged))};`,
   };
 }
 
@@ -307,9 +331,9 @@ function printRange(
   // each hole is a name that parses in its place until then: an attribute, text, or for `⟦close⟧`
   // the end of a self-closing element.
   const placeholders: string[] = [];
-  const dedent = (text: string) => {
-    const from = lineIndent(code, range.start);
-    return text.replaceAll(`\n${from}`, '\n');
+  const dedent: Dedent = (text, before, after) => {
+    const placed = reindent(`${before}${text}${after}`, lineIndent(code, range.start), '');
+    return placed.slice(before.length, placed.length - after.length);
   };
   const placeholder = (written: NonNullable<Edit['hole']>) => {
     const hole = typeof written === 'string' ? written : written(dedent);
@@ -366,47 +390,65 @@ const valuePrinter =
   (node) =>
     reindent(detachedTextOf(node), '', indent);
 
-const isValidJsxAttrName = (n: string) => /^[A-Za-z_][A-Za-z0-9_:-]*$/.test(n);
-
-const toAttr = (key: string, value: Node, print: ValuePrinter) => {
-  if (value.type === 'Literal' && typeof value.value === 'boolean') {
-    return value.value ? key : `${key}={false}`;
+// An arg's node as the shared printers read it, its code printed by `print`.
+const describe = (node: Node, print: ValuePrinter): JsxValue => {
+  if (node.type === 'Literal' && typeof node.value === 'boolean') {
+    return { kind: 'boolean', value: node.value };
   }
-  // A JSX attribute string has no escapes, decodes entities and folds line breaks, so a value it
-  // cannot hold as written stays an expression.
-  if (isStringLiteral(value) && !/["&\r\n]/.test(value.value)) {
-    return `${key}="${value.value}"`;
+  if (isStringLiteral(node)) {
+    return { kind: 'string', value: node.value, code: print(node) };
   }
-  return `${key}={${print(value)}}`;
+  return { kind: isJsx(node) ? 'jsx' : 'code', code: print(node) };
 };
 
-// Attributes for every arg not already set by name, with invalid names collected in a spread.
-function injectedAttributes(
-  merged: Args,
-  existing: ReadonlySet<string>,
-  print: ValuePrinter
-): string[] {
-  const entries = Object.entries(merged).filter(
-    ([k, v]) => v != null && k !== 'children' && !existing.has(k)
-  );
-  const attrs = entries.filter(([k]) => isValidJsxAttrName(k)).map(([k, v]) => toAttr(k, v, print));
-  const invalid = entries.filter(([k]) => !isValidJsxAttrName(k));
-  if (invalid.length > 0) {
-    const members = invalid.map(([k, v]) => `${JSON.stringify(k)}: ${print(v)}`);
-    attrs.push(`{...{ ${members.join(', ')} }}`);
-  }
-  return attrs;
-}
+const toAttr = (key: string, value: Node, print: ValuePrinter) =>
+  printAttribute(key, describe(value, print));
 
-// JSX text cannot hold braces or tags, decodes entities and folds line breaks.
+// The args a spread passes: every arg but `children` and those already set by name.
+const spreadEntries = (merged: Args, existing: ReadonlySet<string>) =>
+  Object.entries(merged).filter(([k, v]) => v != null && k !== 'children' && !existing.has(k));
+
+// Attributes for every arg not already set by name, with invalid names collected in a spread.
+const injectedAttributes = (merged: Args, existing: ReadonlySet<string>, print: ValuePrinter) =>
+  printAttributes(spreadEntries(merged, existing).map(([k, v]) => [k, describe(v, print)]));
+
 const toJsxChildren = (node: Node | null | undefined, print: ValuePrinter) =>
-  !node
-    ? ''
-    : isStringLiteral(node) && !/[{}<>&\r\n]/.test(node.value)
-      ? node.value
-      : isJsx(node)
-        ? print(node)
-        : `{${print(node)}}`;
+  node ? printChildren(describe(node, print)) : '';
+
+// `jsx` when the `children` arg is JSX, which content prints as it is once it is written code.
+const jsxWord = (merged: Args) => (merged.children && isJsx(merged.children) ? ['jsx'] : []);
+
+// The words of a hole for the code each written arg prints at `print`, where it is not its
+// `argCode`: `inner` is how the place puts the code, so `dedent` reads its literals there.
+const codeWords = (
+  entries: [string, Node][],
+  print: ValuePrinter,
+  dedent: Dedent,
+  inner: (node: Node) => [string, string],
+  isText: (text: string, key: string) => boolean
+) =>
+  entries.flatMap(([key, node]) => {
+    if (printsAsValue(key, node)) {
+      return [];
+    }
+    if (isStringLiteral(node) && isText(node.value, key)) {
+      return [textWord(key, node.value)];
+    }
+    const code = dedent(print(node), ...inner(node));
+    return code === detachedTextOf(node) ? [] : [codeWord(key, code)];
+  });
+
+// The words of a place on the snippet's own line, where code needs no other indentation.
+const placeWords = (entries: [string, Node | undefined][], isText: (text: string) => boolean) =>
+  entries.flatMap(([key, node]) =>
+    node && !printsAsValue(key, node) && isStringLiteral(node) && isText(node.value)
+      ? [textWord(key, node.value)]
+      : []
+  );
+
+const IN_ATTRIBUTE: [string, string] = ['<x a={', '} />'];
+const inChildren = (node: Node): [string, string] =>
+  isJsx(node) ? ['<x>', '</x>'] : ['<x>{', '}</x>'];
 
 /** Return `key` if expression is `args.key` (incl. optional chaining), else `null`. */
 function getArgsMemberKey(expr: Node) {
@@ -459,10 +501,19 @@ function rewriteJsx(
       const pieces = injectedAttributes(merged, existing, print).join(' ');
       // The spread passes every arg but the attributes written next to it, and `children` passes
       // as content.
-      const props = hole(
-        'props',
-        ...[...new Set([...existing, 'children'])].map((name) => holeWord(`-${name}`))
-      );
+      const props = (dedent: Dedent) =>
+        hole(
+          'props',
+          ...[...new Set([...existing, 'children'])].map((name) => holeWord(`-${name}`)),
+          ...codeWords(
+            spreadEntries(merged, existing),
+            print,
+            dedent,
+            () => IN_ATTRIBUTE,
+            // A name no attribute can have puts the arg in a spread, as code.
+            (text, key) => isAttributeName(key) && isAttributeText(text)
+          )
+        );
       attrs.forEach((a, index) => {
         if (!isArgsSpread(a)) {
           return;
@@ -486,20 +537,18 @@ function rewriteJsx(
         const lastEnd = attrs.length > 0 ? attrs[attrs.length - 1].end : tagEnd;
         // Without children the element ends as the story writes it.
         // Content is indented as the line the element opens on, as the snippet prints it.
-        const close = (end: number) => (dedent: (code: string) => string) => {
-          const indent = dedent(`\n${lineIndent(code, opening.start)}`).slice(1);
-          return hole(
+        const close = (end: number) => (dedent: Dedent) =>
+          hole(
             'close',
             holeWord(name),
-            ...(indent ? [holeWord(`^${indent}`)] : []),
-            defaultWord(dedent(code.slice(lastEnd, end)))
+            ...childrenWords(merged, printAt(opening.start), dedent),
+            defaultWord(dedent(code.slice(lastEnd, end), `<${name}`, ''))
           );
-        };
         if (opening.selfClosing) {
           edits.push({
             start: lastEnd,
             end: opening.end,
-            value: children === undefined ? undefined : `>${children}</${name}>`,
+            value: children === undefined ? undefined : printClose(name, children),
             hole: close(opening.end),
           });
         } else {
@@ -525,11 +574,18 @@ function rewriteJsx(
       }
       const name = a.name.name;
       if (Object.hasOwn(merged, key)) {
+        const print = printAt(a.start);
         edits.push({
           start: a.start,
           end: a.end,
-          value: toAttr(name, merged[key], printAt(a.start)),
-          hole: hole('attr', holeWord(name), holeWord(key)),
+          value: toAttr(name, merged[key], print),
+          hole: (dedent) =>
+            hole(
+              'attr',
+              holeWord(name),
+              holeWord(key),
+              ...codeWords([[key, merged[key]]], print, dedent, () => IN_ATTRIBUTE, isAttributeText)
+            ),
         });
         changed = true;
       } else {
@@ -543,7 +599,7 @@ function rewriteJsx(
               'attr',
               holeWord(name),
               holeWord(key),
-              defaultWord(dedent(code.slice(start, end)))
+              defaultWord(dedent(code.slice(start, end), '<x ', ' />'))
             ),
         });
       }
@@ -563,14 +619,16 @@ function rewriteJsx(
           start,
           end,
           value: toJsxChildren(merged.children, printAt(start)),
-          hole: hole('text', 'children'),
+          hole: (dedent) =>
+            hole('text', 'children', ...childrenWords(merged, printAt(start), dedent)),
         });
         changed = true;
       } else {
         edits.push({
           start,
           end,
-          hole: (dedent) => hole('text', 'children', defaultWord(dedent(code.slice(start, end)))),
+          hole: (dedent) =>
+            hole('text', 'children', defaultWord(dedent(code.slice(start, end), '<x>', '</x>'))),
         });
       }
     }
@@ -578,6 +636,15 @@ function rewriteJsx(
 
   return changed;
 }
+
+// The words of a hole that prints the `children` arg as content at `print`.
+const childrenWords = (merged: Args, print: ValuePrinter, dedent: Dedent) =>
+  merged.children
+    ? [
+        ...codeWords([['children', merged.children]], print, dedent, inChildren, isChildText),
+        ...jsxWord(merged),
+      ]
+    : [];
 
 // An attribute that prints nothing leaves no gap, and no hole leaves an empty line.
 const takesSpace = (kind: string, space: string) =>

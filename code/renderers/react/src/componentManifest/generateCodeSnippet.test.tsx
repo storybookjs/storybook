@@ -1,11 +1,6 @@
 import { expect, test, vi } from 'vitest';
 
-import {
-  type ESTreeNode,
-  createStoryArgsResolver,
-  loadCsf,
-  unresolvedWarning,
-} from 'storybook/internal/csf-tools';
+import { type ESTreeNode, createStoryArgsResolver, loadCsf } from 'storybook/internal/csf-tools';
 import { UnprintableArgError, writtenArg } from 'storybook/internal/docs-tools';
 import { selectLiveSnippetForStory } from 'storybook/open-service';
 
@@ -1180,7 +1175,7 @@ test('template: an arg next fills in is a hole, and one the story does not set p
     };
   `);
   expect(template(input, 'Card')).toBe(
-    'const Card = (args) => <Card ⟦attr title title⟧ ⟦attr label label ?label%3D%7Bargs.label%7D⟧>⟦text children⟧</Card>;'
+    'const Card = (args) => <Card⟦attr title title ~%20⟧⟦attr label label ?label%3D%7Bargs.label%7D ~%20⟧>⟦text children⟧</Card>;'
   );
   expect(filled(input, 'Card', { title: 'Bye', children: 'Save' })).toBe(
     'const Card = (args) => <Card title="Bye" label={args.label}>Save</Card>;'
@@ -1203,7 +1198,7 @@ test('template: code that reads an arg some other way stays as written', () => {
   expect(template(input, 'Read')).toMatchInlineSnapshot(`
     "const Read = (args) => {
       const [value] = useState(args.value);
-      return <Input value={value} ⟦attr label label⟧ />;
+      return <Input value={value}⟦attr label label ~%20⟧ />;
     };"
   `);
 });
@@ -1218,7 +1213,7 @@ test('template: a spread is a hole for every arg but the attributes written next
     };
   `);
   expect(template(input, 'Before')).toBe(
-    'const Before = () => <Button size="sm" ⟦props -size -children⟧⟦close Button ?%20%2F%3E⟧;'
+    'const Before = () => <Button size="sm"⟦props -size -children ~%20⟧⟦close Button ?%20%2F%3E⟧;'
   );
   expect(filled(input, 'Before', { label: 'Go', size: 'lg' })).toBe(
     'const Before = () => <Button size="sm" label="Go" />;'
@@ -1227,13 +1222,13 @@ test('template: a spread is a hole for every arg but the attributes written next
     'const Before = () => <Button size="sm" label="Go">Save</Button>;'
   );
   expect(template(input, 'Both')).toBe(
-    'const Both = () => <Button size="sm" ⟦props -size -children⟧ size="md"⟦close Button ?%20%2F%3E⟧;'
+    'const Both = () => <Button size="sm"⟦props -size -children ~%20⟧ size="md"⟦close Button ?%20%2F%3E⟧;'
   );
   expect(template(input, 'Nested')).toBe(
-    'const Nested = () => <div><Button ⟦props -children⟧⟦close Button ?%20%2F%3E⟧</div>;'
+    'const Nested = () => <div><Button⟦props -children ~%20⟧⟦close Button ?%20%2F%3E⟧</div>;'
   );
   expect(template(input, 'Dynamic')).toBe(
-    'const Dynamic = () => <Button size="sm" ⟦props -size -onClick -children⟧ {...dynamicArgs} onClick={log}⟦close Button ?%20%2F%3E⟧;'
+    'const Dynamic = () => <Button size="sm"⟦props -size -onClick -children ~%20⟧ {...dynamicArgs} onClick={log}⟦close Button ?%20%2F%3E⟧;'
   );
 });
 
@@ -1266,7 +1261,7 @@ test('template: an arg named with a space is one word', () => {
     };
   `);
   expect(template(input, 'Spaced')).toBe(
-    'const Spaced = () => <Button ⟦attr title %Button%20title⟧ />;'
+    'const Spaced = () => <Button⟦attr title %Button%20title "Button%20title=Go ~%20⟧ />;'
   );
   expect(filled(input, 'Spaced', { 'Button title': 'Go on' })).toBe(
     'const Spaced = () => <Button title="Go on" />;'
@@ -1330,18 +1325,6 @@ test('template: an arg that still holds the value the story writes stays as writ
   ).toMatchInlineSnapshot(
     `"const Form = () => <Button label="Stop" formatter={shout} select={fn((o) => o.name)} control={new FormControl('x')}>Click me</Button>;"`
   );
-});
-
-test('template: the filled snippet keeps the warning of the static one', () => {
-  const input = withCSF3(dedent`
-    function shout(text) { return text.toUpperCase(); }
-    export const Shout: Story = { args: { format: shout, label: 'Go' } };
-  `);
-  const csf = loadCsf(input, { makeTitle: () => 'T' }).parse();
-  const { template, unresolved, templateWarning } = getCodeSnippet(csf, 'Shout', 'Button');
-  expect(template).toBeDefined();
-  expect(unresolved).not.toEqual([]);
-  expect(templateWarning).toBe(unresolvedWarning(unresolved));
 });
 
 test('template: an arg no attribute can be named as is spread', () => {
@@ -1471,5 +1454,165 @@ test('template: an arg the story does not set is a hole that prints the read as 
   );
   expect(filled(input, 'Unset', { size: 'sm', label: 'Go' })).toBe(
     'const Unset = (args) => <Button size="sm" label="Go" />;'
+  );
+});
+
+test('template: a written arg over several lines prints in each place as the static snippet does', () => {
+  const input = dedent`
+    import type { Meta } from '@storybook/react';
+    import { Button } from '@design-system/button';
+    import { log } from './log';
+
+    export default { component: Button } satisfies Meta<typeof Button>;
+
+    export const Nested = {
+      args: {
+        data: {
+          a: 1,
+          b: [2, 3],
+        },
+        code: \`first
+      second\`,
+        children: (
+          <span>
+            <b>Hi</b>
+          </span>
+        ),
+      },
+      render: (args) => (
+        <div>
+          <section>
+            <Button {...args} title={args.data} />
+          </section>
+        </div>
+      ),
+    };
+
+    export const Text = {
+      args: {
+        children: [
+          'a',
+          'b',
+        ],
+      },
+      render: (args) => (
+        <div>
+          <p>
+            {args.children}
+          </p>
+        </div>
+      ),
+    };
+
+    export const Synthesized = {
+      args: {
+        data: {
+          a: 1,
+        },
+        onClick: log,
+      },
+    };
+  `;
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Nested = () => <div>
+      <section>
+        <Button data={{
+          a: 1,
+          b: [2, 3],
+        }} code={\`first
+      second\`} title={{
+          a: 1,
+          b: [2, 3],
+        }}><span>
+          <b>Hi</b>
+        </span></Button>
+      </section>
+    </div>;
+    const Text = () => <div>
+      <p>
+        {[
+          'a',
+          'b',
+        ]}
+      </p>
+    </div>;
+    const Synthesized = () => <Button data={{
+      a: 1,
+    }} onClick={log} />;"
+  `);
+  expect(template(input, 'Nested')).toMatchInlineSnapshot(`
+    "const Nested = () => <div>
+      <section>
+        <Button⟦props -title -children %%3Ddata%3D%7B%0A%20%20%20%20%20%20a%3A%201%2C%0A%20%20%20%20%20%20b%3A%20%5B2%2C%203%5D%2C%0A%20%20%20%20%7D ~%20⟧⟦attr title data %%3Ddata%3D%7B%0A%20%20%20%20%20%20a%3A%201%2C%0A%20%20%20%20%20%20b%3A%20%5B2%2C%203%5D%2C%0A%20%20%20%20%7D ~%20⟧⟦close Button %%3Dchildren%3D%3Cspan%3E%0A%20%20%20%20%20%20%3Cb%3EHi%3C%2Fb%3E%0A%20%20%20%20%3C%2Fspan%3E jsx ?%20%2F%3E⟧
+      </section>
+    </div>;"
+  `);
+});
+
+test('template: a bound story prints a written arg over several lines as the static snippet does', () => {
+  const input = dedent`
+    import { Template } from './template';
+    export default { title: 'Bound' };
+    export const Bound = Template.bind({});
+    Bound.args = {
+      data: {
+        a: 1,
+      },
+      label: 'Go',
+    };
+  `;
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Bound = () => Template.bind({})({
+        "data": {
+          a: 1,
+        },
+        "label": 'Go'
+    });"
+  `);
+  expect(template(input, 'Bound')).toMatchInlineSnapshot(
+    `"const Bound = () => Template.bind({})(⟦args %%3Ddata%3D%7B%0A%20%20%20%20%20%20a%3A%201%2C%0A%20%20%20%20%7D⟧);"`
+  );
+});
+
+test('template: a string arg prints as text where a place holds it, and as its code where it does not', () => {
+  const input = dedent`
+    import type { Meta } from '@storybook/react';
+    import { Button } from '@design-system/button';
+
+    export default { component: Button } satisfies Meta<typeof Button>;
+
+    export const Quoted = {
+      args: { children: 'say "hi"' },
+      render: (args) => <Button title={args.children}>{args.children}</Button>,
+    };
+
+    export const Braces = {
+      args: { children: '{x}' },
+      render: (args) => <Button title={args.children}>{args.children}</Button>,
+    };
+
+    export const Spread = {
+      args: { children: 'say "hi"' },
+      render: (args) => <Button {...args} title={args.children} />,
+    };
+
+    export const Synthesized = {
+      args: { children: 'say "hi"' },
+    };
+
+    export const Named = {
+      args: { 'Button title': 'Go' },
+      render: (args) => <Button title={args['Button title']} />,
+    };
+  `;
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Quoted = () => <Button title={'say "hi"'}>say "hi"</Button>;
+    const Braces = () => <Button title="{x}">{'{x}'}</Button>;
+    const Spread = () => <Button title={'say "hi"'}>say "hi"</Button>;
+    const Synthesized = () => <Button>say "hi"</Button>;
+    const Named = () => <Button title="Go" />;"
+  `);
+  expect(template(input, 'Quoted')).toMatchInlineSnapshot(
+    `"const Quoted = () => <Button⟦attr title children ~%20⟧>⟦text children %%22children%3Dsay%20%22hi%22⟧</Button>;"`
   );
 });

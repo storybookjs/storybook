@@ -2,9 +2,6 @@ import { SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE } from '../../../constants.ts'
 
 import type { ESTreeAST } from '../../../parser/ast.ts';
 
-/**
- * The export is defined in the `package.json` export map
- */
 export function createRuntimeStoriesImport(): ESTreeAST.ImportDeclaration {
   const imported = {
     type: 'Identifier',

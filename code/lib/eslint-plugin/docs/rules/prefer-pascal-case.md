@@ -7,7 +7,7 @@
 
 ## Rule Details
 
-As a best practice, stories should be defined in [_PascalCase_](https://en.wiktionary.org/wiki/Pascal_case). This makes it easier to differentiate stories from other code visually. Plus, it makes it simpler to define regexes for [non-story exports](https://storybook.js.org/docs/api/csf#non-story-exports).
+As a best practice, stories should be defined in [_PascalCase_](https://en.wiktionary.org/wiki/Pascal_case). This makes it easier to differentiate stories from other code visually. Plus, it makes it simpler to define regexes for [non-story exports](https://storybook.js.org/docs/writing-stories/csf#non-story-exports).
 
 Examples of **incorrect** code for this rule:
 

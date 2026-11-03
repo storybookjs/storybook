@@ -148,6 +148,7 @@ describe('getFocusJobs', () => {
       'typescript-validation--affected',
       'tests--linux--affected',
       'lint-and-format--affected',
+      'local-storybook---chromatic',
       'sandboxes',
       'react-latest--vite---typescript---create',
       'react-latest--vite---typescript---dev',
@@ -264,12 +265,11 @@ describe('selectPathTriggeredJobs', () => {
     ]);
   });
 
-  it('adds the internal Storybook E2E, story tests, and Chromatic for a manager change', () => {
+  it('adds the internal Storybook E2E and story tests for a manager change', () => {
     expect(triggeredIds('code/core/src/manager/App.tsx')).toEqual([
       'internal-storybook-e2e',
       'internal-storybook-build-e2e',
       'tests-stories--linux',
-      'local-storybook---chromatic',
     ]);
   });
 });

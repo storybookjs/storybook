@@ -67,7 +67,7 @@ describe(extractCompiledASTNodes.name, () => {
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 
-      More info: https://github.com/storybookjs/storybook/blob/v<version>/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002
+      More info: https://storybook.js.org/docs/writing-stories?renderer=svelte&ref=error#meta
       ]
     `);
   });

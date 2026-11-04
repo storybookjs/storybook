@@ -264,3 +264,90 @@ describe('DocgenWorkerClient.extract', () => {
     await expect(second).resolves.toMatchObject({ id: 'y' });
   });
 });
+
+describe('DocgenWorkerClient.extract queueing', () => {
+  const TIMEOUT_MS = 120_000;
+
+  const extractIds = (worker: FakeWorker) =>
+    worker.posted.flatMap((m) => (m.type === 'extract' ? [m.id] : []));
+
+  const respond = (worker: FakeWorker, id: number, name: string) =>
+    worker.emit('message', {
+      type: 'extract',
+      id,
+      payload: { id: name, name, path: `./${name}.stories.ts`, jsDocTags: {} },
+    } satisfies DocgenWorkerResponse);
+
+  const startWithQueue = async (count: number) => {
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+    const results = Array.from({ length: count }, (_, i) => {
+      const promise = client.extract({ id: `c${i}--story` } as any);
+      promise.catch(() => undefined);
+      return promise;
+    });
+    const worker = fakeWorkers[0];
+    ackInit(worker);
+    await vi.advanceTimersByTimeAsync(0);
+    return { worker, results };
+  };
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('posts one extract at a time and the next once the worker answers', async () => {
+    const { worker, results } = await startWithQueue(3);
+
+    expect(extractIds(worker)).toHaveLength(1);
+    respond(worker, extractIds(worker)[0], 'c0');
+    await expect(results[0]).resolves.toMatchObject({ id: 'c0' });
+
+    expect(extractIds(worker)).toHaveLength(2);
+    expect(worker.posted.at(-1)).toMatchObject({ type: 'extract', entry: { id: 'c1--story' } });
+  });
+
+  it('starts each timeout when the extract is posted, not when it is queued', async () => {
+    const { worker, results } = await startWithQueue(3);
+
+    // Each extract takes most of the timeout. Together they take far longer than one timeout,
+    // which used to time out every extract behind the first.
+    for (const [index, result] of results.entries()) {
+      await vi.advanceTimersByTimeAsync(TIMEOUT_MS - 1_000);
+      respond(worker, extractIds(worker)[index], `c${index}`);
+      await expect(result).resolves.toMatchObject({ id: `c${index}` });
+    }
+  });
+
+  it('times out a stuck extract and moves on to the next', async () => {
+    const { worker, results } = await startWithQueue(2);
+    const [stuckId] = extractIds(worker);
+
+    await vi.advanceTimersByTimeAsync(TIMEOUT_MS);
+    await expect(results[0]).rejects.toThrow(
+      `docgen worker extract ${stuckId} timed out after ${TIMEOUT_MS}ms`
+    );
+
+    const [, nextId] = extractIds(worker);
+    expect(nextId).toBeDefined();
+    // A late answer for the timed-out extract is ignored.
+    respond(worker, stuckId, 'c0');
+    respond(worker, nextId, 'c1');
+    await expect(results[1]).resolves.toMatchObject({ id: 'c1' });
+  });
+
+  it('rejects queued extracts when the worker dies', async () => {
+    const { worker, results } = await startWithQueue(3);
+
+    worker.emit('error', new Error('worker ran out of memory'));
+
+    for (const result of results) {
+      await expect(result).rejects.toThrow('worker ran out of memory');
+    }
+    expect(extractIds(worker)).toHaveLength(1);
+  });
+});

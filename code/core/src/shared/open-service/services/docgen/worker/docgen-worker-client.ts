@@ -21,6 +21,10 @@ interface Pending {
   timer?: NodeJS.Timeout;
 }
 
+interface Queued extends Pending {
+  entry: IndexEntry;
+}
+
 export interface DocgenWorkerClient {
   extract(entry: IndexEntry): Promise<DocgenPayload | undefined>;
 }
@@ -38,9 +42,15 @@ function errorLikeToError(errorLike: ErrorLike): Error {
 
 // One worker, never a pool: extraction serializes on a single warm TypeScript program, so extra
 // threads would only duplicate multi-second program builds and their memory.
+//
+// Extracts are posted one at a time and each timeout starts at dispatch. Callers such as the static
+// build fan out every component at once, and a timer started at enqueue would charge each extract
+// for the whole queue ahead of it.
 class DocgenWorker implements DocgenWorkerClient {
   private readonly worker: Worker;
+  /** The extract the worker is running, keyed by request id. Holds at most one entry. */
   private readonly pending = new Map<number, Pending>();
+  private readonly queue: Queued[] = [];
   private readonly ready: Promise<void>;
   private rejectReady: (error: unknown) => void = () => undefined;
   private nextId = 0;
@@ -106,24 +116,41 @@ class DocgenWorker implements DocgenWorkerClient {
     }
     await this.ready;
     return new Promise<DocgenPayload | undefined>((resolve, reject) => {
-      const id = this.nextId++;
-      const pending: Pending = { resolve, reject };
-      if (this.taskTimeoutMs > 0) {
-        pending.timer = setTimeout(() => {
-          this.pending.delete(id);
-          this.keepProcessAliveWhileBusy();
-          reject(new Error(`docgen worker extract ${id} timed out after ${this.taskTimeoutMs}ms`));
-        }, this.taskTimeoutMs);
-        pending.timer.unref?.();
-      }
-      this.pending.set(id, pending);
+      this.queue.push({ entry, resolve, reject });
+      this.dispatchNext();
       this.keepProcessAliveWhileBusy();
-      this.post({ type: 'extract', id, entry });
     });
   }
 
+  private dispatchNext(): void {
+    if (this.death || this.pending.size > 0) {
+      return;
+    }
+    const next = this.queue.shift();
+    if (!next) {
+      return;
+    }
+    const { entry, ...pending } = next;
+    const id = this.nextId++;
+    if (this.taskTimeoutMs > 0) {
+      // The worker keeps running a timed-out extract, so the next one can still wait out its tail.
+      // Only that one extract is charged, instead of the whole queue.
+      pending.timer = setTimeout(() => {
+        this.pending.delete(id);
+        pending.reject(
+          new Error(`docgen worker extract ${id} timed out after ${this.taskTimeoutMs}ms`)
+        );
+        this.dispatchNext();
+        this.keepProcessAliveWhileBusy();
+      }, this.taskTimeoutMs);
+      pending.timer.unref?.();
+    }
+    this.pending.set(id, pending);
+    this.post({ type: 'extract', id, entry });
+  }
+
   private keepProcessAliveWhileBusy(): void {
-    if (this.pending.size > 0) {
+    if (this.pending.size > 0 || this.queue.length > 0) {
       this.worker.ref();
     } else {
       this.worker.unref();
@@ -147,12 +174,13 @@ class DocgenWorker implements DocgenWorkerClient {
     }
     this.pending.delete(msg.id);
     this.served = true;
-    this.keepProcessAliveWhileBusy();
     if (msg.error) {
       pending.reject(errorLikeToError(msg.error));
     } else {
       pending.resolve(msg.payload);
     }
+    this.dispatchNext();
+    this.keepProcessAliveWhileBusy();
   }
 
   private fail(error: Error): void {
@@ -175,6 +203,9 @@ class DocgenWorker implements DocgenWorkerClient {
       pending.reject(error);
     }
     this.pending.clear();
+    for (const queued of this.queue.splice(0)) {
+      queued.reject(error);
+    }
     this.worker.unref();
   }
 }

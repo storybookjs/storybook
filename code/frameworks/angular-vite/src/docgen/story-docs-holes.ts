@@ -1,8 +1,9 @@
 // The story-docs snippet is printed twice by the same printer: once with the story's args, which is
 // the static snippet, and once with a placeholder wherever it prints an arg's value, which marks
 // the places the template wraps in holes. A placeholder is as wide as the value it stands for and
-// keeps its whitespace, so the layout breaks lines and attributes as it does for the value. Markup
-// or whitespace the layout reads inside a text value is not kept; see `show` below.
+// keeps its whitespace, so the layout breaks lines and attributes as it does for the value; marks
+// around the value, as core's `createHoleMarks` writes them, would make it wider. Markup or
+// whitespace the layout reads inside a text value is not kept; see `show` below.
 import type { SnippetTemplate, TemplateHole } from 'storybook/internal/docs-tools';
 
 import type { AngularHolePlace } from '../snippet-values.ts';
@@ -27,9 +28,8 @@ export const printValues: ArgPrinter = {
 
 // One private-use character per hole that prints a value, and one mark, which the layout reads as
 // nothing, per hole that prints none: an empty value, or an arg the story does not set.
-const FIRST = 0xe000;
+const PLACEHOLDERS = { first: 0xe000, last: 0xf6ff };
 const HOLE_MARKS = { first: 0xf700, last: 0xf8ff };
-const LAST = HOLE_MARKS.first - 1;
 
 const HOLE_MARK = / ?[\uf700-\uf8ff]/g;
 
@@ -64,8 +64,8 @@ export const printPlaceholders = (): PlaceholderPrinter => {
       if (value === '') {
         return mark(arg, kind);
       }
-      const id = FIRST + values++;
-      if (id > LAST) {
+      const id = PLACEHOLDERS.first + values++;
+      if (id > PLACEHOLDERS.last) {
         // An overflow prints the value itself, which `template` then finds no hole for.
         return value;
       }

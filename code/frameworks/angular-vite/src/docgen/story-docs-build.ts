@@ -227,11 +227,9 @@ const renderedSnippet = async (
   const decorators = shape.members.properties.decorators;
   const derived = await renderStorySnippet(deps.snippetMeta, shape, decorators, deps, printValues);
   const template = await storyTemplate(deps.snippetMeta, shape, decorators, deps, derived);
-  const rendered =
-    authored.kind === 'unresolvable'
-      ? withWarnings(derived, unresolvedWarning([authored.source]))
-      : withWarnings(derived);
-  return { ...rendered, ...template };
+  const authoredWarning =
+    authored.kind === 'unresolvable' ? unresolvedWarning([authored.source]) : undefined;
+  return { ...withWarnings(derived, authoredWarning), ...template };
 };
 
 interface StoryTemplate {
@@ -302,14 +300,14 @@ const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
  */
 const renderStorySnippet = async (
   snippetMeta: AngularComponentSnippetMeta,
-  storyShape: StoryShape,
+  baseShape: StoryShape,
   storyDecorators: Node | undefined,
   deps: StoryDocDeps,
   printer: ArgPrinter,
   // A print with placeholders lays out the markup as the print with values analyzed it.
   valuesAnalysis?: StoryTemplateAnalysis
 ): Promise<RenderedSnippet> => {
-  const shape = { ...storyShape, printer };
+  const shape = { ...baseShape, printer };
   const { componentImport } = deps;
   // The story file's local name is what the import binds, so an aliased import stays consistent
   // between the import statement, the `imports` array and the template.

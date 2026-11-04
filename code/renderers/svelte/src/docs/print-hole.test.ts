@@ -82,8 +82,7 @@ describe('printHole', () => {
     expect(stripHoles(template!)).toBe(snippet);
   });
 
-  // A value a control sets prints as next prints a story that writes that value as its literal.
-  it.each(TEMPLATES)('prints each value in %j as next prints it', (code) => {
+  it.each(TEMPLATES)('prints each value in %j as the snippet of a story that writes it', (code) => {
     for (const value of VALUES) {
       expect(fill(code, value), JSON.stringify(value)).toBe(print(code, value).snippet);
     }

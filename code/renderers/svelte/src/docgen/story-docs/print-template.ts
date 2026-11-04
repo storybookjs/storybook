@@ -18,14 +18,10 @@ import { walk } from 'zimmerframe';
 import {
   type PropValue,
   type SvelteHolePlace,
-  attributeText,
-  fragmentText,
-  isPrimary,
+  type WholeReadPlace,
   printProp,
-  printRead,
   printSpreadAttribute,
-  quotedText,
-  readText,
+  printWholeRead,
 } from '../../snippet-values.ts';
 import type { SvelteAST } from '../../svelte-csf/parser/ast.ts';
 import { type Edit, type Span, applyEdits, parseMarkup, scriptFile, span } from './markup.ts';
@@ -49,8 +45,7 @@ interface Reads {
 
 type Mark = HoleMarks<SvelteHolePlace>['mark'];
 
-// An edit the static snippet makes, `value`, which is the code as written where it keeps it, and
-// `marked`, the same code with the places an arg prints in it marked as holes for the template.
+// An edit of the snippet, with `marked`: its `value` with each place an arg prints marked as a hole.
 type MarkedEdit = Edit & { marked?: string };
 
 // Write a story's args into its markup: spread `{...args}` into attributes, and replace each
@@ -192,64 +187,41 @@ export function printTemplate({
         const range = at(node.expression);
         const replaced = replaceArgsReads(written(range), reads);
         if (replaced === undefined) return;
-        const parent = path.at(-1);
-        const tag = at(node);
-        const text = replaced.text;
-        const attribute = parent?.type === 'Attribute' ? at(parent) : undefined;
-        const quoted = attribute && /=\s*["']/.test(code.slice(attribute.start, range.start));
-        // `title={args.title}` and `{title}` print a string as a spread prints it: `title="Save"`.
-        const asAttribute =
-          parent?.type === 'Attribute' && parent.value === node
-            ? attributeText(parent.name, text)
-            : undefined;
-        const asQuoted = quoted ? quotedText(text) : undefined;
-        const asFragment = parent?.type === 'Fragment' ? fragmentText(text) : undefined;
-        // `{label}` names the attribute after the variable it reads.
-        const shorthand = parent?.type === 'Attribute' && code[attribute!.start] === '{';
-        let edit: Edit = { ...range, value: replaced.value };
-        if (asAttribute !== undefined) {
-          edit = { ...attribute!, value: asAttribute };
-        } else if (shorthand) {
-          edit = { ...attribute!, value: `${parent.name}={${replaced.value}}` };
-        } else if (asQuoted !== undefined || asFragment !== undefined) {
-          edit = { ...tag, value: (asQuoted ?? asFragment)! };
-        }
-        if (!replaced.substituted) {
-          edit = { ...range, value: written(range) };
-        }
         if (!replaced.single) {
-          edits.push({ ...edit, marked: replaced.marked });
+          edits.push({ ...range, value: replaced.value, marked: replaced.marked });
           return;
         }
         // One whole read prints as text or code by its value, so its hole holds the whole place.
-        const { arg, deep } = replaced.single;
-        const attributeName =
-          parent?.type === 'Attribute' && parent.value === node ? parent.name : undefined;
-        const place = attributeName === undefined ? tag : attribute!;
-        const [before, after] =
-          attributeName !== undefined && shorthand
-            ? [`${attributeName}={`, '}']
-            : [code.slice(place.start, range.start), code.slice(range.end, place.end)];
-        const holePlace: SvelteHolePlace = deep
-          ? { kind: 'member' }
-          : attributeName !== undefined
-            ? {
-                kind: 'attrvalue',
-                ...(attributeName !== arg && { name: attributeName }),
-                before,
-                after,
-              }
-            : {
-                kind: quoted ? 'quoted' : parent?.type === 'Fragment' ? 'fragment' : 'code',
-                before,
-                after,
-              };
-        const value =
-          code.slice(place.start, edit.start) + edit.value + code.slice(edit.end, place.end);
+        const { arg, deep, string } = replaced.single;
+        const parent = path.at(-1);
+        const attribute = parent?.type === 'Attribute' ? parent : undefined;
+        const place = attribute?.value === node ? at(attribute) : at(node);
+        const before = code.slice(place.start, range.start);
+        const after = code.slice(range.end, place.end);
+        let wholeRead: WholeReadPlace;
+        if (attribute?.value === node) {
+          // `{label}` names the attribute after the variable it reads.
+          const shorthand = code[place.start] === '{';
+          wholeRead = {
+            kind: 'attrvalue',
+            ...(attribute.name !== arg && { name: attribute.name }),
+            before: shorthand ? `${attribute.name}={` : before,
+            after: shorthand ? '}' : after,
+          };
+        } else {
+          const quoted =
+            attribute !== undefined &&
+            /=\s*["']/.test(code.slice(at(attribute).start, range.start));
+          const kind = quoted ? 'quoted' : parent?.type === 'Fragment' ? 'fragment' : 'code';
+          wholeRead = { kind, before, after };
+        }
+        const value = replaced.substituted
+          ? printWholeRead(wholeRead, arg, replaced.value, string)
+          : written(place);
         edits.push({
           ...place,
           value,
-          marked: mark({ ...holePlace, arg }, value),
+          marked: mark(deep ? { kind: 'member', arg } : { ...wholeRead, arg }, value),
         });
       },
       _(node, { next }) {
@@ -258,8 +230,7 @@ export function printTemplate({
           const range = at(expression);
           const replaced = replaceArgsReads(written(range), reads);
           if (replaced === undefined) continue;
-          // `class:active` reads `active`, so a substituted value needs the long form, which the
-          // snippet writes once it substitutes one.
+          // `class:active` reads `active`, so a substituted value needs the long form.
           const shorthand =
             'name' in node &&
             node.type.endsWith('Directive') &&
@@ -291,8 +262,7 @@ export function printTemplate({
     code,
     collect((_, text) => text)
   );
-  // The marked print is the snippet with marks in it, including arg values a string literal writes
-  // escaped, so marks none of the snippet's characters are never read in it.
+  // The marks avoid the characters of the snippet, not of `code`: `'\uE000'` prints U+E000.
   const marks = createHoleMarks<SvelteHolePlace>([snippet]);
   const marked = collect(marks.mark).map((edit) => ({ ...edit, value: edit.marked ?? edit.value }));
   const template = marks.toTemplate(applyEdits(code, marked));
@@ -314,7 +284,7 @@ function propValue(value: Node): PropValue {
   };
 }
 
-// The edit of a `{...args}` spread, which prints the props one a line when they are long. It
+// The edit of a `{...args}` spread, which prints the props one per line when they are long. It
 // replaces the whitespace before the spread too: the spread's line when it prints no props and is
 // alone on it, else the spaces before it. In the template each prop is a hole, followed by one for
 // the args a control sets, except the `printed` names.
@@ -396,8 +366,8 @@ function blockExpressions(node: SvelteAST.SvelteNode): object[] {
 // Replace each read of the story args in an expression with the source of the value it reads, or
 // return `undefined` when the expression reads no story args. A read of an arg the story does not
 // set stays as written, unless `argsComplete`; `substituted` says whether any read was replaced.
-// `marked` has a hole for each read of an arg, and `single` is the arg when the expression is one
-// whole read of it, `deep` when it reads a member of it. `text` is set when that read is of a string.
+// `marked` has a hole for each read, and `single` is set when the expression is one whole read: its
+// arg, whether it reads a member of that arg, and the `string` it reads, if any.
 function replaceArgsReads(
   expression: string,
   { args, name, aliases, typescript, argsComplete, mark }: Reads
@@ -406,8 +376,7 @@ function replaceArgsReads(
       value: string;
       marked: string;
       substituted: boolean;
-      text?: string;
-      single?: { arg: string; deep: boolean };
+      single?: { arg: string; deep: boolean; string?: string };
     }
   | undefined {
   // The parentheses let an object literal or a sequence parse as one expression.
@@ -451,7 +420,7 @@ function replaceArgsReads(
   };
   // The value of an arg that the template parameter destructures.
   const valueOf = (key: string): { value: string; node?: Node } | undefined => {
-    if (key in args) return printMemberRead(args[key], []);
+    if (key in args) return printRead(args[key], []);
     return argsComplete ? { value: 'undefined' } : undefined;
   };
   const aliasOf = (node: Node) =>
@@ -463,7 +432,7 @@ function replaceArgsReads(
       const [key, ...members] = keys;
       const read =
         key in args
-          ? printMemberRead(args[key], members)
+          ? printRead(args[key], members)
           : argsComplete
             ? { value: 'undefined' }
             : undefined;
@@ -486,24 +455,27 @@ function replaceArgsReads(
   const [only] = edits;
   const whole =
     edits.length === 1 &&
+    only.place.kind !== 'property' &&
     expression.slice(0, only.start).trim() === '' &&
     expression.slice(only.end).trim() === '';
-  const text =
-    whole && only.node?.type === 'Literal' && typeof only.node.value === 'string'
-      ? readText(only.node.value)
+  const string =
+    only.node?.type === 'Literal' && typeof only.node.value === 'string'
+      ? only.node.value
       : undefined;
-  const value = applyEdits(expression, edits);
   return {
-    value,
+    value: applyEdits(expression, edits),
     marked: applyEdits(
       expression,
       edits.map((edit) => ({ ...edit, value: edit.marked }))
     ),
     substituted: edits.some((edit) => edit.substituted),
-    ...(text !== undefined ? { text } : {}),
-    ...(whole && only.place.kind !== 'property'
-      ? { single: { arg: only.arg, deep: only.place.kind === 'member' } }
-      : {}),
+    ...(whole && {
+      single: {
+        arg: only.arg,
+        deep: only.place.kind === 'member',
+        ...(string !== undefined && { string }),
+      },
+    }),
   };
 }
 
@@ -527,7 +499,7 @@ function argsPath(node: Node, editor: SourceEditor, name: string): string[] | un
 
 // Static members of an object literal print as the value they hold; any other read keeps its
 // member access on the value source. `node` is the value when the whole read resolved.
-function printMemberRead(value: Node, keys: string[]): { value: string; node?: Node } {
+function printRead(value: Node, keys: string[]): { value: string; node?: Node } {
   let node = unwrapExpression(value);
   let rest = keys;
   while (rest.length) {
@@ -540,7 +512,7 @@ function printMemberRead(value: Node, keys: string[]): { value: string; node?: N
     .map((key) => (/^[A-Za-z_$][\w$]*$/.test(key) ? `.${key}` : `[${JSON.stringify(key)}]`))
     .join('');
   return {
-    value: printRead(textOf(node), !isPrimaryNode(node)) + accessors,
+    value: isPrimary(node) ? `${textOf(node)}${accessors}` : `(${textOf(node)})${accessors}`,
     ...(rest.length ? {} : { node }),
   };
 }
@@ -560,10 +532,20 @@ function memberOf(node: Node, key: string): Node | undefined {
   return undefined;
 }
 
-// Whether an arg's code keeps its meaning where an `args.x` read stood, as `isPrimary` decides.
-function isPrimaryNode(node: Node): boolean {
-  return isPrimary(
-    node.type,
-    node.type === 'Literal' && typeof node.value === 'number' && node.value < 0
-  );
+// A value that keeps its meaning wherever an `args.x` read stood, without parentheses. An object
+// literal does not: in `() => args.o` it would become a block body.
+function isPrimary(node: Node): boolean {
+  switch (node.type) {
+    case 'Identifier':
+    case 'ThisExpression':
+    case 'TemplateLiteral':
+    case 'ArrayExpression':
+    case 'MemberExpression':
+    case 'CallExpression':
+      return true;
+    case 'Literal':
+      return typeof node.value !== 'number' || node.value >= 0;
+    default:
+      return false;
+  }
 }

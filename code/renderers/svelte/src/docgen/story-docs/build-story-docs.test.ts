@@ -82,7 +82,7 @@ export const Default = { args: { label: 'Save' } };`,
   });
 });
 
-it('keeps the warning once the template is filled, as it is about code the snippet leaves out', async () => {
+it('writes a template for a story whose snippet has a warning', async () => {
   const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
   vol.fromJSON({
     [svelteEntry.importPath]: `<script module>

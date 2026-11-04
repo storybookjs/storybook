@@ -67,14 +67,22 @@ export const materializeLike = (
   const byMarker = new Map(expansions.map((expansion) => [expansion.marker, expansion]));
   return applyReplacements(
     markup,
-    analysis.replacements.map((replacement) => {
+    analysis.replacements.flatMap((replacement) => {
+      const expansion = byMarker.get(replacement.marker);
+      // Where a value holds a marker's name, the print with values picks another name, which this
+      // print does not have: the marker stays in its markup, and the two prints do not line up.
+      if (expansion === undefined) {
+        return [];
+      }
       const start = markup.indexOf(replacement.marker);
-      return {
-        ...replacement,
-        start,
-        end: start + replacement.end - replacement.start,
-        text: expansionText(byMarker.get(replacement.marker)!, replacement.outputs),
-      };
+      return [
+        {
+          ...replacement,
+          start,
+          end: start + replacement.end - replacement.start,
+          text: expansionText(expansion, replacement.outputs),
+        },
+      ];
     })
   );
 };

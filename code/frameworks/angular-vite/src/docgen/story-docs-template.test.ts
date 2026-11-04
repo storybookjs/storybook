@@ -291,6 +291,21 @@ describe('story-docs templates', () => {
     );
   });
 
+  it('keeps the snippet of a story whose text holds the name of an argsToTemplate marker', async () => {
+    const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = {
+        args: { label: 'data-storybook-args-to-template-1', size: 'lg' },
+        render: ({ label, ...rest }) => ({
+          props: rest,
+          template: \`<p>\${label}</p><sb-button \${argsToTemplate(rest)}></sb-button>\`,
+        }),
+      };
+    `);
+    expect(story!.error).toBeUndefined();
+    expect(story!.snippet).toContain(`<sb-button [size]="'lg'"></sb-button>`);
+  });
+
   it('has no template where next prints the author code', async () => {
     const [story] = await storyDocs(`
       ${IMPORTS}

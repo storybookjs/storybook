@@ -92,7 +92,14 @@ function printTemplate(
   sources: string[]
 ): SnippetTemplate<ReactHolePlace> | undefined {
   const marks = createHoleMarks<ReactHolePlace>(sources, (mark) => `/*${mark}*/`);
-  const template = marks.toTemplate(print(marks.mark));
+  const template: SnippetTemplate<ReactHolePlace> | undefined = marks
+    .toTemplate(print(marks.mark))
+    ?.map((segment) =>
+      // While neither arg it follows changes, an `overridden` hole prints the attribute as written.
+      typeof segment !== 'string' && segment.kind === 'overridden'
+        ? { ...segment, written: segment.text }
+        : segment
+    );
   // An attribute a control clears leaves no gap or empty line.
   return template && withHoleSpace(template, (hole) => hole.kind === 'attr');
 }
@@ -423,15 +430,10 @@ function rewriteJsx(
       );
       const print = printAt(attrs[firstSpread].start);
       const pieces = injectedAttributes(merged, existing, print).join(' ');
-      let marked: string | undefined;
-      if (mark) {
-        const beforeSpread = attrs.slice(0, attrs.findLastIndex(isArgsSpread));
-        const guards = markAttributesBeforeSpread(code, beforeSpread, edits, mark);
-        marked =
-          injectedAttributes(merged, existing, print, mark).join(' ') +
-          guards +
+      const marked =
+        mark &&
+        injectedAttributes(merged, existing, print, mark).join(' ') +
           addedAttributes([...existing, ...injectedNames(merged, existing)], mark);
-      }
       attrs.forEach((a, index) => {
         if (!isArgsSpread(a)) {
           return;
@@ -473,32 +475,47 @@ function rewriteJsx(
       }
     }
 
-    for (const a of attrs) {
-      if (
-        a.type !== 'JSXAttribute' ||
-        a.name.type !== 'JSXIdentifier' ||
-        a.value?.type !== 'JSXExpressionContainer'
-      ) {
-        continue;
+    // A spread writes over the attributes before it: each is a hole for the arg it names, and one
+    // that reads another arg follows both, as an `overridden` hole.
+    const lastSpread = attrs.findLastIndex(isArgsSpread);
+    attrs.forEach((a, index) => {
+      if (a.type !== 'JSXAttribute' || a.name.type !== 'JSXIdentifier') {
+        return;
       }
-      const key = getArgsMemberKey(a.value.expression);
+      const name = a.name.name;
+      const beforeSpread = index < lastSpread;
+      const key =
+        a.value?.type === 'JSXExpressionContainer' ? getArgsMemberKey(a.value.expression) : null;
       if (key === null) {
-        continue;
+        if (beforeSpread && mark) {
+          edits.push({
+            start: a.start,
+            end: a.end,
+            marked: mark({ kind: 'attr', arg: name }, code.slice(a.start, a.end)),
+          });
+        }
+        return;
       }
       const value = Object.hasOwn(merged, key)
-        ? toAttr(a.name.name, merged[key], printAt(a.start))
+        ? toAttr(name, merged[key], printAt(a.start))
         : undefined;
+      const written = value ?? code.slice(a.start, a.end);
       edits.push({
         start: a.start,
         end: a.end,
         value,
         marked: mark?.(
-          { kind: 'attr', arg: key, ...(a.name.name !== key && { name: a.name.name }) },
-          value ?? code.slice(a.start, a.end)
+          key === name
+            ? { kind: 'attr', arg: key }
+            : beforeSpread
+              ? // `printTemplate` sets `written` to the hole's text.
+                { kind: 'overridden', spread: true, name, reads: key, written: '' }
+              : { kind: 'attr', arg: key, name },
+          written
         ),
       });
       changed ||= value !== undefined;
-    }
+    });
   }
 
   for (const child of node.children) {
@@ -525,34 +542,4 @@ function rewriteJsx(
   }
 
   return changed;
-}
-
-// A spread writes over the attributes before it, so each is a hole for the arg it names; one that
-// reads an arg is marked as a read instead. One that reads another arg than it names cannot follow
-// the arg it names, so this returns a `guard` hole for that arg.
-function markAttributesBeforeSpread(
-  code: string,
-  attrs: E.JSXOpeningElement['attributes'],
-  edits: Edit[],
-  mark: Mark
-): string {
-  let guards = '';
-  for (const a of attrs) {
-    if (a.type !== 'JSXAttribute' || a.name.type !== 'JSXIdentifier') {
-      continue;
-    }
-    const name = a.name.name;
-    const read =
-      a.value?.type === 'JSXExpressionContainer' ? getArgsMemberKey(a.value.expression) : null;
-    if (read === null) {
-      edits.push({
-        start: a.start,
-        end: a.end,
-        marked: mark({ kind: 'attr', arg: name }, code.slice(a.start, a.end)),
-      });
-    } else if (read !== name) {
-      guards += mark({ kind: 'guard', arg: name }, '');
-    }
-  }
-  return guards;
 }

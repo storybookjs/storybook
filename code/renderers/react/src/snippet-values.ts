@@ -23,7 +23,9 @@ export type JsxValue =
 // - `attrs`: the args a control set, as attributes, but those named in `except`.
 // - `entries` and `object`: the args a control set, as the args of a bound story, but those named
 //   in `except`; `object` writes the whole object for a story that passes none.
-// - `guard`: an arg the snippet cannot follow.
+// - `overridden`: an attribute written as `name={args.reads}` before `{...args}`, which writes over
+//   it once a control sets the arg `name`. Of the args a control set, it prints `name` as the
+//   attribute, else `reads`, else `written`, the attribute as the snippet prints it.
 export type ReactHolePlace =
   | { kind: 'attr'; name?: string }
   | { kind: 'text' }
@@ -32,7 +34,7 @@ export type ReactHolePlace =
   | { kind: 'attrs'; except: string[] }
   | { kind: 'entries'; except: string[] }
   | { kind: 'object' }
-  | { kind: 'guard' };
+  | { kind: 'overridden'; name: string; reads: string; written: string };
 
 // Wraps the text a place prints in its hole, for the template; the snippet prints the text.
 export type Mark = (hole: HoleRef<ReactHolePlace>, text: string) => string;

@@ -1,9 +1,4 @@
-import {
-  type PrintHole,
-  UnprintableArgError,
-  printValue,
-  unknownHoleKind,
-} from 'storybook/internal/docs-tools';
+import { type PrintHole, printValue, unknownHoleKind } from 'storybook/internal/docs-tools';
 import type { Args } from 'storybook/internal/types';
 
 import {
@@ -45,8 +40,13 @@ export const printHole: PrintHole<ReactHolePlace> = (hole, value) => {
         .join('');
     case 'object':
       return printArgsObject(codes(value as Args));
-    case 'guard':
-      throw new UnprintableArgError(arg);
+    case 'overridden': {
+      const args = value as Args;
+      const read = [hole.name, hole.reads].find((name) => Object.hasOwn(args, name));
+      return read === undefined
+        ? hole.written
+        : printAttribute(hole.name, toJsxValue(read, args[read]));
+    }
     default:
       return unknownHoleKind(hole);
   }

@@ -17,6 +17,19 @@ const parallel = `--parallel=${process.env.CI ? CI_VCPUS : maxConcurrentTasks}`;
 const linkCommand = `yarn nx run-many -t compile ${parallel}`;
 const noLinkCommand = `yarn nx run-many -t compile -c production ${parallel}`;
 
+/**
+ * On CI, Nx connected to NX Cloud prints only a cloud link for a failed task, and with no token it
+ * prints nothing at all. Stream output keeps compile errors in the CI log, and a CI job without a
+ * token skips NX Cloud instead of failing to authenticate.
+ */
+const ciEnv = (): NodeJS.ProcessEnv =>
+  process.env.CI
+    ? {
+        NX_DEFAULT_OUTPUT_STYLE: process.env.NX_DEFAULT_OUTPUT_STYLE ?? 'stream',
+        ...(process.env.NX_CLOUD_ACCESS_TOKEN ? {} : { NX_NO_CLOUD: 'true' }),
+      }
+    : {};
+
 export const compile: Task<MonorepoDetails> = {
   description: 'Compile the source code of the monorepo',
   dependsOn: ['install'],
@@ -37,7 +50,7 @@ export const compile: Task<MonorepoDetails> = {
     await rm(join(codeDir, 'bench/esbuild-metafiles'), { recursive: true, force: true });
     return exec(
       `${command} ${skipCache ? '--skip-nx-cache' : ''}`,
-      { cwd: ROOT_DIRECTORY },
+      { cwd: ROOT_DIRECTORY, env: ciEnv() },
       {
         startMessage: '🥾 Bootstrapping',
         errorMessage: '❌ Failed to bootstrap',

@@ -18,23 +18,25 @@ env:
 jobs:
   nx:
     # Same-repo PRs only: fork PRs get no secrets, so they cannot reach Nx Cloud.
-    # A `labeled` event only starts a run for a `ci:` label, so adding e.g. a `qa:` label
-    # does not restart the whole pipeline.
+    # A `labeled` event only starts a run for `ci:normal` or `ci:daily`, so adding any other
+    # label does not restart the whole pipeline.
     if: >
       github.repository == 'storybookjs/storybook' &&
         ((github.event_name == 'pull_request' &&
           github.event.pull_request.head.repo.full_name == github.repository &&
-          (github.event.action != 'labeled' || startsWith(github.event.label.name, 'ci:')) &&
+          (github.event.action != 'labeled' || github.event.label.name == 'ci:normal' || github.event.label.name == 'ci:daily') &&
           (contains(github.event.pull_request.labels.*.name, 'ci:normal') ||
            contains(github.event.pull_request.labels.*.name, 'ci:daily'))
         ) || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
 
-    # Job-level (not workflow-level) so a skipped run, such as a non-`ci:` label, never
+    # Job-level (not workflow-level) so a skipped run, such as an unrelated label, never
     # cancels the run in progress. A new push supersedes the previous run of the same PR.
+    # Scheduled and manual runs each get their own group, so they never cancel each other.
     concurrency:
-      group: nx-${{ github.event.pull_request.number || github.ref }}
+      group: nx-${{ github.event.pull_request.number || github.run_id }}
       cancel-in-progress: true
 
+    timeout-minutes: 90
     runs-on: ubuntu-latest
     env:
       ALL_TASKS: compile,check,knip,test,lint,fmt,sandbox,build,e2e-tests,e2e-tests-dev,vitest-integration,check-sandbox,e2e-ui,jest,vitest
@@ -105,14 +107,20 @@ jobs:
           echo 'EOF' >> "$GITHUB_OUTPUT"
           exit $status
 
+      # Not on cancellation: a superseded run must not overwrite the status of the run that replaced it.
       - name: Create per-task Nx statuses
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        env:
+          NX_OUTCOME: ${{ steps.nx.outcome }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: | # zizmor: ignore[template-injection] safe toJson context expansion in github-script
             const raw = ${{ toJson(steps.nx.outputs.nx_output) }} || '';
             const tag = ${{ toJson(steps.tag.outputs.tag) }} || '';
+            // `success` only when the nx step itself succeeded. A failure before it (for example
+            // NX Cloud rejecting the run) leaves the output empty, which must not read as green.
+            const succeeded = process.env.NX_OUTCOME === 'success';
             const lines = raw.split('\n');
             const failures = [];
 
@@ -123,10 +131,11 @@ jobs:
                 line.match(/✖\s+([^│]+?)\s{2,}/)?.[1].trim() ||
                 'Unknown Nx task';
 
+              // Nx 24 prints `> Logs: https://cloud.nx.app/runs/<run>/task/<task>` under a failed task.
               const url = lines
                 .slice(i + 1, i + 6)
-                .find(l => l.includes('Task logs:'))
-                ?.match(/Task logs:\s*(https:\/\/cloud\.nx\.app\/logs\/\S+)/)?.[1];
+                .find(l => /Logs:/.test(l))
+                ?.match(/Logs:\s*(https:\/\/cloud\.nx\.app\/\S+)/)?.[1];
 
               failures.push({ task, url });
             }
@@ -146,8 +155,14 @@ jobs:
               });
             }
 
-            const runMatches = raw.match(/https:\/\/cloud\.nx\.app\/runs\/\S+/g);
-            const nxCloudUrl = runMatches ? runMatches[runMatches.length - 1] : undefined;
+            // Prefer the pipeline execution link, then a run link; never a single task's log.
+            const cloudLinks = (raw.match(/https:\/\/cloud\.nx\.app\/\S+/g) ?? []).filter(
+              (link) => !link.includes('/task/')
+            );
+            const nxCloudUrl =
+              cloudLinks.find((link) => link.includes('/cipes/')) ??
+              cloudLinks.filter((link) => link.includes('/runs/')).at(-1) ??
+              `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
             const failedCount = failures.length;
 
@@ -155,10 +170,12 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               sha,
-              state: failedCount ? 'failure' : 'success',
+              state: succeeded ? 'success' : 'failure',
               target_url: nxCloudUrl,
-              description: failedCount
-                ? `Nx Cloud run failed (${failedCount} tasks failed)`
-                : 'Nx Cloud run finished successfully',
+              description: succeeded
+                ? 'Nx Cloud run finished successfully'
+                : failedCount
+                  ? `Nx Cloud run failed (${failedCount} tasks failed)`
+                  : 'Nx Cloud run failed before or outside its tasks',
               context: `nx: ${tag}`,
             });

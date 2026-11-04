@@ -392,7 +392,8 @@ export const node26Smoke = defineJob('Node 26 smoke', () => ({
       },
     },
     npm.install('.'),
-    compileStep(),
+    // Its task hashes match the Node 22 build, so a cache hit would skip compiling on Node 26.
+    compileStep({ skipCache: true }),
     {
       run: {
         name: 'Run unit tests',

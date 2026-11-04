@@ -68,7 +68,9 @@ const getCurrentVersion = async (verbose?: boolean) => {
 
 const buildAllPackages = async () => {
   console.log(`🏗️ Building all packages...`);
-  await execaCommand('yarn task --task=compile --start-from=compile --no-link', {
+  // A release always builds from scratch: the version bump changes every task hash anyway, and
+  // what gets published must not depend on the remote cache.
+  await execaCommand('yarn task --task=compile --start-from=compile --no-link --skip-cache', {
     stdio: 'inherit',
     cleanup: true,
     cwd: CODE_DIR_PATH,

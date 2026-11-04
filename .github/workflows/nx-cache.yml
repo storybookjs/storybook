@@ -15,13 +15,15 @@ on:
 permissions:
   contents: read
 
+# Queue instead of cancel: a cancelled fill leaves its commit's tasks out of the shared cache.
 concurrency:
   group: ${{ github.workflow }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   fill-cache:
     if: github.repository == 'storybookjs/storybook' && github.ref == 'refs/heads/next'
+    timeout-minutes: 45
     runs-on: ubuntu-latest
     environment: nx-cloud-write
     env:

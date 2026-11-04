@@ -3,7 +3,18 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "targets": {
-    "compile": {},
+    "compile": {
+      "inputs": [
+        "production",
+        "^production",
+        {
+          "env": "OS"
+        },
+        "{workspaceRoot}/package.json",
+        "{workspaceRoot}/code/*/package.json",
+        "{workspaceRoot}/code/*/*/package.json"
+      ]
+    },
     "check": {}
   },
   "tags": ["library"]

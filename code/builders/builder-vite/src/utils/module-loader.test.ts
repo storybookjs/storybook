@@ -4,7 +4,7 @@ import type { Options } from 'storybook/internal/types';
 
 import { getModuleLoader } from './module-loader.ts';
 
-const optionsWith = (moduleLoader?: string) =>
+const optionsWith = (moduleLoader?: unknown) =>
   ({ presets: { apply: async () => moduleLoader } }) as unknown as Options;
 
 describe('getModuleLoader', () => {
@@ -16,6 +16,21 @@ describe('getModuleLoader', () => {
 
   it('keeps a package specifier', async () => {
     expect(await getModuleLoader(optionsWith('my-framework/loader'))).toBe('my-framework/loader');
+  });
+
+  it('converts a file URL to a path', async () => {
+    expect(await getModuleLoader(optionsWith('file:///project/loader.js'))).toBe(
+      '/project/loader.js'
+    );
+    expect(await getModuleLoader(optionsWith(new URL('file:///project/loader.js')))).toBe(
+      '/project/loader.js'
+    );
+  });
+
+  it('rejects a value that is not a string', async () => {
+    await expect(getModuleLoader(optionsWith(42))).rejects.toThrow(
+      'must be an absolute path or a package specifier'
+    );
   });
 
   it('rejects a relative path', async () => {

@@ -1425,14 +1425,37 @@ describe('template', () => {
     `);
   });
 
-  it('follows a read of an arg as content, which the snippet keeps as written', () => {
+  it('fills in a read of an arg as content, as it fills in one in an attribute', () => {
     const code = withCSF3(
-      `export const S = { args: { label: 'Go' }, render: (args) => <p>{args.label}!</p> };`
+      `export const S = { args: { label: 'Go' }, render: (args) => <p title={args.label}>{args.label}!</p> };`
     );
-    expect(snippetOf(code)).toBe('const S = (args) => <p>{args.label}!</p>;');
+    expect(snippetOf(code)).toBe('const S = () => <p title="Go">Go!</p>;');
     const initialArgs = { children: 'Click me', label: 'Go' };
     expect(fill(code, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(
-      'const S = (args) => <p>Stop!</p>;'
+      'const S = () => <p title="Stop">Stop!</p>;'
+    );
+  });
+
+  it('prints the arg the story sets for an attribute a spread writes over', () => {
+    const code = withCSF3(
+      `export const S = { args: { size: 'large' }, render: (args) => <Button size="small" {...args} /> };`
+    );
+    expect(snippetOf(code)).toBe('const S = () => <Button size="large">Click me</Button>;');
+    const initialArgs = { children: 'Click me', size: 'large' };
+    expect(fill(code, initialArgs, { ...initialArgs, size: 'medium' })).toBe(
+      'const S = () => <Button size="medium">Click me</Button>;'
+    );
+  });
+
+  it('leaves out `children` a control sets on an element with content of its own', () => {
+    const code = dedent`
+      import { Button } from '@design-system/button';
+      export default { component: Button };
+      export const S = { args: { label: 'Go' }, render: (args) => <Button {...args}>Static</Button> };
+    `;
+    const initialArgs = { label: 'Go' };
+    expect(fill(code, initialArgs, { ...initialArgs, children: 'x' })).toBe(
+      'const S = () => <Button label="Go">Static</Button>;'
     );
   });
 

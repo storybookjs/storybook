@@ -197,7 +197,7 @@ function buildSnippet(
   invariant(componentName, 'Could not generate snippet without component name.');
   const print = valuePrinter('');
   const attrs = injectedAttributes(merged, new Set(), print, mark);
-  const added = addedAttributes(injectedNames(merged, new Set()), merged, mark);
+  const added = addedAttributes(injectedNames(merged, new Set()), Boolean(merged.children), mark);
   const opening = `<${[componentName, ...attrs].join(' ')}${added}`;
   const element = merged.children
     ? `${opening}>${childrenHole(merged.children, print, mark)}</${componentName}>`
@@ -335,14 +335,10 @@ const injectedAttributes = (
   );
 
 // Where a spread passes the args a control sets, but those the element prints already: by name,
-// or `children` as its content.
-const addedAttributes = (printed: string[], merged: Args, mark: Mark) =>
+// or `children` where it has content.
+const addedAttributes = (printed: string[], hasContent: boolean, mark: Mark) =>
   mark(
-    {
-      kind: 'attrs',
-      spread: true,
-      except: merged.children ? [...printed, 'children'] : printed,
-    },
+    { kind: 'attrs', spread: true, except: hasContent ? [...printed, 'children'] : printed },
     ''
   );
 
@@ -405,7 +401,11 @@ function rewriteJsx(
       const injected = injectedNames(merged, existing);
       const pieces =
         injectedAttributes(merged, existing, print, mark).join(' ') +
-        addedAttributes([...existing, ...injected], merged, mark);
+        addedAttributes(
+          [...existing, ...injected],
+          Boolean(merged.children) || node.children.length > 0,
+          mark
+        );
       attrs.forEach((a, index) => {
         if (!isArgsSpread(a)) {
           return;
@@ -432,7 +432,8 @@ function rewriteJsx(
     }
 
     // Each attribute that reads an arg is a hole for it. A spread writes over the attributes before
-    // it, so each of those is a hole for the arg it names, which the spread then leaves out.
+    // it, so each of those is a hole for the arg it names, which the spread then leaves out, and
+    // prints that arg where the story sets it.
     const lastSpread = attrs.findLastIndex(isArgsSpread);
     attrs.forEach((a, index) => {
       if (a.type !== 'JSXAttribute' || a.name.type !== 'JSXIdentifier') {
@@ -445,8 +446,9 @@ function rewriteJsx(
       if (arg === null) {
         return;
       }
-      const set = key !== null && Object.hasOwn(merged, key);
-      const text = set ? toAttr(name, merged[key], printAt(a.start)) : code.slice(a.start, a.end);
+      const read = Object.hasOwn(merged, arg) ? arg : key;
+      const set = read !== null && Object.hasOwn(merged, read);
+      const text = set ? toAttr(name, merged[read], printAt(a.start)) : code.slice(a.start, a.end);
       edits.push({
         start: a.start,
         end: a.end,
@@ -460,14 +462,14 @@ function rewriteJsx(
     if (isJsx(child)) {
       changed = rewriteJsx(code, child, merged, edits, mark) || changed;
     } else if (child.type === 'JSXExpressionContainer') {
-      // The snippet inlines only `children` as content; a read of another arg stays as written.
+      // A read of an arg the story sets is filled in; one of an arg it does not set stays as written.
       const key = getArgsMemberKey(child.expression);
       if (key === null) {
         continue;
       }
-      const set = key === 'children' && Boolean(merged.children);
+      const set = Object.hasOwn(merged, key);
       const text = set
-        ? toJsxChildren(merged.children, printAt(child.start))
+        ? toJsxChildren(merged[key], printAt(child.start))
         : code.slice(child.start, child.end);
       edits.push({
         start: child.start,

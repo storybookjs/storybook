@@ -43,7 +43,10 @@ const cases: [string, () => Error][] = [
   [
     'NoStoryComponentDestructuredError',
     () =>
-      new svelte.NoStoryComponentDestructuredError({ filename, metaFunctionName: 'preview.meta' }),
+      new svelte.NoStoryComponentDestructuredError({
+        filename,
+        metaFunctionName: 'preview.meta',
+      }),
   ],
   ['GetDefineMetaFirstArgumentError', () => new svelte.GetDefineMetaFirstArgumentError(filename)],
   [
@@ -56,7 +59,10 @@ const cases: [string, () => Error][] = [
   ],
   [
     'IndexerParseError',
-    () => new svelte.IndexerParseError(filename, { cause: new SyntaxError('Unexpected token') }),
+    () =>
+      new svelte.IndexerParseError(filename, {
+        cause: new SyntaxError('Unexpected token'),
+      }),
   ],
   ['MixedMetaError', () => new svelte.MixedMetaError(filename)],
   ['PreviewNotImportedError', () => new svelte.PreviewNotImportedError(filename)],
@@ -83,7 +89,10 @@ const cases: [string, () => Error][] = [
     () =>
       new defineMeta.InvalidComponentValueError({
         filename,
-        componentProperty: createASTProperty('component', { type: 'Literal', value: 'Button' }),
+        componentProperty: createASTProperty('component', {
+          type: 'Literal',
+          value: 'Button',
+        }),
       }),
   ],
   [
@@ -99,18 +108,29 @@ const cases: [string, () => Error][] = [
   ],
   [
     'NoStringLiteralError',
-    () => new defineMeta.NoStringLiteralError({ filename, property: identifierProperty('title') }),
+    () =>
+      new defineMeta.NoStringLiteralError({
+        filename,
+        property: identifierProperty('title'),
+      }),
   ],
   [
     'NoArrayExpressionError',
-    () => new defineMeta.NoArrayExpressionError({ filename, property: identifierProperty('tags') }),
+    () =>
+      new defineMeta.NoArrayExpressionError({
+        filename,
+        property: identifierProperty('tags'),
+      }),
   ],
   [
     'ArrayElementNotStringError',
     () =>
       new defineMeta.ArrayElementNotStringError({
         filename,
-        property: createASTProperty('tags', { type: 'ArrayExpression', elements: [] }),
+        property: createASTProperty('tags', {
+          type: 'ArrayExpression',
+          elements: [],
+        }),
         element: { type: 'Identifier', name: 'tag' },
       }),
   ],
@@ -198,11 +218,21 @@ const cases: [string, () => Error][] = [
   ],
   [
     'StoryExtendUnnamedError',
-    () => new story.StoryExtendUnnamedError({ filename, component, extend: 'Primary' }),
+    () =>
+      new story.StoryExtendUnnamedError({
+        filename,
+        component,
+        extend: 'Primary',
+      }),
   ],
   [
     'StoryExtendDuplicateNameError',
-    () => new story.StoryExtendDuplicateNameError({ filename, component, extend: 'Primary' }),
+    () =>
+      new story.StoryExtendDuplicateNameError({
+        filename,
+        component,
+        extend: 'Primary',
+      }),
   ],
   [
     'StoryExtendCycleError',

@@ -1,12 +1,15 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import type { StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
+import type { PreparedStory, StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
 
 import {
   type QueryState,
-  selectSnippetForStory,
+  type StoryArgs,
+  getPrintHole,
+  loadStoryTemplates,
+  selectLiveSnippetForStory,
   selectStoryDoc,
-  selectWarningForStory,
+  storyArgsChanged,
 } from 'storybook/open-service';
 import { getService } from 'storybook/preview-api';
 
@@ -53,12 +56,67 @@ export function useServiceStoryDoc(storyId: string): QueryState<StoryDoc | undef
   return useServiceStory(storyId, selectStoryDoc);
 }
 
-/** Convenience hook returning one story's display snippet (with its CSF import block prepended). */
-export function useServiceStorySnippet(storyId: string): QueryState<string | undefined> {
-  return useServiceStory(storyId, selectSnippetForStory);
+// One story's display snippet with its `args` filled into its template by the story's renderer, or
+// its static snippet and warning while it has the args it is written with or no template.
+export function useServiceStoryLiveSnippet(
+  story: PreparedStory,
+  args: StoryArgs | undefined
+): QueryState<{ snippet?: string; warning?: string }> {
+  // The selector is stable, so an args change fills the template again without a new subscription,
+  // which would load the story docs again.
+  const state = useServiceStory(story.id, selectStoryWithTemplate);
+  const printHole = getPrintHole(story.parameters);
+  const service = getService('core/story-docs', { internal: true });
+  const componentId = story.id.split('--')[0]!;
+  const changed = storyArgsChanged(args);
+  const templates = state.data?.templates;
+  // The templates load apart from the story docs, the first time the args change, and again on
+  // each change after a load that brought none.
+  const [loadedFor, setLoadedFor] = useState<string>();
+  const retryOn = loadedFor === componentId && templates === undefined ? args : undefined;
+  useEffect(() => {
+    if (!changed) {
+      return;
+    }
+    let mounted = true;
+    void loadStoryTemplates(service, componentId).then(() => {
+      if (mounted) {
+        setLoadedFor(componentId);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [changed, service, componentId, retryOn]);
+  const data = useMemo(
+    () =>
+      selectLiveSnippetForStory(
+        state.data?.payload,
+        templates ?? (loadedFor === componentId ? undefined : 'loading'),
+        story.id,
+        args,
+        printHole
+      ),
+    [state.data, templates, story.id, args, printHole, componentId, loadedFor]
+  );
+  return useMemo(() => ({ ...state, data }), [state, data]);
 }
 
-/** Convenience hook returning why one story's snippet is an incomplete example, when it is one. */
-export function useServiceStoryWarning(storyId: string): QueryState<string | undefined> {
-  return useServiceStory(storyId, selectWarningForStory);
+// A plain copy of the payload with only this story's docs, and of its template. The subscription
+// compares what the selector returns with what it returned before, and the payload itself is state
+// that changes in place, so it would always compare equal. The template is read, not subscribed
+// to, which would load it at once; reading it here re-runs the selector when an update changes it.
+function selectStoryWithTemplate(payload: StoryDocsPayload | undefined, storyId: string) {
+  const story = payload?.stories[storyId];
+  const templates = getService('core/story-docs', { internal: true }).queries.storyTemplates.get({
+    id: storyId.split('--')[0]!,
+  });
+  const template = templates?.stories[storyId];
+  return {
+    payload: payload && { ...payload, stories: story ? { [storyId]: { ...story } } : {} },
+    templates: templates && {
+      ...(templates.import !== undefined && { import: templates.import }),
+      stories: template === undefined ? {} : { [storyId]: template },
+    },
+  };
 }

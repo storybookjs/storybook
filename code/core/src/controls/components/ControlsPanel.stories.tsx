@@ -1,6 +1,11 @@
 import React from 'react';
 
-import { STORY_FINISHED, STORY_PREPARED } from 'storybook/internal/core-events';
+import { Channel } from 'storybook/internal/channels';
+import {
+  CURRENT_STORY_WAS_SET,
+  STORY_FINISHED,
+  STORY_PREPARED,
+} from 'storybook/internal/core-events';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
@@ -11,6 +16,7 @@ import { expect, fn, waitFor, within } from 'storybook/test';
 
 import { buildQueryState } from '../../shared/open-service/query-state.ts';
 import type { QueryState } from '../../shared/open-service/types.ts';
+import { createDocgenGate } from '../docgenGate.ts';
 import { ControlsPanel } from './ControlsPanel.tsx';
 
 const refId = 'my-ref';
@@ -85,31 +91,25 @@ const serviceUnpreparedManagerContext: any = {
   },
 };
 
-// A real (tiny) channel backing `api.on`/`off`/`emit`, so a story's `play` can emit story lifecycle
-// events (STORY_FINISHED / STORY_PREPARED) and drive the dev-only docgen gate in `ControlsPanel`.
-function createApiChannel() {
-  const listeners = new Map<string, Set<(...args: any[]) => void>>();
-  return {
-    on: fn((type: string, cb: (...args: any[]) => void) => {
-      const set = listeners.get(type) ?? new Set();
-      set.add(cb);
-      listeners.set(type, set);
-    }).mockName('api::on'),
-    off: fn((type: string, cb: (...args: any[]) => void) => {
-      listeners.get(type)?.delete(cb);
-    }).mockName('api::off'),
-    emit: fn((type: string, ...args: any[]) => {
-      listeners.get(type)?.forEach((cb) => cb(...args));
-    }).mockName('api::emit'),
-  };
-}
+const serviceRenderChannel = new Channel({});
+const serviceDocgenGate = createDocgenGate({
+  channel: serviceRenderChannel,
+  gateEvent: STORY_FINISHED,
+  resolveRefId: () => undefined,
+});
+const preparedDocgenGate = createDocgenGate({
+  channel: serviceRenderChannel,
+  gateEvent: STORY_PREPARED,
+  resolveRefId: () => undefined,
+});
 
-const serviceRenderChannel = createApiChannel();
 const serviceRenderManagerContext: any = {
   ...serviceManagerContext,
   api: {
     ...serviceManagerContext.api,
-    ...serviceRenderChannel,
+    on: fn(serviceRenderChannel.on.bind(serviceRenderChannel)),
+    off: fn(serviceRenderChannel.off.bind(serviceRenderChannel)),
+    emit: fn(serviceRenderChannel.emit.bind(serviceRenderChannel)),
   },
 };
 
@@ -168,7 +168,18 @@ const docgenService: any = { queries: { docgen: serviceGetDocgen } };
 
 const meta = {
   component: ControlsPanel,
-  args: { saveStory: fn(), createStory: fn() },
+  args: { saveStory: fn(), createStory: fn(), docgenGate: serviceDocgenGate },
+  beforeEach: () => {
+    // End the previous fixture's selection before starting this story's render.
+    serviceRenderChannel.emit(CURRENT_STORY_WAS_SET, {
+      storyId: serviceStoryData.id,
+      viewMode: 'docs',
+    });
+    serviceRenderChannel.emit(CURRENT_STORY_WAS_SET, {
+      storyId: serviceStoryData.id,
+      viewMode: 'story',
+    });
+  },
   decorators: [
     (storyFn) => (
       <ManagerContext.Provider value={managerContext}>{storyFn()}</ManagerContext.Provider>
@@ -314,6 +325,49 @@ export const ServiceDocgenLoadsAfterStoryFinishedInDev: Story = {
   },
 };
 
+function RemountableControlsPanel(props: React.ComponentProps<typeof ControlsPanel>) {
+  const [visible, setVisible] = React.useState(true);
+  return (
+    <>
+      <button onClick={() => setVisible(!visible)}>
+        {visible ? 'Hide controls' : 'Show controls'}
+      </button>
+      {visible && <ControlsPanel {...props} />}
+    </>
+  );
+}
+
+export const ServiceDocgenSurvivesPanelRemount: Story = {
+  ...ServiceDocgenLoadsAfterStoryFinishedInDev,
+  render: (args) => <RemountableControlsPanel {...args} />,
+  play: async ({ canvas, userEvent }) => {
+    await canvas.findByText('variant');
+    serviceRenderChannel.emit(STORY_FINISHED, { storyId: serviceStoryData.id });
+    await expect(await canvas.findByRole('radio', { name: 'primary' })).toBeInTheDocument();
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Hide controls' }));
+    await expect(canvas.queryByText('variant')).not.toBeInTheDocument();
+    await userEvent.click(canvas.getByRole('button', { name: 'Show controls' }));
+
+    await expect(await canvas.findByRole('radio', { name: 'primary' })).toBeInTheDocument();
+    await expect(serviceGetDocgen.subscribe).toHaveBeenCalledTimes(2);
+  },
+};
+
+export const ServiceDocgenFinishesWhilePanelUnmounted: Story = {
+  ...ServiceDocgenLoadsAfterStoryFinishedInDev,
+  render: (args) => <RemountableControlsPanel {...args} />,
+  play: async ({ canvas, userEvent }) => {
+    await canvas.findByText('variant');
+    await userEvent.click(canvas.getByRole('button', { name: 'Hide controls' }));
+    serviceRenderChannel.emit(STORY_FINISHED, { storyId: serviceStoryData.id });
+    await userEvent.click(canvas.getByRole('button', { name: 'Show controls' }));
+
+    await expect(await canvas.findByRole('radio', { name: 'primary' })).toBeInTheDocument();
+    await expect(serviceGetDocgen.subscribe).toHaveBeenCalledTimes(1);
+  },
+};
+
 /**
  * Regression test: opening the dev gate must keep the table mounted. The panel used to swap its
  * annotation-only table for a new docgen-backed one, so every control lost its local state (an open
@@ -351,7 +405,7 @@ export const ServiceDocgenKeepsControlsMountedWhenGateOpens: Story = {
  * STORY_FINISHED, so the panel subscribes to docgen as soon as the story module is delivered.
  */
 export const ServiceDocgenLoadsAfterStoryPreparedInDev: Story = {
-  args: { docgenService },
+  args: { docgenService, docgenGate: preparedDocgenGate },
   beforeEach: () => {
     serviceGetDocgen.mockClear();
     serviceGetDocgen.get.mockClear();

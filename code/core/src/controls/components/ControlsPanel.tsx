@@ -1,7 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 
-import { STORY_FINISHED, STORY_PREPARED } from 'storybook/internal/core-events';
-import type { ArgTypes, DocgenPayload, StoryId } from 'storybook/internal/types';
+import type { ArgTypes, DocgenPayload } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -10,7 +9,6 @@ import { mergeServiceArgTypes } from '../../docs-tools/argTypes/docgenServiceArg
 import {
   useArgTypes,
   useArgs,
-  useChannel,
   useGlobals,
   useParameter,
   useServiceQuery,
@@ -26,6 +24,7 @@ import {
 } from '../../../../addons/docs/src/blocks/components/ArgsTable/ArgsTable.tsx';
 import type { PresetColor } from '../../../../addons/docs/src/blocks/controls/types.ts';
 import { PARAM_KEY } from '../constants.ts';
+import type { DocgenGate } from '../docgenGate.ts';
 import { SaveStory } from './SaveStory.tsx';
 
 // Remove undefined values (top-level only)
@@ -60,10 +59,14 @@ interface ControlsParameters {
   disableSaveFromUI?: boolean;
 }
 
-interface ControlsPanelProps {
+interface ControlsPanelActions {
   saveStory: () => Promise<unknown>;
   createStory: (storyName: string) => Promise<unknown>;
+}
+
+interface ControlsPanelProps extends ControlsPanelActions {
   docgenService?: DocgenService;
+  docgenGate: DocgenGate;
 }
 
 function applyPresetColors(rows: ArgTypes, presetColors: PresetColor[] | undefined) {
@@ -86,7 +89,7 @@ function ControlsPanelTable({
   isLoading,
   saveStory,
   createStory,
-}: ControlsPanelProps & { rows: ArgTypes; isLoading: boolean }) {
+}: ControlsPanelActions & { rows: ArgTypes; isLoading: boolean }) {
   const [args, updateArgs, resetArgs, initialArgs] = useArgs();
   const [globals] = useGlobals();
   const {
@@ -134,7 +137,7 @@ function ControlsPanelTable({
   );
 }
 
-function LegacyControlsPanel(props: ControlsPanelProps) {
+function LegacyControlsPanel(props: ControlsPanelActions) {
   const [isLoading, setIsLoading] = useState(true);
   const rows = useArgTypes();
   const { refs, previewInitialized } = useStorybookState();
@@ -175,45 +178,9 @@ function DocgenQuery({
   return null;
 }
 
-// Tracks whether it is safe to query docgen for the selected story, gating the CPU-bound worker
-// extraction out of the first-render window so it never starves the dev server's bundling or the
-// preview's render/paint. The gate resets on every story change.
-//
-// In a static build there is no bundling to contend with and docgen is precomputed JSON, so the gate
-// is open from the start. In dev it opens once the story reaches a safe point in its lifecycle:
-// STORY_FINISHED by default, or — with the STORYBOOK_DOCGEN_STORY_PREPARED env var — the earlier
-// STORY_PREPARED (the story module has been delivered to the browser, before it mounts and paints),
-// trading a slice of the first-render budget for an earlier Controls population. The server reads the
-// env var and injects it into the manager as the DOCGEN_STORY_PREPARED global so it can be evaluated
-// per project.
-function useStoryDocgenGateReady(storyId: StoryId): boolean {
-  const isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT';
-  const requestAtStoryPrepared = global.DOCGEN_STORY_PREPARED === true;
-  // Key readiness by the story it was opened for (derived during render, not via an effect). On a
-  // story switch this is immediately false for the new id, so we never render one frame with a stale
-  // `ready=true` that would mount the query before the new story emits its gate event.
-  const [readyStoryId, setReadyStoryId] = useState<StoryId | null>(null);
-  const ready = !isDevelopment || readyStoryId === storyId;
-
-  // STORY_PREPARED carries `{ id }`; STORY_FINISHED carries `{ storyId }`.
-  const gateEvent = requestAtStoryPrepared ? STORY_PREPARED : STORY_FINISHED;
-  useChannel(
-    {
-      [gateEvent]: (payload: { id?: StoryId; storyId?: StoryId }) => {
-        const eventStoryId = requestAtStoryPrepared ? payload?.id : payload?.storyId;
-        if (eventStoryId === storyId) {
-          setReadyStoryId(storyId);
-        }
-      },
-    },
-    [storyId, requestAtStoryPrepared, gateEvent]
-  );
-
-  return ready;
-}
-
 function ServiceControlsPanel({
   docgenService,
+  docgenGate,
   ...props
 }: ControlsPanelProps & { docgenService: DocgenService }) {
   const api = useStorybookApi();
@@ -231,7 +198,10 @@ function ServiceControlsPanel({
   const isStoryPrepared = !isDevelopment || (isStory ? storyData.prepared : true);
   // Docs entries don't emit the story lifecycle events the gate listens for, so it only applies to
   // actual stories; everything else queries docgen right away.
-  const gateReady = useStoryDocgenGateReady(storyData.id);
+  const renderReady = useSyncExternalStore(docgenGate.subscribe, () =>
+    docgenGate.isReady(storyData.id, storyData.refId)
+  );
+  const gateReady = !isDevelopment || renderReady;
   const queryReady = !isStory || gateReady;
 
   const [docgen, setDocgen] = useState<{

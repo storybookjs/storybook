@@ -6,7 +6,12 @@ import type {
   SaveStoryRequestPayload,
   SaveStoryResponsePayload,
 } from 'storybook/internal/core-events';
-import { SAVE_STORY_REQUEST, SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
+import {
+  SAVE_STORY_REQUEST,
+  SAVE_STORY_RESPONSE,
+  STORY_FINISHED,
+  STORY_PREPARED,
+} from 'storybook/internal/core-events';
 import type { Args } from 'storybook/internal/csf';
 
 import { FailedIcon, PassedIcon } from '@storybook/icons';
@@ -18,6 +23,8 @@ import { color } from 'storybook/theming/emotion';
 import { ControlsPanel } from './components/ControlsPanel.tsx';
 import { Title } from './components/Title.tsx';
 import { ADDON_ID, PARAM_KEY } from './constants.ts';
+import { createDocgenGate } from './docgenGate.ts';
+import { getEventMetadata } from '../manager-api/lib/events.ts';
 import { trySelectStory } from '../manager/utils/trySelectStory.ts';
 import { stringifyArgs } from './stringifyArgs.tsx';
 
@@ -27,6 +34,14 @@ export default addons.register(ADDON_ID, (api) => {
     const docgenService = globalThis.FEATURES?.docgenServer
       ? getService('core/docgen', { internal: true })
       : undefined;
+    const docgenGate = createDocgenGate({
+      channel,
+      gateEvent: globalThis.DOCGEN_STORY_PREPARED === true ? STORY_PREPARED : STORY_FINISHED,
+      resolveRefId: (event) => {
+        const metadata = getEventMetadata(event, api);
+        return metadata?.ref?.id ?? (metadata?.sourceType === 'local' ? undefined : null);
+      },
+    });
 
     const saveStory = async () => {
       const data = api.getCurrentStoryData();
@@ -131,6 +146,7 @@ export default addons.register(ADDON_ID, (api) => {
               saveStory={saveStory}
               createStory={createStory}
               docgenService={docgenService}
+              docgenGate={docgenGate}
             />
           </AddonPanel>
         );

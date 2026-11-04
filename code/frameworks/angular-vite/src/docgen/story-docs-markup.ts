@@ -18,7 +18,7 @@ import {
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 
-import { inputBinding, textValue } from '../snippet-values.ts';
+import { angularText, inputBinding, textValue } from '../snippet-values.ts';
 import { formatPropInTemplate } from '../template-grammar.ts';
 import type { ArgPrinter } from './story-docs-holes.ts';
 
@@ -337,10 +337,13 @@ const substituteExpression = (
   }
   const argName = scope.argBindings.get(expression.name);
   if (argName !== undefined) {
-    const text = shape.unresolvedArgs.length === 0 ? literalText(shape.args[argName]) : undefined;
-    if (text === undefined) {
+    const written =
+      shape.unresolvedArgs.length === 0 ? literalText(shape.args[argName]) : undefined;
+    if (written === undefined) {
       return undefined;
     }
+    // Printed as the preview prints a changed value; text with `{{` as written.
+    const text = angularText(written) ?? written;
     representedArgs.add(argName);
     return shape.printer ? shape.printer.show(argName, 'text', text) : text;
   }

@@ -114,6 +114,8 @@ jobs:
           TAG: ${{ steps.tag.outputs.tag }}
           # Wide enough that the task summary table never truncates task names.
           COLUMNS: 250
+          # "Re-run with debug logging" also makes Nx and the NX Cloud client log verbosely.
+          NX_VERBOSE_LOGGING: ${{ runner.debug == '1' }}
         run: |
           echo 'nx_output<<EOF' >> "$GITHUB_OUTPUT"
           yarn nx run-many -t $ALL_TASKS -c production -p="tag:library,tag:ci:${TAG}" | tee -a "$GITHUB_OUTPUT"

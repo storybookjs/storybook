@@ -32,9 +32,16 @@ const managerEntries = [
 ];
 const built = managerEntries.filter((entry) => existsSync(entry));
 
-// The preview runtime's chunks and vendor entries, `storybook/test`, and the test libraries.
-const TEST_STACK =
-  /dist\/(test|preview\/(vendor|_chunks))\/|node_modules\/(chai|@vitest|@testing-library)\//;
+const TEST_LIBRARIES = /node_modules\/(chai|@vitest\/(expect|spy|utils)|@testing-library)\//;
+// A test library bundled from source, or a built file of this repository that bundles one: esbuild
+// marks each module it bundles with a `// <path>` line, so this also finds `storybook/test` and the
+// `_browser-chunks` it shares with the instrumenter, whatever their names.
+const bundlesTestLibrary = (input: string) =>
+  TEST_LIBRARIES.test(input) ||
+  (/\/dist\//.test(input) &&
+    readFileSync(join(CODE, input), 'utf-8')
+      .split('\n')
+      .some((line) => line.startsWith('// ') && TEST_LIBRARIES.test(line)));
 
 describe('built-in manager entries', () => {
   it.runIf(process.env.CI)('are built before this suite runs', () => {
@@ -42,15 +49,16 @@ describe('built-in manager entries', () => {
   });
 
   // storybook/test is no manager global, so a module that imports it (e.g. `storybook/internal/csf`)
-  // would bundle its test libraries into the manager, from `dist/test` or from the preview
-  // runtime's chunks that it and the instrumenter share. Bundle such helpers with a relative import
-  // instead, like addon-docs' `ArgsTable` does with `includeConditionalArg`.
+  // would bundle its test libraries into the manager, from `dist/test` or from the chunks it shares
+  // with the instrumenter. Bundle such helpers with a relative import instead, like addon-docs'
+  // `ArgsTable` does with `includeConditionalArg`.
   it.runIf(built.length > 0).each(built.map((entry) => [entry.slice(CODE.length + 1), entry]))(
-    '%s does not bundle storybook/test',
+    '%s bundles no test library',
     async (_, entry) => {
       // Like the manager builder: its globals and esbuild options.
       const { metafile } = await build({
         entryPoints: [entry],
+        absWorkingDir: CODE,
         bundle: true,
         write: false,
         metafile: true,
@@ -62,8 +70,8 @@ describe('built-in manager entries', () => {
       });
 
       expect(
-        Object.keys(metafile.inputs).filter((input) => TEST_STACK.test(input)),
-        'modules of the test stack in this manager entry'
+        Object.keys(metafile.inputs).filter(bundlesTestLibrary),
+        'modules that bundle a test library in this manager entry'
       ).toEqual([]);
     }
   );

@@ -1,3 +1,5 @@
+import { isDirectiveResult, isTemplateResult } from 'lit/directive-helpers.js';
+
 import {
   type PrintHole,
   UnprintableArgError,
@@ -89,7 +91,4 @@ function printable(arg: string, value: unknown): unknown {
   return value;
 }
 
-const isLitValue = (value: unknown) =>
-  typeof value === 'object' &&
-  value !== null &&
-  Object.keys(value).some((key) => key.includes('$lit'));
+const isLitValue = (value: unknown) => isTemplateResult(value) || isDirectiveResult(value);

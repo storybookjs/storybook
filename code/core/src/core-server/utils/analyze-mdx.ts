@@ -1,7 +1,5 @@
 import type { DocsAnchor } from 'storybook/internal/types';
 
-import { Parser } from 'acorn';
-import acornJsx from 'acorn-jsx';
 import type { Expression, Program, SpreadElement } from 'estree';
 import GithubSlugger from 'github-slugger';
 import { fromMarkdown } from 'mdast-util-from-markdown';
@@ -12,7 +10,13 @@ import type {
   MdxJsxExpressionAttribute,
   MdxJsxFlowElement,
 } from 'mdast-util-mdx-jsx';
-import { mdxjs } from 'micromark-extension-mdxjs';
+import { mdxExpression } from 'micromark-extension-mdx-expression';
+import { mdxJsx } from 'micromark-extension-mdx-jsx';
+import { mdxMd } from 'micromark-extension-mdx-md';
+import { mdxjsEsm } from 'micromark-extension-mdxjs-esm';
+import { combineExtensions } from 'micromark-util-combine-extensions';
+
+import { oxcAcorn } from './mdx-oxc-acorn.ts';
 
 export type MdxAnalysisResult = {
   title: string | undefined;
@@ -29,15 +33,22 @@ export type MdxAnalysisResult = {
 type ImportMap = Record<string, string>;
 type ArrayElement = Expression | SpreadElement | null;
 
-const mdxSyntaxOptions = {
-  acorn: Parser.extend(acornJsx()),
-  acornOptions: { ecmaVersion: 2024 as const, sourceType: 'module' as const },
-  addResult: true,
-};
+// The extensions default to the acorn options `{ ecmaVersion: 2024, sourceType: 'module' }`, which
+// `oxcAcorn` implements.
+const mdxSyntaxOptions = { acorn: oxcAcorn, addResult: true };
+
+// What `micromark-extension-mdxjs` combines, without its default acorn parser, which it imports
+// (and so bundles) even when another parser is passed.
+const mdxjs = combineExtensions([
+  mdxjsEsm(mdxSyntaxOptions),
+  mdxExpression(mdxSyntaxOptions),
+  mdxJsx(mdxSyntaxOptions),
+  mdxMd(),
+]);
 
 const parseMdx = (code: string) =>
   fromMarkdown(code, {
-    extensions: [mdxjs(mdxSyntaxOptions)],
+    extensions: [mdxjs],
     mdastExtensions: [mdxFromMarkdown()],
   });
 

@@ -573,4 +573,52 @@ describe('analyzeMdx', () => {
       expect(anchors).toEqual([{ id: 'usage-1', title: 'Usage' }]);
     });
   });
+
+  // The JavaScript in MDX is parsed with oxc-parser, in place of acorn configured for ES2024
+  // with JSX. These pin what acorn accepted and rejected.
+  describe('JavaScript', () => {
+    it.each([
+      ['an arrow function body after a blank line', 'export const A = () =>\n\n  <button />'],
+      ['an object literal across a blank line', 'export const a = {\n\n  b: 1 }'],
+      [
+        'an export of a binding imported after a blank line',
+        "export { A }\n\nimport { A } from './A'",
+      ],
+    ])('continues ESM over a blank line: %s', async (_, esm) => {
+      await expect(analyzeMdx(`${esm}\n\n<Meta title="x" />`)).resolves.toMatchObject({
+        title: 'x',
+      });
+    });
+
+    it.each([
+      ['import attributes', "import data from './data.json' with { type: 'json' }"],
+      ['a second import() argument', "export const a = import('a', { with: {} })"],
+      ['using declarations', 'export const f = () => { using x = y }'],
+      ['decorators', 'export @dec class A {}'],
+      ['regular expression modifiers', 'export const r = /(?i:a)/'],
+      ['duplicate named capture groups', 'export const r = /(?<a>x)|(?<a>y)/'],
+      ['an invalid regular expression', 'export const r = /[b-a]/'],
+      ['JSX spread children', 'export const a = <a>{...b}</a>'],
+      ['an import of a name imported before', "import a from 'a'\n\nimport a from 'b'"],
+    ])('rejects %s', async (_, esm) => {
+      await expect(analyzeMdx(esm)).rejects.toThrow('Could not parse import/exports with acorn');
+    });
+
+    it('reads attribute expressions with comments, parentheses and astral characters', async () => {
+      const input = dedent`
+        <Meta title="😀" tags={/* first */ (['😀', ('}')]) // last
+        } />
+      `;
+      await expect(analyzeMdx(input)).resolves.toMatchObject({
+        title: '😀',
+        metaTags: ['😀', '}'],
+      });
+    });
+
+    it('rejects an expression that a line comment closes', async () => {
+      await expect(analyzeMdx(`<Meta title="x" tags={['a'] // last} />`)).rejects.toThrow(
+        'Could not parse expression with acorn'
+      );
+    });
+  });
 });

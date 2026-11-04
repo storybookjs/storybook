@@ -1,6 +1,7 @@
 import {
   type PrintHole,
   UnprintableArgError,
+  fillTemplate,
   printValue,
   unknownHoleKind,
 } from 'storybook/internal/docs-tools';
@@ -32,21 +33,17 @@ export const printHole: PrintHole<SvelteHolePlace> = (hole, value) => {
       return printSpreadAttribute(arg, propValue(value, arg));
     case 'overridden': {
       const args = value as Args;
-      if (Object.hasOwn(args, hole.name)) {
-        return printSpreadAttribute(hole.name, propValue(args[hole.name], hole.name));
-      }
-      return Object.hasOwn(args, hole.read.arg)
-        ? printHole(hole.read, args[hole.read.arg])
-        : hole.written;
+      return Object.hasOwn(args, hole.name)
+        ? printSpreadAttribute(hole.name, propValue(args[hole.name], hole.name))
+        : // The args a control set are the args that changed from none.
+          fillTemplate(hole.template, { unmappedArgs: args, initialArgs: {} }, printHole);
     }
     case 'cleared':
+      // The `overridden` hole before it would print the stale read of an arg a control cleared.
       if (value === undefined) {
         throw new UnprintableArgError(arg);
       }
       return '';
-    case 'overwritten':
-      // The attribute would follow both this arg and the args it reads, but a hole reads one arg.
-      throw new UnprintableArgError(arg);
     case 'value':
       return printRead(value, arg, hole.path).code;
     case 'property':

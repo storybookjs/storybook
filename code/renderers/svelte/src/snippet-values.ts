@@ -1,3 +1,5 @@
+import type { SnippetTemplate } from 'storybook/internal/docs-tools';
+
 // How the Svelte snippet prints one arg value in each place it prints one. The story-docs
 // provider prints the static snippet with these, and `printHole` a value a control changed, so the
 // two print a value alike. The callers say what the value is: the provider from the code the
@@ -12,19 +14,14 @@ export type SvelteHolePlace =
   // passes already, and what the element and the template parameter take themselves. They stand
   // `separator` apart, as the props of the spread do.
   | { kind: 'props'; except: string[]; separator: string }
-  // An attribute a later `{...args}` spread writes over.
+  // An attribute a later `{...args}` spread writes over with its arg, which the story sets.
   | { kind: 'spreadattr' }
-  // An attribute `name` that is one whole `read` of another arg, as `title={args.label}`, before an
-  // `{...args}` spread that writes over it once a control sets `name`. Of the args a control set, it
-  // prints `name` as the spread does, else the arg it reads, else `written`, the static attribute.
-  | { kind: 'overridden'; name: string; read: AttributeRead; written: string }
-  // After an `overridden` hole, for the arg it reads: it prints nothing, and cannot show that arg
+  // An attribute `name` before an `{...args}` spread, which writes over it once a control sets
+  // `name`. Until then it prints its `template`, its reads filled with the args a control set.
+  | { kind: 'overridden'; name: string; template: SnippetTemplate<SvelteHolePlace> }
+  // After an `overridden` hole, for an arg it reads: it prints nothing, and cannot show that arg
   // cleared, which the spread hole does not see.
   | { kind: 'cleared' }
-  // After an attribute that reads other args in other code, before an `{...args}` spread that
-  // writes over it once a control sets the arg it names. It prints nothing: the holes of the reads
-  // print the attribute.
-  | { kind: 'overwritten' }
   // A read of an arg, or of the member `path` of it, in code.
   | { kind: 'value'; path?: string[] }
   // A shorthand property, `{ name }`, that reads an arg.
@@ -38,12 +35,6 @@ export type WholeReadPlace = (
   | { kind: 'attrvalue'; name?: string; before: string; after: string }
   | { kind: 'quoted' | 'fragment' | 'code'; before: string; after: string }
 ) & { path?: string[] };
-
-// A whole read of the arg `arg`, as its hole reads it.
-export type WholeRead = WholeReadPlace & { arg: string };
-
-// A whole read of an arg that is the value of an attribute.
-export type AttributeRead = Extract<WholeRead, { kind: 'attrvalue' }>;
 
 // An arg a spread passes: unset, `true`, or code, which a `string` it holds may print as text.
 export type PropValue = undefined | true | { string?: string; code: string };

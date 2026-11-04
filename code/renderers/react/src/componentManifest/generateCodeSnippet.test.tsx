@@ -2,7 +2,6 @@ import { describe, expect, it, test } from 'vitest';
 
 import { type CsfFile, loadCsf } from 'storybook/internal/csf-tools';
 import {
-  UnprintableArgError,
   fillTemplate,
   formatTemplate,
   printValue,
@@ -1304,17 +1303,60 @@ describe('template', () => {
     );
   });
 
-  it('cannot follow an attribute before the spread that reads another arg', () => {
-    const code = withCSF3(
-      `export const S = { args: { label: 'Go' }, render: (args) => <Button title={args.label} {...args} /> };`
-    );
-    const initialArgs = { label: 'Go' };
-    expect(fill(code, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(
-      'const S = () => <Button title="Stop" label="Stop">Click me</Button>;'
-    );
-    expect(() => fill(code, initialArgs, { ...initialArgs, title: 'X' })).toThrow(
-      UnprintableArgError
-    );
+  describe('an attribute before the spread that reads another arg', () => {
+    // At runtime the spread writes `title` over `title={args.label}` once the args hold `title`.
+    const story = (args: string) =>
+      withCSF3(
+        `export const S = { args: { ${args} }, render: (args) => <Button title={args.label} {...args} /> };`
+      );
+    const code = story(`label: 'Go'`);
+    const initialArgs = { children: 'Click me', label: 'Go' };
+
+    it('follows the arg it reads', () => {
+      expect(fill(code, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(
+        snippetOf(story(`label: 'Stop'`))
+      );
+    });
+
+    it('prints the arg it names once a control sets it, as the spread does', () => {
+      expect(fill(code, initialArgs, { ...initialArgs, title: 'Stop' })).toBe(
+        'const S = () => <Button title="Stop" label="Go">Click me</Button>;'
+      );
+      expect(fill(code, initialArgs, { ...initialArgs, title: 'Stop', label: 'Bye' })).toBe(
+        'const S = () => <Button title="Stop" label="Bye">Click me</Button>;'
+      );
+    });
+
+    it('prints it as written while another arg changes', () => {
+      expect(fill(code, initialArgs, { ...initialArgs, size: 'lg' })).toBe(
+        'const S = () => <Button title="Go" label="Go" size="lg">Click me</Button>;'
+      );
+      expect(formatTemplate(templateOf(code))).toMatchInlineSnapshot(
+        `"const S = () => <Button ⟦overridden * name="title" reads="label" written="title=\\"Go\\""⟫title="Go"⟧⟦attr label ~" "⟫ label="Go"⟧⟦attrs * except=["title","label","children"]⟫⟧⟦close children element="Button"⟫>Click me</Button>⟧;"`
+      );
+    });
+
+    it('prints it as the snippet does over several lines', () => {
+      const nested = withCSF3(dedent`
+        export const S = {
+          args: { list: [
+            'a',
+          ] },
+          render: (args) => (
+            <div>
+              <List
+                items={args.list}
+                {...args}
+              />
+            </div>
+          ),
+        };
+      `);
+      const args = { children: 'Click me', list: ['a'] };
+      expect(fill(nested, args, { ...args, size: 'lg' })).toBe(
+        snippetOf(nested).replace(']}>', ']} size="lg">')
+      );
+    });
   });
 
   it('passes the args a control sets to a bound story, but those it writes', () => {

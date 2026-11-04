@@ -9,39 +9,17 @@ dte:
     medium-changeset: 12 linux-browsers-js # 26-50%
     large-changeset: 16 linux-browsers-js # 51-75%
     extra-large-changeset: 20 linux-browsers-js # 76-100%
-  # NX Cloud packs tasks onto each worker by the CPU and memory they used in earlier runs (dynamic
-  # task packing, turned on in nx.yml). Light tasks (compile, check, lint, knip, fmt, publish) share
-  # workers freely; at most one of the tasks below runs on a worker at a time:
-  # - The sandbox tasks use one sandbox folder per template, outside the workspace. Each task
-  #   restores the folder from the cache first, so a `build` packed next to the `e2e-tests-dev` of
-  #   the same template wiped the node_modules under its running dev server.
-  # - The Playwright and Vitest runs all write to {workspaceRoot}/test-results.
-  # The continuous `dev`, `serve` and `run-registry` tasks are not listed: they run next to the task
-  # that needs them.
-  scheduling-constraints:
+  # One task per worker at a time (plus the continuous dev, serve and run-registry tasks that task
+  # needs). The sandbox tasks share one folder per template outside the workspace, and each restores
+  # it from the cache first; the Playwright and Vitest runs all write to {workspaceRoot}/test-results.
+  # Dynamic task packing (NX_CLOUD_AUTO_TASK_PACKING) needs `scheduling-constraints` for that instead,
+  # but in our runs it left an e2e task queued behind a finished one for minutes, so it stays off.
+  assignment-rules:
     - targets:
-        - sandbox
-        - build
-        - check-sandbox
-        - vitest-integration
-        - e2e-tests
-        - e2e-tests-dev
-        - e2e-ui
-        - jest
-        - vitest
-        - test
-      cannot-run-with:
-        - targets:
-            - sandbox
-            - build
-            - check-sandbox
-            - vitest-integration
-            - e2e-tests
-            - e2e-tests-dev
-            - e2e-ui
-            - jest
-            - vitest
-            - test
+        - '*'
+      run-on:
+        - agent: linux-browsers-js
+          parallelism: 1
 # No lifecycle.stop-after: NX Cloud tracks the main job (heartbeat) and stops the workers when it
 # ends. A stop-after list that misses a target strands queued tasks (for example the continuous
 # serve, dev and run-registry tasks) and the run hangs.

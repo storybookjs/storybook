@@ -47,12 +47,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_WRITE_TOKEN || secrets.NX_CLOUD_ACCESS_TOKEN }}
-      # Dynamic task packing: NX Cloud fills each worker by the CPU and memory its tasks used in
-      # earlier runs, instead of one task per worker. Tasks that must not share a worker are listed
-      # under `scheduling-constraints` in .nx/ci-config.yaml. Packing needs continuous assignment
-      # (workers pull tasks as they have room); the workspace setting would turn on both at once.
-      NX_CLOUD_AUTO_TASK_PACKING: 'true'
-      NX_CLOUD_CONTINUOUS_ASSIGNMENT: 'true'
       # Report each finished task right away instead of in batches, so the tasks that depend on it
       # (sandbox, then build, then e2e) start sooner. The Nx repo itself runs with this.
       NX_CLOUD_DISABLE_BUFFER_TASK_COMPLETIONS: 'true'

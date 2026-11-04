@@ -278,16 +278,19 @@ test.describe('story-docs open service', () => {
       );
       expect(defaultStory?.snippet).toContain(E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE);
       // The story docs, which the components manifest references, leave the templates out.
-      expect(JSON.stringify(body)).not.toMatch(/"template"|⟦/);
+      expect(JSON.stringify(body)).not.toContain('"template"');
 
       const templatesResponse = await request.get(`${storybookUrl}${storyTemplatesStaticPath}`);
       expect(templatesResponse.ok()).toBe(true);
       const templates = (await templatesResponse.json()) as {
-        templates: Record<string, { stories: Record<string, string> }>;
+        templates: Record<string, { stories: Record<string, unknown[]> }>;
       };
-      expect(Object.values(templates.templates[componentId]!.stories).join('\n')).toContain(
-        `⟫label="${E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE}"⟧`
-      );
+      expect(Object.values(templates.templates[componentId]!.stories).flat()).toContainEqual({
+        kind: 'attr',
+        arg: 'label',
+        text: ` label="${E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE}"`,
+        space: ' ',
+      });
 
       await gotoAutodocsPage(page);
       await expectAutodocsDefaultSourceToContainLabel(

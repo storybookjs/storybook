@@ -64,7 +64,10 @@ export async function createAppendix(params: Params) {
       variableFromRuntimeStoriesCall,
       // A CSF factories file has no default export: core finds the meta through the stories
       ...(factoryMeta ? [] : [createExportDefaultMeta()]),
-      createExportOrderVariableDeclaration({ storiesIdentifiers: stories, filename }),
+      createExportOrderVariableDeclaration({
+        storiesIdentifiers: stories,
+        filename,
+      }),
       ...storiesVariableDeclarations,
       createNamedExportStories({ storiesIdentifiers: stories }),
     ],
@@ -86,9 +89,17 @@ interface GetStoryTagsParams {
 }
 function getStoryTags(params: GetStoryTagsParams): ESTreeAST.ArrayExpression | undefined {
   const storyComponent = params.storyComponents[params.idx];
-  const tags = storyComponent.component.attributes.find((a) => a.name === 'tags');
+  const tags = storyComponent.component.attributes.find(
+    (attribute): attribute is SvelteAST.Attribute =>
+      attribute.type === 'Attribute' && attribute.name === 'tags'
+  );
 
   if (!tags) return;
 
-  return (tags.value as SvelteAST.ExpressionTag).expression as ESTreeAST.ArrayExpression;
+  const { value } = tags;
+  // A `tags` attribute is either `true` (no value), a single `{...}` expression tag, or an array of
+  // text/expression tags for quoted strings. Only the expression tag holds `.expression`.
+  if (value === true || Array.isArray(value)) return;
+
+  return value.expression as ESTreeAST.ArrayExpression;
 }

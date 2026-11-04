@@ -20,6 +20,7 @@
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
     - [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
+    - [React: `react-docgen` and `react-docgen-typescript` are optional peer dependencies](#react-react-docgen-and-react-docgen-typescript-are-optional-peer-dependencies)
     - [Svelte](#svelte)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or newer](#typescript-59-or-newer)
@@ -35,6 +36,7 @@
   - ['Create new story' UI feature removed](#create-new-story-ui-feature-removed)
   - [Sidebar: standalone docs pages are no longer wrapped in a component](#sidebar-standalone-docs-pages-are-no-longer-wrapped-in-a-component)
   - [Test runner support ended](#test-runner-support-ended)
+  - [`storybook/test` is based on Vitest 5 and no longer installs its test libraries](#storybooktest-is-based-on-vitest-5-and-no-longer-installs-its-test-libraries)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
@@ -1149,6 +1151,28 @@ This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.re
 Builder docgen only runs when `features.docgenServer` is `false`. Storybook prints a deprecation warning when your `.storybook/main.ts` sets `docgenServer: false`. When server-side docgen is off because TypeScript is missing or unusable, Storybook prints the TypeScript warning instead. For no docgen and no warnings, also turn builder docgen off: `typescript.reactDocgen: false` for React, and the `docgen: false` framework option for Vue 3 and Svelte.
 Install the `typescript` package and remove `docgenServer: false` to use server-side docgen.
 
+#### React: `react-docgen` and `react-docgen-typescript` are optional peer dependencies
+
+The packages that only React builder docgen uses are now optional peer dependencies, so projects on server-side docgen no longer install them, nor the Babel toolchain that `react-docgen` brings along:
+
+- `react-docgen` and `react-docgen-typescript` in `@storybook/react`, `@storybook/react-vite` and `@storybook/preset-react-webpack`
+- `@joshwooding/vite-plugin-react-docgen-typescript` in `@storybook/react-vite`
+- `@storybook/react-docgen-typescript-plugin` in `@storybook/preset-react-webpack`
+
+Storybook loads them only when builder docgen runs. When your main config sets `features.docgenServer: false` and a package is missing, `storybook dev` and `storybook build` fail with the install command for your package manager. Set `typescript.reactDocgen: false` to run without docgen instead, or better, remove `docgenServer: false` to use server-side docgen:
+
+| `typescript.reactDocgen` | Add to devDependencies |
+| --- | --- |
+| `'react-docgen'` (default) | `react-docgen` |
+| `'react-docgen-typescript'` | Vite: `@joshwooding/vite-plugin-react-docgen-typescript` and `react-docgen-typescript`. Webpack: `@storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0` (this exact version; the `latest` tag is older) and `react-docgen-typescript` |
+
+Projects without a usable `typescript` (no `typescript` package, or TypeScript 7 without the [side-by-side setup](#typescript-59-or-newer)) only get docgen from the `react-docgen` fallback when `react-docgen` is installed. <!-- TEMPORARY(ts-7.1): update once Storybook supports TypeScript 7.1. -->
+Until Storybook supports TypeScript 7.1, `storybook init` and the `typescript-7-react-docgen` automigration add `react-docgen` to React projects on TypeScript 7.0 and note that in the Storybook cache in `node_modules`. A later Storybook update offers to remove it again once TypeScript 7 projects can use server-side docgen; without that note it leaves `react-docgen` alone. Setting up TypeScript 6 side by side gives you server-side docgen today.
+
+In `react-docgen-typescript` mode, `react-docgen` is optional and only documents JavaScript files. Without it, JavaScript components get no props, and Storybook does not warn about that.
+
+Storybook does not add these packages for you when you upgrade. If you keep `features.docgenServer: false`, install the packages from the table yourself.
+
 #### Svelte
 
 Server-side docgen is enabled by default for `@storybook/svelte-vite` and `@storybook/sveltekit`. Like the other frameworks, it needs the `typescript` package in your project. Setting `framework.options.docgen: false` still disables builder docgen without a warning. The deprecated APIs stay available until Storybook 12.
@@ -1382,6 +1406,44 @@ The Vitest addon requires a Vite-based framework. If your Storybook uses Webpack
 - Other Webpack-based frameworks: see [migrating from Webpack to Vite](https://storybook.js.org/docs/builders/vite#migrating-from-webpack).
 
 If you cannot switch to a Vite-based framework and Vitest, you can continue using the test runner without official support. Another option is to switch to plain Playwright with [a minimal setup that generates tests from stories](https://gist.github.com/AriPerkkio/99b9eedc7d8f71ff6e6770f9425a4be4).
+
+### `storybook/test` is based on Vitest 5 and no longer installs its test libraries
+
+`fn`, `spyOn` and `expect` from `storybook/test` are now based on `@vitest/spy` and `@vitest/expect` 5 (previously 3.2.4), and the DOM matchers on `@testing-library/jest-dom` 7. Some mock behavior follows [Vitest 4's changes to mocks](https://vitest.dev/guide/migration.html#vitest-4):
+
+- A mock called with `new` uses its implementation as a constructor, so that implementation must be a `function` or a `class`, not an arrow function. `fn()` also accepts a class.
+- The default name of a mock created with `fn()` is `vi.fn()` instead of `spy`. Calls of mocks with that name are not logged as actions, as before.
+- `mockReset()` also resets the name given with `mockName()`. `resetAllMocks()` and `restoreAllMocks()` from `storybook/test`, which Storybook calls between stories, keep the names.
+- `mockReturnValue()`, `mockResolvedValue()` and similar shorthands throw when the mock is called with `new`. Use `mockImplementation()` with a `class` instead.
+- Type augmentations of `@vitest/expect` or of the global `jest.Matchers` no longer reach the `expect` of `storybook/test`. Augment its `Assertion` interface with `declare module 'storybook/test'` instead. Its matchers return a `Promise`, which you `await` in a `play` function:
+
+  ```ts
+  // Before
+  declare module '@vitest/expect' {
+    interface JestAssertion<T = any> {
+      toBeEven(): void;
+    }
+  }
+  // or
+  declare global {
+    namespace jest {
+      interface Matchers<R, T = {}> {
+        toBeEven(): R;
+      }
+    }
+  }
+
+  // After
+  declare module 'storybook/test' {
+    interface Assertion<T> {
+      toBeEven(): Promise<void>;
+    }
+  }
+  ```
+
+  The `expect.extend()` call that implements the matcher stays the same, and `await expect(2).toBeEven()` type checks again.
+
+`storybook/test` bundles `@testing-library/dom`, `@testing-library/user-event`, `@testing-library/jest-dom`, `@vitest/expect`, `@vitest/spy` and `chai`, including their types, so `storybook` no longer installs them (or `@types/chai`) as dependencies. If your project imports any of these packages directly, add them to your own `devDependencies`. In Vitest browser mode, the queries of `storybook/test` no longer share `configure()` with a `@testing-library/dom` you install yourself: call `configure` from `storybook/test`.
 
 ### Vitest Addon: requires Vitest 4.0 or higher
 

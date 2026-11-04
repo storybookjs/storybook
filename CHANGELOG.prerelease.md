@@ -1,3 +1,13 @@
+## 11.0.0-beta.0
+
+- Astro: Add init support, doc mention and ecosystem CI sandbox - [#37122](https://github.com/storybookjs/storybook/pull/37122), thanks @Sidnioulz!
+- Core: Fix composition refs with camelCase keys crashing the sidebar - [#36703](https://github.com/storybookjs/storybook/pull/36703), thanks @obvious-autobuild!
+- Core: Remove unused docs images from the published package - [#37138](https://github.com/storybookjs/storybook/pull/37138), thanks @kasperpeulen!
+- Sidebar: Avoid infinite recursion in focus callback - [#37073](https://github.com/storybookjs/storybook/pull/37073), thanks @Sidnioulz!
+- Sidebar: Expand/collapse all and run tests from root context menu - [#37038](https://github.com/storybookjs/storybook/pull/37038), thanks @MichaelArestad!
+- UI: Remove deprecated components for Storybook 11 - [#36534](https://github.com/storybookjs/storybook/pull/36534), thanks @valentinpalkovic!
+- UI: Show context menu button on sticky branch rows - [#37042](https://github.com/storybookjs/storybook/pull/37042), thanks @MichaelArestad!
+
 ## 11.0.0-alpha.9
 
 - Addon Docs: Keep the code toggle focus ring visible - [#37001](https://github.com/storybookjs/storybook/pull/37001), thanks @BaconMan1168!

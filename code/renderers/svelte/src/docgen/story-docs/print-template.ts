@@ -88,7 +88,11 @@ export function printTemplate({
       argsComplete,
       mark,
     };
-    const isArgsSpread = (attribute: SvelteAST.Component['attributes'][number]) =>
+    // The walker's `attributes` arrays hold both Svelte attribute kinds and estree import
+    // attributes, so the guard starts from the wide node union and narrows to one kind.
+    const isArgsSpread = (
+      attribute: SvelteAST.SvelteNode | E.ImportAttribute
+    ): attribute is SvelteAST.SpreadAttribute =>
       attribute.type === 'SpreadAttribute' &&
       attribute.expression.type === 'Identifier' &&
       attribute.expression.name === name;
@@ -106,8 +110,7 @@ export function printTemplate({
           element &&
           'attributes' in element &&
           element.attributes.some(
-            (attribute: SvelteAST.Component['attributes'][number]) =>
-              isArgsSpread(attribute) && attribute.start > node.start
+            (attribute) => isArgsSpread(attribute) && attribute.start > node.start
           );
         // The spread writes over it with the arg, or leaves it as written while the arg is unset.
         const readsNoArgs =
@@ -142,7 +145,7 @@ export function printTemplate({
             : [];
         const writtenProps = new Set([
           ...(element && 'attributes' in element
-            ? element.attributes.flatMap((attribute: SvelteAST.Component['attributes'][number]) =>
+            ? element.attributes.flatMap((attribute) =>
                 attribute.type === 'Attribute' || attribute.type === 'BindDirective'
                   ? [attribute.name]
                   : []
@@ -370,21 +373,19 @@ function blockExpressions(node: SvelteAST.SvelteNode): object[] {
     case 'HtmlTag':
     case 'RenderTag':
     case 'SpreadAttribute':
+    case 'AttachTag':
       return [node.expression];
-    // `{@attach}` is newer than the AST types.
-    case 'AttachTag' as SvelteAST.SvelteNode['type']:
-      return [(node as unknown as { expression: object }).expression];
     case 'ConstTag':
       return node.declaration.declarations.flatMap((declaration) =>
         declaration.init ? [declaration.init] : []
       );
     case 'ClassDirective':
-    case 'StyleDirective':
     case 'OnDirective':
     case 'UseDirective':
     case 'TransitionDirective':
     case 'AnimateDirective':
-      return node.expression && typeof node.expression === 'object' ? [node.expression] : [];
+      // `on:`, `use:`, `transition:` and `animate:` may omit their parameter expression.
+      return node.expression ? [node.expression] : [];
     default:
       return [];
   }

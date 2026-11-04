@@ -55,10 +55,11 @@ export const storyDocsServiceDef = defineService({
         'Returns the story-docs payload for one component id, or undefined when not loaded.',
       input: storyDocsInputSchema,
       output: storyDocsOutputSchema,
-      handler: (input, ctx) =>
-        Object.hasOwn(ctx.self.state.components, input.id)
-          ? ctx.self.state.components[input.id]
-          : undefined,
+      handler: (input, ctx) => {
+        // State does not track `Object.hasOwn`, so read the key on every run to re-run when it's added.
+        const payload = ctx.self.state.components[input.id];
+        return Object.hasOwn(ctx.self.state.components, input.id) ? payload : undefined;
+      },
       load: async (input, ctx) => {
         await ctx.self.commands.extractStoryDocs(input);
       },

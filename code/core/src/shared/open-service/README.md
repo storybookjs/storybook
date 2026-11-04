@@ -539,7 +539,10 @@ State is a **deep reactive proxy** (`deepSignal` from `deepsignal`, backed by `@
 created in [service-runtime.ts](./service-runtime.ts). There is no top-level state atom and no Immer:
 
 - Reading a field through `ctx.self.state` tracks a fine-grained signal for exactly that field
-  (including not-yet-present record keys, which fire when the key is later added).
+  (including not-yet-present record keys, which fire when the key is later added). Only property
+  reads and key enumeration (`Object.keys`) are tracked. `key in state.record` and
+  `Object.hasOwn(state.record, key)` are not. If a handler or load that checks a key this way must
+  re-run when the key is added, it must also read `state.record[key]`.
 - `setState((state) => …)` mutates the proxy **in place** inside a batch, so one call notifies
   subscribers once, and only the fields it actually changed are invalidated. The recipe writes
   through a recording proxy, and **one `setState` call is one sync entry**: when the recipe returns,

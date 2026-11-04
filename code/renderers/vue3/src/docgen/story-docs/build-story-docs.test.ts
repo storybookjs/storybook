@@ -408,6 +408,35 @@ export const Primary = {
     expect(filled(story, { label: 'Hi' }, { size: 'lg' })).toContain(
       '<MyButton size="lg" label="Hi" />'
     );
+    const own = await primaryStory(
+      rendered("'Hi'", '<MyButton size="sm" :size.prop="args.label" v-bind="args" />')
+    );
+    expect(filled(own, { label: 'Hi' }, { size: 'lg' })).toContain(
+      `<MyButton size="lg" :size.prop="'Hi'" label="Hi" />`
+    );
+  });
+
+  it('moves the lines of a prop written on several lines as the snippet does', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: \`
+      <MyButton
+        :style="{
+          color: args.label,
+        }"
+        v-bind="args"
+      />\`,
+  }),
+};
+`);
+    expect(story?.snippet).toContain(`  :style="{\n      color: 'Hi',\n    }"`);
+    expect(filled(story, { label: 'Hi' }, { label: 'Go' })).toContain(
+      `  :style="{\n      color: 'Go',\n    }"`
+    );
   });
 
   it('binds the class a control sets with the class the template binds, as Vue merges them', async () => {
@@ -593,6 +622,9 @@ describe('a value a control sets', () => {
     [`<MyButton :title="args.label" v-bind="args" />`, { title: 'Top', label: 'Go' }],
     [`<MyButton :class="['own', args.label]" v-bind="args" />`, { class: 'wide', label: 'Go' }],
     [`<MyButton v-bind="args" :style="{ color: 'red' }" />`, { style: 'color: blue' }],
+    [`<MyButton :class="args.label" v-bind="args" />`, { class: 'wide', label: 'Go' }],
+    [`<MyButton :class="args.label" v-bind="args" />`, { class: 'wide' }],
+    [`<MyButton title="sm" v-bind="args" :title="'xl'" />`, { title: 'lg' }],
   ])(
     'prints %s as it renders once a control sets the arg the args bind over it',
     async (template, changed) => {

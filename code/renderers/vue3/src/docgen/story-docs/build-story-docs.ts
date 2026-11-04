@@ -56,7 +56,7 @@ import {
 import type { ForwardableSetup } from './transform-template/forward-setup.ts';
 import { printH } from './print-h/print-h.ts';
 import { createRenderContext } from '../shared/render-primitives.ts';
-import type { VueHolePlace } from '../../snippet-values.ts';
+import type { BoundCode, VueHolePlace } from '../../snippet-values.ts';
 import {
   readTemplateRenderConfig,
   transformTemplate,
@@ -403,6 +403,8 @@ function laidOut(template: SnippetTemplate<VueHolePlace>): SnippetTemplate<VueHo
     } else if (segment.kind === 'slots') {
       const line = /[^\n]*$/.exec(stripHoles(result))![0];
       result.push({ ...segment, indent: /^\s*/.exec(line)![0] + (segment.tag ? '  ' : '') });
+    } else if (segment.kind === 'bound') {
+      result.push(reindented(segment));
     } else if (
       typeof previous === 'string' &&
       /\n[ \t]+$/.test(previous) &&
@@ -418,6 +420,31 @@ function laidOut(template: SnippetTemplate<VueHolePlace>): SnippetTemplate<VueHo
     }
   }
   return result;
+}
+
+// A `bound` hole with its code indented as the snippet indents its text, which the template block
+// moves as a whole: the lines of a prop written on several lines move alike.
+function reindented<Hole extends Extract<VueHolePlace, { kind: 'bound' }> & { text: string }>(
+  hole: Hole
+): Hole {
+  const written = hole.code.map((part) => (typeof part === 'string' ? part : part.text));
+  const from = written.join('').split('\n');
+  const to = hole.text.split('\n');
+  const line = to.findIndex((text, index) => index > 0 && text.trim() !== '');
+  const indent = (text = '') => /^[ \t]*/.exec(text)![0].length;
+  const shift = line < 0 ? 0 : indent(from[line]) - indent(to[line]);
+  if (shift === 0) {
+    return hole;
+  }
+  const move = (code: BoundCode): BoundCode =>
+    code.map((part) =>
+      typeof part === 'string'
+        ? part.replace(/\n([ \t]*)/g, (_, blanks: string) =>
+            shift > 0 ? `\n${blanks.slice(shift)}` : `\n${' '.repeat(-shift)}${blanks}`
+          )
+        : part
+    );
+  return { ...hole, code: move(hole.code), over: move(hole.over) };
 }
 
 function staticRendererForRenderFunction(

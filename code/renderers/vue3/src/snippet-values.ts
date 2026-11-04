@@ -23,8 +23,8 @@
 // - `bound`: a prop an element writes before its args binding, which writes over it with the arg
 //   `by` once a control sets that, or a `class` or `style` it binds, which Vue merges with that
 //   arg's. It prints `over` while a control set `by`, else `code`, the prop as the snippet prints
-//   it: either as code with the `attr` and `value` holes of the args it reads, whose value it
-//   prints where a control set it, else their text.
+//   it. Each is code with the `attr` and `value` holes of the args it reads, which print the
+//   value a control set, else their text.
 export type VueHolePlace =
   | AttrPlace
   | { kind: 'bound'; by: string; code: BoundCode; over: BoundCode }

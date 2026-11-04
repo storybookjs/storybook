@@ -14,7 +14,7 @@
       "id": "webcomponentsfixtures-lit-property-only--dom-node",
       "name": "Dom Node",
       "snippet": "<lit-property-only label="Configured"></lit-property-only>",
-      "template": "<lit-property-only⟦attr label mode="field" ~" "⟫ label="Configured"⟧></lit-property-only>⟦props * properties=[{"arg":"items","name":"items","tag":"lit-property-only"},{"arg":"config","name":"config","tag":"lit-property-only"}] ~"\n"⟫⟧",
+      "template": "⟦guard items⟫⟧⟦guard config⟫⟧<lit-property-only⟦attr label mode="field" ~" "⟫ label="Configured"⟧></lit-property-only>",
       "warning": "Incomplete snippet: `(args) => { const el = document.createElement('lit-property-only') as HTMLElement & { config?: unknown; items?: unknown; }; el.setAttribute('label', String(args.label)); el.items = args.items; el.config = args.config; return el; }` could not be resolved statically.
 Incomplete snippet: properties without an attribute: `items`, `config`.",
     },

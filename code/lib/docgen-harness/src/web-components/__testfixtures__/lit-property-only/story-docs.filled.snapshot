@@ -4,11 +4,7 @@
   document.querySelector('lit-property-only').items = [{ name: 'Alpha & <changed>' }, { name: 'Beta & <changed>' }];
   document.querySelector('lit-property-only').config = { dense: false, theme: 'dark & <changed>' };
 </script>",
-  "DomNode": "<lit-property-only label="Configured &amp; &lt;changed>"></lit-property-only>
-<script>
-  document.querySelector('lit-property-only').items = [{ name: 'Alpha & <changed>' }, { name: 'Beta & <changed>' }];
-  document.querySelector('lit-property-only').config = { dense: false, theme: 'dark & <changed>' };
-</script>",
+  "DomNode": "UnprintableArgError: The snippet cannot show the current value of the `items` arg.",
   "LitTemplate": "<lit-property-only label="Configured &amp; &lt;changed>"></lit-property-only>
 <script>
   document.querySelector('lit-property-only').items = [{ name: 'Alpha & <changed>' }, { name: 'Beta & <changed>' }];

@@ -891,6 +891,71 @@ describe('the template', () => {
     );
   });
 
+  it('cannot follow the args of an attribute a branch of `nothing` leaves out', async () => {
+    const { snippet, template } = await firstTemplate(`
+      import { html, nothing } from 'lit';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { tone: 'warm', open: false },
+        render: (args) => html\`<test-element class="\${args.tone} \${args.open ? 'open' : nothing}"></test-element>\`,
+      };
+    `);
+    expect(snippet).toBe('<test-element></test-element>');
+    expect(() => fill(template, { tone: 'warm', open: false }, { tone: 'cold' })).toThrow(
+      'The snippet cannot show the current value of the `tone` arg.'
+    );
+    expect(() => fill(template, { tone: 'warm', open: false }, { open: true })).toThrow(
+      'The snippet cannot show the current value of the `open` arg.'
+    );
+  });
+
+  it.each([
+    {
+      name: 'an undeclared arg a render the server cannot read reads',
+      args: '{ label: "Go", show: true }',
+      render: 'render: (args) => makeElement(args),',
+      change: { show: false },
+    },
+    {
+      name: 'an undeclared arg whose key names a category',
+      args: '{ label: "Go", "--undeclared": "red" }',
+      render: '',
+      change: { '--undeclared': 'blue' },
+    },
+    {
+      name: 'a property of one of two elements of a tag',
+      args: '{ a: [1], b: [2] }',
+      render:
+        'render: (args) => html`<test-element .items=${args.a}></test-element><test-element .items=${args.b}></test-element>`,',
+      change: { b: [3] },
+    },
+    {
+      name: 'a conditional whose other branch has a listener the snippet leaves out',
+      args: '{ open: false }',
+      render:
+        'render: (args) => html`<test-element>${args.open ? html`<button @click=${() => {}}>Go</button>` : "none"}</test-element>`,',
+      change: { open: true },
+    },
+    {
+      name: 'a conditional that prints the arg or `undefined`, which lit prints as empty',
+      args: '{ label: "Go" }',
+      render:
+        'render: (args) => html`<test-element label=${args.label ? args.label : undefined}></test-element>`,',
+      change: { label: 0 },
+    },
+  ])('cannot follow $name', async ({ args, render, change }) => {
+    const { template } = await firstTemplate(`
+      import { html } from 'lit';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: ${args}, ${render} };
+    `);
+    const initialArgs = new Function(`return ${args}`)() as Args;
+    const [arg] = Object.keys(change);
+    expect(() => fill(template, initialArgs, change)).toThrow(
+      `The snippet cannot show the current value of the \`${arg}\` arg.`
+    );
+  });
+
   it('cannot follow an arg an attribute reads next to code it cannot resolve', async () => {
     const { template } = await firstTemplate(`
       import { html } from 'lit';

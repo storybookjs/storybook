@@ -87,8 +87,14 @@ const propertyScript = (properties: SnippetProperty[], args: Record<string, unkn
     if (value === undefined) {
       return [];
     }
-    const code = printValue(value, arg, { quote: "'", opaque: isLitValue }).replace(/<\//g, '<\\/');
-    const property = /^[A-Za-z_$][\w$]*$/.test(name) ? `.${name}` : `['${name}']`;
+    // `<\/` and `<\!--` read as `</` and `<!--`, which would end or break the script.
+    const code = printValue(value, arg, { quote: "'", opaque: isLitValue }).replace(
+      /<(\/|!--)/g,
+      '<\\$1'
+    );
+    const property = /^[A-Za-z_$][\w$]*$/.test(name)
+      ? `.${name}`
+      : `[${printValue(name, name, { quote: "'" })}]`;
     return [`  document.querySelector('${tag}')${property} = ${code};`];
   });
   return lines.length === 0 ? '' : `<script>\n${lines.join('\n')}\n</script>`;

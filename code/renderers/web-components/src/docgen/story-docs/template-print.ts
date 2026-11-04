@@ -95,7 +95,7 @@ export function printHtmlTemplate(
     ...printed,
     template:
       printed.template &&
-      withChoices(printed.template, choices, printed.unresolved, (flip) =>
+      withChoices(printed.template, choices, printed, (flip) =>
         printTemplate(template, { ...context, flip })
       ),
   };
@@ -127,12 +127,23 @@ const printTemplate = (template: HtmlTemplate, context: PrintContext): Printed =
   const script = printRootListenerScript(onHost ? listeners : []);
   const html = printHtml(nodes);
   const snippet = script ? `${html}\n${script}` : html;
+  // `document.querySelector` sets the property of the first element of its tag only.
+  const tags = tagCounts(nodes);
+  const properties = [
+    ...new Map(state.props.map((property) => [JSON.stringify(property), property])).values(),
+  ].filter((property) => {
+    const once = tags.get(property.tag) === 1;
+    if (!once) {
+      state.guarded.add(property.arg);
+    }
+    return once;
+  });
   const marks = createHoleMarks<HtmlHolePlace>([snippet]);
   const guards = [...state.guarded].map((arg) => marks.mark({ kind: 'guard', arg }, ''));
   const props =
-    state.props.length === 0
+    properties.length === 0
       ? ''
-      : marks.mark({ kind: 'props', spread: true, properties: state.props }, '', '\n');
+      : marks.mark({ kind: 'props', spread: true, properties }, '', '\n');
   const holes = guards.join('') + printHtml(nodes, marks);
 
   return {
@@ -179,15 +190,39 @@ const resolveTemplate = (
   return { nodes: resolveTemplateNodes(parseHtml(source), state, 0), listeners: state.listeners };
 };
 
+// How many elements of each tag `nodes` print.
+const tagCounts = (nodes: HtmlNode[], counts = new Map<string, number>()): Map<string, number> => {
+  for (const node of nodes) {
+    if (node.kind === 'element') {
+      counts.set(node.name, (counts.get(node.name) ?? 0) + 1);
+      tagCounts(node.children, counts);
+    } else if (node.kind === 'hole') {
+      tagCounts(node.nodes, counts);
+    }
+  }
+  return counts;
+};
+
 // The template with the html of both branches in each `choice` hole: the one the story's args take
 // as printed, and the other printed again with its conditional flipped. A conditional whose other
-// branch prints code the server cannot resolve gets a `guard` hole instead.
+// branch leaves out code the snippet of the story's args does not gets a `guard` hole instead.
 const withChoices = (
   template: HtmlSnippetTemplate,
   choices: Choice[],
-  unresolved: string[],
+  printed: HtmlTemplateRenderResult,
   printFlipped: (flip: Node) => Printed
 ): HtmlSnippetTemplate => {
+  const leftOut = ({
+    unresolved,
+    properties,
+    falseDefaults,
+    listenersNotShown,
+  }: typeof printed) => [
+    ...unresolved,
+    ...properties,
+    ...(falseDefaults ?? []),
+    ...(listenersNotShown ?? []),
+  ];
   const guards: HtmlSnippetTemplate = [];
   const filled = template.map((segment) => {
     if (typeof segment === 'string' || segment.kind !== 'choice') {
@@ -200,7 +235,7 @@ const withChoices = (
       (flippedSegment) =>
         typeof flippedSegment !== 'string' && (flippedSegment as { at?: number }).at === at
     ) as TemplateHole<HtmlHolePlace> | undefined;
-    if (!other || flipped.unresolved.some((source) => !unresolved.includes(source))) {
+    if (!other || leftOut(flipped).some((code) => !leftOut(printed).includes(code))) {
       guards.push({ kind: 'guard', arg: hole.arg!, text: '' });
       return segment.text;
     }
@@ -399,6 +434,10 @@ const resolveAttribute = (
       return undefined;
     }
     if (value.kind === 'nothing') {
+      // Lit leaves the attribute out, and with it the holes of its other parts.
+      if (singleHole === undefined) {
+        guardMarkers(attribute.value, state);
+      }
       return withHole(undefined);
     }
     if (value.kind === 'unresolved') {
@@ -452,10 +491,9 @@ const attributeHole = (
   const node = unwrapExpression(expression);
   if (node.type === 'ConditionalExpression') {
     const test = wholeArg(node.test, state);
-    const otherwise = resolveHoleValue(node.alternate, state.context);
-    const none =
-      otherwise.kind === 'nothing' || (otherwise.kind === 'value' && otherwise.value === undefined);
-    if (test && none && !otherwise.arg && isEqual(test, wholeArg(node.consequent, state))) {
+    // Lit prints `undefined` as an empty value, but leaves the attribute out for `nothing`.
+    const nothing = resolveHoleValue(node.alternate, state.context).kind === 'nothing';
+    if (test && nothing && isEqual(test, wholeArg(node.consequent, state))) {
       return attrHole(test, name, 'truthy');
     }
   }
@@ -595,8 +633,9 @@ const singleArg = (
 };
 
 // A `choice` hole for `${args.x ? a : b}`, where neither branch reads an arg, so the server prints
-// both. Its `at` is the conditional's place in `state.choices`, which a print with that conditional
-// flipped gives it too; `printHtmlTemplate` fills in the html of each branch.
+// both. Its `at` is the conditional's place in `state.choices`, where every print, as the one with
+// that conditional flipped, finds it first in the same place; `printHtmlTemplate` fills in the html
+// of each branch.
 const choiceHole = (expression: E.Expression, state: TemplatePrintState): HtmlHole | undefined => {
   const node = unwrapExpression(expression);
   if (node.type !== 'ConditionalExpression') {
@@ -607,16 +646,17 @@ const choiceHole = (expression: E.Expression, state: TemplatePrintState): HtmlHo
   if (!test || reads(node.consequent) || reads(node.alternate)) {
     return undefined;
   }
-  const testValue = resolveHoleValue(node.test, state.context);
-  const at = state.choices.push({
-    node,
-    truthy: testValue.kind === 'value' && isTruthy(testValue.value),
-  });
+  let at = state.choices.findIndex((choice) => choice.node === node);
+  if (at === -1) {
+    const testValue = resolveHoleValue(node.test, state.context);
+    const truthy = testValue.kind === 'value' && isTruthy(testValue.value);
+    at = state.choices.push({ node, truthy }) - 1;
+  }
   const branch = resolveHoleValue(node, state.context).kind;
   if (branch === 'unresolved' || branch === 'function') {
     return undefined;
   }
-  return { kind: 'choice', ...argRead(test), truthy: '', falsy: '', at: at - 1 } as HtmlHole;
+  return { kind: 'choice', ...argRead(test), truthy: '', falsy: '', at } as HtmlHole;
 };
 
 const resolveMarkerValue = (expression: E.Expression, state: TemplatePrintState): HoleValue => {

@@ -907,6 +907,8 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
     ...templateConfig,
     features: {
       ...templateConfig.features,
+      // Sandboxes test live snippets, which stay behind this flag until they ship.
+      experimentalLiveSnippets: true,
     },
     ...(template.modifications?.editAddons
       ? {

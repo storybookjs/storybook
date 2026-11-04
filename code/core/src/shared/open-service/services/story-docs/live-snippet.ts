@@ -28,9 +28,13 @@ const storiesWarnedAbout = new Set<string>();
 // those it is written with.
 export type StoryArgs = { unmappedArgs: Args; initialArgs: Args };
 
-/** Whether a story renders with other args than those it is written with, so its template fills. */
+/**
+ * Whether a story renders with other args than those it is written with, so its template fills.
+ * Never while `features.experimentalLiveSnippets` is off: the snippet then stays static, as before
+ * live snippets.
+ */
 export const storyArgsChanged = ({ unmappedArgs, initialArgs }: StoryArgs) =>
-  !isEqual(unmappedArgs, initialArgs);
+  Boolean(globalThis.FEATURES?.experimentalLiveSnippets) && !isEqual(unmappedArgs, initialArgs);
 
 // Each component's templates load once a story of it first renders with changed args. A static
 // build serves them as a file of their own, which does not change, and a dev server keeps them

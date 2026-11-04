@@ -60,7 +60,7 @@ export function useServiceStoryDoc(storyId: string): QueryState<StoryDoc | undef
 // its static snippet and warning while it has the args it is written with or no template.
 export function useServiceStoryLiveSnippet(
   story: PreparedStory,
-  args: StoryArgs | undefined
+  args: StoryArgs
 ): QueryState<{ snippet?: string; warning?: string }> {
   // The selector is stable, so an args change fills the template again without a new subscription,
   // which would load the story docs again.

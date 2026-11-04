@@ -29,8 +29,8 @@ const storiesWarnedAbout = new Set<string>();
 export type StoryArgs = { unmappedArgs: Args; initialArgs: Args };
 
 /** Whether a story renders with other args than those it is written with, so its template fills. */
-export const storyArgsChanged = (args: StoryArgs | undefined) =>
-  args !== undefined && !isEqual(args.unmappedArgs, args.initialArgs);
+export const storyArgsChanged = ({ unmappedArgs, initialArgs }: StoryArgs) =>
+  !isEqual(unmappedArgs, initialArgs);
 
 // Each component's templates load once a story of it first renders with changed args. A static
 // build serves them as a file of their own, which does not change, and a dev server keeps them
@@ -78,13 +78,13 @@ export function selectLiveSnippetForStory(
   payload: StoryDocsPayload | undefined,
   templates: StoryTemplatesPayload | 'loading' | undefined,
   storyId: string,
-  args: StoryArgs | undefined,
+  args: StoryArgs,
   printHole: PrintHole | undefined
 ): { snippet?: string; warning?: string } {
-  const staticSnippet = (unprintable?: string) => ({
+  const staticSnippet = (reason?: string) => ({
     snippet: selectSnippetForStory(payload, storyId),
     warning:
-      [selectWarningForStory(payload, storyId), unprintable].filter(Boolean).join(' ') || undefined,
+      [selectWarningForStory(payload, storyId), reason].filter(Boolean).join(' ') || undefined,
   });
   if (!storyArgsChanged(args) || templates === 'loading') {
     return staticSnippet();
@@ -103,7 +103,7 @@ export function selectLiveSnippetForStory(
   }
   try {
     return {
-      snippet: prependImportToSnippet(payload?.import, fillTemplate(template, args!, printHole)),
+      snippet: prependImportToSnippet(payload?.import, fillTemplate(template, args, printHole)),
       warning: story?.warning,
     };
   } catch (error) {

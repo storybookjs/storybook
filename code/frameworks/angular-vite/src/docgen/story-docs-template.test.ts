@@ -166,9 +166,7 @@ describe('story-docs templates', () => {
         render: ({ label }) => ({ template: \`<sb-button>\${label}</sb-button>\` }),
       };
     `);
-    expect(formatTemplate(story!.template!)).toContain(
-      '<sb-button>⟦text label indent=2⟫⟧</sb-button>'
-    );
+    expect(formatTemplate(story!.template!)).toContain('<sb-button>⟦text label⟫⟧</sb-button>');
     expect(fill(story!, { label: '' })).toBe(story!.snippet);
     expect(fill(story!, { label: '' }, { label: 'Stop' })).toContain('<sb-button>Stop</sb-button>');
   });
@@ -181,9 +179,7 @@ describe('story-docs templates', () => {
         render: ({ label }) => ({ template: \`<sb-button>\${label}</sb-button>\` }),
       };
     `);
-    expect(formatTemplate(story!.template!)).toContain(
-      '<sb-button>⟦text label indent=2⟫Go⟧</sb-button>'
-    );
+    expect(formatTemplate(story!.template!)).toContain('<sb-button>⟦text label⟫Go⟧</sb-button>');
     expect(fill(story!, { label: 'Go' }, { label: 'Stop' })).toContain(
       '<sb-button>Stop</sb-button>'
     );
@@ -203,22 +199,8 @@ describe('story-docs templates', () => {
     expect(fill(story!, { label: 'Go' }, { label: 'Mail {me} @ home' })).toContain(
       '<sb-button>Mail &#123;me&#125; &#64; home</sb-button>'
     );
-  });
-
-  it('lines up a new value over several lines with the line its text starts on', async () => {
-    const [story] = await storyDocs(`
-      ${IMPORTS}
-      export const Default = {
-        args: { label: 'Go', size: 'lg' },
-        render: ({ label, ...rest }) => ({
-          props: rest,
-          template: \`<div><sb-button \${argsToTemplate(rest)}>\${label}</sb-button></div>\`,
-        }),
-      };
-    `);
-    const own = { label: 'Go', size: 'lg' };
-    expect(fill(story!, own, { ...own, label: 'first\nsecond' })).toContain(
-      `\n        <sb-button [size]="'lg'">first\n        second</sb-button>\n`
+    expect(fill(story!, { label: 'Go' }, { label: 'first\nsecond' })).toContain(
+      '<sb-button>first\nsecond</sb-button>'
     );
   });
 

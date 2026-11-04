@@ -10,13 +10,11 @@
  * - `bind`: the expression of a `[name]="…"` binding.
  * - `prop`: a whole `[name]="…"` binding `argsToTemplate` expands, which an unset arg leaves out.
  * - `field`: the code of a host component field.
- * - `text`: text the story's markup interpolates, as written. `indent` is the indent of the line it
- *   starts on, which the lines after the first of a new value over several lines line up with; left
- *   out for none.
+ * - `text`: text the story's markup interpolates, as written.
  */
-export type AngularHolePlace =
-  | { kind: 'bind' | 'prop' | 'field' }
-  | { kind: 'text'; indent?: number };
+export interface AngularHolePlace {
+  kind: 'bind' | 'prop' | 'field' | 'text';
+}
 
 export const isValidIdentifier = (name: string): boolean => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name);
 
@@ -31,20 +29,16 @@ const quoteExpressionString = (value: string): string =>
 // Renders an arg value as the template expression or class field code a story-docs snippet holds
 // for it, losslessly for strings carrying quotes. The story-docs build prints the values it
 // evaluates from the story with it, as next does. The preview prints a value a control changed
-// with it and passes `unprintable`, which prints a value that has no such expression, or throws: a
-// function, a symbol, a bigint, `NaN` or `Infinity`, which an Angular template reads as fields, a
-// class instance, or a cycle.
-export const printExpressionValue = (
-  value: unknown,
-  unprintable?: (value: unknown) => string
-): string => {
+// with it and passes `unprintable`, which throws for a value that has no such expression: a
+// function, a symbol, a bigint, a class instance, or a cycle.
+export const printExpressionValue = (value: unknown, unprintable?: () => never): string => {
   const parents = new Set<unknown>();
   const print = (value: unknown): string => {
     if (typeof value === 'string') {
       return quoteExpressionString(value);
     }
     if (unprintable && hasNoExpression(value, parents)) {
-      return unprintable(value);
+      return unprintable();
     }
     if (typeof value !== 'object' || value === null) {
       return `${value}`;
@@ -66,9 +60,6 @@ export const printExpressionValue = (
 };
 
 const hasNoExpression = (value: unknown, parents: Set<unknown>): boolean => {
-  if (typeof value === 'number') {
-    return !Number.isFinite(value);
-  }
   if (typeof value !== 'object' || value === null) {
     return typeof value === 'function' || typeof value === 'symbol' || typeof value === 'bigint';
   }

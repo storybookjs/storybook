@@ -9,6 +9,8 @@ import {
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
 
+import type { ProvidedStoryDoc } from 'storybook/internal/types';
+
 import { getCodeSnippet } from './generateCodeSnippet.ts';
 import {
   type ComponentRef,
@@ -135,16 +137,7 @@ export async function resolveStoryFileComponents(options: {
 }
 
 /** Snippet + metadata for one story, before output-specific shaping. */
-export interface ResolvedStory {
-  id: string;
-  name: string;
-  snippet?: string;
-  description?: string;
-  summary?: string;
-  /** Why the snippet is an incomplete example; see `StoryDoc.warning`. */
-  warning?: string;
-  error?: { name: string; message: string };
-}
+export type ResolvedStory = ProvidedStoryDoc;
 
 /** Every story's snippet, plus the imports they need beyond the components in the file. */
 export interface ExtractedStorySnippets {
@@ -164,7 +157,8 @@ export function extractStorySnippets(
   csf: ParsedCsf,
   componentName: string | undefined,
   filterStoryIds?: ReadonlySet<string>,
-  references?: StoryReferences
+  references?: StoryReferences,
+  withTemplate = false
 ): ExtractedStorySnippets {
   const imports: ImportRef[] = [];
   const resolver = createStoryArgsResolver(csf, references);
@@ -177,21 +171,29 @@ export function extractStorySnippets(
           csf._storyStatements[storyExport],
           csf.editor
         );
-        const snippet = getCodeSnippet(csf, storyExport, componentName, resolver);
-        imports.push(...snippet.imports);
-        const warning = unresolvedWarning(snippet.unresolved);
+        const {
+          imports: needs,
+          unresolved,
+          ...snippet
+        } = getCodeSnippet(csf, storyExport, componentName, resolver, withTemplate);
+        imports.push(...needs);
+        const warning = unresolvedWarning(unresolved);
 
         return {
           id: story.id,
           name,
-          snippet: snippet.code,
+          ...snippet,
           description,
           summary,
           ...(warning ? { warning } : {}),
         };
       } catch (e) {
         const err = e instanceof Error ? e : new Error(String(e));
-        return { id: story.id, name, error: { name: err.name, message: err.message } };
+        return {
+          id: story.id,
+          name,
+          error: { name: err.name, message: err.message },
+        };
       }
     });
 

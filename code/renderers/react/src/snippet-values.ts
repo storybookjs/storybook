@@ -1,4 +1,4 @@
-import type { HoleRef } from 'storybook/internal/docs-tools';
+import type { HoleMarks } from 'storybook/internal/docs-tools';
 
 // How a React story snippet prints one arg's value in each place it can stand. The story-docs
 // provider prints the static snippet with these from the story's code, and the preview's
@@ -27,7 +27,7 @@ export type ReactHolePlace =
   | { kind: 'attrs'; except: string[] };
 
 // Wraps the text a place prints in its hole, for the template; the snippet prints the text.
-export type Mark = (hole: HoleRef<ReactHolePlace>, text: string) => string;
+export type Mark = HoleMarks<ReactHolePlace>['mark'];
 
 const unmarked: Mark = (_, text) => text;
 
@@ -76,9 +76,3 @@ export const printChildren = (value: JsxValue) => {
   }
   return value.kind === 'jsx' ? value.code : `{${valueCode(value)}}`;
 };
-
-// The args a bound story is called with, one a line, each as its code.
-export const printArgsObject = (args: [string, string][]) =>
-  args.length === 0
-    ? '{}'
-    : `{\n${args.map(([name, code]) => `    ${JSON.stringify(name)}: ${code}`).join(',\n')}\n}`;

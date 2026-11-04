@@ -51,7 +51,7 @@ describe('fillTemplate', () => {
       fillTemplate(template, { unmappedArgs: { ...initialArgs, label: 'Stop' }, initialArgs }, echo)
     ).toBe('<Button[attr label="Stop"][attrs *={"label":"Stop"}] />');
     expect(fillTemplate(template, { unmappedArgs: { theme: 'dark' }, initialArgs }, echo)).toBe(
-      '<Button[attr label=undefined] />'
+      '<Button[attr label=undefined][attrs *={}] />'
     );
   });
 
@@ -75,6 +75,19 @@ describe('fillTemplate', () => {
         echo
       )
     ).toBe('<Button label="Go"[attrs *={"theme":"light"}] />');
+  });
+
+  it('gives a spread hole an arg a control cleared, as undefined', () => {
+    const initialArgs = { label: 'Go', theme: 'dark' };
+    const seen: unknown[] = [];
+    fillTemplate(template, { unmappedArgs: { label: 'Go' }, initialArgs }, (hole, value) => {
+      if (hole.spread) {
+        seen.push(value);
+      }
+      return '';
+    });
+    expect(seen).toEqual([{ theme: undefined }]);
+    expect(Object.hasOwn(seen[0] as object, 'theme')).toBe(true);
   });
 
   it('prints the space before a print, and leaves it out with an empty one', () => {

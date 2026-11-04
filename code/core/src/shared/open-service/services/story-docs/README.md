@@ -33,7 +33,7 @@ arg prints with the `text` the snippet prints there. For a React story `Primary`
 ]
 ```
 
-A hole reads one `arg`, or, as a `spread` hole, the args a control set, as a spread passes them.
+A hole reads one `arg`, or, as a `spread` hole, the args a control changed, as a spread passes them.
 A hole is flat: its `kind` and the renderer's own fields for that place stand next to the fields
 core reads, `arg`, `spread`, `text` and `space`. Each renderer types its places as one union, which
 its provider and its `printHole` share. Core owns only the contract, in `snippetTemplate.ts`, and
@@ -45,9 +45,9 @@ never reads a place's fields but its `kind`:
 - A changed arg prints what the renderer's `PrintHole`, set as `parameters.docs.source.printHole`,
   prints for the hole's place and the value. It never sees the code around the hole. A cleared arg
   prints what it prints for `undefined`, such as nothing for an attribute.
-- A `spread` hole gets every arg a control set, and the renderer prints those its place does not
-  print already. Project-level args, actions Storybook adds and args the server could not resolve
-  show only once a control changes them.
+- A `spread` hole gets every arg a control changed, a cleared one as `undefined`, and the renderer
+  prints those its place does not print already. Project-level args, actions Storybook adds and args
+  the server could not resolve show only once a control changes them.
 - A hole's `space`, such as the whitespace before an attribute, is printed before the renderer's
   print unless that is empty; `withHoleSpace` moves the whitespace before the holes a provider
   names into them, so a cleared attribute leaves no gap.

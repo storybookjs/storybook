@@ -25,7 +25,7 @@ If the app's own Storybook can compose the published one, you can use [compositi
 
 ## Publish with Chromatic
 
-When you [publish your Storybook with Chromatic](../sharing/publish-storybook.mdx#publish-storybook-with-chromatic), Chromatic also publishes its MCP server. The server is at your published Storybook's URL, followed by `/mcp`.
+When you [publish your Storybook with Chromatic](../sharing/publish-storybook.mdx#publish-storybook-with-chromatic), Chromatic also [publishes its MCP server](https://chromatic.com/docs/mcp/). The server is at your published Storybook's URL, followed by `/mcp`.
 
 Each build has its own URL. For a URL that always points to your latest Storybook, use the permalink of your default branch:
 
@@ -35,14 +35,11 @@ https://<branch>--<app-id>.chromatic.com/mcp
 
 For example, `https://main--642d765a7e8afcfb104268dc.chromatic.com/mcp`.
 
-Before you publish, make sure that:
+Before you publish, make sure that the [components manifest is on](./reference/manifests.mdx#framework-support).
 
-- `@storybook/addon-mcp` is installed. See [Install the addon](./reference/mcp-server.mdx#1-install-the-addon).
-- The components manifest is on. See [framework support](./reference/manifests.mdx#framework-support).
+The published MCP server has the same access as your Storybook. If your Storybook is private, people sign in to Chromatic the first time their agent connects, and only people with access to your Chromatic project can use it. If your Storybook is public, anyone with the URL can use it.
 
-The MCP server has the same access as your Storybook. If your Storybook is private, people sign in to Chromatic the first time their agent connects, and only people with access to your Chromatic project can use it. If your Storybook is public, anyone with the URL can use it.
-
-To add the server to an agent, follow [Add the MCP server to your agent](./reference/mcp-server.mdx#3-add-the-mcp-server-to-your-agent) with the published URL. For sign-in details, see [Chromatic's MCP documentation](https://www.chromatic.com/docs/mcp/).
+To add the server to an agent, follow [Add the MCP server to your agent](./reference/mcp-server.mdx#3-add-the-mcp-server-to-your-agent) with the [published URL](https://chromatic.com/docs/mcp/#grab-your-mcp-server-url).
 
 ## Self-host with `@storybook/mcp`
 

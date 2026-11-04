@@ -94,8 +94,8 @@ the components manifest read:
 - The `Source` hook reads a story's template in its story-docs selector, so an update that changes
   only a template fills the snippet again without loading the templates.
 
-So a story whose args never change costs nothing more than its snippet, in the manifest and in the
-preview.
+So the manifest and a static build carry nothing more for a story whose args never change. A dev
+server does send the templates over its socket with the story docs.
 
 ## Providers
 

@@ -161,12 +161,7 @@
     }
   },
   "namedInputs": {
-    "sharedGlobals": [
-      "{workspaceRoot}/code/tsconfig.json",
-      "{workspaceRoot}/scripts/**/*",
-      "{workspaceRoot}/.github/workflows/nx.yml",
-      "{workspaceRoot}/.nx/workflows/*"
-    ],
+    "sharedGlobals": ["{workspaceRoot}/code/tsconfig.json", "{workspaceRoot}/scripts/**/*"],
     "default": ["sharedGlobals", "{projectRoot}/**/*"],
     "production": [
       "sharedGlobals",

@@ -11,6 +11,8 @@ import invariant from 'tiny-invariant';
 import { getService } from '../../../shared/open-service/server.ts';
 import { Tag } from '../../../shared/constants/tags.ts';
 import type { ComponentsManifest } from '../../../types/modules/core-common.ts';
+import { getOwn } from '../../../shared/open-service/plain-object.ts';
+import { readAllComponents } from '../../../shared/open-service/services/component-state-key.ts';
 import type { DocgenPayload } from '../../../shared/open-service/services/docgen/types.ts';
 import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
 import {
@@ -61,8 +63,8 @@ function mergeServicePayloads(
 ): Record<string, ComponentManifestWithStoryDocs> {
   return Object.fromEntries(
     componentIds.flatMap((id) => {
-      const docgen = docgenPayloads[id];
-      const storyDocs = storyDocsPayloads[id];
+      const docgen = getOwn(docgenPayloads, id);
+      const storyDocs = getOwn(storyDocsPayloads, id);
       if (!docgen) {
         // A componentless component (its story file names no `meta.component`, so no docgen
         // provider claims it) still has stories to show. Without a stub row here it would disappear
@@ -176,7 +178,7 @@ function withDocsOnlyComponents(
   const next = { ...components };
 
   for (const id of manifestComponentIds) {
-    if (!next[id] && docsByComponentId[id]) {
+    if (!getOwn(next, id) && getOwn(docsByComponentId, id)) {
       next[id] = mergeManifestPayloads(createDocsOnlyDocgenPayload(id));
     }
   }
@@ -206,7 +208,11 @@ async function renderComponentsHtmlFromService(
   const durationMs = Math.round(performance.now() - startTime);
   const docsByComponentId = getAttachedDocsByComponent(manifests.components);
   const components = withDocsOnlyComponents(
-    mergeServicePayloads(allDocgenPayloads, allStoryDocsPayloads, manifestComponentIds),
+    mergeServicePayloads(
+      readAllComponents(allDocgenPayloads),
+      readAllComponents(allStoryDocsPayloads),
+      manifestComponentIds
+    ),
     manifestComponentIds,
     docsByComponentId
   );

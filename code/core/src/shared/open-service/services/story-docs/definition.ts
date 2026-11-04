@@ -1,8 +1,8 @@
 import * as v from 'valibot';
 
 import { defineService } from 'storybook/open-service';
-import { getOwn } from '../../plain-object.ts';
 import type { ServiceInstanceOf } from '../../types.ts';
+import { readComponent } from '../component-state-key.ts';
 import type { StoryDocsPayload } from './types.ts';
 import { storyDocsQueryStaticPath } from './paths.ts';
 
@@ -56,7 +56,7 @@ export const storyDocsServiceDef = defineService({
         'Returns the story-docs payload for one component id, or undefined when not loaded.',
       input: storyDocsInputSchema,
       output: storyDocsOutputSchema,
-      handler: (input, ctx) => getOwn(ctx.self.state.components, input.id),
+      handler: (input, ctx) => readComponent(ctx.self.state.components, input.id),
       load: async (input, ctx) => {
         await ctx.self.commands.extractStoryDocs(input);
       },

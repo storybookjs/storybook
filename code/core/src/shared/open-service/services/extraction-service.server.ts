@@ -17,6 +17,7 @@ import type {
   ServiceInstance,
   ServiceRegistrationOptions,
 } from '../types.ts';
+import { toComponentStateKey } from './component-state-key.ts';
 import type { ModuleGraphService } from './module-graph/definition.ts';
 import { toStoryIndexPath } from './module-graph/types.ts';
 
@@ -192,10 +193,11 @@ export function registerExtractionService<
     id: string,
     payload: TState['components'][string] | undefined
   ): void => {
+    const key = toComponentStateKey(id);
     if (payload) {
-      state.components[id] = payload;
+      state.components[key] = payload;
     } else {
-      delete state.components[id];
+      delete state.components[key];
     }
   };
 

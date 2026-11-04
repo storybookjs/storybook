@@ -36,8 +36,11 @@ export const printHole: PrintHole<VueHolePlace> = (hole, value) => {
     case 'text':
       return text(arg, value, hole);
     case 'value': {
+      if (hole.in === 'script') {
+        return code(arg, value, "'");
+      }
       const printed =
-        hole.in === 'script'
+        hole.in === 'statement'
           ? code(arg, value, "'")
           : expression(arg, value, hole.in === 'attribute' ? hole.quote : undefined);
       return operand(printed, hole.readsOn === true);

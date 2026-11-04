@@ -46,12 +46,15 @@ describe('printHole', () => {
     expect(() => print({ kind: 'text', slot: true }, ' padded')).toThrow(UnprintableArgError);
   });
 
-  it('prints code in the quote the place does not use, in parentheses where it reads on', () => {
+  it('prints code in the quote the place does not use, an operand in parentheses if needed', () => {
     expect(print({ kind: 'value', in: 'attribute', quote: '"' }, 'a b')).toBe("'a b'");
     expect(print({ kind: 'value', in: 'attribute', quote: "'" }, 'it')).toBe('"it"');
     expect(print({ kind: 'value', in: 'interpolation', readsOn: true }, 5)).toBe('(5)');
     expect(print({ kind: 'value', in: 'interpolation' }, -2)).toBe('(-2)');
     expect(print({ kind: 'value', in: 'script' }, '</d>')).toBe("'</d>'");
+    expect(print({ kind: 'value', in: 'script' }, -2)).toBe('-2');
+    expect(print({ kind: 'value', in: 'statement' }, -2)).toBe('(-2)');
+    expect(print({ kind: 'value', in: 'statement', readsOn: true }, 5)).toBe('(5)');
     expect(() => print({ kind: 'value', in: 'attribute', quote: '"' }, 'say "hi"')).toThrow(
       UnprintableArgError
     );

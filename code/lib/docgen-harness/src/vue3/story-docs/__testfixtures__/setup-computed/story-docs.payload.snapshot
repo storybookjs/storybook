@@ -22,7 +22,7 @@ const upper = computed(() => 'Ready'.toUpperCase());
 import { computed } from "vue";
 import SetupComputed from './SetupComputed.vue';
 
-const upper = computed(() => ⟦value label in="script" readsOn=true⟫'Ready'⟧.toUpperCase());
+const upper = computed(() => ⟦value label in="statement" readsOn=true⟫'Ready'⟧.toUpperCase());
 </script>
 
 <template>

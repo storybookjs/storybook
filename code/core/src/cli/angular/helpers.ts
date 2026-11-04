@@ -4,15 +4,9 @@ import { resolve } from 'node:path';
 import { prompt } from 'storybook/internal/node-logger';
 import { MissingAngularJsonError } from 'storybook/internal/server-errors';
 
-import {
-  type FormattingOptions,
-  type ParseError,
-  applyEdits,
-  modify,
-  parse,
-  printParseErrorCode,
-} from 'jsonc-parser';
 import semver from 'semver';
+
+import { type JSONEditPath, editJsonText } from '../json-text.ts';
 
 export const ANGULAR_JSON_PATH = 'angular.json';
 
@@ -33,42 +27,6 @@ export const toDevkitVersion = (ngRange?: string | null): string | undefined => 
 
   return ngRange.trim().startsWith('^') ? `^${versionCore}` : versionCore;
 };
-
-/** A path into a JSON document, e.g. `['projects', 'app', 'architect', 'storybook', 'builder']`. */
-export type JSONEditPath = (string | number)[];
-
-// `jsonc-parser` re-indents the lines it touches, so a wrong tab size leaves the document with
-// mixed indentation.
-const detectIndentation = (text: string): FormattingOptions => {
-  const indent = /^[ \t]+(?=[^\s])/m.exec(text)?.[0];
-
-  if (!indent) {
-    return { insertSpaces: true, tabSize: 2 };
-  }
-
-  return indent.startsWith('\t')
-    ? { insertSpaces: false, tabSize: 1 }
-    : { insertSpaces: true, tabSize: indent.length };
-};
-
-/**
- * Parse a workspace JSON file, which Angular and Nx allow to contain comments and trailing commas.
- *
- * @throws When the text is not valid JSON with comments.
- */
-export const parseJsonText = (text: string): unknown => {
-  const errors: ParseError[] = [];
-  const value = parse(text, errors, { allowTrailingComma: true });
-  if (errors.length > 0) {
-    const [{ error, offset }] = errors;
-    throw new SyntaxError(`${printParseErrorCode(error)} at offset ${offset}`);
-  }
-  return value;
-};
-
-/** Apply a format-preserving edit to a JSON string at `path`. `value === undefined` removes it. */
-export const editJsonText = (text: string, path: JSONEditPath, value: unknown): string =>
-  applyEdits(text, modify(text, path, value, { formattingOptions: detectIndentation(text) }));
 
 /** An `angular.json` architect target or Nx `project.json` target. */
 export interface StorybookBuilderTarget {

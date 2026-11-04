@@ -1,0 +1,77 @@
+import { describe, expect, it } from 'vitest';
+
+import { appendJsonArrayItem, editJsonText, parseJsonText } from './json-text.ts';
+
+describe('editJsonText', () => {
+  const removeCompodoc = (text: string) =>
+    editJsonText(text, ['targets', 'storybook', 'options', 'compodoc'], undefined);
+
+  it('keeps tab indentation', () => {
+    const tabbed =
+      '{\n\t"targets": {\n\t\t"storybook": {\n\t\t\t"options": {\n\t\t\t\t"compodoc": true,\n\t\t\t\t"port": 6006\n\t\t\t}\n\t\t}\n\t}\n}\n';
+
+    expect(removeCompodoc(tabbed)).toBe(
+      '{\n\t"targets": {\n\t\t"storybook": {\n\t\t\t"options": {\n\t\t\t\t"port": 6006\n\t\t\t}\n\t\t}\n\t}\n}\n'
+    );
+  });
+
+  it('keeps 4-space indentation', () => {
+    const fourSpace =
+      '{\n    "targets": {\n        "storybook": {\n            "options": {\n                "compodoc": true,\n                "port": 6006\n            }\n        }\n    }\n}\n';
+
+    expect(removeCompodoc(fourSpace)).toBe(
+      '{\n    "targets": {\n        "storybook": {\n            "options": {\n                "port": 6006\n            }\n        }\n    }\n}\n'
+    );
+  });
+
+  it('keeps 2-space indentation', () => {
+    const twoSpace =
+      '{\n  "targets": {\n    "storybook": {\n      "options": {\n        "compodoc": true,\n        "port": 6006\n      }\n    }\n  }\n}\n';
+
+    expect(removeCompodoc(twoSpace)).toBe(
+      '{\n  "targets": {\n    "storybook": {\n      "options": {\n        "port": 6006\n      }\n    }\n  }\n}\n'
+    );
+  });
+});
+
+describe('parseJsonText', () => {
+  it('allows comments and trailing commas', () => {
+    expect(parseJsonText('{\n  // comment\n  "a": [1,],\n}')).toEqual({ a: [1] });
+  });
+
+  it('throws on invalid JSON', () => {
+    expect(() => parseJsonText('{ "a": }')).toThrow(SyntaxError);
+  });
+});
+
+describe('appendJsonArrayItem', () => {
+  const append = (text: string) => appendJsonArrayItem(text, ['list'], 'new');
+
+  it('keeps a line comment on the last item', () => {
+    expect(append('{\n  "list": [\n    "a", // first\n    "b" // last\n  ]\n}\n')).toBe(
+      '{\n  "list": [\n    "a", // first\n    "b", // last\n    "new"\n  ]\n}\n'
+    );
+  });
+
+  it('keeps a trailing comma after a commented last item', () => {
+    expect(append('{\n  "list": [\n    "b", // last\n  ]\n}\n')).toBe(
+      '{\n  "list": [\n    "b", // last\n    "new",\n  ]\n}\n'
+    );
+  });
+
+  it('keeps CRLF line endings', () => {
+    expect(append('{\r\n\t"list": [\r\n\t\t"b" // last\r\n\t]\r\n}\r\n')).toBe(
+      '{\r\n\t"list": [\r\n\t\t"b", // last\r\n\t\t"new"\r\n\t]\r\n}\r\n'
+    );
+  });
+
+  it('formats an inline array', () => {
+    expect(append('{\n  "list": ["a"] // after\n}\n')).toBe(
+      '{\n  "list": [\n    "a",\n    "new"\n  ] // after\n}\n'
+    );
+  });
+
+  it('appends to an empty array', () => {
+    expect(append('{\n  "list": []\n}\n')).toBe('{\n  "list": [\n    "new"\n  ]\n}\n');
+  });
+});

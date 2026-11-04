@@ -1,5 +1,3 @@
-import type { SnippetTemplate } from 'storybook/internal/docs-tools';
-
 // How the Svelte snippet prints one arg value in each place it prints one. The story-docs
 // provider prints the static snippet with these, and `printHole` a value a control changed, so the
 // two print a value alike. The callers say what the value is: the provider from the code the
@@ -8,17 +6,13 @@ import type { SnippetTemplate } from 'storybook/internal/docs-tools';
 // Where a hole of a story's template stands: the story-docs provider writes the holes and
 // `printHole` prints a changed value for them. A `name` is left out where it is the hole's arg.
 export type SvelteHolePlace =
-  // One prop a `{...args}` spread passes, left out while its arg is unset.
+  // One prop a `{...args}` spread passes, or an attribute before it, which it writes over: left
+  // out while its arg is unset.
   | { kind: 'prop' }
   // The args a control set, as a spread passes them, but those `except` names: the props the spread
   // passes already, and what the element and the template parameter take themselves. They stand
   // `separator` apart, as the props of the spread do.
   | { kind: 'props'; except: string[]; separator: string }
-  // An attribute a later `{...args}` spread writes over with its arg, which the story sets.
-  | { kind: 'spreadattr' }
-  // An attribute `name` before an `{...args}` spread, which writes over it once a control sets
-  // `name`. Until then it prints its `template`, its reads filled with the args a control set.
-  | { kind: 'overridden'; name: string; template: SnippetTemplate<SvelteHolePlace> }
   // A read of an arg, or of the member `path` of it, in code.
   | { kind: 'value'; path?: string[] }
   // A shorthand property, `{ name }`, that reads an arg.
@@ -55,10 +49,6 @@ export function printProp(name: string, value: PropValue): string {
     ? `${name}="${value.string}"`
     : `${name}={${value.code}}`;
 }
-
-// An attribute a later `{...args}` spread writes over: as the spread prints it, else `undefined`.
-export const printSpreadAttribute = (name: string, value: PropValue) =>
-  value === undefined ? `${name}={undefined}` : printProp(name, value);
 
 // The accessors of a read of the member `keys` of a value, such as `.user.name` or `["b-c"]`.
 export const printAccessors = (keys: string[]) =>

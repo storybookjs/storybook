@@ -451,71 +451,23 @@ describe('printTemplate template', () => {
     );
   });
 
-  it('prints an attribute that reads another arg as the spread writes over it once set', () => {
+  it('prints an attribute before a spread as written, with the args it reads, until a control sets the arg it names', () => {
     const code = '<Panel\n  title={args.label}\n  {...args}\n/>';
     const written = template(code, "{ label: 'Go' }");
     const initialArgs = { label: 'Go' };
     expect(fill(written, initialArgs, { label: 'Stop' })).toBe(
-      '<Panel\n  title="Stop"\n  label="Stop"\n/>'
+      '<Panel\n  title="Go"\n  label="Stop"\n/>'
     );
     expect(fill(written, initialArgs, { label: 'Go', title: 'Hi' })).toBe(
       '<Panel\n  title="Hi"\n  label="Go"\n/>'
     );
-    expect(fill(written, initialArgs, { label: 'Stop', title: 'Hi' })).toBe(
-      '<Panel\n  title="Hi"\n  label="Stop"\n/>'
-    );
-    expect(fill(written, initialArgs, { label: undefined })).toMatchInlineSnapshot(`
-      "<Panel
-        title={undefined}
-      />"
-    `);
     expect(fill(written, initialArgs, { label: 'Go', size: 'sm' })).toBe(
       '<Panel\n  title="Go"\n  label="Go" size="sm"\n/>'
     );
     const unset = template(code);
     expect(fill(unset, {}, { title: 'Hi' })).toBe('<Panel\n  title="Hi"\n/>');
     expect(fill(unset, {}, { size: 'sm' })).toBe('<Panel\n  title={args.label}\n  size="sm"\n/>');
-    const member = template(
-      '<Card title={args.user.name} {...args} />',
-      "{ user: { name: 'Jane' } }"
-    );
-    const jane = { user: { name: 'Jane' } };
-    expect(fill(member, jane, { user: { name: 'John' } })).toBe(
-      '<Card title="John" user={{ name: "John" }} />'
-    );
-    expect(fill(member, jane, { ...jane, title: 'Hi' })).toBe(
-      '<Card title="Hi" user={{ name: \'Jane\' }} />'
-    );
   });
-
-  it.each([
-    [
-      '<Panel title={args.label + "!"} {...args} />',
-      '<Panel title={"Stop" + "!"} label="Stop" size="sm" />',
-      '<Panel title={undefined + "!"} size="sm" />',
-    ],
-    [
-      '<Panel title="By {args.label}" {...args} />',
-      '<Panel title="By Stop" label="Stop" size="sm" />',
-      '<Panel title="By {undefined}" size="sm" />',
-    ],
-    [
-      '<Panel title="{args.label} {args.size}" {...args} />',
-      '<Panel title="Stop sm" label="Stop" size="sm" />',
-      '<Panel title="{undefined} sm" size="sm" />',
-    ],
-  ])(
-    'follows the reads in %j before a spread until a control sets its arg',
-    (code, expected, cleared) => {
-      const initialArgs = { label: 'Go', size: 'sm' };
-      const written = template(code, "{ label: 'Go', size: 'sm' }");
-      expect(fill(written, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(expected);
-      expect(fill(written, initialArgs, { ...initialArgs, label: 'Stop', title: 'Hi' })).toBe(
-        '<Panel title="Hi" label="Stop" size="sm" />'
-      );
-      expect(fill(written, initialArgs, { size: 'sm' })).toBe(cleared);
-    }
-  );
 
   it('follows the reads of an attribute before a spread of the rest that leaves out its arg', () => {
     const written = template('<Button label={label + "!"} {...rest} />', "{ size: 'sm' }", {

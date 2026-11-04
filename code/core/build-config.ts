@@ -1,12 +1,32 @@
 import path from 'node:path';
 
+import { normalize } from 'pathe';
 import { x as exec } from 'tinyexec';
 
 import type { BuildEntries } from '../../scripts/build/utils/entry-utils.ts';
+import { convertCommonJsNamespaceDeclaration } from '../../scripts/build/utils/generate-types-rolldown.ts';
 
 import { retargetEmotionTypeQueries } from './scripts/retarget-emotion-type-queries.ts';
 
 const config: BuildEntries = {
+  // storybook/test inlines the types of the test libraries it bundles, so they need not be installed.
+  transformDependencyDeclaration({ id, code }) {
+    const posixId = normalize(id);
+    if (posixId.includes('/node_modules/@testing-library/jest-dom/')) {
+      return convertCommonJsNamespaceDeclaration(id, code);
+    }
+    if (posixId.includes('/node_modules/@vitest/expect/')) {
+      // These declarations use Chai's global types (`Chai.Assertion`, ...), from `@types/chai`. The
+      // public types of storybook/test don't expose them (see `test/expect.ts`), but the declarations
+      // they inline mention them. A module-local `Chai` namespace satisfies those mentions without
+      // requiring `@types/chai` or declaring globals in the user's project.
+      const chaiTypes = [...new Set(code.match(/(?<=\bChai\.)\w+/g))];
+      // The members are untyped, e.g. of the experimental `this.assertion` in custom matchers.
+      const stubs = chaiTypes.map((name) => `  interface ${name} { [key: string]: any }`);
+      return `${code}\ndeclare namespace Chai {\n${stubs.join('\n')}\n}\n`;
+    }
+    return null;
+  },
   transformEmittedDeclarations({ emitDir, packageName }) {
     retargetEmotionTypeQueries(emitDir, `${packageName}/theming/emotion`);
   },

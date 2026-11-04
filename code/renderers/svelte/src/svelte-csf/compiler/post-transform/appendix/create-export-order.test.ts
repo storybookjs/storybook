@@ -1,4 +1,5 @@
 import { print } from 'esrap';
+import ts from 'esrap/languages/ts';
 import { describe, it } from 'vitest';
 
 import { createExportOrderVariableDeclaration } from './create-export-order.ts';
@@ -12,17 +13,12 @@ describe(createExportOrderVariableDeclaration.name, () => {
           { exportName: 'SomeComponent', name: 'Some Component' },
           { exportName: 'ThisNameIsWeird', name: 'This-Name-Is-Weird' },
         ],
-      })
+      }),
+      ts()
     ).code;
 
     expect(stringified).toMatchInlineSnapshot(
-      `
-			"export const __namedExportsOrder = [
-				"Default",
-				"SomeComponent",
-				"ThisNameIsWeird"
-			];"
-		`
+      `"export const __namedExportsOrder = ['Default', 'SomeComponent', 'ThisNameIsWeird'];"`
     );
   });
 });

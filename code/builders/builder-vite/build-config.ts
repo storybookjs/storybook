@@ -12,6 +12,10 @@ const config: BuildEntries = {
         entryPoint: './src/preset.ts',
         dts: false,
       },
+      {
+        entryPoint: './src/vite-plugin/preset.ts',
+        dts: false,
+      },
     ],
   },
   extraOutputs: {

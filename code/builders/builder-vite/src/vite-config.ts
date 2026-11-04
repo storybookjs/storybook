@@ -27,6 +27,8 @@ import {
 } from './plugins/index.ts';
 import { viteCorePlugins as corePlugins } from './preset.ts';
 import type { BuilderOptions } from './types.ts';
+import { withoutVitePlugins } from './utils/without-vite-plugins.ts';
+import { PLUGIN_NAME } from './vite-plugin/constants.ts';
 
 export type PluginConfigType = 'build' | 'development';
 
@@ -150,6 +152,8 @@ export async function commonConfig(
     options,
     _type
   );
+  // The embedded Storybook plugin must not start another Storybook inside Storybook's own Vite.
+  userConfig.plugins = await withoutVitePlugins(userConfig.plugins, [PLUGIN_NAME]);
 
   // Storybook's Vite config is assembled from self-contained plugins.
   // The config plugin handles base settings (root, cacheDir, resolve conditions, etc.),

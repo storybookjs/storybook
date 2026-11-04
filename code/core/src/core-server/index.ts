@@ -13,6 +13,12 @@ export { getStoriesPathsFromConfig } from './utils/get-stories-paths-from-config
 export type { ComponentArgTypesData } from './utils/get-dummy-args-from-argtypes.ts';
 
 export { loadStorybook as experimental_loadStorybook } from './load.ts';
+export { createStorybookApp, type StorybookApp } from './dev-server.ts';
+export { getWsToken } from './presets/wsToken.ts';
+export {
+  getMcpMetadataFromMainConfig,
+  writeStorybookRuntimeInstanceRecord,
+} from './utils/runtime-instance-registry.ts';
 
 export { Tag } from '../shared/constants/tags.ts';
 export { analyzeMdx } from './utils/analyze-mdx.ts';
@@ -121,7 +127,7 @@ export type {
 export { ChangeDetectionService } from './change-detection/change-detection-service.ts';
 export { resolveChangeDetectionAdapter } from '../shared/open-service/services/module-graph/server.ts';
 export { getBuilders } from './utils/get-builders.ts';
-export { prepareHeadlessUniversalStores } from './utils/get-server-channel.ts';
+export { getServerChannel, prepareHeadlessUniversalStores } from './utils/get-server-channel.ts';
 export { isValidHost, type HostValidationOptions } from './utils/getHostValidationMiddleware.ts';
 export { resetServicesPresetOnce as experimental_resetServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 export {

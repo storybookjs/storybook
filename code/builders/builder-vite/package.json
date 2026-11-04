@@ -57,6 +57,7 @@
     "knitwork": "^1.1.0",
     "magic-string": "^1.1.0",
     "pathe": "^1.1.2",
+    "polka": "^1.0.0-next.28",
     "vite": "^7.0.4"
   },
   "peerDependencies": {

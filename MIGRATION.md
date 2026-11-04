@@ -60,6 +60,7 @@
   - [Internal toolset telemetry now returns with the outcome](#internal-toolset-telemetry-now-returns-with-the-outcome)
   - [Internal toolset inputs must be strict objects](#internal-toolset-inputs-must-be-strict-objects)
   - [Internal `satisfies` helper removed](#internal-satisfies-helper-removed)
+  - [Internal npmlog `instance` export removed from `storybook/internal/node-logger`](#internal-npmlog-instance-export-removed-from-storybookinternalnode-logger)
   - [Experimental `UniversalStore` API is now internal](#experimental-universalstore-api-is-now-internal)
   - [`mockChannel` removed from `storybook/preview-api` and `storybook/manager-api`](#mockchannel-removed-from-storybookpreview-api-and-storybookmanager-api)
   - [React: Require v18 and up](#react-require-v18-and-up)
@@ -1767,6 +1768,18 @@ Replace calls with the native operator:
 -});
 +} satisfies Meta<typeof Button>;
 ```
+
+### Internal npmlog `instance` export removed from `storybook/internal/node-logger`
+
+Storybook no longer depends on `npmlog`, so `storybook/internal/node-logger` no longer exports `instance`. Nothing in Storybook has written through it since 10.1, so setting its `level`, `heading` or `stream` had no effect on Storybook's output. Importing `instance` now fails when the module loads, so remove the import and log through `logger` from the same module instead:
+
+```diff
+-import { instance as npmLog, logger } from 'storybook/internal/node-logger';
+-npmLog.heading = '';
++import { logger } from 'storybook/internal/node-logger';
+```
+
+`logger.setLogLevel()` and the `--loglevel` CLI flag control all of Storybook's Node output.
 
 ### Experimental `UniversalStore` API is now internal
 

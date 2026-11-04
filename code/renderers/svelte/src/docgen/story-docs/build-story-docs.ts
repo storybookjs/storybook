@@ -22,11 +22,7 @@ import {
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 import { prependToTemplate } from 'storybook/internal/docs-tools';
-import type {
-  ProvidedStoryDoc,
-  ProvidedStoryDocsPayload,
-  StoryDocsProviderInput,
-} from 'storybook/internal/types';
+import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
 import { printTemplate } from './print-template.ts';
 import { buildSnippetImportBlock } from './snippet-imports.ts';
@@ -38,7 +34,7 @@ const RENDER_WARNING = 'The render function is not reflected in this snippet.';
 
 export async function buildStoryDocsPayload(
   input: StoryDocsProviderInput
-): Promise<ProvidedStoryDocsPayload | undefined> {
+): Promise<StoryDocsPayload | undefined> {
   const path = getStoryImportPathFromEntry(input.entry);
   if (!path) return undefined;
   const filename = resolve(path);
@@ -75,12 +71,12 @@ export async function buildStoryDocsPayload(
   };
   const resolver = createStoryArgsResolver(csf, { filePath: filename, ...openStoryReferences() });
 
-  const stories: Record<string, ProvidedStoryDoc> = {};
+  const stories: Record<string, StoryDoc> = {};
   for (const [exportName, story] of Object.entries(csf._stories)) {
     const id = svelte
       ? toId(csf.meta.id ?? csf.meta.title ?? input.entry.title, storyNameFromExport(exportName))
       : story.id;
-    const doc: ProvidedStoryDoc = {
+    const doc: StoryDoc = {
       id,
       name: story.name ?? storyNameFromExport(exportName),
       ...extractStoryJSDocInfo(csf._storyStatements[exportName], csf.editor),
@@ -115,7 +111,7 @@ function storySnippet(
   exportName: string,
   resolved: ResolvedStoryArgs,
   { file, bindings, importOverride, componentName }: StoryContext
-): Pick<ProvidedStoryDoc, 'snippet' | 'warning' | 'template'> {
+): Pick<StoryDoc, 'snippet' | 'warning' | 'template'> {
   const story = file.stories.get(exportName);
   const template =
     story?.template ?? (componentName ? `<${componentName} {...args} />` : undefined);

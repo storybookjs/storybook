@@ -25,33 +25,28 @@ describe('printHole', () => {
     expect(print('field', ['a\nb'])).toBe("['a\\nb']");
   });
 
-  it('indents the lines after the first of text as its place says', () => {
-    expect(printHole({ kind: 'text', arg: 'x', indent: 2 }, 'a\nb')).toBe('a\n  b');
-  });
-
-  it('prints text as written, and a cleared arg as none', () => {
-    expect(print('text', 'a <i>b</i> `d`')).toBe('a <i>b</i> \\`d\\`');
+  it('fills text in as written, and a cleared arg as none', () => {
+    expect(print('text', 'a <i>b</i>\ne `f`')).toBe('a <i>b</i>\ne \\`f\\`');
     expect(print('text', 3)).toBe('3');
     expect(print('text', undefined)).toBe('');
   });
 
-  it('prints text Angular would read as its own syntax in the form Angular reads as text', () => {
-    expect(print('text', 'a {b} me@x.com')).toBe('a &#123;b&#125; me&#64;x.com');
-    expect(print('text', 'US$')).toBe('US&#36;');
-    expect(print('text', 'a $ b')).toBe('a $ b');
-  });
-
-  it('prints NaN and Infinity into a class field, which TypeScript writes by name', () => {
+  it('fills NaN and Infinity in as JavaScript writes them', () => {
     expect(print('field', Number.NaN)).toBe('NaN');
-    expect(print('field', { max: Number.NEGATIVE_INFINITY })).toBe('{max: -Infinity}');
+    expect(print('bind', { max: Number.NEGATIVE_INFINITY })).toBe('{max: -Infinity}');
   });
 
-  it.each([() => null, new Date(0), Number.NaN, { a: Number.POSITIVE_INFINITY }, Symbol('s')])(
+  it.each([() => null, new Date(0), Symbol('s')])(
     'throws for a value with no template expression, such as %s',
     (value) => {
       expect(() => print('bind', value)).toThrow(new UnprintableArgError('x'));
     }
   );
+
+  it('prints text Angular would read as its own syntax in the form Angular reads as text', () => {
+    expect(print('text', 'a {b} me@x.com')).toBe('a &#123;b&#125; me&#64;x.com');
+    expect(print('text', 'US$')).toBe('US&#36;');
+  });
 
   it.each([() => null, new Date(0), { a: 1 }, '{{ x }}'])(
     'throws for a value with no text, such as %s',

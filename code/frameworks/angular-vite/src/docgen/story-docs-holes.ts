@@ -53,9 +53,7 @@ export const printMarks = (snippet: string): MarkPrinter => {
         return undefined;
       }
       // A binding a control clears leaves no gap, and text a control clears no empty line.
-      return withTextIndent(
-        withHoleSpace(template, ({ kind }) => kind === 'prop' || kind === 'text')
-      );
+      return withHoleSpace(template, ({ kind }) => kind === 'prop' || kind === 'text');
     },
   };
 };
@@ -81,21 +79,3 @@ const withUnsetSpace = (
 };
 
 const isUnset = (hole: TemplateHole<AngularHolePlace>) => hole.kind === 'prop' && hole.text === '';
-
-// Each text hole with the indent of the line it starts on, which the lines after the first of a
-// new value over several lines line up with.
-const withTextIndent = (
-  template: SnippetTemplate<AngularHolePlace>
-): SnippetTemplate<AngularHolePlace> => {
-  let printed = '';
-  return template.map((segment) => {
-    if (typeof segment === 'string') {
-      printed += segment;
-      return segment;
-    }
-    const before = printed + (segment.space ?? '');
-    printed += segment.text;
-    const indent = /^ */.exec(before.slice(before.lastIndexOf('\n') + 1))![0].length;
-    return segment.kind === 'text' && indent > 0 ? { ...segment, indent } : segment;
-  });
-};

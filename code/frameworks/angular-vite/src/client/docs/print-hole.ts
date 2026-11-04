@@ -8,54 +8,41 @@ import {
   type AngularHolePlace,
   escapeAttributeExpression,
   escapeTemplateLiteral,
-  indentLines,
   inputBinding,
   printExpressionValue,
   textValue,
 } from '../../snippet-values.ts';
 
-// Prints a changed arg for a hole of a template from the story-docs build, for the place where the
-// static snippet prints the arg's value; `AngularHolePlace` names each place. Every value prints
-// with `snippet-values.ts`, which the build prints the static snippet with.
+// Fills a hole of a story's template with an arg a control changed, printed as the build prints
+// the story's own args there: every value prints with `snippet-values.ts`. `AngularHolePlace`
+// names each place.
 export const printHole: PrintHole<AngularHolePlace> = (hole, value) => {
+  const arg = hole.arg ?? '';
   const unprintable = (): never => {
-    throw new UnprintableArgError(hole.arg ?? '');
+    throw new UnprintableArgError(arg);
   };
+  const expression = () => escapeAttributeExpression(printExpressionValue(value, unprintable));
   switch (hole.kind) {
     case 'bind':
-      return escapeTemplateLiteral(
-        escapeAttributeExpression(printExpressionValue(value, unprintable))
-      );
+      return escapeTemplateLiteral(expression());
     case 'prop':
       // `argsToTemplate` binds no input for an unset arg, and a function as an output instead.
       return value === undefined || typeof value === 'function'
         ? ''
-        : escapeTemplateLiteral(
-            inputBinding(
-              hole.arg ?? '',
-              escapeAttributeExpression(printExpressionValue(value, unprintable))
-            )
-          );
+        : escapeTemplateLiteral(inputBinding(arg, expression()));
     case 'field':
-      // A class field is TypeScript, which writes `NaN` and `Infinity` as they are.
-      return printExpressionValue(value, (unprinted) =>
-        typeof unprinted === 'number' ? String(unprinted) : unprintable()
-      );
+      return printExpressionValue(value, unprintable);
     case 'text':
-      return indentLines(
-        escapeTemplateLiteral(text(value) ?? unprintable()),
-        ' '.repeat(hole.indent ?? 0)
-      );
+      return escapeTemplateLiteral(text(value) ?? unprintable());
     default:
-      return unknownHoleKind(hole);
+      return unknownHoleKind(hole.kind);
   }
 };
 
-// Text prints as written, as the static snippet prints it, and a cleared arg as none. Angular reads
-// `{`, `}` and `@` in text as its own syntax, so they print as the character references Angular
-// asks for, which read as text wherever the markup interpolates an arg. Text holding `{{` has none:
-// Angular reads a `{{` it decodes from references as an interpolation too. A `$` at the end prints
-// as a reference as well, so it never makes `${` with the code after it in the template literal.
+// Text prints as written, and a cleared arg as none. Angular reads `{`, `}` and `@` in text as its
+// own syntax, so they print as character references, which read as text. Text holding `{{` has
+// none: Angular reads a `{{` it decodes from references as an interpolation too. A `$` at the end
+// prints as a reference too, so it never makes `${` with the code after it in the template literal.
 const text = (value: unknown): string | undefined => {
   if (value === undefined) {
     return '';

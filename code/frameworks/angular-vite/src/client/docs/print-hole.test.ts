@@ -34,7 +34,7 @@ describe('printHole', () => {
     }
   });
 
-  it.each([() => null, new Date(0), Number.NaN, Symbol('s')])(
+  it.each([() => null, new Date(0), Number.NaN, { a: Number.POSITIVE_INFINITY }, Symbol('s')])(
     'throws for a value with no expression, such as %s',
     (value) => {
       expect(() => print('bind', value)).toThrow(new UnprintableArgError('x'));

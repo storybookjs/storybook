@@ -76,20 +76,13 @@ const placeholderHoles = (children: HtmlNode[], space: string, marks: Marks): st
         .join('')
     : '';
 
-// `printed` with the hole of `node` opened before it, after its indent, and closed after it. A text
-// hole says whether the snippet trims the text it prints at its start and at its end.
-const wrapInHole = (
-  printed: string,
-  node: HtmlNode,
-  trim: { start: boolean; end: boolean },
-  marks: Marks
-): string => {
+// `printed` with the hole of `node` opened before it, after its indent, and closed after it.
+const wrapInHole = (printed: string, node: HtmlNode, marks: Marks): string => {
   const tag = marks?.tags.get(node);
   if (!tag || !marks) {
     return printed;
   }
-  const hole: HtmlHole =
-    tag.hole.kind === 'text' ? { ...tag.hole, trimStart: trim.start, trimEnd: trim.end } : tag.hole;
+  const { hole } = tag;
   const indent = printed.match(/^\s*/)![0];
   const text = printed.slice(indent.length);
   if (tag.first && tag.last) {
@@ -102,7 +95,7 @@ const wrapInHole = (
 };
 
 const printNode = (node: HtmlNode, depth: number, marks: Marks): string =>
-  wrapInHole(printNodeText(node, depth, marks), node, { start: true, end: true }, marks);
+  wrapInHole(printNodeText(node, depth, marks), node, marks);
 
 const printNodeText = (node: HtmlNode, depth: number, marks: Marks): string => {
   const indent = INDENT.repeat(depth);
@@ -231,10 +224,12 @@ const inlineChildrenText = (children: HtmlNode[], marks: Marks): InlineText | un
       return undefined;
     }
     hasText ||= part.hasText;
-    const trim = { start: child === shown[0], end: child === shown.at(-1) };
-    const text = child.kind === 'text' ? inlineText(child.text, trim.start, trim.end) : part.text;
+    const text =
+      child.kind === 'text'
+        ? inlineText(child.text, child === shown[0], child === shown.at(-1))
+        : part.text;
     if (text !== '') {
-      parts.push(wrapInHole(text, child, trim, marks));
+      parts.push(wrapInHole(text, child, marks));
     }
   }
   return { hasText, text: parts.join('') };

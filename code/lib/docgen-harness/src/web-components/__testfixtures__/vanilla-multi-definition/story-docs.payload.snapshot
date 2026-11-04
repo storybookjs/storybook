@@ -7,14 +7,14 @@
       "id": "webcomponentsfixtures-vanilla-multi-definition--args-default-render",
       "name": "Args Default Render",
       "snippet": "<multi-beta></multi-beta>",
-      "template": "<multi-beta⟦attr beta-label mode="render" ~" "⟫⟧></multi-beta>",
+      "template": "<multi-beta⟦attr beta-label mode="render" ~" "⟫⟧></multi-beta>⟦props * properties=[{"arg":"betaLabel","name":"betaLabel","tag":"multi-beta"}] ~"\n"⟫⟧",
       "warning": "Incomplete snippet: properties without an attribute: `betaLabel`.",
     },
     "webcomponentsfixtures-vanilla-multi-definition--dom-node": {
       "id": "webcomponentsfixtures-vanilla-multi-definition--dom-node",
       "name": "Dom Node",
       "snippet": "<multi-beta></multi-beta>",
-      "template": "<multi-beta⟦attr beta-label mode="render" ~" "⟫⟧></multi-beta>",
+      "template": "<multi-beta⟦attr beta-label mode="render" ~" "⟫⟧></multi-beta>⟦props * properties=[{"arg":"betaLabel","name":"betaLabel","tag":"multi-beta"}] ~"\n"⟫⟧",
       "warning": "Incomplete snippet: `(args) => { const el = document.createElement('multi-beta'); el.setAttribute('beta-label', String(args.betaLabel)); return el; }` could not be resolved statically.
 Incomplete snippet: properties without an attribute: `betaLabel`.",
     },

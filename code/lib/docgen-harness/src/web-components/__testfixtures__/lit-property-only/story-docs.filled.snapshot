@@ -1,5 +1,17 @@
 {
-  "ArgsDefaultRender": "<lit-property-only label="Default render &amp; &lt;changed>"></lit-property-only>",
-  "DomNode": "<lit-property-only label="Configured &amp; &lt;changed>"></lit-property-only>",
-  "LitTemplate": "<lit-property-only label="Configured &amp; &lt;changed>"></lit-property-only>",
+  "ArgsDefaultRender": "<lit-property-only label="Default render &amp; &lt;changed>"></lit-property-only>
+<script>
+  document.querySelector('lit-property-only').items = [{ name: 'Alpha & <changed>' }, { name: 'Beta & <changed>' }];
+  document.querySelector('lit-property-only').config = { dense: false, theme: 'dark & <changed>' };
+</script>",
+  "DomNode": "<lit-property-only label="Configured &amp; &lt;changed>"></lit-property-only>
+<script>
+  document.querySelector('lit-property-only').items = [{ name: 'Alpha & <changed>' }, { name: 'Beta & <changed>' }];
+  document.querySelector('lit-property-only').config = { dense: false, theme: 'dark & <changed>' };
+</script>",
+  "LitTemplate": "<lit-property-only label="Configured &amp; &lt;changed>"></lit-property-only>
+<script>
+  document.querySelector('lit-property-only').items = [{ name: 'Alpha & <changed>' }, { name: 'Beta & <changed>' }];
+  document.querySelector('lit-property-only').config = { dense: false, theme: 'dark & <changed>' };
+</script>",
 }

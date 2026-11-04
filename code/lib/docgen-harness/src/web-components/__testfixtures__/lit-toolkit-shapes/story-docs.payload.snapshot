@@ -18,18 +18,18 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "⟦guard computed⟫⟧⟦guard version⟫⟧⟦guard pressed⟫⟧⟦guard onSelect⟫⟧⟦style base-part selector="lit-toolkit-shapes::part(base)"⟫⟧⟦style active-state selector="lit-toolkit-shapes:state(active)"⟫⟧<lit-toolkit-shapes⟦attr size mode="field" ~"\n  "⟫
+      "template": "⟦style base-part selector="lit-toolkit-shapes::part(base)"⟫⟧⟦style active-state selector="lit-toolkit-shapes:state(active)"⟫⟧<lit-toolkit-shapes⟦attr size mode="field" ~"\n  "⟫
   size="small"⟧⟦attr level mode="field" ~"\n  "⟫
   level="3"⟧⟦attr tags mode="field" ~"\n  "⟫
   tags="[&quot;b&quot;]"⟧⟦attr label mode="field" ~"\n  "⟫
-  label="Default render"⟧⟦attr oldSize name="old-size" mode="field" ~"\n  "⟫⟧⟦attr target mode="field" ~"\n  "⟫⟧⟦attr when mode="field" ~"\n  "⟫⟧⟦cssattr --toolkit-color ~"\n  "⟫⟧⟦cssattr --toolkit-scale ~"\n  "⟫⟧⟦cssattr --toolkit-font ~"\n  "⟫⟧⟦cssattr --toolkit-gap ~"\n  "⟫⟧
+  label="Default render"⟧⟦attr oldSize name="old-size" mode="field" ~"\n  "⟫⟧⟦attr target mode="field" ~"\n  "⟫⟧⟦attr when mode="field" ~"\n  "⟫⟧⟦cssattr * properties=[{"arg":"--toolkit-color","property":"--toolkit-color"},{"arg":"--toolkit-scale","property":"--toolkit-scale"},{"arg":"--toolkit-font","property":"--toolkit-font"},{"arg":"--toolkit-gap","property":"--toolkit-gap"}] ~"\n  "⟫⟧
 >⟦slot default-slot name="default"⟫⟧⟦slot label-slot name="label"⟫⟧</lit-toolkit-shapes>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
     host.addEventListener('toolkit-resize', () => {});
   }
-</script>",
+</script>⟦props * properties=[{"arg":"computed","name":"computed","tag":"lit-toolkit-shapes"},{"arg":"version","name":"version","tag":"lit-toolkit-shapes"},{"arg":"pressed","name":"pressed","tag":"lit-toolkit-shapes"},{"arg":"onSelect","name":"onSelect","tag":"lit-toolkit-shapes"}] ~"\n"⟫⟧",
     },
     "webcomponentsfixtures-lit-toolkit-shapes--dom-node": {
       "id": "webcomponentsfixtures-lit-toolkit-shapes--dom-node",
@@ -46,18 +46,18 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "⟦guard computed⟫⟧⟦guard version⟫⟧⟦guard pressed⟫⟧⟦guard onSelect⟫⟧⟦style base-part selector="lit-toolkit-shapes::part(base)"⟫⟧⟦style active-state selector="lit-toolkit-shapes:state(active)"⟫⟧<lit-toolkit-shapes⟦attr size mode="field" ~"\n  "⟫
+      "template": "⟦style base-part selector="lit-toolkit-shapes::part(base)"⟫⟧⟦style active-state selector="lit-toolkit-shapes:state(active)"⟫⟧<lit-toolkit-shapes⟦attr size mode="field" ~"\n  "⟫
   size="large"⟧⟦attr level mode="field" ~"\n  "⟫
   level="2"⟧⟦attr tags mode="field" ~"\n  "⟫
   tags="[&quot;b&quot;]"⟧⟦attr label mode="field" ~"\n  "⟫
-  label="Shaped"⟧⟦attr oldSize name="old-size" mode="field" ~"\n  "⟫⟧⟦attr target mode="field" ~"\n  "⟫⟧⟦attr when mode="field" ~"\n  "⟫⟧⟦cssattr --toolkit-color ~"\n  "⟫⟧⟦cssattr --toolkit-scale ~"\n  "⟫⟧⟦cssattr --toolkit-font ~"\n  "⟫⟧⟦cssattr --toolkit-gap ~"\n  "⟫⟧
+  label="Shaped"⟧⟦attr oldSize name="old-size" mode="field" ~"\n  "⟫⟧⟦attr target mode="field" ~"\n  "⟫⟧⟦attr when mode="field" ~"\n  "⟫⟧⟦cssattr * properties=[{"arg":"--toolkit-color","property":"--toolkit-color"},{"arg":"--toolkit-scale","property":"--toolkit-scale"},{"arg":"--toolkit-font","property":"--toolkit-font"},{"arg":"--toolkit-gap","property":"--toolkit-gap"}] ~"\n  "⟫⟧
 >⟦slot default-slot name="default"⟫⟧⟦slot label-slot name="label"⟫⟧</lit-toolkit-shapes>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
     host.addEventListener('toolkit-resize', () => {});
   }
-</script>",
+</script>⟦props * properties=[{"arg":"computed","name":"computed","tag":"lit-toolkit-shapes"},{"arg":"version","name":"version","tag":"lit-toolkit-shapes"},{"arg":"pressed","name":"pressed","tag":"lit-toolkit-shapes"},{"arg":"onSelect","name":"onSelect","tag":"lit-toolkit-shapes"}] ~"\n"⟫⟧",
       "warning": "Incomplete snippet: `(args) => { const el = document.createElement('lit-toolkit-shapes'); el.setAttribute('size', String(args.size)); el.setAttribute('level', String(args.level)); el.setAttribute('label', String(args.label)); (el as HTMLElement & { tags: string[] }).tags = args.tags as string[]; el.addEventListener('toolkit-resize', args.onToolkitResize as EventListener); return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-lit-toolkit-shapes--lit-template": {

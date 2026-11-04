@@ -18,6 +18,9 @@
   <span slot="actions"><button>Go</button> & <changed></span>
 </csf-shapes>",
   "SpreadArgs": "<csf-shapes label="Shared &amp; &lt;changed>" count="3"></csf-shapes>",
-  "UnknownArg": "<csf-shapes label="Meta &amp; &lt;changed>"></csf-shapes>",
+  "UnknownArg": "<csf-shapes label="Meta &amp; &lt;changed>"></csf-shapes>
+<script>
+  document.querySelector('csf-shapes').nope = 2;
+</script>",
   "Unset": "<csf-shapes></csf-shapes>",
 }

@@ -779,7 +779,7 @@ describe('the template', () => {
     `);
     expect(snippet).toBe('<test-element label="Go">Go</test-element>');
     expect(formatTemplate(template!)).toBe(
-      '<test-element⟦attr label mode="bind" ~" "⟫ label="Go"⟧⟦bool disabled ~" "⟫⟧>⟦text label trimStart=true trimEnd=true⟫Go⟧</test-element>'
+      '<test-element⟦attr label mode="bind" ~" "⟫ label="Go"⟧⟦bool disabled ~" "⟫⟧>⟦text label⟫Go⟧</test-element>'
     );
     expect(
       fill(template, { label: 'Go', disabled: false }, { label: 'a < b', disabled: true })
@@ -799,13 +799,81 @@ describe('the template', () => {
     );
   });
 
-  it('cannot follow a property without an attribute a control sets', async () => {
-    const { template } = await firstTemplate(`
+  it('sets a property without an attribute a control changes in a script', async () => {
+    const { snippet, template } = await firstTemplate(`
       export default { title: 'Example/TestElement', component: 'test-element' };
-      export const Primary = { args: { label: 'Go' } };
+      export const Primary = { args: { label: 'Go', items: ['a'] } };
     `);
-    expect(() => fill(template, { label: 'Go' }, { items: [1, 2] })).toThrow(
-      'The snippet cannot show the current value of the `items` arg.'
+    expect(snippet).toBe('<test-element label="Go"></test-element>');
+    expect(fill(template, { label: 'Go', items: ['a'] }, {})).toBe(snippet);
+    expect(fill(template, { label: 'Go', items: ['a'] }, { items: ['a', '</script>'] })).toBe(
+      [
+        '<test-element label="Go"></test-element>',
+        '<script>',
+        "  document.querySelector('test-element').items = ['a', '<\\/script>'];",
+        '</script>',
+      ].join('\n')
+    );
+    expect(fill(template, { label: 'Go', items: ['a'] }, { items: undefined })).toBe(snippet);
+  });
+
+  it('sets a property a lit template binds without an attribute in a script', async () => {
+    const { template } = await firstTemplate(`
+      import { html } from 'lit';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { label: 'Go', data: { items: [1] }, onShapeChange: () => {} },
+        render: (args) => html\`<test-element label=\${args.label} .items=\${args.data.items} @shape-change=\${args.onShapeChange}></test-element>\`,
+      };
+    `);
+    const initialArgs = { label: 'Go', data: { items: [1] } };
+    expect(fill(template, initialArgs, { label: 'Stop', data: { items: [1, 2] } })).toBe(
+      [
+        '<test-element label="Stop"></test-element>',
+        '<script>',
+        '  {',
+        '    const host = document.currentScript.previousElementSibling;',
+        "    host.addEventListener('shape-change', () => {});",
+        '  }',
+        '</script>',
+        '<script>',
+        "  document.querySelector('test-element').items = [1, 2];",
+        '</script>',
+      ].join('\n')
+    );
+  });
+
+  it('follows a member of an arg and an arg a nested template reads', async () => {
+    const { template } = await firstTemplate(`
+      import { html } from 'lit';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { user: { name: 'Bob' }, label: 'Go' },
+        render: (args) => {
+          const badge = html\`<b>\${args.label}</b>\`;
+          return html\`<test-element label=\${args.user.name}>\${badge}</test-element>\`;
+        },
+      };
+    `);
+    const initialArgs = { user: { name: 'Bob' }, label: 'Go' };
+    expect(fill(template, initialArgs, { user: { name: 'Ann' }, label: 'Stop' })).toBe(
+      '<test-element label="Ann">\n  <b>Stop</b>\n</test-element>'
+    );
+  });
+
+  it('prints the branch of a conditional on an arg a control picks', async () => {
+    const { snippet, template } = await firstTemplate(`
+      import { html, nothing } from 'lit';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { open: true, badge: false },
+        render: (args) => html\`<test-element class="card \${args.open ? 'open' : ''}" label=\${args.open ? 'Open' : 'Closed'}>\${args.badge ? html\`<b>New</b>\` : nothing}</test-element>\`,
+      };
+    `);
+    expect(snippet).toBe('<test-element class="card open" label="Open"></test-element>');
+    const initialArgs = { open: true, badge: false };
+    expect(fill(template, initialArgs, { open: 0, badge: 'yes' })).toBe(
+      '<test-element class="card" label="Closed"><b>New</b></test-element>'
     );
   });
 

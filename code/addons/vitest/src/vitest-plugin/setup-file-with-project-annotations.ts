@@ -14,7 +14,7 @@ if (
 
 globalThis.__STORYBOOK_ADDON_VITEST_PROJECT_ANNOTATIONS_APPLIED__ = false;
 
-// Async when the preview file is loaded through the builder's `experimental_moduleLoader`
+// Async when the preview file is loaded through the builder's `experimental_moduleImporter`
 setProjectAnnotations(await getProjectAnnotations());
 
 // Later user calls would replace these annotations, so `setProjectAnnotations` refuses them from now on.

@@ -7,7 +7,7 @@ import { filename } from 'pathe/utils';
 import { dedent } from 'ts-dedent';
 
 import { toImportPath } from './utils/import-path.ts';
-import { getModuleLoader } from './utils/module-loader.ts';
+import { getModuleImporter } from './utils/module-importer.ts';
 import { processPreviewAnnotation } from './utils/process-preview-annotation.ts';
 
 /** Generates the code for the `PROJECT_ANNOTATIONS_FILE` virtual module. */
@@ -24,7 +24,7 @@ export async function generateProjectAnnotationsCode(options: Options, projectRo
     [],
     options
   );
-  const moduleLoader = await getModuleLoader(options);
+  const moduleImporter = await getModuleImporter(options);
 
   return generateProjectAnnotationsCodeFromPreviews({
     previewAnnotations,
@@ -32,7 +32,7 @@ export async function generateProjectAnnotationsCode(options: Options, projectRo
     projectRoot,
     frameworkName,
     isCsf4,
-    moduleLoader,
+    moduleImporter,
   });
 }
 
@@ -44,10 +44,10 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
   projectRoot: string;
   frameworkName: string;
   isCsf4: boolean;
-  /** A module whose `load(importPath, importFn)` loads the project's preview file. */
-  moduleLoader?: string;
+  /** A module whose `importModule(importPath, importFn)` imports the project's preview file. */
+  moduleImporter?: string;
 }) {
-  const { projectRoot, moduleLoader } = options;
+  const { projectRoot, moduleImporter } = options;
 
   const toModule = (previewAnnotation: PreviewAnnotation) => {
     const url = processPreviewAnnotation(previewAnnotation, projectRoot);
@@ -62,15 +62,15 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
   const moduleAt = (index: number, variable: string) =>
     `hmrPreviewAnnotationModules[${index}] ?? ${variable}`;
   const loadPreviewFile = ({ url, variable }: ReturnType<typeof toModule>, index: number) =>
-    moduleLoader
-      ? `await load(${JSON.stringify(toImportPath(url))}, async () => ${moduleAt(index, variable)})`
+    moduleImporter
+      ? `await importModule(${JSON.stringify(toImportPath(url))}, async () => ${moduleAt(index, variable)})`
       : moduleAt(index, variable);
-  const loaderImport = moduleLoader ? `${genImport(moduleLoader, ['load'])}\n` : '';
-  const maybeAsync = moduleLoader ? 'async ' : '';
+  const importerImport = moduleImporter ? `${genImport(moduleImporter, ['importModule'])}\n` : '';
+  const maybeAsync = moduleImporter ? 'async ' : '';
 
   if (options.isCsf4 && previewFile) {
     return dedent`
-      ${loaderImport}${previewFile.import}
+      ${importerImport}${previewFile.import}
 
       export ${maybeAsync}function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
         const preview = ${loadPreviewFile(previewFile, 0)};
@@ -96,7 +96,7 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
 
   return dedent`
     import { composeConfigs } from 'storybook/preview-api';
-    ${loaderImport}
+    ${importerImport}
     ${modules.map((module) => module.import).join('\n')}
 
     export ${maybeAsync}function getProjectAnnotations(hmrPreviewAnnotationModules = []) {

@@ -12,10 +12,10 @@ import { getUniqueImportPaths } from './utils/unique-import-paths.ts';
  * the working directory and their dynamic imports. The import is done in an asynchronous function
  * to delay loading and to allow Vite to split the code into smaller chunks. It then creates a
  * function, `importFn(path)`, which resolves a path to an import function and this is called by
- * Storybook to fetch a story dynamically when needed. With a `moduleLoader`, `importFn` asks its
- * `load(path, importFn)` for every file.
+ * Storybook to fetch a story dynamically when needed. With a `moduleImporter`, `importFn` asks its
+ * `importModule(path, importFn)` for every file.
  */
-export function generateImportFnScriptCode(index: StoryIndex, moduleLoader?: string): string {
+export function generateImportFnScriptCode(index: StoryIndex, moduleImporter?: string): string {
   const objectEntries: [path: string, importStatement: string][] = getUniqueImportPaths(index).map(
     (importPath) => {
       if (importPath.startsWith('virtual:')) {
@@ -33,17 +33,17 @@ export function generateImportFnScriptCode(index: StoryIndex, moduleLoader?: str
     }
   );
 
-  const importModule = moduleLoader
-    ? 'load(path, (path) => importers[path]())'
+  const moduleExpression = moduleImporter
+    ? 'importModule(path, (path) => importers[path]())'
     : 'importers[path]()';
 
   const code = dedent`
     const importers = ${genObjectFromRawEntries(objectEntries)};
 
     export async function importFn(path) {
-      return await ${importModule};
+      return await ${moduleExpression};
     }
   `;
 
-  return moduleLoader ? `${genImport(moduleLoader, ['load'])}\n\n${code}` : code;
+  return moduleImporter ? `${genImport(moduleImporter, ['importModule'])}\n\n${code}` : code;
 }

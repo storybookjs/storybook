@@ -102,7 +102,7 @@ describe('generateImportFnScriptCode', () => {
   });
 });
 
-describe('generateImportFnScriptCode with a module loader', () => {
+describe('generateImportFnScriptCode with a module importer', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -121,32 +121,32 @@ describe('generateImportFnScriptCode with a module loader', () => {
     },
   };
 
-  it('imports every file through the load function of the loader', async () => {
+  it('imports every file through the importModule function of the importer', async () => {
     vi.spyOn(process, 'cwd').mockReturnValue('/absolute/path');
 
-    expect(generateImportFnScriptCode(index, '/absolute/loader.js')).toMatchInlineSnapshot(`
-      "import { load } from "/absolute/loader.js";
+    expect(generateImportFnScriptCode(index, '/absolute/importer.js')).toMatchInlineSnapshot(`
+      "import { importModule } from "/absolute/importer.js";
 
       const importers = {
         "./Button.stories.js": () => import("/absolute/path/Button.stories.js")
       };
 
       export async function importFn(path) {
-        return await load(path, (path) => importers[path]());
+        return await importModule(path, (path) => importers[path]());
       }"
     `);
   });
 
-  it('importFn returns what load returns, asked with the path of the index', async () => {
-    const dir = await realpath(await mkdtemp(join(tmpdir(), 'module-loader-')));
+  it('importFn returns what importModule returns, asked with the path of the index', async () => {
+    const dir = await realpath(await mkdtemp(join(tmpdir(), 'module-importer-')));
     onTestFinished(() => rm(dir, { recursive: true }));
     vi.spyOn(process, 'cwd').mockReturnValue(dir);
     await writeFile(join(dir, 'Button.stories.js'), 'export const Primary = {};');
     await writeFile(
-      join(dir, 'loader.js'),
+      join(dir, 'importer.js'),
       dedent`
         export const paths = [];
-        export async function load(importPath, importFn) {
+        export async function importModule(importPath, importFn) {
           paths.push(importPath);
           return { ...(await importFn(importPath)), loaded: true };
         }
@@ -154,11 +154,11 @@ describe('generateImportFnScriptCode with a module loader', () => {
     );
     await writeFile(
       join(dir, 'stories.js'),
-      generateImportFnScriptCode(index, join(dir, 'loader.js'))
+      generateImportFnScriptCode(index, join(dir, 'importer.js'))
     );
 
     const { importFn } = await import(/* @vite-ignore */ join(dir, 'stories.js'));
-    const { paths } = await import(/* @vite-ignore */ join(dir, 'loader.js'));
+    const { paths } = await import(/* @vite-ignore */ join(dir, 'importer.js'));
 
     expect(await importFn('./Button.stories.js')).toEqual({
       Primary: {},
@@ -167,14 +167,14 @@ describe('generateImportFnScriptCode with a module loader', () => {
     expect(paths).toEqual(['./Button.stories.js']);
   });
 
-  it('load can return a module for a path the build never saw', async () => {
-    const dir = await realpath(await mkdtemp(join(tmpdir(), 'module-loader-')));
+  it('importModule can return a module for a path the build never saw', async () => {
+    const dir = await realpath(await mkdtemp(join(tmpdir(), 'module-importer-')));
     onTestFinished(() => rm(dir, { recursive: true }));
     vi.spyOn(process, 'cwd').mockReturnValue(dir);
     await writeFile(
-      join(dir, 'loader.js'),
+      join(dir, 'importer.js'),
       dedent`
-        export async function load(importPath, importFn) {
+        export async function importModule(importPath, importFn) {
           if (importPath.endsWith('.stories.json')) {
             return { default: { title: 'Runtime' }, Story: {} };
           }
@@ -184,7 +184,7 @@ describe('generateImportFnScriptCode with a module loader', () => {
     );
     await writeFile(
       join(dir, 'stories.js'),
-      generateImportFnScriptCode({ v: 5, entries: {} }, join(dir, 'loader.js'))
+      generateImportFnScriptCode({ v: 5, entries: {} }, join(dir, 'importer.js'))
     );
 
     const { importFn } = await import(/* @vite-ignore */ join(dir, 'stories.js'));

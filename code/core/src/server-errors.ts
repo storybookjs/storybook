@@ -1127,16 +1127,16 @@ export class ViteModuleGraphSubscriptionError extends StorybookError {
   }
 }
 
-export class ViteModuleLoaderPathError extends StorybookError {
-  constructor(public data: { moduleLoader: string }) {
+export class ViteModuleImporterPathError extends StorybookError {
+  constructor(public data: { moduleImporter: string }) {
     super({
-      name: 'ViteModuleLoaderPathError',
+      name: 'ViteModuleImporterPathError',
       category: Category.BUILDER_VITE,
       code: 3,
       message: dedent`
-        \`experimental_moduleLoader\` must be an absolute path or a package specifier, received: ${data.moduleLoader}
+        \`experimental_moduleImporter\` must be an absolute path or a package specifier, received: ${data.moduleImporter}
 
-        The generated preview modules import it, so a relative path would not resolve against your config. Use, for example, \`fileURLToPath(import.meta.resolve('./loader.ts'))\`.`,
+        The generated preview modules import it, so a relative path would not resolve against your config. Use, for example, \`fileURLToPath(import.meta.resolve('./importer.ts'))\`.`,
     });
   }
 }

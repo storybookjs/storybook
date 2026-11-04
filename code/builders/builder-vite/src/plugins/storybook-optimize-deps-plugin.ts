@@ -6,7 +6,7 @@ import type { Options, PreviewAnnotation, StoryIndex } from 'storybook/internal/
 import { isAbsolute, resolve } from 'pathe';
 import { type Plugin } from 'vite';
 
-import { getModuleLoader } from '../utils/module-loader.ts';
+import { getModuleImporter } from '../utils/module-importer.ts';
 import { processPreviewAnnotation } from '../utils/process-preview-annotation.ts';
 import { getUniqueImportPaths } from '../utils/unique-import-paths.ts';
 
@@ -46,12 +46,12 @@ export function storybookOptimizeDepsPlugin(options: Options): Plugin {
 
       const projectRoot = resolve(options.configDir, '..');
 
-      const [extraOptimizeDeps, storyIndexGenerator, previewAnnotations, moduleLoader] =
+      const [extraOptimizeDeps, storyIndexGenerator, previewAnnotations, moduleImporter] =
         await Promise.all([
           options.presets.apply<string[]>('optimizeViteDeps', []),
           options.presets.apply<StoryIndexGenerator>('storyIndexGenerator'),
           options.presets.apply<PreviewAnnotation[]>('previewAnnotations', [], options),
-          getModuleLoader(options),
+          getModuleImporter(options),
         ]);
 
       const index: StoryIndex = await storyIndexGenerator.getIndex();
@@ -92,8 +92,10 @@ export function storybookOptimizeDepsPlugin(options: Options): Plugin {
             ...mockRedirectIncludeEntries,
             ...getUniqueImportPaths(index).map(escapeGlobPath),
             ...previewAnnotationEntries.map(escapeGlobPath),
-            // The module loader's own dependencies, when it is a file of the project
-            ...(moduleLoader && isAbsolute(moduleLoader) ? [escapeGlobPath(moduleLoader)] : []),
+            // The module importer's own dependencies, when it is a file of the project
+            ...(moduleImporter && isAbsolute(moduleImporter)
+              ? [escapeGlobPath(moduleImporter)]
+              : []),
           ],
           // Extra deps explicitly included by Storybook presets (e.g. framework-specific packages).
           include: [...extraOptimizeDeps, ...(config.optimizeDeps?.include ?? [])],

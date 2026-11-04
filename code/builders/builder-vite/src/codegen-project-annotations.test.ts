@@ -20,7 +20,7 @@ afterEach(() => {
 });
 
 describe('generateProjectAnnotationsCodeFromPreviews', () => {
-  it('imports a CSF Next preview file as it is without a module loader', () => {
+  it('imports a CSF Next preview file as it is without a module importer', () => {
     expect(generateProjectAnnotationsCodeFromPreviews({ ...options, isCsf4: true }))
       .toMatchInlineSnapshot(`
       "import * as preview_2178760794 from "/project/.storybook/preview.ts";
@@ -41,7 +41,7 @@ describe('generateProjectAnnotationsCodeFromPreviews', () => {
     `);
   });
 
-  it('imports a CSF 3 preview file as it is without a module loader', () => {
+  it('imports a CSF 3 preview file as it is without a module importer', () => {
     expect(generateProjectAnnotationsCodeFromPreviews({ ...options, isCsf4: false }))
       .toMatchInlineSnapshot(`
       "import { composeConfigs } from 'storybook/preview-api';
@@ -69,22 +69,22 @@ describe('generateProjectAnnotationsCodeFromPreviews', () => {
   });
 });
 
-describe('generateProjectAnnotationsCodeFromPreviews with a module loader', () => {
-  it('loads a CSF Next preview file through the load function of the loader', () => {
+describe('generateProjectAnnotationsCodeFromPreviews with a module importer', () => {
+  it('loads a CSF Next preview file through the importModule function of the importer', () => {
     vi.spyOn(process, 'cwd').mockReturnValue('/project');
 
     const code = generateProjectAnnotationsCodeFromPreviews({
       ...options,
       isCsf4: true,
-      moduleLoader: '/project/loader.js',
+      moduleImporter: '/project/importer.js',
     });
 
     expect(code).toMatchInlineSnapshot(`
-      "import { load } from "/project/loader.js";
+      "import { importModule } from "/project/importer.js";
       import * as preview_2178760794 from "/project/.storybook/preview.ts";
 
       export async function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
-        const preview = await load("./.storybook/preview.ts", async () => hmrPreviewAnnotationModules[0] ?? preview_2178760794);
+        const preview = await importModule("./.storybook/preview.ts", async () => hmrPreviewAnnotationModules[0] ?? preview_2178760794);
         return preview.default.composed;
       }
 
@@ -99,18 +99,18 @@ describe('generateProjectAnnotationsCodeFromPreviews with a module loader', () =
     `);
   });
 
-  it('loads a CSF 3 preview file through the loader, and no other preview annotation', () => {
+  it('loads a CSF 3 preview file through the importer, and no other preview annotation', () => {
     vi.spyOn(process, 'cwd').mockReturnValue('/project');
 
     expect(
       generateProjectAnnotationsCodeFromPreviews({
         ...options,
         isCsf4: false,
-        moduleLoader: '/project/loader.js',
+        moduleImporter: '/project/importer.js',
       })
     ).toMatchInlineSnapshot(`
       "import { composeConfigs } from 'storybook/preview-api';
-      import { load } from "/project/loader.js";
+      import { importModule } from "/project/importer.js";
 
       import * as preview_3900539004 from "/project/addon/preview.js";
       import * as preview_2178760794 from "/project/.storybook/preview.ts";
@@ -118,7 +118,7 @@ describe('generateProjectAnnotationsCodeFromPreviews with a module loader', () =
       export async function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
         const configs = [
           hmrPreviewAnnotationModules[0] ?? preview_3900539004,
-          await load("./.storybook/preview.ts", async () => hmrPreviewAnnotationModules[1] ?? preview_2178760794)
+          await importModule("./.storybook/preview.ts", async () => hmrPreviewAnnotationModules[1] ?? preview_2178760794)
         ];
         return composeConfigs(configs);
       }
@@ -134,26 +134,26 @@ describe('generateProjectAnnotationsCodeFromPreviews with a module loader', () =
     `);
   });
 
-  it('loads no other preview annotation through the loader when the project has no preview file', () => {
+  it('loads no other preview annotation through the importer when the project has no preview file', () => {
     const code = generateProjectAnnotationsCodeFromPreviews({
       ...options,
       previewFile: undefined,
       isCsf4: false,
-      moduleLoader: '/project/loader.js',
+      moduleImporter: '/project/importer.js',
     });
 
-    expect(code).not.toContain('await load(');
+    expect(code).not.toContain('await importModule(');
   });
 
-  it('getProjectAnnotations reads the module load returns, also for an HMR module', async () => {
-    const dir = await realpath(await mkdtemp(join(tmpdir(), 'module-loader-')));
+  it('getProjectAnnotations reads the module importModule returns, also for an HMR module', async () => {
+    const dir = await realpath(await mkdtemp(join(tmpdir(), 'module-importer-')));
     onTestFinished(() => rm(dir, { recursive: true }));
     vi.spyOn(process, 'cwd').mockReturnValue(dir);
     await writeFile(join(dir, 'preview.js'), 'export default { composed: { from: "file" } };');
     await writeFile(
-      join(dir, 'loader.js'),
+      join(dir, 'importer.js'),
       dedent`
-        export async function load(importPath, importFn) {
+        export async function importModule(importPath, importFn) {
           const preview = await importFn(importPath);
           return { default: { composed: { ...preview.default.composed, importPath } } };
         }
@@ -167,7 +167,7 @@ describe('generateProjectAnnotationsCodeFromPreviews with a module loader', () =
         projectRoot: dir,
         frameworkName: 'frameworkName',
         isCsf4: true,
-        moduleLoader: join(dir, 'loader.js'),
+        moduleImporter: join(dir, 'importer.js'),
       })
     );
 

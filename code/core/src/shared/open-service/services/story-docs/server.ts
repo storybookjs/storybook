@@ -36,26 +36,21 @@ export type RegisterStoryDocsServiceOptions = {
 
 type FileResult = PromiseSettledResult<ProvidedStoryDocsPayload | undefined>;
 
-// A template the preview can fill: it has a template's shape, and it prints the snippet while no arg
-// changes.
-function withFillableTemplate(story: ProvidedStoryDoc): ProvidedStoryDoc {
+// Drops a template the preview cannot fill: one without a template's shape, or one that does not
+// print the story's snippet while no arg changes.
+function withoutUnfillableTemplate(story: ProvidedStoryDoc): ProvidedStoryDoc {
   const { template, ...doc } = story;
-  if (
+  const fillable =
     template === undefined ||
-    (story.snippet !== undefined &&
-      isSnippetTemplate(template) &&
-      stripHoles(template) === story.snippet)
-  ) {
-    return story;
-  }
-  return doc;
+    (isSnippetTemplate(template) && stripHoles(template) === story.snippet);
+  return fillable ? story : doc;
 }
 
-const withFillableTemplates = (payload: ProvidedStoryDocsPayload | undefined) =>
+const withoutUnfillableTemplates = (payload: ProvidedStoryDocsPayload | undefined) =>
   payload && {
     ...payload,
     stories: Object.fromEntries(
-      Object.entries(payload.stories).map(([id, story]) => [id, withFillableTemplate(story)])
+      Object.entries(payload.stories).map(([id, story]) => [id, withoutUnfillableTemplate(story)])
     ),
   };
 
@@ -82,12 +77,12 @@ function withStoriesFromEveryFile(provider: StoryDocsProvider) {
       ...new Map(storyEntries.map((storyEntry) => [storyEntry.importPath, storyEntry])).values(),
     ];
     if (fileEntries.length < 2) {
-      return withFillableTemplates(await provider({ entry }));
+      return withoutUnfillableTemplates(await provider({ entry }));
     }
 
     const results = await Promise.allSettled(
       fileEntries.map(async (fileEntry) =>
-        withFillableTemplates(await provider({ entry: fileEntry }))
+        withoutUnfillableTemplates(await provider({ entry: fileEntry }))
       )
     );
     const resultByFile = Object.fromEntries(

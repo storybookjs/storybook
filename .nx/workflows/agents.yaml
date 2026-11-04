@@ -77,9 +77,9 @@ launch-templates:
     init-steps: *linux-init-steps
     env: *common-env-vars
   linux-browsers-js:
-    # 4 vCPU, the closest class to the medium+/large executors CircleCI runs sandbox jobs on, so
-    # the two CI systems compare like for like. Tasks run one at a time per worker.
-    resource-class: 'docker_linux_amd64/large'
+    # extra_large (8 vCPU): on large (4 vCPU) a worker died mid-run and NX Cloud cancelled the
+    # whole pipeline. Tasks run one at a time per worker.
+    resource-class: 'docker_linux_amd64/extra_large'
     image: 'ubuntu22.04-node20.19-v2'
     init-steps: *linux-browsers-init-steps
     env: *common-env-vars

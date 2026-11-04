@@ -451,22 +451,47 @@ describe('printTemplate template', () => {
     );
   });
 
-  it.each([
-    ["{ label: 'Go' }", { label: 'Go' }],
-    ['{}', {}],
-  ])(
-    'cannot follow the arg an attribute names that reads other args before a spread of %s',
-    (source, initialArgs) => {
-      const code = '<Panel\n  title={args.label}\n  {...args}\n/>';
-      const written = template(code, source);
-      expect(fill(written, initialArgs, { label: 'Stop' })).toBe(
-        '<Panel\n  title="Stop"\n  label="Stop"\n/>'
-      );
-      expect(() => fill(written, initialArgs, { ...initialArgs, title: 'Hi' })).toThrow(
-        'The snippet cannot show the current value of the `title` arg.'
-      );
-    }
-  );
+  it('prints an attribute that reads another arg as the spread writes over it once set', () => {
+    const code = '<Panel\n  title={args.label}\n  {...args}\n/>';
+    const written = template(code, "{ label: 'Go' }");
+    const initialArgs = { label: 'Go' };
+    expect(fill(written, initialArgs, { label: 'Stop' })).toBe(
+      '<Panel\n  title="Stop"\n  label="Stop"\n/>'
+    );
+    expect(fill(written, initialArgs, { label: 'Go', title: 'Hi' })).toBe(
+      '<Panel\n  title="Hi"\n  label="Go"\n/>'
+    );
+    expect(fill(written, initialArgs, { label: 'Stop', title: 'Hi' })).toBe(
+      '<Panel\n  title="Hi"\n  label="Stop"\n/>'
+    );
+    expect(fill(written, initialArgs, { label: 'Go', size: 'sm' })).toBe(
+      '<Panel\n  title="Go"\n  label="Go" size="sm"\n/>'
+    );
+    const unset = template(code);
+    expect(fill(unset, {}, { title: 'Hi' })).toBe('<Panel\n  title="Hi"\n/>');
+    expect(fill(unset, {}, { size: 'sm' })).toBe('<Panel\n  title={args.label}\n  size="sm"\n/>');
+    const member = template(
+      '<Card title={args.user.name} {...args} />',
+      "{ user: { name: 'Jane' } }"
+    );
+    const jane = { user: { name: 'Jane' } };
+    expect(fill(member, jane, { user: { name: 'John' } })).toBe(
+      '<Card title="John" user={{ name: "John" }} />'
+    );
+    expect(fill(member, jane, { ...jane, title: 'Hi' })).toBe(
+      '<Card title="Hi" user={{ name: \'Jane\' }} />'
+    );
+  });
+
+  it('cannot follow the arg an attribute names that reads other args in code before a spread', () => {
+    const written = template('<Panel title={args.label + "!"} {...args} />', "{ label: 'Go' }");
+    expect(fill(written, { label: 'Go' }, { label: 'Stop' })).toBe(
+      '<Panel title={"Stop" + "!"} label="Stop" />'
+    );
+    expect(() => fill(written, { label: 'Go' }, { label: 'Go', title: 'Hi' })).toThrow(
+      'The snippet cannot show the current value of the `title` arg.'
+    );
+  });
 
   it('follows the reads of an attribute before a spread of the rest that leaves out its arg', () => {
     const written = template('<Button label={label + "!"} {...rest} />', "{ size: 'sm' }", {

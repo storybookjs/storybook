@@ -18,6 +18,7 @@ import { walk } from 'zimmerframe';
 import {
   type PropValue,
   type SvelteHolePlace,
+  type WholeRead,
   type WholeReadPlace,
   printAccessors,
   printProp,
@@ -46,8 +47,9 @@ interface Reads {
 
 type Mark = HoleMarks<SvelteHolePlace>['mark'];
 
-// An edit of the snippet, with `marked`: its `value` with each place an arg prints marked as a hole.
-type MarkedEdit = Edit & { marked?: string };
+// An edit of the snippet, with `marked`: its `value` with each place an arg prints marked as a hole,
+// and the `read` of an arg it prints, where it is one whole read.
+type MarkedEdit = Edit & { marked?: string; read?: WholeRead };
 
 // Write a story's args into its markup: spread `{...args}` into attributes, and replace each
 // `args.x` read with the source of the arg value. The template is the same markup with each place
@@ -131,7 +133,9 @@ export function printTemplate({
         );
         const from = edits.length;
         next();
-        if (readArgs.some((arg) => arg !== node.name)) {
+        const own = readArgs.every((arg) => arg === node.name);
+        const [read, ...more] = edits.slice(from).map((edit) => edit.read);
+        if (!own && (read?.kind !== 'attrvalue' || more.length)) {
           // Its reads follow their args, but it cannot also follow the arg it names.
           edits.push({
             start: range.end,
@@ -141,7 +145,8 @@ export function printTemplate({
           });
           return;
         }
-        // It reads no arg but its own, so it prints as written until the spread writes over it.
+        // It prints as written until the spread writes over it, or, as `name={args.x}`, the arg it
+        // reads changes.
         const value = applyEdits(
           written(range),
           edits.splice(from).map((edit) => ({
@@ -153,7 +158,13 @@ export function printTemplate({
         edits.push({
           ...range,
           value,
-          marked: mark({ kind: 'spreadattr', arg: node.name }, value),
+          marked: mark(
+            own
+              ? { kind: 'spreadattr', arg: node.name }
+              : // `printTemplate` sets `written` to the hole's text.
+                { kind: 'overridden', spread: true, name: node.name, read: read!, written: '' },
+            value
+          ),
         });
       },
       SpreadAttribute(node, { path, next }) {
@@ -253,6 +264,7 @@ export function printTemplate({
           ...place,
           value,
           marked: mark({ ...wholeRead, arg }, value),
+          read: { ...wholeRead, arg },
         });
       },
       _(node, { next }) {
@@ -296,7 +308,14 @@ export function printTemplate({
   // The marks avoid the characters of the snippet, not of `code`: `'\uE000'` prints U+E000.
   const marks = createHoleMarks<SvelteHolePlace>([snippet]);
   const marked = collect(marks.mark).map((edit) => ({ ...edit, value: edit.marked ?? edit.value }));
-  const template = marks.toTemplate(applyEdits(code, marked));
+  const template: SnippetTemplate<SvelteHolePlace> | undefined = marks
+    .toTemplate(applyEdits(code, marked))
+    ?.map((segment) =>
+      // While no arg it follows changes, an `overridden` hole prints the attribute as written.
+      typeof segment !== 'string' && segment.kind === 'overridden'
+        ? { ...segment, written: segment.text }
+        : segment
+    );
   return {
     snippet,
     // An arg a control clears leaves no gap in the spread.

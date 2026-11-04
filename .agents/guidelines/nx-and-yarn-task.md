@@ -37,6 +37,28 @@ Key points:
 - `compile` hashes the `OS` environment variable, so Windows and POSIX builds never restore each other's `dist`
 - To force a rebuild, pass `--skip-nx-cache` (or `yarn task compile --skip-cache`). Do not bump a field in `nx.json` to bust the cache: that invalidates every task in the workspace
 
+## Following an NX Cloud pipeline
+
+`scripts/nx-cloud-status.ts` reads a pipeline from the NX Cloud Public API with your `npx nx login`, so you do not need the NX Cloud web page. It needs no dependencies installed.
+
+```bash
+# Report the newest pipeline of a pull request (or a branch, a CIPE id, a cloud.nx.app/cipes link,
+# or the NX Cloud link of the pull request's `nx: normal` status)
+node scripts/nx-cloud-status.ts 37181
+
+# Follow the pipeline of the commit you just pushed: one line per change, then the full report
+node scripts/nx-cloud-status.ts 37181 --watch --sha HEAD
+```
+
+- The report gives the pipeline status, why it was canceled, each failed task with the lines that name the failure and the end of its log, and the worker steps that failed or timed out (for example `Restore Node Modules Cache`, or `no_output_timeout after 600s`), with the end of a worker's log. Each log is saved as a text file; the report prints its path
+- Agents run `--watch` as a background monitor, so each printed line wakes them. It exits with the report once the pipeline is done: 0 when it succeeded, 1 when it failed or was canceled. It exits 2 on an error it cannot retry, or when no pipeline started within 15 minutes (is the pull request labeled `ci:normal`?)
+- Pass `--sha` after a push. Without it, the watch follows the newest pipeline, which is the previous one until NX Cloud registers the push. Without a target, the script follows the current branch at `HEAD`
+- A one-off report on a pipeline that still runs exits 3
+- Live, NX Cloud shows the pipeline status and each `nx` command once it finishes. Our pipeline runs one `nx run-many`, so failed tasks show when it ends. Worker details (steps, timeouts, restarts) can follow minutes after the pipeline ends; the watch waits up to 10 minutes for them
+- A report costs up to about 30 requests of the Public API quota, which the whole organization shares (60 per minute on the Team plan). A watch costs a few per poll, every 30 seconds by default
+- The `nx: normal` and `nx run <task>` commit statuses from `.github/workflows/nx.yml` still say on the pull request whether the run passed; use the script for why
+- A workspace token in `NX_CLOUD_ACCESS_TOKEN` overrides your login in `nx-cloud api`. When NX Cloud rejects that token, the script retries with your login
+
 ## Environment Variables
 
 | Variable                      | Purpose                                         |

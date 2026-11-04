@@ -1,8 +1,6 @@
 import type { ComponentProps } from 'react';
 import React, { useContext } from 'react';
 
-import { deprecate } from 'storybook/internal/client-logger';
-
 import { CrossIcon } from '@storybook/icons';
 
 import { Heading } from 'react-aria-components/Heading';
@@ -200,25 +198,6 @@ export const Close = ({ asChild, children, onClick, ...props }: CloseProps) => {
     >
       <CrossIcon />
     </Button>
-  );
-};
-
-export const Dialog = {
-  Close: () => {
-    deprecate('Modal.Dialog.Close is deprecated, please use Modal.Close instead.');
-    return <Close data-deprecated="Modal.Dialog.Close" />;
-  },
-};
-
-export const CloseButton = ({ ariaLabel, ...props }: React.ComponentProps<typeof Button>) => {
-  deprecate('Modal.CloseButton is deprecated, please use Modal.Close instead.');
-
-  return (
-    <Close asChild>
-      <Button ariaLabel={ariaLabel || 'Close'} data-deprecated="Modal.CloseButton" {...props}>
-        <CrossIcon />
-      </Button>
-    </Close>
   );
 };
 

@@ -329,6 +329,18 @@ describe('template', () => {
     );
   });
 
+  it('gives a prop before the args binding that the snippet leaves out the space before it', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { label: 'Hi', title: undefined },
+  render: (args) => ({ components: { MyButton }, setup: () => ({ args }), template: \`<MyButton :title="args.title" v-bind="args" />\` }),
+};
+`);
+    expect(filled(story, { label: 'Hi', title: undefined }, { title: 'Top' })).toContain(
+      '<MyButton title="Top" label="Hi" />'
+    );
+  });
+
   it('follows a class an `h()` spread of the args writes over, as JavaScript does', async () => {
     const story = await primaryStory(`
 export const Primary = {

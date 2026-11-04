@@ -646,7 +646,13 @@ function boundProp(
   return {
     start,
     end,
-    text: marked(state.ctx, { kind: 'attr', arg: by, ...(name !== by && { name }) }, text),
+    // A prop the snippet leaves out takes the space before it once a control sets it.
+    text: marked(
+      state.ctx,
+      { kind: 'attr', arg: by, ...(name !== by && { name }) },
+      text,
+      text ? undefined : ' '
+    ),
   };
 }
 

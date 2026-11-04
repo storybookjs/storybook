@@ -10,6 +10,9 @@ snippet to the manager Code panel and the docs blocks via `SNIPPET_RENDERED`, re
 
 ## Live snippets
 
+The goal: after you change a control, the snippet shows code you can copy into your project, and
+it reads like code you would write. It does not have to be perfect; it has to be logical.
+
 A story's `snippet` is static: it shows the args written in the story file, and it is what agents
 and the components manifest read. So that the snippet follows the controls with `docgenServer` on,
 a provider also emits a `template`: the same snippet split into code and holes, each hole a place an

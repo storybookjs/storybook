@@ -33,10 +33,15 @@ import {
   renderArgsBindingExpansion,
   renderBoundArgAttribute,
   renderPreparedSfcSnippet,
-  wrapSlotContent,
+  sharesWrittenConst,
   type RenderContext,
 } from '../../shared/render-primitives.ts';
-import { expressionCode, fitsBraces, interpolatedText, operand } from '../../../snippet-values.ts';
+import {
+  expressionCode,
+  interpolatedText,
+  operand,
+  wrapSlotContent,
+} from '../../../snippet-values.ts';
 import { renderSlotArgContent } from './render-slot-content.ts';
 
 export interface TemplateRenderConfig {
@@ -116,6 +121,8 @@ interface ElementContext {
   storyTag: boolean;
   /** Wrapped slot children waiting to be spliced into the element. */
   slotChildren: string[];
+  // The story component's slots the story leaves unset, which a control can set as its children.
+  unsetSlots: string[];
 }
 
 interface ArgsExpansionPlan {
@@ -276,7 +283,8 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
     let text = statement.source;
     for (const read of [...statement.argsReads].sort((a, b) => b.start - a.start)) {
       const arg = state.argsByName.get(read.name);
-      const inline = !arg || arg.plan.kind === 'inline';
+      const inline =
+        !arg || arg.plan.kind === 'inline' || sharesWrittenConst(arg.name, arg.value, state.ctx);
       const rendered = arg
         ? arg.role === 'prop'
           ? arg.plan.kind === 'inline'
@@ -367,13 +375,7 @@ function transformInterpolation(
   const arg = state.argsByName.get(argName);
   const start = node.loc.start.offset;
   const end = node.loc.end.offset;
-  // A value edge touching an author '{' would concatenate into a new '{{', which the preview
-  // checks a value it prints there for.
-  const braces = {
-    ...(state.template[start - 1] === '{' && { braceBefore: true }),
-    ...(state.template[end] === '{' && { braceAfter: true }),
-  };
-  const hole = { kind: 'text', ...braces, arg: argName } as const;
+  const hole = { kind: 'text', arg: argName } as const;
   if (!arg && state.unsetArgs.has(argName)) {
     state.edits.push({ start, end, text: marked(state.ctx, hole, '') });
     return true;
@@ -384,9 +386,13 @@ function transformInterpolation(
 
   // Runtime interpolation renders escaped text, so markup and mustache characters in the value
   // are entity-escaped to decode back to the same text when the snippet re-parses.
-  const value = snippetValueOf(arg.value);
-  const text = interpolatedText(value);
-  if (text === undefined || !fitsBraces(text, braces)) {
+  const text = interpolatedText(snippetValueOf(arg.value));
+  // A value edge touching an author '{' would concatenate into a new '{{'.
+  if (
+    text === undefined ||
+    (text.startsWith('{') && state.template[start - 1] === '{') ||
+    (text.endsWith('{') && state.template[end] === '{')
+  ) {
     return false;
   }
 
@@ -410,6 +416,7 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
   const element: ElementContext = {
     storyTag: node.tag === state.componentName,
     slotChildren: [],
+    unsetSlots: [],
   };
   const attributesByName = attributePropsByName(node);
   const plan = planArgsBindingExpansion(node, attributesByName, state);
@@ -430,17 +437,12 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
       }
       continue;
     }
-    // An attribute written before the args binding is the binding's arg once a control sets it.
-    if (
-      plan.directive &&
-      prop.type === NodeTypes.ATTRIBUTE &&
-      prop.loc.start.offset < plan.directive.loc.start.offset &&
-      prop.name !== 'class' &&
-      prop.name !== 'style'
-    ) {
+    // A prop written before the args binding is the binding's arg once a control sets it.
+    const overridden = plan.directive && overriddenProp(prop, plan.directive);
+    if (overridden) {
       const start = prop.loc.start.offset;
       const end = prop.loc.end.offset;
-      const hole = attributeHole(prop.name, camelCase(prop.name));
+      const hole = attributeHole(overridden, camelCase(overridden));
       state.edits.push({
         start,
         end,
@@ -456,17 +458,28 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
     }
   }
 
+  // The slots a control sets join those the story sets, or open the tag if it closes itself.
+  const unsetSlots = (tag?: string) =>
+    marked(
+      state.ctx,
+      { kind: 'slots', slots: element.unsetSlots, indent: '', ...(tag && { tag }), spread: true },
+      tag ? ' />' : ''
+    );
   if (element.slotChildren.length > 0) {
     // Slot children joining an element that already renders its own content would reorder or
     // duplicate what the story shows, so only an empty element takes them.
     if (hasNonWhitespaceChildren(node)) {
       return false;
     }
-    const edit = slotChildrenEdit(node, element.slotChildren, state.template);
+    const after = element.unsetSlots.length > 0 ? unsetSlots() : '';
+    const edit = slotChildrenEdit(node, element.slotChildren, after, state.template);
     if (!edit) {
       return false;
     }
     state.edits.push(edit);
+  } else if (node.isSelfClosing && element.unsetSlots.length > 0) {
+    const start = blankRunStart(state.template, node.loc.end.offset - 2);
+    state.edits.push({ start, end: node.loc.end.offset, text: unsetSlots(node.tag) });
   }
 
   return node.children.every((child) => transformNode(child, state));
@@ -544,35 +557,71 @@ function expandArgsBinding(
   }
 
   element.slotChildren.push(...rendered.slotChildren);
+  if (element.storyTag) {
+    element.unsetSlots = [...state.slots].filter(
+      (slot) => !surviving.some((arg) => arg.name === slot)
+    );
+  }
   // The args a control sets go after the args the story writes, but those the element prints
-  // itself and its slots. A binding or a `class` or `style` written before the args binding
-  // cannot follow the arg that sets it, so it is a guard.
-  const printed = [
-    ...[...attributesByName.keys()].flatMap(spellings),
-    ...surviving.map((arg) => arg.name),
-    ...state.slots,
-  ];
-  const guards = [...attributesByName.entries()].flatMap(([name, props]) =>
+  // itself and its slots. Vue merges a `class` or `style` the element writes with the arg's, so
+  // that one is bound. A prop the element binds before the args binding to code that reads other
+  // args, or a `class` or `style` it binds, cannot follow the arg that sets it, so it is a guard.
+  const written = [...attributesByName.entries()];
+  const merge = written
+    .filter(
+      ([name, props]) => isMerged(name) && props.every((prop) => prop.type === NodeTypes.ATTRIBUTE)
+    )
+    .map(([name]) => name);
+  const guards = written.flatMap(([name, props]) =>
     props.some(
       (prop) =>
-        prop.loc.start.offset < directive.loc.start.offset &&
+        prop.type === NodeTypes.DIRECTIVE &&
+        prop.name === 'bind' &&
         !removed.has(prop) &&
-        (prop.type === NodeTypes.DIRECTIVE
-          ? prop.name === 'bind'
-          : prop.name === 'class' || prop.name === 'style')
+        (isMerged(name) || (prop.loc.start.offset < directive.loc.start.offset && readsArgs(prop)))
     )
       ? [marked(state.ctx, { kind: 'guard', arg: camelCase(name) }, '')]
       : []
   );
+  const printed = [
+    ...written.flatMap(([name]) => (merge.includes(name) ? [] : spellings(name))),
+    ...surviving.map((arg) => arg.name),
+    ...state.slots,
+  ];
   const added = marked(
     state.ctx,
-    { kind: 'props', except: [...new Set(printed)], spread: true },
+    {
+      kind: 'props',
+      except: [...new Set(printed)],
+      ...(merge.length > 0 && { merge }),
+      spread: true,
+    },
     '',
     ' '
   );
   const edit = replacementFor(directive, rendered.attributes.join(' '), state.template);
   state.edits.push({ ...edit, text: edit.text + guards.join('') + added });
   return true;
+}
+
+// Vue merges a `class` or `style` from every source.
+const isMerged = (name: string) => name === 'class' || name === 'style';
+
+const readsArgs = (prop: DirectiveNode) =>
+  prop.exp?.type === NodeTypes.SIMPLE_EXPRESSION && valueReferencesArgs(prop.exp.content);
+
+// The prop an attribute, or a binding of code that reads no args, sets before the args binding,
+// which the binding sets once a control sets its arg.
+function overriddenProp(prop: ElementProp, directive: DirectiveNode): string | undefined {
+  const name =
+    prop.type === NodeTypes.ATTRIBUTE
+      ? prop.name
+      : prop.name === 'bind' && !readsArgs(prop)
+        ? staticDirectiveArg(prop)
+        : undefined;
+  return name && !isMerged(name) && prop.loc.start.offset < directive.loc.start.offset
+    ? name
+    : undefined;
 }
 
 const camelCase = (name: string) =>
@@ -962,7 +1011,10 @@ function replacementForArgsReference(
     return undefined;
   }
 
-  return { text, inline: arg.plan.kind === 'inline' };
+  return {
+    text,
+    inline: arg.plan.kind === 'inline' || sharesWrittenConst(arg.name, arg.value, state.ctx),
+  };
 }
 
 /**
@@ -1011,12 +1063,13 @@ function blankRunEnd(template: string, index: number): number {
 function slotChildrenEdit(
   node: ElementNode,
   children: string[],
+  after: string,
   template: string
 ): Edit | undefined {
   const baseIndent = ' '.repeat(Math.max(node.loc.start.column - 1, 0));
   const joined = `\n${children
     .map((child) => indentBy(child, `${baseIndent}  `))
-    .join('\n')}\n${baseIndent}`;
+    .join('\n')}${after}\n${baseIndent}`;
 
   if (node.isSelfClosing) {
     let start = node.loc.end.offset - 2;

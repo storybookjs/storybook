@@ -15,12 +15,12 @@ import TsEnumProps from './TsEnumProps.vue';
   <TsEnumProps :level="1" />
 </template>",
       "summary": undefined,
-      "template": "⟦guard default⟫⟧<script lang="ts" setup>
+      "template": "<script lang="ts" setup>
 import TsEnumProps from './TsEnumProps.vue';
 </script>
 
 <template>
-  <TsEnumProps⟦attr level ~" "⟫ :level="1"⟧⟦props * except=["level","default"] ~" "⟫⟧ />
+  <TsEnumProps⟦attr level ~" "⟫ :level="1"⟧⟦props * except=["level","default"] ~" "⟫⟧⟦slots * slots=["default"] indent="    " tag="TsEnumProps"⟫ />⟧
 </template>",
       "warning": "Incomplete snippet: `severity: Severity.Warning` could not be resolved statically.",
     },

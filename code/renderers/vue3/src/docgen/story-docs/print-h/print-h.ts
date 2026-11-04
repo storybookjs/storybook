@@ -19,15 +19,13 @@ import { isFunctionExpression, printValue } from '../../shared/classify-value.ts
 import {
   formatRenderedProp,
   importStatementForBinding,
-  indent,
   inlinePrimitiveSource,
   renderEventArg,
   renderPropLikeArg,
   renderSlotContent,
-  wrapSlotContent,
   type RenderContext,
 } from '../../shared/render-primitives.ts';
-import { escapeTextContent } from '../../../snippet-values.ts';
+import { escapeTextContent, indent, wrapSlotContent } from '../../../snippet-values.ts';
 
 export interface PrintHInput {
   /** Render-function expression to print as template markup. */

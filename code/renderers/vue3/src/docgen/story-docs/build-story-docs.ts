@@ -38,6 +38,7 @@ import {
   type HoleMarks,
   type SnippetTemplate,
   createHoleMarks,
+  stripHoles,
   withHoleSpace,
 } from 'storybook/internal/docs-tools';
 import type {
@@ -374,26 +375,46 @@ function enrichStoryDoc(
   const marks = createHoleMarks<VueHolePlace>([rendered.snippet]);
   const printed = print(marks.mark)?.snippet;
   const holes = printed === undefined ? undefined : marks.toTemplate(printed);
-  // A slot of the component the story leaves unset, which a control can set, has no place in the
-  // snippet.
-  const set = new Set(args.map((arg) => arg.name));
-  const unsetSlots =
-    renderer.kind === 'sfc' ? [...docgenArgInfo.slots].filter((slot) => !set.has(slot)) : [];
-  const guards: SnippetTemplate<VueHolePlace> = unsetSlots.map((arg) => ({
-    kind: 'guard',
-    arg,
-    text: '',
-  }));
 
   return {
     ...storyDoc,
     snippet: rendered.snippet,
     // An attribute a control clears leaves no gap.
     ...(holes && {
-      template: withHoleSpace([...guards, ...holes], (hole) => hole.kind === 'attr'),
+      template: withHoleSpace(laidOut(holes), (hole) => hole.kind === 'attr'),
     }),
     ...(unresolved.length > 0 ? { warning: unresolvedWarning(unresolved) } : {}),
   };
+}
+
+// The template with each hole laid out on its line. A hole that prints nothing on a line of its
+// own, which the snippet leaves blank, takes that line's indent as its `space`, and a `slots` hole
+// indents the children it prints as its line, or past it where it opens a tag.
+function laidOut(template: SnippetTemplate<VueHolePlace>): SnippetTemplate<VueHolePlace> {
+  const result: SnippetTemplate<VueHolePlace> = [];
+  for (const [index, segment] of template.entries()) {
+    const previous = result.at(-1);
+    const next = template[index + 1];
+    if (typeof segment === 'string') {
+      result.push(segment);
+    } else if (segment.kind === 'slots') {
+      const line = /[^\n]*$/.exec(stripHoles(result))![0];
+      result.push({ ...segment, indent: /^\s*/.exec(line)![0] + (segment.tag ? '  ' : '') });
+    } else if (
+      typeof previous === 'string' &&
+      /\n[ \t]+$/.test(previous) &&
+      segment.text === '' &&
+      segment.space === undefined &&
+      (next === undefined || (typeof next === 'string' && next.startsWith('\n')))
+    ) {
+      const space = /[ \t]+$/.exec(previous)![0];
+      result[result.length - 1] = previous.slice(0, -space.length);
+      result.push({ ...segment, space });
+    } else {
+      result.push(segment);
+    }
+  }
+  return result;
 }
 
 function staticRendererForRenderFunction(

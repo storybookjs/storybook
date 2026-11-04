@@ -1,8 +1,8 @@
 // How a Vue story snippet prints an arg's value where it stands. The story-docs provider prints
 // the static snippet with these, from the value the story writes, and the preview's filler prints a
 // template's holes with them, from the value a control sets, so the two print a value alike. Where
-// one returns `undefined`, the snippet cannot hold the value there: the provider declares it in
-// `<script setup>` or prints no snippet, and the filler shows the static snippet.
+// one returns `undefined`, the static snippet declares the value in `<script setup>` or prints no
+// snippet; the filler writes it in place with the entities Vue decodes there.
 
 // Where a hole of a story's template stands, which the provider writes and `printHole` prints a
 // changed arg for:
@@ -10,30 +10,28 @@
 // - `attr`: the attribute `name`, the arg's own name unless it says otherwise, left out while the
 //   arg is unset.
 // - `props`: the args a control set, as an args binding passes them, but those in `except`, which
-//   the element prints already.
-// - `text`: the text of an interpolation, or with `slot`, a slot's content. `braceBefore` and
-//   `braceAfter` say the template writes a `{` right before or after it.
+//   the element prints already. Those in `merge`, a `class` or `style` the element writes, which
+//   Vue merges with the arg's, it binds.
+// - `slots`: the slots in `slots`, which the story leaves unset, that a control set, as children
+//   of the story component, indented by `indent`. With `tag`, the hole is the end of the
+//   self-closing tag, which it opens to hold them.
+// - `text`: the text of an interpolation, or with `slot`, a slot's content.
 // - `value`: code. In `script`, the whole value a `<script setup>` const or `ref()` declares; in a
 //   setup `statement`, an `interpolation` or an `attribute` value quoted with `quote`, an operand,
 //   in parentheses where the code around it would read it otherwise. `readsOn` says that code
 //   reads on after it with a `.`, as `(5).toFixed()` does.
-// - `guard`: an arg the snippet has no place for, such as a slot the story leaves unset.
+// - `guard`: an arg the snippet has no place for: a prop the element binds, before its args
+//   binding, to code that reads other args, or a `class` or `style` it binds, which Vue merges.
 export type VueHolePlace =
   | { kind: 'attr'; name?: string }
-  | { kind: 'props'; except: string[] }
-  | ({ kind: 'text'; slot?: boolean } & Braces)
+  | { kind: 'props'; except: string[]; merge?: string[] }
+  | { kind: 'slots'; slots: string[]; indent: string; tag?: string }
+  | { kind: 'text'; slot?: boolean }
   | ({ kind: 'value'; readsOn?: boolean } & (
       | { in: 'script' | 'statement' | 'interpolation' }
       | { in: 'attribute'; quote: '"' | "'" }
     ))
   | { kind: 'guard' };
-
-// The `{` a template writes right before or after a text, which a `{` in the text would make a `{{`
-// with.
-export interface Braces {
-  braceBefore?: boolean;
-  braceAfter?: boolean;
-}
 
 // A value as the snippet prints it: a literal whose value it prints, or code it prints as is.
 export type SnippetValue =
@@ -44,6 +42,10 @@ export type SnippetValue =
 
 // The order the snippet writes the props of an args binding in.
 export const attributeOrder = (a: string, b: string) => a.localeCompare(b);
+
+// The order the snippet writes slots in: the default slot first, then by name.
+export const slotOrder = (a: string, b: string) =>
+  a === 'default' ? -1 : b === 'default' ? 1 : a.localeCompare(b);
 
 // A string as a quoted attribute value. An attribute decodes entities, so a string with `&` would
 // read differently, as would one with both quotes.
@@ -113,8 +115,14 @@ export function operand(code: string, readsOn: boolean): string {
   return code.startsWith('-') || (readsOn && /^\d/.test(code)) ? `(${code})` : code;
 }
 
-// Whether text fits where the template writes a `{` before or after it, which it would make a `{{`
-// with.
-export function fitsBraces(text: string, { braceBefore, braceAfter }: Braces): boolean {
-  return !((text.startsWith('{') && braceBefore) || (text.endsWith('{') && braceAfter));
+// A slot's content as a child of its component: a named slot in a `<template>`.
+export function wrapSlotContent(name: string, content: string): string {
+  return name === 'default' ? content : `<template #${name}>\n${indent(content)}\n</template>`;
+}
+
+export function indent(source: string, by = '  '): string {
+  return source
+    .split('\n')
+    .map((line) => (line ? `${by}${line}` : line))
+    .join('\n');
 }

@@ -12,38 +12,57 @@ import {
   type SnippetValue,
   type VueHolePlace,
   attributeOrder,
-  expressionCode,
-  fitsBraces,
-  interpolatedText,
+  escapeTextContent,
+  indent,
   operand,
   printAttribute,
-  slotContent,
+  slotOrder,
+  wrapSlotContent,
 } from '../snippet-values.ts';
 
 // Prints a changed arg for a hole of a template of the Vue story-docs provider, with the printers
-// the static snippet is printed with. `VueHolePlace` says what each place prints.
+// the static snippet is printed with. `VueHolePlace` says what each place prints. Where the static
+// snippet declares a value in `<script setup>`, as a string with `&` or both quotes, this writes it
+// in place, with the entities Vue decodes there.
 export const printHole: PrintHole<VueHolePlace> = (hole, value) => {
   const arg = hole.arg ?? '';
   switch (hole.kind) {
     case 'attr':
-      return value === undefined ? '' : attribute(arg, hole.name ?? arg, value);
+      return value === undefined ? '' : attribute(hole.name ?? arg, arg, value);
     case 'props':
       return Object.entries(value as Args)
         .filter(([name]) => !hole.except.includes(name))
         .sort(([a], [b]) => attributeOrder(a, b))
-        .map(([name, item]) => attribute(name, name, item))
+        .map(([name, item]) =>
+          hole.merge?.includes(name)
+            ? `:${name}="${inAttribute(code(name, item, "'"), '"')}"`
+            : attribute(name, name, item)
+        )
         .join(' ');
-    case 'text':
-      return text(arg, value, hole);
-    case 'value': {
-      if (hole.in === 'script') {
-        return code(arg, value, "'");
+    case 'slots': {
+      const set = hole.slots.filter((name) => Object.hasOwn(value as Args, name)).sort(slotOrder);
+      if (set.length === 0) {
+        return hole.tag ? ' />' : '';
       }
-      const printed =
-        hole.in === 'statement'
-          ? code(arg, value, "'")
-          : expression(arg, value, hole.in === 'attribute' ? hole.quote : undefined);
-      return operand(printed, hole.readsOn === true);
+      const children = set
+        .map((name) => wrapSlotContent(name, slotContent(name, (value as Args)[name])))
+        .map((child) => indent(child, hole.indent))
+        .join('\n');
+      return hole.tag ? `>\n${children}\n${hole.indent.slice(2)}</${hole.tag}>` : `\n${children}`;
+    }
+    case 'text':
+      return value === undefined ? '' : hole.slot ? slotContent(arg, value) : text(arg, value);
+    case 'value': {
+      const readsOn = hole.readsOn === true;
+      if (hole.in === 'attribute') {
+        const quote = hole.quote;
+        return operand(inAttribute(code(arg, value, quote === "'" ? '"' : "'"), quote), readsOn);
+      }
+      const printed = code(arg, value, "'");
+      if (hole.in === 'script') {
+        return printed;
+      }
+      return operand(hole.in === 'interpolation' ? inInterpolation(printed) : printed, readsOn);
     }
     case 'guard':
       throw new UnprintableArgError(arg);
@@ -69,41 +88,38 @@ function snippetValue(name: string, value: unknown): SnippetValue {
   return { kind: 'code', code: code(name, value, "'") };
 }
 
-// An attribute holds code in `"`, and a string without `&` in the quotes it does not hold.
-function attribute(arg: string, name: string, value: unknown): string {
+// Code or text in an attribute value quoted with `quote`, where Vue decodes entities.
+const inAttribute = (text: string, quote: '"' | "'") =>
+  text.replaceAll('&', '&amp;').replaceAll(quote, quote === '"' ? '&quot;' : '&#39;');
+
+// Code in an interpolation, where Vue decodes entities and `}}` ends it. Printed code writes `}}`
+// only in a string, where `}\}` reads the same.
+const inInterpolation = (text: string) => text.replaceAll('&', '&amp;').replace(/}(?=})/g, '}\\');
+
+// An attribute holds a literal in quotes, and code bound.
+function attribute(name: string, arg: string, value: unknown): string {
   const snippet = snippetValue(arg, value);
-  const printed =
-    snippet.kind === 'code' && expressionCode(snippet.code, '"') === undefined
-      ? undefined
-      : printAttribute(name, snippet);
-  if (printed === undefined) {
-    throw new UnprintableArgError(arg);
+  if (snippet.kind === 'code') {
+    return `:${name}="${inAttribute(snippet.code, '"')}"`;
   }
-  return printed;
+  return printAttribute(name, snippet) ?? `${name}="${inAttribute(String(snippet.value), '"')}"`;
 }
 
-function text(
-  name: string,
-  value: unknown,
-  place: Extract<VueHolePlace, { kind: 'text' }>
-): string {
-  if (value === undefined) {
-    return '';
-  }
-  const printed = snippetValue(name, value);
-  const content = place.slot ? slotContent(printed) : interpolatedText(printed);
-  if (content === undefined || !fitsBraces(content, place)) {
-    throw new UnprintableArgError(name);
-  }
-  return content;
+// The text an interpolation shows. A `{` it ends with is escaped, as the code after it may start
+// an interpolation. Code shows as an interpolation of its own.
+function text(name: string, value: unknown): string {
+  const snippet = snippetValue(name, value);
+  return snippet.kind === 'code'
+    ? `{{ ${inInterpolation(snippet.code)} }}`
+    : escapeTextContent(String(snippet.value)).replace(/\{$/, '&#123;');
 }
 
-// Code in a template expression, with strings in the quote the attribute is not, or in an
-// interpolation without one.
-function expression(name: string, value: unknown, quote: '"' | "'" | undefined): string {
-  const printed = expressionCode(code(name, value, quote === "'" ? '"' : "'"), quote);
-  if (printed === undefined) {
-    throw new UnprintableArgError(name);
-  }
-  return printed;
+// A slot's content: a literal as text, unless Vue would condense its padding, else code in an
+// interpolation.
+function slotContent(name: string, value: unknown): string {
+  const snippet = snippetValue(name, value);
+  const literal = snippet.kind === 'code' ? undefined : String(snippet.value);
+  return literal === undefined || /^\s|\s$/.test(literal)
+    ? `{{ ${inInterpolation(code(name, value, "'"))} }}`
+    : escapeTextContent(literal);
 }

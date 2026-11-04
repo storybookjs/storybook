@@ -17,9 +17,9 @@ export function findNonPortableEntryNames(entryNames: string[]): string[] {
 }
 
 /**
- * Names of every entry under `root`, in the form tar stores them: relative to
- * the root, with directory symlinks kept as links — their targets are never
- * traversed, because `tar --create` stores only the link.
+ * Names of every entry under `root`, relative to the root, with directory
+ * symlinks listed but not traversed — `tar --create` stores only the link, so
+ * the archive never contains a target's contents.
  */
 export async function listEntryNamesUnder(root: string): Promise<string[]> {
   const dirents = await readdir(root, { recursive: true, withFileTypes: true });
@@ -30,6 +30,6 @@ export function formatNonPortableEntriesError(names: string[]): string {
   return [
     'Non-portable entry names in sandbox archive — Windows tar.exe cannot extract these:',
     ...names.map((name) => `  ${name}`),
-    'Fix: make the emitting path derive portable filenames (see open-service static paths).',
+    'Fix: rename the entry where it is created (for example an open-service static path or a dependency file).',
   ].join('\n');
 }

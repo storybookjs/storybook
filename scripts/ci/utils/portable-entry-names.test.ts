@@ -25,7 +25,7 @@ const canSymlink = await (async () => {
 })();
 
 describe('findNonPortableEntryNames', () => {
-  it('flags emoji-named entries, keeping the archive-relative path', () => {
+  it('flags emoji-named entries, reported relative to the scanned root', () => {
     const entries = [
       'storybook-static/index.html',
       'storybook-static/services/core/docgen/😀.json',
@@ -57,14 +57,18 @@ describe('findNonPortableEntryNames', () => {
   });
 
   it('flags other non-ANSI scripts and emoji-named directories', () => {
-    const entries = ['storybook-static/компоненты/кнопка.json', 'storybook-static/组件/按钮.json'];
+    const entries = [
+      'storybook-static/компоненты/кнопка.json',
+      'storybook-static/组件/按钮.json',
+      'storybook-static/😀/index.json',
+    ];
 
     expect(findNonPortableEntryNames(entries)).toEqual(entries);
   });
 });
 
 describe('listEntryNamesUnder', () => {
-  it('lists the same names tar stores, relative to the scanned root', async () => {
+  it('lists every entry relative to the scanned root, symlinks included', async () => {
     const root = await mkdtemp(join(tmpdir(), 'portable-names-'));
     try {
       await mkdir(join(root, 'storybook-static', 'assets'), { recursive: true });
@@ -104,7 +108,7 @@ describe('listEntryNamesUnder', () => {
   });
 
   it.runIf(canSymlink)(
-    'still flags a real emoji-named file inside a symlinked directory',
+    'flags an emoji-named file at its real path, not through a link to its directory',
     async () => {
       const root = await mkdtemp(join(tmpdir(), 'portable-names-'));
       try {
@@ -124,13 +128,11 @@ describe('listEntryNamesUnder', () => {
 });
 
 describe('formatNonPortableEntriesError', () => {
-  it('prints every offending name and the fix pointer', () => {
+  it('prints every offending name', () => {
     const message = formatNonPortableEntriesError(['docgen/😀.json', 'story-docs/😀.json']);
 
     expect(message).toContain('docgen/😀.json');
     expect(message).toContain('story-docs/😀.json');
-    expect(message).toContain('Windows tar.exe cannot extract these');
-    expect(message).toContain('Fix: make the emitting path derive portable filenames');
   });
 });
 

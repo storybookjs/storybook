@@ -9,23 +9,27 @@ export type SvelteHolePlace =
   // One prop a `{...args}` spread passes, left out while its arg is unset.
   | { kind: 'prop' }
   // The args a control set, as a spread passes them, but those `except` names: the props the spread
-  // passes already, and what the element and the template parameter take themselves.
-  | { kind: 'props'; except: string[] }
+  // passes already, and what the element and the template parameter take themselves. They stand
+  // `separator` apart, a space unless the spread prints one prop per line.
+  | { kind: 'props'; except: string[]; separator?: string }
   // An attribute a later `{...args}` spread writes over.
   | { kind: 'spreadattr' }
-  // A read of an arg in code.
-  | { kind: 'value' }
+  // After an attribute that reads other args, before an `{...args}` spread that writes over it once
+  // a control sets the arg it names. It prints nothing: the holes of the reads print the attribute.
+  | { kind: 'overwritten' }
+  // A read of an arg, or of the member `path` of it, in code.
+  | { kind: 'value'; path?: string[] }
   // A shorthand property, `{ name }`, that reads an arg.
   | { kind: 'property'; name?: string }
-  | WholeReadPlace
-  // A read of a member of an arg, which the snippet cannot follow.
-  | { kind: 'member' };
+  | WholeReadPlace;
 
-// An expression tag that is one whole read of an arg, printed by `printWholeRead`: the value of the
-// attribute `name`, a quoted attribute value, a text node, or other code.
-export type WholeReadPlace =
+// An expression tag that is one whole read of an arg, or of the member `path` of it, printed by
+// `printWholeRead`: the value of the attribute `name`, a quoted attribute value, a text node, or
+// other code.
+export type WholeReadPlace = (
   | { kind: 'attrvalue'; name?: string; before: string; after: string }
-  | { kind: 'quoted' | 'fragment' | 'code'; before: string; after: string };
+  | { kind: 'quoted' | 'fragment' | 'code'; before: string; after: string }
+) & { path?: string[] };
 
 // An arg a spread passes: unset, `true`, or code, which a `string` it holds may print as text.
 export type PropValue = undefined | true | { string?: string; code: string };
@@ -53,6 +57,12 @@ export function printProp(name: string, value: PropValue): string {
 // An attribute a later `{...args}` spread writes over: as the spread prints it, else `undefined`.
 export const printSpreadAttribute = (name: string, value: PropValue) =>
   value === undefined ? `${name}={undefined}` : printProp(name, value);
+
+// The accessors of a read of the member `keys` of a value, such as `.user.name` or `["b-c"]`.
+export const printAccessors = (keys: string[]) =>
+  keys
+    .map((key) => (/^[A-Za-z_$][\w$]*$/.test(key) ? `.${key}` : `[${JSON.stringify(key)}]`))
+    .join('');
 
 // A whole read of `arg` whose code is `read`: a `string` it holds as text where its place shows
 // that text as written, else the code between `before` and `after`.

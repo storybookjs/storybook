@@ -59,6 +59,35 @@ describe('story-docs open service', () => {
     expect(provider).toHaveBeenCalledWith({ entry });
   });
 
+  describe('storyDocs query', () => {
+    it('emits a payload that is extracted after the subscription starts', async () => {
+      const payload = makeStoryDocsPayload();
+      const extracted = Promise.withResolvers<StoryDocsPayload>();
+      const service = registerStoryDocsService({
+        getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
+        storyDocsProvider: () => extracted.promise,
+      });
+      const emitted: Array<StoryDocsPayload | undefined> = [];
+
+      const unsubscribe = service.queries.storyDocs.subscribe({ id: 'button' }, (state) =>
+        emitted.push(state.data)
+      );
+      extracted.resolve(payload);
+
+      await vi.waitFor(() => expect(emitted.at(-1)).toEqual(payload));
+      unsubscribe();
+    });
+
+    it('answers undefined for a prototype member such as constructor', () => {
+      const service = registerStoryDocsService({
+        getIndex: makeGetIndex([]),
+        storyDocsProvider: async () => undefined,
+      });
+
+      expect(service.queries.storyDocs.get({ id: 'constructor' })).toBeUndefined();
+    });
+  });
+
   describe('a component with several story files', () => {
     const chart = './chart.stories.tsx';
     const ranges = './ranges.stories.tsx';

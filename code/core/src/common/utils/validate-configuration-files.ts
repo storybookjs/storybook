@@ -9,7 +9,7 @@ import { dedent } from 'ts-dedent';
 import { globCaseSensitiveMatch } from './common-glob-options.ts';
 import { supportedExtensions } from './interpret-files.ts';
 
-export async function validateConfigurationFiles(configDir: string) {
+export async function validateConfigurationFiles(configDir: string, _cwd?: string) {
   const extensionsPattern = `{${Array.from(supportedExtensions).join(',')}}`;
   const mainConfigMatches = await glob(`main${extensionsPattern}`, {
     cwd: resolve(configDir),

@@ -1,4 +1,5 @@
 import { statSync } from 'node:fs';
+import { posix } from 'node:path';
 
 import { isAbsolute, join } from 'pathe';
 
@@ -20,13 +21,14 @@ const isDirectory = (path: string) => {
 };
 
 /**
- * Rewrite each pattern that names an existing directory to match every file inside it.
+ * Rewrite a pattern that names an existing directory to match every file inside it.
  *
  * Pass the result to tinyglobby with `expandDirectories: false`, whose own expansion also applies
  * to glob patterns such as `**\/*.mdx`.
  */
-export const expandDirectoryPatterns = (patterns: string[], cwd: string) =>
-  patterns.map((pattern) => {
-    const path = pattern.startsWith('!') ? pattern.slice(1) : pattern;
-    return isDirectory(isAbsolute(path) ? path : join(cwd, path)) ? join(pattern, '**') : pattern;
-  });
+export const expandDirectoryPattern = (pattern: string, cwd: string) => {
+  const path = pattern.startsWith('!') ? pattern.slice(1) : pattern;
+  return isDirectory(isAbsolute(path) ? path : join(cwd, path))
+    ? posix.join(pattern, '**')
+    : pattern;
+};

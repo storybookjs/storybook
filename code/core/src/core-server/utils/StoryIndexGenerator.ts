@@ -4,7 +4,7 @@ import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:
 
 import {
   commonGlobOptions,
-  expandDirectoryPatterns,
+  expandDirectoryPattern,
   getProjectRoot,
   getTsconfigPathsBaseDir,
   normalizeStoryPath,
@@ -169,7 +169,7 @@ export class StoryIndexGenerator {
     // Prepend ./ to patterns starting with ! to ensure they are treated as extglobs
     const globPattern = specifier.files.startsWith('!') ? `./${specifier.files}` : specifier.files;
 
-    const files = await glob(expandDirectoryPatterns([globPattern], globCwd), {
+    const files = await glob(expandDirectoryPattern(globPattern, globCwd), {
       absolute: true,
       cwd: globCwd,
       ...commonGlobOptions(globPattern),

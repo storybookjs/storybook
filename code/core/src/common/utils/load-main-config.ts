@@ -13,12 +13,14 @@ import { validateConfigurationFiles } from './validate-configuration-files.ts';
 
 export async function loadMainConfig({
   configDir = '.storybook',
+  cwd,
   skipCache,
 }: {
   configDir: string;
+  cwd?: string;
   skipCache?: boolean;
 }): Promise<StorybookConfig> {
-  await validateConfigurationFiles(configDir);
+  await validateConfigurationFiles(configDir, cwd);
 
   const mainPath = getInterpretedFile(resolve(configDir, 'main')) as string;
 

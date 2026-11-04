@@ -2,7 +2,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { glob as tinyglobby } from 'tinyglobby';
 
-import { commonGlobOptions, expandDirectoryPatterns } from './common-glob-options.ts';
+import { commonGlobOptions, expandDirectoryPattern } from './common-glob-options.ts';
 import { getProjectRoot } from './paths.ts';
 
 /**
@@ -42,7 +42,7 @@ export async function scanAndTransformFiles<T extends Record<string, unknown>>({
   logger.log('Scanning for affected files...');
 
   const cwd = getProjectRoot();
-  const sourceFiles = await tinyglobby(expandDirectoryPatterns([glob], cwd), {
+  const sourceFiles = await tinyglobby(expandDirectoryPattern(glob, cwd), {
     ...commonGlobOptions(''),
     ignore: ['**/node_modules/**'],
     dot: true,

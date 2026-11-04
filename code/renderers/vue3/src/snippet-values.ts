@@ -2,7 +2,7 @@
 // the static snippet with these, from the value the story writes, and the preview's filler prints a
 // template's holes with them, from the value a control sets, so the two print a value alike. Where
 // one returns `undefined`, the static snippet declares the value in `<script setup>` or prints no
-// snippet; the filler writes it in place with the entities Vue decodes there.
+// snippet; the filler writes it in place, escaped as Vue reads it there.
 
 // Where a hole of a story's template stands, which the provider writes and `printHole` prints a
 // changed arg for:
@@ -12,16 +12,17 @@
 // - `props`: the args a control set, as an args binding passes them, but those in `except`, which
 //   the element prints already. Those in `merge`, a `class` or `style` the element writes, which
 //   Vue merges with the arg's, it binds.
-// - `slots`: the slots in `slots`, which the story leaves unset, that a control set, as children
-//   of the story component, indented by `indent`. With `tag`, the hole is the end of the
-//   self-closing tag, which it opens to hold them.
+// - `slots`: the slots in `slots`, which a story without a render function leaves unset, that a
+//   control set, as children of its component, indented by `indent`. With `tag`, the hole is the
+//   end of the self-closing tag, which it opens to hold them.
 // - `text`: the text of an interpolation, or with `slot`, a slot's content.
 // - `value`: code. In `script`, the whole value a `<script setup>` const or `ref()` declares; in a
 //   setup `statement`, an `interpolation` or an `attribute` value quoted with `quote`, an operand,
 //   in parentheses where the code around it would read it otherwise. `readsOn` says that code
 //   reads on after it with a `.`, as `(5).toFixed()` does.
 // - `guard`: an arg the snippet has no place for: a prop the element binds, before its args
-//   binding, to code that reads other args, or a `class` or `style` it binds, which Vue merges.
+//   binding, to code that reads other args, or a `class` or `style` a template binds, which Vue
+//   merges with the arg's into code that holds both.
 export type VueHolePlace =
   | { kind: 'attr'; name?: string }
   | { kind: 'props'; except: string[]; merge?: string[] }

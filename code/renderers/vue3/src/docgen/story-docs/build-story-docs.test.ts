@@ -314,15 +314,28 @@ describe('template', () => {
 
   it('follows a prop written before the args binding, which the binding writes over', async () => {
     const story = await primaryStory(
-      rendered("'Hi'", `<MyButton label="Go" :count="2" class="big" v-bind="args" />`)
+      rendered("'Hi'", `<MyButton size="sm" :count="2" class="big" v-bind="args" />`)
     );
-    expect(story?.snippet).toContain('<MyButton :count="2" class="big" label="Hi" />');
-    expect(filled(story, { label: 'Hi' }, { count: 3, size: 'lg' })).toContain(
-      '<MyButton :count="3" class="big" label="Hi" size="lg" />'
+    expect(story?.snippet).toContain('<MyButton size="sm" :count="2" class="big" label="Hi" />');
+    expect(filled(story, { label: 'Hi' }, { count: 3, size: 'lg', active: true })).toContain(
+      '<MyButton size="lg" :count="3" class="big" label="Hi" active />'
     );
     // Vue merges the class the element writes with the arg's.
     expect(filled(story, { label: 'Hi' }, { class: 'wide' })).toContain(
-      `<MyButton :count="2" class="big" label="Hi" :class="'wide'" />`
+      `<MyButton size="sm" :count="2" class="big" label="Hi" :class="'wide'" />`
+    );
+  });
+
+  it('follows a class an `h()` spread of the args writes over, as JavaScript does', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => h(MyButton, { class: 'big', ...args }),
+};
+`);
+    expect(story?.snippet).toContain('<MyButton class="big" label="Hi" />');
+    expect(filled(story, { label: 'Hi' }, { class: 'wide' })).toContain(
+      '<MyButton class="wide" label="Hi" />'
     );
   });
 
@@ -352,6 +365,15 @@ describe('template', () => {
     expect(filled(withDefault, { default: 'Body' }, { header: 'Top' })).toBe(
       (await story(`header: 'Top', default: 'Body'`))?.snippet
     );
+  });
+
+  it('leaves out a slot a control sets where the render passes the args as props', async () => {
+    const story = await primaryStory(
+      rendered("'Hi'", '<MyButton v-bind="args" />'),
+      undefined,
+      SLOT_CATEGORIES
+    );
+    expect(filled(story, { label: 'Hi' }, { header: 'Top' })).toBe(story?.snippet);
   });
 
   it('follows an arg the template prints nothing for on a line of its own', async () => {

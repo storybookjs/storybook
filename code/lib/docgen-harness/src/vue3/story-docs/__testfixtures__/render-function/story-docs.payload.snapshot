@@ -46,7 +46,7 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 </script>
 
 <template>
-  <section class="toolbar"⟦attr label ~" "⟫ label="Confirm"⟧⟦props * except=["label"] merge=["class"] ~" "⟫⟧>
+  <section⟦attr class ~" "⟫ class="toolbar"⟧⟦attr label ~" "⟫ label="Confirm"⟧⟦props * except=["class","label"] ~" "⟫⟧>
     <RenderFunctionButton⟦attr label ~" "⟫ label="Confirm"⟧⟦props * except=["label"] ~" "⟫⟧ />
   </section>
 </template>",

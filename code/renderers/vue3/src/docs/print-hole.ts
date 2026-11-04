@@ -12,10 +12,11 @@ import {
   type SnippetValue,
   type VueHolePlace,
   attributeOrder,
-  escapeTextContent,
+  interpolatedText,
   indent,
   operand,
   printAttribute,
+  slotContent,
   slotOrder,
   wrapSlotContent,
 } from '../snippet-values.ts';
@@ -23,7 +24,7 @@ import {
 // Prints a changed arg for a hole of a template of the Vue story-docs provider, with the printers
 // the static snippet is printed with. `VueHolePlace` says what each place prints. Where the static
 // snippet declares a value in `<script setup>`, as a string with `&` or both quotes, this writes it
-// in place, with the entities Vue decodes there.
+// in place, escaped as Vue reads it there.
 export const printHole: PrintHole<VueHolePlace> = (hole, value) => {
   const arg = hole.arg ?? '';
   switch (hole.kind) {
@@ -45,13 +46,13 @@ export const printHole: PrintHole<VueHolePlace> = (hole, value) => {
         return hole.tag ? ' />' : '';
       }
       const children = set
-        .map((name) => wrapSlotContent(name, slotContent(name, (value as Args)[name])))
+        .map((name) => wrapSlotContent(name, slot(name, (value as Args)[name])))
         .map((child) => indent(child, hole.indent))
         .join('\n');
       return hole.tag ? `>\n${children}\n${hole.indent.slice(2)}</${hole.tag}>` : `\n${children}`;
     }
     case 'text':
-      return value === undefined ? '' : hole.slot ? slotContent(arg, value) : text(arg, value);
+      return value === undefined ? '' : hole.slot ? slot(arg, value) : text(arg, value);
     case 'value': {
       const readsOn = hole.readsOn === true;
       if (hole.in === 'attribute') {
@@ -105,21 +106,17 @@ function attribute(name: string, arg: string, value: unknown): string {
   return printAttribute(name, snippet) ?? `${name}="${inAttribute(String(snippet.value), '"')}"`;
 }
 
-// The text an interpolation shows. A `{` it ends with is escaped, as the code after it may start
-// an interpolation. Code shows as an interpolation of its own.
+// The text an interpolation shows, or code as an interpolation of its own. A `{` it ends with is
+// escaped, as the code after it may start an interpolation.
 function text(name: string, value: unknown): string {
-  const snippet = snippetValue(name, value);
-  return snippet.kind === 'code'
-    ? `{{ ${inInterpolation(snippet.code)} }}`
-    : escapeTextContent(String(snippet.value)).replace(/\{$/, '&#123;');
+  return (
+    interpolatedText(snippetValue(name, value))?.replace(/\{$/, '&#123;') ??
+    interpolation(name, value)
+  );
 }
 
-// A slot's content: a literal as text, unless Vue would condense its padding, else code in an
-// interpolation.
-function slotContent(name: string, value: unknown): string {
-  const snippet = snippetValue(name, value);
-  const literal = snippet.kind === 'code' ? undefined : String(snippet.value);
-  return literal === undefined || /^\s|\s$/.test(literal)
-    ? `{{ ${inInterpolation(code(name, value, "'"))} }}`
-    : escapeTextContent(literal);
-}
+const slot = (name: string, value: unknown) =>
+  slotContent(snippetValue(name, value)) ?? interpolation(name, value);
+
+const interpolation = (name: string, value: unknown) =>
+  `{{ ${inInterpolation(code(name, value, "'"))} }}`;

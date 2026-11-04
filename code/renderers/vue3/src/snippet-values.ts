@@ -89,10 +89,12 @@ export function interpolatedText(value: SnippetValue): string | undefined {
   return value.kind === 'code' ? undefined : escapeTextContent(String(value.value));
 }
 
-// A slot's content: a literal as text, unless Vue would condense its padding, else code.
+// A slot's content: a literal as text, unless Vue would condense its padding, else code in an
+// interpolation.
 export function slotContent(value: SnippetValue): string | undefined {
   if (value.kind === 'code') {
-    return `{{ ${value.code} }}`;
+    const code = expressionCode(value.code, undefined);
+    return code === undefined ? undefined : `{{ ${code} }}`;
   }
   const text = String(value.value);
   return /^\s|\s$/.test(text) ? undefined : escapeTextContent(text);

@@ -44,6 +44,8 @@ describe('printHole', () => {
     expect(() => print({ kind: 'text' }, ['a'])).toThrow(UnprintableArgError);
     expect(() => print({ kind: 'text', braceBefore: true }, '{x')).toThrow(UnprintableArgError);
     expect(() => print({ kind: 'text', slot: true }, ' padded')).toThrow(UnprintableArgError);
+    expect(() => print({ kind: 'text', slot: true }, ['a}}b'])).toThrow(UnprintableArgError);
+    expect(() => print({ kind: 'text', slot: true }, { a: '&amp;' })).toThrow(UnprintableArgError);
   });
 
   it('prints code in the quote the place does not use, an operand in parentheses if needed', () => {

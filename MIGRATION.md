@@ -928,6 +928,8 @@ To keep opening Storybook automatically, add `--open` to your command or package
 }
 ```
 
+Angular projects that start Storybook through the `start-storybook` builder of `@storybook/angular` or `@storybook/angular-vite` no longer open a browser by default either. Set `"open": true` in the builder options in `angular.json` to keep opening it.
+
 ### `viewport.defaultViewport` parameter and `responsiveViewport` removed
 
 Storybook 11 removes the deprecated `parameters.viewport.defaultViewport` parameter and the `responsiveViewport` export from `storybook/viewport`. Set the viewport with the `globals` API instead:

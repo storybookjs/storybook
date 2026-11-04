@@ -33600,6 +33600,7 @@ __metadata:
     globby: "npm:^14.1.0"
     hast-util-to-estree: "npm:^3.0.0"
     host-validation-middleware: "npm:^0.1.2"
+    is-inside-container: "npm:^1.0.0"
     jiti: "npm:^2.6.1"
     js-yaml: "npm:^4.1.0"
     jsdoc-type-pratt-parser: "npm:^4.0.0"
@@ -33667,6 +33668,7 @@ __metadata:
     watchpack: "npm:^2.5.0"
     wrap-ansi: "npm:^9.0.2"
     ws: "npm:^8.21.1"
+    wsl-utils: "npm:^0.1.0"
     yaml: "npm:^2.8.2"
     zod: "npm:^3.25.76"
   peerDependencies:

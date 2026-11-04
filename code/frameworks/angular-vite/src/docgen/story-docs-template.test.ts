@@ -266,6 +266,31 @@ describe('story-docs templates', () => {
     expect(fill(story!, { label: '⟦bind x⟫y⟧' }, { label: 'Stop' })).toContain(`[label]="'Stop'"`);
   });
 
+  it('has no template where text the snippet escapes stands right before other text', async () => {
+    const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = {
+        args: { label: '\`x\`', size: 'B' },
+        render: ({ label, size }) => ({ template: \`<p>\${label}\${size}</p>\` }),
+      };
+    `);
+    expect(story!.snippet).toContain('<p>\\`x\\`B</p>');
+    expect(story!.template).toBeUndefined();
+  });
+
+  it('fills text right before other text', async () => {
+    const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = {
+        args: { label: 'Go', size: 'B' },
+        render: ({ label, size }) => ({ template: \`<p>\${label}\${size}</p>\` }),
+      };
+    `);
+    expect(fill(story!, { label: 'Go', size: 'B' }, { label: 'Stop', size: 'B' })).toContain(
+      '<p>StopB</p>'
+    );
+  });
+
   it('has no template where next prints the author code', async () => {
     const [story] = await storyDocs(`
       ${IMPORTS}

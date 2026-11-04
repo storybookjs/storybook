@@ -148,8 +148,16 @@ export const printPlaceholders = (): PlaceholderPrinter => {
         const indent = /\n( *)/.exec(value)?.[1].length ?? 0;
         index += value.length;
         // The snippet escapes the value for the template literal it stands in, so its text there
-        // runs on to where the code after it does.
+        // runs on to where the code after it does. Right before another value there is no such
+        // code, so the value has to print as it is: escaping would put a backslash in its text.
         const after = codeAfter(index);
+        if (
+          after === '' &&
+          index < printed.length &&
+          snippet.slice(at, at + value.length).includes('\\')
+        ) {
+          return undefined;
+        }
         const end =
           after !== ''
             ? snippet.indexOf(after, at + value.length)

@@ -21,6 +21,7 @@
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
     - [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
+    - [React: `react-docgen` and `react-docgen-typescript` are optional peer dependencies](#react-react-docgen-and-react-docgen-typescript-are-optional-peer-dependencies)
     - [Svelte](#svelte)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or newer](#typescript-59-or-newer)
@@ -1154,6 +1155,28 @@ Client-side docgen that runs in the builder is deprecated and will be removed in
 This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`, and the Svelte `docgen` framework option in `@storybook/svelte-vite` and `@storybook/sveltekit` (including the sveltedoc-shaped `__docgen`).
 Builder docgen only runs when `features.docgenServer` is `false`. Storybook prints a deprecation warning when your `.storybook/main.ts` sets `docgenServer: false`. When server-side docgen is off because TypeScript is missing or unusable, Storybook prints the TypeScript warning instead. For no docgen and no warnings, also turn builder docgen off: `typescript.reactDocgen: false` for React, and the `docgen: false` framework option for Vue 3 and Svelte.
 Install the `typescript` package and remove `docgenServer: false` to use server-side docgen.
+
+#### React: `react-docgen` and `react-docgen-typescript` are optional peer dependencies
+
+The packages that only React builder docgen uses are now optional peer dependencies, so projects on server-side docgen no longer install them, nor the Babel toolchain that `react-docgen` brings along:
+
+- `react-docgen` and `react-docgen-typescript` in `@storybook/react`, `@storybook/react-vite` and `@storybook/preset-react-webpack`
+- `@joshwooding/vite-plugin-react-docgen-typescript` in `@storybook/react-vite`
+- `@storybook/react-docgen-typescript-plugin` in `@storybook/preset-react-webpack`
+
+Storybook loads them only when builder docgen runs. When your main config sets `features.docgenServer: false` and a package is missing, `storybook dev` and `storybook build` fail with the install command for your package manager. Set `typescript.reactDocgen: false` to run without docgen instead, or better, remove `docgenServer: false` to use server-side docgen:
+
+| `typescript.reactDocgen` | Add to devDependencies |
+| --- | --- |
+| `'react-docgen'` (default) | `react-docgen` |
+| `'react-docgen-typescript'` | Vite: `@joshwooding/vite-plugin-react-docgen-typescript` and `react-docgen-typescript`. Webpack: `@storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0` (this exact version; the `latest` tag is older) and `react-docgen-typescript` |
+
+Projects without a usable `typescript` (no `typescript` package, or TypeScript 7 without the [side-by-side setup](#typescript-59-or-newer)) only get docgen from the `react-docgen` fallback when `react-docgen` is installed. <!-- TEMPORARY(ts-7.1): update once Storybook supports TypeScript 7.1. -->
+Until Storybook supports TypeScript 7.1, `storybook init` and the `typescript-7-react-docgen` automigration add `react-docgen` to React projects on TypeScript 7.0 and note that in the Storybook cache in `node_modules`. A later Storybook update offers to remove it again once TypeScript 7 projects can use server-side docgen; without that note it leaves `react-docgen` alone. Setting up TypeScript 6 side by side gives you server-side docgen today.
+
+In `react-docgen-typescript` mode, `react-docgen` is optional and only documents JavaScript files. Without it, JavaScript components get no props, and Storybook does not warn about that.
+
+Storybook does not add these packages for you when you upgrade. If you keep `features.docgenServer: false`, install the packages from the table yourself.
 
 #### Svelte
 

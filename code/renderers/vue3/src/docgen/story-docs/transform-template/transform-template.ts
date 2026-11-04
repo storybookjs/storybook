@@ -76,7 +76,7 @@ export interface TransformTemplateInput {
   componentImports: Map<string, string>;
   /** Story component tag; role-aware args expansion applies only to it. */
   componentName?: string;
-  // The story component's slots, which a `v-bind="args"` passes as no prop.
+  // The story component's slots, which `v-bind="args"` does not pass as props.
   slots?: ReadonlySet<string>;
   /** Import bindings from the CSF module, for components a function slot renders. */
   importBindings?: Map<string, ImportBinding>;
@@ -438,8 +438,9 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
       prop.name !== 'class' &&
       prop.name !== 'style'
     ) {
-      const hole = attributeHole(prop.name, spellings(prop.name)[1]!);
-      const { start, end } = { start: prop.loc.start.offset, end: prop.loc.end.offset };
+      const start = prop.loc.start.offset;
+      const end = prop.loc.end.offset;
+      const hole = attributeHole(prop.name, camelCase(prop.name));
       state.edits.push({
         start,
         end,
@@ -528,11 +529,7 @@ function planArgsBindingExpansion(
 }
 
 function expandArgsBinding(
-  {
-    directive,
-    surviving,
-    removed,
-  }: { directive: DirectiveNode; surviving: ClassifiedArg[]; removed: Set<ElementProp> },
+  { directive, surviving, removed }: Required<ArgsExpansionPlan>,
   attributesByName: Map<string, ElementProp[]>,
   element: ElementContext,
   state: TransformState
@@ -564,7 +561,7 @@ function expandArgsBinding(
           ? prop.name === 'bind'
           : prop.name === 'class' || prop.name === 'style')
     )
-      ? [marked(state.ctx, { kind: 'guard', arg: spellings(name)[1]! }, '')]
+      ? [marked(state.ctx, { kind: 'guard', arg: camelCase(name) }, '')]
       : []
   );
   const added = marked(
@@ -578,10 +575,13 @@ function expandArgsBinding(
   return true;
 }
 
+const camelCase = (name: string) =>
+  name.replace(/-(\w)/g, (_, letter: string) => letter.toUpperCase());
+
 // The arg names that set the same prop as an attribute: `max-count` and `maxCount`.
 const spellings = (name: string) => [
   name,
-  name.replace(/-(\w)/g, (_, letter: string) => letter.toUpperCase()),
+  camelCase(name),
   name.replace(/\B([A-Z])/g, '-$1').toLowerCase(),
 ];
 

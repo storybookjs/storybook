@@ -111,25 +111,6 @@ ${lines.join('\n')}
 </script>`;
 }
 
-export function printRootListenerScript(
-  listeners: { event: string; handler: string }[]
-): string | undefined {
-  const uniqueListeners = uniqueListenersByEvent(listeners);
-  if (uniqueListeners.length === 0) {
-    return undefined;
-  }
-  const lines = uniqueListeners.map(
-    ({ event, handler }) =>
-      `    host.addEventListener('${escapeScriptString(event)}', ${sanitizeScriptHandler(handler)});`
-  );
-  return `<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-${lines.join('\n')}
-  }
-</script>`;
-}
-
 const uniqueListenersByEvent = (
   listeners: { event: string; handler: string; tag?: string }[]
 ): { event: string; handler: string; tag?: string }[] => {

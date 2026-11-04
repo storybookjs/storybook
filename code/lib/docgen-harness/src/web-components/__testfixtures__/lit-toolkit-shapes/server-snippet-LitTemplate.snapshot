@@ -1,12 +1,7 @@
-<lit-toolkit-shapes
+html`<lit-toolkit-shapes
   size="large"
   level="2"
-  tags="[&quot;b&quot;]"
+  .tags=${['b']}
   label="Shaped"
-></lit-toolkit-shapes>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('toolkit-resize', () => {});
-  }
-</script>
+  @toolkit-resize=${() => {}}
+></lit-toolkit-shapes>`

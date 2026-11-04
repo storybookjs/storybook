@@ -1,1 +1,3 @@
-<lit-template-shapes style="color: red; --gap: 4px;"></lit-template-shapes>
+html`<lit-template-shapes
+  style=${styleMap({ color: 'red' as string, fontSize: '' as string, '--gap': '4px' })}
+></lit-template-shapes>`

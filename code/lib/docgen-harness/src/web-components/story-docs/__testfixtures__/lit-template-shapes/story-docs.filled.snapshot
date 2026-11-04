@@ -1,43 +1,53 @@
 {
-  "Aliased": "<lit-template-shapes label="Aliased &amp; &lt;changed>" count="8" heading="Head &amp; &lt;changed>">
-  <b>Aliased &amp; &lt;changed&gt;</b>
-</lit-template-shapes>",
-  "Attributes": "<lit-template-shapes label="Alpha &amp; &lt;changed>" count="3"></lit-template-shapes>",
-  "ClassMap": "<lit-template-shapes></lit-template-shapes>",
-  "ClassMapCall": "UnprintableArgError: The snippet cannot show the current value of the `size` arg.",
-  "ClassMapKeys": "<lit-template-shapes class="card round active"></lit-template-shapes>",
-  "Destructured": "<lit-template-shapes label="Destructured &amp; &lt;changed>" count="7"></lit-template-shapes>",
-  "DisabledFalse": "<lit-template-shapes label="Beta &amp; &lt;changed>" count="4" disabled></lit-template-shapes>",
-  "IfDefined": "<lit-template-shapes count="5"></lit-template-shapes>",
-  "Listener": "<lit-template-shapes></lit-template-shapes>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('shape-change', () => {});
-  }
-</script>",
-  "MemberPath": "<lit-template-shapes label="Bob &amp; &lt;changed>">admin</lit-template-shapes>",
-  "Nested": "<lit-template-shapes>
-  <span>Nested &amp; &lt;changed&gt;</span>
-</lit-template-shapes>",
-  "NestedListener": "<lit-template-shapes>
-  <button>Go</button>
-</lit-template-shapes>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('shape-change', () => {});
-  }
-</script>",
-  "Nothing": "<lit-template-shapes label="Set &amp; &lt;changed>"><b>shown</b></lit-template-shapes>",
-  "PrefixedClass": "<lit-template-shapes class="btn-large &amp; &lt;changed>"></lit-template-shapes>",
-  "PropertyOnly": "<lit-template-shapes></lit-template-shapes>
-<script>
-  document.querySelector('lit-template-shapes').items = [{ name: 'Alpha & <changed>' }];
-</script>",
-  "PropertyPaired": "<lit-template-shapes heading="Heading &amp; &lt;changed>"></lit-template-shapes>",
-  "PropertyPairedFalse": "<lit-template-shapes heading="Closed &amp; &lt;changed>" open></lit-template-shapes>",
-  "QuotedAndMultiHole": "<lit-template-shapes class="card warm &amp; &lt;changed> large &amp; &lt;changed>" label="Quoted &amp; &lt;changed>"></lit-template-shapes>",
-  "StyleMap": "<lit-template-shapes style="color: red &amp; &lt;changed>; font-size:  &amp; &lt;changed>; --gap: 4px;"></lit-template-shapes>",
-  "UnboundArg": "<lit-template-shapes label="Bound &amp; &lt;changed>"></lit-template-shapes>",
+  "Aliased": "UnprintableArgError: The snippet cannot show the current value of the `label` arg.",
+  "Attributes": "html`<lit-template-shapes
+  label="Alpha &amp; &lt;changed>"
+  count="3"
+  ?disabled=${false}
+></lit-template-shapes>`",
+  "ClassMap": "html`<lit-template-shapes
+  class=${classMap({ active: Boolean(false) })}
+></lit-template-shapes>`",
+  "ClassMapCall": "html`<lit-template-shapes
+  class=${classMap({ large: isLarge('large & <changed>') })}
+></lit-template-shapes>`",
+  "ClassMapKeys": "html`<lit-template-shapes
+  class="card ${classMap({ active: true as boolean, muted: !true, round: true })}"
+></lit-template-shapes>`",
+  "Destructured": "html`<lit-template-shapes label="Destructured &amp; &lt;changed>" count="7"></lit-template-shapes>`",
+  "DisabledFalse": "html`<lit-template-shapes
+  label="Beta &amp; &lt;changed>"
+  count="4"
+  ?disabled=${true}
+></lit-template-shapes>`",
+  "IfDefined": "html`<lit-template-shapes
+  label=${ifDefined(undefined)}
+  count=${ifDefined(5)}
+></lit-template-shapes>`",
+  "Listener": "html`<lit-template-shapes @shape-change=${() => {}}></lit-template-shapes>`",
+  "MemberPath": "const MemberPath = () => {
+  const user = { name: 'Bob & <changed>', admin: true } as { name: string; admin: boolean };
+  return html`<lit-template-shapes label=${user.name}
+    >${user.admin ? 'admin' : 'guest'}</lit-template-shapes
+  >`;
+};",
+  "Nested": "html`<lit-template-shapes>${html`<span>Nested &amp; &lt;changed&gt;</span>`}</lit-template-shapes>`",
+  "NestedListener": "html`<lit-template-shapes @shape-change=${() => {}}
+  >${html`<button @click=${() => {}}>Go</button>`}</lit-template-shapes
+>`",
+  "Nothing": "html`<lit-template-shapes label=${'Set & <changed>' ? 'Set & <changed>' : nothing}
+  >${true ? html`<b>shown</b>` : nothing}</lit-template-shapes
+>`",
+  "PrefixedClass": "html`<lit-template-shapes class="btn-large &amp; &lt;changed>"></lit-template-shapes>`",
+  "PropertyOnly": "html`<lit-template-shapes .items=${[{ name: 'Alpha & <changed>' }]}></lit-template-shapes>`",
+  "PropertyPaired": "html`<lit-template-shapes .heading=${'Heading & <changed>'} .open=${false}></lit-template-shapes>`",
+  "PropertyPairedFalse": "html`<lit-template-shapes .heading=${'Closed & <changed>'} .open=${true}></lit-template-shapes>`",
+  "QuotedAndMultiHole": "html`<lit-template-shapes
+  class="card warm &amp; &lt;changed> large &amp; &lt;changed>"
+  label="Quoted &amp; &lt;changed>"
+></lit-template-shapes>`",
+  "StyleMap": "html`<lit-template-shapes
+  style=${styleMap({ color: 'red & <changed>' as string, fontSize: ' & <changed>' as string, '--gap': '4px' })}
+></lit-template-shapes>`",
+  "UnboundArg": "html`<lit-template-shapes label="Bound &amp; &lt;changed>"></lit-template-shapes>`",
 }

@@ -12,12 +12,7 @@ import type {
   ManifestClassField,
   ManifestDeclaration,
 } from '../component-docgen/manifest/types.ts';
-import {
-  type SnippetTemplate,
-  fillTemplate,
-  formatTemplate,
-  stripHoles,
-} from 'storybook/internal/docs-tools';
+import { type SnippetTemplate, fillTemplate, stripHoles } from 'storybook/internal/docs-tools';
 
 import { printHole } from '../../docs/print-hole.ts';
 import type { HtmlSnippetTemplate } from '../../snippet-holes.ts';
@@ -192,7 +187,7 @@ describe('buildStoryDocsPayload', () => {
       },
     },
     {
-      name: 'render fallback warning',
+      name: 'render that reads no arg',
       source: `
         export default { title: 'Example/TestElement', component: 'test-element' };
         export const Primary = {
@@ -203,9 +198,7 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: '<test-element label="Fallback"></test-element>',
-        warning:
-          "Incomplete snippet: `() => document.createElement('test-element')` could not be resolved statically.",
+        snippet: "document.createElement('test-element')",
       },
     },
     {
@@ -221,7 +214,7 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: '<test-element label="Template" count="2"></test-element>',
+        snippet: 'html`<test-element label="Template" count="2"></test-element>`',
       },
     },
     {
@@ -242,9 +235,12 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: `<test-element label="Aliased" count="7" heading="Head">
-  <b>Aliased</b>
-</test-element>`,
+        snippet: `const Primary = () => {
+  const { label, count: n } = { label: 'Aliased', count: 7, heading: 'Head' };
+  const heading = 'Head';
+  const tag = html\`<b>\${label}</b>\`;
+  return html\`<test-element label=\${label} count=\${n} .heading=\${heading}>\${tag}</test-element>\`;
+};`,
       },
     },
     {
@@ -261,7 +257,7 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: '<test-element label="Meta render"></test-element>',
+        snippet: 'html`<test-element label="Meta render"></test-element>`',
       },
     },
     {
@@ -295,11 +291,11 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: '<test-element label="csf2"></test-element>',
+        snippet: 'html`<test-element label="csf2"></test-element>`',
       },
     },
     {
-      name: 'unbound args warning for render template',
+      name: 'render that reads some args',
       source: `
         import { html } from 'lit';
         export default { title: 'Example/TestElement', component: 'test-element' };
@@ -311,12 +307,11 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: '<test-element label="Bound"></test-element>',
-        warning: 'Incomplete snippet: args not bound by the render template: `count`.',
+        snippet: 'html`<test-element label="Bound"></test-element>`',
       },
     },
     {
-      name: 'unresolved template expression arg is not unbound',
+      name: 'call that reads an arg',
       source: `
         import { html } from 'lit';
         import { compute } from './compute';
@@ -329,8 +324,7 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: '<test-element></test-element>',
-        warning: 'Incomplete snippet: `compute(args.active)` could not be resolved statically.',
+        snippet: 'html`<test-element class=${compute(true)}></test-element>`',
       },
     },
     {
@@ -767,24 +761,6 @@ describe('the template', () => {
     );
   });
 
-  it('wraps each value the lit template of the render prints of an arg in a hole', async () => {
-    const { snippet, template } = await firstTemplate(`
-      import { html } from 'lit';
-      export default { title: 'Example/TestElement', component: 'test-element' };
-      export const Primary = {
-        args: { label: 'Go', disabled: false },
-        render: (args) => html\`<test-element label=\${args.label} ?disabled=\${args.disabled}>\${args.label}</test-element>\`,
-      };
-    `);
-    expect(snippet).toBe('<test-element label="Go">Go</test-element>');
-    expect(formatTemplate(template!)).toBe(
-      '<test-element⟦attr label mode="bind" ~" "⟫ label="Go"⟧⟦bool disabled ~" "⟫⟧>⟦text label⟫Go⟧</test-element>'
-    );
-    expect(
-      fill(template, { label: 'Go', disabled: false }, { label: 'a < b', disabled: true })
-    ).toBe('<test-element label="a &lt; b" disabled>a &lt; b</test-element>');
-  });
-
   it('shows an arg the server cannot read once a control changes it', async () => {
     const { snippet, template } = await firstTemplate(`
       export default { title: 'Example/TestElement', component: 'test-element' };
@@ -816,216 +792,114 @@ describe('the template', () => {
     expect(fill(template, { label: 'Go', items: ['a'] }, { items: undefined })).toBe(snippet);
   });
 
-  it('sets a property a lit template binds without an attribute in a script', async () => {
-    const { template } = await firstTemplate(`
-      import { html } from 'lit';
-      export default { title: 'Example/TestElement', component: 'test-element' };
-      export const Primary = {
-        args: { label: 'Go', data: { items: [1] }, onShapeChange: () => {} },
-        render: (args) => html\`<test-element label=\${args.label} .items=\${args.data.items} @shape-change=\${args.onShapeChange}></test-element>\`,
-      };
-    `);
-    const initialArgs = { label: 'Go', data: { items: [1] } };
-    expect(fill(template, initialArgs, { label: 'Stop', data: { items: [1, 2] } })).toBe(
-      [
-        '<test-element label="Stop"></test-element>',
-        '<script>',
-        '  {',
-        '    const host = document.currentScript.previousElementSibling;',
-        "    host.addEventListener('shape-change', () => {});",
-        '  }',
-        '</script>',
-        '<script>',
-        "  document.querySelector('test-element').items = [1, 2];",
-        '</script>',
-      ].join('\n')
-    );
-  });
-
-  it('follows a member of an arg and an arg a nested template reads', async () => {
-    const { template } = await firstTemplate(`
-      import { html } from 'lit';
-      export default { title: 'Example/TestElement', component: 'test-element' };
-      export const Primary = {
-        args: { user: { name: 'Bob' }, label: 'Go' },
-        render: (args) => {
-          const badge = html\`<b>\${args.label}</b>\`;
-          return html\`<test-element label=\${args.user.name}>\${badge}</test-element>\`;
-        },
-      };
-    `);
-    const initialArgs = { user: { name: 'Bob' }, label: 'Go' };
-    expect(fill(template, initialArgs, { user: { name: 'Ann' }, label: 'Stop' })).toBe(
-      '<test-element label="Ann">\n  <b>Stop</b>\n</test-element>'
-    );
-  });
-
-  it('prints the branch of a conditional on an arg a control picks', async () => {
+  it("prints the render's lit code with the args it reads filled in", async () => {
     const { snippet, template } = await firstTemplate(`
-      import { html, nothing } from 'lit';
-      export default { title: 'Example/TestElement', component: 'test-element' };
-      export const Primary = {
-        args: { open: true, badge: false },
-        render: (args) => html\`<test-element class="card \${args.open ? 'open' : ''}" label=\${args.open ? 'Open' : 'Closed'}>\${args.badge ? html\`<b>New</b>\` : nothing}</test-element>\`,
-      };
-    `);
-    expect(snippet).toBe('<test-element class="card open" label="Open"></test-element>');
-    const initialArgs = { open: true, badge: false };
-    expect(fill(template, initialArgs, { open: 0, badge: 'yes' })).toBe(
-      '<test-element class="card" label="Closed"><b>New</b></test-element>'
-    );
-  });
-
-  it("prints lit's classMap and styleMap and follows the args they read", async () => {
-    const { snippet, template } = await firstTemplate(`
-      import { html } from 'lit';
-      import { classMap } from 'lit/directives/class-map.js';
-      import { styleMap } from 'lit/directives/style-map.js';
-      export default { title: 'Example/TestElement', component: 'test-element' };
-      export const Primary = {
-        args: { active: true, enabled: true, color: 'red' },
-        render: (args) => html\`<test-element class="card \${classMap({ active: args.active, muted: !args.enabled, round: true })}" style=\${styleMap({ backgroundColor: args.color })}></test-element>\`,
-      };
-    `);
-    expect(snippet).toBe(
-      '<test-element class="card round active" style="background-color: red;"></test-element>'
-    );
-    const initialArgs = { active: true, enabled: true, color: 'red' };
-    expect(fill(template, initialArgs, { active: false, enabled: false, color: '' })).toBe(
-      '<test-element class="card round muted" style=""></test-element>'
-    );
-  });
-
-  it('keeps one space between classes and prints no empty style attribute', async () => {
-    const { snippet, template } = await firstTemplate(`
-      import { html } from 'lit';
-      import { classMap } from 'lit/directives/class-map.js';
-      import { styleMap } from 'lit/directives/style-map.js';
-      export default { title: 'Example/TestElement', component: 'test-element' };
-      export const Primary = {
-        args: { a: false, b: false, label: 'Save $& now' },
-        render: (args) => html\`<test-element class="btn \${classMap({ a: args.a, b: args.b })}" style=\${styleMap({ backgroundColor: args.color })} label=\${args.label}></test-element>\`,
-      };
-    `);
-    expect(snippet).toBe('<test-element class="btn " label="Save $&amp; now"></test-element>');
-    const initialArgs = { a: false, b: false, label: 'Save $& now' };
-    expect(fill(template, initialArgs, { b: true, color: 'red' })).toBe(
-      '<test-element class="btn b " label="Save $&amp; now" style="background-color: red;"></test-element>'
-    );
-    expect(fill(template, initialArgs, { a: true, b: true })).toBe(
-      '<test-element class="btn a b " label="Save $&amp; now"></test-element>'
-    );
-  });
-
-  it('cannot follow an arg a classMap passes to a function', async () => {
-    const { snippet, warning, template } = await firstTemplate(`
       import { html } from 'lit';
       import { classMap } from 'lit/directives/class-map.js';
       import { isLarge } from './sizes';
       export default { title: 'Example/TestElement', component: 'test-element' };
       export const Primary = {
-        args: { size: 'large' },
-        render: (args) => html\`<test-element class=\${classMap({ large: isLarge(args.size) })}></test-element>\`,
+        args: { label: 'Go', size: 'lg', items: [1], user: { name: 'Bob' }, open: true },
+        render: ({ label, size, items, user, open }) => html\`<test-element
+          label=\${label}
+          title="Hi \${user.name}"
+          class=\${classMap({ large: isLarge(size) })}
+          .items=\${items}
+          ?open=\${open}
+        >\${label}: \${open ? 'open' : 'closed'}</test-element>\`,
       };
     `);
-    expect({ snippet, warning }).toEqual({
-      snippet: '<test-element></test-element>',
-      warning: 'Incomplete snippet: `isLarge(args.size)` could not be resolved statically.',
-    });
-    expect(() => fill(template, { size: 'large' }, { size: 'small' })).toThrow(
-      'The snippet cannot show the current value of the `size` arg.'
+    expect(snippet).toBe(
+      [
+        'html`<test-element',
+        '  label="Go"',
+        '  title="Hi Bob"',
+        "  class=${classMap({ large: isLarge('lg') })}",
+        '  .items=${[1]}',
+        '  ?open=${true}',
+        ">Go: ${true ? 'open' : 'closed'}</test-element>`",
+      ].join('\n')
+    );
+    const initialArgs = { label: 'Go', size: 'lg', items: [1], user: { name: 'Bob' }, open: true };
+    const changed = {
+      label: 'a "b" `c`',
+      size: 'sm',
+      items: [1, 2],
+      user: { name: '<Ann>' },
+      open: false,
+    };
+    expect(fill(template, initialArgs, changed)).toBe(
+      [
+        'html`<test-element',
+        '  label="a &quot;b&quot; \\`c\\`"',
+        '  title="Hi &lt;Ann>"',
+        "  class=${classMap({ large: isLarge('sm') })}",
+        '  .items=${[1, 2]}',
+        '  ?open=${false}',
+        ">a \"b\" \\`c\\`: ${false ? 'open' : 'closed'}</test-element>`",
+      ].join('\n')
     );
   });
 
-  it('cannot follow an arg a conditional reads', async () => {
-    const { template } = await firstTemplate(`
-      import { html } from 'lit';
-      export default { title: 'Example/TestElement', component: 'test-element' };
-      export const Primary = {
-        args: { label: 'Go', open: true },
-        render: (args) => html\`<test-element label=\${args.open ? args.label : 'Closed'}></test-element>\`,
-      };
-    `);
-    expect(() => fill(template, { label: 'Go', open: true }, { open: false })).toThrow(
-      'The snippet cannot show the current value of the `open` arg.'
-    );
-  });
-
-  it('cannot follow the args of an attribute a branch of `nothing` leaves out', async () => {
+  it('prints a block body as the story, and a string template with its text', async () => {
     const { snippet, template } = await firstTemplate(`
-      import { html, nothing } from 'lit';
-      export default { title: 'Example/TestElement', component: 'test-element' };
-      export const Primary = {
-        args: { tone: 'warm', open: false },
-        render: (args) => html\`<test-element class="\${args.tone} \${args.open ? 'open' : nothing}"></test-element>\`,
-      };
-    `);
-    expect(snippet).toBe('<test-element></test-element>');
-    expect(() => fill(template, { tone: 'warm', open: false }, { tone: 'cold' })).toThrow(
-      'The snippet cannot show the current value of the `tone` arg.'
-    );
-    expect(() => fill(template, { tone: 'warm', open: false }, { open: true })).toThrow(
-      'The snippet cannot show the current value of the `open` arg.'
-    );
-  });
-
-  it.each([
-    {
-      name: 'an undeclared arg a render the server cannot read reads',
-      args: '{ label: "Go", show: true }',
-      render: 'render: (args) => makeElement(args),',
-      change: { show: false },
-    },
-    {
-      name: 'an undeclared arg whose key names a category',
-      args: '{ label: "Go", "--undeclared": "red" }',
-      render: '',
-      change: { '--undeclared': 'blue' },
-    },
-    {
-      name: 'a property of one of two elements of a tag',
-      args: '{ a: [1], b: [2] }',
-      render:
-        'render: (args) => html`<test-element .items=${args.a}></test-element><test-element .items=${args.b}></test-element>`,',
-      change: { b: [3] },
-    },
-    {
-      name: 'a conditional whose other branch has a listener the snippet leaves out',
-      args: '{ open: false }',
-      render:
-        'render: (args) => html`<test-element>${args.open ? html`<button @click=${() => {}}>Go</button>` : "none"}</test-element>`,',
-      change: { open: true },
-    },
-    {
-      name: 'a conditional that prints the arg or `undefined`, which lit prints as empty',
-      args: '{ label: "Go" }',
-      render:
-        'render: (args) => html`<test-element label=${args.label ? args.label : undefined}></test-element>`,',
-      change: { label: 0 },
-    },
-  ])('cannot follow $name', async ({ args, render, change }) => {
-    const { template } = await firstTemplate(`
-      import { html } from 'lit';
-      export default { title: 'Example/TestElement', component: 'test-element' };
-      export const Primary = { args: ${args}, ${render} };
-    `);
-    const initialArgs = new Function(`return ${args}`)() as Args;
-    const [arg] = Object.keys(change);
-    expect(() => fill(template, initialArgs, change)).toThrow(
-      `The snippet cannot show the current value of the \`${arg}\` arg.`
-    );
-  });
-
-  it('cannot follow an arg an attribute reads next to code it cannot resolve', async () => {
-    const { template } = await firstTemplate(`
-      import { html } from 'lit';
-      import { suffix } from './suffix';
       export default { title: 'Example/TestElement', component: 'test-element' };
       export const Primary = {
         args: { label: 'Go' },
-        render: (args) => html\`<test-element title="\${args.label} \${suffix}"></test-element>\`,
+        render: (args) => {
+          const label = args.label.toUpperCase();
+          return \`<test-element label="\${args.label}">\${label}</test-element>\`;
+        },
       };
     `);
+    expect(snippet).toBe(
+      [
+        'const Primary = () => {',
+        "  const label = 'Go'.toUpperCase();",
+        '  return `<test-element label="Go">${label}</test-element>`;',
+        '};',
+      ].join('\n')
+    );
+    expect(fill(template, { label: 'Go' }, { label: 'Stop' })).toBe(
+      [
+        'const Primary = () => {',
+        "  const label = 'Stop'.toUpperCase();",
+        '  return `<test-element label="Stop">${label}</test-element>`;',
+        '};',
+      ].join('\n')
+    );
+  });
+
+  it('cannot follow an undeclared arg whose key names a category', async () => {
+    const { template } = await firstTemplate(`
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: { label: 'Go', '--undeclared': 'red' } };
+    `);
+    expect(() =>
+      fill(template, { label: 'Go', '--undeclared': 'red' }, { '--undeclared': 'blue' })
+    ).toThrow('The snippet cannot show the current value of the `--undeclared` arg.');
+  });
+
+  it('prints the args the render reads as a whole, and cannot follow them', async () => {
+    const { snippet, template } = await firstTemplate(`
+      import { html } from 'lit';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { label: 'Go' },
+        render: (args) => {
+          const { label } = args;
+          return html\`<test-element label=\${label}></test-element>\`;
+        },
+      };
+    `);
+    expect(snippet).toBe(
+      [
+        'const Primary = () => {',
+        "  const { label } = { label: 'Go' };",
+        '  return html`<test-element label=${label}></test-element>`;',
+        '};',
+      ].join('\n')
+    );
     expect(() => fill(template, { label: 'Go' }, { label: 'Stop' })).toThrow(
       'The snippet cannot show the current value of the `label` arg.'
     );

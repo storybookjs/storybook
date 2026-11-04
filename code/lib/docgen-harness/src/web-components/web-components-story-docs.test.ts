@@ -36,7 +36,6 @@ const storyDocsFixturesDir = join(
 // `betaLabel` arg with it; the legacy recording got the attribute from runtime reflection.
 const DECLARED_OMISSIONS: Record<string, readonly string[]> = {
   'vanilla-multi-definition/ArgsDefaultRender': ['beta-label'],
-  'vanilla-multi-definition/DomNode': ['beta-label'],
 };
 
 const listFixtureCases = (dir: string): string[] =>
@@ -162,6 +161,13 @@ describe('web-components story-docs server snippets', () => {
         storyDoc?.snippet ?? NO_SNIPPET_SENTINEL,
         ...(storyDoc?.warning === undefined ? [] : [`warning: ${storyDoc.warning}`]),
       ].join('\n\n');
+      // The snippet of a render function is its own code, which next's html does not describe.
+      if (storyDoc?.snippet !== undefined && !storyDoc.snippet.startsWith('<')) {
+        await expect(recorded).toMatchFileSnapshot(
+          join(testDir, `server-snippet-${exportName}.snapshot`)
+        );
+        continue;
+      }
       await recordServerSnippet({
         framework: 'web-components',
         normalize: (snippet) => snippet.replace(STYLE_BLOCK_REGEXP, ''),

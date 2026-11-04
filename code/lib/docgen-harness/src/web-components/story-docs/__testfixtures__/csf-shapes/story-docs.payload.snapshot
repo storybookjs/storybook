@@ -59,9 +59,8 @@
     "webcomponentsstorydocs-csf-shapes--render-fallback": {
       "id": "webcomponentsstorydocs-csf-shapes--render-fallback",
       "name": "Render Fallback",
-      "snippet": "<csf-shapes label="Fallback"></csf-shapes>",
-      "template": "⟦guard items⟫⟧⟦style panel-part selector="csf-shapes::part(panel)"⟫⟧⟦style active-state selector="csf-shapes:state(active)"⟫⟧<csf-shapes⟦attr label mode="field" ~" "⟫ label="Fallback"⟧⟦attr count mode="field" ~" "⟫⟧⟦attr disabled mode="field" ~" "⟫⟧⟦cssattr * properties=[{"arg":"--csf-shapes-accent","property":"--csf-shapes-accent"}] ~" "⟫⟧>⟦slot default-slot name="default"⟫⟧⟦slot actions-slot name="actions"⟫⟧</csf-shapes>",
-      "warning": "Incomplete snippet: `() => document.createElement('csf-shapes')` could not be resolved statically.",
+      "snippet": "document.createElement('csf-shapes')",
+      "template": "document.createElement('csf-shapes')",
     },
     "webcomponentsstorydocs-csf-shapes--slots": {
       "id": "webcomponentsstorydocs-csf-shapes--slots",

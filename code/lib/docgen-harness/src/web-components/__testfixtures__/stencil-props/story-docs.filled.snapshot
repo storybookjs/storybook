@@ -5,6 +5,18 @@
   variant="full &amp; &lt;changed>"
   aria-label-text="Default rating &amp; &lt;changed>"
 ></stencil-props>",
-  "DomNode": "<stencil-props value="4" max="6" variant="compact &amp; &lt;changed>" aria-label-text="Rating &amp; &lt;changed>"></stencil-props>",
-  "LitTemplate": "<stencil-props value="4" max="6" variant="compact &amp; &lt;changed>" aria-label-text="Rating &amp; &lt;changed>"></stencil-props>",
+  "DomNode": "const DomNode = () => {
+  const el = document.createElement('stencil-props');
+  el.setAttribute('value', String(4));
+  el.setAttribute('max', String(6));
+  el.setAttribute('variant', String('compact & <changed>'));
+  el.setAttribute('aria-label-text', String('Rating & <changed>'));
+  return el;
+};",
+  "LitTemplate": "html`<stencil-props
+  value="4"
+  max="6"
+  variant="compact &amp; &lt;changed>"
+  aria-label-text="Rating &amp; &lt;changed>"
+></stencil-props>`",
 }

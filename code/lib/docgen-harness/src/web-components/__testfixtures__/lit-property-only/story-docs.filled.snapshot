@@ -4,10 +4,19 @@
   document.querySelector('lit-property-only').items = [{ name: 'Alpha & <changed>' }, { name: 'Beta & <changed>' }];
   document.querySelector('lit-property-only').config = { dense: false, theme: 'dark & <changed>' };
 </script>",
-  "DomNode": "UnprintableArgError: The snippet cannot show the current value of the `items` arg.",
-  "LitTemplate": "<lit-property-only label="Configured &amp; &lt;changed>"></lit-property-only>
-<script>
-  document.querySelector('lit-property-only').items = [{ name: 'Alpha & <changed>' }, { name: 'Beta & <changed>' }];
-  document.querySelector('lit-property-only').config = { dense: false, theme: 'dark & <changed>' };
-</script>",
+  "DomNode": "const DomNode = () => {
+  const el = document.createElement('lit-property-only') as HTMLElement & {
+    config?: unknown;
+    items?: unknown;
+  };
+  el.setAttribute('label', String('Configured & <changed>'));
+  el.items = [{ name: 'Alpha & <changed>' }, { name: 'Beta & <changed>' }];
+  el.config = { dense: false, theme: 'dark & <changed>' };
+  return el;
+};",
+  "LitTemplate": "html`<lit-property-only
+  label="Configured &amp; &lt;changed>"
+  .items=${[{ name: 'Alpha & <changed>' }, { name: 'Beta & <changed>' }]}
+  .config=${{ dense: false, theme: 'dark & <changed>' }}
+></lit-property-only>`",
 }

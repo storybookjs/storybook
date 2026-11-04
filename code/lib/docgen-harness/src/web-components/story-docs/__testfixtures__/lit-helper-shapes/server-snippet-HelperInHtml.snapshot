@@ -1,3 +1,1 @@
-<lit-template-shapes label="Alpha" count="2"></lit-template-shapes>
-
-warning: Incomplete snippet: `(args) => html`<section>${List(args)}</section>`` could not be resolved statically.
+html`<section>${List({ label: 'Alpha', count: 2 })}</section>`

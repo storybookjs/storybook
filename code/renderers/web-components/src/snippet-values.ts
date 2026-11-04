@@ -56,11 +56,8 @@ export const cssDeclarations = (
   return declarations.length === 0 ? undefined : declarations.join(' ');
 };
 
-// Whether lit's `?name=${value}` sets the attribute.
-export const isTruthy = (value: unknown): boolean => Boolean(value);
-
-// Whether lit's `ifDefined(value)` sets the attribute.
-export const isDefined = (value: unknown): boolean => value !== null && value !== undefined;
+// Text in a template literal, as code: its backslashes, backticks and `${` escaped.
+export const templateText = (text: string): string => text.replace(/\\|`|\$\{/g, '\\$&');
 
 // A part or state rule, as a line of the `<style>`.
 export const styleRule = (selector: string, declarations: string): string =>

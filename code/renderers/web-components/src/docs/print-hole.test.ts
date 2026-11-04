@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { UnprintableArgError, fillTemplate } from 'storybook/internal/docs-tools';
+import { UnprintableArgError, fillTemplate, printValue } from 'storybook/internal/docs-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import type { WebComponentsDocgenPayload } from '../docgen/component-docgen/build-docgen.ts';
@@ -16,7 +16,7 @@ import type {
 import { buildStoryDocsPayload } from '../docgen/story-docs/build-story-docs.ts';
 
 import type { HtmlHole, HtmlHolePlace, HtmlSnippetTemplate } from '../snippet-holes.ts';
-import { childText, slotText } from '../snippet-values.ts';
+import { slotText } from '../snippet-values.ts';
 import { printHole } from './print-hole.ts';
 
 describe('a changed arg', () => {
@@ -52,18 +52,15 @@ describe('a changed arg', () => {
     { kind: 'attr', name: 'label', mode: 'render' },
     { kind: 'attr', name: 'label', mode: 'field' },
     { kind: 'attr', name: 'label', mode: 'bind' },
-    { kind: 'attr', name: 'label', mode: 'defined' },
-    { kind: 'attr', name: 'label', mode: 'truthy' },
+    { kind: 'code' },
     { kind: 'css', property: '--accent' },
     { kind: 'cssattr', properties: [{ arg: 'v', property: '--accent' }] },
-    { kind: 'bool', name: 'disabled' },
     { kind: 'quoted' },
     { kind: 'text' },
     { kind: 'html' },
     { kind: 'slot', name: 'actions' },
     { kind: 'rule', selector: 'x-el::part(p)' },
     { kind: 'style', selector: 'x-el::part(p)' },
-    { kind: 'choice', truthy: '<b>on</b>', falsy: '' },
     { kind: 'attr', name: 'label', mode: 'bind', path: ['name'] },
     { kind: 'guard' },
   ];
@@ -86,74 +83,33 @@ describe('a changed arg', () => {
     {
       name: 'a lit binding',
       story: 'html`<test-element label=${args.x}></test-element>`',
-      values: () => true,
-    },
-    {
-      name: 'a lit ifDefined binding',
-      story: 'html`<test-element label=${ifDefined(args.x)}></test-element>`',
-      values: () => true,
-    },
-    {
-      name: 'a classMap on an arg',
-      story:
-        'html`<test-element class=${classMap({ on: args.x, off: !Boolean(args.x), card: true })}></test-element>`',
-      values: () => true,
-    },
-    {
-      name: 'a classMap that can set no class',
-      story: 'html`<test-element class=${classMap({ on: args.x })}></test-element>`',
-      values: () => true,
-    },
-    {
-      name: 'a styleMap value',
-      story:
-        'html`<test-element style=${styleMap({ "--gap": "4px", fontSize: args.x })}></test-element>`',
-      // A long value lays the start tag out on lines of its own.
-      values: (value) => String(value).length < 16,
-    },
-    {
-      name: 'a styleMap of args alone',
-      story: 'html`<test-element style=${styleMap({ fontSize: args.x })}></test-element>`',
-      // A story that sets no declaration prints no `style` attribute, whose hole the template of
-      // one that does keeps in its value.
-      values: (value) => String(value).length < 16 && value !== '' && value != null,
-    },
-    {
-      name: 'a lit binding while truthy',
-      story: 'html`<test-element label=${args.x ? args.x : nothing}></test-element>`',
-      values: () => true,
-    },
-    {
-      name: 'a lit boolean binding',
-      story: 'html`<test-element ?disabled=${args.x}></test-element>`',
-      values: () => true,
+      values: isNotObject,
     },
     {
       name: 'a quoted lit value',
       story: 'html`<test-element title="a ${args.x}"></test-element>`',
-      values: () => true,
+      values: isNotObject,
     },
     {
       name: 'lit text',
       story: 'html`<test-element>${args.x}</test-element>`',
-      values: (value) => isTrimmedText(value),
+      values: isNotObject,
     },
     {
       name: 'a member of an arg',
       story: 'html`<test-element label=${args.x.v}></test-element>`',
       member: true,
-      // A story that leaves the member out reads code the server cannot resolve.
-      values: (value) => value !== undefined,
+      values: isNotObject,
     },
     {
       name: 'a nested lit template',
       story: 'html`<test-element>${html`<b>${args.x}</b>`}</test-element>`',
-      values: (value) => isTrimmedText(value),
+      values: isNotObject,
     },
     {
-      name: 'a conditional',
+      name: 'lit code',
       story:
-        'html`<test-element title=${args.x ? "on" : nothing}>${args.x ? "on" : "off"}</test-element>`',
+        'html`<test-element .items=${args.x} class=${classMap({ on: args.x })}>${args.x ? "on" : "off"}</test-element>`',
       values: () => true,
     },
     {
@@ -165,10 +121,9 @@ describe('a changed arg', () => {
         (/^<(\w+)>[^<]*<\/\1>$/.test(slotText(value)) || !/[<\s]/.test(slotText(value))),
     },
     {
-      name: 'string template html',
+      name: 'a string template',
       story: '`<test-element>${args.x}</test-element>`',
-      // Html with elements or runs of whitespace changes the element's layout.
-      values: (value) => !/<|^\s|\s$|\s\s|[\n\t]/.test(childText(value)),
+      values: isNotObject,
     },
     {
       name: 'a css part',
@@ -198,14 +153,12 @@ describe('a changed arg', () => {
     dirs.push(dir);
     const storyPath = join(dir, 'input.stories.ts');
     const own = place.member ? { v: value } : value;
-    const literal = own === undefined ? 'undefined' : JSON.stringify(own);
+    const literal = printValue(own, arg, { quote: "'" });
     writeFileSync(
       storyPath,
       [
-        "import { html, nothing } from 'lit';",
-        "import { ifDefined } from 'lit/directives/if-defined.js';",
+        "import { html } from 'lit';",
         "import { classMap } from 'lit/directives/class-map.js';",
-        "import { styleMap } from 'lit/directives/style-map.js';",
         "export default { title: 'Example/TestElement', component: 'test-element' };",
         `export const Primary = { args: { ${JSON.stringify(arg)}: ${literal} }${
           place.story ? `, render: (args) => ${place.story}` : ''
@@ -294,10 +247,10 @@ describe('a changed arg', () => {
   });
 });
 
-// Text with no whitespace at its ends: the snippet trims a text node at the ends of an element,
-// but prints the text of a changed value as it is.
-const isTrimmedText = (value: unknown) =>
-  childText(value).trim() !== '' && childText(value).trim() === childText(value);
+// A value lit or JavaScript prints as text in a template: an object prints as code where a story is
+// written with it, but as its text where a control sets it.
+const isNotObject = (value: unknown) =>
+  value === null || typeof value !== 'object' || Array.isArray(value);
 
 const declaration = {
   kind: 'class',

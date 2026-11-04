@@ -10,10 +10,12 @@ import {
   authoredSource,
   createStoryArgsResolver,
   createStoryReferenceResolver,
+  detachedTextOf,
   extractStoryJSDocInfo,
   noSnippetWarning,
   resolveEffectiveRender,
   oneLineTextOf,
+  reindent,
   unwrapExpression,
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
@@ -38,9 +40,7 @@ import { classifyArg, type ArgBinding } from './classify-args.ts';
 import { parseArgKey } from '../../arg-keys.ts';
 import type { ElementSnippet } from './print-element.ts';
 import { printElementSnippet } from './print-element.ts';
-import { handlerText } from './template-holes.ts';
-import { printHtmlTemplate } from './template-print.ts';
-import { resolveHtmlTemplate } from './template-scope.ts';
+import { renderSnippet } from './render-snippet.ts';
 
 export interface BuildStoryDocsContext {
   getDocgenPayload: (componentId: string) => Promise<WebComponentsDocgenPayload | undefined>;
@@ -242,27 +242,17 @@ const renderedArgsSnippet = (
 ): SnippetResult => {
   const warnings: (string | undefined)[] = [];
   const render = resolveEffectiveRender(deps.csf, exportName, deps.resolveStoryArgs.ctx);
-  if (render.kind === 'resolved') {
-    const template = resolveHtmlTemplate(render.node, deps.csf);
-    if (template) {
-      const printed = printHtmlTemplate(template, resolved.args, deps.declaration);
-      const unresolved = [...resolved.unresolved, ...printed.unresolved];
-      warnings.push(unresolvedWarning(unresolved));
-      warnings.push(incompleteList(printed.properties, 'properties without an attribute'));
-      warnings.push(
-        incompleteList(printed.falseDefaults ?? [], 'false values that HTML cannot express')
-      );
-      warnings.push(incompleteList(printed.listenersNotShown ?? [], 'listeners not shown'));
-      warnings.push(unboundTemplateArgs(resolved.args, printed.referenced));
-      const hasFailedHole = unresolved.length > 0 || printed.properties.length > 0;
-      const hasSnippet = printed.snippet !== '' || !hasFailedHole;
-      return {
-        ...(hasSnippet ? { snippet: printed.snippet, template: printed.template } : {}),
-        ...joinWarnings(hasSnippet ? warnings : [...warnings, noSnippetWarning(unresolved)]),
-      };
-    }
-    warnings.push(unresolvedWarning([oneLineTextOf(render.node)]));
-  } else if (render.kind === 'unresolved') {
+  if (render.kind === 'resolved' && render.node.body) {
+    // The render function's own code, with the args it reads filled in.
+    const argNames = [
+      ...new Set([
+        ...Object.keys(resolved.args),
+        ...Object.keys(deps.docgenPayload.argTypes ?? {}),
+      ]),
+    ];
+    return renderSnippet(render.node, deps.csf, exportName, resolved.args, argNames);
+  }
+  if (render.kind === 'unresolved') {
     warnings.push(unresolvedWarning(unresolvedRenderSource(render, resolved)));
   }
 
@@ -272,7 +262,7 @@ const renderedArgsSnippet = (
     deps.docgenPayload.argTypes ?? {},
     deps.tag,
     resolved.unresolved,
-    render.kind === 'resolved' || render.kind === 'unresolved'
+    render.kind === 'unresolved'
   );
   warnings.push(args.warning);
 
@@ -280,17 +270,6 @@ const renderedArgsSnippet = (
     ...(args.snippet ? { snippet: args.snippet, template: args.template } : {}),
     ...joinWarnings(warnings),
   };
-};
-
-const unboundTemplateArgs = (
-  args: Record<string, Node>,
-  referenced: readonly string[]
-): string | undefined => {
-  const bound = new Set(referenced);
-  const unbound = Object.entries(args)
-    .filter(([name, node]) => !bound.has(name) && evaluateArgValue(node).kind !== 'unset')
-    .map(([name]) => name);
-  return incompleteList(unbound, 'args not bound by the render template');
 };
 
 const unresolvedRenderSource = (
@@ -537,6 +516,10 @@ const hasSnippetContent = (snippet: ElementSnippet): boolean =>
   snippet.listeners.length > 0 ||
   snippet.slots.length > 0 ||
   snippet.styleRules.length > 0;
+
+// A handler runs inside the snippet's `<script>`, so it keeps its lines and comments, re-indented
+// from the story file to the snippet.
+const handlerText = (node: Node): string => reindent(detachedTextOf(node), '', '    ');
 
 const listenerHandler = (node: Node): string =>
   isFunctionNode(unwrapExpression(node)) ? handlerText(node) : '() => {}';

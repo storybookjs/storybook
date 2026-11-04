@@ -360,18 +360,21 @@ export const Primary = {
       rendered('{ w: 1 }', '<MyButton :size="args.label" v-bind="args" />')
     );
     expect(story?.snippet).toContain('<MyButton :size="label" :label="label" />');
-    expect(filled(story, { label: { w: 1 } }, { label: { w: 2 } })).toContain(
-      '<MyButton :size="{ w: 2 }" :label="{ w: 2 }" />'
+    const changed = filled(story, { label: { w: 1 } }, { label: { w: 2 } });
+    expect(changed).toContain('const label = { w: 2 };');
+    expect(changed).toContain('<MyButton :size="label" :label="label" />');
+    expect(filled(story, { label: { w: 1 } }, { size: 'lg' })).toContain(
+      '<MyButton size="lg" :label="label" />'
     );
   });
 
   it('cannot follow a prop bound before the args binding to an expression of args', async () => {
-    const story = await primaryStory(
-      rendered("'Hi'", `<MyButton :size="args.label + '!'" v-bind="args" />`)
-    );
-    expect(() => filled(story, { label: 'Hi' }, { size: 'lg' })).toThrow(
-      'The snippet cannot show the current value of the `size` arg.'
-    );
+    for (const binding of [`:size="args.label + '!'"`, ':size.prop="args.label"']) {
+      const story = await primaryStory(rendered("'Hi'", `<MyButton ${binding} v-bind="args" />`));
+      expect(() => filled(story, { label: 'Hi' }, { size: 'lg' })).toThrow(
+        'The snippet cannot show the current value of the `size` arg.'
+      );
+    }
   });
 
   it('binds the class a control sets with the class the template binds, as Vue merges them', async () => {
@@ -381,6 +384,13 @@ export const Primary = {
     expect(story?.snippet).toContain('<MyButton :class="{ on: true }" label="Hi" />');
     expect(filled(story, { label: 'Hi' }, { class: 'wide' })).toContain(
       `<MyButton :class="[{ on: true }, 'wide']" label="Hi" />`
+    );
+    // A style bound after the args binding wins over the arg's.
+    const after = await primaryStory(
+      rendered("'Hi'", `<MyButton v-bind="args" :style="{ color: 'red' }" />`)
+    );
+    expect(filled(after, { label: 'Hi' }, { style: 'color: blue' })).toContain(
+      `<MyButton label="Hi" :style="['color: blue', { color: 'red' }]" />`
     );
   });
 

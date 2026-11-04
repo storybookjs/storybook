@@ -51,7 +51,7 @@ function renderFunctionOf(resolution: RenderResolution) {
 export interface CodeSnippet {
   /** Source of a `const` or `function` declaration named after the story. */
   snippet: string;
-  // The snippet with each place an arg prints wrapped in a hole; see `StoryDoc.template`.
+  // The snippet with each place an arg prints as a hole, when asked for; see `ProvidedStoryDoc`.
   template?: SnippetTemplate<ReactHolePlace>;
   /** Imports the snippet needs beyond the component, from arg values that kept a name. */
   imports: ImportRef[];
@@ -214,7 +214,7 @@ function buildSnippet(
   const attrs = injectedAttributes(merged, new Set(), print, mark);
   const children = toJsxChildren(merged.children, print);
   const end = children ? printClose(componentName, children) : ' />';
-  const added = addedAttributes(new Set(injectedNames(merged, new Set())), mark);
+  const added = addedAttributes(injectedNames(merged, new Set()), mark);
   const element = `<${[componentName, ...attrs].join(' ')}${added}${closeHole(componentName, end, mark)}`;
   return `const ${storyName} = () => ${element};`;
 }
@@ -239,7 +239,7 @@ function functionSnippet(
 
   if (fn.type === 'ArrowFunctionExpression' && isJsx(fn.body)) {
     if (rewriteJsx(code, fn.body, merged, edits, mark)) {
-      // Whether the snippet keeps the parameter is the snippet's to decide, in both prints.
+      // The static snippet decides whether the parameter stays, for the template too.
       const kept = readsArgs(`${asyncPrefix}() => (${printRange(code, fn.body, edits)});`)
         ? params
         : '';
@@ -329,7 +329,7 @@ const valuePrinter =
     reindent(detachedTextOf(node), '', indent);
 
 // An arg's node as the shared printers read it, its code printed by `print`.
-const describe = (node: Node, print: ValuePrinter): JsxValue => {
+const toJsxValue = (node: Node, print: ValuePrinter): JsxValue => {
   if (node.type === 'Literal' && typeof node.value === 'boolean') {
     return { kind: 'boolean', value: node.value };
   }
@@ -340,13 +340,14 @@ const describe = (node: Node, print: ValuePrinter): JsxValue => {
 };
 
 const toAttr = (key: string, value: Node, print: ValuePrinter) =>
-  printAttribute(key, describe(value, print));
+  printAttribute(key, toJsxValue(value, print));
 
-// The args `injectedAttributes` prints.
+// The args an element gets as attributes: every one it does not set by name, but `children`.
+const injectedArgs = (merged: Args, existing: ReadonlySet<string>) =>
+  Object.entries(merged).filter(([k, v]) => v != null && k !== 'children' && !existing.has(k));
+
 const injectedNames = (merged: Args, existing: ReadonlySet<string>) =>
-  Object.entries(merged)
-    .filter(([k, v]) => v != null && k !== 'children' && !existing.has(k))
-    .map(([k]) => k);
+  injectedArgs(merged, existing).map(([k]) => k);
 
 // Attributes for every arg not already set by name, with invalid names collected in a spread.
 const injectedAttributes = (
@@ -356,15 +357,13 @@ const injectedAttributes = (
   mark?: Mark
 ) =>
   printAttributes(
-    Object.entries(merged)
-      .filter(([k, v]) => v != null && k !== 'children' && !existing.has(k))
-      .map(([k, v]) => [k, describe(v, print)]),
+    injectedArgs(merged, existing).map(([k, v]) => [k, toJsxValue(v, print)]),
     mark
   );
 
 // Where a spread passes the args a control sets, but those the element prints by name, and
 // `children`, which the element ends with; see `closeHole`.
-const addedAttributes = (printed: ReadonlySet<string>, mark: Mark | undefined) =>
+const addedAttributes = (printed: string[], mark: Mark | undefined) =>
   mark ? mark({ kind: 'attrs', spread: true, except: [...printed, 'children'] }, '') : '';
 
 // The end of an element the args pass `children` to: `end` as the snippet prints it.
@@ -372,7 +371,7 @@ const closeHole = (name: string, end: string, mark: Mark | undefined) =>
   mark ? mark({ kind: 'close', arg: 'children', element: name }, end) : end;
 
 const toJsxChildren = (node: Node | null | undefined, print: ValuePrinter) =>
-  node ? printChildren(describe(node, print)) : '';
+  node ? printChildren(toJsxValue(node, print)) : '';
 
 /** Return `key` if expression is `args.key` (incl. optional chaining), else `null`. */
 function getArgsMemberKey(expr: Node) {
@@ -424,33 +423,15 @@ function rewriteJsx(
       );
       const print = printAt(attrs[firstSpread].start);
       const pieces = injectedAttributes(merged, existing, print).join(' ');
-      // An attribute written before a spread is the spread's arg once a control sets it, so it is
-      // a hole of its own; one that reads another arg cannot follow it, so it is a guard.
-      const lastSpread = attrs.findLastIndex(isArgsSpread);
-      const guards: string[] = [];
-      attrs.slice(0, lastSpread).forEach((a) => {
-        if (!mark || a.type !== 'JSXAttribute' || a.name.type !== 'JSXIdentifier') {
-          return;
-        }
-        const name = a.name.name;
-        const read =
-          a.value?.type === 'JSXExpressionContainer' ? getArgsMemberKey(a.value.expression) : null;
-        if (read === null) {
-          edits.push({
-            start: a.start,
-            end: a.end,
-            marked: mark({ kind: 'attr', arg: name }, code.slice(a.start, a.end)),
-          });
-        } else if (read !== name) {
-          guards.push(mark({ kind: 'guard', arg: name }, ''));
-        }
-      });
-      const printed = new Set([...existing, ...injectedNames(merged, existing)]);
-      const marked =
-        mark &&
-        injectedAttributes(merged, existing, print, mark).join(' ') +
-          guards.join('') +
-          addedAttributes(printed, mark);
+      let marked: string | undefined;
+      if (mark) {
+        const beforeSpread = attrs.slice(0, attrs.findLastIndex(isArgsSpread));
+        const guards = markAttributesBeforeSpread(code, beforeSpread, edits, mark);
+        marked =
+          injectedAttributes(merged, existing, print, mark).join(' ') +
+          guards +
+          addedAttributes([...existing, ...injectedNames(merged, existing)], mark);
+      }
       attrs.forEach((a, index) => {
         if (!isArgsSpread(a)) {
           return;
@@ -544,4 +525,34 @@ function rewriteJsx(
   }
 
   return changed;
+}
+
+// A spread writes over the attributes before it, so each is a hole for the arg it names; one that
+// reads an arg is marked as a read instead. One that reads another arg than it names cannot follow
+// the arg it names, so this returns a `guard` hole for that arg.
+function markAttributesBeforeSpread(
+  code: string,
+  attrs: E.JSXOpeningElement['attributes'],
+  edits: Edit[],
+  mark: Mark
+): string {
+  let guards = '';
+  for (const a of attrs) {
+    if (a.type !== 'JSXAttribute' || a.name.type !== 'JSXIdentifier') {
+      continue;
+    }
+    const name = a.name.name;
+    const read =
+      a.value?.type === 'JSXExpressionContainer' ? getArgsMemberKey(a.value.expression) : null;
+    if (read === null) {
+      edits.push({
+        start: a.start,
+        end: a.end,
+        marked: mark({ kind: 'attr', arg: name }, code.slice(a.start, a.end)),
+      });
+    } else if (read !== name) {
+      guards += mark({ kind: 'guard', arg: name }, '');
+    }
+  }
+  return guards;
 }

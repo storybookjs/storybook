@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -2117,6 +2117,25 @@ describe('StoryIndexGenerator', () => {
         await expect(() => generator.getIndex()).rejects.toThrowErrorMatchingInlineSnapshot(
           `[Error: Unable to index ./src/docs2/MetaOf.mdx]`
         );
+      });
+    });
+
+    describe('matching', () => {
+      it('finds stories in dot folders that a ** reaches with zero or more segments', async () => {
+        const specifier = normalizeStoriesEntry('./dot-folders/**/.docs/*.stories.ts', options);
+
+        const files = await StoryIndexGenerator.findMatchingFiles(
+          specifier,
+          options.workingDir,
+          true
+        );
+
+        expect(
+          Object.keys(files).map((file) => relative(options.workingDir, file).replaceAll('\\', '/'))
+        ).toEqual([
+          'dot-folders/.docs/Cached.stories.ts',
+          'dot-folders/nested/.docs/Nested.stories.ts',
+        ]);
       });
     });
 

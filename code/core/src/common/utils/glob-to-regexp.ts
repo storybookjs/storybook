@@ -1,6 +1,11 @@
 import * as pico from 'picomatch';
+import { convertPathToPattern } from 'tinyglobby';
 
-export function globToRegexp(glob: string) {
+export function globToRegexp(glob: string, directory?: string) {
+  if (directory) {
+    glob = `${convertPathToPattern(directory)}/${glob}`;
+  }
+
   const regex = pico.makeRe(glob, {
     fastpaths: false,
     noglobstar: false,

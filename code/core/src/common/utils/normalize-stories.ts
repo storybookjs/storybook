@@ -90,7 +90,7 @@ export const normalizeStoriesEntry = (
   ).replace(/\/$/, '');
 
   // Now make the importFn matcher.
-  const importPathMatcher = globToRegexp(`${directory}/${files}`);
+  const importPathMatcher = globToRegexp(files, directory);
 
   return {
     ...specifierWithoutMatcher,

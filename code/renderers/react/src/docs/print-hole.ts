@@ -23,7 +23,7 @@ export const printHole: PrintHole<ReactHolePlace> = (hole, value) => {
     case 'attrs':
       return printAttributes(
         Object.entries(value as Args)
-          .filter(([name, item]) => item !== undefined && !hole.except.includes(name))
+          .filter(([name]) => !hole.except.includes(name))
           .map(([name, item]) => [name, toJsxValue(name, item)])
       )
         .map((attribute) => ` ${attribute}`)

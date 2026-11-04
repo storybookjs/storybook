@@ -200,8 +200,8 @@ describe('story-docs templates', () => {
         render: ({ label }) => ({ template: \`<sb-button>\${label}</sb-button>\` }),
       };
     `);
-    expect(fill(story!, { label: 'Go' }, { label: 'Mail {{ me }} @ home' })).toContain(
-      "<sb-button>Mail {{ '{{' }} me &#125;&#125; &#64; home</sb-button>"
+    expect(fill(story!, { label: 'Go' }, { label: 'Mail {me} @ home' })).toContain(
+      '<sb-button>Mail &#123;me&#125; &#64; home</sb-button>'
     );
   });
 
@@ -331,7 +331,27 @@ describe('story-docs templates', () => {
       };
     `);
     expect(fill(story!, {})).toBe(story!.snippet);
-    expect(fill(story!, {}, { size: 'lg' })).toContain(`<sb-button [size]="'lg'"></sb-button>`);
+    expect(fill(story!, {}, { label: 'Go', size: 'lg' })).toContain(
+      `<sb-button [label]="'Go'" [size]="'lg'"></sb-button>`
+    );
+  });
+
+  it('puts an input a control sets after one space, before the outputs', async () => {
+    const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = {
+        args: { label: 'Go', pressed: () => {} },
+        render: ({ label, ...rest }) => ({
+          props: rest,
+          template: \`<sb-button \${argsToTemplate(rest)}>\${label}</sb-button>\`,
+        }),
+      };
+    `);
+    const own = { label: 'Go', pressed: () => {} };
+    expect(fill(story!, own)).toBe(story!.snippet);
+    expect(fill(story!, own, { ...own, size: 'lg' })).toContain(
+      `<sb-button [size]="'lg'" (pressed)="pressed($event)">Go</sb-button>`
+    );
   });
 
   it('fills an argsToTemplate call that breaks its bindings over lines', async () => {

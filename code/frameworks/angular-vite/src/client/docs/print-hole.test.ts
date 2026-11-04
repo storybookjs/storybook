@@ -37,7 +37,8 @@ describe('printHole', () => {
 
   it('prints text Angular would read as its own syntax in the form Angular reads as text', () => {
     expect(print('text', 'a {b} me@x.com')).toBe('a &#123;b&#125; me&#64;x.com');
-    expect(print('text', '{{ x }}')).toBe("{{ '{{' }} x &#125;&#125;");
+    expect(print('text', 'US$')).toBe('US&#36;');
+    expect(print('text', 'a $ b')).toBe('a $ b');
   });
 
   it('prints NaN and Infinity into a class field, which TypeScript writes by name', () => {
@@ -52,7 +53,7 @@ describe('printHole', () => {
     }
   );
 
-  it.each([() => null, new Date(0), { a: 1 }])(
+  it.each([() => null, new Date(0), { a: 1 }, '{{ x }}'])(
     'throws for a value with no text, such as %s',
     (value) => {
       expect(() => print('text', value)).toThrow(new UnprintableArgError('x'));

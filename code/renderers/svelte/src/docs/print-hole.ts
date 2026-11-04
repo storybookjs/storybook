@@ -19,7 +19,7 @@ export const printHole: PrintHole<SvelteHolePlace> = (hole, value) => {
       return printProp(arg, propValue(value, arg));
     case 'props':
       return Object.entries(value as Args)
-        .filter(([name, item]) => item !== undefined && !hole.except.includes(name))
+        .filter(([name]) => !hole.except.includes(name))
         .map(([name, item]) => printProp(name, propValue(item, name)))
         .join(hole.separator);
     case 'value':

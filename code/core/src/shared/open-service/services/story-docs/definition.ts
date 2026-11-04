@@ -24,6 +24,16 @@ const storyDocSchema = v.object({
   error: v.optional(storyDocsErrorSchema),
 });
 
+// A `SnippetTemplate`: code, and holes whose place only its renderer reads.
+const templateHoleSchema = v.object({
+  place: v.looseObject({ kind: v.string() }),
+  arg: v.optional(v.string()),
+  spread: v.optional(v.literal(true)),
+  text: v.string(),
+  space: v.optional(v.string()),
+});
+const snippetTemplateSchema = v.array(v.union([v.string(), templateHoleSchema]));
+
 const storyDocsPayloadSchema = v.object({
   id: v.string(),
   name: v.string(),
@@ -38,7 +48,7 @@ const storyDocsOutputSchema = v.optional(storyDocsPayloadSchema);
 const storyTemplatesOutputSchema = v.optional(
   v.object({
     import: v.optional(v.string()),
-    stories: v.record(v.string(), v.string()),
+    stories: v.record(v.string(), snippetTemplateSchema),
   })
 );
 

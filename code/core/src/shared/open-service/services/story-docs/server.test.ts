@@ -4,7 +4,20 @@ import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.t
 import { buildStaticFiles, clearRegistry, getService } from '../../server.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
 import { registerStoryDocsService, subscribeStoryDocsToModuleGraphChanges } from './server.ts';
+import type { SnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
 import type { ProvidedStoryDocsPayload, StoryDocsPayload, StoryDocsProvider } from './types.ts';
+
+// `<Button label="…" />` with its label in a hole.
+const buttonTemplate = (text = 'label="Hi"', name = 'label'): SnippetTemplate => [
+  '<Button ',
+  { place: { kind: 'attr', name }, arg: 'label', text },
+  ' />',
+];
+const vegaTemplate: SnippetTemplate = [
+  '<Vega',
+  { place: { kind: 'attrs' }, spread: true, text: '' },
+  ' />',
+];
 
 afterEach(() => {
   clearRegistry();
@@ -79,18 +92,24 @@ describe('story-docs open service', () => {
     expect(provider).toHaveBeenCalledWith({ entry });
   });
 
-  it('keeps a template only while it prints the snippet and holds no hole bracket of its own', async () => {
+  it('keeps a template only while it prints the snippet and has the shape of one', async () => {
     const entry = makeStoryEntry('button--primary', 'Button');
-    const story = (snippet: string, template: string) => ({
-      id: `button--${snippet.length}`,
+    const story = (id: string, snippet: string, template: unknown) => ({
+      id: `button--${id}`,
       name: 'Primary',
       snippet,
-      template,
+      template: template as SnippetTemplate,
     });
     const stories = [
-      story('<Button label="Hi" />', '<Button ⟦attr label label⟫label="Hi"⟧ />'),
-      story('<Button label="⟦x⟧" />', '<Button label="⟦x⟧" />'),
-      story('<Button label="Hi" />  ', '<Button ⟦attr label label⟫label="Hey"⟧ />  '),
+      story('kept', '<Button label="Hi" />', buttonTemplate()),
+      story('brackets', '<Button label="⟦x⟧" />', ['<Button label="⟦x⟧" />']),
+      story('other-snippet', '<Button label="Hi" />  ', [...buttonTemplate('label="Hey"'), '  ']),
+      story('string', '<Button label="Hi" />', '<Button ⟦attr label label⟫label="Hi"⟧ />'),
+      story('no-arg', '<Button label="Hi" />', [
+        '<Button ',
+        { place: { kind: 'attr' }, text: 'label="Hi"' },
+        ' />',
+      ]),
     ];
     const service = registerStoryDocsService({
       getIndex: makeGetIndex([entry]),
@@ -99,7 +118,10 @@ describe('story-docs open service', () => {
     });
     await service.commands.extractStoryDocs({ id: 'button' });
     expect(service.queries.storyTemplates.get({ id: 'button' })).toEqual({
-      stories: { [stories[0]!.id]: stories[0]!.template },
+      stories: {
+        [stories[0]!.id]: stories[0]!.template,
+        [stories[1]!.id]: stories[1]!.template,
+      },
     });
   });
 
@@ -113,7 +135,7 @@ describe('story-docs open service', () => {
           id: 'button--primary',
           name: 'Primary',
           snippet: '<Button label="Hi" />',
-          template: '<Button ⟦attr label label⟫label="Hi"⟧ />',
+          template: buttonTemplate(),
         },
         'button--plain': { id: 'button--plain', name: 'Plain', snippet: '<Button />' },
       },
@@ -141,7 +163,7 @@ describe('story-docs open service', () => {
       expect(service.queries.storyDocs.get({ id: 'button' })).toEqual({ ...provided, stories });
       expect(service.queries.storyTemplates.get({ id: 'button' })).toEqual({
         import: provided.import,
-        stories: { 'button--primary': '<Button ⟦attr label label⟫label="Hi"⟧ />' },
+        stories: { 'button--primary': buttonTemplate() },
       });
     });
 
@@ -192,13 +214,13 @@ describe('story-docs open service', () => {
         ...provided,
         stories: {
           ...provided.stories,
-          'button--primary': { ...primary, template: '<Button ⟦attr label x⟫label="Hi"⟧ />' },
+          'button--primary': { ...primary, template: buttonTemplate('label="Hi"', 'x') },
         },
       };
       await service.commands.extractStoryDocs({ id: 'button' });
       unsubscribe();
 
-      expect(selected.at(-1)).toBe('<Button ⟦attr label x⟫label="Hi"⟧ />');
+      expect(selected.at(-1)).toEqual(buttonTemplate('label="Hi"', 'x'));
       expect(templates).not.toHaveBeenCalled();
     });
 
@@ -210,12 +232,12 @@ describe('story-docs open service', () => {
       expect(store['core/story-docs/button.json']).toEqual({
         components: { button: { ...provided, stories: expect.any(Object) } },
       });
-      expect(JSON.stringify(store['core/story-docs/button.json'])).not.toContain('⟦');
+      expect(JSON.stringify(store['core/story-docs/button.json'])).not.toContain('"template"');
       expect(store['core/story-docs/templates/button.json']).toEqual({
         templates: {
           button: {
             import: provided.import,
-            stories: { 'button--primary': '<Button ⟦attr label label⟫label="Hi"⟧ />' },
+            stories: { 'button--primary': buttonTemplate() },
           },
         },
       });
@@ -241,7 +263,7 @@ describe('story-docs open service', () => {
           .filter((story) => story.importPath === entry.importPath)
           .map((story) => [
             story.id,
-            { id: story.id, name: story.name, snippet: '<Vega />', template: '<Vega⟦attrs *⟫⟧ />' },
+            { id: story.id, name: story.name, snippet: '<Vega />', template: vegaTemplate },
           ])
       ),
     });
@@ -278,9 +300,10 @@ describe('story-docs open service', () => {
       expect(payload!.stories['vega--heatmap']!.snippet).toBe(
         `import { Vega } from '${ranges}';\n\n<Vega />`
       );
-      expect(service.queries.storyTemplates.get({ id: 'vega' })!.stories['vega--heatmap']).toBe(
-        `import { Vega } from '${ranges}';\n\n<Vega⟦attrs *⟫⟧ />`
-      );
+      expect(service.queries.storyTemplates.get({ id: 'vega' })!.stories['vega--heatmap']).toEqual([
+        `import { Vega } from '${ranges}';\n\n<Vega`,
+        ...vegaTemplate.slice(1),
+      ]);
     });
 
     it('reports the error of a file that fails on the stories of that file', async () => {

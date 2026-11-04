@@ -1,3 +1,4 @@
+import type { SnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
 import type { Options } from '../../../../types/modules/core-common.ts';
 import type { IndexEntry } from '../../../../types/modules/indexer.ts';
 
@@ -66,12 +67,12 @@ export interface StoryDocsPayload {
  */
 export interface ProvidedStoryDoc extends StoryDoc {
   /**
-   * The static `snippet` with each place an arg prints wrapped in a hole that holds what the
-   * snippet prints there, such as `<Button⟦attr label label ~%20⟫label="Go"⟧ />`; see
-   * `TemplateHole`. Once the args differ from the story's initial args, the preview fills it
-   * through the renderer's `parameters.docs.source.printHole`, so the snippet follows the controls.
+   * The static `snippet` split into code and holes, each a place an arg prints with what the
+   * snippet prints there; see `SnippetTemplate`. Joining its segments gives the snippet. Once the
+   * args differ from the story's initial args, the preview fills it through the renderer's
+   * `parameters.docs.source.printHole`, so the snippet follows the controls.
    */
-  template?: string;
+  template?: SnippetTemplate;
 }
 
 /** A story-docs payload as a provider returns it, with each story's `template`. */
@@ -88,7 +89,7 @@ export interface StoryTemplatesPayload {
   /** Prepended to every template, as `StoryDocsPayload.import` is to every snippet. */
   import?: string;
   /** Each story's template by story id; a story without one cannot follow the controls. */
-  stories: Record<string, string>;
+  stories: Record<string, SnippetTemplate>;
 }
 
 /**

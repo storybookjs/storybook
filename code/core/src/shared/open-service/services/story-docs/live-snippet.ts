@@ -1,7 +1,11 @@
 import { isEqual } from 'es-toolkit/predicate';
 
 import { logger } from 'storybook/internal/client-logger';
-import { type PrintHole, fillTemplate } from '../../../../docs-tools/snippetTemplate.ts';
+import {
+  type PrintHole,
+  fillTemplate,
+  stripHoles,
+} from '../../../../docs-tools/snippetTemplate.ts';
 import type { Args, Parameters } from 'storybook/internal/types';
 
 import type { StoryDocsService } from './definition.ts';
@@ -88,7 +92,13 @@ export function selectLiveSnippetForStory(
   const story = payload?.stories[storyId];
   const stale = story?.snippet === undefined ? undefined : NOT_FOLLOWING;
   const template = templates?.stories[storyId];
-  if (template === undefined || printHole === undefined) {
+  // The templates load apart from the story docs, so a template from another revision of the
+  // story file than its snippet does not follow it.
+  if (
+    template === undefined ||
+    printHole === undefined ||
+    stripHoles(template) !== story?.snippet
+  ) {
     return staticSnippet(stale);
   }
   try {

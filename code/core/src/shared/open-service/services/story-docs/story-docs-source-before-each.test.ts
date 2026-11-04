@@ -47,7 +47,9 @@ const payloadWithWarning: StoryDocsPayload = {
 const serviceSnippet = 'import { Button } from \'./Button\';\n\n<Button label="hi" />';
 const templates: StoryTemplatesPayload = {
   import: payload.import,
-  stories: { [storyId]: '<Button ⟦attr label⟫label="hi"⟧ />' },
+  stories: {
+    [storyId]: ['<Button ', { place: { kind: 'attr' }, arg: 'label', text: 'label="hi"' }, ' />'],
+  },
 };
 const printHole = (_: unknown, value: unknown) => `label="${String(value)}"`;
 // The story's args once `label` changed to `Go` from the `hi` it is written with.
@@ -130,6 +132,26 @@ describe('selectLiveSnippetForStory', () => {
     ).toEqual({
       snippet: serviceSnippet,
       warning: stale,
+    });
+  });
+
+  it('selects the static snippet with a warning that it does not follow for a template of another snippet', () => {
+    // The templates load apart from the story docs, so they can come from another revision.
+    const otherRevision: StoryTemplatesPayload = {
+      ...templates,
+      stories: {
+        [storyId]: [
+          '<Button ',
+          { place: { kind: 'attr' }, arg: 'label', text: 'label="ho"' },
+          ' />',
+        ],
+      },
+    };
+    expect(
+      selectLiveSnippetForStory(payloadWithWarning, otherRevision, storyId, changed, printHole)
+    ).toEqual({
+      snippet: serviceSnippet,
+      warning: `${warning} The snippet does not follow the changed args.`,
     });
   });
 

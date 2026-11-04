@@ -7,7 +7,11 @@ import {
   toExtractionError,
 } from '../extraction-service.server.ts';
 import { type StoryDocsServiceState, storyDocsServiceDef } from './definition.ts';
-import { hasHoleBracket, stripHoles } from '../../../../docs-tools/snippetTemplate.ts';
+import {
+  isSnippetTemplate,
+  prependToTemplate,
+  stripHoles,
+} from '../../../../docs-tools/snippetTemplate.ts';
 import { prependImportToSnippet } from './snippet.ts';
 import type {
   ProvidedStoryDoc,
@@ -32,14 +36,14 @@ export type RegisterStoryDocsServiceOptions = {
 
 type FileResult = PromiseSettledResult<ProvidedStoryDocsPayload | undefined>;
 
-// A template the preview can fill: its holes can be found, as the snippet holds no hole bracket, and
-// it prints the snippet while no arg changes.
+// A template the preview can fill: it has a template's shape, and it prints the snippet while no arg
+// changes.
 function withFillableTemplate(story: ProvidedStoryDoc): ProvidedStoryDoc {
   const { template, ...doc } = story;
   if (
     template === undefined ||
     (story.snippet !== undefined &&
-      !hasHoleBracket(story.snippet) &&
+      isSnippetTemplate(template) &&
       stripHoles(template) === story.snippet)
   ) {
     return story;
@@ -63,11 +67,18 @@ function storyDocFromFile(entry: IndexEntry, result: FileResult): ProvidedStoryD
   if (story?.snippet === undefined) {
     return story;
   }
-  const withImport = (code: string) => prependImportToSnippet(result.value?.import, code);
+  const importBlock = result.value?.import;
+  const snippet = prependImportToSnippet(importBlock, story.snippet);
   return {
     ...story,
-    snippet: withImport(story.snippet),
-    ...(story.template !== undefined && { template: withImport(story.template) }),
+    snippet,
+    ...(story.template !== undefined && {
+      // The import block as `prependImportToSnippet` writes it before the snippet.
+      template: prependToTemplate(
+        snippet.slice(0, snippet.length - story.snippet.length),
+        story.template
+      ),
+    }),
   };
 }
 

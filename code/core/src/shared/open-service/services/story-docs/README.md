@@ -13,8 +13,10 @@ snippet to the manager Code panel and the docs blocks via `SNIPPET_RENDERED`, re
 The goal: after you change a control, the snippet shows code you can copy into your project, and
 it reads like code you would write. It does not have to be perfect; it has to be logical.
 
-Live snippets are behind `features.experimentalLiveServerSnippets`. While it is off, `storyArgsChanged`
-never reports a change, so the preview shows the static snippet, as before live snippets.
+Live snippets are behind `features.experimentalLiveServerSnippets`. While it is off, the service
+leaves every `template` out of the story docs, so agents and the components manifest read what they
+read before live snippets, and `storyArgsChanged` never reports a change, so the preview shows the
+static snippet.
 
 A story's `snippet` is static: it shows the args written in the story file, and it is what agents
 and the components manifest read. So that the snippet follows the controls with `docgenServer` on,
@@ -62,10 +64,10 @@ never reads a place's fields but its `kind`:
   shows its static snippet with a warning that it does not follow them.
 
 `stripHoles(template)`, every segment joined with each hole's `text`, is the snippet. The service
-drops a template that does not have a template's shape or does not print its snippet, and the
-preview checks it again, as the templates load apart from the story docs. Each renderer registers
-its `printHole` only with `docgenServer` on, so with it off the parameters do not change. It prints a
-value with its `snippet-values.ts`, the module its provider prints the static snippet with too.
+drops a template that does not have a template's shape or does not print its snippet. Each
+renderer registers its `printHole` only with `docgenServer` on, so with it off the parameters do not
+change. It prints a value with its `snippet-values.ts`, the module its provider prints the static
+snippet with too.
 
 A provider usually prints the snippet a second time with each place an arg prints marked, through
 `createHoleMarks`, and turns the marks into holes. Marks are written with private-use characters the
@@ -77,28 +79,8 @@ has the args it is written with, and fill the template once the args change, in 
 builds alike. The `warning` says what the snippet leaves out, which the filled snippet leaves out
 too, so it is shown with either.
 
-### Where templates are stored
-
-A template holds its whole snippet again, so it is kept apart from the story docs, which agents and
-the components manifest read:
-
-- One extraction writes the story docs under `state.components` and the templates under
-  `state.templates`; the `storyDocs` query never returns a template. A filled template gets the
-  `import` of the story docs, as its snippet does, so the templates do not repeat it.
-- The `storyTemplates` query returns a component's templates. A static build writes them to
-  `core/story-docs/templates/<id>.json`, apart from `core/story-docs/<id>.json`, through the
-  `storyDocs` query's `staticSnapshots`, so one extraction fills both files.
-- The preview loads a component's templates once, the first time one of its stories renders with
-  changed args (`loadStoryTemplates`). A static build fetches the file then. A dev server sends them
-  over its socket with the story docs, and the `storyTemplates` load joins a story-docs load in
-  flight, so it never extracts twice. Until they load, the static snippet shows; if they cannot
-  load, it shows with a warning that it does not follow the controls, and the next change tries
-  again.
-- The `Source` hook reads a story's template in its story-docs selector, so an update that changes
-  only a template fills the snippet again without loading the templates.
-
-So the manifest and a static build carry nothing more for a story whose args never change. A dev
-server does send the templates over its socket with the story docs.
+A story's `template` is stored next to its `snippet`, in the same story docs, so the preview has
+it as soon as the story docs load. With the flag on, agents and the components manifest read it too.
 
 ## Providers
 

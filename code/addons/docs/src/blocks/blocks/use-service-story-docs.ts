@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import type { PreparedStory, StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
 
@@ -6,10 +6,8 @@ import {
   type QueryState,
   type StoryArgs,
   getPrintHole,
-  loadStoryTemplates,
   selectLiveSnippetForStory,
   selectStoryDoc,
-  storyArgsChanged,
 } from 'storybook/open-service';
 import { getService } from 'storybook/preview-api';
 
@@ -64,56 +62,18 @@ export function useServiceStoryLiveSnippet(
 ): QueryState<{ snippet?: string; warning?: string }> {
   // The selector is stable, so an args change fills the template again without a new subscription,
   // which would load the story docs again.
-  const state = useServiceStory(story.id, selectStoryWithTemplate);
+  const state = useServiceStory(story.id, selectStoryPayload);
   const printHole = getPrintHole(story.parameters);
-  const service = getService('core/story-docs', { internal: true });
-  const componentId = story.id.split('--')[0]!;
-  const changed = storyArgsChanged(args);
-  const templates = state.data?.templates;
-  // The templates load apart from the story docs, the first time the args change, and again on
-  // each change after a load that brought none.
-  const [loadedFor, setLoadedFor] = useState<string>();
-  const retryOn = loadedFor === componentId && templates === undefined ? args : undefined;
-  useEffect(() => {
-    if (!changed) {
-      return;
-    }
-    let mounted = true;
-    void loadStoryTemplates(service, componentId).then(() => {
-      if (mounted) {
-        setLoadedFor(componentId);
-      }
-    });
-    return () => {
-      mounted = false;
-    };
-  }, [changed, service, componentId, retryOn]);
   const data = useMemo(
-    () =>
-      selectLiveSnippetForStory(
-        state.data?.payload,
-        templates ?? (loadedFor === componentId ? undefined : 'loading'),
-        story.id,
-        args,
-        printHole
-      ),
-    [state.data, templates, story.id, args, printHole, componentId, loadedFor]
+    () => selectLiveSnippetForStory(state.data, story.id, args, printHole),
+    [state.data, story.id, args, printHole]
   );
   return useMemo(() => ({ ...state, data }), [state, data]);
 }
 
-// This story's docs and template. A subscription re-runs only for the state its selector reads, and
-// an update can change a story's fields in place, so the story is copied field by field. The
-// template is read here rather than subscribed to, which would load it at once, so an update that
-// changes only the template still re-runs the selector.
-function selectStoryWithTemplate(payload: StoryDocsPayload | undefined, storyId: string) {
+// The payload with only this story. A subscription re-runs only for the state its selector reads,
+// and an update can change a story's fields in place, so the story is copied field by field.
+function selectStoryPayload(payload: StoryDocsPayload | undefined, storyId: string) {
   const story = payload?.stories[storyId];
-  const templates = getService('core/story-docs', { internal: true }).queries.storyTemplates.get({
-    id: storyId.split('--')[0]!,
-  });
-  const template = templates?.stories[storyId];
-  return {
-    payload: payload && { ...payload, stories: story ? { [storyId]: { ...story } } : {} },
-    templates: templates && { stories: template === undefined ? {} : { [storyId]: template } },
-  };
+  return payload && { ...payload, stories: story ? { [storyId]: { ...story } } : {} };
 }

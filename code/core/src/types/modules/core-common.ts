@@ -30,8 +30,6 @@ export type {
   DocgenWorkerModule,
 } from '../../shared/open-service/services/docgen/types.ts';
 export type {
-  ProvidedStoryDoc,
-  ProvidedStoryDocsPayload,
   StoryDoc,
   StoryDocsById,
   StoryDocsError,
@@ -39,7 +37,6 @@ export type {
   StoryDocsProvider,
   StoryDocsProviderInput,
   StoryDocsProviderPreset,
-  StoryTemplatesPayload,
 } from '../../shared/open-service/services/story-docs/types.ts';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */

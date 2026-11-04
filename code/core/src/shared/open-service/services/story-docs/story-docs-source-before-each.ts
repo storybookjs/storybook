@@ -5,18 +5,13 @@ import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePan
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
-import {
-  storyArgsChanged,
-  getPrintHole,
-  loadStoryTemplates,
-  selectLiveSnippetForStory,
-} from './live-snippet.ts';
+import { getPrintHole, selectLiveSnippetForStory } from './live-snippet.ts';
 
 export { shouldSkipStoryDocsEmit };
 
 // The first render of each version of a story loads its component's story docs; the server keeps
 // them current after that. Keyed on the story's parameters, which an args change keeps and a hot
-// update replaces. The templates its snippets fill load apart, once a story's args first change.
+// update replaces.
 const loads = new WeakMap<object, Promise<unknown>>();
 
 // The latest emit of each story. Each emit waits for the one before it, so with an async
@@ -64,16 +59,14 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
     load.catch(() => loads.delete(context.parameters));
   }
   const args = { unmappedArgs: context.unmappedArgs, initialArgs: context.initialArgs };
-  const templates = storyArgsChanged(args) ? loadStoryTemplates(service, componentId) : undefined;
   const previous = emits.get(storyId);
-  const codePanelSnippetPromise: Promise<unknown> = Promise.all([load, templates, previous])
+  const codePanelSnippetPromise: Promise<unknown> = Promise.all([load, previous])
     .then(() => {
       if (cancelled) {
         return;
       }
       const { snippet, warning } = selectLiveSnippetForStory(
         query.get({ id: componentId }),
-        service.queries.storyTemplates.get({ id: componentId }),
         storyId,
         args,
         getPrintHole(context.parameters)

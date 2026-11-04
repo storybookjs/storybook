@@ -600,12 +600,6 @@ For each static input it:
 4. resolves the normalized logical output path as `<serviceId>/<staticPath(input)>`
 5. stores the resulting runtime state in the final `StaticStore`
 
-A query may declare `staticSnapshots(state, input)` to split that state into one snapshot per query,
-keyed by query name. Each is written at that query's own `staticPath` for the same input, so one load
-fills several files. `core/story-docs` uses it to write the heavy templates its extraction produces
-to a file apart from the story docs, which the browser fetches only when it needs them. A name whose
-query has no `staticPath` fails the build.
-
 `staticPath` is declared on the definition layer as `(input) => string`, relative to the service's
 own output folder. The static build always prepends the service id so two services cannot write to
 the same JSON path. It is exposed to callers through `describeService()` as `staticPath: true` on the

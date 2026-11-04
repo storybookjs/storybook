@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
-import { buildStaticFiles, clearRegistry, getService } from '../../server.ts';
+import { clearRegistry, getService } from '../../server.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
 import { registerStoryDocsService, subscribeStoryDocsToModuleGraphChanges } from './server.ts';
 import type { SnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
-import type { ProvidedStoryDocsPayload, StoryDocsPayload, StoryDocsProvider } from './types.ts';
+import type { StoryDocsPayload, StoryDocsProvider } from './types.ts';
 
 // `<Button label="…" />` with its label in a hole.
 const buttonTemplate = (
@@ -110,131 +110,60 @@ describe('story-docs open service', () => {
         ' />',
       ]),
     ];
-    const service = registerStoryDocsService({
-      getIndex: makeGetIndex([entry]),
-      storyDocsProvider: async () =>
-        makeStoryDocsPayload({ stories: Object.fromEntries(stories.map((s) => [s.id, s])) }),
-    });
-    await service.commands.extractStoryDocs({ id: 'button' });
-    expect(service.queries.storyTemplates.get({ id: 'button' })).toEqual({
-      stories: {
-        [stories[0]!.id]: stories[0]!.template,
-        [stories[1]!.id]: stories[1]!.template,
-      },
-    });
+    const templatesWith = async (liveSnippets: boolean) => {
+      clearRegistry();
+      const service = registerStoryDocsService({
+        getIndex: makeGetIndex([entry]),
+        storyDocsProvider: async () =>
+          makeStoryDocsPayload({ stories: Object.fromEntries(stories.map((s) => [s.id, s])) }),
+        liveSnippets,
+      });
+      const payload = await service.commands.extractStoryDocs({ id: 'button' });
+      return Object.values(payload!.stories).map((doc) => doc.template);
+    };
+
+    expect(await templatesWith(true)).toEqual([
+      stories[0]!.template,
+      stories[1]!.template,
+      undefined,
+      undefined,
+      undefined,
+    ]);
+    // Without live snippets, agents and the components manifest read no templates.
+    expect(await templatesWith(false)).toEqual(stories.map(() => undefined));
   });
 
-  describe('templates', () => {
-    const entry = makeStoryEntry('button--primary', 'Button');
-    const provided: ProvidedStoryDocsPayload = {
-      ...makeStoryDocsPayload(),
-      import: "import { Button } from './Button';",
-      stories: {
-        'button--primary': {
-          id: 'button--primary',
-          name: 'Primary',
-          snippet: '<Button label="Hi" />',
-          template: buttonTemplate(),
-        },
-        'button--plain': { id: 'button--plain', name: 'Plain', snippet: '<Button />' },
-      },
-    };
-    const register = (payload: ProvidedStoryDocsPayload) =>
-      registerStoryDocsService({
-        getIndex: makeGetIndex([entry]),
-        storyDocsProvider: async () => payload,
-      });
-
-    it('keeps them out of the story docs, which agents and the components manifest read', async () => {
-      const service = register(provided);
-
-      const extracted = await service.commands.extractStoryDocs({ id: 'button' });
-
-      const stories = {
-        'button--primary': {
-          id: 'button--primary',
-          name: 'Primary',
-          snippet: '<Button label="Hi" />',
-        },
-        'button--plain': { id: 'button--plain', name: 'Plain', snippet: '<Button />' },
-      };
-      expect(extracted).toEqual({ ...provided, stories });
-      expect(service.queries.storyDocs.get({ id: 'button' })).toEqual({ ...provided, stories });
-      expect(service.queries.storyTemplates.get({ id: 'button' })).toEqual({
-        stories: { 'button--primary': buttonTemplate() },
-      });
+  it('updates a subscription to a template when only the template changes', async () => {
+    let name = 'label';
+    const service = registerStoryDocsService({
+      getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
+      storyDocsProvider: async () =>
+        makeStoryDocsPayload({
+          stories: {
+            'button--primary': {
+              id: 'button--primary',
+              name: 'Primary',
+              snippet: '<Button label="Hi" />',
+              template: buttonTemplate('label="Hi"', name),
+            },
+          },
+        }),
+      liveSnippets: true,
     });
+    await service.commands.extractStoryDocs({ id: 'button' });
+    const selected: unknown[] = [];
+    const unsubscribe = service.queries.storyDocs.subscribe(
+      { id: 'button' },
+      (payload) => payload?.stories['button--primary']?.template,
+      (state) => selected.push(state.data)
+    );
 
-    it('load with the story docs, in one extraction', async () => {
-      const provider = vi.fn<StoryDocsProvider>(async () => provided);
-      const service = registerStoryDocsService({
-        getIndex: makeGetIndex([entry]),
-        storyDocsProvider: provider,
-      });
+    // A server update that changes the template but not the snippet.
+    name = 'title';
+    await service.commands.extractStoryDocs({ id: 'button' });
+    unsubscribe();
 
-      await Promise.all([
-        service.queries.storyDocs.loaded({ id: 'button' }),
-        service.queries.storyTemplates.loaded({ id: 'button' }),
-      ]);
-
-      expect(provider).toHaveBeenCalledOnce();
-      expect(service.queries.storyTemplates.get({ id: 'button' })?.stories).toHaveProperty(
-        'button--primary'
-      );
-    });
-
-    it('stores none for a component whose stories have none, so the preview knows they loaded', async () => {
-      const service = register(makeStoryDocsPayload());
-
-      await service.commands.extractStoryDocs({ id: 'button' });
-
-      expect(service.queries.storyTemplates.get({ id: 'button' })).toEqual({ stories: {} });
-    });
-
-    it('reach a story-docs subscription whose selector reads them, without loading them', async () => {
-      let payload = provided;
-      const service = registerStoryDocsService({
-        getIndex: makeGetIndex([entry]),
-        storyDocsProvider: async () => payload,
-      });
-      await service.commands.extractStoryDocs({ id: 'button' });
-      const templates = vi.spyOn(service.queries.storyTemplates, 'loaded');
-      const selected: unknown[] = [];
-      const unsubscribe = service.queries.storyDocs.subscribe(
-        { id: 'button' },
-        () => service.queries.storyTemplates.get({ id: 'button' })?.stories['button--primary'],
-        (state) => selected.push(state.data)
-      );
-
-      // A server update that changes a template but no snippet.
-      const primary = provided.stories['button--primary']!;
-      payload = {
-        ...provided,
-        stories: {
-          ...provided.stories,
-          'button--primary': { ...primary, template: buttonTemplate('label="Hi"', 'x') },
-        },
-      };
-      await service.commands.extractStoryDocs({ id: 'button' });
-      unsubscribe();
-
-      expect(selected.at(-1)).toEqual(buttonTemplate('label="Hi"', 'x'));
-      expect(templates).not.toHaveBeenCalled();
-    });
-
-    it('writes them to a static file of their own, apart from the story docs', async () => {
-      register(provided);
-
-      const store = await buildStaticFiles();
-
-      expect(store['core/story-docs/button.json']).toEqual({
-        components: { button: { ...provided, stories: expect.any(Object) } },
-      });
-      expect(JSON.stringify(store['core/story-docs/button.json'])).not.toContain('"template"');
-      expect(store['core/story-docs/templates/button.json']).toEqual({
-        templates: { button: { stories: { 'button--primary': buttonTemplate() } } },
-      });
-    });
+    expect(selected.at(-1)).toEqual(buttonTemplate('label="Hi"', 'title'));
   });
 
   describe('a component with several story files', () => {
@@ -282,6 +211,7 @@ describe('story-docs open service', () => {
       const service = registerStoryDocsService({
         getIndex: makeGetIndex(entries),
         storyDocsProvider: extractFile,
+        liveSnippets: true,
       });
 
       const payload = await service.commands.extractStoryDocs({ id: 'vega' });
@@ -293,7 +223,7 @@ describe('story-docs open service', () => {
       expect(payload!.stories['vega--heatmap']!.snippet).toBe(
         `import { Vega } from '${ranges}';\n\n<Vega />`
       );
-      expect(service.queries.storyTemplates.get({ id: 'vega' })!.stories['vega--heatmap']).toEqual([
+      expect(payload!.stories['vega--heatmap']!.template).toEqual([
         `import { Vega } from '${ranges}';\n\n<Vega`,
         ...vegaTemplate.slice(1),
       ]);

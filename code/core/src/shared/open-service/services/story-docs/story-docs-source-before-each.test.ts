@@ -13,7 +13,8 @@ import {
   shouldSkipStoryDocsEmit,
   storyDocsSourceBeforeEach,
 } from './story-docs-source-before-each.ts';
-import type { StoryDocsPayload, StoryTemplatesPayload } from './types.ts';
+import type { SnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
+import type { StoryDocsPayload } from './types.ts';
 
 vi.mock('storybook/preview-api', { spy: true });
 
@@ -24,6 +25,11 @@ const settled = () => new Promise((resolve) => setTimeout(resolve));
 const mockedGetService = vi.mocked(getService);
 
 const storyId = 'button--primary';
+const template: SnippetTemplate = [
+  '<Button ',
+  { kind: 'attr', arg: 'label', text: 'label="hi"' },
+  ' />',
+];
 const payload: StoryDocsPayload = {
   id: 'button',
   name: 'Button',
@@ -34,6 +40,7 @@ const payload: StoryDocsPayload = {
       id: storyId,
       name: 'Primary',
       snippet: '<Button label="hi" />',
+      template,
     },
   },
 };
@@ -45,36 +52,25 @@ const payloadWithWarning: StoryDocsPayload = {
   stories: { [storyId]: { ...payload.stories[storyId]!, warning } },
 };
 const serviceSnippet = 'import { Button } from \'./Button\';\n\n<Button label="hi" />';
-const templates: StoryTemplatesPayload = {
-  stories: {
-    [storyId]: ['<Button ', { kind: 'attr', arg: 'label', text: 'label="hi"' }, ' />'],
-  },
+const { template: _, ...storyWithoutTemplate } = payloadWithWarning.stories[storyId]!;
+const payloadWithoutTemplate: StoryDocsPayload = {
+  ...payloadWithWarning,
+  stories: { [storyId]: storyWithoutTemplate },
 };
 const printHole = (_: unknown, value: unknown) => `label="${String(value)}"`;
 // The story's args once `label` changed to `Go` from the `hi` it is written with.
 const changed = { unmappedArgs: { label: 'Go' }, initialArgs: { label: 'hi' } };
 
 // Builds a minimal `core/story-docs` service mock whose `storyDocs.loaded` resolves with `loaded`,
-// which `storyDocs.get` reads from then on, and whose `storyTemplates` do the same with
-// `loadedTemplates`.
-function mockStoryDocsService(
-  loaded: () => Promise<StoryDocsPayload>,
-  loadedTemplates: () => Promise<StoryTemplatesPayload> = () => Promise.resolve(templates)
-) {
+// which `storyDocs.get` reads from then on.
+function mockStoryDocsService(loaded: () => Promise<StoryDocsPayload>) {
   let state: StoryDocsPayload | undefined;
-  let templatesState: StoryTemplatesPayload | undefined;
   const storyDocs = {
     loaded: vi.fn(() => loaded().then((value) => (state = value))),
     get: () => state,
   };
-  const storyTemplates = {
-    loaded: vi.fn(() => loadedTemplates().then((value) => (templatesState = value))),
-    get: () => templatesState,
-  };
-  mockedGetService.mockReturnValue({
-    queries: { storyDocs, storyTemplates },
-  } as unknown as StoryDocsService);
-  return Object.assign(storyDocs, { templates: storyTemplates });
+  mockedGetService.mockReturnValue({ queries: { storyDocs } } as unknown as StoryDocsService);
+  return storyDocs;
 }
 
 // Runs the hook for one render and lets its snippet load settle before the story is torn down.
@@ -114,9 +110,7 @@ describe('selectLiveSnippetForStory', () => {
   });
 
   it('fills the template with the args, with the warning', () => {
-    expect(
-      selectLiveSnippetForStory(payloadWithWarning, templates, storyId, changed, printHole)
-    ).toEqual({
+    expect(selectLiveSnippetForStory(payloadWithWarning, storyId, changed, printHole)).toEqual({
       snippet: 'import { Button } from \'./Button\';\n\n<Button label="Go" />',
       warning,
     });
@@ -124,33 +118,13 @@ describe('selectLiveSnippetForStory', () => {
 
   it('selects the static snippet with a warning that it does not follow without a hole printer or a template', () => {
     const stale = `${warning} The snippet does not follow the changed args.`;
-    expect(
-      selectLiveSnippetForStory(payloadWithWarning, templates, storyId, changed, undefined)
-    ).toEqual({
+    expect(selectLiveSnippetForStory(payloadWithWarning, storyId, changed, undefined)).toEqual({
       snippet: serviceSnippet,
       warning: stale,
     });
-    expect(
-      selectLiveSnippetForStory(payloadWithWarning, { stories: {} }, storyId, changed, printHole)
-    ).toEqual({
+    expect(selectLiveSnippetForStory(payloadWithoutTemplate, storyId, changed, printHole)).toEqual({
       snippet: serviceSnippet,
       warning: stale,
-    });
-  });
-
-  it('selects the static snippet with a warning that it does not follow for a template of another snippet', () => {
-    // The templates load apart from the story docs, so they can come from another revision.
-    const otherRevision: StoryTemplatesPayload = {
-      ...templates,
-      stories: {
-        [storyId]: ['<Button ', { kind: 'attr', arg: 'label', text: 'label="ho"' }, ' />'],
-      },
-    };
-    expect(
-      selectLiveSnippetForStory(payloadWithWarning, otherRevision, storyId, changed, printHole)
-    ).toEqual({
-      snippet: serviceSnippet,
-      warning: `${warning} The snippet does not follow the changed args.`,
     });
   });
 
@@ -161,9 +135,7 @@ describe('selectLiveSnippetForStory', () => {
     };
     for (const label of ['Go', 'Stop']) {
       const args = { ...changed, unmappedArgs: { label } };
-      expect(
-        selectLiveSnippetForStory(payloadWithWarning, templates, storyId, args, throwing)
-      ).toEqual({
+      expect(selectLiveSnippetForStory(payloadWithWarning, storyId, args, throwing)).toEqual({
         snippet: serviceSnippet,
         warning: `${warning} The snippet does not follow the changed args.`,
       });
@@ -179,41 +151,22 @@ describe('selectLiveSnippetForStory', () => {
     const unprintable = () => {
       throw new UnprintableArgError('label');
     };
-    expect(
-      selectLiveSnippetForStory(payloadWithWarning, templates, storyId, changed, unprintable)
-    ).toEqual({
+    expect(selectLiveSnippetForStory(payloadWithWarning, storyId, changed, unprintable)).toEqual({
       snippet: serviceSnippet,
       warning: `${warning} The snippet cannot show the current value of the \`label\` arg.`,
     });
     expect(
-      selectLiveSnippetForStory(payload, { stories: {} }, storyId, changed, unprintable)
-    ).toEqual({
-      snippet: serviceSnippet,
-      warning: 'The snippet does not follow the changed args.',
-    });
-    expect(warn).not.toHaveBeenCalled();
-  });
-
-  it('selects the static snippet without a warning while the templates load', () => {
-    expect(
-      selectLiveSnippetForStory(payloadWithWarning, 'loading', storyId, changed, printHole)
-    ).toEqual({ snippet: serviceSnippet, warning });
-  });
-
-  it('selects the static snippet with a warning that it does not follow when the templates did not load', () => {
-    expect(
-      selectLiveSnippetForStory(payloadWithWarning, undefined, storyId, changed, printHole)
+      selectLiveSnippetForStory(payloadWithoutTemplate, storyId, changed, unprintable)
     ).toEqual({
       snippet: serviceSnippet,
       warning: `${warning} The snippet does not follow the changed args.`,
     });
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it('selects the static snippet while the story has the args it is written with', () => {
     const args = { unmappedArgs: { label: 'hi' }, initialArgs: { label: 'hi' } };
-    expect(
-      selectLiveSnippetForStory(payloadWithWarning, templates, storyId, args, printHole)
-    ).toEqual({
+    expect(selectLiveSnippetForStory(payloadWithWarning, storyId, args, printHole)).toEqual({
       snippet: serviceSnippet,
       warning,
     });
@@ -263,9 +216,10 @@ describe('shouldSkipStoryDocsEmit', () => {
 describe('selectLiveSnippetForStory without experimentalLiveServerSnippets', () => {
   it('selects the static snippet with its own warning, as before live snippets', () => {
     vi.stubGlobal('FEATURES', {});
-    expect(
-      selectLiveSnippetForStory(payloadWithWarning, templates, storyId, changed, printHole)
-    ).toEqual({ snippet: selectSnippetForStory(payloadWithWarning, storyId), warning });
+    expect(selectLiveSnippetForStory(payloadWithWarning, storyId, changed, printHole)).toEqual({
+      snippet: selectSnippetForStory(payloadWithWarning, storyId),
+      warning,
+    });
     vi.unstubAllGlobals();
   });
 });
@@ -310,7 +264,7 @@ describe('storyDocsSourceBeforeEach', () => {
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context, warning);
   });
 
-  it('fills the template once the args change, loading the story docs and templates once', async () => {
+  it('fills the template once the args change, loading the story docs once', async () => {
     const storyDocs = mockStoryDocsService(() => Promise.resolve(payloadWithWarning));
     const parameters = { __isArgsStory: true, docs: { source: { printHole } } };
     const withLabel = (label: string) =>
@@ -332,44 +286,6 @@ describe('storyDocsSourceBeforeEach', () => {
       );
     }
     expect(storyDocs.loaded).toHaveBeenCalledOnce();
-    expect(storyDocs.templates.loaded).toHaveBeenCalledOnce();
-    expect(storyDocs.templates.loaded).toHaveBeenCalledWith({ id: 'button' });
-  });
-
-  it('does not load the templates while the story has the args it is written with', async () => {
-    const storyDocs = mockStoryDocsService(() => Promise.resolve(payloadWithWarning));
-    await render({
-      id: storyId,
-      args: { label: 'hi' },
-      unmappedArgs: { label: 'hi' },
-      initialArgs: { label: 'hi' },
-      parameters: { __isArgsStory: true, docs: { source: { printHole } } },
-    } as unknown as StoryContext);
-    expect(storyDocs.templates.loaded).not.toHaveBeenCalled();
-  });
-
-  it('emits the static snippet with a warning when the templates do not load, and loads them again', async () => {
-    const storyDocs = mockStoryDocsService(
-      () => Promise.resolve(payloadWithWarning),
-      () => Promise.reject(new Error('offline'))
-    );
-    const context = {
-      id: storyId,
-      args: { label: 'Go' },
-      unmappedArgs: { label: 'Go' },
-      initialArgs: { label: 'hi' },
-      parameters: { __isArgsStory: true, docs: { source: { printHole } } },
-    } as unknown as StoryContext;
-
-    await render(context);
-    await render(context);
-
-    expect(mockedEmitTransformCode).toHaveBeenLastCalledWith(
-      serviceSnippet,
-      context,
-      `${warning} The snippet does not follow the changed args.`
-    );
-    expect(storyDocs.templates.loaded).toHaveBeenCalledTimes(2);
   });
 
   it('emits the filled template with the warning', async () => {

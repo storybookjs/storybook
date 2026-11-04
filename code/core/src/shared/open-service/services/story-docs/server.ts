@@ -6,20 +6,14 @@ import {
   subscribeExtractionServiceToModuleGraphChanges,
   toExtractionError,
 } from '../extraction-service.server.ts';
-import { type StoryDocsServiceState, storyDocsServiceDef } from './definition.ts';
+import { storyDocsServiceDef } from './definition.ts';
 import {
   isSnippetTemplate,
   prependToTemplate,
   stripHoles,
 } from '../../../../docs-tools/snippetTemplate.ts';
 import { importPrefix } from './snippet.ts';
-import type {
-  ProvidedStoryDoc,
-  ProvidedStoryDocsPayload,
-  StoryDocsPayload,
-  StoryDocsProvider,
-  StoryTemplatesPayload,
-} from './types.ts';
+import type { StoryDoc, StoryDocsPayload, StoryDocsProvider } from './types.ts';
 
 export type RegisterStoryDocsServiceOptions = {
   /**
@@ -32,29 +26,37 @@ export type RegisterStoryDocsServiceOptions = {
    * `presets.apply('experimental_storyDocsProvider', ...)`.
    */
   storyDocsProvider: StoryDocsProvider;
+  /**
+   * `features.experimentalLiveServerSnippets`. Without it the story docs carry no templates, so
+   * agents and the components manifest read what they read before live snippets.
+   */
+  liveSnippets?: boolean;
 };
 
-type FileResult = PromiseSettledResult<ProvidedStoryDocsPayload | undefined>;
+type FileResult = PromiseSettledResult<StoryDocsPayload | undefined>;
 
 // Drops a template the preview cannot fill: one without a template's shape, or one that does not
-// print the story's snippet while no arg changes.
-function withoutUnfillableTemplate(story: ProvidedStoryDoc): ProvidedStoryDoc {
+// print the story's snippet while no arg changes. Without live snippets, drops every template.
+function withoutUnfillableTemplate(story: StoryDoc, liveSnippets: boolean): StoryDoc {
   const { template, ...doc } = story;
   const fillable =
     template === undefined ||
-    (isSnippetTemplate(template) && stripHoles(template) === story.snippet);
+    (liveSnippets && isSnippetTemplate(template) && stripHoles(template) === story.snippet);
   return fillable ? story : doc;
 }
 
-const withoutUnfillableTemplates = (payload: ProvidedStoryDocsPayload | undefined) =>
+const withoutUnfillableTemplates = (payload: StoryDocsPayload | undefined, liveSnippets: boolean) =>
   payload && {
     ...payload,
     stories: Object.fromEntries(
-      Object.entries(payload.stories).map(([id, story]) => [id, withoutUnfillableTemplate(story)])
+      Object.entries(payload.stories).map(([id, story]) => [
+        id,
+        withoutUnfillableTemplate(story, liveSnippets),
+      ])
     ),
   };
 
-function storyDocFromFile(entry: IndexEntry, result: FileResult): ProvidedStoryDoc | undefined {
+function storyDocFromFile(entry: IndexEntry, result: FileResult): StoryDoc | undefined {
   if (result.status === 'rejected') {
     return { id: entry.id, name: entry.name, error: toExtractionError(result.reason) };
   }
@@ -71,18 +73,18 @@ function storyDocFromFile(entry: IndexEntry, result: FileResult): ProvidedStoryD
 }
 
 // CSF files that share a title share a component id, but `entry` stands for only one of them.
-function withStoriesFromEveryFile(provider: StoryDocsProvider) {
+function withStoriesFromEveryFile(provider: StoryDocsProvider, liveSnippets: boolean) {
   return async ({ entry, storyEntries }: ExtractionInput) => {
     const fileEntries = [
       ...new Map(storyEntries.map((storyEntry) => [storyEntry.importPath, storyEntry])).values(),
     ];
     if (fileEntries.length < 2) {
-      return withoutUnfillableTemplates(await provider({ entry }));
+      return withoutUnfillableTemplates(await provider({ entry }), liveSnippets);
     }
 
     const results = await Promise.allSettled(
       fileEntries.map(async (fileEntry) =>
-        withoutUnfillableTemplates(await provider({ entry: fileEntry }))
+        withoutUnfillableTemplates(await provider({ entry: fileEntry }), liveSnippets)
       )
     );
     const resultByFile = Object.fromEntries(
@@ -111,37 +113,11 @@ function withStoriesFromEveryFile(provider: StoryDocsProvider) {
   };
 }
 
-// Stores a payload's story docs under `components` and their templates apart, under `templates`, so
-// agents and the components manifest read the story docs without them.
-function writeStoryDocs(
-  state: StoryDocsServiceState,
-  id: string,
-  payload: ProvidedStoryDocsPayload | undefined
-) {
-  if (!payload) {
-    delete state.components[id];
-    delete state.templates[id];
-    return;
-  }
-  const stories: StoryDocsPayload['stories'] = {};
-  const templates: StoryTemplatesPayload['stories'] = {};
-  for (const [storyId, { template, ...story }] of Object.entries(payload.stories)) {
-    stories[storyId] = story;
-    if (template !== undefined) {
-      templates[storyId] = template;
-    }
-  }
-  state.components[id] = { ...payload, stories };
-  // Stored even when empty, so the preview can tell a component without templates from one whose
-  // templates did not load.
-  state.templates[id] = { stories: templates };
-}
-
 /** Registers the `core/story-docs` open service against the process-global registry. */
 export function registerStoryDocsService(options: RegisterStoryDocsServiceOptions) {
   return registerExtractionService(storyDocsServiceDef, {
     getIndex: options.getIndex,
-    provider: withStoriesFromEveryFile(options.storyDocsProvider),
+    provider: withStoriesFromEveryFile(options.storyDocsProvider, Boolean(options.liveSnippets)),
     buildErrorPayload: ({ id, entry, error }) => ({
       id,
       name: entry.title,
@@ -152,7 +128,6 @@ export function registerStoryDocsService(options: RegisterStoryDocsServiceOption
     queryName: 'storyDocs',
     extractCommand: 'extractStoryDocs',
     extractAllCommand: 'extractAllStoryDocs',
-    writePayload: writeStoryDocs,
   });
 }
 

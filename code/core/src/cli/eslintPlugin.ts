@@ -22,7 +22,7 @@ import {
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
-import { parseTree } from 'jsonc-parser';
+import { createScanner, parseTree } from 'jsonc-parser';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
@@ -403,16 +403,33 @@ const removeEarlierExtends = (code: string) => {
     .slice(0, -1)
     .reverse()
     .reduce((output, { offset, length }) => {
-      let start = offset;
-      // A duplicate is never the last property, so a comma always follows it
-      let end = offset + length + (/^\s*,/.exec(output.slice(offset + length))?.[0].length ?? 0);
-      const indent = /(^|\n)[ \t]*$/.exec(output.slice(0, start))?.[0];
-      const restOfLine = /^[ \t]*\r?\n/.exec(output.slice(end))?.[0];
-      if (indent !== undefined && restOfLine) {
-        start -= indent.replace('\n', '').length;
-        end += restOfLine.length;
+      // A duplicate is never the last property, so a comma follows it, maybe after comments
+      const scanner = createScanner(output, false);
+      scanner.setPosition(offset + length);
+      let comma = offset + length;
+      // Skip whitespace and comments; a token starting with `,` can only be the comma
+      while (comma < output.length && output[comma] !== ',') {
+        scanner.scan();
+        comma = scanner.getTokenOffset();
       }
-      return output.slice(0, start) + output.slice(end);
+      // A leading comma takes the space after it along, so the next property keeps its indentation
+      const commaLength = /\n[ \t]*$/.test(output.slice(0, comma))
+        ? (/^,[ \t]*/.exec(output.slice(comma))?.[0].length ?? 0)
+        : 1;
+      const withoutComma = output.slice(0, comma) + output.slice(comma + commaLength);
+
+      const lineStart = withoutComma.lastIndexOf('\n', offset - 1) + 1;
+      const indent = withoutComma.slice(lineStart, offset);
+      const rest = withoutComma.slice(offset + length);
+      if (indent.trim() !== '') {
+        return withoutComma.slice(0, offset) + rest;
+      }
+      // The property started its line: drop the line when nothing else is left on it, or keep
+      // what is left (such as a comment) at the property's indentation
+      const restOfLine = /^[ \t]*(\r?\n|$)/.exec(rest);
+      return restOfLine
+        ? withoutComma.slice(0, lineStart) + rest.slice(restOfLine[0].length)
+        : withoutComma.slice(0, offset) + rest.trimStart();
     }, code);
 };
 
@@ -420,7 +437,13 @@ const removeEarlierExtends = (code: string) => {
  * Add the recommended Storybook config to the `extends` of an `.eslintrc.json`. Only the `extends`
  * value is rewritten, so comments and formatting elsewhere in the file are kept.
  */
-const configureJsonConfig = (code: string, configFile: string) => {
+const configureJsonConfig = (code: string, configFile: string): string => {
+  // Edit without a byte order mark, so the offsets jsonc-parser reports match the text
+  if (code.startsWith('\uFEFF')) {
+    const output = configureJsonConfig(code.slice(1), configFile);
+    return output === code.slice(1) ? code : `\uFEFF${output}`;
+  }
+
   const config = parseJsonText(code);
   if (typeof config !== 'object' || config === null || Array.isArray(config)) {
     throw new Error(`Expected ${configFile} to contain a JSON object`);

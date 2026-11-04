@@ -13,13 +13,20 @@ import {
 /** A path into a JSON document, e.g. `['projects', 'app', 'architect', 'storybook', 'builder']`. */
 export type JSONEditPath = (string | number)[];
 
-// `jsonc-parser` re-indents the lines it touches, so a wrong tab size leaves the document with
-// mixed indentation.
-const detectIndentation = (text: string): FormattingOptions => {
-  const indent = /^[ \t]+(?=[^\s])/m.exec(text)?.[0];
+const DEFAULT_INDENTATION: FormattingOptions = { insertSpaces: true, tabSize: 2 };
 
-  if (!indent) {
-    return { insertSpaces: true, tabSize: 2 };
+// `jsonc-parser` re-indents the lines it touches, so a wrong tab size leaves the document with
+// mixed indentation. The first top-level property shows the indentation, where the first indented
+// line could be part of a comment.
+const detectIndentation = (text: string): FormattingOptions => {
+  const firstProperty = parseTree(text, [], { allowTrailingComma: true })?.children?.[0];
+  if (!firstProperty) {
+    return DEFAULT_INDENTATION;
+  }
+  const indent = text.slice(text.lastIndexOf('\n', firstProperty.offset) + 1, firstProperty.offset);
+
+  if (!/^(\t+| +)$/.test(indent)) {
+    return DEFAULT_INDENTATION;
   }
 
   return indent.startsWith('\t')
@@ -35,7 +42,8 @@ const detectIndentation = (text: string): FormattingOptions => {
  */
 export const parseJsonText = (text: string): unknown => {
   const errors: ParseError[] = [];
-  const value = parse(text, errors, { allowTrailingComma: true });
+  // Editors on Windows may save a byte order mark, which JSON.parse and ESLint ignore too
+  const value = parse(text.replace(/^\uFEFF/, ''), errors, { allowTrailingComma: true });
   if (errors.length > 0) {
     const [{ error, offset }] = errors;
     throw new SyntaxError(`${printParseErrorCode(error)} at offset ${offset}`);
@@ -51,7 +59,7 @@ export const editJsonText = (
   text: string,
   path: JSONEditPath,
   value: unknown,
-  options: Pick<ModificationOptions, 'isArrayInsertion' | 'getInsertionIndex'> = {}
+  options: Pick<ModificationOptions, 'getInsertionIndex'> = {}
 ): string =>
   applyEdits(
     text,
@@ -64,7 +72,8 @@ export const editJsonText = (
  */
 export const appendJsonArrayItem = (text: string, path: JSONEditPath, value: unknown): string => {
   const root = parseTree(text, [], { allowTrailingComma: true });
-  const last = (root && findNodeAtLocation(root, path))?.children?.at(-1);
+  const array = root && findNodeAtLocation(root, path);
+  const last = array?.type === 'array' ? array.children?.at(-1) : undefined;
   if (last) {
     const lineStart = text.lastIndexOf('\n', last.offset) + 1;
     const indent = /^[ \t]*/.exec(text.slice(lineStart))?.[0] ?? '';
@@ -84,5 +93,5 @@ export const appendJsonArrayItem = (text: string, path: JSONEditPath, value: unk
       ].join('');
     }
   }
-  return editJsonText(text, [...path, -1], value, { isArrayInsertion: true });
+  return editJsonText(text, [...path, -1], value);
 };

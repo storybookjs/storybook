@@ -217,6 +217,50 @@ describe('configureEslintPlugin', () => {
         `);
     });
 
+    it.each([
+      [
+        'a comment after the comma',
+        '{\n  "extends": ["plugin:first"], // Old\n  "extends": ["plugin:other"]\n}\n',
+      ],
+      [
+        'a comment before the comma',
+        '{\n  "extends": ["plugin:first"] /* Old */,\n  "root": true,\n  "extends": ["plugin:other"]\n}\n',
+      ],
+      [
+        'a leading comma',
+        '{\n  "extends": ["plugin:first"] // Old\n  , "root": true\n  , "extends": ["plugin:other"]\n}\n',
+      ],
+    ])('removes an earlier duplicate extends with %s', async (_, code) => {
+      const content = await configureJson(code);
+
+      expect(JSON.parse(String(content).replace(/\/\/.*|\/\*.*?\*\//g, ''))).toMatchObject({
+        extends: ['plugin:other', 'plugin:storybook/recommended'],
+      });
+      expect(content).toMatch(/^  (\/\/|\/\*) Old/m);
+    });
+
+    it('keeps a byte order mark', async () => {
+      expect(await configureJson('\uFEFF{\n  "extends": "plugin:other"\n}\n')).toBe(
+        '\uFEFF{\n  "extends": [\n    "plugin:other",\n    "plugin:storybook/recommended"\n  ]\n}\n'
+      );
+    });
+
+    it('keeps CRLF line endings', async () => {
+      expect(
+        await configureJson('{\r\n  "extends": [\r\n    "plugin:other" // Other\r\n  ]\r\n}\r\n')
+      ).toBe(
+        '{\r\n  "extends": [\r\n    "plugin:other", // Other\r\n    "plugin:storybook/recommended"\r\n  ]\r\n}\r\n'
+      );
+    });
+
+    it('reads the indentation from the properties, not from a header comment', async () => {
+      expect(
+        await configureJson('/*\n * ESLint config\n */\n{\n\t"root": true,\n\t"extends": "a"\n}\n')
+      ).toBe(
+        '/*\n * ESLint config\n */\n{\n\t"root": true,\n\t"extends": [\n\t\t"a",\n\t\t"plugin:storybook/recommended"\n\t]\n}\n'
+      );
+    });
+
     it('keeps a comment on the last extends entry with that entry', async () => {
       const content = await configureJson(dedent`{
         "extends": [

@@ -1,6 +1,6 @@
 export * from './helpers.ts';
 export * from './angular/helpers.ts';
-export * from './json-text.ts';
+export { type JSONEditPath, editJsonText, parseJsonText } from './json-text.ts';
 export * from './dirs.ts';
 export * from './projectTypes.ts';
 export * from './NpmOptions.ts';

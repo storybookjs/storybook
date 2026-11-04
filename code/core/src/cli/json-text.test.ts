@@ -39,6 +39,10 @@ describe('parseJsonText', () => {
     expect(parseJsonText('{\n  // comment\n  "a": [1,],\n}')).toEqual({ a: [1] });
   });
 
+  it('ignores a byte order mark', () => {
+    expect(parseJsonText('\uFEFF{ "a": 1 }')).toEqual({ a: 1 });
+  });
+
   it('throws on invalid JSON', () => {
     expect(() => parseJsonText('{ "a": }')).toThrow(SyntaxError);
   });
@@ -69,6 +73,12 @@ describe('appendJsonArrayItem', () => {
     expect(append('{\n  "list": ["a"] // after\n}\n')).toBe(
       '{\n  "list": [\n    "a",\n    "new"\n  ] // after\n}\n'
     );
+  });
+
+  it('does not treat an object as an array', () => {
+    expect(() =>
+      appendJsonArrayItem('{\n  "list": {\n    "a": 1 // c\n  }\n}\n', ['list'], 'x')
+    ).toThrow();
   });
 
   it('appends to an empty array', () => {

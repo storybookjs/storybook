@@ -1,3 +1,6 @@
+import { setFlagsFromString } from 'node:v8';
+import { runInNewContext } from 'node:vm';
+
 import { beforeEach, expect, it, vi } from 'vitest';
 
 import type { Mock } from '@vitest/spy';
@@ -6,15 +9,7 @@ import { logger } from 'storybook/internal/client-logger';
 
 import { mockObject } from '@vitest/mocker';
 
-import {
-  clearAllMocks,
-  fn,
-  mocks,
-  onMockCall,
-  resetAllMocks,
-  restoreAllMocks,
-  spyOn,
-} from './spy.ts';
+import { clearAllMocks, fn, onMockCall, resetAllMocks, restoreAllMocks, spyOn } from './spy.ts';
 
 const vitestSpy = vi.fn();
 
@@ -193,18 +188,20 @@ it('resets the mocks of class instances after the class mock is cleared', () => 
   expect(service.get.mock.calls).toEqual([['key']]);
 });
 
-it('holds the mocks of class instances weakly', () => {
+it('lets the mocks of class instances be garbage collected with their instance', async () => {
+  setFlagsFromString('--expose-gc');
+  const gc = runInNewContext('gc') as () => void;
   const Service = automockService();
-  const before = mocks.size;
-  // E.g. a component that constructs an instance on every render.
-  for (let i = 0; i < 100; i++) {
-    new Service().get('key');
-  }
+  // E.g. a component that constructs an instance on every render, and is then unmounted.
+  const member = (() => new WeakRef(new Service().get))();
 
+  // The class mock registers the member mocks of its instances when it's cleared.
   restoreAllMocks();
+  // A `WeakRef` keeps its target alive until the current job ends.
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  gc();
 
-  // Only their instances keep them alive, so they can be collected with them.
-  expect(mocks.size).toBe(before);
+  expect(member.deref()).toBeUndefined();
 });
 
 it('notifies calls of class instance members as calls of the prototype member', () => {

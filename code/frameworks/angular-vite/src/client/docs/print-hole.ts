@@ -28,6 +28,7 @@ export const printHole: PrintHole<AngularHolePlace> = (hole, value) => {
         indent
       );
     case 'prop':
+      // `argsToTemplate` binds no input for an unset arg, and a function as an output instead.
       return value === undefined || typeof value === 'function'
         ? ''
         : indentLines(

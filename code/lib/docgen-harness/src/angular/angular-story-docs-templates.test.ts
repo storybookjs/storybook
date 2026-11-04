@@ -1,7 +1,3 @@
-// Fills each live story-docs template with the args its story declares, each as the code it is
-// written with where it has one, as the preview fills it, which has to give the static snippet, and
-// with values that stress the printer: the whole host component has to parse, and its
-// markup has to compile.
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

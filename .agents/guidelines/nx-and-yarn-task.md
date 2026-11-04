@@ -37,6 +37,24 @@ Key points:
 - `compile` hashes the `OS` environment variable, so Windows and POSIX builds never restore each other's `dist`
 - To force a rebuild, pass `--skip-nx-cache` (or `yarn task compile --skip-cache`). Do not bump a field in `nx.json` to bust the cache: that invalidates every task in the workspace
 
+## Following an NX Cloud pipeline
+
+`scripts/nx-cloud-status.ts` reads a pipeline from the NX Cloud Public API with your `npx nx login`, so you do not need the NX Cloud web page. It needs no dependencies installed.
+
+```bash
+# Report the newest pipeline of a pull request (or a branch, a CIPE id, or a cloud.nx.app/cipes link)
+node scripts/nx-cloud-status.ts 37181
+
+# Follow the pipeline of the commit you just pushed: one line per change, then the full report
+node scripts/nx-cloud-status.ts 37181 --watch --sha HEAD
+```
+
+- The report gives the pipeline status, why it was canceled, each failed task with the lines that name the failure and the end of its log, and the worker steps that failed or timed out (for example `Restore Node Modules Cache`, or `no_output_timeout after 600s`), with the end of a worker's log. Each log is saved as a text file; the report prints its path
+- `--watch` exits with the report once the pipeline is done: exit code 0 when it succeeded, 1 otherwise. Agents run it as a background monitor, so each printed line wakes them
+- Live, NX Cloud shows the pipeline status and each `nx` command once it finishes. Worker details (steps, timeouts, restarts) arrive when the pipeline is done
+- The `nx: normal` and `nx run <task>` commit statuses from `.github/workflows/nx.yml` still say on the pull request whether the run passed; use the script for why
+- A workspace token in `NX_CLOUD_ACCESS_TOKEN` overrides your login in `nx-cloud api`. When NX Cloud rejects that token, the script retries with your login
+
 ## Environment Variables
 
 | Variable                      | Purpose                                         |

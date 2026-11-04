@@ -30,6 +30,15 @@ export const printHole: PrintHole<SvelteHolePlace> = (hole, value) => {
         .join(hole.separator);
     case 'spreadattr':
       return printSpreadAttribute(arg, propValue(value, arg));
+    case 'overridden': {
+      const args = value as Args;
+      if (Object.hasOwn(args, hole.name)) {
+        return printSpreadAttribute(hole.name, propValue(args[hole.name], hole.name));
+      }
+      return Object.hasOwn(args, hole.read.arg)
+        ? printHole(hole.read, args[hole.read.arg])
+        : hole.written;
+    }
     case 'overwritten':
       // The attribute would follow both this arg and the args it reads, but a hole reads one arg.
       throw new UnprintableArgError(arg);

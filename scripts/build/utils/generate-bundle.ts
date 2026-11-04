@@ -37,11 +37,8 @@ const DIR_METAFILE_BASE = join(
 );
 export const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 
-/**
- * Resolve the `useSyncExternalStore` shim that react-aria and react-stately import to a stand-in,
- * see that module. The key is the exact specifier they use: a shorter key would also match other
- * subpaths of the package, such as `shim/with-selector`.
- */
+// react-aria and react-stately import this exact specifier; a shorter key would also match
+// subpaths such as `shim/with-selector`.
 const USE_SYNC_EXTERNAL_STORE_ALIAS = {
   'use-sync-external-store/shim/index.js': join(
     import.meta.dirname,
@@ -49,16 +46,12 @@ const USE_SYNC_EXTERNAL_STORE_ALIAS = {
   ),
 };
 
-/**
- * A `require()` of an external (such as `react`), for example in a bundled CommonJS module, becomes
- * a `__require("…")` call in ES module output, which throws "Dynamic require of … is not supported"
- * in the browser. That broke the preview once (#32270), through the shim above. Browser builds fail
- * when it shows up, so the fix (an alias to an ES module, or a static import) happens at build time.
- */
+// In ES module output, a `require()` of an external becomes `__require("…")`, which throws
+// "Dynamic require of … is not supported" in the browser. Browser builds fail on it instead.
 const dynamicRequireError = (file: string, specifier: string) =>
   `${file} calls require("${specifier}") on an external, which fails in the browser. Alias the import to an ES module, or import it statically.`;
 
-const esbuildNoDynamicRequireGuard: esbuild.Plugin = {
+export const esbuildNoDynamicRequireGuard: esbuild.Plugin = {
   name: 'no-dynamic-require-in-browser-output',
   setup(build) {
     build.onEnd((result) => ({
@@ -74,11 +67,11 @@ const esbuildNoDynamicRequireGuard: esbuild.Plugin = {
   },
 };
 
-// Rolldown has no metafile, so this side reads the code. Its CommonJS wrappers are named
-// `function __require()` and take no string, so only real require calls match.
-const DYNAMIC_REQUIRE_CALL = /\b__require\(\s*["'`]([^"'`]+)/;
+// Rolldown has no metafile and skips `resolveId` for its `external` option, so this reads the code.
+// Its helper is `__require`, or `__require$1` when a bundled module defines its own `__require`.
+const DYNAMIC_REQUIRE_CALL = /\b__require(?:\$\d+)?\(\s*["'`]([^"'`]+)/;
 
-const rolldownNoDynamicRequireGuard: RolldownPlugin = {
+export const rolldownNoDynamicRequireGuard: RolldownPlugin = {
   name: 'no-dynamic-require-in-browser-output',
   generateBundle(_options, bundle) {
     for (const output of Object.values(bundle)) {

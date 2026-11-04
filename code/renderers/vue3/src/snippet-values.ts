@@ -103,9 +103,12 @@ export const printSlot = (value: SnippetValue) =>
 
 const interpolation = (value: SnippetValue) => `{{ ${inInterpolation(codeOf(value))} }}`;
 
-// Code in parentheses where the code around it reads it otherwise: `-1`, or `5` in `5.toFixed()`.
+// Code in parentheses where the code around it reads it otherwise: `-1`, an object, which would
+// open a block after `=>`, or `5` in `5.toFixed()`.
 export function operand(code: string, readsOn: boolean): string {
-  return code.startsWith('-') || (readsOn && /^\d/.test(code)) ? `(${code})` : code;
+  return code.startsWith('-') || code.startsWith('{') || (readsOn && /^\d/.test(code))
+    ? `(${code})`
+    : code;
 }
 
 // A slot's content as a child of its component: a named slot in a `<template>`.

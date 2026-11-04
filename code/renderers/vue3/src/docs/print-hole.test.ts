@@ -80,6 +80,8 @@ describe('printHole', () => {
     expect(print({ kind: 'value', in: 'script' }, -2)).toBe('-2');
     expect(print({ kind: 'value', in: 'statement' }, -2)).toBe('(-2)');
     expect(print({ kind: 'value', in: 'statement', readsOn: true }, 5)).toBe('(5)');
+    // An object after `=>` would open a block.
+    expect(print({ kind: 'value', in: 'statement' }, { dense: true })).toBe('({ dense: true })');
   });
 
   it('cannot print a place it does not know', () => {

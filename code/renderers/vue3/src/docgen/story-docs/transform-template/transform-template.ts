@@ -86,10 +86,9 @@ export interface TransformTemplateInput {
   componentName?: string;
   // The story component's slots, which `v-bind="args"` does not pass as props.
   slots?: ReadonlySet<string>;
-  // Where the template comes from: the story's own, one `h()` calls print, whose props a spread
-  // sets as JavaScript does, the later one winning even for a `class` or `style`, or the one a
-  // story without a render function renders with, which passes its slot args as slots.
-  origin?: TemplateOrigin;
+  // Whether the template is the one a story without a render function renders with, which passes
+  // its slot args as slots.
+  argsStory?: boolean;
   /** Import bindings from the CSF module, for components a function slot renders. */
   importBindings?: Map<string, ImportBinding>;
   /** Pre-seeded context carrying imports and hoists an upstream printer collected. */
@@ -117,14 +116,12 @@ interface TransformState {
   componentImports: Map<string, string>;
   componentName?: string;
   slots: ReadonlySet<string>;
-  origin: TemplateOrigin;
+  argsStory: boolean;
   importBindings: Map<string, ImportBinding>;
   template: string;
 }
 
 type ElementProp = ElementNode['props'][number];
-
-type TemplateOrigin = 'template' | 'h' | 'args';
 
 interface ElementContext {
   /** Whether the element is the story component tag, where role-aware expansion applies. */
@@ -241,7 +238,7 @@ export function transformTemplate(
     componentImports: input.componentImports,
     componentName: input.componentName,
     slots: input.slots ?? new Set(),
-    origin: input.origin ?? 'template',
+    argsStory: input.argsStory ?? false,
     importBindings: input.importBindings ?? new Map(),
     template,
   };
@@ -558,7 +555,7 @@ function expandArgsBinding(
   }
 
   element.slotChildren.push(...rendered.slotChildren);
-  if (element.storyTag && state.origin === 'args') {
+  if (element.storyTag && state.argsStory) {
     element.unsetSlots = [...state.slots].filter(
       (slot) => !surviving.some((arg) => arg.name === slot)
     );

@@ -1304,7 +1304,6 @@ describe('template', () => {
   });
 
   describe('an attribute before the spread that reads another arg', () => {
-    // At runtime the spread writes `title` over `title={args.label}` once the args hold `title`.
     const story = (args: string) =>
       withCSF3(
         `export const S = { args: { ${args} }, render: (args) => <Button title={args.label} {...args} /> };`
@@ -1327,6 +1326,15 @@ describe('template', () => {
       );
     });
 
+    it('follows the arg it names from a later spread only', () => {
+      const between = withCSF3(
+        `export const S = { args: { label: 'Go' }, render: (args) => <Button {...args} title={args.label} {...args} /> };`
+      );
+      expect(fill(between, initialArgs, { ...initialArgs, title: 'Stop' })).toBe(
+        'const S = () => <Button label="Go" title="Stop">Click me</Button>;'
+      );
+    });
+
     it('prints it as written while another arg changes', () => {
       expect(fill(code, initialArgs, { ...initialArgs, size: 'lg' })).toBe(
         'const S = () => <Button title="Go" label="Go" size="lg">Click me</Button>;'
@@ -1336,7 +1344,7 @@ describe('template', () => {
       );
     });
 
-    it('prints it as the snippet does over several lines', () => {
+    it('keeps a value over several lines as the snippet indents it', () => {
       const nested = withCSF3(dedent`
         export const S = {
           args: { list: [
@@ -1353,9 +1361,17 @@ describe('template', () => {
         };
       `);
       const args = { children: 'Click me', list: ['a'] };
-      expect(fill(nested, args, { ...args, size: 'lg' })).toBe(
-        snippetOf(nested).replace(']}>', ']} size="lg">')
-      );
+      expect(fill(nested, args, { ...args, size: 'lg' })).toMatchInlineSnapshot(`
+        "const S = () => <div>
+          <List
+            items={[
+              'a',
+            ]}
+            list={[
+              'a',
+            ]} size="lg">Click me</List>
+        </div>;"
+      `);
     });
   });
 

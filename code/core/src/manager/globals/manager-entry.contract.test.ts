@@ -43,8 +43,8 @@ describe('built-in manager entries', () => {
 
   // storybook/test is no manager global, so a module that imports it (e.g. `storybook/internal/csf`)
   // would bundle its test libraries into the manager, from `dist/test` or from the preview
-  // runtime's chunks that it and the instrumenter share. Import such helpers from a pure module
-  // instead, like `storybook/internal/csf/csf-utils`.
+  // runtime's chunks that it and the instrumenter share. Bundle such helpers with a relative import
+  // instead, like addon-docs' `ArgsTable` does with `includeConditionalArg`.
   it.runIf(built.length > 0).each(built.map((entry) => [entry.slice(CODE.length + 1), entry]))(
     '%s does not bundle storybook/test',
     async (_, entry) => {

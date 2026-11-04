@@ -3,15 +3,15 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { once } from 'storybook/internal/client-logger';
 import { Button, Link, ResetWrapper } from 'storybook/internal/components';
-// Not from `storybook/internal/csf`, which also pulls in the preview annotations and
-// storybook/test: the manager renders this table in the Controls panel.
-import { includeConditionalArg } from 'storybook/internal/csf/csf-utils';
 
 import { DocumentIcon, UndoIcon } from '@storybook/icons';
 
 import { pickBy } from 'es-toolkit/object';
 import { styled } from 'storybook/theming/emotion';
 
+// Bundled, rather than imported from `storybook/internal/csf`, which also pulls in the preview
+// annotations and storybook/test: the manager renders this table in the Controls panel.
+import { includeConditionalArg } from '../../../../../../core/src/csf/includeConditionalArg.ts';
 import { EmptyBlock } from '../EmptyBlock';
 import { ArgRow } from './ArgRow';
 import { Empty } from './Empty';

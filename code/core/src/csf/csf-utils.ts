@@ -4,7 +4,6 @@
  * helpers.
  */
 export { isExportStory, storyNameFromExport, type IncludeExcludeOptions } from './export-story.ts';
-export { includeConditionalArg } from './includeConditionalArg.ts';
 
 /**
  * Remove punctuation and illegal characters from a story ID, so it is safe to use in URLs and CSS

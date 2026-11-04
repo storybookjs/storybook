@@ -310,9 +310,9 @@ type NormalizablePropType = { name?: string; value?: unknown };
  * RangeError on sequences like `\users`. Re-serialize every quoted literal to the JSON contract
  * so the conversion decodes exactly once.
  */
-export const normalizeReactDocgenTypescriptProps = (
-  props: Record<string, { type?: NormalizablePropType }>
-): Record<string, { type?: NormalizablePropType }> =>
+export const normalizeReactDocgenTypescriptProps = <P extends { type?: NormalizablePropType }>(
+  props: Record<string, P>
+): Record<string, P> =>
   Object.fromEntries(
     Object.entries(props).map(([name, prop]) => {
       const type = prop.type;
@@ -320,6 +320,8 @@ export const normalizeReactDocgenTypescriptProps = (
         return [
           name,
           {
+            // The spread preserves every field of P at runtime; the assertion only bridges
+            // what the compiler cannot correlate through the generic.
             ...prop,
             type: {
               ...type,
@@ -336,7 +338,7 @@ export const normalizeReactDocgenTypescriptProps = (
                 return member;
               }),
             },
-          },
+          } as P,
         ];
       }
       return [name, prop];

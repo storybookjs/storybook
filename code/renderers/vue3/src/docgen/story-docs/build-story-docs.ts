@@ -381,7 +381,10 @@ function enrichStoryDoc(
     snippet: rendered.snippet,
     // An attribute a control clears leaves no gap.
     ...(holes && {
-      template: withHoleSpace(laidOut(holes), (hole) => hole.kind === 'attr'),
+      template: withHoleSpace(
+        laidOut(holes),
+        (hole) => hole.kind === 'attr' || hole.kind === 'bound'
+      ),
     }),
     ...(unresolved.length > 0 ? { warning: unresolvedWarning(unresolved) } : {}),
   };

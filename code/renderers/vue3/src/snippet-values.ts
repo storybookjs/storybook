@@ -20,28 +20,27 @@
 //   setup `statement`, an `interpolation` or an `attribute` value quoted with `quote`, an operand,
 //   in parentheses where the code around it would read it otherwise. `readsOn` says that code
 //   reads on after it with a `.`, as `(5).toFixed()` does.
-// - `overridden`: the attribute `name`, which an element binds to an arg before its args binding,
-//   which writes over it with the arg `by` once a control sets that. Of the args a control set, it
-//   prints `name` from `by`, else from `reads`, the arg it writes the value of, else `written`, as
-//   the snippet prints it.
-// - `merged`: a `class` or `style` a template binds to `code`, quoted with `quote`, which Vue
-//   merges with the arg's: both in one binding, the arg's last unless the binding is `after` the
-//   args binding.
-// - `guard`: an arg the snippet has no place for: a prop the element binds, before its args
-//   binding, to code that reads args, but for one it reads as is, or a `class` or `style` a
-//   template binds to code that reads args.
+// - `bound`: a prop an element writes before its args binding, which writes over it with the arg
+//   `by` once a control sets that, or a `class` or `style` it binds, which Vue merges with that
+//   arg's. It prints `over` while a control set `by`, else `code`, the prop as the snippet prints
+//   it: either as code with the `attr` and `value` holes of the args it reads, whose value it
+//   prints where a control set it, else their text.
 export type VueHolePlace =
-  | { kind: 'attr'; name?: string }
-  | { kind: 'overridden'; name: string; by: string; reads?: string; written: string }
-  | { kind: 'merged'; code: string; quote: '"' | "'"; after?: boolean }
+  | AttrPlace
+  | { kind: 'bound'; by: string; code: BoundCode; over: BoundCode }
   | { kind: 'props'; except: string[]; merge?: string[] }
   | { kind: 'slots'; slots: string[]; indent: string; tag?: string }
   | { kind: 'text'; slot?: boolean }
-  | ({ kind: 'value'; readsOn?: boolean } & (
-      | { in: 'script' | 'statement' | 'interpolation' }
-      | { in: 'attribute'; quote: '"' | "'" }
-    ))
-  | { kind: 'guard' };
+  | ValuePlace;
+
+type AttrPlace = { kind: 'attr'; name?: string };
+type ValuePlace = { kind: 'value'; readsOn?: boolean } & (
+  | { in: 'script' | 'statement' | 'interpolation' }
+  | { in: 'attribute'; quote: '"' | "'" }
+);
+
+// The code of a `bound` hole: as written, and the holes of the args it reads, with their text.
+export type BoundCode = (string | ((AttrPlace | ValuePlace) & { arg: string; text: string }))[];
 
 // A value as the snippet prints it: a literal whose value it prints, or code it prints as is.
 export type SnippetValue =

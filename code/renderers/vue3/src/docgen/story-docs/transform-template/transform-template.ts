@@ -37,6 +37,7 @@ import {
   type RenderContext,
 } from '../../shared/render-primitives.ts';
 import {
+  type BoundCode,
   expressionCode,
   interpolatedText,
   operand,
@@ -445,23 +446,13 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
       }
       continue;
     }
-    // A prop written before the args binding is the binding's arg once a control sets it.
-    const overridden = plan.directive && overriddenProp(prop, plan.directive, state);
-    if (overridden) {
-      const start = prop.loc.start.offset;
-      const end = prop.loc.end.offset;
-      const hole = attributeHole(overridden, camelCase(overridden));
-      state.edits.push({
-        start,
-        end,
-        text: marked(state.ctx, hole, state.template.slice(start, end)),
-      });
-      continue;
+    const bound =
+      plan.directive && boundProp(prop, plan.directive, attributesByName, element, state);
+    if (bound === false) {
+      return false;
     }
-    const followed =
-      plan.directive && followedBinding(prop, plan.directive, attributesByName, state);
-    if (followed) {
-      state.edits.push(followed);
+    if (bound) {
+      state.edits.push(bound);
       continue;
     }
     if (
@@ -578,8 +569,8 @@ function expandArgsBinding(
     );
   }
   // The args a control sets go after the args the story writes, but those the element prints
-  // itself and its slots. Vue merges a `class` or `style` the element writes with the arg's, so
-  // that one is bound. A binding of code that reads args no hole follows is a guard.
+  // itself, but for a `.prop` or `.attr` binding, which sets another key, and its slots. Vue
+  // merges a `class` or `style` the element writes with the arg's, so that one is bound.
   const written = [...attributesByName.entries()];
   const merge = written
     .filter(
@@ -587,21 +578,10 @@ function expandArgsBinding(
         isMerged(name, state) && props.every((prop) => prop.type === NodeTypes.ATTRIBUTE)
     )
     .map(([name]) => name);
-  const guards = written.flatMap(([name, props]) =>
-    props.some(
-      (prop) =>
-        prop.type === NodeTypes.DIRECTIVE &&
-        prop.name === 'bind' &&
-        !removed.has(prop) &&
-        !isFollowed(prop, directive, attributesByName, state) &&
-        (isMerged(name, state) ||
-          (prop.loc.start.offset < directive.loc.start.offset && readsArgs(prop)))
-    )
-      ? [marked(state.ctx, { kind: 'guard', arg: camelCase(name) }, '')]
-      : []
-  );
   const printed = [
-    ...written.flatMap(([name]) => (merge.includes(name) ? [] : spellings(name))),
+    ...written.flatMap(([name, props]) =>
+      merge.includes(name) || props.every(setsOwnKey) ? [] : spellings(name)
+    ),
     ...surviving.map((arg) => arg.name),
     ...state.slots,
   ];
@@ -617,136 +597,110 @@ function expandArgsBinding(
     ' '
   );
   const edit = replacementFor(directive, rendered.attributes.join(' '), state.template);
-  state.edits.push({ ...edit, text: edit.text + guards.join('') + added });
+  state.edits.push({ ...edit, text: edit.text + added });
   return true;
+}
+
+// A prop the element writes before its args binding, which the binding writes over once a control
+// sets the arg, or a `class` or `style` it binds, which Vue merges with the arg's, as a `bound`
+// hole. The prop is printed as the snippet prints it, with the holes of the args it reads recorded
+// as its `code` instead of marked, so the hole holds them.
+function boundProp(
+  prop: ElementProp,
+  directive: DirectiveNode,
+  attributesByName: Map<string, ElementProp[]>,
+  element: ElementContext,
+  state: TransformState
+): Edit | false | undefined {
+  const binding = prop.type === NodeTypes.DIRECTIVE ? prop : undefined;
+  const name = binding
+    ? binding.name === 'bind' && !setsOwnKey(binding)
+      ? staticDirectiveArg(binding)
+      : undefined
+    : prop.name;
+  const merge = name !== undefined && isMerged(name, state);
+  const after = prop.loc.start.offset > directive.loc.start.offset;
+  const exp = binding?.exp?.type === NodeTypes.SIMPLE_EXPRESSION ? binding.exp : undefined;
+  const read = exp && state.argsByName.get(exactArgsMemberName(exp.content.trim()) ?? '');
+  if (!name || (merge ? !binding : after) || read?.role === 'slot') {
+    return undefined;
+  }
+
+  const holes: Extract<BoundCode[number], object>[] = [];
+  const { mark } = state.ctx;
+  const own = {
+    ...state,
+    edits: [] as Edit[],
+    ctx: {
+      ...state.ctx,
+      mark:
+        mark &&
+        ((hole, text, space) =>
+          hole.kind === 'value' && hole.in === 'script'
+            ? mark(hole, text, space)
+            : `\0${holes.push({ ...hole, text } as (typeof holes)[number]) - 1}\0`),
+    } satisfies RenderContext,
+  };
+  if (binding && !transformDirective(binding, attributesByName, element, own)) {
+    return false;
+  }
+  // The code from `from` to `to` with the binding's edits made, its holes recorded.
+  const codeOf = (from: number, to: number): BoundCode =>
+    applyEdits(
+      state.template.slice(from, to),
+      own.edits
+        .filter((edit) => edit.start >= from && edit.end <= to)
+        .map((edit) => ({ ...edit, start: edit.start - from, end: edit.end - from }))
+    )
+      .split(/\0(\d+)\0/)
+      .map((part, index) => (index % 2 ? holes[Number(part)] : part))
+      .filter((part) => part !== '');
+  const start = Math.min(prop.loc.start.offset, ...own.edits.map((edit) => edit.start));
+  const end = Math.max(prop.loc.end.offset, ...own.edits.map((edit) => edit.end));
+  const code = codeOf(start, end);
+  const text = code.map((part) => (typeof part === 'string' ? part : part.text)).join('');
+
+  let over: BoundCode;
+  if (merge) {
+    // Both in one binding, in the order Vue merges them: the args binding's after one before it.
+    const quote = exp && surroundingAttributeQuote(exp, state.template);
+    const [open, expression, close] =
+      exp && quote
+        ? [
+            state.template.slice(prop.loc.start.offset, exp.loc.start.offset),
+            codeOf(exp.loc.start.offset, exp.loc.end.offset),
+            state.template.slice(exp.loc.end.offset, prop.loc.end.offset),
+          ]
+        : [`:${name}="`, [exp?.loc.source || camelCase(name)], '"'];
+    const value = { kind: 'value', in: 'attribute', quote: quote || '"', arg: name, text: '' };
+    const both = after ? [value, ', ', ...expression] : [...expression, ', ', value];
+    over = [`${open}[`, ...(both as BoundCode), `]${close}`];
+  } else {
+    // An earlier one of two props of a name leaves it to the later one.
+    const later = attributesByName
+      .get(name)
+      ?.some(
+        (other) =>
+          other.loc.start.offset > prop.loc.start.offset &&
+          other.loc.start.offset < directive.loc.start.offset
+      );
+    const by = camelCase(name);
+    over = later ? [] : [{ kind: 'attr', ...(name !== by && { name }), arg: by, text: '' }];
+  }
+  const by = merge ? name : camelCase(name);
+  const hole = { kind: 'bound', by, code, over, spread: true } as const;
+  return { start, end, text: marked(state.ctx, hole, text, text ? undefined : ' ') };
 }
 
 // A Vue template merges a `class` or `style` from every source, where an `h()` spread overrides it.
 const isMerged = (name: string, state: TransformState) =>
   state.origin !== 'h' && (name === 'class' || name === 'style');
 
-// The edit of a binding a hole follows on an element with an args binding: one that reads an arg
-// as is before it, as `:size="args.label"`, which an `overridden` hole prints from the arg the
-// binding writes over it with once a control sets that, or a `class` or `style` of code that
-// reads no args, which a `merged` hole binds with the arg's.
-function followedBinding(
-  prop: ElementProp,
-  directive: DirectiveNode,
-  attributesByName: Map<string, ElementProp[]>,
-  state: TransformState
-): Edit | undefined {
-  const start = prop.loc.start.offset;
-  const end = prop.loc.end.offset;
-  const read = argReadBefore(prop, directive, attributesByName, state);
-  if (read) {
-    // The attribute as the snippet prints it, but its own hole, which the `overridden` one takes:
-    // it follows the arg it reads only where it writes its value, not a const that follows it.
-    let inline = false as boolean;
-    const { mark } = state.ctx;
-    const text = renderBoundArgAttribute(read.name, read.arg, {
-      ...state.ctx,
-      mark:
-        mark &&
-        ((hole, text, space) =>
-          hole.kind === 'attr' ? ((inline = true), text) : mark(hole, text, space)),
-    });
-    const hole = {
-      kind: 'overridden',
-      name: read.name,
-      by: camelCase(read.name),
-      ...(inline && { reads: read.arg.name }),
-      written: text,
-      spread: true,
-    } as const;
-    return { start, end, text: marked(state.ctx, hole, text) };
-  }
-  const merged = mergedBinding(prop, directive, state);
-  if (merged) {
-    return { start, end, text: marked(state.ctx, merged, state.template.slice(start, end)) };
-  }
-  return undefined;
-}
-
-// Whether a hole follows a binding on an element with an args binding; see `followedBinding`.
-const isFollowed = (
-  prop: ElementProp,
-  directive: DirectiveNode,
-  attributesByName: Map<string, ElementProp[]>,
-  state: TransformState
-) =>
-  argReadBefore(prop, directive, attributesByName, state) !== undefined ||
-  mergedBinding(prop, directive, state) !== undefined;
-
-// A binding without modifiers, the only one of its name, before the args binding, of an arg as is,
-// as `:size="args.label"`.
-function argReadBefore(
-  prop: ElementProp,
-  directive: DirectiveNode,
-  attributesByName: Map<string, ElementProp[]>,
-  state: TransformState
-) {
-  const name = plainBinding(prop);
-  const arg =
-    name && prop.loc.start.offset < directive.loc.start.offset
-      ? state.argsByName.get(
-          exactArgsMemberName(
-            ((prop as DirectiveNode).exp as SimpleExpressionNode).content.trim()
-          ) ?? ''
-        )
-      : undefined;
-  return name &&
-    arg &&
-    arg.role !== 'slot' &&
-    !isMerged(name, state) &&
-    attributesByName.get(name)?.length === 1
-    ? { name, arg }
-    : undefined;
-}
-
-// The `merged` hole of a `class` or `style` a template binds to code that reads no args, which
-// Vue merges with the arg's, after it where the binding comes after the args binding.
-function mergedBinding(prop: ElementProp, directive: DirectiveNode, state: TransformState) {
-  const name = plainBinding(prop);
-  const exp = (prop as DirectiveNode).exp as SimpleExpressionNode | undefined;
-  const quote = exp && surroundingAttributeQuote(exp, state.template);
-  // Vue decodes the entities of the code it reads, so the hole writes it as the template does.
-  const code = exp?.loc.source;
-  if (!name || !isMerged(name, state) || !quote || !code || readsArgs(prop as DirectiveNode)) {
-    return undefined;
-  }
-  const after = prop.loc.start.offset > directive.loc.start.offset;
-  return { kind: 'merged', code, quote, ...(after && { after }), arg: name } as const;
-}
-
-// The name a `:name="code"` binding without modifiers binds.
-const plainBinding = (prop: ElementProp) =>
+// A `.prop` or `.attr` binding sets a key of its own, which no args binding writes over.
+const setsOwnKey = (prop: ElementProp) =>
   prop.type === NodeTypes.DIRECTIVE &&
   prop.name === 'bind' &&
-  prop.modifiers.length === 0 &&
-  prop.exp?.type === NodeTypes.SIMPLE_EXPRESSION
-    ? staticDirectiveArg(prop)
-    : undefined;
-
-const readsArgs = (prop: DirectiveNode) =>
-  prop.exp?.type === NodeTypes.SIMPLE_EXPRESSION && valueReferencesArgs(prop.exp.content);
-
-// The prop an attribute, or a binding of code that reads no args, sets before the args binding,
-// which the binding sets once a control sets its arg.
-function overriddenProp(
-  prop: ElementProp,
-  directive: DirectiveNode,
-  state: TransformState
-): string | undefined {
-  const name =
-    prop.type === NodeTypes.ATTRIBUTE
-      ? prop.name
-      : prop.name === 'bind' && !readsArgs(prop)
-        ? staticDirectiveArg(prop)
-        : undefined;
-  return name && !isMerged(name, state) && prop.loc.start.offset < directive.loc.start.offset
-    ? name
-    : undefined;
-}
+  prop.modifiers.some(({ content }) => content === 'prop' || content === 'attr');
 
 const camelCase = (name: string) =>
   name.replace(/-(\w)/g, (_, letter: string) => letter.toUpperCase());

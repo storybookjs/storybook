@@ -29,6 +29,13 @@ Your editor uses the package named `typescript` by default, so its language serv
 
 If your project depends on TypeScript 7 directly, including a new Vite app, replace that `typescript` dependency with the two entries above.
 
+<If renderer="react">
+
+{/* TEMPORARY(ts-7.1): update once Storybook supports TypeScript 7.1. */}
+Until you do, React projects use the deprecated builder docgen with `react-docgen`. Storybook adds it to new and upgraded projects on TypeScript 7.0 for now, and offers to remove it again once it supports TypeScript 7.1.
+
+</If>
+
 ## Configure Storybook with TypeScript
 
 Storybook's configuration file (i.e., `main.ts`) is defined as an ESM module written in TypeScript, providing you with the baseline configuration to support your existing framework while enabling you stricter type-checking and autocompletion in your editor. Below is an abridged configuration file.
@@ -115,7 +122,7 @@ If you're using Vue single file components and TypeScript, you can add the offic
 
 ### Storybook doesn't create the required types for external packages
 
-If your project relies on a third-party library and the server does not generate the expected types, you can opt out of server-side docgen and use `react-docgen-typescript` with the required options. For example:
+If your project relies on a third-party library and the server does not generate the expected types, you can opt out of server-side docgen and use `react-docgen-typescript` with the required options. Install its packages first: `@joshwooding/vite-plugin-react-docgen-typescript` and `react-docgen-typescript` with Vite, or `@storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0` (this exact version; the `latest` tag is older) and `react-docgen-typescript` with Webpack. For example:
 
 <CodeSnippets path="storybook-main-prop-filter.md" />
 
@@ -133,7 +140,7 @@ Adjust the path (`../../packages/ui/src/**/*.tsx`) to match your monorepo layout
 
 ### The types are not being generated for my component
 
-If server-side docgen does not generate the expected types, you can use the legacy `react-docgen-typescript` path instead. This requires `features.docgenServer: false`; the example includes that opt-out:
+If server-side docgen does not generate the expected types, you can use the legacy `react-docgen-typescript` path instead. This requires `features.docgenServer: false` and the packages listed above; the example includes the opt-out:
 
 <CodeSnippets path="storybook-main-react-docgen-typescript.md" />
 

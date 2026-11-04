@@ -170,7 +170,7 @@ test.describe('addon-docs', () => {
     );
     // The renderers and frameworks that fill snippet templates so far. The gate goes once every
     // one with server docgen does.
-    const fillsTemplates = ['@storybook/react', '@storybook/vue3'];
+    const fillsTemplates = ['@storybook/react', '@storybook/vue3', '@storybook/svelte'];
     test.skip(
       !checkTemplate(templateName, ({ expected }) =>
         fillsTemplates.some((name) => name === expected.renderer || name === expected.framework)

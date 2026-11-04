@@ -44,9 +44,7 @@ jobs:
           node-version-file: '.nvmrc'
           cache: 'yarn'
       - run: yarn install --immutable
-      # The same commands, with the same configuration, as CircleCI's `Compile` step and affected
-      # typecheck, so their task hashes match what pull request pipelines look up.
-      - name: Compile
-        run: yarn nx run-many -t compile -c production
-      - name: Typecheck
-        run: yarn nx run-many -t check --exclude-task-dependencies --parallel=4
+      # The production configuration, as the `nx` workflow's workers run them, so the task hashes
+      # match what pull request pipelines look up.
+      - name: Compile and typecheck
+        run: yarn nx run-many -t compile,check -c production --parallel=4

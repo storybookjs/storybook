@@ -31,8 +31,8 @@ Key points:
 - NX target commands use Nx project names (from `project.json` / Nx graph), not `package.json` names
 - Example: `yarn nx compile core` (project `core` is published as package `storybook`)
 - NX Cloud remote-cache auth failures (e.g. HTTP 401 "insufficient access") degrade to the local cache, so they are expected on local runs where `NX_CLOUD_ACCESS_TOKEN` is unset. CI always sets that token, so a 401 there means an invalid or expired token and should be investigated rather than ignored. Locally, a read-only token or an `nx login` session reads the shared cache but stores nothing, so the "Skipping storing" message is expected. On CI, a read-only token also writes to a cache NX Cloud scopes to the pull request (see below)
-- CircleCI uses the NX Cloud remote cache for `compile` and the affected `check`, so unchanged packages are restored instead of rebuilt. See `nxEnvironment` in `scripts/ci/utils/helpers.ts`
-- Only `next` writes to the shared remote cache: `.github/workflows/nx-cache.yml` runs on every push with the read-write token from the `nx-cloud-write` environment. Every other CI token is read-only, so pull request pipelines read the shared cache and write only to a cache NX Cloud scopes to that pull request. CircleCI passes the pull request number as `NX_BRANCH` because API-triggered pipelines don't have it otherwise
+- CircleCI does not use NX Cloud (`--skip-nx-cache` on CI). NX Cloud runs in `.github/workflows/nx.yml`: it starts workers with `npx nx-cloud start-workers` before installing dependencies, and `.nx/ci-config.yaml` sets how tasks are distributed. Worker machines and their setup steps are in `.nx/workflows/agents.yaml`
+- Only `next` writes to the shared remote cache and the workers' node_modules cache: `.github/workflows/nx-cache.yml` on every push, and the nightly `nx` run, use the read-write token from the `nx-cloud-write` environment. Pull requests use the read-only token, so they read those caches and write only to a cache NX Cloud scopes to the pull request
 - On CI, NX Cloud prints only a link for a failed task. Pass `--output-style=stream` (or set `NX_DEFAULT_OUTPUT_STYLE=stream`) to keep the task's own errors in the log
 - `compile` hashes the `OS` environment variable, so Windows and POSIX builds never restore each other's `dist`
 - To force a rebuild, pass `--skip-nx-cache` (or `yarn task compile --skip-cache`). Do not bump a field in `nx.json` to bust the cache: that invalidates every task in the workspace
@@ -49,4 +49,3 @@ Key points:
 | `NX_CLOUD_ACCESS_TOKEN`       | Authenticate the NX Cloud remote cache          |
 | `NX_ISOLATE_PLUGINS`          | `false` in `.env`: plugins load in-process      |
 | `NX_NO_CLOUD`                 | Run without NX Cloud (local cache only)         |
-| `NX_DEFAULT_OUTPUT_STYLE`     | `stream` on CI: print task output inline        |

@@ -36,10 +36,6 @@ dte:
       run-on:
         - agent: linux-browsers-js
           parallelism: 1
-lifecycle:
-  # The main job installs dependencies for about two minutes between `start-workers` and its first Nx
-  # command. With the heartbeat on, NX Cloud took that gap as a stalled main job and cancelled the
-  # workers. The workflow stops the workers with `nx-cloud complete-ci-run` instead.
-  heartbeat: false
-# No stop-after list: one that misses a target strands queued tasks (for example the continuous
+# No lifecycle.stop-after: NX Cloud tracks the main job (heartbeat) and stops the workers when it
+# ends. A stop-after list that misses a target strands queued tasks (for example the continuous
 # serve, dev and run-registry tasks) and the run hangs.

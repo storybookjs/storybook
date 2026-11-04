@@ -7,7 +7,7 @@ import { executors } from './utils/executors.ts';
 import { cancelWorkflowStep, ensureRequiredJobs } from './utils/helpers.ts';
 import { orbs } from './utils/orbs.ts';
 import { parameters } from './utils/parameters.ts';
-import { setPrNumber, setTrustedAuthor } from './utils/runtime.ts';
+import { setTrustedAuthor } from './utils/runtime.ts';
 import type { JobImplementationObj, NoOpJobImplementationObj } from './utils/types.ts';
 import { type Workflow, workflows } from './utils/types.ts';
 import { getJobs } from './workflow-jobs.ts';
@@ -130,12 +130,10 @@ const { values: opts } = parseArgs({
     workflow: { type: 'string', short: 'w' },
     'base-ref': { type: 'string', default: 'origin/next' },
     'gh-trusted-author': { type: 'string', default: 'false' },
-    'gh-pr-number': { type: 'string', default: '' },
     branch: { type: 'string', default: '' },
   },
 });
 setTrustedAuthor(opts['gh-trusted-author'] === 'true');
-setPrNumber(opts['gh-pr-number']);
 
 const requested = (opts.workflow ?? '').split(',').filter(Boolean);
 const unknown = requested.filter((w) => !(workflows as readonly string[]).includes(w));

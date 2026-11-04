@@ -13,7 +13,6 @@ import {
   artifact,
   cache,
   compileStep,
-  nxEnvironment,
   git,
   node,
   npm,
@@ -392,8 +391,7 @@ export const node26Smoke = defineJob('Node 26 smoke', () => ({
       },
     },
     npm.install('.'),
-    // Its task hashes match the Node 22 build, so a cache hit would skip compiling on Node 26.
-    compileStep({ skipCache: true }),
+    compileStep(),
     {
       run: {
         name: 'Run unit tests',
@@ -467,7 +465,8 @@ export const defineAffectedCheck = (changedFiles: readonly string[]) =>
         {
           run: {
             name: 'TypeCheck affected projects',
-            environment: nxEnvironment(),
+            // With Nx Cloud on, CI logs show only a cloud link per task instead of the type errors.
+            environment: { NX_NO_CLOUD: 'true' },
             command: `yarn nx affected -t check --exclude-task-dependencies --parallel=4 --stdin < ${CHANGED_FILES_PATH}`,
           },
         },

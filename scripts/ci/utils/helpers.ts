@@ -1,6 +1,5 @@
 import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../../utils/npm-constants.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './constants.ts';
-import { getPrNumber } from './runtime.ts';
 import { type JobOrNoOpJob } from './types.ts';
 
 export const cancelWorkflowStep = {
@@ -12,28 +11,11 @@ export const cancelWorkflowStep = {
   },
 };
 
-/**
- * Environment for every CircleCI step that runs Nx.
- *
- * - Connected to Nx Cloud, Nx on CI prints only a cloud link for a failed task. Stream output keeps
- *   the task's own output (compile and type errors) in the CircleCI log.
- * - CircleCI's Nx Cloud token is read-only. Nx Cloud then gives each pull request its own writable
- *   cache next to the shared one, which only `next` fills (see `.github/workflows/nx-cache.yml`).
- *   Pipelines started through the API carry no pull request number for Nx Cloud to find, so
- *   `NX_BRANCH` passes it on. Without it, NX Cloud has no pull request to scope the writes to.
- */
-export const nxEnvironment = () => ({
-  NX_DEFAULT_OUTPUT_STYLE: 'stream',
-  ...(getPrNumber() ? { NX_BRANCH: getPrNumber() } : {}),
-});
-
-/** `skipCache` builds every package from scratch, for jobs whose point is to compile in their own environment. */
-export const compileStep = ({ skipCache = false }: { skipCache?: boolean } = {}) => ({
+export const compileStep = () => ({
   run: {
     name: 'Compile',
     working_directory: 'code',
-    environment: nxEnvironment(),
-    command: `yarn task --task compile --start-from=auto --no-link --debug${skipCache ? ' --skip-cache' : ''}`,
+    command: 'yarn task --task compile --start-from=auto --no-link --debug',
   },
 });
 

@@ -39,6 +39,11 @@ export const printHole: PrintHole<SvelteHolePlace> = (hole, value) => {
         ? printHole(hole.read, args[hole.read.arg])
         : hole.written;
     }
+    case 'cleared':
+      if (value === undefined) {
+        throw new UnprintableArgError(arg);
+      }
+      return '';
     case 'overwritten':
       // The attribute would follow both this arg and the args it reads, but a hole reads one arg.
       throw new UnprintableArgError(arg);

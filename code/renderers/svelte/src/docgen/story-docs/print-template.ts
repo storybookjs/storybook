@@ -135,7 +135,8 @@ export function printTemplate({
         next();
         const own = readArgs.every((arg) => arg === node.name);
         const [read, ...more] = edits.slice(from).map((edit) => edit.read);
-        if (!own && (read?.kind !== 'attrvalue' || more.length)) {
+        const overridden = !own && read?.kind === 'attrvalue' && !more.length ? read : undefined;
+        if (!own && !overridden) {
           // Its reads follow their args, but it cannot also follow the arg it names.
           edits.push({
             start: range.end,
@@ -159,13 +160,27 @@ export function printTemplate({
           ...range,
           value,
           marked: mark(
-            own
-              ? { kind: 'spreadattr', arg: node.name }
-              : // `printTemplate` sets `written` to the hole's text.
-                { kind: 'overridden', spread: true, name: node.name, read: read!, written: '' },
+            overridden
+              ? {
+                  kind: 'overridden',
+                  spread: true,
+                  name: node.name,
+                  read: overridden,
+                  written: value,
+                }
+              : { kind: 'spreadattr', arg: node.name },
             value
           ),
         });
+        if (overridden) {
+          // The spread hole does not see the arg it reads cleared.
+          edits.push({
+            start: range.end,
+            end: range.end,
+            value: '',
+            marked: mark({ kind: 'cleared', arg: overridden.arg }, ''),
+          });
+        }
       },
       SpreadAttribute(node, { path, next }) {
         if (!isArgsSpread(node)) {
@@ -308,14 +323,7 @@ export function printTemplate({
   // The marks avoid the characters of the snippet, not of `code`: `'\uE000'` prints U+E000.
   const marks = createHoleMarks<SvelteHolePlace>([snippet]);
   const marked = collect(marks.mark).map((edit) => ({ ...edit, value: edit.marked ?? edit.value }));
-  const template: SnippetTemplate<SvelteHolePlace> | undefined = marks
-    .toTemplate(applyEdits(code, marked))
-    ?.map((segment) =>
-      // While no arg it follows changes, an `overridden` hole prints the attribute as written.
-      typeof segment !== 'string' && segment.kind === 'overridden'
-        ? { ...segment, written: segment.text }
-        : segment
-    );
+  const template = marks.toTemplate(applyEdits(code, marked));
   return {
     snippet,
     // An arg a control clears leaves no gap in the spread.

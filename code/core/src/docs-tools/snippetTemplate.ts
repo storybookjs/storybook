@@ -230,9 +230,9 @@ export interface HoleMarks<Place extends HolePlace> {
   /**
    * `text`, marked as a hole for `ref`, with `space` as its {@link TemplateHole.space}, which the
    * static snippet does not print: give it to a hole that prints no text, and let
-   * {@link withHoleSpace} take the whitespace before any other. The same
-   * hole marks the same text alike, so a provider that compares printed code, as to declare a
-   * repeated value once, compares marked code as it compares the snippet.
+   * {@link withHoleSpace} take the whitespace before any other. The same hole marks the same text
+   * alike, so a provider that compares printed code, as to declare a repeated value once, compares
+   * marked code as it compares the snippet.
    */
   mark(ref: HoleRef<Place>, text: string, space?: string): string;
   /**
@@ -247,7 +247,7 @@ export interface HoleMarks<Place extends HolePlace> {
  * written with private-use characters none of `sources` holds, so code as written is never read as
  * a mark. Pass the static snippet: it holds everything the marked print holds but the marks,
  * including values printed from other files. `wrap` writes each mark where the printed code must
- * still parse, such as in a comment: `(mark) => `/*${mark}*\/``.
+ * still parse, such as inside a block comment.
  */
 export function createHoleMarks<Place extends HolePlace>(
   sources: string[],

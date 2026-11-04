@@ -22,7 +22,11 @@
     "strict": true,
     "noEmit": true,
     "strictBindCallApply": true,
-    "target": "ES2020"
+    "target": "ES2020",
+    // TypeScript 6 no longer loads every @types package. Name Node explicitly: otherwise a package
+    // only sees Node's globals when some core d.ts chunk it imports happens to reference them, which
+    // depends on how the build splits those chunks.
+    "types": ["node"]
   },
   "exclude": ["dist", "**/dist", "node_modules", "**/node_modules"]
 }

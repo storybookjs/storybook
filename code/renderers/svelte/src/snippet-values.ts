@@ -17,13 +17,15 @@ export type SvelteHolePlace =
   | { kind: 'value' }
   // A shorthand property, `{ name }`, that reads an arg.
   | { kind: 'property'; name?: string }
-  // One whole read, which prints a string as text where next does, else as code between `before`
-  // and `after`: an attribute value of the attribute `name`, a quoted attribute value, a text node,
-  // or code.
-  | { kind: 'attrvalue'; name?: string; before: string; after: string }
-  | { kind: 'quoted' | 'fragment' | 'code'; before: string; after: string }
+  | WholeReadPlace
   // A read of a member of an arg, which the snippet cannot follow.
   | { kind: 'member' };
+
+// An expression tag that is one whole read of an arg, printed by `printWholeRead`: the value of the
+// attribute `name`, a quoted attribute value, a text node, or other code.
+export type WholeReadPlace =
+  | { kind: 'attrvalue'; name?: string; before: string; after: string }
+  | { kind: 'quoted' | 'fragment' | 'code'; before: string; after: string };
 
 // An arg a spread passes: unset, `true`, or code, which a `string` it holds may print as text.
 export type PropValue = undefined | true | { string?: string; code: string };
@@ -52,36 +54,25 @@ export function printProp(name: string, value: PropValue): string {
 export const printSpreadAttribute = (name: string, value: PropValue) =>
   value === undefined ? `${name}={undefined}` : printProp(name, value);
 
-const PRIMARY = new Set([
-  'Identifier',
-  'ThisExpression',
-  'TemplateLiteral',
-  'ArrayExpression',
-  'MemberExpression',
-  'CallExpression',
-  'Literal',
-]);
-
-// Whether code of this node type keeps its meaning wherever an `args.x` read stood, without
-// parentheses. A negative number does not, nor an object literal: in `() => args.o` it would
-// become a block body.
-export const isPrimary = (type: string, negativeNumber: boolean) =>
-  PRIMARY.has(type) && !negativeNumber;
-
-// An arg read in code, in parentheses where it would not keep its meaning in place of the read.
-export const printRead = (code: string, parentheses: boolean) => (parentheses ? `(${code})` : code);
-
-// The text a whole read of a string prints as, where it prints text: none for a blank one.
-export const readText = (value: string) => (value.trim() ? value : undefined);
-
-// `name={args.x}` as `name="text"`, or `undefined` where it prints the read as code.
-export const attributeText = (name: string, text: string | undefined) =>
-  text !== undefined && isPlain(text) ? `${name}="${text}"` : undefined;
-
-// A read in a quoted attribute value as its text, or `undefined` where it stays code.
-export const quotedText = (text: string | undefined) =>
-  text !== undefined && !/[{}]/.test(text) ? escapeAttribute(text) : undefined;
-
-// A read in markup as its text, or `undefined` where it stays code.
-export const fragmentText = (text: string | undefined) =>
-  text !== undefined && !/[{}<>"\\&]/.test(text) ? text : undefined;
+// A whole read of `arg` whose code is `read`: a `string` it holds as text where its place shows
+// that text as written, else the code between `before` and `after`.
+export function printWholeRead(
+  place: WholeReadPlace,
+  arg: string,
+  read: string,
+  string: string | undefined
+): string {
+  const text = string?.trim() ? string : undefined;
+  const code = `${place.before}${read}${place.after}`;
+  switch (place.kind) {
+    case 'attrvalue':
+      // `title={args.title}` and `{title}` print a string as a spread prints it: `title="Save"`.
+      return text !== undefined && isPlain(text) ? `${place.name ?? arg}="${text}"` : code;
+    case 'quoted':
+      return text !== undefined && !/[{}]/.test(text) ? escapeAttribute(text) : code;
+    case 'fragment':
+      return text !== undefined && !/[{}<>"\\&]/.test(text) ? text : code;
+    case 'code':
+      return code;
+  }
+}

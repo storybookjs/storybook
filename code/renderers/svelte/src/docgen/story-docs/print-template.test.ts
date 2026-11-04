@@ -395,18 +395,21 @@ describe('printTemplate template', () => {
     expect(fill(written, {}, { active: true })).toBe('<div class:active={true}>{true}</div>');
   });
 
-  it('writes the holes of markup that holds hole brackets', () => {
-    const written = template('<Panel title="⟦⟫⟧">{args.label}</Panel>', "{ label: 'Go' }");
-    expect(stripHoles(written)).toBe('<Panel title="⟦⟫⟧">Go</Panel>');
+  it('writes the holes of markup that holds private-use characters', () => {
+    const written = template(
+      '<Panel title="\uE000\uE001\uE002">{args.label}</Panel>',
+      "{ label: 'Go' }"
+    );
+    expect(stripHoles(written)).toBe('<Panel title="\uE000\uE001\uE002">Go</Panel>');
     expect(fill(written, { label: 'Go' }, { label: 'Stop' })).toBe(
-      '<Panel title="⟦⟫⟧">Stop</Panel>'
+      '<Panel title="\uE000\uE001\uE002">Stop</Panel>'
     );
   });
 
   it('writes the holes of an arg whose escaped value prints a private-use character', () => {
     const written = template('<Panel title={args.title} />', "{ title: '\\uE000x' }");
-    expect(stripHoles(written)).toBe('<Panel title="x" />');
-    expect(fill(written, { title: 'x' }, { title: 'y' })).toBe('<Panel title="y" />');
+    expect(stripHoles(written)).toBe('<Panel title="\uE000x" />');
+    expect(fill(written, { title: '\uE000x' }, { title: 'y' })).toBe('<Panel title="y" />');
   });
 
   it('cannot follow a read of a member of an arg', () => {

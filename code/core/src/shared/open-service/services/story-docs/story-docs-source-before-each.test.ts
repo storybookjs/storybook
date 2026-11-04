@@ -46,7 +46,6 @@ const payloadWithWarning: StoryDocsPayload = {
 };
 const serviceSnippet = 'import { Button } from \'./Button\';\n\n<Button label="hi" />';
 const templates: StoryTemplatesPayload = {
-  import: payload.import,
   stories: {
     [storyId]: ['<Button ', { kind: 'attr', arg: 'label', text: 'label="hi"' }, ' />'],
   },

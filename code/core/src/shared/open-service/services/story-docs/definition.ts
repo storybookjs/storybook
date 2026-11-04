@@ -44,10 +44,7 @@ const storyDocsPayloadSchema = v.object({
 const storyDocsOutputSchema = v.optional(storyDocsPayloadSchema);
 
 const storyTemplatesOutputSchema = v.optional(
-  v.object({
-    import: v.optional(v.string()),
-    stories: v.record(v.string(), snippetTemplateSchema),
-  })
+  v.object({ stories: v.record(v.string(), snippetTemplateSchema) })
 );
 
 export type StoryDocsServiceState = {

@@ -161,7 +161,6 @@ describe('story-docs open service', () => {
       expect(extracted).toEqual({ ...provided, stories });
       expect(service.queries.storyDocs.get({ id: 'button' })).toEqual({ ...provided, stories });
       expect(service.queries.storyTemplates.get({ id: 'button' })).toEqual({
-        import: provided.import,
         stories: { 'button--primary': buttonTemplate() },
       });
     });
@@ -233,12 +232,7 @@ describe('story-docs open service', () => {
       });
       expect(JSON.stringify(store['core/story-docs/button.json'])).not.toContain('"template"');
       expect(store['core/story-docs/templates/button.json']).toEqual({
-        templates: {
-          button: {
-            import: provided.import,
-            stories: { 'button--primary': buttonTemplate() },
-          },
-        },
+        templates: { button: { stories: { 'button--primary': buttonTemplate() } } },
       });
     });
   });

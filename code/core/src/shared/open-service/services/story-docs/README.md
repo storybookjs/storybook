@@ -74,7 +74,8 @@ A template holds its whole snippet again, so it is kept apart from the story doc
 the components manifest read:
 
 - One extraction writes the story docs under `state.components` and the templates under
-  `state.templates`; the `storyDocs` query never returns a template.
+  `state.templates`; the `storyDocs` query never returns a template. A filled template gets the
+  `import` of the story docs, as its snippet does, so the templates do not repeat it.
 - The `storyTemplates` query returns a component's templates. A static build writes them to
   `core/story-docs/templates/<id>.json`, apart from `core/story-docs/<id>.json`, through the
   `storyDocs` query's `staticSnapshots`, so one extraction fills both files.

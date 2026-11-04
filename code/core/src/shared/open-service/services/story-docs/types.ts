@@ -83,11 +83,10 @@ export interface ProvidedStoryDocsPayload extends Omit<StoryDocsPayload, 'storie
 /**
  * The templates of a component's stories, returned by `core/story-docs`'s `storyTemplates` query.
  * They are kept apart from the {@link StoryDocsPayload}, which agents and the components manifest
- * read: only the preview fills them, and only once a story's args change.
+ * read: only the preview fills them, and only once a story's args change. A filled template gets
+ * the `import` of the story docs, as the snippet it is written from does.
  */
 export interface StoryTemplatesPayload {
-  /** Prepended to every template, as `StoryDocsPayload.import` is to every snippet. */
-  import?: string;
   /** Each story's template by story id; a story without one cannot follow the controls. */
   stories: Record<string, SnippetTemplate>;
 }

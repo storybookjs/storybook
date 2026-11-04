@@ -114,9 +114,6 @@ function selectStoryWithTemplate(payload: StoryDocsPayload | undefined, storyId:
   const template = templates?.stories[storyId];
   return {
     payload: payload && { ...payload, stories: story ? { [storyId]: { ...story } } : {} },
-    templates: templates && {
-      ...(templates.import !== undefined && { import: templates.import }),
-      stories: template === undefined ? {} : { [storyId]: template },
-    },
+    templates: templates && { stories: template === undefined ? {} : { [storyId]: template } },
   };
 }

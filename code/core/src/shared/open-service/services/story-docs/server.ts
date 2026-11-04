@@ -139,10 +139,7 @@ function writeStoryDocs(
   state.components[id] = { ...payload, stories };
   // Stored even when empty, so the preview can tell a component without templates from one whose
   // templates did not load.
-  state.templates[id] = {
-    ...(payload.import !== undefined && { import: payload.import }),
-    stories: templates,
-  };
+  state.templates[id] = { stories: templates };
 }
 
 /** Registers the `core/story-docs` open service against the process-global registry. */

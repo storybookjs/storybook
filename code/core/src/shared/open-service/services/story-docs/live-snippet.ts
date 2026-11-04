@@ -103,7 +103,7 @@ export function selectLiveSnippetForStory(
   }
   try {
     return {
-      snippet: prependImportToSnippet(templates?.import, fillTemplate(template, args!, printHole)),
+      snippet: prependImportToSnippet(payload?.import, fillTemplate(template, args!, printHole)),
       warning: story?.warning,
     };
   } catch (error) {

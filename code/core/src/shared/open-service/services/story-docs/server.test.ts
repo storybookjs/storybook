@@ -145,12 +145,61 @@ describe('story-docs open service', () => {
       });
     });
 
+    it('load with the story docs, in one extraction', async () => {
+      const provider = vi.fn<StoryDocsProvider>(async () => provided);
+      const service = registerStoryDocsService({
+        getIndex: makeGetIndex([entry]),
+        storyDocsProvider: provider,
+      });
+
+      await Promise.all([
+        service.queries.storyDocs.loaded({ id: 'button' }),
+        service.queries.storyTemplates.loaded({ id: 'button' }),
+      ]);
+
+      expect(provider).toHaveBeenCalledOnce();
+      expect(service.queries.storyTemplates.get({ id: 'button' })?.stories).toHaveProperty(
+        'button--primary'
+      );
+    });
+
     it('stores none for a component whose stories have none, so the preview knows they loaded', async () => {
       const service = register(makeStoryDocsPayload());
 
       await service.commands.extractStoryDocs({ id: 'button' });
 
       expect(service.queries.storyTemplates.get({ id: 'button' })).toEqual({ stories: {} });
+    });
+
+    it('reach a story-docs subscription whose selector reads them, without loading them', async () => {
+      let payload = provided;
+      const service = registerStoryDocsService({
+        getIndex: makeGetIndex([entry]),
+        storyDocsProvider: async () => payload,
+      });
+      await service.commands.extractStoryDocs({ id: 'button' });
+      const templates = vi.spyOn(service.queries.storyTemplates, 'loaded');
+      const selected: unknown[] = [];
+      const unsubscribe = service.queries.storyDocs.subscribe(
+        { id: 'button' },
+        () => service.queries.storyTemplates.get({ id: 'button' })?.stories['button--primary'],
+        (state) => selected.push(state.data)
+      );
+
+      // A server update that changes a template but no snippet.
+      const primary = provided.stories['button--primary']!;
+      payload = {
+        ...provided,
+        stories: {
+          ...provided.stories,
+          'button--primary': { ...primary, template: '<Button ⟦attr label x⟫label="Hi"⟧ />' },
+        },
+      };
+      await service.commands.extractStoryDocs({ id: 'button' });
+      unsubscribe();
+
+      expect(selected.at(-1)).toBe('<Button ⟦attr label x⟫label="Hi"⟧ />');
+      expect(templates).not.toHaveBeenCalled();
     });
 
     it('writes them to a static file of their own, apart from the story docs', async () => {

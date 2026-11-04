@@ -25,7 +25,7 @@ const storiesWarnedAbout = new Set<string>();
 export type StoryArgs = { unmappedArgs: Args; initialArgs: Args };
 
 /** Whether a story renders with other args than those it is written with, so its template fills. */
-export const argsChanged = (args: StoryArgs | undefined) =>
+export const storyArgsChanged = (args: StoryArgs | undefined) =>
   args !== undefined && !isEqual(args.unmappedArgs, args.initialArgs);
 
 // Each component's templates load once a story of it first renders with changed args. A static
@@ -82,7 +82,7 @@ export function selectLiveSnippetForStory(
     warning:
       [selectWarningForStory(payload, storyId), unprintable].filter(Boolean).join(' ') || undefined,
   });
-  if (!argsChanged(args) || templates === 'loading') {
+  if (!storyArgsChanged(args) || templates === 'loading') {
     return staticSnippet();
   }
   const story = payload?.stories[storyId];

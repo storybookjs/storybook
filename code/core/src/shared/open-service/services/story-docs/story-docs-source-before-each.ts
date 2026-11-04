@@ -6,7 +6,7 @@ import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePan
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
 import {
-  argsChanged,
+  storyArgsChanged,
   getPrintHole,
   loadStoryTemplates,
   selectLiveSnippetForStory,
@@ -64,7 +64,7 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
     load.catch(() => loads.delete(context.parameters));
   }
   const args = { unmappedArgs: context.unmappedArgs, initialArgs: context.initialArgs };
-  const templates = argsChanged(args) ? loadStoryTemplates(service, componentId) : undefined;
+  const templates = storyArgsChanged(args) ? loadStoryTemplates(service, componentId) : undefined;
   const previous = emits.get(storyId);
   const codePanelSnippetPromise: Promise<unknown> = Promise.all([load, templates, previous])
     .then(() => {

@@ -64,9 +64,13 @@ the components manifest read:
   `core/story-docs/templates/<id>.json`, apart from `core/story-docs/<id>.json`, through the
   `storyDocs` query's `staticSnapshots`, so one extraction fills both files.
 - The preview loads a component's templates once, the first time one of its stories renders with
-  changed args (`loadStoryTemplates`). A static build fetches the file then; a dev server already
-  sent them with the story docs. Until they load, the static snippet shows; if they cannot load, it
-  shows with a warning that it does not follow the controls.
+  changed args (`loadStoryTemplates`). A static build fetches the file then. A dev server sends them
+  over its socket with the story docs, and the `storyTemplates` load joins a story-docs load in
+  flight, so it never extracts twice. Until they load, the static snippet shows; if they cannot
+  load, it shows with a warning that it does not follow the controls, and the next change tries
+  again.
+- The `Source` hook reads a story's template in its story-docs selector, so an update that changes
+  only a template fills the snippet again without loading the templates.
 
 So a story whose args never change costs nothing more than its snippet, in the manifest and in the
 preview.

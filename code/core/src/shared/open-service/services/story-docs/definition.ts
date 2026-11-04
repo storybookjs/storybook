@@ -96,8 +96,10 @@ export const storyDocsServiceDef = defineService({
         const payload = ctx.self.state.templates[input.id];
         return Object.hasOwn(ctx.self.state.templates, input.id) ? payload : undefined;
       },
+      // The extraction that loads the story docs stores the templates too, so this joins a load of
+      // the story docs already in flight instead of extracting again.
       load: async (input, ctx) => {
-        await ctx.self.commands.extractStoryDocs(input);
+        await ctx.self.queries.storyDocs.loaded(input);
       },
       // Built by the `storyDocs` query's `staticSnapshots`.
       staticPath: (input) => storyTemplatesQueryStaticPath(input.id),

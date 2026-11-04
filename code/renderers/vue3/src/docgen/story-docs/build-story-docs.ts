@@ -271,7 +271,8 @@ function vueDocgenArgInfo(payload: DocgenPayload): VueDocgenArgInfo {
 }
 
 /**
- * Maps every CSF story export to its ProvidedStoryDoc, enriched with a snippet or error where possible.
+ * Maps every CSF story export to its ProvidedStoryDoc, enriched with a snippet or error where
+ * possible.
  */
 function extractStories(csf: ParsedCsf, options: StoryDocsContext): ExtractStoriesResult {
   const stories = Object.fromEntries(
@@ -368,8 +369,8 @@ function enrichStoryDoc(
   if (!rendered) {
     return withWarning(UNRENDERED_WARNINGS[renderer.kind]);
   }
-  // The marked print is the snippet with marks in it, so marks none of the snippet's code holds
-  // are never read in it.
+  // The snippet holds every character the marked print does but the marks, so no code it prints
+  // is read as a mark.
   const marks = createHoleMarks<VueHolePlace>([rendered.snippet]);
   const printed = print(marks.mark)?.snippet;
   const holes = printed === undefined ? undefined : marks.toTemplate(printed);

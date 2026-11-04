@@ -117,7 +117,7 @@ export const marked = (
   space?: string
 ) => (ctx.mark ? ctx.mark(hole, text, space) : text);
 
-// The hole of the attribute `name` for `arg`, which names the attribute only where the arg does not.
+// The hole of the attribute `name` for `arg`, which names the attribute only where it differs.
 export const attributeHole = (name: string, arg: string): HoleRef<VueHolePlace> => ({
   kind: 'attr',
   arg,

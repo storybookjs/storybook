@@ -66,7 +66,8 @@ async function buildPayload(
   importSource = "import MyButton from './MyButton.vue';",
   componentName = 'MyButton'
 ) {
-  const storyFile = `
+  vol.fromJSON({
+    [STORY_PATH]: `
 ${importSource}
 
 const meta = {
@@ -77,8 +78,8 @@ const meta = {
 export default meta;
 
 ${storySource}
-`;
-  vol.fromJSON({ [STORY_PATH]: storyFile });
+`,
+  });
 
   const payload = await buildStoryDocsPayload(
     { entry: ENTRY },

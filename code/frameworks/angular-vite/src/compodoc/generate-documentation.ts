@@ -85,7 +85,6 @@ const runCli = async (
       cwd,
       // Interleaved into one stream, so the failure message reads in the order Compodoc printed it.
       all: true,
-      encoding: 'utf8',
       // Failures come back as a result rather than a throw, so a timeout and a non-zero exit are
       // told apart by inspecting one object.
       reject: false,

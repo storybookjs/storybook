@@ -2,9 +2,6 @@ import { stripVTControlCharacters } from 'node:util';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { execaSync } from 'execa';
-
 import {
   createHyperlink,
   getTerminalWidth,
@@ -22,10 +19,6 @@ vi.mock('picocolors', () => ({
   cyan: vi.fn((text) => `cyan(${text})`),
   dim: vi.fn((text) => `dim(${text})`),
   reset: vi.fn((text) => `reset(${text})`),
-}));
-
-vi.mock('execa', () => ({
-  execaSync: vi.fn(),
 }));
 
 function getVisibleLength(str: string): number {
@@ -87,27 +80,6 @@ describe('wrap-utils', () => {
   });
 
   describe('wrapTextForClack', () => {
-    beforeEach(() => {
-      // Note: execaSync mock is not actually used by the implementation
-      // which reads process.env directly, but kept for compatibility
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(execaSync).mockImplementation((_cmd: string | URL, args: any) => {
-        if (args && args[0] === '$TERM_PROGRAM') {
-          return {
-            stdout: 'iTerm.app',
-          } as any;
-        }
-        if (args && args[0] === '$TERM_PROGRAM_VERSION') {
-          return {
-            stdout: '3.4.0',
-          } as any;
-        }
-        return {
-          stdout: '',
-        } as any;
-      });
-    });
-
     it('should wrap text to fit within content width and respect line length constraints', () => {
       const text =
         'This is a very long line of text that should be wrapped to fit within the specified width and not exceed the limit';
@@ -350,27 +322,6 @@ describe('wrap-utils', () => {
   });
 
   describe('protectUrls', () => {
-    beforeEach(() => {
-      // Note: execaSync mock is not actually used by the implementation
-      // which reads process.env directly, but kept for compatibility
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(execaSync).mockImplementation((_cmd: string | URL, args: any) => {
-        if (args && args[0] === '$TERM_PROGRAM') {
-          return {
-            stdout: 'iTerm.app',
-          } as any;
-        }
-        if (args && args[0] === '$TERM_PROGRAM_VERSION') {
-          return {
-            stdout: '3.4.0',
-          } as any;
-        }
-        return {
-          stdout: '',
-        } as any;
-      });
-    });
-
     it('should return text unchanged when no URLs are present', () => {
       const text = 'This is just plain text without any URLs';
       const result = protectUrls(text);

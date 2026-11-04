@@ -8,8 +8,7 @@ import { getProjectRoot } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
-// eslint-disable-next-line depend/ban-dependencies
-import type { ResultPromise } from 'execa';
+import type { Subprocess } from '../common/utils/subprocess.ts';
 
 import { SupportedBuilder, SupportedFramework } from '../types/index.ts';
 import { AddonVitestService, canInstallLatestVitest } from './AddonVitestService.ts';
@@ -512,7 +511,7 @@ describe('AddonVitestService', () => {
       delete process.env.CI;
       vi.mocked(os.platform).mockReturnValue('linux');
       try {
-        type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
+        type ChildProcessFactory = (signal?: AbortSignal) => Subprocess;
         let commandFactory: ChildProcessFactory | ChildProcessFactory[];
         vi.mocked(prompt.confirm).mockResolvedValue(true);
         vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
@@ -542,7 +541,7 @@ describe('AddonVitestService', () => {
       delete process.env.CI;
       vi.mocked(os.platform).mockReturnValue('linux');
       try {
-        type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
+        type ChildProcessFactory = (signal?: AbortSignal) => Subprocess;
         vi.mocked(prompt.confirm).mockResolvedValue(true);
         vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
           async (factory: ChildProcessFactory | ChildProcessFactory[]) => {
@@ -572,7 +571,7 @@ describe('AddonVitestService', () => {
       process.env.CI = 'true';
       vi.mocked(os.platform).mockReturnValue('linux');
       try {
-        type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
+        type ChildProcessFactory = (signal?: AbortSignal) => Subprocess;
         let commandFactory: ChildProcessFactory | ChildProcessFactory[];
         vi.mocked(prompt.confirm).mockResolvedValue(true);
         vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
@@ -605,7 +604,7 @@ describe('AddonVitestService', () => {
         delete process.env.CI;
         vi.mocked(os.platform).mockReturnValue(platform);
         try {
-          type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
+          type ChildProcessFactory = (signal?: AbortSignal) => Subprocess;
           let commandFactory: ChildProcessFactory | ChildProcessFactory[];
           vi.mocked(prompt.confirm).mockResolvedValue(true);
           vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(

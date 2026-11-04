@@ -1,12 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 
-// eslint-disable-next-line depend/ban-dependencies
-import type { ResultPromise } from 'execa';
+import type { Subprocess } from '../common/utils/subprocess.ts';
 
 import { executeTaskWithSpinner } from './tasks.ts';
 
-// Create a minimal fake ResultPromise
-const makeChild = (onStart?: (cp: Partial<ResultPromise>) => void): ResultPromise => {
+// Create a minimal fake Subprocess
+const makeChild = (onStart?: (cp: Partial<Subprocess>) => void): Subprocess => {
   const listeners: Record<string, Function[]> = {};
   const stdout = {
     on: vi.fn((event: string, cb: (data: Buffer) => void) => {
@@ -15,7 +14,7 @@ const makeChild = (onStart?: (cp: Partial<ResultPromise>) => void): ResultPromis
     }),
   } as any;
 
-  const cp: Partial<ResultPromise> = {
+  const cp: Partial<Subprocess> = {
     stdout: stdout as any,
     then: undefined as any,
     catch: undefined as any,
@@ -29,7 +28,7 @@ const makeChild = (onStart?: (cp: Partial<ResultPromise>) => void): ResultPromis
   (cp as any).finally = promise.finally.bind(promise);
 
   onStart?.(cp);
-  return cp as ResultPromise;
+  return cp as Subprocess;
 };
 
 describe('executeTaskWithSpinner', () => {

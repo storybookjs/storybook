@@ -155,8 +155,9 @@ const bootTestRunner = async ({
             STORYBOOK_PREVIEW_ANNOTATIONS: JSON.stringify(previewAnnotations),
           },
           extendEnv: true,
-          // Execa's ipcOutput would otherwise retain reports from every previous test run.
-          buffer: { ipc: false },
+          // Output is forwarded through the stream listeners below; collecting it as well would
+          // retain everything the runner prints for as long as it lives.
+          buffer: false,
         },
       });
       sentStoryIndex = undefined;

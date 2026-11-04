@@ -8,8 +8,7 @@ import {
 } from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
-// eslint-disable-next-line depend/ban-dependencies
-import type { ResultPromise } from 'execa';
+import type { Subprocess } from '../utils/subprocess.ts';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
 import { normalize } from 'pathe';
@@ -139,7 +138,7 @@ export class NPMProxy extends JsPackageManager {
   }: Omit<ExecuteCommandOptions, 'command'> & {
     args: string[];
     useRemotePkg?: boolean;
-  }): ResultPromise {
+  }): Subprocess {
     return executeCommand({
       command: 'npx',
       ...options,

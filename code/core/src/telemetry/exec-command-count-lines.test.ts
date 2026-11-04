@@ -3,28 +3,26 @@ import { PassThrough } from 'node:stream';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { execa as rawExeca } from 'execa';
-
+import { spawnSubprocess as rawSpawnSubprocess } from '../common/utils/subprocess.ts';
 import { execCommandCountLines } from './exec-command-count-lines.ts';
 
-vi.mock('execa', { spy: true });
+vi.mock('../common/utils/subprocess.ts', { spy: true });
 
-const execa = vi.mocked(rawExeca);
+const spawnSubprocess = vi.mocked(rawSpawnSubprocess);
 beforeEach(() => {
-  execa.mockReset();
+  spawnSubprocess.mockReset();
 });
 
-type ExecaStreamer = typeof Promise & {
+type SubprocessStreamer = typeof Promise & {
   stdout: Transform;
   kill: () => void;
 };
 
-function createExecaStreamer() {
+function createSubprocessStreamer() {
   let resolver: () => void;
   const promiseLike = new Promise<void>((aResolver) => {
     resolver = aResolver;
-  }) as unknown as ExecaStreamer;
+  }) as unknown as SubprocessStreamer;
 
   promiseLike.stdout = new PassThrough();
   // @ts-expect-error technically it is invalid to use resolver "before" it is assigned (but not really)
@@ -34,8 +32,8 @@ function createExecaStreamer() {
 
 describe('execCommandCountLines', () => {
   it('counts lines, many', async () => {
-    const streamer = createExecaStreamer();
-    execa.mockReturnValue(streamer as unknown as ReturnType<typeof execa>);
+    const streamer = createSubprocessStreamer();
+    spawnSubprocess.mockReturnValue(streamer as unknown as ReturnType<typeof spawnSubprocess>);
 
     const promise = execCommandCountLines('some command', []);
 
@@ -47,8 +45,8 @@ describe('execCommandCountLines', () => {
   });
 
   it('counts lines, one', async () => {
-    const streamer = createExecaStreamer();
-    execa.mockReturnValue(streamer as unknown as ReturnType<typeof execa>);
+    const streamer = createSubprocessStreamer();
+    spawnSubprocess.mockReturnValue(streamer as unknown as ReturnType<typeof spawnSubprocess>);
 
     const promise = execCommandCountLines('some command', []);
 
@@ -59,8 +57,8 @@ describe('execCommandCountLines', () => {
   });
 
   it('counts lines, none', async () => {
-    const streamer = createExecaStreamer();
-    execa.mockReturnValue(streamer as unknown as ReturnType<typeof execa>);
+    const streamer = createSubprocessStreamer();
+    spawnSubprocess.mockReturnValue(streamer as unknown as ReturnType<typeof spawnSubprocess>);
 
     const promise = execCommandCountLines('some command', []);
 

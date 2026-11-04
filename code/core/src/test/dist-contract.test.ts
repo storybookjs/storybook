@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, normalize } from 'pathe';
+import picomatch from 'picomatch';
 import { describe, expect, it } from 'vitest';
 
 const DTS_ARTIFACT = join(import.meta.dirname, '../../dist/test/index.d.ts');
@@ -141,6 +142,23 @@ describe('storybook/test declaration contract', () => {
       );
 
       expect(copies).toEqual([]);
+    });
+
+    it('declares the vendor entries as side effects', () => {
+      // A vendor entry calls the lazy `init_*` function of its library. A consumer bundler that
+      // treats it as side-effect free (Vite's optimizer, a Rollup or webpack build) skips that call
+      // and leaves the library uninitialized; see dist-rebundle.contract.test.ts.
+      const { sideEffects } = JSON.parse(
+        readFileSync(join(import.meta.dirname, '../../package.json'), 'utf-8')
+      );
+      const isSideEffect = picomatch(
+        (Array.isArray(sideEffects) ? sideEffects : []).map((glob: string) =>
+          glob.replace(/^\.\//, '')
+        )
+      );
+
+      expect(vendorEntries).not.toEqual([]);
+      expect(vendorEntries.filter((entry) => !isSideEffect(`dist/${entry}`))).toEqual([]);
     });
 
     it('runs no runtime code when a vendor entry is imported', () => {

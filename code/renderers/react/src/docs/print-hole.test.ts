@@ -26,12 +26,7 @@ describe('printHole', () => {
   });
 
   it('throws for a value the snippet cannot show', () => {
-    const places: ReactHolePlace[] = [
-      { kind: 'attr' },
-      { kind: 'text' },
-      { kind: 'close', element: 'Button' },
-      { kind: 'value' },
-    ];
+    const places: ReactHolePlace[] = [{ kind: 'attr' }, { kind: 'text' }, { kind: 'value' }];
     for (const place of places) {
       expect(() => printHole({ ...place, arg: 'format' }, () => '')).toThrow(
         new UnprintableArgError('format')

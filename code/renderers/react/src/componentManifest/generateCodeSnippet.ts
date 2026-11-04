@@ -32,11 +32,10 @@ import {
   type JsxValue,
   type Mark,
   type ReactHolePlace,
-  printArgsEntry,
+  printArgsObject,
   printAttribute,
   printAttributes,
   printChildren,
-  printClose,
 } from '../snippet-values.ts';
 import { invariant } from './utils.ts';
 
@@ -79,14 +78,9 @@ export function getCodeSnippet(
   const holes = marks.toTemplate(marked);
   invariant(holes, 'A place an arg prints was printed inside another.');
   const template = withHoleSpace(
-    holes.map((segment): SnippetTemplate<ReactHolePlace>[number] =>
-      // While neither arg it follows changes, an `overridden` hole prints the attribute as written.
-      typeof segment !== 'string' && segment.kind === 'overridden'
-        ? { ...segment, written: segment.text }
-        : segment
-    ),
+    holes,
     // An attribute a control clears leaves no gap or empty line.
-    (hole) => hole.kind === 'attr' || hole.kind === 'overridden'
+    (hole) => hole.kind === 'attr'
   );
   return {
     snippet: stripHoles(template),
@@ -122,18 +116,14 @@ function importedBoundStory(
 
   const print = valuePrinter('    ');
   const bound = textOf(declaration.init);
-  const entries = Object.entries(args);
-  // The args a control adds go after the story's, or make the object when it has none.
-  const argsObject = (mark: Mark) => {
-    if (entries.length === 0) {
-      return mark({ kind: 'object', spread: true }, '{}');
-    }
-    const values = entries.map(([key, value]) =>
-      printArgsEntry([key, mark({ kind: 'value', arg: key }, print(value))])
+  // Each value the story writes is a hole for its arg.
+  const argsObject = (mark: Mark) =>
+    printArgsObject(
+      Object.entries(args).map(([key, value]) => [
+        key,
+        mark({ kind: 'value', arg: key }, print(value)),
+      ])
     );
-    const keys = entries.map(([key]) => key);
-    return `{\n${values.join(',\n')}${mark({ kind: 'entries', spread: true, except: keys }, '')}\n}`;
-  };
   return {
     print: (mark) => `const ${storyName} = () => ${bound}(${argsObject(mark)});`,
     importRef: {
@@ -207,10 +197,11 @@ function buildSnippet(
   invariant(componentName, 'Could not generate snippet without component name.');
   const print = valuePrinter('');
   const attrs = injectedAttributes(merged, new Set(), print, mark);
-  const children = toJsxChildren(merged.children, print);
-  const end = children ? printClose(componentName, children) : ' />';
-  const added = addedAttributes(injectedNames(merged, new Set()), mark);
-  const element = `<${[componentName, ...attrs].join(' ')}${added}${closeHole(componentName, end, mark)}`;
+  const added = addedAttributes(injectedNames(merged, new Set()), merged, mark);
+  const opening = `<${[componentName, ...attrs].join(' ')}${added}`;
+  const element = merged.children
+    ? `${opening}>${childrenHole(merged.children, print, mark)}</${componentName}>`
+    : `${opening} />`;
   return `const ${storyName} = () => ${element};`;
 }
 
@@ -343,14 +334,21 @@ const injectedAttributes = (
     mark
   );
 
-// Where a spread passes the args a control sets, but those the element prints by name, and
-// `children`, which the element ends with; see `closeHole`.
-const addedAttributes = (printed: string[], mark: Mark) =>
-  mark({ kind: 'attrs', spread: true, except: [...printed, 'children'] }, '');
+// Where a spread passes the args a control sets, but those the element prints already: by name,
+// or `children` as its content.
+const addedAttributes = (printed: string[], merged: Args, mark: Mark) =>
+  mark(
+    {
+      kind: 'attrs',
+      spread: true,
+      except: merged.children ? [...printed, 'children'] : printed,
+    },
+    ''
+  );
 
-// The end of an element the args pass `children` to: `end` as the snippet prints it.
-const closeHole = (name: string, end: string, mark: Mark) =>
-  mark({ kind: 'close', arg: 'children', element: name }, end);
+// The `children` arg as content, in a hole for it.
+const childrenHole = (node: Node, print: ValuePrinter, mark: Mark) =>
+  mark({ kind: 'text', arg: 'children' }, toJsxChildren(node, print));
 
 const toJsxChildren = (node: Node | null | undefined, print: ValuePrinter) =>
   node ? printChildren(toJsxValue(node, print)) : '';
@@ -407,7 +405,7 @@ function rewriteJsx(
       const injected = injectedNames(merged, existing);
       const pieces =
         injectedAttributes(merged, existing, print, mark).join(' ') +
-        addedAttributes([...existing, ...injected], mark);
+        addedAttributes([...existing, ...injected], merged, mark);
       attrs.forEach((a, index) => {
         if (!isArgsSpread(a)) {
           return;
@@ -420,63 +418,39 @@ function rewriteJsx(
         }
       });
 
-      if (node.children.length === 0) {
+      // The `children` arg the story sets is the content of an element that has none.
+      if (node.children.length === 0 && merged.children) {
         const name = code.slice(opening.name.start, opening.name.end);
-        const children = merged.children
-          ? toJsxChildren(merged.children, printAt(opening.start))
-          : undefined;
-        // The element ends as written, with the `children` arg as content when the story sets it.
-        const [start, end] = opening.selfClosing
-          ? [attrs.length > 0 ? attrs[attrs.length - 1].end : tagEnd, opening.end]
-          : [opening.end - 1, node.end];
-        const text =
-          children === undefined
-            ? code.slice(start, end)
-            : opening.selfClosing
-              ? printClose(name, children)
-              : `>${children}${code.slice(opening.end, node.end)}`;
-        edits.push({ start, end, text: closeHole(name, text, mark) });
+        const children = childrenHole(merged.children, printAt(opening.start), mark);
+        if (opening.selfClosing) {
+          const start = attrs.length > 0 ? attrs[attrs.length - 1].end : tagEnd;
+          edits.push({ start, end: opening.end, text: `>${children}</${name}>` });
+        } else {
+          edits.push({ start: opening.end, end: opening.end, text: children });
+        }
       }
     }
 
     // Each attribute that reads an arg is a hole for it. A spread writes over the attributes before
-    // it, so each of those follows the arg it names too, and one that reads another arg follows
-    // both, as an `overridden` hole.
+    // it, so each of those is a hole for the arg it names, which the spread then leaves out.
     const lastSpread = attrs.findLastIndex(isArgsSpread);
     attrs.forEach((a, index) => {
       if (a.type !== 'JSXAttribute' || a.name.type !== 'JSXIdentifier') {
         return;
       }
       const name = a.name.name;
-      const beforeSpread = index < lastSpread;
       const key =
         a.value?.type === 'JSXExpressionContainer' ? getArgsMemberKey(a.value.expression) : null;
-      if (key === null) {
-        if (beforeSpread) {
-          edits.push({
-            start: a.start,
-            end: a.end,
-            text: mark({ kind: 'attr', arg: name }, code.slice(a.start, a.end)),
-          });
-        }
+      const arg = index < lastSpread ? name : key;
+      if (arg === null) {
         return;
       }
-      const set = Object.hasOwn(merged, key);
-      const written = set
-        ? toAttr(name, merged[key], printAt(a.start))
-        : code.slice(a.start, a.end);
+      const set = key !== null && Object.hasOwn(merged, key);
+      const text = set ? toAttr(name, merged[key], printAt(a.start)) : code.slice(a.start, a.end);
       edits.push({
         start: a.start,
         end: a.end,
-        text: mark(
-          key === name
-            ? { kind: 'attr', arg: key }
-            : beforeSpread
-              ? // `printTemplate` sets `written` to the hole's text.
-                { kind: 'overridden', spread: true, name, reads: key, written: '' }
-              : { kind: 'attr', arg: key, name },
-          written
-        ),
+        text: mark({ kind: 'attr', arg, ...(arg !== name && { name }) }, text),
       });
       changed ||= set;
     });

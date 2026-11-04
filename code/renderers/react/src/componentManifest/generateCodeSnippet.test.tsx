@@ -1232,16 +1232,13 @@ describe('template', () => {
     });
   });
 
-  it.each(['element', 'element end', 'bound story'])(
-    'prints an arg a control adds to a %s as a story that writes it last',
-    (name) => {
-      const place = places[name]!;
-      const initialArgs = place.arg === 'children' ? {} : { children: 'Click me' };
-      expect(fill(place.story(), initialArgs, { ...initialArgs, [place.arg]: 'Go' })).toBe(
-        snippetOf(place.story('"Go"'))
-      );
-    }
-  );
+  it('prints an arg a control adds to an element as a story that writes it last', () => {
+    const place = places.element!;
+    const initialArgs = { children: 'Click me' };
+    expect(fill(place.story(), initialArgs, { ...initialArgs, label: 'Go' })).toBe(
+      snippetOf(place.story('"Go"'))
+    );
+  });
 
   it('prints an arg a control adds to a spread after the args the story writes', () => {
     const code = places.spread!.story();
@@ -1262,7 +1259,7 @@ describe('template', () => {
     );
     expect(cleared('attribute')).toBe('const S = () => <Button />;');
     expect(cleared('content')).toBe('const S = () => <p></p>;');
-    expect(cleared('element end')).toBe('const S = () => <Button />;');
+    expect(cleared('element end')).toBe('const S = () => <Button></Button>;');
   });
 
   it('follows an attribute written before the spread, which the spread writes over', () => {
@@ -1293,24 +1290,18 @@ describe('template', () => {
     const code = story(`label: 'Go'`);
     const initialArgs = { children: 'Click me', label: 'Go' };
 
-    it('follows the arg it reads', () => {
-      expect(fill(code, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(
-        snippetOf(story(`label: 'Stop'`))
-      );
-    });
-
-    it('prints the arg it names once a control sets it, as the spread does', () => {
+    it('follows the arg it names, which the spread writes over it, so it never prints twice', () => {
       expect(fill(code, initialArgs, { ...initialArgs, title: 'Stop' })).toBe(
         'const S = () => <Button title="Stop" label="Go">Click me</Button>;'
       );
-      expect(fill(code, initialArgs, { ...initialArgs, title: 'Stop', label: 'Bye' })).toBe(
-        'const S = () => <Button title="Stop" label="Bye">Click me</Button>;'
-      );
     });
 
-    it('leaves the attribute out once a control clears the arg it reads', () => {
-      expect(fill(code, initialArgs, { ...initialArgs, label: undefined })).toBe(
-        'const S = () => <Button>Click me</Button>;'
+    it('keeps the value it read while the arg it reads changes', () => {
+      expect(fill(code, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(
+        'const S = () => <Button title="Go" label="Stop">Click me</Button>;'
+      );
+      expect(formatTemplate(templateOf(code))).toMatchInlineSnapshot(
+        `"const S = () => <Button⟦attr title ~" "⟫ title="Go"⟧⟦attr label ~" "⟫ label="Go"⟧⟦attrs * except=["title","label","children"]⟫⟧>⟦text children⟫Click me⟧</Button>;"`
       );
     });
 
@@ -1320,15 +1311,6 @@ describe('template', () => {
       );
       expect(fill(between, initialArgs, { ...initialArgs, title: 'Stop' })).toBe(
         'const S = () => <Button label="Go" title="Stop">Click me</Button>;'
-      );
-    });
-
-    it('prints it as written while another arg changes', () => {
-      expect(fill(code, initialArgs, { ...initialArgs, size: 'lg' })).toBe(
-        'const S = () => <Button title="Go" label="Go" size="lg">Click me</Button>;'
-      );
-      expect(formatTemplate(templateOf(code))).toMatchInlineSnapshot(
-        `"const S = () => <Button⟦overridden * name="title" reads="label" written="title=\\"Go\\"" ~" "⟫ title="Go"⟧⟦attr label ~" "⟫ label="Go"⟧⟦attrs * except=["title","label","children"]⟫⟧⟦close children element="Button"⟫>Click me</Button>⟧;"`
       );
     });
 
@@ -1363,18 +1345,17 @@ describe('template', () => {
     });
   });
 
-  it('passes the args a control sets to a bound story, but those it writes', () => {
+  it('fills the args a bound story writes', () => {
     const code = withCSF3(dedent`
       import { Template } from './template';
       export const S = Template.bind({});
       S.args = { label: 'Go' };
     `);
     const initialArgs = { label: 'Go' };
-    expect(fill(code, initialArgs, { label: 'Stop', size: 'lg' })).toMatchInlineSnapshot(`
+    expect(fill(code, initialArgs, { label: 'Stop' })).toMatchInlineSnapshot(`
       "const S = () => Template.bind({})({
           "children": 'Click me',
-          "label": "Stop",
-          "size": "lg"
+          "label": "Stop"
       });"
     `);
   });
@@ -1407,7 +1388,7 @@ describe('template', () => {
       'const S = () => <Button label="Go" onClick={() => {}} theme="light">Click me</Button>;'
     );
     expect(formatTemplate(templateOf(code))).toMatchInlineSnapshot(
-      `"const S = () => <Button⟦attr label ~" "⟫ label="Go"⟧⟦attr onClick ~" "⟫ onClick={() => {}}⟧⟦attrs * except=["label","onClick","children"]⟫⟧⟦close children element="Button"⟫>Click me</Button>⟧;"`
+      `"const S = () => <Button⟦attr label ~" "⟫ label="Go"⟧⟦attr onClick ~" "⟫ onClick={() => {}}⟧⟦attrs * except=["label","onClick","children"]⟫⟧>⟦text children⟫Click me⟧</Button>;"`
     );
   });
 

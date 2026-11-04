@@ -33,8 +33,8 @@ export interface HolePlace {
 
 /**
  * A hole as its renderer prints it: its place, and which args it reads. A hole reads one `arg`, or,
- * as a `spread` hole, every arg a control changed, of which the renderer prints those the place does
- * not print already. A control that cleared an arg passes it as `undefined`.
+ * as a `spread` hole, every arg a control set, of which the renderer prints those the place does not
+ * print already.
  */
 export type HoleRef<Place extends HolePlace = HolePlace> = Place &
   ({ arg: string; spread?: never } | { spread: true; arg?: never });
@@ -53,7 +53,7 @@ export type TemplateHole<Place extends HolePlace = HolePlace> = HoleRef<Place> &
 
 /**
  * Prints an arg value a control changed for the place `hole` describes, or, for a `spread` hole, the
- * args a control changed, but those the place already prints, with a cleared one as `undefined`. The renderer sets it as
+ * args a control set, but those the place already prints. The renderer sets it as
  * `parameters.docs.source.printHole`. It sees only the hole's place, never the code around it.
  *
  * @throws {UnprintableArgError} For a value the snippet cannot show.
@@ -93,8 +93,8 @@ export const stripHoles = (template: SnippetTemplate<any>): string =>
 /**
  * Fills a template with the args a story renders with before they are mapped: a hole whose arg
  * holds its initial value prints its `text`, and every other hole what `printHole` prints for it,
- * after its `space` unless that is empty. A `spread` hole gets every arg a control changed, a cleared
- * one as `undefined`; its renderer leaves out those its place already prints.
+ * after its `space` unless that is empty. A `spread` hole gets every arg a control set; its
+ * renderer leaves out those its place already prints.
  *
  * @throws {UnprintableArgError} When `printHole` cannot print a value.
  */
@@ -106,11 +106,8 @@ export const fillTemplate = <Place extends HolePlace>(
 ): string => {
   const own = (args: Args, name: string) => (Object.hasOwn(args, name) ? args[name] : undefined);
   const changed = (name: string) => !isEqual(own(unmappedArgs, name), own(initialArgs, name));
-  // A spread hole gets each arg a control changed, a cleared one too, so a place that reads it can
-  // tell it from one that holds its initial value.
-  const names = new Set([...Object.keys(unmappedArgs), ...Object.keys(initialArgs)]);
   const added = Object.fromEntries(
-    [...names].filter(changed).map((name) => [name, own(unmappedArgs, name)])
+    Object.entries(unmappedArgs).filter(([name, value]) => value !== undefined && changed(name))
   );
   const print = (hole: TemplateHole<Place>) => {
     if (hole.spread) {

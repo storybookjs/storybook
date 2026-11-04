@@ -880,6 +880,21 @@ describe('the template', () => {
     ).toThrow('The snippet cannot show the current value of the `--undeclared` arg.');
   });
 
+  it('wraps a value an arrow returns or a minus reads in parentheses, so any value keeps its meaning', async () => {
+    const { snippet, template } = await firstTemplate(`
+      import { html } from 'lit';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { count: 2, config: null },
+        render: (args) => html\`<test-element count=\${1-args.count} .get=\${() => args.config}></test-element>\`,
+      };
+    `);
+    expect(snippet).toBe('html`<test-element count=${1-(2)} .get=${() => (null)}></test-element>`');
+    expect(fill(template, { count: 2, config: null }, { count: -2, config: { a: 1 } })).toBe(
+      'html`<test-element count=${1-(-2)} .get=${() => ({ a: 1 })}></test-element>`'
+    );
+  });
+
   it('prints the args the render reads as a whole, with no template to follow them', async () => {
     const { snippet, template } = await firstTemplate(`
       import { html } from 'lit';

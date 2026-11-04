@@ -1,16 +1,51 @@
-import { expect, test } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
 
-import { loadCsf } from 'storybook/internal/csf-tools';
+import { type CsfFile, loadCsf } from 'storybook/internal/csf-tools';
+import {
+  UnprintableArgError,
+  fillTemplate,
+  formatTemplate,
+  printValue,
+  stripHoles,
+} from 'storybook/internal/docs-tools';
+import type { Args } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
+import { printHole } from '../docs/print-hole.ts';
 import { getCodeSnippet } from './generateCodeSnippet.ts';
 
+const load = (code: string) =>
+  loadCsf(code, {
+    makeTitle: (userTitle?: string) => userTitle ?? 'title',
+  }).parse();
+
+// Every template prints its story's snippet while no arg changes.
+function expectTemplatesStripToSnippets(csf: CsfFile) {
+  for (const name of Object.keys(csf._storyExports)) {
+    let printed;
+    try {
+      printed = getCodeSnippet(
+        csf,
+        name,
+        csf._meta?.component ?? 'ComponentTitle',
+        undefined,
+        true
+      );
+    } catch {
+      continue;
+    }
+    expect(printed.template, name).toBeDefined();
+    expect(stripHoles(printed.template!), name).toBe(printed.snippet);
+  }
+}
+
 function generateExample(code: string) {
-  const csf = loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();
+  const csf = load(code);
+  expectTemplatesStripToSnippets(csf);
 
   const snippets = Object.keys(csf._storyExports).map(
-    (name) => getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle').code
+    (name) => getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle').snippet
   );
 
   return snippets.join('\n');
@@ -18,12 +53,13 @@ function generateExample(code: string) {
 
 /** Snippet plus what it still depends on, for the cases that resolve names rather than values. */
 function generateResolved(code: string) {
-  const csf = loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();
+  const csf = load(code);
+  expectTemplatesStripToSnippets(csf);
 
   return Object.keys(csf._storyExports).map((name) => {
     const snippet = getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle');
     return {
-      snippet: snippet.code,
+      snippet: snippet.snippet,
       imports: snippet.imports.map((ref) => `${ref.importName} from ${ref.importId}`),
       unresolved: snippet.unresolved,
     };
@@ -1109,4 +1145,317 @@ test('a multi-line template literal arg keeps the lines of its value', () => {
       second\`} />
     </div>;"
   `);
+});
+
+const snippetOf = (code: string, story = 'S') =>
+  getCodeSnippet(load(code), story, 'Button').snippet;
+
+const templateOf = (code: string, story = 'S') =>
+  getCodeSnippet(load(code), story, 'Button', undefined, true).template!;
+
+const fill = (code: string, initialArgs: Args, unmappedArgs: Args, story = 'S') =>
+  fillTemplate(templateOf(code, story), { initialArgs, unmappedArgs }, printHole);
+
+describe('template', () => {
+  // The places an arg prints, each as a story that writes the arg `arg` as `value`, the code of a
+  // value.
+  const places: Record<string, { arg: string; story: (value?: string) => string }> = {
+    element: {
+      arg: 'label',
+      story: (value) => withCSF3(`export const S = { args: { ${arg('label', value)} } };`),
+    },
+    spread: {
+      arg: 'label',
+      story: (value) =>
+        withCSF3(dedent`
+          export const S = {
+            args: { ${arg('label', value)} },
+            render: (args) => (
+              <div>
+                <Button
+                  {...args}
+                  size="sm"
+                />
+              </div>
+            ),
+          };
+        `),
+    },
+    attribute: {
+      arg: 'label',
+      story: (value) =>
+        withCSF3(
+          `export const S = { args: { ${arg('label', value)} }, render: (args) => <Button title={args.label} /> };`
+        ),
+    },
+    'unnamed attribute': {
+      arg: 'data.x',
+      story: (value) => withCSF3(`export const S = { args: { ${arg('"data.x"', value)} } };`),
+    },
+    content: {
+      arg: 'children',
+      story: (value) =>
+        withCSF3(
+          `export const S = { args: { ${arg('children', value)} }, render: (args) => <p>{args.children}</p> };`
+        ),
+    },
+    'element end': {
+      arg: 'children',
+      story: (value) =>
+        withCSF3(
+          `export const S = { args: { ${arg('children', value)} }, render: (args) => <Button {...args} /> };`
+        ),
+    },
+    'bound story': {
+      arg: 'label',
+      story: (value) => dedent`
+        import { Button } from '@design-system/button';
+        import { renderMatch as Match } from './match-helper';
+        export default { component: Button };
+        export const S = Match.bind({});
+        S.args = { ${arg('label', value)} };
+      `,
+    },
+  };
+  const arg = (key: string, value?: string) => (value === undefined ? '' : `${key}: ${value}`);
+  const runtime = (key: string, value: unknown): Args =>
+    key === 'children' ? { [key]: value } : { children: 'Click me', [key]: value };
+
+  const values: unknown[] = [
+    'Stop',
+    'say "hi" & {go} <now>',
+    'two\nlines',
+    0,
+    -1.5,
+    true,
+    false,
+    null,
+    [1, 'a'],
+    { a: 1, 'b-c': [true] },
+  ];
+
+  describe.each(Object.entries(places))('%s', (_, place) => {
+    it('prints the story as written while no arg changes', () => {
+      const code = place.story(printValue('Go', place.arg));
+      expect(stripHoles(templateOf(code))).toBe(snippetOf(code));
+    });
+
+    it.each(values)('prints a changed value as a story that writes it: %j', (value) => {
+      const code = place.story(printValue('Go', place.arg));
+      expect(fill(code, runtime(place.arg, 'Go'), runtime(place.arg, value))).toBe(
+        snippetOf(place.story(printValue(value, place.arg)))
+      );
+    });
+  });
+
+  it.each(['element', 'element end', 'bound story'])(
+    'prints an arg a control adds to a %s as a story that writes it last',
+    (name) => {
+      const place = places[name]!;
+      const initialArgs = place.arg === 'children' ? {} : { children: 'Click me' };
+      expect(fill(place.story(), initialArgs, { ...initialArgs, [place.arg]: 'Go' })).toBe(
+        snippetOf(place.story('"Go"'))
+      );
+    }
+  );
+
+  it('prints an arg a control adds to a spread after the args the story writes', () => {
+    const code = places.spread!.story();
+    expect(fill(code, { children: 'Click me' }, { children: 'Click me', label: 'Go' })).toBe(
+      'const S = () => <div>\n  <Button label="Go"\n    size="sm">Click me</Button>\n</div>;'
+    );
+  });
+
+  it('leaves out an arg a control clears', () => {
+    const cleared = (name: string) => {
+      const place = places[name]!;
+      const { [place.arg]: _, ...args } = runtime(place.arg, 'Go');
+      return fill(place.story('"Go"'), runtime(place.arg, 'Go'), args);
+    };
+    expect(cleared('element')).toBe('const S = () => <Button>Click me</Button>;');
+    expect(cleared('spread')).toBe(
+      'const S = () => <div>\n  <Button\n    size="sm">Click me</Button>\n</div>;'
+    );
+    expect(cleared('attribute')).toBe('const S = () => <Button />;');
+    expect(cleared('content')).toBe('const S = () => <p></p>;');
+    expect(cleared('element end')).toBe('const S = () => <Button />;');
+  });
+
+  it('follows an attribute written before the spread, which the spread writes over', () => {
+    const code = withCSF3(
+      `export const S = { args: { label: 'Go' }, render: (args) => <Button size="small" {...args} title="T" /> };`
+    );
+    const initialArgs = { children: 'Click me', label: 'Go' };
+    expect(fill(code, initialArgs, { ...initialArgs, size: 'large', title: 'X' })).toBe(
+      'const S = () => <Button size="large" label="Go" title="T">Click me</Button>;'
+    );
+  });
+
+  it('passes an arg the spread passes, also where another place reads it', () => {
+    const code = withCSF3(
+      `export const S = { args: { size: 'sm' }, render: (args) => <Button {...args}>{args.label}</Button> };`
+    );
+    const initialArgs = { size: 'sm' };
+    expect(fill(code, initialArgs, { ...initialArgs, label: 'Go' })).toBe(
+      'const S = (args) => <Button size="sm" label="Go">Go</Button>;'
+    );
+  });
+
+  it('cannot follow an attribute before the spread that reads another arg', () => {
+    const code = withCSF3(
+      `export const S = { args: { label: 'Go' }, render: (args) => <Button title={args.label} {...args} /> };`
+    );
+    const initialArgs = { label: 'Go' };
+    expect(fill(code, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(
+      'const S = () => <Button title="Stop" label="Stop">Click me</Button>;'
+    );
+    expect(() => fill(code, initialArgs, { ...initialArgs, title: 'X' })).toThrow(
+      UnprintableArgError
+    );
+  });
+
+  it('passes the args a control sets to a bound story, but those it writes', () => {
+    const code = withCSF3(dedent`
+      import { Template } from './template';
+      export const S = Template.bind({});
+      S.args = { label: 'Go' };
+    `);
+    const initialArgs = { label: 'Go' };
+    expect(fill(code, initialArgs, { label: 'Stop', size: 'lg' })).toMatchInlineSnapshot(`
+      "const S = () => Template.bind({})({
+          "children": 'Click me',
+          "label": "Stop",
+          "size": "lg"
+      });"
+    `);
+  });
+
+  it('shows only the args that changed: no project, action or unresolved arg appears unchanged', () => {
+    const code = withCSF3(dedent`
+      import { base } from './base';
+      export const S = {
+        args: { ...base, label: 'Go', onClick: () => {} },
+        render: (args) => <Button {...args} />,
+      };
+    `);
+    // As the preview has them: a project-level `theme`, an action Storybook adds, and `variant`
+    // from the spread the server cannot read.
+    const initialArgs = {
+      theme: 'dark',
+      onHover: Object.assign(() => {}, { isAction: true }),
+      variant: 'primary',
+      children: 'Click me',
+      label: 'Go',
+      onClick: () => {},
+    };
+    expect(snippetOf(code)).toBe(
+      'const S = () => <Button label="Go" onClick={() => {}}>Click me</Button>;'
+    );
+    expect(fill(code, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(
+      'const S = () => <Button label="Stop" onClick={() => {}}>Click me</Button>;'
+    );
+    // The spread passes a project-level arg a control changes, so the snippet shows it.
+    expect(fill(code, initialArgs, { ...initialArgs, theme: 'light' })).toBe(
+      'const S = () => <Button label="Go" onClick={() => {}} theme="light">Click me</Button>;'
+    );
+    expect(formatTemplate(templateOf(code))).toMatchInlineSnapshot(
+      `"const S = () => <Button⟦attr label ~" "⟫ label="Go"⟧⟦attr onClick ~" "⟫ onClick={() => {}}⟧⟦attrs * except=["label","onClick","children"]⟫⟧⟦close children element="Button"⟫>Click me</Button>⟧;"`
+    );
+  });
+
+  it('keeps a read of an arg the story does not set until a control sets it', () => {
+    const code = withCSF3(dedent`
+      export const S = {
+        args: { title: 'Hi' },
+        render: (args) => (
+          <Card
+            title={args.title}
+            label={args.label}
+          />
+        ),
+      };
+    `);
+    expect(formatTemplate(templateOf(code))).toMatchInlineSnapshot(`
+      "const S = (args) => <Card⟦attr title ~"\\n  "⟫
+        title="Hi"⟧⟦attr label ~"\\n  "⟫
+        label={args.label}⟧
+      />;"
+    `);
+    const initialArgs = { children: 'Click me', title: 'Hi' };
+    expect(fill(code, initialArgs, { ...initialArgs, title: 'Bye' })).toMatchInlineSnapshot(`
+      "const S = (args) => <Card
+        title="Bye"
+        label={args.label}
+      />;"
+    `);
+    expect(fill(code, initialArgs, { ...initialArgs, label: 'Go' })).toMatchInlineSnapshot(`
+      "const S = (args) => <Card
+        title="Hi"
+        label="Go"
+      />;"
+    `);
+  });
+
+  it('follows a read of an arg as content, which the snippet keeps as written', () => {
+    const code = withCSF3(
+      `export const S = { args: { label: 'Go' }, render: (args) => <p>{args.label}!</p> };`
+    );
+    expect(snippetOf(code)).toBe('const S = (args) => <p>{args.label}!</p>;');
+    const initialArgs = { children: 'Click me', label: 'Go' };
+    expect(fill(code, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(
+      'const S = (args) => <p>Stop!</p>;'
+    );
+  });
+
+  it('keeps an arg written as code while it is unchanged, and throws for a changed one it cannot print', () => {
+    const code = withCSF3(dedent`
+      import { shout } from './format';
+      export const S = { args: { format: shout, label: 'Go' } };
+    `);
+    const initialArgs = {
+      children: 'Click me',
+      format: (text: string) => text,
+      label: 'Go',
+    };
+    expect(fill(code, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(
+      'const S = () => <Button format={shout} label="Stop">Click me</Button>;'
+    );
+    expect(() => fill(code, initialArgs, { ...initialArgs, format: () => '' })).toThrow(
+      'The snippet cannot show the current value of the `format` arg.'
+    );
+  });
+
+  it('follows a story whose code holds hole brackets and private-use characters', () => {
+    const label = '⟦attr x⟫\uE000\uE001\uE002⟧';
+    const code = withCSF3(`export const S = { args: { label: '${label}', size: 'sm' } };`);
+    expect(stripHoles(templateOf(code))).toBe(snippetOf(code));
+    const initialArgs = { children: 'Click me', label, size: 'sm' };
+    expect(fill(code, initialArgs, { ...initialArgs, size: 'lg' })).toBe(
+      snippetOf(code).replace('size="sm"', 'size="lg"')
+    );
+  });
+
+  it('keeps the indentation of a value over several lines while it is unchanged', () => {
+    const code = withCSF3(dedent`
+      export const S = {
+        args: { items: [
+          'a',
+          'b',
+        ], label: 'Go' },
+        render: (args) => (
+          <div>
+            <List {...args} />
+          </div>
+        ),
+      };
+    `);
+    const initialArgs = {
+      children: 'Click me',
+      items: ['a', 'b'],
+      label: 'Go',
+    };
+    expect(fill(code, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(
+      snippetOf(code).replace('label="Go"', 'label="Stop"')
+    );
+  });
 });

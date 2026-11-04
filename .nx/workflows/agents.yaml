@@ -72,12 +72,12 @@ common-env-vars: &common-env-vars
 launch-templates:
   linux-js:
     # see for options: https://nx.dev/docs/reference/nx-cloud/launch-templates#launch-templatestemplate-nameresource-class
-    resource-class: 'docker_linux_amd64/extra_large+'
+    resource-class: 'docker_linux_amd64/extra_large'
     image: 'ubuntu22.04-node20.19-v2'
     init-steps: *linux-init-steps
     env: *common-env-vars
   linux-browsers-js:
-    resource-class: 'docker_linux_amd64/extra_large+'
+    resource-class: 'docker_linux_amd64/extra_large'
     image: 'ubuntu22.04-node20.19-v2'
     init-steps: *linux-browsers-init-steps
     env: *common-env-vars

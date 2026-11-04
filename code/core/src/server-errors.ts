@@ -228,7 +228,7 @@ export class OpenServiceStaticSnapshotWithoutPathError extends StorybookError {
     super({
       name: 'OpenServiceStaticSnapshotWithoutPathError',
       category: Category.CORE_COMMON,
-      code: 35,
+      code: 36,
       message: `Query "${data.serviceId}.${data.name}" splits its static snapshot into "${data.snapshotName}", which declares no staticPath to write it at.`,
     });
   }

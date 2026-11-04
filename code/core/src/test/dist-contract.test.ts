@@ -1,8 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-
+import { dirname, join, normalize } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
 const DTS_ARTIFACT = join(import.meta.dirname, '../../dist/test/index.d.ts');
@@ -10,7 +9,7 @@ const CONSUMER_FIXTURE = join(import.meta.dirname, '__testfixtures__/typescript-
 const TYPESCRIPT = createRequire(import.meta.url).resolve('typescript/bin/tsc');
 const TYPESCRIPT_5 = createRequire(import.meta.url).resolve('typescript-5/bin/tsc');
 const DTS_BUILT = existsSync(DTS_ARTIFACT);
-// Watch builds bundle the runtime without its vendor entries (see `BuildEntry.sharedModules`).
+// Watch builds bundle the runtime without its vendor entries (see `ChunkedRuntimeOptions`).
 const VENDOR_BUILT = existsSync(join(import.meta.dirname, '../../dist/preview/vendor'));
 const REPOSITORY_ROOT = join(import.meta.dirname, '../../../..');
 const TSC_OPTIONS = [
@@ -89,9 +88,10 @@ describe('storybook/test declaration contract', () => {
     // `sharedModules` of the preview runtime in build-config.ts.
     const distDirectory = join(import.meta.dirname, '../../dist');
     const read = (file: string) => readFileSync(join(distDirectory, file), 'utf-8');
-    const jsFiles = readdirSync(distDirectory, { recursive: true, encoding: 'utf-8' }).filter(
-      (file) => file.endsWith('.js')
-    );
+    // POSIX paths, also on Windows, for the prefix checks below.
+    const jsFiles = readdirSync(distDirectory, { recursive: true, encoding: 'utf-8' })
+      .map((file) => normalize(file))
+      .filter((file) => file.endsWith('.js'));
     const relativeImports = (file: string) =>
       [...read(file).matchAll(/(?:from|import) "(\.\.?\/[^"]+)"/g)].map(([, specifier]) =>
         join(dirname(file), specifier)
@@ -126,14 +126,16 @@ describe('storybook/test declaration contract', () => {
 
     it('bundles no copy of them outside the runtimes', () => {
       // esbuild marks each bundled module with a `// <path>` comment.
-      const copies = jsFiles
-        .filter((file) => /^(test|instrumenter|_browser-chunks)\//.test(file))
-        .flatMap((file) =>
-          read(file)
-            .split('\n')
-            .filter((line) => line.startsWith('// ') && testLibraries.test(line))
-            .map((line) => `${file}: ${line}`)
-        );
+      const browserFiles = jsFiles.filter((file) =>
+        /^(test|instrumenter|_browser-chunks)\//.test(file)
+      );
+      expect(browserFiles).toContain('test/index.js');
+      const copies = browserFiles.flatMap((file) =>
+        read(file)
+          .split('\n')
+          .filter((line) => line.startsWith('// ') && testLibraries.test(line))
+          .map((line) => `${file}: ${line}`)
+      );
 
       expect(copies).toEqual([]);
     });

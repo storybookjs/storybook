@@ -1,5 +1,6 @@
 import path from 'node:path';
 
+import { normalize } from 'pathe';
 import { x as exec } from 'tinyexec';
 
 import type { BuildEntries } from '../../scripts/build/utils/entry-utils.ts';
@@ -10,7 +11,7 @@ import { retargetEmotionTypeQueries } from './scripts/retarget-emotion-type-quer
 const config: BuildEntries = {
   // storybook/test inlines the types of the test libraries it bundles, so they need not be installed.
   transformDependencyDeclaration({ id, code }) {
-    const posixId = id.replaceAll('\\', '/');
+    const posixId = normalize(id);
     if (posixId.includes('/node_modules/@testing-library/jest-dom/')) {
       return convertCommonJsNamespaceDeclaration(id, code);
     }
@@ -263,18 +264,19 @@ const config: BuildEntries = {
         exportEntries: ['./internal/preview/runtime'],
         entryPoint: './src/preview/runtime.ts',
         dts: false,
-        chunkedRuntime: true,
-        // The libraries of storybook/test (and the instrumenter), so that `dist/test` imports the
-        // preview runtime's copy from `dist/preview/vendor` instead of bundling another one.
-        sharedModules: [
-          'chai',
-          '@vitest/expect',
-          '@vitest/spy',
-          '@vitest/utils/error',
-          '@testing-library/dom',
-          '@testing-library/user-event',
-          '@testing-library/jest-dom/matchers',
-        ],
+        chunkedRuntime: {
+          // The libraries of storybook/test (and the instrumenter), so that `dist/test` imports the
+          // preview runtime's copy from `dist/preview/vendor` instead of bundling another one.
+          sharedModules: [
+            'chai',
+            '@vitest/expect',
+            '@vitest/spy',
+            '@vitest/utils/error',
+            '@testing-library/dom',
+            '@testing-library/user-event',
+            '@testing-library/jest-dom/matchers',
+          ],
+        },
       },
       {
         exportEntries: ['./internal/manager/globals-runtime'],

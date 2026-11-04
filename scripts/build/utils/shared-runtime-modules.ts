@@ -7,7 +7,7 @@ import { join, normalize } from 'pathe';
 /**
  * Third-party modules that a chunked runtime emits as stable entries under
  * `dist/<runtime dir>/vendor/`, and that the browser entries of the same package import from there
- * instead of bundling another copy. See `BuildEntry.sharedModules`.
+ * instead of bundling another copy. See `ChunkedRuntimeOptions`.
  */
 export type SharedRuntimeModules = { outDir: string; specifiers: readonly string[] };
 
@@ -67,7 +67,10 @@ export function collectPackageDirs(specifiers: readonly string[], cwd: string): 
   const visit = (name: string, from: string) => {
     const resolved = resolve(name, from);
     const dir = packageDirOf(resolved, name);
-    if (!dir || dirs.has(dir)) {
+    if (!dir) {
+      throw new Error(`${name} resolved outside a node_modules/${name}/ directory: ${resolved}`);
+    }
+    if (dirs.has(dir)) {
       return;
     }
     dirs.add(dir);

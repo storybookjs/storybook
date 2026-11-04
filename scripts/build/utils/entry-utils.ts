@@ -12,14 +12,7 @@ export type BuildEntry = {
   external?: string[]; // the list of external dependencies to exclude from the bundle
   dts?: false; // default to generating d.ts files for all entries, except if set to false
   // Replace the esbuild runtime bundle with a Rolldown build under dist/<entry dir>.
-  chunkedRuntime?: true;
-  /**
-   * For a chunked runtime: bare specifiers of third-party modules it also emits as stable entries
-   * (`dist/<entry dir>/vendor/<name>.js`, each in chunks of only those packages). The package's
-   * browser entries import these instead of bundling another copy. Not in watch mode, which builds
-   * the runtime without chunks.
-   */
-  sharedModules?: string[];
+  chunkedRuntime?: true | ChunkedRuntimeOptions;
   /**
    * Bundle this entry's d.ts in an isolated single-entry pass, producing one flat self-contained
    * file instead of sharing type chunks with the package's other entries. For entries other
@@ -30,6 +23,15 @@ export type BuildEntry = {
    * second copy, so widening it is a reviewer-visible edit), and a size budget.
    */
   portable?: { external: string[] };
+};
+export type ChunkedRuntimeOptions = {
+  /**
+   * Bare specifiers of third-party modules the runtime also emits as stable entries
+   * (`dist/<entry dir>/vendor/<name>.js`, each in chunks of only those packages). The package's
+   * browser entries import these instead of bundling another copy. Not in watch mode, which builds
+   * the runtime without chunks.
+   */
+  sharedModules?: string[];
 };
 export type BuildEntriesByPlatform = Partial<Record<EntryType, BuildEntry[]>>;
 

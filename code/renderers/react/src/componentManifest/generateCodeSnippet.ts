@@ -101,7 +101,10 @@ function printTemplate(
         : segment
     );
   // An attribute a control clears leaves no gap or empty line.
-  return template && withHoleSpace(template, (hole) => hole.kind === 'attr');
+  return (
+    template &&
+    withHoleSpace(template, (hole) => hole.kind === 'attr' || hole.kind === 'overridden')
+  );
 }
 
 // `value` is the snippet's code from `start` to `end`, or the code as written when `undefined`;

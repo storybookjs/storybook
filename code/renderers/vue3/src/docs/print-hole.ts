@@ -27,12 +27,12 @@ export const printHole: PrintHole<VueHolePlace> = (hole, value) => {
       return value === undefined ? '' : printAttribute(hole.name ?? arg, snippetValue(arg, value));
     case 'props':
       return Object.entries(value as Args)
-        .filter(([name, item]) => item !== undefined && !hole.except.includes(name))
+        .filter(([name]) => !hole.except.includes(name))
         .sort(([a], [b]) => attributeOrder(a, b))
         .map(([name, item]) => printAttribute(name, snippetValue(name, item)))
         .join(' ');
     case 'slots': {
-      const set = hole.slots.filter((name) => (value as Args)[name] !== undefined).sort(slotOrder);
+      const set = hole.slots.filter((name) => Object.hasOwn(value as Args, name)).sort(slotOrder);
       if (set.length === 0) {
         return hole.tag ? ' />' : '';
       }

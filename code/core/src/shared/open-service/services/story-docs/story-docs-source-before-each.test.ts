@@ -48,7 +48,7 @@ const serviceSnippet = 'import { Button } from \'./Button\';\n\n<Button label="h
 const templates: StoryTemplatesPayload = {
   import: payload.import,
   stories: {
-    [storyId]: ['<Button ', { place: { kind: 'attr' }, arg: 'label', text: 'label="hi"' }, ' />'],
+    [storyId]: ['<Button ', { kind: 'attr', arg: 'label', text: 'label="hi"' }, ' />'],
   },
 };
 const printHole = (_: unknown, value: unknown) => `label="${String(value)}"`;
@@ -140,11 +140,7 @@ describe('selectLiveSnippetForStory', () => {
     const otherRevision: StoryTemplatesPayload = {
       ...templates,
       stories: {
-        [storyId]: [
-          '<Button ',
-          { place: { kind: 'attr' }, arg: 'label', text: 'label="ho"' },
-          ' />',
-        ],
+        [storyId]: ['<Button ', { kind: 'attr', arg: 'label', text: 'label="ho"' }, ' />'],
       },
     };
     expect(

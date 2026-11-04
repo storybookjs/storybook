@@ -122,7 +122,7 @@ export const printPlaceholders = (): PlaceholderPrinter => {
         const found = markAt(index);
         if (found) {
           const { arg, kind } = holes.get(found.mark)!;
-          push({ place: { kind }, arg, text: '', ...(found.space ? { space: found.space } : {}) });
+          push({ kind, arg, text: '', ...(found.space ? { space: found.space } : {}) });
           index += found.space.length + 1;
           continue;
         }
@@ -160,8 +160,9 @@ export const printPlaceholders = (): PlaceholderPrinter => {
           return undefined;
         }
         push({
-          place: { kind: hole.kind, ...(indent ? { indent } : {}) },
+          kind: hole.kind,
           arg: hole.arg,
+          ...(indent ? { indent } : {}),
           text: snippet.slice(at, end),
         });
         at = end;

@@ -26,7 +26,7 @@ const title = heading;
 </script>
 
 <template>
-  <SetupRenamedArgs⟦attr label name="label" ~" "⟫ label="Renamed"⟧ :title="title" />
+  <SetupRenamedArgs⟦attr label ~" "⟫ label="Renamed"⟧ :title="title" />
 </template>",
     },
   },

@@ -20,7 +20,7 @@ import ExposeEventCollision from './ExposeEventCollision.vue';
 </script>
 
 <template>
-  <ExposeEventCollision⟦attr label name="label" ~" "⟫ label="Name"⟧⟦props * except=["label"] ~" "⟫⟧ />
+  <ExposeEventCollision⟦attr label ~" "⟫ label="Name"⟧⟦props * except=["label"] ~" "⟫⟧ />
 </template>",
     },
   },

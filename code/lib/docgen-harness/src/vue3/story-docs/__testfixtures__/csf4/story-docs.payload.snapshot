@@ -40,7 +40,7 @@ import CsfFourButton from './CsfFourButton.vue';
 </script>
 
 <template>
-  <CsfFourButton⟦attr label name="label" ~" "⟫ label="Save"⟧⟦props * except=["label"] ~" "⟫⟧ />
+  <CsfFourButton⟦attr label ~" "⟫ label="Save"⟧⟦props * except=["label"] ~" "⟫⟧ />
 </template>",
     },
   },

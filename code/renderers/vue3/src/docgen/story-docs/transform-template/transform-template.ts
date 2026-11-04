@@ -24,6 +24,7 @@ import type { ClassifiedArg } from '../classify-args/classify-args.ts';
 import { isFunctionExpression, printValue, snippetValueOf } from '../../shared/classify-value.ts';
 import { readForwardableSetup, type ForwardableSetup } from './forward-setup.ts';
 import {
+  attributeHole,
   createRenderContext,
   hoistArgValue,
   hoistModelRef,
@@ -292,7 +293,7 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
       const wrapped = inline
         ? marked(
             state.ctx,
-            { place: { kind: 'value', in: 'script', ...readsOn(following) }, arg: read.name },
+            { kind: 'value', in: 'script', ...readsOn(following), arg: read.name },
             wrapSubstitution(rendered, following)
           )
         : rendered;
@@ -372,7 +373,7 @@ function transformInterpolation(
     ...(state.template[start - 1] === '{' && { braceBefore: true }),
     ...(state.template[end] === '{' && { braceAfter: true }),
   };
-  const hole = { place: { kind: 'text', ...braces }, arg: argName } as const;
+  const hole = { kind: 'text', ...braces, arg: argName } as const;
   if (!arg && state.unsetArgs.has(argName)) {
     state.edits.push({ start, end, text: marked(state.ctx, hole, '') });
     return true;
@@ -437,10 +438,7 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
       prop.name !== 'class' &&
       prop.name !== 'style'
     ) {
-      const hole = {
-        place: { kind: 'attr', name: prop.name },
-        arg: spellings(prop.name)[1]!,
-      } as const;
+      const hole = attributeHole(prop.name, spellings(prop.name)[1]!);
       const { start, end } = { start: prop.loc.start.offset, end: prop.loc.end.offset };
       state.edits.push({
         start,
@@ -566,12 +564,12 @@ function expandArgsBinding(
           ? prop.name === 'bind'
           : prop.name === 'class' || prop.name === 'style')
     )
-      ? [marked(state.ctx, { place: { kind: 'guard' }, arg: spellings(name)[1]! }, '')]
+      ? [marked(state.ctx, { kind: 'guard', arg: spellings(name)[1]! }, '')]
       : []
   );
   const added = marked(
     state.ctx,
-    { place: { kind: 'props', except: [...new Set(printed)] }, spread: true },
+    { kind: 'props', except: [...new Set(printed)], spread: true },
     '',
     ' '
   );
@@ -615,7 +613,7 @@ function transformDirective(
     if (!arg && state.unsetArgs.has(argName)) {
       // Vue resolves a prop bound to undefined to its declared default, exactly as an absent attribute does.
       const edit = replacementFor(directive, '', state.template);
-      const hole = { place: { kind: 'attr', name: boundProp }, arg: argName } as const;
+      const hole = attributeHole(boundProp, argName);
       state.edits.push({ ...edit, text: marked(state.ctx, hole, '', ' ') });
       return true;
     }
@@ -748,10 +746,7 @@ function substituteArgsExpression(
       const { text: replacement, inline } = replacements.get(reference.name)!;
       const following = expression.slice(reference.end);
       const wrapped = wrapSubstitution(replacement, following);
-      const hole = {
-        place: { kind: 'value' as const, ...where, ...readsOn(following) },
-        arg: reference.name,
-      };
+      const hole = { kind: 'value' as const, ...where, ...readsOn(following), arg: reference.name };
       return (
         expression.slice(0, reference.start) +
         (inline ? marked(state.ctx, hole, wrapped) : wrapped) +

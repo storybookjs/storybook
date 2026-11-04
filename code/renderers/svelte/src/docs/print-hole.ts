@@ -23,19 +23,18 @@ import {
 // `docgen/story-docs/print-template.ts`, with the printers the static snippet is printed with; see
 // `SvelteHolePlace` for what each place is.
 export const printHole: PrintHole<SvelteHolePlace> = (hole, value) => {
-  const { place } = hole;
   const arg = hole.arg ?? '';
   const read = () => printRead(printValue(value, arg), !isPrimary(...printedType(value)));
   const text = typeof value === 'string' ? readText(value) : undefined;
   // A whole read where it prints as code, between the code its place writes around it.
   const between = ({ before, after }: { before: string; after: string }) =>
     `${before}${read()}${after}`;
-  switch (place.kind) {
+  switch (hole.kind) {
     case 'prop':
       return printProp(arg, propValue(value, arg));
     case 'props':
       return Object.entries(value as Args)
-        .filter(([name]) => !place.except.includes(name))
+        .filter(([name]) => !hole.except.includes(name))
         .map(([name, item]) => printProp(name, propValue(item, name)))
         .filter(Boolean)
         .join(' ');
@@ -44,19 +43,19 @@ export const printHole: PrintHole<SvelteHolePlace> = (hole, value) => {
     case 'value':
       return read();
     case 'property':
-      return `${place.name}: ${read()}`;
+      return `${hole.name ?? arg}: ${read()}`;
     case 'attrvalue':
-      return attributeText(place.name, text) ?? between(place);
+      return attributeText(hole.name ?? arg, text) ?? between(hole);
     case 'quoted':
-      return quotedText(text) ?? between(place);
+      return quotedText(text) ?? between(hole);
     case 'fragment':
-      return fragmentText(text) ?? between(place);
+      return fragmentText(text) ?? between(hole);
     case 'code':
-      return between(place);
+      return between(hole);
     case 'member':
       throw new UnprintableArgError(arg);
     default:
-      return unknownHoleKind(place);
+      return unknownHoleKind(hole);
   }
 };
 

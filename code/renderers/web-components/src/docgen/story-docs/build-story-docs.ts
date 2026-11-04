@@ -172,7 +172,7 @@ const baseStoryDoc = (
       : {
           // A value a control clears leaves no gap or empty line; text in a quoted value keeps the
           // text around it as written.
-          template: withHoleSpace(result.template, (place) => place.kind !== 'quoted'),
+          template: withHoleSpace(result.template, (hole) => hole.kind !== 'quoted'),
         }),
     ...(result.warning === undefined ? {} : { warning: result.warning }),
     ...(description ? { description } : {}),
@@ -418,7 +418,7 @@ const elementTemplate = (
         break;
       case 'property':
       case 'unknown':
-        guards.push(marks.mark({ place: { kind: 'guard' }, arg: key }, ''));
+        guards.push(marks.mark({ kind: 'guard', arg: key }, ''));
         break;
       default:
         break;

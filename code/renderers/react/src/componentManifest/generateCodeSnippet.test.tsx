@@ -1359,7 +1359,7 @@ describe('template', () => {
       'const S = () => <Button label="Go" onClick={() => {}} theme="light">Click me</Button>;'
     );
     expect(formatTemplate(templateOf(code))).toMatchInlineSnapshot(
-      `"const S = () => <Button⟦attr label name="label" ~" "⟫ label="Go"⟧⟦attr onClick name="onClick" ~" "⟫ onClick={() => {}}⟧⟦attrs * except=["label","onClick","children"]⟫⟧⟦close children element="Button"⟫>Click me</Button>⟧;"`
+      `"const S = () => <Button⟦attr label ~" "⟫ label="Go"⟧⟦attr onClick ~" "⟫ onClick={() => {}}⟧⟦attrs * except=["label","onClick","children"]⟫⟧⟦close children element="Button"⟫>Click me</Button>⟧;"`
     );
   });
 
@@ -1376,8 +1376,8 @@ describe('template', () => {
       };
     `);
     expect(formatTemplate(templateOf(code))).toMatchInlineSnapshot(`
-      "const S = (args) => <Card⟦attr title name="title" ~"\\n  "⟫
-        title="Hi"⟧⟦attr label name="label" ~"\\n  "⟫
+      "const S = (args) => <Card⟦attr title ~"\\n  "⟫
+        title="Hi"⟧⟦attr label ~"\\n  "⟫
         label={args.label}⟧
       />;"
     `);

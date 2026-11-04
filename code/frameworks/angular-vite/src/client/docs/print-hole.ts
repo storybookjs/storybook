@@ -18,9 +18,10 @@ import {
 // static snippet prints the arg's value; `AngularHolePlace` names each place. A value over several
 // lines is indented by the place's `indent`, as the snippet indents one there. Every value prints
 // with `snippet-values.ts`, which the build prints the static snippet with.
-export const printHole: PrintHole<AngularHolePlace> = ({ place, arg = '' }, value) => {
-  const indent = ' '.repeat(place.indent ?? 0);
-  switch (place.kind) {
+export const printHole: PrintHole<AngularHolePlace> = (hole, value) => {
+  const arg = hole.arg ?? '';
+  const indent = ' '.repeat(hole.indent ?? 0);
+  switch (hole.kind) {
     case 'bind':
       return indentLines(
         escapeTemplateLiteral(escapeAttributeExpression(expression(value, arg))),
@@ -40,7 +41,7 @@ export const printHole: PrintHole<AngularHolePlace> = ({ place, arg = '' }, valu
     case 'text':
       return indentLines(escapeTemplateLiteral(text(value, arg)), indent);
     default:
-      return unknownHoleKind(place.kind);
+      return unknownHoleKind(hole.kind);
   }
 };
 

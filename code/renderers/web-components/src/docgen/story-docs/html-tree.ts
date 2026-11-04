@@ -88,11 +88,8 @@ const wrapInHole = (
   if (!tag || !marks) {
     return printed;
   }
-  const { place } = tag.hole;
   const hole: HtmlHole =
-    place.kind === 'text'
-      ? { ...tag.hole, place: { ...place, trimStart: trim.start, trimEnd: trim.end } }
-      : tag.hole;
+    tag.hole.kind === 'text' ? { ...tag.hole, trimStart: trim.start, trimEnd: trim.end } : tag.hole;
   const indent = printed.match(/^\s*/)![0];
   const text = printed.slice(indent.length);
   if (tag.first && tag.last) {

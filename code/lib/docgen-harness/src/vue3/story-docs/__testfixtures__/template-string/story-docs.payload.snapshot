@@ -20,7 +20,7 @@ import TemplateStringButton from './TemplateStringButton.vue';
 </script>
 
 <template>
-  <TemplateStringButton⟦attr label name="label" ~" "⟫ label="Assigned template"⟧⟦props * except=["label"] ~" "⟫⟧ />
+  <TemplateStringButton⟦attr label ~" "⟫ label="Assigned template"⟧⟦props * except=["label"] ~" "⟫⟧ />
 </template>",
     },
     "forms-template-string--primary": {
@@ -42,7 +42,7 @@ import TemplateStringButton from './TemplateStringButton.vue';
 </script>
 
 <template>
-  <div class="wrap"><TemplateStringBadge text="New" /><TemplateStringButton⟦attr label name="label" ~" "⟫ label="Template"⟧⟦props * except=["label"] ~" "⟫⟧ /></div>
+  <div class="wrap"><TemplateStringBadge text="New" /><TemplateStringButton⟦attr label ~" "⟫ label="Template"⟧⟦props * except=["label"] ~" "⟫⟧ /></div>
 </template>",
     },
   },

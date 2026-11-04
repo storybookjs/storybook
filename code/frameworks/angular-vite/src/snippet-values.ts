@@ -4,7 +4,8 @@
 
 /**
  * Where a story-docs snippet prints an arg's value, which decides how the preview prints a new one
- * there. The build writes it into each hole of a story's template, and `printHole` reads it.
+ * there. The build writes its fields into each hole of a story's template, next to the hole's
+ * `arg`, and `printHole` reads them.
  *
  * - `bind`: the expression of a `[name]="…"` binding.
  * - `prop`: a whole `[name]="…"` binding `argsToTemplate` expands, which an unset arg leaves out.

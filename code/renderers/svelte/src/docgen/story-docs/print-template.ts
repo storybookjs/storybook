@@ -125,7 +125,7 @@ export function printTemplate({
           edits.push({
             ...range,
             value,
-            marked: mark({ place: { kind: 'spreadattr' }, arg: node.name }, value),
+            marked: mark({ kind: 'spreadattr', arg: node.name }, value),
           });
           return;
         }
@@ -233,7 +233,12 @@ export function printTemplate({
         const holePlace: SvelteHolePlace = deep
           ? { kind: 'member' }
           : attributeName !== undefined
-            ? { kind: 'attrvalue', name: attributeName, before, after }
+            ? {
+                kind: 'attrvalue',
+                ...(attributeName !== arg && { name: attributeName }),
+                before,
+                after,
+              }
             : {
                 kind: quoted ? 'quoted' : parent?.type === 'Fragment' ? 'fragment' : 'code',
                 before,
@@ -244,7 +249,7 @@ export function printTemplate({
         edits.push({
           ...place,
           value,
-          marked: mark({ place: holePlace, arg }, value),
+          marked: mark({ ...holePlace, arg }, value),
         });
       },
       _(node, { next }) {
@@ -269,10 +274,7 @@ export function printTemplate({
             value,
             marked: replaced.single
               ? mark(
-                  {
-                    place: { kind: 'code', before: `${node.name}={`, after: '}' },
-                    arg: replaced.single.arg,
-                  },
+                  { kind: 'code', before: `${node.name}={`, after: '}', arg: replaced.single.arg },
                   value
                 )
               : value,
@@ -297,7 +299,7 @@ export function printTemplate({
   return {
     snippet,
     // An arg a control clears leaves no gap in the spread.
-    ...(template && { template: withHoleSpace(template, (place) => place.kind === 'prop') }),
+    ...(template && { template: withHoleSpace(template, (hole) => hole.kind === 'prop') }),
   };
 }
 
@@ -326,9 +328,9 @@ function spreadPlace(
   const values = props.map(([, prop]) => prop);
   const onePerLine = values.join(' ').length > 50;
   const separator = onePerLine ? '\n  ' : ' ';
-  const holes = props.map(([arg, prop]) => mark({ place: { kind: 'prop' }, arg }, prop));
+  const holes = props.map(([arg, prop]) => mark({ kind: 'prop', arg }, prop));
   const added = (space: string) =>
-    mark({ place: { kind: 'props', except: printed }, spread: true }, '', space);
+    mark({ kind: 'props', except: printed, spread: true }, '', space);
   const { end } = span;
   let { start } = span;
   if (onePerLine) while (start > 0 && /[ \t]/.test(code[start - 1])) start--;
@@ -429,13 +431,13 @@ function replaceArgsReads(
       ? { kind: 'member' }
       : property === undefined
         ? { kind: 'value' }
-        : { kind: 'property', name: property };
+        : { kind: 'property', ...(property !== arg && { name: property }) };
     edits.push({
       start,
       end,
       value,
       node: property === undefined ? read?.node : undefined,
-      marked: mark({ place, arg }, value),
+      marked: mark({ ...place, arg }, value),
       arg,
       place,
     });

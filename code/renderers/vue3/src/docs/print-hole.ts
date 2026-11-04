@@ -23,30 +23,29 @@ import {
 // Prints a changed arg for a hole of a template of the Vue story-docs provider, with the printers
 // the static snippet is printed with. `VueHolePlace` says what each place prints.
 export const printHole: PrintHole<VueHolePlace> = (hole, value) => {
-  const { place } = hole;
   const arg = hole.arg ?? '';
-  switch (place.kind) {
+  switch (hole.kind) {
     case 'attr':
-      return value === undefined ? '' : attribute(arg, place.name, value);
+      return value === undefined ? '' : attribute(arg, hole.name ?? arg, value);
     case 'props':
       return Object.entries(value as Args)
-        .filter(([name]) => !place.except.includes(name))
+        .filter(([name]) => !hole.except.includes(name))
         .sort(([a], [b]) => attributeOrder(a, b))
         .map(([name, item]) => attribute(name, name, item))
         .join(' ');
     case 'text':
-      return text(arg, value, place);
+      return text(arg, value, hole);
     case 'value': {
       const printed =
-        place.in === 'script'
+        hole.in === 'script'
           ? code(arg, value, "'")
-          : expression(arg, value, place.in === 'attribute' ? place.quote : undefined);
-      return operand(printed, place.readsOn === true);
+          : expression(arg, value, hole.in === 'attribute' ? hole.quote : undefined);
+      return operand(printed, hole.readsOn === true);
     }
     case 'guard':
       throw new UnprintableArgError(arg);
     default:
-      return unknownHoleKind(place);
+      return unknownHoleKind(hole);
   }
 };
 

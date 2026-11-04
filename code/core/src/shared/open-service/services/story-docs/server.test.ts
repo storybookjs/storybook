@@ -13,14 +13,10 @@ const buttonTemplate = (
   name = 'label'
 ): SnippetTemplate<{ kind: 'attr'; name: string }> => [
   '<Button ',
-  { place: { kind: 'attr', name }, arg: 'label', text },
+  { kind: 'attr', name, arg: 'label', text },
   ' />',
 ];
-const vegaTemplate: SnippetTemplate = [
-  '<Vega',
-  { place: { kind: 'attrs' }, spread: true, text: '' },
-  ' />',
-];
+const vegaTemplate: SnippetTemplate = ['<Vega', { kind: 'attrs', spread: true, text: '' }, ' />'];
 
 afterEach(() => {
   clearRegistry();
@@ -110,7 +106,7 @@ describe('story-docs open service', () => {
       story('string', '<Button label="Hi" />', '<Button ⟦attr label label⟫label="Hi"⟧ />'),
       story('no-arg', '<Button label="Hi" />', [
         '<Button ',
-        { place: { kind: 'attr' }, text: 'label="Hi"' },
+        { kind: 'attr', text: 'label="Hi"' },
         ' />',
       ]),
     ];

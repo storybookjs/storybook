@@ -20,7 +20,7 @@ import CsfOneButton from './CsfOneButton.vue';
 </script>
 
 <template>
-  <CsfOneButton⟦attr label name="label" ~" "⟫ label="Assigned"⟧⟦props * except=["label"] ~" "⟫⟧ />
+  <CsfOneButton⟦attr label ~" "⟫ label="Assigned"⟧⟦props * except=["label"] ~" "⟫⟧ />
 </template>",
     },
     "forms-csf1-legacy--assigned-args-override-inline": {
@@ -40,7 +40,7 @@ import CsfOneButton from './CsfOneButton.vue';
 </script>
 
 <template>
-  <CsfOneButton⟦attr label name="label" ~" "⟫ label="Assigned wins"⟧⟦props * except=["label"] ~" "⟫⟧ />
+  <CsfOneButton⟦attr label ~" "⟫ label="Assigned wins"⟧⟦props * except=["label"] ~" "⟫⟧ />
 </template>",
     },
     "forms-csf1-legacy--primary": {

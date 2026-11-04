@@ -7,20 +7,20 @@
       "id": "webcomponentsfixtures-lit-basic-attributes--args-default-render",
       "name": "Args Default Render",
       "snippet": "<lit-basic-attributes label="Default render" count="3" disabled is-open></lit-basic-attributes>",
-      "template": "<lit-basic-attributes⟦attr label name="label" mode="field" ~" "⟫ label="Default render"⟧⟦attr count name="count" mode="field" ~" "⟫ count="3"⟧⟦attr disabled name="disabled" mode="field" ~" "⟫ disabled⟧⟦attr isOpen name="is-open" mode="field" ~" "⟫ is-open⟧></lit-basic-attributes>",
+      "template": "<lit-basic-attributes⟦attr label mode="field" ~" "⟫ label="Default render"⟧⟦attr count mode="field" ~" "⟫ count="3"⟧⟦attr disabled mode="field" ~" "⟫ disabled⟧⟦attr isOpen name="is-open" mode="field" ~" "⟫ is-open⟧></lit-basic-attributes>",
     },
     "webcomponentsfixtures-lit-basic-attributes--dom-node": {
       "id": "webcomponentsfixtures-lit-basic-attributes--dom-node",
       "name": "Dom Node",
       "snippet": "<lit-basic-attributes label="Open panel" count="7" is-open></lit-basic-attributes>",
-      "template": "<lit-basic-attributes⟦attr label name="label" mode="field" ~" "⟫ label="Open panel"⟧⟦attr count name="count" mode="field" ~" "⟫ count="7"⟧⟦attr isOpen name="is-open" mode="field" ~" "⟫ is-open⟧⟦attr disabled name="disabled" mode="field" ~" "⟫⟧></lit-basic-attributes>",
+      "template": "<lit-basic-attributes⟦attr label mode="field" ~" "⟫ label="Open panel"⟧⟦attr count mode="field" ~" "⟫ count="7"⟧⟦attr isOpen name="is-open" mode="field" ~" "⟫ is-open⟧⟦attr disabled mode="field" ~" "⟫⟧></lit-basic-attributes>",
       "warning": "Incomplete snippet: `(args) => { const el = document.createElement('lit-basic-attributes'); el.setAttribute('label', String(args.label)); el.setAttribute('count', String(args.count)); if (args.disabled) { el.setAttribute('disabled', ''); } if (args.isOpen) { el.setAttribute('is-open', ''); } return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-lit-basic-attributes--lit-template": {
       "id": "webcomponentsfixtures-lit-basic-attributes--lit-template",
       "name": "Lit Template",
       "snippet": "<lit-basic-attributes label="Open panel" count="7" is-open></lit-basic-attributes>",
-      "template": "<lit-basic-attributes⟦attr label name="label" mode="bind" ~" "⟫ label="Open panel"⟧⟦attr count name="count" mode="bind" ~" "⟫ count="7"⟧⟦bool isOpen name="is-open" ~" "⟫ is-open⟧⟦bool disabled name="disabled" ~" "⟫⟧></lit-basic-attributes>",
+      "template": "<lit-basic-attributes⟦attr label mode="bind" ~" "⟫ label="Open panel"⟧⟦attr count mode="bind" ~" "⟫ count="7"⟧⟦bool isOpen name="is-open" ~" "⟫ is-open⟧⟦bool disabled ~" "⟫⟧></lit-basic-attributes>",
     },
   },
 }

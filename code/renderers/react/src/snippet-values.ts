@@ -15,7 +15,8 @@ export type JsxValue =
 
 // Where a hole of a React template stands, which the provider writes and `printHole` prints:
 //
-// - `attr`: the attribute `name`, left out while the arg is unset.
+// - `attr`: the attribute `name`, which is the arg's own unless given, left out while the arg is
+//   unset.
 // - `text`: the arg as content.
 // - `close`: the end of `element`, with the `children` arg as content.
 // - `value`: the arg as an expression.
@@ -24,7 +25,7 @@ export type JsxValue =
 //   in `except`; `object` writes the whole object for a story that passes none.
 // - `guard`: an arg the snippet cannot follow.
 export type ReactHolePlace =
-  | { kind: 'attr'; name: string }
+  | { kind: 'attr'; name?: string }
   | { kind: 'text' }
   | { kind: 'close'; element: string }
   | { kind: 'value' }
@@ -65,13 +66,11 @@ export const printAttributes = (args: [string, JsxValue][], mark = unmarked) => 
   const unnamed = args.filter(([name]) => !isAttributeName(name));
   const attributes = args
     .filter(([name]) => isAttributeName(name))
-    .map(([name, value]) =>
-      mark({ place: { kind: 'attr', name }, arg: name }, printAttribute(name, value))
-    );
+    .map(([name, value]) => mark({ kind: 'attr', arg: name }, printAttribute(name, value)));
   if (unnamed.length !== 0) {
     const members = unnamed.map(
       ([name, value]) =>
-        `${JSON.stringify(name)}: ${mark({ place: { kind: 'value' }, arg: name }, valueCode(value))}`
+        `${JSON.stringify(name)}: ${mark({ kind: 'value', arg: name }, valueCode(value))}`
     );
     attributes.push(`{...{ ${members.join(', ')} }}`);
   }

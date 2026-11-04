@@ -20,7 +20,7 @@ import SetupRenderButton from './SetupRenderButton.vue';
 </script>
 
 <template>
-  <SetupRenderButton⟦attr label name="label" ~" "⟫ label="Click me"⟧ />
+  <SetupRenderButton⟦attr label ~" "⟫ label="Click me"⟧ />
 </template>",
     },
   },

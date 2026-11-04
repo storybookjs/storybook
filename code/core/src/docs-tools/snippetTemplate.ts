@@ -16,11 +16,16 @@ import type { Args } from 'storybook/internal/types';
  *
  * Core does not know any place: a renderer types its own as a union of {@link HolePlace}s, and shares
  * that type between its provider, which writes the holes, and its {@link PrintHole}, which prints
- * them.
+ * them. A hole is flat: the place's own fields stand next to the fields core reads, `arg`, `spread`,
+ * `text` and `space`, which a place therefore does not use, such as
+ * `{ kind: 'attr', arg: 'label', text: ' label="Go"', space: ' ' }`.
  */
 export type SnippetTemplate<Place extends HolePlace = HolePlace> = (string | TemplateHole<Place>)[];
 
-/** Where a hole stands in a renderer's code, such as an attribute or a text node. */
+/**
+ * Where a hole stands in a renderer's code, such as an attribute or a text node: its `kind` and the
+ * renderer's own fields for it, named other than `arg`, `spread`, `text` and `space`.
+ */
 export interface HolePlace {
   /** Tells the renderer's places apart. */
   kind: string;
@@ -31,9 +36,8 @@ export interface HolePlace {
  * as a `spread` hole, every arg a control set, of which the renderer prints those the place does not
  * print already.
  */
-export type HoleRef<Place extends HolePlace = HolePlace> =
-  | { place: Place; arg: string; spread?: never }
-  | { place: Place; spread: true; arg?: never };
+export type HoleRef<Place extends HolePlace = HolePlace> = Place &
+  ({ arg: string; spread?: never } | { spread: true; arg?: never });
 
 /** A hole of a {@link SnippetTemplate}. */
 export type TemplateHole<Place extends HolePlace = HolePlace> = HoleRef<Place> & {
@@ -126,8 +130,11 @@ export const fillTemplate = <Place extends HolePlace>(
 };
 
 // The hole as its renderer sees it: without the code the snippet prints there.
-const ref = <Place extends HolePlace>(hole: TemplateHole<Place>): HoleRef<Place> =>
-  hole.spread ? { place: hole.place, spread: true } : { place: hole.place, arg: hole.arg };
+const ref = <Place extends HolePlace>({
+  text: _text,
+  space: _space,
+  ...hole
+}: TemplateHole<Place>): HoleRef<Place> => hole as HoleRef<Place>;
 
 /**
  * The template with the whitespace before each hole `takesSpace` names moved into it, as its
@@ -135,11 +142,11 @@ const ref = <Place extends HolePlace>(hole: TemplateHole<Place>): HoleRef<Place>
  * whose arg a control cleared. A hole that prints no text, or has a `space` already, keeps the
  * whitespace before it.
  */
-export const withHoleSpace = <Place extends HolePlace>(
-  template: SnippetTemplate<Place>,
-  takesSpace: (place: Place) => boolean
-): SnippetTemplate<Place> => {
-  const result: SnippetTemplate<Place> = [];
+export const withHoleSpace = <Template extends SnippetTemplate<any>>(
+  template: Template,
+  takesSpace: (hole: HoleRef<PlaceOf<Template>>) => boolean
+): Template => {
+  const result: SnippetTemplate<any> = [];
   for (const segment of template) {
     const previous = result.at(-1);
     const space = typeof previous === 'string' ? /\s+$/.exec(previous)?.[0] : undefined;
@@ -148,7 +155,7 @@ export const withHoleSpace = <Place extends HolePlace>(
       space === undefined ||
       segment.text === '' ||
       segment.space !== undefined ||
-      !takesSpace(segment.place)
+      !takesSpace(ref(segment))
     ) {
       result.push(segment);
       continue;
@@ -161,8 +168,11 @@ export const withHoleSpace = <Place extends HolePlace>(
     }
     result.push({ ...segment, text: space + segment.text, space });
   }
-  return result;
+  return result as Template;
 };
+
+// The places of a template's holes.
+type PlaceOf<Template> = Template extends SnippetTemplate<infer Place> ? Place : never;
 
 /** The template with `code`, such as an import block, before it. */
 export const prependToTemplate = <Place extends HolePlace>(
@@ -184,7 +194,7 @@ export const isSnippetTemplate = (value: unknown): value is SnippetTemplate =>
       (typeof segment === 'object' &&
         segment !== null &&
         typeof segment.text === 'string' &&
-        typeof segment.place?.kind === 'string' &&
+        typeof segment.kind === 'string' &&
         (segment.space === undefined || typeof segment.space === 'string') &&
         ((segment.spread === undefined && typeof segment.arg === 'string') ||
           (segment.spread === true && segment.arg === undefined)))
@@ -200,14 +210,15 @@ export const formatTemplate = (template: SnippetTemplate<any>): string =>
       if (!isHole(segment)) {
         return segment;
       }
-      const { kind, ...fields } = segment.place as HolePlace & Record<string, unknown>;
+      const { kind, arg, spread, text, space, ...fields } = segment as TemplateHole &
+        Record<string, unknown>;
       const header = [
         kind,
-        segment.spread ? '*' : segment.arg,
+        spread ? '*' : arg,
         ...Object.entries(fields).map(([name, value]) => `${name}=${JSON.stringify(value)}`),
-        ...(segment.space === undefined ? [] : [`~${JSON.stringify(segment.space)}`]),
+        ...(space === undefined ? [] : [`~${JSON.stringify(space)}`]),
       ];
-      return `⟦${header.join(' ')}⟫${segment.text}⟧`;
+      return `⟦${header.join(' ')}⟫${text}⟧`;
     })
     .join('');
 

@@ -26,7 +26,7 @@ const upper = computed(() => ⟦value label in="script" readsOn=true⟫'Ready'�
 </script>
 
 <template>
-  <SetupComputed⟦attr label name="label" ~" "⟫ label="Ready"⟧ :hint="upper" />
+  <SetupComputed⟦attr label ~" "⟫ label="Ready"⟧ :hint="upper" />
 </template>",
     },
   },

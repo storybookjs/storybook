@@ -20,7 +20,7 @@ import ExtendedInterfaceProps from './ExtendedInterfaceProps.vue';
 </script>
 
 <template>
-  <ExtendedInterfaceProps⟦attr extra name="extra" ~" "⟫ extra⟧⟦attr id name="id" ~" "⟫ :id="7"⟧⟦attr name name="name" ~" "⟫ name="Chained"⟧⟦props * except=["id","name","extra"] ~" "⟫⟧ />
+  <ExtendedInterfaceProps⟦attr extra ~" "⟫ extra⟧⟦attr id ~" "⟫ :id="7"⟧⟦attr name ~" "⟫ name="Chained"⟧⟦props * except=["id","name","extra"] ~" "⟫⟧ />
 </template>",
     },
   },

@@ -20,7 +20,7 @@ import OptionsApiEmits from './OptionsApiEmits.vue';
 </script>
 
 <template>
-  <OptionsApiEmits⟦attr step name="step" ~" "⟫ :step="2"⟧⟦props * except=["step"] ~" "⟫⟧ />
+  <OptionsApiEmits⟦attr step ~" "⟫ :step="2"⟧⟦props * except=["step"] ~" "⟫⟧ />
 </template>",
     },
   },

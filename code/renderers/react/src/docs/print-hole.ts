@@ -19,26 +19,27 @@ import {
 
 // Prints a changed arg for a hole of a template from `getCodeSnippet`, with the printers the static
 // snippet is printed with; see `ReactHolePlace` for what each place prints.
-export const printHole: PrintHole<ReactHolePlace> = ({ place, arg = '' }, value) => {
-  switch (place.kind) {
+export const printHole: PrintHole<ReactHolePlace> = (hole, value) => {
+  const arg = hole.arg ?? '';
+  switch (hole.kind) {
     case 'attr':
-      return value === undefined ? '' : printAttribute(place.name, describe(arg, value));
+      return value === undefined ? '' : printAttribute(hole.name ?? arg, describe(arg, value));
     case 'text':
       return value === undefined ? '' : printChildren(describe(arg, value));
     case 'close':
       return value === undefined
         ? ' />'
-        : printClose(place.element, printChildren(describe(arg, value)));
+        : printClose(hole.element, printChildren(describe(arg, value)));
     case 'value':
       return printValue(value, arg);
     case 'attrs': {
-      const added = Object.entries(value as Args).filter(([name]) => !place.except.includes(name));
+      const added = Object.entries(value as Args).filter(([name]) => !hole.except.includes(name));
       const attributes = printAttributes(added.map(([name, item]) => [name, describe(name, item)]));
       return attributes.map((attribute) => ` ${attribute}`).join('');
     }
     case 'entries':
       return codes(value as Args)
-        .filter(([name]) => !place.except.includes(name))
+        .filter(([name]) => !hole.except.includes(name))
         .map((entry) => `,\n${printArgsEntry(entry)}`)
         .join('');
     case 'object':
@@ -46,7 +47,7 @@ export const printHole: PrintHole<ReactHolePlace> = ({ place, arg = '' }, value)
     case 'guard':
       throw new UnprintableArgError(arg);
     default:
-      return unknownHoleKind(place);
+      return unknownHoleKind(hole);
   }
 };
 

@@ -20,7 +20,7 @@ import PropSlotCollision from './PropSlotCollision.vue';
 </script>
 
 <template>
-  <PropSlotCollision⟦attr default name="default" ~" "⟫ default="fallback text"⟧⟦attr icon name="icon" ~" "⟫ icon="pi pi-check"⟧⟦props * except=["icon","default"] ~" "⟫⟧ />
+  <PropSlotCollision⟦attr default ~" "⟫ default="fallback text"⟧⟦attr icon ~" "⟫ icon="pi pi-check"⟧⟦props * except=["icon","default"] ~" "⟫⟧ />
 </template>",
     },
   },

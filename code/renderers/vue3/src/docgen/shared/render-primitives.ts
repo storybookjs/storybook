@@ -117,11 +117,18 @@ export const marked = (
   space?: string
 ) => (ctx.mark ? ctx.mark(hole, text, space) : text);
 
+// The hole of the attribute `name` for `arg`, which names the attribute only where the arg does not.
+export const attributeHole = (name: string, arg: string): HoleRef<VueHolePlace> => ({
+  kind: 'attr',
+  arg,
+  ...(name !== arg && { name }),
+});
+
 // An arg's value as code in `<script setup>`.
 export function scriptValue(name: string, value: Node, ctx: RenderContext): string {
   return marked(
     ctx,
-    { place: { kind: 'value', in: 'script' }, arg: name },
+    { kind: 'value', in: 'script', arg: name },
     printValue(unwrapExpression(value))
   );
 }
@@ -160,11 +167,7 @@ function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): Rende
   }
 
   return {
-    attrName: marked(
-      ctx,
-      { place: { kind: 'attr', name: input.attributeName }, arg: input.variableName },
-      attribute
-    ),
+    attrName: marked(ctx, attributeHole(input.attributeName, input.variableName), attribute),
   };
 }
 
@@ -212,7 +215,7 @@ export function renderSlotContent(
     const content = slotContent(snippetValueOf(value));
     // Vue's whitespace condensing would alter padded text, so it hoists to an interpolation.
     if (content !== undefined) {
-      return marked(own, { place: { kind: 'text', slot: true }, arg: arg.name }, content);
+      return marked(own, { kind: 'text', slot: true, arg: arg.name }, content);
     }
   }
 
@@ -395,7 +398,7 @@ export function hoistModelRef(name: string, value: Node | undefined, ctx: Render
   const initial = value ? printValue(unwrapExpression(value)) : '';
   ctx.variables.set(
     bindingName,
-    `ref(${marked(ctx, { place: { kind: 'value', in: 'script' }, arg: name }, initial)})`
+    `ref(${marked(ctx, { kind: 'value', in: 'script', arg: name }, initial)})`
   );
   return bindingName;
 }

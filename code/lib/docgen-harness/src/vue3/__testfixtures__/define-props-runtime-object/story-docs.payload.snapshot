@@ -20,7 +20,7 @@ import RuntimeObjectProps from './RuntimeObjectProps.vue';
 </script>
 
 <template>
-  <RuntimeObjectProps⟦attr count name="count" ~" "⟫ :count="3"⟧⟦attr label name="label" ~" "⟫ label="Total"⟧⟦props * except=["label","count"] ~" "⟫⟧ />
+  <RuntimeObjectProps⟦attr count ~" "⟫ :count="3"⟧⟦attr label ~" "⟫ label="Total"⟧⟦props * except=["label","count"] ~" "⟫⟧ />
 </template>",
     },
   },

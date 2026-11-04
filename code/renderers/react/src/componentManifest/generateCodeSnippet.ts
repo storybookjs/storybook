@@ -94,7 +94,7 @@ function printTemplate(
   const marks = createHoleMarks<ReactHolePlace>(sources, (mark) => `/*${mark}*/`);
   const template = marks.toTemplate(print(marks.mark));
   // An attribute a control clears leaves no gap or empty line.
-  return template && withHoleSpace(template, (place) => place.kind === 'attr');
+  return template && withHoleSpace(template, (hole) => hole.kind === 'attr');
 }
 
 // `value` is the snippet's code from `start` to `end`, or the code as written when `undefined`;
@@ -131,13 +131,13 @@ function importedBoundStory(
       return printArgsObject(entries.map(([key, value]) => [key, print(value)]));
     }
     if (entries.length === 0) {
-      return mark({ place: { kind: 'object' }, spread: true }, '{}');
+      return mark({ kind: 'object', spread: true }, '{}');
     }
     const values = entries.map(([key, value]) =>
-      printArgsEntry([key, mark({ place: { kind: 'value' }, arg: key }, print(value))])
+      printArgsEntry([key, mark({ kind: 'value', arg: key }, print(value))])
     );
     const keys = entries.map(([key]) => key);
-    return `{\n${values.join(',\n')}${mark({ place: { kind: 'entries', except: keys }, spread: true }, '')}\n}`;
+    return `{\n${values.join(',\n')}${mark({ kind: 'entries', spread: true, except: keys }, '')}\n}`;
   };
   return {
     print: (mark) => `const ${storyName} = () => ${bound}(${argsObject(mark)});`,
@@ -365,19 +365,11 @@ const injectedAttributes = (
 // Where a spread passes the args a control sets, but those the element prints by name, and
 // `children`, which the element ends with; see `closeHole`.
 const addedAttributes = (printed: ReadonlySet<string>, mark: Mark | undefined) =>
-  mark
-    ? mark(
-        {
-          place: { kind: 'attrs', except: [...printed, 'children'] },
-          spread: true,
-        },
-        ''
-      )
-    : '';
+  mark ? mark({ kind: 'attrs', spread: true, except: [...printed, 'children'] }, '') : '';
 
 // The end of an element the args pass `children` to: `end` as the snippet prints it.
 const closeHole = (name: string, end: string, mark: Mark | undefined) =>
-  mark ? mark({ place: { kind: 'close', element: name }, arg: 'children' }, end) : end;
+  mark ? mark({ kind: 'close', arg: 'children', element: name }, end) : end;
 
 const toJsxChildren = (node: Node | null | undefined, print: ValuePrinter) =>
   node ? printChildren(describe(node, print)) : '';
@@ -447,10 +439,10 @@ function rewriteJsx(
           edits.push({
             start: a.start,
             end: a.end,
-            marked: mark({ place: { kind: 'attr', name }, arg: name }, code.slice(a.start, a.end)),
+            marked: mark({ kind: 'attr', arg: name }, code.slice(a.start, a.end)),
           });
         } else if (read !== name) {
-          guards.push(mark({ place: { kind: 'guard' }, arg: name }, ''));
+          guards.push(mark({ kind: 'guard', arg: name }, ''));
         }
       });
       const printed = new Set([...existing, ...injectedNames(merged, existing)]);
@@ -520,7 +512,7 @@ function rewriteJsx(
         end: a.end,
         value,
         marked: mark?.(
-          { place: { kind: 'attr', name: a.name.name }, arg: key },
+          { kind: 'attr', arg: key, ...(a.name.name !== key && { name: a.name.name }) },
           value ?? code.slice(a.start, a.end)
         ),
       });
@@ -545,10 +537,7 @@ function rewriteJsx(
         start: child.start,
         end: child.end,
         value,
-        marked: mark?.(
-          { place: { kind: 'text' }, arg: key },
-          value ?? code.slice(child.start, child.end)
-        ),
+        marked: mark?.({ kind: 'text', arg: key }, value ?? code.slice(child.start, child.end)),
       });
       changed ||= value !== undefined;
     }

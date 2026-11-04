@@ -18,11 +18,11 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "⟦guard computed⟫⟧⟦guard version⟫⟧⟦guard pressed⟫⟧⟦guard onSelect⟫⟧⟦style base-part selector="lit-toolkit-shapes::part(base)"⟫⟧⟦style active-state selector="lit-toolkit-shapes:state(active)"⟫⟧<lit-toolkit-shapes⟦attr size name="size" mode="field" ~"\n  "⟫
-  size="small"⟧⟦attr level name="level" mode="field" ~"\n  "⟫
-  level="3"⟧⟦attr tags name="tags" mode="field" ~"\n  "⟫
-  tags="[&quot;b&quot;]"⟧⟦attr label name="label" mode="field" ~"\n  "⟫
-  label="Default render"⟧⟦attr oldSize name="old-size" mode="field" ~"\n  "⟫⟧⟦attr target name="target" mode="field" ~"\n  "⟫⟧⟦attr when name="when" mode="field" ~"\n  "⟫⟧⟦cssattr --toolkit-color property="--toolkit-color" ~"\n  "⟫⟧⟦cssattr --toolkit-scale property="--toolkit-scale" ~"\n  "⟫⟧⟦cssattr --toolkit-font property="--toolkit-font" ~"\n  "⟫⟧⟦cssattr --toolkit-gap property="--toolkit-gap" ~"\n  "⟫⟧
+      "template": "⟦guard computed⟫⟧⟦guard version⟫⟧⟦guard pressed⟫⟧⟦guard onSelect⟫⟧⟦style base-part selector="lit-toolkit-shapes::part(base)"⟫⟧⟦style active-state selector="lit-toolkit-shapes:state(active)"⟫⟧<lit-toolkit-shapes⟦attr size mode="field" ~"\n  "⟫
+  size="small"⟧⟦attr level mode="field" ~"\n  "⟫
+  level="3"⟧⟦attr tags mode="field" ~"\n  "⟫
+  tags="[&quot;b&quot;]"⟧⟦attr label mode="field" ~"\n  "⟫
+  label="Default render"⟧⟦attr oldSize name="old-size" mode="field" ~"\n  "⟫⟧⟦attr target mode="field" ~"\n  "⟫⟧⟦attr when mode="field" ~"\n  "⟫⟧⟦cssattr --toolkit-color ~"\n  "⟫⟧⟦cssattr --toolkit-scale ~"\n  "⟫⟧⟦cssattr --toolkit-font ~"\n  "⟫⟧⟦cssattr --toolkit-gap ~"\n  "⟫⟧
 >⟦slot default-slot name="default"⟫⟧⟦slot label-slot name="label"⟫⟧</lit-toolkit-shapes>
 <script>
   {
@@ -46,11 +46,11 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "⟦guard computed⟫⟧⟦guard version⟫⟧⟦guard pressed⟫⟧⟦guard onSelect⟫⟧⟦style base-part selector="lit-toolkit-shapes::part(base)"⟫⟧⟦style active-state selector="lit-toolkit-shapes:state(active)"⟫⟧<lit-toolkit-shapes⟦attr size name="size" mode="field" ~"\n  "⟫
-  size="large"⟧⟦attr level name="level" mode="field" ~"\n  "⟫
-  level="2"⟧⟦attr tags name="tags" mode="field" ~"\n  "⟫
-  tags="[&quot;b&quot;]"⟧⟦attr label name="label" mode="field" ~"\n  "⟫
-  label="Shaped"⟧⟦attr oldSize name="old-size" mode="field" ~"\n  "⟫⟧⟦attr target name="target" mode="field" ~"\n  "⟫⟧⟦attr when name="when" mode="field" ~"\n  "⟫⟧⟦cssattr --toolkit-color property="--toolkit-color" ~"\n  "⟫⟧⟦cssattr --toolkit-scale property="--toolkit-scale" ~"\n  "⟫⟧⟦cssattr --toolkit-font property="--toolkit-font" ~"\n  "⟫⟧⟦cssattr --toolkit-gap property="--toolkit-gap" ~"\n  "⟫⟧
+      "template": "⟦guard computed⟫⟧⟦guard version⟫⟧⟦guard pressed⟫⟧⟦guard onSelect⟫⟧⟦style base-part selector="lit-toolkit-shapes::part(base)"⟫⟧⟦style active-state selector="lit-toolkit-shapes:state(active)"⟫⟧<lit-toolkit-shapes⟦attr size mode="field" ~"\n  "⟫
+  size="large"⟧⟦attr level mode="field" ~"\n  "⟫
+  level="2"⟧⟦attr tags mode="field" ~"\n  "⟫
+  tags="[&quot;b&quot;]"⟧⟦attr label mode="field" ~"\n  "⟫
+  label="Shaped"⟧⟦attr oldSize name="old-size" mode="field" ~"\n  "⟫⟧⟦attr target mode="field" ~"\n  "⟫⟧⟦attr when mode="field" ~"\n  "⟫⟧⟦cssattr --toolkit-color ~"\n  "⟫⟧⟦cssattr --toolkit-scale ~"\n  "⟫⟧⟦cssattr --toolkit-font ~"\n  "⟫⟧⟦cssattr --toolkit-gap ~"\n  "⟫⟧
 >⟦slot default-slot name="default"⟫⟧⟦slot label-slot name="label"⟫⟧</lit-toolkit-shapes>
 <script>
   {
@@ -75,10 +75,10 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "<lit-toolkit-shapes⟦attr size name="size" mode="bind" ~"\n  "⟫
-  size="large"⟧⟦attr level name="level" mode="bind" ~"\n  "⟫
-  level="2"⟧⟦attr tags name="tags" mode="field" ~"\n  "⟫
-  tags="[&quot;b&quot;]"⟧⟦attr label name="label" mode="bind" ~"\n  "⟫
+      "template": "<lit-toolkit-shapes⟦attr size mode="bind" ~"\n  "⟫
+  size="large"⟧⟦attr level mode="bind" ~"\n  "⟫
+  level="2"⟧⟦attr tags mode="field" ~"\n  "⟫
+  tags="[&quot;b&quot;]"⟧⟦attr label mode="bind" ~"\n  "⟫
   label="Shaped"⟧
 ></lit-toolkit-shapes>
 <script>

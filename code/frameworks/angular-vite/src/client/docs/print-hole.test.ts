@@ -6,7 +6,7 @@ import type { AngularHolePlace } from '../../snippet-values.ts';
 import { printHole } from './print-hole.ts';
 
 const print = (kind: AngularHolePlace['kind'], value: unknown, indent?: number) =>
-  printHole({ place: { kind, indent }, arg: 'x' }, value);
+  printHole({ kind, arg: 'x', indent }, value);
 
 describe('printHole', () => {
   it('prints a value into a binding as the build prints the story args, for the template literal', () => {

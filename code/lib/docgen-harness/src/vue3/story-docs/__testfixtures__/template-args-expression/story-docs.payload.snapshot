@@ -43,7 +43,7 @@ const status = ⟦value status in="script"⟫{ state: 'available', version: '1.2
       overflow: 'hidden'
     }"
   >
-    <TemplateArgsExpression⟦attr isCollapsed name="isCollapsed" ~" "⟫ isCollapsed⟧ :release="release" :status="status"⟦attr updateProgressInfo name="updateProgressInfo" ~" "⟫ :updateProgressInfo="null"⟧⟦props * except=["status","release","updateProgressInfo","isCollapsed"] ~" "⟫⟧ />
+    <TemplateArgsExpression⟦attr isCollapsed ~" "⟫ isCollapsed⟧ :release="release" :status="status"⟦attr updateProgressInfo ~" "⟫ :updateProgressInfo="null"⟧⟦props * except=["status","release","updateProgressInfo","isCollapsed"] ~" "⟫⟧ />
   </div>
 </template>",
     },
@@ -87,7 +87,7 @@ const status = ⟦value status in="script"⟫{ state: 'available', version: '1.2
       overflow: 'hidden'
     }"
   >
-    <TemplateArgsExpression⟦attr isCollapsed name="isCollapsed" ~" "⟫ :isCollapsed="false"⟧ :release="release" :status="status"⟦attr updateProgressInfo name="updateProgressInfo" ~" "⟫ :updateProgressInfo="null"⟧⟦props * except=["status","release","updateProgressInfo","isCollapsed"] ~" "⟫⟧ />
+    <TemplateArgsExpression⟦attr isCollapsed ~" "⟫ :isCollapsed="false"⟧ :release="release" :status="status"⟦attr updateProgressInfo ~" "⟫ :updateProgressInfo="null"⟧⟦props * except=["status","release","updateProgressInfo","isCollapsed"] ~" "⟫⟧ />
   </div>
 </template>",
     },

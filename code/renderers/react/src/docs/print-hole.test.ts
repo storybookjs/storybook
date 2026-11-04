@@ -9,10 +9,7 @@ describe('printHole', () => {
   it('prints the args a control added as attributes, but those its place leaves out', () => {
     expect(
       printHole(
-        {
-          place: { kind: 'attrs', except: ['size', 'children'] },
-          spread: true,
-        },
+        { kind: 'attrs', spread: true, except: ['size', 'children'] },
         {
           label: 'Go',
           size: 'lg',
@@ -23,20 +20,25 @@ describe('printHole', () => {
     ).toBe(' label="Go" {...{ "data.x": 1 }}');
   });
 
+  it('prints an attribute named after its arg, unless the hole names it', () => {
+    expect(printHole({ kind: 'attr', arg: 'label' }, 'Go')).toBe('label="Go"');
+    expect(printHole({ kind: 'attr', arg: 'title', name: 'label' }, 'Go')).toBe('label="Go"');
+  });
+
   it('throws for a value the snippet cannot show', () => {
     const places: ReactHolePlace[] = [
-      { kind: 'attr', name: 'format' },
+      { kind: 'attr' },
       { kind: 'text' },
       { kind: 'close', element: 'Button' },
       { kind: 'value' },
     ];
     for (const place of places) {
-      expect(() => printHole({ place, arg: 'format' }, () => '')).toThrow(
+      expect(() => printHole({ ...place, arg: 'format' }, () => '')).toThrow(
         new UnprintableArgError('format')
       );
     }
     expect(() =>
-      printHole({ place: { kind: 'attrs', except: [] }, spread: true }, { format: () => '' })
+      printHole({ kind: 'attrs', spread: true, except: [] }, { format: () => '' })
     ).toThrow(new UnprintableArgError('format'));
   });
 });

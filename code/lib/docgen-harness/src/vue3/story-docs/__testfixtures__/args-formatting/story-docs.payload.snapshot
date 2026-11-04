@@ -32,7 +32,7 @@ const quotationLabel = ⟦value quotationLabel in="script"⟫'She said "hi" and 
 </script>
 
 <template>
-  <ArgsFormattingButton⟦attr count name="count" ~" "⟫ :count="3"⟧⟦attr disabled name="disabled" ~" "⟫ :disabled="false"⟧⟦attr enabled name="enabled" ~" "⟫ enabled⟧ :items="items"⟦attr label name="label" ~" "⟫ label="Formatted"⟧ :options="options" :quotationLabel="quotationLabel"⟦props * except=["label","quotationLabel","enabled","disabled","count","options","items"] ~" "⟫⟧ />
+  <ArgsFormattingButton⟦attr count ~" "⟫ :count="3"⟧⟦attr disabled ~" "⟫ :disabled="false"⟧⟦attr enabled ~" "⟫ enabled⟧ :items="items"⟦attr label ~" "⟫ label="Formatted"⟧ :options="options" :quotationLabel="quotationLabel"⟦props * except=["label","quotationLabel","enabled","disabled","count","options","items"] ~" "⟫⟧ />
 </template>",
     },
     "forms-args-formatting--unset-arg": {
@@ -52,7 +52,7 @@ import ArgsFormattingButton from './ArgsFormattingButton.vue';
 </script>
 
 <template>
-  <ArgsFormattingButton⟦attr count name="count" ~" "⟫ :count="3"⟧⟦props * except=["count"] ~" "⟫⟧ />
+  <ArgsFormattingButton⟦attr count ~" "⟫ :count="3"⟧⟦props * except=["count"] ~" "⟫⟧ />
 </template>",
     },
   },

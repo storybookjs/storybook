@@ -7,7 +7,7 @@ import { UnprintableArgError } from 'storybook/internal/docs-tools';
 import type { VueHolePlace } from '../snippet-values.ts';
 import { printHole } from './print-hole.ts';
 
-const print = (place: VueHolePlace, value: unknown) => printHole({ place, arg: 'x' }, value);
+const print = (place: VueHolePlace, value: unknown) => printHole({ ...place, arg: 'x' }, value);
 const attr = { kind: 'attr', name: 'label' } as const;
 
 describe('printHole', () => {
@@ -19,6 +19,7 @@ describe('printHole', () => {
     expect(print(attr, -2)).toBe(':label="-2"');
     expect(print(attr, ['a', 1])).toBe(`:label="['a', 1]"`);
     expect(print(attr, undefined)).toBe('');
+    expect(printHole({ kind: 'attr', arg: 'label' }, 'Go')).toBe('label="Go"');
   });
 
   it('cannot print an attribute that would read back as another value', () => {
@@ -30,7 +31,7 @@ describe('printHole', () => {
   it('prints the args a control added in name order, but those its place prints already', () => {
     expect(
       printHole(
-        { place: { kind: 'props', except: ['label', 'default'] }, spread: true },
+        { kind: 'props', except: ['label', 'default'], spread: true },
         { size: 2, label: 'Go', active: true }
       )
     ).toBe('active :size="2"');

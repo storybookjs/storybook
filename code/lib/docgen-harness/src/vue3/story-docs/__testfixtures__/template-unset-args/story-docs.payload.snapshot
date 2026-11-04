@@ -30,8 +30,8 @@ const modelValue = ref(⟦value modelValue in="script"⟫⟧);
 </script>
 
 <template>
-  <TemplateUnsetArgs⟦attr id name="id" ~" "⟫⟧⟦attr label name="label" ~"\n    "⟫
-    label="Ready"⟧⟦attr hint name="hint" ~"\n    "⟫
+  <TemplateUnsetArgs⟦attr id ~" "⟫⟧⟦attr label ~"\n    "⟫
+    label="Ready"⟧⟦attr hint ~"\n    "⟫
     hint="Optional hint"⟧
     v-model="modelValue"
   />

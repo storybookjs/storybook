@@ -4,7 +4,7 @@
 // story writes, `printHole` from the value itself.
 
 // Where a hole of a story's template stands: the story-docs provider writes the holes and
-// `printHole` prints a changed value for them.
+// `printHole` prints a changed value for them. A `name` is left out where it is the hole's arg.
 export type SvelteHolePlace =
   // One prop a `{...args}` spread passes, left out while its arg is unset.
   | { kind: 'prop' }
@@ -16,11 +16,11 @@ export type SvelteHolePlace =
   // A read of an arg in code.
   | { kind: 'value' }
   // A shorthand property, `{ name }`, that reads an arg.
-  | { kind: 'property'; name: string }
+  | { kind: 'property'; name?: string }
   // One whole read, which prints a string as text where next does, else as code between `before`
   // and `after`: an attribute value of the attribute `name`, a quoted attribute value, a text node,
   // or code.
-  | { kind: 'attrvalue'; name: string; before: string; after: string }
+  | { kind: 'attrvalue'; name?: string; before: string; after: string }
   | { kind: 'quoted' | 'fragment' | 'code'; before: string; after: string }
   // A read of a member of an arg, which the snippet cannot follow.
   | { kind: 'member' };

@@ -16,7 +16,7 @@
       "template": "<style>⟦rule panel-part selector="lit-slots-and-css::part(panel)" ~"\n"⟫
   lit-slots-and-css::part(panel) { color: rebeccapurple; }⟧
 </style>
-<lit-slots-and-css⟦attr heading name="heading" mode="field" ~" "⟫ heading="Default render"⟧ style="⟦css --slot-panel-color property="--slot-panel-color"⟫--slot-panel-color: teal;⟧">⟦slot default-slot name="default" ~"\n  "⟫
+<lit-slots-and-css⟦attr heading mode="field" ~" "⟫ heading="Default render"⟧ style="⟦css --slot-panel-color⟫--slot-panel-color: teal;⟧">⟦slot default-slot name="default" ~"\n  "⟫
   Body <b>text</b>⟧⟦slot actions-slot name="actions" ~"\n  "⟫
   <button slot="actions">Confirm</button>⟧
 </lit-slots-and-css>",
@@ -25,7 +25,7 @@
       "id": "webcomponentsfixtures-lit-slots-and-css--dom-node",
       "name": "Dom Node",
       "snippet": "<lit-slots-and-css heading="Projected"></lit-slots-and-css>",
-      "template": "⟦style panel-part selector="lit-slots-and-css::part(panel)"⟫⟧<lit-slots-and-css⟦attr heading name="heading" mode="field" ~" "⟫ heading="Projected"⟧⟦cssattr --slot-panel-color property="--slot-panel-color" ~" "⟫⟧>⟦slot default-slot name="default"⟫⟧⟦slot actions-slot name="actions"⟫⟧</lit-slots-and-css>",
+      "template": "⟦style panel-part selector="lit-slots-and-css::part(panel)"⟫⟧<lit-slots-and-css⟦attr heading mode="field" ~" "⟫ heading="Projected"⟧⟦cssattr --slot-panel-color ~" "⟫⟧>⟦slot default-slot name="default"⟫⟧⟦slot actions-slot name="actions"⟫⟧</lit-slots-and-css>",
       "warning": "Incomplete snippet: `(args) => { const el = document.createElement('lit-slots-and-css'); el.setAttribute('heading', String(args.heading)); const body = document.createElement('p'); body.textContent = 'Default slot content'; const action = document.createElement('button'); action.slot = 'actions'; action.textContent = 'Confirm'; el.append(body, action); return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-lit-slots-and-css--lit-template": {
@@ -35,7 +35,7 @@
   <p>Default slot content</p>
   <button slot="actions">Confirm</button>
 </lit-slots-and-css>",
-      "template": "<lit-slots-and-css⟦attr heading name="heading" mode="bind" ~" "⟫ heading="Projected"⟧>
+      "template": "<lit-slots-and-css⟦attr heading mode="bind" ~" "⟫ heading="Projected"⟧>
   <p>Default slot content</p>
   <button slot="actions">Confirm</button>
 </lit-slots-and-css>",

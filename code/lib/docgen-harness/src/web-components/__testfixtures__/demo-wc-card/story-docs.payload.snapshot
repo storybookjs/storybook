@@ -9,7 +9,7 @@
       "snippet": "<demo-wc-card back-side rows="[]">
   <span slot="prefix"></span>A simple card
 </demo-wc-card>",
-      "template": "<demo-wc-card⟦attr backSide name="back-side" mode="field" ~" "⟫ back-side⟧⟦attr rows name="rows" mode="field" ~" "⟫ rows="[]"⟧⟦attr header name="header" mode="field" ~" "⟫⟧>
+      "template": "<demo-wc-card⟦attr backSide name="back-side" mode="field" ~" "⟫ back-side⟧⟦attr rows mode="field" ~" "⟫ rows="[]"⟧⟦attr header mode="field" ~" "⟫⟧>
   <span slot="prefix">⟦text prefix trimStart=false trimEnd=false⟫⟧</span>A simple card
 </demo-wc-card>",
     },
@@ -17,7 +17,7 @@
       "id": "webcomponentsfixtures-demo-wc-card--front",
       "name": "Front",
       "snippet": "<demo-wc-card rows="[]"><span slot="prefix"></span>A simple card</demo-wc-card>",
-      "template": "<demo-wc-card⟦attr rows name="rows" mode="field" ~" "⟫ rows="[]"⟧⟦attr backSide name="back-side" mode="field" ~" "⟫⟧⟦attr header name="header" mode="field" ~" "⟫⟧><span slot="prefix">⟦text prefix trimStart=false trimEnd=false⟫⟧</span>A simple card</demo-wc-card>",
+      "template": "<demo-wc-card⟦attr rows mode="field" ~" "⟫ rows="[]"⟧⟦attr backSide name="back-side" mode="field" ~" "⟫⟧⟦attr header mode="field" ~" "⟫⟧><span slot="prefix">⟦text prefix trimStart=false trimEnd=false⟫⟧</span>A simple card</demo-wc-card>",
     },
     "webcomponentsfixtures-demo-wc-card--prefix": {
       "id": "webcomponentsfixtures-demo-wc-card--prefix",
@@ -25,7 +25,7 @@
       "snippet": "<demo-wc-card header="my header" rows="[]">
   <span slot="prefix">prefix:</span>A simple card
 </demo-wc-card>",
-      "template": "<demo-wc-card⟦attr header name="header" mode="field" ~" "⟫ header="my header"⟧⟦attr rows name="rows" mode="field" ~" "⟫ rows="[]"⟧⟦attr backSide name="back-side" mode="field" ~" "⟫⟧>
+      "template": "<demo-wc-card⟦attr header mode="field" ~" "⟫ header="my header"⟧⟦attr rows mode="field" ~" "⟫ rows="[]"⟧⟦attr backSide name="back-side" mode="field" ~" "⟫⟧>
   <span slot="prefix">⟦text prefix trimStart=true trimEnd=true⟫prefix:⟧</span>A simple card
 </demo-wc-card>",
     },

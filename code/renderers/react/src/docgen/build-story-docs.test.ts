@@ -138,7 +138,7 @@ describe('buildStoryDocsPayload', () => {
     );
     expect(primary!.snippet).toBe('const Primary = () => <Button label="Save" primary />;');
     expect(formatTemplate(primary!.template!)).toMatchInlineSnapshot(
-      `"const Primary = () => <Button⟦attr label name="label" ~" "⟫ label="Save"⟧⟦attr primary name="primary" ~" "⟫ primary⟧⟦attrs * except=["label","primary","children"]⟫⟧⟦close children element="Button"⟫ />⟧;"`
+      `"const Primary = () => <Button⟦attr label ~" "⟫ label="Save"⟧⟦attr primary ~" "⟫ primary⟧⟦attrs * except=["label","primary","children"]⟫⟧⟦close children element="Button"⟫ />⟧;"`
     );
     expect(fixed!.snippet).toBe('const Fixed = () => <Button label="Fixed" />;');
     expect(fixed!.template).toEqual(['const Fixed = () => <Button label="Fixed" />;']);

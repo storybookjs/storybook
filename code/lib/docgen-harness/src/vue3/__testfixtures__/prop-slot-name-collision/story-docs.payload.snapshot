@@ -20,7 +20,7 @@ import PropSlotNameCollision from './PropSlotNameCollision.vue';
 </script>
 
 <template>
-  <PropSlotNameCollision⟦attr icon name="icon" ~" "⟫ icon="pi pi-check"⟧⟦props * except=["icon","default"] ~" "⟫⟧ />
+  <PropSlotNameCollision⟦attr icon ~" "⟫ icon="pi pi-check"⟧⟦props * except=["icon","default"] ~" "⟫⟧ />
 </template>",
     },
   },

@@ -779,7 +779,7 @@ describe('the template', () => {
     `);
     expect(snippet).toBe('<test-element label="Go">Go</test-element>');
     expect(formatTemplate(template!)).toBe(
-      '<test-element⟦attr label name="label" mode="bind" ~" "⟫ label="Go"⟧⟦bool disabled name="disabled" ~" "⟫⟧>⟦text label trimStart=true trimEnd=true⟫Go⟧</test-element>'
+      '<test-element⟦attr label mode="bind" ~" "⟫ label="Go"⟧⟦bool disabled ~" "⟫⟧>⟦text label trimStart=true trimEnd=true⟫Go⟧</test-element>'
     );
     expect(
       fill(template, { label: 'Go', disabled: false }, { label: 'a < b', disabled: true })

@@ -6,7 +6,12 @@ import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts'
 import { fieldDefault, pairedAttribute } from './classify-args.ts';
 import { type HtmlAttribute, type HtmlNode, parseHtml } from '../../html-parse.ts';
 import { printHtml } from './html-tree.ts';
-import type { HtmlHole, HtmlHolePlace, HtmlSnippetTemplate } from '../../snippet-holes.ts';
+import {
+  type HtmlHole,
+  type HtmlHolePlace,
+  type HtmlSnippetTemplate,
+  attrHole,
+} from '../../snippet-holes.ts';
 import { boundText, childText, escapeText, printAttribute } from '../../snippet-values.ts';
 import { printRootListenerScript } from './print-element.ts';
 import type { HoleContext, HoleValue } from './template-holes.ts';
@@ -118,7 +123,7 @@ const printTemplateWithListeners = (
   const html = printHtml(nodes);
   const snippet = script ? `${html}\n${script}` : html;
   const marks = createHoleMarks<HtmlHolePlace>([snippet]);
-  const guards = [...state.guarded].map((arg) => marks.mark({ place: { kind: 'guard' }, arg }, ''));
+  const guards = [...state.guarded].map((arg) => marks.mark({ kind: 'guard', arg }, ''));
   const holes = guards.join('') + printHtml(nodes, marks);
 
   return {
@@ -215,7 +220,7 @@ const resolveAttribute = (
       return {
         name,
         value: undefined,
-        hole: { place: { kind: 'bool', name }, arg },
+        hole: { kind: 'bool', arg, ...(name !== arg && { name }) },
         ...(shown ? {} : { omitted: true }),
       };
     }
@@ -272,7 +277,7 @@ const resolveAttribute = (
       ? printed
       : {
           ...(printed ?? { name: paired, value: undefined, omitted: true }),
-          hole: { place: { kind: 'attr', name: paired, mode: 'field' }, arg },
+          hole: attrHole(arg, paired, 'field'),
         };
   }
 
@@ -288,9 +293,9 @@ const resolveAttribute = (
   const boundArg = only && definedArg === undefined ? wholeArg(only, state) : undefined;
   const singleHole: HtmlHole | undefined =
     definedArg !== undefined
-      ? { place: { kind: 'attr', name: attribute.name, mode: 'defined' }, arg: definedArg }
+      ? attrHole(definedArg, attribute.name, 'defined')
       : boundArg !== undefined
-        ? { place: { kind: 'attr', name: attribute.name, mode: 'bind' }, arg: boundArg }
+        ? attrHole(boundArg, attribute.name, 'bind')
         : undefined;
   const withHole = (printed: HtmlAttribute | undefined): HtmlAttribute | undefined =>
     singleHole === undefined
@@ -345,7 +350,7 @@ const resolveAttribute = (
     holeValue = replaceMarker(
       holeValue,
       marker,
-      arg === undefined ? valueText : { place: { kind: 'quoted' }, arg, text: valueText }
+      arg === undefined ? valueText : { kind: 'quoted', arg, text: valueText }
     );
   }
   return withHole({
@@ -390,10 +395,9 @@ const resolveTextNode = (text: string, state: TemplatePrintState): HtmlNode[] =>
     if (expression && arg !== undefined) {
       // Next prints the text of a lit template, and the html of a string template.
       nodes.push({
-        hole: {
-          place: state.lit ? { kind: 'text', trimStart: false, trimEnd: false } : { kind: 'html' },
-          arg,
-        },
+        hole: state.lit
+          ? { kind: 'text', arg, trimStart: false, trimEnd: false }
+          : { kind: 'html', arg },
         kind: 'hole',
         nodes: nodesForChildValue(resolveMarkerValue(expression, state), state),
       });

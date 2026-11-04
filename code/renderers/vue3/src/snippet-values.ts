@@ -7,7 +7,8 @@
 // Where a hole of a story's template stands, which the provider writes and `printHole` prints a
 // changed arg for:
 //
-// - `attr`: the attribute `name`, left out while the arg is unset.
+// - `attr`: the attribute `name`, the arg's own name unless it says otherwise, left out while the
+//   arg is unset.
 // - `props`: the args a control set, as an args binding passes them, but those in `except`, which
 //   the element prints already.
 // - `text`: the text of an interpolation, or with `slot`, a slot's content. `braceBefore` and
@@ -16,7 +17,7 @@
 //   `quote`. `readsOn` says the code reads on after it with a `.`, as `(5).toFixed()` does.
 // - `guard`: an arg the snippet has no place for, such as a slot the story leaves unset.
 export type VueHolePlace =
-  | { kind: 'attr'; name: string }
+  | { kind: 'attr'; name?: string }
   | { kind: 'props'; except: string[] }
   | ({ kind: 'text'; slot?: boolean } & Braces)
   | ({ kind: 'value'; readsOn?: boolean } & (

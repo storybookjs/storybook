@@ -20,7 +20,7 @@ import TypeIntersectionWhole from './TypeIntersectionWhole.vue';
 </script>
 
 <template>
-  <TypeIntersectionWhole⟦attr id name="id" ~" "⟫ id="save-button"⟧⟦attr size name="size" ~" "⟫ size="medium"⟧⟦props * except=["id","size","default"] ~" "⟫⟧ />
+  <TypeIntersectionWhole⟦attr id ~" "⟫ id="save-button"⟧⟦attr size ~" "⟫ size="medium"⟧⟦props * except=["id","size","default"] ~" "⟫⟧ />
 </template>",
     },
   },

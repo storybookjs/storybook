@@ -26,42 +26,43 @@ import type { HtmlHolePlace } from '../snippet-holes.ts';
 export const printHole: PrintHole<HtmlHolePlace> = (hole, changed) => {
   const arg = hole.arg ?? '';
   const value = printable(arg, changed);
-  const { place } = hole;
-  switch (place.kind) {
-    case 'attr':
-      if (place.mode === 'bind' || place.mode === 'defined') {
-        return place.mode === 'defined' && !isDefined(value)
+  switch (hole.kind) {
+    case 'attr': {
+      const name = hole.name ?? arg;
+      if (hole.mode === 'bind' || hole.mode === 'defined') {
+        return hole.mode === 'defined' && !isDefined(value)
           ? ''
-          : quotedAttribute(place.name, boundText(value));
+          : quotedAttribute(name, boundText(value));
       }
-      return printAttribute(place.name, value, place.mode === 'field') ?? '';
+      return printAttribute(name, value, hole.mode === 'field') ?? '';
+    }
     case 'bool':
       // Lit sets the attribute while the value is truthy, as the static snippet reads it.
-      return isTruthy(value) ? place.name : '';
+      return isTruthy(value) ? (hole.name ?? arg) : '';
     case 'quoted':
       return escapeAttribute(boundText(value));
     case 'css':
-      return escapeAttribute(cssDeclarations([{ name: place.property, value }]) ?? '');
+      return escapeAttribute(cssDeclarations([{ name: hole.property ?? arg, value }]) ?? '');
     case 'cssattr': {
-      const style = cssDeclarations([{ name: place.property, value }]);
+      const style = cssDeclarations([{ name: hole.property ?? arg, value }]);
       return style === undefined ? '' : quotedAttribute('style', style);
     }
     case 'text':
-      return escapeText(inlineText(childText(value), place.trimStart, place.trimEnd));
+      return escapeText(inlineText(childText(value), hole.trimStart, hole.trimEnd));
     case 'html':
       return childText(value);
     case 'slot':
-      return slottedHtml(place.name, slotText(value));
+      return slottedHtml(hole.name, slotText(value));
     case 'rule':
-      return isSet(value) ? `  ${place.selector} { ${String(value)} }` : '';
+      return isSet(value) ? `  ${hole.selector} { ${String(value)} }` : '';
     case 'style':
       return isSet(value)
-        ? `${styleElement([{ selector: place.selector, declarations: String(value) }])}\n`
+        ? `${styleElement([{ selector: hole.selector, declarations: String(value) }])}\n`
         : '';
     case 'guard':
       throw new UnprintableArgError(arg);
     default:
-      return unknownHoleKind(place);
+      return unknownHoleKind(hole);
   }
 };
 

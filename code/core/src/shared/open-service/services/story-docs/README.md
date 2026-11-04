@@ -22,18 +22,19 @@ arg prints with the `text` the snippet prints there. For a React story `Primary`
 // template
 [
   'const Primary = () => <Button',
-  { place: { kind: 'attr', name: 'label' }, arg: 'label', text: ' label="Go"', space: ' ' },
-  { place: { kind: 'attr', name: 'onClick' }, arg: 'onClick', text: ' onClick={fn()}', space: ' ' },
-  { place: { kind: 'attrs', except: ['label', 'onClick', 'children'] }, spread: true, text: '' },
-  { place: { kind: 'close', element: 'Button' }, arg: 'children', text: ' />' },
+  { kind: 'attr', arg: 'label', text: ' label="Go"', space: ' ' },
+  { kind: 'attr', arg: 'onClick', text: ' onClick={fn()}', space: ' ' },
+  { kind: 'attrs', spread: true, except: ['label', 'onClick', 'children'], text: '' },
+  { kind: 'close', arg: 'children', element: 'Button', text: ' />' },
   ';',
 ]
 ```
 
 A hole reads one `arg`, or, as a `spread` hole, the args a control set, as a spread passes them.
-Its `place` is the renderer's: each renderer types its places as one union, which its provider and
-its `printHole` share. Core owns only the contract, in `snippetTemplate.ts`, and never reads a place
-but its `kind`:
+A hole is flat: its `kind` and the renderer's own fields for that place stand next to the fields
+core reads, `arg`, `spread`, `text` and `space`. Each renderer types its places as one union, which
+its provider and its `printHole` share. Core owns only the contract, in `snippetTemplate.ts`, and
+never reads a place's fields but its `kind`:
 
 - An arg that holds its initial value (deep-equal) prints the hole's `text`, so nothing the
   controls did not change moves: an arg written as code, such as `fn()` or `shout`, stays as

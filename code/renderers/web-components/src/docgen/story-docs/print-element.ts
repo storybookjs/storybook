@@ -9,7 +9,12 @@ import {
   styleElement,
 } from '../../snippet-values.ts';
 import { type HtmlAttribute, type HtmlNode, parseHtml } from '../../html-parse.ts';
-import type { HtmlHole, HtmlHolePlace, HtmlSnippetTemplate } from '../../snippet-holes.ts';
+import {
+  type HtmlHole,
+  type HtmlHolePlace,
+  type HtmlSnippetTemplate,
+  attrHole,
+} from '../../snippet-holes.ts';
 import { printHtml } from './html-tree.ts';
 
 // What the element of a story without a render prints. The template wraps an entry with an `arg`
@@ -63,7 +68,8 @@ export function printElementSnippet(
       rule.declarations === undefined && rule.arg !== undefined
   );
   const rule = ({ selector, arg }: { selector: string; arg: string }): HtmlHole => ({
-    place: rules.length > 0 ? { kind: 'rule', selector } : { kind: 'style', selector },
+    kind: rules.length > 0 ? 'rule' : 'style',
+    selector,
     arg,
   });
   const style =
@@ -144,10 +150,7 @@ const elementAttributes = (snippet: ElementSnippet): HtmlAttribute[] => {
     if (attribute.arg === undefined) {
       return node ? [node] : [];
     }
-    const hole: HtmlHole = {
-      place: { kind: 'attr', name: attribute.name, mode: attribute.viaField ? 'field' : 'render' },
-      arg: attribute.arg,
-    };
+    const hole = attrHole(attribute.arg, attribute.name, attribute.viaField ? 'field' : 'render');
     return [{ ...(node ?? { name: attribute.name, value: undefined, omitted: true }), hole }];
   });
   const style = cssDeclarations(snippet.cssProperties);
@@ -160,7 +163,13 @@ const elementAttributes = (snippet: ElementSnippet): HtmlAttribute[] => {
     const text = cssDeclarations([{ name, value }]) ?? '';
     return arg === undefined
       ? text
-      : { place: { kind: 'css', property: name }, arg, text, ...(text ? {} : { space: ' ' }) };
+      : {
+          kind: 'css',
+          arg,
+          ...(name !== arg && { property: name }),
+          text,
+          ...(text ? {} : { space: ' ' }),
+        };
   };
   const set = snippet.cssProperties.filter((property) => cssDeclarations([property]));
   const unset = snippet.cssProperties.filter(
@@ -174,7 +183,11 @@ const elementAttributes = (snippet: ElementSnippet): HtmlAttribute[] => {
         name: 'style',
         value: undefined,
         omitted: true,
-        hole: { place: { kind: 'cssattr', property: property.name }, arg: property.arg },
+        hole: {
+          kind: 'cssattr',
+          arg: property.arg,
+          ...(property.name !== property.arg && { property: property.name }),
+        },
       })),
     ];
   }
@@ -206,7 +219,7 @@ const slotNodes = (slots: ElementSnippet['slots']): HtmlNode[] => {
       : [
           ...separator,
           {
-            hole: { place: { kind: 'slot', name: slot.name }, arg: slot.arg },
+            hole: { kind: 'slot', arg: slot.arg, name: slot.name },
             kind: 'hole',
             nodes,
           },

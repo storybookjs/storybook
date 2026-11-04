@@ -20,7 +20,7 @@ import MetaRenderButton from './MetaRenderButton.vue';
 </script>
 
 <template>
-  <section class="preview"><MetaRenderButton⟦attr label name="label" ~" "⟫ label="Primary"⟧⟦attr variant name="variant" ~" "⟫ variant="primary"⟧⟦props * except=["label","variant"] ~" "⟫⟧ /></section>
+  <section class="preview"><MetaRenderButton⟦attr label ~" "⟫ label="Primary"⟧⟦attr variant ~" "⟫ variant="primary"⟧⟦props * except=["label","variant"] ~" "⟫⟧ /></section>
 </template>",
     },
     "forms-template-meta-render--secondary": {
@@ -40,7 +40,7 @@ import MetaRenderButton from './MetaRenderButton.vue';
 </script>
 
 <template>
-  <section class="preview"><MetaRenderButton⟦attr label name="label" ~" "⟫ label="Secondary"⟧⟦attr variant name="variant" ~" "⟫ variant="secondary"⟧⟦props * except=["label","variant"] ~" "⟫⟧ /></section>
+  <section class="preview"><MetaRenderButton⟦attr label ~" "⟫ label="Secondary"⟧⟦attr variant ~" "⟫ variant="secondary"⟧⟦props * except=["label","variant"] ~" "⟫⟧ /></section>
 </template>",
     },
   },

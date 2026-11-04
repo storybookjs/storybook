@@ -274,7 +274,7 @@ describe('template', () => {
       </script>
 
       <template>
-        <MyButton⟦attr count name="count" ~" "⟫ :count="2"⟧⟦attr label name="label" ~" "⟫ label="Hi"⟧⟦props * except=["label","count"] ~" "⟫⟧ />
+        <MyButton⟦attr count ~" "⟫ :count="2"⟧⟦attr label ~" "⟫ label="Hi"⟧⟦props * except=["label","count"] ~" "⟫⟧ />
       </template>"
     `);
     const initialArgs = { label: 'Hi', count: 2, theme: 'dark' };

@@ -379,7 +379,7 @@ function enrichStoryDoc(
   const unsetSlots =
     renderer.kind === 'sfc' ? [...docgenArgInfo.slots].filter((slot) => !set.has(slot)) : [];
   const guards: SnippetTemplate<VueHolePlace> = unsetSlots.map((arg) => ({
-    place: { kind: 'guard' },
+    kind: 'guard',
     arg,
     text: '',
   }));
@@ -389,7 +389,7 @@ function enrichStoryDoc(
     snippet: rendered.snippet,
     // An attribute a control clears leaves no gap.
     ...(holes && {
-      template: withHoleSpace([...guards, ...holes], (place) => place.kind === 'attr'),
+      template: withHoleSpace([...guards, ...holes], (hole) => hole.kind === 'attr'),
     }),
     ...(unresolved.length > 0 ? { warning: unresolvedWarning(unresolved) } : {}),
   };

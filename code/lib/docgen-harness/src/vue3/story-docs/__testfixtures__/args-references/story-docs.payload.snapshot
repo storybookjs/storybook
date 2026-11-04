@@ -20,7 +20,7 @@ import ArgsReferencesButton from './ArgsReferencesButton.vue';
 </script>
 
 <template>
-  <ArgsReferencesButton⟦attr label name="label" ~" "⟫ label="Declared label"⟧⟦props * except=["label"] ~" "⟫⟧ />
+  <ArgsReferencesButton⟦attr label ~" "⟫ label="Declared label"⟧⟦props * except=["label"] ~" "⟫⟧ />
 </template>",
     },
     "forms-args-references--spread-object-arg": {

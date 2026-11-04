@@ -14,7 +14,7 @@
     host.addEventListener('my-close', () => {});
   }
 </script>",
-      "template": "<lit-events⟦attr value name="value" mode="field" ~" "⟫ value="default event"⟧></lit-events>
+      "template": "<lit-events⟦attr value mode="field" ~" "⟫ value="default event"⟧></lit-events>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
@@ -34,7 +34,7 @@
     host.addEventListener('my-close', () => {});
   }
 </script>",
-      "template": "<lit-events⟦attr value name="value" mode="field" ~" "⟫ value="changed"⟧></lit-events>
+      "template": "<lit-events⟦attr value mode="field" ~" "⟫ value="changed"⟧></lit-events>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
@@ -55,7 +55,7 @@
     host.addEventListener('my-close', () => {});
   }
 </script>",
-      "template": "<lit-events⟦attr value name="value" mode="bind" ~" "⟫ value="changed"⟧></lit-events>
+      "template": "<lit-events⟦attr value mode="bind" ~" "⟫ value="changed"⟧></lit-events>
 <script>
   {
     const host = document.currentScript.previousElementSibling;

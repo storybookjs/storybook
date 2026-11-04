@@ -25,7 +25,7 @@ import SlotsWithEvents from './SlotsWithEvents.vue';
 </script>
 
 <template>
-  <SlotsWithEvents⟦attr title name="title" ~" "⟫ title="Notice"⟧⟦props * except=["title","leading","default"] ~" "⟫⟧>
+  <SlotsWithEvents⟦attr title ~" "⟫ title="Notice"⟧⟦props * except=["title","leading","default"] ~" "⟫⟧>
     ⟦text default slot=true⟫Body text⟧
     <template #leading>
       ⟦text leading slot=true⟫!⟧

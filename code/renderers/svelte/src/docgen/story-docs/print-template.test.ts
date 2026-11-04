@@ -304,6 +304,23 @@ describe('printTemplate template', () => {
     );
   });
 
+  it('names the attribute or property of a hole only where it is not its arg', () => {
+    const parameter = { aliases: { label: 'label', text: 'label' } };
+    expect(formatTemplate(template('<Panel title={args.label} />', "{ label: 'Go' }"))).toBe(
+      '<Panel ⟦attrvalue label name="title" before="title={" after="}"⟫title="Go"⟧ />'
+    );
+    expect(formatTemplate(template('<Panel {label} />', "{ label: 'Go' }", parameter))).toBe(
+      '<Panel ⟦attrvalue label before="label={" after="}"⟫label="Go"⟧ />'
+    );
+    const properties = template('<Panel data={{ label, text }} />', "{ label: 'Go' }", parameter);
+    expect(formatTemplate(properties)).toBe(
+      `<Panel data={{ ⟦property label⟫label: 'Go'⟧, ⟦property label name="text"⟫text: 'Go'⟧ }} />`
+    );
+    expect(fill(properties, { label: 'Go' }, { label: 'Stop' })).toBe(
+      `<Panel data={{ label: "Stop", text: "Stop" }} />`
+    );
+  });
+
   it('adds the args a control adds after the props of the spread, but those the element writes', () => {
     const written = template('<Panel {...args} title="T" />', "{ label: 'Go' }");
     expect(fill(written, { label: 'Go' }, { label: 'Go', count: 3, title: 'X' })).toBe(

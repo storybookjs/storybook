@@ -20,7 +20,7 @@ import RuntimePropTypeCast from './RuntimePropTypeCast.vue';
 </script>
 
 <template>
-  <RuntimePropTypeCast⟦attr kind name="kind" ~" "⟫ kind="secondary"⟧⟦attr measure name="measure" ~" "⟫ :measure="42"⟧⟦props * except=["kind","measure"] ~" "⟫⟧ />
+  <RuntimePropTypeCast⟦attr kind ~" "⟫ kind="secondary"⟧⟦attr measure ~" "⟫ :measure="42"⟧⟦props * except=["kind","measure"] ~" "⟫⟧ />
 </template>",
     },
   },

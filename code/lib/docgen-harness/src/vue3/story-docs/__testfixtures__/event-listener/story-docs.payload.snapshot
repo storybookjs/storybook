@@ -30,7 +30,7 @@ const onSubmit = ⟦value onSubmit in="script"⟫(payload: { value: string }) =>
 </script>
 
 <template>
-  <EventListenerForm :formatter="formatter"⟦attr label name="label" ~" "⟫ label="Send"⟧ @submit="onSubmit"⟦props * except=["label","default","formatter","onSubmit"] ~" "⟫⟧>
+  <EventListenerForm :formatter="formatter"⟦attr label ~" "⟫ label="Send"⟧ @submit="onSubmit"⟦props * except=["label","default","formatter","onSubmit"] ~" "⟫⟧>
     Submit now
   </EventListenerForm>
 </template>",

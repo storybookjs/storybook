@@ -174,7 +174,7 @@ describe('a changed arg', () => {
 
   it.each(holePlaces)('cannot print a function or lit value in a hole of %j', (place) => {
     for (const value of unprintable) {
-      expect(() => printHole({ place, arg: 'v' }, value)).toThrow(new UnprintableArgError('v'));
+      expect(() => printHole({ ...place, arg: 'v' }, value)).toThrow(new UnprintableArgError('v'));
     }
   });
 });

@@ -50,53 +50,41 @@ const USE_SYNC_EXTERNAL_STORE_ALIAS = {
 };
 
 /**
- * A bundled CommonJS module that calls `require()` on an external (such as `react`) becomes a
- * `__require("…")` call, which throws "Dynamic require of … is not supported" in the browser. That
- * broke the preview once (#32270), through the shim above. Browser builds fail when it shows up, so
- * the fix (an alias to an ES module, or keeping the dependency external) happens at build time.
+ * A `require()` of an external (such as `react`), for example in a bundled CommonJS module, becomes
+ * a `__require("…")` call in ES module output, which throws "Dynamic require of … is not supported"
+ * in the browser. That broke the preview once (#32270), through the shim above. Browser builds fail
+ * when it shows up, so the fix (an alias to an ES module, or a static import) happens at build time.
  */
-const DYNAMIC_REQUIRE_CALL = /\b__require\(\s*["'`]([^"'`]+)/g;
-
-/**
- * Deliberate `require()` calls in our own browser source, each guarded by try/catch. The Next.js
- * header mocks load `draftMode` this way to stay compatible with Next.js 14.
- */
-const ALLOWED_DYNAMIC_REQUIRES = new Set(['next/dist/server/request/draft-mode']);
-
-function findDynamicRequire(file: string, code: string) {
-  const specifier = Array.from(code.matchAll(DYNAMIC_REQUIRE_CALL), (match) => match[1]).find(
-    (required) => !ALLOWED_DYNAMIC_REQUIRES.has(required)
-  );
-  return specifier
-    ? `${file} calls __require("${specifier}"): a bundled CommonJS module requires an external, which fails in the browser. Alias the import to an ES module, or keep the dependency external.`
-    : undefined;
-}
+const dynamicRequireError = (file: string, specifier: string) =>
+  `${file} calls require("${specifier}") on an external, which fails in the browser. Alias the import to an ES module, or import it statically.`;
 
 const esbuildNoDynamicRequireGuard: esbuild.Plugin = {
   name: 'no-dynamic-require-in-browser-output',
   setup(build) {
-    build.onEnd(async (result) => {
-      const outputs = Object.keys(result.metafile?.outputs ?? {}).filter((file) =>
-        file.endsWith('.js')
-      );
-      const workingDir = build.initialOptions.absWorkingDir ?? process.cwd();
-      const problems = await Promise.all(
-        outputs.map(async (file) =>
-          findDynamicRequire(file, await readFile(join(workingDir, file), 'utf8'))
-        )
-      );
-      return { errors: problems.filter((text) => text !== undefined).map((text) => ({ text })) };
-    });
+    build.onEnd((result) => ({
+      errors: Object.entries(result.metafile?.outputs ?? {}).flatMap(([file, output]) =>
+        output.imports
+          .filter(
+            ({ external, kind }) =>
+              external && (kind === 'require-call' || kind === 'require-resolve')
+          )
+          .map(({ path }) => ({ text: dynamicRequireError(file, path) }))
+      ),
+    }));
   },
 };
+
+// Rolldown has no metafile, so this side reads the code. Its CommonJS wrappers are named
+// `function __require()` and take no string, so only real require calls match.
+const DYNAMIC_REQUIRE_CALL = /\b__require\(\s*["'`]([^"'`]+)/;
 
 const rolldownNoDynamicRequireGuard: RolldownPlugin = {
   name: 'no-dynamic-require-in-browser-output',
   generateBundle(_options, bundle) {
     for (const output of Object.values(bundle)) {
-      const problem = output.type === 'chunk' && findDynamicRequire(output.fileName, output.code);
-      if (problem) {
-        this.error(problem);
+      const specifier = output.type === 'chunk' && DYNAMIC_REQUIRE_CALL.exec(output.code)?.[1];
+      if (specifier) {
+        this.error(dynamicRequireError(output.fileName, specifier));
       }
     }
   },

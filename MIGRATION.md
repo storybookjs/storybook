@@ -37,6 +37,7 @@
   - [Sidebar: standalone docs pages are no longer wrapped in a component](#sidebar-standalone-docs-pages-are-no-longer-wrapped-in-a-component)
   - [Test runner support ended](#test-runner-support-ended)
   - [`storybook/test` is based on Vitest 5 and no longer installs its test libraries](#storybooktest-is-based-on-vitest-5-and-no-longer-installs-its-test-libraries)
+  - [`storybook` no longer installs some utility packages](#storybook-no-longer-installs-some-utility-packages)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
@@ -1446,6 +1447,10 @@ If you cannot switch to a Vite-based framework and Vitest, you can continue usin
   The `expect.extend()` call that implements the matcher stays the same, and `await expect(2).toBeEven()` type checks again.
 
 `storybook/test` bundles `@testing-library/dom`, `@testing-library/user-event`, `@testing-library/jest-dom`, `@vitest/expect`, `@vitest/spy` and `chai`, including their types, so `storybook` no longer installs them (or `@types/chai`) as dependencies. If your project imports any of these packages directly, add them to your own `devDependencies`. In Vitest browser mode, the queries of `storybook/test` no longer share `configure()` with a `@testing-library/dom` you install yourself: call `configure` from `storybook/test`.
+
+### `storybook` no longer installs some utility packages
+
+`storybook` bundles `semver`, `ws`, `jsonc-parser` and `@webcontainer/env`, and `@storybook/builder-vite` and `@storybook/addon-docs` bundle `ts-dedent`, so these packages are no longer installed as dependencies. `storybook` also no longer depends on `use-sync-external-store`. If your project or addon imports any of these packages directly, add them to your own `dependencies` or `devDependencies`.
 
 ### Vitest Addon: requires Vitest 4.0 or higher
 

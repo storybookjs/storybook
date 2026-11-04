@@ -1,4 +1,4 @@
-import type { IndexEntry, ProvidedStoryDoc } from 'storybook/internal/types';
+import type { IndexEntry, StoryDoc } from 'storybook/internal/types';
 
 import { readFileSync } from 'node:fs';
 import { join } from 'pathe';
@@ -59,17 +59,13 @@ const docgen = async (): Promise<AngularDocgenPayload> => ({
   },
 });
 
-const storyDocs = async (source: string): Promise<ProvidedStoryDoc[]> => {
+const storyDocs = async (source: string): Promise<StoryDoc[]> => {
   vol.fromNestedJSON({ [STORY_PATH]: dedent(source) });
   const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: docgen });
   return Object.values(payload!.stories);
 };
 
-const fill = (
-  story: ProvidedStoryDoc,
-  initialArgs: Record<string, unknown>,
-  args = initialArgs
-) => {
+const fill = (story: StoryDoc, initialArgs: Record<string, unknown>, args = initialArgs) => {
   expect(stripHoles(story.template!)).toBe(story.snippet);
   // The build writes Angular's places, which the payload type leaves to the renderer.
   const template = story.template as SnippetTemplate<AngularHolePlace>;

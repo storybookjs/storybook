@@ -19,7 +19,7 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import { type SnippetTemplate, withHoleSpace } from 'storybook/internal/docs-tools';
+import type { SnippetTemplate } from 'storybook/internal/docs-tools';
 import type {
   ProvidedStoryDoc,
   ProvidedStoryDocsPayload,
@@ -36,7 +36,7 @@ import {
   evaluateArgExpression,
   evaluateArgLiteral,
 } from './story-docs-args.ts';
-import { type ArgPrinter, printPlaceholders, printValues } from './story-docs-holes.ts';
+import { type ArgPrinter, printMarks, printValues } from './story-docs-holes.ts';
 import type { Bindings, StoryShape } from './story-docs-markup.ts';
 import { oneLineTextOf, userTemplate } from './story-docs-markup.ts';
 import type { StoryNgModules } from './story-docs-ng-modules.ts';
@@ -237,7 +237,7 @@ interface StoryTemplate {
 }
 
 // The story's template: its static snippet with each value of an arg it prints wrapped in a hole,
-// from the same print with a placeholder there, or nothing where the two prints do not line up.
+// from the same print with each such place marked, or nothing where the two prints do not line up.
 const storyTemplate = async (
   snippetMeta: AngularComponentSnippetMeta,
   shape: StoryShape,
@@ -245,24 +245,22 @@ const storyTemplate = async (
   deps: StoryDocDeps,
   derived: RenderedSnippet
 ): Promise<Partial<StoryTemplate>> => {
-  const placeholders = printPlaceholders();
-  const printed = await renderStorySnippet(
+  const marks = printMarks(derived.snippet);
+  const marked = await renderStorySnippet(
     snippetMeta,
     shape,
     decorators,
     deps,
-    placeholders,
+    marks,
     derived.analysis
   );
-  const template = placeholders.template(printed.snippet, derived.snippet);
-  // A binding a control clears leaves no gap, and a value over a line of its own no empty line.
-  return template === undefined
-    ? {}
-    : { template: withHoleSpace(template, ({ kind }) => kind === 'prop' || kind === 'text') };
+  const template = marks.template(marked.snippet);
+  return template === undefined ? {} : { template };
 };
 
 type RenderedSnippet = HostComponentSnippet & {
-  // The analysis of the story's own markup, which a print with placeholders reuses.
+  // The analysis of the story's own markup, which the marked print reuses: a mark in an Angular
+  // expression the markup interpolates an arg into would not parse.
   analysis?: StoryTemplateAnalysis;
 };
 
@@ -304,7 +302,7 @@ const renderStorySnippet = async (
   storyDecorators: Node | undefined,
   deps: StoryDocDeps,
   printer: ArgPrinter,
-  // A print with placeholders lays out the markup as the print with values analyzed it.
+  // The marked print lays out the markup as the print with values analyzed it.
   valuesAnalysis?: StoryTemplateAnalysis
 ): Promise<RenderedSnippet> => {
   const shape = { ...baseShape, printer };
@@ -356,7 +354,7 @@ const renderStorySnippet = async (
       printer
     );
     const rendered = withWarnings(
-      host(formatTemplateMarkup(markup, printer.layout), false, boundOutputs, hostArgs.fields),
+      host(formatTemplateMarkup(markup, printer.unmarked), false, boundOutputs, hostArgs.fields),
       unresolvedWarning([
         ...shape.metaMembers.unresolved,
         ...shape.members.unresolved,
@@ -385,7 +383,7 @@ const renderStorySnippet = async (
   const { bindings, fields } = componentBindings(snippetMeta, shape, printer);
   return withWarnings(
     host(
-      buildTemplate(snippetMeta.selector, { ...bindings, selfClosing: true }, printer.layout),
+      buildTemplate(snippetMeta.selector, { ...bindings, selfClosing: true }, printer.unmarked),
       false,
       snippetMeta.outputs,
       fields
@@ -525,7 +523,7 @@ const unsetInputs = (
     if (!isUnset(name)) {
       return [];
     }
-    const attribute = printer.unset(name, 'prop');
+    const attribute = printer.unset(name);
     return attribute === undefined ? [] : [{ name, expression: '', attribute, unset: true }];
   });
 

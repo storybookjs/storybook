@@ -5,8 +5,8 @@ import { UnprintableArgError } from 'storybook/internal/docs-tools';
 import type { AngularHolePlace } from '../../snippet-values.ts';
 import { printHole } from './print-hole.ts';
 
-const print = (kind: AngularHolePlace['kind'], value: unknown, indent?: number) =>
-  printHole({ kind, arg: 'x', indent }, value);
+const print = (kind: AngularHolePlace['kind'], value: unknown) =>
+  printHole({ kind, arg: 'x' }, value);
 
 describe('printHole', () => {
   it('prints a value into a binding as the build prints the story args, for the template literal', () => {
@@ -21,23 +21,41 @@ describe('printHole', () => {
     expect(print('prop', undefined)).toBe('');
   });
 
-  it('indents the lines after the first as its place says', () => {
-    expect(print('field', ['a\nb'], 2)).toBe("['a\\nb']");
-    expect(print('text', 'a\nb', 2)).toBe('a\n  b');
+  it('prints a value over several lines as one line of code', () => {
+    expect(print('field', ['a\nb'])).toBe("['a\\nb']");
   });
 
-  it('prints text as written, and none Angular would read as its own syntax', () => {
+  it('indents the lines after the first of text as its place says', () => {
+    expect(printHole({ kind: 'text', arg: 'x', indent: 2 }, 'a\nb')).toBe('a\n  b');
+  });
+
+  it('prints text as written, and a cleared arg as none', () => {
     expect(print('text', 'a <i>b</i> `d`')).toBe('a <i>b</i> \\`d\\`');
     expect(print('text', 3)).toBe('3');
-    for (const label of ['a {b}', '@if', '{{ x }}']) {
-      expect(() => print('text', label)).toThrow(UnprintableArgError);
-    }
+    expect(print('text', undefined)).toBe('');
+  });
+
+  it('prints text Angular would read as its own syntax in the form Angular reads as text', () => {
+    expect(print('text', 'a {b} me@x.com')).toBe('a &#123;b&#125; me&#64;x.com');
+    expect(print('text', '{{ x }}')).toBe("{{ '{{' }} x &#125;&#125;");
+  });
+
+  it('prints NaN and Infinity into a class field, which TypeScript writes by name', () => {
+    expect(print('field', Number.NaN)).toBe('NaN');
+    expect(print('field', { max: Number.NEGATIVE_INFINITY })).toBe('{max: -Infinity}');
   });
 
   it.each([() => null, new Date(0), Number.NaN, { a: Number.POSITIVE_INFINITY }, Symbol('s')])(
-    'throws for a value with no expression, such as %s',
+    'throws for a value with no template expression, such as %s',
     (value) => {
       expect(() => print('bind', value)).toThrow(new UnprintableArgError('x'));
+    }
+  );
+
+  it.each([() => null, new Date(0), { a: 1 }])(
+    'throws for a value with no text, such as %s',
+    (value) => {
+      expect(() => print('text', value)).toThrow(new UnprintableArgError('x'));
     }
   );
 });

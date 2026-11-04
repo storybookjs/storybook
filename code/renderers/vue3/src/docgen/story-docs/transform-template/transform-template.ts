@@ -293,7 +293,7 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
       const wrapped = inline
         ? marked(
             state.ctx,
-            { kind: 'value', in: 'script', ...readsOn(following), arg: read.name },
+            { kind: 'value', in: 'statement', ...readsOn(following), arg: read.name },
             wrapSubstitution(rendered, following)
           )
         : rendered;

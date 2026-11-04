@@ -385,6 +385,7 @@ describe('a value a control sets', () => {
     'a bound attribute': (label) => rendered(label, '<MyButton :label="args.label" />'),
     'an interpolation': (label) => rendered(label, '<MyButton>{{ args.label }}</MyButton>'),
     'an expression': (label) => rendered(label, `<MyButton :title="args.label + '!'" />`),
+    'a v-model': (label) => rendered(label, '<MyButton v-model="args.label" />'),
     'a slot': (label) => `export const Primary = { args: { default: ${label} } };`,
   };
   const CATEGORIES = { ...DOCGEN_CATEGORIES, default: 'slots' };

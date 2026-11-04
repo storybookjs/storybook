@@ -13,15 +13,17 @@
 //   the element prints already.
 // - `text`: the text of an interpolation, or with `slot`, a slot's content. `braceBefore` and
 //   `braceAfter` say the template writes a `{` right before or after it.
-// - `value`: code in `<script setup>`, in an interpolation, or in an attribute value quoted with
-//   `quote`. `readsOn` says the code reads on after it with a `.`, as `(5).toFixed()` does.
+// - `value`: code. In `script`, the whole value a `<script setup>` const or `ref()` declares; in a
+//   setup `statement`, an `interpolation` or an `attribute` value quoted with `quote`, an operand,
+//   in parentheses where the code around it would read it otherwise. `readsOn` says that code
+//   reads on after it with a `.`, as `(5).toFixed()` does.
 // - `guard`: an arg the snippet has no place for, such as a slot the story leaves unset.
 export type VueHolePlace =
   | { kind: 'attr'; name?: string }
   | { kind: 'props'; except: string[] }
   | ({ kind: 'text'; slot?: boolean } & Braces)
   | ({ kind: 'value'; readsOn?: boolean } & (
-      | { in: 'script' | 'interpolation' }
+      | { in: 'script' | 'statement' | 'interpolation' }
       | { in: 'attribute'; quote: '"' | "'" }
     ))
   | { kind: 'guard' };

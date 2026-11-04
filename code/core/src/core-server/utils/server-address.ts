@@ -72,9 +72,38 @@ const canReadNetworkInterfaces = () => {
   }
 };
 
+const tryListen = (port: number, host: string) =>
+  new Promise<number>((resolve, reject) => {
+    const server = net.createServer();
+    server.once('error', reject);
+    server.listen(port, host, () => {
+      const { port: freePort } = server.address() as AddressInfo;
+      server.close(() => resolve(freePort));
+    });
+  });
+
+// Tries the same ports as detect-port (the requested one, the next nine, then a random one), but
+// gives up after that. detect-port with a hostname keeps retrying forever when every bind fails.
+const findFreePortOnHost = async (port: number | undefined, host: string) => {
+  const candidates = port
+    ? Array.from({ length: Math.min(10, 65535 - port) }, (_, i) => port + i)
+    : [];
+  for (const candidate of [...candidates, 0]) {
+    try {
+      return await tryListen(candidate, host);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'EADDRNOTAVAIL') {
+        return undefined;
+      }
+    }
+  }
+  return undefined;
+};
+
 export const getServerPort = (port?: number, { exactPort, host }: PortOptions = {}) =>
-  detectFreePort(
-    canReadNetworkInterfaces() ? port : { port, hostname: getListenHost(host) }
+  (canReadNetworkInterfaces()
+    ? detectFreePort(port)
+    : findFreePortOnHost(port, getListenHost(host))
   )
     .catch((error) => {
       logger.error(error);

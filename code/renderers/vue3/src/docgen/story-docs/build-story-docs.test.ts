@@ -379,6 +379,9 @@ export const Primary = {
     expect(filled(story, { label: 'Hi' }, { label: 'Go', size: 'lg' })).toContain(
       '<MyButton size="lg" label="Go" />'
     );
+    expect(filled(story, { label: 'Hi' }, { label: undefined })).toContain(
+      `<MyButton :size="undefined + '!'" />`
+    );
     // An arg declared as a const follows there.
     const declared = await primaryStory(
       rendered('{ w: 1 }', '<MyButton :size="args.label.w + 1" v-bind="args" />')

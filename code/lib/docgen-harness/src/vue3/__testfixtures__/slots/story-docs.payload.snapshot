@@ -24,13 +24,13 @@ import SlotsShowcase from './SlotsShowcase.vue';
   </SlotsShowcase>
 </template>",
       "summary": undefined,
-      "template": "⟦guard header⟫⟧⟦guard item⟫⟧<script lang="ts" setup>
+      "template": "<script lang="ts" setup>
 import SlotsShowcase from './SlotsShowcase.vue';
 </script>
 
 <template>
   <SlotsShowcase⟦attr heading ~" "⟫ heading="Plain"⟧⟦props * except=["heading","default","header","item"] ~" "⟫⟧>
-    ⟦text default slot=true⟫Plain text content⟧
+    ⟦text default slot=true⟫Plain text content⟧⟦slots * slots=["header","item"] indent="    "⟫⟧
   </SlotsShowcase>
 </template>",
     },
@@ -51,7 +51,7 @@ import SlotsShowcase from './SlotsShowcase.vue';
   </SlotsShowcase>
 </template>",
       "summary": undefined,
-      "template": "⟦guard item⟫⟧<script lang="ts" setup>
+      "template": "<script lang="ts" setup>
 import SlotsShowcase from './SlotsShowcase.vue';
 </script>
 
@@ -60,7 +60,7 @@ import SlotsShowcase from './SlotsShowcase.vue';
     <p class="body">Body content</p>
     <template #header>
       <strong>Header content</strong>
-    </template>
+    </template>⟦slots * slots=["item"] indent="    "⟫⟧
   </SlotsShowcase>
 </template>",
     },

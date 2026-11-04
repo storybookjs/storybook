@@ -16,9 +16,12 @@ import type {
 import {
   type VueHolePlace,
   attributeOrder,
+  indent,
   printAttribute,
   quoteAttributeValue,
   slotContent,
+  slotOrder,
+  wrapSlotContent,
 } from '../../snippet-values.ts';
 import { printValue, snippetValueOf } from './classify-value.ts';
 
@@ -91,7 +94,7 @@ function partitionArgsByRole(args: ClassifiedArg[]): {
       .sort((a, b) => attributeOrder(a.name, b.name)),
     slots: args
       .filter((arg): arg is ClassifiedSlotArg => arg.role === 'slot')
-      .sort((a, b) => slotSortKey(a.name).localeCompare(slotSortKey(b.name))),
+      .sort((a, b) => slotOrder(a.name, b.name)),
   };
 }
 
@@ -157,13 +160,12 @@ function renderPropArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): Rendered
 function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): RenderedProp {
   const value = unwrapExpression(input.value);
 
-  if (input.plan.kind === 'hoist') {
-    return hoistedProp(input, ctx, scriptValue(input.variableName, value, ctx));
-  }
-
-  const attribute = printAttribute(input.attributeName, snippetValueOf(value));
+  const attribute =
+    input.plan.kind === 'hoist'
+      ? undefined
+      : printAttribute(input.attributeName, snippetValueOf(value));
   if (attribute === undefined) {
-    return hoistedProp(input, ctx, scriptValue(input.variableName, value, ctx));
+    return hoistedProp(input, ctx);
   }
 
   return {
@@ -171,21 +173,21 @@ function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): Rende
   };
 }
 
-/** Arg-value hoists share one const per arg name, so every reference keeps the same identity. */
-function hoistedProp(
-  input: Pick<RenderPropValueInput, 'attributeName' | 'variableName'>,
-  ctx: RenderContext,
-  source: string
-): RenderedProp {
-  const existing = ctx.hoistedArgs.get(input.variableName);
-  if (existing?.source === source) {
-    return { attrName: `:${input.attributeName}`, value: existing.binding };
-  }
-
-  const bindingName = allocateBindingName(input.variableName, ctx);
-  ctx.variables.set(bindingName, source);
-  ctx.hoistedArgs.set(input.variableName, { binding: bindingName, source });
-  return { attrName: `:${input.attributeName}`, value: bindingName };
+// An arg's value bound from the const it is declared as. Where that const holds a value a render
+// writes, which follows no control, the template marks the attribute instead.
+function hoistedProp(input: RenderPropValueInput, ctx: RenderContext): RenderedProp {
+  const shared = sharesWrittenConst(input.variableName, input.value, ctx);
+  const binding = hoistArgValue(input.variableName, input.value, ctx);
+  const prop = { attrName: `:${input.attributeName}`, value: binding };
+  return shared
+    ? {
+        attrName: marked(
+          ctx,
+          attributeHole(input.attributeName, input.variableName),
+          formatRenderedProp(prop)
+        ),
+      }
+    : prop;
 }
 
 function renderModelArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): RenderedProp {
@@ -377,11 +379,14 @@ export function renderBoundArgAttribute(
   );
 }
 
-/** Hoist an arg value into `<script setup>` and return the binding name that replaces it. */
+/**
+ * Hoist an arg value into `<script setup>` and return the binding name that replaces it. Hoists
+ * share one const per arg name and value, so every reference keeps the same identity.
+ */
 export function hoistArgValue(name: string, value: Node, ctx: RenderContext): string {
   const source = scriptValue(name, value, ctx);
   const existing = ctx.hoistedArgs.get(name);
-  if (existing?.source === source) {
+  if (existing && (existing.source === source || sharesWrittenConst(name, value, ctx))) {
     return existing.binding;
   }
 
@@ -389,6 +394,15 @@ export function hoistArgValue(name: string, value: Node, ctx: RenderContext): st
   ctx.variables.set(bindingName, source);
   ctx.hoistedArgs.set(name, { binding: bindingName, source });
   return bindingName;
+}
+
+// Whether a template's arg shares the const of a value a render writes, which `h()` declares
+// before any arg and no template marks; the snippet declares the two as one when they print alike.
+export function sharesWrittenConst(name: string, value: Node, ctx: RenderContext): boolean {
+  return (
+    ctx.mark !== undefined &&
+    ctx.hoistedArgs.get(name)?.source === printValue(unwrapExpression(value))
+  );
 }
 
 /** Hoist an arg value as a `ref` for a `v-model` binding; an absent value starts the ref empty. */
@@ -426,17 +440,6 @@ export function importStatementForBinding(
       },
     ],
   }).join('\n');
-}
-
-export function wrapSlotContent(name: string, content: string): string {
-  return name === 'default' ? content : `<template #${name}>\n${indent(content)}\n</template>`;
-}
-
-export function indent(source: string): string {
-  return source
-    .split('\n')
-    .map((line) => (line ? `  ${line}` : line))
-    .join('\n');
 }
 
 // Normalize author template literals so story-file indentation does not leak into snippets.
@@ -484,10 +487,6 @@ function normalizeTemplateBlock(source: string): string {
   }
 
   return lines.slice(start, end).join('\n');
-}
-
-function slotSortKey(name: string): string {
-  return name === 'default' ? '' : name;
 }
 
 function isVueExpressionAttribute(name: string): boolean {

@@ -22,10 +22,14 @@ describe('printHole', () => {
     expect(printHole({ kind: 'attr', arg: 'label' }, 'Go')).toBe('label="Go"');
   });
 
-  it('cannot print an attribute that would read back as another value', () => {
-    for (const value of [`a & "b" 'c'`, ['say "hi"'], () => {}]) {
-      expect(() => print(attr, value)).toThrow(new UnprintableArgError('x'));
-    }
+  it('writes what an attribute value cannot hold as is with the entities Vue decodes', () => {
+    expect(print(attr, `a & "b" 'c'`)).toBe(`label="a &amp; &quot;b&quot; 'c'"`);
+    expect(print(attr, ['say "hi"'])).toBe(`:label="['say &quot;hi&quot;']"`);
+  });
+
+  it('cannot print a value with no literal', () => {
+    expect(() => print(attr, () => {})).toThrow(new UnprintableArgError('x'));
+    expect(() => print({ kind: 'value', in: 'script' }, h('b'))).toThrow(UnprintableArgError);
   });
 
   it('prints the args a control added in name order, but those its place prints already', () => {
@@ -37,33 +41,54 @@ describe('printHole', () => {
     ).toBe('active :size="2"');
   });
 
-  it('prints text escaped, and slot content that is no text as an interpolation', () => {
+  it('binds a class or style the element writes, which Vue merges', () => {
+    expect(
+      printHole(
+        { kind: 'props', except: [], merge: ['class'], spread: true },
+        { class: 'big', title: 'Hi' }
+      )
+    ).toBe(`:class="'big'" title="Hi"`);
+  });
+
+  it('prints the slots a control set as children, opening a tag that closes itself', () => {
+    const slots: Extract<VueHolePlace, { kind: 'slots' }> = {
+      kind: 'slots',
+      slots: ['default', 'header'],
+      indent: '    ',
+    };
+    expect(printHole({ ...slots, spread: true }, { label: 'Go' })).toBe('');
+    expect(printHole({ ...slots, tag: 'Card', spread: true }, { label: 'Go' })).toBe(' />');
+    expect(printHole({ ...slots, spread: true }, { header: 'Hi', default: 'Body' })).toBe(
+      '\n    Body\n    <template #header>\n      Hi\n    </template>'
+    );
+    expect(printHole({ ...slots, tag: 'Card', spread: true }, { header: ' padded ' })).toBe(
+      ">\n    <template #header>\n      {{ ' padded ' }}\n    </template>\n  </Card>"
+    );
+  });
+
+  it('prints text escaped, and code as an interpolation', () => {
     expect(print({ kind: 'text' }, 'a < b & {{ c }}')).toBe('a &lt; b &amp; &#123;&#123; c }}');
-    expect(print({ kind: 'text', slot: true }, null)).toBe('{{ null }}');
+    expect(print({ kind: 'text' }, 'a{')).toBe('a&#123;');
+    expect(print({ kind: 'text' }, ['a}}b'])).toBe(`{{ ['a}\\}b'] }}`);
     expect(print({ kind: 'text' }, undefined)).toBe('');
-    expect(() => print({ kind: 'text' }, ['a'])).toThrow(UnprintableArgError);
-    expect(() => print({ kind: 'text', braceBefore: true }, '{x')).toThrow(UnprintableArgError);
-    expect(() => print({ kind: 'text', slot: true }, ' padded')).toThrow(UnprintableArgError);
-    expect(() => print({ kind: 'text', slot: true }, ['a}}b'])).toThrow(UnprintableArgError);
-    expect(() => print({ kind: 'text', slot: true }, { a: '&amp;' })).toThrow(UnprintableArgError);
+    expect(print({ kind: 'text', slot: true }, null)).toBe('{{ null }}');
+    expect(print({ kind: 'text', slot: true }, ' padded')).toBe(`{{ ' padded' }}`);
+    expect(print({ kind: 'text', slot: true }, { a: '&amp;' })).toBe(`{{ { a: '&amp;amp;' } }}`);
   });
 
   it('prints code in the quote the place does not use, an operand in parentheses if needed', () => {
     expect(print({ kind: 'value', in: 'attribute', quote: '"' }, 'a b')).toBe("'a b'");
     expect(print({ kind: 'value', in: 'attribute', quote: "'" }, 'it')).toBe('"it"');
+    expect(print({ kind: 'value', in: 'attribute', quote: '"' }, 'say "hi"')).toBe(
+      "'say &quot;hi&quot;'"
+    );
     expect(print({ kind: 'value', in: 'interpolation', readsOn: true }, 5)).toBe('(5)');
     expect(print({ kind: 'value', in: 'interpolation' }, -2)).toBe('(-2)');
+    expect(print({ kind: 'value', in: 'interpolation' }, 'a}}}b')).toBe(`'a}\\}\\}b'`);
     expect(print({ kind: 'value', in: 'script' }, '</d>')).toBe("'</d>'");
     expect(print({ kind: 'value', in: 'script' }, -2)).toBe('-2');
     expect(print({ kind: 'value', in: 'statement' }, -2)).toBe('(-2)');
     expect(print({ kind: 'value', in: 'statement', readsOn: true }, 5)).toBe('(5)');
-    expect(() => print({ kind: 'value', in: 'attribute', quote: '"' }, 'say "hi"')).toThrow(
-      UnprintableArgError
-    );
-    expect(() => print({ kind: 'value', in: 'interpolation' }, 'a}}b')).toThrow(
-      UnprintableArgError
-    );
-    expect(() => print({ kind: 'value', in: 'script' }, h('b'))).toThrow(UnprintableArgError);
   });
 
   it('cannot print an arg the snippet has no place for, nor a place it does not know', () => {

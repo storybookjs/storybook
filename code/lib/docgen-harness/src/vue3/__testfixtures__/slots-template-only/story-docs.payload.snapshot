@@ -27,7 +27,7 @@ import TemplateOnlySlots from './TemplateOnlySlots.vue';
   </TemplateOnlySlots>
 </template>",
       "summary": undefined,
-      "template": "⟦guard item⟫⟧<script lang="ts" setup>
+      "template": "<script lang="ts" setup>
 import TemplateOnlySlots from './TemplateOnlySlots.vue';
 </script>
 
@@ -36,7 +36,7 @@ import TemplateOnlySlots from './TemplateOnlySlots.vue';
     ⟦text default slot=true⟫Plain text content⟧
     <template #header>
       ⟦text header slot=true⟫Header text⟧
-    </template>
+    </template>⟦slots * slots=["item"] indent="    "⟫⟧
   </TemplateOnlySlots>
 </template>",
     },

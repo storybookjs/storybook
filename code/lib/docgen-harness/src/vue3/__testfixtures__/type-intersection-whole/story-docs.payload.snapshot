@@ -15,12 +15,12 @@ import TypeIntersectionWhole from './TypeIntersectionWhole.vue';
   <TypeIntersectionWhole id="save-button" size="medium" />
 </template>",
       "summary": undefined,
-      "template": "⟦guard default⟫⟧<script lang="ts" setup>
+      "template": "<script lang="ts" setup>
 import TypeIntersectionWhole from './TypeIntersectionWhole.vue';
 </script>
 
 <template>
-  <TypeIntersectionWhole⟦attr id ~" "⟫ id="save-button"⟧⟦attr size ~" "⟫ size="medium"⟧⟦props * except=["id","size","default"] ~" "⟫⟧ />
+  <TypeIntersectionWhole⟦attr id ~" "⟫ id="save-button"⟧⟦attr size ~" "⟫ size="medium"⟧⟦props * except=["id","size","default"] ~" "⟫⟧⟦slots * slots=["default"] indent="    " tag="TypeIntersectionWhole"⟫ />⟧
 </template>",
     },
   },

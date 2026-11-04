@@ -15,6 +15,13 @@ import PropSlotNameCollision from './PropSlotNameCollision.vue';
   <PropSlotNameCollision icon="pi pi-check" />
 </template>",
       "summary": undefined,
+      "template": "⟦guard default⟫⟧<script lang="ts" setup>
+import PropSlotNameCollision from './PropSlotNameCollision.vue';
+</script>
+
+<template>
+  <PropSlotNameCollision⟦attr icon ~" "⟫ icon="pi pi-check"⟧⟦props * except=["icon","default"] ~" "⟫⟧ />
+</template>",
     },
   },
 }

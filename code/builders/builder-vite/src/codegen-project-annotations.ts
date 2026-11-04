@@ -52,7 +52,6 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
   moduleImporters?: string[];
 }) {
   const { projectRoot, moduleImporters = [] } = options;
-  const hasImporters = moduleImporters.length > 0;
 
   const toModule = (previewAnnotation: PreviewAnnotation) => {
     const url = processPreviewAnnotation(previewAnnotation, projectRoot);
@@ -62,18 +61,23 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
   };
   const annotations = options.previewAnnotations.map(toModule);
   const previewFile = options.previewFile ? toModule(options.previewFile) : undefined;
+  // The importers import the preview file only
+  const hasImporters = moduleImporters.length > 0 && previewFile !== undefined;
 
   // Prefer the updated module from an HMR update, otherwise the original module
   const moduleAt = (index: number, variable: string) =>
     `hmrPreviewAnnotationModules[${index}] ?? ${variable}`;
-  const loadPreviewFile = ({ url, variable }: ReturnType<typeof toModule>, index: number) =>
-    hasImporters
-      ? `await ${genImportThroughModuleImporters(
-          moduleImporters,
-          JSON.stringify(toImportPath(url)),
-          `async () => ${moduleAt(index, variable)}`
-        )}`
-      : moduleAt(index, variable);
+  const loadPreviewFile = ({ url, variable }: ReturnType<typeof toModule>, index: number) => {
+    if (!hasImporters) {
+      return moduleAt(index, variable);
+    }
+    const importPath = JSON.stringify(toImportPath(url));
+    // The build's import of the preview file, which imports no other path
+    const importFn =
+      `async (path) => path === ${importPath} ? ${moduleAt(index, variable)} : ` +
+      `Promise.reject(new Error(\`The preview file's importFn can't import \${path}\`))`;
+    return `await ${genImportThroughModuleImporters(moduleImporters, importPath, importFn)}`;
+  };
   const importerImport = hasImporters ? `${genModuleImporterImports(moduleImporters)}\n` : '';
   const maybeAsync = hasImporters ? 'async ' : '';
 

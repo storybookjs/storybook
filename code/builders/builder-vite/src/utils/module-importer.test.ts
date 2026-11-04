@@ -24,36 +24,40 @@ describe('getModuleImporters', () => {
   });
 
   it('converts a file URL to a path', async () => {
-    expect(
-      await getModuleImporters(
-        optionsWith(['file:///project/a.js', new URL('file:///project/b.js')])
-      )
-    ).toEqual(['/project/a.js', '/project/b.js']);
+    expect(await getModuleImporters(optionsWith(['file:///project/importer.js']))).toEqual([
+      '/project/importer.js',
+    ]);
   });
 
-  it('keeps the preset order and uses a module listed twice once', async () => {
+  it('keeps a module listed twice at its last place, so the main config can move it', async () => {
     expect(
       await getModuleImporters(
         optionsWith(['/framework/importer.js', '/project/importer.js', '/framework/importer.js'])
       )
-    ).toEqual(['/framework/importer.js', '/project/importer.js']);
+    ).toEqual(['/project/importer.js', '/framework/importer.js']);
+  });
+
+  it('rejects a URL that is not a file URL', async () => {
+    await expect(
+      getModuleImporters(optionsWith(['https://example.com/importer.js']))
+    ).rejects.toThrow('must be an absolute path, a `file:` URL or a package specifier');
   });
 
   it('rejects an entry that is not a string', async () => {
     await expect(getModuleImporters(optionsWith([42]))).rejects.toThrow(
-      'must be an absolute path or a package specifier'
+      'must be an absolute path, a `file:` URL or a package specifier'
     );
   });
 
   it('rejects a value that is not an array', async () => {
     await expect(getModuleImporters(optionsWith('/project/importer.js'))).rejects.toThrow(
-      'must be an absolute path or a package specifier'
+      'must be an array of module specifiers'
     );
   });
 
   it('rejects a relative path', async () => {
     await expect(getModuleImporters(optionsWith(['./importer.js']))).rejects.toThrow(
-      'must be an absolute path or a package specifier'
+      'must be an absolute path, a `file:` URL or a package specifier'
     );
   });
 

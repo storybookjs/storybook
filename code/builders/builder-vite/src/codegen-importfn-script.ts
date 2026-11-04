@@ -40,20 +40,32 @@ export function generateImportFnScriptCode(
     }
   );
 
-  const moduleExpression =
-    moduleImporters.length > 0
-      ? genImportThroughModuleImporters(moduleImporters, 'path', '(path) => importers[path]()')
-      : 'importers[path]()';
+  const importers = `const importers = ${genObjectFromRawEntries(objectEntries)};`;
 
-  const code = dedent`
-    const importers = ${genObjectFromRawEntries(objectEntries)};
+  if (moduleImporters.length === 0) {
+    return dedent`
+      ${importers}
+
+      export async function importFn(path) {
+        return await importers[path]();
+      }
+    `;
+  }
+
+  return dedent`
+    ${genModuleImporterImports(moduleImporters)}
+
+    ${importers}
+
+    async function importFromBuild(path) {
+      if (!Object.hasOwn(importers, path)) {
+        throw new Error(\`The Storybook build has no file \${path}\`);
+      }
+      return importers[path]();
+    }
 
     export async function importFn(path) {
-      return await ${moduleExpression};
+      return await ${genImportThroughModuleImporters(moduleImporters, 'path', 'importFromBuild')};
     }
   `;
-
-  return moduleImporters.length > 0
-    ? `${genModuleImporterImports(moduleImporters)}\n\n${code}`
-    : code;
 }

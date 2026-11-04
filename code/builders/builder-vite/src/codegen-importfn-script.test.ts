@@ -131,8 +131,15 @@ describe('generateImportFnScriptCode with module importers', () => {
         "./Button.stories.js": () => import("/absolute/path/Button.stories.js")
       };
 
+      async function importFromBuild(path) {
+        if (!Object.hasOwn(importers, path)) {
+          throw new Error(\`The Storybook build has no file \${path}\`);
+        }
+        return importers[path]();
+      }
+
       export async function importFn(path) {
-        return await importModule_0(path, (path) => importers[path]());
+        return await importModule_0(path, importFromBuild);
       }"
     `);
   });
@@ -207,8 +214,15 @@ describe('generateImportFnScriptCode with module importers', () => {
           "./Button.stories.js": () => import("/absolute/path/Button.stories.js")
         };
 
+        async function importFromBuild(path) {
+          if (!Object.hasOwn(importers, path)) {
+            throw new Error(\`The Storybook build has no file \${path}\`);
+          }
+          return importers[path]();
+        }
+
         export async function importFn(path) {
-          return await importModule_1(path, (path) => importModule_0(path, (path) => importers[path]()));
+          return await importModule_1(path, async (path) => importModule_0(path, importFromBuild));
         }"
       `);
   });
@@ -242,5 +256,38 @@ describe('generateImportFnScriptCode with module importers', () => {
       project: true,
     });
     expect(calls).toEqual(['project ./Button.stories.js', 'framework ./Button.stories.js']);
+  });
+
+  it('gives each importer a promise, and a clear rejection for a path the build has not', async () => {
+    const dir = await realpath(await mkdtemp(join(tmpdir(), 'module-importer-')));
+    onTestFinished(() => rm(dir, { recursive: true }));
+    vi.spyOn(process, 'cwd').mockReturnValue(dir);
+    await writeFile(join(dir, 'Button.stories.js'), 'export const Primary = {};');
+    // Returns a plain object, not a promise
+    await writeFile(
+      join(dir, 'framework.js'),
+      'export function importModule(path, importFn) { return path.endsWith(".json") ? importFn(path) : { framework: true }; }'
+    );
+    await writeFile(
+      join(dir, 'project.js'),
+      dedent`
+        export function importModule(importPath, importFn) {
+          return importFn(importPath)
+            .then((module) => ({ ...module, project: true }))
+            .catch((error) => ({ error: error.message }));
+        }
+      `
+    );
+    await writeFile(
+      join(dir, 'stories.js'),
+      generateImportFnScriptCode(index, [join(dir, 'framework.js'), join(dir, 'project.js')])
+    );
+
+    const { importFn } = await import(/* @vite-ignore */ join(dir, 'stories.js'));
+
+    expect(await importFn('./Button.stories.js')).toEqual({ framework: true, project: true });
+    expect(await importFn('./Login.stories.json')).toEqual({
+      error: 'The Storybook build has no file ./Login.stories.json',
+    });
   });
 });

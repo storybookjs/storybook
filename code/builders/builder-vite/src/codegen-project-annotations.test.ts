@@ -84,7 +84,7 @@ describe('generateProjectAnnotationsCodeFromPreviews with module importers', () 
       import * as preview_2178760794 from "/project/.storybook/preview.ts";
 
       export async function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
-        const preview = await importModule_0("./.storybook/preview.ts", async () => hmrPreviewAnnotationModules[0] ?? preview_2178760794);
+        const preview = await importModule_0("./.storybook/preview.ts", async (path) => path === "./.storybook/preview.ts" ? hmrPreviewAnnotationModules[0] ?? preview_2178760794 : Promise.reject(new Error(\`The preview file's importFn can't import \${path}\`)));
         return preview.default.composed;
       }
 
@@ -118,7 +118,7 @@ describe('generateProjectAnnotationsCodeFromPreviews with module importers', () 
       export async function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
         const configs = [
           hmrPreviewAnnotationModules[0] ?? preview_3900539004,
-          await importModule_0("./.storybook/preview.ts", async () => hmrPreviewAnnotationModules[1] ?? preview_2178760794)
+          await importModule_0("./.storybook/preview.ts", async (path) => path === "./.storybook/preview.ts" ? hmrPreviewAnnotationModules[1] ?? preview_2178760794 : Promise.reject(new Error(\`The preview file's importFn can't import \${path}\`)))
         ];
         return composeConfigs(configs);
       }
@@ -142,7 +142,8 @@ describe('generateProjectAnnotationsCodeFromPreviews with module importers', () 
       moduleImporters: ['/project/importer.js'],
     });
 
-    expect(code).not.toContain('await importModule(');
+    expect(code).not.toContain('importModule_0');
+    expect(code).toContain('export function getProjectAnnotations(');
   });
 
   it('getProjectAnnotations reads the module importModule returns, also for an HMR module', async () => {
@@ -218,5 +219,35 @@ describe('generateProjectAnnotationsCodeFromPreviews with module importers', () 
 
     // The project's importer is asked first, so it sees what the framework's made of the file
     expect(await getProjectAnnotations()).toEqual({ order: ['file', 'framework', 'project'] });
+  });
+
+  it("rejects a path other than the preview file in the preview file's importFn", async () => {
+    const dir = await realpath(await mkdtemp(join(tmpdir(), 'module-importer-')));
+    onTestFinished(() => rm(dir, { recursive: true }));
+    vi.spyOn(process, 'cwd').mockReturnValue(dir);
+    await writeFile(join(dir, 'preview.js'), 'export default { composed: {} };');
+    await writeFile(
+      join(dir, 'importer.js'),
+      'export function importModule(path, importFn) { return importFn("./elsewhere.js"); }'
+    );
+    await writeFile(
+      join(dir, 'project-annotations.js'),
+      generateProjectAnnotationsCodeFromPreviews({
+        previewAnnotations: [],
+        previewFile: join(dir, 'preview.js'),
+        projectRoot: dir,
+        frameworkName: 'frameworkName',
+        isCsf4: true,
+        moduleImporters: [join(dir, 'importer.js')],
+      })
+    );
+
+    const { getProjectAnnotations } = await import(
+      /* @vite-ignore */ join(dir, 'project-annotations.js')
+    );
+
+    await expect(getProjectAnnotations()).rejects.toThrow(
+      "The preview file's importFn can't import ./elsewhere.js"
+    );
   });
 });

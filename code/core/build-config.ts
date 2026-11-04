@@ -264,19 +264,7 @@ const config: BuildEntries = {
         exportEntries: ['./internal/preview/runtime'],
         entryPoint: './src/preview/runtime.ts',
         dts: false,
-        chunkedRuntime: {
-          // The libraries of storybook/test (and the instrumenter), so that `dist/test` imports the
-          // preview runtime's copy from `dist/preview/vendor` instead of bundling another one.
-          sharedModules: [
-            'chai',
-            '@vitest/expect',
-            '@vitest/spy',
-            '@vitest/utils/error',
-            '@testing-library/dom',
-            '@testing-library/user-event',
-            '@testing-library/jest-dom/matchers',
-          ],
-        },
+        chunkedRuntime: true,
       },
       {
         exportEntries: ['./internal/manager/globals-runtime'],

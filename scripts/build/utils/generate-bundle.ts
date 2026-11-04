@@ -19,19 +19,11 @@ import {
 import { resolvePackageDir } from '../../../code/core/src/shared/utils/module.ts';
 import {
   type BuildEntries,
-  type BuildEntry,
   type EntryType,
   type EsbuildContextOptions,
   getExternal,
 } from './entry-utils.ts';
 import { tiePreviewRuntimeSetup } from './preview-runtime-entry.ts';
-import {
-  type SharedRuntimeModules,
-  collectPackageDirs,
-  isInPackageDirs,
-  sharedModuleName,
-  sharedRuntimeModulesPlugin,
-} from './shared-runtime-modules.ts';
 
 // repo root/bench/esbuild-metafiles/core
 const DIR_METAFILE_BASE = join(
@@ -204,13 +196,11 @@ export async function generateBundle({
     outDir,
     chunkDir,
     useGlobals,
-    sharedModules = [],
   }: {
     entryPoint: string;
     outDir: string;
     chunkDir: string;
     useGlobals: boolean;
-    sharedModules?: readonly string[];
   }) => {
     const name = basename(entryPoint).replace(/\.[^.]+$/, '');
     const alias = Object.fromEntries(
@@ -219,28 +209,9 @@ export async function generateBundle({
         value.startsWith('.') ? join(DIR_CWD, value) : value,
       ])
     );
-    // Shared modules are entries of their own, in chunks that contain only their packages, so that
-    // importing one doesn't evaluate any runtime code. Each gets a group of its own packages, the
-    // smallest first, so that it doesn't load the packages of another (the instrumenter only needs
-    // `@vitest/utils/error`); packages that several of them use go to the smallest.
-    const vendorGroups = sharedModules
-      .map((specifier) => ({ specifier, dirs: collectPackageDirs([specifier], DIR_CWD) }))
-      .sort((a, b) => a.dirs.length - b.dirs.length)
-      .map(({ specifier, dirs }, index, all) => ({
-        name: `vendor-${sharedModuleName(specifier)}`,
-        test: isInPackageDirs(dirs),
-        priority: all.length - index,
-        maxSize: 500 * 1024,
-      }));
     const build = await rolldown({
       cwd: DIR_CWD,
-      input: {
-        [name]: entryPoint,
-        ...Object.fromEntries(
-          sharedModules.map((specifier) => [`vendor/${sharedModuleName(specifier)}`, specifier])
-        ),
-      },
-      preserveEntrySignatures: sharedModules.length ? 'strict' : undefined,
+      input: { [name]: entryPoint },
       platform: 'browser',
       plugins: useGlobals ? [rolldownGlobalExternalsPlugin()] : [],
       resolve: {
@@ -261,10 +232,7 @@ export async function generateBundle({
       chunkFileNames: `${outDir}/${chunkDir}/${name}-[hash].js`,
       strictExecutionOrder: true,
       codeSplitting: {
-        groups: [
-          ...vendorGroups,
-          { name, maxSize: 500 * 1024 },
-        ],
+        groups: [{ name, maxSize: 500 * 1024 }],
       },
     });
     await build.close();
@@ -326,28 +294,6 @@ export async function generateBundle({
     );
   }
 
-  const regularRuntimeEntries = entries.runtime?.filter((entry) => !entry.chunkedRuntime) ?? [];
-  const chunkedRuntimeEntries = entries.runtime?.filter((entry) => entry.chunkedRuntime) ?? [];
-
-  const chunkedRuntimeOutput = ({ entryPoint, chunkedRuntime }: BuildEntry, useGlobals: boolean) => {
-    const outDir = basename(dirname(entryPoint));
-    return {
-      entryPoint,
-      outDir,
-      chunkDir: outDir === 'manager' ? '_manager-chunks' : '_chunks',
-      useGlobals,
-      sharedModules: (typeof chunkedRuntime === 'object' && chunkedRuntime.sharedModules) || [],
-    };
-  };
-
-  // Watch mode builds the runtimes with esbuild, without the shared modules' entries.
-  const sharedRuntimeModules: SharedRuntimeModules[] = isWatch
-    ? []
-    : chunkedRuntimeEntries
-        .map((entry) => chunkedRuntimeOutput(entry, false))
-        .filter(({ sharedModules }) => sharedModules.length)
-        .map(({ outDir, sharedModules }) => ({ outDir, specifiers: sharedModules }));
-
   if (entries.browser) {
     contexts.push(
       esbuild.context({
@@ -362,13 +308,25 @@ export async function generateBundle({
         target: BROWSER_TARGETS,
         supported: SUPPORTED_FEATURES,
         plugins: [
-          ...sharedRuntimeModules.map(sharedRuntimeModulesPlugin),
           ...sharedOptions.plugins,
           metafileWriterPlugin('browser', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
       })
     );
   }
+
+  const regularRuntimeEntries = entries.runtime?.filter((entry) => !entry.chunkedRuntime) ?? [];
+  const chunkedRuntimeEntries = entries.runtime?.filter((entry) => entry.chunkedRuntime) ?? [];
+
+  const chunkedRuntimeOutput = (entryPoint: string, useGlobals: boolean) => {
+    const outDir = basename(dirname(entryPoint));
+    return {
+      entryPoint,
+      outDir,
+      chunkDir: outDir === 'manager' ? '_manager-chunks' : '_chunks',
+      useGlobals,
+    };
+  };
 
   // Rolldown writes these once. Watch mode uses the esbuild bundle, which rebuilds on edit.
   const esbuildRuntimeEntries = isWatch
@@ -405,11 +363,11 @@ export async function generateBundle({
   const compile = await Promise.all(contexts);
   if (!isWatch) {
     await Promise.all([
-      ...chunkedRuntimeEntries.map((entry) =>
-        buildChunkedRuntimeEntry(chunkedRuntimeOutput(entry, false))
+      ...chunkedRuntimeEntries.map(({ entryPoint }) =>
+        buildChunkedRuntimeEntry(chunkedRuntimeOutput(entryPoint, false))
       ),
-      ...(entries.globalizedRuntime ?? []).map((entry) =>
-        buildChunkedRuntimeEntry(chunkedRuntimeOutput(entry, true))
+      ...(entries.globalizedRuntime ?? []).map(({ entryPoint }) =>
+        buildChunkedRuntimeEntry(chunkedRuntimeOutput(entryPoint, true))
       ),
     ]);
   }

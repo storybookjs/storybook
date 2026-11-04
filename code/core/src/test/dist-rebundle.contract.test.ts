@@ -6,13 +6,11 @@ import { rolldown } from 'rolldown';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const DIST = join(import.meta.dirname, '../../dist');
-const VENDOR_BUILT = existsSync(join(DIST, 'preview/vendor'));
+const TEST_BUILT = existsSync(join(DIST, 'test/index.js'));
 
-// Vite's dependency optimizer (Vite 8), Rollup and webpack builds bundle `storybook/test` and the
-// instrumenter again, honoring `sideEffects` in package.json. The vendor entries they import call
-// the lazy `init_*` function of their library; a bundler that treats them as side-effect free skips
-// that call and leaves the library uninitialized (`userEvent` was `undefined` in Vitest).
-describe('the test libraries bundled again by a consumer', () => {
+// Vite's dependency optimizer (Vite 8), Rollup and webpack bundle `storybook/test` again, honoring
+// `sideEffects` in package.json. The test libraries it bundles must still work after that.
+describe('storybook/test bundled again by a consumer', () => {
   let workDir: string | undefined;
   afterEach(() => {
     if (workDir) {
@@ -34,14 +32,15 @@ describe('the test libraries bundled again by a consumer', () => {
     await build.close();
     return import(/* @vite-ignore */ join(workDir, 'out/bundle.mjs'));
   };
-  const reExport = (file: string) => `export * from ${JSON.stringify(join(DIST, file))};`;
 
   it.runIf(process.env.CI)('is built before this suite runs', () => {
-    expect(VENDOR_BUILT).toBe(true);
+    expect(TEST_BUILT).toBe(true);
   });
 
-  it.runIf(VENDOR_BUILT)('initializes the libraries of storybook/test', async () => {
-    const test = await bundleAndImport(reExport('test/index.js'));
+  it.runIf(TEST_BUILT)('initializes the libraries of storybook/test', async () => {
+    const test = await bundleAndImport(
+      `export * from ${JSON.stringify(join(DIST, 'test/index.js'))};`
+    );
 
     document.body.innerHTML = '<button>Save</button>';
     const onClick = test.fn();
@@ -49,19 +48,5 @@ describe('the test libraries bundled again by a consumer', () => {
     await test.userEvent.click(test.within(document.body).getByRole('button', { name: 'Save' }));
     test.expect(onClick).toHaveBeenCalledOnce();
     expect(() => test.expect(1).toBe(2)).toThrow('expected 1 to be 2');
-  });
-
-  it.runIf(VENDOR_BUILT)('initializes the error utilities of the instrumenter', async () => {
-    // `dist/instrumenter` imports `processError` from this vendor entry.
-    const { processError } = await bundleAndImport(
-      reExport('preview/vendor/vitest-utils-error.js')
-    );
-
-    const error = Object.assign(new Error('expected 1 to be 2'), {
-      showDiff: true,
-      actual: 1,
-      expected: 2,
-    });
-    expect(processError(error).diff).toContain('Expected');
   });
 });

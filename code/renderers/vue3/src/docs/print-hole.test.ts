@@ -68,9 +68,9 @@ describe('printHole', () => {
     expect(printHole({ kind: 'merged', code: 'cls', quote: '"', arg: 'class' }, 'a "b"')).toBe(
       `:class="[cls, 'a &quot;b&quot;']"`
     );
-    expect(printHole({ kind: 'merged', code: 'cls', quote: "'", arg: 'class' }, undefined)).toBe(
-      `:class='cls'`
-    );
+    expect(
+      printHole({ kind: 'merged', code: 'css', quote: "'", after: true, arg: 'style' }, "a: 'b'")
+    ).toBe(`:style='["a: &#39;b&#39;", css]'`);
   });
 
   it('prints the slots a control set as children, opening a tag that closes itself', () => {

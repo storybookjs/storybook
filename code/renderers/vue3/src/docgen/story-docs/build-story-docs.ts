@@ -388,9 +388,8 @@ function enrichStoryDoc(
 }
 
 // The template with each hole laid out on its line. A hole that prints nothing on a line of its
-// own, which the snippet leaves blank, takes that line's indent as its `space`, a `slots` hole
-// indents the children it prints as its line, or past it where it opens a tag, and an
-// `overridden` hole holds its text as `written`.
+// own, which the snippet leaves blank, takes that line's indent as its `space`, and a `slots` hole
+// indents the children it prints as its line, or past it where it opens a tag.
 function laidOut(template: SnippetTemplate<VueHolePlace>): SnippetTemplate<VueHolePlace> {
   const result: SnippetTemplate<VueHolePlace> = [];
   for (const [index, segment] of template.entries()) {
@@ -401,9 +400,6 @@ function laidOut(template: SnippetTemplate<VueHolePlace>): SnippetTemplate<VueHo
     } else if (segment.kind === 'slots') {
       const line = /[^\n]*$/.exec(stripHoles(result))![0];
       result.push({ ...segment, indent: /^\s*/.exec(line)![0] + (segment.tag ? '  ' : '') });
-    } else if (segment.kind === 'overridden') {
-      // While neither arg it follows changes, it prints the attribute as the snippet does.
-      result.push({ ...segment, written: segment.text });
     } else if (
       typeof previous === 'string' &&
       /\n[ \t]+$/.test(previous) &&

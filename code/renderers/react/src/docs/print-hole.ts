@@ -23,23 +23,24 @@ export const printHole: PrintHole<ReactHolePlace> = (hole, value) => {
   const arg = hole.arg ?? '';
   switch (hole.kind) {
     case 'attr':
-      return value === undefined ? '' : printAttribute(hole.name ?? arg, describe(arg, value));
+      return value === undefined ? '' : printAttribute(hole.name ?? arg, toJsxValue(arg, value));
     case 'text':
-      return value === undefined ? '' : printChildren(describe(arg, value));
+      return value === undefined ? '' : printChildren(toJsxValue(arg, value));
     case 'close':
       return value === undefined
         ? ' />'
-        : printClose(hole.element, printChildren(describe(arg, value)));
+        : printClose(hole.element, printChildren(toJsxValue(arg, value)));
     case 'value':
       return printValue(value, arg);
     case 'attrs': {
       const added = Object.entries(value as Args).filter(([name]) => !hole.except.includes(name));
-      const attributes = printAttributes(added.map(([name, item]) => [name, describe(name, item)]));
+      const attributes = printAttributes(
+        added.map(([name, item]) => [name, toJsxValue(name, item)])
+      );
       return attributes.map((attribute) => ` ${attribute}`).join('');
     }
     case 'entries':
-      return codes(value as Args)
-        .filter(([name]) => !hole.except.includes(name))
+      return codes(value as Args, hole.except)
         .map((entry) => `,\n${printArgsEntry(entry)}`)
         .join('');
     case 'object':
@@ -51,10 +52,13 @@ export const printHole: PrintHole<ReactHolePlace> = (hole, value) => {
   }
 };
 
-const codes = (args: Args) =>
-  Object.entries(args).map(([name, value]): [string, string] => [name, printValue(value, name)]);
+// Each arg as its code, but those named in `except`.
+const codes = (args: Args, except: string[] = []) =>
+  Object.entries(args)
+    .filter(([name]) => !except.includes(name))
+    .map(([name, value]): [string, string] => [name, printValue(value, name)]);
 
-const describe = (name: string, value: unknown): JsxValue => {
+const toJsxValue = (name: string, value: unknown): JsxValue => {
   if (typeof value === 'boolean') {
     return { kind: 'boolean', value };
   }

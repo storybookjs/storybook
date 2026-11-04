@@ -40,7 +40,9 @@ jobs:
     # only to their own pull-request cache.
     # TEMPORARY: kasper/nx-cloud-revive is allowed so PR #37181 can test the writes. Remove it, and
     # its deployment branch rule on the nx-cloud-write environment, before merging.
-    environment: ${{ (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/next' || github.ref == 'refs/heads/kasper/nx-cloud-revive'))) && 'nx-cloud-write' || '' }}
+    # TEMPORARY: kasper/nx-cloud-fast-ci likewise, so PR #37189 can measure the workers' node_modules
+    # cache. Remove it, and its deployment branch rule, before merging.
+    environment: ${{ (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/next' || github.ref == 'refs/heads/kasper/nx-cloud-revive' || github.ref == 'refs/heads/kasper/nx-cloud-fast-ci'))) && 'nx-cloud-write' || '' }}
     timeout-minutes: 90
     runs-on: ubuntu-latest
     env:

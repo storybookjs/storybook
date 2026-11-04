@@ -236,6 +236,15 @@ describe('printTemplate', () => {
     ).toBe('<Button label="Save" />');
   });
 
+  it('writes the long form of a shorthand whose arg is written as the same name', () => {
+    expect(
+      print('<Button {label} class:active />', '{ label: label, active: active }', false, {
+        name: 'rest',
+        aliases: { label: 'label', active: 'active' },
+      })
+    ).toBe('<Button label={label} class:active={active} />');
+  });
+
   it('keeps the name of a shorthand property that reads a destructured arg', () => {
     expect(
       print('<Button value={{ label }} />', "{ label: 'Save' }", false, {

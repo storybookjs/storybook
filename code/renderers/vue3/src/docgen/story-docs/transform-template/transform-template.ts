@@ -19,6 +19,7 @@ import {
   unwrapExpression,
   walk,
 } from 'storybook/internal/csf-tools';
+import { createHoleMarks } from 'storybook/internal/docs-tools';
 
 import type { ClassifiedArg } from '../classify-args/classify-args.ts';
 import { isFunctionExpression, printValue, snippetValueOf } from '../../shared/classify-value.ts';
@@ -38,6 +39,7 @@ import {
 } from '../../shared/render-primitives.ts';
 import {
   type BoundCode,
+  type VueHolePlace,
   expressionCode,
   interpolatedText,
   operand,
@@ -603,8 +605,8 @@ function expandArgsBinding(
 
 // A prop the element writes before its args binding, which the binding writes over once a control
 // sets the arg, or a `class` or `style` it binds, which Vue merges with the arg's, as a `bound`
-// hole. The prop is printed as the snippet prints it, with the holes of the args it reads recorded
-// as its `code` instead of marked, so the hole holds them.
+// hole. The prop is printed as the snippet prints it, with the holes of the args it reads made
+// part of its `code` instead of the template, so the hole holds them.
 function boundProp(
   prop: ElementProp,
   directive: DirectiveNode,
@@ -626,7 +628,11 @@ function boundProp(
     return undefined;
   }
 
-  const holes: Extract<BoundCode[number], object>[] = [];
+  // The holes of the args the prop reads, marked apart from the snippet's, which make its code.
+  const marks = createHoleMarks<VueHolePlace>([
+    state.template,
+    ...[...state.argsByName.values()].map((arg) => printValue(unwrapExpression(arg.value))),
+  ]);
   const { mark } = state.ctx;
   const own = {
     ...state,
@@ -638,37 +644,33 @@ function boundProp(
         ((hole, text, space) =>
           hole.kind === 'value' && hole.in === 'script'
             ? mark(hole, text, space)
-            : `\0${holes.push({ ...hole, text } as (typeof holes)[number]) - 1}\0`),
+            : marks.mark(hole, text, space)),
     } satisfies RenderContext,
   };
   if (binding && !transformDirective(binding, attributesByName, element, own)) {
     return false;
   }
-  // The code from `from` to `to` with the binding's edits made, its holes recorded.
-  const codeOf = (from: number, to: number): BoundCode =>
-    applyEdits(
-      state.template.slice(from, to),
-      own.edits
-        .filter((edit) => edit.start >= from && edit.end <= to)
-        .map((edit) => ({ ...edit, start: edit.start - from, end: edit.end - from }))
-    )
-      .split(/\0(\d+)\0/)
-      .map((part, index) => (index % 2 ? holes[Number(part)] : part))
-      .filter((part) => part !== '');
+  const codeOf = (marked: string) => (marks.toTemplate(marked) ?? []) as BoundCode;
   const start = Math.min(prop.loc.start.offset, ...own.edits.map((edit) => edit.start));
   const end = Math.max(prop.loc.end.offset, ...own.edits.map((edit) => edit.end));
-  const code = codeOf(start, end);
+  const code = codeOf(
+    applyEdits(
+      state.template.slice(start, end),
+      own.edits.map((edit) => ({ ...edit, start: edit.start - start, end: edit.end - start }))
+    )
+  );
   const text = code.map((part) => (typeof part === 'string' ? part : part.text)).join('');
 
   let over: BoundCode;
   if (merge) {
     // Both in one binding, in the order Vue merges them: the args binding's after one before it.
     const quote = exp && surroundingAttributeQuote(exp, state.template);
+    const substituted = exp && quote && substituteArgsExpression(exp, own, 'directive');
     const [open, expression, close] =
       exp && quote
         ? [
             state.template.slice(prop.loc.start.offset, exp.loc.start.offset),
-            codeOf(exp.loc.start.offset, exp.loc.end.offset),
+            substituted ? codeOf(substituted.text) : [exp.loc.source],
             state.template.slice(exp.loc.end.offset, prop.loc.end.offset),
           ]
         : [`:${name}="`, [exp?.loc.source || camelCase(name)], '"'];
@@ -676,13 +678,14 @@ function boundProp(
     const both = after ? [value, ', ', ...expression] : [...expression, ', ', value];
     over = [`${open}[`, ...(both as BoundCode), `]${close}`];
   } else {
-    // An earlier one of two props of a name leaves it to the later one.
+    // An earlier one of two props of a name leaves it to the later one, which Vue keeps.
     const later = attributesByName
       .get(name)
       ?.some(
         (other) =>
           other.loc.start.offset > prop.loc.start.offset &&
-          other.loc.start.offset < directive.loc.start.offset
+          (other.type === NodeTypes.ATTRIBUTE || other.name === 'bind') &&
+          !setsOwnKey(other)
       );
     const by = camelCase(name);
     over = later ? [] : [{ kind: 'attr', ...(name !== by && { name }), arg: by, text: '' }];

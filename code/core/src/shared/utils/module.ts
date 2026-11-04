@@ -4,7 +4,6 @@ import { win32 } from 'node:path/win32';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { resolveModulePath } from 'exsolve';
-import semver from 'semver';
 import { dirname, join } from 'pathe';
 
 import { jsModuleExtensions } from '../constants/extensions.ts';
@@ -51,7 +50,8 @@ let typescriptLoaderRegistrationError: unknown = null;
 
 function registerTypescriptLoader() {
   typescriptLoaderRegistration ??= (async () => {
-    if (semver.gte(process.versions.node, '26.0.0')) {
+    // A plain major check keeps semver out of this module, which other packages bundle from source.
+    if (Number(process.versions.node.split('.')[0]) >= 26) {
       try {
         const { load } = await import('storybook/internal/bin/loader');
         nodeModule.registerHooks({ load });

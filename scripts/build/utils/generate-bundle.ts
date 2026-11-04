@@ -37,6 +37,14 @@ const DIR_METAFILE_BASE = join(
 );
 export const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 
+/** Resolve the React `useSyncExternalStore` shim to React itself, see the shim module. */
+const USE_SYNC_EXTERNAL_STORE_ALIAS = Object.fromEntries(
+  ['use-sync-external-store/shim', 'use-sync-external-store/shim/index.js'].map((specifier) => [
+    specifier,
+    join(import.meta.dirname, 'use-sync-external-store-shim.ts'),
+  ])
+);
+
 function rolldownGlobalExternalsPlugin(): RolldownPlugin {
   const prefix = '\0storybook-global:';
 
@@ -116,6 +124,7 @@ export async function generateBundle({
     treeShaking: true,
     color: true,
     external,
+    alias: USE_SYNC_EXTERNAL_STORE_ALIAS,
     loader: {
       // The MCP packages import markdown/html instruction and template files as text
       '.md': 'text',
@@ -165,6 +174,7 @@ export async function generateBundle({
       'msw/http',
     ], // Prefer `alias` over `external` because we're using aliases to bundle everything into the runtimes
     alias: {
+      ...USE_SYNC_EXTERNAL_STORE_ALIAS,
       // The following aliases ensures that the runtimes bundles in the actual sources of these modules
       // instead of attempting to resolve them to the dist files, because the dist files are not available yet.
       'storybook/preview-api': './src/preview-api',
@@ -254,11 +264,14 @@ export async function generateBundle({
         platform: 'node',
         target: NODE_TARGET,
         alias: {
+          ...sharedOptions.alias,
           // Keep a single bundled acorn copy when CommonJS dependencies such as
           // acorn-jsx require('acorn') alongside ESM imports.
           acorn: join(resolvePackageDir('acorn'), 'dist/acorn.mjs'),
           // Avoid a nested @polka/url@0.5.0 CJS copy that drops polka's named `parse` export.
           '@polka/url': join(resolvePackageDir('@polka/url'), 'build.mjs'),
+          // jsonc-parser's `main` is a UMD build whose requires esbuild cannot follow.
+          'jsonc-parser': join(resolvePackageDir('jsonc-parser'), 'lib/esm/main.js'),
         },
         chunkNames: '_node-chunks/[name]-[hash]',
         banner: {

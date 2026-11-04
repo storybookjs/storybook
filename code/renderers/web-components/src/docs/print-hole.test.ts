@@ -250,10 +250,12 @@ describe('a changed arg', () => {
         { arg: 'w', path: ['a'], name: 'aria-x', tag: 'y-el' },
       ],
     };
-    expect(printHole(hole, { v: ["it's", 1, null], w: { a: { b: true } }, other: 1 })).toBe(
+    expect(
+      printHole(hole, { v: ["it's", 1, null, '<!--<script></script>'], w: { a: { b: true } } })
+    ).toBe(
       [
         '<script>',
-        "  document.querySelector('x-el').items = ['it\\'s', 1, null];",
+        "  document.querySelector('x-el').items = ['it\\'s', 1, null, '<\\!--<script><\\/script>'];",
         "  document.querySelector('y-el')['aria-x'] = { b: true };",
         '</script>',
       ].join('\n')

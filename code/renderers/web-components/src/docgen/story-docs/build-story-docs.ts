@@ -35,6 +35,7 @@ import {
 import type { HtmlHolePlace, HtmlSnippetTemplate, SnippetProperty } from '../../snippet-holes.ts';
 import { evaluateArgValue, isFunctionNode } from './arg-values.ts';
 import { classifyArg, type ArgBinding } from './classify-args.ts';
+import { parseArgKey } from '../../arg-keys.ts';
 import type { ElementSnippet } from './print-element.ts';
 import { printElementSnippet } from './print-element.ts';
 import { handlerText } from './template-holes.ts';
@@ -270,7 +271,8 @@ const renderedArgsSnippet = (
     deps.declaration,
     deps.docgenPayload.argTypes ?? {},
     deps.tag,
-    resolved.unresolved
+    resolved.unresolved,
+    render.kind === 'resolved' || render.kind === 'unresolved'
   );
   warnings.push(args.warning);
 
@@ -307,7 +309,8 @@ const argsSnippet = (
   declaration: ManifestDeclaration,
   argTypes: WebComponentsDocgenPayload['argTypes'],
   tag: string,
-  unresolvedArgs: readonly string[]
+  unresolvedArgs: readonly string[],
+  customRender: boolean
 ): SnippetResult => {
   const snippet: ElementSnippet = {
     tag,
@@ -378,20 +381,23 @@ const argsSnippet = (
   const html = printElementSnippet(snippet);
   return {
     snippet: html,
-    template: elementTemplate(html, snippet, args, argTypes, declaration),
+    template: elementTemplate(html, snippet, args, argTypes, declaration, customRender),
     ...joinWarnings(warnings),
   };
 };
 
 // The template of the element, with a hole for each arg the snippet prints no value of where it
 // would print one, and after it a `props` hole for the args Storybook's render sets as properties,
-// which html cannot set. Its marks hold no character of `html`, the static snippet.
+// which html cannot set. A render of the story's own, which the server cannot read, may set them
+// any other way, as may Storybook's render an undeclared arg whose key names a category, so those
+// get a `guard` hole. Its marks hold no character of `html`, the static snippet.
 const elementTemplate = (
   html: string,
   snippet: ElementSnippet,
   args: Record<string, Node>,
   argTypes: WebComponentsDocgenPayload['argTypes'],
-  declaration: ManifestDeclaration
+  declaration: ManifestDeclaration,
+  customRender: boolean
 ): HtmlSnippetTemplate | undefined => {
   const kinds = new Map(
     Object.entries(args).map(([key, node]) => [key, evaluateArgValue(node).kind])
@@ -404,6 +410,7 @@ const elementTemplate = (
     styleRules: [...snippet.styleRules],
   };
   const properties: SnippetProperty[] = [];
+  const guarded: string[] = [];
   for (const key of new Set([...Object.keys(args), ...Object.keys(argTypes ?? {})])) {
     const binding = classifyArg(key, kinds.get(key) === 'function', argTypes ?? {}, declaration);
     switch (binding.kind) {
@@ -418,21 +425,28 @@ const elementTemplate = (
         }
         break;
       case 'property':
-        properties.push({ arg: key, name: binding.name, tag: snippet.tag });
-        break;
       case 'unknown':
-        properties.push({ arg: key, name: key, tag: snippet.tag });
+        if (customRender || (binding.kind === 'unknown' && parseArgKey(key))) {
+          guarded.push(key);
+        } else {
+          properties.push({
+            arg: key,
+            name: binding.kind === 'property' ? binding.name : key,
+            tag: snippet.tag,
+          });
+        }
         break;
       default:
         break;
     }
   }
   const marks = createHoleMarks<HtmlHolePlace>([html]);
+  const guards = guarded.map((arg) => marks.mark({ kind: 'guard', arg }, '')).join('');
   const props =
     properties.length === 0
       ? ''
       : marks.mark({ kind: 'props', spread: true, properties }, '', '\n');
-  return marks.toTemplate(printElementSnippet(template, marks) + props);
+  return marks.toTemplate(guards + printElementSnippet(template, marks) + props);
 };
 
 // Each value is the arg `source`'s, so the template prints a hole for it. An unset arg is only

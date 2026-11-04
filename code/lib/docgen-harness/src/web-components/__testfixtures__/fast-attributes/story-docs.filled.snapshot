@@ -3,10 +3,7 @@
 <script>
   document.querySelector('fast-attributes').items = ['a & <changed>'];
 </script>",
-  "DomNode": "<fast-attributes label="Count &amp; &lt;changed>" size="large &amp; &lt;changed>" max-count="6" disabled></fast-attributes>
-<script>
-  document.querySelector('fast-attributes').items = ['a & <changed>'];
-</script>",
+  "DomNode": "UnprintableArgError: The snippet cannot show the current value of the `items` arg.",
   "LitTemplate": "<fast-attributes label="Count &amp; &lt;changed>" size="large &amp; &lt;changed>" max-count="6" disabled></fast-attributes>
 <script>
   document.querySelector('fast-attributes').items = ['a & <changed>'];

@@ -3,9 +3,6 @@
 <script>
   document.querySelector('multi-beta').betaLabel = 'Default beta & <changed>';
 </script>",
-  "DomNode": "<multi-beta></multi-beta>
-<script>
-  document.querySelector('multi-beta').betaLabel = 'Beta & <changed>';
-</script>",
+  "DomNode": "UnprintableArgError: The snippet cannot show the current value of the `betaLabel` arg.",
   "LitTemplate": "<multi-beta beta-label="Beta &amp; &lt;changed>"></multi-beta>",
 }

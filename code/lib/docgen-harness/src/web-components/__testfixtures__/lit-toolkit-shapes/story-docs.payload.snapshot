@@ -46,7 +46,7 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "⟦style base-part selector="lit-toolkit-shapes::part(base)"⟫⟧⟦style active-state selector="lit-toolkit-shapes:state(active)"⟫⟧<lit-toolkit-shapes⟦attr size mode="field" ~"\n  "⟫
+      "template": "⟦guard computed⟫⟧⟦guard version⟫⟧⟦guard pressed⟫⟧⟦guard onSelect⟫⟧⟦style base-part selector="lit-toolkit-shapes::part(base)"⟫⟧⟦style active-state selector="lit-toolkit-shapes:state(active)"⟫⟧<lit-toolkit-shapes⟦attr size mode="field" ~"\n  "⟫
   size="large"⟧⟦attr level mode="field" ~"\n  "⟫
   level="2"⟧⟦attr tags mode="field" ~"\n  "⟫
   tags="[&quot;b&quot;]"⟧⟦attr label mode="field" ~"\n  "⟫
@@ -57,7 +57,7 @@
     const host = document.currentScript.previousElementSibling;
     host.addEventListener('toolkit-resize', () => {});
   }
-</script>⟦props * properties=[{"arg":"computed","name":"computed","tag":"lit-toolkit-shapes"},{"arg":"version","name":"version","tag":"lit-toolkit-shapes"},{"arg":"pressed","name":"pressed","tag":"lit-toolkit-shapes"},{"arg":"onSelect","name":"onSelect","tag":"lit-toolkit-shapes"}] ~"\n"⟫⟧",
+</script>",
       "warning": "Incomplete snippet: `(args) => { const el = document.createElement('lit-toolkit-shapes'); el.setAttribute('size', String(args.size)); el.setAttribute('level', String(args.level)); el.setAttribute('label', String(args.label)); (el as HTMLElement & { tags: string[] }).tags = args.tags as string[]; el.addEventListener('toolkit-resize', args.onToolkitResize as EventListener); return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-lit-toolkit-shapes--lit-template": {

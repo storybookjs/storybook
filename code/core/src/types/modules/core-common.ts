@@ -673,7 +673,7 @@ export interface StorybookFeatures {
    * @default false
    * @experimental
    */
-  experimentalLiveSnippets?: boolean;
+  experimentalLiveServerSnippets?: boolean;
 
   /**
    * Keep Vite from merging the pre-split preview runtime back into one output chunk.

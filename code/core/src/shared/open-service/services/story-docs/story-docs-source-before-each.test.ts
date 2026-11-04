@@ -106,7 +106,7 @@ describe('snippet helpers', () => {
 
 describe('selectLiveSnippetForStory', () => {
   beforeEach(() => {
-    vi.stubGlobal('FEATURES', { experimentalLiveSnippets: true });
+    vi.stubGlobal('FEATURES', { experimentalLiveServerSnippets: true });
   });
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -260,7 +260,7 @@ describe('shouldSkipStoryDocsEmit', () => {
   });
 });
 
-describe('selectLiveSnippetForStory without experimentalLiveSnippets', () => {
+describe('selectLiveSnippetForStory without experimentalLiveServerSnippets', () => {
   it('selects the static snippet with its own warning, as before live snippets', () => {
     vi.stubGlobal('FEATURES', {});
     expect(
@@ -273,7 +273,7 @@ describe('selectLiveSnippetForStory without experimentalLiveSnippets', () => {
 describe('storyDocsSourceBeforeEach', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal('FEATURES', { docgenServer: true, experimentalLiveSnippets: true });
+    vi.stubGlobal('FEATURES', { docgenServer: true, experimentalLiveServerSnippets: true });
     mockedEmitTransformCode.mockResolvedValue(undefined);
     mockStoryDocsService(() => Promise.resolve(payload));
   });

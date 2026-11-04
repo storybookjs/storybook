@@ -163,7 +163,7 @@ const config = defineMain({
     experimentalTestSyntax: true,
     experimentalReactComponentMeta: true,
     experimentalSearchDocsHeadings: true,
-    experimentalLiveSnippets: true,
+    experimentalLiveServerSnippets: true,
   },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],
   viteFinal: async (viteConfig: InlineConfig, { configType }: Options) => {

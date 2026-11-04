@@ -13,7 +13,7 @@ snippet to the manager Code panel and the docs blocks via `SNIPPET_RENDERED`, re
 The goal: after you change a control, the snippet shows code you can copy into your project, and
 it reads like code you would write. It does not have to be perfect; it has to be logical.
 
-Live snippets are behind `features.experimentalLiveSnippets`. While it is off, `storyArgsChanged`
+Live snippets are behind `features.experimentalLiveServerSnippets`. While it is off, `storyArgsChanged`
 never reports a change, so the preview shows the static snippet, as before live snippets.
 
 A story's `snippet` is static: it shows the args written in the story file, and it is what agents

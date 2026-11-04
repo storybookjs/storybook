@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 import process from 'process';
 import { dedent } from 'ts-dedent';
 
-import { SbPage, checkTemplate, isReactSandbox } from './util.ts';
+import { SbPage, isReactSandbox } from './util.ts';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
@@ -167,20 +167,6 @@ test.describe('addon-docs', () => {
         Boolean((globalThis as { FEATURES?: { docgenServer?: boolean } }).FEATURES?.docgenServer)
       )),
       'Covers snippets filled from a server template; without server docgen, renderer source decorators make them'
-    );
-    // The renderers and frameworks that fill snippet templates so far. The gate goes once every
-    // one with server docgen does.
-    const fillsTemplates = [
-      '@storybook/react',
-      '@storybook/vue3',
-      '@storybook/svelte',
-      '@storybook/web-components',
-    ];
-    test.skip(
-      !checkTemplate(templateName, ({ expected }) =>
-        fillsTemplates.some((name) => name === expected.renderer || name === expected.framework)
-      ),
-      'This renderer does not fill snippet templates yet'
     );
     test.skip(templateName.includes('react-native-web'), 'React Native has no Code panel snippet');
     test.skip(

@@ -32,7 +32,6 @@ import {
   type JsxValue,
   type Mark,
   type ReactHolePlace,
-  printArgsObject,
   printAttribute,
   printAttributes,
   printChildren,
@@ -91,6 +90,12 @@ export function getCodeSnippet(
 }
 
 type Args = Record<string, Node>;
+
+// The args a bound story is called with, one a line, each as its code.
+const printArgsObject = (args: [string, string][]) =>
+  args.length === 0
+    ? '{}'
+    : `{\n${args.map(([name, code]) => `    ${JSON.stringify(name)}: ${code}`).join(',\n')}\n}`;
 
 interface Edit {
   start: number;
@@ -446,8 +451,8 @@ function rewriteJsx(
       if (arg === null) {
         return;
       }
-      const read = Object.hasOwn(merged, arg) ? arg : key;
-      const set = read !== null && Object.hasOwn(merged, read);
+      const read = [arg, key].find((k): k is string => k !== null && Object.hasOwn(merged, k));
+      const set = read !== undefined;
       const text = set ? toAttr(name, merged[read], printAt(a.start)) : code.slice(a.start, a.end);
       edits.push({
         start: a.start,

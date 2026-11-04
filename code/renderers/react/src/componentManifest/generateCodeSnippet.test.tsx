@@ -1305,6 +1305,13 @@ describe('template', () => {
       );
     });
 
+    it('prints the arg it names where the story sets it, as the spread does', () => {
+      const both = story(`title: 'T', label: 'Go'`);
+      expect(snippetOf(both)).toBe(
+        'const S = () => <Button title="T" label="Go">Click me</Button>;'
+      );
+    });
+
     it('follows the arg it names from a later spread only', () => {
       const between = withCSF3(
         `export const S = { args: { label: 'Go' }, render: (args) => <Button {...args} title={args.label} {...args} /> };`

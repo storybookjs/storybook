@@ -190,9 +190,12 @@ const bindsName = (node: Node, names: Set<string>): boolean => {
 };
 
 // Whether a value in place of `node` needs parentheses to keep its meaning, as a number before a
-// member, `(5).toFixed()`, or a function called, `(() => {})()`.
+// member, `(5).toFixed()`, a function called, `(() => {})()`, an object an arrow returns,
+// `() => ({})`, or a negative number after a minus, `1 - (-2)`.
 const needsParentheses = (node: Node, parent: Node | null) =>
   (parent?.type === 'MemberExpression' && parent.object === node) ||
+  (parent?.type === 'ArrowFunctionExpression' && parent.body === node) ||
+  (parent?.type === 'BinaryExpression' && parent.operator === '-' && parent.right === node) ||
   ((parent?.type === 'CallExpression' || parent?.type === 'NewExpression') &&
     parent.callee === node) ||
   parent?.type === 'UnaryExpression' ||

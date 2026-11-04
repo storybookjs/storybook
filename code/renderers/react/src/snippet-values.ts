@@ -13,28 +13,18 @@ export type JsxValue =
   | { kind: 'jsx'; code: string }
   | { kind: 'code'; code: string };
 
-// Where a hole of a React template stands, which the provider writes and `printHole` prints:
+// Where a hole of a React template stands, which the provider writes and `printHole` fills:
 //
-// - `attr`: the attribute `name`, which is the arg's own unless given, left out while the arg is
-//   unset.
+// - `attr`: the attribute `name`, which is the arg's own unless given, left out while it is unset.
 // - `text`: the arg as content.
-// - `close`: the end of `element`, with the `children` arg as content.
 // - `value`: the arg as an expression.
-// - `attrs`: the args a control set, as attributes, but those named in `except`.
-// - `entries` and `object`: the args a control set, as the args of a bound story, but those named
-//   in `except`; `object` writes the whole object for a story that passes none.
-// - `overridden`: an attribute written as `name={args.reads}` before `{...args}`, which writes over
-//   it once a control sets the arg `name`. Of the args a control set, it prints `name` as the
-//   attribute, else `reads`, else `written`, the attribute as the snippet prints it.
+// - `attrs`: the args a control set, as attributes, but those the element writes already, named in
+//   `except`.
 export type ReactHolePlace =
   | { kind: 'attr'; name?: string }
   | { kind: 'text' }
-  | { kind: 'close'; element: string }
   | { kind: 'value' }
-  | { kind: 'attrs'; except: string[] }
-  | { kind: 'entries'; except: string[] }
-  | { kind: 'object' }
-  | { kind: 'overridden'; name: string; reads: string; written: string };
+  | { kind: 'attrs'; except: string[] };
 
 // Wraps the text a place prints in its hole, for the template; the snippet prints the text.
 export type Mark = (hole: HoleRef<ReactHolePlace>, text: string) => string;
@@ -87,13 +77,8 @@ export const printChildren = (value: JsxValue) => {
   return value.kind === 'jsx' ? value.code : `{${valueCode(value)}}`;
 };
 
-// The end of an element with its content.
-export const printClose = (name: string, children: string) => `>${children}</${name}>`;
-
 // The args a bound story is called with, one a line, each as its code.
 export const printArgsObject = (args: [string, string][]) =>
-  args.length === 0 ? '{}' : `{\n${args.map(printArgsEntry).join(',\n')}\n}`;
-
-// One arg of `printArgsObject`.
-export const printArgsEntry = ([name, code]: [string, string]) =>
-  `    ${JSON.stringify(name)}: ${code}`;
+  args.length === 0
+    ? '{}'
+    : `{\n${args.map(([name, code]) => `    ${JSON.stringify(name)}: ${code}`).join(',\n')}\n}`;

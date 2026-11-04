@@ -300,8 +300,17 @@ describe('printTemplate', () => {
 });
 
 describe('printTemplate template', () => {
-  const template = (code: string, source = '{}', parameter?: TemplateParameter) =>
-    printTemplate({ code, args: args(source), typescript: false, parameter }).template!;
+  // The template, which prints the snippet while no arg changes.
+  const template = (code: string, source = '{}', parameter?: TemplateParameter) => {
+    const { snippet, template: written } = printTemplate({
+      code,
+      args: args(source),
+      typescript: false,
+      parameter,
+    });
+    expect(stripHoles(written!)).toBe(snippet);
+    return written!;
+  };
   const fill = (written: SnippetTemplate<SvelteHolePlace>, initialArgs: Args, unmappedArgs: Args) =>
     fillTemplate(written, { initialArgs, unmappedArgs }, printHole);
 
@@ -430,25 +439,47 @@ describe('printTemplate template', () => {
     }
   });
 
-  it('prints an attribute a later spread writes over as the spread prints it', () => {
-    const written = template('<Panel title={heading} {...args} />', "{ label: 'Go' }");
+  it.each([
+    '<Panel title={heading} {...args} />',
+    '<Panel title={args.title} {...args} />',
+    '<Panel title="By {args.title}" {...args} />',
+    '<Panel title={args.title.trim()} {...args} />',
+  ])('prints %j as the spread writes over it once a control sets its arg', (code) => {
+    const written = template(code, "{ label: 'Go' }");
     expect(fill(written, { label: 'Go' }, { label: 'Go', title: 'Hi' })).toBe(
       '<Panel title="Hi" label="Go" />'
     );
   });
 
-  it('cannot follow the arg an attribute names that reads other args before a spread', () => {
-    const written = template('<Panel title={args.label} {...args} />', "{ label: 'Go' }");
-    expect(stripHoles(written)).toBe('<Panel title="Go" label="Go" />');
-    expect(fill(written, { label: 'Go' }, { label: 'Stop' })).toBe(
-      '<Panel title="Stop" label="Stop" />'
+  it.each([
+    ["{ label: 'Go' }", { label: 'Go' }],
+    ['{}', {}],
+  ])(
+    'cannot follow the arg an attribute names that reads other args before a spread of %s',
+    (source, initialArgs) => {
+      const code = '<Panel\n  title={args.label}\n  {...args}\n/>';
+      const written = template(code, source);
+      expect(fill(written, initialArgs, { label: 'Stop' })).toBe(
+        '<Panel\n  title="Stop"\n  label="Stop"\n/>'
+      );
+      expect(() => fill(written, initialArgs, { ...initialArgs, title: 'Hi' })).toThrow(
+        'The snippet cannot show the current value of the `title` arg.'
+      );
+    }
+  );
+
+  it('follows the reads of an attribute before a spread of the rest that leaves out its arg', () => {
+    const written = template('<Button label={label + "!"} {...rest} />', "{ size: 'sm' }", {
+      name: 'rest',
+      aliases: { label: 'label' },
+    });
+    expect(fill(written, { size: 'sm' }, { size: 'sm', label: 'Stop' })).toBe(
+      '<Button label={"Stop" + "!"} size="sm" />'
     );
-    expect(() => fill(written, { label: 'Go' }, { label: 'Go', title: 'Hi' })).toThrow(
-      'The snippet cannot show the current value of the `title` arg.'
-    );
-    const own = template('<Panel title={args.title} {...args} />', "{ label: 'Go' }");
-    expect(fill(own, { label: 'Go' }, { label: 'Go', title: 'Hi' })).toBe(
-      '<Panel title="Hi" label="Go" />'
-    );
+  });
+
+  it('wraps a number before a member access', () => {
+    const written = template('<p>{args.price.toFixed(2)}</p>', '{ price: 9.99 }');
+    expect(fill(written, { price: 9.99 }, { price: 10 })).toBe('<p>{(10).toFixed(2)}</p>');
   });
 });

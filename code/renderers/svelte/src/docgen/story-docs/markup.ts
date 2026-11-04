@@ -42,8 +42,10 @@ export function patternNames(pattern: ESTreeAST.Node | null | undefined): string
 
 export type Edit = Span & { value: string };
 
+// Applies `edits` from the end of `code` back, so the offsets of those still to apply hold. Of two
+// that start at one offset, an insertion goes last, after the edit that replaces what follows it.
 export function applyEdits(code: string, edits: Edit[]): string {
-  for (const edit of [...edits].sort((a, b) => b.start - a.start)) {
+  for (const edit of [...edits].sort((a, b) => b.start - a.start || b.end - a.end)) {
     code = code.slice(0, edit.start) + edit.value + code.slice(edit.end);
   }
   return code;

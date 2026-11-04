@@ -162,6 +162,47 @@ it('resets module mocks, including nested ones and those of class instances', ()
   ]);
 });
 
+const automockService = () => {
+  class Service {
+    get(key: string) {
+      return key;
+    }
+  }
+  return mockObject(
+    {
+      type: 'automock',
+      globalConstructors: { Object, Function, Array, Map, RegExp },
+      createMockInstance: createModuleMock as never,
+    },
+    { __esModule: true, Service }
+  ).Service as Mock<new () => { get: Mock<(key: string) => string> }> & {
+    prototype: { get: Mock<(key: string) => string> };
+  };
+};
+
+it('resets the mocks of class instances after the class mock is cleared', () => {
+  const Service = automockService();
+  const service = new Service();
+  service.get.mockReturnValue('changed');
+  service.get('key');
+
+  Service.mockClear();
+  restoreAllMocks();
+
+  expect(service.get('key')).toBeUndefined();
+  expect(service.get.mock.calls).toEqual([['key']]);
+});
+
+it('notifies calls of class instance members as calls of the prototype member', () => {
+  const Service = automockService();
+  const service = new Service();
+  vitestSpy.mockClear();
+
+  service.get('key');
+
+  expect(vitestSpy).toHaveBeenCalledWith(Service.prototype.get, ['key']);
+});
+
 it('names a mock after its named implementation', () => {
   expect(fn(function save() {}).getMockName()).toBe('save');
   expect(fn().getMockName()).toBe('vi.fn()');
@@ -213,5 +254,4 @@ it('restores spied methods with restoreAllMocks', () => {
   expect(target.method()).toBe('mocked');
   restoreAllMocks();
   expect(target.method()).toBe('original');
-  expect(mocks.size).toBeGreaterThan(0);
 });

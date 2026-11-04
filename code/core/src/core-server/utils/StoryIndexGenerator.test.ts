@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,6 +12,8 @@ import type {
   NormalizedStoriesSpecifier,
   StoryIndexEntry,
 } from 'storybook/internal/types';
+
+import { relative } from 'pathe';
 
 import { Tag } from '../../shared/constants/tags.ts';
 import { csfIndexer } from '../presets/common-preset.ts';
@@ -2130,9 +2132,7 @@ describe('StoryIndexGenerator', () => {
           true
         );
 
-        expect(
-          Object.keys(files).map((file) => relative(options.workingDir, file).replaceAll('\\', '/'))
-        ).toEqual([
+        expect(Object.keys(files).map((file) => relative(options.workingDir, file))).toEqual([
           'dot-folders/.docs/Cached.stories.ts',
           'dot-folders/nested/.docs/Nested.stories.ts',
         ]);

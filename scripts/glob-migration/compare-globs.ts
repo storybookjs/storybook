@@ -1,10 +1,9 @@
-/**
- * Compares the glob results of `glob` / `globby` (Storybook 10) with the `tinyglobby` code that
- * replaced them in Storybook 11, for every call site in `code/core`, on generated fixture trees.
- *
- * Run with `node scripts/glob-migration/compare-globs.ts`. Symlinks need a file system that
- * supports them (macOS or Linux).
- */
+// Compares the glob results of `glob` / `globby` (Storybook 10) with the `tinyglobby` code that
+// replaced them in Storybook 11, for every call site in `code/core`, on generated fixture trees.
+// The call-site options below record the code as of the 11.0 migration.
+//
+// Run with `node scripts/glob-migration/compare-globs.ts`. Symlinks need a file system that
+// supports them (macOS or Linux).
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';

@@ -2,6 +2,24 @@
 // static snippet with it, and the preview fills a template's holes with it, so the two print alike.
 // It stays free of `@angular/core`, as the preview and the dev server both import it.
 
+/**
+ * Where a story-docs snippet prints an arg's value, which decides how the preview prints a new one
+ * there. The build writes it into each hole of a story's template, and `printHole` reads it.
+ *
+ * - `bind`: the expression of a `[name]="…"` binding.
+ * - `prop`: a whole `[name]="…"` binding `argsToTemplate` expands, which an unset arg leaves out.
+ * - `field`: the code of a host component field.
+ * - `text`: text the story's markup interpolates, as written.
+ */
+export interface AngularHolePlace {
+  kind: 'bind' | 'prop' | 'field' | 'text';
+  /**
+   * The spaces the snippet indents the lines after the first of a value over several lines by,
+   * which the preview indents a new value by too. Left out for none.
+   */
+  indent?: number;
+}
+
 export const isValidIdentifier = (name: string): boolean => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name);
 
 // Angular expression strings support backslash escapes, so quoting stays lossless.

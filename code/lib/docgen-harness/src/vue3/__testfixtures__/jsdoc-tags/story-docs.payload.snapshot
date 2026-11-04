@@ -20,7 +20,7 @@ import JsdocTags from './JsdocTags.vue';
 </script>
 
 <template>
-  <JsdocTags⟦attr label label ~%20⟫label="Old label"⟧⟦attr title title ~%20⟫title="New title"⟧⟦props * label title ~%20⟫⟧ />
+  <JsdocTags⟦attr label name="label" ~" "⟫ label="Old label"⟧⟦attr title name="title" ~" "⟫ title="New title"⟧⟦props * except=["label","title"] ~" "⟫⟧ />
 </template>",
     },
   },

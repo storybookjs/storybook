@@ -12,41 +12,55 @@ snippet to the manager Code panel and the docs blocks via `SNIPPET_RENDERED`, re
 
 A story's `snippet` is static: it shows the args written in the story file, and it is what agents
 and the components manifest read. So that the snippet follows the controls with `docgenServer` on,
-a provider also emits a `template`: the same snippet with each place an arg prints wrapped in a
-hole that holds what the snippet prints there. For a React story `Primary` with
+a provider also emits a `template`: the same snippet split into code and holes, each hole a place an
+arg prints with the `text` the snippet prints there. For a React story `Primary` with
 `args: { label: 'Go', onClick: fn() }` and `render: (args) => <Button {...args} />`:
 
-```tsx
+```ts
 // snippet
-const Primary = () => <Button label="Go" onClick={fn()} />;
+'const Primary = () => <Button label="Go" onClick={fn()} />;'
 // template
-const Primary = () => <Button⟦attr label label ~%20⟫label="Go"⟧⟦attr onClick onClick ~%20⟫onClick={fn()}⟧⟦attrs * label onClick children⟫⟧⟦close children Button⟫ />⟧;
+[
+  'const Primary = () => <Button',
+  { place: { kind: 'attr', name: 'label' }, arg: 'label', text: ' label="Go"', space: ' ' },
+  { place: { kind: 'attr', name: 'onClick' }, arg: 'onClick', text: ' onClick={fn()}', space: ' ' },
+  { place: { kind: 'attrs', except: ['label', 'onClick', 'children'] }, spread: true, text: '' },
+  { place: { kind: 'close', element: 'Button' }, arg: 'children', text: ' />' },
+  ';',
+]
 ```
 
-A hole is `⟦kind arg word…⟫text⟧`. `text` is what the snippet prints in that place, `arg` the arg
-the place reads, or `*` for the args a control set, as a spread passes them, and `kind` and the
-other words are the renderer's. Core owns only this contract, in `snippetTemplate.ts`:
+A hole reads one `arg`, or, as a `spread` hole, the args a control set, as a spread passes them.
+Its `place` is the renderer's: each renderer types its places as one union, which its provider and
+its `printHole` share. Core owns only the contract, in `snippetTemplate.ts`, and never reads a place
+but its `kind`:
 
 - An arg that holds its initial value (deep-equal) prints the hole's `text`, so nothing the
   controls did not change moves: an arg written as code, such as `fn()` or `shout`, stays as
   written.
 - A changed arg prints what the renderer's `PrintHole`, set as `parameters.docs.source.printHole`,
-  prints for the hole and the value. A cleared arg prints what it prints for `undefined`, such as
-  nothing for an attribute.
-- A `*` hole gets every arg a control set, and the renderer prints those its place does not print
-  already, which the hole's words name. Project-level args, actions
-  Storybook adds and args the server could not resolve show only once a control changes them.
-- A `~space` word is text, such as the whitespace before an attribute, printed before the hole's
+  prints for the hole's place and the value. It never sees the code around the hole. A cleared arg
+  prints what it prints for `undefined`, such as nothing for an attribute.
+- A `spread` hole gets every arg a control set, and the renderer prints those its place does not
+  print already. Project-level args, actions Storybook adds and args the server could not resolve
+  show only once a control changes them.
+- A hole's `space`, such as the whitespace before an attribute, is printed before the renderer's
   print unless that is empty; `withHoleSpace` moves the whitespace before the holes a provider
-  names into them.
+  names into them, so a cleared attribute leaves no gap.
 - A renderer throws an `UnprintableArgError` for a value it cannot print, and the static snippet
   is shown with a warning that names the arg. Once the args change, a story with no template
   shows its static snippet with a warning that it does not follow them.
 
-`stripHoles(template)` is the snippet, which the service checks: it drops a template that does not
-print its snippet, or whose snippet holds a hole bracket. Each renderer registers its `printHole`
-only with `docgenServer` on, so with it off the parameters do not change. It prints a value with its
-`snippet-values.ts`, the module its provider prints the static snippet with too.
+`stripHoles(template)`, every segment joined with each hole's `text`, is the snippet. The service
+drops a template that does not have a template's shape or does not print its snippet, and the
+preview checks it again, as the templates load apart from the story docs. Each renderer registers
+its `printHole` only with `docgenServer` on, so with it off the parameters do not change. It prints a
+value with its `snippet-values.ts`, the module its provider prints the static snippet with too.
+
+A provider usually prints the snippet a second time with each place an arg prints marked, through
+`createHoleMarks`, and turns the marks into holes. Marks are written with private-use characters the
+snippet does not hold, so no code as written is read as a mark. `formatTemplate` writes a template
+as one string, `⟦kind arg field=value… ~space⟫text⟧`, for test snapshots only.
 
 The Code panel, Canvas › Show code and the `Source` block show the static `snippet` while a story
 has the args it is written with, and fill the template once the args change, in dev and in static

@@ -84,7 +84,8 @@ export const stripHoles = (template: SnippetTemplate<any>): string =>
  * @throws {UnprintableArgError} When `printHole` cannot print a value.
  */
 export const fillTemplate = <Place extends HolePlace>(
-  template: SnippetTemplate<Place>,
+  // Any template: a payload types its places as `HolePlace`, the renderer's `printHole` as its own.
+  template: SnippetTemplate<any>,
   { unmappedArgs, initialArgs }: { unmappedArgs: Args; initialArgs: Args },
   printHole: PrintHole<Place>
 ): string => {
@@ -203,7 +204,11 @@ export const formatTemplate = (template: SnippetTemplate<any>): string =>
  * the marks into holes afterwards; see {@link createHoleMarks}.
  */
 export interface HoleMarks<Place extends HolePlace> {
-  /** `text`, marked as a hole for `ref`, with `space` as its {@link TemplateHole.space}. */
+  /**
+   * `text`, marked as a hole for `ref`, with `space` as its {@link TemplateHole.space}. The same
+   * hole marks the same text alike, so a provider that compares printed code, as to declare a
+   * repeated value once, compares marked code as it compares the snippet.
+   */
   mark(ref: HoleRef<Place>, text: string, space?: string): string;
   /**
    * The template of code printed with marks, or `undefined` when its marks do not pair up, as when
@@ -214,9 +219,10 @@ export interface HoleMarks<Place extends HolePlace> {
 
 /**
  * Marks a provider prints a snippet with, to find the places an arg prints in it again. A mark is
- * written with private-use characters none of `sources` holds, such as the story file the snippet is
- * printed from, so code as written is never read as a mark. `wrap` writes each mark where the
- * printed code must still parse, such as in a comment: `(mark) => `/*${mark}*\/``.
+ * written with private-use characters none of `sources` holds, so code as written is never read as
+ * a mark. Pass the static snippet: it holds everything the marked print holds but the marks,
+ * including values printed from other files. `wrap` writes each mark where the printed code must
+ * still parse, such as in a comment: `(mark) => `/*${mark}*\/``.
  */
 export function createHoleMarks<Place extends HolePlace>(
   sources: string[] = [],
@@ -224,6 +230,17 @@ export function createHoleMarks<Place extends HolePlace>(
 ): HoleMarks<Place> {
   const [open, middle, close] = unusedPrivateUseCharacters(3, sources.join(''));
   const holes: { ref: HoleRef<Place>; space?: string }[] = [];
+  const indexes = new Map<string, number>();
+  // The index of the hole for `ref` and `space`, the same for the same hole.
+  const indexOf = (ref: HoleRef<Place>, space: string | undefined) => {
+    const key = JSON.stringify([ref, space]);
+    let index = indexes.get(key);
+    if (index === undefined) {
+      index = holes.push({ ref, ...(space && { space }) }) - 1;
+      indexes.set(key, index);
+    }
+    return index;
+  };
   const [before = '', after = ''] = wrap('\0').split('\0');
   const quote = (text: string) => text.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
   const pattern = new RegExp(
@@ -234,7 +251,7 @@ export function createHoleMarks<Place extends HolePlace>(
 
   return {
     mark: (ref, text, space) =>
-      `${wrap(`${open}${holes.push({ ref, space }) - 1}${middle}`)}${text}${wrap(close)}`,
+      `${wrap(`${open}${indexOf(ref, space || undefined)}${middle}`)}${text}${wrap(close)}`,
     toTemplate(marked) {
       const template: SnippetTemplate<Place> = [];
       let cursor = 0;

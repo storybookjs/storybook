@@ -1,4 +1,4 @@
-import type { TemplateHole } from 'storybook/internal/docs-tools';
+import type { HoleRef } from 'storybook/internal/docs-tools';
 
 // How a React story snippet prints one arg's value in each place it can stand. The story-docs
 // provider prints the static snippet with these from the story's code, and the preview's
@@ -13,8 +13,28 @@ export type JsxValue =
   | { kind: 'jsx'; code: string }
   | { kind: 'code'; code: string };
 
+// Where a hole of a React template stands, which the provider writes and `printHole` prints:
+//
+// - `attr`: the attribute `name`, left out while the arg is unset.
+// - `text`: the arg as content.
+// - `close`: the end of `element`, with the `children` arg as content.
+// - `value`: the arg as an expression.
+// - `attrs`: the args a control set, as attributes, but those named in `except`.
+// - `entries` and `object`: the args a control set, as the args of a bound story, but those named
+//   in `except`; `object` writes the whole object for a story that passes none.
+// - `guard`: an arg the snippet cannot follow.
+export type ReactHolePlace =
+  | { kind: 'attr'; name: string }
+  | { kind: 'text' }
+  | { kind: 'close'; element: string }
+  | { kind: 'value' }
+  | { kind: 'attrs'; except: string[] }
+  | { kind: 'entries'; except: string[] }
+  | { kind: 'object' }
+  | { kind: 'guard' };
+
 // Wraps the text a place prints in its hole, for the template; the snippet prints the text.
-export type Mark = (hole: TemplateHole, text: string) => string;
+export type Mark = (hole: HoleRef<ReactHolePlace>, text: string) => string;
 
 const unmarked: Mark = (_, text) => text;
 
@@ -46,12 +66,12 @@ export const printAttributes = (args: [string, JsxValue][], mark = unmarked) => 
   const attributes = args
     .filter(([name]) => isAttributeName(name))
     .map(([name, value]) =>
-      mark({ kind: 'attr', arg: name, words: [name] }, printAttribute(name, value))
+      mark({ place: { kind: 'attr', name }, arg: name }, printAttribute(name, value))
     );
   if (unnamed.length !== 0) {
     const members = unnamed.map(
       ([name, value]) =>
-        `${JSON.stringify(name)}: ${mark({ kind: 'value', arg: name, words: [] }, valueCode(value))}`
+        `${JSON.stringify(name)}: ${mark({ place: { kind: 'value' }, arg: name }, valueCode(value))}`
     );
     attributes.push(`{...{ ${members.join(', ')} }}`);
   }

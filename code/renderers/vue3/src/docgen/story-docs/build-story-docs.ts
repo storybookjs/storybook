@@ -34,7 +34,12 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import { hasHoleBracket, hole, withHoleSpace } from 'storybook/internal/docs-tools';
+import {
+  type HoleMarks,
+  type SnippetTemplate,
+  createHoleMarks,
+  withHoleSpace,
+} from 'storybook/internal/docs-tools';
 import type {
   ProvidedStoryDoc,
   ProvidedStoryDocsPayload,
@@ -50,6 +55,7 @@ import {
 import type { ForwardableSetup } from './transform-template/forward-setup.ts';
 import { printH } from './print-h/print-h.ts';
 import { createRenderContext } from '../shared/render-primitives.ts';
+import type { VueHolePlace } from '../../snippet-values.ts';
 import {
   readTemplateRenderConfig,
   transformTemplate,
@@ -355,27 +361,36 @@ function enrichStoryDoc(
     return withWarning(noSnippetWarning(unresolved));
   }
 
-  // The snippet, and its template: the same print with each place an arg prints wrapped in a hole.
-  const print = (mark?: typeof hole) =>
+  // The snippet, and its template: the same print with each place an arg prints marked as a hole.
+  const print = (mark?: HoleMarks<VueHolePlace>['mark']) =>
     renderStaticStorySnippet(renderer, classified, componentName, docgenArgInfo, options, mark);
   const rendered = print();
   if (!rendered) {
     return withWarning(UNRENDERED_WARNINGS[renderer.kind]);
   }
-  // Holes written in code that already holds a hole bracket could not be found again. A slot of
-  // the component the story leaves unset, which a control can set, has no place in the snippet.
+  // The marked print is the snippet with marks in it, so marks none of the snippet's code holds
+  // are never read in it.
+  const marks = createHoleMarks<VueHolePlace>([rendered.snippet]);
+  const printed = print(marks.mark)?.snippet;
+  const holes = printed === undefined ? undefined : marks.toTemplate(printed);
+  // A slot of the component the story leaves unset, which a control can set, has no place in the
+  // snippet.
   const set = new Set(args.map((arg) => arg.name));
   const unsetSlots =
     renderer.kind === 'sfc' ? [...docgenArgInfo.slots].filter((slot) => !set.has(slot)) : [];
-  const guards = unsetSlots.map((arg) => hole({ kind: 'guard', arg, words: [] }, '')).join('');
-  const printed = hasHoleBracket(options.source) ? undefined : print(hole)?.snippet;
-  const holes = printed === undefined ? undefined : guards + printed;
+  const guards: SnippetTemplate<VueHolePlace> = unsetSlots.map((arg) => ({
+    place: { kind: 'guard' },
+    arg,
+    text: '',
+  }));
 
   return {
     ...storyDoc,
     snippet: rendered.snippet,
     // An attribute a control clears leaves no gap.
-    ...(holes && { template: withHoleSpace(holes, (kind) => kind === 'attr') }),
+    ...(holes && {
+      template: withHoleSpace([...guards, ...holes], (place) => place.kind === 'attr'),
+    }),
     ...(unresolved.length > 0 ? { warning: unresolvedWarning(unresolved) } : {}),
   };
 }
@@ -441,7 +456,7 @@ function renderStaticStorySnippet(
   componentName: string,
   docgenArgInfo: VueDocgenArgInfo,
   options: StoryDocsContext,
-  mark: typeof hole | undefined
+  mark: HoleMarks<VueHolePlace>['mark'] | undefined
 ): StorySnippetResult | undefined {
   const componentImportStatement = options.snippet?.componentImportStatement;
   const { args } = classified;

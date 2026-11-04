@@ -26,11 +26,13 @@ const modelValue = ref();
 import { ref } from "vue";
 import TemplateUnsetArgs from './TemplateUnsetArgs.vue';
 
-const modelValue = ref(⟦value modelValue script⟫⟧);
+const modelValue = ref(⟦value modelValue in="script"⟫⟧);
 </script>
 
 <template>
-  <TemplateUnsetArgs⟦attr id id ~%20⟫⟧⟦attr label label ~%0A%20%20%20%20⟫label="Ready"⟧⟦attr hint hint ~%0A%20%20%20%20⟫hint="Optional hint"⟧
+  <TemplateUnsetArgs⟦attr id name="id" ~" "⟫⟧⟦attr label name="label" ~"\n    "⟫
+    label="Ready"⟧⟦attr hint name="hint" ~"\n    "⟫
+    hint="Optional hint"⟧
     v-model="modelValue"
   />
 </template>",

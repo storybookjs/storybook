@@ -7,20 +7,20 @@
       "id": "webcomponentsfixtures-lit-union-jsdoc--args-default-render",
       "name": "Args Default Render",
       "snippet": "<lit-union-jsdoc variant="ghost" old-label="Legacy" label="Default render"></lit-union-jsdoc>",
-      "template": "<lit-union-jsdoc⟦attr variant variant field ~%20⟫variant="ghost"⟧⟦attr oldLabel old-label field ~%20⟫old-label="Legacy"⟧⟦attr label label field ~%20⟫label="Default render"⟧></lit-union-jsdoc>",
+      "template": "<lit-union-jsdoc⟦attr variant name="variant" mode="field" ~" "⟫ variant="ghost"⟧⟦attr oldLabel name="old-label" mode="field" ~" "⟫ old-label="Legacy"⟧⟦attr label name="label" mode="field" ~" "⟫ label="Default render"⟧></lit-union-jsdoc>",
     },
     "webcomponentsfixtures-lit-union-jsdoc--dom-node": {
       "id": "webcomponentsfixtures-lit-union-jsdoc--dom-node",
       "name": "Dom Node",
       "snippet": "<lit-union-jsdoc variant="secondary" old-label="Old" label="Current"></lit-union-jsdoc>",
-      "template": "<lit-union-jsdoc⟦attr variant variant field ~%20⟫variant="secondary"⟧⟦attr oldLabel old-label field ~%20⟫old-label="Old"⟧⟦attr label label field ~%20⟫label="Current"⟧></lit-union-jsdoc>",
+      "template": "<lit-union-jsdoc⟦attr variant name="variant" mode="field" ~" "⟫ variant="secondary"⟧⟦attr oldLabel name="old-label" mode="field" ~" "⟫ old-label="Old"⟧⟦attr label name="label" mode="field" ~" "⟫ label="Current"⟧></lit-union-jsdoc>",
       "warning": "Incomplete snippet: `(args) => { const el = document.createElement('lit-union-jsdoc'); el.setAttribute('variant', String(args.variant)); el.setAttribute('old-label', String(args.oldLabel)); el.setAttribute('label', String(args.label)); return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-lit-union-jsdoc--lit-template": {
       "id": "webcomponentsfixtures-lit-union-jsdoc--lit-template",
       "name": "Lit Template",
       "snippet": "<lit-union-jsdoc variant="secondary" old-label="Old" label="Current"></lit-union-jsdoc>",
-      "template": "<lit-union-jsdoc⟦attr variant variant bind ~%20⟫variant="secondary"⟧⟦attr oldLabel old-label bind ~%20⟫old-label="Old"⟧⟦attr label label bind ~%20⟫label="Current"⟧></lit-union-jsdoc>",
+      "template": "<lit-union-jsdoc⟦attr variant name="variant" mode="bind" ~" "⟫ variant="secondary"⟧⟦attr oldLabel name="old-label" mode="bind" ~" "⟫ old-label="Old"⟧⟦attr label name="label" mode="bind" ~" "⟫ label="Current"⟧></lit-union-jsdoc>",
     },
   },
 }

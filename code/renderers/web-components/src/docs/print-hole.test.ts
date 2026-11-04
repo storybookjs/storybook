@@ -15,6 +15,7 @@ import type {
 } from '../docgen/component-docgen/manifest/types.ts';
 import { buildStoryDocsPayload } from '../docgen/story-docs/build-story-docs.ts';
 
+import type { HtmlHolePlace, HtmlSnippetTemplate } from '../snippet-holes.ts';
 import { childText, slotText } from '../snippet-values.ts';
 import { printHole } from './print-hole.ts';
 
@@ -47,21 +48,21 @@ describe('a changed arg', () => {
   ];
   const unprintable: unknown[] = [() => {}, Symbol('s'), { ['_$litType$']: 1, strings: [] }];
 
-  const holes: [string, string[]][] = [
-    ['attr', ['label']],
-    ['attr', ['label', 'field']],
-    ['attr', ['label', 'bind']],
-    ['attr', ['label', 'defined']],
-    ['css', ['--accent']],
-    ['cssattr', ['--accent']],
-    ['bool', ['disabled']],
-    ['quoted', []],
-    ['text', ['^', '$']],
-    ['html', []],
-    ['slot', ['actions']],
-    ['rule', ['x-el::part(p)']],
-    ['style', ['x-el::part(p)']],
-    ['guard', []],
+  const holePlaces: HtmlHolePlace[] = [
+    { kind: 'attr', name: 'label', mode: 'render' },
+    { kind: 'attr', name: 'label', mode: 'field' },
+    { kind: 'attr', name: 'label', mode: 'bind' },
+    { kind: 'attr', name: 'label', mode: 'defined' },
+    { kind: 'css', property: '--accent' },
+    { kind: 'cssattr', property: '--accent' },
+    { kind: 'bool', name: 'disabled' },
+    { kind: 'quoted' },
+    { kind: 'text', trimStart: true, trimEnd: true },
+    { kind: 'html' },
+    { kind: 'slot', name: 'actions' },
+    { kind: 'rule', selector: 'x-el::part(p)' },
+    { kind: 'style', selector: 'x-el::part(p)' },
+    { kind: 'guard' },
   ];
 
   // Each place a story prints an arg in, as the arg `x`, and the values whose static snippet next
@@ -162,7 +163,7 @@ describe('a changed arg', () => {
       for (const value of values.filter(place.values)) {
         const { arg, story } = await build(place, value);
         const filled = fillTemplate(
-          seed.template!,
+          seed.template as HtmlSnippetTemplate,
           { initialArgs: { [arg]: 'Seed' }, unmappedArgs: { [arg]: value } },
           printHole
         );
@@ -171,11 +172,9 @@ describe('a changed arg', () => {
     }
   );
 
-  it.each(holes)('cannot print a function or lit value in a %s hole %j', (kind, words) => {
+  it.each(holePlaces)('cannot print a function or lit value in a hole of %j', (place) => {
     for (const value of unprintable) {
-      expect(() => printHole({ kind, arg: 'v', words }, value)).toThrow(
-        new UnprintableArgError('v')
-      );
+      expect(() => printHole({ place, arg: 'v' }, value)).toThrow(new UnprintableArgError('v'));
     }
   });
 });

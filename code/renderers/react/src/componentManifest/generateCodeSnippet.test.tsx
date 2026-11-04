@@ -4,6 +4,7 @@ import { type CsfFile, loadCsf } from 'storybook/internal/csf-tools';
 import {
   UnprintableArgError,
   fillTemplate,
+  formatTemplate,
   printValue,
   stripHoles,
 } from 'storybook/internal/docs-tools';
@@ -15,7 +16,9 @@ import { printHole } from '../docs/print-hole.ts';
 import { getCodeSnippet } from './generateCodeSnippet.ts';
 
 const load = (code: string) =>
-  loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();
+  loadCsf(code, {
+    makeTitle: (userTitle?: string) => userTitle ?? 'title',
+  }).parse();
 
 // Every template prints its story's snippet while no arg changes.
 function expectTemplatesStripToSnippets(csf: CsfFile) {
@@ -1355,8 +1358,8 @@ describe('template', () => {
     expect(fill(code, initialArgs, { ...initialArgs, theme: 'light' })).toBe(
       'const S = () => <Button label="Go" onClick={() => {}} theme="light">Click me</Button>;'
     );
-    expect(templateOf(code)).toBe(
-      'const S = () => <Button⟦attr label label ~%20⟫label="Go"⟧⟦attr onClick onClick ~%20⟫onClick={() => {}}⟧⟦attrs * label onClick children⟫⟧⟦close children Button⟫>Click me</Button>⟧;'
+    expect(formatTemplate(templateOf(code))).toMatchInlineSnapshot(
+      `"const S = () => <Button⟦attr label name="label" ~" "⟫ label="Go"⟧⟦attr onClick name="onClick" ~" "⟫ onClick={() => {}}⟧⟦attrs * except=["label","onClick","children"]⟫⟧⟦close children element="Button"⟫>Click me</Button>⟧;"`
     );
   });
 
@@ -1372,8 +1375,10 @@ describe('template', () => {
         ),
       };
     `);
-    expect(templateOf(code)).toMatchInlineSnapshot(`
-      "const S = (args) => <Card⟦attr title title ~%0A%20%20⟫title="Hi"⟧⟦attr label label ~%0A%20%20⟫label={args.label}⟧
+    expect(formatTemplate(templateOf(code))).toMatchInlineSnapshot(`
+      "const S = (args) => <Card⟦attr title name="title" ~"\\n  "⟫
+        title="Hi"⟧⟦attr label name="label" ~"\\n  "⟫
+        label={args.label}⟧
       />;"
     `);
     const initialArgs = { children: 'Click me', title: 'Hi' };
@@ -1407,12 +1412,26 @@ describe('template', () => {
       import { shout } from './format';
       export const S = { args: { format: shout, label: 'Go' } };
     `);
-    const initialArgs = { children: 'Click me', format: (text: string) => text, label: 'Go' };
+    const initialArgs = {
+      children: 'Click me',
+      format: (text: string) => text,
+      label: 'Go',
+    };
     expect(fill(code, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(
       'const S = () => <Button format={shout} label="Stop">Click me</Button>;'
     );
     expect(() => fill(code, initialArgs, { ...initialArgs, format: () => '' })).toThrow(
       'The snippet cannot show the current value of the `format` arg.'
+    );
+  });
+
+  it('follows a story whose code holds hole brackets and private-use characters', () => {
+    const label = '⟦attr x⟫\uE000\uE001\uE002⟧';
+    const code = withCSF3(`export const S = { args: { label: '${label}', size: 'sm' } };`);
+    expect(stripHoles(templateOf(code))).toBe(snippetOf(code));
+    const initialArgs = { children: 'Click me', label, size: 'sm' };
+    expect(fill(code, initialArgs, { ...initialArgs, size: 'lg' })).toBe(
+      snippetOf(code).replace('size="sm"', 'size="lg"')
     );
   });
 
@@ -1430,7 +1449,11 @@ describe('template', () => {
         ),
       };
     `);
-    const initialArgs = { children: 'Click me', items: ['a', 'b'], label: 'Go' };
+    const initialArgs = {
+      children: 'Click me',
+      items: ['a', 'b'],
+      label: 'Go',
+    };
     expect(fill(code, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(
       snippetOf(code).replace('label="Go"', 'label="Stop"')
     );

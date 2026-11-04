@@ -3,6 +3,7 @@ import * as path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { formatTemplate } from 'storybook/internal/docs-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
 
@@ -61,7 +62,9 @@ describe('buildStoryDocsPayload', () => {
       `,
     });
     const payload = await buildStoryDocsPayload(
-      { entry: makeStoryIndexEntry(files['Grid.stories.tsx'], 'Curation/Grid') },
+      {
+        entry: makeStoryIndexEntry(files['Grid.stories.tsx'], 'Curation/Grid'),
+      },
       { resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)) }
     );
 
@@ -124,22 +127,21 @@ describe('buildStoryDocsPayload', () => {
     });
 
     const payload = await buildStoryDocsPayload(
-      { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
+      {
+        entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button'),
+      },
       { resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)) }
     );
 
     const { primary, fixed } = Object.fromEntries(
       Object.values(payload!.stories).map((story) => [story.name.toLowerCase(), story])
     );
-    expect(primary).toMatchObject({
-      snippet: 'const Primary = () => <Button label="Save" primary />;',
-      template:
-        'const Primary = () => <Button⟦attr label label ~%20⟫label="Save"⟧⟦attr primary primary ~%20⟫primary⟧⟦attrs * label primary children⟫⟧⟦close children Button⟫ />⟧;',
-    });
-    expect(fixed).toMatchObject({
-      snippet: 'const Fixed = () => <Button label="Fixed" />;',
-      template: 'const Fixed = () => <Button label="Fixed" />;',
-    });
+    expect(primary!.snippet).toBe('const Primary = () => <Button label="Save" primary />;');
+    expect(formatTemplate(primary!.template!)).toMatchInlineSnapshot(
+      `"const Primary = () => <Button⟦attr label name="label" ~" "⟫ label="Save"⟧⟦attr primary name="primary" ~" "⟫ primary⟧⟦attrs * except=["label","primary","children"]⟫⟧⟦close children element="Button"⟫ />⟧;"`
+    );
+    expect(fixed!.snippet).toBe('const Fixed = () => <Button label="Fixed" />;');
+    expect(fixed!.template).toEqual(['const Fixed = () => <Button label="Fixed" />;']);
   });
 
   it('reflects edited story args after the story file changes on disk', async () => {

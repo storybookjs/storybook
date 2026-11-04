@@ -60,7 +60,7 @@ const renderTemplate = (storySource: string) => {
   expect(template).toBeDefined();
   const args = resolver.resolve(story).args;
   const { template: holes, ...printed } = printHtmlTemplate(template!, args, declaration);
-  expect(stripHoles(holes)).toBe(printed.snippet);
+  expect(holes && stripHoles(holes)).toBe(printed.snippet);
   return printed;
 };
 

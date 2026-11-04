@@ -292,7 +292,7 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
       const wrapped = inline
         ? marked(
             state.ctx,
-            { kind: 'value', arg: read.name, words: ['script', ...readsOn(following)] },
+            { place: { kind: 'value', in: 'script', ...readsOn(following) }, arg: read.name },
             wrapSubstitution(rendered, following)
           )
         : rendered;
@@ -313,8 +313,8 @@ function wrapSubstitution(text: string, following: string): string {
   return operand(text, following.startsWith('.'));
 }
 
-// The `.` word of a value hole followed by a `.`, where a number needs parentheses.
-const readsOn = (following: string) => (following.startsWith('.') ? ['.'] : []);
+// A value hole followed by a `.` reads on, where a number needs parentheses.
+const readsOn = (following: string) => (following.startsWith('.') ? { readsOn: true } : {});
 
 // Continuation lines keep the story file's nesting; strip the statement's own column from them.
 function dedentBy(source: string, column: number): string {
@@ -368,13 +368,13 @@ function transformInterpolation(
   const end = node.loc.end.offset;
   // A value edge touching an author '{' would concatenate into a new '{{', which the preview
   // checks a value it prints there for.
-  const braces = [
-    ...(state.template[start - 1] === '{' ? ['{<'] : []),
-    ...(state.template[end] === '{' ? ['{>'] : []),
-  ];
-  const place = { kind: 'text', arg: argName, words: braces };
+  const braces = {
+    ...(state.template[start - 1] === '{' && { braceBefore: true }),
+    ...(state.template[end] === '{' && { braceAfter: true }),
+  };
+  const hole = { place: { kind: 'text', ...braces }, arg: argName } as const;
   if (!arg && state.unsetArgs.has(argName)) {
-    state.edits.push({ start, end, text: marked(state.ctx, place, '') });
+    state.edits.push({ start, end, text: marked(state.ctx, hole, '') });
     return true;
   }
   if (!arg) {
@@ -389,7 +389,7 @@ function transformInterpolation(
     return false;
   }
 
-  state.edits.push({ start, end, text: marked(state.ctx, place, text) });
+  state.edits.push({ start, end, text: marked(state.ctx, hole, text) });
   return true;
 }
 
@@ -437,12 +437,15 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
       prop.name !== 'class' &&
       prop.name !== 'style'
     ) {
-      const place = { kind: 'attr', arg: spellings(prop.name)[1]!, words: [prop.name] };
+      const hole = {
+        place: { kind: 'attr', name: prop.name },
+        arg: spellings(prop.name)[1]!,
+      } as const;
       const { start, end } = { start: prop.loc.start.offset, end: prop.loc.end.offset };
       state.edits.push({
         start,
         end,
-        text: marked(state.ctx, place, state.template.slice(start, end)),
+        text: marked(state.ctx, hole, state.template.slice(start, end)),
       });
       continue;
     }
@@ -563,10 +566,15 @@ function expandArgsBinding(
           ? prop.name === 'bind'
           : prop.name === 'class' || prop.name === 'style')
     )
-      ? [marked(state.ctx, { kind: 'guard', arg: spellings(name)[1]!, words: [] }, '')]
+      ? [marked(state.ctx, { place: { kind: 'guard' }, arg: spellings(name)[1]! }, '')]
       : []
   );
-  const added = marked(state.ctx, { kind: 'props', words: [...new Set(printed)] }, '', ' ');
+  const added = marked(
+    state.ctx,
+    { place: { kind: 'props', except: [...new Set(printed)] }, spread: true },
+    '',
+    ' '
+  );
   const edit = replacementFor(directive, rendered.attributes.join(' '), state.template);
   state.edits.push({ ...edit, text: edit.text + guards.join('') + added });
   return true;
@@ -607,8 +615,8 @@ function transformDirective(
     if (!arg && state.unsetArgs.has(argName)) {
       // Vue resolves a prop bound to undefined to its declared default, exactly as an absent attribute does.
       const edit = replacementFor(directive, '', state.template);
-      const place = { kind: 'attr', arg: argName, words: [boundProp] };
-      state.edits.push({ ...edit, text: marked(state.ctx, place, '', ' ') });
+      const hole = { place: { kind: 'attr', name: boundProp }, arg: argName } as const;
+      state.edits.push({ ...edit, text: marked(state.ctx, hole, '', ' ') });
       return true;
     }
     if (!arg) {
@@ -733,21 +741,20 @@ function substituteArgsExpression(
   }
 
   // A value the template writes inline is a hole that says how it is quoted and read on.
-  const quoteWords = quote === "'" ? ["'"] : quote === undefined ? ['{{'] : [];
+  const where = quote ? { in: 'attribute' as const, quote } : { in: 'interpolation' as const };
   const text = references
     .sort((a, b) => b.start - a.start)
     .reduce((expression, reference) => {
       const { text: replacement, inline } = replacements.get(reference.name)!;
       const following = expression.slice(reference.end);
       const wrapped = wrapSubstitution(replacement, following);
-      const place = {
-        kind: 'value',
+      const hole = {
+        place: { kind: 'value' as const, ...where, ...readsOn(following) },
         arg: reference.name,
-        words: [...quoteWords, ...readsOn(following)],
       };
       return (
         expression.slice(0, reference.start) +
-        (inline ? marked(state.ctx, place, wrapped) : wrapped) +
+        (inline ? marked(state.ctx, hole, wrapped) : wrapped) +
         expression.slice(reference.end)
       );
     }, exp.content);

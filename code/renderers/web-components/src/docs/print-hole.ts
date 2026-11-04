@@ -15,61 +15,51 @@ import {
   slottedHtml,
   styleElement,
 } from '../snippet-values.ts';
+import type { HtmlHolePlace } from '../snippet-holes.ts';
 
 // Prints a changed arg for a hole of a template from `build-story-docs.ts`, with the printer the
-// static snippet prints a value in that place with:
-//
-// - `⟦attr arg name mode⟫…⟧`: an attribute, or nothing. No mode: the attribute Storybook's render
-//   sets; `field`: as that, but `name=""` while empty; `bind`: lit's `name=${arg}`; `defined`:
-//   lit's `name=${ifDefined(arg)}`, left out while unset.
-// - `⟦bool arg name⟫…⟧`: lit's `?name=${arg}`.
-// - `⟦quoted arg⟫…⟧`: text in a quoted attribute value.
-// - `⟦css arg property⟫…⟧`: a custom property in the `style` attribute, and `⟦cssattr arg
-//   property⟫⟧` the `style` attribute of it alone.
-// - `⟦text arg⟫…⟧`: the text of a lit template, trimmed at a `^` start or `$` end as the snippet
-//   prints a text node there; `⟦html arg⟫…⟧`: the html of a string template.
-// - `⟦slot arg name⟫…⟧`: the html of a slot.
-// - `⟦rule arg selector⟫…⟧`: a part or state rule in the `<style>`, and `⟦style arg selector⟫⟧`
-//   the `<style>` of it alone, with the line break after it.
-// - `⟦guard arg⟫⟧`: an arg the template reads where the snippet cannot follow it.
-export const printHole: PrintHole = ({ kind, arg = '', words }, changed) => {
+// static snippet prints a value in that place with; see `HtmlHolePlace`.
+export const printHole: PrintHole<HtmlHolePlace> = (hole, changed) => {
+  const arg = hole.arg ?? '';
   const value = printable(arg, changed);
-  const [first = '', mode] = words;
-  switch (kind) {
+  const { place } = hole;
+  switch (place.kind) {
     case 'attr':
-      if (mode === 'bind' || mode === 'defined') {
-        return mode === 'defined' && !isDefined(value)
+      if (place.mode === 'bind' || place.mode === 'defined') {
+        return place.mode === 'defined' && !isDefined(value)
           ? ''
-          : quotedAttribute(first, boundText(value));
+          : quotedAttribute(place.name, boundText(value));
       }
-      return printAttribute(first, value, mode === 'field') ?? '';
+      return printAttribute(place.name, value, place.mode === 'field') ?? '';
     case 'bool':
       // Lit sets the attribute while the value is truthy, as the static snippet reads it.
-      return isTruthy(value) ? first : '';
+      return isTruthy(value) ? place.name : '';
     case 'quoted':
       return escapeAttribute(boundText(value));
     case 'css':
-      return escapeAttribute(cssDeclarations([{ name: first, value }]) ?? '');
+      return escapeAttribute(cssDeclarations([{ name: place.property, value }]) ?? '');
     case 'cssattr': {
-      const style = cssDeclarations([{ name: first, value }]);
+      const style = cssDeclarations([{ name: place.property, value }]);
       return style === undefined ? '' : quotedAttribute('style', style);
     }
     case 'text':
-      return escapeText(inlineText(childText(value), words.includes('^'), words.includes('$')));
+      return escapeText(inlineText(childText(value), place.trimStart, place.trimEnd));
     case 'html':
       return childText(value);
     case 'slot':
-      return slottedHtml(first, slotText(value));
+      return slottedHtml(place.name, slotText(value));
     case 'rule':
-      return isSet(value) ? `  ${first} { ${String(value)} }` : '';
+      return isSet(value) ? `  ${place.selector} { ${String(value)} }` : '';
     case 'style':
       return isSet(value)
-        ? `${styleElement([{ selector: first, declarations: String(value) }])}\n`
+        ? `${styleElement([{ selector: place.selector, declarations: String(value) }])}\n`
         : '';
     case 'guard':
       throw new UnprintableArgError(arg);
-    default:
-      throw new Error(`Unknown hole ⟦${kind}⟧`);
+    default: {
+      const unknown: { kind: string } = place;
+      throw new Error(`Unknown hole kind \`${unknown.kind}\``);
+    }
   }
 };
 

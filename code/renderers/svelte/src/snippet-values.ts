@@ -3,6 +3,28 @@
 // two print a value alike. The callers say what the value is: the provider from the code the
 // story writes, `printHole` from the value itself.
 
+// Where a hole of a story's template stands: the story-docs provider writes the holes and
+// `printHole` prints a changed value for them.
+export type SvelteHolePlace =
+  // One prop a `{...args}` spread passes, left out while its arg is unset.
+  | { kind: 'prop' }
+  // The args a control set, as a spread passes them, but those `except` names: the props the spread
+  // passes already, and what the element and the template parameter take themselves.
+  | { kind: 'props'; except: string[] }
+  // An attribute a later `{...args}` spread writes over.
+  | { kind: 'spreadattr' }
+  // A read of an arg in code.
+  | { kind: 'value' }
+  // A shorthand property, `{ name }`, that reads an arg.
+  | { kind: 'property'; name: string }
+  // One whole read, which prints a string as text where next does, else as code between `before`
+  // and `after`: an attribute value of the attribute `name`, a quoted attribute value, a text node,
+  // or code.
+  | { kind: 'attrvalue'; name: string; before: string; after: string }
+  | { kind: 'quoted' | 'fragment' | 'code'; before: string; after: string }
+  // A read of a member of an arg, which the snippet cannot follow.
+  | { kind: 'member' };
+
 // An arg a spread passes: unset, `true`, or code, which a `string` it holds may print as text.
 export type PropValue = undefined | true | { string?: string; code: string };
 

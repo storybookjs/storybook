@@ -23,7 +23,7 @@ import { MetaActionsComponent } from './meta-actions.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [MetaActionsComponent],
-  template: `<sb-meta-actions [label]="⟦bind label⟫SHARED_LABEL⟧"⟦prop primary ~%20⟫⟧ (onClick)="onClick($event)" />`,
+  template: `<sb-meta-actions [label]="⟦bind label⟫SHARED_LABEL⟧"⟦prop primary ~" "⟫⟧ (onClick)="onClick($event)" />`,
 })
 export class DemoComponent {
   onClick(event: unknown) {}

@@ -32,7 +32,7 @@ const increment = () => {
 </script>
 
 <template>
-  <SetupRefPlusHandler⟦attr label label ~%20⟫label="Count"⟧ :count="count" @increment="increment" />
+  <SetupRefPlusHandler⟦attr label name="label" ~" "⟫ label="Count"⟧ :count="count" @increment="increment" />
 </template>",
     },
   },

@@ -22,7 +22,7 @@ import type {
   ProvidedStoryDocsPayload,
   StoryDocsProviderInput,
 } from 'storybook/internal/types';
-import { hole, withHoleSpace } from 'storybook/internal/docs-tools';
+import { createHoleMarks, withHoleSpace } from 'storybook/internal/docs-tools';
 
 import { resolve } from 'node:path';
 
@@ -32,6 +32,7 @@ import {
   parseStoryFile,
   resolveStoryComponent,
 } from '../component-docgen/resolve-component/resolve-component.ts';
+import type { HtmlHolePlace, HtmlSnippetTemplate } from '../../snippet-holes.ts';
 import { evaluateArgValue, isFunctionNode } from './arg-values.ts';
 import { classifyArg, type ArgBinding } from './classify-args.ts';
 import type { ElementSnippet } from './print-element.ts';
@@ -55,7 +56,7 @@ interface StoryDocDeps {
 
 // A story's snippet, and its `template`: the same html with a hole wherever it prints an arg, which
 // the preview fills with the args as the controls change them.
-type SnippetResult = { snippet?: string; template?: string; warning?: string };
+type SnippetResult = { snippet?: string; template?: HtmlSnippetTemplate; warning?: string };
 type ResolvedStoryArgs = ReturnType<StoryArgsResolver['resolve']>;
 type AuthoredFallback = (resolved: ResolvedStoryArgs) => SnippetResult;
 
@@ -171,7 +172,7 @@ const baseStoryDoc = (
       : {
           // A value a control clears leaves no gap or empty line; text in a quoted value keeps the
           // text around it as written.
-          template: withHoleSpace(result.template, (kind) => kind !== 'quoted'),
+          template: withHoleSpace(result.template, (place) => place.kind !== 'quoted'),
         }),
     ...(result.warning === undefined ? {} : { warning: result.warning }),
     ...(description ? { description } : {}),
@@ -371,26 +372,27 @@ const argsSnippet = (
   const printed = hasSnippetContent(snippet) || allUnresolved.length === 0;
   warnings.push(printed ? unresolvedWarning(allUnresolved) : noSnippetWarning(allUnresolved));
 
+  if (!printed) {
+    return joinWarnings(warnings);
+  }
+  const html = printElementSnippet(snippet);
   return {
-    ...(printed
-      ? {
-          snippet: printElementSnippet(snippet),
-          template: elementTemplate(snippet, args, argTypes, declaration),
-        }
-      : {}),
+    snippet: html,
+    template: elementTemplate(html, snippet, args, argTypes, declaration),
     ...joinWarnings(warnings),
   };
 };
 
 // The template of the element, with a hole for each arg the story does not set where it would
 // print it if it were set, and a `guard` hole for one it would not print, such as a property
-// without an attribute.
+// without an attribute. Its marks hold no character of `html`, the static snippet.
 const elementTemplate = (
+  html: string,
   snippet: ElementSnippet,
   args: Record<string, Node>,
   argTypes: WebComponentsDocgenPayload['argTypes'],
   declaration: ManifestDeclaration
-): string => {
+): HtmlSnippetTemplate | undefined => {
   const unset = [
     ...Object.keys(args).filter((key) => evaluateArgValue(args[key]).kind === 'unset'),
     ...Object.keys(argTypes ?? {}).filter((key) => !Object.hasOwn(args, key)),
@@ -402,6 +404,7 @@ const elementTemplate = (
     slots: [...snippet.slots],
     styleRules: [...snippet.styleRules],
   };
+  const marks = createHoleMarks<HtmlHolePlace>([html]);
   const guards: string[] = [];
   for (const key of new Set(unset)) {
     const binding = classifyArg(key, false, argTypes ?? {}, declaration);
@@ -415,13 +418,13 @@ const elementTemplate = (
         break;
       case 'property':
       case 'unknown':
-        guards.push(hole({ kind: 'guard', arg: key, words: [] }, ''));
+        guards.push(marks.mark({ place: { kind: 'guard' }, arg: key }, ''));
         break;
       default:
         break;
     }
   }
-  return guards.join('') + printElementSnippet(template, true);
+  return marks.toTemplate(guards.join('') + printElementSnippet(template, marks));
 };
 
 // Each value is the arg `source`'s, so the template prints a hole for it. An unset arg is only

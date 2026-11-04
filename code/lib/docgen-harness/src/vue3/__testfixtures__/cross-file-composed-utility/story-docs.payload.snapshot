@@ -20,7 +20,7 @@ import UtilityComposedProps from './UtilityComposedProps.vue';
 </script>
 
 <template>
-  <UtilityComposedProps⟦attr label label ~%20⟫label="Picked"⟧⟦props * label ~%20⟫⟧ />
+  <UtilityComposedProps⟦attr label name="label" ~" "⟫ label="Picked"⟧⟦props * except=["label"] ~" "⟫⟧ />
 </template>",
     },
   },

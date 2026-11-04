@@ -3,10 +3,16 @@ import { describe, expect, it } from 'vitest';
 
 import { type ESTreeNode as Node, parseExpression, staticKey } from 'storybook/internal/csf-tools';
 
-import { fillTemplate, stripHoles } from 'storybook/internal/docs-tools';
+import {
+  type SnippetTemplate,
+  fillTemplate,
+  formatTemplate,
+  stripHoles,
+} from 'storybook/internal/docs-tools';
 import type { Args } from 'storybook/internal/types';
 
 import { printHole } from '../../docs/print-hole.ts';
+import type { SvelteHolePlace } from '../../snippet-values.ts';
 import { type TemplateParameter, printTemplate } from './print-template.ts';
 
 const args = (source: string): Record<string, Node> => {
@@ -22,7 +28,8 @@ const args = (source: string): Record<string, Node> => {
 // Prints the snippet, and checks that its template prints it while no arg changes.
 const printChecked = (options: Parameters<typeof printTemplate>[0]) => {
   const { snippet, template } = printTemplate(options);
-  expect(stripHoles(template)).toBe(snippet);
+  expect(template).toBeDefined();
+  expect(stripHoles(template!)).toBe(snippet);
   return snippet;
 };
 
@@ -284,16 +291,16 @@ describe('printTemplate', () => {
 
 describe('printTemplate template', () => {
   const template = (code: string, source = '{}', parameter?: TemplateParameter) =>
-    printTemplate({ code, args: args(source), typescript: false, parameter }).template;
-  const fill = (written: string, initialArgs: Args, unmappedArgs: Args) =>
+    printTemplate({ code, args: args(source), typescript: false, parameter }).template!;
+  const fill = (written: SnippetTemplate<SvelteHolePlace>, initialArgs: Args, unmappedArgs: Args) =>
     fillTemplate(written, { initialArgs, unmappedArgs }, printHole);
 
   it('wraps each place an arg prints in a hole that holds what it prints there', () => {
-    expect(template('<Panel {...args} />', "{ label: 'Go' }")).toBe(
-      '<Panel⟦prop label ~%20⟫label="Go"⟧⟦props * label ~%20⟫⟧ />'
+    expect(formatTemplate(template('<Panel {...args} />', "{ label: 'Go' }"))).toBe(
+      '<Panel⟦prop label ~" "⟫ label="Go"⟧⟦props * except=["label"] ~" "⟫⟧ />'
     );
-    expect(template('<h1>{args.title}</h1>', "{ title: 'Save' }")).toBe(
-      '<h1>⟦fragment title { }⟫Save⟧</h1>'
+    expect(formatTemplate(template('<h1>{args.title}</h1>', "{ title: 'Save' }"))).toBe(
+      '<h1>⟦fragment title before="{" after="}"⟫Save⟧</h1>'
     );
   });
 
@@ -360,6 +367,14 @@ describe('printTemplate template', () => {
     });
     expect(stripHoles(written)).toBe('<div class:active>{active}</div>');
     expect(fill(written, {}, { active: true })).toBe('<div class:active={true}>{true}</div>');
+  });
+
+  it('writes the holes of markup that holds hole brackets', () => {
+    const written = template('<Panel title="⟦⟫⟧">{args.label}</Panel>', "{ label: 'Go' }");
+    expect(stripHoles(written)).toBe('<Panel title="⟦⟫⟧">Go</Panel>');
+    expect(fill(written, { label: 'Go' }, { label: 'Stop' })).toBe(
+      '<Panel title="⟦⟫⟧">Stop</Panel>'
+    );
   });
 
   it('cannot follow a read of a member of an arg', () => {

@@ -12,9 +12,15 @@ import type {
   ManifestClassField,
   ManifestDeclaration,
 } from '../component-docgen/manifest/types.ts';
-import { fillTemplate, stripHoles } from 'storybook/internal/docs-tools';
+import {
+  type SnippetTemplate,
+  fillTemplate,
+  formatTemplate,
+  stripHoles,
+} from 'storybook/internal/docs-tools';
 
 import { printHole } from '../../docs/print-hole.ts';
+import type { HtmlSnippetTemplate } from '../../snippet-holes.ts';
 import { buildStoryDocsPayload, type BuildStoryDocsContext } from './build-story-docs.ts';
 
 const declaration = {
@@ -739,9 +745,9 @@ describe('buildStoryDocsPayload', () => {
 });
 
 describe('the template', () => {
-  const fill = (template: string, initialArgs: Args, changed: Args) =>
+  const fill = (template: SnippetTemplate | undefined, initialArgs: Args, changed: Args) =>
     fillTemplate(
-      template,
+      template as HtmlSnippetTemplate,
       { initialArgs, unmappedArgs: { ...initialArgs, ...changed } },
       printHole
     );
@@ -754,10 +760,10 @@ describe('the template', () => {
     expect(snippet).toBe('<test-element label="Meta" count="2" disabled>Hi</test-element>');
     expect(stripHoles(template!)).toBe(snippet);
     const initialArgs = { label: 'Meta', count: 2, disabled: true, 'default-slot': 'Hi' };
-    expect(fill(template!, initialArgs, { label: 'Changed', variant: 'primary', theme: 'x' })).toBe(
+    expect(fill(template, initialArgs, { label: 'Changed', variant: 'primary', theme: 'x' })).toBe(
       '<test-element label="Changed" count="2" disabled variant="primary">Hi</test-element>'
     );
-    expect(fill(template!, initialArgs, { '--accent': 'red', 'panel-part': 'color: red' })).toBe(
+    expect(fill(template, initialArgs, { '--accent': 'red', 'panel-part': 'color: red' })).toBe(
       '<style>\n  test-element::part(panel) { color: red }\n</style>\n<test-element label="Meta" count="2" disabled style="--accent: red;">Hi</test-element>'
     );
   });
@@ -772,11 +778,11 @@ describe('the template', () => {
       };
     `);
     expect(snippet).toBe('<test-element label="Go">Go</test-element>');
-    expect(template).toBe(
-      '<test-element⟦attr label label bind ~%20⟫label="Go"⟧⟦bool disabled disabled ~%20⟫⟧>⟦text label ^ $⟫Go⟧</test-element>'
+    expect(formatTemplate(template!)).toBe(
+      '<test-element⟦attr label name="label" mode="bind" ~" "⟫ label="Go"⟧⟦bool disabled name="disabled" ~" "⟫⟧>⟦text label trimStart=true trimEnd=true⟫Go⟧</test-element>'
     );
     expect(
-      fill(template!, { label: 'Go', disabled: false }, { label: 'a < b', disabled: true })
+      fill(template, { label: 'Go', disabled: false }, { label: 'a < b', disabled: true })
     ).toBe('<test-element label="a &lt; b" disabled>a &lt; b</test-element>');
   });
 
@@ -785,7 +791,7 @@ describe('the template', () => {
       export default { title: 'Example/TestElement', component: 'test-element' };
       export const Primary = { args: { label: 'Go' } };
     `);
-    expect(() => fill(template!, { label: 'Go' }, { items: [1, 2] })).toThrow(
+    expect(() => fill(template, { label: 'Go' }, { items: [1, 2] })).toThrow(
       'The snippet cannot show the current value of the `items` arg.'
     );
   });
@@ -799,7 +805,7 @@ describe('the template', () => {
         render: (args) => html\`<test-element label=\${args.open ? args.label : 'Closed'}></test-element>\`,
       };
     `);
-    expect(() => fill(template!, { label: 'Go', open: true }, { open: false })).toThrow(
+    expect(() => fill(template, { label: 'Go', open: true }, { open: false })).toThrow(
       'The snippet cannot show the current value of the `open` arg.'
     );
   });
@@ -814,7 +820,7 @@ describe('the template', () => {
         render: (args) => html\`<test-element title="\${args.label} \${suffix}"></test-element>\`,
       };
     `);
-    expect(() => fill(template!, { label: 'Go' }, { label: 'Stop' })).toThrow(
+    expect(() => fill(template, { label: 'Go' }, { label: 'Stop' })).toThrow(
       'The snippet cannot show the current value of the `label` arg.'
     );
   });

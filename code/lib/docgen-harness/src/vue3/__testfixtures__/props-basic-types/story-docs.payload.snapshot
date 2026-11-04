@@ -20,7 +20,7 @@ import PropsBasicTypes from './PropsBasicTypes.vue';
 </script>
 
 <template>
-  <PropsBasicTypes⟦attr count count ~%20⟫:count="2"⟧⟦attr enabled enabled ~%20⟫enabled⟧⟦attr label label ~%20⟫label="Hello"⟧⟦props * label count enabled ~%20⟫⟧ />
+  <PropsBasicTypes⟦attr count name="count" ~" "⟫ :count="2"⟧⟦attr enabled name="enabled" ~" "⟫ enabled⟧⟦attr label name="label" ~" "⟫ label="Hello"⟧⟦props * except=["label","count","enabled"] ~" "⟫⟧ />
 </template>",
     },
     "forms-props-basic-types--unrepresentable-args": {
@@ -48,19 +48,19 @@ const token = Symbol('fixture');
       "template": "<script lang="ts" setup>
 import PropsBasicTypes from './PropsBasicTypes.vue';
 
-const big = ⟦value big script⟫BigInt('9007199254740993')⟧;
+const big = ⟦value big in="script"⟫BigInt('9007199254740993')⟧;
 
-const config = ⟦value config script⟫{ theme: 'dark', dense: true }⟧;
+const config = ⟦value config in="script"⟫{ theme: 'dark', dense: true }⟧;
 
-const formatter = ⟦value formatter script⟫(value: number) => `#${value}`⟧;
+const formatter = ⟦value formatter in="script"⟫(value: number) => `#${value}`⟧;
 
-const tags = ⟦value tags script⟫['alpha', 'beta']⟧;
+const tags = ⟦value tags in="script"⟫['alpha', 'beta']⟧;
 
-const token = ⟦value token script⟫Symbol('fixture')⟧;
+const token = ⟦value token in="script"⟫Symbol('fixture')⟧;
 </script>
 
 <template>
-  <PropsBasicTypes :big="big" :config="config" :formatter="formatter"⟦attr label label ~%20⟫label="Formatted"⟧ :tags="tags" :token="token"⟦props * label tags config formatter token big ~%20⟫⟧ />
+  <PropsBasicTypes :big="big" :config="config" :formatter="formatter"⟦attr label name="label" ~" "⟫ label="Formatted"⟧ :tags="tags" :token="token"⟦props * except=["label","tags","config","formatter","token","big"] ~" "⟫⟧ />
 </template>",
     },
   },

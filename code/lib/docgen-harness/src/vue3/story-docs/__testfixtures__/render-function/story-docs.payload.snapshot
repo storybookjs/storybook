@@ -23,7 +23,7 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 
 <template>
   <div>
-    <RenderFunctionButton⟦attr label label ~%20⟫label="From args"⟧ />
+    <RenderFunctionButton⟦attr label name="label" ~" "⟫ label="From args"⟧ />
   </div>
 </template>",
     },
@@ -46,8 +46,8 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 </script>
 
 <template>
-  <section class="toolbar"⟦attr label label ~%20⟫label="Confirm"⟧⟦guard class⟫⟧⟦props * class label ~%20⟫⟧>
-    <RenderFunctionButton⟦attr label label ~%20⟫label="Confirm"⟧⟦props * label ~%20⟫⟧ />
+  <section class="toolbar"⟦attr label name="label" ~" "⟫ label="Confirm"⟧⟦guard class⟫⟧⟦props * except=["class","label"] ~" "⟫⟧>
+    <RenderFunctionButton⟦attr label name="label" ~" "⟫ label="Confirm"⟧⟦props * except=["label"] ~" "⟫⟧ />
   </section>
 </template>",
     },
@@ -74,7 +74,7 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 <template>
   <section class="toolbar">
     <h2>Actions</h2>
-    <RenderFunctionButton⟦attr label label ~%20⟫label="Confirm"⟧⟦props * label ~%20⟫⟧ />
+    <RenderFunctionButton⟦attr label name="label" ~" "⟫ label="Confirm"⟧⟦props * except=["label"] ~" "⟫⟧ />
     <RenderFunctionButton label="Cancel" />
   </section>
 </template>",
@@ -96,7 +96,7 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 </script>
 
 <template>
-  <RenderFunctionButton⟦attr label label ~%20⟫label="Render"⟧⟦props * label ~%20⟫⟧ />
+  <RenderFunctionButton⟦attr label name="label" ~" "⟫ label="Render"⟧⟦props * except=["label"] ~" "⟫⟧ />
 </template>",
     },
     "forms-render-function--slot-children": {
@@ -121,7 +121,7 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 </script>
 
 <template>
-  <RenderFunctionButton⟦attr label label ~%20⟫label="Confirm"⟧⟦props * label ~%20⟫⟧>
+  <RenderFunctionButton⟦attr label name="label" ~" "⟫ label="Confirm"⟧⟦props * except=["label"] ~" "⟫⟧>
     <span>Extra</span>
     <template #footer>
       <strong>Note</strong>
@@ -146,7 +146,7 @@ import RenderFunctionButton from './RenderFunctionButton.vue';
 </script>
 
 <template>
-  <RenderFunctionButton⟦props * label ~%20⟫⟧ label="Overridden" />
+  <RenderFunctionButton⟦props * except=["label"] ~" "⟫⟧ label="Overridden" />
 </template>",
     },
   },

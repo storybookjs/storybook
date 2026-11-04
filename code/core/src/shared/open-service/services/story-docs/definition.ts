@@ -1,5 +1,7 @@
 import * as v from 'valibot';
 
+import { type SnippetTemplate, isSnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
+
 import { defineService } from 'storybook/open-service';
 import type { ServiceInstanceOf } from '../../types.ts';
 import type { StoryDocsPayload, StoryTemplatesPayload } from './types.ts';
@@ -25,14 +27,10 @@ const storyDocSchema = v.object({
 });
 
 // A `SnippetTemplate`: code, and holes whose place only its renderer reads.
-const templateHoleSchema = v.object({
-  place: v.looseObject({ kind: v.string() }),
-  arg: v.optional(v.string()),
-  spread: v.optional(v.literal(true)),
-  text: v.string(),
-  space: v.optional(v.string()),
-});
-const snippetTemplateSchema = v.array(v.union([v.string(), templateHoleSchema]));
+const snippetTemplateSchema = v.custom<SnippetTemplate>(
+  isSnippetTemplate,
+  'Expected a snippet template: code and holes'
+);
 
 const storyDocsPayloadSchema = v.object({
   id: v.string(),

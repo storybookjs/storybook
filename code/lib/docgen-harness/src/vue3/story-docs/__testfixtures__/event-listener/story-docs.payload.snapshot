@@ -24,13 +24,13 @@ const onSubmit = (payload: { value: string }) => console.log(payload);
       "template": "<script lang="ts" setup>
 import EventListenerForm from './EventListenerForm.vue';
 
-const formatter = ⟦value formatter script⟫(value: string) => value.toUpperCase()⟧;
+const formatter = ⟦value formatter in="script"⟫(value: string) => value.toUpperCase()⟧;
 
-const onSubmit = ⟦value onSubmit script⟫(payload: { value: string }) => console.log(payload)⟧;
+const onSubmit = ⟦value onSubmit in="script"⟫(payload: { value: string }) => console.log(payload)⟧;
 </script>
 
 <template>
-  <EventListenerForm :formatter="formatter"⟦attr label label ~%20⟫label="Send"⟧ @submit="onSubmit"⟦props * label default formatter onSubmit ~%20⟫⟧>
+  <EventListenerForm :formatter="formatter"⟦attr label name="label" ~" "⟫ label="Send"⟧ @submit="onSubmit"⟦props * except=["label","default","formatter","onSubmit"] ~" "⟫⟧>
     Submit now
   </EventListenerForm>
 </template>",

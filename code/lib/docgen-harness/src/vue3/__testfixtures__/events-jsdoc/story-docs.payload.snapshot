@@ -22,13 +22,13 @@ const onSave = () => {};
       "template": "<script lang="ts" setup>
 import EventsJsdoc from './EventsJsdoc.vue';
 
-const onCancel = ⟦value onCancel script⟫() => {}⟧;
+const onCancel = ⟦value onCancel in="script"⟫() => {}⟧;
 
-const onSave = ⟦value onSave script⟫() => {}⟧;
+const onSave = ⟦value onSave in="script"⟫() => {}⟧;
 </script>
 
 <template>
-  <EventsJsdoc⟦attr label label ~%20⟫label="Save"⟧ @cancel="onCancel" @save="onSave"⟦props * label onSave onCancel ~%20⟫⟧ />
+  <EventsJsdoc⟦attr label name="label" ~" "⟫ label="Save"⟧ @cancel="onCancel" @save="onSave"⟦props * except=["label","onSave","onCancel"] ~" "⟫⟧ />
 </template>",
     },
   },

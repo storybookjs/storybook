@@ -70,7 +70,7 @@ const print = (code: string, value: unknown) =>
 
 const fill = (code: string, value: unknown) =>
   fillTemplate(
-    print(code, 'Go').template,
+    print(code, 'Go').template!,
     { initialArgs: { x: 'Go' }, unmappedArgs: { x: value } },
     printHole
   );
@@ -78,7 +78,8 @@ const fill = (code: string, value: unknown) =>
 describe('printHole', () => {
   it.each(TEMPLATES)('prints the snippet of %j while no arg changes', (code) => {
     const { snippet, template } = print(code, 'Go');
-    expect(stripHoles(template)).toBe(snippet);
+    expect(template).toBeDefined();
+    expect(stripHoles(template!)).toBe(snippet);
   });
 
   // A value a control sets prints as next prints a story that writes that value as its literal.

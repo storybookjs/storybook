@@ -3,13 +3,20 @@ import { readFile } from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SourceEditor } from 'storybook/internal/csf-tools';
-import { UnprintableArgError, fillTemplate, printValue } from 'storybook/internal/docs-tools';
+import {
+  type SnippetTemplate,
+  UnprintableArgError,
+  fillTemplate,
+  formatTemplate,
+  printValue,
+} from 'storybook/internal/docs-tools';
 import type { Args, IndexEntry, ProvidedStoryDoc } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
 import { vol } from 'memfs';
 
 import { printHole } from '../../docs/print-hole.ts';
+import type { VueHolePlace } from '../../snippet-values.ts';
 import { buildStoryDocsPayload } from './build-story-docs.ts';
 import { expectTemplatesStripToSnippets } from './story-template.test-helpers.ts';
 
@@ -248,23 +255,26 @@ export const Primary = {
   });
 });
 
+// This provider writes the payload's templates, so their holes stand in Vue places.
+const vueTemplate = (template: SnippetTemplate) => template as SnippetTemplate<VueHolePlace>;
+
 describe('template', () => {
   const filled = (story: ProvidedStoryDoc | undefined, initialArgs: Args, changed: Args) =>
     fillTemplate(
-      story!.template!,
+      vueTemplate(story!.template!),
       { initialArgs, unmappedArgs: { ...initialArgs, ...changed } },
       printHole
     );
 
   it('wraps each arg the snippet prints in a hole, and adds the args a control adds', async () => {
     const story = await primaryStory(`export const Primary = { args: { label: 'Hi', count: 2 } };`);
-    expect(story?.template).toMatchInlineSnapshot(`
+    expect(formatTemplate(story!.template!)).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
       import MyButton from './MyButton.vue';
       </script>
 
       <template>
-        <MyButton⟦attr count count ~%20⟫:count="2"⟧⟦attr label label ~%20⟫label="Hi"⟧⟦props * label count ~%20⟫⟧ />
+        <MyButton⟦attr count name="count" ~" "⟫ :count="2"⟧⟦attr label name="label" ~" "⟫ label="Hi"⟧⟦props * except=["label","count"] ~" "⟫⟧ />
       </template>"
     `);
     const initialArgs = { label: 'Hi', count: 2, theme: 'dark' };
@@ -292,7 +302,9 @@ export const Primary = {
 
   it('declares an arg the snippet hoists with a hole for its value', async () => {
     const story = await primaryStory(`export const Primary = { args: { size: { width: 2 } } };`);
-    expect(story?.template).toContain('const size = ⟦value size script⟫{ width: 2 }⟧;');
+    expect(formatTemplate(story!.template!)).toContain(
+      'const size = ⟦value size in="script"⟫{ width: 2 }⟧;'
+    );
     expect(filled(story, { size: { width: 2 } }, { size: { tag: '</d>' } })).toContain(
       "const size = { tag: '</d>' };"
     );
@@ -360,10 +372,10 @@ export const Primary = {
     );
   });
 
-  it('is none for a story file that already holds a hole bracket', async () => {
-    const story = await primaryStory(`export const Primary = { args: { label: '⟦x⟧' } };`);
-    expect(story?.snippet).toContain('label="⟦x⟧"');
-    expect(story?.template).toBeUndefined();
+  it('follows an arg whose value holds what a formatted hole is written with', async () => {
+    const story = await primaryStory(`export const Primary = { args: { label: '⟦x⟫y⟧' } };`);
+    expect(story?.snippet).toContain('label="⟦x⟫y⟧"');
+    expect(filled(story, { label: '⟦x⟫y⟧' }, { label: 'Go' })).toContain('<MyButton label="Go" />');
   });
 });
 
@@ -418,7 +430,7 @@ describe('a value a control sets', () => {
         const go = await own('Go');
         const filled = outcome(() =>
           fillTemplate(
-            go!.template!,
+            vueTemplate(go!.template!),
             { initialArgs: { [arg]: 'Go' }, unmappedArgs: { [arg]: value } },
             printHole
           )

@@ -20,7 +20,7 @@ import RuntimeArrayProps from './RuntimeArrayProps.vue';
 </script>
 
 <template>
-  <RuntimeArrayProps⟦attr appearance appearance ~%20⟫appearance="primary"⟧⟦attr label label ~%20⟫label="Go"⟧⟦props * appearance label ~%20⟫⟧ />
+  <RuntimeArrayProps⟦attr appearance name="appearance" ~" "⟫ appearance="primary"⟧⟦attr label name="label" ~" "⟫ label="Go"⟧⟦props * except=["appearance","label"] ~" "⟫⟧ />
 </template>",
     },
   },

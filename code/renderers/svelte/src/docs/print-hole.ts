@@ -3,6 +3,7 @@ import type { Args } from 'storybook/internal/types';
 
 import {
   type PropValue,
+  type SvelteHolePlace,
   attributeText,
   fragmentText,
   isPrimary,
@@ -14,27 +15,22 @@ import {
 } from '../snippet-values.ts';
 
 // Prints a changed arg for a hole of a template from `printTemplate` in
-// `docgen/story-docs/print-template.ts`, with the printers the static snippet is printed with:
-//
-// - `⟦prop arg⟫…⟧`: one prop a `{...args}` spread passes, left out while the arg is unset.
-// - `⟦props * name…⟫⟧`: the args a control set, as a spread passes them, but those it names.
-// - `⟦spreadattr arg⟫…⟧`: an attribute a later spread writes over.
-// - `⟦value arg⟫…⟧` and `⟦property arg name⟫…⟧`: a read in code, and a shorthand property.
-// - `⟦attrvalue arg name pre post⟫…⟧`, `⟦quoted arg pre post⟫…⟧`, `⟦fragment arg pre post⟫…⟧` and
-//   `⟦code arg pre post⟫…⟧`: one whole read, which prints a string as text where next does, else
-//   as code between `pre` and `post`.
-// - `⟦member arg⟫…⟧`: a read of a member of an arg, which the snippet cannot follow.
-export const printHole: PrintHole = ({ kind, arg = '', words }, value) => {
+// `docgen/story-docs/print-template.ts`, with the printers the static snippet is printed with; see
+// `SvelteHolePlace` for what each place is.
+export const printHole: PrintHole<SvelteHolePlace> = (hole, value) => {
+  const { place } = hole;
+  const arg = hole.arg ?? '';
   const read = () => printRead(printValue(value, arg), !isPrimary(...printedType(value)));
   const text = typeof value === 'string' ? readText(value) : undefined;
-  // The code a whole read is printed between, where it prints as code.
-  const between = (before = '', after = '') => `${before}${read()}${after}`;
-  switch (kind) {
+  // A whole read where it prints as code, between the code its place writes around it.
+  const between = ({ before, after }: { before: string; after: string }) =>
+    `${before}${read()}${after}`;
+  switch (place.kind) {
     case 'prop':
       return printProp(arg, propValue(value, arg));
     case 'props':
       return Object.entries(value as Args)
-        .filter(([name]) => !words.includes(name))
+        .filter(([name]) => !place.except.includes(name))
         .map(([name, item]) => printProp(name, propValue(item, name)))
         .filter(Boolean)
         .join(' ');
@@ -43,19 +39,19 @@ export const printHole: PrintHole = ({ kind, arg = '', words }, value) => {
     case 'value':
       return read();
     case 'property':
-      return `${words[0]}: ${read()}`;
+      return `${place.name}: ${read()}`;
     case 'attrvalue':
-      return attributeText(words[0]!, text) ?? between(words[1], words[2]);
+      return attributeText(place.name, text) ?? between(place);
     case 'quoted':
-      return quotedText(text) ?? between(...words);
+      return quotedText(text) ?? between(place);
     case 'fragment':
-      return fragmentText(text) ?? between(...words);
+      return fragmentText(text) ?? between(place);
     case 'code':
-      return between(...words);
+      return between(place);
     case 'member':
       throw new UnprintableArgError(arg);
     default:
-      throw new Error(`Unknown hole ⟦${kind}⟧`);
+      throw new Error(`Unknown hole ⟦${(place as { kind: string }).kind}⟧`);
   }
 };
 

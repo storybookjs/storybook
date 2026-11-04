@@ -40,31 +40,31 @@ const user = { name: 'Ada', age: 36 };
       "template": "<script lang="ts" setup>
 import NamedTypeDetails from './NamedTypeDetails.vue';
 
-const big = ⟦value big script⟫{}⟧;
+const big = ⟦value big in="script"⟫{}⟧;
 
-const builtin = ⟦value builtin script⟫new Date(0)⟧;
+const builtin = ⟦value builtin in="script"⟫new Date(0)⟧;
 
-const cyclic = ⟦value cyclic script⟫{ peer: { peer: null } }⟧;
+const cyclic = ⟦value cyclic in="script"⟫{ peer: { peer: null } }⟧;
 
-const dict = ⟦value dict script⟫{ a: 1 }⟧;
+const dict = ⟦value dict in="script"⟫{ a: 1 }⟧;
 
-const inlined = ⟦value inlined script⟫{ foo: 'foo', bar: 1 }⟧;
+const inlined = ⟦value inlined in="script"⟫{ foo: 'foo', bar: 1 }⟧;
 
-const localDate = ⟦value localDate script⟫new Date(0)⟧;
+const localDate = ⟦value localDate in="script"⟫new Date(0)⟧;
 
-const namespaced = ⟦value namespaced script⟫{ key: 'k', count: 2 }⟧;
+const namespaced = ⟦value namespaced in="script"⟫{ key: 'k', count: 2 }⟧;
 
-const partialed = ⟦value partialed script⟫{ age: 36 }⟧;
+const partialed = ⟦value partialed in="script"⟫{ age: 36 }⟧;
 
-const picked = ⟦value picked script⟫{ name: 'Ada' }⟧;
+const picked = ⟦value picked in="script"⟫{ name: 'Ada' }⟧;
 
-const prefs = ⟦value prefs script⟫{ locale: 'en-US' }⟧;
+const prefs = ⟦value prefs in="script"⟫{ locale: 'en-US' }⟧;
 
-const user = ⟦value user script⟫{ name: 'Ada', age: 36 }⟧;
+const user = ⟦value user in="script"⟫{ name: 'Ada', age: 36 }⟧;
 </script>
 
 <template>
-  <NamedTypeDetails :big="big" :builtin="builtin" :cyclic="cyclic" :dict="dict" :inlined="inlined" :localDate="localDate" :namespaced="namespaced" :partialed="partialed" :picked="picked" :prefs="prefs"⟦attr scalarAlias scalarAlias ~%20⟫scalarAlias="abc-123"⟧⟦attr shapes shapes ~%20⟫shapes="circle"⟧ :user="user"⟦props * user scalarAlias shapes cyclic big builtin inlined namespaced dict prefs localDate picked partialed ~%20⟫⟧ />
+  <NamedTypeDetails :big="big" :builtin="builtin" :cyclic="cyclic" :dict="dict" :inlined="inlined" :localDate="localDate" :namespaced="namespaced" :partialed="partialed" :picked="picked" :prefs="prefs"⟦attr scalarAlias name="scalarAlias" ~" "⟫ scalarAlias="abc-123"⟧⟦attr shapes name="shapes" ~" "⟫ shapes="circle"⟧ :user="user"⟦props * except=["user","scalarAlias","shapes","cyclic","big","builtin","inlined","namespaced","dict","prefs","localDate","picked","partialed"] ~" "⟫⟧ />
 </template>",
       "warning": "Incomplete snippet: `color: Color.Red`, `level: Level.High` could not be resolved statically.",
     },

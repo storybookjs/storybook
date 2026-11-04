@@ -7,13 +7,13 @@
       "id": "webcomponentsstorydocs-csf4-shapes--bare",
       "name": "Bare",
       "snippet": "<csf-shapes label="Factory"></csf-shapes>",
-      "template": "<csf-shapes⟦attr label label field ~%20⟫label="Factory"⟧⟦attr count count field ~%20⟫⟧></csf-shapes>",
+      "template": "<csf-shapes⟦attr label name="label" mode="field" ~" "⟫ label="Factory"⟧⟦attr count name="count" mode="field" ~" "⟫⟧></csf-shapes>",
     },
     "webcomponentsstorydocs-csf4-shapes--primary": {
       "id": "webcomponentsstorydocs-csf4-shapes--primary",
       "name": "Primary",
       "snippet": "<csf-shapes label="Factory" count="3"></csf-shapes>",
-      "template": "<csf-shapes⟦attr label label field ~%20⟫label="Factory"⟧⟦attr count count field ~%20⟫count="3"⟧></csf-shapes>",
+      "template": "<csf-shapes⟦attr label name="label" mode="field" ~" "⟫ label="Factory"⟧⟦attr count name="count" mode="field" ~" "⟫ count="3"⟧></csf-shapes>",
     },
   },
 }

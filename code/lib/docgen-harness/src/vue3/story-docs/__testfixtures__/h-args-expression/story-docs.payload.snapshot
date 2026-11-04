@@ -20,7 +20,7 @@ import HArgsExpression from './HArgsExpression.vue';
 </script>
 
 <template>
-  <HArgsExpression :count="⟦value count⟫2⟧ + 1" :label="`${⟦value count⟫2⟧} items`" />
+  <HArgsExpression :count="⟦value count in="attribute" quote="\""⟫2⟧ + 1" :label="`${⟦value count in="attribute" quote="\""⟫2⟧} items`" />
 </template>",
     },
   },

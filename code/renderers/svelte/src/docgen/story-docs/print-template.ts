@@ -7,11 +7,17 @@ import {
   unwrapExpression,
   walk as walkEstree,
 } from 'storybook/internal/csf-tools';
-import { hole, withHoleSpace } from 'storybook/internal/docs-tools';
+import {
+  type HoleMarks,
+  type SnippetTemplate,
+  createHoleMarks,
+  withHoleSpace,
+} from 'storybook/internal/docs-tools';
 import { walk } from 'zimmerframe';
 
 import {
   type PropValue,
+  type SvelteHolePlace,
   attributeText,
   fragmentText,
   isPrimary,
@@ -38,15 +44,19 @@ interface Reads {
   aliases: Record<string, string>;
   typescript: boolean;
   argsComplete: boolean;
+  mark: Mark;
 }
 
+type Mark = HoleMarks<SvelteHolePlace>['mark'];
+
 // An edit the static snippet makes, `value`, which is the code as written where it keeps it, and
-// `marked`, the same code with the places an arg prints in it wrapped in holes for the template.
-type Place = Edit & { marked?: string };
+// `marked`, the same code with the places an arg prints in it marked as holes for the template.
+type MarkedEdit = Edit & { marked?: string };
 
 // Write a story's args into its markup: spread `{...args}` into attributes, and replace each
 // `args.x` read with the source of the arg value. The template is the same markup with each place
-// an arg prints wrapped in a hole that holds what it prints there.
+// an arg prints as a hole that holds what it prints there, or `undefined` when its holes cannot be
+// found again.
 export function printTemplate({
   code,
   args,
@@ -64,8 +74,15 @@ export function printTemplate({
   // `{#snippet}` children for the args that hold snippets, written into the component that
   // spreads the args.
   snippets?: Record<string, string>;
-}): { snippet: string; template: string } {
+}): { snippet: string; template?: SnippetTemplate<SvelteHolePlace> } {
   const { ast, offset } = parseMarkup(code, typescript);
+  // The snippet prints the markup, the arg values and the snippets, so no mark can be read in them.
+  const marks = createHoleMarks<SvelteHolePlace>([
+    code,
+    ...Object.values(args).map((value) => textOf(value)),
+    ...Object.values(snippets),
+  ]);
+  const { mark } = marks;
   const destructured = new Set(Object.values(parameter?.aliases ?? {}));
   const name = parameter ? parameter.name : 'args';
   const reads: Reads = {
@@ -74,6 +91,7 @@ export function printTemplate({
     aliases: parameter?.aliases ?? {},
     typescript,
     argsComplete,
+    mark,
   };
   const isArgsSpread = (attribute: SvelteAST.Component['attributes'][number]) =>
     attribute.type === 'SpreadAttribute' &&
@@ -84,7 +102,7 @@ export function printTemplate({
     return { start: range.start - offset, end: range.end - offset };
   };
   const written = ({ start, end }: Span) => code.slice(start, end);
-  const edits: Place[] = [];
+  const edits: MarkedEdit[] = [];
 
   walk<SvelteAST.SvelteNode, null>(ast.fragment, null, {
     Attribute(node, { path, next }) {
@@ -109,7 +127,7 @@ export function printTemplate({
         edits.push({
           ...range,
           value,
-          marked: hole({ kind: 'spreadattr', arg: node.name, words: [] }, value),
+          marked: mark({ place: { kind: 'spreadattr' }, arg: node.name }, value),
         });
         return;
       }
@@ -147,7 +165,7 @@ export function printTemplate({
           ? []
           : [[key, printProp(key, printed)]];
       });
-      const spread = spreadPlace(code, at(node), props, [
+      const spread = spreadPlace(code, at(node), mark, props, [
         ...props.map(([key]) => key),
         ...writtenProps,
         ...destructured,
@@ -210,28 +228,25 @@ export function printTemplate({
       const attributeName =
         parent?.type === 'Attribute' && parent.value === node ? parent.name : undefined;
       const place = attributeName === undefined ? tag : attribute!;
-      const [pre, post] =
+      const [before, after] =
         attributeName !== undefined && shorthand
           ? [`${attributeName}={`, '}']
           : [code.slice(place.start, range.start), code.slice(range.end, place.end)];
-      const kind = deep
-        ? 'member'
+      const holePlace: SvelteHolePlace = deep
+        ? { kind: 'member' }
         : attributeName !== undefined
-          ? 'attrvalue'
-          : quoted
-            ? 'quoted'
-            : parent?.type === 'Fragment'
-              ? 'fragment'
-              : 'code';
+          ? { kind: 'attrvalue', name: attributeName, before, after }
+          : {
+              kind: quoted ? 'quoted' : parent?.type === 'Fragment' ? 'fragment' : 'code',
+              before,
+              after,
+            };
       const value =
         code.slice(place.start, edit.start) + edit.value + code.slice(edit.end, place.end);
       edits.push({
         ...place,
         value,
-        marked: hole(
-          { kind, arg, words: kind === 'attrvalue' ? [attributeName!, pre, post] : [pre, post] },
-          value
-        ),
+        marked: mark({ place: holePlace, arg }, value),
       });
     },
     _(node, { next }) {
@@ -255,8 +270,11 @@ export function printTemplate({
           ...range,
           value,
           marked: replaced.single
-            ? hole(
-                { kind: 'code', arg: replaced.single.arg, words: [`${node.name}={`, '}'] },
+            ? mark(
+                {
+                  place: { kind: 'code', before: `${node.name}={`, after: '}' },
+                  arg: replaced.single.arg,
+                },
                 value
               )
             : value,
@@ -267,10 +285,11 @@ export function printTemplate({
   });
 
   const marked = edits.map((edit) => ({ ...edit, value: edit.marked ?? edit.value }));
+  const template = marks.toTemplate(applyEdits(code, marked));
   return {
     snippet: applyEdits(code, edits),
     // An arg a control clears leaves no gap in the spread.
-    template: withHoleSpace(applyEdits(code, marked), (kind) => kind === 'prop'),
+    ...(template && { template: withHoleSpace(template, (place) => place.kind === 'prop') }),
   };
 }
 
@@ -292,14 +311,16 @@ function propValue(value: Node): PropValue {
 function spreadPlace(
   code: string,
   span: Span,
+  mark: Mark,
   props: [string, string][],
   printed: string[]
-): Place {
+): MarkedEdit {
   const values = props.map(([, prop]) => prop);
   const onePerLine = values.join(' ').length > 50;
   const separator = onePerLine ? '\n  ' : ' ';
-  const holes = props.map(([arg, prop]) => hole({ kind: 'prop', arg, words: [] }, prop));
-  const added = (space: string) => hole({ kind: 'props', words: printed }, '', space);
+  const holes = props.map(([arg, prop]) => mark({ place: { kind: 'prop' }, arg }, prop));
+  const added = (space: string) =>
+    mark({ place: { kind: 'props', except: printed }, spread: true }, '', space);
   const { end } = span;
   let { start } = span;
   if (onePerLine) while (start > 0 && /[ \t]/.test(code[start - 1])) start--;
@@ -371,7 +392,7 @@ function blockExpressions(node: SvelteAST.SvelteNode): object[] {
 // of it, `deep` when it reads a member of it. `text` is set when that read is of a string.
 function replaceArgsReads(
   expression: string,
-  { args, name, aliases, typescript, argsComplete }: Reads
+  { args, name, aliases, typescript, argsComplete, mark }: Reads
 ):
   | {
       value: string;
@@ -383,7 +404,7 @@ function replaceArgsReads(
   | undefined {
   // The parentheses let an object literal or a sequence parse as one expression.
   const editor = new SourceEditor(`(${expression})`, scriptFile(typescript));
-  const edits: (Edit & { node?: Node; marked: string; arg: string; kind: string })[] = [];
+  const edits: (Edit & { node?: Node; marked: string; arg: string; place: SvelteHolePlace })[] = [];
   // A read of `arg` from `start` to `end`, which the snippet prints as `read`, or keeps as written.
   const push = (
     arg: string,
@@ -398,15 +419,19 @@ function replaceArgsReads(
         : property === undefined
           ? read.value
           : `${property}: ${read.value}`;
-    const kind = deep ? 'member' : property === undefined ? 'value' : 'property';
+    const place: SvelteHolePlace = deep
+      ? { kind: 'member' }
+      : property === undefined
+        ? { kind: 'value' }
+        : { kind: 'property', name: property };
     edits.push({
       start,
       end,
       value,
       node: property === undefined ? read?.node : undefined,
-      marked: hole({ kind, arg, words: property === undefined ? [] : [property] }, value),
+      marked: mark({ place, arg }, value),
       arg,
-      kind,
+      place,
     });
   };
   // The value of an arg that the template parameter destructures.
@@ -461,8 +486,8 @@ function replaceArgsReads(
     ),
     changed: value !== expression,
     ...(text !== undefined ? { text } : {}),
-    ...(whole && only.kind !== 'property'
-      ? { single: { arg: only.arg, deep: only.kind === 'member' } }
+    ...(whole && only.place.kind !== 'property'
+      ? { single: { arg: only.arg, deep: only.place.kind === 'member' } }
       : {}),
   };
 }

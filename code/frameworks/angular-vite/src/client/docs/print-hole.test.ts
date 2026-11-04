@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import { UnprintableArgError } from 'storybook/internal/docs-tools';
 
+import type { AngularHolePlace } from '../../snippet-values.ts';
 import { printHole } from './print-hole.ts';
 
-const print = (kind: string, value: unknown, words: string[] = []) =>
-  printHole({ kind, arg: 'x', words }, value);
+const print = (kind: AngularHolePlace['kind'], value: unknown, indent?: number) =>
+  printHole({ place: { kind, indent }, arg: 'x' }, value);
 
 describe('printHole', () => {
   it('prints a value into a binding as the build prints the story args, for the template literal', () => {
@@ -20,9 +21,9 @@ describe('printHole', () => {
     expect(print('prop', undefined)).toBe('');
   });
 
-  it('indents the lines after the first as its word says', () => {
-    expect(print('field', ['a\nb'], ['+2'])).toBe("['a\\nb']");
-    expect(print('text', 'a\nb', ['+2'])).toBe('a\n  b');
+  it('indents the lines after the first as its place says', () => {
+    expect(print('field', ['a\nb'], 2)).toBe("['a\\nb']");
+    expect(print('text', 'a\nb', 2)).toBe('a\n  b');
   });
 
   it('prints text as written, and none Angular would read as its own syntax', () => {

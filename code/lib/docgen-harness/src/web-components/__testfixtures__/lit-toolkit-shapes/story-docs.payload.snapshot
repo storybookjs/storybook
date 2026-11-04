@@ -18,8 +18,12 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "⟦guard computed⟫⟧⟦guard version⟫⟧⟦guard pressed⟫⟧⟦guard onSelect⟫⟧⟦style base-part lit-toolkit-shapes::part(base)⟫⟧⟦style active-state lit-toolkit-shapes:state(active)⟫⟧<lit-toolkit-shapes⟦attr size size field ~%0A%20%20⟫size="small"⟧⟦attr level level field ~%0A%20%20⟫level="3"⟧⟦attr tags tags field ~%0A%20%20⟫tags="[&quot;b&quot;]"⟧⟦attr label label field ~%0A%20%20⟫label="Default render"⟧⟦attr oldSize old-size field ~%0A%20%20⟫⟧⟦attr target target field ~%0A%20%20⟫⟧⟦attr when when field ~%0A%20%20⟫⟧⟦cssattr --toolkit-color --toolkit-color ~%0A%20%20⟫⟧⟦cssattr --toolkit-scale --toolkit-scale ~%0A%20%20⟫⟧⟦cssattr --toolkit-font --toolkit-font ~%0A%20%20⟫⟧⟦cssattr --toolkit-gap --toolkit-gap ~%0A%20%20⟫⟧
->⟦slot default-slot default⟫⟧⟦slot label-slot label⟫⟧</lit-toolkit-shapes>
+      "template": "⟦guard computed⟫⟧⟦guard version⟫⟧⟦guard pressed⟫⟧⟦guard onSelect⟫⟧⟦style base-part selector="lit-toolkit-shapes::part(base)"⟫⟧⟦style active-state selector="lit-toolkit-shapes:state(active)"⟫⟧<lit-toolkit-shapes⟦attr size name="size" mode="field" ~"\n  "⟫
+  size="small"⟧⟦attr level name="level" mode="field" ~"\n  "⟫
+  level="3"⟧⟦attr tags name="tags" mode="field" ~"\n  "⟫
+  tags="[&quot;b&quot;]"⟧⟦attr label name="label" mode="field" ~"\n  "⟫
+  label="Default render"⟧⟦attr oldSize name="old-size" mode="field" ~"\n  "⟫⟧⟦attr target name="target" mode="field" ~"\n  "⟫⟧⟦attr when name="when" mode="field" ~"\n  "⟫⟧⟦cssattr --toolkit-color property="--toolkit-color" ~"\n  "⟫⟧⟦cssattr --toolkit-scale property="--toolkit-scale" ~"\n  "⟫⟧⟦cssattr --toolkit-font property="--toolkit-font" ~"\n  "⟫⟧⟦cssattr --toolkit-gap property="--toolkit-gap" ~"\n  "⟫⟧
+>⟦slot default-slot name="default"⟫⟧⟦slot label-slot name="label"⟫⟧</lit-toolkit-shapes>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
@@ -42,8 +46,12 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "⟦guard computed⟫⟧⟦guard version⟫⟧⟦guard pressed⟫⟧⟦guard onSelect⟫⟧⟦style base-part lit-toolkit-shapes::part(base)⟫⟧⟦style active-state lit-toolkit-shapes:state(active)⟫⟧<lit-toolkit-shapes⟦attr size size field ~%0A%20%20⟫size="large"⟧⟦attr level level field ~%0A%20%20⟫level="2"⟧⟦attr tags tags field ~%0A%20%20⟫tags="[&quot;b&quot;]"⟧⟦attr label label field ~%0A%20%20⟫label="Shaped"⟧⟦attr oldSize old-size field ~%0A%20%20⟫⟧⟦attr target target field ~%0A%20%20⟫⟧⟦attr when when field ~%0A%20%20⟫⟧⟦cssattr --toolkit-color --toolkit-color ~%0A%20%20⟫⟧⟦cssattr --toolkit-scale --toolkit-scale ~%0A%20%20⟫⟧⟦cssattr --toolkit-font --toolkit-font ~%0A%20%20⟫⟧⟦cssattr --toolkit-gap --toolkit-gap ~%0A%20%20⟫⟧
->⟦slot default-slot default⟫⟧⟦slot label-slot label⟫⟧</lit-toolkit-shapes>
+      "template": "⟦guard computed⟫⟧⟦guard version⟫⟧⟦guard pressed⟫⟧⟦guard onSelect⟫⟧⟦style base-part selector="lit-toolkit-shapes::part(base)"⟫⟧⟦style active-state selector="lit-toolkit-shapes:state(active)"⟫⟧<lit-toolkit-shapes⟦attr size name="size" mode="field" ~"\n  "⟫
+  size="large"⟧⟦attr level name="level" mode="field" ~"\n  "⟫
+  level="2"⟧⟦attr tags name="tags" mode="field" ~"\n  "⟫
+  tags="[&quot;b&quot;]"⟧⟦attr label name="label" mode="field" ~"\n  "⟫
+  label="Shaped"⟧⟦attr oldSize name="old-size" mode="field" ~"\n  "⟫⟧⟦attr target name="target" mode="field" ~"\n  "⟫⟧⟦attr when name="when" mode="field" ~"\n  "⟫⟧⟦cssattr --toolkit-color property="--toolkit-color" ~"\n  "⟫⟧⟦cssattr --toolkit-scale property="--toolkit-scale" ~"\n  "⟫⟧⟦cssattr --toolkit-font property="--toolkit-font" ~"\n  "⟫⟧⟦cssattr --toolkit-gap property="--toolkit-gap" ~"\n  "⟫⟧
+>⟦slot default-slot name="default"⟫⟧⟦slot label-slot name="label"⟫⟧</lit-toolkit-shapes>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
@@ -67,7 +75,11 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-      "template": "<lit-toolkit-shapes⟦attr size size bind ~%0A%20%20⟫size="large"⟧⟦attr level level bind ~%0A%20%20⟫level="2"⟧⟦attr tags tags field ~%0A%20%20⟫tags="[&quot;b&quot;]"⟧⟦attr label label bind ~%0A%20%20⟫label="Shaped"⟧
+      "template": "<lit-toolkit-shapes⟦attr size name="size" mode="bind" ~"\n  "⟫
+  size="large"⟧⟦attr level name="level" mode="bind" ~"\n  "⟫
+  level="2"⟧⟦attr tags name="tags" mode="field" ~"\n  "⟫
+  tags="[&quot;b&quot;]"⟧⟦attr label name="label" mode="bind" ~"\n  "⟫
+  label="Shaped"⟧
 ></lit-toolkit-shapes>
 <script>
   {

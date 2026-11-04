@@ -5,7 +5,7 @@ import {
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 
-import type { TemplateHole, hole } from 'storybook/internal/docs-tools';
+import type { HoleMarks, HoleRef } from 'storybook/internal/docs-tools';
 
 import type {
   ClassifiedArg,
@@ -14,6 +14,7 @@ import type {
   RenderableValuePlan,
 } from '../story-docs/classify-args/classify-args.ts';
 import {
+  type VueHolePlace,
   attributeOrder,
   printAttribute,
   quoteAttributeValue,
@@ -47,8 +48,8 @@ export interface RenderContext {
   componentImports: Set<string>;
   /** Setup statements forwarded into `<script setup>`, printed after the hoisted consts. */
   statements: string[];
-  // For the story's template, wraps each place an arg prints in its hole; see `printHole`.
-  mark?: typeof hole;
+  // For the story's template, marks each place an arg prints as its hole; see `printHole`.
+  mark?: HoleMarks<VueHolePlace>['mark'];
 }
 
 interface RenderPropValueInput {
@@ -95,7 +96,7 @@ function partitionArgsByRole(args: ClassifiedArg[]): {
 }
 
 // Create an isolated hoist context for one generated snippet, or with `mark` for its template.
-export function createRenderContext(mark?: typeof hole): RenderContext {
+export function createRenderContext(mark?: HoleMarks<VueHolePlace>['mark']): RenderContext {
   return {
     imports: {},
     // `ref` is reserved up front so no hoisted arg can shadow the Vue import a v-model may need.
@@ -108,15 +109,19 @@ export function createRenderContext(mark?: typeof hole): RenderContext {
   };
 }
 
-// `text` as the snippet prints it in a place, which a template wraps in the place's hole.
-export const marked = (ctx: RenderContext, place: TemplateHole, text: string, space?: string) =>
-  ctx.mark ? ctx.mark(place, text, space) : text;
+// `text` as the snippet prints it in a place, which a template marks as the place's hole.
+export const marked = (
+  ctx: RenderContext,
+  hole: HoleRef<VueHolePlace>,
+  text: string,
+  space?: string
+) => (ctx.mark ? ctx.mark(hole, text, space) : text);
 
 // An arg's value as code in `<script setup>`.
 export function scriptValue(name: string, value: Node, ctx: RenderContext): string {
   return marked(
     ctx,
-    { kind: 'value', arg: name, words: ['script'] },
+    { place: { kind: 'value', in: 'script' }, arg: name },
     printValue(unwrapExpression(value))
   );
 }
@@ -157,7 +162,7 @@ function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): Rende
   return {
     attrName: marked(
       ctx,
-      { kind: 'attr', arg: input.variableName, words: [input.attributeName] },
+      { place: { kind: 'attr', name: input.attributeName }, arg: input.variableName },
       attribute
     ),
   };
@@ -207,7 +212,7 @@ export function renderSlotContent(
     const content = slotContent(snippetValueOf(value));
     // Vue's whitespace condensing would alter padded text, so it hoists to an interpolation.
     if (content !== undefined) {
-      return marked(own, { kind: 'text', arg: arg.name, words: ['slot'] }, content);
+      return marked(own, { place: { kind: 'text', slot: true }, arg: arg.name }, content);
     }
   }
 
@@ -390,7 +395,7 @@ export function hoistModelRef(name: string, value: Node | undefined, ctx: Render
   const initial = value ? printValue(unwrapExpression(value)) : '';
   ctx.variables.set(
     bindingName,
-    `ref(${marked(ctx, { kind: 'value', arg: name, words: ['script'] }, initial)})`
+    `ref(${marked(ctx, { place: { kind: 'value', in: 'script' }, arg: name }, initial)})`
   );
   return bindingName;
 }

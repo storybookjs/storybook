@@ -21,7 +21,7 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import { hasHoleBracket } from 'storybook/internal/docs-tools';
+import { prependToTemplate } from 'storybook/internal/docs-tools';
 import type {
   ProvidedStoryDoc,
   ProvidedStoryDocsPayload,
@@ -139,8 +139,7 @@ function storySnippet(
     argsComplete: resolved.unresolved.length === 0,
   });
   let markup = printed.snippet;
-  // Holes written in code that already holds a hole bracket could not be found again.
-  let holes = hasHoleBracket(template) ? undefined : printed.template;
+  let holes = printed.template;
   const importBlock = () =>
     buildSnippetImportBlock(markup, {
       bindings,
@@ -165,7 +164,7 @@ function storySnippet(
       const { parameters, body } = file.snippets.get(name)!;
       const declaration = `\n\n{#snippet ${name}(${parameters})}${body}{/snippet}`;
       markup += declaration;
-      holes &&= holes + declaration;
+      holes &&= [...holes, declaration];
     }
     imported = importBlock();
   }
@@ -177,12 +176,12 @@ function storySnippet(
     unresolvedWarning(resolved.unresolved.filter((name) => !imported.declared.includes(name))),
     renders ? RENDER_WARNING : undefined,
   ].filter(Boolean);
-  const withImports = (code: string) => (imported.block ? `${imported.block}\n\n${code}` : code);
+  const importCode = imported.block ? `${imported.block}\n\n` : '';
   const warning = warnings.length ? warnings.join(' ') : undefined;
   return {
-    snippet: withImports(markup),
+    snippet: importCode + markup,
     ...(warning === undefined ? {} : { warning }),
-    ...(holes === undefined ? {} : { template: withImports(holes) }),
+    ...(holes === undefined ? {} : { template: prependToTemplate(importCode, holes) }),
   };
 }
 

@@ -16,12 +16,14 @@ import type { IndexEntry } from 'storybook/internal/types';
 import { buildStoryDocsPayload } from '../../../../renderers/web-components/src/docgen/story-docs/build-story-docs.ts';
 import { evaluateArgValue } from '../../../../renderers/web-components/src/docgen/story-docs/arg-values.ts';
 import { printHole } from '../../../../renderers/web-components/src/docs/print-hole.ts';
+import type { HtmlSnippetTemplate } from '../../../../renderers/web-components/src/snippet-holes.ts';
 import { createFixtureDocgen } from './story-docs/docgen-fixture.ts';
 import {
   expectNoStaleSnippets,
   NO_SNIPPET_SENTINEL,
   recordServerSnippet,
 } from '../compare/server-snippet-recorder.ts';
+import { withReadableTemplates } from '../compare/readable-templates.ts';
 
 const STYLE_BLOCK_REGEXP = /^<style>[\s\S]*?<\/style>\n/;
 
@@ -114,7 +116,11 @@ async function build({ testDir, title }: Case) {
         Object.entries(initialArgs).map(([key, value]) => [key, changed(value)])
       );
       try {
-        filled[exportName] = fillTemplate(template, { initialArgs, unmappedArgs }, printHole);
+        filled[exportName] = fillTemplate(
+          template as HtmlSnippetTemplate,
+          { initialArgs, unmappedArgs },
+          printHole
+        );
       } catch (error) {
         if (!(error instanceof UnprintableArgError)) {
           throw error;
@@ -171,7 +177,7 @@ describe('web-components story-docs server snippets', () => {
       storyExports.map(([exportName]) => exportName)
     );
 
-    await expect({ ...payload, path: '__PATH__' }).toMatchFileSnapshot(
+    await expect(withReadableTemplates({ ...payload!, path: '__PATH__' })).toMatchFileSnapshot(
       join(testDir, 'story-docs.payload.snapshot')
     );
     await expect(filled).toMatchFileSnapshot(join(testDir, 'story-docs.filled.snapshot'));

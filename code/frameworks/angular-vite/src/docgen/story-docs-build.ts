@@ -19,7 +19,7 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import { withHoleSpace } from 'storybook/internal/docs-tools';
+import { type SnippetTemplate, withHoleSpace } from 'storybook/internal/docs-tools';
 import type {
   ProvidedStoryDoc,
   ProvidedStoryDocsPayload,
@@ -51,7 +51,7 @@ import {
   formatPropInTemplate,
   formatTemplateMarkup,
 } from '../template-grammar.ts';
-import { inputBinding } from '../snippet-values.ts';
+import { type AngularHolePlace, inputBinding } from '../snippet-values.ts';
 
 export interface BuildStoryDocsContext {
   /**
@@ -235,7 +235,7 @@ const renderedSnippet = async (
 };
 
 interface StoryTemplate {
-  template: string;
+  template: SnippetTemplate<AngularHolePlace>;
 }
 
 // The story's template: its static snippet with each value of an arg it prints wrapped in a hole,
@@ -260,7 +260,7 @@ const storyTemplate = async (
   // A binding a control clears leaves no gap, and a value over a line of its own no empty line.
   return template === undefined
     ? {}
-    : { template: withHoleSpace(template, (kind) => kind === 'prop' || kind === 'text') };
+    : { template: withHoleSpace(template, ({ kind }) => kind === 'prop' || kind === 'text') };
 };
 
 type RenderedSnippet = HostComponentSnippet & {

@@ -21,12 +21,12 @@ const title = heading;
       "template": "<script lang="ts" setup>
 import SetupRenamedArgs from './SetupRenamedArgs.vue';
 
-const heading = ⟦value label script⟫'Renamed'⟧;
+const heading = ⟦value label in="script"⟫'Renamed'⟧;
 const title = heading;
 </script>
 
 <template>
-  <SetupRenamedArgs⟦attr label label ~%20⟫label="Renamed"⟧ :title="title" />
+  <SetupRenamedArgs⟦attr label name="label" ~" "⟫ label="Renamed"⟧ :title="title" />
 </template>",
     },
   },

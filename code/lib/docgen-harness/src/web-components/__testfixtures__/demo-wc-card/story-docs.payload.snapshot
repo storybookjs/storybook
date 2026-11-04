@@ -9,15 +9,15 @@
       "snippet": "<demo-wc-card back-side rows="[]">
   <span slot="prefix"></span>A simple card
 </demo-wc-card>",
-      "template": "<demo-wc-card⟦attr backSide back-side field ~%20⟫back-side⟧⟦attr rows rows field ~%20⟫rows="[]"⟧⟦attr header header field ~%20⟫⟧>
-  <span slot="prefix">⟦text prefix⟫⟧</span>A simple card
+      "template": "<demo-wc-card⟦attr backSide name="back-side" mode="field" ~" "⟫ back-side⟧⟦attr rows name="rows" mode="field" ~" "⟫ rows="[]"⟧⟦attr header name="header" mode="field" ~" "⟫⟧>
+  <span slot="prefix">⟦text prefix trimStart=false trimEnd=false⟫⟧</span>A simple card
 </demo-wc-card>",
     },
     "webcomponentsfixtures-demo-wc-card--front": {
       "id": "webcomponentsfixtures-demo-wc-card--front",
       "name": "Front",
       "snippet": "<demo-wc-card rows="[]"><span slot="prefix"></span>A simple card</demo-wc-card>",
-      "template": "<demo-wc-card⟦attr rows rows field ~%20⟫rows="[]"⟧⟦attr backSide back-side field ~%20⟫⟧⟦attr header header field ~%20⟫⟧><span slot="prefix">⟦text prefix⟫⟧</span>A simple card</demo-wc-card>",
+      "template": "<demo-wc-card⟦attr rows name="rows" mode="field" ~" "⟫ rows="[]"⟧⟦attr backSide name="back-side" mode="field" ~" "⟫⟧⟦attr header name="header" mode="field" ~" "⟫⟧><span slot="prefix">⟦text prefix trimStart=false trimEnd=false⟫⟧</span>A simple card</demo-wc-card>",
     },
     "webcomponentsfixtures-demo-wc-card--prefix": {
       "id": "webcomponentsfixtures-demo-wc-card--prefix",
@@ -25,8 +25,8 @@
       "snippet": "<demo-wc-card header="my header" rows="[]">
   <span slot="prefix">prefix:</span>A simple card
 </demo-wc-card>",
-      "template": "<demo-wc-card⟦attr header header field ~%20⟫header="my header"⟧⟦attr rows rows field ~%20⟫rows="[]"⟧⟦attr backSide back-side field ~%20⟫⟧>
-  <span slot="prefix">⟦text prefix ^ $⟫prefix:⟧</span>A simple card
+      "template": "<demo-wc-card⟦attr header name="header" mode="field" ~" "⟫ header="my header"⟧⟦attr rows name="rows" mode="field" ~" "⟫ rows="[]"⟧⟦attr backSide name="back-side" mode="field" ~" "⟫⟧>
+  <span slot="prefix">⟦text prefix trimStart=true trimEnd=true⟫prefix:⟧</span>A simple card
 </demo-wc-card>",
     },
   },

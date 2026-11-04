@@ -6,7 +6,12 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { sanitize, storyNameFromExport } from 'storybook/internal/csf';
-import { UnprintableArgError, fillTemplate, stripHoles } from 'storybook/internal/docs-tools';
+import {
+  type SnippetTemplate,
+  UnprintableArgError,
+  fillTemplate,
+  stripHoles,
+} from 'storybook/internal/docs-tools';
 import type { Args, IndexEntry } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
@@ -17,7 +22,9 @@ import { compileScript, compileTemplate, parse } from 'vue/compiler-sfc';
 import { renderToString } from 'vue/server-renderer';
 
 import { printHole } from '../../../../../renderers/vue3/src/docs/print-hole.ts';
+import type { VueHolePlace } from '../../../../../renderers/vue3/src/snippet-values.ts';
 import { parseArgTypesSnapshot } from '../../compare/parse-snapshot.ts';
+import { withReadableTemplates } from '../../compare/readable-templates.ts';
 import TemplateSharedValues from './__testfixtures__/template-shared-values/TemplateSharedValues.vue';
 import * as sharedValuesStories from './__testfixtures__/template-shared-values/input.stories.ts';
 
@@ -221,9 +228,9 @@ async function buildFixturePayload({ name, testDir, tree }: FixtureCase) {
 async function expectPayloadSnapshot(fixtureCase: FixtureCase): Promise<void> {
   const payload = await buildFixturePayload(fixtureCase);
   const { testDir } = fixtureCase;
-  await expect(payload ? { ...payload, path: '__PATH__' } : payload).toMatchFileSnapshot(
-    join(testDir, 'story-docs.payload.snapshot')
-  );
+  await expect(
+    payload ? withReadableTemplates({ ...payload, path: '__PATH__' }) : payload
+  ).toMatchFileSnapshot(join(testDir, 'story-docs.payload.snapshot'));
 }
 
 setProjectAnnotations([]);
@@ -272,10 +279,17 @@ function compileErrors(code: string): string[] {
   return [...errors, ...(template?.errors ?? [])].map(String);
 }
 
+// The Vue provider writes the payload's templates, so their holes stand in Vue places.
+const vueTemplate = (template: SnippetTemplate) => template as SnippetTemplate<VueHolePlace>;
+
 // A story whose args the snippet cannot show falls back to its static snippet.
-function fill(template: string, initialArgs: Args, unmappedArgs: Args): string | undefined {
+function fill(
+  template: SnippetTemplate,
+  initialArgs: Args,
+  unmappedArgs: Args
+): string | undefined {
   try {
-    return fillTemplate(template, { initialArgs, unmappedArgs }, printHole);
+    return fillTemplate(vueTemplate(template), { initialArgs, unmappedArgs }, printHole);
   } catch (error) {
     if (error instanceof UnprintableArgError) {
       return undefined;
@@ -363,7 +377,7 @@ describe('vue3 filled story templates', () => {
     )!;
     const initialArgs = composeStories(sharedValuesStories)[name].args;
     const filled = fillTemplate(
-      story.template!,
+      vueTemplate(story.template!),
       { initialArgs, unmappedArgs: { ...initialArgs, ...structuredClone(args) } },
       printHole
     );

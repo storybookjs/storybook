@@ -12,21 +12,25 @@
   variant="full"
   aria-label-text="Default rating"
 ></stencil-props>",
-      "template": "⟦guard hovered⟫⟧<stencil-props⟦attr value value field ~%0A%20%20⟫value="1"⟧⟦attr max max field ~%0A%20%20⟫max="5"⟧⟦attr variant variant field ~%0A%20%20⟫variant="full"⟧⟦attr labelText aria-label-text field ~%0A%20%20⟫aria-label-text="Default rating"⟧⟦attr labels labels field ~%0A%20%20⟫⟧
+      "template": "⟦guard hovered⟫⟧<stencil-props⟦attr value name="value" mode="field" ~"\n  "⟫
+  value="1"⟧⟦attr max name="max" mode="field" ~"\n  "⟫
+  max="5"⟧⟦attr variant name="variant" mode="field" ~"\n  "⟫
+  variant="full"⟧⟦attr labelText name="aria-label-text" mode="field" ~"\n  "⟫
+  aria-label-text="Default rating"⟧⟦attr labels name="labels" mode="field" ~"\n  "⟫⟧
 ></stencil-props>",
     },
     "webcomponentsfixtures-stencil-props--dom-node": {
       "id": "webcomponentsfixtures-stencil-props--dom-node",
       "name": "Dom Node",
       "snippet": "<stencil-props value="3" max="5" variant="compact" aria-label-text="Rating"></stencil-props>",
-      "template": "⟦guard hovered⟫⟧<stencil-props⟦attr value value field ~%20⟫value="3"⟧⟦attr max max field ~%20⟫max="5"⟧⟦attr variant variant field ~%20⟫variant="compact"⟧⟦attr labelText aria-label-text field ~%20⟫aria-label-text="Rating"⟧⟦attr labels labels field ~%20⟫⟧></stencil-props>",
+      "template": "⟦guard hovered⟫⟧<stencil-props⟦attr value name="value" mode="field" ~" "⟫ value="3"⟧⟦attr max name="max" mode="field" ~" "⟫ max="5"⟧⟦attr variant name="variant" mode="field" ~" "⟫ variant="compact"⟧⟦attr labelText name="aria-label-text" mode="field" ~" "⟫ aria-label-text="Rating"⟧⟦attr labels name="labels" mode="field" ~" "⟫⟧></stencil-props>",
       "warning": "Incomplete snippet: `(args) => { const el = document.createElement('stencil-props'); el.setAttribute('value', String(args.value)); el.setAttribute('max', String(args.max)); el.setAttribute('variant', String(args.variant)); el.setAttribute('aria-label-text', String(args.labelText)); return el; }` could not be resolved statically.",
     },
     "webcomponentsfixtures-stencil-props--lit-template": {
       "id": "webcomponentsfixtures-stencil-props--lit-template",
       "name": "Lit Template",
       "snippet": "<stencil-props value="3" max="5" variant="compact" aria-label-text="Rating"></stencil-props>",
-      "template": "<stencil-props⟦attr value value bind ~%20⟫value="3"⟧⟦attr max max bind ~%20⟫max="5"⟧⟦attr variant variant bind ~%20⟫variant="compact"⟧⟦attr labelText aria-label-text bind ~%20⟫aria-label-text="Rating"⟧></stencil-props>",
+      "template": "<stencil-props⟦attr value name="value" mode="bind" ~" "⟫ value="3"⟧⟦attr max name="max" mode="bind" ~" "⟫ max="5"⟧⟦attr variant name="variant" mode="bind" ~" "⟫ variant="compact"⟧⟦attr labelText name="aria-label-text" mode="bind" ~" "⟫ aria-label-text="Rating"⟧></stencil-props>",
     },
   },
 }

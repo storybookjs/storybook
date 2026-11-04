@@ -4,6 +4,34 @@
 // one returns `undefined`, the snippet cannot hold the value there: the provider declares it in
 // `<script setup>` or prints no snippet, and the filler shows the static snippet.
 
+// Where a hole of a story's template stands, which the provider writes and `printHole` prints a
+// changed arg for:
+//
+// - `attr`: the attribute `name`, left out while the arg is unset.
+// - `props`: the args a control set, as an args binding passes them, but those in `except`, which
+//   the element prints already.
+// - `text`: the text of an interpolation, or with `slot`, a slot's content. `braceBefore` and
+//   `braceAfter` say the template writes a `{` right before or after it.
+// - `value`: code in `<script setup>`, in an interpolation, or in an attribute value quoted with
+//   `quote`. `readsOn` says the code reads on after it with a `.`, as `(5).toFixed()` does.
+// - `guard`: an arg the snippet has no place for, such as a slot the story leaves unset.
+export type VueHolePlace =
+  | { kind: 'attr'; name: string }
+  | { kind: 'props'; except: string[] }
+  | ({ kind: 'text'; slot?: boolean } & Braces)
+  | ({ kind: 'value'; readsOn?: boolean } & (
+      | { in: 'script' | 'interpolation' }
+      | { in: 'attribute'; quote: '"' | "'" }
+    ))
+  | { kind: 'guard' };
+
+// The `{` a template writes right before or after a text, which a `{` in the text would make a `{{`
+// with.
+export interface Braces {
+  braceBefore?: boolean;
+  braceAfter?: boolean;
+}
+
 // A value as the snippet prints it: a literal whose value it prints, or code it prints as is.
 export type SnippetValue =
   | { kind: 'boolean'; value: boolean }
@@ -80,11 +108,8 @@ export function operand(code: string, readsOn: boolean): string {
   return code.startsWith('-') || (readsOn && /^\d/.test(code)) ? `(${code})` : code;
 }
 
-// Whether text fits where the template writes a `{` before it (a `{<` word) or after it (`{>`),
-// which it would make a `{{` with.
-export function fitsBraces(text: string, braces: readonly string[]): boolean {
-  return !(
-    (text.startsWith('{') && braces.includes('{<')) ||
-    (text.endsWith('{') && braces.includes('{>'))
-  );
+// Whether text fits where the template writes a `{` before or after it, which it would make a `{{`
+// with.
+export function fitsBraces(text: string, { braceBefore, braceAfter }: Braces): boolean {
+  return !((text.startsWith('{') && braceBefore) || (text.endsWith('{') && braceAfter));
 }

@@ -22,15 +22,15 @@ import {
   walk,
 } from 'storybook/internal/csf-tools';
 import {
-  type TemplateHole,
-  hasHoleBracket,
-  hole,
+  type SnippetTemplate,
+  createHoleMarks,
   withHoleSpace,
 } from 'storybook/internal/docs-tools';
 
 import {
   type JsxValue,
   type Mark,
+  type ReactHolePlace,
   printArgsEntry,
   printArgsObject,
   printAttribute,
@@ -52,7 +52,7 @@ export interface CodeSnippet {
   /** Source of a `const` or `function` declaration named after the story. */
   snippet: string;
   // The snippet with each place an arg prints wrapped in a hole; see `StoryDoc.template`.
-  template?: string;
+  template?: SnippetTemplate<ReactHolePlace>;
   /** Imports the snippet needs beyond the component, from arg values that kept a name. */
   imports: ImportRef[];
   /** What a static pass could not read, in the source text it was written as. */
@@ -72,15 +72,11 @@ export function getCodeSnippet(
     importedBind
       ? importedBind.print(mark)
       : buildSnippet(csf, storyName, componentName, args, resolver, mark);
-  const marks = commentMarks();
+  const snippet = print();
+  const template = withTemplate ? printTemplate(print, [csf.editor.code, snippet]) : undefined;
   return {
-    snippet: print(),
-    // Marks in code that already holds a hole bracket could not be found again.
-    ...(withTemplate &&
-      !hasHoleBracket(csf.editor.code) && {
-        // An attribute a control clears leaves no gap or empty line.
-        template: withHoleSpace(marks.unmark(print(marks.mark)), (kind) => kind === 'attr'),
-      }),
+    snippet,
+    ...(template && { template }),
     imports: importedBind ? [...imports, importedBind.importRef] : imports,
     unresolved,
   };
@@ -89,15 +85,16 @@ export function getCodeSnippet(
 type Args = Record<string, Node>;
 
 // The template is the snippet printed with each place an arg prints marked by a comment, which
-// parses and reindents wherever the place stands, and the marks then turned into holes.
-function commentMarks() {
-  const holes: TemplateHole[] = [];
-  const mark: Mark = (place, text) => `/*⟦${holes.push(place) - 1}*/${text}/*⟧*/`;
-  const unmark = (code: string) =>
-    code.replace(/\/\*⟦(\d+)\*\/(.*?)\/\*⟧\*\//gs, (_, index: string, text: string) =>
-      hole(holes[Number(index)]!, text)
-    );
-  return { mark, unmark };
+// parses and reindents wherever the place stands, and the marks then turned into holes. `sources`
+// is all code the snippet prints, so none of it is read as a mark.
+function printTemplate(
+  print: (mark: Mark) => string,
+  sources: string[]
+): SnippetTemplate<ReactHolePlace> | undefined {
+  const marks = createHoleMarks<ReactHolePlace>(sources, (mark) => `/*${mark}*/`);
+  const template = marks.toTemplate(print(marks.mark));
+  // An attribute a control clears leaves no gap or empty line.
+  return template && withHoleSpace(template, (place) => place.kind === 'attr');
 }
 
 // `value` is the snippet's code from `start` to `end`, or the code as written when `undefined`;
@@ -134,13 +131,13 @@ function importedBoundStory(
       return printArgsObject(entries.map(([key, value]) => [key, print(value)]));
     }
     if (entries.length === 0) {
-      return mark({ kind: 'object', words: [] }, '{}');
+      return mark({ place: { kind: 'object' }, spread: true }, '{}');
     }
     const values = entries.map(([key, value]) =>
-      printArgsEntry([key, mark({ kind: 'value', arg: key, words: [] }, print(value))])
+      printArgsEntry([key, mark({ place: { kind: 'value' }, arg: key }, print(value))])
     );
     const keys = entries.map(([key]) => key);
-    return `{\n${values.join(',\n')}${mark({ kind: 'entries', words: keys }, '')}\n}`;
+    return `{\n${values.join(',\n')}${mark({ place: { kind: 'entries', except: keys }, spread: true }, '')}\n}`;
   };
   return {
     print: (mark) => `const ${storyName} = () => ${bound}(${argsObject(mark)});`,
@@ -368,11 +365,19 @@ const injectedAttributes = (
 // Where a spread passes the args a control sets, but those the element prints by name, and
 // `children`, which the element ends with; see `closeHole`.
 const addedAttributes = (printed: ReadonlySet<string>, mark: Mark | undefined) =>
-  mark ? mark({ kind: 'attrs', words: [...printed, 'children'] }, '') : '';
+  mark
+    ? mark(
+        {
+          place: { kind: 'attrs', except: [...printed, 'children'] },
+          spread: true,
+        },
+        ''
+      )
+    : '';
 
 // The end of an element the args pass `children` to: `end` as the snippet prints it.
 const closeHole = (name: string, end: string, mark: Mark | undefined) =>
-  mark ? mark({ kind: 'close', arg: 'children', words: [name] }, end) : end;
+  mark ? mark({ place: { kind: 'close', element: name }, arg: 'children' }, end) : end;
 
 const toJsxChildren = (node: Node | null | undefined, print: ValuePrinter) =>
   node ? printChildren(describe(node, print)) : '';
@@ -439,14 +444,13 @@ function rewriteJsx(
         const read =
           a.value?.type === 'JSXExpressionContainer' ? getArgsMemberKey(a.value.expression) : null;
         if (read === null) {
-          const place = { kind: 'attr', arg: name, words: [name] };
           edits.push({
             start: a.start,
             end: a.end,
-            marked: mark(place, code.slice(a.start, a.end)),
+            marked: mark({ place: { kind: 'attr', name }, arg: name }, code.slice(a.start, a.end)),
           });
         } else if (read !== name) {
-          guards.push(mark({ kind: 'guard', arg: name, words: [] }, ''));
+          guards.push(mark({ place: { kind: 'guard' }, arg: name }, ''));
         }
       });
       const printed = new Set([...existing, ...injectedNames(merged, existing)]);
@@ -463,7 +467,12 @@ function rewriteJsx(
           edits.push({ start: a.start, end: a.end, value: pieces, marked });
         } else {
           const start = index > 0 ? attrs[index - 1].end : tagEnd;
-          edits.push({ start, end: a.end, value: '', marked: index === firstSpread ? marked : '' });
+          edits.push({
+            start,
+            end: a.end,
+            value: '',
+            marked: index === firstSpread ? marked : '',
+          });
         }
       });
 
@@ -511,7 +520,7 @@ function rewriteJsx(
         end: a.end,
         value,
         marked: mark?.(
-          { kind: 'attr', arg: key, words: [a.name.name] },
+          { place: { kind: 'attr', name: a.name.name }, arg: key },
           value ?? code.slice(a.start, a.end)
         ),
       });
@@ -537,7 +546,7 @@ function rewriteJsx(
         end: child.end,
         value,
         marked: mark?.(
-          { kind: 'text', arg: key, words: [] },
+          { place: { kind: 'text' }, arg: key },
           value ?? code.slice(child.start, child.end)
         ),
       });

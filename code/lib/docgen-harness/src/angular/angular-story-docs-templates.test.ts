@@ -12,13 +12,19 @@ import { parseTemplate } from '@angular/compiler';
 import ts from 'typescript';
 
 import { loadCsf } from 'storybook/internal/csf-tools';
-import { UnprintableArgError, fillTemplate, stripHoles } from 'storybook/internal/docs-tools';
+import {
+  type SnippetTemplate,
+  UnprintableArgError,
+  fillTemplate,
+  stripHoles,
+} from 'storybook/internal/docs-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { printHole } from '../../../../frameworks/angular-vite/src/client/docs/print-hole.ts';
 import { buildStoryDocsPayload } from '../../../../frameworks/angular-vite/src/docgen/story-docs-build.ts';
 import { extractHostComponentTemplate } from '../../../../frameworks/angular-vite/src/docgen/story-docs-snippet.ts';
 import { analyzeStoryTemplate } from '../../../../frameworks/angular-vite/src/docgen/story-docs-template-analysis.ts';
+import type { AngularHolePlace } from '../../../../frameworks/angular-vite/src/snippet-values.ts';
 import { createFixtureDocgen } from './docgen-fixture.ts';
 import { listFixtureCases } from './snippet-recorder.ts';
 
@@ -75,7 +81,7 @@ const expectCompiles = (filled: string, label: string) => {
 
 // The template filled once a control changed the story's args to `args`.
 const fillOrSkip = (
-  template: string,
+  template: SnippetTemplate<AngularHolePlace>,
   initialArgs: Record<string, unknown>,
   unmappedArgs: Record<string, unknown>
 ) => {
@@ -115,14 +121,16 @@ const expectDeclaresWhatItReads = (code: string, warning: string | undefined, la
 
 interface FilledStory {
   name: string;
-  template: string;
+  template?: SnippetTemplate<AngularHolePlace>;
   snippet: string;
   warning?: string;
   args: Record<string, unknown>;
 }
 
+type TemplatedStory = FilledStory & { template: SnippetTemplate<AngularHolePlace> };
+
 // Each fixture is built once, whichever test asks for it first.
-const built = new Map<string, Promise<{ stories: FilledStory[]; snippets: FilledStory[] }>>();
+const built = new Map<string, Promise<{ stories: TemplatedStory[]; snippets: FilledStory[] }>>();
 const buildFixture = (fixtureCase: string) => {
   let pending = built.get(fixtureCase);
   if (!pending) {
@@ -153,22 +161,25 @@ const buildStories = async (fixtureCase: string) => {
     string,
     Annotations | undefined
   >;
-  const snippets = Object.entries(csf._stories).flatMap(([exportName, story]) => {
-    const { template = '', snippet, warning } = payload!.stories[story.id]!;
+  const snippets = Object.entries(csf._stories).flatMap(([exportName, story]): FilledStory[] => {
+    const { template, snippet, warning } = payload!.stories[story.id]!;
     const args = { ...argsOf(storiesModule.default), ...argsOf(storiesModule[exportName]) };
     return snippet === undefined
       ? []
       : [
           {
             name: `${fixtureCase}/${exportName}`,
-            template,
+            template: template as SnippetTemplate<AngularHolePlace> | undefined,
             snippet,
             warning,
             args,
           },
         ];
   });
-  return { snippets, stories: snippets.filter(({ template }) => template !== '') };
+  return {
+    snippets,
+    stories: snippets.filter((story): story is TemplatedStory => story.template !== undefined),
+  };
 };
 
 describe('angular story-docs templates', () => {
@@ -188,7 +199,10 @@ describe('angular story-docs templates', () => {
     const { snippets } = await buildFixture(fixtureCase);
     for (const { name, template, snippet, warning, args } of snippets) {
       expectDeclaresWhatItReads(snippet, warning, `${name}'s static snippet`);
-      for (const set of template === '' ? [] : argSets(args)) {
+      if (template === undefined) {
+        continue;
+      }
+      for (const set of argSets(args)) {
         const filled = fillOrSkip(template, args, set);
         if (filled !== undefined) {
           expectDeclaresWhatItReads(filled, warning, `${name} filled with ${JSON.stringify(set)}`);

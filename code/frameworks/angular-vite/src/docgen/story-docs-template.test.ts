@@ -9,9 +9,15 @@ import { dedent } from 'ts-dedent';
 
 import { vol } from 'memfs';
 
-import { fillTemplate, stripHoles } from 'storybook/internal/docs-tools';
+import {
+  type SnippetTemplate,
+  fillTemplate,
+  formatTemplate,
+  stripHoles,
+} from 'storybook/internal/docs-tools';
 
 import { printHole } from '../client/docs/print-hole.ts';
+import type { AngularHolePlace } from '../snippet-values.ts';
 import type { AngularDocgenPayload } from './build-docgen.ts';
 import { buildStoryDocsPayload } from './story-docs-build.ts';
 
@@ -65,7 +71,9 @@ const fill = (
   args = initialArgs
 ) => {
   expect(stripHoles(story.template!)).toBe(story.snippet);
-  return fillTemplate(story.template!, { initialArgs, unmappedArgs: args }, printHole);
+  // The build writes Angular's places, which the payload type leaves to the renderer.
+  const template = story.template as SnippetTemplate<AngularHolePlace>;
+  return fillTemplate(template, { initialArgs, unmappedArgs: args }, printHole);
 };
 
 const IMPORTS = dedent`
@@ -82,10 +90,12 @@ describe('story-docs templates', () => {
         args: { label: 'Go', config: { a: 1 }, formatter: (value) => value.trim() },
       };
     `);
-    expect(story!.template).toContain(
+    expect(formatTemplate(story!.template!)).toContain(
       `[label]="⟦bind label⟫'Go'⟧"\n        [config]="⟦bind config⟫{a: 1}⟧"\n        [formatter]="formatter"`
     );
-    expect(story!.template).toContain('formatter = ⟦field formatter⟫(value) => value.trim()⟧;');
+    expect(formatTemplate(story!.template!)).toContain(
+      'formatter = ⟦field formatter⟫(value) => value.trim()⟧;'
+    );
 
     const own = { label: 'Go', config: { a: 1 }, formatter: () => '' };
     expect(fill(story!, own)).toBe(story!.snippet);
@@ -102,8 +112,8 @@ describe('story-docs templates', () => {
         render: (args) => ({ props: args, template: \`<sb-button \${argsToTemplate(args)}></sb-button>\` }),
       };
     `);
-    expect(story!.template).toContain(
-      `<sb-button⟦prop label ~%20⟫[label]="'Go'"⟧⟦prop size ~%20⟫[size]="'lg'"⟧⟦prop config ~%20⟫⟧⟦prop formatter ~%20⟫⟧></sb-button>`
+    expect(formatTemplate(story!.template!)).toContain(
+      `<sb-button⟦prop label ~" "⟫ [label]="'Go'"⟧⟦prop size ~" "⟫ [size]="'lg'"⟧⟦prop config ~" "⟫⟧⟦prop formatter ~" "⟫⟧></sb-button>`
     );
     const own = { label: 'Go', size: 'lg' };
     expect(fill(story!, own)).toBe(story!.snippet);
@@ -156,7 +166,7 @@ describe('story-docs templates', () => {
         render: ({ label }) => ({ template: \`<sb-button>\${label}</sb-button>\` }),
       };
     `);
-    expect(story!.template).toContain('<sb-button>⟦text label⟫⟧</sb-button>');
+    expect(formatTemplate(story!.template!)).toContain('<sb-button>⟦text label⟫⟧</sb-button>');
     expect(fill(story!, { label: '' })).toBe(story!.snippet);
     expect(fill(story!, { label: '' }, { label: 'Stop' })).toContain('<sb-button>Stop</sb-button>');
   });
@@ -169,7 +179,7 @@ describe('story-docs templates', () => {
         render: ({ label }) => ({ template: \`<sb-button>\${label}</sb-button>\` }),
       };
     `);
-    expect(story!.template).toContain('<sb-button>⟦text label⟫Go⟧</sb-button>');
+    expect(formatTemplate(story!.template!)).toContain('<sb-button>⟦text label⟫Go⟧</sb-button>');
     expect(fill(story!, { label: 'Go' }, { label: 'Stop' })).toContain(
       '<sb-button>Stop</sb-button>'
     );
@@ -245,6 +255,15 @@ describe('story-docs templates', () => {
     `);
     expect(story!.snippet).toContain(`[config]="{}"`);
     expect(fill(story!, { config: {} })).toBe(story!.snippet);
+  });
+
+  it('gives a story whose code holds what a template prints a hole with a template', async () => {
+    const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = { args: { label: '⟦bind x⟫y⟧' } };
+    `);
+    expect(fill(story!, { label: '⟦bind x⟫y⟧' })).toBe(story!.snippet);
+    expect(fill(story!, { label: '⟦bind x⟫y⟧' }, { label: 'Stop' })).toContain(`[label]="'Stop'"`);
   });
 
   it('has no template where next prints the author code', async () => {

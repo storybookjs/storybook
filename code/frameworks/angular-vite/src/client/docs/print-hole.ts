@@ -1,6 +1,7 @@
 import { type PrintHole, UnprintableArgError } from 'storybook/internal/docs-tools';
 
 import {
+  type AngularHolePlace,
   escapeAttributeExpression,
   escapeTemplateLiteral,
   indentLines,
@@ -9,21 +10,13 @@ import {
   textValue,
 } from '../../snippet-values.ts';
 
-// Prints a changed arg for a hole of a template from the story-docs build, where the static
-// snippet prints the arg's value:
-//
-// - `⟦bind arg⟫…⟧` is the expression of a `[name]="…"` binding.
-// - `⟦prop arg⟫…⟧` is a whole `[name]="…"` binding, which an unset arg leaves out, as
-//   `argsToTemplate` does.
-// - `⟦field arg⟫…⟧` is the code of a host component field.
-// - `⟦text arg⟫…⟧` is text the story's markup interpolates, as written.
-//
-// A `+n` word indents the lines after the first by `n` spaces, as the snippet indents a value over
-// several lines there. Every value prints with `snippet-values.ts`, which the build prints the
-// static snippet with.
-export const printHole: PrintHole = ({ kind, arg = '', words: [indentWord] }, value) => {
-  const indent = indentWord?.startsWith('+') ? ' '.repeat(Number(indentWord.slice(1))) : '';
-  switch (kind) {
+// Prints a changed arg for a hole of a template from the story-docs build, for the place where the
+// static snippet prints the arg's value; `AngularHolePlace` names each place. A value over several
+// lines is indented by the place's `indent`, as the snippet indents one there. Every value prints
+// with `snippet-values.ts`, which the build prints the static snippet with.
+export const printHole: PrintHole<AngularHolePlace> = ({ place, arg = '' }, value) => {
+  const indent = ' '.repeat(place.indent ?? 0);
+  switch (place.kind) {
     case 'bind':
       return indentLines(
         escapeTemplateLiteral(escapeAttributeExpression(expression(value, arg))),
@@ -43,7 +36,7 @@ export const printHole: PrintHole = ({ kind, arg = '', words: [indentWord] }, va
     case 'text':
       return indentLines(escapeTemplateLiteral(text(value, arg)), indent);
     default:
-      throw new Error(`Unknown hole ⟦${kind}⟧`);
+      throw new Error(`Unknown hole ⟦${(place as { kind: string }).kind}⟧`);
   }
 };
 

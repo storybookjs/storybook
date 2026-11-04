@@ -46,7 +46,7 @@ import { LiveArgsComponent } from './live-args.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [LiveArgsComponent],
-  template: `<sb-live-args [control]="⟦bind control⟫SHARED_CONTROL⟧"⟦prop formatter ~%20⟫⟧⟦prop label ~%20⟫⟧ (pressed)="pressed($event)" />`,
+  template: `<sb-live-args [control]="⟦bind control⟫SHARED_CONTROL⟧"⟦prop formatter ~" "⟫⟧⟦prop label ~" "⟫⟧ (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}
@@ -73,7 +73,7 @@ import { LiveArgsComponent } from './live-args.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [LiveArgsComponent],
-  template: `<sb-live-args [label]="⟦bind label⟫'Go'⟧" [formatter]="⟦bind formatter⟫shout⟧"⟦prop control ~%20⟫⟧ (pressed)="pressed($event)" />`,
+  template: `<sb-live-args [label]="⟦bind label⟫'Go'⟧" [formatter]="⟦bind formatter⟫shout⟧"⟦prop control ~" "⟫⟧ (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}
@@ -100,7 +100,7 @@ import { LiveArgsComponent } from './live-args.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [LiveArgsComponent],
-  template: `<sb-live-args [label]="⟦bind label⟫null⟧"⟦prop control ~%20⟫⟧⟦prop formatter ~%20⟫⟧ (pressed)="pressed($event)" />`,
+  template: `<sb-live-args [label]="⟦bind label⟫null⟧"⟦prop control ~" "⟫⟧⟦prop formatter ~" "⟫⟧ (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}

@@ -20,7 +20,7 @@ import ArgsReferencesButton from './ArgsReferencesButton.vue';
 </script>
 
 <template>
-  <ArgsReferencesButton⟦attr label label ~%20⟫label="Declared label"⟧⟦props * label ~%20⟫⟧ />
+  <ArgsReferencesButton⟦attr label name="label" ~" "⟫ label="Declared label"⟧⟦props * except=["label"] ~" "⟫⟧ />
 </template>",
     },
     "forms-args-references--spread-object-arg": {
@@ -43,14 +43,14 @@ const options = {
       "template": "<script lang="ts" setup>
 import ArgsReferencesButton from './ArgsReferencesButton.vue';
 
-const options = ⟦value options script⟫{
+const options = ⟦value options in="script"⟫{
   size: 'md',
   tone: 'neutral',
 }⟧;
 </script>
 
 <template>
-  <ArgsReferencesButton :options="options"⟦props * options ~%20⟫⟧ />
+  <ArgsReferencesButton :options="options"⟦props * except=["options"] ~" "⟫⟧ />
 </template>",
     },
     "forms-args-references--unreadable-spread-arg": {

@@ -24,13 +24,13 @@ const modelValue = ref('typed text');
 import { ref } from "vue";
 import VModelInput from './VModelInput.vue';
 
-const checked = ref(⟦value checked script⟫true⟧);
+const checked = ref(⟦value checked in="script"⟫true⟧);
 
-const modelValue = ref(⟦value modelValue script⟫'typed text'⟧);
+const modelValue = ref(⟦value modelValue in="script"⟫'typed text'⟧);
 </script>
 
 <template>
-  <VModelInput v-model:checked="checked" v-model="modelValue"⟦props * modelValue checked ~%20⟫⟧ />
+  <VModelInput v-model:checked="checked" v-model="modelValue"⟦props * except=["modelValue","checked"] ~" "⟫⟧ />
 </template>",
     },
   },

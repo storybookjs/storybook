@@ -1,4 +1,4 @@
-import type { TemplateHole } from 'storybook/internal/docs-tools';
+import type { HtmlHole, HtmlSnippetTemplate } from './snippet-holes.ts';
 
 // Html as a tree of nodes, read the way a story-docs snippet prints html. The story-docs build
 // and the preview's slot rule read html with it, so it stays free of anything server-only.
@@ -8,9 +8,9 @@ export interface HtmlAttribute {
   quoted?: boolean;
   value: string | undefined;
   // The place a template wraps the whole attribute in, as it prints an arg.
-  hole?: TemplateHole;
-  // The value a template prints, with a hole around each part of it that prints an arg.
-  holeValue?: string;
+  hole?: HtmlHole;
+  // The value a template prints, unescaped, with a hole for each part of it that prints an arg.
+  holeValue?: HtmlSnippetTemplate;
   // Not printed for the args of the static snippet, but its `hole` is in the template.
   omitted?: boolean;
 }
@@ -29,7 +29,7 @@ export type HtmlNode =
   | { attributes: HtmlAttribute[]; closed: boolean; kind: 'rawText'; name: string; text: string }
   | { kind: 'text'; text: string }
   // The nodes of a value the static snippet prints for an arg, which a template wraps in `hole`.
-  | { hole: TemplateHole; kind: 'hole'; nodes: HtmlNode[] };
+  | { hole: HtmlHole; kind: 'hole'; nodes: HtmlNode[] };
 
 export type ElementNode = Extract<HtmlNode, { kind: 'element' }>;
 type Token =

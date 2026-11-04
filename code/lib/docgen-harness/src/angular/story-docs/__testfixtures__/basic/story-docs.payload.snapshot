@@ -52,7 +52,7 @@ import { BasicComponent } from './basic.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [BasicComponent],
-  template: `<sb-basic [label]="⟦bind label⟫'Override'⟧"⟦prop count ~%20⟫⟧ (pressed)="pressed($event)" />`,
+  template: `<sb-basic [label]="⟦bind label⟫'Override'⟧"⟦prop count ~" "⟫⟧ (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}

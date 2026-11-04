@@ -3,17 +3,12 @@
 // the places the template wraps in holes. A placeholder is as wide as the value it stands for and
 // keeps its whitespace, so the layout breaks lines and attributes as it does for the value. Markup
 // or whitespace the layout reads inside a text value is not kept; see `show` below.
-import { hole } from 'storybook/internal/docs-tools';
+import type { SnippetTemplate, TemplateHole } from 'storybook/internal/docs-tools';
 
+import type { AngularHolePlace } from '../snippet-values.ts';
 import type { TemplateLayout } from '../template-grammar.ts';
 
-// Where a snippet prints an arg's value, which decides how the preview prints a new one there:
-//
-// - `bind`: the expression of a `[name]="…"` binding.
-// - `prop`: a whole `[name]="…"` binding `argsToTemplate` expands, which an unset arg leaves out.
-// - `field`: the code of a host component field.
-// - `text`: text the story's markup interpolates.
-type HoleKind = 'bind' | 'prop' | 'field' | 'text';
+type HoleKind = AngularHolePlace['kind'];
 
 // Prints an arg's value where the snippet shows it.
 export interface ArgPrinter {
@@ -48,7 +43,7 @@ interface PlaceholderPrinter extends ArgPrinter {
   // The template of `snippet`, from its print with this printer: each run of placeholders is the
   // text of the snippet there wrapped in its hole, and each mark an empty hole. `undefined` when the
   // two prints do not line up, as where the print lost a hole past the private-use range.
-  template(printed: string, snippet: string): string | undefined;
+  template(printed: string, snippet: string): SnippetTemplate<AngularHolePlace> | undefined;
 }
 
 export const printPlaceholders = (): PlaceholderPrinter => {
@@ -111,23 +106,32 @@ export const printPlaceholders = (): PlaceholderPrinter => {
         }
         return code;
       };
-      let template = '';
+      const template: SnippetTemplate<AngularHolePlace> = [];
+      // The code read since the last hole, which goes into the template before the next one.
+      let literal = '';
+      const push = (hole: TemplateHole<AngularHolePlace>) => {
+        if (literal) {
+          template.push(literal);
+          literal = '';
+        }
+        template.push(hole);
+      };
       let at = 0;
       for (let index = 0; index < printed.length;) {
         const char = printed[index]!;
         const found = markAt(index);
         if (found) {
           const { arg, kind } = holes.get(found.mark)!;
-          template += hole({ kind, arg, words: [] }, '', found.space || undefined);
+          push({ place: { kind }, arg, text: '', ...(found.space ? { space: found.space } : {}) });
           index += found.space.length + 1;
           continue;
         }
-        const place = holes.get(char);
-        if (!place) {
+        const hole = holes.get(char);
+        if (!hole) {
           if (snippet[at] !== char) {
             return undefined;
           }
-          template += char;
+          literal += char;
           index++;
           at++;
           continue;
@@ -136,13 +140,12 @@ export const printPlaceholders = (): PlaceholderPrinter => {
         // same width each, which the preview indents a new value by too. Text spans the whitespace
         // inside it.
         const run = new RegExp(
-          place.kind === 'text' ? `${char}(?:\\s*${char})*` : `${char}+(?:\\n([ \\t]*)${char}+)*`,
+          hole.kind === 'text' ? `${char}(?:\\s*${char})*` : `${char}+(?:\\n([ \\t]*)${char}+)*`,
           'y'
         );
         run.lastIndex = index;
         const value = run.exec(printed)![0];
-        const indent = /\n( *)/.exec(value)?.[1] ?? '';
-        const words = indent ? [`+${indent.length}`] : [];
+        const indent = /\n( *)/.exec(value)?.[1].length ?? 0;
         index += value.length;
         // The snippet escapes the value for the template literal it stands in, so its text there
         // runs on to where the code after it does.
@@ -156,10 +159,20 @@ export const printPlaceholders = (): PlaceholderPrinter => {
         if (end === -1) {
           return undefined;
         }
-        template += hole({ ...place, words }, snippet.slice(at, end));
+        push({
+          place: { kind: hole.kind, ...(indent ? { indent } : {}) },
+          arg: hole.arg,
+          text: snippet.slice(at, end),
+        });
         at = end;
       }
-      return at === snippet.length ? template : undefined;
+      if (at !== snippet.length) {
+        return undefined;
+      }
+      if (literal) {
+        template.push(literal);
+      }
+      return template;
     },
   };
 };

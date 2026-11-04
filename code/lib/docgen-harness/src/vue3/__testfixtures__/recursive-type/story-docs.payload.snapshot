@@ -23,14 +23,14 @@ const node = {
       "template": "<script lang="ts" setup>
 import RecursiveTree from './RecursiveTree.vue';
 
-const node = ⟦value node script⟫{
+const node = ⟦value node in="script"⟫{
   value: 'root',
   children: [{ value: 'leaf', children: [] }],
 }⟧;
 </script>
 
 <template>
-  <RecursiveTree :node="node"⟦props * node ~%20⟫⟧ />
+  <RecursiveTree :node="node"⟦props * except=["node"] ~" "⟫⟧ />
 </template>",
     },
   },

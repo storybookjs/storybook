@@ -20,7 +20,7 @@ import { ImportOverride as ImportOverrideButton } from 'my-design-system';
 </script>
 
 <template>
-  <ImportOverrideButton⟦attr label label ~%20⟫label="Override"⟧⟦props * label ~%20⟫⟧ />
+  <ImportOverrideButton⟦attr label name="label" ~" "⟫ label="Override"⟧⟦props * except=["label"] ~" "⟫⟧ />
 </template>",
     },
   },

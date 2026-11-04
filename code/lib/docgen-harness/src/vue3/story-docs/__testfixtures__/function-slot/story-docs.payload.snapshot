@@ -24,7 +24,7 @@ import FunctionSlotPanel from './FunctionSlotPanel.vue';
 </script>
 
 <template>
-  <FunctionSlotPanel⟦props * default ~%20⟫⟧>
+  <FunctionSlotPanel⟦props * except=["default"] ~" "⟫⟧>
     <ChildButton label="Click me" />
   </FunctionSlotPanel>
 </template>",

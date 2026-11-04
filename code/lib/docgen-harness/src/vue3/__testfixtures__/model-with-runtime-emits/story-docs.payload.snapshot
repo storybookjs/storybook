@@ -22,11 +22,11 @@ const modelValue = ref('draft');
 import { ref } from "vue";
 import ModelWithRuntimeEmits from './ModelWithRuntimeEmits.vue';
 
-const modelValue = ref(⟦value modelValue script⟫'draft'⟧);
+const modelValue = ref(⟦value modelValue in="script"⟫'draft'⟧);
 </script>
 
 <template>
-  <ModelWithRuntimeEmits v-model="modelValue"⟦props * modelValue ~%20⟫⟧ />
+  <ModelWithRuntimeEmits v-model="modelValue"⟦props * except=["modelValue"] ~" "⟫⟧ />
 </template>",
     },
   },

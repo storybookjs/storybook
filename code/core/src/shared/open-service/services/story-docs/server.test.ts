@@ -8,7 +8,10 @@ import type { SnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts'
 import type { ProvidedStoryDocsPayload, StoryDocsPayload, StoryDocsProvider } from './types.ts';
 
 // `<Button label="…" />` with its label in a hole.
-const buttonTemplate = (text = 'label="Hi"', name = 'label'): SnippetTemplate => [
+const buttonTemplate = (
+  text = 'label="Hi"',
+  name = 'label'
+): SnippetTemplate<{ kind: 'attr'; name: string }> => [
   '<Button ',
   { place: { kind: 'attr', name }, arg: 'label', text },
   ' />',

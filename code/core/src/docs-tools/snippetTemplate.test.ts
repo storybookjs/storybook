@@ -225,6 +225,14 @@ describe('createHoleMarks', () => {
     ]);
   });
 
+  it('marks the same hole alike, and leaves an empty space out', () => {
+    const marks = createHoleMarks<Place>();
+    const ref = { place: { kind: 'value' as const }, arg: 'a' };
+    expect(marks.mark({ ...ref }, '1', '')).toBe(marks.mark({ ...ref }, '1'));
+    expect(marks.mark(ref, '1')).not.toBe(marks.mark({ ...ref, arg: 'b' }, '1'));
+    expect(marks.toTemplate(marks.mark(ref, '1', ''))).toEqual([{ ...ref, text: '1' }]);
+  });
+
   it('gives no template for marks that do not pair up', () => {
     const marks = createHoleMarks<Place>();
     const inner = marks.mark({ place: { kind: 'text' }, arg: 'b' }, 'b');

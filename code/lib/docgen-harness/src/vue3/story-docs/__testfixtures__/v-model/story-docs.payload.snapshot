@@ -24,13 +24,13 @@ const modelValue = ref('Accepted');
 import { ref } from "vue";
 import ModelToggle from './ModelToggle.vue';
 
-const checked = ref(⟦value checked script⟫true⟧);
+const checked = ref(⟦value checked in="script"⟫true⟧);
 
-const modelValue = ref(⟦value modelValue script⟫'Accepted'⟧);
+const modelValue = ref(⟦value modelValue in="script"⟫'Accepted'⟧);
 </script>
 
 <template>
-  <ModelToggle v-model:checked="checked" v-model="modelValue"⟦props * modelValue checked ~%20⟫⟧ />
+  <ModelToggle v-model:checked="checked" v-model="modelValue"⟦props * except=["modelValue","checked"] ~" "⟫⟧ />
 </template>",
     },
   },

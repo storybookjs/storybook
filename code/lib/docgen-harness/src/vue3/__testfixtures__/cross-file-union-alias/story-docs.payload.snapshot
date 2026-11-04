@@ -20,7 +20,7 @@ import CrossFileUnionAlias from './CrossFileUnionAlias.vue';
 </script>
 
 <template>
-  <CrossFileUnionAlias⟦attr size size ~%20⟫size="small"⟧⟦attr variant variant ~%20⟫variant="danger"⟧⟦props * variant size default ~%20⟫⟧ />
+  <CrossFileUnionAlias⟦attr size name="size" ~" "⟫ size="small"⟧⟦attr variant name="variant" ~" "⟫ variant="danger"⟧⟦props * except=["variant","size","default"] ~" "⟫⟧ />
 </template>",
     },
   },

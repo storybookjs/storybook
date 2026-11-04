@@ -22,11 +22,11 @@ const upper = computed(() => 'Ready'.toUpperCase());
 import { computed } from "vue";
 import SetupComputed from './SetupComputed.vue';
 
-const upper = computed(() => ⟦value label script .⟫'Ready'⟧.toUpperCase());
+const upper = computed(() => ⟦value label in="script" readsOn=true⟫'Ready'⟧.toUpperCase());
 </script>
 
 <template>
-  <SetupComputed⟦attr label label ~%20⟫label="Ready"⟧ :hint="upper" />
+  <SetupComputed⟦attr label name="label" ~" "⟫ label="Ready"⟧ :hint="upper" />
 </template>",
     },
   },

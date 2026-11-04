@@ -20,11 +20,11 @@ const mixed = { label: 'Intersected', count: 2, extra: true };
       "template": "<script lang="ts" setup>
 import IntersectionProps from './IntersectionProps.vue';
 
-const mixed = ⟦value mixed script⟫{ label: 'Intersected', count: 2, extra: true }⟧;
+const mixed = ⟦value mixed in="script"⟫{ label: 'Intersected', count: 2, extra: true }⟧;
 </script>
 
 <template>
-  <IntersectionProps :mixed="mixed"⟦props * mixed ~%20⟫⟧ />
+  <IntersectionProps :mixed="mixed"⟦props * except=["mixed"] ~" "⟫⟧ />
 </template>",
     },
   },

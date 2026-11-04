@@ -5,6 +5,7 @@ import { isVNode } from 'vue';
 
 import {
   type SnippetValue,
+  type VueHolePlace,
   attributeOrder,
   expressionCode,
   fitsBraces,
@@ -15,38 +16,32 @@ import {
 } from '../snippet-values.ts';
 
 // Prints a changed arg for a hole of a template of the Vue story-docs provider, with the printers
-// the static snippet is printed with:
-//
-// - `⟦attr arg name⟫…⟧`: the attribute `name`, left out while the arg is unset.
-// - `⟦props * name…⟫⟧`: the args a control set, as an args binding passes them, but those it names.
-// - `⟦text arg⟫…⟧`: the text of an interpolation, with `{<` and `{>` for a `{` the template writes
-//   before or after it; with `slot`, a slot's content.
-// - `⟦value arg⟫…⟧`: code in a template expression, in an attribute quoted with `'` (a `'` word) or
-//   `"`, or in an interpolation (`{{`); with `script`, in `<script setup>`. A `.` word says the
-//   code reads on after it, as `(5).toFixed()` does.
-// - `⟦guard arg⟫⟧`: an arg the snippet has no place for, such as a slot the story leaves unset.
-export const printHole: PrintHole = ({ kind, arg = '', words }, value) => {
-  switch (kind) {
+// the static snippet is printed with. `VueHolePlace` says what each place prints.
+export const printHole: PrintHole<VueHolePlace> = (hole, value) => {
+  const { place } = hole;
+  const arg = hole.arg ?? '';
+  switch (place.kind) {
     case 'attr':
-      return value === undefined ? '' : attribute(arg, words[0]!, value);
+      return value === undefined ? '' : attribute(arg, place.name, value);
     case 'props':
       return Object.entries(value as Args)
-        .filter(([name]) => !words.includes(name))
+        .filter(([name]) => !place.except.includes(name))
         .sort(([a], [b]) => attributeOrder(a, b))
         .map(([name, item]) => attribute(name, name, item))
         .join(' ');
     case 'text':
-      return text(arg, value, words);
+      return text(arg, value, place);
     case 'value': {
-      const printed = words.includes('script')
-        ? code(arg, value, "'")
-        : expression(arg, value, words);
-      return operand(printed, words.includes('.'));
+      const printed =
+        place.in === 'script'
+          ? code(arg, value, "'")
+          : expression(arg, value, place.in === 'attribute' ? place.quote : undefined);
+      return operand(printed, place.readsOn === true);
     }
     case 'guard':
       throw new UnprintableArgError(arg);
     default:
-      throw new Error(`Unknown hole ⟦${kind}⟧`);
+      throw new Error(`Unknown hole ⟦${(place as { kind: string }).kind}⟧`);
   }
 };
 
@@ -80,21 +75,25 @@ function attribute(arg: string, name: string, value: unknown): string {
   return printed;
 }
 
-function text(name: string, value: unknown, words: string[]): string {
+function text(
+  name: string,
+  value: unknown,
+  place: Extract<VueHolePlace, { kind: 'text' }>
+): string {
   if (value === undefined) {
     return '';
   }
   const printed = snippetValue(name, value);
-  const content = words.includes('slot') ? slotContent(printed) : interpolatedText(printed);
-  if (content === undefined || !fitsBraces(content, words)) {
+  const content = place.slot ? slotContent(printed) : interpolatedText(printed);
+  if (content === undefined || !fitsBraces(content, place)) {
     throw new UnprintableArgError(name);
   }
   return content;
 }
 
-// Code in a template expression, with strings in the quote the attribute is not.
-function expression(name: string, value: unknown, words: string[]): string {
-  const quote = words.includes("'") ? "'" : words.includes('{{') ? undefined : '"';
+// Code in a template expression, with strings in the quote the attribute is not, or in an
+// interpolation without one.
+function expression(name: string, value: unknown, quote: '"' | "'" | undefined): string {
   const printed = expressionCode(code(name, value, quote === "'" ? '"' : "'"), quote);
   if (printed === undefined) {
     throw new UnprintableArgError(name);

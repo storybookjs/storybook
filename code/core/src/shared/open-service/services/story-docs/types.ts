@@ -1,3 +1,4 @@
+import type { SnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
 import type { Options } from '../../../../types/modules/core-common.ts';
 import type { IndexEntry } from '../../../../types/modules/indexer.ts';
 
@@ -28,10 +29,18 @@ export interface StoryDoc {
   /**
    * What a static pass could not resolve, in the source text it was written as. Next to a
    * `snippet` it marks the example as partial; on its own it says why no static snippet could be
-   * produced at all. An `error` means the provider itself failed.
+   * produced at all. A filled template leaves out the same code, so it is shown with it too. An
+   * `error` means the provider itself failed.
    */
   warning?: string;
   error?: StoryDocsError;
+  /**
+   * The static `snippet` split into code and holes, each a place an arg prints with what the
+   * snippet prints there; see `SnippetTemplate`. Joining its segments gives the snippet. Once the
+   * args differ from the story's initial args, the preview fills it through the renderer's
+   * `parameters.docs.source.printHole`, so the snippet follows the controls.
+   */
+  template?: SnippetTemplate;
 }
 
 /** Story docs keyed by story id for O(1) lookup and fine-grained open-service subscriptions. */

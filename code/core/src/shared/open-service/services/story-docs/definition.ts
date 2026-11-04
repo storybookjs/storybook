@@ -1,5 +1,7 @@
 import * as v from 'valibot';
 
+import { type SnippetTemplate, isSnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
+
 import { defineService } from 'storybook/open-service';
 import type { ServiceInstanceOf } from '../../types.ts';
 import type { StoryDocsPayload } from './types.ts';
@@ -12,6 +14,14 @@ const storyDocsErrorSchema = v.object({
   message: v.string(),
 });
 
+// A `SnippetTemplate`: code, and holes whose place only its renderer reads.
+const snippetTemplateSchema = v.custom<SnippetTemplate>(
+  isSnippetTemplate,
+  'Expected a snippet template: code and holes'
+);
+
+// The query output is parsed with these schemas, which drop every key they don't list; the type
+// test next to this file keeps them equal to the hand-written types in `types.ts`.
 const storyDocSchema = v.object({
   id: v.string(),
   name: v.string(),
@@ -20,6 +30,7 @@ const storyDocSchema = v.object({
   summary: v.optional(v.string()),
   warning: v.optional(v.string()),
   error: v.optional(storyDocsErrorSchema),
+  template: v.optional(snippetTemplateSchema),
 });
 
 const storyDocsPayloadSchema = v.object({
@@ -55,10 +66,12 @@ export const storyDocsServiceDef = defineService({
         'Returns the story-docs payload for one component id, or undefined when not loaded.',
       input: storyDocsInputSchema,
       output: storyDocsOutputSchema,
-      handler: (input, ctx) =>
-        Object.hasOwn(ctx.self.state.components, input.id)
-          ? ctx.self.state.components[input.id]
-          : undefined,
+      // Reads the entry before `Object.hasOwn`, which is not tracked, so a subscription made before
+      // the entry is stored still updates once it is.
+      handler: (input, ctx) => {
+        const entry = ctx.self.state.components[input.id];
+        return Object.hasOwn(ctx.self.state.components, input.id) ? entry : undefined;
+      },
       load: async (input, ctx) => {
         await ctx.self.commands.extractStoryDocs(input);
       },

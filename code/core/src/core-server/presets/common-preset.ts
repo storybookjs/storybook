@@ -461,6 +461,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     registerStoryDocsService({
       getIndex,
       storyDocsProvider,
+      liveSnippets: features.experimentalLiveServerSnippets,
     });
     devServerSubscriptions.push(() =>
       subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() })

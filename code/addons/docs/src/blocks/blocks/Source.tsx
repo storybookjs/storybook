@@ -3,7 +3,7 @@ import React, { useContext, useMemo } from 'react';
 
 import { SourceType } from 'storybook/internal/docs-tools';
 import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
-import type { Args, ModuleExport, StoryId } from 'storybook/internal/types';
+import type { Args, ModuleExport, PreparedStory, StoryId } from 'storybook/internal/types';
 
 import type { SourceCodeProps } from '../components/Source';
 import { Source as PureSource, SourceError } from '../components/Source';
@@ -11,7 +11,8 @@ import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import type { SourceContextProps, SourceItem } from './SourceContainer';
 import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
-import { useServiceStorySnippet, useServiceStoryWarning } from './use-service-story-docs.ts';
+import { useArgs } from './useArgs.ts';
+import { useServiceStoryLiveSnippet } from './use-service-story-docs.ts';
 import { useTransformCode } from './useTransformCode';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
@@ -208,11 +209,23 @@ const SourceWithStoryDocsSnippet: FC<
   SourceProps & {
     docsContext: DocsContextProps;
     sourceContext: SourceContextProps;
-    storyId: string;
+    story: PreparedStory;
   }
-> = ({ storyId, docsContext, sourceContext, ...props }) => {
-  const serviceSnippet = useServiceStorySnippet(storyId).data ?? '';
-  const serviceWarning = useServiceStoryWarning(storyId).data;
+> = ({ story, docsContext, sourceContext, ...props }) => {
+  // The story context holds the args before and after mapping; the snippet fills those before, as
+  // the static snippet reads them. `argsUpdate` only signals when to read it again.
+  const [argsUpdate] = useArgs(story, docsContext);
+  const args = useMemo(
+    () => {
+      const { unmappedArgs, initialArgs } = docsContext.getStoryContext(story);
+      return { unmappedArgs: props.__forceInitialArgs ? initialArgs : unmappedArgs, initialArgs };
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `argsUpdate` is the trigger
+    [argsUpdate, story, docsContext, props.__forceInitialArgs]
+  );
+  const { data } = useServiceStoryLiveSnippet(story, args);
+  const serviceSnippet = data?.snippet ?? '';
+  const serviceWarning = data?.warning;
   const sourceProps = useSourceProps(
     props,
     docsContext,
@@ -250,7 +263,7 @@ const SourceWithStorySnippet = (props: SourceProps) => {
         {...props}
         docsContext={docsContext}
         sourceContext={sourceContext}
-        storyId={story.id}
+        story={story}
       />
     );
   }

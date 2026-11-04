@@ -127,15 +127,16 @@ jobs:
             for (const [i, line] of lines.entries()) {
               if (!line.includes('✖')) continue;
 
-              const task =
-                line.match(/✖\s+([^│]+?)\s{2,}/)?.[1].trim() ||
-                'Unknown Nx task';
+              // The first `<project>:<target>[:<configuration>]` after the cross, whether Nx prints
+              // `✖ Failed   <task>` (distributed) or `✖ │ <task>` (summary table).
+              const task = line.match(/✖.*?([\w@.\/-]+:[\w:.-]+)/)?.[1] || 'Unknown Nx task';
 
-              // Nx 24 prints `> Logs: https://cloud.nx.app/runs/<run>/task/<task>` under a failed task.
+              // Under a failed task Nx prints `> Task logs: …/logs/<id>` (distributed) or
+              // `> Logs: …/runs/<run>/task/<task>` (summary table).
               const url = lines
                 .slice(i + 1, i + 6)
-                .find(l => /Logs:/.test(l))
-                ?.match(/Logs:\s*(https:\/\/cloud\.nx\.app\/\S+)/)?.[1];
+                .find(l => /logs:/i.test(l))
+                ?.match(/logs:\s*(https:\/\/cloud\.nx\.app\/\S+)/i)?.[1];
 
               failures.push({ task, url });
             }

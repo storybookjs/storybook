@@ -9,7 +9,7 @@ import {
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
 
-import type { ProvidedStoryDoc } from 'storybook/internal/types';
+import type { StoryDoc } from 'storybook/internal/types';
 
 import { getCodeSnippet } from './generateCodeSnippet.ts';
 import {
@@ -138,7 +138,7 @@ export async function resolveStoryFileComponents(options: {
 
 /** Every story's snippet, plus the imports they need beyond the components in the file. */
 export interface ExtractedStorySnippets {
-  stories: ProvidedStoryDoc[];
+  stories: StoryDoc[];
   imports: ImportRef[];
 }
 
@@ -162,7 +162,7 @@ export function extractStorySnippets(
   const resolver = createStoryArgsResolver(csf, references);
   const stories = Object.entries(csf._stories)
     .filter(([, story]) => !filterStoryIds || filterStoryIds.has(story.id))
-    .map(([storyExport, story]): ProvidedStoryDoc => {
+    .map(([storyExport, story]): StoryDoc => {
       const name = story.name ?? storyNameFromExport(storyExport);
       try {
         const { description, summary } = extractStoryJSDocInfo(

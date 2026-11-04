@@ -438,12 +438,6 @@ const removeEarlierExtends = (code: string) => {
  * value is rewritten, so comments and formatting elsewhere in the file are kept.
  */
 const configureJsonConfig = (code: string, configFile: string): string => {
-  // Edit without a byte order mark, so the offsets jsonc-parser reports match the text
-  if (code.startsWith('\uFEFF')) {
-    const output = configureJsonConfig(code.slice(1), configFile);
-    return output === code.slice(1) ? code : `\uFEFF${output}`;
-  }
-
   const config = parseJsonText(code);
   if (typeof config !== 'object' || config === null || Array.isArray(config)) {
     throw new Error(`Expected ${configFile} to contain a JSON object`);

@@ -16,22 +16,19 @@ export type JSONEditPath = (string | number)[];
 const DEFAULT_INDENTATION: FormattingOptions = { insertSpaces: true, tabSize: 2 };
 
 // `jsonc-parser` re-indents the lines it touches, so a wrong tab size leaves the document with
-// mixed indentation. The first top-level property shows the indentation, where the first indented
-// line could be part of a comment.
+// mixed indentation. Read it from the first top-level property that starts its own line, because
+// the first indented line in the file could be part of a comment.
 const detectIndentation = (text: string): FormattingOptions => {
-  const firstProperty = parseTree(text, [], { allowTrailingComma: true })?.children?.[0];
-  if (!firstProperty) {
-    return DEFAULT_INDENTATION;
+  const properties = parseTree(text, [], { allowTrailingComma: true })?.children ?? [];
+  for (const { offset } of properties) {
+    const indent = text.slice(text.lastIndexOf('\n', offset) + 1, offset);
+    if (/^(\t+| +)$/.test(indent)) {
+      return indent.startsWith('\t')
+        ? { insertSpaces: false, tabSize: 1 }
+        : { insertSpaces: true, tabSize: indent.length };
+    }
   }
-  const indent = text.slice(text.lastIndexOf('\n', firstProperty.offset) + 1, firstProperty.offset);
-
-  if (!/^(\t+| +)$/.test(indent)) {
-    return DEFAULT_INDENTATION;
-  }
-
-  return indent.startsWith('\t')
-    ? { insertSpaces: false, tabSize: 1 }
-    : { insertSpaces: true, tabSize: indent.length };
+  return DEFAULT_INDENTATION;
 };
 
 /**
@@ -42,7 +39,7 @@ const detectIndentation = (text: string): FormattingOptions => {
  */
 export const parseJsonText = (text: string): unknown => {
   const errors: ParseError[] = [];
-  // Editors on Windows may save a byte order mark, which JSON.parse and ESLint ignore too
+  // Editors on Windows may save a byte order mark. ESLint strips it too, where JSON.parse would throw
   const value = parse(text.replace(/^\uFEFF/, ''), errors, { allowTrailingComma: true });
   if (errors.length > 0) {
     const [{ error, offset }] = errors;
@@ -66,32 +63,38 @@ export const editJsonText = (
     modify(text, path, value, { ...options, formattingOptions: detectIndentation(text) })
   );
 
+// An optional comma, then `//` or one-line `/* */` comments up to the end of the line
+const TRAILING_COMMENTS =
+  /^([ \t]*,)?(?:[ \t]*(?:\/\/[^\r\n]*|\/\*(?:(?!\*\/)[^\r\n])*\*\/))+(?=[ \t]*(?:\r?\n|$))/;
+
 /**
- * Append `value` to the array at `path`, keeping comments and formatting like `editJsonText`. A line
- * comment after the last item stays with that item, where jsonc-parser would hand it to the new one.
+ * Append `value` to the array at `path`, keeping comments and formatting like `editJsonText`.
+ * Comments that end the last item's line stay with that item, where jsonc-parser would hand them
+ * to the new one.
  */
 export const appendJsonArrayItem = (text: string, path: JSONEditPath, value: unknown): string => {
   const root = parseTree(text, [], { allowTrailingComma: true });
   const array = root && findNodeAtLocation(root, path);
   const last = array?.type === 'array' ? array.children?.at(-1) : undefined;
-  if (last) {
-    const lineStart = text.lastIndexOf('\n', last.offset) + 1;
-    const indent = /^[ \t]*/.exec(text.slice(lineStart))?.[0] ?? '';
-    const lastEnd = last.offset + last.length;
-    const trailingComment = /^([ \t]*,)?[ \t]*\/\/[^\r\n]*/.exec(text.slice(lastEnd));
-    if (trailingComment && lineStart + indent.length === last.offset) {
-      const [comment, trailingComma] = trailingComment;
-      const commentEnd = lastEnd + comment.length;
-      const eol = text.includes('\r\n') ? '\r\n' : '\n';
-      return [
-        text.slice(0, lastEnd),
-        trailingComma ? '' : ',',
-        text.slice(lastEnd, commentEnd),
-        `${eol}${indent}${JSON.stringify(value)}`,
-        trailingComma ? ',' : '',
-        text.slice(commentEnd),
-      ].join('');
-    }
+  const lineStart = last ? text.lastIndexOf('\n', last.offset) + 1 : -1;
+  const lastEnd = last ? last.offset + last.length : -1;
+  const trailingComments = last && TRAILING_COMMENTS.exec(text.slice(lastEnd));
+
+  // On the `[` line, the line's indentation is not an item's, so let jsonc-parser format instead
+  if (!array || !trailingComments || lineStart <= array.offset) {
+    return editJsonText(text, [...path, -1], value);
   }
-  return editJsonText(text, [...path, -1], value);
+
+  const indent = /^[ \t]*/.exec(text.slice(lineStart))?.[0] ?? '';
+  const [comments, trailingComma] = trailingComments;
+  const commentsEnd = lastEnd + comments.length;
+  const eol = text.includes('\r\n') ? '\r\n' : '\n';
+  return [
+    text.slice(0, lastEnd),
+    trailingComma ? '' : ',',
+    text.slice(lastEnd, commentsEnd),
+    `${eol}${indent}${JSON.stringify(value)}`,
+    trailingComma ? ',' : '',
+    text.slice(commentsEnd),
+  ].join('');
 };

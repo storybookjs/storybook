@@ -14,23 +14,31 @@ const getDefaultSettingsPath = () => join(getStorybookConfigDir(), SETTINGS_FILE
 
 const VERSION = 1;
 
+// zod's objects rejected arrays, where valibot's read them as objects. Keep rejecting them, so a
+// broken file is still replaced by fresh settings.
+const notArray = v.check((input: unknown) => !Array.isArray(input));
+const object = <TEntries extends v.ObjectEntries>(entries: TEntries) =>
+  v.pipe(v.unknown(), notArray, v.object(entries));
+const strictObject = <TEntries extends v.ObjectEntries>(entries: TEntries) =>
+  v.pipe(v.unknown(), notArray, v.strictObject(entries));
+
 const statusValue = v.optional(
-  v.strictObject({
+  strictObject({
     status: v.optional(v.picklist(['open', 'accepted', 'done', 'skipped'])),
     mutedAt: v.optional(v.number()),
   })
 );
 
-const userSettingSchema = v.object({
+const userSettingSchema = object({
   version: v.number(),
   // NOTE: every key (and subkey) below must be optional, for forwards compatibility reasons
   // (we can remove keys once they are deprecated)
   userSince: v.optional(v.number()),
-  init: v.optional(v.object({ skipOnboarding: v.optional(v.boolean()) })),
+  init: v.optional(object({ skipOnboarding: v.optional(v.boolean()) })),
   checklist: v.optional(
-    v.object({
+    object({
       items: v.optional(
-        v.object({
+        object({
           accessibilityTests: statusValue,
           aiSetup: statusValue,
           autodocs: statusValue,
@@ -57,7 +65,7 @@ const userSettingSchema = v.object({
           writeInteractions: statusValue,
         })
       ),
-      widget: v.optional(v.object({ disable: v.optional(v.boolean()) })),
+      widget: v.optional(object({ disable: v.optional(v.boolean()) })),
     })
   ),
 });

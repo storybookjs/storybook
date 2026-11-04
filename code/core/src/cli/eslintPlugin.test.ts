@@ -239,10 +239,21 @@ describe('configureEslintPlugin', () => {
       expect(content).toMatch(/^  (\/\/|\/\*) Old/m);
     });
 
-    it('keeps a byte order mark', async () => {
-      expect(await configureJson('\uFEFF{\n  "extends": "plugin:other"\n}\n')).toBe(
-        '\uFEFF{\n  "extends": [\n    "plugin:other",\n    "plugin:storybook/recommended"\n  ]\n}\n'
-      );
+    it.each([
+      [
+        '{\n  "extends": "plugin:other"\n}\n',
+        '{\n  "extends": [\n    "plugin:other",\n    "plugin:storybook/recommended"\n  ]\n}\n',
+      ],
+      [
+        '{\n  "root": true\n}\n',
+        '{\n  "extends": [\n    "plugin:storybook/recommended"\n  ],\n  "root": true\n}\n',
+      ],
+      [
+        '{\n  "extends": ["plugin:first"],\n  "extends": ["plugin:other"]\n}\n',
+        '{\n  "extends": [\n    "plugin:other",\n    "plugin:storybook/recommended"\n  ]\n}\n',
+      ],
+    ])('keeps a byte order mark in %j', async (code, expected) => {
+      expect(await configureJson(`\uFEFF${code}`)).toBe(`\uFEFF${expected}`);
     });
 
     it('keeps CRLF line endings', async () => {

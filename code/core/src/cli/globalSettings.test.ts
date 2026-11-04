@@ -125,6 +125,11 @@ describe('globalSettings validation', () => {
       { version: 1, checklist: { items: { controls: { x: 1 } } } },
     ],
     ['a non-object file', [1]],
+    ['an empty array file', []],
+    ['an array for settings', { version: 1, init: [] }],
+    ['an array for checklist', { version: 1, checklist: [] }],
+    ['an array for checklist items', { version: 1, checklist: { items: [] } }],
+    ['an array for a checklist item', { version: 1, checklist: { items: { controls: [] } } }],
   ])('replaces a settings file with %s by fresh settings', async (_, value) => {
     expect(await load(value)).toEqual(baseSettings);
     expect(fs.writeFile).toHaveBeenCalledWith(TEST_SETTINGS_FILE, baseSettingsJson);

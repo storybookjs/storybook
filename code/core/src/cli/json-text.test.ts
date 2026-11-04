@@ -34,6 +34,20 @@ describe('editJsonText', () => {
   });
 });
 
+describe('editJsonText indentation', () => {
+  it('reads it from a property on its own line, not from a header comment', () => {
+    expect(editJsonText('/**\n * Config\n */\n{\n    "a": 1\n}\n', ['b'], [1])).toBe(
+      '/**\n * Config\n */\n{\n    "a": 1,\n    "b": [\n        1\n    ]\n}\n'
+    );
+  });
+
+  it('skips a first property on the opening line', () => {
+    expect(editJsonText('{ "a": 1,\n    "b": {\n        "c": 1\n    }\n}\n', ['b', 'd'], 2)).toBe(
+      '{ "a": 1,\n    "b": {\n        "c": 1,\n        "d": 2\n    }\n}\n'
+    );
+  });
+});
+
 describe('parseJsonText', () => {
   it('allows comments and trailing commas', () => {
     expect(parseJsonText('{\n  // comment\n  "a": [1,],\n}')).toEqual({ a: [1] });
@@ -54,6 +68,16 @@ describe('appendJsonArrayItem', () => {
   it('keeps a line comment on the last item', () => {
     expect(append('{\n  "list": [\n    "a", // first\n    "b" // last\n  ]\n}\n')).toBe(
       '{\n  "list": [\n    "a", // first\n    "b", // last\n    "new"\n  ]\n}\n'
+    );
+  });
+
+  it.each([
+    ['a block comment', '"a" /* c */', '"a", /* c */'],
+    ['two items on the line', '"a", "b" // c', '"a", "b", // c'],
+    ['several comments', '/* x */ "a" /* y */ // z', '/* x */ "a", /* y */ // z'],
+  ])('keeps %s on the last item', (_, line, expected) => {
+    expect(append(`{\n  "list": [\n    ${line}\n  ]\n}\n`)).toBe(
+      `{\n  "list": [\n    ${expected}\n    "new"\n  ]\n}\n`
     );
   });
 

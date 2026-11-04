@@ -8,6 +8,8 @@ import { mapValues } from 'es-toolkit/object';
 import requireFromString from 'require-from-string';
 
 import { normalizeNewlines } from '../utils.ts';
+
+import { parseLiteral } from './utils.ts';
 import { convert } from './index.ts';
 
 expect.addSnapshotSerializer({
@@ -153,6 +155,13 @@ describe('storybook type system', () => {
         }
       `);
     });
+    // Malformed and out-of-range `\u` sequences (only reachable through tokens that hold
+    // pre-decoded content) must pass through instead of throwing RangeError.
+    it('passes invalid and oversized unicode escapes through without throwing', () => {
+      expect(parseLiteral('"C:\\us"')).toBe('C:us');
+      expect(parseLiteral('"\\u{110000}"')).toBe('\\u{110000}');
+    });
+
     it('unions', () => {
       const input = readFixture('typescript/unions.tsx');
       expect(input).toMatchInlineSnapshot(`
@@ -178,6 +187,7 @@ describe('storybook type system', () => {
           nullableLiteralUnion: 'red' | 'blue' | null;
           nullableLiteralUnionWithUndefined: 'top' | 'bottom' | null | undefined;
           nullableScalarUnion: string | number | null;
+          escapedLiteralUnion?: 'C:\\\\users\\\\bob' | '\\\\d+';
         }
         export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
         "
@@ -246,6 +256,14 @@ describe('storybook type system', () => {
                 "name": "other",
                 "value": "null"
               }
+            ]
+          },
+          "escapedLiteralUnion": {
+            "raw": "'C:\\\\\\\\users\\\\\\\\bob' | '\\\\\\\\d+'",
+            "name": "enum",
+            "value": [
+              "C:\\\\\\\\users\\\\\\\\bob",
+              "\\\\\\\\d+"
             ]
           }
         }

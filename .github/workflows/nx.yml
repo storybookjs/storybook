@@ -66,22 +66,10 @@ jobs:
             tags="daily"
           fi
           echo "tag=$tags" >> "$GITHUB_OUTPUT"
-      - name: Select distribution config
-        id: dist
-        env:
-          TAG: ${{ steps.tag.outputs.tag }}
-        run: |
-          if [[ "$TAG" == "daily" ]]; then
-            echo "config=./.nx/workflows/distribution-config-daily.yaml" >> "$GITHUB_OUTPUT"
-          else
-            echo "config=./.nx/workflows/distribution-config.yaml" >> "$GITHUB_OUTPUT"
-          fi
-      - env:
-          DIST_CONFIG: ${{ steps.dist.outputs.config }}
-        # No --stop-workers-after: it stops the workers once every task of the listed targets is done,
-        # which strands continuous tasks (serve, dev, run-registry) that are still queued, and the run
-        # then hangs until the job times out. `complete-ci-run` below stops the workers instead.
-        run: npx nx-cloud@19.1.5 start-ci-run --distribute-on="$DIST_CONFIG"
+      # Before installing dependencies, so the workers boot while this job installs. Distribution
+      # and assignment rules live in .nx/ci-config.yaml; NX Cloud stops the workers when this job ends.
+      - name: Start NX Cloud workers
+        run: npx nx-cloud@19.1.5 start-workers
       - name: Create Nx Cloud Status (pending)
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
@@ -103,6 +91,17 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: 'yarn'
+      # The installed tree itself, keyed on the lockfile: with a hit, `yarn install` only verifies it
+      # instead of linking every package again (over two minutes on this runner).
+      - name: Restore node_modules
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            node_modules
+            */node_modules
+            code/*/node_modules
+            code/*/*/node_modules
+          key: nx-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'yarn.lock', '.yarn/patches/**') }}
       - run: yarn install --immutable
       - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
       - id: nx
@@ -192,6 +191,3 @@ jobs:
               context: `nx: ${tag}`,
             });
 
-      - name: Stop the NX Cloud workers
-        if: always()
-        run: npx nx-cloud@19.1.5 complete-ci-run

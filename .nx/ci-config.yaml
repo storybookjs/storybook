@@ -1,0 +1,41 @@
+# NX Cloud CI configuration, read by `npx nx-cloud start-workers` in .github/workflows/nx.yml.
+# Launch templates (machines and their init steps) live in .nx/workflows/agents.yaml.
+# See https://nx.dev/docs/reference/nx-cloud/ci-config
+dte:
+  # The NX Cloud Team plan allows at most 20 workers per run; NX Cloud rejects the whole run above it.
+  distribute-on:
+    small-changeset: 5 linux-browsers-js, 4 linux-js # 1-25% of projects affected
+    medium-changeset: 10 linux-browsers-js, 4 linux-js # 26-50%
+    large-changeset: 15 linux-browsers-js, 4 linux-js # 51-75%
+    extra-large-changeset: 16 linux-browsers-js, 4 linux-js # 76-100%
+  assignment-rules:
+    - targets:
+        - compile
+      projects:
+        - core
+      run-on:
+        - agent: linux-js
+          parallelism: 1
+    - targets:
+        - compile
+      run-on:
+        - agent: linux-js
+          parallelism: 1
+        - agent: linux-browsers-js
+          parallelism: 1
+    # Typecheck, lint and knip run on the linux-js workers, one task per worker at a time.
+    - targets:
+        - check
+        - lint
+        - knip
+      run-on:
+        - agent: linux-js
+          parallelism: 1
+    - targets:
+        - '*'
+      run-on:
+        - agent: linux-browsers-js
+          parallelism: 1
+# No lifecycle.stop-after: NX Cloud tracks the main job (heartbeat) and stops the workers when it
+# ends. A stop-after list that misses a target strands queued tasks (for example the continuous
+# serve, dev and run-registry tasks) and the run hangs.

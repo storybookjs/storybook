@@ -2,42 +2,40 @@
 # see https://github.com/nrwl/nx/blob/master/.nx/workflows/agents.yaml for inspiration
 linux-init-steps: &linux-init-steps
   - name: Checkout
-    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/checkout/main.yaml'
+    uses: 'nrwl/nx-cloud-workflows/v6/workflow-steps/checkout/main.yaml'
   - name: Restore Node Modules Cache
-    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
+    uses: 'nrwl/nx-cloud-workflows/v6/workflow-steps/cache/main.yaml'
     inputs:
       key: 'yarn.lock|.yarn/patches/**'
       paths: |
         ~/.yarn/berry
       base-branch: 'next'
   - name: Install Node
-    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node/main.yaml'
+    uses: 'nrwl/nx-cloud-workflows/v6/workflow-steps/install-node/main.yaml'
   - name: Install Node Modules
-    script: |
-      yarn install --immutable
+    uses: 'nrwl/nx-cloud-workflows/v6/workflow-steps/install-node-modules/main.yaml'
 
 linux-browsers-init-steps: &linux-browsers-init-steps
   - name: Checkout
-    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/checkout/main.yaml'
+    uses: 'nrwl/nx-cloud-workflows/v6/workflow-steps/checkout/main.yaml'
   - name: Restore Node Modules Cache
-    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
+    uses: 'nrwl/nx-cloud-workflows/v6/workflow-steps/cache/main.yaml'
     inputs:
       key: 'yarn.lock|.yarn/patches/**'
       paths: |
         ~/.yarn/berry
       base-branch: 'next'
   - name: Restore Browser Binary Cache
-    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
+    uses: 'nrwl/nx-cloud-workflows/v6/workflow-steps/cache/main.yaml'
     inputs:
       key: '"browsers"|yarn.lock|.yarn/patches/**'
       paths: |
         ~/.cache/ms-playwright
       base-branch: 'next'
   - name: Install Node
-    uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node/main.yaml'
+    uses: 'nrwl/nx-cloud-workflows/v6/workflow-steps/install-node/main.yaml'
   - name: Install Node Modules
-    script: |
-      yarn install --immutable
+    uses: 'nrwl/nx-cloud-workflows/v6/workflow-steps/install-node-modules/main.yaml'
   - name: Clean stale Storybook packages from yarn cache
     # NX Cloud agents use the global yarn cache (enableGlobalCache: true) to
     # avoid duplicating .yarn/cache across sandboxes. However, sandboxes install

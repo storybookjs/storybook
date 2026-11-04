@@ -3,7 +3,7 @@ import type {
   DocgenProviderDescriptor,
   IndexEntry,
   Options,
-  StoryDocsPayload,
+  ProvidedStoryDocsPayload,
 } from 'storybook/internal/types';
 
 import { describe, expect, it, vi } from 'vitest';
@@ -14,7 +14,7 @@ import { experimental_storyDocsProvider } from './story-docs-provider.ts';
 
 vi.mock('./story-docs/build-story-docs.ts', { spy: true });
 
-const DOWNSTREAM: StoryDocsPayload = {
+const DOWNSTREAM: ProvidedStoryDocsPayload = {
   id: 'button',
   name: 'Button',
   path: './Button.stories.svelte',

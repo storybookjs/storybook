@@ -1326,6 +1326,12 @@ describe('template', () => {
       );
     });
 
+    it('leaves the attribute out once a control clears the arg it reads', () => {
+      expect(fill(code, initialArgs, { ...initialArgs, label: undefined })).toBe(
+        'const S = () => <Button>Click me</Button>;'
+      );
+    });
+
     it('follows the arg it names from a later spread only', () => {
       const between = withCSF3(
         `export const S = { args: { label: 'Go' }, render: (args) => <Button {...args} title={args.label} {...args} /> };`
@@ -1340,7 +1346,7 @@ describe('template', () => {
         'const S = () => <Button title="Go" label="Go" size="lg">Click me</Button>;'
       );
       expect(formatTemplate(templateOf(code))).toMatchInlineSnapshot(
-        `"const S = () => <Button ⟦overridden * name="title" reads="label" written="title=\\"Go\\""⟫title="Go"⟧⟦attr label ~" "⟫ label="Go"⟧⟦attrs * except=["title","label","children"]⟫⟧⟦close children element="Button"⟫>Click me</Button>⟧;"`
+        `"const S = () => <Button⟦overridden * name="title" reads="label" written="title=\\"Go\\"" ~" "⟫ title="Go"⟧⟦attr label ~" "⟫ label="Go"⟧⟦attrs * except=["title","label","children"]⟫⟧⟦close children element="Button"⟫>Click me</Button>⟧;"`
       );
     });
 

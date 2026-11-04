@@ -28,7 +28,9 @@ export const printHole: PrintHole<ReactHolePlace> = (hole, value) => {
     case 'value':
       return printValue(value, arg);
     case 'attrs': {
-      const added = Object.entries(value as Args).filter(([name]) => !hole.except.includes(name));
+      const added = Object.entries(value as Args).filter(
+        ([name, item]) => item !== undefined && !hole.except.includes(name)
+      );
       const attributes = printAttributes(
         added.map(([name, item]) => [name, toJsxValue(name, item)])
       );
@@ -43,8 +45,12 @@ export const printHole: PrintHole<ReactHolePlace> = (hole, value) => {
     case 'overridden': {
       const args = value as Args;
       const read = [hole.name, hole.reads].find((name) => Object.hasOwn(args, name));
-      return read === undefined
-        ? hole.written
+      if (read === undefined) {
+        return hole.written;
+      }
+      // React leaves out an attribute a spread or a cleared arg sets to `undefined`.
+      return args[read] === undefined
+        ? ''
         : printAttribute(hole.name, toJsxValue(read, args[read]));
     }
     default:
@@ -52,10 +58,10 @@ export const printHole: PrintHole<ReactHolePlace> = (hole, value) => {
   }
 };
 
-// Each arg as its code, but those named in `except`.
+// Each arg as its code, but those named in `except` and those a control cleared.
 const codes = (args: Args, except: string[] = []) =>
   Object.entries(args)
-    .filter(([name]) => !except.includes(name))
+    .filter(([name, value]) => value !== undefined && !except.includes(name))
     .map(([name, value]): [string, string] => [name, printValue(value, name)]);
 
 const toJsxValue = (name: string, value: unknown): JsxValue => {

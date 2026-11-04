@@ -102,10 +102,10 @@ export function useServiceStoryLiveSnippet(
   return useMemo(() => ({ ...state, data }), [state, data]);
 }
 
-// A plain copy of the payload with only this story's docs, and of its template. The subscription
-// compares what the selector returns with what it returned before, and the payload itself is state
-// that changes in place, so it would always compare equal. The template is read, not subscribed
-// to, which would load it at once; reading it here re-runs the selector when an update changes it.
+// This story's docs and template. A subscription re-runs only for the state its selector reads, and
+// an update can change a story's fields in place, so the story is copied field by field. The
+// template is read here rather than subscribed to, which would load it at once, so an update that
+// changes only the template still re-runs the selector.
 function selectStoryWithTemplate(payload: StoryDocsPayload | undefined, storyId: string) {
   const story = payload?.stories[storyId];
   const templates = getService('core/story-docs', { internal: true }).queries.storyTemplates.get({

@@ -24,6 +24,7 @@ import {
 import {
   type SnippetTemplate,
   createHoleMarks,
+  stripHoles,
   withHoleSpace,
 } from 'storybook/internal/docs-tools';
 
@@ -32,7 +33,6 @@ import {
   type Mark,
   type ReactHolePlace,
   printArgsEntry,
-  printArgsObject,
   printAttribute,
   printAttributes,
   printChildren,
@@ -51,32 +51,46 @@ function renderFunctionOf(resolution: RenderResolution) {
 export interface CodeSnippet {
   /** Source of a `const` or `function` declaration named after the story. */
   snippet: string;
-  // The snippet with each place an arg prints as a hole, when asked for; see `ProvidedStoryDoc`.
-  template?: SnippetTemplate<ReactHolePlace>;
+  // The snippet with each place an arg prints as a hole; see `ProvidedStoryDoc`.
+  template: SnippetTemplate<ReactHolePlace>;
   /** Imports the snippet needs beyond the component, from arg values that kept a name. */
   imports: ImportRef[];
   /** What a static pass could not read, in the source text it was written as. */
   unresolved: string[];
 }
 
+// The snippet is printed once, with each place an arg prints marked by a comment, which parses and
+// reindents wherever the place stands. The marks become the template's holes, and the template
+// without them is the snippet.
 export function getCodeSnippet(
   csf: CsfFile,
   storyName: string,
   componentName?: string,
-  resolver: StoryArgsResolver = createStoryArgsResolver(csf),
-  withTemplate = false
+  resolver: StoryArgsResolver = createStoryArgsResolver(csf)
 ): CodeSnippet {
   const { args, imports, unresolved } = resolver.resolve(storyName);
   const importedBind = importedBoundStory(csf, storyName, args);
-  const print = (mark?: Mark) =>
-    importedBind
-      ? importedBind.print(mark)
-      : buildSnippet(csf, storyName, componentName, args, resolver, mark);
-  const snippet = print();
-  const template = withTemplate ? printTemplate(print, [csf.editor.code, snippet]) : undefined;
+  // All code the snippet prints, so none of it is read as a mark.
+  const sources = [csf.editor.code, ...Object.values(args).map(detachedTextOf)];
+  const marks = createHoleMarks<ReactHolePlace>(sources, (mark) => `/*${mark}*/`);
+  const marked = importedBind
+    ? importedBind.print(marks.mark)
+    : buildSnippet(csf, storyName, componentName, args, resolver, marks.mark);
+  const holes = marks.toTemplate(marked);
+  invariant(holes, 'A place an arg prints was printed inside another.');
+  const template = withHoleSpace(
+    holes.map((segment): SnippetTemplate<ReactHolePlace>[number] =>
+      // While neither arg it follows changes, an `overridden` hole prints the attribute as written.
+      typeof segment !== 'string' && segment.kind === 'overridden'
+        ? { ...segment, written: segment.text }
+        : segment
+    ),
+    // An attribute a control clears leaves no gap or empty line.
+    (hole) => hole.kind === 'attr' || hole.kind === 'overridden'
+  );
   return {
-    snippet,
-    ...(template && { template }),
+    snippet: stripHoles(template),
+    template,
     imports: importedBind ? [...imports, importedBind.importRef] : imports,
     unresolved,
   };
@@ -84,36 +98,10 @@ export function getCodeSnippet(
 
 type Args = Record<string, Node>;
 
-// The template is the snippet printed with each place an arg prints marked by a comment, which
-// parses and reindents wherever the place stands, and the marks then turned into holes. `sources`
-// is all code the snippet prints, so none of it is read as a mark.
-function printTemplate(
-  print: (mark: Mark) => string,
-  sources: string[]
-): SnippetTemplate<ReactHolePlace> | undefined {
-  const marks = createHoleMarks<ReactHolePlace>(sources, (mark) => `/*${mark}*/`);
-  const template: SnippetTemplate<ReactHolePlace> | undefined = marks
-    .toTemplate(print(marks.mark))
-    ?.map((segment) =>
-      // While neither arg it follows changes, an `overridden` hole prints the attribute as written.
-      typeof segment !== 'string' && segment.kind === 'overridden'
-        ? { ...segment, written: segment.text }
-        : segment
-    );
-  // An attribute a control clears leaves no gap or empty line.
-  return (
-    template &&
-    withHoleSpace(template, (hole) => hole.kind === 'attr' || hole.kind === 'overridden')
-  );
-}
-
-// `value` is the snippet's code from `start` to `end`, or the code as written when `undefined`;
-// `marked` is the template's, with the places in it marked, or `value` when `undefined`.
 interface Edit {
   start: number;
   end: number;
-  value?: string;
-  marked?: string;
+  text: string;
 }
 
 // `Story = helper.bind({})` with `helper` imported: the snippet calls the bound helper with the args.
@@ -121,7 +109,7 @@ function importedBoundStory(
   csf: CsfFile,
   storyName: string,
   args: Args
-): { print: (mark?: Mark) => string; importRef: ImportRef } | undefined {
+): { print: (mark: Mark) => string; importRef: ImportRef } | undefined {
   const declaration = csf._storyExports[storyName];
   if (declaration?.type !== 'VariableDeclarator' || !isCanonicalCsf2BindCall(declaration.init)) {
     return undefined;
@@ -136,10 +124,7 @@ function importedBoundStory(
   const bound = textOf(declaration.init);
   const entries = Object.entries(args);
   // The args a control adds go after the story's, or make the object when it has none.
-  const argsObject = (mark?: Mark) => {
-    if (!mark) {
-      return printArgsObject(entries.map(([key, value]) => [key, print(value)]));
-    }
+  const argsObject = (mark: Mark) => {
     if (entries.length === 0) {
       return mark({ kind: 'object', spread: true }, '{}');
     }
@@ -166,7 +151,7 @@ function buildSnippet(
   componentName: string | undefined,
   merged: Args,
   resolver: StoryArgsResolver,
-  mark: Mark | undefined
+  mark: Mark
 ): string {
   const editor = csf.editor;
   const storyDeclaration = csf._storyExports[storyName];
@@ -239,7 +224,7 @@ function functionSnippet(
   fn: FunctionNode,
   method: boolean,
   merged: Args,
-  mark: Mark | undefined
+  mark: Mark
 ): string {
   const asyncPrefix = fn.async ? 'async ' : '';
   const params = fn.params.length
@@ -249,11 +234,8 @@ function functionSnippet(
 
   if (fn.type === 'ArrowFunctionExpression' && isJsx(fn.body)) {
     if (rewriteJsx(code, fn.body, merged, edits, mark)) {
-      // The static snippet decides whether the parameter stays, for the template too.
-      const kept = readsArgs(`${asyncPrefix}() => (${printRange(code, fn.body, edits)});`)
-        ? params
-        : '';
-      const body = printRange(code, fn.body, edits, mark);
+      const body = printRange(code, fn.body, edits);
+      const kept = readsArgs(`${asyncPrefix}() => (${body});`) ? params : '';
       return `const ${storyName} = ${asyncPrefix}(${kept}) => ${body};`;
     }
   } else if (fn.body?.type === 'BlockStatement') {
@@ -264,44 +246,34 @@ function functionSnippet(
       }
     }
     if (changed) {
+      const body = printRange(code, fn.body, edits);
       const head = `${asyncPrefix}function${fn.generator ? '*' : ''}`;
-      const kept = readsArgs(`${head} f() ${printRange(code, fn.body, edits)}`) ? params : '';
-      const body = printRange(code, fn.body, edits, mark);
+      const kept = readsArgs(`${head} f() ${body}`) ? params : '';
       return fn.type === 'FunctionDeclaration'
         ? `${asyncPrefix}function${fn.generator ? '*' : ''} ${storyName}(${kept}) ${body}`
         : `const ${storyName} = ${asyncPrefix}(${kept}) => ${body};`;
     }
   }
 
-  // The story as written, but for the reads of args it does not set, which the template marks.
+  // The story as written, but for the reads of args it does not set, which are marked.
   if (fn.type === 'FunctionDeclaration' && fn.body) {
-    return `${asyncPrefix}function${fn.generator ? '*' : ''} ${storyName}(${params}) ${printRange(code, fn.body, edits, mark)}`;
+    return `${asyncPrefix}function${fn.generator ? '*' : ''} ${storyName}(${params}) ${printRange(code, fn.body, edits)}`;
   }
   if (method && fn.body) {
-    return `const ${storyName} = ${asyncPrefix}(${params}) => ${printRange(code, fn.body, edits, mark)};`;
+    return `const ${storyName} = ${asyncPrefix}(${params}) => ${printRange(code, fn.body, edits)};`;
   }
-  return `const ${storyName} = ${printRange(code, fn, edits, mark)};`;
+  return `const ${storyName} = ${printRange(code, fn, edits)};`;
 }
 
 const isJsx = (node: Node | null | undefined): node is E.JSXElement | E.JSXFragment =>
   node?.type === 'JSXElement' || node?.type === 'JSXFragment';
 
-// Dedents continuation lines so the snippet does not carry the story file's nesting. With `mark`,
-// prints the template's code, with its places marked.
-function printRange(
-  code: string,
-  range: { start: number; end: number },
-  edits: Edit[],
-  mark?: Mark
-): string {
+// Dedents continuation lines so the snippet does not carry the story file's nesting.
+function printRange(code: string, range: { start: number; end: number }, edits: Edit[]): string {
   let text = '';
   let cursor = range.start;
   for (const edit of [...edits].sort((a, b) => a.start - b.start || a.end - b.end)) {
-    const printed = mark ? (edit.marked ?? edit.value) : edit.value;
-    if (printed === undefined) {
-      continue;
-    }
-    text += code.slice(cursor, edit.start) + printed;
+    text += code.slice(cursor, edit.start) + edit.text;
     cursor = edit.end;
   }
   text += code.slice(cursor, range.end);
@@ -364,7 +336,7 @@ const injectedAttributes = (
   merged: Args,
   existing: ReadonlySet<string>,
   print: ValuePrinter,
-  mark?: Mark
+  mark: Mark
 ) =>
   printAttributes(
     injectedArgs(merged, existing).map(([k, v]) => [k, toJsxValue(v, print)]),
@@ -373,12 +345,12 @@ const injectedAttributes = (
 
 // Where a spread passes the args a control sets, but those the element prints by name, and
 // `children`, which the element ends with; see `closeHole`.
-const addedAttributes = (printed: string[], mark: Mark | undefined) =>
-  mark ? mark({ kind: 'attrs', spread: true, except: [...printed, 'children'] }, '') : '';
+const addedAttributes = (printed: string[], mark: Mark) =>
+  mark({ kind: 'attrs', spread: true, except: [...printed, 'children'] }, '');
 
 // The end of an element the args pass `children` to: `end` as the snippet prints it.
-const closeHole = (name: string, end: string, mark: Mark | undefined) =>
-  mark ? mark({ kind: 'close', arg: 'children', element: name }, end) : end;
+const closeHole = (name: string, end: string, mark: Mark) =>
+  mark({ kind: 'close', arg: 'children', element: name }, end);
 
 const toJsxChildren = (node: Node | null | undefined, print: ValuePrinter) =>
   node ? printChildren(toJsxValue(node, print)) : '';
@@ -409,7 +381,7 @@ function rewriteJsx(
   node: E.JSXElement | E.JSXFragment,
   merged: Args,
   edits: Edit[],
-  mark: Mark | undefined
+  mark: Mark
 ): boolean {
   let changed = false;
   const printAt = (offset: number) => valuePrinter(lineIndent(code, offset));
@@ -432,25 +404,19 @@ function rewriteJsx(
         )
       );
       const print = printAt(attrs[firstSpread].start);
-      const pieces = injectedAttributes(merged, existing, print).join(' ');
-      const marked =
-        mark &&
+      const injected = injectedNames(merged, existing);
+      const pieces =
         injectedAttributes(merged, existing, print, mark).join(' ') +
-          addedAttributes([...existing, ...injectedNames(merged, existing)], mark);
+        addedAttributes([...existing, ...injected], mark);
       attrs.forEach((a, index) => {
         if (!isArgsSpread(a)) {
           return;
         }
-        if (index === firstSpread && pieces) {
-          edits.push({ start: a.start, end: a.end, value: pieces, marked });
+        if (index === firstSpread && injected.length > 0) {
+          edits.push({ start: a.start, end: a.end, text: pieces });
         } else {
           const start = index > 0 ? attrs[index - 1].end : tagEnd;
-          edits.push({
-            start,
-            end: a.end,
-            value: '',
-            marked: index === firstSpread ? marked : '',
-          });
+          edits.push({ start, end: a.end, text: index === firstSpread ? pieces : '' });
         }
       });
 
@@ -463,18 +429,13 @@ function rewriteJsx(
         const [start, end] = opening.selfClosing
           ? [attrs.length > 0 ? attrs[attrs.length - 1].end : tagEnd, opening.end]
           : [opening.end - 1, node.end];
-        const value =
+        const text =
           children === undefined
-            ? undefined
+            ? code.slice(start, end)
             : opening.selfClosing
               ? printClose(name, children)
               : `>${children}${code.slice(opening.end, node.end)}`;
-        edits.push({
-          start,
-          end,
-          value,
-          marked: closeHole(name, value ?? code.slice(start, end), mark),
-        });
+        edits.push({ start, end, text: closeHole(name, text, mark) });
       }
     }
 
@@ -491,24 +452,23 @@ function rewriteJsx(
       const key =
         a.value?.type === 'JSXExpressionContainer' ? getArgsMemberKey(a.value.expression) : null;
       if (key === null) {
-        if (beforeSpread && mark) {
+        if (beforeSpread) {
           edits.push({
             start: a.start,
             end: a.end,
-            marked: mark({ kind: 'attr', arg: name }, code.slice(a.start, a.end)),
+            text: mark({ kind: 'attr', arg: name }, code.slice(a.start, a.end)),
           });
         }
         return;
       }
-      const value = Object.hasOwn(merged, key)
+      const set = Object.hasOwn(merged, key);
+      const written = set
         ? toAttr(name, merged[key], printAt(a.start))
-        : undefined;
-      const written = value ?? code.slice(a.start, a.end);
+        : code.slice(a.start, a.end);
       edits.push({
         start: a.start,
         end: a.end,
-        value,
-        marked: mark?.(
+        text: mark(
           key === name
             ? { kind: 'attr', arg: key }
             : beforeSpread
@@ -518,7 +478,7 @@ function rewriteJsx(
           written
         ),
       });
-      changed ||= value !== undefined;
+      changed ||= set;
     });
   }
 
@@ -531,17 +491,16 @@ function rewriteJsx(
       if (key === null) {
         continue;
       }
-      const value =
-        key === 'children' && merged.children
-          ? toJsxChildren(merged.children, printAt(child.start))
-          : undefined;
+      const set = key === 'children' && Boolean(merged.children);
+      const text = set
+        ? toJsxChildren(merged.children, printAt(child.start))
+        : code.slice(child.start, child.end);
       edits.push({
         start: child.start,
         end: child.end,
-        value,
-        marked: mark?.({ kind: 'text', arg: key }, value ?? code.slice(child.start, child.end)),
+        text: mark({ kind: 'text', arg: key }, text),
       });
-      changed ||= value !== undefined;
+      changed ||= set;
     }
   }
 

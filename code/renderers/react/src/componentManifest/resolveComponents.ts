@@ -174,7 +174,7 @@ export function extractStorySnippets(
           template,
           imports: needs,
           unresolved,
-        } = getCodeSnippet(csf, storyExport, componentName, resolver, withTemplate);
+        } = getCodeSnippet(csf, storyExport, componentName, resolver);
         imports.push(...needs);
         const warning = unresolvedWarning(unresolved);
 
@@ -182,7 +182,7 @@ export function extractStorySnippets(
           id: story.id,
           name,
           snippet,
-          ...(template ? { template } : {}),
+          ...(withTemplate && { template }),
           description,
           summary,
           ...(warning ? { warning } : {}),

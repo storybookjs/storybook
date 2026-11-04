@@ -1,6 +1,6 @@
 import { describe, expect, it, test } from 'vitest';
 
-import { type CsfFile, loadCsf } from 'storybook/internal/csf-tools';
+import { loadCsf } from 'storybook/internal/csf-tools';
 import {
   fillTemplate,
   formatTemplate,
@@ -19,25 +19,8 @@ const load = (code: string) =>
     makeTitle: (userTitle?: string) => userTitle ?? 'title',
   }).parse();
 
-function expectTemplatesStripToSnippets(csf: CsfFile) {
-  for (const name of Object.keys(csf._storyExports)) {
-    const print = (withTemplate: boolean) =>
-      getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle', undefined, withTemplate);
-    let printed;
-    try {
-      printed = print(true);
-    } catch {
-      expect(() => print(false), name).toThrow();
-      continue;
-    }
-    expect(printed.template, name).toBeDefined();
-    expect(stripHoles(printed.template!), name).toBe(printed.snippet);
-  }
-}
-
 function generateExample(code: string) {
   const csf = load(code);
-  expectTemplatesStripToSnippets(csf);
 
   const snippets = Object.keys(csf._storyExports).map(
     (name) => getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle').snippet
@@ -49,7 +32,6 @@ function generateExample(code: string) {
 /** Snippet plus what it still depends on, for the cases that resolve names rather than values. */
 function generateResolved(code: string) {
   const csf = load(code);
-  expectTemplatesStripToSnippets(csf);
 
   return Object.keys(csf._storyExports).map((name) => {
     const snippet = getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle');
@@ -1146,7 +1128,7 @@ const snippetOf = (code: string, story = 'S') =>
   getCodeSnippet(load(code), story, 'Button').snippet;
 
 const templateOf = (code: string, story = 'S') =>
-  getCodeSnippet(load(code), story, 'Button', undefined, true).template!;
+  getCodeSnippet(load(code), story, 'Button').template;
 
 const fill = (code: string, initialArgs: Args, unmappedArgs: Args, story = 'S') =>
   fillTemplate(templateOf(code, story), { initialArgs, unmappedArgs }, printHole);

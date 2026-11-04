@@ -1,0 +1,50 @@
+name: nx-cache
+
+# Fills the shared NX Cloud remote cache from `next`.
+#
+# Pull request pipelines (CircleCI and the `nx` workflow) use read-only NX Cloud tokens. They read
+# this shared cache and write only to a cache that NX Cloud scopes to their own pull request, so a
+# pull request can never poison what other branches restore. Only this workflow writes to the
+# shared cache, with the read-write token kept in the `nx-cloud-write` environment, which only
+# `next` can use.
+on:
+  push:
+    branches: [next]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  fill-cache:
+    if: github.repository == 'storybookjs/storybook' && github.ref == 'refs/heads/next'
+    runs-on: ubuntu-latest
+    environment: nx-cloud-write
+    env:
+      NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_WRITE_TOKEN }}
+      NX_DEFAULT_OUTPUT_STYLE: stream
+    steps:
+      - name: Check for the write token
+        run: |
+          if [ -z "$NX_CLOUD_ACCESS_TOKEN" ]; then
+            echo "::error::NX_CLOUD_WRITE_TOKEN is not set in the nx-cloud-write environment, so nothing would be stored."
+            exit 1
+          fi
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
+      - run: yarn install --immutable
+      # The same commands, with the same configuration, as CircleCI's `Compile` step and affected
+      # typecheck, so their task hashes match what pull request pipelines look up.
+      - name: Compile
+        run: yarn nx run-many -t compile -c production
+      - name: Typecheck
+        run: yarn nx run-many -t check --exclude-task-dependencies --parallel=4

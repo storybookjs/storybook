@@ -1,6 +1,6 @@
 import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../../utils/npm-constants.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './constants.ts';
-import { isTrustedAuthor } from './runtime.ts';
+import { getPrNumber } from './runtime.ts';
 import { type JobOrNoOpJob } from './types.ts';
 
 export const cancelWorkflowStep = {
@@ -17,12 +17,14 @@ export const cancelWorkflowStep = {
  *
  * - Connected to Nx Cloud, Nx on CI prints only a cloud link for a failed task. Stream output keeps
  *   the task's own output (compile and type errors) in the CircleCI log.
- * - Pipelines from untrusted authors run without Nx Cloud, so they neither read from nor write to the
- *   shared remote cache. Same rule as the node_modules cache in `installWithCache`.
+ * - CircleCI's Nx Cloud token is read-only. Nx Cloud then gives each pull request its own writable
+ *   cache next to the shared one, which only `next` fills (see `.github/workflows/nx-cache.yml`).
+ *   Pipelines started through the API carry no pull request number for Nx Cloud to find, so
+ *   `NX_BRANCH` passes it on. Without it, a pull request pipeline cannot store anything.
  */
 export const nxEnvironment = () => ({
   NX_DEFAULT_OUTPUT_STYLE: 'stream',
-  ...(isTrustedAuthor() ? {} : { NX_NO_CLOUD: 'true' }),
+  ...(getPrNumber() ? { NX_BRANCH: getPrNumber() } : {}),
 });
 
 export const compileStep = () => ({

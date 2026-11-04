@@ -21,7 +21,6 @@ import {
   type WholeReadPlace,
   printAccessors,
   printProp,
-  printSpreadAttribute,
   printWholeRead,
 } from '../../snippet-values.ts';
 import type { SvelteAST } from '../../svelte-csf/parser/ast.ts';
@@ -72,8 +71,6 @@ export function printTemplate({
   snippets?: Record<string, string>;
 }): { snippet: string; template?: SnippetTemplate<SvelteHolePlace> } {
   const { ast, offset } = parseMarkup(code, typescript);
-  // Whether the holes of an attribute a spread writes over could not be found again.
-  let holesLost = false;
   // The edits that print the snippet, with each place an arg prints marked by `marks`, if any.
   const collect = (marks?: HoleMarks<SvelteHolePlace>): MarkedEdit[] => {
     const mark: Mark = marks?.mark ?? ((_, text) => text);
@@ -112,46 +109,25 @@ export function printTemplate({
             (attribute) => isArgsSpread(attribute) && attribute.start > node.start
           );
         const range = at(node);
-        // The spread writes over it with the arg.
-        if (spreadAfter && node.name in args) {
-          const value = printSpreadAttribute(node.name, propValue(args[node.name]));
-          edits.push({
-            ...range,
-            value,
-            marked: mark({ kind: 'spreadattr', arg: node.name }, value),
-          });
-          return;
-        }
         // A spread of the rest leaves out the args the template parameter destructures.
         if (!spreadAfter || destructured.has(node.name)) {
           next();
           return;
         }
+        // The spread writes over it with the arg it names, so it is a hole for that arg: as the
+        // spread prints the arg the story sets, else as written, with the args it reads filled in.
         const from = edits.length;
         next();
-        // It prints as written, its reads following their args, until the spread writes over it.
         const children = edits.splice(from).map((edit) => ({
           ...edit,
           start: edit.start - range.start,
           end: edit.end - range.start,
         }));
-        const value = applyEdits(written(range), children);
-        // The snippet's own print needs no template.
-        const nested = marks
-          ? marks.toTemplate(
-              applyEdits(
-                written(range),
-                children.map((edit) => ({ ...edit, value: edit.marked ?? edit.value }))
-              )
-            )
-          : [];
-        holesLost ||= nested === undefined;
-        const template = nested ?? [];
-        edits.push({
-          ...range,
-          value,
-          marked: mark({ kind: 'overridden', spread: true, name: node.name, template }, value),
-        });
+        const value =
+          node.name in args
+            ? printProp(node.name, propValue(args[node.name]))
+            : applyEdits(written(range), children);
+        edits.push({ ...range, value, marked: mark({ kind: 'prop', arg: node.name }, value) });
       },
       SpreadAttribute(node, { path, next }) {
         if (!isArgsSpread(node)) {
@@ -290,7 +266,7 @@ export function printTemplate({
   // The marks avoid the characters of the snippet, not of `code`: `'\uE000'` prints U+E000.
   const marks = createHoleMarks<SvelteHolePlace>([snippet]);
   const marked = collect(marks).map((edit) => ({ ...edit, value: edit.marked ?? edit.value }));
-  const template = holesLost ? undefined : marks.toTemplate(applyEdits(code, marked));
+  const template = marks.toTemplate(applyEdits(code, marked));
   return {
     snippet,
     // An arg a control clears leaves no gap in the spread.

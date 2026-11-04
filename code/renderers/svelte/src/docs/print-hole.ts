@@ -1,9 +1,4 @@
-import {
-  type PrintHole,
-  fillTemplate,
-  printValue,
-  unknownHoleKind,
-} from 'storybook/internal/docs-tools';
+import { type PrintHole, printValue, unknownHoleKind } from 'storybook/internal/docs-tools';
 import type { Args } from 'storybook/internal/types';
 
 import {
@@ -11,7 +6,6 @@ import {
   type SvelteHolePlace,
   printAccessors,
   printProp,
-  printSpreadAttribute,
   printWholeRead,
 } from '../snippet-values.ts';
 
@@ -28,19 +22,6 @@ export const printHole: PrintHole<SvelteHolePlace> = (hole, value) => {
         .filter(([name, item]) => item !== undefined && !hole.except.includes(name))
         .map(([name, item]) => printProp(name, propValue(item, name)))
         .join(hole.separator);
-    case 'spreadattr':
-      return printSpreadAttribute(arg, propValue(value, arg));
-    case 'overridden': {
-      const args = value as Args;
-      return Object.hasOwn(args, hole.name)
-        ? printSpreadAttribute(hole.name, propValue(args[hole.name], hole.name))
-        : // Each arg the spread hole gets is one a control changed, a cleared one too.
-          fillTemplate(
-            hole.template,
-            { unmappedArgs: args, initialArgs: changedFrom(args) },
-            printHole
-          );
-    }
     case 'value':
       return printRead(value, arg, hole.path).code;
     case 'property':
@@ -79,11 +60,6 @@ function printRead(
     ? { code: `${wrapped}${printAccessors(rest)}` }
     : { code: wrapped, ...(typeof value === 'string' && { string: value }) };
 }
-
-// Initial args that differ from each of `args`, so `fillTemplate` prints every one of them.
-const UNSET = Symbol('unset');
-const changedFrom = (args: Args): Args =>
-  Object.fromEntries(Object.keys(args).map((name) => [name, UNSET]));
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);

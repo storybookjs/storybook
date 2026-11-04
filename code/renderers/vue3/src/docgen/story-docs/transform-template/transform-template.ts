@@ -458,6 +458,11 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
       });
       continue;
     }
+    const followed = plan.directive && followedBinding(prop, plan.directive, state);
+    if (followed) {
+      state.edits.push(followed);
+      continue;
+    }
     if (
       prop.type === NodeTypes.DIRECTIVE &&
       !transformDirective(prop, attributesByName, element, state)
@@ -573,9 +578,7 @@ function expandArgsBinding(
   }
   // The args a control sets go after the args the story writes, but those the element prints
   // itself and its slots. Vue merges a `class` or `style` the element writes with the arg's, so
-  // that one is bound. A prop the element binds before the args binding to code that reads other
-  // args, or a `class` or `style` it binds, which the arg's would merge with, has no code that
-  // follows the arg that sets it, so it is a guard.
+  // that one is bound. A binding of code that reads args no hole follows is a guard.
   const written = [...attributesByName.entries()];
   const merge = written
     .filter(
@@ -589,8 +592,10 @@ function expandArgsBinding(
         prop.type === NodeTypes.DIRECTIVE &&
         prop.name === 'bind' &&
         !removed.has(prop) &&
+        readsArgs(prop) &&
         (isMerged(name, state) ||
-          (prop.loc.start.offset < directive.loc.start.offset && readsArgs(prop)))
+          (prop.loc.start.offset < directive.loc.start.offset &&
+            !argReadBefore(prop, directive, state)))
     )
       ? [marked(state.ctx, { kind: 'guard', arg: camelCase(name) }, '')]
       : []
@@ -619,6 +624,52 @@ function expandArgsBinding(
 // A Vue template merges a `class` or `style` from every source, where an `h()` spread overrides it.
 const isMerged = (name: string, state: TransformState) =>
   state.origin !== 'h' && (name === 'class' || name === 'style');
+
+// The edit of a binding a hole follows on an element with an args binding: one that reads an arg
+// as is before it, as `:size="args.label"`, which an `overridden` hole prints from the arg the
+// binding writes over it with once a control sets that, or a `class` or `style` of code that
+// reads no args, which a `merged` hole binds with the arg's.
+function followedBinding(
+  prop: ElementProp,
+  directive: DirectiveNode,
+  state: TransformState
+): Edit | undefined {
+  const name = prop.type === NodeTypes.DIRECTIVE ? staticDirectiveArg(prop) : undefined;
+  const start = prop.loc.start.offset;
+  const end = prop.loc.end.offset;
+  const arg = argReadBefore(prop, directive, state);
+  if (name && arg) {
+    // The attribute as the snippet prints it, which the hole holds, so it marks no hole of its own.
+    const text = renderBoundArgAttribute(name, arg, { ...state.ctx, mark: undefined });
+    const place = { kind: 'overridden', name, by: camelCase(name), reads: arg.name } as const;
+    // `laidOut` sets `written` to the hole's text.
+    const hole = { ...place, written: '', spread: true } as const;
+    return { start, end, text: marked(state.ctx, hole, text) };
+  }
+  const exp = prop.type === NodeTypes.DIRECTIVE ? prop.exp : undefined;
+  const quote =
+    exp?.type === NodeTypes.SIMPLE_EXPRESSION && surroundingAttributeQuote(exp, state.template);
+  if (name && isMerged(name, state) && quote && !readsArgs(prop as DirectiveNode)) {
+    const hole = { kind: 'merged', code: exp.content, quote, arg: name } as const;
+    return { start, end, text: marked(state.ctx, hole, state.template.slice(start, end)) };
+  }
+  return undefined;
+}
+
+// The arg a binding before the args binding reads as is, as `:size="args.label"`.
+function argReadBefore(prop: ElementProp, directive: DirectiveNode, state: TransformState) {
+  if (
+    prop.type !== NodeTypes.DIRECTIVE ||
+    prop.name !== 'bind' ||
+    prop.exp?.type !== NodeTypes.SIMPLE_EXPRESSION ||
+    prop.loc.start.offset > directive.loc.start.offset
+  ) {
+    return undefined;
+  }
+  const name = staticDirectiveArg(prop);
+  const arg = state.argsByName.get(exactArgsMemberName(prop.exp.content.trim()) ?? '');
+  return name && !isMerged(name, state) && arg && arg.role !== 'slot' ? arg : undefined;
+}
 
 const readsArgs = (prop: DirectiveNode) =>
   prop.exp?.type === NodeTypes.SIMPLE_EXPRESSION && valueReferencesArgs(prop.exp.content);

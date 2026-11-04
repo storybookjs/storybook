@@ -20,11 +20,18 @@
 //   setup `statement`, an `interpolation` or an `attribute` value quoted with `quote`, an operand,
 //   in parentheses where the code around it would read it otherwise. `readsOn` says that code
 //   reads on after it with a `.`, as `(5).toFixed()` does.
+// - `overridden`: the attribute `name`, which an element binds to the arg `reads` before its args
+//   binding, which writes over it with the arg `by` once a control sets that. Of the args a control
+//   set, it prints `name` from `by`, else from `reads`, else `written`, as the snippet prints it.
+// - `merged`: a `class` or `style` a template binds to `code`, quoted with `quote`, which Vue
+//   merges with the arg's: both in one binding.
 // - `guard`: an arg the snippet has no place for: a prop the element binds, before its args
-//   binding, to code that reads other args, or a `class` or `style` a template binds, which Vue
-//   merges with the arg's into code that holds both.
+//   binding, to code that reads args, but for one it reads as is, or a `class` or `style` a
+//   template binds to code that reads args.
 export type VueHolePlace =
   | { kind: 'attr'; name?: string }
+  | { kind: 'overridden'; name: string; by: string; reads: string; written: string }
+  | { kind: 'merged'; code: string; quote: '"' | "'" }
   | { kind: 'props'; except: string[]; merge?: string[] }
   | { kind: 'slots'; slots: string[]; indent: string; tag?: string }
   | { kind: 'text'; slot?: boolean }

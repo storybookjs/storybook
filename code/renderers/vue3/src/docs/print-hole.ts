@@ -30,6 +30,19 @@ export const printHole: PrintHole<VueHolePlace> = (hole, value) => {
   switch (hole.kind) {
     case 'attr':
       return value === undefined ? '' : attribute(hole.name ?? arg, arg, value);
+    case 'overridden': {
+      const args = value as Args;
+      const read = [hole.by, hole.reads].find((name) => Object.hasOwn(args, name));
+      return read === undefined ? hole.written : attribute(hole.name, read, args[read]);
+    }
+    case 'merged': {
+      const { quote } = hole;
+      const bound =
+        value === undefined
+          ? hole.code
+          : `[${hole.code}, ${inAttribute(code(arg, value, quote === "'" ? '"' : "'"), quote)}]`;
+      return `:${arg}=${quote}${bound}${quote}`;
+    }
     case 'props':
       return Object.entries(value as Args)
         .filter(([name]) => !hole.except.includes(name))

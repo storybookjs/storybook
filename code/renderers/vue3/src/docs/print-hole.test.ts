@@ -50,6 +50,29 @@ describe('printHole', () => {
     ).toBe(`:class="'big'" title="Hi"`);
   });
 
+  it('prints an attribute an args binding writes over from the arg over it, else the one it reads', () => {
+    const hole = {
+      kind: 'overridden',
+      name: 'max-size',
+      by: 'maxSize',
+      reads: 'label',
+      written: 'max-size="Hi"',
+      spread: true,
+    } as const;
+    expect(printHole(hole, { maxSize: 'lg', label: 'Ho' })).toBe('max-size="lg"');
+    expect(printHole(hole, { label: 'Ho' })).toBe('max-size="Ho"');
+    expect(printHole(hole, { count: 2 })).toBe('max-size="Hi"');
+  });
+
+  it('binds the value of a class or style with the code the template binds', () => {
+    expect(printHole({ kind: 'merged', code: 'cls', quote: '"', arg: 'class' }, 'a "b"')).toBe(
+      `:class="[cls, 'a &quot;b&quot;']"`
+    );
+    expect(printHole({ kind: 'merged', code: 'cls', quote: "'", arg: 'class' }, undefined)).toBe(
+      `:class='cls'`
+    );
+  });
+
   it('prints the slots a control set as children, opening a tag that closes itself', () => {
     const slots: Extract<VueHolePlace, { kind: 'slots' }> = {
       kind: 'slots',

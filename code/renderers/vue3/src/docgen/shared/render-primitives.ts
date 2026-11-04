@@ -396,8 +396,9 @@ export function hoistArgValue(name: string, value: Node, ctx: RenderContext): st
   return bindingName;
 }
 
-// Whether a template's arg shares the const of a value a render writes, which `h()` declares
-// before any arg and no template marks; the snippet declares the two as one when they print alike.
+// Whether a template's arg shares a const no hole marks, of a value `h()` writes, which it declares
+// before any arg, or of an arg an `overridden` hole prints whole; the snippet declares the two as
+// one when they print alike.
 export function sharesWrittenConst(name: string, value: Node, ctx: RenderContext): boolean {
   return (
     ctx.mark !== undefined &&

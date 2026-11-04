@@ -1,5 +1,11 @@
 import type { ESTree as E, ESTreeNode as Node, RenderFunction } from 'storybook/internal/csf-tools';
-import { detachedTextOf, isStringLiteral, textOf, walk } from 'storybook/internal/csf-tools';
+import {
+  detachedTextOf,
+  isStringLiteral,
+  isTSWrapper,
+  textOf,
+  walk,
+} from 'storybook/internal/csf-tools';
 import { createHoleMarks, printValue } from 'storybook/internal/docs-tools';
 
 import type { HtmlHole, HtmlHolePlace, HtmlSnippetTemplate } from '../../snippet-holes.ts';
@@ -76,7 +82,7 @@ function argReads(render: RenderFunction): Read[] | undefined {
 
   walk(render.body!, (node, parent) => {
     // Types read no arg, but for the wrappers around an expression.
-    if (node.type.startsWith('TS') && !EXPRESSION_WRAPPERS.has(node.type)) {
+    if (node.type.startsWith('TS') && !isTSWrapper(node)) {
       return false;
     }
     if (bindsName(node, names)) {
@@ -112,13 +118,6 @@ function argReads(render: RenderFunction): Read[] | undefined {
   });
   return rebound ? undefined : reads;
 }
-
-const EXPRESSION_WRAPPERS = new Set([
-  'TSAsExpression',
-  'TSSatisfiesExpression',
-  'TSNonNullExpression',
-  'TSInstantiationExpression',
-]);
 
 // The arg each name of a destructured parameter reads, and the name of its rest, or `undefined`
 // for a pattern other than plain names, as `{ label, count: n, ...rest }`.

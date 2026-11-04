@@ -63,9 +63,10 @@ function printRead(
     rest = rest.slice(1);
   }
   const code = printValue(value, arg);
-  // As in `-args.n`, `() => args.o` or `args.o.a`, a negative number or an object needs parentheses.
-  const object = isObject(value);
-  const wrapped = object || (typeof value === 'number' && value < 0) ? `(${code})` : code;
+  // As in `-args.n`, `() => args.o` or `args.o.a`, a negative number or an object needs parentheses,
+  // and as in `args.n.toFixed(2)`, any number before an accessor.
+  const number = typeof value === 'number' && (value < 0 || rest.length > 0);
+  const wrapped = isObject(value) || number ? `(${code})` : code;
   return rest.length
     ? { code: `${wrapped}${printAccessors(rest)}` }
     : { code: wrapped, ...(typeof value === 'string' && { string: value }) };

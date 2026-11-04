@@ -108,22 +108,10 @@ export function printTemplate({
           element.attributes.some(
             (attribute) => isArgsSpread(attribute) && attribute.start > node.start
           );
-        if (!spreadAfter) {
-          next();
-          return;
-        }
-        const argReads = (Array.isArray(node.value) ? node.value : [node.value]).flatMap((part) =>
-          part !== true && part.type === 'ExpressionTag'
-            ? (replaceArgsReads(written(at(part.expression)), reads) ?? [])
-            : []
-        );
-        // The spread writes over it with the arg, or leaves it as written while the arg is unset.
-        if (node.name in args || !argReads.length) {
-          const range = at(node);
-          const value =
-            node.name in args
-              ? printSpreadAttribute(node.name, propValue(args[node.name]))
-              : written(range);
+        const range = at(node);
+        // The spread writes over it with the arg.
+        if (spreadAfter && node.name in args) {
+          const value = printSpreadAttribute(node.name, propValue(args[node.name]));
           edits.push({
             ...range,
             value,
@@ -131,20 +119,42 @@ export function printTemplate({
           });
           return;
         }
-        // Its reads follow their args. Unless it is a whole read of the arg it names, which the
-        // spread writes over it with, it cannot also follow that arg.
-        const ownRead = ({ single }: (typeof argReads)[number]) =>
-          single?.arg === node.name && !single.path;
-        if (!argReads.every(ownRead)) {
-          const { end } = at(node);
+        // A spread of the rest leaves out the args the template parameter destructures.
+        if (!spreadAfter || destructured.has(node.name)) {
+          next();
+          return;
+        }
+        const readArgs = (Array.isArray(node.value) ? node.value : [node.value]).flatMap((part) =>
+          part !== true && part.type === 'ExpressionTag'
+            ? (replaceArgsReads(written(at(part.expression)), reads)?.args ?? [])
+            : []
+        );
+        const from = edits.length;
+        next();
+        if (readArgs.some((arg) => arg !== node.name)) {
+          // Its reads follow their args, but it cannot also follow the arg it names.
           edits.push({
-            start: end,
-            end,
+            start: range.end,
+            end: range.end,
             value: '',
             marked: mark({ kind: 'overwritten', arg: node.name }, ''),
           });
+          return;
         }
-        next();
+        // It reads no arg but its own, so it prints as written until the spread writes over it.
+        const value = applyEdits(
+          written(range),
+          edits.splice(from).map((edit) => ({
+            ...edit,
+            start: edit.start - range.start,
+            end: edit.end - range.start,
+          }))
+        );
+        edits.push({
+          ...range,
+          value,
+          marked: mark({ kind: 'spreadattr', arg: node.name }, value),
+        });
       },
       SpreadAttribute(node, { path, next }) {
         if (!isArgsSpread(node)) {
@@ -387,8 +397,8 @@ function blockExpressions(node: SvelteAST.SvelteNode): object[] {
 
 // Replace each read of the story args in an expression with the source of the value it reads, or
 // return `undefined` when the expression reads no story args. A read of an arg the story does not
-// set stays as written, unless `argsComplete`; `substituted` says whether any read was replaced.
-// `marked` has a hole for each read, and `single` is set when the expression is one whole read: its
+// set stays as written, unless `argsComplete`; `substituted` says whether any read was replaced, and
+// `args` names the arg of each read. `marked` has a hole for each read, and `single` is set when the expression is one whole read: its
 // arg, the `path` of the member of it that it reads, if any, and the `string` it reads, if any.
 function replaceArgsReads(
   expression: string,
@@ -398,6 +408,7 @@ function replaceArgsReads(
       value: string;
       marked: string;
       substituted: boolean;
+      args: string[];
       single?: { arg: string; path?: string[]; string?: string };
     }
   | undefined {
@@ -492,6 +503,7 @@ function replaceArgsReads(
       edits.map((edit) => ({ ...edit, value: edit.marked }))
     ),
     substituted: edits.some((edit) => edit.substituted),
+    args: edits.map((edit) => edit.arg),
     ...(whole && {
       single: {
         arg: only.arg,

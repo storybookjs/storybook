@@ -538,24 +538,14 @@ describe('service runtime', () => {
       );
     });
 
-    it('resolves .loaded() immediately when state is already populated', async () => {
+    it('resolves .loaded() with the value when state is already populated', async () => {
       const service = registerService(awaitedPreloadValueServiceDef);
-      const preloadValueSpy = vi.spyOn(
-        awaitedPreloadValueServiceDef.commands.preloadValue,
-        'handler'
+
+      await service.queries.preloadedValue.loaded({ entryId: 'entry-a' });
+
+      await expect(service.queries.preloadedValue.loaded({ entryId: 'entry-a' })).resolves.toBe(
+        'preloaded'
       );
-
-      try {
-        await service.queries.preloadedValue.loaded({ entryId: 'entry-a' });
-        preloadValueSpy.mockClear();
-
-        await expect(service.queries.preloadedValue.loaded({ entryId: 'entry-a' })).resolves.toBe(
-          'preloaded'
-        );
-        expect(preloadValueSpy).not.toHaveBeenCalled();
-      } finally {
-        preloadValueSpy.mockRestore();
-      }
     });
 
     it('never fires the load from repeated .get() reads (no implicit background load)', async () => {

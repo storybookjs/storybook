@@ -100,6 +100,8 @@ jobs:
         name: 'Run nx'
         env:
           TAG: ${{ steps.tag.outputs.tag }}
+          # Wide enough that the task summary table never truncates task names.
+          COLUMNS: 250
         run: |
           echo 'nx_output<<EOF' >> "$GITHUB_OUTPUT"
           yarn nx run-many -t $ALL_TASKS -c production -p="tag:library,tag:ci:${TAG}" | tee -a "$GITHUB_OUTPUT"

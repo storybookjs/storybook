@@ -9,9 +9,7 @@ name: nx-cache
 # `next` can use.
 on:
   push:
-    # TEMPORARY: kasper/nx-cloud-revive is here only to test writes on PR #37181. Remove it, and
-    # its deployment branch rule on the nx-cloud-write environment, before merging.
-    branches: [next, kasper/nx-cloud-revive]
+    branches: [next]
   workflow_dispatch:
 
 permissions:
@@ -24,7 +22,7 @@ concurrency:
 
 jobs:
   fill-cache:
-    if: github.repository == 'storybookjs/storybook' && (github.ref == 'refs/heads/next' || github.ref == 'refs/heads/kasper/nx-cloud-revive')
+    if: github.repository == 'storybookjs/storybook' && github.ref == 'refs/heads/next'
     timeout-minutes: 45
     runs-on: ubuntu-latest
     environment: nx-cloud-write

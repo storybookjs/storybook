@@ -9,8 +9,8 @@
       "snippet": "<lit-template-shapes label="Aliased" count="7" heading="Head">
   <b>Aliased</b>
 </lit-template-shapes>",
-      "template": "⟦guard label⟫⟧<lit-template-shapes⟦attr label mode="bind" ~" "⟫ label="Aliased"⟧⟦attr count mode="bind" ~" "⟫ count="7"⟧⟦attr heading mode="field" ~" "⟫ heading="Head"⟧>
-  <b>Aliased</b>
+      "template": "<lit-template-shapes⟦attr label mode="bind" ~" "⟫ label="Aliased"⟧⟦attr count mode="bind" ~" "⟫ count="7"⟧⟦attr heading mode="field" ~" "⟫ heading="Head"⟧>
+  <b>⟦text label⟫Aliased⟧</b>
 </lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--attributes": {
@@ -66,7 +66,7 @@
       "id": "webcomponentsstorydocs-lit-template-shapes--member-path",
       "name": "Member Path",
       "snippet": "<lit-template-shapes label="Bob">guest</lit-template-shapes>",
-      "template": "⟦guard user⟫⟧<lit-template-shapes label="Bob">guest</lit-template-shapes>",
+      "template": "<lit-template-shapes⟦attr user path=["name"] name="label" mode="bind" ~" "⟫ label="Bob"⟧>⟦choice user path=["admin"] truthy="admin" falsy="guest"⟫guest⟧</lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--nested": {
       "id": "webcomponentsstorydocs-lit-template-shapes--nested",
@@ -74,8 +74,8 @@
       "snippet": "<lit-template-shapes>
   <span>Nested</span>
 </lit-template-shapes>",
-      "template": "⟦guard label⟫⟧<lit-template-shapes>
-  <span>Nested</span>
+      "template": "<lit-template-shapes>
+  <span>⟦text label⟫Nested⟧</span>
 </lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--nested-listener": {
@@ -90,7 +90,7 @@
     host.addEventListener('shape-change', () => {});
   }
 </script>",
-      "template": "⟦guard onInnerClick⟫⟧<lit-template-shapes>
+      "template": "<lit-template-shapes>
   <button>Go</button>
 </lit-template-shapes>
 <script>
@@ -105,7 +105,7 @@
       "id": "webcomponentsstorydocs-lit-template-shapes--nothing",
       "name": "Nothing",
       "snippet": "<lit-template-shapes label="Set"></lit-template-shapes>",
-      "template": "⟦guard label⟫⟧⟦guard show⟫⟧<lit-template-shapes label="Set"></lit-template-shapes>",
+      "template": "⟦guard label⟫⟧<lit-template-shapes label="Set">⟦choice show truthy="<b>shown</b>" falsy=""⟫⟧</lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--prefixed-class": {
       "id": "webcomponentsstorydocs-lit-template-shapes--prefixed-class",
@@ -117,7 +117,7 @@
       "id": "webcomponentsstorydocs-lit-template-shapes--property-only",
       "name": "Property Only",
       "snippet": "<lit-template-shapes></lit-template-shapes>",
-      "template": "⟦guard items⟫⟧<lit-template-shapes></lit-template-shapes>",
+      "template": "<lit-template-shapes></lit-template-shapes>⟦props * properties=[{"arg":"items","name":"items","tag":"lit-template-shapes"}] ~"\n"⟫⟧",
       "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
     "webcomponentsstorydocs-lit-template-shapes--property-paired": {

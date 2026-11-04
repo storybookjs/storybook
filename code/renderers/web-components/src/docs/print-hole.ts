@@ -1,6 +1,7 @@
 import {
   type PrintHole,
   UnprintableArgError,
+  printValue,
   unknownHoleKind,
 } from 'storybook/internal/docs-tools';
 
@@ -10,7 +11,6 @@ import {
   cssDeclarations,
   escapeAttribute,
   escapeText,
-  inlineText,
   isDefined,
   isTruthy,
   printAttribute,
@@ -20,13 +20,13 @@ import {
   styleElement,
   styleRule,
 } from '../snippet-values.ts';
-import type { HtmlHolePlace } from '../snippet-holes.ts';
+import type { HtmlHolePlace, SnippetProperty } from '../snippet-holes.ts';
 
 // Prints a changed arg for a hole of a template from `build-story-docs.ts`, with the printer the
 // static snippet prints a value in that place with; see `HtmlHolePlace`.
 export const printHole: PrintHole<HtmlHolePlace> = (hole, changed) => {
   const arg = hole.arg ?? '';
-  const value = printable(arg, changed);
+  const value = printable(arg, valueAt(changed, hole.path));
   switch (hole.kind) {
     case 'attr': {
       const name = hole.name ?? arg;
@@ -45,11 +45,19 @@ export const printHole: PrintHole<HtmlHolePlace> = (hole, changed) => {
     case 'css':
       return escapeAttribute(cssDeclarations([{ name: hole.property ?? arg, value }]) ?? '');
     case 'cssattr': {
-      const style = cssDeclarations([{ name: hole.property ?? arg, value }]);
+      const args = changed as Record<string, unknown>;
+      const style = cssDeclarations(
+        hole.properties
+          .filter((property) => Object.hasOwn(args, property.arg))
+          .map((property) => ({
+            name: property.property,
+            value: printable(property.arg, args[property.arg]),
+          }))
+      );
       return style === undefined ? '' : quotedAttribute('style', style);
     }
     case 'text':
-      return escapeText(inlineText(childText(value), hole.trimStart, hole.trimEnd));
+      return escapeText(childText(value).replace(/\s+/g, ' '));
     case 'html':
       return childText(value);
     case 'slot':
@@ -60,12 +68,41 @@ export const printHole: PrintHole<HtmlHolePlace> = (hole, changed) => {
       return isSet(value)
         ? `${styleElement([{ selector: hole.selector, declarations: String(value) }])}\n`
         : '';
+    case 'choice':
+      return isTruthy(value) ? hole.truthy : hole.falsy;
+    case 'props':
+      return propertyScript(hole.properties, changed as Record<string, unknown>);
     case 'guard':
       throw new UnprintableArgError(arg);
     default:
       return unknownHoleKind(hole);
   }
 };
+
+// The `<script>` that sets each property a control set, as the story sets it: on the element it
+// queries, to the value as JavaScript.
+const propertyScript = (properties: SnippetProperty[], args: Record<string, unknown>): string => {
+  const lines = properties.flatMap(({ arg, path, name, tag }) => {
+    const value = Object.hasOwn(args, arg) ? valueAt(args[arg], path) : undefined;
+    if (value === undefined) {
+      return [];
+    }
+    const code = printValue(value, arg, { quote: "'", opaque: isLitValue }).replace(/<\//g, '<\\/');
+    const property = /^[A-Za-z_$][\w$]*$/.test(name) ? `.${name}` : `['${name}']`;
+    return [`  document.querySelector('${tag}')${property} = ${code};`];
+  });
+  return lines.length === 0 ? '' : `<script>\n${lines.join('\n')}\n</script>`;
+};
+
+// The member of `value` at `path`, as the story reads it, or `undefined` where there is none.
+const valueAt = (value: unknown, path: string[] = []): unknown =>
+  path.reduce<unknown>(
+    (current, key) =>
+      current === null || current === undefined
+        ? undefined
+        : (current as Record<string, unknown>)[key],
+    value
+  );
 
 const isSet = (value: unknown) => value !== null && value !== undefined && value !== '';
 

@@ -1,5 +1,7 @@
 {
-  "Aliased": "UnprintableArgError: The snippet cannot show the current value of the `label` arg.",
+  "Aliased": "<lit-template-shapes label="Aliased &amp; &lt;changed>" count="8" heading="Head &amp; &lt;changed>">
+  <b>Aliased &amp; &lt;changed&gt;</b>
+</lit-template-shapes>",
   "Attributes": "<lit-template-shapes label="Alpha &amp; &lt;changed>" count="3"></lit-template-shapes>",
   "ClassMap": "UnprintableArgError: The snippet cannot show the current value of the `active` arg.",
   "Destructured": "<lit-template-shapes label="Destructured &amp; &lt;changed>" count="7"></lit-template-shapes>",
@@ -12,8 +14,10 @@
     host.addEventListener('shape-change', () => {});
   }
 </script>",
-  "MemberPath": "<lit-template-shapes label="Bob">guest</lit-template-shapes>",
-  "Nested": "UnprintableArgError: The snippet cannot show the current value of the `label` arg.",
+  "MemberPath": "<lit-template-shapes label="Bob &amp; &lt;changed>">admin</lit-template-shapes>",
+  "Nested": "<lit-template-shapes>
+  <span>Nested &amp; &lt;changed&gt;</span>
+</lit-template-shapes>",
   "NestedListener": "<lit-template-shapes>
   <button>Go</button>
 </lit-template-shapes>
@@ -25,7 +29,10 @@
 </script>",
   "Nothing": "UnprintableArgError: The snippet cannot show the current value of the `label` arg.",
   "PrefixedClass": "<lit-template-shapes class="btn-large &amp; &lt;changed>"></lit-template-shapes>",
-  "PropertyOnly": "<lit-template-shapes></lit-template-shapes>",
+  "PropertyOnly": "<lit-template-shapes></lit-template-shapes>
+<script>
+  document.querySelector('lit-template-shapes').items = [{ name: 'Alpha & <changed>' }];
+</script>",
   "PropertyPaired": "<lit-template-shapes heading="Heading &amp; &lt;changed>"></lit-template-shapes>",
   "PropertyPairedFalse": "<lit-template-shapes heading="Closed &amp; &lt;changed>" open></lit-template-shapes>",
   "QuotedAndMultiHole": "<lit-template-shapes class="card warm &amp; &lt;changed> large &amp; &lt;changed>" label="Quoted &amp; &lt;changed>"></lit-template-shapes>",

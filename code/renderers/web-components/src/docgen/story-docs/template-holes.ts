@@ -32,6 +32,8 @@ export interface HoleContext {
   bindings: Map<string, ImportBinding>;
   scope: TemplateScope;
   storyArgs: Record<string, Node>;
+  // A conditional read as the branch the story's args do not take, to print that branch.
+  flip?: Node;
 }
 
 const TEMPLATE_TAG_SOURCES = ['lit', 'lit-html', 'lit-element'];
@@ -82,7 +84,7 @@ export const resolveHoleValue = (expression: E.Expression, context: HoleContext)
       return test;
     }
     const branch = resolveHoleValue(
-      test.truthy ? unwrapped.consequent : unwrapped.alternate,
+      test.truthy !== (unwrapped === context.flip) ? unwrapped.consequent : unwrapped.alternate,
       context
     );
     return test.arg && !branch.arg ? { ...branch, arg: test.arg } : branch;

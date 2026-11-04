@@ -144,14 +144,18 @@ const uniqueListenersByEvent = (
 };
 
 // The template has a hole for each attribute an arg prints, and for each custom property in the
-// `style` attribute. While none is set, each is a `style` attribute of its own, a `cssattr` hole.
+// `style` attribute. While none is set, the `style` attribute is a `cssattr` hole of them all.
 const elementAttributes = (snippet: ElementSnippet): HtmlAttribute[] => {
   const attributes = snippet.attributes.flatMap((attribute): HtmlAttribute[] => {
     const node = attributeNode(attribute);
     if (attribute.arg === undefined) {
       return node ? [node] : [];
     }
-    const hole = attrHole(attribute.arg, attribute.name, attribute.viaField ? 'field' : 'render');
+    const hole = attrHole(
+      { arg: attribute.arg },
+      attribute.name,
+      attribute.viaField ? 'field' : 'render'
+    );
     return [{ ...(node ?? { name: attribute.name, value: undefined, omitted: true }), hole }];
   });
   const style = cssDeclarations(snippet.cssProperties);
@@ -178,19 +182,18 @@ const elementAttributes = (snippet: ElementSnippet): HtmlAttribute[] => {
       property.arg !== undefined && !cssDeclarations([property])
   );
   if (style === undefined) {
-    return [
-      ...attributes,
-      ...unset.map((property): HtmlAttribute => ({
-        name: 'style',
-        value: undefined,
-        omitted: true,
-        hole: {
-          kind: 'cssattr',
-          arg: property.arg,
-          ...(property.name !== property.arg && { property: property.name }),
-        },
-      })),
-    ];
+    const properties = unset.map(({ arg, name }) => ({ arg, property: name }));
+    return properties.length === 0
+      ? attributes
+      : [
+          ...attributes,
+          {
+            name: 'style',
+            value: undefined,
+            omitted: true,
+            hole: { kind: 'cssattr', spread: true, properties },
+          },
+        ];
   }
   const holeValue: HtmlSnippetTemplate = [
     ...set.flatMap((property, index) => [...(index > 0 ? [' '] : []), declaration(property)]),

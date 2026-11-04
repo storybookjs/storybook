@@ -32,7 +32,7 @@ import {
   parseStoryFile,
   resolveStoryComponent,
 } from '../component-docgen/resolve-component/resolve-component.ts';
-import type { HtmlHolePlace, HtmlSnippetTemplate } from '../../snippet-holes.ts';
+import type { HtmlHolePlace, HtmlSnippetTemplate, SnippetProperty } from '../../snippet-holes.ts';
 import { evaluateArgValue, isFunctionNode } from './arg-values.ts';
 import { classifyArg, type ArgBinding } from './classify-args.ts';
 import type { ElementSnippet } from './print-element.ts';
@@ -384,8 +384,8 @@ const argsSnippet = (
 };
 
 // The template of the element, with a hole for each arg the snippet prints no value of where it
-// would print one, and a `guard` hole for one the story does not set that it would not print, such
-// as a property without an attribute. Its marks hold no character of `html`, the static snippet.
+// would print one, and after it a `props` hole for the args Storybook's render sets as properties,
+// which html cannot set. Its marks hold no character of `html`, the static snippet.
 const elementTemplate = (
   html: string,
   snippet: ElementSnippet,
@@ -396,12 +396,6 @@ const elementTemplate = (
   const kinds = new Map(
     Object.entries(args).map(([key, node]) => [key, evaluateArgValue(node).kind])
   );
-  const unset = [
-    ...Object.keys(args).filter((key) => kinds.get(key) === 'unset'),
-    ...Object.keys(argTypes ?? {}).filter((key) => !Object.hasOwn(args, key)),
-  ];
-  // The args the story sets to code the server cannot read, which the warning names already.
-  const unread = Object.keys(args).filter((key) => kinds.get(key) === 'unresolved');
   const template: ElementSnippet = {
     ...snippet,
     attributes: [...snippet.attributes],
@@ -409,29 +403,36 @@ const elementTemplate = (
     slots: [...snippet.slots],
     styleRules: [...snippet.styleRules],
   };
-  const marks = createHoleMarks<HtmlHolePlace>([html]);
-  const guards: string[] = [];
-  for (const key of new Set([...unset, ...unread])) {
-    const binding = classifyArg(key, false, argTypes ?? {}, declaration);
+  const properties: SnippetProperty[] = [];
+  for (const key of new Set([...Object.keys(args), ...Object.keys(argTypes ?? {})])) {
+    const binding = classifyArg(key, kinds.get(key) === 'function', argTypes ?? {}, declaration);
     switch (binding.kind) {
       case 'attribute':
       case 'cssProperty':
       case 'slot':
       case 'cssPart':
       case 'cssState':
-        addBoundValue(template, binding, key, undefined, snippet.tag, true);
+        // The snippet prints the value of an arg the story sets to a value.
+        if (kinds.get(key) !== 'value') {
+          addBoundValue(template, binding, key, undefined, snippet.tag, true);
+        }
         break;
       case 'property':
+        properties.push({ arg: key, name: binding.name, tag: snippet.tag });
+        break;
       case 'unknown':
-        if (!unread.includes(key)) {
-          guards.push(marks.mark({ kind: 'guard', arg: key }, ''));
-        }
+        properties.push({ arg: key, name: key, tag: snippet.tag });
         break;
       default:
         break;
     }
   }
-  return marks.toTemplate(guards.join('') + printElementSnippet(template, marks));
+  const marks = createHoleMarks<HtmlHolePlace>([html]);
+  const props =
+    properties.length === 0
+      ? ''
+      : marks.mark({ kind: 'props', spread: true, properties }, '', '\n');
+  return marks.toTemplate(printElementSnippet(template, marks) + props);
 };
 
 // Each value is the arg `source`'s, so the template prints a hole for it. An unset arg is only

@@ -2,7 +2,7 @@
   "ArgsDefaultRender": "<lit-toolkit-shapes
   size="small &amp; &lt;changed>"
   level="4"
-  tags="[&quot;b&quot;]"
+  tags="[&quot;b &amp; &lt;changed>&quot;]"
   label="Default render &amp; &lt;changed>"
 ></lit-toolkit-shapes>
 <script>
@@ -14,7 +14,7 @@
   "DomNode": "<lit-toolkit-shapes
   size="large &amp; &lt;changed>"
   level="3"
-  tags="[&quot;b&quot;]"
+  tags="[&quot;b &amp; &lt;changed>&quot;]"
   label="Shaped &amp; &lt;changed>"
 ></lit-toolkit-shapes>
 <script>
@@ -26,7 +26,7 @@
   "LitTemplate": "<lit-toolkit-shapes
   size="large &amp; &lt;changed>"
   level="3"
-  tags="[&quot;b&quot;]"
+  tags="[&quot;b &amp; &lt;changed>&quot;]"
   label="Shaped &amp; &lt;changed>"
 ></lit-toolkit-shapes>
 <script>

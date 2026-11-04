@@ -15,7 +15,7 @@ import type {
 } from '../docgen/component-docgen/manifest/types.ts';
 import { buildStoryDocsPayload } from '../docgen/story-docs/build-story-docs.ts';
 
-import type { HtmlHolePlace, HtmlSnippetTemplate } from '../snippet-holes.ts';
+import type { HtmlHole, HtmlHolePlace, HtmlSnippetTemplate } from '../snippet-holes.ts';
 import { childText, slotText } from '../snippet-values.ts';
 import { printHole } from './print-hole.ts';
 
@@ -54,20 +54,27 @@ describe('a changed arg', () => {
     { kind: 'attr', name: 'label', mode: 'bind' },
     { kind: 'attr', name: 'label', mode: 'defined' },
     { kind: 'css', property: '--accent' },
-    { kind: 'cssattr', property: '--accent' },
+    { kind: 'cssattr', properties: [{ arg: 'v', property: '--accent' }] },
     { kind: 'bool', name: 'disabled' },
     { kind: 'quoted' },
-    { kind: 'text', trimStart: true, trimEnd: true },
+    { kind: 'text' },
     { kind: 'html' },
     { kind: 'slot', name: 'actions' },
     { kind: 'rule', selector: 'x-el::part(p)' },
     { kind: 'style', selector: 'x-el::part(p)' },
+    { kind: 'choice', truthy: '<b>on</b>', falsy: '' },
+    { kind: 'attr', name: 'label', mode: 'bind', path: ['name'] },
     { kind: 'guard' },
   ];
 
-  // Each place a story prints an arg in, as the arg `x`, and the values whose static snippet next
-  // prints there without laying the value out anew.
-  const places: { name: string; story: string; values: (value: unknown) => boolean }[] = [
+  // Each place a story prints an arg in, as the arg `x` (or the member `v` of it, where `member`),
+  // and the values whose static snippet next prints there without laying the value out anew.
+  const places: {
+    name: string;
+    story: string;
+    values: (value: unknown) => boolean;
+    member?: boolean;
+  }[] = [
     { name: 'an attribute', story: '', values: () => true },
     {
       name: 'a css custom property',
@@ -98,7 +105,25 @@ describe('a changed arg', () => {
     {
       name: 'lit text',
       story: 'html`<test-element>${args.x}</test-element>`',
-      values: (value) => childText(value).trim() !== '',
+      values: (value) => isTrimmedText(value),
+    },
+    {
+      name: 'a member of an arg',
+      story: 'html`<test-element label=${args.x.v}></test-element>`',
+      member: true,
+      // A story that leaves the member out reads code the server cannot resolve.
+      values: (value) => value !== undefined,
+    },
+    {
+      name: 'a nested lit template',
+      story: 'html`<test-element>${html`<b>${args.x}</b>`}</test-element>`',
+      values: (value) => isTrimmedText(value),
+    },
+    {
+      name: 'a conditional',
+      story:
+        'html`<test-element title=${args.x ? "on" : nothing}>${args.x ? "on" : "off"}</test-element>`',
+      values: () => true,
     },
     {
       name: 'a named slot',
@@ -141,11 +166,12 @@ describe('a changed arg', () => {
     const dir = mkdtempSync(join(tmpdir(), 'wc-fill-'));
     dirs.push(dir);
     const storyPath = join(dir, 'input.stories.ts');
-    const literal = value === undefined ? 'undefined' : JSON.stringify(value);
+    const own = place.member ? { v: value } : value;
+    const literal = own === undefined ? 'undefined' : JSON.stringify(own);
     writeFileSync(
       storyPath,
       [
-        "import { html } from 'lit';",
+        "import { html, nothing } from 'lit';",
         "import { ifDefined } from 'lit/directives/if-defined.js';",
         "export default { title: 'Example/TestElement', component: 'test-element' };",
         `export const Primary = { args: { ${JSON.stringify(arg)}: ${literal} }${
@@ -165,19 +191,19 @@ describe('a changed arg', () => {
       { entry },
       { getDocgenPayload: async () => docgen, resolvePath: (path) => path }
     );
-    return { arg, story: Object.values(payload!.stories)[0]! };
+    return { arg, own, story: Object.values(payload!.stories)[0]! };
   };
 
   // A template is laid out for the story's own args; a changed value is printed in that layout.
   it.each(places.map((place) => [place.name, place] as const))(
     'prints a value in %s as the static snippet of a story written with it',
     async (_name, place) => {
-      const { story: seed } = await build(place, 'Seed');
+      const { own: seedArg, story: seed } = await build(place, 'Seed');
       for (const value of values.filter(place.values)) {
-        const { arg, story } = await build(place, value);
+        const { arg, own, story } = await build(place, value);
         const filled = fillTemplate(
           seed.template as HtmlSnippetTemplate,
-          { initialArgs: { [arg]: 'Seed' }, unmappedArgs: { [arg]: value } },
+          { initialArgs: { [arg]: seedArg }, unmappedArgs: { [arg]: own } },
           printHole
         );
         expect(filled, JSON.stringify(value)).toBe(story.snippet);
@@ -187,10 +213,56 @@ describe('a changed arg', () => {
 
   it.each(holePlaces)('cannot print a function or lit value in a hole of %j', (place) => {
     for (const value of unprintable) {
-      expect(() => printHole({ ...place, arg: 'v' }, value)).toThrow(new UnprintableArgError('v'));
+      // A spread hole gets the args a control set, and a `path` reads a member of the arg.
+      const changed =
+        place.kind === 'cssattr' ? { v: value } : place.path ? { [place.path[0]!]: value } : value;
+      expect(() => printHole({ ...place, arg: 'v' }, changed)).toThrow(
+        new UnprintableArgError('v')
+      );
+    }
+  });
+
+  it('prints the custom properties controls set in one `style` attribute', () => {
+    const hole: HtmlHole = {
+      kind: 'cssattr',
+      spread: true,
+      properties: [
+        { arg: '--a', property: '--a' },
+        { arg: 'b', property: '--b' },
+      ],
+    };
+    expect(printHole(hole, { '--a': 'red', b: 1, other: 2 })).toBe('style="--a: red; --b: 1;"');
+    expect(printHole(hole, { other: 2 })).toBe('');
+  });
+
+  it('sets each property a control set in a script, as JavaScript', () => {
+    const hole: HtmlHole = {
+      kind: 'props',
+      spread: true,
+      properties: [
+        { arg: 'v', name: 'items', tag: 'x-el' },
+        { arg: 'w', path: ['a'], name: 'aria-x', tag: 'y-el' },
+      ],
+    };
+    expect(printHole(hole, { v: ["it's", 1, null], w: { a: { b: true } }, other: 1 })).toBe(
+      [
+        '<script>',
+        "  document.querySelector('x-el').items = ['it\\'s', 1, null];",
+        "  document.querySelector('y-el')['aria-x'] = { b: true };",
+        '</script>',
+      ].join('\n')
+    );
+    expect(printHole(hole, { other: 1, w: {} })).toBe('');
+    for (const value of unprintable) {
+      expect(() => printHole(hole, { v: value })).toThrow(new UnprintableArgError('v'));
     }
   });
 });
+
+// Text with no whitespace at its ends: the snippet trims a text node at the ends of an element,
+// but prints the text of a changed value as it is.
+const isTrimmedText = (value: unknown) =>
+  childText(value).trim() !== '' && childText(value).trim() === childText(value);
 
 const declaration = {
   kind: 'class',

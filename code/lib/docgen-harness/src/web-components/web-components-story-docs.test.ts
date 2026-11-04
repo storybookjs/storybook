@@ -133,7 +133,7 @@ async function build({ testDir, title }: Case) {
 }
 
 // A value as a control changes it: a string to one that needs escaping, a number and a boolean to
-// another one.
+// another one, and an array or object to one with each of its values changed.
 const changed = (value: unknown): unknown =>
   typeof value === 'string'
     ? `${value} & <changed>`
@@ -141,7 +141,11 @@ const changed = (value: unknown): unknown =>
       ? value + 1
       : typeof value === 'boolean'
         ? !value
-        : value;
+        : Array.isArray(value)
+          ? value.map(changed)
+          : typeof value === 'object' && value !== null
+            ? Object.fromEntries(Object.entries(value).map(([key, item]) => [key, changed(item)]))
+            : value;
 
 describe('web-components story-docs server snippets', () => {
   it.each(cases)('$fixtureCase', async (testCase) => {

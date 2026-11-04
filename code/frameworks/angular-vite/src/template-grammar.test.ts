@@ -56,6 +56,13 @@ describe('buildTemplate', () => {
     outputs: ['clicked'],
   };
 
+  it('measures every character of a binding, private-use ones too', () => {
+    const label = `'\uf8ff ${'x'.repeat(70)}'`;
+    expect(
+      buildTemplate('sb-button', { inputs: [{ name: 'label', expression: label }], outputs: [] })
+    ).toBe(`<sb-button\n    [label]="${label}">\n</sb-button>`);
+  });
+
   it('keeps the closing tag when the caller does not opt in', () => {
     expect(buildTemplate('sb-button', short)).toBe(`<sb-button [label]="'x'"></sb-button>`);
   });

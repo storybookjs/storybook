@@ -10,7 +10,7 @@ import type {
   ComponentManifest,
   ComponentSubcomponentManifest,
   IndexEntry,
-  StoryDocsPayload,
+  ProvidedStoryDocsPayload,
 } from 'storybook/internal/types';
 
 import path from 'pathe';
@@ -234,6 +234,7 @@ export function buildStoryDocsFromResolved({
   component,
   allComponents,
   filterStoryIds,
+  withTemplate,
 }: {
   entry: IndexEntry;
   storyPath: string;
@@ -244,7 +245,9 @@ export function buildStoryDocsFromResolved({
   allComponents: ComponentRef[];
   /** When set, only stories whose ids are in the set are included (manifest tag filtering). */
   filterStoryIds?: ReadonlySet<string>;
-}): StoryDocsPayload {
+  // Whether each story gets the `template` the preview fills with its args.
+  withTemplate?: boolean;
+}): ProvidedStoryDocsPayload {
   const id = getComponentIdFromEntry(entry);
   const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 
@@ -257,7 +260,8 @@ export function buildStoryDocsFromResolved({
     {
       filePath: storyPath,
       ...openStoryReferences(),
-    }
+    },
+    withTemplate
   );
   // An arg value that kept the name another module gave it only compiles once the import block
   // names that module too. `packageName` rewriting is for the component, so those refs opt out of it.

@@ -14,11 +14,27 @@
     host.addEventListener('my-close', () => {});
   }
 </script>",
+      "template": "<lit-events⟦attr value mode="field" ~" "⟫ value="default event"⟧></lit-events>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('my-change', () => {});
+    host.addEventListener('my-close', () => {});
+  }
+</script>",
     },
     "webcomponentsfixtures-lit-events--dom-node": {
       "id": "webcomponentsfixtures-lit-events--dom-node",
       "name": "Dom Node",
       "snippet": "<lit-events value="changed"></lit-events>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('my-change', () => {});
+    host.addEventListener('my-close', () => {});
+  }
+</script>",
+      "template": "<lit-events⟦attr value mode="field" ~" "⟫ value="changed"⟧></lit-events>
 <script>
   {
     const host = document.currentScript.previousElementSibling;
@@ -32,6 +48,14 @@
       "id": "webcomponentsfixtures-lit-events--lit-template",
       "name": "Lit Template",
       "snippet": "<lit-events value="changed"></lit-events>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('my-change', () => {});
+    host.addEventListener('my-close', () => {});
+  }
+</script>",
+      "template": "<lit-events⟦attr value mode="bind" ~" "⟫ value="changed"⟧></lit-events>
 <script>
   {
     const host = document.currentScript.previousElementSibling;

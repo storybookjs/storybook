@@ -16,6 +16,7 @@
       "id": "webcomponentsstorydocs-csf-shapes--imported-items",
       "name": "Imported Items",
       "snippet": "<csf-shapes label="Meta"></csf-shapes>",
+      "template": "⟦style panel-part selector="csf-shapes::part(panel)"⟫⟧⟦style active-state selector="csf-shapes:state(active)"⟫⟧<csf-shapes⟦attr label mode="field" ~" "⟫ label="Meta"⟧⟦attr count mode="field" ~" "⟫⟧⟦attr disabled mode="field" ~" "⟫⟧⟦cssattr --csf-shapes-accent ~" "⟫⟧>⟦slot default-slot name="default"⟫⟧⟦slot actions-slot name="actions"⟫⟧</csf-shapes>",
       "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
     "webcomponentsstorydocs-csf-shapes--imported-label": {
@@ -33,6 +34,13 @@
     host.addEventListener('shape-change', () => {});
   }
 </script>",
+      "template": "⟦guard items⟫⟧⟦style panel-part selector="csf-shapes::part(panel)"⟫⟧⟦style active-state selector="csf-shapes:state(active)"⟫⟧<csf-shapes⟦attr label mode="field" ~" "⟫ label="Meta"⟧⟦attr count mode="field" ~" "⟫⟧⟦attr disabled mode="field" ~" "⟫⟧⟦cssattr --csf-shapes-accent ~" "⟫⟧>⟦slot default-slot name="default"⟫⟧⟦slot actions-slot name="actions"⟫⟧</csf-shapes>
+<script>
+  {
+    const host = document.currentScript.previousElementSibling;
+    host.addEventListener('shape-change', () => {});
+  }
+</script>",
     },
     "webcomponentsstorydocs-csf-shapes--parts-and-css": {
       "id": "webcomponentsstorydocs-csf-shapes--parts-and-css",
@@ -42,11 +50,17 @@
   csf-shapes:state(active) { outline: 1px solid; }
 </style>
 <csf-shapes label="Meta" style="--csf-shapes-accent: teal;"></csf-shapes>",
+      "template": "⟦guard items⟫⟧<style>⟦rule panel-part selector="csf-shapes::part(panel)" ~"\n"⟫
+  csf-shapes::part(panel) { color: red; }⟧⟦rule active-state selector="csf-shapes:state(active)" ~"\n"⟫
+  csf-shapes:state(active) { outline: 1px solid; }⟧
+</style>
+<csf-shapes⟦attr label mode="field" ~" "⟫ label="Meta"⟧ style="⟦css --csf-shapes-accent⟫--csf-shapes-accent: teal;⟧"⟦attr count mode="field" ~" "⟫⟧⟦attr disabled mode="field" ~" "⟫⟧>⟦slot default-slot name="default"⟫⟧⟦slot actions-slot name="actions"⟫⟧</csf-shapes>",
     },
     "webcomponentsstorydocs-csf-shapes--render-fallback": {
       "id": "webcomponentsstorydocs-csf-shapes--render-fallback",
       "name": "Render Fallback",
       "snippet": "<csf-shapes label="Fallback"></csf-shapes>",
+      "template": "⟦guard items⟫⟧⟦style panel-part selector="csf-shapes::part(panel)"⟫⟧⟦style active-state selector="csf-shapes:state(active)"⟫⟧<csf-shapes⟦attr label mode="field" ~" "⟫ label="Fallback"⟧⟦attr count mode="field" ~" "⟫⟧⟦attr disabled mode="field" ~" "⟫⟧⟦cssattr --csf-shapes-accent ~" "⟫⟧>⟦slot default-slot name="default"⟫⟧⟦slot actions-slot name="actions"⟫⟧</csf-shapes>",
       "warning": "Incomplete snippet: `() => document.createElement('csf-shapes')` could not be resolved statically.",
     },
     "webcomponentsstorydocs-csf-shapes--slots": {
@@ -56,22 +70,29 @@
   Body <b>text</b>
   <button slot="actions">Go</button>
 </csf-shapes>",
+      "template": "⟦guard items⟫⟧⟦style panel-part selector="csf-shapes::part(panel)"⟫⟧⟦style active-state selector="csf-shapes:state(active)"⟫⟧<csf-shapes⟦attr label mode="field" ~" "⟫ label="Meta"⟧⟦attr count mode="field" ~" "⟫⟧⟦attr disabled mode="field" ~" "⟫⟧⟦cssattr --csf-shapes-accent ~" "⟫⟧>⟦slot default-slot name="default" ~"\n  "⟫
+  Body <b>text</b>⟧⟦slot actions-slot name="actions" ~"\n  "⟫
+  <button slot="actions">Go</button>⟧
+</csf-shapes>",
     },
     "webcomponentsstorydocs-csf-shapes--spread-args": {
       "id": "webcomponentsstorydocs-csf-shapes--spread-args",
       "name": "Spread Args",
       "snippet": "<csf-shapes label="Shared" count="2"></csf-shapes>",
+      "template": "⟦guard items⟫⟧⟦style panel-part selector="csf-shapes::part(panel)"⟫⟧⟦style active-state selector="csf-shapes:state(active)"⟫⟧<csf-shapes⟦attr label mode="field" ~" "⟫ label="Shared"⟧⟦attr count mode="field" ~" "⟫ count="2"⟧⟦attr disabled mode="field" ~" "⟫⟧⟦cssattr --csf-shapes-accent ~" "⟫⟧>⟦slot default-slot name="default"⟫⟧⟦slot actions-slot name="actions"⟫⟧</csf-shapes>",
     },
     "webcomponentsstorydocs-csf-shapes--unknown-arg": {
       "id": "webcomponentsstorydocs-csf-shapes--unknown-arg",
       "name": "Unknown Arg",
       "snippet": "<csf-shapes label="Meta"></csf-shapes>",
+      "template": "⟦guard items⟫⟧⟦style panel-part selector="csf-shapes::part(panel)"⟫⟧⟦style active-state selector="csf-shapes:state(active)"⟫⟧<csf-shapes⟦attr label mode="field" ~" "⟫ label="Meta"⟧⟦attr count mode="field" ~" "⟫⟧⟦attr disabled mode="field" ~" "⟫⟧⟦cssattr --csf-shapes-accent ~" "⟫⟧>⟦slot default-slot name="default"⟫⟧⟦slot actions-slot name="actions"⟫⟧</csf-shapes>",
       "warning": "Incomplete snippet: args not declared by `csf-shapes`: `nope`.",
     },
     "webcomponentsstorydocs-csf-shapes--unset": {
       "id": "webcomponentsstorydocs-csf-shapes--unset",
       "name": "Unset",
       "snippet": "<csf-shapes disabled></csf-shapes>",
+      "template": "⟦guard items⟫⟧⟦style panel-part selector="csf-shapes::part(panel)"⟫⟧⟦style active-state selector="csf-shapes:state(active)"⟫⟧<csf-shapes⟦attr disabled mode="field" ~" "⟫ disabled⟧⟦attr label mode="field" ~" "⟫⟧⟦attr count mode="field" ~" "⟫⟧⟦cssattr --csf-shapes-accent ~" "⟫⟧>⟦slot default-slot name="default"⟫⟧⟦slot actions-slot name="actions"⟫⟧</csf-shapes>",
     },
   },
 }

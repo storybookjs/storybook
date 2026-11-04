@@ -2,9 +2,10 @@ import {
   type ESTreeNode as Node,
   type ImportBinding,
   buildImportStatements,
-  isStringLiteral,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
+
+import type { HoleMarks, HoleRef } from 'storybook/internal/docs-tools';
 
 import type {
   ClassifiedArg,
@@ -12,7 +13,14 @@ import type {
   ClassifiedSlotArg,
   RenderableValuePlan,
 } from '../story-docs/classify-args/classify-args.ts';
-import { printValue } from './classify-value.ts';
+import {
+  type VueHolePlace,
+  attributeOrder,
+  printAttribute,
+  quoteAttributeValue,
+  slotContent,
+} from '../../snippet-values.ts';
+import { printValue, snippetValueOf } from './classify-value.ts';
 
 export interface RenderSfcMarkupInput {
   /** Rendered Vue template markup without the wrapping `<template>` block. */
@@ -40,6 +48,8 @@ export interface RenderContext {
   componentImports: Set<string>;
   /** Setup statements forwarded into `<script setup>`, printed after the hoisted consts. */
   statements: string[];
+  // For the story's template, marks each place an arg prints as its hole; see `printHole`.
+  mark?: HoleMarks<VueHolePlace>['mark'];
 }
 
 interface RenderPropValueInput {
@@ -75,18 +85,18 @@ function partitionArgsByRole(args: ClassifiedArg[]): {
   return {
     props: args
       .filter((arg): arg is ClassifiedPropLikeArg => arg.role === 'model' || arg.role === 'prop')
-      .sort((a, b) => a.name.localeCompare(b.name)),
+      .sort((a, b) => attributeOrder(a.name, b.name)),
     events: args
       .filter((arg): arg is ClassifiedPropLikeArg => arg.role === 'event')
-      .sort((a, b) => a.name.localeCompare(b.name)),
+      .sort((a, b) => attributeOrder(a.name, b.name)),
     slots: args
       .filter((arg): arg is ClassifiedSlotArg => arg.role === 'slot')
       .sort((a, b) => slotSortKey(a.name).localeCompare(slotSortKey(b.name))),
   };
 }
 
-/** Create an isolated hoist context for one generated snippet. */
-export function createRenderContext(): RenderContext {
+// Create an isolated hoist context for one generated snippet, or with `mark` for its template.
+export function createRenderContext(mark?: HoleMarks<VueHolePlace>['mark']): RenderContext {
   return {
     imports: {},
     // `ref` is reserved up front so no hoisted arg can shadow the Vue import a v-model may need.
@@ -95,7 +105,32 @@ export function createRenderContext(): RenderContext {
     hoistedArgs: new Map(),
     componentImports: new Set(),
     statements: [],
+    mark,
   };
+}
+
+// `text` as the snippet prints it in a place, which a template marks as the place's hole.
+export const marked = (
+  ctx: RenderContext,
+  hole: HoleRef<VueHolePlace>,
+  text: string,
+  space?: string
+) => (ctx.mark ? ctx.mark(hole, text, space) : text);
+
+// The hole of the attribute `name` for `arg`, which names the attribute only where the arg does not.
+export const attributeHole = (name: string, arg: string): HoleRef<VueHolePlace> => ({
+  kind: 'attr',
+  arg,
+  ...(name !== arg && { name }),
+});
+
+// An arg's value as code in `<script setup>`.
+export function scriptValue(name: string, value: Node, ctx: RenderContext): string {
+  return marked(
+    ctx,
+    { kind: 'value', in: 'script', arg: name },
+    printValue(unwrapExpression(value))
+  );
 }
 
 /** Wrap prepared template markup with the shared SFC block assembly. */
@@ -123,23 +158,17 @@ function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): Rende
   const value = unwrapExpression(input.value);
 
   if (input.plan.kind === 'hoist') {
-    return hoistedProp(input, ctx, printValue(value));
+    return hoistedProp(input, ctx, scriptValue(input.variableName, value, ctx));
   }
 
-  if (value.type === 'Literal' && typeof value.value === 'boolean') {
-    return value.value
-      ? { attrName: input.attributeName }
-      : { attrName: `:${input.attributeName}`, value: 'false' };
+  const attribute = printAttribute(input.attributeName, snippetValueOf(value));
+  if (attribute === undefined) {
+    return hoistedProp(input, ctx, scriptValue(input.variableName, value, ctx));
   }
 
-  if (isStringLiteral(value)) {
-    const quoted = quoteAttributeValue(value.value);
-    return quoted === undefined
-      ? hoistedProp(input, ctx, printValue(value))
-      : { attrName: input.attributeName, value: value.value };
-  }
-
-  return { attrName: `:${input.attributeName}`, value: printValue(value) };
+  return {
+    attrName: marked(ctx, attributeHole(input.attributeName, input.variableName), attribute),
+  };
 }
 
 /** Arg-value hoists share one const per arg name, so every reference keeps the same identity. */
@@ -168,7 +197,7 @@ function renderModelArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): Rendere
 /** Listeners hoist their handler, because inline handlers would bloat the tag. */
 export function renderEventArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): RenderedProp {
   const bindingName = allocateBindingName(arg.name, ctx);
-  ctx.variables.set(bindingName, printValue(unwrapExpression(arg.value)));
+  ctx.variables.set(bindingName, scriptValue(arg.name, arg.value, ctx));
   return { attrName: `@${arg.eventName ?? arg.name}`, value: bindingName };
 }
 
@@ -179,20 +208,19 @@ export function renderSlotContent(
   ctx: RenderContext
 ): string {
   const value = unwrapExpression(arg.value);
+  // The content a slot function returns is no arg's value, so it has no hole.
+  const own = arg.returned ? { ...ctx, mark: undefined } : ctx;
 
   if (plan.kind === 'inline') {
-    const source = inlinePrimitiveSource(value);
-    if (source === undefined) {
-      return `{{ ${printValue(value)} }}`;
-    }
+    const content = slotContent(snippetValueOf(value));
     // Vue's whitespace condensing would alter padded text, so it hoists to an interpolation.
-    if (!/^\s|\s$/.test(source)) {
-      return escapeTextContent(source);
+    if (content !== undefined) {
+      return marked(own, { kind: 'text', slot: true, arg: arg.name }, content);
     }
   }
 
   const bindingName = allocateBindingName(arg.name, ctx);
-  ctx.variables.set(bindingName, printValue(value));
+  ctx.variables.set(bindingName, scriptValue(arg.name, value, own));
   return `{{ ${bindingName} }}`;
 }
 
@@ -208,20 +236,6 @@ export function inlinePrimitiveSource(node: Node): string | undefined {
     : typeof value.value === 'number' || typeof value.value === 'boolean'
       ? String(value.value)
       : undefined;
-}
-
-/**
- * Escapes a string value so it reaches the reader as the text the story passed.
- *
- * Vue compiles the generated snippet, so an unescaped `<` opens a tag and `{{` opens an
- * interpolation, both of which would render something the story never produced.
- */
-export function escapeTextContent(text: string): string {
-  return text
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('{{', '&#123;&#123;');
 }
 
 function renderScript(ctx: RenderContext): string | undefined {
@@ -278,22 +292,6 @@ function toIdentifier(input: string): string {
     .replace(/^[-0-9]+/, '')
     .replace(/[-\s]+(.)?/g, (_, next?: string) => (next ? next.toUpperCase() : ''));
   return name && !RESERVED_WORDS.has(name) ? name : `_${name}`;
-}
-
-/** Quoted attribute value, or `undefined` when both quote styles occur and it must be hoisted. */
-function quoteAttributeValue(value: string): string | undefined {
-  // Attribute values are entity-decoded on re-parse, so an `&` would come back as a different
-  // string than the story set. Text content escapes instead; an attribute has to hoist.
-  if (value.includes('&')) {
-    return undefined;
-  }
-  if (!value.includes('"')) {
-    return `"${value}"`;
-  }
-  if (!value.includes("'")) {
-    return `'${value}'`;
-  }
-  return undefined;
 }
 
 /** Format one structured attribute at the SFC print boundary. */
@@ -381,7 +379,7 @@ export function renderBoundArgAttribute(
 
 /** Hoist an arg value into `<script setup>` and return the binding name that replaces it. */
 export function hoistArgValue(name: string, value: Node, ctx: RenderContext): string {
-  const source = printValue(unwrapExpression(value));
+  const source = scriptValue(name, value, ctx);
   const existing = ctx.hoistedArgs.get(name);
   if (existing?.source === source) {
     return existing.binding;
@@ -397,7 +395,11 @@ export function hoistArgValue(name: string, value: Node, ctx: RenderContext): st
 export function hoistModelRef(name: string, value: Node | undefined, ctx: RenderContext): string {
   (ctx.imports[VUE_PACKAGE] ??= new Set()).add('ref');
   const bindingName = allocateBindingName(name, ctx);
-  ctx.variables.set(bindingName, value ? `ref(${printValue(unwrapExpression(value))})` : 'ref()');
+  const initial = value ? printValue(unwrapExpression(value)) : '';
+  ctx.variables.set(
+    bindingName,
+    `ref(${marked(ctx, { kind: 'value', in: 'script', arg: name }, initial)})`
+  );
   return bindingName;
 }
 

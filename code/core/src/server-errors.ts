@@ -223,6 +223,17 @@ export class OpenServiceInvalidStaticPathError extends StorybookError {
   }
 }
 
+export class OpenServiceStaticSnapshotWithoutPathError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; name: string; snapshotName: string }) {
+    super({
+      name: 'OpenServiceStaticSnapshotWithoutPathError',
+      category: Category.CORE_COMMON,
+      code: 35,
+      message: `Query "${data.serviceId}.${data.name}" splits its static snapshot into "${data.snapshotName}", which declares no staticPath to write it at.`,
+    });
+  }
+}
+
 export class OpenServiceAsyncSchemaError extends StorybookError {
   constructor(
     public data: {

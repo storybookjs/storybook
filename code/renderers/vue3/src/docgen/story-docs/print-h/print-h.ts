@@ -17,7 +17,6 @@ import {
 } from '../classify-args/classify-args.ts';
 import { isFunctionExpression, printValue } from '../../shared/classify-value.ts';
 import {
-  escapeTextContent,
   formatRenderedProp,
   importStatementForBinding,
   indent,
@@ -28,6 +27,7 @@ import {
   wrapSlotContent,
   type RenderContext,
 } from '../../shared/render-primitives.ts';
+import { escapeTextContent } from '../../../snippet-values.ts';
 
 export interface PrintHInput {
   /** Render-function expression to print as template markup. */
@@ -143,7 +143,7 @@ export function printH(input: PrintHInput): PrintHResult | undefined {
     argsParam: input.argsParam,
     componentName: input.componentName,
     componentImports,
-    ctx: input.ctx,
+    ctx: writtenValues(input.ctx),
     docgen: input.docgen,
     importBindings: input.importBindings,
   });
@@ -158,11 +158,15 @@ export function printHFragment(
 ): string | undefined {
   return printFragmentFunction(node, {
     componentImports: options.componentImportStatements ?? new Map(),
-    ctx: options.ctx,
+    ctx: writtenValues(options.ctx),
     docgen: NO_DOCGEN,
     importBindings: options.importBindings,
   });
 }
+
+// The values an `h()` tree writes are no args, so a template prints them as the snippet does, into
+// the same `<script setup>`.
+const writtenValues = (ctx: RenderContext): RenderContext => ({ ...ctx, mark: undefined });
 
 // h('div', { class: 'row' }, 'Hi') -> <div class="row">Hi</div>
 function printNode(node: Node, options: PrintOptions): string | undefined {

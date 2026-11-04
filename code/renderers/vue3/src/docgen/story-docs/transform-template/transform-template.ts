@@ -21,21 +21,22 @@ import {
 } from 'storybook/internal/csf-tools';
 
 import type { ClassifiedArg } from '../classify-args/classify-args.ts';
-import { isFunctionExpression, printValue } from '../../shared/classify-value.ts';
+import { isFunctionExpression, printValue, snippetValueOf } from '../../shared/classify-value.ts';
 import { readForwardableSetup, type ForwardableSetup } from './forward-setup.ts';
 import {
+  attributeHole,
   createRenderContext,
-  escapeTextContent,
   hoistArgValue,
   hoistModelRef,
   importStatementForBinding,
-  inlinePrimitiveSource,
+  marked,
   renderArgsBindingExpansion,
   renderBoundArgAttribute,
   renderPreparedSfcSnippet,
   wrapSlotContent,
   type RenderContext,
 } from '../../shared/render-primitives.ts';
+import { expressionCode, fitsBraces, interpolatedText, operand } from '../../../snippet-values.ts';
 import { renderSlotArgContent } from './render-slot-content.ts';
 
 export interface TemplateRenderConfig {
@@ -75,6 +76,8 @@ export interface TransformTemplateInput {
   componentImports: Map<string, string>;
   /** Story component tag; role-aware args expansion applies only to it. */
   componentName?: string;
+  // The story component's slots, which a `v-bind="args"` passes as no prop.
+  slots?: ReadonlySet<string>;
   /** Import bindings from the CSF module, for components a function slot renders. */
   importBindings?: Map<string, ImportBinding>;
   /** Pre-seeded context carrying imports and hoists an upstream printer collected. */
@@ -101,6 +104,7 @@ interface TransformState {
   edits: Edit[];
   componentImports: Map<string, string>;
   componentName?: string;
+  slots: ReadonlySet<string>;
   importBindings: Map<string, ImportBinding>;
   template: string;
 }
@@ -219,6 +223,7 @@ export function transformTemplate(
     edits: [],
     componentImports: input.componentImports,
     componentName: input.componentName,
+    slots: input.slots ?? new Set(),
     importBindings: input.importBindings ?? new Map(),
     template,
   };
@@ -271,6 +276,7 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
     let text = statement.source;
     for (const read of [...statement.argsReads].sort((a, b) => b.start - a.start)) {
       const arg = state.argsByName.get(read.name);
+      const inline = !arg || arg.plan.kind === 'inline';
       const rendered = arg
         ? arg.role === 'prop'
           ? arg.plan.kind === 'inline'
@@ -283,7 +289,14 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
       if (rendered === undefined) {
         return false;
       }
-      const wrapped = wrapSubstitution(rendered, text.slice(read.end));
+      const following = text.slice(read.end);
+      const wrapped = inline
+        ? marked(
+            state.ctx,
+            { kind: 'value', in: 'script', ...readsOn(following), arg: read.name },
+            wrapSubstitution(rendered, following)
+          )
+        : rendered;
       text = text.slice(0, read.start) + wrapped + text.slice(read.end);
     }
     state.ctx.statements.push(dedentBy(text, statement.column));
@@ -298,11 +311,11 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
  * lexes the dot into the number
  */
 function wrapSubstitution(text: string, following: string): string {
-  if (text.startsWith('-') || (following.startsWith('.') && /^\d/.test(text))) {
-    return `(${text})`;
-  }
-  return text;
+  return operand(text, following.startsWith('.'));
 }
+
+// A value hole followed by a `.` reads on, where a number needs parentheses.
+const readsOn = (following: string) => (following.startsWith('.') ? { readsOn: true } : {});
 
 // Continuation lines keep the story file's nesting; strip the statement's own column from them.
 function dedentBy(source: string, column: number): string {
@@ -352,34 +365,32 @@ function transformInterpolation(
   }
 
   const arg = state.argsByName.get(argName);
+  const start = node.loc.start.offset;
+  const end = node.loc.end.offset;
+  // A value edge touching an author '{' would concatenate into a new '{{', which the preview
+  // checks a value it prints there for.
+  const braces = {
+    ...(state.template[start - 1] === '{' && { braceBefore: true }),
+    ...(state.template[end] === '{' && { braceAfter: true }),
+  };
+  const hole = { kind: 'text', ...braces, arg: argName } as const;
   if (!arg && state.unsetArgs.has(argName)) {
-    state.edits.push({ start: node.loc.start.offset, end: node.loc.end.offset, text: '' });
+    state.edits.push({ start, end, text: marked(state.ctx, hole, '') });
     return true;
   }
   if (!arg) {
     return false;
   }
 
-  const rendered = inlinePrimitiveSource(arg.value);
-  if (rendered === undefined) {
-    return false;
-  }
-
   // Runtime interpolation renders escaped text, so markup and mustache characters in the value
   // are entity-escaped to decode back to the same text when the snippet re-parses.
-  const text = escapeTextContent(rendered);
-
-  // A value edge touching an author '{' would concatenate into a new '{{'.
-  const start = node.loc.start.offset;
-  const end = node.loc.end.offset;
-  if (
-    (text.startsWith('{') && state.template[start - 1] === '{') ||
-    (text.endsWith('{') && state.template[end] === '{')
-  ) {
+  const value = snippetValueOf(arg.value);
+  const text = interpolatedText(value);
+  if (text === undefined || !fitsBraces(text, braces)) {
     return false;
   }
 
-  state.edits.push({ start, end, text });
+  state.edits.push({ start, end, text: marked(state.ctx, hole, text) });
   return true;
 }
 
@@ -412,9 +423,28 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
       continue;
     }
     if (plan.directive && prop === plan.directive) {
-      if (!expandArgsBinding(plan.directive, plan.surviving, element, state)) {
+      if (
+        !expandArgsBinding({ ...plan, directive: plan.directive }, attributesByName, element, state)
+      ) {
         return false;
       }
+      continue;
+    }
+    // An attribute written before the args binding is the binding's arg once a control sets it.
+    if (
+      plan.directive &&
+      prop.type === NodeTypes.ATTRIBUTE &&
+      prop.loc.start.offset < plan.directive.loc.start.offset &&
+      prop.name !== 'class' &&
+      prop.name !== 'style'
+    ) {
+      const hole = attributeHole(prop.name, spellings(prop.name)[1]!);
+      const { start, end } = { start: prop.loc.start.offset, end: prop.loc.end.offset };
+      state.edits.push({
+        start,
+        end,
+        text: marked(state.ctx, hole, state.template.slice(start, end)),
+      });
       continue;
     }
     if (
@@ -498,8 +528,12 @@ function planArgsBindingExpansion(
 }
 
 function expandArgsBinding(
-  directive: DirectiveNode,
-  surviving: ClassifiedArg[],
+  {
+    directive,
+    surviving,
+    removed,
+  }: { directive: DirectiveNode; surviving: ClassifiedArg[]; removed: Set<ElementProp> },
+  attributesByName: Map<string, ElementProp[]>,
   element: ElementContext,
   state: TransformState
 ): boolean {
@@ -513,9 +547,43 @@ function expandArgsBinding(
   }
 
   element.slotChildren.push(...rendered.slotChildren);
-  state.edits.push(replacementFor(directive, rendered.attributes.join(' '), state.template));
+  // The args a control sets go after the args the story writes, but those the element prints
+  // itself and its slots. A binding or a `class` or `style` written before the args binding
+  // cannot follow the arg that sets it, so it is a guard.
+  const printed = [
+    ...[...attributesByName.keys()].flatMap(spellings),
+    ...surviving.map((arg) => arg.name),
+    ...state.slots,
+  ];
+  const guards = [...attributesByName.entries()].flatMap(([name, props]) =>
+    props.some(
+      (prop) =>
+        prop.loc.start.offset < directive.loc.start.offset &&
+        !removed.has(prop) &&
+        (prop.type === NodeTypes.DIRECTIVE
+          ? prop.name === 'bind'
+          : prop.name === 'class' || prop.name === 'style')
+    )
+      ? [marked(state.ctx, { kind: 'guard', arg: spellings(name)[1]! }, '')]
+      : []
+  );
+  const added = marked(
+    state.ctx,
+    { kind: 'props', except: [...new Set(printed)], spread: true },
+    '',
+    ' '
+  );
+  const edit = replacementFor(directive, rendered.attributes.join(' '), state.template);
+  state.edits.push({ ...edit, text: edit.text + guards.join('') + added });
   return true;
 }
+
+// The arg names that set the same prop as an attribute: `max-count` and `maxCount`.
+const spellings = (name: string) => [
+  name,
+  name.replace(/-(\w)/g, (_, letter: string) => letter.toUpperCase()),
+  name.replace(/\B([A-Z])/g, '-$1').toLowerCase(),
+];
 
 function transformDirective(
   directive: DirectiveNode,
@@ -544,7 +612,9 @@ function transformDirective(
     }
     if (!arg && state.unsetArgs.has(argName)) {
       // Vue resolves a prop bound to undefined to its declared default, exactly as an absent attribute does.
-      state.edits.push(replacementFor(directive, '', state.template));
+      const edit = replacementFor(directive, '', state.template);
+      const hole = attributeHole(boundProp, argName);
+      state.edits.push({ ...edit, text: marked(state.ctx, hole, '', ' ') });
       return true;
     }
     if (!arg) {
@@ -658,7 +728,7 @@ function substituteArgsExpression(
     return undefined;
   }
 
-  const replacements = new Map<string, string>();
+  const replacements = new Map<string, Replacement>();
   for (const reference of references) {
     const replacement =
       replacements.get(reference.name) ?? replacementForArgsReference(reference, quote, state);
@@ -668,14 +738,20 @@ function substituteArgsExpression(
     replacements.set(reference.name, replacement);
   }
 
+  // A value the template writes inline is a hole that says how it is quoted and read on.
+  const where = quote ? { in: 'attribute' as const, quote } : { in: 'interpolation' as const };
   const text = references
     .sort((a, b) => b.start - a.start)
     .reduce((expression, reference) => {
-      const wrapped = wrapSubstitution(
-        replacements.get(reference.name)!,
+      const { text: replacement, inline } = replacements.get(reference.name)!;
+      const following = expression.slice(reference.end);
+      const wrapped = wrapSubstitution(replacement, following);
+      const hole = { kind: 'value' as const, ...where, ...readsOn(following), arg: reference.name };
+      return (
+        expression.slice(0, reference.start) +
+        (inline ? marked(state.ctx, hole, wrapped) : wrapped) +
         expression.slice(reference.end)
       );
-      return expression.slice(0, reference.start) + wrapped + expression.slice(reference.end);
     }, exp.content);
 
   return { start: exp.loc.start.offset, end: exp.loc.end.offset, text };
@@ -855,14 +931,18 @@ function isAllowedArgsObject(node: Node, parent: Node | null): boolean {
   return parent?.type === 'MemberExpression' && parent.object === node && !parent.computed;
 }
 
+// What an args read is replaced with, which is `inline` where it is the value rather than the
+// name of a const the script declares it as.
+type Replacement = { text: string; inline: boolean };
+
 function replacementForArgsReference(
   reference: ArgsReference,
   quote: '"' | "'" | undefined,
   state: TransformState
-): string | undefined {
+): Replacement | undefined {
   const arg = state.argsByName.get(reference.name);
   if (!arg && state.unsetArgs.has(reference.name)) {
-    return 'undefined';
+    return { text: 'undefined', inline: true };
   }
   if (!arg) {
     return undefined;
@@ -878,11 +958,11 @@ function replacementForArgsReference(
       : hoistArgValue(arg.name, arg.value, state.ctx);
 
   // Vue entity-decodes generated markup on re-parse, so `&` cannot be substituted faithfully.
-  if ((quote && text.includes(quote)) || text.includes('}}') || text.includes('&')) {
+  if (expressionCode(text, quote) === undefined) {
     return undefined;
   }
 
-  return text;
+  return { text, inline: arg.plan.kind === 'inline' };
 }
 
 /**

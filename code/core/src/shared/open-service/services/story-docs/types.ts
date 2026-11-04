@@ -1,3 +1,4 @@
+import type { SnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
 import type { Options } from '../../../../types/modules/core-common.ts';
 import type { IndexEntry } from '../../../../types/modules/indexer.ts';
 
@@ -28,7 +29,8 @@ export interface StoryDoc {
   /**
    * What a static pass could not resolve, in the source text it was written as. Next to a
    * `snippet` it marks the example as partial; on its own it says why no static snippet could be
-   * produced at all. An `error` means the provider itself failed.
+   * produced at all. A filled template leaves out the same code, so it is shown with it too. An
+   * `error` means the provider itself failed.
    */
   warning?: string;
   error?: StoryDocsError;
@@ -60,11 +62,42 @@ export interface StoryDocsPayload {
 }
 
 /**
+ * A story's docs as a provider returns them: with the `template` the preview fills so its snippet
+ * follows the controls. The service stores templates apart, under the `storyTemplates` query.
+ */
+export interface ProvidedStoryDoc extends StoryDoc {
+  /**
+   * The static `snippet` split into code and holes, each a place an arg prints with what the
+   * snippet prints there; see `SnippetTemplate`. Joining its segments gives the snippet. Once the
+   * args differ from the story's initial args, the preview fills it through the renderer's
+   * `parameters.docs.source.printHole`, so the snippet follows the controls.
+   */
+  template?: SnippetTemplate;
+}
+
+/** A story-docs payload as a provider returns it, with each story's `template`. */
+export interface ProvidedStoryDocsPayload extends Omit<StoryDocsPayload, 'stories'> {
+  stories: Record<string, ProvidedStoryDoc>;
+}
+
+/**
+ * The templates of a component's stories, returned by `core/story-docs`'s `storyTemplates` query.
+ * They are kept apart from the {@link StoryDocsPayload}, which agents and the components manifest
+ * read: only the preview fills them, and only once a story's args change.
+ */
+export interface StoryTemplatesPayload {
+  /** Prepended to every template, as `StoryDocsPayload.import` is to every snippet. */
+  import?: string;
+  /** Each story's template by story id; a story without one cannot follow the controls. */
+  stories: Record<string, SnippetTemplate>;
+}
+
+/**
  * Middleware-style provider function registered through the `experimental_storyDocsProvider` preset.
  */
 export type StoryDocsProvider = (
   input: StoryDocsProviderInput
-) => Promise<StoryDocsPayload | undefined>;
+) => Promise<ProvidedStoryDocsPayload | undefined>;
 
 /**
  * Preset signature for `experimental_storyDocsProvider`.

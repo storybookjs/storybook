@@ -1,0 +1,5 @@
+{
+  "ArgsDefaultRender": "<lit-union-jsdoc variant="ghost &amp; &lt;changed>" old-label="Legacy &amp; &lt;changed>" label="Default render &amp; &lt;changed>"></lit-union-jsdoc>",
+  "DomNode": "<lit-union-jsdoc variant="secondary &amp; &lt;changed>" old-label="Old &amp; &lt;changed>" label="Current &amp; &lt;changed>"></lit-union-jsdoc>",
+  "LitTemplate": "<lit-union-jsdoc variant="secondary &amp; &lt;changed>" old-label="Old &amp; &lt;changed>" label="Current &amp; &lt;changed>"></lit-union-jsdoc>",
+}

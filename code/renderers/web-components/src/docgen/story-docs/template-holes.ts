@@ -261,6 +261,34 @@ export const isIfDefinedCall = (
   expression.callee.type === 'Identifier' &&
   isImported(expression.callee.name, 'ifDefined', IF_DEFINED_SOURCES, bindings);
 
+// Which of lit's `classMap` and `styleMap` an expression calls with one object.
+export const mapDirective = (
+  expression: Node,
+  bindings: Map<string, ImportBinding>
+): { kind: 'classes' | 'styles'; object: E.ObjectExpression } | undefined => {
+  const node = unwrapExpression(expression as E.Expression);
+  if (
+    node.type !== 'CallExpression' ||
+    node.callee.type !== 'Identifier' ||
+    node.arguments.length !== 1 ||
+    node.arguments[0].type !== 'ObjectExpression'
+  ) {
+    return undefined;
+  }
+  const { name } = node.callee;
+  const object = node.arguments[0];
+  return isImported(name, 'classMap', directiveSources('class-map'), bindings)
+    ? { kind: 'classes', object }
+    : isImported(name, 'styleMap', directiveSources('style-map'), bindings)
+      ? { kind: 'styles', object }
+      : undefined;
+};
+
+const directiveSources = (name: string) => [
+  `lit/directives/${name}.js`,
+  `lit-html/directives/${name}.js`,
+];
+
 const resolveConditionalTest = (
   expression: E.Expression,
   context: HoleContext

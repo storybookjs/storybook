@@ -580,11 +580,11 @@ describe('html template story snippets', () => {
       name: 'unresolved child and raw text holes',
       source: `
         import { html } from 'lit';
-        import { classMap } from 'lit/directives/class-map.js';
+        import { compute } from './compute';
         export default { component: 'template-element' };
         export const Primary = {
           args: { active: true },
-          render: (args) => html\`<template-element class=\${classMap({ active: Boolean(args.active) })}><!-- \${args.active} --><style>\${args.active}</style></template-element>\`,
+          render: (args) => html\`<template-element class=\${compute(args.active)}><!-- \${args.active} --><style>\${args.active}</style></template-element>\`,
         };
       `,
       expected: {
@@ -595,17 +595,17 @@ describe('html template story snippets', () => {
   <!--  -->
   <style></style>
 </template-element>`,
-        unresolved: ['classMap({ active: Boolean(args.active) })', 'args.active'],
+        unresolved: ['compute(args.active)', 'args.active'],
       },
     },
     {
       name: 'template whose only hole fails',
       source: `
         import { html } from 'lit';
-        import { classMap } from 'lit/directives/class-map.js';
+        import { compute } from './compute';
         export default { component: 'template-element' };
         export const Primary = {
-          render: (args) => html\`\${classMap({ active: Boolean(args.active) })}\`,
+          render: (args) => html\`\${compute(args.active)}\`,
         };
       `,
       expected: {
@@ -613,7 +613,7 @@ describe('html template story snippets', () => {
         properties: [],
         referenced: ['active'],
         snippet: '',
-        unresolved: ['classMap({ active: Boolean(args.active) })'],
+        unresolved: ['compute(args.active)'],
       },
     },
   ])('$name', ({ source, expected }) => {
@@ -713,11 +713,11 @@ describe('html template story snippets', () => {
       name: 'removed multi-hole attribute skips later holes',
       source: `
         import { html } from 'lit';
-        import { classMap } from 'lit/directives/class-map.js';
+        import { compute } from './compute';
         export default { component: 'template-element' };
         export const Primary = {
           args: { active: true, size: 'lg' },
-          render: (args) => html\`<template-element class="a \${classMap({ active: Boolean(args.active) })} \${args.size}"></template-element>\`,
+          render: (args) => html\`<template-element class="a \${compute(args.active)} \${args.size}"></template-element>\`,
         };
       `,
       assert: (actual: ReturnType<typeof renderTemplate>) =>
@@ -731,7 +731,7 @@ describe('html template story snippets', () => {
   ],
   "snippet": "<template-element></template-element>",
   "unresolved": [
-    "classMap({ active: Boolean(args.active) })",
+    "compute(args.active)",
   ],
 }
 `),

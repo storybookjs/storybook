@@ -94,6 +94,24 @@ describe('a changed arg', () => {
       values: () => true,
     },
     {
+      name: 'a classMap on an arg',
+      story:
+        'html`<test-element class=${classMap({ on: args.x, off: !Boolean(args.x), card: true })}></test-element>`',
+      values: () => true,
+    },
+    {
+      name: 'a classMap that can set no class',
+      story: 'html`<test-element class=${classMap({ on: args.x })}></test-element>`',
+      values: () => true,
+    },
+    {
+      name: 'a styleMap value',
+      story:
+        'html`<test-element style=${styleMap({ fontSize: args.x, "--gap": "4px" })}></test-element>`',
+      // A long value lays the start tag out on lines of its own.
+      values: (value) => String(value).length < 16,
+    },
+    {
       name: 'a lit binding while truthy',
       story: 'html`<test-element label=${args.x ? args.x : nothing}></test-element>`',
       values: () => true,
@@ -179,6 +197,8 @@ describe('a changed arg', () => {
       [
         "import { html, nothing } from 'lit';",
         "import { ifDefined } from 'lit/directives/if-defined.js';",
+        "import { classMap } from 'lit/directives/class-map.js';",
+        "import { styleMap } from 'lit/directives/style-map.js';",
         "export default { title: 'Example/TestElement', component: 'test-element' };",
         `export const Primary = { args: { ${JSON.stringify(arg)}: ${literal} }${
           place.story ? `, render: (args) => ${place.story}` : ''

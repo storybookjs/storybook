@@ -108,11 +108,24 @@ describe('a changed arg', () => {
         slotText(value) !== '' &&
         (/^<(\w+)>[^<]*<\/\1>$/.test(slotText(value)) || !/[<\s]/.test(slotText(value))),
     },
+    {
+      name: 'string template html',
+      story: '`<test-element>${args.x}</test-element>`',
+      // Html with elements or runs of whitespace changes the element's layout.
+      values: (value) => !/<|^\s|\s$|\s\s|[\n\t]/.test(childText(value)),
+    },
+    {
+      name: 'a css part',
+      story: '',
+      // A rule a control clears leaves the `<style>` empty.
+      values: (value) => value !== '' && value !== null && value !== undefined,
+    },
   ];
   const argOf: Record<string, string> = {
     'an attribute': 'label',
     'a css custom property': '--accent',
     'a named slot': 'actions-slot',
+    'a css part': 'panel-part',
   };
 
   const dirs: string[] = [];
@@ -192,6 +205,7 @@ const declaration = {
   ],
   slots: [{ name: '' }, { name: 'actions' }],
   cssProperties: [{ name: '--accent' }],
+  cssParts: [{ name: 'panel' }],
 } satisfies ManifestDeclaration;
 
 const docgen: WebComponentsDocgenPayload = {

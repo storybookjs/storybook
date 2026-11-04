@@ -152,18 +152,6 @@ export function printTemplate({
           value,
           marked: mark({ kind: 'overridden', spread: true, name: node.name, template }, value),
         });
-        // The spread hole does not see an arg a control clears, which a hole for that arg does.
-        const read = template.flatMap((segment) =>
-          typeof segment === 'string' || segment.arg === undefined ? [] : [segment.arg]
-        );
-        for (const arg of new Set(read)) {
-          edits.push({
-            start: range.end,
-            end: range.end,
-            value: '',
-            marked: mark({ kind: 'cleared', arg }, ''),
-          });
-        }
       },
       SpreadAttribute(node, { path, next }) {
         if (!isArgsSpread(node)) {

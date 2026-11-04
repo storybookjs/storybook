@@ -1,6 +1,5 @@
 import {
   type PrintHole,
-  UnprintableArgError,
   fillTemplate,
   printValue,
   unknownHoleKind,
@@ -26,7 +25,7 @@ export const printHole: PrintHole<SvelteHolePlace> = (hole, value) => {
       return printProp(arg, propValue(value, arg));
     case 'props':
       return Object.entries(value as Args)
-        .filter(([name]) => !hole.except.includes(name))
+        .filter(([name, item]) => item !== undefined && !hole.except.includes(name))
         .map(([name, item]) => printProp(name, propValue(item, name)))
         .join(hole.separator);
     case 'spreadattr':
@@ -35,15 +34,13 @@ export const printHole: PrintHole<SvelteHolePlace> = (hole, value) => {
       const args = value as Args;
       return Object.hasOwn(args, hole.name)
         ? printSpreadAttribute(hole.name, propValue(args[hole.name], hole.name))
-        : // The args a control set are the args that changed from none.
-          fillTemplate(hole.template, { unmappedArgs: args, initialArgs: {} }, printHole);
+        : // Each arg the spread hole gets is one a control changed, a cleared one too.
+          fillTemplate(
+            hole.template,
+            { unmappedArgs: args, initialArgs: changedFrom(args) },
+            printHole
+          );
     }
-    case 'cleared':
-      // The `overridden` hole before it would print the stale read of an arg a control cleared.
-      if (value === undefined) {
-        throw new UnprintableArgError(arg);
-      }
-      return '';
     case 'value':
       return printRead(value, arg, hole.path).code;
     case 'property':
@@ -82,6 +79,11 @@ function printRead(
     ? { code: `${wrapped}${printAccessors(rest)}` }
     : { code: wrapped, ...(typeof value === 'string' && { string: value }) };
 }
+
+// Initial args that differ from each of `args`, so `fillTemplate` prints every one of them.
+const UNSET = Symbol('unset');
+const changedFrom = (args: Args): Args =>
+  Object.fromEntries(Object.keys(args).map((name) => [name, UNSET]));
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);

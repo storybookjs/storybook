@@ -43,16 +43,16 @@
       "id": "webcomponentsfixtures-stencil-props--lit-template",
       "name": "Lit Template",
       "snippet": "html`<stencil-props
-  value="3"
-  max="5"
-  variant="compact"
-  aria-label-text="Rating"
+  value=${3}
+  max=${5}
+  variant=${'compact'}
+  aria-label-text=${'Rating'}
 ></stencil-props>`",
-      "template": "html`<stencil-props⟦attr value mode="bind" ~"\n  "⟫
-  value="3"⟧⟦attr max mode="bind" ~"\n  "⟫
-  max="5"⟧⟦attr variant mode="bind" ~"\n  "⟫
-  variant="compact"⟧⟦attr labelText name="aria-label-text" mode="bind" ~"\n  "⟫
-  aria-label-text="Rating"⟧
+      "template": "html`<stencil-props
+  value=${⟦code value⟫3⟧}
+  max=${⟦code max⟫5⟧}
+  variant=${⟦code variant⟫'compact'⟧}
+  aria-label-text=${⟦code labelText⟫'Rating'⟧}
 ></stencil-props>`",
     },
   },

@@ -27,8 +27,8 @@
     "webcomponentsfixtures-vanilla-multi-definition--lit-template": {
       "id": "webcomponentsfixtures-vanilla-multi-definition--lit-template",
       "name": "Lit Template",
-      "snippet": "html`<multi-beta beta-label="Beta"></multi-beta>`",
-      "template": "html`<multi-beta⟦attr betaLabel name="beta-label" mode="bind" ~" "⟫ beta-label="Beta"⟧></multi-beta>`",
+      "snippet": "html`<multi-beta beta-label=${'Beta'}></multi-beta>`",
+      "template": "html`<multi-beta beta-label=${⟦code betaLabel⟫'Beta'⟧}></multi-beta>`",
     },
   },
 }

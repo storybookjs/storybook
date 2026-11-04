@@ -132,11 +132,7 @@ const elementAttributes = (snippet: ElementSnippet): HtmlAttribute[] => {
     if (attribute.arg === undefined) {
       return node ? [node] : [];
     }
-    const hole = attrHole(
-      { arg: attribute.arg },
-      attribute.name,
-      attribute.viaField ? 'field' : 'render'
-    );
+    const hole = attrHole(attribute.arg, attribute.name, attribute.viaField ? 'field' : 'render');
     return [{ ...(node ?? { name: attribute.name, value: undefined, omitted: true }), hole }];
   });
   const style = cssDeclarations(snippet.cssProperties);

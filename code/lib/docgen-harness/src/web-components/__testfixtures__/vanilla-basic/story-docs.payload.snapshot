@@ -35,13 +35,13 @@
       "id": "webcomponentsfixtures-vanilla-basic--lit-template",
       "name": "Lit Template",
       "snippet": "html`<vanilla-basic
-  label="Vanilla"
-  count="4"
+  label=${'Vanilla'}
+  count=${4}
   ?disabled=${true}
 ></vanilla-basic>`",
-      "template": "html`<vanilla-basic⟦attr label mode="bind" ~"\n  "⟫
-  label="Vanilla"⟧⟦attr count mode="bind" ~"\n  "⟫
-  count="4"⟧
+      "template": "html`<vanilla-basic
+  label=${⟦code label⟫'Vanilla'⟧}
+  count=${⟦code count⟫4⟧}
   ?disabled=${⟦code disabled⟫true⟧}
 ></vanilla-basic>`",
     },

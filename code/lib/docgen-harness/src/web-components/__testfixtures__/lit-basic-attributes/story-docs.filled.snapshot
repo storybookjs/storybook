@@ -13,8 +13,8 @@
   return el;
 };",
   "LitTemplate": "html`<lit-basic-attributes
-  label="Open panel &amp; &lt;changed>"
-  count="8"
+  label=${'Open panel & <changed>'}
+  count=${8}
   ?disabled=${true}
   ?is-open=${false}
 ></lit-basic-attributes>`",

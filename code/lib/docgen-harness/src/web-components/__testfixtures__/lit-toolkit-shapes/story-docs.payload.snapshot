@@ -48,8 +48,8 @@
   el.setAttribute('size', String(⟦code size⟫'large'⟧));
   el.setAttribute('level', String(⟦code level⟫2⟧));
   el.setAttribute('label', String(⟦code label⟫'Shaped'⟧));
-  (el as HTMLElement & { tags: string[] }).tags =⟦code tags ~" "⟫ ['b']⟧ as string[];
-  el.addEventListener('toolkit-resize',⟦code onToolkitResize ~" "⟫ () => {}⟧ as EventListener);
+  (el as HTMLElement & { tags: string[] }).tags = ⟦code tags⟫['b']⟧ as string[];
+  el.addEventListener('toolkit-resize', ⟦code onToolkitResize⟫() => {}⟧ as EventListener);
   return el;
 };",
     },
@@ -57,17 +57,17 @@
       "id": "webcomponentsfixtures-lit-toolkit-shapes--lit-template",
       "name": "Lit Template",
       "snippet": "html`<lit-toolkit-shapes
-  size="large"
-  level="2"
+  size=${'large'}
+  level=${2}
   .tags=${['b']}
-  label="Shaped"
+  label=${'Shaped'}
   @toolkit-resize=${() => {}}
 ></lit-toolkit-shapes>`",
-      "template": "html`<lit-toolkit-shapes⟦attr size mode="bind" ~"\n  "⟫
-  size="large"⟧⟦attr level mode="bind" ~"\n  "⟫
-  level="2"⟧
-  .tags=${⟦code tags⟫['b']⟧}⟦attr label mode="bind" ~"\n  "⟫
-  label="Shaped"⟧
+      "template": "html`<lit-toolkit-shapes
+  size=${⟦code size⟫'large'⟧}
+  level=${⟦code level⟫2⟧}
+  .tags=${⟦code tags⟫['b']⟧}
+  label=${⟦code label⟫'Shaped'⟧}
   @toolkit-resize=${⟦code onToolkitResize⟫() => {}⟧}
 ></lit-toolkit-shapes>`",
     },

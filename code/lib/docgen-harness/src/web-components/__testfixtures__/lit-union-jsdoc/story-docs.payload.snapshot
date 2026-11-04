@@ -31,14 +31,14 @@
       "id": "webcomponentsfixtures-lit-union-jsdoc--lit-template",
       "name": "Lit Template",
       "snippet": "html`<lit-union-jsdoc
-  variant="secondary"
-  old-label="Old"
-  label="Current"
+  variant=${'secondary'}
+  old-label=${'Old'}
+  label=${'Current'}
 ></lit-union-jsdoc>`",
-      "template": "html`<lit-union-jsdoc⟦attr variant mode="bind" ~"\n  "⟫
-  variant="secondary"⟧⟦attr oldLabel name="old-label" mode="bind" ~"\n  "⟫
-  old-label="Old"⟧⟦attr label mode="bind" ~"\n  "⟫
-  label="Current"⟧
+      "template": "html`<lit-union-jsdoc
+  variant=${⟦code variant⟫'secondary'⟧}
+  old-label=${⟦code oldLabel⟫'Old'⟧}
+  label=${⟦code label⟫'Current'⟧}
 ></lit-union-jsdoc>`",
     },
   },

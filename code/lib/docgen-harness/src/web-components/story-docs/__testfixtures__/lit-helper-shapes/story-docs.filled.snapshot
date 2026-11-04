@@ -6,7 +6,5 @@
   "HelperInHtml": "UnprintableArgError: The snippet cannot show the current value of the `label` arg.",
   "ReExportedHtml": "html`<lit-template-shapes label=${'Alpha & <changed>'}></lit-template-shapes>`",
   "SpreadDirective": "UnprintableArgError: The snippet cannot show the current value of the `label` arg.",
-  "SpreadNextToAttribute": "html`<lit-template-shapes label="Written" ${spreadProps(rest)}
-  >${undefined}</lit-template-shapes
->`",
+  "SpreadNextToAttribute": "UnprintableArgError: The snippet cannot show the current value of the `count` arg.",
 }

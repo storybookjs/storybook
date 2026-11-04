@@ -171,9 +171,8 @@ const baseStoryDoc = (
     ...(result.snippet === undefined || result.template === undefined
       ? {}
       : {
-          // A value a control clears leaves no gap or empty line; text in a quoted value keeps the
-          // text around it as written.
-          template: withHoleSpace(result.template, (hole) => hole.kind !== 'quoted'),
+          // A value a control clears leaves no gap or empty line.
+          template: withHoleSpace(result.template, (hole) => hole.kind !== 'code'),
         }),
     ...(result.warning === undefined ? {} : { warning: result.warning }),
     ...(description ? { description } : {}),
@@ -242,7 +241,7 @@ const renderedArgsSnippet = (
 ): SnippetResult => {
   const warnings: (string | undefined)[] = [];
   const render = resolveEffectiveRender(deps.csf, exportName, deps.resolveStoryArgs.ctx);
-  if (render.kind === 'resolved' && render.node.body) {
+  if (render.kind === 'resolved') {
     // The render function's own code, with the args it reads filled in.
     const argNames = [
       ...new Set([
@@ -250,9 +249,13 @@ const renderedArgsSnippet = (
         ...Object.keys(deps.docgenPayload.argTypes ?? {}),
       ]),
     ];
-    return renderSnippet(render.node, deps.csf, exportName, resolved.args, argNames);
-  }
-  if (render.kind === 'unresolved') {
+    const code =
+      render.node.body && renderSnippet(render.node, exportName, resolved.args, argNames);
+    if (code) {
+      return code;
+    }
+    warnings.push(unresolvedWarning([oneLineTextOf(render.node)]));
+  } else if (render.kind === 'unresolved') {
     warnings.push(unresolvedWarning(unresolvedRenderSource(render, resolved)));
   }
 
@@ -262,7 +265,7 @@ const renderedArgsSnippet = (
     deps.docgenPayload.argTypes ?? {},
     deps.tag,
     resolved.unresolved,
-    render.kind === 'unresolved'
+    render.kind !== 'missing'
   );
   warnings.push(args.warning);
 

@@ -214,7 +214,7 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: 'html`<test-element label="Template" count="2"></test-element>`',
+        snippet: "html`<test-element label=${'Template'} count=${2}></test-element>`",
       },
     },
     {
@@ -257,7 +257,7 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: 'html`<test-element label="Meta render"></test-element>`',
+        snippet: "html`<test-element label=${'Meta render'}></test-element>`",
       },
     },
     {
@@ -291,7 +291,7 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: 'html`<test-element label="csf2"></test-element>`',
+        snippet: "html`<test-element label=${'csf2'}></test-element>`",
       },
     },
     {
@@ -307,7 +307,7 @@ describe('buildStoryDocsPayload', () => {
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
-        snippet: 'html`<test-element label="Bound"></test-element>`',
+        snippet: "html`<test-element label=${'Bound'}></test-element>`",
       },
     },
     {
@@ -812,12 +812,12 @@ describe('the template', () => {
     expect(snippet).toBe(
       [
         'html`<test-element',
-        '  label="Go"',
-        '  title="Hi Bob"',
+        "  label=${'Go'}",
+        '  title="Hi ${({ name: \'Bob\' }).name}"',
         "  class=${classMap({ large: isLarge('lg') })}",
         '  .items=${[1]}',
         '  ?open=${true}',
-        ">Go: ${true ? 'open' : 'closed'}</test-element>`",
+        ">${'Go'}: ${true ? 'open' : 'closed'}</test-element>`",
       ].join('\n')
     );
     const initialArgs = { label: 'Go', size: 'lg', items: [1], user: { name: 'Bob' }, open: true };
@@ -831,12 +831,12 @@ describe('the template', () => {
     expect(fill(template, initialArgs, changed)).toBe(
       [
         'html`<test-element',
-        '  label="a &quot;b&quot; \\`c\\`"',
-        '  title="Hi &lt;Ann>"',
+        '  label=${\'a "b" `c`\'}',
+        '  title="Hi ${({ name: \'<Ann>\' }).name}"',
         "  class=${classMap({ large: isLarge('sm') })}",
         '  .items=${[1, 2]}',
         '  ?open=${false}',
-        ">a \"b\" \\`c\\`: ${false ? 'open' : 'closed'}</test-element>`",
+        ">${'a \"b\" `c`'}: ${false ? 'open' : 'closed'}</test-element>`",
       ].join('\n')
     );
   });
@@ -855,16 +855,16 @@ describe('the template', () => {
     expect(snippet).toBe(
       [
         'const Primary = () => {',
-        "  const label = 'Go'.toUpperCase();",
-        '  return `<test-element label="Go">${label}</test-element>`;',
+        "  const label = ('Go').toUpperCase();",
+        '  return `<test-element label="${\'Go\'}">${label}</test-element>`;',
         '};',
       ].join('\n')
     );
     expect(fill(template, { label: 'Go' }, { label: 'Stop' })).toBe(
       [
         'const Primary = () => {',
-        "  const label = 'Stop'.toUpperCase();",
-        '  return `<test-element label="Stop">${label}</test-element>`;',
+        "  const label = ('Stop').toUpperCase();",
+        '  return `<test-element label="${\'Stop\'}">${label}</test-element>`;',
         '};',
       ].join('\n')
     );

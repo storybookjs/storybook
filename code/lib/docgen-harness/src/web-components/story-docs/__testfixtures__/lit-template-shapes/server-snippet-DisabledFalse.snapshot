@@ -1,5 +1,5 @@
 html`<lit-template-shapes
-  label="Beta"
-  count="3"
+  label=${'Beta'}
+  count=${3}
   ?disabled=${false}
 ></lit-template-shapes>`

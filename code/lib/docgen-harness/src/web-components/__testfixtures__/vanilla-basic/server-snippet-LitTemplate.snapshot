@@ -1,5 +1,5 @@
 html`<vanilla-basic
-  label="Vanilla"
-  count="4"
+  label=${'Vanilla'}
+  count=${4}
   ?disabled=${true}
 ></vanilla-basic>`

@@ -17,7 +17,7 @@
   el.append(body, action);
   return el;
 };",
-  "LitTemplate": "html`<lit-slots-and-css heading="Projected &amp; &lt;changed>">
+  "LitTemplate": "html`<lit-slots-and-css heading=${'Projected & <changed>'}>
   <p>Default slot content</p>
   <button slot="actions">Confirm</button>
 </lit-slots-and-css>`",

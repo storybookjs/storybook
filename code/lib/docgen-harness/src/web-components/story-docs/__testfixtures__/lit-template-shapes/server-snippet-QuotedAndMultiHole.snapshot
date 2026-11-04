@@ -1,4 +1,4 @@
 html`<lit-template-shapes
-  class="card warm large"
-  label="Quoted"
+  class="card ${'warm'} ${'large'}"
+  label="${'Quoted'}"
 ></lit-template-shapes>`

@@ -10,8 +10,8 @@
   return el;
 };",
   "LitTemplate": "html`<lit-inheritance-mixin
-  base-label="Inherited &amp; &lt;changed>"
+  base-label=${'Inherited & <changed>'}
   ?mixed-active=${false}
-  count="6"
+  count=${6}
 ></lit-inheritance-mixin>`",
 }

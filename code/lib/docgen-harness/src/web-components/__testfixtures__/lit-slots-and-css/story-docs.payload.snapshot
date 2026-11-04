@@ -50,11 +50,11 @@
     "webcomponentsfixtures-lit-slots-and-css--lit-template": {
       "id": "webcomponentsfixtures-lit-slots-and-css--lit-template",
       "name": "Lit Template",
-      "snippet": "html`<lit-slots-and-css heading="Projected">
+      "snippet": "html`<lit-slots-and-css heading=${'Projected'}>
   <p>Default slot content</p>
   <button slot="actions">Confirm</button>
 </lit-slots-and-css>`",
-      "template": "html`<lit-slots-and-css⟦attr heading mode="bind" ~" "⟫ heading="Projected"⟧>
+      "template": "html`<lit-slots-and-css heading=${⟦code heading⟫'Projected'⟧}>
   <p>Default slot content</p>
   <button slot="actions">Confirm</button>
 </lit-slots-and-css>`",

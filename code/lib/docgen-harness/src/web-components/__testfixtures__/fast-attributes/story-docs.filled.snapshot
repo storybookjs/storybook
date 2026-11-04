@@ -15,10 +15,10 @@
   return el;
 };",
   "LitTemplate": "html`<fast-attributes
-  label="Count &amp; &lt;changed>"
-  size="large &amp; &lt;changed>"
+  label=${'Count & <changed>'}
+  size=${'large & <changed>'}
   ?disabled=${true}
-  max-count="6"
+  max-count=${6}
   .items=${['a & <changed>']}
 ></fast-attributes>`",
 }

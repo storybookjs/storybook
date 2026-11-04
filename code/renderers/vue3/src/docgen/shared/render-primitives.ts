@@ -18,7 +18,6 @@ import {
   attributeOrder,
   indent,
   printAttribute,
-  quoteAttributeValue,
   slotContent,
   slotOrder,
   wrapSlotContent,
@@ -64,13 +63,6 @@ interface RenderPropValueInput {
   value: Node;
   /** Render plan the value was classified with. */
   plan: RenderableValuePlan;
-}
-
-export interface RenderedProp {
-  /** Vue template attribute. */
-  attrName: string;
-  /** Vue template attribute value, or undefined for a bare attribute. */
-  value?: string;
 }
 
 const VUE_PACKAGE = 'vue';
@@ -145,11 +137,11 @@ export function renderPreparedSfcSnippet(input: RenderSfcMarkupInput): string {
 }
 
 /** Render a classified prop or model arg into a Vue template attribute. */
-export function renderPropLikeArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): RenderedProp {
+export function renderPropLikeArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): string {
   return arg.role === 'model' ? renderModelArg(arg, ctx) : renderPropArg(arg, ctx);
 }
 
-function renderPropArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): RenderedProp {
+function renderPropArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): string {
   return renderPropValue(
     { attributeName: arg.name, variableName: arg.name, value: arg.value, plan: arg.plan },
     ctx
@@ -157,7 +149,7 @@ function renderPropArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): Rendered
 }
 
 /** Render a classified arg value into a Vue template attribute under a chosen attribute name. */
-function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): RenderedProp {
+function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): string {
   const value = unwrapExpression(input.value);
 
   const attribute =
@@ -168,39 +160,30 @@ function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): Rende
     return hoistedProp(input, ctx);
   }
 
-  return {
-    attrName: marked(ctx, attributeHole(input.attributeName, input.variableName), attribute),
-  };
+  return marked(ctx, attributeHole(input.attributeName, input.variableName), attribute);
 }
 
 // An arg's value bound from the const it is declared as. Where that const holds a value a render
 // writes, which follows no control, the template marks the attribute instead.
-function hoistedProp(input: RenderPropValueInput, ctx: RenderContext): RenderedProp {
+function hoistedProp(input: RenderPropValueInput, ctx: RenderContext): string {
   const shared = sharesWrittenConst(input.variableName, input.value, ctx);
-  const binding = hoistArgValue(input.variableName, input.value, ctx);
-  const prop = { attrName: `:${input.attributeName}`, value: binding };
+  const attribute = `:${input.attributeName}="${hoistArgValue(input.variableName, input.value, ctx)}"`;
   return shared
-    ? {
-        attrName: marked(
-          ctx,
-          attributeHole(input.attributeName, input.variableName),
-          formatRenderedProp(prop)
-        ),
-      }
-    : prop;
+    ? marked(ctx, attributeHole(input.attributeName, input.variableName), attribute)
+    : attribute;
 }
 
-function renderModelArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): RenderedProp {
+function renderModelArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): string {
   const bindingName = hoistModelRef(arg.name, arg.value, ctx);
   const directive = arg.name === 'modelValue' ? 'v-model' : `v-model:${arg.name}`;
-  return { attrName: directive, value: bindingName };
+  return `${directive}="${bindingName}"`;
 }
 
 /** Listeners hoist their handler, because inline handlers would bloat the tag. */
-export function renderEventArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): RenderedProp {
+export function renderEventArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): string {
   const bindingName = allocateBindingName(arg.name, ctx);
   ctx.variables.set(bindingName, scriptValue(arg.name, arg.value, ctx));
-  return { attrName: `@${arg.eventName ?? arg.name}`, value: bindingName };
+  return `@${arg.eventName ?? arg.name}="${bindingName}"`;
 }
 
 /** Slot children for one classified slot arg with a renderable plan. */
@@ -296,20 +279,6 @@ function toIdentifier(input: string): string {
   return name && !RESERVED_WORDS.has(name) ? name : `_${name}`;
 }
 
-/** Format one structured attribute at the SFC print boundary. */
-export function formatRenderedProp(prop: RenderedProp): string {
-  if (prop.value === undefined) {
-    return prop.attrName;
-  }
-
-  if (!isVueExpressionAttribute(prop.attrName)) {
-    // renderPropValue hoists strings mixing both quote styles, so this value is always quotable.
-    return `${prop.attrName}=${quoteAttributeValue(prop.value)!}`;
-  }
-
-  return `${prop.attrName}="${prop.value}"`;
-}
-
 export interface ArgsBindingExpansion {
   /** Formatted attribute text for each expanded prop, model, and event arg. */
   attributes: string[];
@@ -362,7 +331,7 @@ export function renderArgsBindingExpansion(
     slotChildren.push(wrapSlotContent(slot.name, content));
   }
 
-  return { attributes: [...props, ...events].map(formatRenderedProp), slotChildren };
+  return { attributes: [...props, ...events], slotChildren };
 }
 
 /** Attribute text for one `:prop="args.x"` binding rewritten to the arg's static value. */
@@ -371,11 +340,9 @@ export function renderBoundArgAttribute(
   arg: ClassifiedPropLikeArg,
   ctx: RenderContext
 ): string {
-  return formatRenderedProp(
-    renderPropValue(
-      { attributeName, variableName: arg.name, value: arg.value, plan: arg.plan },
-      ctx
-    )
+  return renderPropValue(
+    { attributeName, variableName: arg.name, value: arg.value, plan: arg.plan },
+    ctx
   );
 }
 
@@ -487,8 +454,4 @@ function normalizeTemplateBlock(source: string): string {
   }
 
   return lines.slice(start, end).join('\n');
-}
-
-function isVueExpressionAttribute(name: string): boolean {
-  return name.startsWith(':') || name.startsWith('@') || name.startsWith('v-');
 }

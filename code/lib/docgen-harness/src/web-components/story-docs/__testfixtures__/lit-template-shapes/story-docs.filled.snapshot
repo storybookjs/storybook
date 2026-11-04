@@ -38,6 +38,6 @@
   "PropertyPaired": "<lit-template-shapes heading="Heading &amp; &lt;changed>"></lit-template-shapes>",
   "PropertyPairedFalse": "<lit-template-shapes heading="Closed &amp; &lt;changed>" open></lit-template-shapes>",
   "QuotedAndMultiHole": "<lit-template-shapes class="card warm &amp; &lt;changed> large &amp; &lt;changed>" label="Quoted &amp; &lt;changed>"></lit-template-shapes>",
-  "StyleMap": "<lit-template-shapes style="--gap: 4px; color: red &amp; &lt;changed>; font-size:  &amp; &lt;changed>;"></lit-template-shapes>",
+  "StyleMap": "<lit-template-shapes style="color: red &amp; &lt;changed>; font-size:  &amp; &lt;changed>; --gap: 4px;"></lit-template-shapes>",
   "UnboundArg": "<lit-template-shapes label="Bound &amp; &lt;changed>"></lit-template-shapes>",
 }

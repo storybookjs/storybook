@@ -1,1 +1,1 @@
-<lit-template-shapes style="--gap: 4px; color: red;"></lit-template-shapes>
+<lit-template-shapes style="color: red; --gap: 4px;"></lit-template-shapes>

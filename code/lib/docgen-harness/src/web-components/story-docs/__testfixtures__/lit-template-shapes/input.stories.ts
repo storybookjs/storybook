@@ -101,7 +101,7 @@ export const ClassMapKeys: Story = {
   args: { active: false, enabled: false },
   render: (args) =>
     html`<lit-template-shapes
-      class="card ${classMap({ active: args.active, muted: !args.enabled, round: true })}"
+      class="card ${classMap({ active: args.active as boolean, muted: !args.enabled, round: true })}"
     ></lit-template-shapes>`,
 };
 
@@ -119,7 +119,7 @@ export const StyleMap: Story = {
   args: { color: 'red', fontSize: '' },
   render: (args) =>
     html`<lit-template-shapes
-      style=${styleMap({ color: args.color, fontSize: args.fontSize, '--gap': '4px' })}
+      style=${styleMap({ color: args.color as string, fontSize: args.fontSize as string, '--gap': '4px' })}
     ></lit-template-shapes>`,
 };
 

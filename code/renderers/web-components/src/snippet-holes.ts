@@ -15,8 +15,8 @@ type Place =
   | { kind: 'bool'; name?: string }
   // Text in a quoted attribute value.
   | { kind: 'quoted' }
-  // A custom property in the `style` attribute, and `cssattr` a spread hole for the `style`
-  // attribute while the snippet prints none: each custom property, and the arg that sets it.
+  // A declaration in the `style` attribute, and `cssattr` a spread hole for the `style` attribute
+  // while the snippet prints none: each property, and the arg that sets it.
   | { kind: 'css'; property?: string }
   | { kind: 'cssattr'; properties: { arg: string; property: string }[] }
   // The text of a lit template.
@@ -28,7 +28,8 @@ type Place =
   // break after it.
   | { kind: 'rule'; selector: string }
   | { kind: 'style'; selector: string }
-  // `${arg ? a : b}` where neither branch reads an arg: what the snippet prints for each branch.
+  // What the snippet prints while the arg is truthy and while it is not, as for `${arg ? a : b}`
+  // where neither branch reads an arg, or a `classMap` class.
   | { kind: 'choice'; truthy: string; falsy: string }
   // A spread hole after the snippet for the properties without an attribute, which only a script
   // sets: each one's element, and the arg it is set to.

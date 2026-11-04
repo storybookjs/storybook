@@ -214,7 +214,7 @@ export function printTemplate({
         } else if (asQuoted !== undefined || asFragment !== undefined) {
           edit = { ...tag, value: (asQuoted ?? asFragment)! };
         }
-        if (!replaced.changed) {
+        if (!replaced.substituted) {
           edit = { ...range, value: written(range) };
         }
         if (!replaced.single) {
@@ -268,7 +268,7 @@ export function printTemplate({
             edits.push({ ...range, value: replaced.value, marked: replaced.marked });
             continue;
           }
-          const value = replaced.changed ? `${node.name}={${replaced.value}}` : written(range);
+          const value = replaced.substituted ? `${node.name}={${replaced.value}}` : written(range);
           edits.push({
             ...range,
             value,
@@ -394,10 +394,10 @@ function blockExpressions(node: SvelteAST.SvelteNode): object[] {
 }
 
 // Replace each read of the story args in an expression with the source of the value it reads, or
-// return `undefined` when the expression reads no story args. Next keeps a read of an arg the story
-// does not set as written, unless `argsComplete`; `changed` says whether it replaced any. `marked`
-// has a hole for each read of an arg, and `single` is the arg when the expression is one whole read
-// of it, `deep` when it reads a member of it. `text` is set when that read is of a string.
+// return `undefined` when the expression reads no story args. A read of an arg the story does not
+// set stays as written, unless `argsComplete`; `substituted` says whether any read was replaced.
+// `marked` has a hole for each read of an arg, and `single` is the arg when the expression is one
+// whole read of it, `deep` when it reads a member of it. `text` is set when that read is of a string.
 function replaceArgsReads(
   expression: string,
   { args, name, aliases, typescript, argsComplete, mark }: Reads
@@ -405,14 +405,20 @@ function replaceArgsReads(
   | {
       value: string;
       marked: string;
-      changed: boolean;
+      substituted: boolean;
       text?: string;
       single?: { arg: string; deep: boolean };
     }
   | undefined {
   // The parentheses let an object literal or a sequence parse as one expression.
   const editor = new SourceEditor(`(${expression})`, scriptFile(typescript));
-  const edits: (Edit & { node?: Node; marked: string; arg: string; place: SvelteHolePlace })[] = [];
+  const edits: (Edit & {
+    node?: Node;
+    marked: string;
+    arg: string;
+    place: SvelteHolePlace;
+    substituted: boolean;
+  })[] = [];
   // A read of `arg` from `start` to `end`, which the snippet prints as `read`, or keeps as written.
   const push = (
     arg: string,
@@ -440,6 +446,7 @@ function replaceArgsReads(
       marked: mark({ ...place, arg }, value),
       arg,
       place,
+      substituted: read !== undefined,
     });
   };
   // The value of an arg that the template parameter destructures.
@@ -492,7 +499,7 @@ function replaceArgsReads(
       expression,
       edits.map((edit) => ({ ...edit, value: edit.marked }))
     ),
-    changed: value !== expression,
+    substituted: edits.some((edit) => edit.substituted),
     ...(text !== undefined ? { text } : {}),
     ...(whole && only.place.kind !== 'property'
       ? { single: { arg: only.arg, deep: only.place.kind === 'member' } }

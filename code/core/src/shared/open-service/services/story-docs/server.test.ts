@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
-import { clearRegistry, getService } from '../../server.ts';
+import { buildStaticFiles, clearRegistry, getService } from '../../server.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
 import { registerStoryDocsService, subscribeStoryDocsToModuleGraphChanges } from './server.ts';
-import type { StoryDocsPayload, StoryDocsProvider } from './types.ts';
+import type { ProvidedStoryDocsPayload, StoryDocsPayload, StoryDocsProvider } from './types.ts';
 
 afterEach(() => {
   clearRegistry();
@@ -98,8 +98,79 @@ describe('story-docs open service', () => {
         makeStoryDocsPayload({ stories: Object.fromEntries(stories.map((s) => [s.id, s])) }),
     });
     await service.commands.extractStoryDocs({ id: 'button' });
-    const kept = Object.values(service.queries.storyDocs.get({ id: 'button' })!.stories);
-    expect(kept.map((doc) => doc.template)).toEqual([stories[0]!.template, undefined, undefined]);
+    expect(service.queries.storyTemplates.get({ id: 'button' })).toEqual({
+      stories: { [stories[0]!.id]: stories[0]!.template },
+    });
+  });
+
+  describe('templates', () => {
+    const entry = makeStoryEntry('button--primary', 'Button');
+    const provided: ProvidedStoryDocsPayload = {
+      ...makeStoryDocsPayload(),
+      import: "import { Button } from './Button';",
+      stories: {
+        'button--primary': {
+          id: 'button--primary',
+          name: 'Primary',
+          snippet: '<Button label="Hi" />',
+          template: '<Button ⟦attr label label⟫label="Hi"⟧ />',
+        },
+        'button--plain': { id: 'button--plain', name: 'Plain', snippet: '<Button />' },
+      },
+    };
+    const register = (payload: ProvidedStoryDocsPayload) =>
+      registerStoryDocsService({
+        getIndex: makeGetIndex([entry]),
+        storyDocsProvider: async () => payload,
+      });
+
+    it('keeps them out of the story docs, which agents and the components manifest read', async () => {
+      const service = register(provided);
+
+      const extracted = await service.commands.extractStoryDocs({ id: 'button' });
+
+      const stories = {
+        'button--primary': {
+          id: 'button--primary',
+          name: 'Primary',
+          snippet: '<Button label="Hi" />',
+        },
+        'button--plain': { id: 'button--plain', name: 'Plain', snippet: '<Button />' },
+      };
+      expect(extracted).toEqual({ ...provided, stories });
+      expect(service.queries.storyDocs.get({ id: 'button' })).toEqual({ ...provided, stories });
+      expect(service.queries.storyTemplates.get({ id: 'button' })).toEqual({
+        import: provided.import,
+        stories: { 'button--primary': '<Button ⟦attr label label⟫label="Hi"⟧ />' },
+      });
+    });
+
+    it('stores none for a component whose stories have none, so the preview knows they loaded', async () => {
+      const service = register(makeStoryDocsPayload());
+
+      await service.commands.extractStoryDocs({ id: 'button' });
+
+      expect(service.queries.storyTemplates.get({ id: 'button' })).toEqual({ stories: {} });
+    });
+
+    it('writes them to a static file of their own, apart from the story docs', async () => {
+      register(provided);
+
+      const store = await buildStaticFiles();
+
+      expect(store['core/story-docs/button.json']).toEqual({
+        components: { button: { ...provided, stories: expect.any(Object) } },
+      });
+      expect(JSON.stringify(store['core/story-docs/button.json'])).not.toContain('⟦');
+      expect(store['core/story-docs/templates/button.json']).toEqual({
+        templates: {
+          button: {
+            import: provided.import,
+            stories: { 'button--primary': '<Button ⟦attr label label⟫label="Hi"⟧ />' },
+          },
+        },
+      });
+    });
   });
 
   describe('a component with several story files', () => {
@@ -158,7 +229,7 @@ describe('story-docs open service', () => {
       expect(payload!.stories['vega--heatmap']!.snippet).toBe(
         `import { Vega } from '${ranges}';\n\n<Vega />`
       );
-      expect(payload!.stories['vega--heatmap']!.template).toBe(
+      expect(service.queries.storyTemplates.get({ id: 'vega' })!.stories['vega--heatmap']).toBe(
         `import { Vega } from '${ranges}';\n\n<Vega⟦attrs *⟫⟧ />`
       );
     });

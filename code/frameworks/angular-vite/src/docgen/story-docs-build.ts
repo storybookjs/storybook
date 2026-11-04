@@ -20,7 +20,11 @@ import {
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 import { withHoleSpace } from 'storybook/internal/docs-tools';
-import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
+import type {
+  ProvidedStoryDoc,
+  ProvidedStoryDocsPayload,
+  StoryDocsProviderInput,
+} from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
 
@@ -63,7 +67,7 @@ export interface BuildStoryDocsContext {
 export const buildStoryDocsPayload = async (
   input: StoryDocsProviderInput,
   context: BuildStoryDocsContext
-): Promise<StoryDocsPayload | undefined> => {
+): Promise<ProvidedStoryDocsPayload | undefined> => {
   const storyImportPath = getStoryImportPathFromEntry(input.entry);
   if (!storyImportPath) {
     return undefined;
@@ -170,7 +174,7 @@ const buildStoryDoc = async (
   exportName: string,
   story: CsfFile['_stories'][string],
   deps: StoryDocDeps
-): Promise<StoryDoc> => {
+): Promise<ProvidedStoryDoc> => {
   const { csf } = deps;
   const name = story.name ?? storyNameFromExport(exportName);
   try {

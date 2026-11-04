@@ -5,13 +5,18 @@ import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePan
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
-import { getPrintHole, selectLiveSnippetForStory } from './live-snippet.ts';
+import {
+  argsChanged,
+  getPrintHole,
+  loadStoryTemplates,
+  selectLiveSnippetForStory,
+} from './live-snippet.ts';
 
 export { shouldSkipStoryDocsEmit };
 
 // The first render of each version of a story loads its component's story docs; the server keeps
 // them current after that. Keyed on the story's parameters, which an args change keeps and a hot
-// update replaces, so filling in new args needs no request.
+// update replaces. The templates its snippets fill load apart, once a story's args first change.
 const loads = new WeakMap<object, Promise<unknown>>();
 
 // The latest emit of each story. Each emit waits for the one before it, so with an async
@@ -21,7 +26,7 @@ const emits = new Map<string, Promise<unknown>>();
 
 /**
  * Preview `beforeEach` hook that emits a story-docs snippet to the manager Code panel via
- * {@link emitTransformCode}. It runs again on every args change, which fills the story's `template`
+ * {@link emitTransformCode}. It runs again on every args change, which fills the story's template
  * with the new args.
  */
 export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallback | void {
@@ -58,16 +63,19 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
     // A failed load is tried again on the next render.
     load.catch(() => loads.delete(context.parameters));
   }
+  const args = { unmappedArgs: context.unmappedArgs, initialArgs: context.initialArgs };
+  const templates = argsChanged(args) ? loadStoryTemplates(service, componentId) : undefined;
   const previous = emits.get(storyId);
-  const codePanelSnippetPromise: Promise<unknown> = Promise.all([load, previous])
+  const codePanelSnippetPromise: Promise<unknown> = Promise.all([load, templates, previous])
     .then(() => {
       if (cancelled) {
         return;
       }
       const { snippet, warning } = selectLiveSnippetForStory(
         query.get({ id: componentId }),
+        service.queries.storyTemplates.get({ id: componentId }),
         storyId,
-        { unmappedArgs: context.unmappedArgs, initialArgs: context.initialArgs },
+        args,
         getPrintHole(context.parameters)
       );
       const source = snippet ?? context.parameters?.docs?.source?.originalSource;

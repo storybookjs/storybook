@@ -1,11 +1,13 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { PreparedStory, StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
 
 import {
   type QueryState,
   type StoryArgs,
+  argsChanged,
   getPrintHole,
+  loadStoryTemplates,
   selectLiveSnippetForStory,
   selectStoryDoc,
 } from 'storybook/open-service';
@@ -64,9 +66,40 @@ export function useServiceStoryLiveSnippet(
   // which would load the story docs again.
   const state = useServiceStory(story.id, selectStoryPayload);
   const printHole = getPrintHole(story.parameters);
+  const service = getService('core/story-docs', { internal: true });
+  const componentId = story.id.split('--')[0]!;
+  const changed = argsChanged(args);
+  // The templates load apart from the story docs, once the args first change. They are read, not
+  // subscribed to, as a subscription would load them at once; one extraction updates them and the
+  // story docs together, which the subscription above follows.
+  const [loadedFor, setLoadedFor] = useState<string>();
+  useEffect(() => {
+    if (!changed) {
+      return;
+    }
+    let mounted = true;
+    void loadStoryTemplates(service, componentId).then(() => {
+      if (mounted) {
+        setLoadedFor(componentId);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [changed, service, componentId]);
   const data = useMemo(
-    () => selectLiveSnippetForStory(state.data, story.id, args, printHole),
-    [state.data, story.id, args, printHole]
+    () => {
+      const templates = service.queries.storyTemplates.get({ id: componentId });
+      return selectLiveSnippetForStory(
+        state.data,
+        templates ?? (loadedFor === componentId ? undefined : 'loading'),
+        story.id,
+        args,
+        printHole
+      );
+    },
+    // `loadedFor` is the trigger: the templates are read from the service, not from it.
+    [state.data, story.id, args, printHole, service, componentId, loadedFor]
   );
   return useMemo(() => ({ ...state, data }), [state, data]);
 }

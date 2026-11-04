@@ -9,7 +9,7 @@ import {
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
 
-import type { StoryDoc } from 'storybook/internal/types';
+import type { ProvidedStoryDoc } from 'storybook/internal/types';
 
 import { getCodeSnippet } from './generateCodeSnippet.ts';
 import {
@@ -137,7 +137,7 @@ export async function resolveStoryFileComponents(options: {
 }
 
 /** Snippet + metadata for one story, before output-specific shaping. */
-export type ResolvedStory = StoryDoc;
+export type ResolvedStory = ProvidedStoryDoc;
 
 /** Every story's snippet, plus the imports they need beyond the components in the file. */
 export interface ExtractedStorySnippets {

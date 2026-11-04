@@ -366,6 +366,16 @@ export type QueryDefinition<
     [],
     InferSchemaInput<TInputSchema>[] | Promise<InferSchemaInput<TInputSchema>[]>
   >;
+  /**
+   * Splits the state a static build of this query produced into one snapshot per query, keyed by
+   * query name, each written at that query's `staticPath` for the same input. Lets one load fill
+   * several files, so a query whose data is heavy and rarely read can be fetched apart from the
+   * one that loaded it. Without it, the whole state is written at this query's `staticPath`.
+   */
+  staticSnapshots?: BivariantCallback<
+    [state: TState, input: InferSchemaOutput<TInputSchema>],
+    Partial<Record<keyof TQueries & string, unknown>>
+  >;
   handler?: BivariantCallback<
     [input: InferSchemaOutput<TInputSchema>, ctx: QueryCtx<TState, TQueries>],
     InferSchemaInput<TOutputSchema>
@@ -418,6 +428,7 @@ export type AnyQueryDefinition<TState> = {
   output: AnySchema;
   staticPath?: BivariantCallback<[input: unknown], string>;
   staticInputs?: RegisteredStaticInputs<TState>;
+  staticSnapshots?: BivariantCallback<[state: TState, input: unknown], Record<string, unknown>>;
   handler?: BivariantCallback<[input: unknown, ctx: QueryCtx<TState>], unknown>;
   load?: BivariantCallback<[input: unknown, ctx: LoadCtx<TState>], void | Promise<void>>;
 };

@@ -24,6 +24,7 @@ const defaultStoryBlockId = 'story--addons-docs-codepanel--default';
 const primaryStoryBlockId = `${defaultStoryBlockId}--primary`;
 const componentId = 'addons-docs-codepanel';
 const storyDocsStaticPath = `/services/core/story-docs/${componentId}.json`;
+const storyTemplatesStaticPath = `/services/core/story-docs/templates/${componentId}.json`;
 
 const E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE = 'e2eStoryDocsBefore';
 const E2E_STORY_DOCS_HOT_UPDATE_LABEL_AFTER = 'e2eStoryDocsAfter';
@@ -186,7 +187,7 @@ test.describe('story-docs open service', () => {
   });
 
   // Runs against the dev server and the static build: once the args change, the preview fills the
-  // snippet template with them, with no server round trip.
+  // snippet template with them. The templates load once, on the first change.
   test.describe('live snippets', () => {
     const LIVE_LABEL = 'e2eLiveSnippet';
 
@@ -194,16 +195,21 @@ test.describe('story-docs open service', () => {
       await gotoCodePanelStory(page);
       await openCodePanel(page);
       await expectCodePanelToContainLabel(page, E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE);
-      // A static build serves story docs as files; changing the args must not fetch them again.
+      // A static build serves story docs and templates as files of their own: changing the args
+      // fetches the templates once, and never the story docs again. A dev server sends the
+      // templates with the story docs, so fetches neither.
       const storyDocsRequests: string[] = [];
       page.on('request', (request) => {
         if (request.url().includes('/services/core/story-docs/')) {
-          storyDocsRequests.push(request.url());
+          storyDocsRequests.push(new URL(request.url()).pathname);
         }
       });
 
       await page.getByRole('tab', { name: 'Controls' }).click();
-      await page.locator('#storybook-panel-root textarea[name=label]').fill(LIVE_LABEL);
+      const label = page.locator('#storybook-panel-root textarea[name=label]');
+      await label.fill(`${LIVE_LABEL}First`);
+      await expectPreviewButtonLabel(page, `${LIVE_LABEL}First`);
+      await label.fill(LIVE_LABEL);
       await expectPreviewButtonLabel(page, LIVE_LABEL);
 
       await openCodePanel(page);
@@ -211,7 +217,9 @@ test.describe('story-docs open service', () => {
       await expect(page.getByRole('tabpanel', { name: 'Code' })).not.toContainText(
         E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE
       );
-      expect(storyDocsRequests).toStrictEqual([]);
+      expect(storyDocsRequests).toStrictEqual(
+        runsAgainstDevServer ? [] : [storyTemplatesStaticPath]
+      );
     });
 
     test('autodocs Show code follows the controls', async ({ page }) => {
@@ -269,6 +277,17 @@ test.describe('story-docs open service', () => {
         story.snippet?.includes(E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE)
       );
       expect(defaultStory?.snippet).toContain(E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE);
+      // The story docs, which the components manifest references, leave the templates out.
+      expect(JSON.stringify(body)).not.toMatch(/"template"|⟦/);
+
+      const templatesResponse = await request.get(`${storybookUrl}${storyTemplatesStaticPath}`);
+      expect(templatesResponse.ok()).toBe(true);
+      const templates = (await templatesResponse.json()) as {
+        templates: Record<string, { stories: Record<string, string> }>;
+      };
+      expect(Object.values(templates.templates[componentId]!.stories).join('\n')).toContain(
+        `⟫label="${E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE}"⟧`
+      );
 
       await gotoAutodocsPage(page);
       await expectAutodocsDefaultSourceToContainLabel(

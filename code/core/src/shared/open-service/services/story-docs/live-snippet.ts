@@ -4,8 +4,9 @@ import { logger } from 'storybook/internal/client-logger';
 import { type PrintHole, fillTemplate } from '../../../../docs-tools/snippetTemplate.ts';
 import type { Args, Parameters } from 'storybook/internal/types';
 
+import type { StoryDocsService } from './definition.ts';
 import { prependImportToSnippet, selectSnippetForStory, selectWarningForStory } from './snippet.ts';
-import type { StoryDocsPayload } from './types.ts';
+import type { StoryDocsPayload, StoryTemplatesPayload } from './types.ts';
 
 // The preview side of story snippets, which fills a story's template with its current args. Kept
 // apart from `snippet.ts`, which the server imports too.
@@ -23,12 +24,55 @@ const storiesWarnedAbout = new Set<string>();
 // those it is written with.
 export type StoryArgs = { unmappedArgs: Args; initialArgs: Args };
 
-// Resolves the display snippet for one story with its args filled into its `template`. While the
+/** Whether a story renders with other args than those it is written with, so its template fills. */
+export const argsChanged = (args: StoryArgs | undefined) =>
+  args !== undefined && !isEqual(args.unmappedArgs, args.initialArgs);
+
+// Each component's templates load once a story of it first renders with changed args. A static
+// build serves them as a file of their own, which does not change, and a dev server keeps them
+// current with its story docs, so a component never loads them twice. By query, so each service
+// runtime loads its own.
+const templateLoads = new WeakMap<object, Map<string, Promise<void>>>();
+
+/**
+ * Loads the templates of a component's stories, which its story docs leave out, once per
+ * component. A failed load settles without them, so its snippets show the static snippet with a
+ * warning, and is tried again on the next call.
+ */
+export function loadStoryTemplates(service: StoryDocsService, componentId: string): Promise<void> {
+  const query = service.queries.storyTemplates;
+  if (query.get({ id: componentId }) !== undefined) {
+    return Promise.resolve();
+  }
+  let loads = templateLoads.get(query);
+  if (!loads) {
+    loads = new Map();
+    templateLoads.set(query, loads);
+  }
+  let load = loads.get(componentId);
+  if (!load) {
+    load = query.loaded({ id: componentId }).then(
+      () => undefined,
+      (error: unknown) => {
+        loads.delete(componentId);
+        logger.debug(`Story templates of ${componentId} unavailable: ${String(error)}`);
+      }
+    );
+    loads.set(componentId, load);
+  }
+  return load;
+}
+
+// Resolves the display snippet for one story with its args filled into its template. While the
 // story still has the args it is written with, it is the static snippet. Either comes with the
 // story's `warning`. Once the args changed, a snippet that cannot follow them is the static one with
 // a warning that says so, naming the arg where it can.
+//
+// `templates` is the component's templates, `'loading'` while they load, which shows the static
+// snippet for that moment, or `undefined` when they could not load.
 export function selectLiveSnippetForStory(
   payload: StoryDocsPayload | undefined,
+  templates: StoryTemplatesPayload | 'loading' | undefined,
   storyId: string,
   args: StoryArgs | undefined,
   printHole: PrintHole | undefined
@@ -38,21 +82,19 @@ export function selectLiveSnippetForStory(
     warning:
       [selectWarningForStory(payload, storyId), unprintable].filter(Boolean).join(' ') || undefined,
   });
-  const story = payload?.stories[storyId];
-  if (args === undefined || isEqual(args.unmappedArgs, args.initialArgs)) {
+  if (!argsChanged(args) || templates === 'loading') {
     return staticSnippet();
   }
+  const story = payload?.stories[storyId];
   const stale = story?.snippet === undefined ? undefined : NOT_FOLLOWING;
-  if (story?.template === undefined || printHole === undefined) {
+  const template = templates?.stories[storyId];
+  if (template === undefined || printHole === undefined) {
     return staticSnippet(stale);
   }
   try {
     return {
-      snippet: prependImportToSnippet(
-        payload?.import,
-        fillTemplate(story.template, args, printHole)
-      ),
-      warning: story.warning,
+      snippet: prependImportToSnippet(templates?.import, fillTemplate(template, args!, printHole)),
+      warning: story?.warning,
     };
   } catch (error) {
     // By name: a renderer may bundle its own copy of the error class.

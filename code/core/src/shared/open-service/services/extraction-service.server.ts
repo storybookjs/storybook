@@ -47,7 +47,7 @@ export const toExtractionError = (error: unknown): ExtractionError =>
     ? { name: error.name, message: error.message }
     : { name: 'Error', message: String(error) };
 
-export type RegisterExtractionServiceOptions<TPayload, TQueries, TCommands> = {
+export type RegisterExtractionServiceOptions<TPayload, TQueries, TCommands, TState = unknown> = {
   getIndex: () => Promise<StoryIndex>;
   provider: ExtractionProvider<TPayload>;
   /**
@@ -63,6 +63,11 @@ export type RegisterExtractionServiceOptions<TPayload, TQueries, TCommands> = {
   extractCommand: keyof TCommands & string;
   /** Command that extracts every component in the story index. Keyed against the service's commands. */
   extractAllCommand: keyof TCommands & string;
+  /**
+   * Writes one component's payload into state, or removes it when the provider returned none.
+   * Defaults to `state.components[id]`; a service that keeps part of a payload apart writes it here.
+   */
+  writePayload?: (state: TState, id: string, payload: TPayload | undefined) => void;
 };
 
 /**
@@ -147,9 +152,10 @@ export function registerExtractionService<
   TState extends ExtractionServiceState,
   TQueries extends Queries<TState>,
   TCommands extends Commands<TState>,
+  TPayload extends TState['components'][string] = TState['components'][string],
 >(
   definition: ServiceDefinition<TState, TQueries, TCommands>,
-  options: RegisterExtractionServiceOptions<TState['components'][string], TQueries, TCommands>
+  options: RegisterExtractionServiceOptions<TPayload, TQueries, TCommands, TState>
 ) {
   const { getIndex, provider, buildErrorPayload, queryName, extractCommand, extractAllCommand } =
     options;
@@ -187,17 +193,15 @@ export function registerExtractionService<
     return input;
   };
 
-  const writePayload = (
-    state: TState,
-    id: string,
-    payload: TState['components'][string] | undefined
-  ): void => {
-    if (payload) {
-      state.components[id] = payload;
-    } else {
-      delete state.components[id];
-    }
-  };
+  const writePayload =
+    options.writePayload ??
+    ((state: TState, id: string, payload: TPayload | undefined): void => {
+      if (payload) {
+        state.components[id] = payload;
+      } else {
+        delete state.components[id];
+      }
+    });
 
   return registerService(definition, {
     queries: {

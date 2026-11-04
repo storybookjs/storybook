@@ -9,6 +9,15 @@ export function storyDocsQueryStaticPath(id: string): string {
   return `${id}.json`;
 }
 
+/**
+ * Relative path segment for one component's templates snapshot, as returned by the
+ * `storyTemplates` query's `staticPath`. A file apart from the story docs, which the components
+ * manifest references, so neither agents nor a preview that never changes an arg fetch it.
+ */
+export function storyTemplatesQueryStaticPath(id: string): string {
+  return `templates/${id}.json`;
+}
+
 /** Logical static-store key: `core/story-docs/<id>.json`. */
 export function storyDocsStaticStorePath(id: string): string {
   return `${STORY_DOCS_SERVICE_ID}/${storyDocsQueryStaticPath(id)}`;

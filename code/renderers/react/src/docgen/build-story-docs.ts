@@ -1,4 +1,4 @@
-import type { StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
+import type { ProvidedStoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
 import { getStoryImportPathFromEntry } from 'storybook/internal/common';
 import path from 'pathe';
@@ -14,7 +14,7 @@ export interface BuildStoryDocsContext {
 }
 
 /**
- * Build a {@link StoryDocsPayload} for the stories in one CSF story file.
+ * Build a {@link ProvidedStoryDocsPayload} for the stories in one CSF story file.
  *
  * Uses {@link resolveStoryFileComponents} and {@link buildStoryDocsFromResolved} without running
  * RCM or any component docgen engine.
@@ -22,7 +22,7 @@ export interface BuildStoryDocsContext {
 export async function buildStoryDocsPayload(
   input: StoryDocsProviderInput,
   context: BuildStoryDocsContext
-): Promise<StoryDocsPayload | undefined> {
+): Promise<ProvidedStoryDocsPayload | undefined> {
   const storyFilePath = getStoryImportPathFromEntry(input.entry);
   if (!storyFilePath) {
     return undefined;

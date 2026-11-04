@@ -20,7 +20,7 @@ hole that holds what the snippet prints there. For a React story `Primary` with
 // snippet
 const Primary = () => <Button label="Go" onClick={fn()} />;
 // template
-const Primary = () => <Button⟦attr label label ~%20⟫label="Go"⟧⟦attr onClick onClick ~%20⟫onClick={fn()}⟧⟦attrs * children⟫⟧⟦close children Button⟫ />⟧;
+const Primary = () => <Button⟦attr label label ~%20⟫label="Go"⟧⟦attr onClick onClick ~%20⟫onClick={fn()}⟧⟦attrs * label onClick children⟫⟧⟦close children Button⟫ />⟧;
 ```
 
 A hole is `⟦kind arg word…⟫text⟧`. `text` is what the snippet prints in that place, `arg` the arg
@@ -50,9 +50,26 @@ only with `docgenServer` on, so with it off the parameters do not change. It pri
 
 The Code panel, Canvas › Show code and the `Source` block show the static `snippet` while a story
 has the args it is written with, and fill the template once the args change, in dev and in static
-builds alike. The story docs load once per version of a story, so an args change makes no request.
-The `warning` says what the snippet leaves out, which the filled snippet leaves out too, so it is
-shown with either.
+builds alike. The `warning` says what the snippet leaves out, which the filled snippet leaves out
+too, so it is shown with either.
+
+### Where templates are stored
+
+A template holds its whole snippet again, so it is kept apart from the story docs, which agents and
+the components manifest read:
+
+- One extraction writes the story docs under `state.components` and the templates under
+  `state.templates`; the `storyDocs` query never returns a template.
+- The `storyTemplates` query returns a component's templates. A static build writes them to
+  `core/story-docs/templates/<id>.json`, apart from `core/story-docs/<id>.json`, through the
+  `storyDocs` query's `staticSnapshots`, so one extraction fills both files.
+- The preview loads a component's templates once, the first time one of its stories renders with
+  changed args (`loadStoryTemplates`). A static build fetches the file then; a dev server already
+  sent them with the story docs. Until they load, the static snippet shows; if they cannot load, it
+  shows with a warning that it does not follow the controls.
+
+So a story whose args never change costs nothing more than its snippet, in the manifest and in the
+preview.
 
 ## Providers
 

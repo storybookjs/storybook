@@ -51,7 +51,9 @@ export type { DocgenService } from './services/docgen/definition.ts';
 export type { DocgenPayload } from './services/docgen/types.ts';
 export type { StoryDocsService } from './services/story-docs/definition.ts';
 export {
+  argsChanged,
   getPrintHole,
+  loadStoryTemplates,
   selectLiveSnippetForStory,
   type StoryArgs,
 } from './services/story-docs/live-snippet.ts';

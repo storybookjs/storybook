@@ -17,7 +17,11 @@ import {
   unwrapExpression,
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
-import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
+import type {
+  ProvidedStoryDoc,
+  ProvidedStoryDocsPayload,
+  StoryDocsProviderInput,
+} from 'storybook/internal/types';
 import { hole, withHoleSpace } from 'storybook/internal/docs-tools';
 
 import { resolve } from 'node:path';
@@ -62,7 +66,7 @@ const openStoryReferences = createStoryReferenceResolver();
 export async function buildStoryDocsPayload(
   input: StoryDocsProviderInput,
   context: BuildStoryDocsContext
-): Promise<StoryDocsPayload | undefined> {
+): Promise<ProvidedStoryDocsPayload | undefined> {
   const storyImportPath = getStoryImportPathFromEntry(input.entry);
   if (!storyImportPath) {
     return undefined;
@@ -110,7 +114,7 @@ const buildPayload = (
   csf: CsfFile,
   snippetFor: (exportName: string) => SnippetResult,
   name: string
-): StoryDocsPayload => {
+): ProvidedStoryDocsPayload => {
   const stories = Object.fromEntries(
     Object.entries(csf._stories).map(([exportName, story]) => [
       story.id,
@@ -153,7 +157,7 @@ const baseStoryDoc = (
   exportName: string,
   story: CsfFile['_stories'][string],
   result: SnippetResult
-): StoryDoc => {
+): ProvidedStoryDoc => {
   const { description, summary } = extractStoryJSDocInfo(
     csf._storyStatements[exportName],
     csf.editor
@@ -180,7 +184,7 @@ const buildStoryDoc = (
   story: CsfFile['_stories'][string],
   csf: CsfFile,
   snippetFor: (exportName: string) => SnippetResult
-): StoryDoc => {
+): ProvidedStoryDoc => {
   try {
     return baseStoryDoc(csf, exportName, story, snippetFor(exportName));
   } catch (e) {

@@ -2,8 +2,8 @@ import * as v from 'valibot';
 
 import { defineService } from 'storybook/open-service';
 import type { ServiceInstanceOf } from '../../types.ts';
-import type { StoryDocsPayload } from './types.ts';
-import { storyDocsQueryStaticPath } from './paths.ts';
+import type { StoryDocsPayload, StoryTemplatesPayload } from './types.ts';
+import { storyDocsQueryStaticPath, storyTemplatesQueryStaticPath } from './paths.ts';
 
 const storyDocsInputSchema = v.object({ id: v.string() });
 
@@ -18,7 +18,6 @@ const storyDocSchema = v.object({
   id: v.string(),
   name: v.string(),
   snippet: v.optional(v.string()),
-  template: v.optional(v.string()),
   description: v.optional(v.string()),
   summary: v.optional(v.string()),
   warning: v.optional(v.string()),
@@ -36,9 +35,22 @@ const storyDocsPayloadSchema = v.object({
 
 const storyDocsOutputSchema = v.optional(storyDocsPayloadSchema);
 
+const storyTemplatesOutputSchema = v.optional(
+  v.object({
+    import: v.optional(v.string()),
+    stories: v.record(v.string(), v.string()),
+  })
+);
+
 export type StoryDocsServiceState = {
   /** Extracted story docs keyed by component id. Populated by the `extractStoryDocs` command. */
   components: Record<string, StoryDocsPayload>;
+  /**
+   * The templates of the same extraction, keyed by component id. Kept apart from `components`, which
+   * agents and the components manifest read, so a static build writes them to a file of their own
+   * that the preview fetches only once a story's args change.
+   */
+  templates: Record<string, StoryTemplatesPayload>;
 };
 
 /**
@@ -51,7 +63,7 @@ export const storyDocsServiceDef = defineService({
   id: 'core/story-docs',
   internal: true,
   description: 'Story documentation (snippets, descriptions, imports) keyed by component id.',
-  initialState: { components: {} } as StoryDocsServiceState,
+  initialState: { components: {}, templates: {} } as StoryDocsServiceState,
   queries: {
     storyDocs: {
       description:
@@ -68,6 +80,27 @@ export const storyDocsServiceDef = defineService({
         await ctx.self.commands.extractStoryDocs(input);
       },
       staticPath: (input) => storyDocsQueryStaticPath(input.id),
+      // One extraction fills both queries; a static build writes each its own file.
+      staticSnapshots: (state, input) => ({
+        storyDocs: { components: pick(state.components, input.id) },
+        storyTemplates: { templates: pick(state.templates, input.id) },
+      }),
+    },
+    storyTemplates: {
+      description:
+        "Returns the templates of one component id's stories, which the preview fills with changed args, or undefined when not loaded.",
+      input: storyDocsInputSchema,
+      output: storyTemplatesOutputSchema,
+      handler: (input, ctx) => {
+        // Read the key first, so a payload stored after this read reaches subscribers.
+        const payload = ctx.self.state.templates[input.id];
+        return Object.hasOwn(ctx.self.state.templates, input.id) ? payload : undefined;
+      },
+      load: async (input, ctx) => {
+        await ctx.self.commands.extractStoryDocs(input);
+      },
+      // Built by the `storyDocs` query's `staticSnapshots`.
+      staticPath: (input) => storyTemplatesQueryStaticPath(input.id),
     },
     storyDocsForAllComponents: {
       description: 'Returns story-docs payloads for every component in the story index.',
@@ -82,7 +115,7 @@ export const storyDocsServiceDef = defineService({
   commands: {
     extractStoryDocs: {
       description:
-        'Resolves the story entry for a component id, runs the registered provider chain, writes the result into state, and returns it (or undefined when no provider produced story docs).',
+        'Resolves the story entry for a component id, runs the registered provider chain, writes the story docs and their templates into state, and returns the story docs (or undefined when no provider produced any).',
       input: storyDocsInputSchema,
       output: storyDocsOutputSchema,
     },
@@ -96,3 +129,7 @@ export const storyDocsServiceDef = defineService({
 });
 
 export type StoryDocsService = ServiceInstanceOf<typeof storyDocsServiceDef>;
+
+// The entry of `id` alone, or none.
+const pick = <T>(record: Record<string, T>, id: string): Record<string, T> =>
+  Object.hasOwn(record, id) ? { [id]: record[id]! } : {};

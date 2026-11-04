@@ -10,7 +10,7 @@ import type {
   ComponentManifest,
   ComponentSubcomponentManifest,
   IndexEntry,
-  StoryDocsPayload,
+  ProvidedStoryDocsPayload,
 } from 'storybook/internal/types';
 
 import path from 'pathe';
@@ -247,7 +247,7 @@ export function buildStoryDocsFromResolved({
   filterStoryIds?: ReadonlySet<string>;
   // Whether each story gets the `template` the preview fills with its args.
   withTemplate?: boolean;
-}): StoryDocsPayload {
+}): ProvidedStoryDocsPayload {
   const id = getComponentIdFromEntry(entry);
   const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 

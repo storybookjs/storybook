@@ -6,10 +6,16 @@ import {
   subscribeExtractionServiceToModuleGraphChanges,
   toExtractionError,
 } from '../extraction-service.server.ts';
-import { storyDocsServiceDef } from './definition.ts';
+import { type StoryDocsServiceState, storyDocsServiceDef } from './definition.ts';
 import { hasHoleBracket, stripHoles } from '../../../../docs-tools/snippetTemplate.ts';
 import { prependImportToSnippet } from './snippet.ts';
-import type { StoryDoc, StoryDocsPayload, StoryDocsProvider } from './types.ts';
+import type {
+  ProvidedStoryDoc,
+  ProvidedStoryDocsPayload,
+  StoryDocsPayload,
+  StoryDocsProvider,
+  StoryTemplatesPayload,
+} from './types.ts';
 
 export type RegisterStoryDocsServiceOptions = {
   /**
@@ -24,11 +30,11 @@ export type RegisterStoryDocsServiceOptions = {
   storyDocsProvider: StoryDocsProvider;
 };
 
-type FileResult = PromiseSettledResult<StoryDocsPayload | undefined>;
+type FileResult = PromiseSettledResult<ProvidedStoryDocsPayload | undefined>;
 
 // A template the preview can fill: its holes can be found, as the snippet holds no hole bracket, and
 // it prints the snippet while no arg changes.
-function withFillableTemplate(story: StoryDoc): StoryDoc {
+function withFillableTemplate(story: ProvidedStoryDoc): ProvidedStoryDoc {
   const { template, ...doc } = story;
   if (
     template === undefined ||
@@ -41,7 +47,7 @@ function withFillableTemplate(story: StoryDoc): StoryDoc {
   return doc;
 }
 
-const withFillableTemplates = (payload: StoryDocsPayload | undefined) =>
+const withFillableTemplates = (payload: ProvidedStoryDocsPayload | undefined) =>
   payload && {
     ...payload,
     stories: Object.fromEntries(
@@ -49,7 +55,7 @@ const withFillableTemplates = (payload: StoryDocsPayload | undefined) =>
     ),
   };
 
-function storyDocFromFile(entry: IndexEntry, result: FileResult): StoryDoc | undefined {
+function storyDocFromFile(entry: IndexEntry, result: FileResult): ProvidedStoryDoc | undefined {
   if (result.status === 'rejected') {
     return { id: entry.id, name: entry.name, error: toExtractionError(result.reason) };
   }
@@ -106,6 +112,35 @@ function withStoriesFromEveryFile(provider: StoryDocsProvider) {
   };
 }
 
+// Stores a payload's story docs under `components` and their templates apart, under `templates`, so
+// agents and the components manifest read the story docs without them.
+function writeStoryDocs(
+  state: StoryDocsServiceState,
+  id: string,
+  payload: ProvidedStoryDocsPayload | undefined
+) {
+  if (!payload) {
+    delete state.components[id];
+    delete state.templates[id];
+    return;
+  }
+  const stories: StoryDocsPayload['stories'] = {};
+  const templates: StoryTemplatesPayload['stories'] = {};
+  for (const [storyId, { template, ...story }] of Object.entries(payload.stories)) {
+    stories[storyId] = story;
+    if (template !== undefined) {
+      templates[storyId] = template;
+    }
+  }
+  state.components[id] = { ...payload, stories };
+  // Stored even when empty, so the preview can tell a component without templates from one whose
+  // templates did not load.
+  state.templates[id] = {
+    ...(payload.import !== undefined && { import: payload.import }),
+    stories: templates,
+  };
+}
+
 /** Registers the `core/story-docs` open service against the process-global registry. */
 export function registerStoryDocsService(options: RegisterStoryDocsServiceOptions) {
   return registerExtractionService(storyDocsServiceDef, {
@@ -121,6 +156,7 @@ export function registerStoryDocsService(options: RegisterStoryDocsServiceOption
     queryName: 'storyDocs',
     extractCommand: 'extractStoryDocs',
     extractAllCommand: 'extractAllStoryDocs',
+    writePayload: writeStoryDocs,
   });
 }
 

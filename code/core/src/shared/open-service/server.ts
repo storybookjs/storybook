@@ -14,6 +14,7 @@ import {
   registerService as registerServiceCore,
   serviceRegistryApi,
 } from './service-registry.ts';
+import { OpenServiceStaticSnapshotWithoutPathError } from '../../server-errors.ts';
 import { createServiceRuntime, resolveStaticPath } from './service-runtime.ts';
 import { validateSchema } from './service-validation.ts';
 import type {
@@ -65,7 +66,7 @@ export function registerService<
  */
 export async function buildStaticFiles(): Promise<StaticStore> {
   const store: StaticStore = {};
-  const buildTasks: Promise<BuildTaskResult[]>[] = [];
+  const buildTasks: Promise<BuildTaskResult[][]>[] = [];
 
   for (const service of getRegisteredServices() as RuntimeServiceDefinition[]) {
     for (const [queryName, query] of Object.entries(service.queries) as [
@@ -95,11 +96,32 @@ export async function buildStaticFiles(): Promise<StaticStore> {
                 name: queryName,
                 phase: 'input',
               });
-              const path = resolveStaticPath(service.id, queryName, { staticPath }, validatedInput);
-
               await buildRuntime.runLoadOnce(queryName, validatedInput);
 
-              return { path, state: buildRuntime.getStateSnapshot() };
+              const state = buildRuntime.getStateSnapshot();
+              const snapshots = query.staticSnapshots?.(state, validatedInput) ?? {
+                [queryName]: state,
+              };
+              return Object.entries(snapshots).map(([name, snapshot]) => {
+                const snapshotPath = (service.queries[name] as RuntimeQueryDefinition | undefined)
+                  ?.staticPath;
+                if (!snapshotPath) {
+                  throw new OpenServiceStaticSnapshotWithoutPathError({
+                    serviceId: service.id,
+                    name: queryName,
+                    snapshotName: name,
+                  });
+                }
+                return {
+                  path: resolveStaticPath(
+                    service.id,
+                    name,
+                    { staticPath: snapshotPath },
+                    validatedInput
+                  ),
+                  state: snapshot,
+                };
+              });
             })
           );
         })()
@@ -107,7 +129,7 @@ export async function buildStaticFiles(): Promise<StaticStore> {
     }
   }
 
-  const builtStates = (await Promise.all(buildTasks)).flat();
+  const builtStates = (await Promise.all(buildTasks)).flat(2);
 
   for (const { path, state } of builtStates) {
     store[path] = path in store ? toMerged(store[path] as object, state as object) : state;

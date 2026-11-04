@@ -18,7 +18,8 @@ import {
   attributeOrder,
   indent,
   printAttribute,
-  printSlot,
+  quoteAttributeValue,
+  slotContent,
   slotOrder,
   wrapSlotContent,
 } from '../../snippet-values.ts';
@@ -68,7 +69,7 @@ interface RenderPropValueInput {
 export interface RenderedProp {
   /** Vue template attribute. */
   attrName: string;
-  /** The code a bound attribute such as `:x`, `@x` or `v-model` holds, or none for one written whole. */
+  /** Vue template attribute value, or undefined for a bare attribute. */
   value?: string;
 }
 
@@ -157,10 +158,16 @@ function renderPropArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): Rendered
 
 /** Render a classified arg value into a Vue template attribute under a chosen attribute name. */
 function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): RenderedProp {
-  if (input.plan.kind === 'hoist') {
+  const value = unwrapExpression(input.value);
+
+  const attribute =
+    input.plan.kind === 'hoist'
+      ? undefined
+      : printAttribute(input.attributeName, snippetValueOf(value));
+  if (attribute === undefined) {
     return hoistedProp(input, ctx);
   }
-  const attribute = printAttribute(input.attributeName, snippetValueOf(input.value));
+
   return {
     attrName: marked(ctx, attributeHole(input.attributeName, input.variableName), attribute),
   };
@@ -207,11 +214,11 @@ export function renderSlotContent(
   const own = arg.returned ? { ...ctx, mark: undefined } : ctx;
 
   if (plan.kind === 'inline') {
-    return marked(
-      own,
-      { kind: 'text', slot: true, arg: arg.name },
-      printSlot(snippetValueOf(value))
-    );
+    const content = slotContent(snippetValueOf(value));
+    // Vue's whitespace condensing would alter padded text, so it hoists to an interpolation.
+    if (content !== undefined) {
+      return marked(own, { kind: 'text', slot: true, arg: arg.name }, content);
+    }
   }
 
   const bindingName = allocateBindingName(arg.name, ctx);
@@ -291,7 +298,16 @@ function toIdentifier(input: string): string {
 
 /** Format one structured attribute at the SFC print boundary. */
 export function formatRenderedProp(prop: RenderedProp): string {
-  return prop.value === undefined ? prop.attrName : `${prop.attrName}="${prop.value}"`;
+  if (prop.value === undefined) {
+    return prop.attrName;
+  }
+
+  if (!isVueExpressionAttribute(prop.attrName)) {
+    // renderPropValue hoists strings mixing both quote styles, so this value is always quotable.
+    return `${prop.attrName}=${quoteAttributeValue(prop.value)!}`;
+  }
+
+  return `${prop.attrName}="${prop.value}"`;
 }
 
 export interface ArgsBindingExpansion {
@@ -471,4 +487,8 @@ function normalizeTemplateBlock(source: string): string {
   }
 
   return lines.slice(start, end).join('\n');
+}
+
+function isVueExpressionAttribute(name: string): boolean {
+  return name.startsWith(':') || name.startsWith('@') || name.startsWith('v-');
 }

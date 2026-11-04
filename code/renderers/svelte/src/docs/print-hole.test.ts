@@ -47,6 +47,8 @@ const TEMPLATES = [
   '<Panel onclick={() => args.x} />',
   '<Panel x="written" {...args} />',
   '{#if args.x}<p>yes</p>{/if}',
+  '<Panel data={{ x }} />',
+  '<div style:color={args.x}></div>',
 ];
 
 const argsOf = (source: string): Record<string, Node> => {
@@ -64,7 +66,7 @@ const print = (code: string, value: unknown) =>
     code,
     args: argsOf(`{ x: ${printValue(value, 'x')} }`),
     typescript: false,
-    parameter: code.includes('{x}') ? { aliases: { x: 'x' } } : undefined,
+    parameter: /\{\s*x\s*\}/.test(code) ? { aliases: { x: 'x' } } : undefined,
     argsComplete: true,
   });
 

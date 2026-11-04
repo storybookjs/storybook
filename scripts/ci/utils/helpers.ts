@@ -34,6 +34,7 @@ export const compileStep = () => ({
 export const PACKED_NODE_MODULES_ARCHIVE = 'workspace-node_modules.tar.zst';
 
 const ZSTD_STREAM = `${WORKING_DIR}/scripts/ci/zstd-stream.mjs`;
+const EXTRACT_SANDBOX = `${WORKING_DIR}/scripts/ci/extract-sandbox.mjs`;
 
 /**
  * The generated sandboxes get the same treatment: they are mostly
@@ -153,18 +154,26 @@ export const workspace = {
     };
   },
   unpackSandbox: (id: string, root = LINUX_ROOT_DIR) => {
+    // Windows extracts via Node: bsdtar cannot convert pax UTF-8 path records
+    // outside the system code page (it skips them as "empty or unreadable
+    // filename" and fails the step), while Node's UTF-16 filesystem handles
+    // every name. Linux keeps GNU tar, which reads UTF-8 natively and needs
+    // the uid semantics below. Requires node_modules (guaranteed: every
+    // Windows job runs `yarn install` in restoreWindows before this step).
+    const extract =
+      root === WINDOWS_ROOT_DIR
+        ? `node ${EXTRACT_SANDBOX} ${sandboxArchive(id)}`
+        : // --no-same-owner matches attach_workspace semantics: extraction as
+          // root (the Playwright image) must not preserve the create job's uid,
+          // or git refuses to operate on the sandbox repo ("dubious ownership")
+          // and the change-detection feature and its E2E tests break.
+          `node ${ZSTD_STREAM} decompress < ${sandboxArchive(id)} | tar --extract --no-same-owner`;
+
     return {
       run: {
         name: 'Unpack sandbox from workspace',
         working_directory: root,
-        // --no-same-owner matches attach_workspace semantics: extraction as
-        // root (the Playwright image) must not preserve the create job's uid,
-        // or git refuses to operate on the sandbox repo ("dubious ownership")
-        // and the change-detection feature and its E2E tests break.
-        command: [
-          'node --version',
-          `node ${ZSTD_STREAM} decompress < ${sandboxArchive(id)} | tar --extract --no-same-owner`,
-        ].join('\n'),
+        command: ['node --version', extract].join('\n'),
       },
     };
   },

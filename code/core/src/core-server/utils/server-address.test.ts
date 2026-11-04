@@ -1,3 +1,5 @@
+import os from 'node:os';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -14,14 +16,14 @@ import {
 vi.mock('node:os', () => ({
   default: {
     release: () => '',
-    networkInterfaces: () => ({
+    networkInterfaces: vi.fn(() => ({
       lo: [{ address: '127.0.0.1', family: 'IPv4', internal: true }],
       eth0: [
         { address: '192.168.1.100', family: 'IPv4', internal: false },
         { address: 'fe80::1', family: 'IPv6', internal: false },
       ],
       wlan0: [{ address: '192.130.20.4', family: 'IPv4', internal: false }],
-    }),
+    })),
   },
   platform: 'darwin',
   constants: {
@@ -98,6 +100,24 @@ describe('getServerPort', () => {
     const result = await getServerPort(port);
 
     expect(result).toBe(expectedFreePort);
+    expect(detectPort).toHaveBeenLastCalledWith(port);
+  });
+
+  it('should probe the listen host when the network interfaces cannot be read', async () => {
+    vi.mocked(detectPort).mockResolvedValue(port);
+    vi.mocked(os.networkInterfaces).mockImplementationOnce(() => {
+      throw new Error('uv_interface_addresses returned Unknown system error 1');
+    });
+
+    expect(await getServerPort(port, { host: '0.0.0.0' })).toBe(port);
+    expect(detectPort).toHaveBeenLastCalledWith({ port, hostname: '0.0.0.0' });
+
+    vi.mocked(os.networkInterfaces).mockImplementationOnce(() => {
+      throw new Error('uv_interface_addresses returned Unknown system error 1');
+    });
+
+    await getServerPort(port);
+    expect(detectPort).toHaveBeenLastCalledWith({ port, hostname: '127.0.0.1' });
   });
 
   it('should reject with an actionable error when no port can be bound', async () => {

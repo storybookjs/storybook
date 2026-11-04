@@ -58,10 +58,24 @@ export function getServerAddresses(
 
 interface PortOptions {
   exactPort?: boolean;
+  host?: string;
 }
 
-export const getServerPort = (port?: number, { exactPort }: PortOptions = {}) =>
-  detectFreePort(port)
+// Without a hostname, detect-port reads the network interfaces in a listen callback, where a
+// throw cannot be caught. Probe the listen host directly when the interfaces cannot be read.
+const canReadNetworkInterfaces = () => {
+  try {
+    os.networkInterfaces();
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const getServerPort = (port?: number, { exactPort, host }: PortOptions = {}) =>
+  detectFreePort(
+    canReadNetworkInterfaces() ? port : { port, hostname: getListenHost(host) }
+  )
     .catch((error) => {
       logger.error(error);
       process.exit(-1);

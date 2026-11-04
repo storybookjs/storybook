@@ -264,6 +264,54 @@ describe('TestManager', () => {
     expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests, true);
   });
 
+  it('should run indexed story files that Vitest has not picked up yet', async () => {
+    // A story file created outside the Vite root after startup: Storybook indexed it, but Vitest's
+    // cached test file list doesn't contain it because its watcher never reported the file.
+    const newFile = path.join(process.cwd(), 'path/to/new/file');
+    const storybookProject = {
+      config: { env: { __STORYBOOK_URL__: 'http://localhost:6006' } },
+    };
+    const knownFiles = [...tests];
+    const newTest = { project: storybookProject, moduleId: newFile };
+    const matchesTestGlob = vi.fn((moduleId: string) => {
+      if (moduleId === newFile) {
+        knownFiles.push(newTest);
+        return true;
+      }
+      return false;
+    });
+    vitest.projects = [{ ...storybookProject, matchesTestGlob }] as any;
+    vitest.globTestSpecifications.mockImplementation(() => [...knownFiles]);
+
+    const testManager = await startWithIndex();
+    testManager.storyIndex = {
+      ...mockIndex,
+      entries: {
+        ...mockIndex.entries,
+        'new--story': {
+          type: 'story',
+          subtype: 'story',
+          id: 'new--story',
+          name: 'Story',
+          title: 'new',
+          importPath: 'path/to/new/file',
+          tags: [Tag.TEST],
+        },
+      },
+    };
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds: ['story--one', 'new--story'],
+        triggeredBy: 'global',
+      },
+    });
+
+    expect(matchesTestGlob).toHaveBeenCalledWith(newFile);
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith([tests[0], newTest], true);
+  });
+
   it('should provide merged config override before running tests', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
     const testManager = await startWithIndex();

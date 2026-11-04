@@ -407,8 +407,8 @@ export class VitestManager {
 
     await this.cancelCurrentRun();
 
-    const testSpecifications = await this.getStorybookTestSpecifications();
     const allStories = this.getStories();
+    const testSpecifications = await this.getStorybookTestSpecifications(allStories);
 
     const filteredStories = runPayload.storyIds
       ? allStories.filter((story) => runPayload.storyIds?.includes(story.id))
@@ -443,8 +443,32 @@ export class VitestManager {
     await this.runningPromise;
   }
 
-  async getStorybookTestSpecifications() {
-    const globTestSpecifications = (await this.vitest?.globTestSpecifications()) ?? [];
+  async getStorybookTestSpecifications(stories: StoryIndexEntry[] = []) {
+    let globTestSpecifications = (await this.vitest?.globTestSpecifications()) ?? [];
+
+    // Vitest caches its list of test files after the first glob and only adds new files when its
+    // Vite watcher reports them. Story files created outside the Vite root after startup never
+    // reach that watcher, even though Storybook has already indexed them. Register any indexed
+    // story file Vitest doesn't know about yet, so it doesn't get silently dropped from the run.
+    const knownModuleIds = new Set(globTestSpecifications.map((spec) => spec.moduleId));
+    const storybookProjects = this.vitest?.projects.filter((p) => this.isStorybookProject(p)) ?? [];
+    let addedTestFiles = false;
+    for (const story of stories) {
+      const moduleId = path.join(process.cwd(), story.importPath);
+      if (knownModuleIds.has(moduleId)) {
+        continue;
+      }
+      knownModuleIds.add(moduleId);
+      for (const project of storybookProjects) {
+        if (project.matchesTestGlob(moduleId)) {
+          addedTestFiles = true;
+        }
+      }
+    }
+    if (addedTestFiles) {
+      globTestSpecifications = (await this.vitest?.globTestSpecifications()) ?? [];
+    }
+
     return (
       globTestSpecifications.filter((workspaceSpec) =>
         this.isStorybookProject(workspaceSpec.project)
@@ -615,6 +639,6 @@ export class VitestManager {
   }
 
   isStorybookProject(project: TestProject) {
-    return !!project.config.env?.__STORYBOOK_URL__;
+    return !!project.config?.env?.__STORYBOOK_URL__;
   }
 }

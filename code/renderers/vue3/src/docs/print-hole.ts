@@ -39,7 +39,7 @@ export const printHole: PrintHole<VueHolePlace> = (hole, value) => {
     }
     case 'props':
       return Object.entries(value as Args)
-        .filter(([name]) => !hole.except.includes(name))
+        .filter(([name, item]) => item !== undefined && !hole.except.includes(name))
         .sort(([a], [b]) => attributeOrder(a, b))
         .map(([name, item]) =>
           hole.merge?.includes(name)
@@ -48,7 +48,7 @@ export const printHole: PrintHole<VueHolePlace> = (hole, value) => {
         )
         .join(' ');
     case 'slots': {
-      const set = hole.slots.filter((name) => Object.hasOwn(value as Args, name)).sort(slotOrder);
+      const set = hole.slots.filter((name) => (value as Args)[name] !== undefined).sort(slotOrder);
       if (set.length === 0) {
         return hole.tag ? ' />' : '';
       }

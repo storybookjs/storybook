@@ -41,11 +41,7 @@ import {
   stripHoles,
   withHoleSpace,
 } from 'storybook/internal/docs-tools';
-import type {
-  ProvidedStoryDoc,
-  ProvidedStoryDocsPayload,
-  StoryDocsProviderInput,
-} from 'storybook/internal/types';
+import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 
 import {
@@ -108,7 +104,7 @@ const UNRENDERED_WARNINGS: Record<Exclude<StaticStoryRenderer, { kind: 'bail' }>
   };
 
 type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
-type ExtractStoriesResult = { stories: Record<string, ProvidedStoryDoc> };
+type ExtractStoriesResult = { stories: Record<string, StoryDoc> };
 type StaticStoryRenderer =
   | { kind: 'bail'; warning: string }
   | { kind: 'h'; argsParam?: string; expression: E.Expression }
@@ -132,7 +128,7 @@ type StaticStoryArgs = {
 export async function buildStoryDocsPayload(
   input: StoryDocsProviderInput,
   context: BuildStoryDocsContext = {}
-): Promise<ProvidedStoryDocsPayload | undefined> {
+): Promise<StoryDocsPayload | undefined> {
   const storyFilePath = getStoryImportPathFromEntry(input.entry);
   if (!storyFilePath || !STORY_FILE_TEST_REGEXP.test(storyFilePath)) {
     return undefined;
@@ -272,17 +268,17 @@ function vueDocgenArgInfo(payload: DocgenPayload): VueDocgenArgInfo {
 }
 
 /**
- * Maps every CSF story export to its ProvidedStoryDoc, enriched with a snippet or error where
+ * Maps every CSF story export to its StoryDoc, enriched with a snippet or error where
  * possible.
  */
 function extractStories(csf: ParsedCsf, options: StoryDocsContext): ExtractStoriesResult {
   const stories = Object.fromEntries(
-    Object.entries(csf._stories).map(([storyExport, story]): [string, ProvidedStoryDoc] => {
+    Object.entries(csf._stories).map(([storyExport, story]): [string, StoryDoc] => {
       const { description, summary } = extractStoryJSDocInfo(
         csf._storyStatements[storyExport],
         csf.editor
       );
-      const storyDoc: ProvidedStoryDoc = {
+      const storyDoc: StoryDoc = {
         id: story.id,
         name: story.name ?? storyNameFromExport(storyExport),
         description,
@@ -309,11 +305,11 @@ function extractStories(csf: ParsedCsf, options: StoryDocsContext): ExtractStori
 function enrichStoryDoc(
   csf: ParsedCsf,
   storyExport: string,
-  storyDoc: ProvidedStoryDoc,
+  storyDoc: StoryDoc,
   options: StoryDocsContext
-): ProvidedStoryDoc {
+): StoryDoc {
   const plain = storyDoc;
-  const withWarning = (warning: string | undefined): ProvidedStoryDoc =>
+  const withWarning = (warning: string | undefined): StoryDoc =>
     warning ? { ...storyDoc, warning } : plain;
 
   if (!options.snippet) {

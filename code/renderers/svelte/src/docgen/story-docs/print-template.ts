@@ -58,7 +58,11 @@ export function printTemplate({
     typescript,
     argsComplete,
   };
-  const isArgsSpread = (attribute: SvelteAST.Component['attributes'][number]) =>
+  // The walker's `attributes` arrays hold both Svelte attribute kinds and estree import
+  // attributes, so the guard starts from the wide node union and narrows to one kind.
+  const isArgsSpread = (
+    attribute: SvelteAST.SvelteNode | E.ImportAttribute
+  ): attribute is SvelteAST.SpreadAttribute =>
     attribute.type === 'SpreadAttribute' &&
     attribute.expression.type === 'Identifier' &&
     attribute.expression.name === name;
@@ -76,8 +80,7 @@ export function printTemplate({
         element &&
         'attributes' in element &&
         element.attributes.some(
-          (attribute: SvelteAST.Component['attributes'][number]) =>
-            isArgsSpread(attribute) && attribute.start > node.start
+          (attribute) => isArgsSpread(attribute) && attribute.start > node.start
         )
       ) {
         edits.push({
@@ -102,7 +105,7 @@ export function printTemplate({
           : [];
       const written = new Set([
         ...(element && 'attributes' in element
-          ? element.attributes.flatMap((attribute: SvelteAST.Component['attributes'][number]) =>
+          ? element.attributes.flatMap((attribute) =>
               attribute.type === 'Attribute' || attribute.type === 'BindDirective'
                 ? [attribute.name]
                 : []
@@ -134,7 +137,11 @@ export function printTemplate({
         });
       } else {
         const close = code.lastIndexOf('</', end - 1);
-        edits.push({ start: close, end: close, value: `${children.join('\n')}\n` });
+        edits.push({
+          start: close,
+          end: close,
+          value: `${children.join('\n')}\n`,
+        });
       }
     },
     ExpressionTag(node, { path }) {
@@ -156,7 +163,10 @@ export function printTemplate({
         edits.push({ ...at(parent), value: `${parent.name}="${text}"` });
       } else if (parent?.type === 'Attribute' && code[at(parent).start] === '{') {
         // `{label}` names the attribute after the variable it reads.
-        edits.push({ ...at(parent), value: `${parent.name}={${replaced.value}}` });
+        edits.push({
+          ...at(parent),
+          value: `${parent.name}={${replaced.value}}`,
+        });
       } else if (text !== undefined && quoted && !/[{}]/.test(text)) {
         edits.push({ ...at(node), value: escapeAttribute(text) });
       } else if (text !== undefined && parent?.type === 'Fragment' && !/[{}<>"\\&]/.test(text)) {
@@ -232,21 +242,19 @@ function blockExpressions(node: SvelteAST.SvelteNode): object[] {
     case 'HtmlTag':
     case 'RenderTag':
     case 'SpreadAttribute':
+    case 'AttachTag':
       return [node.expression];
-    // `{@attach}` is newer than the AST types.
-    case 'AttachTag' as SvelteAST.SvelteNode['type']:
-      return [(node as unknown as { expression: object }).expression];
     case 'ConstTag':
       return node.declaration.declarations.flatMap((declaration) =>
         declaration.init ? [declaration.init] : []
       );
     case 'ClassDirective':
-    case 'StyleDirective':
     case 'OnDirective':
     case 'UseDirective':
     case 'TransitionDirective':
     case 'AnimateDirective':
-      return node.expression && typeof node.expression === 'object' ? [node.expression] : [];
+      // `on:`, `use:`, `transition:` and `animate:` may omit their parameter expression.
+      return node.expression ? [node.expression] : [];
     default:
       return [];
   }
@@ -276,7 +284,11 @@ function replaceArgsReads(
       if (!keys?.length) return;
       if (!(keys[0] in args)) {
         if (!argsComplete) return;
-        edits.push({ start: node.start - 1, end: node.end - 1, value: 'undefined' });
+        edits.push({
+          start: node.start - 1,
+          end: node.end - 1,
+          value: 'undefined',
+        });
         return false;
       }
       edits.push({
@@ -313,7 +325,10 @@ function replaceArgsReads(
     only.node.value.trim()
       ? only.node.value
       : undefined;
-  return { value: applyEdits(expression, edits), ...(text !== undefined ? { text } : {}) };
+  return {
+    value: applyEdits(expression, edits),
+    ...(text !== undefined ? { text } : {}),
+  };
 }
 
 // `['a', 'b']` for `args.a.b`, when `args` is the story args and not a local binding.

@@ -1,6 +1,8 @@
 import { parse } from 'svelte/compiler';
 
-import type { ESTreeAST } from '../../svelte-csf/parser/ast.ts';
+import { type ESTreeAST, type Span, span } from '../../svelte-csf/parser/ast.ts';
+
+export { span, type Span };
 
 // Parse story markup on its own. Svelte reads TypeScript in markup only when the source has a
 // `<script lang="ts">`, so a TypeScript story file gets one in front, and `offset` maps positions
@@ -38,20 +40,7 @@ export function patternNames(pattern: ESTreeAST.Node | null | undefined): string
   }
 }
 
-export type Span = { start: number; end: number };
 export type Edit = Span & { value: string };
-
-export function span(node: object): Span {
-  if (
-    'start' in node &&
-    typeof node.start === 'number' &&
-    'end' in node &&
-    typeof node.end === 'number'
-  ) {
-    return { start: node.start, end: node.end };
-  }
-  throw new TypeError('Svelte AST node has no source positions');
-}
 
 export function applyEdits(code: string, edits: Edit[]): string {
   for (const edit of [...edits].sort((a, b) => b.start - a.start)) {

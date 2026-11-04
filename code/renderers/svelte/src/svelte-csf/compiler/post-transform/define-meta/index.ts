@@ -5,7 +5,7 @@ import { replaceDefineMetaArgument } from './replace-argument.ts';
 import { insertDefineMetaParameters } from './insert-parameters.ts';
 
 import { STORYBOOK_META_IDENTIFIER } from '../../../constants.ts';
-import { createASTIdentifier, type ESTreeAST } from '../../../parser/ast.ts';
+import { createASTIdentifier, span, type ESTreeAST } from '../../../parser/ast.ts';
 import type { CompiledASTNodes } from '../../../parser/extract/compiled/nodes.ts';
 import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.ts';
 
@@ -29,21 +29,23 @@ export function transformDefineMeta(params: Params): void {
   }
 
   const metaObjectExpression = replaceDefineMetaArgument({ nodes, filename });
-  const metaVariableDeclaration = createMetaVariableDeclaration({ init: metaObjectExpression });
+  const metaVariableDeclaration = createMetaVariableDeclaration({
+    init: metaObjectExpression,
+  });
 
   const { compiled } = nodes;
   const { defineMetaVariableDeclaration } = compiled;
-  const { start, end } = defineMetaVariableDeclaration;
+  const { start, end } = span(defineMetaVariableDeclaration);
 
-  code.update(start as number, end as number, print(defineMetaVariableDeclaration).code);
-  code.appendLeft(start as number, print(metaVariableDeclaration).code + '\n');
+  code.update(start, end, print(defineMetaVariableDeclaration).code);
+  code.appendLeft(start, print(metaVariableDeclaration).code + '\n');
 }
 
 // Names the meta `$__meta`, unless the file already does, so that the stories can call `meta.story()`
 function transformFactoryMeta(params: Params): void {
   const { code, nodes } = params;
   const { defineMetaVariableDeclaration, metaIdentifier } = nodes.compiled;
-  const { start, end } = defineMetaVariableDeclaration;
+  const { start, end } = span(defineMetaVariableDeclaration);
   const [declarator] = defineMetaVariableDeclaration.declarations;
   let printed = '';
 
@@ -52,7 +54,7 @@ function transformFactoryMeta(params: Params): void {
     declarator.init = createASTIdentifier(STORYBOOK_META_IDENTIFIER);
   }
 
-  code.update(start as number, end as number, printed + print(defineMetaVariableDeclaration).code);
+  code.update(start, end, printed + print(defineMetaVariableDeclaration).code);
 }
 
 export function createMetaVariableDeclaration({

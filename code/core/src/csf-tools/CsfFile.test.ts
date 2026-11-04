@@ -6,13 +6,7 @@ import { logger } from 'storybook/internal/node-logger';
 import yaml from 'js-yaml';
 import { dedent } from 'ts-dedent';
 
-import {
-  type CsfOptions,
-  formatCsf,
-  isModuleMock,
-  loadCsf,
-  printCsf,
-} from './CsfFile.ts';
+import { type CsfOptions, formatCsf, isModuleMock, loadCsf, printCsf } from './CsfFile.ts';
 import { parseExpression } from './estree/ast.ts';
 
 expect.addSnapshotSerializer({

@@ -13,7 +13,6 @@ Type:
 ```ts
 {
   actions?: boolean;
-  argTypeTargetsV7?: boolean;
   babelRemoveBugfixes?: boolean; // webpack only
   backgrounds?: boolean;
   componentsManifest?: boolean;
@@ -41,7 +40,6 @@ Type:
 {
   actions?: boolean;
   angularFilterNonInputControls?: boolean;
-  argTypeTargetsV7?: boolean;
   babelRemoveBugfixes?: boolean; // webpack only
   backgrounds?: boolean;
   componentsManifest?: boolean;
@@ -66,7 +64,6 @@ Type:
 ```ts
 {
   actions?: boolean;
-  argTypeTargetsV7?: boolean;
   babelRemoveBugfixes?: boolean; // webpack only
   backgrounds?: boolean;
   componentsManifest?: boolean;
@@ -91,7 +88,6 @@ Type:
 ```ts
 {
   actions?: boolean;
-  argTypeTargetsV7?: boolean;
   babelRemoveBugfixes?: boolean; // webpack only
   backgrounds?: boolean;
   controls?: boolean;
@@ -115,7 +111,6 @@ Type:
 ```ts
 {
   actions?: boolean;
-  argTypeTargetsV7?: boolean;
   babelRemoveBugfixes?: boolean; // webpack only
   backgrounds?: boolean;
   controls?: boolean;
@@ -157,18 +152,6 @@ Setting both leaves `propsTable` in charge.
 `@storybook/angular` still reads this feature and is unaffected.
 
 </If>
-
-## `argTypeTargetsV7`
-
-(⚠️ **Experimental**)
-
-Type: `boolean`
-
-Default: `true`
-
-Filter args with a "target" on the type from the render function.
-
-<CodeSnippets path="main-config-features-arg-type-targets-v7.md" />
 
 ## `babelRemoveBugfixes`
 
@@ -260,9 +243,31 @@ Unlike the current implementation, this method reads the actual stories source f
 
 Type: `boolean`
 
-Default: `true` when the framework ships a server-side docgen provider: every React and Vue 3 framework, `@storybook/angular-vite`, and `@storybook/web-components-vite`. `false` otherwise.
+Default: `true` for React and Vue 3 when the `typescript` package is installed; `true` for `@storybook/angular-vite`, `@storybook/web-components-vite`, and community frameworks that support the docgen server; `false` for other frameworks.
 
-React and Vue 3 extract component metadata with TypeScript, so for them the default is only `true` when the `typescript` package is installed. A JavaScript project without it keeps builder docgen.
+</If>
+
+<If renderer="react">
+
+<Callout variant="info" icon="💡">
+
+When the `typescript` package is not installed, React falls back to builder docgen only when `react-docgen` is installed. Otherwise, Controls and the Docs args table show no props.
+
+</Callout>
+
+</If>
+
+<If renderer="vue">
+
+<Callout variant="info" icon="💡">
+
+When the `typescript` package is not installed, Vue 3 falls back to builder docgen.
+
+</Callout>
+
+</If>
+
+<If renderer={['react','angular','vue','web-components']}>
 
 Enable server-side docgen. Storybook extracts component metadata on the dev server using the TypeScript Language Service instead of injecting docgen into the preview bundle. This provides faster startup, more accurate [Controls](../../essentials/controls.mdx) and ArgTypes tables in [autodocs](../../writing-docs/autodocs.mdx), and improved static code snippets in docs and the Code panel. [Manifests](../../ai/manifests.mdx) and the [MCP server](../../ai/mcp/overview.mdx) use an optimized, ref-based format that loads faster for AI agents.
 
@@ -298,7 +303,7 @@ On `@storybook/angular-vite`, `framework.options.compodoc: false` only prevents 
 
 Type: `boolean`
 
-Enable the [experimental `.test` method with the CSF Next format](../csf/csf-next.mdx#storytest).
+Enable the [experimental `.test` method with the CSF 4 format](../../writing-stories/csf/api.mdx#storytest).
 
 <CodeSnippets path="main-config-features-experimental-test-syntax.md" />
 

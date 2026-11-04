@@ -45,6 +45,7 @@ export const metaFrameworks = {
   '@nrwl/storybook': 'nx',
   '@vue/cli-service': 'vue-cli',
   '@sveltejs/kit': 'sveltekit',
+  astro: 'astro',
   '@tanstack/react-router': 'tanstack-react',
   '@react-router/dev': 'react-router',
   '@remix-run/dev': 'remix',

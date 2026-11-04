@@ -3,9 +3,21 @@ import type {
   TypescriptOptions as TypescriptOptionsBase,
   WebpackConfiguration as WebpackConfigurationBase,
 } from '@storybook/core-webpack';
-import type { PluginOptions as ReactDocgenTypescriptOptions } from '@storybook/react-docgen-typescript-plugin';
+import type { ReactDocgenTypescriptParserOptions } from '@storybook/react';
 
 export type { BuilderResult } from '@storybook/core-webpack';
+
+/** Options of `@storybook/react-docgen-typescript-plugin`, copied from its declarations. */
+export type ReactDocgenTypescriptOptions = ReactDocgenTypescriptParserOptions & {
+  docgenCollectionName?: string | null;
+  setDisplayName?: boolean;
+  typePropName?: string;
+  tsconfigPath?: string;
+  /** TypeScript `CompilerOptions`. */
+  compilerOptions?: Record<string, any>;
+  exclude?: string[];
+  include?: string[];
+};
 
 export interface ReactOptions {
   strictMode?: boolean;

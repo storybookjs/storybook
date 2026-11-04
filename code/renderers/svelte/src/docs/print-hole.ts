@@ -9,6 +9,7 @@ import type { Args } from 'storybook/internal/types';
 import {
   type PropValue,
   type SvelteHolePlace,
+  printAccessors,
   printProp,
   printSpreadAttribute,
   printWholeRead,
@@ -19,12 +20,6 @@ import {
 // `SvelteHolePlace` for what each place is.
 export const printHole: PrintHole<SvelteHolePlace> = (hole, value) => {
   const arg = hole.arg ?? '';
-  const read = () => {
-    const code = printValue(value, arg);
-    // As in `-args.n` or `() => args.o`, a negative number or an object literal needs parentheses.
-    const object = typeof value === 'object' && value !== null && !Array.isArray(value);
-    return object || (typeof value === 'number' && value < 0) ? `(${code})` : code;
-  };
   switch (hole.kind) {
     case 'prop':
       return printProp(arg, propValue(value, arg));
@@ -33,24 +28,52 @@ export const printHole: PrintHole<SvelteHolePlace> = (hole, value) => {
         .filter(([name]) => !hole.except.includes(name))
         .map(([name, item]) => printProp(name, propValue(item, name)))
         .filter(Boolean)
-        .join(' ');
+        .join(hole.separator ?? ' ');
     case 'spreadattr':
       return printSpreadAttribute(arg, propValue(value, arg));
+    case 'overwritten':
+      // The attribute would follow both this arg and the args it reads, but a hole reads one arg.
+      throw new UnprintableArgError(arg);
     case 'value':
-      return read();
+      return printRead(value, arg, hole.path).code;
     case 'property':
-      return `${hole.name ?? arg}: ${read()}`;
+      return `${hole.name ?? arg}: ${printRead(value, arg).code}`;
     case 'attrvalue':
     case 'quoted':
     case 'fragment':
-    case 'code':
-      return printWholeRead(hole, arg, read(), typeof value === 'string' ? value : undefined);
-    case 'member':
-      throw new UnprintableArgError(arg);
+    case 'code': {
+      const { code, string } = printRead(value, arg, hole.path);
+      return printWholeRead(hole, arg, code, string);
+    }
     default:
       return unknownHoleKind(hole);
   }
 };
+
+// A read of an arg, or of the member `path` of it, as the snippet prints one of an arg the story
+// writes as an object literal: a member of an object prints as the value it holds, any other keeps
+// its accessors. `string` is the string the read prints, if any.
+function printRead(
+  value: unknown,
+  arg: string,
+  path: string[] = []
+): { code: string; string?: string } {
+  let rest = path;
+  while (rest.length && isObject(value) && Object.hasOwn(value, rest[0])) {
+    value = value[rest[0]];
+    rest = rest.slice(1);
+  }
+  const code = printValue(value, arg);
+  // As in `-args.n`, `() => args.o` or `args.o.a`, a negative number or an object needs parentheses.
+  const object = isObject(value);
+  const wrapped = object || (typeof value === 'number' && value < 0) ? `(${code})` : code;
+  return rest.length
+    ? { code: `${wrapped}${printAccessors(rest)}` }
+    : { code: wrapped, ...(typeof value === 'string' && { string: value }) };
+}
+
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 // An arg as a spread prints it: left out while unset.
 function propValue(value: unknown, name: string): PropValue {

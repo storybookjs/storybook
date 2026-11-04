@@ -19,6 +19,7 @@ import {
   type PropValue,
   type SvelteHolePlace,
   type WholeReadPlace,
+  printAccessors,
   printProp,
   printSpreadAttribute,
   printWholeRead,
@@ -107,11 +108,17 @@ export function printTemplate({
           element.attributes.some(
             (attribute) => isArgsSpread(attribute) && attribute.start > node.start
           );
+        if (!spreadAfter) {
+          next();
+          return;
+        }
+        const argReads = (Array.isArray(node.value) ? node.value : [node.value]).flatMap((part) =>
+          part !== true && part.type === 'ExpressionTag'
+            ? (replaceArgsReads(written(at(part.expression)), reads) ?? [])
+            : []
+        );
         // The spread writes over it with the arg, or leaves it as written while the arg is unset.
-        const readsNoArgs =
-          node.value === true ||
-          (Array.isArray(node.value) && node.value.every((part) => part.type === 'Text'));
-        if (spreadAfter && (node.name in args || readsNoArgs)) {
+        if (node.name in args || !argReads.length) {
           const range = at(node);
           const value =
             node.name in args
@@ -123,6 +130,19 @@ export function printTemplate({
             marked: mark({ kind: 'spreadattr', arg: node.name }, value),
           });
           return;
+        }
+        // Its reads follow their args. Unless it is a whole read of the arg it names, which the
+        // spread writes over it with, it cannot also follow that arg.
+        const ownRead = ({ single }: (typeof argReads)[number]) =>
+          single?.arg === node.name && !single.path;
+        if (!argReads.every(ownRead)) {
+          const { end } = at(node);
+          edits.push({
+            start: end,
+            end,
+            value: '',
+            marked: mark({ kind: 'overwritten', arg: node.name }, ''),
+          });
         }
         next();
       },
@@ -192,7 +212,7 @@ export function printTemplate({
           return;
         }
         // One whole read prints as text or code by its value, so its hole holds the whole place.
-        const { arg, deep, string } = replaced.single;
+        const { arg, path: members, string } = replaced.single;
         const parent = path.at(-1);
         const attribute = parent?.type === 'Attribute' ? parent : undefined;
         const place = attribute?.value === node ? at(attribute) : at(node);
@@ -207,13 +227,14 @@ export function printTemplate({
             ...(attribute.name !== arg && { name: attribute.name }),
             before: shorthand ? `${attribute.name}={` : before,
             after: shorthand ? '}' : after,
+            ...(members && { path: members }),
           };
         } else {
           const quoted =
             attribute !== undefined &&
             /=\s*["']/.test(code.slice(at(attribute).start, range.start));
           const kind = quoted ? 'quoted' : parent?.type === 'Fragment' ? 'fragment' : 'code';
-          wholeRead = { kind, before, after };
+          wholeRead = { kind, before, after, ...(members && { path: members }) };
         }
         const value = replaced.substituted
           ? printWholeRead(wholeRead, arg, replaced.value, string)
@@ -221,7 +242,7 @@ export function printTemplate({
         edits.push({
           ...place,
           value,
-          marked: mark(deep ? { kind: 'member', arg } : { ...wholeRead, arg }, value),
+          marked: mark({ ...wholeRead, arg }, value),
         });
       },
       _(node, { next }) {
@@ -299,8 +320,13 @@ function spreadPlace(
   const onePerLine = values.join(' ').length > 50;
   const separator = onePerLine ? '\n  ' : ' ';
   const holes = props.map(([arg, prop]) => mark({ kind: 'prop', arg }, prop));
+  // The args a control adds stand `space` apart, as the props of the spread do.
   const added = (space: string) =>
-    mark({ kind: 'props', except: printed, spread: true }, '', space);
+    mark(
+      { kind: 'props', except: printed, spread: true, ...(space !== ' ' && { separator: space }) },
+      '',
+      space
+    );
   const { end } = span;
   let { start } = span;
   if (onePerLine) while (start > 0 && /[ \t]/.test(code[start - 1])) start--;
@@ -318,7 +344,7 @@ function spreadPlace(
   const lineStart = code.lastIndexOf('\n', start - 1) + 1;
   const lineEnd = code.indexOf('\n', end);
   if (lineEnd !== -1 && !code.slice(lineStart, start).trim() && !code.slice(end, lineEnd).trim()) {
-    // The line goes, so the args a control adds go on a line of their own.
+    // The line goes, so the args a control adds go on lines of their own.
     return {
       start: lineStart - 1,
       end: lineEnd,
@@ -367,7 +393,7 @@ function blockExpressions(node: SvelteAST.SvelteNode): object[] {
 // return `undefined` when the expression reads no story args. A read of an arg the story does not
 // set stays as written, unless `argsComplete`; `substituted` says whether any read was replaced.
 // `marked` has a hole for each read, and `single` is set when the expression is one whole read: its
-// arg, whether it reads a member of that arg, and the `string` it reads, if any.
+// arg, the `path` of the member of it that it reads, if any, and the `string` it reads, if any.
 function replaceArgsReads(
   expression: string,
   { args, name, aliases, typescript, argsComplete, mark }: Reads
@@ -376,7 +402,7 @@ function replaceArgsReads(
       value: string;
       marked: string;
       substituted: boolean;
-      single?: { arg: string; deep: boolean; string?: string };
+      single?: { arg: string; path?: string[]; string?: string };
     }
   | undefined {
   // The parentheses let an object literal or a sequence parse as one expression.
@@ -394,7 +420,7 @@ function replaceArgsReads(
     start: number,
     end: number,
     read: { value: string; node?: Node } | undefined,
-    { deep = false, property }: { deep?: boolean; property?: string } = {}
+    { path, property }: { path?: string[]; property?: string } = {}
   ) => {
     const value =
       read === undefined
@@ -402,10 +428,9 @@ function replaceArgsReads(
         : property === undefined
           ? read.value
           : `${property}: ${read.value}`;
-    const place: SvelteHolePlace = deep
-      ? { kind: 'member' }
-      : property === undefined
-        ? { kind: 'value' }
+    const place: SvelteHolePlace =
+      property === undefined
+        ? { kind: 'value', ...(path && { path }) }
         : { kind: 'property', ...(property !== arg && { name: property }) };
     edits.push({
       start,
@@ -436,7 +461,9 @@ function replaceArgsReads(
           : argsComplete
             ? { value: 'undefined' }
             : undefined;
-      push(key, node.start - 1, node.end - 1, read, { deep: members.length > 0 });
+      push(key, node.start - 1, node.end - 1, read, {
+        ...(members.length > 0 && { path: members }),
+      });
       return false;
     }
     if (node.type === 'Property' && node.shorthand && node.value.type === 'Identifier') {
@@ -472,7 +499,7 @@ function replaceArgsReads(
     ...(whole && {
       single: {
         arg: only.arg,
-        deep: only.place.kind === 'member',
+        ...(only.place.kind === 'value' && only.place.path && { path: only.place.path }),
         ...(string !== undefined && { string }),
       },
     }),
@@ -508,9 +535,7 @@ function printRead(value: Node, keys: string[]): { value: string; node?: Node } 
     node = unwrapExpression(member);
     rest = rest.slice(1);
   }
-  const accessors = rest
-    .map((key) => (/^[A-Za-z_$][\w$]*$/.test(key) ? `.${key}` : `[${JSON.stringify(key)}]`))
-    .join('');
+  const accessors = printAccessors(rest);
   return {
     value: isPrimary(node) ? `${textOf(node)}${accessors}` : `(${textOf(node)})${accessors}`,
     ...(rest.length ? {} : { node }),

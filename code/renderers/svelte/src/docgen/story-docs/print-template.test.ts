@@ -7,6 +7,7 @@ import {
   type SnippetTemplate,
   fillTemplate,
   formatTemplate,
+  printValue,
   stripHoles,
 } from 'storybook/internal/docs-tools';
 import type { Args } from 'storybook/internal/types';
@@ -340,8 +341,8 @@ describe('printTemplate template', () => {
       "{ label: 'A label that is long enough to wrap the spread' }"
     );
     const initialArgs = { label: 'A label that is long enough to wrap the spread' };
-    expect(fill(wrapped, initialArgs, { ...initialArgs, count: 3 })).toBe(
-      '<Panel\n  label="A label that is long enough to wrap the spread"\n  count={3}\n />'
+    expect(fill(wrapped, initialArgs, { ...initialArgs, count: 3, size: 'sm' })).toBe(
+      '<Panel\n  label="A label that is long enough to wrap the spread"\n  count={3}\n  size="sm"\n />'
     );
   });
 
@@ -355,7 +356,9 @@ describe('printTemplate template', () => {
   it('adds the args a control adds on the line of a spread that passes none', () => {
     const written = template('<Button\n  {...args}\n  primary\n/>');
     expect(stripHoles(written)).toBe('<Button\n  primary\n/>');
-    expect(fill(written, {}, { label: 'Go' })).toBe('<Button\n  label="Go"\n  primary\n/>');
+    expect(fill(written, {}, { label: 'Go', size: 'sm' })).toBe(
+      '<Button\n  label="Go"\n  size="sm"\n  primary\n/>'
+    );
     expect(fill(template('<Button {...args} />'), {}, { label: 'Go' })).toBe(
       '<Button label="Go" />'
     );
@@ -412,10 +415,40 @@ describe('printTemplate template', () => {
     expect(fill(written, { title: '\uE000x' }, { title: 'y' })).toBe('<Panel title="y" />');
   });
 
-  it('cannot follow a read of a member of an arg', () => {
-    const written = template('<p>{args.user.name}</p>', "{ user: { name: 'Jane' } }");
-    expect(() => fill(written, { user: { name: 'Jane' } }, { user: { name: 'John' } })).toThrow(
-      'The snippet cannot show the current value of the `user` arg.'
+  it.each([
+    '<p>{args.user.name}</p>',
+    '<Panel title={args.user.name} />',
+    '<Panel title="By {args.user.name}" onclick={() => greet(args.user.name)} />',
+    '<p>{args.user.tags.length}</p>',
+  ])('prints a read of a member of an arg in %j as a story that writes the arg', (code) => {
+    const jane = { name: 'Jane', tags: ['a'] };
+    const written = template(code, "{ user: { name: 'Jane', tags: ['a'] } }");
+    for (const user of [{ name: 'John', tags: ['a', 'b'] }, { tags: [] }, 'Jane', undefined]) {
+      const source = `{ user: ${printValue(user, 'user')} }`;
+      const story = printTemplate({ code, args: args(source), typescript: false });
+      expect(fill(written, { user: jane }, { user }), JSON.stringify(user)).toBe(story.snippet);
+    }
+  });
+
+  it('prints an attribute a later spread writes over as the spread prints it', () => {
+    const written = template('<Panel title={heading} {...args} />', "{ label: 'Go' }");
+    expect(fill(written, { label: 'Go' }, { label: 'Go', title: 'Hi' })).toBe(
+      '<Panel title="Hi" label="Go" />'
+    );
+  });
+
+  it('cannot follow the arg an attribute names that reads other args before a spread', () => {
+    const written = template('<Panel title={args.label} {...args} />', "{ label: 'Go' }");
+    expect(stripHoles(written)).toBe('<Panel title="Go" label="Go" />');
+    expect(fill(written, { label: 'Go' }, { label: 'Stop' })).toBe(
+      '<Panel title="Stop" label="Stop" />'
+    );
+    expect(() => fill(written, { label: 'Go' }, { label: 'Go', title: 'Hi' })).toThrow(
+      'The snippet cannot show the current value of the `title` arg.'
+    );
+    const own = template('<Panel title={args.title} {...args} />', "{ label: 'Go' }");
+    expect(fill(own, { label: 'Go' }, { label: 'Go', title: 'Hi' })).toBe(
+      '<Panel title="Hi" label="Go" />'
     );
   });
 });

@@ -49,6 +49,8 @@ const TEMPLATES = [
   '{#if args.x}<p>yes</p>{/if}',
   '<Panel data={{ x }} />',
   '<div style:color={args.x}></div>',
+  '<p>{args.x.a}</p>',
+  '<Panel title={args.x.a} onclick={() => args.x["b-c"]} />',
 ];
 
 const argsOf = (source: string): Record<string, Node> => {

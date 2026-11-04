@@ -80,6 +80,8 @@ CLAUDE.local.md
 .claude/*
 !.claude/skills/
 !.claude/skills/**
+!.claude/agents/
+!.claude/agents/**
 .cursor/mcp.json
 .vscode/mcp.json
 .mcp.json

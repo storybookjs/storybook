@@ -486,13 +486,28 @@ describe('printTemplate template', () => {
     );
   });
 
-  it('cannot follow the arg an attribute names that reads other args in code before a spread', () => {
-    const written = template('<Panel title={args.label + "!"} {...args} />', "{ label: 'Go' }");
-    expect(fill(written, { label: 'Go' }, { label: 'Stop' })).toBe(
-      '<Panel title={"Stop" + "!"} label="Stop" />'
+  it.each([
+    [
+      '<Panel title={args.label + "!"} {...args} />',
+      '<Panel title={"Stop" + "!"} label="Stop" size="sm" />',
+    ],
+    [
+      '<Panel title="By {args.label}" {...args} />',
+      '<Panel title="By Stop" label="Stop" size="sm" />',
+    ],
+    [
+      '<Panel title="{args.label} {args.size}" {...args} />',
+      '<Panel title="Stop sm" label="Stop" size="sm" />',
+    ],
+  ])('follows the reads in %j before a spread until a control sets its arg', (code, expected) => {
+    const initialArgs = { label: 'Go', size: 'sm' };
+    const written = template(code, "{ label: 'Go', size: 'sm' }");
+    expect(fill(written, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(expected);
+    expect(fill(written, initialArgs, { ...initialArgs, label: 'Stop', title: 'Hi' })).toBe(
+      '<Panel title="Hi" label="Stop" size="sm" />'
     );
-    expect(() => fill(written, { label: 'Go' }, { label: 'Go', title: 'Hi' })).toThrow(
-      'The snippet cannot show the current value of the `title` arg.'
+    expect(() => fill(written, initialArgs, { size: 'sm' })).toThrow(
+      'The snippet cannot show the current value of the `label` arg.'
     );
   });
 

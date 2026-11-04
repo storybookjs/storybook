@@ -18,7 +18,6 @@ import { walk } from 'zimmerframe';
 import {
   type PropValue,
   type SvelteHolePlace,
-  type WholeRead,
   type WholeReadPlace,
   printAccessors,
   printProp,
@@ -47,9 +46,8 @@ interface Reads {
 
 type Mark = HoleMarks<SvelteHolePlace>['mark'];
 
-// An edit of the snippet, with `marked`: its `value` with each place an arg prints marked as a hole,
-// and the `read` of an arg it prints, where it is one whole read.
-type MarkedEdit = Edit & { marked?: string; read?: WholeRead };
+// An edit of the snippet, with `marked`: its `value` with each place an arg prints marked as a hole.
+type MarkedEdit = Edit & { marked?: string };
 
 // Write a story's args into its markup: spread `{...args}` into attributes, and replace each
 // `args.x` read with the source of the arg value. The template is the same markup with each place
@@ -74,8 +72,11 @@ export function printTemplate({
   snippets?: Record<string, string>;
 }): { snippet: string; template?: SnippetTemplate<SvelteHolePlace> } {
   const { ast, offset } = parseMarkup(code, typescript);
-  // The edits that print the snippet, with each place an arg prints marked by `mark`.
-  const collect = (mark: Mark): MarkedEdit[] => {
+  // Whether the holes of an attribute a spread writes over could not be found again.
+  let holesLost = false;
+  // The edits that print the snippet, with each place an arg prints marked by `marks`, if any.
+  const collect = (marks?: HoleMarks<SvelteHolePlace>): MarkedEdit[] => {
+    const mark: Mark = marks?.mark ?? ((_, text) => text);
     const destructured = new Set(Object.values(parameter?.aliases ?? {}));
     const name = parameter ? parameter.name : 'args';
     const reads: Reads = {
@@ -126,59 +127,41 @@ export function printTemplate({
           next();
           return;
         }
-        const readArgs = (Array.isArray(node.value) ? node.value : [node.value]).flatMap((part) =>
-          part !== true && part.type === 'ExpressionTag'
-            ? (replaceArgsReads(written(at(part.expression)), reads)?.args ?? [])
-            : []
-        );
         const from = edits.length;
         next();
-        const own = readArgs.every((arg) => arg === node.name);
-        const [read, ...more] = edits.slice(from).map((edit) => edit.read);
-        const overridden = !own && read?.kind === 'attrvalue' && !more.length ? read : undefined;
-        if (!own && !overridden) {
-          // Its reads follow their args, but it cannot also follow the arg it names.
-          edits.push({
-            start: range.end,
-            end: range.end,
-            value: '',
-            marked: mark({ kind: 'overwritten', arg: node.name }, ''),
-          });
-          return;
-        }
-        // It prints as written until the spread writes over it, or, as `name={args.x}`, the arg it
-        // reads changes.
-        const value = applyEdits(
-          written(range),
-          edits.splice(from).map((edit) => ({
-            ...edit,
-            start: edit.start - range.start,
-            end: edit.end - range.start,
-          }))
-        );
+        // It prints as written, its reads following their args, until the spread writes over it.
+        const children = edits.splice(from).map((edit) => ({
+          ...edit,
+          start: edit.start - range.start,
+          end: edit.end - range.start,
+        }));
+        const value = applyEdits(written(range), children);
+        // The snippet's own print needs no template.
+        const nested = marks
+          ? marks.toTemplate(
+              applyEdits(
+                written(range),
+                children.map((edit) => ({ ...edit, value: edit.marked ?? edit.value }))
+              )
+            )
+          : [];
+        holesLost ||= nested === undefined;
+        const template = nested ?? [];
         edits.push({
           ...range,
           value,
-          marked: mark(
-            overridden
-              ? {
-                  kind: 'overridden',
-                  spread: true,
-                  name: node.name,
-                  read: overridden,
-                  written: value,
-                }
-              : { kind: 'spreadattr', arg: node.name },
-            value
-          ),
+          marked: mark({ kind: 'overridden', spread: true, name: node.name, template }, value),
         });
-        if (overridden) {
-          // The spread hole does not see the arg it reads cleared.
+        // The spread hole does not see an arg a control clears, which a hole for that arg does.
+        const read = template.flatMap((segment) =>
+          typeof segment === 'string' || segment.arg === undefined ? [] : [segment.arg]
+        );
+        for (const arg of new Set(read)) {
           edits.push({
             start: range.end,
             end: range.end,
             value: '',
-            marked: mark({ kind: 'cleared', arg: overridden.arg }, ''),
+            marked: mark({ kind: 'cleared', arg }, ''),
           });
         }
       },
@@ -279,7 +262,6 @@ export function printTemplate({
           ...place,
           value,
           marked: mark({ ...wholeRead, arg }, value),
-          read: { ...wholeRead, arg },
         });
       },
       _(node, { next }) {
@@ -316,14 +298,11 @@ export function printTemplate({
     return edits;
   };
 
-  const snippet = applyEdits(
-    code,
-    collect((_, text) => text)
-  );
+  const snippet = applyEdits(code, collect());
   // The marks avoid the characters of the snippet, not of `code`: `'\uE000'` prints U+E000.
   const marks = createHoleMarks<SvelteHolePlace>([snippet]);
-  const marked = collect(marks.mark).map((edit) => ({ ...edit, value: edit.marked ?? edit.value }));
-  const template = marks.toTemplate(applyEdits(code, marked));
+  const marked = collect(marks).map((edit) => ({ ...edit, value: edit.marked ?? edit.value }));
+  const template = holesLost ? undefined : marks.toTemplate(applyEdits(code, marked));
   return {
     snippet,
     // An arg a control clears leaves no gap in the spread.
@@ -424,8 +403,8 @@ function blockExpressions(node: SvelteAST.SvelteNode): object[] {
 
 // Replace each read of the story args in an expression with the source of the value it reads, or
 // return `undefined` when the expression reads no story args. A read of an arg the story does not
-// set stays as written, unless `argsComplete`; `substituted` says whether any read was replaced, and
-// `args` names the arg of each read. `marked` has a hole for each read, and `single` is set when the expression is one whole read: its
+// set stays as written, unless `argsComplete`; `substituted` says whether any read was replaced.
+// `marked` has a hole for each read, and `single` is set when the expression is one whole read: its
 // arg, the `path` of the member of it that it reads, if any, and the `string` it reads, if any.
 function replaceArgsReads(
   expression: string,
@@ -435,7 +414,6 @@ function replaceArgsReads(
       value: string;
       marked: string;
       substituted: boolean;
-      args: string[];
       single?: { arg: string; path?: string[]; string?: string };
     }
   | undefined {
@@ -530,7 +508,6 @@ function replaceArgsReads(
       edits.map((edit) => ({ ...edit, value: edit.marked }))
     ),
     substituted: edits.some((edit) => edit.substituted),
-    args: edits.map((edit) => edit.arg),
     ...(whole && {
       single: {
         arg: only.arg,

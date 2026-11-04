@@ -6,6 +6,8 @@ import {
   resolveEffectiveRender,
 } from 'storybook/internal/csf-tools';
 
+import { stripHoles } from 'storybook/internal/docs-tools';
+
 import type {
   ManifestClassField,
   ManifestDeclaration,
@@ -56,7 +58,10 @@ const renderTemplate = (storySource: string) => {
   }
   const template = resolveHtmlTemplate(render.node, csf);
   expect(template).toBeDefined();
-  return printHtmlTemplate(template!, resolver.resolve(story).args, declaration);
+  const args = resolver.resolve(story).args;
+  const { template: holes, ...printed } = printHtmlTemplate(template!, args, declaration);
+  expect(holes && stripHoles(holes)).toBe(printed.snippet);
+  return printed;
 };
 
 describe('html template story snippets', () => {
@@ -76,6 +81,42 @@ describe('html template story snippets', () => {
         properties: [],
         referenced: ['label', 'count'],
         snippet: '<template-element label="Hello" count="2"></template-element>',
+        unresolved: [],
+      },
+    },
+    {
+      name: 'an arg whose name html escapes, read in a quoted attribute',
+      source: `
+        import { html } from 'lit';
+        export default { component: 'template-element' };
+        export const Primary = {
+          args: { 'a&b': 'v' },
+          render: (args) => html\`<template-element title="x \${args['a&b']}"></template-element>\`,
+        };
+      `,
+      expected: {
+        listeners: [],
+        properties: [],
+        referenced: ['a&b'],
+        snippet: '<template-element title="x v"></template-element>',
+        unresolved: [],
+      },
+    },
+    {
+      name: 'text with whitespace',
+      source: `
+        import { html } from 'lit';
+        export default { component: 'template-element' };
+        export const Primary = {
+          args: { label: '  spaced   text ' },
+          render: (args) => html\`<template-element>\${args.label}</template-element>\`,
+        };
+      `,
+      expected: {
+        listeners: [],
+        properties: [],
+        referenced: ['label'],
+        snippet: '<template-element>spaced text</template-element>',
         unresolved: [],
       },
     },
@@ -226,6 +267,23 @@ describe('html template story snippets', () => {
         properties: [],
         referenced: ['count', 'disabled'],
         snippet: '<template-element count="2" disabled></template-element>',
+        unresolved: [],
+      },
+    },
+    {
+      name: 'string template html',
+      source: `
+        export default { component: 'template-element' };
+        export const Primary = {
+          args: { label: ['<b>', 'Go', '</b>'] },
+          render: (args) => \`<template-element>\${args.label}</template-element>\`,
+        };
+      `,
+      expected: {
+        listeners: [],
+        properties: [],
+        referenced: ['label'],
+        snippet: '<template-element>\n  <b>Go</b>\n</template-element>',
         unresolved: [],
       },
     },

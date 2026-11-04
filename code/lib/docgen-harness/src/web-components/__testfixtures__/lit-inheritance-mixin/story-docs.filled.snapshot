@@ -1,0 +1,5 @@
+{
+  "ArgsDefaultRender": "<lit-inheritance-mixin base-label="Default base &amp; &lt;changed>" count="3"></lit-inheritance-mixin>",
+  "DomNode": "<lit-inheritance-mixin base-label="Inherited &amp; &lt;changed>" count="6"></lit-inheritance-mixin>",
+  "LitTemplate": "<lit-inheritance-mixin base-label="Inherited &amp; &lt;changed>" count="6"></lit-inheritance-mixin>",
+}

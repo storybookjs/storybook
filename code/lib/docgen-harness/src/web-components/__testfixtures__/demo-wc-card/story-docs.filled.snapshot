@@ -1,0 +1,9 @@
+{
+  "Back": "<demo-wc-card rows="[]">
+  <span slot="prefix"></span>A simple card
+</demo-wc-card>",
+  "Front": "<demo-wc-card rows="[]" back-side><span slot="prefix"></span>A simple card</demo-wc-card>",
+  "Prefix": "<demo-wc-card header="my header &amp; &lt;changed>" rows="[]" back-side>
+  <span slot="prefix">prefix: &amp; &lt;changed&gt;</span>A simple card
+</demo-wc-card>",
+}

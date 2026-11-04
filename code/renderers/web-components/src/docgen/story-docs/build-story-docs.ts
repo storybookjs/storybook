@@ -17,7 +17,12 @@ import {
   unwrapExpression,
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
-import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
+import type {
+  ProvidedStoryDoc,
+  ProvidedStoryDocsPayload,
+  StoryDocsProviderInput,
+} from 'storybook/internal/types';
+import { createHoleMarks, withHoleSpace } from 'storybook/internal/docs-tools';
 
 import { resolve } from 'node:path';
 
@@ -27,6 +32,7 @@ import {
   parseStoryFile,
   resolveStoryComponent,
 } from '../component-docgen/resolve-component/resolve-component.ts';
+import type { HtmlHolePlace, HtmlSnippetTemplate } from '../../snippet-holes.ts';
 import { evaluateArgValue, isFunctionNode } from './arg-values.ts';
 import { classifyArg, type ArgBinding } from './classify-args.ts';
 import type { ElementSnippet } from './print-element.ts';
@@ -48,7 +54,9 @@ interface StoryDocDeps {
   tag: string;
 }
 
-type SnippetResult = { snippet?: string; warning?: string };
+// A story's snippet, and its `template`: the same html with a hole wherever it prints an arg, which
+// the preview fills with the args as the controls change them.
+type SnippetResult = { snippet?: string; template?: HtmlSnippetTemplate; warning?: string };
 type ResolvedStoryArgs = ReturnType<StoryArgsResolver['resolve']>;
 type AuthoredFallback = (resolved: ResolvedStoryArgs) => SnippetResult;
 
@@ -59,7 +67,7 @@ const openStoryReferences = createStoryReferenceResolver();
 export async function buildStoryDocsPayload(
   input: StoryDocsProviderInput,
   context: BuildStoryDocsContext
-): Promise<StoryDocsPayload | undefined> {
+): Promise<ProvidedStoryDocsPayload | undefined> {
   const storyImportPath = getStoryImportPathFromEntry(input.entry);
   if (!storyImportPath) {
     return undefined;
@@ -107,7 +115,7 @@ const buildPayload = (
   csf: CsfFile,
   snippetFor: (exportName: string) => SnippetResult,
   name: string
-): StoryDocsPayload => {
+): ProvidedStoryDocsPayload => {
   const stories = Object.fromEntries(
     Object.entries(csf._stories).map(([exportName, story]) => [
       story.id,
@@ -150,7 +158,7 @@ const baseStoryDoc = (
   exportName: string,
   story: CsfFile['_stories'][string],
   result: SnippetResult
-): StoryDoc => {
+): ProvidedStoryDoc => {
   const { description, summary } = extractStoryJSDocInfo(
     csf._storyStatements[exportName],
     csf.editor
@@ -159,6 +167,13 @@ const baseStoryDoc = (
     id: story.id,
     name: story.name ?? storyNameFromExport(exportName),
     ...(result.snippet === undefined ? {} : { snippet: result.snippet }),
+    ...(result.snippet === undefined || result.template === undefined
+      ? {}
+      : {
+          // A value a control clears leaves no gap or empty line; text in a quoted value keeps the
+          // text around it as written.
+          template: withHoleSpace(result.template, (hole) => hole.kind !== 'quoted'),
+        }),
     ...(result.warning === undefined ? {} : { warning: result.warning }),
     ...(description ? { description } : {}),
     ...(summary === undefined ? {} : { summary }),
@@ -170,7 +185,7 @@ const buildStoryDoc = (
   story: CsfFile['_stories'][string],
   csf: CsfFile,
   snippetFor: (exportName: string) => SnippetResult
-): StoryDoc => {
+): ProvidedStoryDoc => {
   try {
     return baseStoryDoc(csf, exportName, story, snippetFor(exportName));
   } catch (e) {
@@ -241,7 +256,7 @@ const renderedArgsSnippet = (
       const hasFailedHole = unresolved.length > 0 || printed.properties.length > 0;
       const hasSnippet = printed.snippet !== '' || !hasFailedHole;
       return {
-        ...(hasSnippet ? { snippet: printed.snippet } : {}),
+        ...(hasSnippet ? { snippet: printed.snippet, template: printed.template } : {}),
         ...joinWarnings(hasSnippet ? warnings : [...warnings, noSnippetWarning(unresolved)]),
       };
     }
@@ -260,7 +275,7 @@ const renderedArgsSnippet = (
   warnings.push(args.warning);
 
   return {
-    ...(args.snippet ? { snippet: args.snippet } : {}),
+    ...(args.snippet ? { snippet: args.snippet, template: args.template } : {}),
     ...joinWarnings(warnings),
   };
 };
@@ -357,47 +372,107 @@ const argsSnippet = (
   const printed = hasSnippetContent(snippet) || allUnresolved.length === 0;
   warnings.push(printed ? unresolvedWarning(allUnresolved) : noSnippetWarning(allUnresolved));
 
+  if (!printed) {
+    return joinWarnings(warnings);
+  }
+  const html = printElementSnippet(snippet);
   return {
-    ...(printed ? { snippet: printElementSnippet(snippet) } : {}),
+    snippet: html,
+    template: elementTemplate(html, snippet, args, argTypes, declaration),
     ...joinWarnings(warnings),
   };
 };
 
+// The template of the element, with a hole for each arg the story does not set where it would
+// print it if it were set, and a `guard` hole for one it would not print, such as a property
+// without an attribute. Its marks hold no character of `html`, the static snippet.
+const elementTemplate = (
+  html: string,
+  snippet: ElementSnippet,
+  args: Record<string, Node>,
+  argTypes: WebComponentsDocgenPayload['argTypes'],
+  declaration: ManifestDeclaration
+): HtmlSnippetTemplate | undefined => {
+  const unset = [
+    ...Object.keys(args).filter((key) => evaluateArgValue(args[key]).kind === 'unset'),
+    ...Object.keys(argTypes ?? {}).filter((key) => !Object.hasOwn(args, key)),
+  ];
+  const template: ElementSnippet = {
+    ...snippet,
+    attributes: [...snippet.attributes],
+    cssProperties: [...snippet.cssProperties],
+    slots: [...snippet.slots],
+    styleRules: [...snippet.styleRules],
+  };
+  const marks = createHoleMarks<HtmlHolePlace>([html]);
+  const guards: string[] = [];
+  for (const key of new Set(unset)) {
+    const binding = classifyArg(key, false, argTypes ?? {}, declaration);
+    switch (binding.kind) {
+      case 'attribute':
+      case 'cssProperty':
+      case 'slot':
+      case 'cssPart':
+      case 'cssState':
+        addBoundValue(template, binding, key, undefined, snippet.tag, true);
+        break;
+      case 'property':
+      case 'unknown':
+        guards.push(marks.mark({ kind: 'guard', arg: key }, ''));
+        break;
+      default:
+        break;
+    }
+  }
+  return marks.toTemplate(guards.join('') + printElementSnippet(template, marks));
+};
+
+// Each value is the arg `source`'s, so the template prints a hole for it. An unset arg is only
+// added where no other arg already sets the same attribute, slot or rule.
 const addBoundValue = (
   snippet: ElementSnippet,
   binding: Exclude<ArgBinding, { kind: 'listener' | 'property' | 'method' | 'unknown' }>,
   source: string,
   value: unknown,
-  tag: string
+  tag: string,
+  unset = false
 ): void => {
+  const upsert = unset ? addIfAbsent : upsertByName;
   switch (binding.kind) {
     case 'attribute':
-      upsertByName(snippet.attributes, {
+      upsert(snippet.attributes, {
         name: binding.name,
         value,
         viaField: binding.viaField,
         defaultValue: binding.defaultValue,
         source,
+        arg: source,
       });
       break;
     case 'cssProperty':
-      upsertByName(snippet.cssProperties, { name: binding.name, value });
+      upsert(snippet.cssProperties, { name: binding.name, value, arg: source });
       break;
     case 'slot':
-      upsertByName(snippet.slots, { name: binding.name, html: value });
+      upsert(snippet.slots, { name: binding.name, html: value, arg: source });
       break;
     case 'cssPart':
-      upsertBySelector(snippet.styleRules, {
-        selector: `${tag}::part(${binding.name})`,
-        declarations: String(value),
-      });
+    case 'cssState': {
+      const selector =
+        binding.kind === 'cssPart'
+          ? `${tag}::part(${binding.name})`
+          : `${tag}:state(${binding.name})`;
+      const rule = {
+        selector,
+        declarations: unset ? undefined : String(value),
+        arg: source,
+      };
+      if (!unset) {
+        upsertBySelector(snippet.styleRules, rule);
+      } else if (!snippet.styleRules.some((existing) => existing.selector === selector)) {
+        snippet.styleRules.push(rule);
+      }
       break;
-    case 'cssState':
-      upsertBySelector(snippet.styleRules, {
-        selector: `${tag}:state(${binding.name})`,
-        declarations: String(value),
-      });
-      break;
+    }
     default: {
       const exhaustive: never = binding;
       return exhaustive;
@@ -412,6 +487,12 @@ const upsertByName = <T extends { name: string }>(items: T[], next: T): void => 
     return;
   }
   items[index] = next;
+};
+
+const addIfAbsent = <T extends { name: string }>(items: T[], next: T): void => {
+  if (!items.some((item) => item.name === next.name)) {
+    items.push(next);
+  }
 };
 
 const upsertBySelector = <T extends { selector: string }>(items: T[], next: T): void => {

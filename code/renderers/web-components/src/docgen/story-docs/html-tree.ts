@@ -1,243 +1,129 @@
-import { escapeAttribute } from './print-element.ts';
+import type { HoleMarks } from 'storybook/internal/docs-tools';
 
-export interface HtmlAttribute {
-  name: string;
-  quoted?: boolean;
-  value: string | undefined;
-}
+import {
+  type ElementNode,
+  type HtmlAttribute,
+  type HtmlNode,
+  VOID_ELEMENTS,
+} from '../../html-parse.ts';
+import type { HtmlHole, HtmlHolePlace } from '../../snippet-holes.ts';
+import { escapeAttribute, inlineText, quotedAttribute } from '../../snippet-values.ts';
 
-export type HtmlNode =
-  | { kind: 'comment'; text: string }
-  | {
-      attributes: HtmlAttribute[];
-      children: HtmlNode[];
-      closed: boolean;
-      kind: 'element';
-      name: string;
-      selfClosing: boolean;
-    }
-  | { kind: 'malformed'; text: string }
-  | { attributes: HtmlAttribute[]; closed: boolean; kind: 'rawText'; name: string; text: string }
-  | { kind: 'text'; text: string };
-
-type ElementNode = Extract<HtmlNode, { kind: 'element' }>;
 type InlineText = { hasText: boolean; text: string };
-
-type Token =
-  | { kind: 'comment'; text: string }
-  | { kind: 'end'; name: string }
-  | { attributes: HtmlAttribute[]; kind: 'raw'; name: string; text: string }
-  | { attributes: HtmlAttribute[]; kind: 'start'; name: string; selfClosing: boolean }
-  | { kind: 'text'; text: string };
+// With marks, the printer prints the template of the html: the same html with each hole marked.
+type Marks = HoleMarks<HtmlHolePlace> | undefined;
 
 const INLINE_LIMIT = 80;
 const INDENT = '  ';
-const RAW_TEXT_ELEMENTS = new Set(['pre', 'script', 'style', 'textarea', 'title']);
-const VOID_ELEMENTS = new Set([
-  'area',
-  'base',
-  'br',
-  'col',
-  'embed',
-  'hr',
-  'img',
-  'input',
-  'link',
-  'meta',
-  'source',
-  'track',
-  'wbr',
-]);
-
-export function parseHtml(source: string): HtmlNode[] {
-  const root: { children: HtmlNode[] } = { children: [] };
-  const stack: ({ children: HtmlNode[] } | ElementNode)[] = [root];
-  let offset = 0;
-
-  while (offset < source.length) {
-    const read = readToken(source, offset);
-    if (!read) {
-      current(stack).children.push({ kind: 'malformed', text: source.slice(offset) });
-      break;
-    }
-    offset = read.end;
-    const token = read.token;
-    switch (token.kind) {
-      case 'comment':
-      case 'text':
-        current(stack).children.push(token);
-        break;
-      case 'start': {
-        const node: ElementNode = {
-          attributes: token.attributes,
-          children: [],
-          closed: token.selfClosing || VOID_ELEMENTS.has(token.name.toLowerCase()),
-          kind: 'element',
-          name: token.name,
-          selfClosing: token.selfClosing,
-        };
-        current(stack).children.push(node);
-        if (!node.closed) {
-          stack.push(node);
-        }
-        break;
-      }
-      case 'raw':
-        current(stack).children.push({
-          attributes: token.attributes,
-          closed: true,
-          kind: 'rawText',
-          name: token.name,
-          text: token.text,
-        });
-        break;
-      case 'end': {
-        const top = stack.at(-1);
-        if (VOID_ELEMENTS.has(token.name)) {
-          break;
-        }
-        if (!('kind' in top!) || top.kind !== 'element' || top.name.toLowerCase() !== token.name) {
-          current(stack).children.push({ kind: 'malformed', text: source.slice(read.start) });
-          return root.children;
-        }
-        top.closed = true;
-        stack.pop();
-        break;
-      }
-      default: {
-        const exhaustive: never = token;
-        return exhaustive;
-      }
-    }
-  }
-
-  return root.children;
+// Html laid out in 80 columns. With `marks`, the template of the same html: each `hole` node and
+// attribute marks what it prints as its hole. A value that prints nothing goes at the end of the
+// content it stands in, and an attribute that does at the end of the start tag.
+export function printHtml(nodes: HtmlNode[], marks?: HoleMarks<HtmlHolePlace>): string {
+  const expanded = expandHoles(nodes);
+  const lines = expanded.filter(isPrintable).map((node) => printNode(node, 0, marks));
+  const html = lines.join('\n');
+  return marks ? html + placeholderHoles(expanded, html ? '\n' : '', marks) : html;
 }
 
-export function printHtml(nodes: HtmlNode[]): string {
-  return printableChildren(nodes)
-    .map((node) => printNode(node, 0))
-    .join('\n');
+interface HoleTag {
+  hole: HtmlHole;
+  // Whether the node opens the hole, and whether it closes it.
+  first: boolean;
+  last: boolean;
+  // A value that prints nothing, which only the template shows, as its hole.
+  placeholder?: boolean;
 }
 
-const current = (stack: ({ children: HtmlNode[] } | ElementNode)[]): { children: HtmlNode[] } =>
-  stack[stack.length - 1];
+const holeTags = new WeakMap<HtmlNode, HoleTag>();
 
-const readToken = (
-  source: string,
-  start: number
-): { end: number; start: number; token: Token } | undefined => {
-  if (source[start] !== '<') {
-    const next = source.indexOf('<', start);
-    const end = next === -1 ? source.length : next;
-    return { end, start, token: { kind: 'text', text: source.slice(start, end) } };
-  }
-
-  if (source.startsWith('<!--', start)) {
-    const end = source.indexOf('-->', start + 4);
-    if (end === -1) {
-      return undefined;
+// Each `hole` node as the nodes of its value, each tagged with the hole, or as an empty text when
+// its value prints nothing.
+const expandHoles = (nodes: HtmlNode[]): HtmlNode[] =>
+  nodes.flatMap((node): HtmlNode[] => {
+    if (node.kind === 'element') {
+      return [{ ...node, children: expandHoles(node.children) }];
     }
-    return { end: end + 3, start, token: { kind: 'comment', text: source.slice(start, end + 3) } };
-  }
-
-  const end = findTagEnd(source, start);
-  if (end === undefined) {
-    return undefined;
-  }
-  const raw = source.slice(start, end);
-  const endMatch = /^<\/\s*([^\s>]+)\s*>$/.exec(raw);
-  if (endMatch) {
-    return { end, start, token: { kind: 'end', name: endMatch[1].toLowerCase() } };
-  }
-
-  const startMatch = /^<\s*([^\s/>]+)([\s\S]*?)>$/.exec(raw);
-  if (!startMatch) {
-    return { end, start, token: { kind: 'text', text: raw } };
-  }
-  const name = startMatch[1];
-  const rest = startMatch[2];
-  const selfClosing = hasSelfClosingSlash(rest);
-  const attrs = selfClosing ? rest.replace(/\/\s*$/, '') : rest;
-  const attributes = parseAttributes(attrs.trim());
-  if (!selfClosing && RAW_TEXT_ELEMENTS.has(name.toLowerCase())) {
-    const rawEnd = findRawTextEnd(source, end, name);
-    if (rawEnd) {
-      return {
-        end: rawEnd.end,
-        start,
-        token: { attributes, kind: 'raw', name, text: source.slice(end, rawEnd.start) },
-      };
+    if (node.kind !== 'hole') {
+      return [node];
     }
+    const inner = expandHoles(node.nodes);
+    const printable = inner.filter(isPrintable);
+    if (printable.length === 0) {
+      const placeholder: HtmlNode = { kind: 'text', text: '' };
+      holeTags.set(placeholder, { hole: node.hole, first: true, last: true, placeholder: true });
+      return [placeholder];
+    }
+    inner.forEach((child) =>
+      holeTags.set(child, {
+        hole: node.hole,
+        first: child === printable[0],
+        last: child === printable.at(-1),
+      })
+    );
+    return inner;
+  });
+
+const isPlaceholder = (node: HtmlNode): boolean => holeTags.get(node)?.placeholder === true;
+
+const isPrintable = (node: HtmlNode): boolean =>
+  node.kind !== 'text' || collapseText(node.text) !== '';
+
+// The holes of the values that print nothing among `children`, each after `space` once it prints.
+const placeholderHoles = (children: HtmlNode[], space: string, marks: Marks): string =>
+  marks
+    ? children
+        .filter(isPlaceholder)
+        .map((child) => marks.mark(holeTags.get(child)!.hole, '', space))
+        .join('')
+    : '';
+
+// `printed` with the hole of its node opened before it, after its indent, and closed after it. A
+// text hole says whether the snippet trims the text it prints at its start and at its end.
+const wrapInHole = (
+  printed: string,
+  tag: HoleTag | undefined,
+  trim: { start: boolean; end: boolean },
+  marks: Marks
+): string => {
+  if (!tag || !marks) {
+    return printed;
   }
-  return { end, start, token: { attributes, kind: 'start', name, selfClosing } };
+  const hole: HtmlHole =
+    tag.hole.kind === 'text' ? { ...tag.hole, trimStart: trim.start, trimEnd: trim.end } : tag.hole;
+  const indent = printed.match(/^\s*/)![0];
+  const text = printed.slice(indent.length);
+  if (tag.first && tag.last) {
+    return `${indent}${marks.mark(hole, text)}`;
+  }
+  // A hole of several nodes is printed a node at a time: its first node opens the mark and its last
+  // closes it, each with its half of the mark split around a newline, which a mark never holds.
+  const [open, close] = marks.mark(hole, '\n').split('\n') as [string, string];
+  return `${indent}${tag.first ? open : ''}${text}${tag.last ? close : ''}`;
 };
 
-const parseAttributes = (source: string): HtmlAttribute[] => {
-  const attributes: HtmlAttribute[] = [];
-  let index = 0;
-  while (index < source.length) {
-    while (/\s/.test(source[index] ?? '')) {
-      index += 1;
-    }
-    if (index >= source.length) {
-      break;
-    }
-    const nameStart = index;
-    while (index < source.length && !/[\s=]/.test(source[index])) {
-      index += 1;
-    }
-    const name = source.slice(nameStart, index);
-    while (/\s/.test(source[index] ?? '')) {
-      index += 1;
-    }
-    if (source[index] !== '=') {
-      attributes.push({ name, value: undefined });
-      continue;
-    }
-    index += 1;
-    while (/\s/.test(source[index] ?? '')) {
-      index += 1;
-    }
-    const quote = source[index] === '"' || source[index] === "'" ? source[index] : undefined;
-    if (quote) {
-      index += 1;
-      const valueStart = index;
-      while (index < source.length && source[index] !== quote) {
-        index += 1;
-      }
-      attributes.push({
-        name,
-        quoted: true,
-        value: decodeAttribute(source.slice(valueStart, index)),
-      });
-      if (source[index] === quote) {
-        index += 1;
-      }
-      continue;
-    }
-    const valueStart = index;
-    while (index < source.length && !/\s/.test(source[index])) {
-      index += 1;
-    }
-    attributes.push({ name, value: decodeAttribute(source.slice(valueStart, index)) });
-  }
-  return attributes;
-};
+const printNode = (node: HtmlNode, depth: number, marks: Marks): string =>
+  wrapInHole(
+    printNodeText(node, depth, marks),
+    holeTags.get(node),
+    { start: true, end: true },
+    marks
+  );
 
-const printNode = (node: HtmlNode, depth: number): string => {
+const printNodeText = (node: HtmlNode, depth: number, marks: Marks): string => {
   const indent = INDENT.repeat(depth);
   switch (node.kind) {
     case 'comment':
       return `${indent}${node.text}`;
     case 'element':
-      return printElement(node, depth);
+      return printElement(node, depth, marks);
     case 'malformed':
       return node.text;
     case 'rawText':
-      return printRawTextElement(node, depth);
+      return printRawTextElement(node, depth, marks);
     case 'text':
       return `${indent}${collapseText(node.text)}`;
+    case 'hole':
+      return '';
     default: {
       const exhaustive: never = node;
       return exhaustive;
@@ -245,9 +131,10 @@ const printNode = (node: HtmlNode, depth: number): string => {
   }
 };
 
-const printElement = (node: ElementNode, depth: number): string => {
+// Every layout decision reads the values the html prints; `marks` only changes what it prints.
+const printElement = (node: ElementNode, depth: number, marks: Marks): string => {
   const indent = INDENT.repeat(depth);
-  const startTag = printStartTag(node, depth);
+  const startTag = printStartTag(node, depth, marks);
   if (VOID_ELEMENTS.has(node.name.toLowerCase())) {
     return startTag;
   }
@@ -257,99 +144,108 @@ const printElement = (node: ElementNode, depth: number): string => {
 
   const children = printableChildren(node.children);
   if (children.length === 0) {
-    return node.closed ? `${startTag}</${node.name}>` : startTag;
+    const content = placeholderHoles(node.children, '', marks);
+    return node.closed ? `${startTag}${content}</${node.name}>` : `${startTag}${content}`;
   }
 
-  const inline = inlineElementText(node, true)?.text;
+  const inline = inlineElementText(node, true, undefined)?.text;
   if (inline) {
     if (indent.length + inline.length <= INLINE_LIMIT) {
-      return `${indent}${inline}`;
+      return `${indent}${marks ? inlineElementText(node, true, marks)!.text : inline}`;
     }
   }
 
-  const body = printChildLines(node.children, depth + 1).join('\n');
+  const body =
+    printChildLines(node.children, depth + 1, marks).join('\n') +
+    placeholderHoles(node.children, `\n${INDENT.repeat(depth + 1)}`, marks);
   return node.closed ? `${startTag}\n${body}\n${indent}</${node.name}>` : `${startTag}\n${body}`;
 };
 
-const printChildLines = (children: HtmlNode[], depth: number): string[] => {
+const printChildLines = (children: HtmlNode[], depth: number, marks: Marks): string[] => {
   const lines: string[] = [];
   let group: HtmlNode[] = [];
   const flushGroup = (): void => {
     if (group.length === 0) {
       return;
     }
-    const inline = inlineChildrenText(group);
+    const inline = inlineChildrenText(group, undefined);
     const indent = INDENT.repeat(depth);
     if (inline && inline.hasText && indent.length + inline.text.length <= INLINE_LIMIT) {
-      lines.push(`${indent}${inline.text}`);
+      lines.push(`${indent}${marks ? inlineChildrenText(group, marks)!.text : inline.text}`);
     } else {
-      group.forEach((child) => lines.push(printNode(child, depth)));
+      group.forEach((child) => lines.push(printNode(child, depth, marks)));
     }
     group = [];
   };
 
   for (const child of children) {
+    if (isPlaceholder(child)) {
+      continue;
+    }
     if (child.kind === 'text' && collapseText(child.text) === '') {
       flushGroup();
       continue;
     }
-    if (inlineChildText(child)) {
+    if (inlineChildText(child, undefined)) {
       group.push(child);
       continue;
     }
     flushGroup();
-    lines.push(printNode(child, depth));
+    lines.push(printNode(child, depth, marks));
   }
   flushGroup();
   return lines;
 };
 
-const inlineElementText = (node: ElementNode, requireText = true): InlineText | undefined => {
+const inlineElementText = (
+  node: ElementNode,
+  requireText: boolean,
+  marks: Marks
+): InlineText | undefined => {
   const lowerName = node.name.toLowerCase();
   if (VOID_ELEMENTS.has(lowerName)) {
-    return { hasText: false, text: printCompactStartTag(node) };
+    return { hasText: false, text: printCompactStartTag(node, marks) };
   }
   if (node.selfClosing) {
-    return { hasText: false, text: `${printCompactStartTag(node)}</${node.name}>` };
+    return { hasText: false, text: `${printCompactStartTag(node, marks)}</${node.name}>` };
   }
+  const content = placeholderHoles(node.children, '', marks);
   const children = printableChildren(node.children);
   if (children.length === 0) {
     const text = node.closed
-      ? `${printCompactStartTag(node)}</${node.name}>`
-      : printCompactStartTag(node);
+      ? `${printCompactStartTag(node, marks)}${content}</${node.name}>`
+      : `${printCompactStartTag(node, marks)}${content}`;
     return { hasText: false, text };
   }
-  const childrenText = inlineChildrenText(node.children);
+  const childrenText = inlineChildrenText(node.children, marks);
   return childrenText === undefined || (requireText && !childrenText.hasText)
     ? undefined
     : {
         hasText: childrenText.hasText,
-        text: `${printCompactStartTag(node)}${childrenText.text}</${node.name}>`,
+        text: `${printCompactStartTag(node, marks)}${childrenText.text}${content}</${node.name}>`,
       };
 };
 
-const inlineChildrenText = (children: HtmlNode[]): InlineText | undefined => {
+const inlineChildrenText = (children: HtmlNode[], marks: Marks): InlineText | undefined => {
   const parts: string[] = [];
   let hasText = false;
-  for (let index = 0; index < children.length; index += 1) {
-    const child = children[index];
-    const part = inlineChildText(child);
+  const shown = children.filter((child) => !isPlaceholder(child));
+  for (const child of shown) {
+    const part = inlineChildText(child, marks);
     if (part === undefined) {
       return undefined;
     }
-    if (part.text !== '') {
-      parts.push(
-        child.kind === 'text'
-          ? inlineText(child.text, index === 0, index === children.length - 1)
-          : part.text
-      );
-    }
     hasText ||= part.hasText;
+    const trim = { start: child === shown[0], end: child === shown.at(-1) };
+    const text = child.kind === 'text' ? inlineText(child.text, trim.start, trim.end) : part.text;
+    if (text !== '') {
+      parts.push(wrapInHole(text, holeTags.get(child), trim, marks));
+    }
   }
   return { hasText, text: parts.join('') };
 };
 
-const inlineChildText = (node: HtmlNode): InlineText | undefined => {
+const inlineChildText = (node: HtmlNode, marks: Marks): InlineText | undefined => {
   switch (node.kind) {
     case 'text':
       return collapseText(node.text) === '' ? undefined : { hasText: true, text: node.text };
@@ -357,12 +253,13 @@ const inlineChildText = (node: HtmlNode): InlineText | undefined => {
       if (!isInlineChildElement(node)) {
         return undefined;
       }
-      const inline = inlineElementText(node, false);
+      const inline = inlineElementText(node, false, marks);
       return inline ? { hasText: false, text: inline.text } : undefined;
     }
     case 'comment':
     case 'malformed':
     case 'rawText':
+    case 'hole':
       return undefined;
     default: {
       const exhaustive: never = node;
@@ -377,115 +274,77 @@ const isInlineChildElement = (node: ElementNode): boolean =>
 
 const printRawTextElement = (
   node: Extract<HtmlNode, { kind: 'rawText' }>,
-  depth: number
+  depth: number,
+  marks: Marks
 ): string => {
-  const startTag = printStartTag({ attributes: node.attributes, name: node.name }, depth);
+  const startTag = printStartTag({ attributes: node.attributes, name: node.name }, depth, marks);
   return node.closed ? `${startTag}${node.text}</${node.name}>` : `${startTag}${node.text}`;
 };
 
-const printStartTag = (node: Pick<ElementNode, 'attributes' | 'name'>, depth: number): string => {
+const printStartTag = (
+  node: Pick<ElementNode, 'attributes' | 'name'>,
+  depth: number,
+  marks: Marks
+): string => {
   const indent = INDENT.repeat(depth);
-  const compact = printCompactStartTag(node);
-  if (indent.length + compact.length <= INLINE_LIMIT) {
-    return `${indent}${compact}`;
+  const compact = printCompactStartTag(node, undefined);
+  if (indent.length + compact.length <= INLINE_LIMIT || shown(node.attributes).length === 0) {
+    return `${indent}${marks ? printCompactStartTag(node, marks) : compact}`;
   }
-  if (node.attributes.length === 0) {
-    return `${indent}<${node.name}>`;
-  }
+  const lines = shown(node.attributes).map(
+    (attribute) => `${indent}${INDENT}${printHtmlAttribute(attribute, marks)}`
+  );
+  const omitted = omittedHoles(node.attributes, `\n${indent}${INDENT}`, marks);
   return [
     `${indent}<${node.name}`,
-    ...node.attributes.map((attr) => `${indent}${INDENT}${printHtmlAttribute(attr)}`),
+    ...lines.slice(0, -1),
+    lines.at(-1) + omitted,
     `${indent}>`,
   ].join('\n');
 };
 
-const printCompactStartTag = (node: Pick<ElementNode, 'attributes' | 'name'>): string => {
-  const attrs = node.attributes.map(printHtmlAttribute).join(' ');
-  const suffix = attrs ? ` ${attrs}` : '';
-  return `<${node.name}${suffix}>`;
+const printCompactStartTag = (
+  node: Pick<ElementNode, 'attributes' | 'name'>,
+  marks: Marks
+): string => {
+  const attrs = shown(node.attributes)
+    .map((attribute) => printHtmlAttribute(attribute, marks))
+    .join(' ');
+  const omitted = omittedHoles(node.attributes, ' ', marks);
+  return `<${node.name}${attrs ? ` ${attrs}` : ''}${omitted}>`;
 };
 
-const printHtmlAttribute = ({ name, value }: HtmlAttribute): string =>
-  value === undefined ? name : `${name}="${escapeAttribute(value)}"`;
+const shown = (attributes: HtmlAttribute[]): HtmlAttribute[] =>
+  attributes.filter((attribute) => !attribute.omitted);
 
-const decodeAttribute = (value: string): string =>
-  value
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&amp;/g, '&');
+// The holes of the attributes that print nothing, each after `space` once it prints.
+const omittedHoles = (attributes: HtmlAttribute[], space: string, marks: Marks): string =>
+  marks
+    ? attributes
+        .flatMap((attribute) => (attribute.omitted && attribute.hole ? [attribute.hole] : []))
+        .map((hole) => marks.mark(hole, '', space))
+        .join('')
+    : '';
 
-const printableChildren = (children: HtmlNode[]): HtmlNode[] =>
-  children.filter((child) => child.kind !== 'text' || collapseText(child.text) !== '');
+const printHtmlAttribute = (attribute: HtmlAttribute, marks: Marks): string => {
+  const { hole, holeValue, name, value } = attribute;
+  if (marks && holeValue !== undefined) {
+    // The text of each hole is escaped as the rest of the value is.
+    const marked = holeValue
+      .map((segment) => {
+        if (typeof segment === 'string') {
+          return escapeAttribute(segment);
+        }
+        const { text, space, ...ref } = segment;
+        return marks.mark(ref, escapeAttribute(text), space);
+      })
+      .join('');
+    return `${name}="${marked}"`;
+  }
+  const printed = value === undefined ? name : quotedAttribute(name, value);
+  return marks && hole ? marks.mark(hole, printed) : printed;
+};
+
+const printableChildren = (children: HtmlNode[]): HtmlNode[] => children.filter(isPrintable);
 
 const collapseText = (text: string): string => text.trim().replace(/\s+/g, ' ');
-
-const inlineText = (text: string, first: boolean, last: boolean): string => {
-  let collapsed = text.replace(/\s+/g, ' ');
-  if (first) {
-    collapsed = collapsed.trimStart();
-  }
-  if (last) {
-    collapsed = collapsed.trimEnd();
-  }
-  return collapsed;
-};
-
-const hasSelfClosingSlash = (rest: string): boolean => {
-  let index = rest.length - 1;
-  while (index >= 0 && /\s/.test(rest[index])) {
-    index -= 1;
-  }
-  if (rest[index] !== '/') {
-    return false;
-  }
-  return index === 0 || /\s/.test(rest[index - 1]);
-};
-
-const findTagEnd = (source: string, start: number): number | undefined => {
-  let quote: '"' | "'" | undefined;
-  let canOpenQuote = false;
-  for (let index = start + 1; index < source.length; index += 1) {
-    const char = source[index];
-    if (quote) {
-      if (char === quote) {
-        quote = undefined;
-      }
-      continue;
-    }
-    if ((char === '"' || char === "'") && canOpenQuote) {
-      quote = char;
-      continue;
-    }
-    if (/\s|=/.test(char)) {
-      canOpenQuote = true;
-    }
-    if (char === '>') {
-      return index + 1;
-    }
-  }
-  return undefined;
-};
-
-const findRawTextEnd = (
-  source: string,
-  start: number,
-  name: string
-): { end: number; start: number } | undefined => {
-  const lower = source.toLowerCase();
-  const close = `</${name.toLowerCase()}`;
-  let index = start;
-  while (index < source.length) {
-    const found = lower.indexOf(close, index);
-    if (found === -1) {
-      return undefined;
-    }
-    const boundary = source[found + close.length];
-    if (boundary !== undefined && /[\s>]/.test(boundary)) {
-      const end = findTagEnd(source, found);
-      return end === undefined ? undefined : { end, start: found };
-    }
-    index = found + close.length;
-  }
-  return undefined;
-};

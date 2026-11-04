@@ -1,0 +1,5 @@
+{
+  "ArgsDefaultRender": "<lit-basic-attributes label="Default render &amp; &lt;changed>" count="4"></lit-basic-attributes>",
+  "DomNode": "<lit-basic-attributes label="Open panel &amp; &lt;changed>" count="8" disabled></lit-basic-attributes>",
+  "LitTemplate": "<lit-basic-attributes label="Open panel &amp; &lt;changed>" count="8" disabled></lit-basic-attributes>",
+}

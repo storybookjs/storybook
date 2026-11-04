@@ -19,7 +19,12 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
+import { type SnippetTemplate, withHoleSpace } from 'storybook/internal/docs-tools';
+import type {
+  ProvidedStoryDoc,
+  ProvidedStoryDocsPayload,
+  StoryDocsProviderInput,
+} from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
 
@@ -31,6 +36,7 @@ import {
   evaluateArgExpression,
   evaluateArgLiteral,
 } from './story-docs-args.ts';
+import { type ArgPrinter, printPlaceholders, printValues } from './story-docs-holes.ts';
 import type { Bindings, StoryShape } from './story-docs-markup.ts';
 import { oneLineTextOf, userTemplate } from './story-docs-markup.ts';
 import type { StoryNgModules } from './story-docs-ng-modules.ts';
@@ -38,12 +44,14 @@ import { ngModulesFromDecorators, storyNgModules } from './story-docs-ng-modules
 import type { HostComponentSnippet } from './story-docs-snippet.ts';
 import { buildHostComponentSnippet } from './story-docs-snippet.ts';
 import type { StoryTemplateAnalysis } from './story-docs-template-analysis.ts';
+import { materializeLike } from './story-docs-template-analysis.ts';
 import {
   buildComponentOutletTemplate,
   buildTemplate,
   formatPropInTemplate,
   formatTemplateMarkup,
 } from '../template-grammar.ts';
+import { type AngularHolePlace, inputBinding } from '../snippet-values.ts';
 
 export interface BuildStoryDocsContext {
   /**
@@ -59,7 +67,7 @@ export interface BuildStoryDocsContext {
 export const buildStoryDocsPayload = async (
   input: StoryDocsProviderInput,
   context: BuildStoryDocsContext
-): Promise<StoryDocsPayload | undefined> => {
+): Promise<ProvidedStoryDocsPayload | undefined> => {
   const storyImportPath = getStoryImportPathFromEntry(input.entry);
   if (!storyImportPath) {
     return undefined;
@@ -166,7 +174,7 @@ const buildStoryDoc = async (
   exportName: string,
   story: CsfFile['_stories'][string],
   deps: StoryDocDeps
-): Promise<StoryDoc> => {
+): Promise<ProvidedStoryDoc> => {
   const { csf } = deps;
   const name = story.name ?? storyNameFromExport(exportName);
   try {
@@ -181,6 +189,7 @@ const buildStoryDoc = async (
       name,
       ...(rendered === undefined ? {} : { snippet: rendered.snippet }),
       ...(rendered?.warning === undefined ? {} : { warning: rendered.warning }),
+      ...(rendered?.template === undefined ? {} : { template: rendered.template }),
       ...(description ? { description } : {}),
       ...(summary === undefined ? {} : { summary }),
     };
@@ -199,7 +208,7 @@ const buildStoryDoc = async (
 const renderedSnippet = async (
   shape: StoryShape,
   deps: StoryDocDeps
-): Promise<HostComponentSnippet | undefined> => {
+): Promise<(HostComponentSnippet & Partial<StoryTemplate>) | undefined> => {
   const authoredShape = {
     storyMembers: shape.members,
     members: shape.members,
@@ -212,12 +221,51 @@ const renderedSnippet = async (
   if (authored.kind === 'disabled') {
     return undefined;
   }
-  const derived = deps.snippetMeta
-    ? await renderStorySnippet(deps.snippetMeta, shape, shape.members.properties.decorators, deps)
-    : undefined;
-  return derived && authored.kind === 'unresolvable'
-    ? withWarnings(derived, unresolvedWarning([authored.source]))
-    : derived;
+  if (!deps.snippetMeta) {
+    return undefined;
+  }
+  const decorators = shape.members.properties.decorators;
+  const derived = await renderStorySnippet(deps.snippetMeta, shape, decorators, deps, printValues);
+  const template = await storyTemplate(deps.snippetMeta, shape, decorators, deps, derived);
+  const rendered =
+    authored.kind === 'unresolvable'
+      ? withWarnings(derived, unresolvedWarning([authored.source]))
+      : withWarnings(derived);
+  return { ...rendered, ...template };
+};
+
+interface StoryTemplate {
+  template: SnippetTemplate<AngularHolePlace>;
+}
+
+// The story's template: its static snippet with each value of an arg it prints wrapped in a hole,
+// from the same print with a placeholder there, or nothing where the two prints do not line up.
+const storyTemplate = async (
+  snippetMeta: AngularComponentSnippetMeta,
+  shape: StoryShape,
+  decorators: Node | undefined,
+  deps: StoryDocDeps,
+  derived: RenderedSnippet
+): Promise<Partial<StoryTemplate>> => {
+  const placeholders = printPlaceholders();
+  const printed = await renderStorySnippet(
+    snippetMeta,
+    shape,
+    decorators,
+    deps,
+    placeholders,
+    derived.analysis
+  );
+  const template = placeholders.template(printed.snippet, derived.snippet);
+  // A binding a control clears leaves no gap, and a value over a line of its own no empty line.
+  return template === undefined
+    ? {}
+    : { template: withHoleSpace(template, ({ kind }) => kind === 'prop' || kind === 'text') };
+};
+
+type RenderedSnippet = HostComponentSnippet & {
+  // The analysis of the story's own markup, which a print with placeholders reuses.
+  analysis?: StoryTemplateAnalysis;
 };
 
 const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
@@ -254,16 +302,20 @@ const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
  */
 const renderStorySnippet = async (
   snippetMeta: AngularComponentSnippetMeta,
-  shape: StoryShape,
+  storyShape: StoryShape,
   storyDecorators: Node | undefined,
-  deps: StoryDocDeps
-): Promise<HostComponentSnippet> => {
+  deps: StoryDocDeps,
+  printer: ArgPrinter,
+  // A print with placeholders lays out the markup as the print with values analyzed it.
+  valuesAnalysis?: StoryTemplateAnalysis
+): Promise<RenderedSnippet> => {
+  const shape = { ...storyShape, printer };
   const { componentImport } = deps;
   // The story file's local name is what the import binds, so an aliased import stays consistent
   // between the import statement, the `imports` array and the template.
   const localName = componentNameOf(shape.csf._metaAnnotations.component) ?? snippetMeta.name;
   const ngModules = storyNgModules(storyDecorators, deps);
-  const expansion = argsExpansion(snippetMeta, shape);
+  const expansion = argsExpansion(snippetMeta, shape, printer);
   // Hidden args would expand `argsToTemplate` into markup that looks complete, so the markup is
   // read without bindings then and falls back with a warning instead.
   const userMarkup = userTemplate(shape, shape.unresolvedArgs.length === 0 ? expansion : undefined);
@@ -287,7 +339,11 @@ const renderStorySnippet = async (
 
   if (userMarkup?.kind === 'literal') {
     const { analyzeStoryTemplate } = await import('./story-docs-template-analysis.ts');
-    const analysis = analyzeStoryTemplate(userMarkup.markup, userMarkup.expansions);
+    const analysis =
+      valuesAnalysis ?? analyzeStoryTemplate(userMarkup.markup, userMarkup.expansions);
+    const markup = valuesAnalysis
+      ? materializeLike(valuesAnalysis, userMarkup.markup, userMarkup.expansions)
+      : analysis.markup;
     const referencedNames = new Set(analysis.kind === 'resolved' ? analysis.referencedNames : []);
     const boundOutputs =
       analysis.kind === 'resolved'
@@ -298,10 +354,11 @@ const renderStorySnippet = async (
       userMarkup.representedArgs,
       shape,
       boundOutputs,
-      snippetMeta.enums
+      snippetMeta.enums,
+      printer
     );
-    return withWarnings(
-      host(formatTemplateMarkup(analysis.markup), false, boundOutputs, hostArgs.fields),
+    const rendered = withWarnings(
+      host(formatTemplateMarkup(markup, printer.layout), false, boundOutputs, hostArgs.fields),
       unresolvedWarning([
         ...shape.metaMembers.unresolved,
         ...shape.members.unresolved,
@@ -314,6 +371,7 @@ const renderStorySnippet = async (
         ...referencedNames,
       ])
     );
+    return { ...rendered, analysis };
   }
 
   const markupSources = userMarkup?.source === undefined ? [] : [userMarkup.source];
@@ -326,10 +384,10 @@ const renderStorySnippet = async (
     );
   }
 
-  const { bindings, fields } = componentBindings(snippetMeta, shape);
+  const { bindings, fields } = componentBindings(snippetMeta, shape, printer);
   return withWarnings(
     host(
-      buildTemplate(snippetMeta.selector, { ...bindings, selfClosing: true }),
+      buildTemplate(snippetMeta.selector, { ...bindings, selfClosing: true }, printer.layout),
       false,
       snippetMeta.outputs,
       fields
@@ -344,7 +402,8 @@ const referencedArgFields = (
   representedArgs: readonly string[],
   shape: StoryShape,
   boundOutputs: readonly string[],
-  enums: AngularComponentSnippetMeta['enums']
+  enums: AngularComponentSnippetMeta['enums'],
+  printer: ArgPrinter
 ): { fields: { name: string; value: string }[]; unresolved: string[] } => {
   const taken = new Set([...representedArgs, ...boundOutputs]);
   const fields: { name: string; value: string }[] = [];
@@ -362,7 +421,7 @@ const referencedArgFields = (
       unresolved.push(oneLineTextOf(node));
       continue;
     }
-    fields.push({ name, value });
+    fields.push({ name, value: printer.show(name, 'field', value) });
   }
 
   return { fields, unresolved };
@@ -432,7 +491,8 @@ const unboundArgsWarning = (
 
 const componentBindings = (
   snippetMeta: AngularComponentSnippetMeta,
-  shape: StoryShape
+  shape: StoryShape,
+  printer: ArgPrinter
 ): { bindings: Bindings; fields: { name: string; value: string }[] } => {
   const inputNames = new Set(snippetMeta.inputs);
   const inputs: Bindings['inputs'] = [];
@@ -442,16 +502,40 @@ const componentBindings = (
       continue;
     }
     if (evaluateArgLiteral(node, snippetMeta.enums) === undefined && isSelfContained(node)) {
-      fields.push({ name, value: argFieldValue(node) });
+      fields.push({ name, value: printer.show(name, 'field', argFieldValue(node)) });
       inputs.push({ name, expression: formatPropInTemplate(name) });
       continue;
     }
-    inputs.push({ name, expression: evaluateArgExpression(node, snippetMeta.enums) });
+    inputs.push({
+      name,
+      expression: printer.show(name, 'bind', evaluateArgExpression(node, snippetMeta.enums)),
+    });
   }
+  inputs.push(...unsetInputs(snippetMeta, shape, printer, (name) => !(name in shape.args)));
   return { bindings: { inputs, outputs: snippetMeta.outputs }, fields };
 };
 
-const argsExpansion = (snippetMeta: AngularComponentSnippetMeta, shape: StoryShape): Bindings => {
+// A binding hole for each input `isUnset` names, where a control that sets it puts it, after those
+// the story sets: nothing in the print with values.
+const unsetInputs = (
+  snippetMeta: AngularComponentSnippetMeta,
+  shape: StoryShape,
+  printer: ArgPrinter,
+  isUnset: (name: string) => boolean
+): Bindings['inputs'] =>
+  snippetMeta.inputs.flatMap((name) => {
+    if (!isUnset(name)) {
+      return [];
+    }
+    const attribute = printer.unset(name, 'prop');
+    return attribute === undefined ? [] : [{ name, expression: '', attribute, unset: true }];
+  });
+
+const argsExpansion = (
+  snippetMeta: AngularComponentSnippetMeta,
+  shape: StoryShape,
+  printer: ArgPrinter
+): Bindings => {
   const inputNames = new Set(snippetMeta.inputs);
   const outputNames = new Set(snippetMeta.outputs);
   const inputs: Bindings['inputs'] = [];
@@ -465,9 +549,23 @@ const argsExpansion = (snippetMeta: AngularComponentSnippetMeta, shape: StorySha
         outputs.push(name);
       }
     } else if (inputNames.has(name)) {
-      inputs.push({ name, expression: evaluateArgExpression(node, snippetMeta.enums) });
+      const expression = evaluateArgExpression(node, snippetMeta.enums);
+      inputs.push({
+        name,
+        expression,
+        attribute: printer.show(name, 'prop', inputBinding(name, expression)),
+      });
     }
   }
+  // `argsToTemplate` leaves out an arg set to `undefined` too.
+  inputs.push(
+    ...unsetInputs(
+      snippetMeta,
+      shape,
+      printer,
+      (name) => !(name in shape.args) || isUndefinedValue(shape.args[name]!)
+    )
+  );
   return { inputs, outputs };
 };
 

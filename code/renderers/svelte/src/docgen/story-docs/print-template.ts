@@ -239,21 +239,13 @@ export function printTemplate({
             'name' in node &&
             node.type.endsWith('Directive') &&
             !code.slice(at(node).start, range.start).includes('=');
-          if (!shorthand) {
+          if (!shorthand || !replaced.single) {
             edits.push({ ...range, value: replaced.value, marked: replaced.marked });
             continue;
           }
           const value = replaced.substituted ? `${node.name}={${replaced.value}}` : written(range);
-          edits.push({
-            ...range,
-            value,
-            marked: replaced.single
-              ? mark(
-                  { kind: 'code', before: `${node.name}={`, after: '}', arg: replaced.single.arg },
-                  value
-                )
-              : value,
-          });
+          const hole = { before: `${node.name}={`, after: '}', arg: replaced.single.arg };
+          edits.push({ ...range, value, marked: mark({ kind: 'code', ...hole }, value) });
         }
         next();
       },

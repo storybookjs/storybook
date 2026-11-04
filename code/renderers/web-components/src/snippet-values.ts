@@ -62,13 +62,15 @@ export const isTruthy = (value: unknown): boolean => Boolean(value);
 // Whether lit's `ifDefined(value)` sets the attribute.
 export const isDefined = (value: unknown): boolean => value !== null && value !== undefined;
 
-// The `<style>` of part and state rules.
-export const styleElement = (rules: { selector: string; declarations: string }[]): string =>
-  `<style>${styleText(rules)}</style>`;
+// A part or state rule, as a line of the `<style>`.
+export const styleRule = (selector: string, declarations: string): string =>
+  `  ${selector} { ${declarations} }`;
 
-// The text of a `<style>` of part and state rules.
-const styleText = (rules: { selector: string; declarations: string }[]): string =>
-  `\n${rules.map(({ selector, declarations }) => `  ${selector} { ${declarations} }`).join('\n')}\n`;
+// The `<style>` of part and state rules.
+export const styleElement = (rules: { selector: string; declarations: string }[]): string => {
+  const lines = rules.map(({ selector, declarations }) => styleRule(selector, declarations));
+  return `<style>\n${lines.join('\n')}\n</style>`;
+};
 
 // The text or html a value a template renders as content prints: an array its items joined.
 export const childText = (value: unknown): string =>

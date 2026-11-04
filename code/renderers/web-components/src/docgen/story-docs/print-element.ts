@@ -7,6 +7,7 @@ import {
   slotText,
   slottedHtml,
   styleElement,
+  styleRule,
 } from '../../snippet-values.ts';
 import { type HtmlAttribute, type HtmlNode, parseHtml } from '../../html-parse.ts';
 import {
@@ -76,7 +77,7 @@ export function printElementSnippet(
     rules.length > 0
       ? `<style>\n${rules
           .map((written) => {
-            const text = `  ${written.selector} { ${written.declarations} }`;
+            const text = styleRule(written.selector, written.declarations);
             return written.arg === undefined
               ? text
               : marks.mark(rule({ ...written, arg: written.arg }), text);

@@ -18,6 +18,7 @@ import {
   slotText,
   slottedHtml,
   styleElement,
+  styleRule,
 } from '../snippet-values.ts';
 import type { HtmlHolePlace } from '../snippet-holes.ts';
 
@@ -54,7 +55,7 @@ export const printHole: PrintHole<HtmlHolePlace> = (hole, changed) => {
     case 'slot':
       return slottedHtml(hole.name, slotText(value));
     case 'rule':
-      return isSet(value) ? `  ${hole.selector} { ${String(value)} }` : '';
+      return isSet(value) ? styleRule(hole.selector, String(value)) : '';
     case 'style':
       return isSet(value)
         ? `${styleElement([{ selector: hole.selector, declarations: String(value) }])}\n`

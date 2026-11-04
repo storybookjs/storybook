@@ -14,9 +14,9 @@
   return el;
 };",
   "LitTemplate": "html`<stencil-props
-  value="4"
-  max="6"
-  variant="compact &amp; &lt;changed>"
-  aria-label-text="Rating &amp; &lt;changed>"
+  value=${4}
+  max=${6}
+  variant=${'compact & <changed>'}
+  aria-label-text=${'Rating & <changed>'}
 ></stencil-props>`",
 }

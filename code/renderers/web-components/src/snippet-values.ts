@@ -9,9 +9,6 @@ export function escapeAttribute(value: string, quote: '"' | "'" = '"'): string {
   return quote === "'" ? escaped.replace(/'/g, '&#39;') : escaped.replace(/"/g, '&quot;');
 }
 
-export const escapeText = (value: string): string =>
-  value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
 // An attribute with `text` as its value, in double quotes.
 export const quotedAttribute = (name: string, text: string): string =>
   `${name}="${escapeAttribute(text)}"`;
@@ -42,10 +39,6 @@ export function printAttribute(
   return text === undefined ? undefined : text === true ? name : quotedAttribute(name, text);
 }
 
-// The text of a value a lit template binds in an attribute value: none while it is unset.
-export const boundText = (value: unknown): string =>
-  value === null || value === undefined ? '' : String(value);
-
 // The `style` declarations of the custom properties that are set, or `undefined` for none.
 export const cssDeclarations = (
   properties: { name: string; value: unknown }[]
@@ -56,9 +49,6 @@ export const cssDeclarations = (
   return declarations.length === 0 ? undefined : declarations.join(' ');
 };
 
-// Text in a template literal, as code: its backslashes, backticks and `${` escaped.
-export const templateText = (text: string): string => text.replace(/\\|`|\$\{/g, '\\$&');
-
 // A part or state rule, as a line of the `<style>`.
 export const styleRule = (selector: string, declarations: string): string =>
   `  ${selector} { ${declarations} }`;
@@ -68,14 +58,6 @@ export const styleElement = (rules: { selector: string; declarations: string }[]
   const lines = rules.map(({ selector, declarations }) => styleRule(selector, declarations));
   return `<style>\n${lines.join('\n')}\n</style>`;
 };
-
-// The text or html a value a template renders as content prints: an array its items joined.
-export const childText = (value: unknown): string =>
-  value === null || value === undefined
-    ? ''
-    : Array.isArray(value)
-      ? value.map((item) => item ?? '').join('')
-      : String(value);
 
 // The html a slot arg holds: none while it is unset or empty.
 export const slotText = (value: unknown): string =>

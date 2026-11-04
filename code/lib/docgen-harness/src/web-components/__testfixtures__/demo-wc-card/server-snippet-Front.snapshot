@@ -1,5 +1,5 @@
 html`
   <demo-wc-card .backSide=${false} .header=${undefined} .rows=${[]}
-    ><span slot="prefix"></span>A simple card</demo-wc-card
+    ><span slot="prefix">${undefined}</span>A simple card</demo-wc-card
   >
 `

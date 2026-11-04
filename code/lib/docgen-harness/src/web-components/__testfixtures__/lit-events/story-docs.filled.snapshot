@@ -15,7 +15,7 @@
   return el;
 };",
   "LitTemplate": "html`<lit-events
-  value="changed &amp; &lt;changed>"
+  value=${'changed & <changed>'}
   @my-change=${() => {}}
   @my-close=${() => {}}
 ></lit-events>`",

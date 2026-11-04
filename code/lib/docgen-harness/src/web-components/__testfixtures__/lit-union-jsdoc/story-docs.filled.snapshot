@@ -8,8 +8,8 @@
   return el;
 };",
   "LitTemplate": "html`<lit-union-jsdoc
-  variant="secondary &amp; &lt;changed>"
-  old-label="Old &amp; &lt;changed>"
-  label="Current &amp; &lt;changed>"
+  variant=${'secondary & <changed>'}
+  old-label=${'Old & <changed>'}
+  label=${'Current & <changed>'}
 ></lit-union-jsdoc>`",
 }

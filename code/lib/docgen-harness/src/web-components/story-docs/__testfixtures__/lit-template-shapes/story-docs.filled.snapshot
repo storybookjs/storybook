@@ -1,8 +1,8 @@
 {
   "Aliased": "UnprintableArgError: The snippet cannot show the current value of the `label` arg.",
   "Attributes": "html`<lit-template-shapes
-  label="Alpha &amp; &lt;changed>"
-  count="3"
+  label=${'Alpha & <changed>'}
+  count=${3}
   ?disabled=${false}
 ></lit-template-shapes>`",
   "ClassMap": "html`<lit-template-shapes
@@ -12,12 +12,12 @@
   class=${classMap({ large: isLarge('large & <changed>') })}
 ></lit-template-shapes>`",
   "ClassMapKeys": "html`<lit-template-shapes
-  class="card ${classMap({ active: true as boolean, muted: !true, round: true })}"
+  class="card ${classMap({ active: true as boolean, muted: !(true), round: true })}"
 ></lit-template-shapes>`",
-  "Destructured": "html`<lit-template-shapes label="Destructured &amp; &lt;changed>" count="7"></lit-template-shapes>`",
+  "Destructured": "html`<lit-template-shapes label=${'Destructured & <changed>'} count=${7}></lit-template-shapes>`",
   "DisabledFalse": "html`<lit-template-shapes
-  label="Beta &amp; &lt;changed>"
-  count="4"
+  label=${'Beta & <changed>'}
+  count=${4}
   ?disabled=${true}
 ></lit-template-shapes>`",
   "IfDefined": "html`<lit-template-shapes
@@ -31,23 +31,23 @@
     >${user.admin ? 'admin' : 'guest'}</lit-template-shapes
   >`;
 };",
-  "Nested": "html`<lit-template-shapes>${html`<span>Nested &amp; &lt;changed&gt;</span>`}</lit-template-shapes>`",
+  "Nested": "html`<lit-template-shapes>${html`<span>${'Nested & <changed>'}</span>`}</lit-template-shapes>`",
   "NestedListener": "html`<lit-template-shapes @shape-change=${() => {}}
   >${html`<button @click=${() => {}}>Go</button>`}</lit-template-shapes
 >`",
   "Nothing": "html`<lit-template-shapes label=${'Set & <changed>' ? 'Set & <changed>' : nothing}
   >${true ? html`<b>shown</b>` : nothing}</lit-template-shapes
 >`",
-  "PrefixedClass": "html`<lit-template-shapes class="btn-large &amp; &lt;changed>"></lit-template-shapes>`",
+  "PrefixedClass": "html`<lit-template-shapes class="btn-${'large & <changed>'}"></lit-template-shapes>`",
   "PropertyOnly": "html`<lit-template-shapes .items=${[{ name: 'Alpha & <changed>' }]}></lit-template-shapes>`",
   "PropertyPaired": "html`<lit-template-shapes .heading=${'Heading & <changed>'} .open=${false}></lit-template-shapes>`",
   "PropertyPairedFalse": "html`<lit-template-shapes .heading=${'Closed & <changed>'} .open=${true}></lit-template-shapes>`",
   "QuotedAndMultiHole": "html`<lit-template-shapes
-  class="card warm &amp; &lt;changed> large &amp; &lt;changed>"
-  label="Quoted &amp; &lt;changed>"
+  class="card ${'warm & <changed>'} ${'large & <changed>'}"
+  label="${'Quoted & <changed>'}"
 ></lit-template-shapes>`",
   "StyleMap": "html`<lit-template-shapes
   style=${styleMap({ color: 'red & <changed>' as string, fontSize: ' & <changed>' as string, '--gap': '4px' })}
 ></lit-template-shapes>`",
-  "UnboundArg": "html`<lit-template-shapes label="Bound &amp; &lt;changed>"></lit-template-shapes>`",
+  "UnboundArg": "html`<lit-template-shapes label=${'Bound & <changed>'}></lit-template-shapes>`",
 }

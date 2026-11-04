@@ -10,8 +10,8 @@
   return el;
 };",
   "LitTemplate": "html`<vanilla-basic
-  label="Vanilla &amp; &lt;changed>"
-  count="5"
+  label=${'Vanilla & <changed>'}
+  count=${5}
   ?disabled=${false}
 ></vanilla-basic>`",
 }

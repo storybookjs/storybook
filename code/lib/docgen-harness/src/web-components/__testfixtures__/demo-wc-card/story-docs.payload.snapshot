@@ -8,12 +8,12 @@
       "name": "Back",
       "snippet": "html`
   <demo-wc-card .backSide=${true} .header=${undefined} .rows=${[]}
-    ><span slot="prefix"></span>A simple card</demo-wc-card
+    ><span slot="prefix">${undefined}</span>A simple card</demo-wc-card
   >
 `",
       "template": "html`
   <demo-wc-card .backSide=${⟦code backSide⟫true⟧} .header=${⟦code header⟫undefined⟧} .rows=${⟦code rows⟫[]⟧}
-    ><span slot="prefix">⟦text prefix⟫⟧</span>A simple card</demo-wc-card
+    ><span slot="prefix">${⟦code prefix⟫undefined⟧}</span>A simple card</demo-wc-card
   >
 `",
     },
@@ -22,12 +22,12 @@
       "name": "Front",
       "snippet": "html`
   <demo-wc-card .backSide=${false} .header=${undefined} .rows=${[]}
-    ><span slot="prefix"></span>A simple card</demo-wc-card
+    ><span slot="prefix">${undefined}</span>A simple card</demo-wc-card
   >
 `",
       "template": "html`
   <demo-wc-card .backSide=${⟦code backSide⟫false⟧} .header=${⟦code header⟫undefined⟧} .rows=${⟦code rows⟫[]⟧}
-    ><span slot="prefix">⟦text prefix⟫⟧</span>A simple card</demo-wc-card
+    ><span slot="prefix">${⟦code prefix⟫undefined⟧}</span>A simple card</demo-wc-card
   >
 `",
     },
@@ -36,12 +36,12 @@
       "name": "Prefix",
       "snippet": "html`
   <demo-wc-card .backSide=${false} .header=${'my header'} .rows=${[]}
-    ><span slot="prefix">prefix:</span>A simple card</demo-wc-card
+    ><span slot="prefix">${'prefix:'}</span>A simple card</demo-wc-card
   >
 `",
       "template": "html`
   <demo-wc-card .backSide=${⟦code backSide⟫false⟧} .header=${⟦code header⟫'my header'⟧} .rows=${⟦code rows⟫[]⟧}
-    ><span slot="prefix">⟦text prefix⟫prefix:⟧</span>A simple card</demo-wc-card
+    ><span slot="prefix">${⟦code prefix⟫'prefix:'⟧}</span>A simple card</demo-wc-card
   >
 `",
     },

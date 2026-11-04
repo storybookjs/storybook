@@ -1,5 +1,5 @@
 html`<lit-inheritance-mixin
-  base-label="Inherited"
+  base-label=${'Inherited'}
   ?mixed-active=${true}
-  count="5"
+  count=${5}
 ></lit-inheritance-mixin>`

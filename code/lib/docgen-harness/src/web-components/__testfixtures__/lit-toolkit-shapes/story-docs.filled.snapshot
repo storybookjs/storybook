@@ -21,10 +21,10 @@
   return el;
 };",
   "LitTemplate": "html`<lit-toolkit-shapes
-  size="large &amp; &lt;changed>"
-  level="3"
+  size=${'large & <changed>'}
+  level=${3}
   .tags=${['b & <changed>']}
-  label="Shaped &amp; &lt;changed>"
+  label=${'Shaped & <changed>'}
   @toolkit-resize=${() => {}}
 ></lit-toolkit-shapes>`",
 }

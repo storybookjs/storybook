@@ -58,10 +58,10 @@
     "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute": {
       "id": "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute",
       "name": "Spread Next To Attribute",
-      "snippet": "html`<lit-template-shapes label="Written" ${spreadProps(rest)}
+      "snippet": "html`<lit-template-shapes label="Written" ${spreadProps({ count: 2 })}
   >${undefined}</lit-template-shapes
 >`",
-      "template": "html`<lit-template-shapes label="Written" ${spreadProps(rest)}
+      "template": "⟦guard count⟫⟧⟦guard shape-change-event⟫⟧⟦guard default-slot⟫⟧⟦guard items⟫⟧⟦guard label⟫⟧⟦guard disabled⟫⟧⟦guard heading⟫⟧⟦guard open⟫⟧html`<lit-template-shapes label="Written" ${spreadProps({ count: 2 })}
   >${⟦code heading⟫undefined⟧}</lit-template-shapes
 >`",
     },

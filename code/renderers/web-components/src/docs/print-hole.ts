@@ -6,18 +6,14 @@ import {
 } from 'storybook/internal/docs-tools';
 
 import {
-  boundText,
-  childText,
   cssDeclarations,
   escapeAttribute,
-  escapeText,
   printAttribute,
   quotedAttribute,
   slotText,
   slottedHtml,
   styleElement,
   styleRule,
-  templateText,
 } from '../snippet-values.ts';
 import type { HtmlHolePlace, SnippetProperty } from '../snippet-holes.ts';
 
@@ -25,18 +21,12 @@ import type { HtmlHolePlace, SnippetProperty } from '../snippet-holes.ts';
 // static snippet prints a value in that place with; see `HtmlHolePlace`.
 export const printHole: PrintHole<HtmlHolePlace> = (hole, changed) => {
   const arg = hole.arg ?? '';
-  const value = printable(arg, valueAt(changed, hole.path));
+  const value = printable(arg, changed);
   switch (hole.kind) {
-    case 'attr': {
-      const name = hole.name ?? arg;
-      return hole.mode === 'bind'
-        ? templateText(quotedAttribute(name, boundText(value)))
-        : (printAttribute(name, value, hole.mode === 'field') ?? '');
-    }
+    case 'attr':
+      return printAttribute(hole.name ?? arg, value, hole.mode === 'field') ?? '';
     case 'code':
       return printValue(value, arg, { quote: "'", opaque: isLitValue });
-    case 'quoted':
-      return templateText(escapeAttribute(boundText(value)));
     case 'css':
       return escapeAttribute(cssDeclarations([{ name: hole.property ?? arg, value }]) ?? '');
     case 'cssattr': {
@@ -51,10 +41,6 @@ export const printHole: PrintHole<HtmlHolePlace> = (hole, changed) => {
       );
       return style === undefined ? '' : quotedAttribute('style', style);
     }
-    case 'text':
-      return templateText(escapeText(childText(value).replace(/\s+/g, ' ')));
-    case 'html':
-      return templateText(String(value));
     case 'slot':
       return slottedHtml(hole.name, slotText(value));
     case 'rule':
@@ -75,8 +61,8 @@ export const printHole: PrintHole<HtmlHolePlace> = (hole, changed) => {
 // The `<script>` that sets each property a control set, as the story sets it: on the element it
 // queries, to the value as JavaScript.
 const propertyScript = (properties: SnippetProperty[], args: Record<string, unknown>): string => {
-  const lines = properties.flatMap(({ arg, path, name, tag }) => {
-    const value = Object.hasOwn(args, arg) ? valueAt(args[arg], path) : undefined;
+  const lines = properties.flatMap(({ arg, name, tag }) => {
+    const value = Object.hasOwn(args, arg) ? args[arg] : undefined;
     if (value === undefined) {
       return [];
     }
@@ -92,16 +78,6 @@ const propertyScript = (properties: SnippetProperty[], args: Record<string, unkn
   });
   return lines.length === 0 ? '' : `<script>\n${lines.join('\n')}\n</script>`;
 };
-
-// The member of `value` at `path`, as the story reads it, or `undefined` where there is none.
-const valueAt = (value: unknown, path: string[] = []): unknown =>
-  path.reduce<unknown>(
-    (current, key) =>
-      current === null || current === undefined
-        ? undefined
-        : (current as Record<string, unknown>)[key],
-    value
-  );
 
 const isSet = (value: unknown) => value !== null && value !== undefined && value !== '';
 

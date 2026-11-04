@@ -1,1 +1,1 @@
-html`<multi-beta beta-label="Beta"></multi-beta>`
+html`<multi-beta beta-label=${'Beta'}></multi-beta>`

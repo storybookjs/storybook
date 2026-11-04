@@ -32,7 +32,7 @@
     el.setAttribute('disabled', '');
   }
   el.setAttribute('max-count', String(⟦code maxCount⟫5⟧));
-  (el as HTMLElement & { items: string[] }).items =⟦code items ~" "⟫ ['a']⟧ as string[];
+  (el as HTMLElement & { items: string[] }).items = ⟦code items⟫['a']⟧ as string[];
   return el;
 };",
     },
@@ -40,17 +40,17 @@
       "id": "webcomponentsfixtures-fast-attributes--lit-template",
       "name": "Lit Template",
       "snippet": "html`<fast-attributes
-  label="Count"
-  size="large"
+  label=${'Count'}
+  size=${'large'}
   ?disabled=${false}
-  max-count="5"
+  max-count=${5}
   .items=${['a']}
 ></fast-attributes>`",
-      "template": "html`<fast-attributes⟦attr label mode="bind" ~"\n  "⟫
-  label="Count"⟧⟦attr size mode="bind" ~"\n  "⟫
-  size="large"⟧
-  ?disabled=${⟦code disabled⟫false⟧}⟦attr maxCount name="max-count" mode="bind" ~"\n  "⟫
-  max-count="5"⟧
+      "template": "html`<fast-attributes
+  label=${⟦code label⟫'Count'⟧}
+  size=${⟦code size⟫'large'⟧}
+  ?disabled=${⟦code disabled⟫false⟧}
+  max-count=${⟦code maxCount⟫5⟧}
   .items=${⟦code items⟫['a']⟧}
 ></fast-attributes>`",
     },

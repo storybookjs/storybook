@@ -29,8 +29,8 @@
     items?: unknown;
   };
   el.setAttribute('label', String(⟦code label⟫'Configured'⟧));
-  el.items =⟦code items ~" "⟫ [{ name: 'Alpha' }, { name: 'Beta' }]⟧;
-  el.config =⟦code config ~" "⟫ { dense: true, theme: 'dark' }⟧;
+  el.items = ⟦code items⟫[{ name: 'Alpha' }, { name: 'Beta' }]⟧;
+  el.config = ⟦code config⟫{ dense: true, theme: 'dark' }⟧;
   return el;
 };",
     },
@@ -38,12 +38,12 @@
       "id": "webcomponentsfixtures-lit-property-only--lit-template",
       "name": "Lit Template",
       "snippet": "html`<lit-property-only
-  label="Configured"
+  label=${'Configured'}
   .items=${[{ name: 'Alpha' }, { name: 'Beta' }]}
   .config=${{ dense: true, theme: 'dark' }}
 ></lit-property-only>`",
-      "template": "html`<lit-property-only⟦attr label mode="bind" ~"\n  "⟫
-  label="Configured"⟧
+      "template": "html`<lit-property-only
+  label=${⟦code label⟫'Configured'⟧}
   .items=${⟦code items⟫[{ name: 'Alpha' }, { name: 'Beta' }]⟧}
   .config=${⟦code config⟫{ dense: true, theme: 'dark' }⟧}
 ></lit-property-only>`",

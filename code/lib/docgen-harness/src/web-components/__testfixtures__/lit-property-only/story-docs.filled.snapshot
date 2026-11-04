@@ -15,7 +15,7 @@
   return el;
 };",
   "LitTemplate": "html`<lit-property-only
-  label="Configured &amp; &lt;changed>"
+  label=${'Configured & <changed>'}
   .items=${[{ name: 'Alpha & <changed>' }, { name: 'Beta & <changed>' }]}
   .config=${{ dense: false, theme: 'dark & <changed>' }}
 ></lit-property-only>`",

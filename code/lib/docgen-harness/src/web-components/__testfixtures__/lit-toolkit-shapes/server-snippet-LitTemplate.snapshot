@@ -1,7 +1,7 @@
 html`<lit-toolkit-shapes
-  size="large"
-  level="2"
+  size=${'large'}
+  level=${2}
   .tags=${['b']}
-  label="Shaped"
+  label=${'Shaped'}
   @toolkit-resize=${() => {}}
 ></lit-toolkit-shapes>`

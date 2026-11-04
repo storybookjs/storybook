@@ -51,17 +51,12 @@ describe('a changed arg', () => {
   const holePlaces: HtmlHolePlace[] = [
     { kind: 'attr', name: 'label', mode: 'render' },
     { kind: 'attr', name: 'label', mode: 'field' },
-    { kind: 'attr', name: 'label', mode: 'bind' },
     { kind: 'code' },
     { kind: 'css', property: '--accent' },
     { kind: 'cssattr', properties: [{ arg: 'v', property: '--accent' }] },
-    { kind: 'quoted' },
-    { kind: 'text' },
-    { kind: 'html' },
     { kind: 'slot', name: 'actions' },
     { kind: 'rule', selector: 'x-el::part(p)' },
     { kind: 'style', selector: 'x-el::part(p)' },
-    { kind: 'attr', name: 'label', mode: 'bind', path: ['name'] },
     { kind: 'guard' },
   ];
 
@@ -83,28 +78,28 @@ describe('a changed arg', () => {
     {
       name: 'a lit binding',
       story: 'html`<test-element label=${args.x}></test-element>`',
-      values: isNotObject,
+      values: () => true,
     },
     {
       name: 'a quoted lit value',
       story: 'html`<test-element title="a ${args.x}"></test-element>`',
-      values: isNotObject,
+      values: () => true,
     },
     {
       name: 'lit text',
       story: 'html`<test-element>${args.x}</test-element>`',
-      values: isNotObject,
+      values: () => true,
     },
     {
       name: 'a member of an arg',
       story: 'html`<test-element label=${args.x.v}></test-element>`',
       member: true,
-      values: isNotObject,
+      values: () => true,
     },
     {
       name: 'a nested lit template',
       story: 'html`<test-element>${html`<b>${args.x}</b>`}</test-element>`',
-      values: isNotObject,
+      values: () => true,
     },
     {
       name: 'lit code',
@@ -123,7 +118,7 @@ describe('a changed arg', () => {
     {
       name: 'a string template',
       story: '`<test-element>${args.x}</test-element>`',
-      values: isNotObject,
+      values: () => true,
     },
     {
       name: 'a css part',
@@ -199,9 +194,8 @@ describe('a changed arg', () => {
 
   it.each(holePlaces)('cannot print a function or lit value in a hole of %j', (place) => {
     for (const value of unprintable) {
-      // A spread hole gets the args a control set, and a `path` reads a member of the arg.
-      const changed =
-        place.kind === 'cssattr' ? { v: value } : place.path ? { [place.path[0]!]: value } : value;
+      // A spread hole gets the args a control set.
+      const changed = place.kind === 'cssattr' ? { v: value } : value;
       expect(() => printHole({ ...place, arg: 'v' }, changed)).toThrow(
         new UnprintableArgError('v')
       );
@@ -227,12 +221,10 @@ describe('a changed arg', () => {
       spread: true,
       properties: [
         { arg: 'v', name: 'items', tag: 'x-el' },
-        { arg: 'w', path: ['a'], name: 'aria-x', tag: 'y-el' },
+        { arg: 'w', name: 'aria-x', tag: 'y-el' },
       ],
     };
-    expect(
-      printHole(hole, { v: ["it's", 1, null, '<!--<script></script>'], w: { a: { b: true } } })
-    ).toBe(
+    expect(printHole(hole, { v: ["it's", 1, null, '<!--<script></script>'], w: { b: true } })).toBe(
       [
         '<script>',
         "  document.querySelector('x-el').items = ['it\\'s', 1, null, '<\\!--<script><\\/script>'];",
@@ -240,17 +232,12 @@ describe('a changed arg', () => {
         '</script>',
       ].join('\n')
     );
-    expect(printHole(hole, { other: 1, w: {} })).toBe('');
+    expect(printHole(hole, { other: 1 })).toBe('');
     for (const value of unprintable) {
       expect(() => printHole(hole, { v: value })).toThrow(new UnprintableArgError('v'));
     }
   });
 });
-
-// A value lit or JavaScript prints as text in a template: an object prints as code where a story is
-// written with it, but as its text where a control sets it.
-const isNotObject = (value: unknown) =>
-  value === null || typeof value !== 'object' || Array.isArray(value);
 
 const declaration = {
   kind: 'class',

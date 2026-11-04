@@ -1,5 +1,5 @@
 html`<lit-events
-  value="changed"
+  value=${'changed'}
   @my-change=${() => {}}
   @my-close=${() => {}}
 ></lit-events>`

@@ -8,5 +8,5 @@
   el.setAttribute('beta-label', String('Beta & <changed>'));
   return el;
 };",
-  "LitTemplate": "html`<multi-beta beta-label="Beta &amp; &lt;changed>"></multi-beta>`",
+  "LitTemplate": "html`<multi-beta beta-label=${'Beta & <changed>'}></multi-beta>`",
 }

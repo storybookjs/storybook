@@ -41,14 +41,14 @@
       "id": "webcomponentsfixtures-lit-basic-attributes--lit-template",
       "name": "Lit Template",
       "snippet": "html`<lit-basic-attributes
-  label="Open panel"
-  count="7"
+  label=${'Open panel'}
+  count=${7}
   ?disabled=${false}
   ?is-open=${true}
 ></lit-basic-attributes>`",
-      "template": "html`<lit-basic-attributes⟦attr label mode="bind" ~"\n  "⟫
-  label="Open panel"⟧⟦attr count mode="bind" ~"\n  "⟫
-  count="7"⟧
+      "template": "html`<lit-basic-attributes
+  label=${⟦code label⟫'Open panel'⟧}
+  count=${⟦code count⟫7⟧}
   ?disabled=${⟦code disabled⟫false⟧}
   ?is-open=${⟦code isOpen⟫true⟧}
 ></lit-basic-attributes>`",

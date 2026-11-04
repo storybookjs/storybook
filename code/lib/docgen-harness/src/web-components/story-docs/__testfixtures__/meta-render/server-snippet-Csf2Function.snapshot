@@ -1,1 +1,1 @@
-html`<meta-render label="csf2"></meta-render>`
+html`<meta-render label=${'csf2'}></meta-render>`

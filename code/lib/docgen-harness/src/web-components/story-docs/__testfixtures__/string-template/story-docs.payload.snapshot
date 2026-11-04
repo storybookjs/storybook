@@ -18,8 +18,8 @@
     "webcomponentsstorydocs-string-template--untagged": {
       "id": "webcomponentsstorydocs-string-template--untagged",
       "name": "Untagged",
-      "snippet": "`<string-template label="Untagged" ?fake=true></string-template>`",
-      "template": "`<string-template label="⟦html label⟫Untagged⟧" ?fake=⟦html flag⟫true⟧></string-template>`",
+      "snippet": "`<string-template label="${'Untagged'}" ?fake=${true}></string-template>`",
+      "template": "`<string-template label="${⟦code label⟫'Untagged'⟧}" ?fake=${⟦code flag⟫true⟧}></string-template>`",
     },
   },
 }

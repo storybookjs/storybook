@@ -136,6 +136,17 @@ const findForeignWhitespace = (source: string) =>
     ? firstError(source.replace(/[\u0085\u200b]/g, '\u2060'))
     : undefined;
 
+// Acorn-jsx reads `<` right after an import or export source as less-than, so JSX on the next line
+// is an error there, not a statement.
+const findLessThanAfterSource = (program: Node, source: string) => {
+  const body = program.body as Node[];
+  return body.find((statement, index) => {
+    const previous = body[index - 1] as Node | undefined;
+    const from = previous?.source as Node | undefined;
+    return source[statement.start] === '<' && !!from && from.end === previous!.end;
+  });
+};
+
 // `offset` is the length of a prefix added to `source`; positions are reported without it.
 const parseWithOxc = (source: string, offset: number) => {
   const result = parseSync('mdx.jsx', source, oxcOptions);
@@ -148,7 +159,7 @@ const parseWithOxc = (source: string, offset: number) => {
     throw createError(error.message, input, toPosition(error.labels[0]?.start ?? source.length));
   }
   const program = result.program as unknown as Node;
-  const unsupported = findUnsupported(program, source);
+  const unsupported = findLessThanAfterSource(program, source) ?? findUnsupported(program, source);
   if (unsupported) {
     throw createError('Unexpected token', input, toPosition(unsupported.start));
   }

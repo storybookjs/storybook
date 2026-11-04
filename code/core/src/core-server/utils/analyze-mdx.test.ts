@@ -602,6 +602,7 @@ describe('analyzeMdx', () => {
       ['an escape in a JSX name', 'export const a = <\\u0061 />'],
       ['awaiting JSX', 'export const a = await <a />'],
       ['a zero-width space between tokens', "import a from 'a'\u200b"],
+      ['JSX on the line after an import', "import a from 'a'\n<a />"],
     ])('rejects %s', async (_, esm) => {
       await expect(analyzeMdx(esm)).rejects.toThrow('Could not parse import/exports with acorn');
     });

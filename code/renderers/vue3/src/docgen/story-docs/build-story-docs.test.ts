@@ -9,7 +9,7 @@ import {
   formatTemplate,
   printValue,
 } from 'storybook/internal/docs-tools';
-import type { Args, IndexEntry, ProvidedStoryDoc } from 'storybook/internal/types';
+import type { Args, IndexEntry, StoryDoc } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
 import { vol } from 'memfs';
@@ -261,7 +261,7 @@ export const Primary = {
 const vueTemplate = (template: SnippetTemplate) => template as SnippetTemplate<VueHolePlace>;
 
 describe('template', () => {
-  const filled = (story: ProvidedStoryDoc | undefined, initialArgs: Args, changed: Args) =>
+  const filled = (story: StoryDoc | undefined, initialArgs: Args, changed: Args) =>
     fillTemplate(
       vueTemplate(story!.template!),
       { initialArgs, unmappedArgs: { ...initialArgs, ...changed } },

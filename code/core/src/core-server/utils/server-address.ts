@@ -85,8 +85,17 @@ export const getServerChannelUrl = (port: number, { https }: { https?: boolean }
   return `${https ? 'wss' : 'ws'}://127.0.0.1:${port}${SERVER_CHANNEL_PATH}`;
 };
 
+// Sandboxed environments can deny listing the network interfaces, which makes Node throw.
+export const getNetworkInterfaces = () => {
+  try {
+    return os.networkInterfaces();
+  } catch {
+    return {};
+  }
+};
+
 const getExternalIpv4Addresses = () =>
-  Object.values(os.networkInterfaces())
+  Object.values(getNetworkInterfaces())
     .flat()
     .filter((ip) => ip && ip.family === 'IPv4' && !ip.internal)
     .map((ip) => ip!.address);

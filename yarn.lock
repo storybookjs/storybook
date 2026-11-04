@@ -33644,6 +33644,7 @@ __metadata:
     require-from-string: "npm:^2.0.2"
     rolldown: "npm:^1.1.4"
     semver: "npm:^7.7.3"
+    signal-exit: "npm:^4.1.0"
     sirv: "npm:^2.0.4"
     slash: "npm:^5.0.0"
     source-map: "npm:^0.7.4"

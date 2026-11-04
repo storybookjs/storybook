@@ -15,8 +15,11 @@ import {
 } from 'node:child_process';
 // PATH entries are OS-native strings; pathe would rewrite their separators.
 import { basename, delimiter, dirname } from 'node:path';
+import { PassThrough } from 'node:stream';
+import { stripVTControlCharacters } from 'node:util';
 
 import crossSpawn from 'cross-spawn';
+import { onExit } from 'signal-exit';
 
 export interface SubprocessOptions {
   cwd?: string;
@@ -80,8 +83,11 @@ export class SubprocessError extends Error implements SubprocessResult {
   declare shortMessage: string;
   /** Message of the underlying error (spawn error, abort reason), if any. */
   declare originalMessage?: string;
-  /** Code of the underlying error, such as `ENOENT` when the command does not exist. */
-  declare code?: string;
+  /**
+   * Code of the underlying error, such as `ENOENT` when the command does not exist. Numeric for a
+   * `DOMException` abort reason.
+   */
+  declare code?: string | number;
   declare command: string;
   declare escapedCommand: string;
   declare cwd?: string;
@@ -134,7 +140,7 @@ export function spawnSubprocess(
     // Invalid options throw synchronously; report them through the promise like other failures.
     const failure = makeError(context, { cause: error });
     return mergePromise(
-      new ChildProcess(),
+      withEndedStreams(new ChildProcess()),
       reject ? Promise.reject(failure) : Promise.resolve(failure)
     );
   }
@@ -185,6 +191,11 @@ export function spawnSubprocess(
 
   const stdout = buffer ? collect(child.stdout) : undefined;
   const stderr = buffer ? collect(child.stderr) : undefined;
+  if (!buffer) {
+    // A full pipe nobody reads would block the process forever.
+    resumeIfUnread(child.stdout);
+    resumeIfUnread(child.stderr);
+  }
   const interleaved: Buffer[] | undefined = all ? [] : undefined;
   if (interleaved) {
     child.stdout?.on('data', (chunk: Buffer) => interleaved.push(chunk));
@@ -451,11 +462,12 @@ function makeError(context: CommandContext, details: FailureDetails): Subprocess
     timedOut = false,
     isCanceled = false,
   } = details;
-  const code = (cause as NodeJS.ErrnoException | undefined)?.code;
+  const code = (cause as { code?: string | number } | undefined)?.code;
   const originalMessage =
     cause === undefined
       ? undefined
-      : String((cause as Error | undefined)?.message ?? cause) || undefined;
+      : stripVTControlCharacters(String((cause as Error | undefined)?.message ?? cause)) ||
+        undefined;
 
   let reason: string;
   if (timedOut) {
@@ -474,7 +486,8 @@ function makeError(context: CommandContext, details: FailureDetails): Subprocess
 
   const shortMessage = `${reason}: ${context.escapedCommand}${originalMessage ? `\n${originalMessage}` : ''}`;
   const message = [shortMessage, ...(all === undefined ? [stderr, stdout] : [all])]
-    .filter(Boolean)
+    .filter((part): part is string => Boolean(part))
+    .map((part) => stripVTControlCharacters(part))
     .join('\n\n');
 
   const error = new SubprocessError(message, cause === undefined ? undefined : { cause });
@@ -510,53 +523,40 @@ function mergePromise(child: ChildProcess, promise: Promise<SubprocessResult>): 
   }) as unknown as Subprocess;
 }
 
-// Children spawned with `cleanup` are killed when the parent exits, like execa did through
-// signal-exit. For a terminating signal, the parent is re-signalled once its children are killed,
-// unless someone else also listens for that signal and therefore owns the shutdown.
-const liveChildren = new Set<ChildProcess>();
-const TERMINATING_SIGNALS: NodeJS.Signals[] =
-  process.platform === 'win32' ? ['SIGINT', 'SIGTERM'] : ['SIGINT', 'SIGTERM', 'SIGHUP'];
-
-const killLiveChildren = () => {
-  for (const child of liveChildren) {
-    child.kill();
-  }
-};
-
-const onTerminatingSignal = (signal: NodeJS.Signals) => {
-  killLiveChildren();
-  if (process.listenerCount(signal) === 1) {
-    removeCleanupHandlers();
-    process.kill(process.pid, signal);
-  }
-};
-
-function addCleanupHandlers() {
-  process.on('exit', killLiveChildren);
-  for (const signal of TERMINATING_SIGNALS) {
-    process.on(signal, onTerminatingSignal);
-  }
+/** Stand-in streams for a process that could not be spawned, so callers can still attach to them. */
+function withEndedStreams(child: ChildProcess) {
+  const ended = () => new PassThrough().end();
+  const [stdin, stdout, stderr] = [ended(), ended(), ended()];
+  return Object.assign(child, { stdin, stdout, stderr, stdio: [stdin, stdout, stderr] });
 }
 
-function removeCleanupHandlers() {
-  process.off('exit', killLiveChildren);
-  for (const signal of TERMINATING_SIGNALS) {
-    process.off(signal, onTerminatingSignal);
-  }
+/** Let output nobody listens to flow away, after giving the caller a tick to attach listeners. */
+function resumeIfUnread(stream: NodeJS.ReadableStream | null) {
+  setImmediate(() => {
+    if (stream && (stream as { readableFlowing?: boolean | null }).readableFlowing === null) {
+      stream.resume();
+    }
+  });
 }
+
+// Children spawned with `cleanup` are killed when the parent exits or is terminated by a signal,
+// through signal-exit as execa did. signal-exit coordinates with its other copies in the process,
+// so the parent still exits on SIGINT/SIGTERM when another library uses it too.
+const removeExitHandlers = new WeakMap<ChildProcess, () => void>();
 
 function trackForCleanup(child: ChildProcess) {
   if (child.pid === undefined) {
     return;
   }
-  if (liveChildren.size === 0) {
-    addCleanupHandlers();
-  }
-  liveChildren.add(child);
+  removeExitHandlers.set(
+    child,
+    onExit(() => {
+      child.kill();
+    })
+  );
 }
 
 function untrackForCleanup(child: ChildProcess) {
-  if (liveChildren.delete(child) && liveChildren.size === 0) {
-    removeCleanupHandlers();
-  }
+  removeExitHandlers.get(child)?.();
+  removeExitHandlers.delete(child);
 }

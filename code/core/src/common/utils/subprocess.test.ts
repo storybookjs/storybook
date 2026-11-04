@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -148,6 +150,51 @@ describe('spawnSubprocess', () => {
     expect((await subprocess).stdout).toBeUndefined();
   });
 
+  it('drains output nobody reads with buffer false, so the process cannot block on a full pipe', async () => {
+    const result = await spawnSubprocess(
+      node,
+      script('process.stdout.write("x".repeat(1e6)); process.stderr.write("y".repeat(1e6))'),
+      { buffer: false }
+    );
+
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('reports a spawn that fails synchronously through the promise, with ended streams', async () => {
+    const subprocess = spawnSubprocess(node, ['null\0byte']);
+
+    // Callers such as `execCommandCountLines` read stdout before awaiting.
+    const stdoutEnded = new Promise((resolve) => subprocess.stdout?.on('end', resolve).resume());
+    await expect(stdoutEnded).resolves.toBeUndefined();
+    await expect(subprocess).rejects.toMatchObject({
+      failed: true,
+      code: 'ERR_INVALID_ARG_VALUE',
+    });
+  });
+
+  it('strips terminal escape sequences from the error message', async () => {
+    const error = await spawnSubprocess(
+      node,
+      script(
+        'process.stderr.write("\\u001b[31mnpm error code ERESOLVE\\u001b[39m"); process.exit(1)'
+      )
+    ).catch((e: SubprocessError) => e);
+
+    expect(error).toBeInstanceOf(SubprocessError);
+    expect((error as SubprocessError).message).toContain('\n\nnpm error code ERESOLVE');
+    expect(error.stderr).toBe('\u001b[31mnpm error code ERESOLVE\u001b[39m');
+  });
+
+  it('uses only the given env with extendEnv false', async () => {
+    const { stdout } = await spawnSubprocess(
+      node,
+      script('console.log(JSON.stringify([process.env.SB_TEST_VAR, process.env.HOME]))'),
+      { env: { SB_TEST_VAR: 'only' }, extendEnv: false }
+    );
+
+    expect(JSON.parse(stdout!)).toEqual(['only', null]);
+  });
+
   it('leaves stdout undefined when it is not piped', async () => {
     const result = await spawnSubprocess(node, script(''), { stdio: 'ignore' });
 
@@ -218,5 +265,59 @@ describe('spawnSubprocessSync', () => {
     expect(() =>
       spawnSubprocessSync(node, script('setTimeout(() => {}, 60_000)'), { timeout: 100 })
     ).toThrow(expect.objectContaining({ timedOut: true }));
+  });
+});
+
+describe.skipIf(process.platform === 'win32')('cleanup', () => {
+  const subprocessModule = fileURLToPath(new URL('./subprocess.ts', import.meta.url));
+
+  /**
+   * Starts a parent Node process that spawns a long-running child through the wrapper, then sends
+   * the parent `signal` and checks that both processes are gone.
+   */
+  const runParent = async (signal: NodeJS.Signals, { withOtherSignalExitUser = false } = {}) => {
+    const parent = spawnSubprocess(
+      node,
+      [
+        '--input-type=module',
+        '-e',
+        [
+          withOtherSignalExitUser ? "import { onExit } from 'signal-exit'; onExit(() => {});" : '',
+          `const { spawnSubprocess } = await import(${JSON.stringify(subprocessModule)});`,
+          "const child = spawnSubprocess(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' });",
+          'child.catch(() => {});',
+          'console.log(child.pid);',
+          'setInterval(() => {}, 1000);',
+        ].join('\n'),
+      ],
+      { buffer: false, reject: false, cwd: fileURLToPath(new URL('.', import.meta.url)) }
+    );
+    const childPid = await new Promise<number>((resolve) =>
+      parent.stdout?.once('data', (chunk: Buffer) => resolve(Number(chunk.toString().trim())))
+    );
+    parent.kill(signal);
+    const result = await parent;
+
+    await expect.poll(() => isAlive(childPid)).toBe(false);
+    return result;
+  };
+
+  const isAlive = (pid: number) => {
+    try {
+      process.kill(pid, 0);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  it.each(['SIGTERM', 'SIGINT'] as const)('kills children and exits on %s', async (signal) => {
+    expect(await runParent(signal)).toMatchObject({ signal });
+  });
+
+  it('still exits on SIGTERM when another library in the process uses signal-exit', async () => {
+    expect(await runParent('SIGTERM', { withOtherSignalExitUser: true })).toMatchObject({
+      signal: 'SIGTERM',
+    });
   });
 });

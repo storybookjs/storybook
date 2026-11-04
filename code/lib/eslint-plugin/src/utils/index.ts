@@ -1,5 +1,11 @@
 import type { IncludeExcludeOptions } from './csf-helpers.ts';
-import { isExportStory, isValidPreviewPath } from './csf-helpers.ts';
+import {
+  findVarInitialization,
+  isCsfFactoryCall,
+  isExportStory,
+  isValidPreviewPath,
+  unwrapExpression,
+} from './csf-helpers.ts';
 
 import type { TSESTree } from '@typescript-eslint/types';
 import type { TSESLint } from '@typescript-eslint/utils';
@@ -14,9 +20,7 @@ import {
   isObjectExpression,
   isSpreadElement,
   isTSAsExpression,
-  isTSNonNullExpression,
   isTSSatisfiesExpression,
-  isTSTypeAssertion,
   isVariableDeclaration,
   isVariableDeclarator,
 } from './ast.ts';
@@ -64,44 +68,31 @@ export const getMetaObjectExpression = (
   return isObjectExpression(meta) ? meta : null;
 };
 
-export const unwrapTSExpression = (node: TSESTree.Node): TSESTree.Node =>
-  isTSAsExpression(node) ||
-  isTSSatisfiesExpression(node) ||
-  isTSNonNullExpression(node) ||
-  isTSTypeAssertion(node)
-    ? unwrapTSExpression(node.expression)
-    : node;
-
 /**
- * Initializer of the variable an identifier refers to, when csf-tools would resolve it: a single
- * `VariableDeclarator`, optionally required to never be reassigned or to sit at the top level of
- * the file (csf-tools only searches top-level declarations for property values).
+ * Initializer of the constant an identifier refers to in actual scope, mirroring how csf-tools
+ * resolves a factory argument: a single `VariableDeclarator` that is never reassigned.
  */
-export const resolveIdentifierInit = (
+export const resolveConstantInit = (
   context: RuleContext,
-  identifier: TSESTree.Identifier,
-  { requireConstant = false, topLevelOnly = false } = {}
+  identifier: TSESTree.Identifier
 ): TSESTree.Expression | null => {
   const variable = ASTUtils.findVariable(getScope(context, identifier), identifier.name);
   const def = variable?.defs.length === 1 ? variable.defs[0] : undefined;
   if (!def || !isVariableDeclarator(def.node) || !def.node.init) {
     return null;
   }
-  if (requireConstant && variable?.references.some((ref) => ref.isWrite() && !ref.init)) {
+  if (variable?.references.some((ref) => ref.isWrite() && !ref.init)) {
     return null;
-  }
-  if (topLevelOnly) {
-    const declaration = def.node.parent;
-    const container =
-      declaration.parent?.type === 'ExportNamedDeclaration'
-        ? declaration.parent.parent
-        : declaration.parent;
-    if (container?.type !== 'Program') {
-      return null;
-    }
   }
   return def.node.init;
 };
+
+/** csf-tools' top-level variable lookup, run over the ESLint program. */
+export const findTopLevelVariableInit = (
+  context: RuleContext,
+  name: string
+): TSESTree.Expression | null =>
+  findVarInitialization(name, context.sourceCode.ast as never) as TSESTree.Expression | null;
 
 export interface FactoryMetaCall {
   /** False when the root is named `preview` but imported from a non-preview path (csf-tools errors). */
@@ -154,9 +145,9 @@ export const parseFactoryMetaCall = (
   const [argument] = node.arguments;
   let resolved: TSESTree.Node | null = argument ?? null;
   if (argument && isIdentifier(argument)) {
-    resolved = resolveIdentifierInit(context, argument, { requireConstant: true }) ?? argument;
+    resolved = resolveConstantInit(context, argument) ?? argument;
   }
-  const unwrapped = resolved && unwrapTSExpression(resolved);
+  const unwrapped = resolved && unwrapExpression(resolved);
   return {
     validPreviewImport: true,
     metaObject: unwrapped && isObjectExpression(unwrapped) ? unwrapped : null,
@@ -172,31 +163,10 @@ export const getFactoryMetaObjectExpression = (
   return factoryMeta?.validPreviewImport ? factoryMeta.metaObject : null;
 };
 
-// `meta.type<T>()` returns its receiver, so type calls are transparent when finding the root
-const withoutTypeCalls = (node: TSESTree.Node): TSESTree.Node =>
-  isCallExpression(node) &&
-  node.arguments.length === 0 &&
-  isMemberExpression(node.callee) &&
-  !node.callee.computed &&
-  isIdentifier(node.callee.property) &&
-  node.callee.property.name === 'type'
-    ? withoutTypeCalls(node.callee.object)
-    : node;
-
-/**
- * Whether an expression is a CSF factory story call: `meta.story({ ... })` or `meta.extend()`,
- * rooted at an identifier like csf-tools requires — so builder chains such as
- * `z.object({}).extend({ ... })` do not count.
- */
+/** csf-tools' factory story detection (`meta.story()` / `meta.extend()`), over the ESLint AST. */
 export const isCsfFactoryStoryCall = (
   node: TSESTree.Node | null | undefined
-): node is TSESTree.CallExpression =>
-  isCallExpression(node) &&
-  isMemberExpression(node.callee) &&
-  !node.callee.computed &&
-  isIdentifier(node.callee.property) &&
-  ['story', 'extend'].includes(node.callee.property.name) &&
-  isIdentifier(withoutTypeCalls(node.callee.object));
+): node is TSESTree.CallExpression => isCsfFactoryCall(node as never);
 
 /**
  * Whether an exported identifier produces a story in a factory file: only `meta.story()` /
@@ -207,7 +177,7 @@ export const isFactoryStoryExport = (id: TSESTree.Identifier) =>
   id.parent?.type === 'ExportSpecifier' ||
   (isVariableDeclarator(id.parent) &&
     !!id.parent.init &&
-    isCsfFactoryStoryCall(unwrapTSExpression(id.parent.init)));
+    isCsfFactoryStoryCall(unwrapExpression(id.parent.init)));
 
 export const getDescriptor = (
   metaDeclaration: TSESTree.ObjectExpression,

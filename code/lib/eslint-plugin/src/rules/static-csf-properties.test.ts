@@ -271,6 +271,12 @@ const scenarios: Scenario[] = [
     indexable: true,
   },
   {
+    name: 'static template-literal keys are read like identifier keys',
+    code: 'export default { [`title`]: computeTitle() }',
+    indexable: false,
+    errors: [{ messageId: 'dynamicProperty', type: AST_NODE_TYPES.Property }],
+  },
+  {
     name: 'dynamic value behind a quoted key',
     code: "export default { 'title': computeTitle() }",
     indexable: false,

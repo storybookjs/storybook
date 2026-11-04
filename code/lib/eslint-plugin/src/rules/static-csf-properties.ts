@@ -1,16 +1,22 @@
 /**
  * @file CSF properties that Storybook indexes must be statically analyzable
  */
-import { isExportStory } from '../utils/csf-helpers.ts';
+import {
+  isExportStory,
+  isRegExpLiteral,
+  isStringLiteral,
+  staticKey,
+  unwrapExpression,
+} from '../utils/csf-helpers.ts';
 
 import type { TSESTree } from '@typescript-eslint/types';
 
 import {
+  findTopLevelVariableInit,
   getNonStoryExportsConfig,
   getMetaObjectExpression,
   isCsfFactoryStoryCall,
   parseFactoryMetaCall,
-  resolveIdentifierInit,
   unwrapCsfTSWrappers,
 } from '../utils/index.ts';
 import {
@@ -18,7 +24,6 @@ import {
   isAssignmentExpression,
   isFunctionDeclaration,
   isIdentifier,
-  isLiteral,
   isMemberExpression,
   isObjectExpression,
   isProperty,
@@ -29,13 +34,8 @@ import {
 import { CategoryId } from '../utils/constants.ts';
 import { createStorybookRule } from '../utils/create-storybook-rule.ts';
 
-const isStaticString = (node: TSESTree.Node): boolean =>
-  isLiteral(node) && typeof node.value === 'string';
-
-const isStaticRegExp = (node: TSESTree.Node): boolean => isLiteral(node) && 'regex' in node;
-
 const isStaticStringArray = (node: TSESTree.Node): boolean =>
-  isArrayExpression(node) && node.elements.every((element) => element && isStaticString(element));
+  isArrayExpression(node) && node.elements.every((element) => isStringLiteral(element));
 
 interface StaticPropertyCheck {
   /** Whether csf-tools follows an identifier to a top-level variable in the same file. */
@@ -48,12 +48,12 @@ const META_PROPERTIES: Record<string, StaticPropertyCheck> = {
   title: {
     resolveIdentifier: true,
     isValid: (node) =>
-      isStaticString(node) || (isTSSatisfiesExpression(node) && isStaticString(node.expression)),
+      isStringLiteral(node) || (isTSSatisfiesExpression(node) && isStringLiteral(node.expression)),
     expected: 'a string literal (or a top-level `const` in this file holding one)',
   },
   id: {
     resolveIdentifier: false,
-    isValid: isStaticString,
+    isValid: isStringLiteral,
     expected: 'a string literal',
   },
   tags: {
@@ -64,12 +64,12 @@ const META_PROPERTIES: Record<string, StaticPropertyCheck> = {
   },
   includeStories: {
     resolveIdentifier: false,
-    isValid: (node) => isStaticString(node) || isStaticRegExp(node) || isStaticStringArray(node),
+    isValid: (node) => isStringLiteral(node) || isRegExpLiteral(node) || isStaticStringArray(node),
     expected: 'a string literal, regular expression literal, or inline array of string literals',
   },
   excludeStories: {
     resolveIdentifier: false,
-    isValid: (node) => isStaticString(node) || isStaticRegExp(node) || isStaticStringArray(node),
+    isValid: (node) => isStringLiteral(node) || isRegExpLiteral(node) || isStaticStringArray(node),
     expected: 'a string literal, regular expression literal, or inline array of string literals',
   },
 };
@@ -113,7 +113,7 @@ export default createStorybookRule({
     const isValidStaticValue = (check: StaticPropertyCheck, value: TSESTree.Node) => {
       const resolved =
         check.resolveIdentifier && isIdentifier(value)
-          ? (resolveIdentifierInit(context, value, { topLevelOnly: true }) ?? value)
+          ? (findTopLevelVariableInit(context, value.name) ?? value)
           : value;
       return check.isValid(resolved);
     };
@@ -129,14 +129,7 @@ export default createStorybookRule({
           return;
         }
 
-        // mirror csf-tools' staticKey: string-literal keys count, computed identifiers do not
-        const { key } = prop;
-        const name =
-          isLiteral(key) && typeof key.value === 'string'
-            ? key.value
-            : isIdentifier(key) && !prop.computed
-              ? key.name
-              : undefined;
+        const name = staticKey(prop as never);
         if (name === undefined || !Object.hasOwn(checks, name)) {
           return;
         }
@@ -255,7 +248,7 @@ export default createStorybookRule({
             const exportName = isIdentifier(specifier.exported)
               ? specifier.exported.name
               : String(specifier.exported.value);
-            const init = resolveIdentifierInit(context, specifier.local, { topLevelOnly: true });
+            const init = findTopLevelVariableInit(context, specifier.local.name);
             if (init) {
               if (exportName === 'default') {
                 // export { X as default } is a CSF3 meta
@@ -266,7 +259,8 @@ export default createStorybookRule({
                 }
                 return;
               }
-              collectStoryCandidate(exportName, init);
+              // csf-tools unwraps specifier initializers deeply, unlike declarations
+              collectStoryCandidate(exportName, unwrapExpression(init));
             }
           });
         }

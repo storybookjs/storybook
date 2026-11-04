@@ -43,6 +43,11 @@ import {
   locationOf,
   outerSpan,
   unwrapExpression,
+  isCanonicalCsf2BindCall,
+  withoutTypeCalls,
+  isCsfFactoryCall,
+  csfFactoryReceiver,
+  type CsfFactoryCall,
 } from './estree/ast.ts';
 import {
   type GeneratedMap,
@@ -62,48 +67,7 @@ type CsfMutationState = {
 
 const mutationStates = new WeakMap<CsfFile, CsfMutationState>();
 
-type StaticIdentifierMemberCall = E.CallExpression & {
-  callee: E.StaticMemberExpression & { object: E.IdentifierReference; property: E.IdentifierName };
-};
-
-type CsfFactoryCall = E.CallExpression & {
-  callee: E.StaticMemberExpression & { property: E.IdentifierName };
-};
-
-export const isCanonicalCsf2BindCall = (
-  node: Node | null | undefined
-): node is StaticIdentifierMemberCall =>
-  node?.type === 'CallExpression' &&
-  node.callee.type === 'MemberExpression' &&
-  !node.callee.computed &&
-  node.callee.object.type === 'Identifier' &&
-  isIdentifier(node.callee.property, 'bind') &&
-  (node.arguments.length === 0 ||
-    (node.arguments.length === 1 &&
-      node.arguments[0].type === 'ObjectExpression' &&
-      node.arguments[0].properties.length === 0));
-
-/** Receiver of a `.type<T>()` chain, which returns its receiver: `meta` for `meta.type<T>()`. */
-export const withoutTypeCalls = (object: Node): Node =>
-  object.type === 'CallExpression' &&
-  object.arguments.length === 0 &&
-  object.callee.type === 'MemberExpression' &&
-  !object.callee.computed &&
-  isIdentifier(object.callee.property, 'type')
-    ? withoutTypeCalls(object.callee.object)
-    : object;
-
-export const isCsfFactoryCall = (node: Node | null | undefined): node is CsfFactoryCall =>
-  node?.type === 'CallExpression' &&
-  node.callee.type === 'MemberExpression' &&
-  !node.callee.computed &&
-  withoutTypeCalls(node.callee.object).type === 'Identifier' &&
-  node.callee.property.type === 'Identifier' &&
-  (node.callee.property.name === 'story' || node.callee.property.name === 'extend');
-
-/** Identifier a CSF factory call is made on: `meta` in `meta.type<T>().story()`. */
-export const csfFactoryReceiver = (node: CsfFactoryCall): E.IdentifierReference =>
-  withoutTypeCalls(node.callee.object) as E.IdentifierReference;
+export { isCanonicalCsf2BindCall, withoutTypeCalls, isCsfFactoryCall, csfFactoryReceiver };
 
 function parseIncludeExclude(prop: Node) {
   if (prop.type === 'ArrayExpression') {

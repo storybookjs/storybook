@@ -7,7 +7,7 @@ import { storyNameFromExport } from '../utils/csf-helpers.ts';
 
 import type { TSESTree } from '@typescript-eslint/types';
 
-import { isCsfFactoryStoryCall, unwrapTSExpression } from '../utils/index.ts';
+import { isCsfFactoryStoryCall, unwrapCsfTSWrappers } from '../utils/index.ts';
 import {
   isExpressionStatement,
   isIdentifier,
@@ -72,7 +72,7 @@ export default createStorybookRule({
           // CSF3 object exports and CSF4 `meta.story({ ... })` exports carry the same shape.
           // `.extend()` is excluded: it inherits the base story's name, so an override matching
           // the export name still changes what renders.
-          let storyObject: TSESTree.Node | null | undefined = init && unwrapTSExpression(init);
+          let storyObject: TSESTree.Node | null | undefined = init && unwrapCsfTSWrappers(init);
           if (
             isCsfFactoryStoryCall(storyObject) &&
             isMemberExpression(storyObject.callee) &&

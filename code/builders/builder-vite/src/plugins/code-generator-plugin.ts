@@ -1,9 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
+import { getBuilderOptions } from 'storybook/internal/common';
 import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 import type { Options } from 'storybook/internal/types';
 
+import { isAbsolute } from 'pathe';
 import type { Plugin } from 'vite';
 
 import { importMetaResolve } from '../../../../core/src/shared/utils/module.ts';
@@ -11,6 +13,7 @@ import { generateImportFnScriptCode } from '../codegen-importfn-script.ts';
 import { generateModernIframeScriptCode } from '../codegen-modern-iframe-script.ts';
 import { generateAddonSetupCode } from '../codegen-set-addon-channel.ts';
 import { transformIframeHtml } from '../transform-iframe-html.ts';
+import type { BuilderOptions } from '../types.ts';
 import {
   applyChunkedPreviewRuntime,
   bundlerOptionsKey,
@@ -27,6 +30,7 @@ export function codeGeneratorPlugin(options: Options) {
   let iframeId: string;
   const storyIndexGeneratorPromise: Promise<StoryIndexGenerator> =
     options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+  let importFnPathPromise: Promise<string | undefined> | undefined;
 
   return {
     name: 'storybook:code-generator-plugin',
@@ -69,7 +73,24 @@ export function codeGeneratorPlugin(options: Options) {
     configResolved(config) {
       iframeId = `${config.root}/iframe.html`;
     },
-    resolveId(source) {
+    async resolveId(source, importer) {
+      // VIRTUAL_STORIES_FILE can be overriden with custom `options.experimental_importFn`
+      if (source === SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE) {
+        importFnPathPromise ??= getImportFnOverride(options);
+        const importFnPath = await importFnPathPromise;
+
+        if (importFnPath) {
+          const resolved = await this.resolve(importFnPath, importer, { skipSelf: true });
+
+          if (resolved) {
+            return resolved;
+          }
+
+          throw new Error(
+            `Could not resolve the "experimental_importFn" builder option: ${importFnPath}`
+          );
+        }
+      }
       if (SB_VIRTUAL_FILE_IDS.includes(source)) {
         return getResolvedVirtualModuleId(source);
       }
@@ -108,4 +129,20 @@ export function codeGeneratorPlugin(options: Options) {
       return transformIframeHtml(html, options);
     },
   } satisfies Plugin;
+}
+
+async function getImportFnOverride(options: Options): Promise<string | undefined> {
+  const { experimental_importFn } = await getBuilderOptions<BuilderOptions>(options);
+
+  if (experimental_importFn === undefined) {
+    return undefined;
+  }
+
+  if (!isAbsolute(experimental_importFn)) {
+    throw new Error(
+      `The "experimental_importFn" builder option must be an absolute path, received: ${experimental_importFn}`
+    );
+  }
+
+  return experimental_importFn;
 }

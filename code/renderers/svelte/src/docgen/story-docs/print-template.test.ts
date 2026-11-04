@@ -307,7 +307,7 @@ describe('printTemplate template', () => {
 
   it('wraps each place an arg prints in a hole that holds what it prints there', () => {
     expect(formatTemplate(template('<Panel {...args} />', "{ label: 'Go' }"))).toBe(
-      '<Panel⟦prop label ~" "⟫ label="Go"⟧⟦props * except=["label"] ~" "⟫⟧ />'
+      '<Panel⟦prop label ~" "⟫ label="Go"⟧⟦props * except=["label"] separator=" " ~" "⟫⟧ />'
     );
     expect(formatTemplate(template('<h1>{args.title}</h1>', "{ title: 'Save' }"))).toBe(
       '<h1>⟦fragment title before="{" after="}"⟫Save⟧</h1>'

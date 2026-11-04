@@ -1,9 +1,4 @@
-import {
-  type PrintHole,
-  UnprintableArgError,
-  printValue,
-  unknownHoleKind,
-} from 'storybook/internal/docs-tools';
+import { type PrintHole, printValue, unknownHoleKind } from 'storybook/internal/docs-tools';
 import type { Args } from 'storybook/internal/types';
 
 import { isVNode } from 'vue';
@@ -30,16 +25,17 @@ export const printHole: PrintHole<VueHolePlace> = (hole, value) => {
   switch (hole.kind) {
     case 'attr':
       return value === undefined ? '' : attribute(hole.name ?? arg, arg, value);
-    case 'overridden': {
+    case 'bound': {
       const args = value as Args;
-      const read = [hole.by, hole.reads].find((name) => name && Object.hasOwn(args, name));
-      return read === undefined ? hole.written : attribute(hole.name, read, args[read]);
-    }
-    case 'merged': {
-      const { quote } = hole;
-      const own = inAttribute(code(arg, value, quote === "'" ? '"' : "'"), quote);
-      const both = hole.after ? [own, hole.code] : [hole.code, own];
-      return `:${arg}=${quote}[${both.join(', ')}]${quote}`;
+      return (Object.hasOwn(args, hole.by) ? hole.over : hole.code)
+        .map((part) =>
+          typeof part === 'string'
+            ? part
+            : Object.hasOwn(args, part.arg)
+              ? printHole(part, args[part.arg])
+              : part.text
+        )
+        .join('');
     }
     case 'props':
       return Object.entries(value as Args)
@@ -76,8 +72,6 @@ export const printHole: PrintHole<VueHolePlace> = (hole, value) => {
       }
       return operand(hole.in === 'interpolation' ? inInterpolation(printed) : printed, readsOn);
     }
-    case 'guard':
-      throw new UnprintableArgError(arg);
     default:
       return unknownHoleKind(hole);
   }

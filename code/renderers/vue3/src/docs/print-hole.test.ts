@@ -50,29 +50,6 @@ describe('printHole', () => {
     ).toBe(`:class="'big'" title="Hi"`);
   });
 
-  it('prints an attribute an args binding writes over from the arg over it, else the one it reads', () => {
-    const hole = {
-      kind: 'overridden',
-      name: 'max-size',
-      by: 'maxSize',
-      reads: 'label',
-      written: 'max-size="Hi"',
-      spread: true,
-    } as const;
-    expect(printHole(hole, { maxSize: 'lg', label: 'Ho' })).toBe('max-size="lg"');
-    expect(printHole(hole, { label: 'Ho' })).toBe('max-size="Ho"');
-    expect(printHole(hole, { count: 2 })).toBe('max-size="Hi"');
-  });
-
-  it('binds the value of a class or style with the code the template binds', () => {
-    expect(printHole({ kind: 'merged', code: 'cls', quote: '"', arg: 'class' }, 'a "b"')).toBe(
-      `:class="[cls, 'a &quot;b&quot;']"`
-    );
-    expect(
-      printHole({ kind: 'merged', code: 'css', quote: "'", after: true, arg: 'style' }, "a: 'b'")
-    ).toBe(`:style='["a: &#39;b&#39;", css]'`);
-  });
-
   it('prints the slots a control set as children, opening a tag that closes itself', () => {
     const slots: Extract<VueHolePlace, { kind: 'slots' }> = {
       kind: 'slots',
@@ -114,8 +91,24 @@ describe('printHole', () => {
     expect(print({ kind: 'value', in: 'statement', readsOn: true }, 5)).toBe('(5)');
   });
 
-  it('cannot print an arg the snippet has no place for, nor a place it does not know', () => {
-    expect(() => print({ kind: 'guard' }, 'Go')).toThrow(new UnprintableArgError('x'));
+  it('prints a bound prop as its code, with the args a control set, or as its arg over it', () => {
+    const bound: Extract<VueHolePlace, { kind: 'bound' }> = {
+      kind: 'bound',
+      by: 'size',
+      code: [
+        ':size="',
+        { kind: 'value', in: 'attribute', quote: '"', arg: 'label', text: "'Go'" },
+        ` + '!'"`,
+      ],
+      over: [{ kind: 'attr', arg: 'size', text: '' }],
+    };
+    const hole = { ...bound, spread: true } as const;
+    expect(printHole(hole, { count: 2 })).toBe(`:size="'Go' + '!'"`);
+    expect(printHole(hole, { label: 'Stop' })).toBe(`:size="'Stop' + '!'"`);
+    expect(printHole(hole, { label: 'Stop', size: 'lg' })).toBe('size="lg"');
+  });
+
+  it('cannot print a place it does not know', () => {
     expect(() => print({ kind: 'slot' } as never, 'Go')).toThrow('Unknown hole kind `slot`');
   });
 });

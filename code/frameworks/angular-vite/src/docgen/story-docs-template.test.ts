@@ -257,13 +257,13 @@ describe('story-docs templates', () => {
     expect(fill(story!, { config: {} })).toBe(story!.snippet);
   });
 
-  it('gives a story whose code holds what a template prints a hole with a template', async () => {
+  it('has no template, but its snippet, where the snippet holds a private-use character', async () => {
     const [story] = await storyDocs(`
       ${IMPORTS}
-      export const Default = { args: { label: '⟦bind x⟫y⟧' } };
+      export const Default = { args: { label: 'a\\uf700b' } };
     `);
-    expect(fill(story!, { label: '⟦bind x⟫y⟧' })).toBe(story!.snippet);
-    expect(fill(story!, { label: '⟦bind x⟫y⟧' }, { label: 'Stop' })).toContain(`[label]="'Stop'"`);
+    expect(story!.snippet).toContain(`[label]="'a\uf700b'"`);
+    expect(story!.template).toBeUndefined();
   });
 
   it('has no template where text the snippet escapes stands right before other text', async () => {
@@ -339,19 +339,47 @@ describe('a value a control sets', () => {
     { a: 1, 'b-c': ['x'] },
   ];
 
-  it.each(VALUES.map((value) => [value]))(
-    '%s fills as the static snippet of a story setting it',
-    async (value) => {
-      const literal = value === undefined ? 'undefined' : JSON.stringify(value);
-      const [written] = await storyDocs(`
-      ${IMPORTS}
-      export const Default = { args: { label: ${literal} } };
-    `);
-      const [story] = await storyDocs(`
-      ${IMPORTS}
-      export const Default = { args: { label: 'Go' } };
-    `);
-      expect(fill(story!, { label: 'Go' }, { label: value })).toBe(written!.snippet);
-    }
+  // The values markup can interpolate as text from a literal: on one line, without the braces
+  // Angular reads as its own syntax.
+  const TEXT_VALUES = VALUES.filter(
+    (value) =>
+      (typeof value === 'string' && !/[\n{}]/.test(value)) ||
+      typeof value === 'boolean' ||
+      (typeof value === 'number' && value >= 0)
   );
+
+  describe.each([
+    { kind: 'bind', render: '', values: VALUES },
+    {
+      kind: 'prop',
+      render: `(args) => ({ props: args, template: \`<sb-button \${argsToTemplate(args)}></sb-button>\` })`,
+      values: VALUES,
+    },
+    {
+      kind: 'field',
+      render: `(args) => ({ props: args, template: \`<sb-button [label]="label"></sb-button>\` })`,
+      values: VALUES,
+    },
+    {
+      kind: 'text',
+      render: `({ label }) => ({ template: \`<sb-button>\${label}</sb-button>\` })`,
+      values: TEXT_VALUES,
+    },
+  ])('in a $kind hole', ({ kind, render, values }) => {
+    const story = (literal: string) =>
+      storyDocs(`
+        ${IMPORTS}
+        export const Default = { args: { label: ${literal} }, ${render ? `render: ${render}` : ''} };
+      `);
+
+    it.each(values.map((value) => [value]))(
+      '%s fills as the static snippet of a story setting it',
+      async (value) => {
+        const [written] = await story(value === undefined ? 'undefined' : JSON.stringify(value));
+        const [go] = await story(`'Go'`);
+        expect(formatTemplate(go!.template!)).toContain(`⟦${kind} label`);
+        expect(fill(go!, { label: 'Go' }, { label: value })).toBe(written!.snippet);
+      }
+    );
+  });
 });

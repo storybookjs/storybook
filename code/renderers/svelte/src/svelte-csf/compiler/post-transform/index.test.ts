@@ -69,15 +69,11 @@ describe(transformStoriesCode.name, () => {
       	title: 'Example',
       	component: Example,
       	tags: ['autodocs'],
-      	args: {
-      		onclick: fn(),
-      		onmouseenter: fn(),
-      		onmouseleave: fn()
-      	},
+      	args: { onclick: fn(), onmouseenter: fn(), onmouseleave: fn() },
       	parameters: {
       		docs: {
       			description: {
-      				component: "Description set explicitly in the comment above \`defineMeta\`.\\n\\nMultiline supported. And also Markdown syntax:\\n\\n* **Bold**,\\n* _Italic_,\\n* \`Code\`."
+      				component: 'Description set explicitly in the comment above \`defineMeta\`.\\n\\nMultiline supported. And also Markdown syntax:\\n\\n* **Bold**,\\n* _Italic_,\\n* \`Code\`.'
       			}
       		}
       	}
@@ -136,11 +132,9 @@ describe(transformStoriesCode.name, () => {
       	name: 'Default',
       	template,
       	parameters: {
-      		docs: {
-      			description: { story: "Description for the default story" }
-      		},
+      		docs: { description: { story: 'Description for the default story' } },
       		__svelteCsf: {
-      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+      			rawCode: '<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>'
       		}
       	}
       });
@@ -152,11 +146,9 @@ describe(transformStoriesCode.name, () => {
       	args: { rounded: true },
       	template,
       	parameters: {
-      		docs: {
-      			description: { story: "Description for the rounded story" }
-      		},
+      		docs: { description: { story: 'Description for the rounded story' } },
       		__svelteCsf: {
-      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+      			rawCode: '<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>'
       		}
       	}
       });
@@ -168,11 +160,9 @@ describe(transformStoriesCode.name, () => {
       	args: { rounded: false },
       	template,
       	parameters: {
-      		docs: {
-      			description: { story: "Description for the squared story" }
-      		},
+      		docs: { description: { story: 'Description for the squared story' } },
       		__svelteCsf: {
-      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+      			rawCode: '<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>'
       		}
       	}
       });
@@ -200,9 +190,7 @@ describe(transformStoriesCode.name, () => {
       		$.append($$anchor, fragment_3);
       	}),
       	$$slots: { default: true },
-      	parameters: {
-      		__svelteCsf: { rawCode: "<Example>Label</Example>" }
-      	}
+      	parameters: { __svelteCsf: { rawCode: '<Example>Label</Example>' } }
       });
 
       	var node_6 = $.sibling(node_4, 2);
@@ -219,7 +207,7 @@ describe(transformStoriesCode.name, () => {
       	$$slots: { default: true },
       	parameters: {
       		__svelteCsf: {
-      			rawCode: "<Example {...args}>\\n  Forwarded label\\n</Example>"
+      			rawCode: '<Example {...args}>\\n  Forwarded label\\n</Example>'
       		}
       	}
       });
@@ -239,44 +227,25 @@ describe(transformStoriesCode.name, () => {
 
 
 
-      import { createRuntimeStories } from "@storybook/svelte/internal/svelte-csf/create-runtime-stories";
+      import { createRuntimeStories } from '@storybook/svelte/internal/svelte-csf/create-runtime-stories';
 
       const $__stories = createRuntimeStories(Example_stories, $__meta);
 
       export default $__meta;
 
       export const __namedExportsOrder = [
-      	"Default",
-      	"Rounded",
-      	"Square",
-      	"AsChild",
-      	"ChildrenForwared"
+      	'Default',
+      	'Rounded',
+      	'Square',
+      	'AsChild',
+      	'ChildrenForwared'
       ];
 
-      const $__Default = {
-      	...$__stories["Default"],
-      	tags: ["svelte-csf-v5"]
-      };
-
-      const $__Rounded = {
-      	...$__stories["Rounded"],
-      	tags: ["svelte-csf-v5"]
-      };
-
-      const $__Square = {
-      	...$__stories["Square"],
-      	tags: ["svelte-csf-v5"]
-      };
-
-      const $__AsChild = {
-      	...$__stories["AsChild"],
-      	tags: ["svelte-csf-v5"]
-      };
-
-      const $__ChildrenForwared = {
-      	...$__stories["ChildrenForwared"],
-      	tags: ["svelte-csf-v5"]
-      };
+      const $__Default = { ...$__stories['Default'], tags: ['svelte-csf-v5'] };
+      const $__Rounded = { ...$__stories['Rounded'], tags: ['svelte-csf-v5'] };
+      const $__Square = { ...$__stories['Square'], tags: ['svelte-csf-v5'] };
+      const $__AsChild = { ...$__stories['AsChild'], tags: ['svelte-csf-v5'] };
+      const $__ChildrenForwared = { ...$__stories['ChildrenForwared'], tags: ['svelte-csf-v5'] };
 
       export {
       	$__Default as Default,
@@ -326,8 +295,8 @@ describe(transformStoriesCode.name, () => {
 
     const output = code.toString();
 
-    expect(output).toContain('component: "Description of the component"');
-    expect(output).toContain('story: "Description of the story"');
+    expect(output).toContain("component: 'Description of the component'");
+    expect(output).toContain("story: 'Description of the story'");
     expect(output).toContain('__svelteCsf');
   });
 });
@@ -388,9 +357,7 @@ describe('CSF factories', () => {
       	component: Button,
       	args: { primary: true },
       	parameters: {
-      		docs: {
-      			description: { component: "Description of the component" }
-      		}
+      		docs: { description: { component: 'Description of the component' } }
       	}
       });
       const { Story } = $__meta;
@@ -413,10 +380,8 @@ describe('CSF factories', () => {
       			args: { label: 'Primary' },
       			tags: ['autodocs'],
       			parameters: {
-      				docs: {
-      					description: { story: "Description of the story" }
-      				},
-      				__svelteCsf: { rawCode: "<Button {...args} />" }
+      				docs: { description: { story: 'Description of the story' } },
+      				__svelteCsf: { rawCode: '<Button {...args} />' }
       			}
       		}),
       		'component',
@@ -439,9 +404,7 @@ describe('CSF factories', () => {
       				name: 'Button',
       				template,
       				$$slots: { template: true },
-      				parameters: {
-      					__svelteCsf: { rawCode: "<Button {...args} />" }
-      				}
+      				parameters: { __svelteCsf: { rawCode: '<Button {...args} />' } }
       			}),
       			'component',
       			Button_stories,
@@ -452,23 +415,21 @@ describe('CSF factories', () => {
       	}
 
       	$.append($$anchor, fragment);
+
       	return $.pop($$exports);
       }
-      import { createRuntimeStories } from "@storybook/svelte/internal/svelte-csf/create-runtime-stories";
+      import { createRuntimeStories } from '@storybook/svelte/internal/svelte-csf/create-runtime-stories';
 
       const $__stories = createRuntimeStories(Button_stories, $__meta.input);
 
-      export const __namedExportsOrder = ["Primary", "Button"];
+      export const __namedExportsOrder = ['Primary', 'Button'];
 
       const $__Primary = $__meta.story({
-      	...$__stories["Primary"],
-      	tags: ['autodocs', "svelte-csf-v5"]
+      	...$__stories['Primary'],
+      	tags: ['autodocs', 'svelte-csf-v5']
       });
 
-      const $__Button = $__meta.story({
-      	...$__stories["Button"],
-      	tags: ["svelte-csf-v5"]
-      });
+      const $__Button = $__meta.story({ ...$__stories['Button'], tags: ['svelte-csf-v5'] });
 
       export { $__Primary as Primary, $__Button as Button };"
     `);
@@ -511,9 +472,7 @@ describe('CSF factories', () => {
       		() => Story($$anchor, {
       			name: 'Primary',
       			args: { label: 'Primary', theme: 'dark' },
-      			parameters: {
-      				__svelteCsf: { rawCode: "<Button {...args} />" }
-      			}
+      			parameters: { __svelteCsf: { rawCode: '<Button {...args} />' } }
       		}),
       		'component',
       		Button_stories,
@@ -524,16 +483,13 @@ describe('CSF factories', () => {
 
       	return $.pop($$exports);
       }
-      import { createRuntimeStories } from "@storybook/svelte/internal/svelte-csf/create-runtime-stories";
+      import { createRuntimeStories } from '@storybook/svelte/internal/svelte-csf/create-runtime-stories';
 
       const $__stories = createRuntimeStories(Button_stories, $__meta.input);
 
-      export const __namedExportsOrder = ["Primary"];
+      export const __namedExportsOrder = ['Primary'];
 
-      const $__Primary = $__meta.story({
-      	...$__stories["Primary"],
-      	tags: ["svelte-csf-v5"]
-      });
+      const $__Primary = $__meta.story({ ...$__stories['Primary'], tags: ['svelte-csf-v5'] });
 
       export { $__Primary as Primary };"
     `);
@@ -576,9 +532,7 @@ describe('CSF factories', () => {
       		() => Story($$anchor, {
       			name: 'Primary',
       			args: { label: 'Primary', theme: 'dark' },
-      			parameters: {
-      				__svelteCsf: { rawCode: "<Button {...args} />" }
-      			}
+      			parameters: { __svelteCsf: { rawCode: '<Button {...args} />' } }
       		}),
       		'component',
       		Button_stories,
@@ -589,16 +543,13 @@ describe('CSF factories', () => {
 
       	return $.pop($$exports);
       }
-      import { createRuntimeStories } from "@storybook/svelte/internal/svelte-csf/create-runtime-stories";
+      import { createRuntimeStories } from '@storybook/svelte/internal/svelte-csf/create-runtime-stories';
 
       const $__stories = createRuntimeStories(Button_stories, $__meta.input);
 
-      export const __namedExportsOrder = ["Primary"];
+      export const __namedExportsOrder = ['Primary'];
 
-      const $__Primary = $__meta.story({
-      	...$__stories["Primary"],
-      	tags: ["svelte-csf-v5"]
-      });
+      const $__Primary = $__meta.story({ ...$__stories['Primary'], tags: ['svelte-csf-v5'] });
 
       export { $__Primary as Primary };"
     `);
@@ -654,9 +605,7 @@ describe('CSF factories', () => {
       		() => Story(node, {
       			name: 'Primary',
       			args: { label: 'Primary' },
-      			parameters: {
-      				__svelteCsf: { rawCode: "<Button {...args} />" }
-      			}
+      			parameters: { __svelteCsf: { rawCode: '<Button {...args} />' } }
       		}),
       		'component',
       		Button_stories,
@@ -671,7 +620,7 @@ describe('CSF factories', () => {
       		const template = $.wrap_snippet(Button_stories, function ($$anchor, $$arg0) {
       			$.validate_snippet_args(...arguments);
 
-      			let icon = () => $$arg0?.().icon;
+      			let icon = () => ($$arg0?.()).icon;
 
       			icon();
 
@@ -700,7 +649,7 @@ describe('CSF factories', () => {
       				template,
       				$$slots: { template: true },
       				parameters: {
-      					__svelteCsf: { rawCode: "<Button {...args} label={icon} />" }
+      					__svelteCsf: { rawCode: '<Button {...args} label={icon} />' }
       				}
       			}),
       			'component',
@@ -712,23 +661,17 @@ describe('CSF factories', () => {
       	}
 
       	$.append($$anchor, fragment);
+
       	return $.pop($$exports);
       }
-      import { createRuntimeStories } from "@storybook/svelte/internal/svelte-csf/create-runtime-stories";
+      import { createRuntimeStories } from '@storybook/svelte/internal/svelte-csf/create-runtime-stories';
 
       const $__stories = createRuntimeStories(Button_stories, meta.input);
 
-      export const __namedExportsOrder = ["Primary", "Icon"];
+      export const __namedExportsOrder = ['Primary', 'Icon'];
 
-      const $__Primary = meta.story({
-      	...$__stories["Primary"],
-      	tags: ["svelte-csf-v5"]
-      });
-
-      const $__Icon = meta.story({
-      	...$__stories["Icon"],
-      	tags: ["svelte-csf-v5"]
-      });
+      const $__Primary = meta.story({ ...$__stories['Primary'], tags: ['svelte-csf-v5'] });
+      const $__Icon = meta.story({ ...$__stories['Icon'], tags: ['svelte-csf-v5'] });
 
       export { $__Primary as Primary, $__Icon as Icon };"
     `);
@@ -758,48 +701,33 @@ describe('CSF factories', () => {
       <Story extend="Primary" name="Primary Static" asChild />
     `);
 
-    expect([...output.matchAll(/rawCode: (".*")/g)].map(([, rawCode]) => JSON.parse(rawCode)))
-      .toMatchInlineSnapshot(`
-        [
-          "<Button {...args}>
-          Click me
-        </Button>",
-          "<Button {...args}>
-          Click me
-        </Button>",
-          "<Button {...args}>★</Button>",
-          "Click me",
-        ]
-      `);
+    expect(output.match(/rawCode: '.*'/g)).toMatchInlineSnapshot(`
+      [
+        "rawCode: '<Button {...args}>\\n  Click me\\n</Button>'",
+        "rawCode: '<Button {...args}>\\n  Click me\\n</Button>'",
+        "rawCode: '<Button {...args}>★</Button>'",
+        "rawCode: 'Click me'",
+      ]
+    `);
     expect(output.slice(output.indexOf('const $__stories'))).toMatchInlineSnapshot(`
       "const $__stories = createRuntimeStories(Button_stories, $__meta.input);
 
       export const __namedExportsOrder = [
-      	"PrimarySmall",
-      	"Primary",
-      	"PrimarySmallStarred",
-      	"PrimaryStatic"
+      	'PrimarySmall',
+      	'Primary',
+      	'PrimarySmallStarred',
+      	'PrimaryStatic'
       ];
 
-      const $__Primary = $__meta.story({
-      	...$__stories["Primary"],
-      	tags: ["svelte-csf-v5"]
-      });
-
-      const $__PrimarySmall = $__Primary.extend({
-      	...$__stories["PrimarySmall"],
-      	tags: ["svelte-csf-v5"]
-      });
+      const $__Primary = $__meta.story({ ...$__stories['Primary'], tags: ['svelte-csf-v5'] });
+      const $__PrimarySmall = $__Primary.extend({ ...$__stories['PrimarySmall'], tags: ['svelte-csf-v5'] });
 
       const $__PrimarySmallStarred = $__PrimarySmall.extend({
-      	...$__stories["PrimarySmallStarred"],
-      	tags: ['starred', "svelte-csf-v5"]
+      	...$__stories['PrimarySmallStarred'],
+      	tags: ['starred', 'svelte-csf-v5']
       });
 
-      const $__PrimaryStatic = $__Primary.extend({
-      	...$__stories["PrimaryStatic"],
-      	tags: ["svelte-csf-v5"]
-      });
+      const $__PrimaryStatic = $__Primary.extend({ ...$__stories['PrimaryStatic'], tags: ['svelte-csf-v5'] });
 
       export {
       	$__PrimarySmall as PrimarySmall,
@@ -829,13 +757,9 @@ describe('CSF factories', () => {
       <Story extend="Primary" name="Comment"><!-- A note --></Story>
     `);
 
-    expect(
-      [...output.matchAll(/rawCode: (".*")/g)].map(([, rawCode]) => JSON.parse(rawCode))
-    ).toEqual([
-      '<Button {...args}>\n  Click me\n</Button>',
-      '<Button {...args}>\n  Click me\n</Button>',
-      '<Button {...args}>\n  Click me\n</Button>',
-    ]);
+    expect(output.match(/rawCode: '.*'/g)).toEqual(
+      Array(3).fill(String.raw`rawCode: '<Button {...args}>\n  Click me\n</Button>'`)
+    );
   });
 
   it('uses the meta variable of the file', async ({ expect }) => {
@@ -876,9 +800,7 @@ describe('CSF factories', () => {
       		() => Story($$anchor, {
       			name: 'Primary',
       			args: { label: 'Primary' },
-      			parameters: {
-      				__svelteCsf: { rawCode: "<Button {...args} />" }
-      			}
+      			parameters: { __svelteCsf: { rawCode: '<Button {...args} />' } }
       		}),
       		'component',
       		Button_stories,
@@ -889,16 +811,13 @@ describe('CSF factories', () => {
 
       	return $.pop($$exports);
       }
-      import { createRuntimeStories } from "@storybook/svelte/internal/svelte-csf/create-runtime-stories";
+      import { createRuntimeStories } from '@storybook/svelte/internal/svelte-csf/create-runtime-stories';
 
       const $__stories = createRuntimeStories(Button_stories, meta.input);
 
-      export const __namedExportsOrder = ["Primary"];
+      export const __namedExportsOrder = ['Primary'];
 
-      const $__Primary = meta.story({
-      	...$__stories["Primary"],
-      	tags: ["svelte-csf-v5"]
-      });
+      const $__Primary = meta.story({ ...$__stories['Primary'], tags: ['svelte-csf-v5'] });
 
       export { $__Primary as Primary };"
     `);

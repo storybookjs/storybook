@@ -11157,7 +11157,7 @@ __metadata:
     "@testing-library/svelte": "npm:^5.2.4"
     "@types/estree": "npm:^1.0.6"
     es-toolkit: "npm:^1.43.0"
-    esrap: "npm:1.2.2"
+    esrap: "npm:^2.4.0"
     magic-string: "npm:^0.30.12"
     memfs: "npm:^4.11.1"
     rollup: "npm:^4.43.0"
@@ -12502,7 +12502,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/estree@npm:*, @types/estree@npm:^1.0.0, @types/estree@npm:^1.0.1, @types/estree@npm:^1.0.5, @types/estree@npm:^1.0.6, @types/estree@npm:^1.0.8":
+"@types/estree@npm:*, @types/estree@npm:^1.0.0, @types/estree@npm:^1.0.5, @types/estree@npm:^1.0.6, @types/estree@npm:^1.0.8":
   version: 1.0.9
   resolution: "@types/estree@npm:1.0.9"
   checksum: 10c0/3ad3286ca2988cd550dafb8f2ad599c8474868e954fa601a36655bdfefd8039f7c714b8c1c7f2ae219ffbd58bd4660e66fa7479a0120fc02d4777057d4865387
@@ -20426,22 +20426,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"esrap@npm:1.2.2":
-  version: 1.2.2
-  resolution: "esrap@npm:1.2.2"
+"esrap@npm:^2.1.0, esrap@npm:^2.4.0":
+  version: 2.4.0
+  resolution: "esrap@npm:2.4.0"
   dependencies:
     "@jridgewell/sourcemap-codec": "npm:^1.4.15"
-    "@types/estree": "npm:^1.0.1"
-  checksum: 10c0/a3a0b665c034f604a162b910346309c64c42635c5d2e8704a27afcdf4e6d4c529e05475d1875d6b3e0d550f8470986116414097230ab3a7c565b85091ca5e177
-  languageName: node
-  linkType: hard
-
-"esrap@npm:^2.1.0":
-  version: 2.1.3
-  resolution: "esrap@npm:2.1.3"
-  dependencies:
-    "@jridgewell/sourcemap-codec": "npm:^1.4.15"
-  checksum: 10c0/390a6089aa7c1af372b9f7dba4b1b63329a2931bd8eab87e274c06c811b2dcab6d5591353889617c4a8a3ff9103a18f4506a2e17b306e47cd3d5453778cc6287
+  peerDependencies:
+    "@typescript-eslint/types": ^8.2.0
+  peerDependenciesMeta:
+    "@typescript-eslint/types":
+      optional: true
+  checksum: 10c0/36718ac21957031a4f99e4ebda8376e0c11b78b6c7c40dc3494f3cdd8df14cbaf13e6c3f1216feb55cac85f6a249f98a61f3e6ef8c6b1cb8555a7f6e7364227f
   languageName: node
   linkType: hard
 

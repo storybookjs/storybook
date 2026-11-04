@@ -37,13 +37,17 @@ const DIR_METAFILE_BASE = join(
 );
 export const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 
-/** Resolve the React `useSyncExternalStore` shim to React itself, see the shim module. */
-const USE_SYNC_EXTERNAL_STORE_ALIAS = Object.fromEntries(
-  ['use-sync-external-store/shim', 'use-sync-external-store/shim/index.js'].map((specifier) => [
-    specifier,
-    join(import.meta.dirname, 'use-sync-external-store-shim.ts'),
-  ])
-);
+/**
+ * Resolve the `useSyncExternalStore` shim that react-aria and react-stately import to a stand-in,
+ * see that module. The key is the exact specifier they use: a shorter key would also match other
+ * subpaths of the package, such as `shim/with-selector`.
+ */
+const USE_SYNC_EXTERNAL_STORE_ALIAS = {
+  'use-sync-external-store/shim/index.js': join(
+    import.meta.dirname,
+    'use-sync-external-store-shim.ts'
+  ),
+};
 
 function rolldownGlobalExternalsPlugin(): RolldownPlugin {
   const prefix = '\0storybook-global:';
@@ -263,6 +267,13 @@ export async function generateBundle({
         entryPoints: entries.node.map(({ entryPoint }) => entryPoint),
         platform: 'node',
         target: NODE_TARGET,
+        external: [
+          ...external,
+          // Optional native speedups that `ws` requires inside try/catch. Keeping them external
+          // means the bundle never inlines them, even when they happen to be installed.
+          'bufferutil',
+          'utf-8-validate',
+        ],
         alias: {
           ...sharedOptions.alias,
           // Keep a single bundled acorn copy when CommonJS dependencies such as

@@ -751,7 +751,7 @@ export const Primary = {
     `);
   });
 
-  it('bails when a substituted string would terminate a single-quoted attribute', async () => {
+  it('writes a string in the quote a single-quoted attribute does not use', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -762,7 +762,15 @@ export const Primary = {
   }),
 };
 `)
-    ).toBeUndefined();
+    ).toBe(
+      `<script lang="ts" setup>
+import MyButton from './MyButton.vue';
+</script>
+
+<template>
+  <MyButton :aria-label='"Hi" + "!"' label="Hi" />
+</template>`
+    );
   });
 
   it('substitutes args references inside interpolation expressions', async () => {
@@ -958,7 +966,7 @@ export const Primary = {
     `);
   });
 
-  it('bails when expression substitution would entity-decode an arg value', async () => {
+  it('escapes the entities Vue would decode in a value written into an expression', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -969,7 +977,15 @@ export const Primary = {
   }),
 };
 `)
-    ).toBeUndefined();
+    ).toBe(
+      `<script lang="ts" setup>
+import MyButton from './MyButton.vue';
+</script>
+
+<template>
+  <MyButton :x="'a&amp;amp;b' + 1" />
+</template>`
+    );
   });
 
   it('bails on unquoted directive expressions but still substitutes quoted ones', async () => {
@@ -1356,11 +1372,6 @@ export const Primary = {
     ['update expression in event handler', '<MyButton @click="args.count++" />', { count: 2 }],
     ['assignment in event handler', '<MyButton @click="args.count = 1" />', { count: 2 }],
     ['missing arg name', '<MyButton :x="args.missing + 1" />', { count: 2 }],
-    [
-      'inline string value containing a double quote',
-      `<MyButton :aria-label="'Status: ' + args.label" />`,
-      { label: 'say "hi"' },
-    ],
     ['v-for args shadowing', '<MyButton v-for="args in items" :key="args.id" />', { count: 2 }],
     [
       'v-slot args shadowing',
@@ -1468,7 +1479,7 @@ export const Primary = {
     ).toBeUndefined();
   });
 
-  it('hoists string values containing character references, which attributes would decode', async () => {
+  it('writes a string with character references in place, escaped as Vue decodes them', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -1480,20 +1491,18 @@ export const Primary = {
   }),
 };
 `)
-    ).toMatchInlineSnapshot(`
-      "<script lang="ts" setup>
-      import MyButton from './MyButton.vue';
+    ).toBe(
+      `<script lang="ts" setup>
+import MyButton from './MyButton.vue';
+</script>
 
-      const label = 'Tom &amp; Jerry';
-      </script>
-
-      <template>
-        <MyButton :label="label" />
-      </template>"
-    `);
+<template>
+  <MyButton label="Tom &amp;amp; Jerry" />
+</template>`
+    );
   });
 
-  it('bails when an inlined interpolation would form a new mustache with adjacent text', async () => {
+  it('escapes a `{` an inlined interpolation ends with, which the text after it would join', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -1504,7 +1513,11 @@ export const Primary = {
   }),
 };
 `)
-    ).toBeUndefined();
+    ).toBe(
+      `<template>
+  <p>x&#123;{ok}</p>
+</template>`
+    );
   });
 
   it('forwards a setup that returns more than the args', async () => {
@@ -1752,8 +1765,10 @@ const options = {
 </template>`);
   });
 
-  it('hoists a string that both quote styles cannot delimit', () => {
-    expect(render([prop('label', `'She said "hi" and it\\'s fine'`)])).toContain(':label="label"');
+  it('escapes the quote of a string that holds both quote styles', () => {
+    expect(render([prop('label', `'She said "hi" and it\\'s fine'`)])).toContain(
+      `label="She said &quot;hi&quot; and it's fine"`
+    );
   });
 
   it('declares hoisted bindings in the order their attributes appear', () => {
@@ -1847,11 +1862,8 @@ import C from '@example/C.vue';
     expect(snippet).toContain('<C>\n    a &lt; b\n  </C>');
   });
 
-  it('hoists inline slot text whose whitespace raw template text would condense', () => {
-    const snippet = render([slot('default', `'  padded  '`)]);
-
-    expect(snippet).toContain("const _default = '  padded  ';");
-    expect(snippet).toContain('{{ _default }}');
+  it('writes inline slot text whose whitespace Vue would condense as an interpolation', () => {
+    expect(render([slot('default', `'  padded  '`)])).toContain("{{ '  padded  ' }}");
   });
 
   it('hoists a listener and renders it as a Vue event binding', () => {

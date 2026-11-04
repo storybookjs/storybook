@@ -7,45 +7,29 @@ import {
   type SnippetValue,
   type VueHolePlace,
   attributeOrder,
-  interpolatedText,
+  inAttribute,
+  inInterpolation,
   indent,
   operand,
   printAttribute,
-  slotContent,
+  printSlot,
+  printText,
   slotOrder,
   wrapSlotContent,
 } from '../snippet-values.ts';
 
 // Prints a changed arg for a hole of a template of the Vue story-docs provider, with the printers
-// the static snippet is printed with. `VueHolePlace` says what each place prints. Where the static
-// snippet declares a value in `<script setup>`, as a string with `&` or both quotes, this writes it
-// in place, escaped as Vue reads it there.
+// the static snippet is printed with. `VueHolePlace` says what each place prints.
 export const printHole: PrintHole<VueHolePlace> = (hole, value) => {
   const arg = hole.arg ?? '';
   switch (hole.kind) {
     case 'attr':
-      return value === undefined ? '' : attribute(hole.name ?? arg, arg, value);
-    case 'bound': {
-      const args = value as Args;
-      return (Object.hasOwn(args, hole.by) ? hole.over : hole.code)
-        .map((part) =>
-          typeof part === 'string'
-            ? part
-            : Object.hasOwn(args, part.arg)
-              ? printHole(part, args[part.arg])
-              : part.text
-        )
-        .join('');
-    }
+      return value === undefined ? '' : printAttribute(hole.name ?? arg, snippetValue(arg, value));
     case 'props':
       return Object.entries(value as Args)
         .filter(([name, item]) => item !== undefined && !hole.except.includes(name))
         .sort(([a], [b]) => attributeOrder(a, b))
-        .map(([name, item]) =>
-          hole.merge?.includes(name)
-            ? `:${name}="${inAttribute(code(name, item, "'"), '"')}"`
-            : attribute(name, name, item)
-        )
+        .map(([name, item]) => printAttribute(name, snippetValue(name, item)))
         .join(' ');
     case 'slots': {
       const set = hole.slots.filter((name) => (value as Args)[name] !== undefined).sort(slotOrder);
@@ -53,13 +37,15 @@ export const printHole: PrintHole<VueHolePlace> = (hole, value) => {
         return hole.tag ? ' />' : '';
       }
       const children = set
-        .map((name) => wrapSlotContent(name, slot(name, (value as Args)[name])))
+        .map((name) => wrapSlotContent(name, printSlot(snippetValue(name, (value as Args)[name]))))
         .map((child) => indent(child, hole.indent))
         .join('\n');
       return hole.tag ? `>\n${children}\n${hole.indent.slice(2)}</${hole.tag}>` : `\n${children}`;
     }
     case 'text':
-      return value === undefined ? '' : hole.slot ? slot(arg, value) : text(arg, value);
+      return value === undefined
+        ? ''
+        : (hole.slot ? printSlot : printText)(snippetValue(arg, value));
     case 'value': {
       const readsOn = hole.readsOn === true;
       if (hole.in === 'attribute') {
@@ -93,35 +79,3 @@ function snippetValue(name: string, value: unknown): SnippetValue {
   }
   return { kind: 'code', code: code(name, value, "'") };
 }
-
-// Code or text in an attribute value quoted with `quote`, where Vue decodes entities.
-const inAttribute = (text: string, quote: '"' | "'") =>
-  text.replaceAll('&', '&amp;').replaceAll(quote, quote === '"' ? '&quot;' : '&#39;');
-
-// Code in an interpolation, where Vue decodes entities and `}}` ends it. Printed code writes `}}`
-// only in a string, where `}\}` reads the same.
-const inInterpolation = (text: string) => text.replaceAll('&', '&amp;').replace(/}(?=})/g, '}\\');
-
-// An attribute holds a literal in quotes, and code bound.
-function attribute(name: string, arg: string, value: unknown): string {
-  const snippet = snippetValue(arg, value);
-  if (snippet.kind === 'code') {
-    return `:${name}="${inAttribute(snippet.code, '"')}"`;
-  }
-  return printAttribute(name, snippet) ?? `${name}="${inAttribute(String(snippet.value), '"')}"`;
-}
-
-// The text an interpolation shows, or code as an interpolation of its own. A `{` it ends with is
-// escaped, as the code after it may start an interpolation.
-function text(name: string, value: unknown): string {
-  return (
-    interpolatedText(snippetValue(name, value))?.replace(/\{$/, '&#123;') ??
-    interpolation(name, value)
-  );
-}
-
-const slot = (name: string, value: unknown) =>
-  slotContent(snippetValue(name, value)) ?? interpolation(name, value);
-
-const interpolation = (name: string, value: unknown) =>
-  `{{ ${inInterpolation(code(name, value, "'"))} }}`;

@@ -75,12 +75,7 @@ export const storyDocsServiceDef = defineService({
         'Returns the story-docs payload for one component id, or undefined when not loaded.',
       input: storyDocsInputSchema,
       output: storyDocsOutputSchema,
-      handler: (input, ctx) => {
-        // Reading the key subscribes to it, so a payload stored after this read reaches its
-        // subscribers; `Object.hasOwn` alone is not tracked.
-        const payload = ctx.self.state.components[input.id];
-        return Object.hasOwn(ctx.self.state.components, input.id) ? payload : undefined;
-      },
+      handler: (input, ctx) => entryOf(ctx.self.state.components, input.id),
       load: async (input, ctx) => {
         await ctx.self.commands.extractStoryDocs(input);
       },
@@ -96,11 +91,7 @@ export const storyDocsServiceDef = defineService({
         "Returns the templates of one component id's stories, which the preview fills with changed args, or undefined when not loaded.",
       input: storyDocsInputSchema,
       output: storyTemplatesOutputSchema,
-      handler: (input, ctx) => {
-        // Read the key first, so a payload stored after this read reaches subscribers.
-        const payload = ctx.self.state.templates[input.id];
-        return Object.hasOwn(ctx.self.state.templates, input.id) ? payload : undefined;
-      },
+      handler: (input, ctx) => entryOf(ctx.self.state.templates, input.id),
       // The extraction that loads the story docs stores the templates too, so this joins a load of
       // the story docs already in flight instead of extracting again.
       load: async (input, ctx) => {
@@ -136,6 +127,13 @@ export const storyDocsServiceDef = defineService({
 });
 
 export type StoryDocsService = ServiceInstanceOf<typeof storyDocsServiceDef>;
+
+// Reads the key before `Object.hasOwn`, which is not tracked, so a subscription made before the
+// entry is stored still updates once it is.
+function entryOf<T>(record: Record<string, T>, id: string): T | undefined {
+  const entry = record[id];
+  return Object.hasOwn(record, id) ? entry : undefined;
+}
 
 // The entry of `id` alone, or none.
 const pick = <T>(record: Record<string, T>, id: string): Record<string, T> =>

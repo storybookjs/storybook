@@ -126,7 +126,8 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: | # zizmor: ignore[template-injection] safe toJson context expansion in github-script
-            const raw = ${{ toJson(steps.nx.outputs.nx_output) }} || '';
+            // Nx colours its output (FORCE_COLOR), so strip ANSI codes before reading tasks and links.
+            const raw = (${{ toJson(steps.nx.outputs.nx_output) }} || '').replace(/\x1b\[[0-9;]*m/g, '');
             const tag = ${{ toJson(steps.tag.outputs.tag) }} || '';
             // `success` only when the nx step itself succeeded. A failure before it (for example
             // NX Cloud rejecting the run) leaves the output empty, which must not read as green.

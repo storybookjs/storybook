@@ -62,9 +62,7 @@ describe('buildStoryDocsPayload', () => {
       `,
     });
     const payload = await buildStoryDocsPayload(
-      {
-        entry: makeStoryIndexEntry(files['Grid.stories.tsx'], 'Curation/Grid'),
-      },
+      { entry: makeStoryIndexEntry(files['Grid.stories.tsx'], 'Curation/Grid') },
       { resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)) }
     );
 
@@ -127,9 +125,7 @@ describe('buildStoryDocsPayload', () => {
     });
 
     const payload = await buildStoryDocsPayload(
-      {
-        entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button'),
-      },
+      { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
       { resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)) }
     );
 

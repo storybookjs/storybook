@@ -20,19 +20,15 @@ const load = (code: string) =>
     makeTitle: (userTitle?: string) => userTitle ?? 'title',
   }).parse();
 
-// Every template prints its story's snippet while no arg changes.
 function expectTemplatesStripToSnippets(csf: CsfFile) {
   for (const name of Object.keys(csf._storyExports)) {
+    const print = (withTemplate: boolean) =>
+      getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle', undefined, withTemplate);
     let printed;
     try {
-      printed = getCodeSnippet(
-        csf,
-        name,
-        csf._meta?.component ?? 'ComponentTitle',
-        undefined,
-        true
-      );
+      printed = print(true);
     } catch {
+      expect(() => print(false), name).toThrow();
       continue;
     }
     expect(printed.template, name).toBeDefined();
@@ -1206,6 +1202,13 @@ describe('template', () => {
           `export const S = { args: { ${arg('children', value)} }, render: (args) => <Button {...args} /> };`
         ),
     },
+    'end of an element written with a closing tag': {
+      arg: 'children',
+      story: (value) =>
+        withCSF3(
+          `export const S = { args: { ${arg('children', value)} }, render: (args) => <Button {...args}></Button> };`
+        ),
+    },
     'bound story': {
       arg: 'label',
       story: (value) => dedent`
@@ -1354,7 +1357,6 @@ describe('template', () => {
     expect(fill(code, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(
       'const S = () => <Button label="Stop" onClick={() => {}}>Click me</Button>;'
     );
-    // The spread passes a project-level arg a control changes, so the snippet shows it.
     expect(fill(code, initialArgs, { ...initialArgs, theme: 'light' })).toBe(
       'const S = () => <Button label="Go" onClick={() => {}} theme="light">Click me</Button>;'
     );

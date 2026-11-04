@@ -3,6 +3,10 @@
 <script>
   document.querySelector('multi-beta').betaLabel = 'Default beta & <changed>';
 </script>",
-  "DomNode": "UnprintableArgError: The snippet cannot show the current value of the `betaLabel` arg.",
-  "LitTemplate": "<multi-beta beta-label="Beta &amp; &lt;changed>"></multi-beta>",
+  "DomNode": "const DomNode = () => {
+  const el = document.createElement('multi-beta');
+  el.setAttribute('beta-label', String('Beta & <changed>'));
+  return el;
+};",
+  "LitTemplate": "html`<multi-beta beta-label="Beta &amp; &lt;changed>"></multi-beta>`",
 }

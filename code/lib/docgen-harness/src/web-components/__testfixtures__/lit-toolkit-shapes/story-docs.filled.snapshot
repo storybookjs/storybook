@@ -11,28 +11,20 @@
     host.addEventListener('toolkit-resize', () => {});
   }
 </script>",
-  "DomNode": "<lit-toolkit-shapes
+  "DomNode": "const DomNode = () => {
+  const el = document.createElement('lit-toolkit-shapes');
+  el.setAttribute('size', String('large & <changed>'));
+  el.setAttribute('level', String(3));
+  el.setAttribute('label', String('Shaped & <changed>'));
+  (el as HTMLElement & { tags: string[] }).tags = ['b & <changed>'] as string[];
+  el.addEventListener('toolkit-resize', () => {} as EventListener);
+  return el;
+};",
+  "LitTemplate": "html`<lit-toolkit-shapes
   size="large &amp; &lt;changed>"
   level="3"
-  tags="[&quot;b &amp; &lt;changed>&quot;]"
+  .tags=${['b & <changed>']}
   label="Shaped &amp; &lt;changed>"
-></lit-toolkit-shapes>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('toolkit-resize', () => {});
-  }
-</script>",
-  "LitTemplate": "<lit-toolkit-shapes
-  size="large &amp; &lt;changed>"
-  level="3"
-  tags="[&quot;b &amp; &lt;changed>&quot;]"
-  label="Shaped &amp; &lt;changed>"
-></lit-toolkit-shapes>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('toolkit-resize', () => {});
-  }
-</script>",
+  @toolkit-resize=${() => {}}
+></lit-toolkit-shapes>`",
 }

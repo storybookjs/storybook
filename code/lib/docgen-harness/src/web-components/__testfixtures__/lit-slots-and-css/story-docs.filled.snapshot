@@ -6,9 +6,19 @@
   Body <b>text</b> & <changed>
   <span slot="actions"><button>Confirm</button> & <changed></span>
 </lit-slots-and-css>",
-  "DomNode": "<lit-slots-and-css heading="Projected &amp; &lt;changed>"></lit-slots-and-css>",
-  "LitTemplate": "<lit-slots-and-css heading="Projected &amp; &lt;changed>">
+  "DomNode": "const DomNode = () => {
+  const el = document.createElement('lit-slots-and-css');
+  el.setAttribute('heading', String('Projected & <changed>'));
+  const body = document.createElement('p');
+  body.textContent = 'Default slot content';
+  const action = document.createElement('button');
+  action.slot = 'actions';
+  action.textContent = 'Confirm';
+  el.append(body, action);
+  return el;
+};",
+  "LitTemplate": "html`<lit-slots-and-css heading="Projected &amp; &lt;changed>">
   <p>Default slot content</p>
   <button slot="actions">Confirm</button>
-</lit-slots-and-css>",
+</lit-slots-and-css>`",
 }

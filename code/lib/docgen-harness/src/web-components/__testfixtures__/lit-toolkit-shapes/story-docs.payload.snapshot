@@ -34,59 +34,42 @@
     "webcomponentsfixtures-lit-toolkit-shapes--dom-node": {
       "id": "webcomponentsfixtures-lit-toolkit-shapes--dom-node",
       "name": "Dom Node",
-      "snippet": "<lit-toolkit-shapes
-  size="large"
-  level="2"
-  tags="[&quot;b&quot;]"
-  label="Shaped"
-></lit-toolkit-shapes>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('toolkit-resize', () => {});
-  }
-</script>",
-      "template": "⟦guard computed⟫⟧⟦guard version⟫⟧⟦guard pressed⟫⟧⟦guard onSelect⟫⟧⟦style base-part selector="lit-toolkit-shapes::part(base)"⟫⟧⟦style active-state selector="lit-toolkit-shapes:state(active)"⟫⟧<lit-toolkit-shapes⟦attr size mode="field" ~"\n  "⟫
-  size="large"⟧⟦attr level mode="field" ~"\n  "⟫
-  level="2"⟧⟦attr tags mode="field" ~"\n  "⟫
-  tags="[&quot;b&quot;]"⟧⟦attr label mode="field" ~"\n  "⟫
-  label="Shaped"⟧⟦attr oldSize name="old-size" mode="field" ~"\n  "⟫⟧⟦attr target mode="field" ~"\n  "⟫⟧⟦attr when mode="field" ~"\n  "⟫⟧⟦cssattr * properties=[{"arg":"--toolkit-color","property":"--toolkit-color"},{"arg":"--toolkit-scale","property":"--toolkit-scale"},{"arg":"--toolkit-font","property":"--toolkit-font"},{"arg":"--toolkit-gap","property":"--toolkit-gap"}] ~"\n  "⟫⟧
->⟦slot default-slot name="default"⟫⟧⟦slot label-slot name="label"⟫⟧</lit-toolkit-shapes>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('toolkit-resize', () => {});
-  }
-</script>",
-      "warning": "Incomplete snippet: `(args) => { const el = document.createElement('lit-toolkit-shapes'); el.setAttribute('size', String(args.size)); el.setAttribute('level', String(args.level)); el.setAttribute('label', String(args.label)); (el as HTMLElement & { tags: string[] }).tags = args.tags as string[]; el.addEventListener('toolkit-resize', args.onToolkitResize as EventListener); return el; }` could not be resolved statically.",
+      "snippet": "const DomNode = () => {
+  const el = document.createElement('lit-toolkit-shapes');
+  el.setAttribute('size', String('large'));
+  el.setAttribute('level', String(2));
+  el.setAttribute('label', String('Shaped'));
+  (el as HTMLElement & { tags: string[] }).tags = ['b'] as string[];
+  el.addEventListener('toolkit-resize', () => {} as EventListener);
+  return el;
+};",
+      "template": "const DomNode = () => {
+  const el = document.createElement('lit-toolkit-shapes');
+  el.setAttribute('size', String(⟦code size⟫'large'⟧));
+  el.setAttribute('level', String(⟦code level⟫2⟧));
+  el.setAttribute('label', String(⟦code label⟫'Shaped'⟧));
+  (el as HTMLElement & { tags: string[] }).tags =⟦code tags ~" "⟫ ['b']⟧ as string[];
+  el.addEventListener('toolkit-resize',⟦code onToolkitResize ~" "⟫ () => {}⟧ as EventListener);
+  return el;
+};",
     },
     "webcomponentsfixtures-lit-toolkit-shapes--lit-template": {
       "id": "webcomponentsfixtures-lit-toolkit-shapes--lit-template",
       "name": "Lit Template",
-      "snippet": "<lit-toolkit-shapes
+      "snippet": "html`<lit-toolkit-shapes
   size="large"
   level="2"
-  tags="[&quot;b&quot;]"
+  .tags=${['b']}
   label="Shaped"
-></lit-toolkit-shapes>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('toolkit-resize', () => {});
-  }
-</script>",
-      "template": "<lit-toolkit-shapes⟦attr size mode="bind" ~"\n  "⟫
+  @toolkit-resize=${() => {}}
+></lit-toolkit-shapes>`",
+      "template": "html`<lit-toolkit-shapes⟦attr size mode="bind" ~"\n  "⟫
   size="large"⟧⟦attr level mode="bind" ~"\n  "⟫
-  level="2"⟧⟦attr tags mode="field" ~"\n  "⟫
-  tags="[&quot;b&quot;]"⟧⟦attr label mode="bind" ~"\n  "⟫
+  level="2"⟧
+  .tags=${⟦code tags⟫['b']⟧}⟦attr label mode="bind" ~"\n  "⟫
   label="Shaped"⟧
-></lit-toolkit-shapes>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('toolkit-resize', () => {});
-  }
-</script>",
+  @toolkit-resize=${⟦code onToolkitResize⟫() => {}⟧}
+></lit-toolkit-shapes>`",
     },
   },
 }

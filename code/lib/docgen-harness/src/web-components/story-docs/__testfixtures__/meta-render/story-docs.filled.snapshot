@@ -1,6 +1,6 @@
 {
-  "Csf2Function": "<meta-render label="csf2 &amp; &lt;changed>"></meta-render>",
-  "DomOverride": "<meta-render label="dom &amp; &lt;changed>"></meta-render>",
-  "FromMeta": "<meta-render label="from-meta &amp; &lt;changed>"></meta-render>",
-  "Override": "<meta-render label="override &amp; &lt;changed>" class="override"></meta-render>",
+  "Csf2Function": "html`<meta-render label="csf2 &amp; &lt;changed>"></meta-render>`",
+  "DomOverride": "document.createElement('meta-render')",
+  "FromMeta": "html`<meta-render label="from-meta &amp; &lt;changed>"></meta-render>`",
+  "Override": "html`<meta-render label="override &amp; &lt;changed>" class="override"></meta-render>`",
 }

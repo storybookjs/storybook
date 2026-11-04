@@ -1,10 +1,12 @@
 {
-  "BranchingHelper": "<lit-template-shapes label="Alpha &amp; &lt;changed>"></lit-template-shapes>",
-  "Csf2Helper": "<lit-template-shapes label="Alpha &amp; &lt;changed>"></lit-template-shapes>",
-  "HelperCall": "<lit-template-shapes label="Alpha &amp; &lt;changed>" count="3"></lit-template-shapes>",
-  "HelperDefaults": "<lit-template-shapes heading="Head &amp; &lt;changed>"></lit-template-shapes>",
-  "HelperInHtml": "<lit-template-shapes label="Alpha &amp; &lt;changed>" count="3"></lit-template-shapes>",
-  "ReExportedHtml": "<lit-template-shapes label="Alpha &amp; &lt;changed>"></lit-template-shapes>",
-  "SpreadDirective": "<lit-template-shapes label="Alpha &amp; &lt;changed>" count="3"></lit-template-shapes>",
-  "SpreadNextToAttribute": "<lit-template-shapes count="3"></lit-template-shapes>",
+  "BranchingHelper": "UnprintableArgError: The snippet cannot show the current value of the `label` arg.",
+  "Csf2Helper": "UnprintableArgError: The snippet cannot show the current value of the `label` arg.",
+  "HelperCall": "UnprintableArgError: The snippet cannot show the current value of the `label` arg.",
+  "HelperDefaults": "UnprintableArgError: The snippet cannot show the current value of the `heading` arg.",
+  "HelperInHtml": "UnprintableArgError: The snippet cannot show the current value of the `label` arg.",
+  "ReExportedHtml": "html`<lit-template-shapes label=${'Alpha & <changed>'}></lit-template-shapes>`",
+  "SpreadDirective": "UnprintableArgError: The snippet cannot show the current value of the `label` arg.",
+  "SpreadNextToAttribute": "html`<lit-template-shapes label="Written" ${spreadProps(rest)}
+  >${undefined}</lit-template-shapes
+>`",
 }

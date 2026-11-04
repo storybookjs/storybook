@@ -12,7 +12,7 @@
   csf-shapes:state(active) { outline: 1px solid; & <changed> }
 </style>
 <csf-shapes label="Meta &amp; &lt;changed>" style="--csf-shapes-accent: teal &amp; &lt;changed>;"></csf-shapes>",
-  "RenderFallback": "<csf-shapes label="Fallback &amp; &lt;changed>"></csf-shapes>",
+  "RenderFallback": "document.createElement('csf-shapes')",
   "Slots": "<csf-shapes label="Meta &amp; &lt;changed>">
   Body <b>text</b> & <changed>
   <span slot="actions"><button>Go</button> & <changed></span>

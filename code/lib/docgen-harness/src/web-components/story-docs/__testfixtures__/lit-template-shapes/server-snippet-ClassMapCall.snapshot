@@ -1,3 +1,3 @@
-<lit-template-shapes></lit-template-shapes>
-
-warning: Incomplete snippet: `isLarge(args.size)` could not be resolved statically.
+html`<lit-template-shapes
+  class=${classMap({ large: isLarge('large') })}
+></lit-template-shapes>`

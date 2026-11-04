@@ -12,15 +12,46 @@
     "webcomponentsfixtures-lit-basic-attributes--dom-node": {
       "id": "webcomponentsfixtures-lit-basic-attributes--dom-node",
       "name": "Dom Node",
-      "snippet": "<lit-basic-attributes label="Open panel" count="7" is-open></lit-basic-attributes>",
-      "template": "<lit-basic-attributes⟦attr label mode="field" ~" "⟫ label="Open panel"⟧⟦attr count mode="field" ~" "⟫ count="7"⟧⟦attr isOpen name="is-open" mode="field" ~" "⟫ is-open⟧⟦attr disabled mode="field" ~" "⟫⟧></lit-basic-attributes>",
-      "warning": "Incomplete snippet: `(args) => { const el = document.createElement('lit-basic-attributes'); el.setAttribute('label', String(args.label)); el.setAttribute('count', String(args.count)); if (args.disabled) { el.setAttribute('disabled', ''); } if (args.isOpen) { el.setAttribute('is-open', ''); } return el; }` could not be resolved statically.",
+      "snippet": "const DomNode = () => {
+  const el = document.createElement('lit-basic-attributes');
+  el.setAttribute('label', String('Open panel'));
+  el.setAttribute('count', String(7));
+  if (false) {
+    el.setAttribute('disabled', '');
+  }
+  if (true) {
+    el.setAttribute('is-open', '');
+  }
+  return el;
+};",
+      "template": "const DomNode = () => {
+  const el = document.createElement('lit-basic-attributes');
+  el.setAttribute('label', String(⟦code label⟫'Open panel'⟧));
+  el.setAttribute('count', String(⟦code count⟫7⟧));
+  if (⟦code disabled⟫false⟧) {
+    el.setAttribute('disabled', '');
+  }
+  if (⟦code isOpen⟫true⟧) {
+    el.setAttribute('is-open', '');
+  }
+  return el;
+};",
     },
     "webcomponentsfixtures-lit-basic-attributes--lit-template": {
       "id": "webcomponentsfixtures-lit-basic-attributes--lit-template",
       "name": "Lit Template",
-      "snippet": "<lit-basic-attributes label="Open panel" count="7" is-open></lit-basic-attributes>",
-      "template": "<lit-basic-attributes⟦attr label mode="bind" ~" "⟫ label="Open panel"⟧⟦attr count mode="bind" ~" "⟫ count="7"⟧⟦bool isOpen name="is-open" ~" "⟫ is-open⟧⟦bool disabled ~" "⟫⟧></lit-basic-attributes>",
+      "snippet": "html`<lit-basic-attributes
+  label="Open panel"
+  count="7"
+  ?disabled=${false}
+  ?is-open=${true}
+></lit-basic-attributes>`",
+      "template": "html`<lit-basic-attributes⟦attr label mode="bind" ~"\n  "⟫
+  label="Open panel"⟧⟦attr count mode="bind" ~"\n  "⟫
+  count="7"⟧
+  ?disabled=${⟦code disabled⟫false⟧}
+  ?is-open=${⟦code isOpen⟫true⟧}
+></lit-basic-attributes>`",
     },
   },
 }

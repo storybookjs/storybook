@@ -11,14 +11,13 @@ import {
   cssDeclarations,
   escapeAttribute,
   escapeText,
-  isDefined,
-  isTruthy,
   printAttribute,
   quotedAttribute,
   slotText,
   slottedHtml,
   styleElement,
   styleRule,
+  templateText,
 } from '../snippet-values.ts';
 import type { HtmlHolePlace, SnippetProperty } from '../snippet-holes.ts';
 
@@ -30,18 +29,14 @@ export const printHole: PrintHole<HtmlHolePlace> = (hole, changed) => {
   switch (hole.kind) {
     case 'attr': {
       const name = hole.name ?? arg;
-      if (hole.mode === 'bind' || hole.mode === 'defined' || hole.mode === 'truthy') {
-        const shown =
-          hole.mode === 'bind' || (hole.mode === 'defined' ? isDefined(value) : isTruthy(value));
-        return shown ? quotedAttribute(name, boundText(value)) : '';
-      }
-      return printAttribute(name, value, hole.mode === 'field') ?? '';
+      return hole.mode === 'bind'
+        ? templateText(quotedAttribute(name, boundText(value)))
+        : (printAttribute(name, value, hole.mode === 'field') ?? '');
     }
-    case 'bool':
-      // Lit sets the attribute while the value is truthy, as the static snippet reads it.
-      return isTruthy(value) ? (hole.name ?? arg) : '';
+    case 'code':
+      return printValue(value, arg, { quote: "'", opaque: isLitValue });
     case 'quoted':
-      return escapeAttribute(boundText(value));
+      return templateText(escapeAttribute(boundText(value)));
     case 'css':
       return escapeAttribute(cssDeclarations([{ name: hole.property ?? arg, value }]) ?? '');
     case 'cssattr': {
@@ -57,9 +52,9 @@ export const printHole: PrintHole<HtmlHolePlace> = (hole, changed) => {
       return style === undefined ? '' : quotedAttribute('style', style);
     }
     case 'text':
-      return escapeText(childText(value).replace(/\s+/g, ' '));
+      return templateText(escapeText(childText(value).replace(/\s+/g, ' ')));
     case 'html':
-      return childText(value);
+      return templateText(String(value));
     case 'slot':
       return slottedHtml(hole.name, slotText(value));
     case 'rule':
@@ -68,8 +63,6 @@ export const printHole: PrintHole<HtmlHolePlace> = (hole, changed) => {
       return isSet(value)
         ? `${styleElement([{ selector: hole.selector, declarations: String(value) }])}\n`
         : '';
-    case 'choice':
-      return isTruthy(value) ? hole.truthy : hole.falsy;
     case 'props':
       return propertyScript(hole.properties, changed as Record<string, unknown>);
     case 'guard':

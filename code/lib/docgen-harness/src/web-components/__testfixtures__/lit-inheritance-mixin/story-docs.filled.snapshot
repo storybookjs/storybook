@@ -1,5 +1,17 @@
 {
   "ArgsDefaultRender": "<lit-inheritance-mixin base-label="Default base &amp; &lt;changed>" count="3"></lit-inheritance-mixin>",
-  "DomNode": "<lit-inheritance-mixin base-label="Inherited &amp; &lt;changed>" count="6"></lit-inheritance-mixin>",
-  "LitTemplate": "<lit-inheritance-mixin base-label="Inherited &amp; &lt;changed>" count="6"></lit-inheritance-mixin>",
+  "DomNode": "const DomNode = () => {
+  const el = document.createElement('lit-inheritance-mixin');
+  el.setAttribute('base-label', String('Inherited & <changed>'));
+  if (false) {
+    el.setAttribute('mixed-active', '');
+  }
+  el.setAttribute('count', String(6));
+  return el;
+};",
+  "LitTemplate": "html`<lit-inheritance-mixin
+  base-label="Inherited &amp; &lt;changed>"
+  ?mixed-active=${false}
+  count="6"
+></lit-inheritance-mixin>`",
 }

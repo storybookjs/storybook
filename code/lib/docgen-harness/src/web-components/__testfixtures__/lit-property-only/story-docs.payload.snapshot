@@ -13,17 +13,40 @@
     "webcomponentsfixtures-lit-property-only--dom-node": {
       "id": "webcomponentsfixtures-lit-property-only--dom-node",
       "name": "Dom Node",
-      "snippet": "<lit-property-only label="Configured"></lit-property-only>",
-      "template": "⟦guard items⟫⟧⟦guard config⟫⟧<lit-property-only⟦attr label mode="field" ~" "⟫ label="Configured"⟧></lit-property-only>",
-      "warning": "Incomplete snippet: `(args) => { const el = document.createElement('lit-property-only') as HTMLElement & { config?: unknown; items?: unknown; }; el.setAttribute('label', String(args.label)); el.items = args.items; el.config = args.config; return el; }` could not be resolved statically.
-Incomplete snippet: properties without an attribute: `items`, `config`.",
+      "snippet": "const DomNode = () => {
+  const el = document.createElement('lit-property-only') as HTMLElement & {
+    config?: unknown;
+    items?: unknown;
+  };
+  el.setAttribute('label', String('Configured'));
+  el.items = [{ name: 'Alpha' }, { name: 'Beta' }];
+  el.config = { dense: true, theme: 'dark' };
+  return el;
+};",
+      "template": "const DomNode = () => {
+  const el = document.createElement('lit-property-only') as HTMLElement & {
+    config?: unknown;
+    items?: unknown;
+  };
+  el.setAttribute('label', String(⟦code label⟫'Configured'⟧));
+  el.items =⟦code items ~" "⟫ [{ name: 'Alpha' }, { name: 'Beta' }]⟧;
+  el.config =⟦code config ~" "⟫ { dense: true, theme: 'dark' }⟧;
+  return el;
+};",
     },
     "webcomponentsfixtures-lit-property-only--lit-template": {
       "id": "webcomponentsfixtures-lit-property-only--lit-template",
       "name": "Lit Template",
-      "snippet": "<lit-property-only label="Configured"></lit-property-only>",
-      "template": "<lit-property-only⟦attr label mode="bind" ~" "⟫ label="Configured"⟧></lit-property-only>⟦props * properties=[{"arg":"items","name":"items","tag":"lit-property-only"},{"arg":"config","name":"config","tag":"lit-property-only"}] ~"\n"⟫⟧",
-      "warning": "Incomplete snippet: properties without an attribute: `items`, `config`.",
+      "snippet": "html`<lit-property-only
+  label="Configured"
+  .items=${[{ name: 'Alpha' }, { name: 'Beta' }]}
+  .config=${{ dense: true, theme: 'dark' }}
+></lit-property-only>`",
+      "template": "html`<lit-property-only⟦attr label mode="bind" ~"\n  "⟫
+  label="Configured"⟧
+  .items=${⟦code items⟫[{ name: 'Alpha' }, { name: 'Beta' }]⟧}
+  .config=${⟦code config⟫{ dense: true, theme: 'dark' }⟧}
+></lit-property-only>`",
     },
   },
 }

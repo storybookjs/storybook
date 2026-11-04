@@ -13,16 +13,22 @@
     "webcomponentsfixtures-vanilla-multi-definition--dom-node": {
       "id": "webcomponentsfixtures-vanilla-multi-definition--dom-node",
       "name": "Dom Node",
-      "snippet": "<multi-beta></multi-beta>",
-      "template": "⟦guard betaLabel⟫⟧<multi-beta⟦attr beta-label mode="render" ~" "⟫⟧></multi-beta>",
-      "warning": "Incomplete snippet: `(args) => { const el = document.createElement('multi-beta'); el.setAttribute('beta-label', String(args.betaLabel)); return el; }` could not be resolved statically.
-Incomplete snippet: properties without an attribute: `betaLabel`.",
+      "snippet": "const DomNode = () => {
+  const el = document.createElement('multi-beta');
+  el.setAttribute('beta-label', String('Beta'));
+  return el;
+};",
+      "template": "const DomNode = () => {
+  const el = document.createElement('multi-beta');
+  el.setAttribute('beta-label', String(⟦code betaLabel⟫'Beta'⟧));
+  return el;
+};",
     },
     "webcomponentsfixtures-vanilla-multi-definition--lit-template": {
       "id": "webcomponentsfixtures-vanilla-multi-definition--lit-template",
       "name": "Lit Template",
-      "snippet": "<multi-beta beta-label="Beta"></multi-beta>",
-      "template": "<multi-beta⟦attr betaLabel name="beta-label" mode="bind" ~" "⟫ beta-label="Beta"⟧></multi-beta>",
+      "snippet": "html`<multi-beta beta-label="Beta"></multi-beta>`",
+      "template": "html`<multi-beta⟦attr betaLabel name="beta-label" mode="bind" ~" "⟫ beta-label="Beta"⟧></multi-beta>`",
     },
   },
 }

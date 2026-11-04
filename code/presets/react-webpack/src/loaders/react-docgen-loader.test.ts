@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getReactDocgenImporter } from './react-docgen-loader.ts';
 
@@ -31,6 +31,10 @@ vi.mock('react-docgen', async (importOriginal) => {
 });
 
 describe('getReactDocgenImporter function', () => {
+  beforeEach(() => {
+    reactDocgenResolverMock.defaultLookupModule.mockImplementation((filen: string) => filen);
+  });
+
   it('should not map the request if a tsconfig path mapping is not available', () => {
     const filename = './src/components/Button.tsx';
     const basedir = '/src';
@@ -49,5 +53,21 @@ describe('getReactDocgenImporter function', () => {
     reactDocgenResolverMock.defaultLookupModule.mockImplementation((filen: string) => filen);
     const result = (imported as any)(filename, basedir);
     expect(result).toBe(mappedFile);
+  });
+
+  it('lets tsconfig paths match TypeScript files', () => {
+    // Without extensions, tsconfig-paths only tries `.js`, `.json` and `.node`, so an alias to a
+    // `.ts` file such as `@/components/types` would never match.
+    const matchPath = vi.fn().mockReturnValue('/project/src/components/types.ts');
+    const imported = getReactDocgenImporter(matchPath);
+
+    (imported as any)('@/components/types', '/project/src/components');
+
+    expect(matchPath).toHaveBeenCalledWith(
+      '@/components/types',
+      undefined,
+      undefined,
+      expect.arrayContaining(['.ts', '.tsx'])
+    );
   });
 });

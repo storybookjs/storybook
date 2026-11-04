@@ -3,12 +3,22 @@ import { readFile } from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SourceEditor } from 'storybook/internal/csf-tools';
-import type { IndexEntry } from 'storybook/internal/types';
+import {
+  type SnippetTemplate,
+  UnprintableArgError,
+  fillTemplate,
+  formatTemplate,
+  printValue,
+} from 'storybook/internal/docs-tools';
+import type { Args, IndexEntry, ProvidedStoryDoc } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
 import { vol } from 'memfs';
 
+import { printHole } from '../../docs/print-hole.ts';
+import type { VueHolePlace } from '../../snippet-values.ts';
 import { buildStoryDocsPayload } from './build-story-docs.ts';
+import { expectTemplatesStripToSnippets } from './story-template.test-helpers.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 
@@ -22,13 +32,13 @@ const DOCGEN_CATEGORIES: Record<string, string> = {
   size: 'props',
 };
 
-const docgen = (id: string): DocgenPayload => ({
+const docgen = (id: string, categories = DOCGEN_CATEGORIES): DocgenPayload => ({
   id,
   name: 'MyButton',
   path: STORY_PATH,
   jsDocTags: {},
   argTypes: Object.fromEntries(
-    Object.entries(DOCGEN_CATEGORIES).map(([name, category]) => [
+    Object.entries(categories).map(([name, category]) => [
       name,
       { name, table: { category }, type: { name: 'other', value: 'unknown' } },
     ])
@@ -57,7 +67,11 @@ const referencesFor = (modules: Record<string, string>) => ({
   },
 });
 
-async function primaryStory(storySource: string, modules?: Record<string, string>) {
+async function primaryStory(
+  storySource: string,
+  modules?: Record<string, string>,
+  categories = DOCGEN_CATEGORIES
+) {
   vol.fromJSON({
     [STORY_PATH]: `
 import MyButton from './MyButton.vue';
@@ -73,13 +87,14 @@ ${storySource}
   const payload = await buildStoryDocsPayload(
     { entry: ENTRY },
     {
-      readDocgen: async (id) => docgen(id),
+      readDocgen: async (id) => docgen(id, categories),
       ...(modules ? { references: referencesFor(modules) } : {}),
     }
   );
   if (!payload) {
     throw new Error('Expected a story docs payload for the test story file');
   }
+  expectTemplatesStripToSnippets(payload);
   return payload.stories[STORY_ID];
 }
 
@@ -239,3 +254,201 @@ export const Primary = {
     );
   });
 });
+
+// This provider writes the payload's templates, so their holes stand in Vue places.
+const vueTemplate = (template: SnippetTemplate) => template as SnippetTemplate<VueHolePlace>;
+
+describe('template', () => {
+  const filled = (story: ProvidedStoryDoc | undefined, initialArgs: Args, changed: Args) =>
+    fillTemplate(
+      vueTemplate(story!.template!),
+      { initialArgs, unmappedArgs: { ...initialArgs, ...changed } },
+      printHole
+    );
+
+  it('wraps each arg the snippet prints in a hole, and adds the args a control adds', async () => {
+    const story = await primaryStory(`export const Primary = { args: { label: 'Hi', count: 2 } };`);
+    expect(formatTemplate(story!.template!)).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton⟦attr count ~" "⟫ :count="2"⟧⟦attr label ~" "⟫ label="Hi"⟧⟦props * except=["label","count"] ~" "⟫⟧ />
+      </template>"
+    `);
+    const initialArgs = { label: 'Hi', count: 2, theme: 'dark' };
+    expect(filled(story, initialArgs, { label: 'Go', active: true })).toContain(
+      '<MyButton :count="2" label="Go" active />'
+    );
+  });
+
+  it('adds the args a control sets after an attribute the render writes before them', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { count: 2 },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton label="Go" v-bind="args" />',
+  }),
+};
+`);
+    expect(story?.snippet).toContain('<MyButton label="Go" :count="2" />');
+    expect(filled(story, { count: 2 }, { label: 'Stop', size: 'lg' })).toContain(
+      '<MyButton label="Stop" :count="2" size="lg" />'
+    );
+  });
+
+  it('declares an arg the snippet hoists with a hole for its value', async () => {
+    const story = await primaryStory(`export const Primary = { args: { size: { width: 2 } } };`);
+    expect(formatTemplate(story!.template!)).toContain(
+      'const size = ⟦value size in="script"⟫{ width: 2 }⟧;'
+    );
+    expect(filled(story, { size: { width: 2 } }, { size: { tag: '</d>' } })).toContain(
+      "const size = { tag: '</d>' };"
+    );
+  });
+
+  it('keeps an arg written as code while it is unchanged', async () => {
+    const story = await primaryStory(
+      `export const Primary = { args: { count: 1e3, label: 'Hi' } };`
+    );
+    expect(filled(story, { count: 1000, label: 'Hi' }, { label: 'Go' })).toContain(
+      '<MyButton :count="1e3" label="Go" />'
+    );
+  });
+
+  it('shows the static snippet for an attribute a changed string cannot be written in', async () => {
+    const story = await primaryStory(`export const Primary = { args: { label: 'Hi' } };`);
+    expect(() => filled(story, { label: 'Hi' }, { label: `a & "b" 'c'` })).toThrow(
+      UnprintableArgError
+    );
+  });
+
+  it('follows an attribute written before the args binding, which the binding writes over', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { count: 2 },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton label="Go" v-bind="args" />',
+  }),
+};
+`);
+    expect(filled(story, { count: 2 }, { label: 'Stop' })).toContain(
+      '<MyButton label="Stop" :count="2" />'
+    );
+  });
+
+  it('cannot follow a binding written before the args binding that reads another arg', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton :size="args.label" v-bind="args" />',
+  }),
+};
+`);
+    expect(filled(story, { label: 'Hi' }, { label: 'Ho' })).toContain(
+      '<MyButton size="Ho" label="Ho" />'
+    );
+    expect(() => filled(story, { label: 'Hi' }, { label: 'Hi', size: 'lg' })).toThrow(
+      'The snippet cannot show the current value of the `size` arg.'
+    );
+  });
+
+  it('cannot follow a slot a control sets that the story leaves unset', async () => {
+    const story = await primaryStory(
+      `export const Primary = { args: { label: 'Hi' } };`,
+      undefined,
+      { ...DOCGEN_CATEGORIES, default: 'slots' }
+    );
+    expect(() => filled(story, { label: 'Hi' }, { default: 'Slot text' })).toThrow(
+      'The snippet cannot show the current value of the `default` arg.'
+    );
+  });
+
+  it('follows an arg whose value holds what a formatted hole is written with', async () => {
+    const story = await primaryStory(`export const Primary = { args: { label: '⟦x⟫y⟧' } };`);
+    expect(story?.snippet).toContain('label="⟦x⟫y⟧"');
+    expect(filled(story, { label: '⟦x⟫y⟧' }, { label: 'Go' })).toContain('<MyButton label="Go" />');
+  });
+});
+
+describe('a value a control sets', () => {
+  const PLACES: Record<string, (label: string) => string> = {
+    'an args binding': (label) => `export const Primary = { args: { label: ${label} } };`,
+    'a bound attribute': (label) => rendered(label, '<MyButton :label="args.label" />'),
+    'an interpolation': (label) => rendered(label, '<MyButton>{{ args.label }}</MyButton>'),
+    'an expression': (label) => rendered(label, `<MyButton :title="args.label + '!'" />`),
+    'a slot': (label) => `export const Primary = { args: { default: ${label} } };`,
+  };
+  const CATEGORIES = { ...DOCGEN_CATEGORIES, default: 'slots' };
+  const VALUES: unknown[] = [
+    'Go',
+    'say "hi"',
+    "it's",
+    `a "b" 'c'`,
+    '{x}',
+    '{{ x }}',
+    'a}}b',
+    '<b>',
+    'a & b',
+    ' padded ',
+    0,
+    2.5,
+    1000,
+    -3,
+    true,
+    false,
+    null,
+  ];
+  const outcome = (fill: () => string) => {
+    try {
+      return fill();
+    } catch (error) {
+      if (error instanceof UnprintableArgError) {
+        return UnprintableArgError;
+      }
+      throw error;
+    }
+  };
+
+  describe.each(Object.entries(PLACES))('in %s', (_place, story) => {
+    const arg = story('x').includes('default:') ? 'default' : 'label';
+    const own = (value: unknown) =>
+      primaryStory(story(printValue(value, arg, { quote: "'" })), undefined, CATEGORIES);
+
+    it.each(VALUES.map((value) => [value]))(
+      'prints %j as the snippet of a story that writes it does, or not at all',
+      async (value) => {
+        const written = await own(value);
+        const go = await own('Go');
+        const filled = outcome(() =>
+          fillTemplate(
+            vueTemplate(go!.template!),
+            { initialArgs: { [arg]: 'Go' }, unmappedArgs: { [arg]: value } },
+            printHole
+          )
+        );
+        expect([written?.snippet ?? UnprintableArgError, UnprintableArgError]).toContain(filled);
+        if (['Go', 0, 2.5, 1000, true, false].includes(value as never)) {
+          expect(filled).toBe(written?.snippet);
+        }
+      }
+    );
+  });
+});
+
+function rendered(label: string, template: string) {
+  return `
+export const Primary = {
+  args: { label: ${label} },
+  render: (args) => ({ components: { MyButton }, setup: () => ({ args }), template: \`${template}\` }),
+};
+`;
+}

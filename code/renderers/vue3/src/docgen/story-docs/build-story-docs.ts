@@ -34,7 +34,17 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
-import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
+import {
+  type HoleMarks,
+  type SnippetTemplate,
+  createHoleMarks,
+  withHoleSpace,
+} from 'storybook/internal/docs-tools';
+import type {
+  ProvidedStoryDoc,
+  ProvidedStoryDocsPayload,
+  StoryDocsProviderInput,
+} from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 
 import {
@@ -45,6 +55,7 @@ import {
 import type { ForwardableSetup } from './transform-template/forward-setup.ts';
 import { printH } from './print-h/print-h.ts';
 import { createRenderContext } from '../shared/render-primitives.ts';
+import type { VueHolePlace } from '../../snippet-values.ts';
 import {
   readTemplateRenderConfig,
   transformTemplate,
@@ -96,7 +107,7 @@ const UNRENDERED_WARNINGS: Record<Exclude<StaticStoryRenderer, { kind: 'bail' }>
   };
 
 type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
-type ExtractStoriesResult = { stories: Record<string, StoryDoc> };
+type ExtractStoriesResult = { stories: Record<string, ProvidedStoryDoc> };
 type StaticStoryRenderer =
   | { kind: 'bail'; warning: string }
   | { kind: 'h'; argsParam?: string; expression: E.Expression }
@@ -120,7 +131,7 @@ type StaticStoryArgs = {
 export async function buildStoryDocsPayload(
   input: StoryDocsProviderInput,
   context: BuildStoryDocsContext = {}
-): Promise<StoryDocsPayload | undefined> {
+): Promise<ProvidedStoryDocsPayload | undefined> {
   const storyFilePath = getStoryImportPathFromEntry(input.entry);
   if (!storyFilePath || !STORY_FILE_TEST_REGEXP.test(storyFilePath)) {
     return undefined;
@@ -260,16 +271,16 @@ function vueDocgenArgInfo(payload: DocgenPayload): VueDocgenArgInfo {
 }
 
 /**
- * Maps every CSF story export to its StoryDoc, enriched with a snippet or error where possible.
+ * Maps every CSF story export to its ProvidedStoryDoc, enriched with a snippet or error where possible.
  */
 function extractStories(csf: ParsedCsf, options: StoryDocsContext): ExtractStoriesResult {
   const stories = Object.fromEntries(
-    Object.entries(csf._stories).map(([storyExport, story]): [string, StoryDoc] => {
+    Object.entries(csf._stories).map(([storyExport, story]): [string, ProvidedStoryDoc] => {
       const { description, summary } = extractStoryJSDocInfo(
         csf._storyStatements[storyExport],
         csf.editor
       );
-      const storyDoc: StoryDoc = {
+      const storyDoc: ProvidedStoryDoc = {
         id: story.id,
         name: story.name ?? storyNameFromExport(storyExport),
         description,
@@ -296,11 +307,11 @@ function extractStories(csf: ParsedCsf, options: StoryDocsContext): ExtractStori
 function enrichStoryDoc(
   csf: ParsedCsf,
   storyExport: string,
-  storyDoc: StoryDoc,
+  storyDoc: ProvidedStoryDoc,
   options: StoryDocsContext
-): StoryDoc {
+): ProvidedStoryDoc {
   const plain = storyDoc;
-  const withWarning = (warning: string | undefined): StoryDoc =>
+  const withWarning = (warning: string | undefined): ProvidedStoryDoc =>
     warning ? { ...storyDoc, warning } : plain;
 
   if (!options.snippet) {
@@ -350,20 +361,36 @@ function enrichStoryDoc(
     return withWarning(noSnippetWarning(unresolved));
   }
 
-  const rendered = renderStaticStorySnippet(
-    renderer,
-    classified,
-    componentName,
-    docgenArgInfo,
-    options
-  );
+  // The snippet, and its template: the same print with each place an arg prints marked as a hole.
+  const print = (mark?: HoleMarks<VueHolePlace>['mark']) =>
+    renderStaticStorySnippet(renderer, classified, componentName, docgenArgInfo, options, mark);
+  const rendered = print();
   if (!rendered) {
     return withWarning(UNRENDERED_WARNINGS[renderer.kind]);
   }
+  // The marked print is the snippet with marks in it, so marks none of the snippet's code holds
+  // are never read in it.
+  const marks = createHoleMarks<VueHolePlace>([rendered.snippet]);
+  const printed = print(marks.mark)?.snippet;
+  const holes = printed === undefined ? undefined : marks.toTemplate(printed);
+  // A slot of the component the story leaves unset, which a control can set, has no place in the
+  // snippet.
+  const set = new Set(args.map((arg) => arg.name));
+  const unsetSlots =
+    renderer.kind === 'sfc' ? [...docgenArgInfo.slots].filter((slot) => !set.has(slot)) : [];
+  const guards: SnippetTemplate<VueHolePlace> = unsetSlots.map((arg) => ({
+    kind: 'guard',
+    arg,
+    text: '',
+  }));
 
   return {
     ...storyDoc,
     snippet: rendered.snippet,
+    // An attribute a control clears leaves no gap.
+    ...(holes && {
+      template: withHoleSpace([...guards, ...holes], (hole) => hole.kind === 'attr'),
+    }),
     ...(unresolved.length > 0 ? { warning: unresolvedWarning(unresolved) } : {}),
   };
 }
@@ -428,10 +455,13 @@ function renderStaticStorySnippet(
   classified: ClassifyArgsResult,
   componentName: string,
   docgenArgInfo: VueDocgenArgInfo,
-  options: StoryDocsContext
+  options: StoryDocsContext,
+  mark: HoleMarks<VueHolePlace>['mark'] | undefined
 ): StorySnippetResult | undefined {
   const componentImportStatement = options.snippet?.componentImportStatement;
   const { args } = classified;
+  const ctx = createRenderContext(mark);
+  const slots = docgenArgInfo.slots;
 
   // A story without a render function shows the component receiving the args directly.
   if (renderer.kind === 'sfc') {
@@ -440,7 +470,9 @@ function renderStaticStorySnippet(
           args,
           componentImports: new Map([[componentName, componentImportStatement]]),
           componentName,
+          ctx,
           importBindings: options.importBindings,
+          slots,
           template: `<${componentName} v-bind="args" />`,
           unsetArgs: classified.unset,
         })
@@ -452,14 +484,15 @@ function renderStaticStorySnippet(
       args,
       componentImports: renderer.componentImports,
       componentName,
+      ctx,
       importBindings: options.importBindings,
       setup: renderer.setup,
+      slots,
       template: renderer.template,
       unsetArgs: classified.unset,
     });
   }
 
-  const ctx = createRenderContext();
   const printed = printH({
     argsParam: renderer.argsParam,
     componentImportStatement,
@@ -479,6 +512,7 @@ function renderStaticStorySnippet(
     componentName,
     ctx,
     importBindings: options.importBindings,
+    slots,
     template: printed.template,
     unsetArgs: classified.unset,
   });

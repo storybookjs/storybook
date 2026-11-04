@@ -19,9 +19,6 @@ export type SvelteHolePlace =
   // An attribute `name` before an `{...args}` spread, which writes over it once a control sets
   // `name`. Until then it prints its `template`, its reads filled with the args a control set.
   | { kind: 'overridden'; name: string; template: SnippetTemplate<SvelteHolePlace> }
-  // After an `overridden` hole, for an arg it reads: it prints nothing, and cannot show that arg
-  // cleared, which the spread hole does not see.
-  | { kind: 'cleared' }
   // A read of an arg, or of the member `path` of it, in code.
   | { kind: 'value'; path?: string[] }
   // A shorthand property, `{ name }`, that reads an arg.

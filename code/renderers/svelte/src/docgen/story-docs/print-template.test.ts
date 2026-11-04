@@ -464,6 +464,9 @@ describe('printTemplate template', () => {
     expect(fill(written, initialArgs, { label: 'Stop', title: 'Hi' })).toBe(
       '<Panel\n  title="Hi"\n  label="Stop"\n/>'
     );
+    expect(() => fill(written, initialArgs, { label: undefined })).toThrow(
+      'The snippet cannot show the current value of the `label` arg.'
+    );
     expect(fill(written, initialArgs, { label: 'Go', size: 'sm' })).toBe(
       '<Panel\n  title="Go"\n  label="Go" size="sm"\n/>'
     );

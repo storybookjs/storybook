@@ -107,9 +107,16 @@ describe('a changed arg', () => {
     {
       name: 'a styleMap value',
       story:
-        'html`<test-element style=${styleMap({ fontSize: args.x, "--gap": "4px" })}></test-element>`',
+        'html`<test-element style=${styleMap({ "--gap": "4px", fontSize: args.x })}></test-element>`',
       // A long value lays the start tag out on lines of its own.
       values: (value) => String(value).length < 16,
+    },
+    {
+      name: 'a styleMap of args alone',
+      story: 'html`<test-element style=${styleMap({ fontSize: args.x })}></test-element>`',
+      // A story that sets no declaration prints no `style` attribute, whose hole the template of
+      // one that does keeps in its value.
+      values: (value) => String(value).length < 16 && value !== '' && value != null,
     },
     {
       name: 'a lit binding while truthy',

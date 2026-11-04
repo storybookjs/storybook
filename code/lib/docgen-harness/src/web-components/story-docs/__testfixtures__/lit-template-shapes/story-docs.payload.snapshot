@@ -153,8 +153,8 @@
     "webcomponentsstorydocs-lit-template-shapes--style-map": {
       "id": "webcomponentsstorydocs-lit-template-shapes--style-map",
       "name": "Style Map",
-      "snippet": "<lit-template-shapes style="--gap: 4px; color: red;"></lit-template-shapes>",
-      "template": "<lit-template-shapes style="--gap: 4px;⟦css color ~" "⟫ color: red;⟧⟦css fontSize property="font-size" ~" "⟫⟧"></lit-template-shapes>",
+      "snippet": "<lit-template-shapes style="color: red; --gap: 4px;"></lit-template-shapes>",
+      "template": "<lit-template-shapes style="⟦css color⟫color: red;⟧⟦css fontSize property="font-size" ~" "⟫⟧ --gap: 4px;"></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--unbound-arg": {
       "id": "webcomponentsstorydocs-lit-template-shapes--unbound-arg",

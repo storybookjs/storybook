@@ -896,6 +896,27 @@ describe('the template', () => {
     );
   });
 
+  it('keeps one space between classes and prints no empty style attribute', async () => {
+    const { snippet, template } = await firstTemplate(`
+      import { html } from 'lit';
+      import { classMap } from 'lit/directives/class-map.js';
+      import { styleMap } from 'lit/directives/style-map.js';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { a: false, b: false, label: 'Save $& now' },
+        render: (args) => html\`<test-element class="btn \${classMap({ a: args.a, b: args.b })}" style=\${styleMap({ backgroundColor: args.color })} label=\${args.label}></test-element>\`,
+      };
+    `);
+    expect(snippet).toBe('<test-element class="btn " label="Save $&amp; now"></test-element>');
+    const initialArgs = { a: false, b: false, label: 'Save $& now' };
+    expect(fill(template, initialArgs, { b: true, color: 'red' })).toBe(
+      '<test-element class="btn b " label="Save $&amp; now" style="background-color: red;"></test-element>'
+    );
+    expect(fill(template, initialArgs, { a: true, b: true })).toBe(
+      '<test-element class="btn a b " label="Save $&amp; now"></test-element>'
+    );
+  });
+
   it('cannot follow an arg a classMap passes to a function', async () => {
     const { snippet, warning, template } = await firstTemplate(`
       import { html } from 'lit';

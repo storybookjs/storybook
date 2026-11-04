@@ -411,20 +411,24 @@ const resolveAttribute = (
   const singleDynamicValue = markers.length === 1 && attribute.value === markers[0];
   const only = singleDynamicValue ? state.markers.get(markers[0]!) : undefined;
   const map = only && mapValue(only, state);
-  if (map && 'value' in map) {
-    if (map.choice) {
-      // `class=${classMap({ … })}` is the attribute while it sets a class.
-      const { read, truthy, falsy } = map.choice;
-      const print = (classes: string) => classes && quotedAttribute(attribute.name, classes);
-      const hole: HtmlHole = {
-        kind: 'choice',
-        ...read,
-        truthy: print(truthy),
-        falsy: print(falsy),
-      };
-      return map.text
-        ? { name: attribute.name, value: map.text, hole }
-        : { name: attribute.name, value: undefined, omitted: true, hole };
+  if (map?.kind === 'choice') {
+    // `class=${classMap({ … })}` is the attribute while it sets a class.
+    const print = (classes: string) => classes && quotedAttribute(attribute.name, classes);
+    const hole: HtmlHole = {
+      kind: 'choice',
+      ...map.read,
+      truthy: print(map.truthy),
+      falsy: print(map.falsy),
+    };
+    return map.text
+      ? { name: attribute.name, value: map.text, hole }
+      : { name: attribute.name, value: undefined, omitted: true, hole };
+  }
+  if (map?.kind === 'value') {
+    if (map.text === '' && map.properties) {
+      // `style=${styleMap({ … })}` is the attribute while it sets a declaration.
+      const hole: HtmlHole = { kind: 'cssattr', spread: true, properties: map.properties };
+      return { name: attribute.name, value: undefined, omitted: true, hole };
     }
     return map.value.length === 0
       ? undefined
@@ -447,31 +451,30 @@ const resolveAttribute = (
     if (!expression) {
       continue;
     }
-    const directive = mapValue(expression, state);
-    if (directive && 'value' in directive) {
-      const { choice } = directive;
-      text = text.replace(marker, directive.text);
+    const directive = expression === only ? map : mapValue(expression, state);
+    if (directive?.kind === 'unresolved') {
+      state.unresolved.add(directive.source);
+      guardMarkers(attribute.value, state);
+      return undefined;
+    }
+    if (directive) {
+      text = text.replace(marker, () => directive.text);
       holeValue = replaceMarker(
         holeValue,
         marker,
-        choice
+        directive.kind === 'choice'
           ? [
               {
                 kind: 'choice',
-                ...choice.read,
-                truthy: escapeAttribute(choice.truthy),
-                falsy: escapeAttribute(choice.falsy),
+                ...directive.read,
+                truthy: escapeAttribute(directive.truthy),
+                falsy: escapeAttribute(directive.falsy),
                 text: directive.text,
               },
             ]
           : directive.value
       );
       continue;
-    }
-    if (directive) {
-      state.unresolved.add(directive.unresolved);
-      guardMarkers(attribute.value, state);
-      return undefined;
     }
     const value = resolveMarkerValue(expression, state);
     const hole: HtmlHole | undefined =
@@ -512,7 +515,7 @@ const resolveAttribute = (
       return undefined;
     }
     const valueText = boundText(resolved.value);
-    text = text.replace(marker, valueText);
+    text = text.replace(marker, () => valueText);
     holeValue = replaceMarker(holeValue, marker, [hole ? { ...hole, text: valueText } : valueText]);
   }
   return withHole({
@@ -522,29 +525,38 @@ const resolveAttribute = (
   });
 };
 
-// The value lit's `classMap({ … })` or `styleMap({ … })` sets for the story's args, with a
-// `choice` hole for each class and a `css` hole for each declaration whose value reads an arg, or the
-// source of a key or value the server cannot know. A value is a literal or an arg read, for a class
-// also negated or in `Boolean(…)`. Literals go first and what the story's args leave out last, so a
-// change seldom leaves a space at the start. Classes that all read one arg are one `choice` of the
-// classes for each branch instead, which the caller puts in a hole.
-const mapValue = (
-  expression: E.Expression,
-  state: TemplatePrintState
-):
+// What lit's `classMap({ … })` or `styleMap({ … })` sets for the story's args, or the source of a
+// key or value the server cannot know. A value is a literal or
+// an arg read, for a class also negated or in `Boolean(…)`.
+// - Classes that all read one arg are a `choice` of the classes for each branch, which the caller
+//   puts in a hole.
+// - Otherwise each class and declaration whose value reads an arg is a `choice` or `css` hole in the
+//   value. One that prints nothing takes the space before it once it prints, or, for a class
+//   before any that prints, the space after it. `properties` lists declarations that all read a
+//   whole arg, for the `cssattr` hole of a `style` attribute that prints none.
+type MapValue =
+  | { kind: 'choice'; text: string; read: ArgRead; truthy: string; falsy: string }
   | {
-      value: HtmlSnippetTemplate;
+      kind: 'value';
       text: string;
-      choice?: { read: ArgRead; truthy: string; falsy: string };
+      value: HtmlSnippetTemplate;
+      properties?: { arg: string; property: string }[];
     }
-  | { unresolved: string }
-  | undefined => {
+  | { kind: 'unresolved'; source: string };
+
+const mapValue = (expression: E.Expression, state: TemplatePrintState): MapValue | undefined => {
   const directive = mapDirective(expression, state.context.bindings);
   if (!directive) {
     return undefined;
   }
-  const pieces: { key: string; text: string; hole?: HtmlHole; read?: ArgRead; not?: boolean }[] =
-    [];
+  const pieces: {
+    key: string;
+    text: string;
+    hole?: HtmlHole;
+    read?: ArgRead;
+    not?: boolean;
+    property?: string;
+  }[] = [];
   for (const property of directive.object.properties) {
     const key =
       property.type === 'Property' && !property.computed
@@ -555,7 +567,7 @@ const mapValue = (
             : undefined
         : undefined;
     if (property.type !== 'Property' || key === undefined) {
-      return { unresolved: oneLineTextOf(property) };
+      return { kind: 'unresolved', source: oneLineTextOf(property) };
     }
     let node = unwrapExpression(property.value as E.Expression);
     let not = false;
@@ -579,7 +591,7 @@ const mapValue = (
       (value.kind === 'value' || value.kind === 'empty') &&
       (reference !== undefined || collectReferencedArgs(node, state.context.scope).size === 0);
     if (!known) {
-      return { unresolved: oneLineTextOf(property.value) };
+      return { kind: 'unresolved', source: oneLineTextOf(property.value) };
     }
     const story = value.kind === 'value' ? value.value : undefined;
     const read = reference && argRead(reference);
@@ -602,45 +614,72 @@ const mapValue = (
       pieces.push({
         key,
         text: cssDeclarations([{ name, value: story }]) ?? '',
+        read,
+        property: name,
         ...(read && {
           hole: { kind: 'css', ...read, ...(name !== read.arg && { property: name }) },
         }),
       });
     }
   }
-  const reads = pieces.flatMap((piece) => (piece.read ? [piece.read] : []));
-  const text = pieces
-    .map((piece) => piece.text)
-    .filter(Boolean)
-    .join(' ');
-  if (reads.length > 0 && reads.every((read) => isEqual(read, reads[0]))) {
+  const shown = pieces.filter((piece) => piece.hole || piece.text);
+  const textOf = (list: typeof shown) =>
+    list
+      .map((piece) => piece.text)
+      .filter(Boolean)
+      .join(' ');
+  const text = textOf(shown);
+  const reads = shown.flatMap((piece) => (piece.read ? [piece.read] : []));
+  if (
+    directive.kind === 'classes' &&
+    reads.length > 0 &&
+    reads.every((read) => isEqual(read, reads[0]))
+  ) {
     const classes = (truthy: boolean) =>
-      pieces
+      shown
         .filter((piece) => (piece.read ? truthy !== piece.not : piece.text))
         .map((piece) => piece.key)
         .join(' ');
-    return {
-      value: [],
-      text,
-      choice: { read: reads[0]!, truthy: classes(true), falsy: classes(false) },
-    };
+    return { kind: 'choice', text, read: reads[0]!, truthy: classes(true), falsy: classes(false) };
   }
-  const rank = (piece: (typeof pieces)[number]) => (piece.hole ? (piece.text ? 1 : 2) : 0);
-  const shown = pieces
-    .filter((piece) => piece.hole || piece.text)
-    .sort((a, b) => rank(a) - rank(b));
-  const value: HtmlSnippetTemplate = shown.flatMap(({ text, hole }, index) => [
-    ...(index > 0 && text ? [' '] : []),
-    hole ? { ...hole, text, ...(index > 0 && !text && { space: ' ' }) } : text,
-  ]);
+  // A class can go anywhere, so literals go first and what the story's args leave out last, where
+  // a change leaves no space twice; the order of declarations decides which one applies.
+  const rank = (piece: (typeof shown)[number]) => (piece.hole ? (piece.text ? 1 : 2) : 0);
+  const ordered =
+    directive.kind === 'classes' ? shown.toSorted((a, b) => rank(a) - rank(b)) : shown;
+  const value: HtmlSnippetTemplate = [];
+  let printed = false;
+  for (const { text: piece, hole } of ordered) {
+    if (piece) {
+      value.push(...(printed ? [' '] : []), hole ? { ...hole, text: piece } : piece);
+      printed = true;
+    } else if (printed) {
+      value.push({ ...hole!, text: '', space: ' ' });
+    } else {
+      value.push({ ...padded(hole!), text: '' });
+    }
+  }
+  const wholeArgs = shown.every((piece) => piece.read && !piece.read.path);
   return {
+    kind: 'value',
+    text: textOf(ordered),
     value,
-    text: shown
-      .map((piece) => piece.text)
-      .filter(Boolean)
-      .join(' '),
+    ...(directive.kind === 'styles' &&
+      wholeArgs && {
+        properties: shown.map((piece) => ({ arg: piece.read!.arg, property: piece.property! })),
+      }),
   };
 };
+
+// A class's `choice` with a space after the class, for a class before any the story's args print.
+const padded = (hole: HtmlHole): HtmlHole =>
+  hole.kind === 'choice'
+    ? {
+        ...hole,
+        truthy: hole.truthy && `${hole.truthy} `,
+        falsy: hole.falsy && `${hole.falsy} `,
+      }
+    : hole;
 
 const isBooleanCall = (node: Node): node is E.CallExpression & { arguments: [E.Expression] } =>
   node.type === 'CallExpression' &&

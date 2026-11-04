@@ -152,7 +152,6 @@ export const getStorybookInfo = async (
   const configInfo = getConfigInfo(configDir);
   const mainConfig = (await loadMainConfig({
     configDir: configInfo.configDir,
-    cwd,
     // When the main config may have been rewritten earlier in the same process (e.g. an
     // automigration switching frameworks), callers must skip the module cache to read the
     // current on-disk config instead of a stale, previously-evaluated version.

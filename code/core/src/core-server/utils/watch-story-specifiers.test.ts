@@ -89,7 +89,7 @@ describe('watchStorySpecifiers', () => {
   });
 
   it('scans directories when they are added', async () => {
-    // This test uses real timers because globby performs actual filesystem I/O
+    // This test uses real timers because globbing performs actual filesystem I/O
     // that doesn't work well with fake timers
     vi.useRealTimers();
 
@@ -107,9 +107,26 @@ describe('watchStorySpecifiers', () => {
 
     onInvalidate.mockClear();
     onChange('src/nested', 1234);
-    // Wait for the batching timeout and globby to complete
+    // Wait for the batching timeout and globbing to complete
     await vi.waitFor(() => {
       expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.stories.ts`, false);
+    });
+  });
+
+  it('scans added directories whose path contains glob characters', async () => {
+    vi.useRealTimers();
+
+    const specifier = normalizeStoriesEntry('../route-groups/**/*.stories.ts', options);
+
+    const onInvalidate = vi.fn();
+    close = watchStorySpecifiers([specifier], { workingDir }, onInvalidate);
+
+    const watcher = Watchpack.mock.instances[0];
+    const baseOnChange = watcher.on.mock.calls[0][1];
+
+    baseOnChange(abspath('route-groups/(group)'), 1234);
+    await vi.waitFor(() => {
+      expect(onInvalidate).toHaveBeenCalledWith(`./route-groups/(group)/Grouped.stories.ts`, false);
     });
   });
 

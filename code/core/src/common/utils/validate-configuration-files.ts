@@ -3,18 +3,18 @@ import { resolve } from 'node:path';
 import { once } from 'storybook/internal/node-logger';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { glob } from 'glob';
-// eslint-disable-next-line depend/ban-dependencies
-import slash from 'slash';
+import { glob } from 'tinyglobby';
 import { dedent } from 'ts-dedent';
 
+import { globCaseSensitiveMatch } from './common-glob-options.ts';
 import { supportedExtensions } from './interpret-files.ts';
 
-export async function validateConfigurationFiles(configDir: string, cwd?: string) {
+export async function validateConfigurationFiles(configDir: string) {
   const extensionsPattern = `{${Array.from(supportedExtensions).join(',')}}`;
-  const mainConfigMatches = await glob(slash(resolve(configDir, `main${extensionsPattern}`)), {
-    cwd: cwd ?? process.cwd(),
+  const mainConfigMatches = await glob(`main${extensionsPattern}`, {
+    cwd: resolve(configDir),
+    caseSensitiveMatch: globCaseSensitiveMatch,
+    expandDirectories: false,
   });
 
   const [mainConfigPath] = mainConfigMatches;

@@ -6,6 +6,7 @@ import type { NormalizedStoriesSpecifier, Path } from 'storybook/internal/types'
 
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
+import { glob } from 'tinyglobby';
 import Watchpack from 'watchpack';
 
 const isDirectory = (directory: Path) => {
@@ -89,20 +90,16 @@ export function watchStorySpecifiers(
           .map(async (specifier) => {
             // If `./path/to/dir` was added, check all files matching `./path/to/dir/**/*.stories.*`
             // (where the last bit depends on `files`).
-            const dirGlob = join(
-              absolutePath,
-              '**',
-              // files can be e.g. '**/foo/*/*.js' so we just want the last bit,
-              // because the directory could already be within the files part (e.g. './x/foo/bar')
-              basename(specifier.files)
-            );
+            // files can be e.g. '**/foo/*/*.js' so we just want the last bit,
+            // because the directory could already be within the files part (e.g. './x/foo/bar')
+            const dirGlob = `**/${basename(specifier.files)}`;
 
-            // Dynamically import globby because it is a pure ESM module
-            // eslint-disable-next-line depend/ban-dependencies
-            const { globby } = await import('globby');
-
-            // glob only supports forward slashes
-            const addedFiles = await globby(slash(dirGlob), commonGlobOptions(dirGlob));
+            const addedFiles = await glob(dirGlob, {
+              ...commonGlobOptions(join(absolutePath, dirGlob)),
+              cwd: absolutePath,
+              absolute: true,
+              expandDirectories: false,
+            });
 
             addedFiles.forEach((filePath: Path) => {
               const fileImportPath = toImportPath(filePath);

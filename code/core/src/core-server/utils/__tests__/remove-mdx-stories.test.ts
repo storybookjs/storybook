@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { resolve } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
@@ -6,16 +6,15 @@ import { normalizeStoriesEntry } from 'storybook/internal/common';
 import { type StoriesEntry } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
-import { glob as globOriginal } from 'glob';
-// eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
+import { type GlobOptions, glob as globOriginal } from 'tinyglobby';
 
 import { removeMDXEntries } from '../remove-mdx-entries.ts';
 
 const configDir = '/configDir/';
 const workingDir = '/';
 
-vi.mock('glob', () => ({ glob: vi.fn() }));
+vi.mock('tinyglobby', () => ({ glob: vi.fn() }));
 const glob = vi.mocked(globOriginal);
 
 const createList = (list: { entry: StoriesEntry; result: string[] }[]) => {
@@ -25,20 +24,21 @@ const createList = (list: { entry: StoriesEntry; result: string[] }[]) => {
         configDir,
         workingDir,
       });
-      acc[slash(join('/', directory, files))] = { result, entry };
+      acc[slash(resolve('/', directory, files))] = { result, entry };
       return acc;
     },
     {}
   );
 };
 
-const createGlobMock = (input: ReturnType<typeof createList>) => {
-  return async (k: string | string[]) => {
-    if (Array.isArray(k)) {
-      throw new Error('do not pass an array to glob during tests');
+const createGlobMock = (input: ReturnType<typeof createList>): typeof globOriginal => {
+  return async (k: string | readonly string[] | GlobOptions, options?: GlobOptions) => {
+    if (typeof k !== 'string') {
+      throw new Error('pass a single pattern string to glob during tests');
     }
-    if (input[slash(k)]) {
-      return input[slash(k)]?.result;
+    const key = slash(resolve(String(options?.cwd), k));
+    if (input[key]) {
+      return input[key]?.result;
     }
 
     throw new Error('can not find key in input');

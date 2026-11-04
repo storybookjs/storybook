@@ -8,12 +8,13 @@ const mocks = vi.hoisted(() => {
   return {
     commonGlobOptions: vi.fn(),
     promptText: vi.fn(),
-    globby: vi.fn(),
+    glob: vi.fn(),
     loggerLog: vi.fn(),
   };
 });
 
-vi.mock('./common-glob-options', () => ({
+vi.mock('./common-glob-options', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./common-glob-options.ts')>()),
   commonGlobOptions: mocks.commonGlobOptions,
 }));
 
@@ -26,8 +27,8 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-vi.mock('globby', () => ({
-  globby: mocks.globby,
+vi.mock('tinyglobby', () => ({
+  glob: mocks.glob,
 }));
 
 describe('scanAndTransformFiles', () => {
@@ -45,7 +46,7 @@ describe('scanAndTransformFiles', () => {
     // Setup mock implementations
     mocks.promptText.mockResolvedValue('**/*.{js,ts}');
     mocks.commonGlobOptions.mockReturnValue({ cwd: '/mock/project/root' });
-    mocks.globby.mockResolvedValue(mockFiles);
+    mocks.glob.mockResolvedValue(mockFiles);
 
     // Setup transform function mock
     mockTransformFn.mockResolvedValue(mockErrors);

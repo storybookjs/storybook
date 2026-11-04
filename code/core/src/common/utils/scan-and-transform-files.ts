@@ -1,6 +1,8 @@
 import { logger, prompt } from 'storybook/internal/node-logger';
 
-import { commonGlobOptions } from './common-glob-options.ts';
+import { glob as tinyglobby } from 'tinyglobby';
+
+import { commonGlobOptions, expandDirectoryPatterns } from './common-glob-options.ts';
 import { getProjectRoot } from './paths.ts';
 
 /**
@@ -39,15 +41,14 @@ export async function scanAndTransformFiles<T extends Record<string, unknown>>({
 
   logger.log('Scanning for affected files...');
 
-  // eslint-disable-next-line depend/ban-dependencies
-  const globby = (await import('globby')).globby;
-
-  const sourceFiles = await globby([glob], {
+  const cwd = getProjectRoot();
+  const sourceFiles = await tinyglobby(expandDirectoryPatterns([glob], cwd), {
     ...commonGlobOptions(''),
     ignore: ['**/node_modules/**'],
     dot: true,
-    cwd: getProjectRoot(),
+    cwd,
     absolute: true,
+    expandDirectories: false,
   });
 
   logger.log(`Scanning ${sourceFiles.length} files...`);

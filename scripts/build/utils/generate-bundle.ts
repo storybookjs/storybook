@@ -50,31 +50,55 @@ const USE_SYNC_EXTERNAL_STORE_ALIAS = {
 };
 
 /**
- * The real shim is CommonJS that calls `require('react')`. Bundled next to an external `react`, that
- * call fails in the browser with "Dynamic require of react is not supported", which once broke the
- * preview (#32270). Any shim specifier without an alias above must fail the build instead.
+ * A bundled CommonJS module that calls `require()` on an external (such as `react`) becomes a
+ * `__require("…")` call, which throws "Dynamic require of … is not supported" in the browser. That
+ * broke the preview once (#32270), through the shim above. Browser builds fail when it shows up, so
+ * the fix (an alias to an ES module, or keeping the dependency external) happens at build time.
  */
-const USE_SYNC_EXTERNAL_STORE_FILE = /[\\/]node_modules[\\/]use-sync-external-store[\\/]/;
-const USE_SYNC_EXTERNAL_STORE_ERROR =
-  'Bundling use-sync-external-store would ship its CommonJS require("react"), which fails in the ' +
-  'browser. Add the imported specifier to USE_SYNC_EXTERNAL_STORE_ALIAS in generate-bundle.ts.';
+const DYNAMIC_REQUIRE_CALL = /\b__require\(\s*["'`]([^"'`]+)/g;
 
-const esbuildUseSyncExternalStoreGuard: esbuild.Plugin = {
-  name: 'use-sync-external-store-guard',
+/**
+ * Deliberate `require()` calls in our own browser source, each guarded by try/catch. The Next.js
+ * header mocks load `draftMode` this way to stay compatible with Next.js 14.
+ */
+const ALLOWED_DYNAMIC_REQUIRES = new Set(['next/dist/server/request/draft-mode']);
+
+function findDynamicRequire(file: string, code: string) {
+  const specifier = Array.from(code.matchAll(DYNAMIC_REQUIRE_CALL), (match) => match[1]).find(
+    (required) => !ALLOWED_DYNAMIC_REQUIRES.has(required)
+  );
+  return specifier
+    ? `${file} calls __require("${specifier}"): a bundled CommonJS module requires an external, which fails in the browser. Alias the import to an ES module, or keep the dependency external.`
+    : undefined;
+}
+
+const esbuildNoDynamicRequireGuard: esbuild.Plugin = {
+  name: 'no-dynamic-require-in-browser-output',
   setup(build) {
-    build.onLoad({ filter: USE_SYNC_EXTERNAL_STORE_FILE }, () => ({
-      errors: [{ text: USE_SYNC_EXTERNAL_STORE_ERROR }],
-    }));
+    build.onEnd(async (result) => {
+      const outputs = Object.keys(result.metafile?.outputs ?? {}).filter((file) =>
+        file.endsWith('.js')
+      );
+      const workingDir = build.initialOptions.absWorkingDir ?? process.cwd();
+      const problems = await Promise.all(
+        outputs.map(async (file) =>
+          findDynamicRequire(file, await readFile(join(workingDir, file), 'utf8'))
+        )
+      );
+      return { errors: problems.filter((text) => text !== undefined).map((text) => ({ text })) };
+    });
   },
 };
 
-const rolldownUseSyncExternalStoreGuard: RolldownPlugin = {
-  name: 'use-sync-external-store-guard',
-  load(id) {
-    if (USE_SYNC_EXTERNAL_STORE_FILE.test(id)) {
-      this.error(USE_SYNC_EXTERNAL_STORE_ERROR);
+const rolldownNoDynamicRequireGuard: RolldownPlugin = {
+  name: 'no-dynamic-require-in-browser-output',
+  generateBundle(_options, bundle) {
+    for (const output of Object.values(bundle)) {
+      const problem = output.type === 'chunk' && findDynamicRequire(output.fileName, output.code);
+      if (problem) {
+        this.error(problem);
+      }
     }
-    return null;
   },
 };
 
@@ -174,7 +198,6 @@ export async function generateBundle({
     },
     plugins: [
       rawPlugin(),
-      esbuildUseSyncExternalStoreGuard,
       {
         name: 'postbuild',
         setup(build) {
@@ -258,7 +281,7 @@ export async function generateBundle({
       input: { [name]: entryPoint },
       platform: 'browser',
       plugins: [
-        rolldownUseSyncExternalStoreGuard,
+        rolldownNoDynamicRequireGuard,
         ...(useGlobals ? [rolldownGlobalExternalsPlugin()] : []),
       ],
       resolve: {
@@ -366,6 +389,7 @@ export async function generateBundle({
         supported: SUPPORTED_FEATURES,
         plugins: [
           ...sharedOptions.plugins,
+          esbuildNoDynamicRequireGuard,
           metafileWriterPlugin('browser', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
       })
@@ -397,6 +421,7 @@ export async function generateBundle({
         entryPoints: esbuildRuntimeEntries.map(({ entryPoint }) => entryPoint),
         plugins: [
           ...runtimeOptions.plugins,
+          esbuildNoDynamicRequireGuard,
           metafileWriterPlugin('runtime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
       })
@@ -410,6 +435,7 @@ export async function generateBundle({
         entryPoints: entries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
         plugins: [
           ...runtimeOptions.plugins,
+          esbuildNoDynamicRequireGuard,
           globalExternals(globalsModuleInfoMap),
           metafileWriterPlugin('globalizedRuntime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],

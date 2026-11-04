@@ -13,12 +13,10 @@ import ArgsFormattingButton from './ArgsFormattingButton.vue';
 const items = ['one', 'two'];
 
 const options = { tone: 'neutral', compact: true };
-
-const quotationLabel = 'She said "hi" and it\'s fine';
 </script>
 
 <template>
-  <ArgsFormattingButton :count="3" :disabled="false" enabled :items="items" label="Formatted" :options="options" :quotationLabel="quotationLabel" />
+  <ArgsFormattingButton :count="3" :disabled="false" enabled :items="items" label="Formatted" :options="options" quotationLabel="She said &quot;hi&quot; and it's fine" />
 </template>",
       "summary": undefined,
       "template": "<script lang="ts" setup>
@@ -27,12 +25,10 @@ import ArgsFormattingButton from './ArgsFormattingButton.vue';
 const items = ⟦value items in="script"⟫['one', 'two']⟧;
 
 const options = ⟦value options in="script"⟫{ tone: 'neutral', compact: true }⟧;
-
-const quotationLabel = ⟦value quotationLabel in="script"⟫'She said "hi" and it\'s fine'⟧;
 </script>
 
 <template>
-  <ArgsFormattingButton⟦attr count ~" "⟫ :count="3"⟧⟦attr disabled ~" "⟫ :disabled="false"⟧⟦attr enabled ~" "⟫ enabled⟧ :items="items"⟦attr label ~" "⟫ label="Formatted"⟧ :options="options" :quotationLabel="quotationLabel"⟦props * except=["label","quotationLabel","enabled","disabled","count","options","items"] ~" "⟫⟧ />
+  <ArgsFormattingButton⟦attr count ~" "⟫ :count="3"⟧⟦attr disabled ~" "⟫ :disabled="false"⟧⟦attr enabled ~" "⟫ enabled⟧ :items="items"⟦attr label ~" "⟫ label="Formatted"⟧ :options="options"⟦attr quotationLabel ~" "⟫ quotationLabel="She said &quot;hi&quot; and it's fine"⟧⟦props * except=["label","quotationLabel","enabled","disabled","count","options","items"] ~" "⟫⟧ />
 </template>",
     },
     "forms-args-formatting--unset-arg": {

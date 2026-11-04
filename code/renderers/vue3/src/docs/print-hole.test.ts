@@ -41,15 +41,6 @@ describe('printHole', () => {
     ).toBe('active :size="2"');
   });
 
-  it('binds a class or style the element writes, which Vue merges', () => {
-    expect(
-      printHole(
-        { kind: 'props', except: [], merge: ['class'], spread: true },
-        { class: 'big', title: 'Hi' }
-      )
-    ).toBe(`:class="'big'" title="Hi"`);
-  });
-
   it('prints the slots a control set as children, opening a tag that closes itself', () => {
     const slots: Extract<VueHolePlace, { kind: 'slots' }> = {
       kind: 'slots',
@@ -89,23 +80,6 @@ describe('printHole', () => {
     expect(print({ kind: 'value', in: 'script' }, -2)).toBe('-2');
     expect(print({ kind: 'value', in: 'statement' }, -2)).toBe('(-2)');
     expect(print({ kind: 'value', in: 'statement', readsOn: true }, 5)).toBe('(5)');
-  });
-
-  it('prints a bound prop as its code, with the args a control set, or as its arg over it', () => {
-    const bound: Extract<VueHolePlace, { kind: 'bound' }> = {
-      kind: 'bound',
-      by: 'size',
-      code: [
-        ':size="',
-        { kind: 'value', in: 'attribute', quote: '"', arg: 'label', text: "'Go'" },
-        ` + '!'"`,
-      ],
-      over: [{ kind: 'attr', arg: 'size', text: '' }],
-    };
-    const hole = { ...bound, spread: true } as const;
-    expect(printHole(hole, { count: 2 })).toBe(`:size="'Go' + '!'"`);
-    expect(printHole(hole, { label: 'Stop' })).toBe(`:size="'Stop' + '!'"`);
-    expect(printHole(hole, { label: 'Stop', size: 'lg' })).toBe('size="lg"');
   });
 
   it('cannot print a place it does not know', () => {

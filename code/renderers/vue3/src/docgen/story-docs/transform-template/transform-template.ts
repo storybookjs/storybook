@@ -19,7 +19,6 @@ import {
   unwrapExpression,
   walk,
 } from 'storybook/internal/csf-tools';
-import { createHoleMarks } from 'storybook/internal/docs-tools';
 
 import type { ClassifiedArg } from '../classify-args/classify-args.ts';
 import { isFunctionExpression, printValue, snippetValueOf } from '../../shared/classify-value.ts';
@@ -38,11 +37,12 @@ import {
   type RenderContext,
 } from '../../shared/render-primitives.ts';
 import {
-  type BoundCode,
   type VueHolePlace,
-  expressionCode,
-  interpolatedText,
+  codeOf,
+  inAttribute,
+  inInterpolation,
   operand,
+  printText,
   wrapSlotContent,
 } from '../../../snippet-values.ts';
 import { renderSlotArgContent } from './render-slot-content.ts';
@@ -395,19 +395,12 @@ function transformInterpolation(
     return false;
   }
 
-  // Runtime interpolation renders escaped text, so markup and mustache characters in the value
-  // are entity-escaped to decode back to the same text when the snippet re-parses.
-  const text = interpolatedText(snippetValueOf(arg.value));
-  // A value edge touching an author '{' would concatenate into a new '{{'.
-  if (
-    text === undefined ||
-    (text.startsWith('{') && state.template[start - 1] === '{') ||
-    (text.endsWith('{') && state.template[end] === '{')
-  ) {
+  const value = snippetValueOf(arg.value);
+  // Code the story writes holds `}}` only where it would end the interpolation.
+  if (value.kind === 'code' && value.code.includes('}}')) {
     return false;
   }
-
-  state.edits.push({ start, end, text: marked(state.ctx, hole, text) });
+  state.edits.push({ start, end, text: marked(state.ctx, hole, printText(value)) });
   return true;
 }
 
@@ -571,30 +564,17 @@ function expandArgsBinding(
     );
   }
   // The args a control sets go after the args the story writes, but those the element prints
-  // itself, but for a `.prop` or `.attr` binding, which sets another key, and its slots. Vue
-  // merges a `class` or `style` the element writes with the arg's, so that one is bound.
-  const written = [...attributesByName.entries()];
-  const merge = written
-    .filter(
-      ([name, props]) =>
-        isMerged(name, state) && props.every((prop) => prop.type === NodeTypes.ATTRIBUTE)
-    )
-    .map(([name]) => name);
+  // itself, but for a `.prop` or `.attr` binding, which sets another key, and its slots.
   const printed = [
-    ...written.flatMap(([name, props]) =>
-      merge.includes(name) || props.every(setsOwnKey) ? [] : spellings(name)
+    ...[...attributesByName.entries()].flatMap(([name, props]) =>
+      props.every(setsOwnKey) ? [] : spellings(name)
     ),
     ...surviving.map((arg) => arg.name),
     ...state.slots,
   ];
   const added = marked(
     state.ctx,
-    {
-      kind: 'props',
-      except: [...new Set(printed)],
-      ...(merge.length > 0 && { merge }),
-      spread: true,
-    },
+    { kind: 'props', except: [...new Set(printed)], spread: true },
     '',
     ' '
   );
@@ -604,9 +584,8 @@ function expandArgsBinding(
 }
 
 // A prop the element writes before its args binding, which the binding writes over once a control
-// sets the arg, or a `class` or `style` it binds, which Vue merges with the arg's, as a `bound`
-// hole. The prop is printed as the snippet prints it, with the holes of the args it reads made
-// part of its `code` instead of the template, so the hole holds them.
+// sets the arg it names, as an `attr` hole for that arg. Its text is the prop as the snippet prints
+// it, with the args it reads filled in.
 function boundProp(
   prop: ElementProp,
   directive: DirectiveNode,
@@ -620,19 +599,28 @@ function boundProp(
       ? staticDirectiveArg(binding)
       : undefined
     : prop.name;
-  const merge = name !== undefined && isMerged(name, state);
-  const after = prop.loc.start.offset > directive.loc.start.offset;
   const exp = binding?.exp?.type === NodeTypes.SIMPLE_EXPRESSION ? binding.exp : undefined;
   const read = exp && state.argsByName.get(exactArgsMemberName(exp.content.trim()) ?? '');
-  if (!name || (merge ? !binding : after) || read?.role === 'slot') {
+  // An earlier one of two props of a name leaves it to the later one, which Vue keeps.
+  const later = attributesByName
+    .get(name ?? '')
+    ?.some(
+      (other) =>
+        other.loc.start.offset > prop.loc.start.offset &&
+        (other.type === NodeTypes.ATTRIBUTE || other.name === 'bind') &&
+        !setsOwnKey(other)
+    );
+  if (
+    !name ||
+    prop.loc.start.offset > directive.loc.start.offset ||
+    later ||
+    read?.role === 'slot'
+  ) {
     return undefined;
   }
 
-  // The holes of the args the prop reads, marked apart from the snippet's, which make its code.
-  const marks = createHoleMarks<VueHolePlace>([
-    state.template,
-    ...[...state.argsByName.values()].map((arg) => printValue(unwrapExpression(arg.value))),
-  ]);
+  // The prop's own edits, which fill in the args it reads but mark no hole in it, as one hole holds
+  // it; a value it declares in `<script setup>` keeps its hole there.
   const { mark } = state.ctx;
   const own = {
     ...state,
@@ -642,62 +630,25 @@ function boundProp(
       mark:
         mark &&
         ((hole, text, space) =>
-          hole.kind === 'value' && hole.in === 'script'
-            ? mark(hole, text, space)
-            : marks.mark(hole, text, space)),
+          hole.kind === 'value' && hole.in === 'script' ? mark(hole, text, space) : text),
     } satisfies RenderContext,
   };
   if (binding && !transformDirective(binding, attributesByName, element, own)) {
     return false;
   }
-  const codeOf = (marked: string) => (marks.toTemplate(marked) ?? []) as BoundCode;
   const start = Math.min(prop.loc.start.offset, ...own.edits.map((edit) => edit.start));
   const end = Math.max(prop.loc.end.offset, ...own.edits.map((edit) => edit.end));
-  const code = codeOf(
-    applyEdits(
-      state.template.slice(start, end),
-      own.edits.map((edit) => ({ ...edit, start: edit.start - start, end: edit.end - start }))
-    )
+  const text = applyEdits(
+    state.template.slice(start, end),
+    own.edits.map((edit) => ({ ...edit, start: edit.start - start, end: edit.end - start }))
   );
-  const text = code.map((part) => (typeof part === 'string' ? part : part.text)).join('');
-
-  let over: BoundCode;
-  if (merge) {
-    // Both in one binding, in the order Vue merges them: the args binding's after one before it.
-    const quote = exp && surroundingAttributeQuote(exp, state.template);
-    const substituted = exp && quote && substituteArgsExpression(exp, own, 'directive');
-    const [open, expression, close] =
-      exp && quote
-        ? [
-            state.template.slice(prop.loc.start.offset, exp.loc.start.offset),
-            substituted ? codeOf(substituted.text) : [exp.loc.source],
-            state.template.slice(exp.loc.end.offset, prop.loc.end.offset),
-          ]
-        : [`:${name}="`, [exp?.loc.source || camelCase(name)], '"'];
-    const value = { kind: 'value', in: 'attribute', quote: quote || '"', arg: name, text: '' };
-    const both = after ? [value, ', ', ...expression] : [...expression, ', ', value];
-    over = [`${open}[`, ...(both as BoundCode), `]${close}`];
-  } else {
-    // An earlier one of two props of a name leaves it to the later one, which Vue keeps.
-    const later = attributesByName
-      .get(name)
-      ?.some(
-        (other) =>
-          other.loc.start.offset > prop.loc.start.offset &&
-          (other.type === NodeTypes.ATTRIBUTE || other.name === 'bind') &&
-          !setsOwnKey(other)
-      );
-    const by = camelCase(name);
-    over = later ? [] : [{ kind: 'attr', ...(name !== by && { name }), arg: by, text: '' }];
-  }
-  const by = merge ? name : camelCase(name);
-  const hole = { kind: 'bound', by, code, over, spread: true } as const;
-  return { start, end, text: marked(state.ctx, hole, text, text ? undefined : ' ') };
+  const by = camelCase(name);
+  return {
+    start,
+    end,
+    text: marked(state.ctx, { kind: 'attr', arg: by, ...(name !== by && { name }) }, text),
+  };
 }
-
-// A Vue template merges a `class` or `style` from every source, where an `h()` spread overrides it.
-const isMerged = (name: string, state: TransformState) =>
-  state.origin !== 'h' && (name === 'class' || name === 'style');
 
 // A `.prop` or `.attr` binding sets a key of its own, which no args binding writes over.
 const setsOwnKey = (prop: ElementProp) =>
@@ -1082,15 +1033,21 @@ function replacementForArgsReference(
   }
 
   // Non-slot args are typed with renderable plans only, so no 'function-slot' check is needed.
+  // A value is written in place as the story writes it, but a string in the quote the attribute
+  // does not use, escaped as Vue reads it there; a const is a name.
+  const value = snippetValueOf(arg.value);
+  const source = printValue(unwrapExpression(arg.value));
   const text =
-    arg.plan.kind === 'inline'
-      ? printValue(unwrapExpression(arg.value))
-      : hoistArgValue(arg.name, arg.value, state.ctx);
-
-  // Vue entity-decodes generated markup on re-parse, so `&` cannot be substituted faithfully.
-  if (expressionCode(text, quote) === undefined) {
-    return undefined;
-  }
+    arg.plan.kind !== 'inline'
+      ? hoistArgValue(arg.name, arg.value, state.ctx)
+      : quote
+        ? inAttribute(
+            value.kind === 'string' && source.includes(quote)
+              ? codeOf(value, quote === '"' ? "'" : '"')
+              : source,
+            quote
+          )
+        : inInterpolation(source);
 
   return {
     text,

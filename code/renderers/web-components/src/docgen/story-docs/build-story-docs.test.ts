@@ -319,19 +319,18 @@ describe('buildStoryDocsPayload', () => {
       name: 'unresolved template expression arg is not unbound',
       source: `
         import { html } from 'lit';
-        import { classMap } from 'lit/directives/class-map.js';
+        import { compute } from './compute';
         export default { title: 'Example/TestElement', component: 'test-element' };
         export const Primary = {
           args: { active: true },
-          render: (args) => html\`<test-element class=\${classMap({ active: Boolean(args.active) })}></test-element>\`,
+          render: (args) => html\`<test-element class=\${compute(args.active)}></test-element>\`,
         };
       `,
       expected: {
         id: 'example-testelement--primary',
         name: 'Primary',
         snippet: '<test-element></test-element>',
-        warning:
-          'Incomplete snippet: `classMap({ active: Boolean(args.active) })` could not be resolved statically.',
+        warning: 'Incomplete snippet: `compute(args.active)` could not be resolved statically.',
       },
     },
     {
@@ -874,6 +873,46 @@ describe('the template', () => {
     const initialArgs = { open: true, badge: false };
     expect(fill(template, initialArgs, { open: 0, badge: 'yes' })).toBe(
       '<test-element class="card" label="Closed"><b>New</b></test-element>'
+    );
+  });
+
+  it("prints lit's classMap and styleMap and follows the args they read", async () => {
+    const { snippet, template } = await firstTemplate(`
+      import { html } from 'lit';
+      import { classMap } from 'lit/directives/class-map.js';
+      import { styleMap } from 'lit/directives/style-map.js';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { active: true, enabled: true, color: 'red' },
+        render: (args) => html\`<test-element class="card \${classMap({ active: args.active, muted: !args.enabled, round: true })}" style=\${styleMap({ backgroundColor: args.color })}></test-element>\`,
+      };
+    `);
+    expect(snippet).toBe(
+      '<test-element class="card round active" style="background-color: red;"></test-element>'
+    );
+    const initialArgs = { active: true, enabled: true, color: 'red' };
+    expect(fill(template, initialArgs, { active: false, enabled: false, color: '' })).toBe(
+      '<test-element class="card round muted" style=""></test-element>'
+    );
+  });
+
+  it('cannot follow an arg a classMap passes to a function', async () => {
+    const { snippet, warning, template } = await firstTemplate(`
+      import { html } from 'lit';
+      import { classMap } from 'lit/directives/class-map.js';
+      import { isLarge } from './sizes';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { size: 'large' },
+        render: (args) => html\`<test-element class=\${classMap({ large: isLarge(args.size) })}></test-element>\`,
+      };
+    `);
+    expect({ snippet, warning }).toEqual({
+      snippet: '<test-element></test-element>',
+      warning: 'Incomplete snippet: `isLarge(args.size)` could not be resolved statically.',
+    });
+    expect(() => fill(template, { size: 'large' }, { size: 'small' })).toThrow(
+      'The snippet cannot show the current value of the `size` arg.'
     );
   });
 

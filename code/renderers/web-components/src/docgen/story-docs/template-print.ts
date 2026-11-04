@@ -1,5 +1,5 @@
 import type { ESTree as E, ESTreeNode as Node } from 'storybook/internal/csf-tools';
-import { oneLineTextOf, unwrapExpression } from 'storybook/internal/csf-tools';
+import { isStringLiteral, oneLineTextOf, unwrapExpression } from 'storybook/internal/csf-tools';
 import { type TemplateHole, createHoleMarks } from 'storybook/internal/docs-tools';
 
 import { isEqual } from 'es-toolkit/predicate';
@@ -19,9 +19,12 @@ import {
 import {
   boundText,
   childText,
+  cssDeclarations,
+  escapeAttribute,
   escapeText,
   isTruthy,
   printAttribute,
+  quotedAttribute,
 } from '../../snippet-values.ts';
 import { printRootListenerScript } from './print-element.ts';
 import type { HoleContext, HoleValue } from './template-holes.ts';
@@ -31,6 +34,7 @@ import {
   isIfDefinedCall,
   isTruthyAttributeValue,
   listenerHandler,
+  mapDirective,
   resolveHoleValue,
 } from './template-holes.ts';
 import type { HtmlTemplate } from './template-scope.ts';
@@ -225,7 +229,8 @@ const withChoices = (
   ];
   const guards: HtmlSnippetTemplate = [];
   const filled = template.map((segment) => {
-    if (typeof segment === 'string' || segment.kind !== 'choice') {
+    // A class of a `classMap` is a `choice` the server printed both branches of already.
+    if (typeof segment === 'string' || segment.kind !== 'choice' || !('at' in segment)) {
       return segment;
     }
     const { at, ...hole } = segment as typeof segment & { at: number };
@@ -405,6 +410,26 @@ const resolveAttribute = (
   const markers = markersIn(attribute.value, state);
   const singleDynamicValue = markers.length === 1 && attribute.value === markers[0];
   const only = singleDynamicValue ? state.markers.get(markers[0]!) : undefined;
+  const map = only && mapValue(only, state);
+  if (map && 'value' in map) {
+    if (map.choice) {
+      // `class=${classMap({ … })}` is the attribute while it sets a class.
+      const { read, truthy, falsy } = map.choice;
+      const print = (classes: string) => classes && quotedAttribute(attribute.name, classes);
+      const hole: HtmlHole = {
+        kind: 'choice',
+        ...read,
+        truthy: print(truthy),
+        falsy: print(falsy),
+      };
+      return map.text
+        ? { name: attribute.name, value: map.text, hole }
+        : { name: attribute.name, value: undefined, omitted: true, hole };
+    }
+    return map.value.length === 0
+      ? undefined
+      : { name: attribute.name, value: map.text, holeValue: map.value };
+  }
   const singleHole = only && attributeHole(only, attribute.name, state);
   const withHole = (printed: HtmlAttribute | undefined): HtmlAttribute | undefined =>
     singleHole === undefined
@@ -421,6 +446,32 @@ const resolveAttribute = (
     const expression = state.markers.get(marker);
     if (!expression) {
       continue;
+    }
+    const directive = mapValue(expression, state);
+    if (directive && 'value' in directive) {
+      const { choice } = directive;
+      text = text.replace(marker, directive.text);
+      holeValue = replaceMarker(
+        holeValue,
+        marker,
+        choice
+          ? [
+              {
+                kind: 'choice',
+                ...choice.read,
+                truthy: escapeAttribute(choice.truthy),
+                falsy: escapeAttribute(choice.falsy),
+                text: directive.text,
+              },
+            ]
+          : directive.value
+      );
+      continue;
+    }
+    if (directive) {
+      state.unresolved.add(directive.unresolved);
+      guardMarkers(attribute.value, state);
+      return undefined;
     }
     const value = resolveMarkerValue(expression, state);
     const hole: HtmlHole | undefined =
@@ -462,7 +513,7 @@ const resolveAttribute = (
     }
     const valueText = boundText(resolved.value);
     text = text.replace(marker, valueText);
-    holeValue = replaceMarker(holeValue, marker, hole ? { ...hole, text: valueText } : valueText);
+    holeValue = replaceMarker(holeValue, marker, [hole ? { ...hole, text: valueText } : valueText]);
   }
   return withHole({
     name: attribute.name,
@@ -470,6 +521,133 @@ const resolveAttribute = (
     ...(holeValue.some((segment) => typeof segment !== 'string') ? { holeValue } : {}),
   });
 };
+
+// The value lit's `classMap({ … })` or `styleMap({ … })` sets for the story's args, with a
+// `choice` hole for each class and a `css` hole for each declaration whose value reads an arg, or the
+// source of a key or value the server cannot know. A value is a literal or an arg read, for a class
+// also negated or in `Boolean(…)`. Literals go first and what the story's args leave out last, so a
+// change seldom leaves a space at the start. Classes that all read one arg are one `choice` of the
+// classes for each branch instead, which the caller puts in a hole.
+const mapValue = (
+  expression: E.Expression,
+  state: TemplatePrintState
+):
+  | {
+      value: HtmlSnippetTemplate;
+      text: string;
+      choice?: { read: ArgRead; truthy: string; falsy: string };
+    }
+  | { unresolved: string }
+  | undefined => {
+  const directive = mapDirective(expression, state.context.bindings);
+  if (!directive) {
+    return undefined;
+  }
+  const pieces: { key: string; text: string; hole?: HtmlHole; read?: ArgRead; not?: boolean }[] =
+    [];
+  for (const property of directive.object.properties) {
+    const key =
+      property.type === 'Property' && !property.computed
+        ? property.key.type === 'Identifier'
+          ? property.key.name
+          : isStringLiteral(property.key)
+            ? property.key.value
+            : undefined
+        : undefined;
+    if (property.type !== 'Property' || key === undefined) {
+      return { unresolved: oneLineTextOf(property) };
+    }
+    let node = unwrapExpression(property.value as E.Expression);
+    let not = false;
+    for (;;) {
+      if (
+        directive.kind === 'classes' &&
+        node.type === 'UnaryExpression' &&
+        node.operator === '!'
+      ) {
+        not = !not;
+        node = unwrapExpression(node.argument);
+      } else if (directive.kind === 'classes' && isBooleanCall(node)) {
+        node = unwrapExpression(node.arguments[0]);
+      } else {
+        break;
+      }
+    }
+    const reference = argReferenceForExpression(node, state.context.scope);
+    const value = resolveHoleValue(node, state.context);
+    const known =
+      (value.kind === 'value' || value.kind === 'empty') &&
+      (reference !== undefined || collectReferencedArgs(node, state.context.scope).size === 0);
+    if (!known) {
+      return { unresolved: oneLineTextOf(property.value) };
+    }
+    const story = value.kind === 'value' ? value.value : undefined;
+    const read = reference && argRead(reference);
+    if (directive.kind === 'classes') {
+      const name = escapeAttribute(key);
+      pieces.push({
+        key,
+        text: Boolean(story) !== not ? key : '',
+        read,
+        not,
+        ...(read && {
+          hole: { kind: 'choice', ...read, truthy: not ? '' : name, falsy: not ? name : '' },
+        }),
+      });
+    } else {
+      // Lit sets a camelCase key as the kebab-case property.
+      const name = key.includes('-')
+        ? key
+        : key.replace(/(?:^(webkit|moz|ms|o)|)(?=[A-Z])/g, '-$&').toLowerCase();
+      pieces.push({
+        key,
+        text: cssDeclarations([{ name, value: story }]) ?? '',
+        ...(read && {
+          hole: { kind: 'css', ...read, ...(name !== read.arg && { property: name }) },
+        }),
+      });
+    }
+  }
+  const reads = pieces.flatMap((piece) => (piece.read ? [piece.read] : []));
+  const text = pieces
+    .map((piece) => piece.text)
+    .filter(Boolean)
+    .join(' ');
+  if (reads.length > 0 && reads.every((read) => isEqual(read, reads[0]))) {
+    const classes = (truthy: boolean) =>
+      pieces
+        .filter((piece) => (piece.read ? truthy !== piece.not : piece.text))
+        .map((piece) => piece.key)
+        .join(' ');
+    return {
+      value: [],
+      text,
+      choice: { read: reads[0]!, truthy: classes(true), falsy: classes(false) },
+    };
+  }
+  const rank = (piece: (typeof pieces)[number]) => (piece.hole ? (piece.text ? 1 : 2) : 0);
+  const shown = pieces
+    .filter((piece) => piece.hole || piece.text)
+    .sort((a, b) => rank(a) - rank(b));
+  const value: HtmlSnippetTemplate = shown.flatMap(({ text, hole }, index) => [
+    ...(index > 0 && text ? [' '] : []),
+    hole ? { ...hole, text, ...(index > 0 && !text && { space: ' ' }) } : text,
+  ]);
+  return {
+    value,
+    text: shown
+      .map((piece) => piece.text)
+      .filter(Boolean)
+      .join(' '),
+  };
+};
+
+const isBooleanCall = (node: Node): node is E.CallExpression & { arguments: [E.Expression] } =>
+  node.type === 'CallExpression' &&
+  node.callee.type === 'Identifier' &&
+  node.callee.name === 'Boolean' &&
+  node.arguments.length === 1 &&
+  node.arguments[0].type !== 'SpreadElement';
 
 // The hole of the attribute `name` whose whole value is `expression`. `name=${args.x}` is the
 // attribute with the arg's text as its value; `name=${ifDefined(args.x)}` is it while the arg is
@@ -506,11 +684,11 @@ const quotedHole = (expression: E.Expression, state: TemplatePrintState): HtmlHo
   return read ? { kind: 'quoted', ...read } : choiceHole(expression, state);
 };
 
-// `template` with `marker` in its code replaced by `segment`.
+// `template` with `marker` in its code replaced by `segments`.
 const replaceMarker = (
   template: HtmlSnippetTemplate,
   marker: string,
-  segment: string | TemplateHole<HtmlHolePlace>
+  segments: HtmlSnippetTemplate
 ): HtmlSnippetTemplate =>
   template.flatMap((part) => {
     const index = typeof part === 'string' ? part.indexOf(marker) : -1;
@@ -518,7 +696,7 @@ const replaceMarker = (
       return [part];
     }
     const code = part as string;
-    return [code.slice(0, index), segment, code.slice(index + marker.length)].filter(
+    return [code.slice(0, index), ...segments, code.slice(index + marker.length)].filter(
       (piece) => piece !== ''
     );
   });

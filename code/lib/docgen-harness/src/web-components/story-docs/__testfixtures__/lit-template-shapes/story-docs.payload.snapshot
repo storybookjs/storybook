@@ -22,9 +22,21 @@
     "webcomponentsstorydocs-lit-template-shapes--class-map": {
       "id": "webcomponentsstorydocs-lit-template-shapes--class-map",
       "name": "Class Map",
+      "snippet": "<lit-template-shapes class="active"></lit-template-shapes>",
+      "template": "<lit-template-shapes⟦choice active truthy="class=\"active\"" falsy="" ~" "⟫ class="active"⟧></lit-template-shapes>",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--class-map-call": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--class-map-call",
+      "name": "Class Map Call",
       "snippet": "<lit-template-shapes></lit-template-shapes>",
-      "template": "⟦guard active⟫⟧<lit-template-shapes></lit-template-shapes>",
-      "warning": "Incomplete snippet: `classMap({ active: Boolean(args.active) })` could not be resolved statically.",
+      "template": "⟦guard size⟫⟧<lit-template-shapes></lit-template-shapes>",
+      "warning": "Incomplete snippet: `isLarge(args.size)` could not be resolved statically.",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--class-map-keys": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--class-map-keys",
+      "name": "Class Map Keys",
+      "snippet": "<lit-template-shapes class="card round muted"></lit-template-shapes>",
+      "template": "<lit-template-shapes class="card round⟦choice enabled truthy="" falsy="muted" ~" "⟫ muted⟧⟦choice active truthy="active" falsy="" ~" "⟫⟧"></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--destructured": {
       "id": "webcomponentsstorydocs-lit-template-shapes--destructured",
@@ -137,6 +149,12 @@
       "name": "Quoted And Multi Hole",
       "snippet": "<lit-template-shapes class="card warm large" label="Quoted"></lit-template-shapes>",
       "template": "<lit-template-shapes class="card ⟦quoted tone⟫warm⟧ ⟦quoted size⟫large⟧"⟦attr label mode="bind" ~" "⟫ label="Quoted"⟧></lit-template-shapes>",
+    },
+    "webcomponentsstorydocs-lit-template-shapes--style-map": {
+      "id": "webcomponentsstorydocs-lit-template-shapes--style-map",
+      "name": "Style Map",
+      "snippet": "<lit-template-shapes style="--gap: 4px; color: red;"></lit-template-shapes>",
+      "template": "<lit-template-shapes style="--gap: 4px;⟦css color ~" "⟫ color: red;⟧⟦css fontSize property="font-size" ~" "⟫⟧"></lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--unbound-arg": {
       "id": "webcomponentsstorydocs-lit-template-shapes--unbound-arg",

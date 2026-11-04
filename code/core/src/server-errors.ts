@@ -1127,6 +1127,20 @@ export class ViteModuleGraphSubscriptionError extends StorybookError {
   }
 }
 
+export class ViteModuleLoaderPathError extends StorybookError {
+  constructor(public data: { moduleLoader: string }) {
+    super({
+      name: 'ViteModuleLoaderPathError',
+      category: Category.BUILDER_VITE,
+      code: 3,
+      message: dedent`
+        \`experimental_moduleLoader\` must be an absolute path or a package specifier, received: ${data.moduleLoader}
+
+        The generated preview modules import it, so a relative path would not resolve against your config. Use, for example, \`fileURLToPath(import.meta.resolve('./loader.ts'))\`.`,
+    });
+  }
+}
+
 export class FindPackageVersionsError extends StorybookError {
   constructor(
     public data: { error: Error | unknown; packageName: string; packageManager: string }

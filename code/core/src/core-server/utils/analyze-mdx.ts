@@ -33,12 +33,9 @@ export type MdxAnalysisResult = {
 type ImportMap = Record<string, string>;
 type ArrayElement = Expression | SpreadElement | null;
 
-// The extensions default to the acorn options `{ ecmaVersion: 2024, sourceType: 'module' }`, which
-// `oxcAcorn` implements.
 const mdxSyntaxOptions = { acorn: oxcAcorn, addResult: true };
 
-// What `micromark-extension-mdxjs` combines, without its default acorn parser, which it imports
-// (and so bundles) even when another parser is passed.
+// `micromark-extension-mdxjs` would bundle acorn, its default parser, even when given another.
 const mdxjs = combineExtensions([
   mdxjsEsm(mdxSyntaxOptions),
   mdxExpression(mdxSyntaxOptions),

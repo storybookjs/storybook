@@ -574,9 +574,7 @@ describe('analyzeMdx', () => {
     });
   });
 
-  // The JavaScript in MDX is parsed with oxc-parser, in place of acorn configured for ES2024
-  // with JSX. These pin what acorn accepted and rejected.
-  describe('JavaScript', () => {
+  describe('JavaScript, as acorn with acorn-jsx in ES2024 mode parsed it', () => {
     it.each([
       ['an arrow function body after a blank line', 'export const A = () =>\n\n  <button />'],
       ['an object literal across a blank line', 'export const a = {\n\n  b: 1 }'],
@@ -600,6 +598,10 @@ describe('analyzeMdx', () => {
       ['an invalid regular expression', 'export const r = /[b-a]/'],
       ['JSX spread children', 'export const a = <a>{...b}</a>'],
       ['an import of a name imported before', "import a from 'a'\n\nimport a from 'b'"],
+      ['a comma in a JSX spread attribute', 'export const a = <a {...b, c} />'],
+      ['an escape in a JSX name', 'export const a = <\\u0061 />'],
+      ['awaiting JSX', 'export const a = await <a />'],
+      ['a zero-width space between tokens', "import a from 'a'\u200b"],
     ])('rejects %s', async (_, esm) => {
       await expect(analyzeMdx(esm)).rejects.toThrow('Could not parse import/exports with acorn');
     });

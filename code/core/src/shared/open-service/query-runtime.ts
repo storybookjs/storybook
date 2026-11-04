@@ -1061,8 +1061,8 @@ function subscribeToQuery<TState>(
   // The output is always validated, but the computed's dependency footprint must match only what
   // the subscriber consumes:
   //   - With a `selector`, validation runs untracked (so reading the whole value to validate it
-  //     does not register dependencies), and only the selected fields the selector reads are
-  //     tracked. A sibling field the selector ignores never re-runs this computed.
+  //     does not register dependencies), and only the selected slice is tracked, with every field
+  //     inside it. A sibling field the selector ignores never re-runs this computed.
   //   - Without a selector, validation runs tracked: reading the whole value is the correct
   //     footprint for a whole-output subscriber, and the validated value is emitted (identical to
   //     what a direct `.get()` / `.loaded()` pull returns).
@@ -1077,9 +1077,12 @@ function subscribeToQuery<TState>(
     );
     if (selector) {
       const validated = untracked(() => validateQueryOutput(refs, queryName, queryDef, output));
-      // Read the live handler output so the selector's field accesses stay on the reactive
-      // proxy; validation returns a plain parsed value that cannot carry those dependencies.
-      selector(output);
+      // Read every field inside a selected object, so the computed tracks them, not only the path
+      // to the object.
+      const selected = selector(output);
+      if (selected !== null && typeof selected === 'object') {
+        JSON.stringify(selected);
+      }
       return detachSnapshot(selector(validated));
     }
     return detachSnapshot(validateQueryOutput(refs, queryName, queryDef, output));

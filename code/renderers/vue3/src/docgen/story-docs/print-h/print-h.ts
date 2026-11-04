@@ -17,7 +17,6 @@ import {
 } from '../classify-args/classify-args.ts';
 import { isFunctionExpression, printValue } from '../../shared/classify-value.ts';
 import {
-  formatRenderedProp,
   importStatementForBinding,
   inlinePrimitiveSource,
   renderEventArg,
@@ -377,11 +376,7 @@ function printProps(
       continue;
     }
     attributes.push(
-      formatRenderedProp(
-        arg.role === 'event'
-          ? renderEventArg(arg, options.ctx)
-          : renderPropLikeArg(arg, options.ctx)
-      )
+      arg.role === 'event' ? renderEventArg(arg, options.ctx) : renderPropLikeArg(arg, options.ctx)
     );
   }
 

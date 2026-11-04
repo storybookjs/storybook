@@ -383,9 +383,9 @@ const argsSnippet = (
   };
 };
 
-// The template of the element, with a hole for each arg the story does not set where it would
-// print it if it were set, and a `guard` hole for one it would not print, such as a property
-// without an attribute. Its marks hold no character of `html`, the static snippet.
+// The template of the element, with a hole for each arg the snippet prints no value of where it
+// would print one, and a `guard` hole for one the story does not set that it would not print, such
+// as a property without an attribute. Its marks hold no character of `html`, the static snippet.
 const elementTemplate = (
   html: string,
   snippet: ElementSnippet,
@@ -393,10 +393,15 @@ const elementTemplate = (
   argTypes: WebComponentsDocgenPayload['argTypes'],
   declaration: ManifestDeclaration
 ): HtmlSnippetTemplate | undefined => {
+  const kinds = new Map(
+    Object.entries(args).map(([key, node]) => [key, evaluateArgValue(node).kind])
+  );
   const unset = [
-    ...Object.keys(args).filter((key) => evaluateArgValue(args[key]).kind === 'unset'),
+    ...Object.keys(args).filter((key) => kinds.get(key) === 'unset'),
     ...Object.keys(argTypes ?? {}).filter((key) => !Object.hasOwn(args, key)),
   ];
+  // The args the story sets to code the server cannot read, which the warning names already.
+  const unread = Object.keys(args).filter((key) => kinds.get(key) === 'unresolved');
   const template: ElementSnippet = {
     ...snippet,
     attributes: [...snippet.attributes],
@@ -406,7 +411,7 @@ const elementTemplate = (
   };
   const marks = createHoleMarks<HtmlHolePlace>([html]);
   const guards: string[] = [];
-  for (const key of new Set(unset)) {
+  for (const key of new Set([...unset, ...unread])) {
     const binding = classifyArg(key, false, argTypes ?? {}, declaration);
     switch (binding.kind) {
       case 'attribute':
@@ -418,7 +423,9 @@ const elementTemplate = (
         break;
       case 'property':
       case 'unknown':
-        guards.push(marks.mark({ kind: 'guard', arg: key }, ''));
+        if (!unread.includes(key)) {
+          guards.push(marks.mark({ kind: 'guard', arg: key }, ''));
+        }
         break;
       default:
         break;

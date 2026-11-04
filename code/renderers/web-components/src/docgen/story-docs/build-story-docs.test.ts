@@ -786,6 +786,19 @@ describe('the template', () => {
     ).toBe('<test-element label="a &lt; b" disabled>a &lt; b</test-element>');
   });
 
+  it('shows an arg the server cannot read once a control changes it', async () => {
+    const { snippet, template } = await firstTemplate(`
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: { label: makeLabel(), count: 2 } };
+    `);
+    expect(snippet).toBe('<test-element count="2"></test-element>');
+    const initialArgs = { label: 'Made', count: 2 };
+    expect(fill(template, initialArgs, {})).toBe(snippet);
+    expect(fill(template, initialArgs, { label: 'Changed' })).toBe(
+      '<test-element count="2" label="Changed"></test-element>'
+    );
+  });
+
   it('cannot follow a property without an attribute a control sets', async () => {
     const { template } = await firstTemplate(`
       export default { title: 'Example/TestElement', component: 'test-element' };

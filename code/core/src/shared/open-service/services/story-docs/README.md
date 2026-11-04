@@ -27,11 +27,14 @@ arg prints with the `text` the snippet prints there. For a React story `Primary`
   'const Primary = () => <Button',
   { kind: 'attr', arg: 'label', text: ' label="Go"', space: ' ' },
   { kind: 'attr', arg: 'onClick', text: ' onClick={fn()}', space: ' ' },
-  { kind: 'attrs', spread: true, except: ['label', 'onClick', 'children'], text: '' },
-  { kind: 'close', arg: 'children', element: 'Button', text: ' />' },
-  ';',
+  { kind: 'attrs', spread: true, except: ['label', 'onClick'], text: '' },
+  ' />;',
 ]
 ```
+
+The browser only fills in values: `printHole` prints a value for its place, and never reads or
+rearranges the code around it. Anything that depends on that code, such as which attributes a
+spread writes over, the provider decides when it writes the holes.
 
 A hole reads one `arg`, or, as a `spread` hole, the args a control set, as a spread passes them.
 A hole is flat: its `kind` and the renderer's own fields for that place stand next to the fields

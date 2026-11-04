@@ -35,7 +35,7 @@ const quoteExpressionString = (value: string): string =>
 // for it, losslessly for strings carrying quotes. The story-docs build prints the values it
 // evaluates from the story with it, as next does. The preview prints a value a control changed
 // with it and passes `unprintable`, which a value with no such code calls: a function, a symbol, a
-// class instance or a cycle.
+// class instance, a cycle, or `NaN` or `Infinity`, which an Angular template reads as fields.
 export const printExpressionValue = (value: unknown, unprintable?: () => never): string =>
   unprintable ? printStrict(value, unprintable, new Set()) : printEvaluated(value, new Set());
 
@@ -63,7 +63,12 @@ const printEvaluated = (value: unknown, seen: Set<unknown>): string => {
 };
 
 const printStrict = (value: unknown, unprintable: () => never, parents: Set<unknown>): string => {
-  if (typeof value === 'function' || typeof value === 'symbol' || typeof value === 'bigint') {
+  if (
+    typeof value === 'function' ||
+    typeof value === 'symbol' ||
+    typeof value === 'bigint' ||
+    (typeof value === 'number' && !Number.isFinite(value))
+  ) {
     return unprintable();
   }
   if (typeof value !== 'object' || value === null) {

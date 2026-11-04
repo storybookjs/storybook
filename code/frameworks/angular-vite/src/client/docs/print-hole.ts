@@ -45,16 +45,10 @@ export const printHole: PrintHole<AngularHolePlace> = (hole, value) => {
   }
 };
 
-// The code an arg prints as. An Angular template has no `NaN` or `Infinity`; it would read them as
-// component fields.
-const expression = (value: unknown, arg: string): string => {
-  if (typeof value === 'number' && !Number.isFinite(value)) {
-    throw new UnprintableArgError(arg);
-  }
-  return printExpressionValue(value, () => {
+const expression = (value: unknown, arg: string): string =>
+  printExpressionValue(value, () => {
     throw new UnprintableArgError(arg);
   });
-};
 
 // Text prints as written, as the static snippet prints it. Text Angular would read as its own
 // syntax, `{`, `}` or `@`, has no such snippet, so the static snippet is shown instead.

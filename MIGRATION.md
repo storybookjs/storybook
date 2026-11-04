@@ -777,6 +777,7 @@ These cases keep working without changes:
 - Composing Storybooks that run locally, when the composing Storybook is opened on `localhost` or `127.0.0.1`
 - Tools running on your machine, served from `localhost` or `127.0.0.1`, that embed a running Storybook
 - Built and published Storybooks; Only `storybook dev` sends the header, so a built Storybook can still be embedded and composed from any origin
+- Storybooks running in a WebContainer, such as StackBlitz; `storybook dev` does not send the header there, because the host always shows the dev server in an `<iframe>` on its own page
 
 Pages served from any other origin, including your local network address (for example `http://192.168.1.20:6006`), a tunnel, or a custom hostname are now blocked. The embedded Storybook appears empty, and the browser console of the embedding page reports a `frame-ancestors` violation/
 

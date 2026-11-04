@@ -35,7 +35,7 @@ Type: `boolean`
 
 Default: `false`
 
-By default, the dev server's manager and preview can only be embedded in iframes by pages served on `localhost` or `127.0.0.1`. This prevents malicious websites from embedding your local Storybook and attempting to interact with your dev server.
+By default, the dev server's manager and preview can only be embedded in iframes by pages served on `localhost` or `127.0.0.1`. This prevents malicious websites from embedding your local Storybook and attempting to interact with your dev server. This restriction does not apply in a WebContainer, such as StackBlitz, which always shows the dev server in an iframe on its own page.
 
 The `insecureRemoteIframeEmbed` flag lets you embed your Storybook dev server in an `<iframe>` hosted on any origin. It should be used with caution, as any website you visit will be able to embed your local Storybook. The safe alternative is to build your composed Storybook and compose the build output instead.
 

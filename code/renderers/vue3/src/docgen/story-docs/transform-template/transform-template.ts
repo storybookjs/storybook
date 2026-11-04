@@ -38,11 +38,9 @@ import {
 } from '../../shared/render-primitives.ts';
 import {
   type VueHolePlace,
-  codeOf,
-  inAttribute,
-  inInterpolation,
+  expressionCode,
+  interpolatedText,
   operand,
-  printText,
   wrapSlotContent,
 } from '../../../snippet-values.ts';
 import { renderSlotArgContent } from './render-slot-content.ts';
@@ -392,12 +390,19 @@ function transformInterpolation(
     return false;
   }
 
-  const value = snippetValueOf(arg.value);
-  // Code the story writes holds `}}` only where it would end the interpolation.
-  if (value.kind === 'code' && value.code.includes('}}')) {
+  // Runtime interpolation renders escaped text, so markup and mustache characters in the value
+  // are entity-escaped to decode back to the same text when the snippet re-parses.
+  const text = interpolatedText(snippetValueOf(arg.value));
+  // A value edge touching an author '{' would concatenate into a new '{{'.
+  if (
+    text === undefined ||
+    (text.startsWith('{') && state.template[start - 1] === '{') ||
+    (text.endsWith('{') && state.template[end] === '{')
+  ) {
     return false;
   }
-  state.edits.push({ start, end, text: marked(state.ctx, hole, printText(value)) });
+
+  state.edits.push({ start, end, text: marked(state.ctx, hole, text) });
   return true;
 }
 
@@ -1036,21 +1041,15 @@ function replacementForArgsReference(
   }
 
   // Non-slot args are typed with renderable plans only, so no 'function-slot' check is needed.
-  // A value is written in place as the story writes it, but a string in the quote the attribute
-  // does not use, escaped as Vue reads it there; a const is a name.
-  const value = snippetValueOf(arg.value);
-  const source = printValue(unwrapExpression(arg.value));
   const text =
-    arg.plan.kind !== 'inline'
-      ? hoistArgValue(arg.name, arg.value, state.ctx)
-      : quote
-        ? inAttribute(
-            value.kind === 'string' && source.includes(quote)
-              ? codeOf(value, quote === '"' ? "'" : '"')
-              : source,
-            quote
-          )
-        : inInterpolation(source);
+    arg.plan.kind === 'inline'
+      ? printValue(unwrapExpression(arg.value))
+      : hoistArgValue(arg.name, arg.value, state.ctx);
+
+  // Vue entity-decodes generated markup on re-parse, so `&` cannot be substituted faithfully.
+  if (expressionCode(text, quote) === undefined) {
+    return undefined;
+  }
 
   return {
     text,

@@ -1,9 +1,8 @@
-import { printValue } from 'storybook/internal/docs-tools';
-
 // How a Vue story snippet prints an arg's value where it stands. The story-docs provider prints
 // the static snippet with these, from the value the story writes, and the preview's filler prints a
-// template's holes with them, from the value a control sets, so the two print a value alike: in
-// place, escaped as Vue reads it there.
+// template's holes with them, from the value a control sets, so the two print a value alike. Where
+// one returns `undefined`, the static snippet declares the value in `<script setup>` or prints no
+// snippet; the filler writes it in place, escaped as Vue reads it there.
 
 // Where a hole of a story's template stands, which the provider writes and `printHole` prints a
 // changed arg for:
@@ -47,34 +46,33 @@ export const attributeOrder = (a: string, b: string) => a.localeCompare(b);
 export const slotOrder = (a: string, b: string) =>
   a === 'default' ? -1 : b === 'default' ? 1 : a.localeCompare(b);
 
-// A value as code, a string in `quote`.
-export const codeOf = (value: SnippetValue, quote: '"' | "'" = "'") =>
-  value.kind === 'string'
-    ? printValue(value.value, '', { quote })
-    : value.kind === 'boolean'
-      ? String(value.value)
-      : value.code;
-
-// Code or text in an attribute value quoted with `quote`, where Vue decodes entities.
-export const inAttribute = (text: string, quote: '"' | "'") =>
-  text.replaceAll('&', '&amp;').replaceAll(quote, quote === '"' ? '&quot;' : '&#39;');
-
-// Code in an interpolation, where Vue decodes entities and `}}` ends it. Printed code writes `}}`
-// only in a string, where `}\}` reads the same.
-export const inInterpolation = (text: string) =>
-  text.replaceAll('&', '&amp;').replace(/}(?=})/g, '}\\');
-
-// The value as the attribute `name`: bare while `true`, quoted for a string, in the quote it does
-// not hold if it holds one, bound otherwise.
-export function printAttribute(name: string, value: SnippetValue): string {
-  if (value.kind === 'boolean') {
-    return value.value ? name : `:${name}="false"`;
+// A string as a quoted attribute value. An attribute decodes entities, so a string with `&` would
+// read differently, as would one with both quotes.
+export function quoteAttributeValue(value: string): string | undefined {
+  if (value.includes('&')) {
+    return undefined;
   }
-  if (value.kind !== 'string') {
-    return `:${name}="${inAttribute(value.code, '"')}"`;
+  if (!value.includes('"')) {
+    return `"${value}"`;
   }
-  const quote = value.value.includes('"') && !value.value.includes("'") ? "'" : '"';
-  return `${name}=${quote}${inAttribute(value.value, quote)}${quote}`;
+  if (!value.includes("'")) {
+    return `'${value}'`;
+  }
+  return undefined;
+}
+
+// The value as the attribute `name`: bare while `true`, quoted for a string, bound otherwise.
+export function printAttribute(name: string, value: SnippetValue): string | undefined {
+  switch (value.kind) {
+    case 'boolean':
+      return value.value ? name : `:${name}="false"`;
+    case 'string': {
+      const quoted = quoteAttributeValue(value.value);
+      return quoted === undefined ? undefined : `${name}=${quoted}`;
+    }
+    default:
+      return `:${name}="${value.code}"`;
+  }
 }
 
 // Text as it reads back once Vue compiles the snippet: `<` would open a tag and `{{` an
@@ -87,21 +85,29 @@ export function escapeTextContent(text: string): string {
     .replaceAll('{{', '&#123;&#123;');
 }
 
-// The text an `{{ args.x }}` interpolation shows, a `{` it ends with escaped, as code after it may
-// open an interpolation; code shows as an interpolation of its own.
-export const printText = (value: SnippetValue) =>
-  value.kind === 'code'
-    ? interpolation(value)
-    : escapeTextContent(String(value.value)).replace(/\{$/, '&#123;');
+// The text an `{{ args.x }}` interpolation shows, which only a literal has.
+export function interpolatedText(value: SnippetValue): string | undefined {
+  return value.kind === 'code' ? undefined : escapeTextContent(String(value.value));
+}
 
 // A slot's content: a literal as text, unless Vue would condense its padding, else code in an
 // interpolation.
-export const printSlot = (value: SnippetValue) =>
-  value.kind === 'code' || /^\s|\s$/.test(String(value.value))
-    ? interpolation(value)
-    : escapeTextContent(String(value.value));
+export function slotContent(value: SnippetValue): string | undefined {
+  if (value.kind === 'code') {
+    const code = expressionCode(value.code, undefined);
+    return code === undefined ? undefined : `{{ ${code} }}`;
+  }
+  const text = String(value.value);
+  return /^\s|\s$/.test(text) ? undefined : escapeTextContent(text);
+}
 
-const interpolation = (value: SnippetValue) => `{{ ${inInterpolation(codeOf(value))} }}`;
+// Code where a template expression reads an arg: in an attribute value quoted with `quote`, or in
+// an interpolation without one. Vue decodes entities there, and the quote or `}}` would end it.
+export function expressionCode(code: string, quote: '"' | "'" | undefined): string | undefined {
+  return (quote && code.includes(quote)) || code.includes('}}') || code.includes('&')
+    ? undefined
+    : code;
+}
 
 // Code in parentheses where the code around it reads it otherwise: `-1`, an object, which would
 // open a block after `=>`, or `5` in `5.toFixed()`.

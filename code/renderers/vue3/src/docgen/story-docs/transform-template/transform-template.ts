@@ -83,6 +83,10 @@ export interface TransformTemplateInput {
   componentName?: string;
   // The story component's slots, which `v-bind="args"` does not pass as props.
   slots?: ReadonlySet<string>;
+  // Where the template comes from: the story's own, one `h()` calls print, whose props a spread
+  // sets as JavaScript does, the later one winning even for a `class` or `style`, or the one a
+  // story without a render function renders with, which passes its slot args as slots.
+  origin?: TemplateOrigin;
   /** Import bindings from the CSF module, for components a function slot renders. */
   importBindings?: Map<string, ImportBinding>;
   /** Pre-seeded context carrying imports and hoists an upstream printer collected. */
@@ -110,11 +114,14 @@ interface TransformState {
   componentImports: Map<string, string>;
   componentName?: string;
   slots: ReadonlySet<string>;
+  origin: TemplateOrigin;
   importBindings: Map<string, ImportBinding>;
   template: string;
 }
 
 type ElementProp = ElementNode['props'][number];
+
+type TemplateOrigin = 'template' | 'h' | 'args';
 
 interface ElementContext {
   /** Whether the element is the story component tag, where role-aware expansion applies. */
@@ -231,6 +238,7 @@ export function transformTemplate(
     componentImports: input.componentImports,
     componentName: input.componentName,
     slots: input.slots ?? new Set(),
+    origin: input.origin ?? 'template',
     importBindings: input.importBindings ?? new Map(),
     template,
   };
@@ -438,7 +446,7 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
       continue;
     }
     // A prop written before the args binding is the binding's arg once a control sets it.
-    const overridden = plan.directive && overriddenProp(prop, plan.directive);
+    const overridden = plan.directive && overriddenProp(prop, plan.directive, state);
     if (overridden) {
       const start = prop.loc.start.offset;
       const end = prop.loc.end.offset;
@@ -459,11 +467,11 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
   }
 
   // The slots a control sets join those the story sets, or open the tag if it closes itself.
-  const unsetSlots = (tag?: string) =>
+  const slotsHole = (text: string, tag?: string) =>
     marked(
       state.ctx,
       { kind: 'slots', slots: element.unsetSlots, indent: '', ...(tag && { tag }), spread: true },
-      tag ? ' />' : ''
+      text
     );
   if (element.slotChildren.length > 0) {
     // Slot children joining an element that already renders its own content would reorder or
@@ -471,15 +479,16 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
     if (hasNonWhitespaceChildren(node)) {
       return false;
     }
-    const after = element.unsetSlots.length > 0 ? unsetSlots() : '';
+    const after = element.unsetSlots.length > 0 ? slotsHole('') : '';
     const edit = slotChildrenEdit(node, element.slotChildren, after, state.template);
     if (!edit) {
       return false;
     }
     state.edits.push(edit);
   } else if (node.isSelfClosing && element.unsetSlots.length > 0) {
-    const start = blankRunStart(state.template, node.loc.end.offset - 2);
-    state.edits.push({ start, end: node.loc.end.offset, text: unsetSlots(node.tag) });
+    const end = node.loc.end.offset;
+    const start = blankRunStart(state.template, end - 2);
+    state.edits.push({ start, end, text: slotsHole(state.template.slice(start, end), node.tag) });
   }
 
   return node.children.every((child) => transformNode(child, state));
@@ -557,7 +566,7 @@ function expandArgsBinding(
   }
 
   element.slotChildren.push(...rendered.slotChildren);
-  if (element.storyTag) {
+  if (element.storyTag && state.origin === 'args') {
     element.unsetSlots = [...state.slots].filter(
       (slot) => !surviving.some((arg) => arg.name === slot)
     );
@@ -565,11 +574,13 @@ function expandArgsBinding(
   // The args a control sets go after the args the story writes, but those the element prints
   // itself and its slots. Vue merges a `class` or `style` the element writes with the arg's, so
   // that one is bound. A prop the element binds before the args binding to code that reads other
-  // args, or a `class` or `style` it binds, cannot follow the arg that sets it, so it is a guard.
+  // args, or a `class` or `style` it binds, which the arg's would merge with, has no code that
+  // follows the arg that sets it, so it is a guard.
   const written = [...attributesByName.entries()];
   const merge = written
     .filter(
-      ([name, props]) => isMerged(name) && props.every((prop) => prop.type === NodeTypes.ATTRIBUTE)
+      ([name, props]) =>
+        isMerged(name, state) && props.every((prop) => prop.type === NodeTypes.ATTRIBUTE)
     )
     .map(([name]) => name);
   const guards = written.flatMap(([name, props]) =>
@@ -578,7 +589,8 @@ function expandArgsBinding(
         prop.type === NodeTypes.DIRECTIVE &&
         prop.name === 'bind' &&
         !removed.has(prop) &&
-        (isMerged(name) || (prop.loc.start.offset < directive.loc.start.offset && readsArgs(prop)))
+        (isMerged(name, state) ||
+          (prop.loc.start.offset < directive.loc.start.offset && readsArgs(prop)))
     )
       ? [marked(state.ctx, { kind: 'guard', arg: camelCase(name) }, '')]
       : []
@@ -604,22 +616,27 @@ function expandArgsBinding(
   return true;
 }
 
-// Vue merges a `class` or `style` from every source.
-const isMerged = (name: string) => name === 'class' || name === 'style';
+// A Vue template merges a `class` or `style` from every source, where an `h()` spread overrides it.
+const isMerged = (name: string, state: TransformState) =>
+  state.origin !== 'h' && (name === 'class' || name === 'style');
 
 const readsArgs = (prop: DirectiveNode) =>
   prop.exp?.type === NodeTypes.SIMPLE_EXPRESSION && valueReferencesArgs(prop.exp.content);
 
 // The prop an attribute, or a binding of code that reads no args, sets before the args binding,
 // which the binding sets once a control sets its arg.
-function overriddenProp(prop: ElementProp, directive: DirectiveNode): string | undefined {
+function overriddenProp(
+  prop: ElementProp,
+  directive: DirectiveNode,
+  state: TransformState
+): string | undefined {
   const name =
     prop.type === NodeTypes.ATTRIBUTE
       ? prop.name
       : prop.name === 'bind' && !readsArgs(prop)
         ? staticDirectiveArg(prop)
         : undefined;
-  return name && !isMerged(name) && prop.loc.start.offset < directive.loc.start.offset
+  return name && !isMerged(name, state) && prop.loc.start.offset < directive.loc.start.offset
     ? name
     : undefined;
 }

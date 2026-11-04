@@ -15,7 +15,7 @@ import type {
   ManifestClassField,
   ManifestDeclaration,
 } from '../component-docgen/manifest/types.ts';
-import { parseHtml } from './html-tree.ts';
+import { parseHtml } from '../../html-parse.ts';
 import { printHtmlTemplate } from './template-print.ts';
 import { resolveHtmlTemplate } from './template-scope.ts';
 

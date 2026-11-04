@@ -1,0 +1,5 @@
+{
+  "ArgsDefaultRender": "<vanilla-basic label="Default vanilla &amp; &lt;changed>" count="2" disabled></vanilla-basic>",
+  "DomNode": "<vanilla-basic label="Vanilla &amp; &lt;changed>" count="5"></vanilla-basic>",
+  "LitTemplate": "<vanilla-basic label="Vanilla &amp; &lt;changed>" count="5"></vanilla-basic>",
+}

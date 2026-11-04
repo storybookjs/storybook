@@ -1,4 +1,4 @@
-import type { IndexEntry } from 'storybook/internal/types';
+import type { Args, IndexEntry } from 'storybook/internal/types';
 
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -12,6 +12,15 @@ import type {
   ManifestClassField,
   ManifestDeclaration,
 } from '../component-docgen/manifest/types.ts';
+import {
+  type SnippetTemplate,
+  fillTemplate,
+  formatTemplate,
+  stripHoles,
+} from 'storybook/internal/docs-tools';
+
+import { printHole } from '../../docs/print-hole.ts';
+import type { HtmlSnippetTemplate } from '../../snippet-holes.ts';
 import { buildStoryDocsPayload, type BuildStoryDocsContext } from './build-story-docs.ts';
 
 const declaration = {
@@ -123,7 +132,20 @@ const firstStory = async (
     }
   );
   expect(result).toBeDefined();
-  return Object.values(result!.stories)[0];
+  // The template is next's snippet with holes; these cases are about the snippet.
+  const { template: _template, ...story } = Object.values(result!.stories)[0];
+  return story;
+};
+
+// The template of the first story, and its snippet.
+const firstTemplate = async (source: string) => {
+  const { storyPath } = writeFixture(source);
+  const result = await buildStoryDocsPayload(
+    { entry: { ...entry, importPath: storyPath } },
+    { getDocgenPayload: getDocgenPayload(), resolvePath: (path) => path }
+  );
+  const { snippet, template, warning } = Object.values(result!.stories)[0];
+  return { snippet, template, warning };
 };
 
 describe('buildStoryDocsPayload', () => {
@@ -720,4 +742,95 @@ describe('buildStoryDocsPayload', () => {
       expect({ snippet: story.snippet, warning: story.warning }).toEqual(expected);
     }
   );
+});
+
+describe('the template', () => {
+  const fill = (template: SnippetTemplate | undefined, initialArgs: Args, changed: Args) =>
+    fillTemplate(
+      template as HtmlSnippetTemplate,
+      { initialArgs, unmappedArgs: { ...initialArgs, ...changed } },
+      printHole
+    );
+
+  it('wraps each value an arg prints in a hole, with one for each declared arg it leaves unset', async () => {
+    const { snippet, template } = await firstTemplate(`
+      export default { title: 'Example/TestElement', component: 'test-element', args: { label: 'Meta' } };
+      export const Primary = { args: { count: 2, disabled: true, 'default-slot': 'Hi' } };
+    `);
+    expect(snippet).toBe('<test-element label="Meta" count="2" disabled>Hi</test-element>');
+    expect(stripHoles(template!)).toBe(snippet);
+    const initialArgs = { label: 'Meta', count: 2, disabled: true, 'default-slot': 'Hi' };
+    expect(fill(template, initialArgs, { label: 'Changed', variant: 'primary', theme: 'x' })).toBe(
+      '<test-element label="Changed" count="2" disabled variant="primary">Hi</test-element>'
+    );
+    expect(fill(template, initialArgs, { '--accent': 'red', 'panel-part': 'color: red' })).toBe(
+      '<style>\n  test-element::part(panel) { color: red }\n</style>\n<test-element label="Meta" count="2" disabled style="--accent: red;">Hi</test-element>'
+    );
+  });
+
+  it('wraps each value the lit template of the render prints of an arg in a hole', async () => {
+    const { snippet, template } = await firstTemplate(`
+      import { html } from 'lit';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { label: 'Go', disabled: false },
+        render: (args) => html\`<test-element label=\${args.label} ?disabled=\${args.disabled}>\${args.label}</test-element>\`,
+      };
+    `);
+    expect(snippet).toBe('<test-element label="Go">Go</test-element>');
+    expect(formatTemplate(template!)).toBe(
+      '<test-element⟦attr label mode="bind" ~" "⟫ label="Go"⟧⟦bool disabled ~" "⟫⟧>⟦text label trimStart=true trimEnd=true⟫Go⟧</test-element>'
+    );
+    expect(
+      fill(template, { label: 'Go', disabled: false }, { label: 'a < b', disabled: true })
+    ).toBe('<test-element label="a &lt; b" disabled>a &lt; b</test-element>');
+  });
+
+  it('cannot follow a property without an attribute a control sets', async () => {
+    const { template } = await firstTemplate(`
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: { label: 'Go' } };
+    `);
+    expect(() => fill(template, { label: 'Go' }, { items: [1, 2] })).toThrow(
+      'The snippet cannot show the current value of the `items` arg.'
+    );
+  });
+
+  it('cannot follow an arg a conditional reads', async () => {
+    const { template } = await firstTemplate(`
+      import { html } from 'lit';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { label: 'Go', open: true },
+        render: (args) => html\`<test-element label=\${args.open ? args.label : 'Closed'}></test-element>\`,
+      };
+    `);
+    expect(() => fill(template, { label: 'Go', open: true }, { open: false })).toThrow(
+      'The snippet cannot show the current value of the `open` arg.'
+    );
+  });
+
+  it('cannot follow an arg an attribute reads next to code it cannot resolve', async () => {
+    const { template } = await firstTemplate(`
+      import { html } from 'lit';
+      import { suffix } from './suffix';
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = {
+        args: { label: 'Go' },
+        render: (args) => html\`<test-element title="\${args.label} \${suffix}"></test-element>\`,
+      };
+    `);
+    expect(() => fill(template, { label: 'Go' }, { label: 'Stop' })).toThrow(
+      'The snippet cannot show the current value of the `label` arg.'
+    );
+  });
+
+  it('is not there where next prints no snippet', async () => {
+    const { snippet, template } = await firstTemplate(`
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: { label: makeLabel() } };
+    `);
+    expect(snippet).toBeUndefined();
+    expect(template).toBeUndefined();
+  });
 });

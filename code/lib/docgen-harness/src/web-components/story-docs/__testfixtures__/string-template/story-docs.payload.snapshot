@@ -7,16 +7,19 @@
       "id": "webcomponentsstorydocs-string-template--default",
       "name": "Default",
       "snippet": "<string-template label="Default"></string-template>",
+      "template": "<string-template⟦attr label mode="field" ~" "⟫ label="Default"⟧></string-template>",
     },
     "webcomponentsstorydocs-string-template--plain-string": {
       "id": "webcomponentsstorydocs-string-template--plain-string",
       "name": "Plain String",
       "snippet": "<string-template label="static"></string-template>",
+      "template": "<string-template label="static"></string-template>",
     },
     "webcomponentsstorydocs-string-template--untagged": {
       "id": "webcomponentsstorydocs-string-template--untagged",
       "name": "Untagged",
       "snippet": "<string-template label="Untagged" ?fake="true"></string-template>",
+      "template": "<string-template⟦attr label mode="bind" ~" "⟫ label="Untagged"⟧⟦attr flag name="?fake" mode="bind" ~" "⟫ ?fake="true"⟧></string-template>",
     },
   },
 }

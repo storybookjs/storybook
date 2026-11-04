@@ -12,8 +12,6 @@ permissions:
   contents: read
   statuses: write
 
-env:
-  NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
 
 jobs:
   nx:
@@ -36,9 +34,17 @@ jobs:
       group: nx-${{ github.event.pull_request.number || github.run_id }}
       cancel-in-progress: true
 
+    # Runs on `next` (nightly or started by hand) use the read-write token from the nx-cloud-write
+    # environment, so they fill the shared task cache and the workers' node_modules cache. Pull
+    # requests get no environment and keep the read-only token: they read those caches and write
+    # only to their own pull-request cache.
+    # TEMPORARY: kasper/nx-cloud-revive is allowed so PR #37181 can test the writes. Remove it, and
+    # its deployment branch rule on the nx-cloud-write environment, before merging.
+    environment: ${{ (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/next' || github.ref == 'refs/heads/kasper/nx-cloud-revive'))) && 'nx-cloud-write' || '' }}
     timeout-minutes: 90
     runs-on: ubuntu-latest
     env:
+      NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_WRITE_TOKEN || secrets.NX_CLOUD_ACCESS_TOKEN }}
       ALL_TASKS: compile,check,knip,test,lint,fmt,sandbox,build,e2e-tests,e2e-tests-dev,vitest-integration,check-sandbox,e2e-ui,jest,vitest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -72,7 +78,10 @@ jobs:
           fi
       - env:
           DIST_CONFIG: ${{ steps.dist.outputs.config }}
-        run: npx nx-cloud@19.1.5 start-ci-run --distribute-on="$DIST_CONFIG" --stop-workers-after="$ALL_TASKS"
+        # No --stop-workers-after: it stops the workers once every task of the listed targets is done,
+        # which strands continuous tasks (serve, dev, run-registry) that are still queued, and the run
+        # then hangs until the job times out. `complete-ci-run` below stops the workers instead.
+        run: npx nx-cloud@19.1.5 start-ci-run --distribute-on="$DIST_CONFIG"
       - name: Create Nx Cloud Status (pending)
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
@@ -182,3 +191,7 @@ jobs:
                   : 'Nx Cloud run failed before or outside its tasks',
               context: `nx: ${tag}`,
             });
+
+      - name: Stop the NX Cloud workers
+        if: always()
+        run: npx nx-cloud@19.1.5 complete-ci-run

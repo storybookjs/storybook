@@ -475,8 +475,9 @@ function rewriteJsx(
       }
     }
 
-    // A spread writes over the attributes before it: each is a hole for the arg it names, and one
-    // that reads another arg follows both, as an `overridden` hole.
+    // Each attribute that reads an arg is a hole for it. A spread writes over the attributes before
+    // it, so each of those follows the arg it names too, and one that reads another arg follows
+    // both, as an `overridden` hole.
     const lastSpread = attrs.findLastIndex(isArgsSpread);
     attrs.forEach((a, index) => {
       if (a.type !== 'JSXAttribute' || a.name.type !== 'JSXIdentifier') {

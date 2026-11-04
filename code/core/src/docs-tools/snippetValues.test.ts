@@ -19,6 +19,10 @@ describe('printValue', () => {
     );
   });
 
+  it('prints an own `__proto__` key quoted, as a property rather than the prototype', () => {
+    expect(printValue(JSON.parse('{"__proto__":{"x":1}}'), 'v')).toBe('{ "__proto__": { x: 1 } }');
+  });
+
   it('prints a literal of any length', () => {
     expect(printValue('x'.repeat(5000), 'text')).toHaveLength(5002);
   });

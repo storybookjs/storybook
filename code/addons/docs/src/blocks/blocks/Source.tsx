@@ -218,10 +218,10 @@ const SourceWithStoryDocsSnippet: FC<
   const args = useMemo(
     () => {
       const { unmappedArgs, initialArgs } = docsContext.getStoryContext(story);
-      return { unmappedArgs, initialArgs };
+      return { unmappedArgs: props.__forceInitialArgs ? initialArgs : unmappedArgs, initialArgs };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `argsUpdate` is the trigger
-    [argsUpdate, story, docsContext]
+    [argsUpdate, story, docsContext, props.__forceInitialArgs]
   );
   const { data } = useServiceStoryLiveSnippet(story, args);
   const serviceSnippet = data?.snippet ?? '';

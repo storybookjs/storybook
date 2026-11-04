@@ -43,9 +43,10 @@ export function printValue(
     `[${Array.from(array, (_, index) => (index in array ? print(array[index]) : '')).join(', ')}]`;
   const printObject = (object: Record<string, unknown>) => {
     const properties: string[] = [];
-    for (const key in object) {
+    for (const key of Object.keys(object)) {
       if (object[key] !== undefined) {
-        const printedKey = /^[A-Za-z_$][\w$]*$/.test(key) ? key : print(key);
+        // `__proto__:` would set the prototype; a quoted key is a property.
+        const printedKey = /^[A-Za-z_$][\w$]*$/.test(key) && key !== '__proto__' ? key : print(key);
         properties.push(`${printedKey}: ${print(object[key])}`);
       }
     }

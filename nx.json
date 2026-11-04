@@ -27,7 +27,7 @@
       "command": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON ./scripts/build/build-package.ts --cwd {projectRoot}",
       "configurations": { "production": { "args": "--prod" } },
       "cache": true,
-      "inputs": ["production", "^production"],
+      "inputs": ["production", "^production", { "env": "OS" }],
       "outputs": [
         "{projectRoot}/dist",
         "{workspaceRoot}/code/bench/esbuild-metafiles/{projectName}"
@@ -180,5 +180,5 @@
     ]
   },
   "analytics": false,
-  "codexCacheBust": "2026-03-23T12:57:22Z"
+  "affected": { "legacy": true }
 }

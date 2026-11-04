@@ -13,6 +13,7 @@ import {
   artifact,
   cache,
   compileStep,
+  nxEnvironment,
   git,
   node,
   npm,
@@ -465,8 +466,7 @@ export const defineAffectedCheck = (changedFiles: readonly string[]) =>
         {
           run: {
             name: 'TypeCheck affected projects',
-            // With Nx Cloud on, CI logs show only a cloud link per task instead of the type errors.
-            environment: { NX_NO_CLOUD: 'true' },
+            environment: nxEnvironment(),
             command: `yarn nx affected -t check --exclude-task-dependencies --parallel=4 --stdin < ${CHANGED_FILES_PATH}`,
           },
         },

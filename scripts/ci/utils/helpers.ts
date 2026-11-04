@@ -1,5 +1,6 @@
 import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../../utils/npm-constants.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './constants.ts';
+import { isTrustedAuthor } from './runtime.ts';
 import { type JobOrNoOpJob } from './types.ts';
 
 export const cancelWorkflowStep = {
@@ -11,10 +12,24 @@ export const cancelWorkflowStep = {
   },
 };
 
+/**
+ * Environment for every CircleCI step that runs Nx.
+ *
+ * - Connected to Nx Cloud, Nx on CI prints only a cloud link for a failed task. Stream output keeps
+ *   the task's own output (compile and type errors) in the CircleCI log.
+ * - Pipelines from untrusted authors run without Nx Cloud, so they neither read from nor write to the
+ *   shared remote cache. Same rule as the node_modules cache in `installWithCache`.
+ */
+export const nxEnvironment = () => ({
+  NX_DEFAULT_OUTPUT_STYLE: 'stream',
+  ...(isTrustedAuthor() ? {} : { NX_NO_CLOUD: 'true' }),
+});
+
 export const compileStep = () => ({
   run: {
     name: 'Compile',
     working_directory: 'code',
+    environment: nxEnvironment(),
     command: 'yarn task --task compile --start-from=auto --no-link --debug',
   },
 });

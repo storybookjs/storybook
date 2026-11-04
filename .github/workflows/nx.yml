@@ -1,9 +1,10 @@
 name: nx
 
-# NX Cloud license has expired. Triggers are disabled so this workflow does
-# not run on PRs, pushes, or schedules. It can still be started manually via
-# workflow_dispatch once the license is restored.
 on:
+  pull_request:
+    types: [opened, synchronize, labeled, reopened]
+  schedule:
+    - cron: '0 23 * * *'
   workflow_dispatch:
 
 permissions:
@@ -16,13 +17,23 @@ env:
 
 jobs:
   nx:
+    # Same-repo PRs only: fork PRs get no secrets, so they cannot reach Nx Cloud.
+    # A `labeled` event only starts a run for a `ci:` label, so adding e.g. a `qa:` label
+    # does not restart the whole pipeline.
     if: >
       github.repository == 'storybookjs/storybook' &&
         ((github.event_name == 'pull_request' &&
           github.event.pull_request.head.repo.full_name == github.repository &&
+          (github.event.action != 'labeled' || startsWith(github.event.label.name, 'ci:')) &&
           (contains(github.event.pull_request.labels.*.name, 'ci:normal') ||
            contains(github.event.pull_request.labels.*.name, 'ci:daily'))
-        ) || (github.event_name == 'schedule'))
+        ) || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+
+    # Job-level (not workflow-level) so a skipped run, such as a non-`ci:` label, never
+    # cancels the run in progress. A new push supersedes the previous run of the same PR.
+    concurrency:
+      group: nx-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
 
     runs-on: ubuntu-latest
     env:
@@ -59,7 +70,7 @@ jobs:
           fi
       - env:
           DIST_CONFIG: ${{ steps.dist.outputs.config }}
-        run: npx nx-cloud@19.1.3 start-ci-run --distribute-on="$DIST_CONFIG" --stop-agents-after="$ALL_TASKS"
+        run: npx nx-cloud@19.1.5 start-ci-run --distribute-on="$DIST_CONFIG" --stop-agents-after="$ALL_TASKS"
       - name: Create Nx Cloud Status (pending)
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:

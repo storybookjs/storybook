@@ -69,22 +69,22 @@ describe('generateProjectAnnotationsCodeFromPreviews', () => {
   });
 });
 
-describe('generateProjectAnnotationsCodeFromPreviews with a module importer', () => {
+describe('generateProjectAnnotationsCodeFromPreviews with module importers', () => {
   it('loads a CSF Next preview file through the importModule function of the importer', () => {
     vi.spyOn(process, 'cwd').mockReturnValue('/project');
 
     const code = generateProjectAnnotationsCodeFromPreviews({
       ...options,
       isCsf4: true,
-      moduleImporter: '/project/importer.js',
+      moduleImporters: ['/project/importer.js'],
     });
 
     expect(code).toMatchInlineSnapshot(`
-      "import { importModule } from "/project/importer.js";
+      "import { importModule as importModule_0 } from "/project/importer.js";
       import * as preview_2178760794 from "/project/.storybook/preview.ts";
 
       export async function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
-        const preview = await importModule("./.storybook/preview.ts", async () => hmrPreviewAnnotationModules[0] ?? preview_2178760794);
+        const preview = await importModule_0("./.storybook/preview.ts", async () => hmrPreviewAnnotationModules[0] ?? preview_2178760794);
         return preview.default.composed;
       }
 
@@ -106,11 +106,11 @@ describe('generateProjectAnnotationsCodeFromPreviews with a module importer', ()
       generateProjectAnnotationsCodeFromPreviews({
         ...options,
         isCsf4: false,
-        moduleImporter: '/project/importer.js',
+        moduleImporters: ['/project/importer.js'],
       })
     ).toMatchInlineSnapshot(`
       "import { composeConfigs } from 'storybook/preview-api';
-      import { importModule } from "/project/importer.js";
+      import { importModule as importModule_0 } from "/project/importer.js";
 
       import * as preview_3900539004 from "/project/addon/preview.js";
       import * as preview_2178760794 from "/project/.storybook/preview.ts";
@@ -118,7 +118,7 @@ describe('generateProjectAnnotationsCodeFromPreviews with a module importer', ()
       export async function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
         const configs = [
           hmrPreviewAnnotationModules[0] ?? preview_3900539004,
-          await importModule("./.storybook/preview.ts", async () => hmrPreviewAnnotationModules[1] ?? preview_2178760794)
+          await importModule_0("./.storybook/preview.ts", async () => hmrPreviewAnnotationModules[1] ?? preview_2178760794)
         ];
         return composeConfigs(configs);
       }
@@ -139,7 +139,7 @@ describe('generateProjectAnnotationsCodeFromPreviews with a module importer', ()
       ...options,
       previewFile: undefined,
       isCsf4: false,
-      moduleImporter: '/project/importer.js',
+      moduleImporters: ['/project/importer.js'],
     });
 
     expect(code).not.toContain('await importModule(');
@@ -167,7 +167,7 @@ describe('generateProjectAnnotationsCodeFromPreviews with a module importer', ()
         projectRoot: dir,
         frameworkName: 'frameworkName',
         isCsf4: true,
-        moduleImporter: join(dir, 'importer.js'),
+        moduleImporters: [join(dir, 'importer.js')],
       })
     );
 
@@ -184,5 +184,39 @@ describe('generateProjectAnnotationsCodeFromPreviews with a module importer', ()
       from: 'hmr',
       importPath: './preview.js',
     });
+  });
+
+  it('imports the preview file through the chain, the last importer first', async () => {
+    const dir = await realpath(await mkdtemp(join(tmpdir(), 'module-importer-')));
+    onTestFinished(() => rm(dir, { recursive: true }));
+    vi.spyOn(process, 'cwd').mockReturnValue(dir);
+    await writeFile(join(dir, 'preview.js'), 'export default { composed: { order: ["file"] } };');
+    const importer = (name: string) => dedent`
+      export async function importModule(importPath, importFn) {
+        const preview = await importFn(importPath);
+        const order = [...preview.default.composed.order, '${name}'];
+        return { default: { composed: { order } } };
+      }
+    `;
+    await writeFile(join(dir, 'framework.js'), importer('framework'));
+    await writeFile(join(dir, 'project.js'), importer('project'));
+    await writeFile(
+      join(dir, 'project-annotations.js'),
+      generateProjectAnnotationsCodeFromPreviews({
+        previewAnnotations: [],
+        previewFile: join(dir, 'preview.js'),
+        projectRoot: dir,
+        frameworkName: 'frameworkName',
+        isCsf4: true,
+        moduleImporters: [join(dir, 'framework.js'), join(dir, 'project.js')],
+      })
+    );
+
+    const { getProjectAnnotations } = await import(
+      /* @vite-ignore */ join(dir, 'project-annotations.js')
+    );
+
+    // The project's importer is asked first, so it sees what the framework's made of the file
+    expect(await getProjectAnnotations()).toEqual({ order: ['file', 'framework', 'project'] });
   });
 });

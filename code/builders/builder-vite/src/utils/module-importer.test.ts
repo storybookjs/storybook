@@ -1,47 +1,101 @@
 import { describe, expect, it } from 'vitest';
 
+import { getPresets } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 
-import { getModuleImporter } from './module-importer.ts';
+import { getModuleImporters } from './module-importer.ts';
 
-const optionsWith = (moduleImporter?: unknown) =>
-  ({ presets: { apply: async () => moduleImporter } }) as unknown as Options;
+const optionsWith = (moduleImporters?: unknown) =>
+  ({
+    presets: { apply: async (_name: string, initial: unknown) => moduleImporters ?? initial },
+  }) as unknown as Options;
 
-describe('getModuleImporter', () => {
+describe('getModuleImporters', () => {
   it('normalizes a Windows path', async () => {
-    expect(await getModuleImporter(optionsWith('C:\\project\\importer.js'))).toBe(
-      'C:/project/importer.js'
-    );
+    expect(await getModuleImporters(optionsWith(['C:\\project\\importer.js']))).toEqual([
+      'C:/project/importer.js',
+    ]);
   });
 
   it('keeps a package specifier', async () => {
-    expect(await getModuleImporter(optionsWith('my-framework/importer'))).toBe(
-      'my-framework/importer'
-    );
+    expect(await getModuleImporters(optionsWith(['my-framework/importer']))).toEqual([
+      'my-framework/importer',
+    ]);
   });
 
   it('converts a file URL to a path', async () => {
-    expect(await getModuleImporter(optionsWith('file:///project/importer.js'))).toBe(
-      '/project/importer.js'
-    );
-    expect(await getModuleImporter(optionsWith(new URL('file:///project/importer.js')))).toBe(
-      '/project/importer.js'
+    expect(
+      await getModuleImporters(
+        optionsWith(['file:///project/a.js', new URL('file:///project/b.js')])
+      )
+    ).toEqual(['/project/a.js', '/project/b.js']);
+  });
+
+  it('keeps the preset order and uses a module listed twice once', async () => {
+    expect(
+      await getModuleImporters(
+        optionsWith(['/framework/importer.js', '/project/importer.js', '/framework/importer.js'])
+      )
+    ).toEqual(['/framework/importer.js', '/project/importer.js']);
+  });
+
+  it('rejects an entry that is not a string', async () => {
+    await expect(getModuleImporters(optionsWith([42]))).rejects.toThrow(
+      'must be an absolute path or a package specifier'
     );
   });
 
-  it('rejects a value that is not a string', async () => {
-    await expect(getModuleImporter(optionsWith(42))).rejects.toThrow(
+  it('rejects a value that is not an array', async () => {
+    await expect(getModuleImporters(optionsWith('/project/importer.js'))).rejects.toThrow(
       'must be an absolute path or a package specifier'
     );
   });
 
   it('rejects a relative path', async () => {
-    await expect(getModuleImporter(optionsWith('./importer.js'))).rejects.toThrow(
+    await expect(getModuleImporters(optionsWith(['./importer.js']))).rejects.toThrow(
       'must be an absolute path or a package specifier'
     );
   });
 
-  it('is undefined without the preset', async () => {
-    expect(await getModuleImporter(optionsWith())).toBeUndefined();
+  it('is empty without the preset', async () => {
+    expect(await getModuleImporters(optionsWith())).toEqual([]);
+  });
+});
+
+describe('getModuleImporters with the preset system', () => {
+  // The framework's preset, then the main config, in the order Storybook loads them
+  async function presetsOf(main: Record<string, unknown>) {
+    const presets = await getPresets(
+      [
+        {
+          type: 'virtual',
+          name: 'framework',
+          experimental_moduleImporters: (entries: string[] = []) => [
+            ...entries,
+            '/framework/importer.js',
+          ],
+        },
+        { type: 'virtual', name: 'main', ...main },
+      ] as any,
+      { isCritical: true } as any
+    );
+    return { presets } as unknown as Options;
+  }
+
+  it('appends a plain array of the main config to the framework importers', async () => {
+    const options = await presetsOf({ experimental_moduleImporters: ['/project/importer.js'] });
+
+    expect(await getModuleImporters(options)).toEqual([
+      '/framework/importer.js',
+      '/project/importer.js',
+    ]);
+  });
+
+  it('replaces the framework importers with a function of the main config', async () => {
+    const options = await presetsOf({
+      experimental_moduleImporters: () => ['/project/importer.js'],
+    });
+
+    expect(await getModuleImporters(options)).toEqual(['/project/importer.js']);
   });
 });

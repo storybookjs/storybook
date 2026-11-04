@@ -7,7 +7,11 @@ import { filename } from 'pathe/utils';
 import { dedent } from 'ts-dedent';
 
 import { toImportPath } from './utils/import-path.ts';
-import { getModuleImporter } from './utils/module-importer.ts';
+import {
+  genImportThroughModuleImporters,
+  genModuleImporterImports,
+  getModuleImporters,
+} from './utils/module-importer.ts';
 import { processPreviewAnnotation } from './utils/process-preview-annotation.ts';
 
 /** Generates the code for the `PROJECT_ANNOTATIONS_FILE` virtual module. */
@@ -24,7 +28,7 @@ export async function generateProjectAnnotationsCode(options: Options, projectRo
     [],
     options
   );
-  const moduleImporter = await getModuleImporter(options);
+  const moduleImporters = await getModuleImporters(options);
 
   return generateProjectAnnotationsCodeFromPreviews({
     previewAnnotations,
@@ -32,7 +36,7 @@ export async function generateProjectAnnotationsCode(options: Options, projectRo
     projectRoot,
     frameworkName,
     isCsf4,
-    moduleImporter,
+    moduleImporters,
   });
 }
 
@@ -44,10 +48,11 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
   projectRoot: string;
   frameworkName: string;
   isCsf4: boolean;
-  /** A module whose `importModule(importPath, importFn)` imports the project's preview file. */
-  moduleImporter?: string;
+  /** Modules whose `importModule(importPath, importFn)` import the project's preview file. */
+  moduleImporters?: string[];
 }) {
-  const { projectRoot, moduleImporter } = options;
+  const { projectRoot, moduleImporters = [] } = options;
+  const hasImporters = moduleImporters.length > 0;
 
   const toModule = (previewAnnotation: PreviewAnnotation) => {
     const url = processPreviewAnnotation(previewAnnotation, projectRoot);
@@ -62,11 +67,15 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
   const moduleAt = (index: number, variable: string) =>
     `hmrPreviewAnnotationModules[${index}] ?? ${variable}`;
   const loadPreviewFile = ({ url, variable }: ReturnType<typeof toModule>, index: number) =>
-    moduleImporter
-      ? `await importModule(${JSON.stringify(toImportPath(url))}, async () => ${moduleAt(index, variable)})`
+    hasImporters
+      ? `await ${genImportThroughModuleImporters(
+          moduleImporters,
+          JSON.stringify(toImportPath(url)),
+          `async () => ${moduleAt(index, variable)}`
+        )}`
       : moduleAt(index, variable);
-  const importerImport = moduleImporter ? `${genImport(moduleImporter, ['importModule'])}\n` : '';
-  const maybeAsync = moduleImporter ? 'async ' : '';
+  const importerImport = hasImporters ? `${genModuleImporterImports(moduleImporters)}\n` : '';
+  const maybeAsync = hasImporters ? 'async ' : '';
 
   if (options.isCsf4 && previewFile) {
     return dedent`

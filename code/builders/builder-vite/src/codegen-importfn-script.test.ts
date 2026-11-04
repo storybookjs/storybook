@@ -102,7 +102,7 @@ describe('generateImportFnScriptCode', () => {
   });
 });
 
-describe('generateImportFnScriptCode with a module importer', () => {
+describe('generateImportFnScriptCode with module importers', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -124,15 +124,15 @@ describe('generateImportFnScriptCode with a module importer', () => {
   it('imports every file through the importModule function of the importer', async () => {
     vi.spyOn(process, 'cwd').mockReturnValue('/absolute/path');
 
-    expect(generateImportFnScriptCode(index, '/absolute/importer.js')).toMatchInlineSnapshot(`
-      "import { importModule } from "/absolute/importer.js";
+    expect(generateImportFnScriptCode(index, ['/absolute/importer.js'])).toMatchInlineSnapshot(`
+      "import { importModule as importModule_0 } from "/absolute/importer.js";
 
       const importers = {
         "./Button.stories.js": () => import("/absolute/path/Button.stories.js")
       };
 
       export async function importFn(path) {
-        return await importModule(path, (path) => importers[path]());
+        return await importModule_0(path, (path) => importers[path]());
       }"
     `);
   });
@@ -154,7 +154,7 @@ describe('generateImportFnScriptCode with a module importer', () => {
     );
     await writeFile(
       join(dir, 'stories.js'),
-      generateImportFnScriptCode(index, join(dir, 'importer.js'))
+      generateImportFnScriptCode(index, [join(dir, 'importer.js')])
     );
 
     const { importFn } = await import(/* @vite-ignore */ join(dir, 'stories.js'));
@@ -184,7 +184,7 @@ describe('generateImportFnScriptCode with a module importer', () => {
     );
     await writeFile(
       join(dir, 'stories.js'),
-      generateImportFnScriptCode({ v: 5, entries: {} }, join(dir, 'importer.js'))
+      generateImportFnScriptCode({ v: 5, entries: {} }, [join(dir, 'importer.js')])
     );
 
     const { importFn } = await import(/* @vite-ignore */ join(dir, 'stories.js'));
@@ -193,5 +193,54 @@ describe('generateImportFnScriptCode with a module importer', () => {
       default: { title: 'Runtime' },
       Story: {},
     });
+  });
+
+  it('asks the last importer first, and each importer passes on to the one before it', async () => {
+    vi.spyOn(process, 'cwd').mockReturnValue('/absolute/path');
+
+    expect(generateImportFnScriptCode(index, ['/framework/importer.js', '/project/importer.js']))
+      .toMatchInlineSnapshot(`
+        "import { importModule as importModule_0 } from "/framework/importer.js";
+        import { importModule as importModule_1 } from "/project/importer.js";
+
+        const importers = {
+          "./Button.stories.js": () => import("/absolute/path/Button.stories.js")
+        };
+
+        export async function importFn(path) {
+          return await importModule_1(path, (path) => importModule_0(path, (path) => importers[path]()));
+        }"
+      `);
+  });
+
+  it('runs the chain from the last importer down to the build', async () => {
+    const dir = await realpath(await mkdtemp(join(tmpdir(), 'module-importer-')));
+    onTestFinished(() => rm(dir, { recursive: true }));
+    vi.spyOn(process, 'cwd').mockReturnValue(dir);
+    await writeFile(join(dir, 'Button.stories.js'), 'export const Primary = {};');
+    const importer = (name: string) => dedent`
+      import { calls } from './calls.js';
+      export async function importModule(importPath, importFn) {
+        calls.push('${name} ' + importPath);
+        return { ...(await importFn(importPath)), ${name}: true };
+      }
+    `;
+    await writeFile(join(dir, 'calls.js'), 'export const calls = [];');
+    await writeFile(join(dir, 'framework.js'), importer('framework'));
+    await writeFile(join(dir, 'project.js'), importer('project'));
+    await writeFile(
+      join(dir, 'stories.js'),
+      generateImportFnScriptCode(index, [join(dir, 'framework.js'), join(dir, 'project.js')])
+    );
+
+    const { importFn } = await import(/* @vite-ignore */ join(dir, 'stories.js'));
+    const { calls } = await import(/* @vite-ignore */ join(dir, 'calls.js'));
+
+    expect(await importFn('./Button.stories.js')).toEqual({
+      Primary: {},
+      framework: true,
+      project: true,
+    });
+    expect(calls).toEqual(['project ./Button.stories.js', 'framework ./Button.stories.js']);
   });
 });

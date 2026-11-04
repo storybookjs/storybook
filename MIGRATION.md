@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Deprecated addon UI APIs removed](#deprecated-addon-ui-apis-removed)
   - [Theming imports](#theming-imports)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging)
@@ -19,6 +20,7 @@
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
     - [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
+    - [React: `react-docgen` and `react-docgen-typescript` are optional peer dependencies](#react-react-docgen-and-react-docgen-typescript-are-optional-peer-dependencies)
     - [Svelte](#svelte)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or newer](#typescript-59-or-newer)
@@ -637,6 +639,117 @@
 
 ## From version 10.x to 11.0.0
 
+### Deprecated addon UI APIs removed
+
+Storybook 11 removes the deprecated UI APIs from `storybook/internal/components`. Update addons to the replacements below. `TooltipProvider`, `Tooltip`, `TooltipNote`, `PopoverProvider`, `Popover`, `ActionList`, `Select`, and the current tab components remain available.
+
+| Removed API | Replacement |
+| --- | --- |
+| `WithTooltip`, `WithTooltipPure`, and the legacy `WithToolTipState` implementation | `TooltipProvider` for noninteractive content shown on hover or focus |
+| `TooltipMessage` | `PopoverProvider` with `Popover` or custom content |
+| `TooltipLinkList`, `TooltipLinkListLink`, `ListItem` | `PopoverProvider` with `ActionList` for actions; `Select` for choosing a value |
+| `Tabs`, `TabsState`, `TabWrapper` | `TabsView`, or `TabList` and `TabPanel` with `useTabsState` |
+| `TabButton`, `TabBar` | Let `TabsView` or `TabList` render tab controls |
+| `IconButton` | `Button` with `variant="ghost"`, `padding="small"`, and `ariaLabel` |
+| `Button.active` | `ToggleButton.pressed` for a toggle, or `Select` for selection |
+| `FlexBar` | `Bar` with `innerStyle={{ justifyContent: 'space-between' }}` |
+| `Modal.onEscapeKeyDown` | `dismissOnEscape` |
+| `Modal.onInteractOutside` | `dismissOnClickOutside` |
+| `Modal.Dialog.Close`, `Modal.CloseButton` | `Modal.Close` |
+| `Link.isButton` | Omit `href` to render a button; provide `href` to render a link |
+
+`Button.ariaLabel` is now required. Use an action label for icon-only buttons or buttons whose text depends on visual context. Use `ariaLabel={false}` only when the visible text already names the action. `Modal.ariaLabel` and `PopoverProvider.ariaLabel` are also required and must describe the dialog's purpose.
+
+Addons that also support Storybook 10 can adopt these replacements before upgrading.
+`TooltipProvider`, `Tooltip`, `PopoverProvider`, `ActionList`, `TabsView`, `TabList`, `TabPanel`, `ToggleButton`, `Button.ariaLabel`, and `Bar.innerStyle` are available from Storybook 10.1.
+From Storybook 10.3, `Link` renders a button when `href` is absent and `PopoverProvider` accepts `ariaLabel`.
+Storybook 10.1 and 10.2 ignore `PopoverProvider.ariaLabel` and render `Link` without `href` as a plain anchor.
+
+```tsx
+import { Button, ToggleButton } from 'storybook/internal/components';
+import { RefreshIcon } from '@storybook/icons';
+
+<Button variant="ghost" padding="small" ariaLabel="Refresh results" onClick={refresh}>
+  <RefreshIcon />
+</Button>;
+
+<ToggleButton ariaLabel="Show outlines" pressed={showOutlines} onClick={toggleOutlines}>
+  Outlines
+</ToggleButton>;
+```
+
+For tooltips, use `TooltipProvider`, not the transitional `WithTooltipNew` name mentioned in older guidance. Replace `startOpen` with `defaultVisible`. Controlled tooltips use `visible` and `onVisibleChange`.
+
+The legacy props `trigger`, `svg`, `strategy`, `withArrows`, `mutationObserverOptions`, `hasChrome`, `closeOnTriggerHidden`, `followCursor`, `closeOnOutsideClick`, and `interactive` are not supported by `TooltipProvider`. Put tooltip styling on `Tooltip` or use `TooltipNote`. The trigger must be one focusable element that forwards refs. Use `triggerOnFocusOnly` only for keyboard navigation hints. For interactive content or click activation, use `PopoverProvider` instead.
+
+```tsx
+import { TooltipNote, TooltipProvider } from 'storybook/internal/components';
+
+<TooltipProvider tooltip={<TooltipNote note="Inspect the selected story" />} placement="top">
+  <button type="button" onClick={inspectStory}>Inspect story</button>
+</TooltipProvider>;
+```
+
+The current menu replacement is `ActionList`. There are no public `WithMenu` or `MenuItem` components. Convert each old link to an `ActionList.Item` containing an `ActionList.Action` or `ActionList.Link`. Use `ActionList.Icon` and `ActionList.Text` for content. For example, an addon action menu can close after running an action:
+
+```tsx
+import { ActionList, Button, PopoverProvider } from 'storybook/internal/components';
+
+<PopoverProvider
+  ariaLabel="Result actions"
+  padding={0}
+  popover={({ onHide }) => (
+    <ActionList>
+      <ActionList.Item>
+        <ActionList.Action ariaLabel={false} onClick={() => { refresh(); onHide(); }}>
+          <ActionList.Text>Refresh results</ActionList.Text>
+        </ActionList.Action>
+      </ActionList.Item>
+      <ActionList.Item>
+        <ActionList.Link ariaLabel={false} href="https://example.com/help">
+          <ActionList.Text>Help</ActionList.Text>
+        </ActionList.Link>
+      </ActionList.Item>
+    </ActionList>
+  )}
+>
+  <Button ariaLabel={false}>Result actions</Button>
+</PopoverProvider>;
+```
+
+Replace child-based legacy tabs with a `tabs` array. `defaultSelected` sets the initial tab. Use `selected` and `onSelectionChange` for controlled selection. Navigation links cannot be mixed with tabs; put them outside the tab list.
+
+`TabsView` renders only the selected panel, so switching tabs unmounts the others and discards their local state. The legacy `Tabs` kept inactive panels mounted. Pass `panelProps={{ renderAllChildren: true }}` to keep that behavior, for example when a panel holds form input. Omit it when panels are cheap to re-render and hold no state.
+
+```tsx
+import { TabsView } from 'storybook/internal/components';
+
+<TabsView
+  defaultSelected="results"
+  panelProps={{ renderAllChildren: true }}
+  tabs={[
+    { id: 'results', title: 'Results', children: <Results /> },
+    { id: 'settings', title: 'Settings', children: <Settings /> },
+  ]}
+/>;
+```
+
+Modal dismissal callbacks are removed. Replace callback vetoes such as `event.preventDefault()` with `dismissOnEscape={false}` or `dismissOnClickOutside={false}`. Use `onOpenChange` to track visibility. `Modal.Close` closes automatically, including when `asChild` wraps a custom button.
+
+```tsx
+import { Button, Modal } from 'storybook/internal/components';
+
+<Modal ariaLabel="Addon settings" open={open} onOpenChange={setOpen} dismissOnClickOutside={false}>
+  <Modal.Content>
+    <Modal.Header><Modal.Title>Addon settings</Modal.Title></Modal.Header>
+    <Settings />
+    <Modal.Close asChild><Button ariaLabel={false}>Done</Button></Modal.Close>
+  </Modal.Content>
+</Modal>;
+```
+
+`Bar` now applies `backgroundColor` or the theme's bar background regardless of `border`. To keep a transparent bar, set `backgroundColor="transparent"`. Existing serializable toolbar icon names in `globalTypes` remain supported; they do not require importing React components into preview configuration.
+
 ### Theming imports
 
 End users who only create a theme keep `import { create, themes } from 'storybook/theming'`. That module is the same as `storybook/theming/create`. `ThemeVars` and `ThemeVarsPartial` are exported there too.
@@ -1036,6 +1149,28 @@ Client-side docgen that runs in the builder is deprecated and will be removed in
 This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`, and the Svelte `docgen` framework option in `@storybook/svelte-vite` and `@storybook/sveltekit` (including the sveltedoc-shaped `__docgen`).
 Builder docgen only runs when `features.docgenServer` is `false`. Storybook prints a deprecation warning when your `.storybook/main.ts` sets `docgenServer: false`. When server-side docgen is off because TypeScript is missing or unusable, Storybook prints the TypeScript warning instead. For no docgen and no warnings, also turn builder docgen off: `typescript.reactDocgen: false` for React, and the `docgen: false` framework option for Vue 3 and Svelte.
 Install the `typescript` package and remove `docgenServer: false` to use server-side docgen.
+
+#### React: `react-docgen` and `react-docgen-typescript` are optional peer dependencies
+
+The packages that only React builder docgen uses are now optional peer dependencies, so projects on server-side docgen no longer install them, nor the Babel toolchain that `react-docgen` brings along:
+
+- `react-docgen` and `react-docgen-typescript` in `@storybook/react`, `@storybook/react-vite` and `@storybook/preset-react-webpack`
+- `@joshwooding/vite-plugin-react-docgen-typescript` in `@storybook/react-vite`
+- `@storybook/react-docgen-typescript-plugin` in `@storybook/preset-react-webpack`
+
+Storybook loads them only when builder docgen runs. When your main config sets `features.docgenServer: false` and a package is missing, `storybook dev` and `storybook build` fail with the install command for your package manager. Set `typescript.reactDocgen: false` to run without docgen instead, or better, remove `docgenServer: false` to use server-side docgen:
+
+| `typescript.reactDocgen` | Add to devDependencies |
+| --- | --- |
+| `'react-docgen'` (default) | `react-docgen` |
+| `'react-docgen-typescript'` | Vite: `@joshwooding/vite-plugin-react-docgen-typescript` and `react-docgen-typescript`. Webpack: `@storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0` (this exact version; the `latest` tag is older) and `react-docgen-typescript` |
+
+Projects without a usable `typescript` (no `typescript` package, or TypeScript 7 without the [side-by-side setup](#typescript-59-or-newer)) only get docgen from the `react-docgen` fallback when `react-docgen` is installed. <!-- TEMPORARY(ts-7.1): update once Storybook supports TypeScript 7.1. -->
+Until Storybook supports TypeScript 7.1, `storybook init` and the `typescript-7-react-docgen` automigration add `react-docgen` to React projects on TypeScript 7.0 and note that in the Storybook cache in `node_modules`. A later Storybook update offers to remove it again once TypeScript 7 projects can use server-side docgen; without that note it leaves `react-docgen` alone. Setting up TypeScript 6 side by side gives you server-side docgen today.
+
+In `react-docgen-typescript` mode, `react-docgen` is optional and only documents JavaScript files. Without it, JavaScript components get no props, and Storybook does not warn about that.
+
+Storybook does not add these packages for you when you upgrade. If you keep `features.docgenServer: false`, install the packages from the table yourself.
 
 #### Svelte
 

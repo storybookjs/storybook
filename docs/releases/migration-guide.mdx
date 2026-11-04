@@ -260,7 +260,7 @@ For monorepos and manual upgrade steps, see [Upgrade to CSF 4](../writing-storie
 
 ### Builder docgen to server-side docgen
 
-Builder docgen is deprecated. This covers React's `react-docgen` and `react-docgen-typescript`, the Vue 3 Vite `docgen` option, and the Svelte `docgen` option. It only runs when you set `features.docgenServer: false`, and Storybook then prints a deprecation warning. Remove that setting to use [server-side docgen](#server-side-docgen-is-on-by-default). See the [builder docgen notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#builder-docgen-is-deprecated).
+Builder docgen is deprecated. This covers React's `react-docgen` and `react-docgen-typescript`, the Vue 3 Vite `docgen` option, and the Svelte `docgen` option. It runs when you set `features.docgenServer: false`, and Storybook then prints a deprecation warning. React projects on TypeScript 7.0 also fall back to it until Storybook supports TypeScript 7.1. Remove that setting to use [server-side docgen](#server-side-docgen-is-on-by-default). React no longer installs the builder docgen packages: if you keep `docgenServer: false`, add `react-docgen` (or, for `typescript.reactDocgen: 'react-docgen-typescript'`, the plugin for your builder and `react-docgen-typescript`) to your devDependencies, or Storybook stops with the install command. See the [builder docgen notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#builder-docgen-is-deprecated).
 
 `angular-vite` projects may opt-in to server-side docgen by setting `features.experimentalDocgenServer: true` in `.storybook/main.js|ts`. For more details, see the [framework documentation](../get-started/frameworks/angular-vite.mdx#component-documentation).
 

@@ -2360,18 +2360,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@chromatic-com/storybook@npm:^5.1.2":
-  version: 5.1.2
-  resolution: "@chromatic-com/storybook@npm:5.1.2"
+"@chromatic-com/storybook@npm:^5.6.0":
+  version: 5.6.0
+  resolution: "@chromatic-com/storybook@npm:5.6.0"
   dependencies:
     "@neoconfetti/react": "npm:^1.0.0"
-    chromatic: "npm:^13.3.4"
-    filesize: "npm:^10.0.12"
+    chromatic: "npm:^18.12.1"
     jsonfile: "npm:^6.1.0"
     strip-ansi: "npm:^7.1.0"
   peerDependencies:
-    storybook: ^0.0.0-0 || ^10.1.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0
-  checksum: 10c0/0d21aab34eef8dea756d7a510fd78227379751e23d9cedac127161442eb96622f302e0b8f71a78f1254b31a26ee5350e328e4c994909d28553dbe74174d606e1
+    storybook: ^0.0.0-0 || ^10.1.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 || ^10.5.0-0 || ^10.6.0-0 || ^11.0.0-0
+  checksum: 10c0/abeb82b552aad64dba4cf915c3b3f2404e8e0246e14f74075193a35aa669e88fd96658fab39baca68d103952a3a6409e378986715a336a24f62084c75041b085
   languageName: node
   linkType: hard
 
@@ -3139,24 +3138,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@figspec/components@npm:^1.0.1":
-  version: 1.0.3
-  resolution: "@figspec/components@npm:1.0.3"
-  dependencies:
-    lit: "npm:^2.1.3"
-  checksum: 10c0/78f5ee600ea1d15af7848b9fc601063acd537f49deb08aa16b95d3452c3a5783352e142c970f9a7375817099f2f54c3f9b42911f21c44ce6dab72eab20e6e20a
+"@figspec/components@npm:^2.0.1":
+  version: 2.1.0
+  resolution: "@figspec/components@npm:2.1.0"
+  checksum: 10c0/79d2794be3057a53097892b03df210fdeaa8aa20bf8cd5779d2dc039298b595c5f712d60d1b7555aa1558f1e6dfed5a1760aea2fa4c1f824fa91350bfd66cd68
   languageName: node
   linkType: hard
 
-"@figspec/react@npm:^1.0.0":
-  version: 1.0.4
-  resolution: "@figspec/react@npm:1.0.4"
+"@figspec/react@npm:^2.0.0":
+  version: 2.0.1
+  resolution: "@figspec/react@npm:2.0.1"
   dependencies:
-    "@figspec/components": "npm:^1.0.1"
-    "@lit-labs/react": "npm:^1.0.2"
+    "@figspec/components": "npm:^2.0.1"
+    "@lit-labs/react": "npm:^2.0.0"
   peerDependencies:
     react: ^16.14.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-  checksum: 10c0/a91bec560d8262b2c886bd5664f4456083bb79327910d414fc459885302e8cf1d8e6c40d36132fe404dc5154ab761fdcfe237211f318185bb56056d14e7a9ff7
+  checksum: 10c0/d05307df71c58b461a6ad19999237d4dae34f68748c6edcbe1ddc4c8dee9938745c2270cb3f5102e710aed3907ac2d61edef23c4033c38b99185af782ca33841
   languageName: node
   linkType: hard
 
@@ -3866,19 +3863,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@joshwooding/vite-plugin-react-docgen-typescript@npm:^0.7.0":
-  version: 0.7.0
-  resolution: "@joshwooding/vite-plugin-react-docgen-typescript@npm:0.7.0"
+"@joshwooding/vite-plugin-react-docgen-typescript@npm:^0.9.0":
+  version: 0.9.0
+  resolution: "@joshwooding/vite-plugin-react-docgen-typescript@npm:0.9.0"
   dependencies:
-    glob: "npm:^13.0.1"
+    glob: "npm:^13.0.6"
     react-docgen-typescript: "npm:^2.2.2"
   peerDependencies:
-    typescript: ">= 4.3.x"
+    typescript: ">=4.3.0 <7 || >=7.1.0-0 <8"
     vite: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10c0/6d1a353e4dd0d9d641beafcf8d5c36805ad7f916ae07b817642033bc85c388f819f92dc94db192117dedfaa5d981ac5ef72911315e3e4bf2fe9e23d8956618e6
+  checksum: 10c0/403ed899d877f9be2e90a53a91fefa0da8b9ff398c26b616fb75ff7de606b9be8aaa86aab7884875ba8b15a7f4a0c31d9dba02074ed9385ecc6fee705f42e8ed
   languageName: node
   linkType: hard
 
@@ -4224,10 +4221,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lit-labs/react@npm:^1.0.2":
-  version: 1.2.1
-  resolution: "@lit-labs/react@npm:1.2.1"
-  checksum: 10c0/c92364101348400a06c3eb45a6384ca7d47c32765fdcad892827b360d0bad6cef7916f9a17744f2f471a5da3d7d73750767b885fc1521cd5e5e724badb71f014
+"@lit-labs/react@npm:^2.0.0":
+  version: 2.1.3
+  resolution: "@lit-labs/react@npm:2.1.3"
+  dependencies:
+    "@lit/react": "npm:^1.0.3"
+  checksum: 10c0/1e22663b4eedbd7d14e9b46fc6e89903911c51c8e306b8d34842f4576c23f3b1d050a5f2f17de1518ada27e8ec6da7ae5b6699ca07b0835190899d451fe752b4
   languageName: node
   linkType: hard
 
@@ -4235,6 +4234,15 @@ __metadata:
   version: 1.4.0
   resolution: "@lit-labs/ssr-dom-shim@npm:1.4.0"
   checksum: 10c0/eb8b4c6ed83db48e2f2c8c038f88e0ac302214918e5c1209458cb82a35ce27ce586100c5692885b2c5520f6941b2c3512f26c4d7b7dd48f13f17f1668553395a
+  languageName: node
+  linkType: hard
+
+"@lit/react@npm:^1.0.3":
+  version: 1.0.8
+  resolution: "@lit/react@npm:1.0.8"
+  peerDependencies:
+    "@types/react": 17 || 18 || 19
+  checksum: 10c0/18bf3eb6584fa989e0ad40988b349a4401da1cecd5bf1c6edfc1c5caed80037852a4ebe5685b04941e5b28ccf93e740676dae32773d7ae44b1479b96538392b1
   languageName: node
   linkType: hard
 
@@ -9913,16 +9921,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-designs@npm:^11.0.3":
-  version: 11.0.3
-  resolution: "@storybook/addon-designs@npm:11.0.3"
+"@storybook/addon-designs@npm:^12.0.0":
+  version: 12.0.0
+  resolution: "@storybook/addon-designs@npm:12.0.0"
   dependencies:
-    "@figspec/react": "npm:^1.0.0"
+    "@figspec/react": "npm:^2.0.0"
   peerDependencies:
-    "@storybook/addon-docs": ^10.0.0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0
+    "@storybook/addon-docs": ^0.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.5.0-0 || ^10.6.0-0 || ^11.0.0-0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-    storybook: ^10.0.0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0
+    storybook: ^0.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.5.0-0 || ^10.6.0-0 || ^11.0.0-0
   peerDependenciesMeta:
     "@storybook/addon-docs":
       optional: true
@@ -9930,7 +9938,7 @@ __metadata:
       optional: true
     react-dom:
       optional: true
-  checksum: 10c0/ef023c6997368e3ae6f493feb53e3c157bfe685a6ffa2128a21e87d98bfb4fc6c1d44d1580c007b8302e1727f9721f36d67b85f846f100177b8eeb2091c8c2fc
+  checksum: 10c0/f70ea49c99f450070272adfbb63eaa647db79df664108e1c545df3cdf9fc26c965ec3a22488af3a42ef8cf1aed146894c20f3b2456437759dd589ce57c6e3f42
   languageName: node
   linkType: hard
 
@@ -10321,10 +10329,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/code@workspace:code"
   dependencies:
-    "@chromatic-com/storybook": "npm:^5.1.2"
+    "@chromatic-com/storybook": "npm:^5.6.0"
     "@playwright/test": "npm:1.58.2"
     "@storybook/addon-a11y": "workspace:*"
-    "@storybook/addon-designs": "npm:^11.0.3"
+    "@storybook/addon-designs": "npm:^12.0.0"
     "@storybook/addon-docs": "workspace:*"
     "@storybook/addon-links": "workspace:*"
     "@storybook/addon-mcp": "workspace:*"
@@ -10371,7 +10379,7 @@ __metadata:
     "@vitest/browser-playwright": "npm:^5.0.0"
     "@vitest/coverage-istanbul": "npm:^5.0.0"
     "@vitest/coverage-v8": "npm:^5.0.0"
-    chromatic: "npm:^18.0.1"
+    chromatic: "npm:^18.13.0"
     create-storybook: "workspace:*"
     danger: "npm:^13.0.4"
     es-toolkit: "npm:^1.43.0"
@@ -10599,18 +10607,27 @@ __metadata:
     typescript: "npm:^6.0.3"
     vite-plugin-storybook-nextjs: "workspace:*"
   peerDependencies:
+    "@joshwooding/vite-plugin-react-docgen-typescript": ^0.7.0 || ^0.8.0 || ^0.9.0
     "@types/react": ^18.0.0 || ^19.0.0
     "@types/react-dom": ^18.0.0 || ^19.0.0
     next: ^15.0.0 || ^16.0.0
     react: ^18.0.0 || ^19.0.0
+    react-docgen: ^8.0.2
+    react-docgen-typescript: ^2.2.2
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
+    "@joshwooding/vite-plugin-react-docgen-typescript":
+      optional: true
     "@types/react":
       optional: true
     "@types/react-dom":
+      optional: true
+    react-docgen:
+      optional: true
+    react-docgen-typescript:
       optional: true
   languageName: unknown
   linkType: soft
@@ -10669,18 +10686,27 @@ __metadata:
     util: "npm:^0.12.5"
     webpack: "npm:^5.65.0"
   peerDependencies:
+    "@storybook/react-docgen-typescript-plugin": 1.0.6--canary.9.0c3f3b7.0
     "@types/react": ^18.0.0 || ^19.0.0
     "@types/react-dom": ^18.0.0 || ^19.0.0
     next: ^15.0.0 || ^16.0.0
     react: ^18.0.0 || ^19.0.0
+    react-docgen: ^8.0.2
+    react-docgen-typescript: ^2.2.2
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     webpack: ^5.0.0
   peerDependenciesMeta:
+    "@storybook/react-docgen-typescript-plugin":
+      optional: true
     "@types/react":
       optional: true
     "@types/react-dom":
+      optional: true
+    react-docgen:
+      optional: true
+    react-docgen-typescript:
       optional: true
     webpack:
       optional: true
@@ -10722,6 +10748,7 @@ __metadata:
   resolution: "@storybook/preset-react-webpack@workspace:code/presets/react-webpack"
   dependencies:
     "@storybook/core-webpack": "workspace:*"
+    "@storybook/react": "workspace:*"
     "@storybook/react-docgen-typescript-plugin": "npm:1.0.6--canary.9.0c3f3b7.0"
     "@types/node": "npm:^22.19.1"
     empathic: "npm:^2.0.0"
@@ -10732,10 +10759,20 @@ __metadata:
     typescript: "npm:^6.0.3"
     webpack: "npm:5"
   peerDependencies:
+    "@storybook/react-docgen-typescript-plugin": 1.0.6--canary.9.0c3f3b7.0
     react: ^18.0.0 || ^19.0.0
+    react-docgen: ^8.0.2
+    react-docgen-typescript: ^2.2.2
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
+  peerDependenciesMeta:
+    "@storybook/react-docgen-typescript-plugin":
+      optional: true
+    react-docgen:
+      optional: true
+    react-docgen-typescript:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -10785,13 +10822,23 @@ __metadata:
     vite-plugin-rnw: "npm:~0.0.12"
     vite-tsconfig-paths: "npm:^6.1.1"
   peerDependencies:
+    "@joshwooding/vite-plugin-react-docgen-typescript": ^0.7.0 || ^0.8.0 || ^0.9.0
     react: ^18.0.0 || ^19.0.0
+    react-docgen: ^8.0.2
+    react-docgen-typescript: ^2.2.2
     react-dom: ^18.0.0 || ^19.0.0
     react-native: ">=0.74.5"
     react-native-web: ^0.19.12 || ^0.20.0 || ^0.21.0
     storybook: "workspace:^"
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
+  peerDependenciesMeta:
+    "@joshwooding/vite-plugin-react-docgen-typescript":
+      optional: true
+    react-docgen:
+      optional: true
+    react-docgen-typescript:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -10799,12 +10846,11 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/react-vite@workspace:code/frameworks/react-vite"
   dependencies:
-    "@joshwooding/vite-plugin-react-docgen-typescript": "npm:^0.7.0"
+    "@joshwooding/vite-plugin-react-docgen-typescript": "npm:^0.9.0"
     "@rollup/pluginutils": "npm:^5.0.2"
     "@storybook/builder-vite": "workspace:*"
     "@storybook/react": "workspace:*"
     "@types/node": "npm:^22.19.1"
-    empathic: "npm:^2.0.0"
     magic-string: "npm:^1.1.0"
     react-docgen: "npm:^8.0.2"
     resolve: "npm:^1.22.8"
@@ -10812,11 +10858,21 @@ __metadata:
     typescript: "npm:^6.0.3"
     vite: "npm:^7.0.4"
   peerDependencies:
+    "@joshwooding/vite-plugin-react-docgen-typescript": ^0.7.0 || ^0.8.0 || ^0.9.0
     react: ^18.0.0 || ^19.0.0
+    react-docgen: ^8.0.2
+    react-docgen-typescript: ^2.2.2
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
+  peerDependenciesMeta:
+    "@joshwooding/vite-plugin-react-docgen-typescript":
+      optional: true
+    react-docgen:
+      optional: true
+    react-docgen-typescript:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -10829,10 +10885,20 @@ __metadata:
     "@storybook/react": "workspace:*"
     "@types/node": "npm:^22.19.1"
   peerDependencies:
+    "@storybook/react-docgen-typescript-plugin": 1.0.6--canary.9.0c3f3b7.0
     react: ^18.0.0 || ^19.0.0
+    react-docgen: ^8.0.2
+    react-docgen-typescript: ^2.2.2
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
+  peerDependenciesMeta:
+    "@storybook/react-docgen-typescript-plugin":
+      optional: true
+    react-docgen:
+      optional: true
+    react-docgen-typescript:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -10869,6 +10935,8 @@ __metadata:
     "@types/react": ^18.0.0 || ^19.0.0
     "@types/react-dom": ^18.0.0 || ^19.0.0
     react: ^18.0.0 || ^19.0.0
+    react-docgen: ^8.0.2
+    react-docgen-typescript: ^2.2.2
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
@@ -10876,6 +10944,10 @@ __metadata:
     "@types/react":
       optional: true
     "@types/react-dom":
+      optional: true
+    react-docgen:
+      optional: true
+    react-docgen-typescript:
       optional: true
   languageName: unknown
   linkType: soft
@@ -10935,7 +11007,7 @@ __metadata:
     "@types/window-size": "npm:^1.1.4"
     "@verdaccio/types": "npm:^10.8.0"
     "@vitest/coverage-v8": "npm:^5.0.0"
-    chromatic: "npm:^18.0.1"
+    chromatic: "npm:^18.13.0"
     citty: "npm:^0.2.1"
     codecov: "npm:^3.8.1"
     commander: "npm:^14.0.2"
@@ -11144,19 +11216,28 @@ __metadata:
     typescript: "npm:^6.0.3"
     vite: "npm:^7.0.4"
   peerDependencies:
+    "@joshwooding/vite-plugin-react-docgen-typescript": ^0.7.0 || ^0.8.0 || ^0.9.0
     "@tanstack/react-router": ^1.168.10
     "@tanstack/react-start": ^1.167.16
     "@tanstack/router-core": ^1.168.9
     "@tanstack/start-client-core": ^1.167.9
     react: ^18.0.0 || ^19.0.0
+    react-docgen: ^8.0.2
+    react-docgen-typescript: ^2.2.2
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
+    "@joshwooding/vite-plugin-react-docgen-typescript":
+      optional: true
     "@tanstack/react-start":
       optional: true
     "@tanstack/start-client-core":
+      optional: true
+    react-docgen:
+      optional: true
+    react-docgen-typescript:
       optional: true
   languageName: unknown
   linkType: soft
@@ -17239,34 +17320,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chromatic@npm:^13.3.4":
-  version: 13.3.5
-  resolution: "chromatic@npm:13.3.5"
-  peerDependencies:
-    "@chromatic-com/cypress": ^0.*.* || ^1.0.0
-    "@chromatic-com/playwright": ^0.*.* || ^1.0.0
-  peerDependenciesMeta:
-    "@chromatic-com/cypress":
-      optional: true
-    "@chromatic-com/playwright":
-      optional: true
-  bin:
-    chroma: dist/bin.js
-    chromatic: dist/bin.js
-    chromatic-cli: dist/bin.js
-  checksum: 10c0/58b3d7984db000f8c7b605788569a24c3f3cd41bb6b2d3a94f18acc9ff11ce6c6881f795c8390a94ff721ccfcf8a2d7942e78a54a1f70294a7b3d35ccc382154
-  languageName: node
-  linkType: hard
-
-"chromatic@npm:^18.0.1":
-  version: 18.0.1
-  resolution: "chromatic@npm:18.0.1"
+"chromatic@npm:^18.12.1, chromatic@npm:^18.13.0":
+  version: 18.13.0
+  resolution: "chromatic@npm:18.13.0"
   dependencies:
     semver: "npm:^7.3.5"
   peerDependencies:
     "@chromatic-com/cypress": ^0.*.* || ^1.0.0
     "@chromatic-com/playwright": ^0.*.* || ^1.0.0
     "@chromatic-com/vitest": ^0.*.* || ^1.0.0
+  dependenciesMeta:
+    "@sentry/cli":
+      built: true
+    esbuild:
+      built: true
   peerDependenciesMeta:
     "@chromatic-com/cypress":
       optional: true
@@ -17278,7 +17345,7 @@ __metadata:
     chroma: dist/bin.cjs
     chromatic: dist/bin.cjs
     chromatic-cli: dist/bin.cjs
-  checksum: 10c0/0a6adc1ec8b94eda3b8b1a71598f763bb1fa63591de8fe835171fef6e72171071570724bc3f536b571315c43192daab65ea7d13df12007c7a5c4671070ea0811
+  checksum: 10c0/141f481d6d0ac2cdaf32a92de44a197d4c21230a2e7a7f36f489f0a176407e68a638faf2a5dc94e26926dab933e7c760c947e7cc37bbf7a4ceed1cba9ea759cd
   languageName: node
   linkType: hard
 
@@ -21232,13 +21299,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"filesize@npm:^10.0.12":
-  version: 10.1.6
-  resolution: "filesize@npm:10.1.6"
-  checksum: 10c0/9a196d64da4e947b8c0d294be09a3dfa7a634434a1fc5fb3465f1c9acc1237ea0363f245ba6e24477ea612754d942bc964d86e0e500905a72e9e0e17ae1bbdbc
-  languageName: node
-  linkType: hard
-
 "fill-range@npm:^7.1.1":
   version: 7.1.1
   resolution: "fill-range@npm:7.1.1"
@@ -22230,14 +22290,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"glob@npm:^13.0.0, glob@npm:^13.0.1":
-  version: 13.0.1
-  resolution: "glob@npm:13.0.1"
+"glob@npm:^13.0.0, glob@npm:^13.0.6":
+  version: 13.0.6
+  resolution: "glob@npm:13.0.6"
   dependencies:
-    minimatch: "npm:^10.1.2"
-    minipass: "npm:^7.1.2"
-    path-scurry: "npm:^2.0.0"
-  checksum: 10c0/af7b863dec8dff74f61d7d6e53104e1f6bbdd482157a196cade8ed857481e876ec35181b38a059b2a7b93ea3b08248f4ff0792fef6dc91814fd5097a716f48e4
+    minimatch: "npm:^10.2.2"
+    minipass: "npm:^7.1.3"
+    path-scurry: "npm:^2.0.2"
+  checksum: 10c0/269c236f11a9b50357fe7a8c6aadac667e01deb5242b19c84975628f05f4438d8ee1354bb62c5d6c10f37fd59911b54d7799730633a2786660d8c69f1d18120a
   languageName: node
   linkType: hard
 
@@ -26669,7 +26729,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"minimatch@npm:^10.0.1, minimatch@npm:^10.1.1, minimatch@npm:^10.1.2, minimatch@npm:^10.2.2, minimatch@npm:^10.2.4":
+"minimatch@npm:^10.0.1, minimatch@npm:^10.1.1, minimatch@npm:^10.2.2, minimatch@npm:^10.2.4":
   version: 10.2.5
   resolution: "minimatch@npm:10.2.5"
   dependencies:
@@ -26794,10 +26854,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"minipass@npm:^5.0.0 || ^6.0.2 || ^7.0.0, minipass@npm:^7.0.2, minipass@npm:^7.0.3, minipass@npm:^7.0.4, minipass@npm:^7.1.2":
-  version: 7.1.2
-  resolution: "minipass@npm:7.1.2"
-  checksum: 10c0/b0fd20bb9fb56e5fa9a8bfac539e8915ae07430a619e4b86ff71f5fc757ef3924b23b2c4230393af1eda647ed3d75739e4e0acb250a6b1eb277cf7f8fe449557
+"minipass@npm:^5.0.0 || ^6.0.2 || ^7.0.0, minipass@npm:^7.0.2, minipass@npm:^7.0.3, minipass@npm:^7.0.4, minipass@npm:^7.1.2, minipass@npm:^7.1.3":
+  version: 7.1.3
+  resolution: "minipass@npm:7.1.3"
+  checksum: 10c0/539da88daca16533211ea5a9ee98dc62ff5742f531f54640dd34429e621955e91cc280a91a776026264b7f9f6735947629f920944e9c1558369e8bf22eb33fbb
   languageName: node
   linkType: hard
 
@@ -29228,13 +29288,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"path-scurry@npm:^2.0.0":
-  version: 2.0.1
-  resolution: "path-scurry@npm:2.0.1"
+"path-scurry@npm:^2.0.0, path-scurry@npm:^2.0.2":
+  version: 2.0.2
+  resolution: "path-scurry@npm:2.0.2"
   dependencies:
     lru-cache: "npm:^11.0.0"
     minipass: "npm:^7.1.2"
-  checksum: 10c0/2a16ed0e81fbc43513e245aa5763354e25e787dab0d539581a6c3f0f967461a159ed6236b2559de23aa5b88e7dc32b469b6c47568833dd142a4b24b4f5cd2620
+  checksum: 10c0/b35ad37cf6557a87fd057121ce2be7695380c9138d93e87ae928609da259ea0a170fac6f3ef1eb3ece8a068e8b7f2f3adf5bb2374cf4d4a57fe484954fcc9482
   languageName: node
   linkType: hard
 

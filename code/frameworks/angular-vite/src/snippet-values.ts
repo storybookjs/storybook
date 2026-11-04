@@ -93,6 +93,15 @@ export const textValue = (value: unknown): string | undefined => {
   return typeof value === 'number' || typeof value === 'boolean' ? String(value) : undefined;
 };
 
+// Text as Angular reads it where the markup interpolates it. `{`, `}` and `@` are Angular's own
+// syntax there, so they print as character references, as does a `$` at the end, which would make
+// `${` with the code after it in the template literal. Text holding `{{` has no such form, as
+// Angular reads a `{{` it decodes from references as an interpolation too: `undefined`.
+export const angularText = (text: string): string | undefined =>
+  text.includes('{{')
+    ? undefined
+    : text.replace(/[{}@]|\$$/g, (syntax) => `&#${syntax.charCodeAt(0)};`);
+
 // Code over several lines, its lines after the first indented by `indent`.
 export const indentLines = (code: string, indent: string): string =>
   code.split('\n').join(`\n${indent}`);

@@ -226,7 +226,10 @@ const renderedSnippet = async (
   }
   const decorators = shape.members.properties.decorators;
   const derived = await renderStorySnippet(deps.snippetMeta, shape, decorators, deps, printValues);
-  const template = await storyTemplate(deps.snippetMeta, shape, decorators, deps, derived);
+  // The template is an extra: one that cannot print leaves the static snippet as it is.
+  const template = await storyTemplate(deps.snippetMeta, shape, decorators, deps, derived).catch(
+    () => ({})
+  );
   const authoredWarning =
     authored.kind === 'unresolvable' ? unresolvedWarning([authored.source]) : undefined;
   return { ...withWarnings(derived, authoredWarning), ...template };

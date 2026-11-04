@@ -6,6 +6,7 @@ import {
 
 import {
   type AngularHolePlace,
+  angularText,
   escapeAttributeExpression,
   escapeTemplateLiteral,
   inputBinding,
@@ -39,16 +40,11 @@ export const printHole: PrintHole<AngularHolePlace> = (hole, value) => {
   }
 };
 
-// Text prints as written, and a cleared arg as none. Angular reads `{`, `}` and `@` in text as its
-// own syntax, so they print as character references, which read as text. Text holding `{{` has
-// none: Angular reads a `{{` it decodes from references as an interpolation too. A `$` at the end
-// prints as a reference too, so it never makes `${` with the code after it in the template literal.
+// Text as the build prints it, and a cleared arg as none.
 const text = (value: unknown): string | undefined => {
   if (value === undefined) {
     return '';
   }
   const printed = textValue(value);
-  return printed?.includes('{{')
-    ? undefined
-    : printed?.replace(/[{}@]|\$$/g, (syntax) => `&#${syntax.charCodeAt(0)};`);
+  return printed === undefined ? undefined : angularText(printed);
 };

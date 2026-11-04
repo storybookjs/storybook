@@ -1,7 +1,7 @@
 import type { IndexEntry, ProvidedStoryDoc } from 'storybook/internal/types';
 
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -186,6 +186,17 @@ describe('story-docs templates', () => {
     expect(fill(story!, { label: 'Go' }, { label: undefined })).toContain(
       '<sb-button></sb-button>'
     );
+  });
+
+  it('prints text Angular would read as its own syntax in the static snippet as the preview does', async () => {
+    const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = {
+        args: { label: 'Mail {me} @ home' },
+        render: ({ label }) => ({ template: \`<sb-button>\${label}</sb-button>\` }),
+      };
+    `);
+    expect(story!.snippet).toContain('<sb-button>Mail &#123;me&#125; &#64; home</sb-button>');
   });
 
   it('fills text Angular would read as its own syntax as the text it is', async () => {

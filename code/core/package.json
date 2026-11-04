@@ -33,7 +33,9 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/preview/vendor/*.js"
+  ],
   "type": "module",
   "imports": {
     "#manager-stores": {

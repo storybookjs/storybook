@@ -5,6 +5,9 @@ import npmlog from 'npmlog';
 import { logger } from './index.ts';
 import * as loggerRaw from './logger/logger.ts';
 
+// vitest-setup.ts stubs `storybook/internal/node-logger`, which resolves to this module.
+vi.unmock('./index.ts');
+
 vi.mock('./logger/logger', () => ({
   log: vi.fn(),
   warn: vi.fn(),

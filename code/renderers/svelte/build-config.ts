@@ -33,6 +33,10 @@ const config: BuildEntries = {
         dts: false,
       },
       {
+        exportEntries: ['./internal/docgen-engine'],
+        entryPoint: './src/docgen/component-docgen/svelte2tsx/generate-docgen.ts',
+      },
+      {
         exportEntries: ['./internal/docgen-worker'],
         entryPoint: './src/docgen/docgen-worker.ts',
         dts: false,

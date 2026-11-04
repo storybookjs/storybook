@@ -158,7 +158,11 @@ function namedEntry(
   const name = item.name || DEFAULT_SLOT_NAME;
   return [
     toArgKey(category, name),
-    memberArgType(name, [item], NAMED_ENTRY_CATEGORIES[category], { type: { name: 'string' } }),
+    memberArgType(name, [item], NAMED_ENTRY_CATEGORIES[category], {
+      type: { name: 'string' },
+      // The element sets its own states through ElementInternals, so the row documents the `:state()` hook.
+      ...(category === 'cssStates' ? { control: false } : {}),
+    }),
   ];
 }
 

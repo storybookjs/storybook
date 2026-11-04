@@ -14,16 +14,11 @@ import {
 } from '@storybook/icons';
 
 import type { API } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
-import type { NormalLink } from '../../components/components/tooltip/TooltipLinkList.tsx';
 import { Shortcut } from '../components/Shortcut.tsx';
+import type { MenuItem } from '../components/sidebar/Menu.tsx';
 import { useChecklist } from '../components/sidebar/useChecklist.ts';
-
-export type MenuItem = NormalLink & {
-  closeOnClick?: boolean;
-  internal?: boolean;
-};
 
 const ProgressCircle = styled(ProgressSpinner)(({ theme }) => ({
   color: theme.color.secondary,
@@ -99,7 +94,7 @@ export const useMenu = ({
       closeOnClick: true,
       active: isNavShown,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.toggleNav} /> : null,
-      icon: isNavShown ? <CheckIcon /> : <></>,
+      icon: isNavShown ? <CheckIcon /> : undefined,
     }),
     [api, enableShortcuts, shortcutKeys, isNavShown]
   );
@@ -111,7 +106,7 @@ export const useMenu = ({
       onClick: () => api.toggleToolbar(),
       active: showToolbar,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.toolbar} /> : null,
-      icon: showToolbar ? <CheckIcon /> : <></>,
+      icon: showToolbar ? <CheckIcon /> : undefined,
     }),
     [api, enableShortcuts, shortcutKeys, showToolbar]
   );
@@ -123,7 +118,7 @@ export const useMenu = ({
       onClick: () => api.togglePanel(),
       active: isPanelShown,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.togglePanel} /> : null,
-      icon: isPanelShown ? <CheckIcon /> : <></>,
+      icon: isPanelShown ? <CheckIcon /> : undefined,
     }),
     [api, enableShortcuts, shortcutKeys, isPanelShown]
   );
@@ -134,7 +129,6 @@ export const useMenu = ({
       title: 'Previous component or page',
       onClick: () => api.jumpToSubtree(-1),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.prevComponent} /> : null,
-      icon: <></>,
     }),
     [api, enableShortcuts, shortcutKeys]
   );
@@ -145,7 +139,6 @@ export const useMenu = ({
       title: 'Next component or page',
       onClick: () => api.jumpToSubtree(1),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.nextComponent} /> : null,
-      icon: <></>,
     }),
     [api, enableShortcuts, shortcutKeys]
   );
@@ -156,7 +149,6 @@ export const useMenu = ({
       title: 'Previous story',
       onClick: () => api.jumpToStory(-1),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.prevStory} /> : null,
-      icon: <></>,
     }),
     [api, enableShortcuts, shortcutKeys]
   );
@@ -167,7 +159,6 @@ export const useMenu = ({
       title: 'Next story',
       onClick: () => api.jumpToStory(1),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.nextStory} /> : null,
-      icon: <></>,
     }),
     [api, enableShortcuts, shortcutKeys]
   );
@@ -178,7 +169,6 @@ export const useMenu = ({
       title: 'Collapse all',
       onClick: () => api.emit(STORIES_COLLAPSE_ALL),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.collapseAll} /> : null,
-      icon: <></>,
     }),
     [api, enableShortcuts, shortcutKeys]
   );
@@ -227,7 +217,7 @@ export const useMenu = ({
         [sidebarToggle, toolbarToogle, addonsToggle, up, down, prev, next, collapse],
         getAddonsShortcuts(),
         [documentation],
-      ] satisfies NormalLink[][],
+      ] satisfies MenuItem[][],
     [
       about,
       guide,

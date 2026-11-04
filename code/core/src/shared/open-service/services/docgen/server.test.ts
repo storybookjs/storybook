@@ -298,6 +298,36 @@ describe('docgen open service', () => {
         ])
       );
     });
+
+    it('skips the refresh when the story index cannot be built', async () => {
+      const onUnhandledRejection = vi.fn();
+      process.on('unhandledRejection', onUnhandledRejection);
+      const provider = vi.fn<DocgenProvider>(async () => makeDocgenPayload());
+      const resolveIndex = makeGetIndex([makeStoryEntry('button--primary', 'Button')]);
+      let indexBroken = false;
+      const getIndex = vi.fn(() =>
+        indexBroken
+          ? Promise.reject(new Error('Syntax error in button.stories.tsx'))
+          : resolveIndex()
+      );
+      const service = registerDocgenService({ getIndex, docgenProvider: provider });
+      subscribeDocgenToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
+
+      await service.queries.docgen.loaded({ id: 'button' });
+      const callsBeforeUpdate = getIndex.mock.calls.length;
+      indexBroken = true;
+
+      const moduleGraph = getService('core/module-graph', { internal: true });
+      await moduleGraph.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./button.stories.tsx'],
+      });
+
+      await vi.waitFor(() => expect(getIndex.mock.calls.length).toBeGreaterThan(callsBeforeUpdate));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      process.off('unhandledRejection', onUnhandledRejection);
+      expect(onUnhandledRejection).not.toHaveBeenCalled();
+      expect(provider).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('static build', () => {

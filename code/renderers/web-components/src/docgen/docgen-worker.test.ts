@@ -13,7 +13,7 @@ import { loadGenerator } from './component-docgen/source/generator.ts';
 import { SourceManager } from './component-docgen/source/source-manager.ts';
 
 const sourceFind = vi.hoisted(() => vi.fn());
-const typescript = vi.hoisted(() => ({ sys: {} }));
+const typescript = vi.hoisted(() => ({ version: '6.0.3', sys: {} }));
 const generator = { generate: vi.fn() };
 
 vi.mock('node:fs', { spy: true });
@@ -31,6 +31,7 @@ beforeEach(() => {
   vi.mocked(stat).mockImplementation(memfs.promises.stat as typeof stat);
   vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as typeof readFileSync);
   vi.mocked(logger.warn).mockImplementation(() => {});
+  vi.mocked(logger.debug).mockImplementation(() => {});
   vi.mocked(loadGenerator).mockReset().mockResolvedValue(generator);
   vi.mocked(SourceManager)
     .mockReset()
@@ -166,7 +167,8 @@ describe('createDocgenProvider', () => {
     })(async () => undefined);
 
     await expect(provider({ entry })).resolves.toMatchObject({ name: 'x-card' });
-    expect(logger.warn).toHaveBeenCalledWith(
+    expect(logger.warn).not.toHaveBeenCalled();
+    expect(logger.debug).toHaveBeenCalledWith(
       'Web components docgen cannot generate declarations from sources: broken install'
     );
   });
@@ -177,5 +179,8 @@ describe('createDocgenProvider', () => {
     const provider = createDocgenProvider({ manifestPaths: [] })(next as never);
 
     await expect(provider({ entry })).resolves.toEqual({ id: 'downstream' });
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Web components docgen cannot generate declarations from sources: broken install'
+    );
   });
 });

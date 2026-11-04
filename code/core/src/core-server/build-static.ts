@@ -32,6 +32,7 @@ import { writeManifests } from './utils/manifests/manifests.ts';
 import { extractStorybookMetadata } from './utils/metadata.ts';
 import { outputStats } from './utils/output-stats.ts';
 import { summarizeIndex } from './utils/summarizeIndex.ts';
+import { summarizeStoryDocs } from './utils/summarizeStoryDocs.ts';
 
 export type BuildStaticStandaloneOptions = CLIOptions &
   LoadOptions &
@@ -46,6 +47,8 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   options.outputDir = resolve(options.outputDir);
   options.configDir = resolve(options.configDir);
+  // Static builds are not mounted by a host server, so they have no base path.
+  options.basePath = '/';
 
   logger.step(`Cleaning outputDir: ${picocolors.cyan(relative(process.cwd(), options.outputDir))}`);
   if (options.outputDir === '/') {
@@ -215,18 +218,24 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   // NOTE: we don't send the 'build' event for test runs as we want to be as fast as possible.
   if (!options.test) {
     try {
-      const generator = await storyIndexGeneratorPromise;
-      const storyIndex = await generator?.getIndex();
-      const payload: any = {
-        precedingUpgrade: await getPrecedingUpgrade(),
-      };
-      if (storyIndex) {
-        Object.assign(payload, {
-          storyIndex: summarizeIndex(storyIndex),
-        });
-      }
-
-      await telemetry('build', payload, { configDir: options.configDir });
+      await telemetry(
+        'build',
+        async () => {
+          const generator = await storyIndexGeneratorPromise;
+          const storyIndex = await generator?.getIndex();
+          const payload: any = {
+            precedingUpgrade: await getPrecedingUpgrade(),
+          };
+          if (storyIndex) {
+            payload.storyIndex = summarizeIndex(storyIndex);
+            if (features?.docgenServer) {
+              payload.storyDocs = await summarizeStoryDocs(storyIndex, options.outputDir);
+            }
+          }
+          return payload;
+        },
+        { configDir: options.configDir }
+      );
     } catch (e) {
       // Telemetry failures should not fail the build process
       logger.debug?.(`Build telemetry failed: ${e instanceof Error ? e.message : String(e)}`);

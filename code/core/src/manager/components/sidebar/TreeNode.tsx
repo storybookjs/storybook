@@ -14,7 +14,7 @@ import { Button as AriaButton } from 'react-aria-components/Button';
 import { TreeItem, TreeItemContent } from 'react-aria-components/Tree';
 import type { API } from 'storybook/manager-api';
 import { shortcutToHumanString } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming';
+import { styled, useTheme } from 'storybook/theming/emotion';
 
 import { getStatus } from '../../utils/status.tsx';
 import { isBranch, type TreeEntry } from '../../utils/tree.ts';
@@ -43,7 +43,8 @@ const StyledTreeItem = styled(TreeItem)<{
   $level: number;
   $textColor: string | null;
   $startsSection: boolean;
-}>(({ $level, theme, $textColor, $startsSection }) => ({
+  $isRoot: boolean;
+}>(({ $level, theme, $textColor, $startsSection, $isRoot }) => ({
   // General layout.
   position: 'relative',
   display: 'flex',
@@ -75,7 +76,8 @@ const StyledTreeItem = styled(TreeItem)<{
   },
 
   // Base colors.
-  color: $textColor ?? theme.color.defaultText,
+  fontSize: theme.typography.size.s2,
+  color: $textColor ?? ($isRoot ? theme.textMutedColor : theme.color.defaultText),
 
   // Hover colors. React-aria keeps data-focused on a row that a pointer press focused, long after
   // the pointer has left it, so the highlight follows the pointer and the keyboard focus ring
@@ -153,10 +155,11 @@ const StyledContent = styled.div({
   position: 'relative',
 });
 
-const StyledLabel = styled.span({
+const StyledLabel = styled.span(({ theme }) => ({
   ...truncatedLabel,
   marginInlineStart: 6,
-});
+  fontSize: theme.typography.size.s2,
+}));
 
 const MenuTriggerContainer = styled.span({
   margin: -2,
@@ -222,6 +225,10 @@ export interface TreeNodeProps {
   shortcutKeys: ReturnType<API['getShortcutKeys']>;
   /** Reports this row's focus up to the tree while it holds it. */
   onRowFocus?: ReportRowFocus;
+  /** For root nodes: whether all descendant branches are currently expanded. */
+  isFullyExpanded?: boolean;
+  /** For root nodes: expand or collapse all descendants. */
+  onExpandCollapseAll?: () => void;
   children?: React.ReactNode;
 }
 
@@ -280,6 +287,8 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   hasTestProviders = false,
   shortcutKeys,
   onRowFocus,
+  isFullyExpanded,
+  onExpandCollapseAll,
   children,
 }) {
   const theme = useTheme();
@@ -341,11 +350,23 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
         doc.removeEventListener('focusin', onFocusIn, true);
         clearTimeout(timer);
       };
+      // A focus scope that restores focus to the row synchronously inside our own blur call
+      // would recurse through this handler forever. The flag breaks the sync loop by standing
+      // the handler down on the first re-entrant focusin; layered scopes that restore in later
+      // ticks still land their own blur, because the flag has cleared by then.
+      let blurring = false;
       const onFocusIn = (event: FocusEvent) => {
-        // Layered focus scopes restore more than once, so stay armed for the whole window and
-        // stand down only when focus lands somewhere else on purpose.
         if (event.target instanceof HTMLElement && row?.contains(event.target)) {
-          event.target.blur();
+          if (blurring) {
+            cancel();
+            return;
+          }
+          blurring = true;
+          try {
+            event.target.blur();
+          } finally {
+            blurring = false;
+          }
           return;
         }
         cancel();
@@ -447,6 +468,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       $level={item.depth}
       $textColor={statusTextColor}
       $startsSection={startsSection}
+      $isRoot={item.type === 'root'}
       textValue={item.name}
       aria-label={ariaLabel}
       // The collection key must be the raw entry id: selection, expansion, and the delegated
@@ -491,6 +513,8 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
                       openedBy={openedBy}
                       hasProviderMenuEntries={hasProviderMenuEntries}
                       shortcutKeys={shortcutKeys}
+                      isFullyExpanded={isFullyExpanded}
+                      onExpandCollapseAll={onExpandCollapseAll}
                     />
                   }
                 </MenuTriggerContainer>

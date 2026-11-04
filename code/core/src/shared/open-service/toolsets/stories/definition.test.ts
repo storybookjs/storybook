@@ -65,8 +65,8 @@ const moduleGraph = {
   queries: {
     status: { loaded: graphStatus },
     changeDetectionReadiness: { loaded: changeDetectionReadiness },
-    storiesForFiles: { loaded: storiesForFiles },
   },
+  commands: { storiesForFiles },
 };
 
 const storyIndex = { getIndex };
@@ -279,9 +279,9 @@ describe('stories.changed', () => {
       changedConfigFiles: [],
     });
     expect(getStatuses).toHaveBeenCalledOnce();
-    expect(cliCtx.getService).toHaveBeenCalledTimes(2);
-    expect(cliCtx.getService).toHaveBeenCalledWith('core/module-graph', { internal: true });
-    expect(cliCtx.getService).toHaveBeenCalledWith('core/module-graph-index', { internal: true });
+    expect(cliCtx.getService).toHaveBeenCalledExactlyOnceWith('core/module-graph', {
+      internal: true,
+    });
   });
 
   it('rejects with the graph reason rather than reporting zero changes', async () => {
@@ -575,7 +575,6 @@ describe('stories.findByComponent', () => {
       ],
     });
     expect(cliCtx.getService).toHaveBeenCalledWith('core/module-graph', { internal: true });
-    expect(cliCtx.getService).toHaveBeenCalledWith('core/module-graph-index', { internal: true });
     expect(storiesForFiles).toHaveBeenCalledWith({ files: [componentPath] });
   });
 

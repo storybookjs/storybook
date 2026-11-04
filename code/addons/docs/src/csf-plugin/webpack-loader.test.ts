@@ -82,6 +82,18 @@ describe('webpack loader', () => {
     });
     expect(result.map.sources).toEqual(transpiled.map.sources);
     expect(result.map.sourcesContent).toEqual([originalCode]);
+    expect(result.map.file).toBe(id);
+  });
+
+  it('keeps the enrichment when the incoming map cannot be read', async () => {
+    const transpiled = transpile(originalCode);
+    const result = await run(transpiled.code, '{ not a source map');
+
+    expect(result.code).toContain('originalSource');
+    expect(result.map.file).toBe(id);
+    const output = positionOf(result.code, 'play:');
+    const entry = new SourceMap(result.map).findEntry(output.line, output.column);
+    expect(entry).toMatchObject({ originalLine: positionOf(transpiled.code, 'play:').line });
   });
 
   it('leaves the content unknown when the incoming map has none', async () => {

@@ -5,6 +5,7 @@ export type { E };
 
 export type Node = E.Node;
 
+/** The start and end of a span, as 1-based lines, 0-based columns and offsets. */
 export interface SourceLocation {
   start: { line: number; column: number; index: number };
   end: { line: number; column: number; index: number };
@@ -149,16 +150,9 @@ export const restoreLineEndings = (code: string, original: string) => {
  * be shorter than the code passed in. Lines and columns are the same in both.
  *
  * The tree has no parenthesized nodes: `outerSpan` gives the span of the parentheses around one.
+ * `textOf` and `placeableTextOf` print its nodes, and `CsfObject#set` accepts its expressions.
  */
 export const parseModule = (code: string, fileName?: string): ParsedModule => {
-  const module = parseWithParentheses(code, fileName);
-  normalize(module.program, undefined);
-  return module;
-};
-
-// `parseModule`, but `textOf` can print every node of the tree and `moduleOf` finds its parse,
-// also for its comments.
-export const parsePrintable = (code: string, fileName?: string): ParsedModule => {
   const module = parseWithParentheses(code, fileName);
   normalize(module.program, module);
   for (const comment of module.comments) {
@@ -231,6 +225,10 @@ const position = (code: string, index: number) => {
   return { line: low + 1, column: index - starts[low], index };
 };
 
+/**
+ * The 1-based line and 0-based column of the offsets `start` and `end` in `code`, which must be the
+ * normalized code the offsets index, such as `parseModule(...).code` or `editor.code`.
+ */
 export const locationOf = (code: string, start: number, end: number): SourceLocation => ({
   start: position(code, start),
   end: position(code, end),
@@ -318,7 +316,11 @@ export const isNullLiteral = (node: unknown): node is E.NullLiteral =>
 export const isRegExpLiteral = (node: unknown): node is E.RegExpLiteral =>
   isNode(node) && node.type === 'Literal' && 'regex' in node && !!(node as E.RegExpLiteral).regex;
 
-export const isIdentifier = (node: unknown, name?: string): node is E.IdentifierReference =>
+/** Whether `node` is an identifier, and one named `name` when given. */
+export const isIdentifier = (
+  node: unknown,
+  name?: string
+): node is E.IdentifierReference | E.BindingIdentifier | E.IdentifierName =>
   isNode(node) &&
   node.type === 'Identifier' &&
   (name === undefined || (node as E.IdentifierReference).name === name);
@@ -337,13 +339,13 @@ const WRAPPERS = new Set([
 ]);
 
 /** Whether a node is a TS assertion, satisfies or non-null wrapper around an expression. */
-export const isTSWrapper = (node: Node) => WRAPPERS.has(node.type);
+export const isTSWrapper = (node: { type: string }) => WRAPPERS.has(node.type);
 
 /** Peel TS assertion/satisfies wrappers off an expression node. */
-export const unwrapExpression = <T extends Node | null | undefined>(node: T): T => {
-  let current: Node | null | undefined = node;
+export const unwrapExpression = <T extends { type: string } | null | undefined>(node: T): T => {
+  let current: { type: string; expression?: { type: string } } | null | undefined = node;
   while (current && isTSWrapper(current)) {
-    current = (current as { expression: Node }).expression;
+    current = current.expression;
   }
   return current as T;
 };
@@ -376,6 +378,10 @@ export const staticKey = (member: Node): string | undefined => {
   return undefined;
 };
 
+/**
+ * The first property of `object` whose `staticKey` is `name`, a method or accessor included: the
+ * first, not the one that wins at runtime.
+ */
 export const objectProperty = (object: E.ObjectExpression, name: string): Property | undefined =>
   object.properties.find(
     (member): member is Property => member.type === 'Property' && staticKey(member) === name
@@ -442,7 +448,7 @@ class Tag extends Stamp {
   }
 }
 
-/** The parse a node of `parsePrintable` or `parseExpression` came from. */
+/** The parse a node of `parseModule` or `parseExpression` came from. */
 export const moduleOf = (node: object): ParsedModule | undefined => Tag.get(node, 'module');
 
 /** Mark `value` as derived from the nodes of `module`, so `moduleOf` finds that parse for it. */
@@ -470,16 +476,14 @@ const withoutParentheses = (node: Node): Node => {
 const childKeys = new Map<string, readonly string[]>(Object.entries(visitorKeys));
 
 // Replaces every parenthesized node under `root` by the node inside it, in one pass that also
-// records the parse each node came from, if given. It keeps its own stack, so a deeply nested
+// records the parse each node came from. It keeps its own stack, so a deeply nested
 // expression cannot overflow the call stack; tracking the size itself is faster than push and pop.
-const normalize = (root: Node, module: ParsedModule | undefined) => {
+const normalize = (root: Node, module: ParsedModule) => {
   const stack = [root];
   let size = 1;
   while (size > 0) {
     const node = stack[--size];
-    if (module !== undefined) {
-      Tag.set(node, 'module', module);
-    }
+    Tag.set(node, 'module', module);
     const keys = childKeys.get(node.type);
     if (keys === undefined) {
       continue;
@@ -508,15 +512,15 @@ const codeOf = (node: Node) => {
   const code = moduleOf(node)?.code;
   if (code === undefined) {
     throw new Error(
-      `Cannot print a ${node.type} node whose source is unknown: expressions must come from \`get\`, \`transform\` or \`parseExpression\``
+      `Cannot print a ${node.type} node whose source is unknown: expressions must come from \`get\`, \`transform\`, \`parseExpression\` or \`parseModule\``
     );
   }
   return code;
 };
 
 /**
- * Source text of a node from `SourceEditor` or `parseExpression`, as written. Throws for any
- * other node, such as one from `parseModule`.
+ * Source text of a node from `parseModule`, `SourceEditor` or `parseExpression`, as written.
+ * Throws for any other node, such as a copy.
  */
 export const textOf = (node: Node): string =>
   Tag.get(node, 'fragment')?.text ?? sourceOf(codeOf(node), node);

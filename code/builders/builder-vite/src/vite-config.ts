@@ -10,6 +10,7 @@ import { once } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
+import { normalize } from 'pathe';
 import { dedent } from 'ts-dedent';
 import type {
   ConfigEnv,
@@ -64,14 +65,18 @@ function reportUnloadedUserViteConfig(configDir: string, projectRoot: string): v
     return;
   }
 
-  const unloadedConfig = find.any(DEFAULT_VITE_CONFIG_FILES, {
+  const found = find.any(DEFAULT_VITE_CONFIG_FILES, {
     cwd: projectRoot,
     last: root,
   });
 
-  if (!unloadedConfig) {
+  if (!found) {
     return;
   }
+
+  // Forward slashes keep the pasteable snippet valid on Windows, where a backslash path inside
+  // a JS string literal reads as escapes (`'C:\vite.config.ts'` holds a vertical tab).
+  const unloadedConfig = normalize(found);
 
   warnOnce(
     dedent`

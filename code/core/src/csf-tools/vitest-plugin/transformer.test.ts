@@ -8,13 +8,12 @@ import { type RawSourceMap, SourceMapConsumer } from 'source-map';
 import { Tag } from '../../shared/constants/tags.ts';
 import { vitestTransform as originalTransform } from './transformer.ts';
 
-vi.mock('storybook/internal/common', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('storybook/internal/common')>();
-  return {
-    ...actual,
-    getStoryTitle: vi.fn(() => 'automatic/calculated/title'),
-  };
-});
+// Mocks the defining module: `storybook/internal/common` loads this transformer through
+// `storybook/internal/csf-tools`, so a mock of the barrel is still loading when it binds.
+vi.mock('../../common/utils/get-story-id.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../common/utils/get-story-id.ts')>()),
+  getStoryTitle: vi.fn(() => 'automatic/calculated/title'),
+}));
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),

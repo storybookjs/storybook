@@ -34,7 +34,7 @@ import {
 } from 'storybook/internal/types';
 
 import { shortcutToHumanString, useStorybookApi, type IndexHash } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { getGroupDualStatus, shouldShowChangeStatus } from '../../utils/status.tsx';
 import { useLayout } from '../layout/LayoutProvider.tsx';
@@ -86,14 +86,13 @@ const TreeWrapper = styled.div({
   },
 });
 
-// Without CSS anchor positioning the note cannot follow the focused row, and without
-// `position-visibility` (not yet in Chrome) nothing hides it while no row holds the anchor
-// (mouse focus is not :focus-visible) — either way it would sit as a stray pill over the
-// sidebar, so it only renders where both work.
+// Without CSS anchor positioning the note cannot follow the focused row, so it only renders
+// where that works. `anchors-visible` keeps it off screen while the row is scrolled past the
+// visible band; the render gate on keyboard focus hides it the rest of the time.
 const supportsAnchorPositioning =
   typeof CSS !== 'undefined' &&
   !!CSS.supports?.('anchor-name: --sb-probe') &&
-  !!CSS.supports?.('position-visibility: anchors-valid');
+  !!CSS.supports?.('position-visibility: anchors-visible');
 
 const FocusTooltipNote = styled(TooltipNote)({
   marginBlockStart: 8,
@@ -102,7 +101,7 @@ const FocusTooltipNote = styled(TooltipNote)({
   zIndex: 2,
   positionAnchor: '--focused-treenode',
   positionArea: 'span-x-start y-end',
-  positionVisibility: 'anchors-valid',
+  positionVisibility: 'anchors-visible',
 });
 
 interface TreeProps {
@@ -229,13 +228,14 @@ export const Tree = React.memo<TreeProps>(function Tree({
   );
 
   // The note that tells the user which shortcut opens the actions of the focused row. Rows compute
-  // the same availability for their own ⋯ button (see TreeNode).
+  // the same availability for their own ⋯ button (see TreeNode). Gated on keyboard focus so a
+  // pointer-focused row never renders an anchorless note at the viewport origin.
   const focusedItemShortcutLabel = useMemo(() => {
-    if (!supportsAnchorPositioning || !focusedItemId || !contextMenuShortcut) {
+    if (!supportsAnchorPositioning || !keyboardFocusedItemId || !contextMenuShortcut) {
       return null;
     }
 
-    const item = hoistedData[focusedItemId];
+    const item = hoistedData[keyboardFocusedItemId];
     if (!item) {
       return null;
     }
@@ -244,14 +244,21 @@ export const Tree = React.memo<TreeProps>(function Tree({
       return null;
     }
 
-    const itemStatus = groupDualStatus?.[focusedItemId];
+    const itemStatus = groupDualStatus?.[keyboardFocusedItemId];
     const changeStatus = itemStatus?.change.value ?? 'status-value:unknown';
     const testStatus = itemStatus?.test.value ?? 'status-value:unknown';
 
     return changeStatus !== 'status-value:unknown' || testStatus !== 'status-value:unknown'
       ? 'Status and actions'
       : 'Actions';
-  }, [focusedItemId, contextMenuShortcut, hoistedData, groupDualStatus, hasTestProviders, api]);
+  }, [
+    keyboardFocusedItemId,
+    contextMenuShortcut,
+    hoistedData,
+    groupDualStatus,
+    hasTestProviders,
+    api,
+  ]);
 
   // React-aria expects a Set for selectedKeys. Memoize so Tree's children see a stable ref.
   const selectedKeys = useMemo(
@@ -346,6 +353,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
   expandedRef.current = expanded;
   const hoistedDataRef = useRef(hoistedData);
   hoistedDataRef.current = hoistedData;
+  const setExpandedRef = useRef(setExpanded);
+  setExpandedRef.current = setExpanded;
   const selectedStoryIdRef = useRef(selectedStoryId);
   selectedStoryIdRef.current = selectedStoryId;
 
@@ -416,6 +425,17 @@ export const Tree = React.memo<TreeProps>(function Tree({
     });
   }, []);
   const closeContextMenu = useCallback(() => contextMenuStoreRef.current!.setState(null), []);
+
+  // Expand all branch descendants of a root without expanding the root's own rows' siblings.
+  const expandUnder = useCallback((rootId: string) => {
+    const branches = getBranchDescendants(hoistedDataRef.current, rootId);
+    setExpandedRef.current({ ids: branches, append: true, value: true });
+  }, []);
+
+  const collapseUnder = useCallback((rootId: string) => {
+    const branches = getBranchDescendants(hoistedDataRef.current, rootId);
+    setExpandedRef.current({ ids: branches, append: true, value: false });
+  }, []);
 
   // Geometry of the visible rows, in render order.
   const rows = useMemo(() => flattenRows(tree, expanded), [tree, expanded]);
@@ -728,6 +748,9 @@ export const Tree = React.memo<TreeProps>(function Tree({
         hasTestProviders,
         onRowFocus: reportRowFocus,
         collectionDependencies,
+        hoistedDataRef,
+        expandUnder,
+        collapseUnder,
       }),
     [
       api,
@@ -742,6 +765,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
       hasTestProviders,
       reportRowFocus,
       collectionDependencies,
+      expandUnder,
+      collapseUnder,
     ]
   );
 
@@ -771,6 +796,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
               accentId={keyboardFocusedItemId}
               selectionLine={selectionLine}
               onCollapse={collapseStickyRow}
+              openContextMenu={openContextMenu}
+              hasTestProviders={hasTestProviders}
             />
             <Virtualizer layout={treeLayout} layoutOptions={treeLayoutOptions}>
               <StyledAriaTree
@@ -823,6 +850,34 @@ interface RenderNodeProps extends Pick<
   onRowFocus: ReportRowFocus;
   /** Shared with every Collection level so react-aria invalidates its node cache consistently. */
   collectionDependencies: unknown[];
+  /** Ref to the latest hoistedData, for computing per-root expand state without adding it as a dep. */
+  hoistedDataRef: React.MutableRefObject<IndexHash>;
+  /** Expand all branch descendants of a given root. */
+  expandUnder: (rootId: string) => void;
+  /** Collapse all branch descendants of a given root. */
+  collapseUnder: (rootId: string) => void;
+}
+
+/** Returns all branch (non-leaf) descendant ids of a root, for bulk expand/collapse. */
+function getBranchDescendants(data: IndexHash, rootId: string): string[] {
+  const entry = data[rootId];
+  if (!entry || !('children' in entry)) {
+    return [];
+  }
+  const result: string[] = [];
+  const stack = [...(entry.children ?? [])];
+  while (stack.length) {
+    const id = stack.pop()!;
+    const child = data[id];
+    if (!child) {
+      continue;
+    }
+    if ('children' in child && child.children?.length) {
+      result.push(id);
+      stack.push(...child.children);
+    }
+  }
+  return result;
 }
 
 function renderNode({
@@ -833,9 +888,31 @@ function renderNode({
   hasTestProviders,
   onRowFocus,
   collectionDependencies,
+  hoistedDataRef,
+  expandUnder,
+  collapseUnder,
   ...props
 }: RenderNodeProps) {
   const renderNodeLevel = (item: TreeEntry) => {
+    let isFullyExpanded: boolean | undefined;
+    let onExpandCollapseAll: (() => void) | undefined;
+
+    if (item.type === 'root') {
+      const branches = getBranchDescendants(hoistedDataRef.current, item.id);
+      if (branches.length > 0) {
+        isFullyExpanded = branches.every((id) => expanded.has(id));
+        const targetExpand = !isFullyExpanded;
+        const rootId = item.id;
+        onExpandCollapseAll = () => {
+          if (targetExpand) {
+            expandUnder(rootId);
+          } else {
+            collapseUnder(rootId);
+          }
+        };
+      }
+    }
+
     return (
       <TreeNode
         {...props}
@@ -847,6 +924,8 @@ function renderNode({
         closeContextMenu={closeContextMenu}
         hasTestProviders={hasTestProviders}
         onRowFocus={onRowFocus}
+        isFullyExpanded={isFullyExpanded}
+        onExpandCollapseAll={onExpandCollapseAll}
       >
         {item.resolvedChildren && (
           <Collection items={item.resolvedChildren} dependencies={collectionDependencies}>

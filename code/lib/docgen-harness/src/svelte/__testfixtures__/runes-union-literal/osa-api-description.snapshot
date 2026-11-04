@@ -1,0 +1,14 @@
+## Props
+
+```
+export type UnionLiteralProps = {
+  /** Size variant. */
+  size?: "small" | "large" | "medium" = "medium";
+  /** Tone variant. */
+  tone?: "info" | "warn" | null;
+  /** Numeric level. */
+  level: 1 | 2 | 3;
+  /** Automatic mode. */
+  mode?: boolean | "auto";
+}
+```

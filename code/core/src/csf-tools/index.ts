@@ -1,25 +1,32 @@
 export * from './CsfFile.ts';
 export type {
   CsfInspection,
+  CsfListInspection,
   CsfMutationDiagnostic,
   CsfMutationDiagnosticCode,
   CsfMutationResult,
+  CsfMutationTarget,
   CsfObject,
+  CsfObjectLookup,
   CsfObjectOptions,
   CsfObjectTarget,
   CsfValue,
 } from './CsfObject.ts';
+export { type CsfPath, printCsfPath } from './CsfObjectPath.ts';
 export * from './ConfigFile.ts';
 export * from './jsdoc.ts';
 export * from './enrichCsf.ts';
 export { vitestTransform } from './vitest-plugin/transformer.ts';
 export { componentTransform } from './vitest-plugin/component-transformer.ts';
 export * from './story-shape/index.ts';
-export type { E as ESTree, Node as ESTreeNode } from './estree/ast.ts';
+export type { E as ESTree, Node as ESTreeNode, SourceLocation } from './estree/ast.ts';
 export {
+  isIdentifier,
   isStringLiteral,
   isTSWrapper,
+  locationOf,
   normalizeLineEndings,
+  objectProperty,
   outerSpan,
   parseExpression,
   parseModule,
@@ -31,6 +38,7 @@ export {
   walk,
 } from './estree/ast.ts';
 export { SourceEditor, type GeneratedMap, type SourceEdits } from './estree/editor.ts';
+export type { ImportBindings } from './estree/imports.ts';
 export { generateUid, type Binding, type ScopeInfo } from './estree/scope.ts';
 export {
   appendStatement,

@@ -158,17 +158,17 @@ describe('resolveArgValue', () => {
     [
       'two levels deep',
       `const base = {\n  nested: {\n    deep: 1,\n  },\n};`,
-      `{\n  nested: {\n    deep: 1,\n  },\n  tone: 'x'\n}`,
+      `{\n  nested: {\n    deep: 1,\n  },\n  tone: 'x',\n}`,
     ],
     [
       'three levels deep',
       `const base = {\n  nested: {\n    deeper: {\n      deepest: \`a\n  b\`,\n    },\n  },\n};`,
-      `{\n  nested: {\n    deeper: {\n      deepest: \`a\n  b\`,\n    },\n  },\n  tone: 'x'\n}`,
+      `{\n  nested: {\n    deeper: {\n      deepest: \`a\n  b\`,\n    },\n  },\n  tone: 'x',\n}`,
     ],
     [
       'indented with tabs',
       `const base = {\n\tnested: {\n\t\tdeep: \`a\n\tb\`,\n\t},\n};`,
-      `{\n\tnested: {\n\t\tdeep: \`a\n\tb\`,\n\t},\n\ttone: 'x'\n}`,
+      `{\n\tnested: {\n\t\tdeep: \`a\n\tb\`,\n\t},\n\ttone: 'x',\n}`,
     ],
   ])(
     "writes out a spread's members %s at the file's indent, leaving literal lines alone",
@@ -192,7 +192,19 @@ describe('resolveArgValue', () => {
         },
       };
     `;
-    expect(textOfValue(code)).toBe(`[{\n  a: 1\n}, {\n  z: 2,\n}]`);
+    expect(textOfValue(code)).toBe(`[{\n  a: 1,\n}, {\n  z: 2,\n}]`);
+  });
+
+  it('writes out a spread without a trailing comma in a file whose objects have none', () => {
+    const code = dedent`
+      const base = {
+        nested: {
+          deep: 1
+        }
+      };
+      export const Story = { args: { v: { ...base, tone: 'x' } } };
+    `;
+    expect(textOfValue(code)).toBe(`{\n  nested: {\n    deep: 1\n  },\n  tone: 'x'\n}`);
   });
 
   it('names nothing for a global or a parameter the expression declares itself', () => {

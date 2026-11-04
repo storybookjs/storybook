@@ -5,7 +5,7 @@ import { ActionList, Card } from 'storybook/internal/components';
 import { CloseAltIcon, WandIcon } from '@storybook/icons';
 
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { useReviewContext } from '../review/review-context.ts';

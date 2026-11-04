@@ -8,7 +8,8 @@ import { createNamedExportStories } from './appendix/create-named-export-stories
 
 import { STORYBOOK_META_IDENTIFIER } from '../../constants.ts';
 import { createASTIdentifier, type ESTreeAST, type SvelteAST } from '../../parser/ast.ts';
-import { getStoriesIdentifiers } from '../../parser/analyse/story/attributes/identifiers.ts';
+import { type ExtendableStory, orderByParents } from '../../parser/analyse/story/extend.ts';
+import type { StoryParents } from '../../utils/story-chain.ts';
 import type { CompiledASTNodes } from '../../parser/extract/compiled/nodes.ts';
 import type { SvelteASTNodes } from '../../parser/extract/svelte/nodes.ts';
 import { createRuntimeStoryVariableDeclaration } from './appendix/create-runtime-story-variable-declaration.ts';
@@ -19,35 +20,36 @@ interface Params {
     compiled: CompiledASTNodes;
     svelte: SvelteASTNodes;
   };
+  stories: ExtendableStory[];
+  parents: StoryParents;
   filename?: string;
 }
 
 export async function createAppendix(params: Params) {
-  const { code, nodes, filename } = params;
+  const { code, nodes, stories, parents, filename } = params;
   const { compiled, svelte } = nodes;
   const { storiesFunctionDeclaration } = compiled;
   const factoryMeta = compiled.isFactory
     ? (compiled.metaIdentifier ?? createASTIdentifier(STORYBOOK_META_IDENTIFIER))
     : undefined;
 
-  const storiesIdentifiers = getStoriesIdentifiers({
-    nodes: svelte,
-    filename,
-  });
   const variableFromRuntimeStoriesCall = createVariableFromRuntimeStoriesCall({
     storiesFunctionDeclaration,
     factoryMeta,
     filename,
   });
-  const storiesVariableDeclarations = storiesIdentifiers.map(({ exportName }, idx) =>
+  const exportNames = stories.map(({ exportName }) => exportName);
+  // A story that extends another one reads it, so the parent is declared first
+  const storiesVariableDeclarations = orderByParents(exportNames, parents).map((exportName) =>
     createRuntimeStoryVariableDeclaration({
       exportName,
+      parentExportName: parents.get(exportName),
       filename,
       nodes: {
         variable: variableFromRuntimeStoriesCall,
         tags: getStoryTags({
-          storyComponents: params.nodes.svelte.storyComponents,
-          idx,
+          storyComponents: svelte.storyComponents,
+          idx: exportNames.indexOf(exportName),
         }),
         factoryMeta,
       },
@@ -62,9 +64,9 @@ export async function createAppendix(params: Params) {
       variableFromRuntimeStoriesCall,
       // A CSF factories file has no default export: core finds the meta through the stories
       ...(factoryMeta ? [] : [createExportDefaultMeta()]),
-      createExportOrderVariableDeclaration({ storiesIdentifiers, filename }),
+      createExportOrderVariableDeclaration({ storiesIdentifiers: stories, filename }),
       ...storiesVariableDeclarations,
-      createNamedExportStories({ storiesIdentifiers }),
+      createNamedExportStories({ storiesIdentifiers: stories }),
     ],
   });
 

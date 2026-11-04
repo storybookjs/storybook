@@ -4,7 +4,7 @@ import { ActionList } from 'storybook/internal/components';
 
 import { TransferIcon, UndoIcon } from '@storybook/icons';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import {
   VIEWPORT_MIN_HEIGHT,
@@ -301,7 +301,7 @@ export const Viewport = ({
               data-size-input="width"
               label="Viewport width"
               before={
-                <ActionList.Action size="small" readOnly aria-hidden>
+                <ActionList.Action ariaLabel={false} size="small" readOnly aria-hidden>
                   W
                 </ActionList.Action>
               }
@@ -324,7 +324,7 @@ export const Viewport = ({
               data-size-input="height"
               label="Viewport height"
               before={
-                <ActionList.Action size="small" readOnly aria-hidden>
+                <ActionList.Action ariaLabel={false} size="small" readOnly aria-hidden>
                   H
                 </ActionList.Action>
               }

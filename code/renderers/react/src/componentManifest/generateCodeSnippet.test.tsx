@@ -1010,3 +1010,103 @@ test('a read of a name every object inherits is not an arg', () => {
     `"const Inherited = (args) => <Button title={args.constructor} />;"`
   );
 });
+
+test('a multi-line arg lands at the indent of the line it is placed on', () => {
+  const input = withCSF3(dedent`
+    export const Spread: Story = {
+      args: {
+        style: {
+          color: 'red',
+        },
+      },
+      render: (args) => (
+        <div>
+          <Button {...args} />
+        </div>
+      ),
+    };
+
+    export const Read: Story = {
+      args: {
+        onClick: () => {
+          console.log('clicked');
+        },
+      },
+      render: (args) => (
+        <div>
+          <Button onClick={args.onClick} />
+        </div>
+      ),
+    };
+
+    export const Synthesized: Story = {
+      args: {
+        items: [
+          'one',
+          'two',
+        ],
+      },
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Spread = () => <div>
+      <Button style={{
+        color: 'red',
+      }}>Click me</Button>
+    </div>;
+    const Read = () => <div>
+      <Button onClick={() => {
+        console.log('clicked');
+      }} />
+    </div>;
+    const Synthesized = () => <Button items={[
+      'one',
+      'two',
+    ]}>Click me</Button>;"
+  `);
+});
+
+test('a rebuilt arg object keeps its members inside the line it is placed on', () => {
+  const input = withCSF3(dedent`
+    const base = { color: 'red' };
+
+    export const Rebuilt: Story = {
+      args: { style: { ...base, size: 2 } },
+      render: (args) => (
+        <div>
+          <Button {...args} />
+        </div>
+      ),
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Rebuilt = () => <div>
+      <Button style={{
+        color: 'red',
+        size: 2
+      }}>Click me</Button>
+    </div>;"
+  `);
+});
+
+test('a multi-line template literal arg keeps the lines of its value', () => {
+  const input = withCSF3(dedent`
+    export const Template: Story = {
+      args: {
+        code: \`first
+      second\`,
+      },
+      render: (args) => (
+        <div>
+          <Button code={args.code} />
+        </div>
+      ),
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Template = () => <div>
+      <Button code={\`first
+      second\`} />
+    </div>;"
+  `);
+});

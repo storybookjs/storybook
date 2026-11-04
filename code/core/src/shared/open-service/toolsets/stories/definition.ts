@@ -10,7 +10,6 @@ import type {
   ChangeDetectionReadinessResult,
   ModuleGraphService,
 } from '../../services/module-graph/definition.ts';
-import type { ModuleGraphIndexService } from '../../services/module-graph-index/definition.ts';
 import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
 import { getToolName } from '../../toolset-names.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
@@ -215,23 +214,19 @@ Only IDs returned by discovery tools resolve: never derive them from file names,
 Needs a dev server builder with change detection (e.g. Vite); otherwise returns a typed error.`;
 }
 
-// Hot status + cold reverse-index queries, composed for ModuleGraphAccess consumers.
 function moduleGraphAccessFromCtx(
   ctx: ToolsetCtx,
   moduleGraph: ModuleGraphService = ctx.getService<ModuleGraphService>('core/module-graph', {
     internal: true,
   })
 ): ModuleGraphAccess {
-  const moduleGraphIndex = ctx.getService<ModuleGraphIndexService>('core/module-graph-index', {
-    internal: true,
-  });
   return {
     queries: {
       status: {
         loaded: () => moduleGraph.queries.status.loaded(undefined) as Promise<ModuleGraphStatus>,
       },
       storiesForFiles: {
-        loaded: (files) => moduleGraphIndex.queries.storiesForFiles.loaded(files),
+        loaded: (files) => moduleGraph.commands.storiesForFiles(files),
       },
     },
   };

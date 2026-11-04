@@ -17,8 +17,8 @@ import path from 'pathe';
 
 import type { ComponentDoc, PropItem } from './componentMeta/componentMetaExtractor.ts';
 import type { ComponentRef } from './getComponentImports.ts';
-import { type DocObj } from './reactDocgen.ts';
-import { type ComponentDocWithExportName } from './reactDocgenTypescript.ts';
+import type { DocObj } from './reactDocgen.ts';
+import type { ComponentDocWithExportName } from './reactDocgenTypescript.ts';
 import {
   type ParsedCsf,
   type ResolvedSubcomponent,
@@ -149,6 +149,7 @@ function getComponentDocgenData(component: ComponentRef | undefined, docgenEngin
   } else if (docgenEngine === 'react-docgen-typescript') {
     reactDocgenTypescript = component?.reactDocgenTypescript;
     docgenDescription = reactDocgenTypescript?.description;
+    docgenJsDocTags = component?.componentJsDocTags;
     docgenError = component?.reactDocgenTypescriptError;
   } else {
     reactComponentMeta = component?.reactComponentMeta

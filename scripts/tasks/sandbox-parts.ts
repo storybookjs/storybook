@@ -37,7 +37,12 @@ import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templ
 import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService.ts';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task.ts';
 import { executeCLIStep, steps } from '../utils/cli-step.ts';
-import { CODE_DIRECTORY, REPROS_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants.ts';
+import {
+  CODE_DIRECTORY,
+  REPROS_DIRECTORY,
+  ROOT_DIRECTORY,
+  SCRIPTS_DIRECTORY,
+} from '../utils/constants.ts';
 import { exec } from '../utils/exec.ts';
 import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir.ts';
 import { addPreviewAnnotations, readConfig } from '../utils/main-js.ts';
@@ -308,6 +313,9 @@ export const init: Task['run'] = async (
     case '@storybook/react-native-web-vite':
       extra = { type: 'react_native_web' };
       await prepareReactNativeWebSandbox(cwd);
+      break;
+    case '@storybook-astro/framework':
+      await prepareAstroSandbox(cwd);
       break;
   }
 
@@ -1163,6 +1171,11 @@ async function getConfigFile(names: string[], cwd: string) {
   // findFirstPath returns a path relative to `cwd`; resolve it so readConfig
   // does not resolve it against the script's own working directory.
   return join(cwd, firstPath);
+}
+
+// `@storybook-astro/renderer` ships no CLI template stories, so `storybook init` adds none.
+async function prepareAstroSandbox(cwd: string) {
+  await cp(join(SCRIPTS_DIRECTORY, 'sandbox', 'fixtures', 'astro-vite'), cwd, { recursive: true });
 }
 
 async function prepareSvelteSandbox(cwd: string) {

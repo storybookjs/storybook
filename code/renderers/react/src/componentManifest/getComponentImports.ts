@@ -9,22 +9,35 @@ import {
   resolveComponentImport,
   walk,
 } from 'storybook/internal/csf-tools';
+import { isModuleNotFoundError } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { TypescriptOptions as TypescriptOptionsBase } from 'storybook/internal/types';
 
 import type { ParserOptions } from 'react-docgen-typescript';
 
-import { getImportTag, getReactDocgen, matchPath } from './reactDocgen.ts';
+import { getDocgenPackageMissingError, loadReactDocgen } from './loadReactDocgen.ts';
 import {
   type ComponentDocWithExportName,
   getReactDocgenTypescriptError,
   matchComponentDoc,
   parseWithReactDocgenTypescript,
 } from './reactDocgenTypescript.ts';
+import type { ReactDocgenConfig } from './reactDocgen/utils.ts';
+import { getImportTag, matchPath } from './resolveComponentPath.ts';
 import type { ComponentRef } from './types.ts';
 import { cachedResolveImport } from './utils.ts';
 
-export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript' | false;
+/** `react-docgen-typescript` is an optional peer dependency of this package. */
+const isReactDocgenTypescriptResolvable = () => {
+  try {
+    import.meta.resolve('react-docgen-typescript');
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export type { ReactDocgenConfig };
 export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
 
 export interface TypescriptOptions extends TypescriptOptionsBase {
@@ -183,26 +196,40 @@ export const getComponents = async ({
             } catch (e) {
               const message = e instanceof Error ? e.message : String(e);
               logger.debug(`react-docgen-typescript failed for ${path}: ${message}`);
-              reactDocgenTypescriptError = {
-                name: 'react-docgen-typescript parse error',
-                message: `File: ${path}\n${message}`,
-              };
+              // A missing `typescript` also fails the import, but has its own startup warning.
+              reactDocgenTypescriptError =
+                isModuleNotFoundError(e) && !isReactDocgenTypescriptResolvable()
+                  ? getDocgenPackageMissingError('react-docgen-typescript')
+                  : {
+                      name: 'react-docgen-typescript parse error',
+                      message: `File: ${path}\n${message}`,
+                    };
             }
-            const importOverride = reactDocgenTypescript
-              ? getImportTag(reactDocgenTypescript)
-              : undefined;
+            let reactDocgenTypescriptDoc: ComponentDocWithExportName | undefined;
+            let componentJsDocTags = reactDocgenTypescript?.componentJsDocTags;
+            if (reactDocgenTypescript) {
+              const { componentJsDocTags: _tags, ...doc } = reactDocgenTypescript;
+              reactDocgenTypescriptDoc = doc;
+              componentJsDocTags = _tags;
+            }
 
             return {
               ...componentWithPackage,
               path,
-              ...(reactDocgenTypescript ? { reactDocgenTypescript } : {}),
+              ...(reactDocgenTypescriptDoc
+                ? { reactDocgenTypescript: reactDocgenTypescriptDoc }
+                : {}),
               ...(reactDocgenTypescriptError ? { reactDocgenTypescriptError } : {}),
-              importOverride,
+              ...(componentJsDocTags ? { componentJsDocTags } : {}),
+              importOverride: componentJsDocTags?.import?.[0]?.trim(),
             };
           }
 
           if (docgenEngine === 'react-docgen') {
-            const reactDocgen = getReactDocgen(path, componentWithPackage);
+            const reactDocgenEngine = await loadReactDocgen();
+            const reactDocgen = reactDocgenEngine
+              ? reactDocgenEngine.getReactDocgen(path, componentWithPackage)
+              : { type: 'error' as const, error: getDocgenPackageMissingError('react-docgen') };
             return {
               ...componentWithPackage,
               path,

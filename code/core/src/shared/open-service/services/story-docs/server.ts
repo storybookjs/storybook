@@ -12,7 +12,7 @@ import {
   prependToTemplate,
   stripHoles,
 } from '../../../../docs-tools/snippetTemplate.ts';
-import { prependImportToSnippet } from './snippet.ts';
+import { importPrefix } from './snippet.ts';
 import type {
   ProvidedStoryDoc,
   ProvidedStoryDocsPayload,
@@ -67,18 +67,11 @@ function storyDocFromFile(entry: IndexEntry, result: FileResult): ProvidedStoryD
   if (story?.snippet === undefined) {
     return story;
   }
-  const importBlock = result.value?.import;
-  const snippet = prependImportToSnippet(importBlock, story.snippet);
+  const prefix = importPrefix(result.value?.import);
   return {
     ...story,
-    snippet,
-    ...(story.template !== undefined && {
-      // The import block as `prependImportToSnippet` writes it before the snippet.
-      template: prependToTemplate(
-        snippet.slice(0, snippet.length - story.snippet.length),
-        story.template
-      ),
-    }),
+    snippet: prefix + story.snippet,
+    ...(story.template !== undefined && { template: prependToTemplate(prefix, story.template) }),
   };
 }
 

@@ -37,11 +37,12 @@ export type HoleRef<Place extends HolePlace = HolePlace> =
 
 /** A hole of a {@link SnippetTemplate}. */
 export type TemplateHole<Place extends HolePlace = HolePlace> = HoleRef<Place> & {
-  /** What the static snippet prints here. */
+  /** What the static snippet prints here, with the `space` before it, if any. */
   text: string;
   /**
    * Printed before what the renderer prints here, unless that is empty, such as the whitespace
-   * before an attribute, so a cleared attribute leaves no gap. See {@link withHoleSpace}.
+   * before an attribute, so a cleared attribute leaves no gap. It is part of `text` already: a hole
+   * whose `text` is empty gets it from its provider, any other one from {@link withHoleSpace}.
    */
   space?: string;
 };
@@ -66,6 +67,16 @@ export class UnprintableArgError extends Error {
     super(`The snippet cannot show the current value of the \`${argName}\` arg.`);
   }
 }
+
+/**
+ * Throws for a hole place a {@link PrintHole} has no case for. Called with the place in the
+ * `default` branch of a switch on its `kind`, or with the kind itself where the places share one
+ * shape, it fails to compile while a kind of the renderer's places is left out.
+ */
+export const unknownHoleKind = (place: never): never => {
+  const kind = typeof place === 'object' ? (place as HolePlace | null)?.kind : place;
+  throw new Error(`Unknown hole kind \`${String(kind)}\``);
+};
 
 const isHole = <Place extends HolePlace>(
   segment: string | TemplateHole<Place>
@@ -175,7 +186,8 @@ export const isSnippetTemplate = (value: unknown): value is SnippetTemplate =>
         typeof segment.text === 'string' &&
         typeof segment.place?.kind === 'string' &&
         (segment.space === undefined || typeof segment.space === 'string') &&
-        (segment.spread === true) !== (typeof segment.arg === 'string'))
+        ((segment.spread === undefined && typeof segment.arg === 'string') ||
+          (segment.spread === true && segment.arg === undefined)))
   );
 
 /**
@@ -205,7 +217,9 @@ export const formatTemplate = (template: SnippetTemplate<any>): string =>
  */
 export interface HoleMarks<Place extends HolePlace> {
   /**
-   * `text`, marked as a hole for `ref`, with `space` as its {@link TemplateHole.space}. The same
+   * `text`, marked as a hole for `ref`, with `space` as its {@link TemplateHole.space}, which the
+   * static snippet does not print: give it to a hole that prints no text, and let
+   * {@link withHoleSpace} take the whitespace before any other. The same
    * hole marks the same text alike, so a provider that compares printed code, as to declare a
    * repeated value once, compares marked code as it compares the snippet.
    */
@@ -225,7 +239,7 @@ export interface HoleMarks<Place extends HolePlace> {
  * still parse, such as in a comment: `(mark) => `/*${mark}*\/``.
  */
 export function createHoleMarks<Place extends HolePlace>(
-  sources: string[] = [],
+  sources: string[],
   wrap: (mark: string) => string = (mark) => mark
 ): HoleMarks<Place> {
   const [open, middle, close] = unusedPrivateUseCharacters(3, sources.join(''));

@@ -76,218 +76,223 @@ export function printTemplate({
   snippets?: Record<string, string>;
 }): { snippet: string; template?: SnippetTemplate<SvelteHolePlace> } {
   const { ast, offset } = parseMarkup(code, typescript);
-  // The snippet prints the markup, the arg values and the snippets, so no mark can be read in them.
-  const marks = createHoleMarks<SvelteHolePlace>([
-    code,
-    ...Object.values(args).map((value) => textOf(value)),
-    ...Object.values(snippets),
-  ]);
-  const { mark } = marks;
-  const destructured = new Set(Object.values(parameter?.aliases ?? {}));
-  const name = parameter ? parameter.name : 'args';
-  const reads: Reads = {
-    args,
-    name,
-    aliases: parameter?.aliases ?? {},
-    typescript,
-    argsComplete,
-    mark,
-  };
-  const isArgsSpread = (attribute: SvelteAST.Component['attributes'][number]) =>
-    attribute.type === 'SpreadAttribute' &&
-    attribute.expression.type === 'Identifier' &&
-    attribute.expression.name === name;
-  const at = (node: object): Span => {
-    const range = span(node);
-    return { start: range.start - offset, end: range.end - offset };
-  };
-  const written = ({ start, end }: Span) => code.slice(start, end);
-  const edits: MarkedEdit[] = [];
+  // The edits that print the snippet, with each place an arg prints marked by `mark`.
+  const collect = (mark: Mark): MarkedEdit[] => {
+    const destructured = new Set(Object.values(parameter?.aliases ?? {}));
+    const name = parameter ? parameter.name : 'args';
+    const reads: Reads = {
+      args,
+      name,
+      aliases: parameter?.aliases ?? {},
+      typescript,
+      argsComplete,
+      mark,
+    };
+    const isArgsSpread = (attribute: SvelteAST.Component['attributes'][number]) =>
+      attribute.type === 'SpreadAttribute' &&
+      attribute.expression.type === 'Identifier' &&
+      attribute.expression.name === name;
+    const at = (node: object): Span => {
+      const range = span(node);
+      return { start: range.start - offset, end: range.end - offset };
+    };
+    const written = ({ start, end }: Span) => code.slice(start, end);
+    const edits: MarkedEdit[] = [];
 
-  walk<SvelteAST.SvelteNode, null>(ast.fragment, null, {
-    Attribute(node, { path, next }) {
-      const element = path.at(-1);
-      const spreadAfter =
-        element &&
-        'attributes' in element &&
-        element.attributes.some(
-          (attribute: SvelteAST.Component['attributes'][number]) =>
-            isArgsSpread(attribute) && attribute.start > node.start
-        );
-      // The spread writes over it with the arg, or leaves it as written while the arg is unset.
-      const readsNoArgs =
-        node.value === true ||
-        (Array.isArray(node.value) && node.value.every((part) => part.type === 'Text'));
-      if (spreadAfter && (node.name in args || readsNoArgs)) {
-        const range = at(node);
-        const value =
-          node.name in args
-            ? printSpreadAttribute(node.name, propValue(args[node.name]))
-            : written(range);
-        edits.push({
-          ...range,
-          value,
-          marked: mark({ place: { kind: 'spreadattr' }, arg: node.name }, value),
-        });
-        return;
-      }
-      next();
-    },
-    SpreadAttribute(node, { path, next }) {
-      if (!isArgsSpread(node)) {
-        next();
-        return;
-      }
-      const element = path.at(-1);
-      const content =
-        element && 'fragment' in element
-          ? (element.fragment as SvelteAST.Fragment).nodes.filter(
-              (child) => !(child.type === 'Text' && !child.data.trim())
-            )
-          : [];
-      const writtenProps = new Set([
-        ...(element && 'attributes' in element
-          ? element.attributes.flatMap((attribute: SvelteAST.Component['attributes'][number]) =>
-              attribute.type === 'Attribute' || attribute.type === 'BindDirective'
-                ? [attribute.name]
-                : []
-            )
-          : []),
-        // A snippet block inside a component sets the prop it names; other content sets `children`.
-        ...content.map((child) =>
-          child.type === 'SnippetBlock' ? child.expression.name : 'children'
-        ),
-      ]);
-      const passed = (key: string) => !writtenProps.has(key) && !destructured.has(key);
-      const props = Object.entries(args).flatMap(([key, value]): [string, string][] => {
-        const printed = propValue(value);
-        return key in snippets || !passed(key) || printed === undefined
-          ? []
-          : [[key, printProp(key, printed)]];
-      });
-      const spread = spreadPlace(code, at(node), mark, props, [
-        ...props.map(([key]) => key),
-        ...writtenProps,
-        ...destructured,
-        ...Object.keys(snippets),
-      ]);
-      edits.push(spread);
-      const children = Object.entries(snippets).flatMap(([key, snippet]) =>
-        passed(key) ? [snippet] : []
-      );
-      if (!children.length || element?.type !== 'Component') return;
-      const { start, end } = at(element);
-      if (code.slice(start, end).endsWith('/>')) {
-        let from = end - 2;
-        while (from > spread.end && /[ \t]/.test(code[from - 1])) from--;
-        edits.push({
-          start: from,
-          end,
-          value: `>\n${children.join('\n')}\n</${element.name}>`,
-        });
-      } else {
-        const close = code.lastIndexOf('</', end - 1);
-        edits.push({ start: close, end: close, value: `${children.join('\n')}\n` });
-      }
-    },
-    ExpressionTag(node, { path }) {
-      const range = at(node.expression);
-      const replaced = replaceArgsReads(written(range), reads);
-      if (replaced === undefined) return;
-      const parent = path.at(-1);
-      const tag = at(node);
-      const text = replaced.text;
-      const attribute = parent?.type === 'Attribute' ? at(parent) : undefined;
-      const quoted = attribute && /=\s*["']/.test(code.slice(attribute.start, range.start));
-      // `title={args.title}` and `{title}` print a string as a spread prints it: `title="Save"`.
-      const asAttribute =
-        parent?.type === 'Attribute' && parent.value === node
-          ? attributeText(parent.name, text)
-          : undefined;
-      const asQuoted = quoted ? quotedText(text) : undefined;
-      const asFragment = parent?.type === 'Fragment' ? fragmentText(text) : undefined;
-      // `{label}` names the attribute after the variable it reads.
-      const shorthand = parent?.type === 'Attribute' && code[attribute!.start] === '{';
-      let edit: Edit = { ...range, value: replaced.value };
-      if (asAttribute !== undefined) {
-        edit = { ...attribute!, value: asAttribute };
-      } else if (shorthand) {
-        edit = { ...attribute!, value: `${parent.name}={${replaced.value}}` };
-      } else if (asQuoted !== undefined || asFragment !== undefined) {
-        edit = { ...tag, value: (asQuoted ?? asFragment)! };
-      }
-      if (!replaced.changed) {
-        edit = { ...range, value: written(range) };
-      }
-      if (!replaced.single) {
-        edits.push({ ...edit, marked: replaced.marked });
-        return;
-      }
-      // One whole read prints as text or code by its value, so its hole holds the whole place.
-      const { arg, deep } = replaced.single;
-      const attributeName =
-        parent?.type === 'Attribute' && parent.value === node ? parent.name : undefined;
-      const place = attributeName === undefined ? tag : attribute!;
-      const [before, after] =
-        attributeName !== undefined && shorthand
-          ? [`${attributeName}={`, '}']
-          : [code.slice(place.start, range.start), code.slice(range.end, place.end)];
-      const holePlace: SvelteHolePlace = deep
-        ? { kind: 'member' }
-        : attributeName !== undefined
-          ? { kind: 'attrvalue', name: attributeName, before, after }
-          : {
-              kind: quoted ? 'quoted' : parent?.type === 'Fragment' ? 'fragment' : 'code',
-              before,
-              after,
-            };
-      const value =
-        code.slice(place.start, edit.start) + edit.value + code.slice(edit.end, place.end);
-      edits.push({
-        ...place,
-        value,
-        marked: mark({ place: holePlace, arg }, value),
-      });
-    },
-    _(node, { next }) {
-      if (node.type === 'ExpressionTag') return next();
-      for (const expression of blockExpressions(node)) {
-        const range = at(expression);
-        const replaced = replaceArgsReads(written(range), reads);
-        if (replaced === undefined) continue;
-        // `class:active` reads `active`, so a substituted value needs the long form, which the
-        // snippet writes once it substitutes one.
-        const shorthand =
-          'name' in node &&
-          node.type.endsWith('Directive') &&
-          !code.slice(at(node).start, range.start).includes('=');
-        if (!shorthand) {
-          edits.push({ ...range, value: replaced.value, marked: replaced.marked });
-          continue;
+    walk<SvelteAST.SvelteNode, null>(ast.fragment, null, {
+      Attribute(node, { path, next }) {
+        const element = path.at(-1);
+        const spreadAfter =
+          element &&
+          'attributes' in element &&
+          element.attributes.some(
+            (attribute: SvelteAST.Component['attributes'][number]) =>
+              isArgsSpread(attribute) && attribute.start > node.start
+          );
+        // The spread writes over it with the arg, or leaves it as written while the arg is unset.
+        const readsNoArgs =
+          node.value === true ||
+          (Array.isArray(node.value) && node.value.every((part) => part.type === 'Text'));
+        if (spreadAfter && (node.name in args || readsNoArgs)) {
+          const range = at(node);
+          const value =
+            node.name in args
+              ? printSpreadAttribute(node.name, propValue(args[node.name]))
+              : written(range);
+          edits.push({
+            ...range,
+            value,
+            marked: mark({ place: { kind: 'spreadattr' }, arg: node.name }, value),
+          });
+          return;
         }
-        const value = replaced.changed ? `${node.name}={${replaced.value}}` : written(range);
-        edits.push({
-          ...range,
-          value,
-          marked: replaced.single
-            ? mark(
-                {
-                  place: { kind: 'code', before: `${node.name}={`, after: '}' },
-                  arg: replaced.single.arg,
-                },
-                value
+        next();
+      },
+      SpreadAttribute(node, { path, next }) {
+        if (!isArgsSpread(node)) {
+          next();
+          return;
+        }
+        const element = path.at(-1);
+        const content =
+          element && 'fragment' in element
+            ? (element.fragment as SvelteAST.Fragment).nodes.filter(
+                (child) => !(child.type === 'Text' && !child.data.trim())
               )
-            : value,
+            : [];
+        const writtenProps = new Set([
+          ...(element && 'attributes' in element
+            ? element.attributes.flatMap((attribute: SvelteAST.Component['attributes'][number]) =>
+                attribute.type === 'Attribute' || attribute.type === 'BindDirective'
+                  ? [attribute.name]
+                  : []
+              )
+            : []),
+          // A snippet block inside a component sets the prop it names; other content sets `children`.
+          ...content.map((child) =>
+            child.type === 'SnippetBlock' ? child.expression.name : 'children'
+          ),
+        ]);
+        const passed = (key: string) => !writtenProps.has(key) && !destructured.has(key);
+        const props = Object.entries(args).flatMap(([key, value]): [string, string][] => {
+          const printed = propValue(value);
+          return key in snippets || !passed(key) || printed === undefined
+            ? []
+            : [[key, printProp(key, printed)]];
         });
-      }
-      next();
-    },
-  });
+        const spread = spreadPlace(code, at(node), mark, props, [
+          ...props.map(([key]) => key),
+          ...writtenProps,
+          ...destructured,
+          ...Object.keys(snippets),
+        ]);
+        edits.push(spread);
+        const children = Object.entries(snippets).flatMap(([key, snippet]) =>
+          passed(key) ? [snippet] : []
+        );
+        if (!children.length || element?.type !== 'Component') return;
+        const { start, end } = at(element);
+        if (code.slice(start, end).endsWith('/>')) {
+          let from = end - 2;
+          while (from > spread.end && /[ \t]/.test(code[from - 1])) from--;
+          edits.push({
+            start: from,
+            end,
+            value: `>\n${children.join('\n')}\n</${element.name}>`,
+          });
+        } else {
+          const close = code.lastIndexOf('</', end - 1);
+          edits.push({ start: close, end: close, value: `${children.join('\n')}\n` });
+        }
+      },
+      ExpressionTag(node, { path }) {
+        const range = at(node.expression);
+        const replaced = replaceArgsReads(written(range), reads);
+        if (replaced === undefined) return;
+        const parent = path.at(-1);
+        const tag = at(node);
+        const text = replaced.text;
+        const attribute = parent?.type === 'Attribute' ? at(parent) : undefined;
+        const quoted = attribute && /=\s*["']/.test(code.slice(attribute.start, range.start));
+        // `title={args.title}` and `{title}` print a string as a spread prints it: `title="Save"`.
+        const asAttribute =
+          parent?.type === 'Attribute' && parent.value === node
+            ? attributeText(parent.name, text)
+            : undefined;
+        const asQuoted = quoted ? quotedText(text) : undefined;
+        const asFragment = parent?.type === 'Fragment' ? fragmentText(text) : undefined;
+        // `{label}` names the attribute after the variable it reads.
+        const shorthand = parent?.type === 'Attribute' && code[attribute!.start] === '{';
+        let edit: Edit = { ...range, value: replaced.value };
+        if (asAttribute !== undefined) {
+          edit = { ...attribute!, value: asAttribute };
+        } else if (shorthand) {
+          edit = { ...attribute!, value: `${parent.name}={${replaced.value}}` };
+        } else if (asQuoted !== undefined || asFragment !== undefined) {
+          edit = { ...tag, value: (asQuoted ?? asFragment)! };
+        }
+        if (!replaced.changed) {
+          edit = { ...range, value: written(range) };
+        }
+        if (!replaced.single) {
+          edits.push({ ...edit, marked: replaced.marked });
+          return;
+        }
+        // One whole read prints as text or code by its value, so its hole holds the whole place.
+        const { arg, deep } = replaced.single;
+        const attributeName =
+          parent?.type === 'Attribute' && parent.value === node ? parent.name : undefined;
+        const place = attributeName === undefined ? tag : attribute!;
+        const [before, after] =
+          attributeName !== undefined && shorthand
+            ? [`${attributeName}={`, '}']
+            : [code.slice(place.start, range.start), code.slice(range.end, place.end)];
+        const holePlace: SvelteHolePlace = deep
+          ? { kind: 'member' }
+          : attributeName !== undefined
+            ? { kind: 'attrvalue', name: attributeName, before, after }
+            : {
+                kind: quoted ? 'quoted' : parent?.type === 'Fragment' ? 'fragment' : 'code',
+                before,
+                after,
+              };
+        const value =
+          code.slice(place.start, edit.start) + edit.value + code.slice(edit.end, place.end);
+        edits.push({
+          ...place,
+          value,
+          marked: mark({ place: holePlace, arg }, value),
+        });
+      },
+      _(node, { next }) {
+        if (node.type === 'ExpressionTag') return next();
+        for (const expression of blockExpressions(node)) {
+          const range = at(expression);
+          const replaced = replaceArgsReads(written(range), reads);
+          if (replaced === undefined) continue;
+          // `class:active` reads `active`, so a substituted value needs the long form, which the
+          // snippet writes once it substitutes one.
+          const shorthand =
+            'name' in node &&
+            node.type.endsWith('Directive') &&
+            !code.slice(at(node).start, range.start).includes('=');
+          if (!shorthand) {
+            edits.push({ ...range, value: replaced.value, marked: replaced.marked });
+            continue;
+          }
+          const value = replaced.changed ? `${node.name}={${replaced.value}}` : written(range);
+          edits.push({
+            ...range,
+            value,
+            marked: replaced.single
+              ? mark(
+                  {
+                    place: { kind: 'code', before: `${node.name}={`, after: '}' },
+                    arg: replaced.single.arg,
+                  },
+                  value
+                )
+              : value,
+          });
+        }
+        next();
+      },
+    });
 
-  const marked = edits.map((edit) => ({ ...edit, value: edit.marked ?? edit.value }));
+    return edits;
+  };
+
+  const snippet = applyEdits(
+    code,
+    collect((_, text) => text)
+  );
+  // The marked print is the snippet with marks in it, including arg values a string literal writes
+  // escaped, so marks none of the snippet's characters are never read in it.
+  const marks = createHoleMarks<SvelteHolePlace>([snippet]);
+  const marked = collect(marks.mark).map((edit) => ({ ...edit, value: edit.marked ?? edit.value }));
   const template = marks.toTemplate(applyEdits(code, marked));
   return {
-    snippet: applyEdits(code, edits),
+    snippet,
     // An arg a control clears leaves no gap in the spread.
     ...(template && { template: withHoleSpace(template, (place) => place.kind === 'prop') }),
   };

@@ -1,4 +1,8 @@
-import { type PrintHole, UnprintableArgError } from 'storybook/internal/docs-tools';
+import {
+  type PrintHole,
+  UnprintableArgError,
+  unknownHoleKind,
+} from 'storybook/internal/docs-tools';
 
 import {
   type AngularHolePlace,
@@ -36,7 +40,7 @@ export const printHole: PrintHole<AngularHolePlace> = ({ place, arg = '' }, valu
     case 'text':
       return indentLines(escapeTemplateLiteral(text(value, arg)), indent);
     default:
-      throw new Error(`Unknown hole ⟦${(place as { kind: string }).kind}⟧`);
+      return unknownHoleKind(place.kind);
   }
 };
 

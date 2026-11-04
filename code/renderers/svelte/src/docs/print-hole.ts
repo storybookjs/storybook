@@ -1,4 +1,9 @@
-import { type PrintHole, UnprintableArgError, printValue } from 'storybook/internal/docs-tools';
+import {
+  type PrintHole,
+  UnprintableArgError,
+  printValue,
+  unknownHoleKind,
+} from 'storybook/internal/docs-tools';
 import type { Args } from 'storybook/internal/types';
 
 import {
@@ -51,7 +56,7 @@ export const printHole: PrintHole<SvelteHolePlace> = (hole, value) => {
     case 'member':
       throw new UnprintableArgError(arg);
     default:
-      throw new Error(`Unknown hole ⟦${(place as { kind: string }).kind}⟧`);
+      return unknownHoleKind(place);
   }
 };
 

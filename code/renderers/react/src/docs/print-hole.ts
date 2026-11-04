@@ -1,8 +1,8 @@
 import {
-  type HolePlace,
   type PrintHole,
   UnprintableArgError,
   printValue,
+  unknownHoleKind,
 } from 'storybook/internal/docs-tools';
 import type { Args } from 'storybook/internal/types';
 
@@ -46,7 +46,7 @@ export const printHole: PrintHole<ReactHolePlace> = ({ place, arg = '' }, value)
     case 'guard':
       throw new UnprintableArgError(arg);
     default:
-      throw new Error(`Unknown hole ⟦${(place as HolePlace).kind}⟧`);
+      return unknownHoleKind(place);
   }
 };
 

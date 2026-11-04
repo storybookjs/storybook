@@ -189,12 +189,15 @@ describe('isSnippetTemplate', () => {
       false
     );
     expect(isSnippetTemplate([{ place: {}, arg: 'a', text: '' }])).toBe(false);
+    expect(isSnippetTemplate([{ place: { kind: 'x' }, arg: 'a', spread: 1, text: '' }])).toBe(
+      false
+    );
   });
 });
 
 describe('createHoleMarks', () => {
   it('turns marked code into a template', () => {
-    const marks = createHoleMarks<Place>();
+    const marks = createHoleMarks<Place>([]);
     const marked = `<B${marks.mark({ place: { kind: 'attr', name: 'a' }, arg: 'a' }, ' a="1"')}${marks.mark({ place: { kind: 'attrs', except: ['a'] }, spread: true }, '', ' ')} />`;
     expect(marks.toTemplate(marked)).toEqual([
       '<B',
@@ -226,7 +229,7 @@ describe('createHoleMarks', () => {
   });
 
   it('marks the same hole alike, and leaves an empty space out', () => {
-    const marks = createHoleMarks<Place>();
+    const marks = createHoleMarks<Place>([]);
     const ref = { place: { kind: 'value' as const }, arg: 'a' };
     expect(marks.mark({ ...ref }, '1', '')).toBe(marks.mark({ ...ref }, '1'));
     expect(marks.mark(ref, '1')).not.toBe(marks.mark({ ...ref, arg: 'b' }, '1'));
@@ -234,7 +237,7 @@ describe('createHoleMarks', () => {
   });
 
   it('gives no template for marks that do not pair up', () => {
-    const marks = createHoleMarks<Place>();
+    const marks = createHoleMarks<Place>([]);
     const inner = marks.mark({ place: { kind: 'text' }, arg: 'b' }, 'b');
     expect(marks.toTemplate(marks.mark({ place: { kind: 'text' }, arg: 'a' }, `a${inner}`))).toBe(
       undefined

@@ -1,4 +1,8 @@
-import { type PrintHole, UnprintableArgError } from 'storybook/internal/docs-tools';
+import {
+  type PrintHole,
+  UnprintableArgError,
+  unknownHoleKind,
+} from 'storybook/internal/docs-tools';
 
 import {
   boundText,
@@ -56,10 +60,8 @@ export const printHole: PrintHole<HtmlHolePlace> = (hole, changed) => {
         : '';
     case 'guard':
       throw new UnprintableArgError(arg);
-    default: {
-      const unknown: { kind: string } = place;
-      throw new Error(`Unknown hole kind \`${unknown.kind}\``);
-    }
+    default:
+      return unknownHoleKind(place);
   }
 };
 

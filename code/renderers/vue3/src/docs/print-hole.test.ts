@@ -62,6 +62,6 @@ describe('printHole', () => {
 
   it('cannot print an arg the snippet has no place for, nor a place it does not know', () => {
     expect(() => print({ kind: 'guard' }, 'Go')).toThrow(new UnprintableArgError('x'));
-    expect(() => print({ kind: 'slot' } as never, 'Go')).toThrow('Unknown hole ⟦slot⟧');
+    expect(() => print({ kind: 'slot' } as never, 'Go')).toThrow('Unknown hole kind `slot`');
   });
 });

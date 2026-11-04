@@ -73,12 +73,9 @@ const placeholderHoles = (children: HtmlNode[], space: string, marks: Marks): st
   marks
     ? children
         .filter(isPlaceholder)
-        .map((child) => marks.mark(holeTags.get(child)!.hole, '', space || undefined))
+        .map((child) => marks.mark(holeTags.get(child)!.hole, '', space))
         .join('')
     : '';
-
-// The mark that closes a hole its first node opened, for the node that closes it.
-const holeCloses = new WeakMap<HtmlHole, string>();
 
 // `printed` with the hole of its node opened before it, after its indent, and closed after it. A
 // text hole says whether the snippet trims the text it prints at its start and at its end.
@@ -101,14 +98,10 @@ const wrapInHole = (
   if (tag.first && tag.last) {
     return `${indent}${marks.mark(hole, text)}`;
   }
-  if (tag.first) {
-    // A hole of several nodes is printed a node at a time, so its mark is split around a newline,
-    // which a mark never holds.
-    const [open, close] = marks.mark(hole, '\n').split('\n') as [string, string];
-    holeCloses.set(tag.hole, close);
-    return `${indent}${open}${text}`;
-  }
-  return `${indent}${text}${tag.last ? holeCloses.get(tag.hole)! : ''}`;
+  // A hole of several nodes is printed a node at a time: its first node opens the mark and its last
+  // closes it, each with its half of the mark split around a newline, which a mark never holds.
+  const [open, close] = marks.mark(hole, '\n').split('\n') as [string, string];
+  return `${indent}${tag.first ? open : ''}${text}${tag.last ? close : ''}`;
 };
 
 const printNode = (node: HtmlNode, depth: number, marks: Marks): string =>

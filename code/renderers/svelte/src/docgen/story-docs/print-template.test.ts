@@ -377,6 +377,12 @@ describe('printTemplate template', () => {
     );
   });
 
+  it('writes the holes of an arg whose escaped value prints a private-use character', () => {
+    const written = template('<Panel title={args.title} />', "{ title: '\\uE000x' }");
+    expect(stripHoles(written)).toBe('<Panel title="x" />');
+    expect(fill(written, { title: 'x' }, { title: 'y' })).toBe('<Panel title="y" />');
+  });
+
   it('cannot follow a read of a member of an arg', () => {
     const written = template('<p>{args.user.name}</p>', "{ user: { name: 'Jane' } }");
     expect(() => fill(written, { user: { name: 'Jane' } }, { user: { name: 'John' } })).toThrow(

@@ -183,15 +183,20 @@ const resolveAttributes = (
   state: TemplatePrintState,
   depth: number
 ): HtmlAttribute[] => {
-  const resolved: HtmlAttribute[] = [];
+  // The attributes the static snippet prints, each replacing an earlier one of its name, then those
+  // it leaves out, which only the template has, while it prints none of their name.
+  const printed: HtmlAttribute[] = [];
+  const omitted: HtmlAttribute[] = [];
   for (const attribute of attributes) {
     const next = resolveAttribute(tag, attribute, state, depth);
-    // An attribute the static snippet leaves out keeps one of the same name written before it.
-    if (next && !(next.omitted && resolved.some((other) => other.name === next.name))) {
-      upsertAttribute(resolved, next);
+    if (next) {
+      upsertAttribute(next.omitted ? omitted : printed, next);
     }
   }
-  return resolved;
+  return [
+    ...printed,
+    ...omitted.filter((attribute) => !printed.some((other) => other.name === attribute.name)),
+  ];
 };
 
 const resolveAttribute = (
@@ -436,10 +441,12 @@ const nodesForChildValue = (value: HoleValue, state: TemplatePrintState): HtmlNo
       state.unresolved.add(value.source);
       return [];
     case 'value': {
-      const text = childText(value.value);
-      if (text === '') {
+      if (value.value === null || value.value === undefined || value.value === '') {
         return [];
       }
+      // An array that joins to no text is still a text node, which keeps lit text beside it on a
+      // line of its own.
+      const text = childText(value.value);
       return state.lit ? [{ kind: 'text', text: escapeText(text) }] : parseHtml(text);
     }
     default: {

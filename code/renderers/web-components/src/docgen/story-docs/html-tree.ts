@@ -36,8 +36,9 @@ interface HoleTag {
 
 const holeTags = new WeakMap<HtmlNode, HoleTag>();
 
-// Each `hole` node as the nodes of its value, each tagged with the hole, or as an empty text when
-// its value prints nothing.
+// Each `hole` node as the nodes of its value, each tagged with the hole. A value that prints nothing
+// keeps its nodes, as an empty text still breaks a line of inline content, and an empty text after
+// them, its placeholder, takes the hole.
 const expandHoles = (nodes: HtmlNode[]): HtmlNode[] =>
   nodes.flatMap((node): HtmlNode[] => {
     if (node.kind === 'element') {
@@ -51,7 +52,7 @@ const expandHoles = (nodes: HtmlNode[]): HtmlNode[] =>
     if (printable.length === 0) {
       const placeholder: HtmlNode = { kind: 'text', text: '' };
       holeTags.set(placeholder, { hole: node.hole, first: true, last: true, placeholder: true });
-      return [placeholder];
+      return [...inner, placeholder];
     }
     inner.forEach((child) =>
       holeTags.set(child, {

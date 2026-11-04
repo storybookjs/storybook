@@ -121,6 +121,42 @@ describe('html template story snippets', () => {
       },
     },
     {
+      name: 'text beside an arg that holds an empty array',
+      source: `
+        import { html } from 'lit';
+        export default { component: 'template-element' };
+        export const Primary = {
+          args: { items: [] },
+          render: (args) => html\`<template-element>Hi \${args.items}</template-element>\`,
+        };
+      `,
+      expected: {
+        listeners: [],
+        properties: [],
+        referenced: ['items'],
+        snippet: '<template-element>\n  Hi\n</template-element>',
+        unresolved: [],
+      },
+    },
+    {
+      name: 'an attribute written after a binding of its name that prints nothing',
+      source: `
+        import { html } from 'lit';
+        export default { component: 'template-element' };
+        export const Primary = {
+          args: { disabled: false },
+          render: (args) => html\`<template-element ?label=\${args.disabled} title="t" label="Go"></template-element>\`,
+        };
+      `,
+      expected: {
+        listeners: [],
+        properties: [],
+        referenced: ['disabled'],
+        snippet: '<template-element title="t" label="Go"></template-element>',
+        unresolved: [],
+      },
+    },
+    {
       name: 'boolean, property, and listener prefixes',
       source: `
         import { html } from 'lit';

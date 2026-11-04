@@ -49,7 +49,7 @@ function renderFunctionOf(resolution: RenderResolution) {
 export interface CodeSnippet {
   /** Source of a `const` or `function` declaration named after the story. */
   snippet: string;
-  // The snippet with each place an arg prints as a hole; see `ProvidedStoryDoc`.
+  // The snippet with each place an arg prints as a hole; see `StoryDoc`.
   template: SnippetTemplate<ReactHolePlace>;
   /** Imports the snippet needs beyond the component, from arg values that kept a name. */
   imports: ImportRef[];

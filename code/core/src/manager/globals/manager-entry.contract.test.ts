@@ -20,8 +20,14 @@ const managerEntries = [
       return [];
     }
     const manager = JSON.parse(readFileSync(packageJson, 'utf-8')).exports?.['./manager'];
-    const file = typeof manager === 'string' ? manager : manager?.default;
-    return file ? [join(ADDONS, addon, file)] : [];
+    if (!manager) {
+      return [];
+    }
+    const file = typeof manager === 'string' ? manager : manager.default;
+    if (typeof file !== 'string') {
+      throw new Error(`Can't find the file of the ./manager export of ${addon}`);
+    }
+    return [join(ADDONS, addon, file)];
   }),
 ];
 const built = managerEntries.filter((entry) => existsSync(entry));

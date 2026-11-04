@@ -88,10 +88,13 @@ describe('storybook/test declaration contract', () => {
     // `sharedModules` of the preview runtime in build-config.ts.
     const distDirectory = join(import.meta.dirname, '../../dist');
     const read = (file: string) => readFileSync(join(distDirectory, file), 'utf-8');
-    // POSIX paths, also on Windows, for the prefix checks below.
-    const jsFiles = readdirSync(distDirectory, { recursive: true, encoding: 'utf-8' })
-      .map((file) => normalize(file))
-      .filter((file) => file.endsWith('.js'));
+    // POSIX paths, also on Windows, for the prefix checks below. Vitest collects a skipped suite
+    // too, so this must not read `dist` when it wasn't built.
+    const jsFiles = VENDOR_BUILT
+      ? readdirSync(distDirectory, { recursive: true, encoding: 'utf-8' })
+          .map((file) => normalize(file))
+          .filter((file) => file.endsWith('.js'))
+      : [];
     const relativeImports = (file: string) =>
       [...read(file).matchAll(/(?:from|import) "(\.\.?\/[^"]+)"/g)].map(([, specifier]) =>
         join(dirname(file), specifier)

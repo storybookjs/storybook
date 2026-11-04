@@ -1,4 +1,4 @@
-import { componentIdToStaticName } from '../shared/paths.ts';
+import { componentIdToStaticName } from '../../static-names.ts';
 
 /** Open-service id for the story-docs service (also the on-disk directory under `services/`). */
 export const STORY_DOCS_SERVICE_ID = 'core/story-docs';

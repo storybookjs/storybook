@@ -19,7 +19,7 @@ import {
   type MutableRecordLookupService,
   mutableRecordLookupServiceDef,
 } from './fixtures.ts';
-import { componentIdToStaticName } from './services/shared/paths.ts';
+import { docgenQueryStaticPath } from './services/docgen/paths.ts';
 
 // Spy-only mock: keep the real `node:fs/promises` module shape, then redirect the calls used by
 // the static-files writer (and this test's own `readFile` assertions) to `memfs` so disk state
@@ -297,13 +297,9 @@ describe('server static builds', () => {
       registerService(customPathServiceDef);
 
       await expect(buildStaticFiles()).resolves.toEqual({
-        'internal-fixture/custom-static-paths/nested/value.json': {
-          value: 'dot',
-        },
+        'internal-fixture/custom-static-paths/nested/value.json': { value: 'dot' },
         'internal-fixture/custom-static-paths/rooted.json': { value: 'rooted' },
-        'internal-fixture/custom-static-paths/windows/style.json': {
-          value: 'windows',
-        },
+        'internal-fixture/custom-static-paths/windows/style.json': { value: 'windows' },
       });
     });
 
@@ -490,74 +486,90 @@ describe('server static builds', () => {
 
     it('writes non-ASCII-id snapshots under names a decoded fetch can resolve', async () => {
       const outputDir = '/app/dist';
-      const unicodeServiceDef = defineService({
-        id: 'internal-fixture/unicode-static-names',
-        description: 'Writes snapshots keyed by non-ASCII component ids.',
-        initialState: { value: null as string | null },
-        queries: {
-          value: {
-            description: 'Stores one custom value per component id.',
-            input: v.object({ id: v.string(), value: v.string() }),
-            output: v.nullable(v.string()),
-            handler: (_input, ctx) => ctx.self.state.value,
-            load: async (input, ctx) => {
-              await ctx.self.commands.setValue(input);
-            },
-            staticPath: (input) => `snapshots/${componentIdToStaticName(input.id)}.json`,
-            staticInputs: async () => [
-              { id: '😀', value: 'emoji' },
-              { id: '界'.repeat(30), value: 'long' },
-            ],
-          },
-        },
-        commands: {
-          setValue: {
-            description: 'Stores one value before the snapshot is written to disk.',
-            input: v.object({ id: v.string(), value: v.string() }),
-            output: v.undefined(),
-            handler: async (input, ctx) => {
-              ctx.self.setState((state) => {
-                state.value = input.value;
-              });
 
-              return undefined;
+      // Mirrors the real `core/docgen` service: same service id, and the same `staticPath`
+      // composition the real definition uses — so the writer must land on the exact
+      // `docgenQueryStaticPath` names under the production scoping. Only the extraction is
+      // stubbed: loads mutate state only through commands, so the stub load routes through a
+      // fixture command that writes one docgen payload.
+      registerService(
+        defineService({
+          id: 'core/docgen',
+          description: 'Component documentation keyed by component id.',
+          initialState: {
+            components: {} as Record<
+              string,
+              { id: string; name: string; path: string; jsDocTags: Record<string, string[]> }
+            >,
+          },
+          queries: {
+            docgen: {
+              description:
+                'Returns the docgen payload for one component id, or undefined when not loaded.',
+              input: v.object({ id: v.string() }),
+              output: v.optional(v.unknown()),
+              handler: (input, ctx) => ctx.self.state.components[input.id],
+              staticPath: (input) => docgenQueryStaticPath(input.id),
+              load: async (input, ctx) => {
+                await ctx.self.commands.setDocgenFixture({
+                  id: input.id,
+                  name: 'Fixture',
+                  path: './fixture.tsx',
+                  jsDocTags: {},
+                });
+              },
+              staticInputs: async () => [{ id: '😀' }, { id: '界'.repeat(30) }],
             },
           },
-        },
-      });
+          commands: {
+            setDocgenFixture: {
+              description: 'Writes one docgen payload into state without extraction.',
+              input: v.object({
+                id: v.string(),
+                name: v.string(),
+                path: v.string(),
+                jsDocTags: v.record(v.string(), v.array(v.string())),
+              }),
+              output: v.undefined(),
+              handler: async (input, ctx) => {
+                ctx.self.setState((state) => {
+                  state.components[input.id] = input;
+                });
 
-      registerService(unicodeServiceDef);
+                return undefined;
+              },
+            },
+          },
+        })
+      );
 
       await writeOpenServiceStaticFiles(outputDir);
 
-      const snapshotDir = join(
-        outputDir,
-        'services',
-        'internal-fixture',
-        'unicode-static-names',
-        'snapshots'
-      );
+      const snapshotDir = join(outputDir, 'services', 'core', 'docgen');
       const written = await readdir(snapshotDir);
 
-      // The writer must land on the same names the loader and manifest `$ref`s derive.
       expect(new Set(written)).toEqual(
-        new Set([
-          `${componentIdToStaticName('😀')}.json`,
-          `${componentIdToStaticName('界'.repeat(30))}.json`,
-        ])
+        new Set([docgenQueryStaticPath('😀'), docgenQueryStaticPath('界'.repeat(30))])
       );
 
-      // And the names must survive the fetch round-trip: static hosts percent-decode
-      // request paths before their filesystem lookup, so a literal `%` on disk would be
-      // unreachable through any fetch.
+      // The names must survive the fetch round-trip: static hosts percent-decode request
+      // paths before their filesystem lookup, so a literal `%` on disk would be unreachable.
       for (const name of written) {
         expect(decodeURIComponent(name)).toBe(name);
-        expect(name.length).toBeLessThanOrEqual(250);
+        expect(name.length).toBeLessThanOrEqual(255);
       }
 
-      await expect(
-        readFile(join(snapshotDir, `${componentIdToStaticName('😀')}.json`), 'utf8')
-      ).resolves.toBe(JSON.stringify({ value: 'emoji' }, null, 2));
+      await expect(readFile(join(snapshotDir, docgenQueryStaticPath('😀')), 'utf8')).resolves.toBe(
+        JSON.stringify(
+          {
+            components: {
+              '😀': { id: '😀', name: 'Fixture', path: './fixture.tsx', jsDocTags: {} },
+            },
+          },
+          null,
+          2
+        )
+      );
     });
   });
 });

@@ -1,4 +1,4 @@
-import { componentIdToStaticName } from '../shared/paths.ts';
+import { componentIdToStaticName } from '../../static-names.ts';
 
 /** Open-service id for the docgen service (also the on-disk directory under `services/`). */
 export const DOCGEN_SERVICE_ID = 'core/docgen';

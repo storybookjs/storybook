@@ -11,7 +11,15 @@ import { escapeAttribute, inlineText, quotedAttribute } from '../../snippet-valu
 
 type InlineText = { hasText: boolean; text: string };
 // With marks, the printer prints the template of the html: the same html with each hole marked.
-type Marks = HoleMarks<HtmlHolePlace> | undefined;
+// `tags` holds the hole of each node that prints part of a value.
+type Marks = { mark: HoleMarks<HtmlHolePlace>['mark']; tags: Map<HtmlNode, HoleTag> } | undefined;
+
+interface HoleTag {
+  hole: HtmlHole;
+  // Whether the node opens the hole, and whether it closes it.
+  first: boolean;
+  last: boolean;
+}
 
 const INLINE_LIMIT = 80;
 const INDENT = '  ';
@@ -19,43 +27,32 @@ const INDENT = '  ';
 // attribute marks what it prints as its hole. A value that prints nothing goes at the end of the
 // content it stands in, and an attribute that does at the end of the start tag.
 export function printHtml(nodes: HtmlNode[], marks?: HoleMarks<HtmlHolePlace>): string {
-  const expanded = expandHoles(nodes);
-  const lines = expanded.filter(isPrintable).map((node) => printNode(node, 0, marks));
+  const tags = new Map<HtmlNode, HoleTag>();
+  const expanded = expandHoles(nodes, tags);
+  const marked = marks && { mark: marks.mark, tags };
+  const lines = expanded.filter(isPrintable).map((node) => printNode(node, 0, marked));
   const html = lines.join('\n');
-  return marks ? html + placeholderHoles(expanded, html ? '\n' : '', marks) : html;
+  return html + placeholderHoles(expanded, html ? '\n' : '', marked);
 }
 
-interface HoleTag {
-  hole: HtmlHole;
-  // Whether the node opens the hole, and whether it closes it.
-  first: boolean;
-  last: boolean;
-  // A value that prints nothing, which only the template shows, as its hole.
-  placeholder?: boolean;
-}
-
-const holeTags = new WeakMap<HtmlNode, HoleTag>();
-
-// Each `hole` node as the nodes of its value, each tagged with the hole. A value that prints nothing
-// keeps its nodes, as an empty text still breaks a line of inline content, and an empty text after
-// them, its placeholder, takes the hole.
-const expandHoles = (nodes: HtmlNode[]): HtmlNode[] =>
+// Each `hole` node as the nodes of its value, each tagged with the hole in `tags`. A value that
+// prints nothing keeps its nodes, as an empty text still breaks a line of inline content, followed
+// by the `hole` node itself, a placeholder that prints nothing but its hole.
+const expandHoles = (nodes: HtmlNode[], tags: Map<HtmlNode, HoleTag>): HtmlNode[] =>
   nodes.flatMap((node): HtmlNode[] => {
     if (node.kind === 'element') {
-      return [{ ...node, children: expandHoles(node.children) }];
+      return [{ ...node, children: expandHoles(node.children, tags) }];
     }
     if (node.kind !== 'hole') {
       return [node];
     }
-    const inner = expandHoles(node.nodes);
+    const inner = expandHoles(node.nodes, tags);
     const printable = inner.filter(isPrintable);
     if (printable.length === 0) {
-      const placeholder: HtmlNode = { kind: 'text', text: '' };
-      holeTags.set(placeholder, { hole: node.hole, first: true, last: true, placeholder: true });
-      return [...inner, placeholder];
+      return [...inner, node];
     }
     inner.forEach((child) =>
-      holeTags.set(child, {
+      tags.set(child, {
         hole: node.hole,
         first: child === printable[0],
         last: child === printable.at(-1),
@@ -64,28 +61,30 @@ const expandHoles = (nodes: HtmlNode[]): HtmlNode[] =>
     return inner;
   });
 
-const isPlaceholder = (node: HtmlNode): boolean => holeTags.get(node)?.placeholder === true;
+const isPlaceholder = (node: HtmlNode): node is Extract<HtmlNode, { kind: 'hole' }> =>
+  node.kind === 'hole';
 
 const isPrintable = (node: HtmlNode): boolean =>
-  node.kind !== 'text' || collapseText(node.text) !== '';
+  !isPlaceholder(node) && (node.kind !== 'text' || collapseText(node.text) !== '');
 
 // The holes of the values that print nothing among `children`, each after `space` once it prints.
 const placeholderHoles = (children: HtmlNode[], space: string, marks: Marks): string =>
   marks
     ? children
         .filter(isPlaceholder)
-        .map((child) => marks.mark(holeTags.get(child)!.hole, '', space))
+        .map((child) => marks.mark(child.hole, '', space))
         .join('')
     : '';
 
-// `printed` with the hole of its node opened before it, after its indent, and closed after it. A
-// text hole says whether the snippet trims the text it prints at its start and at its end.
+// `printed` with the hole of `node` opened before it, after its indent, and closed after it. A text
+// hole says whether the snippet trims the text it prints at its start and at its end.
 const wrapInHole = (
   printed: string,
-  tag: HoleTag | undefined,
+  node: HtmlNode,
   trim: { start: boolean; end: boolean },
   marks: Marks
 ): string => {
+  const tag = marks?.tags.get(node);
   if (!tag || !marks) {
     return printed;
   }
@@ -103,12 +102,7 @@ const wrapInHole = (
 };
 
 const printNode = (node: HtmlNode, depth: number, marks: Marks): string =>
-  wrapInHole(
-    printNodeText(node, depth, marks),
-    holeTags.get(node),
-    { start: true, end: true },
-    marks
-  );
+  wrapInHole(printNodeText(node, depth, marks), node, { start: true, end: true }, marks);
 
 const printNodeText = (node: HtmlNode, depth: number, marks: Marks): string => {
   const indent = INDENT.repeat(depth);
@@ -240,7 +234,7 @@ const inlineChildrenText = (children: HtmlNode[], marks: Marks): InlineText | un
     const trim = { start: child === shown[0], end: child === shown.at(-1) };
     const text = child.kind === 'text' ? inlineText(child.text, trim.start, trim.end) : part.text;
     if (text !== '') {
-      parts.push(wrapInHole(text, holeTags.get(child), trim, marks));
+      parts.push(wrapInHole(text, child, trim, marks));
     }
   }
   return { hasText, text: parts.join('') };

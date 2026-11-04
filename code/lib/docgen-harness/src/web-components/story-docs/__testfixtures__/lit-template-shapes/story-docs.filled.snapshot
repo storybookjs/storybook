@@ -27,7 +27,7 @@
     host.addEventListener('shape-change', () => {});
   }
 </script>",
-  "Nothing": "UnprintableArgError: The snippet cannot show the current value of the `label` arg.",
+  "Nothing": "<lit-template-shapes label="Set &amp; &lt;changed>"><b>shown</b></lit-template-shapes>",
   "PrefixedClass": "<lit-template-shapes class="btn-large &amp; &lt;changed>"></lit-template-shapes>",
   "PropertyOnly": "<lit-template-shapes></lit-template-shapes>
 <script>

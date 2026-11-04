@@ -2,6 +2,8 @@ import type { ESTree as E, ESTreeNode as Node } from 'storybook/internal/csf-too
 import { oneLineTextOf, unwrapExpression } from 'storybook/internal/csf-tools';
 import { type TemplateHole, createHoleMarks } from 'storybook/internal/docs-tools';
 
+import { isEqual } from 'es-toolkit/predicate';
+
 import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
 import { fieldDefault, pairedAttribute } from './classify-args.ts';
 import { type HtmlAttribute, type HtmlNode, parseHtml } from '../../html-parse.ts';
@@ -367,20 +369,8 @@ const resolveAttribute = (
 
   const markers = markersIn(attribute.value, state);
   const singleDynamicValue = markers.length === 1 && attribute.value === markers[0];
-  // `name=${args.x}` is the attribute with the arg's text as its value; `name=${ifDefined(args.x)}`
-  // is it while the arg is set; `name=${args.x ? a : b}` is the attribute each branch prints.
   const only = singleDynamicValue ? state.markers.get(markers[0]!) : undefined;
-  const definedArg =
-    only && isIfDefinedCall(only, state.context.bindings)
-      ? wholeArg(only.arguments[0], state)
-      : undefined;
-  const boundArg = only && definedArg === undefined ? wholeArg(only, state) : undefined;
-  const singleHole: HtmlHole | undefined =
-    definedArg !== undefined
-      ? attrHole(definedArg, attribute.name, 'defined')
-      : boundArg !== undefined
-        ? attrHole(boundArg, attribute.name, 'bind')
-        : only && choiceHole(only, state);
+  const singleHole = only && attributeHole(only, attribute.name, state);
   const withHole = (printed: HtmlAttribute | undefined): HtmlAttribute | undefined =>
     singleHole === undefined
       ? printed
@@ -440,6 +430,36 @@ const resolveAttribute = (
     value: text,
     ...(holeValue.some((segment) => typeof segment !== 'string') ? { holeValue } : {}),
   });
+};
+
+// The hole of the attribute `name` whose whole value is `expression`. `name=${args.x}` is the
+// attribute with the arg's text as its value; `name=${ifDefined(args.x)}` is it while the arg is
+// set, and `name=${args.x ? args.x : nothing}` while it is truthy; `name=${args.x ? a : b}` is the
+// attribute each branch prints.
+const attributeHole = (
+  expression: E.Expression,
+  name: string,
+  state: TemplatePrintState
+): HtmlHole | undefined => {
+  if (isIfDefinedCall(expression, state.context.bindings)) {
+    const read = wholeArg(expression.arguments[0], state);
+    return read && attrHole(read, name, 'defined');
+  }
+  const read = wholeArg(expression, state);
+  if (read) {
+    return attrHole(read, name, 'bind');
+  }
+  const node = unwrapExpression(expression);
+  if (node.type === 'ConditionalExpression') {
+    const test = wholeArg(node.test, state);
+    const otherwise = resolveHoleValue(node.alternate, state.context);
+    const none =
+      otherwise.kind === 'nothing' || (otherwise.kind === 'value' && otherwise.value === undefined);
+    if (test && none && !otherwise.arg && isEqual(test, wholeArg(node.consequent, state))) {
+      return attrHole(test, name, 'truthy');
+    }
+  }
+  return choiceHole(expression, state);
 };
 
 // The hole of an expression in a quoted attribute value.

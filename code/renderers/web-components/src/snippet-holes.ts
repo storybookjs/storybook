@@ -8,8 +8,9 @@ export type HtmlHolePlace = Place & { path?: string[] };
 type Place =
   // An attribute, or nothing. `render`: the attribute Storybook's render sets; `field`: as that,
   // but `name=""` while empty; `bind`: lit's `name=${arg}`; `defined`: lit's
-  // `name=${ifDefined(arg)}`, left out while unset.
-  | { kind: 'attr'; name?: string; mode: 'render' | 'field' | 'bind' | 'defined' }
+  // `name=${ifDefined(arg)}`, left out while unset; `truthy`: lit's `name=${arg ? arg : nothing}`,
+  // left out while falsy.
+  | { kind: 'attr'; name?: string; mode: 'render' | 'field' | 'bind' | 'defined' | 'truthy' }
   // Lit's `?name=${arg}`.
   | { kind: 'bool'; name?: string }
   // Text in a quoted attribute value.

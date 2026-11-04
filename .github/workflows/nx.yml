@@ -67,7 +67,7 @@ jobs:
           fi
           echo "tag=$tags" >> "$GITHUB_OUTPUT"
       # Before installing dependencies, so the workers boot while this job installs. Distribution
-      # and assignment rules live in .nx/ci-config.yaml; NX Cloud stops the workers when this job ends.
+      # and assignment rules live in .nx/ci-config.yaml. `complete-ci-run` at the end stops them.
       - name: Start NX Cloud workers
         run: npx nx-cloud@19.1.5 start-workers
       - name: Create Nx Cloud Status (pending)
@@ -191,3 +191,6 @@ jobs:
               context: `nx: ${tag}`,
             });
 
+      - name: Stop the NX Cloud workers
+        if: always()
+        run: npx nx-cloud@19.1.5 complete-ci-run

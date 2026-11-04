@@ -45,8 +45,13 @@ export function printValue(
     const properties: string[] = [];
     for (const key of Object.keys(object)) {
       if (object[key] !== undefined) {
-        // `__proto__:` would set the prototype; a quoted key is a property.
-        const printedKey = /^[A-Za-z_$][\w$]*$/.test(key) && key !== '__proto__' ? key : print(key);
+        // A `__proto__` key, quoted or not, sets the prototype; only a computed one is a property.
+        const printedKey =
+          key === '__proto__'
+            ? `[${print(key)}]`
+            : /^[A-Za-z_$][\w$]*$/.test(key)
+              ? key
+              : print(key);
         properties.push(`${printedKey}: ${print(object[key])}`);
       }
     }

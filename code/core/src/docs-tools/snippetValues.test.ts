@@ -19,8 +19,10 @@ describe('printValue', () => {
     );
   });
 
-  it('prints an own `__proto__` key quoted, as a property rather than the prototype', () => {
-    expect(printValue(JSON.parse('{"__proto__":{"x":1}}'), 'v')).toBe('{ "__proto__": { x: 1 } }');
+  it('prints an own `__proto__` key computed, as a property rather than the prototype', () => {
+    const printed = printValue(JSON.parse('{"__proto__":{"x":1}}'), 'v');
+    expect(printed).toBe('{ ["__proto__"]: { x: 1 } }');
+    expect(Object.keys(new Function(`return ${printed}`)())).toEqual(['__proto__']);
   });
 
   it('prints a literal of any length', () => {

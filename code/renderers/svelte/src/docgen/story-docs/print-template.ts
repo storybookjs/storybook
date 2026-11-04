@@ -322,11 +322,7 @@ function spreadPlace(
   const holes = props.map(([arg, prop]) => mark({ kind: 'prop', arg }, prop));
   // The args a control adds stand `space` apart, as the props of the spread do.
   const added = (space: string) =>
-    mark(
-      { kind: 'props', except: printed, spread: true, ...(space !== ' ' && { separator: space }) },
-      '',
-      space
-    );
+    mark({ kind: 'props', except: printed, separator: space, spread: true }, '', space);
   const { end } = span;
   let { start } = span;
   if (onePerLine) while (start > 0 && /[ \t]/.test(code[start - 1])) start--;

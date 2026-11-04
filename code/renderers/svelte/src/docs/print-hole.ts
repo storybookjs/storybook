@@ -27,8 +27,7 @@ export const printHole: PrintHole<SvelteHolePlace> = (hole, value) => {
       return Object.entries(value as Args)
         .filter(([name]) => !hole.except.includes(name))
         .map(([name, item]) => printProp(name, propValue(item, name)))
-        .filter(Boolean)
-        .join(hole.separator ?? ' ');
+        .join(hole.separator);
     case 'spreadattr':
       return printSpreadAttribute(arg, propValue(value, arg));
     case 'overwritten':

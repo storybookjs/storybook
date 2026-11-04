@@ -10,8 +10,8 @@ export type SvelteHolePlace =
   | { kind: 'prop' }
   // The args a control set, as a spread passes them, but those `except` names: the props the spread
   // passes already, and what the element and the template parameter take themselves. They stand
-  // `separator` apart, a space unless the spread prints one prop per line.
-  | { kind: 'props'; except: string[]; separator?: string }
+  // `separator` apart, as the props of the spread do.
+  | { kind: 'props'; except: string[]; separator: string }
   // An attribute a later `{...args}` spread writes over.
   | { kind: 'spreadattr' }
   // After an attribute that reads other args, before an `{...args}` spread that writes over it once

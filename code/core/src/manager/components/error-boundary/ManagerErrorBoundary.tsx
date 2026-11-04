@@ -137,7 +137,7 @@ const ErrorFallback = ({ error, errorInfo }: ErrorFallbackProps) => {
             code or configuration. Please check your browser console for more details. Try clearing
             browser storage if the issue persists.
           </SubHeading>
-          <Button asChild size="medium">
+          <Button ariaLabel={false} asChild size="medium">
             <a href={window.location.origin + window.location.pathname.replace('iframe.html', '')}>
               <SyncIcon size={14} />
               Reload Storybook

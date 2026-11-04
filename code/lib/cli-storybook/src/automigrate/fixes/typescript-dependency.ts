@@ -12,9 +12,14 @@ import { getRendererName } from '../helpers/mainConfigFile.ts';
 import { crossesVersionBoundary } from '../helpers/versionBoundary.ts';
 import type { CheckOptions, Fix } from '../types.ts';
 
+/** The release in which the docgen packages and `typescript` became peer dependencies. */
 const introducedIn = '11.0.0';
 
-const upgradesAcrossPeerChange = ({ beforeVersion, storybookVersion, requested }: CheckOptions) =>
+export const upgradesAcrossPeerChange = ({
+  beforeVersion,
+  storybookVersion,
+  requested,
+}: CheckOptions) =>
   requested ||
   (!!beforeVersion && crossesVersionBoundary(beforeVersion, storybookVersion, introducedIn));
 

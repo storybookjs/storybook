@@ -1,4 +1,5 @@
 import { print } from 'esrap';
+import ts from 'esrap/languages/ts';
 import { describe, it } from 'vitest';
 
 import { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call.ts';
@@ -19,7 +20,8 @@ describe(createVariableFromRuntimeStoriesCall.name, () => {
           },
           params: [],
         },
-      })
+      }),
+      ts()
     ).code;
 
     expect(stringified).toMatchInlineSnapshot(

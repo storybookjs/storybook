@@ -2,12 +2,14 @@ import {
   type JsPackageManager,
   RENDERERS_WITH_TYPESCRIPT_DOCGEN,
   TYPESCRIPT_FOR_DOCGEN_PACKAGE,
+  REACT_DOCGEN_FALLBACK_RANGE,
+  recordReactDocgenFallback,
   hasTypeScriptCompilerApi,
   isCI,
 } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { TypeScriptWithoutCompilerApiError } from 'storybook/internal/server-errors';
-import type { SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
+import { type SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import { coerce } from 'semver';
 
@@ -49,6 +51,9 @@ export class TypeScriptDependencyCommand {
     if (result === 'added') {
       dependencyCollector.addDevDependencies([TYPESCRIPT_FOR_DOCGEN_PACKAGE]);
     }
+    if (result === 'without-compiler-api') {
+      await this.handleTypeScriptWithoutCompilerApi(packageManager, renderer, dependencyCollector);
+    }
     if (result !== 'not-needed') {
       await this.telemetryService.trackTypeScriptDependency(result);
     }
@@ -65,11 +70,8 @@ export class TypeScriptDependencyCommand {
     }
 
     if (packageManager.isDependencyInstalled('typescript')) {
-      const version = coerce(
-        await packageManager.getDeclaredVersionSpecifier('typescript')
-      )?.version;
+      const version = await this.getTypeScriptVersion(packageManager);
       if (version && !hasTypeScriptCompilerApi(version)) {
-        logger.warn(new TypeScriptWithoutCompilerApiError({ version }).message);
         return 'without-compiler-api';
       }
       return 'already-installed';
@@ -79,9 +81,37 @@ export class TypeScriptDependencyCommand {
       return 'added';
     }
     logger.info(
-      `Server-side docgen stays off until you add ${TYPESCRIPT_FOR_DOCGEN_PACKAGE} to your devDependencies.`
+      renderer === SupportedRenderer.REACT
+        ? `Server-side docgen stays off until you add ${TYPESCRIPT_FOR_DOCGEN_PACKAGE} to your devDependencies. Until then, Controls and the Docs args table show no props.`
+        : `Server-side docgen stays off until you add ${TYPESCRIPT_FOR_DOCGEN_PACKAGE} to your devDependencies.`
     );
     return 'declined';
+  }
+
+  private async getTypeScriptVersion(packageManager: JsPackageManager) {
+    return coerce(await packageManager.getDeclaredVersionSpecifier('typescript'))?.version;
+  }
+
+  /** Warn that the TypeScript version has no compiler API, and say what docgen does meanwhile. */
+  private async handleTypeScriptWithoutCompilerApi(
+    packageManager: JsPackageManager,
+    renderer: SupportedRenderer,
+    dependencyCollector: DependencyCollector
+  ) {
+    let builderDocgenFallback;
+    if (renderer === SupportedRenderer.REACT) {
+      let installed = packageManager.isDependencyInstalled('react-docgen');
+      // TEMPORARY(ts-7.1): React falls back to builder docgen, so add its optional `react-docgen`
+      // peer. See `typescript-7-react-docgen-fallback.ts` in core.
+      if (!installed) {
+        dependencyCollector.addDevDependencies([`react-docgen@${REACT_DOCGEN_FALLBACK_RANGE}`]);
+        recordReactDocgenFallback(packageManager.primaryPackageJson.operationDir);
+        installed = true;
+      }
+      builderDocgenFallback = { packageName: 'react-docgen', installed };
+    }
+    const version = (await this.getTypeScriptVersion(packageManager)) ?? '';
+    logger.warn(new TypeScriptWithoutCompilerApiError({ version, builderDocgenFallback }).message);
   }
 
   private async shouldAddTypeScript(): Promise<boolean> {

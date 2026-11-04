@@ -8,16 +8,15 @@ import { evaluateArgValue } from './arg-values.ts';
 // A story's render function as its snippet: its own code, with each arg it reads, as `args.label`
 // or a name its destructured parameter binds, replaced by the arg's value as code, in a `code` hole.
 // An expression body prints alone; a block body as the story's function. A read of `args` as a
-// whole prints the story's args as an object, with a `guard` hole for each arg, as no hole prints
-// the args a control did not change.
+// whole prints the story's args as an object; such a render has no template, as no hole prints the
+// args a control did not change.
 //
 // `undefined` for a render whose names the snippet cannot fill in: a parameter with a default, a
 // rest or a nested pattern, or a body that binds or assigns a name it reads an arg through.
 export function renderSnippet(
   render: RenderFunction,
   exportName: string,
-  args: Record<string, Node>,
-  argNames: string[]
+  args: Record<string, Node>
 ): { snippet: string; template: HtmlSnippetTemplate | undefined } | undefined {
   const body = render.body!;
   const reads = argReads(render);
@@ -46,10 +45,11 @@ export function renderSnippet(
   };
 
   const snippet = print();
+  if (reads.some((read) => read.arg === undefined)) {
+    return { snippet, template: undefined };
+  }
   const marks = createHoleMarks<HtmlHolePlace>([snippet]);
-  const guarded = reads.some((read) => read.arg === undefined) ? argNames : [];
-  const guards = guarded.map((arg) => marks.mark({ kind: 'guard', arg }, '')).join('');
-  return { snippet, template: marks.toTemplate(guards + print(marks.mark)) };
+  return { snippet, template: marks.toTemplate(print(marks.mark)) };
 }
 
 // A place the body reads `arg`, or the args as a whole but those in `rest`, as `node`. `shorthand`

@@ -880,7 +880,7 @@ describe('the template', () => {
     ).toThrow('The snippet cannot show the current value of the `--undeclared` arg.');
   });
 
-  it('prints the args the render reads as a whole, and cannot follow them', async () => {
+  it('prints the args the render reads as a whole, with no template to follow them', async () => {
     const { snippet, template } = await firstTemplate(`
       import { html } from 'lit';
       export default { title: 'Example/TestElement', component: 'test-element' };
@@ -900,9 +900,7 @@ describe('the template', () => {
         '};',
       ].join('\n')
     );
-    expect(() => fill(template, { label: 'Go' }, { label: 'Stop' })).toThrow(
-      'The snippet cannot show the current value of the `label` arg.'
-    );
+    expect(template).toBeUndefined();
   });
 
   it('is not there where next prints no snippet', async () => {

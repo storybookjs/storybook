@@ -8,6 +8,7 @@ import type { Options } from 'storybook/internal/types';
 
 import { genImport } from 'knitwork';
 import { isAbsolute, normalize } from 'pathe';
+import { dedent } from 'ts-dedent';
 
 /**
  * The module specifiers of the `experimental_moduleImporters` preset, in preset order: absolute paths
@@ -41,13 +42,25 @@ function toSpecifier(moduleImporter: unknown): string {
   return moduleImporter;
 }
 
-/** Imports the `importModule` of each module importer as `importModule_<index>`. */
+/**
+ * Imports each module importer as `moduleImporter_<index>`, and defines `importModuleOf`, which
+ * reads its `importModule`. The check happens on use, so a module without the export makes the
+ * import of a story or the preview fail with an error that Storybook shows, not the whole preview.
+ */
 export function genModuleImporterImports(moduleImporters: string[]): string {
-  return moduleImporters
-    .map((specifier, index) =>
-      genImport(specifier, [{ name: 'importModule', as: `importModule_${index}` }])
-    )
-    .join('\n');
+  const imports = moduleImporters.map((specifier, index) =>
+    genImport(specifier, { name: '*', as: `moduleImporter_${index}` })
+  );
+  return dedent`
+    ${imports.join('\n')}
+
+    function importModuleOf(moduleImporter, specifier) {
+      if (typeof moduleImporter.importModule !== 'function') {
+        throw new Error(\`The module importer \${specifier} does not export an importModule function\`);
+      }
+      return moduleImporter.importModule;
+    }
+  `;
 }
 
 /**
@@ -61,9 +74,11 @@ export function genImportThroughModuleImporters(
   importPath: string,
   importFn: string
 ): string {
+  const importModule = (index: number) =>
+    `importModuleOf(moduleImporter_${index}, ${JSON.stringify(moduleImporters[index])})`;
   let next = importFn;
   for (let index = 0; index < moduleImporters.length - 1; index++) {
-    next = `async (path) => importModule_${index}(path, ${next})`;
+    next = `async (path) => ${importModule(index)}(path, ${next})`;
   }
-  return `importModule_${moduleImporters.length - 1}(${importPath}, ${next})`;
+  return `${importModule(moduleImporters.length - 1)}(${importPath}, ${next})`;
 }

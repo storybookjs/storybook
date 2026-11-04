@@ -70,8 +70,6 @@ export type StorybookConfigVite = {
   experimental_moduleImporters?: PresetValue<string[]>;
 };
 
-export type { ImportModule, ModuleImportFn as ImportFn } from 'storybook/internal/types';
-
 export type BuilderOptions = {
   /**
    * Path to `vite.config` file, relative to `process.cwd()`.

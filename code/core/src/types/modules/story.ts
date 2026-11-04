@@ -43,9 +43,11 @@ export type ModuleImportFn = (path: Path) => Promise<ModuleExports>;
  *   runtime, which the importer fetches itself. For a path the build doesn't have, `importFn`
  *   rejects; for the preview file it only imports the preview file.
  * - Return the same object for the same module. The store caches by it, so a new object on every
- *   call processes the file again and remounts its story. A docs file (MDX) refers to a story file
- *   with the module it imports itself, so for a story file that MDX refers to, return what
- *   `importFn` returns.
+ *   call processes the file again and remounts its story. Cache a module you fetch by its path,
+ *   and a module you derive from what `importFn` returns in a `WeakMap` keyed by that module: after
+ *   an HMR update `importFn` returns a new module, which a cache by path would miss. A docs file
+ *   (MDX) refers to a story file with the module it imports itself, so for a story file that MDX
+ *   refers to, return what `importFn` returns.
  * - With CSF Next, a story file imports the preview itself and its stories use that preview. An
  *   importer that replaces the preview file also returns story files whose meta uses it.
  * - It is asked again after an HMR update.

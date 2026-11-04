@@ -42,7 +42,7 @@ export async function generateProjectAnnotationsCode(options: Options, projectRo
 
 export function generateProjectAnnotationsCodeFromPreviews(options: {
   /** The preview annotations of presets and addons. */
-  previewAnnotations: PreviewAnnotation[];
+  previewAnnotations: (PreviewAnnotation | undefined)[];
   /** The project's preview file. */
   previewFile?: PreviewAnnotation;
   projectRoot: string;
@@ -59,7 +59,8 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
       genSafeVariableName(filename(url)).replace(/_(45|46|47)/g, '_') + '_' + hash(url);
     return { url, variable, import: genImport(url, { name: '*', as: variable }) };
   };
-  const annotations = options.previewAnnotations.map(toModule);
+  // A preset may leave an undefined entry
+  const annotations = options.previewAnnotations.filter((path) => path !== undefined).map(toModule);
   const previewFile = options.previewFile ? toModule(options.previewFile) : undefined;
   // The importers import the preview file only
   const hasImporters = moduleImporters.length > 0 && previewFile !== undefined;
@@ -78,12 +79,13 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
       `Promise.reject(new Error(\`The preview file's importFn can't import \${path}\`))`;
     return `await ${genImportThroughModuleImporters(moduleImporters, importPath, importFn)}`;
   };
-  const importerImport = hasImporters ? `${genModuleImporterImports(moduleImporters)}\n` : '';
+  // After the module imports, with a blank line, so without importers the code stays the same
+  const importerImports = hasImporters ? `\n\n${genModuleImporterImports(moduleImporters)}` : '';
   const maybeAsync = hasImporters ? 'async ' : '';
 
   if (options.isCsf4 && previewFile) {
     return dedent`
-      ${importerImport}${previewFile.import}
+      ${previewFile.import}${importerImports}
 
       export ${maybeAsync}function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
         const preview = ${loadPreviewFile(previewFile, 0)};
@@ -109,8 +111,8 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
 
   return dedent`
     import { composeConfigs } from 'storybook/preview-api';
-    ${importerImport}
-    ${modules.map((module) => module.import).join('\n')}
+
+    ${modules.map((module) => module.import).join('\n')}${importerImports}
 
     export ${maybeAsync}function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
       const configs = ${genArrayFromRaw(configs, '  ')};

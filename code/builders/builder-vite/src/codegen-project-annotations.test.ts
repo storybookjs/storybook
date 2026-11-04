@@ -1,9 +1,9 @@
 import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
+import { join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { generateProjectAnnotationsCodeFromPreviews } from './codegen-project-annotations.ts';
@@ -80,11 +80,19 @@ describe('generateProjectAnnotationsCodeFromPreviews with module importers', () 
     });
 
     expect(code).toMatchInlineSnapshot(`
-      "import { importModule as importModule_0 } from "/project/importer.js";
-      import * as preview_2178760794 from "/project/.storybook/preview.ts";
+      "import * as preview_2178760794 from "/project/.storybook/preview.ts";
+
+      import * as moduleImporter_0 from "/project/importer.js";
+
+      function importModuleOf(moduleImporter, specifier) {
+        if (typeof moduleImporter.importModule !== 'function') {
+          throw new Error(\`The module importer \${specifier} does not export an importModule function\`);
+        }
+        return moduleImporter.importModule;
+      }
 
       export async function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
-        const preview = await importModule_0("./.storybook/preview.ts", async (path) => path === "./.storybook/preview.ts" ? hmrPreviewAnnotationModules[0] ?? preview_2178760794 : Promise.reject(new Error(\`The preview file's importFn can't import \${path}\`)));
+        const preview = await importModuleOf(moduleImporter_0, "/project/importer.js")("./.storybook/preview.ts", async (path) => path === "./.storybook/preview.ts" ? hmrPreviewAnnotationModules[0] ?? preview_2178760794 : Promise.reject(new Error(\`The preview file's importFn can't import \${path}\`)));
         return preview.default.composed;
       }
 
@@ -110,15 +118,23 @@ describe('generateProjectAnnotationsCodeFromPreviews with module importers', () 
       })
     ).toMatchInlineSnapshot(`
       "import { composeConfigs } from 'storybook/preview-api';
-      import { importModule as importModule_0 } from "/project/importer.js";
 
       import * as preview_3900539004 from "/project/addon/preview.js";
       import * as preview_2178760794 from "/project/.storybook/preview.ts";
 
+      import * as moduleImporter_0 from "/project/importer.js";
+
+      function importModuleOf(moduleImporter, specifier) {
+        if (typeof moduleImporter.importModule !== 'function') {
+          throw new Error(\`The module importer \${specifier} does not export an importModule function\`);
+        }
+        return moduleImporter.importModule;
+      }
+
       export async function getProjectAnnotations(hmrPreviewAnnotationModules = []) {
         const configs = [
           hmrPreviewAnnotationModules[0] ?? preview_3900539004,
-          await importModule_0("./.storybook/preview.ts", async (path) => path === "./.storybook/preview.ts" ? hmrPreviewAnnotationModules[1] ?? preview_2178760794 : Promise.reject(new Error(\`The preview file's importFn can't import \${path}\`)))
+          await importModuleOf(moduleImporter_0, "/project/importer.js")("./.storybook/preview.ts", async (path) => path === "./.storybook/preview.ts" ? hmrPreviewAnnotationModules[1] ?? preview_2178760794 : Promise.reject(new Error(\`The preview file's importFn can't import \${path}\`)))
         ];
         return composeConfigs(configs);
       }
@@ -249,5 +265,15 @@ describe('generateProjectAnnotationsCodeFromPreviews with module importers', () 
     await expect(getProjectAnnotations()).rejects.toThrow(
       "The preview file's importFn can't import ./elsewhere.js"
     );
+  });
+
+  it('skips an undefined preview annotation of a preset', () => {
+    const code = generateProjectAnnotationsCodeFromPreviews({
+      ...options,
+      previewAnnotations: ['/project/addon/preview.js', undefined],
+      isCsf4: false,
+    });
+
+    expect(code).toBe(generateProjectAnnotationsCodeFromPreviews({ ...options, isCsf4: false }));
   });
 });

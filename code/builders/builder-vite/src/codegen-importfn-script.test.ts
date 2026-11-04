@@ -1,11 +1,11 @@
 import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import type { StoryIndex } from 'storybook/internal/types';
 
+import { join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { generateImportFnScriptCode } from './codegen-importfn-script.ts';
@@ -125,7 +125,14 @@ describe('generateImportFnScriptCode with module importers', () => {
     vi.spyOn(process, 'cwd').mockReturnValue('/absolute/path');
 
     expect(generateImportFnScriptCode(index, ['/absolute/importer.js'])).toMatchInlineSnapshot(`
-      "import { importModule as importModule_0 } from "/absolute/importer.js";
+      "import * as moduleImporter_0 from "/absolute/importer.js";
+
+      function importModuleOf(moduleImporter, specifier) {
+        if (typeof moduleImporter.importModule !== 'function') {
+          throw new Error(\`The module importer \${specifier} does not export an importModule function\`);
+        }
+        return moduleImporter.importModule;
+      }
 
       const importers = {
         "./Button.stories.js": () => import("/absolute/path/Button.stories.js")
@@ -139,7 +146,7 @@ describe('generateImportFnScriptCode with module importers', () => {
       }
 
       export async function importFn(path) {
-        return await importModule_0(path, importFromBuild);
+        return await importModuleOf(moduleImporter_0, "/absolute/importer.js")(path, importFromBuild);
       }"
     `);
   });
@@ -207,8 +214,15 @@ describe('generateImportFnScriptCode with module importers', () => {
 
     expect(generateImportFnScriptCode(index, ['/framework/importer.js', '/project/importer.js']))
       .toMatchInlineSnapshot(`
-        "import { importModule as importModule_0 } from "/framework/importer.js";
-        import { importModule as importModule_1 } from "/project/importer.js";
+        "import * as moduleImporter_0 from "/framework/importer.js";
+        import * as moduleImporter_1 from "/project/importer.js";
+
+        function importModuleOf(moduleImporter, specifier) {
+          if (typeof moduleImporter.importModule !== 'function') {
+            throw new Error(\`The module importer \${specifier} does not export an importModule function\`);
+          }
+          return moduleImporter.importModule;
+        }
 
         const importers = {
           "./Button.stories.js": () => import("/absolute/path/Button.stories.js")
@@ -222,7 +236,7 @@ describe('generateImportFnScriptCode with module importers', () => {
         }
 
         export async function importFn(path) {
-          return await importModule_1(path, async (path) => importModule_0(path, importFromBuild));
+          return await importModuleOf(moduleImporter_1, "/project/importer.js")(path, async (path) => importModuleOf(moduleImporter_0, "/framework/importer.js")(path, importFromBuild));
         }"
       `);
   });
@@ -289,5 +303,23 @@ describe('generateImportFnScriptCode with module importers', () => {
     expect(await importFn('./Login.stories.json')).toEqual({
       error: 'The Storybook build has no file ./Login.stories.json',
     });
+  });
+
+  it('rejects the import with a clear error when an importer has no importModule export', async () => {
+    const dir = await realpath(await mkdtemp(join(tmpdir(), 'module-importer-')));
+    onTestFinished(() => rm(dir, { recursive: true }));
+    vi.spyOn(process, 'cwd').mockReturnValue(dir);
+    await writeFile(join(dir, 'Button.stories.js'), 'export const Primary = {};');
+    await writeFile(join(dir, 'importer.js'), 'export function load() {}');
+    await writeFile(
+      join(dir, 'stories.js'),
+      generateImportFnScriptCode(index, [join(dir, 'importer.js')])
+    );
+
+    const { importFn } = await import(/* @vite-ignore */ join(dir, 'stories.js'));
+
+    await expect(importFn('./Button.stories.js')).rejects.toThrow(
+      `The module importer ${join(dir, 'importer.js')} does not export an importModule function`
+    );
   });
 });

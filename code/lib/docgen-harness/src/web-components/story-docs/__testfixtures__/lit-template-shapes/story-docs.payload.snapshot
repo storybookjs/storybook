@@ -105,7 +105,7 @@
       "id": "webcomponentsstorydocs-lit-template-shapes--nothing",
       "name": "Nothing",
       "snippet": "<lit-template-shapes label="Set"></lit-template-shapes>",
-      "template": "⟦guard label⟫⟧<lit-template-shapes label="Set">⟦choice show truthy="<b>shown</b>" falsy=""⟫⟧</lit-template-shapes>",
+      "template": "<lit-template-shapes⟦attr label mode="truthy" ~" "⟫ label="Set"⟧>⟦choice show truthy="<b>shown</b>" falsy=""⟫⟧</lit-template-shapes>",
     },
     "webcomponentsstorydocs-lit-template-shapes--prefixed-class": {
       "id": "webcomponentsstorydocs-lit-template-shapes--prefixed-class",

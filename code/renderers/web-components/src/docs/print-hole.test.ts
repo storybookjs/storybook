@@ -53,6 +53,7 @@ describe('a changed arg', () => {
     { kind: 'attr', name: 'label', mode: 'field' },
     { kind: 'attr', name: 'label', mode: 'bind' },
     { kind: 'attr', name: 'label', mode: 'defined' },
+    { kind: 'attr', name: 'label', mode: 'truthy' },
     { kind: 'css', property: '--accent' },
     { kind: 'cssattr', properties: [{ arg: 'v', property: '--accent' }] },
     { kind: 'bool', name: 'disabled' },
@@ -90,6 +91,11 @@ describe('a changed arg', () => {
     {
       name: 'a lit ifDefined binding',
       story: 'html`<test-element label=${ifDefined(args.x)}></test-element>`',
+      values: () => true,
+    },
+    {
+      name: 'a lit binding while truthy',
+      story: 'html`<test-element label=${args.x ? args.x : nothing}></test-element>`',
       values: () => true,
     },
     {

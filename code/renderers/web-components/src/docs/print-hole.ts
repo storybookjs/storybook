@@ -30,10 +30,10 @@ export const printHole: PrintHole<HtmlHolePlace> = (hole, changed) => {
   switch (hole.kind) {
     case 'attr': {
       const name = hole.name ?? arg;
-      if (hole.mode === 'bind' || hole.mode === 'defined') {
-        return hole.mode === 'defined' && !isDefined(value)
-          ? ''
-          : quotedAttribute(name, boundText(value));
+      if (hole.mode === 'bind' || hole.mode === 'defined' || hole.mode === 'truthy') {
+        const shown =
+          hole.mode === 'bind' || (hole.mode === 'defined' ? isDefined(value) : isTruthy(value));
+        return shown ? quotedAttribute(name, boundText(value)) : '';
       }
       return printAttribute(name, value, hole.mode === 'field') ?? '';
     }

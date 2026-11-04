@@ -109,10 +109,31 @@ storybookGlobals.__STORYBOOK_CREATE_MOCK_INSTANCE__ = (options) => {
 };
 
 /**
+ * The member mocks of automocked class instances, held weakly: a component may construct an instance
+ * on every render, and only that instance should keep its member mocks alive, not the registry that
+ * the helpers below go through before every story. `@vitest/spy` tracks its own mocks the same way.
+ */
+const instanceMemberMocks = new Set<WeakRef<MockInstance>>();
+const registeredInstanceMemberMocks = new WeakSet<MockInstance>();
+
+/** Every mock of storybook/test: `mocks`, and the member mocks of instances that are still alive. */
+function forEachMock(callback: (mock: MockInstance) => void) {
+  mocks.forEach(callback);
+  for (const ref of instanceMemberMocks) {
+    const mock = ref.deref();
+    if (mock) {
+      callback(mock);
+    } else {
+      instanceMemberMocks.delete(ref);
+    }
+  }
+}
+
+/**
  * `@vitest/spy` mocks the prototype members of an automocked class on every instance it constructs,
  * past `__STORYBOOK_CREATE_MOCK_INSTANCE__`. (Their calls are also recorded on the mocks of the
  * prototype members, which are reactive.) The class mock only lists its instances until its call
- * history is cleared, so it adds their member mocks to `mocks` before every `mockClear()`, which
+ * history is cleared, so it registers their member mocks before every `mockClear()`, which
  * `mockReset()`, `mockRestore()` and the helpers below call too.
  */
 function registerInstanceMemberMocksOnClear(mock: MockInstance, memberNames: (string | symbol)[]) {
@@ -124,8 +145,9 @@ function registerInstanceMemberMocksOnClear(mock: MockInstance, memberNames: (st
     )[]) {
       for (const memberName of memberNames) {
         const member = instance?.[memberName];
-        if (isMockFunction(member)) {
-          mocks.add(member);
+        if (isMockFunction(member) && !registeredInstanceMemberMocks.has(member)) {
+          registeredInstanceMemberMocks.add(member);
+          instanceMemberMocks.add(new WeakRef(member));
         }
       }
     }
@@ -203,7 +225,7 @@ function keepingMockName(spy: MockInstance, reset: () => void) {
  * It is useful if you need to clean up mock between different assertions.
  */
 export function clearAllMocks() {
-  mocks.forEach((spy) => spy.mockClear());
+  forEachMock((spy) => spy.mockClear());
   moduleMockSpies.forEach((spy) => spy.mockClear());
 }
 
@@ -215,7 +237,7 @@ export function clearAllMocks() {
  * This is useful when you want to completely reset a mock to the default state.
  */
 export function resetAllMocks() {
-  mocks.forEach((spy) => keepingMockName(spy, () => spy.mockReset()));
+  forEachMock((spy) => keepingMockName(spy, () => spy.mockReset()));
   moduleMockSpies.forEach((spy) => keepingMockName(spy, () => spy.mockReset()));
 }
 
@@ -226,7 +248,7 @@ export function resetAllMocks() {
 export function restoreAllMocks() {
   // Module mocks created by storybook/test's module mocker are in `mocks` too. They have nothing to
   // restore, so `mockRestore()` resets them and they stay active for subsequent stories.
-  mocks.forEach((spy) => keepingMockName(spy, () => spy.mockRestore()));
+  forEachMock((spy) => keepingMockName(spy, () => spy.mockRestore()));
   // Module mock spies created by another `@vitest/spy` instance (e.g. Vitest's module mocker) only
   // get their call history cleared, because:
   // - mockRestore() would try to undo the spyOn on the module export object, which is not

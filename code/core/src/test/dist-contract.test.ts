@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, normalize } from 'pathe';
+import picomatch from 'picomatch';
 import { describe, expect, it } from 'vitest';
 
 const DTS_ARTIFACT = join(import.meta.dirname, '../../dist/test/index.d.ts');
@@ -88,10 +89,13 @@ describe('storybook/test declaration contract', () => {
     // `sharedModules` of the preview runtime in build-config.ts.
     const distDirectory = join(import.meta.dirname, '../../dist');
     const read = (file: string) => readFileSync(join(distDirectory, file), 'utf-8');
-    // POSIX paths, also on Windows, for the prefix checks below.
-    const jsFiles = readdirSync(distDirectory, { recursive: true, encoding: 'utf-8' })
-      .map((file) => normalize(file))
-      .filter((file) => file.endsWith('.js'));
+    // POSIX paths, also on Windows, for the prefix checks below. Vitest collects a skipped suite
+    // too, so this must not read `dist` when it wasn't built.
+    const jsFiles = VENDOR_BUILT
+      ? readdirSync(distDirectory, { recursive: true, encoding: 'utf-8' })
+          .map((file) => normalize(file))
+          .filter((file) => file.endsWith('.js'))
+      : [];
     const relativeImports = (file: string) =>
       [...read(file).matchAll(/(?:from|import) "(\.\.?\/[^"]+)"/g)].map(([, specifier]) =>
         join(dirname(file), specifier)
@@ -138,6 +142,23 @@ describe('storybook/test declaration contract', () => {
       );
 
       expect(copies).toEqual([]);
+    });
+
+    it('declares the vendor entries as side effects', () => {
+      // A vendor entry calls the lazy `init_*` function of its library. A consumer bundler that
+      // treats it as side-effect free (Vite's optimizer, a Rollup or webpack build) skips that call
+      // and leaves the library uninitialized; see dist-rebundle.contract.test.ts.
+      const { sideEffects } = JSON.parse(
+        readFileSync(join(import.meta.dirname, '../../package.json'), 'utf-8')
+      );
+      const isSideEffect = picomatch(
+        (Array.isArray(sideEffects) ? sideEffects : []).map((glob: string) =>
+          glob.replace(/^\.\//, '')
+        )
+      );
+
+      expect(vendorEntries).not.toEqual([]);
+      expect(vendorEntries.filter((entry) => !isSideEffect(`dist/${entry}`))).toEqual([]);
     });
 
     it('runs no runtime code when a vendor entry is imported', () => {

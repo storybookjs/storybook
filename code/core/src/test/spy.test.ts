@@ -193,6 +193,20 @@ it('resets the mocks of class instances after the class mock is cleared', () => 
   expect(service.get.mock.calls).toEqual([['key']]);
 });
 
+it('holds the mocks of class instances weakly', () => {
+  const Service = automockService();
+  const before = mocks.size;
+  // E.g. a component that constructs an instance on every render.
+  for (let i = 0; i < 100; i++) {
+    new Service().get('key');
+  }
+
+  restoreAllMocks();
+
+  // Only their instances keep them alive, so they can be collected with them.
+  expect(mocks.size).toBe(before);
+});
+
 it('notifies calls of class instance members as calls of the prototype member', () => {
   const Service = automockService();
   const service = new Service();

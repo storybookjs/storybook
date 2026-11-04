@@ -4,7 +4,7 @@ import { dedent } from 'ts-dedent';
 
 import { analyzeStoryTemplate as analyze } from './story-docs-template-analysis.ts';
 
-// The analysis without where it put each expansion, which only a print with placeholders reads.
+// The analysis without where it put each expansion, which only the marked print reads.
 const analyzeStoryTemplate = (...input: Parameters<typeof analyze>) => {
   const { replacements: _, ...analysis } = analyze(...input);
   return analysis;

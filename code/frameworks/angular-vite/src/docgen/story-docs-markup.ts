@@ -52,6 +52,8 @@ export interface Bindings {
 export interface TemplateExpansion {
   marker: string;
   inputAttributes: string[];
+  // The marks of the inputs the story does not set, which only the marked print has.
+  unsetAttributes?: string[];
   outputAttributes: { name: string; markup: string }[];
 }
 
@@ -74,17 +76,16 @@ const bindingAttributes = (
 ): Omit<TemplateExpansion, 'marker'> => {
   const allowed = (name: string) =>
     filter.include ? filter.include.includes(name) : !filter.exclude?.includes(name);
-  const representedInputs = inputs.filter(({ name }) => allowed(name));
+  const representedInputs = inputs.filter(({ name, unset }) => !unset && allowed(name));
   const representedOutputs = outputs.filter(allowed);
-  representedInputs.forEach(({ name, unset }) => {
-    if (!unset) {
-      representedArgs.add(name);
-    }
-  });
+  representedInputs.forEach(({ name }) => representedArgs.add(name));
   representedOutputs.forEach((name) => representedArgs.add(name));
   return {
     inputAttributes: representedInputs.map(
       ({ name, expression, attribute }) => attribute ?? inputBinding(name, expression)
+    ),
+    unsetAttributes: inputs.flatMap(({ name, unset, attribute }) =>
+      unset && attribute !== undefined && allowed(name) ? [attribute] : []
     ),
     outputAttributes: representedOutputs.map((name) => ({
       name,

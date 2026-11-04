@@ -166,7 +166,9 @@ describe('story-docs templates', () => {
         render: ({ label }) => ({ template: \`<sb-button>\${label}</sb-button>\` }),
       };
     `);
-    expect(formatTemplate(story!.template!)).toContain('<sb-button>⟦text label⟫⟧</sb-button>');
+    expect(formatTemplate(story!.template!)).toContain(
+      '<sb-button>⟦text label indent=2⟫⟧</sb-button>'
+    );
     expect(fill(story!, { label: '' })).toBe(story!.snippet);
     expect(fill(story!, { label: '' }, { label: 'Stop' })).toContain('<sb-button>Stop</sb-button>');
   });
@@ -179,9 +181,44 @@ describe('story-docs templates', () => {
         render: ({ label }) => ({ template: \`<sb-button>\${label}</sb-button>\` }),
       };
     `);
-    expect(formatTemplate(story!.template!)).toContain('<sb-button>⟦text label⟫Go⟧</sb-button>');
+    expect(formatTemplate(story!.template!)).toContain(
+      '<sb-button>⟦text label indent=2⟫Go⟧</sb-button>'
+    );
     expect(fill(story!, { label: 'Go' }, { label: 'Stop' })).toContain(
       '<sb-button>Stop</sb-button>'
+    );
+    expect(fill(story!, { label: 'Go' }, { label: undefined })).toContain(
+      '<sb-button></sb-button>'
+    );
+  });
+
+  it('fills text Angular would read as its own syntax as the text it is', async () => {
+    const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = {
+        args: { label: 'Go' },
+        render: ({ label }) => ({ template: \`<sb-button>\${label}</sb-button>\` }),
+      };
+    `);
+    expect(fill(story!, { label: 'Go' }, { label: 'Mail {{ me }} @ home' })).toContain(
+      "<sb-button>Mail {{ '{{' }} me &#125;&#125; &#64; home</sb-button>"
+    );
+  });
+
+  it('lines up a new value over several lines with the line its text starts on', async () => {
+    const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = {
+        args: { label: 'Go', size: 'lg' },
+        render: ({ label, ...rest }) => ({
+          props: rest,
+          template: \`<div><sb-button \${argsToTemplate(rest)}>\${label}</sb-button></div>\`,
+        }),
+      };
+    `);
+    const own = { label: 'Go', size: 'lg' };
+    expect(fill(story!, own, { ...own, label: 'first\nsecond' })).toContain(
+      `\n        <sb-button [size]="'lg'">first\n        second</sb-button>\n`
     );
   });
 
@@ -257,25 +294,72 @@ describe('story-docs templates', () => {
     expect(fill(story!, { config: {} })).toBe(story!.snippet);
   });
 
-  it('has no template, but its snippet, where the snippet holds a private-use character', async () => {
-    const [story] = await storyDocs(`
-      ${IMPORTS}
-      export const Default = { args: { label: 'a\\uf700b' } };
-    `);
-    expect(story!.snippet).toContain(`[label]="'a\uf700b'"`);
-    expect(story!.template).toBeUndefined();
+  it('fills a story whose snippet holds a private-use character', async () => {
+    const story = (label: string) =>
+      storyDocs(`
+        ${IMPORTS}
+        export const Default = { args: { label: '${label}' } };
+      `);
+    const [written] = await story('b\\ue000');
+    const [go] = await story('a\\ue000');
+    expect(written!.snippet).toContain(`[label]="'b\ue000'"`);
+    expect(fill(go!, { label: 'a\ue000' }, { label: 'b\ue000' })).toBe(written!.snippet);
   });
 
-  it('has no template where text the snippet escapes stands right before other text', async () => {
+  it('fills text the snippet escapes right before other text', async () => {
+    const story = (label: string) =>
+      storyDocs(`
+        ${IMPORTS}
+        export const Default = {
+          args: { label: '${label}', size: 'B' },
+          render: ({ label, size }) => ({ template: \`<p>\${label}\${size}</p>\` }),
+        };
+      `);
+    const [written] = await story('\`y\`');
+    const [go] = await story('\`x\`');
+    expect(written!.snippet).toContain('<p>\\`y\\`B</p>');
+    expect(fill(go!, { label: '`x`', size: 'B' }, { label: '`y`', size: 'B' })).toBe(
+      written!.snippet
+    );
+  });
+
+  it('fills an argsToTemplate call of a story that sets no arg', async () => {
     const [story] = await storyDocs(`
       ${IMPORTS}
       export const Default = {
-        args: { label: '\`x\`', size: 'B' },
-        render: ({ label, size }) => ({ template: \`<p>\${label}\${size}</p>\` }),
+        render: (args) => ({ props: args, template: \`<sb-button \${argsToTemplate(args)}></sb-button>\` }),
       };
     `);
-    expect(story!.snippet).toContain('<p>\\`x\\`B</p>');
-    expect(story!.template).toBeUndefined();
+    expect(fill(story!, {})).toBe(story!.snippet);
+    expect(fill(story!, {}, { size: 'lg' })).toContain(`<sb-button [size]="'lg'"></sb-button>`);
+  });
+
+  it('fills an argsToTemplate call that breaks its bindings over lines', async () => {
+    const own = { label: 'A label long enough that the bindings go one per line', size: 'lg' };
+    const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = {
+        args: ${JSON.stringify(own)},
+        render: (args) => ({ props: args, template: \`<sb-button \${argsToTemplate(args)}></sb-button>\` }),
+      };
+    `);
+    expect(fill(story!, own)).toBe(story!.snippet);
+    expect(fill(story!, own, { ...own, size: undefined, config: { a: 1 } })).toContain(
+      `<sb-button\n        [label]="'${own.label}'"\n        [config]="{a: 1}">`
+    );
+  });
+
+  it('fills a host component field with a number TypeScript writes by name', async () => {
+    const [story] = await storyDocs(`
+      ${IMPORTS}
+      export const Default = {
+        args: { size: 1 },
+        render: (args) => ({ props: args, template: \`<sb-button [size]="size"></sb-button>\` }),
+      };
+    `);
+    expect(fill(story!, { size: 1 }, { size: Number.POSITIVE_INFINITY })).toContain(
+      'size = Infinity;'
+    );
   });
 
   it('fills text right before other text', async () => {

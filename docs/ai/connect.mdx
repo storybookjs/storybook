@@ -34,7 +34,7 @@ To install the skills at any other time, run this command from the root of your 
 
 Every install method adds the same files:
 
-- The skills: `storybook-init`, [`storybook-setup`](./skills/setup.mdx), `storybook-upgrade`, [`ui-workflow`](./skills/ui-workflow.mdx), and [`component-docs`](./skills/reuse-components.mdx). They're installed for Claude Code (`.claude/skills/`) and for other agents (`.agents/skills/`).
+- The skills: `storybook-init`, [`storybook-setup`](./skills/setup.mdx), `storybook-upgrade`, [`component-info`](./skills/component-info.mdx), and [`ui-workflow`](./skills/ui-workflow.mdx). They're installed for Claude Code (`.claude/skills/`) and for other agents (`.agents/skills/`).
 - `skills-lock.json`, which records the installed version.
 - A Storybook section in `AGENTS.md` (see below)
 
@@ -49,7 +49,7 @@ Storybook also has plugins for [Claude Code](https://github.com/storybookjs/stor
 
 ## Tell your agent when to use the skills
 
-Agents don't use the Storybook skills on their own. The section that Storybook adds to `AGENTS.md` tells your agent to use `ui-workflow` for UI changes and `component-docs` for questions about components:
+Agents don't use the Storybook skills on their own. The section that Storybook adds to `AGENTS.md` tells your agent to use `ui-workflow` for UI changes and `component-info` for questions about components:
 
 ```md title="AGENTS.md"
 <!-- BEGIN:storybook-skills -->
@@ -60,7 +60,7 @@ Agents don't use the Storybook skills on their own. The section that Storybook a
 For each of these tasks, invoke its Storybook skill first, before you edit any file, and follow it:
 
 - `ui-workflow`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results.
-- `component-docs`: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. It lists the project's components with their props and usage examples.
+- `component-info`: you look for an existing component to reuse instead of building a new one, or the user asks about the project's components: which ones exist, which one fits a use case, which props one takes (for example, for accessibility), or where the component library has gaps. It lists the project's components with their props and usage examples.
 
 <!-- END:storybook-skills -->
 ```
@@ -92,14 +92,14 @@ You can also connect your agent to a published Storybook instead of running it l
 
 Skills are available for these frameworks:
 
-| Renderer                | Frameworks                                          | [Setup](./skills/setup.mdx) | [UI workflow](./skills/ui-workflow.mdx) | [Reuse components](./skills/reuse-components.mdx) |
-| ----------------------- | --------------------------------------------------- | --------------------------- | --------------------------------------- | ------------------------------------------------- |
-| React (Setup supported) | `react-vite`, `nextjs-vite`, `tanstack-react`       | Yes                         | Yes                                     | Yes                                               |
-| React (other)           | `react-webpack5`, `nextjs`, `react-native-web-vite` | No                          | Yes                                     | Yes                                               |
-| Vue 3                   | `vue3-vite`                                         | Yes                         | Yes                                     | Yes                                               |
-| Angular                 | `angular-vite`                                      | Yes                         | Yes                                     | Yes                                               |
-| Svelte                  | `svelte-vite`, `sveltekit`                          | No                          | Yes                                     | Yes                                               |
-| Web Components          | `web-components-vite`                               | No                          | Yes                                     | Yes                                               |
+| Renderer                | Frameworks                                          | [Setup](./skills/setup.mdx) | [UI workflow](./skills/ui-workflow.mdx) | [Component info](./skills/component-info.mdx) |
+| ----------------------- | --------------------------------------------------- | --------------------------- | --------------------------------------- | --------------------------------------------- |
+| React (Setup supported) | `react-vite`, `nextjs-vite`, `tanstack-react`       | Yes                         | Yes                                     | Yes                                           |
+| React (other)           | `react-webpack5`, `nextjs`, `react-native-web-vite` | No                          | Yes                                     | Yes                                           |
+| Vue 3                   | `vue3-vite`                                         | Yes                         | Yes                                     | Yes                                           |
+| Angular                 | `angular-vite`                                      | Yes                         | Yes                                     | Yes                                           |
+| Svelte                  | `svelte-vite`, `sveltekit`                          | No                          | Yes                                     | Yes                                           |
+| Web Components          | `web-components-vite`                               | No                          | Yes                                     | Yes                                           |
 
 The `storybook-init` and `storybook-upgrade` skills work with every framework in this table.
 The [MCP server](./reference/mcp-server.mdx) supports the same renderers.
@@ -107,7 +107,7 @@ The [MCP server](./reference/mcp-server.mdx) supports the same renderers.
 **More AI resources**
 
 - [Setup](./skills/setup.mdx)
-- [Reuse components](./skills/reuse-components.mdx)
+- [Component info](./skills/component-info.mdx)
 - [UI workflow](./skills/ui-workflow.mdx)
 - [Agentic review](./skills/agentic-review.mdx)
 - [Use a published Storybook](./published-storybook.mdx)

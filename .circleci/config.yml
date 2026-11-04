@@ -48,6 +48,9 @@ jobs:
                 command: |
                   git fetch --depth=500 --filter=blob:none --no-tags origin \
                     "$GH_BASE_BRANCH:refs/remotes/origin/$GH_BASE_BRANCH"
+                  # The checkout fetches the branch only 10 commits deep, so a branch with more
+                  # commits than that needs more of its own history to meet the base branch.
+                  git fetch --depth=500 --filter=blob:none --no-tags origin "$CIRCLE_SHA1"
                   if ! git merge-base "origin/$GH_BASE_BRANCH" HEAD >/dev/null; then
                     echo "No merge base found between origin/$GH_BASE_BRANCH and HEAD within 500 commits." >&2
                     exit 1

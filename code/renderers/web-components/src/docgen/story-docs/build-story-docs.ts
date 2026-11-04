@@ -243,14 +243,7 @@ const renderedArgsSnippet = (
   const render = resolveEffectiveRender(deps.csf, exportName, deps.resolveStoryArgs.ctx);
   if (render.kind === 'resolved') {
     // The render function's own code, with the args it reads filled in.
-    const argNames = [
-      ...new Set([
-        ...Object.keys(resolved.args),
-        ...Object.keys(deps.docgenPayload.argTypes ?? {}),
-      ]),
-    ];
-    const code =
-      render.node.body && renderSnippet(render.node, exportName, resolved.args, argNames);
+    const code = render.node.body && renderSnippet(render.node, exportName, resolved.args);
     if (code) {
       return code;
     }

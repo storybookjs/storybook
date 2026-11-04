@@ -12,36 +12,26 @@
   }
   return Card({ label: 'Alpha', disabled: true });
 };",
-      "template": "⟦guard label⟫⟧⟦guard disabled⟫⟧⟦guard shape-change-event⟫⟧⟦guard default-slot⟫⟧⟦guard items⟫⟧⟦guard count⟫⟧⟦guard heading⟫⟧⟦guard open⟫⟧const BranchingHelper = () => {
-  if (⟦code disabled⟫true⟧) {
-    return html`<lit-template-shapes disabled></lit-template-shapes>`;
-  }
-  return Card({ label: 'Alpha', disabled: true });
-};",
     },
     "webcomponentsstorydocs-lit-helper-shapes--csf-2-helper": {
       "id": "webcomponentsstorydocs-lit-helper-shapes--csf-2-helper",
       "name": "Csf 2 Helper",
       "snippet": "Card({ ...{ label: 'Alpha' }, disabled: true })",
-      "template": "⟦guard label⟫⟧⟦guard shape-change-event⟫⟧⟦guard default-slot⟫⟧⟦guard items⟫⟧⟦guard count⟫⟧⟦guard disabled⟫⟧⟦guard heading⟫⟧⟦guard open⟫⟧Card({ ...{ label: 'Alpha' }, disabled: true })",
     },
     "webcomponentsstorydocs-lit-helper-shapes--helper-call": {
       "id": "webcomponentsstorydocs-lit-helper-shapes--helper-call",
       "name": "Helper Call",
       "snippet": "Card({ label: 'Alpha', count: 2 })",
-      "template": "⟦guard label⟫⟧⟦guard count⟫⟧⟦guard shape-change-event⟫⟧⟦guard default-slot⟫⟧⟦guard items⟫⟧⟦guard disabled⟫⟧⟦guard heading⟫⟧⟦guard open⟫⟧Card({ label: 'Alpha', count: 2 })",
     },
     "webcomponentsstorydocs-lit-helper-shapes--helper-defaults": {
       "id": "webcomponentsstorydocs-lit-helper-shapes--helper-defaults",
       "name": "Helper Defaults",
       "snippet": "Card({ ...{ heading: 'Head' }, count: 5 }, html`<b>${'Head'}</b>`)",
-      "template": "⟦guard heading⟫⟧⟦guard shape-change-event⟫⟧⟦guard default-slot⟫⟧⟦guard items⟫⟧⟦guard label⟫⟧⟦guard count⟫⟧⟦guard disabled⟫⟧⟦guard open⟫⟧Card({ ...{ heading: 'Head' }, count: 5 }, html`<b>${⟦code heading⟫'Head'⟧}</b>`)",
     },
     "webcomponentsstorydocs-lit-helper-shapes--helper-in-html": {
       "id": "webcomponentsstorydocs-lit-helper-shapes--helper-in-html",
       "name": "Helper In Html",
       "snippet": "html`<section>${List({ label: 'Alpha', count: 2 })}</section>`",
-      "template": "⟦guard label⟫⟧⟦guard count⟫⟧⟦guard shape-change-event⟫⟧⟦guard default-slot⟫⟧⟦guard items⟫⟧⟦guard disabled⟫⟧⟦guard heading⟫⟧⟦guard open⟫⟧html`<section>${List({ label: 'Alpha', count: 2 })}</section>`",
     },
     "webcomponentsstorydocs-lit-helper-shapes--re-exported-html": {
       "id": "webcomponentsstorydocs-lit-helper-shapes--re-exported-html",
@@ -53,16 +43,12 @@
       "id": "webcomponentsstorydocs-lit-helper-shapes--spread-directive",
       "name": "Spread Directive",
       "snippet": "html`<lit-template-shapes ${spreadProps({ label: 'Alpha', count: 2, disabled: true })}></lit-template-shapes>`",
-      "template": "⟦guard label⟫⟧⟦guard count⟫⟧⟦guard disabled⟫⟧⟦guard shape-change-event⟫⟧⟦guard default-slot⟫⟧⟦guard items⟫⟧⟦guard heading⟫⟧⟦guard open⟫⟧html`<lit-template-shapes ${spreadProps({ label: 'Alpha', count: 2, disabled: true })}></lit-template-shapes>`",
     },
     "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute": {
       "id": "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute",
       "name": "Spread Next To Attribute",
       "snippet": "html`<lit-template-shapes label="Written" ${spreadProps({ count: 2 })}
   >${undefined}</lit-template-shapes
->`",
-      "template": "⟦guard count⟫⟧⟦guard shape-change-event⟫⟧⟦guard default-slot⟫⟧⟦guard items⟫⟧⟦guard label⟫⟧⟦guard disabled⟫⟧⟦guard heading⟫⟧⟦guard open⟫⟧html`<lit-template-shapes label="Written" ${spreadProps({ count: 2 })}
-  >${⟦code heading⟫undefined⟧}</lit-template-shapes
 >`",
     },
   },

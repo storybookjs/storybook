@@ -203,10 +203,19 @@ describe('web-components story-docs server snippets', () => {
       }))
     );
     const withSnippet = stories.filter((story) => story.snippet !== undefined);
-    // A story gets a template exactly where next prints a snippet from its args; a snippet the
-    // story writes itself, as `parameters.docs.source.code`, reads no arg.
+    // A story gets a template where its snippet fills in the args it reads. A snippet the story
+    // writes itself, as `parameters.docs.source.code`, reads no arg, and a render that reads the
+    // args as a whole, as `Card(args)`, prints args no hole could follow.
     expect(withSnippet.filter((story) => story.template === undefined).map((s) => s.id)).toEqual([
       'webcomponentsstorydocs-csf-shapes--authored-code',
+      'webcomponentsstorydocs-lit-helper-shapes--helper-call',
+      'webcomponentsstorydocs-lit-helper-shapes--helper-defaults',
+      'webcomponentsstorydocs-lit-helper-shapes--helper-in-html',
+      'webcomponentsstorydocs-lit-helper-shapes--csf-2-helper',
+      'webcomponentsstorydocs-lit-helper-shapes--spread-directive',
+      'webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute',
+      'webcomponentsstorydocs-lit-helper-shapes--branching-helper',
+      'webcomponentsstorydocs-lit-template-shapes--aliased',
       'webcomponentsstorydocs-no-component--authored',
     ]);
     expect(

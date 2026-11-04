@@ -1,5 +1,4 @@
 {
-  "Aliased": "UnprintableArgError: The snippet cannot show the current value of the `label` arg.",
   "Attributes": "html`<lit-template-shapes
   label=${'Alpha & <changed>'}
   count=${3}

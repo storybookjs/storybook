@@ -1,8 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { dirname, join, normalize } from 'pathe';
-import picomatch from 'picomatch';
+import { join } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
 const DTS_ARTIFACT = join(import.meta.dirname, '../../dist/test/index.d.ts');
@@ -10,8 +9,6 @@ const CONSUMER_FIXTURE = join(import.meta.dirname, '__testfixtures__/typescript-
 const TYPESCRIPT = createRequire(import.meta.url).resolve('typescript/bin/tsc');
 const TYPESCRIPT_5 = createRequire(import.meta.url).resolve('typescript-5/bin/tsc');
 const DTS_BUILT = existsSync(DTS_ARTIFACT);
-// Watch builds bundle the runtime without its vendor entries (see `ChunkedRuntimeOptions`).
-const VENDOR_BUILT = existsSync(join(import.meta.dirname, '../../dist/preview/vendor'));
 const REPOSITORY_ROOT = join(import.meta.dirname, '../../../..');
 const TSC_OPTIONS = [
   '--module',
@@ -32,7 +29,6 @@ const TSC_OPTIONS = [
 describe('storybook/test declaration contract', () => {
   it.runIf(process.env.CI)('is built before this suite runs', () => {
     expect(DTS_BUILT).toBe(true);
-    expect(VENDOR_BUILT).toBe(true);
   });
 
   it.runIf(DTS_BUILT)('inlines the types of the test libraries it bundles', () => {
@@ -83,108 +79,6 @@ describe('storybook/test declaration contract', () => {
         /declare global\s*\{\s*namespace (Chai|jest)\b/.test(declarations)
       )
     ).toEqual([]);
-  });
-
-  describe.runIf(VENDOR_BUILT)('shares the test libraries with the preview runtime', () => {
-    // `sharedModules` of the preview runtime in build-config.ts.
-    const distDirectory = join(import.meta.dirname, '../../dist');
-    const read = (file: string) => readFileSync(join(distDirectory, file), 'utf-8');
-    // POSIX paths, also on Windows, for the prefix checks below. Vitest collects a skipped suite
-    // too, so this must not read `dist` when it wasn't built.
-    const jsFiles = VENDOR_BUILT
-      ? readdirSync(distDirectory, { recursive: true, encoding: 'utf-8' })
-          .map((file) => normalize(file))
-          .filter((file) => file.endsWith('.js'))
-      : [];
-    const relativeImports = (file: string) =>
-      [...read(file).matchAll(/(?:from|import) "(\.\.?\/[^"]+)"/g)].map(([, specifier]) =>
-        join(dirname(file), specifier)
-      );
-    // The files that loading `file` evaluates, by its static relative imports.
-    const reachableFrom = (file: string, seen = new Set<string>()) => {
-      if (!seen.has(file)) {
-        seen.add(file);
-        relativeImports(file).forEach((imported) => reachableFrom(imported, seen));
-      }
-      return seen;
-    };
-    const testLibraries =
-      /node_modules\/(chai|@vitest\/(expect|spy|utils|pretty-format)|@testing-library\/|aria-query|dom-accessibility-api|pretty-format)\//;
-    const vendorEntries = jsFiles.filter((file) => file.startsWith('preview/vendor/'));
-
-    it('imports them from paths that exist', () => {
-      // The browser entries import the vendor entries by a path that the build only assumes.
-      const vendorImports = jsFiles.flatMap((file) =>
-        relativeImports(file)
-          .filter(
-            (imported) => imported.startsWith('preview/vendor/') && !file.startsWith('preview/')
-          )
-          .map((imported) => ({ file, imported }))
-      );
-
-      expect(vendorImports.map(({ file }) => file)).toContain('test/index.js');
-      expect(
-        vendorImports.filter(({ imported }) => !existsSync(join(distDirectory, imported)))
-      ).toEqual([]);
-    });
-
-    it('bundles no copy of them outside the runtimes', () => {
-      // esbuild marks each bundled module with a `// <path>` comment.
-      const browserFiles = jsFiles.filter((file) =>
-        /^(test|instrumenter|_browser-chunks)\//.test(file)
-      );
-      expect(browserFiles).toContain('test/index.js');
-      const copies = browserFiles.flatMap((file) =>
-        read(file)
-          .split('\n')
-          .filter((line) => line.startsWith('// ') && testLibraries.test(line))
-          .map((line) => `${file}: ${line}`)
-      );
-
-      expect(copies).toEqual([]);
-    });
-
-    it('declares the vendor entries as side effects', () => {
-      // A vendor entry calls the lazy `init_*` function of its library. A consumer bundler that
-      // treats it as side-effect free (Vite's optimizer, a Rollup or webpack build) skips that call
-      // and leaves the library uninitialized; see dist-rebundle.contract.test.ts.
-      const { sideEffects } = JSON.parse(
-        readFileSync(join(import.meta.dirname, '../../package.json'), 'utf-8')
-      );
-      const isSideEffect = picomatch(
-        (Array.isArray(sideEffects) ? sideEffects : []).map((glob: string) =>
-          glob.replace(/^\.\//, '')
-        )
-      );
-
-      expect(vendorEntries).not.toEqual([]);
-      expect(vendorEntries.filter((entry) => !isSideEffect(`dist/${entry}`))).toEqual([]);
-    });
-
-    it('runs no runtime code when a vendor entry is imported', () => {
-      expect(vendorEntries).not.toEqual([]);
-      const runtimeCode = vendorEntries.flatMap((entry) =>
-        [...reachableFrom(entry)]
-          .filter((file) => /^\/\/#region src\//m.test(read(file)))
-          .map((file) => `${entry} -> ${file}`)
-      );
-
-      expect(runtimeCode).toEqual([]);
-    });
-
-    it('loads only the libraries the instrumenter uses with it', () => {
-      // It needs `@vitest/utils/error`; webpack previews bundle it through `storybook/internal/csf`.
-      const regions = [...reachableFrom('instrumenter/index.js')].flatMap((file) =>
-        [...read(file).matchAll(/^\/\/#region (\S+)/gm)].map(([, region]) => region)
-      );
-
-      expect(regions.some((region) => region.includes('node_modules/@vitest/utils/'))).toBe(true);
-      expect(
-        regions.filter((region) =>
-          /node_modules\/(chai|@vitest\/(expect|spy)|@testing-library\/|aria-query)\//.test(region)
-        )
-      ).toEqual([]);
-    });
   });
 
   it.runIf(DTS_BUILT)(

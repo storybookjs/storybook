@@ -70,7 +70,7 @@ jobs:
           fi
       - env:
           DIST_CONFIG: ${{ steps.dist.outputs.config }}
-        run: npx nx-cloud@19.1.5 start-ci-run --distribute-on="$DIST_CONFIG" --stop-agents-after="$ALL_TASKS"
+        run: npx nx-cloud@19.1.5 start-ci-run --distribute-on="$DIST_CONFIG" --stop-workers-after="$ALL_TASKS"
       - name: Create Nx Cloud Status (pending)
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:

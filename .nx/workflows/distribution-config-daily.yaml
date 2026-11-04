@@ -1,9 +1,10 @@
-# Distribution config for daily/scheduled runs — more agents for faster throughput
+# Distribution config for daily/scheduled runs — more workers for faster throughput.
+# The NX Cloud Team plan allows at most 20 workers per run; NX Cloud rejects the whole run above it.
 distribute-on:
-  small-changeset: 15 linux-browsers-js, 1 linux-js
-  medium-changeset: 25 linux-browsers-js, 1 linux-js
-  large-changeset: 35 linux-browsers-js, 1 linux-js
-  extra-large-changeset: 59 linux-browsers-js, 1 linux-js
+  small-changeset: 12 linux-browsers-js, 1 linux-js
+  medium-changeset: 16 linux-browsers-js, 1 linux-js
+  large-changeset: 19 linux-browsers-js, 1 linux-js
+  extra-large-changeset: 19 linux-browsers-js, 1 linux-js
 assignment-rules:
   - targets:
       - compile

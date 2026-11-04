@@ -15,14 +15,16 @@ const WORKER_SPECIFIER = 'storybook/internal/docgen-worker';
 
 const DEFAULT_TASK_TIMEOUT_MS = 120_000;
 
-interface Pending {
+interface Job {
+  entry: IndexEntry;
   resolve: (payload: DocgenPayload | undefined) => void;
   reject: (error: unknown) => void;
-  timer?: NodeJS.Timeout;
 }
 
-interface Queued extends Pending {
-  entry: IndexEntry;
+interface InFlight {
+  id: number;
+  job: Job;
+  timer?: NodeJS.Timeout;
 }
 
 export interface DocgenWorkerClient {
@@ -46,11 +48,16 @@ function errorLikeToError(errorLike: ErrorLike): Error {
 // Extracts are posted one at a time and each timeout starts at dispatch. Callers such as the static
 // build fan out every component at once, and a timer started at enqueue would charge each extract
 // for the whole queue ahead of it.
+//
+// A timed-out extract keeps running in the worker, so the next one can still wait out its tail. A
+// second timeout with no answer in between means the worker is stuck rather than slow, so it is
+// stopped: the queue then fails within two timeouts instead of one timeout per queued extract.
 class DocgenWorker implements DocgenWorkerClient {
   private readonly worker: Worker;
-  /** The extract the worker is running, keyed by request id. Holds at most one entry. */
-  private readonly pending = new Map<number, Pending>();
-  private readonly queue: Queued[] = [];
+  private inFlight: InFlight | undefined;
+  private readonly queue: Job[] = [];
+  /** Id of the last extract that timed out, cleared by the worker's next answer. */
+  private unansweredTimeoutId: number | undefined;
   private readonly ready: Promise<void>;
   private rejectReady: (error: unknown) => void = () => undefined;
   private nextId = 0;
@@ -107,14 +114,10 @@ class DocgenWorker implements DocgenWorkerClient {
   }
 
   async extract(entry: IndexEntry): Promise<DocgenPayload | undefined> {
-    if (this.death) {
-      // Carries the death forward: the crash itself is one event, but every later extract fails on
-      // it, so a bare "no longer running" is the only thing anyone downstream ever sees.
-      throw new Error(`docgen worker is no longer running: ${this.death.message}`, {
-        cause: this.death,
-      });
-    }
+    this.throwIfDead();
     await this.ready;
+    // The worker can die while `ready` settles, after which nothing would dispatch this extract.
+    this.throwIfDead();
     return new Promise<DocgenPayload | undefined>((resolve, reject) => {
       this.queue.push({ entry, resolve, reject });
       this.dispatchNext();
@@ -122,35 +125,55 @@ class DocgenWorker implements DocgenWorkerClient {
     });
   }
 
+  private throwIfDead(): void {
+    if (this.death) {
+      // Carries the death forward: the crash itself is one event, but every later extract fails on
+      // it, so a bare "no longer running" is the only thing anyone downstream ever sees.
+      throw new Error(`docgen worker is no longer running: ${this.death.message}`, {
+        cause: this.death,
+      });
+    }
+  }
+
   private dispatchNext(): void {
-    if (this.death || this.pending.size > 0) {
+    if (this.death || this.inFlight) {
       return;
     }
-    const next = this.queue.shift();
-    if (!next) {
+    const job = this.queue.shift();
+    if (!job) {
       return;
     }
-    const { entry, ...pending } = next;
-    const id = this.nextId++;
+    const inFlight: InFlight = { id: this.nextId++, job };
     if (this.taskTimeoutMs > 0) {
-      // The worker keeps running a timed-out extract, so the next one can still wait out its tail.
-      // Only that one extract is charged, instead of the whole queue.
-      pending.timer = setTimeout(() => {
-        this.pending.delete(id);
-        pending.reject(
-          new Error(`docgen worker extract ${id} timed out after ${this.taskTimeoutMs}ms`)
-        );
-        this.dispatchNext();
-        this.keepProcessAliveWhileBusy();
-      }, this.taskTimeoutMs);
-      pending.timer.unref?.();
+      inFlight.timer = setTimeout(() => this.timeOut(inFlight), this.taskTimeoutMs);
+      inFlight.timer.unref?.();
     }
-    this.pending.set(id, pending);
-    this.post({ type: 'extract', id, entry });
+    this.inFlight = inFlight;
+    this.post({ type: 'extract', id: inFlight.id, entry: job.entry });
+  }
+
+  private timeOut({ id, job }: InFlight): void {
+    const timedOut = `timed out after ${this.taskTimeoutMs}ms`;
+    if (this.unansweredTimeoutId !== undefined) {
+      const ids = `extracts ${this.unansweredTimeoutId} and ${id}`;
+      this.fail(new Error(`docgen worker stopped responding: ${ids} both ${timedOut}`));
+      return;
+    }
+    this.unansweredTimeoutId = id;
+    job.reject(new Error(`docgen worker extract ${id} ${timedOut}`));
+    this.finishInFlight();
+  }
+
+  /** Frees the worker for the next queued extract once the current one has settled. */
+  private finishInFlight(): void {
+    clearTimeout(this.inFlight?.timer);
+    this.inFlight = undefined;
+    this.dispatchNext();
+    this.keepProcessAliveWhileBusy();
   }
 
   private keepProcessAliveWhileBusy(): void {
-    if (this.pending.size > 0 || this.queue.length > 0) {
+    if (this.inFlight || this.queue.length > 0) {
       this.worker.ref();
     } else {
       this.worker.unref();
@@ -165,22 +188,19 @@ class DocgenWorker implements DocgenWorkerClient {
     if (msg.type !== 'extract') {
       return;
     }
-    const pending = this.pending.get(msg.id);
-    if (!pending) {
+    // Any answer, even a late one for a timed-out extract, shows the worker isn't stuck.
+    this.unansweredTimeoutId = undefined;
+    const inFlight = this.inFlight;
+    if (inFlight?.id !== msg.id) {
       return;
     }
-    if (pending.timer) {
-      clearTimeout(pending.timer);
-    }
-    this.pending.delete(msg.id);
     this.served = true;
     if (msg.error) {
-      pending.reject(errorLikeToError(msg.error));
+      inFlight.job.reject(errorLikeToError(msg.error));
     } else {
-      pending.resolve(msg.payload);
+      inFlight.job.resolve(msg.payload);
     }
-    this.dispatchNext();
-    this.keepProcessAliveWhileBusy();
+    this.finishInFlight();
   }
 
   private fail(error: Error): void {
@@ -196,15 +216,13 @@ class DocgenWorker implements DocgenWorkerClient {
   }
 
   private rejectAllPending(error: Error): void {
-    for (const [, pending] of this.pending) {
-      if (pending.timer) {
-        clearTimeout(pending.timer);
-      }
-      pending.reject(error);
+    if (this.inFlight) {
+      clearTimeout(this.inFlight.timer);
+      this.inFlight.job.reject(error);
+      this.inFlight = undefined;
     }
-    this.pending.clear();
-    for (const queued of this.queue.splice(0)) {
-      queued.reject(error);
+    for (const job of this.queue.splice(0)) {
+      job.reject(error);
     }
     this.worker.unref();
   }

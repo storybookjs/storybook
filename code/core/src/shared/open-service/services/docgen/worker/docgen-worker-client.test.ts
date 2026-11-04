@@ -350,4 +350,58 @@ describe('DocgenWorkerClient.extract queueing', () => {
     }
     expect(extractIds(worker)).toHaveLength(1);
   });
+
+  it('stops a worker that never answers, so the queue fails within two timeouts', async () => {
+    const { worker, results } = await startWithQueue(5);
+    const settled = results.map((result) => {
+      const state = { done: false };
+      result.finally(() => (state.done = true)).catch(() => undefined);
+      return state;
+    });
+
+    await vi.advanceTimersByTimeAsync(2 * TIMEOUT_MS);
+
+    expect(settled.every((state) => state.done)).toBe(true);
+    const [firstId, secondId] = extractIds(worker);
+    await expect(results[0]).rejects.toThrow(
+      `docgen worker extract ${firstId} timed out after ${TIMEOUT_MS}ms`
+    );
+    for (const result of results.slice(1)) {
+      await expect(result).rejects.toThrow(
+        `docgen worker stopped responding: extracts ${firstId} and ${secondId} both timed out`
+      );
+    }
+    expect(worker.terminate).toHaveBeenCalled();
+  });
+
+  it('keeps a worker that answers late after a timeout', async () => {
+    const { worker, results } = await startWithQueue(3);
+    const [stuckId] = extractIds(worker);
+
+    await vi.advanceTimersByTimeAsync(TIMEOUT_MS);
+    // The timed-out extract finishes late, which leaves the next one less than a full timeout.
+    await vi.advanceTimersByTimeAsync(TIMEOUT_MS / 2);
+    respond(worker, stuckId, 'c0');
+    await vi.advanceTimersByTimeAsync(TIMEOUT_MS / 2);
+    await expect(results[1]).rejects.toThrow(/timed out/);
+
+    expect(worker.terminate).not.toHaveBeenCalled();
+    const [, , lastId] = extractIds(worker);
+    respond(worker, lastId, 'c2');
+    await expect(results[2]).resolves.toMatchObject({ id: 'c2' });
+  });
+
+  it('rejects an extract when the worker dies while init settles', async () => {
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+
+    const promise = client.extract({ id: 'x' } as any);
+    const worker = fakeWorkers[0];
+    ackInit(worker);
+    worker.emit('error', new Error('worker ran out of memory'));
+
+    await expect(promise).rejects.toThrow(
+      'docgen worker is no longer running: worker ran out of memory'
+    );
+  });
 });

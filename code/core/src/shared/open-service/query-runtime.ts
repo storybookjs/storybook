@@ -59,6 +59,8 @@
  * path because handler reads are tracked by `activeHandlerLoadSession`, which is module-scoped
  * and stable for the duration of a sync handler call.
  */
+import { once } from 'storybook/internal/client-logger';
+
 import { computed, effect, signal, untracked } from '@preact/signals-core';
 import { isEqual } from 'es-toolkit/predicate';
 
@@ -289,6 +291,9 @@ function detachSnapshot<TValue>(value: TValue): TValue {
  * Bundling the references lets `createDefaultQuery`, the load body wrapper, and `.loaded()` share
  * the same closure shape without each one re-deriving the per-service callbacks.
  */
+// Runs a write of a reactive load's run, or drops it once a newer run has started.
+export type WriteGate = (write: () => void) => void;
+
 export type QueryRuntimeRefs<TState> = {
   serviceId: ServiceId;
   /**
@@ -317,12 +322,12 @@ export type QueryRuntimeRefs<TState> = {
    */
   getLoadCommands: () => CommandSelf<TState>['commands'];
   /**
-   * Builds a command map whose `setState` writes are dropped once `isCurrent()` returns false.
-   * Used by reactive subscription loads so a superseded (stale) re-run cannot overwrite the state
-   * produced by a newer run. Remote commands are routed through the channel map unchanged, since they
-   * carry no local `setState` to gate.
+   * Builds a command map whose `setState` writes all go through `gate`, which drops a write once
+   * its run is superseded. Used by reactive subscription loads so a superseded (stale) re-run cannot
+   * overwrite the state produced by a newer run. Remote commands are routed through the channel map
+   * unchanged, since they carry no local `setState` to gate.
    */
-  buildGatedCommands: (isCurrent: () => boolean) => CommandSelf<TState>['commands'];
+  buildGatedCommands: (gate: WriteGate) => CommandSelf<TState>['commands'];
 };
 
 /**
@@ -558,6 +563,16 @@ export async function runLoadBody<TState>(
   await drainCollector(collector, undefined, refs.serviceId, queryName);
 }
 
+// The data is often still right (the new run redoes the work), so this warns instead of throwing.
+function warnLoadReplacedByOwnWrite(serviceId: ServiceId, queryName: string): void {
+  if (globalThis.CONFIG_TYPE === 'PRODUCTION') {
+    return;
+  }
+  once.warn(
+    `The load of query "${serviceId}.${queryName}" re-ran because of its own write, and dropped the later writes of the first run. Move the check that reads this state from the load into the command, and let the load just call the command.`
+  );
+}
+
 /**
  * Runs a query's `load` as the body of a subscription's reactive effect.
  *
@@ -567,17 +582,17 @@ export async function runLoadBody<TState>(
  * idempotent warming step (the documented guideline, now a hard contract); one-shot side effects
  * belong in a command.
  *
- * Writes go through gated commands: if `isCurrent()` flips to false because a newer run started
- * (deps changed again), this run's later writes are dropped, so a slow stale load cannot clobber the
- * newer result. Sibling reads use the default queries — their loads fire-and-forget — so transitive
- * dependencies stay warm without the `.loaded()` drain, which is only meaningful for awaited pulls.
+ * Writes go through gated commands: once a newer run started (deps changed again), `gate` drops this
+ * run's later writes, so a slow stale load cannot clobber the newer result. Sibling reads use the
+ * default queries — their loads fire-and-forget — so transitive dependencies stay warm without the
+ * `.loaded()` drain, which is only meaningful for awaited pulls.
  */
 async function runReactiveLoad<TState>(
   refs: QueryRuntimeRefs<TState>,
   queryName: string,
   queryDef: RuntimeQueryDefinition<TState>,
   validatedInput: unknown,
-  isCurrent: () => boolean
+  gate: WriteGate
 ): Promise<void> {
   if (!queryDef.load) {
     return;
@@ -591,7 +606,7 @@ async function runReactiveLoad<TState>(
     // read and never fires a load, so the body sees fire-and-forget wrappers instead: reading a
     // dependency triggers its load (deduped while in flight) without awaiting a drain.
     queries: refs.reactiveLoadQueries,
-    commands: refs.buildGatedCommands(isCurrent) as LoadSelf<TState>['commands'],
+    commands: refs.buildGatedCommands(gate) as LoadSelf<TState>['commands'],
   };
   const loadCtx: LoadCtx<TState> = { self: loadSelf, getService: refs.registryApi.getService };
 
@@ -1030,6 +1045,22 @@ function subscribeToQuery<TState>(
     loadTeardown = effect(() => {
       const myEpoch = ++epoch;
       const isCurrent = () => myEpoch === epoch;
+      let replacedByOwnWrite = false;
+      const gate: WriteGate = (write) => {
+        if (!isCurrent()) {
+          if (replacedByOwnWrite) {
+            warnLoadReplacedByOwnWrite(refs.serviceId, queryName);
+          }
+          return;
+        }
+        // A run that started during the write was started by it, through state this load reads. A
+        // recipe that throws still keeps its earlier changes, so check also then.
+        try {
+          write();
+        } finally {
+          replacedByOwnWrite = !isCurrent();
+        }
+      };
 
       // Mark this run in flight, preserving the current `status` (so the first load reads
       // `pending` → `isInitialLoading`, while a re-load over existing data reads `success` →
@@ -1041,7 +1072,7 @@ function subscribeToQuery<TState>(
         loadStatus: 'loading',
       };
 
-      runReactiveLoad(refs, queryName, queryDef, validatedInput, isCurrent).then(
+      runReactiveLoad(refs, queryName, queryDef, validatedInput, gate).then(
         () => {
           if (!isCurrent()) {
             return;

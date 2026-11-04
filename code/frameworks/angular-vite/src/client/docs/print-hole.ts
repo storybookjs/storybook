@@ -53,11 +53,15 @@ export const printHole: PrintHole<AngularHolePlace> = (hole, value) => {
 
 // Text prints as written, as the static snippet prints it, and a cleared arg as none. Angular reads
 // `{`, `}` and `@` in text as its own syntax, so they print as the character references Angular
-// asks for, but `{{` as the string `'{{'` interpolated: Angular reads a `{{` it decodes from
-// references as an interpolation too.
-const text = (value: unknown): string | undefined =>
-  value === undefined
-    ? ''
-    : textValue(value)?.replace(/\{\{|[{}@]/g, (syntax) =>
-        syntax === '{{' ? "{{ '{{' }}" : `&#${syntax.charCodeAt(0)};`
-      );
+// asks for, which read as text wherever the markup interpolates an arg. Text holding `{{` has none:
+// Angular reads a `{{` it decodes from references as an interpolation too. A `$` at the end prints
+// as a reference as well, so it never makes `${` with the code after it in the template literal.
+const text = (value: unknown): string | undefined => {
+  if (value === undefined) {
+    return '';
+  }
+  const printed = textValue(value);
+  return printed?.includes('{{')
+    ? undefined
+    : printed?.replace(/[{}@]|\$$/g, (syntax) => `&#${syntax.charCodeAt(0)};`);
+};

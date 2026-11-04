@@ -241,9 +241,9 @@ const parseMarkup = (markup: string): (MarkupElement | string)[] | undefined => 
   return stack.length === 1 ? root.children : undefined;
 };
 
-// An attribute name with an optional quoted or bare value; quoted values are skipped whole. It runs
-// on to the next whitespace, which keeps the mark after a marked binding with it.
-const MARKUP_ATTRIBUTE = /[^\s=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|\S+))?\S*/g;
+// An attribute name with an optional quoted or bare value; quoted values are skipped whole. The
+// private-use characters after it are the end of the mark around a marked binding.
+const MARKUP_ATTRIBUTE = /[^\s=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|\S+))?[\uE000-\uF8FF]*/g;
 
 const openTagLines = (
   node: MarkupElement,

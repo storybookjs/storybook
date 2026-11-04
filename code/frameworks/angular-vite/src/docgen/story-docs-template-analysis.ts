@@ -48,15 +48,13 @@ interface Replacement {
   outputs: readonly string[];
 }
 
-// The bindings an expansion stands for. Each mark of an input the story does not set follows them
-// after a space of its own, which the template moves into its hole.
 const expansionText = (expansion: TemplateExpansion, outputs: readonly string[]) =>
   [
     ...expansion.inputAttributes,
     ...expansion.outputAttributes
       .filter(({ name }) => outputs.includes(name))
       .map(({ markup }) => markup),
-  ].join(' ') + (expansion.unsetAttributes ?? []).map((mark) => ` ${mark}`).join('');
+  ].join(' ');
 
 // The markup `analysis` materialized, from `markup` and `expansions` of the same shape: a story's
 // template printed with marks around the values its analyzed print holds. Each expansion is found

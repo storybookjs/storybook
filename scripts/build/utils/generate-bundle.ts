@@ -49,6 +49,35 @@ const USE_SYNC_EXTERNAL_STORE_ALIAS = {
   ),
 };
 
+/**
+ * The real shim is CommonJS that calls `require('react')`. Bundled next to an external `react`, that
+ * call fails in the browser with "Dynamic require of react is not supported", which once broke the
+ * preview (#32270). Any shim specifier without an alias above must fail the build instead.
+ */
+const USE_SYNC_EXTERNAL_STORE_FILE = /[\\/]node_modules[\\/]use-sync-external-store[\\/]/;
+const USE_SYNC_EXTERNAL_STORE_ERROR =
+  'Bundling use-sync-external-store would ship its CommonJS require("react"), which fails in the ' +
+  'browser. Add the imported specifier to USE_SYNC_EXTERNAL_STORE_ALIAS in generate-bundle.ts.';
+
+const esbuildUseSyncExternalStoreGuard: esbuild.Plugin = {
+  name: 'use-sync-external-store-guard',
+  setup(build) {
+    build.onLoad({ filter: USE_SYNC_EXTERNAL_STORE_FILE }, () => ({
+      errors: [{ text: USE_SYNC_EXTERNAL_STORE_ERROR }],
+    }));
+  },
+};
+
+const rolldownUseSyncExternalStoreGuard: RolldownPlugin = {
+  name: 'use-sync-external-store-guard',
+  load(id) {
+    if (USE_SYNC_EXTERNAL_STORE_FILE.test(id)) {
+      this.error(USE_SYNC_EXTERNAL_STORE_ERROR);
+    }
+    return null;
+  },
+};
+
 function rolldownGlobalExternalsPlugin(): RolldownPlugin {
   const prefix = '\0storybook-global:';
 
@@ -145,6 +174,7 @@ export async function generateBundle({
     },
     plugins: [
       rawPlugin(),
+      esbuildUseSyncExternalStoreGuard,
       {
         name: 'postbuild',
         setup(build) {
@@ -227,7 +257,10 @@ export async function generateBundle({
       cwd: DIR_CWD,
       input: { [name]: entryPoint },
       platform: 'browser',
-      plugins: useGlobals ? [rolldownGlobalExternalsPlugin()] : [],
+      plugins: [
+        rolldownUseSyncExternalStoreGuard,
+        ...(useGlobals ? [rolldownGlobalExternalsPlugin()] : []),
+      ],
       resolve: {
         alias,
         conditionNames: ['browser', 'module', 'default'],

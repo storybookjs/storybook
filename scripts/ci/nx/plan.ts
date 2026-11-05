@@ -95,7 +95,15 @@ const fixedJobs: Record<string, Equivalent> = {
   'typescript-validation': { tasks: ['*:check'] },
   'knip-validation': { tasks: ['code:knip'] },
   'local-storybook---chromatic': { tasks: ['code:storybook-ui-chromatic'] },
-  'internal-storybook-e2e': { tasks: ['code:e2e-internal'] },
+  // In shards: on one worker the suite took 6.5 minutes, the longest task of the run.
+  'internal-storybook-e2e': {
+    tasks: [
+      'code:e2e-internal-1',
+      'code:e2e-internal-2',
+      'code:e2e-internal-3',
+      'code:e2e-internal-4',
+    ],
+  },
   'internal-storybook-build-e2e': { tasks: ['code:e2e-internal-static'] },
   'benchmark-packages': { tasks: ['scripts:bench-packages'] },
   'docgen-memory-gate': { tasks: ['docgen-harness:docgen-memory-gate'] },

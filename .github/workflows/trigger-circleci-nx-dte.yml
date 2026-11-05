@@ -29,8 +29,7 @@ jobs:
       github.repository == 'storybookjs/storybook' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       (github.event.action != 'labeled' || startsWith(github.event.label.name, 'nx-dte:')) &&
-      contains(join(github.event.pull_request.labels.*.name, ','), 'nx-dte:') &&
-      !contains(join(github.event.pull_request.labels.*.name, ','), 'ci:')
+      contains(join(github.event.pull_request.labels.*.name, ','), 'nx-dte:')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -68,6 +67,15 @@ jobs:
             | join(",")' <<<"$LABELS")
           if [ -z "$WORKFLOW" ]; then
             echo "No known workflow in the nx-dte: labels."
+            exit 0
+          fi
+          # The same filter as trigger-circle-ci-workflow.yml: labels such as `ci: do not merge` start
+          # no pipeline there, so they do not skip this one.
+          CI_WORKFLOW=$(jq -r '
+            map(select(startswith("ci:")) | ltrimstr("ci:") | select(IN("focus", "normal", "docs", "daily", "windows")))
+            | join(",")' <<<"$LABELS")
+          if [ -n "$CI_WORKFLOW" ]; then
+            echo "Skipped: the ci:$CI_WORKFLOW label starts the per-job pipeline on this branch, which would cancel this one."
             exit 0
           fi
           PAYLOAD=$(jq -nc \

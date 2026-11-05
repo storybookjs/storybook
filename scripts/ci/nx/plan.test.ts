@@ -152,6 +152,10 @@ describe('the split NX targets', () => {
       for (const part of parts) {
         expect(without(code[part], ['PLAYWRIGHT_SHARD'])).toEqual(without(code[base]));
       }
+      const shardOf = (name: string) =>
+        code[name].options.env?.PLAYWRIGHT_SHARD ??
+        code[name].options.command.match(/--shard=(\d+\/\d+)$/)?.[1];
+      expect(parts.map(shardOf)).toEqual(parts.map((_, i) => `${i + 1}/${parts.length}`));
     }
   });
 
@@ -168,6 +172,16 @@ describe('the split NX targets', () => {
 
     expect(inverts).toHaveLength(1);
     expect(greps.flatMap((g) => g.split('|')).sort()).toEqual(inverts[0].split('|').sort());
+
+    // Apart from the selection, each part is the e2e-ui target as nx.json defines it.
+    const defaults = JSON.parse(read('nx.json')).targetDefaults['e2e-ui'];
+    const parts = Object.entries(targets('test-storybooks/portable-stories-kitchen-sink/react'))
+      .filter(([name]) => /^e2e-ui-\d+$/.test(name))
+      .map(([, target]) => structuredClone(target) as Record<string, any>);
+    for (const part of parts) {
+      part.options.command = part.options.command.replace(/ --grep(-invert)? "[^"]+"$/, '');
+      expect(part).toEqual(defaults);
+    }
   });
 });
 

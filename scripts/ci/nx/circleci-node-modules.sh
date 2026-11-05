@@ -19,7 +19,8 @@ fresh="$archive.fresh"
 case "$mode" in
   restore)
     # A broken archive falls through to the install below instead of failing the job.
-    if [ -s "$archive" ] && node scripts/ci/zstd-stream.mjs decompress < "$archive" | tar --extract; then
+    if [ -s "$archive" ] && node scripts/ci/zstd-stream.mjs decompress < "$archive" | tar --extract \
+      && [ -f "$list" ]; then
       missing=0
       while read -r dir; do
         [ -d "$dir" ] || { echo "The restored tree lacks $dir; installing instead."; missing=1; }
@@ -30,6 +31,12 @@ case "$mode" in
         echo "node_modules restored from the cache; skipping yarn install."
         exit 0
       fi
+    fi
+    if [ -s "$archive" ]; then
+      # Whatever a broken or incomplete archive left behind, so the install starts clean.
+      echo "The cached node_modules could not be used; installing instead."
+      find . -path ./.git -prune -o -name node_modules -type d -prune -exec rm -rf {} +
+      rm -f .yarn/root-install-state.gz
     fi
     # Three tries, as the NX Cloud workers do (.nx/workflows/agents.yaml): 20 agents install at once.
     for try in 1 2 3; do

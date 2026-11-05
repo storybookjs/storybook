@@ -51,7 +51,7 @@ The same NX task graph can also run distributed over CircleCI machines instead o
 - `.nx/ci-config.yaml` must be out of the way while `start-ci-run` runs: the command refuses to start when it exists. Assignment rules for the agents are in `.nx/workflows/circleci-assignment-rules.yaml`
 - After the install, use the workspace's Nx (`yarn nx start-agent`, `yarn nx complete-ci-run`). `npx nx-cloud …` loads a client that cannot find the workspace's Nx
 - Rerun a failed NX DTE workflow from the start, not "from failed": rerunning only `nx-main` starts a new NX Cloud run that no agent joins, and it waits until its no-output timeout
-- Do not label a pull request with both `ci:<workflow>` and `nx-dte:<workflow>`: both pipelines run on the same branch and CircleCI cancels one of them. The NX DTE trigger skips pull requests that have a `ci:` label
+- A pull request with a `ci:<workflow>` label does not get the NX DTE pipeline, even with an `nx-dte:` label: both would run on the same branch and CircleCI would cancel one. The trigger's log says so
 - `scripts/ci/nx/circleci-node-modules.sh` caches the whole installed tree as one zstd archive; only `nx-main` stores it, for trusted authors
 - CircleCI cancels a running pipeline when a newer one starts on the same branch (auto-cancel), a push's own pipeline included. To measure two pipelines side by side, run them on different branches, and trigger after the push's pipeline exists
 - `CIRCLE_TOKEN=… node scripts/ci/nx/circleci-benchmark.ts <workflow>...` compares workflows: time to the green check, until `nx-main` ends, wall time, queue, setup and task phase of `nx-main`, container minutes and credits

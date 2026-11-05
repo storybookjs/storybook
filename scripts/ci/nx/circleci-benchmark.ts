@@ -2,9 +2,11 @@
  * Compares CircleCI workflows: the per-job pipeline against the NX DTE pipeline
  * (scripts/ci/nx/circleci-dte.ts), as one Markdown table.
  *
- * Per workflow it reports the wall time (created until stopped), the longest time a job waited in
- * CircleCI's queue, the billed container minutes and the credits they cost. For an NX DTE workflow
- * it also splits the main job into the setup before `Run nx` and the task phase itself.
+ * Per workflow it reports when `circleci-completion` ended (when the pull request's check turns
+ * green), the wall time (created until stopped), the longest time a job waited in CircleCI's queue,
+ * the billed container minutes and the credits they cost. For an NX DTE workflow it also reports
+ * when `nx-main` ended (which decides the check), and splits that job into the setup before
+ * `Run nx` and the task phase itself.
  *
  * Usage:
  *   CIRCLE_TOKEN=… node scripts/ci/nx/circleci-benchmark.ts <workflow>...

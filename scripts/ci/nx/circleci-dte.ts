@@ -303,12 +303,15 @@ const windowsJob = (part: WindowsPart) =>
           : []),
         ...(part.startsWith('e2e-')
           ? [
-              // The checkout orb rewrites every https://github.com URL to ssh globally, and the
-              // job's deploy key cannot read storybookjs/sandboxes, so the template's clone failed
-              // with exit code 128.
+              // The checkout orb rewrites every https://github.com URL to ssh globally, and on
+              // Windows the sandbox template's clone through that rewrite failed with exit code 128
+              // (the Linux agents clone the same way without trouble).
               run(
                 'Clone GitHub over https',
-                'git config --global --unset-all url.ssh://git@github.com.insteadOf || true'
+                [
+                  'git config --global --unset-all url.ssh://git@github.com.insteadOf || true',
+                  "git config --global --get-regexp '^url\\.' || echo 'No URL rewrites left.'",
+                ].join('\n')
               ),
               run(
                 'Create the sandbox',

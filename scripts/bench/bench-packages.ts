@@ -468,8 +468,8 @@ const run = async () => {
 
   if ((await detectFreePort(REGISTRY_PORT)) === REGISTRY_PORT) {
     throw new Error(dedent`The local verdaccio registry must be running in the background for package benching to work,
-      and packages must be published to it in --no-link mode with 'yarn --task publish --no-link'
-      Then run the registry with 'yarn --task run-registry --no-link'`);
+      and packages must be published to it in --no-link mode with 'pnpm task --task publish --no-link'
+      Then run the registry with 'pnpm task --task run-registry --no-link'`);
   }
 
   // The amount of VCPUs for this task in CI is 2 (medium resource)

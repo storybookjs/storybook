@@ -84,6 +84,7 @@
     "README.md",
     "*.js",
     "*.d.ts",
+    "template/**/*.d.ts",
     "!src/**/*"
   ],
   "dependencies": {

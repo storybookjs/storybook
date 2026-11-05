@@ -13,7 +13,7 @@
     },
     "lint": {
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn lint" },
+      "options": { "cwd": "{projectRoot}", "command": "pnpm run lint" },
       "cache": true,
       "inputs": ["default"],
       "configurations": { "production": {} }

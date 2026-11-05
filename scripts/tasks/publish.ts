@@ -24,7 +24,7 @@ export const publish: Task<MonorepoDetails> = {
   },
   async run({ codeDir }, { dryRun, debug }) {
     return exec(
-      'yarn local-registry --publish',
+      'pnpm run local-registry --publish',
       { cwd: codeDir },
       {
         startMessage: '📕 Publishing packages',

@@ -54,6 +54,7 @@
     "template/cli/**/*",
     "README.md",
     "*.js",
+    "template/**/*.js",
     "*.mjs",
     "*.d.ts",
     "!src/**/*"

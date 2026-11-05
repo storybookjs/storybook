@@ -29,7 +29,7 @@ export function compareParser(argv: readonly string[], env?: NodeJS.ProcessEnv) 
     argv,
     {
       scriptName: 'results:compare',
-      usage: 'Usage: yarn results:compare [flags]',
+      usage: 'Usage: pnpm results:compare [flags]',
     },
     {
       control: flags.text('control', 'Control case (default cc-control-none-opus-high)'),

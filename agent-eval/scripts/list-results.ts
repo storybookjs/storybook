@@ -2,9 +2,9 @@
 // Lists the result directories on this machine, one per line, so two machines
 // can swap listings and see which directories to send each other.
 //
-//   yarn results:list                     print this machine's manifest
-//   yarn results:list > mine.txt          save it to share
-//   yarn results:list --compare theirs.txt  diff against a shared manifest
+//   pnpm results:list                       print this machine's manifest
+//   pnpm -s results:list > mine.txt         save it to share (-s keeps pnpm's banner out)
+//   pnpm results:list --compare theirs.txt  diff against a shared manifest
 //
 // A line names one result directory — the unit a collection saves and the unit
 // worth copying whole — followed by the evals it holds and their run counts:
@@ -81,7 +81,7 @@ function main(): void {
       process.argv.slice(2),
       {
         scriptName: 'results:list',
-        usage: 'Usage: yarn results:list [--compare <manifest file>]',
+        usage: 'Usage: pnpm results:list [--compare <manifest file>]',
       },
       {
         compare: flags.text('compare', 'Diff against a manifest saved by results:list elsewhere'),

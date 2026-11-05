@@ -35,7 +35,7 @@ export const serve: Task = {
 
     const controller = new AbortController();
     exec(
-      `yarn http-server ${builtSandboxDir} --port ${port} -s`,
+      `pnpm exec http-server ${builtSandboxDir} --port ${port} -s`,
       { cwd: ROOT_DIRECTORY },
       { dryRun, debug, signal: controller.signal as AbortSignal }
     ).catch((err) => {

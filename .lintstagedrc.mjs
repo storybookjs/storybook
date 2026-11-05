@@ -7,10 +7,10 @@ const tocSuffix = autofix ? '' : ' --check';
 
 export default {
   'code/**/*.{js,jsx,mjs,ts,tsx,html,json}': [fmtCmd],
-  'code/**/*.{js,jsx,mjs,ts,tsx}': [`yarn --cwd code lint:js:cmd${lintSuffix}`],
-  'scripts/**/*.{js,jsx,mjs,ts,tsx}': [`yarn --cwd scripts lint:js:cmd${lintSuffix}`],
+  'code/**/*.{js,jsx,mjs,ts,tsx}': [`pnpm --dir code run lint:js:cmd${lintSuffix}`],
+  'scripts/**/*.{js,jsx,mjs,ts,tsx}': [`pnpm --dir scripts run lint:js:cmd${lintSuffix}`],
   'docs/_snippets/**/*.{js,jsx,mjs,ts,tsx,html,json}': [fmtCmd],
-  '**/*.ejs': ['yarn --cwd scripts exec ejslint'],
-  '**/package.json': ['yarn --cwd scripts lint:package'],
-  './MIGRATION.md': [`yarn --cwd scripts update-migration-toc${tocSuffix}`],
+  '**/*.ejs': ['pnpm --dir scripts exec ejslint'],
+  '**/package.json': ['pnpm --dir scripts run lint:package'],
+  './MIGRATION.md': [`pnpm --dir scripts run update-migration-toc${tocSuffix}`],
 };

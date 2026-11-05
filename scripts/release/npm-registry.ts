@@ -119,20 +119,31 @@ export const waitForPackagesToBePublished = async ({
   return missing;
 };
 
+// Parses the output of the npm CLI that pnpm publish delegates the upload to. npm prints
+// "+ <name>@<version>" after a successful upload, and names a rejected package only through the
+// escaped registry URL in its error line, e.g.
+// "409 Conflict - PUT https://registry.npmjs.org/@storybook%2freact - Cannot publish over previously staged version".
 export const packagesAcceptedByRegistry = (output: string) => {
   const accepted = new Set<string>();
-  for (const line of output.split('\n')) {
-    const prefix = stripVTControlCharacters(line).match(/\[([^\]]+)\]:/);
-    if (!prefix) {
+  for (const rawLine of output.split('\n')) {
+    const line = stripVTControlCharacters(rawLine).trim();
+
+    const published = line.match(/^\+ (@?[^@\s]+)@\S+$/);
+    if (published) {
+      accepted.add(published[1]);
       continue;
     }
+
     if (
-      line.includes('Package archive published') ||
-      line.includes('Registry already knows about version') ||
-      line.includes('previously staged version') ||
-      line.includes('previously published versions')
+      !line.includes('previously staged version') &&
+      !line.includes('previously published versions')
     ) {
-      accepted.add(prefix[1]);
+      continue;
+    }
+    const putUrl = line.match(/\bPUT (\S+)/)?.[1];
+    const escapedName = putUrl && URL.canParse(putUrl) && new URL(putUrl).pathname.split('/').pop();
+    if (escapedName) {
+      accepted.add(decodeURIComponent(escapedName));
     }
   }
   return [...accepted];

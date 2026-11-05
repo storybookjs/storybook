@@ -68,7 +68,7 @@ const getCurrentVersion = async (verbose?: boolean) => {
 
 const buildAllPackages = async () => {
   console.log(`🏗️ Building all packages...`);
-  await execaCommand('yarn task --task=compile --start-from=compile --no-link', {
+  await execaCommand('pnpm run task --task=compile --start-from=compile --no-link', {
     stdio: 'inherit',
     cleanup: true,
     cwd: CODE_DIR_PATH,
@@ -76,10 +76,18 @@ const buildAllPackages = async () => {
   console.log(`🏗️ Packages successfully built`);
 };
 
+// pnpm skips private packages and versions the registry already serves, and publishes the selected
+// packages one at a time in dependency order, stopping at the first failure. --no-git-checks
+// because pnpm otherwise only publishes from a clean main/master branch, and releases publish from
+// the release branches.
 export const publishCommand = (tag: string, packageNames: string[]) => {
-  const include = packageNames.map((name) => `--include=${name}`).join(' ');
-  return `yarn workspaces foreach --all --parallel --no-private ${include} --verbose npm publish --provenance --tolerate-republish --tag ${tag}`;
+  const filters = packageNames.map((name) => `--filter=${name}`).join(' ');
+  return `pnpm --recursive ${filters} publish --tag ${tag} --no-git-checks`;
 };
+
+// pnpm forwards only a fixed set of flags to the npm CLI it publishes with, and --provenance is not
+// one of them, so request provenance through npm's environment config instead.
+const PUBLISH_ENV = { npm_config_provenance: 'true' };
 
 const execaOutput = (error: unknown) => {
   if (!error || typeof error !== 'object') {
@@ -125,6 +133,7 @@ export const publishAllPackages = async ({
       await execaCommand(command, {
         cleanup: true,
         cwd: CODE_DIR_PATH,
+        env: PUBLISH_ENV,
         stdout: ['pipe', 'inherit'],
         stderr: ['pipe', 'inherit'],
       });
@@ -135,7 +144,6 @@ export const publishAllPackages = async ({
       for (const name of packagesAcceptedByRegistry(execaOutput(error))) {
         accepted.add(name);
       }
-      toPublish = toPublish.filter((name) => !accepted.has(name));
 
       unpublished = await listUnpublishedPackages({
         packageNames,
@@ -145,16 +153,34 @@ export const publishAllPackages = async ({
 
       if (unpublished.length === 0) {
         console.log(
-          `📦 All packages are on npm even though Yarn exited non-zero (registry lag after a staged 409). Treating as success.`
+          `📦 All packages are on npm even though pnpm exited non-zero (registry lag after a staged 409). Treating as success.`
         );
         return;
       }
 
+      // pnpm stops at the first package that fails, so a missing package npm never acknowledged was
+      // most likely never uploaded: retry it right away instead of waiting for it to appear. Only
+      // packages npm accepted can be staged (reserved but not in the packument yet), and another PUT
+      // for those would 409, so they are waited for once nothing else is left to publish.
+      toPublish = unpublished.filter((name) => !accepted.has(name));
+
+      if (toPublish.length > 0) {
+        if (attempt === MAX_PUBLISH_ATTEMPTS) {
+          break;
+        }
+        console.log(
+          picocolors.yellow(
+            dedent`❗ ${unpublished.length} package(s) are not yet visible on npm: ${unpublished.join(', ')}
+            This was attempt number ${attempt}, there are ${MAX_PUBLISH_ATTEMPTS - attempt} retries left.
+            Retrying publish for ${toPublish.join(', ')} only.`
+          )
+        );
+        continue;
+      }
+
       console.log(
         picocolors.yellow(
-          dedent`❗ ${unpublished.length} package(s) are not yet visible on npm: ${unpublished.join(', ')}
-          This was attempt number ${attempt}, there are ${MAX_PUBLISH_ATTEMPTS - attempt} retries left.
-          Waiting for the registry instead of publishing over a staged version.`
+          `❗ npm accepted ${unpublished.join(', ')}, but they are not yet visible. Waiting for the registry instead of publishing over a staged version.`
         )
       );
 
@@ -171,22 +197,9 @@ export const publishAllPackages = async ({
         return;
       }
 
-      toPublish = unpublished.filter((name) => !accepted.has(name));
-      if (toPublish.length === 0) {
-        throw new Error(
-          `Failed to publish version ${currentVersion}. Still missing after staging wait: ${unpublished.join(', ')}`,
-          { cause: lastError }
-        );
-      }
-
-      if (attempt === MAX_PUBLISH_ATTEMPTS) {
-        break;
-      }
-
-      console.log(
-        picocolors.yellow(
-          `❗ Still missing ${toPublish.join(', ')}. Retrying publish for those packages only.`
-        )
+      throw new Error(
+        `Failed to publish version ${currentVersion}. Still missing after staging wait: ${unpublished.join(', ')}`,
+        { cause: lastError }
       );
     }
   }

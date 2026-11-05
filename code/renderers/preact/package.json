@@ -40,6 +40,7 @@
     "template/cli/**/*",
     "README.md",
     "*.js",
+    "template/**/*.js",
     "*.d.ts",
     "!src/**/*"
   ],

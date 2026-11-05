@@ -33,6 +33,7 @@
   "files": [
     "dist/**/*",
     "README.md",
+    "CHANGELOG.md",
     "*.js",
     "*.d.ts",
     "!src/**/*"

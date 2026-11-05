@@ -21,8 +21,8 @@
     "playground": "agent-eval-playground --results-dir ./results --evals-dir ./evals",
     "playground:build": "next build --webpack",
     "playground:check-routes": "node ./scripts/check-playground-routes.mjs",
-    "results:analyze": "yarn gen:agentic-ref && node ./scripts/analyze-results.ts",
-    "results:compare": "yarn gen:agentic-ref && node ./scripts/compare-results.ts",
+    "results:analyze": "pnpm run gen:agentic-ref && node ./scripts/analyze-results.ts",
+    "results:compare": "pnpm run gen:agentic-ref && node ./scripts/compare-results.ts",
     "results:compare:setup": "node ./scripts/setup-compare-stats.ts",
     "results:download": "node ./scripts/download-ci-results.mjs",
     "results:export": "node ./scripts/export-results.ts",
@@ -58,8 +58,5 @@
     "typescript": "^6.0.3",
     "vitest": "5.0.5",
     "yargs": "^17.7.3"
-  },
-  "installConfig": {
-    "hoistingLimits": "workspaces"
   }
 }

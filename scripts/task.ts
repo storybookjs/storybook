@@ -412,7 +412,7 @@ async function run() {
   // useful for other scripts to know whether they're running in the creation of a sandbox in the monorepo
   process.env.IN_STORYBOOK_SANDBOX = 'true';
 
-  const allOptionValues = await getOptionsOrPrompt('yarn task', options);
+  const allOptionValues = await getOptionsOrPrompt('pnpm task', options);
 
   const { junit, startFrom, ...optionValues } = allOptionValues;
 
@@ -586,7 +586,7 @@ async function run() {
             To reproduce this error locally, run:
 
             ${picocolors.bold(
-              getCommand('yarn task', options, {
+              getCommand('pnpm task', options, {
                 ...allOptionValues,
                 link: true,
                 startFrom: 'auto',

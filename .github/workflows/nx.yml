@@ -117,11 +117,10 @@ jobs:
           # "Re-run with debug logging" also makes Nx and the NX Cloud client log verbosely.
           NX_VERBOSE_LOGGING: ${{ runner.debug == '1' }}
         run: |
-          echo 'nx_output<<EOF' >> "$GITHUB_OUTPUT"
-          yarn nx run-many -t $ALL_TASKS -c production -p="tag:library,tag:ci:${TAG}" | tee -a "$GITHUB_OUTPUT"
-          status=${PIPESTATUS[0]}
-          echo 'EOF' >> "$GITHUB_OUTPUT"
-          exit $status
+          # The statuses step reads this file. Passing the output inline breaks on long output
+          # ("Argument list too long"), for example with debug logging or many failures.
+          yarn nx run-many -t $ALL_TASKS -c production -p="tag:library,tag:ci:${TAG}" | tee "$RUNNER_TEMP/nx-output.log"
+          exit "${PIPESTATUS[0]}"
 
       # Not on cancellation: a superseded run must not overwrite the status of the run that replaced it.
       - name: Create per-task Nx statuses
@@ -132,8 +131,13 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: | # zizmor: ignore[template-injection] safe toJson context expansion in github-script
+            const fs = require('fs');
+            const outputFile = `${process.env.RUNNER_TEMP}/nx-output.log`;
             // Nx colours its output (FORCE_COLOR), so strip ANSI codes before reading tasks and links.
-            const raw = (${{ toJson(steps.nx.outputs.nx_output) }} || '').replace(/\x1b\[[0-9;]*m/g, '');
+            const raw = (fs.existsSync(outputFile) ? fs.readFileSync(outputFile, 'utf8') : '').replace(
+              /\x1b\[[0-9;]*m/g,
+              ''
+            );
             const tag = ${{ toJson(steps.tag.outputs.tag) }} || '';
             // `success` only when the nx step itself succeeded. A failure before it (for example
             // NX Cloud rejecting the run) leaves the output empty, which must not read as green.

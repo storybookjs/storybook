@@ -58,6 +58,7 @@
     "sandbox": {
       "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
       "command": "yarn task sandbox -s task --debug --no-link --template={projectName}",
+      "options": { "env": { "STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION": "1" } },
       "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/sandbox/{options.dir}"],

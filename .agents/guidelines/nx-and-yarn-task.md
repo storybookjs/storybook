@@ -53,6 +53,8 @@ The same NX task graph can also run distributed over CircleCI machines instead o
 - After the install, use the workspace's Nx (`yarn nx start-agent`). `npx nx-cloud …` loads a client that cannot find the workspace's Nx
 - Rerun a failed NX DTE workflow from the start, not "from failed": rerunning only `nx-main` starts a new NX Cloud run that no agent joins, and it waits until its no-output timeout
 - A pull request with a `ci:<workflow>` label does not get the NX DTE pipeline, even with an `nx-dte:` label: both would run on the same branch and CircleCI would cancel one. The trigger's log says so
+- The `sandbox` target skips `storybook init`'s Playwright install (`STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION` in `nx.json`), as CircleCI's create jobs do: it installed Chromium with apt packages in every sandbox, and the agents install it once. Set it on that target only: `init-empty/features` and the unit tests of the install need it unset
+- The agents set `STORYBOOK_NX_CLOUD_AGENT`, so the sandboxes install from the global yarn cache, as on NX Cloud's workers
 - `scripts/ci/nx/circleci-node-modules.sh` caches the whole installed tree as one zstd archive; only `nx-main` stores it, for trusted authors
 - CircleCI cancels a running pipeline when a newer one starts on the same branch (auto-cancel), a push's own pipeline included. To measure two pipelines side by side, run them on different branches, and trigger after the push's pipeline exists
 - `CIRCLE_TOKEN=… node scripts/ci/nx/circleci-benchmark.ts <workflow>...` compares workflows: time to the green check, until `nx-main` ends, wall time, queue, setup and task phase of `nx-main`, container minutes and credits

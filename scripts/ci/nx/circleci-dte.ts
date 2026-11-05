@@ -195,6 +195,12 @@ const agentJob = (
         // The NX Cloud workers' environment (.nx/workflows/agents.yaml).
         STORYBOOK_DISABLE_TELEMETRY: 'true',
         IN_STORYBOOK_SANDBOX: 'true',
+        // The sandboxes install from the global yarn cache (scripts/utils/yarn.ts), so the installs
+        // of one sandbox, and of every sandbox task an agent runs after it, share their downloads.
+        STORYBOOK_NX_CLOUD_AGENT: 'true',
+        // As CircleCI's create jobs: `storybook init` would install Chromium again, with apt
+        // packages, in every sandbox; the step below installs it once per agent.
+        STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: '1',
         // CircleCI's own e2e jobs run 3 workers on 4 vCPUs; the dev-server E2E targets set 4 in nx.json.
         PLAYWRIGHT_WORKERS: '3',
         // bench-packages.ts uploads the benchmarks for this pull request.

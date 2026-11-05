@@ -113,6 +113,9 @@ common-env-vars: &common-env-vars
   IN_STORYBOOK_SANDBOX: true
   STORYBOOK_SANDBOX_ROOT: ../storybook-sandboxes
   STORYBOOK_NX_CLOUD_AGENT: true
+  # As CircleCI's create jobs: `storybook init` would install Chromium again, with apt packages, in
+  # every sandbox; the init steps above install it once per worker.
+  STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: 1
   CI: true
   NODE_OPTIONS: --max_old_space_size=6144
   # Playwright runs 2 workers on CI unless told otherwise (code/playwright.config.ts). These workers

@@ -51,7 +51,7 @@ describe('the CircleCI NX DTE pipeline', () => {
       general: 'nxDteAgents',
       sandbox: 'nxDteSandboxAgents',
       peak: 'nxDtePeakAgents',
-    };
+    } as const;
     for (const [kind, { job, agents, template }] of Object.entries(NX_DTE_AGENTS)) {
       const agent = jobs.find((j) => j.id === job)!.implementation('normal') as {
         parallelism: number;

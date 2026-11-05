@@ -436,10 +436,17 @@ export type CachePlatform = 'linux' | 'windows';
  * lists, and a path the current graph never assigns is not in it, so restoring a tree built from
  * another lockfile leaves a stale copy shadowing the right one. Hence no fallback keys: either the
  * tree came from this exact lockfile or it is linked again.
+ *
+ * The flip side is that a bad tree saved under a live key is served to every later run, and the
+ * cached `root-install-state.gz` then tells `yarn install` its work is already done, so nothing
+ * repairs it. That happened on `next`: `typescript-validation` went from 50/50 packages clean
+ * (e4ec60736) to 13 failing (f6d12ac3ddd) across a 17-commit run of lockfile churn, and stayed
+ * there because `yarn.lock` — and therefore the key — has not changed since. Bump the version
+ * prefix to orphan such an entry and relink from scratch.
  */
 export const NODE_MODULES_CACHE_KEY = (platform: CachePlatform = 'linux') =>
   [
-    `v11-${platform}-node_modules`,
+    `v12-${platform}-node_modules`,
     '{{ checksum ".nvmrc" }}',
     '{{ checksum ".yarnrc.yml" }}',
     '{{ checksum "yarn.lock" }}',

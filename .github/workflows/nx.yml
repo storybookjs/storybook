@@ -127,9 +127,7 @@ jobs:
     # environment, so they fill the shared task cache and the workers' node_modules cache. Pull
     # requests get no environment and keep the read-only token: they read those caches and write
     # only to their own pull-request cache.
-    # TEMPORARY: kasper/nx-cloud-revive is allowed so PR #37181 can test the writes. Remove it, and
-    # its deployment branch rule on the nx-cloud-write environment, before merging.
-    environment: ${{ (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/next' || github.ref == 'refs/heads/kasper/nx-cloud-revive'))) && 'nx-cloud-write' || '' }}
+    environment: ${{ (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/next')) && 'nx-cloud-write' || '' }}
     timeout-minutes: 90
     runs-on: ubuntu-latest
     # For the `completion` job, which sets the final `nx` status.
@@ -239,10 +237,8 @@ jobs:
       - if: steps.node-modules.outputs.cache-hit != 'true'
         run: yarn install --immutable
       # Right after the install, before tasks write caches into node_modules.
-      # TEMPORARY: kasper/nx-cloud-revive is the base branch of the NX experiments; pull requests
-      # into it restore what it saves. Remove before merging.
       - name: Save node_modules
-        if: (github.ref == 'refs/heads/next' || github.ref == 'refs/heads/kasper/nx-cloud-revive') && steps.node-modules.outputs.cache-hit != 'true'
+        if: github.ref == 'refs/heads/next' && steps.node-modules.outputs.cache-hit != 'true'
         uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |

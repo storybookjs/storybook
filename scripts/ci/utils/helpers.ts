@@ -211,7 +211,9 @@ export const git = {
     if (shallow) {
       flags.push('--depth 1');
     } else {
-      flags.push('--depth 500');
+      // Chromatic walks the commit graph for baselines and diffs trees for TurboSnap; the blobs of
+      // 500 commits are most of the download and nothing in the job reads them.
+      flags.push('--depth 500 --filter=blob:none');
     }
 
     if (forceHttps) {
@@ -221,6 +223,9 @@ export const git = {
     return {
       'git-shallow-clone/checkout_advanced': {
         clone_options: flags.join(' '),
+        // On `pull/N/head` branches the orb's fetch defaults to `--tags`, which pulls every
+        // release tag and its history and costs more than the clone itself.
+        tag_fetch_options: '--no-tags',
       },
     };
   },

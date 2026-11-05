@@ -162,7 +162,7 @@ export async function generateBundle({
       // The actual function which calls these modules is not imported
       // and therefore we can externalize them.
       'msw/browser',
-      'msw/core/http',
+      'msw/http',
     ], // Prefer `alias` over `external` because we're using aliases to bundle everything into the runtimes
     alias: {
       // The following aliases ensures that the runtimes bundles in the actual sources of these modules

@@ -40,6 +40,7 @@ jobs:
           steps:
             - git-shallow-clone/checkout_advanced:
                 clone_options: '--depth 500 --filter=blob:none --no-tags'
+                tag_fetch_options: '--no-tags'
             - run:
                 name: Fetch base branch for focused CI
                 environment:
@@ -59,6 +60,7 @@ jobs:
           steps:
             - git-shallow-clone/checkout_advanced:
                 clone_options: '--depth 1'
+                tag_fetch_options: '--no-tags'
       - run:
           name: Generate config
           environment:

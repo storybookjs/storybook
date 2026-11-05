@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   type NpmOptions,
+  cliStoriesTargetPath,
   configureEslintPlugin,
   copyTemplateFiles,
   extractEslintInfo,
@@ -23,6 +24,7 @@ import { dedent } from 'ts-dedent';
 
 import { AddonService } from '../services/index.ts';
 import { configureMain, configurePreview } from './configure.ts';
+import { rewriteCopiedStoryPreviewImports, supportsCsfFactories } from './csf-factories.ts';
 import type { FrameworkOptions, GeneratorOptions } from './types.ts';
 
 const defaultOptions = {
@@ -271,6 +273,7 @@ export async function baseGenerator(
     : [];
 
   const configurationFileExtension = language === SupportedLanguage.TYPESCRIPT ? 'ts' : 'js';
+  const csfFactories = supportsCsfFactories(framework);
 
   taskLog.message(`- Configuring main.${configurationFileExtension}`);
   await configureMain({
@@ -285,18 +288,20 @@ export async function baseGenerator(
       : addons,
     extensions,
     language,
+    csfFactories,
     ...(staticDir ? { staticDirs: [join('..', staticDir)] } : null),
     ...extraMain,
   });
 
   taskLog.message(`- Configuring preview.${configurationFileExtension}`);
 
-  await configurePreview({
+  const { previewConfigPath } = await configurePreview({
     frameworkPreviewParts: _options.frameworkPreviewParts,
     storybookConfigFolder: storybookConfigFolder as string,
     language,
     frameworkPackage,
     renderer,
+    csfFactories,
   });
 
   if (addScripts) {
@@ -309,6 +314,7 @@ export async function baseGenerator(
   if (addComponents) {
     const templateLocation = hasFrameworkTemplates(framework) ? framework : renderer;
     invariant(templateLocation, `Could not find template location for ${framework} or ${renderer}`);
+    const destination = componentsDestinationPath ?? (await cliStoriesTargetPath());
 
     taskLog.message(`- Copying framework templates`);
 
@@ -316,7 +322,7 @@ export async function baseGenerator(
       templateLocation,
       packageManager: packageManager as any,
       language,
-      destination: componentsDestinationPath,
+      destination,
       commonAssetsDir: join(
         dirname(fileURLToPath(import.meta.resolve('create-storybook/package.json'))),
         'rendererAssets',
@@ -324,6 +330,13 @@ export async function baseGenerator(
       ),
       features,
     });
+
+    if (csfFactories) {
+      await rewriteCopiedStoryPreviewImports({
+        destination,
+        previewConfigPath,
+      });
+    }
   }
 
   taskLog.success('Storybook configuration generated', { showLog: true });

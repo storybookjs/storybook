@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
 import type { StoryDocsService } from './definition.ts';
-import { getPrintHole, selectLiveSnippetForStory } from './live-snippet.ts';
+import { getPrintHole, selectLiveSnippetForStory, storyArgsChanged } from './live-snippet.ts';
 import { prependImportToSnippet, selectSnippetForStory, selectWarningForStory } from './snippet.ts';
 import {
   shouldSkipStoryDocsEmit,
@@ -208,6 +208,23 @@ describe('shouldSkipStoryDocsEmit', () => {
       shouldSkipStoryDocsEmit({
         __isArgsStory: true,
         docs: { source: { type: SourceType.DYNAMIC } },
+      })
+    ).toBe(false);
+  });
+});
+
+describe('storyArgsChanged', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('reads an arg written as undefined as unchanged once the args store drops it', () => {
+    vi.stubGlobal('FEATURES', { experimentalLiveServerSnippets: true });
+
+    expect(
+      storyArgsChanged({
+        unmappedArgs: { label: 'Hi' },
+        initialArgs: { label: 'Hi', size: undefined },
       })
     ).toBe(false);
   });

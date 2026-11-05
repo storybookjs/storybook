@@ -63,6 +63,17 @@ const outputsOf = (entry: AngularClassMeta) =>
 
 const describedBy = (text: string | undefined): string | undefined => text?.trim() || undefined;
 
+const asCodeBlock = (example: string) =>
+  example.startsWith('```') ? example : ['```', example, '```'].join('\n');
+
+// Compodoc keeps `@example` in the description, so Angular docs pages show it. The examples go in
+// `docsDescription` rather than `description`, because the manifest already renders `@example`
+// tags on its own and would list them twice.
+const withExamples = (description: string | undefined, examples: string[] = []) => {
+  const blocks = examples.filter(Boolean).map(asCodeBlock);
+  return blocks.length > 0 ? [description, ...blocks].filter(Boolean).join('\n\n') : undefined;
+};
+
 const analyzerJsDocTags = (entry: AngularClassMeta): DocgenJsDocTags => {
   const tags: DocgenJsDocTags = {};
   for (const tag of entry.jsdoctags ?? []) {
@@ -243,6 +254,7 @@ export const buildDocgenPayload = (
     // The analyzer knows the class name even when the story file imported it as a default export.
     name: meta.entry.name,
     description,
+    docsDescription: withExamples(description, jsDocTags.example),
     summary: jsDocTags.summary?.[0],
     jsDocTags,
     argTypes,

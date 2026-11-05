@@ -268,6 +268,53 @@ describe('buildDocgenPayload', () => {
           }
         `);
     });
+
+    describe('docsDescription', () => {
+      const payloadWith = (description: string, example?: string[]) => {
+        givenStoryFile();
+        const manager = managerReturning(
+          metaFor(componentEntry({ rawdescription: '', description: '' }), {
+            description,
+            jsDocTags: example ? { example } : {},
+          })
+        );
+        return buildDocgenPayload({ entry }, context(manager));
+      };
+
+      it('appends fenced @example blocks as they are', () => {
+        const payload = payloadWith('Renders a button.', ['```html\n<app-button />\n```']);
+
+        expect(payload?.docsDescription).toBe('Renders a button.\n\n```html\n<app-button />\n```');
+      });
+
+      it('wraps unfenced @example values in a code block, one per tag', () => {
+        const payload = payloadWith('Renders a button.', [
+          '<app-button />',
+          '<app-button disabled />',
+        ]);
+
+        expect(payload?.docsDescription).toBe(
+          'Renders a button.\n\n```\n<app-button />\n```\n\n```\n<app-button disabled />\n```'
+        );
+      });
+
+      it('shows the examples alone when the docblock has no prose', () => {
+        const payload = payloadWith('', ['<app-button />']);
+
+        expect(payload?.docsDescription).toBe('```\n<app-button />\n```');
+      });
+
+      it('leaves description and jsDocTags without the examples added', () => {
+        const payload = payloadWith('Renders a button.', ['<app-button />']);
+
+        expect(payload?.description).toBe('Renders a button.');
+        expect(payload?.jsDocTags).toEqual({ example: ['<app-button />'] });
+      });
+
+      it('is undefined when there are no examples, so the description is used', () => {
+        expect(payloadWith('Renders a button.')?.docsDescription).toBeUndefined();
+      });
+    });
   });
 
   describe('extraction rules on the analyzer path', () => {

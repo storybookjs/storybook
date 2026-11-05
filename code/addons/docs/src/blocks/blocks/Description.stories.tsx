@@ -1,9 +1,14 @@
-import type { ModuleExport, StoryContext, StoryDocsPayload } from 'storybook/internal/types';
+import type {
+  DocgenPayload,
+  ModuleExport,
+  StoryContext,
+  StoryDocsPayload,
+} from 'storybook/internal/types';
 import { registerService } from 'storybook/preview-api';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect } from 'storybook/test';
+import { expect, waitFor } from 'storybook/test';
 import invariant from 'tiny-invariant';
 
 import { Button as ButtonComponent } from '../examples/Button';
@@ -14,6 +19,7 @@ import * as ButtonStoriesWithMetaDescriptionAsParameter from '../examples/Button
 import * as ParametersStories from '../examples/SourceParameters.stories.tsx';
 import { Description } from './Description';
 import type { DocsContextProps } from './DocsContext.ts';
+import { docgenServiceDef } from '../../../../../core/src/shared/open-service/services/docgen/definition.ts';
 import { storyDocsServiceDef } from '../../../../../core/src/shared/open-service/services/story-docs/definition.ts';
 import { unregisterService } from '../../../../../core/src/shared/open-service/service-registry.ts';
 
@@ -84,7 +90,57 @@ function storyDocsServiceStoryBeforeEach(of: ModuleExport, data: StoryDocsMockDa
   };
 }
 
+type DocgenMockData = Pick<DocgenPayload, 'description' | 'docsDescription'>;
+
+function docgenServiceBeforeEach(of: ModuleExport, data: DocgenMockData) {
+  return async (context: StoryContext) => {
+    const docsContext = context.loaded?.docsContext as DocsContextProps | undefined;
+    invariant(docsContext, 'docsContext is required to mock docgen for docs block stories');
+
+    // Same reason as the story-docs mock: the block only reads the service behind this feature.
+    const previousFeatures = globalThis.FEATURES;
+    globalThis.FEATURES = { ...previousFeatures, docgenServer: true };
+
+    const { preparedMeta } = docsContext.resolveOf(of, ['meta']);
+    const payload: DocgenPayload = {
+      id: preparedMeta.componentId,
+      name: preparedMeta.componentId,
+      path: './example.stories.tsx',
+      jsDocTags: {},
+      ...data,
+    };
+    unregisterService('core/docgen');
+    const service = registerService(docgenServiceDef, {
+      commands: {
+        extractDocgen: {
+          handler: (_input, ctx) => {
+            ctx.self.setState((state) => {
+              state.components[payload.id] = payload;
+            });
+            return payload;
+          },
+        },
+        extractAllDocgen: {
+          handler: (_input, ctx) => {
+            ctx.self.setState((state) => {
+              state.components[payload.id] = payload;
+            });
+          },
+        },
+      },
+    });
+    await service.commands.extractDocgen({ id: payload.id });
+
+    return () => {
+      unregisterService('core/docgen');
+      globalThis.FEATURES = previousFeatures;
+    };
+  };
+}
+
 const SERVICE_STORY_DESCRIPTION = 'Description from the story-docs service';
+const DOCGEN_DESCRIPTION = 'Description from the docgen service';
+const DOCGEN_EXAMPLE = '<app-empty-example />';
 
 const meta = {
   component: Description,
@@ -198,6 +254,37 @@ export const OfStoryFromStoryDocsService: Story = {
   }),
   play: async ({ canvasElement }) => {
     await expect(canvasElement).toHaveTextContent(SERVICE_STORY_DESCRIPTION);
+  },
+};
+
+export const OfCSFFileWithDocgenDocsDescription: Story = {
+  args: {
+    of: ParametersStories,
+  },
+  parameters: { relativeCsfPaths: ['../examples/SourceParameters.stories'] },
+  beforeEach: docgenServiceBeforeEach(ParametersStories, {
+    description: DOCGEN_DESCRIPTION,
+    docsDescription: `${DOCGEN_DESCRIPTION}\n\n\`\`\`html\n${DOCGEN_EXAMPLE}\n\`\`\``,
+  }),
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement).toHaveTextContent(DOCGEN_DESCRIPTION);
+    // The code block's syntax highlighter loads asynchronously.
+    await waitFor(() => expect(canvasElement).toHaveTextContent(DOCGEN_EXAMPLE));
+  },
+};
+
+export const OfCSFFileAsParameterWinsOverDocgenDocsDescription: Story = {
+  args: {
+    of: ButtonStoriesWithMetaDescriptionAsParameter,
+  },
+  parameters: { relativeCsfPaths: ['../examples/ButtonWithMetaDescriptionAsParameter.stories'] },
+  beforeEach: docgenServiceBeforeEach(ButtonStoriesWithMetaDescriptionAsParameter, {
+    description: DOCGEN_DESCRIPTION,
+    docsDescription: `${DOCGEN_DESCRIPTION}\n\n\`\`\`html\n${DOCGEN_EXAMPLE}\n\`\`\``,
+  }),
+  play: async ({ canvasElement }) => {
+    await expect(canvasElement).toHaveTextContent('These are the stories for the Button component');
+    await expect(canvasElement).not.toHaveTextContent(DOCGEN_EXAMPLE);
   },
 };
 

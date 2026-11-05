@@ -21,7 +21,8 @@ const dir = template.replace('/', '-');
 const sandboxDir = join(SANDBOX_DIRECTORY, dir);
 const cachedDir = join(ROOT_DIRECTORY, 'sandbox', dir);
 
-if (!existsSync(join(sandboxDir, 'storybook-static')) && existsSync(cachedDir)) {
+// Always from the cache when there is one: a storybook-static already in the sandbox can be older.
+if (existsSync(cachedDir) && cachedDir !== sandboxDir) {
   console.log(`Copying the cached sandbox ${cachedDir} to ${sandboxDir}`);
   cpSync(cachedDir, sandboxDir, { recursive: true, force: true });
 }

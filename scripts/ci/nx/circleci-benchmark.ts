@@ -240,7 +240,11 @@ async function main() {
               )
             );
           } catch (error) {
-            // The v1.1 API answers 404 for a few jobs, such as approvals.
+            // The v1.1 API answers 404 for a few jobs, such as approvals. Any other error would
+            // leave a billable job out of the totals.
+            if (!(error as Error).message.includes(': 404 ')) {
+              throw error;
+            }
             console.error(`Skipping job ${job.job_number}: ${(error as Error).message}`);
           }
         }

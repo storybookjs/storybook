@@ -342,16 +342,16 @@ jobs:
               });
             }
 
-            // Once the tasks ran, every task failure an earlier run of this workflow left on the
-            // commit that did not fail again is cleared (`fail-after: 0` runs every task, so the
-            // list is complete). Failures from a run with another ci: label stay.
+            // Once a run of this workflow succeeds, the task failures earlier runs of it left on the
+            // commit are cleared. Not after a failed run: a task that did not run there (a failed
+            // dependency) would turn green. Failures from a run with another ci: label stay.
             const failedAgain = (statusContext) =>
               failures.some(({ task }) =>
                 task.endsWith('…')
                   ? statusContext.startsWith(`nx run ${task.slice(0, -1)}`)
                   : statusContext === `nx run ${task}`
               );
-            if (succeeded || failures.length > 0) {
+            if (succeeded) {
               const statuses = await github.paginate(github.rest.repos.listCommitStatusesForRef, {
                 owner: context.repo.owner,
                 repo: context.repo.repo,

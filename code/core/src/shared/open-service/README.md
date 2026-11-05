@@ -539,7 +539,10 @@ State is a **deep reactive proxy** (`deepSignal` from `deepsignal`, backed by `@
 created in [service-runtime.ts](./service-runtime.ts). There is no top-level state atom and no Immer:
 
 - Reading a field through `ctx.self.state` tracks a fine-grained signal for exactly that field
-  (including not-yet-present record keys, which fire when the key is later added).
+  (including not-yet-present record keys, which fire when the key is later added). Only property
+  reads and key enumeration (`Object.keys`) are tracked. `key in state.record`, `Object.hasOwn` and
+  other own-key checks are not, so a handler that checks a key this way does not re-run when the key
+  is added. The lint rule `local-rules/no-untracked-service-state-key-check` flags these checks.
 - `setState((state) => …)` mutates the proxy **in place** inside a batch, so one call notifies
   subscribers once, and only the fields it actually changed are invalidated. The recipe writes
   through a recording proxy, and **one `setState` call is one sync entry**: when the recipe returns,
@@ -1050,9 +1053,7 @@ export const exampleServiceDef = defineService({
       output: valueSchema,
       handler: (input, ctx) => ctx.self.state.values[input.entryId] ?? null,
       load: async (input, ctx) => {
-        if (!(input.entryId in ctx.self.state.values)) {
-          await ctx.self.commands.preloadValue(input);
-        }
+        await ctx.self.commands.preloadValue(input);
       },
       staticPath: () => 'state.json',
       staticInputs: async () => [{ entryId: 'a' }, { entryId: 'b' }],
@@ -1060,10 +1061,15 @@ export const exampleServiceDef = defineService({
   },
   commands: {
     preloadValue: {
-      description: 'Fills state for one id.',
+      description: 'Fills state for one id, unless it is already filled.',
       input: entryIdSchema,
       output: v.void(),
       handler: async (input, ctx) => {
+        // Check here, not in the load: state the load reads becomes a dependency, so the
+        // load would re-run when this command writes the value.
+        if (ctx.self.state.values[input.entryId] !== undefined) {
+          return;
+        }
         ctx.self.setState((state) => {
           state.values[input.entryId] = 'ready';
         });

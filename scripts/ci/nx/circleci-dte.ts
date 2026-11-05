@@ -143,17 +143,9 @@ const mainJob = (
       NX_CLOUD_DISTRIBUTED_EXECUTION_AGENT_COUNT: `${agents}`,
     },
     steps: [
-      // A focused run asks Nx which projects the diff affects, so it needs the merge base: the
-      // history the setup job fetches (.circleci/config.yml).
-      selected.includes('focus')
-        ? {
-            'git-shallow-clone/checkout_advanced': {
-              clone_options: '--depth 500 --filter=blob:none --no-tags',
-              fetch_options: '--depth 500 --filter=blob:none',
-              tag_fetch_options: '--no-tags',
-            },
-          }
-        : git.checkout(),
+      // One commit, also for a focused run: run.ts asks Nx which projects the changed files affect
+      // (CI_CHANGED_FILES, from the setup job), not a git range.
+      git.checkout(),
       {
         run: {
           name: 'Start the NX Cloud run',
@@ -178,21 +170,6 @@ const mainJob = (
         },
       },
       ...restoreNodeModules(),
-      ...(selected.includes('focus')
-        ? [
-            {
-              run: {
-                name: 'Fetch the base branch',
-                command: [
-                  'git fetch --depth=500 --filter=blob:none --no-tags origin \\',
-                  '  "<< pipeline.parameters.ghBaseBranch >>:refs/remotes/origin/<< pipeline.parameters.ghBaseBranch >>"',
-                  'echo "export NX_BASE=$(git merge-base origin/<< pipeline.parameters.ghBaseBranch >> HEAD)" >> "$BASH_ENV"',
-                  'echo "export NX_HEAD=$(git rev-parse HEAD)" >> "$BASH_ENV"',
-                ].join('\n'),
-              },
-            },
-          ]
-        : []),
       {
         run: {
           name: 'Run nx',

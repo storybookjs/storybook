@@ -7,7 +7,10 @@ import { resolveManifestPaths } from './docgen/component-docgen/config/resolve-m
 import type { WebComponentsFrameworkOptions } from './types.ts';
 
 export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
-export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
+export {
+  experimental_storyDocsPrintHole,
+  experimental_storyDocsProvider,
+} from './docgen/story-docs-preset.ts';
 // Default for `features.docgenServer`. A Custom Elements Manifest needs no `typescript`; without one,
 // a project without a usable `typescript` keeps builder docgen.
 export const isDocgenProviderEnabled = async (_existing: unknown, options: Options) => {

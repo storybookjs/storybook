@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import type { StoryDocsProviderPreset } from 'storybook/internal/types';
 
@@ -44,3 +46,6 @@ export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (
     return { ...downstream, ...ours };
   };
 };
+
+export const experimental_storyDocsPrintHole = () =>
+  fileURLToPath(import.meta.resolve('@storybook/react/internal/register-print-hole'));

@@ -31,3 +31,6 @@ export const experimental_storyDocsProvider = createWorkerGatedStoryDocsProvider
   docgenWorker: fileURLToPath(import.meta.resolve(DOCGEN_WORKER_SPECIFIER)),
   build: (input) => buildStoryDocsPayload(input, { getDocgenPayload }),
 });
+
+export const experimental_storyDocsPrintHole = () =>
+  fileURLToPath(import.meta.resolve('@storybook/angular-vite/internal/register-print-hole'));

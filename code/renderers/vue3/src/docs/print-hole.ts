@@ -1,8 +1,6 @@
 import { type PrintHole, printValue, unknownHoleKind } from 'storybook/internal/docs-tools';
 import type { Args } from 'storybook/internal/types';
 
-import { isVNode } from 'vue';
-
 import {
   type SnippetValue,
   type VueHolePlace,
@@ -60,6 +58,13 @@ export const printHole: PrintHole<VueHolePlace> = (hole, value) => {
       return unknownHoleKind(hole);
   }
 };
+
+// Vue's own `isVNode` test, so the manager, which bundles this printer, does not bundle `vue`.
+const isVNode = (value: unknown) =>
+  typeof value === 'object' &&
+  value !== null &&
+  '__v_isVNode' in value &&
+  value.__v_isVNode === true;
 
 const code = (name: string, value: unknown, quote: '"' | "'") =>
   printValue(value, name, { quote, opaque: isVNode });

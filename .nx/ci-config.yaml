@@ -3,12 +3,10 @@
 # See https://nx.dev/docs/reference/nx-cloud/ci-config
 dte:
   # The NX Cloud Team plan allows at most 20 workers per run; NX Cloud rejects the whole run above it.
-  # One worker type: every worker can run every task, so none sits idle waiting for a task type.
-  distribute-on:
-    small-changeset: 6 linux-browsers-js # 1-25% of projects affected
-    medium-changeset: 12 linux-browsers-js # 26-50%
-    large-changeset: 16 linux-browsers-js # 51-75%
-    extra-large-changeset: 20 linux-browsers-js # 76-100%
+  # Always 20, of one type, so none sits idle waiting for a task type. NX Cloud can scale the count
+  # with the changeset (small-changeset, …), but nx.yml runs every task with `run-many`, not only the
+  # affected ones: a dispatch with a small changeset got 6 workers and took 19 minutes, not 9.
+  distribute-on: 20 linux-browsers-js
   # One task per worker at a time (plus the continuous dev, serve and run-registry tasks that task
   # needs). The sandbox tasks share one folder per template outside the workspace, and each restores
   # it from the cache first; the Playwright and Vitest runs all write to {workspaceRoot}/test-results.

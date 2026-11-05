@@ -9,7 +9,7 @@ import type { StoryId, StoryIndexEntry } from 'storybook/internal/types';
 import * as find from 'empathic/find';
 import * as walk from 'empathic/walk';
 import { escapeRegExp } from 'es-toolkit/string';
-import path, { dirname, join, normalize, resolve } from 'pathe';
+import path, { dirname, join, normalize, relative, resolve } from 'pathe';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
@@ -73,12 +73,16 @@ export class VitestManager {
       reportsDirectory: resolvePathInStorybookCache(COVERAGE_DIRECTORY),
     } as CoverageOptions;
 
-    // Start at the Storybook package and search up to the repository root. An overridden
-    // STORYBOOK_PROJECT_ROOT can point to a package below the workspace Vitest config.
+    // Start at the Storybook package, since cwd may be the workspace root. The Git root
+    // can widen the search past STORYBOOK_PROJECT_ROOT, but must never shrink it.
     const configDir = this.testManager.storybookOptions.configDir;
     const packageRoot = configDir ? dirname(resolve(configDir)) : undefined;
     const repository = find.up('.git', { cwd: packageRoot || process.cwd() });
-    const searchRoot = repository ? dirname(repository) : getProjectRoot();
+    const projectRoot = getProjectRoot();
+    const searchRoot =
+      repository && !relative(dirname(repository), projectRoot).startsWith('..')
+        ? dirname(repository)
+        : projectRoot;
 
     const configFiles = [
       ...VITEST_CONFIG_FILE_EXTENSIONS.flatMap((ext) => [

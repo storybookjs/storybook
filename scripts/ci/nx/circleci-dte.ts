@@ -176,11 +176,14 @@ const mainJob = (selected: readonly Workflow[], changedFiles: readonly string[])
     ],
   }));
 
+/** The agents' job, which `circleci-completion` does not wait for (main.ts). */
+export const NX_AGENT_JOB_ID = 'nx-agent';
+
 const agentJob = (
   changedFiles: readonly string[],
   { agents = NX_DTE_AGENTS, agentClass = 'xlarge' }: NxDteOptions
 ) =>
-  defineJob('nx-agent', () => ({
+  defineJob(NX_AGENT_JOB_ID, () => ({
     executor: { name: 'sb_node_22_browsers', class: agentClass },
     parallelism: agents,
     environment: {

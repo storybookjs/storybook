@@ -11,6 +11,7 @@ import { setTrustedAuthor } from './utils/runtime.ts';
 import type { JobImplementationObj, NoOpJobImplementationObj } from './utils/types.ts';
 import { type Workflow, workflows } from './utils/types.ts';
 import {
+  NX_AGENT_JOB_ID,
   NX_DTE_AGENT_CLASSES,
   type NxDteAgentClass,
   type NxDteOptions,
@@ -74,7 +75,11 @@ function generateConfig(
   // It acts as a single status check for GitHub branch protection: it only runs
   // (and reports success) once every required job has finished successfully.
   if (selected.some(isMergeGating)) {
-    const completion = defineCircleciCompletion([...ensuredJobs]);
+    // Not on the NX agents: `nx-main` fails when a task fails, and the agents stop up to a minute
+    // after it while they wind down.
+    const completion = defineCircleciCompletion(
+      ensuredJobs.filter((job) => job.id !== NX_AGENT_JOB_ID)
+    );
     ensuredJobs.push(completion);
 
     if (nightly) {

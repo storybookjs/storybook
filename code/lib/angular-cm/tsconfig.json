@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.json",
-  "compilerOptions": {},
+  "compilerOptions": { "types": ["node"] },
   "include": ["src/**/*"],
   // Fixtures import @angular/core, which this package deliberately does not depend on; the tests
   // compile them with their own TS programs instead.

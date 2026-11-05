@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { join, normalize } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -81,9 +81,12 @@ describe('getReactDocgenImporter function', () => {
     const root = join(import.meta.dirname, '__testfixtures__/alias');
     const matchPath = TsconfigPaths.createMatchPath(root, { '@/*': ['./src/*'] });
 
-    expect(matchPath('@/components/types', undefined, undefined, RESOLVE_EXTENSIONS)).toBe(
-      join(root, 'src/components/types')
-    );
+    // tsconfig-paths preserves the POSIX separators of the tsconfig mapping in the mapped suffix,
+    // which does not match `join`'s platform separators on Windows, so normalize both sides first.
+    const resolved = matchPath('@/components/types', undefined, undefined, RESOLVE_EXTENSIONS);
+
+    expect(resolved).toBeDefined();
+    expect(normalize(resolved ?? '')).toBe(join(root, 'src', 'components', 'types'));
     expect(matchPath('@/components/types')).toBeUndefined();
   });
 });

@@ -114,8 +114,8 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     // A story that navigates its own landmarks with React Aria stops F6 from reaching onKeydown
     // for as long as it has a landmark to go to. React Aria asks before wrapping around at the end
     // of those; declining leaves the key unhandled, so it reaches onKeydown and moves on to the
-    // manager's landmarks instead.
-    globalWindow.addEventListener('react-aria-landmark-navigation', (event) => {
+    // manager's landmarks instead. React Native has no addEventListener on its global.
+    globalWindow.addEventListener?.('react-aria-landmark-navigation', (event) => {
       if (isEmbedded()) {
         event.preventDefault();
       }

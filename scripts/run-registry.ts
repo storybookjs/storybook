@@ -37,6 +37,24 @@ const pathExists = async (p: string) => {
 };
 
 type Servers = { close: () => Promise<void> };
+
+/**
+ * Listens on `port`, retrying while it is still taken. NX stops a worker's previous registry while
+ * the next task starts one, so its servers can hold a port for a moment after the kill check.
+ */
+const listenWhenFree = (server: http.Server, port: number, onListening: () => void, tries = 40) => {
+  const retry = (error: NodeJS.ErrnoException) => {
+    if (error.code !== 'EADDRINUSE' || tries <= 1) {
+      throw error;
+    }
+    setTimeout(() => listenWhenFree(server, port, onListening, tries - 1), 500);
+  };
+  server.once('error', retry);
+  server.listen(port, () => {
+    server.off('error', retry);
+    onListening();
+  });
+};
 const startVerdaccio = async () => {
   // Kill Verdaccio related processes if they are already running
   await killPort(6001);
@@ -90,7 +108,7 @@ const startVerdaccio = async () => {
         },
       };
 
-      proxy.listen(6001, () => {
+      listenWhenFree(proxy, 6001, () => {
         ready.proxy = true;
         if (ready.verdaccio) {
           resolve(servers);
@@ -106,7 +124,7 @@ const startVerdaccio = async () => {
       runServer(config).then((app: Server) => {
         verdaccioApp = app;
 
-        app.listen(6002, () => {
+        listenWhenFree(app, 6002, () => {
           ready.verdaccio = true;
           if (ready.proxy) {
             resolve(servers);
@@ -117,9 +135,9 @@ const startVerdaccio = async () => {
     new Promise((_, rej) => {
       setTimeout(() => {
         if (!ready.verdaccio || !ready.proxy) {
-          rej(new Error(`TIMEOUT - verdaccio didn't start within 10s`));
+          rej(new Error(`TIMEOUT - verdaccio didn't start within 30s`));
         }
-      }, 10000);
+      }, 30000);
     }),
   ]) as Promise<Servers>;
 };

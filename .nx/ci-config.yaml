@@ -23,7 +23,5 @@ dte:
 # serve, dev and run-registry tasks) and the run hangs.
 lifecycle:
   # Run every task even after one fails, as CircleCI runs every job, so a run reports all its
-  # failures. With the default of 1, NX Cloud stops workers on the first failure while the main job
-  # keeps waiting for the tasks they held: run 41945124730 crawled on with 5 workers until the
-  # 90-minute job timeout after one flaky E2E test.
+  # failures instead of stopping workers at the first one.
   fail-after: 0

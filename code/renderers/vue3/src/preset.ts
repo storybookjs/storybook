@@ -8,7 +8,10 @@ export { experimental_docgenProvider, experimental_manifests } from './docgen/pr
 // Default for `features.docgenServer`; a project without a usable `typescript` keeps builder docgen.
 export const isDocgenProviderEnabled = (_existing: unknown, options: Options) =>
   isTypeScriptReadyForDocgen((specifier) => import.meta.resolve(specifier), options);
-export { experimental_storyDocsProvider } from './docgen/story-docs-provider.ts';
+export {
+  experimental_storyDocsPrintHole,
+  experimental_storyDocsProvider,
+} from './docgen/story-docs-provider.ts';
 // Consumed by external framework packages like storybook-vue3-rsbuild.
 export { DOCGEN_WORKER_SPECIFIER } from './docgen/worker-specifier.ts';
 

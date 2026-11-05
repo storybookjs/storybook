@@ -29,7 +29,10 @@ export { experimental_docgenProvider, experimental_manifests } from './docgen/pr
 // Default for `features.docgenServer`; a project without a usable `typescript` keeps builder docgen.
 export const isDocgenProviderEnabled = (_existing: unknown, options: Options) =>
   isTypeScriptReadyForDocgen((specifier) => import.meta.resolve(specifier), options);
-export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
+export {
+  experimental_storyDocsPrintHole,
+  experimental_storyDocsProvider,
+} from './docgen/story-docs-preset.ts';
 
 export const addons: PresetProperty<'addons'> = [];
 

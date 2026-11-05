@@ -416,13 +416,14 @@ jobs:
   # first daily sandbox). GitHub's Windows runners are free for public repositories, and NX Cloud's
   # only Windows worker is `windows/medium`. Nx runs the tasks here without NX Cloud: these tasks
   # are not distributed, and CircleCI's Windows jobs use no remote cache either.
+  # The parts run in parallel, as CircleCI's jobs do: in one job they took 29 minutes.
   windows:
     needs: plan
     if: needs.plan.outputs.windows == 'true' || needs.plan.outputs.windows-init-empty == 'true'
     strategy:
       fail-fast: false
       matrix:
-        part: [unit, e2e]
+        part: ${{ fromJSON(needs.plan.outputs.windows == 'true' && (needs.plan.outputs.windows-init-empty == 'true' && '["unit-1","unit-2","init-empty","e2e-build","e2e-dev"]' || '["unit-1","unit-2","e2e-build","e2e-dev"]') || '["init-empty"]') }}
     name: windows (${{ matrix.part }})
     runs-on: windows-latest
     timeout-minutes: 90
@@ -431,6 +432,8 @@ jobs:
       TEMPLATE: react-vite/default-ts
       NX_NO_CLOUD: true
       STORYBOOK_DISABLE_TELEMETRY: true
+      # windows-latest has 4 CPUs; CircleCI's Windows E2E jobs run 3 Playwright workers too.
+      PLAYWRIGHT_WORKERS: 3
     defaults:
       run:
         shell: bash
@@ -459,10 +462,12 @@ jobs:
       - name: Ensure no uncommitted changes
         run: git diff --exit-code && test -z "$(git status --porcelain)"
       - name: Unit tests
-        if: matrix.part == 'unit'
-        run: yarn test --project '!agent-eval'
+        if: startsWith(matrix.part, 'unit-')
+        run: yarn test --project '!agent-eval' --shard="${MATRIX_PART#unit-}/2"
+        env:
+          MATRIX_PART: ${{ matrix.part }}
       - name: Start the local registry
-        if: matrix.part == 'e2e'
+        if: matrix.part == 'init-empty' || startsWith(matrix.part, 'e2e-')
         working-directory: code
         run: |
           yarn local-registry --publish
@@ -470,34 +475,43 @@ jobs:
           yarn wait-on --timeout 120000 tcp:127.0.0.1:6001 tcp:127.0.0.1:6002
       # Daily only: the `ci:windows` workflow has no init-empty job.
       - name: Storybook init from an empty directory
-        if: matrix.part == 'e2e' && needs.plan.outputs.windows-init-empty == 'true'
+        if: matrix.part == 'init-empty'
         run: yarn exec jiti ./scripts/ci/nx/init-empty.ts react-vite-ts
       - name: Create the sandbox
-        if: matrix.part == 'e2e' && needs.plan.outputs.windows == 'true'
+        if: startsWith(matrix.part, 'e2e-')
         run: yarn task sandbox --template "$TEMPLATE" --no-link -s sandbox --debug
         env:
           STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: 1
+      # Downloading Chromium took 3.5 minutes. ~150 MB per Playwright version, so pull requests
+      # may save it too.
+      - name: Cache Playwright's Chromium
+        if: startsWith(matrix.part, 'e2e-')
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: ~/AppData/Local/ms-playwright
+          key: playwright-windows-${{ hashFiles('yarn.lock') }}
+          restore-keys: playwright-windows-
       - name: Install Playwright
-        if: matrix.part == 'e2e' && needs.plan.outputs.windows == 'true'
+        if: startsWith(matrix.part, 'e2e-')
         run: yarn playwright install chromium --with-deps
       - name: Build and serve the sandbox, then run its E2E tests
-        if: matrix.part == 'e2e' && needs.plan.outputs.windows == 'true'
+        if: matrix.part == 'e2e-build'
         run: |
           yarn task build --template "$TEMPLATE" --no-link -s build
           (yarn task serve --template "$TEMPLATE" --no-link -s serve > "$RUNNER_TEMP/serve.log" 2>&1 &)
           (cd code && yarn wait-on --timeout 120000 tcp:127.0.0.1:8001)
           yarn task e2e-tests --template "$TEMPLATE" --no-link -s e2e-tests
       - name: Run the sandbox in dev mode, then run its dev E2E tests
-        if: matrix.part == 'e2e' && needs.plan.outputs.windows == 'true'
+        if: matrix.part == 'e2e-dev'
         run: |
-          # Port 8001 still serves the static build from the previous step. `yarn task dev`, as on
-          # Linux, also makes the sandbox a git repository, which the change detection tests need.
+          # `yarn task dev`, as on Linux, also makes the sandbox a git repository, which the change
+          # detection tests need.
           export STORYBOOK_SERVE_PORT=8002
           (yarn task dev --template "$TEMPLATE" --no-link -s dev > "$RUNNER_TEMP/dev.log" 2>&1 &)
           (cd code && yarn wait-on --timeout 300000 tcp:127.0.0.1:8002)
           yarn task e2e-tests-dev --template "$TEMPLATE" --no-link -s e2e-tests-dev --junit
       - name: Server logs
-        if: failure() && matrix.part == 'e2e'
+        if: failure() && matrix.part != 'unit-1' && matrix.part != 'unit-2'
         run: tail -n 200 "$RUNNER_TEMP"/*.log || true
 
   # CircleCI's `Node 26 smoke` job (scripts/ci/common-jobs.ts).

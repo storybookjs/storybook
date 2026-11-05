@@ -53,15 +53,37 @@ export const WORKSPACE_NODE_MODULES_ROOTS = [
 ];
 
 /**
- * Checked after extraction on top of the roots above, because a truncated archive can still leave
- * an empty-but-present `node_modules` directory behind.
+ * Checked after extraction on top of the roots above, and checked as a *file*: a truncated archive
+ * leaves the directory entry behind, so testing the directory would pass on precisely the tree
+ * this is meant to catch.
  *
- * `@types/node` earns its place as the canary: it resolves from the repository root alone (not
- * `code/node_modules`), so every package typechecking `node:` builtins depends on that one
- * directory. When it went missing, `typescript-validation` reported 182 `TS2591`s across twelve
- * unrelated packages and named none of the real cause.
+ * `@types/node` earns the slot because it resolves from the repository root alone (not
+ * `code/node_modules`), so every package typechecking `node:` builtins leans on that one tree.
+ * When `typescript-validation` reported 182 `TS2591`s across thirteen unrelated packages, nothing
+ * in the output distinguished "the tree arrived short" from "this package is misconfigured", and
+ * that ambiguity was most of the cost of the investigation.
  */
-const WORKSPACE_NODE_MODULES_SENTINELS = [`${WORKING_DIR}/node_modules/@types/node`];
+const WORKSPACE_NODE_MODULES_SENTINELS = [`${WORKING_DIR}/node_modules/@types/node/index.d.ts`];
+
+/**
+ * Shell that fails when the extracted tree is missing any packed root or sentinel.
+ *
+ * Exported as its own unit so the tests can run the very string the config embeds, rather than a
+ * copy that could drift away from it.
+ */
+export const workspaceIntegrityCheck = () =>
+  [
+    'missing=""',
+    `for p in ${[...WORKSPACE_NODE_MODULES_ROOTS, ...WORKSPACE_NODE_MODULES_SENTINELS].join(' ')}; do`,
+    // -e, not -d: the roots are directories but the sentinel is a file inside one of them.
+    '  if [ ! -e "$p" ]; then missing="$missing $p"; fi',
+    'done',
+    'if [ -n "$missing" ]; then',
+    '  echo "The unpacked workspace node_modules is incomplete; missing:$missing" >&2',
+    `  echo "The archive (${PACKED_NODE_MODULES_ARCHIVE}) extracted without error, so suspect the packing job rather than this one." >&2`,
+    '  exit 1',
+    'fi',
+  ].join('\n');
 
 /**
  * The generated sandboxes get the same treatment: they are mostly
@@ -163,15 +185,7 @@ export const workspace = {
         command: [
           'node --version',
           `node ${ZSTD_STREAM} decompress < ${PACKED_NODE_MODULES_ARCHIVE} | tar --extract`,
-          'missing=""',
-          `for p in ${[...WORKSPACE_NODE_MODULES_ROOTS, ...WORKSPACE_NODE_MODULES_SENTINELS].join(' ')}; do`,
-          '  if [ ! -d "$p" ]; then missing="$missing $p"; fi',
-          'done',
-          'if [ -n "$missing" ]; then',
-          '  echo "The unpacked workspace node_modules is incomplete; missing:$missing" >&2',
-          `  echo "The archive (${PACKED_NODE_MODULES_ARCHIVE}) extracted without error, so suspect the packing job rather than this one." >&2`,
-          '  exit 1',
-          'fi',
+          workspaceIntegrityCheck(),
         ].join('\n'),
       },
     };
@@ -436,17 +450,10 @@ export type CachePlatform = 'linux' | 'windows';
  * lists, and a path the current graph never assigns is not in it, so restoring a tree built from
  * another lockfile leaves a stale copy shadowing the right one. Hence no fallback keys: either the
  * tree came from this exact lockfile or it is linked again.
- *
- * The flip side is that a bad tree saved under a live key is served to every later run, and the
- * cached `root-install-state.gz` then tells `yarn install` its work is already done, so nothing
- * repairs it. That happened on `next`: `typescript-validation` went from 50/50 packages clean
- * (e4ec60736) to 13 failing (f6d12ac3ddd) across a 17-commit run of lockfile churn, and stayed
- * there because `yarn.lock` — and therefore the key — has not changed since. Bump the version
- * prefix to orphan such an entry and relink from scratch.
  */
 export const NODE_MODULES_CACHE_KEY = (platform: CachePlatform = 'linux') =>
   [
-    `v12-${platform}-node_modules`,
+    `v11-${platform}-node_modules`,
     '{{ checksum ".nvmrc" }}',
     '{{ checksum ".yarnrc.yml" }}',
     '{{ checksum "yarn.lock" }}',

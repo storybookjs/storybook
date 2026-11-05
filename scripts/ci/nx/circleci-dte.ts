@@ -6,7 +6,9 @@
  * - `nx-main` starts the NX Cloud run (`start-ci-run --distribute-on=manual`), then runs the same
  *   `nx run-many` commands as .github/workflows/nx.yml (run.ts). It runs no task itself.
  * - `nx-agent` runs as {@link NX_DTE_AGENTS} parallel containers, each `nx start-agent`,
- *   which runs the tasks NX Cloud assigns until `nx-main` completes the run.
+ *   which runs the tasks NX Cloud assigns. `start-ci-run --stop-workers-after` names every target
+ *   of the run, so NX Cloud knows when no more tasks can come and stops each agent once it has
+ *   nothing left for it, as the Nx docs recommend; no `complete-ci-run` is needed.
  * - The jobs NX Cloud's Linux workers cannot run (plan.ts `sideJobs`) are plain CircleCI jobs: the
  *   Node 26 smoke job as CircleCI defines it, and the Windows parts as .github/workflows/nx.yml runs
  *   them, which builds its sandbox on Windows instead of unpacking the Linux one.
@@ -23,8 +25,9 @@ import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
 import { planFor } from './plan.ts';
 
 /**
- * Parallel CircleCI agent containers by default. With 20 (NX Cloud's own workers, the Team plan's
- * maximum) every agent was busy and sandbox E2E tasks waited for one; 60 were no faster than 40.
+ * Parallel CircleCI agent containers by default, `large` (4 vCPUs) by default: a task costs more on
+ * `xlarge` (twice the credits per minute, not twice as fast). With 20 agents every agent was busy
+ * and sandbox E2E tasks waited for one; 60 were no faster than 40.
  */
 export const NX_DTE_AGENTS = 40;
 
@@ -176,14 +179,6 @@ const mainJob = (
           environment: { COLUMNS: 250 },
           no_output_timeout: '30m',
           command: `yarn exec jiti ./scripts/ci/nx/run.ts --workflow=${selected.join(',')}`,
-        },
-      },
-      {
-        run: {
-          name: 'Complete the NX Cloud run',
-          when: 'always',
-          // Through npx when the install failed, so the agents still stop.
-          command: `yarn nx complete-ci-run || ${NX_CLOUD} complete-ci-run`,
         },
       },
       ...saveNodeModules(),
@@ -386,7 +381,7 @@ export function getNxDteJobs(
     throw new Error(`No NX equivalent for the CircleCI jobs: ${plan.missing.join(', ')}`);
   }
 
-  const { agents = NX_DTE_AGENTS, agentClass = 'xlarge' } = options;
+  const { agents = NX_DTE_AGENTS, agentClass = 'large' } = options;
   const targets = [
     ...new Set([
       ...plan.tasks.map((task) => task.slice(task.lastIndexOf(':') + 1)),

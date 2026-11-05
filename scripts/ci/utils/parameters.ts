@@ -30,7 +30,7 @@ export const parameters = {
     type: 'integer',
   },
   nxDteAgentClass: {
-    default: 'xlarge',
+    default: 'large',
     description: 'The resource class of those agents',
     enum: ['large', 'xlarge'],
     type: 'enum',

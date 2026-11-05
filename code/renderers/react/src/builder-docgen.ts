@@ -2,8 +2,9 @@ import {
   checkBuilderDocgenPackages,
   getTypeScriptForDocgenError,
   isPackageInstalledInRange,
+  typeScriptDocgenApisFor,
 } from 'storybook/internal/common';
-import type { Options } from 'storybook/internal/types';
+import { type Options, SupportedRenderer } from 'storybook/internal/types';
 
 import type { ReactDocgenConfig } from './componentManifest/reactDocgen/utils.ts';
 
@@ -72,7 +73,7 @@ export async function prepareReactBuilderDocgen({
   builder: 'vite' | 'webpack';
   /** Resolve from the framework package, which declares the packages as optional peers. */
   resolve: (specifier: string) => string;
-  options: Pick<Options, 'configDir'>;
+  options: Pick<Options, 'configDir' | 'presets'>;
 }): Promise<Exclude<ReactDocgenConfig, false> | undefined> {
   // react-docgen-typescript runs the TypeScript compiler API, so it falls back to react-docgen
   // without a usable `typescript`.
@@ -95,6 +96,7 @@ export async function prepareReactBuilderDocgen({
       mode !== reactDocgen
         ? '`react-docgen-typescript` needs the TypeScript compiler API, which your `typescript` package does not have, so builder docgen uses `react-docgen` instead.'
         : undefined,
+    apis: typeScriptDocgenApisFor(SupportedRenderer.REACT),
   });
   return missing.length > 0 ? undefined : mode;
 }

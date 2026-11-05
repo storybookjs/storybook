@@ -1,4 +1,9 @@
-import { addReactDocgenFallback, isTypeScriptUsableForDocgen } from 'storybook/internal/common';
+import {
+  addReactDocgenFallback,
+  isTypeScript71Stable,
+  isTypeScriptUsableForDocgen,
+  typeScriptDocgenApisFor,
+} from 'storybook/internal/common';
 import { SupportedRenderer } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -9,9 +14,9 @@ import type { Fix } from '../types.ts';
 import { upgradesAcrossPeerChange } from './typescript-dependency.ts';
 
 /**
- * TEMPORARY(ts-7.1): delete this fix once Storybook supports TypeScript 7.1, which gives TypeScript
- * 7 projects the docgen server. The TypeScript 7.1 automigration then removes what this fix records
- * in the Storybook cache. See `typescript-7-react-docgen-fallback.ts` in core.
+ * TEMPORARY(ts-7.1): delete this fix once TypeScript 7.1 is stable (`isTypeScript71Stable()`), which
+ * gives TypeScript 7 projects the docgen server. `remove-react-docgen-fallback` then removes what
+ * this fix records in the Storybook cache. See `typescript-7-react-docgen-fallback.ts` in core.
  *
  * Storybook 10 installed `react-docgen` for every React project. Storybook 11 makes it an optional
  * peer, and a project on TypeScript 7.0 cannot use the docgen server, so without `react-docgen` it
@@ -26,6 +31,7 @@ export const typescript7ReactDocgen: Fix<true> = {
   async check(options) {
     const { mainConfig, packageManager } = options;
     if (
+      isTypeScript71Stable() ||
       !upgradesAcrossPeerChange(options) ||
       getRendererName(mainConfig) !== SupportedRenderer.REACT
     ) {
@@ -45,7 +51,10 @@ export const typescript7ReactDocgen: Fix<true> = {
       return null;
     }
     const version = coerce(await packageManager.getDeclaredVersionSpecifier('typescript'))?.version;
-    return version && !isTypeScriptUsableForDocgen(version) ? true : null;
+    return version &&
+      !isTypeScriptUsableForDocgen(version, typeScriptDocgenApisFor(SupportedRenderer.REACT))
+      ? true
+      : null;
   },
 
   prompt() {

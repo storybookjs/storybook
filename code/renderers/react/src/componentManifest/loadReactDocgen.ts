@@ -1,5 +1,10 @@
-import { getTypeScriptForDocgenError, isModuleNotFoundError } from 'storybook/internal/common';
+import {
+  getTypeScriptForDocgenError,
+  isModuleNotFoundError,
+  typeScriptDocgenApisFor,
+} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
+import { SupportedRenderer } from 'storybook/internal/types';
 
 type ReactDocgenModule = typeof import('./reactDocgen.ts');
 
@@ -25,13 +30,20 @@ export function loadReactDocgen(): Promise<ReactDocgenModule | undefined> {
 /**
  * The docgen error a component gets when builder docgen needs a package that is not installed.
  *
- * Without a usable `typescript`, builder docgen only runs as a fallback, and the fix is TypeScript 6
- * (the docgen server), not the builder docgen package. Say that, so agents reading the manifest do
- * not install `react-docgen`.
+ * Without a usable `typescript`, builder docgen only runs as a fallback, and the fix is a
+ * TypeScript the docgen server runs on, not the builder docgen package. Say that, so agents reading
+ * the manifest do not install `react-docgen`. `react-docgen-typescript` itself needs the compiler
+ * API, so for it TypeScript 7.1 counts as unusable too.
  */
 export const getDocgenPackageMissingError = (packageName: string) => {
-  const typescriptError = getTypeScriptForDocgenError((specifier) =>
-    import.meta.resolve(specifier)
+  const typescriptError = getTypeScriptForDocgenError(
+    (specifier) => import.meta.resolve(specifier),
+    {
+      apis:
+        packageName === 'react-docgen-typescript'
+          ? ['compiler']
+          : typeScriptDocgenApisFor(SupportedRenderer.REACT),
+    }
   );
   if (typescriptError) {
     return { name: typescriptError.name, message: typescriptError.message };

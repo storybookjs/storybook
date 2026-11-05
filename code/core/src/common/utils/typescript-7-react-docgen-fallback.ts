@@ -1,10 +1,10 @@
 /**
- * TEMPORARY(ts-7.1): TypeScript 7.0 fallback for React docgen. Once Storybook supports TypeScript
- * 7.1 (stable on 2026-11-24), which gives TypeScript 7 projects the docgen server, delete every
- * `TEMPORARY(ts-7.1)` occurrence (`grep -rn 'TEMPORARY(ts-7.1)'`): the `typescript-7-react-docgen`
- * automigration, the init step and their docs. Move `readTemporaryDependencies`,
- * `getTemporaryDependenciesPath` and `TYPESCRIPT_7_DOCGEN_FALLBACK_REASON` to the TypeScript 7.1
- * automigration that removes the recorded packages, then delete the rest of this file.
+ * TEMPORARY(ts-7.1): TypeScript 7.0 fallback for React docgen, used until `isTypeScript71Stable()`
+ * is true. Once TypeScript 7.1 is stable, which gives TypeScript 7 projects the docgen server, delete
+ * every `TEMPORARY(ts-7.1)` occurrence (`grep -rn 'TEMPORARY(ts-7.1)'`): the
+ * `typescript-7-react-docgen` automigration and the init step. Move `getTemporaryDependenciesPath`
+ * and `TYPESCRIPT_7_DOCGEN_FALLBACK_REASON` to the `remove-react-docgen-fallback` automigration,
+ * which removes the recorded packages, then delete the rest of this file.
  *
  * TypeScript 7.0 has no compiler API, so the docgen server cannot run and React falls back to
  * builder docgen. `react-docgen` is an optional peer dependency, so without help a new React project

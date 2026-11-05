@@ -1,4 +1,5 @@
 import picocolors from 'picocolors';
+import { isTypeScript71Stable } from './common/utils/typescript-7-1-stable.ts';
 import type { TypeScriptDocgenApi } from './common/utils/typescript-for-docgen.ts';
 import { dedent } from 'ts-dedent';
 
@@ -364,7 +365,9 @@ const withBuilderDocgenFallback = (message: string, fallback: BuilderDocgenFallb
 
 type TypeScriptDocgenApis = readonly TypeScriptDocgenApi[];
 
-const supportsNativeApi = (apis: TypeScriptDocgenApis = ['compiler']) => apis.includes('native');
+// TEMPORARY(ts-7.1): advise TypeScript 7.1 only once `typescript@^7.1` installs a stable release.
+const supportsNativeApi = (apis: TypeScriptDocgenApis = ['compiler']) =>
+  apis.includes('native') && isTypeScript71Stable();
 
 export class TypeScriptMissingForDocgenError extends StorybookError {
   constructor(
@@ -383,11 +386,11 @@ export class TypeScriptMissingForDocgenError extends StorybookError {
       documentation: 'https://storybook.js.org/docs/configure/integration/typescript',
       message: withBuilderDocgenFallback(
         data.specifier
-        ? dedent`
+          ? dedent`
           Storybook cannot find the TypeScript package \`${data.specifier}\`, which \`typescript.docgenSpecifier\` in your main config names.
 
           Set it to a package name, such as \`@typescript/native\`, or to the path of the package's folder, absolute or relative to the config directory. Do not include a subpath such as \`/sync\`. Then restart Storybook.`
-        : dedent`
+          : dedent`
           Storybook cannot find the \`typescript\` package. Storybook uses TypeScript to read your component types for Controls and the Docs args table, also in JavaScript projects.
 
           Add \`${supportsNativeApi(data.apis) ? 'typescript@^7.1' : 'typescript@^6'}\` to the devDependencies in package.json, install it with your package manager, then restart Storybook.`,
@@ -398,12 +401,14 @@ export class TypeScriptMissingForDocgenError extends StorybookError {
 }
 
 export class TypeScriptWithoutCompilerApiError extends StorybookError {
-  constructor(public data: {
+  constructor(
+    public data: {
       version: string;
       apis?: TypeScriptDocgenApis;
       specifier?: string;
       builderDocgenFallback?: BuilderDocgenFallback;
-    }) {
+    }
+  ) {
     super({
       name: 'TypeScriptWithoutCompilerApiError',
       category: Category.CORE_COMMON,
@@ -411,18 +416,18 @@ export class TypeScriptWithoutCompilerApiError extends StorybookError {
       documentation: 'https://storybook.js.org/docs/configure/integration/typescript#typescript-7',
       message: withBuilderDocgenFallback(
         data.specifier
-        ? dedent`
+          ? dedent`
           Storybook found TypeScript ${data.version} at \`${data.specifier}\`, which \`typescript.docgenSpecifier\` in your main config names. TypeScript 7.0 does not include an API that Storybook can use to read your component types for Controls and the Docs args table.
 
           Install TypeScript 7.1 or newer under that name, or point \`typescript.docgenSpecifier\` at TypeScript 6. Then restart Storybook.`
-        : supportsNativeApi(data.apis)
-          ? dedent`
+          : supportsNativeApi(data.apis)
+            ? dedent`
           Storybook found TypeScript ${data.version} as the \`typescript\` package. TypeScript 7.0 does not include an API that Storybook can use to read your component types for Controls and the Docs args table. TypeScript 7.1 and newer do, and so does TypeScript 6.
 
           Upgrade to \`typescript@^7.1\` in the devDependencies in package.json. If package.json has no \`typescript\` entry, your package manager installed TypeScript 7.0 for Storybook's peer dependency; add the entry.
 
           Then install dependencies and restart Storybook.`
-          : dedent`
+            : dedent`
           Storybook found TypeScript ${data.version} as the \`typescript\` package. TypeScript 7 does not include the compiler API that Storybook uses to read your component types for Controls and the Docs args table.
 
           If package.json has no \`typescript\` entry, your package manager installed TypeScript 7 for Storybook's peer dependency. Add \`typescript@^6\` to the devDependencies in package.json.
@@ -441,7 +446,6 @@ export class TypeScriptWithoutCompilerApiError extends StorybookError {
   }
 }
 
-
 export class BuilderDocgenPackagesMissingError extends StorybookError {
   constructor(
     public data: {
@@ -459,8 +463,12 @@ export class BuilderDocgenPackagesMissingError extends StorybookError {
       installCommand: string;
       /** Whether the main config turns the docgen server off with `features.docgenServer: false`. */
       docgenServerDisabledInMainConfig: boolean;
-      /** Whether `typescript` has the compiler API the docgen server needs. */
+      // Whether `typescript` has an API the docgen server can run on.
       typescriptUsable: boolean;
+      // The TypeScript APIs the renderer's docgen server runs on.
+      apis?: TypeScriptDocgenApis;
+      // The main config's `typescript.docgenSpecifier`, when it names the TypeScript docgen loads.
+      specifier?: string;
       /** Versions of missing packages that resolve, but outside the supported range. */
       foundVersions?: Record<string, string>;
     }
@@ -494,7 +502,11 @@ export class BuilderDocgenPackagesMissingError extends StorybookError {
           ? 'Builder docgen is deprecated and will be removed in Storybook 12.'
           : data.typescriptUsable
             ? `Builder docgen is deprecated and will be removed in Storybook 12. It runs because your Storybook main config sets \`features.docgenServer: false\`. Remove that setting to use server-side docgen, which does not need ${them}.`
-            : `Builder docgen is deprecated and will be removed in Storybook 12. It runs because your Storybook main config sets \`features.docgenServer: false\`. Server-side docgen does not need ${them}, but it needs TypeScript 5.9 or 6 as the \`typescript\` package: remove that setting and install \`typescript@^6\`, side by side with TypeScript 7 if your project uses it.`,
+            : data.specifier
+              ? `Builder docgen is deprecated and will be removed in Storybook 12. It runs because your Storybook main config sets \`features.docgenServer: false\`. Server-side docgen does not need ${them}, but it needs TypeScript 5.9, 6, or 7.1 and newer at \`${data.specifier}\`, which \`typescript.docgenSpecifier\` names: remove that setting, and install TypeScript 7.1 or newer under that name or point \`typescript.docgenSpecifier\` at TypeScript 6.`
+              : supportsNativeApi(data.apis)
+                ? `Builder docgen is deprecated and will be removed in Storybook 12. It runs because your Storybook main config sets \`features.docgenServer: false\`. Server-side docgen does not need ${them}, but it needs TypeScript 5.9, 6, or 7.1 and newer as the \`typescript\` package: remove that setting and install \`typescript@^7.1\`.`
+                : `Builder docgen is deprecated and will be removed in Storybook 12. It runs because your Storybook main config sets \`features.docgenServer: false\`. Server-side docgen does not need ${them}, but it needs TypeScript 5.9 or 6 as the \`typescript\` package: remove that setting and install \`typescript@^6\`, side by side with TypeScript 7 if your project uses it.`,
       ]
         .filter(Boolean)
         .join('\n\n'),

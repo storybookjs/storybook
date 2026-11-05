@@ -22,6 +22,7 @@ import {
   isPackageInstalledInRange,
 } from './builder-docgen-packages.ts';
 import { loadMainConfig } from './load-main-config.ts';
+import { isTypeScript71Stable } from './typescript-7-1-stable.ts';
 
 /** Renderers whose docgen needs `typescript`, which they declare as a peer dependency. */
 export const RENDERERS_WITH_TYPESCRIPT_DOCGEN: readonly SupportedRenderer[] = [
@@ -54,9 +55,10 @@ export const typeScriptDocgenApisFor = (
 ): readonly TypeScriptDocgenApi[] => DOCGEN_APIS_BY_RENDERER[renderer] ?? COMPILER_API_ONLY;
 
 // Return the `typescript` dependency to add to a project without one, for the given APIs.
+// TEMPORARY(ts-7.1): `typescript@^7.1` installs nothing before TypeScript 7.1 is stable.
 export const typeScriptPackageForDocgen = (
   apis: readonly TypeScriptDocgenApi[] = COMPILER_API_ONLY
-) => (apis.includes('native') ? 'typescript@^7.1' : 'typescript@^6');
+) => (apis.includes('native') && isTypeScript71Stable() ? 'typescript@^7.1' : 'typescript@^6');
 
 // Return which API a TypeScript version offers docgen, or `undefined` for TypeScript 7.0.
 export const getTypeScriptDocgenApi = (version: string): TypeScriptDocgenApi | undefined => {
@@ -374,11 +376,12 @@ export async function checkBuilderDocgenPackages({
   disableBuilderDocgen,
   documentation,
   note,
+  apis,
 }: {
   packages: BuilderDocgenPackages;
   /** Resolve from the package that declares the packages as optional peers. */
   resolve: (specifier: string) => string;
-  options: Pick<Options, 'configDir'>;
+  options: Pick<Options, 'configDir' | 'presets'>;
   /** The main config option that selects builder docgen, e.g. `typescript.reactDocgen: 'react-docgen'`. */
   builderDocgen: string;
   /** The main config option that turns builder docgen off, e.g. `typescript.reactDocgen: false`. */
@@ -386,6 +389,8 @@ export async function checkBuilderDocgenPackages({
   documentation: string;
   /** A renderer-specific explanation for the error, if any. */
   note?: string;
+  // The TypeScript APIs the renderer's docgen server runs on.
+  apis?: readonly TypeScriptDocgenApi[];
 }): Promise<string[]> {
   const missing = Object.keys(packages).filter(
     (name) => !isPackageInstalledInRange(resolve, name, packages[name])
@@ -393,7 +398,10 @@ export async function checkBuilderDocgenPackages({
   const docgenServerDisabledInMainConfig = await isDocgenServerDisabledInMainConfig(options);
 
   if (missing.length > 0) {
-    const typescriptUsable = !getTypeScriptForDocgenError(resolve);
+    const typeScriptSpecifier = apis?.includes('native')
+      ? await getTypeScriptSpecifierForDocgen(options)
+      : undefined;
+    const typescriptUsable = !getTypeScriptForDocgenError(resolve, { apis, typeScriptSpecifier });
     if (!docgenServerDisabledInMainConfig && !typescriptUsable) {
       // The `isDocgenProviderEnabled` preset already warned about the unusable `typescript`.
       return missing;
@@ -415,6 +423,8 @@ export async function checkBuilderDocgenPackages({
       ),
       docgenServerDisabledInMainConfig,
       typescriptUsable,
+      apis,
+      specifier: typeScriptSpecifier?.specifier,
       foundVersions,
     });
     if (docgenServerDisabledInMainConfig) {

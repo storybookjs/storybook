@@ -33,8 +33,11 @@ export const e2eTestsInternal: Task<MonorepoDetails> = {
       });
     }
 
+    // `code:e2e-internal-<n>` runs one shard each, so NX can spread the suite over several workers,
+    // each with its own Storybook and still one Playwright worker.
+    const shard = process.env.PLAYWRIGHT_SHARD ? ` --shard=${process.env.PLAYWRIGHT_SHARD}` : '';
     await exec(
-      'yarn playwright test -c e2e-internal/playwright.config.ts',
+      `yarn playwright test -c e2e-internal/playwright.config.ts${shard}`,
       {
         env,
         cwd: codeDir,

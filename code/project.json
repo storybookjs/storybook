@@ -135,6 +135,74 @@
         "production": {}
       }
     },
+    "e2e-internal-1": {
+      "dependsOn": ["storybook-ui-dev"],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn wait-on --timeout 300000 tcp:127.0.0.1:6006 && yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit",
+        "env": {
+          "PLAYWRIGHT_SHARD": "1/4"
+        }
+      },
+      "cache": true,
+      "inputs": ["code-all"],
+      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "configurations": {
+        "production": {}
+      }
+    },
+    "e2e-internal-2": {
+      "dependsOn": ["storybook-ui-dev"],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn wait-on --timeout 300000 tcp:127.0.0.1:6006 && yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit",
+        "env": {
+          "PLAYWRIGHT_SHARD": "2/4"
+        }
+      },
+      "cache": true,
+      "inputs": ["code-all"],
+      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "configurations": {
+        "production": {}
+      }
+    },
+    "e2e-internal-3": {
+      "dependsOn": ["storybook-ui-dev"],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn wait-on --timeout 300000 tcp:127.0.0.1:6006 && yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit",
+        "env": {
+          "PLAYWRIGHT_SHARD": "3/4"
+        }
+      },
+      "cache": true,
+      "inputs": ["code-all"],
+      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "configurations": {
+        "production": {}
+      }
+    },
+    "e2e-internal-4": {
+      "dependsOn": ["storybook-ui-dev"],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn wait-on --timeout 300000 tcp:127.0.0.1:6006 && yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit",
+        "env": {
+          "PLAYWRIGHT_SHARD": "4/4"
+        }
+      },
+      "cache": true,
+      "inputs": ["code-all"],
+      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "configurations": {
+        "production": {}
+      }
+    },
     "storybook-ui-serve": {
       "dependsOn": ["storybook-ui-build"],
       "executor": "nx:run-commands",

@@ -37,7 +37,7 @@ describe('getServerAddresses', () => {
   const proto = 'http';
 
   it('should return server addresses without initial path by default', () => {
-    const expectedAddress = `${proto}://127.0.0.1:${port}/`;
+    const expectedAddress = `${proto}://${host}:${port}/`;
     const expectedNetworkAddress = `${proto}://${host}:${port}/`;
 
     const result = getServerAddresses(port, host, proto);
@@ -49,7 +49,7 @@ describe('getServerAddresses', () => {
   it('should return server addresses with initial path', () => {
     const initialPath = '/foo/bar';
 
-    const expectedAddress = `${proto}://127.0.0.1:${port}/?path=/foo/bar`;
+    const expectedAddress = `${proto}://${host}:${port}/?path=/foo/bar`;
     const expectedNetworkAddress = `${proto}://${host}:${port}/?path=/foo/bar`;
 
     const result = getServerAddresses(port, host, proto, initialPath);
@@ -61,7 +61,7 @@ describe('getServerAddresses', () => {
   it('should return server addresses with initial path and add slash if missing', () => {
     const initialPath = 'foo/bar';
 
-    const expectedAddress = `${proto}://127.0.0.1:${port}/?path=/foo/bar`;
+    const expectedAddress = `${proto}://${host}:${port}/?path=/foo/bar`;
     const expectedNetworkAddress = `${proto}://${host}:${port}/?path=/foo/bar`;
 
     const result = getServerAddresses(port, host, proto, initialPath);
@@ -69,6 +69,27 @@ describe('getServerAddresses', () => {
     expect(result.address).toBe(expectedAddress);
     expect(result.networkAddress).toBe(expectedNetworkAddress);
   });
+});
+
+it.each([
+  [undefined, '127.0.0.1'],
+  ['', '127.0.0.1'],
+  ['0.0.0.0', '127.0.0.1'],
+  ['::', '[::1]'],
+  ['::1', '[::1]'],
+  ['2001:db8::1', '[2001:db8::1]'],
+  ['127.0.0.2', '127.0.0.2'],
+  ['storybook.example', 'storybook.example'],
+])('uses a reachable URL host for %s', (host, expected) => {
+  for (const https of [false, true]) {
+    const proto = https ? 'https' : 'http';
+    const { address, networkAddress } = getServerAddresses(6006, host, proto, '/story/example');
+    expect(address).toBe(`${proto}://${expected}:6006/?path=/story/example`);
+    expect(new URL(networkAddress).protocol).toBe(`${proto}:`);
+    expect(getServerChannelUrl(6006, { host, https })).toBe(
+      `${https ? 'wss' : 'ws'}://${expected}:6006/storybook-server-channel`
+    );
+  }
 });
 
 describe('getReachableNetworkAddresses', () => {

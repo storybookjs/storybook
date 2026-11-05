@@ -170,12 +170,15 @@ const nightly = selected.includes('daily') && opts.branch === 'next';
 
 const agents = Number(opts['nx-dte-agents']);
 const agentClass = opts['nx-dte-agent-class'] as NxDteAgentClass;
-if (!Number.isInteger(agents) || agents < 1 || !(agentClass in NX_DTE_AGENT_CLASSES)) {
+const nxDte = opts['nx-dte'] === 'true' && { agents, agentClass };
+if (
+  nxDte &&
+  (!Number.isInteger(agents) || agents < 1 || !Object.hasOwn(NX_DTE_AGENT_CLASSES, agentClass))
+) {
   throw new Error(
     `Expected a positive number of agents and one of ${Object.keys(NX_DTE_AGENT_CLASSES).join(', ')}, got ${opts['nx-dte-agents']} × ${opts['nx-dte-agent-class']}`
   );
 }
-const nxDte = opts['nx-dte'] === 'true' && { agents, agentClass };
 
 await fs.writeFile(
   join(dirname, '../../.circleci/config.generated.yml'),

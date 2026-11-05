@@ -51,7 +51,8 @@
         "{workspaceRoot}/.nx/ci-config.yaml",
         "{workspaceRoot}/test-storybooks/**/package.json",
         "{workspaceRoot}/.github/workflows/trigger-circleci-nx-dte.yml",
-        "{workspaceRoot}/.nx/workflows/circleci-assignment-rules.yaml"
+        "{workspaceRoot}/.nx/workflows/circleci-assignment-rules.yaml",
+        "{workspaceRoot}/test-storybooks/**/project.json"
       ],
       "configurations": {
         "production": {}
@@ -76,7 +77,8 @@
         "{workspaceRoot}/.nx/ci-config.yaml",
         "{workspaceRoot}/test-storybooks/**/package.json",
         "{workspaceRoot}/.github/workflows/trigger-circleci-nx-dte.yml",
-        "{workspaceRoot}/.nx/workflows/circleci-assignment-rules.yaml"
+        "{workspaceRoot}/.nx/workflows/circleci-assignment-rules.yaml",
+        "{workspaceRoot}/test-storybooks/**/project.json"
       ],
       "configurations": {
         "production": {}
@@ -101,7 +103,8 @@
         "{workspaceRoot}/.nx/ci-config.yaml",
         "{workspaceRoot}/test-storybooks/**/package.json",
         "{workspaceRoot}/.github/workflows/trigger-circleci-nx-dte.yml",
-        "{workspaceRoot}/.nx/workflows/circleci-assignment-rules.yaml"
+        "{workspaceRoot}/.nx/workflows/circleci-assignment-rules.yaml",
+        "{workspaceRoot}/test-storybooks/**/project.json"
       ],
       "configurations": {
         "production": {}

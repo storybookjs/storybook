@@ -122,6 +122,55 @@ describe('the NX plan', () => {
   });
 });
 
+describe('the split NX targets', () => {
+  const targets = (project: string) => JSON.parse(read(`${project}/project.json`)).targets;
+
+  it('run the target they split, each with its part', () => {
+    const code = targets('code');
+    const without = (target: Record<string, any>, env: string[] = []) => {
+      const copy = structuredClone(target);
+      env.forEach((name) => delete copy.options.env?.[name]);
+      if (copy.options.env && Object.keys(copy.options.env).length === 0) {
+        delete copy.options.env;
+      }
+      copy.options.command = copy.options.command.replace(/ --shard=\d+\/\d+$/, '');
+      return copy;
+    };
+    for (const [base, parts] of [
+      ['test', ['test-1', 'test-2']],
+      ['e2e-internal', ['e2e-internal-1', 'e2e-internal-2', 'e2e-internal-3', 'e2e-internal-4']],
+      [
+        'e2e-internal-static',
+        [
+          'e2e-internal-static-1',
+          'e2e-internal-static-2',
+          'e2e-internal-static-3',
+          'e2e-internal-static-4',
+        ],
+      ],
+    ] as const) {
+      for (const part of parts) {
+        expect(without(code[part], ['PLAYWRIGHT_SHARD'])).toEqual(without(code[base]));
+      }
+    }
+  });
+
+  it('split the portable stories E2E suite into parts that cover it once', () => {
+    const commands: string[] = Object.entries(
+      targets('test-storybooks/portable-stories-kitchen-sink/react')
+    )
+      .filter(([name]) => /^e2e-ui-\d+$/.test(name))
+      .map(([, target]) => (target as { options: { command: string } }).options.command);
+    const greps = commands.flatMap((c) => [...c.matchAll(/--grep "([^"]+)"/g)].map((m) => m[1]));
+    const inverts = commands.flatMap((c) =>
+      [...c.matchAll(/--grep-invert "([^"]+)"/g)].map((m) => m[1])
+    );
+
+    expect(inverts).toHaveLength(1);
+    expect(greps.flatMap((g) => g.split('|')).sort()).toEqual(inverts[0].split('|').sort());
+  });
+});
+
 describe('groupTasks', () => {
   const targets: Record<string, string[]> = {
     core: ['compile', 'check'],

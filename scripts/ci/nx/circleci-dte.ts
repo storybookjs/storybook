@@ -303,6 +303,9 @@ const windowsJob = (part: WindowsPart) =>
           : []),
         ...(part.startsWith('e2e-')
           ? [
+              // The sandbox template's clone failed with exit code 128 on CircleCI's Windows image,
+              // which, unlike GitHub's, does not allow paths over 260 characters.
+              run('Allow long paths in git', 'git config --global core.longpaths true'),
               run(
                 'Create the sandbox',
                 `yarn task sandbox --template ${WINDOWS_TEMPLATE} --no-link -s sandbox --debug`,

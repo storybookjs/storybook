@@ -18,8 +18,8 @@ fresh="$archive.fresh"
 
 case "$mode" in
   restore)
-    if [ -s "$archive" ]; then
-      node scripts/ci/zstd-stream.mjs decompress < "$archive" | tar --extract
+    # A broken archive falls through to the install below instead of failing the job.
+    if [ -s "$archive" ] && node scripts/ci/zstd-stream.mjs decompress < "$archive" | tar --extract; then
       missing=0
       while read -r dir; do
         [ -d "$dir" ] || { echo "The restored tree lacks $dir; installing instead."; missing=1; }
@@ -45,9 +45,12 @@ case "$mode" in
     ;;
   pack)
     [ -f "$fresh" ] || { echo "node_modules came from the cache; nothing to pack."; exit 0; }
+    # Into a temporary file first: a half-written archive must never reach the cache, whose key no
+    # later run could overwrite.
     # shellcheck disable=SC2046
     tar --create .yarn/root-install-state.gz $(cat "$list") \
-      | node scripts/ci/zstd-stream.mjs compress 3 > "$archive"
+      | node scripts/ci/zstd-stream.mjs compress 3 > "$archive.tmp"
+    mv "$archive.tmp" "$archive"
     ls -la "$archive"
     ;;
   *)

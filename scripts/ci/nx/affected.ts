@@ -55,9 +55,9 @@ if (changedFiles.length === 0) {
   }
 } else if (mode === 'test') {
   // CircleCI runs the whole suite instead when a global input or a test fixture changed; the focus
-  // plan then asks for `code:test` and this task is not part of it.
+  // plan then asks for `code:test-1` and `code:test-2` and this task is not part of it.
   if (changedFiles.some((file) => isGlobalInput(file) || isTestFixture(file))) {
-    throw new Error('A global input or test fixture changed: run `code:test` instead.');
+    throw new Error('A global input or test fixture changed: run `code:test-1` and `-2` instead.');
   }
   sh(`${AFFECTED_UNIT_TESTS_COMMAND} ${changedFiles.map((file) => `'${file}'`).join(' ')}`);
 } else {

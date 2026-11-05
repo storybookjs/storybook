@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
 import { type StoryDocsService, storyDocsServiceDef } from './definition.ts';
-import { selectLiveSnippetForStory, storyArgsChanged } from './live-snippet.ts';
+import { argsReachManager, selectLiveSnippetForStory, storyArgsChanged } from './live-snippet.ts';
 import { prependImportToSnippet, selectSnippetForStory, selectWarningForStory } from './snippet.ts';
 import {
   shouldSkipStoryDocsEmit,
@@ -213,6 +213,51 @@ describe('shouldSkipStoryDocsEmit', () => {
   });
 });
 
+describe('argsReachManager', () => {
+  class Person {
+    constructor(readonly name: string) {}
+  }
+  const reaches = (unmappedArgs: Record<string, unknown>, initialArgs = unmappedArgs) =>
+    argsReachManager({ unmappedArgs, initialArgs });
+
+  it('holds for plain data, dates and unchanged functions', () => {
+    const onClick = () => {};
+    expect(
+      reaches({
+        label: 'Hi',
+        count: 2,
+        on: false,
+        none: null,
+        unset: undefined,
+        when: new Date(0),
+        user: { name: 'Jane', tags: ['a', { b: 1 }] },
+        onClick,
+      })
+    ).toBe(true);
+  });
+
+  it.each([
+    ['a class instance', new Person('Bob')],
+    ['a Map', new Map([['a', 1]])],
+    ['a React element', { $$typeof: Symbol.for('react.element'), type: 'b', props: {} }],
+    ['NaN', Number.NaN],
+    ['a nested class instance', { owner: new Person('Bob') }],
+  ])('fails for %s, which the channel changes', (_, value) => {
+    expect(reaches({ value }, { value: 'initial' })).toBe(false);
+    expect(reaches({ value: 'current' }, { value })).toBe(false);
+  });
+
+  it('fails for a function that changed, which the channel drops', () => {
+    expect(reaches({ onClick: () => {} }, { onClick: () => {} })).toBe(false);
+  });
+
+  it('fails for an object that refers to itself, without looping', () => {
+    const user: Record<string, unknown> = { name: 'Jane' };
+    user.self = user;
+    expect(reaches({ user })).toBe(false);
+  });
+});
+
 describe('storyArgsChanged', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -264,7 +309,7 @@ describe('storyDocsSourceBeforeEach', () => {
     const cleanup = storyDocsSourceBeforeEach(context);
     await settled();
 
-    expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context, undefined);
+    expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context, undefined, false);
     await cleanup?.();
   });
 
@@ -280,7 +325,7 @@ describe('storyDocsSourceBeforeEach', () => {
 
     await render(context);
 
-    expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context, warning);
+    expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context, warning, false);
   });
 
   it('fills the template once the args change, loading the story docs once', async () => {
@@ -301,7 +346,8 @@ describe('storyDocsSourceBeforeEach', () => {
       expect(mockedEmitTransformCode).toHaveBeenLastCalledWith(
         `import { Button } from './Button';\n\n<Button label="${label}" />`,
         context,
-        warning
+        warning,
+        false
       );
     }
     expect(storyDocs.loaded).toHaveBeenCalledOnce();
@@ -322,8 +368,25 @@ describe('storyDocsSourceBeforeEach', () => {
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(
       `import { Button } from './Button';\n\n<Button label="Go" />`,
       context,
-      warning
+      warning,
+      false
     );
+  });
+
+  it('marks the emit of a story whose args the channel cannot carry', async () => {
+    class Person {
+      constructor(readonly name: string) {}
+    }
+    const context = {
+      id: storyId,
+      unmappedArgs: { label: 'hi', owner: new Person('Bob') },
+      initialArgs: { label: 'hi', owner: new Person('Jane') },
+      parameters: { __isArgsStory: true },
+    } as unknown as StoryContext;
+
+    await render(context);
+
+    expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context, undefined, true);
   });
 
   it('emits every args change in order, even when an emit before it is not done', async () => {
@@ -355,7 +418,8 @@ describe('storyDocsSourceBeforeEach', () => {
     expect(mockedEmitTransformCode).toHaveBeenLastCalledWith(
       `import { Button } from './Button';\n\n<Button label="Wait" />`,
       expect.anything(),
-      warning
+      warning,
+      false
     );
   });
 
@@ -394,7 +458,7 @@ describe('storyDocsSourceBeforeEach', () => {
     const cleanup = storyDocsSourceBeforeEach(context);
     await settled();
 
-    expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context, warning);
+    expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context, warning, false);
     await cleanup?.();
   });
 
@@ -419,7 +483,8 @@ describe('storyDocsSourceBeforeEach', () => {
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(
       'export const Primary = {};',
       context,
-      fallbackWarning
+      fallbackWarning,
+      false
     );
     await cleanup?.();
   });
@@ -446,7 +511,8 @@ describe('storyDocsSourceBeforeEach', () => {
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(
       'export const Primary = {};',
       context,
-      fallbackWarning
+      fallbackWarning,
+      false
     );
     await cleanup?.();
   });
@@ -472,7 +538,8 @@ describe('storyDocsSourceBeforeEach', () => {
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(
       'export const Primary = {};',
       context,
-      undefined
+      undefined,
+      false
     );
     await cleanup?.();
   });

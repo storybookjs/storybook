@@ -38,7 +38,7 @@ const packageDirs = ['*/src', '*/*/src'].flatMap((pattern) =>
  * a mismatched tree there would hand it to all the others. Saving stays gated on a trusted author so
  * a fork PR cannot put a tree where the next run will find it.
  */
-const installWithCache = (platform: CachePlatform = 'linux') => [
+export const installWithCache = (platform: CachePlatform = 'linux') => [
   cache.attach([NODE_MODULES_CACHE_KEY(platform)]),
   npm.install('.'),
   ...(isTrustedAuthor()

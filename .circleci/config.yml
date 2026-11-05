@@ -20,6 +20,19 @@ parameters:
     default: 'false'
     description: Whether the PR author is a trusted author who should be allowed to persist to shared caches
     type: string
+  nxDte:
+    default: false
+    description: Run the workflow as one NX task graph distributed over CircleCI agents (scripts/ci/nx/circleci-dte.ts)
+    type: boolean
+  nxDteAgents:
+    default: 40
+    description: How many CircleCI agents run the tasks when nxDte is set
+    type: integer
+  nxDteAgentClass:
+    default: xlarge
+    description: The resource class of those agents
+    enum: [large, xlarge]
+    type: enum
   workflow:
     default: skipped
     description: Which workflows to run, comma-separated, out of daily, normal, focus, docs, windows (e.g. `normal,windows`)
@@ -73,7 +86,10 @@ jobs:
               --workflow=<< pipeline.parameters.workflow >> \
               --base-ref="origin/$GH_BASE_BRANCH" \
               --gh-trusted-author=<< pipeline.parameters.ghTrustedAuthor >> \
-              --branch="<< pipeline.git.branch >>"
+              --branch="<< pipeline.git.branch >>" \
+              --nx-dte=<< pipeline.parameters.nxDte >> \
+              --nx-dte-agents=<< pipeline.parameters.nxDteAgents >> \
+              --nx-dte-agent-class=<< pipeline.parameters.nxDteAgentClass >>
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml
 workflows:

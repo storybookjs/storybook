@@ -10,6 +10,13 @@ import { parameters } from './utils/parameters.ts';
 import { setTrustedAuthor } from './utils/runtime.ts';
 import type { JobImplementationObj, NoOpJobImplementationObj } from './utils/types.ts';
 import { type Workflow, workflows } from './utils/types.ts';
+import {
+  NX_AGENT_JOB_ID,
+  NX_DTE_AGENT_CLASSES,
+  type NxDteAgentClass,
+  type NxDteOptions,
+  getNxDteJobs,
+} from './nx/circleci-dte.ts';
 import { getJobs } from './workflow-jobs.ts';
 
 const dirname = import.meta.dirname;
@@ -25,11 +32,20 @@ const isMergeGating = (workflow: Workflow) => workflow !== 'windows';
  * @param baseRef - The git ref `focus` diffs against.
  * @param nightly - Whether this is the scheduled `daily` run on `next`, which reports its failures
  *   instead of cancelling on the first one.
+ * @param nxDte - The CircleCI agents to run the workflows' NX tasks on instead
+ *   (scripts/ci/nx/circleci-dte.ts), or `false` for the per-job pipeline.
  * @returns The generated config for CircleCI in JS format.
  */
-function generateConfig(selected: Workflow[], baseRef: string, nightly: boolean) {
+function generateConfig(
+  selected: Workflow[],
+  baseRef: string,
+  nightly: boolean,
+  nxDte: NxDteOptions | false
+) {
   const [workflow] = selected;
-  const jobs = selected.flatMap((workflow) => getJobs(workflow, baseRef));
+  const jobs = nxDte
+    ? getNxDteJobs(selected, baseRef, nxDte)
+    : selected.flatMap((workflow) => getJobs(workflow, baseRef));
 
   /**
    * If you want to filter down to a particular job, e.g.for debugging purposes.. you can do that
@@ -59,7 +75,11 @@ function generateConfig(selected: Workflow[], baseRef: string, nightly: boolean)
   // It acts as a single status check for GitHub branch protection: it only runs
   // (and reports success) once every required job has finished successfully.
   if (selected.some(isMergeGating)) {
-    const completion = defineCircleciCompletion([...ensuredJobs]);
+    // Not on the NX agents: `nx-main` fails when a task fails, and the agents stop up to a minute
+    // after it while they wind down.
+    const completion = defineCircleciCompletion(
+      ensuredJobs.filter((job) => job.id !== NX_AGENT_JOB_ID)
+    );
     ensuredJobs.push(completion);
 
     if (nightly) {
@@ -105,7 +125,7 @@ function generateConfig(selected: Workflow[], baseRef: string, nightly: boolean)
       {} as Record<string, JobImplementationObj | NoOpJobImplementationObj>
     ),
     workflows: {
-      [`${selected.join('-')}-generated${isDebugging ? '-debug' : ''}`]: {
+      [`${selected.join('-')}${nxDte ? '-nx-dte' : ''}-generated${isDebugging ? '-debug' : ''}`]: {
         jobs: sortedJobs.map((t) =>
           t.requires && t.requires.length > 0
             ? {
@@ -131,6 +151,9 @@ const { values: opts } = parseArgs({
     'base-ref': { type: 'string', default: 'origin/next' },
     'gh-trusted-author': { type: 'string', default: 'false' },
     branch: { type: 'string', default: '' },
+    'nx-dte': { type: 'string', default: 'false' },
+    'nx-dte-agents': { type: 'string', default: '40' },
+    'nx-dte-agent-class': { type: 'string', default: 'xlarge' },
   },
 });
 setTrustedAuthor(opts['gh-trusted-author'] === 'true');
@@ -145,7 +168,19 @@ if (unknown.length > 0 || requested.length === 0) {
 const selected = workflows.filter((w) => requested.includes(w));
 const nightly = selected.includes('daily') && opts.branch === 'next';
 
+const agents = Number(opts['nx-dte-agents']);
+const agentClass = opts['nx-dte-agent-class'] as NxDteAgentClass;
+const nxDte = opts['nx-dte'] === 'true' && { agents, agentClass };
+if (
+  nxDte &&
+  (!Number.isInteger(agents) || agents < 1 || !Object.hasOwn(NX_DTE_AGENT_CLASSES, agentClass))
+) {
+  throw new Error(
+    `Expected a positive number of agents and one of ${Object.keys(NX_DTE_AGENT_CLASSES).join(', ')}, got ${opts['nx-dte-agents']} × ${opts['nx-dte-agent-class']}`
+  );
+}
+
 await fs.writeFile(
   join(dirname, '../../.circleci/config.generated.yml'),
-  `${JSON.stringify(generateConfig(selected, opts['base-ref'], nightly), null, 2)}\n`
+  `${JSON.stringify(generateConfig(selected, opts['base-ref'], nightly, nxDte), null, 2)}\n`
 );

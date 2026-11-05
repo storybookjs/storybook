@@ -177,7 +177,10 @@
       "{projectRoot}/**/*",
       "!{projectRoot}/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
     ],
-    "e2e-specs": ["{workspaceRoot}/code/e2e-sandbox/**/*", "{workspaceRoot}/code/playwright.config.ts"],
+    "e2e-specs": [
+      "{workspaceRoot}/code/e2e-sandbox/**/*",
+      "{workspaceRoot}/code/playwright.config.ts"
+    ],
     "code-all": [
       "sharedGlobals",
       "{workspaceRoot}/code/**/*",

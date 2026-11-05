@@ -15,6 +15,12 @@ export function hasOwn(obj: object, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
 
+// Reads the key first: service state tracks reads, not own-key checks.
+export function getOwn<T>(record: Record<string, T>, key: string): T | undefined {
+  const value = record[key];
+  return hasOwn(record, key) ? value : undefined;
+}
+
 export function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

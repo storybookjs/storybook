@@ -14,6 +14,7 @@ describe('isPkgPrNewVersionSpecifier', () => {
     'https://pkg.pr.new/storybookjs/storybook/create-storybook@abc123',
     'https://pkg.pr.new/storybookjs/storybook/@storybook/react@abc123',
     'http://pkg.pr.new/storybookjs/storybook/storybook@deadbeef',
+    'https://pkg.pr.new/storybookjs/storybook@afb5131',
   ])('detects %s', (specifier) => {
     expect(isPkgPrNewVersionSpecifier(specifier)).toBe(true);
   });
@@ -30,6 +31,7 @@ describe('isPkgPrNewVersionSpecifier', () => {
     '0.0.0-pr-34799-sha-abc123',
     'https://registry.npmjs.org/storybook/-/storybook-10.5.0.tgz',
     'https://pkg.pr.new/unrelated-package@abc123',
+    'https://pkg.pr.new/storybookjs/create-storybook@abc123',
     'https://example.com/storybook@abc123',
   ])('rejects %s', (specifier) => {
     expect(isPkgPrNewVersionSpecifier(specifier)).toBe(false);
@@ -59,6 +61,18 @@ describe('getPkgPrNewPackageSpecifier', () => {
         'https://pkg.pr.new/storybookjs/storybook/storybook@deadbeef'
       )
     ).toBe('https://pkg.pr.new/storybookjs/storybook/storybook@deadbeef');
+  });
+
+  it('expands an owner-scoped storybook specifier to the repo-scoped URL of a sibling package', () => {
+    expect(
+      getPkgPrNewPackageSpecifier(
+        'create-storybook',
+        'https://pkg.pr.new/storybookjs/storybook@afb5131'
+      )
+    ).toBe('https://pkg.pr.new/storybookjs/storybook/create-storybook@afb5131');
+    expect(
+      getPkgPrNewPackageSpecifier('storybook', 'https://pkg.pr.new/storybookjs/storybook@afb5131')
+    ).toBe('https://pkg.pr.new/storybookjs/storybook/storybook@afb5131');
   });
 
   it('returns undefined for npm tags, stables, and prereleases', () => {

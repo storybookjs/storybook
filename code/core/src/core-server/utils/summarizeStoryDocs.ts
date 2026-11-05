@@ -3,6 +3,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import { getComponentIdFromEntry } from '../../common/utils/component-id.ts';
 import { isEligibleStoryEntry } from '../../common/utils/select-component-entry.ts';
+import { getOwn } from '../../shared/open-service/plain-object.ts';
 import { loadStoryDocsPayloadsFromDisk } from './manifests/components-ref-manifest.ts';
 
 export async function summarizeStoryDocs(storyIndex: StoryIndex, outputDir: string) {
@@ -19,7 +20,7 @@ export async function summarizeStoryDocs(storyIndex: StoryIndex, outputDir: stri
     for (const story of stories) {
       summary.storyCount++;
       // No entry means the provider failed for the whole component, or returned nothing.
-      const storyDoc = payloads[componentId]?.stories[story.id];
+      const storyDoc = getOwn(payloads, componentId)?.stories[story.id];
       if (!storyDoc || storyDoc.error) {
         summary.errorCount++;
       } else if (storyDoc.snippet === undefined) {

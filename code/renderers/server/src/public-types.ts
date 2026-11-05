@@ -17,21 +17,21 @@ export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/
 /**
  * Metadata to configure the stories for a component.
  *
- * @see [Default export](https://storybook.js.org/docs/api/csf#default-export)
+ * @see [Meta](https://storybook.js.org/docs/writing-stories/csf#meta)
  */
 export type Meta<TArgs = Args> = ComponentAnnotations<ServerRenderer, TArgs>;
 
 /**
  * Story function that represents a CSFv2 component example.
  *
- * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
+ * @see [Stories](https://storybook.js.org/docs/writing-stories/csf#stories)
  */
 export type StoryFn<TArgs = Args> = AnnotatedStoryFn<ServerRenderer, TArgs>;
 
 /**
  * Story object that represents a CSFv3 component example.
  *
- * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
+ * @see [Stories](https://storybook.js.org/docs/writing-stories/csf#stories)
  */
 export type StoryObj<TArgs = Args> = StoryAnnotations<ServerRenderer, TArgs>;
 

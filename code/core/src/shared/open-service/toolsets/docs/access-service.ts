@@ -19,6 +19,7 @@ import {
   OpenServiceMissingServiceError,
 } from '../../../../server-errors.ts';
 import { Tag } from '../../../constants/tags.ts';
+import { readComponent } from '../../services/component-state-key.ts';
 import type { DocgenService } from '../../services/docgen/definition.ts';
 import type { StoryDocsService } from '../../services/story-docs/definition.ts';
 import type { ToolsetGetService } from '../../toolset-definition.ts';
@@ -167,7 +168,7 @@ export function createServiceDocsAccess({
 
     const components: Record<string, ComponentManifestV1> = {};
     for (const id of classification.componentIds) {
-      const payload = allDocgen[id];
+      const payload = readComponent(allDocgen, id);
       components[id] = {
         id,
         name: payload?.name ?? id,

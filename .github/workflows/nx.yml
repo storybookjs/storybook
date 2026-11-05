@@ -239,9 +239,10 @@ jobs:
       - if: steps.node-modules.outputs.cache-hit != 'true'
         run: yarn install --immutable
       # Right after the install, before tasks write caches into node_modules.
-      # TEMPORARY: #37181 PR runs save too, so measurements restore node_modules; remove before merging.
+      # TEMPORARY: kasper/nx-cloud-revive is the base branch of the NX experiments; pull requests
+      # into it restore what it saves. Remove before merging.
       - name: Save node_modules
-        if: (github.ref == 'refs/heads/next' || github.event.pull_request.number == 37181) && steps.node-modules.outputs.cache-hit != 'true'
+        if: (github.ref == 'refs/heads/next' || github.ref == 'refs/heads/kasper/nx-cloud-revive') && steps.node-modules.outputs.cache-hit != 'true'
         uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |

@@ -36,6 +36,34 @@ export const PACKED_NODE_MODULES_ARCHIVE = 'workspace-node_modules.tar.zst';
 const ZSTD_STREAM = `${WORKING_DIR}/scripts/ci/zstd-stream.mjs`;
 
 /**
+ * The node_modules roots every downstream job needs, and the single list `pack` archives and
+ * `unpack` verifies — so the two cannot drift apart.
+ *
+ * Yarn hoists almost everything to the repository root; `code/<pkg>/node_modules` exists only for
+ * packages with unhoistable dependencies, which is why these roots are required and the
+ * per-package trees are optional.
+ */
+export const WORKSPACE_NODE_MODULES_ROOTS = [
+  `${WORKING_DIR}/node_modules`,
+  `${WORKING_DIR}/code/node_modules`,
+  `${WORKING_DIR}/scripts/node_modules`,
+  // agent-eval nests all its dependencies (installConfig.hoistingLimits), so downstream checks
+  // need its node_modules packed explicitly.
+  `${WORKING_DIR}/agent-eval/node_modules`,
+];
+
+/**
+ * Checked after extraction on top of the roots above, because a truncated archive can still leave
+ * an empty-but-present `node_modules` directory behind.
+ *
+ * `@types/node` earns its place as the canary: it resolves from the repository root alone (not
+ * `code/node_modules`), so every package typechecking `node:` builtins depends on that one
+ * directory. When it went missing, `typescript-validation` reported 182 `TS2591`s across twelve
+ * unrelated packages and named none of the real cause.
+ */
+const WORKSPACE_NODE_MODULES_SENTINELS = [`${WORKING_DIR}/node_modules/@types/node`];
+
+/**
  * The generated sandboxes get the same treatment: they are mostly
  * node_modules, so persisting them raw pays the same single-threaded workspace
  * compression cost on the create job and again on every downstream attach.
@@ -127,9 +155,23 @@ export const workspace = {
       run: {
         name: 'Unpack node_modules from workspace',
         working_directory: root,
+        // The extraction is followed by an integrity check because an incomplete tree is otherwise
+        // silent here and only surfaces much later as errors that point somewhere else entirely —
+        // a half-unpacked node_modules reads to TypeScript as "you forgot to install @types/node",
+        // to Node as a missing package, and to neither as "the workspace archive was short".
+        // Failing at the point of extraction keeps the diagnosis attached to the actual cause.
         command: [
           'node --version',
           `node ${ZSTD_STREAM} decompress < ${PACKED_NODE_MODULES_ARCHIVE} | tar --extract`,
+          'missing=""',
+          `for p in ${[...WORKSPACE_NODE_MODULES_ROOTS, ...WORKSPACE_NODE_MODULES_SENTINELS].join(' ')}; do`,
+          '  if [ ! -d "$p" ]; then missing="$missing $p"; fi',
+          'done',
+          'if [ -n "$missing" ]; then',
+          '  echo "The unpacked workspace node_modules is incomplete; missing:$missing" >&2',
+          `  echo "The archive (${PACKED_NODE_MODULES_ARCHIVE}) extracted without error, so suspect the packing job rather than this one." >&2`,
+          '  exit 1',
+          'fi',
         ].join('\n'),
       },
     };

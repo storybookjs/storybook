@@ -10,6 +10,7 @@ import {
   NODE_MODULES_CACHE_KEY,
   NODE_MODULES_CACHE_PATHS,
   PACKED_NODE_MODULES_ARCHIVE,
+  WORKSPACE_NODE_MODULES_ROOTS,
   artifact,
   cache,
   compileStep,
@@ -56,22 +57,14 @@ export const build_linux = defineJob('Build (linux)', () => ({
     ...installWithCache(),
     npm.check(),
     workspace.pack(
-      [
-        // Workspace-root node_modules folders. Yarn hoists shared/singleton
-        // dependencies (e.g. `oxc-parser`, `vitest`, `type-fest`) here rather than
-        // into the per-package `code/<pkg>/node_modules` folders below. Downstream
-        // jobs otherwise only receive these via the shared `save_cache`, which is
-        // gated on `isTrustedAuthor()` — so community/fork PRs end up with a
-        // freshly-built `dist` but no root `node_modules`, producing errors like
-        // `Cannot find package 'oxc-parser'`. Packing them into the (pipeline-
-        // scoped, un-gated) workspace makes downstream jobs correct for every PR.
-        `${WORKING_DIR}/node_modules`,
-        `${WORKING_DIR}/code/node_modules`,
-        `${WORKING_DIR}/scripts/node_modules`,
-        // agent-eval nests all its dependencies (installConfig.hoistingLimits),
-        // so downstream checks need its node_modules packed explicitly.
-        `${WORKING_DIR}/agent-eval/node_modules`,
-      ],
+      // Yarn hoists shared/singleton dependencies (e.g. `oxc-parser`, `vitest`, `type-fest`) to
+      // the workspace roots rather than into the per-package `code/<pkg>/node_modules` folders
+      // below. Downstream jobs otherwise only receive these via the shared `save_cache`, which is
+      // gated on `isTrustedAuthor()` — so community/fork PRs end up with a freshly-built `dist`
+      // but no root `node_modules`, producing errors like `Cannot find package 'oxc-parser'`.
+      // Packing them into the (pipeline-scoped, un-gated) workspace makes downstream jobs correct
+      // for every PR. `unpack` verifies this same list after extraction.
+      WORKSPACE_NODE_MODULES_ROOTS,
       packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`)
     ),
     compileStep(),

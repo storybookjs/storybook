@@ -349,6 +349,9 @@ async function getPrintHoleModule(options: Options): Promise<string | undefined>
     : undefined;
 }
 
+// The manager fills the Code panel itself, so it needs the renderer's hole printer too. The manager
+// is built once from its entries and cannot import a module later, which is why the printer module
+// is one of them.
 export const managerEntries = async (existing: any, options: Options) => {
   const printHoleModule = await getPrintHoleModule(options);
   return [
@@ -468,6 +471,8 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       );
     }
 
+    // The server's `liveSnippet` query fills snippets for agents and tools, so it needs the
+    // renderer's hole printer too. Importing the module the manager bundles registers it here.
     const printHoleModule = await getPrintHoleModule(options);
     if (printHoleModule) {
       await import(pathToFileURL(printHoleModule).href).catch((error: unknown) => {

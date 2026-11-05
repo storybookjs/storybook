@@ -130,6 +130,13 @@ describe('story-docs open service', () => {
         initialArgs: { label: 'Hi' },
       })
     ).resolves.toEqual({ snippet: '<Button label="Go" />' });
+    // Without `initialArgs`, as an agent calls it, only the given args fill.
+    expect(
+      service.queries.liveSnippet.get({ storyId: 'button--primary', args: { label: 'Go' } })
+    ).toEqual({ snippet: '<Button label="Go" />' });
+    expect(service.queries.liveSnippet.get({ storyId: 'button--primary', args: {} })).toEqual({
+      snippet: '<Button label="Hi" />',
+    });
   });
 
   it('keeps a template only while it prints the snippet and has the shape of one', async () => {

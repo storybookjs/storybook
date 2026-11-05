@@ -73,13 +73,12 @@ export class VitestManager {
       reportsDirectory: resolvePathInStorybookCache(COVERAGE_DIRECTORY),
     } as CoverageOptions;
 
-    // In monorepos, the Storybook configDir (e.g. packages/web-app/.storybook) identifies
-    // the sub-package. We start the Vitest config search from its parent (the package root)
-    // and traverse upward to the project root, so configs in both sub-packages and the
-    // monorepo root are found. Without this, find.any defaults to process.cwd() which may
-    // be the monorepo root and would miss sub-package configs entirely.
+    // Start at the Storybook package and search up to the repository root. An overridden
+    // STORYBOOK_PROJECT_ROOT can point to a package below the workspace Vitest config.
     const configDir = this.testManager.storybookOptions.configDir;
     const packageRoot = configDir ? dirname(resolve(configDir)) : undefined;
+    const repository = find.up('.git', { cwd: packageRoot || process.cwd() });
+    const searchRoot = repository ? dirname(repository) : getProjectRoot();
 
     const configFiles = [
       ...VITEST_CONFIG_FILE_EXTENSIONS.flatMap((ext) => [
@@ -89,7 +88,7 @@ export class VitestManager {
     ];
 
     const potentialConfigFileLocations = walk.up(packageRoot || process.cwd(), {
-      last: getProjectRoot(),
+      last: searchRoot,
     });
 
     let vitestConfigLocation: string | undefined;
@@ -97,11 +96,8 @@ export class VitestManager {
 
     for (const location of potentialConfigFileLocations) {
       for (const file of configFiles) {
-        const maybe = find.any([file], {
-          cwd: location,
-          last: getProjectRoot(),
-        });
-        if (maybe && existsSync(maybe)) {
+        const maybe = join(location, file);
+        if (existsSync(maybe)) {
           firstVitestConfig ??= dirname(maybe);
           const content = readFileSync(maybe, 'utf8');
           if (content.includes('storybookTest') || content.includes('@storybook/addon-vitest')) {

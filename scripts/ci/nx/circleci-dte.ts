@@ -22,8 +22,19 @@ import { isTrustedAuthor } from '../utils/runtime.ts';
 import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
 import { planFor } from './plan.ts';
 
-/** Parallel CircleCI agent containers. NX Cloud's own workers run 20 (the Team plan's maximum). */
+/** Parallel CircleCI agent containers by default. NX Cloud's own workers run 20 (the Team plan's maximum). */
 export const NX_DTE_AGENTS = 20;
+
+/** The agents' CircleCI resource classes, with the Playwright workers each runs the static E2E tests with. */
+export const NX_DTE_AGENT_CLASSES = {
+  // 4 vCPUs: CircleCI's own e2e jobs run 3 workers.
+  large: { playwrightWorkers: 3 },
+  // 8 vCPUs and 16 GB, as NX Cloud's extra_large workers (.nx/workflows/agents.yaml), which run 6.
+  xlarge: { playwrightWorkers: 6 },
+} as const;
+export type NxDteAgentClass = keyof typeof NX_DTE_AGENT_CLASSES;
+
+export type NxDteOptions = { agents?: number; agentClass?: NxDteAgentClass };
 
 /**
  * Pinned as in nx.yml. Only for `start-ci-run`, which runs before the install. The commands after
@@ -158,17 +169,19 @@ const mainJob = (selected: readonly Workflow[], changedFiles: readonly string[])
     ],
   }));
 
-const agentJob = (changedFiles: readonly string[]) =>
+const agentJob = (
+  changedFiles: readonly string[],
+  { agents = NX_DTE_AGENTS, agentClass = 'xlarge' }: NxDteOptions
+) =>
   defineJob('nx-agent', () => ({
-    // 8 vCPUs and 16 GB, as NX Cloud's extra_large workers (.nx/workflows/agents.yaml).
-    executor: { name: 'sb_node_22_browsers', class: 'xlarge' },
-    parallelism: NX_DTE_AGENTS,
+    executor: { name: 'sb_node_22_browsers', class: agentClass },
+    parallelism: agents,
     environment: {
       ...nxEnvironment(changedFiles),
       // The NX Cloud workers' environment (.nx/workflows/agents.yaml).
       STORYBOOK_DISABLE_TELEMETRY: 'true',
       IN_STORYBOOK_SANDBOX: 'true',
-      PLAYWRIGHT_WORKERS: '6',
+      PLAYWRIGHT_WORKERS: `${NX_DTE_AGENT_CLASSES[agentClass].playwrightWorkers}`,
       // bench-packages.ts uploads the benchmarks for this pull request.
       BENCH_BASE_BRANCH: '<< pipeline.parameters.ghBaseBranch >>',
       BENCH_PR_NUMBER: '<< pipeline.parameters.ghPrNumber >>',
@@ -323,7 +336,11 @@ const windowsJob = (part: WindowsPart) =>
   });
 
 /** Every job of the NX DTE pipeline for the given CircleCI workflows. */
-export function getNxDteJobs(selected: readonly Workflow[], baseRef: string): JobOrNoOpJob[] {
+export function getNxDteJobs(
+  selected: readonly Workflow[],
+  baseRef: string,
+  options: NxDteOptions = {}
+): JobOrNoOpJob[] {
   const changedFiles = selected.includes('focus') ? getChangedFiles(baseRef) : [];
   const plan = planFor(selected, changedFiles);
   if (plan.missing.length > 0) {
@@ -332,7 +349,7 @@ export function getNxDteJobs(selected: readonly Workflow[], baseRef: string): Jo
 
   const jobs: JobOrNoOpJob[] = [];
   if (plan.tasks.length > 0 || plan.affectedCheck) {
-    jobs.push(mainJob(selected, changedFiles), agentJob(changedFiles));
+    jobs.push(mainJob(selected, changedFiles), agentJob(changedFiles, options));
   }
   if (plan.sideJobs.includes('windows')) {
     jobs.push(...windowsParts.filter((part) => part !== 'init-empty').map(windowsJob));

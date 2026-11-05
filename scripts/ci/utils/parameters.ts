@@ -24,6 +24,17 @@ export const parameters = {
       'Run the workflow as one NX task graph distributed over CircleCI agents (scripts/ci/nx/circleci-dte.ts)',
     type: 'boolean',
   },
+  nxDteAgents: {
+    default: 20,
+    description: 'How many CircleCI agents run the tasks when nxDte is set',
+    type: 'integer',
+  },
+  nxDteAgentClass: {
+    default: 'xlarge',
+    description: 'The resource class of those agents',
+    enum: ['large', 'xlarge'],
+    type: 'enum',
+  },
   workflow: {
     default: 'skipped',
     description: `Which workflows to run, comma-separated, out of ${workflows.join(', ')} (e.g. \`normal,windows\`)`,

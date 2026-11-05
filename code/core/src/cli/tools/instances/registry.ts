@@ -2,6 +2,7 @@ import * as fs from 'node:fs/promises';
 import { join } from 'node:path';
 
 import * as v from 'valibot';
+import { uniqBy } from 'es-toolkit/array';
 
 import {
   getInstanceRegistryDir,
@@ -38,7 +39,7 @@ export async function readRegistry(
     readRegistryDir(legacyRegistryDir),
   ]);
 
-  return [...current, ...legacy];
+  return uniqBy([...current, ...legacy], (record) => record.instanceId);
 }
 
 async function readRegistryDir(registryDir: string): Promise<StorybookInstanceRecord[]> {

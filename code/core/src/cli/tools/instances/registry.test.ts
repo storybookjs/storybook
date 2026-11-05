@@ -199,6 +199,13 @@ describe('readRegistry', () => {
     expect(records).toHaveLength(2);
   });
 
+  it('returns one record when registry paths alias the same directory', async () => {
+    vol.fromNestedJSON({ [REGISTRY_DIR]: { 'alive.json': JSON.stringify(aliveRecord) } });
+    vol.symlinkSync(REGISTRY_DIR, '/registry-link');
+
+    await expect(readRegistry(REGISTRY_DIR, '/registry-link')).resolves.toEqual([aliveRecord]);
+  });
+
   it('reads a dir only once when it is both the preferred and legacy path', async () => {
     vol.fromNestedJSON({ [REGISTRY_DIR]: { 'alive.json': JSON.stringify(aliveRecord) } });
 

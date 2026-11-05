@@ -1,7 +1,13 @@
 import { logger } from 'storybook/internal/client-logger';
-import { SourceType, UnprintableArgError, registerPrintHole } from 'storybook/internal/docs-tools';
+import {
+  SourceType,
+  UnprintableArgError,
+  printValue,
+  registerPrintHole,
+} from 'storybook/internal/docs-tools';
 import type { StoryContext } from 'storybook/internal/types';
 
+import { parse, stringify } from 'telejson';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
@@ -13,7 +19,7 @@ import {
   shouldSkipStoryDocsEmit,
   storyDocsSourceBeforeEach,
 } from './story-docs-source-before-each.ts';
-import type { SnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
+import type { PrintHole, SnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
 import type { StoryDocsPayload } from './types.ts';
 
 vi.mock('storybook/preview-api', { spy: true });
@@ -175,6 +181,33 @@ describe('selectLiveSnippetForStory', () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
+  it('fills args sent through the channel as it fills the args they were sent from', () => {
+    class Person {
+      constructor(readonly name: string) {}
+    }
+    const printers: PrintHole[] = [
+      (hole, value) => `label={${printValue(value, hole.arg ?? '')}}`,
+      (_, value) => `label='${JSON.stringify(value)}'`,
+    ];
+    const values = [
+      new Person('Ada'),
+      new Map([['a', 1]]),
+      new Set(['a']),
+      { owner: new Person('Ada'), tags: ['a'] },
+      [new Person('Ada'), 1],
+      { name: 'Ada' },
+    ];
+    for (const printer of printers) {
+      for (const label of values) {
+        const args = { unmappedArgs: { label }, initialArgs: { label: 'hi' } };
+        const sent = parse(stringify(args));
+        expect(selectLiveSnippetForStory(payloadWithWarning, storyId, sent, printer)).toEqual(
+          selectLiveSnippetForStory(payloadWithWarning, storyId, args, printer)
+        );
+      }
+    }
+  });
+
   it('selects the static snippet while the story has the args it is written with', () => {
     const args = { unmappedArgs: { label: 'hi' }, initialArgs: { label: 'hi' } };
     expect(selectLiveSnippetForStory(payloadWithWarning, storyId, args, printHole)).toEqual({
@@ -214,47 +247,40 @@ describe('shouldSkipStoryDocsEmit', () => {
 });
 
 describe('argsReachManager', () => {
-  class Person {
-    constructor(readonly name: string) {}
-  }
   const reaches = (unmappedArgs: Record<string, unknown>, initialArgs = unmappedArgs) =>
     argsReachManager({ unmappedArgs, initialArgs });
 
-  it('holds for plain data, dates and unchanged functions', () => {
-    const onClick = () => {};
+  it('holds for args the channel sends, and for functions the story is written with', () => {
+    class Person {
+      constructor(readonly name: string) {}
+    }
+    const user: Record<string, unknown> = { name: 'Jane' };
+    user.self = user;
+    const initialArgs = { label: 'Hi', onClick: () => {}, config: { format: () => '' } };
     expect(
-      reaches({
-        label: 'Hi',
-        count: 2,
-        on: false,
-        none: null,
-        unset: undefined,
-        when: new Date(0),
-        user: { name: 'Jane', tags: ['a', { b: 1 }] },
-        onClick,
-      })
+      reaches(
+        {
+          ...initialArgs,
+          label: 'Bye',
+          count: Number.NaN,
+          max: Infinity,
+          when: new Date(0),
+          owner: new Person('Bob'),
+          lookup: new Map([['a', 1]]),
+          user,
+        },
+        initialArgs
+      )
     ).toBe(true);
   });
 
   it.each([
-    ['a class instance', new Person('Bob')],
-    ['a Map', new Map([['a', 1]])],
-    ['a React element', { $$typeof: Symbol.for('react.element'), type: 'b', props: {} }],
-    ['NaN', Number.NaN],
-    ['a nested class instance', { owner: new Person('Bob') }],
-  ])('fails for %s, which the channel changes', (_, value) => {
+    ['a function', () => {}],
+    ['a function in an object', { format: () => '' }],
+    ['a function in an array', [() => {}]],
+  ])('fails for %s that changed, which the channel drops', (_, value) => {
     expect(reaches({ value }, { value: 'initial' })).toBe(false);
     expect(reaches({ value: 'current' }, { value })).toBe(false);
-  });
-
-  it('fails for a function that changed, which the channel drops', () => {
-    expect(reaches({ onClick: () => {} }, { onClick: () => {} })).toBe(false);
-  });
-
-  it('fails for an object that refers to itself, without looping', () => {
-    const user: Record<string, unknown> = { name: 'Jane' };
-    user.self = user;
-    expect(reaches({ user })).toBe(false);
   });
 });
 
@@ -374,13 +400,10 @@ describe('storyDocsSourceBeforeEach', () => {
   });
 
   it('marks the emit of a story whose args the channel cannot carry', async () => {
-    class Person {
-      constructor(readonly name: string) {}
-    }
     const context = {
       id: storyId,
-      unmappedArgs: { label: 'hi', owner: new Person('Bob') },
-      initialArgs: { label: 'hi', owner: new Person('Jane') },
+      unmappedArgs: { label: 'hi', onClick: () => {} },
+      initialArgs: { label: 'hi', onClick: () => {} },
       parameters: { __isArgsStory: true },
     } as unknown as StoryContext;
 

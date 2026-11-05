@@ -99,10 +99,10 @@ CSF factories, builders import only the project's preview file, so a module core
 `previewAnnotations` preset would not load. The registry is on `globalThis`, since the manager
 bundles the module with its own copy of `storybook/internal/docs-tools`.
 
-- **Code panel:** fills in the manager with the manager's `args` and `initialArgs`. A story with a
-  `parameters.docs.source.transform` is the exception: the manager cannot run that function, and
-  the channel drops functions from the parameters it sends, so the preview marks its emit
-  `transformed` and the panel shows the emitted snippet for that story.
+- **Code panel:** fills in the manager with the manager's `args` and `initialArgs`, which the
+  preview sends through the channel. The channel drops functions, so the manager cannot run a
+  `parameters.docs.source.transform`, and cannot see a function arg the preview changed. For such a
+  story the preview marks its emit `previewOnly`, and the panel shows the emitted snippet.
 - **Docs blocks:** Canvas › Show code and `<Source>` fill in the preview.
 - **Server:** agents and tools can fill with `liveSnippet`. Its `.loaded()` loads the story docs
   first, which on the server extracts them on every call; to fill more than once, load them once

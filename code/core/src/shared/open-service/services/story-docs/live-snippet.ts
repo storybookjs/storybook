@@ -1,4 +1,4 @@
-import { isEqual } from 'es-toolkit/predicate';
+import { isEqual, isPlainObject } from 'es-toolkit/predicate';
 
 import { logger } from 'storybook/internal/client-logger';
 import { type PrintHole, fillTemplate } from '../../../../docs-tools/snippetTemplate.ts';
@@ -28,45 +28,55 @@ export const storyArgsChanged = ({ unmappedArgs, initialArgs }: StoryArgs) =>
 const definedArgs = (args: Args | undefined) =>
   Object.fromEntries(Object.entries(args ?? {}).filter(([, value]) => value !== undefined));
 
-// Whether the manager reads the args the preview renders with. The channel carries plain data: a
-// class instance, a React element or `NaN` arrives as some other value, and a function not at all,
-// which is fine only while the function is the one the story is written with.
+// Whether the manager reads the args the preview renders with. The channel drops a function, also
+// inside an object or array, so the manager cannot see one the preview sets in place of the
+// story's own.
 export function argsReachManager({ unmappedArgs, initialArgs }: StoryArgs): boolean {
-  return Object.keys({ ...initialArgs, ...unmappedArgs }).every((key) => {
-    const value = unmappedArgs[key];
-    return typeof value === 'function'
-      ? value === initialArgs[key]
-      : isPlainData(value) && isPlainData(initialArgs[key]);
-  });
+  return Object.keys({ ...initialArgs, ...unmappedArgs }).every(
+    (key) =>
+      unmappedArgs[key] === initialArgs[key] ||
+      !(holdsFunction(unmappedArgs[key]) || holdsFunction(initialArgs[key]))
+  );
 }
 
-function isPlainData(value: unknown, seen = new WeakSet<object>()): boolean {
-  if (value === null || value === undefined) {
+function holdsFunction(value: unknown, seen = new WeakSet<object>()): boolean {
+  if (typeof value === 'function') {
     return true;
   }
-  switch (typeof value) {
-    case 'string':
-    case 'boolean':
-      return true;
-    case 'number':
-      return Number.isFinite(value);
-    case 'object': {
-      if (value instanceof Date) {
-        return true;
-      }
-      const prototype = Object.getPrototypeOf(value);
-      if (
-        seen.has(value) ||
-        !(Array.isArray(value) || prototype === Object.prototype || prototype === null)
-      ) {
-        return false;
-      }
-      seen.add(value);
-      return Object.values(value).every((item) => isPlainData(item, seen));
-    }
-    default:
-      return false;
+  if (typeof value !== 'object' || value === null || seen.has(value)) {
+    return false;
   }
+  seen.add(value);
+  return Object.values(value).some((item) => holdsFunction(item, seen));
+}
+
+// The channel sends a class instance, a Map or a Set as a plain object marked
+// `__isClassInstance__`. As an instance of this class instead, it prints as the preview prints the
+// original: a printer that prints no class instance fails, and `JSON.stringify` writes its fields.
+class SentInstance {}
+
+// Returns `value` itself unless it holds a marked object.
+function restoreSentInstances(value: unknown, seen = new Set<object>()): unknown {
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    seen.has(value) ||
+    !(Array.isArray(value) || isPlainObject(value))
+  ) {
+    return value;
+  }
+  seen.add(value);
+  const marked = !Array.isArray(value) && value.__isClassInstance__ === true;
+  const entries = Object.entries(value)
+    .filter(([key]) => !marked || (key !== '__isClassInstance__' && key !== '__className__'))
+    .map(([key, item]) => [key, restoreSentInstances(item, seen)] as const);
+  if (!marked && entries.every(([key, item]) => item === (value as Args)[key])) {
+    return value;
+  }
+  return Object.assign(
+    Array.isArray(value) ? new Array(value.length) : marked ? new SentInstance() : {},
+    Object.fromEntries(entries)
+  );
 }
 
 // Resolves the display snippet for one story with its args filled into its template. While the
@@ -93,9 +103,16 @@ export function selectLiveSnippetForStory(
   if (template === undefined || printHole === undefined) {
     return staticSnippet(stale);
   }
+  const restoredArgs = {
+    unmappedArgs: restoreSentInstances(args.unmappedArgs) as Args,
+    initialArgs: restoreSentInstances(args.initialArgs) as Args,
+  };
   try {
     return {
-      snippet: prependImportToSnippet(payload?.import, fillTemplate(template, args, printHole)),
+      snippet: prependImportToSnippet(
+        payload?.import,
+        fillTemplate(template, restoredArgs, printHole)
+      ),
       warning: story?.warning,
     };
   } catch (error) {

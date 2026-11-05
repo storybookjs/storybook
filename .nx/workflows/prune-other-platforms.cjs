@@ -1,13 +1,12 @@
 // Run by the "Install Node Modules" step in .nx/workflows/agents.yaml, after a fresh install and
 // before the workers cache node_modules. .yarnrc.yml installs every platform's binaries
-// (supportedArchitectures), about 1 GB that a Linux x64 worker never loads.
+// (supportedArchitectures): on a Linux x64 worker, about 2 GB that it never loads.
 //
-// Removes packages built for another os, cpu or libc than this machine, as Yarn skips them when
-// supportedArchitectures is `current`. DRY=1 only reports.
+// Removes packages built for another os or cpu than this machine, as Yarn skips them when
+// supportedArchitectures is `current`. Yarn already skips the other libc (its default). DRY=1 only
+// reports. Changing this file changes the workers' cache key.
 const fs = require('fs');
 const path = require('path');
-const glibc = Boolean(process.report?.getReport().header.glibcVersionRuntime);
-const libc = process.platform === 'linux' ? (glibc ? 'glibc' : 'musl') : undefined;
 const fits = (list, value) =>
   !Array.isArray(list) ||
   value === undefined ||
@@ -34,8 +33,7 @@ const visit = (dir) => {
     } catch {
       continue;
     }
-    if (fits(pkg.os, process.platform) && fits(pkg.cpu, process.arch) && fits(pkg.libc, libc))
-      continue;
+    if (fits(pkg.os, process.platform) && fits(pkg.cpu, process.arch)) continue;
     count++;
     bytes += size(pkgDir);
     if (!process.env.DRY) fs.rmSync(pkgDir, { recursive: true, force: true });

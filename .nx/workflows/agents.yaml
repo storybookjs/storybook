@@ -5,18 +5,23 @@ linux-browsers-init-steps: &linux-browsers-init-steps
   - name: Checkout
     uses: 'nrwl/nx-cloud-workflows/v6/workflow-steps/checkout/main.yaml'
   # The installed tree itself, not only the yarn cache: with a hit, the workers skip `yarn install`
-  # (1.5 to 7 minutes per worker on a cold install). Only runs with the read-write token (`next`)
-  # store it; pull requests restore the entry `next` stored for the same lockfile.
+  # (1.5 to 2.5 minutes per worker on a cold install). Only runs with the read-write token (the
+  # nightly run on `next`) store it; pull requests restore the entry `next` stored for the same key.
+  # The key covers everything that decides the tree: the image, Node, the yarn config, the
+  # lockfile, the patches, every workspace's package.json and the prune script below.
   #
   # The paths are listed one by one, without globs: the cache step keys its entry on the path list
   # as written before the restore and as expanded after the run, so a glob such as
   # `code/*/node_modules` stores the entry under a key that no restore ever asks for.
   # The install step below checks that every node_modules directory came back, and installs from
   # scratch when one is missing, so a directory missing from this list costs time, never a broken run.
+  #
+  # Pinned to a commit: the paths and the install step depend on how this version of the cache step
+  # names its environment variables (see main.ts and post.ts), and the `v6` tag moves.
   - name: Restore node_modules
-    uses: 'nrwl/nx-cloud-workflows/v6/workflow-steps/cache/main.yaml'
+    uses: 'nrwl/nx-cloud-workflows/563df6a963147063d44d830a2ec7f117758d6c41/workflow-steps/cache/main.yaml'
     inputs:
-      key: '"node-modules-v2"|.nvmrc|.yarnrc.yml|yarn.lock|.yarn/patches/**'
+      key: '"node-modules-v3"|"ubuntu22.04-node20.19-v2"|.nvmrc|.yarnrc.yml|yarn.lock|.yarn/patches/**|package.json|*/package.json|code/*/package.json|code/*/*/package.json|.nx/workflows/prune-other-platforms.cjs'
       paths: |
         node_modules
         agent-eval/node_modules
@@ -48,9 +53,11 @@ linux-browsers-init-steps: &linux-browsers-init-steps
   - name: Install Node
     uses: 'nrwl/nx-cloud-workflows/v6/workflow-steps/install-node/main.yaml'
   - name: Install Node Modules
-    # The cache key above covers the lockfile, so a restored tree is exactly what `yarn install`
-    # would produce, as long as every node_modules directory it created came back. Running
-    # `yarn install` on it anyway would first download the whole yarn cache (3 GB) to verify it.
+    # The cache key above covers what decides the install, so a restored tree is what `yarn install`
+    # (and the prune script) produced, as long as every node_modules directory it created came back.
+    # Running `yarn install` on it anyway would first download the whole yarn cache (3 GB) to verify
+    # it. The cache step also stores the tree as the tasks left it, so the tool caches that tasks
+    # write inside node_modules (.cache, .vite) are cleared first.
     script: |
       set -eu
       list=node_modules/.nx-cloud-node-modules-dirs
@@ -64,9 +71,15 @@ linux-browsers-init-steps: &linux-browsers-init-steps
         done < "$list"
       }
       if restored; then
+        while read -r dir; do rm -rf "$dir/.cache" "$dir/.vite"; done < "$list"
         echo "node_modules restored from the cache; skipping yarn install."
       else
-        yarn install --immutable
+        # Three tries, as the nx-cloud-workflows install step does: 20 workers install at once.
+        for try in 1 2 3; do
+          if yarn install --immutable; then break; fi
+          [ "$try" = 3 ] && exit 1
+          sleep $((try * 15))
+        done
         find . -path ./node_modules -prune -o -name node_modules -type d -prune -print > "$list"
         echo ./node_modules >> "$list"
         node .nx/workflows/prune-other-platforms.cjs "$list"
@@ -100,9 +113,10 @@ common-env-vars: &common-env-vars
   STORYBOOK_NX_CLOUD_AGENT: true
   CI: true
   NODE_OPTIONS: --max_old_space_size=6144
-  # Playwright runs 2 workers on CI unless told otherwise (code/playwright.config.ts). 6 suits the
-  # static builds (e2e-tests) on these 8 vCPU workers, as on CircleCI's xlarge machines. Against a dev
-  # server 6 timed out, so the e2e-tests-dev target sets 4 in nx.json.
+  # Playwright runs 2 workers on CI unless told otherwise (code/playwright.config.ts). These workers
+  # have 8 vCPUs; 6 measured fastest against the static builds (e2e-tests). Against a dev server 6
+  # timed out, so the e2e-tests-dev target sets 4 in nx.json. (CircleCI runs 3 for e2e-tests, and 6
+  # for the dev-server e2e of a few templates on its 8 vCPU machines.)
   PLAYWRIGHT_WORKERS: 6
 
 launch-templates:

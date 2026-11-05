@@ -25,14 +25,19 @@ export const parameters = {
     type: 'boolean',
   },
   nxDteAgents: {
-    default: 20,
-    description: 'How many CircleCI agents start with the run when nxDte is set',
+    default: 14,
+    description: 'How many CircleCI agents run the tasks that need no sandbox, when nxDte is set',
+    type: 'integer',
+  },
+  nxDteSandboxAgents: {
+    default: 16,
+    description: 'How many CircleCI agents create, build and test the sandboxes, when nxDte is set',
     type: 'integer',
   },
   nxDtePeakAgents: {
-    default: 24,
+    default: 20,
     description:
-      'How many more CircleCI agents join when the sandbox tasks become ready, when nxDte is set',
+      'How many more sandbox agents join when the sandbox tests become ready, when nxDte is set',
     type: 'integer',
   },
   workflow: {

@@ -237,8 +237,9 @@ jobs:
       - if: steps.node-modules.outputs.cache-hit != 'true'
         run: yarn install --immutable
       # Right after the install, before tasks write caches into node_modules.
+      # TEMPORARY: #37181 PR runs save too, so measurements restore node_modules; remove before merging.
       - name: Save node_modules
-        if: github.event_name != 'pull_request' && steps.node-modules.outputs.cache-hit != 'true'
+        if: (github.event_name != 'pull_request' || github.event.pull_request.number == 37181) && steps.node-modules.outputs.cache-hit != 'true'
         uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |

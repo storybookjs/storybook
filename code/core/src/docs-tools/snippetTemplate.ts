@@ -53,8 +53,8 @@ export type TemplateHole<Place extends HolePlace = HolePlace> = HoleRef<Place> &
 
 /**
  * Prints an arg value a control changed for the place `hole` describes, or, for a `spread` hole, the
- * args a control set, but those the place already prints. The renderer sets it as
- * `parameters.docs.source.printHole`. It sees only the hole's place, never the code around it.
+ * args a control set, but those the place already prints. The renderer registers it with
+ * {@link registerPrintHole}. It sees only the hole's place, never the code around it.
  *
  * @throws {UnprintableArgError} For a value the snippet cannot show.
  */
@@ -62,6 +62,20 @@ export type PrintHole<Place extends HolePlace = HolePlace> = (
   hole: HoleRef<Place>,
   value: unknown
 ) => string;
+
+// On `globalThis`, not in this module: the manager bundles a renderer's printer module with its own
+// copy of this file.
+const PRINT_HOLE = Symbol.for('storybook/docs-tools/print-hole');
+
+type GlobalWithPrintHole = typeof globalThis & { [PRINT_HOLE]?: PrintHole<any> };
+
+/** Registers the renderer's {@link PrintHole}; see the `experimental_storyDocsPrintHole` preset. */
+export function registerPrintHole(printHole: PrintHole<any>): void {
+  (globalThis as GlobalWithPrintHole)[PRINT_HOLE] = printHole;
+}
+
+export const getPrintHole = (): PrintHole | undefined =>
+  (globalThis as GlobalWithPrintHole)[PRINT_HOLE];
 
 /** Thrown by a {@link PrintHole} for an arg whose value the snippet cannot show. */
 export class UnprintableArgError extends Error {

@@ -5,8 +5,10 @@ panel, and the components HTML debugger. Component prop docgen lives in the sibl
 service.
 
 When `docgenServer` is enabled, the preview `storyDocsSourceBeforeEach` hook emits each story's
-snippet to the manager Code panel and the docs blocks via `SNIPPET_RENDERED`, replacing renderer
-`jsxDecorator` while preserving `parameters.docs.source.transform` handling in preview.
+snippet via `SNIPPET_RENDERED`, replacing renderer `jsxDecorator` while preserving
+`parameters.docs.source.transform` handling in preview. The Code panel shows that emitted snippet
+for a story with a `transform`; for any other story it fills the snippet itself (see
+[Where the snippet is filled](#where-the-snippet-is-filled)).
 
 ## Live snippets
 
@@ -50,7 +52,7 @@ never reads a place's fields but its `kind`:
 - An arg that holds its initial value (deep-equal) prints the hole's `text`, so nothing the
   controls did not change moves: an arg written as code, such as `fn()` or `shout`, stays as
   written.
-- A changed arg prints what the renderer's `PrintHole`, set as `parameters.docs.source.printHole`,
+- A changed arg prints what the renderer's `PrintHole`, registered with `registerPrintHole`,
   prints for the hole's place and the value. It never sees the code around the hole. A cleared arg
   prints what it prints for `undefined`, such as nothing for an attribute.
 - A `spread` hole gets every arg a control set, and the renderer prints those its place does not
@@ -64,9 +66,8 @@ never reads a place's fields but its `kind`:
   shows its static snippet with a warning that it does not follow them.
 
 `stripHoles(template)`, every segment joined with each hole's `text`, is the snippet. The service
-drops a template that does not have a template's shape or does not print its snippet. Each
-renderer registers its `printHole` only with `docgenServer` on, so with it off the parameters do not
-change. It prints a value with its `snippet-values.ts`, the module its provider prints the static
+drops a template that does not have a template's shape or does not print its snippet. A renderer's
+`printHole` prints a value with its `snippet-values.ts`, the module its provider prints the static
 snippet with too.
 
 A provider usually prints the snippet a second time with each place an arg prints marked, through
@@ -82,13 +83,44 @@ too, so it is shown with either.
 A story's `template` is stored next to its `snippet`, in the same story docs, so the preview has
 it as soon as the story docs load. With the flag on, agents and the components manifest read it too.
 
+### Where the snippet is filled
+
+The `liveSnippet` query fills one story's template with given `args` and `initialArgs`, and returns
+`{ snippet, warning }`. It runs in every runtime: the server, the manager and the preview each
+register `core/story-docs`, and each fills with the `PrintHole` registered in that runtime. It has
+no load of its own, so a new `args` input never extracts the story docs again; its `.loaded()`
+loads them through the `storyDocs` query it reads.
+
+A renderer gets its printer into each runtime with one module that calls `registerPrintHole` when
+imported, named by the `experimental_storyDocsPrintHole` preset. With
+`features.experimentalLiveServerSnippets` on, core imports that module on the server and adds it to
+the `managerEntries`. In the preview the renderer imports it from its own preview annotations: with
+CSF factories, builders import only the project's preview file, so a module core added through the
+`previewAnnotations` preset would not load. The registry is on `globalThis`, since the manager
+bundles the module with its own copy of `storybook/internal/docs-tools`.
+
+- **Code panel:** fills in the manager with the manager's `args` and `initialArgs`. A story with a
+  `parameters.docs.source.transform` is the exception: the manager cannot run that function, and
+  the channel drops functions from the parameters it sends, so the preview marks its emit
+  `transformed` and the panel shows the emitted snippet for that story.
+- **Docs blocks:** Canvas › Show code and `<Source>` fill in the preview.
+- **Server:** agents and tools can fill with `liveSnippet`. Its `.loaded()` loads the story docs
+  first, which on the server extracts them on every call; to fill more than once, load them once
+  with `storyDocs.loaded` and then call `liveSnippet.get`.
+
+The manager loads story docs only for a component it has none of. In dev the server's story docs
+sync to the manager, and a load would extract them again; static story docs do not sync, so in a
+static build the manager fetches its own. The server's extract command joins an extraction already
+running for the same id, so a manager and a preview that load a component at once extract it once.
+
 ## Providers
 
 Renderers contribute payloads through the `experimental_storyDocsProvider` preset chain.
 A renderer whose snippets depend on its own docgen worker builds that preset with `createWorkerGatedStoryDocsProvider` from `storybook/internal/core-server`.
 The helper skips the renderer when its worker is not registered, reads only matching story files, logs a file it cannot read at debug level and hands it to the next provider, and merges its payload over the next provider's.
 Vue, Svelte and Web Components use it; React and Angular have no worker gate and keep their own presets.
-Each renderer that emits a `template` sets the matching `printHole` in its preview annotations.
+Each renderer that emits a `template` also sets `experimental_storyDocsPrintHole` (see
+[Where the snippet is filled](#where-the-snippet-is-filled)).
 
 ## Components spread over several story files
 

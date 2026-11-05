@@ -41,6 +41,11 @@ type AllComponentsQuery = { get(): unknown };
 // changed, so a failed refresh is retried on the next index change.
 const pendingIdsByService = new WeakMap<object, Set<string>>();
 
+// Extractions still running, by registered service and component id. A call joins the one running
+// for its component, so a manager and a preview that load it at once extract it once. A file change
+// drops it, so the refresh reads the files as they are now.
+const runningExtractions = new WeakMap<object, Map<string, Promise<unknown>>>();
+
 export type ExtractionInput = {
   /** The entry {@link selectComponentEntriesByComponentId} picks for the component. */
   entry: IndexEntry;
@@ -120,9 +125,16 @@ export function subscribeExtractionServiceToModuleGraphChanges<
   const refreshComponent = (id: string) => extract({ id }).catch(() => undefined);
 
   const refreshExtracted = async (componentIds: Iterable<string>) => {
-    const idsToRefresh = Array.from(componentIds).filter((id) => query.get({ id }) !== undefined);
+    // An extraction still running read the files before the change, so it is refreshed too.
+    const running = runningExtractions.get(runtime);
+    const idsToRefresh = Array.from(componentIds).filter(
+      (id) => query.get({ id }) !== undefined || running?.has(id)
+    );
     if (idsToRefresh.length === 0) {
       return;
+    }
+    for (const id of idsToRefresh) {
+      running?.delete(id);
     }
     await Promise.all(idsToRefresh.map(refreshComponent));
   };
@@ -235,6 +247,7 @@ export function registerExtractionService<
   );
 
   const pendingIds = new Set<string>();
+  const running = new Map<string, Promise<unknown>>();
   // The latest extraction of each component in each runtime, so an older one that finishes later
   // does not overwrite its payload. The static build runs these handlers on runtimes of its own.
   const latestRunsByState = new WeakMap<object, Map<string, Promise<void>>>();
@@ -364,13 +377,20 @@ export function registerExtractionService<
     },
     commands: {
       [extractCommand]: {
-        handler: async (input: { id: string }, ctx: CommandCtx<TState>) => {
-          const run = startRun(ctx, input.id);
-          try {
-            return await extractComponent(input.id, ctx, run.isLatest);
-          } finally {
-            await run.settle();
+        handler: (input: { id: string }, ctx: CommandCtx<TState>) => {
+          const joined = running.get(input.id);
+          if (joined) {
+            return joined;
           }
+          const run = startRun(ctx, input.id);
+          const extraction = extractComponent(input.id, ctx, run.isLatest).finally(async () => {
+            if (running.get(input.id) === extraction) {
+              running.delete(input.id);
+            }
+            await run.settle();
+          });
+          running.set(input.id, extraction);
+          return extraction;
         },
       },
       [extractAllCommand]: {
@@ -389,6 +409,7 @@ export function registerExtractionService<
   // A second registration returns the first instance, whose commands write the first set.
   if (!pendingIdsByService.has(service)) {
     pendingIdsByService.set(service, pendingIds);
+    runningExtractions.set(service, running);
   }
   return service;
 }

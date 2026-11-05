@@ -1,13 +1,13 @@
 import { logger } from 'storybook/internal/client-logger';
-import { SourceType, UnprintableArgError } from 'storybook/internal/docs-tools';
+import { SourceType, UnprintableArgError, registerPrintHole } from 'storybook/internal/docs-tools';
 import type { StoryContext } from 'storybook/internal/types';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
-import type { StoryDocsService } from './definition.ts';
-import { getPrintHole, selectLiveSnippetForStory, storyArgsChanged } from './live-snippet.ts';
+import { type StoryDocsService, storyDocsServiceDef } from './definition.ts';
+import { selectLiveSnippetForStory, storyArgsChanged } from './live-snippet.ts';
 import { prependImportToSnippet, selectSnippetForStory, selectWarningForStory } from './snippet.ts';
 import {
   shouldSkipStoryDocsEmit,
@@ -69,7 +69,18 @@ function mockStoryDocsService(loaded: () => Promise<StoryDocsPayload>) {
     loaded: vi.fn(() => loaded().then((value) => (state = value))),
     get: () => state,
   };
-  mockedGetService.mockReturnValue({ queries: { storyDocs } } as unknown as StoryDocsService);
+  const liveSnippet = {
+    get: (input: unknown) =>
+      storyDocsServiceDef.queries.liveSnippet.handler!(
+        input as never,
+        {
+          self: { queries: { storyDocs } },
+        } as never
+      ),
+  };
+  mockedGetService.mockReturnValue({
+    queries: { storyDocs, liveSnippet },
+  } as unknown as StoryDocsService);
   return storyDocs;
 }
 
@@ -173,17 +184,6 @@ describe('selectLiveSnippetForStory', () => {
   });
 });
 
-describe('getPrintHole', () => {
-  it('reads the hole printer the renderer sets on the docs source parameters', () => {
-    expect(getPrintHole({ docs: { source: { printHole } } })).toBe(printHole);
-  });
-
-  it('ignores a missing or invalid hole printer', () => {
-    expect(getPrintHole(undefined)).toBeUndefined();
-    expect(getPrintHole({ docs: { source: { printHole: 'nope' } } })).toBeUndefined();
-  });
-});
-
 describe('shouldSkipStoryDocsEmit', () => {
   it('skips when source code is provided', () => {
     expect(
@@ -245,6 +245,8 @@ describe('storyDocsSourceBeforeEach', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal('FEATURES', { docgenServer: true, experimentalLiveServerSnippets: true });
+    vi.stubGlobal(Symbol.for('storybook/docs-tools/print-hole'), undefined);
+    registerPrintHole(printHole);
     mockedEmitTransformCode.mockResolvedValue(undefined);
     mockStoryDocsService(() => Promise.resolve(payload));
   });
@@ -273,7 +275,7 @@ describe('storyDocsSourceBeforeEach', () => {
       args: { label: 'hi' },
       unmappedArgs: { label: 'hi' },
       initialArgs: { label: 'hi' },
-      parameters: { __isArgsStory: true, docs: { source: { printHole } } },
+      parameters: { __isArgsStory: true },
     } as unknown as StoryContext;
 
     await render(context);
@@ -283,7 +285,7 @@ describe('storyDocsSourceBeforeEach', () => {
 
   it('fills the template once the args change, loading the story docs once', async () => {
     const storyDocs = mockStoryDocsService(() => Promise.resolve(payloadWithWarning));
-    const parameters = { __isArgsStory: true, docs: { source: { printHole } } };
+    const parameters = { __isArgsStory: true };
     const withLabel = (label: string) =>
       ({
         id: storyId,
@@ -312,7 +314,7 @@ describe('storyDocsSourceBeforeEach', () => {
       args: { label: 'Go' },
       unmappedArgs: { label: 'Go' },
       initialArgs: { label: 'hi' },
-      parameters: { __isArgsStory: true, docs: { source: { printHole } } },
+      parameters: { __isArgsStory: true },
     } as unknown as StoryContext;
 
     await render(context);
@@ -330,7 +332,7 @@ describe('storyDocsSourceBeforeEach', () => {
     mockedEmitTransformCode.mockReturnValueOnce(
       new Promise<void>((resolve) => (finishTransform = resolve))
     );
-    const parameters = { __isArgsStory: true, docs: { source: { printHole } } };
+    const parameters = { __isArgsStory: true };
     const withLabel = (label: string) =>
       ({
         id: storyId,

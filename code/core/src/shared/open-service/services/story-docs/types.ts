@@ -37,8 +37,8 @@ export interface StoryDoc {
   /**
    * The static `snippet` split into code and holes, each a place an arg prints with what the
    * snippet prints there; see `SnippetTemplate`. Joining its segments gives the snippet. Once the
-   * args differ from the story's initial args, the preview fills it through the renderer's
-   * `parameters.docs.source.printHole`, so the snippet follows the controls.
+   * args differ from the story's initial args, the `liveSnippet` query fills it through the
+   * renderer's registered `PrintHole`, so the snippet follows the controls.
    */
   template?: SnippetTemplate;
 }

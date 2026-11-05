@@ -5,7 +5,7 @@ import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePan
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
-import { getPrintHole, selectLiveSnippetForStory } from './live-snippet.ts';
+import { argsReachManager } from './live-snippet.ts';
 
 export { shouldSkipStoryDocsEmit };
 
@@ -58,19 +58,17 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
     // A failed load is tried again on the next render.
     load.catch(() => loads.delete(context.parameters));
   }
-  const args = { unmappedArgs: context.unmappedArgs, initialArgs: context.initialArgs };
   const previous = emits.get(storyId);
   const codePanelSnippetPromise: Promise<unknown> = Promise.all([load, previous])
     .then(() => {
       if (cancelled) {
         return;
       }
-      const { snippet, warning } = selectLiveSnippetForStory(
-        query.get({ id: componentId }),
+      const { snippet, warning } = service.queries.liveSnippet.get({
         storyId,
-        args,
-        getPrintHole(context.parameters)
-      );
+        args: context.unmappedArgs,
+        initialArgs: context.initialArgs,
+      });
       const source = snippet ?? context.parameters?.docs?.source?.originalSource;
       if (source === undefined) {
         return;
@@ -79,7 +77,8 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
       return emitTransformCode(
         source,
         context,
-        snippet === undefined && warning ? `${warning} Showing the story source instead.` : warning
+        snippet === undefined && warning ? `${warning} Showing the story source instead.` : warning,
+        !argsReachManager({ unmappedArgs: context.unmappedArgs, initialArgs: context.initialArgs })
       );
     })
     // The snippet is a Code panel nicety; a failed load must not surface as an unhandled rejection

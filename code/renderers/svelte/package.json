@@ -96,6 +96,7 @@
     "esrap": "^2.4.0",
     "magic-string": "^0.30.12",
     "memfs": "^4.11.1",
+    "pathe": "^1.1.2",
     "rollup": "^4.43.0",
     "svelte": "^5.39.5",
     "svelte-check": "^4.4.8",

@@ -96,6 +96,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.19.1",
+    "@types/semver": "^7.7.1",
     "lilconfig": "^3.0.0",
     "next": "^15.2.3",
     "postcss-load-config": "^6.0.1",

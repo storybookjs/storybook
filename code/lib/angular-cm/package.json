@@ -40,6 +40,7 @@
     "!src/**/*"
   ],
   "devDependencies": {
+    "@angular/core": "^21.2.14",
     "typescript": "^6.0.3"
   },
   "peerDependencies": {

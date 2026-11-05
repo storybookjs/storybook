@@ -57,8 +57,10 @@
     "eslint": "^8.57.1",
     "eslint-plugin-eslint-plugin": "^6.5.0",
     "eslint-plugin-node": "^11.1.0",
+    "minimatch": "^10.0.1",
     "prompts": "^2.4.0",
     "storybook": "workspace:*",
+    "tinyexec": "^1.0.2",
     "ts-dedent": "^2.2.0",
     "typescript": "^6.0.3"
   },

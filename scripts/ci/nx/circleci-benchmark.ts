@@ -97,6 +97,8 @@ export type WorkflowReport = {
   maxQueueMinutes: number;
   containerMinutes: number;
   credits: number;
+  /** NX DTE workflows only: until `nx-main` ended, which decides whether the check turns green. */
+  mainMinutes?: number;
   /** NX DTE workflows only: the main job from its start until `Run nx`, and `Run nx` itself. */
   setupMinutes?: number;
   taskMinutes?: number;
@@ -126,6 +128,9 @@ export function report(
     ),
     containerMinutes: jobs.reduce((sum, job) => sum + job.containerMinutes, 0),
     credits: jobs.reduce((sum, job) => sum + creditsOf(job), 0),
+    ...(main?.stoppedAt
+      ? { mainMinutes: minutes(main.stoppedAt - time(workflow.created_at)!) }
+      : {}),
     ...(main?.startedAt && runNx
       ? {
           setupMinutes: minutes(runNx.start - main.startedAt),
@@ -150,6 +155,7 @@ export function toMarkdown(reports: WorkflowReport[]) {
       r.status,
       r.jobs,
       mmss(r.greenMinutes),
+      mmss(r.mainMinutes),
       mmss(r.wallMinutes),
       mmss(r.maxQueueMinutes),
       mmss(r.setupMinutes),
@@ -159,8 +165,8 @@ export function toMarkdown(reports: WorkflowReport[]) {
     ].join(' | ')
   );
   return [
-    '| Workflow | Status | Jobs | Green | Wall | Max queue | Setup | Tasks | Container-min | Credits |',
-    '|---|---|---|---|---|---|---|---|---|---|',
+    '| Workflow | Status | Jobs | Green | Main | Wall | Max queue | Setup | Tasks | Container-min | Credits |',
+    '|---|---|---|---|---|---|---|---|---|---|---|',
     ...rows.map((row) => `| ${row} |`),
   ].join('\n');
 }

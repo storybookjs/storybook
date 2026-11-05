@@ -54,7 +54,7 @@ The same NX task graph can also run distributed over CircleCI machines instead o
 - Do not label a pull request with both `ci:<workflow>` and `nx-dte:<workflow>`: both pipelines run on the same branch and CircleCI cancels one of them. The NX DTE trigger skips pull requests that have a `ci:` label
 - `scripts/ci/nx/circleci-node-modules.sh` caches the whole installed tree as one zstd archive; only `nx-main` stores it, for trusted authors
 - CircleCI cancels a running pipeline when a newer one starts on the same branch (auto-cancel), a push's own pipeline included. To measure two pipelines side by side, run them on different branches, and trigger after the push's pipeline exists
-- `CIRCLE_TOKEN=… node scripts/ci/nx/circleci-benchmark.ts <workflow>...` compares workflows: time to the green check, wall time, queue, setup and task phase of `nx-main`, container minutes and credits
+- `CIRCLE_TOKEN=… node scripts/ci/nx/circleci-benchmark.ts <workflow>...` compares workflows: time to the green check, until `nx-main` ends, wall time, queue, setup and task phase of `nx-main`, container minutes and credits
 
 ## Following an NX Cloud pipeline
 

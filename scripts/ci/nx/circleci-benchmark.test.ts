@@ -37,6 +37,7 @@ describe('circleci-benchmark', () => {
     const main = jobTiming({
       workflows: { job_name: 'nx-main' },
       start_time: at(1),
+      stop_time: at(6),
       picard: { resource_class: { class: 'large', executor: 'docker' } },
       steps: [step('Checkout code', [[0, at(1), at(2)]]), step('Run nx', [[0, at(2), at(6)]])],
     });
@@ -54,13 +55,14 @@ describe('circleci-benchmark', () => {
 
     expect(result).toMatchObject({
       greenMinutes: 7,
+      mainMinutes: 6,
       wallMinutes: 8,
       setupMinutes: 1,
       taskMinutes: 4,
       credits: 5 * 20 + 1 * 5,
     });
     expect(toMarkdown([result])).toContain(
-      '| normal-nx-dte-generated | success | 2 | 7m00s | 8m00s |'
+      '| normal-nx-dte-generated | success | 2 | 7m00s | 6m00s | 8m00s |'
     );
   });
 });

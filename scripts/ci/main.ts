@@ -147,7 +147,6 @@ const { values: opts } = parseArgs({
     branch: { type: 'string', default: '' },
     'nx-dte': { type: 'string', default: 'false' },
     'nx-dte-agents': { type: 'string' },
-    'nx-dte-sandbox-agents': { type: 'string' },
     'nx-dte-peak-agents': { type: 'string' },
   },
 });
@@ -164,14 +163,13 @@ const selected = workflows.filter((w) => requested.includes(w));
 const nightly = selected.includes('daily') && opts.branch === 'next';
 
 const agentCounts: NxDteOptions = {
-  general: opts['nx-dte-agents'] ? Number(opts['nx-dte-agents']) : undefined,
-  sandbox: opts['nx-dte-sandbox-agents'] ? Number(opts['nx-dte-sandbox-agents']) : undefined,
+  first: opts['nx-dte-agents'] ? Number(opts['nx-dte-agents']) : undefined,
   peak: opts['nx-dte-peak-agents'] ? Number(opts['nx-dte-peak-agents']) : undefined,
 };
 const nxDte = opts['nx-dte'] === 'true' && agentCounts;
 if (nxDte && Object.values(nxDte).some((n) => n !== undefined && !(Number.isInteger(n) && n > 0))) {
   throw new Error(
-    `Expected positive numbers of agents, got ${opts['nx-dte-agents']}, ${opts['nx-dte-sandbox-agents']} and ${opts['nx-dte-peak-agents']}`
+    `Expected positive numbers of agents, got ${opts['nx-dte-agents']} and ${opts['nx-dte-peak-agents']}`
   );
 }
 

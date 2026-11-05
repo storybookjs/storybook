@@ -5,8 +5,8 @@
  *
  * - `nx-main` starts the NX Cloud run (`start-ci-run --distribute-on=manual`), then runs the same
  *   `nx run-many` commands as .github/workflows/nx.yml (run.ts). It runs no task itself.
- * - `nx-agent`, `nx-agent-sandbox` and, a little later, `nx-agent-peak` ({@link NX_DTE_AGENTS})
- *   run as parallel containers, each `nx start-agent`, which runs the tasks NX Cloud assigns. `start-ci-run --stop-workers-after` names every target
+ * - `nx-agent` and, a little later, `nx-agent-peak` ({@link NX_DTE_WAVES}) run as parallel
+ *   containers, each `nx start-agent`, which runs the tasks NX Cloud assigns. `start-ci-run --stop-workers-after` names every target
  *   of the run, so NX Cloud knows when no more tasks can come and stops each agent once it has
  *   nothing left for it, as the Nx docs recommend; no `complete-ci-run` is needed.
  * - The jobs NX Cloud's Linux workers cannot run (plan.ts `sideJobs`) are plain CircleCI jobs: the
@@ -25,37 +25,32 @@ import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
 import { planFor } from './plan.ts';
 
 /**
- * The agents, three CircleCI jobs of parallel `large` containers (4 vCPUs; a task costs more on
- * `xlarge`, which bills twice the credits per minute and ran the dev-server E2E tests only a
- * quarter faster). .nx/workflows/circleci-assignment-rules.yaml sends each task to a pool by the
- * agents' NX_AGENT_LAUNCH_TEMPLATE; NX Cloud has no task priorities, so a pool is how the sandbox
- * chain, the longest path of the run, gets agents first.
+ * The agents come in two waves, each one CircleCI job of parallel `large` containers (4 vCPUs; a
+ * task costs more on `xlarge`, which bills twice the credits per minute and ran the dev-server E2E
+ * tests only a quarter faster).
  *
- * - `general`: the tasks that need no sandbox (lint, the unit and internal E2E tests). When they
- *   shared the agents, the sandboxes became ready 40 seconds into the run, found every agent busy
- *   with these, and the last one finished at 150 seconds instead of 100.
- * - `sandbox`: one agent per sandbox from the start; they create, build and test the sandboxes.
- * - `peak`: more sandbox agents, {@link NX_DTE_PEAK_DELAY_SECONDS} later, behind a `small` job that
- *   only waits. Once the sandboxes are built, some 50 E2E, Chromatic and Vitest tasks become ready
- *   at once; agents sized for that peak from the start idled, billed, for the first 100 seconds.
- *
- * compile, publish and the local registry run in both pools.
+ * - `first` starts with the run and takes the tasks that need no sandbox: compile, lint, the unit
+ *   and internal E2E tests.
+ * - `peak` starts {@link NX_DTE_PEAK_DELAY_SECONDS} later, behind a `small` job that only waits.
+ *   Once compile, publish and the sandboxes are done (about 100 seconds into the run), some 50
+ *   sandbox tasks become ready at once (E2E tests, Chromatic, Vitest). With one wave sized for
+ *   that peak, most agents idled, billed, for the first 100 seconds; with one sized for the start,
+ *   sandbox tasks waited up to two minutes for an agent.
  */
-export const NX_DTE_AGENTS = {
-  general: { job: 'nx-agent', template: 'circleci-linux', agents: 14 },
-  sandbox: { job: 'nx-agent-sandbox', template: 'circleci-linux-sandbox', agents: 16 },
-  peak: { job: 'nx-agent-peak', template: 'circleci-linux-sandbox', agents: 20 },
+export const NX_DTE_WAVES = {
+  first: { job: 'nx-agent', agents: 20 },
+  peak: { job: 'nx-agent-peak', agents: 24 },
 } as const;
-export type NxDteAgentJob = keyof typeof NX_DTE_AGENTS;
+export type NxDteWave = keyof typeof NX_DTE_WAVES;
 export const NX_DTE_PEAK_DELAY_SECONDS = 75;
 const PEAK_DELAY_JOB = 'nx-agent-peak-delay';
 
-/** How many agents each job runs, when not its default. */
-export type NxDteOptions = Partial<Record<NxDteAgentJob, number>>;
+/** How many agents each wave runs, when not its default. */
+export type NxDteOptions = Partial<Record<NxDteWave, number>>;
 
 /** The agents' jobs, which `circleci-completion` does not wait for (main.ts). */
 export const NX_AGENT_JOB_IDS: readonly string[] = [
-  ...Object.values(NX_DTE_AGENTS).map((agent) => agent.job),
+  ...Object.values(NX_DTE_WAVES).map((wave) => wave.job),
   PEAK_DELAY_JOB,
 ];
 
@@ -181,12 +176,12 @@ const mainJob = (
 
 const agentJob = (
   changedFiles: readonly string[],
-  kind: NxDteAgentJob,
+  wave: NxDteWave,
   agents: number,
   requires: JobOrNoOpJob[] = []
 ) =>
   defineJob(
-    NX_DTE_AGENTS[kind].job,
+    NX_DTE_WAVES[wave].job,
     () => ({
       executor: { name: 'sb_node_22_browsers', class: 'large' },
       parallelism: agents,
@@ -209,8 +204,8 @@ const agentJob = (
         // bench-packages.ts uploads the benchmarks for this pull request.
         BENCH_BASE_BRANCH: '<< pipeline.parameters.ghBaseBranch >>',
         BENCH_PR_NUMBER: '<< pipeline.parameters.ghPrNumber >>',
-        // The pool, as .nx/workflows/circleci-assignment-rules.yaml names it.
-        NX_AGENT_LAUNCH_TEMPLATE: NX_DTE_AGENTS[kind].template,
+        // Matches the agent in .nx/workflows/circleci-assignment-rules.yaml.
+        NX_AGENT_LAUNCH_TEMPLATE: 'circleci-linux',
       },
       steps: [
         git.checkout(),
@@ -241,7 +236,7 @@ const agentJob = (
         {
           run: {
             name: 'Run the tasks NX Cloud assigns',
-            command: `NX_AGENT_NAME="circleci-${kind}-$CIRCLE_NODE_INDEX" yarn nx start-agent`,
+            command: `NX_AGENT_NAME="circleci-${wave}-$CIRCLE_NODE_INDEX" yarn nx start-agent`,
             // NX Cloud stops a worker that is silent for 10 minutes; the Chromatic task prints a
             // line every minute while it waits.
             no_output_timeout: '20m',
@@ -253,7 +248,7 @@ const agentJob = (
     requires
   );
 
-/** Only waits, on the smallest machine, so the peak agents start when the sandboxes are nearly built. */
+/** Only waits, on the smallest machine, so the peak wave starts when the sandboxes are nearly done. */
 const peakDelayJob = defineJob(PEAK_DELAY_JOB, () => ({
   executor: { name: 'sb_node_22_classic', class: 'small' },
   steps: [{ run: { name: 'Wait for the peak', command: `sleep ${NX_DTE_PEAK_DELAY_SECONDS}` } }],
@@ -411,9 +406,8 @@ export function getNxDteJobs(
   }
 
   const agents = {
-    general: options.general ?? NX_DTE_AGENTS.general.agents,
-    sandbox: options.sandbox ?? NX_DTE_AGENTS.sandbox.agents,
-    peak: options.peak ?? NX_DTE_AGENTS.peak.agents,
+    first: options.first ?? NX_DTE_WAVES.first.agents,
+    peak: options.peak ?? NX_DTE_WAVES.peak.agents,
   };
   const targets = [
     ...new Set([
@@ -424,9 +418,8 @@ export function getNxDteJobs(
   const jobs: JobOrNoOpJob[] = [];
   if (plan.tasks.length > 0 || plan.affectedCheck) {
     jobs.push(
-      mainJob(selected, changedFiles, targets, agents.general + agents.sandbox + agents.peak),
-      agentJob(changedFiles, 'general', agents.general),
-      agentJob(changedFiles, 'sandbox', agents.sandbox),
+      mainJob(selected, changedFiles, targets, agents.first + agents.peak),
+      agentJob(changedFiles, 'first', agents.first),
       peakDelayJob,
       agentJob(changedFiles, 'peak', agents.peak, [peakDelayJob])
     );

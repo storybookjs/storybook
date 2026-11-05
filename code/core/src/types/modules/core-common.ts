@@ -736,6 +736,7 @@ export interface StorybookConfigRaw {
   experimental_enrichCsf?: CsfEnricher;
   experimental_docgenProvider?: DocgenProviderDescriptor[];
   experimental_storyDocsProvider?: StoryDocsProvider;
+  experimental_storyDocsPrintHole?: string;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: StorybookFeatures;
@@ -935,6 +936,16 @@ export interface StorybookConfig {
    */
   experimental_storyDocsProvider?: PresetValue<
     StorybookConfigRaw['experimental_storyDocsProvider']
+  >;
+
+  /**
+   * Absolute path of a module that registers the renderer's hole printer with `registerPrintHole`
+   * from `storybook/internal/docs-tools` when imported. With `features.experimentalLiveServerSnippets`,
+   * core imports it on the server and in the manager, so story snippets follow the args there. The
+   * renderer registers the same printer in its own preview annotations.
+   */
+  experimental_storyDocsPrintHole?: PresetValue<
+    StorybookConfigRaw['experimental_storyDocsPrintHole']
   >;
 }
 

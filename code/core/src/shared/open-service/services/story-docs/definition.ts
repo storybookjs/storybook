@@ -1,13 +1,31 @@
 import * as v from 'valibot';
 
-import { type SnippetTemplate, isSnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
+import {
+  type SnippetTemplate,
+  getPrintHole,
+  isSnippetTemplate,
+} from '../../../../docs-tools/snippetTemplate.ts';
 
 import { defineService } from 'storybook/open-service';
 import type { ServiceInstanceOf } from '../../types.ts';
 import type { StoryDocsPayload } from './types.ts';
+import { selectLiveSnippetForStory } from './live-snippet.ts';
 import { storyDocsQueryStaticPath } from './paths.ts';
 
 const storyDocsInputSchema = v.object({ id: v.string() });
+
+const argsSchema = v.record(v.string(), v.unknown());
+
+const liveSnippetInputSchema = v.object({
+  storyId: v.string(),
+  args: argsSchema,
+  initialArgs: argsSchema,
+});
+
+const liveSnippetOutputSchema = v.object({
+  snippet: v.optional(v.string()),
+  warning: v.optional(v.string()),
+});
 
 const storyDocsErrorSchema = v.object({
   name: v.string(),
@@ -76,6 +94,21 @@ export const storyDocsServiceDef = defineService({
         await ctx.self.commands.extractStoryDocs(input);
       },
       staticPath: (input) => storyDocsQueryStaticPath(input.id),
+    },
+    liveSnippet: {
+      description:
+        "Returns one story's snippet with `args` filled into its template by the renderer's hole printer, or its static snippet, with a warning when that does not follow `args`.",
+      input: liveSnippetInputSchema,
+      output: liveSnippetOutputSchema,
+      // No load of its own: each new `args` would be a new load key, and a load would extract the
+      // story docs again.
+      handler: (input, ctx) =>
+        selectLiveSnippetForStory(
+          ctx.self.queries.storyDocs.get({ id: input.storyId.split('--')[0]! }),
+          input.storyId,
+          { unmappedArgs: input.args, initialArgs: input.initialArgs },
+          getPrintHole()
+        ),
     },
     storyDocsForAllComponents: {
       description: 'Returns story-docs payloads for every component in the story index.',

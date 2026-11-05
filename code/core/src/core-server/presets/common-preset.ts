@@ -1,5 +1,6 @@
 import { existsSync, realpathSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
@@ -341,10 +342,19 @@ export const resolvedReact = async (existing: any) => {
   }
 };
 
-export const managerEntries = async (existing: any) => {
+async function getPrintHoleModule(options: Options): Promise<string | undefined> {
+  const features = await options.presets.apply('features');
+  return features?.docgenServer && features.experimentalLiveServerSnippets
+    ? options.presets.apply('experimental_storyDocsPrintHole')
+    : undefined;
+}
+
+export const managerEntries = async (existing: any, options: Options) => {
+  const printHoleModule = await getPrintHoleModule(options);
   return [
     pathe.join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-manager.js'),
     ...(existing || []),
+    ...(printHoleModule ? [printHoleModule] : []),
   ];
 };
 
@@ -452,6 +462,13 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       devServerSubscriptions.push(() =>
         subscribeDocgenToModuleGraphChanges({ getIndex, workingDir: process.cwd() })
       );
+    }
+
+    const printHoleModule = await getPrintHoleModule(options);
+    if (printHoleModule) {
+      await import(pathToFileURL(printHoleModule).href).catch((error: unknown) => {
+        logger.warn(`Story snippets cannot follow the args on the server: ${String(error)}`);
+      });
     }
 
     // Story-docs registers whenever this block runs, docgen only when a worker is available, so

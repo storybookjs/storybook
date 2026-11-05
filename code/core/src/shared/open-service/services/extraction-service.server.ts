@@ -30,6 +30,11 @@ type ExtractionServiceState = { components: Record<string, unknown> };
  */
 type ComponentPayloadQuery = { get(input: { id: string }): unknown };
 
+// Extractions still running, by registered service and component id. A call joins the one running
+// for its component, so a manager and a preview that load it at once extract it once. A file change
+// drops it, so the refresh reads the files as they are now.
+const runningExtractions = new WeakMap<object, Map<string, Promise<unknown>>>();
+
 export type ExtractionInput = {
   /** The entry {@link selectComponentEntriesByComponentId} picks for the component. */
   entry: IndexEntry;
@@ -99,9 +104,16 @@ export function subscribeExtractionServiceToModuleGraphChanges<
     ]({ id });
 
   const refreshExtracted = async (componentIds: Iterable<string>) => {
-    const idsToRefresh = Array.from(componentIds).filter((id) => query.get({ id }) !== undefined);
+    // An extraction still running read the files before the change, so it is refreshed too.
+    const running = runningExtractions.get(runtime);
+    const idsToRefresh = Array.from(componentIds).filter(
+      (id) => query.get({ id }) !== undefined || running?.has(id)
+    );
     if (idsToRefresh.length === 0) {
       return;
+    }
+    for (const id of idsToRefresh) {
+      running?.delete(id);
     }
     await Promise.all(idsToRefresh.map((id) => refreshComponent(id).catch(() => undefined)));
   };
@@ -199,7 +211,31 @@ export function registerExtractionService<
     }
   };
 
-  return registerService(definition, {
+  type Extraction = { payload: TState['components'][string] | undefined; started: number };
+  const running = new Map<string, Promise<Extraction>>();
+  // By component, when the extraction whose payload is stored started. An extraction a file change
+  // replaced can finish after its refresh, and must not overwrite what the refresh stored.
+  const storedStart = new Map<string, number>();
+  let starts = 0;
+  const extract = (id: string) => {
+    const joined = running.get(id);
+    if (joined) {
+      return joined;
+    }
+    const started = ++starts;
+    const extraction: Promise<Extraction> = resolveInput(id)
+      .then(provider)
+      .then((payload) => ({ payload, started }))
+      .finally(() => {
+        if (running.get(id) === extraction) {
+          running.delete(id);
+        }
+      });
+    running.set(id, extraction);
+    return extraction;
+  };
+
+  const service = registerService(definition, {
     queries: {
       [queryName]: {
         staticInputs: async () => {
@@ -211,8 +247,11 @@ export function registerExtractionService<
     commands: {
       [extractCommand]: {
         handler: async (input: { id: string }, ctx: CommandCtx<TState>) => {
-          const payload = await provider(await resolveInput(input.id));
-          ctx.self.setState((state) => writePayload(state, input.id, payload));
+          const { payload, started } = await extract(input.id);
+          if (started >= (storedStart.get(input.id) ?? 0)) {
+            storedStart.set(input.id, started);
+            ctx.self.setState((state) => writePayload(state, input.id, payload));
+          }
           return payload;
         },
       },
@@ -244,4 +283,9 @@ export function registerExtractionService<
       },
     },
   } as unknown as ServiceRegistrationOptions<TState, TQueries, TCommands>);
+  // A repeated registration returns the first service, whose commands join the first extractions.
+  if (!runningExtractions.has(service)) {
+    runningExtractions.set(service, running);
+  }
+  return service;
 }

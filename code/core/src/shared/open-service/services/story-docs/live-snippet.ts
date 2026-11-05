@@ -2,19 +2,10 @@ import { isEqual } from 'es-toolkit/predicate';
 
 import { logger } from 'storybook/internal/client-logger';
 import { type PrintHole, fillTemplate } from '../../../../docs-tools/snippetTemplate.ts';
-import type { Args, Parameters } from 'storybook/internal/types';
+import type { Args } from 'storybook/internal/types';
 
 import { prependImportToSnippet, selectSnippetForStory, selectWarningForStory } from './snippet.ts';
 import type { StoryDocsPayload } from './types.ts';
-
-// The preview side of story snippets, which fills a story's template with its current args. Kept
-// apart from `snippet.ts`, which the server imports too.
-
-// The renderer's hole printer, which it sets as `parameters.docs.source.printHole`.
-export function getPrintHole(parameters: Parameters | undefined): PrintHole | undefined {
-  const print = parameters?.docs?.source?.printHole;
-  return typeof print === 'function' ? print : undefined;
-}
 
 // Story ids whose renderer failed; filling runs on every args change, so each warns once.
 const storiesWarnedAbout = new Set<string>();
@@ -36,6 +27,47 @@ export const storyArgsChanged = ({ unmappedArgs, initialArgs }: StoryArgs) =>
 // fill reads it as absent too.
 const definedArgs = (args: Args | undefined) =>
   Object.fromEntries(Object.entries(args ?? {}).filter(([, value]) => value !== undefined));
+
+// Whether the manager reads the args the preview renders with. The channel carries plain data: a
+// class instance, a React element or `NaN` arrives as some other value, and a function not at all,
+// which is fine only while the function is the one the story is written with.
+export function argsReachManager({ unmappedArgs, initialArgs }: StoryArgs): boolean {
+  return Object.keys({ ...initialArgs, ...unmappedArgs }).every((key) => {
+    const value = unmappedArgs[key];
+    return typeof value === 'function'
+      ? value === initialArgs[key]
+      : isPlainData(value) && isPlainData(initialArgs[key]);
+  });
+}
+
+function isPlainData(value: unknown, seen = new WeakSet<object>()): boolean {
+  if (value === null || value === undefined) {
+    return true;
+  }
+  switch (typeof value) {
+    case 'string':
+    case 'boolean':
+      return true;
+    case 'number':
+      return Number.isFinite(value);
+    case 'object': {
+      if (value instanceof Date) {
+        return true;
+      }
+      const prototype = Object.getPrototypeOf(value);
+      if (
+        seen.has(value) ||
+        !(Array.isArray(value) || prototype === Object.prototype || prototype === null)
+      ) {
+        return false;
+      }
+      seen.add(value);
+      return Object.values(value).every((item) => isPlainData(item, seen));
+    }
+    default:
+      return false;
+  }
+}
 
 // Resolves the display snippet for one story with its args filled into its template. While the
 // story still has the args it is written with, it is the static snippet. Either comes with the

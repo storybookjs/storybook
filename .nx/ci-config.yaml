@@ -3,34 +3,16 @@
 # See https://nx.dev/docs/reference/nx-cloud/ci-config
 dte:
   # The NX Cloud Team plan allows at most 20 workers per run; NX Cloud rejects the whole run above it.
-  distribute-on:
-    small-changeset: 5 linux-browsers-js, 4 linux-js # 1-25% of projects affected
-    medium-changeset: 10 linux-browsers-js, 4 linux-js # 26-50%
-    large-changeset: 15 linux-browsers-js, 4 linux-js # 51-75%
-    extra-large-changeset: 16 linux-browsers-js, 4 linux-js # 76-100%
+  # Always 20, of one type, so none sits idle waiting for a task type. NX Cloud can scale the count
+  # with the changeset (small-changeset, …), but nx.yml runs every task with `run-many`, not only the
+  # affected ones: a dispatch with a small changeset got 6 workers and took 19 minutes, not 9.
+  distribute-on: 20 linux-browsers-js
+  # One task per worker at a time (plus the continuous dev, serve and run-registry tasks that task
+  # needs). The sandbox tasks share one folder per template outside the workspace, and each restores
+  # it from the cache first; the Playwright and Vitest runs all write to {workspaceRoot}/test-results.
+  # Dynamic task packing (NX_CLOUD_AUTO_TASK_PACKING) needs `scheduling-constraints` for that instead,
+  # but in our runs it left an e2e task queued behind a finished one for minutes, so it stays off.
   assignment-rules:
-    - targets:
-        - compile
-      projects:
-        - core
-      run-on:
-        - agent: linux-js
-          parallelism: 1
-    - targets:
-        - compile
-      run-on:
-        - agent: linux-js
-          parallelism: 1
-        - agent: linux-browsers-js
-          parallelism: 1
-    # Typecheck, lint and knip run on the linux-js workers, one task per worker at a time.
-    - targets:
-        - check
-        - lint
-        - knip
-      run-on:
-        - agent: linux-js
-          parallelism: 1
     - targets:
         - '*'
       run-on:
@@ -39,3 +21,7 @@ dte:
 # No lifecycle.stop-after: NX Cloud tracks the main job (heartbeat) and stops the workers when it
 # ends. A stop-after list that misses a target strands queued tasks (for example the continuous
 # serve, dev and run-registry tasks) and the run hangs.
+lifecycle:
+  # Run every task even after one fails, as CircleCI runs every job, so a run reports all its
+  # failures instead of stopping workers at the first one.
+  fail-after: 0

@@ -114,6 +114,7 @@
     "e2e-tests-dev": {
       "dependsOn": ["dev"],
       "command": "yarn task e2e-tests-dev --junit -s task --debug --no-link --template={projectName}",
+      "options": { "env": { "PLAYWRIGHT_WORKERS": "4" } },
       "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],

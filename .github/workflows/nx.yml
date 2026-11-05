@@ -40,11 +40,16 @@ jobs:
     # only to their own pull-request cache.
     # TEMPORARY: kasper/nx-cloud-revive is allowed so PR #37181 can test the writes. Remove it, and
     # its deployment branch rule on the nx-cloud-write environment, before merging.
-    environment: ${{ (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/next' || github.ref == 'refs/heads/kasper/nx-cloud-revive'))) && 'nx-cloud-write' || '' }}
+    # TEMPORARY: kasper/nx-cloud-fast-ci likewise, so PR #37189 can measure the workers' node_modules
+    # cache. Remove it, and its deployment branch rule, before merging.
+    environment: ${{ (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/next' || github.ref == 'refs/heads/kasper/nx-cloud-revive' || github.ref == 'refs/heads/kasper/nx-cloud-fast-ci'))) && 'nx-cloud-write' || '' }}
     timeout-minutes: 90
     runs-on: ubuntu-latest
     env:
       NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_WRITE_TOKEN || secrets.NX_CLOUD_ACCESS_TOKEN }}
+      # Report each finished task right away instead of in batches, so the tasks that depend on it
+      # (sandbox, then build, then e2e) start sooner. The Nx repo itself runs with this.
+      NX_CLOUD_DISABLE_BUFFER_TASK_COMPLETIONS: 'true'
       ALL_TASKS: compile,check,knip,test,lint,fmt,sandbox,build,e2e-tests,e2e-tests-dev,vitest-integration,check-sandbox,e2e-ui,jest,vitest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

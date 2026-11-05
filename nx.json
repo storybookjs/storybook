@@ -125,7 +125,7 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "{projectRoot}",
-        "command": "yarn --no-immutable && yarn playwright-e2e"
+        "command": "pnpm install --no-frozen-lockfile && pnpm playwright-e2e"
       },
       "cache": true,
       "inputs": ["default", "^production"],
@@ -135,7 +135,7 @@
     "jest": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn jest" },
+      "options": { "cwd": "{projectRoot}", "command": "pnpm install --no-frozen-lockfile && pnpm jest" },
       "cache": true,
       "inputs": ["default", "^production"],
       "outputs": ["{workspaceRoot}/test-results"],
@@ -144,7 +144,7 @@
     "vitest": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn vitest" },
+      "options": { "cwd": "{projectRoot}", "command": "pnpm install --no-frozen-lockfile && pnpm vitest" },
       "cache": true,
       "inputs": ["default", "^production"],
       "outputs": ["{workspaceRoot}/test-results"],
@@ -153,7 +153,7 @@
     "cypress": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn cypress" },
+      "options": { "cwd": "{projectRoot}", "command": "pnpm install --no-frozen-lockfile && pnpm cypress" },
       "cache": true,
       "inputs": ["default", "^production"],
       "outputs": ["{workspaceRoot}/test-results"],

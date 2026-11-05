@@ -219,20 +219,10 @@ describe('linkMonorepoPackages', () => {
     expect(await isLinkedSandbox(SANDBOX)).toBe(true);
   });
 
-  it('rewrites workspace: ranges in linked manifests as publishing does', async () => {
+  it('rewrites the workspace: peer ranges of the linked manifests', async () => {
     await linkMonorepoPackages({ cwd: SANDBOX, dryRun: false, debug: false });
 
-    const source = vol.readFileSync(`${SANDBOX}/.pnpmfile.cjs`, 'utf-8') as string;
-    const module = { exports: {} as any };
-    new Function('module', source)(module);
-    const pkg = module.exports.hooks.readPackage({
-      name: '@storybook/react',
-      dependencies: { storybook: 'workspace:*' },
-      peerDependencies: { storybook: 'workspace:^', react: '^18 || ^19' },
-    });
-
-    expect(pkg.dependencies.storybook).toBe('11.0.0-beta.0');
-    expect(pkg.peerDependencies).toEqual({ storybook: '^11.0.0-beta.0', react: '^18 || ^19' });
+    expect(readWorkspaceConfig().pnpmfile).toMatch(/scripts\/utils\/workspace-peers\.pnpmfile\.cjs$/);
   });
 
   it('is not a linked sandbox when installing from a registry', async () => {

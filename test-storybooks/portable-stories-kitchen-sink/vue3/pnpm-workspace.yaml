@@ -1,0 +1,21 @@
+# A standalone project inside the monorepo: listing only itself stops pnpm from installing the
+# monorepo's workspace instead.
+packages:
+  - .
+
+# The node_modules layout the Yarn install had.
+nodeLinker: hoisted
+
+minimumReleaseAge: 10080
+
+# cypress: its postinstall downloads the Cypress binary that `pnpm cypress` runs.
+onlyBuiltDependencies:
+  - cypress
+
+# Reviewed and deliberately not run: it only checks that the platform binary package installed and
+# swaps its bin shim for the native binary; esbuild works without it.
+ignoredBuiltDependencies:
+  - esbuild
+
+# Rewrites the `workspace:` peer ranges of the Storybook packages installed from code/.
+pnpmfile: ../../../scripts/utils/workspace-peers.pnpmfile.cjs

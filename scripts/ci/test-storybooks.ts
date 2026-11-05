@@ -24,24 +24,23 @@ export function definePortableStoryTest(directory: string) {
           run: {
             name: 'Install dependencies',
             working_directory,
-            command: 'yarn install --no-immutable',
-            environment: {
-              YARN_ENABLE_IMMUTABLE_INSTALLS: false,
-            },
+            // The Storybook packages come from code/ through `file:` resolutions, so the lockfile
+            // follows their manifests and cannot be frozen.
+            command: 'pnpm install --no-frozen-lockfile',
           },
         },
         {
           run: {
             name: 'Run Jest tests',
             working_directory,
-            command: 'yarn jest',
+            command: 'pnpm jest',
           },
         },
         {
           run: {
             name: 'Run Vitest tests',
             working_directory,
-            command: 'yarn vitest',
+            command: 'pnpm vitest',
           },
         },
         ...(scripts['playwright-e2e']
@@ -50,7 +49,7 @@ export function definePortableStoryTest(directory: string) {
                 run: {
                   name: 'Run Playwright E2E tests',
                   working_directory,
-                  command: 'yarn playwright-e2e',
+                  command: 'pnpm playwright-e2e',
                 },
               },
               artifact.persist(`${working_directory}/test-results`, 'playwright'),
@@ -60,7 +59,7 @@ export function definePortableStoryTest(directory: string) {
           run: {
             name: 'Run Cypress CT tests',
             working_directory,
-            command: 'yarn cypress',
+            command: 'pnpm cypress',
           },
         },
       ],
@@ -80,36 +79,24 @@ export function defineMcpTestStorybook() {
       steps: [
         ...workflow.restoreLinux(),
         {
-          // Yarn's file: protocol checksums the whole package directory (including
-          // nested node_modules/.cache). A bloated jiti cache under code/core OOMs
-          // libzip with "Malloc failure" during resolution.
-          run: {
-            name: 'Clear nested package caches before file: install',
-            command: 'find code -type d -path "*/node_modules/.cache" -prune -exec rm -rf {} +',
-          },
-        },
-        {
           run: {
             name: 'Install dependencies',
             working_directory: 'test-storybooks/mcp',
-            command: 'yarn install --no-immutable',
-            environment: {
-              YARN_ENABLE_IMMUTABLE_INSTALLS: false,
-            },
+            command: 'pnpm install --no-frozen-lockfile',
           },
         },
         {
           run: {
             name: 'Run MCP addon e2e tests',
             working_directory: 'test-storybooks/mcp',
-            command: 'yarn vitest run --project=e2e',
+            command: 'pnpm exec vitest run --project=e2e',
           },
         },
         {
           run: {
             name: 'Run internal Storybook story tests',
             working_directory: 'test-storybooks/mcp',
-            command: 'yarn vitest run --project=storybook',
+            command: 'pnpm exec vitest run --project=storybook',
           },
         },
       ],

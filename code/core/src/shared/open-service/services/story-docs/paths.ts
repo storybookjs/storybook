@@ -1,3 +1,6 @@
+import { encodePointer } from '../../service-channel.ts';
+import { toComponentStateKey } from '../component-state-key.ts';
+
 /** Open-service id for the story-docs service (also the on-disk directory under `services/`). */
 export const STORY_DOCS_SERVICE_ID = 'core/story-docs';
 
@@ -16,7 +19,7 @@ export function storyDocsStaticStorePath(id: string): string {
 
 /** JSON Pointer from a story-docs snapshot file root to one component payload in service state. */
 export function storyDocsPayloadJsonPointer(id: string): string {
-  return `/components/${id}`;
+  return encodePointer(['components', toComponentStateKey(id)]);
 }
 
 /**

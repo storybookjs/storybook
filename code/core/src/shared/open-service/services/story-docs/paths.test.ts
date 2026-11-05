@@ -14,4 +14,10 @@ describe('story-docs paths', () => {
       '../services/core/story-docs/button.json#/components/button'
     );
   });
+
+  it('points the manifest ref of a component titled Constructor at its escaped state key', () => {
+    expect(storyDocsManifestRef('constructor')).toBe(
+      '../services/core/story-docs/constructor.json#/components/~0constructor'
+    );
+  });
 });

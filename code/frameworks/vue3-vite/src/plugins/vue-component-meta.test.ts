@@ -97,7 +97,9 @@ describe('vue-component-meta plugin', () => {
     });
 
     transform = await getTransformHandler();
-  });
+    // The first call imports the plugin's dependencies, which took over 10 seconds on CircleCI's
+    // Windows executors.
+  }, 30_000);
 
   describe('barrel file substring matching (issue #34521)', () => {
     it('should NOT inject __docgenInfo for export names that are substrings of barrel re-export paths (star case)', async () => {

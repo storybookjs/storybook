@@ -36,9 +36,12 @@ export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
     // chromium-mutating holds the specs that write to sandbox files; it runs
     // after the parallel chromium pass (see code/playwright.config.ts).
     const projects = '--project=chromium --project=chromium-mutating';
+    // The NX targets `e2e-tests-dev-1` and `-2` each run one half (nx.json), so CI can run the
+    // halves on different workers.
+    const shard = process.env.PLAYWRIGHT_SHARD ? ` --shard=${process.env.PLAYWRIGHT_SHARD}` : '';
     const playwrightCommand = process.env.DEBUG
       ? `yarn playwright test ${projects} --ui ${testFiles.join(' ')}`
-      : `yarn playwright test ${projects} ${testFiles.join(' ')}`;
+      : `yarn playwright test ${projects}${shard} ${testFiles.join(' ')}`;
 
     await waitOn({ resources: [`http://localhost:${port}`], interval: 16, timeout: 200000 });
     await exec(

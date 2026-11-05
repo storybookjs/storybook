@@ -161,7 +161,11 @@
     }
   },
   "namedInputs": {
-    "sharedGlobals": ["{workspaceRoot}/code/tsconfig.json", "{workspaceRoot}/scripts/**/*"],
+    "sharedGlobals": [
+      "{workspaceRoot}/code/tsconfig.json",
+      "{workspaceRoot}/scripts/*",
+      "{workspaceRoot}/scripts/{__mocks__,bench,build,check,eslint-plugin-local-rules,sandbox,tasks,utils}/**/*"
+    ],
     "default": ["sharedGlobals", "{projectRoot}/**/*"],
     "production": [
       "sharedGlobals",

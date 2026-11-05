@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CommonJsGlobalInEsmError } from 'storybook/internal/server-errors';
 
@@ -58,24 +60,24 @@ describe('toCommonJsGlobalInEsmError', () => {
     const error = new ReferenceError('__dirname is not defined in ES module scope');
     error.stack = [
       'ReferenceError: __dirname is not defined in ES module scope',
-      `    at file://${process.cwd()}/.storybook/paths.ts:2:21`,
+      `    at ${pathToFileURL(resolve('.storybook/paths.ts')).href}:2:21`,
       '    at ModuleJob.run (node:internal/modules/esm/module_job:365:25)',
     ].join('\n');
 
     const wrapped = toCommonJsGlobalInEsmError(error, {
       location: '.storybook/main.ts',
-      sourceExclude: [`${process.cwd()}/.storybook/main.tmp..ts`],
+      sourceExclude: [resolve('.storybook/main.tmp..ts')],
     });
 
-    expect(wrapped?.message).toContain('.storybook/paths.ts');
+    expect(wrapped?.message).toContain(join('.storybook', 'paths.ts'));
   });
 
   it('falls back to the entry location when the only frame is excluded', () => {
     const error = new ReferenceError('__dirname is not defined in ES module scope');
-    const temp = `${process.cwd()}/.storybook/main.tmp..ts`;
+    const temp = resolve('.storybook/main.tmp..ts');
     error.stack = [
       'ReferenceError: __dirname is not defined in ES module scope',
-      `    at file://${temp}:9:21`,
+      `    at ${pathToFileURL(temp).href}:9:21`,
     ].join('\n');
 
     const wrapped = toCommonJsGlobalInEsmError(error, {
@@ -94,7 +96,7 @@ describe('toCommonJsGlobalInEsmError', () => {
     const error = new ReferenceError('__dirname is not defined in ES module scope');
     error.stack = [
       'ReferenceError: __dirname is not defined in ES module scope',
-      `    at file://${process.cwd()}/.storybook/paths.ts:2:21`,
+      `    at ${pathToFileURL(resolve('.storybook/paths.ts')).href}:2:21`,
     ].join('\n');
 
     const wrapped = toCommonJsGlobalInEsmError(error, { location: '.storybook/main.ts' });
@@ -106,8 +108,8 @@ describe('toCommonJsGlobalInEsmError', () => {
     const error = new ReferenceError('__dirname is not defined in ES module scope');
     error.stack = [
       'ReferenceError: __dirname is not defined in ES module scope',
-      `    at file://${process.cwd()}/node_modules/storybook/dist/loader.js:1:1`,
-      `    at file://${process.cwd()}/.storybook/paths.ts:2:21`,
+      `    at ${pathToFileURL(resolve('node_modules/storybook/dist/loader.js')).href}:1:1`,
+      `    at ${pathToFileURL(resolve('.storybook/paths.ts')).href}:2:21`,
     ].join('\n');
 
     const wrapped = toCommonJsGlobalInEsmError(error, {
@@ -116,9 +118,132 @@ describe('toCommonJsGlobalInEsmError', () => {
     });
 
     const subject = wrapped?.message.split('\n')[0];
-    expect(subject).toContain('.storybook/paths.ts');
+    expect(subject).toContain(join('.storybook', 'paths.ts'));
     expect(subject).not.toContain('node_modules');
   });
+
+  it('keeps a source directory whose name only ends with node_modules', () => {
+    const error = new ReferenceError('__dirname is not defined');
+    error.stack = [
+      'ReferenceError: __dirname is not defined',
+      `    at ${pathToFileURL(resolve('.storybook/my_node_modules/paths.ts')).href}:1:1`,
+      `    at ${pathToFileURL(resolve('.storybook/other.ts')).href}:2:1`,
+    ].join('\n');
+    const wrapped = toCommonJsGlobalInEsmError(error, {
+      location: '.storybook/main.ts',
+      sourceExclude: [],
+    });
+    expect(wrapped?.data.location).toBe(join('.storybook', 'my_node_modules', 'paths.ts'));
+  });
+
+  it('excludes the temporary file before an encoded source URL', () => {
+    const temp = resolve('.storybook/main.tmp..ts');
+    const source = resolve('.storybook/paths #1.ts');
+    const error = new ReferenceError('__dirname is not defined');
+    error.stack = [
+      `ReferenceError: __dirname is not defined`,
+      `    at ${pathToFileURL(temp).href}:1:1`,
+      `    at ${pathToFileURL(source).href}:2:1`,
+    ].join('\n');
+    const wrapped = toCommonJsGlobalInEsmError(error, {
+      location: '.storybook/main.ts',
+      sourceExclude: [temp],
+    });
+    expect(wrapped?.data.location).toBe(join('.storybook', 'paths #1.ts'));
+  });
+
+  describe.runIf(process.platform !== 'win32')(
+    'with a literal backslash in the working directory',
+    () => {
+      let workingDir: string;
+
+      beforeEach(() => {
+        workingDir = resolve(String.raw`project\name`);
+        vi.stubGlobal('process', { ...process, cwd: () => workingDir });
+      });
+
+      afterEach(() => {
+        vi.unstubAllGlobals();
+      });
+
+      it('selects the project source after a dependency frame', () => {
+        const error = new ReferenceError('__dirname is not defined');
+        error.stack = [
+          'ReferenceError: __dirname is not defined',
+          `    at ${pathToFileURL(resolve(workingDir, 'node_modules/loader.js')).href}:1:1`,
+          `    at ${pathToFileURL(resolve(workingDir, '.storybook/paths.ts')).href}:2:1`,
+        ].join('\n');
+        const wrapped = toCommonJsGlobalInEsmError(error, {
+          location: '.storybook/main.ts',
+          sourceExclude: [],
+        });
+        expect(wrapped?.data.location).toBe('.storybook/paths.ts');
+      });
+    }
+  );
+
+  describe.runIf(process.platform !== 'win32')('with literal backslashes in POSIX paths', () => {
+    it.each([
+      String.raw`.storybook/paths\helper.ts`,
+      String.raw`.storybook/node_modules\custom.ts`,
+    ])('preserves the source filename %s', (source) => {
+      const error = new ReferenceError('__dirname is not defined');
+      error.stack = [
+        'ReferenceError: __dirname is not defined',
+        `    at ${pathToFileURL(resolve(source)).href}:1:1`,
+        `    at ${pathToFileURL(resolve('.storybook/other.ts')).href}:2:1`,
+      ].join('\n');
+      const wrapped = toCommonJsGlobalInEsmError(error, {
+        location: '.storybook/main.ts',
+        sourceExclude: [],
+      });
+      expect(wrapped?.data.location).toBe(source);
+    });
+
+    it('does not exclude a different file with forward slashes', () => {
+      const error = new ReferenceError('__dirname is not defined');
+      error.stack = `ReferenceError: __dirname is not defined\n    at ${pathToFileURL(resolve('a/b/main.tmp..ts')).href}:1:1`;
+      const wrapped = toCommonJsGlobalInEsmError(error, {
+        location: '.storybook/main.ts',
+        sourceExclude: [resolve(String.raw`a\b/main.tmp..ts`)],
+      });
+      expect(wrapped?.data.location).toBe('a/b/main.tmp..ts');
+    });
+  });
+
+  it.runIf(process.platform === 'win32')(
+    'keeps the first project frame when directory casing differs',
+    () => {
+      const error = new ReferenceError('__dirname is not defined');
+      const source = resolve('.storybook/paths.ts');
+      const differentCase =
+        source === source.toLowerCase() ? source.toUpperCase() : source.toLowerCase();
+      error.stack = [
+        `ReferenceError: __dirname is not defined`,
+        `    at ${pathToFileURL(differentCase).href}:1:1`,
+        `    at ${pathToFileURL(resolve('.storybook/other.ts')).href}:2:1`,
+      ].join('\n');
+      const wrapped = toCommonJsGlobalInEsmError(error, {
+        location: '.storybook/main.ts',
+        sourceExclude: [],
+      });
+      expect(wrapped?.data.location.toLowerCase()).toBe(join('.storybook', 'paths.ts'));
+    }
+  );
+
+  it.runIf(process.platform === 'win32')(
+    'preserves the host of a source on another network share',
+    () => {
+      const error = new ReferenceError('__dirname is not defined');
+      error.stack =
+        'ReferenceError: __dirname is not defined\n    at file://storybook-test-host/share/paths.ts:1:1';
+      const wrapped = toCommonJsGlobalInEsmError(error, {
+        location: '.storybook/main.ts',
+        sourceExclude: [],
+      });
+      expect(wrapped?.data.location).toBe(String.raw`\\storybook-test-host\share\paths.ts`);
+    }
+  );
 
   it('returns undefined for errors it should not wrap', () => {
     expect(

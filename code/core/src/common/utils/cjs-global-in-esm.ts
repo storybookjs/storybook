@@ -40,7 +40,7 @@ function getErrorSourceFile(error: Error, exclude: string[]): string | undefined
       continue;
     }
     const relativePath = relative(cwd, file);
-    if (!relativePath.startsWith('..') && !relativePath.includes(`node_modules${sep}`)) {
+    if (!relativePath.startsWith('..') && !relativePath.split(sep).includes('node_modules')) {
       return relativePath;
     }
     fallback ??= relativePath;

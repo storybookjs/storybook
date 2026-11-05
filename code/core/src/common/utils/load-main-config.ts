@@ -29,15 +29,18 @@ export async function loadMainConfig({
     const out = await importModule(mainPath, { skipCache });
     return out;
   } catch (e) {
-    if (!(e instanceof Error)) {
-      throw e;
-    }
     const location = relative(process.cwd(), mainPath);
-    const toMainFileError = (error: Error) =>
-      toCommonJsGlobalInEsmError(error, { location }) ??
-      new MainFileEvaluationError({ location, error });
+    const toMainFileError = (error: unknown, sourceExclude?: string[]) => {
+      if (!(error instanceof Error)) {
+        return error;
+      }
+      return (
+        toCommonJsGlobalInEsmError(error, { location, sourceExclude }) ??
+        new MainFileEvaluationError({ location, error })
+      );
+    };
 
-    if (e.message.includes('not defined in ES module scope')) {
+    if (e instanceof Error && e.message.includes('not defined in ES module scope')) {
       logger.info(
         'Loading main config failed as the file does not seem to be valid ESM. Trying a temporary fix, please ensure the main config is valid ESM.'
       );
@@ -63,17 +66,7 @@ export async function loadMainConfig({
         try {
           out = await importModule(modifiedMainPath);
         } catch (retryError) {
-          // The header only covers the main file itself, so a CommonJS global used in a file it
-          // imports still fails here. Wrap it instead of letting the raw error escape.
-          if (retryError instanceof Error) {
-            throw (
-              toCommonJsGlobalInEsmError(retryError, {
-                location,
-                sourceExclude: [modifiedMainPath],
-              }) ?? new MainFileEvaluationError({ location, error: retryError })
-            );
-          }
-          throw retryError;
+          throw toMainFileError(retryError, [modifiedMainPath]);
         } finally {
           await rm(modifiedMainPath);
         }

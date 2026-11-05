@@ -19,14 +19,16 @@
  *
  * To follow one GitHub Actions run, such as a `workflow_dispatch` run next to the pull request's own
  * pipeline on the same branch, pass its run id (`41939428103`), its run group (`41939428103-1`, that
- * is `<run id>-<attempt>`), or its GitHub link. A bare run id takes the latest attempt.
+ * is `<run id>-<attempt>`), or its GitHub link. A bare run id takes the latest attempt. NX Cloud
+ * records no nx command for a GitHub re-run (attempt 2 or later); for those, GitHub's conclusion
+ * (through `gh`) decides the exit code.
  *
  * `--sha` picks the pipeline of that commit. After a push, pass `--sha HEAD`: without it the watch
  * follows the newest pipeline, which until NX Cloud registers the push is the previous one.
  *
  * Exit code: 0 when the pipeline succeeded, 1 when it failed, was canceled or timed out, 2 on errors
  * (and when `--watch` saw no pipeline start for 15 minutes), 3 for a one-off report on a pipeline
- * that is still running.
+ * that is still running, 4 for a GitHub re-run whose result `gh` could not read.
  */
 import { execFile, execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
@@ -53,7 +55,8 @@ const INSTANCE_SAMPLES = 3;
 const FINALIZE_TIMEOUT_MS = 10 * 60 * 1000;
 /** How long `--watch` waits for a pipeline to appear before it gives up. */
 const START_TIMEOUT_MS = 15 * 60 * 1000;
-const EXIT = { succeeded: 0, failed: 1, error: 2, running: 3 } as const;
+const EXIT = { succeeded: 0, failed: 1, error: 2, running: 3, unknown: 4 } as const;
+const GITHUB_REPO = 'storybookjs/storybook';
 
 type Links = Record<string, string>;
 type Counts = Record<string, number>;
@@ -401,18 +404,47 @@ function cipeUrl(cipe: Cipe) {
 }
 
 /** NX Cloud names a GitHub Actions run group `<run id>-<attempt>`. */
+const RUN_GROUP = /^(\d{8,})-([1-9]\d*)$/;
+
 function githubRun(group: RunGroup) {
-  const match = /^(\d+)-(\d+)$/.exec(group.id);
+  const match = RUN_GROUP.exec(group.id);
   return match ? { runId: match[1], attempt: Number(match[2]) } : undefined;
 }
 
 /**
- * On a GitHub re-run (attempt 2 or later) NX Cloud answers the Nx client's request for the
- * distributed execution summary with 404. The client retries for about 4 minutes, and NX Cloud then
- * leaves the run IN_PROGRESS for good, so the run group's details never become final.
+ * NX Cloud records no nx command for a GitHub re-run (attempt 2 or later): it answers the Nx
+ * client's request for the distributed execution summary with 404. The run group then ends by
+ * heartbeat with no runs, and the pipeline's status says nothing about the tasks.
  */
-function isRerun(group: RunGroup) {
-  return (githubRun(group)?.attempt ?? 1) >= 2;
+function unrecordedRerun({ group, final }: RunGroupState) {
+  return final && group.runs?.total === 0 && (githubRun(group)?.attempt ?? 1) >= 2;
+}
+
+const conclusions = new Map<string, string | undefined>();
+
+/** GitHub's conclusion of a run attempt (`success`, `failure`, …), or undefined without `gh`. */
+function githubConclusion(runId: string, attempt: number) {
+  const key = `${runId}-${attempt}`;
+  if (!conclusions.has(key)) {
+    let conclusion: string | undefined;
+    try {
+      conclusion =
+        gh([
+          'api',
+          `repos/${GITHUB_REPO}/actions/runs/${runId}/attempts/${attempt}`,
+          '--jq',
+          '.conclusion',
+        ]) || undefined;
+    } catch {
+      conclusion = undefined;
+    }
+    conclusions.set(key, conclusion);
+  }
+  return conclusions.get(key);
+}
+
+function gh(args: string[]) {
+  return execFileSync('gh', args, { cwd: ROOT, encoding: 'utf8', stdio: 'pipe' }).trim();
 }
 
 function cancelReason(cipe: Cipe) {
@@ -533,9 +565,10 @@ async function workflowReport(group: RunGroup): Promise<string[]> {
   return out;
 }
 
-async function report(cipe: Cipe, groups?: RunGroupState[]): Promise<string[]> {
+async function report(cipe: Cipe, groups: RunGroupState[]): Promise<string[]> {
   const out = [cipeLine(cipe), `  ${cipeUrl(cipe)}`];
-  for (const { group, final } of groups ?? (await runGroupsOf(cipe))) {
+  for (const state of groups) {
+    const { group, final } = state;
     const gh = githubRun(group);
     out.push(
       `  run group ${group.id}${gh ? ` (GitHub Actions run ${gh.runId}, attempt ${gh.attempt})` : ''}: ${group.status}${
@@ -546,13 +579,14 @@ async function report(cipe: Cipe, groups?: RunGroupState[]): Promise<string[]> {
     for (const run of await runsOf(group)) {
       out.push(`  ${runLine(run)}`, ...(await taskReport(run)));
     }
-    const noRun = final && group.runs?.total === 0;
     out.push(...(await workflowReport(group)));
-    if (isRerun(group) && (noRun || !final)) {
+    if (gh && unrecordedRerun(state)) {
+      const conclusion = githubConclusion(gh.runId, gh.attempt) ?? 'unknown (no gh)';
       out.push(
-        '  ✖ a GitHub re-run: NX Cloud does not record its nx command, which stays IN_PROGRESS for good. Read the GitHub job log for the result'
+        `  ✖ NX Cloud records no nx command for a GitHub re-run, so this status says nothing about the tasks. GitHub concluded: ${conclusion}`,
+        `    gh run view ${gh.runId} --attempt ${gh.attempt} --repo ${GITHUB_REPO}`
       );
-    } else if (noRun) {
+    } else if (final && group.runs?.total === 0) {
       out.push('  no nx command finished in this run group');
     } else if (!final) {
       out.push(
@@ -561,6 +595,20 @@ async function report(cipe: Cipe, groups?: RunGroupState[]): Promise<string[]> {
     }
   }
   return out;
+}
+
+/**
+ * The exit code for a finished pipeline. For a GitHub re-run NX Cloud's status is not the result
+ * (see unrecordedRerun), so GitHub's conclusion decides; without `gh` the result is unknown.
+ */
+function outcome(cipe: Cipe, groups: RunGroupState[]) {
+  for (const state of groups.filter(unrecordedRerun)) {
+    const gh = githubRun(state.group)!;
+    const conclusion = githubConclusion(gh.runId, gh.attempt);
+    if (conclusion === undefined) return EXIT.unknown;
+    if (conclusion !== 'success') return EXIT.failed;
+  }
+  return cipe.status === 'SUCCEEDED' ? EXIT.succeeded : EXIT.failed;
 }
 
 // --- Watch ---------------------------------------------------------------------------------------
@@ -583,6 +631,7 @@ async function retrying<T>(what: string, fn: () => Promise<T>, interval: number)
 }
 
 async function watch(target: Target, sha: string | undefined, interval: number) {
+  const pipelines = pipelinesOf(target);
   const runsSeen = new Set<string>();
   const statusSeen = new Map<string, string>();
   const startedAt = Date.now();
@@ -591,7 +640,11 @@ async function watch(target: Target, sha: string | undefined, interval: number) 
   let doneAt: number | undefined;
 
   for (;;) {
-    const cipes = await retrying('poll', () => cipesOf(target), interval);
+    const { cipes, notInNxCloud } = await retrying('poll', pipelines, interval);
+    if (notInNxCloud) {
+      print(`[${time()}] nx-cloud: ${notInNxCloud}`);
+      return EXIT.error;
+    }
     const candidates = sha ? cipes.filter((c) => c.vcsContext?.headSha === sha) : cipes;
     const newest = candidates[0];
 
@@ -599,7 +652,11 @@ async function watch(target: Target, sha: string | undefined, interval: number) 
       const where = `${sha ? ` for ${sha.slice(0, 7)}` : ''} on ${describeTarget(target)}`;
       if (Date.now() - startedAt > START_TIMEOUT_MS) {
         print(
-          `[${time()}] nx-cloud: no pipeline started${where} in ${START_TIMEOUT_MS / 60000} minutes. Is the commit pushed, and does the pull request have the ci:normal or ci:daily label?`
+          `[${time()}] nx-cloud: no pipeline started${where} in ${START_TIMEOUT_MS / 60000} minutes. ${
+            target.kind === 'run'
+              ? 'Is it a run of the nx workflow?'
+              : 'Is the commit pushed, and does the pull request have the ci:normal or ci:daily label?'
+          }`
         );
         return EXIT.error;
       }
@@ -648,8 +705,7 @@ async function watch(target: Target, sha: string | undefined, interval: number) 
     // Done. The run groups' details can lag the pipeline by minutes; wait for them, within reason.
     const done = followed;
     const groups = await retrying('poll', () => runGroupsOf(done), interval);
-    // A re-run's details never become final (see isRerun), so do not wait for them.
-    const final = groups.every((g) => g.final || isRerun(g.group));
+    const final = groups.every((g) => g.final);
     if (doneAt === undefined && !final && done.status !== 'SUCCEEDED') {
       // Say why it failed now: a newer push can replace this pipeline before its details are final.
       const lines = await retrying('report', () => report(done, groups), interval);
@@ -662,7 +718,7 @@ async function watch(target: Target, sha: string | undefined, interval: number) 
     }
     const lines = await retrying('report', () => report(done, groups), interval);
     print([`[${time()}] nx-cloud: pipeline done, report:`, ...lines]);
-    return done.status === 'SUCCEEDED' ? EXIT.succeeded : EXIT.failed;
+    return outcome(done, groups);
   }
 }
 
@@ -672,85 +728,133 @@ function sleep(seconds: number) {
 
 // --- Main ----------------------------------------------------------------------------------------
 
-interface Target {
-  branch?: string;
-  cipeId?: string;
-  /** A GitHub Actions run, and optionally its attempt: NX Cloud's run group `<runId>-<attempt>`. */
-  githubRun?: { runId: string; attempt?: number };
-}
+type Target =
+  | { kind: 'branch'; branch: string }
+  | { kind: 'cipe'; cipeId: string }
+  /** A GitHub Actions run: NX Cloud's run group `<runId>-<attempt>`. A job link names its attempt. */
+  | { kind: 'run'; runId: string; attempt?: number; jobId?: string };
 
 function describeTarget(target: Target) {
-  if (target.githubRun) {
-    const { runId, attempt } = target.githubRun;
-    return `GitHub Actions run ${runId}${attempt ? `, attempt ${attempt}` : ''}`;
+  if (target.kind === 'run') {
+    return `GitHub Actions run ${target.runId}${target.attempt ? `, attempt ${target.attempt}` : ''}`;
   }
-  return target.cipeId ? `CIPE ${target.cipeId}` : (target.branch ?? '');
+  return target.kind === 'cipe' ? `CIPE ${target.cipeId}` : target.branch;
+}
+
+interface RunLookup {
+  cipeId?: string;
+  /** Set when GitHub says the run has finished but NX Cloud has no pipeline for it. */
+  notInNxCloud?: string;
 }
 
 /**
  * Finds the pipeline of a GitHub Actions run through its run group. `gh` names the run's branch (to
- * narrow the list) and its latest attempt; without `gh`, the newest run groups of the workspace are
- * searched. Undefined while NX Cloud has not registered the run.
+ * narrow the list), its latest attempt and whether it finished; without `gh`, the newest 100 run
+ * groups of the workspace are searched, and a bare run id takes the latest attempt NX Cloud knows.
  */
-async function cipeOfGithubRun({ runId, attempt }: { runId: string; attempt?: number }) {
+async function lookUpRun(target: Extract<Target, { kind: 'run' }>): Promise<RunLookup> {
+  let { attempt } = target;
   let branch: string | undefined;
+  let finished = false;
   try {
+    if (attempt === undefined && target.jobId) {
+      attempt = Number(
+        gh(['api', `repos/${GITHUB_REPO}/actions/jobs/${target.jobId}`, '--jq', '.run_attempt'])
+      );
+    }
     const run = JSON.parse(
-      execFileSync('gh', ['run', 'view', runId, '--json', 'headBranch,attempt'], {
-        cwd: ROOT,
-        encoding: 'utf8',
-        stdio: 'pipe',
-      })
+      gh([
+        'run',
+        'view',
+        target.runId,
+        '--repo',
+        GITHUB_REPO,
+        '--json',
+        'headBranch,attempt,status',
+      ])
     );
     branch = run.headBranch;
     attempt ??= run.attempt;
+    finished = run.status === 'completed' || attempt! < run.attempt;
   } catch {
-    // No gh, or a run of another repository: search without a branch.
+    if (!ghWarned) {
+      print(
+        `nx-cloud: gh could not read GitHub Actions run ${target.runId}; searching the newest run groups instead`
+      );
+      ghWarned = true;
+    }
   }
   const query: Record<string, string> = { limit: '100' };
   if (branch) query.branch = branch;
   const groups = (await api<List<RunGroup & { cipeId: string }>>('run-groups', { query })).items;
-  const matches = groups
-    .filter((g) => githubRun(g)?.runId === runId)
+  const match = groups
+    .filter((g) => githubRun(g)?.runId === target.runId)
     .filter((g) => attempt === undefined || githubRun(g)?.attempt === attempt)
-    .sort((a, b) => githubRun(b)!.attempt - githubRun(a)!.attempt);
-  return matches[0]?.cipeId;
+    .sort((a, b) => githubRun(b)!.attempt - githubRun(a)!.attempt)[0];
+  if (match) {
+    // Saves findCipe two requests on its first look at a running pipeline.
+    if (match.branch) cipeBranches.set(match.cipeId, match.branch);
+    return { cipeId: match.cipeId };
+  }
+  if (finished) {
+    return {
+      notInNxCloud: `${describeTarget({ ...target, attempt })} has finished, but NX Cloud has no pipeline for it. Is it a run of the nx workflow, and did its nx job run?`,
+    };
+  }
+  return {};
 }
 
-/** The pipelines a target names, newest first; empty while a GitHub run is not in NX Cloud yet. */
-async function cipesOf(target: Target): Promise<Cipe[]> {
-  if (target.githubRun && !target.cipeId) {
-    target.cipeId = await cipeOfGithubRun(target.githubRun);
-    if (!target.cipeId) return [];
-  }
-  return target.cipeId ? [await findCipe(target.cipeId)] : listCipes(target.branch!);
+let ghWarned = false;
+
+/**
+ * Polls the pipelines a target names, newest first. For a GitHub run the list stays empty until NX
+ * Cloud registers it; once found, its pipeline id is kept.
+ */
+function pipelinesOf(target: Target): () => Promise<{ cipes: Cipe[]; notInNxCloud?: string }> {
+  let cipeId = target.kind === 'cipe' ? target.cipeId : undefined;
+  return async () => {
+    if (target.kind === 'branch') return { cipes: await listCipes(target.branch) };
+    if (!cipeId && target.kind === 'run') {
+      const lookup = await lookUpRun(target);
+      if (!lookup.cipeId) return { cipes: [], notInNxCloud: lookup.notInNxCloud };
+      cipeId = lookup.cipeId;
+    }
+    return { cipes: [await findCipe(cipeId!)] };
+  };
 }
 
 /** Pull request numbers stay well under this; GitHub Actions run ids are far above it. */
 const MAX_PR_NUMBER = 9_999_999;
 
 export function parseTarget(target: string): Target {
-  if (/^[0-9a-f]{24}$/.test(target)) return { cipeId: target };
-  const runGroup = /^(\d+)-(\d+)$/.exec(target);
-  if (runGroup) return { githubRun: { runId: runGroup[1], attempt: Number(runGroup[2]) } };
+  if (/^[0-9a-f]{24}$/.test(target)) return { kind: 'cipe', cipeId: target };
+  const runGroup = RUN_GROUP.exec(target);
+  if (runGroup) return { kind: 'run', runId: runGroup[1], attempt: Number(runGroup[2]) };
   if (/^\d+$/.test(target) && Number(target) > MAX_PR_NUMBER) {
-    return { githubRun: { runId: target } };
+    return { kind: 'run', runId: target };
   }
-  if (/^#?\d+$/.test(target)) return { branch: target.replace('#', '') };
-  if (!/^https?:\/\//.test(target)) return { branch: target };
+  if (/^#?\d+$/.test(target)) return { kind: 'branch', branch: target.replace('#', '') };
+  if (!/^https?:\/\//.test(target)) return { kind: 'branch', branch: target };
 
   const url = new URL(target);
   const cipeId = /\/cipes\/([0-9a-f]{24})\b/.exec(url.pathname)?.[1];
-  if (cipeId) return { cipeId };
-  const run = /\/actions\/runs\/(\d+)(?:\/attempts\/(\d+))?/.exec(url.pathname);
-  if (run) return { githubRun: { runId: run[1], attempt: run[2] ? Number(run[2]) : undefined } };
+  if (cipeId) return { kind: 'cipe', cipeId };
+  const run = /\/actions\/runs\/(\d+)(?:\/attempts\/(\d+)|\/job\/(\d+))?/.exec(url.pathname);
+  if (run) {
+    return {
+      kind: 'run',
+      runId: run[1],
+      ...(run[2] ? { attempt: Number(run[2]) } : {}),
+      ...(run[3] ? { jobId: run[3] } : {}),
+    };
+  }
   const pr = /\/pull\/(\d+)\b/.exec(url.pathname)?.[1];
-  if (pr) return { branch: pr };
+  if (pr) return { kind: 'branch', branch: pr };
   // The NX Cloud overview link that `nx.yml` posts on a pull request names its branch.
   const branch = url.searchParams.get('branch');
-  if (url.hostname === 'cloud.nx.app' && branch) return { branch };
+  if (url.hostname === 'cloud.nx.app' && branch) return { kind: 'branch', branch };
   throw new Error(
-    `Cannot read a pipeline from ${target}. Pass a pull request number, a branch, a CIPE id, a cloud.nx.app/cipes link or a GitHub Actions run.`
+    `Cannot read a pipeline from ${target}. Pass a pull request number, a branch, a CIPE id, a cloud.nx.app/cipes link, a GitHub Actions run id or link, or a run group (<run id>-<attempt>).`
   );
 }
 
@@ -780,8 +884,10 @@ async function main() {
     target = parseTarget(positionals[0]);
   } else {
     const branch = git(['branch', '--show-current']);
-    if (!branch) throw new Error('Not on a branch: pass a pull request number, branch or CIPE.');
-    target = { branch };
+    if (!branch) {
+      throw new Error('Not on a branch: pass a pull request number, branch, CIPE or GitHub run.');
+    }
+    target = { kind: 'branch', branch };
     shaRef ??= 'HEAD';
   }
   let sha: string | undefined;
@@ -799,19 +905,21 @@ async function main() {
   // Each poll costs a few requests of the organization's shared API quota; stay well under it.
   if (values.watch) return watch(target, sha, Math.max(15, interval));
 
-  const cipes = await cipesOf(target);
+  const { cipes, notInNxCloud } = await pipelinesOf(target)();
   const cipe = sha ? cipes.find((c) => c.vcsContext?.headSha === sha) : cipes[0];
   if (!cipe) {
     print(
-      `No NX Cloud pipeline found for ${describeTarget(target)}${sha ? ` at ${sha.slice(0, 7)}` : ''}.`
+      notInNxCloud ??
+        `No NX Cloud pipeline found for ${describeTarget(target)}${sha ? ` at ${sha.slice(0, 7)}` : ''}.`
     );
     return EXIT.error;
   }
-  print(await report(cipe));
+  const groups = await runGroupsOf(cipe);
+  print(await report(cipe, groups));
   const running = cipes.filter((c) => c.id !== cipe.id && !TERMINAL.has(c.status));
   if (running.length) print(`also running on this branch: ${running.map((c) => c.id).join(', ')}`);
   if (!TERMINAL.has(cipe.status)) return EXIT.running;
-  return cipe.status === 'SUCCEEDED' ? EXIT.succeeded : EXIT.failed;
+  return outcome(cipe, groups);
 }
 
 if (esMain(import.meta.url)) {

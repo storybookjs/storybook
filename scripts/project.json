@@ -8,7 +8,7 @@
       "dependsOn": [],
       "executor": "nx:run-commands",
       "options": { "cwd": "{projectRoot}", "command": "yarn check" },
-      "inputs": ["default"],
+      "inputs": ["default", "code-all"],
       "cache": true
     },
     "lint": {

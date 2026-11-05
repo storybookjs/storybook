@@ -108,6 +108,8 @@ jobs:
       - if: steps.node-modules.outputs.cache-hit != 'true'
         run: yarn install --immutable
       - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
+        with:
+          main-branch-name: next
       - id: nx
         name: 'Run nx'
         env:

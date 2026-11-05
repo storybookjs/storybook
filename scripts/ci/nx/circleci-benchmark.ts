@@ -87,8 +87,17 @@ export function jobTiming(details: JobDetails): JobTiming {
   };
 }
 
-export const creditsOf = (job: JobTiming) =>
-  job.containerMinutes * (CREDITS_PER_MINUTE[job.executor]?.[job.resourceClass] ?? 0);
+export function creditsOf(job: JobTiming) {
+  const perMinute = CREDITS_PER_MINUTE[job.executor]?.[job.resourceClass];
+  if (job.containerMinutes === 0) {
+    return 0;
+  }
+  if (perMinute === undefined) {
+    // Not 0: a machine priced at nothing hid the Windows jobs' cost once already.
+    throw new Error(`No credit price for ${job.executor} ${job.resourceClass} (${job.name})`);
+  }
+  return job.containerMinutes * perMinute;
+}
 
 export type WorkflowReport = {
   name: string;

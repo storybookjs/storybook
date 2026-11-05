@@ -71,6 +71,13 @@ async function main() {
     }
   }
 
+  // As affected.ts: a list lost on its way here would skip the check without a word.
+  const expected = process.env.CI_CHANGED_FILES_COUNT;
+  if (plan.affectedCheck && expected !== undefined && Number(expected) !== changedFiles.length) {
+    throw new Error(
+      `CI_CHANGED_FILES lists ${changedFiles.length} files, but the main job found ${expected}.`
+    );
+  }
   if (plan.affectedCheck && changedFiles.length > 0) {
     // From the changed files, not from a git range: the check then covers the diff the plan was
     // made from, and the main job needs no history (circleci-dte.ts checks out one commit).

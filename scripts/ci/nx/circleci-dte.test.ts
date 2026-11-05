@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import { parameters } from '../utils/parameters.ts';
 import { workflows } from '../utils/types.ts';
-import { NX_DTE_WAVES, getNxDteJobs } from './circleci-dte.ts';
+import { NX_DTE_WAVES, agentsFor, getNxDteJobs } from './circleci-dte.ts';
 
 const repoRoot = join(import.meta.dirname, '../../..');
 const read = (file: string) => readFileSync(join(repoRoot, file), 'utf8');
@@ -29,10 +29,52 @@ describe('the CircleCI NX DTE pipeline', () => {
     ]);
   });
 
+  it('sizes the waves to the plan', () => {
+    const sandboxes = (n: number) =>
+      Array.from({ length: n }, (_, i) => [`t${i}:sandbox`, `t${i}:e2e-tests`]).flat();
+    const plan = (tasks: string[], affectedCheck = false) => ({ tasks, affectedCheck });
+
+    // No more first-wave agents than tasks, unless they expand in Nx.
+    expect(agentsFor(plan(['code:fmt']))).toEqual({ first: 1, peak: 0 });
+    expect(agentsFor(plan(['*:compile']))).toEqual({ first: 20, peak: 0 });
+    expect(agentsFor(plan(['code:fmt'], true))).toEqual({ first: 20, peak: 0 });
+    // Three tasks per sandbox at the peak, minus the first wave, capped at the default.
+    expect(agentsFor(plan(['*:compile', ...sandboxes(4)]))).toEqual({ first: 20, peak: 0 });
+    expect(agentsFor(plan(['*:compile', ...sandboxes(10)]))).toEqual({ first: 20, peak: 10 });
+    expect(agentsFor(plan(['*:compile', ...sandboxes(16)]))).toEqual({ first: 20, peak: 24 });
+    expect(agentsFor(plan(['*:compile', ...sandboxes(16)]), { peak: 0 })).toEqual({
+      first: 20,
+      peak: 0,
+    });
+  });
+
+  it('leaves the agents out of circleci-completion', () => {
+    const generate = spawnSync(
+      process.execPath,
+      [
+        '--experimental-transform-types',
+        './scripts/ci/main.ts',
+        '--workflow=normal',
+        '--nx-dte=true',
+      ],
+      { cwd: repoRoot, encoding: 'utf8' }
+    );
+    expect(generate.status).toBe(0);
+    const { workflows: generated } = JSON.parse(read('.circleci/config.generated.yml'));
+    const completion = Object.values(generated)
+      .flatMap((workflow) => (workflow as { jobs: unknown[] }).jobs)
+      .find((job) => typeof job === 'object' && job !== null && 'circleci-completion' in job) as {
+      'circleci-completion': { requires: string[] };
+    };
+    expect(completion['circleci-completion'].requires).toEqual(['nx-main']);
+  });
+
   it('adds peak agents only for what the first wave cannot take', () => {
     // docs creates no sandbox; normal creates 16, three tasks each at the peak, minus the 20 of
     // the first wave, capped at the default.
     expect(ids('docs')).toEqual(['nx-main', 'nx-agent']);
+    const docsAgent = getNxDteJobs(['docs'], 'unused').find((job) => job.id === 'nx-agent')!;
+    expect((docsAgent.implementation('docs') as { parallelism: number }).parallelism).toBe(1);
     const peak = getNxDteJobs(['normal'], 'unused').find((job) => job.id === 'nx-agent-peak')!;
     expect((peak.implementation('normal') as { parallelism: number }).parallelism).toBe(24);
   });

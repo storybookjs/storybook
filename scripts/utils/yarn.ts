@@ -139,9 +139,10 @@ export const configureYarn2ForVerdaccio = async ({
   debug,
   key,
 }: YarnOptions & { key: AllTemplatesKey }) => {
-  // On NX Cloud agents, we use the global cache to avoid duplicating .yarn/cache across sandboxes.
-  // Stale @storybook/* packages are cleaned from the global cache in the agent init step (agents.yaml).
-  // Locally and on CircleCI, we disable the global cache to avoid stale packages from previous runs.
+  // On NX agents (NX Cloud's workers and the CircleCI NX DTE agents), we use the global cache to
+  // avoid duplicating .yarn/cache across sandboxes. Their init steps clear stale @storybook/*
+  // packages from it (agents.yaml, scripts/ci/nx/circleci-dte.ts). Locally and in CircleCI's
+  // per-job pipeline, we disable it to avoid stale packages from previous runs.
   const useGlobalCache = Boolean(process.env.STORYBOOK_NX_CLOUD_AGENT);
 
   const command = [

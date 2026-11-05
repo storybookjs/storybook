@@ -164,12 +164,15 @@ const nightly = selected.includes('daily') && opts.branch === 'next';
 
 const agentCounts: NxDteOptions = {
   first: opts['nx-dte-agents'] ? Number(opts['nx-dte-agents']) : undefined,
-  peak: opts['nx-dte-peak-agents'] ? Number(opts['nx-dte-peak-agents']) : undefined,
+  peak: opts['nx-dte-peak-agents'] !== undefined ? Number(opts['nx-dte-peak-agents']) : undefined,
 };
 const nxDte = opts['nx-dte'] === 'true' && agentCounts;
-if (nxDte && Object.values(nxDte).some((n) => n !== undefined && !(Number.isInteger(n) && n > 0))) {
+// The peak wave may be 0, which runs one wave.
+const valid = (n: number | undefined, min: number) =>
+  n === undefined || (Number.isInteger(n) && n >= min);
+if (nxDte && !(valid(nxDte.first, 1) && valid(nxDte.peak, 0))) {
   throw new Error(
-    `Expected positive numbers of agents, got ${opts['nx-dte-agents']} and ${opts['nx-dte-peak-agents']}`
+    `Expected at least 1 first-wave and 0 peak agents, got ${opts['nx-dte-agents']} and ${opts['nx-dte-peak-agents']}`
   );
 }
 

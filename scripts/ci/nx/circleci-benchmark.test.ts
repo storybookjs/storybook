@@ -43,6 +43,16 @@ describe('circleci-benchmark', () => {
     expect(creditsOf(windows)).toBe(10 * 120);
   });
 
+  it('refuses to price a machine it does not know', () => {
+    const unknown = jobTiming({
+      workflows: { job_name: 'mystery' },
+      picard: { executor: 'macos', resource_class: { class: 'm4pro.medium' } },
+      steps: [step('Run', [[0, at(0), at(1)]])],
+    });
+
+    expect(() => creditsOf(unknown)).toThrow('No credit price for docker m4pro.medium');
+  });
+
   it('splits the main job into setup and tasks, and times the green check', () => {
     const main = jobTiming({
       workflows: { job_name: 'nx-main' },

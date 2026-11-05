@@ -688,6 +688,8 @@ export interface SecurityConfig {
   /**
    * In dev mode, the manager and preview can only be embedded by a website running on localhost.
    * This prevents attacks that hijack a local Storybook embedded in an iframe from a malicious domain.
+   * The restriction does not apply in a WebContainer, such as StackBlitz, which shows the dev server
+   * in an iframe on its own page.
    *
    * If you need remote Storybooks to compose this Storybook while it is running in dev mode,
    * you may set `insecureRemoteIframeEmbed` to `true`.

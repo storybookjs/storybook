@@ -16,7 +16,7 @@ linux-browsers-init-steps: &linux-browsers-init-steps
   - name: Restore node_modules
     uses: 'nrwl/nx-cloud-workflows/v6/workflow-steps/cache/main.yaml'
     inputs:
-      key: '"node-modules-v1"|.nvmrc|.yarnrc.yml|yarn.lock|.yarn/patches/**'
+      key: '"node-modules-v2"|.nvmrc|.yarnrc.yml|yarn.lock|.yarn/patches/**'
       paths: |
         node_modules
         agent-eval/node_modules
@@ -69,6 +69,7 @@ linux-browsers-init-steps: &linux-browsers-init-steps
         yarn install --immutable
         find . -path ./node_modules -prune -o -name node_modules -type d -prune -print > "$list"
         echo ./node_modules >> "$list"
+        node .nx/workflows/prune-other-platforms.cjs "$list"
       fi
   - name: Clean stale Storybook packages from yarn cache
     # NX Cloud agents use the global yarn cache (enableGlobalCache: true) to

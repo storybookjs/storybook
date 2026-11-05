@@ -3,6 +3,7 @@ import {
   ChangeDetectorRef,
   Component,
   Inject,
+  isSignal,
   NgModule,
   ViewChild,
   ViewContainerRef,
@@ -18,7 +19,8 @@ import { PropertyExtractor } from './utils/PropertyExtractor.ts';
 
 const getNonInputsOutputsProps = (
   ngComponentInputsOutputs: ComponentInputsOutputs,
-  props: ICollection = {}
+  props: ICollection = {},
+  componentInstance?: object
 ) => {
   const inputs = ngComponentInputsOutputs.inputs
     .filter((i) => i.templateName in props)
@@ -26,7 +28,14 @@ const getNonInputsOutputsProps = (
   const outputs = ngComponentInputsOutputs.outputs
     .filter((o) => o.templateName in props)
     .map((o) => o.templateName);
-  return Object.keys(props).filter((k) => ![...inputs, ...outputs].includes(k));
+  return Object.keys(props).filter(
+    (k) =>
+      ![...inputs, ...outputs].includes(k) &&
+      // Framework-owned signal properties (e.g. signal-based content queries
+      // like contentChildren()) must never be overwritten with a plain story
+      // prop value, otherwise the signal is replaced and calling it throws.
+      !isSignal(componentInstance ? Reflect.get(componentInstance, k) : undefined)
+  );
 };
 
 /** Wraps the story template into a component */
@@ -108,7 +117,11 @@ export const createStorybookWrapperComponent = ({
       if (storyComponentElementRef && storyComponentViewContainerRef) {
         const ngComponentInputsOutputs = getComponentInputsOutputs(storyComponent);
 
-        const initialOtherProps = getNonInputsOutputsProps(ngComponentInputsOutputs, initialProps);
+        const initialOtherProps = getNonInputsOutputsProps(
+          ngComponentInputsOutputs,
+          initialProps,
+          storyComponentElementRef
+        );
 
         // Initializes properties that are not Inputs | Outputs
         // Allows story props to override local component properties
@@ -125,7 +138,11 @@ export const createStorybookWrapperComponent = ({
           .pipe(
             skip(1),
             map((props = {}) => {
-              const propsKeyToKeep = getNonInputsOutputsProps(ngComponentInputsOutputs, props);
+              const propsKeyToKeep = getNonInputsOutputsProps(
+                ngComponentInputsOutputs,
+                props,
+                storyComponentElementRef
+              );
               return propsKeyToKeep.reduce((acc, p) => ({ ...acc, [p]: props[p] }), {});
             })
           )

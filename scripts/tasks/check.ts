@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { execaCommand } from 'execa';
 import pLimit from 'p-limit';
 
+import { findUndeclaredNodeTypes } from '../check/node-types.ts';
 import type { MonorepoDetails, Task } from '../task.ts';
 import { CODE_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants.ts';
 import { maxConcurrentTasks } from '../utils/maxConcurrentTasks.ts';
@@ -68,6 +69,13 @@ export const check: Task<MonorepoDetails> = {
       workspaces.map((workspace) =>
         limit(async () => {
           const cwd = join(CODE_DIRECTORY, workspace.location);
+          const undeclaredNodeTypes = findUndeclaredNodeTypes(cwd);
+          if (undeclaredNodeTypes) {
+            failed.push(workspace.name);
+            console.log(`❌ ${workspace.name}\n${undeclaredNodeTypes}`);
+            return;
+          }
+
           const command = getCheckCommand(workspace.name, cwd);
 
           try {

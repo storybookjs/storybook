@@ -1,0 +1,6 @@
+{
+  "name": "declared",
+  "devDependencies": {
+    "@types/node": "*"
+  }
+}

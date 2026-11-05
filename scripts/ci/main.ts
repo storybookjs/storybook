@@ -10,13 +10,7 @@ import { parameters } from './utils/parameters.ts';
 import { setTrustedAuthor } from './utils/runtime.ts';
 import type { JobImplementationObj, NoOpJobImplementationObj } from './utils/types.ts';
 import { type Workflow, workflows } from './utils/types.ts';
-import {
-  NX_AGENT_JOB_ID,
-  NX_DTE_AGENT_CLASSES,
-  type NxDteAgentClass,
-  type NxDteOptions,
-  getNxDteJobs,
-} from './nx/circleci-dte.ts';
+import { NX_AGENT_JOB_IDS, type NxDteOptions, getNxDteJobs } from './nx/circleci-dte.ts';
 import { getJobs } from './workflow-jobs.ts';
 
 const dirname = import.meta.dirname;
@@ -78,7 +72,7 @@ function generateConfig(
     // Not on the NX agents: `nx-main` fails when a task fails, and the agents stop up to a minute
     // after it while they wind down.
     const completion = defineCircleciCompletion(
-      ensuredJobs.filter((job) => job.id !== NX_AGENT_JOB_ID)
+      ensuredJobs.filter((job) => !NX_AGENT_JOB_IDS.includes(job.id))
     );
     ensuredJobs.push(completion);
 
@@ -152,8 +146,8 @@ const { values: opts } = parseArgs({
     'gh-trusted-author': { type: 'string', default: 'false' },
     branch: { type: 'string', default: '' },
     'nx-dte': { type: 'string', default: 'false' },
-    'nx-dte-agents': { type: 'string', default: '40' },
-    'nx-dte-agent-class': { type: 'string', default: 'large' },
+    'nx-dte-agents': { type: 'string' },
+    'nx-dte-sandbox-agents': { type: 'string' },
   },
 });
 setTrustedAuthor(opts['gh-trusted-author'] === 'true');
@@ -168,15 +162,14 @@ if (unknown.length > 0 || requested.length === 0) {
 const selected = workflows.filter((w) => requested.includes(w));
 const nightly = selected.includes('daily') && opts.branch === 'next';
 
-const agents = Number(opts['nx-dte-agents']);
-const agentClass = opts['nx-dte-agent-class'] as NxDteAgentClass;
-const nxDte = opts['nx-dte'] === 'true' && { agents, agentClass };
-if (
-  nxDte &&
-  (!Number.isInteger(agents) || agents < 1 || !Object.hasOwn(NX_DTE_AGENT_CLASSES, agentClass))
-) {
+const agentCounts: NxDteOptions = {
+  general: opts['nx-dte-agents'] ? Number(opts['nx-dte-agents']) : undefined,
+  sandbox: opts['nx-dte-sandbox-agents'] ? Number(opts['nx-dte-sandbox-agents']) : undefined,
+};
+const nxDte = opts['nx-dte'] === 'true' && agentCounts;
+if (nxDte && Object.values(nxDte).some((n) => n !== undefined && !(Number.isInteger(n) && n > 0))) {
   throw new Error(
-    `Expected a positive number of agents and one of ${Object.keys(NX_DTE_AGENT_CLASSES).join(', ')}, got ${opts['nx-dte-agents']} × ${opts['nx-dte-agent-class']}`
+    `Expected positive numbers of agents, got ${opts['nx-dte-agents']} and ${opts['nx-dte-sandbox-agents']}`
   );
 }
 

@@ -25,15 +25,16 @@ export const parameters = {
     type: 'boolean',
   },
   nxDteAgents: {
-    default: 40,
-    description: 'How many CircleCI agents run the tasks when nxDte is set',
+    default: 24,
+    description:
+      "How many large CircleCI agents run the tasks other than the sandboxes' when nxDte is set",
     type: 'integer',
   },
-  nxDteAgentClass: {
-    default: 'large',
-    description: 'The resource class of those agents',
-    enum: ['large', 'xlarge'],
-    type: 'enum',
+  nxDteSandboxAgents: {
+    default: 16,
+    description:
+      'How many xlarge CircleCI agents create, build and test the sandboxes when nxDte is set',
+    type: 'integer',
   },
   workflow: {
     default: 'skipped',

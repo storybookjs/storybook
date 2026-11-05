@@ -55,6 +55,12 @@ const INSTANCE_SAMPLES = 3;
 const FINALIZE_TIMEOUT_MS = 10 * 60 * 1000;
 /** How long `--watch` waits for a pipeline to appear before it gives up. */
 const START_TIMEOUT_MS = 15 * 60 * 1000;
+/**
+ * How long `--watch` on a branch waits for a new pipeline when the newest one has already finished.
+ * A push or `workflow_dispatch` reaches NX Cloud only once its job starts, so right after one the
+ * newest pipeline is still the previous one, possibly on the same commit.
+ */
+const FINISHED_GRACE_MS = 3 * 60 * 1000;
 const EXIT = { succeeded: 0, failed: 1, error: 2, running: 3, unknown: 4 } as const;
 const GITHUB_REPO = 'storybookjs/storybook';
 
@@ -208,6 +214,9 @@ async function api<T>(path: string, options: ApiOptions = {}, attempt = 1): Prom
     const status: number | undefined = error?.status;
     if (status === 401 && useEnvToken) {
       useEnvToken = false;
+      console.error(
+        'nx-cloud-status: NX Cloud rejected the token in NX_CLOUD_ACCESS_TOKEN (it is for another workspace?); using your `nx login` instead'
+      );
       return api(path, options, attempt);
     }
     if (status === 401) {
@@ -637,6 +646,7 @@ async function watch(target: Target, sha: string | undefined, interval: number) 
   const startedAt = Date.now();
   let followed: Cipe | undefined;
   let waitingSaid = false;
+  let graceSaid = false;
   let doneAt: number | undefined;
 
   for (;;) {
@@ -662,6 +672,22 @@ async function watch(target: Target, sha: string | undefined, interval: number) 
       }
       if (!waitingSaid) print(`[${time()}] nx-cloud: waiting for a pipeline${where}`);
       waitingSaid = true;
+      await sleep(interval);
+      continue;
+    }
+
+    if (
+      !followed &&
+      target.kind === 'branch' &&
+      TERMINAL.has(newest.status) &&
+      Date.now() - startedAt < FINISHED_GRACE_MS
+    ) {
+      if (!graceSaid) {
+        print(
+          `[${time()}] nx-cloud: the newest pipeline${sha ? ` for ${sha.slice(0, 7)}` : ''} has already finished (${newest.id.slice(0, 8)}, ${newest.status}); waiting ${FINISHED_GRACE_MS / 60000} minutes for a new one before reporting it`
+        );
+        graceSaid = true;
+      }
       await sleep(interval);
       continue;
     }

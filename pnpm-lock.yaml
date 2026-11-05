@@ -681,7 +681,7 @@ importers:
         version: 2.0.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@vitest/browser':
         specifier: ^4.0.0 || ^5.0.0
-        version: 5.0.5(vite@8.0.16(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))(vitest@5.0.5)
+        version: 5.0.5(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))(vitest@5.0.5)
       storybook:
         specifier: workspace:^
         version: link:../../core
@@ -709,7 +709,7 @@ importers:
         version: 7.7.1
       '@vitest/browser-playwright':
         specifier: 5.0.5
-        version: 5.0.5(playwright@1.58.2)(vite@8.0.16(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))(vitest@5.0.5)
+        version: 5.0.5(playwright@1.58.2)(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))(vitest@5.0.5)
       '@vitest/istanbul-lib-report':
         specifier: ^1.0.1
         version: 1.0.2
@@ -764,9 +764,12 @@ importers:
       valibot:
         specifier: ^1.4.0
         version: 1.4.0(typescript@6.0.3)
+      vite:
+        specifier: ^7.0.4
+        version: 7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1)
       vitest:
         specifier: 5.0.5
-        version: 5.0.5(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.0)(@types/node@22.19.15)(@vitest/browser-playwright@5.0.5)(@vitest/coverage-istanbul@5.0.5)(@vitest/coverage-v8@5.0.5)(@vitest/ui@5.0.5)(happy-dom@20.0.11)(vite@8.0.16(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
+        version: 5.0.5(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.0)(@types/node@22.19.15)(@vitest/browser-playwright@5.0.5)(@vitest/coverage-istanbul@5.0.5)(@vitest/coverage-v8@5.0.5)(@vitest/ui@5.0.5)(happy-dom@20.0.11)(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
 
   code/builders/builder-vite:
     dependencies:
@@ -1813,9 +1816,6 @@ importers:
       '@types/babel__preset-env':
         specifier: ^7
         version: 7.10.0
-      '@types/loader-utils':
-        specifier: ^2.0.5
-        version: 2.0.6
       '@types/node':
         specifier: ^22.19.1
         version: 22.19.15
@@ -10277,9 +10277,6 @@ packages:
 
   '@types/kill-port@2.0.3':
     resolution: {integrity: sha512-ZHs59e5FBjDLQLOxM48+814LSyNf5sgpi0odtJ0FH6xrIAZXb4yksYG+4mZCbidX3fBOfHytAKAVMgkWvv/Piw==}
-
-  '@types/loader-utils@2.0.6':
-    resolution: {integrity: sha512-cgu0Xefgq9O5FjFR78jgI6X31aPjDWCaJ6LCfRtlj6BtyVVWiXagysSYlPACwGKAzRwsFLjKXcj4iGfcVt6cLw==}
 
   '@types/lodash-es@4.17.12':
     resolution: {integrity: sha512-0NgftHUcV4v34VhXm8QBSftKVXtbkBG3ViCjs6+eJ5a6y6Mi/jiFGPc1sC7QK+9BFhWrURE3EOggmWaSxL9OzQ==}
@@ -27497,11 +27494,6 @@ snapshots:
       '@types/node': 22.19.15
       shell-exec: 1.1.2
 
-  '@types/loader-utils@2.0.6':
-    dependencies:
-      '@types/node': 22.19.15
-      '@types/webpack': 4.41.40
-
   '@types/lodash-es@4.17.12':
     dependencies:
       '@types/lodash': 4.17.20
@@ -27614,13 +27606,15 @@ snapshots:
     dependencies:
       '@types/node': 22.19.15
 
-  '@types/source-list-map@0.1.6': {}
+  '@types/source-list-map@0.1.6':
+    optional: true
 
   '@types/stack-utils@2.0.2': {}
 
   '@types/symlink-or-copy@1.2.2': {}
 
-  '@types/tapable@1.0.12': {}
+  '@types/tapable@1.0.12':
+    optional: true
 
   '@types/tmp@0.2.6': {}
 
@@ -27629,6 +27623,7 @@ snapshots:
   '@types/uglify-js@3.17.5':
     dependencies:
       source-map: 0.6.1
+    optional: true
 
   '@types/unist@2.0.11': {}
 
@@ -27665,6 +27660,7 @@ snapshots:
       '@types/node': 22.19.15
       '@types/source-list-map': 0.1.6
       source-map: 0.7.6
+    optional: true
 
   '@types/webpack@4.41.40':
     dependencies:
@@ -27674,6 +27670,7 @@ snapshots:
       '@types/webpack-sources': 3.2.3
       anymatch: 3.1.3
       source-map: 0.6.1
+    optional: true
 
   '@types/whatwg-mimetype@3.0.2': {}
 
@@ -28499,6 +28496,7 @@ snapshots:
       - msw
       - utf-8-validate
       - vite
+    optional: true
 
   '@vitest/browser-preview@4.1.11(@voidzero-dev/vite-plus-core@0.3.3(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(typescript@6.0.3)(yaml@2.9.1))(vitest@4.1.11)':
     dependencies:
@@ -28625,6 +28623,7 @@ snapshots:
       - msw
       - utf-8-validate
       - vite
+    optional: true
 
   '@vitest/coverage-istanbul@5.0.5(vitest@5.0.5)':
     dependencies:

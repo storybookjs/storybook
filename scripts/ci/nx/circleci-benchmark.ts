@@ -177,7 +177,6 @@ async function circleci<T>(url: string, attempt = 1): Promise<T> {
     throw new Error(`${url}: ${response.status} ${response.statusText}`);
   }
   // Step output in job details can hold raw control characters, which JSON.parse rejects.
-  // eslint-disable-next-line no-control-regex
   return JSON.parse((await response.text()).replace(/[\u0000-\u001f]/g, ' ')) as T;
 }
 

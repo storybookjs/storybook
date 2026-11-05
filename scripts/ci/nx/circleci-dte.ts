@@ -105,10 +105,19 @@ const nxEnvironment = (changedFiles: readonly string[]) => ({
   CI_CHANGED_FILES_COUNT: `${changedFiles.length}`,
 });
 
-const mainJob = (selected: readonly Workflow[], changedFiles: readonly string[]) =>
+const mainJob = (
+  selected: readonly Workflow[],
+  changedFiles: readonly string[],
+  targets: readonly string[],
+  agents: number
+) =>
   defineJob('nx-main', () => ({
     executor: { name: 'sb_node_22_classic', class: 'large' },
-    environment: nxEnvironment(changedFiles),
+    environment: {
+      ...nxEnvironment(changedFiles),
+      // Tells NX Cloud how many agents there are, which it weighs when it stops agents early.
+      NX_CLOUD_DISTRIBUTED_EXECUTION_AGENT_COUNT: `${agents}`,
+    },
     steps: [
       // A focused run asks Nx which projects the diff affects, so it needs the merge base: the
       // history the setup job fetches (.circleci/config.yml).
@@ -124,10 +133,12 @@ const mainJob = (selected: readonly Workflow[], changedFiles: readonly string[])
       {
         run: {
           name: 'Start the NX Cloud run',
-          // Before the install, so NX Cloud knows the run while the agents boot. The agents finish
-          // when `complete-ci-run` below says so, not when the first of the run-many commands
-          // (run.ts starts several at once) ends. A failed task does not stop them: the run reports
-          // every failure, as CircleCI and nx.yml (`lifecycle.fail-after: 0`) do.
+          // Before the install, so NX Cloud knows the run while the agents boot.
+          // `--stop-workers-after` names every target the run-many commands run (run.ts starts
+          // several at once), so NX Cloud knows when no more tasks can come. It then stops each
+          // agent that has nothing left to run, instead of every agent idling until the main job
+          // ends. A failed task does not stop them: the run reports every failure, as CircleCI and
+          // nx.yml (`lifecycle.fail-after: 0`) do.
           // `start-ci-run` refuses to start while .nx/ci-config.yaml (the NX Cloud workers' config,
           // which only `start-workers` reads) exists, so it is out of the way for this command only.
           command: [
@@ -135,7 +146,7 @@ const mainJob = (selected: readonly Workflow[], changedFiles: readonly string[])
             [
               `${NX_CLOUD} start-ci-run --distribute-on=manual`,
               '--assignment-rules=.nx/workflows/circleci-assignment-rules.yaml',
-              '--require-explicit-completion',
+              `--stop-workers-after=${targets.join(',')}`,
               '--stop-workers-on-failure=false',
             ].join(' \\\n  '),
             'mv /tmp/ci-config.yaml .nx/ci-config.yaml',
@@ -182,10 +193,7 @@ const mainJob = (selected: readonly Workflow[], changedFiles: readonly string[])
 /** The agents' job, which `circleci-completion` does not wait for (main.ts). */
 export const NX_AGENT_JOB_ID = 'nx-agent';
 
-const agentJob = (
-  changedFiles: readonly string[],
-  { agents = NX_DTE_AGENTS, agentClass = 'xlarge' }: NxDteOptions
-) =>
+const agentJob = (changedFiles: readonly string[], agents: number, agentClass: NxDteAgentClass) =>
   defineJob(NX_AGENT_JOB_ID, () => ({
     executor: { name: 'sb_node_22_browsers', class: agentClass },
     parallelism: agents,
@@ -378,9 +386,19 @@ export function getNxDteJobs(
     throw new Error(`No NX equivalent for the CircleCI jobs: ${plan.missing.join(', ')}`);
   }
 
+  const { agents = NX_DTE_AGENTS, agentClass = 'xlarge' } = options;
+  const targets = [
+    ...new Set([
+      ...plan.tasks.map((task) => task.slice(task.lastIndexOf(':') + 1)),
+      ...(plan.affectedCheck ? ['check'] : []),
+    ]),
+  ].sort();
   const jobs: JobOrNoOpJob[] = [];
   if (plan.tasks.length > 0 || plan.affectedCheck) {
-    jobs.push(mainJob(selected, changedFiles), agentJob(changedFiles, options));
+    jobs.push(
+      mainJob(selected, changedFiles, targets, agents),
+      agentJob(changedFiles, agents, agentClass)
+    );
   }
   if (plan.sideJobs.includes('windows')) {
     jobs.push(...windowsParts.filter((part) => part !== 'init-empty').map(windowsJob));

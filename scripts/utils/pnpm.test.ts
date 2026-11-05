@@ -169,7 +169,9 @@ describe('configurePnpmForVerdaccio', () => {
   it('sets the registry in .npmrc, where pnpm reads it', async () => {
     await configurePnpmForVerdaccio({ cwd: SANDBOX, dryRun: false, debug: false });
 
-    expect(vol.readFileSync(`${SANDBOX}/.npmrc`, 'utf-8')).toBe('registry=http://localhost:6001/\n');
+    expect(vol.readFileSync(`${SANDBOX}/.npmrc`, 'utf-8')).toBe(
+      'registry=http://localhost:6001/\n'
+    );
   });
 
   it('drops cached local-registry metadata of the republished Storybook packages', async () => {
@@ -222,7 +224,9 @@ describe('linkMonorepoPackages', () => {
   it('rewrites the workspace: peer ranges of the linked manifests', async () => {
     await linkMonorepoPackages({ cwd: SANDBOX, dryRun: false, debug: false });
 
-    expect(readWorkspaceConfig().pnpmfile).toMatch(/scripts\/utils\/workspace-peers\.pnpmfile\.cjs$/);
+    expect(readWorkspaceConfig().pnpmfile).toMatch(
+      /scripts\/utils\/workspace-peers\.pnpmfile\.cjs$/
+    );
   });
 
   it('is not a linked sandbox when installing from a registry', async () => {

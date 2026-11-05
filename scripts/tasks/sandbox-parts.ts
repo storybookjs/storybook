@@ -337,9 +337,10 @@ export const init: Task['run'] = async (
   // `--preserve-symlinks` keeps the symlinked template stories resolving their imports from the
   // sandbox. `--preserve-symlinks-main` is left out: the hoisted pnpm linker makes the `.bin`
   // entries symlinks, and the flag would resolve a CLI's own imports relative to `.bin`.
-  const nodeOptions = [...(process.env.NODE_OPTIONS || '').split(' '), '--preserve-symlinks'].filter(
-    Boolean
-  );
+  const nodeOptions = [
+    ...(process.env.NODE_OPTIONS || '').split(' '),
+    '--preserve-symlinks',
+  ].filter(Boolean);
 
   const nodeOptionsString = nodeOptions.join(' ');
   const prefix = `NODE_OPTIONS='${nodeOptionsString}' STORYBOOK_TELEMETRY_URL="http://localhost:6007/event-log"`;

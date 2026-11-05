@@ -27,7 +27,7 @@ describe('disableMinimumReleaseAge', () => {
   it('sets the gate to 0 and leaves the rest of the config', async () => {
     vol.writeFileSync(
       CONFIG,
-      "packages:\n  - .\nminimumReleaseAge: 10080\nminimumReleaseAgeExclude:\n  - storybook\n"
+      'packages:\n  - .\nminimumReleaseAge: 10080\nminimumReleaseAgeExclude:\n  - storybook\n'
     );
 
     await disableMinimumReleaseAge(SANDBOX);

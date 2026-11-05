@@ -1,4 +1,6 @@
+import { encodePointer } from '../../service-channel.ts';
 import { componentIdToStaticName } from '../../static-names.ts';
+import { toComponentStateKey } from '../component-state-key.ts';
 
 /** Open-service id for the docgen service (also the on-disk directory under `services/`). */
 export const DOCGEN_SERVICE_ID = 'core/docgen';
@@ -21,7 +23,7 @@ export function docgenStaticStorePath(id: string): string {
 
 /** JSON Pointer from a docgen snapshot file root to one component payload in service state. */
 export function docgenPayloadJsonPointer(id: string): string {
-  return `/components/${id}`;
+  return encodePointer(['components', toComponentStateKey(id)]);
 }
 
 /**

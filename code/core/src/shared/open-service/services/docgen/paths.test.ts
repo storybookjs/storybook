@@ -42,4 +42,10 @@ describe('docgen paths', () => {
     ).toBe(storePath);
     expect(docgenManifestRef('😀')).toBe(`../services/${storePath}#/components/😀`);
   });
+
+  it('points the manifest ref of a component titled Constructor at its escaped state key', () => {
+    expect(docgenManifestRef('constructor')).toBe(
+      '../services/core/docgen/constructor.json#/components/~0constructor'
+    );
+  });
 });

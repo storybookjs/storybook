@@ -9,6 +9,7 @@ import { glob } from 'glob';
 import { format } from 'oxfmt';
 import { rolldown } from 'rolldown';
 import { dedent } from 'ts-dedent';
+import { parse as parseYaml } from 'yaml';
 
 const CODE_DIR = join(import.meta.dirname, '..', '..', '..', 'code');
 const CORE_ROOT_DIR = join(CODE_DIR, 'core');
@@ -22,9 +23,9 @@ type WorkspacePackage = {
 };
 
 async function getWorkspace(): Promise<WorkspacePackage[]> {
-  const {
-    workspaces: { packages: patterns },
-  } = JSON.parse(await readFile(join(ROOT_DIR, 'package.json'), 'utf-8'));
+  const { packages: patterns } = parseYaml(
+    await readFile(join(ROOT_DIR, 'pnpm-workspace.yaml'), 'utf-8')
+  );
 
   const workspaces: string[][] = await Promise.all(
     patterns.map((pattern: string) => glob(pattern, { cwd: ROOT_DIR }))

@@ -35,7 +35,7 @@
     },
     "check": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
-      "command": "yarn exec jiti ./scripts/check/check-package.ts --cwd {projectRoot}",
+      "command": "pnpm exec jiti ./scripts/check/check-package.ts --cwd {projectRoot}",
       "cache": true,
       "inputs": ["default", "^production"],
       "configurations": { "production": {} }

@@ -204,17 +204,28 @@ describe('experimental_devServer', () => {
   it.each([
     {
       name: 'default basePath',
+      localAddress: undefined,
       basePath: undefined,
       expected: 'http://localhost:6006/manifests/components.json',
     },
     {
       name: 'non-root basePath',
+      localAddress: undefined,
       basePath: '/__storybook/',
       expected: 'http://localhost:6006/__storybook/manifests/components.json',
     },
+    ...['http://127.0.0.2:6006', 'https://storybook.example.com:6006', 'https://[::1]:6006'].map(
+      (origin) => ({
+        name: origin,
+        localAddress: origin + '/__storybook/',
+        basePath: '/__storybook/',
+        expected: origin + '/__storybook/manifests/components.json',
+      })
+    ),
   ])(
     'should fetch local manifests from the base URL when refs are configured ($name)',
-    async ({ basePath, expected }) => {
+    async ({ basePath, localAddress, expected }) => {
+      vi.stubGlobal('FEATURES', { docgenServer: false });
       const handlers: Record<string, any> = {};
       mockApp.get = vi.fn((path: string, handler: any) => {
         handlers[path] = handler;
@@ -232,6 +243,7 @@ describe('experimental_devServer', () => {
       const optionsWithRefs = {
         ...mockOptions,
         port: 6006,
+        localAddress,
         basePath,
         endpoint: '/custom-mcp',
         presets: {
@@ -264,6 +276,10 @@ describe('experimental_devServer', () => {
       if (!firstCall) {
         throw new Error('Expected mcpServerHandler to be called');
       }
+      expect(firstCall[0]).toMatchObject({
+        origin: new URL(expected).origin,
+        basePath: basePath ?? '/',
+      });
       const { manifestProvider } = firstCall[0];
       if (!manifestProvider) {
         throw new Error('Expected refs to create a manifest provider');

@@ -143,7 +143,7 @@
     "e2e-tests-dev-1": {
       "dependsOn": ["dev"],
       "command": "yarn task e2e-tests-dev --junit -s task --debug --no-link --template={projectName}",
-      "options": { "env": { "PLAYWRIGHT_WORKERS": "4", "PLAYWRIGHT_SHARD": "1/2" } },
+      "options": { "env": { "PLAYWRIGHT_WORKERS": "4", "PLAYWRIGHT_SHARD": "1/3" } },
       "cache": true,
       "inputs": ["^production", "e2e-specs"],
       "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
@@ -152,7 +152,16 @@
     "e2e-tests-dev-2": {
       "dependsOn": ["dev"],
       "command": "yarn task e2e-tests-dev --junit -s task --debug --no-link --template={projectName}",
-      "options": { "env": { "PLAYWRIGHT_WORKERS": "4", "PLAYWRIGHT_SHARD": "2/2" } },
+      "options": { "env": { "PLAYWRIGHT_WORKERS": "4", "PLAYWRIGHT_SHARD": "2/3" } },
+      "cache": true,
+      "inputs": ["^production", "e2e-specs"],
+      "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
+      "configurations": { "production": {} }
+    },
+    "e2e-tests-dev-3": {
+      "dependsOn": ["dev"],
+      "command": "yarn task e2e-tests-dev --junit -s task --debug --no-link --template={projectName}",
+      "options": { "env": { "PLAYWRIGHT_WORKERS": "4", "PLAYWRIGHT_SHARD": "3/3" } },
       "cache": true,
       "inputs": ["^production", "e2e-specs"],
       "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],

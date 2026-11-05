@@ -45,10 +45,11 @@ const sandboxTasks = (key: TemplateKey, kind: string): string[] | undefined => {
         ...(docgenServerTemplates().includes(key) ? [`${key}:docgen-baselines`] : []),
       ];
     case 'dev':
-      // The dev E2E tests in two halves on different workers: in one task they ended most runs.
+      // The dev E2E tests in three parts on different workers: in one task they ended most runs,
+      // and in two the longest half still took up to 225 seconds on a 4 vCPU agent.
       return skipTasks.includes('e2e-tests-dev')
         ? [`${key}:smoke-test`]
-        : [`${key}:e2e-tests-dev-1`, `${key}:e2e-tests-dev-2`];
+        : [1, 2, 3].map((part) => `${key}:e2e-tests-dev-${part}`);
     case 'chromatic':
       return [`${key}:chromatic`];
     case 'vitest':

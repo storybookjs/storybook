@@ -57,7 +57,7 @@ export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
       return;
     }
 
-    // The NX targets `e2e-tests-dev-1` and `-2` (nx.json) each run one part, so CI can run them on
+    // The NX targets `e2e-tests-dev-1` to `-3` (nx.json) each run one part, so CI can run them on
     // different workers. Not `--shard` over both projects: chromium-mutating depends on chromium,
     // and Playwright runs a dependency's tests in every shard, so each shard ran the whole suite.
     // Each part runs its share of chromium; the last one then runs chromium-mutating on its own

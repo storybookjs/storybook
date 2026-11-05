@@ -27,7 +27,8 @@
     "serve": {},
     "e2e-tests-dev": {},
     "e2e-tests-dev-1": {},
-    "e2e-tests-dev-2": {}
+    "e2e-tests-dev-2": {},
+    "e2e-tests-dev-3": {}
   },
   "tags": ["ci:daily"]
 }

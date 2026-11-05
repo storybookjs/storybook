@@ -85,8 +85,10 @@ it as soon as the story docs load. With the flag on, agents and the components m
 
 ### Where the snippet is filled
 
-The `liveSnippet` query fills one story's template with given `args` and `initialArgs`, and returns
-`{ snippet, warning }`. It runs in every runtime: the server, the manager and the preview each
+The `liveSnippet` query fills one story's template with given `args`, and returns `{ snippet,
+warning }`. With `initialArgs`, as the manager and the preview pass them, it fills only the args that
+differ from them. Without, as an agent or tool usually calls it, it fills every arg in `args`, and
+every other arg keeps its text from the static snippet. It runs in every runtime: the server, the manager and the preview each
 register `core/story-docs`, and each fills with the `PrintHole` registered in that runtime. It has
 no load of its own, so a new `args` input never extracts the story docs again; its `.loaded()`
 loads them through the `storyDocs` query it reads.

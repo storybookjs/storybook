@@ -18,8 +18,15 @@ const argsSchema = v.record(v.string(), v.unknown());
 
 const liveSnippetInputSchema = v.object({
   storyId: v.string(),
-  args: argsSchema,
-  initialArgs: argsSchema,
+  args: v.pipe(argsSchema, v.description('The args to show in the snippet.')),
+  initialArgs: v.optional(
+    v.pipe(
+      argsSchema,
+      v.description(
+        'The args the story is written with, as the preview holds them. Leave it out to fill only the args in `args`: every other arg keeps its text from the static snippet.'
+      )
+    )
+  ),
 });
 
 const liveSnippetOutputSchema = v.object({
@@ -106,7 +113,7 @@ export const storyDocsServiceDef = defineService({
         selectLiveSnippetForStory(
           ctx.self.queries.storyDocs.get({ id: input.storyId.split('--')[0]! }),
           input.storyId,
-          { unmappedArgs: input.args, initialArgs: input.initialArgs },
+          { unmappedArgs: input.args, initialArgs: input.initialArgs ?? {} },
           getPrintHole()
         ),
     },

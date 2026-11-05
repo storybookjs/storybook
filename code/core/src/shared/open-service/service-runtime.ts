@@ -20,7 +20,7 @@ import {
   nextLoadScopeId,
   runLoadBody,
 } from './query-runtime.ts';
-import type { QueryRuntimeRefs, RuntimeQueryDefinition } from './query-runtime.ts';
+import type { QueryRuntimeRefs, RuntimeQueryDefinition, WriteGate } from './query-runtime.ts';
 import { applyStatePatch } from './service-sync.ts';
 import { validateSchema } from './service-validation.ts';
 import type { StaticLoader } from './static-fetch.ts';
@@ -300,19 +300,15 @@ export function createServiceRuntime<
         Object.entries(def.queries) as [string, RuntimeQueryDefinition<TState>][]
       );
 
-  // Gated commands for reactive subscription loads: a stale run's writes are dropped once a newer
-  // run has started (`isCurrent()` returns false), so superseded loads cannot clobber fresh state.
-  const buildGatedCommands = (isCurrent: () => boolean): CommandSelf<TState>['commands'] => {
+  // Gated commands for reactive subscription loads: every write goes through `gate`, which drops it
+  // once a newer run has started, so superseded loads cannot clobber fresh state.
+  const buildGatedCommands = (gate: WriteGate): CommandSelf<TState>['commands'] => {
     const gated: CommandSelf<TState>['commands'] = buildCommands(
       def.id,
       def.commands,
       (commandName) => ({
         self: createCommandSelf(
-          (mutate) => {
-            if (isCurrent()) {
-              writeState(commandName, mutate);
-            }
-          },
+          (mutate) => gate(() => writeState(commandName, mutate)),
           () => gated
         ),
         getService: registryApi.getService,

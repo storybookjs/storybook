@@ -76,6 +76,8 @@ describe('vue-component-meta plugin', () => {
   let transform: Awaited<ReturnType<typeof getTransformHandler>>;
   let rejectedExportName: string | undefined;
 
+  // The hook cold-starts the plugin through dynamic imports, which outruns the 10s default on a
+  // loaded CI runner (observed at 10,013ms on Windows), so give it a generous fixed timeout.
   beforeEach(async () => {
     vi.clearAllMocks();
     rejectedExportName = undefined;
@@ -97,8 +99,6 @@ describe('vue-component-meta plugin', () => {
     });
 
     transform = await getTransformHandler();
-    // The first call imports the plugin's dependencies, which took over 10 seconds on CircleCI's
-    // Windows executors.
   }, 30_000);
 
   describe('barrel file substring matching (issue #34521)', () => {

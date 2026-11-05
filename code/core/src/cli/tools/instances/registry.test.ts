@@ -86,6 +86,17 @@ describe('readRegistry', () => {
     await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([aliveRecord]);
   });
 
+  it('skips invalid URLs without dropping healthy records', async () => {
+    vol.fromNestedJSON({
+      [REGISTRY_DIR]: {
+        'alive.json': JSON.stringify(aliveRecord),
+        'bad-url.json': JSON.stringify({ ...aliveRecord, instanceId: 'bad-url', url: 'not a url' }),
+      },
+    });
+
+    await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([aliveRecord]);
+  });
+
   it('removes the registry file of a dead PID', async () => {
     const dead = { ...aliveRecord, instanceId: 'dead-uuid', pid: 2147483646 };
     vol.fromNestedJSON({ [REGISTRY_DIR]: { 'dead.json': JSON.stringify(dead) } });

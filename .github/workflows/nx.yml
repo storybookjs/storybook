@@ -489,9 +489,11 @@ jobs:
           path: ~/AppData/Local/ms-playwright
           key: playwright-windows-${{ hashFiles('yarn.lock') }}
           restore-keys: playwright-windows-
+      # Without --with-deps: on Windows it only adds Media Foundation (audio and video playback),
+      # which took 2 minutes to install.
       - name: Install Playwright
         if: startsWith(matrix.part, 'e2e-')
-        run: yarn playwright install chromium --with-deps
+        run: yarn playwright install chromium
       - name: Build and serve the sandbox, then run its E2E tests
         if: matrix.part == 'e2e-build'
         run: |

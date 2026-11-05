@@ -38,8 +38,11 @@ jobs:
               pattern: '(.*,)?focus(,.*)?'
               value: << pipeline.parameters.workflow >>
           steps:
+            # The orb fetches the PR branch with `--depth 10` by default, which cuts off the merge
+            # base of any PR with more than 10 commits.
             - git-shallow-clone/checkout_advanced:
                 clone_options: '--depth 500 --filter=blob:none --no-tags'
+                fetch_options: '--depth 500 --filter=blob:none'
                 tag_fetch_options: '--no-tags'
             - run:
                 name: Fetch base branch for focused CI

@@ -128,7 +128,7 @@
         "command": "yarn --no-immutable && yarn playwright-e2e"
       },
       "cache": true,
-      "inputs": ["default", "^production"],
+      "inputs": ["default", "all-production"],
       "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
       "configurations": { "production": {} }
     },
@@ -137,7 +137,7 @@
       "executor": "nx:run-commands",
       "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn jest" },
       "cache": true,
-      "inputs": ["default", "^production"],
+      "inputs": ["default", "all-production"],
       "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
     },
@@ -146,7 +146,7 @@
       "executor": "nx:run-commands",
       "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn vitest" },
       "cache": true,
-      "inputs": ["default", "^production"],
+      "inputs": ["default", "all-production"],
       "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
     },
@@ -155,7 +155,7 @@
       "executor": "nx:run-commands",
       "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn cypress" },
       "cache": true,
-      "inputs": ["default", "^production"],
+      "inputs": ["default", "all-production"],
       "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
     }
@@ -171,6 +171,18 @@
       "sharedGlobals",
       "{projectRoot}/**/*",
       "!{projectRoot}/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+    ],
+    "code-all": [
+      "sharedGlobals",
+      "{workspaceRoot}/code/**/*",
+      "{workspaceRoot}/scripts/**/*",
+      "{workspaceRoot}/agent-eval/**/*",
+      "{workspaceRoot}/.circleci/**/*",
+      "{workspaceRoot}/.oxlintrc.json",
+      "{workspaceRoot}/vitest.config.ts",
+      "{workspaceRoot}/package.json",
+      "{workspaceRoot}/yarn.lock",
+      "{workspaceRoot}/.yarn/patches/**/*"
     ],
     "all-production": [
       "sharedGlobals",

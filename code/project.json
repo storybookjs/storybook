@@ -15,7 +15,7 @@
       "executor": "nx:run-commands",
       "options": { "cwd": "{projectRoot}", "command": "yarn lint" },
       "cache": true,
-      "inputs": ["default"],
+      "inputs": ["code-all"],
       "configurations": { "production": {} }
     },
     "test": {
@@ -23,12 +23,7 @@
       "executor": "nx:run-commands",
       "options": { "command": "yarn test" },
       "cache": true,
-      "inputs": [
-        "default",
-        "{workspaceRoot}/vitest.config.ts",
-        "{workspaceRoot}/scripts/**/*",
-        "{workspaceRoot}/agent-eval/**/*"
-      ],
+      "inputs": ["code-all"],
       "configurations": { "production": {} }
     },
     "knip": {
@@ -36,7 +31,7 @@
       "executor": "nx:run-commands",
       "options": { "cwd": "{projectRoot}", "command": "yarn knip --no-exit-code" },
       "cache": true,
-      "inputs": ["default"],
+      "inputs": ["code-all"],
       "configurations": { "production": {} }
     }
   }

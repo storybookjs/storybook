@@ -17,7 +17,7 @@ import {
   type TemplateKey,
 } from '../../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { getFocusJobs } from '../focus.ts';
-import { toId } from '../utils/helpers.ts';
+import { ensureRequiredJobs, toId } from '../utils/helpers.ts';
 import { type JobOrNoOpJob, type Workflow, workflows } from '../utils/types.ts';
 import { getJobs } from '../workflow-jobs.ts';
 
@@ -84,8 +84,9 @@ const portable = (directory: string) => {
 };
 
 const fixedJobs: Record<string, Equivalent> = {
-  // `compile` is a dependency of almost every task; publishing fills the local registry.
-  'build--linux': { tasks: ['*:compile', 'scripts:publish'] },
+  // `compile` is a dependency of almost every task; publishing fills the local registry. The job
+  // also runs `yarn dedupe --check`.
+  'build--linux': { tasks: ['*:compile', 'scripts:publish', 'scripts:dedupe-check'] },
   // The internal Storybook's stories are their own Vitest project, `storybook-ui`.
   'tests--linux': { tasks: ['code:test'] },
   'tests-stories--linux': { tasks: ['code:test-stories'] },
@@ -175,12 +176,15 @@ export type Plan = {
   missing: string[];
 };
 
-/** The CircleCI jobs of the given workflows, as main.ts selects them. */
+/**
+ * The CircleCI jobs of the given workflows, as main.ts selects them, including the jobs they
+ * require.
+ */
 export function circleJobs(selected: readonly Workflow[], changedFiles: readonly string[]) {
   const jobs: JobOrNoOpJob[] = selected.flatMap((workflow) =>
     workflow === 'focus' ? getFocusJobs(changedFiles) : getJobs(workflow, 'unused')
   );
-  return [...new Set(jobs.map((job) => job.id))].sort();
+  return [...new Set(ensureRequiredJobs(jobs).map((job) => job.id))].sort();
 }
 
 export function planFor(selected: readonly Workflow[], changedFiles: readonly string[] = []): Plan {

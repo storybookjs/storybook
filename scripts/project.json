@@ -21,6 +21,20 @@
       "inputs": ["default", "{workspaceRoot}/.oxlintrc.json", "{workspaceRoot}/yarn.lock"],
       "configurations": { "production": {} }
     },
+    "dedupe-check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{workspaceRoot}",
+        "command": "yarn dedupe --check"
+      },
+      "inputs": [
+        "{workspaceRoot}/yarn.lock",
+        "{workspaceRoot}/.yarnrc.yml",
+        "{workspaceRoot}/package.json",
+        "{workspaceRoot}/**/package.json"
+      ],
+      "cache": true
+    },
     "run-registry": {},
     "publish": {},
     "bench-packages": {

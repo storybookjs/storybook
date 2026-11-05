@@ -137,8 +137,6 @@ jobs:
       status-url: ${{ steps.statuses.outputs.url }}
       status-description: ${{ steps.statuses.outputs.description }}
     env:
-      # The write token only outside pull requests, even if it is ever added as a repository secret.
-      NX_CLOUD_ACCESS_TOKEN: ${{ github.event_name != 'pull_request' && secrets.NX_CLOUD_WRITE_TOKEN || secrets.NX_CLOUD_ACCESS_TOKEN }}
       WORKFLOW: ${{ needs.plan.outputs.workflow }}
       CI_CHANGED_FILES: ${{ needs.plan.outputs.changed-files }}
       # So a worker can tell a lost or mangled file list from an empty diff (affected.ts).
@@ -161,6 +159,10 @@ jobs:
         # Only this step sees the secrets: `start-workers` hands the variables that
         # `workers.with-env-vars` lists to the workers.
         env:
+          # Only this step and `Run nx` get the NX Cloud token, so `yarn install` lifecycle scripts
+          # never see the write token on `next`. The write token only outside pull requests, even
+          # if it is ever added as a repository secret.
+          NX_CLOUD_ACCESS_TOKEN: ${{ github.event_name != 'pull_request' && secrets.NX_CLOUD_WRITE_TOKEN || secrets.NX_CLOUD_ACCESS_TOKEN }}
           # Forwarded to the NX Cloud workers by `workers.with-env-vars` in .nx/ci-config.yaml.
           # Workers check out a detached commit, so Chromatic gets the branch and commit from here.
           CHROMATIC_BRANCH: ${{ github.event.pull_request.head.ref || github.ref_name }}
@@ -239,7 +241,7 @@ jobs:
       # Right after the install, before tasks write caches into node_modules.
       # TEMPORARY: #37181 PR runs save too, so measurements restore node_modules; remove before merging.
       - name: Save node_modules
-        if: (github.event_name != 'pull_request' || github.event.pull_request.number == 37181) && steps.node-modules.outputs.cache-hit != 'true'
+        if: (github.ref == 'refs/heads/next' || github.event.pull_request.number == 37181) && steps.node-modules.outputs.cache-hit != 'true'
         uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |
@@ -258,6 +260,7 @@ jobs:
         # (a job timeout counts as cancelled and would leave the `nx` status pending).
         timeout-minutes: 80
         env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ github.event_name != 'pull_request' && secrets.NX_CLOUD_WRITE_TOKEN || secrets.NX_CLOUD_ACCESS_TOKEN }}
           # Wide enough that the task summary table never truncates task names.
           COLUMNS: 250
           # "Re-run with debug logging" also makes Nx and the NX Cloud client log verbosely.
@@ -342,9 +345,16 @@ jobs:
               });
             }
 
-            // A passing re-run clears the task failures an earlier run of this workflow left on the
-            // commit; failures from a run with another ci: label stay.
-            if (succeeded) {
+            // Once the tasks ran, every task failure an earlier run of this workflow left on the
+            // commit that did not fail again is cleared (`fail-after: 0` runs every task, so the
+            // list is complete). Failures from a run with another ci: label stay.
+            const failedAgain = (statusContext) =>
+              failures.some(({ task }) =>
+                task.endsWith('…')
+                  ? statusContext.startsWith(`nx run ${task.slice(0, -1)}`)
+                  : statusContext === `nx run ${task}`
+              );
+            if (succeeded || failures.length > 0) {
               const statuses = await github.paginate(github.rest.repos.listCommitStatusesForRef, {
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -355,7 +365,7 @@ jobs:
               for (const status of statuses) if (!latest.has(status.context)) latest.set(status.context, status);
               for (const status of latest.values()) {
                 if (!status.context.startsWith('nx run ') || status.state !== 'failure') continue;
-                if (!status.description?.endsWith(taskStatusSuffix)) continue;
+                if (!status.description?.endsWith(taskStatusSuffix) || failedAgain(status.context)) continue;
                 await github.rest.repos.createCommitStatus({
                   owner: context.repo.owner,
                   repo: context.repo.repo,

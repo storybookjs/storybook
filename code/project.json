@@ -47,6 +47,7 @@
       "inputs": [
         "code-all",
         "{workspaceRoot}/.github/workflows/nx.yml",
+        "{workspaceRoot}/.github/workflows/trigger-circle-ci-workflow.yml",
         "{workspaceRoot}/.nx/ci-config.yaml",
         "{workspaceRoot}/test-storybooks/**/package.json"
       ],

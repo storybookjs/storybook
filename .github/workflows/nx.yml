@@ -432,8 +432,6 @@ jobs:
       TEMPLATE: react-vite/default-ts
       NX_NO_CLOUD: true
       STORYBOOK_DISABLE_TELEMETRY: true
-      # windows-latest has 4 CPUs; CircleCI's Windows E2E jobs run 3 Playwright workers too.
-      PLAYWRIGHT_WORKERS: 3
     defaults:
       run:
         shell: bash

@@ -56,7 +56,7 @@ const fetchBody = (host: string, port: number) =>
     }).on('error', reject);
   });
 
-it('shares a port across IPv4 and IPv6 loopback with independent HTTP and server channels', async (context) => {
+it('shares a port on distinct addresses with independent HTTP and server channels', async (context) => {
   let ipv6: Server;
   try {
     ipv6 = await listen('::1');

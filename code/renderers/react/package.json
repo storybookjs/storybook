@@ -86,6 +86,7 @@
     "prop-types": "^15.7.2",
     "react-docgen": "^8.0.2",
     "react-docgen-typescript": "^2.2.2",
+    "react-dom": "^18.2.0",
     "react-element-to-jsx-string": "npm:@7rulnik/react-element-to-jsx-string@15.0.1",
     "require-from-string": "^2.0.2",
     "resolve": "^1.22.8",

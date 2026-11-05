@@ -49,6 +49,9 @@ overrides:
   '@types/node': ^22.19.1
   '@types/react': ^18.0.0
   '@typescript-eslint/types': 8.60.0
+  # agent-eval's Next.js playground runs on React 19; the repo-wide react override pins 18.
+  'agent-eval>react': ^19.2.0
+  'agent-eval>react-dom': ^19.2.0
   '@vercel/agent-eval-playground>react': ^19.2.0
   '@vercel/agent-eval-playground>react-dom': ^19.2.0
   'aria-query@5.3.0': ^5.3.0
@@ -61,11 +64,22 @@ overrides:
   'polka@1.0.0-next.28>@polka/url': 1.0.0-next.29
   'radix-ui@^1.4.3': 1.6.0
   react: ^18.2.0
+  # addon-docs lists react-dom in both dependencies (^18 || ^19) and devDependencies; develop
+  # against React 18 like the rest of the repo.
+  '@storybook/addon-docs>react-dom': ^18.2.0
   react-aria: 3.52.1
   react-joyride>type-fest: ~2.19
   react-stately: 3.50.0
   rxjs: ^7.8.2
   typescript: ^6.0.3
+  # One happy-dom for every vitest copy, as Yarn's hoisting gave it; otherwise packages that don't
+  # declare it get a vitest variant built against happy-dom 20, splitting vitest's type identity.
+  'vitest>happy-dom': ^17.6.3
+  # Optional peer of storybook that Yarn never installed; pnpm would install it into code/core,
+  # pulling in a second vitest.
+  vite-plus: '-'
+  # @angular/build's optional vitest@4 peer: Yarn left it uninstalled; our tests run on vitest 5.
+  '@angular/build>vitest': '-'
   valibot: ^1.4.0
 
 patchedDependencies:

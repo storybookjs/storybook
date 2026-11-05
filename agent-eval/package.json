@@ -54,8 +54,11 @@
     "picomatch": "^4.0.5",
     "playwright": "1.58.2",
     "postcss": "^8.5.16",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "tailwindcss": "^4.3.2",
     "typescript": "^6.0.3",
+    "vite": "^7.0.4",
     "vitest": "5.0.5",
     "yargs": "^17.7.3"
   }

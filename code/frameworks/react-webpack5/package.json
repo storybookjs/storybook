@@ -53,7 +53,8 @@
     "@storybook/react": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.19.1"
+    "@types/node": "^22.19.1",
+    "react-dom": "^18.2.0"
   },
   "peerDependencies": {
     "@storybook/react-docgen-typescript-plugin": "1.0.6--canary.9.0c3f3b7.0",

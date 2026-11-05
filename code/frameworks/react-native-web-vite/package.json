@@ -58,6 +58,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.19.1",
+    "react-dom": "^18.2.0",
     "typescript": "^6.0.3",
     "vite-tsconfig-paths": "^6.1.1"
   },

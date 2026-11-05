@@ -62,6 +62,7 @@
     "@types/resolve": "^1.20.6",
     "magic-string": "^1.1.0",
     "react-docgen": "^8.0.2",
+    "react-dom": "^18.2.0",
     "resolve": "^1.22.8",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^6.0.3",

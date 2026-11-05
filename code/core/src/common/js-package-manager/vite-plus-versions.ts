@@ -18,8 +18,7 @@ export async function getVitePlusVersions(): Promise<Record<string, string> | nu
   }
 
   try {
-    // @ts-ignore - vite-plus is an optional peer dependency, so whether this import type-checks
-    // depends on whether the installing tree happens to include it.
+    // @ts-expect-error - This is a dynamic import of a potentially non-existent package. Vite-plus is currently a peer dependency.
     const mod = await import('vite-plus/versions');
     const versions = mod.versions ?? mod;
 

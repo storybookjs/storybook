@@ -152,6 +152,7 @@
     "typescript": "^6.0.3",
     "typescript-native": "npm:typescript@^7.0.2",
     "uuid": "^9.0.1",
+    "vite": "^7.0.4",
     "vitest": "5.0.5",
     "wait-on": "^8.0.3",
     "watchpack": "^2.5.0",

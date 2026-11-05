@@ -6,11 +6,13 @@
  * pnpm-workspace.yaml. existing-resolutions.test.ts checks that this set stays in sync with it.
  */
 export const EXISTING_RESOLUTIONS = new Set([
+  '@angular/build>vitest',
   '@ai-sdk/anthropic',
   '@babel/runtime',
   '@babel/traverse',
   '@babel/types',
   '@playwright/test',
+  '@storybook/addon-docs>react-dom',
   '@testing-library/jest-dom',
   '@testing-library/user-event@^14.6.8',
   '@types/babel__traverse',
@@ -19,6 +21,8 @@ export const EXISTING_RESOLUTIONS = new Set([
   '@typescript-eslint/types',
   '@vercel/agent-eval-playground>react',
   '@vercel/agent-eval-playground>react-dom',
+  'agent-eval>react',
+  'agent-eval>react-dom',
   'aria-query@5.3.0',
   'caniuse-lite',
   'dom-accessibility-api@^0.5.14',
@@ -35,4 +39,6 @@ export const EXISTING_RESOLUTIONS = new Set([
   'rxjs',
   'typescript',
   'valibot',
+  'vite-plus',
+  'vitest>happy-dom',
 ]);

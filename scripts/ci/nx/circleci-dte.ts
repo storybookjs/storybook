@@ -303,9 +303,13 @@ const windowsJob = (part: WindowsPart) =>
           : []),
         ...(part.startsWith('e2e-')
           ? [
-              // The sandbox template's clone failed with exit code 128 on CircleCI's Windows image,
-              // which, unlike GitHub's, does not allow paths over 260 characters.
-              run('Allow long paths in git', 'git config --global core.longpaths true'),
+              // The checkout orb rewrites every https://github.com URL to ssh globally, and the
+              // job's deploy key cannot read storybookjs/sandboxes, so the template's clone failed
+              // with exit code 128.
+              run(
+                'Clone GitHub over https',
+                'git config --global --unset-all url.ssh://git@github.com.insteadOf || true'
+              ),
               run(
                 'Create the sandbox',
                 `yarn task sandbox --template ${WINDOWS_TEMPLATE} --no-link -s sandbox --debug`,

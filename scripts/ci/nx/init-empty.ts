@@ -1,11 +1,9 @@
-/**
- * Run `storybook init` in an empty directory against the local registry and smoke-test the result,
- * as CircleCI's init-empty jobs do (scripts/ci/init-empty.ts).
- *
- * Usage: init-empty.ts <type>, where <type> is an init-empty type such as `react-vite-ts`, or
- * `features` for `create-storybook --features docs test a11y` followed by the Vitest tests it adds.
- * The local registry must be running (`nx run scripts:run-registry`).
- */
+// Run `storybook init` in an empty directory against the local registry and smoke-test the result,
+// as CircleCI's init-empty jobs do (scripts/ci/init-empty.ts).
+//
+// Usage: init-empty.ts <type>, where <type> is an init-empty type such as `react-vite-ts`, or
+// `features` for `create-storybook --features docs test a11y` followed by the Vitest tests it adds.
+// The local registry must be running (`nx run scripts:run-registry`).
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -23,10 +21,8 @@ const initType = features ? 'react-vite-ts' : type;
 const cwd = join(mkdtempSync(join(tmpdir(), 'init-empty-')), `empty-${initType}`);
 mkdirSync(cwd);
 
-/**
- * The environment of a plain shell, as on CircleCI. This script runs under `yarn exec`, whose
- * variables (`npm_config_user_agent` above all) make `storybook init` pick Yarn instead of npm.
- */
+// The environment of a plain shell, as on CircleCI. This script runs under `yarn exec`, whose
+// variables (`npm_config_user_agent` above all) make `storybook init` pick Yarn instead of npm.
 const shellEnv = Object.fromEntries(
   Object.entries(process.env).filter(
     ([key]) => !/^(npm_|YARN_|BERRY_)/i.test(key) && !['INIT_CWD', 'PROJECT_CWD'].includes(key)

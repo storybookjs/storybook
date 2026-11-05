@@ -1,11 +1,9 @@
-/**
- * Verify a sandbox's docgen baselines, as CircleCI's create job does after the build (see
- * `getDocgenBaselineSteps` in scripts/ci/sandboxes.ts).
- *
- * On NX the `build` this depends on may have run on another worker, so its output was restored into
- * the repository (`sandbox/<dir>`), not into the sandbox the harness reads. The baselines hold paths
- * relative to the sandbox, so the cached copy goes where the sandbox was built.
- */
+// Verify a sandbox's docgen baselines, as CircleCI's create job does after the build (see
+// `getDocgenBaselineSteps` in scripts/ci/sandboxes.ts).
+//
+// On NX the `build` this depends on may have run on another worker, so its output was restored into
+// the repository (`sandbox/<dir>`), not into the sandbox the harness reads. The baselines hold paths
+// relative to the sandbox, so the cached copy goes where the sandbox was built.
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync } from 'node:fs';
 import { join } from 'node:path';

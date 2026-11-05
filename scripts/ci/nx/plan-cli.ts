@@ -1,10 +1,8 @@
-/**
- * Print, as GitHub Actions outputs, which parts of .github/workflows/nx.yml a CircleCI workflow
- * needs. Runs under plain Node before `yarn install`, like scripts/ci/main.ts.
- *
- * Usage: node --experimental-transform-types scripts/ci/nx/plan-cli.ts --workflow=<workflows>
- * Focused runs read the changed files from `CI_CHANGED_FILES`, one per line.
- */
+// Print, as GitHub Actions outputs, which parts of .github/workflows/nx.yml a CircleCI workflow
+// needs. Runs under plain Node before `yarn install`, like scripts/ci/main.ts.
+//
+// Usage: node --experimental-transform-types scripts/ci/nx/plan-cli.ts --workflow=<workflows>
+// Focused runs read the changed files from `CI_CHANGED_FILES`, one per line.
 import { parseArgs } from 'node:util';
 
 import { parseWorkflows, planFor, sideJobs } from './plan.ts';

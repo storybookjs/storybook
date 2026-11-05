@@ -146,6 +146,7 @@ const { values: opts } = parseArgs({
     'gh-trusted-author': { type: 'string', default: 'false' },
     branch: { type: 'string', default: '' },
     'nx-dte': { type: 'string', default: 'false' },
+    output: { type: 'string', default: join(dirname, '../../.circleci/config.generated.yml') },
     'nx-dte-agents': { type: 'string' },
     'nx-dte-peak-agents': { type: 'string' },
   },
@@ -177,6 +178,6 @@ if (nxDte && !(valid(nxDte.first, 1) && valid(nxDte.peak, 0))) {
 }
 
 await fs.writeFile(
-  join(dirname, '../../.circleci/config.generated.yml'),
+  opts.output,
   `${JSON.stringify(generateConfig(selected, opts['base-ref'], nightly, nxDte), null, 2)}\n`
 );

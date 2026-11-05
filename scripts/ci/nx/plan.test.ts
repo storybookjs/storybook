@@ -11,7 +11,7 @@ import { equivalentOf, groupTasks, planFor } from './plan.ts';
 const repoRoot = join(import.meta.dirname, '../../..');
 const read = (file: string) => readFileSync(join(repoRoot, file), 'utf8');
 
-/** Diffs that, between them, reach every job a focused run can add. */
+// Diffs that, between them, reach every job a focused run can add.
 const focusDiffs = [
   ['code/renderers/vue3/src/index.ts'],
   ['code/core/template/stories/basics.stories.ts'],

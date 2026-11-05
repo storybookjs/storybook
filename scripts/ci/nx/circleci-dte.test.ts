@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
 import { join } from 'pathe';
 import { describe, expect, it } from 'vitest';
@@ -10,6 +11,18 @@ import { NX_DTE_WAVES, agentsFor, getNxDteJobs } from './circleci-dte.ts';
 
 const repoRoot = join(import.meta.dirname, '../../..');
 const read = (file: string) => readFileSync(join(repoRoot, file), 'utf8');
+
+// Each run writes its own file: test files run in parallel, and main.test.ts generates too.
+const generateConfig = (...args: string[]) => {
+  const output = join(mkdtempSync(join(tmpdir(), 'circleci-config-')), 'config.yml');
+  const result = spawnSync(
+    process.execPath,
+    ['--experimental-transform-types', './scripts/ci/main.ts', ...args, `--output=${output}`],
+    { cwd: repoRoot, encoding: 'utf8' }
+  );
+  expect(result.status, result.stderr).toBe(0);
+  return JSON.parse(readFileSync(output, 'utf8'));
+};
 
 const ids = (workflow: (typeof workflows)[number]) =>
   getNxDteJobs([workflow], 'unused').map((job) => job.id);
@@ -49,18 +62,7 @@ describe('the CircleCI NX DTE pipeline', () => {
   });
 
   it('leaves the agents out of circleci-completion', () => {
-    const generate = spawnSync(
-      process.execPath,
-      [
-        '--experimental-transform-types',
-        './scripts/ci/main.ts',
-        '--workflow=normal',
-        '--nx-dte=true',
-      ],
-      { cwd: repoRoot, encoding: 'utf8' }
-    );
-    expect(generate.status).toBe(0);
-    const { workflows: generated } = JSON.parse(read('.circleci/config.generated.yml'));
+    const { workflows: generated } = generateConfig('--workflow=normal', '--nx-dte=true');
     const completion = Object.values(generated)
       .flatMap((workflow) => (workflow as { jobs: unknown[] }).jobs)
       .find((job) => typeof job === 'object' && job !== null && 'circleci-completion' in job) as {
@@ -109,19 +111,11 @@ describe('the CircleCI NX DTE pipeline', () => {
   });
 
   it('is generated only when the pipeline asks for it', () => {
-    const generate = (...args: string[]) =>
-      spawnSync(
-        process.execPath,
-        ['--experimental-transform-types', './scripts/ci/main.ts', '--workflow=normal', ...args],
-        { cwd: repoRoot, encoding: 'utf8' }
-      );
-    const workflowName = () =>
-      Object.keys(JSON.parse(read('.circleci/config.generated.yml')).workflows)[0];
+    const workflowName = (...args: string[]) =>
+      Object.keys(generateConfig('--workflow=normal', ...args).workflows)[0];
 
-    expect(generate('--nx-dte=true').status).toBe(0);
-    expect(workflowName()).toBe('normal-nx-dte-generated');
-    expect(generate('--nx-dte=false').status).toBe(0);
-    expect(workflowName()).toBe('normal-generated');
+    expect(workflowName('--nx-dte=true')).toBe('normal-nx-dte-generated');
+    expect(workflowName('--nx-dte=false')).toBe('normal-generated');
   });
 
   it('starts on the same workflows as the ci: labels', () => {

@@ -1,10 +1,8 @@
-/**
- * Run the NX tasks that cover a CircleCI workflow (see plan.ts) on NX Cloud. The commands run at
- * the same time, in the same NX Cloud pipeline.
- *
- * Usage: run.ts --workflow=<workflows> [--dry-run]
- * Focused runs read the changed files from `CI_CHANGED_FILES`, one per line.
- */
+// Run the NX tasks that cover a CircleCI workflow (see plan.ts) on NX Cloud. The commands run at
+// the same time, in the same NX Cloud pipeline.
+//
+// Usage: run.ts --workflow=<workflows> [--dry-run]
+// Focused runs read the changed files from `CI_CHANGED_FILES`, one per line.
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

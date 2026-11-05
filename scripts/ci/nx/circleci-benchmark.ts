@@ -1,26 +1,22 @@
-/**
- * Compares CircleCI workflows: the per-job pipeline against the NX DTE pipeline
- * (scripts/ci/nx/circleci-dte.ts), as one Markdown table.
- *
- * Per workflow it reports when `circleci-completion` ended (when the pull request's check turns
- * green), the wall time (created until stopped), the longest time a job waited in CircleCI's queue,
- * the billed container minutes and the credits they cost. For an NX DTE workflow it also reports
- * when `nx-main` ended (which decides the check), and splits that job into the setup before
- * `Run nx` and the task phase itself.
- *
- * Usage:
- *   CIRCLE_TOKEN=… node scripts/ci/nx/circleci-benchmark.ts <workflow>...
- *
- * A workflow is its id or its app.circleci.com link. CIRCLE_TOKEN is a personal CircleCI API token.
- */
+// Compares CircleCI workflows: the per-job pipeline against the NX DTE pipeline
+// (scripts/ci/nx/circleci-dte.ts), as one Markdown table.
+//
+// Per workflow it reports when `circleci-completion` ended (when the pull request's check turns
+// green), the wall time (created until stopped), the longest time a job waited in CircleCI's queue,
+// the billed container minutes and the credits they cost. For an NX DTE workflow it also reports
+// when `nx-main` ended (which decides the check), and splits that job into the setup before
+// `Run nx` and the task phase itself.
+//
+// Usage:
+//   CIRCLE_TOKEN=… node scripts/ci/nx/circleci-benchmark.ts <workflow>...
+//
+// A workflow is its id or its app.circleci.com link. CIRCLE_TOKEN is a personal CircleCI API token.
 import { parseArgs } from 'node:util';
 
 import { esMain } from '../../utils/esmain.ts';
 
-/**
- * CircleCI's credits per minute by resource class, from its price list. A credit costs $0.0006 on
- * the Performance plan; what an organization pays depends on its plan.
- */
+// CircleCI's credits per minute by resource class, from its price list. A credit costs $0.0006 on
+// the Performance plan; what an organization pays depends on its plan.
 export const CREDITS_PER_MINUTE: Record<string, Record<string, number>> = {
   docker: { small: 5, medium: 10, 'medium+': 15, large: 20, xlarge: 40, '2xlarge': 80 },
   windows: { medium: 40, large: 120, xlarge: 210, '2xlarge': 500 },
@@ -35,7 +31,7 @@ type JobDetails = {
   queued_at?: string;
   start_time?: string;
   stop_time?: string;
-  /** `executor` is `docker`, `windows`, …; the resource class carries only its size. */
+  // `executor` is `docker`, `windows`, …; the resource class carries only its size.
   picard?: { executor?: string; resource_class?: { class?: string } };
   steps: Step[];
   workflows?: { job_name?: string };
@@ -48,14 +44,14 @@ export type JobTiming = {
   queuedAt?: number;
   startedAt?: number;
   stoppedAt?: number;
-  /** Billed minutes: per container, from its first step's start to its last step's end. */
+  // Billed minutes: per container, from its first step's start to its last step's end.
   containerMinutes: number;
   steps: { name: string; start: number; end: number }[];
 };
 
 const time = (iso?: string) => (iso ? Date.parse(iso) : undefined);
 
-/** The timing of a job from CircleCI's v1.1 job details. */
+// The timing of a job from CircleCI's v1.1 job details.
 export function jobTiming(details: JobDetails): JobTiming {
   const spans = new Map<number, [number, number]>();
   const steps: JobTiming['steps'] = [];
@@ -104,14 +100,14 @@ export type WorkflowReport = {
   status: string;
   jobs: number;
   wallMinutes: number;
-  /** Until `circleci-completion` ended: when the pull request's check turns green. */
+  // Until `circleci-completion` ended: when the pull request's check turns green.
   greenMinutes?: number;
   maxQueueMinutes: number;
   containerMinutes: number;
   credits: number;
-  /** NX DTE workflows only: until `nx-main` ended, which decides whether the check turns green. */
+  // NX DTE workflows only: until `nx-main` ended, which decides whether the check turns green.
   mainMinutes?: number;
-  /** NX DTE workflows only: the main job from its start until `Run nx`, and `Run nx` itself. */
+  // NX DTE workflows only: the main job from its start until `Run nx`, and `Run nx` itself.
   setupMinutes?: number;
   taskMinutes?: number;
 };

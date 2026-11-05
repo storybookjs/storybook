@@ -1,14 +1,12 @@
-/**
- * What the NX Cloud pipeline (.github/workflows/nx.yml) runs for a CircleCI workflow.
- *
- * CircleCI's generated config (scripts/ci/main.ts) stays the source of truth for which jobs a
- * workflow has. This module maps every one of those jobs to the NX tasks that test the same thing,
- * so the NX pipeline cannot drift from CircleCI: a new CircleCI job without an NX equivalent fails
- * `plan.test.ts`.
- *
- * Like main.ts, this file runs under plain Node before `yarn install`, so it imports only Node
- * built-ins and the CircleCI generator.
- */
+// What the NX Cloud pipeline (.github/workflows/nx.yml) runs for a CircleCI workflow.
+//
+// CircleCI's generated config (scripts/ci/main.ts) stays the source of truth for which jobs a
+// workflow has. This module maps every one of those jobs to the NX tasks that test the same thing,
+// so the NX pipeline cannot drift from CircleCI: a new CircleCI job without an NX equivalent fails
+// `plan.test.ts`.
+//
+// Like main.ts, this file runs under plain Node before `yarn install`, so it imports only Node
+// built-ins and the CircleCI generator.
 import { readFileSync } from 'node:fs';
 
 import {
@@ -21,18 +19,18 @@ import { ensureRequiredJobs, toId } from '../utils/helpers.ts';
 import { type JobOrNoOpJob, type Workflow, workflows } from '../utils/types.ts';
 import { getJobs } from '../workflow-jobs.ts';
 
-/** Jobs NX runs outside NX Cloud's Linux workers, as their own GitHub Actions jobs in nx.yml. */
+// Jobs NX runs outside NX Cloud's Linux workers, as their own GitHub Actions jobs in nx.yml.
 export const sideJobs = ['windows', 'windows-init-empty', 'node-26-smoke'] as const;
 export type SideJob = (typeof sideJobs)[number];
 
-/** How NX covers one CircleCI job. */
+// How NX covers one CircleCI job.
 export type Equivalent =
-  /** NX tasks, as `project:target`. */
+  // NX tasks, as `project:target`.
   | { tasks: string[] }
-  /** The `check` of every project Nx finds affected by the diff, resolved once Nx is installed. */
+  // The `check` of every project Nx finds affected by the diff, resolved once Nx is installed.
   | { affectedCheck: true }
   | { sideJob: SideJob }
-  /** Nothing to run: the reason why. */
+  // Nothing to run: the reason why.
   | { none: string };
 
 const sandboxTasks = (key: TemplateKey, kind: string): string[] | undefined => {
@@ -60,7 +58,7 @@ const sandboxTasks = (key: TemplateKey, kind: string): string[] | undefined => {
   }
 };
 
-/** CircleCI job ids of every template's sandbox jobs, as `defineSandboxFlow` names them. */
+// CircleCI job ids of every template's sandbox jobs, as `defineSandboxFlow` names them.
 const sandboxJobs = new Map(
   (Object.keys(allTemplates) as TemplateKey[]).flatMap((key) =>
     ['create', 'dev', 'chromatic', 'vitest', 'e2e'].map(
@@ -69,7 +67,7 @@ const sandboxJobs = new Map(
   )
 );
 
-/** CircleCI runs the Playwright tests of the test Storybooks that have them (test-storybooks.ts). */
+// CircleCI runs the Playwright tests of the test Storybooks that have them (test-storybooks.ts).
 const portable = (directory: string) => {
   const project = `portable-stories-kitchen-sink/${directory}`;
   const read = (file: string) =>
@@ -146,13 +144,11 @@ const fixedJobs: Record<string, Equivalent> = {
   'nightly-failure-report': { none: 'not ported yet: the nightly run only sets the `nx` status' },
 };
 
-/**
- * Templates still in development are generated before they are created (`yarn task generate`),
- * which NX does not do yet. They only run in the nightly `daily` workflow.
- */
+// Templates still in development are generated before they are created (`yarn task generate`),
+// which NX does not do yet. They only run in the nightly `daily` workflow.
 export const isInDevelopment = (key: TemplateKey) => Boolean(allTemplates[key].inDevelopment);
 
-/** The NX equivalent of a CircleCI job, or `undefined` when there is none yet. */
+// The NX equivalent of a CircleCI job, or `undefined` when there is none yet.
 export function equivalentOf(jobId: string): Equivalent | undefined {
   if (fixedJobs[jobId]) {
     return fixedJobs[jobId];
@@ -188,20 +184,18 @@ export function equivalentOf(jobId: string): Equivalent | undefined {
 export type Group = { targets: string[]; projects: string[] };
 
 export type Plan = {
-  /** The CircleCI jobs this plan covers, by id. */
+  // The CircleCI jobs this plan covers, by id.
   jobs: string[];
-  /** NX tasks, as `project:target`; `*` stands for every project with the target. */
+  // NX tasks, as `project:target`; `*` stands for every project with the target.
   tasks: string[];
   affectedCheck: boolean;
   sideJobs: SideJob[];
-  /** CircleCI jobs without an NX equivalent. */
+  // CircleCI jobs without an NX equivalent.
   missing: string[];
 };
 
-/**
- * The CircleCI jobs of the given workflows, as main.ts selects them, including the jobs they
- * require.
- */
+// The CircleCI jobs of the given workflows, as main.ts selects them, including the jobs they
+// require.
 export function circleJobs(selected: readonly Workflow[], changedFiles: readonly string[]) {
   const jobs: JobOrNoOpJob[] = selected.flatMap((workflow) =>
     workflow === 'focus' ? getFocusJobs(changedFiles) : getJobs(workflow, 'unused')
@@ -238,17 +232,15 @@ export function planFor(selected: readonly Workflow[], changedFiles: readonly st
   };
 }
 
-/**
- * Split the wanted tasks into `nx run-many` commands that each run exactly what they are asked for.
- *
- * `nx run-many -t <targets> -p <projects>` runs every target on every project that has it, so one
- * command can run more than the plan asks for, for example the dev E2E tests of a sandbox that a
- * focused run only sends to Chromatic. Projects that one shared command would over-run get a
- * command of their own per set of targets.
- *
- * @param wanted - The targets to run, by project. Each must be one of the project's targets.
- * @param targetsOf - Every target a project has.
- */
+// Split the wanted tasks into `nx run-many` commands that each run exactly what they are asked for.
+//
+// `nx run-many -t <targets> -p <projects>` runs every target on every project that has it, so one
+// command can run more than the plan asks for, for example the dev E2E tests of a sandbox that a
+// focused run only sends to Chromatic. Projects that one shared command would over-run get a
+// command of their own per set of targets.
+//
+// @param wanted - The targets to run, by project. Each must be one of the project's targets.
+// @param targetsOf - Every target a project has.
 export function groupTasks(
   wanted: ReadonlyMap<string, ReadonlySet<string>>,
   targetsOf: (project: string) => ReadonlySet<string>
@@ -282,7 +274,7 @@ export function groupTasks(
   return groups;
 }
 
-/** Parse `--workflow=a,b` the way main.ts does. */
+// Parse `--workflow=a,b` the way main.ts does.
 export function parseWorkflows(value: string): Workflow[] {
   const requested = value.split(',').filter(Boolean);
   const unknown = requested.filter((w) => !(workflows as readonly string[]).includes(w));

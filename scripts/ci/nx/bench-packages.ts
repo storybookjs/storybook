@@ -1,10 +1,8 @@
-/**
- * Benchmark the published package sizes, as CircleCI's `Benchmark packages` job does
- * (scripts/ci/common-jobs.ts). The local registry must be running.
- *
- * Comparing against the base branch and uploading the results both need `GCP_CREDENTIALS`. Without
- * it, the packages are still installed and measured, so a broken package still fails the task.
- */
+// Benchmark the published package sizes, as CircleCI's `Benchmark packages` job does
+// (scripts/ci/common-jobs.ts). The local registry must be running.
+//
+// Comparing against the base branch and uploading the results both need `GCP_CREDENTIALS`. Without
+// it, the packages are still installed and measured, so a broken package still fails the task.
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';

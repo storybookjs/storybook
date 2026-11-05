@@ -1,12 +1,10 @@
-/**
- * Lint, format-check or unit-test only what a focused run's diff touches, with the steps CircleCI's
- * focused jobs run (`affectedLintAndFormatSteps` and `AFFECTED_UNIT_TESTS_COMMAND` in
- * scripts/ci/common-jobs.ts).
- *
- * Usage: affected.ts lint|test. Reads the changed files, one per line, from `CI_CHANGED_FILES`,
- * and their count from `CI_CHANGED_FILES_COUNT`, which nx.yml sets on the main job and forwards to
- * the NX Cloud workers.
- */
+// Lint, format-check or unit-test only what a focused run's diff touches, with the steps CircleCI's
+// focused jobs run (`affectedLintAndFormatSteps` and `AFFECTED_UNIT_TESTS_COMMAND` in
+// scripts/ci/common-jobs.ts).
+//
+// Usage: affected.ts lint|test. Reads the changed files, one per line, from `CI_CHANGED_FILES`,
+// and their count from `CI_CHANGED_FILES_COUNT`, which nx.yml sets on the main job and forwards to
+// the NX Cloud workers.
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 

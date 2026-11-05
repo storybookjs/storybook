@@ -1,35 +1,33 @@
-/**
- * Reports what an NX Cloud CI pipeline execution (CIPE) did, or follows one live, without a browser.
- *
- * It reads the NX Cloud Public API through `nx-cloud api` with your own `npx nx login`, so it needs
- * no token in code or chat. A one-off report covers the pipeline status, why it was canceled, the
- * failed tasks with the end of their logs, and worker steps that failed or timed out (such as the
- * node_modules cache setup) with the reason NX Cloud recorded.
- *
- * `--watch` prints one line per change and exits with the full report once the pipeline is done, so
- * an agent can run it as a background monitor and is woken by each line.
- *
- * Usage:
- *   node scripts/ci/nx-cloud-status.ts [target] [--watch] [--sha <commit>] [--interval <seconds>]
- *
- * `target` is a pull request number (`37181`, `#37181` or its GitHub link), a branch, a CIPE id, a
- * cloud.nx.app/cipes link, or the NX Cloud overview link that `nx.yml` posts on a pull request. NX
- * Cloud lists a pull request's pipelines under its number and under its branch, so both find them.
- * Without a target it follows the current branch at the local HEAD commit.
- *
- * To follow one GitHub Actions run, such as a `workflow_dispatch` run next to the pull request's own
- * pipeline on the same branch, pass its run id (`41939428103`), its run group (`41939428103-1`, that
- * is `<run id>-<attempt>`), or its GitHub link. A bare run id takes the latest attempt. NX Cloud
- * records no nx command for a GitHub re-run (attempt 2 or later); for those, GitHub's conclusion
- * (through `gh`) decides the exit code.
- *
- * `--sha` picks the pipeline of that commit. After a push, pass `--sha HEAD`: without it the watch
- * follows the newest pipeline, which until NX Cloud registers the push is the previous one.
- *
- * Exit code: 0 when the pipeline succeeded, 1 when it failed, was canceled or timed out, 2 on errors
- * (and when `--watch` saw no pipeline start for 15 minutes), 3 for a one-off report on a pipeline
- * that is still running, 4 for a GitHub re-run whose result `gh` could not read.
- */
+// Reports what an NX Cloud CI pipeline execution (CIPE) did, or follows one live, without a browser.
+//
+// It reads the NX Cloud Public API through `nx-cloud api` with your own `npx nx login`, so it needs
+// no token in code or chat. A one-off report covers the pipeline status, why it was canceled, the
+// failed tasks with the end of their logs, and worker steps that failed or timed out (such as the
+// node_modules cache setup) with the reason NX Cloud recorded.
+//
+// `--watch` prints one line per change and exits with the full report once the pipeline is done, so
+// an agent can run it as a background monitor and is woken by each line.
+//
+// Usage:
+//   node scripts/ci/nx-cloud-status.ts [target] [--watch] [--sha <commit>] [--interval <seconds>]
+//
+// `target` is a pull request number (`37181`, `#37181` or its GitHub link), a branch, a CIPE id, a
+// cloud.nx.app/cipes link, or the NX Cloud overview link that `nx.yml` posts on a pull request. NX
+// Cloud lists a pull request's pipelines under its number and under its branch, so both find them.
+// Without a target it follows the current branch at the local HEAD commit.
+//
+// To follow one GitHub Actions run, such as a `workflow_dispatch` run next to the pull request's own
+// pipeline on the same branch, pass its run id (`41939428103`), its run group (`41939428103-1`, that
+// is `<run id>-<attempt>`), or its GitHub link. A bare run id takes the latest attempt. NX Cloud
+// records no nx command for a GitHub re-run (attempt 2 or later); for those, GitHub's conclusion
+// (through `gh`) decides the exit code.
+//
+// `--sha` picks the pipeline of that commit. After a push, pass `--sha HEAD`: without it the watch
+// follows the newest pipeline, which until NX Cloud registers the push is the previous one.
+//
+// Exit code: 0 when the pipeline succeeded, 1 when it failed, was canceled or timed out, 2 on errors
+// (and when `--watch` saw no pipeline start for 15 minutes), 3 for a one-off report on a pipeline
+// that is still running, 4 for a GitHub re-run whose result `gh` could not read.
 import { execFile, execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -40,26 +38,24 @@ import { esMain } from '../utils/esmain.ts';
 
 const execFileAsync = promisify(execFile);
 
-/** Same version as `.github/workflows/nx.yml`; its `api` command is the NX Cloud Public API client. */
+// Same version as `.github/workflows/nx.yml`; its `api` command is the NX Cloud Public API client.
 const NX_CLOUD_CLI = 'nx-cloud@19.1.5';
 const ROOT = join(import.meta.dirname, '../..');
 const NX_CLOUD_ID: string = JSON.parse(readFileSync(join(ROOT, 'nx.json'), 'utf8')).nxCloudId;
 const TERMINAL = new Set(['SUCCEEDED', 'FAILED', 'CANCELED', 'TIMED_OUT']);
-/** At most this many failed tasks and failed worker steps get their log tail in a report. */
+// At most this many failed tasks and failed worker steps get their log tail in a report.
 const MAX_LOGS = 5;
 const LOG_TAIL_LINES = 20;
 const FAILURE_LINES = 8;
-/** Workers whose details are read per failed worker step, for the reason they stopped. */
+// Workers whose details are read per failed worker step, for the reason they stopped.
 const INSTANCE_SAMPLES = 3;
-/** How long `--watch` waits after a pipeline ends for NX Cloud to finish its run groups' details. */
+// How long `--watch` waits after a pipeline ends for NX Cloud to finish its run groups' details.
 const FINALIZE_TIMEOUT_MS = 10 * 60 * 1000;
-/** How long `--watch` waits for a pipeline to appear before it gives up. */
+// How long `--watch` waits for a pipeline to appear before it gives up.
 const START_TIMEOUT_MS = 15 * 60 * 1000;
-/**
- * How long `--watch` on a branch waits for a new pipeline when the newest one has already finished.
- * A push or `workflow_dispatch` reaches NX Cloud only once its job starts, so right after one the
- * newest pipeline is still the previous one, possibly on the same commit.
- */
+// How long `--watch` on a branch waits for a new pipeline when the newest one has already finished.
+// A push or `workflow_dispatch` reaches NX Cloud only once its job starts, so right after one the
+// newest pipeline is still the previous one, possibly on the same commit.
 const FINISHED_GRACE_MS = 3 * 60 * 1000;
 const EXIT = { succeeded: 0, failed: 1, error: 2, running: 3, unknown: 4 } as const;
 const GITHUB_REPO = 'storybookjs/storybook';
@@ -147,7 +143,7 @@ interface List<T> {
 }
 
 class ApiError extends Error {
-  /** Worth trying again later: rate limits, server errors, network errors, a pipeline not found yet. */
+  // Worth trying again later: rate limits, server errors, network errors, a pipeline not found yet.
   retryable: boolean;
   status?: number;
 
@@ -158,11 +154,9 @@ class ApiError extends Error {
   }
 }
 
-// --- NX Cloud API --------------------------------------------------------------------------------
-
 let cliPath: string | undefined;
 
-/** Resolves the pinned `nx-cloud` CLI once: starting it through `npx` on every call costs seconds. */
+// Resolves the pinned `nx-cloud` CLI once: starting it through `npx` on every call costs seconds.
 function nxCloudCli() {
   cliPath ??= realpathSync(
     execFileSync('npx', ['-y', '-p', NX_CLOUD_CLI, '-c', 'command -v nx-cloud'], {
@@ -173,16 +167,14 @@ function nxCloudCli() {
   return cliPath;
 }
 
-/**
- * A workspace token in the environment wins over the user's login in `nx-cloud api`. A token for
- * another workspace then fails with 401, so a 401 retries once with the login alone.
- */
+// A workspace token in the environment wins over the user's login in `nx-cloud api`. A token for
+// another workspace then fails with 401, so a 401 retries once with the login alone.
 let useEnvToken = Boolean(process.env.NX_CLOUD_ACCESS_TOKEN || process.env.NX_CLOUD_AUTH_TOKEN);
 
 interface ApiOptions {
   query?: Record<string, string | string[]>;
   pathParams?: Record<string, string>;
-  /** Save the response (an asset download) to this file; resolves to the file `nx-cloud` wrote. */
+  // Save the response (an asset download) to this file; resolves to the file `nx-cloud` wrote.
   output?: string;
 }
 
@@ -243,7 +235,7 @@ async function api<T>(path: string, options: ApiOptions = {}, attempt = 1): Prom
   }
 }
 
-/** A line of `nx-cloud api` stderr, or of an NDJSON worker log. */
+// A line of `nx-cloud api` stderr, or of an NDJSON worker log.
 interface JsonLine {
   error?: { message: string; status?: number; body?: { message?: string } | string };
   output?: { file?: string };
@@ -260,7 +252,7 @@ function jsonLines(text: string): JsonLine[] {
   });
 }
 
-/** A terminal entity returns its details; a running one returns 409, so undefined means "still running". */
+// A terminal entity returns its details; a running one returns 409, so undefined means "still running".
 async function getIfTerminal<T>(path: string, pathParams: Record<string, string>) {
   try {
     return await api<T>(path, { pathParams });
@@ -276,7 +268,7 @@ async function listCipes(branch: string, limit = 10): Promise<Cipe[]> {
 
 const cipeBranches = new Map<string, string>();
 
-/** A terminal CIPE is served by id; a running one only appears in the list of its branch. */
+// A terminal CIPE is served by id; a running one only appears in the list of its branch.
 async function findCipe(id: string): Promise<Cipe> {
   let branch = cipeBranches.get(id);
   if (!branch) {
@@ -296,10 +288,8 @@ async function findCipe(id: string): Promise<Cipe> {
 
 interface RunGroupState {
   group: RunGroup;
-  /**
-   * A pipeline and its run groups can be listed as done while the workers' workflow still runs.
-   * Until that finishes NX Cloud serves no details (and often no runs) for the run group.
-   */
+  // A pipeline and its run groups can be listed as done while the workers' workflow still runs.
+  // Until that finishes NX Cloud serves no details (and often no runs) for the run group.
   final: boolean;
 }
 
@@ -320,14 +310,10 @@ async function runsOf(group: RunGroup): Promise<Run[]> {
   return Promise.all(list.items.map((r) => api<Run>(r.links.self)));
 }
 
-// --- Logs ----------------------------------------------------------------------------------------
-
 let logDir: string | undefined;
 
-/**
- * Lines that name a failure in the test runners and compilers this repo uses (Vitest and Jest `FAIL`,
- * `×`/`✖` marks, TypeScript errors, npm/yarn errors). Expected errors that tests log are not matched.
- */
+// Lines that name a failure in the test runners and compilers this repo uses (Vitest and Jest `FAIL`,
+// `×`/`✖` marks, TypeScript errors, npm/yarn errors). Expected errors that tests log are not matched.
 const FAILURE_LINE = /^\s*(FAIL\b|×|✖)|\berror TS\d+|\bERR!/;
 
 export function logLines(text: string) {
@@ -337,7 +323,7 @@ export function logLines(text: string) {
     .filter(Boolean);
 }
 
-/** The lines that name the failure, then the last lines of the log. */
+// The lines that name the failure, then the last lines of the log.
 export function summarizeLog(lines: string[]) {
   const tail = lines.slice(-LOG_TAIL_LINES);
   const failures = lines
@@ -347,10 +333,8 @@ export function summarizeLog(lines: string[]) {
   return [...failures, ...(failures.length ? ['…'] : []), ...tail];
 }
 
-/**
- * Downloads a logs asset to a readable text file (task logs come as a tarball, worker step logs as
- * NDJSON) and returns its path with the lines that name the failure and the last lines.
- */
+// Downloads a logs asset to a readable text file (task logs come as a tarball, worker step logs as
+// NDJSON) and returns its path with the lines that name the failure and the last lines.
 async function readLog(asset: Asset | undefined, name: string): Promise<string[]> {
   if (!asset) return [];
   logDir ??= mkdtempSync(join(tmpdir(), 'nx-cloud-status-'));
@@ -379,8 +363,6 @@ async function readLog(asset: Asset | undefined, name: string): Promise<string[]
     return [`(could not read the log: ${(e as Error).message})`];
   }
 }
-
-// --- Formatting ----------------------------------------------------------------------------------
 
 function stripAnsi(text: string) {
   return text.replace(/\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g, '');
@@ -412,7 +394,7 @@ function cipeUrl(cipe: Cipe) {
   return `https://cloud.nx.app/cipes/${cipe.id}`;
 }
 
-/** NX Cloud names a GitHub Actions run group `<run id>-<attempt>`. */
+// NX Cloud names a GitHub Actions run group `<run id>-<attempt>`.
 const RUN_GROUP = /^(\d{8,})-([1-9]\d*)$/;
 
 function githubRun(group: RunGroup) {
@@ -420,18 +402,16 @@ function githubRun(group: RunGroup) {
   return match ? { runId: match[1], attempt: Number(match[2]) } : undefined;
 }
 
-/**
- * NX Cloud records no nx command for a GitHub re-run (attempt 2 or later): it answers the Nx
- * client's request for the distributed execution summary with 404. The run group then ends by
- * heartbeat with no runs, and the pipeline's status says nothing about the tasks.
- */
+// NX Cloud records no nx command for a GitHub re-run (attempt 2 or later): it answers the Nx
+// client's request for the distributed execution summary with 404. The run group then ends by
+// heartbeat with no runs, and the pipeline's status says nothing about the tasks.
 function unrecordedRerun({ group, final }: RunGroupState) {
   return final && group.runs?.total === 0 && (githubRun(group)?.attempt ?? 1) >= 2;
 }
 
 const conclusions = new Map<string, string | undefined>();
 
-/** GitHub's conclusion of a run attempt (`success`, `failure`, …), or undefined without `gh`. */
+// GitHub's conclusion of a run attempt (`success`, `failure`, …), or undefined without `gh`.
 function githubConclusion(runId: string, attempt: number) {
   const key = `${runId}-${attempt}`;
   if (!conclusions.has(key)) {
@@ -487,8 +467,6 @@ function runLine(run: Run) {
 function indent(lines: string[], prefix: string) {
   return lines.map((l) => `${prefix}${l}`);
 }
-
-// --- Report --------------------------------------------------------------------------------------
 
 const FAILED_TASK = ['FAILED', 'TIMED_OUT'];
 
@@ -606,10 +584,8 @@ async function report(cipe: Cipe, groups: RunGroupState[]): Promise<string[]> {
   return out;
 }
 
-/**
- * The exit code for a finished pipeline. For a GitHub re-run NX Cloud's status is not the result
- * (see unrecordedRerun), so GitHub's conclusion decides; without `gh` the result is unknown.
- */
+// The exit code for a finished pipeline. For a GitHub re-run NX Cloud's status is not the result
+// (see unrecordedRerun), so GitHub's conclusion decides; without `gh` the result is unknown.
 function outcome(cipe: Cipe, groups: RunGroupState[]) {
   for (const state of groups.filter(unrecordedRerun)) {
     const gh = githubRun(state.group)!;
@@ -620,13 +596,11 @@ function outcome(cipe: Cipe, groups: RunGroupState[]) {
   return cipe.status === 'SUCCEEDED' ? EXIT.succeeded : EXIT.failed;
 }
 
-// --- Watch ---------------------------------------------------------------------------------------
-
 function print(lines: string | string[]) {
   for (const line of [lines].flat()) console.log(line);
 }
 
-/** Retries `fn` a few times on errors that can pass; any other error ends the watch. */
+// Retries `fn` a few times on errors that can pass; any other error ends the watch.
 async function retrying<T>(what: string, fn: () => Promise<T>, interval: number): Promise<T> {
   for (let attempt = 1; ; attempt++) {
     try {
@@ -752,12 +726,10 @@ function sleep(seconds: number) {
   return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 }
 
-// --- Main ----------------------------------------------------------------------------------------
-
 type Target =
   | { kind: 'branch'; branch: string }
   | { kind: 'cipe'; cipeId: string }
-  /** A GitHub Actions run: NX Cloud's run group `<runId>-<attempt>`. A job link names its attempt. */
+  // A GitHub Actions run: NX Cloud's run group `<runId>-<attempt>`. A job link names its attempt.
   | { kind: 'run'; runId: string; attempt?: number; jobId?: string };
 
 function describeTarget(target: Target) {
@@ -769,15 +741,13 @@ function describeTarget(target: Target) {
 
 interface RunLookup {
   cipeId?: string;
-  /** Set when GitHub says the run has finished but NX Cloud has no pipeline for it. */
+  // Set when GitHub says the run has finished but NX Cloud has no pipeline for it.
   notInNxCloud?: string;
 }
 
-/**
- * Finds the pipeline of a GitHub Actions run through its run group. `gh` names the run's branch (to
- * narrow the list), its latest attempt and whether it finished; without `gh`, the newest 100 run
- * groups of the workspace are searched, and a bare run id takes the latest attempt NX Cloud knows.
- */
+// Finds the pipeline of a GitHub Actions run through its run group. `gh` names the run's branch (to
+// narrow the list), its latest attempt and whether it finished; without `gh`, the newest 100 run
+// groups of the workspace are searched, and a bare run id takes the latest attempt NX Cloud knows.
 async function lookUpRun(target: Extract<Target, { kind: 'run' }>): Promise<RunLookup> {
   let { attempt } = target;
   let branch: string | undefined;
@@ -832,10 +802,8 @@ async function lookUpRun(target: Extract<Target, { kind: 'run' }>): Promise<RunL
 
 let ghWarned = false;
 
-/**
- * Polls the pipelines a target names, newest first. For a GitHub run the list stays empty until NX
- * Cloud registers it; once found, its pipeline id is kept.
- */
+// Polls the pipelines a target names, newest first. For a GitHub run the list stays empty until NX
+// Cloud registers it; once found, its pipeline id is kept.
 function pipelinesOf(target: Target): () => Promise<{ cipes: Cipe[]; notInNxCloud?: string }> {
   let cipeId = target.kind === 'cipe' ? target.cipeId : undefined;
   return async () => {
@@ -849,7 +817,7 @@ function pipelinesOf(target: Target): () => Promise<{ cipes: Cipe[]; notInNxClou
   };
 }
 
-/** Pull request numbers stay well under this; GitHub Actions run ids are far above it. */
+// Pull request numbers stay well under this; GitHub Actions run ids are far above it.
 const MAX_PR_NUMBER = 9_999_999;
 
 export function parseTarget(target: string): Target {

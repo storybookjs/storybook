@@ -1,22 +1,20 @@
-/**
- * The CircleCI jobs of the NX DTE pipeline: Nx distributes the tasks that cover a CircleCI workflow
- * (plan.ts) over CircleCI machines, with NX Cloud's manual distributed task execution. NX Cloud
- * schedules the tasks and holds the remote cache; CircleCI provides the machines.
- *
- * - `nx-main` starts the NX Cloud run (`start-ci-run --distribute-on=manual`), then runs the same
- *   `nx run-many` commands as .github/workflows/nx.yml (run.ts). It runs no task itself.
- * - `nx-agent` and, a little later, `nx-agent-peak` ({@link NX_DTE_WAVES}) run as parallel
- *   containers, each `nx start-agent`, which runs the tasks NX Cloud assigns.
- *   `start-ci-run --stop-workers-after` names every target of the run, so NX Cloud knows when no
- *   more tasks can come and stops each agent once it has nothing left for it, as the Nx docs
- *   recommend; no `complete-ci-run` is needed.
- * - The jobs NX Cloud's Linux workers cannot run (plan.ts `sideJobs`) are plain CircleCI jobs: the
- *   Node 26 smoke job as CircleCI defines it, and the Windows parts as .github/workflows/nx.yml runs
- *   them, which builds its sandbox on Windows instead of unpacking the Linux one.
- *
- * Opt in with the `nxDte` pipeline parameter (.circleci/config.yml); main.ts then generates these
- * jobs instead of the per-job ones. Like main.ts, this runs under plain Node before `yarn install`.
- */
+// The CircleCI jobs of the NX DTE pipeline: Nx distributes the tasks that cover a CircleCI workflow
+// (plan.ts) over CircleCI machines, with NX Cloud's manual distributed task execution. NX Cloud
+// schedules the tasks and holds the remote cache; CircleCI provides the machines.
+//
+// - `nx-main` starts the NX Cloud run (`start-ci-run --distribute-on=manual`), then runs the same
+//   `nx run-many` commands as .github/workflows/nx.yml (run.ts). It runs no task itself.
+// - `nx-agent` and, a little later, `nx-agent-peak` ({@link NX_DTE_WAVES}) run as parallel
+//   containers, each `nx start-agent`, which runs the tasks NX Cloud assigns.
+//   `start-ci-run --stop-workers-after` names every target of the run, so NX Cloud knows when no
+//   more tasks can come and stops each agent once it has nothing left for it, as the Nx docs
+//   recommend; no `complete-ci-run` is needed.
+// - The jobs NX Cloud's Linux workers cannot run (plan.ts `sideJobs`) are plain CircleCI jobs: the
+//   Node 26 smoke job as CircleCI defines it, and the Windows parts as .github/workflows/nx.yml runs
+//   them, which builds its sandbox on Windows instead of unpacking the Linux one.
+//
+// Opt in with the `nxDte` pipeline parameter (.circleci/config.yml); main.ts then generates these
+// jobs instead of the per-job ones. Like main.ts, this runs under plain Node before `yarn install`.
 import { daily } from '../../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { installWithCache, node26Smoke } from '../common-jobs.ts';
 import { getChangedFiles } from '../focus.ts';
@@ -25,39 +23,35 @@ import { isTrustedAuthor } from '../utils/runtime.ts';
 import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
 import { type Plan, planFor } from './plan.ts';
 
-/**
- * The agents come in two waves, each one CircleCI job of parallel `large` containers (4 vCPUs; a
- * task costs more on `xlarge`, which bills twice the credits per minute and ran the dev-server E2E
- * tests only a quarter faster).
- *
- * - `first` starts with the run. Until the sandboxes exist, only the tasks that need none can
- *   run: compile, lint, the unit and internal E2E tests, and creating the sandboxes.
- * - `peak` starts {@link NX_DTE_PEAK_DELAY_SECONDS} later, behind a `small` job that only waits.
- *   Once compile, publish and the sandboxes are done (about 100 seconds into the run), some 50
- *   sandbox tasks become ready at once (E2E tests, Chromatic, Vitest). With one wave sized for
- *   that peak, most agents idled, billed, for the first 100 seconds; with one sized for the start,
- *   sandbox tasks waited up to two minutes for an agent. It only covers what the first wave cannot
- *   ({@link PEAK_TASKS_PER_SANDBOX} per sandbox): a focused run with one sandbox needs none, and
- *   24 agents that only started and stopped cost it a third more credits.
- */
+// The agents come in two waves, each one CircleCI job of parallel `large` containers (4 vCPUs; a
+// task costs more on `xlarge`, which bills twice the credits per minute and ran the dev-server E2E
+// tests only a quarter faster).
+//
+// - `first` starts with the run. Until the sandboxes exist, only the tasks that need none can
+//   run: compile, lint, the unit and internal E2E tests, and creating the sandboxes.
+// - `peak` starts {@link NX_DTE_PEAK_DELAY_SECONDS} later, behind a `small` job that only waits.
+//   Once compile, publish and the sandboxes are done (about 100 seconds into the run), some 50
+//   sandbox tasks become ready at once (E2E tests, Chromatic, Vitest). With one wave sized for
+//   that peak, most agents idled, billed, for the first 100 seconds; with one sized for the start,
+//   sandbox tasks waited up to two minutes for an agent. It only covers what the first wave cannot
+//   ({@link PEAK_TASKS_PER_SANDBOX} per sandbox): a focused run with one sandbox needs none, and
+//   24 agents that only started and stopped cost it a third more credits.
 export const NX_DTE_WAVES = {
   first: { job: 'nx-agent', agents: 20 },
   peak: { job: 'nx-agent-peak', agents: 24 },
 } as const;
 export type NxDteWave = keyof typeof NX_DTE_WAVES;
 export const NX_DTE_PEAK_DELAY_SECONDS = 75;
-/** The tasks of one sandbox that run at the same time once it is built. */
+// The tasks of one sandbox that run at the same time once it is built.
 const PEAK_TASKS_PER_SANDBOX = 3;
 const PEAK_DELAY_JOB = 'nx-agent-peak-delay';
 
-/** How many agents each wave runs at most, when not its default. */
+// How many agents each wave runs at most, when not its default.
 export type NxDteOptions = Partial<Record<NxDteWave, number>>;
 
-/**
- * The agents each wave runs for a plan. The first wave never outnumbers a plan's tasks (a `docs`
- * run has one), unless they expand to more in Nx: a `*` project or the affected check. The peak
- * wave covers what the first cannot, {@link PEAK_TASKS_PER_SANDBOX} tasks per sandbox.
- */
+// The agents each wave runs for a plan. The first wave never outnumbers a plan's tasks (a `docs`
+// run has one), unless they expand to more in Nx: a `*` project or the affected check. The peak
+// wave covers what the first cannot, {@link PEAK_TASKS_PER_SANDBOX} tasks per sandbox.
 export function agentsFor(
   plan: Pick<Plan, 'tasks' | 'affectedCheck'>,
   options: NxDteOptions = {}
@@ -75,21 +69,20 @@ export function agentsFor(
   return { first, peak };
 }
 
-/** The agents' jobs, which `circleci-completion` does not wait for (main.ts). */
+// The agents' jobs, which `circleci-completion` does not wait for (main.ts).
 export const NX_AGENT_JOB_IDS: readonly string[] = [
   ...Object.values(NX_DTE_WAVES).map((wave) => wave.job),
   PEAK_DELAY_JOB,
 ];
 
-/**
- * Pinned as in nx.yml. Only for `start-ci-run`, which runs before the install. The commands after
- * it go through the workspace's own Nx: the NX Cloud client that `npx nx-cloud` loads resolves Nx
- * next to itself, outside the workspace, and the agents failed with "Cannot find module".
- */
+// Pinned as in nx.yml. Only for `start-ci-run`, which runs before the install. The commands after
+// it go through the workspace's own Nx: the NX Cloud client that `npx nx-cloud` loads resolves Nx
+// next to itself, outside the workspace, and the agents failed with "Cannot find module".
 const NX_CLOUD = 'npx --yes nx-cloud@19.1.5';
 
 const NODE_MODULES_ARCHIVE = '/tmp/nx-dte-node_modules.tar.zst';
-/** Everything that decides the installed tree, as CircleCI's own node_modules key (helpers.ts). */
+const MANIFESTS_SUM = '/tmp/nx-dte-manifests.sha256';
+// Everything that decides the installed tree, as CircleCI's own node_modules key (helpers.ts).
 const NODE_MODULES_KEY = [
   'v1-nx-dte-node_modules',
   '{{ arch }}',
@@ -98,9 +91,18 @@ const NODE_MODULES_KEY = [
   '{{ checksum "yarn.lock" }}',
   '{{ checksum ".nx/workflows/prune-other-platforms.cjs" }}',
   '{{ checksum "scripts/ci/nx/circleci-node-modules.sh" }}',
+  // The workspaces' manifests, as NX Cloud's key does (.nx/workflows/agents.yaml): a change such
+  // as `installConfig` alters the installed tree without touching yarn.lock.
+  `{{ checksum "${MANIFESTS_SUM}" }}`,
 ].join('/');
 
 const restoreNodeModules = () => [
+  {
+    run: {
+      name: 'Hash the package manifests',
+      command: `cat package.json */package.json code/*/package.json code/*/*/package.json | sha256sum > ${MANIFESTS_SUM}`,
+    },
+  },
   cache.attach([NODE_MODULES_KEY]),
   {
     run: {
@@ -110,11 +112,9 @@ const restoreNodeModules = () => [
   },
 ];
 
-/**
- * Only `nx-main` stores a fresh tree, at its end, and only for a trusted author, as CircleCI's other
- * jobs do (common-jobs.ts `installWithCache`), so a fork PR cannot hand its tree to the next run.
- * At the end, because packing takes about a minute and nothing in the main job waits for it.
- */
+// Only `nx-main` stores a fresh tree, at its end, and only for a trusted author, as CircleCI's other
+// jobs do (common-jobs.ts `installWithCache`), so a fork PR cannot hand its tree to the next run.
+// At the end, because packing takes about a minute and nothing in the main job waits for it.
 const saveNodeModules = () =>
   isTrustedAuthor()
     ? [
@@ -135,7 +135,7 @@ const saveNodeModules = () =>
       ]
     : [];
 
-/** The environment both kinds of jobs share. */
+// The environment both kinds of jobs share.
 const nxEnvironment = (changedFiles: readonly string[]) => ({
   // Reports under the pull request, as nx.yml does: API-triggered pipelines carry no PR number.
   NX_BRANCH: '<< pipeline.parameters.ghPrNumber >>',
@@ -271,7 +271,7 @@ const agentJob = (
     requires
   );
 
-/** Only waits, on the smallest machine, so the peak wave starts when the sandboxes are nearly done. */
+// Only waits, on the smallest machine, so the peak wave starts when the sandboxes are nearly done.
 const peakDelayJob = defineJob(PEAK_DELAY_JOB, () => ({
   executor: { name: 'sb_node_22_classic', class: 'small' },
   steps: [{ run: { name: 'Wait for the peak', command: `sleep ${NX_DTE_PEAK_DELAY_SECONDS}` } }],
@@ -280,17 +280,15 @@ const peakDelayJob = defineJob(PEAK_DELAY_JOB, () => ({
 const WINDOWS_PLAYWRIGHT_KEY = 'v1-nx-dte-playwright-windows/{{ checksum "yarn.lock" }}';
 const WINDOWS_PLAYWRIGHT_PATH = 'C:\\Users\\circleci\\AppData\\Local\\ms-playwright';
 
-/** CircleCI's first daily sandbox, as `getWindowsSandboxes` (sandboxes.ts) and nx.yml use. */
+// CircleCI's first daily sandbox, as `getWindowsSandboxes` (sandboxes.ts) and nx.yml use.
 const WINDOWS_TEMPLATE = daily[0];
 
 const windowsParts = ['unit-1', 'unit-2', 'init-empty', 'e2e-build', 'e2e-dev'] as const;
 type WindowsPart = (typeof windowsParts)[number];
 
-/**
- * A part of the Windows tests, as nx.yml's `windows` matrix runs them: CircleCI's own Windows
- * sandbox jobs unpack the sandbox a Linux job created, and init-empty-windows the packages the
- * Linux build published, which the NX agents do not hand to CircleCI.
- */
+// A part of the Windows tests, as nx.yml's `windows` matrix runs them: CircleCI's own Windows
+// sandbox jobs unpack the sandbox a Linux job created, and init-empty-windows the packages the
+// Linux build published, which the NX agents do not hand to CircleCI.
 const windowsJob = (part: WindowsPart) =>
   defineJob(`Windows (${part})`, () => {
     const registry = part === 'init-empty' || part.startsWith('e2e-');
@@ -416,7 +414,7 @@ const windowsJob = (part: WindowsPart) =>
     };
   });
 
-/** Every job of the NX DTE pipeline for the given CircleCI workflows. */
+// Every job of the NX DTE pipeline for the given CircleCI workflows.
 export function getNxDteJobs(
   selected: readonly Workflow[],
   baseRef: string,

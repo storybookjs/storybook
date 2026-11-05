@@ -6,7 +6,7 @@ import { expect, it } from 'vitest';
 
 const ROOT = join(import.meta.dirname, '../..');
 
-/** The scripts that Nx tasks run (see the `command`s in the generated project.json files). */
+// The scripts that Nx tasks run (see the `command`s in the generated project.json files).
 const TASK_ENTRY_POINTS = [
   'task.ts',
   'build/build-package.ts',
@@ -14,11 +14,9 @@ const TASK_ENTRY_POINTS = [
   'run-registry.ts',
 ];
 
-/**
- * `sharedGlobals` in nx.json lists the parts of `scripts/` that every task hashes. A script that a
- * task imports from outside that list would not invalidate the cache when it changes, so tasks
- * would restore stale results. This keeps the list in step with what the tasks actually import.
- */
+// `sharedGlobals` in nx.json lists the parts of `scripts/` that every task hashes. A script that a
+// task imports from outside that list would not invalidate the cache when it changes, so tasks
+// would restore stale results. This keeps the list in step with what the tasks actually import.
 it('sharedGlobals covers every script that Nx tasks import', async () => {
   const nxJson = JSON.parse(readFileSync(join(ROOT, 'nx.json'), 'utf8'));
   const sharedGlobals: string[] = nxJson.namedInputs.sharedGlobals;

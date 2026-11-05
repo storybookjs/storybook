@@ -10,8 +10,6 @@ import { hrefTo, hrefToSync, linkTo } from './utils.ts';
 vi.mock('storybook/preview-api');
 vi.mock('@storybook/global', () => ({
   global: {
-    // globalThis, not `global`: this suite runs in happy-dom, and the only reason the Node spelling
-    // ever compiled here was an @types/node reference this package picked up through a dependency.
     document: globalThis.document,
     window: globalThis,
   },

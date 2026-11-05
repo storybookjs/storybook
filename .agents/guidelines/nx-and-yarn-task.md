@@ -46,10 +46,11 @@ Key points:
 
 The same NX task graph can also run distributed over CircleCI machines instead of NX Cloud's own workers (NX Cloud's manual distributed task execution). NX Cloud schedules the tasks and holds the cache; CircleCI provides the machines. The per-job CircleCI pipeline is unchanged and stays the default.
 
-- Opt in with the `nxDte` pipeline parameter: a pull request labelled `nx-dte:<workflow>` (`nx-dte:focus`, `nx-dte:normal`, `nx-dte:daily`) triggers it through `.github/workflows/trigger-circleci-nx-dte.yml`. `nxDteAgents` (default 40) and `nxDteAgentClass` (`large` or `xlarge`) set the agents
+- Opt in with the `nxDte` pipeline parameter: a pull request labelled `nx-dte:<workflow>` (`nx-dte:focus`, `nx-dte:normal`, `nx-dte:daily`) triggers it through `.github/workflows/trigger-circleci-nx-dte.yml`. `nxDteAgents` (default 40) and `nxDteAgentClass` (`large`, the default, or `xlarge`) set the agents
 - `scripts/ci/nx/circleci-dte.ts` generates the jobs: `nx-main` starts the NX Cloud run with `start-ci-run --distribute-on=manual`, then runs `run.ts` like `nx.yml`; `nx-agent` runs as parallel containers, each `nx start-agent`. The Windows parts and the Node 26 smoke job stay plain CircleCI jobs. `circleci-completion` waits for `nx-main` (which fails when a task fails), not for the agents
 - `.nx/ci-config.yaml` must be out of the way while `start-ci-run` runs: the command refuses to start when it exists. Assignment rules for the agents are in `.nx/workflows/circleci-assignment-rules.yaml`
-- After the install, use the workspace's Nx (`yarn nx start-agent`, `yarn nx complete-ci-run`). `npx nx-cloud …` loads a client that cannot find the workspace's Nx
+- `start-ci-run --stop-workers-after=<every target of the run>`, not `--require-explicit-completion`: only when NX Cloud knows no more tasks can come does it stop each agent that has nothing left ("no further tasks for this worker"). With explicit completion every agent idled until the main job ended, a third of the run's credits
+- After the install, use the workspace's Nx (`yarn nx start-agent`). `npx nx-cloud …` loads a client that cannot find the workspace's Nx
 - Rerun a failed NX DTE workflow from the start, not "from failed": rerunning only `nx-main` starts a new NX Cloud run that no agent joins, and it waits until its no-output timeout
 - A pull request with a `ci:<workflow>` label does not get the NX DTE pipeline, even with an `nx-dte:` label: both would run on the same branch and CircleCI would cancel one. The trigger's log says so
 - `scripts/ci/nx/circleci-node-modules.sh` caches the whole installed tree as one zstd archive; only `nx-main` stores it, for trusted authors

@@ -6,7 +6,9 @@
  * - `nx-main` starts the NX Cloud run (`start-ci-run --distribute-on=manual`), then runs the same
  *   `nx run-many` commands as .github/workflows/nx.yml (run.ts). It runs no task itself.
  * - `nx-agent` runs as {@link NX_DTE_AGENTS} parallel containers, each `nx start-agent`,
- *   which runs the tasks NX Cloud assigns until `nx-main` completes the run.
+ *   which runs the tasks NX Cloud assigns. `start-ci-run --stop-workers-after` names every target
+ *   of the run, so NX Cloud knows when no more tasks can come and stops each agent once it has
+ *   nothing left for it, as the Nx docs recommend; no `complete-ci-run` is needed.
  * - The jobs NX Cloud's Linux workers cannot run (plan.ts `sideJobs`) are plain CircleCI jobs: the
  *   Node 26 smoke job as CircleCI defines it, and the Windows parts as .github/workflows/nx.yml runs
  *   them, which builds its sandbox on Windows instead of unpacking the Linux one.
@@ -23,8 +25,9 @@ import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
 import { planFor } from './plan.ts';
 
 /**
- * Parallel CircleCI agent containers by default. With 20 (NX Cloud's own workers, the Team plan's
- * maximum) every agent was busy and sandbox E2E tasks waited for one; 60 were no faster than 40.
+ * Parallel CircleCI agent containers by default, `large` (4 vCPUs) by default: a task costs more on
+ * `xlarge` (twice the credits per minute, not twice as fast). With 20 agents every agent was busy
+ * and sandbox E2E tasks waited for one; 60 were no faster than 40.
  */
 export const NX_DTE_AGENTS = 40;
 
@@ -105,10 +108,19 @@ const nxEnvironment = (changedFiles: readonly string[]) => ({
   CI_CHANGED_FILES_COUNT: `${changedFiles.length}`,
 });
 
-const mainJob = (selected: readonly Workflow[], changedFiles: readonly string[]) =>
+const mainJob = (
+  selected: readonly Workflow[],
+  changedFiles: readonly string[],
+  targets: readonly string[],
+  agents: number
+) =>
   defineJob('nx-main', () => ({
     executor: { name: 'sb_node_22_classic', class: 'large' },
-    environment: nxEnvironment(changedFiles),
+    environment: {
+      ...nxEnvironment(changedFiles),
+      // Tells NX Cloud how many agents there are, which it weighs when it stops agents early.
+      NX_CLOUD_DISTRIBUTED_EXECUTION_AGENT_COUNT: `${agents}`,
+    },
     steps: [
       // A focused run asks Nx which projects the diff affects, so it needs the merge base: the
       // history the setup job fetches (.circleci/config.yml).
@@ -124,10 +136,12 @@ const mainJob = (selected: readonly Workflow[], changedFiles: readonly string[])
       {
         run: {
           name: 'Start the NX Cloud run',
-          // Before the install, so NX Cloud knows the run while the agents boot. The agents finish
-          // when `complete-ci-run` below says so, not when the first of the run-many commands
-          // (run.ts starts several at once) ends. A failed task does not stop them: the run reports
-          // every failure, as CircleCI and nx.yml (`lifecycle.fail-after: 0`) do.
+          // Before the install, so NX Cloud knows the run while the agents boot.
+          // `--stop-workers-after` names every target the run-many commands run (run.ts starts
+          // several at once), so NX Cloud knows when no more tasks can come. It then stops each
+          // agent that has nothing left to run, instead of every agent idling until the main job
+          // ends. A failed task does not stop them: the run reports every failure, as CircleCI and
+          // nx.yml (`lifecycle.fail-after: 0`) do.
           // `start-ci-run` refuses to start while .nx/ci-config.yaml (the NX Cloud workers' config,
           // which only `start-workers` reads) exists, so it is out of the way for this command only.
           command: [
@@ -135,7 +149,7 @@ const mainJob = (selected: readonly Workflow[], changedFiles: readonly string[])
             [
               `${NX_CLOUD} start-ci-run --distribute-on=manual`,
               '--assignment-rules=.nx/workflows/circleci-assignment-rules.yaml',
-              '--require-explicit-completion',
+              `--stop-workers-after=${targets.join(',')}`,
               '--stop-workers-on-failure=false',
             ].join(' \\\n  '),
             'mv /tmp/ci-config.yaml .nx/ci-config.yaml',
@@ -167,14 +181,6 @@ const mainJob = (selected: readonly Workflow[], changedFiles: readonly string[])
           command: `yarn exec jiti ./scripts/ci/nx/run.ts --workflow=${selected.join(',')}`,
         },
       },
-      {
-        run: {
-          name: 'Complete the NX Cloud run',
-          when: 'always',
-          // Through npx when the install failed, so the agents still stop.
-          command: `yarn nx complete-ci-run || ${NX_CLOUD} complete-ci-run`,
-        },
-      },
       ...saveNodeModules(),
     ],
   }));
@@ -182,10 +188,7 @@ const mainJob = (selected: readonly Workflow[], changedFiles: readonly string[])
 /** The agents' job, which `circleci-completion` does not wait for (main.ts). */
 export const NX_AGENT_JOB_ID = 'nx-agent';
 
-const agentJob = (
-  changedFiles: readonly string[],
-  { agents = NX_DTE_AGENTS, agentClass = 'xlarge' }: NxDteOptions
-) =>
+const agentJob = (changedFiles: readonly string[], agents: number, agentClass: NxDteAgentClass) =>
   defineJob(NX_AGENT_JOB_ID, () => ({
     executor: { name: 'sb_node_22_browsers', class: agentClass },
     parallelism: agents,
@@ -378,9 +381,19 @@ export function getNxDteJobs(
     throw new Error(`No NX equivalent for the CircleCI jobs: ${plan.missing.join(', ')}`);
   }
 
+  const { agents = NX_DTE_AGENTS, agentClass = 'large' } = options;
+  const targets = [
+    ...new Set([
+      ...plan.tasks.map((task) => task.slice(task.lastIndexOf(':') + 1)),
+      ...(plan.affectedCheck ? ['check'] : []),
+    ]),
+  ].sort();
   const jobs: JobOrNoOpJob[] = [];
   if (plan.tasks.length > 0 || plan.affectedCheck) {
-    jobs.push(mainJob(selected, changedFiles), agentJob(changedFiles, options));
+    jobs.push(
+      mainJob(selected, changedFiles, targets, agents),
+      agentJob(changedFiles, agents, agentClass)
+    );
   }
   if (plan.sideJobs.includes('windows')) {
     jobs.push(...windowsParts.filter((part) => part !== 'init-empty').map(windowsJob));

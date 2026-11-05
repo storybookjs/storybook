@@ -76,10 +76,17 @@ const saveNodeModules = () =>
         {
           run: {
             name: 'Pack node_modules',
+            // Also when a task failed: the tree is the same either way.
+            when: 'always',
             command: `bash scripts/ci/nx/circleci-node-modules.sh pack ${NODE_MODULES_ARCHIVE}`,
           },
         },
-        cache.persist([NODE_MODULES_ARCHIVE], NODE_MODULES_KEY),
+        {
+          save_cache: {
+            ...cache.persist([NODE_MODULES_ARCHIVE], NODE_MODULES_KEY).save_cache,
+            when: 'always',
+          },
+        },
       ]
     : [];
 

@@ -23,7 +23,7 @@
         "dir": "bench-react-vite-default-ts-nodocs"
       }
     },
-    "chromatic": {},
+    "smoke-test": {},
     "serve": {}
   },
   "tags": ["ci:normal", "ci:daily"]

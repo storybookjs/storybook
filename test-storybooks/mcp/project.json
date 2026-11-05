@@ -1,0 +1,16 @@
+{
+  "name": "test-storybooks/mcp",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "targets": {
+    "vitest": {
+      "options": {
+        "command": "find ../../code -type d -path '*/node_modules/.cache' -prune -exec rm -rf {} + && yarn --no-immutable && yarn vitest run --project=e2e && yarn vitest run --project=storybook"
+      }
+    }
+  },
+  "tags": [
+    "ci:normal",
+    "ci:daily"
+  ]
+}

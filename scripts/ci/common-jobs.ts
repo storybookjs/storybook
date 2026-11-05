@@ -514,11 +514,38 @@ const runOnChangedFiles = (
  * read other files are warnings, which `--quiet` drops. A config or global input change checks
  * everything.
  */
-export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) => {
+export const affectedLintAndFormatSteps = (changedFiles: readonly string[]) => {
   const checkAll = (config: RegExp) =>
     changedFiles.some((file) => isGlobalInput(file) || config.test(file));
 
-  return defineJob(
+  return [
+    ...(checkAll(FORMAT_CONFIG)
+      ? [{ run: { name: 'Format check', command: 'yarn fmt:check' } }]
+      : runOnChangedFiles(
+          'Format check changed files',
+          '',
+          changedFiles,
+          'yarn oxfmt --check --no-error-on-unmatched-pattern'
+        )),
+    ...(checkAll(LINT_CONFIG)
+      ? [
+          { run: { name: 'Lint code JS', working_directory: 'code', command: 'yarn lint:js' } },
+          { run: { name: 'Lint scripts', working_directory: 'scripts', command: 'yarn lint' } },
+        ]
+      : ['code', 'scripts'].flatMap((dir) =>
+          runOnChangedFiles(
+            `Lint changed ${dir} files`,
+            dir,
+            changedFiles,
+            'yarn lint:js:cmd --quiet --no-error-on-unmatched-pattern'
+          )
+        )),
+  ];
+};
+
+/** The NX pipeline runs the same steps (scripts/ci/nx/affected.ts). */
+export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) =>
+  defineJob(
     'Lint and format (affected)',
     () => ({
       executor: {
@@ -527,33 +554,16 @@ export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) => 
       },
       steps: [
         ...workflow.restoreLinux(),
-        ...(checkAll(FORMAT_CONFIG)
-          ? [{ run: { name: 'Format check', command: 'yarn fmt:check' } }]
-          : runOnChangedFiles(
-              'Format check changed files',
-              '',
-              changedFiles,
-              'yarn oxfmt --check --no-error-on-unmatched-pattern'
-            )),
-        ...(checkAll(LINT_CONFIG)
-          ? [
-              { run: { name: 'Lint code JS', working_directory: 'code', command: 'yarn lint:js' } },
-              { run: { name: 'Lint scripts', working_directory: 'scripts', command: 'yarn lint' } },
-            ]
-          : ['code', 'scripts'].flatMap((dir) =>
-              runOnChangedFiles(
-                `Lint changed ${dir} files`,
-                dir,
-                changedFiles,
-                'yarn lint:js:cmd --quiet --no-error-on-unmatched-pattern'
-              )
-            )),
+        ...affectedLintAndFormatSteps(changedFiles),
         ...workflow.cancelOnFailure(),
       ],
     }),
     [commonJobsNoOpJob]
   );
-};
+
+/** Followed by the changed files. The NX pipeline runs it too (scripts/ci/nx/affected.ts). */
+export const AFFECTED_UNIT_TESTS_COMMAND =
+  "NODE_OPTIONS=--max_old_space_size=4096 yarn vitest related --run --project '!storybook-ui'";
 
 /** Run the unit tests whose imports reach `changedFiles`. */
 export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
@@ -570,7 +580,7 @@ export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
         {
           run: {
             name: 'Run affected tests',
-            command: `NODE_OPTIONS=--max_old_space_size=4096 yarn vitest related --run --project '!storybook-ui' ${UNIT_TEST_REPORTERS} $(cat ${CHANGED_FILES_PATH})`,
+            command: `${AFFECTED_UNIT_TESTS_COMMAND} ${UNIT_TEST_REPORTERS} $(cat ${CHANGED_FILES_PATH})`,
           },
         },
         testResults.persist(`test-results`),

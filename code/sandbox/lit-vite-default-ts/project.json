@@ -25,6 +25,7 @@
       }
     },
     "chromatic": {},
+    "docgen-baselines": {},
     "serve": {},
     "e2e-tests-dev": {}
   },

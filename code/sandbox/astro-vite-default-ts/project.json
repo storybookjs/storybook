@@ -22,7 +22,7 @@
         "dir": "astro-vite-default-ts"
       }
     },
-    "chromatic": {},
+    "smoke-test": {},
     "serve": {}
   },
   "tags": []

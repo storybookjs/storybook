@@ -14,7 +14,8 @@ export const e2eTestsInternal: Task<MonorepoDetails> = {
     return false;
   },
   async run({ codeDir, junitFilename }, { dryRun, debug }) {
-    const storybookUrl = `http://localhost:${STORYBOOK_PORT}`;
+    // NX serves the static build on another port than the dev server, so both can share a worker.
+    const storybookUrl = process.env.STORYBOOK_URL || `http://localhost:${STORYBOOK_PORT}`;
     const env = {
       CI: 'true',
       STORYBOOK_URL: storybookUrl,

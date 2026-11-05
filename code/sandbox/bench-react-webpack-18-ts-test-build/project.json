@@ -24,6 +24,7 @@
       }
     },
     "chromatic": {},
+    "smoke-test": {},
     "serve": {}
   },
   "tags": ["ci:normal", "ci:daily"]

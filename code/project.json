@@ -5,34 +5,213 @@
   "targets": {
     "fmt": {
       "executor": "nx:run-commands",
-      "options": { "command": "yarn fmt:check" },
+      "options": {
+        "command": "yarn fmt:check && yarn docs:check"
+      },
       "cache": true,
       "inputs": ["sharedGlobals", "{workspaceRoot}/**/*"],
-      "configurations": { "production": {} }
+      "configurations": {
+        "production": {}
+      }
     },
     "lint": {
-      "dependsOn": [{ "projects": ["*"], "target": "compile" }],
+      "dependsOn": [
+        {
+          "projects": ["*"],
+          "target": "compile"
+        }
+      ],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn lint" },
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn lint"
+      },
       "cache": true,
       "inputs": ["code-all"],
-      "configurations": { "production": {} }
+      "configurations": {
+        "production": {}
+      }
     },
     "test": {
-      "dependsOn": [{ "projects": ["*"], "target": "compile" }],
+      "dependsOn": [
+        {
+          "projects": ["*"],
+          "target": "compile"
+        }
+      ],
       "executor": "nx:run-commands",
-      "options": { "command": "yarn test" },
+      "options": {
+        "command": "yarn test --project '!storybook-ui'"
+      },
       "cache": true,
-      "inputs": ["code-all"],
-      "configurations": { "production": {} }
+      "inputs": [
+        "code-all",
+        "{workspaceRoot}/.github/workflows/nx.yml",
+        "{workspaceRoot}/.nx/ci-config.yaml",
+        "{workspaceRoot}/test-storybooks/**/package.json"
+      ],
+      "configurations": {
+        "production": {}
+      }
     },
     "knip": {
-      "dependsOn": [{ "projects": ["*"], "target": "compile" }],
+      "dependsOn": [
+        {
+          "projects": ["*"],
+          "target": "compile"
+        }
+      ],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn knip --no-exit-code" },
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn knip --no-exit-code"
+      },
       "cache": true,
       "inputs": ["code-all"],
-      "configurations": { "production": {} }
+      "configurations": {
+        "production": {}
+      }
+    },
+    "storybook-ui-build": {
+      "dependsOn": [
+        {
+          "projects": ["*"],
+          "target": "compile"
+        }
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn storybook:ui:build"
+      },
+      "cache": true,
+      "inputs": ["code-all"],
+      "outputs": ["{projectRoot}/storybook-static"],
+      "configurations": {
+        "production": {}
+      }
+    },
+    "storybook-ui-chromatic": {
+      "dependsOn": ["storybook-ui-build"],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "bash ../scripts/ci/nx/fetch-git-history.sh && yarn storybook:ui:chromatic"
+      },
+      "cache": false,
+      "configurations": {
+        "production": {}
+      }
+    },
+    "storybook-ui-dev": {
+      "dependsOn": [
+        {
+          "projects": ["*"],
+          "target": "compile"
+        }
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn storybook:ui"
+      },
+      "continuous": true,
+      "configurations": {
+        "production": {}
+      }
+    },
+    "e2e-internal": {
+      "dependsOn": ["storybook-ui-dev"],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn wait-on --timeout 300000 tcp:127.0.0.1:6006 && yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit"
+      },
+      "cache": true,
+      "inputs": ["code-all"],
+      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "configurations": {
+        "production": {}
+      }
+    },
+    "storybook-ui-serve": {
+      "dependsOn": ["storybook-ui-build"],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn http-server storybook-static --port 8002 -s"
+      },
+      "continuous": true,
+      "configurations": {
+        "production": {}
+      }
+    },
+    "e2e-internal-static": {
+      "dependsOn": ["storybook-ui-serve"],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn wait-on --timeout 300000 tcp:127.0.0.1:8002 && yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit",
+        "env": {
+          "STORYBOOK_TYPE": "static",
+          "STORYBOOK_URL": "http://localhost:8002"
+        },
+        "cwd": "{projectRoot}"
+      },
+      "cache": true,
+      "inputs": ["code-all"],
+      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "configurations": {
+        "production": {}
+      }
+    },
+    "test-stories": {
+      "dependsOn": [
+        {
+          "projects": ["*"],
+          "target": "compile"
+        }
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn test --project storybook-ui"
+      },
+      "cache": true,
+      "inputs": ["code-all"],
+      "configurations": {
+        "production": {}
+      }
+    },
+    "lint-affected": {
+      "dependsOn": [
+        {
+          "projects": ["*"],
+          "target": "compile"
+        }
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn exec jiti ./scripts/ci/nx/affected.ts lint"
+      },
+      "cache": false,
+      "configurations": {
+        "production": {}
+      }
+    },
+    "test-affected": {
+      "dependsOn": [
+        {
+          "projects": ["*"],
+          "target": "compile"
+        }
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn exec jiti ./scripts/ci/nx/affected.ts test"
+      },
+      "cache": false,
+      "configurations": {
+        "production": {}
+      }
     }
   }
 }

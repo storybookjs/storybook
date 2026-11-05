@@ -23,7 +23,7 @@
         "dir": "bench-react-webpack-18-ts"
       }
     },
-    "chromatic": {},
+    "smoke-test": {},
     "serve": {}
   },
   "tags": ["ci:normal", "ci:daily"]

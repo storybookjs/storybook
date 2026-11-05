@@ -22,7 +22,7 @@
         "dir": "solid-vite-default-ts"
       }
     },
-    "chromatic": {},
+    "smoke-test": {},
     "serve": {}
   },
   "tags": ["ci:daily"]

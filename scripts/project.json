@@ -13,12 +13,32 @@
     },
     "lint": {
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn lint" },
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn lint"
+      },
       "cache": true,
-      "inputs": ["default", "{workspaceRoot}/.oxlintrc.json"],
+      "inputs": ["default", "{workspaceRoot}/.oxlintrc.json", "{workspaceRoot}/yarn.lock"],
       "configurations": { "production": {} }
     },
     "run-registry": {},
-    "publish": {}
+    "publish": {},
+    "bench-packages": {
+      "dependsOn": [
+        {
+          "projects": ["*"],
+          "target": "compile"
+        },
+        "run-registry"
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn exec jiti ./scripts/ci/nx/bench-packages.ts"
+      },
+      "cache": false,
+      "configurations": {
+        "production": {}
+      }
+    }
   }
 }

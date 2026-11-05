@@ -32,6 +32,8 @@ Key points:
 - Example: `yarn nx compile core` (project `core` is published as package `storybook`)
 - NX Cloud remote-cache auth failures (e.g. HTTP 401 "insufficient access") degrade to the local cache, so they are expected on local runs where `NX_CLOUD_ACCESS_TOKEN` is unset. CI always sets that token, so a 401 there means an invalid or expired token and should be investigated rather than ignored. Locally, a read-only token or an `nx login` session reads the shared cache but stores nothing, so the "Skipping storing" message is expected. On CI, a read-only token also writes to a cache NX Cloud scopes to the pull request (see below)
 - CircleCI does not use NX Cloud (`--skip-nx-cache` on CI). NX Cloud runs in `.github/workflows/nx.yml`: it starts workers with `npx nx-cloud start-workers` before installing dependencies, and `.nx/ci-config.yaml` sets how tasks are distributed. Worker machines and their setup steps are in `.nx/workflows/agents.yaml`
+- `.github/workflows/nx.yml` runs what CircleCI runs for the same `ci:` label (`focus`, `normal`, `docs`, `daily`, `windows`). `scripts/ci/nx/plan.ts` maps every job of the generated CircleCI config to its NX tasks, and `scripts/ci/nx/run.ts` runs them as `nx run-many` commands that run nothing extra. When you add a CircleCI job, add its NX equivalent to `plan.ts`; `plan.test.ts` fails until you do. The Windows and Node 26 jobs run as plain GitHub Actions jobs in the same workflow
+- A target on the `code` project must hash `code-all`, not `default`: `{projectRoot}/**/*` only covers the files no nested project owns, so a change in `code/core` would restore a stale result
 - Only `next` writes to the shared remote cache and the node_modules caches, with the read-write token from the `nx-cloud-write` environment: `.github/workflows/nx-cache.yml` on every push (task cache, main job's node_modules) and the nightly `nx` run (also the workers' node_modules, so after a lockfile change pull-request workers install from scratch until the next night). Pull requests use the read-only token, so they read those caches and write only to a cache NX Cloud scopes to the pull request
 - NX Cloud workers restore the installed node_modules tree that the nightly `nx` run on `next` stored, keyed on the lockfile, every package.json and the prune script, and skip `yarn install`. The cache paths in `.nx/workflows/agents.yaml` are listed without globs (the cache step stores a glob under a key no restore asks for). A node_modules folder missing from that list is noticed and the worker installs normally; add the folder to the list. Before storing, `.nx/workflows/prune-other-platforms.cjs` removes the other platforms' native packages that `.yarnrc.yml` installs (about 2 GB)
 - Each worker runs one task at a time (plus the continuous `dev`, `serve` and `run-registry` tasks it needs). Two tasks of the same sandbox on one worker break each other: each restores the sandbox folder from the cache first. Dynamic task packing was tried and left off: it queued an e2e task behind a finished one for minutes
@@ -46,7 +48,7 @@ Key points:
 
 ```bash
 # Report the newest pipeline of a pull request (or a branch, a CIPE id, a cloud.nx.app/cipes link,
-# or the NX Cloud link of the pull request's `nx: normal` status)
+# or the NX Cloud link of the pull request's `nx` status)
 node scripts/ci/nx-cloud-status.ts 37181
 
 # Follow the pipeline of the commit you just pushed: one line per change, then the full report
@@ -63,7 +65,7 @@ node scripts/ci/nx-cloud-status.ts 41939428103 --watch      # or 41939428103-1 (
 - NX Cloud records no `nx` command for a GitHub re-run (attempt 2 or later): the Nx client gets a 404 for the distributed execution summary, and the run group ends by heartbeat with no runs. The report says so and shows GitHub's conclusion, which also decides the exit code (4 when `gh` cannot read it)
 - Live, NX Cloud shows the pipeline status and each `nx` command once it finishes. Our pipeline runs one `nx run-many`, so failed tasks show when it ends. Worker details (steps, timeouts, restarts) can follow minutes after the pipeline ends; the watch waits up to 10 minutes for them
 - A report costs up to about 30 requests of the Public API quota, which the whole organization shares (60 per minute on the Team plan). A watch costs a few per poll, every 30 seconds by default
-- The `nx: normal` and `nx run <task>` commit statuses from `.github/workflows/nx.yml` still say on the pull request whether the run passed; use the script for why
+- The `nx` and `nx run <task>` commit statuses from `.github/workflows/nx.yml` still say on the pull request whether the run passed; use the script for why
 - A workspace token in `NX_CLOUD_ACCESS_TOKEN` overrides your login in `nx-cloud api`. When NX Cloud rejects that token, the script retries with your login
 
 ## Environment Variables

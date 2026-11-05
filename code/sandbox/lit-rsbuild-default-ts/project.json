@@ -23,6 +23,7 @@
       }
     },
     "chromatic": {},
+    "smoke-test": {},
     "serve": {}
   },
   "tags": []

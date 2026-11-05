@@ -1,39 +1,128 @@
 name: nx
 
+# Runs what a CircleCI workflow runs (scripts/ci/main.ts), on NX Cloud. scripts/ci/nx/plan.ts maps
+# every CircleCI job to its NX tasks; a job without an NX equivalent fails its tests.
+
 on:
   pull_request:
     types: [opened, synchronize, labeled, reopened]
   schedule:
     - cron: '0 23 * * *'
   workflow_dispatch:
+    inputs:
+      workflow:
+        description: 'CircleCI workflows to mirror, comma-separated: daily, normal, focus, docs, windows'
+        default: normal
+        type: string
 
 permissions:
   actions: read
   contents: read
   statuses: write
 
+# Same-repo PRs only: fork PRs get no secrets, so they cannot reach Nx Cloud. A `labeled` event only
+# starts a run for a `ci:` workflow label. Any other label gets a group of its own, so it neither
+# restarts the pipeline nor cancels a run that is in progress or waiting. A new push supersedes the
+# previous run of the same PR. Scheduled and manual runs each get their own group, so they never
+# cancel each other.
+concurrency:
+  group: ${{ (github.event.action == 'labeled' && !contains(fromJSON('["ci:focus","ci:normal","ci:docs","ci:daily","ci:windows"]'), github.event.label.name)) && format('nx-ignored-{0}', github.run_id) || format('nx-{0}', github.event.pull_request.number || github.run_id) }}
+  cancel-in-progress: true
+
+env:
+  # The PR's labels as CircleCI reads them (.github/workflows/trigger-circle-ci-workflow.yml).
+  CI_WORKFLOW_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
 
 jobs:
-  nx:
-    # Same-repo PRs only: fork PRs get no secrets, so they cannot reach Nx Cloud.
-    # A `labeled` event only starts a run for `ci:normal` or `ci:daily`, so adding any other
-    # label does not restart the whole pipeline.
+  plan:
     if: >
       github.repository == 'storybookjs/storybook' &&
         ((github.event_name == 'pull_request' &&
           github.event.pull_request.head.repo.full_name == github.repository &&
-          (github.event.action != 'labeled' || github.event.label.name == 'ci:normal' || github.event.label.name == 'ci:daily') &&
-          (contains(github.event.pull_request.labels.*.name, 'ci:normal') ||
-           contains(github.event.pull_request.labels.*.name, 'ci:daily'))
+          (github.event.action != 'labeled' || contains(fromJSON('["ci:focus","ci:normal","ci:docs","ci:daily","ci:windows"]'), github.event.label.name)) &&
+          (contains(github.event.pull_request.labels.*.name, 'ci:focus') ||
+           contains(github.event.pull_request.labels.*.name, 'ci:normal') ||
+           contains(github.event.pull_request.labels.*.name, 'ci:docs') ||
+           contains(github.event.pull_request.labels.*.name, 'ci:daily') ||
+           contains(github.event.pull_request.labels.*.name, 'ci:windows'))
         ) || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      workflow: ${{ steps.plan.outputs.workflow }}
+      changed-files: ${{ steps.changed.outputs.files }}
+      changed-files-count: ${{ steps.plan.outputs.changed-files-count }}
+      nx: ${{ steps.plan.outputs.nx }}
+      windows: ${{ steps.plan.outputs.windows }}
+      windows-init-empty: ${{ steps.plan.outputs.windows-init-empty }}
+      node-26-smoke: ${{ steps.plan.outputs.node-26-smoke }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # The PR head, as CircleCI tests it, not GitHub's merge commit.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          filter: tree:0
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Pick the CircleCI workflows
+        id: workflow
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_WORKFLOW: ${{ inputs.workflow }}
+        run: |
+          case "$EVENT_NAME" in
+            schedule) workflow=daily ;;
+            workflow_dispatch) workflow="$INPUT_WORKFLOW" ;;
+            *) workflow=$(jq -r '
+                 map(select(startswith("ci:")) | ltrimstr("ci:") | select(IN("focus", "normal", "docs", "daily", "windows")))
+                 | join(",")' <<<"$CI_WORKFLOW_LABELS") ;;
+          esac
+          echo "workflow=$workflow" >> "$GITHUB_OUTPUT"
+      # What CircleCI's focused run diffs against (scripts/ci/focus.ts).
+      - name: List the changed files
+        id: changed
+        if: contains(steps.workflow.outputs.workflow, 'focus')
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref || 'next' }}
+        run: |
+          {
+            echo 'files<<EOF'
+            git diff --name-only "origin/$BASE_REF...HEAD" --
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+      - name: Plan
+        id: plan
+        env:
+          WORKFLOW: ${{ steps.workflow.outputs.workflow }}
+          CI_CHANGED_FILES: ${{ steps.changed.outputs.files }}
+        # `shell: bash` adds pipefail, so a plan that throws fails the step instead of skipping all jobs.
+        shell: bash
+        run: node --experimental-transform-types scripts/ci/nx/plan-cli.ts --workflow="$WORKFLOW" | tee -a "$GITHUB_OUTPUT"
+      # The nx job sets a pending status as it starts; a run without NX Cloud tasks (`ci:windows`)
+      # sets it here, so the status never looks finished while jobs still run.
+      - name: Create Nx status (pending)
+        if: steps.plan.outputs.nx != 'true'
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        env:
+          WORKFLOW: ${{ steps.plan.outputs.workflow }}
+        with:
+          script: |
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.payload.pull_request?.head?.sha ?? context.sha,
+              state: 'pending',
+              target_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              description: `${process.env.WORKFLOW}: running`,
+              context: 'nx',
+            });
 
-    # Job-level (not workflow-level) so a skipped run, such as an unrelated label, never
-    # cancels the run in progress. A new push supersedes the previous run of the same PR.
-    # Scheduled and manual runs each get their own group, so they never cancel each other.
-    concurrency:
-      group: nx-${{ github.event.pull_request.number || github.run_id }}
-      cancel-in-progress: true
-
+  nx:
+    needs: plan
+    if: needs.plan.outputs.nx == 'true'
     # Runs on `next` (nightly or started by hand) use the read-write token from the nx-cloud-write
     # environment, so they fill the shared task cache and the workers' node_modules cache. Pull
     # requests get no environment and keep the read-only token: they read those caches and write
@@ -43,43 +132,77 @@ jobs:
     environment: ${{ (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/next' || github.ref == 'refs/heads/kasper/nx-cloud-revive'))) && 'nx-cloud-write' || '' }}
     timeout-minutes: 90
     runs-on: ubuntu-latest
+    # For the `completion` job, which sets the final `nx` status.
+    outputs:
+      status-url: ${{ steps.statuses.outputs.url }}
+      status-description: ${{ steps.statuses.outputs.description }}
     env:
       # The write token only outside pull requests, even if it is ever added as a repository secret.
       NX_CLOUD_ACCESS_TOKEN: ${{ github.event_name != 'pull_request' && secrets.NX_CLOUD_WRITE_TOKEN || secrets.NX_CLOUD_ACCESS_TOKEN }}
+      WORKFLOW: ${{ needs.plan.outputs.workflow }}
+      CI_CHANGED_FILES: ${{ needs.plan.outputs.changed-files }}
+      # So a worker can tell a lost or mangled file list from an empty diff (affected.ts).
+      CI_CHANGED_FILES_COUNT: ${{ needs.plan.outputs.changed-files-count }}
       # Report each finished task right away instead of in batches, so the tasks that depend on it
       # (sandbox, then build, then e2e) start sooner. The Nx repo itself runs with this.
       NX_CLOUD_DISABLE_BUFFER_TASK_COMPLETIONS: 'true'
-      ALL_TASKS: compile,check,knip,test,lint,fmt,sandbox,build,e2e-tests,e2e-tests-dev,vitest-integration,check-sandbox,e2e-ui,jest,vitest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          # The PR head, as CircleCI tests it, not GitHub's merge commit.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           filter: tree:0
           fetch-depth: 0
           persist-credentials: false
-      - name: Set Nx tag(s)
-        id: tag
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          IS_DAILY: ${{ contains(github.event.pull_request.labels.*.name, 'ci:daily') }}
-        run: |
-          tags="normal"
-          if [[ "$EVENT_NAME" == "pull_request" && "$IS_DAILY" == "true" ]]; then
-            tags="daily"
-          fi
-          if [[ "$EVENT_NAME" == "schedule" ]]; then
-            tags="daily"
-          fi
-          echo "tag=$tags" >> "$GITHUB_OUTPUT"
       # Before installing dependencies, so the workers boot while this job installs. Distribution
       # and assignment rules live in .nx/ci-config.yaml; NX Cloud stops the workers when this job ends.
       - name: Start NX Cloud workers
         run: npx nx-cloud@19.1.5 start-workers
+        # Only this step sees the secrets: `start-workers` hands the variables that
+        # `workers.with-env-vars` lists to the workers.
+        env:
+          # Forwarded to the NX Cloud workers by `workers.with-env-vars` in .nx/ci-config.yaml.
+          # Workers check out a detached commit, so Chromatic gets the branch and commit from here.
+          CHROMATIC_BRANCH: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          CHROMATIC_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          CHROMATIC_SLUG: ${{ github.repository }}
+          CI_HEAD_BRANCH: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          CI_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          BENCH_BASE_BRANCH: ${{ github.event.pull_request.base.ref || 'next' }}
+          BENCH_PR_NUMBER: ${{ github.event.pull_request.number }}
+          GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+          # One per sandbox that runs Chromatic; plan.test.ts keeps this list complete.
+          CHROMATIC_TOKEN_ANGULAR_CLI_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_ANGULAR_CLI_DEFAULT_TS }}
+          CHROMATIC_TOKEN_ANGULAR_VITE_21_TS: ${{ secrets.CHROMATIC_TOKEN_ANGULAR_VITE_21_TS }}
+          CHROMATIC_TOKEN_ANGULAR_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_ANGULAR_VITE_DEFAULT_TS }}
+          CHROMATIC_TOKEN_BENCH_REACT_VITE_DEFAULT_TS_TEST_BUILD: ${{ secrets.CHROMATIC_TOKEN_BENCH_REACT_VITE_DEFAULT_TS_TEST_BUILD }}
+          CHROMATIC_TOKEN_BENCH_REACT_WEBPACK_18_TS_TEST_BUILD: ${{ secrets.CHROMATIC_TOKEN_BENCH_REACT_WEBPACK_18_TS_TEST_BUILD }}
+          CHROMATIC_TOKEN_HTML_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_HTML_VITE_DEFAULT_TS }}
+          CHROMATIC_TOKEN_INTERNAL_REACT18_WEBPACK_BABEL: ${{ secrets.CHROMATIC_TOKEN_INTERNAL_REACT18_WEBPACK_BABEL }}
+          CHROMATIC_TOKEN_LIT_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_LIT_VITE_DEFAULT_TS }}
+          CHROMATIC_TOKEN_NEXTJS_15_TS: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_15_TS }}
+          CHROMATIC_TOKEN_NEXTJS_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_DEFAULT_TS }}
+          CHROMATIC_TOKEN_NEXTJS_PRERELEASE: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_PRERELEASE }}
+          CHROMATIC_TOKEN_NEXTJS_VITE_15_TS: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_VITE_15_TS }}
+          CHROMATIC_TOKEN_NEXTJS_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_NEXTJS_VITE_DEFAULT_TS }}
+          CHROMATIC_TOKEN_PREACT_VITE_10_TS: ${{ secrets.CHROMATIC_TOKEN_PREACT_VITE_10_TS }}
+          CHROMATIC_TOKEN_PREACT_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_PREACT_VITE_DEFAULT_TS }}
+          CHROMATIC_TOKEN_REACT_NATIVE_WEB_VITE_EXPO_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_NATIVE_WEB_VITE_EXPO_TS }}
+          CHROMATIC_TOKEN_REACT_VITE_DEFAULT_JS: ${{ secrets.CHROMATIC_TOKEN_REACT_VITE_DEFAULT_JS }}
+          CHROMATIC_TOKEN_REACT_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_VITE_DEFAULT_TS }}
+          CHROMATIC_TOKEN_REACT_VITE_PRERELEASE_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_VITE_PRERELEASE_TS }}
+          CHROMATIC_TOKEN_REACT_WEBPACK_18_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_WEBPACK_18_TS }}
+          CHROMATIC_TOKEN_REACT_WEBPACK_PRERELEASE_TS: ${{ secrets.CHROMATIC_TOKEN_REACT_WEBPACK_PRERELEASE_TS }}
+          CHROMATIC_TOKEN_SVELTE_KIT_SKELETON_TS: ${{ secrets.CHROMATIC_TOKEN_SVELTE_KIT_SKELETON_TS }}
+          CHROMATIC_TOKEN_SVELTE_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_SVELTE_VITE_DEFAULT_TS }}
+          CHROMATIC_TOKEN_TANSTACK_REACT_ROUTER_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_TANSTACK_REACT_ROUTER_DEFAULT_TS }}
+          CHROMATIC_TOKEN_TANSTACK_REACT_START_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_TANSTACK_REACT_START_DEFAULT_TS }}
+          CHROMATIC_TOKEN_VUE3_VITE_DEFAULT_TS: ${{ secrets.CHROMATIC_TOKEN_VUE3_VITE_DEFAULT_TS }}
+          CHROMATIC_TOKEN_VUE3_VITE_PRERELEASE_TS: ${{ secrets.CHROMATIC_TOKEN_VUE3_VITE_PRERELEASE_TS }}
       - name: Create Nx Cloud Status (pending)
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
-          script: | # zizmor: ignore[template-injection] safe toJson context expansion in github-script
-            const tag = ${{ toJson(steps.tag.outputs.tag) }} || 'normal';
-
+          script: |
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -88,8 +211,8 @@ jobs:
               target_url: `https://cloud.nx.app/orgs/606dcb5cdc2a2b00059cc0e9/workspaces/6929fbef73e98d8094d2a343/overview?branch=${
                 context.payload.pull_request?.number ?? 'next'
               }`,
-              description: 'NX Cloud is running your tests',
-              context: `nx: ${tag}`,
+              description: `NX Cloud is running ${process.env.WORKFLOW}`,
+              context: 'nx',
             });
       # The installed tree, keyed on everything `yarn install` reads. On a hit the tree is exactly
       # what an install would produce, so both the yarn download cache and the install are skipped.
@@ -134,22 +257,25 @@ jobs:
         # (a job timeout counts as cancelled and would leave the `nx` status pending).
         timeout-minutes: 80
         env:
-          TAG: ${{ steps.tag.outputs.tag }}
+          # Wide enough that the task summary table never truncates task names.
+          COLUMNS: 250
           # "Re-run with debug logging" also makes Nx and the NX Cloud client log verbosely.
           NX_VERBOSE_LOGGING: ${{ runner.debug == '1' }}
         run: |
           # The statuses step reads this file. Passing the output inline breaks on long output
           # ("Argument list too long"), for example with debug logging or many failures.
-          yarn nx run-many -t $ALL_TASKS -c production -p="tag:library,tag:ci:${TAG}" | tee "$RUNNER_TEMP/nx-output.log"
+          yarn exec jiti ./scripts/ci/nx/run.ts --workflow="$WORKFLOW" | tee "$RUNNER_TEMP/nx-output.log"
           exit "${PIPESTATUS[0]}"
 
       # Not on cancellation: a superseded run must not overwrite the status of the run that replaced it.
       - name: Create per-task Nx statuses
+        id: statuses
         if: ${{ !cancelled() }}
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         env:
           NX_OUTCOME: ${{ steps.nx.outcome }}
-          TAG: ${{ steps.tag.outputs.tag }}
+          # Jobs outside NX Cloud whose results the `completion` job adds to the `nx` status.
+          OTHER_JOBS: ${{ needs.plan.outputs.windows == 'true' || needs.plan.outputs.windows-init-empty == 'true' || needs.plan.outputs.node-26-smoke == 'true' }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: | # zizmor: ignore[template-injection] safe toJson context expansion in github-script
@@ -160,7 +286,7 @@ jobs:
               /\x1b\[[0-9;]*m/g,
               ''
             );
-            const tag = ${{ toJson(steps.tag.outputs.tag) }} || '';
+            const tag = process.env.WORKFLOW;
             // `success` only when the nx step itself succeeded. A failure before it (for example
             // NX Cloud rejecting the run) leaves the output empty, which must not read as green.
             const succeeded = process.env.NX_OUTCOME === 'success';
@@ -187,13 +313,8 @@ jobs:
 
             if (failures.some((failure) => failure.task.endsWith('…'))) {
               try {
-                const graphFile = `${process.env.RUNNER_TEMP}/nx-tasks.json`;
-                require('child_process').execFileSync(
-                  'yarn',
-                  ['nx', 'run-many', '-t', process.env.ALL_TASKS, '-c', 'production', `-p=tag:library,tag:ci:${process.env.TAG}`, `--graph=${graphFile}`],
-                  { stdio: 'ignore' }
-                );
-                const taskIds = Object.keys(JSON.parse(fs.readFileSync(graphFile, 'utf8')).tasks.tasks);
+                // scripts/ci/nx/run.ts lists every task it asked Nx to run.
+                const taskIds = JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/nx-tasks.json`, 'utf8'));
                 for (const failure of failures) {
                   if (!failure.task.endsWith('…')) continue;
                   const matches = taskIds.filter((id) => id.startsWith(failure.task.slice(0, -1)));
@@ -256,18 +377,195 @@ jobs:
               `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
             const failedCount = failures.length;
+            const description = `${tag}: ${
+              succeeded
+                ? 'Nx Cloud run finished successfully'
+                : failedCount
+                  ? `Nx Cloud run failed (${failedCount} tasks failed)`
+                  : 'Nx Cloud run failed before or outside its tasks'
+            }`;
+            core.setOutput('url', nxCloudUrl);
+            core.setOutput('description', description);
 
+            // A failure is final at once. A success waits for the Windows and Node 26 jobs: the
+            // `completion` job sets the final status, as CircleCI's `circleci-completion` does.
+            const waiting = succeeded && process.env.OTHER_JOBS === 'true';
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
               sha,
-              state: succeeded ? 'success' : 'failure',
+              state: waiting ? 'pending' : succeeded ? 'success' : 'failure',
               target_url: nxCloudUrl,
-              description: succeeded
-                ? 'Nx Cloud run finished successfully'
-                : failedCount
-                  ? `Nx Cloud run failed (${failedCount} tasks failed)`
-                  : 'Nx Cloud run failed before or outside its tasks',
-              context: `nx: ${tag}`,
+              description: waiting ? `${tag}: NX Cloud passed; waiting for the other jobs` : description,
+              context: 'nx',
             });
 
+
+  # CircleCI's Windows jobs (build, unit tests, init-empty, and the build and dev E2E tests of the
+  # first daily sandbox). GitHub's Windows runners are free for public repositories, and NX Cloud's
+  # only Windows worker is `windows/medium`. Nx runs the tasks here without NX Cloud: these tasks
+  # are not distributed, and CircleCI's Windows jobs use no remote cache either.
+  windows:
+    needs: plan
+    if: needs.plan.outputs.windows == 'true' || needs.plan.outputs.windows-init-empty == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [unit, e2e]
+    name: windows (${{ matrix.part }})
+    runs-on: windows-latest
+    timeout-minutes: 90
+    env:
+      # CircleCI's first daily sandbox (getWindowsSandboxes in scripts/ci/sandboxes.ts); plan.test.ts checks it.
+      TEMPLATE: react-vite/default-ts
+      NX_NO_CLOUD: true
+      STORYBOOK_DISABLE_TELEMETRY: true
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # The PR head, as CircleCI tests it, not GitHub's merge commit.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
+      - run: corepack enable
+      # The runner's TEMP is an 8.3 short path (C:\Users\RUNNER~1\…), which breaks tests that
+      # compare paths under the temporary directory, such as the codemod and SvelteKit ones.
+      - name: Use a long path for temporary files
+        run: |
+          echo "TEMP=$RUNNER_TEMP" >> "$GITHUB_ENV"
+          echo "TMP=$RUNNER_TEMP" >> "$GITHUB_ENV"
+      - run: yarn install --immutable
+      # Both parts compile: the unit tests check that `dist` is built (dist-contract.test.ts), as
+      # CircleCI's Windows unit job gets it from `Build (windows)`.
+      - name: Compile
+        run: yarn task --task compile --start-from=auto --no-link --debug
+      - name: Ensure no uncommitted changes
+        run: git diff --exit-code && test -z "$(git status --porcelain)"
+      - name: Unit tests
+        if: matrix.part == 'unit'
+        run: yarn test --project '!agent-eval'
+      - name: Start the local registry
+        if: matrix.part == 'e2e'
+        working-directory: code
+        run: |
+          yarn local-registry --publish
+          (yarn local-registry --open > "$RUNNER_TEMP/registry.log" 2>&1 &)
+          yarn wait-on --timeout 120000 tcp:127.0.0.1:6001 tcp:127.0.0.1:6002
+      # Daily only: the `ci:windows` workflow has no init-empty job.
+      - name: Storybook init from an empty directory
+        if: matrix.part == 'e2e' && needs.plan.outputs.windows-init-empty == 'true'
+        run: yarn exec jiti ./scripts/ci/nx/init-empty.ts react-vite-ts
+      - name: Create the sandbox
+        if: matrix.part == 'e2e' && needs.plan.outputs.windows == 'true'
+        run: yarn task sandbox --template "$TEMPLATE" --no-link -s sandbox --debug
+        env:
+          STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: 1
+      - name: Install Playwright
+        if: matrix.part == 'e2e' && needs.plan.outputs.windows == 'true'
+        run: yarn playwright install chromium --with-deps
+      - name: Build and serve the sandbox, then run its E2E tests
+        if: matrix.part == 'e2e' && needs.plan.outputs.windows == 'true'
+        run: |
+          yarn task build --template "$TEMPLATE" --no-link -s build
+          (yarn task serve --template "$TEMPLATE" --no-link -s serve > "$RUNNER_TEMP/serve.log" 2>&1 &)
+          (cd code && yarn wait-on --timeout 120000 tcp:127.0.0.1:8001)
+          yarn task e2e-tests --template "$TEMPLATE" --no-link -s e2e-tests
+      - name: Run the sandbox in dev mode, then run its dev E2E tests
+        if: matrix.part == 'e2e' && needs.plan.outputs.windows == 'true'
+        run: |
+          # Port 8001 still serves the static build from the previous step. `yarn task dev`, as on
+          # Linux, also makes the sandbox a git repository, which the change detection tests need.
+          export STORYBOOK_SERVE_PORT=8002
+          (yarn task dev --template "$TEMPLATE" --no-link -s dev > "$RUNNER_TEMP/dev.log" 2>&1 &)
+          (cd code && yarn wait-on --timeout 300000 tcp:127.0.0.1:8002)
+          yarn task e2e-tests-dev --template "$TEMPLATE" --no-link -s e2e-tests-dev --junit
+      - name: Server logs
+        if: failure() && matrix.part == 'e2e'
+        run: tail -n 200 "$RUNNER_TEMP"/*.log || true
+
+  # CircleCI's `Node 26 smoke` job (scripts/ci/common-jobs.ts).
+  node-26-smoke:
+    needs: plan
+    if: needs.plan.outputs.node-26-smoke == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      NX_NO_CLOUD: true
+      STORYBOOK_DISABLE_TELEMETRY: true
+      NODE_OPTIONS: --max_old_space_size=6144
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # The PR head, as CircleCI tests it, not GitHub's merge commit.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          # The `sb_node_26` executor's image in scripts/ci/utils/executors.ts; plan.test.ts checks it.
+          node-version: 26.12.0
+      # Node 25 stopped bundling corepack, so it comes from npm, with the npm the CircleCI job uses.
+      - run: npm install -g npm@12 corepack@0 && corepack enable && yarn --version # zizmor: ignore[adhoc-packages]
+      - run: yarn install --immutable
+      - run: yarn task --task compile --start-from=auto --no-link --debug
+      - run: yarn test --project '!storybook-ui' --project '!scripts'
+      - run: yarn task build --template react-vite/default-ts --start-from=auto --no-link --debug
+        env:
+          STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: 1
+      - run: yarn task build --template react-webpack/18-ts --start-from=auto --no-link --debug
+        env:
+          STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: 1
+
+  # Sets the final `nx` status from every job, as CircleCI's `circleci-completion` does: the nx job's
+  # own status can only cover NX Cloud, and a job that timed out or was lost sets none.
+  completion:
+    needs: [plan, nx, windows, node-26-smoke]
+    if: ${{ !cancelled() && needs.plan.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Set the nx status
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
+        env:
+          WORKFLOW: ${{ needs.plan.outputs.workflow }}
+          NX_RESULT: ${{ needs.nx.result }}
+          NX_URL: ${{ needs.nx.outputs.status-url }}
+          NX_DESCRIPTION: ${{ needs.nx.outputs.status-description }}
+          WINDOWS_RESULT: ${{ needs.windows.result }}
+          NODE_26_RESULT: ${{ needs.node-26-smoke.result }}
+        with:
+          script: |
+            const results = {
+              nx: process.env.NX_RESULT,
+              windows: process.env.WINDOWS_RESULT,
+              'node-26-smoke': process.env.NODE_26_RESULT,
+            };
+            core.info(`Job results: ${JSON.stringify(results)}`);
+            // A job that timed out reports `cancelled`, so anything but success or skipped fails.
+            const failed = Object.keys(results).filter((job) => !['success', 'skipped'].includes(results[job]));
+            const workflow = process.env.WORKFLOW;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const onlyNxFailed = failed.length === 1 && failed[0] === 'nx' && process.env.NX_DESCRIPTION;
+
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.payload.pull_request?.head?.sha ?? context.sha,
+              state: failed.length > 0 ? 'failure' : 'success',
+              target_url: (failed.length === 0 || onlyNxFailed) && process.env.NX_URL ? process.env.NX_URL : runUrl,
+              description:
+                failed.length === 0
+                  ? `${workflow}: every job succeeded`
+                  : onlyNxFailed
+                    ? process.env.NX_DESCRIPTION
+                    : `${workflow}: failed: ${failed.map((job) => `${job} (${results[job]})`).join(', ')}`,
+              context: 'nx',
+            });
+            if (failed.length > 0) {
+              core.setFailed(`Failed: ${failed.join(', ')}`);
+            }

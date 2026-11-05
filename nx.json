@@ -93,10 +93,27 @@
       "configurations": { "production": {} }
     },
     "chromatic": {
-      "dependsOn": ["build", { "projects": ["scripts"], "target": "run-registry" }],
-      "command": "yarn task chromatic -s task --debug --no-link --template={projectName}",
+      "dependsOn": ["build"],
+      "command": "bash scripts/ci/nx/fetch-git-history.sh && yarn task chromatic -s task --debug --no-link --template={projectName}",
+      "cache": false,
+      "configurations": { "production": {} }
+    },
+    "smoke-test": {
+      "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }],
+      "command": "yarn task smoke-test -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
+      "configurations": { "production": {} }
+    },
+    "docgen-baselines": {
+      "dependsOn": ["build"],
+      "command": "yarn exec jiti ./scripts/ci/nx/docgen-baselines.ts {projectName}",
+      "cache": true,
+      "inputs": [
+        "^production",
+        "{workspaceRoot}/code/lib/docgen-harness/**/*",
+        "{workspaceRoot}/scripts/ci/nx/docgen-baselines.ts"
+      ],
       "configurations": { "production": {} }
     },
     "serve": {
@@ -124,6 +141,13 @@
       "configurations": { "production": {} }
     },
 
+    "init-empty": {
+      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
+      "command": "yarn exec jiti ./scripts/ci/nx/init-empty.ts {projectName}",
+      "cache": true,
+      "inputs": ["all-production", "{workspaceRoot}/scripts/ci/nx/init-empty.ts"],
+      "configurations": { "production": {} }
+    },
     "e2e-ui": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
@@ -196,7 +220,7 @@
     "all-production": [
       "sharedGlobals",
       "{workspaceRoot}/code/**/*",
-      "!{workspaceRoot}/code/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+      "!{workspaceRoot}/code/**/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
     ]
   },
   "analytics": false,

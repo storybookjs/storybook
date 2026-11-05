@@ -259,6 +259,16 @@ const refs: Record<string, RefType> = {
     filteredIndex,
     allStatuses: {},
   },
+  docsAndTests: {
+    id: 'docsAndTests',
+    title: 'It has docs pages and tests',
+    url: 'https://example.com',
+    type: 'lazy',
+    previewInitialized: true,
+    index: indexWithDocsAndTests,
+    filteredIndex: indexWithDocsAndTests,
+    allStatuses: {},
+  },
 };
 
 export const Optimized = () => (
@@ -344,19 +354,7 @@ export const WithSourceCode = () => (
 /** The indicator counts only stories: docs pages and test entries are not stories. */
 export const ReadyWithDocsAndTestsCounts: StoryObj = {
   render: () => (
-    <Ref
-      id="docsAndTests"
-      title="It has docs pages and tests"
-      url="https://example.com"
-      type="lazy"
-      previewInitialized={true}
-      index={indexWithDocsAndTests}
-      filteredIndex={indexWithDocsAndTests}
-      allStatuses={{}}
-      hasEntries={true}
-      isLoading={false}
-      selectedStoryId=""
-    />
+    <Ref {...refs.docsAndTests} hasEntries={true} isLoading={false} selectedStoryId="" />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

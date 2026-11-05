@@ -227,6 +227,9 @@ const agentJob = (
     ],
   }));
 
+const WINDOWS_PLAYWRIGHT_KEY = 'v1-nx-dte-playwright-windows/{{ checksum "yarn.lock" }}';
+const WINDOWS_PLAYWRIGHT_PATH = 'C:\\Users\\circleci\\AppData\\Local\\ms-playwright';
+
 /** CircleCI's first daily sandbox, as `getWindowsSandboxes` (sandboxes.ts) and nx.yml use. */
 const WINDOWS_TEMPLATE = daily[0];
 
@@ -299,7 +302,12 @@ const windowsJob = (part: WindowsPart) =>
                 `yarn task sandbox --template ${WINDOWS_TEMPLATE} --no-link -s sandbox --debug`,
                 { environment: { STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: 1 } }
               ),
+              // Downloading Chromium took 3.5 minutes on GitHub's Windows runners, 6s from the cache.
+              cache.attach([WINDOWS_PLAYWRIGHT_KEY]),
               run('Install Playwright', 'yarn playwright install chromium'),
+              ...(isTrustedAuthor()
+                ? [cache.persist([WINDOWS_PLAYWRIGHT_PATH], WINDOWS_PLAYWRIGHT_KEY)]
+                : []),
             ]
           : []),
         // Server and tests in one step: CircleCI may stop what a step leaves in the background.

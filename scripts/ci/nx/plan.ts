@@ -72,16 +72,19 @@ const sandboxJobs = new Map(
 /** CircleCI runs the Playwright tests of the test Storybooks that have them (test-storybooks.ts). */
 const portable = (directory: string) => {
   const project = `portable-stories-kitchen-sink/${directory}`;
-  const { scripts } = JSON.parse(
-    readFileSync(
-      new URL(`../../../test-storybooks/${project}/package.json`, import.meta.url),
-      'utf8'
-    )
-  );
+  const read = (file: string) =>
+    JSON.parse(
+      readFileSync(new URL(`../../../test-storybooks/${project}/${file}`, import.meta.url), 'utf8')
+    );
+  const { scripts } = read('package.json');
+  // A long suite is split into parts (`e2e-ui-1`, `e2e-ui-2`, …) that run on separate workers.
+  const parts = Object.keys(read('project.json').targets).filter((t) => /^e2e-ui-\d+$/.test(t));
   return [
     `${project}:jest`,
     `${project}:vitest`,
-    ...(scripts['playwright-e2e'] ? [`${project}:e2e-ui`] : []),
+    ...(scripts['playwright-e2e']
+      ? (parts.length > 0 ? parts : ['e2e-ui']).map((target) => `${project}:${target}`)
+      : []),
     `${project}:cypress`,
   ];
 };

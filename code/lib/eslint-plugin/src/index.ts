@@ -1,7 +1,7 @@
 /*
  * IMPORTANT!
  * This file has been automatically generated,
- * in order to update its content execute "yarn update"
+ * in order to update its content execute "pnpm exec jiti scripts/update-all.ts"
  */
 import { name, version } from '../package.json';
 

@@ -24,7 +24,7 @@ function formatCategory(category: TCategory) {
       /*
       * IMPORTANT!
       * This file has been automatically generated,
-      * in order to update its content, execute "yarn update-rules" or rebuild this package.
+      * in order to update its content, execute "pnpm exec jiti scripts/update-all.ts" or rebuild this package.
       */
       export default [
         {
@@ -52,7 +52,7 @@ function formatCategory(category: TCategory) {
   return `/*
     * IMPORTANT!
     * This file has been automatically generated,
-    * in order to update its content, execute "yarn update-rules" or rebuild this package.
+    * in order to update its content, execute "pnpm exec jiti scripts/update-all.ts" or rebuild this package.
     */
     import config from './${extendsCategoryId}.ts'
 

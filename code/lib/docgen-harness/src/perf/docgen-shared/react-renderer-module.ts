@@ -57,7 +57,7 @@ export function rendererModuleError(relativePath: string, err: unknown): Error {
   if (/storybook[/\\]dist[/\\]/.test(message)) {
     return new Error(
       `loading ${relativePath} from the React renderer needs storybook's build output, which is ` +
-        `missing. Run \`yarn nx compile core\` and try again.\n  cause: ${message}`
+        `missing. Run \`pnpm exec nx compile core\` and try again.\n  cause: ${message}`
     );
   }
   return err instanceof Error ? err : new Error(message);

@@ -112,9 +112,9 @@ This file owns Storybook-specific editorial, MDX component, frontmatter, and val
 
 - `<If renderer={[...]}>` / `<If notRenderer={[...]}>` — conditional rendering.
 - `<CodeSnippets path="..." />` — path must exist in `docs/_snippets/`. `[auto]`
-  - In a snippet file, a `tabTitle="CSF 4"` block must come before its `tabTitle="CSF 3"` counterpart (same `renderer` and `language`; `renderer="common"` blocks count for every renderer). Fix with `yarn --cwd scripts docs:fix-snippets`. `[auto]`
+  - In a snippet file, a `tabTitle="CSF 4"` block must come before its `tabTitle="CSF 3"` counterpart (same `renderer` and `language`; `renderer="common"` blocks count for every renderer). Fix with `pnpm --dir scripts docs:fix-snippets`. `[auto]`
   - Snippet tab titles use `CSF 3` and `CSF 4`, not `CSF Next`, `Svelte CSF`, `Svelte CSF 3`, or `Svelte CSF 4`. `[auto]`
-  - Each CSF 3 block starts with the comment `⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4`, in the block's comment syntax: `//` for JS and TS, `<!-- -->` for Svelte, `{/* */}` for MDX. Fix with `yarn --cwd scripts docs:fix-snippets`. `[auto]`
+  - Each CSF 3 block starts with the comment `⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4`, in the block's comment syntax: `//` for JS and TS, `<!-- -->` for Svelte, `{/* */}` for MDX. Fix with `pnpm --dir scripts docs:fix-snippets`. `[auto]`
 - `<Video src="..." />` — embedded video.
 - `<YouTubeCallout id="..." title="..." />` — YouTube embed.
 
@@ -226,6 +226,6 @@ More other content.
 
 ## Validation
 
-Items marked `[auto]` above are checked by `yarn docs:check` (see `scripts/docs/check-docs.ts`). Items marked `[oxfmt]` are handled by `yarn fmt:write`.
+Items marked `[auto]` above are checked by `pnpm docs:check` (see `scripts/docs/check-docs.ts`). Items marked `[oxfmt]` are handled by `pnpm fmt:write`.
 
 These are final-stage validation tools. Run them after structural and editorial work is complete, not as the first step.

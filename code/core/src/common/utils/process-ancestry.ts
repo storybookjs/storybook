@@ -5,10 +5,9 @@
  * Vendored from the `process-ancestry` package so the child-process calls can
  * pin their stdio: the upstream implementation lets benign stderr noise leak
  * into the CLI's own stderr (e.g. wmic's "No Instance(s) Available." on
- * Windows, whenever a queried PID no longer exists). Unlike a Yarn patch, a
- * local module also survives being published — patch descriptors reference a
- * patch file path that does not exist inside consuming projects, which breaks
- * `yarn install` for every sandbox created from the published packages.
+ * Windows, whenever a queried PID no longer exists). Unlike a patch, a local
+ * module also survives being published: patches apply only to this monorepo's
+ * own install, so the published package would get the unpatched dependency.
  */
 
 import { execSync } from 'node:child_process';

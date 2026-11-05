@@ -6,7 +6,7 @@ Storybook is a TypeScript monorepo: code lives in `code/`, build tooling in `scr
 ## Always
 
 - Run commands from the repository root unless stated otherwise.
-- After editing, format with `cd code && yarn fmt:write`.
+- After editing, format with `pnpm fmt:write` from the repository root.
 - Test React components with stories and `play` functions, never `*.test.tsx`.
 - Log through `storybook/internal/node-logger` or `storybook/internal/client-logger`, not `console.*`.
 - Use explicit extensions on relative TS imports (`./foo.ts`), except framework component files such as `.vue` and `.svelte`.
@@ -15,8 +15,8 @@ Storybook is a TypeScript monorepo: code lives in `code/`, build tooling in `scr
 
 ## Never Run
 
-- `yarn task dev` without an explicit sandbox template
-- `yarn start`
+- `pnpm task dev` without an explicit sandbox template
+- `pnpm start`
 
 Both start long-running dev servers.
 `.github/workflows/claude.yml` `--disallowed-tools` mirrors this list; update both together.
@@ -30,7 +30,7 @@ Both start long-running dev servers.
 | write or run tests                                                    | [Testing](.agents/guidelines/testing.md)                                                                                  |
 | open or update a PR                                                   | [Pull requests](.agents/guidelines/pull-requests.md)                                                                      |
 | touch `code/core` internals, presets, open services, or the tools CLI | [Architecture](.agents/guidelines/architecture.md)                                                                        |
-| do sandbox, E2E, or CI-parity work                                    | [NX and `yarn task`](.agents/guidelines/nx-and-yarn-task.md) and [Sandboxes](.agents/guidelines/sandboxes.md)             |
+| do sandbox, E2E, or CI-parity work                                    | [NX and `pnpm task`](.agents/guidelines/nx-and-pnpm-task.md) and [Sandboxes](.agents/guidelines/sandboxes.md)             |
 | call a Chromatic tool or debug a Chromatic build                      | [Chromatic projects](.agents/guidelines/chromatic-projects.md)                                                            |
 | add or change an automigration                                        | [`code/lib/cli-storybook/src/automigrate/README.md`](code/lib/cli-storybook/src/automigrate/README.md)                    |
 

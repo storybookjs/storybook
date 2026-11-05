@@ -6,13 +6,13 @@ This document is canonical for the toolchain, everyday commands, the edit-compil
 ## Toolchain
 
 - **Node.js**: the version in `.nvmrc`. It runs `.ts` files natively through type stripping, so no loader is needed.
-- **Package manager**: Yarn Berry.
-- **Task orchestration**: NX plus the custom `yarn task` runner. See [NX and `yarn task`](./nx-and-yarn-task.md).
+- **Package manager**: pnpm, pinned in the root `package.json` `packageManager` field. Run `corepack enable` once (Node 22 bundles corepack) so `pnpm` runs the pinned release; the root `preinstall` script rejects installs by any other package manager. `overrides`, `patchedDependencies` (patch files in `patches/`), the build-script allowlist (`onlyBuiltDependencies`), and the 7-day `minimumReleaseAge` live in `pnpm-workspace.yaml`. `pnpm <script>` only runs scripts of the `package.json` in the current directory, so run each command below from the directory it names.
+- **Task orchestration**: NX plus the custom `pnpm task` runner. See [NX and `pnpm task`](./nx-and-pnpm-task.md).
 - **Linting**: oxlint (root `.oxlintrc.json`, extended by `code/.oxlintrc.json` and `scripts/.oxlintrc.json`; custom rules load via `jsPlugins`). ESLint is no longer used for repo linting; `code/lib/eslint-plugin` remains as the published `eslint-plugin-storybook` package.
 - **Formatting**: oxfmt (root `.oxfmtrc.json`).
 - **CI environment**: Linux and Windows.
 - **TS execution**: the repo is migrating from `jiti` to native `node` for running `.ts` files. New scripts use `node ./path/file.ts` with explicit `.ts` import extensions (enabled by `allowImportingTsExtensions`). Legacy scripts still use `jiti` and should be migrated over time.
-- **Type checking**: per-package checks (`yarn task check`, `scripts/check/check-package.ts`) and Vitest type tests (`*.test-d.ts`) run on the TypeScript 7 native compiler (the `typescript-native` npm alias), and check diagnostics are filtered to the checked package. A package that is not strict (Angular, Angular-Vite) can list files such as type tests in a `tsconfig.strict.json`; those are also checked with `strict: true`, counting only diagnostics in the listed files. `@storybook/vue3`, `@storybook/docgen-harness` (for its `.vue` fixtures), and `@storybook/svelte` use `vue-tsc` / `svelte-check` (TS 6 based). The workspace `typescript` dependency stays on TS 6 for IDEs and API consumers, so tsconfigs must remain valid for both (for example, no `baseUrl`).
+- **Type checking**: per-package checks (`pnpm task check`, `scripts/check/check-package.ts`) and Vitest type tests (`*.test-d.ts`) run on the TypeScript 7 native compiler (the `typescript-native` npm alias), and check diagnostics are filtered to the checked package. A package that is not strict (Angular, Angular-Vite) can list files such as type tests in a `tsconfig.strict.json`; those are also checked with `strict: true`, counting only diagnostics in the listed files. `@storybook/vue3`, `@storybook/docgen-harness` (for its `.vue` fixtures), and `@storybook/svelte` use `vue-tsc` / `svelte-check` (TS 6 based). The workspace `typescript` dependency stays on TS 6 for IDEs and API consumers, so tsconfigs must remain valid for both (for example, no `baseUrl`).
 
 ## Commands
 
@@ -22,24 +22,25 @@ Add `-c production` only when you need sandbox-related NX tasks or are explicitl
 
 | Scenario                        | Command                                                                      |
 | ------------------------------- | ---------------------------------------------------------------------------- |
-| Install                         | `yarn`                                                                       |
-| Compile everything quickly      | `yarn nx run-many -t compile` (or `yarn task compile`)                       |
-| Compile one project             | `yarn nx compile <nx-project-name>`                                          |
-| Check TypeScript errors quickly | `yarn nx run-many -t check` (or `yarn task check`)                           |
-| Lint everything                 | `yarn lint`                                                                  |
-| Lint one file                   | `yarn --cwd code lint:js:cmd <file-relative-to-code-folder> --fix`           |
-| Update the MIGRATION.md TOC     | `yarn --cwd scripts update-migration-toc`                                    |
-| Check the MIGRATION.md TOC      | `yarn --cwd scripts update-migration-toc --check`                            |
-| Format                          | `cd code && yarn fmt:write`                                                  |
-| Start the internal Storybook UI | `cd code && yarn storybook:ui`                                               |
-| Build the internal Storybook UI | `cd code && yarn storybook:ui:build`                                         |
-| Run unit tests                  | `yarn test` (`yarn test:watch` for watch mode)                               |
-| Run Storybook Vitest tests      | `yarn storybook:vitest`                                                      |
-| Generate a sandbox              | `yarn task sandbox --template react-vite/default-ts --start-from auto`       |
-| Run sandbox E2E tests           | `yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto` |
-| Run the docgen perf bench       | `yarn workspace @storybook/docgen-harness bench:docgen-perf`                 |
-| Run the docgen memory gate      | `yarn workspace @storybook/docgen-harness bench:docgen-memory`               |
-| Verify sandbox docgen baselines | `yarn workspace @storybook/docgen-harness baselines:sandbox`                 |
+| Install                         | `pnpm install`                                                               |
+| Dedupe the lockfile             | `pnpm dedupe`                                                                |
+| Compile everything quickly      | `pnpm exec nx run-many -t compile` (or `pnpm task compile`)                  |
+| Compile one project             | `pnpm exec nx compile <nx-project-name>`                                     |
+| Check TypeScript errors quickly | `pnpm exec nx run-many -t check` (or `pnpm task check`)                      |
+| Lint everything                 | `pnpm lint`                                                                  |
+| Lint one file                   | `pnpm --dir code lint:js:cmd <file-relative-to-code-folder> --fix`           |
+| Update the MIGRATION.md TOC     | `pnpm --dir scripts update-migration-toc`                                    |
+| Check the MIGRATION.md TOC      | `pnpm --dir scripts update-migration-toc --check`                            |
+| Format                          | `pnpm fmt:write`                                                             |
+| Start the internal Storybook UI | `cd code && pnpm storybook:ui`                                               |
+| Build the internal Storybook UI | `cd code && pnpm storybook:ui:build`                                         |
+| Run unit tests                  | `pnpm test` (`pnpm test:watch` for watch mode)                               |
+| Run Storybook Vitest tests      | `pnpm storybook:vitest`                                                      |
+| Generate a sandbox              | `pnpm task sandbox --template react-vite/default-ts --start-from auto`       |
+| Run sandbox E2E tests           | `pnpm task e2e-tests-dev --template react-vite/default-ts --start-from auto` |
+| Run the docgen perf bench       | `pnpm --filter @storybook/docgen-harness run bench:docgen-perf`              |
+| Run the docgen memory gate      | `pnpm --filter @storybook/docgen-harness run bench:docgen-memory`            |
+| Verify sandbox docgen baselines | `pnpm --filter @storybook/docgen-harness run baselines:sandbox`              |
 | List docs via tools CLI         | `cd code && node core/dist/bin/dispatcher.js tools docs list`                |
 | Require attach / force local    | add `--attach` or `--no-attach` before the toolset name                      |
 
@@ -47,11 +48,11 @@ Changes to `MIGRATION.md` are automatically updated by lint-staged. Use the comm
 
 ## Normal code changes
 
-1. Install if needed: `yarn`
-2. Compile with NX: `yarn nx run-many -t compile`
+1. Install if needed: `pnpm install`
+2. Compile with NX: `pnpm exec nx run-many -t compile`
 3. Make changes
 4. Recompile affected packages
-5. Validate there are no TypeScript errors with `yarn nx run-many -t check`
+5. Validate there are no TypeScript errors with `pnpm exec nx run-many -t check`
 6. Format, then run relevant lint and tests
 7. Validate behavior in the internal Storybook UI first, then switch to sandbox or `-c production` flows only if you need template or CI parity
 
@@ -64,14 +65,14 @@ Changes to `MIGRATION.md` are automatically updated by lint-staged. Use the comm
 
 ## Formatting and linting
 
-Always run `cd code && yarn fmt:write` once you are done editing.
+Always run `pnpm fmt:write` from the repository root once you are done editing.
 Hand-written formatting is frequently wrong for oxfmt, so do not skip this step.
 The pre-commit hook detects AI agents (via `std-env`) and switches from check-only to write mode, so formatting is also auto-fixed when agents commit.
 
 ## Troubleshooting
 
-- Build failures are often fixed by rerunning `yarn` and `yarn nx run-many -t compile`.
-- A production compile (`-c production`, `--no-link`) fails on declaration-emit diagnostics such as TS2883 (`cannot be named without a reference to`), which `yarn task check` does not report because it runs without `declaration`. Add an explicit type annotation at the reported location.
+- Build failures are often fixed by rerunning `pnpm install` and `pnpm exec nx run-many -t compile`.
+- A production compile (`-c production`, `--no-link`) fails on declaration-emit diagnostics such as TS2883 (`cannot be named without a reference to`), which `pnpm task check` does not report because it runs without `declaration`. Add an explicit type annotation at the reported location.
 - Large compiles may require more Node.js memory.
 - The internal Storybook UI uses port `6006` by default.
 - Use `--debug` for verbose CLI output.

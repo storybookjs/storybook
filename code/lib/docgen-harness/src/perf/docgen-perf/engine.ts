@@ -125,7 +125,7 @@ export class SeriesChildEngine extends BenchEngine<SeriesResult> {
   preflight(): string | undefined {
     const { pin } = this.#config;
     if (pin && !resolvePin(pin)) {
-      return `${pin} did not resolve; it is pinned in code/lib/docgen-harness/package.json, so run yarn install`;
+      return `${pin} did not resolve; it is pinned in code/lib/docgen-harness/package.json, so run pnpm install`;
     }
     return undefined;
   }

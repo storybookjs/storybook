@@ -122,15 +122,21 @@ const meta = {
       }
     );
 
+    // Prefer the resolved state over the load error, the way `OpenServiceDemoPanel` derives it: a
+    // remote command is best-effort, so the server can execute it and broadcast state even after
+    // the ack times out. Writing the rejection unconditionally would clobber a value the
+    // subscription above had already delivered, and nothing re-fires to repair it. Surfacing the
+    // error only while the status is still unset keeps the static build — where no peer ever
+    // acknowledges the command — showing the error, as its e2e expects.
     void staticLoadSyncService.queries.unbacked
       .loaded()
       .then((unbacked) => {
-        if (active) {
+        if (active && unbacked != null) {
           store.set({ ...store.get(), unbackedStatus: JSON.stringify(unbacked) });
         }
       })
       .catch((error: unknown) => {
-        if (active) {
+        if (active && store.get().unbackedStatus === 'pending') {
           store.set({
             ...store.get(),
             unbackedStatus: error instanceof Error ? error.message : String(error),

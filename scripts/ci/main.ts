@@ -10,13 +10,7 @@ import { parameters } from './utils/parameters.ts';
 import { setTrustedAuthor } from './utils/runtime.ts';
 import type { JobImplementationObj, NoOpJobImplementationObj } from './utils/types.ts';
 import { type Workflow, workflows } from './utils/types.ts';
-import {
-  NX_AGENT_JOB_ID,
-  NX_DTE_AGENT_CLASSES,
-  type NxDteAgentClass,
-  type NxDteOptions,
-  getNxDteJobs,
-} from './nx/circleci-dte.ts';
+import { NX_AGENT_JOB_IDS, type NxDteOptions, getNxDteJobs } from './nx/circleci-dte.ts';
 import { getJobs } from './workflow-jobs.ts';
 
 const dirname = import.meta.dirname;
@@ -78,7 +72,7 @@ function generateConfig(
     // Not on the NX agents: `nx-main` fails when a task fails, and the agents stop up to a minute
     // after it while they wind down.
     const completion = defineCircleciCompletion(
-      ensuredJobs.filter((job) => job.id !== NX_AGENT_JOB_ID)
+      ensuredJobs.filter((job) => !NX_AGENT_JOB_IDS.includes(job.id))
     );
     ensuredJobs.push(completion);
 
@@ -152,8 +146,8 @@ const { values: opts } = parseArgs({
     'gh-trusted-author': { type: 'string', default: 'false' },
     branch: { type: 'string', default: '' },
     'nx-dte': { type: 'string', default: 'false' },
-    'nx-dte-agents': { type: 'string', default: '40' },
-    'nx-dte-agent-class': { type: 'string', default: 'large' },
+    'nx-dte-agents': { type: 'string' },
+    'nx-dte-peak-agents': { type: 'string' },
   },
 });
 setTrustedAuthor(opts['gh-trusted-author'] === 'true');
@@ -168,15 +162,17 @@ if (unknown.length > 0 || requested.length === 0) {
 const selected = workflows.filter((w) => requested.includes(w));
 const nightly = selected.includes('daily') && opts.branch === 'next';
 
-const agents = Number(opts['nx-dte-agents']);
-const agentClass = opts['nx-dte-agent-class'] as NxDteAgentClass;
-const nxDte = opts['nx-dte'] === 'true' && { agents, agentClass };
-if (
-  nxDte &&
-  (!Number.isInteger(agents) || agents < 1 || !Object.hasOwn(NX_DTE_AGENT_CLASSES, agentClass))
-) {
+const agentCounts: NxDteOptions = {
+  first: opts['nx-dte-agents'] ? Number(opts['nx-dte-agents']) : undefined,
+  peak: opts['nx-dte-peak-agents'] !== undefined ? Number(opts['nx-dte-peak-agents']) : undefined,
+};
+const nxDte = opts['nx-dte'] === 'true' && agentCounts;
+// The peak wave may be 0, which runs one wave.
+const valid = (n: number | undefined, min: number) =>
+  n === undefined || (Number.isInteger(n) && n >= min);
+if (nxDte && !(valid(nxDte.first, 1) && valid(nxDte.peak, 0))) {
   throw new Error(
-    `Expected a positive number of agents and one of ${Object.keys(NX_DTE_AGENT_CLASSES).join(', ')}, got ${opts['nx-dte-agents']} × ${opts['nx-dte-agent-class']}`
+    `Expected at least 1 first-wave and 0 peak agents, got ${opts['nx-dte-agents']} and ${opts['nx-dte-peak-agents']}`
   );
 }
 

@@ -35,7 +35,8 @@ type JobDetails = {
   queued_at?: string;
   start_time?: string;
   stop_time?: string;
-  picard?: { resource_class?: { class?: string; executor?: string } };
+  /** `executor` is `docker`, `windows`, …; the resource class carries only its size. */
+  picard?: { executor?: string; resource_class?: { class?: string } };
   steps: Step[];
   workflows?: { job_name?: string };
 };
@@ -76,7 +77,7 @@ export function jobTiming(details: JobDetails): JobTiming {
   const rc = details.picard?.resource_class ?? {};
   return {
     name: details.workflows?.job_name ?? '?',
-    executor: rc.executor === 'windows' ? 'windows' : 'docker',
+    executor: details.picard?.executor === 'windows' ? 'windows' : 'docker',
     resourceClass: rc.class ?? '?',
     queuedAt: time(details.queued_at),
     startedAt: time(details.start_time),
@@ -86,8 +87,17 @@ export function jobTiming(details: JobDetails): JobTiming {
   };
 }
 
-export const creditsOf = (job: JobTiming) =>
-  job.containerMinutes * (CREDITS_PER_MINUTE[job.executor]?.[job.resourceClass] ?? 0);
+export function creditsOf(job: JobTiming) {
+  const perMinute = CREDITS_PER_MINUTE[job.executor]?.[job.resourceClass];
+  if (job.containerMinutes === 0) {
+    return 0;
+  }
+  if (perMinute === undefined) {
+    // Not 0: a machine priced at nothing hid the Windows jobs' cost once already.
+    throw new Error(`No credit price for ${job.executor} ${job.resourceClass} (${job.name})`);
+  }
+  return job.containerMinutes * perMinute;
+}
 
 export type WorkflowReport = {
   name: string;

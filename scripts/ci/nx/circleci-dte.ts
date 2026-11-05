@@ -5,10 +5,11 @@
  *
  * - `nx-main` starts the NX Cloud run (`start-ci-run --distribute-on=manual`), then runs the same
  *   `nx run-many` commands as .github/workflows/nx.yml (run.ts). It runs no task itself.
- * - `nx-agent` runs as {@link NX_DTE_AGENTS} parallel containers, each `nx start-agent`,
- *   which runs the tasks NX Cloud assigns. `start-ci-run --stop-workers-after` names every target
- *   of the run, so NX Cloud knows when no more tasks can come and stops each agent once it has
- *   nothing left for it, as the Nx docs recommend; no `complete-ci-run` is needed.
+ * - `nx-agent` and, a little later, `nx-agent-peak` ({@link NX_DTE_WAVES}) run as parallel
+ *   containers, each `nx start-agent`, which runs the tasks NX Cloud assigns.
+ *   `start-ci-run --stop-workers-after` names every target of the run, so NX Cloud knows when no
+ *   more tasks can come and stops each agent once it has nothing left for it, as the Nx docs
+ *   recommend; no `complete-ci-run` is needed.
  * - The jobs NX Cloud's Linux workers cannot run (plan.ts `sideJobs`) are plain CircleCI jobs: the
  *   Node 26 smoke job as CircleCI defines it, and the Windows parts as .github/workflows/nx.yml runs
  *   them, which builds its sandbox on Windows instead of unpacking the Linux one.
@@ -22,25 +23,63 @@ import { getChangedFiles } from '../focus.ts';
 import { cache, git, node, testResults } from '../utils/helpers.ts';
 import { isTrustedAuthor } from '../utils/runtime.ts';
 import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
-import { planFor } from './plan.ts';
+import { type Plan, planFor } from './plan.ts';
 
 /**
- * Parallel CircleCI agent containers by default, `large` (4 vCPUs) by default: a task costs more on
- * `xlarge` (twice the credits per minute, not twice as fast). With 20 agents every agent was busy
- * and sandbox E2E tasks waited for one; 60 were no faster than 40.
+ * The agents come in two waves, each one CircleCI job of parallel `large` containers (4 vCPUs; a
+ * task costs more on `xlarge`, which bills twice the credits per minute and ran the dev-server E2E
+ * tests only a quarter faster).
+ *
+ * - `first` starts with the run. Until the sandboxes exist, only the tasks that need none can
+ *   run: compile, lint, the unit and internal E2E tests, and creating the sandboxes.
+ * - `peak` starts {@link NX_DTE_PEAK_DELAY_SECONDS} later, behind a `small` job that only waits.
+ *   Once compile, publish and the sandboxes are done (about 100 seconds into the run), some 50
+ *   sandbox tasks become ready at once (E2E tests, Chromatic, Vitest). With one wave sized for
+ *   that peak, most agents idled, billed, for the first 100 seconds; with one sized for the start,
+ *   sandbox tasks waited up to two minutes for an agent. It only covers what the first wave cannot
+ *   ({@link PEAK_TASKS_PER_SANDBOX} per sandbox): a focused run with one sandbox needs none, and
+ *   24 agents that only started and stopped cost it a third more credits.
  */
-export const NX_DTE_AGENTS = 40;
-
-/** The agents' CircleCI resource classes, with the Playwright workers each runs the static E2E tests with. */
-export const NX_DTE_AGENT_CLASSES = {
-  // 4 vCPUs: CircleCI's own e2e jobs run 3 workers.
-  large: { playwrightWorkers: 3 },
-  // 8 vCPUs and 16 GB, as NX Cloud's extra_large workers (.nx/workflows/agents.yaml), which run 6.
-  xlarge: { playwrightWorkers: 6 },
+export const NX_DTE_WAVES = {
+  first: { job: 'nx-agent', agents: 20 },
+  peak: { job: 'nx-agent-peak', agents: 24 },
 } as const;
-export type NxDteAgentClass = keyof typeof NX_DTE_AGENT_CLASSES;
+export type NxDteWave = keyof typeof NX_DTE_WAVES;
+export const NX_DTE_PEAK_DELAY_SECONDS = 75;
+/** The tasks of one sandbox that run at the same time once it is built. */
+const PEAK_TASKS_PER_SANDBOX = 3;
+const PEAK_DELAY_JOB = 'nx-agent-peak-delay';
 
-export type NxDteOptions = { agents?: number; agentClass?: NxDteAgentClass };
+/** How many agents each wave runs at most, when not its default. */
+export type NxDteOptions = Partial<Record<NxDteWave, number>>;
+
+/**
+ * The agents each wave runs for a plan. The first wave never outnumbers a plan's tasks (a `docs`
+ * run has one), unless they expand to more in Nx: a `*` project or the affected check. The peak
+ * wave covers what the first cannot, {@link PEAK_TASKS_PER_SANDBOX} tasks per sandbox.
+ */
+export function agentsFor(
+  plan: Pick<Plan, 'tasks' | 'affectedCheck'>,
+  options: NxDteOptions = {}
+): Record<NxDteWave, number> {
+  const expands = plan.affectedCheck || plan.tasks.some((task) => task.startsWith('*:'));
+  const first = Math.min(
+    options.first ?? NX_DTE_WAVES.first.agents,
+    expands ? Infinity : plan.tasks.length
+  );
+  const sandboxes = plan.tasks.filter((task) => task.endsWith(':sandbox')).length;
+  const peak = Math.min(
+    options.peak ?? NX_DTE_WAVES.peak.agents,
+    Math.max(0, PEAK_TASKS_PER_SANDBOX * sandboxes - first)
+  );
+  return { first, peak };
+}
+
+/** The agents' jobs, which `circleci-completion` does not wait for (main.ts). */
+export const NX_AGENT_JOB_IDS: readonly string[] = [
+  ...Object.values(NX_DTE_WAVES).map((wave) => wave.job),
+  PEAK_DELAY_JOB,
+];
 
 /**
  * Pinned as in nx.yml. Only for `start-ci-run`, which runs before the install. The commands after
@@ -122,17 +161,9 @@ const mainJob = (
       NX_CLOUD_DISTRIBUTED_EXECUTION_AGENT_COUNT: `${agents}`,
     },
     steps: [
-      // A focused run asks Nx which projects the diff affects, so it needs the merge base: the
-      // history the setup job fetches (.circleci/config.yml).
-      selected.includes('focus')
-        ? {
-            'git-shallow-clone/checkout_advanced': {
-              clone_options: '--depth 500 --filter=blob:none --no-tags',
-              fetch_options: '--depth 500 --filter=blob:none',
-              tag_fetch_options: '--no-tags',
-            },
-          }
-        : git.checkout(),
+      // One commit, also for a focused run: run.ts asks Nx which projects the changed files affect
+      // (CI_CHANGED_FILES, from the setup job), not a git range.
+      git.checkout(),
       {
         run: {
           name: 'Start the NX Cloud run',
@@ -157,21 +188,6 @@ const mainJob = (
         },
       },
       ...restoreNodeModules(),
-      ...(selected.includes('focus')
-        ? [
-            {
-              run: {
-                name: 'Fetch the base branch',
-                command: [
-                  'git fetch --depth=500 --filter=blob:none --no-tags origin \\',
-                  '  "<< pipeline.parameters.ghBaseBranch >>:refs/remotes/origin/<< pipeline.parameters.ghBaseBranch >>"',
-                  'echo "export NX_BASE=$(git merge-base origin/<< pipeline.parameters.ghBaseBranch >> HEAD)" >> "$BASH_ENV"',
-                  'echo "export NX_HEAD=$(git rev-parse HEAD)" >> "$BASH_ENV"',
-                ].join('\n'),
-              },
-            },
-          ]
-        : []),
       {
         run: {
           name: 'Run nx',
@@ -185,56 +201,81 @@ const mainJob = (
     ],
   }));
 
-/** The agents' job, which `circleci-completion` does not wait for (main.ts). */
-export const NX_AGENT_JOB_ID = 'nx-agent';
+const agentJob = (
+  changedFiles: readonly string[],
+  wave: NxDteWave,
+  agents: number,
+  requires: JobOrNoOpJob[] = []
+) =>
+  defineJob(
+    NX_DTE_WAVES[wave].job,
+    () => ({
+      executor: { name: 'sb_node_22_browsers', class: 'large' },
+      parallelism: agents,
+      environment: {
+        ...nxEnvironment(changedFiles),
+        // The NX Cloud workers' environment (.nx/workflows/agents.yaml).
+        STORYBOOK_DISABLE_TELEMETRY: 'true',
+        IN_STORYBOOK_SANDBOX: 'true',
+        // The sandboxes install from the global yarn cache (scripts/utils/yarn.ts), so the installs
+        // of one sandbox, and of every sandbox task an agent runs after it, share their downloads.
+        // A fresh container starts with an empty cache, and nothing here saves it between runs;
+        // the step below clears @storybook/* from it anyway, as NX Cloud's workers do.
+        STORYBOOK_NX_CLOUD_AGENT: 'true',
+        // CircleCI's own e2e jobs run 3 workers on 4 vCPUs; the dev-server E2E targets set 4 in nx.json.
+        PLAYWRIGHT_WORKERS: '3',
+        // bench-packages.ts uploads the benchmarks for this pull request.
+        BENCH_BASE_BRANCH: '<< pipeline.parameters.ghBaseBranch >>',
+        BENCH_PR_NUMBER: '<< pipeline.parameters.ghPrNumber >>',
+        // Matches the agent in .nx/workflows/circleci-assignment-rules.yaml.
+        NX_AGENT_LAUNCH_TEMPLATE: 'circleci-linux',
+      },
+      steps: [
+        git.checkout(),
+        ...restoreNodeModules(),
+        cache.attach(['v1-nx-dte-playwright/{{ arch }}/{{ checksum "yarn.lock" }}']),
+        {
+          run: {
+            name: 'Install Chromium for Playwright',
+            // The image has Chrome's system libraries, so no `--with-deps`.
+            command: 'yarn playwright install chromium',
+          },
+        },
+        ...(isTrustedAuthor()
+          ? [
+              cache.persist(
+                ['~/.cache/ms-playwright'],
+                'v1-nx-dte-playwright/{{ arch }}/{{ checksum "yarn.lock" }}'
+              ),
+            ]
+          : []),
+        {
+          run: {
+            name: 'Clear Storybook packages from the global yarn cache',
+            command:
+              'rm -f ~/.yarn/berry/cache/storybook-npm-*.zip ~/.yarn/berry/cache/@storybook-*.zip',
+          },
+        },
+        {
+          run: {
+            name: 'Run the tasks NX Cloud assigns',
+            command: `NX_AGENT_NAME="circleci-${wave}-$CIRCLE_NODE_INDEX" yarn nx start-agent`,
+            // NX Cloud stops a worker that is silent for 10 minutes; the Chromatic task prints a
+            // line every minute while it waits.
+            no_output_timeout: '20m',
+          },
+        },
+        testResults.persist('test-results'),
+      ],
+    }),
+    requires
+  );
 
-const agentJob = (changedFiles: readonly string[], agents: number, agentClass: NxDteAgentClass) =>
-  defineJob(NX_AGENT_JOB_ID, () => ({
-    executor: { name: 'sb_node_22_browsers', class: agentClass },
-    parallelism: agents,
-    environment: {
-      ...nxEnvironment(changedFiles),
-      // The NX Cloud workers' environment (.nx/workflows/agents.yaml).
-      STORYBOOK_DISABLE_TELEMETRY: 'true',
-      IN_STORYBOOK_SANDBOX: 'true',
-      PLAYWRIGHT_WORKERS: `${NX_DTE_AGENT_CLASSES[agentClass].playwrightWorkers}`,
-      // bench-packages.ts uploads the benchmarks for this pull request.
-      BENCH_BASE_BRANCH: '<< pipeline.parameters.ghBaseBranch >>',
-      BENCH_PR_NUMBER: '<< pipeline.parameters.ghPrNumber >>',
-      // Matches the agent in .nx/workflows/circleci-assignment-rules.yaml.
-      NX_AGENT_LAUNCH_TEMPLATE: 'circleci-linux',
-    },
-    steps: [
-      git.checkout(),
-      ...restoreNodeModules(),
-      cache.attach(['v1-nx-dte-playwright/{{ arch }}/{{ checksum "yarn.lock" }}']),
-      {
-        run: {
-          name: 'Install Chromium for Playwright',
-          // The image has Chrome's system libraries, so no `--with-deps`.
-          command: 'yarn playwright install chromium',
-        },
-      },
-      ...(isTrustedAuthor()
-        ? [
-            cache.persist(
-              ['~/.cache/ms-playwright'],
-              'v1-nx-dte-playwright/{{ arch }}/{{ checksum "yarn.lock" }}'
-            ),
-          ]
-        : []),
-      {
-        run: {
-          name: 'Run the tasks NX Cloud assigns',
-          command: 'NX_AGENT_NAME="circleci-$CIRCLE_NODE_INDEX" yarn nx start-agent',
-          // NX Cloud stops a worker that is silent for 10 minutes; the Chromatic task prints a
-          // line every minute while it waits.
-          no_output_timeout: '20m',
-        },
-      },
-      testResults.persist('test-results'),
-    ],
-  }));
+/** Only waits, on the smallest machine, so the peak wave starts when the sandboxes are nearly done. */
+const peakDelayJob = defineJob(PEAK_DELAY_JOB, () => ({
+  executor: { name: 'sb_node_22_classic', class: 'small' },
+  steps: [{ run: { name: 'Wait for the peak', command: `sleep ${NX_DTE_PEAK_DELAY_SECONDS}` } }],
+}));
 
 const WINDOWS_PLAYWRIGHT_KEY = 'v1-nx-dte-playwright-windows/{{ checksum "yarn.lock" }}';
 const WINDOWS_PLAYWRIGHT_PATH = 'C:\\Users\\circleci\\AppData\\Local\\ms-playwright';
@@ -338,7 +379,8 @@ const windowsJob = (part: WindowsPart) =>
                   `yarn task build --template ${WINDOWS_TEMPLATE} --no-link -s build`,
                   `(yarn task serve --template ${WINDOWS_TEMPLATE} --no-link -s serve > serve.log 2>&1 &)`,
                   '(cd code && yarn wait-on --timeout 120000 tcp:127.0.0.1:8001)',
-                  `yarn task e2e-tests --template ${WINDOWS_TEMPLATE} --no-link -s e2e-tests`,
+                  // As the dev E2E tests below.
+                  `/usr/bin/timeout --kill-after=1m 20m yarn task e2e-tests --template ${WINDOWS_TEMPLATE} --no-link -s e2e-tests`,
                 ].join('\n')
               ),
             ]
@@ -353,7 +395,12 @@ const windowsJob = (part: WindowsPart) =>
                   'export STORYBOOK_SERVE_PORT=8002',
                   `(yarn task dev --template ${WINDOWS_TEMPLATE} --no-link -s dev > dev.log 2>&1 &)`,
                   '(cd code && yarn wait-on --timeout 300000 tcp:127.0.0.1:8002)',
-                  `yarn task e2e-tests-dev --template ${WINDOWS_TEMPLATE} --no-link -s e2e-tests-dev --junit`,
+                  // A run once stopped printing halfway and held a Windows large machine (120
+                  // credits a minute) for an hour; CircleCI's no-output timeout did not end it. The
+                  // whole suite takes about 10 minutes. Git Bash's own `timeout`, not Windows'; it
+                  // has not yet had to end a hung run, so whether it ends Playwright's browsers
+                  // with it is unproven.
+                  `/usr/bin/timeout --kill-after=1m 20m yarn task e2e-tests-dev --template ${WINDOWS_TEMPLATE} --no-link -s e2e-tests-dev --junit`,
                 ].join('\n')
               ),
             ]
@@ -381,7 +428,7 @@ export function getNxDteJobs(
     throw new Error(`No NX equivalent for the CircleCI jobs: ${plan.missing.join(', ')}`);
   }
 
-  const { agents = NX_DTE_AGENTS, agentClass = 'large' } = options;
+  const agents = agentsFor(plan, options);
   const targets = [
     ...new Set([
       ...plan.tasks.map((task) => task.slice(task.lastIndexOf(':') + 1)),
@@ -391,8 +438,11 @@ export function getNxDteJobs(
   const jobs: JobOrNoOpJob[] = [];
   if (plan.tasks.length > 0 || plan.affectedCheck) {
     jobs.push(
-      mainJob(selected, changedFiles, targets, agents),
-      agentJob(changedFiles, agents, agentClass)
+      mainJob(selected, changedFiles, targets, agents.first + agents.peak),
+      agentJob(changedFiles, 'first', agents.first),
+      ...(agents.peak > 0
+        ? [peakDelayJob, agentJob(changedFiles, 'peak', agents.peak, [peakDelayJob])]
+        : [])
     );
   }
   if (plan.sideJobs.includes('windows')) {

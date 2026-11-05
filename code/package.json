@@ -126,30 +126,6 @@
     "vitest": "5.0.5",
     "wait-on": "^8.0.3"
   },
-  "dependenciesMeta": {
-    "ejs": {
-      "built": false
-    },
-    "level": {
-      "built": false
-    },
-    "node-uuid": {
-      "built": false,
-      "unplugged": false
-    },
-    "nodemon": {
-      "built": false
-    },
-    "parcel": {
-      "built": false
-    },
-    "preact": {
-      "built": false
-    },
-    "yorkie": {
-      "built": false
-    }
-  },
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"

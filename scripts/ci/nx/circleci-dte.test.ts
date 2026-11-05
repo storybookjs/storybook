@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
+import { parameters } from '../utils/parameters.ts';
 import { workflows } from '../utils/types.ts';
 import { NX_DTE_AGENTS, getNxDteJobs } from './circleci-dte.ts';
 
@@ -36,14 +37,15 @@ describe('the CircleCI NX DTE pipeline', () => {
     }
   });
 
-  it('runs as many agents as the NX Cloud workers, with the agent the assignment rules name', () => {
+  it('runs the default number of agents, with the agent the assignment rules name', () => {
     const agent = getNxDteJobs(['normal'], 'unused')
       .find((job) => job.id === 'nx-agent')!
       .implementation('normal') as { parallelism: number; environment: Record<string, string> };
     const template = agent.environment.NX_AGENT_LAUNCH_TEMPLATE;
 
-    expect(read('.nx/ci-config.yaml')).toContain(`distribute-on: ${NX_DTE_AGENTS} `);
     expect(agent.parallelism).toBe(NX_DTE_AGENTS);
+    expect(parameters.nxDteAgents.default).toBe(NX_DTE_AGENTS);
+    expect(read('.circleci/config.yml')).toContain(`nxDteAgents:\n    default: ${NX_DTE_AGENTS}\n`);
     expect(read('.nx/workflows/circleci-assignment-rules.yaml')).toContain(`agent: ${template}\n`);
   });
 

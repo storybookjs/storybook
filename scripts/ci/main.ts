@@ -152,7 +152,7 @@ const { values: opts } = parseArgs({
     'gh-trusted-author': { type: 'string', default: 'false' },
     branch: { type: 'string', default: '' },
     'nx-dte': { type: 'string', default: 'false' },
-    'nx-dte-agents': { type: 'string', default: '20' },
+    'nx-dte-agents': { type: 'string', default: '40' },
     'nx-dte-agent-class': { type: 'string', default: 'xlarge' },
   },
 });

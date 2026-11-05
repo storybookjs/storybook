@@ -135,10 +135,13 @@ export function report(
   };
 }
 
-const mmss = (minutes?: number) =>
-  minutes === undefined
-    ? '–'
-    : `${Math.floor(minutes)}m${String(Math.round((minutes % 1) * 60)).padStart(2, '0')}s`;
+const mmss = (minutes?: number) => {
+  if (minutes === undefined) {
+    return '–';
+  }
+  const seconds = Math.round(minutes * 60);
+  return `${Math.floor(seconds / 60)}m${String(seconds % 60).padStart(2, '0')}s`;
+};
 
 export function toMarkdown(reports: WorkflowReport[]) {
   const rows = reports.map((r) =>

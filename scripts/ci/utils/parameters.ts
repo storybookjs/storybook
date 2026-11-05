@@ -25,7 +25,7 @@ export const parameters = {
     type: 'boolean',
   },
   nxDteAgents: {
-    default: 20,
+    default: 40,
     description: 'How many CircleCI agents run the tasks when nxDte is set',
     type: 'integer',
   },

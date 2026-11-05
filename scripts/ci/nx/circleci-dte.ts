@@ -22,8 +22,11 @@ import { isTrustedAuthor } from '../utils/runtime.ts';
 import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
 import { planFor } from './plan.ts';
 
-/** Parallel CircleCI agent containers by default. NX Cloud's own workers run 20 (the Team plan's maximum). */
-export const NX_DTE_AGENTS = 20;
+/**
+ * Parallel CircleCI agent containers by default. With 20 (NX Cloud's own workers, the Team plan's
+ * maximum) every agent was busy and sandbox E2E tasks waited for one; 60 were no faster than 40.
+ */
+export const NX_DTE_AGENTS = 40;
 
 /** The agents' CircleCI resource classes, with the Playwright workers each runs the static E2E tests with. */
 export const NX_DTE_AGENT_CLASSES = {

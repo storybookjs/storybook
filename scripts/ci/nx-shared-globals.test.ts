@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { build } from 'esbuild';
 import { expect, it } from 'vitest';
 
-const ROOT = join(import.meta.dirname, '..');
+const ROOT = join(import.meta.dirname, '../..');
 
 /** The scripts that Nx tasks run (see the `command`s in the generated project.json files). */
 const TASK_ENTRY_POINTS = [

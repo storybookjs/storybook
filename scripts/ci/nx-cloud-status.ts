@@ -10,7 +10,7 @@
  * an agent can run it as a background monitor and is woken by each line.
  *
  * Usage:
- *   node scripts/nx-cloud-status.ts [target] [--watch] [--sha <commit>] [--interval <seconds>]
+ *   node scripts/ci/nx-cloud-status.ts [target] [--watch] [--sha <commit>] [--interval <seconds>]
  *
  * `target` is a pull request number (`37181`, `#37181` or its GitHub link), a branch, a CIPE id, a
  * cloud.nx.app/cipes link, or the NX Cloud overview link that `nx.yml` posts on a pull request. NX
@@ -36,13 +36,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseArgs, promisify } from 'node:util';
 
-import { esMain } from './utils/esmain.ts';
+import { esMain } from '../utils/esmain.ts';
 
 const execFileAsync = promisify(execFile);
 
 /** Same version as `.github/workflows/nx.yml`; its `api` command is the NX Cloud Public API client. */
 const NX_CLOUD_CLI = 'nx-cloud@19.1.5';
-const ROOT = join(import.meta.dirname, '..');
+const ROOT = join(import.meta.dirname, '../..');
 const NX_CLOUD_ID: string = JSON.parse(readFileSync(join(ROOT, 'nx.json'), 'utf8')).nxCloudId;
 const TERMINAL = new Set(['SUCCEEDED', 'FAILED', 'CANCELED', 'TIMED_OUT']);
 /** At most this many failed tasks and failed worker steps get their log tail in a report. */

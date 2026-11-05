@@ -44,7 +44,8 @@ jobs:
     timeout-minutes: 90
     runs-on: ubuntu-latest
     env:
-      NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_WRITE_TOKEN || secrets.NX_CLOUD_ACCESS_TOKEN }}
+      # The write token only outside pull requests, even if it is ever added as a repository secret.
+      NX_CLOUD_ACCESS_TOKEN: ${{ github.event_name != 'pull_request' && secrets.NX_CLOUD_WRITE_TOKEN || secrets.NX_CLOUD_ACCESS_TOKEN }}
       # Report each finished task right away instead of in batches, so the tasks that depend on it
       # (sandbox, then build, then e2e) start sooner. The Nx repo itself runs with this.
       NX_CLOUD_DISABLE_BUFFER_TASK_COMPLETIONS: 'true'
@@ -92,9 +93,11 @@ jobs:
             });
       # The installed tree, keyed on everything `yarn install` reads. On a hit the tree is exactly
       # what an install would produce, so both the yarn download cache and the install are skipped.
+      # Only runs on `next` save it (here and in nx-cache.yml): a pull request's own 1.4 GB entry
+      # would push other caches out of the repository's quota.
       - name: Restore node_modules
         id: node-modules
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |
             node_modules
@@ -110,15 +113,28 @@ jobs:
           package-manager-cache: ${{ steps.node-modules.outputs.cache-hit != 'true' }}
       - if: steps.node-modules.outputs.cache-hit != 'true'
         run: yarn install --immutable
+      # Right after the install, before tasks write caches into node_modules.
+      - name: Save node_modules
+        if: github.event_name != 'pull_request' && steps.node-modules.outputs.cache-hit != 'true'
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            node_modules
+            */node_modules
+            code/*/node_modules
+            code/*/*/node_modules
+            .yarn/root-install-state.gz
+          key: ${{ steps.node-modules.outputs.cache-primary-key }}
       - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
         with:
           main-branch-name: next
       - id: nx
         name: 'Run nx'
+        # Below the job's timeout, so a hung run fails this step and the statuses step still runs
+        # (a job timeout counts as cancelled and would leave the `nx` status pending).
+        timeout-minutes: 80
         env:
           TAG: ${{ steps.tag.outputs.tag }}
-          # Wide enough that the task summary table never truncates task names.
-          COLUMNS: 250
           # "Re-run with debug logging" also makes Nx and the NX Cloud client log verbosely.
           NX_VERBOSE_LOGGING: ${{ runner.debug == '1' }}
         run: |
@@ -133,6 +149,7 @@ jobs:
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         env:
           NX_OUTCOME: ${{ steps.nx.outcome }}
+          TAG: ${{ steps.tag.outputs.tag }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: | # zizmor: ignore[template-injection] safe toJson context expansion in github-script
@@ -154,8 +171,9 @@ jobs:
               if (!line.includes('✖')) continue;
 
               // The first `<project>:<target>[:<configuration>]` after the cross, whether Nx prints
-              // `✖ Failed   <task>` (distributed) or `✖ │ <task>` (summary table).
-              const task = line.match(/✖.*?([\w@.\/-]+:[\w:.-]+)/)?.[1] || 'Unknown Nx task';
+              // `✖ Failed   <task>` (distributed) or `✖ │ <task>` (summary table). The table cuts
+              // long names off with `…`; those are completed from the task graph below.
+              const task = line.match(/✖.*?([\w@.\/-]+:[\w:.-]*…?)/)?.[1] || 'Unknown Nx task';
 
               // Under a failed task Nx prints `> Task logs: …/logs/<id>` (distributed) or
               // `> Logs: …/runs/<run>/task/<task>` (summary table).
@@ -167,7 +185,27 @@ jobs:
               failures.push({ task, url });
             }
 
+            if (failures.some((failure) => failure.task.endsWith('…'))) {
+              try {
+                const graphFile = `${process.env.RUNNER_TEMP}/nx-tasks.json`;
+                require('child_process').execFileSync(
+                  'yarn',
+                  ['nx', 'run-many', '-t', process.env.ALL_TASKS, '-c', 'production', `-p=tag:library,tag:ci:${process.env.TAG}`, `--graph=${graphFile}`],
+                  { stdio: 'ignore' }
+                );
+                const taskIds = Object.keys(JSON.parse(fs.readFileSync(graphFile, 'utf8')).tasks.tasks);
+                for (const failure of failures) {
+                  if (!failure.task.endsWith('…')) continue;
+                  const matches = taskIds.filter((id) => id.startsWith(failure.task.slice(0, -1)));
+                  if (matches.length === 1) failure.task = matches[0];
+                }
+              } catch (error) {
+                core.warning(`Could not complete truncated task names: ${error.message}`);
+              }
+            }
+
             const sha = context.payload.pull_request?.head?.sha ?? context.sha;
+            const taskStatusSuffix = `(nx: ${tag})`;
 
             // Per-task statuses (max 5)
             for (const { task, url } of failures.slice(0, 5)) {
@@ -178,8 +216,34 @@ jobs:
                 state: 'failure',
                 target_url: url ?? undefined,
                 context: `nx run ${task}`,
-                description: 'Your test failed on NX Cloud',
+                description: `Your test failed on NX Cloud ${taskStatusSuffix}`,
               });
+            }
+
+            // A passing re-run clears the task failures an earlier run of this workflow left on the
+            // commit; failures from a run with another ci: label stay.
+            if (succeeded) {
+              const statuses = await github.paginate(github.rest.repos.listCommitStatusesForRef, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: sha,
+                per_page: 100,
+              });
+              const latest = new Map();
+              for (const status of statuses) if (!latest.has(status.context)) latest.set(status.context, status);
+              for (const status of latest.values()) {
+                if (!status.context.startsWith('nx run ') || status.state !== 'failure') continue;
+                if (!status.description?.endsWith(taskStatusSuffix)) continue;
+                await github.rest.repos.createCommitStatus({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  sha,
+                  state: 'success',
+                  target_url: status.target_url ?? undefined,
+                  context: status.context,
+                  description: `Passed on a later run ${taskStatusSuffix}`,
+                });
+              }
             }
 
             // Prefer the pipeline execution link, then a run link; never a single task's log.

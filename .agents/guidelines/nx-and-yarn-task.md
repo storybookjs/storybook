@@ -42,18 +42,18 @@ Key points:
 
 ## Following an NX Cloud pipeline
 
-`scripts/nx-cloud-status.ts` reads a pipeline from the NX Cloud Public API with your `npx nx login`, so you do not need the NX Cloud web page. It needs no dependencies installed.
+`scripts/ci/nx-cloud-status.ts` reads a pipeline from the NX Cloud Public API with your `npx nx login`, so you do not need the NX Cloud web page. It needs no dependencies installed.
 
 ```bash
 # Report the newest pipeline of a pull request (or a branch, a CIPE id, a cloud.nx.app/cipes link,
 # or the NX Cloud link of the pull request's `nx: normal` status)
-node scripts/nx-cloud-status.ts 37181
+node scripts/ci/nx-cloud-status.ts 37181
 
 # Follow the pipeline of the commit you just pushed: one line per change, then the full report
-node scripts/nx-cloud-status.ts 37181 --watch --sha HEAD
+node scripts/ci/nx-cloud-status.ts 37181 --watch --sha HEAD
 
 # Follow one GitHub Actions run, such as a workflow_dispatch run on the same branch and commit
-node scripts/nx-cloud-status.ts 41939428103 --watch      # or 41939428103-1 (<run id>-<attempt>)
+node scripts/ci/nx-cloud-status.ts 41939428103 --watch      # or 41939428103-1 (<run id>-<attempt>)
 ```
 
 - The report gives the pipeline status, why it was canceled, each failed task with the lines that name the failure and the end of its log, and the worker steps that failed or timed out (for example `Restore Node Modules Cache`, or `no_output_timeout after 600s`), with the end of a worker's log. Each log is saved as a text file; the report prints its path

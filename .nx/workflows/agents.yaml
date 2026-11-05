@@ -18,6 +18,8 @@ linux-browsers-init-steps: &linux-browsers-init-steps
   #
   # Pinned to a commit: the paths and the install step depend on how this version of the cache step
   # names its environment variables (see main.ts and post.ts), and the `v6` tag moves.
+  # Bump "node-modules-v3" when the install step changes what it leaves in node_modules, and keep
+  # the image name in the key in step with the launch templates' `image`.
   - name: Restore node_modules
     uses: 'nrwl/nx-cloud-workflows/563df6a963147063d44d830a2ec7f117758d6c41/workflow-steps/cache/main.yaml'
     inputs:

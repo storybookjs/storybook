@@ -52,6 +52,7 @@
       "dependsOn": [{ "projects": ["scripts"], "target": "publish" }],
       "command": "yarn workspace @storybook/scripts local-registry --open",
       "continuous": true,
+      "inputs": ["sharedGlobals"],
       "configurations": { "production": {} }
     },
     "sandbox": {
@@ -81,6 +82,7 @@
       "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }],
       "command": "yarn task dev -s task --debug --no-link --template={projectName}",
       "continuous": true,
+      "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "vitest-integration": {
@@ -101,13 +103,14 @@
       "dependsOn": ["build", { "projects": ["scripts"], "target": "run-registry" }],
       "command": "yarn task serve -s task --debug --no-link --template={projectName}",
       "continuous": true,
+      "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "e2e-tests": {
       "dependsOn": ["serve"],
       "command": "yarn task e2e-tests --junit -s task --debug --no-link --template={projectName}",
       "cache": true,
-      "inputs": ["^production"],
+      "inputs": ["^production", "e2e-specs"],
       "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
       "configurations": { "production": {} }
     },
@@ -116,7 +119,7 @@
       "command": "yarn task e2e-tests-dev --junit -s task --debug --no-link --template={projectName}",
       "options": { "env": { "PLAYWRIGHT_WORKERS": "4" } },
       "cache": true,
-      "inputs": ["^production"],
+      "inputs": ["^production", "e2e-specs"],
       "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
       "configurations": { "production": {} }
     },
@@ -163,6 +166,7 @@
   },
   "namedInputs": {
     "sharedGlobals": [
+      "{workspaceRoot}/.nvmrc",
       "{workspaceRoot}/code/tsconfig.json",
       "{workspaceRoot}/scripts/*",
       "{workspaceRoot}/scripts/{__mocks__,bench,build,check,eslint-plugin-local-rules,sandbox,tasks,utils}/**/*"
@@ -173,6 +177,7 @@
       "{projectRoot}/**/*",
       "!{projectRoot}/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
     ],
+    "e2e-specs": ["{workspaceRoot}/code/e2e-sandbox/**/*", "{workspaceRoot}/code/playwright.config.ts"],
     "code-all": [
       "sharedGlobals",
       "{workspaceRoot}/code/**/*",

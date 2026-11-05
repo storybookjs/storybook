@@ -282,11 +282,26 @@ Options include:
 
 ### `skills`
 
-Prints instructions for AI agents as Markdown, tailored to your Storybook configuration. Agents run the command and read the result. See the [agentic setup docs](../ai/setup.mdx) for a full walkthrough.
+<Callout variant="info" icon="🧪">
+
+This command is [experimental](../releases/features.mdx#experimental). Its options and output may change in future releases.
+
+</Callout>
+
+Prints instructions for AI agents as Markdown, tailored to your Storybook configuration. This command is built for agents: the [skills](../ai/skills/index.mdx) installed in your project run it and follow the result.
 
 ```shell
 storybook skills [options] [id]
 ```
+
+Available skills:
+
+| ID               | Instructions for                                                                         |
+| ---------------- | ---------------------------------------------------------------------------------------- |
+| `ui-workflow`    | UI changes: look up components, write stories, run tests, and publish a review           |
+| `component-info` | Looking up and comparing components, with their props                                    |
+| `write-story`    | Writing, updating, and testing stories for the project                                   |
+| `setup`          | Configuring Storybook and writing the first stories. See [`skills setup`](#skills-setup) |
 
 Run `storybook skills --help` to list the available skills.
 
@@ -295,7 +310,7 @@ Options include:
 | Option                          | Description                                                                                                                                                                                     |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `-h`, `--help`                  | Output usage information and the list of skills.<br />`storybook skills --help`                                                                                                                 |
-| `--cwd <path>`                  | Project directory of the target Storybook.<br />`storybook skills stories --cwd packages/ui`                                                                                                    |
+| `--cwd <path>`                  | Project directory of the target Storybook.<br />`storybook skills ui-workflow --cwd packages/ui`                                                                                                |
 | `-c`, `--config-dir <dir-name>` | Storybook configuration directory.<br />`storybook skills setup -c .storybook`                                                                                                                  |
 | `--all`                         | Print every skill in full.<br />`storybook skills --all`                                                                                                                                        |
 | `--disable-telemetry`           | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook skills setup --disable-telemetry`                                        |
@@ -320,6 +335,49 @@ storybook skills setup [options]
 Run it from the directory where you start Storybook, so the running Storybook can tell that setup ran and complete the "Set up with AI" checklist item.
 
 The generated prompt is printed to stdout. To hand it to an agent that doesn't have shell access, redirect it to a file, for example `storybook skills setup > storybook-setup.md`.
+
+### `tools`
+
+<Callout variant="info" icon="🧪">
+
+This command is [experimental](../releases/features.mdx#experimental). Its options and output may change in future releases.
+
+</Callout>
+
+Runs the tools that AI agents use to work with your Storybook: look up component docs, find stories, run tests, and publish reviews. This command is built for agents, and the [skills](../ai/skills/index.mdx) tell them how to use it. It offers the same tools as the [MCP server](../ai/reference/mcp-server.mdx).
+
+```shell
+storybook tools [options] [toolset] [tool] [args...]
+```
+
+Most tools load your Storybook configuration and run without a dev server. Tools marked "requires running Storybook" need a running dev server. Start it first.
+
+| Command                     | Description                                                                          | Runs                       |
+| --------------------------- | ------------------------------------------------------------------------------------ | -------------------------- |
+| `docs list`                 | Lists all components and docs entries, with their IDs.                               | Local                      |
+| `docs show`                 | Shows the props and usage examples of one component or docs entry.                   | Local                      |
+| `docs show-story`           | Shows the code and documentation of one story.                                       | Local                      |
+| `stories changed`           | Lists the stories that are new, modified, or affected by uncommitted changes.        | Local                      |
+| `stories find-by-component` | Lists the stories that render the given component files.                             | Local                      |
+| `stories preview`           | Returns preview URLs for the given stories.                                          | Requires running Storybook |
+| `review create`             | Publishes an [agentic review](../ai/skills/agentic-review.mdx) of the given stories. | Requires running Storybook |
+| `test run`                  | Runs story tests, with accessibility checks if set up.                               | Local                      |
+
+Pass tool arguments as `--key value` flags, or all at once as a JSON object with `--input`. Run `storybook tools <toolset> <tool> --help` to see a tool's description, arguments, and `--json` output.
+
+Options include:
+
+| Option                          | Description                                                                                                                                              |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `-h`, `--help`                  | List the tools of the target Storybook, or show one tool with its arguments.<br />`storybook tools docs show --help`                                     |
+| `--cwd <path>`                  | Project directory of the target Storybook.<br />`storybook tools docs list --cwd packages/ui`                                                            |
+| `-c`, `--config-dir <dir-name>` | Storybook configuration directory of the target Storybook.<br />`storybook tools docs list -c .storybook`                                                |
+| `-p`, `--port <number>`         | Port of a running Storybook. Targets that instance directly, without `--cwd` or `--config-dir`.<br />`storybook tools stories preview --port 6007 ...`   |
+| `--attach`                      | Require a running Storybook. Fails instead of loading the configuration locally.<br />`storybook tools test run --attach`                                |
+| `--no-attach`                   | Load the project configuration without attaching to a running Storybook.<br />`storybook tools test run --no-attach`                                     |
+| `--input <object>`              | Raw JSON object with the tool arguments. Individual `--key value` flags override its entries.<br />`storybook tools docs show --input '{"id":"button"}'` |
+| `--json`                        | Print the tool's structured result as JSON instead of Markdown.<br />`storybook tools docs list --json`                                                  |
+| `-o`, `--output <path>`         | Write the result to a file instead of stdout.<br />`storybook tools docs list -o components.md`                                                          |
 
 ### `info`
 

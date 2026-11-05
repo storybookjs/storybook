@@ -30,7 +30,12 @@ export type StoryArgs = { unmappedArgs: Args; initialArgs: Args };
  */
 export const storyArgsChanged = ({ unmappedArgs, initialArgs }: StoryArgs) =>
   Boolean(globalThis.FEATURES?.experimentalLiveServerSnippets) &&
-  !isEqual(unmappedArgs, initialArgs);
+  !isEqual(definedArgs(unmappedArgs), definedArgs(initialArgs));
+
+// An arg set to `undefined` is unset: the args store deletes it on every update, and the template
+// fill reads it as absent too.
+const definedArgs = (args: Args | undefined) =>
+  Object.fromEntries(Object.entries(args ?? {}).filter(([, value]) => value !== undefined));
 
 // Resolves the display snippet for one story with its args filled into its template. While the
 // story still has the args it is written with, it is the static snippet. Either comes with the

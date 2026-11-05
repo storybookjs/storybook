@@ -1,3 +1,8 @@
+## 10.6.6
+
+- Core: Let StackBlitz embed the dev server again - [#37176](https://github.com/storybookjs/storybook/pull/37176), thanks @kasperpeulen!
+- Telemetry: Add VRT packages - [#37124](https://github.com/storybookjs/storybook/pull/37124), thanks @shilman!
+
 ## 10.6.5
 
 - Typescript: Exclude all dunderscore prefixed folders from production compilation - [#36740](https://github.com/storybookjs/storybook/pull/36740), thanks @mrginglymus!

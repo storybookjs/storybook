@@ -333,8 +333,10 @@ const windowsJob = (part: WindowsPart) =>
                   `yarn task build --template ${WINDOWS_TEMPLATE} --no-link -s build`,
                   `(yarn task serve --template ${WINDOWS_TEMPLATE} --no-link -s serve > serve.log 2>&1 &)`,
                   '(cd code && yarn wait-on --timeout 120000 tcp:127.0.0.1:8001)',
-                  `yarn task e2e-tests --template ${WINDOWS_TEMPLATE} --no-link -s e2e-tests`,
-                ].join('\n')
+                  // As the dev E2E tests below.
+                  `/usr/bin/timeout --kill-after=1m 20m yarn task e2e-tests --template ${WINDOWS_TEMPLATE} --no-link -s e2e-tests`,
+                ].join('\n'),
+                { no_output_timeout: '10m' }
               ),
             ]
           : []),
@@ -348,8 +350,12 @@ const windowsJob = (part: WindowsPart) =>
                   'export STORYBOOK_SERVE_PORT=8002',
                   `(yarn task dev --template ${WINDOWS_TEMPLATE} --no-link -s dev > dev.log 2>&1 &)`,
                   '(cd code && yarn wait-on --timeout 300000 tcp:127.0.0.1:8002)',
-                  `yarn task e2e-tests-dev --template ${WINDOWS_TEMPLATE} --no-link -s e2e-tests-dev --junit`,
-                ].join('\n')
+                  // A run once stopped printing halfway and held a Windows large machine (120
+                  // credits a minute) for an hour; CircleCI's no-output timeout did not end it. The
+                  // whole suite takes about 10 minutes. Git Bash's own `timeout`, not Windows'.
+                  `/usr/bin/timeout --kill-after=1m 20m yarn task e2e-tests-dev --template ${WINDOWS_TEMPLATE} --no-link -s e2e-tests-dev --junit`,
+                ].join('\n'),
+                { no_output_timeout: '10m' }
               ),
             ]
           : []),

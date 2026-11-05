@@ -67,6 +67,9 @@ const projectJson = (
       ? {}
       : {
           'e2e-tests-dev': {},
+          // The two halves of e2e-tests-dev, which CI runs on different workers (nx.json).
+          'e2e-tests-dev-1': {},
+          'e2e-tests-dev-2': {},
         }),
   },
   tags,

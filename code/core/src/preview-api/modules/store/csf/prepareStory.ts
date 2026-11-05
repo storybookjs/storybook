@@ -306,21 +306,14 @@ export function prepareContext<
 ): TContext & Pick<StoryContextForRender<TRenderer>, 'allArgs' | 'argsByTarget' | 'unmappedArgs'> {
   const { args: unmappedArgs } = context;
 
-  let targetedContext: TContext &
+  const argsByTarget = groupArgsByTarget(context);
+  const targetedContext: TContext &
     Pick<StoryContextForRender<TRenderer>, 'allArgs' | 'argsByTarget'> = {
     ...context,
-    allArgs: undefined,
-    argsByTarget: undefined,
+    allArgs: context.args,
+    argsByTarget,
+    args: argsByTarget[UNTARGETED] || {},
   };
-  if (global.FEATURES?.argTypeTargetsV7) {
-    const argsByTarget = groupArgsByTarget(context);
-    targetedContext = {
-      ...context,
-      allArgs: context.args,
-      argsByTarget,
-      args: argsByTarget[UNTARGETED] || {},
-    };
-  }
 
   const mappedArgs = Object.entries(targetedContext.args).reduce((acc, [key, val]) => {
     if (!targetedContext.argTypes[key]?.mapping) {

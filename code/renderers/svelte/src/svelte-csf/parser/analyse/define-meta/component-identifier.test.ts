@@ -1,9 +1,15 @@
+import { pathToFileURL } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
+
+import { resolve } from 'pathe';
 
 import { getSvelteAST } from '../../ast.ts';
 import { extractSvelteASTNodes } from '../../extract/svelte/nodes.ts';
 import { InvalidComponentValueError } from '../../../utils/error/parser/analyse/define-meta.ts';
 import { getDefineMetaComponentValue } from './component-identifier.ts';
+import { getDefineMetaRenderValue } from './render-identifier.ts';
+import { GetDefineMetaFirstArgumentError } from '../../../utils/error/parser/extract/svelte.ts';
 
 const getComponentValue = async (component: string) => {
   const code = `
@@ -45,5 +51,28 @@ describe(getDefineMetaComponentValue.name, () => {
     ['a member expression on this', 'this.input'],
   ])('rejects %s', async (_, component) => {
     await expect(getComponentValue(component)).rejects.toThrow(InvalidComponentValueError);
+  });
+});
+
+describe('the first argument of defineMeta', () => {
+  it.each([
+    ['component', getDefineMetaComponentValue],
+    ['render', getDefineMetaRenderValue],
+  ])('names the stories file when %s is read from a non-object argument', async (_, read) => {
+    const filename = resolve('/project/src/Button.stories.svelte');
+    const code = `
+      <script module>
+        import { defineMeta } from "@storybook/svelte";
+
+        const meta = { title: 'Button' };
+        const { Story } = defineMeta(meta);
+      </script>
+
+      <Story name="Default" />
+    `;
+    const nodes = await extractSvelteASTNodes({ ast: getSvelteAST({ code, filename }), filename });
+
+    expect(() => read({ nodes, filename })).toThrow(GetDefineMetaFirstArgumentError);
+    expect(() => read({ nodes, filename })).toThrow(pathToFileURL(filename).href);
   });
 });

@@ -33,6 +33,15 @@ export const vitestCommonConfig = defineConfig({
   test: {
     passWithNoTests: true,
     clearMocks: true,
+    server: {
+      deps: {
+        // storybook/test registers its own copy of `@vitest/expect` on `chai`. Vitest loads the same
+        // `chai` from node_modules, so without inlining, each would wrap the other's assertions
+        // (e.g. `rejects.toThrow` would wrap the rejected value twice). The published storybook/test
+        // bundles its own `chai`; inlining gives the tests the same isolation.
+        inline: ['chai', '@vitest/expect'],
+      },
+    },
     setupFiles: [resolve(__dirname, './vitest-setup.ts')],
     // Disable globals due to https://github.com/testing-library/user-event/pull/1176 not being released yet
     globals: false,

@@ -5,11 +5,6 @@ import { extractDefineMetaPropertiesNodes } from '../../extract/svelte/define-me
 import type { SvelteASTNodes } from '../../extract/svelte/nodes.ts';
 import { InvalidComponentValueError } from '../../../utils/error/parser/analyse/define-meta.ts';
 
-/**
- * A component value of `defineMeta` this analysis accepts:
- * a plain identifier, or a non-computed member expression over an identifier,
- * like `Input.Select` on an imported object or namespace.
- */
 export type DefineMetaComponentValue =
   | ESTreeAST.Identifier
   | (ESTreeAST.MemberExpression & {
@@ -27,6 +22,7 @@ export function getDefineMetaComponentValue(params: Params): DefineMetaComponent
   const { component } = extractDefineMetaPropertiesNodes({
     nodes,
     properties: ['component'],
+    filename,
   });
 
   if (!component) {
@@ -51,11 +47,7 @@ function withoutTypeArguments(value: ESTreeAST.Property['value']): ESTreeAST.Pro
   return node.type === 'TSInstantiationExpression' ? unwrapExpression(node.expression) : value;
 }
 
-/**
- * Structural check only. Whether an import actually binds the root identifier is resolved by
- * consumers, like the docgen. Computed access and deeper chains name no import, so they stay
- * rejected.
- */
+// Structural check only. Consumers such as the docgen resolve whether an import binds the root identifier.
 function isValidComponentValue(
   value: ESTreeAST.Property['value']
 ): value is DefineMetaComponentValue {
@@ -71,10 +63,6 @@ function isValidComponentValue(
   );
 }
 
-/**
- * The name a component value prints as in generated story markup:
- * the identifier itself, or `object.property` for a member expression like `Input.Select`.
- */
 export function getDefineMetaComponentName(value: DefineMetaComponentValue | undefined): string {
   if (!value) {
     // Kept byte-identical with the previous `?.name` printing, which

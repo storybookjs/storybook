@@ -594,22 +594,6 @@ export interface StorybookFeatures {
   /**
    * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
    *
-   * Filter args with a "target" on the type from the render function (EXPERIMENTAL)
-   */
-  argTypeTargetsV7?: boolean;
-
-  /**
-   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-   *
-   * Disallow implicit actions during rendering. This will be the default in Storybook 8.
-   *
-   * This will make sure that your story renders the same no matter if docgen is enabled or not.
-   */
-  disallowImplicitActionsInRenderV8?: boolean;
-
-  /**
-   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-   *
    * Enable asynchronous component rendering in React renderer
    */
   experimentalRSC?: boolean;
@@ -696,6 +680,8 @@ export interface SecurityConfig {
   /**
    * In dev mode, the manager and preview can only be embedded by a website running on localhost.
    * This prevents attacks that hijack a local Storybook embedded in an iframe from a malicious domain.
+   * The restriction does not apply in a WebContainer, such as StackBlitz, which shows the dev server
+   * in an iframe on its own page.
    *
    * If you need remote Storybooks to compose this Storybook while it is running in dev mode,
    * you may set `insecureRemoteIframeEmbed` to `true`.

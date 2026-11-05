@@ -327,13 +327,18 @@ describe('createTools', () => {
     expect(fallback.fallbackNotice).toContain('port 9999');
   });
 
-  it.each(['ambiguous-instance', 'host-mismatch'] as const)(
-    'never falls back to local execution on %s',
-    async (reason) => {
+  it.each([
+    { reason: 'ambiguous-instance', previousFlag: undefined },
+    { reason: 'host-mismatch', previousFlag: 'true' },
+  ] as const)(
+    'restores the attachment flag without falling back on $reason',
+    async ({ reason, previousFlag }) => {
+      vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', previousFlag);
       const error = new AttachUnavailableError({ reason, instances: [], remediation: reason });
       vi.mocked(attach).mockRejectedValueOnce(error);
       await expect(createTools({ port: 6006 }, { attach })).rejects.toBe(error);
       expect(bootstrapToolsRuntime).not.toHaveBeenCalled();
+      expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBe(previousFlag);
     }
   );
 

@@ -167,59 +167,69 @@ async function createAttachedTools(
   clientInfo: Required<ToolsClientInfo>,
   requestedMode: ToolsMode
 ): Promise<AttachedTools> {
+  const previousAttachedTools = process.env.STORYBOOK_ATTACHED_TOOLS;
   process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
-  // local-runtime pulls core-server at import, which must not run before the attached channel is prepared.
-  const { bootstrapAttachedRuntime } = await import('./attached-runtime.ts');
-  const isChildHost = process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
-  const autoSpawn = isChildHost ? false : (options.autoSpawn ?? true);
-  const attached = await (
-    deps.attach ?? ((target) => bootstrapAttachedRuntime({ ...target, autoSpawn }))
-  )({
-    cwd: options.cwd,
-    configDir: options.configDir,
-    port: options.port,
-    ...(options.host != null ? { host: options.host } : {}),
-  });
-  if ('kind' in attached && attached.kind === 'spawn') {
-    // The child is the instance's own recorded installation, so it attaches as the twin the caller
-    // is not. Pin its host and port so another instance sharing the port cannot win rediscovery.
-    return (deps.spawnChild ?? spawnChildHost)({
-      cwd: attached.record.cwd,
-      installationPath: attached.storybookPath,
-      options: {
-        ...options,
-        mode: 'attached',
-        autoSpawn: false,
-        cwd: attached.record.cwd,
-        port: attached.record.port,
-        host: new URL(attached.record.url).hostname,
-      },
-      clientInfo,
-      requestedMode,
+  try {
+    // local-runtime pulls core-server at import, which must not run before the attached channel is prepared.
+    const { bootstrapAttachedRuntime } = await import('./attached-runtime.ts');
+    const isChildHost = process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
+    const autoSpawn = isChildHost ? false : (options.autoSpawn ?? true);
+    const attached = await (
+      deps.attach ?? ((target) => bootstrapAttachedRuntime({ ...target, autoSpawn }))
+    )({
+      cwd: options.cwd,
+      configDir: options.configDir,
+      port: options.port,
+      ...(options.host != null ? { host: options.host } : {}),
     });
+    if ('kind' in attached && attached.kind === 'spawn') {
+      // The child is the instance's own recorded installation, so it attaches as the twin the caller
+      // is not. Pin its host and port so another instance sharing the port cannot win rediscovery.
+      return await (deps.spawnChild ?? spawnChildHost)({
+        cwd: attached.record.cwd,
+        installationPath: attached.storybookPath,
+        options: {
+          ...options,
+          mode: 'attached',
+          autoSpawn: false,
+          cwd: attached.record.cwd,
+          port: attached.record.port,
+          host: new URL(attached.record.url).hostname,
+        },
+        clientInfo,
+        requestedMode,
+      });
+    }
+    const inProcess = attached as AttachedInProcess;
+    const siblings = inProcess.siblings?.length
+      ? inProcess.siblings.map(toSiblingInstance)
+      : undefined;
+    return createToolsHost({
+      mode: 'attached',
+      host: 'in-process',
+      requestedMode,
+      runtime: inProcess.runtime,
+      clientInfo,
+      storybook: {
+        version: versions.storybook,
+        configDir: inProcess.runtime.configDir,
+        url: inProcess.record.url,
+        pid: inProcess.record.pid,
+        ...(inProcess.record.port != null ? { port: inProcess.record.port } : {}),
+        ...(inProcess.record.cwd ? { cwd: inProcess.record.cwd } : {}),
+        ...(siblings ? { siblings } : {}),
+      },
+      close: () => inProcess.connection.close(),
+      disconnected: inProcess.connection.disconnected,
+    });
+  } catch (error) {
+    if (previousAttachedTools === undefined) {
+      delete process.env.STORYBOOK_ATTACHED_TOOLS;
+    } else {
+      process.env.STORYBOOK_ATTACHED_TOOLS = previousAttachedTools;
+    }
+    throw error;
   }
-  const inProcess = attached as AttachedInProcess;
-  const siblings = inProcess.siblings?.length
-    ? inProcess.siblings.map(toSiblingInstance)
-    : undefined;
-  return createToolsHost({
-    mode: 'attached',
-    host: 'in-process',
-    requestedMode,
-    runtime: inProcess.runtime,
-    clientInfo,
-    storybook: {
-      version: versions.storybook,
-      configDir: inProcess.runtime.configDir,
-      url: inProcess.record.url,
-      pid: inProcess.record.pid,
-      ...(inProcess.record.port != null ? { port: inProcess.record.port } : {}),
-      ...(inProcess.record.cwd ? { cwd: inProcess.record.cwd } : {}),
-      ...(siblings ? { siblings } : {}),
-    },
-    close: () => inProcess.connection.close(),
-    disconnected: inProcess.connection.disconnected,
-  });
 }
 
 /** Identifying info only: the record's channel token must never leave the SDK. */

@@ -18,7 +18,7 @@ const tools = await createTools({
   cwd, // which project; defaults to process.cwd()
   configDir, // --config-dir equivalent; disambiguates monorepos
   port, // --port equivalent; selects across projects
-  host, // --host equivalent; hostname from the registered URL
+  host, // --host equivalent; requires port; hostname from the registered URL
   mode: 'auto', // 'auto' | 'attached' | 'local'
   autoSpawn: true, // false → error instead of a child host (foreign cwd, foreign installation)
   clientInfo: { name, version, kind: 'sdk' },
@@ -84,7 +84,7 @@ npx storybook tools --cwd /apps/web --config-dir /apps/web/.storybook docs list
 npx storybook tools --port 6007 stories preview --stories '[{"storyId":"example-button--primary"}]'
 ```
 
-Explicit `--port` or `--host` selectors must match exactly one running instance. Ambiguous matches are errors even in auto mode, never a local fallback. For instances sharing a port, use `--port 6006 --host 127.0.0.2` (before the toolset name). Use the hostname from the registered URL; DNS aliases are not resolved. IPv6 addresses can be bracketed or unbracketed. An explicit `--config-dir` still restricts matches. An unmatched `--host` is also an error.
+`--port` selects across projects; `--host` only narrows that selection and requires `--port`. Ambiguous matches are errors even in auto mode, never a local fallback. For instances sharing a port, use `--port 6006 --host 127.0.0.2` (before the toolset name). Use the hostname from the registered URL, without a scheme, port, or path; DNS aliases are not resolved. IPv6 addresses can be bracketed or unbracketed. An explicit `--config-dir` still restricts matches. An unmatched `--host` is also an error.
 
 ## Modes
 

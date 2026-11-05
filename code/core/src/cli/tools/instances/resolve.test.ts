@@ -367,17 +367,12 @@ describe('selectInstances', () => {
 
   it.each([
     ['127.0.0.1', 'http://127.0.0.1:6006'],
-    ['::1', 'http://[::1]:6006'],
-    ['[0:0:0:0:0:0:0:1]', 'https://[::1]:6006'],
-    ['STORYBOOK.EXAMPLE.COM', 'https://storybook.example.com:6006'],
+    ['[::1]', 'http://[::1]:6006'],
+    ['storybook.example.com', 'https://storybook.example.com:6006'],
   ])('selects a shared port by host %s', (host, url) => {
     const a = record('/project-a', 'ready', { port: 6006, url });
     const b = record('/project-b', 'ready', { port: 6006, url: 'http://127.0.0.2:6006' });
     expect(selectInstances([a, b], { cwd: b.cwd, port: 6006, host })).toEqual({
-      kind: 'match',
-      matches: [a],
-    });
-    expect(selectInstances([a, b], { cwd: b.cwd, host })).toEqual({
       kind: 'match',
       matches: [a],
     });

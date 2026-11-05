@@ -215,7 +215,7 @@ export const TOOLS_OPTION_SPECS: ReadonlyArray<{ flags: string; description: str
   },
   {
     flags: '--host <hostname>',
-    description: 'Hostname from a running Storybook URL; disambiguates instances sharing a port',
+    description: 'Hostname from a running Storybook URL; requires --port',
   },
   {
     flags: '--attach',

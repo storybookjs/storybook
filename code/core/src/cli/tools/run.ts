@@ -217,6 +217,13 @@ export async function runToolsCommand(
       clientInfo: CLI_CLIENT_INFO,
     });
   } catch (error) {
+    if (isInvalidInputError(error)) {
+      return result({
+        exitCode: 1,
+        output: error.message,
+        outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+      });
+    }
     if (isAttachGateError(error)) {
       return result({
         exitCode: 1,

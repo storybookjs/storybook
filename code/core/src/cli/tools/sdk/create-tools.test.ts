@@ -238,20 +238,24 @@ describe('createTools', () => {
     expect(attach).toHaveBeenCalledOnce();
   });
 
-  it('threads the port option through to attach discovery', async () => {
+  it.each([
+    ['::1', '[::1]'],
+    ['[0:0:0:0:0:0:0:1]', '[::1]'],
+    ['STORYBOOK.EXAMPLE.COM', 'storybook.example.com'],
+  ])('passes a normalized host and port to discovery: %s', async (host, expectedHost) => {
     const attach = vi.fn(async () => ({
       runtime: makeRuntime(),
       record: { url: 'http://localhost:6006', pid: 123, configDir: CONFIG_DIR },
       connection: { close: vi.fn(), disconnected: new Promise<never>(() => {}) },
     }));
 
-    await createTools({ cwd: '/repo', port: 6006, host: '::1', mode: 'attached' }, { attach });
+    await createTools({ cwd: '/repo', port: 6006, host, mode: 'attached' }, { attach });
 
     expect(attach).toHaveBeenCalledWith({
       cwd: '/repo',
       configDir: undefined,
       port: 6006,
-      host: '::1',
+      host: expectedHost,
     });
   });
 

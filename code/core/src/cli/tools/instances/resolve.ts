@@ -1,5 +1,3 @@
-import { isIP } from 'node:net';
-
 import {
   CLAUDE_AGENT_NAME,
   CLAUDE_PREVIEW_AGENT_NAME,
@@ -24,7 +22,7 @@ export type ResolveTarget = {
   configDirExplicit?: boolean;
   /** Port of a running Storybook; a known port targets that instance without cwd or config dir. */
   port?: number;
-  /** Hostname from the registered URL, without DNS alias resolution. */
+  /** Parsed URL hostname, used to narrow an explicit port match. */
   host?: string;
   /** The invoking agent (std-env name), used to pick among competing matches. */
   agent?: string;
@@ -52,7 +50,7 @@ export type InstanceSelection =
 // is found from `packages/ui` and vice versa. An explicit `--config-dir` matches on configDir
 // only, which records from older Storybooks lack.
 //
-// Explicit host/port selectors match across projects, restricted by an explicit config dir.
+// An explicit port matches across projects, narrowed by host and an explicit config dir.
 // Multiple address matches are ambiguous; agent preference and recency must not choose a target.
 //
 // Competing matches narrow to the invoking agent's bucket when one exists. MCP status plays no
@@ -63,25 +61,21 @@ export function selectInstances(
 ): InstanceSelection {
   const { port: targetPort, agent: currentAgent } = target;
 
-  if (targetPort != null || target.host != null) {
+  if (targetPort != null) {
     const candidates = target.configDirExplicit
       ? records.filter((record) => matchesTargetConfigDir(record, target))
       : records;
-    const hostname =
-      target.host == null
-        ? undefined
-        : new URL(`http://${isIP(target.host) === 6 ? `[${target.host}]` : target.host}`).hostname;
     const matches = candidates.filter(
       (record) =>
-        (targetPort == null || record.port === targetPort) &&
-        (hostname == null || new URL(record.url).hostname === hostname)
+        record.port === targetPort &&
+        (target.host == null || new URL(record.url).hostname === target.host)
     );
     if (matches.length === 0) {
       if (target.host != null) {
         return { kind: 'host-mismatch', host: target.host, candidates };
       }
       return candidates.length > 0
-        ? { kind: 'port-mismatch', port: targetPort!, candidates }
+        ? { kind: 'port-mismatch', port: targetPort, candidates }
         : { kind: 'no-instance', records };
     }
     return {

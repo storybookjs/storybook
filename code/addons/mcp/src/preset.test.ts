@@ -225,7 +225,6 @@ describe('experimental_devServer', () => {
   ])(
     'should fetch local manifests from the base URL when refs are configured ($name)',
     async ({ basePath, localAddress, expected }) => {
-      vi.stubGlobal('FEATURES', { docgenServer: false });
       const handlers: Record<string, any> = {};
       mockApp.get = vi.fn((path: string, handler: any) => {
         handlers[path] = handler;

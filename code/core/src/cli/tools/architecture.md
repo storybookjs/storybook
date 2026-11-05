@@ -127,7 +127,7 @@ consumer amortizes config load across many calls on the live synced runtime.
 
 1. **Discover.** Read instance records from `$XDG_STATE_HOME/storybook/instances`, or
    `~/.storybook/instances` when unset, both when they differ (pid-liveness-checked). Match by cwd /
-   configDir — or, with `--port` / `--host`, by address across all projects (the record supplies the
+   configDir — or, with `--port`, across all projects (`--host` requires a port and narrows its matches; the record supplies the
    project; an explicit `--config-dir` still restricts). Ambiguous address matches are errors,
    including in auto mode; use both `--port` and `--host` to disambiguate. Hosts match registered
    URL hostnames without DNS resolution. Without address selectors, several matches narrow to

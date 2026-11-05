@@ -17,6 +17,7 @@ import { projectPathsEqual } from '../instances/project-path.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import type { AttachedBootstrapResult } from './attached-runtime.ts';
 import { toCatalogEntry } from './catalog.ts';
+import { parseHost } from './parse-host.ts';
 import { formatAttachFallback } from './attach-messages.ts';
 import { spawnChildHost } from './child-client.ts';
 import { reportSdkAttachGate, reportSdkInvocation } from './command-telemetry.ts';
@@ -105,6 +106,7 @@ export async function createTools(
   options: CreateToolsOptions = {},
   deps: CreateToolsDeps = {}
 ): Promise<Tools> {
+  options = { ...options, host: parseHost(options.host, options.port) };
   const mode: ToolsMode = options.mode ?? 'auto';
   const clientInfo: Required<ToolsClientInfo> = {
     name: options.clientInfo?.name ?? 'storybook-tools-sdk',

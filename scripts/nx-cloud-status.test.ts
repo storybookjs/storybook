@@ -18,6 +18,19 @@ describe('parseTarget', () => {
     });
   });
 
+  it('reads a GitHub Actions run from its id, run group or link', () => {
+    expect(parseTarget('41939428103')).toEqual({ githubRun: { runId: '41939428103' } });
+    expect(parseTarget('41939428103-2')).toEqual({
+      githubRun: { runId: '41939428103', attempt: 2 },
+    });
+    expect(
+      parseTarget('https://github.com/storybookjs/storybook/actions/runs/41939428103/job/123')
+    ).toEqual({ githubRun: { runId: '41939428103', attempt: undefined } });
+    expect(
+      parseTarget('https://github.com/storybookjs/storybook/actions/runs/41939428103/attempts/2')
+    ).toEqual({ githubRun: { runId: '41939428103', attempt: 2 } });
+  });
+
   it('reads the branch from the NX Cloud overview link that nx.yml posts', () => {
     expect(
       parseTarget(

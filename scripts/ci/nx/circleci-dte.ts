@@ -197,6 +197,9 @@ const agentJob = (
         IN_STORYBOOK_SANDBOX: 'true',
         // The sandboxes install from the global yarn cache (scripts/utils/yarn.ts), so the installs
         // of one sandbox, and of every sandbox task an agent runs after it, share their downloads.
+        // With it, a stale @storybook/* zip in that cache would be installed instead of the
+        // packages this run publishes (same version, other contents), so the step below clears
+        // them first, as NX Cloud's workers do (.nx/workflows/agents.yaml).
         STORYBOOK_NX_CLOUD_AGENT: 'true',
         // As CircleCI's create jobs: `storybook init` would install Chromium again, with apt
         // packages, in every sandbox; the step below installs it once per agent.
@@ -228,6 +231,13 @@ const agentJob = (
               ),
             ]
           : []),
+        {
+          run: {
+            name: 'Clear Storybook packages from the global yarn cache',
+            command:
+              'rm -f ~/.yarn/berry/cache/storybook-npm-*.zip ~/.yarn/berry/cache/@storybook-*.zip',
+          },
+        },
         {
           run: {
             name: 'Run the tasks NX Cloud assigns',

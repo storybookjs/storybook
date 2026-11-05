@@ -48,19 +48,14 @@ describe('toSandboxResolutions', () => {
     ).toEqual({ vite: 'file:/eco/vite' });
   });
 
-  it('rewrites pnpm parent selectors to Yarn resolution keys', () => {
-    expect(
-      toSandboxResolutions({
-        'vite-plugin>vite': '1.0.0',
-        '@scope/parent@1.0.0>@scope/child': '1.0.0',
-        'vitest@<3.2.0>vite': '^6.3.5',
-        'rollup@>=4.0.0': '4.50.0',
-      })
-    ).toEqual({
-      'vite-plugin/vite': '1.0.0',
-      '@scope/parent@1.0.0/@scope/child': '1.0.0',
-      'vitest@<3.2.0/vite': '^6.3.5',
+  it('keeps pnpm selectors as they are, since the sandbox is a pnpm project too', () => {
+    const selectors = {
+      'vite-plugin>vite': '1.0.0',
+      '@scope/parent@1.0.0>@scope/child': '1.0.0',
+      'vitest@<3.2.0>vite': '^6.3.5',
       'rollup@>=4.0.0': '4.50.0',
-    });
+    };
+
+    expect(toSandboxResolutions(selectors)).toEqual(selectors);
   });
 });

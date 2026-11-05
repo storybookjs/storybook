@@ -14,6 +14,7 @@ import {
   type TemplateKey,
 } from '../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { version } from '../code/package.json';
+import { dropInheritedPnpmConfig } from './utils/package-manager-env.ts';
 import { bench } from './tasks/bench.ts';
 import { build } from './tasks/build.ts';
 import { check } from './tasks/check.ts';
@@ -409,6 +410,8 @@ async function runTask(
 const controllers: AbortController[] = [];
 
 async function run() {
+  dropInheritedPnpmConfig();
+
   // useful for other scripts to know whether they're running in the creation of a sandbox in the monorepo
   process.env.IN_STORYBOOK_SANDBOX = 'true';
 

@@ -23,7 +23,7 @@ export const vitestTests: Task = {
     return false;
   },
   async run({ sandboxDir, key }, { dryRun, link }) {
-    await prepareSandbox({ key, link });
+    await prepareSandbox({ key, link, sandboxDir });
     console.log(`running Vitest tests in ${sandboxDir}`);
 
     // The angular-vite sandbox JIT-compiles every story in browser mode, holding many Chromium
@@ -32,7 +32,7 @@ export const vitestTests: Task = {
     // parallelism; other templates are light enough to stay parallel.
     const extraFlags = key.startsWith('angular-vite/') ? ' --no-file-parallelism' : '';
 
-    const command = `yarn vitest run --testTimeout=15000${extraFlags}`;
+    const command = `pnpm vitest run --testTimeout=15000${extraFlags}`;
 
     if (dryRun) {
       console.log(`\n> ${command}\n`);

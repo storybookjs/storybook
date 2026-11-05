@@ -195,30 +195,31 @@ export const sandbox: Task = {
 
     const packageManager = JsPackageManagerFactory.getPackageManager({}, details.sandboxDir);
 
-    await rm(path.join(details.sandboxDir, 'node_modules'), { force: true, recursive: true });
-    await packageManager.installDependencies();
-
     // After sb init the kept before-storybook lockfile can leave nested copies
     // of shared packages (notably react under @storybook/addon-docs). Collapse
-    // those before we cache/run the sandbox.
+    // those before we cache/run the sandbox. Dedupe first: in the hoisted layout
+    // it leaves stray nested packages behind, which the clean install drops.
     await exec(
-      'yarn dedupe',
+      'pnpm dedupe',
       { cwd: details.sandboxDir },
       {
         dryRun: options.dryRun,
         debug: options.debug,
-        startMessage: '🧶 Deduplicating dependencies',
-        errorMessage: '🚨 yarn dedupe failed',
+        startMessage: '📦 Deduplicating dependencies',
+        errorMessage: '🚨 pnpm dedupe failed',
       }
     );
+
+    await rm(path.join(details.sandboxDir, 'node_modules'), { force: true, recursive: true });
+    await packageManager.installDependencies();
 
     await runMigrations(details, options);
 
     await extendPreview(details, options);
 
     // For NX we move the sandbox to a directory that can be cached.
-    // We remove node_modules to keep the remote cache small and fast
-    // node_modules are already cached in the global yarn cache
+    // We remove node_modules to keep the remote cache small and fast;
+    // the consuming task restores them from the pnpm store.
     if (isNxTaskExecution()) {
       logger.info('✅ Moving sandbox to cache directory');
       const sandboxDir = join(details.sandboxDir);
@@ -232,18 +233,11 @@ export const sandbox: Task = {
         await cp(sandboxDir, cacheDir, {
           recursive: true,
           force: true,
-          filter: (src) => {
-            const name = path.basename(src);
-            return (
-              name !== 'node_modules' &&
-              !(name === 'cache' && path.basename(path.dirname(src)) === '.yarn')
-            );
-          },
+          filter: (src) => path.basename(src) !== 'node_modules',
         });
       } else {
         logger.info(`✅ Removing node_modules from cache directory ${cacheDir}`);
         await rm(path.join(cacheDir, 'node_modules'), { force: true, recursive: true });
-        await rm(path.join(cacheDir, '.yarn', 'cache'), { force: true, recursive: true });
       }
     }
 

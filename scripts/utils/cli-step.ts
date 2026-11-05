@@ -55,16 +55,6 @@ export const steps = {
       yes: { type: 'boolean' },
     }),
   },
-  link: {
-    command: 'link',
-    description: 'Linking packages',
-    icon: '🔗',
-    hasArgument: true,
-    options: createOptions({
-      local: { type: 'boolean' },
-      start: { type: 'boolean', inverse: true },
-    }),
-  },
   build: {
     command: 'build',
     description: 'Building Storybook',

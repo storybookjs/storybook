@@ -4,7 +4,7 @@ import { join } from 'path';
 
 import semver from 'semver';
 
-import { BEFORE_SANDBOX_NPM_MIN_VERSION, ROOT_DIRECTORY } from '../../utils/constants.ts';
+import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../../utils/constants.ts';
 
 export { BEFORE_SANDBOX_NPM_MIN_VERSION };
 import { runCommand } from '../generate.ts';
@@ -337,21 +337,19 @@ async function narrowQuarantinedRanges({
 }
 
 /**
- * Copy the monorepo's pinned Yarn version into the sandbox `package.json`
- * `packageManager` field. corepack then resolves Yarn 4 deterministically for
- * every `yarn` command run in the sandbox, with no network `yarn set version`.
+ * The Yarn release published sandboxes pin. They stay on Yarn even though this monorepo uses pnpm:
+ * users download them, so their package manager is part of what we ship.
+ */
+export const PUBLISHED_SANDBOX_PACKAGE_MANAGER = 'yarn@4.18.0';
+
+/**
+ * Pin {@link PUBLISHED_SANDBOX_PACKAGE_MANAGER} in the sandbox `package.json` `packageManager`
+ * field. corepack then resolves Yarn 4 deterministically for every `yarn` command run in the
+ * sandbox, with no network `yarn set version`.
  */
 async function pinYarnPackageManager(cwd: string) {
-  const rootPackageJson = JSON.parse(await readFile(join(ROOT_DIRECTORY, 'package.json'), 'utf-8'));
-  const packageManager: string | undefined = rootPackageJson.packageManager;
-  if (!packageManager?.startsWith('yarn@')) {
-    throw new Error(
-      `Expected a yarn "packageManager" in the monorepo package.json, got: ${packageManager}`
-    );
-  }
-
   const packageJsonPath = join(cwd, 'package.json');
   const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf-8'));
-  packageJson.packageManager = packageManager;
+  packageJson.packageManager = PUBLISHED_SANDBOX_PACKAGE_MANAGER;
   await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
 }

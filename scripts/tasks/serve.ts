@@ -29,8 +29,8 @@ export const serve: Task = {
       return false;
     }
   },
-  async run({ builtSandboxDir, key }, { debug, dryRun, link }) {
-    await prepareSandbox({ key, link });
+  async run({ builtSandboxDir, sandboxDir, key }, { debug, dryRun, link }) {
+    await prepareSandbox({ key, link, sandboxDir });
     const port = getServePort(key);
 
     const controller = new AbortController();

@@ -207,22 +207,23 @@ const run = async () => {
 
   logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);
 
-  logger.log(`👤 add temp user to verdaccio`);
-  // Use npmAuth helper to authenticate to the local Verdaccio registry
-  // This will create a .npmrc file in the root directory
-  await npmAuth({
-    username: 'foo',
-    password: 's3cret',
-    email: 'test@test.com',
-    registry: 'http://localhost:6002',
-    outputDir: root,
-  });
-
   logger.log(
     `📦 found ${packages.length} storybook packages at version ${picocolors.blue(version)}`
   );
 
   if (opts.publish) {
+    logger.log(`👤 add temp user to verdaccio`);
+    // Use npmAuth helper to authenticate to the local Verdaccio registry. This creates a .npmrc
+    // file in the root directory, which only publishing needs: pnpm reads it too, and would send
+    // every monorepo install to the local registry while it exists.
+    await npmAuth({
+      username: 'foo',
+      password: 's3cret',
+      email: 'test@test.com',
+      registry: 'http://localhost:6002',
+      outputDir: root,
+    });
+
     try {
       await publish(packages, 'http://localhost:6002');
     } finally {

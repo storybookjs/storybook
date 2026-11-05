@@ -1,7 +1,7 @@
 // This file requires many imports from `../code`, which requires both an install and bootstrap of
 // the repo to work properly. So we load it async in the task runner *after* those steps.
 import assert from 'node:assert/strict';
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import { access, cp, lstat, mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
@@ -57,10 +57,12 @@ import { workspacePath } from '../utils/workspace.ts';
 import {
   addPackageResolutions,
   addWorkaroundResolutions,
-  configureYarn2ForVerdaccio,
-  installYarn2,
+  configurePnpmForVerdaccio,
+  importYarnLockfile,
+  installPnpm,
   isViteSandbox,
-} from '../utils/yarn.ts';
+  linkMonorepoPackages,
+} from '../utils/pnpm.ts';
 
 async function ensureSymlink(src: string, dest: string): Promise<void> {
   await mkdir(dirname(dest), { recursive: true });
@@ -249,40 +251,39 @@ export const create: Task['run'] = async ({ key, template, sandboxDir }, { dryRu
 
 export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, debug }) => {
   const cwd = sandboxDir;
-  await installYarn2({ cwd, dryRun, debug, key });
+  await installPnpm({ cwd, dryRun, debug, key });
+
+  if (!link) {
+    await configurePnpmForVerdaccio({ cwd, dryRun, debug });
+  }
+
+  await importYarnLockfile({ cwd, dryRun, debug });
 
   if (link) {
-    await executeCLIStep(steps.link, {
-      argument: `"${sandboxDir}"`,
-      cwd: CODE_DIRECTORY,
-      optionValues: { local: true, start: false },
-      dryRun,
-      debug,
-    });
+    await linkMonorepoPackages({ cwd, dryRun, debug });
     await addWorkaroundResolutions({ cwd, dryRun, debug, key });
   } else {
     // We need to add package resolutions to ensure that we only ever install the latest version
     // of any storybook packages as verdaccio is not able to both proxy to npm and publish over
     // the top. In theory this could mask issues where different versions cause problems.
     await addPackageResolutions({ cwd, dryRun, debug });
-    await configureYarn2ForVerdaccio({ cwd, dryRun, debug, key });
 
     // Add workaround resolutions for vite-based sandboxes
     if (isViteSandbox(key)) {
       await addWorkaroundResolutions({ cwd, dryRun, debug, key });
     }
-
-    await exec(
-      'yarn install',
-      { cwd },
-      {
-        debug,
-        dryRun,
-        startMessage: `⬇️ Installing local dependencies`,
-        errorMessage: `🚨 Installing local dependencies failed`,
-      }
-    );
   }
+
+  await exec(
+    'pnpm install',
+    { cwd },
+    {
+      debug,
+      dryRun,
+      startMessage: `⬇️ Installing local dependencies`,
+      errorMessage: `🚨 Installing local dependencies failed`,
+    }
+  );
 };
 
 export const init: Task['run'] = async (
@@ -333,11 +334,12 @@ export const init: Task['run'] = async (
 
   logger.info(`🔢 Adding package scripts:`);
 
-  const nodeOptions = [
-    ...(process.env.NODE_OPTIONS || '').split(' '),
-    '--preserve-symlinks',
-    '--preserve-symlinks-main',
-  ].filter(Boolean);
+  // `--preserve-symlinks` keeps the symlinked template stories resolving their imports from the
+  // sandbox. `--preserve-symlinks-main` is left out: the hoisted pnpm linker makes the `.bin`
+  // entries symlinks, and the flag would resolve a CLI's own imports relative to `.bin`.
+  const nodeOptions = [...(process.env.NODE_OPTIONS || '').split(' '), '--preserve-symlinks'].filter(
+    Boolean
+  );
 
   const nodeOptionsString = nodeOptions.join(' ');
   const prefix = `NODE_OPTIONS='${nodeOptionsString}' STORYBOOK_TELEMETRY_URL="http://localhost:6007/event-log"`;
@@ -387,8 +389,17 @@ export const init: Task['run'] = async (
 // loader for such files. NOTE this isn't necessary for Vite, as far as we know.
 function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
   // NOTE: the test regexp here will apply whether the path is symlink-preserved or otherwise
-  const require = createRequire(import.meta.url);
-  const esbuildLoaderPath = require.resolve('../../node_modules/esbuild-loader');
+  // esbuild-loader is a dependency of the code workspace, so only resolvable from there. Reference
+  // it through `code/node_modules`, whose entry is stable, and resolve the real path when the
+  // config loads: the pnpm store directory behind it is named after esbuild-loader's peers, and the
+  // loader finds its own dependencies only from there.
+  const esbuildLoaderLink = join(CODE_DIRECTORY, 'node_modules', 'esbuild-loader');
+  const esbuildLoaderEntry = relative(
+    realpathSync(esbuildLoaderLink),
+    createRequire(join(CODE_DIRECTORY, 'package.json')).resolve('esbuild-loader')
+  );
+  const esbuildLoaderPath = slash(join(esbuildLoaderLink, esbuildLoaderEntry));
+  mainConfig.setImport(['realpathSync'], 'node:fs');
   const webpackFinalCode = `
   (config) => ({
     ...config,
@@ -399,7 +410,7 @@ function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
         {
           test: [/\\/template-stories\\//],
           exclude: [/\\.mdx$/],
-          loader: '${esbuildLoaderPath}',
+          loader: realpathSync('${esbuildLoaderPath}'),
           options: {
             loader: 'tsx',
             target: 'es2022',
@@ -574,7 +585,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   const packageJsonPath = join(sandboxDir, 'package.json');
   const packageJson = await readJson(packageJsonPath);
 
-  // Angular sandboxes need `yarn docs:json` to run before any preview-evaluating
+  // Angular sandboxes need `pnpm docs:json` to run before any preview-evaluating
   // task so `.storybook/preview.ts`'s static `import docJson from "../documentation.json"`
   // resolves real compodoc data. `prepareAngularSandbox` already wires this into
   // the `storybook` and `build-storybook` scripts; do the same for `vitest` when
@@ -583,18 +594,8 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   const hasDocsJson = !!packageJson.scripts?.['docs:json'];
   packageJson.scripts = {
     ...packageJson.scripts,
-    vitest: hasDocsJson ? `yarn docs:json && ${vitestCmd}` : vitestCmd,
+    vitest: hasDocsJson ? `pnpm docs:json && ${vitestCmd}` : vitestCmd,
   };
-
-  // This workaround is needed because Vitest seems to have issues in link mode
-  // so the /setup-file and /global-setup files from the vitest addon won't work in portal protocol
-  if (options.link) {
-    const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'vitest'));
-    packageJson.resolutions = {
-      ...packageJson.resolutions,
-      '@storybook/addon-vitest': `file:${vitestAddonPath}`,
-    };
-  }
 
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
@@ -1246,7 +1247,7 @@ async function prepareTypeChecking(cwd: string) {
 
   packageJson.scripts = {
     ...packageJson.scripts,
-    typecheck: 'yarn tsc -p tsconfig.app.json',
+    typecheck: 'tsc -p tsconfig.app.json',
   };
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
@@ -1317,9 +1318,9 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
 
   packageJson.scripts = {
     ...packageJson.scripts,
-    'docs:json': `DIR=$(pwd); yarn --cwd ${slash(join(ROOT_DIRECTORY, 'scripts'))} jiti combine-compodoc $DIR`,
-    storybook: `yarn docs:json && ${packageJson.scripts.storybook}`,
-    'build-storybook': `yarn docs:json && ${packageJson.scripts['build-storybook']}`,
+    'docs:json': `DIR=$(pwd); pnpm --dir ${slash(join(ROOT_DIRECTORY, 'scripts'))} exec jiti combine-compodoc $DIR`,
+    storybook: `pnpm docs:json && ${packageJson.scripts.storybook}`,
+    'build-storybook': `pnpm docs:json && ${packageJson.scripts['build-storybook']}`,
   };
 
   await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));

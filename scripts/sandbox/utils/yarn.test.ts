@@ -6,11 +6,11 @@ import * as memfs from 'memfs';
 import { vol } from 'memfs';
 import yml from 'yaml';
 
-import { ROOT_DIRECTORY } from '../../utils/constants.ts';
 import { runCommand } from '../generate.ts';
 import {
   BEFORE_SANDBOX_NPM_MIN_VERSION,
   LOCALLY_PUBLISHED_PACKAGE_PATTERNS,
+  PUBLISHED_SANDBOX_PACKAGE_MANAGER,
   ensureNpmSupportsMinReleaseAge,
   preapproveLocallyPublishedPackages,
   refreshBeforeStorybookLockfile,
@@ -129,13 +129,15 @@ describe('refreshBeforeStorybookLockfile', () => {
 
   beforeEach(() => {
     vol.writeFileSync(`${SANDBOX}/package.json`, JSON.stringify(MANIFEST));
-    // pinYarnPackageManager reads the monorepo root manifest.
-    vol.mkdirSync(ROOT_DIRECTORY, { recursive: true });
-    vol.writeFileSync(
-      `${ROOT_DIRECTORY}/package.json`,
-      JSON.stringify({ packageManager: 'yarn@4.18.0' })
-    );
     failResolveSteps();
+  });
+
+  it('pins the published sandboxes to Yarn, whatever this monorepo uses', async () => {
+    await refreshBeforeStorybookLockfile({ cwd: SANDBOX });
+
+    const manifest = JSON.parse(vol.readFileSync(`${SANDBOX}/package.json`, 'utf-8') as string);
+    expect(manifest.packageManager).toBe(PUBLISHED_SANDBOX_PACKAGE_MANAGER);
+    expect(PUBLISHED_SANDBOX_PACKAGE_MANAGER).toMatch(/^yarn@4\./);
   });
 
   it('installs the template ranges as-is when nothing is quarantined', async () => {

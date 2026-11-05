@@ -22,23 +22,12 @@ export async function readRootOverrides(rootDir: string): Promise<Overrides> {
 }
 
 /**
- * The overrides an ecosystem CI runner injected into the monorepo, as `resolutions` for the sandbox,
- * which is a Yarn project. Storybook's own overrides stay out: they are tuned for the monorepo.
+ * The overrides an ecosystem CI runner injected into the monorepo, as `resolutions` for the sandbox.
+ * The sandbox is a pnpm project too, so the selectors carry over unchanged. Storybook's own
+ * overrides stay out: they are tuned for the monorepo.
  */
 export function toSandboxResolutions(rootOverrides: Overrides): Overrides {
   return Object.fromEntries(
-    Object.entries(rootOverrides)
-      .filter(([selector]) => !EXISTING_RESOLUTIONS.has(selector))
-      .map(([selector, value]) => [toYarnSelector(selector), value])
+    Object.entries(rootOverrides).filter(([selector]) => !EXISTING_RESOLUTIONS.has(selector))
   );
-}
-
-// pnpm writes `parent>child` where Yarn writes `parent/child`; `pkg@range` reads the same in both.
-// pnpm treats a `>` right after a space, `|` or `@` as part of a range (`pkg@>=1.0.0`), so only the
-// first other `>` separates parent from child. Yarn matches a parent only by exact version, so a
-// parent range (`parent@^1.0.0>child`) selects nothing in the sandbox.
-const PARENT_SEPARATOR = /(?<=[^ |@])>/;
-
-function toYarnSelector(selector: string) {
-  return selector.replace(PARENT_SEPARATOR, '/');
 }

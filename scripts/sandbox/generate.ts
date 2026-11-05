@@ -27,6 +27,7 @@ import {
   SCRIPT_TIMEOUT,
 } from '../utils/constants.ts';
 import { esMain } from '../utils/esmain.ts';
+import { dropInheritedPnpmConfig } from '../utils/package-manager-env.ts';
 import type { OptionValues } from '../utils/options.ts';
 import { createOptions } from '../utils/options.ts';
 import { getStackblitzUrl, renderTemplate } from './utils/template.ts';
@@ -561,6 +562,8 @@ async function addResolutions(beforeDir: string) {
 }
 
 if (esMain(import.meta.url)) {
+  dropInheritedPnpmConfig();
+
   program
     .description('Generate sandboxes from a set of possible templates')
     .option('--templates [templates...]', 'Space-delimited list of templates to include')

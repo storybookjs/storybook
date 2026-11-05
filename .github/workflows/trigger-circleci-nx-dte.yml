@@ -1,0 +1,58 @@
+name: Trigger CircleCI NX DTE
+
+# Opt-in experiment: runs a CircleCI workflow as one NX task graph that NX Cloud distributes over
+# CircleCI agents (scripts/ci/nx/circleci-dte.ts), for pull requests labelled `nx-dte:<workflow>`
+# (`nx-dte:focus`, `nx-dte:normal`, `nx-dte:daily`, ...). The `ci:` labels and the CircleCI
+# pipeline they start (trigger-circle-ci-workflow.yml) are unchanged.
+#
+# `pull_request`, not `pull_request_target`: fork pull requests get no secrets, so only branches of
+# this repository, whose authors can push here, start it. They count as trusted authors, which lets
+# the pipeline save its node_modules and Playwright caches.
+
+on:
+  pull_request:
+    types: [opened, synchronize, labeled, reopened]
+
+permissions: {}
+
+concurrency:
+  # Any other label gets a group of its own, so it cannot cancel a trigger that is waiting.
+  group: ${{ (github.event.action == 'labeled' && !startsWith(github.event.label.name, 'nx-dte:')) && format('nx-dte-ignored-{0}', github.run_id) || format('nx-dte-{0}', github.event.pull_request.number) }}
+  cancel-in-progress: true
+
+jobs:
+  trigger:
+    if: >
+      github.repository == 'storybookjs/storybook' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (github.event.action != 'labeled' || startsWith(github.event.label.name, 'nx-dte:')) &&
+      contains(join(github.event.pull_request.labels.*.name, ','), 'nx-dte:')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger CircleCI pipeline
+        env:
+          CIRCLE_CI_TOKEN: ${{ secrets.CIRCLE_CI_TOKEN }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          GH_BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+          GH_PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          WORKFLOW=$(jq -r '
+            map(select(startswith("nx-dte:")) | ltrimstr("nx-dte:") | select(IN("focus", "normal", "docs", "daily", "windows")))
+            | join(",")' <<<"$LABELS")
+          if [ -z "$WORKFLOW" ]; then
+            echo "No known workflow in the nx-dte: labels."
+            exit 0
+          fi
+          PAYLOAD=$(jq -nc \
+            --arg branch "$BRANCH" \
+            --arg workflow "$WORKFLOW" \
+            --arg ghBaseBranch "$GH_BASE_BRANCH" \
+            --arg ghPrNumber "$GH_PR_NUMBER" \
+            '{branch: $branch, parameters: {workflow: $workflow, nxDte: true, ghBaseBranch: $ghBaseBranch, ghPrNumber: $ghPrNumber, ghTrustedAuthor: "true"}}')
+          curl -sS --fail-with-body -X POST \
+            -H "Content-Type: application/json" \
+            -H "Circle-Token: $CIRCLE_CI_TOKEN" \
+            -d "$PAYLOAD" \
+            "https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline"

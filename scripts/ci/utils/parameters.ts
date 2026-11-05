@@ -18,6 +18,12 @@ export const parameters = {
       'Whether the pipeline is allowed to persist to shared caches (team member PRs and push events only)',
     type: 'string',
   },
+  nxDte: {
+    default: false,
+    description:
+      'Run the workflow as one NX task graph distributed over CircleCI agents (scripts/ci/nx/circleci-dte.ts)',
+    type: 'boolean',
+  },
   workflow: {
     default: 'skipped',
     description: `Which workflows to run, comma-separated, out of ${workflows.join(', ')} (e.g. \`normal,windows\`)`,

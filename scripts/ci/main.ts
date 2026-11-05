@@ -10,6 +10,7 @@ import { parameters } from './utils/parameters.ts';
 import { setTrustedAuthor } from './utils/runtime.ts';
 import type { JobImplementationObj, NoOpJobImplementationObj } from './utils/types.ts';
 import { type Workflow, workflows } from './utils/types.ts';
+import { getNxDteJobs } from './nx/circleci-dte.ts';
 import { getJobs } from './workflow-jobs.ts';
 
 const dirname = import.meta.dirname;
@@ -25,11 +26,15 @@ const isMergeGating = (workflow: Workflow) => workflow !== 'windows';
  * @param baseRef - The git ref `focus` diffs against.
  * @param nightly - Whether this is the scheduled `daily` run on `next`, which reports its failures
  *   instead of cancelling on the first one.
+ * @param nxDte - Whether to run the workflows' NX tasks distributed over CircleCI agents instead
+ *   (scripts/ci/nx/circleci-dte.ts).
  * @returns The generated config for CircleCI in JS format.
  */
-function generateConfig(selected: Workflow[], baseRef: string, nightly: boolean) {
+function generateConfig(selected: Workflow[], baseRef: string, nightly: boolean, nxDte: boolean) {
   const [workflow] = selected;
-  const jobs = selected.flatMap((workflow) => getJobs(workflow, baseRef));
+  const jobs = nxDte
+    ? getNxDteJobs(selected, baseRef)
+    : selected.flatMap((workflow) => getJobs(workflow, baseRef));
 
   /**
    * If you want to filter down to a particular job, e.g.for debugging purposes.. you can do that
@@ -105,7 +110,7 @@ function generateConfig(selected: Workflow[], baseRef: string, nightly: boolean)
       {} as Record<string, JobImplementationObj | NoOpJobImplementationObj>
     ),
     workflows: {
-      [`${selected.join('-')}-generated${isDebugging ? '-debug' : ''}`]: {
+      [`${selected.join('-')}${nxDte ? '-nx-dte' : ''}-generated${isDebugging ? '-debug' : ''}`]: {
         jobs: sortedJobs.map((t) =>
           t.requires && t.requires.length > 0
             ? {
@@ -131,6 +136,7 @@ const { values: opts } = parseArgs({
     'base-ref': { type: 'string', default: 'origin/next' },
     'gh-trusted-author': { type: 'string', default: 'false' },
     branch: { type: 'string', default: '' },
+    'nx-dte': { type: 'string', default: 'false' },
   },
 });
 setTrustedAuthor(opts['gh-trusted-author'] === 'true');
@@ -147,5 +153,5 @@ const nightly = selected.includes('daily') && opts.branch === 'next';
 
 await fs.writeFile(
   join(dirname, '../../.circleci/config.generated.yml'),
-  `${JSON.stringify(generateConfig(selected, opts['base-ref'], nightly), null, 2)}\n`
+  `${JSON.stringify(generateConfig(selected, opts['base-ref'], nightly, opts['nx-dte'] === 'true'), null, 2)}\n`
 );

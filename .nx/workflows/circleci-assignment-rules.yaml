@@ -1,0 +1,11 @@
+# Assignment rules for the CircleCI agents of the NX DTE pipeline (scripts/ci/nx/circleci-dte.ts),
+# which starts NX Cloud with `start-ci-run --distribute-on=manual`. The agents set
+# NX_AGENT_LAUNCH_TEMPLATE to the agent name below. See .nx/ci-config.yaml for why each agent runs
+# one task at a time (plus the continuous tasks that task needs).
+# https://nx.dev/docs/reference/nx-cloud/assignment-rules
+assignment-rules:
+  - targets:
+      - '*'
+    run-on:
+      - agent: circleci-linux
+        parallelism: 1

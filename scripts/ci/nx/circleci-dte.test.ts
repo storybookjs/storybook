@@ -29,6 +29,14 @@ describe('the CircleCI NX DTE pipeline', () => {
     ]);
   });
 
+  it('adds peak agents only for what the first wave cannot take', () => {
+    // docs creates no sandbox; normal creates 16, three tasks each at the peak, minus the 20 of
+    // the first wave, capped at the default.
+    expect(ids('docs')).toEqual(['nx-main', 'nx-agent']);
+    const peak = getNxDteJobs(['normal'], 'unused').find((job) => job.id === 'nx-agent-peak')!;
+    expect((peak.implementation('normal') as { parallelism: number }).parallelism).toBe(24);
+  });
+
   it('needs no job outside the pipeline', () => {
     for (const workflow of workflows.filter((w) => w !== 'focus')) {
       const jobs = getNxDteJobs([workflow], 'unused');

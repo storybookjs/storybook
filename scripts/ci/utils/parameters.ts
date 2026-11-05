@@ -32,7 +32,7 @@ export const parameters = {
   nxDtePeakAgents: {
     default: 24,
     description:
-      'How many more CircleCI agents join when the sandbox tasks become ready, when nxDte is set',
+      'At most how many more CircleCI agents join when the sandbox tasks become ready, when nxDte is set',
     type: 'integer',
   },
   workflow: {

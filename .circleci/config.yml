@@ -30,7 +30,7 @@ parameters:
     type: integer
   nxDtePeakAgents:
     default: 24
-    description: How many more CircleCI agents join when the sandbox tasks become ready, when nxDte is set
+    description: At most how many more CircleCI agents join when the sandbox tasks become ready, when nxDte is set
     type: integer
   workflow:
     default: skipped

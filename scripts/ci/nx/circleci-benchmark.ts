@@ -35,7 +35,8 @@ type JobDetails = {
   queued_at?: string;
   start_time?: string;
   stop_time?: string;
-  picard?: { resource_class?: { class?: string; executor?: string } };
+  /** `executor` is `docker`, `windows`, …; the resource class carries only its size. */
+  picard?: { executor?: string; resource_class?: { class?: string } };
   steps: Step[];
   workflows?: { job_name?: string };
 };
@@ -76,7 +77,7 @@ export function jobTiming(details: JobDetails): JobTiming {
   const rc = details.picard?.resource_class ?? {};
   return {
     name: details.workflows?.job_name ?? '?',
-    executor: rc.executor === 'windows' ? 'windows' : 'docker',
+    executor: details.picard?.executor === 'windows' ? 'windows' : 'docker',
     resourceClass: rc.class ?? '?',
     queuedAt: time(details.queued_at),
     startedAt: time(details.start_time),

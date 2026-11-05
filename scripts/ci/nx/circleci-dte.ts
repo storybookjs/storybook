@@ -6,9 +6,10 @@
  * - `nx-main` starts the NX Cloud run (`start-ci-run --distribute-on=manual`), then runs the same
  *   `nx run-many` commands as .github/workflows/nx.yml (run.ts). It runs no task itself.
  * - `nx-agent` and, a little later, `nx-agent-peak` ({@link NX_DTE_WAVES}) run as parallel
- *   containers, each `nx start-agent`, which runs the tasks NX Cloud assigns. `start-ci-run --stop-workers-after` names every target
- *   of the run, so NX Cloud knows when no more tasks can come and stops each agent once it has
- *   nothing left for it, as the Nx docs recommend; no `complete-ci-run` is needed.
+ *   containers, each `nx start-agent`, which runs the tasks NX Cloud assigns.
+ *   `start-ci-run --stop-workers-after` names every target of the run, so NX Cloud knows when no
+ *   more tasks can come and stops each agent once it has nothing left for it, as the Nx docs
+ *   recommend; no `complete-ci-run` is needed.
  * - The jobs NX Cloud's Linux workers cannot run (plan.ts `sideJobs`) are plain CircleCI jobs: the
  *   Node 26 smoke job as CircleCI defines it, and the Windows parts as .github/workflows/nx.yml runs
  *   them, which builds its sandbox on Windows instead of unpacking the Linux one.
@@ -29,13 +30,15 @@ import { planFor } from './plan.ts';
  * task costs more on `xlarge`, which bills twice the credits per minute and ran the dev-server E2E
  * tests only a quarter faster).
  *
- * - `first` starts with the run and takes the tasks that need no sandbox: compile, lint, the unit
- *   and internal E2E tests.
+ * - `first` starts with the run. Until the sandboxes exist, only the tasks that need none can
+ *   run: compile, lint, the unit and internal E2E tests, and creating the sandboxes.
  * - `peak` starts {@link NX_DTE_PEAK_DELAY_SECONDS} later, behind a `small` job that only waits.
  *   Once compile, publish and the sandboxes are done (about 100 seconds into the run), some 50
  *   sandbox tasks become ready at once (E2E tests, Chromatic, Vitest). With one wave sized for
  *   that peak, most agents idled, billed, for the first 100 seconds; with one sized for the start,
- *   sandbox tasks waited up to two minutes for an agent.
+ *   sandbox tasks waited up to two minutes for an agent. It only covers what the first wave cannot
+ *   ({@link PEAK_TASKS_PER_SANDBOX} per sandbox): a focused run with one sandbox needs none, and
+ *   24 agents that only started and stopped cost it a third more credits.
  */
 export const NX_DTE_WAVES = {
   first: { job: 'nx-agent', agents: 20 },
@@ -43,9 +46,11 @@ export const NX_DTE_WAVES = {
 } as const;
 export type NxDteWave = keyof typeof NX_DTE_WAVES;
 export const NX_DTE_PEAK_DELAY_SECONDS = 75;
+/** The tasks of one sandbox that run at the same time once it is built. */
+const PEAK_TASKS_PER_SANDBOX = 3;
 const PEAK_DELAY_JOB = 'nx-agent-peak-delay';
 
-/** How many agents each wave runs, when not its default. */
+/** How many agents each wave runs at most, when not its default. */
 export type NxDteOptions = Partial<Record<NxDteWave, number>>;
 
 /** The agents' jobs, which `circleci-completion` does not wait for (main.ts). */
@@ -402,9 +407,14 @@ export function getNxDteJobs(
     throw new Error(`No NX equivalent for the CircleCI jobs: ${plan.missing.join(', ')}`);
   }
 
+  const first = options.first ?? NX_DTE_WAVES.first.agents;
+  const sandboxes = plan.tasks.filter((task) => task.endsWith(':sandbox')).length;
   const agents = {
-    first: options.first ?? NX_DTE_WAVES.first.agents,
-    peak: options.peak ?? NX_DTE_WAVES.peak.agents,
+    first,
+    peak: Math.min(
+      options.peak ?? NX_DTE_WAVES.peak.agents,
+      Math.max(0, PEAK_TASKS_PER_SANDBOX * sandboxes - first)
+    ),
   };
   const targets = [
     ...new Set([
@@ -417,8 +427,9 @@ export function getNxDteJobs(
     jobs.push(
       mainJob(selected, changedFiles, targets, agents.first + agents.peak),
       agentJob(changedFiles, 'first', agents.first),
-      peakDelayJob,
-      agentJob(changedFiles, 'peak', agents.peak, [peakDelayJob])
+      ...(agents.peak > 0
+        ? [peakDelayJob, agentJob(changedFiles, 'peak', agents.peak, [peakDelayJob])]
+        : [])
     );
   }
   if (plan.sideJobs.includes('windows')) {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { jobTiming, report, toMarkdown } from './circleci-benchmark.ts';
+import { creditsOf, jobTiming, report, toMarkdown } from './circleci-benchmark.ts';
 
 const step = (name: string, actions: [number, string, string][]) => ({
   name,
@@ -17,7 +17,7 @@ describe('circleci-benchmark', () => {
   it('bills every parallel container from its first step to its last', () => {
     const agent = jobTiming({
       workflows: { job_name: 'nx-agent' },
-      picard: { resource_class: { class: 'xlarge', executor: 'docker' } },
+      picard: { executor: 'docker', resource_class: { class: 'xlarge' } },
       steps: [
         step('Spin up environment', [
           [0, at(0), at(1)],
@@ -33,19 +33,29 @@ describe('circleci-benchmark', () => {
     expect(agent.containerMinutes).toBe(12);
   });
 
+  it('prices a Windows job by its executor, as CircleCI reports it', () => {
+    const windows = jobTiming({
+      workflows: { job_name: 'windows--unit-1' },
+      picard: { executor: 'windows', resource_class: { class: 'large' } },
+      steps: [step('Unit tests', [[0, at(0), at(10)]])],
+    });
+
+    expect(creditsOf(windows)).toBe(10 * 120);
+  });
+
   it('splits the main job into setup and tasks, and times the green check', () => {
     const main = jobTiming({
       workflows: { job_name: 'nx-main' },
       start_time: at(1),
       stop_time: at(6),
-      picard: { resource_class: { class: 'large', executor: 'docker' } },
+      picard: { executor: 'docker', resource_class: { class: 'large' } },
       steps: [step('Checkout code', [[0, at(1), at(2)]]), step('Run nx', [[0, at(2), at(6)]])],
     });
     const completion = jobTiming({
       workflows: { job_name: 'circleci-completion' },
       start_time: at(6),
       stop_time: at(7),
-      picard: { resource_class: { class: 'small', executor: 'docker' } },
+      picard: { executor: 'docker', resource_class: { class: 'small' } },
       steps: [step('Workflow completed', [[0, at(6), at(7)]])],
     });
     const result = report(

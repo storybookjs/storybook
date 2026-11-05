@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "types": ["node"],
     "allowJs": true
   },
   "exclude": ["node_modules", "__testfixtures__", "__tests__"],

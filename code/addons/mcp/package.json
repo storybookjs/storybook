@@ -44,6 +44,7 @@
   "devDependencies": {
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-vitest": "workspace:*",
+    "@types/node": "^22.19.1",
     "storybook": "workspace:*",
     "typescript": "^6.0.3"
   },

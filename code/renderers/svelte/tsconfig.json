@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "types": ["node"],
     "allowJs": true,
     "module": "ESNext",
     "verbatimModuleSyntax": true,

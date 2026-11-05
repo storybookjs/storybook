@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
+    "@types/node": "^22.19.1",
     "@types/prompts": "^2.0.9",
     "comment-json": "^4.2.5",
     "cross-spawn": "^7.0.6",

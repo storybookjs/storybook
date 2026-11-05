@@ -50,6 +50,7 @@
     "@sveltejs/vite-plugin-svelte": "^6.2.0",
     "@testing-library/svelte": "^5.2.4",
     "@testing-library/vue": "^8.0.0",
+    "@types/node": "^22.19.1",
     "@types/react": "^18.0.37",
     "@vitejs/plugin-vue": "^4.6.2",
     "jiti": "^2.6.1",

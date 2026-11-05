@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
+    "types": ["node"],
     "resolveJsonModule": true,
     "paths": {
       "storybook/internal/*": ["../../lib/cli/core/*"]

@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "types": ["node"],
     "paths": {
       "storybook/internal/*": ["../../lib/cli/core/*"]
     },

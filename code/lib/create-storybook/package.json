@@ -42,6 +42,7 @@
     "storybook": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^22.19.1",
     "@types/prompts": "^2.0.9",
     "@types/semver": "^7.7.1",
     "commander": "^14.0.2",

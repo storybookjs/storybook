@@ -40,6 +40,7 @@
     "!src/**/*"
   ],
   "devDependencies": {
+    "@types/node": "^22.19.1",
     "typescript": "^6.0.3"
   },
   "peerDependencies": {

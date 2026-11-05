@@ -60,7 +60,7 @@ type AttachedInProcess = {
 export type CreateToolsDeps = {
   bootstrap?: (target: { cwd?: string; configDir?: string }) => Promise<ToolsRuntime>;
   attach?: (
-    target: { cwd?: string; configDir?: string; port?: number },
+    target: { cwd?: string; configDir?: string; port?: number; host?: string },
     deps?: unknown
   ) => Promise<AttachedBootstrapResult | AttachedInProcess>;
   spawnChild?: typeof spawnChildHost;
@@ -80,7 +80,8 @@ export type CreateToolsDeps = {
  * installation the instance recorded and proxies through it.
  *
  * `auto` tries `attached` first and, on a gate failure, loads `local` instead. A missing instance
- * is the expected auto path and stays silent. Unexpected gate failures carry `fallbackNotice`.
+ * is the expected auto path and stays silent. Ambiguous address matches and unmatched explicit
+ * hosts are hard errors. Other gate failures carry `fallbackNotice`.
  *
  * @throws {ToolsRuntimeError} With reason `config-load-failed` when the target configuration cannot
  *   be loaded, or `mode-unavailable` when a foreign `cwd` needs a child host and `autoSpawn` is
@@ -134,6 +135,9 @@ export async function createTools(
           throw error;
         }
         const fallbackReason = attachGateReasonFromError(error);
+        if (fallbackReason === 'ambiguous-instance' || fallbackReason === 'host-mismatch') {
+          throw error;
+        }
         const notice =
           fallbackReason === 'no-instance' ? undefined : formatAttachFallback(error.message);
         try {
@@ -174,11 +178,11 @@ async function createAttachedTools(
     cwd: options.cwd,
     configDir: options.configDir,
     port: options.port,
+    ...(options.host != null ? { host: options.host } : {}),
   });
   if ('kind' in attached && attached.kind === 'spawn') {
     // The child is the instance's own recorded installation, so it attaches as the twin the caller
-    // is not. Pin the chosen instance's port so it re-resolves to that exact instance even when
-    // the registry changes between the parent's resolution and the child's.
+    // is not. Pin its host and port so another instance sharing the port cannot win rediscovery.
     return (deps.spawnChild ?? spawnChildHost)({
       cwd: attached.record.cwd,
       installationPath: attached.storybookPath,
@@ -188,6 +192,7 @@ async function createAttachedTools(
         autoSpawn: false,
         cwd: attached.record.cwd,
         port: attached.record.port,
+        host: new URL(attached.record.url).hostname,
       },
       clientInfo,
       requestedMode,

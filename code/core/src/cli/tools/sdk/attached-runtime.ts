@@ -21,6 +21,8 @@ import {
   formatNoInstance,
   formatOldServer,
   formatPortMismatch,
+  formatAmbiguousInstance,
+  formatHostMismatch,
   formatUnknownInstallation,
 } from './attach-messages.ts';
 import { AttachUnavailableError, EnvironmentMismatchError, ToolsRuntimeError } from './errors.ts';
@@ -64,7 +66,13 @@ export type AttachRuntimeDeps = {
 };
 
 export async function bootstrapAttachedRuntime(
-  options: { cwd?: string; configDir?: string; port?: number; autoSpawn?: boolean } = {},
+  options: {
+    cwd?: string;
+    configDir?: string;
+    port?: number;
+    host?: string;
+    autoSpawn?: boolean;
+  } = {},
   deps: AttachRuntimeDeps = {}
 ): Promise<AttachedBootstrapResult> {
   const discoveryCwd = resolve(options.cwd ?? process.cwd());
@@ -78,6 +86,7 @@ export async function bootstrapAttachedRuntime(
     configDir: resolvedConfigDir,
     configDirExplicit: options.configDir != null,
     port: options.port,
+    host: options.host,
     agent: (deps.detectAgentName ?? (() => detectAgent()?.name))(),
   });
 
@@ -94,6 +103,21 @@ export async function bootstrapAttachedRuntime(
       reason: 'port-mismatch',
       instances: selection.candidates,
       remediation: formatPortMismatch(selection.port, selection.candidates),
+    });
+  }
+
+  if (selection.kind === 'ambiguous-instance') {
+    throw new AttachUnavailableError({
+      reason: selection.kind,
+      instances: selection.matches,
+      remediation: formatAmbiguousInstance(selection.matches),
+    });
+  }
+  if (selection.kind === 'host-mismatch') {
+    throw new AttachUnavailableError({
+      reason: selection.kind,
+      instances: selection.candidates,
+      remediation: formatHostMismatch(selection.host, selection.candidates),
     });
   }
 

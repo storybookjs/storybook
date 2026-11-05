@@ -51,6 +51,7 @@ describe('tools help rendering', () => {
         --cwd <path>                 Project directory of the target Storybook
         -c, --config-dir <dir-name>  Storybook config directory of the target Storybook
         -p, --port <number>          Port of a running Storybook; targets that instance directly, no --cwd or --config-dir needed
+        --host <hostname>            Hostname from a running Storybook URL; disambiguates instances sharing a port
         --attach                     Require attaching to a running Storybook; gate failures are errors instead of a local fallback
         --no-attach                  Load the project configuration without attaching
         --input <object>             Raw JSON object with the tool arguments (escape hatch for complex values)

@@ -214,6 +214,10 @@ export const TOOLS_OPTION_SPECS: ReadonlyArray<{ flags: string; description: str
       'Port of a running Storybook; targets that instance directly, no --cwd or --config-dir needed',
   },
   {
+    flags: '--host <hostname>',
+    description: 'Hostname from a running Storybook URL; disambiguates instances sharing a port',
+  },
+  {
     flags: '--attach',
     description:
       'Require attaching to a running Storybook; gate failures are errors instead of a local fallback',

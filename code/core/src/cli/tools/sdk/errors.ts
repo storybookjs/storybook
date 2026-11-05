@@ -5,6 +5,8 @@ import type { StorybookInstanceRecord } from '../instances/types.ts';
 export type AttachUnavailableReason =
   | 'no-instance'
   | 'port-mismatch'
+  | 'host-mismatch'
+  | 'ambiguous-instance'
   | 'old-server'
   | 'connection-failed';
 

@@ -13,6 +13,8 @@ export type ToolsTarget = {
   configDir?: string;
   /** Port of a running Storybook; a known port targets that instance without cwd or config dir. */
   port?: number;
+  /** Hostname from the registered Storybook URL. */
+  host?: string;
 };
 
 export type InstanceDiscovery = {
@@ -43,6 +45,7 @@ export async function discoverRunningInstance(
     configDir,
     configDirExplicit: target.configDir != null,
     port: target.port,
+    host: target.host,
     agent: detectAgent()?.name,
   });
 

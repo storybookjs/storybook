@@ -212,6 +212,7 @@ export async function runToolsCommand(
       cwd: target.cwd,
       configDir: target.configDir,
       ...(target.port != null ? { port: target.port } : {}),
+      ...(target.host != null ? { host: target.host } : {}),
       mode: requestedMode,
       clientInfo: CLI_CLIENT_INFO,
     });
@@ -442,7 +443,7 @@ type ValidationIssues = ReadonlyArray<{
   path?: ReadonlyArray<PropertyKey | { key?: unknown }>;
 }>;
 
-const TARGET_OPTIONS = ['cwd', 'config-dir', 'port'];
+const TARGET_OPTIONS = ['cwd', 'config-dir', 'port', 'host'];
 
 function formatValidationIssues(
   toolPath: string,

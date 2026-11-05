@@ -74,7 +74,7 @@ storybook@latest tools` against a project-local server, or a project-local CLI a
 started via `npx storybook@latest dev`) respawns instead: a child host is started from the
 *recorded* installation — `record.storybookPath` → its own manifest → its host entry, a
 deterministic lookup, never a guessed bin — with the record's `cwd` as working directory and the
-paired record's port pinned so the child re-resolves to that exact instance. The child is the
+paired record's host and port pinned so the child re-resolves to that exact instance. The child is the
 server's installation, so it attaches as the twin the caller is not; the parent proxies
 `describe` / `call` / `close`. Two processes never attach across installations.
 
@@ -127,10 +127,13 @@ consumer amortizes config load across many calls on the live synced runtime.
 
 1. **Discover.** Read instance records from `$XDG_STATE_HOME/storybook/instances`, or
    `~/.storybook/instances` when unset, both when they differ (pid-liveness-checked). Match by cwd /
-   configDir — or, with `--port`, by port alone across all projects (the record supplies the
-   project; an explicit `--config-dir` still restricts). Several matches → the invoking agent's
-   bucket, then the most recently started; the siblings surface as a stderr warning naming
-   `--port`. No record → local fallback, or a hard error under `--attach`.
+   configDir — or, with `--port` / `--host`, by address across all projects (the record supplies the
+   project; an explicit `--config-dir` still restricts). Ambiguous address matches are errors,
+   including in auto mode; use both `--port` and `--host` to disambiguate. Hosts match registered
+   URL hostnames without DNS resolution. Without address selectors, several matches narrow to
+   the invoking agent's bucket, then the most recently started; siblings surface as a stderr
+   warning. No record → local fallback, or a hard error under `--attach`. An unmatched explicit
+   host is always an error.
 2. **Gate.** Token present (else "restart Storybook" + fallback). Same `storybook` installation
    (the record's `storybookPath` realpath-equals the caller's own package root) → in-process; a
    different installation → child host from the recorded installation; unverifiable or may not

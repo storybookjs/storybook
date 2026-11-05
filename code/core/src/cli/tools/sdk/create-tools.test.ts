@@ -245,9 +245,14 @@ describe('createTools', () => {
       connection: { close: vi.fn(), disconnected: new Promise<never>(() => {}) },
     }));
 
-    await createTools({ cwd: '/repo', port: 6006, mode: 'attached' }, { attach });
+    await createTools({ cwd: '/repo', port: 6006, host: '::1', mode: 'attached' }, { attach });
 
-    expect(attach).toHaveBeenCalledWith({ cwd: '/repo', configDir: undefined, port: 6006 });
+    expect(attach).toHaveBeenCalledWith({
+      cwd: '/repo',
+      configDir: undefined,
+      port: 6006,
+      host: '::1',
+    });
   });
 
   it('surfaces competing sibling instances on the storybook info, without tokens', async () => {
@@ -322,6 +327,16 @@ describe('createTools', () => {
     expect(fallback.fallbackNotice).toContain('port 9999');
   });
 
+  it.each(['ambiguous-instance', 'host-mismatch'] as const)(
+    'never falls back to local execution on %s',
+    async (reason) => {
+      const error = new AttachUnavailableError({ reason, instances: [], remediation: reason });
+      vi.mocked(attach).mockRejectedValueOnce(error);
+      await expect(createTools({ port: 6006 }, { attach })).rejects.toBe(error);
+      expect(bootstrapToolsRuntime).not.toHaveBeenCalled();
+    }
+  );
+
   it('runs a requiresDevServer method when attached', async () => {
     const attach = vi.fn(async () => ({
       runtime: makeRuntime(),
@@ -344,7 +359,7 @@ describe('createTools', () => {
       pid: 123,
       cwd: '/scratch/empty',
       configDir: CONFIG_DIR,
-      url: 'http://localhost:6006',
+      url: 'https://[::1]:6006',
       port: 6006,
       token: 'secret',
       storybookVersion: '10.2.0',
@@ -381,6 +396,7 @@ describe('createTools', () => {
         autoSpawn: false,
         // Pinned from the chosen record, so the child re-resolves to the same instance.
         port: 6006,
+        host: '[::1]',
       }),
       clientInfo: expect.objectContaining({ kind: 'sdk' }),
       requestedMode: 'attached',

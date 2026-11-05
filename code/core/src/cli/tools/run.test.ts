@@ -353,15 +353,21 @@ describe('local tools', () => {
     });
   });
 
-  it('threads a valid --port to the SDK host', async () => {
+  it('threads --host and --port to the SDK host', async () => {
     const { deps, createTools } = makeDeps();
 
     await runToolsCommand(
-      { toolset: 'docs', tool: 'list', tokens: [], target: { cwd: '/repo' }, port: '6006' },
+      {
+        toolset: 'docs',
+        tool: 'list',
+        tokens: [],
+        target: { cwd: '/repo', host: '::1' },
+        port: '6006',
+      },
       deps
     );
 
-    expect(createTools).toHaveBeenCalledWith(expect.objectContaining({ port: 6006 }));
+    expect(createTools).toHaveBeenCalledWith(expect.objectContaining({ port: 6006, host: '::1' }));
   });
 
   it('preserves a port given directly on the target when no raw --port value exists', async () => {

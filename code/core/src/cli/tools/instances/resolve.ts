@@ -1,3 +1,5 @@
+import { isIP } from 'node:net';
+
 import {
   CLAUDE_AGENT_NAME,
   CLAUDE_PREVIEW_AGENT_NAME,
@@ -22,6 +24,8 @@ export type ResolveTarget = {
   configDirExplicit?: boolean;
   /** Port of a running Storybook; a known port targets that instance without cwd or config dir. */
   port?: number;
+  /** Hostname from the registered URL, without DNS alias resolution. */
+  host?: string;
   /** The invoking agent (std-env name), used to pick among competing matches. */
   agent?: string;
 };
@@ -33,6 +37,8 @@ export type InstanceSelection =
       matches: StorybookInstanceRecord[];
     }
   | { kind: 'no-instance'; records: StorybookInstanceRecord[] }
+  | { kind: 'ambiguous-instance'; matches: StorybookInstanceRecord[] }
+  | { kind: 'host-mismatch'; host: string; candidates: StorybookInstanceRecord[] }
   | {
       kind: 'port-mismatch';
       port: number;
@@ -46,8 +52,8 @@ export type InstanceSelection =
 // is found from `packages/ui` and vice versa. An explicit `--config-dir` matches on configDir
 // only, which records from older Storybooks lack.
 //
-// `target.port` is a complete address: records match on port across all projects, still
-// restricted by an explicit `--config-dir`. Nothing on the port → `port-mismatch`.
+// Explicit host/port selectors match across projects, restricted by an explicit config dir.
+// Multiple address matches are ambiguous; agent preference and recency must not choose a target.
 //
 // Competing matches narrow to the invoking agent's bucket when one exists. MCP status plays no
 // role: attaching over the channel works without `@storybook/addon-mcp`.
@@ -57,17 +63,31 @@ export function selectInstances(
 ): InstanceSelection {
   const { port: targetPort, agent: currentAgent } = target;
 
-  if (targetPort != null) {
+  if (targetPort != null || target.host != null) {
     const candidates = target.configDirExplicit
       ? records.filter((record) => matchesTargetConfigDir(record, target))
       : records;
-    const matches = candidates.filter((record) => record.port === targetPort);
+    const hostname =
+      target.host == null
+        ? undefined
+        : new URL(`http://${isIP(target.host) === 6 ? `[${target.host}]` : target.host}`).hostname;
+    const matches = candidates.filter(
+      (record) =>
+        (targetPort == null || record.port === targetPort) &&
+        (hostname == null || new URL(record.url).hostname === hostname)
+    );
     if (matches.length === 0) {
+      if (target.host != null) {
+        return { kind: 'host-mismatch', host: target.host, candidates };
+      }
       return candidates.length > 0
-        ? { kind: 'port-mismatch', port: targetPort, candidates }
+        ? { kind: 'port-mismatch', port: targetPort!, candidates }
         : { kind: 'no-instance', records };
     }
-    return { kind: 'match', matches: [...matches].sort(byMostRecentlyStarted) };
+    return {
+      kind: matches.length > 1 ? 'ambiguous-instance' : 'match',
+      matches: [...matches].sort(byMostRecentlyStarted),
+    };
   }
 
   const projectMatches = listProjectMatches(records, target);

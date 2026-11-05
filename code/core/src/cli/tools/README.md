@@ -17,7 +17,8 @@ import { createTools } from 'storybook/internal/tools';
 const tools = await createTools({
   cwd, // which project; defaults to process.cwd()
   configDir, // --config-dir equivalent; disambiguates monorepos
-  port, // --port equivalent; a known port targets that running instance on its own
+  port, // --port equivalent; selects across projects
+  host, // --host equivalent; hostname from the registered URL
   mode: 'auto', // 'auto' | 'attached' | 'local'
   autoSpawn: true, // false → error instead of a child host (foreign cwd, foreign installation)
   clientInfo: { name, version, kind: 'sdk' },
@@ -60,7 +61,7 @@ set). `--json` keeps only the tool result.
 | `--attach`    | `attached` | Hard error (no fallback)         |
 | `--no-attach` | `local`    | Never attaches                   |
 
-`--cwd`, `--config-dir`, and `--port` belong **before** the toolset name (after it, they are tool arguments). `--attach` / `--no-attach` cannot
+`--cwd`, `--config-dir`, `--port`, and `--host` belong **before** the toolset name (after it, they are tool arguments). `--attach` / `--no-attach` cannot
 be combined. `requiresDevServer` is a **local-mode intercept** only: when attached, those methods
 run caller-side (`stories.preview` reads `origin` from the instance record).
 
@@ -83,6 +84,8 @@ npx storybook tools --cwd /apps/web --config-dir /apps/web/.storybook docs list
 npx storybook tools --port 6007 stories preview --stories '[{"storyId":"example-button--primary"}]'
 ```
 
+Explicit `--port` or `--host` selectors must match exactly one running instance. Ambiguous matches are errors even in auto mode, never a local fallback. For instances sharing a port, use `--port 6006 --host 127.0.0.2` (before the toolset name). Use the hostname from the registered URL; DNS aliases are not resolved. IPv6 addresses can be bracketed or unbracketed. An explicit `--config-dir` still restricts matches. An unmatched `--host` is also an error.
+
 ## Modes
 
 **Attached.** Discover instance records in `$XDG_STATE_HOME/storybook/instances`, or
@@ -97,7 +100,7 @@ recorded installation instead. A record that cannot prove its installation throw
 
 **Child host.** Attached mode: an installation mismatch spawns a child from the instance's
 recorded `storybookPath` (its own manifest resolves the host entry), pinned to the instance's
-port. Local mode: a foreign `--cwd` spawns a child from the `storybook` package under that
+host and port. Local mode: a foreign `--cwd` spawns a child from the `storybook` package under that
 directory. Both proxy `describe` / `call` / `close` over IPC. `autoSpawn: false` throws instead.
 A child never spawns another child (`STORYBOOK_TOOLS_CHILD_HOST`).
 

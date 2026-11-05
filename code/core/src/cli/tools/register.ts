@@ -21,6 +21,7 @@ type ToolsPassthroughOptions = ToolsOutputFlags & {
   cwd?: string;
   configDir?: string;
   port?: string;
+  host?: string;
   attach?: boolean;
   noAttach?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by `withTelemetry`. */
@@ -130,7 +131,7 @@ export function registerToolsPassthrough(
                     toolset,
                     tool,
                     tokens,
-                    target: { cwd: options.cwd, configDir: options.configDir },
+                    target: { cwd: options.cwd, configDir: options.configDir, host: options.host },
                     port: options.port,
                     attach: options.noAttach ? false : options.attach,
                     flags,

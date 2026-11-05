@@ -352,7 +352,7 @@ describe('selectInstances', () => {
     expect(result).toEqual({ kind: 'match', matches: [b] });
   });
 
-  it('selects across projects by port alone, most recently started first', () => {
+  it('rejects ambiguous ports across projects regardless of recency', () => {
     const foo = record('/Users/x/projects/foo', 'ready', {
       port: 6006,
       startedAt: '2026-08-27T10:00:00.000Z',
@@ -362,7 +362,44 @@ describe('selectInstances', () => {
       startedAt: '2026-08-27T11:00:00.000Z',
     });
     const result = selectInstances([foo, bar], { cwd: '/Users/x/projects/other', port: 6006 });
-    expect(result).toEqual({ kind: 'match', matches: [bar, foo] });
+    expect(result).toEqual({ kind: 'ambiguous-instance', matches: [bar, foo] });
+  });
+
+  it.each([
+    ['127.0.0.1', 'http://127.0.0.1:6006'],
+    ['::1', 'http://[::1]:6006'],
+    ['[0:0:0:0:0:0:0:1]', 'https://[::1]:6006'],
+    ['STORYBOOK.EXAMPLE.COM', 'https://storybook.example.com:6006'],
+  ])('selects a shared port by host %s', (host, url) => {
+    const a = record('/project-a', 'ready', { port: 6006, url });
+    const b = record('/project-b', 'ready', { port: 6006, url: 'http://127.0.0.2:6006' });
+    expect(selectInstances([a, b], { cwd: b.cwd, port: 6006, host })).toEqual({
+      kind: 'match',
+      matches: [a],
+    });
+    expect(selectInstances([a, b], { cwd: b.cwd, host })).toEqual({
+      kind: 'match',
+      matches: [a],
+    });
+    expect(selectInstances([a, b], { cwd: b.cwd, port: 6006 })).toMatchObject({
+      kind: 'ambiguous-instance',
+    });
+    expect(
+      selectInstances([a, b], {
+        cwd: b.cwd,
+        port: 6006,
+        host: 'missing.example.com',
+      })
+    ).toMatchObject({ kind: 'host-mismatch' });
+    expect(
+      selectInstances([a, b], {
+        cwd: b.cwd,
+        port: 6006,
+        host,
+        configDir: '/other/.storybook',
+        configDirExplicit: true,
+      })
+    ).toMatchObject({ kind: 'host-mismatch' });
   });
 
   it('returns port-mismatch with the running instances when no instance is on the port', () => {

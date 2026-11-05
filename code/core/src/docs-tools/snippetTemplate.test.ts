@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   type HoleRef,
@@ -114,6 +114,25 @@ describe('fillTemplate', () => {
     expect(() =>
       fillTemplate(template, { unmappedArgs: { label: 'Stop' }, initialArgs: {} }, fail)
     ).toThrow(new UnprintableArgError('label'));
+  });
+});
+
+describe('registerPrintHole', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('registers a printer that every copy of this module finds', async () => {
+    vi.stubGlobal(Symbol.for('storybook/docs-tools/print-hole'), undefined);
+    const printHole: PrintHole = () => 'printed';
+    const registering = await import('./snippetTemplate.ts');
+    vi.resetModules();
+    const reading = await import('./snippetTemplate.ts');
+
+    registering.registerPrintHole(printHole);
+
+    expect(reading).not.toBe(registering);
+    expect(reading.getPrintHole()).toBe(printHole);
   });
 });
 

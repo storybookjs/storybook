@@ -14,7 +14,7 @@ import { readAllComponents } from '../component-state-key.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
 import { storyDocsServiceDef } from './definition.ts';
 import { registerStoryDocsService, subscribeStoryDocsToModuleGraphChanges } from './server.ts';
-import type { SnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
+import { type SnippetTemplate, registerPrintHole } from '../../../../docs-tools/snippetTemplate.ts';
 import type { StoryDocsPayload, StoryDocsProvider } from './types.ts';
 
 // `<Button label="…" />` with its label in a hole.
@@ -30,6 +30,7 @@ const vegaTemplate: SnippetTemplate = ['<Vega', { kind: 'attrs', spread: true, t
 
 afterEach(() => {
   clearRegistry();
+  vi.unstubAllGlobals();
 });
 
 function makeStoryEntry(id: string, title = 'Comp'): IndexEntry {
@@ -79,6 +80,56 @@ describe('story-docs open service', () => {
     await expect(service.commands.extractStoryDocs({ id: 'button' })).resolves.toEqual(payload);
     expect(service.queries.storyDocs.get({ id: 'button' })).toEqual(payload);
     expect(provider).toHaveBeenCalledWith({ entry });
+  });
+
+  it('extracts a component once for the calls that arrive while its extraction runs', async () => {
+    const entry = makeStoryEntry('button--primary', 'Button');
+    const payload = makeStoryDocsPayload();
+    let finish = (_: StoryDocsPayload) => {};
+    const provider = vi.fn<StoryDocsProvider>(
+      () => new Promise<StoryDocsPayload>((resolve) => (finish = resolve))
+    );
+    const service = registerStoryDocsService({
+      getIndex: makeGetIndex([entry]),
+      storyDocsProvider: provider,
+    });
+
+    const first = service.commands.extractStoryDocs({ id: 'button' });
+    const second = service.commands.extractStoryDocs({ id: 'button' });
+    await vi.waitFor(() => expect(provider).toHaveBeenCalled());
+    finish(payload);
+
+    await expect(Promise.all([first, second])).resolves.toEqual([payload, payload]);
+    expect(provider).toHaveBeenCalledOnce();
+  });
+
+  it('fills a story template with the given args through the registered hole printer', async () => {
+    vi.stubGlobal('FEATURES', { docgenServer: true, experimentalLiveServerSnippets: true });
+    vi.stubGlobal(Symbol.for('storybook/docs-tools/print-hole'), undefined);
+    registerPrintHole((_, value) => `label="${String(value)}"`);
+    const service = registerStoryDocsService({
+      getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
+      storyDocsProvider: async () =>
+        makeStoryDocsPayload({
+          stories: {
+            'button--primary': {
+              id: 'button--primary',
+              name: 'Primary',
+              snippet: '<Button label="Hi" />',
+              template: buttonTemplate(),
+            },
+          },
+        }),
+      liveSnippets: true,
+    });
+
+    await expect(
+      service.queries.liveSnippet.loaded({
+        storyId: 'button--primary',
+        args: { label: 'Go' },
+        initialArgs: { label: 'Hi' },
+      })
+    ).resolves.toEqual({ snippet: '<Button label="Go" />' });
   });
 
   it('keeps a template only while it prints the snippet and has the shape of one', async () => {
@@ -422,6 +473,98 @@ describe('story-docs open service', () => {
       });
 
       await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(2));
+    });
+
+    it('re-extracts a component whose story file changes while it is being extracted', async () => {
+      const entry = makeStoryEntry('button--primary', 'Button');
+      const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
+      const getIndex = makeGetIndex([entry]);
+      const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
+      subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
+      await service.queries.storyDocs.loaded({ id: 'button' });
+      provider.mockImplementationOnce(() => new Promise(() => {}));
+      void service.commands.extractStoryDocs({ id: 'button' });
+      await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(2));
+
+      const moduleGraph = getService('core/module-graph', { internal: true });
+      await moduleGraph.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./button.stories.tsx'],
+      });
+
+      await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(3));
+    });
+
+    it('extracts again for a call after a story file changes during its first extraction', async () => {
+      const entry = makeStoryEntry('button--primary', 'Button');
+      let finishFirst = (_: StoryDocsPayload) => {};
+      const provider = vi
+        .fn<StoryDocsProvider>()
+        .mockImplementationOnce(() => new Promise((resolve) => (finishFirst = resolve)))
+        .mockImplementation(async () => makeStoryDocsPayload({ name: 'New' }));
+      const getIndex = makeGetIndex([entry]);
+      const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
+      subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
+      const firstLoad = service.commands.extractStoryDocs({ id: 'button' });
+      await vi.waitFor(() => expect(provider).toHaveBeenCalledOnce());
+
+      const moduleGraph = getService('core/module-graph', { internal: true });
+      await moduleGraph.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./button.stories.tsx'],
+      });
+      const afterChange = service.commands.extractStoryDocs({ id: 'button' });
+      finishFirst(makeStoryDocsPayload({ name: 'Old' }));
+      await firstLoad;
+
+      await expect(afterChange).resolves.toMatchObject({ name: 'New' });
+      expect(service.queries.storyDocs.get({ id: 'button' })?.name).toBe('New');
+    });
+
+    it('keeps the refreshed story docs when the extraction a file change replaced finishes later', async () => {
+      const entry = makeStoryEntry('button--primary', 'Button');
+      let finishReplaced = (_: StoryDocsPayload) => {};
+      const provider = vi
+        .fn<StoryDocsProvider>()
+        .mockImplementationOnce(async () => makeStoryDocsPayload({ name: 'Start' }))
+        .mockImplementationOnce(() => new Promise((resolve) => (finishReplaced = resolve)))
+        .mockImplementation(async () => makeStoryDocsPayload({ name: 'New' }));
+      const getIndex = makeGetIndex([entry]);
+      const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
+      subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
+      await service.queries.storyDocs.loaded({ id: 'button' });
+      const replaced = service.commands.extractStoryDocs({ id: 'button' });
+      await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(2));
+
+      const moduleGraph = getService('core/module-graph', { internal: true });
+      await moduleGraph.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./button.stories.tsx'],
+      });
+      await vi.waitFor(() =>
+        expect(service.queries.storyDocs.get({ id: 'button' })?.name).toBe('New')
+      );
+      finishReplaced(makeStoryDocsPayload({ name: 'Old' }));
+      await replaced;
+
+      expect(service.queries.storyDocs.get({ id: 'button' })?.name).toBe('New');
+    });
+
+    it('re-extracts a component whose story file changes while it is being extracted, after a repeated registration', async () => {
+      const entry = makeStoryEntry('button--primary', 'Button');
+      const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
+      const getIndex = makeGetIndex([entry]);
+      const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
+      registerStoryDocsService({ getIndex, storyDocsProvider: provider });
+      subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
+      await service.queries.storyDocs.loaded({ id: 'button' });
+      provider.mockImplementationOnce(() => new Promise(() => {}));
+      void service.commands.extractStoryDocs({ id: 'button' });
+      await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(2));
+
+      const moduleGraph = getService('core/module-graph', { internal: true });
+      await moduleGraph.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./button.stories.tsx'],
+      });
+
+      await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(3));
     });
 
     it('does not re-extract components that were never extracted', async () => {

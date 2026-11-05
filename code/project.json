@@ -49,7 +49,59 @@
         "{workspaceRoot}/.github/workflows/nx.yml",
         "{workspaceRoot}/.github/workflows/trigger-circle-ci-workflow.yml",
         "{workspaceRoot}/.nx/ci-config.yaml",
-        "{workspaceRoot}/test-storybooks/**/package.json"
+        "{workspaceRoot}/test-storybooks/**/package.json",
+        "{workspaceRoot}/.github/workflows/trigger-circleci-nx-dte.yml",
+        "{workspaceRoot}/.nx/workflows/circleci-assignment-rules.yaml"
+      ],
+      "configurations": {
+        "production": {}
+      }
+    },
+    "test-1": {
+      "dependsOn": [
+        {
+          "projects": ["*"],
+          "target": "compile"
+        }
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn test --project '!storybook-ui' --shard=1/2"
+      },
+      "cache": true,
+      "inputs": [
+        "code-all",
+        "{workspaceRoot}/.github/workflows/nx.yml",
+        "{workspaceRoot}/.github/workflows/trigger-circle-ci-workflow.yml",
+        "{workspaceRoot}/.nx/ci-config.yaml",
+        "{workspaceRoot}/test-storybooks/**/package.json",
+        "{workspaceRoot}/.github/workflows/trigger-circleci-nx-dte.yml",
+        "{workspaceRoot}/.nx/workflows/circleci-assignment-rules.yaml"
+      ],
+      "configurations": {
+        "production": {}
+      }
+    },
+    "test-2": {
+      "dependsOn": [
+        {
+          "projects": ["*"],
+          "target": "compile"
+        }
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn test --project '!storybook-ui' --shard=2/2"
+      },
+      "cache": true,
+      "inputs": [
+        "code-all",
+        "{workspaceRoot}/.github/workflows/nx.yml",
+        "{workspaceRoot}/.github/workflows/trigger-circle-ci-workflow.yml",
+        "{workspaceRoot}/.nx/ci-config.yaml",
+        "{workspaceRoot}/test-storybooks/**/package.json",
+        "{workspaceRoot}/.github/workflows/trigger-circleci-nx-dte.yml",
+        "{workspaceRoot}/.nx/workflows/circleci-assignment-rules.yaml"
       ],
       "configurations": {
         "production": {}
@@ -223,6 +275,82 @@
         "env": {
           "STORYBOOK_TYPE": "static",
           "STORYBOOK_URL": "http://localhost:8002"
+        },
+        "cwd": "{projectRoot}"
+      },
+      "cache": true,
+      "inputs": ["code-all"],
+      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "configurations": {
+        "production": {}
+      }
+    },
+    "e2e-internal-static-1": {
+      "dependsOn": ["storybook-ui-serve"],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn wait-on --timeout 300000 tcp:127.0.0.1:8002 && yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit",
+        "env": {
+          "STORYBOOK_TYPE": "static",
+          "STORYBOOK_URL": "http://localhost:8002",
+          "PLAYWRIGHT_SHARD": "1/4"
+        },
+        "cwd": "{projectRoot}"
+      },
+      "cache": true,
+      "inputs": ["code-all"],
+      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "configurations": {
+        "production": {}
+      }
+    },
+    "e2e-internal-static-2": {
+      "dependsOn": ["storybook-ui-serve"],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn wait-on --timeout 300000 tcp:127.0.0.1:8002 && yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit",
+        "env": {
+          "STORYBOOK_TYPE": "static",
+          "STORYBOOK_URL": "http://localhost:8002",
+          "PLAYWRIGHT_SHARD": "2/4"
+        },
+        "cwd": "{projectRoot}"
+      },
+      "cache": true,
+      "inputs": ["code-all"],
+      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "configurations": {
+        "production": {}
+      }
+    },
+    "e2e-internal-static-3": {
+      "dependsOn": ["storybook-ui-serve"],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn wait-on --timeout 300000 tcp:127.0.0.1:8002 && yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit",
+        "env": {
+          "STORYBOOK_TYPE": "static",
+          "STORYBOOK_URL": "http://localhost:8002",
+          "PLAYWRIGHT_SHARD": "3/4"
+        },
+        "cwd": "{projectRoot}"
+      },
+      "cache": true,
+      "inputs": ["code-all"],
+      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "configurations": {
+        "production": {}
+      }
+    },
+    "e2e-internal-static-4": {
+      "dependsOn": ["storybook-ui-serve"],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "yarn wait-on --timeout 300000 tcp:127.0.0.1:8002 && yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit",
+        "env": {
+          "STORYBOOK_TYPE": "static",
+          "STORYBOOK_URL": "http://localhost:8002",
+          "PLAYWRIGHT_SHARD": "4/4"
         },
         "cwd": "{projectRoot}"
       },

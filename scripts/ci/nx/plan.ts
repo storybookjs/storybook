@@ -94,7 +94,8 @@ const fixedJobs: Record<string, Equivalent> = {
   // also runs `yarn dedupe --check`.
   'build--linux': { tasks: ['*:compile', 'scripts:publish', 'scripts:dedupe-check'] },
   // The internal Storybook's stories are their own Vitest project, `storybook-ui`.
-  'tests--linux': { tasks: ['code:test'] },
+  // In two Vitest shards, as `code:test-1` and `-2`: unsplit, it ran 3.4 minutes.
+  'tests--linux': { tasks: ['code:test-1', 'code:test-2'] },
   'tests-stories--linux': { tasks: ['code:test-stories'] },
   eslint: { tasks: ['code:lint', 'scripts:lint'] },
   'format-check': { tasks: ['code:fmt'] },
@@ -110,7 +111,14 @@ const fixedJobs: Record<string, Equivalent> = {
       'code:e2e-internal-4',
     ],
   },
-  'internal-storybook-build-e2e': { tasks: ['code:e2e-internal-static'] },
+  'internal-storybook-build-e2e': {
+    tasks: [
+      'code:e2e-internal-static-1',
+      'code:e2e-internal-static-2',
+      'code:e2e-internal-static-3',
+      'code:e2e-internal-static-4',
+    ],
+  },
   'benchmark-packages': { tasks: ['scripts:bench-packages'] },
   'docgen-memory-gate': { tasks: ['docgen-harness:docgen-memory-gate'] },
   'docgen-perf-gate': { tasks: ['docgen-harness:docgen-perf-gate'] },

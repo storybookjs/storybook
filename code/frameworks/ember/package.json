@@ -54,6 +54,7 @@
     "empathic": "2.0.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.28.5",
     "@types/babel__core": "^7",
     "ember-source": "~3.28.1",
     "typescript": "^6.0.3"

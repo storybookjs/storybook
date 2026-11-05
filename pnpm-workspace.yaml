@@ -10,8 +10,29 @@ packages:
   - code/renderers/*
   - scripts
 
+# Reviewed and deliberately not run: optional native speed-ups with JS fallbacks (ssh2,
+# cpu-features), a version check (protobufjs) and funding messages (core-js).
+ignoredBuiltDependencies:
+  - core-js
+  - core-js-pure
+  - cpu-features
+  - protobufjs
+  - ssh2
+
 # Supply-chain protection: only resolve versions published at least 7 days ago.
 minimumReleaseAge: 10080
+
+# Dependency install scripts are blocked unless listed here. Allowed: packages that build or fetch
+# a native binary the repo uses.
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - '@swc/core'
+  - esbuild
+  - fast-folder-size
+  - lmdb
+  - msgpackr-extract
+  - nx
+  - sharp
 
 # See RESOLUTIONS.md for the conventions around this list.
 overrides:
@@ -54,27 +75,7 @@ patchedDependencies:
   '@vercel/agent-eval@1.2.0': patches/@vercel-agent-eval-npm-1.2.0-861deb21a0.patch
   '@vitest/expect@5.0.5': patches/@vitest-expect-npm-5.0.5-5df289c822.patch
   'buffer-equal-constant-time@1.0.1': patches/buffer-equal-constant-time-npm-1.0.1-41826f3419.patch
-
-# Dependency install scripts are blocked unless listed here. Allowed: packages that build or fetch
-# a native binary the repo uses.
-onlyBuiltDependencies:
-  - '@parcel/watcher'
-  - '@swc/core'
-  - esbuild
-  - fast-folder-size
-  - lmdb
-  - msgpackr-extract
-  - nx
-  - sharp
-
-# Reviewed and deliberately not run: optional native speed-ups with JS fallbacks (ssh2,
-# cpu-features), a version check (protobufjs) and funding messages (core-js).
-ignoredBuiltDependencies:
-  - core-js
-  - core-js-pure
-  - cpu-features
-  - protobufjs
-  - ssh2
+  resolve@1.22.12: patches/resolve@1.22.12.patch
 
 # ESLint runs from code/ with legacy eslintrc and resolves plugins declared in scripts/package.json
 # through the root node_modules.
@@ -85,14 +86,14 @@ publicHoistPattern:
 # Keeps node_modules content-identical across macOS and Linux CI machines so NX remote cache
 # hashes match (https://github.com/nrwl/nx/issues/22177).
 supportedArchitectures:
-  os:
-    - current
-    - linux
-    - darwin
   cpu:
     - current
     - x64
     - arm64
+  os:
+    - current
+    - linux
+    - darwin
 
 # Keeps .pnpm paths short enough for Windows MAX_PATH on CI.
 virtualStoreDirMaxLength: 60

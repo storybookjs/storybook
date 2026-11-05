@@ -53,7 +53,7 @@
   "devDependencies": {
     "@types/jscodeshift": "^17.3.0",
     "ansi-regex": "^6.0.1",
-    "pathe": "^1.1.2",
+    "pathe": "^2.0.3",
     "ts-dedent": "^2.2.0",
     "typescript": "^6.0.3"
   },

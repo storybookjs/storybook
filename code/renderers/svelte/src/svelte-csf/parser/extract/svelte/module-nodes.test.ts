@@ -14,15 +14,17 @@ describe(extractModuleNodes.name, () => {
 
     await expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
       [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001 (MissingModuleTagError): The file '<path not specified>'
-      does not have a module context (<script module> ... </script>).
+      does not have a <script module>.
 
-      defineMeta(...) or preview.meta(...) should be called inside a module script tag, like so:
+      A Svelte stories file needs a <script module> that calls defineMeta() and uses the Story component that it returns, like so:
 
       <script module>
         import { defineMeta } from "@storybook/svelte-vite";
 
         const { Story } = defineMeta({});
       </script>
+
+      <Story name="Primary" />
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
       With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
@@ -39,15 +41,17 @@ describe(extractModuleNodes.name, () => {
 
     await expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
       [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003 (MissingDefineMetaImportError): The file '<path not specified>'
-      does not import defineMeta from "@storybook/svelte-vite" or "@storybook/sveltekit", or the preview from .storybook/preview, inside the module context.
+      does not import defineMeta from "@storybook/svelte-vite" or "@storybook/sveltekit", or preview from the preview file of Storybook, in its <script module>.
 
-      Make sure to import defineMeta from the package and use it inside the module context like so:
+      A Svelte stories file needs a <script module> that calls defineMeta() and uses the Story component that it returns, like so:
 
       <script module>
         import { defineMeta } from "@storybook/svelte-vite";
 
         const { Story } = defineMeta({});
       </script>
+
+      <Story name="Primary" />
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
       With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
@@ -77,6 +81,8 @@ describe(extractModuleNodes.name, () => {
         const { Story } = defineMeta({});
       </script>
 
+      <Story name="Primary" />
+
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
       With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
 
@@ -104,6 +110,8 @@ describe(extractModuleNodes.name, () => {
 
         const { Story } = defineMeta({});
       </script>
+
+      <Story name="Primary" />
 
       In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
       With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.
@@ -383,6 +391,8 @@ describe(extractModuleNodes.name, () => {
 
           const { Story } = defineMeta({});
         </script>
+
+        <Story name="Primary" />
 
         In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
         With CSF factories, call preview.meta() in place of defineMeta(), with preview imported from '#.storybook/preview'.

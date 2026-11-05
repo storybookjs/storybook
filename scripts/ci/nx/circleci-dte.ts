@@ -103,12 +103,18 @@ const mainJob = (selected: readonly Workflow[], changedFiles: readonly string[])
           // when `complete-ci-run` below says so, not when the first of the run-many commands
           // (run.ts starts several at once) ends. A failed task does not stop them: the run reports
           // every failure, as CircleCI and nx.yml (`lifecycle.fail-after: 0`) do.
+          // `start-ci-run` refuses to start while .nx/ci-config.yaml (the NX Cloud workers' config,
+          // which only `start-workers` reads) exists, so it is out of the way for this command only.
           command: [
-            `${NX_CLOUD} start-ci-run --distribute-on=manual`,
-            '--assignment-rules=.nx/workflows/circleci-assignment-rules.yaml',
-            '--require-explicit-completion',
-            '--stop-workers-on-failure=false',
-          ].join(' \\\n  '),
+            'mv .nx/ci-config.yaml /tmp/ci-config.yaml',
+            [
+              `${NX_CLOUD} start-ci-run --distribute-on=manual`,
+              '--assignment-rules=.nx/workflows/circleci-assignment-rules.yaml',
+              '--require-explicit-completion',
+              '--stop-workers-on-failure=false',
+            ].join(' \\\n  '),
+            'mv /tmp/ci-config.yaml .nx/ci-config.yaml',
+          ].join('\n'),
         },
       },
       ...restoreNodeModules(),

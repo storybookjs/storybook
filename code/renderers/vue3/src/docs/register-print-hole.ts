@@ -1,4 +1,4 @@
-import { registerPrintHole } from 'storybook/internal/docs-tools';
+import { registerPrintHole } from 'storybook/internal/docs-tools/snippets';
 
 import { printHole } from './print-hole.ts';
 

@@ -2,7 +2,7 @@ import {
   type PrintHole,
   UnprintableArgError,
   unknownHoleKind,
-} from 'storybook/internal/docs-tools';
+} from 'storybook/internal/docs-tools/snippets';
 
 import {
   type AngularHolePlace,

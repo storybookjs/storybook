@@ -3,7 +3,7 @@ import {
   UnprintableArgError,
   printValue,
   unknownHoleKind,
-} from 'storybook/internal/docs-tools';
+} from 'storybook/internal/docs-tools/snippets';
 
 import {
   cssDeclarations,

@@ -130,6 +130,11 @@
       "code": "./src/docs-tools/index.ts",
       "default": "./dist/docs-tools/index.js"
     },
+    "./internal/docs-tools/snippets": {
+      "types": "./dist/docs-tools/snippets.d.ts",
+      "code": "./src/docs-tools/snippets.ts",
+      "default": "./dist/docs-tools/snippets.js"
+    },
     "./internal/instrumenter": {
       "types": "./dist/instrumenter/index.d.ts",
       "code": "./src/instrumenter/index.ts",

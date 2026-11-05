@@ -5,7 +5,7 @@
  *
  * - `nx-main` starts the NX Cloud run (`start-ci-run --distribute-on=manual`), then runs the same
  *   `nx run-many` commands as .github/workflows/nx.yml (run.ts). It runs no task itself.
- * - `nx-agent` runs as {@link NX_DTE_AGENTS} parallel containers, each `nx-cloud start-agent`,
+ * - `nx-agent` runs as {@link NX_DTE_AGENTS} parallel containers, each `nx start-agent`,
  *   which runs the tasks NX Cloud assigns until `nx-main` completes the run.
  * - The jobs NX Cloud's Linux workers cannot run (plan.ts `sideJobs`) are plain CircleCI jobs: the
  *   Node 26 smoke job as CircleCI defines it, and the Windows parts as .github/workflows/nx.yml runs
@@ -25,7 +25,11 @@ import { planFor } from './plan.ts';
 /** Parallel CircleCI agent containers. NX Cloud's own workers run 20 (the Team plan's maximum). */
 export const NX_DTE_AGENTS = 20;
 
-/** Pinned as in nx.yml, so both pipelines talk to NX Cloud the same way. */
+/**
+ * Pinned as in nx.yml. Only for `start-ci-run`, which runs before the install. The commands after
+ * it go through the workspace's own Nx: the NX Cloud client that `npx nx-cloud` loads resolves Nx
+ * next to itself, outside the workspace, and the agents failed with "Cannot find module".
+ */
 const NX_CLOUD = 'npx --yes nx-cloud@19.1.5';
 
 const NODE_MODULES_ARCHIVE = '/tmp/nx-dte-node_modules.tar.zst';
@@ -146,7 +150,8 @@ const mainJob = (selected: readonly Workflow[], changedFiles: readonly string[])
         run: {
           name: 'Complete the NX Cloud run',
           when: 'always',
-          command: `${NX_CLOUD} complete-ci-run`,
+          // Through npx when the install failed, so the agents still stop.
+          command: `yarn nx complete-ci-run || ${NX_CLOUD} complete-ci-run`,
         },
       },
       ...saveNodeModules(),
@@ -192,7 +197,7 @@ const agentJob = (changedFiles: readonly string[]) =>
       {
         run: {
           name: 'Run the tasks NX Cloud assigns',
-          command: 'NX_AGENT_NAME="circleci-$CIRCLE_NODE_INDEX" ' + `${NX_CLOUD} start-agent`,
+          command: 'NX_AGENT_NAME="circleci-$CIRCLE_NODE_INDEX" yarn nx start-agent',
           // NX Cloud stops a worker that is silent for 10 minutes; the Chromatic task prints a
           // line every minute while it waits.
           no_output_timeout: '20m',

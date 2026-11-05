@@ -6,7 +6,6 @@ import { join } from 'path/posix';
 import { isGlobalInput } from './global-inputs.ts';
 import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
-  type CachePlatform,
   NODE_MODULES_CACHE_KEY,
   NODE_MODULES_CACHE_PATHS,
   PACKED_NODE_MODULES_ARCHIVE,
@@ -16,6 +15,7 @@ import {
   git,
   node,
   npm,
+  pnpm,
   server,
   testResults,
   verdaccio,
@@ -24,6 +24,7 @@ import {
 } from './utils/helpers.ts';
 import { isTrustedAuthor } from './utils/runtime.ts';
 import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
+import { getWorkspaceDirs } from './utils/workspace.ts';
 
 const codeDir = new URL('../../code/', import.meta.url);
 const packageDirs = ['*/src', '*/*/src'].flatMap((pattern) =>
@@ -34,17 +35,19 @@ const packageDirs = ['*/src', '*/*/src'].flatMap((pattern) =>
 );
 
 /**
- * Every job that installs goes through here, so none is left on the orb's own cache: one job saving
- * a mismatched tree there would hand it to all the others. Saving stays gated on a trusted author so
- * a fork PR cannot put a tree where the next run will find it.
+ * Every Linux job that installs goes through here, so they all share one cache. Saving stays gated
+ * on a trusted author so a fork PR cannot put a tree where the next run will find it.
  */
-const installWithCache = (platform: CachePlatform = 'linux') => [
-  cache.attach([NODE_MODULES_CACHE_KEY(platform)]),
-  npm.install('.'),
-  ...(isTrustedAuthor()
-    ? [cache.persist(NODE_MODULES_CACHE_PATHS, NODE_MODULES_CACHE_KEY(platform))]
-    : []),
+const installWithCache = () => [
+  cache.attach([NODE_MODULES_CACHE_KEY()]),
+  pnpm.install(),
+  ...(isTrustedAuthor() ? [cache.persist(NODE_MODULES_CACHE_PATHS, NODE_MODULES_CACHE_KEY())] : []),
 ];
+
+// pnpm gives every workspace package a node_modules of links into the root's virtual store.
+const packageNodeModules = getWorkspaceDirs()
+  .filter((dir) => dir !== 'code' && dir !== 'scripts')
+  .map((dir) => `${WORKING_DIR}/${dir}/node_modules`);
 
 export const build_linux = defineJob('Build (linux)', () => ({
   executor: {
@@ -53,35 +56,26 @@ export const build_linux = defineJob('Build (linux)', () => ({
   },
   steps: [
     git.checkout(),
+    pnpm.enable(),
     ...installWithCache(),
-    npm.check(),
+    pnpm.dedupeCheck(),
     workspace.pack(
       [
-        // Workspace-root node_modules folders. Yarn hoists shared/singleton
-        // dependencies (e.g. `oxc-parser`, `vitest`, `type-fest`) here rather than
-        // into the per-package `code/<pkg>/node_modules` folders below. Downstream
-        // jobs otherwise only receive these via the shared `save_cache`, which is
-        // gated on `isTrustedAuthor()` — so community/fork PRs end up with a
-        // freshly-built `dist` but no root `node_modules`, producing errors like
-        // `Cannot find package 'oxc-parser'`. Packing them into the (pipeline-
-        // scoped, un-gated) workspace makes downstream jobs correct for every PR.
+        // The root node_modules holds pnpm's virtual store, which every
+        // package's node_modules links into. Downstream jobs otherwise only
+        // receive it via the shared `save_cache`, which is gated on
+        // `isTrustedAuthor()`, so community/fork PRs would end up with a
+        // freshly-built `dist` but no dependencies. Packing the trees into the
+        // (pipeline-scoped, un-gated) workspace makes downstream jobs correct
+        // for every PR.
         `${WORKING_DIR}/node_modules`,
         `${WORKING_DIR}/code/node_modules`,
         `${WORKING_DIR}/scripts/node_modules`,
-        // agent-eval nests all its dependencies (installConfig.hoistingLimits),
-        // so downstream checks need its node_modules packed explicitly.
-        `${WORKING_DIR}/agent-eval/node_modules`,
       ],
-      packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`)
+      packageNodeModules
     ),
     compileStep(),
-    {
-      run: {
-        name: 'Publish to Verdaccio',
-        working_directory: `code`,
-        command: 'yarn local-registry --publish',
-      },
-    },
+    verdaccio.publish(),
     git.check(),
     artifact.persist(`code/bench/esbuild-metafiles`, 'bench'),
     workspace.awaitPack(),
@@ -101,17 +95,18 @@ export const fmt = defineJob('Format check', () => ({
   },
   steps: [
     git.checkout(),
+    pnpm.enable(),
     ...installWithCache(),
     {
       run: {
         name: 'Format check',
-        command: 'yarn fmt:check',
+        command: 'pnpm fmt:check',
       },
     },
     {
       run: {
         name: 'Docs check',
-        command: 'yarn docs:check',
+        command: 'pnpm docs:check',
       },
     },
     ...workflow.cancelOnFailure(),
@@ -127,16 +122,16 @@ export const build_windows = defineJob('Build (windows)', () => ({
   steps: [
     git.checkout({ forceHttps: true }),
     node.installOnWindows(),
-    ...installWithCache('windows'),
+    pnpm.check(),
+    // No node_modules cache: pnpm links packages with junctions on Windows, which the cache is not
+    // known to restore.
+    pnpm.install(),
     compileStep(),
     git.check(),
     verdaccio.start(),
     workspace.persist(
       [
-        ...packageDirs.flatMap((p) => [
-          `code/${p.replace('src', 'dist')}`,
-          `code/${p.replace('src', 'node_modules')}`,
-        ]),
+        ...packageDirs.map((p) => `code/${p.replace('src', 'dist')}`),
         `.verdaccio-cache`,
         `code/bench`,
       ],
@@ -159,14 +154,14 @@ export const storybookChromatic = defineJob(
       {
         run: {
           name: 'Build internal storybook',
-          command: 'yarn storybook:ui:build',
+          command: 'pnpm storybook:ui:build',
           working_directory: 'code',
         },
       },
       {
         run: {
           name: 'Run Chromatic',
-          command: 'yarn storybook:ui:chromatic',
+          command: 'pnpm storybook:ui:chromatic',
           working_directory: 'code',
         },
       },
@@ -190,14 +185,14 @@ export const internalStorybookE2e = defineJob(
           name: 'Run internal Storybook',
           working_directory: 'code',
           background: true,
-          command: 'yarn storybook:ui',
+          command: 'pnpm storybook:ui',
         },
       },
       server.wait(['6006']),
       {
         run: {
           name: 'Run internal Storybook E2E tests',
-          command: 'yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit',
+          command: 'pnpm task e2e-tests-internal --no-link -s e2e-tests-internal --junit',
         },
       },
       artifact.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results'), 'test-results'),
@@ -224,7 +219,7 @@ export const internalStorybookBuildE2e = defineJob(
         run: {
           name: 'Build internal storybook',
           working_directory: 'code',
-          command: 'yarn storybook:ui:build',
+          command: 'pnpm storybook:ui:build',
         },
       },
       {
@@ -232,7 +227,7 @@ export const internalStorybookBuildE2e = defineJob(
           name: 'Serve internal storybook static build',
           working_directory: 'code',
           background: true,
-          command: 'yarn http-server storybook-static --port 6006 -s',
+          command: 'pnpm exec http-server storybook-static --port 6006 -s',
         },
       },
       server.wait(['6006']),
@@ -240,7 +235,7 @@ export const internalStorybookBuildE2e = defineJob(
         run: {
           name: 'Run internal Storybook static E2E tests',
           command:
-            'STORYBOOK_TYPE=static yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit',
+            'STORYBOOK_TYPE=static pnpm task e2e-tests-internal --no-link -s e2e-tests-internal --junit',
         },
       },
       artifact.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results'), 'test-results'),
@@ -271,14 +266,14 @@ export const check = defineJob(
         run: {
           name: 'TypeCheck code',
           working_directory: `code`,
-          command: 'yarn task --task check --no-link',
+          command: 'pnpm task --task check --no-link',
         },
       },
       {
         run: {
           name: 'TypeCheck scripts',
           working_directory: `scripts`,
-          command: 'yarn check',
+          command: 'pnpm check',
         },
       },
       ...workflow.cancelOnFailure(),
@@ -300,14 +295,14 @@ export const lint = defineJob(
         run: {
           name: 'Lint code JS',
           working_directory: `code`,
-          command: 'yarn lint:js',
+          command: 'pnpm lint:js',
         },
       },
       {
         run: {
           name: 'Lint scripts',
           working_directory: `scripts`,
-          command: 'yarn lint',
+          command: 'pnpm lint',
         },
       },
     ],
@@ -328,7 +323,7 @@ export const knip = defineJob(
         run: {
           name: 'Run Knip',
           working_directory: `code`,
-          command: 'yarn knip --no-exit-code',
+          command: 'pnpm knip --no-exit-code',
         },
       },
     ],
@@ -349,7 +344,7 @@ export const knip = defineJob(
 const smokeSandboxBuildStep = (template: string, label: string) => ({
   run: {
     name: `Build ${label} sandbox`,
-    command: `yarn task build --template ${template} --start-from=auto --no-link --debug`,
+    command: `pnpm task build --template ${template} --start-from=auto --no-link --debug`,
     environment: {
       STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: '1',
     },
@@ -375,22 +370,9 @@ export const node26Smoke = defineJob('Node 26 smoke', () => ({
         command: ['node --version', 'sudo npm install -g npm@12', 'npm --version'].join('\n'),
       },
     },
-    {
-      run: {
-        // Node 25 stopped bundling corepack. Without it, sandboxes run the
-        // image's global yarn instead of the Yarn 4 their `packageManager`
-        // field pins, and `create-storybook` hangs. `--force` replaces the
-        // image's own yarn and pnpm binaries, as `corepack enable` would.
-        name: 'Install corepack',
-        command: [
-          'sudo npm install -g --force corepack@0',
-          'sudo corepack enable',
-          'which yarn',
-          'yarn --version',
-        ].join('\n'),
-      },
-    },
-    npm.install('.'),
+    // Node 25 stopped bundling corepack, so this also installs it.
+    pnpm.enable(),
+    pnpm.install(),
     compileStep(),
     {
       run: {
@@ -399,7 +381,7 @@ export const node26Smoke = defineJob('Node 26 smoke', () => ({
         // runs it; stories have their own Playwright job. The scripts tests run
         // `main.ts` under plain Node with `--experimental-transform-types`, a
         // flag Node 26 dropped, so they keep running on the default-Node jobs.
-        command: "yarn test --project '!storybook-ui' --project '!scripts'",
+        command: "pnpm test --project '!storybook-ui' --project '!scripts'",
       },
     },
     smokeSandboxBuildStep('react-vite/default-ts', 'React Vite'),
@@ -424,7 +406,7 @@ export const testsUnit_linux = defineJob(
           name: 'Run tests',
           command: [
             'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec,test-d}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "agent-eval/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
-            `echo "$TEST_FILES" | circleci tests run --command="xargs yarn test ${UNIT_TEST_REPORTERS}" --verbose`,
+            `echo "$TEST_FILES" | circleci tests run --command="xargs pnpm test ${UNIT_TEST_REPORTERS}" --verbose`,
           ].join('\n'),
         },
       },
@@ -467,7 +449,7 @@ export const defineAffectedCheck = (changedFiles: readonly string[]) =>
             name: 'TypeCheck affected projects',
             // With Nx Cloud on, CI logs show only a cloud link per task instead of the type errors.
             environment: { NX_NO_CLOUD: 'true' },
-            command: `yarn nx affected -t check --exclude-task-dependencies --parallel=4 --stdin < ${CHANGED_FILES_PATH}`,
+            command: `pnpm exec nx affected -t check --exclude-task-dependencies --parallel=4 --stdin < ${CHANGED_FILES_PATH}`,
           },
         },
         ...workflow.cancelOnFailure(),
@@ -528,24 +510,24 @@ export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) => 
       steps: [
         ...workflow.restoreLinux(),
         ...(checkAll(FORMAT_CONFIG)
-          ? [{ run: { name: 'Format check', command: 'yarn fmt:check' } }]
+          ? [{ run: { name: 'Format check', command: 'pnpm fmt:check' } }]
           : runOnChangedFiles(
               'Format check changed files',
               '',
               changedFiles,
-              'yarn oxfmt --check --no-error-on-unmatched-pattern'
+              'pnpm exec oxfmt --check --no-error-on-unmatched-pattern'
             )),
         ...(checkAll(LINT_CONFIG)
           ? [
-              { run: { name: 'Lint code JS', working_directory: 'code', command: 'yarn lint:js' } },
-              { run: { name: 'Lint scripts', working_directory: 'scripts', command: 'yarn lint' } },
+              { run: { name: 'Lint code JS', working_directory: 'code', command: 'pnpm lint:js' } },
+              { run: { name: 'Lint scripts', working_directory: 'scripts', command: 'pnpm lint' } },
             ]
           : ['code', 'scripts'].flatMap((dir) =>
               runOnChangedFiles(
                 `Lint changed ${dir} files`,
                 dir,
                 changedFiles,
-                'yarn lint:js:cmd --quiet --no-error-on-unmatched-pattern'
+                'pnpm lint:js:cmd --quiet --no-error-on-unmatched-pattern'
               )
             )),
         ...workflow.cancelOnFailure(),
@@ -570,7 +552,7 @@ export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
         {
           run: {
             name: 'Run affected tests',
-            command: `NODE_OPTIONS=--max_old_space_size=4096 yarn vitest related --run --project '!storybook-ui' ${UNIT_TEST_REPORTERS} $(cat ${CHANGED_FILES_PATH})`,
+            command: `NODE_OPTIONS=--max_old_space_size=4096 pnpm exec vitest related --run --project '!storybook-ui' ${UNIT_TEST_REPORTERS} $(cat ${CHANGED_FILES_PATH})`,
           },
         },
         testResults.persist(`test-results`),
@@ -596,7 +578,7 @@ export const testsStories_linux = defineJob(
           name: 'Run stories tests',
           command: [
             'TEST_FILES=$(circleci tests glob "code/**/*.{stories}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
-            'echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
+            'echo "$TEST_FILES" | circleci tests run --command="xargs pnpm test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
           ].join('\n'),
         },
       },
@@ -620,18 +602,19 @@ export const testUnit_windows = defineJob(
     steps: [
       git.checkout({ forceHttps: true }),
       node.installOnWindows(),
+      pnpm.check(),
       workspace.attach(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}`),
       {
         run: {
           name: 'Install dependencies',
-          // The unit tests load no native addon; building them only compiles agent-eval's node-gyp deps.
-          command: 'yarn install --mode=skip-build',
+          // The unit tests load no native addon, so no dependency needs its build script.
+          command: 'pnpm install --frozen-lockfile --ignore-scripts',
         },
       },
       {
         run: {
           command:
-            "yarn test --project '!agent-eval' --reporter=junit --reporter=default --outputFile=./test-results/junit.xml",
+            "pnpm test --project '!agent-eval' --reporter=junit --reporter=default --outputFile=./test-results/junit.xml",
           name: 'Run unit tests',
         },
       },
@@ -703,7 +686,7 @@ export const docgenMemoryGate = defineJob(
         run: {
           name: 'Docgen-server re-extraction memory gate',
           working_directory: DOCGEN_HARNESS_DIR,
-          command: 'yarn bench:docgen-memory',
+          command: 'pnpm bench:docgen-memory',
         },
       },
     ],
@@ -724,7 +707,7 @@ export const docgenPerfGate = defineJob(
         run: {
           name: 'Per-engine docgen perf budgets',
           working_directory: DOCGEN_HARNESS_DIR,
-          command: `yarn bench:docgen-perf-gate --out ./${DOCGEN_PERF_RESULTS_DIR}`,
+          command: `pnpm bench:docgen-perf-gate --out ./${DOCGEN_PERF_RESULTS_DIR}`,
           // A full run is ~5 minutes; the ceiling covers a hung compodoc child's ten-minute kill.
           no_output_timeout: '30m',
         },
@@ -754,7 +737,7 @@ export const benchmarkPackages = defineJob(
         run: {
           name: 'Benchmarking packages against base branch',
           command:
-            'yarn bench-packages --base-branch << pipeline.parameters.ghBaseBranch >> --pull-request << pipeline.parameters.ghPrNumber >> --upload',
+            'pnpm bench-packages --base-branch << pipeline.parameters.ghBaseBranch >> --pull-request << pipeline.parameters.ghPrNumber >> --upload',
           working_directory: 'scripts',
         },
       },

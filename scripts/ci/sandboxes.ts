@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-
 import { join } from 'path';
 
 import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
@@ -8,6 +6,7 @@ import { build_linux } from './common-jobs.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   artifact,
+  corepackEnable,
   npm,
   sandboxArchive,
   server,
@@ -19,6 +18,7 @@ import {
 } from './utils/helpers.ts';
 import type { JobOrNoOpJob, Workflow } from './utils/types.ts';
 import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types.ts';
+import { getLockedVersion } from './utils/workspace.ts';
 
 const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';
 
@@ -26,28 +26,7 @@ const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';
  * The Chromatic job runs the CLI through npx, so it needs none of the repository's node_modules.
  * The version is read from the lockfile because this generator runs before anything is installed.
  */
-const CHROMATIC_VERSION = getLockedVersion('chromatic');
-
-function getLockedVersion(name: string) {
-  const root = join(import.meta.dirname, '../..');
-  const range: string = JSON.parse(readFileSync(join(root, 'scripts/package.json'), 'utf8'))
-    .dependencies[name];
-  const descriptor = `${name}@npm:${range}`;
-  const entry = readFileSync(join(root, 'yarn.lock'), 'utf8')
-    .split('\n\n')
-    .find((block) =>
-      block
-        .split('\n')[0]
-        .replace(/^"|":$/g, '')
-        .split(', ')
-        .includes(descriptor)
-    );
-  const version = entry?.match(/^ {2}version: (.+)$/m)?.[1];
-  if (!version) {
-    throw new Error(`No yarn.lock entry for ${descriptor}`);
-  }
-  return version;
-}
+const CHROMATIC_VERSION = getLockedVersion('scripts', 'chromatic');
 
 /**
  * Verifies the committed docgen baselines against the sandbox that was just built.
@@ -62,7 +41,7 @@ function getDocgenBaselineSteps(templateKey: string) {
       run: {
         name: 'Verify docgen baselines',
         working_directory: DOCGEN_HARNESS_DIR,
-        command: `yarn baselines:sandbox --template ${templateKey}`,
+        command: `pnpm baselines:sandbox --template ${templateKey}`,
       },
     },
   ];
@@ -75,7 +54,6 @@ function getSandboxSetupSteps(template: string) {
   if (templateData.extraCiSteps?.ensureMinNodeVersion) {
     extraSteps.push({
       'node/install': {
-        'install-yarn': true,
         // Currently using Node 22.22.3 as minimum supported version for Angular sandboxes
         'node-version': '22.22.3',
       },
@@ -146,7 +124,7 @@ function defineSandboxJob_dev({
                   name: 'Run storybook',
                   working_directory: 'code',
                   background: true,
-                  command: `yarn task dev --template ${template} --no-link -s dev`,
+                  command: `pnpm task dev --template ${template} --no-link -s dev`,
                 },
               },
               server.wait(['6006']),
@@ -158,7 +136,7 @@ function defineSandboxJob_dev({
                   },
                   command: [
                     'TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")',
-                    `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests-dev --template ${template} --no-link -s e2e-tests-dev --junit" --verbose --index=0 --total=1`,
+                    `echo "$TEST_FILES" | circleci tests run --command="xargs pnpm task e2e-tests-dev --template ${template} --no-link -s e2e-tests-dev --junit" --verbose --index=0 --total=1`,
                   ].join('\n'),
                 },
               },
@@ -175,7 +153,7 @@ function defineSandboxJob_dev({
                   name: 'Run storybook smoke test',
                   working_directory: 'code',
                   background: true,
-                  command: `yarn task smoke-test --template ${template} --no-link -s dev`,
+                  command: `pnpm task smoke-test --template ${template} --no-link -s dev`,
                 },
               },
             ]),
@@ -208,21 +186,10 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             name: 'Start Event Collector',
             working_directory: `scripts`,
             background: true,
-            command: 'yarn jiti ./event-log-collector.ts',
+            command: 'pnpm exec jiti ./event-log-collector.ts',
           },
         },
         server.wait([...verdaccio.ports, '6007']),
-        {
-          run: {
-            name: 'Setup Corepack',
-            command: [
-              //
-              'sudo corepack enable',
-              'which yarn',
-              'yarn --version',
-            ].join('\n'),
-          },
-        },
         ...('inDevelopment' in data && data.inDevelopment
           ? [
               // Node's bundled npm silently ignores NPM_CONFIG_MIN_RELEASE_AGE during scaffold;
@@ -230,8 +197,18 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
               npm.installPinnedVersion(),
               {
                 run: {
+                  // Generating scaffolds the template the way the published sandboxes are, with
+                  // Yarn. The version check runs outside the repository, whose pnpm pin corepack
+                  // enforces.
+                  name: 'Enable Yarn for sandbox generation',
+                  working_directory: LINUX_ROOT_DIR,
+                  command: [corepackEnable('yarn'), 'yarn --version'].join('\n'),
+                },
+              },
+              {
+                run: {
                   name: 'Generate Sandbox',
-                  command: `yarn task generate --template ${key} --no-link -s generate --debug`,
+                  command: `pnpm task generate --template ${key} --no-link -s generate --debug`,
                   environment: {
                     STORYBOOK_SANDBOX_GENERATE: 1,
                     STORYBOOK_TELEMETRY_DEBUG: 1,
@@ -244,7 +221,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         {
           run: {
             name: 'Create Sandbox',
-            command: `yarn task sandbox --template ${key} --no-link -s sandbox --debug`,
+            command: `pnpm task sandbox --template ${key} --no-link -s sandbox --debug`,
             environment: {
               STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: 1,
               STORYBOOK_TELEMETRY_DEBUG: 1,
@@ -262,7 +239,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
                 run: {
                   name: 'Run prepare',
                   working_directory: `${LINUX_ROOT_DIR}/${SANDBOX_DIR}/${id}`,
-                  command: `yarn prepare`,
+                  command: `pnpm prepare`,
                 },
               },
             ]
@@ -270,7 +247,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         {
           run: {
             name: 'Build storybook',
-            command: `yarn task build --template ${key} --no-link -s build`,
+            command: `pnpm task build --template ${key} --no-link -s build`,
           },
         },
         ...getDocgenBaselineSteps(key),
@@ -314,6 +291,8 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
           run: {
             name: 'Running Chromatic',
             working_directory: join(LINUX_ROOT_DIR, WORKING_DIR, 'sandbox', path),
+            // The sandbox's .npmrc points npx at the local registry, which this job doesn't run.
+            environment: { npm_config_registry: 'https://registry.npmjs.org/' },
             command: [
               `npx --yes chromatic@${CHROMATIC_VERSION}`,
               '--debug',
@@ -340,7 +319,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
         {
           run: {
             name: 'Running Vitest',
-            command: `yarn task vitest-integration --template ${key} --no-link -s vitest-integration --junit`,
+            command: `pnpm task vitest-integration --template ${key} --no-link -s vitest-integration --junit`,
           },
         },
         // Diagnostics for browser-mode crashes ("Browser connection was closed"). `store_artifacts`
@@ -368,7 +347,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
           run: {
             name: 'Serve storybook',
             background: true,
-            command: `yarn task serve --template ${key} --no-link -s serve`,
+            command: `pnpm task serve --template ${key} --no-link -s serve`,
           },
         },
         server.wait(['8001']),
@@ -380,7 +359,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             },
             command: [
               `TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")`,
-              `echo "$TEST_FILES" | circleci tests run --command="xargs yarn task e2e-tests --template ${key} --no-link -s e2e-tests --junit" --verbose --index=0 --total=1`,
+              `echo "$TEST_FILES" | circleci tests run --command="xargs pnpm task e2e-tests --template ${key} --no-link -s e2e-tests --junit" --verbose --index=0 --total=1`,
             ].join('\n'),
           },
         },
@@ -413,6 +392,16 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
   };
 }
 
+// The sandbox was installed on Linux: its node_modules holds Linux binaries and records the Linux
+// store, so it is installed again from the local registry.
+const windowsSandboxInstall = (path: string) => ({
+  run: {
+    name: 'Run Install',
+    working_directory: `${WINDOWS_ROOT_DIR}\\${SANDBOX_DIR}\\${path}`,
+    command: ['rm -rf node_modules', 'pnpm install'].join('\n'),
+  },
+});
+
 export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandboxFlow>) {
   return defineJob(
     `${sandbox.devJob.id}-windows`,
@@ -427,17 +416,11 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
         workspace.unpackSandbox(sandbox.id, WINDOWS_ROOT_DIR),
         verdaccio.start(),
         server.wait([...verdaccio.ports]),
-        {
-          run: {
-            name: 'Run Install',
-            working_directory: `${WINDOWS_ROOT_DIR}\\${SANDBOX_DIR}\\${sandbox.path}`,
-            command: 'yarn install',
-          },
-        },
+        windowsSandboxInstall(sandbox.path),
         {
           run: {
             name: 'Install playwright',
-            command: 'yarn playwright install chromium --with-deps',
+            command: 'pnpm exec playwright install chromium --with-deps',
           },
         },
         {
@@ -445,7 +428,7 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
             name: 'Run storybook',
             background: true,
             working_directory: `${WINDOWS_ROOT_DIR}\\${SANDBOX_DIR}\\${sandbox.path}`,
-            command: 'yarn storybook --port 8001',
+            command: 'pnpm storybook --port 8001',
           },
         },
         server.wait(['8001']),
@@ -453,7 +436,7 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
           run: {
             name: 'Running E2E Tests',
             working_directory: 'code',
-            command: `yarn task e2e-tests-dev --template ${sandbox.name} --no-link -s e2e-tests-dev --junit`,
+            command: `pnpm task e2e-tests-dev --template ${sandbox.name} --no-link -s e2e-tests-dev --junit`,
           },
         },
         testResults.persist(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}\\test-results`),
@@ -477,30 +460,24 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
         workspace.unpackSandbox(sandbox.id, WINDOWS_ROOT_DIR),
         verdaccio.start(),
         server.wait([...verdaccio.ports]),
-        {
-          run: {
-            name: 'Run Install',
-            working_directory: `${WINDOWS_ROOT_DIR}\\${SANDBOX_DIR}\\${sandbox.path}`,
-            command: 'yarn install',
-          },
-        },
+        windowsSandboxInstall(sandbox.path),
         {
           run: {
             name: 'Install playwright',
-            command: 'yarn playwright install chromium --with-deps',
+            command: 'pnpm exec playwright install chromium --with-deps',
           },
         },
         {
           run: {
             name: 'Build storybook',
-            command: `yarn task build --template ${sandbox.name} --no-link -s build`,
+            command: `pnpm task build --template ${sandbox.name} --no-link -s build`,
           },
         },
         {
           run: {
             name: 'Serve storybook',
             background: true,
-            command: `yarn task serve --template ${sandbox.name} --no-link -s serve`,
+            command: `pnpm task serve --template ${sandbox.name} --no-link -s serve`,
           },
         },
         server.wait(['8001']),
@@ -508,7 +485,7 @@ export function defineWindowsSandboxBuild(sandbox: ReturnType<typeof defineSandb
           run: {
             name: 'Running E2E Tests',
             working_directory: 'code',
-            command: `yarn task e2e-tests --template ${sandbox.name} --no-link -s e2e-tests`,
+            command: `pnpm task e2e-tests --template ${sandbox.name} --no-link -s e2e-tests`,
           },
         },
       ],

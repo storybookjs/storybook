@@ -35,4 +35,4 @@ jobs:
           install-code-deps: true
 
       - name: Compile
-        run: yarn nx run-many --targets compile --no-cloud
+        run: pnpm exec nx run-many --targets compile --no-cloud

@@ -46,9 +46,9 @@ jobs:
     environment: Release
     permissions:
       contents: write
-      pull-requests: write # required for yarn release:label-patches (addLabelsToLabelable on PRs)
-      actions: write # required for yarn release:cancel-preparation-runs
-      id-token: write # required for npm provenance via yarn release:publish
+      pull-requests: write # required for pnpm release:label-patches (addLabelsToLabelable on PRs)
+      actions: write # required for pnpm release:cancel-preparation-runs
+      id-token: write # required for npm provenance via pnpm release:publish
     defaults:
       run:
         working-directory: scripts
@@ -64,11 +64,13 @@ jobs:
         uses: ./.github/actions/setup-node-and-install
         with:
           install-code-deps: true
+          # Release credentials: install without the cache, which pnpm does not verify.
+          cache: none
 
       - name: Cancel all release preparation runs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:cancel-preparation-runs
+        run: pnpm release:cancel-preparation-runs
 
       - name: Apply deferred version bump and commit
         working-directory: .
@@ -83,7 +85,7 @@ jobs:
               exit 0
           fi
           cd scripts
-          yarn release:version --apply --verbose
+          pnpm release:version --apply --verbose
           cd ..
 
           git config --global user.name "storybook-bot"
@@ -94,19 +96,19 @@ jobs:
 
       - name: Get current version
         id: version
-        run: yarn release:get-current-version
+        run: pnpm release:get-current-version
 
       - name: Check if publish is needed
         id: publish-needed
         env:
           CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
-        run: yarn release:is-version-published "$CURRENT_VERSION"
+        run: pnpm release:is-version-published "$CURRENT_VERSION"
 
       - name: Check release vs prerelease
         id: is-prerelease
         env:
           CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
-        run: yarn release:is-prerelease "$CURRENT_VERSION" --verbose
+        run: pnpm release:is-prerelease "$CURRENT_VERSION" --verbose
 
       - name: Publish
         env:
@@ -114,7 +116,7 @@ jobs:
         if: |
           steps.publish-needed.outputs.published == 'false' &&
           !(github.event_name == 'workflow_dispatch' && inputs.skip_publish == true)
-        run: yarn release:publish --tag ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next' || 'latest' }} --verbose
+        run: pnpm release:publish --tag ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next' || 'latest' }} --verbose
 
       # Bookkeeping for DX deployment tracking, not part of publishing itself, so it runs
       # continue-on-error to avoid aborting an already-published release. Failure is alerted below.
@@ -194,7 +196,7 @@ jobs:
         id: changelog
         env:
           CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
-        run: yarn release:get-changelog-from-file "$CURRENT_VERSION"
+        run: pnpm release:get-changelog-from-file "$CURRENT_VERSION"
 
       # tags are needed to get list of patches to label as picked
       - name: Fetch git tags
@@ -212,7 +214,7 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:label-patches
+        run: pnpm release:label-patches
 
       - name: Report patch labeling failure to Discord
         if: github.ref_name == 'latest-release' && steps.label-patches.outcome == 'failure'
@@ -310,7 +312,7 @@ jobs:
           SKILLS_REPO_URL: https://x-access-token:${{ steps.skills-token.outputs.token }}@github.com/storybookjs/skills.git
         run: |
           git fetch --quiet origin tag "v$VERSION"
-          STORYBOOK_REF="v$VERSION" yarn release:sync-skills
+          STORYBOOK_REF="v$VERSION" pnpm release:sync-skills
 
       - name: Report job failure to Discord
         if: failure()

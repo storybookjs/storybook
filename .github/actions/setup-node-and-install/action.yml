@@ -1,15 +1,41 @@
 name: 'Setup Node.js and Install Dependencies'
-description: 'Sets up Node.js, caches dependencies, and installs packages for Storybook'
+description: 'Sets up Node.js and the package manager of the checkout, caches dependencies, and installs packages for Storybook'
 
 inputs:
   install-code-deps:
     description: 'Whether to install code dependencies in addition to script dependencies'
     required: false
     default: 'false'
+  cache:
+    description: >-
+      How the job uses the dependency cache: `read-only` (default) restores it, `read-write` also
+      saves it, and `none` skips it. pnpm links a restored store's files without hashing them
+      again, so a job with release or deploy credentials uses `none`, and only jobs that run
+      trusted code on a trusted ref use `read-write`.
+    required: false
+    default: 'read-only'
+
+outputs:
+  package-manager:
+    description: 'The package manager of the checked-out tree: `pnpm`, or `yarn` for a tree from before the pnpm migration'
+    value: ${{ steps.package-manager.outputs.name }}
 
 runs:
   using: 'composite'
   steps:
+    - name: Check inputs
+      shell: bash
+      env:
+        CACHE: ${{ inputs.cache }}
+      run: |
+        case "$CACHE" in
+          read-write | read-only | none) ;;
+          *)
+            echo "::error::cache must be read-write, read-only or none, not '$CACHE'"
+            exit 1
+            ;;
+        esac
+
     - name: Setup Node.js
       uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
       with:
@@ -22,10 +48,109 @@ runs:
       # zizmor: ignore[adhoc-packages]  # replaces the runner's npm before the lockfile install
       run: npm install -g npm@12
 
+    # corepack provides the pnpm release that the packageManager field pins, hash included.
+    # Node >= 25 no longer bundles it; this is the release Node 22.22.3 bundles, as pinned in
+    # scripts/ci/utils/helpers.ts.
+    - name: Install corepack
+      shell: bash
+      # zizmor: ignore[adhoc-packages]  # only runs where Node no longer bundles corepack
+      run: command -v corepack >/dev/null 2>&1 || npm install -g corepack@0.34.6
+
+    # The checkout decides the package manager, not this action: publish-canary.yml loads this
+    # action from the workflow commit (`$/`) and then builds any PR head, branch or SHA, and
+    # agent-eval.yml builds the PR head. Such a tree can still be from before the pnpm migration.
+    - name: Select package manager
+      id: package-manager
+      shell: bash
+      run: |
+        package_manager="$(node -p "require('./package.json').packageManager ?? ''")"
+        case "$package_manager" in
+          pnpm@*)
+            corepack enable pnpm
+            # corepack only replaces the shims in its own directory; a pnpm earlier on PATH would
+            # run unpinned.
+            pinned="${package_manager#pnpm@}"
+            pinned="${pinned%%+*}"
+            actual="$(pnpm --version)"
+            if [[ "$actual" != "$pinned" ]]; then
+              echo "::error::pnpm on PATH is $actual, not the pinned $pinned"
+              exit 1
+            fi
+            echo "name=pnpm" >> "$GITHUB_OUTPUT"
+            echo "store-path=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+            ;;
+          yarn@*)
+            # The tree runs the Yarn release it vendors through .yarnrc.yml `yarnPath`.
+            echo "name=yarn" >> "$GITHUB_OUTPUT"
+            ;;
+          *)
+            echo "::error::package.json has no pnpm or yarn packageManager field"
+            exit 1
+            ;;
+        esac
+
     # Restore only — save is gated below. actions/cache's post-job save step uses a
     # runner-internal token that bypasses `permissions:`, so splitting is the only
     # reliable way to prevent pull_request_target runs from poisoning the shared cache.
-    - name: Restore cached dependencies
+    #
+    # The pnpm store is cached, as the global Yarn cache was, rather than node_modules: pnpm
+    # gives every workspace package its own node_modules, which an exact-key node_modules cache
+    # would have to capture in full, while the content-addressed store holds the packages of any
+    # lockfile, so an older store still saves downloads and `pnpm install` fetches what it lacks.
+    # Only full installs save it, and a script-only install uses the full store too.
+    #
+    # Unlike Yarn's cache, whose archives Yarn checks against yarn.lock, pnpm trusts the index of
+    # a restored store and links its files without hashing them again. A tampered store reaches
+    # every job that restores it, hence the `cache` input.
+    - name: Restore cached pnpm store
+      id: restore-pnpm-store
+      if: steps.package-manager.outputs.name == 'pnpm' && inputs.cache != 'none'
+      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      with:
+        path: ${{ steps.package-manager.outputs.store-path }}
+        key: pnpm-store-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
+        restore-keys: |
+          pnpm-store-v1-${{ runner.os }}-
+
+    # `@storybook/scripts...` selects scripts plus the workspace packages it depends on
+    # (storybook, eslint-plugin-storybook), which is what the release scripts import.
+    - name: Install script dependencies
+      if: steps.package-manager.outputs.name == 'pnpm' && inputs.install-code-deps != 'true'
+      shell: bash
+      run: pnpm install --frozen-lockfile --filter @storybook/scripts...
+
+    - name: Install all dependencies
+      if: steps.package-manager.outputs.name == 'pnpm' && inputs.install-code-deps == 'true'
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    # Skipped after an exact hit: the store already holds this lockfile's packages. Pruning drops
+    # the packages of older lockfiles that a fallback restore brought along.
+    - name: Prune pnpm store
+      if: >-
+        steps.package-manager.outputs.name == 'pnpm' &&
+        inputs.cache == 'read-write' &&
+        inputs.install-code-deps == 'true' &&
+        steps.restore-pnpm-store.outputs.cache-hit != 'true' &&
+        github.event_name != 'pull_request_target'
+      shell: bash
+      run: pnpm store prune
+
+    - name: Save cached pnpm store
+      if: >-
+        steps.package-manager.outputs.name == 'pnpm' &&
+        inputs.cache == 'read-write' &&
+        inputs.install-code-deps == 'true' &&
+        steps.restore-pnpm-store.outputs.cache-hit != 'true' &&
+        github.event_name != 'pull_request_target'
+      uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+      with:
+        path: ${{ steps.package-manager.outputs.store-path }}
+        key: pnpm-store-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
+
+    # Yarn checkouts install as they did before the pnpm migration, within the `cache` input.
+    - name: Restore cached dependencies (Yarn)
+      if: steps.package-manager.outputs.name == 'yarn' && inputs.cache != 'none'
       uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: |
@@ -35,19 +160,23 @@ runs:
           yarn-v1-${{ hashFiles('yarn.lock') }}
           yarn-v1
 
-    - name: Install script dependencies
+    - name: Install script dependencies (Yarn)
+      if: steps.package-manager.outputs.name == 'yarn'
       shell: bash
       working-directory: scripts
       run: yarn install
 
-    - name: Install code dependencies
-      if: inputs.install-code-deps == 'true'
+    - name: Install code dependencies (Yarn)
+      if: steps.package-manager.outputs.name == 'yarn' && inputs.install-code-deps == 'true'
       shell: bash
       working-directory: code
       run: yarn install
 
-    - name: Save cached dependencies
-      if: github.event_name != 'pull_request_target'
+    - name: Save cached dependencies (Yarn)
+      if: >-
+        steps.package-manager.outputs.name == 'yarn' &&
+        inputs.cache == 'read-write' &&
+        github.event_name != 'pull_request_target'
       uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: |

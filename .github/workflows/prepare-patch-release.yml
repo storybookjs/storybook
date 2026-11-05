@@ -38,15 +38,37 @@ jobs:
           ref: main
           token: ${{ secrets.GH_TOKEN }}
 
+      # `./` resolves against the checkout, so this is main's copy of the action, which matches
+      # main's package manager.
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install
+        with:
+          # Release credentials: install without the cache, which pnpm does not verify. Until main
+          # moves to pnpm, its copy of the action ignores this input with a warning and uses the
+          # Yarn cache, whose archives Yarn verifies.
+          cache: none
+
+      # This workflow runs from next but prepares the release from main, which keeps using Yarn
+      # until a release brings the pnpm migration to it. Run the scripts with main's package manager.
+      - name: Select package manager
+        working-directory: .
+        run: |
+          case "$(node -p "require('./package.json').packageManager ?? ''")" in
+            pnpm@*) echo "PM=pnpm" >> "$GITHUB_ENV" ;;
+            yarn@*) echo "PM=yarn" >> "$GITHUB_ENV" ;;
+            *)
+              echo "::error::package.json has no pnpm or yarn packageManager field"
+              exit 1
+              ;;
+          esac
 
       - name: Check if pull request is frozen
         if: github.event_name != 'workflow_dispatch'
         id: check-frozen
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:is-pr-frozen --patch
+        run: |
+          "$PM" release:is-pr-frozen --patch
 
       - name: Cancel when frozen
         if: steps.check-frozen.outputs.frozen == 'true' && github.event_name != 'workflow_dispatch'
@@ -62,7 +84,8 @@ jobs:
         id: unreleased-changes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:unreleased-changes-exists --unpicked-patches
+        run: |
+          "$PM" release:unreleased-changes-exists --unpicked-patches
 
       - name: Fetch next branch
         run:
@@ -77,7 +100,7 @@ jobs:
         run: |
           git config --global user.name 'storybook-bot'
           git config --global user.email '32066757+storybook-bot@users.noreply.github.com'
-          yarn release:pick-patches
+          "$PM" release:pick-patches
 
       - name: Cancel when no patches to pick
         if: steps.pick-patches.outputs.no-patch-prs == 'true'
@@ -93,14 +116,14 @@ jobs:
         id: bump-version
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'true'
         run: |
-          yarn release:version --deferred --release-type patch --verbose
+          "$PM" release:version --deferred --release-type patch --verbose
 
       # We need the current version to set the branch name, even when not bumping the version
       - name: Get current version
         id: current-version
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'false'
         run: |
-          yarn release:get-current-version --verbose
+          "$PM" release:get-current-version --verbose
 
       - name: Set version output
         id: versions
@@ -118,7 +141,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NEXT_VERSION: ${{ steps.versions.outputs.next }}
         run: |
-          yarn release:write-changelog "$NEXT_VERSION" --unpicked-patches --verbose
+          "$PM" release:write-changelog "$NEXT_VERSION" --unpicked-patches --verbose
 
       - name: 'Commit changes to branch: version-patch-from-${{ steps.versions.outputs.current }}'
         working-directory: .
@@ -146,7 +169,7 @@ jobs:
           if [[ "$HAS_CHANGES" == "true" ]]; then
             ARGS+=(--current-version "$CURRENT_VERSION" --next-version "$NEXT_VERSION")
           fi
-          yarn release:generate-pr-description "${ARGS[@]}" --verbose
+          "$PM" release:generate-pr-description "${ARGS[@]}" --verbose
 
       - name: Create or update pull request with release
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'true'

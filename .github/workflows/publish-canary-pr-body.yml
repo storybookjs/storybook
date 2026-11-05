@@ -49,7 +49,7 @@ name: Update Canary PR Body
 #   Danger checking out base.sha).
 # - The publish job stays on `pull_request` with contents:read only. It has no secrets and does
 #   not write to the PR.
-# - This job never checks out the PR, never uses its artifacts, and never runs yarn/npm from it.
+# - This job never checks out the PR, never uses its artifacts, and never runs pnpm/npm from it.
 # - Install snippets for pull_request runs are built from `workflow_run.head_sha`. A fork
 #   cannot aim this token at a different PR: we look up PRs for that SHA and require the
 #   open PR's head to equal it. Manual dispatches use the canary-ref step, not head_sha.

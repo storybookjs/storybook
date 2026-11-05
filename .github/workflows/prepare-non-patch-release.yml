@@ -61,13 +61,16 @@ jobs:
 
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install
+        with:
+          # Release credentials: install without the cache, which pnpm does not verify.
+          cache: none
 
       - name: Check if pull request is frozen
         if: github.event_name != 'workflow_dispatch'
         id: check-frozen
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:is-pr-frozen
+        run: pnpm release:is-pr-frozen
 
       - name: Cancel when frozen
         if: steps.check-frozen.outputs.frozen == 'true' && github.event_name != 'workflow_dispatch'
@@ -88,7 +91,7 @@ jobs:
         id: unreleased-changes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:unreleased-changes-exists
+        run: pnpm release:unreleased-changes-exists
 
       - name: Cancel when no release necessary
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'false' && github.event_name != 'workflow_dispatch'
@@ -110,14 +113,14 @@ jobs:
           if [[ -n "$PRE_ID" ]]; then
             ARGS+=(--pre-id "$PRE_ID")
           fi
-          yarn release:version "${ARGS[@]}" --verbose
+          pnpm release:version "${ARGS[@]}" --verbose
 
       - name: Write changelog
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NEXT_VERSION: ${{ steps.bump-version.outputs.next-version }}
         run: |
-          yarn release:write-changelog "$NEXT_VERSION" --verbose
+          pnpm release:write-changelog "$NEXT_VERSION" --verbose
 
       - name: 'Commit changes to branch: version-non-patch-from-${{ steps.bump-version.outputs.current-version }}'
         working-directory: .
@@ -139,7 +142,7 @@ jobs:
           CURRENT_VERSION: ${{ steps.bump-version.outputs.current-version }}
           NEXT_VERSION: ${{ steps.bump-version.outputs.next-version }}
         run: |
-          yarn release:generate-pr-description \
+          pnpm release:generate-pr-description \
             --current-version "$CURRENT_VERSION" \
             --next-version "$NEXT_VERSION" \
             --verbose

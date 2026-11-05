@@ -122,14 +122,23 @@ jobs:
           persist-credentials: false
 
       # After checkout of PR head, ./ would run that tree's action.yml.
+      # The canary source can predate the pnpm migration; the action then installs it with Yarn
+      # and reports which package manager the tree uses.
       - name: Setup Node.js and Install Dependencies
+        id: setup
         uses: $/.github/actions/setup-node-and-install
         with:
           install-code-deps: true
+          # Only a push to next builds merged code on the default branch; every other run builds a
+          # PR head, branch or SHA, which must not write the store that other runs restore.
+          cache: ${{ github.event_name == 'push' && 'read-write' || 'read-only' }}
 
       - name: Build
         working-directory: code
-        run: yarn task --task compile --start-from=auto --no-link
+        env:
+          PM: ${{ steps.setup.outputs.package-manager }}
+        run: |
+          "$PM" task --task compile --start-from=auto --no-link
 
       - name: Publish
         working-directory: scripts
@@ -137,18 +146,30 @@ jobs:
           # Compact URLs resolve via the npm repository field (storybookjs/storybook).
           # A publish from any other GITHUB_REPOSITORY must use owner/repo URLs.
           PKG_PR_NEW_NO_COMPACT: ${{ github.repository != 'storybookjs/storybook' }}
+          PM: ${{ steps.setup.outputs.package-manager }}
         run: |
           extra=()
           if [ "$PKG_PR_NEW_NO_COMPACT" = true ]; then
             extra+=(--no-compact)
           fi
 
-          # --yarn uses `yarn pack`, which rewrites leftover workspace: ranges
-          # (npm pack leaves them; npm install then fails with EUNSUPPORTEDPROTOCOL).
-          yarn workspaces list --json --no-private \
-            | jq -j '"../" + .location + "\u0000"' \
-            | xargs -0 -r yarn pkg-pr-new publish --yarn --no-template --comment=off \
-              "${extra[@]}" --json=./pkg-pr-new-output.json
+          # --pnpm / --yarn pack with that package manager, which rewrites leftover workspace:
+          # ranges (npm pack leaves them; npm install then fails with EUNSUPPORTEDPROTOCOL).
+          if [ "$PM" = pnpm ]; then
+            # The workspace root is the project with the shortest path; pass the public packages
+            # relative to it, as Yarn's .location was.
+            pnpm ls --recursive --depth -1 --json \
+              | jq -j '(map(.path) | min_by(length)) as $root
+                  | .[] | select(.private != true)
+                  | "../" + (.path | ltrimstr($root + "/")) + "\u0000"' \
+              | xargs -0 -r pnpm exec pkg-pr-new publish --pnpm --no-template --comment=off \
+                "${extra[@]}" --json=./pkg-pr-new-output.json
+          else
+            yarn workspaces list --json --no-private \
+              | jq -j '"../" + .location + "\u0000"' \
+              | xargs -0 -r yarn pkg-pr-new publish --yarn --no-template --comment=off \
+                "${extra[@]}" --json=./pkg-pr-new-output.json
+          fi
 
           test -s ./pkg-pr-new-output.json
           jq -er '.packages[] | select(.name == "create-storybook") | .name' ./pkg-pr-new-output.json >/dev/null

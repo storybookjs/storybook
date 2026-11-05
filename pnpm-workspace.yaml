@@ -97,6 +97,10 @@ publicHoistPattern:
   - '*eslint*'
   - '*prettier*'
 
+# Run scripts through pnpm's portable shell on every OS, as Yarn did with its own: the scripts use
+# POSIX syntax such as `VAR=value command`, which cmd.exe on Windows cannot run.
+shellEmulator: true
+
 # Keeps node_modules content-identical across macOS and Linux CI machines so NX remote cache
 # hashes match (https://github.com/nrwl/nx/issues/22177).
 supportedArchitectures:

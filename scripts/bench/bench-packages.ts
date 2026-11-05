@@ -472,9 +472,15 @@ const run = async () => {
       Then run the registry with 'yarn --task run-registry --no-link'`);
   }
 
-  // The amount of VCPUs for this task in CI is 2 (medium resource)
+  // The amount of VCPUs for this task in CI is 2 (medium resource). The NX task runs on larger
+  // workers and sets BENCH_PACKAGES_CONCURRENCY; the results are sizes, so concurrency cannot
+  // change them.
   const amountOfVCPUs = 2;
-  const concurrentLimit = process.env.CI ? amountOfVCPUs - 1 : maxConcurrentTasks;
+  const concurrentLimit = process.env.BENCH_PACKAGES_CONCURRENCY
+    ? Number(process.env.BENCH_PACKAGES_CONCURRENCY)
+    : process.env.CI
+      ? amountOfVCPUs - 1
+      : maxConcurrentTasks;
   const limit = pLimit(concurrentLimit);
 
   const progressIntervalId = setInterval(() => {

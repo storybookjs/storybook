@@ -7,7 +7,10 @@
     "check": {
       "dependsOn": [],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "yarn check" },
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn check"
+      },
       "inputs": ["default", "code-all"],
       "cache": true
     },
@@ -19,7 +22,9 @@
       },
       "cache": true,
       "inputs": ["default", "{workspaceRoot}/.oxlintrc.json", "{workspaceRoot}/yarn.lock"],
-      "configurations": { "production": {} }
+      "configurations": {
+        "production": {}
+      }
     },
     "dedupe-check": {
       "executor": "nx:run-commands",
@@ -47,7 +52,10 @@
       ],
       "executor": "nx:run-commands",
       "options": {
-        "command": "yarn exec jiti ./scripts/ci/nx/bench-packages.ts"
+        "command": "yarn exec jiti ./scripts/ci/nx/bench-packages.ts",
+        "env": {
+          "BENCH_PACKAGES_CONCURRENCY": "6"
+        }
       },
       "cache": false,
       "configurations": {

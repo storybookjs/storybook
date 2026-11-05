@@ -37,6 +37,30 @@ const pathExists = async (p: string) => {
 };
 
 type Servers = { close: () => Promise<void> };
+
+/**
+ * Listens on `port`, retrying while it is still taken. NX stops a worker's previous registry while
+ * the next task starts one, so its servers can hold a port for a moment after the kill check.
+ */
+const listenWhenFree = (server: http.Server, port: number, tries = 40) =>
+  new Promise<void>((resolve, reject) => {
+    const onError = (error: NodeJS.ErrnoException) => {
+      if (error.code !== 'EADDRINUSE' || --tries <= 0) {
+        server.off('listening', onListening);
+        reject(error);
+        return;
+      }
+      setTimeout(() => server.listen(port), 500);
+    };
+    const onListening = () => {
+      server.off('error', onError);
+      resolve();
+    };
+    server.on('error', onError);
+    server.once('listening', onListening);
+    server.listen(port);
+  });
+
 const startVerdaccio = async () => {
   // Kill Verdaccio related processes if they are already running
   await killPort(6001);
@@ -47,7 +71,7 @@ const startVerdaccio = async () => {
     verdaccio: false,
   };
   return Promise.race([
-    new Promise((resolve) => {
+    new Promise((resolve, reject) => {
       /**
        * The proxy server will sit in front of verdaccio and tunnel traffic to either verdaccio or
        * the actual npm global registry We do this because tunneling all traffic through verdaccio
@@ -90,12 +114,12 @@ const startVerdaccio = async () => {
         },
       };
 
-      proxy.listen(6001, () => {
+      listenWhenFree(proxy, 6001).then(() => {
         ready.proxy = true;
         if (ready.verdaccio) {
           resolve(servers);
         }
-      });
+      }, reject);
       const cache = join(__dirname, '..', '.verdaccio-cache');
       const config = {
         ...parseConfigFile(join(__dirname, 'verdaccio.yaml')),
@@ -103,23 +127,24 @@ const startVerdaccio = async () => {
       };
 
       // @ts-expect-error (verdaccio's interface is wrong)
-      runServer(config).then((app: Server) => {
-        verdaccioApp = app;
-
-        app.listen(6002, () => {
+      runServer(config)
+        .then((app: Server) => {
+          verdaccioApp = app;
+          return listenWhenFree(app, 6002);
+        })
+        .then(() => {
           ready.verdaccio = true;
           if (ready.proxy) {
             resolve(servers);
           }
-        });
-      });
+        }, reject);
     }),
     new Promise((_, rej) => {
       setTimeout(() => {
         if (!ready.verdaccio || !ready.proxy) {
-          rej(new Error(`TIMEOUT - verdaccio didn't start within 10s`));
+          rej(new Error(`TIMEOUT - verdaccio didn't start within 30s`));
         }
-      }, 10000);
+      }, 30000);
     }),
   ]) as Promise<Servers>;
 };

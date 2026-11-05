@@ -72,16 +72,19 @@ const sandboxJobs = new Map(
 /** CircleCI runs the Playwright tests of the test Storybooks that have them (test-storybooks.ts). */
 const portable = (directory: string) => {
   const project = `portable-stories-kitchen-sink/${directory}`;
-  const { scripts } = JSON.parse(
-    readFileSync(
-      new URL(`../../../test-storybooks/${project}/package.json`, import.meta.url),
-      'utf8'
-    )
-  );
+  const read = (file: string) =>
+    JSON.parse(
+      readFileSync(new URL(`../../../test-storybooks/${project}/${file}`, import.meta.url), 'utf8')
+    );
+  const { scripts } = read('package.json');
+  // A long suite is split into parts (`e2e-ui-1`, `e2e-ui-2`, …) that run on separate workers.
+  const parts = Object.keys(read('project.json').targets).filter((t) => /^e2e-ui-\d+$/.test(t));
   return [
     `${project}:jest`,
     `${project}:vitest`,
-    ...(scripts['playwright-e2e'] ? [`${project}:e2e-ui`] : []),
+    ...(scripts['playwright-e2e']
+      ? (parts.length > 0 ? parts : ['e2e-ui']).map((target) => `${project}:${target}`)
+      : []),
     `${project}:cypress`,
   ];
 };
@@ -91,7 +94,8 @@ const fixedJobs: Record<string, Equivalent> = {
   // also runs `yarn dedupe --check`.
   'build--linux': { tasks: ['*:compile', 'scripts:publish', 'scripts:dedupe-check'] },
   // The internal Storybook's stories are their own Vitest project, `storybook-ui`.
-  'tests--linux': { tasks: ['code:test'] },
+  // In two Vitest shards, as `code:test-1` and `-2`: unsplit, it ran 3.4 minutes.
+  'tests--linux': { tasks: ['code:test-1', 'code:test-2'] },
   'tests-stories--linux': { tasks: ['code:test-stories'] },
   eslint: { tasks: ['code:lint', 'scripts:lint'] },
   'format-check': { tasks: ['code:fmt'] },
@@ -107,7 +111,14 @@ const fixedJobs: Record<string, Equivalent> = {
       'code:e2e-internal-4',
     ],
   },
-  'internal-storybook-build-e2e': { tasks: ['code:e2e-internal-static'] },
+  'internal-storybook-build-e2e': {
+    tasks: [
+      'code:e2e-internal-static-1',
+      'code:e2e-internal-static-2',
+      'code:e2e-internal-static-3',
+      'code:e2e-internal-static-4',
+    ],
+  },
   'benchmark-packages': { tasks: ['scripts:bench-packages'] },
   'docgen-memory-gate': { tasks: ['docgen-harness:docgen-memory-gate'] },
   'docgen-perf-gate': { tasks: ['docgen-harness:docgen-perf-gate'] },

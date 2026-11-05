@@ -61,7 +61,6 @@
   },
   "devDependencies": {
     "@storybook/icons": "^2.0.2",
-    "@types/node": "^22.19.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "typescript": "^6.0.3"

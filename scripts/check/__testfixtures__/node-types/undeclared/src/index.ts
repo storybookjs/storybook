@@ -1,1 +1,0 @@
-export { readFileSync } from 'fs';

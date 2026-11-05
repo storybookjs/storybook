@@ -93,7 +93,6 @@
     "@sveltejs/vite-plugin-svelte": "^6.2.0",
     "@testing-library/svelte": "^5.2.4",
     "@types/estree": "^1.0.6",
-    "@types/node": "^22.19.1",
     "esrap": "^2.4.0",
     "magic-string": "^0.30.12",
     "memfs": "^4.11.1",

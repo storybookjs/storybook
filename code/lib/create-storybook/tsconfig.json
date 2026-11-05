@@ -1,7 +1,6 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "types": ["node"],
     "moduleResolution": "bundler",
     "module": "ES2022"
   },

@@ -238,16 +238,25 @@ describe('createTools', () => {
     expect(attach).toHaveBeenCalledOnce();
   });
 
-  it('threads the port option through to attach discovery', async () => {
+  it.each([
+    ['::1', '[::1]'],
+    ['[0:0:0:0:0:0:0:1]', '[::1]'],
+    ['STORYBOOK.EXAMPLE.COM', 'storybook.example.com'],
+  ])('passes a normalized host and port to discovery: %s', async (host, expectedHost) => {
     const attach = vi.fn(async () => ({
       runtime: makeRuntime(),
       record: { url: 'http://localhost:6006', pid: 123, configDir: CONFIG_DIR },
       connection: { close: vi.fn(), disconnected: new Promise<never>(() => {}) },
     }));
 
-    await createTools({ cwd: '/repo', port: 6006, mode: 'attached' }, { attach });
+    await createTools({ cwd: '/repo', port: 6006, host, mode: 'attached' }, { attach });
 
-    expect(attach).toHaveBeenCalledWith({ cwd: '/repo', configDir: undefined, port: 6006 });
+    expect(attach).toHaveBeenCalledWith({
+      cwd: '/repo',
+      configDir: undefined,
+      port: 6006,
+      host: expectedHost,
+    });
   });
 
   it('surfaces competing sibling instances on the storybook info, without tokens', async () => {
@@ -322,6 +331,21 @@ describe('createTools', () => {
     expect(fallback.fallbackNotice).toContain('port 9999');
   });
 
+  it.each([
+    { reason: 'ambiguous-instance', previousFlag: undefined },
+    { reason: 'host-mismatch', previousFlag: 'true' },
+  ] as const)(
+    'restores the attachment flag without falling back on $reason',
+    async ({ reason, previousFlag }) => {
+      vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', previousFlag);
+      const error = new AttachUnavailableError({ reason, instances: [], remediation: reason });
+      vi.mocked(attach).mockRejectedValueOnce(error);
+      await expect(createTools({ port: 6006 }, { attach })).rejects.toBe(error);
+      expect(bootstrapToolsRuntime).not.toHaveBeenCalled();
+      expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBe(previousFlag);
+    }
+  );
+
   it('runs a requiresDevServer method when attached', async () => {
     const attach = vi.fn(async () => ({
       runtime: makeRuntime(),
@@ -344,7 +368,7 @@ describe('createTools', () => {
       pid: 123,
       cwd: '/scratch/empty',
       configDir: CONFIG_DIR,
-      url: 'http://localhost:6006',
+      url: 'https://[::1]:6006',
       port: 6006,
       token: 'secret',
       storybookVersion: '10.2.0',
@@ -381,6 +405,7 @@ describe('createTools', () => {
         autoSpawn: false,
         // Pinned from the chosen record, so the child re-resolves to the same instance.
         port: 6006,
+        host: '[::1]',
       }),
       clientInfo: expect.objectContaining({ kind: 'sdk' }),
       requestedMode: 'attached',

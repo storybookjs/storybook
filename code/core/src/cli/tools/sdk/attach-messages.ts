@@ -31,6 +31,20 @@ export function formatPortMismatch(port: number, candidates: StorybookInstanceRe
   return lines.join('\n');
 }
 
+export function formatAmbiguousInstance(records: StorybookInstanceRecord[]): string {
+  return [
+    'Multiple running Storybook instances match this target. Retry with `--port <port> --host <hostname>` using the hostname from one of these URLs, or narrow the target with `--config-dir <dir>`:',
+    ...records.map((record) => `- ${record.url} (cwd \`${record.cwd}\`)`),
+  ].join('\n');
+}
+
+export function formatHostMismatch(host: string, records: StorybookInstanceRecord[]): string {
+  return [
+    `No running Storybook instance matches host \`${host}\` and the other target options. Use the hostname from a registered URL:`,
+    ...records.map((record) => `- ${record.url} (cwd \`${record.cwd}\`)`),
+  ].join('\n');
+}
+
 export function formatOldServer(version: string): string {
   return `Restart Storybook (v${version}+) to enable attach. The running instance was started with an older Storybook that does not publish a channel token.`;
 }
@@ -82,7 +96,7 @@ export function formatMultiInstanceNotice(
   const lines = [
     `Warning: Multiple Storybook instances match this project. This command used ${storybook.url ?? 'the selected instance'}${instanceDetails(storybook)}.`,
     '',
-    'Other matching instances — target one with `--port <port>`:',
+    'Other matching instances — target one with `--port <port> --host <hostname>`:',
   ];
   for (const sibling of storybook.siblings ?? []) {
     lines.push(`- ${sibling.url}${instanceDetails(sibling)}`);

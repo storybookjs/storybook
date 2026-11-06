@@ -86,6 +86,17 @@ describe('readRegistry', () => {
     await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([aliveRecord]);
   });
 
+  it('skips invalid URLs without dropping healthy records', async () => {
+    vol.fromNestedJSON({
+      [REGISTRY_DIR]: {
+        'alive.json': JSON.stringify(aliveRecord),
+        'bad-url.json': JSON.stringify({ ...aliveRecord, instanceId: 'bad-url', url: 'not a url' }),
+      },
+    });
+
+    await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([aliveRecord]);
+  });
+
   it('removes the registry file of a dead PID', async () => {
     const dead = { ...aliveRecord, instanceId: 'dead-uuid', pid: 2147483646 };
     vol.fromNestedJSON({ [REGISTRY_DIR]: { 'dead.json': JSON.stringify(dead) } });
@@ -197,6 +208,13 @@ describe('readRegistry', () => {
 
     expect(records).toEqual(expect.arrayContaining([aliveRecord, legacyRecord]));
     expect(records).toHaveLength(2);
+  });
+
+  it('returns one record when registry paths alias the same directory', async () => {
+    vol.fromNestedJSON({ [REGISTRY_DIR]: { 'alive.json': JSON.stringify(aliveRecord) } });
+    vol.symlinkSync(REGISTRY_DIR, '/registry-link');
+
+    await expect(readRegistry(REGISTRY_DIR, '/registry-link')).resolves.toEqual([aliveRecord]);
   });
 
   it('reads a dir only once when it is both the preferred and legacy path', async () => {

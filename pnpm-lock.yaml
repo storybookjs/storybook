@@ -544,9 +544,6 @@ importers:
       storybook:
         specifier: workspace:^
         version: link:../../core
-      ts-dedent:
-        specifier: ^2.2.0
-        version: 2.2.0
       unplugin:
         specifier: ^2.3.5
         version: 2.3.11
@@ -611,6 +608,9 @@ importers:
       tocbot:
         specifier: ^4.20.1
         version: 4.36.4
+      ts-dedent:
+        specifier: ^2.2.0
+        version: 2.2.0
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
@@ -842,9 +842,6 @@ importers:
       storybook:
         specifier: workspace:^
         version: link:../../core
-      ts-dedent:
-        specifier: ^2.2.0
-        version: 2.2.0
     devDependencies:
       '@types/node':
         specifier: ^22.19.1
@@ -873,6 +870,9 @@ importers:
       rollup:
         specifier: ^4.43.0
         version: 4.53.2
+      ts-dedent:
+        specifier: ^2.2.0
+        version: 2.2.0
       vite:
         specifier: ^7.0.4
         version: 7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1)
@@ -970,30 +970,15 @@ importers:
       '@types/react':
         specifier: ^18.0.0
         version: 18.3.27
-      '@webcontainer/env':
-        specifier: ^1.1.1
-        version: 1.1.1
       esbuild:
         specifier: ^0.28.0
         version: 0.28.1
-      jsonc-parser:
-        specifier: ^3.3.1
-        version: 3.3.1
       oxc-parser:
         specifier: ^0.155.0
         version: 0.155.0
       oxc-resolver:
         specifier: 11.21.2
         version: 11.21.2
-      semver:
-        specifier: ^7.7.3
-        version: 7.8.5
-      use-sync-external-store:
-        specifier: ^1.5.0
-        version: 1.6.0(react@18.3.1)
-      ws:
-        specifier: ^8.21.1
-        version: 8.22.0
     devDependencies:
       '@aw-web-design/x-default-browser':
         specifier: 1.4.126
@@ -1151,6 +1136,9 @@ importers:
       '@vitest/utils':
         specifier: 5.0.5
         version: 5.0.5
+      '@webcontainer/env':
+        specifier: ^1.1.1
+        version: 1.1.1
       acorn:
         specifier: ^8.15.0
         version: 8.15.0
@@ -1271,6 +1259,9 @@ importers:
       jsdoc-type-pratt-parser:
         specifier: ^4.0.0
         version: 4.8.0
+      jsonc-parser:
+        specifier: ^3.3.1
+        version: 3.3.1
       launch-editor:
         specifier: ^2.13.2
         version: 2.14.1
@@ -1388,6 +1379,9 @@ importers:
       rolldown:
         specifier: ^1.1.4
         version: 1.1.5
+      semver:
+        specifier: ^7.7.3
+        version: 7.8.5
       sirv:
         specifier: ^2.0.4
         version: 2.0.4
@@ -1460,6 +1454,9 @@ importers:
       wrap-ansi:
         specifier: ^9.0.2
         version: 9.0.2
+      ws:
+        specifier: ^8.21.1
+        version: 8.22.0
       wsl-utils:
         specifier: ^0.1.0
         version: 0.1.0
@@ -1977,7 +1974,7 @@ importers:
         specifier: workspace:*
         version: link:../../renderers/preact
       preact:
-        specifier: ^10.8.0 || >= 11.0.0-0
+        specifier: ^10.9.0 || >= 11.0.0-0
         version: 11.0.0
       storybook:
         specifier: workspace:^

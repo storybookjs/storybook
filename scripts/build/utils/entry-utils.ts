@@ -84,7 +84,6 @@ export const getExternal = async (cwd: string) => {
 
   const runtimeExternal: string[] = [
     'react',
-    'use-sync-external-store',
     'react-dom',
     'react-dom/client',
     '@storybook/icons',

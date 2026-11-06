@@ -90,7 +90,6 @@
     "@storybook/icons": "^2.0.2",
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0",
-    "ts-dedent": "^2.2.0",
     "unplugin": "^2.3.5"
   },
   "devDependencies": {
@@ -116,6 +115,7 @@
     "telejson": "8.0.0",
     "tiny-invariant": "^1.3.1",
     "tocbot": "^4.20.1",
+    "ts-dedent": "^2.2.0",
     "typescript": "^6.0.3",
     "valibot": "^1.4.0",
     "vite": "^7.0.4"

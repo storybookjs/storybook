@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  type JsPackageManager,
-  PackageManagerName,
-  recordReactDocgenFallback,
-} from 'storybook/internal/common';
+import { type JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
@@ -74,7 +70,6 @@ const run = async ({
 beforeEach(() => {
   vi.stubEnv('STORYBOOK_TYPESCRIPT_7_1_STABLE', 'true');
   vi.mocked(prompt.confirm).mockResolvedValue(true);
-  vi.mocked(recordReactDocgenFallback).mockImplementation(() => {});
   vi.mocked(logger.warn).mockImplementation(() => {});
   vi.mocked(logger.info).mockImplementation(() => {});
 });
@@ -295,13 +290,12 @@ describe('TypeScriptDependencyCommand', () => {
       expect(devDependencies).toEqual(['typescript@^6']);
     });
 
-    it('adds react-docgen to a React project on TypeScript 7.0 and records it as temporary', async () => {
+    it('adds react-docgen to a React project on TypeScript 7.0', async () => {
       const { result, devDependencies } = await run({ typescriptVersion: '7.0.2' });
 
       expect(prompt.confirm).not.toHaveBeenCalled();
       expect(result).toBe('without-compiler-api');
       expect(devDependencies).toEqual(['react-docgen@^8.0.2']);
-      expect(recordReactDocgenFallback).toHaveBeenCalledExactlyOnceWith('/project');
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringContaining('"typescript": "npm:@typescript/typescript6@^6.0.2"')
       );
@@ -317,7 +311,6 @@ describe('TypeScriptDependencyCommand', () => {
       });
 
       expect(devDependencies).toEqual([]);
-      expect(recordReactDocgenFallback).not.toHaveBeenCalled();
     });
   });
 });

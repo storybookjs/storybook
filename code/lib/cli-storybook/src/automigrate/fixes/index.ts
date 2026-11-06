@@ -26,7 +26,6 @@ import {
   typescriptDependency,
   typescriptNativeApi,
 } from './typescript-dependency.ts';
-import { removeReactDocgenFallback } from './remove-react-docgen-fallback.ts';
 import { typescript7ReactDocgen } from './typescript-7-react-docgen.ts';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies.ts';
 import { vitestSetupFile } from './vitest-setup-file.ts';
@@ -64,7 +63,6 @@ export const allFixes: Fix[] = [
   typescriptCompilerApi,
   // TEMPORARY(ts-7.1): see `typescript-7-react-docgen.ts`.
   typescript7ReactDocgen,
-  removeReactDocgenFallback,
 ];
 
 export const commandFixes: CommandFix[] = [csfFactories];

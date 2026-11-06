@@ -4,7 +4,6 @@ import {
   REACT_DOCGEN_FALLBACK_RANGE,
   getTypeScriptUpgradeForDocgen,
   isTypeScript71Stable,
-  recordReactDocgenFallback,
   isTypeScriptUsableForDocgen,
   isCI,
   recommendedTypeScriptDocgenApis,
@@ -135,7 +134,6 @@ export class TypeScriptDependencyCommand {
       let installed = packageManager.isDependencyInstalled('react-docgen');
       if (!installed && !isTypeScript71Stable()) {
         dependencyCollector.addDevDependencies([`react-docgen@${REACT_DOCGEN_FALLBACK_RANGE}`]);
-        recordReactDocgenFallback(packageManager.primaryPackageJson.operationDir);
         installed = true;
       }
       builderDocgenFallback = { packageName: 'react-docgen', installed };

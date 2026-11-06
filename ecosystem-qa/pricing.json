@@ -1,0 +1,5 @@
+{
+  "claude-sonnet-5-5": { "input": 2, "output": 10, "cacheRead": 0.2, "cacheWrite": 2.5 },
+  "claude-opus-5-5": { "input": 4, "output": 20, "cacheRead": 0.2, "cacheWrite": 5 },
+  "gpt-5.4": { "input": 2.5, "output": 15, "cacheRead": 0.25, "cacheWrite": 0 }
+}

@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
-import { pathToFileURL } from 'node:url';
 
 import * as pkg from 'empathic/package';
 import type { PackageJson } from 'type-fest';
@@ -36,10 +36,8 @@ export const getActualPackageJson = async (
     return undefined;
   }
   try {
-    const { default: packageJson } = await import(pathToFileURL(resolvedPackageJsonPath).href, {
-      with: { type: 'json' },
-    });
-    return packageJson;
+    // npm accepts a package.json that starts with a byte-order mark; JSON.parse does not.
+    return JSON.parse((await readFile(resolvedPackageJsonPath, 'utf8')).replace(/^\uFEFF/, ''));
   } catch {
     return undefined;
   }

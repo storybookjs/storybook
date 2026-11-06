@@ -40,7 +40,6 @@ jobs:
           steps:
             - git-shallow-clone/checkout_advanced:
                 clone_options: '--depth 100 --filter=blob:none --no-tags'
-                # The orb then fetches the branch with `--depth 10` by default, which cuts the history again.
                 fetch_options: '--depth 100 --filter=blob:none --no-tags'
                 tag_fetch_options: '--no-tags'
             - run:

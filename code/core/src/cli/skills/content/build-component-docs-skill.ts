@@ -41,5 +41,5 @@ export function buildComponentDocsSkill(transport: SkillTextTransport = 'cli'): 
 
 ${transport === 'mcp' ? `${MCP_TOOLS_NOTE}\n\n` : ''}${componentLookup(transport)}
 
-For a change to the UI, use ${uiWorkflow}: it includes this lookup, then writes the stories, runs the tests and publishes the review.`;
+For a change to the UI, and when the user asks to see components or stories, use ${uiWorkflow} instead: it includes this lookup, then writes the stories, runs the tests and publishes the review that shows them to the user.`;
 }

@@ -19,9 +19,9 @@ describe('buildComponentDocsSkill', () => {
     );
   });
 
-  it('sends a UI change to ui-workflow when the agent instructions name it', () => {
+  it('sends a UI change or a request to see stories to ui-workflow when the agent instructions name it', () => {
     expect(buildComponentDocsSkill()).toContain(
-      "For a change to the UI, use the `ui-workflow` skill when the project's agent instructions"
+      "For a change to the UI, and when the user asks to see components or stories, use the `ui-workflow` skill when the project's agent instructions"
     );
   });
 });

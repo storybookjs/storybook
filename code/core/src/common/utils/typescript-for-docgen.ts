@@ -194,6 +194,22 @@ export function getTypeScriptForDocgenError(
   return unusableVersionError(version, apis);
 }
 
+// Check the TypeScript that docgen loads: the package `typescript.docgenSpecifier` names, for docgen
+// that runs on the native API, otherwise `typescript`.
+async function getDocgenTypeScriptError(
+  resolve: (specifier: string) => string,
+  options: Pick<Options, 'configDir' | 'presets'>,
+  apis: readonly TypeScriptDocgenApi[] | undefined
+) {
+  const typeScriptSpecifier = apis?.includes('native')
+    ? await getTypeScriptSpecifierForDocgen(options)
+    : undefined;
+  return {
+    error: getTypeScriptForDocgenError(resolve, { apis, typeScriptSpecifier }),
+    specifier: typeScriptSpecifier?.specifier,
+  };
+}
+
 /**
  * Describe the builder docgen package a renderer falls back to without a usable `typescript`, so
  * the TypeScript warning can say whether docgen still runs.
@@ -255,10 +271,7 @@ export async function isTypeScriptReadyForDocgen(
     builderDocgenFallback?: { packageName: string; range: string };
   } = {}
 ): Promise<boolean> {
-  const typeScriptSpecifier = apis?.includes('native')
-    ? await getTypeScriptSpecifierForDocgen(options)
-    : undefined;
-  const error = getTypeScriptForDocgenError(resolve, { apis, typeScriptSpecifier });
+  const { error } = await getDocgenTypeScriptError(resolve, options, apis);
   if (!error) {
     return true;
   }
@@ -398,10 +411,12 @@ export async function checkBuilderDocgenPackages({
   const docgenServerDisabledInMainConfig = await isDocgenServerDisabledInMainConfig(options);
 
   if (missing.length > 0) {
-    const typeScriptSpecifier = apis?.includes('native')
-      ? await getTypeScriptSpecifierForDocgen(options)
-      : undefined;
-    const typescriptUsable = !getTypeScriptForDocgenError(resolve, { apis, typeScriptSpecifier });
+    const { error: typescriptError, specifier } = await getDocgenTypeScriptError(
+      resolve,
+      options,
+      apis
+    );
+    const typescriptUsable = !typescriptError;
     if (!docgenServerDisabledInMainConfig && !typescriptUsable) {
       // The `isDocgenProviderEnabled` preset already warned about the unusable `typescript`.
       return missing;
@@ -424,7 +439,7 @@ export async function checkBuilderDocgenPackages({
       docgenServerDisabledInMainConfig,
       typescriptUsable,
       apis,
-      specifier: typeScriptSpecifier?.specifier,
+      specifier,
       foundVersions,
     });
     if (docgenServerDisabledInMainConfig) {

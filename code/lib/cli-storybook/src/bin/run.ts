@@ -93,6 +93,11 @@ command('init')
   .description('Initialize Storybook into your project')
   .option('-f --force', 'Force add Storybook')
   .option('-s --skip-install', 'Skip installing deps')
+  .option(
+    '--install-typescript',
+    'Add TypeScript, which docgen needs, when the project has none, without asking'
+  )
+  .option('--no-install-typescript', 'Do not add TypeScript when the project has none')
   .addOption(
     new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
       Object.values(PackageManagerName)
@@ -122,14 +127,14 @@ command('add <addon>')
   .option('-y --yes', 'Skip prompting the user')
   .option('--skip-doctor', 'Skip doctor check')
   .action((addonName: string, options: any) => {
-    withTelemetry('add', { cliOptions: options }, async () => {
+    return withTelemetry('add', { cliOptions: options }, async () => {
       logger.intro(`Setting up your project for ${addonName}`);
 
       await add(addonName, options);
 
       await telemetry('add', { addon: addonName, source: 'cli' });
       logger.outro('Done!');
-    }).catch(handleCommandFailure);
+    }).catch(handleCommandFailure(options.logfile));
   });
 
 command('remove <addon>')
@@ -253,8 +258,8 @@ command('sandbox [filterValue]')
   .option('--no-init', 'Whether to download a template without an initialized Storybook', false)
   .action((filterValue, options) => {
     logger.intro(`Creating a Storybook sandbox...`);
-    sandbox({ filterValue, ...options })
-      .catch(handleCommandFailure)
+    return sandbox({ filterValue, ...options })
+      .catch(handleCommandFailure(options.logfile))
       .finally(() => {
         logger.outro('Done!');
       });
@@ -317,4 +322,6 @@ program.on('command:*', ([invalidCmd]) => {
   process.exit(1);
 });
 
-program.usage('<command> [options]').version(String(version)).parse(process.argv);
+program.usage('<command> [options]').version(String(version));
+
+export const run = (argv: string[] = process.argv) => program.parseAsync(argv);

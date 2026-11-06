@@ -135,19 +135,19 @@ export class CompositionAuth {
     return this.#authRequiredUrls.some((authUrl) => url.startsWith(authUrl));
   }
 
-  /** Build .well-known/oauth-protected-resource response. */
-  buildWellKnown(origin: string): object | null {
+  /** Build .well-known/oauth-protected-resource response for the MCP endpoint at `resource`. */
+  buildWellKnown(resource: string): object | null {
     if (!this.#authRequirement) return null;
     return {
-      resource: `${origin}/mcp`,
+      resource,
       authorization_servers: this.#authRequirement.resourceMetadata.authorization_servers,
       scopes_supported: this.#authRequirement.resourceMetadata.scopes_supported,
     };
   }
 
   /** Build WWW-Authenticate header for 401 responses */
-  buildWwwAuthenticate(origin: string): string {
-    return `Bearer error="unauthorized", error_description="Authorization needed for composed Storybooks", resource_metadata="${origin}/.well-known/oauth-protected-resource"`;
+  buildWwwAuthenticate(baseUrl: string): string {
+    return `Bearer error="unauthorized", error_description="Authorization needed for composed Storybooks", resource_metadata="${baseUrl}/.well-known/oauth-protected-resource"`;
   }
 
   /** Build sources configuration: local first, then refs that have manifests. */
@@ -166,17 +166,17 @@ export class CompositionAuth {
    * Create a manifest provider for multi-source mode.
    *
    * Remote sources are fetched over HTTP with auth and caching; the local source fetches from
-   * `localOrigin`. In `docgenServer` mode core 404s the local `/manifests/*.json`, and
+   * `localBaseUrl`. In `docgenServer` mode core 404s the local `/manifests/*.json`, and
    * the composition reads that source through its own access instead of this provider.
    */
-  createManifestProvider(localOrigin: string): ManifestProvider {
+  createManifestProvider(localBaseUrl: string): ManifestProvider {
     return async (request, path, source) => {
       const token = extractBearerToken(request?.headers.get('Authorization'));
       const remoteSource: RemoteSource | undefined = source?.url
         ? { ...source, url: source.url }
         : undefined;
 
-      const baseUrl = remoteSource?.url ?? localOrigin;
+      const baseUrl = remoteSource?.url ?? localBaseUrl;
       const manifestUrl = `${baseUrl}${path.replace(/^\.\//, '/')}`;
       const isRemote = !!remoteSource;
       const needsAuth = isRemote && this.#isAuthRequiredUrl(baseUrl);

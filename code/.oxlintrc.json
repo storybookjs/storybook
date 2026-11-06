@@ -17,9 +17,9 @@
     "**/*.svelte",
     "storybook-static",
     "built-storybooks",
-    "ember-output",
     "**/__testfixtures__",
     "**/__mockdata__",
+    "**/__corpus__/inputs",
     "renderers/svelte/src/svelte-csf/__tests__/__compiled__",
     "core/assets",
     "core/report",
@@ -92,6 +92,12 @@
       "rules": {
         "local-rules/no-uncategorized-errors": "warn",
         "local-rules/storybook-monorepo-imports": "error"
+      }
+    },
+    {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "rules": {
+        "local-rules/no-untracked-service-state-key-check": "error"
       }
     },
     {

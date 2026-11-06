@@ -15,9 +15,12 @@ runs:
       with:
         node-version-file: '.nvmrc'
 
-    - name: Update npm to latest
+    # Pin to current major to keep CI stable when NPM makes a major release.
+    # npm 12 requires ^22.22.2 || ^24.15.0 || >=26, which .nvmrc (22.22.3) satisfies.
+    - name: Install npm 12
       shell: bash
-      run: npm install -g npm@latest
+      # zizmor: ignore[adhoc-packages]  # replaces the runner's npm before the lockfile install
+      run: npm install -g npm@12
 
     # Restore only — save is gated below. actions/cache's post-job save step uses a
     # runner-internal token that bypasses `permissions:`, so splitting is the only

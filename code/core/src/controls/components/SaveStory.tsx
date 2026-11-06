@@ -4,7 +4,7 @@ import { Bar as BaseBar, Button, Form, Modal } from 'storybook/internal/componen
 
 import { AddIcon, CheckIcon, UndoIcon } from '@storybook/icons';
 
-import { keyframes, styled } from 'storybook/theming';
+import { keyframes, styled } from 'storybook/theming/emotion';
 
 const slideIn = keyframes({
   from: { transform: 'translateY(40px)' },

@@ -23,6 +23,7 @@ import { getFrameworkPackageName } from '../automigrate/helpers/mainConfigFile.t
 import type { CommandFix } from '../automigrate/types.ts';
 import { configToCsfFactory } from './helpers/config-to-csf-factory.ts';
 import { storyToCsfFactory } from './helpers/story-to-csf-factory.ts';
+import { svelteCsfToCsfFactory } from './helpers/svelte-csf-to-csf-factory.ts';
 
 async function runStoriesCodemod(options: {
   dryRun: boolean | undefined;
@@ -33,14 +34,15 @@ async function runStoriesCodemod(options: {
   glob: string | undefined;
 }) {
   const { dryRun, packageManager, yes, glob, ...codemodOptions } = options;
+  const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
+  const promptsForGlob = !glob && !inSandbox && !yes;
   try {
-    const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
-    let globString = glob ?? '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx}';
+    let globString = glob ?? '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx,svelte}';
 
     if (!glob && inSandbox) {
       // Sandbox uses limited glob for faster testing (unless glob explicitly provided)
       globString = '{stories,src}/**/{Button,Header,Page,button,header,page}.stories.*';
-    } else if (!glob && !yes) {
+    } else if (promptsForGlob) {
       logger.log('Please enter the glob for your stories to migrate');
       globString = await prompt.text({
         message: 'glob',
@@ -54,11 +56,17 @@ async function runStoriesCodemod(options: {
       args: ['storybook', 'migrate', 'csf-2-to-3', `--glob="${globString}"`],
     });
 
-    await runCodemod(globString, (info) => storyToCsfFactory(info, codemodOptions), {
-      dryRun,
-    });
+    await runCodemod(
+      globString,
+      async (info) =>
+        info.path.endsWith('.svelte')
+          ? svelteCsfToCsfFactory(info, codemodOptions)
+          : storyToCsfFactory(info, codemodOptions),
+      { dryRun }
+    );
   } catch (err: any) {
-    if (err.message === 'No files matched') {
+    // Ask for another glob. Without a prompt, the same glob would match nothing again.
+    if (err.message === 'No files matched' && promptsForGlob) {
       await runStoriesCodemod(options);
     } else {
       throw err;
@@ -90,11 +98,11 @@ export const csfFactories: CommandFix = {
     if (!yes && !inSandbox && !isReactNativePreview) {
       // prompt whether the user wants to use imports map
       logger.logBox(dedent`
-        The CSF Factories format can benefit from using absolute imports of your ${picocolors.cyan(previewConfigPath)} file. We can configure that for you, using subpath imports (a node standard), by adjusting the imports property of your package.json.
+        The CSF 4 format can benefit from using absolute imports of your ${picocolors.cyan(previewConfigPath)} file. We can configure that for you, using subpath imports (a node standard), by adjusting the imports property of your package.json.
         
         However, we cannot broadly recommend it for all projects, because it might not work in some monorepo setups or if you have an outdated tsconfig, use custom paths, or have type alias plugins configured in your project. You can always rerun this codemod and select another option to update your code later.
         
-        More info: ${picocolors.yellow('https://storybook.js.org/docs/api/csf/csf-next?ref=upgrade#previewmeta')}
+        More info: ${picocolors.yellow('https://storybook.js.org/docs/writing-stories/csf/?ref=upgrade#subpath-imports')}
       `);
 
       useSubPathImports = await prompt.select<boolean>({
@@ -158,10 +166,10 @@ export const csfFactories: CommandFix = {
 
     logger.logBox(
       dedent`
-          You can now run Storybook with the new CSF factories format.
+          You can now run Storybook with the new CSF 4 format.
           
           For more info, check out the docs:
-          ${picocolors.yellow('https://storybook.js.org/docs/api/csf/csf-next?ref=upgrade')}
+          ${picocolors.yellow('https://storybook.js.org/docs/writing-stories/csf/upgrade?ref=upgrade')}
         `
     );
   },

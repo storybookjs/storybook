@@ -144,7 +144,6 @@ Here's a highlight of notable directories and files:
 ├── .oxfmtrc.json
 ├── scripts                           # Build and Helper Scripts
 ├── test-storybooks
-│   ├── ember-cli
 │   ├── external-docs
 │   ├── portable-stories-kitchen-sink
 │   └── server-kitchen-sink

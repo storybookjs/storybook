@@ -1,7 +1,11 @@
-import { types as t } from 'storybook/internal/babel';
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
-import type { CsfFile, StoryArgsResolver, StoryReferences } from 'storybook/internal/csf-tools';
+import type {
+  CsfFile,
+  ESTreeNode as Node,
+  StoryArgsResolver,
+  StoryReferences,
+} from 'storybook/internal/csf-tools';
 import {
   buildImportStatements,
   authoredSource,
@@ -28,7 +32,7 @@ import {
   evaluateArgLiteral,
 } from './story-docs-args.ts';
 import type { Bindings, StoryShape } from './story-docs-markup.ts';
-import { sourceOf, userTemplate } from './story-docs-markup.ts';
+import { oneLineTextOf, userTemplate } from './story-docs-markup.ts';
 import type { StoryNgModules } from './story-docs-ng-modules.ts';
 import { ngModulesFromDecorators, storyNgModules } from './story-docs-ng-modules.ts';
 import type { HostComponentSnippet } from './story-docs-snippet.ts';
@@ -87,7 +91,7 @@ export const buildStoryDocsPayload = async (
   };
 
   const componentName = componentNameOf(componentNode);
-  const importBindings = collectImportBindings(csf._file.path);
+  const importBindings = collectImportBindings(csf.program);
   const deps: StoryDocDeps = {
     csf,
     resolveStoryArgs: createStoryArgsResolver(csf, references),
@@ -139,9 +143,9 @@ const createImportStatement = (
 
 // Mirrors the resolver's reading of `meta.component`, keeping the payload named after the story
 // file's component when docgen is unavailable.
-const componentNameOf = (node: t.Node | undefined): string | undefined => {
-  const identifier = node && t.isTSInstantiationExpression(node) ? node.expression : node;
-  return identifier && t.isIdentifier(identifier) ? identifier.name : undefined;
+const componentNameOf = (node: Node | undefined): string | undefined => {
+  const identifier = node?.type === 'TSInstantiationExpression' ? node.expression : node;
+  return identifier?.type === 'Identifier' ? identifier.name : undefined;
 };
 
 interface StoryDocDeps {
@@ -166,7 +170,10 @@ const buildStoryDoc = async (
   const { csf } = deps;
   const name = story.name ?? storyNameFromExport(exportName);
   try {
-    const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[exportName]);
+    const { description, summary } = extractStoryJSDocInfo(
+      csf._storyStatements[exportName],
+      csf.editor
+    );
     const rendered = await renderedSnippet(storyShape(exportName, deps), deps);
 
     return {
@@ -224,7 +231,7 @@ const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
     // expression that only names what it declares itself - a handler's own parameters - needs
     // nothing from the host.
     if (evaluateArgLiteral(value, enums) === undefined && !isSelfContained(value)) {
-      unresolved.push(sourceOf(value));
+      unresolved.push(oneLineTextOf(value));
     }
   }
 
@@ -248,7 +255,7 @@ const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
 const renderStorySnippet = async (
   snippetMeta: AngularComponentSnippetMeta,
   shape: StoryShape,
-  storyDecorators: t.Node | undefined,
+  storyDecorators: Node | undefined,
   deps: StoryDocDeps
 ): Promise<HostComponentSnippet> => {
   const { componentImport } = deps;
@@ -352,7 +359,7 @@ const referencedArgFields = (
     }
     const value = evaluateArgLiteral(node, enums);
     if (value === undefined) {
-      unresolved.push(sourceOf(node));
+      unresolved.push(oneLineTextOf(node));
       continue;
     }
     fields.push({ name, value });
@@ -464,15 +471,19 @@ const argsExpansion = (snippetMeta: AngularComponentSnippetMeta, shape: StorySha
   return { inputs, outputs };
 };
 
-const isFunctionValue = (node: t.Node): boolean => {
-  const unwrapped = unwrapExpression(node);
-  return t.isFunction(unwrapped);
-};
-
-const isUndefinedValue = (node: t.Node): boolean => {
+const isFunctionValue = (node: Node): boolean => {
   const unwrapped = unwrapExpression(node);
   return (
-    (t.isIdentifier(unwrapped) && unwrapped.name === 'undefined') ||
-    t.isUnaryExpression(unwrapped, { operator: 'void' })
+    unwrapped.type === 'ArrowFunctionExpression' ||
+    unwrapped.type === 'FunctionExpression' ||
+    unwrapped.type === 'FunctionDeclaration'
+  );
+};
+
+const isUndefinedValue = (node: Node): boolean => {
+  const unwrapped = unwrapExpression(node);
+  return (
+    (unwrapped.type === 'Identifier' && unwrapped.name === 'undefined') ||
+    (unwrapped.type === 'UnaryExpression' && unwrapped.operator === 'void')
   );
 };

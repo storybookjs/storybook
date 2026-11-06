@@ -602,51 +602,51 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       const result = formatComponentManifest(manifest);
 
       expect(result).toMatchInlineSnapshot(`
-				"# Button
+        "# Button
 
-				ID: button
+        ID: button
 
-				## Stories
+        ## Props
 
-				### Default
+        \`\`\`
+        export type Props = {
+          variant: string;
+        }
+        \`\`\`
 
-				\`\`\`
-				import { Button } from "@/components";
+        ## Stories
 
-				<Button>Default</Button>
-				\`\`\`
+        ### Default
 
-				### Primary
+        \`\`\`
+        import { Button } from "@/components";
 
-				\`\`\`
-				import { Button } from "@/components";
+        <Button>Default</Button>
+        \`\`\`
 
-				<Button variant="primary">Primary</Button>
-				\`\`\`
+        ### Primary
 
-				### Secondary
+        \`\`\`
+        import { Button } from "@/components";
 
-				\`\`\`
-				import { Button } from "@/components";
+        <Button variant="primary">Primary</Button>
+        \`\`\`
 
-				<Button variant="secondary">Secondary</Button>
-				\`\`\`
+        ### Secondary
 
-				### Other Stories
+        \`\`\`
+        import { Button } from "@/components";
 
-				Get the code of one of these stories with the docs show-story tool and its story ID.
+        <Button variant="secondary">Secondary</Button>
+        \`\`\`
 
-				- Disabled (button--disabled): Button in disabled state
-				- WithIcon (button--with-icon): Button with an icon
+        ### Other Stories
 
-				## Props
+        Get the code of one of these stories with the docs show-story tool and its story ID.
 
-				\`\`\`
-				export type Props = {
-				  variant: string;
-				}
-				\`\`\`"
-			`);
+        - Disabled (button--disabled): Button in disabled state
+        - WithIcon (button--with-icon): Button with an icon"
+      `);
     });
 
     it('should show all stories fully when component has no props', () => {
@@ -744,17 +744,17 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       const result = formatComponentManifest(manifest);
 
       expect(result).toMatchInlineSnapshot(`
-				"# abstractions-billboard
+        "# abstractions-billboard
 
-				ID: abstractions-billboard
+        ID: abstractions-billboard
 
-				## Stories
+        ## Stories
 
-				Get the code of one of these stories with the docs show-story tool and its story ID.
+        Get the code of one of these stories with the docs show-story tool and its story ID.
 
-				- Default (abstractions-billboard--default)
-				- Text (abstractions-billboard--text)"
-			`);
+        - Default (abstractions-billboard--default)
+        - Text (abstractions-billboard--text)"
+      `);
     });
 
     it('should list snippet-less stories under the ones it shows in full', () => {
@@ -772,29 +772,29 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       const result = formatComponentManifest(manifest);
 
       expect(result).toMatchInlineSnapshot(`
-				"# Button
+        "# Button
 
-				ID: button
+        ID: button
 
-				## Stories
+        ## Stories
 
-				### Default
+        ### Default
 
-				Story ID: button--default
+        Story ID: button--default
 
-				\`\`\`
-				import { Button } from "@/components";
+        \`\`\`
+        import { Button } from "@/components";
 
-				<Button>Default</Button>
-				\`\`\`
+        <Button>Default</Button>
+        \`\`\`
 
-				### Other Stories
+        ### Other Stories
 
-				Get the code of one of these stories with the docs show-story tool and its story ID.
+        Get the code of one of these stories with the docs show-story tool and its story ID.
 
-				- Primary (button--primary)
-				- Secondary (button--secondary): The quiet one"
-			`);
+        - Primary (button--primary)
+        - Secondary (button--secondary): The quiet one"
+      `);
     });
   });
 
@@ -831,32 +831,32 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       const result = formatComponentManifest(manifest);
 
       expect(result).toMatchInlineSnapshot(`
-				"# Button
+        "# Button
 
-				ID: button
+        ID: button
 
-				## Stories
+        ## Props
 
-				### Primary
+        \`\`\`
+        export type Props = {
+          size: string;
+        }
+        \`\`\`
 
-				\`\`\`
-				<Button>Primary</Button>
-				\`\`\`
+        ## Stories
 
-				## Props
+        ### Primary
 
-				\`\`\`
-				export type Props = {
-				  size: string;
-				}
-				\`\`\`
+        \`\`\`
+        <Button>Primary</Button>
+        \`\`\`
 
-				## Docs
+        ## Docs
 
-				### Additional Information
+        ### Additional Information
 
-				Detailed docs content"
-			`);
+        Detailed docs content"
+      `);
 
       expect(result.indexOf('## Docs')).toBeGreaterThan(result.indexOf('## Stories'));
       expect(result.indexOf('## Docs')).toBeGreaterThan(result.indexOf('## Props'));
@@ -913,25 +913,21 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       const result = formatComponentManifest(manifest);
 
       expect(result).toMatchInlineSnapshot(`
-				"# Button
+        "# Button
 
-				ID: button
+        ID: button
 
-				## Props
+        ## Props
 
-				\`\`\`
-				export type Props = {
-				  /**
-				    The visual style variant
-				  */
-				  variant?: union = primary;
-				  /**
-				    Whether the button is disabled
-				  */
-				  disabled?: bool = false;
-				}
-				\`\`\`"
-			`);
+        \`\`\`
+        export type Props = {
+          /** The visual style variant */
+          variant?: union = primary;
+          /** Whether the button is disabled */
+          disabled?: bool = false;
+        }
+        \`\`\`"
+      `);
     });
   });
 
@@ -976,29 +972,23 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       const result = formatComponentManifest(manifest);
 
       expect(result).toMatchInlineSnapshot(`
-				"# Button
+        "# Button
 
-				ID: button
+        ID: button
 
-				## Props
+        ## Props
 
-				\`\`\`
-				export type Props = {
-				  /**
-				    The visual style variant
-				  */
-				  variant?: "primary" | "secondary" = primary;
-				  /**
-				    Whether the button is disabled
-				  */
-				  disabled?: boolean = false;
-				  /**
-				    Click handler
-				  */
-				  onClick: (event: MouseEvent) => void;
-				}
-				\`\`\`"
-			`);
+        \`\`\`
+        export type Props = {
+          /** The visual style variant */
+          variant?: "primary" | "secondary" = primary;
+          /** Whether the button is disabled */
+          disabled?: boolean = false;
+          /** Click handler */
+          onClick: (event: MouseEvent) => void;
+        }
+        \`\`\`"
+      `);
     });
 
     it('should format props from reactComponentMeta', () => {
@@ -1033,25 +1023,21 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       const result = formatComponentManifest(manifest);
 
       expect(result).toMatchInlineSnapshot(`
-				"# Button
+        "# Button
 
-				ID: button
+        ID: button
 
-				## Props
+        ## Props
 
-				\`\`\`
-				export type Props = {
-				  /**
-				    The visual style variant
-				  */
-				  variant?: "primary" | "secondary" = "primary";
-				  /**
-				    Click handler
-				  */
-				  onClick: (event: MouseEvent) => void;
-				}
-				\`\`\`"
-			`);
+        \`\`\`
+        export type Props = {
+          /** The visual style variant */
+          variant?: "primary" | "secondary" = "primary";
+          /** Click handler */
+          onClick: (event: MouseEvent) => void;
+        }
+        \`\`\`"
+      `);
     });
 
     it('should prefer reactDocgen over reactDocgenTypescript when both are present', () => {
@@ -1290,25 +1276,21 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       const result = formatComponentManifest(manifest);
 
       expect(result).toMatchInlineSnapshot(`
-				"# Button
+        "# Button
 
-				ID: button
+        ID: button
 
-				## Props
+        ## Props
 
-				\`\`\`
-				export type Props = {
-				  /**
-				    The visual style variant
-				  */
-				  variant: union;
-				  /**
-				    The size of the button
-				  */
-				  size: union;
-				}
-				\`\`\`"
-			`);
+        \`\`\`
+        export type Props = {
+          /** The visual style variant */
+          variant: union;
+          /** The size of the button */
+          size: union;
+        }
+        \`\`\`"
+      `);
     });
 
     it('should omit props section when reactDocgen is not present', () => {
@@ -1368,23 +1350,21 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
     const result = formatComponentManifest(manifest);
 
     expect(result).toMatchInlineSnapshot(`
-			"# Button
+      "# Button
 
-			ID: button
+      ID: button
 
-			## Props
+      ## Props
 
-			\`\`\`
-			export type Props = {
-			  /**
-			    The button variant
-			  */
-			  variant?: string = primary;
-			  disabled: bool;
-			  size: union = medium;
-			}
-			\`\`\`"
-		`);
+      \`\`\`
+      export type Props = {
+        /** The button variant */
+        variant?: string = primary;
+        disabled: bool;
+        size: union = medium;
+      }
+      \`\`\`"
+    `);
   });
 
   describe('apiDescription section', () => {
@@ -1603,19 +1583,17 @@ describe('MarkdownFormatter - formatStoryDocumentation', () => {
 });
 
 describe('MarkdownFormatter - formatManifestsToLists', () => {
+  it('says the Storybook has no entries instead of printing empty sections', () => {
+    expect(formatManifestsToLists({ componentManifest: { v: 1, components: {} } })).toBe(
+      'No components or docs entries found. A component is listed here once it has a story.'
+    );
+  });
+
   it('formats the full manifest fixture', () => {
     const result = formatManifestsToLists({
       componentManifest: fullManifestFixture as ComponentManifestMap,
     });
     expect(result).toMatchSnapshot();
-  });
-
-  it('says what to do when no component is documented', () => {
-    const result = formatManifestsToLists({ componentManifest: { v: 0, components: {} } });
-
-    expect(result).toBe(
-      '# Components\n\nNo components are documented yet, so read the source of the project components you need.'
-    );
   });
 
   describe('component list structure', () => {
@@ -2032,6 +2010,35 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 });
 
 describe('MarkdownFormatter - formatMultiSourceManifestsToLists', () => {
+  it('says which source has no entries, while listing the others', () => {
+    const result = formatMultiSourceManifestsToLists([
+      {
+        source: { id: 'local', title: 'Local' },
+        manifests: { componentManifest: { v: 1, components: {} } },
+      },
+      {
+        source: { id: 'ds', title: 'Design System', url: 'https://ds.example.com' },
+        manifests: {
+          componentManifest: { v: 1, components: { button: { id: 'button', name: 'Button' } } },
+        },
+      },
+    ]);
+
+    expect(result).toMatchInlineSnapshot(`
+      "# Local
+      id: local
+
+      No components or docs entries found. A component is listed here once it has a story.
+
+      # Design System
+      id: ds
+
+      ## Components
+
+      - Button (button)"
+    `);
+  });
+
   it('formats requires-own-mcp source notices without an error prefix', () => {
     const result = formatMultiSourceManifestsToLists([
       {

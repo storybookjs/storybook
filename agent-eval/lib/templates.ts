@@ -1060,18 +1060,23 @@ export async function writeStorybookAgentInstructions(
   )) as {
     planStorybookAgentInstructions: (
       read: (file: string) => Promise<string | undefined>,
+      mode: 'install',
       section?: string
     ) => Promise<Record<string, string>>;
   };
   await sandbox.writeFiles(
-    await planStorybookAgentInstructions(async (file) => {
-      // `test` exits with 1 for a missing file. Anything else is a failed check, not a missing file.
-      const { exitCode, stderr } = await sandbox.runCommand('test', ['-f', file]);
-      if (exitCode > 1) {
-        throw new Error(`Failed to check for ${file}: ${stderr}`);
-      }
-      return exitCode === 0 ? sandbox.readFile(file) : undefined;
-    }, section)
+    await planStorybookAgentInstructions(
+      async (file) => {
+        // `test` exits with 1 for a missing file. Anything else is a failed check, not a missing file.
+        const { exitCode, stderr } = await sandbox.runCommand('test', ['-f', file]);
+        if (exitCode > 1) {
+          throw new Error(`Failed to check for ${file}: ${stderr}`);
+        }
+        return exitCode === 0 ? sandbox.readFile(file) : undefined;
+      },
+      'install',
+      section
+    )
   );
 }
 

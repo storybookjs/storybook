@@ -63,7 +63,7 @@
     "open": {
       "type": "boolean",
       "description": "Whether to open Storybook automatically in the browser.",
-      "default": true
+      "default": false
     },
     "quiet": {
       "type": "boolean",
@@ -162,7 +162,7 @@
       "description": "URL path to be appended when visiting Storybook for the first time"
     },
     "statsJson": {
-      "type": ["boolean", "string"],
+      "type": ["string", "boolean"],
       "description": "Write stats JSON to disk",
       "default": false
     },

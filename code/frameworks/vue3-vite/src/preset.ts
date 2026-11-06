@@ -1,3 +1,7 @@
+import {
+  getTypeScriptForDocgenError,
+  isDocgenServerDisabledInMainConfig,
+} from 'storybook/internal/common';
 import { deprecate } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
@@ -25,9 +29,15 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
 
   // Test builds turn `docgenServer` off to skip docgen entirely, not to fall back to builder docgen.
   if (docgen !== false && !docgenServerActive && !options.build?.test?.disableDocgen) {
-    deprecate(VUE_BUILDER_DOCGEN_DEPRECATION);
+    if (await isDocgenServerDisabledInMainConfig(options)) {
+      deprecate(VUE_BUILDER_DOCGEN_DEPRECATION);
+    }
     const engine: VueDocgenEngine = await options.presets.apply('experimental_vueDocgenEngine');
-    if (docgen.plugin === VUE_COMPONENT_META) {
+    // vue-component-meta needs the compiler API; vue-docgen-api needs no TypeScript.
+    const typescriptUsable = !getTypeScriptForDocgenError((specifier) =>
+      import.meta.resolve(specifier)
+    );
+    if (docgen.plugin === VUE_COMPONENT_META && typescriptUsable) {
       plugins.push(await vueComponentMeta(engine, docgen.tsconfig));
     } else {
       plugins.push(await vueDocgen(engine));

@@ -19,6 +19,7 @@ import { addStorybookAgentInstructions } from './agentInstructions.ts';
 import {
   hasStorybookSkills,
   installSkills,
+  refreshAgentInstructions,
   supportsSkills,
   supportsAiSetup,
 } from './installSkills.ts';
@@ -46,7 +47,9 @@ beforeEach(async () => {
   vol.reset();
   vi.mocked(getProjectRoot).mockReturnValue(PROJECT_ROOT);
   vi.mocked(isCI).mockReturnValue(false);
-  vi.mocked(addStorybookAgentInstructions).mockResolvedValue(['AGENTS.md']);
+  vi.mocked(addStorybookAgentInstructions).mockResolvedValue([
+    { file: 'AGENTS.md', change: 'added' },
+  ]);
 });
 
 describe('supportsSkills', () => {
@@ -195,16 +198,43 @@ describe('installSkills', () => {
   it('adds the section that tells agents when to use the skills', async () => {
     await installSkills({ packageManager, source: 'ai-feature' });
 
-    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT);
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install');
     expect(logger.log).toHaveBeenCalledWith(
       expect.stringContaining('Added a Storybook section to AGENTS.md')
     );
   });
 
-  it('leaves AGENTS.md alone on a refresh, so a removed section stays removed', async () => {
+  it('only updates the section between the markers on a refresh', async () => {
+    vi.mocked(addStorybookAgentInstructions).mockResolvedValue([
+      { file: 'AGENTS.md', change: 'updated' },
+      { file: 'CLAUDE.md', change: 'updated' },
+      { file: '.claude/CLAUDE.md', change: 'updated' },
+    ]);
+
     await installSkills({ packageManager, source: 'refresh' });
 
-    expect(addStorybookAgentInstructions).not.toHaveBeenCalled();
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'update');
+    expect(logger.log).toHaveBeenCalledWith(
+      'Updated the Storybook section in AGENTS.md, CLAUDE.md, and .claude/CLAUDE.md.'
+    );
+  });
+
+  it('warns about an update, not an addition, when a refresh cannot write the section', async () => {
+    vi.mocked(addStorybookAgentInstructions).mockRejectedValue(new Error('EACCES'));
+
+    await installSkills({ packageManager, source: 'refresh' });
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Could not update the Storybook section for agents in AGENTS.md.'
+    );
+  });
+
+  it('says nothing about the section when a refresh changes nothing', async () => {
+    vi.mocked(addStorybookAgentInstructions).mockResolvedValue([]);
+
+    await installSkills({ packageManager, source: 'refresh' });
+
+    expect(logger.log).not.toHaveBeenCalledWith(expect.stringContaining('Storybook section'));
   });
 
   it('replaces the stories skill of an 11.0 prerelease on a refresh', async () => {
@@ -224,7 +254,7 @@ describe('installSkills', () => {
       args: ['skills@latest', 'remove', 'stories', '--yes'],
       cwd: PROJECT_ROOT,
     });
-    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT);
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install');
   });
 
   it('keeps the installed skills when removing the stories skill fails', async () => {
@@ -244,7 +274,7 @@ describe('installSkills', () => {
     expect(logger.warn).toHaveBeenCalledWith(
       'Could not remove the replaced Storybook skills stories. Remove them with: npx skills@latest remove stories --yes'
     );
-    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT);
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install');
   });
 
   it('does not remove a stories skill from another repository', async () => {
@@ -292,5 +322,30 @@ describe('installSkills', () => {
     expect(logger.warn).toHaveBeenCalledWith(
       'Could not install the Storybook skills, continuing without them. Install them later with: npx skills@latest add storybookjs/skills#v10.6.0'
     );
+  });
+});
+
+describe('refreshAgentInstructions', () => {
+  beforeEach(() => {
+    vi.mocked(logger.log).mockImplementation(() => {});
+  });
+
+  it('updates the section without installing the skills', async () => {
+    vi.mocked(addStorybookAgentInstructions).mockResolvedValue([
+      { file: 'AGENTS.md', change: 'updated' },
+    ]);
+
+    await refreshAgentInstructions();
+
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'update');
+    expect(logger.log).toHaveBeenCalledWith('Updated the Storybook section in AGENTS.md.');
+  });
+
+  it('does nothing under CI', async () => {
+    vi.mocked(isCI).mockReturnValue(true);
+
+    await refreshAgentInstructions();
+
+    expect(addStorybookAgentInstructions).not.toHaveBeenCalled();
   });
 });

@@ -153,7 +153,6 @@ export function prepareStory<TRenderer extends Renderer>(
     moduleExport,
     id,
     name,
-    story: name,
     originalStoryFn: render!,
     undecoratedStoryFn,
     unboundStoryFn,
@@ -251,11 +250,9 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
   } = {
     componentId: componentAnnotations.id,
     title: componentAnnotations.title,
-    kind: componentAnnotations.title, // Back compat
     id: storyAnnotations?.id || componentAnnotations.id,
     // if there's no story name, we create a fake one since enhancers expect a name
     name: storyAnnotations?.name || '__meta',
-    story: storyAnnotations?.name || '__meta', // Back compat
     component: componentAnnotations.component,
     subcomponents: componentAnnotations.subcomponents,
     tags,
@@ -293,7 +290,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     initialArgsBeforeEnhancers
   );
 
-  const { name, story, ...withoutStoryIdentifiers } = contextForEnhancers;
+  const { name, ...withoutStoryIdentifiers } = contextForEnhancers;
 
   return withoutStoryIdentifiers;
 }
@@ -309,21 +306,14 @@ export function prepareContext<
 ): TContext & Pick<StoryContextForRender<TRenderer>, 'allArgs' | 'argsByTarget' | 'unmappedArgs'> {
   const { args: unmappedArgs } = context;
 
-  let targetedContext: TContext &
+  const argsByTarget = groupArgsByTarget(context);
+  const targetedContext: TContext &
     Pick<StoryContextForRender<TRenderer>, 'allArgs' | 'argsByTarget'> = {
     ...context,
-    allArgs: undefined,
-    argsByTarget: undefined,
+    allArgs: context.args,
+    argsByTarget,
+    args: argsByTarget[UNTARGETED] || {},
   };
-  if (global.FEATURES?.argTypeTargetsV7) {
-    const argsByTarget = groupArgsByTarget(context);
-    targetedContext = {
-      ...context,
-      allArgs: context.args,
-      argsByTarget,
-      args: argsByTarget[UNTARGETED] || {},
-    };
-  }
 
   const mappedArgs = Object.entries(targetedContext.args).reduce((acc, [key, val]) => {
     if (!targetedContext.argTypes[key]?.mapping) {

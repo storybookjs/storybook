@@ -1,0 +1,59 @@
+import type { JsPackageManager } from 'storybook/internal/common';
+import { ReactNativeOnDevicePeerMismatchError } from 'storybook/internal/server-errors';
+
+import { prerelease, satisfies, validRange } from 'semver';
+
+export const REACT_NATIVE_ON_DEVICE_PACKAGES = [
+  '@storybook/addon-ondevice-controls',
+  '@storybook/addon-ondevice-actions',
+  '@storybook/react-native',
+  '@storybook/react-native-ui-lite',
+] as const;
+
+export function reactNativeOnDeviceDistTag(cliVersion: string): 'next' | 'latest' {
+  return prerelease(cliVersion) ? 'next' : 'latest';
+}
+
+export function onDevicePackageSpecifier(packageName: string, cliVersion: string): string {
+  const tag = reactNativeOnDeviceDistTag(cliVersion);
+  return tag === 'latest' ? packageName : `${packageName}@${tag}`;
+}
+
+export function onDevicePeerAllowsCli(cliVersion: string, peerRange: string): boolean {
+  if (!validRange(peerRange)) {
+    return true;
+  }
+  // Match npm. `11.0.0-alpha.6` does not satisfy `^11.0.0`, and coercing it to `11.0.0`
+  // would also accept a higher prerelease floor such as `^11.0.0-alpha.7`.
+  return satisfies(cliVersion, peerRange);
+}
+
+export async function assertReactNativeOnDevicePeers(
+  packageManager: JsPackageManager,
+  cliVersion: string
+): Promise<void> {
+  const tag = reactNativeOnDeviceDistTag(cliVersion);
+
+  const mismatches = (
+    await Promise.all(
+      REACT_NATIVE_ON_DEVICE_PACKAGES.map(async (packageName) => {
+        const spec = tag === 'latest' ? packageName : `${packageName}@${tag}`;
+        const version = await packageManager.latestVersion(spec);
+        if (!version) {
+          return null;
+        }
+        // A failed lookup skips the check and leaves the outcome to the install itself.
+        const peers = await packageManager.getPublishedPeerDependencies(packageName, version);
+        const storybookPeer = peers?.storybook;
+        if (!storybookPeer || onDevicePeerAllowsCli(cliVersion, storybookPeer)) {
+          return null;
+        }
+        return { packageName, version, storybookPeer };
+      })
+    )
+  ).filter((mismatch) => mismatch !== null);
+
+  if (mismatches.length > 0) {
+    throw new ReactNativeOnDevicePeerMismatchError({ cliVersion, mismatches });
+  }
+}

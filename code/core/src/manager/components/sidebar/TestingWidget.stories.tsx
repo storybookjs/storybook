@@ -12,7 +12,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fireEvent, fn, waitFor } from 'storybook/test';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { internal_fullTestProviderStore } from '../../manager-stores.mock.ts';
 import { TestingWidget } from './TestingWidget.tsx';
@@ -185,6 +185,15 @@ export const Crashed: Story = {
       ...testProviderStates,
       'component-tests': 'test-provider-state:crashed',
     },
+  },
+  play: async ({ canvas, canvasElement }) => {
+    const collapse = () => canvasElement.querySelector('[data-testid="collapse"]');
+    await waitFor(() => expect(collapse()).not.toHaveAttribute('inert'));
+    const button = await canvas.findByRole('button', { name: /Collapse testing module/ });
+    await fireEvent.click(button);
+    await waitFor(() => expect(collapse()).toHaveAttribute('inert'));
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    await expect(collapse()).toHaveAttribute('inert');
   },
 };
 

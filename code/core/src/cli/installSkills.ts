@@ -7,7 +7,7 @@ import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
-import { addStorybookAgentInstructions } from './agentInstructions.ts';
+import { type AgentInstructionsMode, addStorybookAgentInstructions } from './agentInstructions.ts';
 
 const SKILLS_REPO = 'storybookjs/skills';
 
@@ -86,9 +86,9 @@ export async function hasStorybookSkills(): Promise<boolean> {
  * Install the official Storybook skills into the project root through Vercel's `skills` CLI, and
  * add the section that tells agents when to use them to `AGENTS.md`.
  *
- * A refresh leaves `AGENTS.md` alone, so an edited or removed section stays that way, unless the
- * refresh replaces the `stories` skill of an 11.0 prerelease. Never runs in CI, and a failed
- * install is reported in the result instead of thrown.
+ * A refresh only updates a section that still has Storybook's markers, so a section without them
+ * and a removed section stay that way, unless the refresh replaces the `stories` skill of an 11.0
+ * prerelease. Never runs in CI, and a failed install is reported in the result instead of thrown.
  */
 export async function installSkills({
   packageManager,
@@ -146,9 +146,9 @@ export async function installSkills({
   if (removedSkills.length > 0) {
     await removeSkills(packageManager, removedSkills, stdio);
   }
-  if (source !== 'refresh' || removedSkills.length > 0) {
-    await addAgentInstructions();
-  }
+  await addAgentInstructions(
+    source === 'refresh' && removedSkills.length === 0 ? 'update' : 'install'
+  );
 
   logger.log(
     `Remove the Storybook skills with: ${packageManager.getRemoteRunCommand(['skills@latest', 'remove'])}`
@@ -179,16 +179,40 @@ async function removeSkills(
   }
 }
 
-async function addAgentInstructions(): Promise<void> {
+const listFiles = (files: string[]) =>
+  new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }).format(files);
+
+async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> {
   try {
-    const files = await addStorybookAgentInstructions(getProjectRoot());
-    if (files.length > 0) {
+    const changes = await addStorybookAgentInstructions(getProjectRoot(), mode);
+    const added = changes.filter(({ change }) => change === 'added').map(({ file }) => file);
+    const updated = changes.filter(({ change }) => change === 'updated').map(({ file }) => file);
+    if (added.length > 0) {
       logger.log(
-        `Added a Storybook section to ${files.join(' and ')} that tells agents when to use the skills. Edit it to change when, or remove it to opt out.`
+        `Added a Storybook section to ${listFiles(added)} that tells agents when to use the skills. Storybook keeps it current on upgrade: remove its markers to keep your own edits, or remove the section to opt out.`
       );
     }
+    if (updated.length > 0) {
+      logger.log(`Updated the Storybook section in ${listFiles(updated)}.`);
+    }
   } catch (error) {
-    logger.warn('Could not add the Storybook section for agents to AGENTS.md.');
+    logger.warn(
+      mode === 'update'
+        ? 'Could not update the Storybook section for agents in AGENTS.md.'
+        : 'Could not add the Storybook section for agents to AGENTS.md.'
+    );
     logger.debug(error);
   }
+}
+
+/**
+ * Bring the section between Storybook's markers in `AGENTS.md` up to date without installing the
+ * skills, for `storybook upgrade` in a project that got the skills from a plugin or by hand. Adds
+ * nothing, and never runs in CI.
+ */
+export async function refreshAgentInstructions(): Promise<void> {
+  if (isCI()) {
+    return;
+  }
+  await addAgentInstructions('update');
 }

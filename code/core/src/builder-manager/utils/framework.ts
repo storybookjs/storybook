@@ -19,8 +19,11 @@ export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
   const renderer = frameworkToRenderer[framework];
 
   if (options.configType === 'DEVELOPMENT') {
-    // Manager only needs the token currently, so we don't pass any other channel options.
-    globals.CHANNEL_OPTIONS = { wsToken: channelOptions?.wsToken };
+    // Manager only needs the token and the channel path.
+    globals.CHANNEL_OPTIONS = {
+      wsToken: channelOptions?.wsToken,
+      ...(channelOptions?.wsPath ? { wsPath: channelOptions.wsPath } : {}),
+    };
   }
   globals.STORYBOOK_BUILDER = builder;
   globals.STORYBOOK_FRAMEWORK = framework;

@@ -90,10 +90,29 @@ const useCode = ({
     // if this is an args story and there's a snippet
     (type === SourceType.AUTO && staticSnippet && isArgsStory);
 
-  const code = useSnippet ? staticSnippet : sourceParameters.originalSource || '';
-  const transformer = transformFromProps ?? sourceParameters.transform;
+  const sourceKind: 'service' | 'emitted' | 'original' = useSnippet
+    ? serviceSnippet
+      ? 'service'
+      : 'emitted'
+    : 'original';
 
-  const transformedCode = transformer ? useTransformCode(code, transformer, storyContext) : code;
+  const code =
+    sourceKind === 'service'
+      ? serviceSnippet
+      : sourceKind === 'emitted'
+        ? snippet
+        : sourceParameters.originalSource || '';
+
+  // The emitted snippet is already transformed by emitTransformCode,
+  // so only transformFromProps applies to it.
+  const hasTransformer = Boolean(transformFromProps ?? sourceParameters.transform);
+  const activeTransformer =
+    transformFromProps ??
+    (sourceKind === 'emitted' ? (rawCode: string) => rawCode : sourceParameters.transform);
+
+  const transformedCode = hasTransformer
+    ? useTransformCode(code, activeTransformer!, storyContext)
+    : code;
 
   if (sourceParameters.code !== undefined) {
     return sourceParameters.code;

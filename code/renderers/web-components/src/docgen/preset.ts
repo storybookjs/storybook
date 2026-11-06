@@ -1,3 +1,4 @@
+import { loadPreviewOrConfigFile } from 'storybook/internal/common';
 import type {
   DocgenProviderDescriptor,
   IndexEntry,
@@ -26,6 +27,7 @@ export const experimental_docgenProvider = async (
     moduleSpecifier: fileURLToPath(import.meta.resolve(DOCGEN_WORKER_SPECIFIER)),
     options: {
       manifestPaths: resolveManifestPaths(options.configDir, frameworkOptions),
+      previewFilePath: loadPreviewOrConfigFile({ configDir: options.configDir }),
     },
   };
 

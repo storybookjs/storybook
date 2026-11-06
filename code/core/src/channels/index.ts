@@ -41,8 +41,8 @@ export function createBrowserChannel({ page, extraTransports = [] }: Options): C
   if (globalThis.CONFIG_TYPE === 'DEVELOPMENT') {
     const protocol = window.location.protocol === 'http:' ? 'ws' : 'wss';
     const { hostname, port } = window.location;
-    const { wsToken } = globalThis.CHANNEL_OPTIONS || {};
-    const channelUrl = `${protocol}://${hostname}:${port}${SERVER_CHANNEL_PATH}?token=${wsToken}&page=${page}`;
+    const { wsToken, wsPath = SERVER_CHANNEL_PATH } = globalThis.CHANNEL_OPTIONS || {};
+    const channelUrl = `${protocol}://${hostname}:${port}${wsPath}?token=${wsToken}&page=${page}`;
 
     transports.push(new WebsocketTransport({ url: channelUrl, onError: () => {}, page }));
   }

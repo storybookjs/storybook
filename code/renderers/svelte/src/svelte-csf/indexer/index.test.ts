@@ -3,11 +3,14 @@ import url from 'node:url';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { parse } from 'svelte/compiler';
+
 import { logger } from 'storybook/internal/node-logger';
 import type { IndexerOptions } from 'storybook/internal/types';
 
 import { createIndexer } from './index.ts';
 import { parseForIndexer } from './parser.ts';
+import { MissingModuleTagError } from '../utils/error/parser/extract/svelte.ts';
 
 vi.mock('./parser.ts', () => ({ parseForIndexer: vi.fn() }));
 
@@ -23,10 +26,26 @@ const indexWithParserError = async (cause: unknown) => {
     );
 };
 
+const catchError = (fn: () => unknown) => {
+  try {
+    fn();
+  } catch (error) {
+    return error;
+  }
+  return expect.unreachable('fn should throw');
+};
+
 describe('createIndexer', () => {
   beforeEach(() => {
-    // The shared vitest setup replaces `logger` with a mock that has no `shouldLog`.
-    logger.shouldLog = vi.fn(() => false);
+    vi.mocked(logger.shouldLog).mockReturnValue(false);
+  });
+
+  it('rethrows a Svelte CSF error as it is', async () => {
+    const svelteCsfError = new MissingModuleTagError(FILENAME);
+
+    const error = await indexWithParserError(svelteCsfError);
+
+    expect(error).toBe(svelteCsfError);
   });
 
   describe('when the parser throws an unrecognized error', () => {
@@ -70,6 +89,22 @@ describe('createIndexer', () => {
       expect(error.message).toContain(expected);
       expect(error.cause).toBe(cause);
     });
+
+    it.each([
+      ['off', false],
+      ['on', true],
+    ])(
+      'shows the file, line, column and code frame of a Svelte compile error with debug logging %s',
+      async (_, debug) => {
+        vi.mocked(logger.shouldLog).mockReturnValue(debug);
+        const cause = catchError(() => parse('<Story name="A">\n  {#if}\n</Story>'));
+
+        const error = await indexWithParserError(cause);
+
+        expect(error.message).toContain(`${url.pathToFileURL(FILENAME).href}:2:7`);
+        expect(error.message).toContain('2:   {#if}\n         ^');
+      }
+    );
 
     it('shows the stack of the original error when debug logging is on', async () => {
       vi.mocked(logger.shouldLog).mockImplementation((level) => level === 'debug');

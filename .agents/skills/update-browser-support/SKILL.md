@@ -63,6 +63,6 @@ If browserslist cannot resolve the new pins, bump `caniuse-lite` (root `resoluti
 
 ## PR
 
-Branch from `origin/next`. Open a PR that targets `next` and follows `.github/PULL_REQUEST_TEMPLATE.md`. Add labels `ci:normal`, `qa:skip`, and `BREAKING CHANGE`.
+Branch from `origin/next`. Open a PR that targets `next` and follows `.github/PULL_REQUEST_TEMPLATE.md`. Add labels `qa:skip` and `BREAKING CHANGE`.
 
 In **What I did**, keep it short: before → after versions, and the share of `/docs` visitors for each chosen floor.

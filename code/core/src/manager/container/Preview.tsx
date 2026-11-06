@@ -5,7 +5,7 @@ import type { Addon_BaseType, Addon_Collection, Addon_WrapperType } from 'storyb
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import memoizerific from 'memoizerific';
-import type { State, StoriesHash } from 'storybook/manager-api';
+import type { IndexHash, State } from 'storybook/manager-api';
 import { Consumer } from 'storybook/manager-api';
 
 import { Preview } from '../components/preview/Preview.tsx';
@@ -48,7 +48,7 @@ const memoizedWrapper = memoizerific(1)((_, previewElements: Addon_Collection) =
   ...Object.values(previewElements),
 ]);
 
-export type Item = StoriesHash[keyof StoriesHash];
+export type Item = IndexHash[keyof IndexHash];
 
 const splitTitleAddExtraSpace = (input: string) =>
   input.split('/').join(' / ').replace(/\s\s/, ' ');

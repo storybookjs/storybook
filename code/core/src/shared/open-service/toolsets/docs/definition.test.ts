@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { invokeToolsetMethod, type ToolsetCtx } from '../../toolset-definition.ts';
 import type { DocsAccess } from './access.ts';
@@ -105,6 +105,153 @@ describe('docs.show', () => {
     expect(cliOutcome.markdown).toContain(
       'Use the npx storybook tools docs list tool to see available components'
     );
+  });
+});
+
+describe('docs.show for an id the requested source does not have', () => {
+  const switchComponent = { id: 'switch', name: 'Switch', stories: [] };
+  const sourceWith = (component: typeof switchComponent): DocsAccess => ({
+    list: async () => ({
+      componentManifest: {
+        v: 1,
+        components: { [component.id]: { id: component.id, name: component.name } },
+      },
+    }),
+    resolve: async (id) => (id === component.id ? { kind: 'component', component } : undefined),
+  });
+  const local = { source: { id: 'local', title: 'Local' }, access: docsAccess };
+  const remote = { source: { id: 'remote', title: 'Remote' }, access: sourceWith(switchComponent) };
+
+  it('shows it from the one other source that has it, and says how to ask that source', async () => {
+    const composed = createDocsToolset({ sources: [local, remote] });
+
+    const outcome = await composed.methods.show.handler(
+      { id: 'switch', storybookId: 'local' },
+      cliCtx
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect(outcome.data).toMatchObject({ storybookId: 'local', resolvedStorybookId: 'remote' });
+    expect(outcome.markdown).toBe(
+      `> "switch" is not in source "local"; showing it from source "remote". Pass --storybookId remote on follow-up calls for this source.
+
+# Switch
+
+ID: switch`
+    );
+
+    const mcpOutcome = await composed.methods.show.handler(
+      { id: 'switch', storybookId: 'local' },
+      mcpCtx
+    );
+    expect(mcpOutcome.markdown).toContain('Pass storybookId "remote" on follow-up calls');
+  });
+
+  it('lists the sources that have it as ready calls when there are several', async () => {
+    const other = { source: { id: 'other', title: 'Other' }, access: sourceWith(switchComponent) };
+    const composed = createDocsToolset({ sources: [local, remote, other] });
+
+    const outcome = await composed.methods.show.handler(
+      { id: 'switch', storybookId: 'local' },
+      cliCtx
+    );
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.markdown).toBe(`Component or Docs Entry not found: "switch" in source "local".
+
+Closest matches:
+- Switch: npx storybook tools docs show --id switch --storybookId remote
+- Switch: npx storybook tools docs show --id switch --storybookId other
+
+Use the npx storybook tools docs list tool to see available components and documentation entries.`);
+  });
+
+  it('suggests close ids as ready calls per transport', async () => {
+    const outcome = await toolset.methods.show.handler({ id: 'primary-button' }, cliCtx);
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.data.suggestions).toEqual([{ id: 'button', name: 'Button' }]);
+    expect(outcome.markdown).toContain('- Button: npx storybook tools docs show --id button\n');
+
+    const mcpOutcome = await toolset.methods.show.handler({ id: 'primary-button' }, mcpCtx);
+    expect(mcpOutcome.markdown).toContain('- Button: docs-show {"id":"button"}\n');
+  });
+
+  it('skips a source that cannot be read', async () => {
+    const broken = {
+      source: { id: 'broken', title: 'Broken' },
+      access: {
+        list: () => Promise.reject(new Error('offline')),
+        resolve: () => Promise.reject(new Error('offline')),
+      },
+    };
+    const composed = createDocsToolset({ sources: [local, broken, remote] });
+
+    const outcome = await composed.methods.show.handler(
+      { id: 'switch', storybookId: 'local' },
+      cliCtx
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect(outcome.data.resolvedStorybookId).toBe('remote');
+  });
+
+  it('names the sources it could not read when the id is found nowhere', async () => {
+    const privateSource = { id: 'private', title: 'Private', url: 'https://private.example.com' };
+    const unreadable = (error: Error): DocsAccess => ({
+      list: () => Promise.reject(error),
+      resolve: () => Promise.reject(error),
+    });
+    const composed = createDocsToolset({
+      sources: [
+        local,
+        {
+          source: { id: 'offline', title: 'Offline' },
+          access: unreadable(new Error('fetch failed')),
+        },
+        { source: privateSource, access: unreadable(new RequiresOwnMcpError(privateSource)) },
+      ],
+    });
+
+    const outcome = await composed.methods.show.handler(
+      { id: 'switch', storybookId: 'local' },
+      cliCtx
+    );
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.markdown).toBe(`Component or Docs Entry not found: "switch" in source "local".
+
+Sources that could not be read:
+- offline: fetch failed
+- private: private, read it through its own MCP endpoint: https://private.example.com/mcp
+
+Use the npx storybook tools docs list tool to see available components and documentation entries.`);
+  });
+
+  it('suggests from the cheaper names listing when a source has one', async () => {
+    const list = vi.fn(docsAccess.list);
+    const composed = createDocsToolset({
+      docsAccess: {
+        ...docsAccess,
+        list,
+        listNames: async () => [{ id: 'button', name: 'PrimaryButton' }],
+      },
+    });
+
+    const outcome = await composed.methods.show.handler({ id: 'primary-button' }, cliCtx);
+
+    expect(outcome.data.suggestions).toEqual([{ id: 'button', name: 'PrimaryButton' }]);
+    expect(list).not.toHaveBeenCalled();
+  });
+
+  it('does not suggest the id that just failed in the same source', async () => {
+    const composed = createDocsToolset({
+      docsAccess: { ...docsAccess, resolve: async () => undefined },
+    });
+
+    const outcome = await composed.methods.show.handler({ id: 'button' }, cliCtx);
+
+    expect(outcome.data.suggestions).toBeUndefined();
   });
 });
 
@@ -272,7 +419,7 @@ describe('docs.showStory in a composition', () => {
   });
 });
 
-describe('docs lookups that leave out the source in a composition', () => {
+describe('docs.showStory for a component the requested source does not have', () => {
   const emptyAccess: DocsAccess = { list: docsAccess.list, resolve: async () => undefined };
   const composed = (...others: DocsAccess[]) =>
     createDocsToolset({
@@ -285,54 +432,28 @@ describe('docs lookups that leave out the source in a composition', () => {
       ],
     });
 
-  it('shows the entry from the only source that has it', async () => {
-    const outcome = await composed(docsAccess).methods.show.handler(
-      { id: 'button', storybookId: 'local' },
-      cliCtx
-    );
-
-    expect(outcome.ok).toBe(true);
-    expect(outcome.data).toMatchObject({ storybookId: 'ds1', fallbackFrom: 'local' });
-    expect(outcome.markdown).toMatch(
-      /^Not found in source "local", so this is the entry from source "ds1", the only source that has it\./
-    );
-    expect(outcome.markdown).toContain('Click me');
-  });
-
-  it('shows a story from the only source that has it', async () => {
+  it('shows the story from the one other source that has it, and says how to ask that source', async () => {
     const outcome = await composed(docsAccess).methods.showStory.handler(
       { storyId: 'button--primary', storybookId: 'local' },
       cliCtx
     );
 
     expect(outcome.ok).toBe(true);
+    expect(outcome.data).toMatchObject({ storybookId: 'local', resolvedStorybookId: 'ds1' });
+    expect(outcome.markdown).toMatch(
+      /^> "button" is not in source "local"; showing it from source "ds1"\. Pass --storybookId ds1/
+    );
     expect(outcome.markdown).toContain('<Button />');
   });
 
-  it('still reports the entry missing when several sources have it', async () => {
-    const outcome = await composed(docsAccess, docsAccess).methods.show.handler(
-      { id: 'button', storybookId: 'local' },
+  it('still reports the component missing when several sources have it', async () => {
+    const outcome = await composed(docsAccess, docsAccess).methods.showStory.handler(
+      { storyId: 'button--primary', storybookId: 'local' },
       cliCtx
     );
 
     expect(outcome.ok).toBe(false);
-    expect(outcome.markdown).toContain(
-      'Component or Docs Entry not found: "button" in source "local"'
-    );
-  });
-
-  it('skips a source that cannot be read', async () => {
-    const unreadable: DocsAccess = {
-      list: docsAccess.list,
-      resolve: () => Promise.reject(new Error('offline')),
-    };
-    const outcome = await composed(unreadable, docsAccess).methods.show.handler(
-      { id: 'button', storybookId: 'local' },
-      cliCtx
-    );
-
-    expect(outcome.ok).toBe(true);
-    expect(outcome.data).toMatchObject({ storybookId: 'ds2' });
+    expect(outcome.markdown).toContain('Story not found: "button--primary"');
   });
 });
 
@@ -407,7 +528,13 @@ describe('usage reporting', () => {
       toolset: 'docs',
       tool: 'show',
       event: 'tool:docs_show',
-      payload: { componentId: 'button', found: true, resultTokenCount: expect.any(Number) },
+      payload: {
+        componentId: 'button',
+        found: true,
+        resolvedElsewhere: false,
+        suggestionCount: 0,
+        resultTokenCount: expect.any(Number),
+      },
     });
   });
 

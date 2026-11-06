@@ -1,11 +1,13 @@
 import { existsSync, watch } from 'node:fs';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import * as esbuild from 'esbuild';
 import { raw as rawPlugin } from 'esbuild-raw-plugin';
-import { basename, join, relative } from 'pathe';
+import { basename, dirname, join, relative } from 'pathe';
 import picocolors from 'picocolors';
+import type { Plugin as RolldownPlugin } from 'rolldown';
+import { rolldown } from 'rolldown';
 import { dedent } from 'ts-dedent';
 
 import { globalsModuleInfoMap } from '../../../code/core/src/manager/globals/globals-module-info.ts';
@@ -21,6 +23,7 @@ import {
   type EsbuildContextOptions,
   getExternal,
 } from './entry-utils.ts';
+import { tiePreviewRuntimeSetup } from './preview-runtime-entry.ts';
 
 // repo root/bench/esbuild-metafiles/core
 const DIR_METAFILE_BASE = join(
@@ -33,6 +36,79 @@ const DIR_METAFILE_BASE = join(
   'esbuild-metafiles'
 );
 export const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
+
+// react-aria and react-stately import this exact specifier; a shorter key would also match
+// subpaths such as `shim/with-selector`.
+const USE_SYNC_EXTERNAL_STORE_ALIAS = {
+  'use-sync-external-store/shim/index.js': join(
+    import.meta.dirname,
+    'use-sync-external-store-shim.ts'
+  ),
+};
+
+// In ES module output, a `require()` of an external becomes `__require("…")`, which throws
+// "Dynamic require of … is not supported" in the browser. Browser builds fail on it instead.
+const dynamicRequireError = (file: string, specifier: string) =>
+  `${file} calls require("${specifier}") on an external, which fails in the browser. Alias the import to an ES module, or import it statically.`;
+
+// Put this plugin first: esbuild runs `onEnd` callbacks in order, and later ones such as
+// `postbuild` then see its errors.
+export const esbuildNoDynamicRequireGuard: esbuild.Plugin = {
+  name: 'no-dynamic-require-in-browser-output',
+  setup(build) {
+    build.initialOptions.metafile = true;
+    build.onEnd((result) => ({
+      // A failed build has no metafile, and already fails.
+      errors: Object.entries(result.metafile?.outputs ?? {}).flatMap(([file, output]) =>
+        output.imports
+          .filter(
+            ({ external, kind }) =>
+              external && (kind === 'require-call' || kind === 'require-resolve')
+          )
+          .map(({ path }) => ({ text: dynamicRequireError(file, path) }))
+      ),
+    }));
+  },
+};
+
+// Put this plugin first, so that `this.resolve` asks every other plugin.
+export const rolldownNoDynamicRequireGuard: RolldownPlugin = {
+  name: 'no-dynamic-require-in-browser-output',
+  async resolveId(source, importer, { kind }) {
+    if (kind !== 'require-call') {
+      return null;
+    }
+    const resolved = await this.resolve(source, importer, { kind });
+    if (!resolved || resolved.external) {
+      this.error(dynamicRequireError(importer ?? source, source));
+    }
+    return resolved;
+  },
+};
+
+function rolldownGlobalExternalsPlugin(): RolldownPlugin {
+  const prefix = '\0storybook-global:';
+
+  return {
+    name: 'storybook-global-externals',
+    resolveId(id) {
+      return id in globalsModuleInfoMap ? `${prefix}${id}` : null;
+    },
+    load(id) {
+      if (!id.startsWith(prefix)) {
+        return null;
+      }
+
+      const moduleName = id.slice(prefix.length) as keyof typeof globalsModuleInfoMap;
+      const { namedExports, varName } = globalsModuleInfoMap[moduleName];
+      const exports = namedExports.map(
+        (name) => `export const ${name} = ${varName}[${JSON.stringify(name)}];`
+      );
+
+      return [...exports, `export default ${varName};`].join('\n');
+    },
+  };
+}
 
 /*
  * This plugin writes the metafile to a file in the output directory.
@@ -89,6 +165,7 @@ export async function generateBundle({
     treeShaking: true,
     color: true,
     external,
+    alias: USE_SYNC_EXTERNAL_STORE_ALIAS,
     loader: {
       // The MCP packages import markdown/html instruction and template files as text
       '.md': 'text',
@@ -135,9 +212,11 @@ export async function generateBundle({
       // The actual function which calls these modules is not imported
       // and therefore we can externalize them.
       'msw/browser',
-      'msw/core/http',
+      'msw/http',
     ], // Prefer `alias` over `external` because we're using aliases to bundle everything into the runtimes
+    plugins: [esbuildNoDynamicRequireGuard, ...sharedOptions.plugins],
     alias: {
+      ...USE_SYNC_EXTERNAL_STORE_ALIAS,
       // The following aliases ensures that the runtimes bundles in the actual sources of these modules
       // instead of attempting to resolve them to the dist files, because the dist files are not available yet.
       'storybook/preview-api': './src/preview-api',
@@ -164,6 +243,61 @@ export async function generateBundle({
     },
   } as const satisfies EsbuildContextOptions;
 
+  const buildChunkedRuntimeEntry = async ({
+    entryPoint,
+    outDir,
+    chunkDir,
+    useGlobals,
+  }: {
+    entryPoint: string;
+    outDir: string;
+    chunkDir: string;
+    useGlobals: boolean;
+  }) => {
+    const name = basename(entryPoint).replace(/\.[^.]+$/, '');
+    const alias = Object.fromEntries(
+      Object.entries(runtimeOptions.alias).map(([key, value]) => [
+        key,
+        value.startsWith('.') ? join(DIR_CWD, value) : value,
+      ])
+    );
+    const build = await rolldown({
+      cwd: DIR_CWD,
+      input: { [name]: entryPoint },
+      platform: 'browser',
+      plugins: [
+        rolldownNoDynamicRequireGuard,
+        ...(useGlobals ? [rolldownGlobalExternalsPlugin()] : []),
+      ],
+      resolve: {
+        alias,
+        conditionNames: ['browser', 'module', 'default'],
+      },
+      transform: {
+        define: runtimeOptions.define,
+        jsx: 'react',
+      },
+      treeshake: true,
+    });
+
+    await build.write({
+      dir: join(DIR_CWD, 'dist'),
+      format: 'es',
+      entryFileNames: `${outDir}/[name].js`,
+      chunkFileNames: `${outDir}/${chunkDir}/${name}-[hash].js`,
+      strictExecutionOrder: true,
+      codeSplitting: {
+        groups: [{ name, maxSize: 500 * 1024 }],
+      },
+    });
+    await build.close();
+
+    if (outDir === 'preview' && name === 'runtime') {
+      const entryFile = join(DIR_CWD, 'dist', outDir, `${name}.js`);
+      await writeFile(entryFile, tiePreviewRuntimeSetup(await readFile(entryFile, 'utf8')));
+    }
+  };
+
   const contexts: Array<ReturnType<typeof esbuild.context>> = [];
 
   if (entries.node) {
@@ -174,12 +308,22 @@ export async function generateBundle({
         entryPoints: entries.node.map(({ entryPoint }) => entryPoint),
         platform: 'node',
         target: NODE_TARGET,
+        external: [
+          ...external,
+          // Optional native speedups that `ws` requires inside try/catch. Keeping them external
+          // means the bundle never inlines them, even when they happen to be installed.
+          'bufferutil',
+          'utf-8-validate',
+        ],
         alias: {
+          ...sharedOptions.alias,
           // Keep a single bundled acorn copy when CommonJS dependencies such as
           // acorn-jsx require('acorn') alongside ESM imports.
           acorn: join(resolvePackageDir('acorn'), 'dist/acorn.mjs'),
           // Avoid a nested @polka/url@0.5.0 CJS copy that drops polka's named `parse` export.
           '@polka/url': join(resolvePackageDir('@polka/url'), 'build.mjs'),
+          // jsonc-parser's `main` is a UMD build whose requires esbuild cannot follow.
+          'jsonc-parser': join(resolvePackageDir('jsonc-parser'), 'lib/esm/main.js'),
         },
         chunkNames: '_node-chunks/[name]-[hash]',
         banner: {
@@ -229,6 +373,7 @@ export async function generateBundle({
         target: BROWSER_TARGETS,
         supported: SUPPORTED_FEATURES,
         plugins: [
+          esbuildNoDynamicRequireGuard,
           ...sharedOptions.plugins,
           metafileWriterPlugin('browser', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
@@ -236,11 +381,29 @@ export async function generateBundle({
     );
   }
 
-  if (entries.runtime) {
+  const regularRuntimeEntries = entries.runtime?.filter((entry) => !entry.chunkedRuntime) ?? [];
+  const chunkedRuntimeEntries = entries.runtime?.filter((entry) => entry.chunkedRuntime) ?? [];
+
+  const chunkedRuntimeOutput = (entryPoint: string, useGlobals: boolean) => {
+    const outDir = basename(dirname(entryPoint));
+    return {
+      entryPoint,
+      outDir,
+      chunkDir: outDir === 'manager' ? '_manager-chunks' : '_chunks',
+      useGlobals,
+    };
+  };
+
+  // Rolldown writes these once. Watch mode uses the esbuild bundle, which rebuilds on edit.
+  const esbuildRuntimeEntries = isWatch
+    ? [...regularRuntimeEntries, ...chunkedRuntimeEntries]
+    : regularRuntimeEntries;
+
+  if (esbuildRuntimeEntries.length) {
     contexts.push(
       esbuild.context({
         ...runtimeOptions,
-        entryPoints: entries.runtime.map(({ entryPoint }) => entryPoint),
+        entryPoints: esbuildRuntimeEntries.map(({ entryPoint }) => entryPoint),
         plugins: [
           ...runtimeOptions.plugins,
           metafileWriterPlugin('runtime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
@@ -249,7 +412,7 @@ export async function generateBundle({
     );
   }
 
-  if (entries.globalizedRuntime) {
+  if (isWatch && entries.globalizedRuntime?.length) {
     contexts.push(
       esbuild.context({
         ...runtimeOptions,
@@ -264,6 +427,16 @@ export async function generateBundle({
   }
 
   const compile = await Promise.all(contexts);
+  if (!isWatch) {
+    await Promise.all([
+      ...chunkedRuntimeEntries.map(({ entryPoint }) =>
+        buildChunkedRuntimeEntry(chunkedRuntimeOutput(entryPoint, false))
+      ),
+      ...(entries.globalizedRuntime ?? []).map(({ entryPoint }) =>
+        buildChunkedRuntimeEntry(chunkedRuntimeOutput(entryPoint, true))
+      ),
+    ]);
+  }
 
   await Promise.all(
     compile.map(async (context) => {

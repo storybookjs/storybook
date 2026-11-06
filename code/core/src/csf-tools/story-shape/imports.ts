@@ -1,4 +1,4 @@
-import { type NodePath, types as t } from 'storybook/internal/babel';
+import type { E } from '../estree/ast.ts';
 
 export interface ImportBinding {
   /** Module specifier the local name is imported from. */
@@ -9,38 +9,31 @@ export interface ImportBinding {
 
 /** True for `import { type X }` specifiers, which carry no runtime binding. */
 export const isTypeSpecifier = (
-  s: t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier
-): boolean => t.isImportSpecifier(s) && s.importKind === 'type';
+  s: E.ImportSpecifier | E.ImportDefaultSpecifier | E.ImportNamespaceSpecifier
+): boolean => s.type === 'ImportSpecifier' && s.importKind === 'type';
 
 /** Exported name behind an import specifier, incl. string-named exports. */
-export const importedName = (im: t.Identifier | t.StringLiteral): string =>
-  t.isIdentifier(im) ? im.name : im.value;
+export const importedName = (im: E.ModuleExportName): string =>
+  im.type === 'Identifier' ? im.name : (im as E.StringLiteral).value;
 
 /** Map of local identifier → import binding for a file's value imports (type-only skipped). */
-export function collectImportBindings(program: NodePath<t.Program>): Map<string, ImportBinding> {
+export function collectImportBindings(program: E.Program): Map<string, ImportBinding> {
   const localToImport = new Map<string, ImportBinding>();
 
-  for (const stmt of program.get('body')) {
-    if (!stmt.isImportDeclaration()) {
+  for (const statement of program.body) {
+    if (statement.type !== 'ImportDeclaration' || statement.importKind === 'type') {
       continue;
     }
-    const decl = stmt.node;
-
-    if (decl.importKind === 'type') {
-      continue;
-    }
-
-    for (const s of decl.specifiers ?? []) {
-      if (!('local' in s) || !s.local || isTypeSpecifier(s)) {
+    const importId = statement.source.value;
+    for (const s of statement.specifiers) {
+      if (isTypeSpecifier(s)) {
         continue;
       }
-
-      const importId = decl.source.value;
-      if (t.isImportDefaultSpecifier(s)) {
+      if (s.type === 'ImportDefaultSpecifier') {
         localToImport.set(s.local.name, { importId, importName: 'default' });
-      } else if (t.isImportNamespaceSpecifier(s)) {
+      } else if (s.type === 'ImportNamespaceSpecifier') {
         localToImport.set(s.local.name, { importId, importName: '*' });
-      } else if (t.isImportSpecifier(s)) {
+      } else {
         localToImport.set(s.local.name, { importId, importName: importedName(s.imported) });
       }
     }

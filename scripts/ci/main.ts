@@ -1,4 +1,7 @@
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync } from 'node:fs';
 import fs from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 
@@ -10,10 +13,47 @@ import { parameters } from './utils/parameters.ts';
 import { setLockfileChanged, setTrustedAuthor } from './utils/runtime.ts';
 import type { JobImplementationObj, NoOpJobImplementationObj } from './utils/types.ts';
 import { type Workflow, workflows } from './utils/types.ts';
-import { getChangedFiles } from './focus.ts';
 import { getJobs } from './workflow-jobs.ts';
 
 const dirname = import.meta.dirname;
+
+// refs/pull/<n>/merge is the pull request merged into its base, so its diff against its first
+// parent needs two commits of history, where a merge base can be any number of commits back.
+// GitHub stops updating it while the pull request conflicts, so it must merge HEAD to count.
+// It is fetched into a scratch repository because a `--depth` fetch marks the parents it stops
+// at as shallow, which would cut the checkout's own history at HEAD.
+function getPullRequestChangedFiles(prNumber: string): string[] | undefined {
+  if (!/^\d+$/.test(prNumber)) {
+    throw new Error(`Invalid pull request number "${prNumber}"`);
+  }
+  const git = (cwd: string, ...args: string[]) =>
+    execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  const scratch = mkdtempSync(join(tmpdir(), 'pull-request-merge-'));
+  try {
+    const origin = git('.', 'remote', 'get-url', 'origin');
+    git(scratch, 'init', '--quiet', '--bare');
+    git(
+      scratch,
+      'fetch',
+      '--depth=2',
+      '--filter=blob:none',
+      '--no-tags',
+      origin,
+      `refs/pull/${prNumber}/merge`
+    );
+    if (git(scratch, 'rev-parse', 'FETCH_HEAD^2') !== git('.', 'rev-parse', 'HEAD')) {
+      throw new Error(`refs/pull/${prNumber}/merge does not merge HEAD`);
+    }
+    return git(scratch, 'diff', '--name-only', 'FETCH_HEAD^1', 'FETCH_HEAD')
+      .split('\n')
+      .filter(Boolean);
+  } catch (error) {
+    console.warn(`Skipping checks that need the files pull request ${prNumber} changes: ${error}`);
+    return undefined;
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+}
 
 /** Workflows that a PR can merge on, so they end in the `circleci-completion` status check. */
 const isMergeGating = (workflow: Workflow) => workflow !== 'windows';
@@ -136,9 +176,9 @@ const { values: opts } = parseArgs({
   },
 });
 setTrustedAuthor(opts['gh-trusted-author'] === 'true');
-// Only pull requests diff against a base; the setup job fetches its history for them.
 setLockfileChanged(
-  opts['gh-pr-number'] !== '' && getChangedFiles(opts['base-ref']).includes('pnpm-lock.yaml')
+  opts['gh-pr-number'] !== '' &&
+    (getPullRequestChangedFiles(opts['gh-pr-number']) ?? []).includes('pnpm-lock.yaml')
 );
 
 const requested = (opts.workflow ?? '').split(',').filter(Boolean);

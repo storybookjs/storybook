@@ -1,20 +1,96 @@
-import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { isBuiltin } from 'node:module';
+import { tmpdir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 
 import { dirname, join, relative } from 'pathe';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 
 import { workflows } from './utils/types.ts';
 
 const repoRoot = join(import.meta.dirname, '../..');
 
-const generate = (...args: string[]) =>
-  spawnSync(process.execPath, ['--experimental-transform-types', './scripts/ci/main.ts', ...args], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-  });
+const generateIn = (cwd: string, ...args: string[]) =>
+  spawnSync(
+    process.execPath,
+    ['--experimental-transform-types', join(repoRoot, 'scripts/ci/main.ts'), ...args],
+    { cwd, encoding: 'utf8' }
+  );
+
+const generate = (...args: string[]) => generateIn(repoRoot, ...args);
+
+const fixtureRoots: string[] = [];
+
+afterEach(() => {
+  fixtureRoots.splice(0).forEach((root) => rmSync(root, { recursive: true, force: true }));
+});
+
+// A shallow checkout of pull request 1, as the CircleCI setup job clones it, with an origin that
+// has GitHub's `refs/pull/1/merge`.
+function checkoutPullRequest({
+  changesLockfile,
+  baseChangesLockfile = false,
+  pushedAfterMerge = false,
+}: {
+  changesLockfile: boolean;
+  baseChangesLockfile?: boolean;
+  pushedAfterMerge?: boolean;
+}) {
+  const root = mkdtempSync(join(tmpdir(), 'sb-ci-pull-request-'));
+  fixtureRoots.push(root);
+  const [origin, dev, checkout, globalConfig] = ['origin.git', 'dev', 'checkout', 'gitconfig'].map(
+    (name) => join(root, name)
+  );
+  // An empty global config keeps the developer's git settings, such as commit signing, out.
+  writeFileSync(globalConfig, '');
+  const git = (cwd: string, ...args: string[]) =>
+    execFileSync('git', args, {
+      cwd,
+      stdio: 'pipe',
+      env: {
+        ...process.env,
+        GIT_CONFIG_GLOBAL: globalConfig,
+        GIT_CONFIG_NOSYSTEM: '1',
+        GIT_AUTHOR_NAME: 'test',
+        GIT_AUTHOR_EMAIL: 'test@example.com',
+        GIT_COMMITTER_NAME: 'test',
+        GIT_COMMITTER_EMAIL: 'test@example.com',
+      },
+    });
+  const commit = (file: string, content: string) => {
+    writeFileSync(join(dev, file), content);
+    git(dev, 'add', file);
+    git(dev, 'commit', '-m', `${file}: ${content}`);
+  };
+
+  git(root, 'init', '--bare', '--initial-branch=next', origin);
+  git(root, 'init', '--initial-branch=next', dev);
+  commit('pnpm-lock.yaml', 'base');
+  commit('README.md', 'base');
+  git(dev, 'checkout', '-b', 'pull');
+  commit(changesLockfile ? 'pnpm-lock.yaml' : 'README.md', 'pull request');
+  if (baseChangesLockfile) {
+    git(dev, 'checkout', 'next');
+    commit('pnpm-lock.yaml', 'next moved on');
+  }
+  git(dev, 'checkout', '--detach', 'next');
+  git(dev, 'merge', '--no-ff', '-m', 'Merge pull request 1', 'pull');
+  git(dev, 'push', origin, 'HEAD:refs/pull/1/merge');
+  if (pushedAfterMerge) {
+    git(dev, 'checkout', 'pull');
+    commit('README.md', 'pushed after GitHub merged');
+  }
+  git(dev, 'push', origin, 'pull', 'next');
+  git(root, 'clone', '--depth=2', '--branch=pull', pathToFileURL(origin).href, checkout);
+  return checkout;
+}
+
+const dedupeCheckGenerated = () =>
+  readConfig()
+    .jobs['build--linux'].steps.map((step: { run?: { name: string } }) => step.run?.name)
+    .includes('Check for dedupe');
 
 const readConfig = () =>
   JSON.parse(readFileSync(join(repoRoot, '.circleci/config.generated.yml'), 'utf8'));
@@ -94,16 +170,83 @@ describe('main.ts under plain Node, as the CircleCI setup job runs it', () => {
     expect(importers.filter((dir) => !packed.has(`project/${dir}`))).toEqual([]);
   });
 
-  it.each([
-    { name: 'a run that is not a pull request', args: [] },
-    { name: 'a pull request that leaves pnpm-lock.yaml alone', args: ['--gh-pr-number=1'] },
-  ])('skips the dedupe check for $name', ({ args }) => {
-    // HEAD...HEAD changes nothing.
-    const result = generate('--workflow=normal', '--base-ref=HEAD', ...args);
+  it('skips the dedupe check for a run that is not a pull request', () => {
+    const result = generate('--workflow=normal', '--base-ref=HEAD');
 
     expect(result.status, result.stderr).toBe(0);
-    const steps: { run?: { name: string } }[] = readConfig().jobs['build--linux'].steps;
-    expect(steps.map((step) => step.run?.name)).not.toContain('Check for dedupe');
+    expect(dedupeCheckGenerated()).toBe(false);
+  });
+
+  it.each([
+    {
+      name: 'runs the dedupe check for a pull request that changes pnpm-lock.yaml',
+      pullRequest: { changesLockfile: true },
+      expected: true,
+    },
+    {
+      name: 'skips the dedupe check for a pull request that leaves pnpm-lock.yaml alone while its base changes it',
+      pullRequest: { changesLockfile: false, baseChangesLockfile: true },
+      expected: false,
+    },
+  ])('$name', ({ pullRequest, expected }) => {
+    const result = generateIn(
+      checkoutPullRequest(pullRequest),
+      '--workflow=normal',
+      '--base-ref=HEAD',
+      '--gh-pr-number=1'
+    );
+
+    expect(result.status, result.stderr).toBe(0);
+    expect(dedupeCheckGenerated()).toBe(expected);
+  });
+
+  it.each([
+    {
+      name: 'was pushed to after GitHub last merged it',
+      pullRequest: { changesLockfile: true, pushedAfterMerge: true },
+      prNumber: '1',
+      warning: 'refs/pull/1/merge does not merge HEAD',
+    },
+    {
+      name: 'has no merge ref',
+      pullRequest: { changesLockfile: true },
+      prNumber: '2',
+      warning: 'Skipping checks that need the files pull request 2 changes',
+    },
+  ])(
+    'skips the dedupe check, with a warning, for a pull request that $name',
+    ({ pullRequest, prNumber, warning }) => {
+      const result = generateIn(
+        checkoutPullRequest(pullRequest),
+        '--workflow=normal',
+        '--base-ref=HEAD',
+        `--gh-pr-number=${prNumber}`
+      );
+
+      expect(result.status, result.stderr).toBe(0);
+      expect(result.stderr).toContain(warning);
+      expect(dedupeCheckGenerated()).toBe(false);
+    }
+  );
+
+  it("leaves the checkout's history alone", () => {
+    const checkout = checkoutPullRequest({ changesLockfile: true });
+    const history = () =>
+      execFileSync('git', ['rev-list', 'HEAD'], { cwd: checkout, encoding: 'utf8' });
+    const before = history();
+
+    const result = generateIn(checkout, '--workflow=normal', '--base-ref=HEAD', '--gh-pr-number=1');
+
+    expect(result.status, result.stderr).toBe(0);
+    expect(before.trim().split('\n')).toHaveLength(2);
+    expect(history()).toBe(before);
+  });
+
+  it('rejects a pull request number that is not a number', () => {
+    const result = generate('--workflow=normal', '--base-ref=HEAD', '--gh-pr-number=1:main');
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('Invalid pull request number "1:main"');
   });
 
   it.each([{ args: [] }, { args: ['--workflow=unknown'] }])('rejects $args', ({ args }) => {

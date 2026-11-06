@@ -31,23 +31,18 @@ jobs:
       - image: cimg/node:22.22.3
     resource_class: large
     steps:
-      # Focus and every pull request diff against the base branch (focus to pick its jobs, pull
-      # requests to tell whether they change pnpm-lock.yaml), so only they pay for 500 commits of
-      # history.
+      # Only focus diffs against the base branch, so only it pays for 500 commits of history.
       - when:
           condition:
-            or:
-              - matches:
-                  pattern: '(.*,)?focus(,.*)?'
-                  value: << pipeline.parameters.workflow >>
-              - not:
-                  equal: ['', '<< pipeline.parameters.ghPrNumber >>']
+            matches:
+              pattern: '(.*,)?focus(,.*)?'
+              value: << pipeline.parameters.workflow >>
           steps:
             - git-shallow-clone/checkout_advanced:
                 clone_options: '--depth 500 --filter=blob:none --no-tags'
                 tag_fetch_options: '--no-tags'
             - run:
-                name: Fetch base branch
+                name: Fetch base branch for focused CI
                 environment:
                   GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
                 command: |
@@ -59,12 +54,9 @@ jobs:
                   fi
       - unless:
           condition:
-            or:
-              - matches:
-                  pattern: '(.*,)?focus(,.*)?'
-                  value: << pipeline.parameters.workflow >>
-              - not:
-                  equal: ['', '<< pipeline.parameters.ghPrNumber >>']
+            matches:
+              pattern: '(.*,)?focus(,.*)?'
+              value: << pipeline.parameters.workflow >>
           steps:
             - git-shallow-clone/checkout_advanced:
                 clone_options: '--depth 1'
@@ -73,12 +65,13 @@ jobs:
           name: Generate config
           environment:
             GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
+            GH_PR_NUMBER: << pipeline.parameters.ghPrNumber >>
           command: |
             node --experimental-transform-types ./scripts/ci/main.ts \
               --workflow=<< pipeline.parameters.workflow >> \
               --base-ref="origin/$GH_BASE_BRANCH" \
               --gh-trusted-author=<< pipeline.parameters.ghTrustedAuthor >> \
-              --gh-pr-number="<< pipeline.parameters.ghPrNumber >>" \
+              --gh-pr-number="$GH_PR_NUMBER" \
               --branch="<< pipeline.git.branch >>"
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml

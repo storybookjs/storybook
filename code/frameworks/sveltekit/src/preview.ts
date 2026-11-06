@@ -1,30 +1,44 @@
-import type { Decorator, Preview } from '@storybook/svelte';
-import MockProvider from '@storybook/sveltekit/internal/MockProvider.svelte';
-import {
-  setAppStateNavigating,
-  setAppStatePage,
-  setAppStateUpdated, // @ts-expect-error no declaration file for this JS module
-} from '@storybook/sveltekit/internal/mocks/app/state.svelte.js';
+import { SvelteKitMockParametersRemovedError } from 'storybook/internal/preview-errors';
 
-import type { SvelteKitParameters } from './types.ts';
+import type { Preview } from '@storybook/svelte';
+// @ts-expect-error no declaration file for this JS module
+import { resetAppState } from '@storybook/sveltekit/internal/mocks/app/state.svelte.js';
+import { beginDocsStory, resetMocks } from '@storybook/sveltekit/internal/mocks/docs-isolation';
+import { setAfterNavigate } from '@storybook/sveltekit/navigation.mock';
 
-const svelteKitMocksDecorator: Decorator = (Story, ctx) => {
-  const svelteKitParameters: SvelteKitParameters = ctx.parameters?.sveltekit_experimental ?? {};
+import { interceptLinkClicks } from './mocks/link-clicks.ts';
 
-  return {
-    Component: MockProvider,
-    props: {
-      svelteKitParameters,
-    },
-  };
+// The paths of the leaves of a parameter object, for example `['state.page', 'hrefs']`
+const keyPaths = (value: unknown, depth = 0): string[] => {
+  if (depth >= 2 || typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return [];
+  }
+  return Object.entries(value).flatMap(([key, child]) => {
+    const childPaths = key === 'hrefs' ? [] : keyPaths(child, depth + 1);
+    return childPaths.length > 0 ? childPaths.map((path) => `${key}.${path}`) : [key];
+  });
 };
 
-export const decorators: Decorator[] = [svelteKitMocksDecorator];
+// The framework's annotations come before the project's, so this runs before every other
+// `beforeEach`, and stories set their mocks on top of the defaults
+export const beforeEach: Preview['beforeEach'] = ({ id, parameters, canvasElement, viewMode }) => {
+  if (parameters?.sveltekit_experimental !== undefined) {
+    const keys = keyPaths(parameters.sveltekit_experimental);
+    throw new SvelteKitMockParametersRemovedError({
+      keys: keys.length > 0 ? keys : ['sveltekit_experimental'],
+    });
+  }
 
-export const beforeEach: Preview['beforeEach'] = async (ctx) => {
-  const svelteKitParameters: SvelteKitParameters = ctx.parameters?.sveltekit_experimental ?? {};
-
-  setAppStatePage(svelteKitParameters?.state?.page);
-  setAppStateNavigating(svelteKitParameters?.state?.navigating);
-  setAppStateUpdated(svelteKitParameters?.state?.updated);
+  // Before the reset, so a story that can't share the page doesn't reset another story's mocks
+  const endDocsStory = viewMode === 'docs' ? beginDocsStory(id) : undefined;
+  resetMocks(() => {
+    resetAppState();
+    // Merges nothing into the default navigation
+    setAfterNavigate({});
+  });
+  const stopLinkClicks = interceptLinkClicks({ canvasElement, viewMode });
+  return () => {
+    stopLinkClicks();
+    endDocsStory?.();
+  };
 };

@@ -19,7 +19,7 @@ export * from './portable-stories.ts';
 
 /**
  * Define the preview of a SvelteKit project, with the `preview.meta()` and `meta.story()`
- * factories. It includes the SvelteKit mocks, configured with `parameters.sveltekit_experimental`.
+ * factories. It includes the mocks of the SvelteKit modules.
  */
 export function definePreview<Addons extends PreviewAddonEntry[] = []>(
   preview: { addons?: Addons } & ProjectAnnotations<

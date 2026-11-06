@@ -4,7 +4,7 @@ import { createServer, get, type Server } from 'node:http';
 import { type AddressInfo, connect } from 'node:net';
 import os from 'node:os';
 
-import { addLoopbackListener, getListenHost } from './server-address.ts';
+import { addLoopbackListener, getListenHost, getServerPort } from './server-address.ts';
 
 const lanAddress = Object.values(os.networkInterfaces())
   .flat()
@@ -118,5 +118,17 @@ describe('getListenHost', () => {
         await close(server);
       }
     });
+  });
+});
+
+describe('getServerPort', () => {
+  it('skips a port that is taken on the host the dev server listens on', async () => {
+    const server = await listen(getListenHost(undefined));
+    const { port } = server.address() as AddressInfo;
+    try {
+      await expect(getServerPort(port)).resolves.not.toBe(port);
+    } finally {
+      await close(server);
+    }
   });
 });

@@ -58,10 +58,11 @@ export function getServerAddresses(
 
 interface PortOptions {
   exactPort?: boolean;
+  host?: string;
 }
 
-export const getServerPort = (port?: number, { exactPort }: PortOptions = {}) =>
-  detectFreePort(port)
+export const getServerPort = (port?: number, { exactPort, host }: PortOptions = {}) =>
+  detectFreePort({ port, hostname: getListenHost(host) })
     .catch((error) => {
       logger.error(error);
       process.exit(-1);

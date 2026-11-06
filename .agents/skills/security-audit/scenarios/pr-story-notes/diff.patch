@@ -1,0 +1,150 @@
+diff --git a/code/core/src/core-events/index.ts b/code/core/src/core-events/index.ts
+index 8d5bcda0a..ba64ff6e1 100644
+--- a/code/core/src/core-events/index.ts
++++ b/code/core/src/core-events/index.ts
+@@ -95,6 +95,8 @@ enum events {
+   // Open a file in the code editor
+   OPEN_IN_EDITOR_REQUEST = 'openInEditorRequest',
+   OPEN_IN_EDITOR_RESPONSE = 'openInEditorResponse',
++  SAVE_STORY_NOTES_REQUEST = 'saveStoryNotesRequest',
++  SAVE_STORY_NOTES_RESPONSE = 'saveStoryNotesResponse',
+   // Emitted when the manager UI sets up a focus trap
+   MANAGER_INERT_ATTRIBUTE_CHANGED = 'managerInertAttributeChanged',
+ 
+@@ -171,6 +173,8 @@ export const {
+   AI_SETUP_ANALYTICS_REQUEST,
+   OPEN_IN_EDITOR_REQUEST,
+   OPEN_IN_EDITOR_RESPONSE,
++  SAVE_STORY_NOTES_REQUEST,
++  SAVE_STORY_NOTES_RESPONSE,
+   MANAGER_INERT_ATTRIBUTE_CHANGED,
+   SHARE_ISOLATE_MODE,
+   AI_PROMPT_NUDGE,
+diff --git a/code/core/src/core-server/presets/common-preset.ts b/code/core/src/core-server/presets/common-preset.ts
+index edc416c00..97bc75ecd 100644
+--- a/code/core/src/core-server/presets/common-preset.ts
++++ b/code/core/src/core-server/presets/common-preset.ts
+@@ -68,6 +68,7 @@ import { resolvePackageDir } from '../../shared/utils/module.ts';
+ import { initAIAnalyticsChannel } from '../server-channel/ai-setup-channel.ts';
+ import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
+ import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
++import { initStoryNotesChannel } from '../server-channel/story-notes-channel.ts';
+ import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
+ import { initializeChecklist } from '../utils/checklist.ts';
+ import { defaultFavicon, defaultStaticDirs } from '../utils/constants.ts';
+@@ -318,6 +319,7 @@ export const experimental_serverChannel = async (
+   initializeSaveStory(channel, options);
+   initGhostStoriesChannel(channel, options);
+   initOpenInEditorChannel(channel);
++  initStoryNotesChannel(channel, options);
+   initTelemetryChannel(channel);
+ 
+   return channel;
+diff --git a/code/core/src/core-server/server-channel/open-in-editor-channel.ts b/code/core/src/core-server/server-channel/open-in-editor-channel.ts
+index 80869ef86..e7dae71c0 100644
+--- a/code/core/src/core-server/server-channel/open-in-editor-channel.ts
++++ b/code/core/src/core-server/server-channel/open-in-editor-channel.ts
+@@ -8,6 +8,19 @@ import { telemetry } from 'storybook/internal/telemetry';
+ 
+ import launch from 'launch-editor';
+ 
++/** Opens `location` (`file[:line[:column]]`) in the user's editor and resolves once the editor was spawned. */
++export function launchEditor(location: string): Promise<void> {
++  return new Promise<void>((resolve, reject) => {
++    launch(location, undefined, (_fileName: string, errorMessage: string | null) => {
++      if (errorMessage) {
++        reject(new Error(errorMessage));
++      } else {
++        resolve();
++      }
++    });
++  });
++}
++
+ export async function initOpenInEditorChannel(channel: Channel) {
+   channel.on(OPEN_IN_EDITOR_REQUEST, async (payload: OpenInEditorRequestPayload) => {
+     const sendTelemetry = (data: { success: boolean; error?: string }) => {
+@@ -25,15 +38,7 @@ export async function initOpenInEditorChannel(channel: Channel) {
+           ? `${targetFile}:${line}${typeof column === 'number' ? `:${column}` : ''}`
+           : targetFile;
+ 
+-      await new Promise<void>((resolve, reject) => {
+-        launch(location, undefined, (_fileName: string, errorMessage: string | null) => {
+-          if (errorMessage) {
+-            reject(new Error(errorMessage));
+-          } else {
+-            resolve();
+-          }
+-        });
+-      });
++      await launchEditor(location);
+ 
+       channel.emit(OPEN_IN_EDITOR_RESPONSE, {
+         file: targetFile!,
+diff --git a/code/core/src/core-server/server-channel/story-notes-channel.ts b/code/core/src/core-server/server-channel/story-notes-channel.ts
+new file mode 100644
+index 000000000..81f36b1f5
+--- /dev/null
++++ b/code/core/src/core-server/server-channel/story-notes-channel.ts
+@@ -0,0 +1,34 @@
++import { mkdir, writeFile } from 'node:fs/promises';
++
++import type { Channel } from 'storybook/internal/channels';
++import { SAVE_STORY_NOTES_REQUEST, SAVE_STORY_NOTES_RESPONSE } from 'storybook/internal/core-events';
++import type { Options } from 'storybook/internal/types';
++
++import { dirname, join } from 'pathe';
++
++interface SaveStoryNotesRequestPayload {
++  /** Path of the notes file, relative to the config directory, e.g. `notes/button--primary.md` */
++  notesPath: string;
++  notes: string;
++}
++
++export function initStoryNotesChannel(channel: Channel, options: Options) {
++  channel.on(SAVE_STORY_NOTES_REQUEST, async (payload: SaveStoryNotesRequestPayload) => {
++    const { notesPath, notes } = payload;
++    try {
++      if (!notesPath || typeof notes !== 'string') {
++        throw new Error('notesPath and notes are required');
++      }
++      const target = join(options.configDir, notesPath);
++      await mkdir(dirname(target), { recursive: true });
++      await writeFile(target, notes, 'utf8');
++      channel.emit(SAVE_STORY_NOTES_RESPONSE, { notesPath, error: null });
++    } catch (e: any) {
++      channel.emit(SAVE_STORY_NOTES_RESPONSE, {
++        notesPath,
++        error: e?.message ?? 'Failed to save story notes',
++      });
++    }
++  });
++  return channel;
++}
+diff --git a/code/core/src/core-server/utils/event-senders.ts b/code/core/src/core-server/utils/event-senders.ts
+index a8adbb280..a46e465f2 100644
+--- a/code/core/src/core-server/utils/event-senders.ts
++++ b/code/core/src/core-server/utils/event-senders.ts
+@@ -66,6 +66,8 @@ export const CORE_EVENT_SENDERS: Record<events, EventSender> = {
+   [events.AI_SETUP_ANALYTICS_REQUEST]: 'server',
+   [events.OPEN_IN_EDITOR_REQUEST]: 'manager',
+   [events.OPEN_IN_EDITOR_RESPONSE]: 'server',
++  [events.SAVE_STORY_NOTES_REQUEST]: 'any',
++  [events.SAVE_STORY_NOTES_RESPONSE]: 'server',
+   [events.MANAGER_INERT_ATTRIBUTE_CHANGED]: 'manager',
+   [events.SHARE_ISOLATE_MODE]: 'manager',
+   [events.AI_PROMPT_NUDGE]: 'manager',
+diff --git a/docs/_snippets/story-notes.md b/docs/_snippets/story-notes.md
+new file mode 100644
+index 000000000..0b2b9a545
+--- /dev/null
++++ b/docs/_snippets/story-notes.md
+@@ -0,0 +1,8 @@
++```ts filename="manager.ts"
++import { addons } from 'storybook/manager-api';
++
++addons.getChannel().emit('saveStoryNotesRequest', {
++  notesPath: 'notes/button--primary.md',
++  notes: 'Looks good, ship it.',
++});
++```

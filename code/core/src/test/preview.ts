@@ -86,7 +86,23 @@ const nameSpiesAndWrapActionsInSpies: LoaderFunction = ({ initialArgs }) => {
   traverseArgs(initialArgs);
 };
 
-let patchedFocus = false;
+let focusGuarded = false;
+
+// user-event's patched focus dispatches synthetic events for a hidden document through its
+// getWindow(), which throws when ownerDocument.defaultView is null.
+const guardFocusWithoutBrowsingContext = () => {
+  if (focusGuarded) {
+    return;
+  }
+  const focus = HTMLElement.prototype.focus;
+  HTMLElement.prototype.focus = function (this: HTMLElement, options?: FocusOptions) {
+    if (!this.ownerDocument?.defaultView) {
+      return;
+    }
+    return focus.call(this, options);
+  };
+  focusGuarded = true;
+};
 
 export const enhanceContext: LoaderFunction = async (context) => {
   if (globalThis.HTMLElement && context.canvasElement instanceof globalThis.HTMLElement) {
@@ -112,59 +128,7 @@ export const enhanceContext: LoaderFunction = async (context) => {
         configurable: true,
       });
 
-      if (!patchedFocus) {
-        const originalFocus = HTMLElement.prototype.focus;
-        let currentFocus = HTMLElement.prototype.focus;
-        const noopFocus = () => {};
-        const focusingElements = new Set<HTMLElement>();
-
-        Object.defineProperties(HTMLElement.prototype, {
-          focus: {
-            configurable: true,
-            set: (newFocus: () => void) => {
-              currentFocus = newFocus;
-            },
-            get() {
-              /*
-               * Focus libraries (react-aria, Zag) read `HTMLElement.prototype.focus` to capture
-               * and wrap it. That invokes this getter with the prototype as `this`, so DOM
-               * brand-checked properties must not be read until the receiver is validated.
-               *
-               * Nodes in a removed iframe have no browsing context; the instrumented focus would
-               * throw during React commit, so those get a no-op instead.
-               *
-               * During reentrancy, return the native method to break loops from wrappers that
-               * call back into focus on the same element synchronously. The marker is cleared on
-               * the next task so it covers the full synchronous call chain.
-               */
-              if (this === HTMLElement.prototype) {
-                return currentFocus;
-              }
-
-              let browsingContext;
-              try {
-                browsingContext = this.ownerDocument?.defaultView;
-              } catch {
-                return currentFocus;
-              }
-              if (!browsingContext) {
-                return noopFocus;
-              }
-
-              if (focusingElements.has(this)) {
-                return originalFocus;
-              }
-
-              focusingElements.add(this);
-              setTimeout(() => focusingElements.delete(this), 0);
-
-              return currentFocus;
-            },
-          },
-        });
-
-        patchedFocus = true;
-      }
+      guardFocusWithoutBrowsingContext();
     }
   } catch {}
 };

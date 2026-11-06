@@ -4,7 +4,11 @@ import buildSchema from '../../build-schema.json';
 import startSchema from '../../start-schema.json';
 
 type SchemaProperty = { type?: string | string[] };
-type Schema = { properties: Record<string, SchemaProperty> };
+type Schema = {
+  properties: Record<string, SchemaProperty> & {
+    loglevel: SchemaProperty & { pattern: string };
+  };
+};
 
 function optionsAcceptingStringAndBoolean(schema: Schema): Array<[string, SchemaProperty]> {
   return Object.entries(schema.properties).filter(
@@ -29,5 +33,17 @@ describe.each(schemas)('%s', (_file: string, schema: Schema) => {
     expect(options.map(([name, property]) => [name, property.type])).toEqual([
       ['statsJson', ['string', 'boolean']],
     ]);
+  });
+
+  it('accepts supported log levels and rejects partial matches', () => {
+    const pattern = new RegExp(schema.properties.loglevel.pattern);
+
+    ['trace', 'debug', 'info', 'warn', 'error', 'silent'].forEach((level) => {
+      expect(pattern.test(level)).toBe(true);
+    });
+
+    ['xerror', 'warning', 'errors', '', 'ERROR'].forEach((level) => {
+      expect(pattern.test(level)).toBe(false);
+    });
   });
 });

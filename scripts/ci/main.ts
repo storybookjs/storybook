@@ -170,7 +170,9 @@ const setupSelection: SetupSelection | undefined = opts['nx-dte-selection']
   ? JSON.parse(await fs.readFile(opts['nx-dte-selection'], 'utf8'))
   : undefined;
 if (opts['nx-dte'] === 'true' && !setupSelection) {
-  console.log('No task selection (--nx-dte-selection): every agent job is sized for the whole plan.');
+  console.log(
+    'No task selection (--nx-dte-selection): every agent job is sized for the whole plan.'
+  );
 }
 const agentCounts: NxDteOptions = {
   first: opts['nx-dte-agents'] ? Number(opts['nx-dte-agents']) : undefined,

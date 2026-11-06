@@ -5,8 +5,8 @@ import {
   STORY_ARGS_UPDATED,
   UPDATE_QUERY_PARAMS,
 } from 'storybook/internal/core-events';
-import { buildArgsParam, queryFromLocation } from 'storybook/internal/router';
 import type { NavigateOptions } from 'storybook/internal/router';
+import { buildArgsParam, queryFromLocation } from 'storybook/internal/router';
 import type { API_Layout, API_UI, API_ViewMode, Args } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -67,7 +67,16 @@ const resolveIframeUrl = (baseUrl: string, { absolute }: { absolute: boolean }):
 // URL query params the manager consumes for layout/navigation. Everything else is a custom param
 // passed through to the preview iframe. Listing the boundary once keeps customQueryParams derived
 // identically at init (initialUrlSupport) and on every navigation (root.tsx), so they can't diverge.
-const LAYOUT_QUERY_PARAM_KEYS = ['full', 'panel', 'nav', 'shortcuts', 'addonPanel', 'tabs', 'path'];
+const LAYOUT_QUERY_PARAM_KEYS = [
+  'full',
+  'panel',
+  'nav',
+  'shortcuts',
+  'addonPanel',
+  'tabs',
+  'toolbar',
+  'path',
+];
 
 /** Single source of truth for the custom (non-layout) query params derived from the URL. */
 export const getCustomQueryParams = (
@@ -81,6 +90,7 @@ export const getCustomQueryParams = (
 //     - full: 0/1 -- show fullscreen
 //     - panel: bottom/right/0 -- set addons panel position (or hide)
 //     - nav: 0/1 -- show or hide the story list
+//     - toolbar: 0/1 -- show or hide the toolbar
 //
 //   We also support legacy URLs from storybook <5
 let prevParams: QueryParams;
@@ -88,7 +98,7 @@ const initialUrlSupport = ({
   state: { location, path, viewMode, storyId: storyIdFromUrl },
   singleStory,
 }: ModuleArgs) => {
-  const { full, panel, nav, shortcuts, addonPanel } = queryFromLocation(location);
+  const { full, panel, nav, shortcuts, addonPanel, toolbar } = queryFromLocation(location);
 
   let navSize;
   let bottomPanelHeight;
@@ -124,6 +134,7 @@ const initialUrlSupport = ({
     bottomPanelHeight,
     rightPanelWidth,
     panelPosition: ['right', 'bottom'].includes(panel) ? panel : undefined,
+    showToolbar: parseBoolean(toolbar),
   };
   const ui: Partial<API_UI> = {
     enableShortcuts: parseBoolean(shortcuts),
@@ -168,7 +179,8 @@ export interface SubAPI {
    *   current story, inheritArgs defaults to true.
    * @param {boolean} [options.inheritGlobals] - Inherit globals from the current URL. Defaults to
    *   true.
-   * @param {QueryParams} [options.queryParams] - Query params to add to the URL.
+   * @param {QueryParams} [options.queryParams] - Query params to add to the URL. Layout params
+   *   apply to `managerHref` only.
    * @param {string} [options.refId] - ID of the ref to get the URL for (for composed Storybooks)
    * @param {string} [options.viewMode] - The view mode to use, defaults to 'story'.
    * @param {boolean} [options.embed] - Append `embed=true` so the preview broadcasts
@@ -287,7 +299,13 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
         ? mergeSerializedParams(customQueryParams?.globals ?? '', globals)
         : globals;
       const managerQueryParams = omit(otherParams, ['embed', 'freeze']);
-      const previewQueryParams = omit(otherParams, ['id', 'viewMode', 'embed', 'freeze']);
+      const previewQueryParams = omit(otherParams, [
+        ...LAYOUT_QUERY_PARAM_KEYS,
+        'id',
+        'viewMode',
+        'embed',
+        'freeze',
+      ]);
 
       let customManagerParams = stringify(managerQueryParams, {
         nesting: true,

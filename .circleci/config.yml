@@ -116,13 +116,17 @@ jobs:
                 environment:
                   GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
                   GH_PR_NUMBER: << pipeline.parameters.ghPrNumber >>
-                  NX_DTE_AFFECTED: << pipeline.parameters.nxDteAffected >>
+                  # Quoted: an unquoted boolean reaches the step as something other than `true`.
+                  NX_DTE_AFFECTED: '<< pipeline.parameters.nxDteAffected >>'
                   NX_NO_CLOUD: 'true'
                   NX_DAEMON: 'false'
                 command: |
                   # Only a pull request has a base to diff against; anything else runs every task.
                   AFFECTED=false
-                  if [ -n "$GH_PR_NUMBER" ] && [ "$NX_DTE_AFFECTED" = true ]; then AFFECTED=true; fi
+                  echo "Pull request: ${GH_PR_NUMBER:-none}; nxDteAffected: $NX_DTE_AFFECTED"
+                  if [ -n "$GH_PR_NUMBER" ] && [ "$(echo "$NX_DTE_AFFECTED" | tr '[:upper:]' '[:lower:]')" = true ]; then
+                    AFFECTED=true
+                  fi
                   yarn exec jiti ./scripts/ci/nx/select.ts \
                     --workflow=<< pipeline.parameters.workflow >> \
                     --base-ref="origin/$GH_BASE_BRANCH" \

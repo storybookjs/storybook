@@ -3,14 +3,13 @@ import {
   getTemporaryDependenciesPath,
   isTypeScript71Stable,
   isTypeScriptUsableForDocgen,
-  readTypeScriptPackageForDocgen,
   recommendedTypeScriptDocgenApis,
 } from 'storybook/internal/common';
 import { SupportedRenderer } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import { coerce } from 'semver';
 
+import { getDocgenTypeScriptVersion } from '../helpers/docgen-typescript.ts';
 import type { Fix } from '../types.ts';
 
 interface RemoveReactDocgenFallbackResult {
@@ -63,26 +62,16 @@ export const removeReactDocgenFallback: Fix<RemoveReactDocgenFallbackResult> = {
     if ((features?.docgenServer ?? features?.experimentalDocgenServer) === false) {
       return null;
     }
-    const apis = recommendedTypeScriptDocgenApis(SupportedRenderer.REACT);
-    const docgenSpecifier = (mainConfig.typescript as { docgenSpecifier?: string } | undefined)
-      ?.docgenSpecifier;
-    let version: string | undefined;
-    if (docgenSpecifier) {
-      if (!configDir) {
-        return null;
-      }
-      try {
-        ({ version } = readTypeScriptPackageForDocgen(
-          { specifier: docgenSpecifier, configDir },
-          apis
-        ));
-      } catch {
-        return null;
-      }
-    } else {
-      version = coerce(await packageManager.getDeclaredVersionSpecifier('typescript'))?.version;
-    }
-    return version && isTypeScriptUsableForDocgen(version, apis)
+    const docgenTypeScript = await getDocgenTypeScriptVersion({
+      mainConfig,
+      configDir,
+      packageManager,
+    });
+    return docgenTypeScript &&
+      isTypeScriptUsableForDocgen(
+        docgenTypeScript.version,
+        recommendedTypeScriptDocgenApis(SupportedRenderer.REACT)
+      )
       ? { recordPath, otherRecords }
       : null;
   },

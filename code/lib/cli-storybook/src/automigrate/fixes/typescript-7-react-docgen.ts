@@ -7,8 +7,8 @@ import {
 import { SupportedRenderer } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import { coerce } from 'semver';
 
+import { getDocgenTypeScriptVersion } from '../helpers/docgen-typescript.ts';
 import { getRendererName } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
 import { upgradesAcrossPeerChange } from './typescript-dependency.ts';
@@ -50,10 +50,10 @@ export const typescript7ReactDocgen: Fix<true> = {
     ) {
       return null;
     }
-    const version = coerce(await packageManager.getDeclaredVersionSpecifier('typescript'))?.version;
-    return version &&
+    const docgenTypeScript = await getDocgenTypeScriptVersion(options);
+    return docgenTypeScript &&
       !isTypeScriptUsableForDocgen(
-        version,
+        docgenTypeScript.version,
         recommendedTypeScriptDocgenApis(SupportedRenderer.REACT)
       )
       ? true

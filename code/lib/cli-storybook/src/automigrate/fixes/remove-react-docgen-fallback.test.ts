@@ -153,10 +153,10 @@ describe('remove-react-docgen-fallback', () => {
 
       it('applies, whatever typescript is', async () => {
         await expect(check(onTypeScript71, withSpecifier)).resolves.not.toBeNull();
-        expect(readTypeScriptPackageForDocgen).toHaveBeenCalledWith(
-          { specifier: '@typescript/native', configDir: '/project/.storybook' },
-          ['compiler', 'native']
-        );
+        expect(readTypeScriptPackageForDocgen).toHaveBeenCalledWith({
+          specifier: '@typescript/native',
+          configDir: '/project/.storybook',
+        });
       });
     });
 

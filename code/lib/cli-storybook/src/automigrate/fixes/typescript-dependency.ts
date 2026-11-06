@@ -8,8 +8,8 @@ import {
 import { SupportedRenderer } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import { coerce } from 'semver';
 
+import { getDocgenTypeScriptVersion } from '../helpers/docgen-typescript.ts';
 import { getRendererName } from '../helpers/mainConfigFile.ts';
 import { crossesVersionBoundary } from '../helpers/versionBoundary.ts';
 import type { CheckOptions, Fix } from '../types.ts';
@@ -53,18 +53,24 @@ export const typescriptDependency: Fix<{ dependency: string }> = {
 };
 
 // The declared TypeScript version of a project whose docgen cannot run on it, with the APIs the
-// renderer's docgen runs on, or `undefined`.
-const getUnusableTypeScript = async ({ mainConfig, packageManager }: CheckOptions) => {
-  const renderer = getRendererName(mainConfig);
+// renderer's docgen runs on, or `undefined`. A project whose main config sets
+// `typescript.docgenSpecifier` is skipped: docgen does not load its `typescript` dependency, and
+// docgen's own error names the specifier when that package is unusable.
+const getUnusableTypeScript = async (options: CheckOptions) => {
+  const renderer = getRendererName(options.mainConfig);
   if (
     !renderer ||
     ![...RENDERERS_WITH_TYPESCRIPT_DOCGEN, SupportedRenderer.ANGULAR].includes(renderer)
   ) {
     return undefined;
   }
-  const version = coerce(await packageManager.getDeclaredVersionSpecifier('typescript'))?.version;
+  const docgenTypeScript = await getDocgenTypeScriptVersion(options);
+  if (!docgenTypeScript || docgenTypeScript.specifier) {
+    return undefined;
+  }
+  const { version } = docgenTypeScript;
   const apis = recommendedTypeScriptDocgenApis(renderer);
-  return version && !isTypeScriptUsableForDocgen(version, apis) ? { version, apis } : undefined;
+  return !isTypeScriptUsableForDocgen(version, apis) ? { version, apis } : undefined;
 };
 
 // Upgrade TypeScript 7.0 to 7.1 for docgen that runs on the native API, such as React's.

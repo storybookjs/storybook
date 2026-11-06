@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, readTypeScriptPackageForDocgen } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
@@ -10,6 +10,8 @@ import {
   typescriptDependency,
   typescriptNativeApi,
 } from './typescript-dependency.ts';
+
+vi.mock('storybook/internal/common', { spy: true });
 
 const packageManagerWith = (
   dependencies: Record<string, string>,
@@ -245,6 +247,39 @@ describe('typescript-compiler-api', () => {
   it('stays quiet for a renderer without TypeScript docgen', async () => {
     await expect(checkTs('@storybook/preact-vite', { typescript: '^7.0.2' })).resolves.toBeNull();
   });
+});
+
+describe('when the main config sets typescript.docgenSpecifier', () => {
+  const checkWithSpecifier = <Result>(fix: Fix<Result>, framework: string) =>
+    checkFix(fix, {
+      mainConfig: {
+        framework,
+        typescript: { docgenSpecifier: '@typescript/native' },
+      } as StorybookConfigRaw,
+      packageManager: packageManagerWith({ typescript: '~7.0.2' }),
+      configDir: '/project/.storybook',
+      ...upgrade,
+    } as CheckOptions);
+
+  beforeEach(() => {
+    vi.mocked(readTypeScriptPackageForDocgen).mockReturnValue({
+      version: '7.1.0',
+      importEntry: async () => ({}),
+    });
+  });
+
+  it('does not upgrade typescript, which docgen does not load', async () => {
+    await expect(
+      checkWithSpecifier(typescriptNativeApi, '@storybook/react-vite')
+    ).resolves.toBeNull();
+  });
+
+  it.each(['@storybook/react-vite', '@storybook/angular-vite'])(
+    'does not notify a %s project about typescript',
+    async (framework) => {
+      await expect(checkWithSpecifier(typescriptCompilerApi, framework)).resolves.toBeNull();
+    }
+  );
 });
 
 describe('before TypeScript 7.1 is stable', () => {

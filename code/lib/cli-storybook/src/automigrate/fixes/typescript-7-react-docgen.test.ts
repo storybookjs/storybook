@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { type JsPackageManager, addReactDocgenFallback } from 'storybook/internal/common';
+import {
+  type JsPackageManager,
+  addReactDocgenFallback,
+  readTypeScriptPackageForDocgen,
+} from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
@@ -115,6 +119,36 @@ describe('typescript-7-react-docgen', () => {
     await expect(
       check({ framework: '@storybook/react-vite' }, { typescript: '7.1.0-beta' })
     ).resolves.toBeNull();
+  });
+
+  describe('when the main config sets typescript.docgenSpecifier', () => {
+    const withSpecifier = {
+      framework: '@storybook/react-vite',
+      typescript: { docgenSpecifier: '@typescript/native' },
+    };
+    const inConfigDir = { ...upgrade, configDir: '/project/.storybook' };
+
+    it('skips a project whose specifier names TypeScript 7.1, whatever typescript is', async () => {
+      vi.mocked(readTypeScriptPackageForDocgen).mockReturnValue({
+        version: '7.1.0',
+        importEntry: async () => ({}),
+      });
+
+      await expect(check(withSpecifier, { typescript: '~7.0.2' }, inConfigDir)).resolves.toBeNull();
+      expect(readTypeScriptPackageForDocgen).toHaveBeenCalledWith({
+        specifier: '@typescript/native',
+        configDir: '/project/.storybook',
+      });
+    });
+
+    it('applies to a project whose specifier names TypeScript 7.0', async () => {
+      vi.mocked(readTypeScriptPackageForDocgen).mockReturnValue({
+        version: '7.0.2',
+        importEntry: async () => ({}),
+      });
+
+      await expect(check(withSpecifier, { typescript: '^6.0.3' }, inConfigDir)).resolves.toBe(true);
+    });
   });
 
   describe('once TypeScript 7.1 is stable', () => {

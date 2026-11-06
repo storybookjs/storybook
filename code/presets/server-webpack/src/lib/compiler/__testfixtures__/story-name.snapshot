@@ -1,0 +1,13 @@
+
+export default {
+  title: "Story Name",
+};
+
+export const _in_story_name = {
+  name: "あ in story name",
+  parameters: {
+    server: {
+      id: "demo/story-name"
+    }
+  }
+};

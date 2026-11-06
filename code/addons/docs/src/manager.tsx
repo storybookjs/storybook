@@ -22,6 +22,7 @@ import {
   shouldWaitForServiceSnippet,
   SNIPPET_RENDERED,
 } from 'storybook/internal/docs-tools';
+import { argChanges } from 'storybook/internal/docs-tools/snippets';
 import type { API_LeafEntry, StoryId } from 'storybook/internal/types';
 import type { StoryDocsService } from 'storybook/open-service';
 import type { SourceParameters } from './blocks/blocks';
@@ -133,8 +134,10 @@ const LiveSnippetCodePanel = ({
 
   const { data } = useServiceQuery(service.queries.liveSnippet, {
     storyId: story?.id ?? '',
-    args: (story?.type === 'story' && story.args) || {},
-    initialArgs: (story?.type === 'story' && story.initialArgs) || {},
+    ...argChanges({
+      unmappedArgs: (story?.type === 'story' && story.args) || {},
+      initialArgs: (story?.type === 'story' && story.initialArgs) || {},
+    }),
   });
 
   return <CodePanel {...props} liveSnippet={isStory ? data : undefined} />;

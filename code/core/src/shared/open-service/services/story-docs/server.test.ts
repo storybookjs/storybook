@@ -134,16 +134,11 @@ describe('story-docs open service', () => {
     });
 
     await expect(
-      service.queries.liveSnippet.loaded({
-        storyId: 'button--primary',
-        args: { label: 'Go' },
-        initialArgs: { label: 'Hi' },
-      })
+      service.queries.liveSnippet.loaded({ storyId: 'button--primary', args: { label: 'Go' } })
     ).resolves.toEqual({ snippet: '<Button label="Go" />' });
-    // Without `initialArgs`, as an agent calls it, only the given args fill.
     expect(
-      service.queries.liveSnippet.get({ storyId: 'button--primary', args: { label: 'Go' } })
-    ).toEqual({ snippet: '<Button label="Go" />' });
+      service.queries.liveSnippet.get({ storyId: 'button--primary', args: {}, unset: ['label'] })
+    ).toEqual({ snippet: '<Button label="undefined" />' });
     expect(service.queries.liveSnippet.get({ storyId: 'button--primary', args: {} })).toEqual({
       snippet: '<Button label="Hi" />',
     });

@@ -1,23 +1,36 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { SvelteKitMockParametersRemovedError } from 'storybook/internal/preview-errors';
+import { Channel } from 'storybook/internal/channels';
+import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
+import {
+  SvelteKitMockParametersRemovedError,
+  SvelteKitMocksSharedOnDocsPageError,
+} from 'storybook/internal/preview-errors';
+
+import { addons } from 'storybook/preview-api';
 
 // @ts-expect-error no declaration file for this JS module
 import { navigating, page, updated } from '@storybook/sveltekit/internal/mocks/app/state.svelte.js';
-import { link } from '@storybook/sveltekit/navigation.mock';
+import { goto, link, setAfterNavigate } from '@storybook/sveltekit/navigation.mock';
+import { formAction } from '@storybook/sveltekit/forms.mock';
 
 import { beforeEach as svelteKitBeforeEach } from './preview.ts';
 
 // The cleanups of the stories that are set up and not yet torn down
 const storyCleanups: Array<() => void> = [];
 
+const channel = new Channel({});
+addons.setChannel(channel);
+
 const runStoryBeforeEach = (context: {
+  id?: string;
   parameters?: Record<string, unknown>;
   canvasElement?: HTMLElement | null;
   viewMode?: string;
 }) => {
   const result = (svelteKitBeforeEach as (context: unknown) => unknown)({
+    id: 'story--default',
     parameters: {},
     canvasElement: document.body,
     viewMode: 'story',
@@ -123,7 +136,7 @@ describe('link clicks', () => {
 
   it.each([
     ['a download', '<a data-click href="/file.pdf" download>Download</a>'],
-    ['a named window', '<a data-click href="/help" target="help">Help</a>'],
+    ['a named window', '<a data-click href="about:blank" target="help">Help</a>'],
     ['an anchor without href', '<a data-click>No href</a>'],
     ['an element outside a link', '<button data-click>Button</button>'],
   ])('leaves %s to the browser', (_, html) => {
@@ -225,5 +238,88 @@ describe('link clicks', () => {
       expect(event.defaultPrevented).toBe(true);
       expect(link).toHaveBeenCalledWith('/b', expect.any(MouseEvent));
     });
+  });
+});
+
+describe('on a docs page', () => {
+  const setUpDocsStory = (id: string) => runStoryBeforeEach({ id, viewMode: 'docs' });
+  const startRender = (storyId: string) =>
+    channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: 'rendering', storyId, renderId: 1 });
+
+  it('throws when a story sets a mock while another story on the page is set up', () => {
+    setUpDocsStory('story--a');
+    setUpDocsStory('story--b');
+
+    expect(() => {
+      page.data = { user: 'Ada' };
+    }).toThrowError(SvelteKitMocksSharedOnDocsPageError);
+  });
+
+  it('throws when a story is set up after another story on the page set a mock', () => {
+    setUpDocsStory('story--a');
+    page.data = { user: 'Ada' };
+    startRender('story--a');
+
+    expect(() => setUpDocsStory('story--b')).toThrowError(SvelteKitMocksSharedOnDocsPageError);
+    // The story that set the mock keeps its setup
+    expect(page.data).toEqual({ user: 'Ada' });
+  });
+
+  it.each([
+    ['navigating', () => (navigating.type = 'link')],
+    ['updated', () => (updated.current = true)],
+    ['setAfterNavigate', () => setAfterNavigate({ type: 'link' })],
+    ['a navigation spy', () => goto.mockImplementation(async () => {})],
+    ['a forms spy', () => formAction.mockResolvedValue({ type: 'success', status: 201 })],
+    ['the link spy', () => link.mockReturnValue(undefined)],
+  ])('counts %s as setting a mock', (_, setMock) => {
+    setUpDocsStory('story--a');
+    setUpDocsStory('story--b');
+
+    expect(setMock).toThrowError(SvelteKitMocksSharedOnDocsPageError);
+  });
+
+  it('allows a page of stories that set no mocks', () => {
+    setUpDocsStory('story--a');
+    setUpDocsStory('story--b');
+    startRender('story--a');
+    startRender('story--b');
+
+    expect(() => setUpDocsStory('story--c')).not.toThrow();
+  });
+
+  it('allows the same story twice, as the primary story and in the list of stories', () => {
+    setUpDocsStory('story--a');
+    page.data = { user: 'Ada' };
+
+    expect(() => setUpDocsStory('story--a')).not.toThrow();
+  });
+
+  it('allows a rendered story to change the mocks, such as when a form is submitted', () => {
+    setUpDocsStory('story--a');
+    setUpDocsStory('story--b');
+    startRender('story--a');
+    startRender('story--b');
+
+    expect(() => {
+      page.form = { error: 'Invalid email' };
+    }).not.toThrow();
+  });
+
+  it('starts over on the next docs page', () => {
+    const cleanupA = setUpDocsStory('story--a');
+    page.data = { user: 'Ada' };
+    cleanupA();
+
+    expect(() => setUpDocsStory('story--b')).not.toThrow();
+  });
+
+  it('allows any number of stories in story mode', () => {
+    runStoryBeforeEach({ id: 'story--a' });
+    runStoryBeforeEach({ id: 'story--b' });
+
+    expect(() => {
+      page.data = { user: 'Ada' };
+    }).not.toThrow();
   });
 });

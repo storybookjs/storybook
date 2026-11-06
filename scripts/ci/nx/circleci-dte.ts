@@ -42,6 +42,10 @@ export const NX_DTE_WAVES = {
 } as const;
 export type NxDteWave = keyof typeof NX_DTE_WAVES;
 export const NX_DTE_PEAK_DELAY_SECONDS = 75;
+// Measurement only (the medium+ benchmark): the resource class of `nx-main` and of every agent.
+export const NX_DTE_CLASS: 'medium+' | 'large' = 'medium+';
+// Measurement only: leaves the Windows jobs out, whose machines do not depend on NX_DTE_CLASS.
+export const MEASURE_WITHOUT_WINDOWS = true;
 // The tasks of one sandbox that run at the same time once it is built.
 const PEAK_TASKS_PER_SANDBOX = 3;
 const PEAK_DELAY_JOB = 'nx-agent-peak-delay';
@@ -154,7 +158,7 @@ const mainJob = (
   agents: number
 ) =>
   defineJob('nx-main', () => ({
-    executor: { name: 'sb_node_22_classic', class: 'large' },
+    executor: { name: 'sb_node_22_classic', class: NX_DTE_CLASS },
     environment: {
       ...nxEnvironment(changedFiles),
       // Tells NX Cloud how many agents there are, which it weighs when it stops agents early.
@@ -210,7 +214,7 @@ const agentJob = (
   defineJob(
     NX_DTE_WAVES[wave].job,
     () => ({
-      executor: { name: 'sb_node_22_browsers', class: 'large' },
+      executor: { name: 'sb_node_22_browsers', class: NX_DTE_CLASS },
       parallelism: agents,
       environment: {
         ...nxEnvironment(changedFiles),
@@ -263,6 +267,18 @@ const agentJob = (
             // NX Cloud stops a worker that is silent for 10 minutes; the Chromatic task prints a
             // line every minute while it waits.
             no_output_timeout: '20m',
+          },
+        },
+        {
+          run: {
+            name: 'Peak memory of this container',
+            when: 'always',
+            command: [
+              'for f in /sys/fs/cgroup/memory.peak /sys/fs/cgroup/memory/memory.max_usage_in_bytes; do',
+              '  [ -r "$f" ] && echo "peak_memory_mb=$(( $(cat "$f") / 1048576 ))" && break',
+              'done',
+              'cat /sys/fs/cgroup/memory.events 2>/dev/null || grep -h oom /sys/fs/cgroup/memory/memory.oom_control 2>/dev/null || true',
+            ].join('\n'),
           },
         },
         testResults.persist('test-results'),
@@ -443,10 +459,10 @@ export function getNxDteJobs(
         : [])
     );
   }
-  if (plan.sideJobs.includes('windows')) {
+  if (plan.sideJobs.includes('windows') && !MEASURE_WITHOUT_WINDOWS) {
     jobs.push(...windowsParts.filter((part) => part !== 'init-empty').map(windowsJob));
   }
-  if (plan.sideJobs.includes('windows-init-empty')) {
+  if (plan.sideJobs.includes('windows-init-empty') && !MEASURE_WITHOUT_WINDOWS) {
     jobs.push(windowsJob('init-empty'));
   }
   if (plan.sideJobs.includes('node-26-smoke')) {

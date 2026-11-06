@@ -7,7 +7,12 @@ import { describe, expect, it } from 'vitest';
 
 import { parameters } from '../utils/parameters.ts';
 import { workflows } from '../utils/types.ts';
-import { NX_DTE_WAVES, agentsFor, getNxDteJobs } from './circleci-dte.ts';
+import {
+  MEASURE_WITHOUT_WINDOWS,
+  NX_DTE_WAVES,
+  agentsFor,
+  getNxDteJobs,
+} from './circleci-dte.ts';
 
 const repoRoot = join(import.meta.dirname, '../../..');
 const read = (file: string) => readFileSync(join(repoRoot, file), 'utf8');
@@ -33,11 +38,15 @@ describe('the CircleCI NX DTE pipeline', () => {
     expect(ids('normal')).toEqual(agents);
     expect(ids('daily')).toEqual([
       ...agents,
-      'windows--unit-1',
-      'windows--unit-2',
-      'windows--e2e-build',
-      'windows--e2e-dev',
-      'windows--init-empty',
+      ...(MEASURE_WITHOUT_WINDOWS
+        ? []
+        : [
+            'windows--unit-1',
+            'windows--unit-2',
+            'windows--e2e-build',
+            'windows--e2e-dev',
+            'windows--init-empty',
+          ]),
       'node-26-smoke',
     ]);
   });

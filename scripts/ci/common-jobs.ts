@@ -198,6 +198,9 @@ export const internalStorybookE2e = defineJob(
         run: {
           name: 'Run internal Storybook E2E tests',
           command: 'yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit',
+          environment: {
+            PLAYWRIGHT_WORKERS: '2',
+          },
         },
       },
       artifact.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results'), 'test-results'),
@@ -241,6 +244,9 @@ export const internalStorybookBuildE2e = defineJob(
           name: 'Run internal Storybook static E2E tests',
           command:
             'STORYBOOK_TYPE=static yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit',
+          environment: {
+            PLAYWRIGHT_WORKERS: '2',
+          },
         },
       },
       artifact.persist(join(LINUX_ROOT_DIR, WORKING_DIR, 'test-results'), 'test-results'),

@@ -492,6 +492,39 @@ export abstract class JsPackageManager {
   }
 
   /**
+   * Set a dependency to a new version in every package.json of the project that declares it in
+   * `dependencies` or `devDependencies`, in the same field. A catalog reference stays in
+   * package.json, and the catalog gets the new version. The method does not run a package manager
+   * install.
+   *
+   * @example
+   *
+   * ```ts
+   * upgradeDeclaredDependency('typescript@^7.1');
+   * ```
+   */
+  upgradeDeclaredDependency(specifier: string): void {
+    const [dependency, version = 'latest'] = getPackageDetails(specifier);
+    for (const packageJsonPath of this.packageJsonPaths) {
+      const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
+      let modified = false;
+      for (const field of ['dependencies', 'devDependencies'] as const) {
+        const declared = packageJson[field];
+        if (!declared?.[dependency]) {
+          continue;
+        }
+        if (this.writeCatalogUpgrades([specifier], declared).length > 0) {
+          declared[dependency] = version;
+          modified = true;
+        }
+      }
+      if (modified) {
+        this.writePackageJson(packageJson, dirname(packageJsonPath));
+      }
+    }
+  }
+
+  /**
    * Removing dependencies from the package.json file, which is found first starting from the
    * instance root. The method does not run a package manager install like `npm install`.
    *

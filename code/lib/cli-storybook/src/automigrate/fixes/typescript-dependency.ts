@@ -69,23 +69,14 @@ const getUnusableTypeScript = async (options: CheckOptions) => {
   return !isTypeScriptUsableForDocgen(version, apis) ? { version, apis } : undefined;
 };
 
-export const typescriptNativeApi: Fix<{
-  version: string;
-  dependency: string;
-  type: 'dependencies' | 'devDependencies';
-}> = {
+export const typescriptNativeApi: Fix<{ version: string; dependency: string }> = {
   id: 'typescript-native-api',
   link: 'https://storybook.js.org/docs/configure/integration/typescript#typescript-7',
 
   async check(options) {
     const unusable = await getUnusableTypeScript(options);
-    const upgrade =
-      unusable &&
-      getTypeScriptUpgradeForDocgen(
-        unusable.apis,
-        options.packageManager.primaryPackageJson.packageJson
-      );
-    return upgrade ? { version: unusable.version, ...upgrade } : null;
+    const dependency = unusable && getTypeScriptUpgradeForDocgen(unusable.apis);
+    return dependency ? { version: unusable.version, dependency } : null;
   },
 
   prompt(result) {
@@ -93,9 +84,7 @@ export const typescriptNativeApi: Fix<{
   },
 
   async run({ packageManager, result }) {
-    await packageManager.addDependencies({ type: result.type, skipInstall: true }, [
-      result.dependency,
-    ]);
+    packageManager.upgradeDeclaredDependency(result.dependency);
   },
 };
 
@@ -109,11 +98,7 @@ export const typescriptCompilerApi: Fix<{ version: string }> = {
       return null;
     }
     const unusable = await getUnusableTypeScript(options);
-    return unusable &&
-      !getTypeScriptUpgradeForDocgen(
-        unusable.apis,
-        options.packageManager.primaryPackageJson.packageJson
-      )
+    return unusable && !getTypeScriptUpgradeForDocgen(unusable.apis)
       ? { version: unusable.version }
       : null;
   },

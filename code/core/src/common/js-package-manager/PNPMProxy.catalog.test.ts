@@ -10,6 +10,7 @@ import { fs as memfs, vol } from 'memfs';
 
 import { executeCommandSync } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
+import { JsPackageManager } from './JsPackageManager.ts';
 import { PNPMProxy } from './PNPMProxy.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -282,6 +283,24 @@ describe('PNPMProxy catalogs', () => {
       expect(writtenYaml()).toBe(
         '# Storybook\ncatalog:\n  storybook: ^11.0.0\ncatalogs:\n  sb:\n    "@storybook/react-vite": 11.0.0\n'
       );
+    });
+  });
+
+  describe('upgradeDeclaredDependency', () => {
+    const PACKAGE_JSON = '/root/packages/app/package.json';
+
+    it('upgrades the catalog entry and keeps the catalog reference in package.json', () => {
+      vol.fromJSON({
+        [WORKSPACE_YAML]: 'catalog:\n  typescript: ~7.0.2\n',
+        [PACKAGE_JSON]: '{\n  "devDependencies": {\n    "typescript": "catalog:"\n  }\n}\n',
+      });
+      JsPackageManager.packageJsonCache.clear();
+      pnpmProxy.packageJsonPaths = [PACKAGE_JSON];
+
+      pnpmProxy.upgradeDeclaredDependency('typescript@^7.1');
+
+      expect(writtenYaml()).toBe('catalog:\n  typescript: ^7.1\n');
+      expect(vol.toJSON()[PACKAGE_JSON]).toContain('"typescript": "catalog:"');
     });
   });
 

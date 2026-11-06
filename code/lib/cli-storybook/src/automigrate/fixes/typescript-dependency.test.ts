@@ -13,15 +13,12 @@ import {
 
 vi.mock('storybook/internal/common', { spy: true });
 
-const packageManagerWith = (
-  dependencies: Record<string, string>,
-  packageJson: Record<string, unknown> = { devDependencies: dependencies }
-) =>
+const packageManagerWith = (dependencies: Record<string, string>) =>
   ({
     isDependencyInstalled: (name: string) => name in dependencies,
     getDeclaredVersionSpecifier: async (name: string) => dependencies[name] ?? null,
     addDependencies: vi.fn().mockResolvedValue(undefined),
-    primaryPackageJson: { packageJson, operationDir: '/project' },
+    upgradeDeclaredDependency: vi.fn(),
   }) as unknown as JsPackageManager;
 
 const upgrade = { beforeVersion: '10.3.0', storybookVersion: '11.0.0' };
@@ -128,11 +125,7 @@ describe('typescript-native-api', () => {
     async (framework) => {
       const result = await checkTs(framework, { typescript: '~7.0.2' });
 
-      expect(result).toEqual({
-        version: '7.0.2',
-        dependency: 'typescript@^7.1',
-        type: 'devDependencies',
-      });
+      expect(result).toEqual({ version: '7.0.2', dependency: 'typescript@^7.1' });
       expect(typescriptNativeApi.prompt(result!)).toContain('typescript@^7.1');
     }
   );
@@ -161,38 +154,20 @@ describe('typescript-native-api', () => {
     expect(result).not.toBeNull();
   });
 
-  it('upgrades a typescript the project declares in dependencies there', async () => {
-    const result = await checkFix(typescriptNativeApi, {
-      mainConfig: { framework: '@storybook/react-vite' } as StorybookConfigRaw,
-      packageManager: packageManagerWith(
-        { typescript: '~7.0.2' },
-        { dependencies: { typescript: '~7.0.2' } }
-      ),
-      ...upgrade,
-    } as CheckOptions);
-
-    expect(result?.type).toBe('dependencies');
-  });
-
-  it('sets the typescript devDependency to ^7.1 without installing', async () => {
+  it('upgrades typescript to ^7.1 where the project declares it, without installing', async () => {
     const packageManager = packageManagerWith({ typescript: '~7.0.2' });
 
     await runFix(typescriptNativeApi, {
-      result: { version: '7.0.2', dependency: 'typescript@^7.1', type: 'devDependencies' },
+      result: { version: '7.0.2', dependency: 'typescript@^7.1' },
       packageManager,
       mainConfigPath: '/project/.storybook/main.ts',
       configDir: '/project/.storybook',
       storiesPaths: [],
       storybookVersion: '11.0.0',
-    } as unknown as Omit<
-      RunOptions<{ version: string; dependency: string; type: 'devDependencies' }>,
-      'files'
-    >);
+    } as unknown as Omit<RunOptions<{ version: string; dependency: string }>, 'files'>);
 
-    expect(packageManager.addDependencies).toHaveBeenCalledWith(
-      { type: 'devDependencies', skipInstall: true },
-      ['typescript@^7.1']
-    );
+    expect(packageManager.upgradeDeclaredDependency).toHaveBeenCalledWith('typescript@^7.1');
+    expect(packageManager.addDependencies).not.toHaveBeenCalled();
   });
 });
 

@@ -110,21 +110,12 @@ describe('recommendedTypeScriptDocgenApis', () => {
 });
 
 describe('getTypeScriptUpgradeForDocgen', () => {
-  it('upgrades a typescript devDependency to TypeScript 7.1 for docgen on the native API', () => {
-    expect(getTypeScriptUpgradeForDocgen(BOTH_APIS, { dependencies: {} })).toEqual({
-      dependency: 'typescript@^7.1',
-      type: 'devDependencies',
-    });
-  });
-
-  it('upgrades typescript in dependencies where the project declares it', () => {
-    expect(
-      getTypeScriptUpgradeForDocgen(BOTH_APIS, { dependencies: { typescript: '~7.0.2' } })
-    ).toEqual({ dependency: 'typescript@^7.1', type: 'dependencies' });
+  it('offers TypeScript 7.1 for docgen on the native API', () => {
+    expect(getTypeScriptUpgradeForDocgen(BOTH_APIS)).toBe('typescript@^7.1');
   });
 
   it('offers no upgrade for docgen on the compiler API', () => {
-    expect(getTypeScriptUpgradeForDocgen(['compiler'], {})).toBeUndefined();
+    expect(getTypeScriptUpgradeForDocgen(['compiler'])).toBeUndefined();
   });
 });
 
@@ -466,6 +457,6 @@ describe('before TypeScript 7.1 is stable', () => {
   });
 
   it('offers no upgrade to TypeScript 7.1 yet', () => {
-    expect(getTypeScriptUpgradeForDocgen(BOTH_APIS, {})).toBeUndefined();
+    expect(getTypeScriptUpgradeForDocgen(BOTH_APIS)).toBeUndefined();
   });
 });

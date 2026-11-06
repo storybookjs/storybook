@@ -51,15 +51,9 @@ export const typeScriptPackageForDocgen = (
 ) => (apis.includes('native') && isTypeScript71Stable() ? 'typescript@^7.1' : 'typescript@^6');
 
 export const getTypeScriptUpgradeForDocgen = (
-  apis: readonly TypeScriptDocgenApi[],
-  packageJson: { dependencies?: Partial<Record<string, string>> }
-): { dependency: string; type: 'dependencies' | 'devDependencies' } | undefined =>
-  apis.includes('native') && isTypeScript71Stable()
-    ? {
-        dependency: typeScriptPackageForDocgen(apis),
-        type: packageJson.dependencies?.typescript ? 'dependencies' : 'devDependencies',
-      }
-    : undefined;
+  apis: readonly TypeScriptDocgenApi[]
+): string | undefined =>
+  apis.includes('native') && isTypeScript71Stable() ? typeScriptPackageForDocgen(apis) : undefined;
 
 export const getTypeScriptDocgenApi = (version: string): TypeScriptDocgenApi | undefined => {
   const [major, minor] = version.split('.').map(Number);

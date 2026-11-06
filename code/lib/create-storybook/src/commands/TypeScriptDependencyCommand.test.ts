@@ -12,17 +12,13 @@ import { TypeScriptDependencyCommand } from './TypeScriptDependencyCommand.ts';
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 
-const packageManagerWith = (
-  typescriptVersion?: string,
-  reactDocgenInstalled = false,
-  packageJson: Record<string, unknown> = {}
-) =>
+const packageManagerWith = (typescriptVersion?: string, reactDocgenInstalled = false) =>
   ({
     isDependencyInstalled: (name: string) =>
       (name === 'typescript' && !!typescriptVersion) ||
       (name === 'react-docgen' && reactDocgenInstalled),
     getDeclaredVersionSpecifier: async () => typescriptVersion ?? null,
-    primaryPackageJson: { packageJson, operationDir: '/project' },
+    upgradeDeclaredDependency: vi.fn(),
   }) as unknown as JsPackageManager;
 
 const run = async ({
@@ -32,7 +28,6 @@ const run = async ({
   typescriptVersion,
   reactDocgenInstalled = false,
   interactive = true,
-  packageJson,
 }: {
   options?: Partial<CommandOptions>;
   framework?: SupportedFramework | null;
@@ -40,14 +35,13 @@ const run = async ({
   typescriptVersion?: string;
   reactDocgenInstalled?: boolean;
   interactive?: boolean;
-  packageJson?: Record<string, unknown>;
 } = {}) => {
   const telemetryService = {
     trackTypeScriptDependency: vi.fn(),
     trackPromptCancel: vi.fn(),
   } as unknown as TelemetryService;
   const dependencyCollector = new DependencyCollector();
-  const packageManager = packageManagerWith(typescriptVersion, reactDocgenInstalled, packageJson);
+  const packageManager = packageManagerWith(typescriptVersion, reactDocgenInstalled);
   const result = await new TypeScriptDependencyCommand(
     { packageManager: PackageManagerName.NPM, ...options },
     telemetryService,
@@ -154,25 +148,19 @@ describe('TypeScriptDependencyCommand', () => {
   });
 
   it('asks, then upgrades a React project from TypeScript 7.0 to 7.1', async () => {
-    const { result, devDependencies } = await run({ typescriptVersion: '~7.0.2' });
+    const { result, dependencies, devDependencies, packageManager } = await run({
+      typescriptVersion: '~7.0.2',
+    });
 
     expect(prompt.confirm).toHaveBeenCalledWith(
       expect.objectContaining({ message: expect.stringContaining('typescript@^7.1') }),
       expect.anything()
     );
     expect(result).toBe('upgraded');
-    expect(devDependencies).toEqual(['typescript@^7.1']);
-    expect(logger.warn).not.toHaveBeenCalled();
-  });
-
-  it('upgrades a typescript the project declares in dependencies there', async () => {
-    const { dependencies, devDependencies } = await run({
-      typescriptVersion: '~7.0.2',
-      packageJson: { dependencies: { typescript: '~7.0.2' } },
-    });
-
-    expect(dependencies).toEqual(['typescript@^7.1']);
+    expect(packageManager.upgradeDeclaredDependency).toHaveBeenCalledWith('typescript@^7.1');
+    expect(dependencies).toEqual([]);
     expect(devDependencies).toEqual([]);
+    expect(logger.warn).not.toHaveBeenCalled();
   });
 
   it('upgrades without asking when the terminal is not interactive', async () => {

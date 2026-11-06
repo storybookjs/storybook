@@ -57,11 +57,7 @@ export class TypeScriptDependencyCommand {
       ]);
     }
     if (upgrade) {
-      if (upgrade.type === 'dependencies') {
-        dependencyCollector.addDependencies([upgrade.dependency]);
-      } else {
-        dependencyCollector.addDevDependencies([upgrade.dependency]);
-      }
+      packageManager.upgradeDeclaredDependency(upgrade);
     }
     if (result === 'without-compiler-api') {
       await this.warnTypeScriptWithoutCompilerApi(packageManager, renderer, dependencyCollector);
@@ -78,7 +74,7 @@ export class TypeScriptDependencyCommand {
     renderer: SupportedRenderer
   ): Promise<{
     result: TypeScriptDependencyResult;
-    upgrade?: ReturnType<typeof getTypeScriptUpgradeForDocgen>;
+    upgrade?: string;
   }> {
     if (!framework || !RENDERERS_WITH_TYPESCRIPT_DOCGEN.includes(renderer)) {
       return { result: 'not-needed' };
@@ -88,14 +84,11 @@ export class TypeScriptDependencyCommand {
     if (packageManager.isDependencyInstalled('typescript')) {
       const version = await this.getTypeScriptVersion(packageManager);
       if (version && !isTypeScriptUsableForDocgen(version, apis)) {
-        const upgrade = getTypeScriptUpgradeForDocgen(
-          apis,
-          packageManager.primaryPackageJson.packageJson
-        );
+        const upgrade = getTypeScriptUpgradeForDocgen(apis);
         if (
           upgrade &&
           (await this.shouldInstallTypeScript(
-            `TypeScript ${version} has no API that Storybook can use to read your component types for Controls and the Docs args table. TypeScript 7.1 and newer do. Do you want to upgrade to ${upgrade.dependency}?`
+            `TypeScript ${version} has no API that Storybook can use to read your component types for Controls and the Docs args table. TypeScript 7.1 and newer do. Do you want to upgrade to ${upgrade}?`
           ))
         ) {
           return { result: 'upgraded', upgrade };

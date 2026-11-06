@@ -1,12 +1,12 @@
 // Which tasks a run of the NX DTE pipeline will run, for CircleCI's setup job (.circleci/config.yml),
 // which passes them to main.ts so it can size the agent jobs (circleci-dte.ts).
 //
-// Usage: select.ts --workflow=<workflows> --base-ref=<ref> --affected=<true|false> --out=<file>
+// Usage: select.ts --workflow=<workflows> --base-ref=<ref> [--base=<sha>] --out=<file>
 //
-// With `--affected=true`, the run covers only what a change since the commit the branch left
-// `--base-ref` at reaches (`nx affected`); the file records that commit as `base`. Runs after
-// `yarn install`.
-import { execFileSync, spawnSync } from 'node:child_process';
+// With `--base` (NX_BASE from the `nx/set-shas` orb command, on a pull request), the run covers
+// only what a change since that commit reaches (`nx affected`); the file records it as `base`.
+// `--base-ref` is what a focused run diffs against. Runs after `yarn install`.
+import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { parseArgs } from 'node:util';
@@ -24,26 +24,20 @@ const { values } = parseArgs({
   options: {
     workflow: { type: 'string' },
     'base-ref': { type: 'string', default: 'origin/next' },
-    affected: { type: 'string', default: 'false' },
+    base: { type: 'string' },
     out: { type: 'string' },
   },
 });
 if (!values.out) {
   throw new Error(
-    'Usage: select.ts --workflow=<workflows> --base-ref=<ref> --affected=<true|false> --out=<file>'
+    'Usage: select.ts --workflow=<workflows> --base-ref=<ref> [--base=<sha>] --out=<file>'
   );
 }
 
 const selected = parseWorkflows(values.workflow ?? '');
 const changedFiles = selected.includes('focus') ? getChangedFiles(values['base-ref']) : [];
 const plan = planFor(selected, changedFiles);
-const base =
-  values.affected === 'true'
-    ? execFileSync('git', ['merge-base', values['base-ref'], 'HEAD'], {
-        cwd: ROOT_DIRECTORY,
-        encoding: 'utf8',
-      }).trim()
-    : undefined;
+const base = values.base || undefined;
 
 const directory = mkdtempSync(join(tmpdir(), 'nx-selection-'));
 const select = (env: 'linux' | 'windows'): Selection => {

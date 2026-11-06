@@ -53,7 +53,6 @@ describe('the CircleCI NX DTE pipeline', () => {
     tasks: Object.fromEntries(
       Array.from({ length: n }, (_, i) => [`p${i}:${target}`, { project: `p${i}`, target }])
     ),
-    dependencies: {},
   });
   const withSelection = (linux: Selection, windows: Selection = EMPTY_SELECTION, base?: string) =>
     getNxDteJobs(['daily'], 'unused', { base, selection: { linux, windows } });
@@ -66,13 +65,13 @@ describe('the CircleCI NX DTE pipeline', () => {
         }
       | undefined;
 
-  it('starts only as many agents as the selected tasks need', () => {
-    // One task: one agent, no peak wave.
+  it('starts one agent per four tasks, not counting compile', () => {
     expect(agentsForSelection(tasks('fmt', 1))).toEqual({ first: 1, peak: 0 });
-    // Two rounds of long independent tasks on every agent, the first wave's worth right away.
-    expect(agentsForSelection(tasks('e2e-tests', 88))).toEqual({ first: 20, peak: 24 });
-    // 34 agents end 100 tasks in three rounds, as 44 do.
-    expect(agentsForSelection(tasks('e2e-tests', 100))).toEqual({ first: 20, peak: 14 });
+    // Only compile tasks still need an agent.
+    expect(agentsForSelection(tasks('compile', 47))).toEqual({ first: 1, peak: 0 });
+    expect(agentsForSelection(tasks('e2e-tests', 91))).toEqual({ first: 20, peak: 3 });
+    // As many as the waves allow.
+    expect(agentsForSelection(tasks('e2e-tests', 400))).toEqual({ first: 20, peak: 24 });
     expect(agentsForSelection(tasks('e2e-tests', 100), { first: 5, peak: 0 })).toEqual({
       first: 5,
       peak: 0,
@@ -82,11 +81,9 @@ describe('the CircleCI NX DTE pipeline', () => {
     expect(jobs.map((j) => j.id)).not.toContain('nx-agent-peak');
   });
 
-  it('adds a Windows agent only while it ends the run two minutes sooner', () => {
-    // Two 10-minute tasks (5 on Linux): a second agent halves the run.
-    expect(windowsAgentsFor(tasks('e2e-tests-dev-1', 2))).toBe(2);
-    // Many short tasks: one more agent saves less than two minutes.
-    expect(windowsAgentsFor(tasks('compile', 30))).toBe(1);
+  it('starts at most four Windows agents, which cost about 500 credits each to boot', () => {
+    expect(windowsAgentsFor(tasks('e2e-tests', 9))).toBe(3);
+    expect(windowsAgentsFor(tasks('e2e-tests', 40))).toBe(4);
     expect(windowsAgentsFor(EMPTY_SELECTION)).toBe(0);
   });
 

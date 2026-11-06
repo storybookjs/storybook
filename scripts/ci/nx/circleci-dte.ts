@@ -27,13 +27,7 @@ import { cache, git, node, testResults } from '../utils/helpers.ts';
 import { isTrustedAuthor } from '../utils/runtime.ts';
 import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
 import { type Plan, planFor, windowsTasksOf } from './plan.ts';
-import {
-  type SelectedTask,
-  type Selection,
-  agentsNeeded,
-  makespan,
-  taskSeconds,
-} from './selection.ts';
+import type { Selection } from './selection.ts';
 
 // The agents come in two waves, each one CircleCI job of parallel `large` containers (4 vCPUs; a
 // task costs more on `xlarge`, which bills twice the credits per minute and ran the dev-server E2E
@@ -58,50 +52,45 @@ export const NX_DTE_PEAK_DELAY_SECONDS = 75;
 const PEAK_TASKS_PER_SANDBOX = 3;
 const PEAK_DELAY_JOB = 'nx-agent-peak-delay';
 
+// Nx's manual DTE has no way to scale the agents to a run (its dynamic changesets are for NX Cloud's
+// own agents), so main.ts counts the tasks the setup job found (select.ts) and starts one agent per
+// {@link TASKS_PER_AGENT} of them. `compile` does not count: every run has some 47 compile tasks as
+// dependencies, and each takes a second or two.
+export const TASKS_PER_AGENT = 4;
 // Windows agents are `large` machines (120 credits a minute) that take about four minutes to boot,
-// most of it `yarn install`; tasks run about twice as long as on the Linux agents.
-export const NX_DTE_WINDOWS_AGENTS = 6;
-const WINDOWS_SLOWDOWN = 2;
+// mostly `yarn install`.
+export const NX_DTE_WINDOWS_AGENTS = 4;
+
+const agentsForWork = (selection: Selection, max: number) => {
+  const tasks = Object.values(selection.tasks);
+  const work = tasks.filter((task) => task.target !== 'compile').length;
+  return Math.min(max, tasks.length === 0 ? 0 : Math.max(1, Math.ceil(work / TASKS_PER_AGENT)));
+};
 
 export type NxDteOptions = Partial<Record<NxDteWave, number>> & {
   // The commit a pull request branched from: the run then runs only the tasks a change since it
   // reaches (`nx affected`). Without it, every task of the plan runs.
   base?: string;
-  // The tasks the run will run, from CircleCI's setup job (selection.ts). Without them, every wave
-  // is sized for the whole plan.
+  // The tasks the run will run, from CircleCI's setup job (select.ts). Without them, every wave is
+  // sized for the whole plan.
   selection?: { linux: Selection; windows: Selection };
 };
 
-// The agents each wave runs for a selection: the fewest that end the run about as soon as all of
-// them would (selection.ts), the first {@link NX_DTE_WAVES} wave's worth right away and the rest in
-// the peak wave.
+// The agents each wave runs for a selection: the first wave's worth right away, the rest in the
+// peak wave.
 export function agentsForSelection(
   selection: Selection,
   options: Partial<Record<NxDteWave, number>> = {}
 ): Record<NxDteWave, number> {
   const firstMax = options.first ?? NX_DTE_WAVES.first.agents;
   const peakMax = options.peak ?? NX_DTE_WAVES.peak.agents;
-  const total = agentsNeeded(selection, firstMax + peakMax);
+  const total = agentsForWork(selection, firstMax + peakMax);
   const first = Math.min(total, firstMax);
   return { first, peak: total - first };
 }
 
-// The Windows agents for a selection. Each one costs about 500 credits just to boot, so one more
-// joins only while it ends the run at least {@link WINDOWS_AGENT_MIN_GAIN_SECONDS} sooner.
-const WINDOWS_AGENT_MIN_GAIN_SECONDS = 120;
-export function windowsAgentsFor(selection: Selection) {
-  const seconds = (task: SelectedTask) => WINDOWS_SLOWDOWN * taskSeconds(task);
-  const count = Math.min(NX_DTE_WINDOWS_AGENTS, Object.keys(selection.tasks).length);
-  let agents = Math.min(1, count);
-  while (
-    agents < count &&
-    makespan(selection, agents, seconds) - makespan(selection, agents + 1, seconds) >=
-      WINDOWS_AGENT_MIN_GAIN_SECONDS
-  ) {
-    agents++;
-  }
-  return agents;
-}
+export const windowsAgentsFor = (selection: Selection) =>
+  agentsForWork(selection, NX_DTE_WINDOWS_AGENTS);
 
 // The agents each wave runs for a plan, when the setup job could not say which tasks will run.
 // The first wave never outnumbers a plan's tasks (a `docs` run has one), unless they expand to
@@ -280,8 +269,7 @@ const runNx = (os: Os, selected: readonly Workflow[], base: string | undefined) 
     no_output_timeout: '30m',
     command: [
       // Bounded, as the agents are: on NX Cloud's own Windows agents a run once never ended and held
-      // its machines for six hours. Not `nx stop-all-agents`, which may stop the other OS's agents
-      // too. Git Bash's `timeout` on Windows.
+      // its machines for six hours. Git Bash's `timeout` on Windows.
       `/usr/bin/timeout --kill-after=1m ${os === 'windows' ? 75 : 45}m`,
       'yarn exec jiti ./scripts/ci/nx/run.ts',
       `--workflow=${selected.join(',')}`,
@@ -289,6 +277,12 @@ const runNx = (os: Os, selected: readonly Workflow[], base: string | undefined) 
       ...(base ? [`--base=${base}`] : []),
     ].join(' '),
   },
+});
+
+// As Nx's manual DTE recipes and lerna's Windows run do: once the command has ended, even when it
+// failed or timed out, the run's agents need not wait for NX Cloud to notice.
+const stopAgents = () => ({
+  run: { name: 'Stop the agents', when: 'always', command: 'yarn nx stop-all-agents' },
 });
 
 const mainJob = (
@@ -313,6 +307,7 @@ const mainJob = (
       ...restoreNodeModules(),
       ...fetchBase(base),
       runNx('linux', selected, base),
+      stopAgents(),
       ...saveNodeModules(),
     ],
   }));
@@ -419,6 +414,7 @@ const windowsMainJob = (
       ...installWithCache('windows'),
       ...fetchBase(base),
       runNx('windows', selected, base),
+      stopAgents(),
     ],
   }));
 
@@ -499,7 +495,6 @@ export function getNxDteJobs(
           { project: '', target: task.slice(task.lastIndexOf(':') + 1) },
         ])
       ),
-      dependencies: {},
     };
     jobs.push(
       mainJob(selected, changedFiles, targets, base, agents.first + agents.peak),
@@ -517,7 +512,6 @@ export function getNxDteJobs(
       tasks: Object.fromEntries(
         windowsTasks.map((task) => [task, { project: '', target: task.split(':').at(-1)! }])
       ),
-      dependencies: {},
     };
     const agents = windows ? windowsAgentsFor(windows) : NX_DTE_WINDOWS_AGENTS;
     jobs.push(

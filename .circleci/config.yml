@@ -6,6 +6,7 @@ setup: true
 orbs:
   git-shallow-clone: guitarrapc/git-shallow-clone@2.8.0
   continuation: circleci/continuation@2.0.1
+  nx: nrwl/nx@1.7.0
 
 parameters:
   ghBaseBranch:
@@ -111,6 +112,10 @@ jobs:
                       key: v1-nx-dte-node_modules/{{ arch }}/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}/{{ checksum ".nx/workflows/prune-other-platforms.cjs" }}/{{ checksum "scripts/ci/nx/circleci-node-modules.sh" }}/{{ checksum "/tmp/nx-dte-manifests.sha256" }}
                       paths:
                         - /tmp/nx-dte-node_modules.tar.zst
+            # NX_BASE and NX_HEAD for `nx affected`, as Nx's CircleCI recipe for manual DTE does: on a
+            # pull request the merge base with the base branch.
+            - nx/set-shas:
+                main-branch-name: << pipeline.parameters.ghBaseBranch >>
             - run:
                 name: Select the tasks to run
                 environment:
@@ -120,16 +125,16 @@ jobs:
                   NX_DAEMON: 'false'
                 command: |
                   # Only a pull request has a base to diff against; anything else runs every task.
-                  AFFECTED=false
                   # The parameter inline: a boolean in `environment` does not reach the step as `true`.
+                  BASE=
                   if [ -n "$GH_PR_NUMBER" ] && [ "<< pipeline.parameters.nxDteAffected >>" = true ]; then
-                    AFFECTED=true
+                    BASE=$NX_BASE
                   fi
-                  echo "Pull request: ${GH_PR_NUMBER:-none}; affected: $AFFECTED"
+                  echo "Pull request: ${GH_PR_NUMBER:-none}; nx affected since: ${BASE:-nothing, all tasks run}"
                   yarn exec jiti ./scripts/ci/nx/select.ts \
                     --workflow=<< pipeline.parameters.workflow >> \
                     --base-ref="origin/$GH_BASE_BRANCH" \
-                    --affected=$AFFECTED \
+                    --base="$BASE" \
                     --out=/tmp/nx-dte-selection.json
             - store_artifacts:
                 path: /tmp/nx-dte-selection.json

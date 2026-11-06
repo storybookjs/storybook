@@ -116,17 +116,16 @@ jobs:
                 environment:
                   GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
                   GH_PR_NUMBER: << pipeline.parameters.ghPrNumber >>
-                  # Quoted: an unquoted boolean reaches the step as something other than `true`.
-                  NX_DTE_AFFECTED: '<< pipeline.parameters.nxDteAffected >>'
                   NX_NO_CLOUD: 'true'
                   NX_DAEMON: 'false'
                 command: |
                   # Only a pull request has a base to diff against; anything else runs every task.
                   AFFECTED=false
-                  echo "Pull request: ${GH_PR_NUMBER:-none}; nxDteAffected: $NX_DTE_AFFECTED"
-                  if [ -n "$GH_PR_NUMBER" ] && [ "$(echo "$NX_DTE_AFFECTED" | tr '[:upper:]' '[:lower:]')" = true ]; then
+                  # The parameter inline: a boolean in `environment` does not reach the step as `true`.
+                  if [ -n "$GH_PR_NUMBER" ] && [ "<< pipeline.parameters.nxDteAffected >>" = true ]; then
                     AFFECTED=true
                   fi
+                  echo "Pull request: ${GH_PR_NUMBER:-none}; affected: $AFFECTED"
                   yarn exec jiti ./scripts/ci/nx/select.ts \
                     --workflow=<< pipeline.parameters.workflow >> \
                     --base-ref="origin/$GH_BASE_BRANCH" \
@@ -138,7 +137,6 @@ jobs:
           name: Generate config
           environment:
             GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
-            NX_DTE: << pipeline.parameters.nxDte >>
           command: |
             node --experimental-transform-types ./scripts/ci/main.ts \
               --workflow=<< pipeline.parameters.workflow >> \
@@ -148,7 +146,7 @@ jobs:
               --nx-dte=<< pipeline.parameters.nxDte >> \
               --nx-dte-agents=<< pipeline.parameters.nxDteAgents >> \
               --nx-dte-peak-agents=<< pipeline.parameters.nxDtePeakAgents >> \
-              $([ "$NX_DTE" = true ] && echo --nx-dte-selection=/tmp/nx-dte-selection.json)
+              $([ "<< pipeline.parameters.nxDte >>" = true ] && echo --nx-dte-selection=/tmp/nx-dte-selection.json)
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml
 workflows:

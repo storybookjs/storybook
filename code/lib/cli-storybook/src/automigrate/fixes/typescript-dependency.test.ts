@@ -27,7 +27,6 @@ const packageManagerWith = (
 const upgrade = { beforeVersion: '10.3.0', storybookVersion: '11.0.0' };
 
 beforeEach(() => {
-  // TypeScript 7.1 is stable for these tests unless a test says otherwise.
   vi.stubEnv('STORYBOOK_TYPESCRIPT_7_1_STABLE', 'true');
 });
 

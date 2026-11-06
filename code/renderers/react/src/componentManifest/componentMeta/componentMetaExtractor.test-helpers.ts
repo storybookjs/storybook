@@ -25,8 +25,7 @@ type SharedProject = ReactComponentMetaProject & ComponentMetaProjectBase;
 
 /**
  * Shared project across all tests — avoids re-parsing @types/react per test. First getProgram() is
- * ~300ms, subsequent incremental rebuilds are ~5ms. `STORYBOOK_DOCGEN_TS_API=native` runs the same
- * tests on the native API of the `typescript-native` alias.
+ * ~300ms, subsequent incremental rebuilds are ~5ms.
  */
 const { projectDir, configPath } = createTempProject({});
 const sharedProject: SharedProject = await (async () => {

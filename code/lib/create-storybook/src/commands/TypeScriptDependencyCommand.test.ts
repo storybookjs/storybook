@@ -72,7 +72,6 @@ const run = async ({
 };
 
 beforeEach(() => {
-  // TypeScript 7.1 is stable for these tests unless a test says otherwise.
   vi.stubEnv('STORYBOOK_TYPESCRIPT_7_1_STABLE', 'true');
   vi.mocked(prompt.confirm).mockResolvedValue(true);
   vi.mocked(recordReactDocgenFallback).mockImplementation(() => {});

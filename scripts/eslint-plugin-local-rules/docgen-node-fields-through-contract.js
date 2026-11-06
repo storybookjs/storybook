@@ -1,6 +1,5 @@
 // @ts-nocheck
 
-// Node fields that TypeScript 7.1's native AST has and the compiler API's AST does not.
 const NATIVE_ONLY_FIELDS = new Set(['defaultType', 'nameExpression', 'postfixToken']);
 
 const fieldName = (node) => {

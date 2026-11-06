@@ -2,9 +2,6 @@
  * One TypeScript LanguageService per tsconfig, built on the checker and project-host patterns from
  * `@volar/typescript`. Freshness is not decided here: the snapshot cache, projectVersion gate and
  * root-set re-checks all live in core's `ProjectFileTracker`, which the Angular analyzer shares.
- *
- * The extraction itself is shared with the native-API project in `extract-entries.ts`; this class
- * only supplies the program and checker of the compiler API.
  */
 import {
   type FileChange,
@@ -29,7 +26,6 @@ import {
 } from '@storybook/component-meta-typescript';
 import { extractEntries } from './extract-entries.ts';
 
-// What the manager drives on a project of either backend.
 export interface ReactComponentMetaProject {
   extractPropsFromStories(entries: StoryRef[]): void;
 }

@@ -37,7 +37,6 @@ const check = (
 
 describe('typescript-7-react-docgen', () => {
   beforeEach(() => {
-    // The fix runs until TypeScript 7.1 is stable, whatever the shell sets.
     vi.stubEnv('STORYBOOK_TYPESCRIPT_7_1_STABLE', 'false');
     vi.clearAllMocks();
     vi.mocked(addReactDocgenFallback).mockImplementation(() => {});

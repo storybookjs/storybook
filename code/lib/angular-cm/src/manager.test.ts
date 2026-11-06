@@ -325,7 +325,6 @@ describe('AngularComponentMetaManager', () => {
     async () => {
       const componentPath = await makeScratchCopy('sb-acm-late-import-');
       const dir = dirname(componentPath);
-      // An explicit `files` list, as Angular CLI writes it, so the created file adds no root.
       await writeFile(
         join(dir, 'tsconfig.json'),
         JSON.stringify({

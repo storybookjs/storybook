@@ -117,7 +117,6 @@ describe.each([
     expect(typeof typescript.sys.useCaseSensitiveFileNames).toBe('boolean');
   });
 
-  // The numbers differ between TypeScript versions; the extractor only compares within one API.
   it('has every enum member of the contract', () => {
     const typescript = create();
     for (const [enumName, members] of Object.entries(ENUMS)) {

@@ -66,10 +66,8 @@ type ComponentMetaManagerCtor = new (
   recycleHeapPressureRatio?: number
 ) => ComponentMetaManagerLike;
 
-// `native` is the `typescript-native` alias (TypeScript 7.1).
 const TYPESCRIPT_APIS = ['compiler', 'native'] as const;
 
-// How many props the extraction documented, so the pair ratio reads as like-for-like.
 const countDocumentedProps = (entries: StoryRefLike[]) =>
   entries.reduce(
     (count, entry) =>

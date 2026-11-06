@@ -1,4 +1,3 @@
-// Get a key's value from a Map or WeakMap, computing and storing it on the first call.
 export const getOrCompute = <Key, Value>(
   map: {
     get(key: Key): Value | undefined;
@@ -23,8 +22,6 @@ interface CallLevel {
   answer?: unknown;
 }
 
-// The answers of pure checker queries, keyed by their arguments' identity. Every argument is a
-// facade, a node or a primitive of one snapshot, so an answer holds for that snapshot's life.
 export class CallCache {
   private readonly methods = new Map<string, CallLevel>();
 

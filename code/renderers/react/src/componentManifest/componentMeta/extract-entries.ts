@@ -1,7 +1,3 @@
-// The extraction loop over a batch of story entries, shared by the compiler-API and native-API
-// projects. The project supplies the checker and the program of its current state; this module
-// resolves each entry's component and writes the serialized doc back onto the entry.
-//
 // A generic component's props are not resolvable from its own file: the first parameter stays
 // `Props<T>` until a call site instantiates it. The story's JSX gives a resolved call signature, so
 // it is tried first, and a story with no JSX falls back to the component's own export. Nothing else
@@ -28,14 +24,12 @@ export interface ExtractionContext {
   typescript: DocgenTypeScript;
   checker: DocgenTypeChecker;
   program: { getSourceFile(fileName: string): ts.SourceFile | undefined };
-  // Resolve a package import of a story file to the file TypeScript resolved it to.
   resolveModule(importId: string, fromFile: string): string | undefined;
 }
 
 const isDeclarationFile = (fileName: string) =>
   fileName.endsWith('.d.ts') || fileName.endsWith('.d.mts') || fileName.endsWith('.d.cts');
 
-// Extract the props of every entry's component and store the docs on the entries.
 export function extractEntries(
   { typescript, checker, program, resolveModule }: ExtractionContext,
   entries: StoryRef[]

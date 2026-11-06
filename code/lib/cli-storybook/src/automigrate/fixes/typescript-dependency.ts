@@ -52,10 +52,6 @@ export const typescriptDependency: Fix<{ dependency: string }> = {
   },
 };
 
-// The declared TypeScript version of a project whose docgen cannot run on it, with the APIs the
-// renderer's docgen runs on, or `undefined`. A project whose main config sets
-// `typescript.docgenSpecifier` is skipped: docgen does not load its `typescript` dependency, and
-// docgen's own error names the specifier when that package is unusable.
 const getUnusableTypeScript = async (options: CheckOptions) => {
   const renderer = getRendererName(options.mainConfig);
   if (
@@ -73,7 +69,6 @@ const getUnusableTypeScript = async (options: CheckOptions) => {
   return !isTypeScriptUsableForDocgen(version, apis) ? { version, apis } : undefined;
 };
 
-// Upgrade TypeScript 7.0 to 7.1 for docgen that runs on the native API, such as React's.
 export const typescriptNativeApi: Fix<{
   version: string;
   dependency: string;
@@ -83,7 +78,6 @@ export const typescriptNativeApi: Fix<{
   link: 'https://storybook.js.org/docs/configure/integration/typescript#typescript-7',
 
   async check(options) {
-    // Not gated on the release: projects already on Storybook 11.0 with TypeScript 7.0 need it too.
     const unusable = await getUnusableTypeScript(options);
     const upgrade =
       unusable &&
@@ -115,8 +109,6 @@ export const typescriptCompilerApi: Fix<{ version: string }> = {
       return null;
     }
     const unusable = await getUnusableTypeScript(options);
-    // TEMPORARY(ts-7.1): `typescript-native-api` upgrades a project whose docgen runs on the native
-    // API, once TypeScript 7.1 is stable.
     return unusable &&
       !getTypeScriptUpgradeForDocgen(
         unusable.apis,

@@ -16,8 +16,6 @@ export const stripImportQualifiers = (text: string): string =>
 
 const collapseWhitespace = (text: string): string => text.replace(/\s+/g, ' ').trim();
 
-// A base class's members are rendered again for every class that extends it, and printing is a
-// round trip on the native API. A node keys its own program, so the cache cannot outlive it.
 const printedWithoutSubstitution = new WeakMap<tsModule.TypeNode, string>();
 
 /**

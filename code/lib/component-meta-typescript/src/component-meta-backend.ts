@@ -11,8 +11,6 @@ import type { LoadedDocgenTypeScript } from './load-docgen-typescript.ts';
 import type { NativeCommandLine } from './native/native-project.ts';
 import type { NativeTypeScriptModules } from './native/native-typescript.ts';
 
-// What a component-meta manager runs on: the filesystem probes core's manager runs during tsconfig
-// discovery and watching, and the factory of its projects.
 export interface ComponentMetaBackend<
   Project extends ComponentMetaProjectBase,
   CommandLine extends ProjectCommandLine = ProjectCommandLine,
@@ -21,7 +19,6 @@ export interface ComponentMetaBackend<
   factory: ComponentMetaProjectFactory<Project, CommandLine>;
 }
 
-// Create a component-meta manager's backend for the API that the loaded TypeScript offers.
 export function createComponentMetaBackend<
   CompilerProject extends ComponentMetaProjectBase,
   NativeProject extends ComponentMetaProjectBase,
@@ -38,6 +35,5 @@ export function createComponentMetaBackend<
 ): ComponentMetaBackend<CompilerProject | NativeProject> {
   const backend =
     loaded.api === 'native' ? create.native(loaded.typescript) : create.compiler(loaded.typescript);
-  // Core's manager passes the command lines a factory parses back to that factory only.
   return backend as unknown as ComponentMetaBackend<CompilerProject | NativeProject>;
 }

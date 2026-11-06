@@ -365,8 +365,6 @@ const withBuilderDocgenFallback = (message: string, fallback: BuilderDocgenFallb
 
 type TypeScriptDocgenApis = readonly TypeScriptDocgenApi[];
 
-// How the user gets a TypeScript that docgen runs on: fix the package `typescript.docgenSpecifier`
-// names, upgrade `typescript` to 7.1, or install TypeScript 6 (side by side with TypeScript 7).
 type TypeScriptRemedy = 'specifier' | 'native' | 'compiler';
 
 const typeScriptRemedy = ({
@@ -378,8 +376,7 @@ const typeScriptRemedy = ({
 }): TypeScriptRemedy =>
   specifier
     ? 'specifier'
-    : // TEMPORARY(ts-7.1): advise TypeScript 7.1 only once `typescript@^7.1` installs a stable release.
-      apis.includes('native') && isTypeScript71Stable()
+    : apis.includes('native') && isTypeScript71Stable()
       ? 'native'
       : 'compiler';
 
@@ -434,7 +431,6 @@ const unusableTypeScriptMessage = (
   }
 };
 
-// Why the docgen server cannot run while `features.docgenServer: false` keeps builder docgen on.
 const docgenServerNeedsTypeScriptMessage = (
   remedy: TypeScriptRemedy,
   them: string,
@@ -513,11 +509,8 @@ export class BuilderDocgenPackagesMissingError extends StorybookError {
       installCommand: string;
       /** Whether the main config turns the docgen server off with `features.docgenServer: false`. */
       docgenServerDisabledInMainConfig: boolean;
-      // Whether `typescript` has an API the docgen server can run on.
       typescriptUsable: boolean;
-      // The TypeScript APIs the renderer's docgen server runs on.
       apis?: TypeScriptDocgenApis;
-      // The main config's `typescript.docgenSpecifier`, when it names the TypeScript docgen loads.
       specifier?: string;
       /** Versions of missing packages that resolve, but outside the supported range. */
       foundVersions?: Record<string, string>;

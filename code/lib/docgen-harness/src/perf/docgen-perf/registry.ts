@@ -91,9 +91,6 @@ export const ENGINES: BenchEngine[] = [
     jiti: true,
     args: (scenario) => [...reactArgs(scenario), '--mode', 'refresh', '--scope', 'changed'],
   }),
-  // The same manager on the TypeScript 7.1 native API (the `typescript-native` alias). No budget
-  // row yet, so it stays out of the default run; `--engine react-osa --engine react-osa-native`
-  // measures the pair.
   new SeriesChildEngine({
     id: 'react-osa-native',
     child: '../docgen-memory/memory-harness.ts',
@@ -149,8 +146,6 @@ export const ENGINES: BenchEngine[] = [
     args: (scenario) => [...workspaceArgs(scenario), '--engine', 'component-meta'],
   }),
   new CompodocEngine(),
-  // The analyzer Angular's docgen server runs, on both TypeScript APIs. No budget rows yet, so they
-  // stay out of the default run; `--engine angular-cm --engine angular-cm-native` measures the pair.
   new SeriesChildEngine({
     id: 'angular-cm',
     child: 'engines/angular-cm.ts',

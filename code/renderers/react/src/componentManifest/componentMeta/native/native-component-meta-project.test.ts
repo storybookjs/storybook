@@ -102,7 +102,6 @@ describe('NativeComponentMetaProject', () => {
     const { filePaths } = createProject({
       'src/Button.tsx': component('Button', 'label: string;'),
       'src/Button.stories.tsx': story('Button'),
-      // A symlinked story directory resolves to a real path like this one, outside `src`.
       'elsewhere/Panel.tsx': component('Panel', 'title: string;'),
       'elsewhere/Panel.stories.tsx': story('Panel'),
     });
@@ -232,11 +231,9 @@ describe('NativeComponentMetaProject', () => {
       manager.onFilesChanged([
         { filePath: path.join(projectDir, 'src/styles.css'), type: 'changed' },
       ]);
-      // Past the warmup delay.
       await new Promise((resolve) => setTimeout(resolve, 200));
       expect(extract).not.toHaveBeenCalled();
 
-      // A branch switch can delete a package and its tsconfig; the first event may be a file's.
       fs.unlinkSync(configPath);
       expect(() =>
         manager.onFilesChanged([{ filePath: filePaths['src/Button.tsx'], type: 'deleted' }])
@@ -363,7 +360,6 @@ describe('NativeFacades', () => {
       expect(empty.getApparentProperties()).toEqual([]);
       expect(checker.typeToString(empty)).toBe('{}');
       expect(checker.getPropertyOfType(empty, 'children')).toBeUndefined();
-      // The compiler process never gets `undefined` for it.
       expect(() => checker.getBaseTypes(empty as ts.InterfaceType)).toThrow();
       project.dispose();
     } finally {

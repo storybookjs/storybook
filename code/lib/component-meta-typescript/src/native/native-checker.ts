@@ -1,4 +1,3 @@
-// The native API's checker behind the compiler API's method names, on a set of facades.
 import type ts from 'typescript';
 import type { Node } from 'typescript-native/ast';
 import type { InterfaceType, Type as NativeType, TypeReference } from 'typescript-native/sync';
@@ -8,8 +7,6 @@ import { CallCache } from './call-cache.ts';
 import type { EmptyObjectTypeFacade, SymbolFacade, TypeFacade } from './facades.ts';
 import type { NativeFacades } from './native-facades.ts';
 
-// Every checker method docgen calls whose answer depends on its arguments and the snapshot alone,
-// and that no facade map keeps. `typeToString` with its default options is in `NativeFacades`.
 const CACHED_QUERIES = [
   'getAliasedSymbol',
   'getBaseTypeOfLiteralType',
@@ -32,7 +29,6 @@ export function createDocgenChecker(facades: NativeFacades): DocgenTypeChecker {
   const { checker } = facades;
   const calls = new CallCache();
   const unwrapSymbol = (symbol: ts.Symbol) => (symbol as unknown as SymbolFacade).native;
-  // The empty object type has no native type. Only the methods that can get it handle that.
   const unwrapType = (type: ts.Type): NativeType | undefined =>
     (type as unknown as TypeFacade | EmptyObjectTypeFacade).native;
   const unwrapNativeType = (type: ts.Type): NativeType => {

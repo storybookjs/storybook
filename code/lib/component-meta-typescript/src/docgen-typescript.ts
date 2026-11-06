@@ -1,18 +1,5 @@
-// The part of TypeScript that component-meta docgen uses, as a structural contract.
-//
-// React's extractor and Angular's analyzer are written against the compiler API's shapes
-// (`ts.Node`, `ts.Type`, `ts.Symbol`, `ts.Signature`), but they only touch the members listed here.
-// The compiler backend passes the `typescript` module itself; the native backend (TypeScript 7.1
-// and newer) passes a facade over `typescript/sync` and `typescript/ast` whose checker, symbols,
-// types and signatures have the same members. AST nodes are each backend's own: the fields that
-// differ between them are read through the node accessors below, never directly, so each
-// TypeScript's code path stays in its backend. Adding a member here is the only way to use more of
-// TypeScript in docgen, so both backends stay complete.
 import type ts from 'typescript';
 
-// The `ts.TypeChecker` methods docgen calls. `ts.Symbol`'s own methods take a `ts.TypeChecker`, so
-// docgen casts the checker where it passes it to a symbol; both backends' symbols accept their own
-// checker there.
 export type DocgenTypeChecker = Pick<
   ts.TypeChecker,
   | 'getAliasedSymbol'
@@ -35,13 +22,11 @@ export type DocgenTypeChecker = Pick<
   | 'typeToString'
 >;
 
-// The `ts.System` members docgen and the projects use.
 export type DocgenSystem = Pick<
   ts.System,
   'directoryExists' | 'fileExists' | 'readFile' | 'useCaseSensitiveFileNames'
 >;
 
-// The node type guards docgen calls.
 export const DOCGEN_NODE_GUARDS = [
   'isArrayLiteralExpression',
   'isArrayTypeNode',
@@ -129,7 +114,6 @@ export type DocgenNodeRewriter = (
 
 export type DocgenNodeGuards = Pick<typeof ts, (typeof DOCGEN_NODE_GUARDS)[number]>;
 
-// The `typescript` module members docgen and the projects use.
 export interface DocgenTypeScript extends DocgenNodeGuards {
   readonly JsxEmit: Pick<typeof ts.JsxEmit, 'ReactJSX'>;
   readonly ModuleKind: Pick<typeof ts.ModuleKind, 'ESNext'>;
@@ -185,32 +169,21 @@ export interface DocgenTypeScript extends DocgenNodeGuards {
   readonly sys: DocgenSystem;
   canHaveDecorators: typeof ts.canHaveDecorators;
   canHaveModifiers: typeof ts.canHaveModifiers;
-  // Parse a file outside the program, to read default values from the component source.
   createSourceFile(fileName: string, text: string): ts.SourceFile;
   displayPartsToString: typeof ts.displayPartsToString;
   forEachChild: typeof ts.forEachChild;
   getDecorators: typeof ts.getDecorators;
-  // The type of `{}`, for a component whose call signature takes no props.
   getEmptyObjectType(checker: DocgenTypeChecker): ts.Type;
   getJSDocCommentsAndTags(node: ts.Node): readonly (ts.JSDoc | ts.JSDocTag)[];
   getJSDocTags: typeof ts.getJSDocTags;
   getLineAndCharacterOfPosition: typeof ts.getLineAndCharacterOfPosition;
   getModifiers: typeof ts.getModifiers;
-  // Print a node without comments, after `visit` rewrote it. `visit` returns the node to print in
-  // place of the one it gets, and calls `visitChildren` to rewrite that node's children.
   printNode(node: ts.Node, visit: DocgenNodeRewriter): string;
 
-  // Node accessors, for the fields TypeScript 7.1 renamed or positions it reports differently.
-  // The default of a type parameter, such as `T = string`.
   getTypeParameterDefault(node: ts.TypeParameterDeclaration): ts.TypeNode | undefined;
-  // Whether a class or type member is optional (`name?: T`).
   hasQuestionToken(member: ts.ClassElement | ts.TypeElement): boolean;
-  // What a `@see` tag refers to, such as `Button` in `@see Button`.
   getSeeTagReference(tag: ts.JSDocSeeTag): ts.Node | undefined;
-  // The position of a JSDoc comment's opening `/**`.
   getJSDocStart(jsDoc: ts.JSDoc): number;
-  // The position where the comment text of a JSDoc tag that has one starts, after the tag's own
-  // parts.
   getJSDocTagCommentStart(tag: ts.JSDocTag): number;
 }
 
@@ -233,10 +206,6 @@ const compilerNodeAccessors: DocgenNodeAccessors = {
     tag.tagName.end,
 };
 
-// Wrap the `typescript` module (TypeScript 5.9 and 6) as the extractor's contract.
-//
-// The module is the prototype, so every member resolves to the real implementation; only the
-// members the compiler API has no direct equivalent for are added.
 export function createCompilerDocgenTypeScript(typescript: typeof ts): DocgenTypeScript {
   // The module's members are getters, so the extra members are defined, not assigned.
   const members: Pick<DocgenTypeScript, 'createSourceFile' | 'getEmptyObjectType' | 'printNode'> &
@@ -263,12 +232,7 @@ export function createCompilerDocgenTypeScript(typescript: typeof ts): DocgenTyp
       }
     },
     createSourceFile: (fileName, text) =>
-      typescript.createSourceFile(
-        fileName,
-        text,
-        typescript.ScriptTarget.Latest,
-        /* setParentNodes */ true
-      ),
+      typescript.createSourceFile(fileName, text, typescript.ScriptTarget.Latest, true),
     getEmptyObjectType: (checker) =>
       (checker as ts.TypeChecker).getTypeFromTypeNode(typescript.factory.createTypeLiteralNode([])),
   };

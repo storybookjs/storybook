@@ -16,9 +16,6 @@ type NativeProjectClass<Project extends NativeProject> = new (
   getCommandLine?: () => NativeCommandLine
 ) => Project;
 
-// Build a component-meta manager's native backend: one compiler process for all of its projects,
-// closed with the factory. A heap-pressure recycle disposes the projects' snapshots, which releases
-// their programs in that process.
 export function createNativeBackend<Project extends NativeProject>(
   modules: NativeTypeScriptModules,
   ProjectClass: NativeProjectClass<Project>,

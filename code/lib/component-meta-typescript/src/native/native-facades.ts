@@ -1,10 +1,3 @@
-// Memoized facades over one project's native objects. `typescript/sync` returns one object per id
-// within a project and the facades are memoized on those objects, so docgen's `symbol === other`
-// comparisons hold. Nodes are not wrapped: remote nodes already have the compiler API's shape.
-//
-// Every checker call is a round trip to the compiler process. A facade set lives as long as its
-// snapshot and caches every answer; when a type lists its properties, one round trip fetches their
-// docs, and the first type asked for fetches the whole group's.
 import type ts from 'typescript';
 import type { Node } from 'typescript-native/ast';
 import type {
@@ -32,8 +25,6 @@ export class NativeFacades {
   private readonly signatureFacades = new WeakMap<NativeSignature, SignatureFacade>();
   private readonly emptyObjectType = new EmptyObjectTypeFacade();
 
-  // The answers the prefetches fill, each kept here alone.
-  // The properties a symbol was listed with, so one lookup can prefetch for all of them.
   private readonly groupOf = new WeakMap<NativeSymbol, readonly NativeSymbol[]>();
   private readonly tags = new WeakMap<NativeSymbol, readonly JSDocTagInfo[]>();
   private readonly docs = new WeakMap<NativeSymbol, string>();
@@ -52,7 +43,6 @@ export class NativeFacades {
     this.checker = project.checker;
   }
 
-  // The facades a checker from `createChecker` was built on.
   static of(checker: DocgenTypeChecker): NativeFacades {
     const facades = (checker as { [NATIVE_FACADES]?: NativeFacades })[NATIVE_FACADES];
     if (!facades) {
@@ -61,7 +51,6 @@ export class NativeFacades {
     return facades;
   }
 
-  // The checker with the compiler API's method names and the facades' objects.
   createChecker(): DocgenTypeChecker {
     if (!this.docgenChecker) {
       this.docgenChecker = createDocgenChecker(this);
@@ -82,7 +71,6 @@ export class NativeFacades {
       : undefined;
   }
 
-  // The facades of a type's properties, with their docs and tags fetched in one batch.
   symbols(natives: readonly NativeSymbol[]): ts.Symbol[] {
     this.prefetchDocs(natives);
     return natives.map((native) => this.symbol(native));
@@ -148,8 +136,6 @@ export class NativeFacades {
     if (cached) {
       return cached;
     }
-    // At its own declaration, a symbol's type is asked for one member after another, each at its
-    // own declaration; elsewhere, for every member at the one location.
     const group = this.groupOf.get(symbol);
     if (group && group.length > 1) {
       if (this.isDeclarationOf(symbol, location)) {
@@ -177,7 +163,6 @@ export class NativeFacades {
       ?.includes(location as unknown as ts.Declaration);
   }
 
-  // One round trip for the doc comments and tags of a type's properties.
   private prefetchDocs(symbols: readonly NativeSymbol[]): void {
     const missing = symbols.filter((symbol) => !this.docs.has(symbol));
     for (const symbol of symbols) {
@@ -197,8 +182,6 @@ export class NativeFacades {
     });
   }
 
-  // One round trip for the types of a property group at a location, then one for their text and
-  // the members of the unions among them, which the extractor reads next.
   private prefetchTypes(
     symbols: readonly NativeSymbol[],
     location: Node,
@@ -215,7 +198,6 @@ export class NativeFacades {
     this.prefetchTexts(types);
   }
 
-  // One round trip for the types of a property group, each at its own first declaration.
   private prefetchTypesAtDeclarations(symbols: readonly NativeSymbol[]): void {
     const located = symbols.flatMap((symbol) => {
       if (this.typesAtDeclarationFetched.has(symbol)) {
@@ -239,8 +221,6 @@ export class NativeFacades {
     this.prefetchSignatures(types);
   }
 
-  // Two round trips for the call signatures of the object types among `types` and their return
-  // types, which docgen reads next for a method.
   private prefetchSignatures(types: readonly NativeType[]): void {
     const objects = [...new Set(types)].filter(
       (type) => type.flags & this.typescript.TypeFlags.Object && !this.callSignaturesOf.has(type)
@@ -261,7 +241,6 @@ export class NativeFacades {
     signatures.forEach((signature, index) => this.returnTypeOf.set(signature, returnTypes[index]));
   }
 
-  // One round trip for the text of the types and the members of the unions among them.
   private prefetchTexts(types: readonly NativeType[]): void {
     const { checker } = this;
     const untexted = [...new Set(types)].filter((type) => !this.typeText.has(type));

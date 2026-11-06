@@ -10,7 +10,6 @@ import {
 } from './extract-component.ts';
 import type { AngularComponentMetaResult } from './types.ts';
 
-// Angular's component-meta project on the native API of TypeScript 7.1 and newer.
 export class NativeAngularComponentMetaProject extends NativeProject {
   extract(componentPath: string, names: ComponentNames): AngularComponentMetaResult | undefined {
     if (this.disposed) {

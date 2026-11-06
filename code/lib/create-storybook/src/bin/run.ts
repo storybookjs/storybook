@@ -36,8 +36,6 @@ const createStorybookProgram = program
   .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
   .option('-f --force', 'Force add Storybook')
   .option('-s --skip-install', 'Skip installing deps')
-  // TEMPORARY(ts-7.1): once TypeScript 7.1 is stable, also say that it upgrades a React project from
-  // TypeScript 7.0 to 7.1, here and in `storybook init`'s help.
   .option(
     '--install-typescript',
     'Add TypeScript, which docgen needs, when the project has none, without asking'

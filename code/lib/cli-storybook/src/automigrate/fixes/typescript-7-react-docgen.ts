@@ -14,10 +14,6 @@ import type { Fix } from '../types.ts';
 import { upgradesAcrossPeerChange } from './typescript-dependency.ts';
 
 /**
- * TEMPORARY(ts-7.1): delete this fix once TypeScript 7.1 is stable (`isTypeScript71Stable()`), which
- * gives TypeScript 7 projects the docgen server. `remove-react-docgen-fallback` then removes what
- * this fix records in the Storybook cache. See `typescript-7-react-docgen-fallback.ts` in core.
- *
  * Storybook 10 installed `react-docgen` for every React project. Storybook 11 makes it an optional
  * peer, and a project on TypeScript 7.0 cannot use the docgen server, so without `react-docgen` it
  * would lose docgen on upgrade. Projects that set `features.docgenServer` are left alone: with

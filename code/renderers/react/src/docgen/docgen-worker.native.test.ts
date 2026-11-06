@@ -20,8 +20,6 @@ vi.mock('@storybook/component-meta-typescript', { spy: true });
 
 let tempDir: string;
 
-// The worker loads the project's `typescript`; here that is TypeScript 7.1 from the
-// `typescript-native` alias, whose API lives in the `sync` and `ast` subpaths.
 beforeEach(async () => {
   vi.mocked(loadDocgenTypeScript).mockResolvedValue({
     api: 'native',

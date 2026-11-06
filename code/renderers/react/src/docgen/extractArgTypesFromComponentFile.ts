@@ -19,7 +19,6 @@ export async function extractArgTypesFromComponentFile({
 }: {
   componentFilePath: string;
   componentExportName?: string;
-  // The main config's `typescript.docgenSpecifier`, when it names the TypeScript to load.
   typeScriptSpecifier?: TypeScriptSpecifierForDocgen;
 }): Promise<StrictArgTypes | null> {
   const manager = await getSharedComponentMetaManager(typeScriptSpecifier);

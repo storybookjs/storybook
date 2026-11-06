@@ -1,5 +1,3 @@
-// Docgen's TypeScript contract on the native API of TypeScript 7.1 and newer: `typescript/sync`
-// drives the compiler process; `typescript/ast` guards and enums run in-process on remote nodes.
 import { existsSync, readFileSync, statSync } from 'node:fs';
 
 import type ts from 'typescript';
@@ -22,7 +20,6 @@ import { NativeFacades } from './native-facades.ts';
 
 type DocgenNodeGuard = (typeof DOCGEN_NODE_GUARDS)[number];
 
-// The guards whose name differs between the compiler API and `typescript/ast`.
 const NATIVE_GUARD_NAMES: Partial<
   Record<DocgenNodeGuard, keyof typeof import('typescript-native/ast')>
 > = {
@@ -33,7 +30,6 @@ const NATIVE_GUARD_NAMES: Partial<
   isTypeAssertionExpression: 'isTypeAssertion',
 };
 
-// The guards `typescript/ast` has no single counterpart for.
 const composedGuards = (
   ast: NativeTypeScriptModules['ast']
 ): Partial<Record<DocgenNodeGuard, (node: Node) => boolean>> => ({
@@ -42,12 +38,9 @@ const composedGuards = (
     ast.isStringLiteral(node) || ast.isNoSubstitutionTemplateLiteral(node),
 });
 
-// The node accessors on `typescript/ast` nodes, whose fields and positions differ from the compiler
-// API's where the accessors are needed.
 const nativeNodeAccessors = (ast: NativeTypeScriptModules['ast']): DocgenNodeAccessors => ({
   getTypeParameterDefault: (node) =>
     (node as unknown as TypeParameterDeclaration).defaultType as unknown as ts.TypeNode | undefined,
-  // A member's `?` or `!` is its `postfixToken`.
   hasQuestionToken: (member) =>
     (member as unknown as Partial<NamedMemberBase>).postfixToken?.kind ===
     ast.SyntaxKind.QuestionToken,
@@ -70,8 +63,6 @@ const nativeNodeAccessors = (ast: NativeTypeScriptModules['ast']): DocgenNodeAcc
     }
     return at;
   },
-  // After the tag's own parts, never at its comment: the comment is parsed into nodes that begin
-  // after the line's `*` decoration.
   getJSDocTagCommentStart: (tag) => {
     const comment = tag.comment as string | { pos: number };
     const commentStart = typeof comment === 'string' ? tag.end : comment.pos;
@@ -81,20 +72,17 @@ const nativeNodeAccessors = (ast: NativeTypeScriptModules['ast']): DocgenNodeAcc
         end = Math.max(end, part.end);
       }
     };
-    // A node array carries no position of its own; its elements do.
     (tag as unknown as Node).forEachChild(afterPart, (parts) => parts.forEach(afterPart));
     return end;
   },
 });
 
-// The native API's modules, imported by the caller where its `typescript` peer resolves.
 export interface NativeTypeScriptModules {
   sync: typeof import('typescript-native/sync');
   ast: typeof import('typescript-native/ast');
   factory: typeof import('typescript-native/ast/factory');
 }
 
-// The compiler API's `ts.sys` members, on the host filesystem.
 export function createNativeSystem(): DocgenSystem {
   return {
     fileExists: (path) => {
@@ -118,7 +106,6 @@ export function createNativeSystem(): DocgenSystem {
         return undefined;
       }
     },
-    // The compiler API's probe: a path with swapped case exists only on a case-insensitive filesystem.
     useCaseSensitiveFileNames: !existsSync(swapCase(process.execPath)),
   };
 }
@@ -129,18 +116,13 @@ const swapCase = (path: string) =>
     return character === upper ? character.toLowerCase() : upper;
   });
 
-// A request the native API can answer in a batch: the `gen` form of one of its methods.
 export type NativeRequest<Result> = Generator<unknown, Result, unknown>;
 
 export interface NativeDocgenTypeScript extends DocgenTypeScript {
-  // Release the source files parsed outside a program since the last call.
   releaseSourceFiles(): void;
-  // Send up to two groups of independent requests in one round trip to the compiler process.
   batch<A, B = never>(first: NativeRequest<A>[], second?: NativeRequest<B>[]): [A[], B[]];
 }
 
-// Build the contract over the native modules. The checker passed to the members is one that
-// `NativeFacades.createChecker` returned, so `getEmptyObjectType` reads the facades from it.
 export function createNativeDocgenTypeScript(
   { sync, ast, factory }: NativeTypeScriptModules,
   api: API
@@ -180,7 +162,7 @@ export function createNativeDocgenTypeScript(
       createLiteralTypeNode: (literal) =>
         factory.createLiteralTypeNode(asNode(literal)) as unknown as ts.LiteralTypeNode,
       createStringLiteral: (text) =>
-        factory.createStringLiteral(text, 0 /* TokenFlags.None */) as unknown as ts.StringLiteral,
+        factory.createStringLiteral(text, 0) as unknown as ts.StringLiteral,
     },
     sys: createNativeSystem(),
     canHaveDecorators: (node): node is ts.HasDecorators => 'modifiers' in node,
@@ -196,8 +178,6 @@ export function createNativeDocgenTypeScript(
       (
         sourceFile as unknown as Pick<ts.SourceFile, 'getLineAndCharacterOfPosition'>
       ).getLineAndCharacterOfPosition(position),
-    // The rewrite runs on the client, and the compiler process prints the result, so a node built
-    // by `factory` travels there.
     printNode: (node, visit) => {
       const visitChildren = (child: ts.Node): ts.Node =>
         ast.visitEachChild(asNode(child), (grandchild) =>

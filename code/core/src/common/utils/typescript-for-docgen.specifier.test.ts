@@ -1,5 +1,5 @@
 // Resolves real packages of the monorepo: a bare specifier goes through Node's own resolver, which
-// memfs cannot stand in for. `typescript-native` is TypeScript 7.1, `typescript` is TypeScript 6.
+// memfs cannot stand in for.
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 

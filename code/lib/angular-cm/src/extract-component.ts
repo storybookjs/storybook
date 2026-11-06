@@ -20,8 +20,6 @@ export interface ComponentNames {
 export const debugExtraction = (configFileName: string | undefined, message: string) =>
   logger.debug(`[angular-cm] ${message}${configFileName ? ` (${configFileName})` : ''}`);
 
-// Analyze the file a component lives in and pick the component's record, following the file's
-// exports when the class is declared elsewhere. Both TypeScript APIs' projects extract through it.
 export function extractComponent(
   typescript: DocgenTypeScript,
   checker: DocgenTypeChecker,
@@ -66,7 +64,6 @@ export function extractComponent(
   return undefined;
 }
 
-// The project files a component's file imports, transitively, to check for edits before extracting.
 // `node_modules` is the boundary: a dependency's sources do not change under a running dev server.
 export const importClosure = (
   typescript: DocgenTypeScript,

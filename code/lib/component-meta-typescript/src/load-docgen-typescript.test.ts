@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { loadDocgenTypeScript, loadTypeScriptForDocgen } from './load-docgen-typescript.ts';
 
-// `typescript-native` is TypeScript 7.1 and `typescript` TypeScript 6, both of this package.
 const configDir = import.meta.dirname;
 
 describe('loadDocgenTypeScript', () => {
@@ -35,7 +34,6 @@ describe('loadTypeScriptForDocgen', () => {
   const moduleNotFound = () =>
     Object.assign(new Error("Cannot find package 'typescript'"), { code: 'ERR_MODULE_NOT_FOUND' });
 
-  // A TypeScript whose main module has `version`, and whose other entry points are empty modules.
   const typeScriptWith = (version: string) =>
     vi.fn(async (subpath: string) => (subpath === '.' ? { version } : { subpath }));
 

@@ -4,10 +4,8 @@ import type { StoryRef } from '../../getComponentImports.ts';
 import type { ReactComponentMetaProject } from '../ComponentMetaProject.ts';
 import { extractEntries } from '../extract-entries.ts';
 
-// React's component-meta project on the native API, with the extraction shared in `extract-entries.ts`.
 export class NativeComponentMetaProject extends NativeProject implements ReactComponentMetaProject {
   private warmupTimer?: ReturnType<typeof setTimeout>;
-  // Replayed after a file change, so the next request finds its types resolved.
   private entries: StoryRef[] = [];
 
   extractPropsFromStories(entries: StoryRef[]): void {

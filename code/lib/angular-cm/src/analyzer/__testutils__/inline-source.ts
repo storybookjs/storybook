@@ -5,10 +5,6 @@
  * Sources go through a real `ts.Program` whose host serves the inline files from memory and falls
  * back to disk for everything else, so `lib.d.ts` and the real `@angular/core` resolve normally and
  * the analyzer sees the types a user's project would give it.
- *
- * `STORYBOOK_DOCGEN_TS_API=native` compiles them on the native API of TypeScript 7.1 instead (the
- * `typescript-native` alias), which reads from disk: the files are written to a directory of their
- * own per worker process.
  */
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -51,9 +47,7 @@ const BASE_OPTIONS: ts.CompilerOptions = {
 // TS spells `fileName` with forward slashes on every platform, so the virtual paths must too.
 const normalize = (fileName: string) => fileName.replace(/\\/g, '/');
 
-// Inside the package so `@angular/core` resolves up through the real `node_modules`. The compiler API
-// reads the files from memory, so its directory never exists on disk; the native API reads real
-// files, so each test file gets its own directory, also when test files share a process.
+// Inside the package so `@angular/core` resolves up through the real `node_modules`.
 const HERE = dirname(fileURLToPath(import.meta.url));
 const VIRTUAL_DIR = normalize(
   NATIVE ? mkdtempSync(join(HERE, '__inline__')) : join(HERE, '__inline__')
@@ -136,8 +130,6 @@ const compileWithCompilerApi = (
   };
 };
 
-// One compiler process and one snapshot chain per worker, so lib.d.ts and `@angular/core` are
-// parsed once; each compile writes its files and notifies the process of what changed.
 const native = NATIVE
   ? await (async () => {
       const modules = await loadTestNativeTypeScriptModules();
@@ -165,7 +157,6 @@ const NATIVE_ENUMS = {
   moduleResolution: 'ModuleResolutionKind',
 } as const;
 
-// The native API's enums number their members differently, so the options are mapped by name.
 const nativeOptions = (options: ts.CompilerOptions): RawCompilerOptions => {
   const { sync, ast } = native!.modules;
   const result: Record<string, unknown> = { ...options };
@@ -300,8 +291,6 @@ export const names = (items: { name: string }[] = []) => items.map((item) => ite
 // A union's members in the checker's order: TypeScript 7.1 sorts them, TypeScript 6 keeps source order.
 export const checkerOrder = (members: string[]) => (NATIVE ? [...members].sort() : members);
 
-// A union as the checker prints it, with its members in `checkerOrder`.
 export const checkerUnion = (...members: string[]) => checkerOrder(members).join(' | ');
 
-// A union's members in a fixed order, to compare type text whose order differs between the APIs.
 export const unionMembers = (type: string | undefined) => type?.split(' | ').sort();

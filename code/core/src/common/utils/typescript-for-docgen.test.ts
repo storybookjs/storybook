@@ -67,7 +67,6 @@ beforeEach(() => {
   // No lockfile and no package manager user agent: install hints use npm.
   vi.mocked(find.up).mockReturnValue(undefined);
   vi.stubEnv('npm_config_user_agent', '');
-  // TypeScript 7.1 is stable for these tests unless a test says otherwise.
   vi.stubEnv('STORYBOOK_TYPESCRIPT_7_1_STABLE', 'true');
 });
 

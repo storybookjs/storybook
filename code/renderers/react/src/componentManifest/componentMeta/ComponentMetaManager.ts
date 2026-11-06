@@ -6,11 +6,6 @@
  * React-specific: a {@link ComponentMetaProjectFactory} for each TypeScript API, React-flavored
  * inferred-project compiler options, and the {@link ComponentMetaManager.batchExtract} surface the
  * manifest generator and docgen provider drive.
- *
- * - The compiler API (TypeScript 5.9 and 6) gets one LanguageService per tsconfig, sharing one
- *   mtime-cached snapshot map and one document registry.
- * - The native API (TypeScript 7.1 and newer) gets one compiler process per manager, with one
- *   snapshot per tsconfig in it.
  */
 import {
   ComponentMetaManager as BaseComponentMetaManager,
@@ -119,8 +114,6 @@ export class ComponentMetaManager extends BaseComponentMetaManager<
   readonly fsFileSnapshots: FsFileSnapshots;
 
   /**
-   * `typescript` is the result of `loadDocgenTypeScript`, which selects the native API for
-   * TypeScript 7.1 and newer.
    * `recycleHeapPressureRatio` is the fraction of the V8 heap limit at which the shared program(s)
    * are recycled; the memory regression gate passes `Infinity` to disable recycling and assert the
    * OOM still happens without the fix.

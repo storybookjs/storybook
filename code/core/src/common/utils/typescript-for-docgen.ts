@@ -32,14 +32,6 @@ export const RENDERERS_WITH_TYPESCRIPT_DOCGEN: readonly SupportedRenderer[] = [
   SupportedRenderer.WEB_COMPONENTS,
 ];
 
-// The API a `typescript` package offers docgen.
-//
-// - `compiler`: the in-process compiler API (`ts.createProgram`, `ts.TypeChecker`) of TypeScript 5.9
-//   and 6.
-// - `native`: the API of TypeScript 7.1 and newer (`typescript/sync`, `typescript/ast`), which drives
-//   the native compiler in a child process.
-//
-// TypeScript 7.0 offers neither.
 export type TypeScriptDocgenApi = 'compiler' | 'native';
 
 const COMPILER_API_ONLY: readonly TypeScriptDocgenApi[] = ['compiler'];
@@ -49,24 +41,14 @@ const DOCGEN_APIS_BY_RENDERER: Partial<Record<SupportedRenderer, readonly TypeSc
     [SupportedRenderer.REACT]: ['compiler', 'native'],
   };
 
-// Return the TypeScript APIs the CLI accepts for a renderer's docgen when it installs, upgrades or
-// checks `typescript`. This is the CLI's policy, not what docgen can run on: Angular's own compiler
-// needs TypeScript 6, so Angular stays on the compiler API, although `@storybook/angular-vite`
-// docgen also runs on the native API.
 export const recommendedTypeScriptDocgenApis = (
   renderer: SupportedRenderer
 ): readonly TypeScriptDocgenApi[] => DOCGEN_APIS_BY_RENDERER[renderer] ?? COMPILER_API_ONLY;
 
-// Return the `typescript` dependency to add to a project without one, for the given APIs.
-// TEMPORARY(ts-7.1): `typescript@^7.1` installs nothing before TypeScript 7.1 is stable.
 export const typeScriptPackageForDocgen = (
   apis: readonly TypeScriptDocgenApi[] = COMPILER_API_ONLY
 ) => (apis.includes('native') && isTypeScript71Stable() ? 'typescript@^7.1' : 'typescript@^6');
 
-// The `typescript` upgrade to offer when docgen cannot run on the declared TypeScript 7.0, in the
-// field of package.json that declares `typescript`, so the project does not declare two versions.
-// `undefined` when docgen does not run on the native API.
-// TEMPORARY(ts-7.1): `typescript@^7.1` installs nothing before TypeScript 7.1 is stable.
 export const getTypeScriptUpgradeForDocgen = (
   apis: readonly TypeScriptDocgenApi[],
   packageJson: { dependencies?: Partial<Record<string, string>> }
@@ -78,7 +60,6 @@ export const getTypeScriptUpgradeForDocgen = (
       }
     : undefined;
 
-// Return which API a TypeScript version offers docgen, or `undefined` for TypeScript 7.0.
 export const getTypeScriptDocgenApi = (version: string): TypeScriptDocgenApi | undefined => {
   const [major, minor] = version.split('.').map(Number);
   if (major < 7) {
@@ -87,7 +68,6 @@ export const getTypeScriptDocgenApi = (version: string): TypeScriptDocgenApi | u
   return major === 7 && minor === 0 ? undefined : 'native';
 };
 
-// Return whether a TypeScript version offers one of the given docgen APIs.
 export const isTypeScriptUsableForDocgen = (
   version: string,
   apis: readonly TypeScriptDocgenApi[] = COMPILER_API_ONLY
@@ -96,13 +76,11 @@ export const isTypeScriptUsableForDocgen = (
   return api !== undefined && apis.includes(api);
 };
 
-// The main config's `typescript.docgenSpecifier`, with the directory it resolves from.
 export interface TypeScriptSpecifierForDocgen {
   specifier: string;
   configDir: string;
 }
 
-// Return the main config's `typescript.docgenSpecifier`, or `undefined` when it is not set.
 export async function getTypeScriptSpecifierForDocgen({
   configDir,
   presets,
@@ -111,7 +89,6 @@ export async function getTypeScriptSpecifierForDocgen({
   return docgenSpecifier ? { specifier: docgenSpecifier, configDir } : undefined;
 }
 
-// Resolved as if the main config imported it, which is where a user writes the specifier.
 const packageDirOf = ({ specifier, configDir }: TypeScriptSpecifierForDocgen) => {
   if (specifier.startsWith('file:')) {
     return fileURLToPath(specifier);
@@ -123,7 +100,6 @@ const packageDirOf = ({ specifier, configDir }: TypeScriptSpecifierForDocgen) =>
   return dirname(require.resolve(`${specifier}/package.json`));
 };
 
-// The TypeScript package a `docgenSpecifier` names: its version, and where to import it from.
 export interface TypeScriptPackageForDocgen {
   version: string;
   packageDir: string;
@@ -131,11 +107,6 @@ export interface TypeScriptPackageForDocgen {
   exports?: Record<string, unknown>;
 }
 
-/**
- * Read the TypeScript package a `docgenSpecifier` names.
- *
- * @throws {TypeScriptMissingForDocgenError} When the specifier names no package.
- */
 export function readTypeScriptPackageForDocgen(
   typeScriptSpecifier: TypeScriptSpecifierForDocgen,
   apis: readonly TypeScriptDocgenApi[] = COMPILER_API_ONLY
@@ -168,13 +139,9 @@ const unusableVersionError = (
     ? undefined
     : new TypeScriptWithoutCompilerApiError({ version, apis, specifier });
 
-// Check whether `typescript` resolves to a version with an API that docgen can run on.
-//
 // `resolve` must resolve from the calling package, for example
 // `(specifier) => import.meta.resolve(specifier)`, because strict package managers only expose
-// `typescript` to the packages that declare it. `apis` lists the APIs the caller supports; the
-// default is the compiler API alone. With `typeScriptSpecifier`, the package it names is checked
-// instead of `typescript`.
+// `typescript` to the packages that declare it.
 export function getTypeScriptForDocgenError(
   resolve: (specifier: string) => string,
   {
@@ -206,8 +173,6 @@ export function getTypeScriptForDocgenError(
   return unusableVersionError(version, apis);
 }
 
-// Check the TypeScript that docgen loads: the package `typescript.docgenSpecifier` names, for docgen
-// that runs on the native API, otherwise `typescript`.
 async function getDocgenTypeScriptError(
   resolve: (specifier: string) => string,
   options: Pick<Options, 'configDir' | 'presets'>,
@@ -264,8 +229,7 @@ export async function isDocgenServerDisabledInMainConfig(
  *
  * Use it as a renderer's `isDocgenProviderEnabled` preset, so a project without a usable
  * `typescript` keeps builder docgen. A project that sets `features.docgenServer: false` gets no
- * warning. Docgen that runs on the native API loads the package `typescript.docgenSpecifier` names,
- * so that package is checked instead of `typescript` when the option is set.
+ * warning.
  *
  * Pass `builderDocgenFallback` when builder docgen needs an optional package, such as React's
  * `react-docgen`. The warning then says whether docgen still runs. It does not suggest installing
@@ -380,7 +344,6 @@ export async function checkBuilderDocgenPackages({
   documentation: string;
   /** A renderer-specific explanation for the error, if any. */
   note?: string;
-  // The TypeScript APIs the renderer's docgen server runs on.
   apis?: readonly TypeScriptDocgenApi[];
 }): Promise<string[]> {
   const missing = Object.keys(packages).filter(

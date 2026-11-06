@@ -89,7 +89,6 @@ export class TypeScriptDependencyCommand {
     if (packageManager.isDependencyInstalled('typescript')) {
       const version = await this.getTypeScriptVersion(packageManager);
       if (version && !isTypeScriptUsableForDocgen(version, apis)) {
-        // TypeScript 7.0 has no API; docgen that runs on the native API needs only a newer minor.
         const upgrade = getTypeScriptUpgradeForDocgen(
           apis,
           packageManager.primaryPackageJson.packageJson
@@ -126,7 +125,6 @@ export class TypeScriptDependencyCommand {
     return coerce(await packageManager.getDeclaredVersionSpecifier('typescript'))?.version;
   }
 
-  // Warn that the TypeScript version has no API docgen can use, and say what docgen does meanwhile.
   private async warnTypeScriptWithoutCompilerApi(
     packageManager: JsPackageManager,
     renderer: SupportedRenderer,
@@ -135,8 +133,6 @@ export class TypeScriptDependencyCommand {
     let builderDocgenFallback;
     if (renderer === SupportedRenderer.REACT) {
       let installed = packageManager.isDependencyInstalled('react-docgen');
-      // TEMPORARY(ts-7.1): until TypeScript 7.1 is stable, React falls back to builder docgen, so add
-      // its optional `react-docgen` peer. See `typescript-7-react-docgen-fallback.ts` in core.
       if (!installed && !isTypeScript71Stable()) {
         dependencyCollector.addDevDependencies([`react-docgen@${REACT_DOCGEN_FALLBACK_RANGE}`]);
         recordReactDocgenFallback(packageManager.primaryPackageJson.operationDir);

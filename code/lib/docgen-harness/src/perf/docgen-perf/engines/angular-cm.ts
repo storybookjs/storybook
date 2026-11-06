@@ -1,12 +1,3 @@
-// Series harness for `@storybook/angular-cm`, the analyzer Angular's docgen server runs, on the
-// compiler API of this package's `typescript` (6) or the native API of the `typescript-native`
-// alias (7.1). Manager creation runs inside the cold pass, since it is part of first-extraction
-// cost. A save rewrites one component with one more input; the manager notices through its mtime
-// check, as the docgen server, which runs no watcher, does.
-//
-// Run from code/lib/docgen-harness:
-//   node --expose-gc --import jiti/register src/perf/docgen-perf/engines/angular-cm.ts \
-//     --components 100 --props 8 --saves 10 --typescript native --json /tmp/result.json
 import * as fs from 'node:fs';
 import * as path from 'pathe';
 
@@ -71,7 +62,6 @@ async function createEngine(options: Options): Promise<SeriesEngine> {
       measured = save % project.componentPaths.length;
       const filePath = project.componentPaths[measured];
       fs.writeFileSync(filePath, angularComponentSource(measured, options.props + 1 + (save % 2)));
-      // Moved past any earlier read, so a save within the same millisecond still counts as an edit.
       const future = new Date(Date.now() + 1000 * (save + 1));
       fs.utimesSync(filePath, future, future);
     },

@@ -1,5 +1,3 @@
-// The native API's symbols, types and signatures behind the compiler API's member names. A facade
-// keeps the answers about its own object that no prefetch fills; `NativeFacades` keeps the rest.
 import type ts from 'typescript';
 import type {
   LiteralType,
@@ -17,7 +15,6 @@ const textPart = (text: string): ts.SymbolDisplayPart => ({
   text,
 });
 
-// The members the extractor reads on a `ts.Symbol`.
 export class SymbolFacade {
   private resolvedValueDeclaration?: ts.Declaration | null;
   private resolvedDeclarations?: ts.Declaration[];
@@ -80,9 +77,7 @@ export class SymbolFacade {
   }
 }
 
-// The members the extractor reads on a `ts.Type`.
 export class TypeFacade {
-  // Each a round trip, asked again for every component that inherits the type.
   private properties?: ts.Symbol[];
   private apparentProperties?: ts.Symbol[];
   private constructSignatures?: ts.Signature[];
@@ -116,12 +111,10 @@ export class TypeFacade {
     return this.facades.symbol(this.native.getSymbol());
   }
 
-  // The literal value of a literal type.
   get value(): string | number | ts.PseudoBigInt {
     return (this.native as LiteralType).value as string | number;
   }
 
-  // The members of a union or intersection type.
   get types(): ts.Type[] {
     return this.facades.memberTypes(this.native).map((type) => this.facades.type(type));
   }
@@ -180,7 +173,6 @@ export class TypeFacade {
   }
 }
 
-// The members the extractor reads on a `ts.Signature`.
 export class SignatureFacade {
   private resolvedParameters?: ts.Symbol[];
 
@@ -209,8 +201,7 @@ export class SignatureFacade {
   }
 }
 
-// The type of `{}` for a component whose signature takes no props. The native API cannot type a
-// synthesized node, and the extractor only reads this type's (absent) members.
+// The native API cannot type a synthesized node.
 export class EmptyObjectTypeFacade {
   readonly native = undefined;
   readonly flags = 0;

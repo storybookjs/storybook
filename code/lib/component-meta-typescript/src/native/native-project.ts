@@ -25,24 +25,17 @@ import type { DocgenTypeChecker } from '../docgen-typescript.ts';
 import { NativeFacades } from './native-facades.ts';
 import type { NativeDocgenTypeScript } from './native-typescript.ts';
 
-// What a native project parses from a tsconfig: core's subset plus the options the program needs.
 export interface NativeCommandLine extends ProjectCommandLine {
   options: RawCompilerOptions;
 }
 
-// One native-API project per tsconfig: a program in the compiler process whose root set is the
-// tsconfig's files plus whatever extraction asks for. A file change becomes a new snapshot; the
-// docgen server runs without a watcher, so extraction also notifies the files whose mtime moved.
 export abstract class NativeProject implements ComponentMetaProjectBase {
   private snapshot: Snapshot;
   private project: Project<SyntheticProjectId>;
   private rootFiles: Set<string>;
   private moduleResolver?: ModuleResolver;
-  // Belongs to the current snapshot, so its answers are cached until a file change replaces it.
   private facades?: NativeFacades;
-  // Mtime of each file extraction read, to notify edits when no watcher runs.
   private fileMtimes = new Map<string, number | undefined>();
-  // A file whose mtime is later changed after the first snapshot read it.
   private readonly readSince = Date.now();
   protected disposed = false;
 
@@ -51,7 +44,6 @@ export abstract class NativeProject implements ComponentMetaProjectBase {
     protected readonly typescript: NativeDocgenTypeScript,
     private commandLine: NativeCommandLine,
     readonly configFileName: string | undefined,
-    // Re-parses the tsconfig, so created and deleted files update the root set.
     private readonly getCommandLineFn?: () => NativeCommandLine
   ) {
     this.rootFiles = new Set(commandLine.fileNames);
@@ -82,7 +74,6 @@ export abstract class NativeProject implements ComponentMetaProjectBase {
     return this.project.program.getSourceFile(fileName) as ts.SourceFile | undefined;
   }
 
-  // Add the files the program does not have to its root set.
   ensureFiles(fileNames: string[]): void {
     const missing = fileNames.filter(
       (fileName) => !this.rootFiles.has(fileName) && !this.hasSourceFile(fileName)
@@ -99,8 +90,6 @@ export abstract class NativeProject implements ComponentMetaProjectBase {
     this.rootFiles = rootFiles;
   }
 
-  // Core calls this from the watcher's timer, so a failure is logged and the project keeps its
-  // state: every method here changes it only after the compiler process accepted the snapshot.
   onFilesChanged(changes: FileChange[]): void {
     if (this.disposed) {
       return;
@@ -125,8 +114,6 @@ export abstract class NativeProject implements ComponentMetaProjectBase {
     this.snapshot.dispose();
   }
 
-  // Notify the compiler process of the files whose mtime moved since they were last read, and
-  // return whether any did.
   protected ensureFresh(fileNames: string[]): boolean {
     const changed: string[] = [];
     const mtimes = new Map<string, number | undefined>();
@@ -151,8 +138,6 @@ export abstract class NativeProject implements ComponentMetaProjectBase {
     return changed.length > 0;
   }
 
-  // The checker of the current snapshot. Its objects belong to that snapshot, so ask for it at the
-  // start of every extraction rather than keeping it across file changes.
   protected getChecker(): DocgenTypeChecker {
     this.facades ??= new NativeFacades(this.project, this.typescript);
     return this.facades.createChecker();
@@ -172,7 +157,6 @@ export abstract class NativeProject implements ComponentMetaProjectBase {
     const changed = byType('changed');
     const known = changes.some((change) => this.hasSourceFile(change.filePath));
 
-    // A created or deleted file can change which files the tsconfig includes.
     let commandLine = this.commandLine;
     let rootFiles = this.rootFiles;
     if ((created.length > 0 || deleted.length > 0) && this.getCommandLineFn) {
@@ -186,8 +170,6 @@ export abstract class NativeProject implements ComponentMetaProjectBase {
       rootFiles.size !== this.rootFiles.size ||
       [...rootFiles].some((fileName) => !this.rootFiles.has(fileName));
 
-    // A changed file the program does not know, such as a stylesheet, changes nothing here. A
-    // created one can be what a failed import was looking for.
     const reachesProgram = known || rootsChanged || created.length > 0;
     if (reachesProgram) {
       this.replaceSnapshot(

@@ -66,10 +66,10 @@ EVAL_ONLY=803-edit-component yarn eval
 ```
 
 A full `EVAL_ALL=1` run (14 workflow evals × 4 experiments + 4
-lifecycle evals × 2 plugin experiments) costs roughly **$0.60** in agent
-tokens at the averages measured in October 2026: about $0.01 per eval on
+lifecycle evals × 2 plugin experiments) costs roughly **$0.45** in agent
+tokens, as measured in November 2026: about $0.007 per eval on
 Haiku 5.5 low and on gpt-6-luna low with Sol's test rules, against about
-$0.12 per eval on gpt-6.1-sol low. The budget guardrail is **$75 per full run** — check the
+$0.11 per eval on gpt-6.1-sol low. The budget guardrail is **$75 per full run** — check the
 usage metadata in the results playground before growing the eval set past it
 (see [storybookjs/mcp#324](https://github.com/storybookjs/mcp/pull/324)).
 
@@ -187,7 +187,7 @@ CI in two cases:
   label.
 
 Every run costs money in agent tokens. The default smoke eval is cheap, a
-run of all evals costs roughly $0.60.
+run of all evals costs roughly $0.45.
 
 ### When to use
 

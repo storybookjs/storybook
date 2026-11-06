@@ -119,6 +119,10 @@ describe('review.create', () => {
     expect(setReview).not.toHaveBeenCalled();
   });
 
+  it('publishes no output schema, so MCP clients pass the review lines on as text', () => {
+    expect(reviewToolset.methods.create).not.toHaveProperty('output');
+  });
+
   it('propagates service errors unchanged', async () => {
     serviceError = new Error('review service unavailable');
 

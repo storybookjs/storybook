@@ -62,22 +62,14 @@ const reviewCreateInputSchema = v.strictObject({
 
 type ReviewCreateInput = v.InferOutput<typeof reviewCreateInputSchema>;
 
-const reviewCreateOutputSchema = v.object({
-  reviewUrl: v.pipe(
-    v.string(),
-    v.description(
-      'URL of the Storybook review page. Always include this URL in your final user-facing response so the user can open it directly.'
-    )
-  ),
-  collectionCount: v.number(),
-  storyCount: v.number(),
-  instructions: v.pipe(
-    v.string(),
-    v.description('What to do now that the review is published. Follow it.')
-  ),
-});
-
-export type ReviewCreateOutput = v.InferOutput<typeof reviewCreateOutputSchema>;
+// No MCP output schema: Claude Code would hand the model this as JSON instead of the text, and
+// the review lines, escaped inside a JSON string, then go missing from the answer.
+export type ReviewCreateOutput = {
+  reviewUrl: string;
+  collectionCount: number;
+  storyCount: number;
+  instructions: string;
+};
 
 function describeCreate(ctx: ToolsetCtx): string {
   const ref = getToolName(ctx);
@@ -147,7 +139,6 @@ export const reviewToolset = defineToolset({
   methods: {
     create: {
       input: reviewCreateInputSchema,
-      output: reviewCreateOutputSchema,
       title: 'Create Storybook review',
       // Reviews publish into the running Storybook's review service and link into its UI.
       requiresDevServer: true,

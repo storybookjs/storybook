@@ -112,7 +112,8 @@ function storyNoun(storyCount: number): string {
 function reviewInstructions(reviewUrl: string, storyCount: number, browse: boolean): string {
   // Agents were observed ending visual work at the tool result, or summarizing the review in
   // their own words, so the result carries the lines the final response has to end with.
-  return `Now write your final response: first answer the user's request, such as what you changed or the stories they asked to see, then end with these three lines, copied unchanged, with nothing after them:
+  // The instruction comes after the lines too, so it is the last thing the agent reads.
+  return `End your final response with these three lines, copied unchanged:
 
 ${
   // A browse request changes no files, so its heading must not speak of changes.
@@ -122,7 +123,9 @@ The review shows the ${storyCount} ${storyNoun(storyCount)} you asked to see.`
     : `## 👀 Review your changes
 The review shows the ${storyCount} ${storyNoun(storyCount)} most relevant for you to review right now.`
 } Because this is AI-curated, results may be inaccurate or incomplete.
-👉 [Open the Storybook review page](${reviewUrl})`;
+👉 [Open the Storybook review page](${reviewUrl})
+
+Above these three lines, first answer the user's request, such as what you changed or the stories they asked to see. Your final response ends with the three lines, with nothing after them.`;
 }
 
 function formatReviewApplied({

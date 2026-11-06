@@ -7,8 +7,10 @@ import type { ComponentManifest, Doc, Story } from './manifest-types.ts';
  * Adapts the `docgenServer` open-service payloads into the manifest formatter's
  * {@link ComponentManifest}/{@link Doc} shapes.
  *
- * Only `argTypes` is dropped: the props section comes from `apiDescription` when the framework
- * authored one, else from the `react*` docgen-engine fields. All of those pass through unchanged.
+ * Only `argTypes` and `docsDescription` are dropped. The props section comes from `apiDescription`
+ * when the framework authored one, else from the `react*` docgen-engine fields; all of those pass
+ * through unchanged. `docsDescription` is for the Docs `Description` block only: it repeats
+ * `description` and content the manifest already renders (such as `jsDocTags.example`).
  */
 
 /**
@@ -45,7 +47,13 @@ export function adaptCoreDoc(doc: MdxDoc): Doc {
 
 /** Adapts a core-format component (docgen + story-docs + attached MDX) into a {@link ComponentManifest}. */
 export function adaptCoreComponent(core: CoreDocgenComponent): ComponentManifest {
-  const { stories, docs, [ARG_TYPES_KEY]: _argTypes, ...rest } = core;
+  const {
+    stories,
+    docs,
+    [ARG_TYPES_KEY]: _argTypes,
+    docsDescription: _docsDescription,
+    ...rest
+  } = core;
   const component = { ...rest } as ComponentManifest;
 
   const adaptedStories = adaptCoreStories(stories);

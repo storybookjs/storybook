@@ -12,7 +12,12 @@ import type {
   ManifestClassField,
   ManifestDeclaration,
 } from '../component-docgen/manifest/types.ts';
-import { type SnippetTemplate, fillTemplate, stripHoles } from 'storybook/internal/docs-tools';
+import {
+  type SnippetTemplate,
+  argChanges,
+  fillTemplate,
+  stripHoles,
+} from 'storybook/internal/docs-tools';
 
 import { printHole } from '../../docs/print-hole.ts';
 import type { HtmlSnippetTemplate } from '../../snippet-holes.ts';
@@ -741,7 +746,7 @@ describe('the template', () => {
   const fill = (template: SnippetTemplate | undefined, initialArgs: Args, changed: Args) =>
     fillTemplate(
       template as HtmlSnippetTemplate,
-      { initialArgs, unmappedArgs: { ...initialArgs, ...changed } },
+      argChanges({ initialArgs, unmappedArgs: { ...initialArgs, ...changed } }),
       printHole
     );
 

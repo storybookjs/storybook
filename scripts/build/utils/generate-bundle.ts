@@ -1,5 +1,6 @@
 import { existsSync, watch } from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import * as esbuild from 'esbuild';
@@ -255,8 +256,9 @@ export async function generateBundle({
         target: NODE_TARGET,
         alias: {
           // Keep a single bundled acorn copy when CommonJS dependencies such as
-          // acorn-jsx require('acorn') alongside ESM imports.
-          acorn: join(resolvePackageDir('acorn'), 'dist/acorn.mjs'),
+          // acorn-jsx require('acorn') alongside ESM imports. Resolved from the scripts package,
+          // which depends on acorn 8, so the copy does not depend on which version is hoisted.
+          acorn: fileURLToPath(import.meta.resolve('acorn')),
           // Avoid a nested @polka/url@0.5.0 CJS copy that drops polka's named `parse` export.
           '@polka/url': join(resolvePackageDir('@polka/url'), 'build.mjs'),
         },

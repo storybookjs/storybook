@@ -23,7 +23,7 @@ Add `-c production` only when you need sandbox-related NX tasks or are explicitl
 | Scenario                        | Command                                                                      |
 | ------------------------------- | ---------------------------------------------------------------------------- |
 | Install                         | `pnpm install`                                                               |
-| Dedupe the lockfile             | `pnpm dedupe`                                                                |
+| Dedupe the lockfile             | `pnpm dedupe` (CI checks it on PRs that change `pnpm-lock.yaml`)             |
 | Compile everything quickly      | `pnpm exec nx run-many -t compile` (or `pnpm task compile`)                  |
 | Compile one project             | `pnpm exec nx compile <nx-project-name>`                                     |
 | Check TypeScript errors quickly | `pnpm exec nx run-many -t check` (or `pnpm task check`)                      |

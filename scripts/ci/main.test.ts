@@ -94,6 +94,18 @@ describe('main.ts under plain Node, as the CircleCI setup job runs it', () => {
     expect(importers.filter((dir) => !packed.has(`project/${dir}`))).toEqual([]);
   });
 
+  it.each([
+    { name: 'a run that is not a pull request', args: [] },
+    { name: 'a pull request that leaves pnpm-lock.yaml alone', args: ['--gh-pr-number=1'] },
+  ])('skips the dedupe check for $name', ({ args }) => {
+    // HEAD...HEAD changes nothing.
+    const result = generate('--workflow=normal', '--base-ref=HEAD', ...args);
+
+    expect(result.status, result.stderr).toBe(0);
+    const steps: { run?: { name: string } }[] = readConfig().jobs['build--linux'].steps;
+    expect(steps.map((step) => step.run?.name)).not.toContain('Check for dedupe');
+  });
+
   it.each([{ args: [] }, { args: ['--workflow=unknown'] }])('rejects $args', ({ args }) => {
     const result = generate(...args);
 

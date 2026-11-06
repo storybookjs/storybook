@@ -63,7 +63,8 @@ linux-browsers-init-steps: &linux-browsers-init-steps
       echo "pnpm store:   $(pnpm store path)"
       echo "home:         $HOME"
       git diff --exit-code
-      pnpm dedupe --check
+      # No `pnpm dedupe --check`: it also fails once newer versions in range pass the release-age
+      # gate. CircleCI runs it on pull requests that change pnpm-lock.yaml.
 
 common-env-vars: &common-env-vars
   STORYBOOK_DISABLE_TELEMETRY: true

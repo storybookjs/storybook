@@ -22,7 +22,7 @@ import {
   workflow,
   workspace,
 } from './utils/helpers.ts';
-import { isTrustedAuthor } from './utils/runtime.ts';
+import { isLockfileChanged, isTrustedAuthor } from './utils/runtime.ts';
 import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
 import { getWorkspaceDirs } from './utils/workspace.ts';
 
@@ -58,7 +58,10 @@ export const build_linux = defineJob('Build (linux)', () => ({
     git.checkout(),
     pnpm.enable(),
     ...installWithCache(),
-    pnpm.dedupeCheck(),
+    // `pnpm dedupe` also moves dependencies to newer versions in their ranges once those are past
+    // the release-age gate, so the check would start failing on unchanged code. Only pull requests
+    // that change the lockfile run it; their authors run `pnpm dedupe` before merging.
+    ...(isLockfileChanged() ? [pnpm.dedupeCheck()] : []),
     workspace.pack(
       [
         // The root node_modules holds pnpm's virtual store, which every

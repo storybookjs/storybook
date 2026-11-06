@@ -3910,6 +3910,13 @@ describe('PreviewWeb', () => {
       expect(wrap.defaultPrevented).toBe(false);
     });
 
+    it('sets up its listeners when the global has no addEventListener, as in React Native', async () => {
+      vi.stubGlobal('addEventListener', undefined);
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+
+      await expect(createAndRenderPreview()).resolves.toBeDefined();
+    });
+
     it('leaves F6 to the browser when the preview is the top-level document', async () => {
       vi.stubGlobal('parent', globalThis.self);
       document.location.search = '?id=component-one--docs&viewMode=docs';

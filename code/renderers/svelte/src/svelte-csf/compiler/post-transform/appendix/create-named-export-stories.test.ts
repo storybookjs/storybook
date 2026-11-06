@@ -1,4 +1,5 @@
 import { print } from 'esrap';
+import ts from 'esrap/languages/ts';
 import { describe, it } from 'vitest';
 
 import { createNamedExportStories } from './create-named-export-stories.ts';
@@ -26,7 +27,7 @@ describe(createNamedExportStories, () => {
       ],
     });
 
-    expect(print(namedExportDeclaration).code).toMatchInlineSnapshot(`
+    expect(print(namedExportDeclaration, ts()).code).toMatchInlineSnapshot(`
       "export {
       	$__Default as Default,
       	$__Primary as Primary,

@@ -95,6 +95,12 @@
       }
     },
     {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "rules": {
+        "local-rules/no-untracked-service-state-key-check": "error"
+      }
+    },
+    {
       "files": ["core/src/cli/skills/content/**"],
       "rules": {
         "no-restricted-imports": [

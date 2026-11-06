@@ -4,6 +4,8 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import type { CompileError } from 'svelte/compiler';
+
 import { SVELTE_CSF_IMPORT_SOURCES } from '../constants.ts';
 import { parseForIndexer } from './parser.ts';
 
@@ -33,6 +35,48 @@ describe('parseForIndexer', () => {
     const { stories } = await parseForIndexer(file);
 
     expect(stories.map((story) => story.exportName)).toEqual(['Default']);
+  });
+
+  it('keeps the location and the code frame of a syntax error', async ({ expect }) => {
+    const file = await writeStoriesFile(`<script module lang="ts">
+  import { defineMeta } from '@storybook/svelte';
+  const { Story } = defineMeta({ title: 'Example' });
+</script>
+
+<Story name="Default">{#if}</Story>
+`);
+
+    const error = await parseForIndexer(file).then(
+      () => expect.unreachable('parseForIndexer should reject'),
+      (error: CompileError) => error
+    );
+
+    expect(error.start).toMatchObject({ line: 6, column: 26 });
+    expect(error.frame).toContain('6: <Story name="Default">{#if}</Story>');
+  });
+
+  it('keeps the location but not the code frame of a syntax error in a file with SCSS styles', async ({
+    expect,
+  }) => {
+    const file = await writeStoriesFile(`<script module lang="ts">
+  import { defineMeta } from '@storybook/svelte';
+  const { Story } = defineMeta({ title: 'Example' });
+</script>
+
+<Story name="Default">{#if}</Story>
+
+<style lang="scss">
+  .a { color: $primary; }
+</style>
+`);
+
+    const error = await parseForIndexer(file).then(
+      () => expect.unreachable('parseForIndexer should reject'),
+      (error: CompileError) => error
+    );
+
+    expect(error.start).toMatchObject({ line: 6, column: 26 });
+    expect(error.frame).toBeUndefined();
   });
 
   it('keeps stories after a script that mentions a style tag', async ({ expect }) => {

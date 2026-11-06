@@ -37,6 +37,7 @@
   - ['Create new story' UI feature removed](#create-new-story-ui-feature-removed)
   - [Sidebar: standalone docs pages are no longer wrapped in a component](#sidebar-standalone-docs-pages-are-no-longer-wrapped-in-a-component)
   - [Test runner support ended](#test-runner-support-ended)
+  - [`storybook/test` is based on Vitest 5 and no longer installs its test libraries](#storybooktest-is-based-on-vitest-5-and-no-longer-installs-its-test-libraries)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
@@ -64,7 +65,7 @@
   - [`mockChannel` removed from `storybook/preview-api` and `storybook/manager-api`](#mockchannel-removed-from-storybookpreview-api-and-storybookmanager-api)
   - [React: Require v18 and up](#react-require-v18-and-up)
   - [`@storybook/react-dom-shim` removed](#storybookreact-dom-shim-removed)
-  - [Preact: Require v10.8.0 and up](#preact-require-v1080-and-up)
+  - [Preact: Require v10.9.0 and up](#preact-require-v1090-and-up)
   - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
   - [`experimentalReview` feature flag removed](#experimentalreview-feature-flag-removed)
   - [`changeDetection` feature flag removed](#changedetection-feature-flag-removed)
@@ -782,6 +783,7 @@ These cases keep working without changes:
 - Composing Storybooks that run locally, when the composing Storybook is opened on `localhost` or `127.0.0.1`
 - Tools running on your machine, served from `localhost` or `127.0.0.1`, that embed a running Storybook
 - Built and published Storybooks; Only `storybook dev` sends the header, so a built Storybook can still be embedded and composed from any origin
+- Storybooks running in a WebContainer, such as StackBlitz, from Storybook 11.0; `storybook dev` does not send the header there, because the host shows the dev server in an `<iframe>` on its own page. Earlier versions that send the header (8.6.19, 9.1.21, and 10.6.2 to 10.6.5) need `security.insecureRemoteIframeEmbed` to render in StackBlitz
 
 Pages served from any other origin, including your local network address (for example `http://192.168.1.20:6006`), a tunnel, or a custom hostname are now blocked. The embedded Storybook appears empty, and the browser console of the embedding page reports a `frame-ancestors` violation/
 
@@ -932,6 +934,8 @@ To keep opening Storybook automatically, add `--open` to your command or package
   }
 }
 ```
+
+Angular projects that start Storybook through the `start-storybook` builder of `@storybook/angular` or `@storybook/angular-vite` no longer open a browser by default either. Set `"open": true` in the builder options in `angular.json` to keep opening it.
 
 ### `viewport.defaultViewport` parameter and `responsiveViewport` removed
 
@@ -1412,6 +1416,44 @@ The Vitest addon requires a Vite-based framework. If your Storybook uses Webpack
 
 If you cannot switch to a Vite-based framework and Vitest, you can continue using the test runner without official support. Another option is to switch to plain Playwright with [a minimal setup that generates tests from stories](https://gist.github.com/AriPerkkio/99b9eedc7d8f71ff6e6770f9425a4be4).
 
+### `storybook/test` is based on Vitest 5 and no longer installs its test libraries
+
+`fn`, `spyOn` and `expect` from `storybook/test` are now based on `@vitest/spy` and `@vitest/expect` 5 (previously 3.2.4), and the DOM matchers on `@testing-library/jest-dom` 7. Some mock behavior follows [Vitest 4's changes to mocks](https://vitest.dev/guide/migration.html#vitest-4):
+
+- A mock called with `new` uses its implementation as a constructor, so that implementation must be a `function` or a `class`, not an arrow function. `fn()` also accepts a class.
+- The default name of a mock created with `fn()` is `vi.fn()` instead of `spy`. Calls of mocks with that name are not logged as actions, as before.
+- `mockReset()` also resets the name given with `mockName()`. `resetAllMocks()` and `restoreAllMocks()` from `storybook/test`, which Storybook calls between stories, keep the names.
+- `mockReturnValue()`, `mockResolvedValue()` and similar shorthands throw when the mock is called with `new`. Use `mockImplementation()` with a `class` instead.
+- Type augmentations of `@vitest/expect` or of the global `jest.Matchers` no longer reach the `expect` of `storybook/test`. Augment its `Assertion` interface with `declare module 'storybook/test'` instead. Its matchers return a `Promise`, which you `await` in a `play` function:
+
+  ```ts
+  // Before
+  declare module '@vitest/expect' {
+    interface JestAssertion<T = any> {
+      toBeEven(): void;
+    }
+  }
+  // or
+  declare global {
+    namespace jest {
+      interface Matchers<R, T = {}> {
+        toBeEven(): R;
+      }
+    }
+  }
+
+  // After
+  declare module 'storybook/test' {
+    interface Assertion<T> {
+      toBeEven(): Promise<void>;
+    }
+  }
+  ```
+
+  The `expect.extend()` call that implements the matcher stays the same, and `await expect(2).toBeEven()` type checks again.
+
+`storybook/test` bundles `@testing-library/dom`, `@testing-library/user-event`, `@testing-library/jest-dom`, `@vitest/expect`, `@vitest/spy` and `chai`, including their types, so `storybook` no longer installs them (or `@types/chai`) as dependencies. If your project imports any of these packages directly, add them to your own `devDependencies`. In Vitest browser mode, the queries of `storybook/test` no longer share `configure()` with a `@testing-library/dom` you install yourself: call `configure` from `storybook/test`.
+
 ### Vitest Addon: requires Vitest 4.0 or higher
 
 The `@storybook/addon-vitest` addon requires **Vitest 4.0 or higher**. Setup now always installs `@vitest/browser-playwright`, generates configuration with the `test.projects` array, and no longer creates or updates `vitest.workspace.*` files. If your Vitest config still uses the deprecated `test.workspace` / `defineWorkspace` style, rename it to `test.projects` and re-run `npx storybook@latest add @storybook/addon-vitest` to merge your existing config.
@@ -1774,17 +1816,19 @@ There is no supported import-only replacement for third-party code that imports 
 
 If your code renders React elements itself, keep one root for each container and reuse it across renders. Apply root options when you first create the root. On unmount, call `root.unmount()`, remove the stored root, and create a new root if that container renders again. Preserve any promise or `act` semantics that callers use to wait for a committed render. A bare `createRoot(container).render(element)` replacement does not preserve these behaviors.
 
-### Preact: Require v10.8.0 and up
+### Preact: Require v10.9.0 and up
 
-Storybook 11 requires Preact 10.8.0 or newer. Upgrade Preact before you upgrade Storybook:
+Storybook 11 requires Preact 10.9.0 or newer. Upgrade Preact before you upgrade Storybook:
 
 ```sh
-npm install preact@^10.8.0
+npm install preact@^10.9.0
 ```
 
-The accepted peer dependency range is `^10.8.0 || >=11.0.0-0`. Storybook uses the `preact/compat/client` entry and calls `unmount()` on its roots when it cleans up a rendered story. Although Preact 10.7.1 includes that entry, its roots don't provide `unmount()`. Preact 10.8.0 provides the root lifecycle that Storybook needs to clean up and render into the same container again.
+The accepted peer dependency range is `^10.9.0 || >=11.0.0-0`. Storybook uses the `preact/compat/client` entry and calls `unmount()` on its roots when it cleans up a rendered story. Although Preact 10.7.1 includes that entry, its roots don't provide `unmount()`. Preact 10.8.0 provides the root lifecycle that Storybook needs to clean up and render into the same container again.
 
-The official Preact framework is `@storybook/preact-vite`. Custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack must also use Preact 10.8.0 or newer.
+Storybook's UI components, which addon-docs renders in the preview, also call `useSyncExternalStore`. `preact/compat` exports it from Preact 10.9.0.
+
+The official Preact framework is `@storybook/preact-vite`. Custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack must also use Preact 10.9.0 or newer.
 
 ### `features.legacyDecoratorFileOrder` removed
 

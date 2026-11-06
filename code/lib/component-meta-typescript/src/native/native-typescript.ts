@@ -3,11 +3,17 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 
 import type ts from 'typescript';
-import type { Node } from 'typescript-native/ast';
+import type {
+  JSDocSeeTag,
+  NamedMemberBase,
+  Node,
+  TypeParameterDeclaration,
+} from 'typescript-native/ast';
 import type { API, RetainedSourceFile } from 'typescript-native/sync';
 
 import {
   DOCGEN_NODE_GUARDS,
+  type DocgenNodeAccessors,
   type DocgenNodeGuards,
   type DocgenSystem,
   type DocgenTypeScript,
@@ -34,6 +40,51 @@ const composedGuards = (
   isClassLike: (node) => ast.isClassDeclaration(node) || ast.isClassExpression(node),
   isStringLiteralLike: (node) =>
     ast.isStringLiteral(node) || ast.isNoSubstitutionTemplateLiteral(node),
+});
+
+// The node accessors on `typescript/ast` nodes, whose fields and positions differ from the compiler
+// API's where the accessors are needed.
+const nativeNodeAccessors = (ast: NativeTypeScriptModules['ast']): DocgenNodeAccessors => ({
+  getTypeParameterDefault: (node) =>
+    (node as unknown as TypeParameterDeclaration).defaultType as unknown as ts.TypeNode | undefined,
+  // A member's `?` or `!` is its `postfixToken`.
+  hasQuestionToken: (member) =>
+    (member as unknown as Partial<NamedMemberBase>).postfixToken?.kind ===
+    ast.SyntaxKind.QuestionToken,
+  getSeeTagReference: (tag) =>
+    (tag as unknown as JSDocSeeTag).nameExpression as unknown as ts.Node | undefined,
+  // A JSDoc node starts at the trivia before it, comments included.
+  getJSDocStart: (jsDoc) => {
+    const sourceText = jsDoc.getSourceFile().text;
+    let at = jsDoc.pos;
+    while (at < sourceText.length && !sourceText.startsWith('/**', at)) {
+      if (sourceText.startsWith('//', at)) {
+        const lineEnd = sourceText.indexOf('\n', at);
+        at = lineEnd < 0 ? sourceText.length : lineEnd + 1;
+      } else if (sourceText.startsWith('/*', at)) {
+        const close = sourceText.indexOf('*/', at + 2);
+        at = close < 0 ? sourceText.length : close + 2;
+      } else {
+        at += 1;
+      }
+    }
+    return at;
+  },
+  // After the tag's own parts, never at its comment: the comment is parsed into nodes that begin
+  // after the line's `*` decoration.
+  getJSDocTagCommentStart: (tag) => {
+    const comment = tag.comment as string | { pos: number };
+    const commentStart = typeof comment === 'string' ? tag.end : comment.pos;
+    let end = tag.tagName.end;
+    const afterPart = (part: { end: number }) => {
+      if (part.end <= commentStart) {
+        end = Math.max(end, part.end);
+      }
+    };
+    // A node array carries no position of its own; its elements do.
+    (tag as unknown as Node).forEachChild(afterPart, (parts) => parts.forEach(afterPart));
+    return end;
+  },
 });
 
 // The native API's modules, imported by the caller where its `typescript` peer resolves.
@@ -114,6 +165,7 @@ export function createNativeDocgenTypeScript(
 
   return {
     ...guards,
+    ...nativeNodeAccessors(ast),
     // Only ever handed back to `createPrinter`, whose native printer takes no hint.
     EmitHint: { Unspecified: 4 } as DocgenTypeScript['EmitHint'],
     JsxEmit: sync.JsxEmit as unknown as DocgenTypeScript['JsxEmit'],

@@ -3,9 +3,11 @@
 // React's extractor and Angular's analyzer are written against the compiler API's shapes
 // (`ts.Node`, `ts.Type`, `ts.Symbol`, `ts.Signature`), but they only touch the members listed here.
 // The compiler backend passes the `typescript` module itself; the native backend (TypeScript 7.1
-// and newer) passes a facade over `typescript/sync` and `typescript/ast` whose objects have the same
-// members. Adding a member here is the only way to use more of TypeScript in docgen, so both
-// backends stay complete.
+// and newer) passes a facade over `typescript/sync` and `typescript/ast` whose checker, symbols,
+// types and signatures have the same members. AST nodes are each backend's own: the fields that
+// differ between them are read through the node accessors below, never directly, so each
+// TypeScript's code path stays in its backend. Adding a member here is the only way to use more of
+// TypeScript in docgen, so both backends stay complete.
 import type ts from 'typescript';
 
 // The `ts.TypeChecker` methods docgen calls. `ts.Symbol`'s own methods take a `ts.TypeChecker`, so
@@ -194,7 +196,39 @@ export interface DocgenTypeScript extends DocgenNodeGuards {
   transform: typeof ts.transform;
   visitEachChild: typeof ts.visitEachChild;
   visitNode: typeof ts.visitNode;
+
+  // Node accessors, for the fields TypeScript 7.1 renamed or positions it reports differently.
+  // The default of a type parameter, such as `T = string`.
+  getTypeParameterDefault(node: ts.TypeParameterDeclaration): ts.TypeNode | undefined;
+  // Whether a class or type member is optional (`name?: T`).
+  hasQuestionToken(member: ts.ClassElement | ts.TypeElement): boolean;
+  // What a `@see` tag refers to, such as `Button` in `@see Button`.
+  getSeeTagReference(tag: ts.JSDocSeeTag): ts.Node | undefined;
+  // The position of a JSDoc comment's opening `/**`.
+  getJSDocStart(jsDoc: ts.JSDoc): number;
+  // The position where the comment text of a JSDoc tag that has one starts, after the tag's own
+  // parts.
+  getJSDocTagCommentStart(tag: ts.JSDocTag): number;
 }
+
+export type DocgenNodeAccessors = Pick<
+  DocgenTypeScript,
+  | 'getJSDocStart'
+  | 'getJSDocTagCommentStart'
+  | 'getSeeTagReference'
+  | 'getTypeParameterDefault'
+  | 'hasQuestionToken'
+>;
+
+const compilerNodeAccessors: DocgenNodeAccessors = {
+  getTypeParameterDefault: (node) => node.default,
+  hasQuestionToken: (member) => 'questionToken' in member && member.questionToken !== undefined,
+  getSeeTagReference: (tag) => tag.name,
+  getJSDocStart: (jsDoc) => jsDoc.pos,
+  getJSDocTagCommentStart: (tag) =>
+    (typeof tag.comment === 'string' ? tag.getChildren().at(-1)?.end : tag.comment?.pos) ??
+    tag.tagName.end,
+};
 
 // Wrap the `typescript` module (TypeScript 5.9 and 6) as the extractor's contract.
 //
@@ -202,7 +236,9 @@ export interface DocgenTypeScript extends DocgenNodeGuards {
 // members the compiler API has no direct equivalent for are added.
 export function createCompilerDocgenTypeScript(typescript: typeof ts): DocgenTypeScript {
   // The module's members are getters, so the extra members are defined, not assigned.
-  const members: Pick<DocgenTypeScript, 'createSourceFile' | 'getEmptyObjectType'> = {
+  const members: Pick<DocgenTypeScript, 'createSourceFile' | 'getEmptyObjectType'> &
+    DocgenNodeAccessors = {
+    ...compilerNodeAccessors,
     createSourceFile: (fileName, text) =>
       typescript.createSourceFile(
         fileName,

@@ -13,7 +13,6 @@ import type * as ts from 'typescript';
 
 import { resolvedNameSymbol, type AnalyzerContext } from './analyzer/context.ts';
 import { getJsDocDescription } from './analyzer/jsdoc.ts';
-import { isOptionalMember } from './analyzer/node-text.ts';
 
 /** Member lines the detail carries before the `… N more` line. */
 const DETAIL_LINE_CAP = 20;
@@ -95,7 +94,7 @@ const objectDetail = (
     if (!ts.isPropertySignature(member) || member.type === undefined) {
       continue;
     }
-    const optional = isOptionalMember(ts, member) ? '?' : '';
+    const optional = ts.hasQuestionToken(member) ? '?' : '';
     lines.push(
       describedLine(
         context,

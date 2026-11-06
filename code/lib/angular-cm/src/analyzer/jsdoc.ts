@@ -32,27 +32,14 @@ const cleanCommentText = (raw: string): string => {
   return cleaned.join('\n');
 };
 
-// TypeScript 7.1 starts a JSDoc node at the trivia before it, comments included.
-const jsDocStart = (sourceText: string, pos: number): number => {
-  let at = pos;
-  while (at < sourceText.length && !sourceText.startsWith('/**', at)) {
-    if (sourceText.startsWith('//', at)) {
-      const lineEnd = sourceText.indexOf('\n', at);
-      at = lineEnd < 0 ? sourceText.length : lineEnd + 1;
-    } else if (sourceText.startsWith('/*', at)) {
-      const close = sourceText.indexOf('*/', at + 2);
-      at = close < 0 ? sourceText.length : close + 2;
-    } else {
-      at += 1;
-    }
-  }
-  return at;
-};
-
-const rawJsDocComment = (sourceText: string, jsDoc: tsModule.JSDoc): string => {
+const rawJsDocComment = (
+  ts: DocgenTypeScript,
+  sourceText: string,
+  jsDoc: tsModule.JSDoc
+): string => {
   const end = jsDoc.tags?.length ? jsDoc.tags[0].pos : jsDoc.end;
   return sourceText
-    .slice(jsDocStart(sourceText, jsDoc.pos), end)
+    .slice(ts.getJSDocStart(jsDoc), end)
     .replace(/^\/\*\*/, '')
     .replace(/\*\/$/, '');
 };
@@ -63,25 +50,11 @@ const rawTagComment = (
   tag: tsModule.JSDocTag
 ): string | undefined => {
   let start: number | undefined;
-  // TypeScript 7.1's native nodes name a `@see` tag's reference `nameExpression`.
-  const seeName =
-    ts.isJSDocSeeTag(tag) &&
-    (tag.name ?? (tag as { nameExpression?: tsModule.Node }).nameExpression);
-  if (seeName) {
-    start = seeName.pos;
+  const seeReference = ts.isJSDocSeeTag(tag) ? ts.getSeeTagReference(tag) : undefined;
+  if (seeReference) {
+    start = seeReference.pos;
   } else if (tag.comment !== undefined) {
-    // After the tag's own parts, never at its comment: TypeScript 7.1 parses every comment into
-    // nodes that begin after the line's `*` decoration, which cleanCommentText would strip again.
-    const commentStart = typeof tag.comment === 'string' ? tag.end : tag.comment.pos;
-    let end = tag.tagName.end;
-    const afterPart = (part: { end: number }) => {
-      if (part.end <= commentStart) {
-        end = Math.max(end, part.end);
-      }
-    };
-    // A native node array carries no position of its own; its elements do.
-    ts.forEachChild(tag, afterPart, (parts) => parts.forEach(afterPart));
-    start = end;
+    start = ts.getJSDocTagCommentStart(tag);
   }
   return start === undefined
     ? undefined
@@ -100,7 +73,9 @@ export function getJsDocDescription(
     .filter((doc): doc is tsModule.JSDoc => ts.isJSDoc(doc))
     .at(-1);
   let text =
-    jsDoc?.comment === undefined ? undefined : cleanCommentText(rawJsDocComment(sourceText, jsDoc));
+    jsDoc?.comment === undefined
+      ? undefined
+      : cleanCommentText(rawJsDocComment(ts, sourceText, jsDoc));
   // `/*****`-style openers leak pure-asterisk lines into the comment text.
   text = text?.replace(/^(?:[ \t]*\*+[ \t]*\n)+/, '').replace(/^[ \t]*\*+[ \t]*$/, '');
   // An explicit `@description` tag wins: the text before it is usually a `property foo` header,

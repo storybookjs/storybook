@@ -1,3 +1,27 @@
+## 11.0.0-beta.1
+
+- Angular-Vite: Evaluate @angular/compiler once per page under Vitest - [#37133](https://github.com/storybookjs/storybook/pull/37133), thanks @yngvebn!
+- CLI: Resolve owner-scoped pkg.pr.new canary specifiers - [#37139](https://github.com/storybookjs/storybook/pull/37139), thanks @Sidnioulz!
+- CLI: Scaffold CSF4 from storybook init - [#37125](https://github.com/storybookjs/storybook/pull/37125), thanks @ndelangen!
+- Core: ASCII-safe open-service static-snapshot filenames - [#37136](https://github.com/storybookjs/storybook/pull/37136), thanks @obvious-autobuild!
+- Core: Bundle six small dependencies and require Preact 10.9 - [#37162](https://github.com/storybookjs/storybook/pull/37162), thanks @kasperpeulen!
+- Core: Drop npmlog from node-logger - [#37159](https://github.com/storybookjs/storybook/pull/37159), thanks @kasperpeulen!
+- Core: Fix docgen and story docs for reserved ids, renamed files and selected stories - [#37157](https://github.com/storybookjs/storybook/pull/37157), thanks @JReinhold!
+- Core: Let StackBlitz embed the dev server again - [#37176](https://github.com/storybookjs/storybook/pull/37176), thanks @kasperpeulen!
+- Core: Prebundle `open` to drop 10 installed packages - [#37140](https://github.com/storybookjs/storybook/pull/37140), thanks @kasperpeulen!
+- Core: Show story-docs data that arrives after a subscription starts - [#37156](https://github.com/storybookjs/storybook/pull/37156), thanks @JReinhold!
+- Core: Stop a late ack error clobbering resolved static-load state in the story - [#37199](https://github.com/storybookjs/storybook/pull/37199), thanks @ndelangen!
+- ESLint: Validate mandatory static fields in CSF 3 and 4 - [#36819](https://github.com/storybookjs/storybook/pull/36819), thanks @Sidnioulz!
+- Next.js: Preserve display option for local fonts - [#37002](https://github.com/storybookjs/storybook/pull/37002), thanks @naveedsajjdawan!
+- Preview API: Skip the landmark navigation listener in RN - [#37183](https://github.com/storybookjs/storybook/pull/37183), thanks @dannyhw!
+- React: Make nested user-event act wrappers re-entrant - [#36754](https://github.com/storybookjs/storybook/pull/36754), thanks @smg99!
+- React: Make react-docgen optional and drop builder docgen deps from the default install - [#37141](https://github.com/storybookjs/storybook/pull/37141), thanks @kasperpeulen!
+- Svelte: Clearer indexing errors for files without defineMeta, and print each error once - [#37204](https://github.com/storybookjs/storybook/pull/37204), thanks @JReinhold!
+- Svelte: Remove stale CSF type augmentations - [#37137](https://github.com/storybookjs/storybook/pull/37137), thanks @obvious-autobuild!
+- Svelte: Update esrap to 2.x - [#37142](https://github.com/storybookjs/storybook/pull/37142), thanks @JReinhold!
+- Telemetry: Add VRT packages - [#37124](https://github.com/storybookjs/storybook/pull/37124), thanks @shilman!
+- Test: Bundle the test libraries and their types, upgrade to Vitest 5 - [#37143](https://github.com/storybookjs/storybook/pull/37143), thanks @kasperpeulen!
+
 ## 11.0.0-beta.0
 
 - Astro: Add init support, doc mention and ecosystem CI sandbox - [#37122](https://github.com/storybookjs/storybook/pull/37122), thanks @Sidnioulz!

@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [ESLint plugin: `meta-inline-properties` replaced by `static-csf-properties`](#eslint-plugin-meta-inline-properties-replaced-by-static-csf-properties)
   - [Deprecated addon UI APIs removed](#deprecated-addon-ui-apis-removed)
   - [Theming imports](#theming-imports)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding)
@@ -20,6 +21,7 @@
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
     - [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
+    - [React: `react-docgen` and `react-docgen-typescript` are optional peer dependencies](#react-react-docgen-and-react-docgen-typescript-are-optional-peer-dependencies)
     - [Svelte](#svelte)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or newer](#typescript-59-or-newer)
@@ -35,6 +37,7 @@
   - ['Create new story' UI feature removed](#create-new-story-ui-feature-removed)
   - [Sidebar: standalone docs pages are no longer wrapped in a component](#sidebar-standalone-docs-pages-are-no-longer-wrapped-in-a-component)
   - [Test runner support ended](#test-runner-support-ended)
+  - [`storybook/test` is based on Vitest 5 and no longer installs its test libraries](#storybooktest-is-based-on-vitest-5-and-no-longer-installs-its-test-libraries)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
@@ -62,7 +65,7 @@
   - [`mockChannel` removed from `storybook/preview-api` and `storybook/manager-api`](#mockchannel-removed-from-storybookpreview-api-and-storybookmanager-api)
   - [React: Require v18 and up](#react-require-v18-and-up)
   - [`@storybook/react-dom-shim` removed](#storybookreact-dom-shim-removed)
-  - [Preact: Require v10.8.0 and up](#preact-require-v1080-and-up)
+  - [Preact: Require v10.9.0 and up](#preact-require-v1090-and-up)
   - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
   - [`experimentalReview` feature flag removed](#experimentalreview-feature-flag-removed)
   - [`changeDetection` feature flag removed](#changedetection-feature-flag-removed)
@@ -638,6 +641,11 @@
 
 ## From version 10.x to 11.0.0
 
+### ESLint plugin: `meta-inline-properties` replaced by `static-csf-properties`
+
+The `storybook/meta-inline-properties` rule has been removed from `eslint-plugin-storybook`. It checked a different property set than Storybook statically analyzes. If your ESLint config enables it explicitly, delete that entry, or the config will fail to load.
+
+Its replacement, `storybook/static-csf-properties`, ships at `error` severity in the `recommended`, `csf`, and `csf-strict` configs (flat and legacy). It reports exactly what breaks Storybook's static analysis of a story file: dynamic values for `title`, `id`, `tags`, `includeStories`, and `excludeStories` (on the meta, on stories, and in `preview.meta()` factory files), statically-read properties placed before an object spread that can override them at runtime, a `preview.meta()` argument that cannot be resolved statically, and a `preview` factory imported from a path that is not a `.storybook/preview` file. Every report corresponds to a file that already fails to index or silently diverges from what renders.
 ### Deprecated addon UI APIs removed
 
 Storybook 11 removes the deprecated UI APIs from `storybook/internal/components`. Update addons to the replacements below. `TooltipProvider`, `Tooltip`, `TooltipNote`, `PopoverProvider`, `Popover`, `ActionList`, `Select`, and the current tab components remain available.
@@ -775,6 +783,7 @@ These cases keep working without changes:
 - Composing Storybooks that run locally, when the composing Storybook is opened on `localhost` or `127.0.0.1`
 - Tools running on your machine, served from `localhost` or `127.0.0.1`, that embed a running Storybook
 - Built and published Storybooks; Only `storybook dev` sends the header, so a built Storybook can still be embedded and composed from any origin
+- Storybooks running in a WebContainer, such as StackBlitz, from Storybook 11.0; `storybook dev` does not send the header there, because the host shows the dev server in an `<iframe>` on its own page. Earlier versions that send the header (8.6.19, 9.1.21, and 10.6.2 to 10.6.5) need `security.insecureRemoteIframeEmbed` to render in StackBlitz
 
 Pages served from any other origin, including your local network address (for example `http://192.168.1.20:6006`), a tunnel, or a custom hostname are now blocked. The embedded Storybook appears empty, and the browser console of the embedding page reports a `frame-ancestors` violation/
 
@@ -925,6 +934,8 @@ To keep opening Storybook automatically, add `--open` to your command or package
   }
 }
 ```
+
+Angular projects that start Storybook through the `start-storybook` builder of `@storybook/angular` or `@storybook/angular-vite` no longer open a browser by default either. Set `"open": true` in the builder options in `angular.json` to keep opening it.
 
 ### `viewport.defaultViewport` parameter and `responsiveViewport` removed
 
@@ -1148,6 +1159,28 @@ Client-side docgen that runs in the builder is deprecated and will be removed in
 This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`, and the Svelte `docgen` framework option in `@storybook/svelte-vite` and `@storybook/sveltekit` (including the sveltedoc-shaped `__docgen`).
 Builder docgen only runs when `features.docgenServer` is `false`. Storybook prints a deprecation warning when your `.storybook/main.ts` sets `docgenServer: false`. When server-side docgen is off because TypeScript is missing or unusable, Storybook prints the TypeScript warning instead. For no docgen and no warnings, also turn builder docgen off: `typescript.reactDocgen: false` for React, and the `docgen: false` framework option for Vue 3 and Svelte.
 Install the `typescript` package and remove `docgenServer: false` to use server-side docgen.
+
+#### React: `react-docgen` and `react-docgen-typescript` are optional peer dependencies
+
+The packages that only React builder docgen uses are now optional peer dependencies, so projects on server-side docgen no longer install them, nor the Babel toolchain that `react-docgen` brings along:
+
+- `react-docgen` and `react-docgen-typescript` in `@storybook/react`, `@storybook/react-vite` and `@storybook/preset-react-webpack`
+- `@joshwooding/vite-plugin-react-docgen-typescript` in `@storybook/react-vite`
+- `@storybook/react-docgen-typescript-plugin` in `@storybook/preset-react-webpack`
+
+Storybook loads them only when builder docgen runs. When your main config sets `features.docgenServer: false` and a package is missing, `storybook dev` and `storybook build` fail with the install command for your package manager. Set `typescript.reactDocgen: false` to run without docgen instead, or better, remove `docgenServer: false` to use server-side docgen:
+
+| `typescript.reactDocgen` | Add to devDependencies |
+| --- | --- |
+| `'react-docgen'` (default) | `react-docgen` |
+| `'react-docgen-typescript'` | Vite: `@joshwooding/vite-plugin-react-docgen-typescript` and `react-docgen-typescript`. Webpack: `@storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0` (this exact version; the `latest` tag is older) and `react-docgen-typescript` |
+
+Projects without a usable `typescript` (no `typescript` package, or TypeScript 7 without the [side-by-side setup](#typescript-59-or-newer)) only get docgen from the `react-docgen` fallback when `react-docgen` is installed. <!-- TEMPORARY(ts-7.1): update once Storybook supports TypeScript 7.1. -->
+Until Storybook supports TypeScript 7.1, `storybook init` and the `typescript-7-react-docgen` automigration add `react-docgen` to React projects on TypeScript 7.0 and note that in the Storybook cache in `node_modules`. A later Storybook update offers to remove it again once TypeScript 7 projects can use server-side docgen; without that note it leaves `react-docgen` alone. Setting up TypeScript 6 side by side gives you server-side docgen today.
+
+In `react-docgen-typescript` mode, `react-docgen` is optional and only documents JavaScript files. Without it, JavaScript components get no props, and Storybook does not warn about that.
+
+Storybook does not add these packages for you when you upgrade. If you keep `features.docgenServer: false`, install the packages from the table yourself.
 
 #### Svelte
 
@@ -1382,6 +1415,44 @@ The Vitest addon requires a Vite-based framework. If your Storybook uses Webpack
 - Other Webpack-based frameworks: see [migrating from Webpack to Vite](https://storybook.js.org/docs/builders/vite#migrating-from-webpack).
 
 If you cannot switch to a Vite-based framework and Vitest, you can continue using the test runner without official support. Another option is to switch to plain Playwright with [a minimal setup that generates tests from stories](https://gist.github.com/AriPerkkio/99b9eedc7d8f71ff6e6770f9425a4be4).
+
+### `storybook/test` is based on Vitest 5 and no longer installs its test libraries
+
+`fn`, `spyOn` and `expect` from `storybook/test` are now based on `@vitest/spy` and `@vitest/expect` 5 (previously 3.2.4), and the DOM matchers on `@testing-library/jest-dom` 7. Some mock behavior follows [Vitest 4's changes to mocks](https://vitest.dev/guide/migration.html#vitest-4):
+
+- A mock called with `new` uses its implementation as a constructor, so that implementation must be a `function` or a `class`, not an arrow function. `fn()` also accepts a class.
+- The default name of a mock created with `fn()` is `vi.fn()` instead of `spy`. Calls of mocks with that name are not logged as actions, as before.
+- `mockReset()` also resets the name given with `mockName()`. `resetAllMocks()` and `restoreAllMocks()` from `storybook/test`, which Storybook calls between stories, keep the names.
+- `mockReturnValue()`, `mockResolvedValue()` and similar shorthands throw when the mock is called with `new`. Use `mockImplementation()` with a `class` instead.
+- Type augmentations of `@vitest/expect` or of the global `jest.Matchers` no longer reach the `expect` of `storybook/test`. Augment its `Assertion` interface with `declare module 'storybook/test'` instead. Its matchers return a `Promise`, which you `await` in a `play` function:
+
+  ```ts
+  // Before
+  declare module '@vitest/expect' {
+    interface JestAssertion<T = any> {
+      toBeEven(): void;
+    }
+  }
+  // or
+  declare global {
+    namespace jest {
+      interface Matchers<R, T = {}> {
+        toBeEven(): R;
+      }
+    }
+  }
+
+  // After
+  declare module 'storybook/test' {
+    interface Assertion<T> {
+      toBeEven(): Promise<void>;
+    }
+  }
+  ```
+
+  The `expect.extend()` call that implements the matcher stays the same, and `await expect(2).toBeEven()` type checks again.
+
+`storybook/test` bundles `@testing-library/dom`, `@testing-library/user-event`, `@testing-library/jest-dom`, `@vitest/expect`, `@vitest/spy` and `chai`, including their types, so `storybook` no longer installs them (or `@types/chai`) as dependencies. If your project imports any of these packages directly, add them to your own `devDependencies`. In Vitest browser mode, the queries of `storybook/test` no longer share `configure()` with a `@testing-library/dom` you install yourself: call `configure` from `storybook/test`.
 
 ### Vitest Addon: requires Vitest 4.0 or higher
 
@@ -1745,17 +1816,19 @@ There is no supported import-only replacement for third-party code that imports 
 
 If your code renders React elements itself, keep one root for each container and reuse it across renders. Apply root options when you first create the root. On unmount, call `root.unmount()`, remove the stored root, and create a new root if that container renders again. Preserve any promise or `act` semantics that callers use to wait for a committed render. A bare `createRoot(container).render(element)` replacement does not preserve these behaviors.
 
-### Preact: Require v10.8.0 and up
+### Preact: Require v10.9.0 and up
 
-Storybook 11 requires Preact 10.8.0 or newer. Upgrade Preact before you upgrade Storybook:
+Storybook 11 requires Preact 10.9.0 or newer. Upgrade Preact before you upgrade Storybook:
 
 ```sh
-npm install preact@^10.8.0
+npm install preact@^10.9.0
 ```
 
-The accepted peer dependency range is `^10.8.0 || >=11.0.0-0`. Storybook uses the `preact/compat/client` entry and calls `unmount()` on its roots when it cleans up a rendered story. Although Preact 10.7.1 includes that entry, its roots don't provide `unmount()`. Preact 10.8.0 provides the root lifecycle that Storybook needs to clean up and render into the same container again.
+The accepted peer dependency range is `^10.9.0 || >=11.0.0-0`. Storybook uses the `preact/compat/client` entry and calls `unmount()` on its roots when it cleans up a rendered story. Although Preact 10.7.1 includes that entry, its roots don't provide `unmount()`. Preact 10.8.0 provides the root lifecycle that Storybook needs to clean up and render into the same container again.
 
-The official Preact framework is `@storybook/preact-vite`. Custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack must also use Preact 10.8.0 or newer.
+Storybook's UI components, which addon-docs renders in the preview, also call `useSyncExternalStore`. `preact/compat` exports it from Preact 10.9.0.
+
+The official Preact framework is `@storybook/preact-vite`. Custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack must also use Preact 10.9.0 or newer.
 
 ### `features.legacyDecoratorFileOrder` removed
 

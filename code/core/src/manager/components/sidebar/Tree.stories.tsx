@@ -620,14 +620,15 @@ export const ContextMenuEnterOnTrigger: Story = {
     const canvas = within(canvasElement);
     await canvas.findByText('marketing hero');
 
-    // Give the row keyboard focus, which reveals its ⋯ trigger, then Tab onto the trigger and
-    // activate it with Enter. A pointer press alone leaves the trigger hidden; ArrowRight on a
-    // leaf row moves nothing and only makes the focus a keyboard one.
+    // Give the row keyboard focus, which reveals its ⋯ trigger, then ArrowRight onto the trigger
+    // and activate it with Enter. A pointer press alone leaves the trigger hidden, so the first
+    // ArrowRight only makes the focus a keyboard one. Tab would leave the tree: react-aria keeps a
+    // collection a single tab stop.
     const row = canvasElement.querySelector<HTMLElement>(`[data-item-id="${dualSlotStoryId}"]`)!;
     await userEvent.click(row);
     await userEvent.keyboard('{ArrowRight}');
     await waitFor(() => expect(row).toHaveAttribute('data-focus-visible', 'true'));
-    await userEvent.tab();
+    await userEvent.keyboard('{ArrowRight}');
     const trigger = within(row).getByTestId('context-menu');
     await waitFor(() => expect(trigger).toHaveFocus());
     await userEvent.keyboard('{Enter}');
@@ -838,13 +839,13 @@ export const ContextMenuOpenClosesTooltip: Story = {
   play: async ({ canvasElement }) => {
     const row = canvasElement.querySelector<HTMLElement>(`[data-item-id="${dualSlotStoryId}"]`)!;
     await waitFor(() => expect(getComputedStyle(row).pointerEvents).not.toBe('none'));
-    // Keyboard focus on the row reveals the trigger (ArrowRight on a leaf row moves nothing and
-    // only makes the focus a keyboard one); a Tab then focuses the trigger, which opens its
-    // tooltip.
+    // Keyboard focus on the row reveals the trigger (the first ArrowRight only makes the focus a
+    // keyboard one, as the trigger is still hidden); the next ArrowRight focuses the trigger, which
+    // opens its tooltip.
     await userEvent.click(row);
     await userEvent.keyboard('{ArrowRight}');
     await waitFor(() => expect(row).toHaveAttribute('data-focus-visible', 'true'));
-    await userEvent.tab();
+    await userEvent.keyboard('{ArrowRight}');
     const trigger = within(row).getByTestId('context-menu');
     await waitFor(() => expect(trigger).toHaveFocus());
     await expect(await screen.findByTestId('tooltip')).toBeVisible();

@@ -3,6 +3,7 @@ import path from 'node:path';
 import url from 'node:url';
 
 import { print } from 'esrap';
+import ts from 'esrap/languages/ts';
 import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
 import { describe, it } from 'vitest';
@@ -50,7 +51,7 @@ describe(transformDefineMeta.name, () => {
       ast: parseAst(code.toString()),
     });
 
-    expect(print(defineMetaVariableDeclaration).code).toMatchInlineSnapshot(
+    expect(print(defineMetaVariableDeclaration, ts()).code).toMatchInlineSnapshot(
       `"const { Story } = defineMeta($__meta);"`
     );
   });
@@ -90,20 +91,16 @@ describe(createMetaVariableDeclaration.name, () => {
     });
     const metaVariableDeclaration = createMetaVariableDeclaration({ init: metaObjectExpression });
 
-    expect(print(metaVariableDeclaration).code).toMatchInlineSnapshot(`
+    expect(print(metaVariableDeclaration, ts()).code).toMatchInlineSnapshot(`
       "const $__meta = {
       	title: 'Example',
       	component: Example,
       	tags: ['autodocs'],
-      	args: {
-      		onclick: fn(),
-      		onmouseenter: fn(),
-      		onmouseleave: fn()
-      	},
+      	args: { onclick: fn(), onmouseenter: fn(), onmouseleave: fn() },
       	parameters: {
       		docs: {
       			description: {
-      				component: "Description set explicitly in the comment above \`defineMeta\`.\\n\\nMultiline supported. And also Markdown syntax:\\n\\n* **Bold**,\\n* _Italic_,\\n* \`Code\`."
+      				component: 'Description set explicitly in the comment above \`defineMeta\`.\\n\\nMultiline supported. And also Markdown syntax:\\n\\n* **Bold**,\\n* _Italic_,\\n* \`Code\`.'
       			}
       		}
       	}

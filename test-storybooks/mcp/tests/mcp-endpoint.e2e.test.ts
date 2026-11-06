@@ -557,32 +557,6 @@ describe('MCP Endpoint E2E Tests', () => {
 				      "type": "object",
 				    },
 				    "name": "review-create",
-				    "outputSchema": {
-				      "$schema": "http://json-schema.org/draft-07/schema#",
-				      "properties": {
-				        "collectionCount": {
-				          "type": "number",
-				        },
-				        "instructions": {
-				          "description": "What to do now that the review is published. Follow it.",
-				          "type": "string",
-				        },
-				        "reviewUrl": {
-				          "description": "URL of the Storybook review page. Always include this URL in your final user-facing response so the user can open it directly.",
-				          "type": "string",
-				        },
-				        "storyCount": {
-				          "type": "number",
-				        },
-				      },
-				      "required": [
-				        "reviewUrl",
-				        "collectionCount",
-				        "storyCount",
-				        "instructions",
-				      ],
-				      "type": "object",
-				    },
 				    "title": "Create Storybook review",
 				  },
 				  {

@@ -1,3 +1,4 @@
+// Benchmark of the NX DTE pipeline (#37221): a renderer-only change, run 3. Not for merging.
 import type {
   DecoratorFunction,
   LegacyStoryFn,

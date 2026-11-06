@@ -11,6 +11,7 @@ import { setTrustedAuthor } from './utils/runtime.ts';
 import type { JobImplementationObj, NoOpJobImplementationObj } from './utils/types.ts';
 import { type Workflow, workflows } from './utils/types.ts';
 import { NX_AGENT_JOB_IDS, type NxDteOptions, getNxDteJobs } from './nx/circleci-dte.ts';
+import type { SetupSelection } from './nx/select.ts';
 import { getJobs } from './workflow-jobs.ts';
 
 const dirname = import.meta.dirname;
@@ -149,6 +150,8 @@ const { values: opts } = parseArgs({
     output: { type: 'string', default: join(dirname, '../../.circleci/config.generated.yml') },
     'nx-dte-agents': { type: 'string' },
     'nx-dte-peak-agents': { type: 'string' },
+    // The tasks the run will run, from the setup job (scripts/ci/nx/select.ts).
+    'nx-dte-selection': { type: 'string' },
   },
 });
 setTrustedAuthor(opts['gh-trusted-author'] === 'true');
@@ -163,9 +166,16 @@ if (unknown.length > 0 || requested.length === 0) {
 const selected = workflows.filter((w) => requested.includes(w));
 const nightly = selected.includes('daily') && opts.branch === 'next';
 
+const setupSelection: SetupSelection | undefined = opts['nx-dte-selection']
+  ? JSON.parse(await fs.readFile(opts['nx-dte-selection'], 'utf8'))
+  : undefined;
 const agentCounts: NxDteOptions = {
   first: opts['nx-dte-agents'] ? Number(opts['nx-dte-agents']) : undefined,
   peak: opts['nx-dte-peak-agents'] !== undefined ? Number(opts['nx-dte-peak-agents']) : undefined,
+  ...(setupSelection && {
+    base: setupSelection.base,
+    selection: { linux: setupSelection.linux, windows: setupSelection.windows },
+  }),
 };
 const nxDte = opts['nx-dte'] === 'true' && agentCounts;
 // The peak wave may be 0, which runs one wave.

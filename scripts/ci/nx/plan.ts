@@ -11,6 +11,7 @@ import { readFileSync } from 'node:fs';
 
 import {
   allTemplates,
+  daily,
   docgenServerTemplates,
   type TemplateKey,
 } from '../../../code/lib/cli-storybook/src/sandbox-templates.ts';
@@ -180,6 +181,35 @@ export function equivalentOf(jobId: string): Equivalent | undefined {
 
   return undefined;
 }
+
+// CircleCI's Windows sandbox, as `getWindowsSandboxes` (sandboxes.ts) and nx.yml use. Its project
+// carries the `ci:windows` tag (scripts/create-nx-sandbox-projects.ts).
+export const WINDOWS_TEMPLATE = daily[0];
+
+// The NX tasks that cover a side job on Windows, for the NX DTE pipeline (circleci-dte.ts), which
+// runs them on Windows agents in a run of their own (`NX_CI_EXECUTION_ENV=windows`). The same
+// targets as on Linux: `compile`, `publish` and `sandbox` come in as dependencies, built on Windows.
+export const WINDOWS_TASKS: Partial<Record<SideJob, string[]>> = {
+  windows: [
+    'code:test-1',
+    'code:test-2',
+    `${WINDOWS_TEMPLATE}:e2e-tests`,
+    `${WINDOWS_TEMPLATE}:e2e-tests-dev-1`,
+    `${WINDOWS_TEMPLATE}:e2e-tests-dev-2`,
+  ],
+  'windows-init-empty': ['init-empty/react-vite-ts:init-empty'],
+};
+
+// The NX tasks a plan runs on Windows.
+export const windowsTasksOf = (plan: Pick<Plan, 'sideJobs'>) =>
+  plan.sideJobs.flatMap((job) => WINDOWS_TASKS[job] ?? []).sort();
+
+// The projects whose tasks a run of the given workflows may run, as an Nx project pattern: every
+// library (including `code` and `scripts`) and the sandboxes and test projects tagged for one of
+// the workflows (`ci:normal`, `ci:daily`, `ci:windows`). With the plan's targets, it selects exactly
+// the plan's tasks, which run.ts checks before it runs anything.
+export const projectPattern = (selected: readonly Workflow[]) =>
+  ['tag:library', ...selected.map((workflow) => `tag:ci:${workflow}`)].join(',');
 
 export type Group = { targets: string[]; projects: string[] };
 

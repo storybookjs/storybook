@@ -24,9 +24,15 @@ export const parameters = {
       'Run the workflow as one NX task graph distributed over CircleCI agents (scripts/ci/nx/circleci-dte.ts)',
     type: 'boolean',
   },
+  nxDteAffected: {
+    default: true,
+    description:
+      'When nxDte is set on a pull request, run only the tasks the change reaches (nx affected) instead of all of them',
+    type: 'boolean',
+  },
   nxDteAgents: {
     default: 20,
-    description: 'How many CircleCI agents start with the run when nxDte is set',
+    description: 'At most how many CircleCI agents start with the run when nxDte is set',
     type: 'integer',
   },
   nxDtePeakAgents: {

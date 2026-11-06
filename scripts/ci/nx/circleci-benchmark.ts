@@ -2,15 +2,19 @@
 // (scripts/ci/nx/circleci-dte.ts), as one Markdown table.
 //
 // Per workflow it reports when `circleci-completion` ended (when the pull request's check turns
-// green), the wall time (created until stopped), the longest time a job waited in CircleCI's queue,
-// the billed container minutes and the credits they cost. For an NX DTE workflow it also reports
-// when `nx-main` ended (which decides the check), and splits that job into the setup before
+// green), the wall time, the longest time a job waited in CircleCI's queue, the billed container
+// minutes and the credits they cost. For an NX DTE workflow it also reports when `nx-main` (and
+// `nx-main-windows`) ended, which decides the check, and splits `nx-main` into the setup before
 // `Run nx` and the task phase itself.
 //
-// Usage:
-//   CIRCLE_TOKEN=… node scripts/ci/nx/circleci-benchmark.ts <workflow>...
+// Times count from the start of the pipeline's setup workflow, and the credits include its job
+// (`generate-and-run-config`), which for the NX DTE pipeline also asks Nx which tasks to run.
 //
-// A workflow is its id or its app.circleci.com link. CIRCLE_TOKEN is a personal CircleCI API token.
+// Usage:
+//   node scripts/ci/nx/circleci-benchmark.ts <workflow>...
+//
+// A workflow is its id or its app.circleci.com link. storybookjs/storybook's CircleCI project is
+// public, so no token is needed; a personal CircleCI API token in CIRCLE_TOKEN is sent when set.
 import { parseArgs } from 'node:util';
 
 import { esMain } from '../../utils/esmain.ts';
@@ -107,16 +111,23 @@ export type WorkflowReport = {
   credits: number;
   // NX DTE workflows only: until `nx-main` ended, which decides whether the check turns green.
   mainMinutes?: number;
+  // NX DTE workflows with Windows tasks only: until `nx-main-windows` ended.
+  windowsMainMinutes?: number;
   // NX DTE workflows only: the main job from its start until `Run nx`, and `Run nx` itself.
   setupMinutes?: number;
   taskMinutes?: number;
 };
 
+// @param setup - The pipeline's setup job, whose start the times count from.
 export function report(
   workflow: { name: string; status: string; created_at: string; stopped_at?: string },
-  jobs: JobTiming[]
+  workflowJobs: JobTiming[],
+  setup?: JobTiming
 ): WorkflowReport {
+  const jobs = setup ? [setup, ...workflowJobs] : workflowJobs;
+  const start = Math.min(time(workflow.created_at)!, setup?.queuedAt ?? Infinity);
   const main = jobs.find((job) => job.name === 'nx-main');
+  const windowsMain = jobs.find((job) => job.name === 'nx-main-windows');
   const runNx = main?.steps.find((step) => step.name === 'Run nx');
   const completion = jobs.find((job) => job.name === 'circleci-completion');
   const minutes = (ms: number) => ms / 60_000;
@@ -124,10 +135,8 @@ export function report(
     name: workflow.name,
     status: workflow.status,
     jobs: jobs.length,
-    wallMinutes: minutes((time(workflow.stopped_at) ?? Date.now()) - time(workflow.created_at)!),
-    greenMinutes: completion?.stoppedAt
-      ? minutes(completion.stoppedAt - time(workflow.created_at)!)
-      : undefined,
+    wallMinutes: minutes((time(workflow.stopped_at) ?? Date.now()) - start),
+    greenMinutes: completion?.stoppedAt ? minutes(completion.stoppedAt - start) : undefined,
     maxQueueMinutes: Math.max(
       0,
       ...jobs
@@ -136,8 +145,9 @@ export function report(
     ),
     containerMinutes: jobs.reduce((sum, job) => sum + job.containerMinutes, 0),
     credits: jobs.reduce((sum, job) => sum + creditsOf(job), 0),
-    ...(main?.stoppedAt
-      ? { mainMinutes: minutes(main.stoppedAt - time(workflow.created_at)!) }
+    ...(main?.stoppedAt ? { mainMinutes: minutes(main.stoppedAt - start) } : {}),
+    ...(windowsMain?.stoppedAt
+      ? { windowsMainMinutes: minutes(windowsMain.stoppedAt - start) }
       : {}),
     ...(main?.startedAt && runNx
       ? {
@@ -164,6 +174,7 @@ export function toMarkdown(reports: WorkflowReport[]) {
       r.jobs,
       mmss(r.greenMinutes),
       mmss(r.mainMinutes),
+      mmss(r.windowsMainMinutes),
       mmss(r.wallMinutes),
       mmss(r.maxQueueMinutes),
       mmss(r.setupMinutes),
@@ -173,8 +184,8 @@ export function toMarkdown(reports: WorkflowReport[]) {
     ].join(' | ')
   );
   return [
-    '| Workflow | Status | Jobs | Green | Main | Wall | Max queue | Setup | Tasks | Container-min | Credits |',
-    '|---|---|---|---|---|---|---|---|---|---|---|',
+    '| Workflow | Status | Jobs | Green | Main | Windows main | Wall | Max queue | Setup | Tasks | Container-min | Credits |',
+    '|---|---|---|---|---|---|---|---|---|---|---|---|',
     ...rows.map((row) => `| ${row} |`),
   ].join('\n');
 }
@@ -182,7 +193,9 @@ export function toMarkdown(reports: WorkflowReport[]) {
 async function circleci<T>(url: string, attempt = 1): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(url, { headers: { 'Circle-Token': process.env.CIRCLE_TOKEN! } });
+    response = await fetch(url, {
+      headers: process.env.CIRCLE_TOKEN ? { 'Circle-Token': process.env.CIRCLE_TOKEN } : {},
+    });
   } catch (error) {
     if (attempt >= 3) {
       throw error;
@@ -197,10 +210,36 @@ async function circleci<T>(url: string, attempt = 1): Promise<T> {
   return JSON.parse((await response.text()).replace(/[\u0000-\u001f]/g, ' ')) as T;
 }
 
+const V1 = 'https://circleci.com/api/v1.1/project/github/storybookjs/storybook';
+
+// The setup job of a pipeline, found among the recent jobs of its branch: the public API lists a
+// pipeline's workflows only with a token.
+async function setupJob(pipelineId: string, jobNumber: number | undefined) {
+  if (!jobNumber) {
+    return undefined;
+  }
+  const { branch } = await circleci<{ branch: string }>(`${V1}/${jobNumber}`);
+  const recent = await circleci<
+    { build_num: number; workflows?: { job_name?: string; workflow_id?: string } }[]
+  >(`${V1}/tree/${encodeURIComponent(branch)}?limit=100`);
+  for (const job of recent.filter((j) => j.workflows?.job_name === 'generate-and-run-config')) {
+    const setup = await circleci<{ pipeline_id: string }>(
+      `https://circleci.com/api/v2/workflow/${job.workflows!.workflow_id}`
+    );
+    if (setup.pipeline_id === pipelineId) {
+      return jobTiming(await circleci<JobDetails>(`${V1}/${job.build_num}`));
+    }
+  }
+  console.error(
+    `No setup job found for pipeline ${pipelineId}; its time and credits are left out.`
+  );
+  return undefined;
+}
+
 async function main() {
   const { positionals } = parseArgs({ allowPositionals: true });
-  if (!process.env.CIRCLE_TOKEN || positionals.length === 0) {
-    console.error('Usage: CIRCLE_TOKEN=… node scripts/ci/nx/circleci-benchmark.ts <workflow>...');
+  if (positionals.length === 0) {
+    console.error('Usage: node scripts/ci/nx/circleci-benchmark.ts <workflow>...');
     process.exit(2);
   }
   const reports: WorkflowReport[] = [];
@@ -209,7 +248,7 @@ async function main() {
     if (!id) {
       throw new Error(`Not a CircleCI workflow id or link: ${target}`);
     }
-    const workflow = await circleci<Parameters<typeof report>[0]>(
+    const workflow = await circleci<Parameters<typeof report>[0] & { pipeline_id: string }>(
       `https://circleci.com/api/v2/workflow/${id}`
     );
     const jobs: { job_number?: number }[] = [];
@@ -223,6 +262,7 @@ async function main() {
     } while (pageToken);
     // A few at a time: a workflow has up to ~150 jobs.
     const queue = jobs.filter((job) => job.job_number);
+    const queue0 = queue[0]?.job_number;
     const timings: JobTiming[] = [];
     await Promise.all(
       Array.from({ length: 8 }, async () => {
@@ -246,7 +286,7 @@ async function main() {
         }
       })
     );
-    reports.push(report(workflow, timings));
+    reports.push(report(workflow, timings, await setupJob(workflow.pipeline_id, queue0)));
   }
   console.log(toMarkdown(reports));
 }

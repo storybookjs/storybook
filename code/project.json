@@ -393,6 +393,7 @@
         "command": "yarn exec jiti ./scripts/ci/nx/affected.ts lint"
       },
       "cache": false,
+      "inputs": ["code-all"],
       "configurations": {
         "production": {}
       }
@@ -409,6 +410,7 @@
         "command": "yarn exec jiti ./scripts/ci/nx/affected.ts test"
       },
       "cache": false,
+      "inputs": ["code-all"],
       "configurations": {
         "production": {}
       }

@@ -242,6 +242,5 @@
       "!{workspaceRoot}/code/**/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
     ]
   },
-  "analytics": false,
-  "affected": { "legacy": true }
+  "analytics": false
 }

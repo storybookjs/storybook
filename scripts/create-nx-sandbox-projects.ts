@@ -89,6 +89,8 @@ await Promise.all(
     const tags = [
       ...(normal.includes(key as any) && !value.inDevelopment ? ['ci:normal'] : []),
       ...(daily.includes(key as any) && !value.inDevelopment ? ['ci:daily'] : []),
+      // The sandbox CircleCI tests on Windows (`WINDOWS_TEMPLATE` in scripts/ci/nx/plan.ts).
+      ...(key === daily[0] ? ['ci:windows'] : []),
     ];
     ensureDirectoryExistence(full);
     console.log(full);

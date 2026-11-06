@@ -82,7 +82,37 @@ describe('circleci-benchmark', () => {
       credits: 5 * 20 + 1 * 5,
     });
     expect(toMarkdown([result])).toContain(
-      '| normal-nx-dte-generated | success | 2 | 7m00s | 6m00s | 8m00s |'
+      '| normal-nx-dte-generated | success | 2 | 7m00s | 6m00s | – | 8m00s |'
     );
+  });
+
+  it('counts from the setup job, whose credits it adds, and times the Windows main job', () => {
+    const setup = jobTiming({
+      workflows: { job_name: 'generate-and-run-config' },
+      queued_at: at(-1),
+      start_time: at(-1),
+      stop_time: at(0),
+      picard: { executor: 'docker', resource_class: { class: 'large' } },
+      steps: [step('Select the tasks to run', [[0, at(-1), at(0)]])],
+    });
+    const windowsMain = jobTiming({
+      workflows: { job_name: 'nx-main-windows' },
+      start_time: at(1),
+      stop_time: at(9),
+      picard: { executor: 'windows', resource_class: { class: 'medium' } },
+      steps: [step('Run nx', [[0, at(1), at(9)]])],
+    });
+    const result = report(
+      { name: 'daily-nx-dte-generated', status: 'success', created_at: at(0), stopped_at: at(10) },
+      [windowsMain],
+      setup
+    );
+
+    expect(result).toMatchObject({
+      jobs: 2,
+      wallMinutes: 11,
+      windowsMainMinutes: 10,
+      credits: 1 * 20 + 8 * 40,
+    });
   });
 });

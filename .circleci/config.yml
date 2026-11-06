@@ -24,9 +24,13 @@ parameters:
     default: false
     description: Run the workflow as one NX task graph distributed over CircleCI agents (scripts/ci/nx/circleci-dte.ts)
     type: boolean
+  nxDteAffected:
+    default: true
+    description: When nxDte is set on a pull request, run only the tasks the change reaches (nx affected) instead of all of them
+    type: boolean
   nxDteAgents:
     default: 20
-    description: How many CircleCI agents start with the run when nxDte is set
+    description: At most how many CircleCI agents start with the run when nxDte is set
     type: integer
   nxDtePeakAgents:
     default: 24
@@ -43,12 +47,15 @@ jobs:
       - image: cimg/node:22.22.3
     resource_class: large
     steps:
-      # Only focus diffs against the base branch, so only it pays for 500 commits of history.
+      # Only focus and the NX DTE pipeline (`nx affected`) diff against the base branch, so only
+      # they pay for 500 commits of history.
       - when:
           condition:
-            matches:
-              pattern: '(.*,)?focus(,.*)?'
-              value: << pipeline.parameters.workflow >>
+            or:
+              - matches:
+                  pattern: '(.*,)?focus(,.*)?'
+                  value: << pipeline.parameters.workflow >>
+              - << pipeline.parameters.nxDte >>
           steps:
             # The orb fetches the PR branch with `--depth 10` by default, which cuts off the merge
             # base of any PR with more than 10 commits.
@@ -69,17 +76,67 @@ jobs:
                   fi
       - unless:
           condition:
-            matches:
-              pattern: '(.*,)?focus(,.*)?'
-              value: << pipeline.parameters.workflow >>
+            or:
+              - matches:
+                  pattern: '(.*,)?focus(,.*)?'
+                  value: << pipeline.parameters.workflow >>
+              - << pipeline.parameters.nxDte >>
           steps:
             - git-shallow-clone/checkout_advanced:
                 clone_options: '--depth 1'
                 tag_fetch_options: '--no-tags'
+      # The NX DTE pipeline sizes its agents to the tasks Nx will run (scripts/ci/nx/select.ts), so
+      # this job installs (from the cache nx-main stores) and asks Nx. The key is circleci-dte.ts
+      # `NODE_MODULES_KEY`; circleci-dte.test.ts keeps the two equal.
+      - when:
+          condition: << pipeline.parameters.nxDte >>
+          steps:
+            - run:
+                name: Hash the package manifests
+                command: cat package.json */package.json code/*/package.json code/*/*/package.json | sha256sum > /tmp/nx-dte-manifests.sha256
+            - restore_cache:
+                keys:
+                  - v1-nx-dte-node_modules/{{ arch }}/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}/{{ checksum ".nx/workflows/prune-other-platforms.cjs" }}/{{ checksum "scripts/ci/nx/circleci-node-modules.sh" }}/{{ checksum "/tmp/nx-dte-manifests.sha256" }}
+            - run:
+                name: Restore node_modules
+                command: bash scripts/ci/nx/circleci-node-modules.sh restore /tmp/nx-dte-node_modules.tar.zst
+            # After an install (a new lockfile), store the tree at once, so the main job and the
+            # agents restore it instead of each installing. Only for trusted authors, as nx-main.
+            - when:
+                condition:
+                  equal: ['true', << pipeline.parameters.ghTrustedAuthor >>]
+                steps:
+                  - run:
+                      name: Pack node_modules
+                      command: bash scripts/ci/nx/circleci-node-modules.sh pack /tmp/nx-dte-node_modules.tar.zst
+                  - save_cache:
+                      key: v1-nx-dte-node_modules/{{ arch }}/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}/{{ checksum ".nx/workflows/prune-other-platforms.cjs" }}/{{ checksum "scripts/ci/nx/circleci-node-modules.sh" }}/{{ checksum "/tmp/nx-dte-manifests.sha256" }}
+                      paths:
+                        - /tmp/nx-dte-node_modules.tar.zst
+            - run:
+                name: Select the tasks to run
+                environment:
+                  GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
+                  GH_PR_NUMBER: << pipeline.parameters.ghPrNumber >>
+                  NX_DTE_AFFECTED: << pipeline.parameters.nxDteAffected >>
+                  NX_NO_CLOUD: 'true'
+                  NX_DAEMON: 'false'
+                command: |
+                  # Only a pull request has a base to diff against; anything else runs every task.
+                  AFFECTED=false
+                  if [ -n "$GH_PR_NUMBER" ] && [ "$NX_DTE_AFFECTED" = true ]; then AFFECTED=true; fi
+                  yarn exec jiti ./scripts/ci/nx/select.ts \
+                    --workflow=<< pipeline.parameters.workflow >> \
+                    --base-ref="origin/$GH_BASE_BRANCH" \
+                    --affected=$AFFECTED \
+                    --out=/tmp/nx-dte-selection.json
+            - store_artifacts:
+                path: /tmp/nx-dte-selection.json
       - run:
           name: Generate config
           environment:
             GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
+            NX_DTE: << pipeline.parameters.nxDte >>
           command: |
             node --experimental-transform-types ./scripts/ci/main.ts \
               --workflow=<< pipeline.parameters.workflow >> \
@@ -88,7 +145,8 @@ jobs:
               --branch="<< pipeline.git.branch >>" \
               --nx-dte=<< pipeline.parameters.nxDte >> \
               --nx-dte-agents=<< pipeline.parameters.nxDteAgents >> \
-              --nx-dte-peak-agents=<< pipeline.parameters.nxDtePeakAgents >>
+              --nx-dte-peak-agents=<< pipeline.parameters.nxDtePeakAgents >> \
+              $([ "$NX_DTE" = true ] && echo --nx-dte-selection=/tmp/nx-dte-selection.json)
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml
 workflows:

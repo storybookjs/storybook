@@ -6,5 +6,5 @@
   "targets": {
     "init-empty": {}
   },
-  "tags": ["ci:normal", "ci:daily"]
+  "tags": ["ci:normal", "ci:daily", "ci:windows"]
 }

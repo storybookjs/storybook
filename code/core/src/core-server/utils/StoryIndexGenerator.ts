@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import {
   commonGlobOptions,
@@ -40,6 +41,7 @@ import { userOrAutoTitleFromSpecifier } from '../../shared/story-index/autoTitle
 import { combineStorySorts, sortStoriesV7 } from '../../shared/story-index/sortStories.ts';
 import { Tag } from '../../shared/constants/tags.ts';
 import { isMdxEntry } from '../../shared/utils/story-index-filters.ts';
+import { StorybookError } from '../../storybook-error.ts';
 import { IndexingError, MultipleIndexingError } from './IndexingError.ts';
 import { autoName } from './autoName.ts';
 import { analyzeMdx } from './analyze-mdx.ts';
@@ -119,6 +121,9 @@ export class StoryIndexGenerator {
 
   // Same as the above but for the error case
   private lastError?: Error | null;
+
+  // Callers that ask while the index is computed share the computation, so its errors log once
+  private pendingIndexAndStats?: Promise<{ storyIndex: StoryIndex; stats: IndexStatsSummary }>;
 
   private invalidationListeners: Set<() => void> = new Set();
 
@@ -272,7 +277,15 @@ export class StoryIndexGenerator {
                 err: new IndexingError(
                   err instanceof Error ? err.message : String(err),
                   [relativePath],
-                  err instanceof Error ? err.stack : undefined
+                  err instanceof Error ? err.stack : undefined,
+                  err instanceof StorybookError
+                    ? {
+                        code: err.fullErrorCode,
+                        messageWithoutPath: err.message
+                          .replaceAll(pathToFileURL(absolutePath).href, '')
+                          .replaceAll(absolutePath, ''),
+                      }
+                    : undefined
                 ),
               };
             }
@@ -750,6 +763,22 @@ export class StoryIndexGenerator {
       throw this.lastError;
     }
 
+    if (!this.pendingIndexAndStats) {
+      const pending = this.computeIndexAndStats().finally(() => {
+        if (this.pendingIndexAndStats === pending) {
+          this.pendingIndexAndStats = undefined;
+        }
+      });
+      this.pendingIndexAndStats = pending;
+    }
+
+    return this.pendingIndexAndStats;
+  }
+
+  private async computeIndexAndStats(): Promise<{
+    storyIndex: StoryIndex;
+    stats: IndexStatsSummary;
+  }> {
     const projectTags = this.getProjectTags(await this.getPreviewFile());
 
     // Extract any entries that are currently missing
@@ -812,6 +841,7 @@ export class StoryIndexGenerator {
     });
     this.lastIndex = null;
     this.lastError = null;
+    this.pendingIndexAndStats = undefined;
     this.invalidationListeners.forEach((listener) => listener());
   }
 
@@ -864,6 +894,7 @@ export class StoryIndexGenerator {
     }
     this.lastIndex = null;
     this.lastError = null;
+    this.pendingIndexAndStats = undefined;
     this.invalidationListeners.forEach((listener) => listener());
   }
 

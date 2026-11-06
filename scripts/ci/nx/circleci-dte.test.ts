@@ -88,7 +88,10 @@ describe('the CircleCI NX DTE pipeline', () => {
     const docsAgent = getNxDteJobs(['docs'], 'unused').find((job) => job.id === 'nx-agent')!;
     expect((docsAgent.implementation('docs') as { parallelism: number }).parallelism).toBe(1);
     const peak = getNxDteJobs(['normal'], 'unused').find((job) => job.id === 'nx-agent-peak')!;
-    expect((peak.implementation('normal') as { parallelism: number }).parallelism).toBe(24);
+    // The mix sizes its large wave to the tasks only it runs (4 internal + 22 dev-server E2E).
+    expect((peak.implementation('normal') as { parallelism: number }).parallelism).toBe(
+      NX_DTE_MODE === 'mix' ? 26 : 24
+    );
   });
 
   it('needs no job outside the pipeline', () => {
@@ -107,7 +110,9 @@ describe('the CircleCI NX DTE pipeline', () => {
         parallelism: number;
         environment: Record<string, string>;
       };
-      expect(agent.parallelism).toBe(agents);
+      if (NX_DTE_MODE !== 'mix' || wave === 'first') {
+        expect(agent.parallelism).toBe(agents);
+      }
       const rules = `.nx/workflows/circleci-assignment-rules${NX_DTE_MODE === 'mix' ? '-mix' : ''}.yaml`;
       expect(read(rules)).toContain(`agent: ${agent.environment.NX_AGENT_LAUNCH_TEMPLATE}\n`);
       const parameter = wave === 'first' ? 'nxDteAgents' : 'nxDtePeakAgents';

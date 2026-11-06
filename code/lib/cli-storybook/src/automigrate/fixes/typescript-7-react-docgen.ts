@@ -1,18 +1,19 @@
-import { addReactDocgenFallback, hasTypeScriptCompilerApi } from 'storybook/internal/common';
+import {
+  addReactDocgenFallback,
+  isTypeScript71Stable,
+  isTypeScriptUsableForDocgen,
+  recommendedTypeScriptDocgenApis,
+} from 'storybook/internal/common';
 import { SupportedRenderer } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import { coerce } from 'semver';
 
+import { getDocgenTypeScriptVersion } from '../helpers/docgen-typescript.ts';
 import { getRendererName } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
 import { upgradesAcrossPeerChange } from './typescript-dependency.ts';
 
 /**
- * TEMPORARY(ts-7.1): delete this fix once Storybook supports TypeScript 7.1, which gives TypeScript
- * 7 projects the docgen server. The TypeScript 7.1 automigration then removes what this fix records
- * in the Storybook cache. See `typescript-7-react-docgen-fallback.ts` in core.
- *
  * Storybook 10 installed `react-docgen` for every React project. Storybook 11 makes it an optional
  * peer, and a project on TypeScript 7.0 cannot use the docgen server, so without `react-docgen` it
  * would lose docgen on upgrade. Projects that set `features.docgenServer` are left alone: with
@@ -26,6 +27,7 @@ export const typescript7ReactDocgen: Fix<true> = {
   async check(options) {
     const { mainConfig, packageManager } = options;
     if (
+      isTypeScript71Stable() ||
       !upgradesAcrossPeerChange(options) ||
       getRendererName(mainConfig) !== SupportedRenderer.REACT
     ) {
@@ -44,8 +46,14 @@ export const typescript7ReactDocgen: Fix<true> = {
     ) {
       return null;
     }
-    const version = coerce(await packageManager.getDeclaredVersionSpecifier('typescript'))?.version;
-    return version && !hasTypeScriptCompilerApi(version) ? true : null;
+    const docgenTypeScript = await getDocgenTypeScriptVersion(options);
+    return docgenTypeScript &&
+      !isTypeScriptUsableForDocgen(
+        docgenTypeScript.version,
+        recommendedTypeScriptDocgenApis(SupportedRenderer.REACT)
+      )
+      ? true
+      : null;
   },
 
   prompt() {

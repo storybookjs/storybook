@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 import { once } from 'storybook/internal/node-logger';
@@ -11,6 +12,8 @@ import {
   TypeScriptMissingForDocgenError,
   TypeScriptWithoutCompilerApiError,
 } from '../../server-errors.ts';
+import { dirname, isAbsolute, join, resolve } from 'pathe';
+
 import {
   type BuilderDocgenPackages,
   getAddDevDependenciesCommand,
@@ -19,6 +22,7 @@ import {
   isPackageInstalledInRange,
 } from './builder-docgen-packages.ts';
 import { loadMainConfig } from './load-main-config.ts';
+import { isTypeScript71Stable } from './typescript-7-1-stable.ts';
 
 /** Renderers whose docgen needs `typescript`, which they declare as a peer dependency. */
 export const RENDERERS_WITH_TYPESCRIPT_DOCGEN: readonly SupportedRenderer[] = [
@@ -28,35 +32,157 @@ export const RENDERERS_WITH_TYPESCRIPT_DOCGEN: readonly SupportedRenderer[] = [
   SupportedRenderer.WEB_COMPONENTS,
 ];
 
-/** The `typescript` dependency that `storybook init` and upgrades add to projects without one. */
-export const TYPESCRIPT_FOR_DOCGEN_PACKAGE = 'typescript@^6';
+export type TypeScriptDocgenApi = 'compiler' | 'native';
 
-/** Return whether a TypeScript version has the compiler API (`ts.*`) that docgen is built on. */
-export const hasTypeScriptCompilerApi = (version: string) => Number(version.split('.')[0]) < 7;
+const COMPILER_API_ONLY: readonly TypeScriptDocgenApi[] = ['compiler'];
 
-/**
- * Check whether `typescript` resolves to a version with the compiler API that docgen needs.
- *
- * `resolve` must resolve from the calling package, for example
- * `(specifier) => import.meta.resolve(specifier)`, because strict package managers only expose
- * `typescript` to the packages that declare it.
- */
+const DOCGEN_APIS_BY_RENDERER: Partial<Record<SupportedRenderer, readonly TypeScriptDocgenApi[]>> =
+  {
+    [SupportedRenderer.REACT]: ['compiler', 'native'],
+    [SupportedRenderer.ANGULAR]: COMPILER_API_ONLY,
+  };
+
+export const recommendedTypeScriptDocgenApis = (
+  renderer: SupportedRenderer
+): readonly TypeScriptDocgenApi[] => DOCGEN_APIS_BY_RENDERER[renderer] ?? COMPILER_API_ONLY;
+
+export const typeScriptPackageForDocgen = (
+  apis: readonly TypeScriptDocgenApi[] = COMPILER_API_ONLY
+) => (apis.includes('native') && isTypeScript71Stable() ? 'typescript@^7.1' : 'typescript@^6');
+
+export const getTypeScriptUpgradeForDocgen = (
+  apis: readonly TypeScriptDocgenApi[]
+): string | undefined =>
+  apis.includes('native') && isTypeScript71Stable() ? typeScriptPackageForDocgen(apis) : undefined;
+
+export const getTypeScriptDocgenApi = (version: string): TypeScriptDocgenApi | undefined => {
+  const [major, minor] = version.split('.').map(Number);
+  if (major < 7) {
+    return 'compiler';
+  }
+  return major === 7 && minor === 0 ? undefined : 'native';
+};
+
+export const isTypeScriptUsableForDocgen = (
+  version: string,
+  apis: readonly TypeScriptDocgenApi[] = COMPILER_API_ONLY
+) => {
+  const api = getTypeScriptDocgenApi(version);
+  return api !== undefined && apis.includes(api);
+};
+
+export interface TypeScriptSpecifierForDocgen {
+  specifier: string;
+  configDir: string;
+}
+
+export async function getTypeScriptSpecifierForDocgen({
+  configDir,
+  presets,
+}: Pick<Options, 'configDir' | 'presets'>): Promise<TypeScriptSpecifierForDocgen | undefined> {
+  const { docgenSpecifier } = (await presets.apply('typescript', {})) ?? {};
+  return docgenSpecifier ? { specifier: docgenSpecifier, configDir } : undefined;
+}
+
+const resolvePackageDirLikeMainConfig = ({
+  specifier,
+  configDir,
+}: TypeScriptSpecifierForDocgen) => {
+  if (specifier.startsWith('file:')) {
+    return fileURLToPath(specifier);
+  }
+  if (isAbsolute(specifier) || specifier.startsWith('.')) {
+    return resolve(configDir, specifier);
+  }
+  const require = createRequire(join(configDir, 'main.js'));
+  return dirname(require.resolve(`${specifier}/package.json`));
+};
+
+export interface TypeScriptPackageForDocgen {
+  version: string;
+  packageDir: string;
+  main?: string;
+  exports?: Record<string, unknown>;
+}
+
+export function readTypeScriptPackageForDocgen(
+  typeScriptSpecifier: TypeScriptSpecifierForDocgen,
+  apis: readonly TypeScriptDocgenApi[] = COMPILER_API_ONLY
+): TypeScriptPackageForDocgen {
+  let packageDir: string;
+  let packageJson: { version?: unknown; main?: string; exports?: Record<string, unknown> };
+  try {
+    packageDir = resolvePackageDirLikeMainConfig(typeScriptSpecifier);
+    packageJson = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf-8'));
+  } catch (cause) {
+    throw new TypeScriptMissingForDocgenError({
+      cause,
+      apis,
+      specifier: typeScriptSpecifier.specifier,
+    });
+  }
+  if (typeof packageJson.version !== 'string') {
+    throw new TypeScriptMissingForDocgenError({ apis, specifier: typeScriptSpecifier.specifier });
+  }
+  const { version, main, exports } = packageJson;
+  return { version, packageDir, main, exports };
+}
+
+const unusableVersionError = (
+  version: string,
+  apis: readonly TypeScriptDocgenApi[],
+  specifier?: string
+) =>
+  isTypeScriptUsableForDocgen(version, apis)
+    ? undefined
+    : new TypeScriptWithoutCompilerApiError({ version, apis, specifier });
+
+// `resolve` must resolve from the calling package, for example
+// `(specifier) => import.meta.resolve(specifier)`, because strict package managers only expose
+// `typescript` to the packages that declare it.
 export function getTypeScriptForDocgenError(
-  resolve: (specifier: string) => string
+  resolve: (specifier: string) => string,
+  {
+    apis = COMPILER_API_ONLY,
+    typeScriptSpecifier,
+  }: {
+    apis?: readonly TypeScriptDocgenApi[];
+    typeScriptSpecifier?: TypeScriptSpecifierForDocgen;
+  } = {}
 ): TypeScriptMissingForDocgenError | TypeScriptWithoutCompilerApiError | undefined {
+  if (typeScriptSpecifier) {
+    try {
+      const { version } = readTypeScriptPackageForDocgen(typeScriptSpecifier, apis);
+      return unusableVersionError(version, apis, typeScriptSpecifier.specifier);
+    } catch (error) {
+      return error as TypeScriptMissingForDocgenError;
+    }
+  }
   let version: unknown;
   try {
     const packageJsonPath = fileURLToPath(resolve('typescript/package.json'));
     ({ version } = JSON.parse(readFileSync(packageJsonPath, 'utf-8')));
   } catch (cause) {
-    return new TypeScriptMissingForDocgenError({ cause });
+    return new TypeScriptMissingForDocgenError({ cause, apis });
   }
   if (typeof version !== 'string') {
-    return new TypeScriptMissingForDocgenError();
+    return new TypeScriptMissingForDocgenError({ apis });
   }
-  return hasTypeScriptCompilerApi(version)
-    ? undefined
-    : new TypeScriptWithoutCompilerApiError({ version });
+  return unusableVersionError(version, apis);
+}
+
+async function getDocgenTypeScriptError(
+  resolve: (specifier: string) => string,
+  options: Pick<Options, 'configDir' | 'presets'>,
+  apis: readonly TypeScriptDocgenApi[] | undefined
+) {
+  const typeScriptSpecifier = apis?.includes('native')
+    ? await getTypeScriptSpecifierForDocgen(options)
+    : undefined;
+  return {
+    error: getTypeScriptForDocgenError(resolve, { apis, typeScriptSpecifier }),
+    specifier: typeScriptSpecifier?.specifier,
+  };
 }
 
 /**
@@ -109,15 +235,17 @@ export async function isDocgenServerDisabledInMainConfig(
  */
 export async function isTypeScriptReadyForDocgen(
   resolve: (specifier: string) => string,
-  options: Pick<Options, 'configDir'>,
+  options: Pick<Options, 'configDir' | 'presets'>,
   {
+    apis,
     builderDocgenFallback: fallbackPackage,
   }: {
+    apis?: readonly TypeScriptDocgenApi[];
     /** The package builder docgen needs, with its supported range, such as React's `react-docgen`. */
     builderDocgenFallback?: { packageName: string; range: string };
   } = {}
 ): Promise<boolean> {
-  const error = getTypeScriptForDocgenError(resolve);
+  const { error } = await getDocgenTypeScriptError(resolve, options, apis);
   if (!error) {
     return true;
   }
@@ -139,6 +267,21 @@ export async function isTypeScriptReadyForDocgen(
   return false;
 }
 
+const importTypeScript = async <TypeScript>(
+  importer: () => Promise<TypeScript & { default?: TypeScript }>,
+  apis: readonly TypeScriptDocgenApi[]
+): Promise<TypeScript> => {
+  try {
+    const imported = await importer();
+    return imported.default ?? imported;
+  } catch (cause) {
+    if (isModuleNotFoundError(cause)) {
+      throw new TypeScriptMissingForDocgenError({ cause, apis });
+    }
+    throw cause;
+  }
+};
+
 /**
  * Import `typescript` and check that it has the compiler API that docgen needs.
  *
@@ -149,20 +292,12 @@ export async function isTypeScriptReadyForDocgen(
  * @throws {TypeScriptWithoutCompilerApiError} When `typescript` is TypeScript 7 or newer.
  */
 export async function loadTypeScriptCompilerApi<TypeScript extends { version: string }>(
-  importTypeScript: () => Promise<TypeScript & { default?: TypeScript }>
+  importTypeScriptModule: () => Promise<TypeScript & { default?: TypeScript }>
 ): Promise<TypeScript> {
-  let typescript: TypeScript;
-  try {
-    const imported = await importTypeScript();
-    typescript = imported.default ?? imported;
-  } catch (cause) {
-    if (isModuleNotFoundError(cause)) {
-      throw new TypeScriptMissingForDocgenError({ cause });
-    }
-    throw cause;
-  }
-  if (!hasTypeScriptCompilerApi(typescript.version)) {
-    throw new TypeScriptWithoutCompilerApiError({ version: typescript.version });
+  const typescript = await importTypeScript(importTypeScriptModule, COMPILER_API_ONLY);
+  const error = unusableVersionError(typescript.version, COMPILER_API_ONLY);
+  if (error) {
+    throw error;
   }
   return typescript;
 }
@@ -194,11 +329,12 @@ export async function checkBuilderDocgenPackages({
   disableBuilderDocgen,
   documentation,
   note,
+  apis,
 }: {
   packages: BuilderDocgenPackages;
   /** Resolve from the package that declares the packages as optional peers. */
   resolve: (specifier: string) => string;
-  options: Pick<Options, 'configDir'>;
+  options: Pick<Options, 'configDir' | 'presets'>;
   /** The main config option that selects builder docgen, e.g. `typescript.reactDocgen: 'react-docgen'`. */
   builderDocgen: string;
   /** The main config option that turns builder docgen off, e.g. `typescript.reactDocgen: false`. */
@@ -206,6 +342,7 @@ export async function checkBuilderDocgenPackages({
   documentation: string;
   /** A renderer-specific explanation for the error, if any. */
   note?: string;
+  apis?: readonly TypeScriptDocgenApi[];
 }): Promise<string[]> {
   const missing = Object.keys(packages).filter(
     (name) => !isPackageInstalledInRange(resolve, name, packages[name])
@@ -213,7 +350,12 @@ export async function checkBuilderDocgenPackages({
   const docgenServerDisabledInMainConfig = await isDocgenServerDisabledInMainConfig(options);
 
   if (missing.length > 0) {
-    const typescriptUsable = !getTypeScriptForDocgenError(resolve);
+    const { error: typescriptError, specifier } = await getDocgenTypeScriptError(
+      resolve,
+      options,
+      apis
+    );
+    const typescriptUsable = !typescriptError;
     if (!docgenServerDisabledInMainConfig && !typescriptUsable) {
       // The `isDocgenProviderEnabled` preset already warned about the unusable `typescript`.
       return missing;
@@ -235,6 +377,8 @@ export async function checkBuilderDocgenPackages({
       ),
       docgenServerDisabledInMainConfig,
       typescriptUsable,
+      apis,
+      specifier,
       foundVersions,
     });
     if (docgenServerDisabledInMainConfig) {

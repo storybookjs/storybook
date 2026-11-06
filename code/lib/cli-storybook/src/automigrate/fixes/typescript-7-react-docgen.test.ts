@@ -1,6 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { type JsPackageManager, addReactDocgenFallback } from 'storybook/internal/common';
+import {
+  type JsPackageManager,
+  addReactDocgenFallback,
+  readTypeScriptPackageForDocgen,
+} from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
@@ -33,8 +37,13 @@ const check = (
 
 describe('typescript-7-react-docgen', () => {
   beforeEach(() => {
+    vi.stubEnv('STORYBOOK_TYPESCRIPT_7_1_STABLE', 'false');
     vi.clearAllMocks();
     vi.mocked(addReactDocgenFallback).mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it.each(['@storybook/react-vite', '@storybook/nextjs', '@storybook/nextjs-vite'])(
@@ -103,5 +112,53 @@ describe('typescript-7-react-docgen', () => {
     } as unknown as Omit<RunOptions<true>, 'files'>);
 
     expect(addReactDocgenFallback).toHaveBeenCalledExactlyOnceWith(packageManager);
+  });
+
+  it('skips a project on TypeScript 7.1, whose docgen runs on the native API', async () => {
+    await expect(
+      check({ framework: '@storybook/react-vite' }, { typescript: '7.1.0-beta' })
+    ).resolves.toBeNull();
+  });
+
+  describe('when the main config sets typescript.docgenSpecifier', () => {
+    const withSpecifier = {
+      framework: '@storybook/react-vite',
+      typescript: { docgenSpecifier: '@typescript/native' },
+    };
+    const inConfigDir = { ...upgrade, configDir: '/project/.storybook' };
+
+    it('skips a project whose specifier names TypeScript 7.1, whatever typescript is', async () => {
+      vi.mocked(readTypeScriptPackageForDocgen).mockReturnValue({
+        version: '7.1.0',
+        packageDir: '/project/node_modules/@typescript/native',
+      });
+
+      await expect(check(withSpecifier, { typescript: '~7.0.2' }, inConfigDir)).resolves.toBeNull();
+      expect(readTypeScriptPackageForDocgen).toHaveBeenCalledWith({
+        specifier: '@typescript/native',
+        configDir: '/project/.storybook',
+      });
+    });
+
+    it('applies to a project whose specifier names TypeScript 7.0', async () => {
+      vi.mocked(readTypeScriptPackageForDocgen).mockReturnValue({
+        version: '7.0.2',
+        packageDir: '/project/node_modules/@typescript/native',
+      });
+
+      await expect(check(withSpecifier, { typescript: '^6.0.3' }, inConfigDir)).resolves.toBe(true);
+    });
+  });
+
+  describe('once TypeScript 7.1 is stable', () => {
+    beforeEach(() => {
+      vi.stubEnv('STORYBOOK_TYPESCRIPT_7_1_STABLE', 'true');
+    });
+
+    it('skips a project on TypeScript 7.0, which typescript-native-api upgrades instead', async () => {
+      await expect(
+        check({ framework: '@storybook/react-vite' }, { typescript: '~7.0.2' })
+      ).resolves.toBeNull();
+    });
   });
 });

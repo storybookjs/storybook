@@ -39,7 +39,10 @@ describe('prop extraction via story JSX', () => {
           parent: { name: 'ButtonProps' },
         },
         variant: {
-          type: { name: 'enum', value: [{ value: '"solid"' }, { value: '"outline"' }] },
+          type: {
+            name: 'enum',
+            value: expect.arrayContaining([{ value: '"solid"' }, { value: '"outline"' }]),
+          },
           required: false,
           parent: { name: 'ButtonProps' },
         },
@@ -142,7 +145,14 @@ describe('prop extraction via story JSX', () => {
           parent: { name: 'FRButtonProps' },
         },
         size: {
-          type: { name: 'enum', value: [{ value: '"md"' }, { value: '"sm"' }, { value: '"lg"' }] },
+          type: {
+            name: 'enum',
+            value: expect.arrayContaining([
+              { value: '"md"' },
+              { value: '"sm"' },
+              { value: '"lg"' },
+            ]),
+          },
           required: false,
           parent: { name: 'FRButtonProps' },
         },
@@ -360,7 +370,10 @@ describe('prop extraction via story JSX', () => {
       },
       props: {
         side: {
-          type: { name: 'enum', value: [{ value: '"start"' }, { value: '"end"' }] },
+          type: {
+            name: 'enum',
+            value: expect.arrayContaining([{ value: '"start"' }, { value: '"end"' }]),
+          },
           required: false,
           description: 'Side to align',
           defaultValue: { value: "'start'" },

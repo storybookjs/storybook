@@ -79,10 +79,27 @@ export default async function postInstall(options: PostinstallOptions) {
   const info = await getStorybookInfo(options.configDir, undefined, { skipCache: true });
   // only install these dependencies if they are not already installed
 
+  // Config discovery and setup detection must precede compatibility validation: the config-shape
+  // guard below should only run for configs the merge would actually attempt to rewrite.
+  const viteConfigFile = findFile('vite.config');
+  const vitestConfigFile = findFile('vitest.config');
+  const rootConfig = vitestConfigFile || viteConfigFile;
+
+  const existingConfig = rootConfig ? await fs.readFile(rootConfig, 'utf8') : null;
+  const alreadyConfigured =
+    rootConfig && existingConfig !== null
+      ? isConfigAlreadySetup(rootConfig, existingConfig)
+      : false;
+
   // Use AddonVitestService for compatibility validation
+  // `projectRoot` starts the config-file search; passing the config dir makes the CommonJS guard
+  // see the same files the config merge below would touch (searching from configDir to root).
+  // An already-wired config takes the skip path below and is never rewritten, so its shape must
+  // not fail the prerequisite check.
   const compatibilityResult = await addonVitestService.validateCompatibility({
     framework: info.framework,
     builder: info.builder,
+    ...(alreadyConfigured ? {} : { projectRoot: options.configDir }),
   });
 
   let result: string | null = null;
@@ -180,10 +197,7 @@ export default async function postInstall(options: PostinstallOptions) {
   const fileExtension =
     allDeps.typescript || findFile('tsconfig', [...EXTENSIONS, '.json']) ? 'ts' : 'js';
 
-  const viteConfigFile = findFile('vite.config');
-  const vitestConfigFile = findFile('vitest.config');
   const vitestShimFile = findFile('vitest.shims.d');
-  const rootConfig = vitestConfigFile || viteConfigFile;
 
   if (fileExtension === 'ts' && !vitestShimFile) {
     await writeFile('vitest.shims.d.ts', '/// <reference types="@vitest/browser-playwright" />');
@@ -223,14 +237,12 @@ export default async function postInstall(options: PostinstallOptions) {
   };
 
   // If there's an existing Vite/Vitest config, we update it to include the Storybook Addon Vitest plugin.
-  if (rootConfig) {
+  if (rootConfig && existingConfig !== null) {
     let target, updated;
-    const configFile = await fs.readFile(rootConfig, 'utf8');
+    const configFile = existingConfig;
     const configFileHasTypeReference = configFile.match(
       /\/\/\/\s*<reference\s+types=["']vitest\/config["']\s*\/>/
     );
-
-    const alreadyConfigured = isConfigAlreadySetup(rootConfig, configFile);
 
     if (!alreadyConfigured) {
       const configTemplate = await loadTemplate('vitest.config.4.template', {

@@ -17,17 +17,24 @@ import { getJobs } from './workflow-jobs.ts';
 
 const dirname = import.meta.dirname;
 
-// refs/pull/<n>/merge is the pull request merged into its base, so its diff against its first
+const LOCKFILE = 'pnpm-lock.yaml';
+
+// refs/pull/<n>/merge is the pull request merged into its base, so comparing it with its first
 // parent needs two commits of history, where a merge base can be any number of commits back.
-// GitHub stops updating it while the pull request conflicts, so it must merge HEAD to count.
-// It is fetched into a scratch repository because a `--depth` fetch marks the parents it stops
-// at as shallow, which would cut the checkout's own history at HEAD.
-function getPullRequestChangedFiles(prNumber: string): string[] | undefined {
+// GitHub stops updating it while the pull request conflicts; HEAD's lockfile is then compared
+// with the base it last merged into. The fetch goes into a scratch repository because a
+// `--depth` fetch marks the parents it stops at as shallow, cutting the checkout's history.
+function pullRequestChangesLockfile(prNumber: string): boolean {
   if (!/^\d+$/.test(prNumber)) {
     throw new Error(`Invalid pull request number "${prNumber}"`);
   }
   const git = (cwd: string, ...args: string[]) =>
-    execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+    execFileSync('git', args, {
+      cwd,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      timeout: 60_000,
+    }).trim();
   const scratch = mkdtempSync(join(tmpdir(), 'pull-request-merge-'));
   try {
     const origin = git('.', 'remote', 'get-url', 'origin');
@@ -41,15 +48,20 @@ function getPullRequestChangedFiles(prNumber: string): string[] | undefined {
       origin,
       `refs/pull/${prNumber}/merge`
     );
-    if (git(scratch, 'rev-parse', 'FETCH_HEAD^2') !== git('.', 'rev-parse', 'HEAD')) {
-      throw new Error(`refs/pull/${prNumber}/merge does not merge HEAD`);
+    if (git(scratch, 'rev-parse', 'FETCH_HEAD^2') === git('.', 'rev-parse', 'HEAD')) {
+      const diff = ['diff', '--no-renames', '--name-only', 'FETCH_HEAD^1', 'FETCH_HEAD'];
+      return git(scratch, ...diff, '--', LOCKFILE) !== '';
     }
-    return git(scratch, 'diff', '--name-only', 'FETCH_HEAD^1', 'FETCH_HEAD')
-      .split('\n')
-      .filter(Boolean);
+    console.warn(
+      `refs/pull/${prNumber}/merge does not merge HEAD, so ${LOCKFILE} is compared with its base`
+    );
+    return (
+      git(scratch, 'rev-parse', `FETCH_HEAD^1:${LOCKFILE}`) !==
+      git('.', 'rev-parse', `HEAD:${LOCKFILE}`)
+    );
   } catch (error) {
-    console.warn(`Skipping checks that need the files pull request ${prNumber} changes: ${error}`);
-    return undefined;
+    console.warn(`Cannot tell whether pull request ${prNumber} changes ${LOCKFILE}: ${error}`);
+    return true;
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
@@ -176,10 +188,7 @@ const { values: opts } = parseArgs({
   },
 });
 setTrustedAuthor(opts['gh-trusted-author'] === 'true');
-setLockfileChanged(
-  opts['gh-pr-number'] !== '' &&
-    (getPullRequestChangedFiles(opts['gh-pr-number']) ?? []).includes('pnpm-lock.yaml')
-);
+setLockfileChanged(opts['gh-pr-number'] !== '' && pullRequestChangesLockfile(opts['gh-pr-number']));
 
 const requested = (opts.workflow ?? '').split(',').filter(Boolean);
 const unknown = requested.filter((w) => !(workflows as readonly string[]).includes(w));

@@ -202,32 +202,38 @@ describe('main.ts under plain Node, as the CircleCI setup job runs it', () => {
 
   it.each([
     {
-      name: 'was pushed to after GitHub last merged it',
+      name: 'runs the dedupe check for a pull request that changes pnpm-lock.yaml and was pushed to after GitHub last merged it',
       pullRequest: { changesLockfile: true, pushedAfterMerge: true },
       prNumber: '1',
       warning: 'refs/pull/1/merge does not merge HEAD',
+      expected: true,
     },
     {
-      name: 'has no merge ref',
-      pullRequest: { changesLockfile: true },
-      prNumber: '2',
-      warning: 'Skipping checks that need the files pull request 2 changes',
+      name: 'skips the dedupe check for a pull request that leaves pnpm-lock.yaml alone and was pushed to after GitHub last merged it',
+      pullRequest: { changesLockfile: false, pushedAfterMerge: true },
+      prNumber: '1',
+      warning: 'refs/pull/1/merge does not merge HEAD',
+      expected: false,
     },
-  ])(
-    'skips the dedupe check, with a warning, for a pull request that $name',
-    ({ pullRequest, prNumber, warning }) => {
-      const result = generateIn(
-        checkoutPullRequest(pullRequest),
-        '--workflow=normal',
-        '--base-ref=HEAD',
-        `--gh-pr-number=${prNumber}`
-      );
+    {
+      name: 'runs the dedupe check for a pull request without a merge ref',
+      pullRequest: { changesLockfile: false },
+      prNumber: '2',
+      warning: 'Cannot tell whether pull request 2 changes pnpm-lock.yaml',
+      expected: true,
+    },
+  ])('$name, with a warning', ({ pullRequest, prNumber, warning, expected }) => {
+    const result = generateIn(
+      checkoutPullRequest(pullRequest),
+      '--workflow=normal',
+      '--base-ref=HEAD',
+      `--gh-pr-number=${prNumber}`
+    );
 
-      expect(result.status, result.stderr).toBe(0);
-      expect(result.stderr).toContain(warning);
-      expect(dedupeCheckGenerated()).toBe(false);
-    }
-  );
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stderr).toContain(warning);
+    expect(dedupeCheckGenerated()).toBe(expected);
+  });
 
   it("leaves the checkout's history alone", () => {
     const checkout = checkoutPullRequest({ changesLockfile: true });

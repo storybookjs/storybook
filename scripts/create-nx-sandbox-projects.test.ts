@@ -11,12 +11,6 @@ const subdirectories = (dir: string) =>
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name);
 
-// The angular-vite templates load `stories_angular-vite-*`, so these stories never run in a sandbox.
-const knownOrphanStoriesFolders = [
-  '@storybook/angular-vite/stories_angular-cli-default-ts',
-  '@storybook/angular-vite/stories_angular-cli-prerelease',
-];
-
 describe('sandbox templates', () => {
   it('have exactly one NX project each under code/sandbox', () => {
     const projects = subdirectories(join(CODE_DIRECTORY, 'sandbox')).sort();
@@ -50,6 +44,6 @@ describe('sandbox templates', () => {
       })
     );
 
-    expect(orphans.sort()).toEqual(knownOrphanStoriesFolders);
+    expect(orphans).toEqual([]);
   });
 });

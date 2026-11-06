@@ -1,10 +1,10 @@
-import type { Meta, StoryObj } from '@storybook/angular-vite';
+import preview from '#.storybook/preview';
 import { fn } from 'storybook/test';
 
 import SignalButtonComponent from './button.component';
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories
-const meta: Meta<SignalButtonComponent> = {
+const meta = preview.meta({
   component: SignalButtonComponent,
   tags: ['autodocs'],
   argTypes: {
@@ -32,35 +32,32 @@ const meta: Meta<SignalButtonComponent> = {
     primary: false,
     size: 'medium',
   },
-};
-
-export default meta;
-type Story = StoryObj<SignalButtonComponent>;
+});
 
 // More on writing stories with args: https://storybook.js.org/docs/writing-stories/args
-export const Primary: Story = {
+export const Primary = meta.story({
   args: {
     primary: true,
     label: 'Button',
   },
-};
+});
 
-export const Secondary: Story = {
+export const Secondary = meta.story({
   args: {
     label: 'Button',
   },
-};
+});
 
-export const Medium: Story = {
+export const Medium = meta.story({
   args: {
     size: 'medium',
     label: 'Button',
   },
-};
+});
 
-export const Small: Story = {
+export const Small = meta.story({
   args: {
     size: 'small',
     label: 'Button',
   },
-};
+});

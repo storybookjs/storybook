@@ -82,6 +82,7 @@
     "@angular/forms": "^21.2.14",
     "@angular/platform-browser": "^21.2.14",
     "@angular/platform-browser-dynamic": "^21.2.14",
+    "@angular/router": "^21.2.14",
     "@storybook/angular-cm": "workspace:*",
     "@storybook/angular-compodoc": "workspace:*",
     "@types/node": "^22.19.1",
@@ -102,6 +103,7 @@
     "@angular/compiler-cli": ">=21.0.0 < 23.0.0",
     "@angular/core": ">=21.0.0 < 23.0.0",
     "@angular/platform-browser": ">=21.0.0 < 23.0.0",
+    "@angular/router": ">=21.0.0 < 23.0.0",
     "less": "^4.0.0",
     "rxjs": "^7.4.0",
     "sass": "^1.0.0",
@@ -113,6 +115,9 @@
   },
   "peerDependenciesMeta": {
     "@angular/cli": {
+      "optional": true
+    },
+    "@angular/router": {
       "optional": true
     },
     "less": {

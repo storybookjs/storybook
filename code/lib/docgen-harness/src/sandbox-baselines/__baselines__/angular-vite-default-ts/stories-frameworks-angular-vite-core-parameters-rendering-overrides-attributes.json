@@ -1,0 +1,37 @@
+{
+  "argTypes": {
+    "buttonClick": {
+      "name": "buttonClick",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "label": {
+      "name": "label",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": "button"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-core-parameters-rendering-overrides-attributes",
+  "jsDocTags": {},
+  "name": "RenderingBugComponent",
+  "path": "./src/stories/frameworks/angular-vite/core/parameters/rendering-overrides-attributes.stories.ts"
+}

@@ -639,6 +639,7 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
               found: resolution.kind === 'found',
               storyId: resolution.kind === 'found' ? resolution.story.id : storyId,
               lookup: storyId !== undefined ? 'storyId' : 'name',
+              resolvedElsewhere: data.resolvedStorybookId !== undefined,
               resultTokenCount: estimateTokens(markdown),
             },
           };

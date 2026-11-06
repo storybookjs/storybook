@@ -492,11 +492,6 @@ export function formatManifestsToLists(
 
   parts.push('# Components');
   parts.push('');
-  if (components.length === 0) {
-    parts.push(
-      'No components are documented yet, so read the source of the project components you need.'
-    );
-  }
   for (const component of components) {
     parts.push(formatComponentLine(component));
     if (options.withStoryIds && Array.isArray(component.stories)) {

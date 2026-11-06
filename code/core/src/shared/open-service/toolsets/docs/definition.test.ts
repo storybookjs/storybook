@@ -446,6 +446,17 @@ describe('docs.showStory for a component the requested source does not have', ()
     expect(outcome.markdown).toContain('<Button />');
   });
 
+  it('names the source to pass in MCP words', async () => {
+    const outcome = await composed(docsAccess).methods.showStory.handler(
+      { storyId: 'button--primary', storybookId: 'local' },
+      mcpCtx
+    );
+
+    expect(outcome.markdown).toMatch(
+      /^> "button" is not in source "local"; showing it from source "ds1"\. Pass storybookId "ds1"/
+    );
+  });
+
   it('still reports the component missing when several sources have it', async () => {
     const outcome = await composed(docsAccess, docsAccess).methods.showStory.handler(
       { storyId: 'button--primary', storybookId: 'local' },
@@ -555,6 +566,7 @@ describe('usage reporting', () => {
         found: true,
         storyId: 'button--primary',
         lookup: 'storyId',
+        resolvedElsewhere: false,
         resultTokenCount: expect.any(Number),
       },
     });
@@ -567,6 +579,7 @@ describe('usage reporting', () => {
       found: true,
       storyId: 'button--primary',
       lookup: 'name',
+      resolvedElsewhere: false,
       resultTokenCount: expect.any(Number),
     });
   });

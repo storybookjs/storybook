@@ -1,11 +1,11 @@
 import type { IncomingMessage } from 'node:http';
 import net from 'node:net';
-import os from 'node:os';
 
 import { isHostAllowed } from 'host-validation-middleware';
 
 import { LOOPBACK_HOSTNAMES, matchesHostname } from '../../shared/utils/local-hosts.ts';
 import type { Middleware } from '../../types/index.ts';
+import { getNetworkInterfaces } from './server-address.ts';
 
 export const DEFAULT_ALLOWED_HOSTS: string[] | true = [];
 
@@ -32,13 +32,12 @@ const toCanonicalIp = (value: string): string | undefined => {
   }
 };
 
-const ifaces = os.networkInterfaces();
 let ownAddresses: Set<string> | undefined;
 
 const getOwnAddresses = () => {
   if (!ownAddresses) {
     ownAddresses = new Set<string>();
-    for (const iface of Object.values(ifaces).flat()) {
+    for (const iface of Object.values(getNetworkInterfaces()).flat()) {
       const ip = iface && toCanonicalIp(iface.address);
       if (ip) {
         ownAddresses.add(ip);

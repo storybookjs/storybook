@@ -1,3 +1,6 @@
+import net from 'node:net';
+import os from 'node:os';
+
 import { describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -14,14 +17,14 @@ import {
 vi.mock('node:os', () => ({
   default: {
     release: () => '',
-    networkInterfaces: () => ({
+    networkInterfaces: vi.fn(() => ({
       lo: [{ address: '127.0.0.1', family: 'IPv4', internal: true }],
       eth0: [
         { address: '192.168.1.100', family: 'IPv4', internal: false },
         { address: 'fe80::1', family: 'IPv6', internal: false },
       ],
       wlan0: [{ address: '192.130.20.4', family: 'IPv4', internal: false }],
-    }),
+    })),
   },
   platform: 'darwin',
   constants: {
@@ -98,6 +101,50 @@ describe('getServerPort', () => {
     const result = await getServerPort(port);
 
     expect(result).toBe(expectedFreePort);
+    expect(detectPort).toHaveBeenLastCalledWith(port);
+  });
+
+  it('should probe the listen host when the network interfaces cannot be read', async () => {
+    const taken = net.createServer();
+    await new Promise<void>((resolve) => taken.listen(0, '127.0.0.1', resolve));
+    const takenPort = (taken.address() as net.AddressInfo).port;
+    vi.mocked(os.networkInterfaces).mockImplementationOnce(() => {
+      throw new Error('uv_interface_addresses returned Unknown system error 1');
+    });
+
+    try {
+      const result = await getServerPort(takenPort);
+
+      expect(result).toBeGreaterThan(0);
+      expect(result).not.toBe(takenPort);
+      expect(detectPort).not.toHaveBeenCalled();
+    } finally {
+      taken.close();
+    }
+  });
+
+  it('should reject when the network interfaces cannot be read and no port can be bound', async () => {
+    vi.mocked(os.networkInterfaces).mockImplementationOnce(() => {
+      throw new Error('uv_interface_addresses returned Unknown system error 1');
+    });
+    const listen = vi.spyOn(net.Server.prototype, 'listen').mockImplementation(function (
+      this: net.Server
+    ) {
+      const error = Object.assign(new Error('listen EPERM'), {
+        code: 'EPERM',
+      });
+      process.nextTick(() => this.emit('error', error));
+      return this;
+    });
+
+    try {
+      await expect(getServerPort(port, { host: '0.0.0.0' })).rejects.toThrow(
+        "Unable to find a free port for Storybook's dev server"
+      );
+      expect(listen).toHaveBeenCalledTimes(11);
+    } finally {
+      listen.mockRestore();
+    }
   });
 
   it('should reject with an actionable error when no port can be bound', async () => {

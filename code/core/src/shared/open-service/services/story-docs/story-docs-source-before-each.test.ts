@@ -254,13 +254,18 @@ describe('argsReachManager', () => {
   const reaches = (unmappedArgs: Record<string, unknown>, initialArgs = unmappedArgs) =>
     argsReachManager({ unmappedArgs, initialArgs });
 
-  it('holds for args the channel sends, and for functions the story is written with', () => {
+  it('holds for args the channel sends, and for functions and collections the story is written with', () => {
     class Person {
       constructor(readonly name: string) {}
     }
     const user: Record<string, unknown> = { name: 'Jane' };
     user.self = user;
-    const initialArgs = { label: 'Hi', onClick: () => {}, config: { format: () => '' } };
+    const initialArgs = {
+      label: 'Hi',
+      onClick: () => {},
+      config: { format: () => '' },
+      tags: new Set(['a']),
+    };
     expect(
       reaches(
         {
@@ -270,7 +275,6 @@ describe('argsReachManager', () => {
           max: Infinity,
           when: new Date(0),
           owner: new Person('Bob'),
-          lookup: new Map([['a', 1]]),
           user,
         },
         initialArgs
@@ -282,7 +286,9 @@ describe('argsReachManager', () => {
     ['a function', () => {}],
     ['a function in an object', { format: () => '' }],
     ['a function in an array', [() => {}]],
-  ])('fails for %s that changed, which the channel drops', (_, value) => {
+    ['a Set', new Set(['a'])],
+    ['a Map in an object', { lookup: new Map([['a', 1]]) }],
+  ])('fails for %s that changed, whose contents the channel drops', (_, value) => {
     expect(reaches({ value }, { value: 'initial' })).toBe(false);
     expect(reaches({ value: 'current' }, { value })).toBe(false);
   });

@@ -152,6 +152,8 @@ export type StorybookDirsAccess = {
   configDir: string;
   /** Absolute paths of the configured static directories. */
   getStaticDirs: () => Promise<string[]>;
+  /** Whether the `stories` globs of the main config match this absolute path. */
+  matchesStories: (file: string) => Promise<boolean>;
 };
 
 export type StoriesChangeStatusesAccess = {

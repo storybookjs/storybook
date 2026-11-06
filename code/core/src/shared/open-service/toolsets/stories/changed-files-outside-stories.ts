@@ -140,9 +140,13 @@ export async function detectChangedFilesOutsideStories({
         reachableFiles.push(file);
         continue;
       }
-      // A story file of this project renders itself, so it misses only while the index has not
-      // picked it up yet. One of another package's Storybook never reaches this index.
-      if (STORY_FILE_RE.test(basename(file)) && isWithin(file, projectDir)) {
+      // A story file the `stories` globs match renders itself, so it misses only while the index
+      // has not picked it up yet. Any other story file, such as one of another package's
+      // Storybook, never reaches this index.
+      if (
+        STORY_FILE_RE.test(basename(file)) &&
+        (await storybookDirs.matchesStories(resolvePath(repoRoot, file)))
+      ) {
         unindexedStoryFiles.push(file);
       } else {
         unreachableFiles.push(file);

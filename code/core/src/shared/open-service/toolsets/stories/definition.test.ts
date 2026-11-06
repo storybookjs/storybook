@@ -78,6 +78,9 @@ const storybookDirs = {
     resolve(storybookWorkingDir, 'public'),
     resolve(storybookWorkingDir, '.storybook/static'),
   ],
+  // Mirrors `stories: ['../src/**/*.stories.*']` in packages/ui/.storybook/main.ts.
+  matchesStories: async (file: string) =>
+    file.startsWith(`${resolve(storybookWorkingDir, 'src')}/`) && /\.stories\./.test(file),
 };
 
 let statusesFixture: Record<string, Record<string, unknown>>;
@@ -497,6 +500,31 @@ Story files that are not in the story index yet: \`packages/ui/src/OrderHistory.
       });
 
       const outcome = await runChanged(mcpCtx);
+
+      expect(outcome.data).toMatchObject({
+        unindexedStoryFiles: [],
+        unreachableFiles: ['packages/web/src/Page.stories.tsx'],
+      });
+      expect(getStatuses).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not wait for a story file the stories globs leave out of a Storybook at the git root', async () => {
+      const rootToolset = createStoriesToolset({
+        storyIndex,
+        git,
+        changeStatuses,
+        storybookDirs: {
+          configDir: resolve(repoRoot, '.storybook'),
+          getStaticDirs: async () => [],
+          matchesStories: async (file) => file.startsWith(`${resolve(repoRoot, 'src')}/`),
+        },
+      });
+      getChangedFiles.mockResolvedValue({
+        changed: new Set(),
+        new: new Set(['packages/web/src/Page.stories.tsx']),
+      });
+
+      const outcome = await runChanged(mcpCtx, rootToolset);
 
       expect(outcome.data).toMatchObject({
         unindexedStoryFiles: [],

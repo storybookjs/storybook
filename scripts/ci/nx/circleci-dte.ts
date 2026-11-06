@@ -57,8 +57,7 @@ const PEAK_DELAY_JOB = 'nx-agent-peak-delay';
 // {@link TASKS_PER_AGENT} of them. `compile` does not count: every run has some 47 compile tasks as
 // dependencies, and each takes a second or two.
 export const TASKS_PER_AGENT = 4;
-// Windows agents are `large` machines (120 credits a minute) that take about four minutes to boot,
-// mostly `yarn install`.
+// Windows agents take about four minutes to boot, mostly `yarn install`.
 export const NX_DTE_WINDOWS_AGENTS = 4;
 
 const agentsForWork = (selection: Selection, max: number) => {
@@ -420,8 +419,9 @@ const windowsMainJob = (
 
 const windowsAgentJob = (changedFiles: readonly string[], agents: number) =>
   defineJob('nx-agent-windows', () => ({
-    // As CircleCI's own Windows E2E jobs.
-    executor: { name: 'win/default', size: 'large', shell: 'bash.exe' },
+    // `medium` (4 vCPUs, 40 credits a minute), as the Linux agents' 4 vCPUs: `large` costs three
+    // times as much per minute, and most of an agent's minutes are boot and waiting.
+    executor: { name: 'win/default', size: 'medium', shell: 'bash.exe' },
     parallelism: agents,
     environment: {
       ...nxEnvironment('windows', changedFiles),

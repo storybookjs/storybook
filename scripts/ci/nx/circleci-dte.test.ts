@@ -81,7 +81,7 @@ describe('the CircleCI NX DTE pipeline', () => {
     expect(jobs.map((j) => j.id)).not.toContain('nx-agent-peak');
   });
 
-  it('starts at most four Windows agents, which cost about 500 credits each to boot', () => {
+  it('starts at most four Windows agents, which take about four minutes each to boot', () => {
     expect(windowsAgentsFor(tasks('e2e-tests', 9))).toBe(3);
     expect(windowsAgentsFor(tasks('e2e-tests', 40))).toBe(4);
     expect(windowsAgentsFor(EMPTY_SELECTION)).toBe(0);

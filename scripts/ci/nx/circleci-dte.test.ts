@@ -87,6 +87,17 @@ describe('the CircleCI NX DTE pipeline', () => {
     expect(windowsAgentsFor(EMPTY_SELECTION)).toBe(0);
   });
 
+  it('names every target of the command in --stop-workers-after, whatever the change reaches', () => {
+    // NX Cloud stops an agent early only once every target of the command is accounted for.
+    const start = job(withSelection(tasks('fmt', 1)), 'nx-main')!.steps.find(
+      (step) => step.run?.name === 'Start the NX Cloud run'
+    )!.run!.command;
+    const targets = start.match(/--stop-workers-after=(\S+)/)![1].split(',');
+    expect(targets).toEqual(
+      expect.arrayContaining(['dedupe-check', 'e2e-tests', 'fmt', 'sandbox'])
+    );
+  });
+
   it('starts no NX job for an OS with nothing to run', () => {
     const ids = withSelection(EMPTY_SELECTION, EMPTY_SELECTION).map((j) => j.id);
     expect(ids).toEqual(['node-26-smoke']);

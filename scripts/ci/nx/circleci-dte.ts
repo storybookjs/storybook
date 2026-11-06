@@ -219,10 +219,13 @@ export const LAUNCH_TEMPLATES: Record<Os, string> = {
   windows: 'circleci-windows',
 };
 
-// The targets of a selection: `start-ci-run --stop-workers-after` names them all, so NX Cloud
-// knows when no more tasks can come.
-const targetsOf = (selection: Selection) =>
-  [...new Set(Object.values(selection.tasks).map((task) => task.target))].sort();
+// The targets of a run's command (run.ts `--targets`), which `start-ci-run --stop-workers-after`
+// must name: NX Cloud stops an agent early ("no further tasks for this worker") only once every
+// target of the command is accounted for. With the targets of only the tasks the change reaches
+// (no `dedupe-check` for a core change, say), no agent stopped before the run ended, and a core
+// run cost a third more.
+const commandTargets = (tasks: readonly string[]) =>
+  [...new Set(tasks.map((task) => task.slice(task.lastIndexOf(':') + 1)))].sort();
 
 const startCiRun = (os: Os, targets: readonly string[], npx: string) => ({
   run: {
@@ -287,7 +290,7 @@ const stopAgents = () => ({
 const mainJob = (
   selected: readonly Workflow[],
   changedFiles: readonly string[],
-  selection: Selection,
+  targets: readonly string[],
   base: string | undefined,
   agents: number
 ) =>
@@ -302,7 +305,7 @@ const mainJob = (
       // One commit: `nx affected` diffs against the base the setup job found (fetched below), and
       // a focused run's check reads the changed files (CI_CHANGED_FILES), not a git range.
       git.checkout(),
-      startCiRun('linux', targetsOf(selection), NX_CLOUD),
+      startCiRun('linux', targets, NX_CLOUD),
       ...restoreNodeModules(),
       ...fetchBase(base),
       runNx('linux', selected, base),
@@ -396,7 +399,7 @@ const windowsSetup = () => [
 const windowsMainJob = (
   selected: readonly Workflow[],
   changedFiles: readonly string[],
-  selection: Selection,
+  targets: readonly string[],
   base: string | undefined,
   agents: number
 ) =>
@@ -409,7 +412,7 @@ const windowsMainJob = (
     },
     steps: [
       ...windowsSetup(),
-      startCiRun('windows', targetsOf(selection), NX_CLOUD),
+      startCiRun('windows', targets, NX_CLOUD),
       ...installWithCache('windows'),
       ...fetchBase(base),
       runNx('windows', selected, base),
@@ -487,15 +490,7 @@ export function getNxDteJobs(
   const linux = selection?.linux;
   if (linuxTasks && (!linux || Object.keys(linux.tasks).length > 0)) {
     const agents = linux ? agentsForSelection(linux, options) : agentsFor(plan, options);
-    // Without a selection, the run's targets from the plan.
-    const targets = linux ?? {
-      tasks: Object.fromEntries(
-        [...plan.tasks, ...(plan.affectedCheck ? ['*:check'] : [])].map((task) => [
-          task,
-          { project: '', target: task.slice(task.lastIndexOf(':') + 1) },
-        ])
-      ),
-    };
+    const targets = commandTargets([...plan.tasks, ...(plan.affectedCheck ? ['*:check'] : [])]);
     jobs.push(
       mainJob(selected, changedFiles, targets, base, agents.first + agents.peak),
       agentJob(changedFiles, 'first', agents.first),
@@ -508,11 +503,7 @@ export function getNxDteJobs(
   const windowsTasks = windowsTasksOf(plan);
   const windows = selection?.windows;
   if (windowsTasks.length > 0 && (!windows || Object.keys(windows.tasks).length > 0)) {
-    const targets = windows ?? {
-      tasks: Object.fromEntries(
-        windowsTasks.map((task) => [task, { project: '', target: task.split(':').at(-1)! }])
-      ),
-    };
+    const targets = commandTargets(windowsTasks);
     const agents = windows ? windowsAgentsFor(windows) : NX_DTE_WINDOWS_AGENTS;
     jobs.push(
       windowsMainJob(selected, changedFiles, targets, base, agents),

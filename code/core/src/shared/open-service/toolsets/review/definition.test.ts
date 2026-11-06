@@ -192,7 +192,7 @@ This usually means the IDs were inferred from file paths or naming conventions r
       const outcome = await createReview({}, mcpCtx);
 
       expect(outcome.markdown)
-        .toBe(`Review applied: 1 collection, 1 story. Now write your final response: first answer the user's request, such as what you changed or the stories they asked to see, then end with these three lines, copied unchanged, with nothing after them:
+        .toBe(`Review applied: 1 collection, 1 story. Now write your final response: first answer the user's request, such as what you changed or which stories the review shows, without links to single stories or to the review, then end with these three lines, copied unchanged, with nothing after them:
 
 ## 👀 Review your changes
 The review shows the 1 story most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete.

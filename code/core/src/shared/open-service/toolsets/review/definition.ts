@@ -112,7 +112,7 @@ function storyNoun(storyCount: number): string {
 function reviewInstructions(reviewUrl: string, storyCount: number, browse: boolean): string {
   // Agents were observed ending visual work at the tool result, or summarizing the review in
   // their own words, so the result carries the lines the final response has to end with.
-  return `Now write your final response: first answer the user's request, such as what you changed or the stories they asked to see, then end with these three lines, copied unchanged, with nothing after them:
+  return `Now write your final response: first answer the user's request, such as what you changed or which stories the review shows, without links to single stories or to the review, then end with these three lines, copied unchanged, with nothing after them:
 
 ${
   // A browse request changes no files, so its heading must not speak of changes.

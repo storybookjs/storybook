@@ -6,7 +6,7 @@ description: Look up the components of a project with Storybook, with their prop
 Prerequisites:
 
 1. Storybook must be installed in the project. If it is not, read the components' source files instead.
-2. Storybook must be 11.0 or later. An 11.0 prerelease (`11.0.0-alpha.x`) or a canary build (`0.0.0-pr-*`) also counts. If it is older, invoke the `/storybook-upgrade` skill only after the user explicitly approves an upgrade; until then, read the components' source files instead.
+2. Storybook must be 11.0 or later. An 11.0 prerelease (`11.0.0-alpha.x`, `-beta.x` or `-rc.x`) or a canary build (`0.0.0-pr-*`) also counts. If it is older, invoke the `/storybook-upgrade` skill only after the user explicitly approves an upgrade; until then, read the components' source files instead.
 
 Run every Storybook CLI command from the package where Storybook is installed (in a monorepo often a leaf package such as `packages/ui`).
 

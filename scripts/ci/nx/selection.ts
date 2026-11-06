@@ -73,7 +73,8 @@ export function mergeTaskGraphs(graphs: readonly NxTaskGraph[]): Selection {
 // the median over CI runs of a week in late 2026 (NX Cloud's task statistics). Only the shape of
 // the run depends on them, so they need no refresh unless a target becomes much slower or faster.
 const SECONDS_BY_TARGET: Record<string, number> = {
-  compile: 5,
+  // Most packages compile in about a second; core takes about ten.
+  compile: 3,
   check: 10,
   publish: 20,
   'dedupe-check': 5,

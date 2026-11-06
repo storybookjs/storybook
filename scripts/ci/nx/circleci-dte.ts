@@ -27,7 +27,13 @@ import { cache, git, node, testResults } from '../utils/helpers.ts';
 import { isTrustedAuthor } from '../utils/runtime.ts';
 import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
 import { type Plan, planFor, windowsTasksOf } from './plan.ts';
-import { type Selection, agentsNeeded, taskSeconds } from './selection.ts';
+import {
+  type SelectedTask,
+  type Selection,
+  agentsNeeded,
+  makespan,
+  taskSeconds,
+} from './selection.ts';
 
 // The agents come in two waves, each one CircleCI job of parallel `large` containers (4 vCPUs; a
 // task costs more on `xlarge`, which bills twice the credits per minute and ran the dev-server E2E
@@ -80,13 +86,22 @@ export function agentsForSelection(
   return { first, peak: total - first };
 }
 
-// The Windows agents for a selection, as {@link agentsForSelection}, with more slack: each extra
-// Windows agent costs about 500 credits to boot.
-export const windowsAgentsFor = (selection: Selection) =>
-  agentsNeeded(selection, NX_DTE_WINDOWS_AGENTS, {
-    seconds: (task) => WINDOWS_SLOWDOWN * taskSeconds(task),
-    slack: { ratio: 1.2, seconds: 120 },
-  });
+// The Windows agents for a selection. Each one costs about 500 credits just to boot, so one more
+// joins only while it ends the run at least {@link WINDOWS_AGENT_MIN_GAIN_SECONDS} sooner.
+const WINDOWS_AGENT_MIN_GAIN_SECONDS = 120;
+export function windowsAgentsFor(selection: Selection) {
+  const seconds = (task: SelectedTask) => WINDOWS_SLOWDOWN * taskSeconds(task);
+  const count = Math.min(NX_DTE_WINDOWS_AGENTS, Object.keys(selection.tasks).length);
+  let agents = Math.min(1, count);
+  while (
+    agents < count &&
+    makespan(selection, agents, seconds) - makespan(selection, agents + 1, seconds) >=
+      WINDOWS_AGENT_MIN_GAIN_SECONDS
+  ) {
+    agents++;
+  }
+  return agents;
+}
 
 // The agents each wave runs for a plan, when the setup job could not say which tasks will run.
 // The first wave never outnumbers a plan's tasks (a `docs` run has one), unless they expand to

@@ -16,6 +16,7 @@ import {
   agentsFor,
   agentsForSelection,
   getNxDteJobs,
+  windowsAgentsFor,
 } from './circleci-dte.ts';
 import { EMPTY_SELECTION, type Selection } from './selection.ts';
 
@@ -79,6 +80,14 @@ describe('the CircleCI NX DTE pipeline', () => {
     const jobs = withSelection(tasks('fmt', 1));
     expect(job(jobs, 'nx-agent')!.parallelism).toBe(1);
     expect(jobs.map((j) => j.id)).not.toContain('nx-agent-peak');
+  });
+
+  it('adds a Windows agent only while it ends the run two minutes sooner', () => {
+    // Two 10-minute tasks (5 on Linux): a second agent halves the run.
+    expect(windowsAgentsFor(tasks('e2e-tests-dev-1', 2))).toBe(2);
+    // Many short tasks: one more agent saves less than two minutes.
+    expect(windowsAgentsFor(tasks('compile', 30))).toBe(1);
+    expect(windowsAgentsFor(EMPTY_SELECTION)).toBe(0);
   });
 
   it('starts no NX job for an OS with nothing to run', () => {

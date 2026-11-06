@@ -304,8 +304,8 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     }
   }
 
-  async onUpdateArgs({ storyId, updatedArgs }: { storyId: StoryId; updatedArgs: Args }) {
-    super.onUpdateArgs({ storyId, updatedArgs });
+  async onUpdateArgs(payload: { storyId: StoryId; updatedArgs: Args }, transported = false) {
+    await super.onUpdateArgs(payload, transported);
   }
 
   async onPreloadStories({ ids }: { ids: string[] }) {

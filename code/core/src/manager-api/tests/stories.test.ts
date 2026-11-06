@@ -19,6 +19,7 @@ import {
 } from 'storybook/internal/core-events';
 import { logger } from 'storybook/internal/client-logger';
 import {
+  type API_ComposedRef,
   type API_PreparedIndexEntry,
   type API_StoryEntry,
   type StoryIndex,
@@ -828,9 +829,58 @@ describe('stories API', () => {
       expect((changedIndex!['a--1'] as API_StoryEntry).args).toEqual({ foo: 'bar' });
       expect((changedIndex!['b--1'] as API_StoryEntry).args).toEqual({ x: 'y' });
     });
+
+    it('revives function markers in args, so object args keep their function keys (#29207)', () => {
+      const fullAPI = { setOptions: vi.fn() };
+      const moduleArgs = createMockModuleArgs({ fullAPI });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider, store } = moduleArgs;
+
+      api.setIndex({ v: 5, entries: preparedEntries });
+      const externalEvent = {
+        source: '',
+        sourceType: 'external' as const,
+        sourceLocation: '',
+        refId: undefined,
+        ref: undefined,
+        type: '',
+      };
+      getEventMetadata.mockReturnValueOnce(externalEvent).mockReturnValueOnce(externalEvent);
+
+      // The channel drops function values; they arrive as `{ __function__: { name } }` markers.
+      provider.channel.emit(STORY_PREPARED, {
+        id: 'a--1',
+        parameters: {},
+        argTypes: {},
+        initialArgs: { link: { onClick: { __function__: { name: 'onClick' } } } },
+        args: { link: { onClick: { __function__: { name: 'onClick' } } } },
+      });
+      provider.channel.emit(STORY_ARGS_UPDATED, {
+        storyId: 'a--1',
+        args: { link: { onClick: { __function__: { name: 'onClick' } } } },
+      });
+
+      const entry = store.getState().index!['a--1'] as API_StoryEntry;
+      const preparedArgs = entry.args as Record<string, any>;
+      const preparedInitialArgs = entry.initialArgs as Record<string, any>;
+
+      expect(typeof preparedArgs.link.onClick).toBe('function');
+      expect(preparedArgs.link.onClick.name).toBe('onClick');
+      // Args are diffed by reference (URL args, save-story): the same unchanged function revived
+      // from two events must keep one identity, or the diffs report phantom changes.
+      expect(preparedArgs.link.onClick).toBe(preparedInitialArgs.link.onClick);
+    });
     it('changes reffed args properly, per story when receiving STORY_ARGS_UPDATED', () => {
       const fullAPI = { updateRef: vi.fn() };
-      const moduleArgs = createMockModuleArgs({ fullAPI });
+      const ref = {
+        id: 'refId',
+        index: { 'a--1': { args: { a: 'b' } } },
+        filteredIndex: { 'a--1': { args: { a: 'b' } } },
+      } as unknown as API_ComposedRef;
+      const moduleArgs = createMockModuleArgs({
+        fullAPI,
+        initialState: { refs: { refId: ref } },
+      });
       initStories(moduleArgs as unknown as ModuleArgs);
       const { provider } = moduleArgs;
 
@@ -840,11 +890,7 @@ describe('stories API', () => {
         source: '',
         sourceLocation: '',
         type: '',
-        ref: {
-          id: 'refId',
-          index: { 'a--1': { args: { a: 'b' } } },
-          filteredIndex: { 'a--1': { args: { a: 'b' } } },
-        } as any,
+        ref,
       });
       provider.channel.emit(STORY_ARGS_UPDATED, { storyId: 'a--1', args: { foo: 'bar' } });
       expect(fullAPI.updateRef).toHaveBeenCalledWith('refId', {
@@ -895,6 +941,32 @@ describe('stories API', () => {
         options: {
           target: 'refId',
         },
+      });
+    });
+    it('updateStoryArgs keeps live functions for local listeners (#29207)', () => {
+      const fullAPI = { updateRef: vi.fn() };
+      const moduleArgs = createMockModuleArgs({ fullAPI });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider } = moduleArgs;
+
+      const listener = vi.fn();
+      provider.channel.on(UPDATE_STORY_ARGS, listener);
+
+      api.setIndex({ v: 5, entries: preparedEntries });
+      const onClick = function onClick() {};
+      api.updateStoryArgs({ id: 'a--1' } as API_StoryEntry, {
+        link: { href: 'https://example.com', onClick },
+      });
+
+      expect(listener).toHaveBeenCalledWith({
+        storyId: 'a--1',
+        updatedArgs: {
+          link: {
+            href: 'https://example.com',
+            onClick,
+          },
+        },
+        options: { target: undefined },
       });
     });
     it('refId to the local frame and does not change anything', () => {

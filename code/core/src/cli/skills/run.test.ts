@@ -172,10 +172,22 @@ describe('runSkillsCommand', () => {
     );
     expect(withoutDocsTools.output).not.toContain('## Look up components first');
 
-    // Composed Storybooks give the MCP docs tools something to read without local manifests.
     d.resolveSkillInputs.mockResolvedValue({ ...(await d.resolveSkillInputs()), composed: true });
     const composed = await runSkillsCommand({ tokens: ['ui-workflow'], mcp: true, target: {} }, d);
     expect(composed.output).toContain('## Look up components first');
+  });
+
+  it('keeps the component lookup on the CLI for composed Storybooks without local manifests', async () => {
+    const d = deps();
+    d.resolveSkillInputs.mockResolvedValue({
+      ...(await d.resolveSkillInputs()),
+      docsEnabledForCli: false,
+      composed: true,
+    });
+
+    const { output } = await runSkillsCommand({ tokens: ['ui-workflow'], target: {} }, d);
+
+    expect(output).toContain('## Look up components first');
   });
 
   it('--mcp leaves out the steps of the toolsets main.ts turns off', async () => {

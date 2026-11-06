@@ -228,8 +228,8 @@ function renderCatalogHelp(): string {
 function assembleUiWorkflow(inputs: SkillInputs, transport: SkillTextTransport): string {
   // Over MCP, a step only appears when the server registers its tools, with the same gates as
   // addon-mcp's tool registry: the toolsets `main.ts` turns on, and for the docs tools the
-  // `componentsManifest` opt-in or composed Storybooks. The CLI commands are always there and only
-  // need manifests.
+  // `componentsManifest` opt-in or composed Storybooks. The CLI docs commands need manifests or
+  // composed Storybooks.
   const mcp = transport === 'mcp';
   const toolsets = mcp ? inputs.mcpToolsets : ALL_MCP_TOOLSETS;
   return buildUiWorkflowSkill({
@@ -239,7 +239,7 @@ function assembleUiWorkflow(inputs: SkillInputs, transport: SkillTextTransport):
     previewFile: inputs.previewFile,
     typescript: inputs.typescript,
     docsEnabled:
-      toolsets.docs && (mcp ? inputs.docsEnabled || inputs.composed : inputs.docsEnabledForCli),
+      toolsets.docs && ((mcp ? inputs.docsEnabled : inputs.docsEnabledForCli) || inputs.composed),
     testSupported: toolsets.test && inputs.testSupported,
     a11yEnabled: inputs.a11yEnabled,
     moduleGraphSupported: toolsets.dev && inputs.moduleGraphSupported,

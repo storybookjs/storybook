@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 
-import { GLOBALS_UPDATED } from 'storybook/internal/core-events';
+import { GLOBALS_UPDATED, UPDATE_GLOBALS } from 'storybook/internal/core-events';
 import type { Globals } from 'storybook/internal/csf';
-import type { DocsContextProps, PreparedStory } from 'storybook/internal/types';
 
-export const useGlobals = (story: PreparedStory, context: DocsContextProps): [Globals] => {
-  const storyContext = context.getStoryContext(story);
+import { DocsContext } from './DocsContext';
 
-  const [globals, setGlobals] = useState(storyContext.globals);
+export const useGlobals = (): [Globals, (globals: Globals) => void] => {
+  const context = useContext(DocsContext);
+  const [globals, setGlobals] = useState(context.getGlobals());
+
   useEffect(() => {
     const onGlobalsUpdated = (changed: { globals: Globals }) => {
       setGlobals(changed.globals);
@@ -16,5 +17,11 @@ export const useGlobals = (story: PreparedStory, context: DocsContextProps): [Gl
     return () => context.channel.off(GLOBALS_UPDATED, onGlobalsUpdated);
   }, [context.channel]);
 
-  return [globals];
+  const updateGlobals = useCallback(
+    (updatedGlobals: Globals) =>
+      context.channel.emit(UPDATE_GLOBALS, { globals: updatedGlobals }),
+    [context.channel]
+  );
+
+  return [globals, updateGlobals];
 };

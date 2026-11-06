@@ -217,6 +217,8 @@ export const git = {
     return {
       'git-shallow-clone/checkout_advanced': {
         clone_options: flags.join(' '),
+        // The orb's fetch defaults to `--depth 10`, which would cut the deep clone's history again.
+        ...(shallow ? {} : { fetch_options: '--depth 100 --filter=blob:none' }),
         // On `pull/N/head` branches the orb's fetch defaults to `--tags`, which pulls every
         // release tag and its history and costs more than the clone itself.
         tag_fetch_options: '--no-tags',

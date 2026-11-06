@@ -50,6 +50,44 @@ const { menu } = standardHeaderData;
 const filteredIndex = mockDataset.withRoot;
 const storyId = '1-12-121';
 
+// 1 component with attached docs, 2 stories and a test, plus unattached docs
+const indexWithDocsAndTests = {
+  intro: { type: 'docs', id: 'intro', name: 'Intro', depth: 0 },
+  button: {
+    type: 'component',
+    id: 'button',
+    name: 'Button',
+    depth: 0,
+    children: ['button--docs', 'button--primary', 'button--secondary'],
+  },
+  'button--docs': { type: 'docs', id: 'button--docs', name: 'Docs', parent: 'button', depth: 1 },
+  'button--primary': {
+    type: 'story',
+    subtype: 'story',
+    id: 'button--primary',
+    name: 'Primary',
+    parent: 'button',
+    depth: 1,
+    children: ['button--primary:test'],
+  },
+  'button--primary:test': {
+    type: 'story',
+    subtype: 'test',
+    id: 'button--primary:test',
+    name: 'Test',
+    parent: 'button--primary',
+    depth: 2,
+  },
+  // Refs built with older Storybook versions have no `subtype`
+  'button--secondary': {
+    type: 'story',
+    id: 'button--secondary',
+    name: 'Secondary',
+    parent: 'button',
+    depth: 1,
+  },
+};
+
 export const simpleData = { menu, filteredIndex, storyId };
 export const loadingData = { menu, filteredIndex: {} };
 
@@ -185,6 +223,19 @@ const refs: Record<string, RefType> = {
     filteredIndex,
     allStatuses: {},
   },
+  withDocsAndTests: {
+    id: 'docsAndTests',
+    title: 'This has docs and tests',
+    url: 'https://example.com',
+    type: 'lazy',
+    expanded: false,
+    // @ts-expect-error (invalid input)
+    index: indexWithDocsAndTests,
+    // @ts-expect-error (invalid input)
+    filteredIndex: indexWithDocsAndTests,
+    previewInitialized: true,
+    allStatuses: {},
+  },
 };
 
 export const Optimized = () => (
@@ -266,3 +317,16 @@ export const Long = () => (
 export const WithSourceCode = () => (
   <Ref {...refs.withSourceCode} hasEntries={true} isLoading={false} selectedStoryId="" />
 );
+
+export const IndicatorCountsOnlyStories: StoryObj = {
+  render: () => (
+    <Ref {...refs.withDocsAndTests} hasEntries={true} isLoading={false} selectedStoryId="" />
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole('button', { name: 'Extra actions' }));
+    await expect(
+      await screen.findByText('Explore 1 components and 2 stories in a new browser tab.')
+    ).toBeInTheDocument();
+  },
+};

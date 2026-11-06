@@ -494,6 +494,37 @@ describe('Panel', () => {
       ]);
     });
 
+    it('includes interactions after an errored call in the log', () => {
+      // Regression test for #21746: when an instrumented call fails but the play
+      // function catches the error, the calls that run afterwards must still show
+      // up in the interactions panel instead of the list stopping at the error.
+      const logWithError: LogItem[] = [
+        { callId: INTERNAL_RENDER_CALL_ID, status: CallStates.DONE, ancestors: [] },
+        { callId: 'story--id [4] findByText', status: CallStates.ERROR, ancestors: [] },
+        { callId: 'story--id [5] click', status: CallStates.DONE, ancestors: [] },
+      ];
+      const completedState = { ...baseState, status: 'completed' as const };
+
+      const result = getPanelState(completedState, {
+        log: logWithError,
+        calls,
+        collapsed,
+        setCollapsed,
+      });
+
+      expect(result.interactions.map((i) => i.id)).toEqual([
+        INTERNAL_RENDER_CALL_ID,
+        'story--id [4] findByText',
+        'story--id [5] click',
+      ]);
+      expect(
+        result.interactions.find((i) => i.id === 'story--id [4] findByText')?.status
+      ).toBe(CallStates.ERROR);
+      expect(result.interactions.find((i) => i.id === 'story--id [5] click')?.status).toBe(
+        CallStates.DONE
+      );
+    });
+
     it('counts user interactions other than step methods', () => {
       const logWithSteps: LogItem[] = [
         {

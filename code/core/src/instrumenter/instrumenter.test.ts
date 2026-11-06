@@ -530,6 +530,63 @@ describe('Instrumenter', () => {
     );
   });
 
+  it('keeps logging interactions after a handled async error', async () => {
+    // Regression test for #21746: when an instrumented call throws and the play
+    // function catches the error, later instrumented calls must still appear in
+    // the interactions log instead of the log stopping at the error.
+    const fn = async () => {};
+    const failingFn = async () => {
+      throw new Error('handled');
+    };
+    const { fn1, fn2, fn3 } = instrument({ fn1: fn, fn2: failingFn, fn3: fn }, { intercept: true });
+
+    setRenderPhase('playing');
+    await fn1();
+    let handledError: unknown;
+    try {
+      await fn2();
+    } catch (err) {
+      handledError = err;
+    }
+    expect(handledError).toEqual(new Error('handled'));
+    await fn3();
+    await tick();
+
+    expect(mocks.syncSpy).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        logItems: [
+          { callId: 'kind--story [0] fn1', status: 'done', ancestors: [] },
+          { callId: 'kind--story [1] fn2', status: 'error', ancestors: [] },
+          { callId: 'kind--story [2] fn3', status: 'done', ancestors: [] },
+        ],
+      })
+    );
+  });
+
+  it('keeps logging interactions after a caught sync error', async () => {
+    const { fn1, fn2 } = instrument(
+      {
+        fn1: () => {
+          throw new Error('Boom!');
+        },
+        fn2: () => {},
+      },
+      { intercept: true }
+    );
+    try {
+      fn1();
+    } catch {
+      // caught
+    }
+    fn2();
+    await tick();
+    const logItems = mocks.syncSpy.mock.calls.at(-1)?.[0]?.logItems;
+    expect(logItems).toEqual([
+      expect.objectContaining({ callId: 'kind--story [0] fn1', status: 'error' }),
+      expect.objectContaining({ callId: 'kind--story [1] fn2', status: 'done' }),
+    ]);
+  });
+
   it('sends control states with the "sync" event', () => {
     const { fn } = instrument({ fn: (...args: any) => {} }, { intercept: true });
     vi.useFakeTimers();

@@ -10,13 +10,13 @@ linux-init-steps: &linux-init-steps
       paths: |
         ~/.local/share/pnpm/store
       base-branch: 'next'
+  # This step runs corepack, which Node 25 and later do not ship.
   - name: Install Node
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node/main.yaml'
   - name: Install Node Modules
     script: |
-      corepack enable pnpm
-      # Fail if a pnpm earlier on PATH shadows corepack's shim.
-      test "$(pnpm --version)" = "$(node -p "require('./package.json').packageManager.replace(/^pnpm@|\\+.*$/g, '')")"
+      pinned="$(node -p "require('./package.json').packageManager.replace(/^pnpm@|\\+.*$/g, '')")"
+      bash .github/actions/setup-node-and-install/package-managers/install.sh "pnpm=$pinned"
       pnpm install --frozen-lockfile
 
 linux-browsers-init-steps: &linux-browsers-init-steps
@@ -42,9 +42,8 @@ linux-browsers-init-steps: &linux-browsers-init-steps
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node/main.yaml'
   - name: Install Node Modules
     script: |
-      corepack enable pnpm
-      # Fail if a pnpm earlier on PATH shadows corepack's shim.
-      test "$(pnpm --version)" = "$(node -p "require('./package.json').packageManager.replace(/^pnpm@|\\+.*$/g, '')")"
+      pinned="$(node -p "require('./package.json').packageManager.replace(/^pnpm@|\\+.*$/g, '')")"
+      bash .github/actions/setup-node-and-install/package-managers/install.sh "pnpm=$pinned"
       pnpm install --frozen-lockfile
   - name: Install Browsers
     script: |

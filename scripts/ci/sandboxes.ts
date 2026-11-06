@@ -6,7 +6,7 @@ import { build_linux } from './common-jobs.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   artifact,
-  corepackEnable,
+  installPackageManagers,
   npm,
   sandboxArchive,
   server,
@@ -197,11 +197,9 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
               npm.installPinnedVersion(),
               {
                 run: {
-                  // Generation scaffolds with Yarn, like the published sandboxes. The version
-                  // check runs outside the repository because corepack enforces the pnpm pin there.
+                  // Generation scaffolds with Yarn, like the published sandboxes.
                   name: 'Enable Yarn for sandbox generation',
-                  working_directory: LINUX_ROOT_DIR,
-                  command: [corepackEnable('yarn'), 'yarn --version'].join('\n'),
+                  command: installPackageManagers('yarn'),
                 },
               },
               {

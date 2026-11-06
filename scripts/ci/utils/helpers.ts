@@ -253,13 +253,12 @@ export const node = {
   installOnWindows: () => {
     return {
       run: {
-        name: 'Install Node + pnpm',
+        name: 'Install Node',
         shell: 'powershell.exe',
         command: [
           '$nodeVersion = Get-Content .nvmrc | Select-Object -First 1',
           'nvm install $nodeVersion',
           'nvm use $nodeVersion',
-          'corepack enable pnpm',
         ].join('\n'),
       },
     };
@@ -280,47 +279,17 @@ export const npm = {
   },
 };
 
-// The corepack release that Node 22.22.3 bundles, for Node versions that bundle none.
-export const COREPACK_VERSION = '0.34.6';
+const PACKAGE_MANAGERS_DIR = '.github/actions/setup-node-and-install/package-managers';
 
-// The cimg images ship their own, unpinned yarn and pnpm.
-export const corepackEnable = (name: 'pnpm' | 'yarn') =>
-  [
-    'sudo=""',
-    '[ -w "$(dirname "$(command -v node)")" ] || sudo=sudo',
-    // `--force` replaces the image's own yarn and pnpm binaries, as `corepack enable` would.
-    `command -v corepack >/dev/null || $sudo npm install -g --force corepack@${COREPACK_VERSION}`,
-    `$sudo corepack enable ${name}`,
-    `which ${name}`,
-  ].join('\n');
-
-// An image's pnpm earlier on PATH can shadow corepack's shim.
-const checkPinnedPnpm = () => {
-  const version = getPnpmVersion();
-  return [
-    'actual="$(pnpm --version)"',
-    `if [ "$actual" != "${version}" ]; then`,
-    `  echo "pnpm on PATH is $actual, not the pinned ${version}" >&2`,
-    '  exit 1',
-    'fi',
-  ].join('\n');
-};
+export const installPackageManagers = (...tools: (`pnpm=${string}` | 'yarn')[]) =>
+  `bash ${PACKAGE_MANAGERS_DIR}/install.sh ${tools.join(' ')}`;
 
 export const pnpm = {
   enable: () => {
     return {
       run: {
         name: 'Enable pnpm',
-        command: [corepackEnable('pnpm'), checkPinnedPnpm()].join('\n'),
-      },
-    };
-  },
-  // For Windows, where the PowerShell Node install step enables corepack.
-  check: () => {
-    return {
-      run: {
-        name: 'Check pnpm',
-        command: ['which pnpm', checkPinnedPnpm()].join('\n'),
+        command: installPackageManagers(`pnpm=${getPnpmVersion()}`),
       },
     };
   },
@@ -402,7 +371,7 @@ export const workflow = {
   restoreWindows: (at = WINDOWS_ROOT_DIR, checkoutOpts: { shallow?: boolean } = {}) => [
     git.checkout({ ...checkoutOpts, forceHttps: true }),
     node.installOnWindows(),
-    pnpm.check(),
+    pnpm.enable(),
     workspace.attach(at),
     // The workspace holds no node_modules for Windows, where pnpm links them with junctions.
     pnpm.install(),

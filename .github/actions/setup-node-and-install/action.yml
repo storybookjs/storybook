@@ -27,12 +27,6 @@ runs:
       # zizmor: ignore[adhoc-packages]  # replaces the runner's npm before the lockfile install
       run: npm install -g npm@12
 
-    # The corepack release that Node 22.22.3 bundles.
-    - name: Install corepack
-      shell: bash
-      # zizmor: ignore[adhoc-packages]  # only runs where Node does not bundle corepack
-      run: command -v corepack >/dev/null 2>&1 || npm install -g corepack@0.34.6
-
     # The checkout can be a tree from before the pnpm migration, such as main.
     - name: Select package manager
       id: package-manager
@@ -41,13 +35,14 @@ runs:
         package_manager="$(node -p "require('./package.json').packageManager ?? ''")"
         case "$package_manager" in
           pnpm@*)
-            corepack enable pnpm
-            # Fail if a pnpm earlier on PATH shadows corepack's shim.
+            bash "$GITHUB_ACTION_PATH/package-managers/install.sh" pnpm
+            # A workflow that loads this action with `$/` can check out a tree that pins another
+            # pnpm, which pnpm then switches to.
             pinned="${package_manager#pnpm@}"
             pinned="${pinned%%+*}"
             actual="$(pnpm --version)"
             if [[ "$actual" != "$pinned" ]]; then
-              echo "::error::pnpm on PATH is $actual, not the pinned $pinned"
+              echo "::error::pnpm in the checkout is $actual, not the pinned $pinned"
               exit 1
             fi
             echo "name=pnpm" >> "$GITHUB_OUTPUT"

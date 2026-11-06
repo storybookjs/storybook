@@ -53,7 +53,9 @@ jobs:
           node-version-file: '.nvmrc'
 
       - name: Enable pnpm
-        run: corepack enable pnpm
+        run: |
+          pinned="$(node -p "require('./package.json').packageManager.replace(/^pnpm@|\\+.*$/g, '')")"
+          bash .github/actions/setup-node-and-install/package-managers/install.sh "pnpm=$pinned"
 
       - name: Run Claude Code
         id: claude

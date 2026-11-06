@@ -88,22 +88,16 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: npm install -g npm@11.17.0
 
-      # The corepack release that Node 22.22.3 bundles.
-      - name: Install corepack
-        working-directory: ${{ github.workspace }}
-        # zizmor: ignore[adhoc-packages]  # only runs where Node does not bundle corepack
-        run: command -v corepack >/dev/null 2>&1 || npm install -g corepack@0.34.6
-
       # main uses Yarn until a release brings pnpm to it. The published sandboxes are Yarn projects,
-      # so a pnpm checkout enables corepack's yarn too.
+      # so a pnpm checkout installs the Yarn they pin too.
       - name: Select package manager
         working-directory: ${{ github.workspace }}
         run: |
-          case "$(node -p "require('./package.json').packageManager ?? ''")" in
+          package_manager="$(node -p "require('./package.json').packageManager ?? ''")"
+          case "$package_manager" in
             pnpm@*)
-              corepack enable pnpm yarn
-              # Fail if a pnpm earlier on PATH shadows corepack's shim.
-              test "$(pnpm --version)" = "$(node -p "require('./package.json').packageManager.replace(/^pnpm@|\\+.*$/g, '')")"
+              pinned="${package_manager#pnpm@}"
+              bash .github/actions/setup-node-and-install/package-managers/install.sh "pnpm=${pinned%%+*}" yarn
               echo "PM=pnpm" >> "$GITHUB_ENV"
               ;;
             yarn@*)

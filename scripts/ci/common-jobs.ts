@@ -118,7 +118,7 @@ export const build_windows = defineJob('Build (windows)', () => ({
   steps: [
     git.checkout({ forceHttps: true }),
     node.installOnWindows(),
-    pnpm.check(),
+    pnpm.enable(),
     // No cache, because pnpm links packages on Windows with junctions the cache may not restore.
     pnpm.install(),
     compileStep(),
@@ -596,7 +596,7 @@ export const testUnit_windows = defineJob(
     steps: [
       git.checkout({ forceHttps: true }),
       node.installOnWindows(),
-      pnpm.check(),
+      pnpm.enable(),
       workspace.attach(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}`),
       {
         run: {

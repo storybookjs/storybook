@@ -2,7 +2,7 @@ version = 1
 name = "storybook"
 
 [setup]
-script = "corepack enable && pnpm install && pnpm exec nx run-many -t compile"
+script = "bash .github/actions/setup-node-and-install/package-managers/install.sh pnpm && pnpm install && pnpm exec nx run-many -t compile"
 
 [[actions]]
 name = "Compile"

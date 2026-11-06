@@ -392,6 +392,28 @@ export class SvelteKitMockParametersRemovedError extends StorybookError {
   }
 }
 
+export class SvelteKitMocksSharedOnDocsPageError extends StorybookError {
+  constructor() {
+    super({
+      name: 'SvelteKitMocksSharedOnDocsPageError',
+      category: Category.FRAMEWORK_SVELTEKIT,
+      code: 2,
+      documentation: 'https://storybook.js.org/docs/get-started/frameworks/sveltekit#docs-pages',
+      message: dedent`
+        Stories on this docs page set up SvelteKit mocks, but they render in the same document, so they would share them.
+
+        The mocks of \`$app/state\`, \`$app/navigation\` and \`$app/forms\` are one instance per document, like SvelteKit's own modules. On a docs page, every story would show the setup of the story that set the mocks last. Storybook stops here instead of showing the wrong state.
+
+        Render the stories of this file in iframes, where each story has its own mocks. Add this to the meta (\`defineMeta()\` or the default export):
+
+          parameters: { docs: { story: { inline: false } } }
+
+        This happens when a story sets \`page\`, \`navigating\` or \`updated\`, calls \`setAfterNavigate()\`, or configures a mock function such as \`goto\` or \`formAction\` in \`beforeEach\`.
+      `,
+    });
+  }
+}
+
 export class UnknownArgTypesError extends StorybookError {
   constructor(public data: { type: object; language: string }) {
     super({

@@ -17,6 +17,10 @@ const config: BuildEntries = {
         entryPoint: './src/mocks/app/forms.ts',
       },
       {
+        exportEntries: ['./internal/mocks/docs-isolation'],
+        entryPoint: './src/mocks/docs-isolation.ts',
+      },
+      {
         exportEntries: ['./navigation.mock'],
         entryPoint: './src/mocks/app/navigation.ts',
       },

@@ -57,5 +57,6 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
 export const optimizeViteDeps = [
   '@storybook/sveltekit/forms.mock',
   '@storybook/sveltekit/internal/mocks/app/state.svelte.js',
+  '@storybook/sveltekit/internal/mocks/docs-isolation',
   '@storybook/sveltekit/navigation.mock',
 ];

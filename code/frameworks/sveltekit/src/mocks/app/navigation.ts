@@ -1,5 +1,6 @@
 import { onMount } from 'svelte';
 
+import { noteConfiguration, noteMockSet } from '@storybook/sveltekit/internal/mocks/docs-isolation';
 import { fn } from 'storybook/test';
 
 import type { AfterNavigate } from '../types.ts';
@@ -86,6 +87,7 @@ let afterNavigateNavigation = defaultAfterNavigate();
  * ```
  */
 export function setAfterNavigate(navigation: Partial<AfterNavigate>) {
+  noteMockSet();
   afterNavigateNavigation = { ...defaultAfterNavigate(), ...navigation } as AfterNavigate;
 }
 
@@ -117,3 +119,21 @@ export const afterNavigate = fn((callback: (navigation: AfterNavigate) => void) 
 export const link = fn<(href: string, event: MouseEvent) => void>(() => {}).mockName(
   '$app/navigation::link'
 );
+
+// On a docs page, configuring these in `beforeEach` counts as setting the mocks
+[
+  goto,
+  invalidate,
+  invalidateAll,
+  refreshAll,
+  preloadData,
+  preloadCode,
+  pushState,
+  replaceState,
+  disableScrollHandling,
+  beforeNavigate,
+  onNavigate,
+  snapshot,
+  afterNavigate,
+  link,
+].forEach(noteConfiguration);

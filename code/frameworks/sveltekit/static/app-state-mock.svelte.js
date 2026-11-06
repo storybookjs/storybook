@@ -10,6 +10,7 @@
  * @module
  */
 
+import { noteConfiguration, noteMockSet } from '@storybook/sveltekit/internal/mocks/docs-isolation';
 import { fn } from 'storybook/test';
 
 /**
@@ -74,48 +75,56 @@ export let page = {
     return pageData;
   },
   set data(newPageData) {
+    noteMockSet();
     pageData = newPageData;
   },
   get form() {
     return pageForm;
   },
   set form(newPageForm) {
+    noteMockSet();
     pageForm = newPageForm;
   },
   get error() {
     return pageError;
   },
   set error(newPageError) {
+    noteMockSet();
     pageError = newPageError;
   },
   get params() {
     return pageParams;
   },
   set params(newPageParams) {
+    noteMockSet();
     pageParams = newPageParams;
   },
   get route() {
     return pageRoute;
   },
   set route(newPageRoute) {
+    noteMockSet();
     pageRoute = newPageRoute;
   },
   get state() {
     return pageState;
   },
   set state(newPageState) {
+    noteMockSet();
     pageState = newPageState;
   },
   get status() {
     return pageStatus;
   },
   set status(newPageStatus) {
+    noteMockSet();
     pageStatus = newPageStatus;
   },
   get url() {
     return pageUrl;
   },
   set url(newPageUrl) {
+    noteMockSet();
     pageUrl = newPageUrl;
   },
 };
@@ -169,36 +178,42 @@ export let navigating = {
     return navigatingFrom;
   },
   set from(newNavigatingFrom) {
+    noteMockSet();
     navigatingFrom = newNavigatingFrom;
   },
   get to() {
     return navigatingTo;
   },
   set to(newNavigatingTo) {
+    noteMockSet();
     navigatingTo = newNavigatingTo;
   },
   get type() {
     return navigatingType;
   },
   set type(newNavigatingType) {
+    noteMockSet();
     navigatingType = newNavigatingType;
   },
   get willUnload() {
     return navigatingWillUnload;
   },
   set willUnload(newNavigatingWillUnload) {
+    noteMockSet();
     navigatingWillUnload = newNavigatingWillUnload;
   },
   get delta() {
     return navigatingDelta;
   },
   set delta(newNavigatingDelta) {
+    noteMockSet();
     navigatingDelta = newNavigatingDelta;
   },
   get complete() {
     return navigatingComplete;
   },
   set complete(newNavigatingComplete) {
+    noteMockSet();
     navigatingComplete = newNavigatingComplete;
   },
 };
@@ -212,9 +227,10 @@ export let updated = {
     return updatedCurrent;
   },
   set current(newCurrent) {
+    noteMockSet();
     updatedCurrent = newCurrent;
   },
-  check: fn(() => Promise.resolve(updatedCurrent)),
+  check: noteConfiguration(fn(() => Promise.resolve(updatedCurrent))),
 };
 
 /** Resets `page`, `navigating` and `updated` to their defaults. The framework calls it before every story. */

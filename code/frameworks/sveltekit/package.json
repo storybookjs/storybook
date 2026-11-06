@@ -39,6 +39,11 @@
       "default": "./dist/mocks/app/forms.js"
     },
     "./internal/mocks/app/state.svelte.js": "./static/app-state-mock.svelte.js",
+    "./internal/mocks/docs-isolation": {
+      "types": "./dist/mocks/docs-isolation.d.ts",
+      "code": "./src/mocks/docs-isolation.ts",
+      "default": "./dist/mocks/docs-isolation.js"
+    },
     "./navigation.mock": {
       "types": "./dist/mocks/app/navigation.d.ts",
       "code": "./src/mocks/app/navigation.ts",

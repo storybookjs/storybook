@@ -2,6 +2,7 @@
 import { page } from '@storybook/sveltekit/internal/mocks/app/state.svelte.js';
 // The same module instance as `$app/navigation`, so stories see the calls of `goto` and `refreshAll`
 import { goto, refreshAll } from '@storybook/sveltekit/navigation.mock';
+import { noteConfiguration } from '@storybook/sveltekit/internal/mocks/docs-isolation';
 import { fn } from 'storybook/test';
 
 import type { ActionResult, FormSubmission, SubmitFunction, UpdateOptions } from '../types.ts';
@@ -177,3 +178,6 @@ export const enhance = fn((formElement: HTMLFormElement, submit: SubmitFunction 
     },
   };
 });
+
+// On a docs page, configuring these in `beforeEach` counts as setting the mocks
+[formAction, applyAction, deserialize, enhance].forEach(noteConfiguration);

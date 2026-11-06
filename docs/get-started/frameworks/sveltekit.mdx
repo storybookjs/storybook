@@ -82,7 +82,7 @@ SvelteKit's `$app/forms`, `$app/navigation` and `$app/state` modules need Svelte
 
 <Callout variant="info">
 
-Storybook 10 used `parameters.sveltekit_experimental` for these mocks. Storybook 11 removes it, and a story that still sets it fails with an error. See the [migration guide](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-sveltekit_experimental-parameters-removed) to update your stories.
+Storybook 10 used `parameters.sveltekit_experimental` for these mocks. Storybook 11 removes it, and a story that still sets it fails with an error. Run `npx storybook automigrate sveltekit-mocking-before-each` to rewrite it into `beforeEach`, and see the [migration guide](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-sveltekit_experimental-parameters-removed) for the files that it can't migrate.
 
 </Callout>
 

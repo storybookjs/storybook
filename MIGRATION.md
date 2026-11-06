@@ -2159,6 +2159,8 @@ Storybook still mocks `$app/forms`, `$app/navigation` and `$app/state`, because 
 
 See [Mocking modules](https://storybook.js.org/docs/get-started/frameworks/sveltekit#mocking-modules) in the SvelteKit docs for the full API.
 
+The `sveltekit-mocking-before-each` automigration migrates most stories files when you upgrade, or when you run `npx storybook automigrate sveltekit-mocking-before-each`. It lists the files that it can't migrate, with the reasons, in `automigrations-summary.md`. For those files, use the prompt below.
+
 To migrate your stories, give this prompt to your AI agent, or follow it by hand:
 
 <details>

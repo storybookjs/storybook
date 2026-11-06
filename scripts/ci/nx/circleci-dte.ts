@@ -69,6 +69,10 @@ export function agentsFor(
   return { first, peak };
 }
 
+// dte-task-statuses.ts reads the failed tasks from this step of this job.
+export const NX_MAIN_JOB = 'nx-main';
+export const RUN_NX_STEP = 'Run nx';
+
 // The agents' jobs, which `circleci-completion` does not wait for (main.ts).
 export const NX_AGENT_JOB_IDS: readonly string[] = [
   ...Object.values(NX_DTE_WAVES).map((wave) => wave.job),
@@ -153,7 +157,7 @@ const mainJob = (
   targets: readonly string[],
   agents: number
 ) =>
-  defineJob('nx-main', () => ({
+  defineJob(NX_MAIN_JOB, () => ({
     executor: { name: 'sb_node_22_classic', class: 'large' },
     environment: {
       ...nxEnvironment(changedFiles),
@@ -190,9 +194,9 @@ const mainJob = (
       ...restoreNodeModules(),
       {
         run: {
-          name: 'Run nx',
-          // Wide enough that the task summary table never truncates task names.
-          environment: { COLUMNS: 250 },
+          name: RUN_NX_STEP,
+          // The project's environment turns it on; it buries the summary under thousands of lines.
+          environment: { NX_VERBOSE_LOGGING: 'false' },
           no_output_timeout: '30m',
           command: `yarn exec jiti ./scripts/ci/nx/run.ts --workflow=${selected.join(',')}`,
         },

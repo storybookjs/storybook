@@ -11,6 +11,7 @@ import { generateImportFnScriptCode } from '../codegen-importfn-script.ts';
 import { generateModernIframeScriptCode } from '../codegen-modern-iframe-script.ts';
 import { generateAddonSetupCode } from '../codegen-set-addon-channel.ts';
 import { transformIframeHtml } from '../transform-iframe-html.ts';
+import { getModuleImporters } from '../utils/module-importer.ts';
 import {
   applyChunkedPreviewRuntime,
   bundlerOptionsKey,
@@ -86,7 +87,7 @@ export function codeGeneratorPlugin(options: Options) {
         case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE): {
           const storyIndexGenerator = await storyIndexGeneratorPromise;
           const index = await storyIndexGenerator?.getIndex();
-          return generateImportFnScriptCode(index);
+          return generateImportFnScriptCode(index, await getModuleImporters(options));
         }
 
         case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE): {

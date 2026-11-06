@@ -267,7 +267,7 @@ If your template has an `inDevelopment` flag, it will be generated (locally) as 
 pnpm task --task dev --template <template-key> --start-from=install
 ```
 
-Templates with `inDevelopment` will automatically run with `--no-link` flag as it is required for the local template generation to work.
+The first time, a template with `inDevelopment` is generated locally, which starts the local registry. The sandbox itself is then linked like any other, unless you pass `--no-link`.
 
 Once the PR is merged, the template will be generated on a nightly cadence and you can remove the `inDevelopment` flag and the sandbox will pull the code from our templates repository.
 

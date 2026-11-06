@@ -23,13 +23,6 @@ const pathExists = (path: string) => {
 };
 
 const sanitizeOptions = (details: TemplateDetails, options: PassedOptionValues) => {
-  if (options.link && !options.forceLink && details.template.inDevelopment) {
-    logger.log(
-      `The ${options.template} has inDevelopment property enabled, therefore the sandbox for that template cannot be linked. Enabling --no-link mode... Pass --force-link to use link mode anyway, but be aware the sandbox may partially or completely not work.`
-    );
-
-    options.link = false;
-  }
   if (options.link && !options.forceLink && details.template.preferNoLink) {
     logger.log(
       `The ${options.template} has preferNoLink property enabled. Defaulting to --no-link mode. Pass --force-link to use link mode anyway, but be aware the sandbox may partially or completely not work.`
@@ -63,12 +56,11 @@ export const sandbox: Task = {
     // Must sanitize options here too to ensure we run the right prerequisite tasks.
     sanitizeOptions(details, options);
 
+    // An in-development template has no published repro yet, so `generate` creates it locally;
+    // the sandbox then installs the monorepo packages as usual, linked or from the registry.
     if ('inDevelopment' in details.template && details.template.inDevelopment) {
-      if (isSandboxReady(details.sandboxDir, options.task)) {
-        return ['run-registry'];
-      }
-
-      return ['run-registry', 'generate'];
+      const install = options.link ? 'compile' : 'run-registry';
+      return isSandboxReady(details.sandboxDir, options.task) ? [install] : [install, 'generate'];
     }
 
     if (options.link) {

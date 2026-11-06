@@ -22,9 +22,11 @@ beforeEach(() => {
 function createMockOptions({
   framework = '@storybook/react-vite',
   configDir,
+  presets = {},
 }: {
   framework?: string | { name: string };
   configDir?: string;
+  presets?: Record<string, () => unknown>;
 } = {}): Options {
   return {
     configDir,
@@ -33,20 +35,19 @@ function createMockOptions({
         if (key === 'framework') {
           return framework;
         }
-        return defaultValue;
+        return key in presets ? presets[key]() : defaultValue;
       }),
     },
   } as unknown as Options;
 }
 
 describe('resolveSkillInputs', () => {
-  it('resolves the framework and its mapped renderer from a string preset', async () => {
+  it('resolves the framework from a string preset', async () => {
     const options = createMockOptions({ framework: '@storybook/vue3-vite' });
 
     const inputs = await resolveSkillInputs(options);
 
     expect(inputs.framework).toBe('@storybook/vue3-vite');
-    expect(inputs.renderer).toBe('@storybook/vue3');
   });
 
   it('resolves the framework from an object preset', async () => {
@@ -55,33 +56,15 @@ describe('resolveSkillInputs', () => {
     const inputs = await resolveSkillInputs(options);
 
     expect(inputs.framework).toBe('@storybook/nextjs');
-    expect(inputs.renderer).toBe('@storybook/react');
   });
 
   it.each([
-    ['/repo/node_modules/@storybook/vue3-vite', '@storybook/vue3-vite', '@storybook/vue3'],
-    [
-      'C:\\repo\\node_modules\\@storybook\\angular-vite',
-      '@storybook/angular-vite',
-      '@storybook/angular',
-    ],
-    [
-      '/repo/node_modules/.pnpm/@storybook+react-vite@11.0.0',
-      '@storybook/react-vite',
-      '@storybook/react',
-    ],
-  ])('normalizes absolute framework preset %s', async (name, framework, renderer) => {
+    ['/repo/node_modules/@storybook/vue3-vite', '@storybook/vue3-vite'],
+    ['C:\\repo\\node_modules\\@storybook\\angular-vite', '@storybook/angular-vite'],
+    ['/repo/node_modules/.pnpm/@storybook+react-vite@11.0.0', '@storybook/react-vite'],
+  ])('normalizes absolute framework preset %s', async (name, framework) => {
     const inputs = await resolveSkillInputs(createMockOptions({ framework: { name } }));
-    expect(inputs).toMatchObject({ framework, renderer });
-  });
-
-  it('leaves renderer undefined for an unmapped framework', async () => {
-    const options = createMockOptions({ framework: '@storybook/some-unmapped-framework' });
-
-    const inputs = await resolveSkillInputs(options);
-
-    expect(inputs.framework).toBe('@storybook/some-unmapped-framework');
-    expect(inputs.renderer).toBeUndefined();
+    expect(inputs.framework).toBe(framework);
   });
 
   it('spreads the resolved tool availability onto the result', async () => {
@@ -134,5 +117,41 @@ describe('resolveSkillInputs', () => {
       previewFile: '.storybook/preview.ts',
       typescript: true,
     });
+  });
+
+  it('reads the MCP toolsets that main.ts turns on, and all of them without addon-mcp', async () => {
+    const toolsets = { dev: false, docs: true, test: true };
+    const withAddon = await resolveSkillInputs(
+      createMockOptions({ presets: { mcpToolsets: () => toolsets } })
+    );
+    expect(withAddon.mcpToolsets).toEqual(toolsets);
+
+    const withoutAddon = await resolveSkillInputs(createMockOptions());
+    expect(withoutAddon.mcpToolsets).toEqual({ dev: true, docs: true, test: true });
+  });
+
+  it('turns every MCP toolset on when addon-mcp rejects its options', async () => {
+    const inputs = await resolveSkillInputs(
+      createMockOptions({
+        presets: {
+          mcpToolsets: () => {
+            throw new Error('Invalid type: Expected boolean but received "false"');
+          },
+        },
+      })
+    );
+    expect(inputs.mcpToolsets).toEqual({ dev: true, docs: true, test: true });
+  });
+
+  it('marks a project that composes other Storybooks', async () => {
+    const composed = await resolveSkillInputs(
+      createMockOptions({
+        presets: { refs: () => ({ design: { url: 'https://design.example' } }) },
+      })
+    );
+    expect(composed.composed).toBe(true);
+
+    const single = await resolveSkillInputs(createMockOptions());
+    expect(single.composed).toBe(false);
   });
 });

@@ -262,22 +262,6 @@ test.describe('addon-mcp', () => {
       });
     });
 
-    test.describe('Tool: get-storybook-story-instructions', () => {
-      test('should return UI building instructions', async ({ request }) => {
-        const response = await mcpRequest(request, 'tools/call', {
-          name: 'get-storybook-story-instructions',
-          arguments: {},
-        });
-
-        expect(response.result).toHaveProperty('content');
-        expect(response.result.content[0]).toHaveProperty('type', 'text');
-
-        const text = response.result.content[0].text;
-        expect(text).toContain('stories');
-        expect(text.length).toBeGreaterThan(100);
-      });
-    });
-
     test.describe('Tool: docs-list', () => {
       test('should list all documentation from manifest', async ({ request }) => {
         const response = await mcpRequest(request, 'tools/call', {

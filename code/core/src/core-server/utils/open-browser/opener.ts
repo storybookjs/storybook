@@ -5,13 +5,16 @@
  * directory of this source tree.
  */
 import { execSync } from 'node:child_process';
-import { join } from 'node:path';
+import { accessSync, constants } from 'node:fs';
 
 import { logger } from 'storybook/internal/node-logger';
 
 import spawn from 'cross-spawn';
-import open from 'open';
+import isInsideContainer from 'is-inside-container';
+import open, { type Options } from 'open';
+import { delimiter, join } from 'pathe';
 import picocolors from 'picocolors';
+import { isWsl } from 'wsl-utils';
 
 import { resolvePackageDir } from '../../../common/index.ts';
 import { StorybookError } from '../../../storybook-error.ts';
@@ -71,6 +74,56 @@ function getBrowserEnv():
   }
 
   return { action: Actions.BROWSER, value, args };
+}
+
+function isExecutable(command: string) {
+  const candidates = command.includes('/')
+    ? [command]
+    : (process.env.PATH ?? '').split(delimiter).map((dir) => join(dir, command));
+
+  return candidates.some((candidate) => {
+    try {
+      accessSync(candidate, constants.X_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  });
+}
+
+// Returns the command that `open` would spawn on Linux when it cannot be found, so Storybook can
+// say what is missing (#32949, #24191). `open` is bundled, so it cannot reach the copy of
+// `xdg-open` that it ships with. The conditions mirror `open`: macOS, Windows and WSL (outside a
+// container) use other launchers.
+function getMissingLinuxCommand(app?: string) {
+  if (process.platform === 'darwin' || process.platform === 'win32') {
+    return undefined;
+  }
+  if (isWsl && !isInsideContainer() && !app) {
+    return undefined;
+  }
+
+  const command = app ?? 'xdg-open';
+  return isExecutable(command) ? undefined : command;
+}
+
+function warnMissingLinuxCommand(url: string, command: string) {
+  const hint =
+    command === 'xdg-open'
+      ? 'Install xdg-utils, or set the BROWSER environment variable.'
+      : 'Check the BROWSER environment variable.';
+  logger.warn(`Could not open ${url} in a browser, because "${command}" was not found. ${hint}`);
+}
+
+// `open` spawns without an error listener, so a failing spawn (for example a missing PowerShell
+// on WSL) would crash Storybook with an unhandled 'error' event. Calling it after an `await` keeps
+// the spawn inside the microtask queue, so the listener below is attached before Node emits it.
+export async function openSafely(url: string, options?: Options) {
+  await Promise.resolve();
+  const child = await open(url, options);
+  child.once('error', (error) => {
+    logger.warn(`Could not open ${url} in a browser: ${error.message}`);
+  });
 }
 
 export class BrowserEnvError extends StorybookError {
@@ -181,19 +234,22 @@ function startBrowserProcess(browser: string | undefined, url: string, args: str
     browser = undefined;
   }
 
+  const missingCommand = getMissingLinuxCommand(browser);
+  if (missingCommand) {
+    warnMissingLinuxCommand(url, missingCommand);
+    // Handled: returning false would mean BROWSER=none, and throwing would retry with `open`.
+    return true;
+  }
+
   // Fallback to open
   // (It will always open new tab)
-  try {
-    const options = {
-      app: browser ? { name: browser, arguments: args } : undefined,
-      wait: false,
-      url: true,
-    };
-    open(url, options).catch(() => {}); // Prevent `unhandledRejection` error.
-    return true;
-  } catch {
-    return false;
-  }
+  const options = {
+    app: browser ? { name: browser, arguments: args } : undefined,
+    wait: false,
+    url: true,
+  };
+  openSafely(url, options).catch(() => {}); // Prevent `unhandledRejection` error.
+  return true;
 }
 
 /**

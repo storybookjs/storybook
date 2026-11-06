@@ -3,6 +3,7 @@ import path from 'node:path';
 import url from 'node:url';
 
 import { print } from 'esrap';
+import ts from 'esrap/languages/ts';
 import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
 import { compile } from 'svelte/compiler';
@@ -70,52 +71,46 @@ describe(transformStory.name, () => {
       filename,
     });
 
-    expect(print(compiledPostTransformedStories[0]).code).toMatchInlineSnapshot(`
+    expect(print(compiledPostTransformedStories[0], ts()).code).toMatchInlineSnapshot(`
       "Story(node_1, {
       	name: 'Default',
       	template,
       	parameters: {
-      		docs: {
-      			description: { story: "Description for the default story" }
-      		},
+      		docs: { description: { story: 'Description for the default story' } },
       		__svelteCsf: {
-      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+      			rawCode: '<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>'
       		}
       	}
       })"
     `);
 
-    expect(print(compiledPostTransformedStories[1]).code).toMatchInlineSnapshot(`
+    expect(print(compiledPostTransformedStories[1], ts()).code).toMatchInlineSnapshot(`
       "Story(node_2, {
       	name: 'Rounded',
       	args: { rounded: true },
       	template,
       	parameters: {
-      		docs: {
-      			description: { story: "Description for the rounded story" }
-      		},
+      		docs: { description: { story: 'Description for the rounded story' } },
       		__svelteCsf: {
-      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+      			rawCode: '<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>'
       		}
       	}
       })"
     `);
-    expect(print(compiledPostTransformedStories[2]).code).toMatchInlineSnapshot(`
+    expect(print(compiledPostTransformedStories[2], ts()).code).toMatchInlineSnapshot(`
       "Story(node_3, {
       	name: 'Square',
       	args: { rounded: false },
       	template,
       	parameters: {
-      		docs: {
-      			description: { story: "Description for the squared story" }
-      		},
+      		docs: { description: { story: 'Description for the squared story' } },
       		__svelteCsf: {
-      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+      			rawCode: '<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>'
       		}
       	}
       })"
     `);
-    expect(print(compiledPostTransformedStories[3]).code).toMatchInlineSnapshot(`
+    expect(print(compiledPostTransformedStories[3], ts()).code).toMatchInlineSnapshot(`
       "Story(node_4, {
       	name: 'As child',
       	asChild: true,
@@ -137,12 +132,10 @@ describe(transformStory.name, () => {
       		$.append($$anchor, fragment_3);
       	}),
       	$$slots: { default: true },
-      	parameters: {
-      		__svelteCsf: { rawCode: "<Example>Label</Example>" }
-      	}
+      	parameters: { __svelteCsf: { rawCode: '<Example>Label</Example>' } }
       })"
     `);
-    expect(print(compiledPostTransformedStories[4]).code).toMatchInlineSnapshot(`
+    expect(print(compiledPostTransformedStories[4], ts()).code).toMatchInlineSnapshot(`
       "Story(node_6, {
       	name: 'Children forwared',
       	children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
@@ -155,7 +148,7 @@ describe(transformStory.name, () => {
       	$$slots: { default: true },
       	parameters: {
       		__svelteCsf: {
-      			rawCode: "<Example {...args}>\\n  Forwarded label\\n</Example>"
+      			rawCode: '<Example {...args}>\\n  Forwarded label\\n</Example>'
       		}
       	}
       })"
@@ -223,7 +216,7 @@ describe(transformStory.name, () => {
     `;
 
     await expect(transformStories(originalCode, filename)).resolves.toContain(
-      `rawCode: "<${componentValue} {...args} />"`
+      `rawCode: '<${componentValue} {...args} />'`
     );
   });
 });

@@ -1,6 +1,9 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+import { basename } from 'pathe';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -17,6 +20,7 @@ import type {
 } from 'storybook/internal/types';
 
 import { Tag } from '../../shared/constants/tags.ts';
+import { StorybookError } from '../../storybook-error.ts';
 import { csfIndexer } from '../presets/common-preset.ts';
 import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator.ts';
 import { StoryIndexGenerator } from './StoryIndexGenerator.ts';
@@ -2177,6 +2181,60 @@ describe('StoryIndexGenerator', () => {
         await expect(() => generator.getIndex()).rejects.toThrowErrorMatchingInlineSnapshot(
           `[Error: Unable to index ./src/docs2/MetaOf.mdx]`
         );
+      });
+
+      it('logs the errors once when getIndex is called again before it finishes', async () => {
+        const generator = new StoryIndexGenerator(
+          [normalizeStoriesEntry('./src/docs2/MetaOf.mdx', options)],
+          options
+        );
+        await generator.initialize();
+
+        const results = await Promise.allSettled([generator.getIndex(), generator.getIndex()]);
+
+        expect(results.map(({ status }) => status)).toEqual(['rejected', 'rejected']);
+        expect(logger.warn).toHaveBeenCalledTimes(1);
+      });
+
+      it('lists the other files that fail with the same Storybook error and message by path', async () => {
+        class ExampleError extends StorybookError {
+          constructor(message: string) {
+            super({ name: 'ExampleError', category: 'EXAMPLE', code: 1, message });
+          }
+        }
+        const generator = new StoryIndexGenerator(
+          [normalizeStoriesEntry('./src/*.stories.(js|ts)', options)],
+          {
+            ...options,
+            indexers: [
+              {
+                test: /\.stories\.(js|ts)$/,
+                createIndex: async (fileName) => {
+                  throw new ExampleError(
+                    basename(fileName) === 'Button.stories.ts'
+                      ? `The file '${pathToFileURL(fileName)}' has a syntax error at 3:1`
+                      : `The file '${pathToFileURL(fileName)}' is not a stories file`
+                  );
+                },
+              },
+            ],
+          }
+        );
+        await generator.initialize();
+
+        const error = await generator.getIndex().then(
+          () => expect.unreachable('getIndex should reject'),
+          (err: Error) => err
+        );
+
+        expect(error.message.replaceAll(pathToFileURL(options.workingDir).href, '<cwd>'))
+          .toMatchInlineSnapshot(`
+            "Unable to index files:
+            - ./src/A.stories.js: The file '<cwd>/src/A.stories.js' is not a stories file
+            - ./src/B.stories.ts: the same error as above (SB_EXAMPLE_0001)
+            - ./src/Empty.stories.ts: the same error as above (SB_EXAMPLE_0001)
+            - ./src/Button.stories.ts: The file '<cwd>/src/Button.stories.ts' has a syntax error at 3:1"
+          `);
       });
     });
 

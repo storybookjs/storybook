@@ -22,10 +22,10 @@ export type RegisterStoryDocsServiceOptions = {
    */
   getIndex: () => Promise<StoryIndex>;
   /**
-   * Fully composed story-docs provider chain from
+   * `extract` of the fully composed story-docs provider chain from
    * `presets.apply('experimental_storyDocsProvider', ...)`.
    */
-  storyDocsProvider: StoryDocsProvider;
+  storyDocsProvider: StoryDocsProvider['extract'];
   /**
    * `features.experimentalLiveServerSnippets`. Without it the story docs carry no templates, so
    * agents and the components manifest read what they read before live snippets.
@@ -73,7 +73,7 @@ function storyDocFromFile(entry: IndexEntry, result: FileResult): StoryDoc | und
 }
 
 // CSF files that share a title share a component id, but `entry` stands for only one of them.
-function withStoriesFromEveryFile(provider: StoryDocsProvider, liveSnippets: boolean) {
+function withStoriesFromEveryFile(provider: StoryDocsProvider['extract'], liveSnippets: boolean) {
   return async ({ entry, storyEntries }: ExtractionInput) => {
     const fileEntries = [
       ...new Map(storyEntries.map((storyEntry) => [storyEntry.importPath, storyEntry])).values(),

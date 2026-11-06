@@ -94,7 +94,8 @@ no load of its own, so a new `args` input never extracts the story docs again; i
 loads them through the `storyDocs` query it reads.
 
 A renderer gets its printer into each runtime with one module that calls `registerPrintHole` when
-imported, named by the `experimental_storyDocsPrintHole` preset. With
+imported, named by `printHole` on its `experimental_storyDocsProvider`, next to the `extract` that
+writes the templates it prints. With
 `features.experimentalLiveServerSnippets` on, core imports that module on the server and adds it to
 the `managerEntries`. In the preview the renderer imports it from its own preview annotations: with
 CSF factories, builders import only the project's preview file, so a module core added through the
@@ -117,11 +118,13 @@ running for the same id, so a manager and a preview that load a component at onc
 
 ## Providers
 
-Renderers contribute payloads through the `experimental_storyDocsProvider` preset chain.
+Renderers contribute payloads through the `experimental_storyDocsProvider` preset chain. Its value
+is `{ extract, printHole? }`: each preset receives the next provider and returns it with its own
+`extract`, which may delegate to the next one, as `{ ...next, extract }`.
 A renderer whose snippets depend on its own docgen worker builds that preset with `createWorkerGatedStoryDocsProvider` from `storybook/internal/core-server`.
 The helper skips the renderer when its worker is not registered, reads only matching story files, logs a file it cannot read at debug level and hands it to the next provider, and merges its payload over the next provider's.
-Vue, Svelte and Web Components use it; React and Angular have no worker gate and keep their own presets.
-Each renderer that emits a `template` also sets `experimental_storyDocsPrintHole` (see
+Vue, Svelte, Web Components and Angular use it; React has no worker gate and keeps its own preset.
+Each renderer that emits a `template` also sets `printHole` (see
 [Where the snippet is filled](#where-the-snippet-is-filled)).
 
 ## Components spread over several story files

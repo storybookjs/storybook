@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 
 import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/internal/common';
-import type { StoryDocsProviderPreset } from 'storybook/internal/types';
+import type { StoryDocsProvider, StoryDocsProviderPreset } from 'storybook/internal/types';
 
 import type { TypescriptOptions } from '../componentManifest/getComponentImports.ts';
 import { buildStoryDocsPayload } from './build-story-docs.ts';
@@ -29,23 +29,25 @@ export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (
     {}
   ) ?? Promise.resolve({})) as Promise<Partial<TypescriptOptions>>;
 
-  return async (input) => {
+  const extract: StoryDocsProvider['extract'] = async (input) => {
     const storyImportPath = getStoryImportPathFromEntry(input.entry);
     if (!storyImportPath || !STORY_FILE_TEST_REGEXP.test(storyImportPath)) {
-      return nextStoryDocs(input);
+      return nextStoryDocs.extract(input);
     }
 
     const ours = await buildStoryDocsPayload(input, {
       typescriptOptions: await typescriptOptionsPromise,
     });
     if (!ours) {
-      return nextStoryDocs(input);
+      return nextStoryDocs.extract(input);
     }
 
-    const downstream = await nextStoryDocs(input);
+    const downstream = await nextStoryDocs.extract(input);
     return { ...downstream, ...ours };
   };
+  return {
+    ...nextStoryDocs,
+    extract,
+    printHole: fileURLToPath(import.meta.resolve('@storybook/react/internal/register-print-hole')),
+  };
 };
-
-export const experimental_storyDocsPrintHole = () =>
-  fileURLToPath(import.meta.resolve('@storybook/react/internal/register-print-hole'));

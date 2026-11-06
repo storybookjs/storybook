@@ -69,7 +69,7 @@ const PRINT_HOLE = Symbol.for('storybook/docs-tools/print-hole');
 
 type GlobalWithPrintHole = typeof globalThis & { [PRINT_HOLE]?: PrintHole<any> };
 
-/** Registers the renderer's {@link PrintHole}; see the `experimental_storyDocsPrintHole` preset. */
+/** Registers the renderer's {@link PrintHole}; see `printHole` of `experimental_storyDocsProvider`. */
 export function registerPrintHole(printHole: PrintHole<any>): void {
   (globalThis as GlobalWithPrintHole)[PRINT_HOLE] = printHole;
 }

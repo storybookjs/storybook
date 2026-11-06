@@ -12,7 +12,5 @@ export const experimental_storyDocsProvider = createWorkerGatedStoryDocsProvider
   label: 'Vue',
   docgenWorker: fileURLToPath(import.meta.resolve(DOCGEN_WORKER_SPECIFIER)),
   build: (input) => buildStoryDocsPayload(input),
+  printHole: fileURLToPath(import.meta.resolve('@storybook/vue3/internal/register-print-hole')),
 });
-
-export const experimental_storyDocsPrintHole = () =>
-  fileURLToPath(import.meta.resolve('@storybook/vue3/internal/register-print-hole'));

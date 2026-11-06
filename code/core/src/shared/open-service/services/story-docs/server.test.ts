@@ -80,7 +80,7 @@ describe('story-docs open service', () => {
         'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
       },
     });
-    const provider = vi.fn<StoryDocsProvider>(async () => payload);
+    const provider = vi.fn<StoryDocsProvider['extract']>(async () => payload);
 
     const service = registerStoryDocsService({
       getIndex: makeGetIndex([entry]),
@@ -96,7 +96,7 @@ describe('story-docs open service', () => {
     const entry = makeStoryEntry('button--primary', 'Button');
     const payload = makeStoryDocsPayload();
     let finish = (_: StoryDocsPayload) => {};
-    const provider = vi.fn<StoryDocsProvider>(
+    const provider = vi.fn<StoryDocsProvider['extract']>(
       () => new Promise<StoryDocsPayload>((resolve) => (finish = resolve))
     );
     const service = registerStoryDocsService({
@@ -233,7 +233,7 @@ describe('story-docs open service', () => {
       { ...makeStoryEntry('vega--bar', 'Vega'), importPath: chart },
     ];
 
-    const extractFile: StoryDocsProvider = async ({ entry }) => ({
+    const extractFile: StoryDocsProvider['extract'] = async ({ entry }) => ({
       id: 'vega',
       name: 'Vega',
       path: entry.importPath,
@@ -344,7 +344,7 @@ describe('story-docs open service', () => {
       makeStoryEntry('button--ghost', 'Button'),
     ];
     const payload = makeStoryDocsPayload({ import: "import { Button } from './button';" });
-    const provider = vi.fn<StoryDocsProvider>(async () => payload);
+    const provider = vi.fn<StoryDocsProvider['extract']>(async () => payload);
     const service = registerStoryDocsService({
       getIndex: makeGetIndex(entries),
       storyDocsProvider: provider,
@@ -364,7 +364,7 @@ describe('story-docs open service', () => {
         { ...makeStoryEntry('vega--bar', 'Vega'), importPath: './chart.stories.tsx' },
         { ...makeStoryEntry('vega--heatmap', 'Vega'), importPath: './ranges.stories.tsx' },
       ];
-      const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
+      const provider = vi.fn<StoryDocsProvider['extract']>(async () => makeStoryDocsPayload());
       const getIndex = makeGetIndex(entries);
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
       subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
@@ -384,7 +384,7 @@ describe('story-docs open service', () => {
     // when their story file changes so snippets stay fresh after the edit.
     it('re-extracts already-extracted components when their story file changes', async () => {
       const entry = makeStoryEntry('button--primary', 'Button');
-      const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
+      const provider = vi.fn<StoryDocsProvider['extract']>(async () => makeStoryDocsPayload());
       const getIndex = makeGetIndex([entry]);
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
       subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
@@ -402,7 +402,7 @@ describe('story-docs open service', () => {
 
     it('re-extracts a component whose story file changes while it is being extracted', async () => {
       const entry = makeStoryEntry('button--primary', 'Button');
-      const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
+      const provider = vi.fn<StoryDocsProvider['extract']>(async () => makeStoryDocsPayload());
       const getIndex = makeGetIndex([entry]);
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
       subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
@@ -423,7 +423,7 @@ describe('story-docs open service', () => {
       const entry = makeStoryEntry('button--primary', 'Button');
       let finishFirst = (_: StoryDocsPayload) => {};
       const provider = vi
-        .fn<StoryDocsProvider>()
+        .fn<StoryDocsProvider['extract']>()
         .mockImplementationOnce(() => new Promise((resolve) => (finishFirst = resolve)))
         .mockImplementation(async () => makeStoryDocsPayload({ name: 'New' }));
       const getIndex = makeGetIndex([entry]);
@@ -448,7 +448,7 @@ describe('story-docs open service', () => {
       const entry = makeStoryEntry('button--primary', 'Button');
       let finishReplaced = (_: StoryDocsPayload) => {};
       const provider = vi
-        .fn<StoryDocsProvider>()
+        .fn<StoryDocsProvider['extract']>()
         .mockImplementationOnce(async () => makeStoryDocsPayload({ name: 'Start' }))
         .mockImplementationOnce(() => new Promise((resolve) => (finishReplaced = resolve)))
         .mockImplementation(async () => makeStoryDocsPayload({ name: 'New' }));
@@ -474,7 +474,7 @@ describe('story-docs open service', () => {
 
     it('re-extracts a component whose story file changes while it is being extracted, after a repeated registration', async () => {
       const entry = makeStoryEntry('button--primary', 'Button');
-      const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
+      const provider = vi.fn<StoryDocsProvider['extract']>(async () => makeStoryDocsPayload());
       const getIndex = makeGetIndex([entry]);
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
       registerStoryDocsService({ getIndex, storyDocsProvider: provider });
@@ -493,7 +493,7 @@ describe('story-docs open service', () => {
     });
 
     it('does not re-extract components that were never extracted', async () => {
-      const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
+      const provider = vi.fn<StoryDocsProvider['extract']>(async () => makeStoryDocsPayload());
       const getIndex = makeGetIndex([makeStoryEntry('button--primary', 'Button')]);
       registerStoryDocsService({ getIndex, storyDocsProvider: provider });
       subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() });

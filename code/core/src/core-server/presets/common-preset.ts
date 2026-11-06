@@ -342,10 +342,12 @@ export const resolvedReact = async (existing: any) => {
   }
 };
 
+const noStoryDocs: StoryDocsProvider = { extract: async () => undefined };
+
 async function getPrintHoleModule(options: Options): Promise<string | undefined> {
   const features = await options.presets.apply('features');
   return features?.docgenServer && features.experimentalLiveServerSnippets
-    ? options.presets.apply('experimental_storyDocsPrintHole')
+    ? (await options.presets.apply('experimental_storyDocsProvider', noStoryDocs)).printHole
     : undefined;
 }
 
@@ -443,10 +445,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   if (features?.docgenServer) {
     const [docgenDescriptors, storyDocsProvider] = await Promise.all([
       options.presets.apply<DocgenProviderDescriptor[]>('experimental_docgenProvider', []),
-      options.presets.apply<StoryDocsProvider>(
-        'experimental_storyDocsProvider',
-        async () => undefined
-      ),
+      options.presets.apply('experimental_storyDocsProvider', noStoryDocs),
     ]);
 
     // Docgen extraction runs in a long-lived worker so its CPU-bound TypeScript work never starves
@@ -469,7 +468,9 @@ export const services = async (_value: void, options: Options): Promise<void> =>
 
     // The server's `liveSnippet` query fills snippets for agents and tools, so it needs the
     // renderer's hole printer too. Importing the module the manager bundles registers it here.
-    const printHoleModule = await getPrintHoleModule(options);
+    const printHoleModule = features.experimentalLiveServerSnippets
+      ? storyDocsProvider.printHole
+      : undefined;
     if (printHoleModule) {
       await import(pathToFileURL(printHoleModule).href).catch((error: unknown) => {
         logger.warn(`Story snippets cannot follow the args on the server: ${String(error)}`);
@@ -482,7 +483,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     // these registrations cannot make the docs toolset throw — only fall back.
     registerStoryDocsService({
       getIndex,
-      storyDocsProvider,
+      storyDocsProvider: storyDocsProvider.extract,
       liveSnippets: features.experimentalLiveServerSnippets,
     });
     devServerSubscriptions.push(() =>

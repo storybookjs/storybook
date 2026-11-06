@@ -10,7 +10,12 @@ import {
   createStoryReferenceResolver,
   loadCsf,
 } from 'storybook/internal/csf-tools';
-import { UnprintableArgError, fillTemplate, stripHoles } from 'storybook/internal/docs-tools';
+import {
+  UnprintableArgError,
+  argChanges,
+  fillTemplate,
+  stripHoles,
+} from 'storybook/internal/docs-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { buildStoryDocsPayload } from '../../../../renderers/web-components/src/docgen/story-docs/build-story-docs.ts';
@@ -117,7 +122,7 @@ async function build({ testDir, title }: Case) {
       try {
         filled[exportName] = fillTemplate(
           template as HtmlSnippetTemplate,
-          { initialArgs, unmappedArgs },
+          argChanges({ initialArgs, unmappedArgs }),
           printHole
         );
       } catch (error) {

@@ -4,7 +4,7 @@ import {
   isTypeScript71Stable,
   isTypeScriptUsableForDocgen,
   readTypeScriptPackageForDocgen,
-  typeScriptDocgenApisFor,
+  recommendedTypeScriptDocgenApis,
 } from 'storybook/internal/common';
 import { SupportedRenderer } from 'storybook/internal/types';
 
@@ -63,7 +63,7 @@ export const removeReactDocgenFallback: Fix<RemoveReactDocgenFallbackResult> = {
     if ((features?.docgenServer ?? features?.experimentalDocgenServer) === false) {
       return null;
     }
-    const apis = typeScriptDocgenApisFor(SupportedRenderer.REACT);
+    const apis = recommendedTypeScriptDocgenApis(SupportedRenderer.REACT);
     const docgenSpecifier = (mainConfig.typescript as { docgenSpecifier?: string } | undefined)
       ?.docgenSpecifier;
     let version: string | undefined;

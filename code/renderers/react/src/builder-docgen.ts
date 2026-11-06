@@ -2,10 +2,10 @@ import {
   checkBuilderDocgenPackages,
   getTypeScriptForDocgenError,
   isPackageInstalledInRange,
-  typeScriptDocgenApisFor,
 } from 'storybook/internal/common';
-import { type Options, SupportedRenderer } from 'storybook/internal/types';
+import type { Options } from 'storybook/internal/types';
 
+import { REACT_DOCGEN_TYPESCRIPT_APIS } from './docgen-typescript-apis.ts';
 import type { ReactDocgenConfig } from './componentManifest/reactDocgen/utils.ts';
 
 /**
@@ -96,7 +96,7 @@ export async function prepareReactBuilderDocgen({
       mode !== reactDocgen
         ? '`react-docgen-typescript` needs the TypeScript compiler API, which your `typescript` package does not have, so builder docgen uses `react-docgen` instead.'
         : undefined,
-    apis: typeScriptDocgenApisFor(SupportedRenderer.REACT),
+    apis: REACT_DOCGEN_TYPESCRIPT_APIS,
   });
   return missing.length > 0 ? undefined : mode;
 }

@@ -21,7 +21,7 @@ import {
   isTypeScriptReadyForDocgen,
   loadTypeScriptCompilerApi,
   loadTypeScriptForDocgen,
-  typeScriptDocgenApisFor,
+  recommendedTypeScriptDocgenApis,
   typeScriptPackageForDocgen,
 } from './typescript-for-docgen.ts';
 import { loadMainConfig } from './load-main-config.ts';
@@ -92,9 +92,12 @@ describe('getTypeScriptDocgenApi', () => {
   );
 });
 
-describe('typeScriptDocgenApisFor', () => {
+describe('recommendedTypeScriptDocgenApis', () => {
   it('lets React docgen run on both APIs', () => {
-    expect(typeScriptDocgenApisFor(SupportedRenderer.REACT)).toEqual(['compiler', 'native']);
+    expect(recommendedTypeScriptDocgenApis(SupportedRenderer.REACT)).toEqual([
+      'compiler',
+      'native',
+    ]);
   });
 
   it.each([
@@ -103,7 +106,7 @@ describe('typeScriptDocgenApisFor', () => {
     SupportedRenderer.WEB_COMPONENTS,
     SupportedRenderer.ANGULAR,
   ])('keeps %s docgen on the compiler API', (renderer) => {
-    expect(typeScriptDocgenApisFor(renderer)).toEqual(['compiler']);
+    expect(recommendedTypeScriptDocgenApis(renderer)).toEqual(['compiler']);
   });
 });
 

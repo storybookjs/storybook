@@ -28,8 +28,8 @@ import type { UserConfig, Plugin } from 'vite';
 export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
 // Default for `features.docgenServer`; a project without a usable `typescript` keeps builder docgen.
 export const isDocgenProviderEnabled = (_existing: unknown, options: Options) =>
-  // Not `typeScriptDocgenApisFor`: Angular's compiler keeps `typescript` on 6, so the CLI must not
-  // advise TypeScript 7.1 for it, while docgen runs on 7.1 through `typescript.docgenSpecifier`.
+  // Docgen runs on both APIs. The CLI still recommends TypeScript 6 for Angular, whose compiler
+  // needs it; docgen runs on 7.1 through `typescript.docgenSpecifier`.
   isTypeScriptReadyForDocgen((specifier) => import.meta.resolve(specifier), options, {
     apis: ['compiler', 'native'],
   });

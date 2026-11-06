@@ -1,10 +1,7 @@
-import {
-  getTypeScriptForDocgenError,
-  isModuleNotFoundError,
-  typeScriptDocgenApisFor,
-} from 'storybook/internal/common';
+import { getTypeScriptForDocgenError, isModuleNotFoundError } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import { SupportedRenderer } from 'storybook/internal/types';
+
+import { REACT_DOCGEN_TYPESCRIPT_APIS } from '../docgen-typescript-apis.ts';
 
 type ReactDocgenModule = typeof import('./reactDocgen.ts');
 
@@ -39,10 +36,7 @@ export const getDocgenPackageMissingError = (packageName: string) => {
   const typescriptError = getTypeScriptForDocgenError(
     (specifier) => import.meta.resolve(specifier),
     {
-      apis:
-        packageName === 'react-docgen-typescript'
-          ? ['compiler']
-          : typeScriptDocgenApisFor(SupportedRenderer.REACT),
+      apis: packageName === 'react-docgen-typescript' ? ['compiler'] : REACT_DOCGEN_TYPESCRIPT_APIS,
     }
   );
   if (typescriptError) {

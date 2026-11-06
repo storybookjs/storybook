@@ -6,7 +6,7 @@ import {
   recordReactDocgenFallback,
   isTypeScriptUsableForDocgen,
   isCI,
-  typeScriptDocgenApisFor,
+  recommendedTypeScriptDocgenApis,
   typeScriptPackageForDocgen,
 } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -51,7 +51,7 @@ export class TypeScriptDependencyCommand {
     dependencyCollector,
   }: ExecuteTypeScriptDependencyParams): Promise<TypeScriptDependencyResult> {
     const result = await this.decide(packageManager, framework, renderer);
-    const typescript = typeScriptPackageForDocgen(typeScriptDocgenApisFor(renderer));
+    const typescript = typeScriptPackageForDocgen(recommendedTypeScriptDocgenApis(renderer));
     if (result === 'added') {
       dependencyCollector.addDevDependencies([typescript]);
     }
@@ -81,7 +81,7 @@ export class TypeScriptDependencyCommand {
       return 'not-needed';
     }
 
-    const apis = typeScriptDocgenApisFor(renderer);
+    const apis = recommendedTypeScriptDocgenApis(renderer);
     if (packageManager.isDependencyInstalled('typescript')) {
       const version = await this.getTypeScriptVersion(packageManager);
       if (version && !isTypeScriptUsableForDocgen(version, apis)) {
@@ -142,7 +142,7 @@ export class TypeScriptDependencyCommand {
     logger.warn(
       new TypeScriptWithoutCompilerApiError({
         version,
-        apis: typeScriptDocgenApisFor(renderer),
+        apis: recommendedTypeScriptDocgenApis(renderer),
         builderDocgenFallback,
       }).message
     );

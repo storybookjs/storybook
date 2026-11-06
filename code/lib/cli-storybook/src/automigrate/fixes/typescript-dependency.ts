@@ -2,7 +2,7 @@ import {
   RENDERERS_WITH_TYPESCRIPT_DOCGEN,
   isTypeScript71Stable,
   isTypeScriptUsableForDocgen,
-  typeScriptDocgenApisFor,
+  recommendedTypeScriptDocgenApis,
   typeScriptPackageForDocgen,
 } from 'storybook/internal/common';
 import { SupportedRenderer } from 'storybook/internal/types';
@@ -37,7 +37,7 @@ export const typescriptDependency: Fix<{ dependency: string }> = {
     const renderer = getRendererName(mainConfig);
     const needsTypeScript = !!renderer && RENDERERS_WITH_TYPESCRIPT_DOCGEN.includes(renderer);
     return needsTypeScript && !packageManager.isDependencyInstalled('typescript')
-      ? { dependency: typeScriptPackageForDocgen(typeScriptDocgenApisFor(renderer)) }
+      ? { dependency: typeScriptPackageForDocgen(recommendedTypeScriptDocgenApis(renderer)) }
       : null;
   },
 
@@ -63,7 +63,7 @@ const getUnusableTypeScript = async ({ mainConfig, packageManager }: CheckOption
     return undefined;
   }
   const version = coerce(await packageManager.getDeclaredVersionSpecifier('typescript'))?.version;
-  const apis = typeScriptDocgenApisFor(renderer);
+  const apis = recommendedTypeScriptDocgenApis(renderer);
   return version && !isTypeScriptUsableForDocgen(version, apis) ? { version, apis } : undefined;
 };
 

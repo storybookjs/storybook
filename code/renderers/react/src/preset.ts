@@ -6,12 +6,12 @@ import {
   getTypeScriptSpecifierForDocgen,
   isModuleNotFoundError,
   isTypeScriptReadyForDocgen,
-  typeScriptDocgenApisFor,
 } from 'storybook/internal/common';
 import type { ArgTypes } from 'storybook/internal/csf';
 import { logger } from 'storybook/internal/node-logger';
-import { type Options, type PresetProperty, SupportedRenderer } from 'storybook/internal/types';
+import type { Options, PresetProperty } from 'storybook/internal/types';
 
+import { REACT_DOCGEN_TYPESCRIPT_APIS } from './docgen-typescript-apis.ts';
 import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
 import { REACT_BUILDER_DOCGEN_PACKAGES } from './builder-docgen.ts';
 import { aliasReactInWebpack, prependReactDedupePlugin } from './preview-react-alias.ts';
@@ -43,7 +43,7 @@ export const isDocgenProviderEnabled = async (_existing: unknown, options: Optio
   const { reactDocgen } =
     (await options.presets?.apply<TypescriptOptionsWithDocgen>('typescript', {})) ?? {};
   return isTypeScriptReadyForDocgen((specifier) => import.meta.resolve(specifier), options, {
-    apis: typeScriptDocgenApisFor(SupportedRenderer.REACT),
+    apis: REACT_DOCGEN_TYPESCRIPT_APIS,
     builderDocgenFallback:
       reactDocgen === false
         ? undefined

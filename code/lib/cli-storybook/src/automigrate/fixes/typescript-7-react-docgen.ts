@@ -2,7 +2,7 @@ import {
   addReactDocgenFallback,
   isTypeScript71Stable,
   isTypeScriptUsableForDocgen,
-  typeScriptDocgenApisFor,
+  recommendedTypeScriptDocgenApis,
 } from 'storybook/internal/common';
 import { SupportedRenderer } from 'storybook/internal/types';
 
@@ -52,7 +52,10 @@ export const typescript7ReactDocgen: Fix<true> = {
     }
     const version = coerce(await packageManager.getDeclaredVersionSpecifier('typescript'))?.version;
     return version &&
-      !isTypeScriptUsableForDocgen(version, typeScriptDocgenApisFor(SupportedRenderer.REACT))
+      !isTypeScriptUsableForDocgen(
+        version,
+        recommendedTypeScriptDocgenApis(SupportedRenderer.REACT)
+      )
       ? true
       : null;
   },

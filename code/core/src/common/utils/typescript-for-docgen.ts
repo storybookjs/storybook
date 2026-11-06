@@ -49,8 +49,11 @@ const DOCGEN_APIS_BY_RENDERER: Partial<Record<SupportedRenderer, readonly TypeSc
     [SupportedRenderer.REACT]: ['compiler', 'native'],
   };
 
-// Return the TypeScript APIs that a renderer's docgen can run on.
-export const typeScriptDocgenApisFor = (
+// Return the TypeScript APIs the CLI accepts for a renderer's docgen when it installs, upgrades or
+// checks `typescript`. This is the CLI's policy, not what docgen can run on: Angular's own compiler
+// needs TypeScript 6, so Angular stays on the compiler API, although `@storybook/angular-vite`
+// docgen also runs on the native API.
+export const recommendedTypeScriptDocgenApis = (
   renderer: SupportedRenderer
 ): readonly TypeScriptDocgenApi[] => DOCGEN_APIS_BY_RENDERER[renderer] ?? COMPILER_API_ONLY;
 

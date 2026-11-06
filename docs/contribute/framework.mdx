@@ -144,18 +144,25 @@ Test it in a fresh project using a Storybook set up as close as possible to your
 
 Once it's fully tested and released, please let us know about your framework by either announcing it in the [`#showcase`](https://discord.com/channels/486522875931656193/1048740936953376859) Discord channel or tweeting it and mentioning `@storybookjs`. It's our hope that well-made community frameworks can eventually move into the Storybook codebase and be considered "officially" supported.
 
-## Supporting `storybook init`
+## Integration with `storybook init`
 
-Some community frameworks, such as those for Astro, Nuxt, Qwik, SolidJS, and Rsbuild, are integrated into [`storybook init`](../get-started/install.mdx). Because these packages are versioned and released independently of Storybook, `init` doesn't pin them to a version. Instead, it picks an npm dist-tag based on the Storybook version running the command:
+Some community frameworks, such as those for Astro, Nuxt, Qwik and SolidJS, are integrated into [`storybook init`](../get-started/install.mdx). The Storybook maintainers choose the community frameworks to integrate based on their popularity, stability, and the quality of their implementation.
 
-- A stable Storybook release installs the `latest` dist-tag.
-- A Storybook prerelease (alpha, beta, or rc) installs the `next` dist-tag when it exists and points to a newer version than `latest`. Otherwise, it falls back to `latest`.
+### Versioning convention
+
+Community framework packages are versioned and released independently of Storybook. Because of that, `init` needs a heuristic to determine which version of a community framework package to install. By convention, `storybook init` picks an npm dist-tag based on the Storybook version running the command:
+
+- A stable Storybook release installs the `latest` dist-tag
+- A Storybook prerelease installs the `next` dist-tag when it exists and is more recent than `latest`; otherwise, it falls back to `latest`
 
 This convention lets you ship support for an upcoming Storybook major before it's stable, without affecting users on the current stable release. To support a Storybook prerelease:
 
-1. Publish prerelease versions of your framework under the `next` dist-tag, for example with `npm publish --tag next`. The version must be higher than the one on `latest`, otherwise `init` ignores it.
-2. Declare a `storybook` peer dependency range that includes the prerelease, such as `"storybook": "^11.0.0-0"`, so that package managers can install it alongside the Storybook prerelease.
-3. When the Storybook release becomes stable, publish your stable version under `latest`. A `next` tag left behind from an earlier release cycle is ignored, because it points to an older version than `latest`.
+1. Publish prerelease versions of your framework under the `next` dist-tag
+2. Declare a `storybook` peer dependency range that includes the prerelease, such as `"storybook": "^11.0.0-0"`, so that package managers can install it alongside the Storybook prerelease
+3. Declare any other peer dependencies required by your framework, ensuring they are compatible with the prerelease version of Storybook
+4. When the Storybook release becomes stable, publish your stable version under `latest`
+
+A `next` tag left behind from an earlier release cycle is ignored, because it points to an older version than `latest`. You don't need to do anything like unpublishing prerelease packages.
 
 **Learn more about contributing to Storybook**
 

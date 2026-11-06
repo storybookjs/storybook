@@ -27,7 +27,7 @@
     "lint": "pnpm run lint:js",
     "lint:ejs": "ejslint **/*.ejs",
     "lint:js": "pnpm run lint:js:cmd . --quiet",
-    "lint:js:cmd": "oxlint --report-unused-disable-directives-severity=error",
+    "lint:js:cmd": "oxlint --report-unused-disable-directives-severity=error --no-error-on-unmatched-pattern",
     "lint:package": "pnpm --dir ../scripts run lint:package",
     "local-registry": "pnpm --dir ../scripts run local-registry",
     "publish-sandboxes": "pnpm --dir ../scripts run publish",

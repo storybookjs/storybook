@@ -285,6 +285,57 @@ describe('initModule', () => {
     expect(store.getState().customQueryParams).toEqual({ globals: 'a:2' });
   });
 
+  it('keeps custom query params intact on GLOBALS_UPDATED', async () => {
+    const location = {};
+    store.setState({
+      ...storyState('test--story'),
+      location,
+      // Decoded, as queryFromLocation parses them from the URL
+      customQueryParams: {
+        base64: 'aW1wb3J0+IHs=',
+        cfg: { mode: 'dark' },
+        hashed: 'a#b',
+        split: 'a&b',
+        tags: 'a11y;!dev',
+      },
+    });
+
+    const navigate = vi.fn();
+    const channel = new EventEmitter();
+    initURL({ store, provider: { channel }, state: { location }, navigate, fullAPI });
+
+    channel.emit(GLOBALS_UPDATED, {
+      userGlobals: { a: 2 },
+      storyGlobals: {},
+      globals: { a: 2 },
+      initialGlobals: { a: 1 },
+    });
+    expect(navigate).toHaveBeenCalledWith(
+      '/story/test--story&base64=aW1wb3J0%2BIHs%3D&cfg.mode=dark&globals=a:2&hashed=a%23b&split=a%26b&tags=a11y;!dev',
+      expect.objectContaining({ replace: true })
+    );
+  });
+
+  it('keeps the location hash after the query params on GLOBALS_UPDATED', async () => {
+    const location = { hash: '#primary' };
+    store.setState({ ...storyState('test--story'), location, customQueryParams: { foo: 'bar' } });
+
+    const navigate = vi.fn();
+    const channel = new EventEmitter();
+    initURL({ store, provider: { channel }, state: { location }, navigate, fullAPI });
+
+    channel.emit(GLOBALS_UPDATED, {
+      userGlobals: { a: 2 },
+      storyGlobals: {},
+      globals: { a: 2 },
+      initialGlobals: { a: 1 },
+    });
+    expect(navigate).toHaveBeenCalledWith(
+      '/story/test--story&foo=bar&globals=a:2#primary',
+      expect.objectContaining({ replace: true })
+    );
+  });
+
   it('adds url params alphabetically', async () => {
     const location = {};
     store.setState({ ...storyState('test--story'), customQueryParams: { full: 1 }, location });

@@ -48,6 +48,7 @@ import {
 import type { A11yParameters } from '../params.ts';
 import type { A11yReport, EnhancedResult, EnhancedResults, Status } from '../types.ts';
 import { RuleType } from '../types.ts';
+import { isHttpUrl } from '../utils.ts';
 import type { TestDiscrepancy } from './TestDiscrepancyMessage.tsx';
 
 // These elements should not be highlighted because they usually cover the whole page.
@@ -268,7 +269,8 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       }
       const [type, id] = itemId.split('.');
       const { helpUrl, nodes } = results?.[type as RuleType]?.find((r) => r.id === id) || {};
-      const openedWindow = helpUrl && window.open(helpUrl, '_blank', 'noopener,noreferrer');
+      const openedWindow =
+        isHttpUrl(helpUrl) && window.open(helpUrl, '_blank', 'noopener,noreferrer');
       if (nodes && !openedWindow) {
         const index =
           nodes.findIndex((n) => details.selectors.some((s) => s === String(n.target))) ?? -1;

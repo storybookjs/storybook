@@ -63,7 +63,7 @@ jobs:
                 fetch_options: '--depth 100 --filter=blob:none --no-tags'
                 tag_fetch_options: '--no-tags'
             - run:
-                name: Fetch base branch for focused CI
+                name: Fetch the base branch
                 environment:
                   GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
                 command: |
@@ -71,7 +71,8 @@ jobs:
                     "$GH_BASE_BRANCH:refs/remotes/origin/$GH_BASE_BRANCH"
                   if ! git merge-base "origin/$GH_BASE_BRANCH" HEAD >/dev/null; then
                     echo "No merge base found between origin/$GH_BASE_BRANCH and HEAD within 100 commits." >&2
-                    exit 1
+                    # The NX DTE pipeline then runs every task (nx/set-shas finds no base).
+                    case "<< pipeline.parameters.workflow >>" in *focus*) exit 1 ;; esac
                   fi
       - unless:
           condition:

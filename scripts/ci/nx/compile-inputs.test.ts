@@ -62,30 +62,33 @@ function hashes(pkg: Package, file: string) {
 // A package that bundles a file of another package without hashing it restores a stale `dist`
 // from the cache when only that file changes, and `nx affected` does not rebuild it. CI compiles
 // everything before the unit tests run, so the metafiles are there; locally, compile first.
-it.skipIf(!existsSync(METAFILES))('every compile hashes the sources it bundles', () => {
-  const missing: string[] = [];
-  for (const folder of readdirSync(METAFILES)) {
-    // The folder is the package directory's name; `mcp` is both an addon and a library.
-    const candidates = packages.filter((pkg) => pkg.dir.endsWith(`/${folder}`));
-    for (const metafile of readdirSync(join(METAFILES, folder)).filter((f) =>
-      f.endsWith('.json')
-    )) {
-      const { inputs } = read(join(METAFILES, folder, metafile)) as {
-        inputs: Record<string, unknown>;
-      };
-      for (const input of Object.keys(inputs)) {
-        if (input.includes('node_modules/') || input.includes(':')) {
-          continue;
-        }
-        const unhashed = candidates.filter((pkg) => !hashes(pkg, join(pkg.dir, input)));
-        if (candidates.length > 0 && unhashed.length === candidates.length) {
-          missing.push(
-            `${candidates[0].name} bundles ${relative(ROOT, join(candidates[0].dir, input))}`
-          );
+it.skipIf(!existsSync(METAFILES) && !process.env.CI)(
+  'every compile hashes the sources it bundles',
+  () => {
+    const missing: string[] = [];
+    for (const folder of readdirSync(METAFILES)) {
+      // The folder is the package directory's name; `mcp` is both an addon and a library.
+      const candidates = packages.filter((pkg) => pkg.dir.endsWith(`/${folder}`));
+      for (const metafile of readdirSync(join(METAFILES, folder)).filter((f) =>
+        f.endsWith('.json')
+      )) {
+        const { inputs } = read(join(METAFILES, folder, metafile)) as {
+          inputs: Record<string, unknown>;
+        };
+        for (const input of Object.keys(inputs)) {
+          if (input.includes('node_modules/') || input.includes(':')) {
+            continue;
+          }
+          const unhashed = candidates.filter((pkg) => !hashes(pkg, join(pkg.dir, input)));
+          if (candidates.length > 0 && unhashed.length === candidates.length) {
+            missing.push(
+              `${candidates[0].name} bundles ${relative(ROOT, join(candidates[0].dir, input))}`
+            );
+          }
         }
       }
     }
+    // Add the file's folder to `compile.inputs` in the package's project.json.
+    expect([...new Set(missing)].sort()).toEqual([]);
   }
-  // Add the file's folder to `compile.inputs` in the package's project.json.
-  expect([...new Set(missing)].sort()).toEqual([]);
-});
+);

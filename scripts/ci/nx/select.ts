@@ -15,7 +15,7 @@ import { join } from 'pathe';
 
 import { ROOT_DIRECTORY } from '../../utils/constants.ts';
 import { getChangedFiles } from '../focus.ts';
-import { parseWorkflows, planFor, windowsTasksOf } from './plan.ts';
+import { linuxRuns, parseWorkflows, planFor, windowsTasksOf } from './plan.ts';
 import { EMPTY_SELECTION, type Selection } from './selection.ts';
 
 export type SetupSelection = { base?: string; linux: Selection; windows: Selection };
@@ -69,13 +69,9 @@ const select = (env: 'linux' | 'windows'): Selection => {
   return JSON.parse(readFileSync(file, 'utf8'));
 };
 
-// A `windows` run's Linux tasks only feed CircleCI's own Windows jobs (circleci-dte.ts).
-const linuxRuns =
-  !selected.every((workflow) => workflow === 'windows') &&
-  (plan.tasks.length > 0 || plan.affectedCheck);
 const output: SetupSelection = {
   ...(base ? { base } : {}),
-  linux: linuxRuns ? select('linux') : EMPTY_SELECTION,
+  linux: linuxRuns(selected, plan) ? select('linux') : EMPTY_SELECTION,
   windows: windowsTasksOf(plan).length > 0 ? select('windows') : EMPTY_SELECTION,
 };
 writeFileSync(values.out, JSON.stringify(output));

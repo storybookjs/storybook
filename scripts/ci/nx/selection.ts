@@ -4,8 +4,6 @@
 // request only the tasks the change reaches (`nx affected`), elsewhere all of them. main.ts then
 // sizes the agent jobs to that work (circleci-dte.ts), so a pull request that only touches docs
 // starts one agent instead of 44.
-//
-// Like main.ts, this runs under plain Node before `yarn install`: no dependencies.
 
 export type SelectedTask = { project: string; target: string };
 

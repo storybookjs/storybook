@@ -7,17 +7,14 @@
 //   otherwise `nx run-many`. It runs no task itself.
 // - `nx-agent` and, a little later, `nx-agent-peak` ({@link NX_DTE_WAVES}) run as parallel
 //   containers, each `nx start-agent`, which runs the tasks NX Cloud assigns.
-//   `start-ci-run --stop-workers-after` names every target of the run, so NX Cloud knows when no
-//   more tasks can come and stops each agent once it has nothing left for it, as the Nx docs
-//   recommend; no `complete-ci-run` is needed.
 // - The Windows tests (plan.ts `WINDOWS_TASKS`) run the same way in a second run of the same NX
 //   Cloud pipeline: `nx-main-windows` and `nx-agent-windows`, with `NX_CI_EXECUTION_ENV=windows`,
 //   so NX Cloud shows them in a tab of their own. The same targets as on Linux; their cache entries
 //   are kept apart by the OS input in nx.json.
 // - The Node 26 smoke job stays a plain CircleCI job, as CircleCI defines it.
 //
-// CircleCI's setup job asks Nx which tasks the run will run (selection.ts) and passes them to
-// main.ts, which sizes each agent job to that work: a run with nothing to do starts no agent.
+// CircleCI's setup job asks Nx which tasks the run will run (select.ts), and main.ts sizes each
+// agent job to that work.
 //
 // Opt in with the `nxDte` pipeline parameter (.circleci/config.yml); main.ts then generates these
 // jobs instead of the per-job ones. Like main.ts, this runs under plain Node before `yarn install`.
@@ -26,7 +23,7 @@ import { getChangedFiles } from '../focus.ts';
 import { cache, git, node, testResults } from '../utils/helpers.ts';
 import { isTrustedAuthor } from '../utils/runtime.ts';
 import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
-import { type Plan, planFor, windowsTasksOf } from './plan.ts';
+import { linuxRuns, planFor, windowsTasksOf } from './plan.ts';
 import type { Selection } from './selection.ts';
 
 // The agents come in two waves, each one CircleCI job of parallel `large` containers (4 vCPUs; a
@@ -39,26 +36,20 @@ import type { Selection } from './selection.ts';
 //   Once compile, publish and the sandboxes are done (about 100 seconds into the run), some 50
 //   sandbox tasks become ready at once (E2E tests, Chromatic, Vitest). With one wave sized for
 //   that peak, most agents idled, billed, for the first 100 seconds; with one sized for the start,
-//   sandbox tasks waited up to two minutes for an agent. It only covers what the first wave cannot
-//   ({@link PEAK_TASKS_PER_SANDBOX} per sandbox): a focused run with one sandbox needs none, and
-//   24 agents that only started and stopped cost it a third more credits.
+//   sandbox tasks waited up to two minutes for an agent.
 export const NX_DTE_WAVES = {
   first: { job: 'nx-agent', agents: 20 },
   peak: { job: 'nx-agent-peak', agents: 24 },
 } as const;
 export type NxDteWave = keyof typeof NX_DTE_WAVES;
 export const NX_DTE_PEAK_DELAY_SECONDS = 75;
-// The tasks of one sandbox that run at the same time once it is built.
-const PEAK_TASKS_PER_SANDBOX = 3;
 const PEAK_DELAY_JOB = 'nx-agent-peak-delay';
 
-// Nx's manual DTE has no way to scale the agents to a run (its dynamic changesets are for NX Cloud's
-// own agents), so main.ts counts the tasks the setup job found (select.ts) and starts one agent per
-// {@link TASKS_PER_AGENT} of them. `compile` does not count: every run has some 47 compile tasks as
-// dependencies, and each takes a second or two.
+// Nx's manual DTE cannot scale the agents to a run (its dynamic changesets are for NX Cloud's own
+// agents), so one agent starts per {@link TASKS_PER_AGENT} tasks the setup job found. Not counting
+// `compile`: every run has some 47 compile tasks as dependencies, mostly cache hits.
 export const TASKS_PER_AGENT = 4;
-// Windows agents are `large` machines (120 credits a minute) that take about four minutes to boot,
-// mostly `yarn install`.
+// A Windows `large` agent costs 120 credits a minute and takes about four minutes to boot.
 export const NX_DTE_WINDOWS_AGENTS = 4;
 
 const agentsForWork = (selection: Selection, max: number) => {
@@ -71,8 +62,8 @@ export type NxDteOptions = Partial<Record<NxDteWave, number>> & {
   // The commit a pull request branched from: the run then runs only the tasks a change since it
   // reaches (`nx affected`). Without it, every task of the plan runs.
   base?: string;
-  // The tasks the run will run, from CircleCI's setup job (select.ts). Without them, every wave is
-  // sized for the whole plan.
+  // The tasks the run will run, from CircleCI's setup job (select.ts). Without them (locally and in
+  // tests), every agent job starts at its maximum.
   selection?: { linux: Selection; windows: Selection };
 };
 
@@ -91,27 +82,6 @@ export function agentsForSelection(
 
 export const windowsAgentsFor = (selection: Selection) =>
   agentsForWork(selection, NX_DTE_WINDOWS_AGENTS);
-
-// The agents each wave runs for a plan, when the setup job could not say which tasks will run.
-// The first wave never outnumbers a plan's tasks (a `docs` run has one), unless they expand to
-// more in Nx: a `*` project or the affected check. The peak wave covers what the first cannot,
-// {@link PEAK_TASKS_PER_SANDBOX} tasks per sandbox.
-export function agentsFor(
-  plan: Pick<Plan, 'tasks' | 'affectedCheck'>,
-  options: Partial<Record<NxDteWave, number>> = {}
-): Record<NxDteWave, number> {
-  const expands = plan.affectedCheck || plan.tasks.some((task) => task.startsWith('*:'));
-  const first = Math.min(
-    options.first ?? NX_DTE_WAVES.first.agents,
-    expands ? Infinity : plan.tasks.length
-  );
-  const sandboxes = plan.tasks.filter((task) => task.endsWith(':sandbox')).length;
-  const peak = Math.min(
-    options.peak ?? NX_DTE_WAVES.peak.agents,
-    Math.max(0, PEAK_TASKS_PER_SANDBOX * sandboxes - first)
-  );
-  return { first, peak };
-}
 
 // dte-task-statuses.ts reads the failed tasks from this step of these jobs.
 export const NX_MAIN_JOBS = { linux: 'nx-main', windows: 'nx-main-windows' } as const;
@@ -196,6 +166,8 @@ const nxEnvironment = (os: Os, changedFiles: readonly string[]) => ({
   // Report each finished task right away instead of in batches, so the tasks that depend on it
   // start sooner (nx.yml).
   NX_CLOUD_DISABLE_BUFFER_TASK_COMPLETIONS: 'true',
+  // Selection from the repository's inputs only, as the setup job (without NX Cloud) makes it.
+  NX_CLOUD_USE_ULTRACACHE: 'false',
   // affected.ts reads the focused diff on the agents; the count tells a mangled list from an empty one.
   CI_CHANGED_FILES: changedFiles.join('\n'),
   CI_CHANGED_FILES_COUNT: `${changedFiles.length}`,
@@ -220,23 +192,17 @@ export const LAUNCH_TEMPLATES: Record<Os, string> = {
   windows: 'circleci-windows',
 };
 
-// The targets of a run's command (run.ts `--targets`), which `start-ci-run --stop-workers-after`
-// must name: NX Cloud stops an agent early ("no further tasks for this worker") only once every
-// target of the command is accounted for. With the targets of only the tasks the change reaches
-// (no `dedupe-check` for a core change, say), no agent stopped before the run ended, and a core
-// run cost a third more.
+// The targets of a run's command (run.ts `--targets`). `start-ci-run --stop-workers-after` must
+// name exactly these: with only the targets a change reaches, NX Cloud stopped no agent before the
+// run ended, and a core run cost a third more.
 const commandTargets = (tasks: readonly string[]) =>
   [...new Set(tasks.map((task) => task.slice(task.lastIndexOf(':') + 1)))].sort();
 
 const startCiRun = (os: Os, targets: readonly string[], npx: string) => ({
   run: {
     name: 'Start the NX Cloud run',
-    // Before the install, so NX Cloud knows the run while the agents boot.
-    // `--stop-workers-after` names every target the run's command runs, so NX Cloud knows when no
-    // more tasks can come. It then stops each agent that has nothing left to run, instead of every
-    // agent idling until the main job ends. A failed task does not stop them: the run reports
-    // every failure, as CircleCI and nx.yml (`lifecycle.fail-after: 0`) do.
-    // `start-ci-run` refuses to start while .nx/ci-config.yaml (the NX Cloud workers' config,
+    // Before the install, so NX Cloud knows the run while the agents boot. A failed task does not
+    // stop the agents: the run reports every failure, as CircleCI does. `start-ci-run` refuses to start while .nx/ci-config.yaml (the NX Cloud workers' config,
     // which only `start-workers` reads) exists, so it is out of the way for this command only.
     command: [
       'mv .nx/ci-config.yaml /tmp/ci-config.yaml',
@@ -391,8 +357,7 @@ const WINDOWS_PLAYWRIGHT_PATH = 'C:\\Users\\circleci\\AppData\\Local\\ms-playwri
 
 // What every Windows job does before Nx: Node, and node_modules from CircleCI's Windows cache.
 const windowsSetup = () => [
-  // Over https: through the checkout orb's ssh rewrite, the sandbox template's clone failed on
-  // Windows with exit code 128 (the Linux agents clone the same way without trouble).
+  // Over https, as CircleCI's own Windows jobs check out.
   git.checkout({ forceHttps: true }),
   node.installOnWindows(),
 ];
@@ -445,7 +410,6 @@ const windowsAgentJob = (changedFiles: readonly string[], agents: number) =>
           ].join('\n'),
         },
       },
-      // Downloading Chromium took 3.5 minutes on GitHub's Windows runners, 6s from the cache.
       cache.attach([WINDOWS_PLAYWRIGHT_KEY]),
       {
         run: {
@@ -482,14 +446,14 @@ export function getNxDteJobs(
   const { base, selection } = options;
   const jobs: JobOrNoOpJob[] = [];
 
-  // The Linux tasks of a `windows` run only build what CircleCI's own Windows jobs unpack; the
-  // Windows agents build their own.
-  const linuxTasks = selected.every((workflow) => workflow === 'windows')
-    ? false
-    : plan.tasks.length > 0 || plan.affectedCheck;
   const linux = selection?.linux;
-  if (linuxTasks && (!linux || Object.keys(linux.tasks).length > 0)) {
-    const agents = linux ? agentsForSelection(linux, options) : agentsFor(plan, options);
+  if (linuxRuns(selected, plan) && (!linux || Object.keys(linux.tasks).length > 0)) {
+    const agents = linux
+      ? agentsForSelection(linux, options)
+      : {
+          first: options.first ?? NX_DTE_WAVES.first.agents,
+          peak: options.peak ?? NX_DTE_WAVES.peak.agents,
+        };
     const targets = commandTargets([...plan.tasks, ...(plan.affectedCheck ? ['*:check'] : [])]);
     jobs.push(
       mainJob(selected, changedFiles, targets, base, agents.first + agents.peak),
@@ -514,5 +478,14 @@ export function getNxDteJobs(
   if (plan.sideJobs.includes('node-26-smoke')) {
     jobs.push(node26Smoke);
   }
+  // A CircleCI workflow needs a job, and a `windows` run has no completion job.
+  if (jobs.length === 0) {
+    jobs.push(nothingToRunJob);
+  }
   return jobs;
 }
+
+const nothingToRunJob = defineJob('nx-nothing-to-run', () => ({
+  executor: { name: 'sb_node_22_classic', class: 'small' },
+  steps: [{ run: { name: 'Nothing to run', command: 'echo "The change reaches no NX task."' } }],
+}));

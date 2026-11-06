@@ -61,7 +61,7 @@
       "configurations": {
         "production": {}
       },
-      "inputs": ["all-production"]
+      "inputs": ["all-production", "{workspaceRoot}/scripts/ci/nx/bench-packages.ts"]
     }
   }
 }

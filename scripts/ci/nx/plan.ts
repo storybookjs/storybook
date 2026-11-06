@@ -204,6 +204,16 @@ export const WINDOWS_TASKS: Partial<Record<SideJob, string[]>> = {
 export const windowsTasksOf = (plan: Pick<Plan, 'sideJobs'>) =>
   plan.sideJobs.flatMap((job) => WINDOWS_TASKS[job] ?? []).sort();
 
+// Whether a run of the given workflows has Linux tasks. A `windows` run's Linux tasks only build
+// what CircleCI's own Windows jobs unpack (and check the dedupe), and the NX DTE pipeline's
+// Windows agents build their own.
+export const linuxRuns = (
+  selected: readonly Workflow[],
+  plan: Pick<Plan, 'tasks' | 'affectedCheck'>
+) =>
+  !selected.every((workflow) => workflow === 'windows') &&
+  (plan.tasks.length > 0 || plan.affectedCheck);
+
 // The projects whose tasks a run of the given workflows may run, as an Nx project pattern: every
 // library (including `code` and `scripts`) and the sandboxes and test projects tagged for one of
 // the workflows (`ci:normal`, `ci:daily`, `ci:windows`). With the plan's targets, it selects exactly

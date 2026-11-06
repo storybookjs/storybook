@@ -19,6 +19,7 @@ import { parseArgs } from 'node:util';
 import { join } from 'pathe';
 
 import { ROOT_DIRECTORY } from '../../utils/constants.ts';
+import { esMain } from '../../utils/esmain.ts';
 import {
   type Group,
   groupTasks,
@@ -236,4 +237,6 @@ async function main() {
   process.exitCode = codes.find((code) => code !== 0) ?? 0;
 }
 
-await main();
+if (esMain(import.meta.url)) {
+  await main();
+}

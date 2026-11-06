@@ -262,7 +262,7 @@ async function main() {
     } while (pageToken);
     // A few at a time: a workflow has up to ~150 jobs.
     const queue = jobs.filter((job) => job.job_number);
-    const queue0 = queue[0]?.job_number;
+    const firstJob = queue[0]?.job_number;
     const timings: JobTiming[] = [];
     await Promise.all(
       Array.from({ length: 8 }, async () => {
@@ -286,7 +286,7 @@ async function main() {
         }
       })
     );
-    reports.push(report(workflow, timings, await setupJob(workflow.pipeline_id, queue0)));
+    reports.push(report(workflow, timings, await setupJob(workflow.pipeline_id, firstJob)));
   }
   console.log(toMarkdown(reports));
 }

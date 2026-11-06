@@ -13,11 +13,11 @@ import {
   NODE_MODULES_ARCHIVE,
   NODE_MODULES_KEY,
   NX_DTE_WAVES,
-  agentsFor,
   agentsForSelection,
   getNxDteJobs,
   windowsAgentsFor,
 } from './circleci-dte.ts';
+import { planFor } from './plan.ts';
 import { EMPTY_SELECTION, type Selection } from './selection.ts';
 
 const repoRoot = join(import.meta.dirname, '../../..');
@@ -94,8 +94,9 @@ describe('the CircleCI NX DTE pipeline', () => {
     )!.run!.command;
     const targets = start.match(/--stop-workers-after=(\S+)/)![1].split(',');
     expect(targets).toEqual(
-      expect.arrayContaining(['dedupe-check', 'e2e-tests', 'fmt', 'sandbox'])
+      [...new Set(planFor(['daily']).tasks.map((task) => task.split(':').at(-1)))].sort()
     );
+    expect(targets).toContain('dedupe-check');
   });
 
   it('starts no NX job for an OS with nothing to run', () => {
@@ -156,25 +157,6 @@ describe('the CircleCI NX DTE pipeline', () => {
     expect(config).toContain(`restore ${NODE_MODULES_ARCHIVE}\n`);
   });
 
-  it('sizes the waves to the plan', () => {
-    const sandboxes = (n: number) =>
-      Array.from({ length: n }, (_, i) => [`t${i}:sandbox`, `t${i}:e2e-tests`]).flat();
-    const plan = (tasks: string[], affectedCheck = false) => ({ tasks, affectedCheck });
-
-    // No more first-wave agents than tasks, unless they expand in Nx.
-    expect(agentsFor(plan(['code:fmt']))).toEqual({ first: 1, peak: 0 });
-    expect(agentsFor(plan(['*:compile']))).toEqual({ first: 20, peak: 0 });
-    expect(agentsFor(plan(['code:fmt'], true))).toEqual({ first: 20, peak: 0 });
-    // Three tasks per sandbox at the peak, minus the first wave, capped at the default.
-    expect(agentsFor(plan(['*:compile', ...sandboxes(4)]))).toEqual({ first: 20, peak: 0 });
-    expect(agentsFor(plan(['*:compile', ...sandboxes(10)]))).toEqual({ first: 20, peak: 10 });
-    expect(agentsFor(plan(['*:compile', ...sandboxes(16)]))).toEqual({ first: 20, peak: 24 });
-    expect(agentsFor(plan(['*:compile', ...sandboxes(16)]), { peak: 0 })).toEqual({
-      first: 20,
-      peak: 0,
-    });
-  });
-
   it('leaves the agents out of circleci-completion', () => {
     const { workflows: generated } = generateConfig('--workflow=normal', '--nx-dte=true');
     const completion = Object.values(generated)
@@ -193,14 +175,17 @@ describe('the CircleCI NX DTE pipeline', () => {
     );
   });
 
-  it('adds peak agents only for what the first wave cannot take', () => {
-    // docs creates no sandbox; normal creates 16, three tasks each at the peak, minus the 20 of
-    // the first wave, capped at the default.
-    expect(ids('docs')).toEqual(['nx-main', 'nx-agent']);
-    const docsAgent = getNxDteJobs(['docs'], 'unused').find((job) => job.id === 'nx-agent')!;
-    expect((docsAgent.implementation('docs') as { parallelism: number }).parallelism).toBe(1);
+  it('starts every agent job at its maximum without a selection from the setup job', () => {
     const peak = getNxDteJobs(['normal'], 'unused').find((job) => job.id === 'nx-agent-peak')!;
     expect((peak.implementation('normal') as { parallelism: number }).parallelism).toBe(24);
+  });
+
+  it('keeps a job in the workflow when the change reaches no task', () => {
+    // A `windows` run has no Linux part and no completion job.
+    const jobs = getNxDteJobs(['windows'], 'unused', {
+      selection: { linux: EMPTY_SELECTION, windows: EMPTY_SELECTION },
+    });
+    expect(jobs.map((job) => job.id)).toEqual(['nx-nothing-to-run']);
   });
 
   it('needs no job outside the pipeline', () => {

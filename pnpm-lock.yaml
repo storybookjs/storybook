@@ -252,6 +252,9 @@ importers:
       '@storybook/builder-webpack5':
         specifier: workspace:*
         version: link:builders/builder-webpack5
+      '@storybook/cli':
+        specifier: workspace:*
+        version: link:lib/cli-storybook
       '@storybook/codemod':
         specifier: workspace:*
         version: link:lib/codemod
@@ -270,9 +273,15 @@ importers:
       '@storybook/html-vite':
         specifier: workspace:*
         version: link:frameworks/html-vite
+      '@storybook/mcp':
+        specifier: workspace:*
+        version: link:lib/mcp
       '@storybook/nextjs':
         specifier: workspace:*
         version: link:frameworks/nextjs
+      '@storybook/nextjs-vite':
+        specifier: workspace:*
+        version: link:frameworks/nextjs-vite
       '@storybook/preact':
         specifier: workspace:*
         version: link:renderers/preact
@@ -288,6 +297,9 @@ importers:
       '@storybook/react':
         specifier: workspace:*
         version: link:renderers/react
+      '@storybook/react-native-web-vite':
+        specifier: workspace:*
+        version: link:frameworks/react-native-web-vite
       '@storybook/react-vite':
         specifier: workspace:*
         version: link:frameworks/react-vite
@@ -303,6 +315,15 @@ importers:
       '@storybook/svelte':
         specifier: workspace:*
         version: link:renderers/svelte
+      '@storybook/svelte-vite':
+        specifier: workspace:*
+        version: link:frameworks/svelte-vite
+      '@storybook/sveltekit':
+        specifier: workspace:*
+        version: link:frameworks/sveltekit
+      '@storybook/tanstack-react':
+        specifier: workspace:*
+        version: link:frameworks/tanstack-react
       '@storybook/vue3':
         specifier: workspace:*
         version: link:renderers/vue3
@@ -378,12 +399,18 @@ importers:
       esbuild-loader:
         specifier: ^4.3.0
         version: 4.4.0(webpack@5.105.2(@swc/core@1.15.46(@swc/helpers@0.5.17))(esbuild@0.28.1)(lightningcss@1.33.0))
+      eslint-plugin-storybook:
+        specifier: workspace:*
+        version: link:lib/eslint-plugin
       happy-dom:
         specifier: ^17.6.3
         version: 17.6.3
       http-server:
         specifier: ^14.1.1
         version: 14.1.1
+      jscodeshift:
+        specifier: ^17.4.0
+        version: 17.4.0(@babel/preset-env@7.29.2(@babel/core@7.29.7))
       knip:
         specifier: ^6.38.0
         version: 6.38.0
@@ -414,6 +441,9 @@ importers:
       react-popper-tooltip:
         specifier: ^4.4.2
         version: 4.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      sb:
+        specifier: workspace:*
+        version: link:lib/cli-sb
       slash:
         specifier: ^5.0.0
         version: 5.1.0
@@ -447,6 +477,9 @@ importers:
       vite-plugin-inspect:
         specifier: ^11.0.0
         version: 11.3.3(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
+      vite-plugin-storybook-nextjs:
+        specifier: workspace:*
+        version: link:lib/vite-plugin-storybook-nextjs
       vitest:
         specifier: 5.0.5
         version: 5.0.5(@edge-runtime/vm@3.2.0)(@opentelemetry/api@1.9.0)(@types/node@22.19.15)(@vitest/browser-playwright@5.0.5)(@vitest/coverage-istanbul@5.0.5)(@vitest/coverage-v8@5.0.5)(@vitest/ui@5.0.5)(happy-dom@17.6.3)(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
@@ -1964,7 +1997,7 @@ importers:
     dependencies:
       '@joshwooding/vite-plugin-react-docgen-typescript':
         specifier: ^0.7.0 || ^0.8.0 || ^0.9.0
-        version: 0.9.0(typescript@6.0.3)(vite@8.0.16(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
+        version: 0.9.0(typescript@6.0.3)(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
       '@storybook/builder-vite':
         specifier: workspace:*
         version: link:../../builders/builder-vite
@@ -1992,12 +2025,9 @@ importers:
       storybook:
         specifier: workspace:^
         version: link:../../core
-      vite:
-        specifier: ^6.3.0 || ^7.0.0 || ^8.0.0
-        version: 8.0.16(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1)
       vite-plugin-rnw:
         specifier: ~0.0.12
-        version: 0.0.12(react-native-web@0.21.4(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(vite@8.0.16(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
+        version: 0.0.12(react-native-web@0.21.4(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
     devDependencies:
       '@types/node':
         specifier: ^22.19.1
@@ -2008,9 +2038,12 @@ importers:
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
+      vite:
+        specifier: ^7.0.4
+        version: 7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1)
       vite-tsconfig-paths:
         specifier: ^6.1.1
-        version: 6.1.1(typescript@6.0.3)(vite@8.0.16(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
+        version: 6.1.1(typescript@6.0.3)(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
 
   code/frameworks/react-vite:
     dependencies:
@@ -27552,7 +27585,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@vitejs/plugin-react@5.2.0(vite@8.0.16(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))':
+  '@vitejs/plugin-react@5.2.0(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))':
     dependencies:
       '@babel/core': 7.29.7
       '@babel/plugin-transform-react-jsx-self': 7.27.1(@babel/core@7.29.7)
@@ -27560,7 +27593,7 @@ snapshots:
       '@rolldown/pluginutils': 1.0.0-rc.3
       '@types/babel__core': 7.20.5
       react-refresh: 0.18.0
-      vite: 8.0.16(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1)
+      vite: 7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -32618,6 +32651,31 @@ snapshots:
   jsbn@0.1.1: {}
 
   jsc-safe-url@0.2.4: {}
+
+  jscodeshift@17.4.0(@babel/preset-env@7.29.2(@babel/core@7.29.7)):
+    dependencies:
+      '@babel/core': 7.29.7
+      '@babel/parser': 7.29.11
+      '@babel/plugin-transform-class-properties': 7.29.7(@babel/core@7.29.7)
+      '@babel/plugin-transform-modules-commonjs': 7.29.7(@babel/core@7.29.7)
+      '@babel/plugin-transform-nullish-coalescing-operator': 7.29.7(@babel/core@7.29.7)
+      '@babel/plugin-transform-optional-chaining': 7.29.7(@babel/core@7.29.7)
+      '@babel/plugin-transform-private-methods': 7.29.7(@babel/core@7.29.7)
+      '@babel/preset-flow': 7.29.7(@babel/core@7.29.7)
+      '@babel/preset-typescript': 7.29.7(@babel/core@7.29.7)
+      '@babel/register': 7.29.7(@babel/core@7.29.7)
+      flow-parser: 0.336.0
+      graceful-fs: 4.2.11
+      neo-async: 2.6.2
+      picocolors: 1.1.1
+      picomatch: 4.0.7
+      recast: 0.23.11
+      tmp: 0.2.5
+      write-file-atomic: 5.0.1
+    optionalDependencies:
+      '@babel/preset-env': 7.29.2(@babel/core@7.29.7)
+    transitivePeerDependencies:
+      - supports-color
 
   jscodeshift@17.4.0(@babel/preset-env@7.29.2(@babel/core@8.0.6)):
     dependencies:
@@ -38405,14 +38463,14 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  vite-plugin-rnw@0.0.12(react-native-web@0.21.4(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(vite@8.0.16(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1)):
+  vite-plugin-rnw@0.0.12(react-native-web@0.21.4(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1)):
     dependencies:
       '@rolldown/pluginutils': 1.0.1
-      '@vitejs/plugin-react': 5.2.0(vite@8.0.16(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
+      '@vitejs/plugin-react': 5.2.0(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
       flow-remove-types: 2.331.0
       magic-string: 1.4.5
       react-native-web: 0.21.4(encoding@0.1.13)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      vite: 8.0.16(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1)
+      vite: 7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1)
       vite-plugin-commonjs: 0.10.4
     transitivePeerDependencies:
       - supports-color
@@ -38428,12 +38486,12 @@ snapshots:
       - supports-color
       - typescript
 
-  vite-tsconfig-paths@6.1.1(typescript@6.0.3)(vite@8.0.16(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1)):
+  vite-tsconfig-paths@6.1.1(typescript@6.0.3)(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1)):
     dependencies:
       debug: 4.4.3
       globrex: 0.1.2
       tsconfck: 3.1.6(typescript@6.0.3)
-      vite: 8.0.16(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1)
+      vite: 7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1)
     transitivePeerDependencies:
       - supports-color
       - typescript

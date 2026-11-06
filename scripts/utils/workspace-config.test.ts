@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import yml from 'yaml';
 
 import { ROOT_DIRECTORY } from './constants.ts';
+import { getCodeWorkspaces } from './workspace.ts';
 
 const readRootFile = (fileName: string) => readFileSync(join(ROOT_DIRECTORY, fileName), 'utf8');
 
@@ -19,5 +20,19 @@ describe('workspace config', () => {
 
     expect(packages.length).toBeGreaterThan(0);
     expect(workspaces.packages).toEqual(packages);
+  });
+
+  // code/core resolves packages by name at runtime (the CLI dispatcher, create-storybook's
+  // template copy), and pnpm only makes visible there what @storybook/code depends on.
+  it('links every public workspace package from code/package.json', async () => {
+    const { dependencies } = JSON.parse(readRootFile('code/package.json'));
+    const publicWorkspaces = await getCodeWorkspaces(false);
+
+    expect(publicWorkspaces.length).toBeGreaterThan(40);
+    expect(
+      publicWorkspaces
+        .map(({ name }) => name)
+        .filter((name) => !dependencies[name]?.startsWith('workspace:'))
+    ).toEqual([]);
   });
 });

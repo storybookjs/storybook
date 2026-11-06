@@ -285,8 +285,9 @@ export const COREPACK_VERSION = '0.34.6';
 /**
  * Points `name` at corepack's shim, which runs the version a `packageManager` field pins, hash
  * included: the cimg images ship their own, unpinned yarn and pnpm. corepack and its shims live
- * next to `node`, which needs sudo on the cimg images but not on the Playwright image (root,
- * without sudo) or for Node installed through nvm (the home directory).
+ * next to `node`. The job's user can write there on every image this runs on (the cimg images'
+ * `circleci` user owns `/usr/local/bin`, the Playwright image runs as root, and nvm installs into
+ * the home directory), so sudo is only a fallback for an image where it can't.
  */
 export const corepackEnable = (name: 'pnpm' | 'yarn') =>
   [

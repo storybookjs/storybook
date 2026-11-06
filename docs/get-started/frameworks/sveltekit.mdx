@@ -89,7 +89,7 @@ For other modules, such as `#lib/*` imports, use [module mocking](../../writing-
 
 <Callout variant="info">
 
-Storybook 10 used `parameters.sveltekit_experimental` for these mocks. Storybook 11 removed it, and a story that still sets it fails with an error. The [migration guide](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-sveltekit_experimental-parameters-removed) shows the replacement for every key.
+Storybook 10 used `parameters.sveltekit_experimental` for these mocks. Storybook 11 removed it, and a story that still sets it fails with an error. Run `npx storybook automigrate sveltekit-mocking-before-each` to rewrite it into `beforeEach`. The [migration guide](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-sveltekit_experimental-parameters-removed) shows the replacement for every key.
 
 </Callout>
 

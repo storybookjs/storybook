@@ -2128,6 +2128,8 @@ Storybook still mocks `$app/forms`, `$app/navigation` and `$app/state`, because 
 
 See [How to mock](https://storybook.js.org/docs/get-started/frameworks/sveltekit#how-to-mock) in the SvelteKit docs for the full API.
 
+The `sveltekit-mocking-before-each` automigration rewrites `sveltekit_experimental` in your stories and `.storybook/preview` when you upgrade, or when you run `npx storybook automigrate sveltekit-mocking-before-each`. It follows the steps below, in `.stories.svelte` files and in CSF files. When the migrated stories set the mocks and autodocs renders two or more of them on a docs page, it also adds `parameters: { docs: { story: { inline: false } } }` to the meta, unless the meta already sets `docs.story.inline` (see the note on docs pages below). It leaves a file unchanged when it can't read every `sveltekit_experimental` in it, for example one in a shared variable or a `play` function that reads `parameters.sveltekit_experimental`, and lists the file and the reasons in `automigrations-summary.md`. Migrate those files by hand, and also any parameters that stories import from a file outside `.storybook`, which the automigration doesn't read.
+
 #### Migrate a SvelteKit stories file
 
 Do these steps for each `sveltekit_experimental` in each stories file and in `.storybook/preview`:

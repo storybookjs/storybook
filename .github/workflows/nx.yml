@@ -78,7 +78,7 @@ jobs:
               context: `nx: ${tag}`,
             });
       - name: Setup Node.js and Install Dependencies
-        uses: ./.github/actions/setup-node-and-install
+        uses: $/.github/actions/setup-node-and-install
         with:
           install-code-deps: true
       - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1

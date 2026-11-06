@@ -88,26 +88,21 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: npm install -g npm@11.17.0
 
-      # Node >= 25 no longer bundles corepack; this is the release Node 22.22.3 bundles, as pinned in
-      # scripts/ci/utils/helpers.ts.
+      # The corepack release that Node 22.22.3 bundles.
       - name: Install corepack
         working-directory: ${{ github.workspace }}
-        # zizmor: ignore[adhoc-packages]  # only runs where Node no longer bundles corepack
+        # zizmor: ignore[adhoc-packages]  # only runs where Node does not bundle corepack
         run: command -v corepack >/dev/null 2>&1 || npm install -g corepack@0.34.6
 
-      # The schedule runs this file from next for both next and main, and main keeps using Yarn
-      # until a release brings the pnpm migration to it. Run each branch with its own package
-      # manager. A pnpm checkout needs corepack's yarn as well: the published sandboxes stay Yarn
-      # projects that pin Yarn 4 through `packageManager`. A Yarn checkout needs neither shim;
-      # `yarn` runs the release vendored through .yarnrc.yml `yarnPath`, as before.
+      # main uses Yarn until a release brings pnpm to it. The published sandboxes are Yarn projects,
+      # so a pnpm checkout enables corepack's yarn too.
       - name: Select package manager
         working-directory: ${{ github.workspace }}
         run: |
           case "$(node -p "require('./package.json').packageManager ?? ''")" in
             pnpm@*)
               corepack enable pnpm yarn
-              # corepack only replaces the shims in its own directory; a pnpm earlier on PATH would
-              # run unpinned.
+              # Fail if a pnpm earlier on PATH shadows corepack's shim.
               test "$(pnpm --version)" = "$(node -p "require('./package.json').packageManager.replace(/^pnpm@|\\+.*$/g, '')")"
               echo "PM=pnpm" >> "$GITHUB_ENV"
               ;;

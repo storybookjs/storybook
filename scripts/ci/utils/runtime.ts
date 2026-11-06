@@ -10,7 +10,6 @@ export function isTrustedAuthor(): boolean {
 
 let lockfileChanged = false;
 
-/** Whether the pull request changes `pnpm-lock.yaml`, which every dependency change does. */
 export function setLockfileChanged(changed: boolean): void {
   lockfileChanged = changed;
 }

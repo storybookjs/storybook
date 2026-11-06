@@ -2,8 +2,7 @@
  * Keys of the overrides Storybook maintains in pnpm-workspace.yaml, as opposed to the overrides an
  * ecosystem CI runner injects there. These are NOT copied to the sandbox package.json.
  *
- * The keys use pnpm's selector syntax (`pkg@range`, `parent>child`), exactly as they appear in
- * pnpm-workspace.yaml. existing-resolutions.test.ts checks that this set stays in sync with it.
+ * existing-resolutions.test.ts checks that this set stays in sync with pnpm-workspace.yaml.
  */
 export const EXISTING_RESOLUTIONS = new Set([
   '@angular/build>vitest',

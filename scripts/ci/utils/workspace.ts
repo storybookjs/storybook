@@ -10,7 +10,6 @@ const readRootFile = (file: string) =>
 
 const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** The pnpm version that the root `packageManager` field pins, e.g. `10.34.9`. */
 export function getPnpmVersion(): string {
   const { packageManager } = JSON.parse(readRootFile('package.json'));
   const version = /^pnpm@([^+]+)/.exec(packageManager ?? '')?.[1];
@@ -20,7 +19,6 @@ export function getPnpmVersion(): string {
   return version;
 }
 
-/** The directories of the workspace packages, relative to the repository root. */
 export function getWorkspaceDirs(): string[] {
   const list = /^packages:\n((?: +- .+\n)+)/m.exec(readRootFile('pnpm-workspace.yaml'))?.[1];
   if (!list) {
@@ -41,7 +39,6 @@ export function getWorkspaceDirs(): string[] {
     .sort();
 }
 
-/** The version of `name` that pnpm-lock.yaml locks for the workspace package at `importer`. */
 export function getLockedVersion(importer: string, name: string): string {
   const block = readRootFile('pnpm-lock.yaml')
     .split(/^(?=\S)/m)

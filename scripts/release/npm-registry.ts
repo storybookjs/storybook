@@ -119,9 +119,8 @@ export const waitForPackagesToBePublished = async ({
   return missing;
 };
 
-// Parses the output of the npm CLI that pnpm publish delegates the upload to. npm prints
-// "+ <name>@<version>" after a successful upload, and names a rejected package only through the
-// escaped registry URL in its error line, e.g.
+// pnpm publish uploads through the npm CLI, which prints "+ <name>@<version>" for each published
+// package and names a rejected one only by its escaped URL, as in
 // "409 Conflict - PUT https://registry.npmjs.org/@storybook%2freact - Cannot publish over previously staged version".
 export const packagesAcceptedByRegistry = (output: string) => {
   const accepted = new Set<string>();

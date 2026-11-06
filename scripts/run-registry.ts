@@ -214,8 +214,8 @@ const run = async () => {
   if (opts.publish) {
     logger.log(`👤 add temp user to verdaccio`);
     // Use npmAuth helper to authenticate to the local Verdaccio registry. This creates a .npmrc
-    // file in the root directory, which only publishing needs: pnpm reads it too, and would send
-    // every monorepo install to the local registry while it exists.
+    // file in the root directory, which points every pnpm install in the monorepo at the local
+    // registry while it exists.
     await npmAuth({
       username: 'foo',
       password: 's3cret',

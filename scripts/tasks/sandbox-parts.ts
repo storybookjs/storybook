@@ -334,9 +334,8 @@ export const init: Task['run'] = async (
 
   logger.info(`🔢 Adding package scripts:`);
 
-  // `--preserve-symlinks` keeps the symlinked template stories resolving their imports from the
-  // sandbox. `--preserve-symlinks-main` is left out: the hoisted pnpm linker makes the `.bin`
-  // entries symlinks, and the flag would resolve a CLI's own imports relative to `.bin`.
+  // `--preserve-symlinks-main` is left out because it would resolve a CLI's own imports relative
+  // to its symlink in `.bin`.
   const nodeOptions = [
     ...(process.env.NODE_OPTIONS || '').split(' '),
     '--preserve-symlinks',
@@ -390,10 +389,8 @@ export const init: Task['run'] = async (
 // loader for such files. NOTE this isn't necessary for Vite, as far as we know.
 function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
   // NOTE: the test regexp here will apply whether the path is symlink-preserved or otherwise
-  // esbuild-loader is a dependency of the code workspace, so only resolvable from there. Reference
-  // it through `code/node_modules`, whose entry is stable, and resolve the real path when the
-  // config loads: the pnpm store directory behind it is named after esbuild-loader's peers, and the
-  // loader finds its own dependencies only from there.
+  // esbuild-loader finds its dependencies only from its real path in the pnpm store, whose name
+  // depends on its peers, so the config resolves the stable `code/node_modules` link when it loads.
   const esbuildLoaderLink = join(CODE_DIRECTORY, 'node_modules', 'esbuild-loader');
   const esbuildLoaderEntry = relative(
     realpathSync(esbuildLoaderLink),

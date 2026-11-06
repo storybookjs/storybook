@@ -136,9 +136,8 @@ jobs:
           node agent-eval/scripts/eval-gate-thread.ts ensure
           --pr "$PR_NUMBER" --sha "$EVALUATED_HEAD_SHA" --run-url "$RUN_URL" --scope "$SCOPE_LINE"
 
-      # Loaded from the workflow commit (`$/`): `./` would run the action.yml of the PR head checked
-      # out above. The PR head can predate the pnpm migration; the action then installs it with
-      # Yarn and reports which package manager the tree uses.
+      # Loaded from the workflow commit (`$/`) because the PR head checked out above can predate the
+      # pnpm migration.
       - name: Install dependencies
         id: install
         uses: $/.github/actions/setup-node-and-install

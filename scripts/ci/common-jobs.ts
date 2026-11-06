@@ -35,8 +35,8 @@ const packageDirs = ['*/src', '*/*/src'].flatMap((pattern) =>
 );
 
 /**
- * Every Linux job that installs goes through here, so they all share one cache. Saving stays gated
- * on a trusted author so a fork PR cannot put a tree where the next run will find it.
+ * Saving stays gated on a trusted author so a fork PR cannot put a tree where the next run will
+ * find it.
  */
 const installWithCache = () => [
   cache.attach([NODE_MODULES_CACHE_KEY()]),
@@ -44,7 +44,6 @@ const installWithCache = () => [
   ...(isTrustedAuthor() ? [cache.persist(NODE_MODULES_CACHE_PATHS, NODE_MODULES_CACHE_KEY())] : []),
 ];
 
-// pnpm gives every workspace package a node_modules of links into the root's virtual store.
 const packageNodeModules = getWorkspaceDirs()
   .filter((dir) => dir !== 'code' && dir !== 'scripts')
   .map((dir) => `${WORKING_DIR}/${dir}/node_modules`);
@@ -58,19 +57,13 @@ export const build_linux = defineJob('Build (linux)', () => ({
     git.checkout(),
     pnpm.enable(),
     ...installWithCache(),
-    // `pnpm dedupe` also moves dependencies to newer versions in their ranges once those are past
-    // the release-age gate, so the check would start failing on unchanged code. Only pull requests
-    // that change the lockfile run it; their authors run `pnpm dedupe` before merging.
+    // `pnpm dedupe` also moves dependencies to newer versions once they pass the release-age gate,
+    // so the check would fail on an unchanged lockfile.
     ...(isLockfileChanged() ? [pnpm.dedupeCheck()] : []),
     workspace.pack(
       [
-        // The root node_modules holds pnpm's virtual store, which every
-        // package's node_modules links into. Downstream jobs otherwise only
-        // receive it via the shared `save_cache`, which is gated on
-        // `isTrustedAuthor()`, so community/fork PRs would end up with a
-        // freshly-built `dist` but no dependencies. Packing the trees into the
-        // (pipeline-scoped, un-gated) workspace makes downstream jobs correct
-        // for every PR.
+        // Downstream jobs take their dependencies from the workspace, because
+        // only trusted authors save the node_modules cache.
         `${WORKING_DIR}/node_modules`,
         `${WORKING_DIR}/code/node_modules`,
         `${WORKING_DIR}/scripts/node_modules`,
@@ -126,8 +119,7 @@ export const build_windows = defineJob('Build (windows)', () => ({
     git.checkout({ forceHttps: true }),
     node.installOnWindows(),
     pnpm.check(),
-    // No node_modules cache: pnpm links packages with junctions on Windows, which the cache is not
-    // known to restore.
+    // No cache, because pnpm links packages on Windows with junctions the cache may not restore.
     pnpm.install(),
     compileStep(),
     git.check(),
@@ -373,7 +365,6 @@ export const node26Smoke = defineJob('Node 26 smoke', () => ({
         command: ['node --version', 'sudo npm install -g npm@12', 'npm --version'].join('\n'),
       },
     },
-    // Node 25 stopped bundling corepack, so this also installs it.
     pnpm.enable(),
     pnpm.install(),
     compileStep(),

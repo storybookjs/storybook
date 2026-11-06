@@ -20,8 +20,6 @@ describe('build_linux', () => {
     expect(stepNames()).toContain('Check for dedupe');
   });
 
-  // `pnpm dedupe` also moves dependencies to newer versions once those pass the release-age gate,
-  // so on an unchanged lockfile the check would fail without any change in the repository.
   it('skips the dedupe check when the lockfile is unchanged', () => {
     setLockfileChanged(false);
 

@@ -624,12 +624,10 @@ let storybookWorkspace: Promise<StorybookWorkspace> | undefined;
 
 export function readStorybookWorkspace(): Promise<StorybookWorkspace> {
   storybookWorkspace ??= (async () => {
-    // One JSON array of every workspace package, the root included, each with an absolute `path`.
     const { stdout } = await execPnpm(['m', 'ls', '--json', '--depth', '-1'], { cwd: REPO_ROOT });
     const workspacePackages = JSON.parse(stdout) as { path: string }[];
     const manifests = await Promise.all(
       workspacePackages.map(async (workspacePackage) => {
-        // Repo-relative with forward slashes on every platform; it becomes `WorkspacePackage.dir`.
         const location = path.relative(REPO_ROOT, workspacePackage.path).split(path.sep).join('/');
         const manifest = JSON.parse(
           await fs.readFile(path.join(REPO_ROOT, location, 'package.json'), 'utf8')

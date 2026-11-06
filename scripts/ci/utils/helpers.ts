@@ -74,8 +74,8 @@ export const workspace = {
         // A workspace package without dependencies gets no node_modules, so
         // the per-package trees are filtered at runtime; the required trees
         // are passed straight to tar so a missing one fails the job loudly.
-        // Compile writes tool caches (jiti's) into node_modules/.cache while
-        // this runs, and tar fails on a file that changes as it reads it.
+        // Compile writes caches into node_modules/.cache during the pack, and
+        // tar fails on a file that changes while it reads it.
         command: [
           `rm -f ${PACKED_NODE_MODULES_ARCHIVE}.status`,
           'node --version',
@@ -280,19 +280,10 @@ export const npm = {
   },
 };
 
-/**
- * The corepack installed where Node bundles none (Node >= 25): the release Node 22.22.3 bundles.
- * `.github/actions/setup-node-and-install` and `generate-sandboxes.yml` pin the same one.
- */
+// The corepack release that Node 22.22.3 bundles, for Node versions that bundle none.
 export const COREPACK_VERSION = '0.34.6';
 
-/**
- * Points `name` at corepack's shim, which runs the version a `packageManager` field pins, hash
- * included: the cimg images ship their own, unpinned yarn and pnpm. corepack and its shims live
- * next to `node`. The job's user can write there on every image this runs on (the cimg images'
- * `circleci` user owns `/usr/local/bin`, the Playwright image runs as root, and nvm installs into
- * the home directory), so sudo is only a fallback for an image where it can't.
- */
+// The cimg images ship their own, unpinned yarn and pnpm.
 export const corepackEnable = (name: 'pnpm' | 'yarn') =>
   [
     'sudo=""',
@@ -303,7 +294,7 @@ export const corepackEnable = (name: 'pnpm' | 'yarn') =>
     `which ${name}`,
   ].join('\n');
 
-/** corepack only replaces the shims in its own directory; an image's pnpm earlier on PATH would run unpinned. */
+// An image's pnpm earlier on PATH can shadow corepack's shim.
 const checkPinnedPnpm = () => {
   const version = getPnpmVersion();
   return [
@@ -324,7 +315,7 @@ export const pnpm = {
       },
     };
   },
-  /** For Windows, whose PowerShell step enables corepack's shims; bash avoids the `.ps1` shim. */
+  // For Windows, where the PowerShell Node install step enables corepack.
   check: () => {
     return {
       run: {
@@ -413,7 +404,7 @@ export const workflow = {
     node.installOnWindows(),
     pnpm.check(),
     workspace.attach(at),
-    // The workspace carries no node_modules for Windows: pnpm links them with junctions there.
+    // The workspace holds no node_modules for Windows, where pnpm links them with junctions.
     pnpm.install(),
   ],
   cancelOnFailure: () => [cancelWorkflowStep],
@@ -434,10 +425,8 @@ export const NODE_MODULES_CACHE_KEY = () =>
     '{{ checksum "pnpm-lock.yaml" }}',
   ].join('/');
 
-/**
- * Only the root: it holds pnpm's virtual store, from which `pnpm install` relinks every workspace
- * package's node_modules in seconds, without the pnpm store or the network.
- */
+// The root node_modules holds pnpm's virtual store, from which `pnpm install` relinks every
+// package's node_modules in seconds.
 export const NODE_MODULES_CACHE_PATHS = ['node_modules'];
 
 export const testResults = {

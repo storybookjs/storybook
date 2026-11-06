@@ -47,8 +47,7 @@ type Options = {
 const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
 const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
-// pnpm stops at the first package that fails, so an attempt that leaves fewer packages to publish
-// than any before it starts the count over: each package gets this many tries in a row.
+// pnpm stops at the first package that fails, so only consecutive attempts without progress count.
 const MAX_ATTEMPTS_WITHOUT_PROGRESS = 3;
 const REGISTRY_POLL_INTERVAL_MS = 15_000;
 const REGISTRY_POLL_TIMEOUT_MS = 15 * 60 * 1000;
@@ -78,17 +77,14 @@ const buildAllPackages = async () => {
   console.log(`🏗️ Packages successfully built`);
 };
 
-// pnpm skips private packages and versions the registry already serves, and publishes the selected
-// packages one at a time in dependency order, stopping at the first failure. --no-git-checks
-// because pnpm otherwise only publishes from a clean main/master branch, and releases publish from
-// the release branches.
+// Without --no-git-checks, pnpm publishes only from a clean main or master branch, not the release
+// branches.
 export const publishCommand = (tag: string, packageNames: string[]) => {
   const filters = packageNames.map((name) => `--filter=${name}`).join(' ');
   return `pnpm --recursive ${filters} publish --tag ${tag} --no-git-checks`;
 };
 
-// pnpm forwards only a fixed set of flags to the npm CLI it publishes with, and --provenance is not
-// one of them, so request provenance through npm's environment config instead.
+// pnpm does not forward --provenance to the npm CLI it publishes with, so set it through npm's env.
 const PUBLISH_ENV = { npm_config_provenance: 'true' };
 
 const execaOutput = (error: unknown) => {
@@ -162,10 +158,8 @@ export const publishAllPackages = async ({
         return;
       }
 
-      // pnpm stops at the first package that fails, so a missing package npm never acknowledged was
-      // most likely never uploaded: retry it right away instead of waiting for it to appear. Only
-      // packages npm accepted can be staged (reserved but not in the packument yet), and another PUT
-      // for those would 409, so they are waited for once nothing else is left to publish.
+      // A package npm never accepted was most likely never uploaded, so retry it before waiting for
+      // the staged ones.
       toPublish = unpublished.filter((name) => !accepted.has(name));
 
       if (toPublish.length > 0) {

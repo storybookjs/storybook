@@ -49,8 +49,7 @@ describe('ChangeDetectionResolverFactory', () => {
     it('returns null for bare specifiers without node_modules', async () => {
       const a = write('src/a.ts');
       const r = new ChangeDetectionResolverFactory({ projectRoot: dir });
-      // A real package name could still resolve through NODE_PATH, which package-manager command
-      // shims may set for the test process; use one that exists nowhere.
+      // pnpm's bin shims set NODE_PATH, so a real package name could still resolve.
       expect(await r.resolve(a, 'sb-resolver-test-nonexistent-package')).toBeNull();
     });
   });

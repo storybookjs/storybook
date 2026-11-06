@@ -197,9 +197,8 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
               npm.installPinnedVersion(),
               {
                 run: {
-                  // Generating scaffolds the template the way the published sandboxes are, with
-                  // Yarn. The version check runs outside the repository, whose pnpm pin corepack
-                  // enforces.
+                  // Generation scaffolds with Yarn, like the published sandboxes. The version
+                  // check runs outside the repository because corepack enforces the pnpm pin there.
                   name: 'Enable Yarn for sandbox generation',
                   working_directory: LINUX_ROOT_DIR,
                   command: [corepackEnable('yarn'), 'yarn --version'].join('\n'),
@@ -392,8 +391,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
   };
 }
 
-// The sandbox was installed on Linux: its node_modules holds Linux binaries and records the Linux
-// store, so it is installed again from the local registry.
+// The sandbox was installed on Linux, so its node_modules holds Linux binaries and store paths.
 const windowsSandboxInstall = (path: string) => ({
   run: {
     name: 'Run Install',

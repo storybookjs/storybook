@@ -1,8 +1,5 @@
-/**
- * Copies the overrides an ecosystem CI runner injected into the monorepo over to the sandbox
- * package.json as resolutions. The runner only patches the repository it cloned, but the tests run
- * in the sandbox, which is a separate pnpm project.
- */
+// Ecosystem CI runners override packages only in the monorepo they clone, but the tests run in the
+// sandbox, so this copies those overrides into the sandbox package.json as resolutions.
 import { writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -36,8 +33,7 @@ sandboxPkgJson.resolutions = {
 await writeFile(sandboxPackageJsonPath, JSON.stringify(sandboxPkgJson, null, 2));
 
 const sandboxDir = dirname(sandboxPackageJsonPath);
-// The runner disables the monorepo's age gate before installing it, but not the sandbox's, which
-// would quarantine the freshly published builds under test.
+// The sandbox's minimum release age would block the just-published builds under test.
 await disableMinimumReleaseAge(sandboxDir);
 await execaCommand('pnpm add playwright', { cwd: sandboxDir, shell: true });
 await execaCommand('pnpm exec playwright install', { cwd: sandboxDir, shell: true });

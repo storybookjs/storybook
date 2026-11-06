@@ -336,10 +336,7 @@ async function narrowQuarantinedRanges({
   await runCommand(`yarn install --mode=update-lockfile`, { cwd, env }, debug);
 }
 
-/**
- * The Yarn release published sandboxes pin. They stay on Yarn even though this monorepo uses pnpm:
- * users download them, so their package manager is part of what we ship.
- */
+// Users download published sandboxes as Yarn projects, so they pin Yarn, not the monorepo's pnpm.
 export const PUBLISHED_SANDBOX_PACKAGE_MANAGER = 'yarn@4.18.0';
 
 /**

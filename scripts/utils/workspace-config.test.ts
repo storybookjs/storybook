@@ -11,9 +11,8 @@ import { getCodeWorkspaces } from './workspace.ts';
 const readRootFile = (fileName: string) => readFileSync(join(ROOT_DIRECTORY, fileName), 'utf8');
 
 describe('workspace config', () => {
-  // pnpm reads workspaces from pnpm-workspace.yaml only. The published `storybook link` command
-  // runs `yarn link --all --relative <monorepo>/code` from Yarn reproductions, and Yarn discovers
-  // the monorepo's packages through package.json `workspaces`, so both lists must stay in sync.
+  // The published `storybook link` runs `yarn link --all` against this monorepo, and Yarn reads its
+  // packages from package.json `workspaces`.
   it('mirrors the pnpm-workspace.yaml packages in the root package.json workspaces', () => {
     const { packages } = yml.parse(readRootFile('pnpm-workspace.yaml'));
     const { workspaces } = JSON.parse(readRootFile('package.json'));
@@ -22,8 +21,8 @@ describe('workspace config', () => {
     expect(workspaces.packages).toEqual(packages);
   });
 
-  // code/core resolves packages by name at runtime (the CLI dispatcher, create-storybook's
-  // template copy), and pnpm only makes visible there what @storybook/code depends on.
+  // code/core resolves workspace packages by name at runtime, and pnpm only exposes the ones
+  // code/package.json depends on.
   it('links every public workspace package from code/package.json', async () => {
     const { dependencies } = JSON.parse(readRootFile('code/package.json'));
     const publicWorkspaces = await getCodeWorkspaces(false);

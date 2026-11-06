@@ -23,10 +23,6 @@ describe(ACTION, () => {
     }
   );
 
-  // pnpm links a restored store's files without hashing them again, and code a job builds can
-  // write the cache of its branch (publish-canary builds fork PRs on next), so a cached store
-  // could carry injected code into every job that restores it. Yarn checks its cache against
-  // yarn.lock, so pre-migration Yarn trees keep theirs.
   it('restores and saves a cache only for Yarn checkouts', () => {
     const steps: Step[] = parse(read(`${ACTION}/action.yml`)).runs.steps;
     const cacheSteps = steps.filter(({ uses }) => uses?.startsWith('actions/cache'));

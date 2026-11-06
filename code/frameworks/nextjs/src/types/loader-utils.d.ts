@@ -1,5 +1,4 @@
-// loader-utils v3 ships no types, and @types/loader-utils@2 is written against webpack 4's
-// `loader.LoaderContext`. Declare the one helper we use against webpack 5.
+// loader-utils 3 ships no types, and @types/loader-utils targets webpack 4.
 declare module 'loader-utils' {
   import type { LoaderContext } from 'webpack';
 

@@ -56,8 +56,7 @@ export const sandbox: Task = {
     // Must sanitize options here too to ensure we run the right prerequisite tasks.
     sanitizeOptions(details, options);
 
-    // An in-development template has no published repro yet, so `generate` creates it locally;
-    // the sandbox then installs the monorepo packages as usual, linked or from the registry.
+    // An in-development template has no published repro, so `generate` creates it locally.
     if ('inDevelopment' in details.template && details.template.inDevelopment) {
       const install = options.link ? 'compile' : 'run-registry';
       return isSandboxReady(details.sandboxDir, options.task) ? [install] : [install, 'generate'];
@@ -189,8 +188,8 @@ export const sandbox: Task = {
 
     // After sb init the kept before-storybook lockfile can leave nested copies
     // of shared packages (notably react under @storybook/addon-docs). Collapse
-    // those before we cache/run the sandbox. Dedupe first: in the hoisted layout
-    // it leaves stray nested packages behind, which the clean install drops.
+    // those before we cache/run the sandbox. The clean install after the dedupe
+    // drops the stray nested packages it leaves in the hoisted layout.
     await exec(
       'pnpm dedupe',
       { cwd: details.sandboxDir },
@@ -210,8 +209,8 @@ export const sandbox: Task = {
     await extendPreview(details, options);
 
     // For NX we move the sandbox to a directory that can be cached.
-    // We remove node_modules to keep the remote cache small and fast;
-    // the consuming task restores them from the pnpm store.
+    // We remove node_modules to keep the remote cache small and fast.
+    // The consuming task restores them from the pnpm store.
     if (isNxTaskExecution()) {
       logger.info('✅ Moving sandbox to cache directory');
       const sandboxDir = join(details.sandboxDir);

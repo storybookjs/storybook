@@ -27,8 +27,6 @@ afterEach(() => {
   fixtureRoots.splice(0).forEach((root) => rmSync(root, { recursive: true, force: true }));
 });
 
-// A shallow checkout of pull request 1, as the CircleCI setup job clones it, with an origin that
-// has GitHub's `refs/pull/1/merge`.
 function checkoutPullRequest({
   changesLockfile,
   baseChangesLockfile = false,

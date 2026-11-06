@@ -38,9 +38,8 @@ jobs:
           ref: main
           token: ${{ secrets.GH_TOKEN }}
 
-      # This workflow runs from next but prepares the release from main, which keeps using Yarn
-      # until a release brings the pnpm migration to it. The action installs the checkout with its
-      # own package manager and reports which one, for the release scripts below.
+      # Loaded from the workflow commit (`$/`) because main, checked out above, uses Yarn until a
+      # release brings pnpm to it.
       - name: Setup Node.js and Install Dependencies
         id: setup
         uses: $/.github/actions/setup-node-and-install

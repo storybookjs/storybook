@@ -24,9 +24,9 @@ import { isNxTaskExecution } from './utils/nx.ts';
  * This is called at the start of each downstream task's `run()` (dev, build, serve, etc.)
  * instead of being a separate NX target, so that NX Cloud doesn't have uncacheable tasks.
  *
- * When not running under NX (i.e. when using `pnpm task` directly), it only refreshes a linked
- * sandbox's copies of the monorepo packages, so the latest compile is what the task runs. It is a
- * no-op under NX when the sandbox is already prepared (node_modules exist).
+ * When not running under NX (i.e. when using `pnpm task` directly), it only syncs the monorepo
+ * packages into a linked sandbox, so the task runs the latest compile. It is a no-op under NX when
+ * the sandbox is already prepared (node_modules exist).
  */
 export async function prepareSandbox({
   key,
@@ -35,16 +35,16 @@ export async function prepareSandbox({
 }: {
   key: string;
   link: boolean;
-  /** Where tasks actually run (e.g. ../storybook-sandboxes/react-vite-default-ts). */
+  // Where tasks actually run, e.g. ../storybook-sandboxes/react-vite-default-ts.
   sandboxDir: string;
 }): Promise<void> {
   // Where NX caches sandbox output (e.g. sandbox/react-vite-default-ts, inside repo)
   const cacheDir = join(ROOT_DIRECTORY, 'sandbox', key.replace('/', '-'));
 
   // When running via `pnpm task`, the sandbox task already fully initializes
-  // the sandbox (including node_modules), so no preparation is needed.
+  // the sandbox (including node_modules), so only linked packages need a refresh.
   if (!isNxTaskExecution()) {
-    // Loaded lazily: it imports from `code/`, like `tasks/sandbox-parts.ts`.
+    // Imported lazily because it imports from `code/`, which may not be installed yet.
     const { isLinkedSandbox, syncLinkedPackages } = await import('./utils/pnpm.ts');
     if (link && (await isLinkedSandbox(sandboxDir))) {
       await syncLinkedPackages({ cwd: sandboxDir, dryRun: false, debug: false });
@@ -80,8 +80,7 @@ export async function prepareSandbox({
     }
 
     // Restore node_modules — the NX cache deliberately excludes them to keep
-    // the remote cache small. The pnpm store is shared, so this is fast, and the
-    // cached lockfile makes a frozen install reproduce the sandbox exactly.
+    // the remote cache small. The pnpm store is shared, so this is fast.
     await exec('pnpm install --frozen-lockfile', { cwd: sandboxDir }, { debug: true });
   }
 

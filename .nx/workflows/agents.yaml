@@ -3,8 +3,6 @@
 linux-init-steps: &linux-init-steps
   - name: Checkout
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/checkout/main.yaml'
-  # The pnpm store at its default Linux location, which the sandbox installs on the agent share.
-  # The Verify step prints the store path pnpm actually uses.
   - name: Restore Node Modules Cache
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
     inputs:
@@ -14,23 +12,18 @@ linux-init-steps: &linux-init-steps
       base-branch: 'next'
   - name: Install Node
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node/main.yaml'
-  # corepack runs the pnpm release pinned by the packageManager field in package.json.
   - name: Install Node Modules
     script: |
       corepack enable pnpm
-      # corepack only replaces the shims in its own directory; a pnpm earlier on PATH would run unpinned.
+      # Fail if a pnpm earlier on PATH shadows corepack's shim.
       test "$(pnpm --version)" = "$(node -p "require('./package.json').packageManager.replace(/^pnpm@|\\+.*$/g, '')")"
       pnpm install --frozen-lockfile
 
 linux-browsers-init-steps: &linux-browsers-init-steps
   - name: Checkout
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/checkout/main.yaml'
-  # Sandboxes install the @storybook/* packages from a local registry that republishes the same
-  # versions with new contents on each pipeline. The global Yarn cache could serve a stale copy
-  # from a previous pipeline, so its @storybook entries were purged before installing. No purge
-  # is needed for pnpm: the store indexes packages by tarball integrity, so a republished package
-  # is a new store entry, and the sandbox setup drops pnpm's cached registry metadata for these
-  # packages before each install. Keep pnpm's metadata cache (~/.cache/pnpm) out of these paths.
+  # The store keys packages by tarball integrity, so it never serves a stale copy of the
+  # @storybook/* versions that the local registry republishes with new contents.
   - name: Restore Node Modules Cache
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
     inputs:
@@ -50,7 +43,7 @@ linux-browsers-init-steps: &linux-browsers-init-steps
   - name: Install Node Modules
     script: |
       corepack enable pnpm
-      # corepack only replaces the shims in its own directory; a pnpm earlier on PATH would run unpinned.
+      # Fail if a pnpm earlier on PATH shadows corepack's shim.
       test "$(pnpm --version)" = "$(node -p "require('./package.json').packageManager.replace(/^pnpm@|\\+.*$/g, '')")"
       pnpm install --frozen-lockfile
   - name: Install Browsers
@@ -63,8 +56,6 @@ linux-browsers-init-steps: &linux-browsers-init-steps
       echo "pnpm store:   $(pnpm store path)"
       echo "home:         $HOME"
       git diff --exit-code
-      # No `pnpm dedupe --check`: it also fails once newer versions in range pass the release-age
-      # gate. CircleCI runs it on pull requests that change pnpm-lock.yaml.
 
 common-env-vars: &common-env-vars
   STORYBOOK_DISABLE_TELEMETRY: true

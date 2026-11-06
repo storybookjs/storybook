@@ -19,11 +19,8 @@ const dirname = import.meta.dirname;
 
 const LOCKFILE = 'pnpm-lock.yaml';
 
-// refs/pull/<n>/merge is the pull request merged into its base, so comparing it with its first
-// parent needs two commits of history, where a merge base can be any number of commits back.
-// GitHub stops updating it while the pull request conflicts; HEAD's lockfile is then compared
-// with the base it last merged into. The fetch goes into a scratch repository because a
-// `--depth` fetch marks the parents it stops at as shallow, cutting the checkout's history.
+// The first parent of refs/pull/<n>/merge is the base branch, so two commits of history are
+// enough to diff the pull request.
 function pullRequestChangesLockfile(prNumber: string): boolean {
   if (!/^\d+$/.test(prNumber)) {
     throw new Error(`Invalid pull request number "${prNumber}"`);
@@ -35,6 +32,7 @@ function pullRequestChangesLockfile(prNumber: string): boolean {
       stdio: ['ignore', 'pipe', 'pipe'],
       timeout: 60_000,
     }).trim();
+  // A `--depth` fetch into the checkout would cut its history.
   const scratch = mkdtempSync(join(tmpdir(), 'pull-request-merge-'));
   try {
     const origin = git('.', 'remote', 'get-url', 'origin');
@@ -52,6 +50,7 @@ function pullRequestChangesLockfile(prNumber: string): boolean {
       const diff = ['diff', '--no-renames', '--name-only', 'FETCH_HEAD^1', 'FETCH_HEAD'];
       return git(scratch, ...diff, '--', LOCKFILE) !== '';
     }
+    // GitHub stops updating the merge ref while the pull request conflicts with its base.
     console.warn(
       `refs/pull/${prNumber}/merge does not merge HEAD, so ${LOCKFILE} is compared with its base`
     );

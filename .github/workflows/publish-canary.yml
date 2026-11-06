@@ -122,8 +122,7 @@ jobs:
           persist-credentials: false
 
       # After checkout of PR head, ./ would run that tree's action.yml.
-      # The canary source can predate the pnpm migration; the action then installs it with Yarn
-      # and reports which package manager the tree uses.
+      # A canary source from before the pnpm migration uses Yarn.
       - name: Setup Node.js and Install Dependencies
         id: setup
         uses: $/.github/actions/setup-node-and-install
@@ -153,8 +152,7 @@ jobs:
           # --pnpm / --yarn pack with that package manager, which rewrites leftover workspace:
           # ranges (npm pack leaves them; npm install then fails with EUNSUPPORTEDPROTOCOL).
           if [ "$PM" = pnpm ]; then
-            # The workspace root is the project with the shortest path; pass the public packages
-            # relative to it, as Yarn's .location was.
+            # The workspace root is the project with the shortest path.
             pnpm ls --recursive --depth -1 --json \
               | jq -j '(map(.path) | min_by(length)) as $root
                   | .[] | select(.private != true)

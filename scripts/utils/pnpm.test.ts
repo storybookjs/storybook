@@ -44,7 +44,6 @@ beforeEach(async () => {
   vol.mkdirSync(SANDBOX, { recursive: true });
 });
 
-/** A sandbox as downloaded from the published repository: a Yarn 4 project. */
 const publishedSandbox = (yarnConfig: Record<string, unknown> = {}) => {
   vol.writeFileSync(
     `${SANDBOX}/package.json`,
@@ -79,8 +78,6 @@ describe('installPnpm', () => {
 
     await install();
 
-    // Without its own workspace file, a sandbox inside the monorepo (the NX cache copy) would
-    // install the monorepo instead.
     expect(readWorkspaceConfig()).toMatchObject({ packages: ['.'], nodeLinker: 'hoisted' });
   });
 
@@ -97,7 +94,6 @@ describe('installPnpm', () => {
 
     await install();
 
-    // They are published to the local registry seconds before they are installed.
     expect(readWorkspaceConfig().minimumReleaseAgeExclude).toEqual(
       expect.arrayContaining([
         'storybook',
@@ -178,7 +174,6 @@ describe('configurePnpmForVerdaccio', () => {
     await configurePnpmForVerdaccio({ cwd: SANDBOX, dryRun: false, debug: false });
 
     const [[purge]] = vi.mocked(exec).mock.calls;
-    // Both the abbreviated and the full metadata caches; the gate makes installs use the latter.
     expect(purge).toEqual([
       expect.stringMatching(
         /^pnpm cache delete --registry=http:\/\/localhost:6001\/ .*'@storybook\/\*'/
@@ -253,7 +248,6 @@ describe('syncLinkedPackages', () => {
     await syncLinkedPackages({ cwd: SANDBOX, dryRun: false, debug: false });
 
     expect(vol.existsSync(`${SANDBOX}/node_modules/storybook`)).toBe(false);
-    // Only packages linked from this checkout's code/ directory.
     expect(vol.existsSync(`${SANDBOX}/node_modules/react`)).toBe(true);
     expect(vol.existsSync(`${SANDBOX}/node_modules/local-fork`)).toBe(true);
     expect(commands()).toEqual(['pnpm install --prefer-offline']);

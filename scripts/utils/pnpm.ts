@@ -22,10 +22,9 @@ export type SandboxPmOptions = {
 
 const logger = console;
 
-/** The 7-day age gate published sandboxes are generated under, in minutes. */
+// 7 days in minutes, the age gate the published sandboxes are generated with.
 export const SANDBOX_MINIMUM_RELEASE_AGE = 10080;
 
-/** The local registry proxy started by `scripts/run-registry.ts`. */
 const LOCAL_REGISTRY_URL = 'http://localhost:6001/';
 
 const WORKSPACE_PEERS_HOOK = join(SCRIPTS_DIRECTORY, 'utils', 'workspace-peers.pnpmfile.cjs');
@@ -64,16 +63,13 @@ async function updateWorkspaceConfig(
   await writeFile(path, yml.stringify(update(await readYaml(path))));
 }
 
-/** The monorepo's `packageManager` spec, e.g. `pnpm@10.34.9+sha512.…`. */
 async function getMonorepoPackageManager(): Promise<string> {
   const { packageManager } = await readJson(join(ROOT_DIRECTORY, 'package.json'));
   return packageManager;
 }
 
-/**
- * Sandboxes install with the monorepo's pnpm. An older pnpm on PATH ignores the sandbox's
- * `packageManager` pin and silently drops settings it does not know, the age gate among them.
- */
+// An older pnpm on PATH ignores the `packageManager` pin and silently drops settings it does not
+// know, such as the age gate.
 async function assertPinnedPnpm(cwd: string) {
   const expected = (await getMonorepoPackageManager()).replace(/^pnpm@/, '').split('+')[0];
   const { stdout } = await execaCommand('pnpm --version', { cwd, shell: true });
@@ -85,18 +81,6 @@ async function assertPinnedPnpm(cwd: string) {
   }
 }
 
-/**
- * Turn a freshly created sandbox into a standalone pnpm project that keeps the published sandbox's
- * protections: the locked dependency versions and a 7-day age gate.
- *
- * - Pins the monorepo's pnpm through `packageManager`.
- * - Writes the sandbox's own `pnpm-workspace.yaml`, so pnpm never treats the sandbox as part of an
- *   enclosing workspace (the NX cache copy lives inside the monorepo). It carries the age gate, with
- *   the locally published Storybook packages and the template's exemptions excluded from it, and
- *   the hoisted linker, which lays out `node_modules` like the Yarn sandboxes did.
- * - Allows lockfile updates on CI, as Yarn's `enableImmutableInstalls false` did: `storybook init`
- *   and later steps change the manifest.
- */
 export const installPnpm = async ({
   cwd,
   dryRun,
@@ -114,12 +98,14 @@ export const installPnpm = async ({
   packageJson.packageManager = await getMonorepoPackageManager();
   await writeJson(packageJsonPath, packageJson);
 
-  // A template's own Yarn allowlist (if any) carries over to the pnpm exclusions.
   const yarnConfig = await readYaml(join(cwd, '.yarnrc.yml'));
 
+  // Without its own pnpm-workspace.yaml, a sandbox inside the monorepo (the NX cache copy) would
+  // install the monorepo instead.
   await updateWorkspaceConfig(cwd, (config) => ({
     ...config,
     packages: ['.'],
+    // Matches the flat node_modules of the published sandboxes, which are Yarn projects.
     nodeLinker: 'hoisted',
     minimumReleaseAge: SANDBOX_MINIMUM_RELEASE_AGE,
     minimumReleaseAgeExclude: Array.from(
@@ -130,6 +116,7 @@ export const installPnpm = async ({
         ...(allTemplates[key].minAgeGateExemptions ?? []),
       ])
     ),
+    // pnpm installs frozen on CI, but `storybook init` and later steps change the manifest.
     frozenLockfile: false,
   }));
 
@@ -140,12 +127,7 @@ export const installPnpm = async ({
   }
 };
 
-/**
- * Convert the published sandbox's `yarn.lock` with `pnpm import`, which keeps its locked versions,
- * then remove what is left of Yarn: the Storybook CLI picks Yarn while a `yarn.lock` exists, and a
- * Yarn-installed `node_modules` would survive a pnpm install. Run it after the registry is
- * configured, so the import resolves through the same registry as the install.
- */
+// Run it after the registry is configured, so `pnpm import` uses the same registry as the install.
 export const importYarnLockfile = async ({ cwd, dryRun, debug }: SandboxPmOptions) => {
   if (dryRun) {
     return;
@@ -179,8 +161,8 @@ export const addPackageResolutions = async ({ cwd, dryRun }: SandboxPmOptions) =
 
   const packageJsonPath = join(cwd, 'package.json');
   const packageJson = await readJson(packageJsonPath);
-  // pnpm reads a top-level `resolutions` field as overrides. Every sandbox writer uses it, because
-  // a non-empty `resolutions` makes pnpm ignore the `overrides` in pnpm-workspace.yaml entirely.
+  // A non-empty `resolutions` makes pnpm ignore the `overrides` in pnpm-workspace.yaml, so every
+  // sandbox override goes in `resolutions`.
   packageJson.resolutions = {
     ...packageJson.resolutions,
     ...storybookVersions,
@@ -249,14 +231,8 @@ export const addWorkaroundResolutions = async ({
   await writeJson(packageJsonPath, packageJson);
 };
 
-/**
- * Point the sandbox at the local registry, which serves the Storybook packages published from this
- * checkout. The registry belongs in `.npmrc`: pnpm ignores a `registry` key in pnpm-workspace.yaml.
- *
- * Each run republishes the same versions with new contents, while pnpm reuses cached registry
- * metadata (up to the age gate's 7 days old) without asking the registry again. Drop the cached
- * metadata of the locally published packages so this install sees what was just published.
- */
+// pnpm ignores a `registry` key in pnpm-workspace.yaml. Each run republishes the same versions
+// with new contents, which pnpm's metadata cache would hide.
 export const configurePnpmForVerdaccio = async ({ cwd, dryRun, debug }: SandboxPmOptions) => {
   if (dryRun) {
     return;
@@ -288,16 +264,8 @@ export const configurePnpmForVerdaccio = async ({ cwd, dryRun, debug }: SandboxP
   );
 };
 
-/**
- * Install every publishable monorepo package into the sandbox from its `code/` directory, through
- * `file:` overrides. pnpm hard-links the package's published files from `code/` and installs its
- * dependencies in the sandbox, resolving peers such as react, next or @angular/* against the
- * sandbox, as Yarn portals did. A `link:` symlink would make the package resolve everything from
- * the monorepo's own `node_modules` instead.
- *
- * The hard links share their files with `code/`, so editing one edits the monorepo, but a build
- * replaces the files; `syncLinkedPackages` links the new build.
- */
+// `file:` installs each package's dependencies and peers in the sandbox, where `link:` would
+// resolve them from the monorepo's `node_modules`. `syncLinkedPackages` picks up a new build.
 export const linkMonorepoPackages = async ({ cwd, dryRun, debug }: SandboxPmOptions) => {
   logger.info(`🔗 Linking monorepo packages`);
 
@@ -323,7 +291,6 @@ export const linkMonorepoPackages = async ({ cwd, dryRun, debug }: SandboxPmOpti
   };
   await writeJson(packageJsonPath, packageJson);
 
-  // The linked manifests still carry `workspace:` peer ranges; the hook rewrites them.
   await updateWorkspaceConfig(cwd, (config) => ({ ...config, pnpmfile: WORKSPACE_PEERS_HOOK }));
 
   if (debug) {
@@ -331,7 +298,6 @@ export const linkMonorepoPackages = async ({ cwd, dryRun, debug }: SandboxPmOpti
   }
 };
 
-/** The packages the sandbox installs from this checkout's `code/` through `file:` resolutions. */
 async function getLinkedPackageNames(cwd: string): Promise<string[]> {
   const packageJsonPath = join(cwd, 'package.json');
   if (!(await pathExists(packageJsonPath))) {
@@ -348,17 +314,12 @@ async function getLinkedPackageNames(cwd: string): Promise<string[]> {
     .map(([name]) => name);
 }
 
-/** Whether the sandbox installs the monorepo packages from `code/` (link mode). */
 export async function isLinkedSandbox(cwd: string) {
   return (await getLinkedPackageNames(cwd)).length > 0;
 }
 
-/**
- * Bring the sandbox's linked packages up to date with the latest build. pnpm links a `file:`
- * package's files once and never re-imports an installed one (not even with `--force`), while a
- * build deletes `dist` and writes new content-hashed chunks. Remove the installed packages, so the
- * install links the current build; being non-frozen, it also installs new dependencies of a package.
- */
+// pnpm never re-imports an installed `file:` package, not even with `--force`, so a new build only
+// reaches the sandbox once the installed copies are removed.
 export const syncLinkedPackages = async ({ cwd, dryRun, debug }: SandboxPmOptions) => {
   if (!dryRun) {
     // The resolutions pin one version of each linked package, so the hoisted linker installs it at

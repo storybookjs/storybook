@@ -47,9 +47,6 @@ jobs:
         with:
           install-code-deps: true
 
-      # fmt:check is a root script. Yarn ran a colon script defined in a single workspace from any
-      # workspace, so `cd code && yarn fmt:check` checked the whole repo; pnpm only runs the
-      # scripts of the package it is in.
       - name: oxfmt
         run: pnpm fmt:check
 

@@ -24,8 +24,7 @@ node -v
 npm -v
 npm info storybook version
 
-# Corepack provides the pnpm version pinned in package.json#packageManager. Calling it explicitly
-# (rather than through `corepack enable` shims) never prompts before downloading, also under sudo.
+# Unlike `corepack enable` shims, calling `corepack pnpm` directly never prompts before downloading.
 printf '#!/bin/sh\nexec corepack pnpm "$@"\n' | $SUDO tee /usr/local/bin/pnpm >/dev/null
 $SUDO chmod +x /usr/local/bin/pnpm
 pnpm --version

@@ -27,18 +27,13 @@ runs:
       # zizmor: ignore[adhoc-packages]  # replaces the runner's npm before the lockfile install
       run: npm install -g npm@12
 
-    # corepack provides the pnpm release that the packageManager field pins, hash included.
-    # Node >= 25 no longer bundles it; this is the release Node 22.22.3 bundles, as pinned in
-    # scripts/ci/utils/helpers.ts.
+    # The corepack release that Node 22.22.3 bundles.
     - name: Install corepack
       shell: bash
-      # zizmor: ignore[adhoc-packages]  # only runs where Node no longer bundles corepack
+      # zizmor: ignore[adhoc-packages]  # only runs where Node does not bundle corepack
       run: command -v corepack >/dev/null 2>&1 || npm install -g corepack@0.34.6
 
-    # The checkout decides the package manager, not this action: publish-canary.yml loads this
-    # action from the workflow commit (`$/`) and then builds any PR head, branch or SHA,
-    # agent-eval.yml builds the PR head, and prepare-patch-release.yml installs main. Such a tree
-    # can still be from before the pnpm migration.
+    # The checkout can be a tree from before the pnpm migration, such as main.
     - name: Select package manager
       id: package-manager
       shell: bash
@@ -47,8 +42,7 @@ runs:
         case "$package_manager" in
           pnpm@*)
             corepack enable pnpm
-            # corepack only replaces the shims in its own directory; a pnpm earlier on PATH would
-            # run unpinned.
+            # Fail if a pnpm earlier on PATH shadows corepack's shim.
             pinned="${package_manager#pnpm@}"
             pinned="${pinned%%+*}"
             actual="$(pnpm --version)"
@@ -68,13 +62,10 @@ runs:
             ;;
         esac
 
-    # No cache for pnpm installs. pnpm links the files of a restored store without hashing them
-    # again, so a tampered store would run in every job that restores it, and code that a job
-    # builds can write the cache of the branch it runs on: publish-canary builds fork PRs on next.
-    # Yarn's cache below is safe to share because Yarn checks every archive against yarn.lock.
+    # pnpm installs are not cached, since pnpm trusts a restored store without rehashing it and
+    # publish-canary builds fork PRs whose code could write next's cache.
 
-    # `@storybook/scripts...` selects scripts plus the workspace packages it depends on
-    # (storybook, eslint-plugin-storybook), which is what the release scripts import.
+    # The `...` suffix also installs the workspace packages that @storybook/scripts depends on.
     - name: Install script dependencies
       if: steps.package-manager.outputs.name == 'pnpm' && inputs.install-code-deps != 'true'
       shell: bash
@@ -85,7 +76,6 @@ runs:
       shell: bash
       run: pnpm install --frozen-lockfile
 
-    # Yarn checkouts install as they did before the pnpm migration.
     # Restore only — save is gated below. actions/cache's post-job save step uses a
     # runner-internal token that bypasses `permissions:`, so splitting is the only
     # reliable way to prevent pull_request_target runs from poisoning the shared cache.

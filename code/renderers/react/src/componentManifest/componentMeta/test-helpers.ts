@@ -2,11 +2,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-/**
- * Resolve a package's directory, optionally from another package's context. Packages cannot be
- * assumed to share one node_modules directory: transitive dependencies such as csstype (a
- * dependency of @types/react) are only reachable from the package that depends on them.
- */
+// A transitive dependency such as csstype resolves only from the package that depends on it.
 function packageDir(pkg: string, fromDir?: string): string {
   return path.dirname(
     require.resolve(`${pkg}/package.json`, fromDir ? { paths: [fromDir] } : undefined)

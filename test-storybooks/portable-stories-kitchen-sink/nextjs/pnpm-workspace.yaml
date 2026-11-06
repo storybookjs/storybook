@@ -1,20 +1,16 @@
-# A standalone project inside the monorepo: listing only itself stops pnpm from installing the
-# monorepo's workspace instead.
+# Without its own workspace root here, pnpm would install the monorepo's workspace.
 packages:
   - .
 
-# The node_modules layout the Yarn install had.
 nodeLinker: hoisted
 
 minimumReleaseAge: 10080
 
-# Reviewed and deliberately not run: @swc/core and esbuild install their native binary as an
-# optional platform package and only fetch one when it is missing, and core-js-pure prints a
-# funding message.
+# @swc/core and esbuild work without their postinstall, using their platform package's binary.
+# core-js-pure's postinstall only prints a funding message.
 ignoredBuiltDependencies:
   - '@swc/core'
   - core-js-pure
   - esbuild
 
-# Rewrites the `workspace:` peer ranges of the Storybook packages installed from code/.
 pnpmfile: ../../../scripts/utils/workspace-peers.pnpmfile.cjs

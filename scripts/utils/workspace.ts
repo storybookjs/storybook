@@ -15,7 +15,6 @@ type PnpmProject = { name: string; path: string; private?: boolean };
  * to the code directory.
  */
 export async function getCodeWorkspaces(includePrivate = true) {
-  // Prints a single JSON array of every workspace project (root included) with absolute paths.
   const { stdout } = await execaCommand('pnpm m ls --json --depth -1', {
     cwd: ROOT_DIRECTORY,
     shell: true,
@@ -24,8 +23,6 @@ export async function getCodeWorkspaces(includePrivate = true) {
     .filter((it) => includePrivate || !it.private)
     .filter(({ name }) => name !== '@storybook/root' && name !== '@storybook/scripts')
     .map((it) => {
-      // POSIX separators on every OS: the `code/` prefix check below relies on them, and sandbox
-      // setup writes locations into main.ts stories globs.
       const location = relative(ROOT_DIRECTORY, it.path).split(sep).join('/');
       return {
         name: it.name,

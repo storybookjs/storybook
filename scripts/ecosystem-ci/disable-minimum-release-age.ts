@@ -3,7 +3,6 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'pathe';
 import { parse, stringify } from 'yaml';
 
-/** Turn off the sandbox's pnpm age gate, kept in its own pnpm-workspace.yaml. */
 export async function disableMinimumReleaseAge(sandboxDir: string) {
   const configPath = join(sandboxDir, 'pnpm-workspace.yaml');
 

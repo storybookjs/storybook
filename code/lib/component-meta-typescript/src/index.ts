@@ -7,7 +7,7 @@ export {
   type DocgenTypeChecker,
   type DocgenTypeScript,
 } from './docgen-typescript.ts';
-export { NativeFacades } from './native/native-checker.ts';
+export { NativeFacades } from './native/native-facades.ts';
 export {
   createNativeDocgenTypeScript,
   createNativeSystem,

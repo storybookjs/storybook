@@ -18,7 +18,7 @@ import {
   type DocgenSystem,
   type DocgenTypeScript,
 } from '../docgen-typescript.ts';
-import { NativeFacades } from './native-checker.ts';
+import { NativeFacades } from './native-facades.ts';
 
 type DocgenNodeGuard = (typeof DOCGEN_NODE_GUARDS)[number];
 

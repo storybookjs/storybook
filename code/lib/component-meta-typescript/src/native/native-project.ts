@@ -22,7 +22,7 @@ import type {
 } from 'typescript-native/sync';
 
 import type { DocgenTypeChecker } from '../docgen-typescript.ts';
-import { NativeFacades } from './native-checker.ts';
+import { NativeFacades } from './native-facades.ts';
 import type { NativeDocgenTypeScript } from './native-typescript.ts';
 
 // What a native project parses from a tsconfig: core's subset plus the options the program needs.

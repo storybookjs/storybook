@@ -133,6 +133,28 @@ describe('publishAllPackages', () => {
     expect(vi.mocked(execaCommand).mock.calls[1][0]).not.toContain('--filter=storybook');
   });
 
+  it('keeps retrying while each attempt publishes more packages', async () => {
+    const stoppedAt = (published: string) =>
+      Object.assign(new Error('pnpm publish exited 1'), {
+        stdout: `+ ${published}@10.6.0-alpha.6`,
+      });
+    const packageNames = ['a', 'b', 'c', 'd'];
+    vi.mocked(execaCommand)
+      .mockRejectedValueOnce(stoppedAt('a'))
+      .mockRejectedValueOnce(stoppedAt('b'))
+      .mockRejectedValueOnce(stoppedAt('c'))
+      .mockResolvedValueOnce({} as never);
+    vi.mocked(listUnpublishedPackages)
+      .mockResolvedValueOnce(['b', 'c', 'd'])
+      .mockResolvedValueOnce(['c', 'd'])
+      .mockResolvedValueOnce(['d']);
+
+    await publishAllPackages({ ...options, packageNames });
+
+    expect(execaCommand).toHaveBeenCalledTimes(4);
+    expect(vi.mocked(execaCommand).mock.calls[3][0]).toBe(publishCommand('next', ['d']));
+  });
+
   it('fails with the missing package list after retries are exhausted', async () => {
     vi.mocked(execaCommand).mockRejectedValue(new Error('pnpm publish exited 1'));
     vi.mocked(listUnpublishedPackages).mockResolvedValue(['storybook']);

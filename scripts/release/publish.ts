@@ -47,7 +47,9 @@ type Options = {
 const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
 const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
-const MAX_PUBLISH_ATTEMPTS = 3;
+// pnpm stops at the first package that fails, so an attempt that leaves fewer packages to publish
+// than any before it starts the count over: each package gets this many tries in a row.
+const MAX_ATTEMPTS_WITHOUT_PROGRESS = 3;
 const REGISTRY_POLL_INTERVAL_MS = 15_000;
 const REGISTRY_POLL_TIMEOUT_MS = 15 * 60 * 1000;
 
@@ -122,8 +124,10 @@ export const publishAllPackages = async ({
   let unpublished = [...packageNames];
   const accepted = new Set<string>();
   let lastError: unknown;
+  let fewestToPublish = toPublish.length;
+  let attemptsWithoutProgress = 0;
 
-  for (let attempt = 1; attempt <= MAX_PUBLISH_ATTEMPTS; attempt += 1) {
+  for (let attempt = 1; ; attempt += 1) {
     const command = publishCommand(tag, toPublish);
     if (verbose) {
       console.log(`📦 Executing: ${command}`);
@@ -165,13 +169,16 @@ export const publishAllPackages = async ({
       toPublish = unpublished.filter((name) => !accepted.has(name));
 
       if (toPublish.length > 0) {
-        if (attempt === MAX_PUBLISH_ATTEMPTS) {
+        attemptsWithoutProgress =
+          toPublish.length < fewestToPublish ? 1 : attemptsWithoutProgress + 1;
+        fewestToPublish = Math.min(fewestToPublish, toPublish.length);
+        if (attemptsWithoutProgress === MAX_ATTEMPTS_WITHOUT_PROGRESS) {
           break;
         }
         console.log(
           picocolors.yellow(
             dedent`❗ ${unpublished.length} package(s) are not yet visible on npm: ${unpublished.join(', ')}
-            This was attempt number ${attempt}, there are ${MAX_PUBLISH_ATTEMPTS - attempt} retries left.
+            This was attempt number ${attempt}, there are ${MAX_ATTEMPTS_WITHOUT_PROGRESS - attemptsWithoutProgress} retries left without progress.
             Retrying publish for ${toPublish.join(', ')} only.`
           )
         );

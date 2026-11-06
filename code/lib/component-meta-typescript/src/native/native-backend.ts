@@ -1,7 +1,6 @@
-import type { ComponentMetaProjectFactory } from 'storybook/internal/component-meta';
-
 import type { API, RawCompilerOptions } from 'typescript-native/sync';
 
+import type { ComponentMetaBackend } from '../component-meta-backend.ts';
 import type { NativeCommandLine, NativeProject } from './native-project.ts';
 import {
   type NativeDocgenTypeScript,
@@ -24,14 +23,11 @@ export function createNativeBackend<Project extends NativeProject>(
   modules: NativeTypeScriptModules,
   ProjectClass: NativeProjectClass<Project>,
   inferredOptions: RawCompilerOptions
-): {
-  typescript: NativeDocgenTypeScript;
-  factory: ComponentMetaProjectFactory<Project, NativeCommandLine>;
-} {
+): ComponentMetaBackend<Project, NativeCommandLine> {
   const api = new modules.sync.API({ cwd: process.cwd() });
   const typescript = createNativeDocgenTypeScript(modules, api);
   return {
-    typescript,
+    fileSystem: typescript,
     factory: {
       parseCommandLine: (tsconfig) => {
         const { fileNames, options, projectReferences } = api.parseConfigFile(tsconfig);

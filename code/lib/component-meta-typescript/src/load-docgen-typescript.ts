@@ -23,9 +23,6 @@ export type LoadedDocgenTypeScript =
   | { api: 'compiler'; typescript: typeof ts }
   | { api: 'native'; typescript: NativeTypeScriptModules };
 
-// The `typescript` a component-meta manager runs on: the compiler API's module, or either loaded API.
-export type ComponentMetaTypeScript = typeof ts | LoadedDocgenTypeScript;
-
 const DOCGEN_APIS: readonly TypeScriptDocgenApi[] = ['compiler', 'native'];
 
 // Import an entry point of a TypeScript package by its subpath, such as `.` or `./sync`.

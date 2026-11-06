@@ -1,6 +1,5 @@
 import {
   ComponentMetaManager,
-  type ComponentMetaProjectFactory,
   type ProjectCommandLine,
   parseTsconfigCommandLine,
 } from 'storybook/internal/component-meta';
@@ -8,8 +7,9 @@ import {
 import type * as ts from 'typescript';
 import type { RawCompilerOptions } from 'typescript-native/sync';
 import {
-  type ComponentMetaTypeScript,
-  type NativeTypeScriptModules,
+  type ComponentMetaBackend,
+  type LoadedDocgenTypeScript,
+  createComponentMetaBackend,
   createNativeBackend,
 } from '@storybook/component-meta-typescript';
 
@@ -20,13 +20,6 @@ import type { AngularComponentMetaResult } from './types.ts';
 
 type ManagedProject = AngularComponentMetaProject | NativeAngularComponentMetaProject;
 
-interface AngularProjectBackend {
-  fileSystem: {
-    sys: { fileExists(path: string): boolean; directoryExists(path: string): boolean };
-  };
-  factory: ComponentMetaProjectFactory<ManagedProject, ProjectCommandLine>;
-}
-
 // Permissive defaults for files no tsconfig claims, which still use legacy decorators.
 const INFERRED_OPTIONS = {
   strict: false,
@@ -35,7 +28,9 @@ const INFERRED_OPTIONS = {
   experimentalDecorators: true,
 } as const;
 
-function createCompilerApiBackend(typescript: typeof ts): AngularProjectBackend {
+function createCompilerApiBackend(
+  typescript: typeof ts
+): ComponentMetaBackend<AngularComponentMetaProject, ts.ParsedCommandLine> {
   const fsFileSnapshots: FsFileSnapshots = new Map();
 
   // Shared so projects reuse parsed SourceFiles instead of each holding a private copy of lib.d.ts.
@@ -43,7 +38,10 @@ function createCompilerApiBackend(typescript: typeof ts): AngularProjectBackend 
     typescript.sys.useCaseSensitiveFileNames
   );
 
-  const factory: ComponentMetaProjectFactory<AngularComponentMetaProject, ts.ParsedCommandLine> = {
+  const factory: ComponentMetaBackend<
+    AngularComponentMetaProject,
+    ts.ParsedCommandLine
+  >['factory'] = {
     parseCommandLine: (tsconfig) =>
       parseTsconfigCommandLine<ts.ParsedCommandLine>(typescript, tsconfig),
     createConfiguredProject: (commandLine, tsconfig, getCommandLine) =>
@@ -79,47 +77,31 @@ function createCompilerApiBackend(typescript: typeof ts): AngularProjectBackend 
     dispose: () => fsFileSnapshots.clear(),
   };
 
-  return {
-    fileSystem: typescript,
-    factory: factory as ComponentMetaProjectFactory<ManagedProject, ProjectCommandLine>,
-  };
+  return { fileSystem: typescript, factory };
 }
-
-function createNativeApiBackend(modules: NativeTypeScriptModules): AngularProjectBackend {
-  const { typescript, factory } = createNativeBackend(modules, NativeAngularComponentMetaProject, {
-    ...(INFERRED_OPTIONS as RawCompilerOptions),
-    target: modules.ast.ScriptTarget.Latest,
-    module: modules.sync.ModuleKind.ESNext,
-    moduleResolution: modules.sync.ModuleResolutionKind.Bundler,
-  });
-  return {
-    fileSystem: typescript,
-    factory: factory as ComponentMetaProjectFactory<ManagedProject, ProjectCommandLine>,
-  };
-}
-
-const createBackend = (typescript: ComponentMetaTypeScript): AngularProjectBackend => {
-  if (!('api' in typescript)) {
-    return createCompilerApiBackend(typescript);
-  }
-  return typescript.api === 'native'
-    ? createNativeApiBackend(typescript.typescript)
-    : createCompilerApiBackend(typescript.typescript);
-};
 
 /**
  * Extract argTypes-ready metadata for Angular components straight from their TypeScript sources.
  *
  * Keeps one warm program per matched tsconfig, so bracket the manager's lifetime with
- * `startWatching()`/`dispose()`. `typescript` is the `typescript` module (compiler API) or the
- * result of `loadDocgenTypeScript`, which selects the native API for TypeScript 7.1 and newer.
+ * `startWatching()`/`dispose()`. `typescript` is the result of `loadDocgenTypeScript`, which selects
+ * the native API for TypeScript 7.1 and newer.
  */
 export class AngularComponentMetaManager extends ComponentMetaManager<
   ManagedProject,
   ProjectCommandLine
 > {
-  constructor(typescript: ComponentMetaTypeScript) {
-    const { fileSystem, factory } = createBackend(typescript);
+  constructor(typescript: LoadedDocgenTypeScript) {
+    const { fileSystem, factory } = createComponentMetaBackend(typescript, {
+      compiler: createCompilerApiBackend,
+      native: (modules) =>
+        createNativeBackend(modules, NativeAngularComponentMetaProject, {
+          ...(INFERRED_OPTIONS as RawCompilerOptions),
+          target: modules.ast.ScriptTarget.Latest,
+          module: modules.sync.ModuleKind.ESNext,
+          moduleResolution: modules.sync.ModuleResolutionKind.Bundler,
+        }),
+    });
     super(fileSystem, factory);
   }
 

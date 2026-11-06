@@ -16,8 +16,5 @@ export {
 } from './native/native-typescript.ts';
 export { NativeProject, type NativeCommandLine } from './native/native-project.ts';
 export { createNativeBackend } from './native/native-backend.ts';
-export {
-  loadDocgenTypeScript,
-  type ComponentMetaTypeScript,
-  type LoadedDocgenTypeScript,
-} from './load-docgen-typescript.ts';
+export { loadDocgenTypeScript, type LoadedDocgenTypeScript } from './load-docgen-typescript.ts';
+export { createComponentMetaBackend, type ComponentMetaBackend } from './component-meta-backend.ts';

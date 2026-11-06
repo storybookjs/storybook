@@ -14,7 +14,6 @@
  */
 import {
   ComponentMetaManager as BaseComponentMetaManager,
-  type ComponentMetaProjectFactory,
   type FileSnapshotCache,
   type ProjectCommandLine,
   parseTsconfigCommandLine,
@@ -28,8 +27,9 @@ import { groupByToMap } from '../utils.ts';
 import type { RawCompilerOptions } from 'typescript-native/sync';
 
 import {
-  type ComponentMetaTypeScript,
-  type NativeTypeScriptModules,
+  type ComponentMetaBackend,
+  type LoadedDocgenTypeScript,
+  createComponentMetaBackend,
   createNativeBackend,
 } from '@storybook/component-meta-typescript';
 
@@ -50,25 +50,15 @@ type FsFileSnapshots = FileSnapshotCache<ts.IScriptSnapshot>;
 
 type ManagedProject = ComponentMetaProject | NativeComponentMetaProject;
 
-interface ReactProjectBackend {
-  // The filesystem probes core's manager runs during tsconfig discovery and watching.
-  fileSystem: {
-    sys: { fileExists(path: string): boolean; directoryExists(path: string): boolean };
-  };
-  factory: ComponentMetaProjectFactory<ManagedProject, ProjectCommandLine>;
-  fsFileSnapshots: FsFileSnapshots;
-}
-
 /**
- * Builds the compiler-API project factory plus the snapshot cache it closes over. The cache is
- * shared across every project the factory creates (Volar Kit checker pattern) and returned
- * separately so the manager can expose it to tests; it is cleared through the factory's `dispose`.
+ * Builds the compiler-API project factory over a snapshot cache. The cache is shared across every
+ * project the factory creates (Volar Kit checker pattern) and owned by the manager, which exposes it
+ * to tests; it is cleared through the factory's `dispose`.
  */
-function createCompilerApiBackend(typescript: typeof ts): ReactProjectBackend {
-  // Adapted from:
-  // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L83
-  const fsFileSnapshots: FsFileSnapshots = new Map();
-
+function createCompilerApiBackend(
+  typescript: typeof ts,
+  fsFileSnapshots: FsFileSnapshots
+): ComponentMetaBackend<ComponentMetaProject, ts.ParsedCommandLine> {
   /**
    * Shared across every project so they reuse parsed+bound SourceFiles instead of each holding a
    * private copy of lib.d.ts, React's types and node_modules.
@@ -84,7 +74,7 @@ function createCompilerApiBackend(typescript: typeof ts): ReactProjectBackend {
     typescript.sys.useCaseSensitiveFileNames
   );
 
-  const factory: ComponentMetaProjectFactory<ComponentMetaProject, ts.ParsedCommandLine> = {
+  const factory: ComponentMetaBackend<ComponentMetaProject, ts.ParsedCommandLine>['factory'] = {
     parseCommandLine: (tsconfig) =>
       parseTsconfigCommandLine<ts.ParsedCommandLine>(typescript, tsconfig),
     createConfiguredProject: (commandLine, tsconfig, getCommandLine) =>
@@ -118,53 +108,38 @@ function createCompilerApiBackend(typescript: typeof ts): ReactProjectBackend {
     dispose: () => fsFileSnapshots.clear(),
   };
 
-  return {
-    fileSystem: typescript,
-    factory: factory as ComponentMetaProjectFactory<ManagedProject, ProjectCommandLine>,
-    fsFileSnapshots,
-  };
+  return { fileSystem: typescript, factory };
 }
-
-function createNativeApiBackend(modules: NativeTypeScriptModules): ReactProjectBackend {
-  const { typescript, factory } = createNativeBackend(modules, NativeComponentMetaProject, {
-    ...(DEFAULT_INFERRED_OPTIONS as RawCompilerOptions),
-    target: modules.ast.ScriptTarget.Latest,
-    module: modules.sync.ModuleKind.ESNext,
-    moduleResolution: modules.sync.ModuleResolutionKind.Bundler,
-    jsx: modules.sync.JsxEmit.ReactJSX,
-  });
-  return {
-    fileSystem: typescript,
-    factory: factory as ComponentMetaProjectFactory<ManagedProject, ProjectCommandLine>,
-    fsFileSnapshots: new Map(),
-  };
-}
-
-const createBackend = (typescript: ComponentMetaTypeScript): ReactProjectBackend => {
-  if (!('api' in typescript)) {
-    return createCompilerApiBackend(typescript);
-  }
-  return typescript.api === 'native'
-    ? createNativeApiBackend(typescript.typescript)
-    : createCompilerApiBackend(typescript.typescript);
-};
 
 export class ComponentMetaManager extends BaseComponentMetaManager<
   ManagedProject,
   ProjectCommandLine
 > {
-  // Shared mtime-cached file snapshots of the compiler API, exposed for tests; owned by the factory.
+  // Shared mtime-cached file snapshots of the compiler API, exposed for tests; the factory clears them.
   readonly fsFileSnapshots: FsFileSnapshots;
 
   /**
-   * `typescript` is the `typescript` module (compiler API) or the result of
-   * `loadDocgenTypeScript`, which selects the native API for TypeScript 7.1 and newer.
+   * `typescript` is the result of `loadDocgenTypeScript`, which selects the native API for
+   * TypeScript 7.1 and newer.
    * `recycleHeapPressureRatio` is the fraction of the V8 heap limit at which the shared program(s)
    * are recycled; the memory regression gate passes `Infinity` to disable recycling and assert the
    * OOM still happens without the fix.
    */
-  constructor(typescript: ComponentMetaTypeScript, recycleHeapPressureRatio?: number) {
-    const { fileSystem, factory, fsFileSnapshots } = createBackend(typescript);
+  constructor(typescript: LoadedDocgenTypeScript, recycleHeapPressureRatio?: number) {
+    // Adapted from:
+    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L83
+    const fsFileSnapshots: FsFileSnapshots = new Map();
+    const { fileSystem, factory } = createComponentMetaBackend(typescript, {
+      compiler: (compilerApi) => createCompilerApiBackend(compilerApi, fsFileSnapshots),
+      native: (modules) =>
+        createNativeBackend(modules, NativeComponentMetaProject, {
+          ...(DEFAULT_INFERRED_OPTIONS as RawCompilerOptions),
+          target: modules.ast.ScriptTarget.Latest,
+          module: modules.sync.ModuleKind.ESNext,
+          moduleResolution: modules.sync.ModuleResolutionKind.Bundler,
+          jsx: modules.sync.JsxEmit.ReactJSX,
+        }),
+    });
     super(fileSystem, factory, recycleHeapPressureRatio);
     this.fsFileSnapshots = fsFileSnapshots;
   }

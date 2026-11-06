@@ -14,6 +14,7 @@ import {
   ensureNpmSupportsMinReleaseAge,
   preapproveLocallyPublishedPackages,
   refreshBeforeStorybookLockfile,
+  setupYarn,
   writeScaffoldNpmrc,
 } from './yarn.ts';
 
@@ -23,7 +24,16 @@ vi.mock('../generate.ts', () => ({ runCommand: vi.fn() }));
 const SANDBOX = resolve('sandbox');
 const CONFIG = `${SANDBOX}/.yarnrc.yml`;
 
+const PUBLISHED_YARN = PUBLISHED_SANDBOX_PACKAGE_MANAGER.replace(/^yarn@/, '');
+
 const readConfig = () => yml.parse(vol.readFileSync(CONFIG, 'utf-8') as string);
+
+const runYarn = (version: string) =>
+  vi.mocked(runCommand).mockImplementation((async (script: string) => ({
+    stdout: script === 'yarn --version' ? `${version}\n` : '',
+  })) as never);
+
+const scripts = () => vi.mocked(runCommand).mock.calls.map(([script]) => script);
 
 beforeEach(async () => {
   vol.reset();
@@ -94,6 +104,24 @@ describe('preapproveLocallyPublishedPackages', () => {
   });
 });
 
+describe('setupYarn', () => {
+  it('installs the Yarn 4 on PATH rather than downloading one', async () => {
+    runYarn(PUBLISHED_YARN);
+
+    await setupYarn({ cwd: SANDBOX });
+
+    expect(scripts()).toContain('yarn set version self');
+  });
+
+  it('downloads Yarn 4 when the Yarn on PATH is Yarn 1', async () => {
+    runYarn('1.22.22');
+
+    await setupYarn({ cwd: SANDBOX });
+
+    expect(scripts()).toContain('yarn set version berry');
+  });
+});
+
 describe('refreshBeforeStorybookLockfile', () => {
   const MANIFEST = {
     name: 'angular-latest',
@@ -123,7 +151,7 @@ describe('refreshBeforeStorybookLockfile', () => {
       if (isResolveStep(script) && queue.length) {
         throw queue.shift();
       }
-      return { stdout: '' };
+      return { stdout: script === 'yarn --version' ? `${PUBLISHED_YARN}\n` : '' };
     }) as never);
   };
 
@@ -140,6 +168,15 @@ describe('refreshBeforeStorybookLockfile', () => {
     expect(PUBLISHED_SANDBOX_PACKAGE_MANAGER).toMatch(/^yarn@4\./);
   });
 
+  it('fails unless `yarn` runs the Yarn release the published sandboxes pin', async () => {
+    runYarn('4.18.1');
+
+    await expect(refreshBeforeStorybookLockfile({ cwd: SANDBOX })).rejects.toThrow(
+      `Published sandboxes pin Yarn ${PUBLISHED_YARN}, but \`yarn\` in ${SANDBOX} is 4.18.1`
+    );
+    expect(yarnCommands()).toEqual([]);
+  });
+
   it('installs the template ranges as-is when nothing is quarantined', async () => {
     await refreshBeforeStorybookLockfile({ cwd: SANDBOX });
 
@@ -149,8 +186,7 @@ describe('refreshBeforeStorybookLockfile', () => {
   it('sets the age gate as a duration string', async () => {
     await refreshBeforeStorybookLockfile({ cwd: SANDBOX });
 
-    const scripts = vi.mocked(runCommand).mock.calls.map(([script]) => script);
-    expect(scripts).toContain('yarn config set npmMinimalAgeGate 7d');
+    expect(scripts()).toContain('yarn config set npmMinimalAgeGate 7d');
   });
 
   it('upgrades only the quarantined package, leaving every other range alone', async () => {

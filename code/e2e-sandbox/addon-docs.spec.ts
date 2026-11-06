@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 import process from 'process';
 import { dedent } from 'ts-dedent';
 
-import { SbPage, isReactSandbox } from './util.ts';
+import { SbPage, dropPreviewSnippets, isReactSandbox } from './util.ts';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
@@ -195,6 +195,35 @@ test.describe('addon-docs', () => {
     await labelControl.fill('Live docs snippet');
     await labelControl.blur();
     await expect(primaryCode).toContainText('Live docs snippet');
+  });
+
+  // The manager fills the Code panel with the renderer's printer, which it bundles itself.
+  test('the Code panel follows the controls without the snippet the preview sends', async ({
+    page,
+  }) => {
+    test.skip(
+      !(await page.evaluate(() =>
+        Boolean((globalThis as { FEATURES?: { docgenServer?: boolean } }).FEATURES?.docgenServer)
+      )),
+      'The manager fills only snippets with a server template'
+    );
+    test.skip(templateName.includes('react-native-web'), 'React Native has no Code panel snippet');
+    test.skip(
+      templateName.startsWith('lit-'),
+      'The Lit sandbox Button is a lit template function, not a custom element in a Custom Elements Manifest, so its snippet is the story as written'
+    );
+
+    await dropPreviewSnippets(page);
+    await page.reload();
+    const sbPage = new SbPage(page, expect);
+    await sbPage.waitUntilLoaded();
+    await sbPage.navigateToStory('example/button', 'primary');
+
+    await sbPage.viewAddonPanel('Controls');
+    await sbPage.panelContent().locator('textarea[name=label]').fill('Manager snippet');
+    await expect(sbPage.previewRoot()).toContainText('Manager snippet');
+    await sbPage.viewAddonPanel('Code');
+    await expect(sbPage.panelContent()).toContainText('Manager snippet');
   });
 
   // Regression test for #28333: `useArgs` called from a story rendered in a <Stories>

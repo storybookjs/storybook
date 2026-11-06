@@ -131,7 +131,7 @@ describe('typescript-7-react-docgen', () => {
     it('skips a project whose specifier names TypeScript 7.1, whatever typescript is', async () => {
       vi.mocked(readTypeScriptPackageForDocgen).mockReturnValue({
         version: '7.1.0',
-        importEntry: async () => ({}),
+        packageDir: '/project/node_modules/@typescript/native',
       });
 
       await expect(check(withSpecifier, { typescript: '~7.0.2' }, inConfigDir)).resolves.toBeNull();
@@ -144,7 +144,7 @@ describe('typescript-7-react-docgen', () => {
     it('applies to a project whose specifier names TypeScript 7.0', async () => {
       vi.mocked(readTypeScriptPackageForDocgen).mockReturnValue({
         version: '7.0.2',
-        importEntry: async () => ({}),
+        packageDir: '/project/node_modules/@typescript/native',
       });
 
       await expect(check(withSpecifier, { typescript: '^6.0.3' }, inConfigDir)).resolves.toBe(true);

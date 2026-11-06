@@ -112,7 +112,7 @@ const createBackend = (typescript: ComponentMetaTypeScript): AngularProjectBacke
  *
  * Keeps one warm program per matched tsconfig, so bracket the manager's lifetime with
  * `startWatching()`/`dispose()`. `typescript` is the `typescript` module (compiler API) or the
- * result of `loadTypeScriptForDocgen`, which selects the native API for TypeScript 7.1 and newer.
+ * result of `loadDocgenTypeScript`, which selects the native API for TypeScript 7.1 and newer.
  */
 export class AngularComponentMetaManager extends ComponentMetaManager<
   ManagedProject,

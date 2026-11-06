@@ -158,7 +158,7 @@ export class ComponentMetaManager extends BaseComponentMetaManager<
 
   /**
    * `typescript` is the `typescript` module (compiler API) or the result of
-   * `loadTypeScriptForDocgen`, which selects the native API for TypeScript 7.1 and newer.
+   * `loadDocgenTypeScript`, which selects the native API for TypeScript 7.1 and newer.
    * `recycleHeapPressureRatio` is the fraction of the V8 heap limit at which the shared program(s)
    * are recycled; the memory regression gate passes `Infinity` to disable recycling and assert the
    * OOM still happens without the fix.

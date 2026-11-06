@@ -21,7 +21,6 @@ import {
   getTypeScriptUpgradeForDocgen,
   isTypeScriptReadyForDocgen,
   loadTypeScriptCompilerApi,
-  loadTypeScriptForDocgen,
   recommendedTypeScriptDocgenApis,
   typeScriptPackageForDocgen,
 } from './typescript-for-docgen.ts';
@@ -458,52 +457,6 @@ describe('checkBuilderDocgenPackages', () => {
   });
 });
 
-describe('loadTypeScriptForDocgen', () => {
-  const native = { sync: {}, ast: {} };
-
-  it('loads the compiler API of TypeScript 6 without importing the native API', async () => {
-    const typescript = { version: '6.0.3', sys: {} };
-    const importNativeApi = vi.fn(async () => native);
-
-    await expect(
-      loadTypeScriptForDocgen({
-        importCompilerApi: async () => ({ ...typescript, default: typescript }),
-        importNativeApi,
-      })
-    ).resolves.toEqual({ api: 'compiler', typescript });
-    expect(importNativeApi).not.toHaveBeenCalled();
-  });
-
-  it('loads the native API of TypeScript 7.1', async () => {
-    await expect(
-      loadTypeScriptForDocgen({
-        importCompilerApi: async () => ({ version: '7.1.0-beta' }),
-        importNativeApi: async () => native,
-      })
-    ).resolves.toEqual({ api: 'native', typescript: native });
-  });
-
-  it('rejects TypeScript 7.0 with the upgrade hint', async () => {
-    await expect(
-      loadTypeScriptForDocgen({
-        importCompilerApi: async () => ({ version: '7.0.2' }),
-        importNativeApi: async () => native,
-      })
-    ).rejects.toThrow('Upgrade to `typescript@^7.1`');
-  });
-
-  it('rejects a missing typescript package with the TypeScript 7.1 hint', async () => {
-    await expect(
-      loadTypeScriptForDocgen({
-        importCompilerApi: async () => {
-          throw moduleNotFound();
-        },
-        importNativeApi: async () => native,
-      })
-    ).rejects.toThrow('Add `typescript@^7.1` to the devDependencies');
-  });
-});
-
 describe('before TypeScript 7.1 is stable', () => {
   beforeEach(() => {
     vi.stubEnv('STORYBOOK_TYPESCRIPT_7_1_STABLE', 'false');
@@ -515,25 +468,5 @@ describe('before TypeScript 7.1 is stable', () => {
 
   it('offers no upgrade to TypeScript 7.1 yet', () => {
     expect(getTypeScriptUpgradeForDocgen(BOTH_APIS, {})).toBeUndefined();
-  });
-
-  it('rejects TypeScript 7.0 with the side-by-side setup', async () => {
-    await expect(
-      loadTypeScriptForDocgen({
-        importCompilerApi: async () => ({ version: '7.0.2' }),
-        importNativeApi: async () => ({}),
-      })
-    ).rejects.toThrow('"typescript": "npm:@typescript/typescript6@^6.0.2"');
-  });
-
-  it('still loads the native API of an installed TypeScript 7.1', async () => {
-    const native = { sync: {}, ast: {} };
-
-    await expect(
-      loadTypeScriptForDocgen({
-        importCompilerApi: async () => ({ version: '7.1.0-beta' }),
-        importNativeApi: async () => native,
-      })
-    ).resolves.toEqual({ api: 'native', typescript: native });
   });
 });

@@ -52,21 +52,19 @@ describe('readTypeScriptPackageForDocgen', () => {
     ['a path relative to the config directory', relative(configDir, nativePackageDir)],
     ['an absolute path', nativePackageDir],
     ['a file URL', pathToFileURL(nativePackageDir).href],
-  ])('reads TypeScript 7.1 from %s', async (_kind, specifier) => {
-    const { version, importEntry } = readTypeScriptPackageForDocgen({ specifier, configDir });
-
-    expect(version).toMatch(/^7\.1\./);
-    expect(await importEntry('./sync')).toHaveProperty('API');
+  ])('reads TypeScript 7.1 from %s', (_kind, specifier) => {
+    expect(readTypeScriptPackageForDocgen({ specifier, configDir })).toMatchObject({
+      version: expect.stringMatching(/^7\.1\./),
+      packageDir: nativePackageDir,
+      exports: expect.objectContaining({ './sync': expect.any(String) }),
+    });
   });
 
-  it('imports the compiler API from a TypeScript 6 package without exports', async () => {
-    const { version, importEntry } = readTypeScriptPackageForDocgen({
-      specifier: 'typescript',
-      configDir,
+  it('reads a TypeScript 6 package without exports', () => {
+    expect(readTypeScriptPackageForDocgen({ specifier: 'typescript', configDir })).toMatchObject({
+      version: expect.stringMatching(/^6\./),
+      exports: undefined,
     });
-
-    expect(version).toMatch(/^6\./);
-    expect(await importEntry('.')).toHaveProperty('default.createProgram');
   });
 
   it.each([

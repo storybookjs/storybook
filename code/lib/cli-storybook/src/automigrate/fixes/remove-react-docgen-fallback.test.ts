@@ -147,7 +147,7 @@ describe('remove-react-docgen-fallback', () => {
       beforeEach(() => {
         vi.mocked(readTypeScriptPackageForDocgen).mockReturnValue({
           version: '7.1.0',
-          importEntry: async () => ({}),
+          packageDir: '/project/node_modules/@typescript/native',
         });
       });
 
@@ -164,7 +164,7 @@ describe('remove-react-docgen-fallback', () => {
       beforeEach(() => {
         vi.mocked(readTypeScriptPackageForDocgen).mockReturnValue({
           version: '7.0.2',
-          importEntry: async () => ({}),
+          packageDir: '/project/node_modules/@typescript/native',
         });
       });
 

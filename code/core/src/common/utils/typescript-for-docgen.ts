@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
 import { once } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
@@ -123,18 +123,23 @@ const packageDirOf = ({ specifier, configDir }: TypeScriptSpecifierForDocgen) =>
   return dirname(require.resolve(`${specifier}/package.json`));
 };
 
+// The TypeScript package a `docgenSpecifier` names: its version, and where to import it from.
+export interface TypeScriptPackageForDocgen {
+  version: string;
+  packageDir: string;
+  main?: string;
+  exports?: Record<string, unknown>;
+}
+
 /**
- * Read the TypeScript package a `docgenSpecifier` names, and import its entry points.
- *
- * A path is not a package specifier, so Node would not apply the package's `exports` to
- * `<path>/sync`; the entry points are read from its package.json instead, for every specifier.
+ * Read the TypeScript package a `docgenSpecifier` names.
  *
  * @throws {TypeScriptMissingForDocgenError} When the specifier names no package.
  */
 export function readTypeScriptPackageForDocgen(
   typeScriptSpecifier: TypeScriptSpecifierForDocgen,
   apis: readonly TypeScriptDocgenApi[] = COMPILER_API_ONLY
-): { version: string; importEntry: (subpath: string) => Promise<unknown> } {
+): TypeScriptPackageForDocgen {
   let packageDir: string;
   let packageJson: { version?: unknown; main?: string; exports?: Record<string, unknown> };
   try {
@@ -151,18 +156,7 @@ export function readTypeScriptPackageForDocgen(
     throw new TypeScriptMissingForDocgenError({ apis, specifier: typeScriptSpecifier.specifier });
   }
   const { version, main, exports } = packageJson;
-  return {
-    version,
-    importEntry: async (subpath) => {
-      const entry = exports ? exports[subpath] : subpath === '.' ? (main ?? 'index.js') : undefined;
-      if (typeof entry !== 'string') {
-        throw new Error(
-          `TypeScript ${version} at ${packageDir} has no "${subpath}" entry point that Storybook can import`
-        );
-      }
-      return import(pathToFileURL(join(packageDir, entry)).href);
-    },
-  };
+  return { version, packageDir, main, exports };
 }
 
 const unusableVersionError = (
@@ -344,40 +338,6 @@ export async function loadTypeScriptCompilerApi<TypeScript extends { version: st
     throw error;
   }
   return typescript;
-}
-
-export type LoadedTypeScriptForDocgen<CompilerApi, NativeApi> =
-  | { api: 'compiler'; typescript: CompilerApi }
-  | { api: 'native'; typescript: NativeApi };
-
-// Import `typescript` and load the API it offers docgen: the compiler API of TypeScript 5.9 and 6,
-// or the native API of TypeScript 7.1 and newer.
-//
-// Both importers must import from the calling package, so they resolve where that package declares
-// its `typescript` peer. The `typescript` main module of every version exports `version`, so the
-// compiler importer runs first and decides which API to load. Pass the `specifier` the importers
-// load from when it is not `typescript`, so the errors name it.
-//
-// @throws {TypeScriptMissingForDocgenError} When `typescript` cannot be resolved.
-// @throws {TypeScriptWithoutCompilerApiError} When `typescript` is TypeScript 7.0.
-export async function loadTypeScriptForDocgen<CompilerApi extends { version: string }, NativeApi>({
-  importCompilerApi,
-  importNativeApi,
-  specifier,
-}: {
-  importCompilerApi: () => Promise<CompilerApi & { default?: CompilerApi }>;
-  importNativeApi: () => Promise<NativeApi>;
-  specifier?: string;
-}): Promise<LoadedTypeScriptForDocgen<CompilerApi, NativeApi>> {
-  const apis: readonly TypeScriptDocgenApi[] = ['compiler', 'native'];
-  const typescript = await importTypeScript(importCompilerApi, apis);
-  const error = unusableVersionError(typescript.version, apis, specifier);
-  if (error) {
-    throw error;
-  }
-  return getTypeScriptDocgenApi(typescript.version) === 'native'
-    ? { api: 'native', typescript: await importNativeApi() }
-    : { api: 'compiler', typescript };
 }
 
 /**

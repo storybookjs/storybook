@@ -264,7 +264,7 @@ describe('when the main config sets typescript.docgenSpecifier', () => {
   beforeEach(() => {
     vi.mocked(readTypeScriptPackageForDocgen).mockReturnValue({
       version: '7.1.0',
-      importEntry: async () => ({}),
+      packageDir: '/project/node_modules/@typescript/native',
     });
   });
 

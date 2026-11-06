@@ -6,7 +6,7 @@ import { promisify } from 'node:util';
 import dirSize from 'fast-folder-size';
 
 import { now, saveBench } from '../bench/utils.ts';
-import type { PassedOptionValues, Task, TaskKey, TemplateDetails } from '../task.ts';
+import type { Task, TaskKey } from '../task.ts';
 import { ROOT_DIRECTORY } from '../utils/constants.ts';
 import { exec } from '../utils/exec.ts';
 import { isNxTaskExecution } from '../utils/nx.ts';
@@ -19,16 +19,6 @@ const pathExists = (path: string) => {
     return true;
   } catch {
     return false;
-  }
-};
-
-const sanitizeOptions = (details: TemplateDetails, options: PassedOptionValues) => {
-  if (options.link && !options.forceLink && details.template.preferNoLink) {
-    logger.log(
-      `The ${options.template} has preferNoLink property enabled. Defaulting to --no-link mode. Pass --force-link to use link mode anyway, but be aware the sandbox may partially or completely not work.`
-    );
-
-    options.link = false;
   }
 };
 
@@ -53,9 +43,6 @@ const isSandboxReady = (sandboxDir: string, selectedTask: TaskKey) =>
 export const sandbox: Task = {
   description: 'Create the sandbox from a template',
   dependsOn: (details, options) => {
-    // Must sanitize options here too to ensure we run the right prerequisite tasks.
-    sanitizeOptions(details, options);
-
     // An in-development template has no published repro, so `generate` creates it locally.
     if ('inDevelopment' in details.template && details.template.inDevelopment) {
       const install = options.link ? 'compile' : 'run-registry';
@@ -72,8 +59,6 @@ export const sandbox: Task = {
     return isSandboxReady(sandboxDir, selectedTask);
   },
   async run(details, options) {
-    sanitizeOptions(details, options);
-
     if (!(await this.ready(details, options))) {
       logger.info('🗑  Removing old sandbox dir');
       await rm(details.sandboxDir, { force: true, recursive: true });

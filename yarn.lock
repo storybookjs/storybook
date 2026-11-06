@@ -19108,6 +19108,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ecosystem-qa@workspace:ecosystem-qa":
+  version: 0.0.0-use.local
+  resolution: "ecosystem-qa@workspace:ecosystem-qa"
+  dependencies:
+    "@types/node": "npm:^22.19.1"
+    gifenc: "npm:1.0.3"
+    pathe: "npm:^2.0.3"
+    playwright: "npm:1.58.2"
+    pngjs: "npm:^7.0.0"
+    typescript: "npm:^6.0.3"
+    vitest: "npm:5.0.5"
+    zod: "npm:^4.4.3"
+  languageName: unknown
+  linkType: soft
+
 "edge-runtime@npm:2.5.9":
   version: 2.5.9
   resolution: "edge-runtime@npm:2.5.9"
@@ -22078,6 +22093,13 @@ __metadata:
   dependencies:
     assert-plus: "npm:^1.0.0"
   checksum: 10c0/c13f8530ecf16fc509f3fa5cd8dd2129ffa5d0c7ccdf5728b6022d52954c2d24be3706b4cdf15333eec52f1fbb43feb70a01dabc639d1d10071e371da8aaa52f
+  languageName: node
+  linkType: hard
+
+"gifenc@npm:1.0.3":
+  version: 1.0.3
+  resolution: "gifenc@npm:1.0.3"
+  checksum: 10c0/34fc6b2c66c305fc556cd2f475154ce2ad68384a52ceb8253b901c8c7d9c63f2c0a5d109ceb3cb46e44c2c6155009920a286cf08a621105863aa43468e345229
   languageName: node
   linkType: hard
 

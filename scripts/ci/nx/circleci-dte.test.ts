@@ -18,7 +18,6 @@ import {
   getNxDteJobs,
   windowsAgentsFor,
 } from './circleci-dte.ts';
-import { planFor, windowsTasksOf } from './plan.ts';
 import { EMPTY_SELECTION, type Selection } from './selection.ts';
 
 const repoRoot = join(import.meta.dirname, '../../..');
@@ -42,7 +41,7 @@ const ids = (workflow: (typeof workflows)[number]) =>
 describe('the CircleCI NX DTE pipeline', () => {
   it('runs every task on NX agents, and only the Node 26 smoke job as a CircleCI job', () => {
     const agents = ['nx-main', 'nx-agent', 'nx-agent-peak-delay', 'nx-agent-peak'];
-    const windows = ['nx-main-windows', 'nx-agent-windows', 'nx-agent-windows-large'];
+    const windows = ['nx-main-windows', 'nx-agent-windows'];
     expect(ids('normal')).toEqual(agents);
     expect(ids('daily')).toEqual([...agents, ...windows, 'node-26-smoke']);
     // Its Linux tasks only feed CircleCI's own Windows jobs.
@@ -82,23 +81,10 @@ describe('the CircleCI NX DTE pipeline', () => {
     expect(jobs.map((j) => j.id)).not.toContain('nx-agent-peak');
   });
 
-  it('runs the dev E2E tests on large Windows agents and the rest on at most four medium ones', () => {
-    const selection = {
-      tasks: {
-        ...tasks('test-1', 9).tasks,
-        'w:e2e-tests-dev-1': { project: 'w', target: 'e2e-tests-dev-1' },
-        'w:e2e-tests-dev-2': { project: 'w', target: 'e2e-tests-dev-2' },
-      },
-    };
-    expect(windowsAgentsFor(selection)).toEqual({ medium: 3, large: 2 });
-    expect(windowsAgentsFor(tasks('test-1', 40))).toEqual({ medium: 4, large: 0 });
-    expect(windowsAgentsFor(EMPTY_SELECTION)).toEqual({ medium: 0, large: 0 });
-    // Every Windows target is assigned to exactly one pool.
-    const rules = read('.nx/workflows/circleci-windows-assignment-rules.yaml');
-    for (const task of windowsTasksOf(planFor(['daily']))) {
-      const target = task.split(':').at(-1)!;
-      expect(rules.split(`      - ${target}\n`).length - 1, target).toBe(1);
-    }
+  it('starts at most four Windows agents, which cost about 500 credits each to boot', () => {
+    expect(windowsAgentsFor(tasks('e2e-tests', 9))).toBe(3);
+    expect(windowsAgentsFor(tasks('e2e-tests', 40))).toBe(4);
+    expect(windowsAgentsFor(EMPTY_SELECTION)).toBe(0);
   });
 
   it('names every target of the command in --stop-workers-after, whatever the change reaches', () => {

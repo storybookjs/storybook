@@ -36,7 +36,7 @@ export abstract class NativeProject implements ComponentMetaProjectBase {
   private moduleResolver?: ModuleResolver;
   private facades?: NativeFacades;
   private fileMtimes = new Map<string, number | undefined>();
-  private readonly readSince = Date.now();
+  private readonly createdAt = Date.now();
   protected disposed = false;
 
   constructor(
@@ -121,7 +121,7 @@ export abstract class NativeProject implements ComponentMetaProjectBase {
       const mtime = modifiedTime(fileName);
       const stale = this.fileMtimes.has(fileName)
         ? this.fileMtimes.get(fileName) !== mtime
-        : mtime !== undefined && mtime > this.readSince;
+        : mtime !== undefined && mtime > this.createdAt;
       if (stale) {
         changed.push(fileName);
       }

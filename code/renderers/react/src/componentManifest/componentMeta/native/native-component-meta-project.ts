@@ -4,6 +4,8 @@ import type { StoryRef } from '../../getComponentImports.ts';
 import type { ReactComponentMetaProject } from '../ComponentMetaProject.ts';
 import { extractEntries } from '../extract-entries.ts';
 
+export const WARMUP_DELAY_MS = 100;
+
 export class NativeComponentMetaProject extends NativeProject implements ReactComponentMetaProject {
   private warmupTimer?: ReturnType<typeof setTimeout>;
   private entries: StoryRef[] = [];
@@ -45,7 +47,7 @@ export class NativeComponentMetaProject extends NativeProject implements ReactCo
       } catch {
         // Warmup failure is non-fatal - extraction will still work on demand.
       }
-    }, 100);
+    }, WARMUP_DELAY_MS);
     this.warmupTimer?.unref?.();
   }
 

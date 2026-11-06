@@ -62,8 +62,8 @@ async function createEngine(options: Options): Promise<SeriesEngine> {
       measured = save % project.componentPaths.length;
       const filePath = project.componentPaths[measured];
       fs.writeFileSync(filePath, angularComponentSource(measured, options.props + 1 + (save % 2)));
-      const future = new Date(Date.now() + 1000 * (save + 1));
-      fs.utimesSync(filePath, future, future);
+      const laterThanEverySave = new Date(Date.now() + 1000 * (save + 1));
+      fs.utimesSync(filePath, laterThanEverySave, laterThanEverySave);
     },
     async reextract() {
       return extractOne(manager!, project.componentPaths[measured], measured);

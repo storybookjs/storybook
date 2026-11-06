@@ -39,6 +39,7 @@ const COMPILER_API_ONLY: readonly TypeScriptDocgenApi[] = ['compiler'];
 const DOCGEN_APIS_BY_RENDERER: Partial<Record<SupportedRenderer, readonly TypeScriptDocgenApi[]>> =
   {
     [SupportedRenderer.REACT]: ['compiler', 'native'],
+    [SupportedRenderer.ANGULAR]: COMPILER_API_ONLY,
   };
 
 export const recommendedTypeScriptDocgenApis = (
@@ -89,7 +90,10 @@ export async function getTypeScriptSpecifierForDocgen({
   return docgenSpecifier ? { specifier: docgenSpecifier, configDir } : undefined;
 }
 
-const packageDirOf = ({ specifier, configDir }: TypeScriptSpecifierForDocgen) => {
+const resolvePackageDirLikeMainConfig = ({
+  specifier,
+  configDir,
+}: TypeScriptSpecifierForDocgen) => {
   if (specifier.startsWith('file:')) {
     return fileURLToPath(specifier);
   }
@@ -114,7 +118,7 @@ export function readTypeScriptPackageForDocgen(
   let packageDir: string;
   let packageJson: { version?: unknown; main?: string; exports?: Record<string, unknown> };
   try {
-    packageDir = packageDirOf(typeScriptSpecifier);
+    packageDir = resolvePackageDirLikeMainConfig(typeScriptSpecifier);
     packageJson = JSON.parse(readFileSync(join(packageDir, 'package.json'), 'utf-8'));
   } catch (cause) {
     throw new TypeScriptMissingForDocgenError({

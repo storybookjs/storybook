@@ -151,30 +151,6 @@ const native = NATIVE
     })()
   : undefined;
 
-const NATIVE_ENUMS = {
-  target: 'ScriptTarget',
-  module: 'ModuleKind',
-  moduleResolution: 'ModuleResolutionKind',
-} as const;
-
-const nativeOptions = (options: ts.CompilerOptions): RawCompilerOptions => {
-  const { sync, ast } = native!.modules;
-  const result: Record<string, unknown> = { ...options };
-  for (const [option, enumName] of Object.entries(NATIVE_ENUMS)) {
-    const value = options[option as keyof typeof NATIVE_ENUMS];
-    if (value !== undefined) {
-      const nativeEnum = (
-        (enumName === 'ScriptTarget' ? ast : sync) as unknown as Record<
-          string,
-          Record<string, number>
-        >
-      )[enumName];
-      result[option] = nativeEnum[(ts[enumName] as Record<number, string>)[value]];
-    }
-  }
-  return result as RawCompilerOptions;
-};
-
 const compileWithNativeApi = (
   files: Record<string, string>,
   options: ts.CompilerOptions
@@ -190,7 +166,7 @@ const compileWithNativeApi = (
   for (const fileName of deleted) {
     rmSync(fileName, { force: true });
   }
-  const program = { rootFiles: paths, compilerOptions: nativeOptions(options) };
+  const program = { rootFiles: paths, compilerOptions: options as RawCompilerOptions };
   const previous = state.snapshot;
   if (previous && state.programId) {
     state.snapshot = previous.update({

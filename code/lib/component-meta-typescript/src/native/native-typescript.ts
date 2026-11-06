@@ -106,11 +106,13 @@ export function createNativeSystem(): DocgenSystem {
         return undefined;
       }
     },
-    useCaseSensitiveFileNames: !existsSync(swapCase(process.execPath)),
+    useCaseSensitiveFileNames: isCaseSensitiveFileSystem(),
   };
 }
 
-const swapCase = (path: string) =>
+const isCaseSensitiveFileSystem = () => !existsSync(withSwappedCase(process.execPath));
+
+const withSwappedCase = (path: string) =>
   path.replace(/\w/g, (character) => {
     const upper = character.toUpperCase();
     return character === upper ? character.toLowerCase() : upper;
@@ -162,7 +164,7 @@ export function createNativeDocgenTypeScript(
       createLiteralTypeNode: (literal) =>
         factory.createLiteralTypeNode(asNode(literal)) as unknown as ts.LiteralTypeNode,
       createStringLiteral: (text) =>
-        factory.createStringLiteral(text, 0) as unknown as ts.StringLiteral,
+        factory.createStringLiteral(text, ast.TokenFlags.None) as unknown as ts.StringLiteral,
     },
     sys: createNativeSystem(),
     canHaveDecorators: (node): node is ts.HasDecorators => 'modifiers' in node,

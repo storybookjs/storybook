@@ -9,7 +9,7 @@ import type ts from 'typescript';
 import type { StoryRef } from '../../getComponentImports.ts';
 import { ComponentMetaManager } from '../ComponentMetaManager.ts';
 import { cleanup, createTempProject, tsconfigJSON } from '../test-helpers.ts';
-import { NativeComponentMetaProject } from './native-component-meta-project.ts';
+import { NativeComponentMetaProject, WARMUP_DELAY_MS } from './native-component-meta-project.ts';
 import { NativeFacades } from '@storybook/component-meta-typescript';
 import {
   type NativeTypeScriptModules,
@@ -231,7 +231,7 @@ describe('NativeComponentMetaProject', () => {
       manager.onFilesChanged([
         { filePath: path.join(projectDir, 'src/styles.css'), type: 'changed' },
       ]);
-      await new Promise((resolve) => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 2 * WARMUP_DELAY_MS));
       expect(extract).not.toHaveBeenCalled();
 
       fs.unlinkSync(configPath);

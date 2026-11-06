@@ -48,7 +48,7 @@ jobs:
     resource_class: large
     steps:
       # Only focus and the NX DTE pipeline (`nx affected`) diff against the base branch, so only
-      # they pay for 500 commits of history.
+      # they pay for 100 commits of history.
       - when:
           condition:
             or:
@@ -57,21 +57,19 @@ jobs:
                   value: << pipeline.parameters.workflow >>
               - << pipeline.parameters.nxDte >>
           steps:
-            # The orb fetches the PR branch with `--depth 10` by default, which cuts off the merge
-            # base of any PR with more than 10 commits.
             - git-shallow-clone/checkout_advanced:
-                clone_options: '--depth 500 --filter=blob:none --no-tags'
-                fetch_options: '--depth 500 --filter=blob:none'
+                clone_options: '--depth 100 --filter=blob:none --no-tags'
+                fetch_options: '--depth 100 --filter=blob:none --no-tags'
                 tag_fetch_options: '--no-tags'
             - run:
                 name: Fetch base branch for focused CI
                 environment:
                   GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
                 command: |
-                  git fetch --depth=500 --filter=blob:none --no-tags origin \
+                  git fetch --depth=100 --filter=blob:none --no-tags origin \
                     "$GH_BASE_BRANCH:refs/remotes/origin/$GH_BASE_BRANCH"
                   if ! git merge-base "origin/$GH_BASE_BRANCH" HEAD >/dev/null; then
-                    echo "No merge base found between origin/$GH_BASE_BRANCH and HEAD within 500 commits." >&2
+                    echo "No merge base found between origin/$GH_BASE_BRANCH and HEAD within 100 commits." >&2
                     exit 1
                   fi
       - unless:

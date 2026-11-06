@@ -109,6 +109,10 @@ export function agentsFor(
   return { first, peak };
 }
 
+// dte-task-statuses.ts reads the failed tasks from this step of these jobs.
+export const NX_MAIN_JOBS = { linux: 'nx-main', windows: 'nx-main-windows' } as const;
+export const RUN_NX_STEP = 'Run nx';
+
 // The agents' jobs, which `circleci-completion` does not wait for (main.ts).
 export const NX_AGENT_JOB_IDS: readonly string[] = [
   ...Object.values(NX_DTE_WAVES).map((wave) => wave.job),
@@ -255,9 +259,9 @@ const fetchBase = (base: string | undefined) =>
 
 const runNx = (os: Os, selected: readonly Workflow[], base: string | undefined) => ({
   run: {
-    name: 'Run nx',
-    // Wide enough that the task summary table never truncates task names.
-    environment: { COLUMNS: 250 },
+    name: RUN_NX_STEP,
+    // The project's environment turns it on; it buries the summary under thousands of lines.
+    environment: { NX_VERBOSE_LOGGING: 'false' },
     no_output_timeout: '30m',
     command: [
       // Bounded, as the agents are: on NX Cloud's own Windows agents a run once never ended and held
@@ -279,7 +283,7 @@ const mainJob = (
   base: string | undefined,
   agents: number
 ) =>
-  defineJob('nx-main', () => ({
+  defineJob(NX_MAIN_JOBS.linux, () => ({
     executor: { name: 'sb_node_22_classic', class: 'large' },
     environment: {
       ...nxEnvironment('linux', changedFiles),
@@ -387,7 +391,7 @@ const windowsMainJob = (
   base: string | undefined,
   agents: number
 ) =>
-  defineJob('nx-main-windows', () => ({
+  defineJob(NX_MAIN_JOBS.windows, () => ({
     // Runs no task; on Windows so that it hashes the tasks on the OS that runs them.
     executor: { name: 'win/default', size: 'medium', shell: 'bash.exe' },
     environment: {

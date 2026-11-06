@@ -141,7 +141,7 @@
         "command": "yarn storybook:ui:build"
       },
       "cache": true,
-      "inputs": ["code-all"],
+      "inputs": ["code-internal"],
       "outputs": ["{projectRoot}/storybook-static"],
       "configurations": {
         "production": {}
@@ -157,7 +157,8 @@
       "cache": false,
       "configurations": {
         "production": {}
-      }
+      },
+      "inputs": ["code-internal", "{workspaceRoot}/scripts/ci/nx/fetch-git-history.sh"]
     },
     "storybook-ui-dev": {
       "dependsOn": [
@@ -174,7 +175,8 @@
       "continuous": true,
       "configurations": {
         "production": {}
-      }
+      },
+      "inputs": ["code-internal"]
     },
     "e2e-internal": {
       "dependsOn": ["storybook-ui-dev"],
@@ -184,7 +186,7 @@
         "command": "yarn wait-on --timeout 300000 tcp:127.0.0.1:6006 && yarn task e2e-tests-internal --no-link -s e2e-tests-internal --junit"
       },
       "cache": true,
-      "inputs": ["code-all"],
+      "inputs": ["code-internal"],
       "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
       "configurations": {
         "production": {}
@@ -201,7 +203,7 @@
         }
       },
       "cache": true,
-      "inputs": ["code-all"],
+      "inputs": ["code-internal"],
       "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
       "configurations": {
         "production": {}
@@ -218,7 +220,7 @@
         }
       },
       "cache": true,
-      "inputs": ["code-all"],
+      "inputs": ["code-internal"],
       "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
       "configurations": {
         "production": {}
@@ -235,7 +237,7 @@
         }
       },
       "cache": true,
-      "inputs": ["code-all"],
+      "inputs": ["code-internal"],
       "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
       "configurations": {
         "production": {}
@@ -252,7 +254,7 @@
         }
       },
       "cache": true,
-      "inputs": ["code-all"],
+      "inputs": ["code-internal"],
       "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
       "configurations": {
         "production": {}
@@ -268,7 +270,8 @@
       "continuous": true,
       "configurations": {
         "production": {}
-      }
+      },
+      "inputs": ["code-internal"]
     },
     "e2e-internal-static": {
       "dependsOn": ["storybook-ui-serve"],
@@ -282,7 +285,7 @@
         "cwd": "{projectRoot}"
       },
       "cache": true,
-      "inputs": ["code-all"],
+      "inputs": ["code-internal"],
       "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
       "configurations": {
         "production": {}
@@ -301,7 +304,7 @@
         "cwd": "{projectRoot}"
       },
       "cache": true,
-      "inputs": ["code-all"],
+      "inputs": ["code-internal"],
       "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
       "configurations": {
         "production": {}
@@ -320,7 +323,7 @@
         "cwd": "{projectRoot}"
       },
       "cache": true,
-      "inputs": ["code-all"],
+      "inputs": ["code-internal"],
       "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
       "configurations": {
         "production": {}
@@ -339,7 +342,7 @@
         "cwd": "{projectRoot}"
       },
       "cache": true,
-      "inputs": ["code-all"],
+      "inputs": ["code-internal"],
       "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
       "configurations": {
         "production": {}
@@ -358,7 +361,7 @@
         "cwd": "{projectRoot}"
       },
       "cache": true,
-      "inputs": ["code-all"],
+      "inputs": ["code-internal"],
       "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
       "configurations": {
         "production": {}
@@ -376,7 +379,7 @@
         "command": "yarn test --project storybook-ui"
       },
       "cache": true,
-      "inputs": ["code-all"],
+      "inputs": ["code-internal"],
       "configurations": {
         "production": {}
       }

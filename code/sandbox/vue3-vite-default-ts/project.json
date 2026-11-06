@@ -9,7 +9,11 @@
     "addon-docs",
     "addon-vitest",
     "addon-onboarding",
-    "vue3-vite"
+    "vue3-vite",
+    "vue3",
+    "builder-vite",
+    "addon-mcp",
+    "mcp"
   ],
   "targets": {
     "sandbox": {

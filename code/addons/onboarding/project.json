@@ -4,7 +4,13 @@
   "projectType": "library",
   "targets": {
     "compile": {
-      "outputs": ["{projectRoot}/dist", "{workspaceRoot}/code/bench/esbuild-metafiles/onboarding"]
+      "outputs": ["{projectRoot}/dist", "{workspaceRoot}/code/bench/esbuild-metafiles/onboarding"],
+      "inputs": [
+        "production",
+        "^production",
+        "{workspaceRoot}/code/.storybook/**/*",
+        "!{workspaceRoot}/code/**/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+      ]
     },
     "check": {}
   },

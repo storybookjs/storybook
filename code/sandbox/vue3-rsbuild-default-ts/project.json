@@ -8,7 +8,8 @@
     "addon-a11y",
     "addon-docs",
     "addon-vitest",
-    "addon-onboarding"
+    "addon-onboarding",
+    "vue3"
   ],
   "targets": {
     "sandbox": {

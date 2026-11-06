@@ -60,7 +60,8 @@
       "cache": false,
       "configurations": {
         "production": {}
-      }
+      },
+      "inputs": ["all-production"]
     }
   }
 }

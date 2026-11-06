@@ -27,7 +27,7 @@
       "command": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON ./scripts/build/build-package.ts --cwd {projectRoot}",
       "configurations": { "production": { "args": "--prod" } },
       "cache": true,
-      "inputs": ["production", "^production", { "env": "OS" }],
+      "inputs": ["production", "^production"],
       "outputs": [
         "{projectRoot}/dist",
         "{workspaceRoot}/code/bench/esbuild-metafiles/{projectName}"
@@ -37,7 +37,12 @@
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "command": "yarn exec jiti ./scripts/check/check-package.ts --cwd {projectRoot}",
       "cache": true,
-      "inputs": ["default", "^production"],
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/code/**/src/**/*",
+        "{workspaceRoot}/code/.storybook/**/*"
+      ],
       "configurations": { "production": {} }
     },
     "publish": {
@@ -97,6 +102,7 @@
       "dependsOn": ["build"],
       "command": "bash scripts/ci/nx/fetch-git-history.sh && yarn task chromatic -s task --debug --no-link --template={projectName}",
       "cache": false,
+      "inputs": ["^production", "{workspaceRoot}/scripts/ci/nx/fetch-git-history.sh"],
       "configurations": { "production": {} }
     },
     "smoke-test": {
@@ -209,7 +215,9 @@
   },
   "namedInputs": {
     "sharedGlobals": [
+      { "env": "OS" },
       "{workspaceRoot}/.nvmrc",
+      "{workspaceRoot}/.yarnrc.yml",
       "{workspaceRoot}/code/tsconfig.json",
       "{workspaceRoot}/scripts/*",
       "{workspaceRoot}/scripts/{__mocks__,bench,build,check,eslint-plugin-local-rules,sandbox,tasks,utils}/**/*"
@@ -218,7 +226,12 @@
     "production": [
       "sharedGlobals",
       "{projectRoot}/**/*",
-      "!{projectRoot}/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+      "!{projectRoot}/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
+      "!{projectRoot}/src/**/{__tests__,__testfixtures__}/**/*",
+      "!{projectRoot}/test/**/*",
+      "!{projectRoot}/vitest.config.ts",
+      "!{projectRoot}/*.md",
+      "!{projectRoot}/docs/**/*"
     ],
     "e2e-specs": [
       "{workspaceRoot}/code/e2e-sandbox/**/*",
@@ -234,12 +247,24 @@
       "{workspaceRoot}/vitest.config.ts",
       "{workspaceRoot}/package.json",
       "{workspaceRoot}/yarn.lock",
+      "{workspaceRoot}/.yarn/patches/**/*",
+      "{workspaceRoot}/.env"
+    ],
+    "code-internal": [
+      "sharedGlobals",
+      "{workspaceRoot}/code/**/*",
+      "{workspaceRoot}/vitest.config.ts",
+      "{workspaceRoot}/.env",
+      "{workspaceRoot}/package.json",
+      "{workspaceRoot}/yarn.lock",
       "{workspaceRoot}/.yarn/patches/**/*"
     ],
     "all-production": [
       "sharedGlobals",
       "{workspaceRoot}/code/**/*",
-      "!{workspaceRoot}/code/**/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+      "!{workspaceRoot}/code/**/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
+      "!{workspaceRoot}/code/{e2e-sandbox,e2e-internal,sandbox,.storybook}/**/*",
+      "!{workspaceRoot}/code/*/*/*.md"
     ]
   },
   "analytics": false

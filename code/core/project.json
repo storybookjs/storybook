@@ -7,12 +7,14 @@
       "inputs": [
         "production",
         "^production",
-        {
-          "env": "OS"
-        },
         "{workspaceRoot}/package.json",
         "{workspaceRoot}/code/*/package.json",
-        "{workspaceRoot}/code/*/*/package.json"
+        "{workspaceRoot}/code/*/*/package.json",
+        "{workspaceRoot}/code/addons/docs/src/**/*",
+        "{workspaceRoot}/code/addons/a11y/src/**/*",
+        "{workspaceRoot}/code/addons/vitest/src/**/*",
+        "{workspaceRoot}/code/lib/cli-storybook/src/**/*",
+        "!{workspaceRoot}/code/**/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
       ]
     },
     "check": {}

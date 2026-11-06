@@ -19,7 +19,9 @@ const TASK_ENTRY_POINTS = [
 // would restore stale results. This keeps the list in step with what the tasks actually import.
 it('sharedGlobals covers every script that Nx tasks import', async () => {
   const nxJson = JSON.parse(readFileSync(join(ROOT, 'nx.json'), 'utf8'));
-  const sharedGlobals: string[] = nxJson.namedInputs.sharedGlobals;
+  const sharedGlobals: string[] = nxJson.namedInputs.sharedGlobals.filter(
+    (input: unknown) => typeof input === 'string'
+  );
 
   const dirsPattern = sharedGlobals.find((input) => input.startsWith('{workspaceRoot}/scripts/{'));
   expect(sharedGlobals).toContain('{workspaceRoot}/scripts/*');
@@ -44,4 +46,13 @@ it('sharedGlobals covers every script that Nx tasks import', async () => {
     .filter((file) => file.includes('/') && !coveredDirs.includes(file.split('/')[0]));
 
   expect(uncovered).toEqual([]);
+});
+
+// The NX DTE pipeline runs the same targets on Linux and on Windows (scripts/ci/nx/circleci-dte.ts).
+// `OS` is `Windows_NT` on Windows and unset elsewhere, so every task that hashes sharedGlobals,
+// directly or through a dependency's inputs, keeps its Windows results apart, while macOS and Linux
+// still share theirs.
+it('sharedGlobals keeps the Windows cache apart', () => {
+  const nxJson = JSON.parse(readFileSync(join(ROOT, 'nx.json'), 'utf8'));
+  expect(nxJson.namedInputs.sharedGlobals).toContainEqual({ env: 'OS' });
 });

@@ -9,7 +9,8 @@
     "addon-docs",
     "addon-vitest",
     "addon-onboarding",
-    "angular"
+    "angular",
+    "builder-webpack5"
   ],
   "targets": {
     "sandbox": {

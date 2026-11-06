@@ -9,7 +9,11 @@
     "addon-docs",
     "addon-vitest",
     "addon-onboarding",
-    "react-vite"
+    "react-vite",
+    "react",
+    "builder-vite",
+    "addon-mcp",
+    "mcp"
   ],
   "targets": {
     "sandbox": {

@@ -71,6 +71,78 @@ describe('globalSettings', () => {
   });
 });
 
+describe('globalSettings validation', () => {
+  const load = async (value: unknown) => {
+    vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(value));
+    return (await globalSettings(TEST_SETTINGS_FILE)).value;
+  };
+
+  it('keeps every known setting', async () => {
+    const value = {
+      version: 1,
+      userSince: 123,
+      init: { skipOnboarding: true },
+      checklist: {
+        items: {
+          controls: { status: 'done', mutedAt: 456 },
+          viewports: { status: 'skipped' },
+          renderComponent: { mutedAt: 789 },
+          writeInteractions: {},
+        },
+        widget: { disable: false },
+      },
+    };
+
+    expect(await load(value)).toEqual(value);
+    expect(fs.writeFile).not.toHaveBeenCalled();
+  });
+
+  it('drops unknown keys outside checklist items', async () => {
+    expect(
+      await load({
+        version: 2,
+        future: true,
+        init: { skipOnboarding: false, future: true },
+        checklist: { future: true, items: { future: { status: 'done' } }, widget: { future: 1 } },
+      })
+    ).toEqual({
+      version: 2,
+      init: { skipOnboarding: false },
+      checklist: { items: {}, widget: {} },
+    });
+  });
+
+  it.each([
+    ['a missing version', { userSince: 1 }],
+    ['a wrongly typed setting', { version: 1, userSince: '1' }],
+    ['a null setting', { version: 1, init: null }],
+    [
+      'an unknown checklist status',
+      { version: 1, checklist: { items: { controls: { status: 'x' } } } },
+    ],
+    [
+      'an unknown key in a checklist item',
+      { version: 1, checklist: { items: { controls: { x: 1 } } } },
+    ],
+    ['a non-object file', [1]],
+    ['an empty array file', []],
+    ['an array for settings', { version: 1, init: [] }],
+    ['an array for checklist', { version: 1, checklist: [] }],
+    ['an array for checklist items', { version: 1, checklist: { items: [] } }],
+    ['an array for a checklist item', { version: 1, checklist: { items: { controls: [] } } }],
+  ])('replaces a settings file with %s by fresh settings', async (_, value) => {
+    expect(await load(value)).toEqual(baseSettings);
+    expect(fs.writeFile).toHaveBeenCalledWith(TEST_SETTINGS_FILE, baseSettingsJson);
+  });
+
+  it('replaces a settings file that is not JSON by fresh settings', async () => {
+    vi.mocked(fs.readFile).mockResolvedValue('{ not json');
+
+    expect((await globalSettings(TEST_SETTINGS_FILE)).value).toEqual(baseSettings);
+    expect(fs.writeFile).toHaveBeenCalledWith(TEST_SETTINGS_FILE, baseSettingsJson);
+  });
+});
+
 describe('globalSettings default path', () => {
   it('reads from ~/.storybook/settings.json when XDG_CONFIG_HOME is not set', async () => {
     vi.stubEnv('XDG_CONFIG_HOME', undefined);

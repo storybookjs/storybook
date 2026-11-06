@@ -21,11 +21,12 @@ import {
 } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
-import commentJson from 'comment-json';
-import detectIndent from 'detect-indent';
 import * as find from 'empathic/find';
+import { createScanner, parseTree } from 'jsonc-parser';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
+
+import { appendJsonArrayItem, editJsonText, parseJsonText } from './json-text.ts';
 
 export const SUPPORTED_ESLINT_EXTENSIONS = ['ts', 'mts', 'cts', 'mjs', 'js', 'cjs', 'json'];
 const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
@@ -386,6 +387,83 @@ export const normalizeExtends = (existingExtends: CsfValue): string[] => {
   throw new Error(`Invalid eslint extends ${existingExtends}`);
 };
 
+const STORYBOOK_EXTENDS = 'plugin:storybook/recommended';
+
+/**
+ * ESLint reads the last of duplicate `extends` keys, but jsonc-parser edits the first. Remove the
+ * earlier ones, leaving the comments around them in place.
+ */
+const removeEarlierExtends = (code: string) => {
+  const properties =
+    parseTree(code, [], { allowTrailingComma: true })?.children?.filter(
+      (property) => property.children?.[0]?.value === 'extends'
+    ) ?? [];
+
+  return properties
+    .slice(0, -1)
+    .reverse()
+    .reduce((output, { offset, length }) => {
+      // A duplicate is never the last property, so a comma follows it, maybe after comments
+      const scanner = createScanner(output, false);
+      scanner.setPosition(offset + length);
+      let comma = offset + length;
+      // Skip whitespace and comments; a token starting with `,` can only be the comma
+      while (comma < output.length && output[comma] !== ',') {
+        scanner.scan();
+        comma = scanner.getTokenOffset();
+      }
+      // A leading comma takes the space after it along, so the next property keeps its indentation
+      const commaLength = /\n[ \t]*$/.test(output.slice(0, comma))
+        ? (/^,[ \t]*/.exec(output.slice(comma))?.[0].length ?? 0)
+        : 1;
+      const withoutComma = output.slice(0, comma) + output.slice(comma + commaLength);
+
+      const lineStart = withoutComma.lastIndexOf('\n', offset - 1) + 1;
+      const indent = withoutComma.slice(lineStart, offset);
+      const rest = withoutComma.slice(offset + length);
+      if (indent.trim() !== '') {
+        return withoutComma.slice(0, offset) + rest;
+      }
+      // The property started its line: drop the line when nothing else is left on it, or keep
+      // what is left (such as a comment) at the property's indentation
+      const restOfLine = /^[ \t]*(\r?\n|$)/.exec(rest);
+      return restOfLine
+        ? withoutComma.slice(0, lineStart) + rest.slice(restOfLine[0].length)
+        : withoutComma.slice(0, offset) + rest.trimStart();
+    }, code);
+};
+
+/**
+ * Add the recommended Storybook config to the `extends` of an `.eslintrc.json`. Only the `extends`
+ * value is rewritten, so comments and formatting elsewhere in the file are kept.
+ */
+const configureJsonConfig = (code: string, configFile: string): string => {
+  const config = parseJsonText(code);
+  if (typeof config !== 'object' || config === null || Array.isArray(config)) {
+    throw new Error(`Expected ${configFile} to contain a JSON object`);
+  }
+
+  const existing = (config as { extends?: CsfValue }).extends;
+  if (normalizeExtends(existing).includes(STORYBOOK_EXTENDS)) {
+    return code;
+  }
+
+  const output = removeEarlierExtends(code);
+
+  if (Array.isArray(existing)) {
+    return appendJsonArrayItem(output, ['extends'], STORYBOOK_EXTENDS);
+  }
+  // A new `extends` goes first, where it can't take over a comment trailing the last property
+  return editJsonText(
+    output,
+    ['extends'],
+    existing ? [existing, STORYBOOK_EXTENDS] : [STORYBOOK_EXTENDS],
+    {
+      getInsertionIndex: () => 0,
+    }
+  );
+};
+
 export async function configureEslintPlugin({
   eslintConfigFile,
   packageManager,
@@ -398,23 +476,12 @@ export async function configureEslintPlugin({
   if (eslintConfigFile) {
     if (eslintConfigFile.endsWith('json')) {
       logger.debug(`Detected JSON config at ${eslintConfigFile}`);
-      const eslintFileContents = await readFile(eslintConfigFile, { encoding: 'utf8' });
-      const eslintConfig = commentJson.parse(eslintFileContents) as {
-        extends?: string[];
-      };
-      const existingExtends = normalizeExtends(eslintConfig.extends).filter(Boolean);
-
-      if (existingExtends.includes('plugin:storybook/recommended')) {
+      const code = await readFile(eslintConfigFile, { encoding: 'utf8' });
+      const output = configureJsonConfig(code, eslintConfigFile);
+      if (output === code) {
         return;
       }
-
-      if (!Array.isArray(eslintConfig.extends)) {
-        eslintConfig.extends = eslintConfig.extends ? [eslintConfig.extends] : [];
-      }
-      eslintConfig.extends.push('plugin:storybook/recommended');
-
-      const spaces = detectIndent(eslintFileContents).amount || 2;
-      await writeFile(eslintConfigFile, commentJson.stringify(eslintConfig, null, spaces));
+      await writeFile(eslintConfigFile, output);
     } else {
       if (isFlatConfig) {
         logger.debug(`Detected flat config at ${eslintConfigFile}`);
@@ -432,11 +499,11 @@ export async function configureEslintPlugin({
         }
         const existingExtends = normalizeExtends(extendsValue).filter(Boolean);
 
-        if (existingExtends.includes('plugin:storybook/recommended')) {
+        if (existingExtends.includes(STORYBOOK_EXTENDS)) {
           return;
         }
 
-        eslint.set(['extends'], [...existingExtends, 'plugin:storybook/recommended']);
+        eslint.set(['extends'], [...existingExtends, STORYBOOK_EXTENDS]);
 
         await writeConfig(eslint);
       }
@@ -448,7 +515,7 @@ export async function configureEslintPlugin({
 
     packageJson.eslintConfig = {
       ...packageJson.eslintConfig,
-      extends: [...existingExtends, 'plugin:storybook/recommended'],
+      extends: [...existingExtends, STORYBOOK_EXTENDS],
     };
 
     packageManager.writePackageJson(packageJson, operationDir);

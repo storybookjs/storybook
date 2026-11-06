@@ -27,26 +27,26 @@ export const storyArgsChanged = ({ args, unset = [] }: ArgChanges) =>
   Boolean(globalThis.FEATURES?.experimentalLiveServerSnippets) &&
   (Object.keys(args).length > 0 || unset.length > 0);
 
-// Whether the manager reads the args the preview renders with. The channel drops a function, also
-// inside an object or array, so the manager cannot see one the preview sets in place of the
-// story's own.
+// Whether the manager reads the args the preview renders with. The channel drops a function and
+// the entries of a Map or Set, also inside an object or array, so the manager cannot see one the
+// preview sets in place of the story's own: two Sets arrive as the same empty object.
 export function argsReachManager({ unmappedArgs, initialArgs }: StoryArgs): boolean {
   return Object.keys({ ...initialArgs, ...unmappedArgs }).every(
     (key) =>
       unmappedArgs[key] === initialArgs[key] ||
-      !(holdsFunction(unmappedArgs[key]) || holdsFunction(initialArgs[key]))
+      !(holdsLostValue(unmappedArgs[key]) || holdsLostValue(initialArgs[key]))
   );
 }
 
-function holdsFunction(value: unknown, seen = new WeakSet<object>()): boolean {
-  if (typeof value === 'function') {
+function holdsLostValue(value: unknown, seen = new WeakSet<object>()): boolean {
+  if (typeof value === 'function' || value instanceof Map || value instanceof Set) {
     return true;
   }
   if (typeof value !== 'object' || value === null || seen.has(value)) {
     return false;
   }
   seen.add(value);
-  return Object.values(value).some((item) => holdsFunction(item, seen));
+  return Object.values(value).some((item) => holdsLostValue(item, seen));
 }
 
 // The channel sends a class instance, a Map or a Set as a plain object marked

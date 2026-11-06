@@ -1,3 +1,4 @@
+// Benchmark of the NX DTE pipeline (#37221): a core change as daily, run 2. Not for merging.
 export * from './root.tsx';
 
 export { UniversalStore as internal_UniversalStore } from '../shared/universal-store/index.ts';

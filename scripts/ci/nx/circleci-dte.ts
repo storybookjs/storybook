@@ -46,7 +46,7 @@ export const NX_DTE_PEAK_DELAY_SECONDS = 75;
 // that class. `mix` runs the first wave on medium+ and the peak wave on large, and only the large
 // agents take the dev-server E2E tests and the internal Storybook's dev E2E tests
 // (.nx/workflows/circleci-assignment-rules-mix.yaml): on medium+ those timed out or ran out of memory.
-export const NX_DTE_MODE = 'large' as 'medium+' | 'large' | 'mix';
+export const NX_DTE_MODE = 'mix' as 'medium+' | 'large' | 'mix';
 const NX_DTE_CLASS = NX_DTE_MODE === 'large' ? 'large' : 'medium+';
 const classOf = (wave: NxDteWave) =>
   NX_DTE_MODE === 'mix' ? (wave === 'peak' ? 'large' : 'medium+') : NX_DTE_CLASS;

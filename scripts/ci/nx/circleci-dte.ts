@@ -42,8 +42,18 @@ export const NX_DTE_WAVES = {
 } as const;
 export type NxDteWave = keyof typeof NX_DTE_WAVES;
 export const NX_DTE_PEAK_DELAY_SECONDS = 75;
-// Measurement only (the medium+ benchmark): the resource class of `nx-main` and of every agent.
-export const NX_DTE_CLASS: 'medium+' | 'large' = 'medium+';
+// Measurement only (the medium+ benchmark): `large` and `medium+` run `nx-main` and every agent on
+// that class. `mix` runs the first wave on medium+ and the peak wave on large, and only the large
+// agents take the dev-server E2E tests (.nx/workflows/circleci-assignment-rules-mix.yaml): on
+// medium+ those timed out, and angular-vite's ran out of memory.
+export const NX_DTE_MODE = 'mix' as 'medium+' | 'large' | 'mix';
+const NX_DTE_CLASS = NX_DTE_MODE === 'large' ? 'large' : 'medium+';
+const classOf = (wave: NxDteWave) =>
+  NX_DTE_MODE === 'mix' ? (wave === 'peak' ? 'large' : 'medium+') : NX_DTE_CLASS;
+const launchTemplateOf = (wave: NxDteWave) =>
+  NX_DTE_MODE === 'mix' && wave === 'peak' ? 'circleci-linux-large' : 'circleci-linux';
+// In `mix`, the large wave has at least one agent per dev-server E2E task, up to this many.
+const MIX_MAX_LARGE_AGENTS = 50;
 // Measurement only: leaves the Windows jobs out, whose machines do not depend on NX_DTE_CLASS.
 export const MEASURE_WITHOUT_WINDOWS = true;
 // The tasks of one sandbox that run at the same time once it is built.
@@ -183,7 +193,7 @@ const mainJob = (
             'mv .nx/ci-config.yaml /tmp/ci-config.yaml',
             [
               `${NX_CLOUD} start-ci-run --distribute-on=manual`,
-              '--assignment-rules=.nx/workflows/circleci-assignment-rules.yaml',
+              `--assignment-rules=.nx/workflows/circleci-assignment-rules${NX_DTE_MODE === 'mix' ? '-mix' : ''}.yaml`,
               `--stop-workers-after=${targets.join(',')}`,
               '--stop-workers-on-failure=false',
             ].join(' \\\n  '),
@@ -214,7 +224,7 @@ const agentJob = (
   defineJob(
     NX_DTE_WAVES[wave].job,
     () => ({
-      executor: { name: 'sb_node_22_browsers', class: NX_DTE_CLASS },
+      executor: { name: 'sb_node_22_browsers', class: classOf(wave) },
       parallelism: agents,
       environment: {
         ...nxEnvironment(changedFiles),
@@ -232,7 +242,7 @@ const agentJob = (
         BENCH_BASE_BRANCH: '<< pipeline.parameters.ghBaseBranch >>',
         BENCH_PR_NUMBER: '<< pipeline.parameters.ghPrNumber >>',
         // Matches the agent in .nx/workflows/circleci-assignment-rules.yaml.
-        NX_AGENT_LAUNCH_TEMPLATE: 'circleci-linux',
+        NX_AGENT_LAUNCH_TEMPLATE: launchTemplateOf(wave),
       },
       steps: [
         git.checkout(),
@@ -443,6 +453,10 @@ export function getNxDteJobs(
   }
 
   const agents = agentsFor(plan, options);
+  if (NX_DTE_MODE === 'mix') {
+    const devTasks = plan.tasks.filter((task) => task.includes(':e2e-tests-dev')).length;
+    agents.peak = Math.max(agents.peak, Math.min(devTasks, MIX_MAX_LARGE_AGENTS));
+  }
   const targets = [
     ...new Set([
       ...plan.tasks.map((task) => task.slice(task.lastIndexOf(':') + 1)),

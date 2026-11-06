@@ -9,6 +9,7 @@ import { parameters } from '../utils/parameters.ts';
 import { workflows } from '../utils/types.ts';
 import {
   MEASURE_WITHOUT_WINDOWS,
+  NX_DTE_MODE,
   NX_DTE_WAVES,
   agentsFor,
   getNxDteJobs,
@@ -107,9 +108,8 @@ describe('the CircleCI NX DTE pipeline', () => {
         environment: Record<string, string>;
       };
       expect(agent.parallelism).toBe(agents);
-      expect(read('.nx/workflows/circleci-assignment-rules.yaml')).toContain(
-        `agent: ${agent.environment.NX_AGENT_LAUNCH_TEMPLATE}\n`
-      );
+      const rules = `.nx/workflows/circleci-assignment-rules${NX_DTE_MODE === 'mix' ? '-mix' : ''}.yaml`;
+      expect(read(rules)).toContain(`agent: ${agent.environment.NX_AGENT_LAUNCH_TEMPLATE}\n`);
       const parameter = wave === 'first' ? 'nxDteAgents' : 'nxDtePeakAgents';
       expect(parameters[parameter].default).toBe(agents);
       expect(read('.circleci/config.yml')).toContain(`${parameter}:\n    default: ${agents}\n`);

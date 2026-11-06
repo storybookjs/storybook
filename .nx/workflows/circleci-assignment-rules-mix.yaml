@@ -1,0 +1,16 @@
+# Measurement only (the medium+ benchmark, NX_DTE_MODE `mix` in scripts/ci/nx/circleci-dte.ts):
+# the dev-server E2E tests run only on the large agents; every other task on either kind.
+# Both rules name only targets, so the first one wins for the dev-server E2E tests.
+assignment-rules:
+  - targets:
+      - 'e2e-tests-dev*'
+    run-on:
+      - agent: circleci-linux-large
+        parallelism: 1
+  - targets:
+      - '*'
+    run-on:
+      - agent: circleci-linux
+        parallelism: 1
+      - agent: circleci-linux-large
+        parallelism: 1

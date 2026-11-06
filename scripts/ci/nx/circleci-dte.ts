@@ -88,8 +88,22 @@ export function agentsForSelection(
   return { first, peak: total - first };
 }
 
-export const windowsAgentsFor = (selection: Selection) =>
-  agentsForWork(selection, NX_DTE_WINDOWS_AGENTS);
+// The dev-server E2E tests timed out on a Windows `medium` (4 vCPUs): the dev server and 4
+// Playwright workers were too much for it. They run on `large` agents, one per task
+// (.nx/workflows/circleci-windows-assignment-rules.yaml); everything else on `medium`, three times
+// cheaper a minute.
+export const WINDOWS_LARGE_TARGETS = ['e2e-tests-dev-1', 'e2e-tests-dev-2'];
+
+export function windowsAgentsFor(selection: Selection) {
+  const tasks = Object.entries(selection.tasks);
+  const large = tasks.filter(([, task]) => WINDOWS_LARGE_TARGETS.includes(task.target));
+  const medium = {
+    tasks: Object.fromEntries(
+      tasks.filter(([, task]) => !WINDOWS_LARGE_TARGETS.includes(task.target))
+    ),
+  };
+  return { medium: agentsForWork(medium, NX_DTE_WINDOWS_AGENTS), large: large.length };
+}
 
 // The agents each wave runs for a plan, when the setup job could not say which tasks will run.
 // The first wave never outnumbers a plan's tasks (a `docs` run has one), unless they expand to
@@ -121,6 +135,7 @@ export const NX_AGENT_JOB_IDS: readonly string[] = [
   ...Object.values(NX_DTE_WAVES).map((wave) => wave.job),
   PEAK_DELAY_JOB,
   'nx-agent-windows',
+  'nx-agent-windows-large',
 ];
 
 // Pinned as in nx.yml. Only for `start-ci-run`, which runs before the install. The commands after
@@ -214,10 +229,11 @@ const ASSIGNMENT_RULES: Record<Os, string> = {
   windows: '.nx/workflows/circleci-windows-assignment-rules.yaml',
 };
 // The agent each OS's assignment rules name.
-export const LAUNCH_TEMPLATES: Record<Os, string> = {
+export const LAUNCH_TEMPLATES = {
   linux: 'circleci-linux',
   windows: 'circleci-windows',
-};
+  windowsLarge: 'circleci-windows-large',
+} as const;
 
 // The targets of a run's command (run.ts `--targets`), which `start-ci-run --stop-workers-after`
 // must name: NX Cloud stops an agent early ("no further tasks for this worker") only once every
@@ -420,17 +436,21 @@ const windowsMainJob = (
     ],
   }));
 
-const windowsAgentJob = (changedFiles: readonly string[], agents: number) =>
-  defineJob('nx-agent-windows', () => ({
-    // `medium` (4 vCPUs, 40 credits a minute), as the Linux agents' 4 vCPUs: `large` costs three
-    // times as much per minute, and most of an agent's minutes are boot and waiting.
-    executor: { name: 'win/default', size: 'medium', shell: 'bash.exe' },
+const windowsAgentJob = (
+  changedFiles: readonly string[],
+  size: 'medium' | 'large',
+  agents: number
+) =>
+  defineJob(size === 'medium' ? 'nx-agent-windows' : 'nx-agent-windows-large', () => ({
+    // `medium` is 4 vCPUs at 40 credits a minute, `large` 8 at 120 ({@link WINDOWS_LARGE_TARGETS}).
+    executor: { name: 'win/default', size, shell: 'bash.exe' },
     parallelism: agents,
     environment: {
       ...nxEnvironment('windows', changedFiles),
       ...agentEnvironment,
       PLAYWRIGHT_WORKERS: '3',
-      NX_AGENT_LAUNCH_TEMPLATE: LAUNCH_TEMPLATES.windows,
+      NX_AGENT_LAUNCH_TEMPLATE:
+        size === 'medium' ? LAUNCH_TEMPLATES.windows : LAUNCH_TEMPLATES.windowsLarge,
     },
     steps: [
       ...windowsSetup(),
@@ -460,7 +480,7 @@ const windowsAgentJob = (changedFiles: readonly string[], agents: number) =>
         run: {
           name: 'Run the tasks NX Cloud assigns',
           // Bounded as the main job is (`runNx`).
-          command: `NX_AGENT_NAME="circleci-windows-$CIRCLE_NODE_INDEX" /usr/bin/timeout --kill-after=1m 75m yarn nx start-agent`,
+          command: `NX_AGENT_NAME="circleci-windows-${size}-$CIRCLE_NODE_INDEX" /usr/bin/timeout --kill-after=1m 75m yarn nx start-agent`,
           no_output_timeout: '20m',
         },
       },
@@ -504,10 +524,18 @@ export function getNxDteJobs(
   const windows = selection?.windows;
   if (windowsTasks.length > 0 && (!windows || Object.keys(windows.tasks).length > 0)) {
     const targets = commandTargets(windowsTasks);
-    const agents = windows ? windowsAgentsFor(windows) : NX_DTE_WINDOWS_AGENTS;
+    const agents = windows
+      ? windowsAgentsFor(windows)
+      : {
+          medium: NX_DTE_WINDOWS_AGENTS,
+          large: windowsTasks.filter((task) =>
+            WINDOWS_LARGE_TARGETS.includes(task.split(':').at(-1)!)
+          ).length,
+        };
     jobs.push(
-      windowsMainJob(selected, changedFiles, targets, base, agents),
-      windowsAgentJob(changedFiles, agents)
+      windowsMainJob(selected, changedFiles, targets, base, agents.medium + agents.large),
+      ...(agents.medium > 0 ? [windowsAgentJob(changedFiles, 'medium', agents.medium)] : []),
+      ...(agents.large > 0 ? [windowsAgentJob(changedFiles, 'large', agents.large)] : [])
     );
   }
 

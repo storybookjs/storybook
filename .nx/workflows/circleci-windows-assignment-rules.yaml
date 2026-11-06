@@ -1,11 +1,28 @@
 # Assignment rules for the Windows agents of the NX DTE pipeline (scripts/ci/nx/circleci-dte.ts),
-# whose run `nx-main-windows` starts with `NX_CI_EXECUTION_ENV=windows`. The agents set
-# NX_AGENT_LAUNCH_TEMPLATE to the agent name below. One task at a time, as on Linux
-# (circleci-assignment-rules.yaml).
+# whose run `nx-main-windows` starts with `NX_CI_EXECUTION_ENV=windows`. Each agent sets
+# NX_AGENT_LAUNCH_TEMPLATE to one of the agent names below, and runs one task at a time (plus the
+# continuous tasks it needs), as on Linux (circleci-assignment-rules.yaml).
+#
+# The dev-server E2E tests timed out on a `medium` (4 vCPUs), so they run on `large` agents
+# (`WINDOWS_LARGE_TARGETS` in circleci-dte.ts); every other Windows task on `medium`, which costs a
+# third as much a minute. The two rules name disjoint targets.
 # https://nx.dev/docs/reference/nx-cloud/assignment-rules
 assignment-rules:
   - targets:
-      - '*'
+      - e2e-tests-dev-1
+      - e2e-tests-dev-2
+    run-on:
+      - agent: circleci-windows-large
+        parallelism: 1
+  - targets:
+      - compile
+      - publish
+      - sandbox
+      - build
+      - e2e-tests
+      - test-1
+      - test-2
+      - init-empty
     run-on:
       - agent: circleci-windows
         parallelism: 1

@@ -1,7 +1,10 @@
+import { convert } from 'storybook/internal/docs-tools';
+import type { DocgenInfo } from 'storybook/internal/docs-tools';
 import type {
   DocgenPayload,
   DocgenProviderInput,
   DocgenSubcomponent,
+  SBType,
   StrictArgTypes,
 } from 'storybook/internal/types';
 
@@ -10,7 +13,10 @@ import path from 'pathe';
 
 import { buildComponentDocgenFromResolved } from '../componentManifest/buildReactComponentDocgen.ts';
 import type { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
-import type { ComponentDoc } from '../componentManifest/componentMeta/componentMetaExtractor.ts';
+import type {
+  ComponentDoc,
+  PropItemType,
+} from '../componentManifest/componentMeta/componentMetaExtractor.ts';
 import type {
   ComponentRef,
   StoryRef,
@@ -42,6 +48,23 @@ function isReactAttribute(prop: ComponentDoc['props'][string]) {
   );
 }
 
+/**
+ * RCM names arrays as TypeScript prints them (`string[]`), which the shared conversion reads as
+ * `other`. Builds the `array` type from the element type instead, like the Vue 3 adapter does.
+ */
+function toArrayType(type: PropItemType): SBType | undefined {
+  if (type.elements?.length !== 1) {
+    return undefined;
+  }
+  const [element] = type.elements;
+  return {
+    name: 'array',
+    raw: type.name,
+    value: toArrayType(element) ??
+      convert({ type: element } as DocgenInfo) ?? { name: 'other', value: element.name },
+  };
+}
+
 /** Converts one RCM `ComponentDoc` into the `StrictArgTypes` shape consumed by args tables. */
 export function extractArgTypesFromComponentMeta(
   componentMeta: ComponentDoc | undefined
@@ -62,7 +85,15 @@ export function extractArgTypesFromComponentMeta(
           : prop,
       ])
   );
-  return extractArgTypes({ __docgenInfo: { ...componentMeta, props } }) ?? undefined;
+  const argTypes = extractArgTypes({ __docgenInfo: { ...componentMeta, props } }) ?? undefined;
+  for (const [name, prop] of Object.entries(componentMeta.props)) {
+    const arrayType = toArrayType(prop.type);
+    const argType = argTypes?.[name];
+    if (arrayType && argType) {
+      argType.type = { required: prop.required, ...arrayType };
+    }
+  }
+  return argTypes;
 }
 
 /**

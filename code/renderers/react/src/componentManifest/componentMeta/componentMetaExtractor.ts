@@ -35,6 +35,8 @@ export interface PropItemType {
   name: string;
   raw?: string;
   value?: { value: string }[];
+  /** Element type of an array, such as `string` for `string[]`. */
+  elements?: PropItemType[];
 }
 
 export interface ParentType {
@@ -736,7 +738,19 @@ function serializeType(
       nonUndefinedTypes.length === 1 &&
       nonUndefinedTypes.length < type.types.length
     ) {
-      return { name: checker.typeToString(nonUndefinedTypes[0]) };
+      return serializeLeaf(typescript, checker, nonUndefinedTypes[0], depth);
+    }
+
+    // A nullable array keeps TypeScript's name, but its array member still supplies the element
+    // type so the args table can offer the array control.
+    const nonNullishTypes = nonUndefinedTypes.filter(
+      (t) => !(t.getFlags() & typescript.TypeFlags.Null)
+    );
+    if (nonNullishTypes.length === 1 && checker.isArrayType(nonNullishTypes[0])) {
+      return {
+        name: checker.typeToString(type),
+        elements: serializeElements(typescript, checker, nonNullishTypes[0], depth),
+      };
     }
   }
 
@@ -745,7 +759,34 @@ function serializeType(
     return serializeType(typescript, checker, constraint, isRequired, depth + 1);
   }
 
-  return { name: checker.typeToString(type) };
+  return serializeLeaf(typescript, checker, type, depth);
+}
+
+/**
+ * Names a type as TypeScript prints it. Arrays also get their element type, so args tables can
+ * show an array control.
+ */
+function serializeLeaf(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  type: ts.Type,
+  depth: number
+): PropItemType {
+  const name = checker.typeToString(type);
+  return checker.isArrayType(type)
+    ? { name, elements: serializeElements(typescript, checker, type, depth) }
+    : { name };
+}
+
+function serializeElements(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  arrayType: ts.Type,
+  depth: number
+): PropItemType[] {
+  return checker
+    .getTypeArguments(arrayType as ts.TypeReference)
+    .map((element) => serializeType(typescript, checker, element, true, depth + 1));
 }
 
 // ---------------------------------------------------------------------------

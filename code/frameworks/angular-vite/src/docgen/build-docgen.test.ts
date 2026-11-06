@@ -287,6 +287,16 @@ describe('buildDocgenPayload', () => {
         expect(payload?.docsDescription).toBe('Renders a button.\n\n```html\n<app-button />\n```');
       });
 
+      it('keeps an @example with a caption before its fence as it is', () => {
+        const payload = payloadWith('Renders a button.', [
+          'Basic usage:\n```html\n<app-button />\n```',
+        ]);
+
+        expect(payload?.docsDescription).toBe(
+          'Renders a button.\n\nBasic usage:\n```html\n<app-button />\n```'
+        );
+      });
+
       it('wraps unfenced @example values in a code block, one per tag', () => {
         const payload = payloadWith('Renders a button.', [
           '<app-button />',
@@ -313,6 +323,22 @@ describe('buildDocgenPayload', () => {
 
       it('is undefined when there are no examples, so the description is used', () => {
         expect(payloadWith('Renders a button.')?.docsDescription).toBeUndefined();
+      });
+
+      it('uses the analyzer prose and tags when TypeScript JSDoc is unavailable', () => {
+        givenStoryFile();
+        const manager = managerReturning(
+          metaFor(
+            componentEntry({
+              rawdescription: 'Renders a button.',
+              jsdoctags: [{ tagName: { escapedText: 'example' }, comment: '<app-button />' }],
+            })
+          )
+        );
+
+        const payload = buildDocgenPayload({ entry }, context(manager));
+
+        expect(payload?.docsDescription).toBe('Renders a button.\n\n```\n<app-button />\n```');
       });
     });
   });

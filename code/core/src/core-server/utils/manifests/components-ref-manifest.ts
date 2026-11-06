@@ -69,8 +69,11 @@ export function mergeManifestPayloads(
   docgen: DocgenPayload,
   storyDocs?: StoryDocsPayload
 ): ComponentManifestWithStoryDocs {
+  // `docsDescription` is for the Docs `Description` block only; the manifest renders `description`
+  // and `jsDocTags` itself.
+  const { docsDescription: _docsDescription, ...component } = docgen;
   return {
-    ...docgen,
+    ...component,
     stories: storyDocs?.stories ?? {},
     ...(storyDocs?.import ? { import: storyDocs.import } : {}),
   };

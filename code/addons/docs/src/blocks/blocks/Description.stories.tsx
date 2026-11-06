@@ -21,7 +21,16 @@ import { Description } from './Description';
 import type { DocsContextProps } from './DocsContext.ts';
 import { docgenServiceDef } from '../../../../../core/src/shared/open-service/services/docgen/definition.ts';
 import { storyDocsServiceDef } from '../../../../../core/src/shared/open-service/services/story-docs/definition.ts';
-import { unregisterService } from '../../../../../core/src/shared/open-service/service-registry.ts';
+import {
+  getRegisteredServices,
+  unregisterService,
+} from '../../../../../core/src/shared/open-service/service-registry.ts';
+
+// The real core services register once, in `beforeAll`. A story that swaps one for a mock has to put
+// it back, or the stories opened after it find no service.
+function isServiceRegistered(serviceId: string) {
+  return getRegisteredServices().some(({ id }) => id === serviceId);
+}
 
 type StoryDocsMockData = {
   description?: string;
@@ -61,6 +70,7 @@ function storyDocsServiceStoryBeforeEach(of: ModuleExport, data: StoryDocsMockDa
     globalThis.FEATURES = { ...previousFeatures, docgenServer: true };
 
     const payload = createStoryDocsPayload(docsContext, of, data);
+    const hadStoryDocsService = isServiceRegistered(storyDocsServiceDef.id);
     unregisterService('core/story-docs');
     const service = registerService(storyDocsServiceDef, {
       commands: {
@@ -85,6 +95,9 @@ function storyDocsServiceStoryBeforeEach(of: ModuleExport, data: StoryDocsMockDa
 
     return () => {
       unregisterService('core/story-docs');
+      if (hadStoryDocsService) {
+        registerService(storyDocsServiceDef);
+      }
       globalThis.FEATURES = previousFeatures;
     };
   };
@@ -109,6 +122,7 @@ function docgenServiceBeforeEach(of: ModuleExport, data: DocgenMockData) {
       jsDocTags: {},
       ...data,
     };
+    const hadDocgenService = isServiceRegistered(docgenServiceDef.id);
     unregisterService('core/docgen');
     const service = registerService(docgenServiceDef, {
       commands: {
@@ -133,6 +147,9 @@ function docgenServiceBeforeEach(of: ModuleExport, data: DocgenMockData) {
 
     return () => {
       unregisterService('core/docgen');
+      if (hadDocgenService) {
+        registerService(docgenServiceDef);
+      }
       globalThis.FEATURES = previousFeatures;
     };
   };
@@ -141,6 +158,7 @@ function docgenServiceBeforeEach(of: ModuleExport, data: DocgenMockData) {
 const SERVICE_STORY_DESCRIPTION = 'Description from the story-docs service';
 const DOCGEN_DESCRIPTION = 'Description from the docgen service';
 const DOCGEN_EXAMPLE = '<app-empty-example />';
+const DOCGEN_DOCS_DESCRIPTION = `${DOCGEN_DESCRIPTION}\n\n\`\`\`html\n${DOCGEN_EXAMPLE}\n\`\`\``;
 
 const meta = {
   component: Description,
@@ -264,7 +282,7 @@ export const OfCSFFileWithDocgenDocsDescription: Story = {
   parameters: { relativeCsfPaths: ['../examples/SourceParameters.stories'] },
   beforeEach: docgenServiceBeforeEach(ParametersStories, {
     description: DOCGEN_DESCRIPTION,
-    docsDescription: `${DOCGEN_DESCRIPTION}\n\n\`\`\`html\n${DOCGEN_EXAMPLE}\n\`\`\``,
+    docsDescription: DOCGEN_DOCS_DESCRIPTION,
   }),
   play: async ({ canvasElement }) => {
     await expect(canvasElement).toHaveTextContent(DOCGEN_DESCRIPTION);
@@ -280,7 +298,7 @@ export const OfCSFFileAsParameterWinsOverDocgenDocsDescription: Story = {
   parameters: { relativeCsfPaths: ['../examples/ButtonWithMetaDescriptionAsParameter.stories'] },
   beforeEach: docgenServiceBeforeEach(ButtonStoriesWithMetaDescriptionAsParameter, {
     description: DOCGEN_DESCRIPTION,
-    docsDescription: `${DOCGEN_DESCRIPTION}\n\n\`\`\`html\n${DOCGEN_EXAMPLE}\n\`\`\``,
+    docsDescription: DOCGEN_DOCS_DESCRIPTION,
   }),
   play: async ({ canvasElement }) => {
     await expect(canvasElement).toHaveTextContent('These are the stories for the Button component');

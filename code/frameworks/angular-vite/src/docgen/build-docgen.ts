@@ -63,8 +63,10 @@ const outputsOf = (entry: AngularClassMeta) =>
 
 const describedBy = (text: string | undefined): string | undefined => text?.trim() || undefined;
 
+// An example that already has a fence (possibly after a caption such as "Basic usage:") is Markdown
+// already; wrapping it again would nest the fences.
 const asCodeBlock = (example: string) =>
-  example.startsWith('```') ? example : ['```', example, '```'].join('\n');
+  example.includes('```') ? example : ['```', example, '```'].join('\n');
 
 // Compodoc keeps `@example` in the description, so Angular docs pages show it. The examples go in
 // `docsDescription` rather than `description`, because the manifest already renders `@example`

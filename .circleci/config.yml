@@ -31,7 +31,7 @@ parameters:
     type: boolean
   nxDteMaxAgents:
     default: 44
-    description: At most how many Linux CircleCI agents a run starts when nxDte is set; the setup job starts the fewest its work needs
+    description: At most how many Linux CircleCI agents a run starts when nxDte is set; the setup job works out how many its work needs
     type: integer
   workflow:
     default: skipped
@@ -120,6 +120,8 @@ jobs:
                   GH_PR_NUMBER: << pipeline.parameters.ghPrNumber >>
                   NX_NO_CLOUD: 'true'
                   NX_DAEMON: 'false'
+                  # As the root .env, which select.ts's in-process hashing does not load.
+                  NX_ISOLATE_PLUGINS: 'false'
                 command: |
                   # Only a pull request has a base to diff against; anything else runs every task.
                   # The parameter inline: a boolean in `environment` does not reach the step as `true`.
@@ -133,7 +135,7 @@ jobs:
                     --base-ref="origin/$GH_BASE_BRANCH" \
                     --base="$BASE" \
                     --nx-branch="${GH_PR_NUMBER:-<< pipeline.git.branch >>}" \
-                    --base-branch="$GH_BASE_BRANCH" \
+                    --max-agents=<< pipeline.parameters.nxDteMaxAgents >> \
                     --out=/tmp/nx-dte-selection.json
             - store_artifacts:
                 path: /tmp/nx-dte-selection.json

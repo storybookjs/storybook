@@ -13,9 +13,18 @@
 export type WorkTask = { seconds: number; dependsOn: readonly string[] };
 export type Work = Readonly<Record<string, WorkTask>>;
 
-// A minute sooner green is worth this many agent-minutes. Below it, an agent that only shaves a
-// few seconds off the run is not started.
-export const WAIT_WORTH = 4;
+// Speed first: a minute sooner green is worth this many agent-minutes (about 400 credits on Linux),
+// so an agent starts when it makes the run at least three seconds faster for each minute it bills.
+// At 4, a cold core run started 24 agents instead of 44: 500 credits cheaper, but 1m46s slower.
+export const WAIT_WORTH = 20;
+
+// Linux agents are `large` containers (4 vCPUs; a task costs more on `xlarge`, which bills twice
+// the credits per minute and ran the dev-server E2E tests only a quarter faster). A Windows `large`
+// agent costs 120 credits a minute and boots in about four minutes, which also bounds how many pay
+// off.
+export const MAX_AGENTS = { linux: 44, windows: 4 } as const;
+// From the job's start until `nx start-agent` takes a task: checkout, node_modules, Chromium.
+export const AGENT_BOOT_SECONDS = { linux: 60, windows: 240 } as const;
 
 // Each task's chain: its own seconds plus the longest chain of the tasks that wait for it.
 function chains(work: Work) {

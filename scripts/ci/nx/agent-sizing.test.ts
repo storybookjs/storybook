@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
-import { type Work, agentsFor, simulate } from './agent-sizing.ts';
+import { AGENT_BOOT_SECONDS, MAX_AGENTS, type Work, agentsFor, simulate } from './agent-sizing.ts';
 
 const independent = (n: number, seconds: number): Work =>
   Object.fromEntries(Array.from({ length: n }, (_, i) => [`t${i}`, { seconds, dependsOn: [] }]));
 
+const linux = { max: MAX_AGENTS.linux, bootSeconds: AGENT_BOOT_SECONDS.linux };
+const windows = { max: MAX_AGENTS.windows, bootSeconds: AGENT_BOOT_SECONDS.windows };
+
 describe('the agents a run needs', () => {
-  it('bills each agent from its boot until no task is left to hand out', () => {
+  it('bills an idle agent only until the last task is handed out', () => {
     expect(simulate({ a: { seconds: 100, dependsOn: [] } }, 2, 60)).toEqual({
       seconds: 160,
-      // The idle agent stops once the only task is handed out.
       agentSeconds: 160 + 60,
     });
   });
@@ -28,20 +30,27 @@ describe('the agents a run needs', () => {
       sandbox: { seconds: 10, dependsOn: [] },
       e2e: { seconds: 100, dependsOn: ['sandbox'] },
     };
-    // With `short` first, the E2E test would start 10 seconds later.
     expect(simulate(work, 1, 0).seconds).toBe(120);
     expect(simulate(work, 2, 0).seconds).toBe(110);
   });
 
   it('starts no agent that only shaves a few seconds off the run', () => {
-    expect(agentsFor(independent(2, 10), { max: 44, bootSeconds: 60 }).agents).toBe(1);
+    expect(agentsFor(independent(2, 2), linux).agents).toBe(1);
   });
 
   it('starts as many agents as long independent tasks need, up to the maximum', () => {
-    expect(agentsFor(independent(10, 600), { max: 44, bootSeconds: 60 }).agents).toBe(10);
-    expect(agentsFor(independent(440, 300), { max: 44, bootSeconds: 60 }).agents).toBe(44);
-    // 400 tasks take ten rounds on 40 agents as on 44.
-    expect(agentsFor(independent(400, 300), { max: 44, bootSeconds: 60 }).agents).toBe(40);
+    expect(agentsFor(independent(10, 600), linux).agents).toBe(10);
+    expect(agentsFor(independent(440, 300), linux).agents).toBe(MAX_AGENTS.linux);
+    expect(agentsFor(independent(440, 300), { ...linux, max: 5 }).agents).toBe(5);
+  });
+
+  it('starts no agent that leaves the number of rounds the same', () => {
+    expect(agentsFor(independent(400, 300), linux).agents).toBe(40);
+  });
+
+  it('starts far fewer agents for a rerun, whose tasks only restore from the cache', () => {
+    const cold = agentsFor(independent(177, 60), linux).agents;
+    expect(agentsFor(independent(177, 5), linux).agents).toBeLessThanOrEqual(cold / 2);
   });
 
   it('does not add agents to a run its longest chain decides', () => {
@@ -50,14 +59,15 @@ describe('the agents a run needs', () => {
       b: { seconds: 300, dependsOn: ['a'] },
       ...independent(5, 20),
     };
-    expect(agentsFor(chain, { max: 44, bootSeconds: 60 }).agents).toBe(2);
+    expect(agentsFor(chain, linux).agents).toBe(2);
+  });
+
+  it('weighs the long boot of a Windows agent, at most four of them', () => {
+    expect(agentsFor(independent(2, 600), windows).agents).toBe(2);
+    expect(agentsFor(independent(40, 600), windows).agents).toBe(MAX_AGENTS.windows);
   });
 
   it('starts no agent for no work', () => {
-    expect(agentsFor({}, { max: 44, bootSeconds: 60 })).toEqual({
-      agents: 0,
-      seconds: 0,
-      agentSeconds: 0,
-    });
+    expect(agentsFor({}, linux)).toEqual({ agents: 0, seconds: 0, agentSeconds: 0 });
   });
 });

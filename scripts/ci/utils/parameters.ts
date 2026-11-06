@@ -33,7 +33,7 @@ export const parameters = {
   nxDteMaxAgents: {
     default: 44,
     description:
-      'At most how many Linux CircleCI agents a run starts when nxDte is set; the setup job starts the fewest its work needs',
+      'At most how many Linux CircleCI agents a run starts when nxDte is set; the setup job works out how many its work needs',
     type: 'integer',
   },
   workflow: {

@@ -1,6 +1,7 @@
 // Nx's hash of each selected task, as the run will compute it, for CircleCI's setup job (select.ts):
 // the hash keys the task's cache entry, so a hash an earlier run stored is a task that only
-// restores. With Nx's own hasher, so a change to how Nx hashes cannot make the two disagree.
+// restores. With Nx's own hasher, so a change to how Nx hashes cannot make the two disagree; these
+// are Nx internals, and select.ts warns when no hash matches an earlier run's.
 //
 // The Windows tasks are hashed here on Linux with Windows' `OS`, the one input that differs
 // (`sharedGlobals` in nx.json; the repository checks files out unchanged, `* -text`).
@@ -11,28 +12,37 @@ import { createTaskGraph } from 'nx/src/tasks-runner/create-task-graph.js';
 
 import type { Selection } from './selection.ts';
 
-export async function hashSelection(
-  selection: Selection,
-  env: 'linux' | 'windows'
-): Promise<Record<string, string>> {
-  const tasks = Object.values(selection.tasks);
-  if (tasks.length === 0) {
-    return {};
-  }
-  const graph = await createProjectGraphAsync({ exitOnError: true });
-  const taskGraph = createTaskGraph(
-    graph,
-    {},
-    [...new Set(tasks.map((task) => task.project))],
-    [...new Set(tasks.map((task) => task.target))],
-    'production',
-    {}
-  );
-  const ids = Object.keys(selection.tasks).filter((id) => taskGraph.tasks[id]);
-  const hashes = await createTaskHasher(graph, readNxJson()).hashTasks(
-    ids.map((id) => taskGraph.tasks[id]),
-    taskGraph,
-    { ...process.env, ...(env === 'windows' ? { OS: 'Windows_NT' } : {}) }
-  );
-  return Object.fromEntries(ids.map((id, i) => [id, hashes[i].value]));
+type Os = 'linux' | 'windows';
+
+export async function hashSelections(
+  selections: Record<Os, Selection>
+): Promise<Record<Os, Record<string, string>>> {
+  // Throws instead of exiting, so select.ts can fall back to counting every task.
+  const graph = await createProjectGraphAsync({ exitOnError: false });
+  const hasher = createTaskHasher(graph, readNxJson());
+  const hash = async (selection: Selection, os: Os) => {
+    const tasks = Object.values(selection.tasks);
+    if (tasks.length === 0) {
+      return {};
+    }
+    const taskGraph = createTaskGraph(
+      graph,
+      {},
+      [...new Set(tasks.map((task) => task.project))],
+      [...new Set(tasks.map((task) => task.target))],
+      'production',
+      {}
+    );
+    const ids = Object.keys(selection.tasks).filter((id) => taskGraph.tasks[id]);
+    const hashes = await hasher.hashTasks(
+      ids.map((id) => taskGraph.tasks[id]),
+      taskGraph,
+      { ...process.env, ...(os === 'windows' ? { OS: 'Windows_NT' } : {}) }
+    );
+    return Object.fromEntries(ids.map((id, i) => [id, hashes[i].value]));
+  };
+  return {
+    linux: await hash(selections.linux, 'linux'),
+    windows: await hash(selections.windows, 'windows'),
+  };
 }

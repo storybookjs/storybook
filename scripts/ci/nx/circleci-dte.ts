@@ -14,8 +14,8 @@
 // - The Node 26 smoke job stays a plain CircleCI job, as CircleCI defines it.
 //
 // CircleCI's setup job asks Nx which tasks the run will run, which of them NX Cloud already has in
-// its cache, and how long the rest take (select.ts). Each agent job gets the fewest agents that
-// run that work about as fast as any number could (agent-sizing.ts).
+// its cache, and how long each takes, and works out the agents each OS needs for that work
+// (select.ts, agent-sizing.ts); all of them start at once.
 //
 // Opt in with the `nxDte` pipeline parameter (.circleci/config.yml); main.ts then generates these
 // jobs instead of the per-job ones. Like main.ts, this runs under plain Node before `yarn install`.
@@ -25,34 +25,20 @@ import { cache, git, node, testResults } from '../utils/helpers.ts';
 import { isTrustedAuthor } from '../utils/runtime.ts';
 import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
 import { linuxRuns, planFor, windowsTasksOf } from './plan.ts';
-import { agentsFor } from './agent-sizing.ts';
-import { type Selection, workOf } from './selection.ts';
-
-// Linux agents are `large` containers (4 vCPUs; a task costs more on `xlarge`, which bills twice
-// the credits per minute and ran the dev-server E2E tests only a quarter faster). A Windows `large`
-// agent costs 120 credits a minute and boots in about four minutes, which also bounds how many pay
-// off.
-export const MAX_AGENTS = { linux: 44, windows: 4 } as const;
-// From the job's start until `nx start-agent` takes a task: checkout, node_modules, Chromium.
-export const AGENT_BOOT_SECONDS = { linux: 60, windows: 240 } as const;
+import { MAX_AGENTS } from './agent-sizing.ts';
+import type { Selection } from './selection.ts';
 
 export type NxDteOptions = {
-  // At most this many Linux agents (the `nxDteMaxAgents` pipeline parameter).
+  // At most this many Linux agents when the setup job sized none (the `nxDteMaxAgents` parameter).
   maxAgents?: number;
   // The commit a pull request branched from: the run then runs only the tasks a change since it
   // reaches (`nx affected`). Without it, every task of the plan runs.
   base?: string;
-  // The tasks the run will run, from CircleCI's setup job (select.ts). Without them (locally and in
-  // tests), every agent job starts at its maximum.
+  // From CircleCI's setup job (select.ts): the tasks the run will run, and the agents each OS
+  // needs for them. Without them (locally and in tests), every agent job starts at its maximum.
   selection?: { linux: Selection; windows: Selection };
+  agents?: { linux: number; windows: number };
 };
-
-// The agents a selection needs (agent-sizing.ts).
-export const agentsForSelection = (
-  selection: Selection,
-  os: Os,
-  max: number = MAX_AGENTS[os]
-): number => agentsFor(workOf(selection), { max, bootSeconds: AGENT_BOOT_SECONDS[os] }).agents;
 
 // dte-task-statuses.ts reads the failed tasks from this step of these jobs.
 export const NX_MAIN_JOBS = { linux: 'nx-main', windows: 'nx-main-windows' } as const;
@@ -400,8 +386,7 @@ export function getNxDteJobs(
 
   const linux = selection?.linux;
   if (linuxRuns(selected, plan) && (!linux || Object.keys(linux.tasks).length > 0)) {
-    const max = options.maxAgents ?? MAX_AGENTS.linux;
-    const agents = linux ? agentsForSelection(linux, 'linux', max) : max;
+    const agents = options.agents?.linux ?? options.maxAgents ?? MAX_AGENTS.linux;
     const targets = commandTargets([...plan.tasks, ...(plan.affectedCheck ? ['*:check'] : [])]);
     jobs.push(
       mainJob(selected, changedFiles, targets, base, agents),
@@ -413,7 +398,7 @@ export function getNxDteJobs(
   const windows = selection?.windows;
   if (windowsTasks.length > 0 && (!windows || Object.keys(windows.tasks).length > 0)) {
     const targets = commandTargets(windowsTasks);
-    const agents = windows ? agentsForSelection(windows, 'windows') : MAX_AGENTS.windows;
+    const agents = options.agents?.windows ?? MAX_AGENTS.windows;
     jobs.push(
       windowsMainJob(selected, changedFiles, targets, base, agents),
       windowsAgentJob(changedFiles, agents)

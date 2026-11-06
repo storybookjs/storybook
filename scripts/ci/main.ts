@@ -178,6 +178,7 @@ const agentCounts: NxDteOptions = {
   ...(setupSelection && {
     base: setupSelection.base,
     selection: { linux: setupSelection.linux, windows: setupSelection.windows },
+    agents: setupSelection.agents,
   }),
 };
 const nxDte = opts['nx-dte'] === 'true' && agentCounts;

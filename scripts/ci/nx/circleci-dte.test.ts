@@ -12,10 +12,9 @@ import {
   LAUNCH_TEMPLATES,
   NODE_MODULES_ARCHIVE,
   NODE_MODULES_KEY,
-  MAX_AGENTS,
-  agentsForSelection,
   getNxDteJobs,
 } from './circleci-dte.ts';
+import { MAX_AGENTS } from './agent-sizing.ts';
 import { planFor } from './plan.ts';
 import { EMPTY_SELECTION, type Selection } from './selection.ts';
 
@@ -47,12 +46,11 @@ describe('the CircleCI NX DTE pipeline', () => {
     expect(ids('windows')).toEqual(windows);
   });
 
-  // A selection of `n` independent tasks of a target, each taking `seconds`.
-  const tasks = (target: string, n: number, seconds = 60, cached = false): Selection => ({
+  const tasks = (target: string, n: number): Selection => ({
     tasks: Object.fromEntries(
       Array.from({ length: n }, (_, i) => [
         `p${i}:${target}`,
-        { project: `p${i}`, target, cache: true, dependsOn: [], seconds, cached },
+        { project: `p${i}`, target, cache: true, dependsOn: [] },
       ])
     ),
   });
@@ -67,23 +65,17 @@ describe('the CircleCI NX DTE pipeline', () => {
         }
       | undefined;
 
-  it('starts the agents the work needs, all at once', () => {
-    expect(agentsForSelection(tasks('fmt', 1), 'linux')).toBe(1);
-    // A rerun: the same tasks, but they only restore from the cache.
-    expect(agentsForSelection(tasks('e2e-tests', 177, 5, true), 'linux')).toBeLessThan(10);
-    expect(agentsForSelection(tasks('e2e-tests', 177), 'linux')).toBeGreaterThan(20);
-    expect(agentsForSelection(tasks('e2e-tests', 440, 300), 'linux')).toBe(MAX_AGENTS.linux);
-    expect(agentsForSelection(tasks('e2e-tests', 440, 300), 'linux', 5)).toBe(5);
-    expect(agentsForSelection(EMPTY_SELECTION, 'linux')).toBe(0);
-
-    const jobs = withSelection(tasks('fmt', 1));
-    expect(job(jobs, 'nx-agent')!.parallelism).toBe(1);
-    expect(job(jobs, 'nx-main')!.environment.NX_CLOUD_DISTRIBUTED_EXECUTION_AGENT_COUNT).toBe('1');
-  });
-
-  it('starts at most four Windows agents, which take about four minutes to boot', () => {
-    expect(agentsForSelection(tasks('e2e-tests', 2, 600), 'windows')).toBe(2);
-    expect(agentsForSelection(tasks('e2e-tests', 40, 600), 'windows')).toBe(MAX_AGENTS.windows);
+  it('starts the agents the setup job worked out, all in one job', () => {
+    const jobs = getNxDteJobs(['daily'], 'unused', {
+      selection: { linux: tasks('fmt', 1), windows: tasks('test-1', 1) },
+      agents: { linux: 3, windows: 2 },
+    });
+    expect(job(jobs, 'nx-agent')!.parallelism).toBe(3);
+    expect(job(jobs, 'nx-main')!.environment.NX_CLOUD_DISTRIBUTED_EXECUTION_AGENT_COUNT).toBe('3');
+    expect(job(jobs, 'nx-agent-windows')!.parallelism).toBe(2);
+    expect(
+      job(jobs, 'nx-main-windows')!.environment.NX_CLOUD_DISTRIBUTED_EXECUTION_AGENT_COUNT
+    ).toBe('2');
   });
 
   it('names every target of the command in --stop-workers-after, whatever the change reaches', () => {

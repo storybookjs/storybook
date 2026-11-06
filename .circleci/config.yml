@@ -29,13 +29,9 @@ parameters:
     default: true
     description: When nxDte is set on a pull request, run only the tasks the change reaches (nx affected) instead of all of them
     type: boolean
-  nxDteAgents:
-    default: 20
-    description: At most how many CircleCI agents start with the run when nxDte is set
-    type: integer
-  nxDtePeakAgents:
-    default: 24
-    description: At most how many more CircleCI agents join when the sandbox tasks become ready, when nxDte is set
+  nxDteMaxAgents:
+    default: 44
+    description: At most how many Linux CircleCI agents a run starts when nxDte is set; the setup job starts the fewest its work needs
     type: integer
   workflow:
     default: skipped
@@ -136,6 +132,8 @@ jobs:
                     --workflow=<< pipeline.parameters.workflow >> \
                     --base-ref="origin/$GH_BASE_BRANCH" \
                     --base="$BASE" \
+                    --nx-branch="${GH_PR_NUMBER:-<< pipeline.git.branch >>}" \
+                    --base-branch="$GH_BASE_BRANCH" \
                     --out=/tmp/nx-dte-selection.json
             - store_artifacts:
                 path: /tmp/nx-dte-selection.json
@@ -150,8 +148,7 @@ jobs:
               --gh-trusted-author=<< pipeline.parameters.ghTrustedAuthor >> \
               --branch="<< pipeline.git.branch >>" \
               --nx-dte=<< pipeline.parameters.nxDte >> \
-              --nx-dte-agents=<< pipeline.parameters.nxDteAgents >> \
-              --nx-dte-peak-agents=<< pipeline.parameters.nxDtePeakAgents >> \
+              --nx-dte-max-agents=<< pipeline.parameters.nxDteMaxAgents >> \
               $([ "<< pipeline.parameters.nxDte >>" = true ] && echo --nx-dte-selection=/tmp/nx-dte-selection.json)
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml

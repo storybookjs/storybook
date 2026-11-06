@@ -148,8 +148,7 @@ const { values: opts } = parseArgs({
     branch: { type: 'string', default: '' },
     'nx-dte': { type: 'string', default: 'false' },
     output: { type: 'string', default: join(dirname, '../../.circleci/config.generated.yml') },
-    'nx-dte-agents': { type: 'string' },
-    'nx-dte-peak-agents': { type: 'string' },
+    'nx-dte-max-agents': { type: 'string' },
     // The tasks the run will run, from the setup job (scripts/ci/nx/select.ts).
     'nx-dte-selection': { type: 'string' },
   },
@@ -175,21 +174,19 @@ if (opts['nx-dte'] === 'true' && !setupSelection) {
   );
 }
 const agentCounts: NxDteOptions = {
-  first: opts['nx-dte-agents'] ? Number(opts['nx-dte-agents']) : undefined,
-  peak: opts['nx-dte-peak-agents'] !== undefined ? Number(opts['nx-dte-peak-agents']) : undefined,
+  maxAgents: opts['nx-dte-max-agents'] ? Number(opts['nx-dte-max-agents']) : undefined,
   ...(setupSelection && {
     base: setupSelection.base,
     selection: { linux: setupSelection.linux, windows: setupSelection.windows },
   }),
 };
 const nxDte = opts['nx-dte'] === 'true' && agentCounts;
-// The peak wave may be 0, which runs one wave.
-const valid = (n: number | undefined, min: number) =>
-  n === undefined || (Number.isInteger(n) && n >= min);
-if (nxDte && !(valid(nxDte.first, 1) && valid(nxDte.peak, 0))) {
-  throw new Error(
-    `Expected at least 1 first-wave and 0 peak agents, got ${opts['nx-dte-agents']} and ${opts['nx-dte-peak-agents']}`
-  );
+if (
+  nxDte &&
+  nxDte.maxAgents !== undefined &&
+  !(Number.isInteger(nxDte.maxAgents) && nxDte.maxAgents >= 1)
+) {
+  throw new Error(`Expected at least 1 agent, got ${opts['nx-dte-max-agents']}`);
 }
 
 await fs.writeFile(

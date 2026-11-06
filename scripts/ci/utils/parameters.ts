@@ -30,15 +30,10 @@ export const parameters = {
       'When nxDte is set on a pull request, run only the tasks the change reaches (nx affected) instead of all of them',
     type: 'boolean',
   },
-  nxDteAgents: {
-    default: 20,
-    description: 'At most how many CircleCI agents start with the run when nxDte is set',
-    type: 'integer',
-  },
-  nxDtePeakAgents: {
-    default: 24,
+  nxDteMaxAgents: {
+    default: 44,
     description:
-      'At most how many more CircleCI agents join when the sandbox tasks become ready, when nxDte is set',
+      'At most how many Linux CircleCI agents a run starts when nxDte is set; the setup job starts the fewest its work needs',
     type: 'integer',
   },
   workflow: {

@@ -12,10 +12,9 @@ import {
   LAUNCH_TEMPLATES,
   NODE_MODULES_ARCHIVE,
   NODE_MODULES_KEY,
-  NX_DTE_WAVES,
+  MAX_AGENTS,
   agentsForSelection,
   getNxDteJobs,
-  windowsAgentsFor,
 } from './circleci-dte.ts';
 import { planFor } from './plan.ts';
 import { EMPTY_SELECTION, type Selection } from './selection.ts';
@@ -40,7 +39,7 @@ const ids = (workflow: (typeof workflows)[number]) =>
 
 describe('the CircleCI NX DTE pipeline', () => {
   it('runs every task on NX agents, and only the Node 26 smoke job as a CircleCI job', () => {
-    const agents = ['nx-main', 'nx-agent', 'nx-agent-peak-delay', 'nx-agent-peak'];
+    const agents = ['nx-main', 'nx-agent'];
     const windows = ['nx-main-windows', 'nx-agent-windows'];
     expect(ids('normal')).toEqual(agents);
     expect(ids('daily')).toEqual([...agents, ...windows, 'node-26-smoke']);
@@ -48,10 +47,13 @@ describe('the CircleCI NX DTE pipeline', () => {
     expect(ids('windows')).toEqual(windows);
   });
 
-  // A selection of `n` independent tasks of a target.
-  const tasks = (target: string, n: number): Selection => ({
+  // A selection of `n` independent tasks of a target, each taking `seconds`.
+  const tasks = (target: string, n: number, seconds = 60, cached = false): Selection => ({
     tasks: Object.fromEntries(
-      Array.from({ length: n }, (_, i) => [`p${i}:${target}`, { project: `p${i}`, target }])
+      Array.from({ length: n }, (_, i) => [
+        `p${i}:${target}`,
+        { project: `p${i}`, target, cache: true, dependsOn: [], seconds, cached },
+      ])
     ),
   });
   const withSelection = (linux: Selection, windows: Selection = EMPTY_SELECTION, base?: string) =>
@@ -65,26 +67,23 @@ describe('the CircleCI NX DTE pipeline', () => {
         }
       | undefined;
 
-  it('starts one agent per four tasks, not counting compile', () => {
-    expect(agentsForSelection(tasks('fmt', 1))).toEqual({ first: 1, peak: 0 });
-    // Only compile tasks still need an agent.
-    expect(agentsForSelection(tasks('compile', 47))).toEqual({ first: 1, peak: 0 });
-    expect(agentsForSelection(tasks('e2e-tests', 91))).toEqual({ first: 20, peak: 3 });
-    // As many as the waves allow.
-    expect(agentsForSelection(tasks('e2e-tests', 400))).toEqual({ first: 20, peak: 24 });
-    expect(agentsForSelection(tasks('e2e-tests', 100), { first: 5, peak: 0 })).toEqual({
-      first: 5,
-      peak: 0,
-    });
+  it('starts the agents the work needs, all at once', () => {
+    expect(agentsForSelection(tasks('fmt', 1), 'linux')).toBe(1);
+    // A rerun: the same tasks, but they only restore from the cache.
+    expect(agentsForSelection(tasks('e2e-tests', 177, 5, true), 'linux')).toBeLessThan(10);
+    expect(agentsForSelection(tasks('e2e-tests', 177), 'linux')).toBeGreaterThan(20);
+    expect(agentsForSelection(tasks('e2e-tests', 440, 300), 'linux')).toBe(MAX_AGENTS.linux);
+    expect(agentsForSelection(tasks('e2e-tests', 440, 300), 'linux', 5)).toBe(5);
+    expect(agentsForSelection(EMPTY_SELECTION, 'linux')).toBe(0);
+
     const jobs = withSelection(tasks('fmt', 1));
     expect(job(jobs, 'nx-agent')!.parallelism).toBe(1);
-    expect(jobs.map((j) => j.id)).not.toContain('nx-agent-peak');
+    expect(job(jobs, 'nx-main')!.environment.NX_CLOUD_DISTRIBUTED_EXECUTION_AGENT_COUNT).toBe('1');
   });
 
-  it('starts at most four Windows agents, which cost about 500 credits each to boot', () => {
-    expect(windowsAgentsFor(tasks('e2e-tests', 9))).toBe(3);
-    expect(windowsAgentsFor(tasks('e2e-tests', 40))).toBe(4);
-    expect(windowsAgentsFor(EMPTY_SELECTION)).toBe(0);
+  it('starts at most four Windows agents, which take about four minutes to boot', () => {
+    expect(agentsForSelection(tasks('e2e-tests', 2, 600), 'windows')).toBe(2);
+    expect(agentsForSelection(tasks('e2e-tests', 40, 600), 'windows')).toBe(MAX_AGENTS.windows);
   });
 
   it('names every target of the command in --stop-workers-after, whatever the change reaches', () => {
@@ -176,8 +175,11 @@ describe('the CircleCI NX DTE pipeline', () => {
   });
 
   it('starts every agent job at its maximum without a selection from the setup job', () => {
-    const peak = getNxDteJobs(['normal'], 'unused').find((job) => job.id === 'nx-agent-peak')!;
-    expect((peak.implementation('normal') as { parallelism: number }).parallelism).toBe(24);
+    const jobs = getNxDteJobs(['daily'], 'unused');
+    expect(job(jobs, 'nx-agent')!.parallelism).toBe(MAX_AGENTS.linux);
+    expect(job(jobs, 'nx-agent-windows')!.parallelism).toBe(MAX_AGENTS.windows);
+    const capped = getNxDteJobs(['normal'], 'unused', { maxAgents: 7 });
+    expect(job(capped, 'nx-agent')!.parallelism).toBe(7);
   });
 
   it('keeps a job in the workflow when the change reaches no task', () => {
@@ -197,24 +199,15 @@ describe('the CircleCI NX DTE pipeline', () => {
     }
   });
 
-  it('runs each wave with its default number of agents, as the agent the assignment rules name', () => {
-    const jobs = getNxDteJobs(['normal'], 'unused');
-    for (const [wave, { job, agents }] of Object.entries(NX_DTE_WAVES)) {
-      const agent = jobs.find((j) => j.id === job)!.implementation('normal') as {
-        parallelism: number;
-        environment: Record<string, string>;
-      };
-      expect(agent.parallelism).toBe(agents);
-      expect(read('.nx/workflows/circleci-assignment-rules.yaml')).toContain(
-        `agent: ${agent.environment.NX_AGENT_LAUNCH_TEMPLATE}\n`
-      );
-      const parameter = wave === 'first' ? 'nxDteAgents' : 'nxDtePeakAgents';
-      expect(parameters[parameter].default).toBe(agents);
-      expect(read('.circleci/config.yml')).toContain(`${parameter}:\n    default: ${agents}\n`);
-    }
-    expect(jobs.find((j) => j.id === 'nx-agent-peak')!.requires.map((j) => j.id)).toEqual([
-      'nx-agent-peak-delay',
-    ]);
+  it('runs the agents as the agent the assignment rules name, at most as many as the parameter says', () => {
+    const agent = job(getNxDteJobs(['normal'], 'unused'), 'nx-agent')!;
+    expect(read('.nx/workflows/circleci-assignment-rules.yaml')).toContain(
+      `agent: ${agent.environment.NX_AGENT_LAUNCH_TEMPLATE}\n`
+    );
+    expect(parameters.nxDteMaxAgents.default).toBe(MAX_AGENTS.linux);
+    expect(read('.circleci/config.yml')).toContain(
+      `nxDteMaxAgents:\n    default: ${MAX_AGENTS.linux}\n`
+    );
   });
 
   it('is generated only when the pipeline asks for it', () => {

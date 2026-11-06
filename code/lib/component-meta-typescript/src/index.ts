@@ -2,6 +2,7 @@ export {
   DOCGEN_NODE_GUARDS,
   createCompilerDocgenTypeScript,
   type DocgenNodeGuards,
+  type DocgenNodeRewriter,
   type DocgenSystem,
   type DocgenTypeChecker,
   type DocgenTypeScript,

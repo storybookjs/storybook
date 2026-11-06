@@ -122,11 +122,15 @@ export const DOCGEN_NODE_GUARDS = [
   'isVariableStatement',
 ] as const;
 
+export type DocgenNodeRewriter = (
+  node: ts.Node,
+  visitChildren: (node: ts.Node) => ts.Node
+) => ts.Node;
+
 export type DocgenNodeGuards = Pick<typeof ts, (typeof DOCGEN_NODE_GUARDS)[number]>;
 
 // The `typescript` module members docgen and the projects use.
 export interface DocgenTypeScript extends DocgenNodeGuards {
-  readonly EmitHint: Pick<typeof ts.EmitHint, 'Unspecified'>;
   readonly JsxEmit: Pick<typeof ts.JsxEmit, 'ReactJSX'>;
   readonly ModuleKind: Pick<typeof ts.ModuleKind, 'ESNext'>;
   readonly ModuleResolutionKind: Pick<typeof ts.ModuleResolutionKind, 'Bundler'>;
@@ -181,7 +185,6 @@ export interface DocgenTypeScript extends DocgenNodeGuards {
   readonly sys: DocgenSystem;
   canHaveDecorators: typeof ts.canHaveDecorators;
   canHaveModifiers: typeof ts.canHaveModifiers;
-  createPrinter(options: Pick<ts.PrinterOptions, 'removeComments'>): Pick<ts.Printer, 'printNode'>;
   // Parse a file outside the program, to read default values from the component source.
   createSourceFile(fileName: string, text: string): ts.SourceFile;
   displayPartsToString: typeof ts.displayPartsToString;
@@ -193,9 +196,9 @@ export interface DocgenTypeScript extends DocgenNodeGuards {
   getJSDocTags: typeof ts.getJSDocTags;
   getLineAndCharacterOfPosition: typeof ts.getLineAndCharacterOfPosition;
   getModifiers: typeof ts.getModifiers;
-  transform: typeof ts.transform;
-  visitEachChild: typeof ts.visitEachChild;
-  visitNode: typeof ts.visitNode;
+  // Print a node without comments, after `visit` rewrote it. `visit` returns the node to print in
+  // place of the one it gets, and calls `visitChildren` to rewrite that node's children.
+  printNode(node: ts.Node, visit: DocgenNodeRewriter): string;
 
   // Node accessors, for the fields TypeScript 7.1 renamed or positions it reports differently.
   // The default of a type parameter, such as `T = string`.
@@ -236,9 +239,29 @@ const compilerNodeAccessors: DocgenNodeAccessors = {
 // members the compiler API has no direct equivalent for are added.
 export function createCompilerDocgenTypeScript(typescript: typeof ts): DocgenTypeScript {
   // The module's members are getters, so the extra members are defined, not assigned.
-  const members: Pick<DocgenTypeScript, 'createSourceFile' | 'getEmptyObjectType'> &
+  const members: Pick<DocgenTypeScript, 'createSourceFile' | 'getEmptyObjectType' | 'printNode'> &
     DocgenNodeAccessors = {
     ...compilerNodeAccessors,
+    printNode: (node, visit) => {
+      const result = typescript.transform(node, [
+        (context) => (root) => {
+          const visitChildren = (child: ts.Node): ts.Node =>
+            typescript.visitEachChild(
+              child,
+              (grandchild) => visit(grandchild, visitChildren),
+              context
+            );
+          return visit(root, visitChildren);
+        },
+      ]);
+      try {
+        return typescript
+          .createPrinter({ removeComments: true })
+          .printNode(typescript.EmitHint.Unspecified, result.transformed[0], node.getSourceFile());
+      } finally {
+        result.dispose();
+      }
+    },
     createSourceFile: (fileName, text) =>
       typescript.createSourceFile(
         fileName,

@@ -14,7 +14,6 @@ const MEMBERS = [
   ...DOCGEN_NODE_GUARDS,
   'canHaveDecorators',
   'canHaveModifiers',
-  'createPrinter',
   'createSourceFile',
   'displayPartsToString',
   'forEachChild',
@@ -29,13 +28,10 @@ const MEMBERS = [
   'getSeeTagReference',
   'getTypeParameterDefault',
   'hasQuestionToken',
-  'transform',
-  'visitEachChild',
-  'visitNode',
+  'printNode',
 ] as const;
 
 const ENUMS = {
-  EmitHint: ['Unspecified'],
   JsxEmit: ['ReactJSX'],
   ModuleKind: ['ESNext'],
   ModuleResolutionKind: ['Bundler'],
@@ -151,11 +147,13 @@ describe.each([
       'interface Shape {',
       '  size?: number;',
       '}',
+      'type Label = Shape | "label";',
     ].join('\n');
 
     let typescript: DocgenTypeScript;
     let box: ts.ClassDeclaration;
     let shape: ts.InterfaceDeclaration;
+    let label: ts.TypeAliasDeclaration;
 
     beforeEach(() => {
       typescript = create();
@@ -165,6 +163,8 @@ describe.each([
           box = statement;
         } else if (typescript.isInterfaceDeclaration(statement)) {
           shape = statement;
+        } else if (typescript.isTypeAliasDeclaration(statement)) {
+          label = statement;
         }
       });
     });
@@ -194,6 +194,17 @@ describe.each([
 
     it('finds the opening of a JSDoc comment after the comments before it', () => {
       expect(typescript.getJSDocStart(jsDoc())).toBe(source.indexOf('/**'));
+    });
+
+    it('prints a node after rewriting it', () => {
+      const printed = typescript.printNode(label.type, (node, visitChildren) =>
+        typescript.isTypeReferenceNode(node)
+          ? typescript.factory.createLiteralTypeNode(
+              typescript.factory.createStringLiteral('shape')
+            )
+          : visitChildren(node)
+      );
+      expect(printed).toBe('"shape" | "label"');
     });
 
     it("finds a tag's comment text after the tag's own parts", () => {

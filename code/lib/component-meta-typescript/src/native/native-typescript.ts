@@ -166,8 +166,6 @@ export function createNativeDocgenTypeScript(
   return {
     ...guards,
     ...nativeNodeAccessors(ast),
-    // Only ever handed back to `createPrinter`, whose native printer takes no hint.
-    EmitHint: { Unspecified: 4 } as DocgenTypeScript['EmitHint'],
     JsxEmit: sync.JsxEmit as unknown as DocgenTypeScript['JsxEmit'],
     ModuleKind: sync.ModuleKind as unknown as DocgenTypeScript['ModuleKind'],
     ModuleResolutionKind:
@@ -198,31 +196,15 @@ export function createNativeDocgenTypeScript(
       (
         sourceFile as unknown as Pick<ts.SourceFile, 'getLineAndCharacterOfPosition'>
       ).getLineAndCharacterOfPosition(position),
-    // A transform here is a visitor over one node: the native API transforms on the client and has
-    // no emit pipeline to hand a context to.
-    transform: ((source: ts.Node, transformers: ts.TransformerFactory<ts.Node>[]) => ({
-      transformed: [
-        transformers.reduce(
-          (node, transformer) => transformer({} as ts.TransformationContext)(node),
-          source
-        ),
-      ],
-      dispose: () => {},
-    })) as unknown as DocgenTypeScript['transform'],
-    visitNode: ((node: ts.Node, visitor: ts.Visitor) =>
-      ast.visitNode(
-        asNode(node),
-        visitor as unknown as Parameters<typeof ast.visitNode>[1]
-      )) as unknown as DocgenTypeScript['visitNode'],
-    visitEachChild: ((node: ts.Node, visitor: ts.Visitor) =>
-      ast.visitEachChild(
-        asNode(node),
-        visitor as unknown as Parameters<typeof ast.visitEachChild>[1]
-      )) as unknown as DocgenTypeScript['visitEachChild'],
-    // The compiler process prints, so a node built by `factory` travels there.
-    createPrinter: () => ({
-      printNode: (_hint, node) => api.printer.printNode(asNode(node)),
-    }),
+    // The rewrite runs on the client, and the compiler process prints the result, so a node built
+    // by `factory` travels there.
+    printNode: (node, visit) => {
+      const visitChildren = (child: ts.Node): ts.Node =>
+        ast.visitEachChild(asNode(child), (grandchild) =>
+          asNode(visit(grandchild as unknown as ts.Node, visitChildren))
+        ) as unknown as ts.Node;
+      return api.printer.printNode(asNode(visit(node, visitChildren)));
+    },
     getModifiers: (node) =>
       (node as { modifiers?: readonly ts.ModifierLike[] }).modifiers?.filter((modifier) =>
         ast.isModifier(asNode(modifier))

@@ -1,5 +1,9 @@
 import type * as tsModule from 'typescript';
-import type { DocgenTypeChecker, DocgenTypeScript } from '@storybook/component-meta-typescript';
+import type {
+  DocgenNodeRewriter,
+  DocgenTypeChecker,
+  DocgenTypeScript,
+} from '@storybook/component-meta-typescript';
 
 import type { EnumType, EnumTypeChild, TypeAlias } from '../types.ts';
 import type { AngularFileMeta } from '../types.ts';
@@ -174,47 +178,29 @@ export class TypeIndex {
     substitutions: ReadonlyMap<tsModule.Symbol, tsModule.TypeNode>
   ): string {
     const resolving = new Set<tsModule.Symbol>();
-    const transformed = this.ts.transform(typeNode, [
-      (context) => {
-        const visit: tsModule.Visitor = (node) => {
-          if (this.ts.isTypeReferenceNode(node) && this.ts.isIdentifier(node.typeName)) {
-            const symbol = this.checker.getSymbolAtLocation(node.typeName);
-            const replacement = symbol && substitutions.get(symbol);
-            if (symbol && replacement && !resolving.has(symbol)) {
-              resolving.add(symbol);
-              const resolved = this.ts.visitNode(replacement, visit);
-              resolving.delete(symbol);
-              return resolved;
-            }
-          }
-          if (
-            this.ts.isLiteralTypeNode(node) &&
-            (this.ts.isStringLiteral(node.literal) ||
-              this.ts.isNoSubstitutionTemplateLiteral(node.literal))
-          ) {
-            return this.ts.factory.createLiteralTypeNode(
-              this.ts.factory.createStringLiteral(node.literal.text)
-            );
-          }
-          return this.ts.visitEachChild(node, visit, context);
-        };
-        return (root) => this.ts.visitNode(root, visit) as tsModule.TypeNode;
-      },
-    ]);
-
-    try {
-      return collapseWhitespace(
-        this.ts
-          .createPrinter({ removeComments: true })
-          .printNode(
-            this.ts.EmitHint.Unspecified,
-            transformed.transformed[0],
-            typeNode.getSourceFile()
-          )
-      );
-    } finally {
-      transformed.dispose();
-    }
+    const visit: DocgenNodeRewriter = (node, visitChildren) => {
+      if (this.ts.isTypeReferenceNode(node) && this.ts.isIdentifier(node.typeName)) {
+        const symbol = this.checker.getSymbolAtLocation(node.typeName);
+        const replacement = symbol && substitutions.get(symbol);
+        if (symbol && replacement && !resolving.has(symbol)) {
+          resolving.add(symbol);
+          const resolved = visit(replacement, visitChildren);
+          resolving.delete(symbol);
+          return resolved;
+        }
+      }
+      if (
+        this.ts.isLiteralTypeNode(node) &&
+        (this.ts.isStringLiteral(node.literal) ||
+          this.ts.isNoSubstitutionTemplateLiteral(node.literal))
+      ) {
+        return this.ts.factory.createLiteralTypeNode(
+          this.ts.factory.createStringLiteral(node.literal.text)
+        );
+      }
+      return visitChildren(node);
+    };
+    return collapseWhitespace(this.ts.printNode(typeNode, visit));
   }
 
   /** Widen and render a declaration's inferred type, as the legacy pipeline did (`'v1'` to `string`). */

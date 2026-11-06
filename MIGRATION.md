@@ -64,7 +64,7 @@
   - [`mockChannel` removed from `storybook/preview-api` and `storybook/manager-api`](#mockchannel-removed-from-storybookpreview-api-and-storybookmanager-api)
   - [React: Require v18 and up](#react-require-v18-and-up)
   - [`@storybook/react-dom-shim` removed](#storybookreact-dom-shim-removed)
-  - [Preact: Require v10.8.0 and up](#preact-require-v1080-and-up)
+  - [Preact: Require v10.9.0 and up](#preact-require-v1090-and-up)
   - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
   - [`experimentalReview` feature flag removed](#experimentalreview-feature-flag-removed)
   - [`changeDetection` feature flag removed](#changedetection-feature-flag-removed)
@@ -1810,17 +1810,19 @@ There is no supported import-only replacement for third-party code that imports 
 
 If your code renders React elements itself, keep one root for each container and reuse it across renders. Apply root options when you first create the root. On unmount, call `root.unmount()`, remove the stored root, and create a new root if that container renders again. Preserve any promise or `act` semantics that callers use to wait for a committed render. A bare `createRoot(container).render(element)` replacement does not preserve these behaviors.
 
-### Preact: Require v10.8.0 and up
+### Preact: Require v10.9.0 and up
 
-Storybook 11 requires Preact 10.8.0 or newer. Upgrade Preact before you upgrade Storybook:
+Storybook 11 requires Preact 10.9.0 or newer. Upgrade Preact before you upgrade Storybook:
 
 ```sh
-npm install preact@^10.8.0
+npm install preact@^10.9.0
 ```
 
-The accepted peer dependency range is `^10.8.0 || >=11.0.0-0`. Storybook uses the `preact/compat/client` entry and calls `unmount()` on its roots when it cleans up a rendered story. Although Preact 10.7.1 includes that entry, its roots don't provide `unmount()`. Preact 10.8.0 provides the root lifecycle that Storybook needs to clean up and render into the same container again.
+The accepted peer dependency range is `^10.9.0 || >=11.0.0-0`. Storybook uses the `preact/compat/client` entry and calls `unmount()` on its roots when it cleans up a rendered story. Although Preact 10.7.1 includes that entry, its roots don't provide `unmount()`. Preact 10.8.0 provides the root lifecycle that Storybook needs to clean up and render into the same container again.
 
-The official Preact framework is `@storybook/preact-vite`. Custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack must also use Preact 10.8.0 or newer.
+Storybook's UI components, which addon-docs renders in the preview, also call `useSyncExternalStore`. `preact/compat` exports it from Preact 10.9.0.
+
+The official Preact framework is `@storybook/preact-vite`. Custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack must also use Preact 10.9.0 or newer.
 
 ### `features.legacyDecoratorFileOrder` removed
 

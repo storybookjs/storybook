@@ -11,6 +11,9 @@ name: Trigger CircleCI NX DTE
 #
 # A pull request that also has a `ci:` label is skipped: both pipelines would run on the same branch,
 # and CircleCI cancels the older one.
+#
+# The `report` job then waits for the pipeline and puts each failed NX task on the commit as a status
+# `nx run <task>` (scripts/ci/nx/dte-task-statuses.ts): CircleCI has no token that may write statuses.
 
 on:
   pull_request:
@@ -32,6 +35,9 @@ jobs:
       contains(join(github.event.pull_request.labels.*.name, ','), 'nx:')
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      pipeline: ${{ steps.circleci.outputs.pipeline }}
+      workflow: ${{ steps.circleci.outputs.workflow }}
     steps:
       # As trigger-circle-ci-workflow.yml decides it.
       - id: trusted-author
@@ -54,6 +60,7 @@ jobs:
           done
           echo "result=$IS_TRUSTED" >> "$GITHUB_OUTPUT"
       - name: Trigger CircleCI pipeline
+        id: circleci
         env:
           CIRCLE_CI_TOKEN: ${{ secrets.CIRCLE_CI_TOKEN }}
           BRANCH: ${{ github.event.pull_request.head.ref }}
@@ -85,8 +92,37 @@ jobs:
             --arg ghPrNumber "$GH_PR_NUMBER" \
             --arg ghTrustedAuthor "$GH_TRUSTED_AUTHOR" \
             '{branch: $branch, parameters: {workflow: $workflow, nxDte: true, ghBaseBranch: $ghBaseBranch, ghPrNumber: $ghPrNumber, ghTrustedAuthor: $ghTrustedAuthor}}')
-          curl -sS --fail-with-body -X POST \
+          PIPELINE=$(curl -sS --fail-with-body -X POST \
             -H "Content-Type: application/json" \
             -H "Circle-Token: $CIRCLE_CI_TOKEN" \
             -d "$PAYLOAD" \
-            "https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline"
+            "https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline")
+          echo "$PIPELINE"
+          echo "pipeline=$(jq -r '.id' <<<"$PIPELINE")" >> "$GITHUB_OUTPUT"
+          echo "workflow=$WORKFLOW" >> "$GITHUB_OUTPUT"
+
+  report:
+    needs: trigger
+    if: needs.trigger.outputs.pipeline != ''
+    runs-on: ubuntu-latest
+    # The script gives up after 80 minutes.
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+      - name: Report the failed NX tasks
+        env:
+          CIRCLE_TOKEN: ${{ secrets.CIRCLE_CI_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          PIPELINE: ${{ needs.trigger.outputs.pipeline }}
+          WORKFLOW: ${{ needs.trigger.outputs.workflow }}
+        run: |
+          node --experimental-transform-types --no-warnings scripts/ci/nx/dte-task-statuses.ts \
+            --pipeline="$PIPELINE" --workflow="$WORKFLOW"

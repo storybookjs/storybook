@@ -930,8 +930,8 @@ export interface StorybookConfig {
 
   /**
    * Middleware-style provider for the experimental story-docs service. Each registrant receives the
-   * previously accumulated provider as its config argument and returns a wrapping provider that
-   * may delegate to it via the input forwarding pattern.
+   * previously accumulated provider as its config argument and returns it with its own `extract`,
+   * which may delegate to the previous one, and the `printHole` module for the templates it writes.
    */
   experimental_storyDocsProvider?: PresetValue<
     StorybookConfigRaw['experimental_storyDocsProvider']

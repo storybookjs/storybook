@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SourceEditor } from 'storybook/internal/csf-tools';
 import {
   type SnippetTemplate,
+  argChanges,
   fillTemplate,
   formatTemplate,
   printValue,
@@ -264,7 +265,7 @@ describe('template', () => {
   const filled = (story: StoryDoc | undefined, initialArgs: Args, changed: Args) =>
     fillTemplate(
       vueTemplate(story!.template!),
-      { initialArgs, unmappedArgs: { ...initialArgs, ...changed } },
+      argChanges({ initialArgs, unmappedArgs: { ...initialArgs, ...changed } }),
       printHole
     );
   const SLOT_CATEGORIES = { ...DOCGEN_CATEGORIES, default: 'slots', header: 'slots' };
@@ -487,7 +488,7 @@ describe('a value a control sets', () => {
         const go = await story('Go');
         const filled = fillTemplate(
           vueTemplate(go!.template!),
-          { initialArgs: { [arg]: 'Go' }, unmappedArgs: { [arg]: value } },
+          argChanges({ initialArgs: { [arg]: 'Go' }, unmappedArgs: { [arg]: value } }),
           printHole
         );
         expect(await renderSnippet(filled)).toBe(await renderStory(template, { [arg]: value }));
@@ -508,7 +509,7 @@ describe('a value a control sets', () => {
       const args = { label: 'Hi', ...changed };
       const filled = fillTemplate(
         vueTemplate(story!.template!),
-        { initialArgs: { label: 'Hi' }, unmappedArgs: args },
+        argChanges({ initialArgs: { label: 'Hi' }, unmappedArgs: args }),
         printHole
       );
       expect(await renderSnippet(filled)).toBe(await renderStory(template, args));

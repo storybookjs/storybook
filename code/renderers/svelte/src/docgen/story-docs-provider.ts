@@ -11,4 +11,5 @@ export const experimental_storyDocsProvider = createWorkerGatedStoryDocsProvider
   docgenWorker: fileURLToPath(import.meta.resolve(DOCGEN_WORKER_SPECIFIER)),
   storyFileTest: SVELTE_DOCGEN_STORY_FILE_TEST_REGEXP,
   build: (input) => buildStoryDocsPayload(input),
+  printHole: fileURLToPath(import.meta.resolve('@storybook/svelte/internal/register-print-hole')),
 });

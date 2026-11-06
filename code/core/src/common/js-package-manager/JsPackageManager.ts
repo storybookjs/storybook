@@ -7,14 +7,14 @@ import detectIndent from 'detect-indent';
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import { type ResultPromise } from 'execa';
-// eslint-disable-next-line depend/ban-dependencies
-import { globSync } from 'glob';
 import picocolors from 'picocolors';
 import { coerce, gt, satisfies, validRange } from 'semver';
 import invariant from 'tiny-invariant';
+import { globSync } from 'tinyglobby';
 
 import { HandledError } from '../utils/HandledError.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
+import { globCaseSensitiveMatch } from '../utils/common-glob-options.ts';
 import { getPkgPrNewPackageSpecifier } from '../utils/get-pkg-pr-new-package-specifier.ts';
 import { findFilesUp, getProjectRoot } from '../utils/paths.ts';
 import storybookPackagesVersions from '../versions.ts';
@@ -975,6 +975,9 @@ export abstract class JsPackageManager {
       cwd: projectRoot,
       absolute: true,
       ignore: ['**/node_modules/**', '**/dist/**'],
+      caseSensitiveMatch: globCaseSensitiveMatch,
+      followSymbolicLinks: false,
+      expandDirectories: false,
     });
 
     // 2. Only keep the ones that are parents of at least one of the storiesPaths

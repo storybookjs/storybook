@@ -1,7 +1,8 @@
 import { readFile } from 'node:fs/promises';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { glob } from 'glob';
+import { globCaseSensitiveMatch } from 'storybook/internal/common';
+
+import { glob } from 'tinyglobby';
 
 import { parseModule, walk } from '../../../csf-tools/estree/ast.ts';
 import { getComponentComplexity } from './component-analyzer.ts';
@@ -141,6 +142,9 @@ export async function getComponentCandidates({
         '**/stories/{Button,Header,Page}.*',
         '**/stories/{button,header,page}.*',
       ],
+      caseSensitiveMatch: globCaseSensitiveMatch,
+      followSymbolicLinks: false,
+      expandDirectories: false,
     });
 
     globMatchCount = files.length;

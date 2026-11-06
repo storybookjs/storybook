@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url';
 
 import {
   commonGlobOptions,
+  expandDirectoryPattern,
   getProjectRoot,
   getTsconfigPathsBaseDir,
   normalizeStoryPath,
@@ -32,6 +33,7 @@ import picocolors from 'picocolors';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 import invariant from 'tiny-invariant';
+import { glob } from 'tinyglobby';
 import { dedent } from 'ts-dedent';
 import * as TsconfigPaths from 'tsconfig-paths';
 
@@ -172,15 +174,11 @@ export class StoryIndexGenerator {
     // Prepend ./ to patterns starting with ! to ensure they are treated as extglobs
     const globPattern = specifier.files.startsWith('!') ? `./${specifier.files}` : specifier.files;
 
-    // Dynamically import globby because it is a pure ESM module
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
-
-    const files = await globby(globPattern, {
+    const files = await glob(expandDirectoryPattern(globPattern, globCwd), {
       absolute: true,
       cwd: globCwd,
       ...commonGlobOptions(globPattern),
-      onlyFiles: true,
+      expandDirectories: false,
     });
 
     if (files.length === 0 && !ignoreWarnings) {

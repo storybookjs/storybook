@@ -6,7 +6,7 @@ import { getComponentComplexity } from './component-analyzer.ts';
 import { getCandidatesForStorybook } from './get-candidates.ts';
 
 vi.mock('node:fs/promises');
-vi.mock('glob');
+vi.mock('tinyglobby');
 vi.mock('storybook/internal/node-logger');
 vi.mock('./component-analyzer');
 

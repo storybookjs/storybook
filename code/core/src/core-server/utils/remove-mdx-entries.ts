@@ -1,12 +1,13 @@
-import { isAbsolute, join, relative } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 
-import { commonGlobOptions, normalizeStories } from 'storybook/internal/common';
+import {
+  commonGlobOptions,
+  globCaseSensitiveMatch,
+  normalizeStories,
+} from 'storybook/internal/common';
 import type { Options, StoriesEntry } from 'storybook/internal/types';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { glob } from 'glob';
-// eslint-disable-next-line depend/ban-dependencies
-import slash from 'slash';
+import { glob } from 'tinyglobby';
 
 export async function removeMDXEntries(
   entries: StoriesEntry[],
@@ -20,17 +21,16 @@ export async function removeMDXEntries(
   const result = (
     await Promise.all(
       list.map(async ({ directory, files, titlePrefix }) => {
-        const pattern = join(directory, files);
-        const absolutePattern = isAbsolute(pattern) ? pattern : join(options.configDir, pattern);
-        const absoluteDirectory = isAbsolute(directory)
-          ? directory
-          : join(options.configDir, directory);
+        const absoluteDirectory = resolve(options.configDir, directory);
 
         return {
           files: (
-            await glob(slash(absolutePattern), {
-              ...commonGlobOptions(absolutePattern),
-              follow: true,
+            await glob(files, {
+              ...commonGlobOptions(join(absoluteDirectory, files)),
+              cwd: absoluteDirectory,
+              absolute: true,
+              caseSensitiveMatch: globCaseSensitiveMatch,
+              expandDirectories: false,
             })
           ).map((f) => relative(absoluteDirectory, f)),
           directory,

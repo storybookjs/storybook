@@ -27,6 +27,7 @@
   - [CSF Next: meta args no longer need `as const`](#csf-next-meta-args-no-longer-need-as-const)
   - [CSF Next: use `mocked()` for the mock API on args](#csf-next-use-mocked-for-the-mock-api-on-args)
   - [CSF Next: every key in meta args must be an arg](#csf-next-every-key-in-meta-args-must-be-an-arg)
+  - [Story globs: a few rare patterns match differently](#story-globs-a-few-rare-patterns-match-differently)
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
   - [Raised browser support floors](#raised-browser-support-floors)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
@@ -1282,6 +1283,21 @@ const meta = preview.meta({ component: Action, args: { label: 'Go', kind: 'link'
 
 export const Link = meta.story({ args: { href: '/' } });
 ```
+
+### Story globs: a few rare patterns match differently
+
+Storybook 11 finds story files with [tinyglobby](https://github.com/SuperchupuDev/tinyglobby) instead of globby. Your `stories` patterns find the same files as before, except in these rare cases:
+
+- **Wrong letter case on macOS and Windows.** Storybook 10 found `'../src/button.stories.tsx'` for the file `Button.stories.tsx`, and `'../src/{Components,Pages}/**/*.stories.tsx'` for the folder `src/components/`. Storybook 11 finds neither, as on Linux. Write names exactly as they are on disk.
+- **An empty option in braces now matches dotfiles.** `'../src/{,components/}*.stories.tsx'` now also finds `src/.draft.stories.tsx`. To skip dotfiles, split it into two entries with the same `directory`, so story titles stay the same: `{ directory: '../src', files: '*.stories.tsx' }` and `{ directory: '../src', files: 'components/*.stories.tsx' }`.
+- **Unreadable folders are skipped.** Storybook 10 stopped with an `EACCES` error when a story glob reached a folder it cannot read. Storybook 11 skips that folder. If stories are missing, check the folder's permissions.
+
+`files` values that start with `../`, or with `!` but not `!(`, also match differently. Storybook 10 could not index the stories they found either.
+
+Storybook 11 also fixes two bugs:
+
+- Storybook starts when the project path contains `[…]`, `{a,b}` or `@(…)`, such as `~/clients/[acme]/web`. Storybook 10 stopped with `MainFileMissingError`.
+- `storybook dev` picks up stories in a new folder whose path contains `(…)`, `{a,b}` or `@(…)`, such as the Next.js route group `app/(marketing)/`. Storybook 10 showed them only after a restart.
 
 ### Yarn PnP support removed
 

@@ -45,13 +45,18 @@ export const resolvePackageDir = (
   }
 };
 
+/**
+ * Whether Storybook loads TypeScript through `module.registerHooks()` on this Node.js version.
+ * A plain major check keeps semver out of this module, which other packages bundle from source.
+ */
+export const usesRegisterHooks = (nodeVersion: string) => Number(nodeVersion.split('.')[0]) >= 26;
+
 let typescriptLoaderRegistration: Promise<void> | null = null;
 let typescriptLoaderRegistrationError: unknown = null;
 
 function registerTypescriptLoader() {
   typescriptLoaderRegistration ??= (async () => {
-    // A plain major check keeps semver out of this module, which other packages bundle from source.
-    if (Number(process.versions.node.split('.')[0]) >= 26) {
+    if (usesRegisterHooks(process.versions.node)) {
       try {
         const { load } = await import('storybook/internal/bin/loader');
         nodeModule.registerHooks({ load });

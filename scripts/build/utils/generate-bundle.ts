@@ -51,10 +51,14 @@ const USE_SYNC_EXTERNAL_STORE_ALIAS = {
 const dynamicRequireError = (file: string, specifier: string) =>
   `${file} calls require("${specifier}") on an external, which fails in the browser. Alias the import to an ES module, or import it statically.`;
 
+// Put this plugin first: esbuild runs `onEnd` callbacks in order, and later ones such as
+// `postbuild` then see its errors.
 export const esbuildNoDynamicRequireGuard: esbuild.Plugin = {
   name: 'no-dynamic-require-in-browser-output',
   setup(build) {
+    build.initialOptions.metafile = true;
     build.onEnd((result) => ({
+      // A failed build has no metafile, and already fails.
       errors: Object.entries(result.metafile?.outputs ?? {}).flatMap(([file, output]) =>
         output.imports
           .filter(
@@ -67,19 +71,18 @@ export const esbuildNoDynamicRequireGuard: esbuild.Plugin = {
   },
 };
 
-// Rolldown has no metafile and skips `resolveId` for its `external` option, so this reads the code.
-// Its helper is `__require`, or `__require$1` when a bundled module defines its own `__require`.
-const DYNAMIC_REQUIRE_CALL = /\b__require(?:\$\d+)?\(\s*["'`]([^"'`]+)/;
-
+// Put this plugin first, so that `this.resolve` asks every other plugin.
 export const rolldownNoDynamicRequireGuard: RolldownPlugin = {
   name: 'no-dynamic-require-in-browser-output',
-  generateBundle(_options, bundle) {
-    for (const output of Object.values(bundle)) {
-      const specifier = output.type === 'chunk' && DYNAMIC_REQUIRE_CALL.exec(output.code)?.[1];
-      if (specifier) {
-        this.error(dynamicRequireError(output.fileName, specifier));
-      }
+  async resolveId(source, importer, { kind }) {
+    if (kind !== 'require-call') {
+      return null;
     }
+    const resolved = await this.resolve(source, importer, { kind });
+    if (!resolved || resolved.external) {
+      this.error(dynamicRequireError(importer ?? source, source));
+    }
+    return resolved;
   },
 };
 
@@ -211,6 +214,7 @@ export async function generateBundle({
       'msw/browser',
       'msw/http',
     ], // Prefer `alias` over `external` because we're using aliases to bundle everything into the runtimes
+    plugins: [esbuildNoDynamicRequireGuard, ...sharedOptions.plugins],
     alias: {
       ...USE_SYNC_EXTERNAL_STORE_ALIAS,
       // The following aliases ensures that the runtimes bundles in the actual sources of these modules
@@ -369,8 +373,8 @@ export async function generateBundle({
         target: BROWSER_TARGETS,
         supported: SUPPORTED_FEATURES,
         plugins: [
-          ...sharedOptions.plugins,
           esbuildNoDynamicRequireGuard,
+          ...sharedOptions.plugins,
           metafileWriterPlugin('browser', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
       })
@@ -402,7 +406,6 @@ export async function generateBundle({
         entryPoints: esbuildRuntimeEntries.map(({ entryPoint }) => entryPoint),
         plugins: [
           ...runtimeOptions.plugins,
-          esbuildNoDynamicRequireGuard,
           metafileWriterPlugin('runtime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
       })
@@ -416,7 +419,6 @@ export async function generateBundle({
         entryPoints: entries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
         plugins: [
           ...runtimeOptions.plugins,
-          esbuildNoDynamicRequireGuard,
           globalExternals(globalsModuleInfoMap),
           metafileWriterPlugin('globalizedRuntime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],

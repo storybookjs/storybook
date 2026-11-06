@@ -15,25 +15,24 @@ const bundleWithEsbuild = (contents: string) =>
     platform: 'browser',
     external: ['react'],
     write: false,
-    metafile: true,
     logLevel: 'silent',
     plugins: [esbuildNoDynamicRequireGuard],
   });
 
-const bundleWithRolldown = async (code: string, modules: Record<string, string> = {}) => {
-  const sources: Record<string, string> = { entry: code, ...modules };
+// Like the production config, this has no `external` option: a plugin marks `react` external.
+const bundleWithRolldown = async (sources: Record<string, string>) => {
   const build = await rolldown({
     input: 'entry',
     platform: 'browser',
-    external: ['react'],
     logLevel: 'silent',
     plugins: [
+      rolldownNoDynamicRequireGuard,
       {
-        name: 'entry',
-        resolveId: (id) => (id in sources ? id : null),
+        name: 'virtual-modules',
+        resolveId: (id) =>
+          id === 'react' ? { id, external: true } : id in sources ? id : null,
         load: (id) => sources[id] ?? null,
       },
-      rolldownNoDynamicRequireGuard,
     ],
   });
   try {
@@ -55,26 +54,33 @@ describe('no dynamic require in browser output', () => {
   });
 
   it('fails a rolldown build that requires an external', async () => {
-    await expect(bundleWithRolldown(requiresReact)).rejects.toThrow(
+    await expect(bundleWithRolldown({ entry: requiresReact })).rejects.toThrow(
       'calls require("react") on an external'
     );
   });
 
-  it('fails a rolldown build whose require helper got renamed', async () => {
-    // A bundled module that defines its own `__require` makes rolldown name its helper `__require$1`.
-    const modules = {
-      own: `export function __require() { return 1; }`,
-      cjs: requiresReact,
-    };
+  it('fails a rolldown build that requires a module it cannot resolve', async () => {
     await expect(
-      bundleWithRolldown(
-        `import { __require } from 'own'; import value from 'cjs'; export default [__require(), value];`,
-        modules
-      )
-    ).rejects.toThrow('calls require("react") on an external');
+      bundleWithRolldown({ entry: `module.exports = require('not-installed');` })
+    ).rejects.toThrow('calls require("not-installed") on an external');
+  });
+
+  it('passes a rolldown build that requires a bundled module', async () => {
+    await expect(
+      bundleWithRolldown({
+        entry: `module.exports = require('cjs');`,
+        cjs: `module.exports = 1;`,
+      })
+    ).resolves.toBeDefined();
   });
 
   it('passes a rolldown build that imports an external', async () => {
-    await expect(bundleWithRolldown(importsReact)).resolves.toBeDefined();
+    await expect(bundleWithRolldown({ entry: importsReact })).resolves.toBeDefined();
+  });
+
+  it('passes a rolldown build that only mentions require in a string', async () => {
+    await expect(
+      bundleWithRolldown({ entry: 'export const help = `__require("react")`;' })
+    ).resolves.toBeDefined();
   });
 });

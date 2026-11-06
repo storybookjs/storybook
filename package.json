@@ -23,7 +23,7 @@
     "fmt:write": "oxfmt .",
     "get-sandbox-dir": "pnpm --dir scripts run get-sandbox-dir",
     "i": "pnpm install",
-    "preinstall": "node -e \"const pin = require('./package.json').packageManager.replace(/^pnpm@|\\+.*$/g, ''); if (!(process.env.npm_config_user_agent ?? '').startsWith('pnpm/' + pin + ' ')) { console.error('This repository uses pnpm ' + pin + ': install pnpm 10 or later (https://pnpm.io/installation), which switches to that version, then run pnpm install.'); process.exit(1); }\"",
+    "preinstall": "node -e \"const pin = require('./package.json').packageManager.replace(/^pnpm@/, '').split('+')[0]; if (!(process.env.npm_config_user_agent ?? '').startsWith('pnpm/' + pin + ' ')) { console.error('This repository uses pnpm ' + pin + ': install pnpm 10 or later (https://pnpm.io/installation), which switches to that version, then run pnpm install.'); process.exit(1); }\"",
     "postinstall": "husky",
     "knip": "pnpm --dir code run knip",
     "lint": "pnpm --dir code run lint",
@@ -63,5 +63,8 @@
     "vite": "^7.0.4",
     "vitest": "5.0.5"
   },
-  "packageManager": "pnpm@10.34.9+sha512.f49b5a8ea0fdedb44bb3c0c1d6575092a53c2950d95b7ad15df11f17974877a2de3a01c07e934e9b28ce716e51c09a94962c7306d09be2e1e4b18a8c8762fd32"
+  "packageManager": "pnpm@10.34.9+sha512.f49b5a8ea0fdedb44bb3c0c1d6575092a53c2950d95b7ad15df11f17974877a2de3a01c07e934e9b28ce716e51c09a94962c7306d09be2e1e4b18a8c8762fd32",
+  "engines": {
+    "pnpm": ">=10"
+  }
 }

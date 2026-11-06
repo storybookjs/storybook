@@ -18,6 +18,7 @@ for arg in "$@"; do
     yarn) package=@yarnpkg/cli-dist ;;
     *) echo "Unknown package manager: $tool" >&2; exit 1 ;;
   esac
+  # The cimg images install their own pnpm as root into a global directory the job user can write.
   sudo=""
   case "${OSTYPE:-}" in
     msys* | cygwin*) ;;
@@ -26,9 +27,10 @@ for arg in "$@"; do
   esac
   # `--force` replaces an image's own pnpm and yarn, and `--install-links` copies the verified tree
   # rather than linking to the temporary directory.
-  $sudo npm install --global --install-links --force --ignore-scripts --no-audit --no-fund "$dir/node_modules/$package"
+  $sudo npm install --global --install-links --force --ignore-scripts --no-audit --no-fund \
+    --no-update-notifier "$dir/node_modules/$package"
   expected="${want:-$(node -p 'require(process.argv[1]).version' "$dir/node_modules/$package/package.json")}"
-  # Outside any project pnpm does not switch versions, so this runs the binary on PATH.
+  # $dir's package.json pins no package manager, so pnpm runs the binary on PATH without switching.
   actual="$(cd "$dir" && "$tool" --version)"
   if [ "$actual" != "$expected" ]; then
     echo "$tool on PATH ($(command -v "$tool")) is $actual, not $expected" >&2

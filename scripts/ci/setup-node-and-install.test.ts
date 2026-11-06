@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 import { join } from 'pathe';
@@ -38,6 +39,21 @@ describe(PACKAGE_MANAGERS, () => {
     const hash = Buffer.from(integrity.replace(/^sha512-/, ''), 'base64').toString('hex');
 
     expect(readJson('package.json').packageManager).toBe(`pnpm@${version}+sha512.${hash}`);
+  });
+
+  it('pins the same pnpm in every test storybook as in the repository', () => {
+    const { packageManager } = readJson('package.json');
+    const pins = execFileSync('git', ['ls-files', 'test-storybooks/**/package.json'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    })
+      .split('\n')
+      .filter(Boolean)
+      .map((file) => [file, readJson(file).packageManager])
+      .filter(([, pin]) => pin?.startsWith('pnpm@'));
+
+    expect(pins.length).toBeGreaterThan(0);
+    expect(pins.filter(([, pin]) => pin !== packageManager)).toEqual([]);
   });
 
   it('locks the Yarn release that the published sandboxes pin', () => {

@@ -35,6 +35,7 @@ import {
   BEFORE_SANDBOX_MIN_AGE_GATE,
   BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS,
   ensureNpmSupportsMinReleaseAge,
+  PublishedSandboxYarnError,
   localizeYarnConfigFiles,
   preapproveLocallyPublishedPackages,
   refreshBeforeStorybookLockfile,
@@ -361,8 +362,8 @@ const runGenerators = async (
               minAgeGateExemptions,
             });
           } catch (error) {
-            if (minAgeGateExemptions?.length) {
-              const message = `❌ Failed to refresh Yarn 4 lockfile for prerelease template: ${name} (${dirName})`;
+            if (minAgeGateExemptions?.length || error instanceof PublishedSandboxYarnError) {
+              const message = `❌ Failed to refresh Yarn 4 lockfile for template: ${name} (${dirName})`;
               if (isCI) {
                 ghActions.error(dedent`${message}
                   ${formatCommandError(error)}`);

@@ -11,6 +11,7 @@ import {
   BEFORE_SANDBOX_NPM_MIN_VERSION,
   LOCALLY_PUBLISHED_PACKAGE_PATTERNS,
   PUBLISHED_SANDBOX_PACKAGE_MANAGER,
+  PublishedSandboxYarnError,
   ensureNpmSupportsMinReleaseAge,
   preapproveLocallyPublishedPackages,
   refreshBeforeStorybookLockfile,
@@ -171,7 +172,10 @@ describe('refreshBeforeStorybookLockfile', () => {
   it('fails unless `yarn` runs the Yarn release the published sandboxes pin', async () => {
     runYarn('4.18.1');
 
-    await expect(refreshBeforeStorybookLockfile({ cwd: SANDBOX })).rejects.toThrow(
+    const refresh = refreshBeforeStorybookLockfile({ cwd: SANDBOX });
+
+    await expect(refresh).rejects.toThrow(PublishedSandboxYarnError);
+    await expect(refresh).rejects.toThrow(
       `Published sandboxes pin Yarn ${PUBLISHED_YARN}, but \`yarn\` in ${SANDBOX} is 4.18.1`
     );
     expect(yarnCommands()).toEqual([]);

@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -19,6 +20,13 @@ describe('workspace config', () => {
 
     expect(packages.length).toBeGreaterThan(0);
     expect(workspaces.packages).toEqual(packages);
+  });
+
+  // pnpm runs root scripts through its shell emulator (`shellEmulator` in pnpm-workspace.yaml).
+  it('runs the root preinstall check through pnpm', () => {
+    expect(() =>
+      execSync('pnpm run --silent preinstall', { cwd: ROOT_DIRECTORY, stdio: 'pipe' })
+    ).not.toThrow();
   });
 
   // code/core resolves workspace packages by name at runtime, and pnpm only exposes the ones

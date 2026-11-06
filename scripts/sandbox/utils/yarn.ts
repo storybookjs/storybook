@@ -348,12 +348,14 @@ async function pinYarnPackageManager(cwd: string) {
   await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
 }
 
+export class PublishedSandboxYarnError extends Error {}
+
 async function assertPublishedSandboxYarn(cwd: string, env: NodeJS.ProcessEnv) {
   const expected = PUBLISHED_SANDBOX_PACKAGE_MANAGER.replace(/^yarn@/, '');
   const { stdout } = await runCommand('yarn --version', { cwd, env });
   const actual = String(stdout).trim();
   if (actual !== expected) {
-    throw new Error(
+    throw new PublishedSandboxYarnError(
       `Published sandboxes pin Yarn ${expected}, but \`yarn\` in ${cwd} is ${actual}. Install it with \`bash .github/actions/setup-node-and-install/package-managers/install.sh yarn\`.`
     );
   }

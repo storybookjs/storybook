@@ -168,9 +168,9 @@ git branch --set-upstream-to upstream/next next
 
 If you're interested in contributing to Storybook's codebase, you can run it locally to get a feel for the codebase and the development environment. To get started with the development environment, you should always run `pnpm start` from the root directory. Running `pnpm start` will install the required dependencies, build the project, including the packages, and generate a sandbox environment using React with TypeScript with a set of test stories to help you get started.
 
-The repository uses the pnpm version pinned in the `packageManager` field of the root `package.json`. Install pnpm 10 or later once, with npm as below or [any other method](https://pnpm.io/installation), and it switches to that version by itself. Installing with any other package manager or pnpm version fails on purpose.
+The repository uses the pnpm version pinned in the `packageManager` field of the root `package.json`. Install pnpm 10 or later once, with npm as below or [any other method](https://pnpm.io/installation), and it switches to that version by itself. Installs that do not run the pinned pnpm fail on purpose.
 
-If Corepack already provides pnpm, nothing changes. To switch, run `corepack disable pnpm` first. Offline, install exactly the pinned version, so pnpm has nothing to download.
+If Corepack already provides pnpm, nothing changes; to use an npm-installed pnpm instead, run `corepack disable pnpm` first. If you work offline, install the exact version the `packageManager` field pins beforehand, so pnpm never needs to download it.
 
 ```shell
 # Navigate to the root directory of the Storybook repository 

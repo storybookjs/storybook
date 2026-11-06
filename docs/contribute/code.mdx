@@ -22,14 +22,12 @@ git clone https://github.com/your-username/storybook.git
 cd storybook
 ```
 
-Storybook uses the [pnpm](https://pnpm.io/) package manager. Install pnpm 10 or later, with npm as below or [any other method](https://pnpm.io/installation), and it switches by itself to the version Storybook pins. Then install the dependencies.
+Storybook uses the [pnpm](https://pnpm.io/) package manager. Install pnpm 10 or later, with npm as below or [any other method](https://pnpm.io/installation), and it switches by itself to the version Storybook pins. Then install the dependencies. If Corepack already provides pnpm, nothing changes; to use an npm-installed pnpm instead, run `corepack disable pnpm` first. If you work offline, install the exact version the `packageManager` field pins beforehand, so pnpm never needs to download it.
 
 ```shell
 npm install --global pnpm@latest-10
 pnpm install
 ```
-
-If Corepack already provides pnpm, nothing changes. To switch, run `corepack disable pnpm` first.
 
 ## Run your first sandbox
 

@@ -386,7 +386,7 @@ export class SvelteKitMockParametersRemovedError extends StorybookError {
       message: dedent`
         \`parameters.sveltekit_experimental\` was removed in Storybook 11, and this story still sets it: ${data.keys.map((key) => `\`${key}\``).join(', ')}.
 
-        Mock SvelteKit modules in \`beforeEach\` instead. Import \`goto\` and the other functions from \`$app/navigation\`, set \`page\` from \`$app/state\`, and use \`link\` and \`setAfterNavigate\` from \`@storybook/sveltekit/navigation.mock\` and \`formAction\` from \`@storybook/sveltekit/forms.mock\`. The migration guide maps every key to its replacement.
+        Mock SvelteKit modules in \`beforeEach\` instead. Import \`goto\` and the other functions from \`$app/navigation\`, set \`page\` from \`$app/state\`, and use \`link\` and \`setAfterNavigate\` from \`@storybook/sveltekit/navigation.mock\` and \`formAction\` from \`@storybook/sveltekit/forms.mock\`. The migration guide maps every key to its replacement, and \`npx storybook automigrate sveltekit-mocking-before-each\` rewrites them for you.
       `,
     });
   }

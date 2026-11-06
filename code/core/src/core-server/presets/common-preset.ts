@@ -417,15 +417,16 @@ export const services = async (_value: void, options: Options): Promise<void> =>
               return [];
             }
           }),
-        matchesStories: async (file) => {
-          const workingDir = realpathSync.native(process.cwd());
-          const specifiers = normalizeStories(await options.presets.apply('stories'), {
-            configDir: realpathSync.native(pathe.resolve(options.configDir)),
-            workingDir,
-          });
-          const relativePath = pathe.relative(workingDir, file);
-          const importPath = relativePath.startsWith('.') ? relativePath : `./${relativePath}`;
-          return specifiers.some(({ importPathMatcher }) => importPathMatcher.test(importPath));
+        // The story index's own specifiers, so a file matches exactly when the index takes it in.
+        getStoriesMatcher: async () => {
+          const { specifiers, options: indexOptions } =
+            await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+          const workingDir = realpathSync.native(indexOptions.workingDir);
+          return (file) => {
+            const relativePath = pathe.relative(workingDir, file);
+            const importPath = relativePath.startsWith('.') ? relativePath : `./${relativePath}`;
+            return specifiers.some(({ importPathMatcher }) => importPathMatcher.test(importPath));
+          };
         },
       },
     })

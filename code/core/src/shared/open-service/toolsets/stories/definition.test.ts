@@ -79,8 +79,8 @@ const storybookDirs = {
     resolve(storybookWorkingDir, '.storybook/static'),
   ],
   // Mirrors `stories: ['../src/**/*.stories.*']` in packages/ui/.storybook/main.ts.
-  matchesStories: async (file: string) =>
-    file.startsWith(`${resolve(storybookWorkingDir, 'src')}/`) && /\.stories\./.test(file),
+  getStoriesMatcher: async () => (file: string) =>
+    file.startsWith(`${resolve(storybookWorkingDir, 'src')}/`),
 };
 
 let statusesFixture: Record<string, Record<string, unknown>>;
@@ -516,7 +516,7 @@ Story files that are not in the story index yet: \`packages/ui/src/OrderHistory.
         storybookDirs: {
           configDir: resolve(repoRoot, '.storybook'),
           getStaticDirs: async () => [],
-          matchesStories: async (file) => file.startsWith(`${resolve(repoRoot, 'src')}/`),
+          getStoriesMatcher: async () => (file) => file.startsWith(`${resolve(repoRoot, 'src')}/`),
         },
       });
       getChangedFiles.mockResolvedValue({
@@ -531,6 +531,35 @@ Story files that are not in the story index yet: \`packages/ui/src/OrderHistory.
         unreachableFiles: ['packages/web/src/Page.stories.tsx'],
       });
       expect(getStatuses).toHaveBeenCalledTimes(1);
+    });
+
+    it("checks the project's files before story files the stories globs leave out", async () => {
+      const rootToolset = createStoriesToolset({
+        storyIndex,
+        git,
+        changeStatuses,
+        storybookDirs: {
+          configDir: resolve(repoRoot, '.storybook'),
+          getStaticDirs: async () => [],
+          getStoriesMatcher: async () => (file) => file.startsWith(`${resolve(repoRoot, 'src')}/`),
+        },
+      });
+      const otherStories = Array.from(
+        { length: 11 },
+        (_, index) => `packages/web/src/Page${index}.stories.tsx`
+      );
+      getChangedFiles.mockResolvedValue({
+        changed: new Set([...otherStories, 'src/Button.tsx']),
+        new: new Set(),
+      });
+      markReachable(resolve(repoRoot, 'src/Button.tsx'));
+
+      const pending = runChanged(mcpCtx, rootToolset);
+      await vi.advanceTimersByTimeAsync(5_000);
+      const outcome = await pending;
+
+      expect(outcome.data.pendingFiles).toEqual(['src/Button.tsx']);
+      expect(outcome.data.unreachableFilesTruncated).toBe(true);
     });
 
     it('names the files when the scan does not finish in time', async () => {

@@ -39,7 +39,7 @@ export function registerCoreToolsetsForTest({ index = EMPTY_INDEX }: { index?: S
       storybookDirs: {
         configDir: `${process.cwd()}/.storybook`,
         getStaticDirs: async () => [],
-        matchesStories: async () => false,
+        getStoriesMatcher: async () => () => false,
       },
     })
   );

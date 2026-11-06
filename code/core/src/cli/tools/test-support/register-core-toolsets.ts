@@ -54,7 +54,7 @@ export function registerCoreToolsetsForTest({
       storybookDirs: {
         configDir: `${process.cwd()}/.storybook`,
         getStaticDirs: async () => [],
-        matchesStories: async () => false,
+        getStoriesMatcher: async () => () => false,
       },
     })
   );

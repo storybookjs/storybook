@@ -78,6 +78,12 @@ export async function detectChangedFilesOutsideStories({
     return none;
   }
 
+  const matchesStories = await storybookDirs.getStoriesMatcher();
+  // A story file the `stories` globs match renders itself, so it misses only while the index has
+  // not picked it up yet. Any other story file, such as one of another package's Storybook, never
+  // reaches this index.
+  const isIndexedStoryFile = (file: string) =>
+    STORY_FILE_RE.test(basename(file)) && matchesStories(resolvePath(repoRoot, file));
   const configDir = relative(repoRoot, storybookDirs.configDir);
   const projectDir = dirname(configDir) === '.' ? '' : dirname(configDir);
   const staticDirs = (await storybookDirs.getStaticDirs()).map((dir) => relative(repoRoot, dir));
@@ -113,10 +119,14 @@ export async function detectChangedFilesOutsideStories({
     }
   }
 
-  // Story files of this project first, then its other files, so neither other packages nor the
-  // unreachable cap can crowd them out.
+  // Story files of this index first, then the project's other files, so neither other packages nor
+  // the unreachable cap can crowd them out.
   const rank = (file: string) =>
-    isWithin(file, projectDir) ? (STORY_FILE_RE.test(basename(file)) ? 0 : 1) : 2;
+    isIndexedStoryFile(file)
+      ? 0
+      : isWithin(file, projectDir) && !STORY_FILE_RE.test(basename(file))
+        ? 1
+        : 2;
   candidates.sort((a, b) => rank(a) - rank(b));
 
   const unreachableFiles: string[] = [];
@@ -140,13 +150,7 @@ export async function detectChangedFilesOutsideStories({
         reachableFiles.push(file);
         continue;
       }
-      // A story file the `stories` globs match renders itself, so it misses only while the index
-      // has not picked it up yet. Any other story file, such as one of another package's
-      // Storybook, never reaches this index.
-      if (
-        STORY_FILE_RE.test(basename(file)) &&
-        (await storybookDirs.matchesStories(resolvePath(repoRoot, file)))
-      ) {
+      if (isIndexedStoryFile(file)) {
         unindexedStoryFiles.push(file);
       } else {
         unreachableFiles.push(file);

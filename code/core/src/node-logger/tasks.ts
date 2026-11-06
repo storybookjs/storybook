@@ -1,11 +1,10 @@
-// eslint-disable-next-line depend/ban-dependencies
-import type { ResultPromise } from 'execa';
+import type { Subprocess } from '../common/utils/subprocess.ts';
 
 import { CLI_COLORS, log } from './logger/index.ts';
 import { logTracker } from './logger/log-tracker.ts';
 import { spinner } from './prompts/prompt-functions.ts';
 
-type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
+type ChildProcessFactory = (signal?: AbortSignal) => Subprocess;
 
 interface SetupAbortControllerResult {
   abortController: AbortController;

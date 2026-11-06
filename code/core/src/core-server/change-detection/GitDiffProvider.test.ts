@@ -4,17 +4,16 @@ import type { watch } from 'node:fs';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { execa } from 'execa';
 import { logger } from 'storybook/internal/node-logger';
 
+import { spawnSubprocess } from '../../common/utils/subprocess.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
 
-vi.mock('execa', { spy: true });
+vi.mock('../../common/utils/subprocess.ts', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 
-type ExecaMockResult = { stdout: string } | { error: Error };
+type SubprocessMockResult = { stdout: string } | { error: Error };
 type MockWatcherRecord = {
   path: string;
   watcher: FSWatcher;
@@ -40,11 +39,11 @@ function mockStats(isDirectory: boolean) {
   } as Awaited<ReturnType<typeof stat>>;
 }
 
-function resolved(stdout: string): ExecaMockResult {
+function resolved(stdout: string): SubprocessMockResult {
   return { stdout };
 }
 
-function rejected(error: Error): ExecaMockResult {
+function rejected(error: Error): SubprocessMockResult {
   return { error };
 }
 
@@ -125,14 +124,14 @@ function getLatestWatcherByPath(
 }
 
 describe('GitDiffProvider', () => {
-  let repoRootResult: ExecaMockResult;
-  let stagedResult: ExecaMockResult;
-  let unstagedResult: ExecaMockResult;
-  let untrackedResult: ExecaMockResult;
-  let stagedAddedResult: ExecaMockResult;
-  let intentToAddResult: ExecaMockResult;
-  let headCommitResult: ExecaMockResult;
-  let statusPorcelainResult: ExecaMockResult;
+  let repoRootResult: SubprocessMockResult;
+  let stagedResult: SubprocessMockResult;
+  let unstagedResult: SubprocessMockResult;
+  let untrackedResult: SubprocessMockResult;
+  let stagedAddedResult: SubprocessMockResult;
+  let intentToAddResult: SubprocessMockResult;
+  let headCommitResult: SubprocessMockResult;
+  let statusPorcelainResult: SubprocessMockResult;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -145,7 +144,7 @@ describe('GitDiffProvider', () => {
     headCommitResult = resolved('abc123\n');
     statusPorcelainResult = resolved('');
 
-    vi.mocked(execa).mockImplementation(((_command: string | URL, ...rest: unknown[]) => {
+    vi.mocked(spawnSubprocess).mockImplementation(((_command: string, ...rest: unknown[]) => {
       const args = Array.isArray(rest[0]) ? rest[0] : [];
       const gitArgs = args.join(' ');
       const result =
@@ -175,8 +174,8 @@ describe('GitDiffProvider', () => {
         throw result.error;
       }
 
-      return Promise.resolve(result) as ReturnType<typeof execa>;
-    }) as unknown as typeof execa);
+      return Promise.resolve(result) as ReturnType<typeof spawnSubprocess>;
+    }) as unknown as typeof spawnSubprocess);
   });
 
   afterEach(() => {
@@ -351,7 +350,7 @@ describe('GitDiffProvider', () => {
 
     provider.onGitStateChange(vi.fn());
     await vi.waitFor(() => {
-      expect(vi.mocked(execa)).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(spawnSubprocess)).toHaveBeenCalledTimes(1);
     });
   });
 

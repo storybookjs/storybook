@@ -2,17 +2,21 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import { existsSync } from 'node:fs';
 import { delimiter, join } from 'node:path';
 
-// eslint-disable-next-line depend/ban-dependencies
-import {
-  type Options,
-  type ResultPromise,
-  type SyncOptions,
-  execa,
-  execaCommandSync,
-  execaNode,
-} from 'execa';
-
 import { categorizeExecaError } from './categorize-execa-error.ts';
+import {
+  type Subprocess,
+  type SubprocessOptions,
+  spawnNodeSubprocess,
+  spawnSubprocess,
+  spawnSubprocessSync,
+} from './subprocess.ts';
+
+export type {
+  Subprocess,
+  SubprocessError,
+  SubprocessOptions,
+  SubprocessResult,
+} from './subprocess.ts';
 
 const COMMON_ENV_VARS = {
   COREPACK_ENABLE_STRICT: '0',
@@ -20,24 +24,25 @@ const COMMON_ENV_VARS = {
   NO_UPDATE_NOTIFIER: 'true',
 };
 
-export type ExecuteCommandOptions = Omit<Options, 'cancelSignal'> & {
+export type ExecuteCommandOptions = Omit<SubprocessOptions, 'cancelSignal' | 'ipc'> & {
   command: string;
   args?: string[];
   cwd?: string;
   ignoreError?: boolean;
   env?: Record<string, string>;
-  signal?: AbortSignal; // Alias for cancelSignal (execa v9 uses cancelSignal)
+  /** Kills the command when aborted. */
+  signal?: AbortSignal;
 };
 
-function attachCategorizedExecaFailureHandler(
-  execaProcess: ResultPromise,
+function attachCategorizedFailureHandler(
+  subprocess: Subprocess,
   context: { command: string; args: string[] }
 ) {
   const categorize = (error: unknown) => categorizeExecaError(error, context);
-  const originalThen = execaProcess.then.bind(execaProcess);
-  const originalCatch = execaProcess.catch.bind(execaProcess);
+  const originalThen = subprocess.then.bind(subprocess);
+  const originalCatch = subprocess.catch.bind(subprocess);
 
-  execaProcess.then = ((onFulfilled, onRejected) =>
+  subprocess.then = ((onFulfilled, onRejected) =>
     originalThen(
       onFulfilled,
       typeof onRejected === 'function'
@@ -45,62 +50,60 @@ function attachCategorizedExecaFailureHandler(
         : (error) => {
             throw categorize(error);
           }
-    )) as ResultPromise['then'];
+    )) as Subprocess['then'];
 
-  execaProcess.catch = ((onRejected) =>
+  subprocess.catch = ((onRejected) =>
     originalCatch((error) => {
       throw categorize(error);
-    }).catch(typeof onRejected === 'function' ? onRejected : undefined)) as ResultPromise['catch'];
+    }).catch(typeof onRejected === 'function' ? onRejected : undefined)) as Subprocess['catch'];
 }
 
-function getExecaOptions({
+function getSubprocessOptions({
+  command: _command,
+  args: _args,
+  ignoreError: _ignoreError,
   stdio,
   cwd,
   env,
   signal,
-  ...execaOptions
-}: ExecuteCommandOptions): Options {
+  ...subprocessOptions
+}: ExecuteCommandOptions): SubprocessOptions {
   return {
     cwd,
     stdio: stdio ?? prompt.getPreferredStdio(),
-    encoding: 'utf8' as const,
     cleanup: true,
     env: {
       ...COMMON_ENV_VARS,
       ...env,
     },
-    ...(signal && { cancelSignal: signal }), // Map signal to cancelSignal for execa v9
-    ...execaOptions,
+    ...(signal && { cancelSignal: signal }),
+    ...subprocessOptions,
   };
 }
 
-export function executeCommand(options: ExecuteCommandOptions): ResultPromise {
+export function executeCommand(options: ExecuteCommandOptions): Subprocess {
   const { command, args = [], ignoreError = false } = options;
   logger.debug(`Executing command: ${command} ${args.join(' ')}`);
 
   const commandVariations = resolveCommand(command);
-  const execaProcess = tryCommandVariations(commandVariations, args, getExecaOptions(options));
+  const subprocess = tryCommandVariations(commandVariations, args, getSubprocessOptions(options));
 
   if (ignoreError) {
-    execaProcess.catch(() => {
+    subprocess.catch(() => {
       // Silently ignore errors when ignoreError is true
     });
   } else {
-    attachCategorizedExecaFailureHandler(execaProcess, { command, args });
+    attachCategorizedFailureHandler(subprocess, { command, args });
   }
 
-  return execaProcess;
+  return subprocess;
 }
 
 export function executeCommandSync(options: ExecuteCommandOptions): string {
   const { command, args = [], ignoreError = false } = options;
   try {
     const commandVariations = resolveCommand(command);
-    return tryCommandVariationsSync(
-      commandVariations,
-      args,
-      getExecaOptions(options) as SyncOptions
-    );
+    return tryCommandVariationsSync(commandVariations, args, getSubprocessOptions(options));
   } catch (err) {
     if (!ignoreError) {
       throw categorizeExecaError(err, { command, args });
@@ -116,11 +119,9 @@ export function executeNodeCommand({
 }: {
   scriptPath: string;
   args?: string[];
-  options?: Options;
-}): ResultPromise {
-  return execaNode(scriptPath, args, {
-    ...options,
-  });
+  options?: Omit<SubprocessOptions, 'shell' | 'ipc'>;
+}): Subprocess {
+  return spawnNodeSubprocess(scriptPath, args, options);
 }
 
 /**
@@ -156,22 +157,22 @@ function isExecutableInPath(command: string): boolean {
 function tryCommandVariations(
   commandVariations: string[],
   args: string[],
-  options: Options
-): ResultPromise {
+  options: SubprocessOptions
+): Subprocess {
   if (commandVariations.length <= 1) {
-    return execa(commandVariations[0], args, options);
+    return spawnSubprocess(commandVariations[0], args, options);
   }
 
   // Resolve the best variation synchronously via PATH lookup
   for (const cmd of commandVariations.slice(0, -1)) {
     if (isExecutableInPath(cmd)) {
       logger.debug(`Resolved command variation: ${cmd}`);
-      return execa(cmd, args, options);
+      return spawnSubprocess(cmd, args, options);
     }
   }
 
   // Fallback to the last variation (bare command name)
-  return execa(commandVariations[commandVariations.length - 1], args, options);
+  return spawnSubprocess(commandVariations[commandVariations.length - 1], args, options);
 }
 
 /**
@@ -179,20 +180,20 @@ function tryCommandVariations(
  *
  * @param commandVariations - Array of command variations to try
  * @param args - Command arguments
- * @param options - Execa sync options
+ * @param options - Subprocess options
  * @returns Stdout from the successful command
  */
 function tryCommandVariationsSync(
   commandVariations: string[],
   args: string[],
-  options: SyncOptions
+  options: SubprocessOptions
 ): string {
   let lastError: any;
 
   for (let i = 0; i < commandVariations.length; i++) {
     const cmd = commandVariations[i];
     try {
-      const commandResult = execaCommandSync([cmd, ...args].join(' '), options);
+      const commandResult = spawnSubprocessSync(cmd, args, options);
       return typeof commandResult.stdout === 'string' ? commandResult.stdout : '';
     } catch (error: any) {
       lastError = error;
@@ -216,8 +217,8 @@ function tryCommandVariationsSync(
  * - Many Node-based CLIs (npm, npx, pnpm, yarn, vite, eslint, anything in node_modules/.bin) do NOT
  *   ship as real executables on Windows.
  * - Instead, they install *.cmd and *.ps1 "shim" files.
- * - When using execa/child_process with `shell: false` (our default), Node WILL NOT resolve these
- *   shims. -> calling execa("npx") throws ENOENT on Windows.
+ * - When using child_process with `shell: false` (our default), Node WILL NOT resolve these shims.
+ *   -> spawning "npx" throws ENOENT on Windows.
  * - HOWEVER, package managers like pnpm can be installed via system tools (Mise, Scoop) as native
  *   executables (.exe), not as Node packages. In these cases, the .cmd shim doesn't exist.
  *

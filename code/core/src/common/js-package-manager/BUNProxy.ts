@@ -8,8 +8,7 @@ import {
 } from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
-// eslint-disable-next-line depend/ban-dependencies
-import type { ResultPromise } from 'execa';
+import type { Subprocess } from '../utils/subprocess.ts';
 import sort from 'semver/functions/sort.js';
 import { dedent } from 'ts-dedent';
 
@@ -137,7 +136,7 @@ export class BUNProxy extends JsPackageManager {
 
   public runPackageCommand(
     options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
-  ): ResultPromise {
+  ): Subprocess {
     // The following command is unsafe to use with `bun run`
     // because it will always favour a equally script named in the package.json instead of the installed binary.
     // so running `bun storybook automigrate` will run the

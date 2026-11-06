@@ -62,8 +62,8 @@ export async function runStoryTests(
 
       await testProcess;
     } catch (error) {
-      const execaError = error as { stdout?: string; stderr?: string };
-      const errorMessage = (execaError.stderr || String(error) || '').toLowerCase();
+      const subprocessError = error as { stdout?: string; stderr?: string };
+      const errorMessage = (subprocessError.stderr || String(error) || '').toLowerCase();
       if (errorMessage.includes('browsertype.launch')) {
         testFailureMessage = 'Playwright is not installed';
       } else if (errorMessage.includes('startup error')) {

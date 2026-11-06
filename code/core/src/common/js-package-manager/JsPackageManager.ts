@@ -5,8 +5,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 
 import detectIndent from 'detect-indent';
 import * as find from 'empathic/find';
-// eslint-disable-next-line depend/ban-dependencies
-import { type ResultPromise } from 'execa';
+import type { Subprocess } from '../utils/subprocess.ts';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
 import picocolors from 'picocolors';
@@ -401,7 +400,7 @@ export abstract class JsPackageManager {
           packageJsonInfo?: PackageJsonInfo;
         },
     dependencies: string[]
-  ): Promise<void | ResultPromise> {
+  ): Promise<void | Subprocess> {
     const {
       skipInstall,
       writeOutputToFile = true,
@@ -789,7 +788,7 @@ export abstract class JsPackageManager {
   protected abstract runInstall(options?: {
     force?: boolean;
     legacyPeerDeps?: boolean;
-  }): ResultPromise;
+  }): Subprocess;
 
   protected get installUsesTerminal(): boolean {
     return false;
@@ -799,7 +798,7 @@ export abstract class JsPackageManager {
     dependencies: string[],
     installAsDevDependencies: boolean,
     writeOutputToFile?: boolean
-  ): ResultPromise;
+  ): Subprocess;
 
   protected abstract getResolutions(
     packageJson: PackageJson,
@@ -834,10 +833,10 @@ export abstract class JsPackageManager {
     args: string[],
     cwd?: string,
     stdio?: 'inherit' | 'pipe' | 'ignore'
-  ): ResultPromise;
+  ): Subprocess;
   public abstract runPackageCommand(
     options: Omit<ExecuteCommandOptions, 'command'> & { args: string[]; useRemotePkg?: boolean }
-  ): ResultPromise;
+  ): Subprocess;
   public abstract findInstallations(pattern?: string[]): Promise<InstallationMetadata | undefined>;
   public abstract findInstallations(
     pattern?: string[],

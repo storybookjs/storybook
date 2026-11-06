@@ -1,10 +1,8 @@
 import { existsSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { execa, execaCommandSync } from 'execa';
-
 import { executeCommand, executeCommandSync } from './command.ts';
+import { spawnSubprocess, spawnSubprocessSync } from './subprocess.ts';
 import { ExecaCommandFailedError } from '../../server-errors.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
@@ -18,18 +16,18 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-vi.mock('execa', () => ({
-  execa: vi.fn(),
-  execaCommandSync: vi.fn(),
-  execaNode: vi.fn(),
+vi.mock('./subprocess.ts', () => ({
+  spawnSubprocess: vi.fn(),
+  spawnSubprocessSync: vi.fn(),
+  spawnNodeSubprocess: vi.fn(),
 }));
 
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(() => false),
 }));
 
-const mockedExeca = vi.mocked(execa);
-const mockedExecaCommandSync = vi.mocked(execaCommandSync);
+const mockedSpawn = vi.mocked(spawnSubprocess);
+const mockedSpawnSync = vi.mocked(spawnSubprocessSync);
 const mockedExistsSync = vi.mocked(existsSync);
 
 describe('command', () => {
@@ -58,7 +56,7 @@ describe('command', () => {
 
     it('should use .cmd when found in PATH for pnpm', async () => {
       mockedExistsSync.mockImplementation((p) => String(p).endsWith('pnpm.cmd'));
-      mockedExeca.mockResolvedValueOnce({
+      mockedSpawn.mockResolvedValueOnce({
         stdout: 'success',
         stderr: '',
       } as any);
@@ -68,12 +66,11 @@ describe('command', () => {
         args: ['--version'],
       });
 
-      expect(mockedExeca).toHaveBeenCalledTimes(1);
-      expect(mockedExeca).toHaveBeenCalledWith(
+      expect(mockedSpawn).toHaveBeenCalledTimes(1);
+      expect(mockedSpawn).toHaveBeenCalledWith(
         'pnpm.cmd',
         ['--version'],
         expect.objectContaining({
-          encoding: 'utf8',
           cleanup: true,
         })
       );
@@ -81,7 +78,7 @@ describe('command', () => {
 
     it('should use .exe when .cmd not found but .exe exists in PATH', async () => {
       mockedExistsSync.mockImplementation((p) => String(p).endsWith('pnpm.exe'));
-      mockedExeca.mockResolvedValueOnce({
+      mockedSpawn.mockResolvedValueOnce({
         stdout: 'success',
         stderr: '',
       } as any);
@@ -91,12 +88,11 @@ describe('command', () => {
         args: ['--version'],
       });
 
-      expect(mockedExeca).toHaveBeenCalledTimes(1);
-      expect(mockedExeca).toHaveBeenCalledWith(
+      expect(mockedSpawn).toHaveBeenCalledTimes(1);
+      expect(mockedSpawn).toHaveBeenCalledWith(
         'pnpm.exe',
         ['--version'],
         expect.objectContaining({
-          encoding: 'utf8',
           cleanup: true,
         })
       );
@@ -104,7 +100,7 @@ describe('command', () => {
 
     it('should use .ps1 when neither .cmd nor .exe found but .ps1 exists in PATH', async () => {
       mockedExistsSync.mockImplementation((p) => String(p).endsWith('pnpm.ps1'));
-      mockedExeca.mockResolvedValueOnce({
+      mockedSpawn.mockResolvedValueOnce({
         stdout: 'success',
         stderr: '',
       } as any);
@@ -114,12 +110,11 @@ describe('command', () => {
         args: ['--version'],
       });
 
-      expect(mockedExeca).toHaveBeenCalledTimes(1);
-      expect(mockedExeca).toHaveBeenCalledWith(
+      expect(mockedSpawn).toHaveBeenCalledTimes(1);
+      expect(mockedSpawn).toHaveBeenCalledWith(
         'pnpm.ps1',
         ['--version'],
         expect.objectContaining({
-          encoding: 'utf8',
           cleanup: true,
         })
       );
@@ -127,7 +122,7 @@ describe('command', () => {
 
     it('should fall back to bare command when no variation found in PATH', async () => {
       mockedExistsSync.mockReturnValue(false);
-      mockedExeca.mockResolvedValueOnce({
+      mockedSpawn.mockResolvedValueOnce({
         stdout: 'success',
         stderr: '',
       } as any);
@@ -137,15 +132,15 @@ describe('command', () => {
         args: ['--version'],
       });
 
-      expect(mockedExeca).toHaveBeenCalledTimes(1);
-      expect(mockedExeca).toHaveBeenCalledWith('pnpm', ['--version'], expect.anything());
+      expect(mockedSpawn).toHaveBeenCalledTimes(1);
+      expect(mockedSpawn).toHaveBeenCalledWith('pnpm', ['--version'], expect.anything());
     });
 
     it('should prefer .cmd over .exe when both exist in PATH', async () => {
       mockedExistsSync.mockImplementation(
         (p) => String(p).endsWith('pnpm.exe') || String(p).endsWith('pnpm.cmd')
       );
-      mockedExeca.mockResolvedValueOnce({
+      mockedSpawn.mockResolvedValueOnce({
         stdout: 'success',
         stderr: '',
       } as any);
@@ -155,13 +150,13 @@ describe('command', () => {
         args: ['--version'],
       });
 
-      expect(mockedExeca).toHaveBeenCalledTimes(1);
-      expect(mockedExeca).toHaveBeenCalledWith('pnpm.cmd', ['--version'], expect.anything());
+      expect(mockedSpawn).toHaveBeenCalledTimes(1);
+      expect(mockedSpawn).toHaveBeenCalledWith('pnpm.cmd', ['--version'], expect.anything());
     });
 
     it('should propagate categorized errors from the resolved command', async () => {
       mockedExistsSync.mockReturnValue(false);
-      mockedExeca.mockRejectedValueOnce({
+      mockedSpawn.mockRejectedValueOnce({
         stderr: 'Some other error',
         message: 'Command failed with different error',
         exitCode: 1,
@@ -174,12 +169,12 @@ describe('command', () => {
         })
       ).rejects.toBeInstanceOf(ExecaCommandFailedError);
 
-      expect(mockedExeca).toHaveBeenCalledTimes(1);
+      expect(mockedSpawn).toHaveBeenCalledTimes(1);
     });
 
     it('should preserve subprocess methods like on after attaching categorized errors', async () => {
       const on = vi.fn();
-      mockedExeca.mockReturnValueOnce(
+      mockedSpawn.mockReturnValueOnce(
         Object.assign(Promise.resolve({ stdout: 'success', stderr: '' }), { on }) as any
       );
 
@@ -201,7 +196,7 @@ describe('command', () => {
         message: 'Command failed',
         exitCode: 1,
       };
-      mockedExeca.mockRejectedValueOnce(error);
+      mockedSpawn.mockRejectedValueOnce(error);
 
       await expect(
         executeCommand({
@@ -212,12 +207,12 @@ describe('command', () => {
         name: expect.stringContaining('PackageManagerBinaryNotFoundError'),
       });
 
-      expect(mockedExeca).toHaveBeenCalledTimes(1);
+      expect(mockedSpawn).toHaveBeenCalledTimes(1);
     });
 
     it('should work for npm command', async () => {
       mockedExistsSync.mockImplementation((p) => String(p).endsWith('npm.cmd'));
-      mockedExeca.mockResolvedValueOnce({
+      mockedSpawn.mockResolvedValueOnce({
         stdout: 'success',
         stderr: '',
       } as any);
@@ -227,12 +222,12 @@ describe('command', () => {
         args: ['--version'],
       });
 
-      expect(mockedExeca).toHaveBeenCalledWith('npm.cmd', ['--version'], expect.anything());
+      expect(mockedSpawn).toHaveBeenCalledWith('npm.cmd', ['--version'], expect.anything());
     });
 
     it('should work for yarn command', async () => {
       mockedExistsSync.mockImplementation((p) => String(p).endsWith('yarn.cmd'));
-      mockedExeca.mockResolvedValueOnce({
+      mockedSpawn.mockResolvedValueOnce({
         stdout: 'success',
         stderr: '',
       } as any);
@@ -242,11 +237,11 @@ describe('command', () => {
         args: ['--version'],
       });
 
-      expect(mockedExeca).toHaveBeenCalledWith('yarn.cmd', ['--version'], expect.anything());
+      expect(mockedSpawn).toHaveBeenCalledWith('yarn.cmd', ['--version'], expect.anything());
     });
 
     it('should not modify unknown commands on Windows', async () => {
-      mockedExeca.mockResolvedValueOnce({
+      mockedSpawn.mockResolvedValueOnce({
         stdout: 'success',
         stderr: '',
       } as any);
@@ -256,7 +251,7 @@ describe('command', () => {
         args: ['--version'],
       });
 
-      expect(mockedExeca).toHaveBeenCalledWith('git', ['--version'], expect.anything());
+      expect(mockedSpawn).toHaveBeenCalledWith('git', ['--version'], expect.anything());
     });
   });
 
@@ -278,7 +273,7 @@ describe('command', () => {
     });
 
     it('should use command as-is for pnpm on Linux', async () => {
-      mockedExeca.mockResolvedValueOnce({
+      mockedSpawn.mockResolvedValueOnce({
         stdout: 'success',
         stderr: '',
       } as any);
@@ -288,7 +283,7 @@ describe('command', () => {
         args: ['--version'],
       });
 
-      expect(mockedExeca).toHaveBeenCalledWith('pnpm', ['--version'], expect.anything());
+      expect(mockedSpawn).toHaveBeenCalledWith('pnpm', ['--version'], expect.anything());
     });
 
     it('should use command as-is for npm on macOS', async () => {
@@ -297,7 +292,7 @@ describe('command', () => {
         configurable: true,
       });
 
-      mockedExeca.mockResolvedValueOnce({
+      mockedSpawn.mockResolvedValueOnce({
         stdout: 'success',
         stderr: '',
       } as any);
@@ -307,7 +302,7 @@ describe('command', () => {
         args: ['install'],
       });
 
-      expect(mockedExeca).toHaveBeenCalledWith('npm', ['install'], expect.anything());
+      expect(mockedSpawn).toHaveBeenCalledWith('npm', ['install'], expect.anything());
     });
   });
 
@@ -329,7 +324,7 @@ describe('command', () => {
     });
 
     it('should try .cmd first for pnpm and succeed', () => {
-      mockedExecaCommandSync.mockReturnValueOnce({
+      mockedSpawnSync.mockReturnValueOnce({
         stdout: '10.0.0',
         stderr: '',
       } as any);
@@ -340,11 +335,11 @@ describe('command', () => {
       });
 
       expect(result).toBe('10.0.0');
-      expect(mockedExecaCommandSync).toHaveBeenCalledTimes(1);
-      expect(mockedExecaCommandSync).toHaveBeenCalledWith(
-        'pnpm.cmd --version',
+      expect(mockedSpawnSync).toHaveBeenCalledTimes(1);
+      expect(mockedSpawnSync).toHaveBeenCalledWith(
+        'pnpm.cmd',
+        ['--version'],
         expect.objectContaining({
-          encoding: 'utf8',
           cleanup: true,
         })
       );
@@ -352,7 +347,7 @@ describe('command', () => {
 
     it('should try .exe after .cmd fails with "not recognized" error', () => {
       // First call (.cmd) fails
-      mockedExecaCommandSync.mockImplementationOnce(() => {
+      mockedSpawnSync.mockImplementationOnce(() => {
         throw {
           stderr: "'pnpm.cmd' is not recognized as an internal or external command",
           message: 'Command failed',
@@ -360,7 +355,7 @@ describe('command', () => {
       });
 
       // Second call (.exe) succeeds
-      mockedExecaCommandSync.mockReturnValueOnce({
+      mockedSpawnSync.mockReturnValueOnce({
         stdout: '10.0.0',
         stderr: '',
       } as any);
@@ -371,21 +366,23 @@ describe('command', () => {
       });
 
       expect(result).toBe('10.0.0');
-      expect(mockedExecaCommandSync).toHaveBeenCalledTimes(2);
-      expect(mockedExecaCommandSync).toHaveBeenNthCalledWith(
+      expect(mockedSpawnSync).toHaveBeenCalledTimes(2);
+      expect(mockedSpawnSync).toHaveBeenNthCalledWith(
         1,
-        'pnpm.cmd --version',
+        'pnpm.cmd',
+        ['--version'],
         expect.anything()
       );
-      expect(mockedExecaCommandSync).toHaveBeenNthCalledWith(
+      expect(mockedSpawnSync).toHaveBeenNthCalledWith(
         2,
-        'pnpm.exe --version',
+        'pnpm.exe',
+        ['--version'],
         expect.anything()
       );
     });
 
     it('should throw categorized error immediately if first call fails with non-"not recognized" error', () => {
-      mockedExecaCommandSync.mockImplementationOnce(() => {
+      mockedSpawnSync.mockImplementationOnce(() => {
         throw {
           stderr: 'Some other error',
           message: 'Command failed with different error',
@@ -400,7 +397,7 @@ describe('command', () => {
         })
       ).toThrow(ExecaCommandFailedError);
 
-      expect(mockedExecaCommandSync).toHaveBeenCalledTimes(1);
+      expect(mockedSpawnSync).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -422,7 +419,7 @@ describe('command', () => {
     });
 
     it('should use command as-is for pnpm on Linux', () => {
-      mockedExecaCommandSync.mockReturnValueOnce({
+      mockedSpawnSync.mockReturnValueOnce({
         stdout: '10.0.0',
         stderr: '',
       } as any);
@@ -433,13 +430,13 @@ describe('command', () => {
       });
 
       expect(result).toBe('10.0.0');
-      expect(mockedExecaCommandSync).toHaveBeenCalledWith('pnpm --version', expect.anything());
+      expect(mockedSpawnSync).toHaveBeenCalledWith('pnpm', ['--version'], expect.anything());
     });
   });
 
   describe('ignoreError option', () => {
     it('should not throw unhandled rejection when ignoreError is true for executeCommand', async () => {
-      mockedExeca.mockRejectedValueOnce(new Error('Command failed'));
+      mockedSpawn.mockRejectedValueOnce(new Error('Command failed'));
 
       const promise = executeCommand({
         command: 'pnpm',
@@ -448,12 +445,12 @@ describe('command', () => {
       });
 
       // The .catch() handler in executeCommand prevents unhandled rejection warnings,
-      // but the returned promise still rejects since it's the original ResultPromise
+      // but the returned promise still rejects since it's the original subprocess
       await expect(promise).rejects.toThrow('Command failed');
     });
 
     it('should return empty string when ignoreError is true for executeCommandSync', () => {
-      mockedExecaCommandSync.mockImplementationOnce(() => {
+      mockedSpawnSync.mockImplementationOnce(() => {
         throw new Error('Command failed');
       });
 

@@ -2,9 +2,9 @@ import { watch, type FSWatcher } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import { dirname, join, resolve as resolvePath } from 'pathe';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { execa, type ExecaError } from 'execa';
 import { logger } from 'storybook/internal/node-logger';
+
+import { type SubprocessError, spawnSubprocess } from '../../common/utils/subprocess.ts';
 
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 
@@ -49,7 +49,7 @@ export class GitDiffProvider {
     }
 
     try {
-      const { stdout } = await execa('git', ['rev-parse', '--show-toplevel'], {
+      const { stdout = '' } = await spawnSubprocess('git', ['rev-parse', '--show-toplevel'], {
         cwd: this.cwd,
         stdio: 'pipe',
         // Prevent git from acquiring .git/index.lock for stat-cache refreshes
@@ -273,9 +273,9 @@ export class GitDiffProvider {
     }
   }
 
-  private async runGitCommand(repoRoot: string, args: string[]) {
+  private async runGitCommand(repoRoot: string, args: string[]): Promise<{ stdout: string }> {
     try {
-      return await execa('git', args, {
+      const { stdout = '' } = await spawnSubprocess('git', args, {
         cwd: repoRoot,
         stdio: 'pipe',
         // GIT_OPTIONAL_LOCKS=0 disables the stat-cache refresh that
@@ -286,6 +286,7 @@ export class GitDiffProvider {
         // user's shell.
         env: { GIT_OPTIONAL_LOCKS: '0' },
       });
+      return { stdout };
     } catch (error) {
       throw this.toGitError(error, `git ${args.join(' ')}`);
     }
@@ -298,12 +299,12 @@ export class GitDiffProvider {
   }
 
   private toGitError(error: unknown, command: string): Error {
-    const execaError = error as Partial<ExecaError>;
-    const stderr = [execaError.stderr, execaError.shortMessage, execaError.message]
+    const subprocessError = error as Partial<SubprocessError>;
+    const stderr = [subprocessError.stderr, subprocessError.shortMessage, subprocessError.message]
       .filter(Boolean)
       .join('\n');
 
-    if (execaError.code === 'ENOENT') {
+    if (subprocessError.code === 'ENOENT') {
       return new ChangeDetectionUnavailableError('git is not available', { cause: error as Error });
     }
 

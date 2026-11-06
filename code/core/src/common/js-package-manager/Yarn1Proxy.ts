@@ -6,8 +6,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
-// eslint-disable-next-line depend/ban-dependencies
-import type { ResultPromise } from 'execa';
+import type { Subprocess } from '../utils/subprocess.ts';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
@@ -74,7 +73,7 @@ export class Yarn1Proxy extends JsPackageManager {
   }: Omit<ExecuteCommandOptions, 'command'> & {
     args: string[];
     useRemotePkg?: boolean;
-  }): ResultPromise {
+  }): Subprocess {
     const [command, ...rest] = args;
     return executeCommand({
       ...options,

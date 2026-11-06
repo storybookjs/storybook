@@ -8,8 +8,7 @@ import {
 } from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
-// eslint-disable-next-line depend/ban-dependencies
-import type { ResultPromise } from 'execa';
+import type { Subprocess } from '../utils/subprocess.ts';
 import { dedent } from 'ts-dedent';
 
 import { logger } from '../../node-logger/index.ts';
@@ -131,7 +130,7 @@ export class Yarn2Proxy extends JsPackageManager {
   }: Omit<ExecuteCommandOptions, 'command'> & {
     args: string[];
     useRemotePkg?: boolean;
-  }): ResultPromise {
+  }): Subprocess {
     return executeCommand({
       command: 'yarn',
       args: [useRemotePkg ? 'dlx' : 'exec', ...args],

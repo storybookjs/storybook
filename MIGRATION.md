@@ -2593,6 +2593,10 @@ Storybook's MCP tools are now named from their toolset and method (`stories.prev
 
 `@storybook/addon-mcp` no longer serves `get-storybook-story-instructions`. The server's instructions now have agents run `npx storybook skills ui-workflow --mcp`, which prints the same workflow as the `ui-workflow` skill, with the MCP tool names. This needs an agent that can run shell commands. Replace calls to the tool in agent prompts and allowlists with that command.
 
+`npx storybook skills write-story`, the skill name that shipped in 10.6, now prints the `ui-workflow` skill instead of the old story instructions.
+
+`review-create` no longer has an MCP output schema, so its result no longer carries `structuredContent`: it is text only, ending with the lines the agent's answer ends with. Clients that pass `structuredContent` to the model instead of the text (Claude Code does) showed those lines as escaped JSON, and agents left them out. A client that read `structuredContent.reviewUrl` can take the link from the text, or run `npx storybook tools review create --json`, which still prints the data.
+
 ### Angular Vite defaults to server-side docgen
 
 `experimentalDocgenServer` moves component analysis out of the browser and onto the Storybook server, where each component is read from its TypeScript source once and the resulting inputs, outputs and descriptions are served to the Controls table, the Docs pages and the component manifest that AI agents read.

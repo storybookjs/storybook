@@ -23,7 +23,7 @@
     "fmt:write": "oxfmt .",
     "get-sandbox-dir": "pnpm --dir scripts run get-sandbox-dir",
     "i": "pnpm install",
-    "preinstall": "node -e \"if (!/^pnpm\\//.test(process.env.npm_config_user_agent ?? '')) { console.error('This repository uses pnpm: run corepack enable, then pnpm install.'); process.exit(1); }\"",
+    "preinstall": "node -e \"const pin = require('./package.json').packageManager.replace(/^pnpm@|\\+.*$/g, ''); if (!(process.env.npm_config_user_agent ?? '').startsWith('pnpm/' + pin + ' ')) { console.error('This repository uses pnpm ' + pin + ': install pnpm 10 or later (https://pnpm.io/installation), which switches to that version, then run pnpm install.'); process.exit(1); }\"",
     "postinstall": "husky",
     "knip": "pnpm --dir code run knip",
     "lint": "pnpm --dir code run lint",

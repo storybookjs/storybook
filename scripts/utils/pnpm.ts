@@ -76,7 +76,7 @@ async function assertPinnedPnpm(cwd: string) {
   const actual = stdout.trim();
   if (actual !== expected) {
     throw new Error(
-      `Sandboxes need pnpm ${expected}, but \`pnpm\` in ${cwd} is ${actual}. Run \`corepack enable pnpm\` so the pinned version is used.`
+      `Sandboxes need pnpm ${expected}, but \`pnpm\` in ${cwd} is ${actual}. Install pnpm 10 or later, which switches to the version the \`packageManager\` field pins.`
     );
   }
 }

@@ -374,7 +374,7 @@ Done! 🚀
 
 If you need to release a change to an older minor version that is not the latest, you have to do it manually, locally. The process is described below, with an example of releasing a new `v8.3.7` in a situation where `8.4.0` is currently the latest version.
 
-The steps use Yarn, because tags from before the switch to pnpm, like `v8.3.6` here, use Yarn (`corepack enable` provides the version they pin). For a tag whose root `package.json` pins pnpm in its `packageManager` field, run the pnpm equivalents instead, as in [Releasing Locally in an Emergency](#releasing-locally-in-an-emergency-): `pnpm install`, `pnpm task ...`, and the `pnpm release:...` scripts from the `scripts` directory.
+The steps use Yarn, because tags from before the switch to pnpm, like `v8.3.6` here, use Yarn. They vendor their Yarn release through `yarnPath` in `.yarnrc.yml`, so any global Yarn runs it, such as one from `npm install --global yarn`. For a tag whose root `package.json` pins pnpm in its `packageManager` field, run the pnpm equivalents instead, as in [Releasing Locally in an Emergency](#releasing-locally-in-an-emergency-): `pnpm install`, `pnpm task ...`, and the `pnpm release:...` scripts from the `scripts` directory.
 
 1. Checkout the _existing_ tag that matches the latest minor release you want to bump, and create a new branch from it. In this case, we want to do:
     1. `git fetch --all --tags`

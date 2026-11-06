@@ -6,7 +6,7 @@ This document is canonical for the toolchain, everyday commands, the edit-compil
 ## Toolchain
 
 - **Node.js**: the version in `.nvmrc`. It runs `.ts` files natively through type stripping, so no loader is needed.
-- **Package manager**: pnpm, pinned in the root `package.json` `packageManager` field. Run `corepack enable` once (Node 22 bundles corepack) so `pnpm` runs the pinned release; the root `preinstall` script rejects installs by any other package manager. `overrides`, `patchedDependencies` (patch files in `patches/`), the build-script allowlist (`onlyBuiltDependencies`), and the 7-day `minimumReleaseAge` live in `pnpm-workspace.yaml`. `pnpm <script>` only runs scripts of the `package.json` in the current directory, so run each command below from the directory it names.
+- **Package manager**: pnpm, pinned in the root `package.json` `packageManager` field. Install pnpm 10 or later once (`npm install --global pnpm@latest-10`); it switches to the pinned release by itself, and the root `preinstall` script rejects installs by any other package manager or pnpm version. CI installs pnpm, and the Yarn that sandbox generation uses, from the lockfile in `.github/actions/setup-node-and-install/package-managers/` (see [Bumping pnpm or Yarn](#bumping-pnpm-or-yarn)). `overrides`, `patchedDependencies` (patch files in `patches/`), the build-script allowlist (`onlyBuiltDependencies`), and the 7-day `minimumReleaseAge` live in `pnpm-workspace.yaml`. `pnpm <script>` only runs scripts of the `package.json` in the current directory, so run each command below from the directory it names.
 - **Task orchestration**: NX plus the custom `pnpm task` runner. See [NX and `pnpm task`](./nx-and-pnpm-task.md).
 - **Linting**: oxlint (root `.oxlintrc.json`, extended by `code/.oxlintrc.json` and `scripts/.oxlintrc.json`; custom rules load via `jsPlugins`). ESLint is no longer used for repo linting; `code/lib/eslint-plugin` remains as the published `eslint-plugin-storybook` package.
 - **Formatting**: oxfmt (root `.oxfmtrc.json`).
@@ -68,6 +68,14 @@ Changes to `MIGRATION.md` are automatically updated by lint-staged. Use the comm
 Always run `pnpm fmt:write` from the repository root once you are done editing.
 Hand-written formatting is frequently wrong for oxfmt, so do not skip this step.
 The pre-commit hook detects AI agents (via `std-env`) and switches from check-only to write mode, so formatting is also auto-fixed when agents commit.
+
+## Bumping pnpm or Yarn
+
+Only bump to a release that is at least 7 days old. In `.github/actions/setup-node-and-install/package-managers/`:
+
+1. Run `npm install --package-lock-only --ignore-scripts --save-exact pnpm@<version>` (or `@yarnpkg/cli-dist@<version>`).
+2. Run `npm ci --ignore-scripts && npm audit signatures`, which checks the new tarball against npm's signatures once, then delete the folder's `node_modules`.
+3. Run `pnpm test scripts/ci/setup-node-and-install.test.ts` from the repository root. For pnpm, paste the `packageManager` value it expects into the root `package.json`. For Yarn, update `PUBLISHED_SANDBOX_PACKAGE_MANAGER` in `scripts/sandbox/utils/yarn.ts`, which changes the published sandboxes.
 
 ## Troubleshooting
 

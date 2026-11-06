@@ -50,10 +50,10 @@ You can use any version manager to install the correct version of Node.js. We re
   pnpm env use --global 22
   ```
 
-2. Install [fnm](https://github.com/Schniz/fnm/tree/master?tab=readme-ov-file#installation) and adjust your shell configuration to include the following parameters: `fnm env`, `use-on-cd`, `corepack-enabled`, and `version-file-strategy recursive`.
+2. Install [fnm](https://github.com/Schniz/fnm/tree/master?tab=readme-ov-file#installation) and adjust your shell configuration to include the following parameters: `fnm env`, `use-on-cd`, and `version-file-strategy recursive`.
    
    ```shell
-   eval "$(fnm env --use-on-cd --corepack-enabled --version-file-strategy recursive)"
+   eval "$(fnm env --use-on-cd --version-file-strategy recursive)"
    ```
 
 3. If you're a Windows user, you'll need to enable Windows Subsystem for Linux (WSL). You can follow the instructions [here](https://docs.microsoft.com/en-us/windows/wsl/install).
@@ -168,14 +168,16 @@ git branch --set-upstream-to upstream/next next
 
 If you're interested in contributing to Storybook's codebase, you can run it locally to get a feel for the codebase and the development environment. To get started with the development environment, you should always run `pnpm start` from the root directory. Running `pnpm start` will install the required dependencies, build the project, including the packages, and generate a sandbox environment using React with TypeScript with a set of test stories to help you get started.
 
-The repository uses the pnpm version pinned in the `packageManager` field of the root `package.json`. Run `corepack enable` once (Node.js 22 bundles Corepack), and Corepack will provide that pnpm version. Installing with any other package manager fails on purpose.
+The repository uses the pnpm version pinned in the `packageManager` field of the root `package.json`. Install pnpm 10 or later once, with npm as below or [any other method](https://pnpm.io/installation), and it switches to that version by itself. Installing with any other package manager or pnpm version fails on purpose.
+
+If Corepack already provides pnpm, nothing changes. To switch, run `corepack disable pnpm` first. Offline, install exactly the pinned version, so pnpm has nothing to download.
 
 ```shell
 # Navigate to the root directory of the Storybook repository 
 cd path/to/your/storybook/fork 
 
-# Let Corepack provide the pinned pnpm version (once per Node.js installation)
-corepack enable
+# Install pnpm (once per Node.js installation)
+npm install --global pnpm@latest-10
 # Install the required dependencies
 pnpm install
 # start the development environment 

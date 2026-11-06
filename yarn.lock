@@ -10740,7 +10740,7 @@ __metadata:
     typescript: "npm:^6.0.3"
     vite: "npm:^7.0.4"
   peerDependencies:
-    preact: ^10.8.0 || >= 11.0.0-0
+    preact: ^10.9.0 || >= 11.0.0-0
     storybook: "workspace:^"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
@@ -10755,7 +10755,7 @@ __metadata:
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^6.0.3"
   peerDependencies:
-    preact: ^10.8.0 || >= 11.0.0-0
+    preact: ^10.9.0 || >= 11.0.0-0
     storybook: "workspace:^"
   languageName: unknown
   linkType: soft
@@ -33611,7 +33611,6 @@ __metadata:
     typescript-5: "npm:typescript@5.9.3"
     unique-string: "npm:^3.0.0"
     use-resize-observer: "npm:^9.1.0"
-    use-sync-external-store: "npm:^1.5.0"
     valibot: "npm:^1.4.0"
     watchpack: "npm:^2.5.0"
     wrap-ansi: "npm:^9.0.2"
@@ -35728,7 +35727,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"use-sync-external-store@npm:^1.5.0, use-sync-external-store@npm:^1.6.0":
+"use-sync-external-store@npm:^1.6.0":
   version: 1.6.0
   resolution: "use-sync-external-store@npm:1.6.0"
   peerDependencies:

@@ -1,3 +1,5 @@
+import { unwrapExpression } from 'storybook/internal/csf-tools';
+
 import type { ESTreeAST } from '../../ast.ts';
 import type { SvelteASTNodes } from './nodes.ts';
 import { isOneOf } from '../../../utils/is-one-of.ts';
@@ -17,11 +19,7 @@ type Result<Properties extends Array<keyof ComponentAnnotations<Cmp>>> = Partial
   [Key in Properties[number]]: ESTreeAST.Property;
 }>;
 
-/**
- * Extract selected properties from `defineMeta` as AST node {@link Property}.
- * It works for original svelte code as well as compiled code,
- * because in both cases, the AST structure is the same _(or should be!)_.
- */
+// Works on both the Svelte and the compiled AST, because `defineMeta()` has the same shape in both.
 export function extractDefineMetaPropertiesNodes<
   const Properties extends Array<keyof ComponentAnnotations<Cmp>>,
 >(options: Options<Properties>): Result<Properties> {
@@ -42,10 +40,6 @@ export function extractDefineMetaPropertiesNodes<
   return results;
 }
 
-/**
- * `defineMeta` and `preview.meta` accept only one argument - an {@link ObjectExpression},
- * which should satisfy `@storybook/svelte`'s interface {@link Meta}.
- */
 export function getDefineMetaFirstArgumentObjectExpression(
   options: Pick<Options<Array<keyof ComponentAnnotations<Cmp>>>, 'filename' | 'nodes'>
 ): ESTreeAST.ObjectExpression {
@@ -54,17 +48,14 @@ export function getDefineMetaFirstArgumentObjectExpression(
   const { declarations } = defineMetaVariableDeclaration;
   const declaration = declarations[0];
   const init = declaration.init && skipTypeCalls(declaration.init);
+  const argument =
+    init?.type === 'CallExpression' && init.arguments.length === 1
+      ? unwrapExpression(init.arguments[0])
+      : undefined;
 
-  if (
-    init?.type === 'CallExpression' &&
-    init.arguments.length === 1 &&
-    init.arguments[0].type === 'ObjectExpression'
-  ) {
-    return init.arguments[0];
+  if (argument?.type === 'ObjectExpression') {
+    return argument;
   }
 
-  throw new GetDefineMetaFirstArgumentError({
-    filename,
-    defineMetaVariableDeclaration,
-  });
+  throw new GetDefineMetaFirstArgumentError(filename);
 }

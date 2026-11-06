@@ -339,13 +339,13 @@ const WRAPPERS = new Set([
 ]);
 
 /** Whether a node is a TS assertion, satisfies or non-null wrapper around an expression. */
-export const isTSWrapper = (node: Node) => WRAPPERS.has(node.type);
+export const isTSWrapper = (node: { type: string }) => WRAPPERS.has(node.type);
 
 /** Peel TS assertion/satisfies wrappers off an expression node. */
-export const unwrapExpression = <T extends Node | null | undefined>(node: T): T => {
-  let current: Node | null | undefined = node;
+export const unwrapExpression = <T extends { type: string } | null | undefined>(node: T): T => {
+  let current: { type: string; expression?: { type: string } } | null | undefined = node;
   while (current && isTSWrapper(current)) {
-    current = (current as { expression: Node }).expression;
+    current = current.expression;
   }
   return current as T;
 };

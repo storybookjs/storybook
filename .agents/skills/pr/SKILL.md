@@ -59,11 +59,27 @@ Heuristics:
 - Simple, straightforward change → `qa:skip`
 - Unsure → ask the user whether manual QA before minor release is necessary
 
+## Commit history
+
+Shape the commits so a reviewer can skip the hard implementation and review the behaviour through the tests:
+
+- One commit for each unrelated fix, one for core changes, then the implementation.
+- One commit with only the test cases that show the behaviour, for example `test(svelte): the test cases for <feature>`.
+- Snapshots contain no versions and no absolute paths. Use a snapshot serializer with placeholders (see `code/renderers/svelte/vitest-setup.ts`).
+
+Until a human has reviewed the PR, fold each fix into the commit that owns it, also for bot feedback. After the first human review, add each fix for a human's feedback as a new commit on top, and link that commit in the reply on the human's thread: a folded fix is hard for the reviewer to find. A rebase onto the base branch is still fine, but keep those fix commits separate.
+
 ## PR body
 
 Read `.github/PULL_REQUEST_TEMPLATE.md` from the repository root.
 
 Copy that template **EXACTLY**, including all HTML comments (`<!-- ... -->`). Fill in the relevant sections based on the changes, but keep all comments intact.
+
+Describe the change against the base branch only. Do not compare it with earlier or replaced PRs. When the PR is an alternative to another open PR, say so in one line at the top.
+
+### How to review
+
+Add a "How to review" section when the PR has more than one commit. Write one numbered item per commit, in order: the commit title as a link (`https://github.com/<owner>/<repo>/pull/<number>/commits/<full sha>`), how closely to review it (**Review this one**, **Skim**, or **Skip**), and what it changes, in one or two sentences. Update the links after each rebase or force-push, because the SHAs change.
 
 ### Manual testing (required)
 
@@ -83,6 +99,8 @@ When useful, link to published Chromatic Storybooks (CI must finish first; links
 
 - Internal UI: `https://<branch>--635781f3500dd2c49e189caf.chromatic.com/?path=/story/<story_id>`
 - React Vite TS: `https://<branch>--630511d655df72125520f051.chromatic.com/?path=/story/<story_id>`
+
+For stories of another sandbox, use that sandbox's project from [Chromatic projects](../../guidelines/chromatic-projects.md). The links need a Chromatic login.
 
 Replace `<branch>` with Chromatic's normalized slug (special chars → dashes, e.g. `feature/foo` → `feature-foo`) and `<story_id>` with the story path (e.g. `example-button--primary`).
 

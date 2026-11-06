@@ -1,7 +1,7 @@
-import type { ComponentProps, FC, SyntheticEvent } from 'react';
+import type { FC, SyntheticEvent } from 'react';
 import React, { memo, useCallback, useMemo } from 'react';
 
-import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
+import { PopoverProvider } from 'storybook/internal/components';
 import {
   type API_HashEntry,
   type Addon_Collection,
@@ -9,17 +9,17 @@ import {
   Addon_TypesEnum,
 } from 'storybook/internal/types';
 
-import { CopyIcon, EditorIcon, EllipsisIcon } from '@storybook/icons';
+import { CollapseIcon, CopyIcon, EditorIcon, EllipsisIcon, ExpandAltIcon } from '@storybook/icons';
 
 import type { API } from 'storybook/manager-api';
 import { useStorybookApi } from 'storybook/manager-api';
 
-import type { Link, NormalLink } from '../../../components/components/tooltip/TooltipLinkList.tsx';
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import { isStoryRow } from '../../utils/tree.ts';
 
 import { Shortcut } from '../Shortcut.tsx';
 import { ContextMenuButton } from './ContextMenuButton.tsx';
+import { type MenuItem, type SidebarMenuItem, SidebarMenuList } from './Menu.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 
 /** How the user opened a context menu. A keyboard open prepends a nav link item and autofocuses it. */
@@ -54,14 +54,17 @@ export function hasContextMenu(context: API_HashEntry, hasProviderMenuEntries = 
     ('importPath' in context && Boolean(context.importPath)) ||
     context.type === 'story' ||
     context.type === 'docs' ||
+    // Root rows always get expand/collapse; test providers can also contribute entries.
+    context.type === 'root' ||
     // Test providers contribute entries (e.g. "run tests for this group") to branch rows.
     (hasProviderMenuEntries && (context.type === 'group' || context.type === 'component'))
   );
 }
 
 /**
- * Whether a registered test provider contributes menu entries for this one entry. It gates the
- * menu on a group or component row, so that the ⋯ button never opens an empty popover.
+ * Whether a registered test provider contributes menu entries for this entry. Used to gate the
+ * ⋯ button on group and component rows (root rows always get the button for expand/collapse).
+ * Providers receive the full `API_HashEntry` context, including root entries.
  *
  * @param hasTestProviders Whether any test provider addon is registered at all.
  */
@@ -71,7 +74,7 @@ export function hasProviderMenuEntriesFor(
   hasTestProviders: boolean
 ): boolean {
   // Test providers never see a "Story" row: its id names no story they could run.
-  if (!hasTestProviders || context.type === 'root' || isStoryRow(context)) {
+  if (!hasTestProviders || isStoryRow(context)) {
     return false;
   }
   return (
@@ -91,6 +94,10 @@ export const ContextMenu: FC<{
   hasProviderMenuEntries?: boolean;
   /** The current shortcuts, read once by the tree. */
   shortcutKeys: ReturnType<API['getShortcutKeys']>;
+  /** For root nodes: whether all descendant branches are currently expanded. */
+  isFullyExpanded?: boolean;
+  /** For root nodes: toggle expanding or collapsing all descendants. */
+  onExpandCollapseAll?: () => void;
 }> = memo(
   ({
     context,
@@ -101,6 +108,8 @@ export const ContextMenu: FC<{
     openedBy,
     hasProviderMenuEntries = false,
     shortcutKeys,
+    isFullyExpanded,
+    onExpandCollapseAll,
   }) => {
     const exportName = context && 'exportName' in context ? (context.exportName ?? '') : '';
     const { children: copyText, buttonProps: copyButtonProps } = useCopyButton<string>({
@@ -108,8 +117,8 @@ export const ContextMenu: FC<{
       content: exportName,
     });
 
-    const topLinks = useMemo<Link[]>(() => {
-      const defaultLinks: NormalLink[] = [];
+    const topLinks = useMemo<MenuItem[]>(() => {
+      const defaultLinks: MenuItem[] = [];
 
       // Add a navigation link at the top when the menu opens from the keyboard.
       // Keyboard-only users then have a way to open a story that has child tests.
@@ -156,6 +165,18 @@ export const ContextMenu: FC<{
         });
       }
 
+      if (context.type === 'root' && onExpandCollapseAll !== undefined) {
+        defaultLinks.push({
+          id: isFullyExpanded ? 'collapse-all' : 'expand-all',
+          title: isFullyExpanded ? 'Collapse all' : 'Expand all',
+          icon: isFullyExpanded ? <CollapseIcon /> : <ExpandAltIcon />,
+          onClick: () => {
+            onExpandCollapseAll();
+            setIsOpen(false);
+          },
+        });
+      }
+
       // Move focus to the first item when opening from the keyboard, so the user can operate the
       // menu without a Tab press. A pointer open keeps focus on the dialog container, because a
       // focused item makes screen readers announce it twice. React honors autoFocus on the
@@ -174,6 +195,8 @@ export const ContextMenu: FC<{
       openedBy,
       setIsOpen,
       shortcutKeys,
+      isFullyExpanded,
+      onExpandCollapseAll,
     ]);
 
     const handleOpen = useCallback(
@@ -201,7 +224,9 @@ export const ContextMenu: FC<{
         defaultVisible={false}
         visible={isOpen}
         onVisibleChange={setIsOpen}
-        popover={<ContextMenuContent context={context} links={topLinks} />}
+        popover={({ onHide }) => (
+          <ContextMenuContent context={context} links={topLinks} onHide={onHide} />
+        )}
         hasChrome={true}
         padding={0}
       >
@@ -224,38 +249,27 @@ export const ContextMenu: FC<{
 ContextMenu.displayName = 'ContextMenu';
 
 /**
- * The body of the sidebar context menu, rendered as a tooltip link list. It reads the registered
- * test providers on every render, so the provider links stay current, and it renders them below
- * the given links.
+ * The body of the sidebar context menu. It reads the registered test providers on every render, so
+ * the provider links stay current, and it renders them below the given links.
  */
-const ContextMenuContent: FC<
-  {
-    context: API_HashEntry;
-  } & ComponentProps<typeof TooltipLinkList>
-> = ({ context, links, ...rest }) => {
+const ContextMenuContent: FC<{
+  context: API_HashEntry;
+  links: SidebarMenuItem[];
+  onHide: () => void;
+}> = ({ context, links, onHide }) => {
   const registeredTestProviders = useStorybookApi().getElements(
     Addon_TypesEnum.experimental_TEST_PROVIDER
   );
-  const providerLinks: Link[] = generateTestProviderLinks(registeredTestProviders, context);
+  const providerLinks = generateTestProviderLinks(registeredTestProviders, context);
 
-  /**
-   * The context menu can take a list of lists of links, so that the links are grouped and separated
-   * by a line separator, so we need to make sure that links are contained within arrays (but not
-   * more than one level deep)
-   */
-  const groups: Link[][] =
-    Array.isArray(links[0]) || links.length === 0 ? (links as Link[][]) : [links as Link[]];
-
-  const all = groups.concat([providerLinks]).filter((group) => group.length > 0);
-
-  return <TooltipLinkList {...rest} links={all} />;
+  return <SidebarMenuList menu={[links, providerLinks]} onHide={onHide} />;
 };
 
 type ExcludesNull = <T>(x: T | null) => x is T;
 export function generateTestProviderLinks(
   registeredTestProviders: Addon_Collection<Addon_TestProviderType>,
   context: API_HashEntry
-): Link[] {
+): SidebarMenuItem[] {
   return Object.entries(registeredTestProviders)
     .map(([testProviderId, state]) => {
       if (!state) {

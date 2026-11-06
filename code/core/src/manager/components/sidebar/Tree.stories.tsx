@@ -620,14 +620,15 @@ export const ContextMenuEnterOnTrigger: Story = {
     const canvas = within(canvasElement);
     await canvas.findByText('marketing hero');
 
-    // Give the row keyboard focus, which reveals its ⋯ trigger, then Tab onto the trigger and
-    // activate it with Enter. A pointer press alone leaves the trigger hidden; ArrowRight on a
-    // leaf row moves nothing and only makes the focus a keyboard one.
+    // Give the row keyboard focus, which reveals its ⋯ trigger, then ArrowRight onto the trigger
+    // and activate it with Enter. A pointer press alone leaves the trigger hidden, so the first
+    // ArrowRight only makes the focus a keyboard one. Tab would leave the tree: react-aria keeps a
+    // collection a single tab stop.
     const row = canvasElement.querySelector<HTMLElement>(`[data-item-id="${dualSlotStoryId}"]`)!;
     await userEvent.click(row);
     await userEvent.keyboard('{ArrowRight}');
     await waitFor(() => expect(row).toHaveAttribute('data-focus-visible', 'true'));
-    await userEvent.tab();
+    await userEvent.keyboard('{ArrowRight}');
     const trigger = within(row).getByTestId('context-menu');
     await waitFor(() => expect(trigger).toHaveFocus());
     await userEvent.keyboard('{Enter}');
@@ -680,6 +681,103 @@ export const ContextMenuOutsideDismiss: Story = {
 
     await userEvent.unhover(row);
     await waitFor(() => expect(getComputedStyle(trigger).display).toBe('none'));
+  },
+};
+
+/**
+ * The post-dismissal blur must not recurse through a focus scope that restores focus to the
+ * row synchronously inside blur, which otherwise explodes the call stack.
+ */
+export const ContextMenuOutsideDismissSurvivesFocusTrap: Story = {
+  ...makeDualSlotStory({
+    [dualSlotStoryId]: {
+      'storybook/vitest': {
+        storyId: dualSlotStoryId,
+        typeId: 'storybook/vitest',
+        value: 'status-value:error',
+        title: 'Vitest',
+        description: 'Test failed',
+      },
+    },
+  }),
+  play: async ({ canvasElement }) => {
+    const row = canvasElement.querySelector<HTMLElement>(`[data-item-id="${dualSlotStoryId}"]`)!;
+    await waitFor(() => expect(getComputedStyle(row).pointerEvents).not.toBe('none'));
+    await userEvent.click(row);
+    const openMenuHandler = managerContext.api.on.mock.calls
+      .filter(([event]: [string]) => event === SIDEBAR_OPEN_CONTEXT_MENU)
+      .at(-1)?.[1];
+    openMenuHandler();
+    await screen.findByRole('dialog');
+
+    // Stand in for a react-aria FocusScope that restores focus to the row synchronously inside
+    // our own blur call: focusout on any element in the row re-focuses the row, which fires
+    // focusin and would recurse through blur → focusout → focus → focusin without the guard.
+    // The sentinel caps restorations so the test returns even against an unpatched handler.
+    const doc = canvasElement.ownerDocument;
+    let restores = 0;
+    const onFocusOut = (event: FocusEvent) => {
+      if (event.target instanceof HTMLElement && row.contains(event.target) && restores < 1000) {
+        restores += 1;
+        row.focus();
+      }
+    };
+    doc.addEventListener('focusout', onFocusOut, true);
+    try {
+      const outside = canvasElement.querySelector<HTMLElement>(
+        '[data-testid="sidebar-scroll-area"]'
+      )!;
+      await userEvent.click(outside);
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+      // Prime the handler: the post-dismissal focusin listener blurs any focus landing back on
+      // the row, which the focusout stand-in refocuses, which recurses without the guard.
+      row.focus();
+      // The handler sees exactly one blur before the sync re-entry stands it down.
+      await waitFor(() => expect(restores).toBeGreaterThanOrEqual(1));
+      expect(restores).toBe(1);
+    } finally {
+      doc.removeEventListener('focusout', onFocusOut, true);
+    }
+  },
+};
+
+/**
+ * The pill advertising the row's context-menu shortcut follows keyboard focus only: the pointer
+ * never asks for a shortcut hint, and an unanchored pill would otherwise sit at the viewport
+ * origin for every click.
+ */
+export const FocusTooltipShowsShortcut: Story = {
+  args: { refId: DEFAULT_REF_ID },
+  render: (args) => {
+    const [selectedId, setSelectedId] = useState(storyId);
+    return (
+      <Tree {...args} data={index} selectedStoryId={selectedId} onSelectStoryId={setSelectedId} />
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const row = (id: string) => canvasElement.querySelector<HTMLElement>(`[data-item-id="${id}"]`);
+    const first = await canvas.findByText('marketing hero');
+    // A pointer click focuses the row without making the focus keyboard-visible: no pill.
+    await userEvent.click(first);
+    await waitFor(() =>
+      expect(row('images--marketing-hero')).toHaveAttribute('data-focused', 'true')
+    );
+    expect(canvas.queryByText('Actions')).toBeNull();
+
+    // ArrowRight on a leaf row moves nothing but promotes the focus to a keyboard focus: the
+    // pill then appears, anchored to the focused row.
+    await userEvent.keyboard('{ArrowRight}');
+    await waitFor(() =>
+      expect(row('images--marketing-hero')).toHaveAttribute('data-focus-visible', 'true')
+    );
+    const note = canvas.getByText('Actions');
+    await expect(note).toBeVisible();
+
+    // A fresh pointer click on a different row drops the keyboard-focus flag and hides the pill.
+    await userEvent.click(await canvas.findByText('brand'));
+    await waitFor(() => expect(row('images--brand')).toHaveAttribute('data-focused', 'true'));
+    expect(canvas.queryByText('Actions')).toBeNull();
   },
 };
 
@@ -741,13 +839,13 @@ export const ContextMenuOpenClosesTooltip: Story = {
   play: async ({ canvasElement }) => {
     const row = canvasElement.querySelector<HTMLElement>(`[data-item-id="${dualSlotStoryId}"]`)!;
     await waitFor(() => expect(getComputedStyle(row).pointerEvents).not.toBe('none'));
-    // Keyboard focus on the row reveals the trigger (ArrowRight on a leaf row moves nothing and
-    // only makes the focus a keyboard one); a Tab then focuses the trigger, which opens its
-    // tooltip.
+    // Keyboard focus on the row reveals the trigger (the first ArrowRight only makes the focus a
+    // keyboard one, as the trigger is still hidden); the next ArrowRight focuses the trigger, which
+    // opens its tooltip.
     await userEvent.click(row);
     await userEvent.keyboard('{ArrowRight}');
     await waitFor(() => expect(row).toHaveAttribute('data-focus-visible', 'true'));
-    await userEvent.tab();
+    await userEvent.keyboard('{ArrowRight}');
     const trigger = within(row).getByTestId('context-menu');
     await waitFor(() => expect(trigger).toHaveFocus());
     await expect(await screen.findByTestId('tooltip')).toBeVisible();

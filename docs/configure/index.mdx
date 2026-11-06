@@ -79,12 +79,6 @@ You can also adjust your Storybook configuration and implement custom logic to l
 
 <CodeSnippets path="main-config-stories-with-logic.md" />
 
-#### Known limitations
-
-Because of the way stories are currently indexed in Storybook, loading stories on demand has a minor limitation at the moment:
-
-- [CSF formats](../api/csf/index.mdx) from version 1 to version 3 are supported.
-
 ## Configure story rendering
 
 To control the way stories are rendered and add global [decorators](../writing-stories/decorators.mdx#global-decorators) and [parameters](../writing-stories/parameters.mdx#global-parameters), create a `.storybook/preview.js` file. This is loaded in the Canvas UI, the “preview” iframe that renders your components in isolation. Use `preview.js` for global code (such as [CSS imports](../get-started/setup.mdx#render-component-styles) or JavaScript mocks) that applies to all stories.

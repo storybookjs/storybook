@@ -3,12 +3,17 @@ import path from 'node:path';
 import url from 'node:url';
 
 import { print } from 'esrap';
+import ts from 'esrap/languages/ts';
 import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
-import { describe, it } from 'vitest';
+import { compile } from 'svelte/compiler';
+import { dedent } from 'ts-dedent';
+import { describe, expect, it } from 'vitest';
 
 import { transformStory } from './index.ts';
+import { transformStoriesCode } from '../index.ts';
 
+import { SVELTE_CSF_RENDERER_IMPORT_SOURCE } from '../../../constants.ts';
 import { getSvelteAST } from '../../../parser/ast.ts';
 import { extractSvelteASTNodes } from '../../../parser/extract/svelte/nodes.ts';
 import { extractCompiledASTNodes } from '../../../parser/extract/compiled/nodes.ts';
@@ -66,52 +71,46 @@ describe(transformStory.name, () => {
       filename,
     });
 
-    expect(print(compiledPostTransformedStories[0]).code).toMatchInlineSnapshot(`
+    expect(print(compiledPostTransformedStories[0], ts()).code).toMatchInlineSnapshot(`
       "Story(node_1, {
       	name: 'Default',
       	template,
       	parameters: {
-      		docs: {
-      			description: { story: "Description for the default story" }
-      		},
+      		docs: { description: { story: 'Description for the default story' } },
       		__svelteCsf: {
-      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+      			rawCode: '<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>'
       		}
       	}
       })"
     `);
 
-    expect(print(compiledPostTransformedStories[1]).code).toMatchInlineSnapshot(`
+    expect(print(compiledPostTransformedStories[1], ts()).code).toMatchInlineSnapshot(`
       "Story(node_2, {
       	name: 'Rounded',
       	args: { rounded: true },
       	template,
       	parameters: {
-      		docs: {
-      			description: { story: "Description for the rounded story" }
-      		},
+      		docs: { description: { story: 'Description for the rounded story' } },
       		__svelteCsf: {
-      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+      			rawCode: '<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>'
       		}
       	}
       })"
     `);
-    expect(print(compiledPostTransformedStories[2]).code).toMatchInlineSnapshot(`
+    expect(print(compiledPostTransformedStories[2], ts()).code).toMatchInlineSnapshot(`
       "Story(node_3, {
       	name: 'Square',
       	args: { rounded: false },
       	template,
       	parameters: {
-      		docs: {
-      			description: { story: "Description for the squared story" }
-      		},
+      		docs: { description: { story: 'Description for the squared story' } },
       		__svelteCsf: {
-      			rawCode: "<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>"
+      			rawCode: '<Example {...args} onclick={handleClick}>\\n  <p>{context.name}</p>\\n  You clicked: {count}<br />\\n</Example>'
       		}
       	}
       })"
     `);
-    expect(print(compiledPostTransformedStories[3]).code).toMatchInlineSnapshot(`
+    expect(print(compiledPostTransformedStories[3], ts()).code).toMatchInlineSnapshot(`
       "Story(node_4, {
       	name: 'As child',
       	asChild: true,
@@ -133,12 +132,10 @@ describe(transformStory.name, () => {
       		$.append($$anchor, fragment_3);
       	}),
       	$$slots: { default: true },
-      	parameters: {
-      		__svelteCsf: { rawCode: "<Example>Label</Example>" }
-      	}
+      	parameters: { __svelteCsf: { rawCode: '<Example>Label</Example>' } }
       })"
     `);
-    expect(print(compiledPostTransformedStories[4]).code).toMatchInlineSnapshot(`
+    expect(print(compiledPostTransformedStories[4], ts()).code).toMatchInlineSnapshot(`
       "Story(node_6, {
       	name: 'Children forwared',
       	children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
@@ -151,10 +148,75 @@ describe(transformStory.name, () => {
       	$$slots: { default: true },
       	parameters: {
       		__svelteCsf: {
-      			rawCode: "<Example {...args}>\\n  Forwarded label\\n</Example>"
+      			rawCode: '<Example {...args}>\\n  Forwarded label\\n</Example>'
       		}
       	}
       })"
     `);
+  });
+
+  async function transformStories(originalCode: string, filename: string) {
+    const compiledCode = compile(originalCode, { filename, dev: true }).js.code;
+    const code = new MagicString(compiledCode);
+
+    await transformStoriesCode({
+      code,
+      nodes: {
+        svelte: await extractSvelteASTNodes({
+          ast: getSvelteAST({ code: originalCode, filename }),
+          filename,
+        }),
+        compiled: await extractCompiledASTNodes({ ast: parseAst(compiledCode), filename }),
+      },
+      filename,
+      originalCode,
+    });
+
+    return code.toString();
+  }
+
+  it('names the stories file when the defineMeta component value is invalid', async ({
+    expect,
+  }) => {
+    const filename = path.resolve(__dirname, '../../../__tests__/stories/Invalid.stories.svelte');
+    const originalCode = dedent`
+      <script module>
+        import { defineMeta } from "${SVELTE_CSF_RENDERER_IMPORT_SOURCE}";
+
+        const { Story } = defineMeta({
+          component: 'Not a component',
+        });
+      </script>
+
+      <Story name="Default" />
+    `;
+
+    await expect(transformStories(originalCode, filename)).rejects.toThrow(
+      `The issue occurred in Stories file: ${url.pathToFileURL(filename).href}`
+    );
+  });
+
+  it.each([
+    ['a named import of an object', 'import { Input } from "./input.ts";', 'Input.Select'],
+    ['a namespace import', 'import * as ns from "./components.ts";', 'ns.Button'],
+  ])('accepts a member-expression component on %s', async (_, importStatement, componentValue) => {
+    const filename = 'MemberExpression.stories.svelte';
+    const originalCode = dedent`
+      <script module>
+        import { defineMeta } from "${SVELTE_CSF_RENDERER_IMPORT_SOURCE}";
+
+        ${importStatement}
+
+        const { Story } = defineMeta({
+          component: ${componentValue},
+        });
+      </script>
+
+      <Story name="Default" />
+    `;
+
+    await expect(transformStories(originalCode, filename)).resolves.toContain(
+      `rawCode: '<${componentValue} {...args} />'`
+    );
   });
 });

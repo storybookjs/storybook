@@ -1,0 +1,29 @@
+## Props
+
+```
+export type LegacyExportLetProps = {
+  /** Legacy label text. */
+  label?: string = "Legacy";
+  /** Legacy count. */
+  count: number;
+}
+```
+
+## Events
+
+```
+export type LegacyExportLetEvents = {
+  change: CustomEvent<string>; // on:change
+}
+```
+
+## Slots
+
+Each slot is typed with the props it passes to its content.
+
+```
+export type LegacyExportLetSlots = {
+  default: {};
+  footer: {};
+}
+```

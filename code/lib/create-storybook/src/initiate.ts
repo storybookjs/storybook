@@ -11,6 +11,9 @@ import {
   PackageManagerName,
   cache,
   executeCommand,
+  getConfigInfo,
+  loadMainConfig,
+  syncStorybookAddons,
   type JsPackageManager,
 } from 'storybook/internal/common';
 import { getServerPort, withTelemetry } from 'storybook/internal/core-server';
@@ -31,6 +34,7 @@ import {
   executeGeneratorExecution,
   executePreflightCheck,
   executeProjectDetection,
+  executeTypeScriptDependency,
   executeUserPreferences,
 } from './commands/index.ts';
 import { DependencyCollector } from './dependency-collector.ts';
@@ -134,6 +138,14 @@ export async function doInitiate(options: CommandOptions): Promise<
     selectedFeatures.delete(Feature.AI);
   }
 
+  await executeTypeScriptDependency({
+    options,
+    packageManager,
+    framework,
+    renderer,
+    dependencyCollector,
+  });
+
   // Step 5: Execute generator with dependency collector (now with frameworkInfo)
 
   const { configDir, storybookCommand, shouldRunDev, extraAddons, postInstall } =
@@ -176,6 +188,20 @@ export async function doInitiate(options: CommandOptions): Promise<
     configDir,
     options,
   });
+
+  if (configDir && !options.skipInstall && dependencyInstallationResult.status === 'success') {
+    try {
+      const { previewConfigPath } = getConfigInfo(configDir);
+      if (previewConfigPath) {
+        const mainConfig = await loadMainConfig({ configDir, skipCache: true });
+        await syncStorybookAddons(mainConfig, previewConfigPath, configDir);
+      }
+    } catch (err) {
+      logger.debug(
+        `Could not sync preview addons after init: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+  }
 
   // Step 8: Install the official Storybook skills for AI agents, and tell agents in AGENTS.md when
   // to use them

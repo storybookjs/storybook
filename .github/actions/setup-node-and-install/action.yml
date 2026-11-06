@@ -36,8 +36,9 @@ runs:
       run: command -v corepack >/dev/null 2>&1 || npm install -g corepack@0.34.6
 
     # The checkout decides the package manager, not this action: publish-canary.yml loads this
-    # action from the workflow commit (`$/`) and then builds any PR head, branch or SHA, and
-    # agent-eval.yml builds the PR head. Such a tree can still be from before the pnpm migration.
+    # action from the workflow commit (`$/`) and then builds any PR head, branch or SHA,
+    # agent-eval.yml builds the PR head, and prepare-patch-release.yml installs main. Such a tree
+    # can still be from before the pnpm migration.
     - name: Select package manager
       id: package-manager
       shell: bash

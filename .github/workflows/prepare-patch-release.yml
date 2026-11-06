@@ -38,29 +38,18 @@ jobs:
           ref: main
           token: ${{ secrets.GH_TOKEN }}
 
-      # `./` resolves against the checkout, so this is main's copy of the action, which matches
-      # main's package manager.
-      - name: Setup Node.js and Install Dependencies
-        uses: ./.github/actions/setup-node-and-install
-
       # This workflow runs from next but prepares the release from main, which keeps using Yarn
-      # until a release brings the pnpm migration to it. Run the scripts with main's package manager.
-      - name: Select package manager
-        working-directory: .
-        run: |
-          case "$(node -p "require('./package.json').packageManager ?? ''")" in
-            pnpm@*) echo "PM=pnpm" >> "$GITHUB_ENV" ;;
-            yarn@*) echo "PM=yarn" >> "$GITHUB_ENV" ;;
-            *)
-              echo "::error::package.json has no pnpm or yarn packageManager field"
-              exit 1
-              ;;
-          esac
+      # until a release brings the pnpm migration to it. The action installs the checkout with its
+      # own package manager and reports which one, for the release scripts below.
+      - name: Setup Node.js and Install Dependencies
+        id: setup
+        uses: $/.github/actions/setup-node-and-install
 
       - name: Check if pull request is frozen
         if: github.event_name != 'workflow_dispatch'
         id: check-frozen
         env:
+          PM: ${{ steps.setup.outputs.package-manager }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           "$PM" release:is-pr-frozen --patch
@@ -78,6 +67,7 @@ jobs:
       - name: Check for unreleased changes
         id: unreleased-changes
         env:
+          PM: ${{ steps.setup.outputs.package-manager }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           "$PM" release:unreleased-changes-exists --unpicked-patches
@@ -91,6 +81,7 @@ jobs:
       - name: Pick patches
         id: pick-patches
         env:
+          PM: ${{ steps.setup.outputs.package-manager }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name 'storybook-bot'
@@ -110,6 +101,8 @@ jobs:
       - name: Bump version deferred
         id: bump-version
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'true'
+        env:
+          PM: ${{ steps.setup.outputs.package-manager }}
         run: |
           "$PM" release:version --deferred --release-type patch --verbose
 
@@ -117,6 +110,8 @@ jobs:
       - name: Get current version
         id: current-version
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'false'
+        env:
+          PM: ${{ steps.setup.outputs.package-manager }}
         run: |
           "$PM" release:get-current-version --verbose
 
@@ -133,6 +128,7 @@ jobs:
       - name: Write changelog
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'true'
         env:
+          PM: ${{ steps.setup.outputs.package-manager }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NEXT_VERSION: ${{ steps.versions.outputs.next }}
         run: |
@@ -154,6 +150,7 @@ jobs:
       - name: Generate PR description
         id: description
         env:
+          PM: ${{ steps.setup.outputs.package-manager }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HAS_CHANGES: ${{ steps.unreleased-changes.outputs.has-changes-to-release }}
           CURRENT_VERSION: ${{ steps.versions.outputs.current }}

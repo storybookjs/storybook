@@ -44,15 +44,15 @@ export type NxDteWave = keyof typeof NX_DTE_WAVES;
 export const NX_DTE_PEAK_DELAY_SECONDS = 75;
 // Measurement only (the medium+ benchmark): `large` and `medium+` run `nx-main` and every agent on
 // that class. `mix` runs the first wave on medium+ and the peak wave on large, and only the large
-// agents take the dev-server E2E tests (.nx/workflows/circleci-assignment-rules-mix.yaml): on
-// medium+ those timed out, and angular-vite's ran out of memory.
+// agents take the dev-server E2E tests and the internal Storybook's dev E2E tests
+// (.nx/workflows/circleci-assignment-rules-mix.yaml): on medium+ those timed out or ran out of memory.
 export const NX_DTE_MODE = 'mix' as 'medium+' | 'large' | 'mix';
 const NX_DTE_CLASS = NX_DTE_MODE === 'large' ? 'large' : 'medium+';
 const classOf = (wave: NxDteWave) =>
   NX_DTE_MODE === 'mix' ? (wave === 'peak' ? 'large' : 'medium+') : NX_DTE_CLASS;
 const launchTemplateOf = (wave: NxDteWave) =>
   NX_DTE_MODE === 'mix' && wave === 'peak' ? 'circleci-linux-large' : 'circleci-linux';
-// In `mix`, the large wave has at least one agent per dev-server E2E task, up to this many.
+// In `mix`, the large wave has at least one agent per task only it runs, up to this many.
 const MIX_MAX_LARGE_AGENTS = 50;
 // Measurement only: leaves the Windows jobs out, whose machines do not depend on NX_DTE_CLASS.
 export const MEASURE_WITHOUT_WINDOWS = true;
@@ -458,8 +458,8 @@ export function getNxDteJobs(
 
   const agents = agentsFor(plan, options);
   if (NX_DTE_MODE === 'mix') {
-    const devTasks = plan.tasks.filter((task) => task.includes(':e2e-tests-dev')).length;
-    agents.peak = Math.max(agents.peak, Math.min(devTasks, MIX_MAX_LARGE_AGENTS));
+    const largeOnly = plan.tasks.filter((task) => /:(e2e-tests-dev|e2e-internal-\d)/.test(task));
+    agents.peak = Math.max(agents.peak, Math.min(largeOnly.length, MIX_MAX_LARGE_AGENTS));
   }
   const targets = [
     ...new Set([

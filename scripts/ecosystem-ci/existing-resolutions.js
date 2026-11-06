@@ -24,6 +24,8 @@ export const EXISTING_RESOLUTIONS = new Set([
   '@vercel/agent-eval-playground/react-dom',
   '@vercel/agent-eval@npm:1.2.0',
   '@vitest/expect@npm:3.2.4',
+  '@vitest/mocker@npm:3.2.4',
+  '@vitest/spy@npm:3.2.4',
   'aria-query@5.3.0',
   'buffer-equal-constant-time@npm:1.0.1',
   'caniuse-lite',

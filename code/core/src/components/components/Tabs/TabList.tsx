@@ -132,6 +132,8 @@ const TabButton: FC<TabButtonProps> = ({ item, state }) => {
   return (
     <StyledTabButton
       {...tabProps}
+      role="tab"
+      aria-selected={isSelected}
       isDisabled={isDisabled}
       isPressed={isPressed}
       isSelected={isSelected}

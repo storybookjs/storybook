@@ -1,6 +1,7 @@
 // How many agents a run of the NX DTE pipeline needs (circleci-dte.ts), worked out from the tasks it
-// will run (select.ts): for each task how long it takes (a cache hit only restores its outputs) and
-// what it waits for.
+// will run (select.ts): for each task how long it takes and what it waits for. NX Cloud hands an
+// agent only the tasks it has no cache entry for, so a cached task takes no agent time; it only
+// says when the tasks that wait for it can start.
 //
 // A simulation of the run gives, for each number of agents, when the run ends and how many
 // agent-seconds it bills: agents boot, then each takes the ready task with the longest chain of work
@@ -23,8 +24,10 @@ export const WAIT_WORTH = 20;
 // agent costs 120 credits a minute and boots in about four minutes, which also bounds how many pay
 // off.
 export const MAX_AGENTS = { linux: 44, windows: 4 } as const;
-// From the job's start until `nx start-agent` takes a task: checkout, node_modules, Chromium.
-export const AGENT_BOOT_SECONDS = { linux: 60, windows: 240 } as const;
+// From the job's start until an agent's first task runs: checkout, node_modules and Chromium (about
+// 45 seconds on Linux), then the outputs of every `compile` the task depends on, which NX Cloud
+// downloads once per agent (about 55). Measured on the core runs of #37232.
+export const AGENT_BOOT_SECONDS = { linux: 100, windows: 240 } as const;
 
 // Each task's chain: its own seconds plus the longest chain of the tasks that wait for it.
 function chains(work: Work) {

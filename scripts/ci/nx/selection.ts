@@ -21,7 +21,7 @@ export type SelectedTask = {
   hash?: string;
   // A run on NX Cloud already succeeded with this hash, so the task only restores its outputs.
   cached?: boolean;
-  // How long the task takes: the time it ran, or a restore when it is cached.
+  // How long the task takes on an agent: none when it is cached, since NX Cloud hands it to none.
   seconds?: number;
 };
 
@@ -88,11 +88,10 @@ export function mergeTaskGraphs(graphs: readonly NxTaskGraph[]): Selection {
 
 // A task the setup job knows nothing more about: a few CI tasks take less, the E2E tests more.
 export const UNKNOWN_TASK_SECONDS = 60;
-// A cached task the setup job has no restore time for.
-export const CACHE_HIT_SECONDS = 5;
-
 // Fill in each task's hash, whether it is cached, and its seconds: the time the pull request's
-// latest run took for it, else NX Cloud's average on CI, else a guess.
+// latest run took for it, else NX Cloud's average on CI, else a guess. A task Nx may not cache
+// (Chromatic) takes NX Cloud's average: its last run may have been a rerun of the same commit, which
+// Chromatic had already built.
 export function weigh(
   selection: Selection,
   hashes: Readonly<Record<string, string>>,
@@ -103,11 +102,10 @@ export function weigh(
     const key = `${task.project}:${task.target}`;
     task.hash = hashes[id];
     task.cached = task.cache && !!task.hash && !!history?.succeeded.has(task.hash);
-    task.seconds = Math.round(
-      task.cached
-        ? (durations?.get(key)?.hitSeconds ?? CACHE_HIT_SECONDS)
-        : (history?.seconds.get(key) ?? durations?.get(key)?.missSeconds ?? UNKNOWN_TASK_SECONDS)
-    );
+    const ran = task.cache ? history?.seconds.get(key) : undefined;
+    task.seconds = task.cached
+      ? 0
+      : Math.round(ran ?? durations?.get(key)?.missSeconds ?? UNKNOWN_TASK_SECONDS);
   }
 }
 

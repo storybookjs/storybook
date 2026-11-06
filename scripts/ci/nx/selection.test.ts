@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { History } from './nx-cloud-history.ts';
-import {
-  CACHE_HIT_SECONDS,
-  type NxTaskGraph,
-  UNKNOWN_TASK_SECONDS,
-  mergeTaskGraphs,
-  weigh,
-} from './selection.ts';
+import { type NxTaskGraph, UNKNOWN_TASK_SECONDS, mergeTaskGraphs, weigh } from './selection.ts';
 
 const task = (project: string, target: string, continuous = false, cache = true) => ({
   target: { project, target },
@@ -72,11 +66,15 @@ describe('weighing the selected tasks', () => {
     runs: 1,
     succeeded: new Set(['h-sandbox']),
     seen: new Set(['h-sandbox', 'h-e2e']),
-    seconds: new Map([['a:e2e-tests-dev-1', 200]]),
+    seconds: new Map([
+      ['a:e2e-tests-dev-1', 200],
+      ['a:chromatic', 12],
+    ]),
   };
   const durations = new Map([
-    ['a:sandbox', { missSeconds: 120, hitSeconds: 8 }],
+    ['a:sandbox', { missSeconds: 120 }],
     ['a:e2e-tests-dev-1', { missSeconds: 300 }],
+    ['a:chromatic', { missSeconds: 90 }],
   ]);
   const hashes = {
     'a:sandbox': 'h-sandbox',
@@ -84,21 +82,18 @@ describe('weighing the selected tasks', () => {
     'a:chromatic': 'h-sandbox',
   };
 
-  it('counts a task as a restore when an earlier run succeeded with its hash', () => {
+  it('takes no agent time for a task an earlier run succeeded with', () => {
     const selection = mergeTaskGraphs([devE2eGraph]);
     weigh(selection, hashes, history, durations);
 
-    expect(selection.tasks['a:sandbox']).toMatchObject({ cached: true, seconds: 8 });
+    expect(selection.tasks['a:sandbox']).toMatchObject({ cached: true, seconds: 0 });
   });
 
-  it('runs a task Nx may not restore, whatever the cache holds', () => {
+  it("runs a task Nx may not restore for NX Cloud's average, not its last quick rerun", () => {
     const selection = mergeTaskGraphs([devE2eGraph]);
     weigh(selection, hashes, history, durations);
 
-    expect(selection.tasks['a:chromatic']).toMatchObject({
-      cached: false,
-      seconds: UNKNOWN_TASK_SECONDS,
-    });
+    expect(selection.tasks['a:chromatic']).toMatchObject({ cached: false, seconds: 90 });
   });
 
   it("prefers the pull request's own time for a task over NX Cloud's average", () => {
@@ -115,6 +110,5 @@ describe('weighing the selected tasks', () => {
     expect(Object.values(selection.tasks).map((t) => [t.cached, t.seconds])).toEqual(
       Object.values(selection.tasks).map(() => [false, UNKNOWN_TASK_SECONDS])
     );
-    expect(CACHE_HIT_SECONDS).toBeLessThan(UNKNOWN_TASK_SECONDS);
   });
 });

@@ -48,9 +48,10 @@ describe('the agents a run needs', () => {
     expect(agentsFor(independent(400, 300), linux).agents).toBe(40);
   });
 
-  it('starts far fewer agents for a rerun, whose tasks only restore from the cache', () => {
-    const cold = agentsFor(independent(177, 60), linux).agents;
-    expect(agentsFor(independent(177, 5), linux).agents).toBeLessThanOrEqual(cold / 2);
+  it('starts agents only for the tasks NX Cloud has no cache entry for', () => {
+    const rerun: Work = { ...independent(163, 0), ...independent(14, 90) };
+    expect(agentsFor(independent(177, 90), linux).agents).toBeGreaterThan(30);
+    expect(agentsFor(rerun, linux).agents).toBeLessThanOrEqual(14);
   });
 
   it('does not add agents to a run its longest chain decides', () => {

@@ -137,15 +137,15 @@ type TaskStats = {
   projectName: string;
   target: string;
   totalCount: number;
-  cacheStatusRatio: { cacheMiss: number; remoteCacheHit: number };
-  averageDuration: { cacheMissMs: number | null; remoteCacheHitMs: number | null };
+  cacheStatusRatio: { cacheMiss: number };
+  averageDuration: { cacheMissMs: number | null };
 };
 
-export type Durations = Map<string, { missSeconds?: number; hitSeconds?: number }>;
+export type Durations = Map<string, { missSeconds?: number }>;
 
 // How long each task (`project:target`) took on CI over the last days, averaged over every run of
-// it, so a single slow day does not decide: the time it ran (the average, since the work an agent
-// count is worked out from is the sum), and the time it took to restore from the remote cache.
+// it, so a single slow day does not decide. The average, not the median: the work an agent count is
+// worked out from is the sum.
 export async function taskDurations(days = 3): Promise<Durations | undefined> {
   try {
     const after = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -159,19 +159,14 @@ export async function taskDurations(days = 3): Promise<Durations | undefined> {
         `NX Cloud has more task statistics than ${STATS_PAGES} pages; some tasks lack a time.`
       );
     }
-    const sums = new Map<string, { miss: number; misses: number; hit: number; hits: number }>();
+    const sums = new Map<string, { miss: number; misses: number }>();
     for (const row of rows) {
       const key = `${row.projectName}:${row.target}`;
-      const sum = sums.get(key) ?? { miss: 0, misses: 0, hit: 0, hits: 0 };
+      const sum = sums.get(key) ?? { miss: 0, misses: 0 };
       const misses = row.totalCount * row.cacheStatusRatio.cacheMiss;
-      const hits = row.totalCount * row.cacheStatusRatio.remoteCacheHit;
       if (row.averageDuration.cacheMissMs != null && misses > 0) {
         sum.miss += row.averageDuration.cacheMissMs * misses;
         sum.misses += misses;
-      }
-      if (row.averageDuration.remoteCacheHitMs != null && hits > 0) {
-        sum.hit += row.averageDuration.remoteCacheHitMs * hits;
-        sum.hits += hits;
       }
       sums.set(key, sum);
     }
@@ -180,7 +175,6 @@ export async function taskDurations(days = 3): Promise<Durations | undefined> {
         key,
         {
           missSeconds: sum.misses > 0 ? sum.miss / sum.misses / 1000 : undefined,
-          hitSeconds: sum.hits > 0 ? sum.hit / sum.hits / 1000 : undefined,
         },
       ])
     );

@@ -2,6 +2,7 @@ import {
   type JsPackageManager,
   RENDERERS_WITH_TYPESCRIPT_DOCGEN,
   REACT_DOCGEN_FALLBACK_RANGE,
+  getTypeScriptUpgradeForDocgen,
   isTypeScript71Stable,
   recordReactDocgenFallback,
   isTypeScriptUsableForDocgen,
@@ -50,17 +51,17 @@ export class TypeScriptDependencyCommand {
     renderer,
     dependencyCollector,
   }: ExecuteTypeScriptDependencyParams): Promise<TypeScriptDependencyResult> {
-    const result = await this.decide(packageManager, framework, renderer);
-    const typescript = typeScriptPackageForDocgen(recommendedTypeScriptDocgenApis(renderer));
+    const { result, upgrade } = await this.decide(packageManager, framework, renderer);
     if (result === 'added') {
-      dependencyCollector.addDevDependencies([typescript]);
+      dependencyCollector.addDevDependencies([
+        typeScriptPackageForDocgen(recommendedTypeScriptDocgenApis(renderer)),
+      ]);
     }
-    // Upgrade the declaration where it is, so the project does not declare two versions.
-    if (result === 'upgraded') {
-      if (packageManager.primaryPackageJson.packageJson.dependencies?.typescript) {
-        dependencyCollector.addDependencies([typescript]);
+    if (upgrade) {
+      if (upgrade.type === 'dependencies') {
+        dependencyCollector.addDependencies([upgrade.dependency]);
       } else {
-        dependencyCollector.addDevDependencies([typescript]);
+        dependencyCollector.addDevDependencies([upgrade.dependency]);
       }
     }
     if (result === 'without-compiler-api') {
@@ -76,9 +77,12 @@ export class TypeScriptDependencyCommand {
     packageManager: JsPackageManager,
     framework: SupportedFramework | null,
     renderer: SupportedRenderer
-  ): Promise<TypeScriptDependencyResult> {
+  ): Promise<{
+    result: TypeScriptDependencyResult;
+    upgrade?: ReturnType<typeof getTypeScriptUpgradeForDocgen>;
+  }> {
     if (!framework || !RENDERERS_WITH_TYPESCRIPT_DOCGEN.includes(renderer)) {
-      return 'not-needed';
+      return { result: 'not-needed' };
     }
 
     const apis = recommendedTypeScriptDocgenApis(renderer);
@@ -86,19 +90,21 @@ export class TypeScriptDependencyCommand {
       const version = await this.getTypeScriptVersion(packageManager);
       if (version && !isTypeScriptUsableForDocgen(version, apis)) {
         // TypeScript 7.0 has no API; docgen that runs on the native API needs only a newer minor.
-        // TEMPORARY(ts-7.1): offered once TypeScript 7.1 is stable.
+        const upgrade = getTypeScriptUpgradeForDocgen(
+          apis,
+          packageManager.primaryPackageJson.packageJson
+        );
         if (
-          isTypeScript71Stable() &&
-          isTypeScriptUsableForDocgen('7.1.0', apis) &&
+          upgrade &&
           (await this.shouldInstallTypeScript(
-            `TypeScript ${version} has no API that Storybook can use to read your component types for Controls and the Docs args table. TypeScript 7.1 and newer do. Do you want to upgrade to ${typeScriptPackageForDocgen(apis)}?`
+            `TypeScript ${version} has no API that Storybook can use to read your component types for Controls and the Docs args table. TypeScript 7.1 and newer do. Do you want to upgrade to ${upgrade.dependency}?`
           ))
         ) {
-          return 'upgraded';
+          return { result: 'upgraded', upgrade };
         }
-        return 'without-compiler-api';
+        return { result: 'without-compiler-api' };
       }
-      return 'already-installed';
+      return { result: 'already-installed' };
     }
 
     if (
@@ -106,14 +112,14 @@ export class TypeScriptDependencyCommand {
         'Storybook uses TypeScript to read your component types for Controls and the Docs args table, also in JavaScript projects. Do you want to install TypeScript?'
       )
     ) {
-      return 'added';
+      return { result: 'added' };
     }
     logger.info(
       renderer === SupportedRenderer.REACT
         ? `Server-side docgen stays off until you add ${typeScriptPackageForDocgen(apis)} to your devDependencies. Until then, Controls and the Docs args table show no props.`
         : `Server-side docgen stays off until you add ${typeScriptPackageForDocgen(apis)} to your devDependencies.`
     );
-    return 'declined';
+    return { result: 'declined' };
   }
 
   private async getTypeScriptVersion(packageManager: JsPackageManager) {

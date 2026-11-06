@@ -63,6 +63,21 @@ export const typeScriptPackageForDocgen = (
   apis: readonly TypeScriptDocgenApi[] = COMPILER_API_ONLY
 ) => (apis.includes('native') && isTypeScript71Stable() ? 'typescript@^7.1' : 'typescript@^6');
 
+// The `typescript` upgrade to offer when docgen cannot run on the declared TypeScript 7.0, in the
+// field of package.json that declares `typescript`, so the project does not declare two versions.
+// `undefined` when docgen does not run on the native API.
+// TEMPORARY(ts-7.1): `typescript@^7.1` installs nothing before TypeScript 7.1 is stable.
+export const getTypeScriptUpgradeForDocgen = (
+  apis: readonly TypeScriptDocgenApi[],
+  packageJson: { dependencies?: Partial<Record<string, string>> }
+): { dependency: string; type: 'dependencies' | 'devDependencies' } | undefined =>
+  apis.includes('native') && isTypeScript71Stable()
+    ? {
+        dependency: typeScriptPackageForDocgen(apis),
+        type: packageJson.dependencies?.typescript ? 'dependencies' : 'devDependencies',
+      }
+    : undefined;
+
 // Return which API a TypeScript version offers docgen, or `undefined` for TypeScript 7.0.
 export const getTypeScriptDocgenApi = (version: string): TypeScriptDocgenApi | undefined => {
   const [major, minor] = version.split('.').map(Number);

@@ -1,6 +1,6 @@
 import {
   RENDERERS_WITH_TYPESCRIPT_DOCGEN,
-  isTypeScript71Stable,
+  getTypeScriptUpgradeForDocgen,
   isTypeScriptUsableForDocgen,
   recommendedTypeScriptDocgenApis,
   typeScriptPackageForDocgen,
@@ -77,22 +77,15 @@ export const typescriptNativeApi: Fix<{
   link: 'https://storybook.js.org/docs/configure/integration/typescript#typescript-7',
 
   async check(options) {
-    // TEMPORARY(ts-7.1): `typescript@^7.1` installs nothing before TypeScript 7.1 is stable.
-    if (!isTypeScript71Stable()) {
-      return null;
-    }
     // Not gated on the release: projects already on Storybook 11.0 with TypeScript 7.0 need it too.
     const unusable = await getUnusableTypeScript(options);
-    if (!unusable?.apis.includes('native')) {
-      return null;
-    }
-    // Upgrade the declaration where it is, so the project does not declare two versions.
-    const { packageJson } = options.packageManager.primaryPackageJson;
-    return {
-      version: unusable.version,
-      dependency: typeScriptPackageForDocgen(unusable.apis),
-      type: packageJson.dependencies?.typescript ? 'dependencies' : 'devDependencies',
-    };
+    const upgrade =
+      unusable &&
+      getTypeScriptUpgradeForDocgen(
+        unusable.apis,
+        options.packageManager.primaryPackageJson.packageJson
+      );
+    return upgrade ? { version: unusable.version, ...upgrade } : null;
   },
 
   prompt(result) {
@@ -118,7 +111,11 @@ export const typescriptCompilerApi: Fix<{ version: string }> = {
     const unusable = await getUnusableTypeScript(options);
     // TEMPORARY(ts-7.1): `typescript-native-api` upgrades a project whose docgen runs on the native
     // API, once TypeScript 7.1 is stable.
-    return unusable && !(unusable.apis.includes('native') && isTypeScript71Stable())
+    return unusable &&
+      !getTypeScriptUpgradeForDocgen(
+        unusable.apis,
+        options.packageManager.primaryPackageJson.packageJson
+      )
       ? { version: unusable.version }
       : null;
   },

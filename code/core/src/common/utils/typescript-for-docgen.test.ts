@@ -18,6 +18,7 @@ import {
   checkBuilderDocgenPackages,
   getTypeScriptDocgenApi,
   getTypeScriptForDocgenError,
+  getTypeScriptUpgradeForDocgen,
   isTypeScriptReadyForDocgen,
   loadTypeScriptCompilerApi,
   loadTypeScriptForDocgen,
@@ -107,6 +108,25 @@ describe('recommendedTypeScriptDocgenApis', () => {
     SupportedRenderer.ANGULAR,
   ])('keeps %s docgen on the compiler API', (renderer) => {
     expect(recommendedTypeScriptDocgenApis(renderer)).toEqual(['compiler']);
+  });
+});
+
+describe('getTypeScriptUpgradeForDocgen', () => {
+  it('upgrades a typescript devDependency to TypeScript 7.1 for docgen on the native API', () => {
+    expect(getTypeScriptUpgradeForDocgen(BOTH_APIS, { dependencies: {} })).toEqual({
+      dependency: 'typescript@^7.1',
+      type: 'devDependencies',
+    });
+  });
+
+  it('upgrades typescript in dependencies where the project declares it', () => {
+    expect(
+      getTypeScriptUpgradeForDocgen(BOTH_APIS, { dependencies: { typescript: '~7.0.2' } })
+    ).toEqual({ dependency: 'typescript@^7.1', type: 'dependencies' });
+  });
+
+  it('offers no upgrade for docgen on the compiler API', () => {
+    expect(getTypeScriptUpgradeForDocgen(['compiler'], {})).toBeUndefined();
   });
 });
 
@@ -491,6 +511,10 @@ describe('before TypeScript 7.1 is stable', () => {
 
   it('adds TypeScript 6, because typescript@^7.1 installs nothing yet', () => {
     expect(typeScriptPackageForDocgen(BOTH_APIS)).toBe('typescript@^6');
+  });
+
+  it('offers no upgrade to TypeScript 7.1 yet', () => {
+    expect(getTypeScriptUpgradeForDocgen(BOTH_APIS, {})).toBeUndefined();
   });
 
   it('rejects TypeScript 7.0 with the side-by-side setup', async () => {

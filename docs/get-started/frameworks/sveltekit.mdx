@@ -144,6 +144,16 @@ Like in SvelteKit, `use:enhance` handles only forms with `method="post"`. A rout
 
 The `submit` function you pass to `use:enhance` runs as in SvelteKit: it can call `cancel()`, and it can return a callback that receives the `result` and the `update()` function. `applyAction()` from `$app/forms` applies a result as the table above shows, and `deserialize()` is a mock function that returns `undefined`.
 
+#### Docs pages
+
+The SvelteKit mocks are one instance per document, like SvelteKit's own modules. A docs page renders its stories in one document, so stories that set the mocks would share them: each story would show the setup of the story that set the mocks last. Storybook doesn't render that wrong state. Instead, the stories on the docs page fail with a `SvelteKitMocksSharedOnDocsPageError`.
+
+This happens when a story on a docs page sets `page`, `navigating` or `updated`, calls `setAfterNavigate()`, or configures a mock function such as `goto` or `formAction`, in `beforeEach` or in the meta's `beforeEach`. It doesn't happen when you view a story on its own, in tests, or on a docs page whose stories don't set the mocks.
+
+To fix it, render the stories of that file in iframes on the docs page, where each story has its own mocks:
+
+<CodeSnippets path="sveltekit-mock-docs-pages.md" />
+
 ## Writing native Svelte stories
 
 The Svelte frameworks ship with built-in support for writing stories for your Svelte components using the template syntax, via Svelte CSF.

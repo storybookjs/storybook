@@ -614,34 +614,44 @@ export function readStorybookWorkspace(): Promise<StorybookWorkspace> {
   return storybookWorkspace;
 }
 
-const packedTarballs = new Map<string, string>();
-let packQueue: Promise<unknown> = Promise.resolve();
+type PackState = { tarballs: Map<string, string>; queue: Promise<unknown> };
+
+const PACK_STATE = Symbol.for('storybook.agent-eval.pack-state');
+
+// One per process, not per module: agent-eval loads each experiment with its own module cache, so
+// the experiments of one run each get their own copy of this module.
+export function sharedPackState(): PackState {
+  const store = globalThis as typeof globalThis & { [PACK_STATE]?: PackState };
+  store[PACK_STATE] ??= { tarballs: new Map(), queue: Promise.resolve() };
+  return store[PACK_STATE];
+}
 
 // Compiles and packs each package once per process. Sandbox setups run concurrently, so the runs
 // are chained: a compile for one sandbox must not rewrite a `dist` another one is still packing.
 async function packCheckoutPackages(packages: WorkspacePackage[]): Promise<Record<string, string>> {
-  if (packages.every((pkg) => packedTarballs.has(pkg.name))) {
+  const state = sharedPackState();
+  if (packages.every((pkg) => state.tarballs.has(pkg.name))) {
     return readPackedTarballs(packages);
   }
 
-  const run = packQueue.then(async () => {
-    const unpacked = packages.filter((pkg) => !packedTarballs.has(pkg.name));
+  const run = state.queue.then(async () => {
+    const unpacked = packages.filter((pkg) => !state.tarballs.has(pkg.name));
     if (unpacked.length > 0) {
       await compileCheckoutPackages(unpacked);
     }
     await Promise.all(
-      unpacked.map(async (pkg) => packedTarballs.set(pkg.name, await packCheckoutPackage(pkg)))
+      unpacked.map(async (pkg) => state.tarballs.set(pkg.name, await packCheckoutPackage(pkg)))
     );
     return readPackedTarballs(packages);
   });
-  packQueue = run.catch(() => undefined);
+  state.queue = run.catch(() => undefined);
   return run;
 }
 
 function readPackedTarballs(packages: WorkspacePackage[]): Record<string, string> {
   const names = new Set(packages.map((pkg) => pkg.name));
   return Object.fromEntries(
-    [...packedTarballs]
+    [...sharedPackState().tarballs]
       .filter(([name]) => names.has(name))
       .map(([name, tarball]) => [`${checkoutTarballPath(name)}.base64`, tarball])
   );

@@ -301,3 +301,17 @@ function findStorybookMainFiles(rootDir: string): string[] {
       : [];
   });
 }
+
+describe('sharedPackState', () => {
+  it('is one state for every copy of the module, as agent-eval loads one per experiment', async () => {
+    const { createJiti } = await import('jiti');
+    const load = () =>
+      createJiti(import.meta.url, { interopDefault: true, moduleCache: false }).import<
+        typeof import('./templates.ts')
+      >(join(fileURLToPath(new URL('.', import.meta.url)), 'templates.ts'));
+    const [first, second] = await Promise.all([load(), load()]);
+
+    expect(first).not.toBe(second);
+    expect(first.sharedPackState()).toBe(second.sharedPackState());
+  });
+});

@@ -20,6 +20,7 @@ import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 import { getStoryIndex } from './utils/get-story-index.ts';
 import { toBaseUrl } from './utils/base-url.ts';
 
+// Benchmark of the NX DTE pipeline (#37221): an addon-only change, run 3. Not for merging.
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
   existingAnnotations = []
 ) => {

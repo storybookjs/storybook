@@ -7,6 +7,10 @@ const config: BuildEntries = {
         exportEntries: ['.'],
         entryPoint: './src/index.ts',
       },
+      {
+        exportEntries: ['./testing'],
+        entryPoint: './src/testing.ts',
+      },
     ],
   },
 };

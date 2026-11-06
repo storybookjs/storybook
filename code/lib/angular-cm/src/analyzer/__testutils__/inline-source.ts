@@ -25,12 +25,16 @@ import {
   createCompilerDocgenTypeScript,
   createNativeDocgenTypeScript,
 } from '@storybook/component-meta-typescript';
+import {
+  DOCGEN_TS_API,
+  loadTestNativeTypeScriptModules,
+} from '@storybook/component-meta-typescript/testing';
 
 import type { AngularClassMeta, AngularFileMeta, Directive } from '../../types.ts';
 import { analyzeSourceFile, analyzerContext } from '../analyze-file.ts';
 import type { AnalyzerContext } from '../context.ts';
 
-const NATIVE = process.env.STORYBOOK_DOCGEN_TS_API === 'native';
+const NATIVE = DOCGEN_TS_API === 'native';
 
 const BASE_OPTIONS: ts.CompilerOptions = {
   target: ts.ScriptTarget.Latest,
@@ -136,11 +140,7 @@ const compileWithCompilerApi = (
 // parsed once; each compile writes its files and notifies the process of what changed.
 const native = NATIVE
   ? await (async () => {
-      const modules = {
-        sync: await import('typescript-native/sync'),
-        ast: await import('typescript-native/ast'),
-        factory: await import('typescript-native/ast/factory'),
-      };
+      const modules = await loadTestNativeTypeScriptModules();
       const api = new modules.sync.API({ cwd: dirname(VIRTUAL_DIR) });
       const state = {
         modules,

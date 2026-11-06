@@ -33,7 +33,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
-import ts from 'typescript';
+import { loadTestTypeScript } from '@storybook/component-meta-typescript/testing';
 
 import { z } from 'zod';
 
@@ -68,20 +68,6 @@ type ComponentMetaManagerCtor = new (
 
 // `native` is the `typescript-native` alias (TypeScript 7.1).
 const TYPESCRIPT_APIS = ['compiler', 'native'] as const;
-
-async function loadTypeScript(api: (typeof TYPESCRIPT_APIS)[number]): Promise<unknown> {
-  if (api === 'compiler') {
-    return ts;
-  }
-  return {
-    api: 'native',
-    typescript: {
-      sync: await import('typescript-native/sync'),
-      ast: await import('typescript-native/ast'),
-      factory: await import('typescript-native/ast/factory'),
-    },
-  };
-}
 
 // How many props the extraction documented, so the pair ratio reads as like-for-like.
 const countDocumentedProps = (entries: StoryRefLike[]) =>
@@ -324,7 +310,7 @@ harnessMain(async () => {
   const project = resolveProject(options);
   const ComponentMetaManager = await loadComponentMetaManager();
   const manager = new ComponentMetaManager(
-    await loadTypeScript(options.typescript),
+    await loadTestTypeScript(options.typescript),
     options.recycleHeapPressureRatio
   );
   const entries = buildStoryRefs(project.componentPaths, project.storyPaths);

@@ -30,7 +30,12 @@
       "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "code": "./src/testing.ts",
+      "default": "./dist/testing.js"
+    }
   },
   "files": [
     "dist/**/*",

@@ -8,12 +8,12 @@ import { dedent } from 'ts-dedent';
 import { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
 import type { ComponentDoc } from '../componentManifest/componentMeta/componentMetaExtractor.ts';
 import {
-  loadTestTypeScript,
   cleanup,
   createTempDir,
   tsconfigJSON,
   writeFiles,
 } from '../componentManifest/componentMeta/test-helpers.ts';
+import { loadTestTypeScript } from '@storybook/component-meta-typescript/testing';
 import { buildDocgenPayload } from './buildDocgen.ts';
 
 const typescript = await loadTestTypeScript();

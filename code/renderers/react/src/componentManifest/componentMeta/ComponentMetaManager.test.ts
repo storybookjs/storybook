@@ -9,14 +9,8 @@ import { dedent } from 'ts-dedent';
 
 import type { StoryRef } from '../getComponentImports.ts';
 import { ComponentMetaManager, isFileInDir, sortTSConfigs } from './ComponentMetaManager.ts';
-import {
-  DOCGEN_TS_API,
-  loadTestTypeScript,
-  cleanup,
-  createTempDir,
-  tsconfigJSON,
-  writeFiles,
-} from './test-helpers.ts';
+import { cleanup, createTempDir, tsconfigJSON, writeFiles } from './test-helpers.ts';
+import { DOCGEN_TS_API, loadTestTypeScript } from '@storybook/component-meta-typescript/testing';
 
 const typescript = await loadTestTypeScript();
 

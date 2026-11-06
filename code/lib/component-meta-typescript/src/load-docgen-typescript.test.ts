@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { NativeTypeScriptModules } from './native/native-typescript.ts';
 import { loadDocgenTypeScript, loadTypeScriptForDocgen } from './load-docgen-typescript.ts';
 
 // `typescript-native` is TypeScript 7.1 and `typescript` TypeScript 6, both of this package.
@@ -33,9 +32,12 @@ describe('loadDocgenTypeScript', () => {
 });
 
 describe('loadTypeScriptForDocgen', () => {
-  const native = { sync: {}, ast: {}, factory: {} } as unknown as NativeTypeScriptModules;
   const moduleNotFound = () =>
     Object.assign(new Error("Cannot find package 'typescript'"), { code: 'ERR_MODULE_NOT_FOUND' });
+
+  // A TypeScript whose main module has `version`, and whose other entry points are empty modules.
+  const typeScriptWith = (version: string) =>
+    vi.fn(async (subpath: string) => (subpath === '.' ? { version } : { subpath }));
 
   beforeEach(() => {
     vi.stubEnv('STORYBOOK_TYPESCRIPT_7_1_STABLE', 'true');
@@ -47,42 +49,36 @@ describe('loadTypeScriptForDocgen', () => {
 
   it('loads the compiler API of TypeScript 6 without importing the native API', async () => {
     const typescript = { version: '6.0.3', sys: {} };
-    const importNativeApi = vi.fn(async () => native);
+    const importEntry = vi.fn(async () => ({ ...typescript, default: typescript }));
 
-    await expect(
-      loadTypeScriptForDocgen({
-        importCompilerApi: async () => ({ ...typescript, default: typescript }),
-        importNativeApi,
-      })
-    ).resolves.toEqual({ api: 'compiler', typescript });
-    expect(importNativeApi).not.toHaveBeenCalled();
+    await expect(loadTypeScriptForDocgen(importEntry)).resolves.toEqual({
+      api: 'compiler',
+      typescript,
+    });
+    expect(importEntry).toHaveBeenCalledTimes(1);
   });
 
-  it('loads the native API of TypeScript 7.1', async () => {
-    await expect(
-      loadTypeScriptForDocgen({
-        importCompilerApi: async () => ({ version: '7.1.0-beta' }),
-        importNativeApi: async () => native,
-      })
-    ).resolves.toEqual({ api: 'native', typescript: native });
+  it('loads every native module of TypeScript 7.1', async () => {
+    await expect(loadTypeScriptForDocgen(typeScriptWith('7.1.0-beta'))).resolves.toEqual({
+      api: 'native',
+      typescript: {
+        sync: { subpath: './sync' },
+        ast: { subpath: './ast' },
+        factory: { subpath: './ast/factory' },
+      },
+    });
   });
 
   it('rejects TypeScript 7.0 with the upgrade hint', async () => {
-    await expect(
-      loadTypeScriptForDocgen({
-        importCompilerApi: async () => ({ version: '7.0.2' }),
-        importNativeApi: async () => native,
-      })
-    ).rejects.toThrow('Upgrade to `typescript@^7.1`');
+    await expect(loadTypeScriptForDocgen(typeScriptWith('7.0.2'))).rejects.toThrow(
+      'Upgrade to `typescript@^7.1`'
+    );
   });
 
   it('rejects a missing typescript package with the TypeScript 7.1 hint', async () => {
     await expect(
-      loadTypeScriptForDocgen({
-        importCompilerApi: async () => {
-          throw moduleNotFound();
-        },
-        importNativeApi: async () => native,
+      loadTypeScriptForDocgen(async () => {
+        throw moduleNotFound();
       })
     ).rejects.toThrow('Add `typescript@^7.1` to the devDependencies');
   });
@@ -93,21 +89,15 @@ describe('loadTypeScriptForDocgen', () => {
     });
 
     it('rejects TypeScript 7.0 with the side-by-side setup', async () => {
-      await expect(
-        loadTypeScriptForDocgen({
-          importCompilerApi: async () => ({ version: '7.0.2' }),
-          importNativeApi: async () => native,
-        })
-      ).rejects.toThrow('"typescript": "npm:@typescript/typescript6@^6.0.2"');
+      await expect(loadTypeScriptForDocgen(typeScriptWith('7.0.2'))).rejects.toThrow(
+        '"typescript": "npm:@typescript/typescript6@^6.0.2"'
+      );
     });
 
     it('still loads the native API of an installed TypeScript 7.1', async () => {
-      await expect(
-        loadTypeScriptForDocgen({
-          importCompilerApi: async () => ({ version: '7.1.0-beta' }),
-          importNativeApi: async () => native,
-        })
-      ).resolves.toEqual({ api: 'native', typescript: native });
+      await expect(loadTypeScriptForDocgen(typeScriptWith('7.1.0-beta'))).resolves.toMatchObject({
+        api: 'native',
+      });
     });
   });
 });

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, describe, expect, it } from 'vitest';
 
-import ts from 'typescript';
+import { DOCGEN_TS_API, loadTestTypeScript } from '@storybook/component-meta-typescript/testing';
 
 import { AngularComponentMetaManager } from './manager.ts';
 import type { AngularComponentMetaResult } from './types.ts';
@@ -15,19 +15,7 @@ const normalize = (fileName: string) => fileName.replace(/\\/g, '/');
 const togglePath = normalize(join(fixturesDir, 'toggle.component.ts'));
 
 // One manager for the whole suite: building programs is expensive, and it matches production.
-// `STORYBOOK_DOCGEN_TS_API=native` runs it on the native API of the `typescript-native` alias.
-const manager = new AngularComponentMetaManager(
-  process.env.STORYBOOK_DOCGEN_TS_API === 'native'
-    ? {
-        api: 'native',
-        typescript: {
-          sync: await import('typescript-native/sync'),
-          ast: await import('typescript-native/ast'),
-          factory: await import('typescript-native/ast/factory'),
-        },
-      }
-    : ts
-);
+const manager = new AngularComponentMetaManager(await loadTestTypeScript());
 
 const scratchDirs: string[] = [];
 afterAll(async () => {
@@ -332,7 +320,7 @@ describe('AngularComponentMetaManager', () => {
   });
 
   // TypeScript 6's LanguageService keeps a failed module resolution until the importer changes.
-  it.skipIf(process.env.STORYBOOK_DOCGEN_TS_API !== 'native')(
+  it.skipIf(DOCGEN_TS_API !== 'native')(
     'resolves an import whose file is created later, through its change event',
     async () => {
       const componentPath = await makeScratchCopy('sb-acm-late-import-');

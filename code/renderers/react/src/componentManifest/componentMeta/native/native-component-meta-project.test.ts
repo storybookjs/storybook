@@ -7,18 +7,14 @@ import { dedent } from 'ts-dedent';
 
 import type { StoryRef } from '../../getComponentImports.ts';
 import { ComponentMetaManager } from '../ComponentMetaManager.ts';
-import {
-  cleanup,
-  createTempProject,
-  loadNativeTypeScriptModules,
-  tsconfigJSON,
-} from '../test-helpers.ts';
+import { cleanup, createTempProject, tsconfigJSON } from '../test-helpers.ts';
 import { NativeComponentMetaProject } from './native-component-meta-project.ts';
 import { NativeFacades } from '@storybook/component-meta-typescript';
 import {
   type NativeTypeScriptModules,
   createNativeDocgenTypeScript,
 } from '@storybook/component-meta-typescript';
+import { loadTestNativeTypeScriptModules } from '@storybook/component-meta-typescript/testing';
 
 const component = (name: string, props: string) => dedent`
   import React from 'react';
@@ -52,7 +48,7 @@ let modules: NativeTypeScriptModules;
 const dirs: string[] = [];
 
 beforeAll(async () => {
-  modules = await loadNativeTypeScriptModules();
+  modules = await loadTestNativeTypeScriptModules();
 });
 
 afterEach(() => {

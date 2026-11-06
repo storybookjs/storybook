@@ -28,22 +28,33 @@ export type ComponentMetaTypeScript = typeof ts | LoadedDocgenTypeScript;
 
 const DOCGEN_APIS: readonly TypeScriptDocgenApi[] = ['compiler', 'native'];
 
+// Import an entry point of a TypeScript package by its subpath, such as `.` or `./sync`.
+export type ImportTypeScriptEntry = (subpath: string) => Promise<unknown>;
+
+// The native API's modules, by the subpath of their entry point.
+const NATIVE_ENTRY_POINTS = { sync: './sync', ast: './ast', factory: './ast/factory' } as const;
+
+// Import the modules of TypeScript 7.1's native API.
+export async function loadNativeTypeScriptModules(
+  importEntry: ImportTypeScriptEntry
+): Promise<NativeTypeScriptModules> {
+  const [sync, ast, factory] = await Promise.all(
+    Object.values(NATIVE_ENTRY_POINTS).map((subpath) => importEntry(subpath))
+  );
+  return { sync, ast, factory } as NativeTypeScriptModules;
+}
+
 // Import the API that a TypeScript offers docgen: the compiler API of TypeScript 5.9 and 6, or the
 // native API of TypeScript 7.1 and newer. The main module of every version exports `version`, so
-// the compiler importer runs first and decides which API to load. `specifier` is the package the
-// importers load from when it is not `typescript`, so the errors name it.
-export async function loadTypeScriptForDocgen({
-  importCompilerApi,
-  importNativeApi,
-  specifier,
-}: {
-  importCompilerApi: () => Promise<unknown>;
-  importNativeApi: () => Promise<NativeTypeScriptModules>;
-  specifier?: string;
-}): Promise<LoadedDocgenTypeScript> {
+// it is imported first and decides which API to load. `specifier` is the package `importEntry`
+// loads from when it is not `typescript`, so the errors name it.
+export async function loadTypeScriptForDocgen(
+  importEntry: ImportTypeScriptEntry,
+  specifier?: string
+): Promise<LoadedDocgenTypeScript> {
   let typescript: typeof ts;
   try {
-    const imported = (await importCompilerApi()) as typeof ts & { default?: typeof ts };
+    const imported = (await importEntry('.')) as typeof ts & { default?: typeof ts };
     typescript = imported.default ?? imported;
   } catch (cause) {
     if (isModuleNotFoundError(cause)) {
@@ -56,7 +67,7 @@ export async function loadTypeScriptForDocgen({
     throw new TypeScriptWithoutCompilerApiError({ version, apis: DOCGEN_APIS, specifier });
   }
   return getTypeScriptDocgenApi(version) === 'native'
-    ? { api: 'native', typescript: await importNativeApi() }
+    ? { api: 'native', typescript: await loadNativeTypeScriptModules(importEntry) }
     : { api: 'compiler', typescript };
 }
 
@@ -65,7 +76,7 @@ export async function loadTypeScriptForDocgen({
 const importPackageEntry = (
   { version, packageDir, main, exports }: TypeScriptPackageForDocgen,
   subpath: string
-) => {
+): Promise<unknown> => {
   const entry = exports ? exports[subpath] : subpath === '.' ? (main ?? 'index.js') : undefined;
   if (typeof entry !== 'string') {
     throw new Error(
@@ -83,28 +94,10 @@ export function loadDocgenTypeScript(
 ): Promise<LoadedDocgenTypeScript> {
   if (typeScriptSpecifier) {
     const typeScriptPackage = readTypeScriptPackageForDocgen(typeScriptSpecifier, DOCGEN_APIS);
-    const importEntry = (subpath: string) => importPackageEntry(typeScriptPackage, subpath);
-    return loadTypeScriptForDocgen({
-      importCompilerApi: () => importEntry('.'),
-      importNativeApi: async () =>
-        ({
-          sync: await importEntry('./sync'),
-          ast: await importEntry('./ast'),
-          factory: await importEntry('./ast/factory'),
-        }) as NativeTypeScriptModules,
-      specifier: typeScriptSpecifier.specifier,
-    });
+    return loadTypeScriptForDocgen(
+      (subpath) => importPackageEntry(typeScriptPackage, subpath),
+      typeScriptSpecifier.specifier
+    );
   }
-  return loadTypeScriptForDocgen({
-    importCompilerApi: () => import('typescript'),
-    importNativeApi: async () => {
-      // @ts-expect-error -- TypeScript 7.1 has these subpaths; the workspace's TypeScript 6 does not.
-      const sync = await import('typescript/sync');
-      // @ts-expect-error -- see above.
-      const ast = await import('typescript/ast');
-      // @ts-expect-error -- see above.
-      const factory = await import('typescript/ast/factory');
-      return { sync, ast, factory } as NativeTypeScriptModules;
-    },
-  });
+  return loadTypeScriptForDocgen((subpath) => import(`typescript${subpath.slice(1)}`));
 }

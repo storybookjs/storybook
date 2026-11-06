@@ -7,7 +7,7 @@ import {
   type DocgenTypeScript,
   createCompilerDocgenTypeScript,
 } from '../docgen-typescript.ts';
-import { loadNativeTypeScriptModules } from '../test-helpers.ts';
+import { loadTestNativeTypeScriptModules } from '../testing.ts';
 import { type NativeTypeScriptModules, createNativeDocgenTypeScript } from './native-typescript.ts';
 
 const MEMBERS = [
@@ -87,7 +87,7 @@ let modules: NativeTypeScriptModules;
 const apis: InstanceType<NativeTypeScriptModules['sync']['API']>[] = [];
 
 beforeAll(async () => {
-  modules = await loadNativeTypeScriptModules();
+  modules = await loadTestNativeTypeScriptModules();
 });
 
 afterEach(() => {

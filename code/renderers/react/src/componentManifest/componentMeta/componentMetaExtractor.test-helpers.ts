@@ -15,12 +15,11 @@ import { findMatchingComponent } from '../resolveComponents.ts';
 import { ComponentMetaProject, type ReactComponentMetaProject } from './ComponentMetaProject.ts';
 import { NativeComponentMetaProject } from './native/native-component-meta-project.ts';
 import { createNativeDocgenTypeScript } from '@storybook/component-meta-typescript';
+import { createTempProject, writeFiles } from './test-helpers.ts';
 import {
   DOCGEN_TS_API,
-  createTempProject,
-  loadNativeTypeScriptModules,
-  writeFiles,
-} from './test-helpers.ts';
+  loadTestNativeTypeScriptModules,
+} from '@storybook/component-meta-typescript/testing';
 
 type SharedProject = ReactComponentMetaProject & ComponentMetaProjectBase;
 
@@ -32,7 +31,7 @@ type SharedProject = ReactComponentMetaProject & ComponentMetaProjectBase;
 const { projectDir, configPath } = createTempProject({});
 const sharedProject: SharedProject = await (async () => {
   if (DOCGEN_TS_API === 'native') {
-    const modules = await loadNativeTypeScriptModules();
+    const modules = await loadTestNativeTypeScriptModules();
     const api = new modules.sync.API({ cwd: projectDir });
     const { fileNames, options, projectReferences } = api.parseConfigFile(configPath);
     const project = new NativeComponentMetaProject(

@@ -7,10 +7,10 @@ import type { IndexEntry } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
 
 import { loadDocgenTypeScript } from '@storybook/component-meta-typescript';
+import { loadTestNativeTypeScriptModules } from '@storybook/component-meta-typescript/testing';
 import {
   cleanup,
   createTempDir,
-  loadNativeTypeScriptModules,
   tsconfigJSON,
   writeFiles,
 } from '../componentManifest/componentMeta/test-helpers.ts';
@@ -25,7 +25,7 @@ let tempDir: string;
 beforeEach(async () => {
   vi.mocked(loadDocgenTypeScript).mockResolvedValue({
     api: 'native',
-    typescript: await loadNativeTypeScriptModules(),
+    typescript: await loadTestNativeTypeScriptModules(),
   });
   tempDir = createTempDir('docgen-worker-native');
   vi.spyOn(process, 'cwd').mockReturnValue(tempDir);

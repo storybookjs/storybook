@@ -10,11 +10,10 @@
 import * as fs from 'node:fs';
 import * as path from 'pathe';
 
-import ts from 'typescript';
 import { z } from 'zod';
 
 import { AngularComponentMetaManager } from '@storybook/angular-cm';
-import type { ComponentMetaTypeScript } from '@storybook/component-meta-typescript';
+import { loadTestTypeScript } from '@storybook/component-meta-typescript/testing';
 
 import { countOption, parseHarnessOptions, positiveCountOption } from '../../docgen-shared/args.ts';
 import { SANDBOX_DIRECTORY } from '../../docgen-shared/paths.ts';
@@ -41,20 +40,6 @@ const SCHEMA = z.object({
 
 type Options = z.infer<typeof SCHEMA>;
 
-async function loadTypeScript(api: Options['typescript']): Promise<ComponentMetaTypeScript> {
-  if (api === 'compiler') {
-    return ts;
-  }
-  return {
-    api: 'native',
-    typescript: {
-      sync: await import('typescript-native/sync'),
-      ast: await import('typescript-native/ast'),
-      factory: await import('typescript-native/ast/factory'),
-    },
-  };
-}
-
 function extractOne(manager: AngularComponentMetaManager, filePath: string, i: number): number {
   const entry = manager.extractComponentMeta(filePath, { exportName: `Comp${i}Component` })?.entry;
   if (entry?.type !== 'component' || entry.inputsClass.length === 0) {
@@ -69,7 +54,7 @@ async function createEngine(options: Options): Promise<SeriesEngine> {
     components: options.components,
     props: options.props,
   });
-  const typescript = await loadTypeScript(options.typescript);
+  const typescript = await loadTestTypeScript(options.typescript);
   let manager: AngularComponentMetaManager | undefined;
   let measured = 0;
 

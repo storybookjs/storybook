@@ -3,6 +3,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { ParserOptions as ReactDocgenTypescriptOptions } from 'react-docgen-typescript';
 
 import { extractArgTypes } from '../../extractArgTypes.ts';
+import { normalizeReactDocgenTypescriptProps } from '../reactDocgenTypescript.ts';
 import { type GetArgTypesDataOptions, getTsConfig } from './utils.ts';
 
 interface PropFilterProps {
@@ -71,7 +72,14 @@ export const extractArgTypesFromDocgenTypescript = async ({
         return null;
       }
     }
-    return extractArgTypes({ __docgenInfo: targetDocgen }) ?? {};
+    return (
+      extractArgTypes({
+        __docgenInfo: {
+          ...targetDocgen,
+          props: normalizeReactDocgenTypescriptProps(targetDocgen.props ?? {}),
+        },
+      }) ?? {}
+    );
   } catch (error) {
     logger.debug(
       `Error parsing component file with react-docgen-typescript ${componentFilePath}: ${error}`

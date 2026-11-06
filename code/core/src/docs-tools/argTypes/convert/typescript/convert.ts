@@ -65,7 +65,9 @@ export const convert = (type: TSType): SBType | void => {
           ...base,
           name: 'enum',
           value: nonUndefinedElements.map((element) =>
-            isLiteral(element) ? parseLiteral(element.value) : null
+            // react-docgen-typescript wraps the compiler's already-decoded literal in
+            // plain quotes, so the escape grammar must not run again on these tokens.
+            isLiteral(element) ? parseLiteral(element.value, { decodeEscapes: false }) : null
           ),
         };
       }

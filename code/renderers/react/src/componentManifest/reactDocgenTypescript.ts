@@ -300,6 +300,51 @@ export function matchComponentDoc(
   );
 }
 
+type NormalizablePropType = { name?: string; value?: unknown };
+
+/**
+ * react-docgen-typescript serializes string-literal enum members by plain quote-wrapping the
+ * compiler's already-decoded value (`'"' + type.value + '"'` in its `getValuesFromUnionType`).
+ * The shared argTypes conversion expects JSON-serialized literals there; decoding that raw wrap
+ * a second time corrupts values containing backslashes (`\d+` loses the backslash) and throws
+ * RangeError on sequences like `\users`. Re-serialize every quoted literal to the JSON contract
+ * so the conversion decodes exactly once.
+ */
+export const normalizeReactDocgenTypescriptProps = <P extends { type?: NormalizablePropType }>(
+  props: Record<string, P>
+): Record<string, P> =>
+  Object.fromEntries(
+    Object.entries(props).map(([name, prop]) => {
+      const type = prop.type;
+      if ((type?.name === 'enum' || type?.name === 'union') && Array.isArray(type.value)) {
+        return [
+          name,
+          {
+            // The spread preserves every field of P at runtime; the assertion only bridges
+            // what the compiler cannot correlate through the generic.
+            ...prop,
+            type: {
+              ...type,
+              value: (type.value as { value?: unknown }[]).map((member) => {
+                const token = member?.value;
+                if (
+                  typeof token === 'string' &&
+                  token.length > 1 &&
+                  token.startsWith('"') &&
+                  token.endsWith('"')
+                ) {
+                  return { ...member, value: JSON.stringify(token.slice(1, -1)) };
+                }
+                return member;
+              }),
+            },
+          } as P,
+        ];
+      }
+      return [name, prop];
+    })
+  );
+
 export function getReactDocgenTypescriptError(
   path: string,
   {
@@ -364,11 +409,13 @@ export const parseWithReactDocgenTypescript = asyncCache(
         exportName,
         componentJsDocTags,
         // Filter out bulk props from non-user sources (React built-ins, DOM, CSS-in-JS system props)
-        props: Object.fromEntries(
-          Object.entries(doc.props).filter(([, prop]) => {
-            const source = getPropSource(prop);
-            return !source || !largeNonUserSources.has(source);
-          })
+        props: normalizeReactDocgenTypescriptProps(
+          Object.fromEntries(
+            Object.entries(doc.props).filter(([, prop]) => {
+              const source = getPropSource(prop);
+              return !source || !largeNonUserSources.has(source);
+            })
+          )
         ),
       };
     });

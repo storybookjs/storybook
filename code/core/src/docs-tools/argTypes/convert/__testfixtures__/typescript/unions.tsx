@@ -20,5 +20,6 @@ interface Props {
   nullableLiteralUnion: 'red' | 'blue' | null;
   nullableLiteralUnionWithUndefined: 'top' | 'bottom' | null | undefined;
   nullableScalarUnion: string | number | null;
+  escapedLiteralUnion?: 'C:\\users\\bob' | '\\d+';
 }
 export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;

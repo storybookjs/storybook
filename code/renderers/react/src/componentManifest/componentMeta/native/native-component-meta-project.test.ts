@@ -4,6 +4,7 @@ import * as path from 'pathe';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
+import type ts from 'typescript';
 
 import type { StoryRef } from '../../getComponentImports.ts';
 import { ComponentMetaManager } from '../ComponentMetaManager.ts';
@@ -358,8 +359,12 @@ describe('NativeFacades', () => {
       expect(checker.getExportsOfModule(moduleSymbol)[0]).toBe(exported);
       const type = checker.getTypeOfSymbol(exported);
       expect(checker.getTypeOfSymbol(exported)).toBe(type);
-      expect(typescript.getEmptyObjectType(checker).getApparentProperties()).toEqual([]);
-      expect(checker.typeToString(typescript.getEmptyObjectType(checker))).toBe('{}');
+      const empty = typescript.getEmptyObjectType(checker);
+      expect(empty.getApparentProperties()).toEqual([]);
+      expect(checker.typeToString(empty)).toBe('{}');
+      expect(checker.getPropertyOfType(empty, 'children')).toBeUndefined();
+      // The compiler process never gets `undefined` for it.
+      expect(() => checker.getBaseTypes(empty as ts.InterfaceType)).toThrow();
       project.dispose();
     } finally {
       api.close();

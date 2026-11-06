@@ -594,26 +594,35 @@ export class NativeFacades {
   private buildChecker(): DocgenTypeChecker {
     const { checker } = this;
     const unwrapSymbol = (symbol: ts.Symbol) => (symbol as unknown as SymbolFacade).native;
-    const unwrapType = (type: ts.Type) => (type as unknown as TypeFacade).native;
+    // The empty object type has no native type. Only the methods that can get it handle that.
+    const unwrapType = (type: ts.Type): NativeType | undefined =>
+      (type as unknown as TypeFacade | EmptyObjectTypeFacade).native;
+    const unwrapNativeType = (type: ts.Type): NativeType => {
+      const native = unwrapType(type);
+      if (!native) {
+        throw new Error('The checker cannot take the empty object type here');
+      }
+      return native;
+    };
     const asNode = (node: ts.Node) => node as unknown as Node;
 
     const docgenChecker: DocgenTypeChecker = {
       getAliasedSymbol: (symbol) => this.symbol(checker.getAliasedSymbol(unwrapSymbol(symbol))),
       getBaseTypeOfLiteralType: (type) =>
-        this.type(checker.getBaseTypeOfLiteralType(unwrapType(type))),
+        this.type(checker.getBaseTypeOfLiteralType(unwrapNativeType(type))),
       getBaseTypes: (type) =>
         checker
-          .getBaseTypes(unwrapType(type) as InterfaceType)
+          .getBaseTypes(unwrapNativeType(type) as InterfaceType)
           .map((base) => this.type(base) as ts.BaseType),
       getDeclaredTypeOfSymbol: (symbol) =>
         this.type(checker.getDeclaredTypeOfSymbol(unwrapSymbol(symbol))),
       getExportsOfModule: (symbol) =>
         checker.getExportsOfModule(unwrapSymbol(symbol)).map((exported) => this.symbol(exported)),
       getMergedSymbol: (symbol) => this.symbol(checker.getMergedSymbol(unwrapSymbol(symbol))),
-      getPropertyOfType: (type, name) =>
-        unwrapType(type)
-          ? this.symbol(checker.getPropertyOfType(unwrapType(type), name))
-          : undefined,
+      getPropertyOfType: (type, name) => {
+        const native = unwrapType(type);
+        return native && this.symbol(checker.getPropertyOfType(native, name));
+      },
       getResolvedSignature: (node) => this.signature(checker.getResolvedSignature(asNode(node))),
       getShorthandAssignmentValueSymbol: (node) =>
         node ? this.symbol(checker.getShorthandAssignmentValueSymbol(asNode(node))) : undefined,
@@ -624,7 +633,7 @@ export class NativeFacades {
       getSymbolAtLocation: (node) => this.symbol(checker.getSymbolAtLocation(asNode(node))),
       getTypeArguments: (type) =>
         checker
-          .getTypeArguments(unwrapType(type) as TypeReference)
+          .getTypeArguments(unwrapNativeType(type) as TypeReference)
           .map((argument) => this.type(argument)),
       getTypeAtLocation: (node) => this.type(checker.getTypeAtLocation(asNode(node))),
       getTypeOfSymbol: (symbol) => this.type(checker.getTypeOfSymbol(unwrapSymbol(symbol))),

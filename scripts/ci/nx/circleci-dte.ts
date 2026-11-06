@@ -215,7 +215,8 @@ const mainJob = (
   agents: number
 ) =>
   defineJob(NX_MAIN_JOBS.linux, () => ({
-    executor: { name: 'sb_node_22_classic', class: 'large' },
+    // Runs no task: it starts the run, waits for the agents and reports. Half the credits of `large`.
+    executor: { name: 'sb_node_22_classic', class: 'medium' },
     environment: {
       ...nxEnvironment('linux', changedFiles),
       // Tells NX Cloud how many agents there are, which it weighs when it stops agents early.

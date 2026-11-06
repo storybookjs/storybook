@@ -1,3 +1,4 @@
+import type { ChannelLike } from 'storybook/internal/channels';
 import { getStoryImportPathFromEntry } from '../../../../common/utils/select-component-entry.ts';
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
 import {
@@ -94,12 +95,14 @@ export function registerStoryDocsService(options: RegisterStoryDocsServiceOption
 }
 
 export function subscribeStoryDocsToModuleGraphChanges(options: {
+  channel: ChannelLike;
   getIndex: () => Promise<StoryIndex>;
   workingDir: string;
 }) {
   subscribeExtractionServiceToModuleGraphChanges(storyDocsServiceDef, {
     ...options,
     queryName: 'storyDocs',
+    allQueryName: 'storyDocsForAllComponents',
     extractCommand: 'extractStoryDocs',
   });
 }

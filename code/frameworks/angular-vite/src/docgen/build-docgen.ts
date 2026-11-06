@@ -1,5 +1,16 @@
-import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
-import type { DocgenJsDocTags, DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
+import type { DeclaredSubcomponent, MetaComponentResolution } from 'storybook/internal/common';
+import {
+  extractDeclaredSubcomponents,
+  getComponentIdFromEntry,
+  getStoryImportPathFromEntry,
+} from 'storybook/internal/common';
+import type { CsfFile } from 'storybook/internal/csf-tools';
+import type {
+  DocgenJsDocTags,
+  DocgenPayload,
+  DocgenProviderInput,
+  DocgenSubcomponent,
+} from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
 
@@ -11,7 +22,7 @@ import type {
 } from '@storybook/angular-cm';
 import { extractArgTypesFromData } from '@storybook/angular-cm';
 import { buildApiDescription } from './api-description.ts';
-import { resolveStoryComponent } from './resolve-component.ts';
+import { parseStoryFile, resolveMetaComponent } from './resolve-component.ts';
 
 // Structured-cloned onto the worker thread, so every field must be plain JSON data.
 export interface AngularDocgenOptions {
@@ -109,108 +120,15 @@ const errorPayload = (
   message: string
 ): AngularDocgenPayload => ({ ...base, jsDocTags: {}, error: { name, message } });
 
-// `undefined` means "no Angular component here", so callers fall through to the next provider,
-// while a payload carrying `error` means "mine, but extraction failed".
-export const buildDocgenPayload = (
-  input: DocgenProviderInput,
-  context: BuildDocgenContext
-): AngularDocgenPayload | undefined => {
-  const { manager, options, logger } = context;
-  const storyImportPath = getStoryImportPathFromEntry(input.entry);
-  if (!storyImportPath) {
-    return undefined;
-  }
-
-  // The index writes `importPath` relative to the Storybook working directory, the worker's cwd.
-  const resolvePath =
-    context.resolvePath ?? ((importPath: string) => resolve(process.cwd(), importPath));
-  const storyFilePath = resolvePath(storyImportPath);
-  const resolved = resolveStoryComponent(storyFilePath, input.entry.title);
-  if ('reason' in resolved) {
-    // A story file with no `component` at all documents no Angular component, so the next provider
-    // gets its turn. A `component` that is there but unreadable is this provider's failure to
-    // report: staying quiet would be indistinguishable from a story that documents nothing.
-    if (resolved.reason === 'no-meta-component') {
-      logger.debug(`No Angular component resolved from ${storyFilePath}: ${resolved.reason}.`);
-      return undefined;
-    }
-
-    const unreadableBase = {
-      id: getComponentIdFromEntry(input.entry),
-      name:
-        resolved.reason === 'unreadable-component-expression'
-          ? resolved.expression
-          : (input.entry.title.split('/').at(-1) ?? input.entry.title),
-      path: storyImportPath,
-    };
-    return errorPayload(
-      unreadableBase,
-      'AngularComponentMetaNotFound',
-      resolved.reason === 'unreadable-component-expression'
-        ? `The story file sets \`component: ${resolved.expression}\`, which does not resolve to a class.\n` +
-            `Storybook follows an imported name, a namespace-import property access, or a chain of ` +
-            `property accesses and spreads through modules it can resolve. ` +
-            `Assign the component to a name in ${storyFilePath}.`
-        : // `meta.component` may reach this binding through another module (e.g. a spread config
-          // object), so the type-only or namespace import is not necessarily written in the story
-          // file itself - naming it here would send the reader to the wrong file.
-          `Resolving \`meta.component\` from ${storyFilePath} reached a binding that is a type-only ` +
-            `or namespace import, which carries no class to document.\n` +
-            `Import the component as a value in whichever module declares that binding.`
-    );
-  }
-
-  const { component } = resolved;
-  // `default` is an export name, not a class name, so the local binding is the best name so far.
-  const displayName =
-    component.exportName === 'default' ? component.localName : component.exportName;
-
-  const base = {
-    id: getComponentIdFromEntry(input.entry),
-    name: displayName,
-    path: storyImportPath,
-  };
-
-  // A component declared in the story file resolves to the story file itself, so no path at all can
-  // only mean the import specifier did not resolve.
-  if (!component.path) {
-    return errorPayload(
-      base,
-      'AngularComponentMetaNotFound',
-      // `component.importId` may be read from a module `meta.component` only reaches through a
-      // chain (e.g. a spread config object), so the import is not necessarily written in the story
-      // file itself - naming it here would send the reader to the wrong file.
-      `Storybook could not resolve the import of "${displayName}" from "${component.importId}", ` +
-        `reached while resolving \`meta.component\` from ${storyFilePath}.\n` +
-        `Check the import specifier (and any tsconfig path aliases it relies on) in whichever module ` +
-        `actually imports it.`
-    );
-  }
-
-  // The language service can throw a TS Debug Failure on a single pathological file.
-  let meta: AngularComponentMetaResult | undefined;
-  try {
-    meta = manager.extractComponentMeta(component.path, {
-      exportName: component.exportName,
-      localName: component.localName,
-    });
-  } catch (err) {
-    return errorPayload(
-      base,
-      'AngularComponentMetaExtractionFailed',
-      `The analyzer threw while extracting "${component.exportName}" from ${component.path}: ` +
-        `${err instanceof Error ? err.message : String(err)}`
-    );
-  }
-  if (!meta) {
-    return errorPayload(
-      base,
-      'AngularComponentMetaNotFound',
-      `No metadata was extracted for the "${component.exportName}" export of ${component.path}.\n` +
-        `Check that the file exports the component class and is covered by a tsconfig.json in or above its directory.`
-    );
-  }
-
+/**
+ * The extraction chain every documented component runs, primary or subcomponent: argTypes at the
+ * user's `propsTable` mode, agent documentation pinned to `api`, and the JSDoc prose chain.
+ */
+const docgenFieldsOf = (
+  meta: AngularComponentMetaResult,
+  options: AngularDocgenOptions,
+  logger: ParsingLogger
+) => {
   const argTypes = extractArgTypesFromData(meta.entry, {
     metadataJson: meta.json,
     propsTable: options.propsTable,
@@ -233,21 +151,269 @@ export const buildDocgenPayload = (
         });
 
   const jsDocTags: DocgenJsDocTags = meta.jsDocInfo?.jsDocTags ?? analyzerJsDocTags(meta.entry);
-  const description =
-    describedBy(meta.jsDocInfo?.description) ??
-    describedBy(meta.entry.rawdescription) ??
-    describedBy(meta.entry.description);
+  return {
+    argTypes,
+    jsDocTags,
+    description:
+      describedBy(meta.jsDocInfo?.description) ??
+      describedBy(meta.entry.rawdescription) ??
+      describedBy(meta.entry.description),
+    summary: jsDocTags.summary?.[0],
+    apiDescription: buildApiDescription(apiArgTypes, meta.entry.name),
+  };
+};
+
+interface DocgenError {
+  name: string;
+  message: string;
+}
+
+/** `default` is an export name, not a class name, so the local binding reads better. */
+const displayNameOf = (component: { exportName: string; localName: string }) =>
+  component.exportName === 'default' ? component.localName : component.exportName;
+
+/** The best name available for a primary component whose documentation failed. */
+const errorNameOf = (resolution: MetaComponentResolution, title: string): string => {
+  if ('component' in resolution) {
+    return displayNameOf(resolution.component);
+  }
+  return resolution.reason === 'unreadable-component-expression'
+    ? resolution.expression
+    : (title.split('/').at(-1) ?? title);
+};
+
+const capitalized = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
+/** The remediation text for a resolution that did not name a component class. */
+const unresolvedMessage = (
+  resolution: Extract<MetaComponentResolution, { reason: string }>,
+  subject: string,
+  storyFilePath: string
+): string => {
+  switch (resolution.reason) {
+    case 'unreadable-component-expression':
+      return (
+        `${capitalized(subject)} sets \`${resolution.expression}\`, which does not resolve to a class.\n` +
+        `Storybook follows an imported name, a namespace-import property access, or a chain of ` +
+        `property accesses and spreads through modules it can resolve. ` +
+        `Assign the component to a name in ${storyFilePath}.`
+      );
+    case 'no-component-import':
+      // The binding may be reached through another module (e.g. a spread config object), so the
+      // type-only or namespace import is not necessarily written in the story file itself - naming
+      // it here would send the reader to the wrong file.
+      return (
+        `Resolving ${subject} from ${storyFilePath} reached a binding that is a type-only ` +
+        `or namespace import, which carries no class to document.\n` +
+        `Import the component as a value in whichever module declares that binding.`
+      );
+    case 'no-meta-component':
+      // The primary hands this case to the next provider; a declared entry always carries its node.
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
+      throw new Error(`Storybook found no component expression for ${subject}.`);
+  }
+};
+
+type DocumentedComponent =
+  | {
+      path: string;
+      meta: AngularComponentMetaResult;
+      fields: ReturnType<typeof docgenFieldsOf>;
+    }
+  | { error: DocgenError };
+
+/**
+ * The chain primary and subcomponent share: resolution → analyzer query → field derivation, with
+ * every failure returned as an `error` for the caller to place (error payload or errored entry).
+ * `subject` names what was being resolved ("`meta.component`", "the `subcomponents` entry ...").
+ *
+ * The analyzer query and the field derivation share one `try`: the language service can throw a TS
+ * Debug Failure on a single pathological file, and field derivation resolves named-type detail
+ * against that same live TS context.
+ */
+const documentComponent = (
+  resolution: MetaComponentResolution,
+  subject: string,
+  storyFilePath: string,
+  context: BuildDocgenContext
+): DocumentedComponent => {
+  if ('reason' in resolution) {
+    return {
+      error: {
+        name: 'AngularComponentMetaNotFound',
+        message: unresolvedMessage(resolution, subject, storyFilePath),
+      },
+    };
+  }
+
+  const { component } = resolution;
+  // A component declared in the story file resolves to the story file itself, so no path at all can
+  // only mean the import specifier did not resolve.
+  if (!component.path) {
+    const displayName = displayNameOf(component);
+    return {
+      error: {
+        name: 'AngularComponentMetaNotFound',
+        // `component.importId` may be read from a module the chain only reaches through (e.g. a
+        // spread config object), so the import is not necessarily written in the story file itself.
+        message:
+          `Storybook could not resolve the import of "${displayName}" from "${component.importId}", ` +
+          `reached while resolving ${subject} from ${storyFilePath}.\n` +
+          `Check the import specifier (and any tsconfig path aliases it relies on) in whichever module ` +
+          `actually imports it.`,
+      },
+    };
+  }
+
+  const { path } = component;
+  const { manager, options, logger } = context;
+  try {
+    const meta = manager.extractComponentMeta(path, {
+      exportName: component.exportName,
+      localName: component.localName,
+    });
+    if (!meta) {
+      return {
+        error: {
+          name: 'AngularComponentMetaNotFound',
+          message:
+            `No metadata was extracted for the "${component.exportName}" export of ${path}.\n` +
+            `Check that the file exports the component class and is covered by a tsconfig.json in or above its directory.`,
+        },
+      };
+    }
+    return { path, meta, fields: docgenFieldsOf(meta, options, logger) };
+  } catch (err) {
+    return {
+      error: {
+        name: 'AngularComponentMetaExtractionFailed',
+        message:
+          `The analyzer threw while extracting "${component.exportName}" from ${path}: ` +
+          `${err instanceof Error ? err.message : String(err)}`,
+      },
+    };
+  }
+};
+
+/** The errored entry a failed subcomponent degrades to, in place of the payload it would have been. */
+const subcomponentError = (
+  name: string,
+  storyFilePath: string,
+  error: DocgenError
+): DocgenSubcomponent => ({
+  name,
+  path: storyFilePath,
+  jsDocTags: {},
+  error,
+});
+
+/**
+ * Builds one declared subcomponent's docgen entry through the same chain as the primary component.
+ *
+ * Resolution runs inside the `try` with everything else, so one broken child can never fail the
+ * payload documenting the primary component, whatever the resolver or analyzer throws.
+ */
+const buildSubcomponentDocgen = (
+  declared: DeclaredSubcomponent,
+  csf: CsfFile,
+  storyFilePath: string,
+  context: BuildDocgenContext
+): DocgenSubcomponent => {
+  const subject = `the \`subcomponents\` entry "${declared.name}"`;
+  try {
+    const resolution = resolveMetaComponent(csf, storyFilePath, declared.node);
+
+    const documented = documentComponent(resolution, subject, storyFilePath, context);
+    if ('error' in documented) {
+      return subcomponentError(declared.componentName, storyFilePath, documented.error);
+    }
+    return {
+      name: documented.meta.entry.name,
+      path: documented.path,
+      ...documented.fields,
+      renderer: 'angular',
+    };
+  } catch (err) {
+    return subcomponentError(declared.componentName, storyFilePath, {
+      name: 'AngularComponentMetaExtractionFailed',
+      message: `Documenting ${subject} threw: ${err instanceof Error ? err.message : String(err)}`,
+    });
+  }
+};
+
+/**
+ * Builds the `subcomponents` record for the story meta's declared subcomponents; empty when none
+ * are declared. Takes the already-parsed CSF file so the story file is parsed once.
+ */
+const buildSubcomponents = (
+  csf: CsfFile,
+  storyFilePath: string,
+  context: BuildDocgenContext
+): Record<string, DocgenSubcomponent> =>
+  Object.fromEntries(
+    extractDeclaredSubcomponents(csf).map((declared): [string, DocgenSubcomponent] => [
+      declared.name,
+      buildSubcomponentDocgen(declared, csf, storyFilePath, context),
+    ])
+  );
+
+// `undefined` means "no Angular component here", so callers fall through to the next provider,
+// while a payload carrying `error` means "mine, but extraction failed".
+export const buildDocgenPayload = (
+  input: DocgenProviderInput,
+  context: BuildDocgenContext
+): AngularDocgenPayload | undefined => {
+  const { logger } = context;
+  const storyImportPath = getStoryImportPathFromEntry(input.entry);
+  if (!storyImportPath) {
+    return undefined;
+  }
+
+  // The index writes `importPath` relative to the Storybook working directory, the worker's cwd.
+  const resolvePath =
+    context.resolvePath ?? ((importPath: string) => resolve(process.cwd(), importPath));
+  const storyFilePath = resolvePath(storyImportPath);
+  const csf = parseStoryFile(storyFilePath, input.entry.title);
+  if (!csf) {
+    // An unparseable story file documents no Angular component, so the next provider gets its turn.
+    logger.debug(
+      `No Angular component resolved from ${storyFilePath}: could not parse the story file.`
+    );
+    return undefined;
+  }
+
+  const resolved = resolveMetaComponent(csf, storyFilePath);
+  // A story file with no `component` at all documents no Angular component, so the next provider
+  // gets its turn. A `component` that is there but unreadable is this provider's failure to
+  // report: staying quiet would be indistinguishable from a story that documents nothing.
+  if ('reason' in resolved && resolved.reason === 'no-meta-component') {
+    logger.debug(`No Angular component resolved from ${storyFilePath}: ${resolved.reason}.`);
+    return undefined;
+  }
+
+  const id = getComponentIdFromEntry(input.entry);
+  const documented = documentComponent(resolved, '`meta.component`', storyFilePath, context);
+  if ('error' in documented) {
+    const name = errorNameOf(resolved, input.entry.title);
+    return errorPayload(
+      { id, name, path: storyImportPath },
+      documented.error.name,
+      documented.error.message
+    );
+  }
+
+  const { meta, fields } = documented;
+  const subcomponents = buildSubcomponents(csf, storyFilePath, context);
 
   return {
-    ...base,
+    id,
+    path: storyImportPath,
     // The analyzer knows the class name even when the story file imported it as a default export.
     name: meta.entry.name,
-    description,
-    summary: jsDocTags.summary?.[0],
-    jsDocTags,
-    argTypes,
-    apiDescription: buildApiDescription(apiArgTypes, meta.entry.name),
+    ...fields,
     renderer: 'angular',
     angularComponentMeta: metaToSnippetMeta(meta),
+    // Omitted entirely when the meta declares none, so existing payloads stay unchanged.
+    ...(Object.keys(subcomponents).length > 0 ? { subcomponents } : {}),
   };
 };

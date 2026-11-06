@@ -1,4 +1,3 @@
-import type { MetaComponentResolution } from 'storybook/internal/common';
 import {
   createMetaComponentResolver,
   createModuleResolver,
@@ -11,7 +10,9 @@ import { readFileSync } from 'node:fs';
 
 // Angular has no single-file-component format, so the JS/TS extensions the resolver already tries
 // are enough. One instance per process: the resolver caches its module resolutions.
-const resolveMetaComponent = createMetaComponentResolver();
+// The annotation keeps declaration emit from naming core's unexported babel `Node` (TS2883).
+export const resolveMetaComponent: ReturnType<typeof createMetaComponentResolver> =
+  createMetaComponentResolver();
 
 const storyImportResolver = createModuleResolver({
   extensions: [...jsTsSourceExtensions],
@@ -35,22 +36,4 @@ export function parseStoryFile(storyFilePath: string, title: string): CsfFile | 
   } catch {
     return undefined;
   }
-}
-
-/**
- * Story file → the component it documents.
- *
- * Reports `no-meta-component` when the file cannot be read or parsed, which callers treat the same
- * as "no `meta.component` here": there is no Angular component to document either way.
- */
-export function resolveStoryComponent(
-  storyFilePath: string,
-  title = 'Docgen'
-): MetaComponentResolution {
-  const csf = parseStoryFile(storyFilePath, title);
-  if (!csf) {
-    return { reason: 'no-meta-component' };
-  }
-
-  return resolveMetaComponent(csf, storyFilePath);
 }

@@ -5,10 +5,7 @@ import type { ImportParser } from 'storybook/internal/core-server';
 import type { Indexer, Options, PresetProperty } from 'storybook/internal/types';
 
 export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
-export {
-  experimental_storyDocsPrintHole,
-  experimental_storyDocsProvider,
-} from './docgen/story-docs-provider.ts';
+export { experimental_storyDocsProvider } from './docgen/story-docs-provider.ts';
 
 // Default for `features.docgenServer`; a project without a usable `typescript` keeps builder docgen.
 export const isDocgenProviderEnabled = (_existing: unknown, options: Options) =>

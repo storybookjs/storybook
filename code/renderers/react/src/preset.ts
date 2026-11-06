@@ -47,10 +47,7 @@ export const isDocgenProviderEnabled = async (_existing: unknown, options: Optio
   });
 };
 
-export {
-  experimental_storyDocsPrintHole,
-  experimental_storyDocsProvider,
-} from './docgen/story-docs-preset.ts';
+export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
 
 export const features: PresetProperty<'features'> = async (existing) => ({
   ...existing,

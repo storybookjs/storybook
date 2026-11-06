@@ -69,11 +69,21 @@ export interface StoryDocsPayload {
 }
 
 /**
- * Middleware-style provider function registered through the `experimental_storyDocsProvider` preset.
+ * The value of the `experimental_storyDocsProvider` preset chain. Each preset receives the next
+ * provider and returns it with what it adds, such as `{ ...next, extract }`, so a field it does not
+ * set stays.
  */
-export type StoryDocsProvider = (
-  input: StoryDocsProviderInput
-) => Promise<StoryDocsPayload | undefined>;
+export interface StoryDocsProvider {
+  /** Extracts one component's story docs, or `undefined` when it has none. */
+  extract: (input: StoryDocsProviderInput) => Promise<StoryDocsPayload | undefined>;
+  /**
+   * Absolute path of a module that registers, with `registerPrintHole` when imported, the hole
+   * printer for the templates `extract` writes. With `features.experimentalLiveServerSnippets`,
+   * core imports it on the server and adds it to the manager entries; the renderer registers the
+   * same printer in the preview.
+   */
+  printHole?: string;
+}
 
 /**
  * Preset signature for `experimental_storyDocsProvider`.

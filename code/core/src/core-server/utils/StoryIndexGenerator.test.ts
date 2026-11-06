@@ -2464,12 +2464,14 @@ describe('StoryIndexGenerator', () => {
 
           const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
           await generator.initialize();
-          await expect(generator.getIndex()).rejects.toThrow();
+          await expect(generator.getIndex()).rejects.toThrow(/MetaOf\.mdx/);
 
           generator.invalidate('./src/A.stories.js', false);
 
           const { entries } = await generator.getIndex();
-          expect(Object.keys(entries)).toContain('a--metaof');
+          expect(Object.keys(entries)).toEqual(
+            expect.arrayContaining(['a--metaof', 'a--second-docs'])
+          );
         });
       });
 

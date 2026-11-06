@@ -42,11 +42,6 @@ jobs:
       # main's package manager.
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install
-        with:
-          # Release credentials: install without the cache, which pnpm does not verify. Until main
-          # moves to pnpm, its copy of the action ignores this input with a warning and uses the
-          # Yarn cache, whose archives Yarn verifies.
-          cache: none
 
       # This workflow runs from next but prepares the release from main, which keeps using Yarn
       # until a release brings the pnpm migration to it. Run the scripts with main's package manager.

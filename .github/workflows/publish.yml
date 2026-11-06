@@ -64,8 +64,6 @@ jobs:
         uses: ./.github/actions/setup-node-and-install
         with:
           install-code-deps: true
-          # Release credentials: install without the cache, which pnpm does not verify.
-          cache: none
 
       - name: Cancel all release preparation runs
         env:

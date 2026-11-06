@@ -129,9 +129,6 @@ jobs:
         uses: $/.github/actions/setup-node-and-install
         with:
           install-code-deps: true
-          # Only a push to next builds merged code on the default branch; every other run builds a
-          # PR head, branch or SHA, which must not write the store that other runs restore.
-          cache: ${{ github.event_name == 'push' && 'read-write' || 'read-only' }}
 
       - name: Build
         working-directory: code

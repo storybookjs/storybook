@@ -1,19 +1,11 @@
 name: 'Setup Node.js and Install Dependencies'
-description: 'Sets up Node.js and the package manager of the checkout, caches dependencies, and installs packages for Storybook'
+description: 'Sets up Node.js and the package manager of the checkout, and installs packages for Storybook'
 
 inputs:
   install-code-deps:
     description: 'Whether to install code dependencies in addition to script dependencies'
     required: false
     default: 'false'
-  cache:
-    description: >-
-      How the job uses the dependency cache: `read-only` (default) restores it, `read-write` also
-      saves it, and `none` skips it. pnpm links a restored store's files without hashing them
-      again, so a job with release or deploy credentials uses `none`, and only jobs that run
-      trusted code on a trusted ref use `read-write`.
-    required: false
-    default: 'read-only'
 
 outputs:
   package-manager:
@@ -23,19 +15,6 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Check inputs
-      shell: bash
-      env:
-        CACHE: ${{ inputs.cache }}
-      run: |
-        case "$CACHE" in
-          read-write | read-only | none) ;;
-          *)
-            echo "::error::cache must be read-write, read-only or none, not '$CACHE'"
-            exit 1
-            ;;
-        esac
-
     - name: Setup Node.js
       uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
       with:
@@ -77,7 +56,6 @@ runs:
               exit 1
             fi
             echo "name=pnpm" >> "$GITHUB_OUTPUT"
-            echo "store-path=$(pnpm store path)" >> "$GITHUB_OUTPUT"
             ;;
           yarn@*)
             # The tree runs the Yarn release it vendors through .yarnrc.yml `yarnPath`.
@@ -89,28 +67,10 @@ runs:
             ;;
         esac
 
-    # Restore only — save is gated below. actions/cache's post-job save step uses a
-    # runner-internal token that bypasses `permissions:`, so splitting is the only
-    # reliable way to prevent pull_request_target runs from poisoning the shared cache.
-    #
-    # The pnpm store is cached, as the global Yarn cache was, rather than node_modules: pnpm
-    # gives every workspace package its own node_modules, which an exact-key node_modules cache
-    # would have to capture in full, while the content-addressed store holds the packages of any
-    # lockfile, so an older store still saves downloads and `pnpm install` fetches what it lacks.
-    # Only full installs save it, and a script-only install uses the full store too.
-    #
-    # Unlike Yarn's cache, whose archives Yarn checks against yarn.lock, pnpm trusts the index of
-    # a restored store and links its files without hashing them again. A tampered store reaches
-    # every job that restores it, hence the `cache` input.
-    - name: Restore cached pnpm store
-      id: restore-pnpm-store
-      if: steps.package-manager.outputs.name == 'pnpm' && inputs.cache != 'none'
-      uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-      with:
-        path: ${{ steps.package-manager.outputs.store-path }}
-        key: pnpm-store-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
-        restore-keys: |
-          pnpm-store-v1-${{ runner.os }}-
+    # No cache for pnpm installs. pnpm links the files of a restored store without hashing them
+    # again, so a tampered store would run in every job that restores it, and code that a job
+    # builds can write the cache of the branch it runs on: publish-canary builds fork PRs on next.
+    # Yarn's cache below is safe to share because Yarn checks every archive against yarn.lock.
 
     # `@storybook/scripts...` selects scripts plus the workspace packages it depends on
     # (storybook, eslint-plugin-storybook), which is what the release scripts import.
@@ -124,33 +84,12 @@ runs:
       shell: bash
       run: pnpm install --frozen-lockfile
 
-    # Skipped after an exact hit: the store already holds this lockfile's packages. Pruning drops
-    # the packages of older lockfiles that a fallback restore brought along.
-    - name: Prune pnpm store
-      if: >-
-        steps.package-manager.outputs.name == 'pnpm' &&
-        inputs.cache == 'read-write' &&
-        inputs.install-code-deps == 'true' &&
-        steps.restore-pnpm-store.outputs.cache-hit != 'true' &&
-        github.event_name != 'pull_request_target'
-      shell: bash
-      run: pnpm store prune
-
-    - name: Save cached pnpm store
-      if: >-
-        steps.package-manager.outputs.name == 'pnpm' &&
-        inputs.cache == 'read-write' &&
-        inputs.install-code-deps == 'true' &&
-        steps.restore-pnpm-store.outputs.cache-hit != 'true' &&
-        github.event_name != 'pull_request_target'
-      uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-      with:
-        path: ${{ steps.package-manager.outputs.store-path }}
-        key: pnpm-store-v1-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'pnpm-workspace.yaml') }}
-
-    # Yarn checkouts install as they did before the pnpm migration, within the `cache` input.
+    # Yarn checkouts install as they did before the pnpm migration.
+    # Restore only — save is gated below. actions/cache's post-job save step uses a
+    # runner-internal token that bypasses `permissions:`, so splitting is the only
+    # reliable way to prevent pull_request_target runs from poisoning the shared cache.
     - name: Restore cached dependencies (Yarn)
-      if: steps.package-manager.outputs.name == 'yarn' && inputs.cache != 'none'
+      if: steps.package-manager.outputs.name == 'yarn'
       uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: |
@@ -173,10 +112,7 @@ runs:
       run: yarn install
 
     - name: Save cached dependencies (Yarn)
-      if: >-
-        steps.package-manager.outputs.name == 'yarn' &&
-        inputs.cache == 'read-write' &&
-        github.event_name != 'pull_request_target'
+      if: steps.package-manager.outputs.name == 'yarn' && github.event_name != 'pull_request_target'
       uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: |

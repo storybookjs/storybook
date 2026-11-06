@@ -144,8 +144,6 @@ jobs:
         uses: $/.github/actions/setup-node-and-install
         with:
           install-code-deps: true
-          # Deploy and API credentials: install without the cache, which pnpm does not verify.
-          cache: none
 
       # Sandbox setup compiles these again, but inside each eval's timeout, so warm the nx cache here.
       - name: Compile the Storybook packages the sandboxes install

@@ -81,8 +81,6 @@ jobs:
         uses: ./.github/actions/setup-node-and-install
         with:
           install-code-deps: true
-          # NX Cloud token: install without the cache, which pnpm does not verify.
-          cache: none
       - uses: nrwl/nx-set-shas@afb73a62d26e41464e9254689e1fd6122ee683c1 # v5.0.1
       - id: nx
         name: 'Run nx'

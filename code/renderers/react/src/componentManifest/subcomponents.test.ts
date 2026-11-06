@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { extractDeclaredSubcomponents } from 'storybook/internal/common';
 import { loadCsf } from 'storybook/internal/csf-tools';
-
-import { extractDeclaredSubcomponents } from './subcomponents.ts';
 
 describe('extractDeclaredSubcomponents', () => {
   it('does not loop forever on circular identifier references', () => {
@@ -29,8 +28,8 @@ describe('extractDeclaredSubcomponents', () => {
     ).parse();
 
     expect(extractDeclaredSubcomponents(csf)).toEqual([
-      { name: 'Loop', componentName: 'LoopA' },
-      { name: 'Item', componentName: 'Item' },
+      { componentName: 'LoopA', name: 'Loop', node: expect.anything() },
+      { componentName: 'Item', name: 'Item', node: expect.anything() },
     ]);
   });
 });

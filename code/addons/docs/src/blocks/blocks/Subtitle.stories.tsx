@@ -3,12 +3,10 @@ import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import * as DefaultButtonStories from '../examples/Button.stories';
-import * as ButtonStoriesWithMetaSubtitleAsBoth from '../examples/ButtonWithMetaSubtitleAsBoth.stories';
-import * as ButtonStoriesWithMetaSubtitleAsComponentSubtitle from '../examples/ButtonWithMetaSubtitleAsComponentSubtitle.stories';
 import * as ButtonStoriesWithMetaSubtitleAsDocsSubtitle from '../examples/ButtonWithMetaSubtitleAsDocsSubtitle.stories';
 import { Subtitle } from './Subtitle';
 
-const meta: Meta<typeof Subtitle> = {
+const meta = {
   component: Subtitle,
   parameters: {
     layout: 'fullscreen',
@@ -21,28 +19,11 @@ const meta: Meta<typeof Subtitle> = {
     attached: false,
     docsStyles: true,
   },
-};
+} satisfies Meta<typeof Subtitle>;
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const OfCSFFileAsBoth: Story = {
-  args: {
-    of: ButtonStoriesWithMetaSubtitleAsBoth,
-  },
-  parameters: {
-    relativeCsfPaths: ['../examples/ButtonWithMetaSubtitleAsBoth.stories'],
-  },
-};
-export const OfCSFFileAsComponentSubtitle: Story = {
-  name: 'Of CSF File As parameters.componentSubtitle',
-  args: {
-    of: ButtonStoriesWithMetaSubtitleAsComponentSubtitle,
-  },
-  parameters: {
-    relativeCsfPaths: ['../examples/ButtonWithMetaSubtitleAsComponentSubtitle.stories'],
-  },
-};
 export const OfCSFFileAsDocsSubtitle: Story = {
   name: 'Of CSF File As parameters.docs.subtitle',
   args: {
@@ -50,23 +31,6 @@ export const OfCSFFileAsDocsSubtitle: Story = {
   },
   parameters: {
     relativeCsfPaths: ['../examples/ButtonWithMetaSubtitleAsDocsSubtitle.stories'],
-  },
-};
-export const OfMetaAsBoth: Story = {
-  args: {
-    of: ButtonStoriesWithMetaSubtitleAsBoth.default,
-  },
-  parameters: {
-    relativeCsfPaths: ['../examples/ButtonWithMetaSubtitleAsBoth.stories'],
-  },
-};
-export const OfMetaAsComponentSubtitle: Story = {
-  name: 'Of Meta As parameters.componentSubtitle',
-  args: {
-    of: ButtonStoriesWithMetaSubtitleAsComponentSubtitle.default,
-  },
-  parameters: {
-    relativeCsfPaths: ['../examples/ButtonWithMetaSubtitleAsComponentSubtitle.stories'],
   },
 };
 export const OfMetaAsDocsSubtitle: Story = {

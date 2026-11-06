@@ -111,25 +111,9 @@
       "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
       "configurations": { "production": {} }
     },
-    "test-runner": {
-      "dependsOn": ["serve"],
-      "command": "yarn task test-runner --junit -s task --debug --no-link --template={projectName}",
-      "cache": true,
-      "inputs": ["^production"],
-      "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
-      "configurations": { "production": {} }
-    },
     "e2e-tests-dev": {
       "dependsOn": ["dev"],
       "command": "yarn task e2e-tests-dev --junit -s task --debug --no-link --template={projectName}",
-      "cache": true,
-      "inputs": ["^production"],
-      "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
-      "configurations": { "production": {} }
-    },
-    "test-runner-dev": {
-      "dependsOn": ["dev"],
-      "command": "yarn task test-runner-dev --junit -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],

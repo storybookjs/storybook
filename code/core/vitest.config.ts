@@ -31,7 +31,6 @@ export default mergeConfig(
       name: 'core',
       typecheck: {
         enabled: true,
-        ignoreSourceErrors: true,
       },
       server: {
         deps: {

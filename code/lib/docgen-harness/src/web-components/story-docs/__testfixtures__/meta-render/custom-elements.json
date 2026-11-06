@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "meta-render.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Lit element for meta render fallback.",
+          "name": "MetaRender",
+          "members": [
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "attribute": "label"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "fieldName": "label"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "meta-render",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "MetaRender",
+          "declaration": {
+            "name": "MetaRender",
+            "module": "meta-render.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "meta-render",
+          "declaration": {
+            "name": "MetaRender",
+            "module": "meta-render.ts"
+          }
+        }
+      ]
+    }
+  ]
+}

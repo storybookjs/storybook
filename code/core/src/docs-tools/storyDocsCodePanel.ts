@@ -48,7 +48,7 @@ export function shouldWaitForServiceSnippet(
   parameters: StoryDocsCodePanelParameters | undefined,
   storyPrepared: boolean | undefined
 ): boolean {
-  if (!globalThis.FEATURES?.experimentalDocgenServer) {
+  if (!globalThis.FEATURES?.docgenServer) {
     return false;
   }
   return !storyPrepared || !shouldSkipStoryDocsEmit(parameters);

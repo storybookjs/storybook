@@ -15,5 +15,7 @@ const isStylingRule = (rule: RuleSetRule) => {
 };
 
 export const filterOutStylingRules = (config: Configuration) => {
-  return (config.module.rules as RuleSetRule[]).filter((rule) => !isStylingRule(rule));
+  return (config.module?.rules ?? []).filter(
+    (rule) => !rule || rule === '...' || !isStylingRule(rule)
+  );
 };

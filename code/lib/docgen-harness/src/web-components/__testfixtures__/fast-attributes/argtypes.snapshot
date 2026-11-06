@@ -1,0 +1,147 @@
+{
+  "count": {
+    "description": "Current click count.",
+    "name": "count",
+    "required": false,
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "0",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "disabled": {
+    "description": "Disables the button (boolean attribute).",
+    "name": "disabled",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
+  "fast-count-change": {
+    "description": "Emitted after every click with the new count.",
+    "name": "fast-count-change",
+    "required": false,
+    "table": {
+      "category": "events",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "CustomEvent<number>",
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "items": {
+    "description": "Property only, never reflected.",
+    "name": "items",
+    "required": false,
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "[]",
+      },
+      "type": {
+        "summary": "string[]",
+      },
+    },
+    "type": {
+      "name": "string[]",
+    },
+  },
+  "label": {
+    "description": "Visible label.",
+    "name": "label",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'Go'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "max-count": {
+    "description": "Upper bound for the counter; attribute name differs from the field.",
+    "name": "max-count",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "3",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "maxCount": {
+    "description": "Upper bound for the counter; attribute name differs from the field.",
+    "name": "maxCount",
+    "required": false,
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "3",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "onFastCountChange": {
+    "action": {
+      "name": "fast-count-change",
+    },
+    "name": "onFastCountChange",
+    "table": {
+      "disable": true,
+    },
+  },
+  "size": {
+    "description": "Button size.",
+    "name": "size",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'small'",
+      },
+      "type": {
+        "summary": "'small' | 'large'",
+      },
+    },
+    "type": {
+      "name": "'small' | 'large'",
+    },
+  },
+}

@@ -1,10 +1,12 @@
-import type { ProjectType } from 'storybook/internal/cli';
-import { getStorybookVersionSpecifierFromAncestry } from 'storybook/internal/common';
+import type { ProjectType, SkillsInstallResult } from 'storybook/internal/cli';
+import {
+  getProcessAncestry,
+  getStorybookVersionSpecifierFromAncestry,
+} from 'storybook/internal/common';
 import { telemetry } from 'storybook/internal/telemetry';
 import { Feature } from 'storybook/internal/types';
 
-import { getProcessAncestry } from 'process-ancestry';
-
+import type { TypeScriptDependencyResult } from '../commands/TypeScriptDependencyCommand.ts';
 import { VersionService } from './VersionService.ts';
 
 /** Service for tracking telemetry events during Storybook initialization */
@@ -43,6 +45,23 @@ export class TelemetryService {
     await telemetry('init-step', {
       step: 'playwright-install',
       result,
+    });
+  }
+
+  async trackTypeScriptDependency(
+    result: Exclude<TypeScriptDependencyResult, 'not-needed'>
+  ): Promise<void> {
+    await telemetry('init-step', {
+      step: 'typescript-dependency',
+      result,
+    });
+  }
+
+  /** Track the outcome of the official Storybook skills install step */
+  async trackSkills(result: SkillsInstallResult): Promise<void> {
+    await telemetry('init-step', {
+      step: 'skills',
+      ...result,
     });
   }
 

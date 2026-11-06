@@ -3,21 +3,21 @@ import type { Options } from '../../types/index.ts';
 export type ManifestFeatures = {
   componentsManifest?: boolean;
   experimentalComponentsManifest?: boolean;
-  experimentalDocgenServer?: boolean;
+  docgenServer?: boolean;
 };
 
 export const hasComponentManifestFeature = (features: ManifestFeatures | undefined): boolean =>
   !!(features?.componentsManifest ?? features?.experimentalComponentsManifest);
 
 export const isDocgenServerMode = (features: ManifestFeatures | undefined): boolean =>
-  !!(features?.experimentalDocgenServer && features?.componentsManifest);
+  !!(features?.docgenServer && features?.componentsManifest);
 
 export type ManifestStatus = {
   available: boolean;
   hasManifests: boolean;
   hasFeatureFlag: boolean;
   /**
-   * `experimentalDocgenServer` mode: the split/ref manifest format served from the
+   * `docgenServer` mode: the split/ref manifest format served from the
    * open services. In dev, `/manifests/*.json` is 404'd by core, so the addon reads
    * manifest data in-process instead of fetching it.
    */

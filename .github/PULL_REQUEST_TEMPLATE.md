@@ -50,7 +50,7 @@ Do not describe how YOU tested the PR code, but how a separate maintainer should
 
 ## Checklist for Maintainers
 
-- [ ] When this PR is ready for testing, make sure to add `ci:normal`, `ci:merged` or `ci:daily` GH label to it to run a specific set of sandboxes. The particular set of sandboxes can be found in `code/lib/cli-storybook/src/sandbox-templates.ts`
+- [ ] When this PR is ready for testing, add a `ci:focus`, `ci:normal`, or `ci:daily` GitHub label. `ci:focus` runs the typecheck, unit tests, and lint for the changed files, Chromatic on the internal Storybook, the end-to-end jobs whose paths changed, and one sandbox in full for each changed framework, renderer, builder, or library (default `react-vite/default-ts`), plus Chromatic on the other sandboxes that load it, or on every sandbox when a core or addon template story changes. `ci:normal` and `ci:daily` run the sandbox sets in `code/lib/cli-storybook/src/sandbox-templates.ts`. Add `ci:windows` to also run the Windows jobs, or on its own to iterate on Windows failures; it does not report `circleci-completion`, so a PR cannot merge on it alone.
 - [ ] Declare whether manual QA will be needed for this PR during the next release, through `qa:needed` or `qa:skip`
 - [ ] Make sure this PR contains **one** of the labels below:
    <details>

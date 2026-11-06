@@ -129,7 +129,8 @@ export function mapCommonTypes(typeName: string): SBType | null {
 
 export const getTsConfig = async (componentFilePath?: string) => {
   try {
-    const ts = await import('typescript');
+    const imported = await import('typescript');
+    const ts = imported.default ?? imported;
     const tsconfigPath = componentFilePath
       ? findTsconfigPathForFile(dirname(componentFilePath), componentFilePath)
       : ts.findConfigFile(process.cwd(), ts.sys.fileExists);

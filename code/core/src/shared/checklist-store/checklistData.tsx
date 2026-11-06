@@ -18,7 +18,7 @@ import {
 } from 'storybook/internal/types';
 
 import { type API, Tag, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
-import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
+import { ThemeProvider, convert, styled, themes } from 'storybook/theming/emotion';
 
 import { WandIcon } from '@storybook/icons';
 
@@ -170,10 +170,10 @@ export const checklistData: ChecklistData = {
           icon: WandIcon,
           available: ({ storeState }) => {
             // Show only if the user opted into AI during `storybook init` and has not run
-            // `storybook ai setup` yet. Both flags are populated server-side from the event cache.
+            // `storybook skills setup` yet. Both flags are populated server-side from the fs cache.
             return !!storeState.aiOptIn && storeState.items.aiSetup?.status !== 'done';
           },
-          criteria: 'ai setup command has not been run yet',
+          criteria: 'skills setup command has not been run yet',
           showOnGuidePage: false,
           action: {
             label: 'Copy prompt',

@@ -107,7 +107,12 @@ export type ToolsetMethod<
   title: string;
   description: ToolsetMethodDescription;
   input: TSchema;
-  /** Published as the MCP tool's `outputSchema`. Must describe a JSON object. */
+  /**
+   * Published as the MCP tool's `outputSchema`. Must describe a JSON object.
+   *
+   * A client may hand the model only this structured data and drop the text, so it has to carry
+   * everything `markdown` says, next-step instructions included.
+   */
   output?: ToolsetObjectOutputSchema;
   /**
    * Marks a method that can only do its job against a running Storybook dev server — because it
@@ -143,9 +148,8 @@ export type AnyToolsetDefinition = ToolsetDefinition;
 /**
  * What a handler may return when its method publishes an `output`: outcomes whose `data` —
  * on both branches, since adapters validate failure data into `structuredContent` too — carries at
- * least the schema's declared shape. The open record keeps the data-superset pattern legal: the
- * rendered Markdown may use fields the public contract does not ship. Intersecting with
- * `Record<string, unknown>` keeps handler `data` an object.
+ * least the schema's declared shape. Intersecting with `Record<string, unknown>` keeps handler
+ * `data` an object.
  */
 type SchemaBoundData<TSchema extends AnySchema> = StandardSchemaV1.InferInput<TSchema> &
   Record<string, unknown>;
@@ -154,6 +158,13 @@ type MethodOutcomeContract<TMethod> = TMethod extends {
   output: infer TOut extends AnySchema;
 }
   ? ToolsetOutcome<SchemaBoundData<TOut>> | Promise<ToolsetOutcome<SchemaBoundData<TOut>>>
+  : unknown;
+
+// Brackets make a ternary input fail when either branch is not strict.
+type StrictInputContract<TInput> = [TInput] extends [{ '~standard': { vendor: 'valibot' } }]
+  ? [TInput] extends [{ type: 'strict_object' }]
+    ? unknown
+    : 'Declare toolset inputs with v.strictObject so undeclared arguments are rejected'
   : unknown;
 
 /**
@@ -165,6 +176,7 @@ type MethodOutcomeContract<TMethod> = TMethod extends {
  */
 type MethodContracts<TMethods extends ToolsetMethods> = {
   [TKey in keyof TMethods]: {
+    input: StrictInputContract<TMethods[TKey]['input']>;
     handler: (
       input: StandardSchemaV1.InferOutput<TMethods[TKey]['input']>,
       context: ToolsetCtx
@@ -172,14 +184,28 @@ type MethodContracts<TMethods extends ToolsetMethods> = {
   };
 };
 
+/**
+ * Types each method's handler from its own `input` and `output` schemas.
+ *
+ * @throws When a valibot method `input` is not a `v.strictObject`.
+ */
 export function defineToolset<
   const TId extends string,
   const TMethods extends ToolsetMethods,
 >(definition: {
   id: TId;
   description: string;
-  methods: TMethods & MethodContracts<TMethods>;
+  methods: MethodContracts<TMethods> & TMethods;
 }): ToolsetDefinition<TId, TMethods> {
+  for (const [methodName, method] of Object.entries(definition.methods)) {
+    const input: AnySchema & { type?: unknown } = method.input;
+    if (input['~standard'].vendor === 'valibot' && input.type !== 'strict_object') {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors -- portable toolsets-docs path
+      throw new Error(
+        `Toolset method "${definition.id}.${methodName}" must declare its input with v.strictObject, got a valibot "${String(input.type)}" schema. Undeclared arguments would otherwise be silently dropped or passed through instead of rejected.`
+      );
+    }
+  }
   return definition;
 }
 

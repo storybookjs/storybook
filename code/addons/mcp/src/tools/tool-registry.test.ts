@@ -37,7 +37,7 @@ function registerTestToolsetThrowing(error: Error) {
       description: 'stub',
       methods: {
         run: {
-          input: v.object({}),
+          input: v.strictObject({}),
           title: 'Storybook Tests',
           description: () => {
             throw error;
@@ -53,9 +53,6 @@ function registerTestToolsetThrowing(error: Error) {
 function availabilityWith(overrides: Partial<ToolAvailability> = {}): ToolAvailability {
   return {
     moduleGraphSupported: false,
-    changeDetectionEnabled: false,
-    reviewEnabled: false,
-    reviewEnabledForCli: false,
     docsEnabled: false,
     docsEnabledForCli: false,
     docsHasManifests: false,
@@ -104,7 +101,7 @@ describe('a broken tool definition', () => {
     expect(loggerError).toHaveBeenCalledWith(expect.stringContaining('test-run'));
   });
 
-  it('is dropped from the storybook ai metadata instead of failing the build', () => {
+  it('is dropped from the tool metadata instead of throwing', () => {
     const metadata = getAddonToolMetadata(context);
     const names = metadata.map((tool) => tool.name);
 
@@ -166,7 +163,7 @@ describe('test-run over the registry', () => {
         description: 'stub',
         methods: {
           run: {
-            input: v.object({}),
+            input: v.strictObject({}),
             title: 'Storybook Tests',
             description: 'run',
             handler: async () => ({

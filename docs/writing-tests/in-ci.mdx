@@ -12,7 +12,7 @@ Thankfully, that’s quite easy!
 
 <Callout variant="info">
 
-If you cannot use the Vitest addon in your project, you can still run your stories as tests in CI using the test-runner. Follow the instructions in the [test-runner documentation](./integrations/test-runner.mdx#set-up-ci-to-run-tests) to set up the test-runner to run in CI in your project.
+The Vitest addon requires a Vite-based framework. If your project uses Webpack, [migrate to Vite](./integrations/vitest-addon/migration-guide.mdx#what-if-i-am-using-storybook-with-webpack-or-rspack) first.
 
 </Callout>
 
@@ -450,6 +450,7 @@ The workflow would then look like:
 
 **More testing resources**
 
+- [See our complete guide to component testing](https://storybook.js.org/blog/component-testing-a-practical-guide-for-frontend-developers/)
 - [Vitest addon](./integrations/vitest-addon/index.mdx) for running tests in Storybook
 - [Interaction testing](./interaction-testing.mdx) for user behavior simulation
 - [Accessibility testing](./accessibility-testing.mdx) for accessibility
@@ -458,4 +459,3 @@ The workflow would then look like:
 - [Test coverage](./test-coverage.mdx) for measuring code coverage
 - [End-to-end testing](./integrations/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
 - [Unit testing](./integrations/stories-in-unit-tests.mdx) for functionality
-- [Test runner](./integrations/test-runner.mdx) to automate test execution

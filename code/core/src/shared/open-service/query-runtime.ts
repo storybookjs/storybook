@@ -1,15 +1,66 @@
 /**
  * # query-runtime
  *
- * The synchronous query surface and the asynchronous `load` machinery for one registered service:
- * `.get()` / `.loaded()` / `.subscribe()`, the in-flight load registry, and the `.loaded()` drain
- * loop. Split out of `service-runtime.ts` (which assembles the full runtime — state signal, commands,
- * static loader) to keep each file focused.
+ * The query surface for one registered service: `.get()`, `.loaded()`, and `.subscribe()`, the
+ * in-flight load registry, and the `.loaded()` drain loop. `service-runtime.ts` assembles the rest
+ * of the runtime (state signal, commands, static loader).
  *
- * See `service-runtime.ts` for the end-to-end mental model and the dependency-tracking algorithm; the
- * functions referenced there (`runLoaded`, `buildLoadWrappedQueries`, `inFlightLoads`, `LoadedSession`)
- * all live here.
+ * ## Mental model in one paragraph
+ *
+ * `query.get(input)` is a synchronous, pure read: it validates input, calls the handler against
+ * current state, and returns the result immediately. It does **not** fire the query's `load` — a
+ * read never starts background work. Loads fire only through `query.subscribe(...)` (reactively,
+ * re-firing as tracked state changes) and `query.loaded(input)` (the "wait until fully loaded"
+ * form). `.loaded()` must guarantee that **every dependency the handler transitively reads is
+ * settled** before returning, even though those dependencies are not declared statically anywhere.
+ * The drain machinery in this file provides that guarantee. When a handler or load
+ * body reads a *dependency* via `.get()` inside a `.loaded()` drain or a load body, that read still
+ * triggers and awaits the dependency's load; a bare consumer `.get()` does not.
+ *
+ * ## Dependency-tracking algorithm
+ *
+ * `.loaded()` runs a *drain loop*:
+ *
+ * 1. Fire this query's own `load` and put the promise into a `LoadedSession` collector.
+ * 2. Repeat:
+ *    - Await everything currently in the collector with `Promise.allSettled`.
+ *    - Mark those load keys as `settled` for the session.
+ *    - Run the sync handler under the session as a *discovery pass*. Every sync read of a
+ *      dependency query (via `ctx.self.queries.*` or `ctx.getService(...).queries.*`) consults
+ *      the module-scoped `activeHandlerLoadSession`; if that dep's load is not already
+ *      settled or on the ancestor chain, its promise is added to the collector.
+ *    - If the discovery pass added new entries, loop again. Otherwise, exit.
+ * 3. Final handler call (no session) returns the validated output.
+ *
+ * Inside a `load` body, `ctx.self.queries.*` are *wrapped* by {@link buildLoadWrappedQueries} so
+ * the same registration happens against a load-local collector — the load promise only resolves
+ * when its body **and** its own dependencies have settled. This propagates the "wait" through
+ * async load bodies without needing AsyncLocalStorage.
+ *
+ * ## Why each piece exists
+ *
+ * - **{@link inFlightLoads}** dedups concurrent calls for the same `(runtime, service, query,
+ *   input)` so two consumers asking for the same data share one load.
+ * - **{@link LoadedSession.ancestorChain}** breaks cycles: a dep whose load key is already on the
+ *   call chain is skipped (not added to any collector) so two queries that read each other do
+ *   not self-deadlock.
+ * - **{@link LoadedSession.settledKeys}** prevents the discovery loop from refiring already
+ *   completed loads on each iteration — without it, every reread of a dep in the handler would
+ *   re-trigger its load and the drain loop would never converge.
+ * - **{@link MAX_DRAIN_ITERATIONS}** caps pathological cases (e.g. a handler reading a query with
+ *   an ever-changing input key) so a buggy service surfaces a real error instead of hanging.
+ *
+ * ## Boundaries
+ *
+ * Cross-service `getService(...).queries.*` calls **inside a load body** are intentionally not
+ * tracked into the load-local collector. Authors who need cross-service deps awaited from inside
+ * a load should call `.loaded()` explicitly (e.g. `await ctx.getService(id).queries.foo
+ * .loaded(input)`). Cross-service calls from a sync handler still go through the session-aware
+ * path because handler reads are tracked by `activeHandlerLoadSession`, which is module-scoped
+ * and stable for the duration of a sync handler call.
  */
+import { once } from 'storybook/internal/client-logger';
+
 import { computed, effect, signal, untracked } from '@preact/signals-core';
 import { isEqual } from 'es-toolkit/predicate';
 
@@ -64,7 +115,7 @@ type LoadedSession = {
 
 /**
  * Process-global registry of in-flight `load` promises keyed by
- * `${runtimeId}::${serviceId}::${queryName}::${hash}`.
+ * `${loadScopeId}::${serviceId}::${queryName}::${hash}`.
  *
  * The dedup is in-flight only: once a load settles, its entry is removed so a subsequent call can
  * refire it. The same registry is consulted by both same-service and cross-service callers so two
@@ -80,8 +131,8 @@ export const inFlightLoads = new Map<string, Promise<unknown>>();
  * Monotonic instance id for {@link makeInFlightKey}. The load key already names the service;
  * this token only has to be unique among live runtimes.
  */
-let nextRuntimeSequence = 0;
-export const nextRuntimeId = (): string => String((nextRuntimeSequence += 1));
+let nextLoadScopeSequence = 0;
+export const nextLoadScopeId = (): string => String((nextLoadScopeSequence += 1));
 
 /**
  * Active session for `.loaded()` while a sync handler is being re-run for dependency discovery.
@@ -132,8 +183,8 @@ function stableHash(value: unknown): string {
  * The unscoped {@link makeLoadKey} stays the identity used for cycle detection and settled-key
  * bookkeeping, which are per-load-graph rather than per-runtime.
  */
-export function makeInFlightKey(runtimeId: string, loadKey: string): string {
-  return `${runtimeId}::${loadKey}`;
+export function makeInFlightKey(loadScopeId: string, loadKey: string): string {
+  return `${loadScopeId}::${loadKey}`;
 }
 
 export function makeLoadKey(
@@ -240,17 +291,19 @@ function detachSnapshot<TValue>(value: TValue): TValue {
  * Bundling the references lets `createDefaultQuery`, the load body wrapper, and `.loaded()` share
  * the same closure shape without each one re-deriving the per-service callbacks.
  */
+// Runs a write of a reactive load's run, or drops it once a newer run has started.
+export type WriteGate = (write: () => void) => void;
+
 export type QueryRuntimeRefs<TState> = {
   serviceId: ServiceId;
   /**
-   * Identity of this runtime instance, used to scope {@link inFlightLoads}.
+   * Process-local token used to scope {@link inFlightLoads}.
    *
    * A load body writes through the `self` of the runtime it started on, so a load in flight on one
    * runtime says nothing about another runtime's state. The static build stands up a throwaway
    * runtime per snapshot next to the live registry's runtime, which is where the two meet.
    */
-  runtimeId: string;
-  commandSelf: CommandSelf<TState>;
+  loadScopeId: string;
   /** Deep reactive proxy backing this service's state; reads inside a computed track fine-grained. */
   state: TState;
   registryApi: ServiceRegistryApi;
@@ -269,12 +322,12 @@ export type QueryRuntimeRefs<TState> = {
    */
   getLoadCommands: () => CommandSelf<TState>['commands'];
   /**
-   * Builds a command map whose `setState` writes are dropped once `isCurrent()` returns false.
-   * Used by reactive subscription loads so a superseded (stale) re-run cannot overwrite the state
-   * produced by a newer run. Remote commands are routed through the channel map unchanged, since they
-   * carry no local `setState` to gate.
+   * Builds a command map whose `setState` writes all go through `gate`, which drops a write once
+   * its run is superseded. Used by reactive subscription loads so a superseded (stale) re-run cannot
+   * overwrite the state produced by a newer run. Remote commands are routed through the channel map
+   * unchanged, since they carry no local `setState` to gate.
    */
-  buildGatedCommands: (isCurrent: () => boolean) => CommandSelf<TState>['commands'];
+  buildGatedCommands: (gate: WriteGate) => CommandSelf<TState>['commands'];
 };
 
 /**
@@ -435,7 +488,7 @@ function triggerLoad<TState>(
   loadKey: string,
   parentAncestorChain: ReadonlySet<string>
 ): Promise<unknown> {
-  const inFlightKey = makeInFlightKey(refs.runtimeId, loadKey);
+  const inFlightKey = makeInFlightKey(refs.loadScopeId, loadKey);
   const existing = inFlightLoads.get(inFlightKey);
   if (existing) {
     return existing;
@@ -510,6 +563,16 @@ export async function runLoadBody<TState>(
   await drainCollector(collector, undefined, refs.serviceId, queryName);
 }
 
+// The data is often still right (the new run redoes the work), so this warns instead of throwing.
+function warnLoadReplacedByOwnWrite(serviceId: ServiceId, queryName: string): void {
+  if (globalThis.CONFIG_TYPE === 'PRODUCTION') {
+    return;
+  }
+  once.warn(
+    `The load of query "${serviceId}.${queryName}" re-ran because of its own write, and dropped the later writes of the first run. Move the check that reads this state from the load into the command, and let the load just call the command.`
+  );
+}
+
 /**
  * Runs a query's `load` as the body of a subscription's reactive effect.
  *
@@ -519,17 +582,17 @@ export async function runLoadBody<TState>(
  * idempotent warming step (the documented guideline, now a hard contract); one-shot side effects
  * belong in a command.
  *
- * Writes go through gated commands: if `isCurrent()` flips to false because a newer run started
- * (deps changed again), this run's later writes are dropped, so a slow stale load cannot clobber the
- * newer result. Sibling reads use the default queries — their loads fire-and-forget — so transitive
- * dependencies stay warm without the `.loaded()` drain, which is only meaningful for awaited pulls.
+ * Writes go through gated commands: once a newer run started (deps changed again), `gate` drops this
+ * run's later writes, so a slow stale load cannot clobber the newer result. Sibling reads use the
+ * default queries — their loads fire-and-forget — so transitive dependencies stay warm without the
+ * `.loaded()` drain, which is only meaningful for awaited pulls.
  */
 async function runReactiveLoad<TState>(
   refs: QueryRuntimeRefs<TState>,
   queryName: string,
   queryDef: RuntimeQueryDefinition<TState>,
   validatedInput: unknown,
-  isCurrent: () => boolean
+  gate: WriteGate
 ): Promise<void> {
   if (!queryDef.load) {
     return;
@@ -543,7 +606,7 @@ async function runReactiveLoad<TState>(
     // read and never fires a load, so the body sees fire-and-forget wrappers instead: reading a
     // dependency triggers its load (deduped while in flight) without awaiting a drain.
     queries: refs.reactiveLoadQueries,
-    commands: refs.buildGatedCommands(isCurrent) as LoadSelf<TState>['commands'],
+    commands: refs.buildGatedCommands(gate) as LoadSelf<TState>['commands'],
   };
   const loadCtx: LoadCtx<TState> = { self: loadSelf, getService: refs.registryApi.getService };
 
@@ -554,8 +617,7 @@ async function runReactiveLoad<TState>(
  * Builds the `ctx.self.queries` map used inside a *reactive subscription load* body.
  *
  * `.get()` here fires the dependency's `load` fire-and-forget (deduped via {@link inFlightLoads}),
- * mirroring how a bare query call used to warm dependencies — but scoped to the reactive-load
- * context only, so a plain consumer `.get()` stays a pure read. There is no drain: a subscription
+ * scoped to the reactive-load context only, so a plain consumer `.get()` stays a pure read. There is no drain: a subscription
  * does not await its dependencies, it re-fires reactively when their tracked state changes.
  */
 export function buildReactiveLoadQueries<TState>(
@@ -828,8 +890,7 @@ async function runLoaded<TState>(
  *
  * - **`get(input)`** validates input synchronously, runs the handler against current state, and
  *   returns the validated result. It does **not** fire this query's `load` for an ordinary consumer
- *   read — that was the confusing implicit-background-load behavior of the old bare call, now
- *   removed. The one exception is dependency tracking: when a `.get()` runs inside a `.loaded()`
+ *   read. The one exception is dependency tracking: when a `.get()` runs inside a `.loaded()`
  *   discovery pass (`activeHandlerLoadSession` set), it fires + registers the load into the session
  *   collector so the outer drain awaits it (skipping cycles and already-settled keys). Reactive
  *   subscription loads warm dependencies through {@link buildReactiveLoadQueries} instead.
@@ -984,6 +1045,22 @@ function subscribeToQuery<TState>(
     loadTeardown = effect(() => {
       const myEpoch = ++epoch;
       const isCurrent = () => myEpoch === epoch;
+      let replacedByOwnWrite = false;
+      const gate: WriteGate = (write) => {
+        if (!isCurrent()) {
+          if (replacedByOwnWrite) {
+            warnLoadReplacedByOwnWrite(refs.serviceId, queryName);
+          }
+          return;
+        }
+        // A run that started during the write was started by it, through state this load reads. A
+        // recipe that throws still keeps its earlier changes, so check also then.
+        try {
+          write();
+        } finally {
+          replacedByOwnWrite = !isCurrent();
+        }
+      };
 
       // Mark this run in flight, preserving the current `status` (so the first load reads
       // `pending` → `isInitialLoading`, while a re-load over existing data reads `success` →
@@ -995,7 +1072,7 @@ function subscribeToQuery<TState>(
         loadStatus: 'loading',
       };
 
-      runReactiveLoad(refs, queryName, queryDef, validatedInput, isCurrent).then(
+      runReactiveLoad(refs, queryName, queryDef, validatedInput, gate).then(
         () => {
           if (!isCurrent()) {
             return;
@@ -1015,8 +1092,8 @@ function subscribeToQuery<TState>(
   // The output is always validated, but the computed's dependency footprint must match only what
   // the subscriber consumes:
   //   - With a `selector`, validation runs untracked (so reading the whole value to validate it
-  //     does not register dependencies), and only the selected fields the selector reads are
-  //     tracked. A sibling field the selector ignores never re-runs this computed.
+  //     does not register dependencies), and only the selected slice is tracked, with every field
+  //     inside it. A sibling field the selector ignores never re-runs this computed.
   //   - Without a selector, validation runs tracked: reading the whole value is the correct
   //     footprint for a whole-output subscriber, and the validated value is emitted (identical to
   //     what a direct `.get()` / `.loaded()` pull returns).
@@ -1031,9 +1108,12 @@ function subscribeToQuery<TState>(
     );
     if (selector) {
       const validated = untracked(() => validateQueryOutput(refs, queryName, queryDef, output));
-      // Read the live handler output so the selector's field accesses stay on the reactive
-      // proxy; validation returns a plain parsed value that cannot carry those dependencies.
-      selector(output);
+      // Read every field inside a selected object, so the computed tracks them, not only the path
+      // to the object.
+      const selected = selector(output);
+      if (selected !== null && typeof selected === 'object') {
+        JSON.stringify(selected);
+      }
       return detachSnapshot(selector(validated));
     }
     return detachSnapshot(validateQueryOutput(refs, queryName, queryDef, output));

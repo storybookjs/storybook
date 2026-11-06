@@ -1,12 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 
-import type {
-  CoverageOptions,
-  ResolvedCoverageOptions,
-  TestProject,
-  TestSpecification,
-  Vitest,
-} from 'vitest/node';
+import type { CoverageOptions, TestProject, TestSpecification, Vitest } from 'vitest/node';
 
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import { Tag } from 'storybook/internal/core-server';
@@ -44,36 +38,40 @@ const getTestName = (name: string) => `${name}${DOUBLE_SPACES}`;
 export class VitestManager {
   vitest: Vitest | null = null;
 
+  private testNameSeparator = ' ';
+
   vitestStartupCounter = 0;
 
   vitestRestartPromise: Promise<void> | null = null;
 
   runningPromise: Promise<any> | null = null;
 
+  // Tracked here because `vitest.config.coverage.enabled` does not follow `disableCoverage()`.
+  coverageEnabled = false;
+
   constructor(private testManager: TestManager) {}
 
   async startVitest({ coverage }: { coverage: boolean }) {
-    const { createVitest } = await import('vitest/node');
+    const { createVitest, version } = await import('vitest/node');
+    this.testNameSeparator = Number.parseInt(version, 10) >= 5 ? ' > ' : ' ';
 
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
       '@storybook/addon-vitest/internal/coverage-reporter',
       {
-        testManager: this.testManager,
-        coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions | undefined,
+        // A function, not the manager itself: Vitest deep-clones coverage options when coverage
+        // is toggled at runtime, and the reporter must reach the live manager.
+        getTestManager: () => this.testManager,
       },
     ];
-    const coverageOptions = (
-      coverage
-        ? {
-            enabled: true,
-            clean: true,
-            cleanOnRerun: true,
-            reportOnFailure: true,
-            reporter: [['html', {}], storybookCoverageReporter],
-            reportsDirectory: resolvePathInStorybookCache(COVERAGE_DIRECTORY),
-          }
-        : { enabled: false }
-    ) as CoverageOptions;
+    // Always pass the full options so `enableCoverage()` can turn coverage on later.
+    const coverageOptions = {
+      enabled: coverage,
+      clean: true,
+      cleanOnRerun: true,
+      reportOnFailure: true,
+      reporter: [['html', {}], storybookCoverageReporter],
+      reportsDirectory: resolvePathInStorybookCache(COVERAGE_DIRECTORY),
+    } as CoverageOptions;
 
     // In monorepos, the Storybook configDir (e.g. packages/web-app/.storybook) identifies
     // the sub-package. We start the Vitest config search from its parent (the package root)
@@ -136,6 +134,7 @@ export class VitestManager {
         reporters: ['default', new StorybookReporter(this.testManager)],
         coverage: coverageOptions,
       });
+      this.coverageEnabled = coverage;
     } catch (err: any) {
       const originalMessage = String(err.message);
       if (originalMessage.includes('Found multiple projects')) {
@@ -159,7 +158,11 @@ export class VitestManager {
     }
 
     try {
-      await this.vitest.init();
+      if (typeof this.vitest.standalone === 'function') {
+        await this.vitest.standalone();
+      } else {
+        await this.vitest.init();
+      }
     } catch (e: any) {
       let message = 'Failed to initialize Vitest';
       const isV8 = e.message?.includes('@vitest/coverage-v8');
@@ -203,6 +206,20 @@ export class VitestManager {
     return this.vitestRestartPromise;
   }
 
+  async setCoverage(enabled: boolean) {
+    await this.vitestRestartPromise;
+    if (!this.vitest || this.coverageEnabled === enabled) {
+      return;
+    }
+    await this.cancelCurrentRun();
+    if (enabled) {
+      await this.vitest.enableCoverage();
+    } else {
+      this.vitest.disableCoverage();
+    }
+    this.coverageEnabled = enabled;
+  }
+
   private resetGlobalTestNamePattern() {
     this.vitest?.setGlobalTestNamePattern('');
   }
@@ -221,7 +238,7 @@ export class VitestManager {
   }
 
   private getStories(requestStoryIds?: string[]): StoryIndexEntry[] {
-    const index = this.testManager.store.getState().index;
+    const index = this.testManager.storyIndex;
     if (requestStoryIds) {
       const stories: StoryIndexEntry[] = [];
       for (const id of requestStoryIds) {
@@ -261,7 +278,7 @@ export class VitestManager {
         throw new Error(`Parent story not found for story ${story.id}`);
       }
 
-      return `^${escapeRegExp(getTestName(parentStory.name))} ${escapeRegExp(story.name)}$`;
+      return `^${escapeRegExp(getTestName(parentStory.name))}${this.testNameSeparator}${escapeRegExp(story.name)}$`;
     }
 
     return `^${escapeRegExp(story.name)}$`;
@@ -377,14 +394,11 @@ export class VitestManager {
     const runConfig = this.getCurrentRunConfig();
     const coverageShouldBeEnabled =
       !!runConfig.coverage && !watching && (runPayload?.storyIds?.length ?? 0) === 0;
-    const currentCoverage = this.vitest?.config.coverage?.enabled;
 
     if (!this.vitest) {
       await this.startVitest({ coverage: coverageShouldBeEnabled });
-    } else if (currentCoverage !== coverageShouldBeEnabled) {
-      await this.restartVitest({ coverage: coverageShouldBeEnabled });
     } else {
-      await this.vitestRestartPromise;
+      await this.setCoverage(coverageShouldBeEnabled);
     }
 
     this.provideRunConfig();
@@ -462,15 +476,15 @@ export class VitestManager {
 
     const storybookProject = this.vitest!.projects.find((p) => this.isStorybookProject(p));
     // we create synthetic TestSpecifications for the preview annotations and setup files, so that we can analyze their dependencies
-    const previewAnnotationSpecifications = this.testManager.store
-      .getState()
-      .previewAnnotations.map((previewAnnotation) => {
+    const previewAnnotationSpecifications = this.testManager.previewAnnotations.map(
+      (previewAnnotation) => {
         return {
           project: storybookProject ?? this.vitest!.projects[0],
           moduleId:
             typeof previewAnnotation === 'string' ? previewAnnotation : previewAnnotation.absolute,
         };
-      }) as TestSpecification[];
+      }
+    ) as TestSpecification[];
     const setupFilesSpecifications = this.vitest!.projects.flatMap((project) =>
       project.config.setupFiles.map((setupFile) => ({
         project,

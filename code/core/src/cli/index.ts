@@ -6,5 +6,7 @@ export * from './NpmOptions.ts';
 export * from './eslintPlugin.ts';
 export * from './globalSettings.ts';
 export * from './AddonVitestService.ts';
+export * from './installSkills.ts';
 export * from './detectLanguage.ts';
 export * from './getStorybookData.ts';
+export * from './vitest-config.ts';

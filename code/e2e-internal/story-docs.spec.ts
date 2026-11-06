@@ -30,9 +30,6 @@ const E2E_STORY_DOCS_HOT_UPDATE_LABEL_AFTER = 'e2eStoryDocsAfter';
 const defaultArgsLine = `  args: { label: '${E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE}' }`;
 const hotUpdateArgsLine = `  args: { label: '${E2E_STORY_DOCS_HOT_UPDATE_LABEL_AFTER}' }`;
 
-// Start the internal dev server with STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true before running the
-// hot-update test. CI sets that env var in the internal Storybook e2e job. Static tests require a
-// build produced with the same flag so story-docs snapshots exist under storybook-static/services/.
 let originalCodePanelStorySource: string | undefined;
 
 async function restoreFile(path: string, contents: string) {
@@ -45,7 +42,7 @@ function previewFrame(page: Page) {
   return page.frameLocator('#storybook-preview-iframe');
 }
 
-async function expectExperimentalDocgenServer(page: Page) {
+async function expectDocgenServer(page: Page) {
   await expect
     .poll(
       () =>
@@ -53,9 +50,9 @@ async function expectExperimentalDocgenServer(page: Page) {
           Boolean(
             (
               globalThis as {
-                FEATURES?: { experimentalDocgenServer?: boolean };
+                FEATURES?: { docgenServer?: boolean };
               }
-            ).FEATURES?.experimentalDocgenServer
+            ).FEATURES?.docgenServer
           )
         ),
       { timeout: PREVIEW_STORY_TIMEOUT }
@@ -114,7 +111,7 @@ async function expectPreviewButtonLabel(page: Page, label: string) {
 
 async function gotoCodePanelStory(page: Page) {
   await page.goto(`${storybookUrl}/?path=${storyPath}`);
-  await expectExperimentalDocgenServer(page);
+  await expectDocgenServer(page);
   await waitForPreviewReady(page);
   await expect(
     previewFrame(page)
@@ -125,7 +122,7 @@ async function gotoCodePanelStory(page: Page) {
 
 async function gotoAutodocsPage(page: Page) {
   await page.goto(`${storybookUrl}/?path=${docsPath}`);
-  await expectExperimentalDocgenServer(page);
+  await expectDocgenServer(page);
   await waitForPreviewReady(page);
 }
 

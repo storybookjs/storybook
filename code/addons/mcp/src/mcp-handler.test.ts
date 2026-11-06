@@ -239,40 +239,43 @@ describe('mcpServerHandler', () => {
   async function getRegisteredToolNames(
     mockOptions: any,
     port: number,
-    handlerOptions: { sources?: any[]; headers?: Record<string, string> } = {}
+    handlerOptions: { sources?: any[] } = {}
   ): Promise<string[]> {
     const host = `localhost:${port}`;
     const addonOptions = { toolsets: { dev: true, docs: true } };
-    const { headers: extraHeaders = {}, ...restHandlerOptions } = handlerOptions;
 
     const initReq = createMockIncomingMessage({
       method: 'POST',
-      headers: { 'content-type': 'application/json', host, ...extraHeaders },
+      headers: { 'content-type': 'application/json', host },
       body: createMCPInitializeRequest(),
     });
     const { response: initResponse } = createMockServerResponse();
     await mcpServerHandler({
       req: initReq,
       res: initResponse,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions,
       addonOptions,
       compositionAuth: new CompositionAuth(),
-      ...restHandlerOptions,
+      ...handlerOptions,
     });
 
     const listReq = createMockIncomingMessage({
       method: 'POST',
-      headers: { 'content-type': 'application/json', host, ...extraHeaders },
+      headers: { 'content-type': 'application/json', host },
       body: { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} },
     });
     const { response: listResponse, getResponseData } = createMockServerResponse();
     await mcpServerHandler({
       req: listReq,
       res: listResponse,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions,
       addonOptions,
       compositionAuth: new CompositionAuth(),
-      ...restHandlerOptions,
+      ...handlerOptions,
     });
 
     const { body } = getResponseData();
@@ -293,6 +296,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: mockReq,
       res: response,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       addonOptions: {
         toolsets: {
@@ -369,6 +374,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: mockReq,
       res: response,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       addonOptions: {
         toolsets: {
@@ -392,7 +399,9 @@ describe('mcpServerHandler', () => {
     expect(parsedResponse.result.instructions).toContain(
       '**CRITICAL: Never hallucinate component properties!**'
     );
-    expect(parsedResponse.result.instructions).toContain('## Multi-Source Requests');
+    expect(parsedResponse.result.instructions).toContain(
+      'scope multi-source requests with `storybookId`'
+    );
     expect(parsedResponse.result.instructions).not.toContain(
       '## UI Building and Story Writing Workflow'
     );
@@ -425,6 +434,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: mockReq,
       res: response,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       addonOptions: {
         toolsets: {
@@ -472,6 +483,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: initReq,
       res: initResponse,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       addonOptions: {
         toolsets: { dev: true, docs: true },
@@ -495,6 +508,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: listToolsReq,
       res: listResponse,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       addonOptions: {
         toolsets: { dev: true, docs: true },
@@ -539,89 +554,11 @@ describe('mcpServerHandler', () => {
     expect(toolNames).toContain('docs-show-story');
   });
 
-  it('registers stories-changed when the changeDetection feature flag is on', async () => {
-    const mockOptions = createMockOptions({
-      port: 6009,
-      presets: {
-        apply: vi.fn(async (key: string, defaultValue?: any) => {
-          if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: true };
-          return defaultValue;
-        }),
-      },
-    });
+  it('registers stories-changed and review-create', async () => {
+    const toolNames = await getRegisteredToolNames(createMockOptions({ port: 6009 }), 6009);
 
-    const toolNames = await getRegisteredToolNames(mockOptions, 6009);
     expect(toolNames).toContain('stories-changed');
-  });
-
-  it('registers review-create when the experimentalReview and changeDetection feature flags are on', async () => {
-    const mockOptions = createMockOptions({
-      port: 6010,
-      presets: {
-        apply: vi.fn(async (key: string, defaultValue?: any) => {
-          if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: true, experimentalReview: true };
-          return defaultValue;
-        }),
-      },
-    });
-
-    const toolNames = await getRegisteredToolNames(mockOptions, 6010);
     expect(toolNames).toContain('review-create');
-  });
-
-  it('does not list review-create for direct MCP clients when only the changeDetection feature flag is on', async () => {
-    const mockOptions = createMockOptions({
-      port: 6013,
-      presets: {
-        apply: vi.fn(async (key: string, defaultValue?: any) => {
-          if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: true };
-          return defaultValue;
-        }),
-      },
-    });
-
-    const toolNames = await getRegisteredToolNames(mockOptions, 6013);
-    expect(toolNames).toContain('stories-changed');
-    expect(toolNames).not.toContain('review-create');
-  });
-
-  it('lists review-create for storybook ai CLI requests when only the changeDetection feature flag is on', async () => {
-    const mockOptions = createMockOptions({
-      port: 6014,
-      presets: {
-        apply: vi.fn(async (key: string, defaultValue?: any) => {
-          if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: true };
-          return defaultValue;
-        }),
-      },
-    });
-
-    const toolNames = await getRegisteredToolNames(mockOptions, 6014, {
-      headers: { 'x-storybook-mcp-proxy': 'true' },
-    });
-    expect(toolNames).toContain('review-create');
-  });
-
-  it('does not list review-create for CLI requests when experimentalReview is explicitly false', async () => {
-    const mockOptions = createMockOptions({
-      port: 6015,
-      presets: {
-        apply: vi.fn(async (key: string, defaultValue?: any) => {
-          if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: true, experimentalReview: false };
-          return defaultValue;
-        }),
-      },
-    });
-
-    const toolNames = await getRegisteredToolNames(mockOptions, 6015, {
-      headers: { 'x-storybook-mcp-proxy': 'true' },
-    });
-    expect(toolNames).not.toContain('review-create');
   });
 });
 

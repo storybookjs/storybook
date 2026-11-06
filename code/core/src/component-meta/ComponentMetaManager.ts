@@ -53,7 +53,10 @@ export class ComponentMetaManager<
   // Our own file watching layer
   private watching = false;
   private watchersByDir = new Map<string, FSWatcher>();
-  private pendingEvents = new Map<string, ReturnType<typeof setTimeout>>();
+  private pendingEvents = new Map<
+    string,
+    { timeout: ReturnType<typeof setTimeout>; renamed: boolean }
+  >();
 
   // Heap-pressure recycle: bytes of `heapUsed` past which the TS program(s) are disposed and rebuilt.
   private readonly heapRecycleThresholdBytes: number;
@@ -113,7 +116,7 @@ export class ComponentMetaManager<
     // their memory limit rather than silently paying repeated rebuilds (or eventually crashing).
     const heapLimitMb = Math.round(v8.getHeapStatistics().heap_size_limit / (1024 * 1024));
     once.warn(dedent`
-      Storybook's experimental docgen server is nearing the Node.js memory limit (~${heapLimitMb} MB) while extracting component types, and recycled its TypeScript program to avoid an out-of-memory crash. This can briefly slow down the docs and Controls panels.
+      Storybook's docgen server is nearing the Node.js memory limit (~${heapLimitMb} MB) while extracting component types, and recycled its TypeScript program to avoid an out-of-memory crash. This can briefly slow down the docs and Controls panels.
 
       If this happens often, raise Node's memory limit before starting Storybook, for example:
         NODE_OPTIONS="--max-old-space-size=${heapLimitMb * 2}"
@@ -492,15 +495,21 @@ export class ComponentMetaManager<
 
         const existing = this.pendingEvents.get(filePath);
         if (existing) {
-          clearTimeout(existing);
+          clearTimeout(existing.timeout);
         }
+        // Windows reports writing a new file as `rename` (FILE_ACTION_ADDED) followed by `change`
+        // (FILE_ACTION_MODIFIED). A `rename` anywhere in the burst must survive, or the file is
+        // treated as an edit and projects never see it was created.
+        // https://learn.microsoft.com/en-us/dotnet/api/system.io.filesystemwatcher.created#remarks
+        // https://github.com/libuv/libuv/blob/v1.51.0/src/win/fs-event.c#L540-L548
+        const renamed = eventType === 'rename' || (existing?.renamed ?? false);
 
-        this.pendingEvents.set(
-          filePath,
-          setTimeout(() => {
+        this.pendingEvents.set(filePath, {
+          renamed,
+          timeout: setTimeout(() => {
             this.pendingEvents.delete(filePath);
 
-            if (eventType === 'rename') {
+            if (renamed) {
               if (existsSync(filePath)) {
                 this.handleFileEvent(filePath, 'created');
               } else {
@@ -509,8 +518,8 @@ export class ComponentMetaManager<
             } else {
               this.handleFileEvent(filePath, 'changed');
             }
-          }, 50)
-        );
+          }, 50),
+        });
       });
       watcher.unref();
       this.watchersByDir.set(normalized, watcher);
@@ -520,7 +529,7 @@ export class ComponentMetaManager<
   }
 
   stopWatching(): void {
-    for (const timeout of this.pendingEvents.values()) {
+    for (const { timeout } of this.pendingEvents.values()) {
       clearTimeout(timeout);
     }
     this.pendingEvents.clear();

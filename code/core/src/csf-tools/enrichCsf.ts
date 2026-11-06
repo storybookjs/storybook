@@ -1,7 +1,14 @@
-import { generate, types as t } from 'storybook/internal/babel';
 import { type CsfEnricher } from 'storybook/internal/types';
 
 import type { CsfFile } from './CsfFile.ts';
+import { type E, type Node, staticKey } from './estree/ast.ts';
+import {
+  type SourceEditor,
+  appendMembers,
+  appendStatement,
+  prependMembers,
+  triviaBefore,
+} from './estree/editor.ts';
 
 export interface EnrichCsfOptions {
   disableSource?: boolean;
@@ -16,131 +23,93 @@ export const enrichCsfStory = (
   options?: EnrichCsfOptions
 ) => {
   const storyExport = csfSource.getStoryExport(key);
-  const isCsfFactory =
-    t.isCallExpression(storyExport) &&
-    t.isMemberExpression(storyExport.callee) &&
-    t.isIdentifier(storyExport.callee.object) &&
-    storyExport.callee.object.name === 'meta';
-  const source = !options?.disableSource && extractSource(storyExport);
+  const source = !options?.disableSource && extractSource(storyExport, csfSource._code);
   const description =
-    !options?.disableDescription && extractDescription(csfSource._storyStatements[key]);
-  const parameters = [];
+    !options?.disableDescription &&
+    extractDescription(csfSource._storyStatements[key], csfSource.editor);
   // in csf 1/2/3 use Story.parameters; CSF factories use Story.input.parameters
-  const baseStoryObject = isCsfFactory
-    ? t.memberExpression(t.identifier(key), t.identifier('input'))
-    : t.identifier(key);
-  const originalParameters = t.memberExpression(baseStoryObject, t.identifier('parameters'));
-  parameters.push(t.spreadElement(originalParameters));
-  const optionalDocs = t.optionalMemberExpression(
-    originalParameters,
-    t.identifier('docs'),
-    false,
-    true
-  );
-  const extraDocsParameters = [];
+  const originalParameters = csfSource._metaIsFactory
+    ? `${key}.input.parameters`
+    : `${key}.parameters`;
+  const optionalDocs = `${originalParameters}?.docs`;
+  const extraDocsParameters: string[] = [];
 
   // docs: { source: { originalSource: %%source%% } },
   if (source) {
-    const optionalSource = t.optionalMemberExpression(
-      optionalDocs,
-      t.identifier('source'),
-      false,
-      true
-    );
-
     extraDocsParameters.push(
-      t.objectProperty(
-        t.identifier('source'),
-        t.objectExpression([
-          t.objectProperty(t.identifier('originalSource'), t.stringLiteral(source)),
-          t.spreadElement(optionalSource),
-        ])
-      )
+      `source: { originalSource: ${JSON.stringify(source)}, ...${optionalDocs}?.source }`
     );
   }
 
   // docs: { description: { story: %%description%% } },
   if (description) {
-    const optionalDescription = t.optionalMemberExpression(
-      optionalDocs,
-      t.identifier('description'),
-      false,
-      true
-    );
     extraDocsParameters.push(
-      t.objectProperty(
-        t.identifier('description'),
-        t.objectExpression([
-          t.objectProperty(t.identifier('story'), t.stringLiteral(description)),
-          t.spreadElement(optionalDescription),
-        ])
-      )
+      `description: { story: ${JSON.stringify(description)}, ...${optionalDocs}?.description }`
     );
   }
 
   if (extraDocsParameters.length > 0) {
-    parameters.push(
-      t.objectProperty(
-        t.identifier('docs'),
-        t.objectExpression([t.spreadElement(optionalDocs), ...extraDocsParameters])
-      )
+    appendStatement(
+      csf.editor,
+      `${originalParameters} = { ...${originalParameters}, docs: { ...${optionalDocs}, ${extraDocsParameters.join(', ')} } };`
     );
-    const addParameter = t.expressionStatement(
-      t.assignmentExpression('=', originalParameters, t.objectExpression(parameters))
-    );
-    csf._ast.program.body.push(addParameter);
   }
 };
 
 const addComponentDescription = (
-  node: t.ObjectExpression,
+  editor: SourceEditor,
+  node: E.ObjectExpression,
   path: string[],
-  value: t.ObjectProperty
+  value: string
 ) => {
   if (!path.length) {
-    const hasExistingComponent = node.properties.find(
-      (p) => t.isObjectProperty(p) && t.isIdentifier(p.key) && p.key.name === 'component'
+    const hasExistingComponent = node.properties.some(
+      (p) => p.type === 'Property' && staticKey(p) === 'component'
     );
     if (!hasExistingComponent) {
       // make this the lowest-priority so that if the user is object-spreading on top of it,
       // the users' code will "win"
-      node.properties.unshift(value);
+      prependMembers(editor, node, [`component: ${value}`]);
     }
     return;
   }
   const [first, ...rest] = path;
   const existing = node.properties.find(
-    (p) =>
-      t.isObjectProperty(p) &&
-      t.isIdentifier(p.key) &&
-      p.key.name === first &&
-      t.isObjectExpression(p.value)
+    (p): p is E.ObjectProperty =>
+      p.type === 'Property' && staticKey(p) === first && p.value.type === 'ObjectExpression'
   );
-  let subNode: t.ObjectExpression;
   if (existing) {
-    subNode = (existing as t.ObjectProperty).value as t.ObjectExpression;
-  } else {
-    subNode = t.objectExpression([]);
-    node.properties.push(t.objectProperty(t.identifier(first), subNode));
+    addComponentDescription(editor, existing.value as E.ObjectExpression, rest, value);
+    return;
   }
-  addComponentDescription(subNode, rest, value);
+  const nested = rest.reduceRight(
+    (inner, key) => `{ ${key}: ${inner} }`,
+    `{ component: ${value} }`
+  );
+  appendMembers(editor, node, [`${first}: ${nested}`]);
 };
 
 export const enrichCsfMeta = (csf: CsfFile, csfSource: CsfFile, options?: EnrichCsfOptions) => {
-  const description = !options?.disableDescription && extractDescription(csfSource._metaStatement);
+  const description =
+    !options?.disableDescription && extractDescription(csfSource._metaStatement, csfSource.editor);
   // docs: { description: { component: %%description%% } },
   if (description) {
     const metaNode = csf._metaNode;
-    if (metaNode && t.isObjectExpression(metaNode)) {
+    if (metaNode && !csf._metaNodeIsSynthetic) {
       addComponentDescription(
+        csf.editor,
         metaNode,
         ['parameters', 'docs', 'description'],
-        t.objectProperty(t.identifier('component'), t.stringLiteral(description))
+        JSON.stringify(description)
       );
     }
   }
 };
 
+/**
+ * Add `docs.source.originalSource` and JSDoc descriptions to a parsed CSF file. Edits accumulate
+ * on `csf`; print them with `formatCsf(csf, { sourceMaps: true })`.
+ */
 export const enrichCsf = async (csf: CsfFile, csfSource: CsfFile, options?: EnrichCsfOptions) => {
   enrichCsfMeta(csf, csfSource, options);
   await options?.enrichCsf?.(csf, csfSource);
@@ -149,19 +118,21 @@ export const enrichCsf = async (csf: CsfFile, csfSource: CsfFile, options?: Enri
   });
 };
 
-export const extractSource = (node: t.Node) => {
-  const src = t.isVariableDeclarator(node) ? node.init : node;
-  const { code } = generate(src as t.Node, {});
-  return code;
+// The story's own source text: the initializer of `const X = …`, or the function itself.
+export const extractSource = (node: Node, code: string) => {
+  const src = node?.type === 'VariableDeclarator' ? node.init : node;
+  return src ? code.slice(src.start, src.end) : '';
 };
 
-export const extractDescription = (node?: t.Node) => {
-  if (!node?.leadingComments) {
-    return '';
-  }
-  const comments = node.leadingComments
+const leadingComments = (node: Node | undefined, editor: SourceEditor) => {
+  const start = (node as { start?: number } | undefined)?.start;
+  return start === undefined ? [] : triviaBefore(editor, start).comments;
+};
+
+export const extractDescription = (node: Node | undefined, editor: SourceEditor) => {
+  const comments = leadingComments(node, editor)
     .map((comment) => {
-      if (comment.type === 'CommentLine' || !comment.value.startsWith('*')) {
+      if (comment.type === 'Line' || !comment.value.startsWith('*')) {
         return null;
       }
       return (

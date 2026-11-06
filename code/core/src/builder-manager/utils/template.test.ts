@@ -30,9 +30,7 @@ const renderManagerHtml = (customHead = '') =>
     Promise.resolve({}),
     {
       versionCheck: undefined,
-      previewUrl: undefined,
       configType: 'DEVELOPMENT',
-      ignorePreview: false,
     } as Options,
     {}
   );

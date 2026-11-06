@@ -28,9 +28,6 @@
     },
   },
   "heading": {
-    "defaultValue": {
-      "summary": "'Title'",
-    },
     "description": "",
     "name": "heading",
     "table": {

@@ -5,10 +5,10 @@
   "description": "Test Storybook for the MCP packages in the monorepo",
   "scripts": {
     "build-storybook": "storybook build",
-    "storybook": "storybook dev --port 6006 --loglevel debug --no-open",
-    "storybook:composition": "storybook dev --port 6007 -c .storybook-composition --loglevel debug --no-open",
-    "storybook:composition:auth": "storybook dev --port 6008 -c .storybook-composition-auth --loglevel debug --no-open",
-    "storybook:composition:docgen-server": "storybook dev --port 6009 -c .storybook-composition-docgen-server --loglevel debug --no-open",
+    "storybook": "storybook dev --port 6006 --loglevel debug",
+    "storybook:composition": "storybook dev --port 6007 -c .storybook-composition --loglevel debug",
+    "storybook:composition:auth": "storybook dev --port 6008 -c .storybook-composition-auth --loglevel debug",
+    "storybook:composition:docgen-server": "storybook dev --port 6009 -c .storybook-composition-docgen-server --loglevel debug",
     "test": "vitest --project=e2e",
     "test:storybook": "vitest run --project=storybook",
     "typecheck": "tsc"
@@ -23,7 +23,6 @@
     "@storybook/builder-vite": "file:../../code/builders/builder-vite",
     "@storybook/mcp": "file:../../code/lib/mcp",
     "@storybook/react": "file:../../code/renderers/react",
-    "@storybook/react-dom-shim": "file:../../code/lib/react-dom-shim",
     "@storybook/react-vite": "file:../../code/frameworks/react-vite",
     "playwright": "1.58.2",
     "storybook": "file:../../code/core"

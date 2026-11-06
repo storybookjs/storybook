@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { logger, prompt } from 'storybook/internal/node-logger';
+
 import { JsPackageManager } from './JsPackageManager.ts';
+
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 const mockVersions = vi.hoisted(() => ({
   '@storybook/react': '8.3.0',
@@ -20,6 +24,32 @@ describe('JsPackageManager', () => {
     mockLatestVersion = vi.spyOn(jsPackageManager, 'latestVersion');
 
     vi.clearAllMocks();
+  });
+
+  describe('getInstalledVersion', () => {
+    let first: JsPackageManager;
+    let second: JsPackageManager;
+
+    beforeEach(() => {
+      JsPackageManager.installedVersionCache.clear();
+      // @ts-expect-error Ignore abstract class error
+      first = new JsPackageManager({ configDir: '/project-a/.storybook' });
+      // @ts-expect-error Ignore abstract class error
+      second = new JsPackageManager({ configDir: '/project-b/.storybook' });
+      const installationsOf = (version: string) => ({
+        dependencies: { typescript: [{ version, location: '' }] },
+        duplicatedDependencies: {},
+        infoCommand: '',
+        dedupeCommand: '',
+      });
+      first.findInstallations = vi.fn().mockResolvedValue(installationsOf('6.0.3'));
+      second.findInstallations = vi.fn().mockResolvedValue(installationsOf('7.0.2'));
+    });
+
+    it('keeps the installed version of each project apart', async () => {
+      await expect(first.getInstalledVersion('typescript')).resolves.toBe('6.0.3');
+      await expect(second.getInstalledVersion('typescript')).resolves.toBe('7.0.2');
+    });
   });
 
   describe('getVersionedPackages method', () => {
@@ -86,6 +116,75 @@ describe('JsPackageManager', () => {
       const result = await jsPackageManager.getVersionedPackages(['some-other-package']);
 
       expect(result).toEqual(['some-other-package']);
+    });
+  });
+
+  describe('installDependencies method', () => {
+    it('propagates a truncated npm stderr tail into the thrown error', async () => {
+      const stderr = [
+        'npm error code ERESOLVE',
+        ...Array.from({ length: 30 }, (_, i) => `npm error while resolving line ${i}`),
+        'npm error Could not resolve dependency: vitest@5.0.0',
+      ].join('\n');
+      vi.mocked(prompt.executeTaskWithSpinner).mockRejectedValue(
+        Object.assign(new Error('Command failed: npm install'), { stderr })
+      );
+
+      const error = await jsPackageManager.installDependencies().then(
+        () => null,
+        (e) => e
+      );
+
+      // The tail (last 15 lines) is folded into the error message...
+      expect(error.message).toContain('Could not resolve dependency: vitest@5.0.0');
+      // ...truncated: the head of a long stderr does not leak into the message...
+      expect(error.message).not.toContain('npm error code ERESOLVE');
+      // ...and is printed so failures behind the spinner name themselves.
+      expect(vi.mocked(logger.error)).toHaveBeenCalledWith(expect.stringContaining('vitest@5.0.0'));
+    });
+
+    it('logs and folds a short stderr tail into the thrown error', async () => {
+      const stderr = [
+        'npm error code ERESOLVE',
+        'npm error Could not resolve dependency: vitest@5.0.0',
+      ].join('\n');
+      vi.mocked(prompt.executeTaskWithSpinner).mockRejectedValue(
+        Object.assign(new Error('Command failed: npm install'), { stderr })
+      );
+
+      const error = await jsPackageManager.installDependencies().then(
+        () => null,
+        (e) => e
+      );
+
+      // Short outputs are surfaced too — not silently dropped because they fit the tail window.
+      expect(vi.mocked(logger.error)).toHaveBeenCalledWith(expect.stringContaining('ERESOLVE'));
+      expect(error.message).toContain('Could not resolve dependency: vitest@5.0.0');
+    });
+
+    it('does not duplicate the tail when the error message already contains it', async () => {
+      // A plain Error with no structured stderr: getErrorLogs falls back to the message itself,
+      // so the tail equals the message and appending would duplicate it.
+      const message =
+        'Command failed: npm install\nnpm error code ERESOLVE\nnpm error Could not resolve dependency: vitest@5.0.0';
+      vi.mocked(prompt.executeTaskWithSpinner).mockRejectedValue(new Error(message));
+
+      const error = await jsPackageManager.installDependencies().then(
+        () => null,
+        (e) => e
+      );
+
+      // The tail is still printed, but not appended a second time.
+      expect(vi.mocked(logger.error)).toHaveBeenCalledWith(expect.stringContaining('ERESOLVE'));
+      expect(error.message).toBe(message);
+    });
+
+    it('resolves and clears the installed version cache on success', async () => {
+      const clearSpy = vi.spyOn(jsPackageManager, 'clearInstalledVersionCache');
+      vi.mocked(prompt.executeTaskWithSpinner).mockResolvedValue(undefined);
+
+      await expect(jsPackageManager.installDependencies()).resolves.toBeUndefined();
+      expect(clearSpy).toHaveBeenCalled();
     });
   });
 });

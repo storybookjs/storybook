@@ -2,20 +2,19 @@ import type {
   Declaration,
   ExportDefaultDeclaration,
   ExportNamedDeclaration,
-  Expression,
   Pattern,
   Program,
 } from 'estree';
 import MagicString from 'magic-string';
 
+import { outerSpan, parseModule } from '../csf-tools/estree/ast.ts';
 import { type Positioned, getArbitraryModuleIdentifier } from './esmWalker.ts';
-
-type ParseFn = (code: string) => Program;
 
 export const __STORYBOOK_GLOBAL_THIS_ACCESSOR__ = '__vitest_mocker__';
 
-export function getAutomockCode(originalCode: string, isSpy: boolean, parse: ParseFn) {
-  const mocked = automockModule(originalCode, isSpy ? 'autospy' : 'automock', parse, {
+/** Mock the exports of a module. The file name picks the grammar it is parsed with. */
+export function getAutomockCode(originalCode: string, isSpy: boolean, fileName?: string) {
+  const mocked = automockModule(originalCode, isSpy ? 'autospy' : 'automock', fileName, {
     globalThisAccessor: JSON.stringify(__STORYBOOK_GLOBAL_THIS_ACCESSOR__),
   });
   return mocked;
@@ -44,17 +43,19 @@ export function getAutomockCode(originalCode: string, isSpy: boolean, parse: Par
  * DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-export function automockModule(
+function automockModule(
   code: string,
   mockType: 'automock' | 'autospy',
-  parse: (code: string) => any,
+  fileName: string | undefined,
   options: any = {}
 ): MagicString {
   const globalThisAccessor =
     options.globalThisAccessor || JSON.stringify(__STORYBOOK_GLOBAL_THIS_ACCESSOR__);
-  const ast = parse(code) as Program;
+  // Edits apply at the parsed offsets, which index the code with `\n` line endings.
+  const { code: text, program } = parseModule(code, fileName);
+  const ast = program as unknown as Program;
 
-  const m = new MagicString(code);
+  const m = new MagicString(text);
 
   const allSpecifiers: { name: string; alias?: string }[] = [];
   let importIndex = 0;
@@ -98,10 +99,9 @@ export function automockModule(
         } else if (expression.type === 'RestElement') {
           traversePattern(expression.argument);
         }
-        // const [name[1], name[2]] = []
-        // cannot be used in export
+        // export const { a = 1 } = {}
         else if (expression.type === 'AssignmentPattern') {
-          throw new Error(`AssignmentPattern is not supported. Please open a new bug report.`);
+          traversePattern(expression.left);
         }
         // const test = thing.func()
         // cannot be used in export
@@ -159,9 +159,12 @@ export function automockModule(
     }
     if (_node.type === 'ExportDefaultDeclaration') {
       const node = _node as Positioned<ExportDefaultDeclaration>;
-      const declaration = node.declaration as Positioned<Expression>;
       allSpecifiers.push({ name: '__vitest_default', alias: 'default' });
-      m.overwrite(node.start, declaration.start, `const __vitest_default = `);
+      m.overwrite(
+        node.start,
+        outerSpan(node.declaration as Positioned<typeof node.declaration>).start,
+        `const __vitest_default = `
+      );
     }
   }
   const moduleObject = `

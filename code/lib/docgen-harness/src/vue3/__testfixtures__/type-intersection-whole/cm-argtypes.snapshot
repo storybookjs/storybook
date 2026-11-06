@@ -14,7 +14,6 @@
     },
   },
   "id": {
-    "defaultValue": undefined,
     "description": "Unique identifier.",
     "name": "id",
     "table": {
@@ -30,7 +29,6 @@
     },
   },
   "size": {
-    "defaultValue": undefined,
     "description": "Size of the button.",
     "name": "size",
     "table": {

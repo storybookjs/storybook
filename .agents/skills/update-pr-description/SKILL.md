@@ -1,6 +1,8 @@
 ---
 name: update-pr-description
 description: Evaluate a PR's title and description against its actual implementation, then iteratively suggest and apply updates. Use when the user asks to check, fix, or update a PR title or description.
+metadata:
+  internal: true
 ---
 
 # Update PR Description

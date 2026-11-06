@@ -142,7 +142,7 @@ export function getOptions<TOptions extends OptionSpecifier>(
       };
 
       if (option.type === 'string') {
-        return acc.option(flags, option.description, (raw) => {
+        return acc.option(flags, option.description ?? '', (raw) => {
           return checkStringValue(raw);
         });
       }
@@ -150,8 +150,8 @@ export function getOptions<TOptions extends OptionSpecifier>(
       if (option.type === 'string[]') {
         return acc.option(
           flags,
-          option.description,
-          (raw, values) => [...values, checkStringValue(raw)],
+          option.description ?? '',
+          (raw, values: string[]) => [...values, checkStringValue(raw)],
           []
         );
       }
@@ -232,8 +232,9 @@ export async function promptOptions<TOptions extends OptionSpecifier>(
     let type: PromptObject['type'] = defaultType;
     // Allow returning `undefined` from `type()` function to fallback to default
     if (typeof passedType === 'function') {
-      type = (...args: Parameters<typeof passedType>) => {
-        const chosenType = passedType(...args);
+      type = (prev, answers, prompt) => {
+        // `prompts` only passes answers to questions it asked, not values given on the command line
+        const chosenType = passedType(prev, { ...values, ...answers }, prompt);
         return chosenType === true ? defaultType : chosenType;
       };
     } else if (typeof passedType !== 'undefined') {

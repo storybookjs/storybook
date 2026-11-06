@@ -1,6 +1,6 @@
 /**
- * Docs access backed by the manifests core builds itself (the default mode, with
- * `experimentalDocgenServer` off).
+ * Docs access backed by the manifests core builds itself (the opt-out mode, with
+ * `docgenServer` off).
  *
  * Those manifests are fully inline: component rows carry their docgen, stories, and attached MDX
  * content, and standalone docs carry their MDX content. `$ref` indirection only appears in

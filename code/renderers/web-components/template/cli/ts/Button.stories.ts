@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/web-components';
+import preview from '../../.storybook/preview';
 
 import { fn } from 'storybook/test';
 
@@ -6,7 +6,7 @@ import type { ButtonProps } from './Button';
 import { Button } from './Button';
 
 // More on how to set up stories at: https://storybook.js.org/docs/writing-stories
-const meta = {
+const meta = preview.type<{ args: ButtonProps }>().meta({
   title: 'Example/Button',
   tags: ['autodocs'],
   render: (args) => Button(args),
@@ -18,35 +18,32 @@ const meta = {
     },
   },
   args: { onClick: fn() },
-} satisfies Meta<ButtonProps>;
-
-export default meta;
-type Story = StoryObj<ButtonProps>;
+});
 
 // More on writing stories with args: https://storybook.js.org/docs/writing-stories/args
-export const Primary: Story = {
+export const Primary = meta.story({
   args: {
     primary: true,
     label: 'Button',
   },
-};
+});
 
-export const Secondary: Story = {
+export const Secondary = meta.story({
   args: {
     label: 'Button',
   },
-};
+});
 
-export const Large: Story = {
+export const Large = meta.story({
   args: {
     size: 'large',
     label: 'Button',
   },
-};
+});
 
-export const Small: Story = {
+export const Small = meta.story({
   args: {
     size: 'small',
     label: 'Button',
   },
-};
+});

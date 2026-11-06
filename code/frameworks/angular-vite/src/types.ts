@@ -28,7 +28,7 @@ export type FrameworkOptions = {
    *
    * Tag a member `@ignore` to drop it whatever this says.
    *
-   * `api` needs `features.experimentalDocgenServer`; without it only `all` and `inputs` apply.
+   * `api` needs `features.docgenServer`; without it only `all` and `inputs` apply.
    *
    * @default 'api'
    */

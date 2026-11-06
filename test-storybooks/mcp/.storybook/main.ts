@@ -29,10 +29,9 @@ const config = defineMain({
 		disableTelemetry: true,
 	},
 	features: {
-		changeDetection: true,
-		// @ts-expect-error -- not yet in core's features type; review is opt-in via this flag
-		experimentalReview: true,
 		experimentalComponentsManifest: true,
+		// These configs snapshot the legacy manifest path; `.storybook-composition-docgen-server` covers the server.
+		docgenServer: false,
 	},
 	// No refs - single source mode
 });

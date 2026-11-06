@@ -35,3 +35,7 @@ export function typeCheckPassesWhenExpectedDOD(ctx: SetupInstructionsContext): s
 export function sharedPreviewDOD(ctx: SetupInstructionsContext): string {
   return dedent`The shared preview is strong enough that stories don't need per-story fetch/provider workarounds.`;
 }
+
+export function optionalTestInfrastructureDOD(_ctx: SetupInstructionsContext): string {
+  return dedent`MSW was added only if at least one selected story makes network requests, and MockDate only if at least one selected story depends on the current date or time. Each dependency you added is exercised by at least one verified story. Existing MSW or MockDate setup in the project is left in place.`;
+}

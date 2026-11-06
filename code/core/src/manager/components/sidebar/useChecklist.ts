@@ -10,8 +10,8 @@ import {
 import { debounce, throttle } from 'es-toolkit/function';
 import {
   type API,
-  experimental_UniversalStore,
-  experimental_useUniversalStore,
+  internal_UniversalStore,
+  internal_useUniversalStore,
   useStorybookApi,
   useStorybookState,
 } from 'storybook/manager-api';
@@ -116,7 +116,7 @@ const checkLockedBy = (
 export const useChecklist = () => {
   const api = useStorybookApi();
   const index = useStoryIndex();
-  const [checklistState] = experimental_useUniversalStore(universalChecklistStore);
+  const [checklistState] = internal_useUniversalStore(universalChecklistStore);
   const { loaded, items, widget } = checklistState;
   const { status } = universalChecklistStore;
 
@@ -198,7 +198,7 @@ export const useChecklist = () => {
   }, [allItems]);
 
   useEffect(() => {
-    if (!loaded || status !== experimental_UniversalStore.Status.READY) {
+    if (!loaded || status !== internal_UniversalStore.Status.READY) {
       return;
     }
 
@@ -240,7 +240,7 @@ export const useChecklist = () => {
   }, [api]);
 
   useEffect(() => {
-    if (initialized && items && status === experimental_UniversalStore.Status.READY) {
+    if (initialized && items && status === internal_UniversalStore.Status.READY) {
       debounceReady();
     }
   }, [initialized, items, status, debounceReady]);

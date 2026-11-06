@@ -151,6 +151,7 @@ type StorybookContext = {
 					input: { id: string; storybookId?: string };
 					foundDocumentation: ComponentManifest | Doc;
 					resultText: string;
+					resolvedStorybookId?: string;
 			  }
 			| {
 					context: StorybookContext;
@@ -225,6 +226,7 @@ Type:
         input: { id: string; storybookId?: string };
         foundDocumentation: ComponentManifest | Doc;
         resultText: string;
+        resolvedStorybookId?: string;
       }
     | {
         context: StorybookContext;
@@ -236,6 +238,7 @@ Type:
 Optional callback after `docs-show` runs:
 
 - When a component/docs entry is found, receives `foundDocumentation` and `resultText`.
+- When it is found in another source than `input.storybookId`, also receives that source as `resolvedStorybookId`.
 - When not found, receives only `context` and `input`.
 
 ##### `sources`
@@ -355,7 +358,7 @@ Type:
 
 Registers [documentation lookup](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-show) by component/docs `id`.
 
-When `options.multiSource` is `true`, the tool schema requires `storybookId` input.
+When `options.multiSource` is `true`, the tool schema takes an optional `storybookId` input, defaulting to `local`.
 
 #### `addGetStoryDocumentationTool`
 

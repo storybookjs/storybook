@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { recast, types as t } from 'storybook/internal/babel';
-
 import { dedent } from 'ts-dedent';
 
 import { loadCsf } from '../CsfFile.ts';
+import { textOf } from '../estree/ast.ts';
 import { normalizeStoryDeclaration } from './normalize-story.ts';
 
 const parse = (code: string) => {
@@ -12,14 +11,15 @@ const parse = (code: string) => {
 };
 
 const normalize = (code: string, exportName = 'A') => {
-  return normalizeStoryDeclaration(parse(code)._storyDeclarationPath[exportName]);
+  const csf = parse(code);
+  csf.editor.parentOf(csf.program);
+  return normalizeStoryDeclaration(csf._storyExports[exportName], csf.editor);
 };
 
 const printedShape = (code: string) => {
   const normalized = normalize(code);
   return {
-    // Recast may emit CRLF on Windows; keep assertions LF-stable across OSes.
-    code: recast.print(normalized.path.node).code.replace(/\r\n/g, '\n'),
+    code: textOf(normalized.node),
     type: normalized.type,
   };
 };
@@ -167,7 +167,44 @@ describe('normalizeStoryDeclaration', () => {
     `);
 
     expect(normalized.type).toBe('fn');
-    expect(t.isArrowFunctionExpression(normalized.path.node)).toBe(true);
+    expect(normalized.node.type).toBe('ArrowFunctionExpression');
+  });
+
+  it('resolves a story export that references a local function', () => {
+    const normalized = normalize(
+      dedent`
+      export default { title: 'Paragraph' };
+      const ParagraphStory = ({ text }) => <p>{text}</p>;
+      export const Example = ParagraphStory;
+    `,
+      'Example'
+    );
+
+    expect(normalized.type).toBe('fn');
+    expect(normalized.node.type).toBe('ArrowFunctionExpression');
+  });
+
+  it('resolves a typed chain of immutable local story aliases', () => {
+    expect(
+      printedShape(dedent`
+        type Story = unknown;
+        export default { title: 'Paragraph' };
+        const Impl = ({ text }) => <p>{text}</p>;
+        const Alias = Impl as Story;
+        export const A = Alias satisfies Story;
+      `)
+    ).toEqual({ code: '({ text }) => <p>{text}</p>', type: 'fn' });
+  });
+
+  it('does not use the initial value of a reassigned story helper', () => {
+    expect(() =>
+      normalize(dedent`
+        export default { title: 'Paragraph' };
+        let Helper = () => null;
+        Helper = { args: {} };
+        export const A = Helper;
+      `)
+    ).toThrow('Expected story to be csf factory, function or an object expression');
   });
 
   it('throws for factory calls with more than one argument', () => {

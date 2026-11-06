@@ -8,7 +8,24 @@ import { connect } from 'node:net';
 import { stringify } from 'telejson';
 import type { WebSocketServer } from 'ws';
 
+import {
+  PREVIEW_INITIALIZED,
+  SAVE_STORY_REQUEST,
+  SAVE_STORY_RESPONSE,
+} from 'storybook/internal/core-events';
+
 import { ServerChannelTransport, getServerChannel } from '../get-server-channel.ts';
+
+// This machine is 192.168.1.100 on its LAN and 10.0.0.7 on a second interface.
+vi.mock('node:os', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:os')>();
+  const networkInterfaces = () => ({
+    lo: [{ address: '127.0.0.1', family: 'IPv4', internal: true }],
+    eth0: [{ address: '192.168.1.100', family: 'IPv4', internal: false }],
+    wlan0: [{ address: '10.0.0.7', family: 'IPv4', internal: false }],
+  });
+  return { ...actual, default: { ...actual, networkInterfaces }, networkInterfaces };
+});
 
 const mockToken = 'test-token-123';
 
@@ -42,6 +59,17 @@ function closeCreatedTransports() {
 
 function websocketServer(transport: ServerChannelTransport) {
   return (transport as unknown as { socket: WebSocketServer }).socket;
+}
+
+function connectClient(server: Server, transport: ServerChannelTransport, page?: string) {
+  const client = new EventEmitter();
+  vi.spyOn(websocketServer(transport), 'handleUpgrade').mockImplementation(
+    (request, _socket, _head, callback) => callback(client as any, request)
+  );
+  const query = page ? `&page=${page}` : '';
+  const request = { url: `/storybook-server-channel?token=${mockToken}${query}`, headers: {} };
+  server.listeners('upgrade')[0](request, { end: vi.fn() }, Buffer.from(''));
+  return client;
 }
 
 async function readRejectedUpgrade(requestLines: string[]): Promise<string> {
@@ -118,12 +146,11 @@ describe('ServerChannelTransport', () => {
 
   it('parses simple JSON', () => {
     const server = new EventEmitter() as any as Server;
-    const socket = new EventEmitter();
     const transport = createTransport(server);
     const handler = vi.fn();
     transport.setHandler(handler);
 
-    websocketServer(transport).emit('connection', socket);
+    const socket = connectClient(server, transport);
     socket.emit('message', '"hello"');
 
     expect(handler).toHaveBeenCalledWith('hello');
@@ -131,12 +158,11 @@ describe('ServerChannelTransport', () => {
 
   it('parses object JSON', () => {
     const server = new EventEmitter() as any as Server;
-    const socket = new EventEmitter();
     const transport = createTransport(server);
     const handler = vi.fn();
     transport.setHandler(handler);
 
-    websocketServer(transport).emit('connection', socket);
+    const socket = connectClient(server, transport);
     socket.emit('message', JSON.stringify({ type: 'hello' }));
 
     expect(handler).toHaveBeenCalledWith({ type: 'hello' });
@@ -144,12 +170,11 @@ describe('ServerChannelTransport', () => {
 
   it('supports telejson cyclical data', () => {
     const server = new EventEmitter() as any as Server;
-    const socket = new EventEmitter();
     const transport = createTransport(server);
     const handler = vi.fn();
     transport.setHandler(handler);
 
-    websocketServer(transport).emit('connection', socket);
+    const socket = connectClient(server, transport);
 
     const input: any = { a: 1 };
     input.b = input;
@@ -217,7 +242,7 @@ describe('ServerChannelTransport', () => {
 
     // Simulate upgrade request with correct token and valid origin
     const request = {
-      url: `/storybook-server-channel?token=${mockToken}`,
+      url: `/storybook-server-channel?token=${mockToken}&page=manager`,
       headers: {
         origin: 'http://localhost:6006',
       },
@@ -249,6 +274,30 @@ describe('ServerChannelTransport', () => {
     server.listeners('upgrade')[0](request, socket, head);
 
     expect(endSpy).toHaveBeenCalledWith('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+  });
+
+  it('rejects connections from an origin at an unknown IP address', () => {
+    const server = new EventEmitter() as any as Server;
+    const socket = new EventEmitter() as any;
+    socket.end = vi.fn();
+    const endSpy = vi.spyOn(socket, 'end');
+    const transport = createTransport(server);
+    const handleUpgradeSpy = vi
+      .spyOn(websocketServer(transport), 'handleUpgrade')
+      .mockImplementation(() => {});
+
+    const request = {
+      url: `/storybook-server-channel?token=${mockToken}`,
+      headers: {
+        origin: 'http://203.0.113.5',
+      },
+    } as any;
+    const head = Buffer.from('');
+
+    server.listeners('upgrade')[0](request, socket, head);
+
+    expect(endSpy).toHaveBeenCalledWith('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+    expect(handleUpgradeSpy).not.toHaveBeenCalled();
   });
 
   it('accepts connections without origin header when the token is valid', () => {
@@ -329,7 +378,7 @@ describe('ServerChannelTransport', () => {
 
     // Simulate upgrade request with network address origin
     const request = {
-      url: `/storybook-server-channel?token=${mockToken}`,
+      url: `/storybook-server-channel?token=${mockToken}&page=manager`,
       headers: {
         origin: 'http://192.168.1.100:6006',
       },
@@ -340,6 +389,65 @@ describe('ServerChannelTransport', () => {
 
     expect(endSpy).not.toHaveBeenCalled();
     expect(handleUpgradeSpy).toHaveBeenCalled();
+  });
+
+  describe('origins on the local network', () => {
+    const isUpgradeAccepted = (origin: string, transportOptions: typeof options) => {
+      const server = new EventEmitter() as any as Server;
+      const socket = new EventEmitter() as any;
+      socket.end = vi.fn();
+      const transport = createTransport(server, transportOptions);
+      const handleUpgradeSpy = vi
+        .spyOn(websocketServer(transport), 'handleUpgrade')
+        .mockImplementation(() => {});
+
+      server.listeners('upgrade')[0](
+        {
+          url: `/storybook-server-channel?token=${mockToken}&page=manager`,
+          headers: { origin },
+        } as any,
+        socket,
+        Buffer.from('')
+      );
+
+      return handleUpgradeSpy.mock.calls.length > 0;
+    };
+
+    it.each([
+      ['without --host', options],
+      ['when --host is the LAN address of this machine', { ...options, host: '192.168.1.100' }],
+      [
+        'when --host is 0.0.0.0 and core.allowedHosts is a list',
+        { ...options, host: '0.0.0.0', allowedHosts: ['storybook.example.com'] },
+      ],
+    ])('rejects an origin served by another machine on the LAN %s', (_, transportOptions) => {
+      expect(isUpgradeAccepted('http://192.168.1.50:6006', transportOptions)).toBe(false);
+    });
+
+    it('accepts an origin served by another machine on the LAN when core.allowedHosts lists it', () => {
+      expect(
+        isUpgradeAccepted('http://192.168.1.50:6006', {
+          ...options,
+          allowedHosts: ['192.168.1.50'],
+        })
+      ).toBe(true);
+    });
+
+    it('accepts an origin at the LAN address of this machine when --host is that address', () => {
+      expect(
+        isUpgradeAccepted('http://192.168.1.100:6006', { ...options, host: '192.168.1.100' })
+      ).toBe(true);
+    });
+
+    it('accepts an origin at another address of this machine when --host is 0.0.0.0', () => {
+      expect(
+        isUpgradeAccepted('http://10.0.0.7:6006', {
+          ...options,
+          host: '0.0.0.0',
+          allowedHosts: ['storybook.example.com'],
+        })
+      ).toBe(true);
+    });
   });
 
   it('accepts connections with 127.0.0.1 origin', () => {
@@ -354,7 +462,7 @@ describe('ServerChannelTransport', () => {
 
     // Simulate upgrade request with 127.0.0.1 origin
     const request = {
-      url: `/storybook-server-channel?token=${mockToken}`,
+      url: `/storybook-server-channel?token=${mockToken}&page=manager`,
       headers: {
         origin: 'http://127.0.0.1:6006',
       },
@@ -404,7 +512,7 @@ describe('ServerChannelTransport', () => {
       .mockImplementation(() => {});
 
     const request = {
-      url: '/storybook-server-channel',
+      url: '/storybook-server-channel?page=manager',
       headers: {
         origin: 'http://localhost:6006',
       },
@@ -428,7 +536,7 @@ describe('ServerChannelTransport', () => {
       .mockImplementation(() => {});
 
     const request = {
-      url: '/storybook-server-channel?token=wrong-token',
+      url: '/storybook-server-channel?token=wrong-token&page=manager',
       headers: {
         origin: 'http://malicious-site.com',
       },
@@ -460,5 +568,158 @@ describe('ServerChannelTransport', () => {
       'Origin: http://malicious-site.com',
     ]);
     expect(response).toContain('HTTP/1.1 403 Forbidden');
+  });
+  describe('client role separation', () => {
+    it('drops manager-only events from a preview connection', () => {
+      const server = new EventEmitter() as any as Server;
+      const transport = createTransport(server);
+      const handler = vi.fn();
+      transport.setHandler(handler);
+
+      const socket = connectClient(server, transport, 'preview');
+      socket.emit('message', JSON.stringify({ type: SAVE_STORY_REQUEST, args: [] }));
+
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('accepts manager-only events from a manager connection', () => {
+      const server = new EventEmitter() as any as Server;
+      const transport = createTransport(server);
+      const handler = vi.fn();
+      transport.setHandler(handler);
+
+      const socket = connectClient(server, transport, 'manager');
+      socket.emit('message', JSON.stringify({ type: SAVE_STORY_REQUEST, args: [] }));
+
+      expect(handler).toHaveBeenCalledWith({ type: SAVE_STORY_REQUEST, args: [] });
+    });
+
+    it('drops preview-only events from a manager connection', () => {
+      const server = new EventEmitter() as any as Server;
+      const transport = createTransport(server);
+      const handler = vi.fn();
+      transport.setHandler(handler);
+
+      const socket = connectClient(server, transport, 'manager');
+      socket.emit('message', JSON.stringify({ type: PREVIEW_INITIALIZED, args: [] }));
+
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('accepts preview-only events from a preview connection', () => {
+      const server = new EventEmitter() as any as Server;
+      const transport = createTransport(server);
+      const handler = vi.fn();
+      transport.setHandler(handler);
+
+      const socket = connectClient(server, transport, 'preview');
+      socket.emit('message', JSON.stringify({ type: PREVIEW_INITIALIZED, args: [] }));
+
+      expect(handler).toHaveBeenCalledWith({ type: PREVIEW_INITIALIZED, args: [] });
+    });
+
+    it('accepts unrestricted events from either browser connection', () => {
+      const server = new EventEmitter() as any as Server;
+      const transport = createTransport(server);
+      const handler = vi.fn();
+      transport.setHandler(handler);
+
+      connectClient(server, transport, 'preview').emit(
+        'message',
+        JSON.stringify({ type: 'someEvent', args: [] })
+      );
+      connectClient(server, transport, 'manager').emit(
+        'message',
+        JSON.stringify({ type: 'someEvent', args: [] })
+      );
+
+      expect(handler).toHaveBeenCalledTimes(2);
+    });
+
+    it('accepts only server-sent and unrestricted events from a connection without a page parameter', () => {
+      const server = new EventEmitter() as any as Server;
+      const transport = createTransport(server);
+      const handler = vi.fn();
+      transport.setHandler(handler);
+
+      const socket = connectClient(server, transport);
+      socket.emit('message', JSON.stringify({ type: SAVE_STORY_REQUEST, args: [] }));
+      socket.emit('message', JSON.stringify({ type: PREVIEW_INITIALIZED, args: [] }));
+      socket.emit('message', JSON.stringify({ type: SAVE_STORY_RESPONSE, args: [] }));
+      socket.emit('message', JSON.stringify({ type: 'someEvent', args: [] }));
+
+      expect(handler).toHaveBeenCalledTimes(2);
+      expect(handler).toHaveBeenCalledWith({ type: SAVE_STORY_RESPONSE, args: [] });
+      expect(handler).toHaveBeenCalledWith({ type: 'someEvent', args: [] });
+    });
+
+    it('drops server-sent events arriving from any browser connection', () => {
+      const server = new EventEmitter() as any as Server;
+      const transport = createTransport(server);
+      const handler = vi.fn();
+      transport.setHandler(handler);
+
+      connectClient(server, transport, 'manager').emit(
+        'message',
+        JSON.stringify({ type: SAVE_STORY_RESPONSE, args: [] })
+      );
+      connectClient(server, transport, 'preview').emit(
+        'message',
+        JSON.stringify({ type: SAVE_STORY_RESPONSE, args: [] })
+      );
+
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('rejects upgrades from a browser that declares no page', () => {
+      const server = new EventEmitter() as any as Server;
+      const socket = new EventEmitter() as any;
+      socket.end = vi.fn();
+      const endSpy = vi.spyOn(socket, 'end');
+      const transport = createTransport(server);
+      const handleUpgradeSpy = vi
+        .spyOn(websocketServer(transport), 'handleUpgrade')
+        .mockImplementation(() => {});
+
+      const request = {
+        url: `/storybook-server-channel?token=${mockToken}`,
+        headers: { origin: 'http://localhost:6006' },
+      } as any;
+
+      server.listeners('upgrade')[0](request, socket, Buffer.from(''));
+
+      expect(endSpy).toHaveBeenCalledWith('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n');
+      expect(handleUpgradeSpy).not.toHaveBeenCalled();
+    });
+
+    it('rejects upgrades that declare an unknown page', () => {
+      const server = new EventEmitter() as any as Server;
+      const socket = new EventEmitter() as any;
+      socket.end = vi.fn();
+      const endSpy = vi.spyOn(socket, 'end');
+      const transport = createTransport(server);
+      const handleUpgradeSpy = vi
+        .spyOn(websocketServer(transport), 'handleUpgrade')
+        .mockImplementation(() => {});
+
+      const request = {
+        url: `/storybook-server-channel?token=${mockToken}&page=admin`,
+        headers: { origin: 'http://localhost:6006' },
+      } as any;
+
+      server.listeners('upgrade')[0](request, socket, Buffer.from(''));
+
+      expect(endSpy).toHaveBeenCalledWith('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n');
+      expect(handleUpgradeSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  it('does not crash when a socket emits an error', () => {
+    const server = new EventEmitter() as any as Server;
+    const transport = createTransport(server);
+
+    const socket = connectClient(server, transport, 'manager');
+
+    expect(() => socket.emit('error', new Error('Max payload size exceeded'))).not.toThrow();
   });
 });

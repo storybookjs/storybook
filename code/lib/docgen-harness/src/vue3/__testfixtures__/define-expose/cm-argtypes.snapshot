@@ -17,7 +17,6 @@
     },
   },
   "label": {
-    "defaultValue": undefined,
     "description": "Visible label of the counter button.",
     "name": "label",
     "table": {

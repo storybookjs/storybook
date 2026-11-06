@@ -17,7 +17,6 @@
     },
   },
   "modelValue": {
-    "defaultValue": undefined,
     "description": "",
     "name": "modelValue",
     "table": {

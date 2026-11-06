@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "strict": true },
+  "files": ["src/client/csf-factories.test.ts", "src/typings.d.ts"],
+  "include": []
+}

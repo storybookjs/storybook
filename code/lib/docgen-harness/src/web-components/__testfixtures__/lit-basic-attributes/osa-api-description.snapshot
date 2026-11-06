@@ -1,0 +1,14 @@
+## Attributes
+
+```
+export type LitBasicAttributesAttributes = {
+  /** Text shown in the component. */
+  label?: string = 'Basic label';
+  /** Number of items to display. */
+  count?: number = 2;
+  /** Whether the panel is disabled. */
+  disabled?: boolean = false;
+  /** Whether the panel is open. */
+  'is-open'?: boolean = false; // property: isOpen
+}
+```

@@ -574,7 +574,10 @@ export class Instrumenter {
           diff = undefined,
           actual = undefined,
           expected = undefined,
-        } = e.name === 'AssertionError' ? processError(e) : e;
+        } = (e.name === 'AssertionError' ? processError(e) : e) as Pick<
+          NonNullable<Call['exception']>,
+          'showDiff' | 'diff' | 'actual' | 'expected'
+        >;
 
         const exception = { name, message, stack, callId, showDiff, diff, actual, expected };
         this.update({ ...info, status: CallStates.ERROR, exception });
@@ -712,7 +715,7 @@ export class Instrumenter {
           next: false,
           end: false,
         };
-        const payload: SyncPayload = { controlStates, logItems };
+        const payload: SyncPayload = { storyId, controlStates, logItems };
         this.channel?.emit(EVENTS.SYNC, payload);
         return;
       }
@@ -729,7 +732,7 @@ export class Instrumenter {
         end: isPlaying,
       };
 
-      const payload: SyncPayload = { controlStates, logItems, pausedAt };
+      const payload: SyncPayload = { storyId, controlStates, logItems, pausedAt };
       this.channel?.emit(EVENTS.SYNC, payload);
     };
 

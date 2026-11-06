@@ -102,7 +102,7 @@ describe('shouldSkipStoryDocsEmit', () => {
 describe('storyDocsSourceBeforeEach', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+    vi.stubGlobal('FEATURES', { docgenServer: true });
     mockedEmitTransformCode.mockResolvedValue(undefined);
     mockStoryDocsService(() => Promise.resolve(payload));
   });
@@ -247,6 +247,18 @@ describe('storyDocsSourceBeforeEach', () => {
     const cleanup = storyDocsSourceBeforeEach(context);
     await cleanup?.();
 
+    expect(mockedEmitTransformCode).not.toHaveBeenCalled();
+  });
+
+  it('settles without rejecting when the story docs load fails', async () => {
+    mockStoryDocsService(() => Promise.reject(new Error('no runtime acknowledged the command')));
+
+    const cleanup = storyDocsSourceBeforeEach({
+      id: storyId,
+      parameters: { __isArgsStory: true },
+    } as unknown as StoryContext);
+
+    await expect(cleanup?.()).resolves.toBeUndefined();
     expect(mockedEmitTransformCode).not.toHaveBeenCalled();
   });
 

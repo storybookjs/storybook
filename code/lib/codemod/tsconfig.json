@@ -1,8 +1,7 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "allowJs": true,
-    "strict": false
+    "allowJs": true
   },
   "exclude": ["node_modules", "__testfixtures__", "__tests__"],
   "include": ["src/**/*"]

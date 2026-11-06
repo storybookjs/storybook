@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'pathe';
-import { x } from 'tinyexec';
+import { type Output, x } from 'tinyexec';
 import { parseVitestResults } from '../../../code/core/src/core-server/utils/ghost-stories/parse-vitest-report.ts';
 import type { FileChange } from './grade.ts';
 import { detectPackageManager, resolveInstallRoot } from './package-manager.ts';
@@ -97,7 +97,7 @@ export async function runStoryRenderPass(opts: {
   const [runCmd, ...runArgs] = getScriptRunCommand(pm);
 
   const timeoutMs = STORY_RENDER_TIMEOUT_MS;
-  let result: { exitCode: number | null; stdout: string; stderr: string };
+  let result: Output;
   let timedOut = false;
   try {
     result = await x(
@@ -118,7 +118,7 @@ export async function runStoryRenderPass(opts: {
   } catch (error) {
     if (isAbortTimeoutError(error)) {
       timedOut = true;
-      result = { exitCode: null, stdout: '', stderr: `Timed out after ${timeoutMs / 1000}s` };
+      result = { exitCode: undefined, stdout: '', stderr: `Timed out after ${timeoutMs / 1000}s` };
     } else {
       throw error;
     }

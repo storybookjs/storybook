@@ -182,7 +182,7 @@ describe('svelteImportParser', () => {
   it('parses a .stories.svelte (Svelte CSF) file the same way', async () => {
     const source = [
       `<script module>`,
-      `  import { defineMeta } from '@storybook/addon-svelte-csf';`,
+      `  import { defineMeta } from '@storybook/svelte-vite';`,
       `  import Button from './Button.svelte';`,
       ``,
       `  const { Story } = defineMeta({ component: Button });`,
@@ -192,7 +192,7 @@ describe('svelteImportParser', () => {
     ].join('\n');
 
     const { ctx } = makeContext(() => [
-      { specifier: '@storybook/addon-svelte-csf', kind: 'static', importedNames: null },
+      { specifier: '@storybook/svelte-vite', kind: 'static', importedNames: null },
       { specifier: './Button.svelte', kind: 'static', importedNames: null },
     ]);
 
@@ -202,7 +202,7 @@ describe('svelteImportParser', () => {
     );
 
     expect(edges).toEqual([
-      { specifier: '@storybook/addon-svelte-csf', kind: 'static', importedNames: null },
+      { specifier: '@storybook/svelte-vite', kind: 'static', importedNames: null },
       { specifier: './Button.svelte', kind: 'static', importedNames: null },
     ]);
   });

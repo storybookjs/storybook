@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { StoryContext } from 'storybook/internal/types';
+import type { StoryContextForRender } from 'storybook/internal/types';
 
 vi.mock('storybook/preview-api', () => ({
   useEffect: (cb: () => void) => {
@@ -14,12 +14,12 @@ import { withOutline } from './withOutline.ts';
 
 const OUTLINE_STYLE_ID = 'addon-outline';
 
-const runDecorator = (context: Partial<StoryContext>) =>
+const runDecorator = (context: Partial<StoryContextForRender>) =>
   withOutline(() => 'story', {
     viewMode: 'story',
     id: 'test--story',
     ...context,
-  } as StoryContext);
+  } as StoryContextForRender);
 
 describe('withOutline', () => {
   beforeEach(() => {

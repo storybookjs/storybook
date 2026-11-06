@@ -184,10 +184,9 @@ function isAgentFacingError(error: unknown): error is Error {
 /**
  * Narrows outcome data to the published output contract.
  *
- * Outcomes may carry more data than the contract declares (the rendered Markdown needs it); only
- * the declared shape reaches `structuredContent`. A mismatch is a maintainer bug, thrown as a
- * plain error — core's typed class lives outside this package's dependency-light closure — and
- * lands in the generic catch below, which logs it and reports it as an unexpected failure.
+ * A mismatch is a maintainer bug, thrown as a plain error — core's typed class lives outside this
+ * package's dependency-light closure — and lands in the generic catch below, which logs it and
+ * reports it as an unexpected failure.
  */
 async function toStructuredContent(
   outputSchema: GenericSchema | undefined,
@@ -307,8 +306,9 @@ export async function addGetDocumentationTool(
       // Skipped when the manifest itself could not be read: that is a transport failure, not a
       // lookup with an outcome to report.
       if (data) {
-        const { entry } = data as {
+        const { entry, resolvedStorybookId } = data as {
           entry?: { kind: string; component?: unknown; doc?: unknown };
+          resolvedStorybookId?: string;
         };
         const found = entry
           ? entry.kind === 'component'
@@ -323,6 +323,7 @@ export async function addGetDocumentationTool(
                 input,
                 foundDocumentation: found as never,
                 resultText: result.content[0].text,
+                resolvedStorybookId,
               }
             : { context: context!, input }
         );

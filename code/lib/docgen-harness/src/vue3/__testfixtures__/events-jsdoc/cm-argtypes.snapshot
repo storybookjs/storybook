@@ -17,7 +17,6 @@
     },
   },
   "label": {
-    "defaultValue": undefined,
     "description": "Visible label.",
     "name": "label",
     "table": {

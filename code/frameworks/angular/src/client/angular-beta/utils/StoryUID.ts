@@ -12,11 +12,7 @@ const storyCounts = new Map<string, number>();
  * @returns Uid of a story
  */
 export const getNextStoryUID = (storyId: string): string => {
-  if (!storyCounts.has(storyId)) {
-    storyCounts.set(storyId, -1);
-  }
-
-  const count = storyCounts.get(storyId) + 1;
+  const count = (storyCounts.get(storyId) ?? -1) + 1;
   storyCounts.set(storyId, count);
   return `${storyId}-${count}`;
 };

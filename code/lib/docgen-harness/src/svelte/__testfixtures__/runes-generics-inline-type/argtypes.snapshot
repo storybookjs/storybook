@@ -1,0 +1,141 @@
+{
+  "anchor": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Anchor target id.",
+    "name": "anchor",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+  "label": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Visible group label.",
+    "name": "label",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "labelless": {
+    "control": {
+      "type": "boolean",
+    },
+    "description": "Hide the visible label.",
+    "name": "labelless",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+  "onchange": {
+    "control": null,
+    "description": "Value change callback.",
+    "name": "onchange",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "(value: Value) => void",
+      },
+    },
+    "type": {
+      "name": "(value: Value) => void",
+      "required": true,
+    },
+  },
+  "size": {
+    "control": {
+      "type": "radio",
+    },
+    "description": "Control size.",
+    "name": "size",
+    "options": [
+      "icon",
+      "wide",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": ""icon" | "wide"",
+      },
+    },
+    "type": {
+      "name": ""icon" | "wide"",
+      "required": false,
+    },
+  },
+  "value": {
+    "description": "Selected value.",
+    "name": "value",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": undefined,
+      "required": true,
+    },
+  },
+  "values": {
+    "control": {
+      "type": "array",
+    },
+    "description": "Available values.",
+    "name": "values",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "[Value, string, (string | undefined)?][]",
+      },
+    },
+    "type": {
+      "name": "[Value, string, (string | undefined)?][]",
+      "required": true,
+    },
+  },
+}

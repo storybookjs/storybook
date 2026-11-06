@@ -12,6 +12,7 @@ import { dedent } from 'ts-dedent';
 import { vol } from 'memfs';
 
 import type { AngularDocgenPayload } from './build-docgen.ts';
+import type { BuildStoryDocsContext } from './story-docs-build.ts';
 import { buildStoryDocsPayload } from './story-docs-build.ts';
 import { extractHostComponentTemplate } from './story-docs-snippet.ts';
 
@@ -60,6 +61,21 @@ const buttonDocgen =
       enums: [],
     },
   });
+
+const compiledButtonDocgen = async (): Promise<AngularDocgenPayload> => ({
+  id: 'example-button',
+  name: 'ButtonComponent',
+  path: STORY_PATH,
+  jsDocTags: {},
+  angularComponentMeta: {
+    name: 'ButtonComponent',
+    selector: undefined,
+    standalone: undefined,
+    inputs: ['label'],
+    outputs: ['pressed'],
+    enums: [],
+  },
+});
 
 /** The docgen stub the story-shape file below is written against. */
 const shapesDocgen = async (): Promise<AngularDocgenPayload> => ({
@@ -207,7 +223,10 @@ const warningsOf = async (storyFile: string, extraFiles: Record<string, string> 
     [...(await storiesOf(storyFile, extraFiles))].map(([name, story]) => [name, story.warning])
   );
 
-const soleStory = async (source: string, getDocgenPayload = buttonDocgen()) => {
+const soleStory = async (
+  source: string,
+  getDocgenPayload: BuildStoryDocsContext['getDocgenPayload'] = buttonDocgen()
+) => {
   givenStoryFile(source);
   const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload });
   const stories = Object.values(payload?.stories ?? {});
@@ -326,6 +345,39 @@ describe('buildStoryDocsPayload', () => {
     expect(story.snippet).not.toContain('./button.component');
     expect(story.warning).toContain('standalone: false');
     expect(story.warning).toContain('NgModule');
+  });
+
+  it('uses a literal render template when compiled metadata has no selector or standalone value', async () => {
+    givenStoryFile(`
+      import { CommonModule } from '@angular/common';
+      import { moduleMetadata } from '@storybook/angular-vite';
+      import { ButtonComponent } from './button.component';
+      export default {
+        title: 'Example/Button',
+        component: ButtonComponent,
+        decorators: [moduleMetadata({ declarations: [ButtonComponent], imports: [CommonModule] })],
+      };
+      const Template = (args) => ({
+        component: ButtonComponent,
+        template: '<sb-button></sb-button>',
+        props: args,
+      });
+      export const Default = { render: Template, args: { label: 'Save' } };
+    `);
+
+    const payload = await buildStoryDocsPayload(
+      { entry },
+      { getDocgenPayload: compiledButtonDocgen }
+    );
+
+    const story = Object.values(payload!.stories)[0];
+    expect(story.snippet).toContain('<sb-button></sb-button>');
+    expect(story.snippet).not.toContain('NgComponentOutlet');
+    expect(story.snippet).not.toMatch(/imports: \[[^\]]*ButtonComponent/);
+    expect(story.snippet).not.toContain("import { ButtonComponent } from './button.component';");
+    expect(story.snippet).toContain('imports: [],');
+    expect(story.snippet).not.toContain("import { CommonModule } from '@angular/common';");
+    expect(story.warning).toContain('could not be determined');
   });
 
   it("mirrors the story's moduleMetadata modules for a non-standalone component", async () => {
@@ -1459,17 +1511,33 @@ describe('buildStoryDocsPayload', () => {
     });
 
     it.each([
-      ['above the arg', `label:\n          // why\n          (value) => value.trim(),`],
-      ['before the arg', `label: /* why */ (value) => value.trim(),`],
-      ['inside the arg', `label: (value) => /* why */ value.trim(),`],
-      ['inside the parameter list', `label: (/* why */ value) => value.trim(),`],
-    ])('leaves a comment %s out of the binding', async (_name, property) => {
+      [
+        'above the arg',
+        `label:\n          // why\n          (value) => value.trim(),`,
+        `label = (value) => value.trim();`,
+      ],
+      [
+        'before the arg',
+        `label: /* why */ (value) => value.trim(),`,
+        `label = (value) => value.trim();`,
+      ],
+      [
+        'inside the arg',
+        `label: (value) => /* why */ value.trim(),`,
+        `label = (value) => /* why */ value.trim();`,
+      ],
+      [
+        'inside the parameter list',
+        `label: (/* why */ value) => value.trim(),`,
+        `label = (/* why */ value) => value.trim();`,
+      ],
+    ])('binds an arg with a comment %s as the arg is written', async (_name, property, field) => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
         export const Default = { args: { ${property} } };
       `);
-      expect(story.snippet).toContain(`label = (value) => value.trim();`);
+      expect(story.snippet).toContain(field);
     });
   });
 
@@ -1594,7 +1662,7 @@ describe('buildStoryDocsPayload', () => {
     });
 
     it('indents a hoisted value that prints over several lines', async () => {
-      const story = await storyWithArgs(`value: (item) => { return item.id; }`);
+      const story = await storyWithArgs(`value: (item) => {\n  return item.id;\n}`);
 
       expect(story.snippet).toMatchInlineSnapshot(`
         "import { Component } from '@angular/core';
@@ -1648,7 +1716,7 @@ describe('buildStoryDocsPayload', () => {
           template: \`<sb-button [value]="value" />\`,
         })
         export class DemoComponent {
-          value = (text) => text.replace('"', '\\'');
+          value = (text) => text.replace('"', "'");
         }"
       `);
       expect(story.snippet).not.toContain('&quot;');

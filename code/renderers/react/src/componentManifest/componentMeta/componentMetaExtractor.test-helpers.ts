@@ -1,5 +1,6 @@
 import * as path from 'node:path';
 
+import { extractDeclaredSubcomponents } from 'storybook/internal/common';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
 import { vol } from 'memfs';
@@ -7,7 +8,6 @@ import ts from 'typescript';
 
 import { type StoryRef, getComponents } from '../getComponentImports.ts';
 import { findMatchingComponent } from '../resolveComponents.ts';
-import { extractDeclaredSubcomponents } from '../subcomponents.ts';
 import { ComponentMetaProject } from './ComponentMetaProject.ts';
 import { createTempProject, writeFiles } from './test-helpers.ts';
 

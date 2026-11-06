@@ -22,21 +22,19 @@ vi.mock('../util.ts', () => ({
   shortenPath: (path: string) => path,
 }));
 
-type AddonVersion = string | null | (() => Promise<string | null>);
+type GateVersions = Record<string, string | null | (() => Promise<string | null>)>;
 
 const createPackageManager = (
   versions: Record<string, string>,
-  addonVersion: AddonVersion = null
+  gateVersions: GateVersions = {}
 ): JsPackageManager =>
   ({
     getModulePackageJSON: async (packageName: string): Promise<PackageJson | null> =>
       versions[packageName] ? { version: versions[packageName] } : null,
     getInstalledVersion: async (packageName: string) => {
-      if (packageName !== '@storybook/addon-vitest') {
-        return null;
-      }
+      const gateVersion = gateVersions[packageName] ?? null;
 
-      return typeof addonVersion === 'function' ? addonVersion() : addonVersion;
+      return typeof gateVersion === 'function' ? gateVersion() : gateVersion;
     },
   }) as JsPackageManager;
 
@@ -50,6 +48,29 @@ const createCheckOptions = (packageManager: JsPackageManager) => ({
 describe('dependenciesVersions blocker', () => {
   beforeEach(() => {
     vi.mocked(getVitePlusVersions).mockImplementation(async () => null);
+  });
+
+  test.each(['10.0.0', '10.7.1', '10.8.2'])(
+    'blocks Preact %s before upgrading',
+    async (version) => {
+      const result = await blocker.check(
+        createCheckOptions(createPackageManager({ preact: version }))
+      );
+
+      expect(result).toEqual({
+        packageName: 'preact',
+        installedVersion: version,
+        minimumVersion: '10.9.0',
+      });
+    }
+  );
+
+  test.each(['10.9.0', '10.29.8', '11.0.0-rc.2'])('accepts Preact %s', async (version) => {
+    const result = await blocker.check(
+      createCheckOptions(createPackageManager({ preact: version }))
+    );
+
+    expect(result).toBe(false);
   });
 
   test('blocks on Next.js 14 with a message linking the migration guide', async () => {
@@ -78,6 +99,50 @@ describe('dependenciesVersions blocker', () => {
 
   test.each(['15.0.0', '16.0.0'])('passes on Next.js %s', async (version) => {
     const packageManager = createPackageManager({ next: version });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toBe(false);
+  });
+
+  test.each(['4.5.2', '5.4.21', '6.2.2'])('blocks Vite %s before upgrading', async (version) => {
+    const packageManager = createPackageManager({ vite: version });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toEqual({
+      packageName: 'vite',
+      installedVersion: version,
+      minimumVersion: '6.3.0',
+    });
+
+    if (!result) {
+      throw new Error(`Expected Vite ${version} to be blocked`);
+    }
+
+    const logged = blocker.log(result);
+
+    expect(logged.title).toBe('Vite 6.3 or newer required');
+    expect(logged.message).toContain('Support for Vite < 6.3.0 has been removed.');
+    expect(logged.link).toBe(
+      'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-requires-vite-63-or-higher'
+    );
+  });
+
+  test('blocks Vite prereleases of the floor version', async () => {
+    const result = await blocker.check(
+      createCheckOptions(createPackageManager({ vite: '6.3.0-beta.0' }))
+    );
+
+    expect(result).toEqual({
+      packageName: 'vite',
+      installedVersion: '6.3.0-beta.0',
+      minimumVersion: '6.3.0',
+    });
+  });
+
+  test.each(['6.3.0', '6.4.4', '7.1.2'])('accepts Vite %s', async (version) => {
+    const packageManager = createPackageManager({ vite: version });
 
     const result = await blocker.check(createCheckOptions(packageManager));
 
@@ -116,6 +181,80 @@ describe('dependenciesVersions blocker', () => {
     expect(result).toBe(false);
   });
 
+  test.each(['2.70.3', '3.0.0-next.30'])(
+    '@sveltejs/kit %s is blocked with message and migration anchor',
+    async (version) => {
+      const packageManager = createPackageManager(
+        { '@sveltejs/kit': version },
+        { '@storybook/sveltekit': '10.0.0' }
+      );
+
+      const result = await blocker.check(createCheckOptions(packageManager));
+
+      expect(result).toEqual({
+        packageName: '@sveltejs/kit',
+        installedVersion: version,
+        minimumVersion: '3.0.0',
+      });
+
+      if (!result) {
+        throw new Error(`Expected @sveltejs/kit ${version} to be blocked`);
+      }
+
+      const logged = blocker.log(result);
+
+      expect(logged.title).toBe('Require SvelteKit v3 and up');
+      expect(logged.message).toContain('npx sv migrate sveltekit-3');
+      expect(logged.link).toBe(
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-require-v3-and-up'
+      );
+    }
+  );
+
+  test.each(['3.0.0', '3.1.2'])('@sveltejs/kit %s is not blocked', async (version) => {
+    const packageManager = createPackageManager(
+      { '@sveltejs/kit': version },
+      { '@storybook/sveltekit': '10.0.0' }
+    );
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toBe(false);
+  });
+
+  test('does not block on @sveltejs/kit 2 without @storybook/sveltekit installed', async () => {
+    const manager = createPackageManager({ '@sveltejs/kit': '2.70.3' });
+    const gateSpy = vi.spyOn(manager, 'getInstalledVersion');
+
+    const result = await blocker.check(createCheckOptions(manager));
+
+    expect(result).toBe(false);
+    expect(gateSpy).toHaveBeenCalledWith('@storybook/sveltekit');
+  });
+
+  test('blocks on @sveltejs/kit 2 when @storybook/sveltekit is installed', async () => {
+    const packageManager = createPackageManager(
+      { '@sveltejs/kit': '2.70.3' },
+      { '@storybook/sveltekit': '10.0.0' }
+    );
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toEqual({
+      packageName: '@sveltejs/kit',
+      installedVersion: '2.70.3',
+      minimumVersion: '3.0.0',
+    });
+
+    if (!result) {
+      throw new Error('Expected @sveltejs/kit 2.70.3 to be blocked');
+    }
+
+    const logged = blocker.log(result);
+
+    expect(logged.title).toBe('Require SvelteKit v3 and up');
+  });
+
   test('missing @angular/core does not block', async () => {
     const packageManager = createPackageManager({});
 
@@ -139,7 +278,12 @@ describe('dependenciesVersions blocker', () => {
   });
 
   test('blocks on Vitest 3 when @storybook/addon-vitest is installed', async () => {
-    const packageManager = createPackageManager({ vitest: '3.2.4' }, '11.0.0');
+    const packageManager = createPackageManager(
+      { vitest: '3.2.4' },
+      {
+        '@storybook/addon-vitest': '11.0.0',
+      }
+    );
 
     const result = await blocker.check(createCheckOptions(packageManager));
 
@@ -161,7 +305,12 @@ describe('dependenciesVersions blocker', () => {
   });
 
   test('passes at the Vitest 4.0.0 boundary with the addon installed', async () => {
-    const packageManager = createPackageManager({ vitest: '4.0.0' }, '11.0.0');
+    const packageManager = createPackageManager(
+      { vitest: '4.0.0' },
+      {
+        '@storybook/addon-vitest': '11.0.0',
+      }
+    );
 
     const result = await blocker.check(createCheckOptions(packageManager));
 
@@ -169,7 +318,7 @@ describe('dependenciesVersions blocker', () => {
   });
 
   test('does not block when the addon is installed but Vitest is absent', async () => {
-    const manager = createPackageManager({}, '11.0.0');
+    const manager = createPackageManager({}, { '@storybook/addon-vitest': '11.0.0' });
     const moduleSpy = vi.spyOn(manager, 'getModulePackageJSON');
 
     const result = await blocker.check(createCheckOptions(manager));
@@ -183,7 +332,7 @@ describe('dependenciesVersions blocker', () => {
       vite: '7.1.2',
       vitest: '3.2.4',
     }));
-    const packageManager = createPackageManager({}, '11.0.0');
+    const packageManager = createPackageManager({}, { '@storybook/addon-vitest': '11.0.0' });
 
     const result = await blocker.check(createCheckOptions(packageManager));
 
@@ -195,8 +344,11 @@ describe('dependenciesVersions blocker', () => {
   });
 
   test('does not block when the addon lookup throws', async () => {
-    const packageManager = createPackageManager({}, () =>
-      Promise.reject(new Error('version detection failed'))
+    const packageManager = createPackageManager(
+      {},
+      {
+        '@storybook/addon-vitest': () => Promise.reject(new Error('version detection failed')),
+      }
     );
 
     const result = await blocker.check(createCheckOptions(packageManager));
@@ -232,5 +384,68 @@ describe('dependenciesVersions blocker', () => {
     });
 
     expect(logged.title).toBe('react-scripts version < 5.0.0 support removed');
+  });
+
+  test('blocks on react 17 with a message linking the migration guide', async () => {
+    const packageManager = createPackageManager({ react: '17.0.0', 'react-dom': '17.0.0' });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toEqual({
+      packageName: 'react',
+      installedVersion: '17.0.0',
+      minimumVersion: '18.0.0',
+    });
+
+    if (!result) {
+      throw new Error('Expected the blocker to block on react 17');
+    }
+
+    const logged = blocker.log(result);
+
+    expect(logged.title).toBe('React 18 or newer required');
+    expect(logged.message).toContain('Support for React < 18 has been removed');
+    expect(logged.link).toBe(
+      'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-require-v18-and-up'
+    );
+  });
+
+  test('blocks on react-dom 17 when react itself is current', async () => {
+    const packageManager = createPackageManager({ react: '18.2.0', 'react-dom': '17.0.2' });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toEqual({
+      packageName: 'react-dom',
+      installedVersion: '17.0.2',
+      minimumVersion: '18.0.0',
+    });
+  });
+
+  test('passes on react 18', async () => {
+    const packageManager = createPackageManager({ react: '18.2.0', 'react-dom': '18.2.0' });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toBe(false);
+  });
+
+  test('passes on react 19', async () => {
+    const packageManager = createPackageManager({ react: '19.0.0', 'react-dom': '19.0.0' });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toBe(false);
+  });
+
+  test('passes on react 0.0.0 experimental builds, matching the shim treatment', async () => {
+    const packageManager = createPackageManager({
+      react: '0.0.0-experimental-4cb07d14-20250411',
+      'react-dom': '0.0.0-experimental-4cb07d14-20250411',
+    });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toBe(false);
   });
 });

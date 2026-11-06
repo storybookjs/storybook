@@ -17,8 +17,8 @@ export type ServiceId = string;
  * 1. State is wrapped in a `deepSignal` proxy for fine-grained per-field reactivity, and `deepSignal`
  *    throws ("this object can't be observed") on primitives, `null`, and `undefined` — there are no
  *    fields to track on a scalar.
- * 2. Cross-peer sync (`applyStatePatch` in `service-sync.ts`) merges state by walking object keys;
- *    it has no notion of replacing a whole scalar, so the wire protocol only carries keyed objects.
+ * 2. Snapshot install (`applyStatePatch` in `service-sync.ts`) merges state by walking object keys,
+ *    and entry pointers need at least one segment, so sync has no way to replace a whole scalar.
  *
  * Arrays are technically observable by `deepSignal` but are still rejected here: `applyStatePatch`
  * replaces arrays wholesale rather than merging by key, so a *top-level* array state would silently
@@ -163,9 +163,8 @@ export type QueryState<TData> = {
  *   and again whenever tracked state or the load lifecycle changes (deduped on the whole state).
  *   Subscribing is what fires the query's reactive `load`.
  *
- * There is intentionally no bare-call form: a previous `query(input)` that returned synchronously
- * *and* fired the `load` behind the scenes was removed because the implicit background load was
- * confusing. Read with `.get(input)`, await with `.loaded(input)`, observe with `.subscribe(...)`.
+ * There is no bare-call form. Read with `.get(input)`, await with `.loaded(input)`, observe with
+ * `.subscribe(...)`.
  *
  * Queries whose input schema resolves to `undefined` (for example `v.void()`) may be called with
  * zero arguments: `query.get()`, `query.loaded()`.

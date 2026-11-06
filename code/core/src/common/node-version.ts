@@ -35,11 +35,13 @@ export const MIN_SUPPORTED_NODE_DESCRIPTION =
   MIN_SUPPORTED_NODE_VERSIONS.map(formatMinVersion).join(' or ');
 
 /**
- * Check whether a Node.js version (major.minor.patch) meets the minimum requirement.
+ * Check whether a Node.js version meets the minimum requirement.
  *
- * Missing version components should be normalized by callers (e.g. "22" -> 22.0.0).
+ * Expects the raw `process.versions.node` value (e.g. "22.12.0", "26.1.0-rc.0").
+ * Prerelease builds are evaluated with semver's prerelease rules, so a prerelease
+ * below the floor (e.g. "22.12.0-rc.0") still fails. Unparseable input fails closed.
  */
-export function isNodeVersionSupported(major: number, minor: number, patch: number): boolean {
+export function isNodeVersionSupported(version: string): boolean {
   const sortedMinimums = [...MIN_SUPPORTED_NODE_VERSIONS].sort((a, b) => a.major - b.major);
   const supportedRange = sortedMinimums
     .map((min, index) => {
@@ -54,5 +56,5 @@ export function isNodeVersionSupported(major: number, minor: number, patch: numb
     })
     .join(' || ');
 
-  return satisfies(`${major}.${minor}.${patch}`, supportedRange);
+  return satisfies(version, supportedRange, { includePrerelease: true });
 }

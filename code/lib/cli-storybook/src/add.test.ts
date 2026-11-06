@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -73,8 +75,9 @@ vi.mock('./automigrate/helpers/mainConfigFile', () => {
   return MockedMainConfigFileHelper;
 });
 vi.mock('./codemod/helpers/csf-factories-utils');
-vi.mock('storybook/internal/common', () => {
+vi.mock('storybook/internal/common', async (importOriginal) => {
   return {
+    ...(await importOriginal<typeof import('storybook/internal/common')>()),
     getStorybookInfo: vi.fn(() => ({ mainConfig: {}, configDir: '' })),
     serverRequire: vi.fn(() => ({})),
     loadMainConfig: vi.fn(() => ({})),
@@ -188,5 +191,21 @@ describe('add (extra)', () => {
       logger: expect.any(Object),
       prompt: expect.any(Object),
     });
+  });
+
+  test('logs the main config path relative to the working directory', async () => {
+    MockedMainConfigFileHelper.getStorybookData.mockReturnValueOnce({
+      ...MockedMainConfigFileHelper.getStorybookData(),
+      mainConfigPath: join(process.cwd(), 'packages', 'ui', '.storybook', 'main.ts'),
+    });
+
+    await add('@storybook/addon-docs', {
+      packageManager: PackageManagerName.NPM,
+      skipPostinstall: true,
+    });
+
+    expect(logger.log).toHaveBeenCalledWith(
+      `Adding '@storybook/addon-docs' to the "addons" field in ${join('packages', 'ui', '.storybook', 'main.ts')}`
+    );
   });
 });

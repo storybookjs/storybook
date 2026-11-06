@@ -5,11 +5,12 @@
     "customConditions": ["code"],
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "ignoreDeprecations": "6.0",
     "incremental": false,
     "isolatedModules": true,
     "jsx": "preserve",
     "lib": ["dom", "dom.iterable", "esnext"],
+    // TS 6.0 no longer auto-includes @types packages; most packages import Node built-ins.
+    "types": ["node"],
     "module": "Preserve",
     "moduleResolution": "bundler",
     // Required for explicit .ts import extensions — migrating toward native Node TS execution

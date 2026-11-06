@@ -6,8 +6,10 @@ import {
   createLocalDocsAccess,
   getEffectiveToolAvailability,
   getToolAvailability,
+  isValidHost,
   loadManifests,
 } from 'storybook/internal/core-server';
+import { isWebContainer } from 'storybook/internal/common';
 import htmlTemplate from './template.html';
 import path from 'node:path';
 import { extractBearerToken, type ManifestProvider } from './auth/index.ts';
@@ -15,8 +17,8 @@ import { resolveCompositionSources } from './auth/resolve-composition-sources.ts
 import { logger } from 'storybook/internal/node-logger';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
-import { buildStorybookAiMetadata, type StorybookAiMetadata } from './storybook-ai-metadata.ts';
 import { getStoryIndex } from './utils/get-story-index.ts';
+import { toBaseUrl } from './utils/base-url.ts';
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
   existingAnnotations = []
@@ -36,8 +38,63 @@ export const experimental_devServer: PresetPropertyFn<
     toolsets: options.toolsets ?? {},
   });
 
+  const basePath = options.basePath ?? '/';
   const origin = `http://localhost:${options.port}`;
+  const baseUrl = toBaseUrl(origin, basePath);
+  logger.debug(`MCP server base URL: ${baseUrl}`);
   const endpoint = addonOptions.endpoint ?? DEFAULT_MCP_ENDPOINT;
+
+  const core = await options.presets.apply('core', {});
+  const hostValidation = {
+    host: options.host,
+    allowedHosts: core?.allowedHosts,
+    localAddress: options.localAddress,
+    networkAddress: options.networkAddress,
+  };
+
+  // Needed for e.g. StackBlitz. Not running on developer machines so skipping validation is ok.
+  const skipOriginValidation = isWebContainer();
+
+  // Request middleware rejecting invalid origin or host configuration.
+  const rejectDisallowedOrigin = (req: IncomingMessage, res: ServerResponse): boolean => {
+    if (skipOriginValidation) {
+      return false;
+    }
+
+    // MCP clients are not browsers and send no Origin header. We only need to check the Origin
+    // of Web clients for DNS rebinding attacks, which browsers will attach for us.
+    // See https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/streamable-http.
+    const { origin: requestOrigin } = req.headers;
+    if (!requestOrigin) {
+      return false;
+    }
+
+    // Check host validity.
+    try {
+      if (isValidHost(new URL(requestOrigin).host, hostValidation)) {
+        return false;
+      }
+    } catch {}
+
+    res.writeHead(403, { 'Content-Type': 'text/plain' });
+    res.end('Invalid origin');
+    return true;
+  };
+
+  // When allowedHosts or --host relax origin validation, a web page can still reach this endpoint
+  // cross-origin. Requiring application/json makes the browser send a CORS preflight first, which
+  // this server never approves, so the request is never sent. Only the type before `;` counts:
+  // `text/plain; x=application/json` is still a safelisted type and needs no preflight.
+  const rejectNonJsonBody = (req: IncomingMessage, res: ServerResponse): boolean => {
+    const mediaType = req.headers['content-type']?.split(';')[0].trim().toLowerCase();
+    if (mediaType === 'application/json') {
+      return false;
+    }
+
+    res.writeHead(415, { 'Content-Type': 'text/plain' });
+    res.end('Unsupported Media Type: Content-Type must be application/json');
+    return true;
+  };
 
   const { refs, compositionAuth, sources, multiSource } = await resolveCompositionSources(options);
 
@@ -66,8 +123,8 @@ export const experimental_devServer: PresetPropertyFn<
     logger.info(`Sources: ${(sources ?? []).map((s) => s.id).join(', ')}`);
 
     // Remote sources are fetched over HTTP; the local one is read through `localAccess` when
-    // docgen-server mode is on, and over HTTP from this origin otherwise.
-    createManifestProvider = () => compositionAuth.createManifestProvider(origin);
+    // docgen-server mode is on, and over HTTP from this base URL otherwise.
+    createManifestProvider = () => compositionAuth.createManifestProvider(baseUrl);
   }
 
   const manifestAccessFor = (req: IncomingMessage) => ({
@@ -77,7 +134,7 @@ export const experimental_devServer: PresetPropertyFn<
 
   // Serve .well-known/oauth-protected-resource for MCP auth
   app!.get('/.well-known/oauth-protected-resource', (_req, res) => {
-    const wellKnown = compositionAuth.buildWellKnown(origin);
+    const wellKnown = compositionAuth.buildWellKnown(`${baseUrl}${endpoint}`);
     if (!wellKnown) {
       res.writeHead(404);
       res.end('Not found');
@@ -93,7 +150,7 @@ export const experimental_devServer: PresetPropertyFn<
     if (compositionAuth.requiresAuth && !token) {
       res.writeHead(401, {
         'Content-Type': 'text/plain',
-        'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(origin),
+        'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(baseUrl),
       });
       res.end('401 - Unauthorized');
       return true;
@@ -102,13 +159,17 @@ export const experimental_devServer: PresetPropertyFn<
   };
 
   app!.post(endpoint, (req, res) => {
+    if (rejectDisallowedOrigin(req, res)) return;
     if (requireAuth(req, res)) return;
+    if (rejectNonJsonBody(req, res)) return;
 
     return mcpServerHandler({
       req,
       res,
       options,
       addonOptions,
+      origin,
+      basePath,
       endpoint,
       sources,
       ...manifestAccessFor(req),
@@ -120,9 +181,6 @@ export const experimental_devServer: PresetPropertyFn<
   // claim a tool is available when it isn't (and vice versa).
   const {
     moduleGraphSupported,
-    changeDetectionEnabled,
-    reviewEnabled,
-    reviewEnabledForCli,
     docsEnabled,
     docsHasManifests,
     docsFeatureEnabled,
@@ -135,6 +193,7 @@ export const experimental_devServer: PresetPropertyFn<
   const isTestEnabled = testSupported && (addonOptions.toolsets?.test ?? true);
 
   app!.get(endpoint, (req, res) => {
+    if (rejectDisallowedOrigin(req, res)) return;
     if (!req.headers['accept']?.includes('text/html')) {
       if (requireAuth(req, res)) return;
 
@@ -143,6 +202,8 @@ export const experimental_devServer: PresetPropertyFn<
         res,
         options,
         addonOptions,
+        origin,
+        basePath,
         endpoint,
         sources,
         ...manifestAccessFor(req),
@@ -159,11 +220,11 @@ export const experimental_devServer: PresetPropertyFn<
       // already on and there is still no manifest, the framework is the reason, not the config.
       docsNotice = docsFeatureEnabled
         ? `<div class="toolset-notice">
-				This toolset requires a components manifest, which your framework does not generate. On <code>@storybook/vue3-vite</code>, also enable <code>experimentalDocgenServer</code>.
+				This toolset requires a components manifest, which your framework does not generate. On <code>@storybook/vue3-vite</code>, also enable <code>docgenServer</code>.
 				<a target="_blank" href="https://storybook.js.org/docs/ai/mcp/overview#framework-support">See which frameworks are supported</a>
 			</div>`
         : `<div class="toolset-notice">
-				This toolset requires a components manifest, which is generated by the React frameworks, <code>@storybook/angular-vite</code> and <code>@storybook/vue3-vite</code>. Enable the <code>componentsManifest</code> feature, plus <code>experimentalDocgenServer</code> on <code>@storybook/vue3-vite</code>.
+				This toolset requires a components manifest, which is generated by the React frameworks, <code>@storybook/angular-vite</code> and <code>@storybook/vue3-vite</code>. Enable the <code>componentsManifest</code> feature, plus <code>docgenServer</code> on <code>@storybook/vue3-vite</code>.
 				<a target="_blank" href="https://storybook.js.org/docs/ai/mcp/overview#framework-support">Learn how to enable it</a>
 			</div>`;
     } else if (!docsFeatureEnabled) {
@@ -187,39 +248,25 @@ export const experimental_devServer: PresetPropertyFn<
       ? ' <span class="toolset-status enabled">+ accessibility</span>'
       : '';
 
-    // `stories-find-by-component`, `stories-changed`, and `review-create` are gated
-    // independently of the `dev` toolset — `stories-find-by-component` needs the dependency
-    // graph, `stories-changed` needs the `changeDetection` feature flag, and
-    // `review-create` additionally needs the opt-in `experimentalReview` feature flag —
-    // so each shows its own badge.
+    // `stories-find-by-component` also needs the dependency graph, so it shows its own badge.
     // When the whole `dev` toolset is turned off via addon options every dev tool is
-    // disabled regardless of its own gate, so explain that instead of the per-tool reasons.
+    // disabled regardless of its own gate, so explain that instead of the per-tool reason.
     const devNoticeLines = !isDevEnabled
       ? [`The <code>dev</code> toolset is disabled via addon options.`]
       : [
           !moduleGraphSupported &&
             `<code>stories-find-by-component</code> requires a dev server with a builder that supports the module graph (Vite or Webpack 5).`,
-          !changeDetectionEnabled &&
-            `<code>stories-changed</code> requires enabling the <code>changeDetection</code> feature flag.`,
-          !reviewEnabled &&
-            (reviewEnabledForCli
-              ? `<code>review-create</code> is enabled for <code>storybook ai</code> CLI clients (the Claude/Codex plugins); direct MCP clients need the <code>experimentalReview</code> feature flag.`
-              : `<code>review-create</code> requires the <code>changeDetection</code> feature flag and is off when <code>experimentalReview</code> is set to <code>false</code>.`),
         ].filter(Boolean);
     const devNotice = devNoticeLines.length
       ? `<div class="toolset-notice">${devNoticeLines.join('<br>')}</div>`
       : '';
 
-    const statusWord = (enabled: boolean) => (enabled ? 'enabled' : 'disabled');
-
     const html = htmlTemplate
       .replaceAll('{{DEV_STATUS}}', isDevEnabled ? 'enabled' : 'disabled')
       .replaceAll(
         '{{STORIES_BY_COMPONENT_STATUS}}',
-        statusWord(isDevEnabled && moduleGraphSupported)
+        isDevEnabled && moduleGraphSupported ? 'enabled' : 'disabled'
       )
-      .replaceAll('{{CHANGE_DETECTION_STATUS}}', statusWord(isDevEnabled && changeDetectionEnabled))
-      .replaceAll('{{REVIEW_STATUS}}', statusWord(isDevEnabled && reviewEnabledForCli))
       .replace('{{DEV_NOTICE}}', devNotice)
       .replaceAll('{{DOCS_STATUS}}', isDocsEnabled ? 'enabled' : 'disabled')
       .replace('{{DOCS_NOTICE}}', docsNotice)
@@ -228,20 +275,13 @@ export const experimental_devServer: PresetPropertyFn<
       .replace(
         '{{MANIFEST_DEBUGGER_LINK}}',
         rawAvailability.docsEnabled
-          ? '<p>View the <a href="/manifests/components.html">component manifest debugger</a>.</p>'
+          ? `<p>View the <a href="${basePath}manifests/components.html">component manifest debugger</a>.</p>`
           : ''
       )
       .replace('{{A11Y_BADGE}}', a11yBadge);
     res.end(html);
   });
   return app;
-};
-
-export const experimental_storybookAi = async (
-  existingMetadata: StorybookAiMetadata | undefined,
-  options: Parameters<typeof buildStorybookAiMetadata>[0]
-): Promise<StorybookAiMetadata> => {
-  return buildStorybookAiMetadata(options, existingMetadata);
 };
 
 export const features: PresetPropertyFn<'features'> = async (existingFeatures) => {

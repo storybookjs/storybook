@@ -12,7 +12,8 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
 import type { AngularClassMeta, AngularFileMeta, Directive } from '../../types.ts';
-import { analyzeSourceFile } from '../analyze-file.ts';
+import { analyzeSourceFile, analyzerContext } from '../analyze-file.ts';
+import type { AnalyzerContext } from '../context.ts';
 
 const BASE_OPTIONS: ts.CompilerOptions = {
   target: ts.ScriptTarget.Latest,
@@ -59,9 +60,10 @@ const programFor = (files: Record<string, string>, options: ts.CompilerOptions):
 
   host.readFile = (fileName) => virtual.get(normalize(fileName)) ?? readRealFile(fileName);
   host.fileExists = (fileName) => virtual.has(normalize(fileName)) || realFileExists(fileName);
-  // Module resolution probes the containing directory before the file, and this one is not on disk.
+  // Module resolution probes the containing directory before the file, and these are not on disk.
   host.directoryExists = (directoryName) =>
-    normalize(directoryName) === VIRTUAL_DIR || (realDirectoryExists?.(directoryName) ?? true);
+    [...virtual.keys()].some((name) => name.startsWith(`${normalize(directoryName)}/`)) ||
+    (realDirectoryExists?.(directoryName) ?? true);
   host.realpath = (fileName) =>
     virtual.has(normalize(fileName)) ? fileName : (realpath?.(fileName) ?? fileName);
   host.getSourceFile = (fileName, languageVersion, onError, shouldCreate) => {
@@ -92,6 +94,24 @@ const analyzeWith = (
     throw new Error(`${entry} missing from the program`);
   }
   return analyzeSourceFile(ts, sourceFile, program.getTypeChecker());
+};
+
+/**
+ * Analyze `source` with its live analyzer context, for argTypes tests that resolve named types: the
+ * returned `context` is the one `analyzeSourceFile` ran under, so extraction sees the same checker
+ * and TypeIndex the analysis did.
+ */
+export const analyzeForExtraction = (
+  source: string,
+  extraFiles: Record<string, string> = {}
+): { meta: AngularFileMeta; context: AnalyzerContext } => {
+  const program = programFor({ 'component.ts': source, ...extraFiles }, BASE_OPTIONS);
+  const sourceFile = program.getSourceFile(normalize(join(VIRTUAL_DIR, 'component.ts')));
+  if (!sourceFile) {
+    throw new Error('component.ts missing from the program');
+  }
+  const context = analyzerContext(ts, sourceFile, program.getTypeChecker());
+  return { meta: analyzeSourceFile(ts, sourceFile, program.getTypeChecker(), context), context };
 };
 
 /** Analyze `source` as `component.ts`; `extraFiles` are siblings it can import. */

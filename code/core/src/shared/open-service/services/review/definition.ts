@@ -48,8 +48,6 @@ export type ReviewServiceState = {
   pending: ReviewState | null;
 };
 
-export const REVIEW_STALE_GRACE_MS = 10_000;
-
 /**
  * Stateful review coordination shared by the server and manager realms.
  */
@@ -83,7 +81,7 @@ export const reviewServiceDef = defineService({
     },
     bannerKind: {
       description:
-        'Returns which attention banner review surfaces should show: pending-update outranks stale (accepting the update supersedes the warning); null when neither applies.',
+        'Returns which attention banner review surfaces should show: pending-update outranks stale, and once accepted the banner reflects the staleness of the accepted review; null when neither applies.',
       input: v.undefined(),
       output: v.nullable(v.picklist(['pending-update', 'stale'])),
       handler: (_input, ctx) =>
@@ -107,8 +105,14 @@ export const reviewServiceDef = defineService({
       output: v.void(),
     },
     markStale: {
-      description: 'Marks the current review stale. Implemented by the server.',
-      input: v.undefined(),
+      description:
+        'Marks the current and pending reviews stale when the module graph changed after they were published. Implemented by the server.',
+      input: v.object({
+        changedAt: v.pipe(
+          v.number(),
+          v.description('When (unix ms) the newest module-graph change was made.')
+        ),
+      }),
       output: v.void(),
     },
     dismissReview: {

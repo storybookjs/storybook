@@ -110,7 +110,7 @@ You can also enable, disable, or configure individual rules. This can be done in
 
 ### Test behavior
 
-You can configure accessibility tests with the `parameters.a11y.test` [parameter](../writing-stories/parameters.mdx), which determines the behavior of accessibility tests for a story when run with either the [Vitest addon](./integrations/vitest-addon/index.mdx) or the [test-runner](./integrations/test-runner.mdx). The parameter accepts three values:
+You can configure accessibility tests with the `parameters.a11y.test` [parameter](../writing-stories/parameters.mdx), which determines the behavior of accessibility tests for a story when run with the [Vitest addon](./integrations/vitest-addon/index.mdx). The parameter accepts three values:
 
 | Value     | Description                                                                              |
 | --------- | ---------------------------------------------------------------------------------------- |
@@ -177,12 +177,6 @@ If any of your tests have warnings or failures, the testing widget will show the
 
 In CI, accessibility tests are run automatically for stories with [`parameters.a11y.test = 'error'`](#test-behavior) when you run the Vitest tests.
 
-### With the test-runner
-
-If you're using the [test-runner](./integrations/test-runner.mdx), you can run your accessibility tests in the terminal or in CI environments.
-
-Accessibility tests are included in your test run when you have the Accessibility addon installed and [`parameters.a11y.test`](#test-behavior) is set to a value other than `'off'`.
-
 ## Debug accessibility violations
 
 When you run accessibility tests, the results are reported in the Storybook UI. You can click on a violation to see more details about it, including the rule that was violated and suggestions for how to fix it.
@@ -201,7 +195,7 @@ Accessibility tests will only produce errors in CI if you have set [`parameters.
 
 </Callout>
 
-If you cannot use the Vitest addon, you can still run your tests in CI using the [test-runner](./integrations/test-runner.mdx).
+The Vitest addon requires a Vite-based framework. If your project uses Webpack, [migrate to Vite](./integrations/vitest-addon/migration-guide.mdx#what-if-i-am-using-storybook-with-webpack-or-rspack) first.
 
 ## Recommended workflow
 
@@ -226,6 +220,12 @@ Browser-based accessibility tests, like those found in Storybook, evaluate the r
 
 With the [Vitest addon](./integrations/vitest-addon/index.mdx), your tests run in Vitest using your project's configuration with Playwright's Chromium browser. This can lead to inconsistent test results reported in the Storybook UI or CLI. The inconsistency can be due to `axe-core` reporting different results in different environments, such as browser versions or configurations. If you encounter this issue, we recommend reaching out using the default communication channels (e.g., [GitHub discussions](https://github.com/storybookjs/storybook/discussions/new?category=help), [Github issues](https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml)).
 
+### Why do my accessibility tests show limited result types in the CLI or CI?
+
+Test runs executed locally via the CLI or in a CI environment will include only a subset of result types, such as A11y violations and incomplete checks. Other result types, such as passes and inapplicable results, will be limited to at most one node per rule. This behavior helps reduce noise in test outputs and improve memory usage during the test execution.
+
+If you want to include all result details in your test outputs, you need to configure the `a11y` parameter to include an `options` object with the `resultTypes` property specifying the intended result types (e.g., `['violations', 'incomplete', 'passes', 'inapplicable']`).
+
 ### The addon panel does not show expected violations
 
 Modern React components often use asynchronous techniques like [Suspense](https://react.dev/reference/react/Suspense) or [React Server Components (RSC)](https://react.dev/reference/rsc/server-components) to handle complex data fetching and rendering. These components don’t immediately render their final UI state. Storybook doesn’t inherently know when an async component has fully rendered. As a result, the a11y checks sometimes run too early, before the component finishes rendering, leading to false negatives (no reported violations even if they exist).
@@ -238,6 +238,7 @@ To enable this feature flag, add the following configuration to your `.storybook
 
 **More testing resources**
 
+- [See our complete guide to component testing](https://storybook.js.org/blog/component-testing-a-practical-guide-for-frontend-developers/)
 - [Vitest addon](./integrations/vitest-addon/index.mdx) for running tests in Storybook
 - [Interaction testing](./interaction-testing.mdx) for user behavior simulation
 - [Visual testing](./visual-testing.mdx) for appearance
@@ -246,4 +247,3 @@ To enable this feature flag, add the following configuration to your `.storybook
 - [CI](./in-ci.mdx) for running tests in your CI/CD pipeline
 - [End-to-end testing](./integrations/stories-in-end-to-end-tests.mdx) for simulating real user scenarios
 - [Unit testing](./integrations/stories-in-unit-tests.mdx) for functionality
-- [Test runner](./integrations/test-runner.mdx) to automate test execution

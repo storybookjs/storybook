@@ -15,7 +15,6 @@ export const buildIndex = async (
     ...cliOptions,
     configDir: cliOptions.configDir || '.storybook',
     outputFile: cliOptions.outputFile || 'index.json',
-    ignorePreview: true,
     configType: 'PRODUCTION' as BuilderOptions['configType'],
     cache,
     packageJson: cliOptions.packageJson,

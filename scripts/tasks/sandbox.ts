@@ -7,7 +7,7 @@ import dirSize from 'fast-folder-size';
 
 import { now, saveBench } from '../bench/utils.ts';
 import type { PassedOptionValues, Task, TaskKey, TemplateDetails } from '../task.ts';
-import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '../utils/constants.ts';
+import { ROOT_DIRECTORY } from '../utils/constants.ts';
 import { exec } from '../utils/exec.ts';
 import { isNxTaskExecution } from '../utils/nx.ts';
 
@@ -39,6 +39,24 @@ const sanitizeOptions = (details: TemplateDetails, options: PassedOptionValues) 
   }
 };
 
+// If the selected task requires the sandbox to exist, we check it. Else we always assume it needs to be created
+// This avoids issues where you want to overwrite a sandbox and it will stop because it already exists
+const tasksAfterSandbox: TaskKey[] = [
+  'vitest-integration',
+  'e2e-tests',
+  'e2e-tests-dev',
+  'smoke-test',
+  'dev',
+  'build',
+  'serve',
+  'chromatic',
+  'bench',
+  'check-sandbox',
+];
+
+const isSandboxReady = (sandboxDir: string, selectedTask: TaskKey) =>
+  tasksAfterSandbox.includes(selectedTask) && pathExists(sandboxDir);
+
 export const sandbox: Task = {
   description: 'Create the sandbox from a template',
   dependsOn: (details, options) => {
@@ -46,7 +64,7 @@ export const sandbox: Task = {
     sanitizeOptions(details, options);
 
     if ('inDevelopment' in details.template && details.template.inDevelopment) {
-      if (pathExists(join(SANDBOX_DIRECTORY, details.key))) {
+      if (isSandboxReady(details.sandboxDir, options.task)) {
         return ['run-registry'];
       }
 
@@ -60,24 +78,7 @@ export const sandbox: Task = {
     return ['run-registry'];
   },
   async ready({ sandboxDir }, { task: selectedTask }) {
-    // If the selected task requires the sandbox to exist, we check it. Else we always assume it needs to be created
-    // This avoids issues where you want to overwrite a sandbox and it will stop because it already exists
-    const tasksAfterSandbox: TaskKey[] = [
-      'vitest-integration',
-      'test-runner',
-      'test-runner-dev',
-      'e2e-tests',
-      'e2e-tests-dev',
-      'smoke-test',
-      'dev',
-      'build',
-      'serve',
-      'chromatic',
-      'bench',
-      'check-sandbox',
-    ];
-    const isSelectedTaskAfterSandboxCreation = tasksAfterSandbox.includes(selectedTask);
-    return isSelectedTaskAfterSandboxCreation && pathExists(sandboxDir);
+    return isSandboxReady(sandboxDir, selectedTask);
   },
   async run(details, options) {
     sanitizeOptions(details, options);
@@ -113,12 +114,6 @@ export const sandbox: Task = {
       'uuid',
     ];
 
-    const extraDevDeps = [
-      ...(details.template.modifications?.extraDevDependencies ?? []),
-      // Always installed regardless of the template.
-      '@storybook/test-runner@latest',
-    ];
-
     const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
 
     if (shouldAddVitestIntegration) {
@@ -145,12 +140,12 @@ export const sandbox: Task = {
     startTime = now();
     await install(details, options);
     const generateTime = now() - startTime;
-    const generateSize = await promisify(dirSize)(join(details.sandboxDir, 'node_modules'));
+    const generateSize = (await promisify(dirSize)(join(details.sandboxDir, 'node_modules'))) ?? 0;
 
     startTime = now();
     await init(details, options);
     const initTime = now() - startTime;
-    const initSize = await promisify(dirSize)(join(details.sandboxDir, 'node_modules'));
+    const initSize = (await promisify(dirSize)(join(details.sandboxDir, 'node_modules'))) ?? 0;
 
     await saveBench(
       'sandbox',
@@ -184,7 +179,7 @@ export const sandbox: Task = {
       debug: options.debug,
       dryRun: options.dryRun,
       extraDeps,
-      extraDevDeps,
+      extraDevDeps: details.template.modifications?.extraDevDependencies,
       removeDeps: details.template.modifications?.removeDependencies,
       removeDevDeps: details.template.modifications?.removeDevDependencies,
       resolutions: details.template.modifications?.resolutions,

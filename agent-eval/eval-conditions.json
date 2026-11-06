@@ -1,0 +1,19 @@
+{
+  "labelPrefix": "agent-eval:",
+  "optInLabel": "agent-eval:eval",
+  "conditions": [
+    {
+      "id": "all_evals",
+      "label": "agent-eval:all-evals",
+      "input": "all_evals",
+      "description": "All agent evals: for changes to one agent workflow (full 8xx/82x line)",
+      "schedule": true
+    },
+    {
+      "id": "storybook_latest",
+      "label": "agent-eval:storybook-latest",
+      "input": "storybook_latest",
+      "description": "Agent evals on Storybook latest: check if a problem exists in the stable release"
+    }
+  ]
+}

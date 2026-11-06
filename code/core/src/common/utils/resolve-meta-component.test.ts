@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { loadCsf } from '../../csf-tools/index.ts';
+import { extractDeclaredSubcomponents } from './subcomponents.ts';
 import { createMetaComponentResolver } from './resolve-meta-component.ts';
 
 const resolveMetaComponent = createMetaComponentResolver();
@@ -187,6 +188,79 @@ describe('createMetaComponentResolver', () => {
       ).toEqual({
         reason: 'unreadable-component-expression',
         expression: 'internal.config.component',
+      });
+    });
+  });
+
+  // Declared subcomponents resolve through the same pass as the meta component, by passing the
+  // component expression `extractDeclaredSubcomponents` found instead of the meta annotation.
+  describe('a declared subcomponent node', () => {
+    const resolveDeclared = (source: string, storyPath = '/project/x.stories.ts') => {
+      const csf = loadCsf(source, { makeTitle: () => 'Button' }).parse();
+      const declared = extractDeclaredSubcomponents(csf)[0];
+      if (!declared) {
+        throw new Error('Fixture declares no subcomponents');
+      }
+      return resolveMetaComponent(csf, storyPath, declared.node);
+    };
+
+    it('resolves like the meta component it is declared beside', () => {
+      expect(
+        resolveDeclared(`import { ButtonComponent as Btn } from './nowhere';
+                         export default { subcomponents: { Header: Btn } };`)
+      ).toEqual({
+        component: {
+          localName: 'Btn',
+          importId: './nowhere',
+          exportName: 'ButtonComponent',
+          path: undefined,
+        },
+      });
+    });
+
+    it("reads a namespace import's property access", () => {
+      expect(
+        resolveDeclared(`import * as Buttons from './nowhere';
+                         export default { subcomponents: { Header: Buttons.Button } };`)
+      ).toEqual({
+        component: {
+          localName: 'Button',
+          importId: './nowhere',
+          exportName: 'Button',
+          path: undefined,
+        },
+      });
+    });
+
+    it('resolves through a subcomponents object held in a local variable', () => {
+      expect(
+        resolveDeclared(`import { ButtonComponent } from './nowhere';
+                         const parts = { Header: ButtonComponent };
+                         export default { subcomponents: parts };`)
+      ).toEqual({
+        component: {
+          localName: 'ButtonComponent',
+          importId: './nowhere',
+          exportName: 'ButtonComponent',
+          path: undefined,
+        },
+      });
+    });
+
+    it('resolves a declared subcomponent to its file on disk', () => {
+      expect(
+        resolveDeclared(
+          `import { ButtonComponent } from './button.component';
+           export default { subcomponents: { Header: ButtonComponent } };`,
+          join(FIXTURES, 'x.stories.ts')
+        )
+      ).toEqual({
+        component: {
+          localName: 'ButtonComponent',
+          importId: './button.component',
+          exportName: 'ButtonComponent',
+          path: join(FIXTURES, 'button.component.ts'),
+        },
       });
     });
   });

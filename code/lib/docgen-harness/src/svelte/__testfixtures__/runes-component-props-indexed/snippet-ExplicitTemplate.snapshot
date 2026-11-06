@@ -1,0 +1,5 @@
+<Modal id="modal-explicit-template" open>
+  {#snippet content()}
+    <p>Template content</p>
+  {/snippet}
+</Modal>

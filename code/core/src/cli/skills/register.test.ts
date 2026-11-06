@@ -6,10 +6,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Command } from 'commander';
 
+import type { ProjectInfo } from './project-info.ts';
+import { recordSetupRun } from './record-setup-run.ts';
 import { registerSkillsCommand } from './register.ts';
 import { runSkillsCommand } from './run.ts';
 
 vi.mock('./run.ts', { spy: true });
+vi.mock('./record-setup-run.ts', () => ({ recordSetupRun: vi.fn() }));
 vi.mock('storybook/internal/core-server', () => ({
   withTelemetry: vi.fn(async (_event, _options, run: () => Promise<unknown>) => run()),
   experimental_loadStorybook: vi.fn(),
@@ -47,7 +50,7 @@ beforeEach(() => {
   vi.mocked(runSkillsCommand).mockResolvedValue({
     output: 'ok',
     exitCode: 0,
-    skill: 'stories',
+    skill: 'ui-workflow',
   });
   vi.mocked(withTelemetry).mockImplementation(async (_eventType, _options, run) => run());
   vi.mocked(telemetry).mockResolvedValue(undefined);
@@ -73,10 +76,10 @@ afterEach(() => {
 describe('registerSkillsCommand', () => {
   it('passes a bare skill id through as tokens', async () => {
     const { program } = buildProgram();
-    await parse(program, ['skills', 'stories']);
+    await parse(program, ['skills', 'ui-workflow']);
 
     expect(vi.mocked(runSkillsCommand).mock.calls[0]?.[0]).toEqual({
-      tokens: ['stories'],
+      tokens: ['ui-workflow'],
       help: undefined,
       all: undefined,
       target: { cwd: undefined, configDir: undefined },
@@ -99,12 +102,33 @@ describe('registerSkillsCommand', () => {
     expect(telemetry).toHaveBeenCalledWith('skills-get', { skill: 'all' }, expect.anything());
   });
 
+  it('records the setup run when the setup skill was served', async () => {
+    const setupRun = { projectInfo: { configDir: '.storybook' } as ProjectInfo, prompt: 'setup' };
+    vi.mocked(runSkillsCommand).mockResolvedValue({
+      output: '# Storybook Setup',
+      exitCode: 0,
+      skill: 'setup',
+      setupRun,
+    });
+    const { program } = buildProgram();
+    await parse(program, ['skills', 'setup']);
+
+    expect(recordSetupRun).toHaveBeenCalledWith(setupRun);
+  });
+
+  it('does not record a setup run for other skills', async () => {
+    const { program } = buildProgram();
+    await parse(program, ['skills', 'ui-workflow']);
+
+    expect(recordSetupRun).not.toHaveBeenCalled();
+  });
+
   it('does not intercept `help` as commander help', async () => {
     const { program } = buildProgram();
-    await parse(program, ['skills', 'help', 'stories']);
+    await parse(program, ['skills', 'help', 'ui-workflow']);
 
     expect(vi.mocked(runSkillsCommand).mock.calls[0]?.[0]).toMatchObject({
-      tokens: ['help', 'stories'],
+      tokens: ['help', 'ui-workflow'],
     });
   });
 

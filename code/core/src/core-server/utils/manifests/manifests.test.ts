@@ -10,8 +10,11 @@ import { vol } from 'memfs';
 import type { Polka } from 'polka';
 
 import { defineService } from '../../../shared/open-service/index.ts';
-import { clearRegistry, registerService } from '../../../shared/open-service/server.ts';
-import { registerTestModuleGraphService } from '../../../shared/open-service/services/module-graph/module-graph.test-helpers.ts';
+import {
+  clearRegistry,
+  registerService,
+  writeOpenServiceStaticFiles,
+} from '../../../shared/open-service/server.ts';
 import { registerDocgenService } from '../../../shared/open-service/services/docgen/server.ts';
 import { registerStoryDocsService } from '../../../shared/open-service/services/story-docs/server.ts';
 import type { DocgenProvider } from '../../../shared/open-service/services/docgen/types.ts';
@@ -58,10 +61,7 @@ describe('manifests', () => {
     return registerService(testMdxServiceDef);
   };
 
-  const setupMockPresets = (options?: {
-    componentsManifest?: boolean;
-    experimentalDocgenServer?: boolean;
-  }) => {
+  const setupMockPresets = (options?: { componentsManifest?: boolean; docgenServer?: boolean }) => {
     mockGetIndex = vi.fn<() => Promise<StoryIndex>>().mockResolvedValue({
       entries: {},
     } as StoryIndex);
@@ -78,7 +78,7 @@ describe('manifests', () => {
           case 'features':
             return Promise.resolve({
               componentsManifest: options?.componentsManifest ?? true,
-              experimentalDocgenServer: options?.experimentalDocgenServer ?? false,
+              docgenServer: options?.docgenServer ?? false,
             });
           default:
             return Promise.resolve(undefined);
@@ -140,7 +140,7 @@ describe('manifests', () => {
       );
     });
 
-    it('writes legacy inline components.json with array-shaped stories when experimentalDocgenServer is disabled', async () => {
+    it('writes legacy inline components.json with array-shaped stories when docgenServer is disabled', async () => {
       mockManifests = {
         components: {
           v: 0,
@@ -332,10 +332,10 @@ describe('manifests', () => {
       expect(entryIds).not.toContain('story-without-manifest');
     });
 
-    it('writes ref-based components.json when experimentalDocgenServer is enabled', async () => {
+    it('writes ref-based components.json when docgenServer is enabled', async () => {
       mockPresets = setupMockPresets({
         componentsManifest: true,
-        experimentalDocgenServer: true,
+        docgenServer: true,
       });
       mockGetIndex.mockResolvedValue({
         v: 5,
@@ -388,7 +388,6 @@ describe('manifests', () => {
         },
       }));
 
-      registerTestModuleGraphService();
       registerDocgenService({
         getIndex: () => mockGenerator.getIndex(),
         docgenProvider,
@@ -463,7 +462,7 @@ describe('manifests', () => {
     it('includes a componentless component in components.html, matching components.json', async () => {
       mockPresets = setupMockPresets({
         componentsManifest: true,
-        experimentalDocgenServer: true,
+        docgenServer: true,
       });
       mockGetIndex.mockResolvedValue({
         v: 5,
@@ -496,7 +495,6 @@ describe('manifests', () => {
         stories: { 'billboard--default': { id: 'billboard--default', name: 'Default' } },
       }));
 
-      registerTestModuleGraphService();
       registerDocgenService({
         getIndex: () => mockGenerator.getIndex(),
         docgenProvider: vi.fn<DocgenProvider>(async () => undefined),
@@ -539,10 +537,67 @@ describe('manifests', () => {
       expect(files['/output/manifests/components.html']).toContain('Default');
     });
 
+    it('lists a component titled Constructor in components.json and components.html', async () => {
+      mockPresets = setupMockPresets({ componentsManifest: true, docgenServer: true });
+      mockGetIndex.mockResolvedValue({
+        v: 5,
+        entries: {
+          'constructor--default': {
+            type: 'story',
+            subtype: 'story',
+            id: 'constructor--default',
+            name: 'Default',
+            title: 'Constructor',
+            importPath: './constructor.stories.tsx',
+            tags: [Tag.MANIFEST],
+          },
+        },
+      } as StoryIndex);
+      mockManifests = {
+        components: {
+          v: 0,
+          components: {},
+          meta: { docgen: 'react-component-meta', durationMs: 0 },
+        },
+      };
+      registerDocgenService({
+        getIndex: () => mockGenerator.getIndex(),
+        docgenProvider: async () => ({
+          id: 'constructor',
+          name: 'Constructor',
+          path: './constructor.tsx',
+          jsDocTags: {},
+        }),
+      });
+      registerStoryDocsService({
+        getIndex: () => mockGenerator.getIndex(),
+        storyDocsProvider: async () => ({
+          id: 'constructor',
+          name: 'Constructor',
+          path: './constructor.stories.tsx',
+          stories: { 'constructor--default': { id: 'constructor--default', name: 'Default' } },
+        }),
+      });
+      await writeOpenServiceStaticFiles('/output');
+
+      await writeManifests('/output', mockPresets);
+
+      const files = vol.toJSON();
+      const componentsJson = JSON.parse(files['/output/manifests/components.json'] as string);
+      expect(componentsJson.components.constructor).toMatchObject({
+        id: 'constructor',
+        name: 'Constructor',
+        docgen: { $ref: expect.stringContaining('constructor') },
+        stories: { $ref: expect.stringContaining('constructor') },
+      });
+      expect(files['/output/manifests/components.html']).toContain('id="constructor"');
+      expect(files['/output/manifests/components.html']).toContain('./constructor.tsx');
+    });
+
     it('writes shallow MDX refs and renders HTML from MDX service snapshots', async () => {
       mockPresets = setupMockPresets({
         componentsManifest: true,
-        experimentalDocgenServer: true,
+        docgenServer: true,
       });
       mockGetIndex.mockResolvedValue({
         v: 5,
@@ -749,10 +804,10 @@ describe('manifests', () => {
         expect(res.end).toHaveBeenCalledWith('Manifest "any" not found');
       });
 
-      it('returns 404 for components.json when experimentalDocgenServer is enabled', async () => {
+      it('returns 404 for components.json when docgenServer is enabled', async () => {
         mockPresets = setupMockPresets({
           componentsManifest: true,
-          experimentalDocgenServer: true,
+          docgenServer: true,
         });
 
         registerManifests({ app: mockApp, presets: mockPresets });
@@ -765,14 +820,14 @@ describe('manifests', () => {
 
         expect(res.statusCode).toBe(404);
         expect(res.end).toHaveBeenCalledWith(
-          'Manifest "components" is not available in dev when experimentalDocgenServer is enabled'
+          'Manifest "components" is not available in dev when docgenServer is enabled'
         );
       });
 
-      it('returns 404 for docs.json when experimentalDocgenServer is enabled', async () => {
+      it('returns 404 for docs.json when docgenServer is enabled', async () => {
         mockPresets = setupMockPresets({
           componentsManifest: true,
-          experimentalDocgenServer: true,
+          docgenServer: true,
         });
 
         registerManifests({ app: mockApp, presets: mockPresets });
@@ -785,7 +840,7 @@ describe('manifests', () => {
 
         expect(res.statusCode).toBe(404);
         expect(res.end).toHaveBeenCalledWith(
-          'Manifest "docs" is not available in dev when experimentalDocgenServer is enabled'
+          'Manifest "docs" is not available in dev when docgenServer is enabled'
         );
       });
 
@@ -950,7 +1005,7 @@ describe('manifests', () => {
       it('renders docgen-server HTML with MDX from the live service', async () => {
         mockPresets = setupMockPresets({
           componentsManifest: true,
-          experimentalDocgenServer: true,
+          docgenServer: true,
         });
         mockGetIndex.mockResolvedValue({
           v: 5,
@@ -998,7 +1053,6 @@ describe('manifests', () => {
           },
         };
 
-        registerTestModuleGraphService();
         registerDocgenService({
           getIndex: () => mockGenerator.getIndex(),
           docgenProvider: async () => ({

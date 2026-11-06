@@ -1,11 +1,14 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+import { basename } from 'pathe';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 import { toId } from 'storybook/internal/csf/csf-utils';
-import { getStorySortParameter, loadCsf } from 'storybook/internal/csf-tools';
+import { loadCsf } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import type {
   DocsIndexEntry,
@@ -14,6 +17,7 @@ import type {
 } from 'storybook/internal/types';
 
 import { Tag } from '../../shared/constants/tags.ts';
+import { StorybookError } from '../../storybook-error.ts';
 import { csfIndexer } from '../presets/common-preset.ts';
 import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator.ts';
 import { StoryIndexGenerator } from './StoryIndexGenerator.ts';
@@ -34,13 +38,11 @@ vi.mock('storybook/internal/csf-tools', async (importOriginal) => {
   return {
     ...csfTools,
     loadCsf: vi.fn(csfTools.loadCsf),
-    getStorySortParameter: vi.fn(csfTools.getStorySortParameter),
   };
 });
 
 const toIdMock = vi.mocked(toId);
 const loadCsfMock = vi.mocked(loadCsf);
-const getStorySortParameterMock = vi.mocked(getStorySortParameter);
 
 const options: StoryIndexGeneratorOptions = {
   configDir: join(__dirname, '__mockdata__'),
@@ -55,9 +57,53 @@ describe('StoryIndexGenerator', () => {
     vi.mocked(once.warn).mockClear();
     toIdMock.mockClear();
     loadCsfMock.mockClear();
-    getStorySortParameterMock.mockClear();
     StoryIndexGenerator.clearFindMatchingFilesCache();
   });
+  it.each([
+    'export default { tags: ["autodocs"] };',
+    'const tags = ["autodocs"]; export default { tags };',
+    'const preview = { tags: ["autodocs"] }; export const argTypesEnhancers = []; export default preview;',
+    'const base = ["autodocs"]; export default { tags: [...base] };',
+    'const tags = ["autodocs"]; export default { tags, parameters: { tags } };',
+    'export const parameters = {}; export const Preview = { parameters }; export const tags = ["autodocs"];',
+  ])('reads project tags statically from %s', (source) => {
+    const generator = new StoryIndexGenerator([], options);
+    expect(generator.getProjectTags({ path: 'preview.ts', code: source })).toEqual([
+      Tag.DEV,
+      Tag.TEST,
+      Tag.MANIFEST,
+      'autodocs',
+    ]);
+    expect(once.warn).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    'export default { tags: getTags() };',
+    'export default { tags: [1] };',
+    'export default { tags: "autodocs" };',
+  ])('warns and retains default tags for %s', (source) => {
+    const generator = new StoryIndexGenerator([], options);
+    expect(generator.getProjectTags({ path: 'preview.ts', code: source })).toEqual([
+      Tag.DEV,
+      Tag.TEST,
+      Tag.MANIFEST,
+    ]);
+    expect(once.warn).toHaveBeenCalledWith(expect.stringContaining('Unable to parse tags'));
+  });
+
+  it.each([
+    'export default { ...basePreview, parameters: {} };',
+    'export default definePreview(importedConfig);',
+  ])('retains default tags without warning for %s', (source) => {
+    const generator = new StoryIndexGenerator([], options);
+    expect(generator.getProjectTags({ path: 'preview.ts', code: source })).toEqual([
+      Tag.DEV,
+      Tag.TEST,
+      Tag.MANIFEST,
+    ]);
+    expect(once.warn).not.toHaveBeenCalled();
+  });
+
   describe('extraction', () => {
     const storiesSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
       './src/A.stories.(ts|js|mjs|jsx)',
@@ -2076,6 +2122,60 @@ describe('StoryIndexGenerator', () => {
           `[Error: Unable to index ./src/docs2/MetaOf.mdx]`
         );
       });
+
+      it('logs the errors once when getIndex is called again before it finishes', async () => {
+        const generator = new StoryIndexGenerator(
+          [normalizeStoriesEntry('./src/docs2/MetaOf.mdx', options)],
+          options
+        );
+        await generator.initialize();
+
+        const results = await Promise.allSettled([generator.getIndex(), generator.getIndex()]);
+
+        expect(results.map(({ status }) => status)).toEqual(['rejected', 'rejected']);
+        expect(logger.warn).toHaveBeenCalledTimes(1);
+      });
+
+      it('lists the other files that fail with the same Storybook error and message by path', async () => {
+        class ExampleError extends StorybookError {
+          constructor(message: string) {
+            super({ name: 'ExampleError', category: 'EXAMPLE', code: 1, message });
+          }
+        }
+        const generator = new StoryIndexGenerator(
+          [normalizeStoriesEntry('./src/*.stories.(js|ts)', options)],
+          {
+            ...options,
+            indexers: [
+              {
+                test: /\.stories\.(js|ts)$/,
+                createIndex: async (fileName) => {
+                  throw new ExampleError(
+                    basename(fileName) === 'Button.stories.ts'
+                      ? `The file '${pathToFileURL(fileName)}' has a syntax error at 3:1`
+                      : `The file '${pathToFileURL(fileName)}' is not a stories file`
+                  );
+                },
+              },
+            ],
+          }
+        );
+        await generator.initialize();
+
+        const error = await generator.getIndex().then(
+          () => expect.unreachable('getIndex should reject'),
+          (err: Error) => err
+        );
+
+        expect(error.message.replaceAll(pathToFileURL(options.workingDir).href, '<cwd>'))
+          .toMatchInlineSnapshot(`
+            "Unable to index files:
+            - ./src/A.stories.js: The file '<cwd>/src/A.stories.js' is not a stories file
+            - ./src/B.stories.ts: the same error as above (SB_EXAMPLE_0001)
+            - ./src/Empty.stories.ts: the same error as above (SB_EXAMPLE_0001)
+            - ./src/Button.stories.ts: The file '<cwd>/src/Button.stories.ts' has a syntax error at 3:1"
+          `);
+      });
     });
 
     describe('warnings', () => {
@@ -2236,12 +2336,14 @@ describe('StoryIndexGenerator', () => {
         options
       );
 
-      const generator = new StoryIndexGenerator([docsSpecifier, storiesSpecifier], options);
-      await generator.initialize();
-
-      getStorySortParameterMock.mockReturnValueOnce({
+      const storySort = {
         order: ['docs2', 'D', 'B', 'nested', 'A', 'second-nested', 'first-nested/deeply'],
+      };
+      const generator = new StoryIndexGenerator([docsSpecifier, storiesSpecifier], {
+        ...options,
+        storySorts: [storySort],
       });
+      await generator.initialize();
 
       expect(Object.keys((await generator.getIndex()).entries)).toMatchInlineSnapshot(`
         [
@@ -2323,8 +2425,10 @@ describe('StoryIndexGenerator', () => {
         );
 
         const sortFn = vi.fn();
-        getStorySortParameterMock.mockReturnValue(sortFn);
-        const generator = new StoryIndexGenerator([specifier], options);
+        const generator = new StoryIndexGenerator([specifier], {
+          ...options,
+          storySorts: [sortFn],
+        });
         await generator.initialize();
         await generator.getIndex();
         expect(sortFn).toHaveBeenCalled();
@@ -2406,8 +2510,10 @@ describe('StoryIndexGenerator', () => {
         );
 
         const sortFn = vi.fn();
-        getStorySortParameterMock.mockReturnValue(sortFn);
-        const generator = new StoryIndexGenerator([specifier], options);
+        const generator = new StoryIndexGenerator([specifier], {
+          ...options,
+          storySorts: [sortFn],
+        });
         await generator.initialize();
         await generator.getIndex();
         expect(sortFn).toHaveBeenCalled();
@@ -2447,8 +2553,10 @@ describe('StoryIndexGenerator', () => {
         );
 
         const sortFn = vi.fn();
-        getStorySortParameterMock.mockReturnValue(sortFn);
-        const generator = new StoryIndexGenerator([specifier], options);
+        const generator = new StoryIndexGenerator([specifier], {
+          ...options,
+          storySorts: [sortFn],
+        });
         await generator.initialize();
         await generator.getIndex();
         expect(sortFn).toHaveBeenCalled();

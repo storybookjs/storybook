@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "`meta.component` must be the element's tag name as a string, got `undefined`",
+    "name": "component-not-a-tag"
+  },
+  "id": "stories-renderers-web-components-script",
+  "jsDocTags": {},
+  "name": "script",
+  "path": "./src/stories/renderers/web-components/script.stories.js"
+}

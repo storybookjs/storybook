@@ -1,6 +1,5 @@
 import { StorybookError } from '../../storybook-error.ts';
 import {
-  AutomigrateAddonA11yTestError,
   ExecaCommandFailedError,
   NuxtModuleAddFailedError,
   PackageInstallDependencyConflictError,
@@ -12,7 +11,7 @@ import {
   PnpmNoTtyModulesDirError,
   type ExecaCommandErrorData,
 } from '../../server-errors.ts';
-import { getErrorLogs } from '../js-package-manager/util.ts';
+import { extractPackageManagerErrorCode, getErrorLogs } from '../js-package-manager/util.ts';
 
 export type ExecaErrorContext = {
   command: string;
@@ -50,25 +49,6 @@ export function extractExecaCommandErrorData(
     logs,
     packageManagerErrorCode: extractPackageManagerErrorCode(logs),
   };
-}
-
-export function extractPackageManagerErrorCode(logs: string): string | undefined {
-  const npmMatch = logs.match(/npm\s+(?:ERR!|error)\s+code\s+([A-Z0-9_]+)/i);
-  if (npmMatch) {
-    return npmMatch[1];
-  }
-
-  const pnpmMatch = logs.match(/(ERR_PNPM_[A-Z0-9_]+)/);
-  if (pnpmMatch) {
-    return pnpmMatch[1];
-  }
-
-  return undefined;
-}
-
-function isAutomigrateAddonA11yTest(args: string[]) {
-  const joined = args.join(' ');
-  return joined.includes('automigrate') && joined.includes('addon-a11y-addon-test');
 }
 
 function isNuxtModuleAdd(args: string[]) {
@@ -139,10 +119,6 @@ export function categorizeExecaError(error: unknown, context: ExecaErrorContext)
 
   const data = extractExecaCommandErrorData(error, context);
   const { command, args } = data;
-
-  if (isAutomigrateAddonA11yTest(args)) {
-    return new AutomigrateAddonA11yTestError({ ...data, cause: error });
-  }
 
   if (isNuxtModuleAdd(args)) {
     return new NuxtModuleAddFailedError({ ...data, cause: error });

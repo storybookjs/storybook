@@ -2,7 +2,7 @@ import { access } from 'node:fs/promises';
 
 import { resolve } from 'path';
 
-import type { Task } from '../task.ts';
+import type { MonorepoDetails, Task } from '../task.ts';
 import { exec } from '../utils/exec.ts';
 
 const verdaccioCacheDir = resolve(__dirname, '../../.verdaccio-cache');
@@ -16,7 +16,7 @@ const pathExists = async (path: string) => {
   }
 };
 
-export const publish: Task = {
+export const publish: Task<MonorepoDetails> = {
   description: 'Publish the packages of the monorepo to an internal npm server',
   dependsOn: ['compile'],
   async ready() {

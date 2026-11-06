@@ -53,8 +53,9 @@ Depending on the version of ESLint you are using, you may need to install a spec
 
 | ESLint version | Storybook plugin version |
 | -------------- | ------------------------ |
-| `^9.0.0`       | `^9.0.0` or `^0.10.0`    |
-| `^8.57.0`      | `^9.0.0` or `^0.10.0`    |
+| `^10.0.0`      | `^10.3.0`                |
+| `^9.0.0`       | `^9.0.0` or `^10.0.0`    |
+| `^8.57.0`      | `^9.0.0` or `^10.0.0`    |
 | `^7.0.0`       | `~0.9.0`                 |
 
 ## Usage
@@ -158,7 +159,7 @@ This plugin does not support MDX files.
 | [`storybook/meta-satisfies-type`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/meta-satisfies-type.md)                     | Meta should use `satisfies Meta`                                                                                              | ✅                    | N/A                                                                                                                            |
 | [`storybook/no-redundant-story-name`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/no-redundant-story-name.md)             | A story should not have a redundant name property                                                                             | ✅                    | <ul><li>csf</li><li>flat/csf</li><li>recommended</li><li>flat/recommended</li><li>csf-strict</li><li>flat/csf-strict</li></ul> |
 | [`storybook/no-renderer-packages`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/no-renderer-packages.md)                   | Do not import renderer packages directly in stories                                                                           |                       | <ul><li>recommended</li><li>flat/recommended</li></ul>                                                                         |
-| [`storybook/no-stories-of`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/no-stories-of.md)                                 | storiesOf is deprecated and should not be used                                                                                |                       | <ul><li>csf-strict</li><li>flat/csf-strict</li></ul>                                                                           |
+| [`storybook/no-stories-of`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/no-stories-of.md)                                 | storiesOf was removed in Storybook 8.0; use CSF instead.                                                                      |                       | <ul><li>csf-strict</li><li>flat/csf-strict</li></ul>                                                                           |
 | [`storybook/no-title-property-in-meta`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/no-title-property-in-meta.md)         | Do not define a title in meta                                                                                                 | ✅                    | <ul><li>csf-strict</li><li>flat/csf-strict</li></ul>                                                                           |
 | [`storybook/no-uninstalled-addons`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/no-uninstalled-addons.md)                 | This rule identifies storybook addons that are invalid because they are either not installed or contain a typo in their name. |                       | <ul><li>recommended</li><li>flat/recommended</li></ul>                                                                         |
 | [`storybook/prefer-pascal-case`](https://github.com/storybookjs/storybook/blob/next/code/lib/eslint-plugin/docs/rules/prefer-pascal-case.md)                       | Stories should use PascalCase                                                                                                 | ✅                    | <ul><li>recommended</li><li>flat/recommended</li></ul>                                                                         |

@@ -10,7 +10,7 @@ import { FailedIcon } from '@storybook/icons';
 
 import type { API, AddonStore } from 'storybook/manager-api';
 import { addons, types } from 'storybook/manager-api';
-import { color } from 'storybook/theming';
+import { color } from 'storybook/theming/emotion';
 
 import { ToolbarManager } from '../toolbar/components/ToolbarManager.tsx';
 import { TOOLBAR_ID } from '../toolbar/constants.ts';
@@ -24,7 +24,6 @@ addons.register(TOOLBAR_ID, () =>
   addons.add(TOOLBAR_ID, {
     title: TOOLBAR_ID,
     type: types.TOOL,
-    match: ({ tabId }) => !tabId,
     render: () => <ToolbarManager />,
   })
 );

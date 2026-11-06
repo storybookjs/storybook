@@ -1,11 +1,13 @@
-import storybookPlugin from '../../index.ts';
-
 /*
  * IMPORTANT!
  * This file has been automatically generated,
  * in order to update its content, execute "yarn update-rules" or rebuild this package.
  */
-export default [
+import type { CompatibleFlatConfig } from '../../types/index.ts';
+
+import storybookPlugin from '../../index.ts';
+
+const config: CompatibleFlatConfig[] = [
   {
     name: 'storybook:recommended:setup',
     plugins: {
@@ -41,3 +43,5 @@ export default [
     } as const,
   },
 ];
+
+export default config;

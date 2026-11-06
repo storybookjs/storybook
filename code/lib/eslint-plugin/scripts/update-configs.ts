@@ -11,8 +11,14 @@ import { update as updateIndex } from './update-lib-index.ts';
 const ROOT_CONFIG_DIR = path.resolve(__dirname, '../src/configs/');
 
 async function run() {
-  // cleanup
-  await fs.rm(ROOT_CONFIG_DIR, { recursive: true });
+  // cleanup generated configs while preserving test files
+  const entries = await fs.readdir(ROOT_CONFIG_DIR, { withFileTypes: true }).catch(() => []);
+  for (const entry of entries) {
+    if (entry.name.endsWith('.test-d.ts')) {
+      continue;
+    }
+    await fs.rm(path.join(ROOT_CONFIG_DIR, entry.name), { recursive: true, force: true });
+  }
 
   // updates
   await updateLegacyConfigs();

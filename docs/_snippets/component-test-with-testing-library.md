@@ -44,7 +44,7 @@ it('Checks if the form is valid', async () => {
 
 ```js filename="Form.test.js|jsx" renderer="react" language="js"
 import { screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { userEvent } from 'storybook/test';
 
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import { composeStories } from '@storybook/your-framework';
@@ -72,7 +72,7 @@ test('Checks if the form is valid', async () => {
 
 ```ts filename="Form.test.ts|tsx" renderer="react" language="ts"
 import { screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { userEvent } from 'storybook/test';
 
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import { composeStories } from '@storybook/your-framework';
@@ -100,7 +100,7 @@ test('Checks if the form is valid', async () => {
 
 ```js filename="Form.test.js" renderer="svelte" language="js"
 import { render, screen } from '@testing-library/svelte';
-import userEvent from '@testing-library/user-event';
+import { userEvent } from 'storybook/test';
 
 // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
 import { composeStories } from '@storybook/your-framework';
@@ -124,7 +124,7 @@ it('Checks if the form is valid', async () => {
 
 ```js filename="tests/Form.test.js" renderer="vue" language="js"
 import { screen } from '@testing-library/vue';
-import userEvent from '@testing-library/user-event';
+import { userEvent } from 'storybook/test';
 
 import { composeStories } from '@storybook/vue3-vite';
 
@@ -151,7 +151,7 @@ test('Checks if the form is valid', async () => {
 
 ```ts filename="tests/Form.test.ts" renderer="vue" language="ts"
 import { screen } from '@testing-library/vue';
-import userEvent from '@testing-library/user-event';
+import { userEvent } from 'storybook/test';
 
 import { composeStories } from '@storybook/vue3-vite';
 

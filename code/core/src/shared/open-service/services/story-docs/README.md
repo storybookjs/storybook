@@ -17,7 +17,7 @@ it reads like code you would write. It does not have to be perfect; it has to be
 
 Live snippets are behind `features.experimentalLiveServerSnippets`. While it is off, the service
 leaves every `template` out of the story docs, so agents and the components manifest read what they
-read before live snippets, and `storyArgsChanged` never reports a change, so the preview shows the
+read before live snippets, and `storyArgsChanged` never reports a change, so every runtime shows the
 static snippet.
 
 A story's `snippet` is static: it shows the args written in the story file, and it is what agents
@@ -85,10 +85,12 @@ it as soon as the story docs load. With the flag on, agents and the components m
 
 ### Where the snippet is filled
 
-The `liveSnippet` query fills one story's template with given `args`, and returns `{ snippet,
-warning }`. With `initialArgs`, as the manager and the preview pass them, it fills only the args that
-differ from them. Without, as an agent or tool usually calls it, it fills every arg in `args`, and
-every other arg keeps its text from the static snippet. It runs in every runtime: the server, the manager and the preview each
+The `liveSnippet` query fills one story's template with the args that changed, and returns
+`{ snippet, warning }`. Its input is a change set: `args` holds only the args that differ from those
+the story is written with, and `unset` names the args the story no longer has. Every other arg keeps
+its text from the static snippet. The manager, the preview and the docs blocks compute the change
+set with `argChanges` from `storybook/internal/docs-tools`, which compares by value and counts an arg
+set to `undefined` as unset. With no change, the query returns the static snippet. It runs in every runtime: the server, the manager and the preview each
 register `core/story-docs`, and each fills with the `PrintHole` registered in that runtime. It has
 no load of its own, so a new `args` input never extracts the story docs again; its `.loaded()`
 loads them through the `storyDocs` query it reads.
@@ -102,8 +104,8 @@ CSF factories, builders import only the project's preview file, so a module core
 `previewAnnotations` preset would not load. The registry is on `globalThis`, since the manager
 bundles the module with its own copy of `storybook/internal/docs-tools`.
 
-- **Code panel:** fills in the manager with the manager's `args` and `initialArgs`, which the
-  preview sends through the channel. The channel drops functions, so the manager cannot run a
+- **Code panel:** fills in the manager with the change set of the manager's `args` and
+  `initialArgs`, which the preview sends through the channel. The channel drops functions, so the manager cannot run a
   `parameters.docs.source.transform`, and cannot see a function arg the preview changed. For such a
   story the preview marks its emit `previewOnly`, and the panel shows the emitted snippet.
 - **Docs blocks:** Canvas › Show code and `<Source>` fill in the preview.

@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 
 import type { PreparedStory, StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
 
+import { argChanges } from 'storybook/internal/docs-tools/snippets';
 import { type QueryState, type StoryArgs, selectStoryDoc } from 'storybook/open-service';
 import { getService } from 'storybook/preview-api';
 
@@ -61,8 +62,7 @@ export function useServiceStoryLiveSnippet(
     () =>
       getService('core/story-docs', { internal: true }).queries.liveSnippet.get({
         storyId: story.id,
-        args: args.unmappedArgs,
-        initialArgs: args.initialArgs,
+        ...argChanges(args),
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `state.data` is the trigger
     [state.data, story.id, args]

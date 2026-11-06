@@ -2,6 +2,7 @@ import { logger } from 'storybook/internal/client-logger';
 import {
   SourceType,
   UnprintableArgError,
+  argChanges,
   printValue,
   registerPrintHole,
 } from 'storybook/internal/docs-tools';
@@ -13,7 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
 import { type StoryDocsService, storyDocsServiceDef } from './definition.ts';
-import { argsReachManager, selectLiveSnippetForStory, storyArgsChanged } from './live-snippet.ts';
+import { argsReachManager, selectLiveSnippetForStory } from './live-snippet.ts';
 import { prependImportToSnippet, selectSnippetForStory, selectWarningForStory } from './snippet.ts';
 import {
   shouldSkipStoryDocsEmit,
@@ -64,8 +65,8 @@ const payloadWithoutTemplate: StoryDocsPayload = {
   stories: { [storyId]: storyWithoutTemplate },
 };
 const printHole = (_: unknown, value: unknown) => `label="${String(value)}"`;
-// The story's args once `label` changed to `Go` from the `hi` it is written with.
-const changed = { unmappedArgs: { label: 'Go' }, initialArgs: { label: 'hi' } };
+// The story's `label` changed to `Go` from the `hi` it is written with.
+const changed = { args: { label: 'Go' } };
 
 // Builds a minimal `core/story-docs` service mock whose `storyDocs.loaded` resolves with `loaded`,
 // which `storyDocs.get` reads from then on.
@@ -151,7 +152,7 @@ describe('selectLiveSnippetForStory', () => {
       throw new Error('unexpected value');
     };
     for (const label of ['Go', 'Stop']) {
-      const args = { ...changed, unmappedArgs: { label } };
+      const args = { args: { label } };
       expect(selectLiveSnippetForStory(payloadWithWarning, storyId, args, throwing)).toEqual({
         snippet: serviceSnippet,
         warning: `${warning} The snippet does not follow the changed args.`,
@@ -201,19 +202,22 @@ describe('selectLiveSnippetForStory', () => {
       for (const label of values) {
         const args = { unmappedArgs: { label }, initialArgs: { label: 'hi' } };
         const sent = parse(stringify(args));
-        expect(selectLiveSnippetForStory(payloadWithWarning, storyId, sent, printer)).toEqual(
-          selectLiveSnippetForStory(payloadWithWarning, storyId, args, printer)
+        expect(
+          selectLiveSnippetForStory(payloadWithWarning, storyId, argChanges(sent), printer)
+        ).toEqual(
+          selectLiveSnippetForStory(payloadWithWarning, storyId, argChanges(args), printer)
         );
       }
     }
   });
 
   it('selects the static snippet while the story has the args it is written with', () => {
-    const args = { unmappedArgs: { label: 'hi' }, initialArgs: { label: 'hi' } };
-    expect(selectLiveSnippetForStory(payloadWithWarning, storyId, args, printHole)).toEqual({
-      snippet: serviceSnippet,
-      warning,
-    });
+    expect(selectLiveSnippetForStory(payloadWithWarning, storyId, { args: {} }, printHole)).toEqual(
+      {
+        snippet: serviceSnippet,
+        warning,
+      }
+    );
   });
 });
 
@@ -281,23 +285,6 @@ describe('argsReachManager', () => {
   ])('fails for %s that changed, which the channel drops', (_, value) => {
     expect(reaches({ value }, { value: 'initial' })).toBe(false);
     expect(reaches({ value: 'current' }, { value })).toBe(false);
-  });
-});
-
-describe('storyArgsChanged', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it('reads an arg written as undefined as unchanged once the args store drops it', () => {
-    vi.stubGlobal('FEATURES', { experimentalLiveServerSnippets: true });
-
-    expect(
-      storyArgsChanged({
-        unmappedArgs: { label: 'Hi' },
-        initialArgs: { label: 'Hi', size: undefined },
-      })
-    ).toBe(false);
   });
 });
 

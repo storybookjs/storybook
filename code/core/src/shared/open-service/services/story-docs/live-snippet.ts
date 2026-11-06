@@ -1,7 +1,11 @@
-import { isEqual, isPlainObject } from 'es-toolkit/predicate';
+import { isPlainObject } from 'es-toolkit/predicate';
 
 import { logger } from 'storybook/internal/client-logger';
-import { type PrintHole, fillTemplate } from '../../../../docs-tools/snippetTemplate.ts';
+import {
+  type ArgChanges,
+  type PrintHole,
+  fillTemplate,
+} from '../../../../docs-tools/snippetTemplate.ts';
 import type { Args } from 'storybook/internal/types';
 
 import { prependImportToSnippet, selectSnippetForStory, selectWarningForStory } from './snippet.ts';
@@ -15,18 +19,13 @@ const storiesWarnedAbout = new Set<string>();
 export type StoryArgs = { unmappedArgs: Args; initialArgs: Args };
 
 /**
- * Whether a story renders with other args than those it is written with, so its template fills.
- * Never while `features.experimentalLiveServerSnippets` is off: the snippet then stays static, as before
- * live snippets.
+ * Whether a story's args changed, so its template fills. Never while
+ * `features.experimentalLiveServerSnippets` is off: the snippet then stays static, as before live
+ * snippets.
  */
-export const storyArgsChanged = ({ unmappedArgs, initialArgs }: StoryArgs) =>
+export const storyArgsChanged = ({ args, unset = [] }: ArgChanges) =>
   Boolean(globalThis.FEATURES?.experimentalLiveServerSnippets) &&
-  !isEqual(definedArgs(unmappedArgs), definedArgs(initialArgs));
-
-// An arg set to `undefined` is unset: the args store deletes it on every update, and the template
-// fill reads it as absent too.
-const definedArgs = (args: Args | undefined) =>
-  Object.fromEntries(Object.entries(args ?? {}).filter(([, value]) => value !== undefined));
+  (Object.keys(args).length > 0 || unset.length > 0);
 
 // Whether the manager reads the args the preview renders with. The channel drops a function, also
 // inside an object or array, so the manager cannot see one the preview sets in place of the
@@ -86,7 +85,7 @@ function restoreSentInstances(value: unknown, seen = new Set<object>()): unknown
 export function selectLiveSnippetForStory(
   payload: StoryDocsPayload | undefined,
   storyId: string,
-  args: StoryArgs,
+  changes: ArgChanges,
   printHole: PrintHole | undefined
 ): { snippet?: string; warning?: string } {
   const staticSnippet = (reason?: string) => ({
@@ -94,7 +93,7 @@ export function selectLiveSnippetForStory(
     warning:
       [selectWarningForStory(payload, storyId), reason].filter(Boolean).join(' ') || undefined,
   });
-  if (!storyArgsChanged(args)) {
+  if (!storyArgsChanged(changes)) {
     return staticSnippet();
   }
   const story = payload?.stories[storyId];
@@ -103,16 +102,10 @@ export function selectLiveSnippetForStory(
   if (template === undefined || printHole === undefined) {
     return staticSnippet(stale);
   }
-  const restoredArgs = {
-    unmappedArgs: restoreSentInstances(args.unmappedArgs) as Args,
-    initialArgs: restoreSentInstances(args.initialArgs) as Args,
-  };
+  const restored = { ...changes, args: restoreSentInstances(changes.args) as Args };
   try {
     return {
-      snippet: prependImportToSnippet(
-        payload?.import,
-        fillTemplate(template, restoredArgs, printHole)
-      ),
+      snippet: prependImportToSnippet(payload?.import, fillTemplate(template, restored, printHole)),
       warning: story?.warning,
     };
   } catch (error) {

@@ -18,6 +18,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 import { getStoryIndex } from './utils/get-story-index.ts';
+import { toBaseUrl } from './utils/base-url.ts';
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
   existingAnnotations = []
@@ -37,7 +38,10 @@ export const experimental_devServer: PresetPropertyFn<
     toolsets: options.toolsets ?? {},
   });
 
+  const basePath = options.basePath ?? '/';
   const origin = `http://localhost:${options.port}`;
+  const baseUrl = toBaseUrl(origin, basePath);
+  logger.debug(`MCP server base URL: ${baseUrl}`);
   const endpoint = addonOptions.endpoint ?? DEFAULT_MCP_ENDPOINT;
 
   const core = await options.presets.apply('core', {});
@@ -119,8 +123,8 @@ export const experimental_devServer: PresetPropertyFn<
     logger.info(`Sources: ${(sources ?? []).map((s) => s.id).join(', ')}`);
 
     // Remote sources are fetched over HTTP; the local one is read through `localAccess` when
-    // docgen-server mode is on, and over HTTP from this origin otherwise.
-    createManifestProvider = () => compositionAuth.createManifestProvider(origin);
+    // docgen-server mode is on, and over HTTP from this base URL otherwise.
+    createManifestProvider = () => compositionAuth.createManifestProvider(baseUrl);
   }
 
   const manifestAccessFor = (req: IncomingMessage) => ({
@@ -130,7 +134,7 @@ export const experimental_devServer: PresetPropertyFn<
 
   // Serve .well-known/oauth-protected-resource for MCP auth
   app!.get('/.well-known/oauth-protected-resource', (_req, res) => {
-    const wellKnown = compositionAuth.buildWellKnown(origin);
+    const wellKnown = compositionAuth.buildWellKnown(`${baseUrl}${endpoint}`);
     if (!wellKnown) {
       res.writeHead(404);
       res.end('Not found');
@@ -146,7 +150,7 @@ export const experimental_devServer: PresetPropertyFn<
     if (compositionAuth.requiresAuth && !token) {
       res.writeHead(401, {
         'Content-Type': 'text/plain',
-        'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(origin),
+        'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(baseUrl),
       });
       res.end('401 - Unauthorized');
       return true;
@@ -164,6 +168,8 @@ export const experimental_devServer: PresetPropertyFn<
       res,
       options,
       addonOptions,
+      origin,
+      basePath,
       endpoint,
       sources,
       ...manifestAccessFor(req),
@@ -196,6 +202,8 @@ export const experimental_devServer: PresetPropertyFn<
         res,
         options,
         addonOptions,
+        origin,
+        basePath,
         endpoint,
         sources,
         ...manifestAccessFor(req),
@@ -267,7 +275,7 @@ export const experimental_devServer: PresetPropertyFn<
       .replace(
         '{{MANIFEST_DEBUGGER_LINK}}',
         rawAvailability.docsEnabled
-          ? '<p>View the <a href="/manifests/components.html">component manifest debugger</a>.</p>'
+          ? `<p>View the <a href="${basePath}manifests/components.html">component manifest debugger</a>.</p>`
           : ''
       )
       .replace('{{A11Y_BADGE}}', a11yBadge);

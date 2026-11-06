@@ -2,7 +2,7 @@ import type { FC } from 'react';
 import React from 'react';
 
 import { Tab } from 'react-aria-components/Tabs';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 export interface StatelessTabProps {
   /** Unique id of the Tab, must match that of its corresponding TabPanel. */

@@ -58,17 +58,15 @@ const entries = new Map(
   )
 );
 
-const LEGACY_PARITY = new Set<string>();
-
 const provider = createDocgenProvider()(async () => undefined);
 
-const withoutArgTypes = (
+const withoutOwnSnapshots = (
   payload: DocgenPayload | undefined
-): Omit<DocgenPayload, 'argTypes'> | undefined => {
+): Omit<DocgenPayload, 'argTypes' | 'apiDescription'> | undefined => {
   if (!payload) {
     return payload;
   }
-  const { argTypes: _argTypes, ...rest } = payload;
+  const { argTypes: _argTypes, apiDescription: _apiDescription, ...rest } = payload;
   return rest;
 };
 
@@ -91,24 +89,40 @@ describe('svelte server-side docgen baselines', () => {
       path: join(testDir, 'osa-argtypes.snapshot'),
       label: `${fixtureCase}/osa-argtypes.snapshot`,
       candidate: payload?.argTypes ?? {},
-      extraGates: LEGACY_PARITY.has(fixtureCase)
-        ? [
-            {
-              committed: readFixtureFile(fixtureCase, 'argtypes.snapshot'),
-              label: `${fixtureCase}/argtypes.snapshot`,
-              legacyBaseline: true,
-            },
-          ]
-        : [],
+      extraGates: [
+        {
+          committed: readFixtureFile(fixtureCase, 'argtypes.snapshot'),
+          label: `${fixtureCase}/argtypes.snapshot`,
+          legacyBaseline: true,
+        },
+      ],
     });
-    await expect(withoutArgTypes(payload)).toMatchFileSnapshot(
+    await expect(withoutOwnSnapshots(payload)).toMatchFileSnapshot(
       join(testDir, 'osa-payload.snapshot')
     );
     await expect(payload?.description ?? '').toMatchFileSnapshot(
       join(testDir, 'osa-description.snapshot')
     );
+    await expect(payload?.apiDescription ?? '').toMatchFileSnapshot(
+      join(testDir, 'osa-api-description.snapshot')
+    );
   });
 });
+
+it.each(['runes-basic-props', 'runes-callbacks', 'runes-component-props-indexed'])(
+  '%s resolves the same component from plain CSF and Svelte CSF',
+  async (fixtureCase) => {
+    vi.spyOn(process, 'cwd').mockReturnValue(join(fixturesDir, fixtureCase));
+    const entry = entries.get(fixtureCase)!;
+    const sveltePayload = await provider({ entry });
+    const plainPayload = await provider({
+      entry: { ...entry, importPath: './input.stories.ts' },
+    });
+    expect(plainPayload?.argTypes).toEqual(sveltePayload?.argTypes);
+    expect(plainPayload?.name).toEqual(sveltePayload?.name);
+    expect(plainPayload?.error).toBeUndefined();
+  }
+);
 
 it('every parity marker has its legacy and server argTypes baselines', () => {
   for (const fixtureCase of fixtureCases) {
@@ -121,9 +135,9 @@ it('every parity marker has its legacy and server argTypes baselines', () => {
   }
 });
 
-describe('svelte server-side argTypes hold the legacy baseline (red until LEGACY_PARITY lists the fixture)', () => {
+describe('svelte server-side argTypes hold the legacy baseline', () => {
   for (const fixtureCase of fixtureCases) {
-    (LEGACY_PARITY.has(fixtureCase) ? it : it.fails)(fixtureCase, () => {
+    it(fixtureCase, () => {
       expectCurrentOrBetter({
         kind: 'argTypes',
         baseline: parseArgTypesSnapshot(
@@ -138,4 +152,17 @@ describe('svelte server-side argTypes hold the legacy baseline (red until LEGACY
       });
     });
   }
+});
+
+it('preserves component argTypes and description through a plain CSF barrel import', async () => {
+  vi.spyOn(process, 'cwd').mockReturnValue(join(fixturesDir, 'runes-basic-props'));
+  const entry = entries.get('runes-basic-props')!;
+  const direct = await provider({ entry });
+  const barrel = await provider({ entry: { ...entry, importPath: './barrel.stories.ts' } });
+
+  expect(Object.keys(direct?.argTypes ?? {})).not.toHaveLength(0);
+  expect(barrel?.argTypes).toEqual(direct?.argTypes);
+  expect(barrel?.description).toEqual(direct?.description);
+  expect(barrel?.name).toEqual(direct?.name);
+  expect(barrel?.error).toBeUndefined();
 });

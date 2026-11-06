@@ -16,7 +16,7 @@ import {
   useStorybookApi,
   useStorybookState,
 } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { computeStatusFilterFn } from '../../../manager-api/modules/statuses.ts';
 import { computeTagsFilterFn } from '../../../manager-api/modules/tags.ts';

@@ -1,4 +1,5 @@
 import { print } from 'esrap';
+import ts from 'esrap/languages/ts';
 import { describe, it } from 'vitest';
 
 import { createASTArrayExpression, createASTIdentifier } from '../../../parser/ast.ts';
@@ -24,16 +25,12 @@ describe(createRuntimeStoryVariableDeclaration, () => {
             },
           }),
         },
-      })
+      }),
+      ts()
     ).code;
 
     expect(stringified).toMatchInlineSnapshot(
-      `
-      "const $__Default = {
-      	...$__stories["Default"],
-      	tags: ["svelte-csf-v5"]
-      };"
-    `
+      `"const $__Default = { ...$__stories['Default'], tags: ['svelte-csf-v5'] };"`
     );
   });
 
@@ -64,14 +61,15 @@ describe(createRuntimeStoryVariableDeclaration, () => {
             },
           ]),
         },
-      })
+      }),
+      ts()
     ).code;
 
     expect(stringified).toMatchInlineSnapshot(
       `
       "const $__Default = {
-      	...$__stories["Default"],
-      	tags: ["autodocs", "!test", "svelte-csf-v5"]
+      	...$__stories['Default'],
+      	tags: ['autodocs', '!test', 'svelte-csf-v5']
       };"
     `
     );

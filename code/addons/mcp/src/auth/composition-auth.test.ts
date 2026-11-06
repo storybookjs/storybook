@@ -639,7 +639,7 @@ describe('CompositionAuth', () => {
       expect(auth.requiresAuth).toBe(true);
       expect(auth.authUrls).toContain('https://private.example.com');
 
-      const wellKnown = auth.buildWellKnown('http://localhost:6006');
+      const wellKnown = auth.buildWellKnown('http://localhost:6006/mcp');
       expect(wellKnown).toEqual({
         resource: 'http://localhost:6006/mcp',
         authorization_servers: ['https://auth.example.com'],

@@ -23,7 +23,6 @@
     "**/agent-eval/templates/*/public/mockServiceWorker.js",
     "storybook-static",
     "built-storybooks",
-    "ember-output",
     "code/core/assets",
     "code/core/src/core-server/presets/common-manager.ts",
     "code/core/src/core-server/utils/__search-files-tests__",

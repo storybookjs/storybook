@@ -23,7 +23,7 @@ export const experimental_manifests: PresetPropertyFn<
 > = async (existingManifests = {}, options) => {
   const features = await options.presets.apply('features', {});
 
-  if (!features?.docgenServer || !features?.componentsManifest) {
+  if (!features?.docgenServer) {
     return existingManifests;
   }
 

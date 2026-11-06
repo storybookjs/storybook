@@ -386,7 +386,7 @@ The mechanism is not Vue-specific: an engine entry declares which install it mea
 
 ### The gate and its budgets
 
-Both gates run on CircleCI's daily tier, which is triggered on demand by the `ci:daily` label on a pull request - nothing schedules it, so this is not nightly protection.
+Both gates run on CircleCI's daily tier, which runs nightly on `next` and on demand via the `ci:daily` label on a pull request.
 
 `bench:docgen-perf-gate` runs the suite at the pinned profile, asserts the budgets in `src/perf/docgen-shared/budgets.ts`, and then proves its own failure detection by running a deliberately failing engine and requiring that run to come back non-zero.
 It writes into the sandbox directory by default; CI passes `--out ./perf-results` so the results can be stored as a build artifact.

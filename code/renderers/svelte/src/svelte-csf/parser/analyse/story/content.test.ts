@@ -147,6 +147,66 @@ describe(getStoryContentRawCode.name, () => {
 
       expect(rawSource).toBe(`<SampleComponent {...args} />`);
     });
+
+    it('prints a member-expression component of a named import of an object', async ({
+      expect,
+    }) => {
+      const code = `
+        <script module>
+          import { defineMeta } from "@storybook/svelte";
+
+          import { Input } from "./input.ts";
+
+          const { Story } = defineMeta({
+            component: Input.Select,
+          });
+        </script>
+
+        <Story name="Default" />
+      `;
+      const ast = getSvelteAST({ code });
+      const svelteASTNodes = await extractSvelteASTNodes({ ast });
+      const { storyComponents } = svelteASTNodes;
+      const component = storyComponents[0].component;
+      const rawSource = getStoryContentRawCode({
+        nodes: {
+          component,
+          svelte: svelteASTNodes,
+        },
+        originalCode: code,
+      });
+
+      expect(rawSource).toBe(`<Input.Select {...args} />`);
+    });
+
+    it('prints a member-expression component of a namespace import', async ({ expect }) => {
+      const code = `
+        <script module>
+          import { defineMeta } from "@storybook/svelte";
+
+          import * as ns from "./components.ts";
+
+          const { Story } = defineMeta({
+            component: ns.Button,
+          });
+        </script>
+
+        <Story name="Default" />
+      `;
+      const ast = getSvelteAST({ code });
+      const svelteASTNodes = await extractSvelteASTNodes({ ast });
+      const { storyComponents } = svelteASTNodes;
+      const component = storyComponents[0].component;
+      const rawSource = getStoryContentRawCode({
+        nodes: {
+          component,
+          svelte: svelteASTNodes,
+        },
+        originalCode: code,
+      });
+
+      expect(rawSource).toBe(`<ns.Button {...args} />`);
+    });
   });
 
   describe('When a `<Story />` is NOT a self-closing tag...', () => {
@@ -214,6 +274,39 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe(dedent`<SampleComponent {...args}>
           <h1>Static children content</h1>
         </SampleComponent>`);
+    });
+
+    it('wraps the children in a member-expression component', async ({ expect }) => {
+      const code = `
+        <script module>
+          import { defineMeta } from "@storybook/svelte";
+
+          import { Input } from "./input.ts";
+
+          const { Story } = defineMeta({
+            component: Input.Select,
+          });
+        </script>
+
+        <Story name="Default">
+          <h1>Static children content</h1>
+        </Story>
+      `;
+      const ast = getSvelteAST({ code });
+      const svelteASTNodes = await extractSvelteASTNodes({ ast });
+      const { storyComponents } = svelteASTNodes;
+      const component = storyComponents[0].component;
+      const rawSource = getStoryContentRawCode({
+        nodes: {
+          component,
+          svelte: svelteASTNodes,
+        },
+        originalCode: code,
+      });
+
+      expect(rawSource).toBe(dedent`<Input.Select {...args}>
+          <h1>Static children content</h1>
+        </Input.Select>`);
     });
 
     it("works when a `template` svelte's snippet block used inside", async ({ expect }) => {

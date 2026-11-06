@@ -12,12 +12,16 @@ vi.mock('storybook/internal/common', () => ({
   },
 }));
 
-vi.mock('picocolors', () => ({
-  default: {
-    red: (s: string) => s,
-    cyan: (s: string) => s,
-  },
-}));
+vi.mock('picocolors', async (importOriginal) => {
+  const { default: actual } = await importOriginal<{ default: typeof import('picocolors') }>();
+  return {
+    default: {
+      ...actual,
+      red: (s: string) => s,
+      cyan: (s: string) => s,
+    },
+  };
+});
 
 vi.mock('semver', () => ({
   coerce: vi.fn(),

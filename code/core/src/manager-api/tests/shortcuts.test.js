@@ -1,8 +1,10 @@
 // @vitest-environment happy-dom
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/client-logger';
+import { PREVIEW_KEYDOWN } from 'storybook/internal/core-events';
 
+import { init as initLayout } from '../modules/layout';
 import { init as initShortcuts } from '../modules/shortcuts';
 
 vi.mock('storybook/internal/client-logger');
@@ -339,6 +341,188 @@ describe('addon shortcut matching', () => {
     expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
       expect.stringContaining('stale-addon-gone')
     );
+  });
+});
+
+describe('focus region shortcuts', () => {
+  const setup = ({ navShown = true, panelShown = true } = {}) => {
+    const store = createMockStore();
+    const fullAPI = {
+      getNavAvailability: () => 'shown',
+      getIsFullscreen: () => false,
+      getIsNavShown: () => navShown,
+      getIsPanelShown: () => panelShown,
+      toggleNav: vi.fn(),
+      togglePanel: vi.fn(),
+      focusOnUIElement: vi.fn(),
+    };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: true }, storyId: 'a', refId: undefined });
+    return { api, fullAPI };
+  };
+
+  it.each([
+    ['focusNav', 'storybook-sidebar-region'],
+    ['focusIframe', 'storybook-preview-region'],
+    ['focusPanel', 'storybook-panel-region'],
+  ])('%s forces focus onto the landmark region', (feature, regionId) => {
+    const { api, fullAPI } = setup();
+
+    api.handleShortcutFeature(feature, {});
+
+    expect(fullAPI.focusOnUIElement).toHaveBeenCalledWith(regionId, {
+      forceFocus: true,
+      poll: true,
+      signal: expect.any(AbortSignal),
+    });
+  });
+
+  it('supersedes the pending focus of an earlier shortcut', () => {
+    const { api, fullAPI } = setup();
+
+    api.handleShortcutFeature('focusNav', {});
+    api.handleShortcutFeature('focusIframe', {});
+
+    const [[, first], [, second]] = fullAPI.focusOnUIElement.mock.calls;
+    expect(first.signal.aborted).toBe(true);
+    expect(second.signal.aborted).toBe(false);
+  });
+
+  it('does not fall back to the body when a superseded focus move gives up', async () => {
+    const { api, fullAPI } = setup();
+    document.body.innerHTML = '<div id="storybook-panel-region"><button></button></div>';
+    document.querySelector('button').focus();
+    vi.spyOn(document.body, 'focus');
+    fullAPI.focusOnUIElement.mockImplementation(
+      (_, { signal }) =>
+        new Promise((resolve) => signal.addEventListener('abort', () => resolve(false)))
+    );
+
+    api.handleShortcutFeature('togglePanel', {});
+    api.handleShortcutFeature('focusNav', {});
+    await Promise.resolve();
+
+    expect(fullAPI.focusOnUIElement).toHaveBeenCalledWith(
+      'storybook-show-addon-panel',
+      expect.objectContaining({ poll: true })
+    );
+    expect(document.body.focus).not.toHaveBeenCalled();
+  });
+
+  it('shows hidden regions before focusing them', () => {
+    const { api, fullAPI } = setup({ navShown: false, panelShown: false });
+
+    api.handleShortcutFeature('focusNav', {});
+    api.handleShortcutFeature('focusPanel', {});
+
+    expect(fullAPI.toggleNav).toHaveBeenCalledWith(true);
+    expect(fullAPI.togglePanel).toHaveBeenCalledWith(true);
+  });
+
+  describe('with a region that mounts after the shortcut ran', () => {
+    // The real focusOnUIElement, so that forcing focus and polling for the region run against
+    // the DOM instead of a mock.
+    const setupWithLayout = () => {
+      const store = createMockStore();
+      const layoutApi = initLayout({
+        store,
+        provider: { getConfig: () => ({}) },
+        singleStory: false,
+      }).api;
+      const { api, fullAPI } = setup({ panelShown: false });
+      fullAPI.focusOnUIElement.mockImplementation(layoutApi.focusOnUIElement);
+      return api;
+    };
+
+    const mountRegion = (region) => {
+      const element = document.createElement('div');
+      element.id = `storybook-${region}-region`;
+      element.setAttribute('data-sb-landmark', '');
+      document.body.appendChild(element);
+      return element;
+    };
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      document.body.innerHTML = '';
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('focuses the region once it appears', async () => {
+      const api = setupWithLayout();
+
+      api.handleShortcutFeature('focusPanel', {});
+      const panel = mountRegion('panel');
+      await vi.advanceTimersByTimeAsync(100);
+
+      expect(document.activeElement).toBe(panel);
+    });
+
+    it('leaves focus where a later shortcut put it', async () => {
+      const api = setupWithLayout();
+      const sidebar = mountRegion('sidebar');
+
+      api.handleShortcutFeature('focusPanel', {});
+      api.handleShortcutFeature('focusNav', {});
+      expect(document.activeElement).toBe(sidebar);
+
+      mountRegion('panel');
+      await vi.advanceTimersByTimeAsync(600);
+
+      expect(document.activeElement).toBe(sidebar);
+    });
+  });
+});
+
+describe('landmark navigation relayed from the preview', () => {
+  const setup = () => {
+    document.body.innerHTML = '<div id="storybook-preview-region" data-sb-landmark></div>';
+    const store = createMockStore();
+    const channel = { on: vi.fn() };
+    const fullAPI = {
+      getNavAvailability: () => 'shown',
+      getIsFullscreen: () => false,
+      toggleFullscreen: vi.fn(),
+    };
+    const { state, init } = initShortcuts({ store, provider: { channel }, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: true }, storyId: 'a' });
+    init();
+
+    const [, onPreviewKeydown] = channel.on.mock.calls.find(([name]) => name === PREVIEW_KEYDOWN);
+    const replayed = [];
+    const listener = (event) => replayed.push(event);
+    document.addEventListener('keydown', listener, { capture: true });
+    return {
+      fullAPI,
+      replayed,
+      region: document.getElementById('storybook-preview-region'),
+      pressInPreview: (event) => {
+        onPreviewKeydown({ event: { altKey: false, ctrlKey: false, metaKey: false, ...event } });
+        document.removeEventListener('keydown', listener, { capture: true });
+      },
+    };
+  };
+
+  it('replays F6 on the preview landmark for React Aria to navigate from', () => {
+    const { pressInPreview, replayed, region } = setup();
+
+    pressInPreview({ key: 'F6', code: 'F6', shiftKey: true });
+
+    expect(replayed).toHaveLength(1);
+    expect(replayed[0].target).toBe(region);
+    expect(replayed[0].key).toBe('F6');
+    expect(replayed[0].shiftKey).toBe(true);
+  });
+
+  it('does not replay other keys', () => {
+    const { pressInPreview, replayed } = setup();
+
+    pressInPreview({ key: 'F', code: 'KeyF', altKey: true, shiftKey: false });
+
+    expect(replayed).toHaveLength(0);
   });
 });
 

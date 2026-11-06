@@ -1,14 +1,18 @@
 import path, { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import {
+  getProjectRoot,
+  isModuleNotFoundError,
+  isTypeScriptReadyForDocgen,
+} from 'storybook/internal/common';
 import type { ArgTypes } from 'storybook/internal/csf';
+import { logger } from 'storybook/internal/node-logger';
 import type { Options, PresetProperty } from 'storybook/internal/types';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
+import { REACT_BUILDER_DOCGEN_PACKAGES } from './builder-docgen.ts';
 import { aliasReactInWebpack, prependReactDedupePlugin } from './preview-react-alias.ts';
-import { extractArgTypesFromDocgen } from './componentManifest/reactDocgen/extractReactDocgenInfo.ts';
-import { extractArgTypesFromDocgenTypescript } from './componentManifest/reactDocgen/extractReactTypescriptDocgenInfo.ts';
 import type {
   GetArgTypesDataOptions,
   ReactDocgenConfig,
@@ -29,16 +33,18 @@ export { enrichCsf as experimental_enrichCsf } from './enrichCsf.ts';
 
 export { experimental_docgenProvider } from './docgen/preset.ts';
 
-// Turns `features.docgenServer` on by default; read through `presets.apply('isDocgenProviderEnabled')`
-// so the default never has to call the provider, which itself reads `features`. Server docgen runs on
-// the optional `typescript` peer, so a project without it keeps builder docgen.
-export const isDocgenProviderEnabled = () => {
-  try {
-    import.meta.resolve('typescript');
-    return true;
-  } catch {
-    return false;
-  }
+// Default for `features.docgenServer`; a project without a usable `typescript` keeps builder docgen,
+// which needs the optional `react-docgen` package, unless `typescript.reactDocgen` turns it off
+// (as `storybook build --test` does).
+export const isDocgenProviderEnabled = async (_existing: unknown, options: Options) => {
+  const { reactDocgen } =
+    (await options.presets?.apply<TypescriptOptionsWithDocgen>('typescript', {})) ?? {};
+  return isTypeScriptReadyForDocgen((specifier) => import.meta.resolve(specifier), options, {
+    builderDocgenFallback:
+      reactDocgen === false
+        ? undefined
+        : { packageName: 'react-docgen', range: REACT_BUILDER_DOCGEN_PACKAGES['react-docgen'] },
+  });
 };
 
 export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
@@ -133,6 +139,22 @@ export async function internal_getArgTypesData(
     return null;
   }
 
+  const absoluteComponentFilePath = path.isAbsolute(componentFilePath)
+    ? componentFilePath
+    : join(getProjectRoot(), componentFilePath);
+
+  // On the docgen server, infer arg types with its engine, so the optional builder docgen packages
+  // are not needed. The docgen server ignores `typescript.reactDocgen`.
+  const features = await presets?.apply('features', {});
+  if (features?.docgenServer) {
+    const { extractArgTypesFromComponentFile } =
+      await import('./docgen/extractArgTypesFromComponentFile.ts');
+    return extractArgTypesFromComponentFile({
+      componentFilePath: absoluteComponentFilePath,
+      componentExportName,
+    });
+  }
+
   // Get typescript options from presets to determine which docgen to use
   let typescriptOptions: TypescriptOptionsWithDocgen = {};
   if (presets) {
@@ -151,24 +173,33 @@ export async function internal_getArgTypesData(
     return null;
   }
 
-  const resolvedFilePath = path.isAbsolute(componentFilePath)
-    ? componentFilePath
-    : join(getProjectRoot(), componentFilePath);
-
-  // Choose the appropriate extractor based on the reactDocgen option
+  // Builder docgen: choose the extractor based on the reactDocgen option. Both engines are optional
+  // peer dependencies, so import them only here; without them there are no arg types to infer.
   let argTypesData;
-  if (reactDocgen === 'react-docgen-typescript') {
-    argTypesData = await extractArgTypesFromDocgenTypescript({
-      componentFilePath: resolvedFilePath,
-      componentExportName,
-      reactDocgenTypescriptOptions,
-    });
-  } else {
-    // Default to 'react-docgen'
-    argTypesData = extractArgTypesFromDocgen({
-      componentFilePath: resolvedFilePath,
-      componentExportName,
-    });
+  try {
+    if (reactDocgen === 'react-docgen-typescript') {
+      const { extractArgTypesFromDocgenTypescript } =
+        await import('./componentManifest/reactDocgen/extractReactTypescriptDocgenInfo.ts');
+      argTypesData = await extractArgTypesFromDocgenTypescript({
+        componentFilePath: absoluteComponentFilePath,
+        componentExportName,
+        reactDocgenTypescriptOptions,
+      });
+    } else {
+      // Default to 'react-docgen'
+      const { extractArgTypesFromDocgen } =
+        await import('./componentManifest/reactDocgen/extractReactDocgenInfo.ts');
+      argTypesData = extractArgTypesFromDocgen({
+        componentFilePath: absoluteComponentFilePath,
+        componentExportName,
+      });
+    }
+  } catch (error) {
+    if (!isModuleNotFoundError(error)) {
+      throw error;
+    }
+    logger.debug(`Skipping arg types inference, because ${reactDocgen} is not installed: ${error}`);
+    return null;
   }
 
   return argTypesData;

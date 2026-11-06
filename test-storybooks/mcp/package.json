@@ -45,5 +45,8 @@
     "tinyexec": "^1.0.2",
     "vite": "7.2.2",
     "vitest": "4.0.6"
+  },
+  "nx": {
+    "includedScripts": []
   }
 }

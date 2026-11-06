@@ -2,7 +2,9 @@
   "name": "addon-themes",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "targets": {
-    "compile": {},
+    "compile": {
+      "outputs": ["{projectRoot}/dist", "{workspaceRoot}/code/bench/esbuild-metafiles/themes"]
+    },
     "check": {}
   },
   "tags": ["library"]

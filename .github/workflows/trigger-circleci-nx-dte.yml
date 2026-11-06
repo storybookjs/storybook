@@ -1,0 +1,128 @@
+name: Trigger CircleCI NX DTE
+
+# Opt-in experiment: runs a CircleCI workflow as one NX task graph that NX Cloud distributes over
+# CircleCI agents (scripts/ci/nx/circleci-dte.ts), for pull requests labelled `nx:<workflow>`
+# (`nx:focus`, `nx:normal`, `nx:daily`, ...). The `ci:` labels and the CircleCI
+# pipeline they start (trigger-circle-ci-workflow.yml) are unchanged.
+#
+# `pull_request`, not `pull_request_target`: fork pull requests get no secrets, so only branches of
+# this repository start it. Their author counts as trusted, which lets the pipeline save its caches,
+# only as a member of the teams trigger-circle-ci-workflow.yml trusts.
+#
+# A pull request that also has a `ci:` label is skipped: both pipelines would run on the same branch,
+# and CircleCI cancels the older one.
+#
+# The `report` job then waits for the pipeline and puts each failed NX task on the commit as a status
+# `nx run <task>` (scripts/ci/nx/dte-task-statuses.ts): CircleCI has no token that may write statuses.
+
+on:
+  pull_request:
+    types: [opened, synchronize, labeled, reopened]
+
+permissions: {}
+
+concurrency:
+  # Any other label gets a group of its own, so it cannot cancel a trigger that is waiting.
+  group: ${{ (github.event.action == 'labeled' && !startsWith(github.event.label.name, 'nx:')) && format('nx-dte-ignored-{0}', github.run_id) || format('nx-dte-{0}', github.event.pull_request.number) }}
+  cancel-in-progress: true
+
+jobs:
+  trigger:
+    if: >
+      github.repository == 'storybookjs/storybook' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (github.event.action != 'labeled' || startsWith(github.event.label.name, 'nx:')) &&
+      contains(join(github.event.pull_request.labels.*.name, ','), 'nx:')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      pipeline: ${{ steps.circleci.outputs.pipeline }}
+      workflow: ${{ steps.circleci.outputs.workflow }}
+    steps:
+      # As trigger-circle-ci-workflow.yml decides it.
+      - id: trusted-author
+        env:
+          USER_LOGIN: ${{ github.event.pull_request.user.login }}
+          GITHUB_API_TOKEN: ${{ secrets.STORYBOOKJS_ORG_MEMBERSHIP_TOKEN }}
+        run: |
+          IS_TRUSTED=false
+          for TEAM in maintainers core developer-experience; do
+            STATE=$(curl -fsSL \
+              -H "Authorization: Bearer $GITHUB_API_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "https://api.github.com/orgs/storybookjs/teams/$TEAM/memberships/$USER_LOGIN" \
+              | jq -r '.state' 2>/dev/null || true)
+            if [ "$STATE" = "active" ]; then
+              IS_TRUSTED=true
+              break
+            fi
+          done
+          echo "result=$IS_TRUSTED" >> "$GITHUB_OUTPUT"
+      - name: Trigger CircleCI pipeline
+        id: circleci
+        env:
+          CIRCLE_CI_TOKEN: ${{ secrets.CIRCLE_CI_TOKEN }}
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          GH_BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
+          GH_PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TRUSTED_AUTHOR: ${{ steps.trusted-author.outputs.result }}
+        run: |
+          WORKFLOW=$(jq -r '
+            map(select(startswith("nx:")) | ltrimstr("nx:") | select(IN("focus", "normal", "docs", "daily", "windows")))
+            | join(",")' <<<"$LABELS")
+          if [ -z "$WORKFLOW" ]; then
+            echo "No known workflow in the nx: labels."
+            exit 0
+          fi
+          # The same filter as trigger-circle-ci-workflow.yml: labels such as `ci: do not merge` start
+          # no pipeline there, so they do not skip this one.
+          CI_WORKFLOW=$(jq -r '
+            map(select(startswith("ci:")) | ltrimstr("ci:") | select(IN("focus", "normal", "docs", "daily", "windows")))
+            | join(",")' <<<"$LABELS")
+          if [ -n "$CI_WORKFLOW" ]; then
+            echo "Skipped: the ci:$CI_WORKFLOW label starts the per-job pipeline on this branch, which would cancel this one."
+            exit 0
+          fi
+          PAYLOAD=$(jq -nc \
+            --arg branch "$BRANCH" \
+            --arg workflow "$WORKFLOW" \
+            --arg ghBaseBranch "$GH_BASE_BRANCH" \
+            --arg ghPrNumber "$GH_PR_NUMBER" \
+            --arg ghTrustedAuthor "$GH_TRUSTED_AUTHOR" \
+            '{branch: $branch, parameters: {workflow: $workflow, nxDte: true, ghBaseBranch: $ghBaseBranch, ghPrNumber: $ghPrNumber, ghTrustedAuthor: $ghTrustedAuthor}}')
+          PIPELINE=$(curl -sS --fail-with-body -X POST \
+            -H "Content-Type: application/json" \
+            -H "Circle-Token: $CIRCLE_CI_TOKEN" \
+            -d "$PAYLOAD" \
+            "https://circleci.com/api/v2/project/gh/storybookjs/storybook/pipeline")
+          echo "$PIPELINE"
+          echo "pipeline=$(jq -r '.id' <<<"$PIPELINE")" >> "$GITHUB_OUTPUT"
+          echo "workflow=$WORKFLOW" >> "$GITHUB_OUTPUT"
+
+  report:
+    needs: trigger
+    if: needs.trigger.outputs.pipeline != ''
+    runs-on: ubuntu-latest
+    # The script gives up after 80 minutes.
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+      - name: Report the failed NX tasks
+        env:
+          CIRCLE_TOKEN: ${{ secrets.CIRCLE_CI_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          PIPELINE: ${{ needs.trigger.outputs.pipeline }}
+          WORKFLOW: ${{ needs.trigger.outputs.workflow }}
+        run: |
+          node --experimental-transform-types --no-warnings scripts/ci/nx/dte-task-statuses.ts \
+            --pipeline="$PIPELINE" --workflow="$WORKFLOW"

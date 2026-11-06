@@ -5,7 +5,10 @@ import { type Template } from '../code/lib/cli-storybook/src/sandbox-templates.t
 import * as templates from '../code/lib/cli-storybook/src/sandbox-templates.ts';
 
 // @ts-expect-error somehow TS thinks there is a default export
-const { allTemplates, daily, normal } = (templates.default || templates) as typeof templates;
+const { allTemplates, daily, normal, docgenServerTemplates } = (templates.default ||
+  templates) as typeof templates;
+
+const skips = (template: Template, task: string) => template.skipTasks?.includes(task as never);
 
 const projectJson = (
   name: string,
@@ -49,7 +52,11 @@ const projectJson = (
         dir: name.replaceAll('/', '-'),
       },
     },
-    chromatic: {},
+    // The same tasks CircleCI runs for the template (scripts/ci/sandboxes.ts).
+    ...(skips(template, 'chromatic') ? {} : { chromatic: {} }),
+    // CircleCI's dev job smoke-tests the templates that skip the dev E2E tests.
+    ...(skips(template, 'e2e-tests-dev') ? { 'smoke-test': {} } : {}),
+    ...(docgenServerTemplates().includes(name as never) ? { 'docgen-baselines': {} } : {}),
     serve: {},
     ...(template.skipTasks && template.skipTasks.includes('e2e-tests')
       ? {}
@@ -60,6 +67,9 @@ const projectJson = (
       ? {}
       : {
           'e2e-tests-dev': {},
+          // The two halves of e2e-tests-dev, which CI runs on different workers (nx.json).
+          'e2e-tests-dev-1': {},
+          'e2e-tests-dev-2': {},
         }),
   },
   tags,

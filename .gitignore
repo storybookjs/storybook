@@ -101,3 +101,6 @@ scripts/eval/results
 
 # Perf suite results written by the docgen perf jobs
 code/lib/docgen-harness/perf-results
+
+.nx/migrate-runs
+.nx/self-healing

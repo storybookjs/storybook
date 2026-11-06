@@ -1,0 +1,82 @@
+name: nx-cache
+
+# Fills the shared NX Cloud remote cache from `next`.
+#
+# Pull request runs of the `nx` workflow use a read-only NX Cloud token. They read this shared
+# cache and write only to a cache that NX Cloud scopes to their own pull request, so a pull request
+# can never poison what other branches restore. Only `next` writes to the shared cache (this
+# workflow on every push, the nightly `nx` run for everything else), with the read-write token
+# kept in the `nx-cloud-write` environment. It also saves the `node_modules` cache that pull
+# requests restore, so a lockfile change on `next` reaches them before the nightly run.
+on:
+  push:
+    branches: [next]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Not cancelled by a newer push: a cancelled fill leaves its commit's tasks out of the shared
+# cache. GitHub keeps at most one run waiting, so a burst of pushes fills only the newest.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  fill-cache:
+    if: github.repository == 'storybookjs/storybook' && github.ref == 'refs/heads/next'
+    timeout-minutes: 45
+    runs-on: ubuntu-latest
+    environment: nx-cloud-write
+    env:
+      NX_DEFAULT_OUTPUT_STYLE: stream
+    steps:
+      # The write token only reaches the steps that need it, not `yarn install`'s lifecycle scripts.
+      - name: Check for the write token
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_WRITE_TOKEN }}
+        run: |
+          if [ -z "$NX_CLOUD_ACCESS_TOKEN" ]; then
+            echo "::error::NX_CLOUD_WRITE_TOKEN is not set in the nx-cloud-write environment, so nothing would be stored."
+            exit 1
+          fi
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      # Same cache as the `nx` workflow, saved from `next` so pull requests can restore it.
+      - name: Restore node_modules
+        id: node-modules
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            node_modules
+            */node_modules
+            code/*/node_modules
+            code/*/*/node_modules
+            .yarn/root-install-state.gz
+          key: nx-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', '.yarnrc.yml', 'yarn.lock', '.yarn/patches/**', 'package.json', '*/package.json', 'code/*/package.json', 'code/*/*/package.json') }}
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: ${{ steps.node-modules.outputs.cache-hit != 'true' && 'yarn' || '' }}
+          package-manager-cache: ${{ steps.node-modules.outputs.cache-hit != 'true' }}
+      - if: steps.node-modules.outputs.cache-hit != 'true'
+        run: yarn install --immutable
+      # Right after the install, before tasks write caches into node_modules.
+      - name: Save node_modules
+        if: steps.node-modules.outputs.cache-hit != 'true'
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: |
+            node_modules
+            */node_modules
+            code/*/node_modules
+            code/*/*/node_modules
+            .yarn/root-install-state.gz
+          key: ${{ steps.node-modules.outputs.cache-primary-key }}
+      # The production configuration, as the `nx` workflow's workers run them, so the task hashes
+      # match what pull request pipelines look up.
+      - name: Compile and typecheck
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_WRITE_TOKEN }}
+        run: yarn nx run-many -t compile,check -c production --parallel=4

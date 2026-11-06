@@ -27,7 +27,7 @@
       "command": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON ./scripts/build/build-package.ts --cwd {projectRoot}",
       "configurations": { "production": { "args": "--prod" } },
       "cache": true,
-      "inputs": ["production", "^production"],
+      "inputs": ["production", "^production", { "env": "OS" }],
       "outputs": [
         "{projectRoot}/dist",
         "{workspaceRoot}/code/bench/esbuild-metafiles/{projectName}"
@@ -52,11 +52,13 @@
       "dependsOn": [{ "projects": ["scripts"], "target": "publish" }],
       "command": "yarn workspace @storybook/scripts local-registry --open",
       "continuous": true,
+      "inputs": ["sharedGlobals"],
       "configurations": { "production": {} }
     },
     "sandbox": {
       "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
       "command": "yarn task sandbox -s task --debug --no-link --template={projectName}",
+      "options": { "env": { "STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION": "1" } },
       "cache": true,
       "inputs": ["^production"],
       "outputs": ["{workspaceRoot}/sandbox/{options.dir}"],
@@ -81,6 +83,7 @@
       "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }],
       "command": "yarn task dev -s task --debug --no-link --template={projectName}",
       "continuous": true,
+      "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "vitest-integration": {
@@ -91,35 +94,79 @@
       "configurations": { "production": {} }
     },
     "chromatic": {
-      "dependsOn": ["build", { "projects": ["scripts"], "target": "run-registry" }],
-      "command": "yarn task chromatic -s task --debug --no-link --template={projectName}",
+      "dependsOn": ["build"],
+      "command": "bash scripts/ci/nx/fetch-git-history.sh && yarn task chromatic -s task --debug --no-link --template={projectName}",
+      "cache": false,
+      "configurations": { "production": {} }
+    },
+    "smoke-test": {
+      "dependsOn": ["sandbox", { "projects": ["scripts"], "target": "run-registry" }],
+      "command": "yarn task smoke-test -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production"],
+      "configurations": { "production": {} }
+    },
+    "docgen-baselines": {
+      "dependsOn": ["build"],
+      "command": "yarn exec jiti ./scripts/ci/nx/docgen-baselines.ts {projectName}",
+      "cache": true,
+      "inputs": [
+        "^production",
+        "{workspaceRoot}/code/lib/docgen-harness/**/*",
+        "{workspaceRoot}/scripts/ci/nx/docgen-baselines.ts"
+      ],
       "configurations": { "production": {} }
     },
     "serve": {
       "dependsOn": ["build", { "projects": ["scripts"], "target": "run-registry" }],
       "command": "yarn task serve -s task --debug --no-link --template={projectName}",
       "continuous": true,
+      "inputs": ["^production"],
       "configurations": { "production": {} }
     },
     "e2e-tests": {
       "dependsOn": ["serve"],
       "command": "yarn task e2e-tests --junit -s task --debug --no-link --template={projectName}",
       "cache": true,
-      "inputs": ["^production"],
+      "inputs": ["^production", "e2e-specs"],
       "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
       "configurations": { "production": {} }
     },
     "e2e-tests-dev": {
       "dependsOn": ["dev"],
       "command": "yarn task e2e-tests-dev --junit -s task --debug --no-link --template={projectName}",
+      "options": { "env": { "PLAYWRIGHT_WORKERS": "4" } },
       "cache": true,
-      "inputs": ["^production"],
+      "inputs": ["^production", "e2e-specs"],
+      "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
+      "configurations": { "production": {} }
+    },
+    "e2e-tests-dev-1": {
+      "dependsOn": ["dev"],
+      "command": "yarn task e2e-tests-dev --junit -s task --debug --no-link --template={projectName}",
+      "options": { "env": { "PLAYWRIGHT_WORKERS": "4", "PLAYWRIGHT_SHARD": "1/2" } },
+      "cache": true,
+      "inputs": ["^production", "e2e-specs"],
+      "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
+      "configurations": { "production": {} }
+    },
+    "e2e-tests-dev-2": {
+      "dependsOn": ["dev"],
+      "command": "yarn task e2e-tests-dev --junit -s task --debug --no-link --template={projectName}",
+      "options": { "env": { "PLAYWRIGHT_WORKERS": "4", "PLAYWRIGHT_SHARD": "2/2" } },
+      "cache": true,
+      "inputs": ["^production", "e2e-specs"],
       "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
       "configurations": { "production": {} }
     },
 
+    "init-empty": {
+      "dependsOn": [{ "projects": ["scripts"], "target": "run-registry" }],
+      "command": "yarn exec jiti ./scripts/ci/nx/init-empty.ts {projectName}",
+      "cache": true,
+      "inputs": ["all-production", "{workspaceRoot}/scripts/ci/nx/init-empty.ts"],
+      "configurations": { "production": {} }
+    },
     "e2e-ui": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
@@ -128,7 +175,7 @@
         "command": "yarn --no-immutable && yarn playwright-e2e"
       },
       "cache": true,
-      "inputs": ["default", "^production"],
+      "inputs": ["default", "all-production"],
       "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
       "configurations": { "production": {} }
     },
@@ -137,7 +184,7 @@
       "executor": "nx:run-commands",
       "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn jest" },
       "cache": true,
-      "inputs": ["default", "^production"],
+      "inputs": ["default", "all-production"],
       "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
     },
@@ -146,7 +193,7 @@
       "executor": "nx:run-commands",
       "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn vitest" },
       "cache": true,
-      "inputs": ["default", "^production"],
+      "inputs": ["default", "all-production"],
       "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
     },
@@ -155,17 +202,17 @@
       "executor": "nx:run-commands",
       "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn cypress" },
       "cache": true,
-      "inputs": ["default", "^production"],
+      "inputs": ["default", "all-production"],
       "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
     }
   },
   "namedInputs": {
     "sharedGlobals": [
+      "{workspaceRoot}/.nvmrc",
       "{workspaceRoot}/code/tsconfig.json",
-      "{workspaceRoot}/scripts/**/*",
-      "{workspaceRoot}/.github/workflows/nx.yml",
-      "{workspaceRoot}/.nx/workflows/*"
+      "{workspaceRoot}/scripts/*",
+      "{workspaceRoot}/scripts/{__mocks__,bench,build,check,eslint-plugin-local-rules,sandbox,tasks,utils}/**/*"
     ],
     "default": ["sharedGlobals", "{projectRoot}/**/*"],
     "production": [
@@ -173,12 +220,28 @@
       "{projectRoot}/**/*",
       "!{projectRoot}/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
     ],
+    "e2e-specs": [
+      "{workspaceRoot}/code/e2e-sandbox/**/*",
+      "{workspaceRoot}/code/playwright.config.ts"
+    ],
+    "code-all": [
+      "sharedGlobals",
+      "{workspaceRoot}/code/**/*",
+      "{workspaceRoot}/scripts/**/*",
+      "{workspaceRoot}/agent-eval/**/*",
+      "{workspaceRoot}/.circleci/**/*",
+      "{workspaceRoot}/.oxlintrc.json",
+      "{workspaceRoot}/vitest.config.ts",
+      "{workspaceRoot}/package.json",
+      "{workspaceRoot}/yarn.lock",
+      "{workspaceRoot}/.yarn/patches/**/*"
+    ],
     "all-production": [
       "sharedGlobals",
       "{workspaceRoot}/code/**/*",
-      "!{workspaceRoot}/code/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+      "!{workspaceRoot}/code/**/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
     ]
   },
   "analytics": false,
-  "codexCacheBust": "2026-03-23T12:57:22Z"
+  "affected": { "legacy": true }
 }

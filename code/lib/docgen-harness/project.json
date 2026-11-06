@@ -7,7 +7,45 @@
     "check": {
       "executor": "nx:run-commands",
       "dependsOn": [],
-      "options": { "cwd": "{projectRoot}", "command": "vue-tsc --noEmit" }
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "vue-tsc --noEmit"
+      }
+    },
+    "docgen-memory-gate": {
+      "dependsOn": [
+        {
+          "projects": ["*"],
+          "target": "compile"
+        }
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn bench:docgen-memory"
+      },
+      "cache": false,
+      "configurations": {
+        "production": {}
+      }
+    },
+    "docgen-perf-gate": {
+      "dependsOn": [
+        {
+          "projects": ["*"],
+          "target": "compile"
+        }
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn bench:docgen-perf-gate --out ./perf-results"
+      },
+      "cache": false,
+      "outputs": ["{projectRoot}/perf-results"],
+      "configurations": {
+        "production": {}
+      }
     }
   },
   "tags": ["library"]

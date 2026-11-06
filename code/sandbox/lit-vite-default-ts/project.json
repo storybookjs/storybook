@@ -25,8 +25,11 @@
       }
     },
     "chromatic": {},
+    "docgen-baselines": {},
     "serve": {},
-    "e2e-tests-dev": {}
+    "e2e-tests-dev": {},
+    "e2e-tests-dev-1": {},
+    "e2e-tests-dev-2": {}
   },
   "tags": ["ci:normal", "ci:daily"]
 }

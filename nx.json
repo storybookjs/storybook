@@ -237,11 +237,19 @@
   "namedInputs": {
     "sharedGlobals": [
       { "env": "OS" },
+      "ci-environment",
       "{workspaceRoot}/.nvmrc",
       "{workspaceRoot}/.yarnrc.yml",
       "{workspaceRoot}/code/tsconfig.json",
       "{workspaceRoot}/scripts/*",
       "{workspaceRoot}/scripts/{__mocks__,bench,build,check,eslint-plugin-local-rules,sandbox,tasks,utils}/**/*"
+    ],
+    "ci-environment": [
+      "{workspaceRoot}/.env",
+      "{workspaceRoot}/.github/workflows/nx.yml",
+      "{workspaceRoot}/.nx/workflows/agents.yaml",
+      "{workspaceRoot}/.nx/workflows/prune-other-platforms.cjs",
+      "{workspaceRoot}/scripts/ci/nx/circleci-node-modules.sh"
     ],
     "default": ["sharedGlobals", "{projectRoot}/**/*"],
     "production": ["package-production"],

@@ -52,6 +52,8 @@
         "{workspaceRoot}/test-storybooks/**/package.json",
         "{workspaceRoot}/.github/workflows/trigger-circleci-nx-dte.yml",
         "{workspaceRoot}/.nx/workflows/circleci-assignment-rules.yaml",
+        "{workspaceRoot}/.nx/workflows/circleci-windows-assignment-rules.yaml",
+        "{workspaceRoot}/nx.json",
         "{workspaceRoot}/test-storybooks/**/project.json"
       ],
       "configurations": {
@@ -78,6 +80,8 @@
         "{workspaceRoot}/test-storybooks/**/package.json",
         "{workspaceRoot}/.github/workflows/trigger-circleci-nx-dte.yml",
         "{workspaceRoot}/.nx/workflows/circleci-assignment-rules.yaml",
+        "{workspaceRoot}/.nx/workflows/circleci-windows-assignment-rules.yaml",
+        "{workspaceRoot}/nx.json",
         "{workspaceRoot}/test-storybooks/**/project.json"
       ],
       "configurations": {
@@ -104,6 +108,8 @@
         "{workspaceRoot}/test-storybooks/**/package.json",
         "{workspaceRoot}/.github/workflows/trigger-circleci-nx-dte.yml",
         "{workspaceRoot}/.nx/workflows/circleci-assignment-rules.yaml",
+        "{workspaceRoot}/.nx/workflows/circleci-windows-assignment-rules.yaml",
+        "{workspaceRoot}/nx.json",
         "{workspaceRoot}/test-storybooks/**/project.json"
       ],
       "configurations": {

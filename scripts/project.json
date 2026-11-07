@@ -33,6 +33,7 @@
         "command": "yarn dedupe --check"
       },
       "inputs": [
+        "ci-environment",
         "{workspaceRoot}/yarn.lock",
         "{workspaceRoot}/.yarnrc.yml",
         "{workspaceRoot}/package.json",

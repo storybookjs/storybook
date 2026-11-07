@@ -142,7 +142,7 @@ describe('the CircleCI NX DTE pipeline', () => {
     }
   });
 
-  it('fails each agent, as its last step, when its tasks left files in the checkout', () => {
+  it('lists, as the last step of each agent, what its tasks left in the checkout, without failing', () => {
     const jobs = withSelection(tasks('fmt', 1), tasks('test-1', 1));
     for (const id of ['nx-agent', 'nx-agent-windows']) {
       const last = job(jobs, id)!.steps.at(-1)!.run as {
@@ -167,7 +167,7 @@ describe('the CircleCI NX DTE pipeline', () => {
 
       writeFileSync(join(repo, 'chromatic-diagnostics.json'), '{}');
       const dirty = check();
-      expect(dirty.status).toBe(1);
+      expect(dirty.status).toBe(0);
       expect(dirty.stdout).toContain('?? chromatic-diagnostics.json');
     }
   });

@@ -5,7 +5,7 @@
   "targets": {
     "vitest": {
       "options": {
-        "command": "find ../../code -type d -path '*/node_modules/.cache' -prune -exec rm -rf {} + && yarn --no-immutable && yarn vitest run --project=e2e && yarn vitest run --project=storybook"
+        "command": "lock=$(mktemp) && cp yarn.lock \"$lock\" && find ../../code -type d -path '*/node_modules/.cache' -prune -exec rm -rf {} + && yarn --no-immutable && yarn vitest run --project=e2e && yarn vitest run --project=storybook; status=$?; cp \"$lock\" yarn.lock; exit $status"
       }
     }
   },

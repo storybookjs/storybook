@@ -26,3 +26,7 @@ dist-ssr
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Created empty before each install (nx.json, scripts/ci/test-storybooks.ts), so Yarn treats this
+# folder as a project of its own. The install fills it in.
+/yarn.lock

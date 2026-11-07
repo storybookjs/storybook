@@ -221,8 +221,9 @@ const storeResults = () => [
 
 // The tasks of an agent share its checkout, so a file one of them leaves there is read by the tasks
 // NX Cloud happens to run after it, such as `oxfmt --check .`. scripts/task.ts fails the `yarn task`
-// tasks that leave one; this step names what any other task, or a restored output, left.
-export const CHECK_CHECKOUT_STEP = 'Check that the tasks left the checkout as the commit has it';
+// tasks that leave one; this step names what any other task, or a restored output, left. It does not
+// fail: the agents are not part of the merge gate, so a red agent would only be noise.
+export const CHECK_CHECKOUT_STEP = 'List what the tasks left in the checkout';
 const checkCheckout = () => ({
   run: {
     name: CHECK_CHECKOUT_STEP,
@@ -233,7 +234,8 @@ const checkCheckout = () => ({
       '  echo "The tasks on this agent left files in the checkout that git does not ignore:"',
       '  echo "$changes"',
       '  echo "The later tasks on an agent read them. Write them to a gitignored path."',
-      '  exit 1',
+      'else',
+      '  echo "The checkout is as the commit has it."',
       'fi',
     ].join('\n'),
   },

@@ -19,7 +19,7 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "{projectRoot}",
-        "command": "yarn --no-immutable && yarn playwright-e2e --grep \"watch mode|discrepancy\""
+        "command": "touch yarn.lock && yarn --no-immutable && yarn playwright-e2e --grep \"watch mode|discrepancy\""
       },
       "cache": true,
       "inputs": [
@@ -46,7 +46,7 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "{projectRoot}",
-        "command": "yarn --no-immutable && yarn playwright-e2e --grep \"coverage|composition\""
+        "command": "touch yarn.lock && yarn --no-immutable && yarn playwright-e2e --grep \"coverage|composition\""
       },
       "cache": true,
       "inputs": [
@@ -73,7 +73,7 @@
       "executor": "nx:run-commands",
       "options": {
         "cwd": "{projectRoot}",
-        "command": "yarn --no-immutable && yarn playwright-e2e --grep-invert \"watch mode|discrepancy|coverage|composition\""
+        "command": "touch yarn.lock && yarn --no-immutable && yarn playwright-e2e --grep-invert \"watch mode|discrepancy|coverage|composition\""
       },
       "cache": true,
       "inputs": [

@@ -2,12 +2,11 @@ name: nx-cache
 
 # Fills the shared NX Cloud remote cache from `next`.
 #
-# Pull request runs of the `nx` workflow use a read-only NX Cloud token. They read this shared
-# cache and write only to a cache that NX Cloud scopes to their own pull request, so a pull request
-# can never poison what other branches restore. Only `next` writes to the shared cache (this
-# workflow on every push, the nightly `nx` run for everything else), with the read-write token
-# kept in the `nx-cloud-write` environment. It also saves the `node_modules` cache that pull
-# requests restore, so a lockfile change on `next` reaches them before the nightly run.
+# Pull request runs of the NX DTE pipeline (scripts/ci/nx/circleci-dte.ts) use a read-only NX Cloud
+# token. They read this shared cache and write only to a cache that NX Cloud scopes to their own
+# pull request, so a pull request can never poison what other branches restore. Only `next` writes
+# to the shared cache, with the read-write token kept in the `nx-cloud-write` environment: this
+# workflow fills `compile` and `check` on every push.
 on:
   push:
     branches: [next]
@@ -47,7 +46,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      # Same cache as the `nx` workflow, saved from `next` so pull requests can restore it.
+      # This workflow's own node_modules cache, keyed on the lockfile.
       - name: Restore node_modules
         id: node-modules
         uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
@@ -78,8 +77,8 @@ jobs:
             code/*/*/node_modules
             .yarn/root-install-state.gz
           key: ${{ steps.node-modules.outputs.cache-primary-key }}
-      # The production configuration, as the `nx` workflow's workers run them, so the task hashes
-      # match what pull request pipelines look up.
+      # The production configuration, as the NX DTE pipeline runs them, so the task hashes match
+      # what pull request pipelines look up.
       - name: Compile and typecheck
         env:
           NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_WRITE_TOKEN }}

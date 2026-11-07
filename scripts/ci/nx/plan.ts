@@ -20,7 +20,7 @@ import { ensureRequiredJobs, toId } from '../utils/helpers.ts';
 import { type JobOrNoOpJob, type Workflow, workflows } from '../utils/types.ts';
 import { getJobs } from '../workflow-jobs.ts';
 
-// Jobs NX runs outside NX Cloud's Linux workers, as their own GitHub Actions jobs in nx.yml.
+// Jobs that are not NX tasks: the NX DTE pipeline runs them as their own CircleCI jobs.
 export const sideJobs = ['windows', 'windows-init-empty', 'node-26-smoke'] as const;
 export type SideJob = (typeof sideJobs)[number];
 
@@ -174,7 +174,7 @@ export function equivalentOf(jobId: string): Equivalent | undefined {
   return undefined;
 }
 
-// CircleCI's Windows sandbox, as `getWindowsSandboxes` (sandboxes.ts) and nx.yml use. Its project
+// CircleCI's Windows sandbox, as `getWindowsSandboxes` (sandboxes.ts) uses. Its project
 // carries the `ci:windows` tag (scripts/create-nx-sandbox-projects.ts).
 export const WINDOWS_TEMPLATE = daily[0];
 

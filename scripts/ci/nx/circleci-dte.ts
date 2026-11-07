@@ -57,7 +57,7 @@ export const RUN_NX_STEP = 'Run nx';
 // The agents' jobs, which `circleci-completion` does not wait for (main.ts).
 export const NX_AGENT_JOB_IDS: readonly string[] = ['nx-agent', 'nx-agent-windows'];
 
-// Pinned as in nx.yml. Only for `start-ci-run`, which runs before the install. The commands after
+// Pinned. Only for `start-ci-run` and the fallback `stop-all-agents`, which runs before the install. The commands after
 // it go through the workspace's own Nx, which the NX Cloud client that `npx nx-cloud` loads cannot
 // find.
 const NX_CLOUD = 'npx --yes nx-cloud@19.1.5';
@@ -123,13 +123,13 @@ const TIMEOUT_MINUTES: Record<Os, number> = { linux: 45, windows: 75 };
 
 // The environment every job of one OS shares.
 const nxEnvironment = (os: Os, diff: FocusDiff | undefined) => ({
-  // Reports under the pull request, as nx.yml does: API-triggered pipelines carry no PR number.
+  // Reports under the pull request: API-triggered pipelines carry no PR number.
   NX_BRANCH: '<< pipeline.parameters.ghPrNumber >>',
   // The Linux and the Windows tasks run as two runs of one NX Cloud pipeline, each with its own
   // agents, which NX Cloud shows side by side.
   NX_CI_EXECUTION_ENV: os,
   // Report each finished task right away instead of in batches, so the tasks that depend on it
-  // start sooner (nx.yml).
+  // start sooner.
   NX_CLOUD_DISABLE_BUFFER_TASK_COMPLETIONS: 'true',
   // Selection from the repository's inputs only, as the setup job (without NX Cloud) makes it.
   NX_CLOUD_USE_ULTRACACHE: 'false',
@@ -282,7 +282,7 @@ const agentJob = (diff: FocusDiff | undefined, agents: number) =>
       {
         run: {
           name: 'Run the tasks NX Cloud assigns',
-          command: `NX_AGENT_NAME="circleci-linux-$CIRCLE_NODE_INDEX" bash scripts/ci/nx/run-agent.sh ${NX_MAIN_JOBS.linux} ${TIMEOUT_MINUTES.linux}`,
+          command: `NX_AGENT_NAME="circleci-linux-$CIRCLE_NODE_INDEX" bash scripts/ci/nx/run-agent.sh ${NX_MAIN_JOBS.linux} /usr/bin/timeout --kill-after=1m ${TIMEOUT_MINUTES.linux}m yarn nx start-agent`,
           // NX Cloud stops a worker that is silent for 10 minutes; the Chromatic task prints a
           // line every minute while it waits.
           no_output_timeout: '20m',
@@ -336,7 +336,7 @@ const windowsAgentJob = (diff: FocusDiff | undefined, agents: number) =>
         run: {
           name: 'Run the tasks NX Cloud assigns',
           // Bounded as the main job is (`runNx`).
-          command: `NX_AGENT_NAME="circleci-windows-$CIRCLE_NODE_INDEX" bash scripts/ci/nx/run-agent.sh ${NX_MAIN_JOBS.windows} ${TIMEOUT_MINUTES.windows}`,
+          command: `NX_AGENT_NAME="circleci-windows-$CIRCLE_NODE_INDEX" bash scripts/ci/nx/run-agent.sh ${NX_MAIN_JOBS.windows} /usr/bin/timeout --kill-after=1m ${TIMEOUT_MINUTES.windows}m yarn nx start-agent`,
           no_output_timeout: '20m',
         },
       },

@@ -44,7 +44,7 @@ describe('parseTarget', () => {
     expect(parseTarget('41939428103-0')).toEqual({ kind: 'branch', branch: '41939428103-0' });
   });
 
-  it('reads the branch from the NX Cloud overview link that nx.yml posts', () => {
+  it('reads the branch from an NX Cloud overview link', () => {
     expect(
       parseTarget(
         'https://cloud.nx.app/orgs/606dcb5cdc2a2b00059cc0e9/workspaces/6929fbef73e98d8094d2a343/overview?branch=37181'

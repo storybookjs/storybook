@@ -51,7 +51,7 @@ The same NX task graph can also run distributed over CircleCI machines (NX Cloud
 - `scripts/ci/nx/circleci-dte.ts` generates the jobs: `nx-main` starts the NX Cloud run with `start-ci-run --distribute-on=manual`, then runs `run.ts`; `nx-agent` runs as parallel containers, each `nx start-agent`. The Node 26 smoke job stays a plain CircleCI job. `circleci-completion` waits for the main jobs (which fail when a task fails), not for the agents
 - What the tasks on an agent see, its executor, environment variables and Chromium, is in `scripts/ci/nx/agent-environment.ts`. The `ci-environment` named input hashes it, with `scripts/ci/utils/executors.ts` and `orbs.ts`, so a change to them runs every task again. `circleci-dte.ts` only schedules, so a change to it keeps the cache
 - The Windows tests (`WINDOWS_TASKS` in `plan.ts`: the same `code:test-1`/`-2`, `e2e-tests`, `e2e-tests-dev-1`/`-2` and `init-empty` targets as on Linux, on the `ci:windows` projects) run in a second run of the same NX Cloud pipeline: `nx-main-windows` (a Windows `medium`, which hashes the tasks on the OS that runs them) and `nx-agent-windows` (`large`), with `NX_CI_EXECUTION_ENV=windows` and `.nx/workflows/circleci-windows-assignment-rules.yaml`. NX Cloud shows the two runs side by side. A Windows agent boots in about four minutes (about 500 credits), which the same simulation weighs, with at most 4 (`MAX_AGENTS`). Its hashes are worked out on Linux with Windows' `OS` and npm package names (`windows-graph.ts`). A `nx:windows` run has no Linux part: CircleCI's own Windows jobs needed the Linux sandbox, the agents build their own
-- Every main job and agent ends within a hard `timeout` (45 minutes on Linux, 75 on Windows): on NX Cloud's own Windows agents a run once never ended and held its machines for six hours. Each main job ends with `nx stop-all-agents`, as Nx's manual DTE recipes do. An agent also stops a minute after its main job ended (`scripts/ci/nx/run-agent.sh`): it waits for its NX Cloud run, also for one the main job never started, as when that failed to check out
+- Every main job and agent ends within a hard `timeout` (45 minutes on Linux, 75 on Windows): on NX Cloud's own Windows agents a run once never ended and held its machines for six hours. Each main job ends with `nx stop-all-agents`, as Nx's manual DTE recipes do. An agent also stops a minute after its main job ended (`scripts/ci/nx/run-agent.sh`, which asks CircleCI's public API every 30 seconds; on Windows it ends the agent's whole process tree with `taskkill`): it waits for its NX Cloud run, also for one the main job never started, as when that failed to check out. Such a stop exits 0, since the main job already shows how the run ended
 - Assignment rules for the agents are in `.nx/workflows/circleci-assignment-rules.yaml`. Every agent is `large`: an `xlarge` pool for the sandbox tasks ran the dev-server E2E tests only a quarter faster at twice the credits per minute
 - `start-ci-run --stop-workers-after=<every target of the run>`, not `--require-explicit-completion`: only when NX Cloud knows no more tasks can come does it stop each agent that has nothing left ("no further tasks for this worker"). With explicit completion every agent idled until the main job ended, a third of the run's credits
 - After the install, use the workspace's Nx (`yarn nx start-agent`). `npx nx-cloud …` loads a client that cannot find the workspace's Nx
@@ -67,25 +67,22 @@ The same NX task graph can also run distributed over CircleCI machines (NX Cloud
 
 ## Following an NX Cloud pipeline
 
-`scripts/ci/nx-cloud-status.ts` reads a pipeline from the NX Cloud Public API with your `npx nx login`, so you do not need the NX Cloud web page. It needs no dependencies installed.
+`gh pr checks <pr>` lists each failed task as a red `nx run <task>` status (`nx run <task> on Windows` for the Windows run), linked to its log. `scripts/ci/nx-cloud-status.ts` says why: it reads a pipeline from the NX Cloud Public API with your `npx nx login`, so you do not need the NX Cloud web page. It needs no dependencies installed.
 
 ```bash
-# Report the newest pipeline of a pull request (or a branch, a CIPE id, a cloud.nx.app/cipes link,
-# or the NX Cloud link of the pull request's `nx` status)
-node scripts/ci/nx-cloud-status.ts 37181
+# Report the newest pipeline of a pull request (or a branch, a CIPE id, or a cloud.nx.app/cipes link)
+node scripts/ci/nx-cloud-status.ts 37221
 
 # Follow the pipeline of the commit you just pushed: one line per change, then the full report
-node scripts/ci/nx-cloud-status.ts 37181 --watch --sha HEAD
+node scripts/ci/nx-cloud-status.ts 37221 --watch --sha HEAD
 ```
 
-- The report gives the pipeline status, why it was canceled, each failed task with the lines that name the failure and the end of its log, and the worker steps that failed or timed out (for example `Restore Node Modules Cache`, or `no_output_timeout after 600s`), with the end of a worker's log. Each log is saved as a text file; the report prints its path
-- Agents run `--watch` as a background monitor, so each printed line wakes them. It exits with the report once the pipeline is done: 0 when it succeeded, 1 when it failed or was canceled. It exits 2 on an error it cannot retry, when GitHub says a run finished that NX Cloud never saw, or when no pipeline started within 15 minutes (does the pull request have an `nx:` label, or was `nx.yml` started for it?)
-- Pass `--sha` after a push. Without it, the watch follows the newest pipeline, which is the previous one until NX Cloud registers the push. When the newest pipeline on a branch has already finished, the watch first waits 3 minutes for a new one: a push or `workflow_dispatch` reaches NX Cloud only once its job starts, possibly on the same commit as a finished pipeline. A CIPE id or GitHub run as target skips that wait. Without a target, the script follows the current branch at `HEAD`
+- The report gives the pipeline status, why it was canceled, each run group (Linux and Windows) with its `nx affected` command, and each failed task with the lines that name the failure and the end of its log. Each log is saved as a text file; the report prints its path
+- Agents run `--watch` as a background monitor, so each printed line wakes them. It exits with the report once the pipeline is done: 0 when it succeeded, 1 when it failed or was canceled. It exits 2 on an error it cannot retry, or when no pipeline started within 15 minutes (does the pull request have an `nx:` label?)
+- Pass `--sha` after a push. Without it, the watch follows the newest pipeline, which is the previous one until NX Cloud registers the push. When the newest pipeline on a branch has already finished, the watch first waits 3 minutes for a new one: a push reaches NX Cloud only once `nx-main` starts. A CIPE id as target skips that wait. Without a target, the script follows the current branch at `HEAD`
 - A one-off report on a pipeline that still runs exits 3
-- NX Cloud records no `nx` command for a GitHub re-run (attempt 2 or later): the Nx client gets a 404 for the distributed execution summary, and the run group ends by heartbeat with no runs. The report says so and shows GitHub's conclusion, which also decides the exit code (4 when `gh` cannot read it)
-- Live, NX Cloud shows the pipeline status and each `nx` command once it finishes. Our pipeline runs one `nx run-many`, so failed tasks show when it ends. Worker details (steps, timeouts, restarts) can follow minutes after the pipeline ends; the watch waits up to 10 minutes for them
-- A report costs up to about 30 requests of the Public API quota, which the whole organization shares (60 per minute on the Team plan). A watch costs a few per poll, every 30 seconds by default
-- `gh pr checks <pr>` lists each failed task as a red `nx run <task>` status (`nx run <task> on Windows` for the Windows run), linked to its log; use the script for why it failed
+- NX Cloud shows each `nx affected` command once it finishes, so the failed tasks show when a run group ends
+- A report costs up to about 30 requests of the Public API quota, which the whole organization shares (60 per minute). A watch costs a few per poll, every 30 seconds by default
 - A workspace token in `NX_CLOUD_ACCESS_TOKEN` overrides your login in `nx-cloud api`. When NX Cloud rejects that token, the script retries with your login
 
 ## Environment Variables

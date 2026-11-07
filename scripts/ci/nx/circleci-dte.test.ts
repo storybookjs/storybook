@@ -133,7 +133,7 @@ describe('the CircleCI NX DTE pipeline', () => {
 
   it('bounds every NX job, so a run that never ends cannot hold machines for hours', () => {
     const jobs = withSelection(tasks('fmt', 1), tasks('test-1', 1));
-    for (const id of ['nx-main', 'nx-main-windows']) {
+    for (const id of ['nx-main', 'nx-agent', 'nx-main-windows', 'nx-agent-windows']) {
       const commands = job(jobs, id)!.steps.map((step) => step.run?.command ?? '');
       expect(
         commands.some((command) => /\/usr\/bin\/timeout --kill-after=1m \d+m yarn /.test(command))
@@ -149,9 +149,10 @@ describe('the CircleCI NX DTE pipeline', () => {
     ]) {
       const commands = job(jobs, agent)!.steps.map((step) => step.run?.command ?? '');
       expect(
-        commands.some((command) => / scripts\/ci\/nx\/run-agent\.sh \S+ \d+$/.test(command))
+        commands.some((command) =>
+          command.includes(`scripts/ci/nx/run-agent.sh ${main} /usr/bin/timeout --kill-after=1m `)
+        )
       ).toBe(true);
-      expect(commands.some((command) => command.includes(`run-agent.sh ${main} `))).toBe(true);
     }
   });
 

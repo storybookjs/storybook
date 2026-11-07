@@ -204,14 +204,6 @@ async function main() {
     return;
   }
 
-  // nx.yml completes the task names that Nx's summary table cuts off from this list.
-  if (process.env.RUNNER_TEMP) {
-    const taskIds = [...wanted].flatMap(([project, targets]) =>
-      [...targets].map((target) => `${project}:${target}:production`)
-    );
-    writeFileSync(join(process.env.RUNNER_TEMP, 'nx-tasks.json'), JSON.stringify(taskIds));
-  }
-
   const codes = await Promise.all(
     commands.map(
       (command) =>

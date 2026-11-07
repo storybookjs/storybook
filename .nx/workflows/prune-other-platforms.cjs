@@ -4,7 +4,7 @@
 //
 // Removes packages built for another os or cpu than this machine, as Yarn skips them when
 // supportedArchitectures is `current`. Yarn already skips the other libc (its default). DRY=1 only
-// reports. Changing this file changes the workers' cache key.
+// reports. Changing this file changes the node_modules cache key.
 const fs = require('fs');
 const path = require('path');
 const fits = (list, value) =>

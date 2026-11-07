@@ -12,7 +12,7 @@
 //   node scripts/ci/nx-cloud-status.ts [target] [--watch] [--sha <commit>] [--interval <seconds>]
 //
 // `target` is a pull request number (`37181`, `#37181` or its GitHub link), a branch, a CIPE id, a
-// cloud.nx.app/cipes link, or the NX Cloud overview link that `nx.yml` posts on a pull request. NX
+// cloud.nx.app/cipes link, or an NX Cloud overview link with a `branch` parameter. NX
 // Cloud lists a pull request's pipelines under its number and under its branch, so both find them.
 // Without a target it follows the current branch at the local HEAD commit.
 //
@@ -638,8 +638,8 @@ async function watch(target: Target, sha: string | undefined, interval: number) 
         print(
           `[${time()}] nx-cloud: no pipeline started${where} in ${START_TIMEOUT_MS / 60000} minutes. ${
             target.kind === 'run'
-              ? 'Is it a run of the nx workflow?'
-              : 'Is the commit pushed, and does the pull request have an nx: label (or was nx.yml started)?'
+              ? 'Did that run start an NX Cloud pipeline?'
+              : 'Is the commit pushed, and does the pull request have an nx: label?'
           }`
         );
         return EXIT.error;
@@ -794,7 +794,7 @@ async function lookUpRun(target: Extract<Target, { kind: 'run' }>): Promise<RunL
   }
   if (finished) {
     return {
-      notInNxCloud: `${describeTarget({ ...target, attempt })} has finished, but NX Cloud has no pipeline for it. Is it a run of the nx workflow, and did its nx job run?`,
+      notInNxCloud: `${describeTarget({ ...target, attempt })} has finished, but NX Cloud has no pipeline for it. Did that run start an NX Cloud pipeline?`,
     };
   }
   return {};
@@ -844,7 +844,7 @@ export function parseTarget(target: string): Target {
   }
   const pr = /\/pull\/(\d+)\b/.exec(url.pathname)?.[1];
   if (pr) return { kind: 'branch', branch: pr };
-  // The NX Cloud overview link that `nx.yml` posts on a pull request names its branch.
+  // An NX Cloud overview link names its branch.
   const branch = url.searchParams.get('branch');
   if (url.hostname === 'cloud.nx.app' && branch) return { kind: 'branch', branch };
   throw new Error(

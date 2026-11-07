@@ -114,10 +114,10 @@ common-env-vars: &common-env-vars
   CI: true
   NODE_OPTIONS: --max_old_space_size=6144
   # Playwright runs 2 workers on CI unless told otherwise (code/playwright.config.ts). These workers
-  # have 8 vCPUs; 6 measured fastest against the static builds (e2e-tests). Against a dev server 6
-  # timed out, so the e2e-tests-dev target sets 4 in nx.json. (CircleCI runs 3 for e2e-tests, and 6
-  # for the dev-server e2e of a few templates on its 8 vCPU machines.)
-  PLAYWRIGHT_WORKERS: 6
+  # have 8 vCPUs; 6 measured fastest against the static builds (e2e-tests), but against a dev server
+  # (e2e-tests-dev) 6 timed out, so both run 4. (CircleCI runs 3 for e2e-tests, and 6 for the
+  # dev-server e2e of a few templates on its 8 vCPU machines.)
+  PLAYWRIGHT_WORKERS: 4
 
 launch-templates:
   linux-browsers-js:

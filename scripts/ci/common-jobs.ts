@@ -609,10 +609,6 @@ export const testsStories_linux = defineJob(
   [commonJobsNoOpJob]
 );
 
-const WINDOWS_CRASH_DUMP_DIR = `${WINDOWS_ROOT_DIR}\\crash-dumps`;
-const WER_LOCAL_DUMPS_KEY =
-  'HKLM\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting\\LocalDumps';
-
 export const testUnit_windows = defineJob(
   'Tests unit (windows)',
   () => ({
@@ -632,18 +628,6 @@ export const testUnit_windows = defineJob(
           command: 'yarn install --mode=skip-build',
         },
       },
-      // The unit tests sometimes die of a native crash (exit status 2816) that prints no stack.
-      {
-        run: {
-          name: 'Enable crash dumps',
-          shell: 'powershell.exe',
-          command: [
-            `New-Item -ItemType Directory -Force -Path '${WINDOWS_CRASH_DUMP_DIR}' | Out-Null`,
-            `reg add '${WER_LOCAL_DUMPS_KEY}' /v DumpFolder /t REG_EXPAND_SZ /d '${WINDOWS_CRASH_DUMP_DIR}' /f`,
-            `reg add '${WER_LOCAL_DUMPS_KEY}' /v DumpType /t REG_DWORD /d 2 /f`,
-          ].join('\n'),
-        },
-      },
       {
         run: {
           command:
@@ -651,21 +635,7 @@ export const testUnit_windows = defineJob(
           name: 'Run unit tests',
         },
       },
-      {
-        run: {
-          name: 'Print crash events',
-          when: 'on_fail',
-          shell: 'powershell.exe',
-          command: [
-            '$since = (Get-CimInstance Win32_OperatingSystem).LastBootUpTime',
-            "$events = Get-WinEvent -FilterHashtable @{ LogName = 'Application'; Id = 1000, 1001; StartTime = $since } -ErrorAction SilentlyContinue",
-            'if ($events) { $events | Format-List TimeCreated, Id, ProviderName, Message } else { "No crash events since $since" }',
-            `Get-ChildItem '${WINDOWS_CRASH_DUMP_DIR}'`,
-          ].join('\n'),
-        },
-      },
       testResults.persist(`test-results`),
-      artifact.persist(WINDOWS_CRASH_DUMP_DIR, 'crash-dumps'),
     ],
   }),
   [build_windows]

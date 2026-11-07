@@ -19,7 +19,7 @@ import { esMain } from '../../utils/esmain.ts';
 const ROOT = join(import.meta.dirname, '../../..');
 const CODE = join(ROOT, 'code');
 const TESTS = '.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)';
-const BASE_INPUTS = ['default', '^production'];
+const BASE_INPUTS = ['default', '^own-production'];
 
 const nxJson = JSON.parse(readFileSync(join(ROOT, 'nx.json'), 'utf8'));
 const tsc = join(

@@ -39,6 +39,7 @@ type Package = {
   project: string;
   dependencies: string[];
   production: string[];
+  ownProduction: string[];
 };
 
 const packages: Package[] = ['', 'addons', 'builders', 'frameworks', 'lib', 'presets', 'renderers']
@@ -62,6 +63,7 @@ const packages: Package[] = ['', 'addons', 'builders', 'frameworks', 'lib', 'pre
         ...pkg.peerDependencies,
       }),
       production: globsOf(['production'], named, relative(ROOT, dir)),
+      ownProduction: globsOf(['own-production'], named, relative(ROOT, dir)),
     };
   });
 
@@ -94,9 +96,10 @@ const bundledFiles = (): { pkg: Package; file: string }[] =>
 // first.
 const compiled = existsSync(METAFILES) || !!process.env.CI;
 
-// `compile` hashes the package's `production`, and so do the tasks that use the package, through
-// `^production`: a sandbox, for one. A bundled file outside `production` changes the bundle without
-// changing those hashes, so they restore stale results and `nx affected` skips them.
+// `compile` hashes the package's `production` and its dependencies' own files (`^own-production`),
+// and the tasks that use the package hash its `production` (`^production`): a sandbox, for one. A
+// bundled file outside them changes the bundle without changing those hashes, so they restore
+// stale results and `nx affected` skips them.
 it.skipIf(!compiled)("every package's production covers the sources it bundles", () => {
   const missing = new Set(
     readdirSync(METAFILES)
@@ -107,7 +110,7 @@ it.skipIf(!compiled)("every package's production covers the sources it bundles",
     const from = owner(file);
     const path = relative(ROOT, file);
     const hashedBy =
-      from && from !== pkg && pkg.dependencies.includes(from.name) ? from.production : [];
+      from && from !== pkg && pkg.dependencies.includes(from.name) ? from.ownProduction : [];
     if (!covers(pkg.production, path) && !covers(hashedBy, path)) {
       missing.add(`${pkg.project} bundles ${path}`);
     }

@@ -27,7 +27,7 @@
       "command": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON ./scripts/build/build-package.ts --cwd {projectRoot}",
       "configurations": { "production": { "args": "--prod" } },
       "cache": true,
-      "inputs": ["production", "^production"],
+      "inputs": ["production", "^own-production"],
       "outputs": [
         "{projectRoot}/dist",
         "{workspaceRoot}/code/bench/esbuild-metafiles/{projectName}"
@@ -37,7 +37,7 @@
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "command": "yarn exec jiti ./scripts/check/check-package.ts --cwd {projectRoot}",
       "cache": true,
-      "inputs": ["default", "^production"],
+      "inputs": ["default", "^own-production"],
       "configurations": { "production": {} }
     },
     "publish": {
@@ -247,8 +247,8 @@
       "{workspaceRoot}/scripts/ci/nx/circleci-node-modules.sh"
     ],
     "default": ["sharedGlobals", "{projectRoot}/**/*"],
-    "production": ["package-production"],
-    "package-production": [
+    "production": ["own-production"],
+    "own-production": [
       "sharedGlobals",
       "{projectRoot}/**/*",
       "!{projectRoot}/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",

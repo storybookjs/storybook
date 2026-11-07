@@ -3,7 +3,7 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "namedInputs": {
     "production": [
-      "package-production",
+      "own-production",
       "{workspaceRoot}/code/renderers/react/src/**/*",
       "!{workspaceRoot}/code/**/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
     ]
@@ -14,11 +14,13 @@
     "check": {
       "inputs": [
         "default",
-        "^production",
+        "^own-production",
         "{workspaceRoot}/code/builders/builder-vite/src/**/*",
         "!{workspaceRoot}/code/builders/builder-vite/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
         "{workspaceRoot}/code/frameworks/react-vite/src/**/*",
         "!{workspaceRoot}/code/frameworks/react-vite/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
+        "{workspaceRoot}/code/lib/cli-storybook/src/**/*",
+        "!{workspaceRoot}/code/lib/cli-storybook/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
         "{workspaceRoot}/code/renderers/react/src/**/*",
         "!{workspaceRoot}/code/renderers/react/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
       ]

@@ -3,7 +3,7 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "namedInputs": {
     "production": [
-      "package-production",
+      "own-production",
       "{workspaceRoot}/package.json",
       "{workspaceRoot}/code/*/package.json",
       "{workspaceRoot}/code/*/*/package.json",
@@ -20,7 +20,7 @@
     "check": {
       "inputs": [
         "default",
-        "^production",
+        "^own-production",
         "{workspaceRoot}/code/addons/a11y/src/**/*",
         "!{workspaceRoot}/code/addons/a11y/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
         "{workspaceRoot}/code/addons/docs/src/**/*",

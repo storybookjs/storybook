@@ -8,7 +8,8 @@
 //
 // Every request counts against a rate limit the whole organization shares (60 a minute, bursts of
 // 10), so a setup job makes few, at most CONCURRENCY at a time. After a 429 or 503 it waits as long
-// as asked before it tries again, up to MAX_WAIT_SECONDS; longer, and it goes on without history.
+// as asked before it tries again, up to MAX_WAIT_SECONDS and until DEADLINE; longer, and it goes on
+// without that request's history.
 
 const API = `${process.env.NX_CLOUD_API ?? 'https://cloud.nx.app'}/nx-cloud/data/v1`;
 const RUNS = 3;
@@ -17,6 +18,9 @@ const STATS_PAGES = 4;
 const CONCURRENCY = 4;
 const ATTEMPTS = 4;
 const MAX_WAIT_SECONDS = 30;
+// No retry waits past this, counted from the setup job's start: Nx's own task selection, which runs
+// meanwhile, takes about as long, so the history never holds up the agents.
+const DEADLINE = Date.now() + 60_000;
 
 type Page<T> = { items: T[]; nextCursor: string | null };
 
@@ -43,12 +47,12 @@ async function limited<T>(work: () => Promise<T>): Promise<T> {
 }
 
 // How long to wait before trying again, or undefined when NX Cloud asks for longer than the setup job
-// can spare: it then sizes the run without history instead of asking again too soon.
+// can spare: the run is then sized without this request's history, instead of asking again too soon.
 function retryAfterSeconds(response: Response, attempt: number) {
   const header = response.headers.get('retry-after');
   const seconds = header === null ? NaN : Number(header);
   const wait = Number.isNaN(seconds) ? 2 ** attempt : seconds;
-  return wait <= MAX_WAIT_SECONDS ? wait : undefined;
+  return wait <= MAX_WAIT_SECONDS && Date.now() + wait * 1000 <= DEADLINE ? wait : undefined;
 }
 
 async function request<T>(path: string, query: URLSearchParams): Promise<Page<T>> {

@@ -1,77 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
-import { AGENT_BOOT_SECONDS, MAX_AGENTS, type Work, agentsFor, simulate } from './agent-sizing.ts';
+import { MAX_AGENTS, agentsFor } from './agent-sizing.ts';
 
-const independent = (n: number, seconds: number, prefix = 't'): Work =>
-  Object.fromEntries(
-    Array.from({ length: n }, (_, i) => [`${prefix}${i}`, { seconds, dependsOn: [] }])
-  );
-
-const linux = { max: MAX_AGENTS.linux, bootSeconds: AGENT_BOOT_SECONDS.linux };
-const windows = { max: MAX_AGENTS.windows, bootSeconds: AGENT_BOOT_SECONDS.windows };
-
-describe('the agents a run needs', () => {
-  it('bills an idle agent only until the last task is handed out', () => {
-    expect(simulate({ a: { seconds: 100, dependsOn: [] } }, 2, 60)).toEqual({
-      seconds: 160,
-      agentSeconds: 160 + 60,
-    });
+describe('the agents a run starts', () => {
+  it('starts one for every four tasks NX Cloud hands out', () => {
+    expect(agentsFor({ tasks: 96, uncached: 96 }, MAX_AGENTS.linux)).toBe(24);
+    expect(agentsFor({ tasks: 1, uncached: 1 }, MAX_AGENTS.linux)).toBe(1);
   });
 
-  it('starts a task once the tasks it waits for are done', () => {
-    const work: Work = {
-      compile: { seconds: 30, dependsOn: [] },
-      test: { seconds: 50, dependsOn: ['compile'] },
-    };
-    expect(simulate(work, 2, 60).seconds).toBe(60 + 30 + 50);
+  it('counts no cached task, but keeps one agent while any task is selected', () => {
+    expect(agentsFor({ tasks: 224, uncached: 15 }, MAX_AGENTS.linux)).toBe(4);
+    expect(agentsFor({ tasks: 56, uncached: 0 }, MAX_AGENTS.windows)).toBe(1);
   });
 
-  it('hands out the task with the longest chain behind it first', () => {
-    const work: Work = {
-      short: { seconds: 10, dependsOn: [] },
-      sandbox: { seconds: 10, dependsOn: [] },
-      e2e: { seconds: 100, dependsOn: ['sandbox'] },
-    };
-    expect(simulate(work, 1, 0).seconds).toBe(120);
-    expect(simulate(work, 2, 0).seconds).toBe(110);
-  });
-
-  it('starts no agent that only shaves a few seconds off the run', () => {
-    expect(agentsFor(independent(2, 2), linux).agents).toBe(1);
-  });
-
-  it('starts as many agents as long independent tasks need, up to the maximum', () => {
-    expect(agentsFor(independent(10, 600), linux).agents).toBe(10);
-    expect(agentsFor(independent(440, 300), linux).agents).toBe(MAX_AGENTS.linux);
-    expect(agentsFor(independent(440, 300), { ...linux, max: 5 }).agents).toBe(5);
-  }, 30_000);
-
-  it('starts no agent that leaves the number of rounds the same', () => {
-    expect(agentsFor(independent(400, 300), linux).agents).toBe(40);
-  }, 30_000);
-
-  it('starts agents only for the tasks NX Cloud has no cache entry for', () => {
-    const rerun: Work = { ...independent(163, 0, 'cached'), ...independent(14, 90) };
-    expect(Object.keys(rerun)).toHaveLength(177);
-    expect(agentsFor(independent(177, 90), linux).agents).toBeGreaterThan(30);
-    expect(agentsFor(rerun, linux).agents).toBeLessThanOrEqual(14);
-  });
-
-  it('does not add agents to a run its longest chain decides', () => {
-    const chain: Work = {
-      a: { seconds: 300, dependsOn: [] },
-      b: { seconds: 300, dependsOn: ['a'] },
-      ...independent(5, 20),
-    };
-    expect(agentsFor(chain, linux).agents).toBe(2);
-  });
-
-  it('weighs the long boot of a Windows agent, at most four of them', () => {
-    expect(agentsFor(independent(2, 600), windows).agents).toBe(2);
-    expect(agentsFor(independent(40, 600), windows).agents).toBe(MAX_AGENTS.windows);
-  });
-
-  it('starts no agent for no work', () => {
-    expect(agentsFor({}, linux)).toEqual({ agents: 0, seconds: 0, agentSeconds: 0 });
+  it('starts at most the maximum, and none for an empty run', () => {
+    expect(agentsFor({ tasks: 315, uncached: 315 }, MAX_AGENTS.linux)).toBe(44);
+    expect(agentsFor({ tasks: 56, uncached: 56 }, MAX_AGENTS.windows)).toBe(4);
+    expect(agentsFor({ tasks: 0, uncached: 0 }, MAX_AGENTS.linux)).toBe(0);
   });
 });

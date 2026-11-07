@@ -7,9 +7,8 @@
 // - With `--base` (NX_BASE from the `nx/set-shas` orb command, on a pull request), the run covers
 //   only what a change since that commit reaches (`nx affected`); the file records it as `base`.
 //   `--base-ref` is what a focused run diffs against.
-// - Each task gets its hash, whether the latest NX Cloud runs on `--nx-branch` (NX_BRANCH, the pull
-//   request's number) or on the branch of `--base-ref` already stored it, and how long it takes
-//   (nx-cloud-history.ts).
+// - Each task gets its hash, and whether the latest NX Cloud runs on `--nx-branch` (NX_BRANCH, the
+//   pull request's number) or on the branch of `--base-ref` already stored it (nx-cloud-history.ts).
 // - From that, `agents` holds how many agents each OS starts (agent-sizing.ts), Linux at most
 //   `--max-agents`.
 //
@@ -23,10 +22,10 @@ import { join } from 'pathe';
 
 import { ROOT_DIRECTORY } from '../../utils/constants.ts';
 import { changedFilesEnvironment, focusDiff } from '../utils/changed-files.ts';
-import { AGENT_BOOT_SECONDS, MAX_AGENTS, agentsFor } from './agent-sizing.ts';
-import { baseRuns, osHistory, taskDurations } from './nx-cloud-history.ts';
+import { MAX_AGENTS, agentsFor } from './agent-sizing.ts';
+import { baseRuns, osHistory } from './nx-cloud-history.ts';
 import { linuxRuns, parseWorkflows, planFor, windowsTasksOf } from './plan.ts';
-import { EMPTY_SELECTION, type Selection, weigh, workOf } from './selection.ts';
+import { EMPTY_SELECTION, type Selection, markCached } from './selection.ts';
 import { hashSelections } from './task-hashes.ts';
 
 type Os = 'linux' | 'windows';
@@ -96,12 +95,11 @@ const baseBranchRuns =
     : Promise.resolve([]);
 const history = (os: Os) => (runsOn[os] ? osHistory(os, branch, baseBranchRuns) : undefined);
 // NX Cloud answers while Nx selects the tasks.
-const [linux, windows, linuxHistory, windowsHistory, durations] = await Promise.all([
+const [linux, windows, linuxHistory, windowsHistory] = await Promise.all([
   runsOn.linux ? select('linux') : EMPTY_SELECTION,
   runsOn.windows ? select('windows') : EMPTY_SELECTION,
   history('linux'),
   history('windows'),
-  taskDurations(),
 ]);
 console.log(
   `${base ? `Affected since ${base}` : 'Everything'}: ${Object.keys(linux.tasks).length} Linux and ${Object.keys(windows.tasks).length} Windows tasks.`
@@ -117,7 +115,7 @@ const size = (os: Os, selection: Selection, past: typeof linuxHistory) => {
   if (tasks.length === 0) {
     return 0;
   }
-  weigh(selection, hashes[os], past, durations);
+  markCached(selection, hashes[os], past);
   const cached = tasks.filter((task) => task.cached).length;
   const seen = tasks.filter((task) => task.hash && past?.seen.has(task.hash)).length;
   if (past && past.runs > 0 && seen === 0) {
@@ -125,16 +123,12 @@ const size = (os: Os, selection: Selection, past: typeof linuxHistory) => {
       `WARNING: ${past.runs} earlier ${os} runs on ${branch} know none of the ${tasks.length} hashes. The setup job hashes differently from Nx in the run (task-hashes.ts), so every task counts as one that runs.`
     );
   }
-  const work = tasks.reduce((sum, task) => sum + task.seconds!, 0) / 60;
-  const { agents, seconds } = agentsFor(workOf(selection), {
-    max: max[os],
-    bootSeconds: AGENT_BOOT_SECONDS[os],
-  });
+  const agents = agentsFor({ tasks: tasks.length, uncached: tasks.length - cached }, max[os]);
   console.log(
     [
       `${os}: ${tasks.length} tasks, ${cached} of them in the cache`,
       past?.runs ? `(${past.runs} earlier runs knew ${seen} of the hashes)` : '(no earlier runs)',
-      `→ ${Math.round(work)} minutes of work: ${agents} agents, done in about ${Math.round(seconds / 60)} minutes.`,
+      `→ ${agents} agents.`,
     ].join(' ')
   );
   return agents;

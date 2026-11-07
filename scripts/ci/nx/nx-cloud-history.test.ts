@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { type Run, baseRuns, historyOf, osHistory, taskDurations } from './nx-cloud-history.ts';
+import { type Run, baseRuns, historyOf, osHistory } from './nx-cloud-history.ts';
 
 const task = (
   hash: string,
@@ -9,11 +9,8 @@ const task = (
   hash,
   status: 'SUCCEEDED',
   cacheable: true,
-  cacheStatus: 'cache-miss',
   projectName: hash,
   target: 'compile',
-  startedAt: '2026-11-01T10:00:00Z',
-  completedAt: '2026-11-01T10:01:00Z',
   ...overrides,
 });
 
@@ -49,22 +46,6 @@ describe('the history of a branch', () => {
     expect(history.runs).toBe(1);
     expect([...history.succeeded].sort()).toEqual(['h-next', 'h-pr']);
     expect([...history.seen]).toEqual(['h-pr']);
-    expect([...history.seconds.keys()]).toEqual(['h-pr:compile']);
-  });
-
-  it("takes the newest run's time for a task, and only the time of a run that missed the cache", () => {
-    const newer = task('h1', { completedAt: '2026-11-01T10:02:00Z' });
-    const hit = task('h2', { cacheStatus: 'remote-cache-hit' });
-
-    const history = historyOf(
-      [
-        { id: 'new', tasks: [newer, hit] },
-        { id: 'old', tasks: [task('h1')] },
-      ],
-      []
-    );
-
-    expect(history.seconds).toEqual(new Map([['h1:compile', 120]]));
   });
 
   it('reads the base branch in every environment', async () => {
@@ -79,24 +60,6 @@ describe('the history of a branch', () => {
     const query = new URL(fetch.mock.calls[0][0]).searchParams;
     expect(query.get('branch')).toBe('next');
     expect(query.has('ciExecutionEnv')).toBe(false);
-  });
-
-  it("times a branch's first run on an OS from the latest run on that OS on any branch", async () => {
-    vi.stubGlobal(
-      'fetch',
-      nxCloud((path, query) => {
-        if (path === 'runs') {
-          return page(query.has('branch') ? [] : [{ id: 'other-pr' }]);
-        }
-        return page([task('h-windows', { completedAt: '2026-11-01T10:05:00Z' })]);
-      })
-    );
-
-    const history = await osHistory('windows', '123', Promise.resolve([]));
-
-    expect(history.runs).toBe(0);
-    expect(history.succeeded.size).toBe(0);
-    expect(history.seconds).toEqual(new Map([['h-windows:compile', 300]]));
   });
 
   it("keeps the other runs when one run's tasks do not come", async () => {
@@ -139,12 +102,12 @@ describe('the requests to NX Cloud', () => {
     );
     vi.stubGlobal('fetch', fetch);
 
-    const durations = taskDurations();
+    const runs = baseRuns('next');
     await vi.advanceTimersByTimeAsync(2_999);
     expect(fetch).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(1);
 
-    expect(await durations).toEqual(new Map());
+    expect(await runs).toEqual([]);
     expect(fetch).toHaveBeenCalledTimes(2);
   });
 
@@ -155,10 +118,10 @@ describe('the requests to NX Cloud', () => {
     );
     vi.stubGlobal('fetch', fetch);
 
-    const durations = taskDurations();
+    const runs = baseRuns('next');
     await vi.runAllTimersAsync();
 
-    expect(await durations).toBeUndefined();
+    expect(await runs).toEqual([]);
     expect(fetch).toHaveBeenCalledTimes(4);
   });
 
@@ -169,10 +132,10 @@ describe('the requests to NX Cloud', () => {
     );
     vi.stubGlobal('fetch', fetch);
 
-    const durations = taskDurations();
+    const runs = baseRuns('next');
     await vi.advanceTimersByTimeAsync(0);
 
-    expect(await durations).toBeUndefined();
+    expect(await runs).toEqual([]);
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 

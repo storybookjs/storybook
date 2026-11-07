@@ -21,10 +21,14 @@ if (typeof zlib.createZstdCompress !== 'function') {
 }
 
 const level = Number(levelArg ?? 3);
+// zlib's default 16 KiB output chunks make decompression the bottleneck: a 610 MiB node_modules
+// archive (3.3 GB of tar) took 17 s to decompress, and 4 s with 1 MiB chunks.
+const chunkSize = 1024 * 1024;
 
 const transform =
   mode === 'compress'
     ? zlib.createZstdCompress({
+        chunkSize,
         params: {
           [zlib.constants.ZSTD_c_compressionLevel]: level,
           // Long-distance matching helps on multi-GB node_modules payloads
@@ -33,7 +37,7 @@ const transform =
         },
       })
     : mode === 'decompress'
-      ? zlib.createZstdDecompress()
+      ? zlib.createZstdDecompress({ chunkSize })
       : null;
 
 if (!transform) {

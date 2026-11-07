@@ -59,7 +59,7 @@ const NX_CLOUD = 'npx --yes nx-cloud@19.1.5';
 export const NODE_MODULES_ARCHIVE = '/tmp/nx-dte-node_modules.tar.zst';
 export const MANIFESTS_SUM = '/tmp/nx-dte-manifests.sha256';
 // Hashes the workspaces' manifests and Yarn's patches into MANIFESTS_SUM, for the key below.
-export const HASH_MANIFESTS_COMMAND = `cat package.json */package.json code/*/package.json code/*/*/package.json .yarn/patches/* | sha256sum > ${MANIFESTS_SUM}`;
+export const HASH_MANIFESTS_COMMAND = `shopt -s nullglob; cat package.json */package.json code/*/package.json code/*/*/package.json .yarn/patches/* | sha256sum > ${MANIFESTS_SUM}`;
 // Everything that decides the installed tree, as CircleCI's own node_modules key (helpers.ts).
 // The setup job (.circleci/config.yml) restores the same key; circleci-dte.test.ts keeps them equal.
 export const NODE_MODULES_KEY = [

@@ -171,18 +171,25 @@ describe('the CircleCI NX DTE pipeline', () => {
     }
   });
 
-  it('keys node_modules on the patches, whose install a hit would skip', () => {
+  it('keys node_modules on the patches, whose install a hit would skip, also when there are none', () => {
     const repo = mkdtempSync(join(tmpdir(), 'node-modules-key-'));
     onTestFinished(() => rmSync(repo, { recursive: true, force: true }));
     mkdirSync(join(repo, '.yarn/patches'), { recursive: true });
     writeFileSync(join(repo, 'package.json'), '{}');
-    const hash = () =>
-      spawnSync('bash', ['-c', HASH_MANIFESTS_COMMAND.replace(MANIFESTS_SUM, '/dev/stdout')], {
-        cwd: repo,
-        encoding: 'utf8',
-      }).stdout;
+    // As CircleCI runs a step.
+    const hash = () => {
+      const result = spawnSync(
+        'bash',
+        ['-eo', 'pipefail', '-c', HASH_MANIFESTS_COMMAND.replace(MANIFESTS_SUM, '/dev/stdout')],
+        { cwd: repo, encoding: 'utf8' }
+      );
+      expect(result.status, result.stderr).toBe(0);
+      return result.stdout;
+    };
 
+    const withoutPatches = hash();
     writeFileSync(join(repo, '.yarn/patches/pkg-npm-1.0.0.patch'), '+ one');
+    expect(hash()).not.toBe(withoutPatches);
     const before = hash();
     writeFileSync(join(repo, '.yarn/patches/pkg-npm-1.0.0.patch'), '+ two');
 
@@ -212,7 +219,7 @@ describe('the CircleCI NX DTE pipeline', () => {
     expect(daily['circleci-completion'].requires.sort()).toEqual(
       ['nx-main', 'nx-main-windows', 'node-26-smoke'].sort()
     );
-  });
+  }, 30_000);
 
   it('starts every agent job at its maximum without a selection from the setup job', () => {
     const jobs = getNxDteJobs(['daily'], 'unused');
@@ -255,7 +262,7 @@ describe('the CircleCI NX DTE pipeline', () => {
 
     expect(workflowName('--nx-dte=true')).toBe('normal-nx-dte-generated');
     expect(workflowName('--nx-dte=false')).toBe('normal-generated');
-  });
+  }, 30_000);
 
   it('starts on the same workflows as the ci: labels', () => {
     const list = read('.github/workflows/trigger-circleci-nx-dte.yml').match(

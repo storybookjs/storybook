@@ -1,78 +1,19 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 
-import { minimatch } from 'minimatch';
-import { join, relative } from 'pathe';
+import { join } from 'pathe';
 import { expect, it } from 'vitest';
 
-const ROOT = join(import.meta.dirname, '../../..');
-const CODE = join(ROOT, 'code');
+import { type Package, ROOT, covers, globsOf, ownerOf, packages } from './inputs.ts';
+
 // Written by every `compile` (scripts/build/utils/generate-bundle.ts), one folder per Nx project.
-const METAFILES = join(CODE, 'bench/esbuild-metafiles');
+const METAFILES = join(ROOT, 'code/bench/esbuild-metafiles');
 
 const read = (file: string) => JSON.parse(readFileSync(file, 'utf8'));
-const nxJson = read(join(ROOT, 'nx.json'));
 
-// A named input as the globs Nx hashes, relative to the workspace root.
-function globsOf(inputs: unknown[], named: Record<string, unknown[]>, root: string): string[] {
-  return inputs.flatMap((input) => {
-    if (typeof input !== 'string' || input.startsWith('^')) {
-      return [];
-    }
-    if (named[input]) {
-      return globsOf(named[input], named, root);
-    }
-    return [input.replace('{workspaceRoot}/', '').replace('{projectRoot}', root)];
-  });
-}
+const productionOf = (pkg: Package, input: string) =>
+  globsOf([input], pkg.project.namedInputs ?? {}, pkg.root);
 
-const covers = (globs: string[], path: string) => {
-  const matches = (glob: string) => minimatch(path, glob, { dot: true });
-  return (
-    globs.some((glob) => !glob.startsWith('!') && matches(glob)) &&
-    !globs.some((glob) => glob.startsWith('!') && matches(glob.slice(1)))
-  );
-};
-
-type Package = {
-  dir: string;
-  name: string;
-  project: string;
-  dependencies: string[];
-  production: string[];
-  ownProduction: string[];
-};
-
-const packages: Package[] = ['', 'addons', 'builders', 'frameworks', 'lib', 'presets', 'renderers']
-  .flatMap((group) =>
-    readdirSync(join(CODE, group), { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => join(CODE, group, entry.name))
-  )
-  .filter((dir) => existsSync(join(dir, 'package.json')) && existsSync(join(dir, 'project.json')))
-  .map((dir) => {
-    const pkg = read(join(dir, 'package.json'));
-    const project = read(join(dir, 'project.json'));
-    const named = { ...nxJson.namedInputs, ...project.namedInputs };
-    return {
-      dir,
-      name: pkg.name,
-      project: project.name,
-      dependencies: Object.keys({
-        ...pkg.dependencies,
-        ...pkg.devDependencies,
-        ...pkg.peerDependencies,
-      }),
-      production: globsOf(['production'], named, relative(ROOT, dir)),
-      ownProduction: globsOf(['own-production'], named, relative(ROOT, dir)),
-    };
-  });
-
-const owner = (file: string) =>
-  packages
-    .filter((pkg) => file.startsWith(`${pkg.dir}/`))
-    .sort((a, b) => b.dir.length - a.dir.length)[0];
-
-const projectOf = (folder: string) => packages.find((pkg) => pkg.project === folder);
+const projectOf = (folder: string) => packages.find((pkg) => pkg.project.name === folder);
 
 const bundledFiles = (): { pkg: Package; file: string }[] =>
   readdirSync(METAFILES).flatMap((folder) => {
@@ -88,7 +29,7 @@ const bundledFiles = (): { pkg: Package; file: string }[] =>
         };
         return Object.keys(inputs)
           .filter((input) => !input.includes('node_modules/') && !input.includes(':'))
-          .map((input) => ({ pkg, file: join(pkg.dir, input) }));
+          .map((input) => ({ pkg, file: join(pkg.root, input) }));
       });
   });
 
@@ -96,37 +37,42 @@ const bundledFiles = (): { pkg: Package; file: string }[] =>
 // first.
 const compiled = existsSync(METAFILES) || !!process.env.CI;
 
-// `compile` hashes the package's `production` and its dependencies' own files (`^own-production`),
-// and the tasks that use the package hash its `production` (`^production`): a sandbox, for one. A
-// bundled file outside them changes the bundle without changing those hashes, so they restore
-// stale results and `nx affected` skips them.
-it.skipIf(!compiled)("every package's production covers the sources it bundles", () => {
-  const missing = new Set(
-    readdirSync(METAFILES)
-      .filter((folder) => !projectOf(folder))
-      .map((folder) => `no Nx project is named ${folder}`)
-  );
-  for (const { pkg, file } of bundledFiles()) {
-    const from = owner(file);
-    const path = relative(ROOT, file);
-    const hashedBy =
-      from && from !== pkg && pkg.dependencies.includes(from.name) ? from.ownProduction : [];
-    if (!covers(pkg.production, path) && !covers(hashedBy, path)) {
-      missing.add(`${pkg.project} bundles ${path}`);
+it.skipIf(!compiled)(
+  "every bundled source is hashed by the package's compile and by the tasks that use the package",
+  () => {
+    const missing = new Set(
+      readdirSync(METAFILES)
+        .filter((folder) => !projectOf(folder))
+        .map((folder) => `no Nx project is named ${folder}`)
+    );
+    for (const { pkg, file } of bundledFiles()) {
+      const from = ownerOf(file);
+      const hashedBy =
+        from && from !== pkg && pkg.dependencies.includes(from.name)
+          ? productionOf(from, 'own-production')
+          : [];
+      if (!covers(productionOf(pkg, 'production'), file) && !covers(hashedBy, file)) {
+        missing.add(`${pkg.project.name} bundles ${file}`);
+      }
     }
-  }
-  // Add the file to `namedInputs.production` in the package's project.json.
-  expect([...missing].sort()).toEqual([]);
-});
+    expect(
+      [...missing].sort(),
+      "Add the file to `namedInputs.production` in the package's project.json"
+    ).toEqual([]);
+  },
+  30_000
+);
 
-// `publish`, `init-empty` and the test Storybooks hash `all-production` for the packages they
-// install from the local registry.
-it.skipIf(!compiled)('all-production covers every bundled source', () => {
-  const allProduction = globsOf(['all-production'], nxJson.namedInputs, '');
-  const missing = new Set(
-    bundledFiles()
-      .map(({ file }) => relative(ROOT, file))
-      .filter((path) => !covers(allProduction, path))
-  );
-  expect([...missing].sort()).toEqual([]);
-});
+it.skipIf(!compiled)(
+  'all-production hashes every bundled source, for the tasks that install from the local registry',
+  () => {
+    const allProduction = globsOf(['all-production'], {}, '');
+    const missing = new Set(
+      bundledFiles()
+        .map(({ file }) => file)
+        .filter((path) => !covers(allProduction, path))
+    );
+    expect([...missing].sort()).toEqual([]);
+  },
+  30_000
+);

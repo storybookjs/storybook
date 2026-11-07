@@ -8,14 +8,22 @@
       "inputs": [
         "default",
         "^own-production",
-        "{workspaceRoot}/code/addons/docs/src/**/*",
-        "!{workspaceRoot}/code/addons/docs/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
-        "{workspaceRoot}/code/builders/builder-vite/src/**/*",
-        "!{workspaceRoot}/code/builders/builder-vite/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
-        "{workspaceRoot}/code/frameworks/react-vite/src/**/*",
-        "!{workspaceRoot}/code/frameworks/react-vite/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
-        "{workspaceRoot}/code/lib/cli-storybook/src/**/*",
-        "!{workspaceRoot}/code/lib/cli-storybook/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+        {
+          "projects": ["addon-docs"],
+          "input": "production"
+        },
+        {
+          "projects": ["builder-vite"],
+          "input": "production"
+        },
+        {
+          "projects": ["core"],
+          "input": "production"
+        },
+        {
+          "projects": ["react-vite"],
+          "input": "production"
+        }
       ]
     }
   },

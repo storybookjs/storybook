@@ -8,8 +8,30 @@
       "inputs": [
         "default",
         "^own-production",
-        "{workspaceRoot}/code/lib/cli-storybook/src/**/*",
-        "!{workspaceRoot}/code/lib/cli-storybook/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+        {
+          "projects": ["builder-webpack5"],
+          "input": "production"
+        },
+        {
+          "projects": ["core"],
+          "input": "production"
+        },
+        {
+          "projects": ["nextjs"],
+          "input": "production"
+        },
+        {
+          "projects": ["core-webpack"],
+          "input": "production"
+        },
+        {
+          "projects": ["react-webpack"],
+          "input": "production"
+        },
+        {
+          "projects": ["react"],
+          "input": "production"
+        }
       ]
     }
   },

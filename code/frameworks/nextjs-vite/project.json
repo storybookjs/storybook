@@ -8,8 +8,30 @@
       "inputs": [
         "default",
         "^own-production",
-        "{workspaceRoot}/code/lib/cli-storybook/src/**/*",
-        "!{workspaceRoot}/code/lib/cli-storybook/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+        {
+          "projects": ["builder-vite"],
+          "input": "production"
+        },
+        {
+          "projects": ["core"],
+          "input": "production"
+        },
+        {
+          "projects": ["nextjs-vite"],
+          "input": "production"
+        },
+        {
+          "projects": ["react-vite"],
+          "input": "production"
+        },
+        {
+          "projects": ["vite-plugin-storybook-nextjs"],
+          "input": "production"
+        },
+        {
+          "projects": ["react"],
+          "input": "production"
+        }
       ]
     }
   },

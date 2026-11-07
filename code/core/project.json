@@ -21,34 +21,60 @@
       "inputs": [
         "default",
         "^own-production",
-        "{workspaceRoot}/code/addons/a11y/src/**/*",
-        "!{workspaceRoot}/code/addons/a11y/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
-        "{workspaceRoot}/code/addons/docs/src/**/*",
-        "!{workspaceRoot}/code/addons/docs/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
+        {
+          "projects": ["addon-a11y"],
+          "input": "production"
+        },
+        {
+          "projects": ["addon-docs"],
+          "input": "production"
+        },
+        {
+          "projects": ["storybook-addon-pseudo-states"],
+          "input": "production"
+        },
+        {
+          "projects": ["addon-themes"],
+          "input": "production"
+        },
+        {
+          "projects": ["addon-vitest"],
+          "input": "production"
+        },
+        {
+          "projects": ["builder-vite"],
+          "input": "production"
+        },
+        {
+          "projects": ["builder-webpack5"],
+          "input": "production"
+        },
+        {
+          "projects": ["core"],
+          "input": "production"
+        },
+        {
+          "projects": ["react-vite"],
+          "input": "production"
+        },
+        {
+          "projects": ["react-webpack5"],
+          "input": "production"
+        },
+        {
+          "projects": ["core-webpack"],
+          "input": "production"
+        },
+        {
+          "projects": ["react-webpack"],
+          "input": "production"
+        },
+        {
+          "projects": ["react"],
+          "input": "production"
+        },
         "{workspaceRoot}/code/addons/onboarding/src/**/*",
         "!{workspaceRoot}/code/addons/onboarding/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
-        "{workspaceRoot}/code/addons/pseudo-states/src/**/*",
-        "!{workspaceRoot}/code/addons/pseudo-states/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
-        "{workspaceRoot}/code/addons/themes/src/**/*",
-        "!{workspaceRoot}/code/addons/themes/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
-        "{workspaceRoot}/code/addons/vitest/src/**/*",
-        "!{workspaceRoot}/code/addons/vitest/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
-        "{workspaceRoot}/code/builders/builder-vite/src/**/*",
-        "!{workspaceRoot}/code/builders/builder-vite/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
-        "{workspaceRoot}/code/builders/builder-webpack5/src/**/*",
-        "!{workspaceRoot}/code/builders/builder-webpack5/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
-        "{workspaceRoot}/code/frameworks/react-vite/src/**/*",
-        "!{workspaceRoot}/code/frameworks/react-vite/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
-        "{workspaceRoot}/code/frameworks/react-webpack5/src/**/*",
-        "!{workspaceRoot}/code/frameworks/react-webpack5/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
-        "{workspaceRoot}/code/lib/cli-storybook/src/**/*",
-        "!{workspaceRoot}/code/lib/cli-storybook/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
-        "{workspaceRoot}/code/lib/core-webpack/src/**/*",
-        "!{workspaceRoot}/code/lib/core-webpack/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
-        "{workspaceRoot}/code/presets/react-webpack/src/**/*",
-        "!{workspaceRoot}/code/presets/react-webpack/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
-        "{workspaceRoot}/code/renderers/react/src/**/*",
-        "!{workspaceRoot}/code/renderers/react/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
         "{workspaceRoot}/code/.storybook/isChromatic.ts",
         "{workspaceRoot}/code/.storybook/preview.tsx",
         "{workspaceRoot}/code/.storybook/vitest.preview.ts",

@@ -8,10 +8,10 @@
       "inputs": [
         "default",
         "^own-production",
-        "{workspaceRoot}/code/lib/cli-storybook/src/**/*",
-        "!{workspaceRoot}/code/lib/cli-storybook/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
-        "{workspaceRoot}/code/renderers/react/src/**/*",
-        "!{workspaceRoot}/code/renderers/react/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+        {
+          "projects": ["core"],
+          "input": "production"
+        }
       ]
     }
   },

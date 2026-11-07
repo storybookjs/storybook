@@ -11,11 +11,9 @@
 # On Linux and on Windows (Git Bash). Runs from the repository root. Changing this file changes the
 # cache key.
 set -euo pipefail
-# Git Bash's own tools by path: on CircleCI's Windows machines, Windows' find, sort and tar come
-# first on the PATH.
-find=/usr/bin/find
-sort=/usr/bin/sort
-tar=/usr/bin/tar
+# Git Bash's own tools first: on CircleCI's Windows machines, Windows' find, sort and tar and
+# Sysinternals' du come first on the PATH.
+PATH="/usr/bin:$PATH"
 
 mode=$1
 archives=$2
@@ -29,7 +27,7 @@ extract() {
   local pids=() part status=0
   for part in "$archives"/part-*.tar.zst; do
     [ -s "$part" ] || return 1
-    (node scripts/ci/zstd-stream.mjs decompress < "$part" | "$tar" --extract) &
+    (node scripts/ci/zstd-stream.mjs decompress < "$part" | tar --extract) &
     pids+=($!)
   done
   for pid in "${pids[@]}"; do wait "$pid" || status=1; done
@@ -55,7 +53,7 @@ case "$mode" in
     if [ -d "$archives" ]; then
       # Whatever a broken or incomplete archive left behind, so the install starts clean.
       echo "The cached node_modules could not be used; installing instead."
-      "$find" . -path ./.git -prune -o -name node_modules -type d -prune -exec rm -rf {} +
+      find . -path ./.git -prune -o -name node_modules -type d -prune -exec rm -rf {} +
       rm -f .yarn/root-install-state.gz
     fi
     # Three tries: up to 20 agents install at once.
@@ -64,7 +62,7 @@ case "$mode" in
       [ "$try" = 3 ] && exit 1
       sleep $((try * 15))
     done
-    "$find" . -path ./node_modules -prune -o -name node_modules -type d -prune -print > "$list"
+    find . -path ./node_modules -prune -o -name node_modules -type d -prune -print > "$list"
     echo ./node_modules >> "$list"
     # Drops the binaries .yarnrc.yml installs for other platforms: about 2 GB on Linux x64.
     node .nx/workflows/prune-other-platforms.cjs "$list"
@@ -76,9 +74,9 @@ case "$mode" in
     # or follow. A restore makes them again.
     node scripts/ci/nx/workspace-links.mjs list | sed 's|^|./|' > "$archives.links"
     # Each top-level entry of a node_modules directory, largest first, goes to the lightest part.
-    while read -r dir; do "$find" "$dir" -mindepth 1 -maxdepth 1; done < "$list" \
+    while read -r dir; do find "$dir" -mindepth 1 -maxdepth 1; done < "$list" \
       | grep -vxF -f "$archives.links" \
-      | tr '\n' '\0' | xargs -0 du -s --apparent-size | "$sort" -rn \
+      | tr '\n' '\0' | xargs -0 du -s --apparent-size | sort -rn \
       | awk -v n="$PARTS" -v out="$archives.part" '{
           m = 0; for (i = 1; i < n; i++) if (w[i] < w[m]) m = i
           w[m] += $1; sub(/^[0-9]+\t/, ""); print > (out "-" m)
@@ -90,7 +88,7 @@ case "$mode" in
     pids=()
     for ((i = 0; i < PARTS; i++)); do
       touch "$archives.part-$i"
-      ("$tar" --create --anchored --exclude-from="$archives.links" -T "$archives.part-$i" \
+      (tar --create --anchored --exclude-from="$archives.links" -T "$archives.part-$i" \
         | node scripts/ci/zstd-stream.mjs compress 3 > "$archives.tmp/part-$i.tar.zst") &
       pids+=($!)
     done

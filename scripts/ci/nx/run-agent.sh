@@ -12,10 +12,26 @@ shift
 "$@" &
 agent=$!
 
+# The processes the agent started, by their parent in `ps`.
+descendants() {
+  local child
+  for child in $(ps -ef | awk -v parent="$1" '$3 == parent { print $2 }'); do
+    echo "$child"
+    descendants "$child"
+  done
+}
+
 stop() {
-  # On Windows, `kill` reaches the MSYS `timeout`, not the native node processes Nx starts.
+  # On Windows, `kill` reaches the MSYS `timeout` only: the native node processes of
+  # `yarn nx start-agent` are not in its Windows process tree, and keep the step open until Nx
+  # exits by itself. Each of them goes with its own tree.
   if [ -r "/proc/$agent/winpid" ]; then
-    taskkill //F //T //PID "$(cat "/proc/$agent/winpid")" >/dev/null 2>&1
+    local pid
+    for pid in "$agent" $(descendants "$agent"); do
+      if [ -r "/proc/$pid/winpid" ]; then
+        taskkill //F //T //PID "$(cat "/proc/$pid/winpid")" >/dev/null 2>&1
+      fi
+    done
   fi
   kill "$agent" 2>/dev/null
 }

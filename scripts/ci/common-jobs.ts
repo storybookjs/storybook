@@ -537,7 +537,8 @@ export const affectedLintAndFormatChecks = (changedFiles: readonly string[]): Af
             `Lint changed ${dir} files`,
             dir,
             changedFiles,
-            'yarn lint:js:cmd --quiet --no-error-on-unmatched-pattern'
+            // `lint:js:cmd` already skips a pattern that matches nothing; oxlint rejects the flag twice.
+            'yarn lint:js:cmd --quiet'
           )
         )),
   ];

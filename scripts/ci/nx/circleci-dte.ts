@@ -282,7 +282,7 @@ const agentJob = (diff: FocusDiff | undefined, agents: number) =>
       {
         run: {
           name: 'Run the tasks NX Cloud assigns',
-          command: `NX_AGENT_NAME="circleci-linux-$CIRCLE_NODE_INDEX" /usr/bin/timeout --kill-after=1m ${TIMEOUT_MINUTES.linux}m yarn nx start-agent`,
+          command: `NX_AGENT_NAME="circleci-linux-$CIRCLE_NODE_INDEX" bash scripts/ci/nx/run-agent.sh ${NX_MAIN_JOBS.linux} ${TIMEOUT_MINUTES.linux}`,
           // NX Cloud stops a worker that is silent for 10 minutes; the Chromatic task prints a
           // line every minute while it waits.
           no_output_timeout: '20m',
@@ -336,7 +336,7 @@ const windowsAgentJob = (diff: FocusDiff | undefined, agents: number) =>
         run: {
           name: 'Run the tasks NX Cloud assigns',
           // Bounded as the main job is (`runNx`).
-          command: `NX_AGENT_NAME="circleci-windows-$CIRCLE_NODE_INDEX" /usr/bin/timeout --kill-after=1m ${TIMEOUT_MINUTES.windows}m yarn nx start-agent`,
+          command: `NX_AGENT_NAME="circleci-windows-$CIRCLE_NODE_INDEX" bash scripts/ci/nx/run-agent.sh ${NX_MAIN_JOBS.windows} ${TIMEOUT_MINUTES.windows}`,
           no_output_timeout: '20m',
         },
       },

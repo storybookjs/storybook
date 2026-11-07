@@ -17,6 +17,7 @@ import {
   getNxDteJobs,
 } from './circleci-dte.ts';
 import { MAX_AGENTS } from './agent-sizing.ts';
+import { hasEnded } from './main-job-ended.ts';
 import { planFor } from './plan.ts';
 import { EMPTY_SELECTION, type Selection } from './selection.ts';
 
@@ -132,12 +133,43 @@ describe('the CircleCI NX DTE pipeline', () => {
 
   it('bounds every NX job, so a run that never ends cannot hold machines for hours', () => {
     const jobs = withSelection(tasks('fmt', 1), tasks('test-1', 1));
-    for (const id of ['nx-main', 'nx-agent', 'nx-main-windows', 'nx-agent-windows']) {
+    for (const id of ['nx-main', 'nx-main-windows']) {
       const commands = job(jobs, id)!.steps.map((step) => step.run?.command ?? '');
       expect(
         commands.some((command) => /\/usr\/bin\/timeout --kill-after=1m \d+m yarn /.test(command))
       ).toBe(true);
     }
+    expect(read('scripts/ci/nx/run-agent.sh')).toContain(
+      '/usr/bin/timeout --kill-after=1m "${minutes}m" yarn nx start-agent &'
+    );
+  });
+
+  it('stops each agent once its main job has ended, also when that never started the NX Cloud run', () => {
+    const jobs = withSelection(tasks('fmt', 1), tasks('test-1', 1));
+    for (const [agent, main] of [
+      ['nx-agent', 'nx-main'],
+      ['nx-agent-windows', 'nx-main-windows'],
+    ]) {
+      const commands = job(jobs, agent)!.steps.map((step) => step.run?.command ?? '');
+      expect(
+        commands.some((command) => / scripts\/ci\/nx\/run-agent\.sh \S+ \d+$/.test(command))
+      ).toBe(true);
+      expect(commands.some((command) => command.includes(`run-agent.sh ${main} `))).toBe(true);
+    }
+  });
+
+  it('counts a main job as ended once CircleCI no longer runs it', () => {
+    const jobs = (status: string) => [
+      { name: 'nx-agent', status: 'running' },
+      { name: 'nx-main', status },
+    ];
+    for (const status of ['success', 'failed', 'canceled', 'infrastructure_fail', 'timedout']) {
+      expect(hasEnded(jobs(status), 'nx-main')).toBe(true);
+    }
+    for (const status of ['running', 'queued', 'not_running', 'blocked', 'on_hold']) {
+      expect(hasEnded(jobs(status), 'nx-main')).toBe(false);
+    }
+    expect(hasEnded(jobs('success'), 'nx-main-windows')).toBe(false);
   });
 
   it('lists, as the last step of each agent, what its tasks left in the checkout, without failing', () => {

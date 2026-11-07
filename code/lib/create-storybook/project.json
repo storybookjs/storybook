@@ -13,7 +13,14 @@
   "projectType": "library",
   "targets": {
     "compile": {},
-    "check": {}
+    "check": {
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/code/renderers/react/src/**/*",
+        "!{workspaceRoot}/code/renderers/react/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+      ]
+    }
   },
   "tags": ["library"]
 }

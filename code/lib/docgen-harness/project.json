@@ -10,7 +10,13 @@
       "options": {
         "cwd": "{projectRoot}",
         "command": "vue-tsc --noEmit"
-      }
+      },
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/code/**/src/**/*",
+        "{workspaceRoot}/code/.storybook/**/*"
+      ]
     },
     "docgen-memory-gate": {
       "dependsOn": [

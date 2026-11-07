@@ -4,7 +4,18 @@
   "projectType": "library",
   "targets": {
     "compile": {},
-    "check": {}
+    "check": {
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/code/builders/builder-vite/src/**/*",
+        "!{workspaceRoot}/code/builders/builder-vite/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
+        "{workspaceRoot}/code/frameworks/react-vite/src/**/*",
+        "!{workspaceRoot}/code/frameworks/react-vite/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
+        "{workspaceRoot}/code/renderers/react/src/**/*",
+        "!{workspaceRoot}/code/renderers/react/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+      ]
+    }
   },
   "tags": ["library"]
 }

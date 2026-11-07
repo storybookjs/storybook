@@ -37,12 +37,7 @@
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "command": "yarn exec jiti ./scripts/check/check-package.ts --cwd {projectRoot}",
       "cache": true,
-      "inputs": [
-        "default",
-        "^production",
-        "{workspaceRoot}/code/**/src/**/*",
-        "{workspaceRoot}/code/.storybook/**/*"
-      ],
+      "inputs": ["default", "^production"],
       "configurations": { "production": {} }
     },
     "publish": {

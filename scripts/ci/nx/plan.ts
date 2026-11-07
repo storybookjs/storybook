@@ -145,10 +145,6 @@ const fixedJobs: Record<string, Equivalent> = {
   'nightly-failure-report': { none: 'not ported yet: the nightly run only sets the `nx` status' },
 };
 
-// Templates still in development are generated before they are created (`yarn task generate`),
-// which NX does not do yet. They only run in the nightly `daily` workflow.
-export const isInDevelopment = (key: TemplateKey) => Boolean(allTemplates[key].inDevelopment);
-
 // The NX equivalent of a CircleCI job, or `undefined` when there is none yet.
 export function equivalentOf(jobId: string): Equivalent | undefined {
   if (fixedJobs[jobId]) {
@@ -157,9 +153,6 @@ export function equivalentOf(jobId: string): Equivalent | undefined {
 
   const sandbox = sandboxJobs.get(jobId);
   if (sandbox) {
-    if (isInDevelopment(sandbox.key)) {
-      return { none: `${sandbox.key} is in development and needs \`yarn task generate\` first` };
-    }
     const tasks = sandboxTasks(sandbox.key, sandbox.kind);
     return tasks && { tasks };
   }

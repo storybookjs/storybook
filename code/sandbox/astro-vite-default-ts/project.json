@@ -13,8 +13,13 @@
   ],
   "targets": {
     "sandbox": {
+      "command": "npx --yes --package=npm@11.17.0 -- yarn task generate -s task --debug --no-link --template={projectName} && yarn task sandbox -s task --debug --no-link --template={projectName}",
       "options": {
-        "dir": "astro-vite-default-ts"
+        "dir": "astro-vite-default-ts",
+        "env": {
+          "STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION": "1",
+          "STORYBOOK_SANDBOX_GENERATE": "1"
+        }
       }
     },
     "dev": {},
@@ -26,5 +31,5 @@
     "smoke-test": {},
     "serve": {}
   },
-  "tags": []
+  "tags": ["ci:daily"]
 }

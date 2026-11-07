@@ -55,6 +55,12 @@ describe('the NX plan', () => {
     expect(equivalentOf('some-new-circleci-job')).toBeUndefined();
   });
 
+  it('creates every sandbox of the daily run, also those still in development', () => {
+    const { tasks } = planFor(['daily']);
+    expect(daily.filter((key) => !tasks.includes(`${key}:sandbox`))).toEqual([]);
+    expect(tasks).toContain('astro-vite/default-ts:sandbox');
+  });
+
   it('runs the Windows and Node 26 jobs only where CircleCI does', () => {
     expect(planFor(['normal']).sideJobs).toEqual([]);
     expect(planFor(['daily']).sideJobs).toEqual(['windows', 'windows-init-empty', 'node-26-smoke']);

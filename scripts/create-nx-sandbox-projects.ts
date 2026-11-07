@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { dirname, join } from 'pathe';
 
 import { esMain } from './utils/esmain.ts';
+import { BEFORE_SANDBOX_NPM_MIN_VERSION } from './utils/npm-constants.ts';
 
 import { type Template } from '../code/lib/cli-storybook/src/sandbox-templates.ts';
 import * as templates from '../code/lib/cli-storybook/src/sandbox-templates.ts';
@@ -86,10 +87,28 @@ export const projectJson = (name: string, tags: string[], template: Template) =>
   implicitDependencies: sandboxDependencies(template),
   targets: {
     sandbox: {
+      // A template in development has no published repro to start from, so it is generated first,
+      // as CircleCI's create job does (scripts/ci/sandboxes.ts), with the npm that generating needs.
+      ...(template.inDevelopment
+        ? {
+            command: [
+              `npx --yes --package=npm@${BEFORE_SANDBOX_NPM_MIN_VERSION} -- yarn task generate -s task --debug --no-link --template={projectName}`,
+              'yarn task sandbox -s task --debug --no-link --template={projectName}',
+            ].join(' && '),
+          }
+        : {}),
       options: {
         // Ensure Nx sandboxes write to a stable, slash-free folder name
         // e.g. "react-vite/default-ts" -> "react-vite-default-ts"
         dir: name.replaceAll('/', '-'),
+        ...(template.inDevelopment
+          ? {
+              env: {
+                STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: '1',
+                STORYBOOK_SANDBOX_GENERATE: '1',
+              },
+            }
+          : {}),
       },
     },
     dev: {},
@@ -135,8 +154,8 @@ export function sandboxProjects(): Map<string, string> {
   return new Map(
     Object.entries(allTemplates).map(([key, value]) => {
       const tags = [
-        ...(normal.includes(key as any) && !value.inDevelopment ? ['ci:normal'] : []),
-        ...(daily.includes(key as any) && !value.inDevelopment ? ['ci:daily'] : []),
+        ...(normal.includes(key as any) ? ['ci:normal'] : []),
+        ...(daily.includes(key as any) ? ['ci:daily'] : []),
         // The sandbox CircleCI tests on Windows (`WINDOWS_TEMPLATE` in scripts/ci/nx/plan.ts).
         ...(key === daily[0] ? ['ci:windows'] : []),
       ];

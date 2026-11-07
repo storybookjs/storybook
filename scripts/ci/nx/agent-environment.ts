@@ -3,9 +3,8 @@
 // Every task hashes this file (`ci-environment` in nx.json), so a change here runs the tasks again
 // instead of restoring their results from the old environment. Like main.ts, this runs under plain
 // Node before `yarn install`.
-import { NODE_MODULES_CACHE_KEY, NODE_MODULES_CACHE_PATHS, cache } from '../utils/helpers.ts';
+import { cache } from '../utils/helpers.ts';
 import { isTrustedAuthor } from '../utils/runtime.ts';
-import { installNodeOnWindows } from '../utils/windows-node.ts';
 
 export type Os = 'linux' | 'windows';
 
@@ -55,18 +54,8 @@ const installChromium = (os: Os) => [
     : []),
 ];
 
-// Node, Yarn and node_modules on a Windows machine, from CircleCI's Windows cache. (Linux agents
-// restore node_modules with circleci-node-modules.sh, which every task hashes too.)
-export const windowsInstall = () => [
-  installNodeOnWindows(),
-  cache.attach([NODE_MODULES_CACHE_KEY('windows')]),
-  { 'node/install-packages': { 'app-dir': '.', 'pkg-manager': 'yarn', 'with-cache': false } },
-  ...(isTrustedAuthor()
-    ? [cache.persist(NODE_MODULES_CACHE_PATHS, NODE_MODULES_CACHE_KEY('windows'))]
-    : []),
-];
-
-// The steps an agent runs after its checkout (and, on Linux, once node_modules is in place).
+// The steps an agent runs after its checkout, once Node, Yarn and node_modules are in place
+// (circleci-node-modules.sh, which every task hashes too).
 export const agentSetup = (os: Os) =>
   os === 'linux'
     ? [
@@ -81,7 +70,6 @@ export const agentSetup = (os: Os) =>
         },
       ]
     : [
-        ...windowsInstall(),
         {
           run: {
             name: 'Clone GitHub over https',

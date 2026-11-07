@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import { AGENT_BOOT_SECONDS, MAX_AGENTS, type Work, agentsFor, simulate } from './agent-sizing.ts';
 
-const independent = (n: number, seconds: number): Work =>
-  Object.fromEntries(Array.from({ length: n }, (_, i) => [`t${i}`, { seconds, dependsOn: [] }]));
+const independent = (n: number, seconds: number, prefix = 't'): Work =>
+  Object.fromEntries(
+    Array.from({ length: n }, (_, i) => [`${prefix}${i}`, { seconds, dependsOn: [] }])
+  );
 
 const linux = { max: MAX_AGENTS.linux, bootSeconds: AGENT_BOOT_SECONDS.linux };
 const windows = { max: MAX_AGENTS.windows, bootSeconds: AGENT_BOOT_SECONDS.windows };
@@ -49,7 +51,8 @@ describe('the agents a run needs', () => {
   });
 
   it('starts agents only for the tasks NX Cloud has no cache entry for', () => {
-    const rerun: Work = { ...independent(163, 0), ...independent(14, 90) };
+    const rerun: Work = { ...independent(163, 0, 'cached'), ...independent(14, 90) };
+    expect(Object.keys(rerun)).toHaveLength(177);
     expect(agentsFor(independent(177, 90), linux).agents).toBeGreaterThan(30);
     expect(agentsFor(rerun, linux).agents).toBeLessThanOrEqual(14);
   });

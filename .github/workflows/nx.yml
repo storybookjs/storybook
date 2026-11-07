@@ -52,7 +52,7 @@ jobs:
     timeout-minutes: 10
     outputs:
       workflow: ${{ steps.plan.outputs.workflow }}
-      changed-files: ${{ steps.changed.outputs.files }}
+      changed-files-base: ${{ steps.changed.outputs.base }}
       changed-files-count: ${{ steps.plan.outputs.changed-files-count }}
       nx: ${{ steps.plan.outputs.nx }}
       windows: ${{ steps.plan.outputs.windows }}
@@ -80,18 +80,14 @@ jobs:
                  | join(",")' <<<"$CI_WORKFLOW_LABELS") ;;
           esac
           echo "workflow=$workflow" >> "$GITHUB_OUTPUT"
-      # What CircleCI's focused run diffs against (scripts/ci/focus.ts).
-      - name: List the changed files
+      # What CircleCI's focused run diffs against (scripts/ci/focus.ts): the jobs read the changed
+      # files from git, since a list of them can be too long for an environment variable.
+      - name: Find the commit the focused diff starts at
         id: changed
         if: contains(steps.workflow.outputs.workflow, 'focus')
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref || 'next' }}
-        run: |
-          {
-            echo 'files<<EOF'
-            git diff --name-only "origin/$BASE_REF...HEAD" --
-            echo 'EOF'
-          } >> "$GITHUB_OUTPUT"
+        run: echo "base=$(git merge-base "origin/$BASE_REF" HEAD)" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: '.nvmrc'
@@ -99,7 +95,7 @@ jobs:
         id: plan
         env:
           WORKFLOW: ${{ steps.workflow.outputs.workflow }}
-          CI_CHANGED_FILES: ${{ steps.changed.outputs.files }}
+          CI_CHANGED_FILES_BASE: ${{ steps.changed.outputs.base }}
         # `shell: bash` adds pipefail, so a plan that throws fails the step instead of skipping all jobs.
         shell: bash
         run: node --experimental-transform-types scripts/ci/nx/plan-cli.ts --workflow="$WORKFLOW" | tee -a "$GITHUB_OUTPUT"
@@ -138,8 +134,8 @@ jobs:
       status-description: ${{ steps.statuses.outputs.description }}
     env:
       WORKFLOW: ${{ needs.plan.outputs.workflow }}
-      CI_CHANGED_FILES: ${{ needs.plan.outputs.changed-files }}
-      # So a worker can tell a lost or mangled file list from an empty diff (affected.ts).
+      CI_CHANGED_FILES_BASE: ${{ needs.plan.outputs.changed-files-base }}
+      # So a worker can tell a diff that came out different from the one the run was planned from.
       CI_CHANGED_FILES_COUNT: ${{ needs.plan.outputs.changed-files-count }}
       # Report each finished task right away instead of in batches, so the tasks that depend on it
       # (sandbox, then build, then e2e) start sooner. The Nx repo itself runs with this.

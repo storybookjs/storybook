@@ -10,7 +10,7 @@
 //   Without it, every task of the plan runs (`nx run-many`).
 // - `--graph` writes the tasks the commands would run (selection.ts) instead of running them.
 //
-// Focused runs read the changed files from `CI_CHANGED_FILES`, one per line.
+// Focused runs read the changed files since `CI_CHANGED_FILES_BASE` (scripts/ci/utils/changed-files.ts).
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -20,6 +20,7 @@ import { join } from 'pathe';
 
 import { ROOT_DIRECTORY } from '../../utils/constants.ts';
 import { esMain } from '../../utils/esmain.ts';
+import { changedFilesFromEnvironment } from '../utils/changed-files.ts';
 import {
   type Group,
   groupTasks,
@@ -30,10 +31,12 @@ import {
 } from './plan.ts';
 import { type Selection, mergeTaskGraphs } from './selection.ts';
 
-function yarn(args: string[]) {
+function yarn(args: string[], input?: string) {
   const result = spawnSync('yarn', args, {
     cwd: ROOT_DIRECTORY,
     encoding: 'utf8',
+    input,
+    maxBuffer: 1024 ** 3,
     // Windows resolves `yarn` through yarn.cmd.
     shell: process.platform === 'win32',
   });
@@ -115,7 +118,7 @@ async function main() {
     throw new Error(`Unknown --env=${values.env}. Expected linux or windows.`);
   }
   const selected = parseWorkflows(values.workflow ?? '');
-  const changedFiles = (process.env.CI_CHANGED_FILES ?? '').split('\n').filter(Boolean);
+  const changedFiles = changedFilesFromEnvironment();
   const plan = planFor(selected, changedFiles);
 
   if (plan.missing.length > 0) {
@@ -145,27 +148,14 @@ async function main() {
   }
 
   const affectedCheck = values.env === 'linux' && plan.affectedCheck;
-  // As affected.ts: a list lost on its way here would skip the check without a word.
-  const expected = process.env.CI_CHANGED_FILES_COUNT;
-  if (affectedCheck && expected !== undefined && Number(expected) !== changedFiles.length) {
-    throw new Error(
-      `CI_CHANGED_FILES lists ${changedFiles.length} files, but the main job found ${expected}.`
-    );
-  }
   if (affectedCheck && changedFiles.length > 0) {
     // From the changed files, not from a git range: the check then covers the diff the plan was
-    // made from, and the main job needs no history (circleci-dte.ts checks out one commit).
+    // made from, and the main job needs only the commit that diff starts at.
     const affected: string[] = JSON.parse(
-      yarn([
-        'nx',
-        'show',
-        'projects',
-        '--affected',
-        `--files=${changedFiles.join(',')}`,
-        '--with-target',
-        'check',
-        '--json',
-      ])
+      yarn(
+        ['nx', 'show', 'projects', '--affected', '--stdin', '--with-target', 'check', '--json'],
+        changedFiles.join('\n')
+      )
     );
     affected.forEach((project) => want(project, 'check'));
   }

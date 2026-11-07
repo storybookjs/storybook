@@ -87,7 +87,7 @@ describe('the NX plan', () => {
   it('forwards the changed files and their count to the NX Cloud workers', () => {
     const ciConfig = read('.nx/ci-config.yaml');
 
-    expect(ciConfig).toContain('- CI_CHANGED_FILES\n');
+    expect(ciConfig).toContain('- CI_CHANGED_FILES_BASE\n');
     expect(ciConfig).toContain('- CI_CHANGED_FILES_COUNT\n');
   });
 

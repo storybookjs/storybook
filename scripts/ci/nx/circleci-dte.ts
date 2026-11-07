@@ -20,8 +20,8 @@
 // Opt in with the `nxDte` pipeline parameter (.circleci/config.yml); main.ts then generates these
 // jobs instead of the per-job ones. Like main.ts, this runs under plain Node before `yarn install`.
 import { installWithCache, node26Smoke } from '../common-jobs.ts';
-import { getChangedFiles } from '../focus.ts';
 import { artifact, cache, git, node, testResults } from '../utils/helpers.ts';
+import { type FocusDiff, changedFilesEnvironment, focusDiff } from '../utils/changed-files.ts';
 import { isTrustedAuthor } from '../utils/runtime.ts';
 import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
 import { linuxRuns, planFor, windowsTasksOf } from './plan.ts';
@@ -111,7 +111,7 @@ const saveNodeModules = () =>
 type Os = 'linux' | 'windows';
 
 // The environment every job of one OS shares.
-const nxEnvironment = (os: Os, changedFiles: readonly string[]) => ({
+const nxEnvironment = (os: Os, diff: FocusDiff | undefined) => ({
   // Reports under the pull request, as nx.yml does: API-triggered pipelines carry no PR number.
   NX_BRANCH: '<< pipeline.parameters.ghPrNumber >>',
   // The Linux and the Windows tasks run as two runs of one NX Cloud pipeline, each with its own
@@ -122,9 +122,8 @@ const nxEnvironment = (os: Os, changedFiles: readonly string[]) => ({
   NX_CLOUD_DISABLE_BUFFER_TASK_COMPLETIONS: 'true',
   // Selection from the repository's inputs only, as the setup job (without NX Cloud) makes it.
   NX_CLOUD_USE_ULTRACACHE: 'false',
-  // affected.ts reads the focused diff on the agents; the count tells a mangled list from an empty one.
-  CI_CHANGED_FILES: changedFiles.join('\n'),
-  CI_CHANGED_FILES_COUNT: `${changedFiles.length}`,
+  // The focused diff, for run.ts on the main job and affected.ts on the agents.
+  ...changedFilesEnvironment(diff),
 });
 
 // The environment of the agents of both OSes: as on the NX Cloud workers (.nx/workflows/agents.yaml).
@@ -243,7 +242,7 @@ const checkCheckout = () => ({
 
 const mainJob = (
   selected: readonly Workflow[],
-  changedFiles: readonly string[],
+  diff: FocusDiff | undefined,
   targets: readonly string[],
   base: string | undefined,
   agents: number
@@ -251,13 +250,13 @@ const mainJob = (
   defineJob(NX_MAIN_JOBS.linux, () => ({
     executor: { name: 'sb_node_22_classic', class: 'large' },
     environment: {
-      ...nxEnvironment('linux', changedFiles),
+      ...nxEnvironment('linux', diff),
       // Tells NX Cloud how many agents there are, which it weighs when it stops agents early.
       NX_CLOUD_DISTRIBUTED_EXECUTION_AGENT_COUNT: `${agents}`,
     },
     steps: [
       // One commit: `nx affected` diffs against the base the setup job found (fetched below), and
-      // a focused run's check reads the changed files (CI_CHANGED_FILES), not a git range.
+      // a focused run fetches the commit its diff starts at (scripts/ci/utils/changed-files.ts).
       git.checkout(),
       startCiRun('linux', targets, NX_CLOUD),
       ...restoreNodeModules(),
@@ -268,12 +267,12 @@ const mainJob = (
     ],
   }));
 
-const agentJob = (changedFiles: readonly string[], agents: number) =>
+const agentJob = (diff: FocusDiff | undefined, agents: number) =>
   defineJob('nx-agent', () => ({
     executor: { name: 'sb_node_22_browsers', class: 'large' },
     parallelism: agents,
     environment: {
-      ...nxEnvironment('linux', changedFiles),
+      ...nxEnvironment('linux', diff),
       ...agentEnvironment,
       // The sandboxes install from the global yarn cache (scripts/utils/yarn.ts), so the installs
       // of one sandbox, and of every sandbox task an agent runs after it, share their downloads.
@@ -337,7 +336,7 @@ const windowsSetup = () => [
 
 const windowsMainJob = (
   selected: readonly Workflow[],
-  changedFiles: readonly string[],
+  diff: FocusDiff | undefined,
   targets: readonly string[],
   base: string | undefined,
   agents: number
@@ -346,7 +345,7 @@ const windowsMainJob = (
     // Runs no task; on Windows so that it hashes the tasks on the OS that runs them.
     executor: { name: 'win/default', size: 'medium', shell: 'bash.exe' },
     environment: {
-      ...nxEnvironment('windows', changedFiles),
+      ...nxEnvironment('windows', diff),
       NX_CLOUD_DISTRIBUTED_EXECUTION_AGENT_COUNT: `${agents}`,
     },
     steps: [
@@ -359,13 +358,13 @@ const windowsMainJob = (
     ],
   }));
 
-const windowsAgentJob = (changedFiles: readonly string[], agents: number) =>
+const windowsAgentJob = (diff: FocusDiff | undefined, agents: number) =>
   defineJob('nx-agent-windows', () => ({
     // As CircleCI's own Windows E2E jobs.
     executor: { name: 'win/default', size: 'large', shell: 'bash.exe' },
     parallelism: agents,
     environment: {
-      ...nxEnvironment('windows', changedFiles),
+      ...nxEnvironment('windows', diff),
       ...agentEnvironment,
       PLAYWRIGHT_WORKERS: '3',
       NX_AGENT_LAUNCH_TEMPLATE: LAUNCH_TEMPLATES.windows,
@@ -412,8 +411,8 @@ export function getNxDteJobs(
   baseRef: string,
   options: NxDteOptions = {}
 ): JobOrNoOpJob[] {
-  const changedFiles = selected.includes('focus') ? getChangedFiles(baseRef) : [];
-  const plan = planFor(selected, changedFiles);
+  const diff = selected.includes('focus') ? focusDiff(baseRef) : undefined;
+  const plan = planFor(selected, diff?.files ?? []);
   if (plan.missing.length > 0) {
     throw new Error(`No NX equivalent for the CircleCI jobs: ${plan.missing.join(', ')}`);
   }
@@ -424,10 +423,7 @@ export function getNxDteJobs(
   if (linuxRuns(selected, plan) && (!linux || Object.keys(linux.tasks).length > 0)) {
     const agents = options.agents?.linux ?? options.maxAgents ?? MAX_AGENTS.linux;
     const targets = commandTargets([...plan.tasks, ...(plan.affectedCheck ? ['*:check'] : [])]);
-    jobs.push(
-      mainJob(selected, changedFiles, targets, base, agents),
-      agentJob(changedFiles, agents)
-    );
+    jobs.push(mainJob(selected, diff, targets, base, agents), agentJob(diff, agents));
   }
 
   const windowsTasks = windowsTasksOf(plan);
@@ -435,10 +431,7 @@ export function getNxDteJobs(
   if (windowsTasks.length > 0 && (!windows || Object.keys(windows.tasks).length > 0)) {
     const targets = commandTargets(windowsTasks);
     const agents = options.agents?.windows ?? MAX_AGENTS.windows;
-    jobs.push(
-      windowsMainJob(selected, changedFiles, targets, base, agents),
-      windowsAgentJob(changedFiles, agents)
-    );
+    jobs.push(windowsMainJob(selected, diff, targets, base, agents), windowsAgentJob(diff, agents));
   }
 
   if (plan.sideJobs.includes('node-26-smoke')) {

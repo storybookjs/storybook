@@ -2,13 +2,14 @@
 // needs. Runs under plain Node before `yarn install`, like scripts/ci/main.ts.
 //
 // Usage: node --experimental-transform-types scripts/ci/nx/plan-cli.ts --workflow=<workflows>
-// Focused runs read the changed files from `CI_CHANGED_FILES`, one per line.
+// Focused runs read the changed files since `CI_CHANGED_FILES_BASE` (scripts/ci/utils/changed-files.ts).
 import { parseArgs } from 'node:util';
 
+import { changedFilesFromEnvironment } from '../utils/changed-files.ts';
 import { parseWorkflows, planFor, sideJobs } from './plan.ts';
 
 const { values } = parseArgs({ options: { workflow: { type: 'string', default: '' } } });
-const changedFiles = (process.env.CI_CHANGED_FILES ?? '').split('\n').filter(Boolean);
+const changedFiles = changedFilesFromEnvironment();
 const selected = parseWorkflows(values.workflow);
 const plan = planFor(selected, changedFiles);
 

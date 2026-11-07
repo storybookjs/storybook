@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -8,6 +7,7 @@ import {
   type TemplateKey,
 } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { isGlobalInput, isTestFixture } from './global-inputs.ts';
+import { focusDiff } from './utils/changed-files.ts';
 import {
   build_linux,
   defineAffectedCheck,
@@ -180,11 +180,7 @@ export const selectPathTriggeredJobs = (changedFiles: readonly string[]): JobOrN
   ).map(({ job }) => job);
 
 export function getChangedFiles(baseRef: string): string[] {
-  return execFileSync('git', ['diff', '--name-only', `${baseRef}...HEAD`, '--'], {
-    encoding: 'utf8',
-  })
-    .split('\n')
-    .filter(Boolean);
+  return focusDiff(baseRef).files;
 }
 
 /** Select the jobs a diff can affect. */

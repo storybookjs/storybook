@@ -22,7 +22,7 @@ import { parseArgs } from 'node:util';
 import { join } from 'pathe';
 
 import { ROOT_DIRECTORY } from '../../utils/constants.ts';
-import { getChangedFiles } from '../focus.ts';
+import { changedFilesEnvironment, focusDiff } from '../utils/changed-files.ts';
 import { AGENT_BOOT_SECONDS, MAX_AGENTS, agentsFor } from './agent-sizing.ts';
 import { baseRuns, osHistory, taskDurations } from './nx-cloud-history.ts';
 import { linuxRuns, parseWorkflows, planFor, windowsTasksOf } from './plan.ts';
@@ -55,8 +55,8 @@ if (!values.out) {
 }
 
 const selected = parseWorkflows(values.workflow ?? '');
-const changedFiles = selected.includes('focus') ? getChangedFiles(values['base-ref']) : [];
-const plan = planFor(selected, changedFiles);
+const diff = selected.includes('focus') ? focusDiff(values['base-ref']) : undefined;
+const plan = planFor(selected, diff?.files ?? []);
 const base = values.base || undefined;
 const branch = values['nx-branch'] || undefined;
 const max = {
@@ -80,11 +80,7 @@ const select = (os: Os): Promise<Selection> => {
     spawn('yarn', args, {
       cwd: ROOT_DIRECTORY,
       stdio: 'inherit',
-      env: {
-        ...process.env,
-        CI_CHANGED_FILES: changedFiles.join('\n'),
-        CI_CHANGED_FILES_COUNT: `${changedFiles.length}`,
-      },
+      env: { ...process.env, ...changedFilesEnvironment(diff) },
     }).on('close', (code) =>
       code === 0
         ? resolve(JSON.parse(readFileSync(file, 'utf8')))

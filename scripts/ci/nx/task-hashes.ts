@@ -7,14 +7,17 @@
 // once the tasks it depends on ran (https://github.com/nrwl/nx/discussions/23419).
 // task-hashes.test.ts keeps it so.
 //
-// The Windows tasks are hashed here on Linux with Windows' `OS`, the one input that differs
-// (`sharedGlobals` in nx.json; the repository checks files out unchanged, `* -text`).
+// The Windows tasks are hashed here on Linux with Windows' `OS` (`sharedGlobals` in nx.json; the
+// repository checks files out unchanged, `* -text`), and with the npm packages as Nx names them on
+// Windows, where other native packages are installed (windows-graph.ts).
 import { readNxJson } from 'nx/src/config/nx-json.js';
 import { createTaskHasher } from 'nx/src/hasher/create-task-hasher.js';
 import { createProjectGraphAsync } from 'nx/src/project-graph/project-graph.js';
 import { createTaskGraph } from 'nx/src/tasks-runner/create-task-graph.js';
+import { workspaceRoot } from 'nx/src/utils/workspace-root.js';
 
 import type { Selection } from './selection.ts';
+import { windowsGraph } from './windows-graph.ts';
 
 type Os = 'linux' | 'windows';
 
@@ -22,13 +25,15 @@ export async function hashSelections(
   selections: Record<Os, Selection>
 ): Promise<Record<Os, Record<string, string>>> {
   // Throws instead of exiting, so select.ts can fall back to counting every task.
-  const graph = await createProjectGraphAsync({ exitOnError: false });
-  const hasher = createTaskHasher(graph, readNxJson());
+  const linuxGraph = await createProjectGraphAsync({ exitOnError: false });
+  const graphs = { linux: linuxGraph, windows: windowsGraph(linuxGraph, workspaceRoot) };
   const hash = async (selection: Selection, os: Os) => {
     const tasks = Object.values(selection.tasks);
     if (tasks.length === 0) {
       return {};
     }
+    const graph = graphs[os];
+    const hasher = createTaskHasher(graph, readNxJson());
     const taskGraph = createTaskGraph(
       graph,
       {},

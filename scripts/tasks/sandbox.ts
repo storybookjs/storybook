@@ -44,8 +44,8 @@ export const sandbox: Task = {
   description: 'Create the sandbox from a template',
   dependsOn: (details, options) => {
     const install = options.link ? 'compile' : 'run-registry';
-    // An in-development template has no published repro, so `generate` creates it locally. That
-    // publishes to the local registry once, even when the sandbox is linked.
+    // An in-development template has no published repro, so `generate` creates it locally, which
+    // needs the local registry even for a linked sandbox.
     const needsRepro =
       'inDevelopment' in details.template &&
       details.template.inDevelopment &&

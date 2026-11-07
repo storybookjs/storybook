@@ -47,6 +47,9 @@ describe('publishAllPackages', () => {
       publishCommand('next', ['storybook', '@storybook/react']),
       expect.objectContaining({ env: { npm_config_provenance: 'true' } })
     );
+    expect(listUnpublishedPackages).toHaveBeenCalledWith(
+      expect.objectContaining({ packageNames: ['storybook', '@storybook/react'] })
+    );
     expect(waitForPackagesToBePublished).not.toHaveBeenCalled();
   });
 
@@ -90,7 +93,7 @@ describe('publishAllPackages', () => {
     vi.mocked(waitForPackagesToBePublished).mockResolvedValue(['storybook']);
 
     await expect(publishAllPackages(options)).rejects.toThrow(
-      'Failed to publish version 10.6.0-alpha.6. Still missing after staging wait: storybook'
+      'Failed to publish version 10.6.0-alpha.6. Still missing after waiting for the registry: storybook'
     );
     expect(execaCommand).toHaveBeenCalledTimes(1);
   });
@@ -136,6 +139,9 @@ describe('publishAllPackages', () => {
     expect(vi.mocked(execaCommand).mock.calls[1][0]).toBe(
       publishCommand('next', ['@storybook/react'])
     );
+    expect(listUnpublishedPackages).toHaveBeenLastCalledWith(
+      expect.objectContaining({ packageNames: ['storybook', '@storybook/react'] })
+    );
     expect(waitForPackagesToBePublished).toHaveBeenCalledWith(
       expect.objectContaining({ packageNames: ['storybook'] })
     );
@@ -154,9 +160,11 @@ describe('publishAllPackages', () => {
       .mockResolvedValueOnce(['storybook']);
     vi.mocked(waitForPackagesToBePublished).mockResolvedValue(['storybook']);
 
-    await expect(publishAllPackages(options)).rejects.toThrow(
-      'Failed to publish version 10.6.0-alpha.6. Still missing after staging wait: storybook'
-    );
+    await expect(publishAllPackages(options)).rejects.toMatchObject({
+      message:
+        'Failed to publish version 10.6.0-alpha.6. Still missing after waiting for the registry: storybook',
+      cause: staged,
+    });
   });
 
   it('keeps retrying while each attempt publishes more packages', async () => {

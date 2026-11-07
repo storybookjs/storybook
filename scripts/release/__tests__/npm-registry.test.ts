@@ -71,6 +71,17 @@ describe('isPackageVersionPublished', () => {
     ).resolves.toBe(false);
   });
 
+  it('returns false when reading the response body fails', async () => {
+    fetchMock.mockResolvedValue({
+      status: 200,
+      json: () => Promise.reject(new DOMException('The operation was aborted', 'TimeoutError')),
+    });
+
+    await expect(
+      isPackageVersionPublished({ packageName: 'storybook', version: '10.6.0-alpha.6' })
+    ).resolves.toBe(false);
+  });
+
   it('throws on unexpected status codes', async () => {
     fetchMock.mockImplementation(() => jsonResponse(401, { error: 'unauthorized' }));
 

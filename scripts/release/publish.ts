@@ -175,31 +175,30 @@ export const publishAllPackages = async ({
     }
   }
 
-  // A staged package stays invisible after its own attempt failed, even when a later attempt
-  // publishes the rest, so success means every package is on npm.
-  let unpublished = await listUnpublishedPackages({
+  // pnpm exiting 0 says nothing about packages an earlier attempt staged, so check every package.
+  let missing = await listUnpublishedPackages({
     packageNames,
     version: currentVersion,
     verbose,
   });
-  if (unpublished.length > 0) {
+  if (missing.length > 0) {
     console.log(
       picocolors.yellow(
-        `⏳ npm does not list ${unpublished.join(', ')} yet. Waiting for the registry rather than publishing again.`
+        `⏳ npm does not list ${missing.join(', ')} yet. Waiting for the registry rather than publishing again.`
       )
     );
-    unpublished = await waitForPackagesToBePublished({
-      packageNames: unpublished,
+    missing = await waitForPackagesToBePublished({
+      packageNames: missing,
       version: currentVersion,
       timeoutMs: REGISTRY_POLL_TIMEOUT_MS,
       intervalMs: REGISTRY_POLL_INTERVAL_MS,
       verbose,
     });
   }
-  if (unpublished.length > 0) {
+  if (missing.length > 0) {
     throw new Error(
-      `Failed to publish version ${currentVersion}. Still missing after staging wait: ${unpublished.join(', ')}`,
-      { cause: lastError }
+      `Failed to publish version ${currentVersion}. Still missing after waiting for the registry: ${missing.join(', ')}`,
+      lastError === undefined ? undefined : { cause: lastError }
     );
   }
   console.log(`📦 All packages are on npm`);

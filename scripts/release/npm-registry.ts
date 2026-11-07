@@ -51,7 +51,15 @@ export const isPackageVersionPublished = async ({
     );
   }
 
-  const data: { version?: string } = await response.json();
+  let data: { version?: string };
+  try {
+    data = await response.json();
+  } catch (error) {
+    console.log(
+      `⚠️ Failed to read npm's response for ${prettyPackage} (${error instanceof Error ? error.message : 'unknown error'}), treating as not yet visible`
+    );
+    return false;
+  }
   if (verbose) {
     console.log(`Response from npm:`, data);
   }

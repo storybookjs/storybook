@@ -639,7 +639,7 @@ async function watch(target: Target, sha: string | undefined, interval: number) 
           `[${time()}] nx-cloud: no pipeline started${where} in ${START_TIMEOUT_MS / 60000} minutes. ${
             target.kind === 'run'
               ? 'Is it a run of the nx workflow?'
-              : 'Is the commit pushed, and does the pull request have the ci:normal or ci:daily label?'
+              : 'Is the commit pushed, and does the pull request have an nx: label (or was nx.yml started)?'
           }`
         );
         return EXIT.error;

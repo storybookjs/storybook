@@ -5,8 +5,8 @@ linux-browsers-init-steps: &linux-browsers-init-steps
   - name: Checkout
     uses: 'nrwl/nx-cloud-workflows/v6/workflow-steps/checkout/main.yaml'
   # The installed tree itself, not only the yarn cache: with a hit, the workers skip `yarn install`
-  # (1.5 to 2.5 minutes per worker on a cold install). Only runs with the read-write token (the
-  # nightly run on `next`) store it; pull requests restore the entry `next` stored for the same key.
+  # (1.5 to 2.5 minutes per worker on a cold install). Only runs with the read-write token (a run
+  # on `next`) store it; pull requests restore the entry `next` stored for the same key.
   # The key covers everything that decides the tree: the image, Node, the yarn config, the
   # lockfile, the patches, every workspace's package.json and the prune script below.
   #

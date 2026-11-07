@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { join } from 'pathe';
 import { describe, expect, it } from 'vitest';
+import yml from 'yaml';
 
 import { daily } from '../../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { executors } from '../utils/executors.ts';
@@ -90,7 +91,13 @@ describe('the NX plan', () => {
     expect(ciConfig).toContain('- CI_CHANGED_FILES_COUNT\n');
   });
 
-  it('starts on the same ci: labels as CircleCI', () => {
+  it('starts only by hand, so pull requests run on CircleCI alone', () => {
+    expect(Object.keys(yml.parse(read('.github/workflows/nx.yml')).on)).toEqual([
+      'workflow_dispatch',
+    ]);
+  });
+
+  it('reads the same ci: labels as CircleCI', () => {
     const labels = JSON.stringify(workflows.map((workflow) => `ci:${workflow}`).sort());
     const lists = [...read('.github/workflows/nx.yml').matchAll(/fromJSON\('(\[[^\]]*\])'\)/g)].map(
       ([, list]) => JSON.stringify(JSON.parse(list).sort())

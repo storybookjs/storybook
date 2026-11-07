@@ -2,12 +2,14 @@ name: nx
 
 # Runs what a CircleCI workflow runs (scripts/ci/main.ts), on NX Cloud. scripts/ci/nx/plan.ts maps
 # every CircleCI job to its NX tasks; a job without an NX equivalent fails its tests.
+#
+# NX Cloud license has expired. Triggers are disabled so this workflow does not run on PRs, pushes,
+# or schedules. It can still be started manually via workflow_dispatch once the license is restored.
+# The pull-request and schedule paths below stay, so the triggers that start them can come back:
+#   pull_request: { types: [opened, synchronize, labeled, reopened] }
+#   schedule: [{ cron: '0 23 * * *' }]
 
 on:
-  pull_request:
-    types: [opened, synchronize, labeled, reopened]
-  schedule:
-    - cron: '0 23 * * *'
   workflow_dispatch:
     inputs:
       workflow:

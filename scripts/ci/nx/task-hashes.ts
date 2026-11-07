@@ -3,6 +3,10 @@
 // restores. With Nx's own hasher, so a change to how Nx hashes cannot make the two disagree; these
 // are Nx internals, and select.ts warns when no hash matches an earlier run's.
 //
+// This holds only while no input is `dependentTasksOutputFiles`: such a task's hash is known only
+// once the tasks it depends on ran (https://github.com/nrwl/nx/discussions/23419).
+// task-hashes.test.ts keeps it so.
+//
 // The Windows tasks are hashed here on Linux with Windows' `OS`, the one input that differs
 // (`sharedGlobals` in nx.json; the repository checks files out unchanged, `* -text`).
 import { readNxJson } from 'nx/src/config/nx-json.js';

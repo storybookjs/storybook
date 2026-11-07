@@ -16,7 +16,6 @@ export type Work = Readonly<Record<string, WorkTask>>;
 
 // Speed first: a minute sooner green is worth this many agent-minutes (about 400 credits on Linux),
 // so an agent starts when it makes the run at least three seconds faster for each minute it bills.
-// At 4, a cold core run started 24 agents instead of 44: 500 credits cheaper, but 1m46s slower.
 export const WAIT_WORTH = 20;
 
 // Linux agents are `large` containers (4 vCPUs; a task costs more on `xlarge`, which bills twice
@@ -26,7 +25,7 @@ export const WAIT_WORTH = 20;
 export const MAX_AGENTS = { linux: 44, windows: 4 } as const;
 // From the job's start until an agent's first task runs: checkout, node_modules and Chromium (about
 // 45 seconds on Linux), then the outputs of every `compile` the task depends on, which NX Cloud
-// downloads once per agent (about 55). Measured on the core runs of #37232.
+// downloads once per agent (about 55).
 export const AGENT_BOOT_SECONDS = { linux: 100, windows: 240 } as const;
 
 // Each task's chain: its own seconds plus the longest chain of the tasks that wait for it.

@@ -7,7 +7,9 @@
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { delimiter, join } from 'node:path';
+import { delimiter } from 'node:path';
+
+import { join } from 'pathe';
 
 const type = process.argv[2]?.split('/').at(-1);
 if (!type) {

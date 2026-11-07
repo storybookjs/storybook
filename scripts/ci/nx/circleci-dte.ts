@@ -110,6 +110,10 @@ const saveNodeModules = () =>
 
 type Os = 'linux' | 'windows';
 
+// How long a main job's run and an agent may take: on NX Cloud's own Windows agents a run once never
+// ended and held its machines for six hours.
+const TIMEOUT_MINUTES: Record<Os, number> = { linux: 45, windows: 75 };
+
 // The environment every job of one OS shares.
 const nxEnvironment = (os: Os, diff: FocusDiff | undefined) => ({
   // Reports under the pull request, as nx.yml does: API-triggered pipelines carry no PR number.
@@ -122,16 +126,16 @@ const nxEnvironment = (os: Os, diff: FocusDiff | undefined) => ({
   NX_CLOUD_DISABLE_BUFFER_TASK_COMPLETIONS: 'true',
   // Selection from the repository's inputs only, as the setup job (without NX Cloud) makes it.
   NX_CLOUD_USE_ULTRACACHE: 'false',
+  // The project's environment turns it on. Its lines bury the main job's summary, and on an agent its
+  // lines about every extracted artifact pass CircleCI's 400,000-character step limit, which cuts
+  // off the output of the last tasks.
+  NX_VERBOSE_LOGGING: 'false',
   // The focused diff, for run.ts on the main job and affected.ts on the agents.
   ...changedFilesEnvironment(diff),
 });
 
 // The environment of the agents of both OSes: as on the NX Cloud workers (.nx/workflows/agents.yaml).
 const agentEnvironment = {
-  // As in the main job's Run nx step: the project's environment turns it on, and its lines about
-  // every artifact an agent extracts filled the step past CircleCI's 400,000-character limit, which
-  // cut off the output of the tasks that ran last.
-  NX_VERBOSE_LOGGING: 'false',
   STORYBOOK_DISABLE_TELEMETRY: 'true',
   IN_STORYBOOK_SANDBOX: 'true',
   // bench-packages.ts uploads the benchmarks for this pull request.
@@ -190,13 +194,10 @@ const fetchBase = (base: string | undefined) =>
 const runNx = (os: Os, selected: readonly Workflow[], base: string | undefined) => ({
   run: {
     name: RUN_NX_STEP,
-    // The project's environment turns it on; it buries the summary under thousands of lines.
-    environment: { NX_VERBOSE_LOGGING: 'false' },
     no_output_timeout: '30m',
     command: [
-      // Bounded, as the agents are: on NX Cloud's own Windows agents a run once never ended and held
-      // its machines for six hours. Git Bash's `timeout` on Windows.
-      `/usr/bin/timeout --kill-after=1m ${os === 'windows' ? 75 : 45}m`,
+      // Bounded, as the agents are (TIMEOUT_MINUTES). Git Bash's `timeout` on Windows.
+      `/usr/bin/timeout --kill-after=1m ${TIMEOUT_MINUTES[os]}m`,
       'yarn exec jiti ./scripts/ci/nx/run.ts',
       `--workflow=${selected.join(',')}`,
       `--env=${os}`,
@@ -313,7 +314,7 @@ const agentJob = (diff: FocusDiff | undefined, agents: number) =>
       {
         run: {
           name: 'Run the tasks NX Cloud assigns',
-          command: `NX_AGENT_NAME="circleci-linux-$CIRCLE_NODE_INDEX" /usr/bin/timeout --kill-after=1m 45m yarn nx start-agent`,
+          command: `NX_AGENT_NAME="circleci-linux-$CIRCLE_NODE_INDEX" /usr/bin/timeout --kill-after=1m ${TIMEOUT_MINUTES.linux}m yarn nx start-agent`,
           // NX Cloud stops a worker that is silent for 10 minutes; the Chromatic task prints a
           // line every minute while it waits.
           no_output_timeout: '20m',
@@ -396,7 +397,7 @@ const windowsAgentJob = (diff: FocusDiff | undefined, agents: number) =>
         run: {
           name: 'Run the tasks NX Cloud assigns',
           // Bounded as the main job is (`runNx`).
-          command: `NX_AGENT_NAME="circleci-windows-$CIRCLE_NODE_INDEX" /usr/bin/timeout --kill-after=1m 75m yarn nx start-agent`,
+          command: `NX_AGENT_NAME="circleci-windows-$CIRCLE_NODE_INDEX" /usr/bin/timeout --kill-after=1m ${TIMEOUT_MINUTES.windows}m yarn nx start-agent`,
           no_output_timeout: '20m',
         },
       },

@@ -6,7 +6,9 @@
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { delimiter, join } from 'node:path';
+import { delimiter } from 'node:path';
+
+import { join } from 'pathe';
 
 import { ROOT_DIRECTORY } from '../../utils/constants.ts';
 import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../../utils/npm-constants.ts';

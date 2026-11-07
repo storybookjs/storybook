@@ -1,9 +1,9 @@
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 import { join } from 'pathe';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished } from 'vitest';
 
 import { parameters } from '../utils/parameters.ts';
 import { workflows } from '../utils/types.ts';
@@ -44,7 +44,6 @@ describe('the CircleCI NX DTE pipeline', () => {
     const windows = ['nx-main-windows', 'nx-agent-windows'];
     expect(ids('normal')).toEqual(agents);
     expect(ids('daily')).toEqual([...agents, ...windows, 'node-26-smoke']);
-    // Its Linux tasks only feed CircleCI's own Windows jobs.
     expect(ids('windows')).toEqual(windows);
   });
 
@@ -81,7 +80,6 @@ describe('the CircleCI NX DTE pipeline', () => {
   });
 
   it('names every target of the command in --stop-workers-after, whatever the change reaches', () => {
-    // NX Cloud stops an agent early only once every target of the command is accounted for.
     const start = job(withSelection(tasks('fmt', 1)), 'nx-main')!.steps.find(
       (step) => step.run?.name === 'Start the NX Cloud run'
     )!.run!.command;
@@ -154,6 +152,7 @@ describe('the CircleCI NX DTE pipeline', () => {
       expect(last.when).toBe('always');
 
       const repo = mkdtempSync(join(tmpdir(), 'agent-checkout-'));
+      onTestFinished(() => rmSync(repo, { recursive: true, force: true }));
       const git = (...args: string[]) => spawnSync('git', args, { cwd: repo });
       git('init', '--quiet');
       writeFileSync(join(repo, '.gitignore'), 'sandbox\n');
@@ -174,6 +173,7 @@ describe('the CircleCI NX DTE pipeline', () => {
 
   it('keys node_modules on the patches, whose install a hit would skip', () => {
     const repo = mkdtempSync(join(tmpdir(), 'node-modules-key-'));
+    onTestFinished(() => rmSync(repo, { recursive: true, force: true }));
     mkdirSync(join(repo, '.yarn/patches'), { recursive: true });
     writeFileSync(join(repo, 'package.json'), '{}');
     const hash = () =>
@@ -189,9 +189,8 @@ describe('the CircleCI NX DTE pipeline', () => {
     expect(hash()).not.toBe(before);
   });
 
-  it('restores node_modules in the setup job from the key the NX jobs use', () => {
+  it('restores and saves node_modules in the setup job under the key the NX jobs use', () => {
     const config = read('.circleci/config.yml');
-    // Restored and saved there.
     expect(config.split(NODE_MODULES_KEY).length - 1).toBe(2);
     expect(config).toContain(`command: ${HASH_MANIFESTS_COMMAND}\n`);
     expect(config).toContain(`restore ${NODE_MODULES_ARCHIVE}\n`);
@@ -223,8 +222,7 @@ describe('the CircleCI NX DTE pipeline', () => {
     expect(job(capped, 'nx-agent')!.parallelism).toBe(7);
   });
 
-  it('keeps a job in the workflow when the change reaches no task', () => {
-    // A `windows` run has no Linux part and no completion job.
+  it('keeps a job in a windows workflow, which has no Linux part or completion job, when the change reaches no task', () => {
     const jobs = getNxDteJobs(['windows'], 'unused', {
       selection: { linux: EMPTY_SELECTION, windows: EMPTY_SELECTION },
     });

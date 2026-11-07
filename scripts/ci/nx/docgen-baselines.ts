@@ -6,7 +6,7 @@
 // relative to the sandbox, so the cached copy goes where the sandbox was built.
 import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join } from 'pathe';
 
 import { restoreSandbox } from '../../prepare-sandbox.ts';
 import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '../../utils/constants.ts';

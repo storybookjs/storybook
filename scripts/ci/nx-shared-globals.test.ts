@@ -54,6 +54,14 @@ it('sharedGlobals keeps the Windows cache apart from the Linux and macOS cache',
   expect(nxJson.namedInputs.sharedGlobals).toContainEqual({ env: 'OS' });
 });
 
+// The steps an NX agent may run before agentSetup(): its checkout and the Linux node_modules restore.
+const BEFORE_SETUP = [
+  'git-shallow-clone/checkout_advanced',
+  'Hash the package manifests and patches',
+  'restore_cache',
+  'Restore node_modules',
+];
+
 const git = (args: string) =>
   execSync(`git ${args}`, { cwd: ROOT, encoding: 'utf8' }).trim().split('\n').filter(Boolean);
 
@@ -128,6 +136,10 @@ it("the NX DTE agents take every environment variable and setup step their tasks
       (step) => step.run?.name === 'Run the tasks NX Cloud assigns'
     );
     expect(agent.steps.slice(start - setup.length, start)).toEqual(setup);
+    const before = agent.steps
+      .slice(0, start - setup.length)
+      .map((step) => step.run?.name ?? Object.keys(step)[0]);
+    expect(before.filter((step) => !BEFORE_SETUP.includes(step))).toEqual([]);
   }
 });
 

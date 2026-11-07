@@ -22,13 +22,19 @@
 //
 // Opt in with the `nxDte` pipeline parameter (.circleci/config.yml); main.ts then generates these
 // jobs instead of the per-job ones. Like main.ts, this runs under plain Node before `yarn install`.
-import { installWithCache, node26Smoke } from '../common-jobs.ts';
-import { artifact, cache, git, node, testResults } from '../utils/helpers.ts';
+import { node26Smoke } from '../common-jobs.ts';
+import { artifact, cache, git, testResults } from '../utils/helpers.ts';
 import { type FocusDiff, changedFilesEnvironment, focusDiff } from '../utils/changed-files.ts';
 import { isTrustedAuthor } from '../utils/runtime.ts';
 import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
 import { linuxRuns, planFor, windowsTasksOf } from './plan.ts';
-import { AGENT_EXECUTORS, type Os, agentEnvironment, agentSetup } from './agent-environment.ts';
+import {
+  AGENT_EXECUTORS,
+  type Os,
+  agentEnvironment,
+  agentSetup,
+  windowsInstall,
+} from './agent-environment.ts';
 import { MAX_AGENTS } from './agent-sizing.ts';
 import type { Selection } from './selection.ts';
 
@@ -287,12 +293,8 @@ const agentJob = (diff: FocusDiff | undefined, agents: number) =>
     ],
   }));
 
-// What every Windows job does before Nx: Node, and node_modules from CircleCI's Windows cache.
-const windowsSetup = () => [
-  // Over https, as CircleCI's own Windows jobs check out.
-  git.checkout({ forceHttps: true }),
-  node.installOnWindows(),
-];
+// Over https, as CircleCI's own Windows jobs check out.
+const windowsCheckout = () => git.checkout({ forceHttps: true });
 
 const windowsMainJob = (
   selected: readonly Workflow[],
@@ -309,9 +311,9 @@ const windowsMainJob = (
       NX_CLOUD_DISTRIBUTED_EXECUTION_AGENT_COUNT: `${agents}`,
     },
     steps: [
-      ...windowsSetup(),
+      windowsCheckout(),
       startCiRun('windows', targets, NX_CLOUD),
-      ...installWithCache('windows'),
+      ...windowsInstall(),
       ...fetchBase(base),
       runNx('windows', selected, base),
       stopAgents(),
@@ -328,8 +330,7 @@ const windowsAgentJob = (diff: FocusDiff | undefined, agents: number) =>
       NX_AGENT_LAUNCH_TEMPLATE: LAUNCH_TEMPLATES.windows,
     },
     steps: [
-      ...windowsSetup(),
-      ...installWithCache('windows'),
+      windowsCheckout(),
       ...agentSetup('windows'),
       {
         run: {

@@ -10,7 +10,7 @@ import { unhashedSandboxPackages } from '../create-nx-sandbox-projects.ts';
 import type { PassedOptionValues, Task, TaskKey, TemplateDetails } from '../task.ts';
 import { ROOT_DIRECTORY } from '../utils/constants.ts';
 import { exec } from '../utils/exec.ts';
-import { isNxTaskExecution } from '../utils/nx.ts';
+import { isCiNxTask, isNxTaskExecution } from '../utils/nx.ts';
 
 const logger = console;
 
@@ -218,7 +218,7 @@ export const sandbox: Task = {
     await extendPreview(details, options);
 
     // On CI `storybook init` skips the ESLint plugin, so this holds on CI only.
-    if (process.env.CI && isNxTaskExecution()) {
+    if (isCiNxTask()) {
       const { dependencies, devDependencies } = JSON.parse(
         await readFile(join(details.sandboxDir, 'package.json'), 'utf8')
       );

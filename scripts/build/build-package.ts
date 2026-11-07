@@ -9,7 +9,6 @@
  * The `process.cwd()` is the root of the current package to be built.
  */
 
-import { execFileSync } from 'node:child_process';
 import { mkdir, rm } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -18,7 +17,8 @@ import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import prettyTime from 'pretty-hrtime';
 
-import { isNxTaskExecution } from '../utils/nx.ts';
+import { checkoutChanges, checkoutChangesSince } from '../utils/checkout.ts';
+import { isCiNxTask } from '../utils/nx.ts';
 import { type BuildEntries, measure } from './utils/entry-utils.ts';
 import { generateBundle } from './utils/generate-bundle.ts';
 import { generatePackageJsonFile } from './utils/generate-package-json.ts';
@@ -71,15 +71,7 @@ async function run() {
 
   // CircleCI's build job runs `git.check()` after compiling; an NX agent compiles in its own task.
   // Limited to the package, which is all a compile writes, so a task running beside it is not blamed.
-  const packageChanges = () =>
-    execFileSync('git', ['status', '--porcelain', '--untracked-files=all', '--', DIR_CWD], {
-      cwd: DIR_ROOT,
-      encoding: 'utf8',
-    })
-      .split('\n')
-      .filter(Boolean);
-  const changesBefore =
-    process.env.CI && isNxTaskExecution() && !isWatch ? packageChanges() : undefined;
+  const changesBefore = isCiNxTask() && !isWatch ? checkoutChanges(DIR_ROOT, [DIR_CWD]) : undefined;
 
   const { default: pkg } = await import(pathToFileURL(join(DIR_CWD, 'package.json')).href, {
     with: { type: 'json' },
@@ -138,9 +130,7 @@ async function run() {
     picocolors.yellow(prettyTime(typesTime))
   );
 
-  const changed = changesBefore
-    ? packageChanges().filter((entry) => !changesBefore.includes(entry))
-    : [];
+  const changed = changesBefore ? checkoutChangesSince(changesBefore, DIR_ROOT, [DIR_CWD]) : [];
   if (changed.length > 0) {
     throw new Error(
       [

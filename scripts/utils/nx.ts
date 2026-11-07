@@ -4,6 +4,9 @@ export function isNxTaskExecution(env: NodeJS.ProcessEnv = process.env) {
   return Boolean(env.NX_TASK_TARGET_PROJECT);
 }
 
+export const isCiNxTask = (env: NodeJS.ProcessEnv = process.env) =>
+  Boolean(env.CI) && isNxTaskExecution(env);
+
 // Under NX, `<root>/<project>/<target>`: the tasks of one NX agent run one after another in one
 // checkout, so each keeps its results apart, and the `outputs` in nx.json cache only its own.
 export function nxTaskResultsDirectory(root: string, env: NodeJS.ProcessEnv = process.env) {

@@ -36,7 +36,7 @@ import { vitestTests } from './tasks/vitest-test.ts';
 import { checkoutChanges, checkoutChangesSince } from './utils/checkout.ts';
 import { CODE_DIRECTORY, JUNIT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants.ts';
 import { findMostMatchText } from './utils/diff.ts';
-import { isNxTaskExecution, nxTaskResultsDirectory } from './utils/nx.ts';
+import { isCiNxTask, nxTaskResultsDirectory } from './utils/nx.ts';
 import type { OptionValues } from './utils/options.ts';
 import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options.ts';
 
@@ -546,7 +546,7 @@ async function run() {
 
   // The tasks of an NX agent share its checkout, so a file one leaves there is read by the tasks
   // NX Cloud happens to run after it there, such as `oxfmt --check .`.
-  const checkoutBefore = process.env.CI && isNxTaskExecution() ? checkoutChanges() : undefined;
+  const checkoutBefore = isCiNxTask() ? checkoutChanges() : undefined;
   const assertCheckoutUnchanged = () => {
     const left = checkoutBefore ? checkoutChangesSince(checkoutBefore) : [];
     if (left.length > 0) {

@@ -94,6 +94,7 @@ export const testStory = ({
 
     const shouldRunA11yTests = !!runConfig.a11y;
     const initialGlobals = composeInitialGlobals({
+      storyId,
       userInitialGlobals,
       runConfig,
       ghostStoriesEnabled,

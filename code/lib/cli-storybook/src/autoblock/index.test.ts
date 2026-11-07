@@ -2,6 +2,17 @@ import { beforeEach, expect, test, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 
+// Load the real blockers (the list in index.ts) one after another before the tests run.
+// `autoblock()` imports them all at once, and Vite's module runner then takes the modules they share
+// for an import cycle and hands out half-evaluated ones (`createFileSystemCache is not a function`,
+// seen on slow CI machines).
+import './block-dependencies-versions.ts';
+import './block-create-react-app.ts';
+import './block-node-version.ts';
+import './block-webpack5-frameworks.ts';
+import './block-major-version.ts';
+import './block-experimental-addon-test.ts';
+import './block-react-legacy-root-api.ts';
 import { autoblock } from './index.ts';
 import { type BlockerModule, createBlocker } from './types.ts';
 

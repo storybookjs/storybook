@@ -11,6 +11,7 @@
       "{workspaceRoot}/code/addons/a11y/src/**/*",
       "{workspaceRoot}/code/addons/vitest/src/**/*",
       "{workspaceRoot}/code/lib/cli-storybook/src/**/*",
+      "{workspaceRoot}/code/addons/onboarding/src/constants.ts",
       "!{workspaceRoot}/code/**/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
     ]
   },

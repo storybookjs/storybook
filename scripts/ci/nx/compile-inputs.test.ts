@@ -21,16 +21,18 @@ const bundledFiles = (): { pkg: Package; file: string }[] =>
     if (!pkg) {
       return [];
     }
-    return readdirSync(join(METAFILES, folder))
-      .filter((file) => file.endsWith('.json'))
-      .flatMap((metafile) => {
-        const { inputs } = read(join(METAFILES, folder, metafile)) as {
-          inputs: Record<string, unknown>;
-        };
-        return Object.keys(inputs)
-          .filter((input) => !input.includes('node_modules/') && !input.includes(':'))
-          .map((input) => ({ pkg, file: join(pkg.root, input) }));
-      });
+    // esbuild's metafiles, and the inputs of the runtimes Rolldown bundles in chunks.
+    return readdirSync(join(METAFILES, folder)).flatMap((file) => {
+      const path = join(METAFILES, folder, file);
+      const inputs = file.endsWith('.json')
+        ? Object.keys((read(path) as { inputs: Record<string, unknown> }).inputs)
+        : file.endsWith('.rolldown-inputs')
+          ? readFileSync(path, 'utf8').split('\n').filter(Boolean)
+          : [];
+      return inputs
+        .filter((input) => !input.includes('node_modules/') && !input.includes(':'))
+        .map((input) => ({ pkg, file: join(pkg.root, input) }));
+    });
   });
 
 // CI compiles everything before the unit tests run, so the metafiles are there; locally, compile
@@ -45,6 +47,12 @@ it.skipIf(!compiled)(
         .filter((folder) => !projectOf(folder))
         .map((folder) => `no Nx project is named ${folder}`)
     );
+    const runtimes = readdirSync(METAFILES).flatMap((folder) =>
+      readdirSync(join(METAFILES, folder)).filter((file) => file.endsWith('.rolldown-inputs'))
+    );
+    if (runtimes.length === 0) {
+      missing.add('no compile wrote the inputs of a runtime it bundles with Rolldown');
+    }
     for (const { pkg, file } of bundledFiles()) {
       const from = ownerOf(file);
       const hashedBy =

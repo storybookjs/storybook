@@ -280,7 +280,7 @@ export async function generateBundle({
       treeshake: true,
     });
 
-    await build.write({
+    const { output } = await build.write({
       dir: join(DIR_CWD, 'dist'),
       format: 'es',
       entryFileNames: `${outDir}/[name].js`,
@@ -291,6 +291,18 @@ export async function generateBundle({
       },
     });
     await build.close();
+
+    // The sources Rolldown bundled, one path per line relative to the package, for the input check
+    // in scripts/ci/nx/compile-inputs.test.ts. Not `.json`: the bench story reads every metafile.
+    const inputs = output
+      .flatMap((chunk) => (chunk.type === 'chunk' ? chunk.moduleIds : []))
+      .filter((id) => !id.startsWith('\0') && !id.includes('node_modules/'))
+      .map((id) => relative(DIR_CWD, id));
+    await mkdir(DIR_METAFILES, { recursive: true });
+    await writeFile(
+      join(DIR_METAFILES, `${outDir}-${name}.rolldown-inputs`),
+      [...new Set(inputs)].sort().join('\n')
+    );
 
     if (outDir === 'preview' && name === 'runtime') {
       const entryFile = join(DIR_CWD, 'dist', outDir, `${name}.js`);

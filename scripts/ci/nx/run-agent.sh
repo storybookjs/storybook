@@ -9,7 +9,10 @@ set -u
 main_job=$1
 shift
 
-"$@" &
+# EXPERIMENT: each line of the agent's output with the time it was written.
+ts() { while IFS= read -r line; do printf '%(%H:%M:%S)T %s\n' -1 "$line"; done; }
+echo "TS $(date +%T) the agent starts"
+"$@" > >(ts) 2>&1 &
 agent=$!
 
 # The processes the agent started, by their parent in `ps`.

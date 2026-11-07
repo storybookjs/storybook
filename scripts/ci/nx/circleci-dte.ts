@@ -188,13 +188,18 @@ const runNx = (os: Os, selected: readonly Workflow[], base: string | undefined) 
     name: RUN_NX_STEP,
     no_output_timeout: '30m',
     command: [
-      // Bounded, as the agents are (TIMEOUT_MINUTES). Git Bash's `timeout` on Windows.
-      `/usr/bin/timeout --kill-after=1m ${TIMEOUT_MINUTES[os]}m`,
-      'yarn exec jiti ./scripts/ci/nx/run.ts',
-      `--workflow=${selected.join(',')}`,
-      `--env=${os}`,
-      ...(base ? [`--base=${base}`] : []),
-    ].join(' '),
+      // EXPERIMENT: each line of the output with the time it was written.
+      `echo "TS $(date +%T) Run nx starts"`,
+      [
+        // Bounded, as the agents are (TIMEOUT_MINUTES). Git Bash's `timeout` on Windows.
+        `/usr/bin/timeout --kill-after=1m ${TIMEOUT_MINUTES[os]}m`,
+        'yarn exec jiti ./scripts/ci/nx/run.ts',
+        `--workflow=${selected.join(',')}`,
+        `--env=${os}`,
+        ...(base ? [`--base=${base}`] : []),
+        `2>&1 | while IFS= read -r line; do printf '%(%H:%M:%S)T %s\\n' -1 "$line"; done`,
+      ].join(' '),
+    ].join('\n'),
   },
 });
 

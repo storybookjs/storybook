@@ -355,7 +355,8 @@ export function getNxDteJobs(
   // EXPERIMENT (kasper/nx-agent-startup-bench): every NX DTE run of this branch only measures the
   // agents' startup. Not for merging.
   if (!process.env.VITEST) {
-    return [benchWindowsJob, benchLinuxJob];
+    void benchWindowsJob;
+    return [benchLinuxJob];
   }
   const diff = selected.includes('focus') ? focusDiff(baseRef) : undefined;
   const plan = planFor(selected, diff?.files ?? []);

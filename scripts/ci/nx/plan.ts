@@ -139,9 +139,9 @@ const fixedJobs: Record<string, Equivalent> = {
   'test-storybooks': { none: 'groups jobs in the CircleCI UI' },
   'init-empty': { none: 'groups jobs in the CircleCI UI' },
   'circleci-completion': {
-    none: 'the `nx` commit status, which the `completion` job sets, plays this role',
+    none: 'a CircleCI job in the NX workflow too (main.ts): it waits for the main jobs',
   },
-  'nightly-failure-report': { none: 'the nightly run only sets the `nx` status' },
+  'nightly-failure-report': { none: 'a CircleCI job in the NX workflow too (main.ts)' },
 };
 
 // The NX equivalent of a CircleCI job, or `undefined` when there is none yet.

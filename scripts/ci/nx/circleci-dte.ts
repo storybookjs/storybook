@@ -264,6 +264,12 @@ const mainJob = (
       startCiRun('linux', targets, NX_CLOUD),
       ...restoreNodeModules(),
       ...fetchBase(base),
+      {
+        run: {
+          name: 'Diagnostic: stop here (not for merging)',
+          command: 'yarn nx stop-all-agents || true; circleci-agent step halt',
+        },
+      },
       runNx('linux', selected, base),
       stopAgents(),
       ...saveNodeModules(),
@@ -273,7 +279,7 @@ const mainJob = (
 const agentJob = (diff: FocusDiff | undefined, agents: number) =>
   defineJob('nx-agent', () => ({
     executor: AGENT_EXECUTORS.linux,
-    parallelism: agents,
+    parallelism: 1,
     environment: {
       ...nxEnvironment('linux', diff),
       ...agentEnvironment('linux'),
@@ -319,6 +325,12 @@ const windowsMainJob = (
       windowsCheckout(),
       startCiRun('windows', targets, NX_CLOUD),
       ...windowsInstall(),
+      {
+        run: {
+          name: 'Diagnostic: hash details (not for merging)',
+          command: 'NX_DAEMON=false yarn exec jiti scripts/ci/nx/hash-details.tmp.ts || true; yarn nx stop-all-agents || true; circleci-agent step halt',
+        },
+      },
       ...fetchBase(base),
       runNx('windows', selected, base),
       stopAgents(),
@@ -328,7 +340,7 @@ const windowsMainJob = (
 const windowsAgentJob = (diff: FocusDiff | undefined, agents: number) =>
   defineJob('nx-agent-windows', () => ({
     executor: AGENT_EXECUTORS.windows,
-    parallelism: agents,
+    parallelism: 1,
     environment: {
       ...nxEnvironment('windows', diff),
       ...agentEnvironment('windows'),

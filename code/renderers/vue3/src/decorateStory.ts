@@ -83,3 +83,4 @@ export function decorateStory(
     (context) => prepare(storyFn(context)) as LegacyStoryFn<VueRenderer>
   );
 }
+// Bench: a renderer-only change on the final head (not for merging).

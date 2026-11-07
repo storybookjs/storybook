@@ -352,6 +352,11 @@ export function getNxDteJobs(
   baseRef: string,
   options: NxDteOptions = {}
 ): JobOrNoOpJob[] {
+  // EXPERIMENT (kasper/nx-agent-startup-bench): every NX DTE run of this branch only measures the
+  // agents' startup. Not for merging.
+  if (!process.env.VITEST) {
+    return [benchWindowsJob, benchLinuxJob];
+  }
   const diff = selected.includes('focus') ? focusDiff(baseRef) : undefined;
   const plan = planFor(selected, diff?.files ?? []);
   if (plan.missing.length > 0) {
@@ -372,10 +377,7 @@ export function getNxDteJobs(
   if (windowsTasks.length > 0 && (!windows || Object.keys(windows.tasks).length > 0)) {
     const targets = commandTargets(windowsTasks);
     const agents = options.agents?.windows ?? MAX_AGENTS.windows;
-    // EXPERIMENT (kasper/nx-agent-startup-bench): measure the agents' startup instead of running
-    // the Windows tasks. Not for merging.
-    void [targets, agents, windowsMainJob, windowsAgentJob];
-    jobs.push(benchWindowsJob, benchLinuxJob);
+    jobs.push(windowsMainJob(selected, diff, targets, base, agents), windowsAgentJob(diff, agents));
   }
 
   if (plan.sideJobs.includes('node-26-smoke')) {

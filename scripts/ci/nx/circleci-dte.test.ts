@@ -11,6 +11,7 @@ import {
   CHECK_CHECKOUT_STEP,
   HASH_MANIFESTS_COMMAND,
   LAUNCH_TEMPLATES,
+  MANIFESTS_SUM,
   NODE_MODULES_ARCHIVE,
   NODE_MODULES_KEY,
   getNxDteJobs,
@@ -169,6 +170,23 @@ describe('the CircleCI NX DTE pipeline', () => {
       expect(dirty.status).toBe(1);
       expect(dirty.stdout).toContain('?? chromatic-diagnostics.json');
     }
+  });
+
+  it('keys node_modules on the patches, whose install a hit would skip', () => {
+    const repo = mkdtempSync(join(tmpdir(), 'node-modules-key-'));
+    mkdirSync(join(repo, '.yarn/patches'), { recursive: true });
+    writeFileSync(join(repo, 'package.json'), '{}');
+    const hash = () =>
+      spawnSync('bash', ['-c', HASH_MANIFESTS_COMMAND.replace(MANIFESTS_SUM, '/dev/stdout')], {
+        cwd: repo,
+        encoding: 'utf8',
+      }).stdout;
+
+    writeFileSync(join(repo, '.yarn/patches/pkg-npm-1.0.0.patch'), '+ one');
+    const before = hash();
+    writeFileSync(join(repo, '.yarn/patches/pkg-npm-1.0.0.patch'), '+ two');
+
+    expect(hash()).not.toBe(before);
   });
 
   it('restores node_modules in the setup job from the key the NX jobs use', () => {

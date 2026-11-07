@@ -88,8 +88,8 @@ jobs:
           condition: << pipeline.parameters.nxDte >>
           steps:
             - run:
-                name: Hash the package manifests
-                command: cat package.json */package.json code/*/package.json code/*/*/package.json | sha256sum > /tmp/nx-dte-manifests.sha256
+                name: Hash the package manifests and patches
+                command: cat package.json */package.json code/*/package.json code/*/*/package.json .yarn/patches/* | sha256sum > /tmp/nx-dte-manifests.sha256
             - restore_cache:
                 keys:
                   - v1-nx-dte-node_modules/{{ arch }}/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}/{{ checksum ".nx/workflows/prune-other-platforms.cjs" }}/{{ checksum "scripts/ci/nx/circleci-node-modules.sh" }}/{{ checksum "/tmp/nx-dte-manifests.sha256" }}

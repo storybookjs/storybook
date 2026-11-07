@@ -54,8 +54,8 @@ const NX_CLOUD = 'npx --yes nx-cloud@19.1.5';
 
 export const NODE_MODULES_ARCHIVE = '/tmp/nx-dte-node_modules.tar.zst';
 export const MANIFESTS_SUM = '/tmp/nx-dte-manifests.sha256';
-// Hashes the workspaces' manifests into MANIFESTS_SUM, for the key below.
-export const HASH_MANIFESTS_COMMAND = `cat package.json */package.json code/*/package.json code/*/*/package.json | sha256sum > ${MANIFESTS_SUM}`;
+// Hashes the workspaces' manifests and Yarn's patches into MANIFESTS_SUM, for the key below.
+export const HASH_MANIFESTS_COMMAND = `cat package.json */package.json code/*/package.json code/*/*/package.json .yarn/patches/* | sha256sum > ${MANIFESTS_SUM}`;
 // Everything that decides the installed tree, as CircleCI's own node_modules key (helpers.ts).
 // The setup job (.circleci/config.yml) restores the same key; circleci-dte.test.ts keeps them equal.
 export const NODE_MODULES_KEY = [
@@ -66,13 +66,14 @@ export const NODE_MODULES_KEY = [
   '{{ checksum "yarn.lock" }}',
   '{{ checksum ".nx/workflows/prune-other-platforms.cjs" }}',
   '{{ checksum "scripts/ci/nx/circleci-node-modules.sh" }}',
-  // The workspaces' manifests, as NX Cloud's key does (.nx/workflows/agents.yaml): a change such
-  // as `installConfig` alters the installed tree without touching yarn.lock.
+  // The workspaces' manifests and the patches, as NX Cloud's key does (.nx/workflows/agents.yaml):
+  // a change such as `installConfig` alters the installed tree without touching yarn.lock, and the
+  // install that a changed patch needs is skipped on a hit.
   `{{ checksum "${MANIFESTS_SUM}" }}`,
 ].join('/');
 
 const restoreNodeModules = () => [
-  { run: { name: 'Hash the package manifests', command: HASH_MANIFESTS_COMMAND } },
+  { run: { name: 'Hash the package manifests and patches', command: HASH_MANIFESTS_COMMAND } },
   cache.attach([NODE_MODULES_KEY]),
   {
     run: {

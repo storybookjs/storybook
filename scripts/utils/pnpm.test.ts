@@ -134,6 +134,14 @@ describe('installPnpm', () => {
     expect(readWorkspaceConfig().frozenLockfile).toBe(false);
   });
 
+  it('runs the env-prefixed sandbox scripts through the shell emulator, which Windows needs', async () => {
+    publishedSandbox();
+
+    await install();
+
+    expect(readWorkspaceConfig().shellEmulator).toBe(true);
+  });
+
   it('refuses a pnpm that would ignore the pinned version and drop the age gate', async () => {
     publishedSandbox();
     vi.mocked(execaCommand).mockResolvedValue({ stdout: '9.6.0\n' } as never);

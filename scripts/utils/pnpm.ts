@@ -118,6 +118,8 @@ export const installPnpm = async ({
     ),
     // pnpm installs frozen on CI, but `storybook init` and later steps change the manifest.
     frozenLockfile: false,
+    // cmd.exe on Windows cannot run the sandbox scripts' `VAR=value command` prefixes.
+    shellEmulator: true,
   }));
 
   await assertPinnedPnpm(cwd);

@@ -9,10 +9,36 @@ import {
 import type { State } from '../root.tsx';
 import { mockEntries } from '../tests/mockStoriesEntries.ts';
 import {
+  titleToPathIds,
   transformStoryIndexToStoriesHash,
   transformStoryIndexV3toV4,
   transformStoryIndexV4toV5,
+  getComponentLookupList,
 } from './stories.ts';
+
+describe('titleToPathIds', () => {
+  it.each<[string, string[]]>([
+    ['Components/Button', ['components', 'components-button']],
+    ['Components\t / \tButton', ['components', 'components-button']],
+    ['Components/Button\t', ['components', 'components-button']],
+    [
+      'Design System/Actions/Button',
+      ['design-system', 'design-system-actions', 'design-system-actions-button'],
+    ],
+  ])('builds the title path for %j', (title, expected) => {
+    expect(titleToPathIds(title)).toEqual(expected);
+  });
+
+  it.each(['', 'Components/', 'Components//Button'])('rejects an empty segment in %j', (title) => {
+    expect(() => titleToPathIds(title)).toThrow(`Invalid title ${title} ending in slash.`);
+  });
+
+  it('rejects a segment that produces the same ID as its parent', () => {
+    expect(() => titleToPathIds('Components/---')).toThrow(
+      "Invalid part '---', leading to id === parentId ('components')"
+    );
+  });
+});
 
 const baseV3: StoryIndexV3['stories'][0] = {
   id: '1',
@@ -331,6 +357,80 @@ describe('transformStoryIndexToStoriesHash', () => {
         children: ['guides-button--docs'],
       });
       expect(filtered['guides-button--primary']).toBeUndefined();
+    });
+
+    const nestedIndex: API_PreparedStoryIndex = {
+      v: 5,
+      entries: {
+        'guides-button-icon--primary': {
+          id: 'guides-button-icon--primary',
+          type: 'story',
+          subtype: 'story',
+          title: 'Guides/Button/Icon',
+          name: 'Primary',
+          importPath: './icon.stories.ts',
+          tags: [],
+        },
+        ...index.entries,
+      },
+    };
+
+    it('keeps a component with subcomponents and its own import path', () => {
+      const nested = transformStoryIndexToStoriesHash(nestedIndex, options);
+
+      expect(nested['guides-button']).toMatchObject({
+        type: 'component',
+        importPath: './guides-button--docs.mdx',
+        children: ['guides-button-icon', 'guides-button--docs', 'guides-button--primary'],
+      });
+      expect(nested['guides-button-icon']).toMatchObject({
+        type: 'component',
+        parent: 'guides-button',
+        importPath: './icon.stories.ts',
+      });
+      expect(nested['guides']).toMatchObject({ type: 'root' });
+      expect(nested['guides-faq']).toMatchObject({ type: 'group' });
+    });
+
+    it('keeps the component type when a filter hides its subcomponents', () => {
+      const filtered = transformStoryIndexToStoriesHash(nestedIndex, {
+        ...options,
+        filters: { hideIcon: (entry) => entry.title !== 'Guides/Button/Icon' },
+      });
+
+      expect(filtered['guides-button']).toMatchObject({
+        type: 'component',
+        children: ['guides-button--docs', 'guides-button--primary'],
+      });
+      expect(filtered['guides-button-icon']).toBeUndefined();
+    });
+
+    it('keeps the component source when only a subcomponent passes the filter', () => {
+      const filtered = transformStoryIndexToStoriesHash(nestedIndex, {
+        ...options,
+        filters: { onlyIcon: (entry) => entry.title === 'Guides/Button/Icon' },
+      });
+
+      expect(filtered['guides-button']).toMatchObject({
+        type: 'component',
+        importPath: './guides-button--docs.mdx',
+        children: ['guides-button-icon'],
+      });
+      expect(filtered['guides-button--primary']).toBeUndefined();
+      expect(getComponentLookupList(filtered)).toEqual([['guides-button-icon--primary']]);
+    });
+
+    it('keeps component navigation on leaf entries when a component has subcomponents', () => {
+      const nested = transformStoryIndexToStoriesHash(nestedIndex, options);
+
+      expect(getComponentLookupList(nested)).toEqual([
+        ['welcome--docs'],
+        ['guides-button--docs', 'guides-button--primary'],
+        ['guides-button-icon--primary'],
+        ['guides-intro--docs'],
+        ['guides-faq--setup'],
+        ['guides-faq--usage'],
+      ]);
     });
   });
 });

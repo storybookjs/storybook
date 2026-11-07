@@ -1,11 +1,18 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-import type { Meta, StoryFn } from '@storybook/react-vite';
+import type { StoryIndex } from 'storybook/internal/types';
 
-import type { API } from 'storybook/manager-api';
-import { ManagerContext } from 'storybook/manager-api';
+import type { Meta, StoryFn, StoryObj } from '@storybook/react-vite';
+
+import type { API, State } from 'storybook/manager-api';
+import { ManagerContext, useStorybookState } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
+import { transformStoryIndexToStoriesHash } from '../../../manager-api/lib/stories.ts';
+import type { ModuleArgs } from '../../../manager-api/lib/types.tsx';
+import { init as initStories } from '../../../manager-api/modules/stories.ts';
+import Store from '../../../manager-api/store.ts';
+import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import { IconSymbols } from './IconSymbols.tsx';
 import { Search } from './Search.tsx';
 import type { SearchProps } from './Search.tsx';
@@ -59,6 +66,145 @@ export const FilledIn: StoryFn = () => (
     {() => <SearchResults {...noResults} />}
   </Search>
 );
+
+export const ComponentWithSubcomponents: StoryObj<Meta<typeof Search>> = {
+  globals: { sb_theme: 'light' },
+  decorators: [
+    (Story) => {
+      const [selectedPage, setSelectedPage] = useState('No page selected');
+      const [context] = useState(() => {
+        const provider = { getConfig: () => ({}) } as ModuleArgs['provider'];
+        const entries: StoryIndex['entries'] = {
+          'custom-guide--docs': {
+            type: 'docs',
+            id: 'custom-guide--docs',
+            title: 'Components/Button/Guide',
+            name: 'Docs',
+            importPath: './guide.mdx',
+            storiesImports: [],
+          },
+          'components-button-icon--primary': {
+            type: 'story',
+            subtype: 'story',
+            id: 'components-button-icon--primary',
+            title: 'Components/Button/Icon',
+            name: 'Primary',
+            importPath: './icon.stories.ts',
+          },
+          'components-button--docs': {
+            type: 'docs',
+            id: 'components-button--docs',
+            title: 'Components/Button',
+            name: 'Docs',
+            importPath: './button.stories.ts',
+            storiesImports: [],
+          },
+          'components-button--primary': {
+            type: 'story',
+            subtype: 'story',
+            id: 'components-button--primary',
+            title: 'Components/Button',
+            name: 'Primary',
+            importPath: './button.stories.ts',
+          },
+        };
+        const index = transformStoryIndexToStoriesHash(
+          { v: 5, entries },
+          { provider, docsOptions: {}, filters: {}, allStatuses: {} }
+        );
+        let state = { index, filteredIndex: index, filters: {} } as State;
+        const store = new Store({
+          allowPersistence: false,
+          getState: () => state,
+          setState: (patch, callback) => {
+            state = { ...state, ...(typeof patch === 'function' ? patch(state) : patch) };
+            callback?.();
+          },
+        });
+        const fullAPI = { getRefs: () => ({}) } as API;
+        const { api } = initStories({
+          store,
+          provider,
+          navigate: setSelectedPage,
+          fullAPI,
+          state,
+        } as ModuleArgs);
+
+        return {
+          api: Object.assign(fullAPI, api, { emit: fn(), getShortcutKeys: () => defaultShortcuts }),
+          state,
+        };
+      });
+
+      return (
+        <ManagerContext.Provider value={context}>
+          <Story />
+          <output aria-label="Selected page">{selectedPage}</output>
+        </ManagerContext.Provider>
+      );
+    },
+  ],
+  render: () => {
+    const { index } = useStorybookState();
+    const ref = {
+      id: refId,
+      url: '/',
+      index,
+      previewInitialized: true,
+      allStatuses: {},
+    };
+
+    return (
+      <Search
+        dataset={{ hash: { [refId]: ref }, entries: [[refId, ref]] }}
+        getLastViewed={() => []}
+        initialQuery="Button"
+      >
+        {({ query, results, closeMenu, getMenuProps, getItemProps, highlightedIndex }) => (
+          <SearchResults
+            query={query}
+            results={results}
+            closeMenu={closeMenu}
+            getMenuProps={getMenuProps}
+            getItemProps={getItemProps}
+            highlightedIndex={highlightedIndex}
+          />
+        )}
+      </Search>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByRole('searchbox');
+    await userEvent.click(input);
+    await userEvent.click(canvasElement.querySelector('[data-id="components-button"]')!);
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Selected page')).toHaveTextContent(
+        '/docs/components-button--docs'
+      )
+    );
+
+    await userEvent.click(input);
+    await userEvent.clear(input);
+    await userEvent.type(input, 'Icon');
+    await userEvent.keyboard('{ArrowDown}{Enter}');
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Selected page')).toHaveTextContent(
+        '/story/components-button-icon--primary'
+      )
+    );
+
+    await userEvent.click(input);
+    await userEvent.clear(input);
+    await userEvent.type(input, 'Button');
+    await userEvent.keyboard('{ArrowDown}{Enter}');
+    await waitFor(() =>
+      expect(canvas.getByLabelText('Selected page')).toHaveTextContent(
+        '/docs/components-button--docs'
+      )
+    );
+  },
+};
 
 export const LastViewed: StoryFn = () => (
   <Search {...baseProps} getLastViewed={getLastViewed}>

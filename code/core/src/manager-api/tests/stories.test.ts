@@ -1123,6 +1123,100 @@ describe('stories API', () => {
     });
   });
   describe('selectStory', () => {
+    const nestedEntries: StoryIndex['entries'] = {
+      'components-button-icon--primary': {
+        ...navigationEntries['a--1'],
+        id: 'components-button-icon--primary',
+        title: 'Components/Button/Icon',
+      },
+      'components-button--docs': {
+        type: 'docs',
+        id: 'components-button--docs',
+        title: 'Components/Button',
+        name: 'Docs',
+        importPath: './button.stories.ts',
+        storiesImports: [],
+      },
+      'components-button--primary': {
+        ...navigationEntries['a--1'],
+        id: 'components-button--primary',
+        title: 'Components/Button',
+      },
+    };
+
+    it.each([
+      {
+        name: 'its docs before a nested component',
+        filter: () => true,
+        path: '/docs/components-button--docs',
+      },
+      {
+        name: 'its story when its docs are filtered out',
+        filter: (entry: API_PreparedIndexEntry) => entry.type !== 'docs',
+        path: '/story/components-button--primary',
+      },
+      {
+        name: 'a nested component when its own pages are filtered out',
+        filter: (entry: API_PreparedIndexEntry) => entry.title === 'Components/Button/Icon',
+        path: '/story/components-button-icon--primary',
+      },
+    ])('selects $name', ({ filter, path }) => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: { filters: { visible: filter } },
+      });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+
+      api.setIndex({ v: 5, entries: nestedEntries });
+      api.selectStory('components-button');
+
+      expect(moduleArgs.navigate).toHaveBeenCalledWith(path, undefined);
+    });
+
+    it('keeps group selection in child order when the group has direct docs', () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const entries = Object.fromEntries(
+        Object.entries(nestedEntries).filter(([id]) => id !== 'components-button--primary')
+      );
+
+      api.setIndex({ v: 5, entries });
+      api.selectStory('components-button');
+
+      expect(moduleArgs.navigate).toHaveBeenCalledWith(
+        '/story/components-button-icon--primary',
+        undefined
+      );
+    });
+
+    it('prefers its own page over hoisted nested docs with custom IDs', () => {
+      const title = 'Components/Button';
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+
+      api.setIndex({
+        v: 5,
+        entries: {
+          'custom-guide--docs': {
+            type: 'docs',
+            id: 'custom-guide--docs',
+            title: `${title}/Guide`,
+            name: 'Docs',
+            importPath: './guide.mdx',
+            storiesImports: [],
+          },
+          ...Object.fromEntries(
+            Object.values(nestedEntries).map((entry) => {
+              const id = entry.id.replace('components-button--', 'custom-button--');
+              return [id, { ...entry, id, title: entry.title.replace('Components/Button', title) }];
+            })
+          ),
+        },
+      });
+      api.selectStory('components-button');
+
+      expect(moduleArgs.navigate).toHaveBeenCalledWith('/docs/custom-button--docs', undefined);
+    });
+
     it('navigates', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
       const moduleArgs = createMockModuleArgs({ initialState });

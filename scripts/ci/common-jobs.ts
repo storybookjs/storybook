@@ -545,7 +545,8 @@ export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) => 
                 `Lint changed ${dir} files`,
                 dir,
                 changedFiles,
-                'yarn lint:js:cmd --quiet --no-error-on-unmatched-pattern'
+                // The code workspace already supplies the unmatched-pattern option.
+                `yarn lint:js:cmd --quiet${dir === 'scripts' ? ' --no-error-on-unmatched-pattern' : ''}`
               )
             )),
         ...workflow.cancelOnFailure(),

@@ -1,17 +1,16 @@
 {
   "name": "addon-docs",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "namedInputs": {
+    "production": [
+      "package-production",
+      "{workspaceRoot}/code/renderers/react/src/**/*",
+      "!{workspaceRoot}/code/**/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+    ]
+  },
   "projectType": "library",
   "targets": {
-    "compile": {
-      "outputs": ["{projectRoot}/dist", "{workspaceRoot}/code/bench/esbuild-metafiles/docs"],
-      "inputs": [
-        "production",
-        "^production",
-        "{workspaceRoot}/code/renderers/react/src/**/*",
-        "!{workspaceRoot}/code/**/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
-      ]
-    },
+    "compile": {},
     "check": {}
   },
   "tags": ["library"]

@@ -6,12 +6,40 @@ import { expect, it } from 'vitest';
 
 const ROOT = join(import.meta.dirname, '../../..');
 const CODE = join(ROOT, 'code');
-// Written by every `compile` (scripts/build/utils/generate-bundle.ts), one folder per package.
+// Written by every `compile` (scripts/build/utils/generate-bundle.ts), one folder per Nx project.
 const METAFILES = join(CODE, 'bench/esbuild-metafiles');
 
-type Package = { dir: string; name: string; dependencies: string[]; inputs: string[] };
-
 const read = (file: string) => JSON.parse(readFileSync(file, 'utf8'));
+const nxJson = read(join(ROOT, 'nx.json'));
+
+// A named input as the globs Nx hashes, relative to the workspace root.
+function globsOf(inputs: unknown[], named: Record<string, unknown[]>, root: string): string[] {
+  return inputs.flatMap((input) => {
+    if (typeof input !== 'string' || input.startsWith('^')) {
+      return [];
+    }
+    if (named[input]) {
+      return globsOf(named[input], named, root);
+    }
+    return [input.replace('{workspaceRoot}/', '').replace('{projectRoot}', root)];
+  });
+}
+
+const covers = (globs: string[], path: string) => {
+  const matches = (glob: string) => minimatch(path, glob, { dot: true });
+  return (
+    globs.some((glob) => !glob.startsWith('!') && matches(glob)) &&
+    !globs.some((glob) => glob.startsWith('!') && matches(glob.slice(1)))
+  );
+};
+
+type Package = {
+  dir: string;
+  name: string;
+  project: string;
+  dependencies: string[];
+  production: string[];
+};
 
 const packages: Package[] = ['', 'addons', 'builders', 'frameworks', 'lib', 'presets', 'renderers']
   .flatMap((group) =>
@@ -22,19 +50,18 @@ const packages: Package[] = ['', 'addons', 'builders', 'frameworks', 'lib', 'pre
   .filter((dir) => existsSync(join(dir, 'package.json')) && existsSync(join(dir, 'project.json')))
   .map((dir) => {
     const pkg = read(join(dir, 'package.json'));
-    const inputs: unknown[] = read(join(dir, 'project.json')).targets?.compile?.inputs ?? [];
+    const project = read(join(dir, 'project.json'));
+    const named = { ...nxJson.namedInputs, ...project.namedInputs };
     return {
       dir,
       name: pkg.name,
+      project: project.name,
       dependencies: Object.keys({
         ...pkg.dependencies,
         ...pkg.devDependencies,
         ...pkg.peerDependencies,
       }),
-      inputs: inputs
-        .filter((input): input is string => typeof input === 'string')
-        .filter((input) => input.startsWith('{workspaceRoot}/'))
-        .map((input) => input.slice('{workspaceRoot}/'.length)),
+      production: globsOf(['production'], named, relative(ROOT, dir)),
     };
   });
 
@@ -43,52 +70,59 @@ const owner = (file: string) =>
     .filter((pkg) => file.startsWith(`${pkg.dir}/`))
     .sort((a, b) => b.dir.length - a.dir.length)[0];
 
-// Whether a package's `compile` hashes a file it bundles: its own, a dependency's (`^production`),
-// or one its project.json lists in `compile.inputs`.
-function hashes(pkg: Package, file: string) {
-  const from = owner(file);
-  if (!from || from === pkg || pkg.dependencies.includes(from.name)) {
-    return true;
-  }
-  const path = relative(ROOT, file);
-  const globs = pkg.inputs.filter((input) => !input.startsWith('!'));
-  const negations = pkg.inputs.filter((input) => input.startsWith('!')).map((i) => i.slice(1));
-  return (
-    globs.some((glob) => minimatch(path, glob, { dot: true })) &&
-    !negations.some((glob) => minimatch(path, glob, { dot: true }))
-  );
-}
-
-// A package that bundles a file of another package without hashing it restores a stale `dist`
-// from the cache when only that file changes, and `nx affected` does not rebuild it. CI compiles
-// everything before the unit tests run, so the metafiles are there; locally, compile first.
-it.skipIf(!existsSync(METAFILES) && !process.env.CI)(
-  'every compile hashes the sources it bundles',
-  () => {
-    const missing: string[] = [];
-    for (const folder of readdirSync(METAFILES)) {
-      // The folder is the package directory's name; `mcp` is both an addon and a library.
-      const candidates = packages.filter((pkg) => pkg.dir.endsWith(`/${folder}`));
-      for (const metafile of readdirSync(join(METAFILES, folder)).filter((f) =>
-        f.endsWith('.json')
-      )) {
+const bundledFiles = () =>
+  readdirSync(METAFILES).flatMap((folder) =>
+    readdirSync(join(METAFILES, folder))
+      .filter((file) => file.endsWith('.json'))
+      .flatMap((metafile) => {
+        const pkg = packages.find((candidate) => candidate.project === folder);
+        if (!pkg) {
+          return [{ folder, pkg, file: '' }];
+        }
         const { inputs } = read(join(METAFILES, folder, metafile)) as {
           inputs: Record<string, unknown>;
         };
-        for (const input of Object.keys(inputs)) {
-          if (input.includes('node_modules/') || input.includes(':')) {
-            continue;
-          }
-          const unhashed = candidates.filter((pkg) => !hashes(pkg, join(pkg.dir, input)));
-          if (candidates.length > 0 && unhashed.length === candidates.length) {
-            missing.push(
-              `${candidates[0].name} bundles ${relative(ROOT, join(candidates[0].dir, input))}`
-            );
-          }
-        }
-      }
+        return Object.keys(inputs)
+          .filter((input) => !input.includes('node_modules/') && !input.includes(':'))
+          .map((input) => ({ folder, pkg, file: join(pkg.dir, input) }));
+      })
+  );
+
+// CI compiles everything before the unit tests run, so the metafiles are there; locally, compile
+// first.
+const compiled = existsSync(METAFILES) || !!process.env.CI;
+
+// `compile` hashes the package's `production`, and so do the tasks that use the package, through
+// `^production`: a sandbox, for one. A bundled file outside `production` changes the bundle without
+// changing those hashes, so they restore stale results and `nx affected` skips them.
+it.skipIf(!compiled)("every package's production covers the sources it bundles", () => {
+  const missing = new Set<string>();
+  for (const { folder, pkg, file } of bundledFiles()) {
+    if (!pkg) {
+      missing.add(`no Nx project is named ${folder}`);
+      continue;
     }
-    // Add the file's folder to `compile.inputs` in the package's project.json.
-    expect([...new Set(missing)].sort()).toEqual([]);
+    const from = owner(file);
+    const path = relative(ROOT, file);
+    const hashedBy =
+      from && from !== pkg && pkg.dependencies.includes(from.name) ? from.production : [];
+    if (!covers(pkg.production, path) && !covers(hashedBy, path)) {
+      missing.add(`${pkg.project} bundles ${path}`);
+    }
   }
-);
+  // Add the file to `namedInputs.production` in the package's project.json.
+  expect([...missing].sort()).toEqual([]);
+});
+
+// `publish`, `init-empty` and the test Storybooks hash `all-production` for the packages they
+// install from the local registry.
+it.skipIf(!compiled)('all-production covers every bundled source', () => {
+  const allProduction = globsOf(['all-production'], nxJson.namedInputs, '');
+  const missing = new Set(
+    bundledFiles()
+      .filter(({ pkg }) => pkg)
+      .map(({ file }) => relative(ROOT, file))
+      .filter((path) => !covers(allProduction, path))
+  );
+  expect([...missing].sort()).toEqual([]);
+});

@@ -244,7 +244,8 @@
       "{workspaceRoot}/scripts/{__mocks__,bench,build,check,eslint-plugin-local-rules,sandbox,tasks,utils}/**/*"
     ],
     "default": ["sharedGlobals", "{projectRoot}/**/*"],
-    "production": [
+    "production": ["package-production"],
+    "package-production": [
       "sharedGlobals",
       "{projectRoot}/**/*",
       "!{projectRoot}/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",

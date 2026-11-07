@@ -93,10 +93,14 @@ export const projectJson = (name: string, tags: string[], template: Template) =>
     sandbox: {
       // A template in development has no published repro to start from, so it is generated first,
       // as CircleCI's create job does (scripts/ci/sandboxes.ts), with the npm that generating needs.
+      // That npm is installed into its own prefix and put first on the PATH: run through
+      // `npx --package=npm@…`, its `--package` reaches the generator's own `npx create-…` calls
+      // through the environment, which then look for a binary named after the package.
       ...(template.inDevelopment
         ? {
             command: [
-              `npx --yes --package=npm@${BEFORE_SANDBOX_NPM_MIN_VERSION} -- yarn task generate -s task --debug --no-link --template={projectName}`,
+              `npm install --silent --global --prefix "\${TMPDIR:-/tmp}/npm-${BEFORE_SANDBOX_NPM_MIN_VERSION}" npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}`,
+              `PATH="\${TMPDIR:-/tmp}/npm-${BEFORE_SANDBOX_NPM_MIN_VERSION}/bin:$PATH" yarn task generate -s task --debug --no-link --template={projectName}`,
               'yarn task sandbox -s task --debug --no-link --template={projectName}',
             ].join(' && '),
           }

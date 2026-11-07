@@ -13,7 +13,7 @@
   ],
   "targets": {
     "sandbox": {
-      "command": "npx --yes --package=npm@11.17.0 -- yarn task generate -s task --debug --no-link --template={projectName} && yarn task sandbox -s task --debug --no-link --template={projectName}",
+      "command": "npm install --silent --global --prefix \"${TMPDIR:-/tmp}/npm-11.17.0\" npm@11.17.0 && PATH=\"${TMPDIR:-/tmp}/npm-11.17.0/bin:$PATH\" yarn task generate -s task --debug --no-link --template={projectName} && yarn task sandbox -s task --debug --no-link --template={projectName}",
       "options": {
         "dir": "astro-vite-default-ts",
         "env": {

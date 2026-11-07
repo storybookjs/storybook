@@ -14,15 +14,10 @@ const sameFile = async (a: string, b: string) => {
   return left !== undefined && left === right;
 };
 
-/**
- * Makes `sandboxDir` a copy of `cacheDir`, where NX keeps what the `sandbox` task (and a `build`,
- * for `storybook-static`) produced. The tasks of an NX agent share the sandbox, so without this a
- * task inherits what an earlier one changed there, such as the story that the onboarding E2E test
- * creates. The installed node_modules stay when they were installed for the same manifest and
- * lockfile.
- *
- * Returns whether node_modules were kept.
- */
+// Makes `sandboxDir` a copy of `cacheDir`, where NX keeps what the `sandbox` task (and a `build`,
+// for `storybook-static`) produced: the tasks of an NX agent share the sandbox, so a task would
+// otherwise inherit what an earlier one changed there, such as the story the onboarding E2E test
+// saves. Keeps node_modules installed for the same manifest and lockfile, and says whether it did.
 export async function restoreSandbox(cacheDir: string, sandboxDir: string): Promise<boolean> {
   if (!existsSync(cacheDir)) {
     throw new Error(

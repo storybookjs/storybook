@@ -23,7 +23,13 @@
 // Opt in with the `nxDte` pipeline parameter (.circleci/config.yml); main.ts then generates these
 // jobs instead of the per-job ones. Like main.ts, this runs under plain Node before `yarn install`.
 import { node26Smoke } from '../common-jobs.ts';
-import { artifact, cache, git, testResults } from '../utils/helpers.ts';
+import {
+  NODE_MODULES_CACHE_KEY,
+  artifact,
+  cache,
+  git,
+  testResults,
+} from '../utils/helpers.ts';
 import { type FocusDiff, changedFilesEnvironment, focusDiff } from '../utils/changed-files.ts';
 import { isTrustedAuthor } from '../utils/runtime.ts';
 import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
@@ -391,6 +397,11 @@ export function getNxDteJobs(
   baseRef: string,
   options: NxDteOptions = {}
 ): JobOrNoOpJob[] {
+  // EXPERIMENT (kasper/nx-bench-windows-2): every NX DTE run of this branch only measures. Not for
+  // merging.
+  if (!process.env.VITEST) {
+    return [benchWindowsJob];
+  }
   const diff = selected.includes('focus') ? focusDiff(baseRef) : undefined;
   const plan = planFor(selected, diff?.files ?? []);
   if (plan.missing.length > 0) {
@@ -423,6 +434,46 @@ export function getNxDteJobs(
   }
   return jobs;
 }
+
+// EXPERIMENT: ways to put node_modules on a Windows agent without `yarn install`.
+const BENCH_CACHE_KEY = 'v1-bench-windows-2-{{ .Environment.CIRCLE_WORKFLOW_ID }}';
+const benchWindowsJob = defineJob('nx-bench-windows-2', () => ({
+  executor: AGENT_EXECUTORS.windows,
+  steps: [
+    windowsCheckout(),
+    installNodeOnWindows(),
+    cache.attach([NODE_MODULES_CACHE_KEY('windows')]),
+    { run: { name: 'yarn install, as the Windows jobs do now', command: 'yarn install --immutable' } },
+    {
+      run: {
+        name: 'Measure the archives',
+        command: 'bash scripts/ci/nx/bench-windows-2.sh',
+        no_output_timeout: '30m',
+      },
+    },
+    cache.persist(
+      ['node_modules', 'code/node_modules', 'scripts/node_modules', '.yarn/root-install-state.gz'],
+      BENCH_CACHE_KEY
+    ),
+    {
+      run: {
+        name: 'Remove the tree',
+        command: 'while read -r dir; do rm -rf "$dir"; done < /c/bench-dirs; rm -f .yarn/root-install-state.gz',
+      },
+    },
+    cache.attach([BENCH_CACHE_KEY]),
+    {
+      run: {
+        name: 'Check the tree CircleCI restored',
+        command: [
+          'node scripts/ci/nx/workspace-links.mjs make',
+          'while read -r dir; do [ -d "$dir" ] || echo "MISSING $dir"; done < /c/bench-dirs',
+          'yarn nx show projects | wc -l',
+        ].join('\n'),
+      },
+    },
+  ],
+}));
 
 const nothingToRunJob = defineJob('nx-nothing-to-run', () => ({
   executor: { name: 'sb_node_22_classic', class: 'small' },

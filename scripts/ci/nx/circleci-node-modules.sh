@@ -21,7 +21,7 @@ archives=$2
 list=node_modules/.circleci-node-modules-dirs
 # Set by a fresh install in this job: only that tree is packed, never one restored from the cache.
 fresh="$archives.fresh"
-PARTS=4
+PARTS=${NODE_MODULES_PARTS:-4}
 
 extract() {
   local pids=() part status=0

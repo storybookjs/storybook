@@ -56,6 +56,26 @@ export const Compact = {
   args: { ...Normal.args, compact: true },
 };
 
+export const Rtl: Story = {
+  args: Normal.args,
+  decorators: [
+    (Story) => (
+      <div dir="rtl">
+        <Story />
+      </div>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = canvas.getByRole('button', { name: 'Reset controls' }).getBoundingClientRect();
+    const control = canvas.getByRole('columnheader', { name: 'Control' }).getBoundingClientRect();
+    const buttonCenter = button.left + button.width / 2;
+
+    await expect(buttonCenter).toBeGreaterThanOrEqual(control.left);
+    await expect(buttonCenter).toBeLessThanOrEqual(control.right);
+  },
+};
+
 export const Sections = {
   args: {
     rows: {

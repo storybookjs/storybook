@@ -29,6 +29,9 @@ export type Selection = {
   // The tasks that occupy an agent, by Nx task id. Continuous tasks (`dev`, `serve`,
   // `run-registry`) run alongside the task that needs them and are left out.
   tasks: Record<string, SelectedTask>;
+  // The Nx commands that select these tasks, without `yarn`, as run.ts would run them. nx-main
+  // runs them as they are, without working them out again (circleci-dte.ts).
+  commands?: string[][];
 };
 
 export const EMPTY_SELECTION: Selection = { tasks: {} };

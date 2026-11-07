@@ -14,8 +14,8 @@ const skips = (template: Template, task: string) => template.skipTasks?.includes
 
 const CODE = join(import.meta.dirname, '../code');
 
-// The Nx project of each workspace package under code/, by package name.
-const projectsByPackage = new Map(
+// The workspace packages under code/ that are Nx projects, by package name.
+const workspacePackages = new Map(
   ['', 'addons', 'builders', 'frameworks', 'lib', 'presets', 'renderers'].flatMap((group) =>
     readdirSync(join(CODE, group), { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
@@ -23,11 +23,22 @@ const projectsByPackage = new Map(
       .filter(
         (dir) => existsSync(join(dir, 'package.json')) && existsSync(join(dir, 'project.json'))
       )
-      .map((dir) => [
-        JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')).name as string,
-        JSON.parse(readFileSync(join(dir, 'project.json'), 'utf8')).name as string,
-      ])
+      .map((dir) => {
+        const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+        const project: string = JSON.parse(readFileSync(join(dir, 'project.json'), 'utf8')).name;
+        // The manifest fields Nx draws a project's dependencies from.
+        const dependencies = Object.keys({
+          ...pkg.dependencies,
+          ...pkg.devDependencies,
+          ...pkg.peerDependencies,
+          ...pkg.optionalDependencies,
+        });
+        return [pkg.name as string, { project, dependencies }] as const;
+      })
   )
+);
+const projectsByPackage = new Map(
+  [...workspacePackages].map(([name, { project }]) => [name, project])
 );
 
 // What every sandbox installs: `storybook` (core), the CLI that creates it, and the addons that
@@ -51,6 +62,21 @@ export function sandboxDependencies(template: Template): string[] {
       ...(projects.includes('addon-mcp') ? ['mcp'] : []),
     ]),
   ];
+}
+
+// The workspace packages among `installed` (a created sandbox's dependencies) that its Nx project
+// reaches neither directly nor through a package's own dependencies, so its tasks do not hash them.
+export function unhashedSandboxPackages(template: Template, installed: readonly string[]) {
+  const reached = new Set<string>();
+  const byProject = new Map([...workspacePackages].map(([name, { project }]) => [project, name]));
+  const visit = (name: string) => {
+    if (!reached.has(name) && workspacePackages.has(name)) {
+      reached.add(name);
+      workspacePackages.get(name)!.dependencies.forEach(visit);
+    }
+  };
+  sandboxDependencies(template).forEach((project) => visit(byProject.get(project)!));
+  return installed.filter((name) => workspacePackages.has(name) && !reached.has(name));
 }
 
 export const projectJson = (name: string, tags: string[], template: Template) => ({

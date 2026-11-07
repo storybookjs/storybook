@@ -4,7 +4,11 @@ import { join } from 'pathe';
 import { expect, it } from 'vitest';
 
 import { allTemplates } from '../code/lib/cli-storybook/src/sandbox-templates.ts';
-import { sandboxDependencies, sandboxProjects } from './create-nx-sandbox-projects.ts';
+import {
+  sandboxDependencies,
+  sandboxProjects,
+  unhashedSandboxPackages,
+} from './create-nx-sandbox-projects.ts';
 
 const ROOT = join(import.meta.dirname, '..');
 
@@ -23,4 +27,19 @@ it('makes each sandbox depend on the workspace packages its template installs', 
   );
   // A community framework from npm, on this repository's renderer.
   expect(sandboxDependencies(allTemplates['vue3-rsbuild/default-ts'])).toContain('vue3');
+});
+
+it('finds the workspace packages a sandbox installs that its project does not reach', () => {
+  expect(
+    unhashedSandboxPackages(allTemplates['react-vite/default-ts'], [
+      'storybook',
+      '@storybook/react-vite',
+      // Through @storybook/cli.
+      'create-storybook',
+      '@storybook/addon-mcp',
+      'react',
+      'eslint-plugin-storybook',
+      '@storybook/addon-themes',
+    ])
+  ).toEqual(['eslint-plugin-storybook', '@storybook/addon-themes']);
 });

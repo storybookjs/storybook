@@ -4,7 +4,6 @@ import type {
   API_DocsEntry,
   API_GroupEntry,
   API_IndexHash,
-  API_LeafEntry,
   API_PreparedIndexEntry,
   API_PreparedStoryIndex,
   API_Provider,
@@ -27,6 +26,31 @@ import { type API, type State } from '../root.tsx';
 import intersect from './intersect.ts';
 
 const TITLE_PATH_SEPARATOR = /\s*\/\s*/;
+
+export const titleToPathIds = (title: string): string[] =>
+  title
+    .trim()
+    .split(TITLE_PATH_SEPARATOR)
+    .reduce<string[]>((paths, name) => {
+      const parent = paths.at(-1);
+      const id = sanitize(parent ? `${parent}-${name}` : name);
+
+      if (name.trim() === '') {
+        throw new Error(dedent`Invalid title ${title} ending in slash.`);
+      }
+
+      if (parent === id) {
+        throw new Error(
+          dedent`
+          Invalid part '${name}', leading to id === parentId ('${id}'), inside title '${title}'
+
+          Did you create a path that uses the separator char accidentally, such as 'Vue <docs/>' where '/' is a separator char? See https://github.com/storybookjs/storybook/issues/6128
+          `
+        );
+      }
+      paths.push(id);
+      return paths;
+    }, []);
 
 export const transformStoryIndexV3toV4 = (index: StoryIndexV3): API_PreparedStoryIndex => {
   const countByTitle = countBy(Object.values(index.stories), (item) => item.title);
@@ -181,27 +205,7 @@ export const transformStoryIndexToStoriesHash = (
     const root = (!setShowRoots || showRoots) && groups.length > 1 ? [groups.shift()] : [];
     const names = [...root, ...groups];
 
-    // Now create a "path" or sub id for each name
-    const paths = names.reduce((list, name, idx) => {
-      const parent = idx > 0 && list[idx - 1];
-      const id = sanitize(parent ? `${parent}-${name}` : name!);
-
-      if (name!.trim() === '') {
-        throw new Error(dedent`Invalid title ${title} ending in slash.`);
-      }
-
-      if (parent === id) {
-        throw new Error(
-          dedent`
-          Invalid part '${name}', leading to id === parentId ('${id}'), inside title '${title}'
-
-          Did you create a path that uses the separator char accidentally, such as 'Vue <docs/>' where '/' is a separator char? See https://github.com/storybookjs/storybook/issues/6128
-          `
-        );
-      }
-      list.push(id);
-      return list;
-    }, [] as string[]);
+    const paths = titleToPathIds(title);
 
     paths.forEach((id, idx) => {
       const node = titleNodes.get(id) ?? {
@@ -228,11 +232,11 @@ export const transformStoryIndexToStoriesHash = (
     if (node.isRoot) {
       return 'root';
     }
+    if (node.children.some((id) => entriesById.get(id)?.type === 'story')) {
+      return 'component';
+    }
     if (node.children.some((id) => titleNodes.has(id))) {
       return 'group';
-    }
-    if (node.children.some((id) => entriesById.get(id)!.type === 'story')) {
-      return 'component';
     }
     return node.children.length === 1 ? 'docs' : 'group';
   };
@@ -312,7 +316,8 @@ export const transformStoryIndexToStoriesHash = (
       .map((id) => storiesHash[id].tags)
       .reduce(intersect);
     if (entry.type === 'component') {
-      entry.importPath = (storiesHash[children[0]] as API_LeafEntry).importPath;
+      const childId = node.children.find((id) => entriesById.has(id))!;
+      entry.importPath = entriesById.get(childId)!.importPath;
     }
   };
 
@@ -351,7 +356,12 @@ export const getComponentLookupList = memoize(1)((hash: API_IndexHash) => {
   return Object.entries(hash).reduce((acc, i) => {
     const value = i[1];
     if (value.type === 'component') {
-      acc.push([...value.children]);
+      const children = value.children.filter(
+        (id) => hash[id].type === 'story' || hash[id].type === 'docs'
+      );
+      if (children.length) {
+        acc.push(children);
+      }
     } else if (
       value.type === 'docs' &&
       (!value.parent || hash[value.parent].type !== 'component')

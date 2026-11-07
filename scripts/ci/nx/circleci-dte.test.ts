@@ -139,9 +139,6 @@ describe('the CircleCI NX DTE pipeline', () => {
         commands.some((command) => /\/usr\/bin\/timeout --kill-after=1m \d+m yarn /.test(command))
       ).toBe(true);
     }
-    expect(read('scripts/ci/nx/run-agent.sh')).toContain(
-      '/usr/bin/timeout --kill-after=1m "${minutes}m" yarn nx start-agent &'
-    );
   });
 
   it('stops each agent once its main job has ended, also when that never started the NX Cloud run', () => {

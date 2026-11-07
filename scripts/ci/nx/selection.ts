@@ -2,11 +2,12 @@
 //
 // CircleCI's setup job asks Nx which tasks the run's commands select (run.ts `--graph`): on a pull
 // request only the tasks the change reaches (`nx affected`), elsewhere all of them. It then looks up
-// which of them NX Cloud already has in its cache, and starts agents for the rest (select.ts,
-// agent-sizing.ts).
+// which of them NX Cloud already has in its cache and how long each takes, and works out the
+// agents each OS needs (select.ts, agent-sizing.ts).
 //
 // Plain Node with no dependencies: main.ts imports it before `yarn install`.
-import type { History } from './nx-cloud-history.ts';
+import type { Work } from './agent-sizing.ts';
+import type { Durations, History } from './nx-cloud-history.ts';
 
 export type SelectedTask = {
   project: string;
@@ -18,9 +19,10 @@ export type SelectedTask = {
   dependsOn: string[];
   // Nx's hash of the task's inputs, which keys its cache entry.
   hash?: string;
-  // A run on NX Cloud already succeeded with this hash, so NX Cloud only restores the task's
-  // outputs and hands it to no agent.
+  // A run on NX Cloud already succeeded with this hash, so the task only restores its outputs.
   cached?: boolean;
+  // How long the task takes on an agent: none when it is cached, since NX Cloud hands it to none.
+  seconds?: number;
 };
 
 export type Selection = {
@@ -84,14 +86,34 @@ export function mergeTaskGraphs(graphs: readonly NxTaskGraph[]): Selection {
   };
 }
 
-// Fill in each task's hash and whether it is cached. A task Nx may not cache (Chromatic) always runs.
-export function markCached(
+// A task the setup job knows nothing more about: a few CI tasks take less, the E2E tests more.
+export const UNKNOWN_TASK_SECONDS = 60;
+// Fill in each task's hash, whether it is cached, and its seconds: the time the latest run on this
+// OS took for it (`History.seconds`), else NX Cloud's average on CI, else a guess. A task Nx may
+// not cache (Chromatic) takes NX Cloud's average: its last run may have been a rerun of the same
+// commit, which Chromatic had already built.
+export function weigh(
   selection: Selection,
   hashes: Readonly<Record<string, string>>,
-  history: History | undefined
+  history: History | undefined,
+  durations: Durations | undefined
 ) {
   for (const [id, task] of Object.entries(selection.tasks)) {
+    const key = `${task.project}:${task.target}`;
     task.hash = hashes[id];
     task.cached = task.cache && !!task.hash && !!history?.succeeded.has(task.hash);
+    const ran = task.cache ? history?.seconds.get(key) : undefined;
+    task.seconds = task.cached
+      ? 0
+      : Math.round(ran ?? durations?.get(key)?.missSeconds ?? UNKNOWN_TASK_SECONDS);
   }
 }
+
+// The work an agent count is worked out from (agent-sizing.ts).
+export const workOf = (selection: Selection): Work =>
+  Object.fromEntries(
+    Object.entries(selection.tasks).map(([id, task]) => [
+      id,
+      { seconds: task.seconds ?? UNKNOWN_TASK_SECONDS, dependsOn: task.dependsOn ?? [] },
+    ])
+  );

@@ -128,6 +128,10 @@ const nxEnvironment = (os: Os, changedFiles: readonly string[]) => ({
 
 // The environment of the agents of both OSes: as on the NX Cloud workers (.nx/workflows/agents.yaml).
 const agentEnvironment = {
+  // As in the main job's Run nx step: the project's environment turns it on, and its lines about
+  // every artifact an agent extracts filled the step past CircleCI's 400,000-character limit, which
+  // cut off the output of the tasks that ran last.
+  NX_VERBOSE_LOGGING: 'false',
   STORYBOOK_DISABLE_TELEMETRY: 'true',
   IN_STORYBOOK_SANDBOX: 'true',
   // bench-packages.ts uploads the benchmarks for this pull request.

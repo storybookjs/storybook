@@ -256,6 +256,7 @@ const mainJob = (
       // One commit: `nx affected` diffs against the base the setup job found (fetched below), and
       // a focused run fetches the commit its diff starts at (scripts/ci/utils/changed-files.ts).
       git.checkout(),
+      { run: { name: 'Bench: fail before the NX Cloud run starts (not for merging)', command: 'exit 1' } },
       startCiRun('linux', targets, NX_CLOUD),
       ...restoreNodeModules(),
       ...fetchBase(base),
@@ -268,7 +269,7 @@ const mainJob = (
 const agentJob = (diff: FocusDiff | undefined, agents: number) =>
   defineJob('nx-agent', () => ({
     executor: AGENT_EXECUTORS.linux,
-    parallelism: agents,
+    parallelism: 1,
     environment: {
       ...nxEnvironment('linux', diff),
       ...agentEnvironment('linux'),
@@ -312,6 +313,7 @@ const windowsMainJob = (
     },
     steps: [
       windowsCheckout(),
+      { run: { name: 'Bench: fail before the NX Cloud run starts (not for merging)', command: 'exit 1' } },
       startCiRun('windows', targets, NX_CLOUD),
       ...windowsInstall(),
       ...fetchBase(base),
@@ -323,7 +325,7 @@ const windowsMainJob = (
 const windowsAgentJob = (diff: FocusDiff | undefined, agents: number) =>
   defineJob('nx-agent-windows', () => ({
     executor: AGENT_EXECUTORS.windows,
-    parallelism: agents,
+    parallelism: 1,
     environment: {
       ...nxEnvironment('windows', diff),
       ...agentEnvironment('windows'),

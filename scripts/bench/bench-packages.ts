@@ -3,6 +3,7 @@ import path from 'node:path';
 import { BigQuery } from '@google-cloud/bigquery';
 import { InvalidArgumentError, program } from 'commander';
 import detectFreePort from 'detect-port';
+import { existsSync, readFileSync } from 'fs';
 import { mkdir, readdir, rm, stat, writeFile } from 'fs/promises';
 import pLimit from 'p-limit';
 import picocolors from 'picocolors';
@@ -12,6 +13,7 @@ import { dedent } from 'ts-dedent';
 import versions from '../../code/core/src/common/versions.ts';
 import { maxConcurrentTasks } from '../utils/concurrency.ts';
 import { esMain } from '../utils/esmain.ts';
+import { getCodeWorkspaces } from '../utils/workspace.ts';
 import { safeMetafileArg } from './safe-args.ts';
 
 const METAFILES_DIR = path.join(__dirname, '..', '..', 'code', 'bench', 'esbuild-metafiles');
@@ -21,6 +23,15 @@ const METAFILES_DIR = path.join(__dirname, '..', '..', 'code', 'bench', 'esbuild
  * This is based on the metafiles and their paths in the metafile directory
  */
 async function getMetafileArgsByPackage() {
+  // A package's metafiles are in a folder named after its Nx project (generate-bundle.ts).
+  const packageByProject = new Map(
+    (await getCodeWorkspaces()).flatMap(({ name, location }) => {
+      const project = path.join(__dirname, '..', '..', 'code', location, 'project.json');
+      return existsSync(project)
+        ? [[JSON.parse(readFileSync(project, 'utf8')).name as string, name]]
+        : [];
+    })
+  );
   const result: Record<string, string[]> = {};
   async function walk(dir: string, rel: string) {
     const entries = await readdir(dir, { withFileTypes: true });
@@ -31,7 +42,9 @@ async function getMetafileArgsByPackage() {
         .filter((e) => e.isFile() && e.name.endsWith('.json'))
         .map((e) => e.name);
       if (files.length > 0) {
-        result[rel] = files.map((file) => safeMetafileArg(path.join(dir, file)));
+        result[packageByProject.get(rel) ?? rel] = files.map((file) =>
+          safeMetafileArg(path.join(dir, file))
+        );
       }
     } else {
       for (const sub of subdirs) {

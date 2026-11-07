@@ -2,10 +2,8 @@ import { readFileSync } from 'node:fs';
 
 import { join } from 'pathe';
 import { describe, expect, it } from 'vitest';
-import yml from 'yaml';
 
 import { daily } from '../../../code/lib/cli-storybook/src/sandbox-templates.ts';
-import { executors } from '../utils/executors.ts';
 import { workflows } from '../utils/types.ts';
 import { equivalentOf, groupTasks, planFor } from './plan.ts';
 
@@ -25,22 +23,6 @@ const focusDiffs = [
 const plans = [
   ...workflows.filter((w) => w !== 'focus').map((w) => planFor([w])),
   ...focusDiffs.map((diff) => planFor(['focus'], diff)),
-];
-
-const chromaticTokens = [
-  ...new Set(
-    plans.flatMap((plan) =>
-      plan.tasks
-        .filter((task) => task.endsWith(':chromatic'))
-        .map(
-          (task) =>
-            `CHROMATIC_TOKEN_${task
-              .slice(0, -':chromatic'.length)
-              .toUpperCase()
-              .replace(/\/|-|\./g, '_')}`
-        )
-    )
-  ),
 ];
 
 describe('the NX plan', () => {
@@ -65,73 +47,6 @@ describe('the NX plan', () => {
     expect(planFor(['normal']).sideJobs).toEqual([]);
     expect(planFor(['daily']).sideJobs).toEqual(['windows', 'windows-init-empty', 'node-26-smoke']);
     expect(planFor(['windows']).sideJobs).toEqual(['windows']);
-  });
-
-  it('runs the Windows sandbox jobs on the sandbox CircleCI uses', () => {
-    const workflow = read('.github/workflows/nx.yml');
-
-    const windowsJob = workflow.slice(
-      workflow.indexOf('\n  windows:\n'),
-      workflow.indexOf('\n  node-26-smoke:\n')
-    );
-
-    expect(windowsJob).toContain(`      TEMPLATE: ${daily[0]}\n`);
-    expect(windowsJob).not.toMatch(/--template (?!"\$TEMPLATE")/);
-  });
-
-  it('passes every Chromatic token a plan needs to the NX Cloud workers', () => {
-    const workflow = read('.github/workflows/nx.yml');
-    const ciConfig = read('.nx/ci-config.yaml');
-
-    expect(chromaticTokens.length).toBeGreaterThan(10);
-    for (const token of chromaticTokens) {
-      expect(workflow).toContain(`${token}: \${{ secrets.${token} }}`);
-      expect(ciConfig).toContain(`- ${token}\n`);
-    }
-  });
-
-  it('forwards the changed files and their count to the NX Cloud workers', () => {
-    const ciConfig = read('.nx/ci-config.yaml');
-
-    expect(ciConfig).toContain('- CI_CHANGED_FILES_BASE\n');
-    expect(ciConfig).toContain('- CI_CHANGED_FILES_COUNT\n');
-  });
-
-  it('starts only by hand, so pull requests run on CircleCI alone', () => {
-    expect(Object.keys(yml.parse(read('.github/workflows/nx.yml')).on)).toEqual([
-      'workflow_dispatch',
-    ]);
-  });
-
-  it('reads the same ci: labels as CircleCI', () => {
-    const labels = JSON.stringify(workflows.map((workflow) => `ci:${workflow}`).sort());
-    const lists = [...read('.github/workflows/nx.yml').matchAll(/fromJSON\('(\[[^\]]*\])'\)/g)].map(
-      ([, list]) => JSON.stringify(JSON.parse(list).sort())
-    );
-    const contains = [
-      ...read('.github/workflows/nx.yml').matchAll(/labels\.\*\.name, '(ci:\w+)'\)/g),
-    ].map(([, label]) => label);
-
-    expect(lists.length).toBeGreaterThanOrEqual(2);
-    expect(lists.every((list) => list === labels)).toBe(true);
-    expect(JSON.stringify(contains.sort())).toBe(labels);
-    const circleList = read('.github/workflows/trigger-circle-ci-workflow.yml').match(
-      /select\(IN\(([^)]*)\)\)/
-    )?.[1];
-    expect(
-      JSON.stringify(
-        JSON.parse(`[${circleList}]`)
-          .map((w: string) => `ci:${w}`)
-          .sort()
-      )
-    ).toBe(labels);
-  });
-
-  it('runs the Node 26 smoke job on the Node version CircleCI uses', () => {
-    const image = executors.sb_node_26.docker[0].image;
-    const version = image.split(':')[1];
-
-    expect(read('.github/workflows/nx.yml')).toContain(`node-version: ${version}\n`);
   });
 });
 

@@ -55,7 +55,6 @@ describe('isTestFixture', () => {
 
 describe('needsAllUnitTests', () => {
   it.each([
-    '.nx/ci-config.yaml',
     '.nx/workflows/circleci-assignment-rules.yaml',
     '.circleci/config.yml',
     '.github/workflows/nx.yml',

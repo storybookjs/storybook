@@ -160,18 +160,13 @@ const startCiRun = (os: Os, targets: readonly string[], npx: string) => ({
   run: {
     name: 'Start the NX Cloud run',
     // Before the install, so NX Cloud knows the run while the agents boot. A failed task does not
-    // stop the agents: the run reports every failure, as CircleCI does. `start-ci-run` refuses to start while .nx/ci-config.yaml (the NX Cloud workers' config,
-    // which only `start-workers` reads) exists, so it is out of the way for this command only.
+    // stop the agents: the run reports every failure, as CircleCI does.
     command: [
-      'mv .nx/ci-config.yaml /tmp/ci-config.yaml',
-      [
-        `${npx} start-ci-run --distribute-on=manual`,
-        `--assignment-rules=${ASSIGNMENT_RULES[os]}`,
-        `--stop-workers-after=${targets.join(',')}`,
-        '--stop-workers-on-failure=false',
-      ].join(' \\\n  '),
-      'mv /tmp/ci-config.yaml .nx/ci-config.yaml',
-    ].join('\n'),
+      `${npx} start-ci-run --distribute-on=manual`,
+      `--assignment-rules=${ASSIGNMENT_RULES[os]}`,
+      `--stop-workers-after=${targets.join(',')}`,
+      '--stop-workers-on-failure=false',
+    ].join(' \\\n  '),
   },
 });
 

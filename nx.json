@@ -241,7 +241,6 @@
     "ci-environment": [
       "{workspaceRoot}/.env",
       "{workspaceRoot}/.github/workflows/nx-cache.yml",
-      "{workspaceRoot}/.nx/workflows/agents.yaml",
       "{workspaceRoot}/.nx/workflows/prune-other-platforms.cjs",
       "{workspaceRoot}/scripts/ci/nx/agent-environment.ts",
       "{workspaceRoot}/scripts/ci/nx/circleci-node-modules.sh",

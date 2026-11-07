@@ -7,7 +7,9 @@ import {
   commonGlobOptions,
   getProjectRoot,
   getTsconfigPathsBaseDir,
+  matchesSpecifier,
   normalizeStoryPath,
+  toSpecifierPath,
 } from 'storybook/internal/common';
 import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
 import { loadConfig } from 'storybook/internal/csf-tools';
@@ -417,7 +419,11 @@ export class StoryIndexGenerator {
     const relativePath = relative(this.options.workingDir, absolutePath);
     const importPath = slash(normalizeStoryPath(relativePath));
     const defaultMakeTitle = (userTitle?: string) => {
-      const title = userOrAutoTitleFromSpecifier(importPath, specifier, userTitle);
+      const title = userOrAutoTitleFromSpecifier(
+        toSpecifierPath(specifier, importPath, this.options.workingDir),
+        specifier,
+        userTitle
+      );
       invariant(
         title,
         "makeTitle created an undefined title. This happens when the fileName doesn't match any specifier from main.js"
@@ -616,7 +622,12 @@ export class StoryIndexGenerator {
       });
 
       const title =
-        csfEntry?.title || userOrAutoTitleFromSpecifier(importPath, specifier, result.title);
+        csfEntry?.title ||
+        userOrAutoTitleFromSpecifier(
+          toSpecifierPath(specifier, importPath, this.options.workingDir),
+          specifier,
+          result.title
+        );
       invariant(
         title,
         "makeTitle created an undefined title. This happens when a specifier's doesn't have any matches in its fileName"
@@ -848,7 +859,7 @@ export class StoryIndexGenerator {
   invalidate(importPath: Path, removed: boolean) {
     const absolutePath = slash(resolve(this.options.workingDir, importPath));
     const specifier = Array.from(this.specifierToCache.keys()).find((ns) =>
-      ns.importPathMatcher.exec(importPath)
+      matchesSpecifier(ns, importPath, this.options.workingDir)
     );
     if (!specifier) {
       // not a story file

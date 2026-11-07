@@ -1,4 +1,4 @@
-import { globToRegexp } from 'storybook/internal/common';
+import { getSpecifierPathPrefixes, globToRegexp } from 'storybook/internal/common';
 import type { NormalizedStoriesSpecifier } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
@@ -28,10 +28,9 @@ export function webpackIncludeRegexp(specifier: NormalizedStoriesSpecifier) {
   // `./` or `../` off our directory and match on that.
   // It's imperfect as it could match extra things in extremely unusual cases, but it'll do for now.
   // NOTE: directory is "slashed" so will contain only `/` (no `\`), even on windows
-  const directoryWithoutLeadingDots = directory.replace(/^(\.+\/)+/, '/');
-  const webpackIncludeGlob = ['.', '..'].includes(directory)
-    ? files
-    : `${directoryWithoutLeadingDots}/${files}`;
+  const directoryWithoutLeadingDots = directory.replace(/^(\.+(\/|$))+/, '/');
+  const webpackIncludeGlob =
+    directoryWithoutLeadingDots === '/' ? files : `${directoryWithoutLeadingDots}/${files}`;
   const webpackIncludeRegexpWithCaret = webpackIncludeGlob.includes('node_modules')
     ? globToRegexp(webpackIncludeGlob)
     : adjustRegexToExcludeNodeModules(globToRegexp(webpackIncludeGlob));
@@ -39,16 +38,22 @@ export function webpackIncludeRegexp(specifier: NormalizedStoriesSpecifier) {
   return new RegExp(webpackIncludeRegexpWithCaret.source.replace(/^\^/, ''));
 }
 
-export function toImportFnPart(specifier: NormalizedStoriesSpecifier) {
+export function toImportFnPart(
+  specifier: NormalizedStoriesSpecifier,
+  { workingDir = process.cwd() }: { workingDir?: string } = {}
+) {
   const { directory, importPathMatcher } = specifier;
+  const prefixes = JSON.stringify(getSpecifierPathPrefixes(specifier, workingDir));
 
   return dedent`
       async (path) => {
-        if (!${importPathMatcher}.exec(path)) {
+        const prefix = ${prefixes}.find(([from]) => path.startsWith(from));
+        const specifierPath = prefix ? prefix[1] + path.substring(prefix[0].length) : path;
+        if (!${importPathMatcher}.exec(specifierPath)) {
           return;
         }
 
-        const pathRemainder = path.substring(${directory.length + 1});
+        const pathRemainder = specifierPath.substring(${directory.length + 1});
         return import(
           /* webpackChunkName: "[request]" */
           /* webpackInclude: ${webpackIncludeRegexp(specifier)} */
@@ -61,7 +66,10 @@ export function toImportFnPart(specifier: NormalizedStoriesSpecifier) {
 
 export function toImportFn(
   stories: NormalizedStoriesSpecifier[],
-  { needPipelinedImport }: { needPipelinedImport?: boolean } = {}
+  {
+    needPipelinedImport,
+    workingDir = process.cwd(),
+  }: { needPipelinedImport?: boolean; workingDir?: string } = {}
 ) {
   let pipelinedImport = `const pipeline = (x) => x();`;
   if (needPipelinedImport) {
@@ -75,7 +83,7 @@ export function toImportFn(
     ${pipelinedImport}
 
     const importers = [
-      ${stories.map(toImportFnPart).join(',\n')}
+      ${stories.map((specifier) => toImportFnPart(specifier, { workingDir })).join(',\n')}
     ];
 
     export async function importFn(path) {

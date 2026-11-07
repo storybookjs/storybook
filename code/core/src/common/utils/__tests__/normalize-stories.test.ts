@@ -9,6 +9,7 @@ import {
   getDirectoryFromWorkingDir,
   normalizeStories,
   normalizeStoriesEntry,
+  toSpecifierPath,
 } from '../normalize-stories.ts';
 
 expect.addSnapshotSerializer({
@@ -309,6 +310,23 @@ describe('getDirectoryFromWorkingDir', () => {
       directory: '/path/to/project/src',
     });
     expect(normalizedPath).toBe(`.${sep}src`);
+  });
+});
+
+describe('toSpecifierPath', () => {
+  it.each([
+    ['./src', '/r', './src/a/B.stories.ts', './src/a/B.stories.ts'],
+    ['.', '/r', './a/B.stories.ts', './a/B.stories.ts'],
+    ['../lib', '/r/app', '../lib/B.stories.ts', '../lib/B.stories.ts'],
+    ['..', '/r/packages/core', './src/B.stories.ts', '../core/src/B.stories.ts'],
+    ['..', '/r/packages/core', '../other/src/B.stories.ts', '../other/src/B.stories.ts'],
+    ['..', 'C:\\r\\packages\\core', './src/B.stories.ts', '../core/src/B.stories.ts'],
+    ['../..', '/r/packages/core', './src/B.stories.ts', '../../packages/core/src/B.stories.ts'],
+    ['../..', '/r/packages/core', '../other/B.stories.ts', '../../packages/other/B.stories.ts'],
+    ['../..', '/r/packages/core', '../../B.stories.ts', '../../B.stories.ts'],
+    ['../..', '/r/packages/core', '../../../B.stories.ts', '../../../B.stories.ts'],
+  ])('writes %s from %s: %s as %s', (directory, workingDir, importPath, specifierPath) => {
+    expect(toSpecifierPath({ directory }, importPath, workingDir)).toBe(specifierPath);
   });
 });
 

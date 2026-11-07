@@ -36,8 +36,9 @@ describe('publishAllPackages', () => {
     packageNames: ['storybook', '@storybook/react'],
   };
 
-  it('succeeds when pnpm publish succeeds', async () => {
+  it('succeeds when pnpm publish succeeds and npm lists every package', async () => {
     vi.mocked(execaCommand).mockResolvedValue({} as never);
+    vi.mocked(listUnpublishedPackages).mockResolvedValue([]);
 
     await publishAllPackages(options);
 
@@ -46,7 +47,7 @@ describe('publishAllPackages', () => {
       publishCommand('next', ['storybook', '@storybook/react']),
       expect.objectContaining({ env: { npm_config_provenance: 'true' } })
     );
-    expect(listUnpublishedPackages).not.toHaveBeenCalled();
+    expect(waitForPackagesToBePublished).not.toHaveBeenCalled();
   });
 
   it('treats a pnpm failure as success when every package is already on npm', async () => {
@@ -101,7 +102,9 @@ describe('publishAllPackages', () => {
     vi.mocked(execaCommand)
       .mockRejectedValueOnce(stoppedEarly)
       .mockResolvedValueOnce({} as never);
-    vi.mocked(listUnpublishedPackages).mockResolvedValue(['storybook', '@storybook/react']);
+    vi.mocked(listUnpublishedPackages)
+      .mockResolvedValueOnce(['storybook', '@storybook/react'])
+      .mockResolvedValueOnce([]);
 
     await publishAllPackages(options);
 
@@ -113,7 +116,7 @@ describe('publishAllPackages', () => {
     expect(vi.mocked(execaCommand).mock.calls[1][0]).toBe(publishCommand('next', ['storybook']));
   });
 
-  it('does not retry PUT for packages npm already accepted with a staged 409', async () => {
+  it('waits for a staged package when the retry publishes the rest', async () => {
     const staged = Object.assign(new Error('pnpm publish exited 1'), {
       stderr: [
         'npm error code E409',
@@ -123,14 +126,37 @@ describe('publishAllPackages', () => {
     vi.mocked(execaCommand)
       .mockRejectedValueOnce(staged)
       .mockResolvedValueOnce({} as never);
-    vi.mocked(listUnpublishedPackages).mockResolvedValue(['storybook', '@storybook/react']);
+    vi.mocked(listUnpublishedPackages)
+      .mockResolvedValueOnce(['storybook', '@storybook/react'])
+      .mockResolvedValueOnce(['storybook']);
+    vi.mocked(waitForPackagesToBePublished).mockResolvedValue([]);
 
     await publishAllPackages(options);
 
     expect(vi.mocked(execaCommand).mock.calls[1][0]).toBe(
       publishCommand('next', ['@storybook/react'])
     );
-    expect(vi.mocked(execaCommand).mock.calls[1][0]).not.toContain('--filter=storybook');
+    expect(waitForPackagesToBePublished).toHaveBeenCalledWith(
+      expect.objectContaining({ packageNames: ['storybook'] })
+    );
+  });
+
+  it('fails when the staged package never appears after the retry publishes the rest', async () => {
+    const staged = Object.assign(new Error('pnpm publish exited 1'), {
+      stderr:
+        'npm error 409 Conflict - PUT https://registry.npmjs.org/storybook - Cannot publish over previously staged version',
+    });
+    vi.mocked(execaCommand)
+      .mockRejectedValueOnce(staged)
+      .mockResolvedValueOnce({} as never);
+    vi.mocked(listUnpublishedPackages)
+      .mockResolvedValueOnce(['storybook', '@storybook/react'])
+      .mockResolvedValueOnce(['storybook']);
+    vi.mocked(waitForPackagesToBePublished).mockResolvedValue(['storybook']);
+
+    await expect(publishAllPackages(options)).rejects.toThrow(
+      'Failed to publish version 10.6.0-alpha.6. Still missing after staging wait: storybook'
+    );
   });
 
   it('keeps retrying while each attempt publishes more packages', async () => {
@@ -147,7 +173,8 @@ describe('publishAllPackages', () => {
     vi.mocked(listUnpublishedPackages)
       .mockResolvedValueOnce(['b', 'c', 'd'])
       .mockResolvedValueOnce(['c', 'd'])
-      .mockResolvedValueOnce(['d']);
+      .mockResolvedValueOnce(['d'])
+      .mockResolvedValueOnce([]);
 
     await publishAllPackages({ ...options, packageNames });
 

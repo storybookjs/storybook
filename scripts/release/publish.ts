@@ -117,7 +117,6 @@ export const publishAllPackages = async ({
 
   // Staged versions are reserved but not in the packument yet; a retry PUT 409s.
   let toPublish = [...packageNames];
-  let unpublished = [...packageNames];
   const accepted = new Set<string>();
   let lastError: unknown;
   let fewestToPublish = toPublish.length;
@@ -137,78 +136,73 @@ export const publishAllPackages = async ({
         stdout: ['pipe', 'inherit'],
         stderr: ['pipe', 'inherit'],
       });
-      console.log(`📦 Packages successfully published`);
-      return;
+      break;
     } catch (error) {
       lastError = error;
       for (const name of packagesAcceptedByRegistry(execaOutput(error))) {
         accepted.add(name);
       }
 
-      unpublished = await listUnpublishedPackages({
+      const unpublished = await listUnpublishedPackages({
         packageNames,
         version: currentVersion,
         verbose,
       });
 
-      if (unpublished.length === 0) {
-        console.log(
-          `📦 All packages are on npm even though pnpm exited non-zero (registry lag after a staged 409). Treating as success.`
-        );
-        return;
-      }
-
       // A package npm never accepted was most likely never uploaded, so retry it before waiting for
       // the staged ones.
       toPublish = unpublished.filter((name) => !accepted.has(name));
-
-      if (toPublish.length > 0) {
-        attemptsWithoutProgress =
-          toPublish.length < fewestToPublish ? 1 : attemptsWithoutProgress + 1;
-        fewestToPublish = Math.min(fewestToPublish, toPublish.length);
-        if (attemptsWithoutProgress === MAX_ATTEMPTS_WITHOUT_PROGRESS) {
-          break;
-        }
-        console.log(
-          picocolors.yellow(
-            dedent`❗ ${unpublished.length} package(s) are not yet visible on npm: ${unpublished.join(', ')}
-            This was attempt number ${attempt}, there are ${MAX_ATTEMPTS_WITHOUT_PROGRESS - attemptsWithoutProgress} retries left without progress.
-            Retrying publish for ${toPublish.join(', ')} only.`
-          )
-        );
-        continue;
+      if (toPublish.length === 0) {
+        break;
       }
 
+      attemptsWithoutProgress =
+        toPublish.length < fewestToPublish ? 1 : attemptsWithoutProgress + 1;
+      fewestToPublish = Math.min(fewestToPublish, toPublish.length);
+      if (attemptsWithoutProgress === MAX_ATTEMPTS_WITHOUT_PROGRESS) {
+        throw new Error(
+          `Failed to publish version ${currentVersion}. Still missing: ${unpublished.join(', ')}`,
+          { cause: lastError }
+        );
+      }
       console.log(
         picocolors.yellow(
-          `❗ npm accepted ${unpublished.join(', ')}, but they are not yet visible. Waiting for the registry instead of publishing over a staged version.`
+          dedent`❗ ${unpublished.length} package(s) are not yet visible on npm: ${unpublished.join(', ')}
+          This was attempt number ${attempt}, there are ${MAX_ATTEMPTS_WITHOUT_PROGRESS - attemptsWithoutProgress} retries left without progress.
+          Retrying publish for ${toPublish.join(', ')} only.`
         )
-      );
-
-      unpublished = await waitForPackagesToBePublished({
-        packageNames: unpublished,
-        version: currentVersion,
-        timeoutMs: REGISTRY_POLL_TIMEOUT_MS,
-        intervalMs: REGISTRY_POLL_INTERVAL_MS,
-        verbose,
-      });
-
-      if (unpublished.length === 0) {
-        console.log(`📦 All packages became visible on npm. Treating as success.`);
-        return;
-      }
-
-      throw new Error(
-        `Failed to publish version ${currentVersion}. Still missing after staging wait: ${unpublished.join(', ')}`,
-        { cause: lastError }
       );
     }
   }
 
-  throw new Error(
-    `Failed to publish version ${currentVersion}. Still missing: ${unpublished.join(', ')}`,
-    { cause: lastError }
-  );
+  // A staged package stays invisible after its own attempt failed, even when a later attempt
+  // publishes the rest, so success means every package is on npm.
+  let unpublished = await listUnpublishedPackages({
+    packageNames,
+    version: currentVersion,
+    verbose,
+  });
+  if (unpublished.length > 0) {
+    console.log(
+      picocolors.yellow(
+        `⏳ npm does not list ${unpublished.join(', ')} yet. Waiting for the registry rather than publishing again.`
+      )
+    );
+    unpublished = await waitForPackagesToBePublished({
+      packageNames: unpublished,
+      version: currentVersion,
+      timeoutMs: REGISTRY_POLL_TIMEOUT_MS,
+      intervalMs: REGISTRY_POLL_INTERVAL_MS,
+      verbose,
+    });
+  }
+  if (unpublished.length > 0) {
+    throw new Error(
+      `Failed to publish version ${currentVersion}. Still missing after staging wait: ${unpublished.join(', ')}`,
+      { cause: lastError }
+    );
+  }
+  console.log(`📦 All packages are on npm`);
 };
 
 export const run = async (options: unknown) => {

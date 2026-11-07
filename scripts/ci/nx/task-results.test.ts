@@ -22,7 +22,8 @@ const tasks = execFileSync('git', ['ls-files', '*project.json'], { cwd: root, en
       return {
         id: `${file}:${target}`,
         target,
-        command: own.options?.command ?? own.command ?? defaults.options?.command ?? defaults.command,
+        command:
+          own.options?.command ?? own.command ?? defaults.options?.command ?? defaults.command,
         outputs: own.outputs ?? defaults.outputs ?? [],
       };
     });
@@ -50,7 +51,10 @@ describe('the results of the NX tasks', () => {
   });
 
   it('are written where the outputs say', () => {
-    const env = { NX_TASK_TARGET_PROJECT: 'react-vite/default-ts', NX_TASK_TARGET_TARGET: 'e2e-tests' };
+    const env = {
+      NX_TASK_TARGET_PROJECT: 'react-vite/default-ts',
+      NX_TASK_TARGET_TARGET: 'e2e-tests',
+    };
     expect(nxTaskResultsDirectory('/repo/test-results', env)).toBe(
       '/repo/test-results/react-vite/default-ts/e2e-tests'
     );

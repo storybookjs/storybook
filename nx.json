@@ -203,7 +203,10 @@
     "jest": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "touch yarn.lock && yarn --no-immutable && yarn jest" },
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "touch yarn.lock && yarn --no-immutable && yarn jest"
+      },
       "cache": true,
       "inputs": ["default", "all-production"],
       "configurations": { "production": {} }
@@ -211,7 +214,10 @@
     "vitest": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "touch yarn.lock && yarn --no-immutable && yarn vitest" },
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "touch yarn.lock && yarn --no-immutable && yarn vitest"
+      },
       "cache": true,
       "inputs": ["default", "all-production"],
       "configurations": { "production": {} }
@@ -219,7 +225,10 @@
     "cypress": {
       "dependsOn": [{ "projects": ["*"], "target": "compile" }],
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "touch yarn.lock && yarn --no-immutable && yarn cypress" },
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "touch yarn.lock && yarn --no-immutable && yarn cypress"
+      },
       "cache": true,
       "inputs": ["default", "all-production"],
       "configurations": { "production": {} }

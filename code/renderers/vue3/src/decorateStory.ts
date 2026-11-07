@@ -83,3 +83,4 @@ export function decorateStory(
     (context) => prepare(storyFn(context)) as LegacyStoryFn<VueRenderer>
   );
 }
+// Bench: a vue3 change, count rule (not for merging).

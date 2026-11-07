@@ -11,6 +11,16 @@ const linux = { max: MAX_AGENTS.linux, bootSeconds: AGENT_BOOT_SECONDS.linux };
 const windows = { max: MAX_AGENTS.windows, bootSeconds: AGENT_BOOT_SECONDS.windows };
 
 describe('the agents a run needs', () => {
+  it('hands out the task that has been ready longest, not the longest chain, as NX Cloud does', () => {
+    const work: Work = {
+      a1: { seconds: 10, dependsOn: [] },
+      a2: { seconds: 10, dependsOn: [] },
+      z: { seconds: 100, dependsOn: [] },
+    };
+    // Longest chain first would start `z` at once and end at 100.
+    expect(simulate(work, 2, 0).seconds).toBe(110);
+  });
+
   it('bills an idle agent only until the last task is handed out', () => {
     expect(simulate({ a: { seconds: 100, dependsOn: [] } }, 2, 60)).toEqual({
       seconds: 160,
@@ -24,16 +34,6 @@ describe('the agents a run needs', () => {
       test: { seconds: 50, dependsOn: ['compile'] },
     };
     expect(simulate(work, 2, 60).seconds).toBe(60 + 30 + 50);
-  });
-
-  it('hands out the task with the longest chain behind it first', () => {
-    const work: Work = {
-      short: { seconds: 10, dependsOn: [] },
-      sandbox: { seconds: 10, dependsOn: [] },
-      e2e: { seconds: 100, dependsOn: ['sandbox'] },
-    };
-    expect(simulate(work, 1, 0).seconds).toBe(120);
-    expect(simulate(work, 2, 0).seconds).toBe(110);
   });
 
   it('starts no agent that only shaves a few seconds off the run', () => {

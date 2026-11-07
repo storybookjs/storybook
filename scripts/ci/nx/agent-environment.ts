@@ -2,7 +2,7 @@
 // the machine, the environment variables and the tools the agent installs before `nx start-agent`.
 // Every task hashes this file (`ci-environment` in nx.json), so a change here runs the tasks again
 // instead of restoring their results from the old environment. Like main.ts, this runs under plain
-// Node before `yarn install`.
+// Node before `yarn install`. (EXPERIMENT: changed so that every task runs again.)
 import { NODE_MODULES_CACHE_KEY, NODE_MODULES_CACHE_PATHS, cache } from '../utils/helpers.ts';
 import { isTrustedAuthor } from '../utils/runtime.ts';
 import { installNodeOnWindows } from '../utils/windows-node.ts';

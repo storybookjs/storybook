@@ -88,10 +88,10 @@ export function mergeTaskGraphs(graphs: readonly NxTaskGraph[]): Selection {
 
 // A task the setup job knows nothing more about: a few CI tasks take less, the E2E tests more.
 export const UNKNOWN_TASK_SECONDS = 60;
-// Fill in each task's hash, whether it is cached, and its seconds: the time the pull request's
-// latest run took for it, else NX Cloud's average on CI, else a guess. A task Nx may not cache
-// (Chromatic) takes NX Cloud's average: its last run may have been a rerun of the same commit, which
-// Chromatic had already built.
+// Fill in each task's hash, whether it is cached, and its seconds: the time the latest run on this
+// OS took for it (`History.seconds`), else NX Cloud's average on CI, else a guess. A task Nx may
+// not cache (Chromatic) takes NX Cloud's average: its last run may have been a rerun of the same
+// commit, which Chromatic had already built.
 export function weigh(
   selection: Selection,
   hashes: Readonly<Record<string, string>>,

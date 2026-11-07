@@ -8,7 +8,8 @@
 //   only what a change since that commit reaches (`nx affected`); the file records it as `base`.
 //   `--base-ref` is what a focused run diffs against.
 // - Each task gets its hash, whether the latest NX Cloud runs on `--nx-branch` (NX_BRANCH, the pull
-//   request's number) already stored it, and how long it takes (nx-cloud-history.ts).
+//   request's number) or on the branch of `--base-ref` already stored it, and how long it takes
+//   (nx-cloud-history.ts).
 // - From that, `agents` holds how many agents each OS starts (agent-sizing.ts), Linux at most
 //   `--max-agents`.
 //
@@ -23,7 +24,7 @@ import { join } from 'pathe';
 import { ROOT_DIRECTORY } from '../../utils/constants.ts';
 import { getChangedFiles } from '../focus.ts';
 import { AGENT_BOOT_SECONDS, MAX_AGENTS, agentsFor } from './agent-sizing.ts';
-import { branchHistory, taskDurations } from './nx-cloud-history.ts';
+import { baseRuns, osHistory, taskDurations } from './nx-cloud-history.ts';
 import { linuxRuns, parseWorkflows, planFor, windowsTasksOf } from './plan.ts';
 import { EMPTY_SELECTION, type Selection, weigh, workOf } from './selection.ts';
 import { hashSelections } from './task-hashes.ts';
@@ -93,7 +94,11 @@ const select = (os: Os): Promise<Selection> => {
 };
 
 const runsOn = { linux: linuxRuns(selected, plan), windows: windowsTasksOf(plan).length > 0 };
-const history = (os: Os) => (runsOn[os] && branch ? branchHistory(branch, os) : undefined);
+const baseBranchRuns =
+  runsOn.linux || runsOn.windows
+    ? baseRuns(values['base-ref'].replace(/^origin\//, ''))
+    : Promise.resolve([]);
+const history = (os: Os) => (runsOn[os] ? osHistory(os, branch, baseBranchRuns) : undefined);
 // NX Cloud answers while Nx selects the tasks.
 const [linux, windows, linuxHistory, windowsHistory, durations] = await Promise.all([
   runsOn.linux ? select('linux') : EMPTY_SELECTION,
@@ -132,7 +137,7 @@ const size = (os: Os, selection: Selection, past: typeof linuxHistory) => {
   console.log(
     [
       `${os}: ${tasks.length} tasks, ${cached} of them in the cache`,
-      past ? `(${past.runs} earlier runs knew ${seen} of the hashes)` : '(no earlier runs)',
+      past?.runs ? `(${past.runs} earlier runs knew ${seen} of the hashes)` : '(no earlier runs)',
       `→ ${Math.round(work)} minutes of work: ${agents} agents, done in about ${Math.round(seconds / 60)} minutes.`,
     ].join(' ')
   );

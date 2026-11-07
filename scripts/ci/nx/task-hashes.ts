@@ -26,7 +26,15 @@ export async function hashSelections(
 ): Promise<Record<Os, Record<string, string>>> {
   // Throws instead of exiting, so select.ts can fall back to counting every task.
   const linuxGraph = await createProjectGraphAsync({ exitOnError: false });
-  const graphs = { linux: linuxGraph, windows: windowsGraph(linuxGraph, workspaceRoot) };
+  const graphs = { linux: linuxGraph, windows: linuxGraph };
+  if (Object.keys(selections.windows.tasks).length > 0) {
+    try {
+      graphs.windows = windowsGraph(linuxGraph, workspaceRoot);
+    } catch (error) {
+      // Only the Windows hashes then miss, and every Windows task counts as one that runs.
+      console.warn(`Naming the npm packages as on Windows failed: ${error}`);
+    }
+  }
   const hash = async (selection: Selection, os: Os) => {
     const tasks = Object.values(selection.tasks);
     if (tasks.length === 0) {

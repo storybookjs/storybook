@@ -23,7 +23,8 @@
 // Opt in with the `nxDte` pipeline parameter (.circleci/config.yml); main.ts then generates these
 // jobs instead of the per-job ones. Like main.ts, this runs under plain Node before `yarn install`.
 import { node26Smoke } from '../common-jobs.ts';
-import { artifact, cache, git, testResults } from '../utils/helpers.ts';
+import { NODE_MODULES_CACHE_KEY, artifact, cache, git, testResults } from '../utils/helpers.ts';
+import { installNodeOnWindows } from '../utils/windows-node.ts';
 import { type FocusDiff, changedFilesEnvironment, focusDiff } from '../utils/changed-files.ts';
 import { isTrustedAuthor } from '../utils/runtime.ts';
 import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
@@ -371,7 +372,10 @@ export function getNxDteJobs(
   if (windowsTasks.length > 0 && (!windows || Object.keys(windows.tasks).length > 0)) {
     const targets = commandTargets(windowsTasks);
     const agents = options.agents?.windows ?? MAX_AGENTS.windows;
-    jobs.push(windowsMainJob(selected, diff, targets, base, agents), windowsAgentJob(diff, agents));
+    // EXPERIMENT (kasper/nx-agent-startup-bench): measure the agents' startup instead of running
+    // the Windows tasks. Not for merging.
+    void [targets, agents, windowsMainJob, windowsAgentJob];
+    jobs.push(benchWindowsJob, benchLinuxJob);
   }
 
   if (plan.sideJobs.includes('node-26-smoke')) {
@@ -383,6 +387,39 @@ export function getNxDteJobs(
   }
   return jobs;
 }
+
+// EXPERIMENT: the node_modules restore the NX DTE jobs do, then the measurements.
+const benchWindowsJob = defineJob('nx-bench-startup-windows', () => ({
+  // As nx-main-windows, which the Windows run waits for.
+  executor: { name: 'win/default', size: 'medium', shell: 'bash.exe' },
+  steps: [
+    windowsCheckout(),
+    installNodeOnWindows(),
+    cache.attach([NODE_MODULES_CACHE_KEY('windows')]),
+    {
+      run: {
+        name: 'Measure the node_modules restore on Windows',
+        command: 'bash scripts/ci/nx/bench-startup-windows.sh',
+        no_output_timeout: '30m',
+      },
+    },
+  ],
+}));
+
+const benchLinuxJob = defineJob('nx-bench-startup-linux', () => ({
+  executor: AGENT_EXECUTORS.linux,
+  steps: [
+    git.checkout(),
+    { run: { name: 'Hash the package manifests and patches', command: HASH_MANIFESTS_COMMAND } },
+    cache.attach([NODE_MODULES_KEY]),
+    {
+      run: {
+        name: 'Measure the node_modules extraction on Linux',
+        command: 'bash scripts/ci/nx/bench-startup-linux.sh',
+      },
+    },
+  ],
+}));
 
 const nothingToRunJob = defineJob('nx-nothing-to-run', () => ({
   executor: { name: 'sb_node_22_classic', class: 'small' },

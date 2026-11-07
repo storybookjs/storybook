@@ -156,17 +156,28 @@ export const LAUNCH_TEMPLATES: Record<Os, string> = {
 const commandTargets = (tasks: readonly string[]) =>
   [...new Set(tasks.map((task) => task.slice(task.lastIndexOf(':') + 1)))].sort();
 
+// The background `start-ci-run` (startCiRun) leaves one of these for `Run nx`.
+const CI_RUN_STARTED = '/tmp/nx-ci-run-started';
+const CI_RUN_FAILED = '/tmp/nx-ci-run-failed';
+
 const startCiRun = (os: Os, targets: readonly string[], npx: string) => ({
   run: {
     name: 'Start the NX Cloud run',
-    // Before the install, so NX Cloud knows the run while the agents boot. A failed task does not
-    // stop the agents: the run reports every failure, as CircleCI does.
+    // Before the install, so NX Cloud knows the run while the agents boot, and in the background,
+    // so the install does not wait for npx to download the CLI. `Run nx` waits for it (waitForCiRun).
+    // A failed task does not stop the agents: the run reports every failure, as CircleCI does.
+    background: true,
     command: [
-      `${npx} start-ci-run --distribute-on=manual`,
-      `--assignment-rules=${ASSIGNMENT_RULES[os]}`,
-      `--stop-workers-after=${targets.join(',')}`,
-      '--stop-workers-on-failure=false',
-    ].join(' \\\n  '),
+      `if ${[
+        `${npx} start-ci-run --distribute-on=manual`,
+        `--assignment-rules=${ASSIGNMENT_RULES[os]}`,
+        `--stop-workers-after=${targets.join(',')}`,
+        '--stop-workers-on-failure=false',
+      ].join(' \\\n  ')}`,
+      `then touch ${CI_RUN_STARTED}`,
+      `else touch ${CI_RUN_FAILED}; exit 1`,
+      'fi',
+    ].join('\n'),
   },
 });
 
@@ -183,18 +194,55 @@ const fetchBase = (base: string | undefined) =>
       ]
     : [];
 
-const runNx = (os: Os, selected: readonly Workflow[], base: string | undefined) => ({
+// One argument for bash, as it is.
+const quote = (arg: string) => `'${arg.replaceAll("'", `'\\''`)}'`;
+
+// The setup job already worked out the run's Nx commands (select.ts): the main job runs them as
+// they are, at the same time, instead of starting run.ts and the two Nx processes it needs for them.
+const runCommands = (os: Os, commands: readonly (readonly string[])[]) =>
+  [
+    'status=0',
+    'pids=()',
+    ...commands.map(
+      (command) =>
+        `/usr/bin/timeout --kill-after=1m ${TIMEOUT_MINUTES[os]}m yarn ${command.map(quote).join(' ')} & pids+=($!)`
+    ),
+    'for pid in "${pids[@]}"; do wait "$pid" || status=1; done',
+    'exit "$status"',
+  ].join('\n');
+
+const waitForCiRun = [
+  'for _ in $(seq 300); do',
+  `  [ -e ${CI_RUN_STARTED} ] && break`,
+  `  [ -e ${CI_RUN_FAILED} ] && { echo "Starting the NX Cloud run failed."; exit 1; }`,
+  '  sleep 1',
+  'done',
+  `[ -e ${CI_RUN_STARTED} ] || { echo "Starting the NX Cloud run took over 5 minutes."; exit 1; }`,
+].join('\n');
+
+const runNx = (
+  os: Os,
+  selected: readonly Workflow[],
+  base: string | undefined,
+  commands: readonly (readonly string[])[] | undefined
+) => ({
   run: {
     name: RUN_NX_STEP,
     no_output_timeout: '30m',
+    // Without the setup job's commands (locally and in tests), run.ts works them out.
     command: [
-      // Bounded, as the agents are (TIMEOUT_MINUTES). Git Bash's `timeout` on Windows.
-      `/usr/bin/timeout --kill-after=1m ${TIMEOUT_MINUTES[os]}m`,
-      'yarn exec jiti ./scripts/ci/nx/run.ts',
-      `--workflow=${selected.join(',')}`,
-      `--env=${os}`,
-      ...(base ? [`--base=${base}`] : []),
-    ].join(' '),
+      waitForCiRun,
+      commands
+        ? runCommands(os, commands)
+        : [
+            // Bounded, as the agents are (TIMEOUT_MINUTES). Git Bash's `timeout` on Windows.
+            `/usr/bin/timeout --kill-after=1m ${TIMEOUT_MINUTES[os]}m`,
+            'yarn exec jiti ./scripts/ci/nx/run.ts',
+            `--workflow=${selected.join(',')}`,
+            `--env=${os}`,
+            ...(base ? [`--base=${base}`] : []),
+          ].join(' '),
+    ].join('\n'),
   },
 });
 
@@ -243,7 +291,8 @@ const mainJob = (
   diff: FocusDiff | undefined,
   targets: readonly string[],
   base: string | undefined,
-  agents: number
+  agents: number,
+  commands: readonly (readonly string[])[] | undefined
 ) =>
   defineJob(NX_MAIN_JOBS.linux, () => ({
     executor: { name: 'sb_node_22_classic', class: 'large' },
@@ -259,7 +308,7 @@ const mainJob = (
       startCiRun('linux', targets, NX_CLOUD),
       ...restoreNodeModules(),
       ...fetchBase(base),
-      runNx('linux', selected, base),
+      runNx('linux', selected, base, commands),
       stopAgents(),
       ...saveNodeModules(),
     ],
@@ -301,7 +350,8 @@ const windowsMainJob = (
   diff: FocusDiff | undefined,
   targets: readonly string[],
   base: string | undefined,
-  agents: number
+  agents: number,
+  commands: readonly (readonly string[])[] | undefined
 ) =>
   defineJob(NX_MAIN_JOBS.windows, () => ({
     // Runs no task; on Windows so that it hashes the tasks on the OS that runs them.
@@ -315,7 +365,7 @@ const windowsMainJob = (
       startCiRun('windows', targets, NX_CLOUD),
       ...windowsInstall(),
       ...fetchBase(base),
-      runNx('windows', selected, base),
+      runNx('windows', selected, base, commands),
       stopAgents(),
     ],
   }));
@@ -363,7 +413,10 @@ export function getNxDteJobs(
   if (linuxRuns(selected, plan) && (!linux || Object.keys(linux.tasks).length > 0)) {
     const agents = options.agents?.linux ?? options.maxAgents ?? MAX_AGENTS.linux;
     const targets = commandTargets([...plan.tasks, ...(plan.affectedCheck ? ['*:check'] : [])]);
-    jobs.push(mainJob(selected, diff, targets, base, agents), agentJob(diff, agents));
+    jobs.push(
+      mainJob(selected, diff, targets, base, agents, linux?.commands),
+      agentJob(diff, agents)
+    );
   }
 
   const windowsTasks = windowsTasksOf(plan);
@@ -371,7 +424,10 @@ export function getNxDteJobs(
   if (windowsTasks.length > 0 && (!windows || Object.keys(windows.tasks).length > 0)) {
     const targets = commandTargets(windowsTasks);
     const agents = options.agents?.windows ?? MAX_AGENTS.windows;
-    jobs.push(windowsMainJob(selected, diff, targets, base, agents), windowsAgentJob(diff, agents));
+    jobs.push(
+      windowsMainJob(selected, diff, targets, base, agents, windows?.commands),
+      windowsAgentJob(diff, agents)
+    );
   }
 
   if (plan.sideJobs.includes('node-26-smoke')) {

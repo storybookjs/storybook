@@ -46,7 +46,6 @@
       "cache": true,
       "inputs": [
         "code-all",
-        "{workspaceRoot}/.github/workflows/nx.yml",
         "{workspaceRoot}/.github/workflows/trigger-circle-ci-workflow.yml",
         "{workspaceRoot}/test-storybooks/**/package.json",
         "{workspaceRoot}/.github/workflows/trigger-circleci-nx-dte.yml",
@@ -73,7 +72,6 @@
       "cache": true,
       "inputs": [
         "code-all",
-        "{workspaceRoot}/.github/workflows/nx.yml",
         "{workspaceRoot}/.github/workflows/trigger-circle-ci-workflow.yml",
         "{workspaceRoot}/test-storybooks/**/package.json",
         "{workspaceRoot}/.github/workflows/trigger-circleci-nx-dte.yml",
@@ -100,7 +98,6 @@
       "cache": true,
       "inputs": [
         "code-all",
-        "{workspaceRoot}/.github/workflows/nx.yml",
         "{workspaceRoot}/.github/workflows/trigger-circle-ci-workflow.yml",
         "{workspaceRoot}/test-storybooks/**/package.json",
         "{workspaceRoot}/.github/workflows/trigger-circleci-nx-dte.yml",

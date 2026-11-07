@@ -1,4 +1,4 @@
-// What the NX Cloud pipeline (.github/workflows/nx.yml) runs for a CircleCI workflow.
+// What the NX DTE pipeline (circleci-dte.ts) runs for a CircleCI workflow.
 //
 // CircleCI's generated config (scripts/ci/main.ts) stays the source of truth for which jobs a
 // workflow has. This module maps every one of those jobs to the NX tasks that test the same thing,

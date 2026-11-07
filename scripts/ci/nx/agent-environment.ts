@@ -16,7 +16,6 @@ export const AGENT_EXECUTORS = {
   windows: { name: 'win/default', size: 'large', shell: 'bash.exe' },
 } as const;
 
-// As on the NX Cloud workers (.nx/workflows/agents.yaml).
 export const agentEnvironment = (os: Os): Record<string, string> => ({
   STORYBOOK_DISABLE_TELEMETRY: 'true',
   IN_STORYBOOK_SANDBOX: 'true',
@@ -75,8 +74,7 @@ export const agentSetup = (os: Os) =>
         {
           run: {
             name: 'Clear Storybook packages from the global yarn cache',
-            // As NX Cloud's workers do. A fresh container starts with an empty cache, which nothing
-            // saves between runs.
+            // A fresh container starts with an empty cache, which nothing saves between runs.
             command:
               'rm -f ~/.yarn/berry/cache/storybook-npm-*.zip ~/.yarn/berry/cache/@storybook-*.zip',
           },

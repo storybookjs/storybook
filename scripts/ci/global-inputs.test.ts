@@ -57,7 +57,7 @@ describe('needsAllUnitTests', () => {
   it.each([
     '.nx/workflows/circleci-assignment-rules.yaml',
     '.circleci/config.yml',
-    '.github/workflows/nx.yml',
+    '.github/workflows/nx-cache.yml',
     'code/project.json',
     'yarn.lock',
     'code/addons/a11y/src/__fixtures__/axe-result.ts',

@@ -1,6 +1,6 @@
-// Run by the "Install Node Modules" step in .nx/workflows/agents.yaml, after a fresh install and
-// before the workers cache node_modules. .yarnrc.yml installs every platform's binaries
-// (supportedArchitectures): on a Linux x64 worker, about 2 GB that it never loads.
+// Run by scripts/ci/nx/circleci-node-modules.sh after a fresh install, before the NX DTE jobs cache
+// node_modules. .yarnrc.yml installs every platform's binaries (supportedArchitectures): on a Linux
+// x64 agent, about 2 GB that it never loads.
 //
 // Removes packages built for another os or cpu than this machine, as Yarn skips them when
 // supportedArchitectures is `current`. Yarn already skips the other libc (its default). DRY=1 only

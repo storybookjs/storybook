@@ -38,7 +38,7 @@ import { esMain } from '../utils/esmain.ts';
 
 const execFileAsync = promisify(execFile);
 
-// Same version as `.github/workflows/nx.yml`; its `api` command is the NX Cloud Public API client.
+// Same version as the NX DTE jobs (circleci-dte.ts); its `api` command is the NX Cloud Public API client.
 const NX_CLOUD_CLI = 'nx-cloud@19.1.5';
 const ROOT = join(import.meta.dirname, '../..');
 const NX_CLOUD_ID: string = JSON.parse(readFileSync(join(ROOT, 'nx.json'), 'utf8')).nxCloudId;

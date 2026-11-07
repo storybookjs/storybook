@@ -76,7 +76,7 @@ export const NODE_MODULES_KEY = [
   '{{ checksum "yarn.lock" }}',
   '{{ checksum ".nx/workflows/prune-other-platforms.cjs" }}',
   '{{ checksum "scripts/ci/nx/circleci-node-modules.sh" }}',
-  // The workspaces' manifests and the patches, as NX Cloud's key does (.nx/workflows/agents.yaml):
+  // The workspaces' manifests and the patches:
   // a change such as `installConfig` alters the installed tree without touching yarn.lock, and the
   // install that a changed patch needs is skipped on a hit.
   `{{ checksum "${MANIFESTS_SUM}" }}`,

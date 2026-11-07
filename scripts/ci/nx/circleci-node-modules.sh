@@ -38,7 +38,7 @@ case "$mode" in
       find . -path ./.git -prune -o -name node_modules -type d -prune -exec rm -rf {} +
       rm -f .yarn/root-install-state.gz
     fi
-    # Three tries, as the NX Cloud workers do (.nx/workflows/agents.yaml): 20 agents install at once.
+    # Three tries: up to 20 agents install at once.
     for try in 1 2 3; do
       if yarn install --immutable; then break; fi
       [ "$try" = 3 ] && exit 1

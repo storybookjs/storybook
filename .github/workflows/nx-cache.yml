@@ -31,7 +31,7 @@ jobs:
     env:
       NX_DEFAULT_OUTPUT_STYLE: stream
       # As the CircleCI NX DTE jobs (scripts/ci/nx/circleci-dte.ts): with Ultracache, Nx hashes a task
-      # from the files it read on NX Cloud's workers instead of its declared inputs, and the entries
+      # from the files it read instead of its declared inputs, and the entries
       # stored here would match no hash the pull requests' runs and their setup job compute.
       NX_CLOUD_USE_ULTRACACHE: 'false'
     steps:

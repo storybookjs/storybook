@@ -12,7 +12,10 @@ it.skipIf((!compiled && !process.env.CI) || process.platform === 'win32')(
         .filter((file) => !hashes(pkg, file))
         .map((file) => `${pkg.name} loads ${file}`)
     );
-    expect(unhashed.flat(), 'Run `yarn exec jiti scripts/ci/nx/check-inputs.ts`').toEqual([]);
+    expect(
+      unhashed.flat(),
+      'Run `yarn nx run-many -t compile -c production`, then `yarn exec jiti scripts/ci/nx/check-inputs.ts`'
+    ).toEqual([]);
   },
   300_000
 );

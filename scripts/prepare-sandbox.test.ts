@@ -3,7 +3,7 @@ import * as fsp from 'node:fs/promises';
 
 import * as memfs from 'memfs';
 import { vol } from 'memfs';
-import { join } from 'pathe';
+import { join, relative } from 'pathe';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prepareSandbox } from './prepare-sandbox.ts';
@@ -20,10 +20,17 @@ const CACHE = join(ROOT_DIRECTORY, 'sandbox', 'react-vite-default-ts');
 const SANDBOX = join(SANDBOX_DIRECTORY, 'react-vite-default-ts');
 const STORY = 'src/stories/Button.stories.ts';
 
-const files = (dir: string) =>
-  Object.fromEntries(
-    Object.entries(vol.toJSON(dir)).map(([path, content]) => [path.slice(dir.length + 1), content])
+// memfs drops the drive letter from the paths it lists on Windows, so they are made relative to
+// the folder's path as memfs writes it.
+const files = (dir: string) => {
+  const root = dir.replace(/^[A-Za-z]:/, '');
+  return Object.fromEntries(
+    Object.entries(vol.toJSON(dir)).map(([path, content]) => [
+      relative(root, path.replace(/^[A-Za-z]:/, '')),
+      content,
+    ])
   );
+};
 
 beforeEach(() => {
   vol.reset();

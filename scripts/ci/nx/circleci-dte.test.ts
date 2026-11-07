@@ -176,15 +176,21 @@ describe('the CircleCI NX DTE pipeline', () => {
     onTestFinished(() => rmSync(repo, { recursive: true, force: true }));
     mkdirSync(join(repo, '.yarn/patches'), { recursive: true });
     writeFileSync(join(repo, 'package.json'), '{}');
+    const sum = join(repo, 'manifests.sha256');
     // As CircleCI runs a step.
     const hash = () => {
       const result = spawnSync(
         'bash',
-        ['-eo', 'pipefail', '-c', HASH_MANIFESTS_COMMAND.replace(MANIFESTS_SUM, '/dev/stdout')],
+        [
+          '-eo',
+          'pipefail',
+          '-c',
+          HASH_MANIFESTS_COMMAND.replace(MANIFESTS_SUM, 'manifests.sha256'),
+        ],
         { cwd: repo, encoding: 'utf8' }
       );
       expect(result.status, result.stderr).toBe(0);
-      return result.stdout;
+      return readFileSync(sum, 'utf8');
     };
 
     const withoutPatches = hash();

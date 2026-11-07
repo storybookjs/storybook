@@ -9,7 +9,7 @@
 // Usage: check-inputs.ts, after compiling every package; it writes the inputs into the packages'
 // project.json files.
 import { execFile } from 'node:child_process';
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { availableParallelism } from 'node:os';
 import { promisify } from 'node:util';
@@ -49,11 +49,17 @@ export const checkedPackages = packages.filter(
     !project.targets.check.options?.command
 );
 
-// Whether every package that scripts/build/build-package.ts compiles has its `dist`, as when
-// `check` runs.
+// Whether every package that scripts/build/build-package.ts compiles has its declarations, as after
+// the production compile that `check` runs after. A development compile writes no `.d.ts`.
 export const compiled = packages
   .filter(({ root }) => existsSync(join(ROOT, root, 'build-config.ts')))
-  .every(({ root }) => existsSync(join(ROOT, root, 'dist')));
+  .every(
+    ({ root }) =>
+      existsSync(join(ROOT, root, 'dist')) &&
+      readdirSync(join(ROOT, root, 'dist'), { recursive: true }).some((file) =>
+        String(file).endsWith('.d.ts')
+      )
+  );
 
 const builtBy = (file: string) => {
   const owner = ownerOf(file);

@@ -426,7 +426,7 @@
         "command": "yarn exec jiti ./scripts/ci/nx/affected.ts lint"
       },
       "cache": false,
-      "inputs": ["code-all"],
+      "inputs": ["sharedGlobals", "{workspaceRoot}/**/*"],
       "configurations": {
         "production": {}
       }

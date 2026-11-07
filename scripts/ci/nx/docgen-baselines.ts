@@ -5,9 +5,10 @@
 // the repository (`sandbox/<dir>`), not into the sandbox the harness reads. The baselines hold paths
 // relative to the sandbox, so the cached copy goes where the sandbox was built.
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { restoreSandbox } from '../../prepare-sandbox.ts';
 import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '../../utils/constants.ts';
 
 const template = process.argv[2];
@@ -19,10 +20,10 @@ const dir = template.replace('/', '-');
 const sandboxDir = join(SANDBOX_DIRECTORY, dir);
 const cachedDir = join(ROOT_DIRECTORY, 'sandbox', dir);
 
-// Always from the cache when there is one: a storybook-static already in the sandbox can be older.
+// Always from the cache when there is one: a storybook-static already in the sandbox can be older,
+// and an earlier task on the same NX agent can have changed the sandbox.
 if (existsSync(cachedDir) && cachedDir !== sandboxDir) {
-  console.log(`Copying the cached sandbox ${cachedDir} to ${sandboxDir}`);
-  cpSync(cachedDir, sandboxDir, { recursive: true, force: true });
+  await restoreSandbox(cachedDir, sandboxDir);
 }
 
 const { status } = spawnSync('yarn', ['baselines:sandbox', '--template', template], {

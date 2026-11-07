@@ -1,31 +1,72 @@
 import { existsSync } from 'node:fs';
-import { cp, rm } from 'node:fs/promises';
+import { cp, readFile, readdir, rm } from 'node:fs/promises';
 
-import { join } from 'path';
+import { join } from 'pathe';
 import waitOn from 'wait-on';
 
 import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants.ts';
 import { exec } from './utils/exec.ts';
 import { isNxTaskExecution } from './utils/nx.ts';
 
+const sameFile = async (a: string, b: string) => {
+  const read = (file: string) => readFile(file, 'utf8').catch(() => undefined);
+  const [left, right] = await Promise.all([read(a), read(b)]);
+  return left !== undefined && left === right;
+};
+
+/**
+ * Makes `sandboxDir` a copy of `cacheDir`, where NX keeps what the `sandbox` task (and a `build`,
+ * for `storybook-static`) produced. The tasks of an NX agent share the sandbox, so without this a
+ * task inherits what an earlier one changed there, such as the story that the onboarding E2E test
+ * creates. The installed node_modules stay when they were installed for the same manifest and
+ * lockfile.
+ *
+ * Returns whether node_modules were kept.
+ */
+export async function restoreSandbox(cacheDir: string, sandboxDir: string): Promise<boolean> {
+  if (!existsSync(cacheDir)) {
+    throw new Error(
+      `Sandbox should exist at ${cacheDir}. Did you forget to run the sandbox command first?`
+    );
+  }
+  const keepNodeModules =
+    existsSync(join(sandboxDir, 'node_modules')) &&
+    (await sameFile(join(cacheDir, 'yarn.lock'), join(sandboxDir, 'yarn.lock'))) &&
+    (await sameFile(join(cacheDir, 'package.json'), join(sandboxDir, 'package.json')));
+
+  console.log(`🧹 copying cached ${cacheDir} to ${sandboxDir}`);
+  // On Windows a dev server the previous task stopped can hold its files for a moment.
+  const remove = (path: string) => rm(path, { recursive: true, force: true, maxRetries: 5 });
+  if (keepNodeModules) {
+    const entries = await readdir(sandboxDir);
+    await Promise.all(
+      entries
+        .filter((entry) => entry !== 'node_modules')
+        .map((entry) => remove(join(sandboxDir, entry)))
+    );
+  } else {
+    await remove(sandboxDir);
+  }
+  await cp(cacheDir, sandboxDir, { recursive: true, force: true });
+  return keepNodeModules;
+}
+
 /**
  * Prepares a sandbox for use during NX task execution.
  *
- * In NX CI, the `sandbox` task caches its output at `sandbox/<dir>` (inside the repo,
- * without node_modules). Downstream tasks need the sandbox at `../storybook-sandboxes/<dir>`
- * with node_modules installed. This function bridges that gap by:
+ * In NX CI, the `sandbox` task caches its output at `sandbox/<dir>` (inside the repo, without
+ * node_modules). Downstream tasks need the sandbox at `../storybook-sandboxes/<dir>` with
+ * node_modules installed. This function bridges that gap by:
  *
- * 1. Copying the cached sandbox to the working directory (if needed)
+ * 1. Restoring the sandbox from the NX cache (see `restoreSandbox`)
  * 2. Waiting for the local verdaccio registry (when using --no-link)
- * 3. Running `yarn install` to restore node_modules
+ * 3. Running `yarn install` to restore node_modules, unless they were kept
  * 4. Running framework-specific setup (e.g. svelte-kit sync)
- * 5. Copying storybook-static from cache (if a build was cached)
  *
- * This is called at the start of each downstream task's `run()` (dev, build, serve, etc.)
- * instead of being a separate NX target, so that NX Cloud doesn't have uncacheable tasks.
+ * This is called at the start of each downstream task's `run()` (dev, build, serve, etc.) instead
+ * of being a separate NX target, so that NX Cloud doesn't have uncacheable tasks.
  *
- * No-op when not running under NX (i.e. when using `yarn task` directly),
- * or when the sandbox is already prepared (node_modules exist).
+ * No-op when not running under NX (i.e. when using `yarn task` directly).
  */
 export async function prepareSandbox({ key, link }: { key: string; link: boolean }): Promise<void> {
   // When running via `yarn task`, the sandbox task already fully initializes
@@ -41,22 +82,13 @@ export async function prepareSandbox({ key, link }: { key: string; link: boolean
   const sandboxDir = join(SANDBOX_DIRECTORY, templateDir);
   const cacheDir = join(ROOT_DIRECTORY, 'sandbox', templateDir);
 
-  // Fast path: if node_modules already exist, the sandbox was already prepared
-  // by a previous task in the same pipeline (e.g. build already prepared, so serve can skip)
-  if (!existsSync(join(sandboxDir, 'node_modules'))) {
-    // Copy from NX cache to the actual working directory
-    if (sandboxDir !== cacheDir) {
-      console.log(`🧹 copying cached ${cacheDir} to ${sandboxDir}`);
-      await rm(sandboxDir, { recursive: true, force: true });
-      if (!existsSync(cacheDir)) {
-        throw new Error(
-          `Sandbox should exist at ${cacheDir}. Did you forget to run the sandbox command first?`
-        );
-      }
-      // cache dir is created in the sandbox command that should be run before this script
-      await cp(cacheDir, sandboxDir, { recursive: true, force: true });
-    }
+  // With STORYBOOK_SANDBOX_ROOT=./sandbox the tasks run in the cached sandbox itself.
+  const installed =
+    sandboxDir === cacheDir
+      ? existsSync(join(sandboxDir, 'node_modules'))
+      : await restoreSandbox(cacheDir, sandboxDir);
 
+  if (!installed) {
     // In --no-link mode, packages are installed from a local verdaccio registry
     // that must be running before we can install
     if (!link) {
@@ -76,18 +108,5 @@ export async function prepareSandbox({ key, link }: { key: string; link: boolean
   // SvelteKit requires a sync step to generate types after install
   if (key.includes('svelte-kit')) {
     await exec('yarn exec svelte-kit sync', { cwd: sandboxDir }, { debug: true });
-  }
-
-  // If a `build` task already ran and cached storybook-static, copy it over
-  // so that serve/chromatic tasks can use it without rebuilding
-  const storybookStaticSandboxDir = join(sandboxDir, 'storybook-static');
-  const storybookStaticCacheDir = join(cacheDir, 'storybook-static');
-
-  if (existsSync(storybookStaticCacheDir) && !existsSync(storybookStaticSandboxDir)) {
-    console.log(`🧹 copying cached ${storybookStaticCacheDir} to ${storybookStaticSandboxDir}`);
-    await cp(storybookStaticCacheDir, storybookStaticSandboxDir, {
-      recursive: true,
-      force: true,
-    });
   }
 }

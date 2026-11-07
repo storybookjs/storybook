@@ -1,0 +1,96 @@
+import * as fs from 'node:fs';
+import * as fsp from 'node:fs/promises';
+
+import * as memfs from 'memfs';
+import { vol } from 'memfs';
+import { join } from 'pathe';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { prepareSandbox } from './prepare-sandbox.ts';
+import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants.ts';
+import { exec } from './utils/exec.ts';
+
+vi.mock('node:fs', { spy: true });
+vi.mock('node:fs/promises', { spy: true });
+vi.mock('./utils/exec.ts', () => ({ exec: vi.fn() }));
+vi.mock('wait-on', () => ({ default: vi.fn() }));
+
+const KEY = 'react-vite/default-ts';
+const CACHE = join(ROOT_DIRECTORY, 'sandbox', 'react-vite-default-ts');
+const SANDBOX = join(SANDBOX_DIRECTORY, 'react-vite-default-ts');
+const STORY = 'src/stories/Button.stories.ts';
+
+const files = (dir: string) =>
+  Object.fromEntries(
+    Object.entries(vol.toJSON(dir)).map(([path, content]) => [path.slice(dir.length + 1), content])
+  );
+
+beforeEach(() => {
+  vol.reset();
+  vi.mocked(fs.existsSync).mockImplementation(memfs.fs.existsSync as never);
+  for (const name of ['cp', 'readFile', 'readdir', 'rm'] as const) {
+    vi.mocked(fsp[name]).mockImplementation(memfs.fs.promises[name] as never);
+  }
+  // As NX runs every task.
+  vi.stubEnv('NX_TASK_TARGET_PROJECT', KEY);
+  vol.fromNestedJSON({
+    [CACHE]: {
+      'package.json': '{"name":"sandbox"}',
+      'yarn.lock': 'lockfile',
+      [STORY]: 'export const Primary = {};',
+      'storybook-static/index.html': 'built',
+    },
+  });
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
+const installs = () =>
+  vi.mocked(exec).mock.calls.filter(([command]) => String(command).startsWith('yarn install'));
+
+describe('prepareSandbox', () => {
+  it('installs a sandbox the agent has not prepared before', async () => {
+    await prepareSandbox({ key: KEY, link: false });
+
+    expect(files(SANDBOX)).toEqual(files(CACHE));
+    expect(installs()).toHaveLength(1);
+  });
+
+  it('undoes what an earlier task on the agent changed, and keeps its node_modules', async () => {
+    await prepareSandbox({ key: KEY, link: false });
+    vol.fromNestedJSON({
+      [SANDBOX]: {
+        'node_modules/storybook/package.json': '{}',
+        // What the onboarding E2E test and `yarn task dev` leave behind.
+        [STORY]: 'export const Primary = {};\nexport const TestAbc = {};',
+        '.git/HEAD': 'ref: refs/heads/main',
+      },
+    });
+    vi.mocked(exec).mockClear();
+
+    await prepareSandbox({ key: KEY, link: false });
+
+    expect(files(SANDBOX)).toEqual({
+      ...files(CACHE),
+      'node_modules/storybook/package.json': '{}',
+    });
+    expect(installs()).toHaveLength(0);
+  });
+
+  it('installs again when the cached sandbox has another lockfile than the installed one', async () => {
+    vol.fromNestedJSON({
+      [SANDBOX]: {
+        'package.json': '{"name":"sandbox"}',
+        'yarn.lock': 'an older lockfile',
+        'node_modules/storybook/package.json': '{}',
+      },
+    });
+
+    await prepareSandbox({ key: KEY, link: false });
+
+    expect(files(SANDBOX)).toEqual(files(CACHE));
+    expect(installs()).toHaveLength(1);
+  });
+});

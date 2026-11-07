@@ -57,9 +57,9 @@ export const RUN_NX_STEP = 'Run nx';
 // The agents' jobs, which `circleci-completion` does not wait for (main.ts).
 export const NX_AGENT_JOB_IDS: readonly string[] = ['nx-agent', 'nx-agent-windows'];
 
-// Pinned. Only for `start-ci-run` and the fallback `stop-all-agents`, which runs before the install. The commands after
-// it go through the workspace's own Nx, which the NX Cloud client that `npx nx-cloud` loads cannot
-// find.
+// Pinned. Only for `start-ci-run`, which runs before the install, and for `stop-all-agents` when the
+// job failed before it. The other commands go through the workspace's own Nx, which the NX Cloud
+// client that `npx nx-cloud` loads cannot find.
 const NX_CLOUD = 'npx --yes nx-cloud@19.1.5';
 
 export const NODE_MODULES_ARCHIVE = '/tmp/nx-dte-node_modules.tar.zst';

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# run-agent.sh <main job> <command…>: runs an NX Cloud agent (<command…>, a bounded `nx start-agent`)
-# and stops it a minute after the workflow's <main job> ended (main-job-ended.ts). The agent waits
+# run-agent.sh <main job> <command…>: runs an NX Cloud agent (<command…>, a bounded
+# `nx start-agent`) and stops it a minute after the workflow's <main job> ended (main-job-ended.ts). The agent waits
 # for its NX Cloud run, also for one that never starts: when the main job fails before
 # `start-ci-run`, as on a failed checkout, the agents would idle until their timeout.
 #
@@ -29,7 +29,7 @@ stop() {
     local pid
     for pid in "$agent" $(descendants "$agent"); do
       if [ -r "/proc/$pid/winpid" ]; then
-        taskkill //F //T //PID "$(cat "/proc/$pid/winpid")" >/dev/null 2>&1
+        taskkill //F //T //PID "$(cat "/proc/$pid/winpid" 2>/dev/null)" >/dev/null 2>&1
       fi
     done
   fi

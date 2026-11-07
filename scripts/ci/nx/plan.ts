@@ -44,7 +44,7 @@ const sandboxTasks = (key: TemplateKey, kind: string): string[] | undefined => {
         ...(docgenServerTemplates().includes(key) ? [`${key}:docgen-baselines`] : []),
       ];
     case 'dev':
-      // The dev E2E tests in two halves on different workers: in one task they ended most runs.
+      // The dev E2E tests in two halves, on different workers.
       return skipTasks.includes('e2e-tests-dev')
         ? [`${key}:smoke-test`]
         : [`${key}:e2e-tests-dev-1`, `${key}:e2e-tests-dev-2`];
@@ -92,8 +92,8 @@ const fixedJobs: Record<string, Equivalent> = {
   // `compile` is a dependency of almost every task; publishing fills the local registry. The job
   // also runs `yarn dedupe --check`.
   'build--linux': { tasks: ['*:compile', 'scripts:publish', 'scripts:dedupe-check'] },
-  // The internal Storybook's stories are their own Vitest project, `storybook-ui`.
-  // In two Vitest shards, as `code:test-1` and `-2`: unsplit, it ran 3.4 minutes.
+  // The internal Storybook's stories are their own Vitest project, `storybook-ui`. In two Vitest
+  // shards, as `code:test-1` and `-2`.
   'tests--linux': { tasks: ['code:test-1', 'code:test-2'] },
   'tests-stories--linux': { tasks: ['code:test-stories'] },
   eslint: { tasks: ['code:lint', 'scripts:lint'] },
@@ -101,7 +101,7 @@ const fixedJobs: Record<string, Equivalent> = {
   'typescript-validation': { tasks: ['*:check'] },
   'knip-validation': { tasks: ['code:knip'] },
   'local-storybook---chromatic': { tasks: ['code:storybook-ui-chromatic'] },
-  // In shards: on one worker the suite took 6.5 minutes, the longest task of the run.
+  // In shards, so the suite is not the longest task of the run.
   'internal-storybook-e2e': {
     tasks: [
       'code:e2e-internal-1',
@@ -141,8 +141,7 @@ const fixedJobs: Record<string, Equivalent> = {
   'circleci-completion': {
     none: 'the `nx` commit status, which the `completion` job sets, plays this role',
   },
-  // TODO: post a failed nightly run to Slack too; that needs the Slack secrets in GitHub.
-  'nightly-failure-report': { none: 'not ported yet: the nightly run only sets the `nx` status' },
+  'nightly-failure-report': { none: 'the nightly run only sets the `nx` status' },
 };
 
 // The NX equivalent of a CircleCI job, or `undefined` when there is none yet.

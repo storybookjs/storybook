@@ -15,6 +15,10 @@ const skips = (template: Template, task: string) => template.skipTasks?.includes
 
 const CODE = join(import.meta.dirname, '../code');
 
+const SANDBOX_ENV: Record<string, string> = JSON.parse(
+  readFileSync(join(import.meta.dirname, '../nx.json'), 'utf8')
+).targetDefaults.sandbox.options.env;
+
 // The workspace packages under code/ that are Nx projects, by package name.
 const workspacePackages = new Map(
   ['', 'addons', 'builders', 'frameworks', 'lib', 'presets', 'renderers'].flatMap((group) =>
@@ -103,10 +107,8 @@ export const projectJson = (name: string, tags: string[], template: Template) =>
         dir: name.replaceAll('/', '-'),
         ...(template.inDevelopment
           ? {
-              env: {
-                STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION: '1',
-                STORYBOOK_SANDBOX_GENERATE: '1',
-              },
+              // Replaces the target default's `env`, so it keeps that one's variables.
+              env: { ...SANDBOX_ENV, STORYBOOK_SANDBOX_GENERATE: '1' },
             }
           : {}),
       },

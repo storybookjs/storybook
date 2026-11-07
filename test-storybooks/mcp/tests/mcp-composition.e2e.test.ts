@@ -11,7 +11,8 @@ import {
 
 const PORT = 6007;
 const MCP_ENDPOINT = `http://localhost:${PORT}/mcp`;
-const STARTUP_TIMEOUT = 30_000;
+// Starting Storybook fetches the remote refs; waitForMcpEndpoint itself allows 60 seconds.
+const STARTUP_TIMEOUT = 60_000;
 
 let storybookProcess: ReturnType<typeof x> | null = null;
 

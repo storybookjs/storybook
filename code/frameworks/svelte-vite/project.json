@@ -4,7 +4,24 @@
   "projectType": "library",
   "targets": {
     "compile": {},
-    "check": {}
+    "check": {
+      "inputs": [
+        "default",
+        "^own-production",
+        {
+          "projects": ["builder-vite"],
+          "input": "production"
+        },
+        {
+          "projects": ["core"],
+          "input": "production"
+        },
+        {
+          "projects": ["svelte"],
+          "input": "production"
+        }
+      ]
+    }
   },
   "tags": ["library"]
 }

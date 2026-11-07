@@ -4,7 +4,31 @@
   "projectType": "library",
   "targets": {
     "compile": {},
-    "check": {}
+    "check": {
+      "inputs": [
+        "default",
+        "^own-production",
+        {
+          "projects": ["builder-vite"],
+          "input": "production"
+        },
+        {
+          "projects": ["core"],
+          "input": "production"
+        },
+        {
+          "projects": ["angular-cm"],
+          "input": "production"
+        },
+        {
+          "projects": ["codemod"],
+          "input": "production"
+        },
+        "{workspaceRoot}/code/frameworks/angular-vite/src/**/*",
+        "!{workspaceRoot}/code/frameworks/angular-vite/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
+        "{workspaceRoot}/code/core/src/common/utils/get-addon-annotations.test.ts"
+      ]
+    }
   },
   "tags": ["library"]
 }

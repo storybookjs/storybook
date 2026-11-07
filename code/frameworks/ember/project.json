@@ -4,7 +4,24 @@
   "projectType": "library",
   "targets": {
     "compile": {},
-    "check": {}
+    "check": {
+      "inputs": [
+        "default",
+        "^own-production",
+        {
+          "projects": ["builder-webpack5"],
+          "input": "production"
+        },
+        {
+          "projects": ["core"],
+          "input": "production"
+        },
+        {
+          "projects": ["core-webpack"],
+          "input": "production"
+        }
+      ]
+    }
   },
   "tags": ["library"]
 }

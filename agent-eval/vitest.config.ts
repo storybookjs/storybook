@@ -7,6 +7,9 @@ export default defineConfig({
   plugins: textAssetLoaderPlugins,
   test: {
     name: 'agent-eval',
+    // Tests compare printed text. Nx forces colour on the tasks it runs (and some shells set
+    // FORCE_COLOR), which would put ANSI codes in that text; this keeps it plain everywhere.
+    env: { FORCE_COLOR: '0', NO_COLOR: '1' },
     // .eval-cache/ contains the external repo when using `setupExternalRepo`.
     // results/ contains post-eval project trees copied out of each run.
     // .agentic-ref/ symlinks both into the generated work directory.

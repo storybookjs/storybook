@@ -1,6 +1,7 @@
 import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../../utils/npm-constants.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './constants.ts';
 import { type JobOrNoOpJob } from './types.ts';
+import { installNodeOnWindows } from './windows-node.ts';
 
 export const cancelWorkflowStep = {
   run: {
@@ -247,21 +248,7 @@ export const git = {
 };
 
 export const node = {
-  installOnWindows: () => {
-    return {
-      run: {
-        name: 'Install Node + Yarn',
-        shell: 'powershell.exe',
-        command: [
-          '$nodeVersion = Get-Content .nvmrc | Select-Object -First 1',
-          'nvm install $nodeVersion',
-          'nvm use $nodeVersion',
-          'corepack enable',
-          'corepack prepare yarn@stable --activate',
-        ].join('\n'),
-      },
-    };
-  },
+  installOnWindows: installNodeOnWindows,
 };
 
 export const npm = {

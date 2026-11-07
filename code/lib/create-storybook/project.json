@@ -1,10 +1,28 @@
 {
   "name": "create-storybook",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "namedInputs": {
+    "production": [
+      "own-production",
+      "{workspaceRoot}/code/addons/vitest/src/**/*",
+      "{workspaceRoot}/code/addons/a11y/src/**/*",
+      "{workspaceRoot}/code/lib/cli-storybook/src/**/*",
+      "!{workspaceRoot}/code/**/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+    ]
+  },
   "projectType": "library",
   "targets": {
     "compile": {},
-    "check": {}
+    "check": {
+      "inputs": [
+        "default",
+        "^own-production",
+        {
+          "projects": ["core"],
+          "input": "production"
+        }
+      ]
+    }
   },
   "tags": ["library"]
 }

@@ -6,7 +6,91 @@
     "jest": {},
     "vitest": {},
     "cypress": {},
-    "e2e-ui": {}
+    "e2e-ui": {},
+    "e2e-ui-1": {
+      "dependsOn": [
+        {
+          "projects": [
+            "*"
+          ],
+          "target": "compile"
+        }
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "touch yarn.lock && yarn --no-immutable && yarn playwright-e2e --grep \"watch mode|discrepancy\""
+      },
+      "cache": true,
+      "inputs": [
+        "default",
+        "all-production"
+      ],
+      "outputs": [
+        "{workspaceRoot}/test-results/{projectName}/e2e-ui-1",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-ui-1"
+      ],
+      "configurations": {
+        "production": {}
+      }
+    },
+    "e2e-ui-2": {
+      "dependsOn": [
+        {
+          "projects": [
+            "*"
+          ],
+          "target": "compile"
+        }
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "touch yarn.lock && yarn --no-immutable && yarn playwright-e2e --grep \"coverage|composition\""
+      },
+      "cache": true,
+      "inputs": [
+        "default",
+        "all-production"
+      ],
+      "outputs": [
+        "{workspaceRoot}/test-results/{projectName}/e2e-ui-2",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-ui-2"
+      ],
+      "configurations": {
+        "production": {}
+      }
+    },
+    "e2e-ui-3": {
+      "dependsOn": [
+        {
+          "projects": [
+            "*"
+          ],
+          "target": "compile"
+        }
+      ],
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "touch yarn.lock && yarn --no-immutable && yarn playwright-e2e --grep-invert \"watch mode|discrepancy|coverage|composition\""
+      },
+      "cache": true,
+      "inputs": [
+        "default",
+        "all-production"
+      ],
+      "outputs": [
+        "{workspaceRoot}/test-results/{projectName}/e2e-ui-3",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-ui-3"
+      ],
+      "configurations": {
+        "production": {}
+      }
+    }
   },
-  "tags": ["ci:normal", "ci:daily"]
+  "tags": [
+    "ci:normal",
+    "ci:daily"
+  ]
 }

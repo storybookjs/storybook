@@ -32,6 +32,7 @@ Both start long-running dev servers.
 | touch `code/core` internals, presets, open services, or the tools CLI | [Architecture](.agents/guidelines/architecture.md)                                                                        |
 | do sandbox, E2E, or CI-parity work                                    | [NX and `yarn task`](.agents/guidelines/nx-and-yarn-task.md) and [Sandboxes](.agents/guidelines/sandboxes.md)             |
 | call a Chromatic tool or debug a Chromatic build                      | [Chromatic projects](.agents/guidelines/chromatic-projects.md)                                                            |
+| follow or debug an NX Cloud pipeline                                  | [Following an NX Cloud pipeline](.agents/guidelines/nx-and-yarn-task.md#following-an-nx-cloud-pipeline)                   |
 | add or change an automigration                                        | [`code/lib/cli-storybook/src/automigrate/README.md`](code/lib/cli-storybook/src/automigrate/README.md)                    |
 
 Contributor skills live in `.agents/skills/`.

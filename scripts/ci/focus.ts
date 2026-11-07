@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -7,7 +6,8 @@ import {
   daily,
   type TemplateKey,
 } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
-import { isGlobalInput, isTestFixture } from './global-inputs.ts';
+import { isGlobalInput, needsAllUnitTests } from './global-inputs.ts';
+import { focusDiff } from './utils/changed-files.ts';
 import {
   build_linux,
   defineAffectedCheck,
@@ -180,11 +180,7 @@ export const selectPathTriggeredJobs = (changedFiles: readonly string[]): JobOrN
   ).map(({ job }) => job);
 
 export function getChangedFiles(baseRef: string): string[] {
-  return execFileSync('git', ['diff', '--name-only', `${baseRef}...HEAD`, '--'], {
-    encoding: 'utf8',
-  })
-    .split('\n')
-    .filter(Boolean);
+  return focusDiff(baseRef).files;
 }
 
 /** Select the jobs a diff can affect. */
@@ -195,9 +191,7 @@ export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
   return [
     build_linux,
     defineAffectedCheck(changedFiles),
-    changedFiles.some((file) => isGlobalInput(file) || isTestFixture(file))
-      ? testsUnit_linux
-      : defineAffectedUnitTests(changedFiles),
+    changedFiles.some(needsAllUnitTests) ? testsUnit_linux : defineAffectedUnitTests(changedFiles),
     defineAffectedLintAndFormat(changedFiles),
     // The internal Storybook loads stories from across `code`, and TurboSnap snapshots only those the diff affects.
     storybookChromatic,

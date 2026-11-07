@@ -12,7 +12,8 @@ test('suggests the closest match to an unknown command', () => {
   // Error messages are now written to stdout
   expect(stdoutString).toContain('Invalid command: upgraed.');
   expect(stdoutString).toContain('Did you mean upgrade?');
-});
+  // Each test spawns the CLI, which took over 10 seconds on CircleCI's Windows executors.
+}, 30_000);
 
 test('help command', () => {
   const { status, stdout, stderr } = run(['help']);
@@ -55,4 +56,4 @@ test('help command', () => {
   );
 
   expect(status).toBe(0);
-});
+}, 30_000);

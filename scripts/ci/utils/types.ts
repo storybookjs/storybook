@@ -52,6 +52,9 @@ export type JobImplementationObj = {
    */
   steps: unknown[];
 
+  /** Environment variables for every step of the job. */
+  environment?: Record<string, string | number>;
+
   /** I think we generally want to avoid this, since we're generating the jobs dynamically. */
   parameters?: Record<string, unknown>;
 

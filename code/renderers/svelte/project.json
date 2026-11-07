@@ -6,7 +6,16 @@
     "compile": {},
     "check": {
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "svelte-check" }
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "svelte-check"
+      },
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/code/**/src/**/*",
+        "{workspaceRoot}/code/.storybook/**/*"
+      ]
     }
   },
   "tags": ["library"]

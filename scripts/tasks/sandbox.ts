@@ -1,15 +1,16 @@
 import { accessSync } from 'node:fs';
-import { cp, rm } from 'node:fs/promises';
+import { cp, readFile, rm } from 'node:fs/promises';
 import path, { join } from 'node:path';
 import { promisify } from 'node:util';
 
 import dirSize from 'fast-folder-size';
 
 import { now, saveBench } from '../bench/utils.ts';
+import { unhashedSandboxPackages } from '../create-nx-sandbox-projects.ts';
 import type { PassedOptionValues, Task, TaskKey, TemplateDetails } from '../task.ts';
 import { ROOT_DIRECTORY } from '../utils/constants.ts';
 import { exec } from '../utils/exec.ts';
-import { isNxTaskExecution } from '../utils/nx.ts';
+import { isCiNxTask, isNxTaskExecution } from '../utils/nx.ts';
 
 const logger = console;
 
@@ -215,6 +216,22 @@ export const sandbox: Task = {
     await runMigrations(details, options);
 
     await extendPreview(details, options);
+
+    // On CI `storybook init` skips the ESLint plugin, so this holds on CI only.
+    if (isCiNxTask()) {
+      const { dependencies, devDependencies } = JSON.parse(
+        await readFile(join(details.sandboxDir, 'package.json'), 'utf8')
+      );
+      const unhashed = unhashedSandboxPackages(
+        details.template,
+        Object.keys({ ...dependencies, ...devDependencies })
+      );
+      if (unhashed.length > 0) {
+        throw new Error(
+          `The sandbox installs ${unhashed.join(', ')}, which its Nx project does not depend on, so its tasks would not rerun when they change. Add them in scripts/create-nx-sandbox-projects.ts.`
+        );
+      }
+    }
 
     // For NX we move the sandbox to a directory that can be cached.
     // We remove node_modules to keep the remote cache small and fast

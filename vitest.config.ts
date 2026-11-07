@@ -10,10 +10,13 @@ import { coverageConfigDefaults, defineConfig } from 'vitest/config';
  * @see .circleci/config.yml#L187
  */
 const threadCount = process.env.CI ? (process.platform === 'win32' ? 8 : 7) : undefined;
-const shouldRunStorybookTests = !(process.env.CI && process.platform === 'win32');
+const isWindowsCI = Boolean(process.env.CI) && process.platform === 'win32';
+const shouldRunStorybookTests = !isWindowsCI;
 
 const projects = [
-  'agent-eval/vitest.config.ts',
+  // CircleCI's Windows jobs skip agent-eval, whose native dependencies they do not build; the NX
+  // agents run the same `code:test-1`/`-2` targets on Windows as on Linux.
+  ...(isWindowsCI ? [] : ['agent-eval/vitest.config.ts']),
   'code/addons/*/vitest.config.ts',
   'code/frameworks/*/vitest.config.ts',
   'code/lib/*/vitest.config.ts',

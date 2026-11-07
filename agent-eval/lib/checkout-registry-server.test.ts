@@ -12,8 +12,15 @@ const SCRIPT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   'checkout-registry-server.mjs'
 );
-// Per process, so parallel runs of this file in other checkouts don't collide.
-const PORT = 40_000 + (process.pid % 10_000);
+// A port the OS reports free. A fixed port could sit in the ephemeral range (32768-60999 on
+// Linux), where another process's outgoing connection on a busy CI machine may already hold it.
+async function freePort(): Promise<number> {
+  const probe = createServer();
+  await new Promise<void>((resolve) => probe.listen(0, '127.0.0.1', resolve));
+  const { port } = probe.address() as AddressInfo;
+  await new Promise<void>((resolve) => probe.close(() => resolve()));
+  return port;
+}
 
 const cleanups: (() => void)[] = [];
 
@@ -86,7 +93,7 @@ describe('the checkout registry', () => {
 
   beforeAll(async () => {
     const distTags = { latest: '10.6.1', next: '11.0.0-alpha.4' };
-    REGISTRY = await startRegistry(PORT, '11.0.0-alpha.4', {
+    REGISTRY = await startRegistry(await freePort(), '11.0.0-alpha.4', {
       storybook: published('storybook', distTags, ['10.6.1', '11.0.0-alpha.4', '11.0.0-alpha.5']),
       '@storybook/addon-themes': published('@storybook/addon-themes', distTags, [
         '10.6.1',
@@ -137,7 +144,7 @@ describe('the checkout registry once the stable release is on the major of the c
   let REGISTRY: string;
 
   beforeAll(async () => {
-    REGISTRY = await startRegistry(PORT + 10_000, '11.1.0-alpha.0', {
+    REGISTRY = await startRegistry(await freePort(), '11.1.0-alpha.0', {
       storybook: published(
         'storybook',
         { latest: '11.0.2', next: '11.1.0-alpha.0', v10: '10.6.5' },

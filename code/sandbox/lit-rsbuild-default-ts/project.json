@@ -8,7 +8,8 @@
     "addon-a11y",
     "addon-docs",
     "addon-vitest",
-    "addon-onboarding"
+    "addon-onboarding",
+    "web-components"
   ],
   "targets": {
     "sandbox": {
@@ -23,6 +24,7 @@
       }
     },
     "chromatic": {},
+    "smoke-test": {},
     "serve": {}
   },
   "tags": []

@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 import { join } from 'pathe';
@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { parameters } from '../utils/parameters.ts';
 import { workflows } from '../utils/types.ts';
 import {
+  CHECK_CHECKOUT_STEP,
   HASH_MANIFESTS_COMMAND,
   LAUNCH_TEMPLATES,
   NODE_MODULES_ARCHIVE,
@@ -137,6 +138,36 @@ describe('the CircleCI NX DTE pipeline', () => {
       expect(
         commands.some((command) => /\/usr\/bin\/timeout --kill-after=1m \d+m yarn /.test(command))
       ).toBe(true);
+    }
+  });
+
+  it('fails each agent, as its last step, when its tasks left files in the checkout', () => {
+    const jobs = withSelection(tasks('fmt', 1), tasks('test-1', 1));
+    for (const id of ['nx-agent', 'nx-agent-windows']) {
+      const last = job(jobs, id)!.steps.at(-1)!.run as {
+        name: string;
+        when: string;
+        command: string;
+      };
+      expect(last.name).toBe(CHECK_CHECKOUT_STEP);
+      expect(last.when).toBe('always');
+
+      const repo = mkdtempSync(join(tmpdir(), 'agent-checkout-'));
+      const git = (...args: string[]) => spawnSync('git', args, { cwd: repo });
+      git('init', '--quiet');
+      writeFileSync(join(repo, '.gitignore'), 'sandbox\n');
+      git('add', '.');
+      git('-c', 'user.name=t', '-c', 'user.email=t@example.com', 'commit', '--quiet', '-m', 'i');
+      const check = () => spawnSync('bash', ['-c', last.command], { cwd: repo, encoding: 'utf8' });
+
+      mkdirSync(join(repo, 'sandbox'));
+      writeFileSync(join(repo, 'sandbox', 'chromatic-diagnostics.json'), '{}');
+      expect(check().status).toBe(0);
+
+      writeFileSync(join(repo, 'chromatic-diagnostics.json'), '{}');
+      const dirty = check();
+      expect(dirty.status).toBe(1);
+      expect(dirty.stdout).toContain('?? chromatic-diagnostics.json');
     }
   });
 

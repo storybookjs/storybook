@@ -33,8 +33,10 @@ import { serve } from './tasks/serve.ts';
 import { smokeTest } from './tasks/smoke-test.ts';
 import { syncDocs } from './tasks/sync-docs.ts';
 import { vitestTests } from './tasks/vitest-test.ts';
+import { checkoutChanges, checkoutChangesSince } from './utils/checkout.ts';
 import { CODE_DIRECTORY, JUNIT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants.ts';
 import { findMostMatchText } from './utils/diff.ts';
+import { isNxTaskExecution } from './utils/nx.ts';
 import type { OptionValues } from './utils/options.ts';
 import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options.ts';
 
@@ -542,6 +544,22 @@ async function run() {
     setUnready(startFromTask);
   }
 
+  // The tasks of an NX agent share its checkout, so a file one leaves there is read by the tasks
+  // NX Cloud happens to run after it there, such as `oxfmt --check .`.
+  const checkoutBefore = process.env.CI && isNxTaskExecution() ? checkoutChanges() : undefined;
+  const assertCheckoutUnchanged = () => {
+    const left = checkoutBefore ? checkoutChangesSince(checkoutBefore) : [];
+    if (left.length > 0) {
+      throw new Error(
+        [
+          `${taskKey} left files in the checkout that git does not ignore:`,
+          ...left.map((entry) => `  ${entry}`),
+          'The later tasks on this NX agent would read them. Write them to a gitignored path.',
+        ].join('\n')
+      );
+    }
+  };
+
   for (let i = 0; i < sortedTasks.length; i += 1) {
     const task = sortedTasks[i];
     const status = statuses.get(task);
@@ -610,11 +628,13 @@ async function run() {
 
       // If the task is a service, we want to stay open until we are ctrl-ced
       if (sortedTasks[i] === finalTask && finalTask.service) {
+        assertCheckoutUnchanged();
         await new Promise(() => {});
       }
     }
   }
 
+  assertCheckoutUnchanged();
   return 0;
 }
 

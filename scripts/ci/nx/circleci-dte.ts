@@ -211,6 +211,26 @@ const stopAgents = () => ({
   run: { name: 'Stop the agents', when: 'always', command: 'yarn nx stop-all-agents' },
 });
 
+// The tasks of an agent share its checkout, so a file one of them leaves there is read by the tasks
+// NX Cloud happens to run after it, such as `oxfmt --check .`. scripts/task.ts fails the `yarn task`
+// tasks that leave one; this step names what any other task, or a restored output, left.
+export const CHECK_CHECKOUT_STEP = 'Check that the tasks left the checkout as the commit has it';
+const checkCheckout = () => ({
+  run: {
+    name: CHECK_CHECKOUT_STEP,
+    when: 'always',
+    command: [
+      'changes="$(git status --porcelain --untracked-files=all)"',
+      'if [ -n "$changes" ]; then',
+      '  echo "The tasks on this agent left files in the checkout that git does not ignore:"',
+      '  echo "$changes"',
+      '  echo "The later tasks on an agent read them. Write them to a gitignored path."',
+      '  exit 1',
+      'fi',
+    ].join('\n'),
+  },
+});
+
 const mainJob = (
   selected: readonly Workflow[],
   changedFiles: readonly string[],
@@ -291,6 +311,7 @@ const agentJob = (changedFiles: readonly string[], agents: number) =>
         },
       },
       testResults.persist('test-results'),
+      checkCheckout(),
     ],
   }));
 
@@ -371,6 +392,7 @@ const windowsAgentJob = (changedFiles: readonly string[], agents: number) =>
         },
       },
       testResults.persist('test-results'),
+      checkCheckout(),
     ],
   }));
 

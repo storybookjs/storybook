@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+
+import { dirname, join } from 'pathe';
 
 import type { Task } from '../task.ts';
 import { ROOT_DIRECTORY } from '../utils/constants.ts';
@@ -41,6 +42,11 @@ export const chromatic: Task = {
       console.log(`Still waiting for Chromatic (${minutes} min)`);
     }, 60_000);
 
+    // With `--debug`, Chromatic keeps its log and diagnostics in the working directory, the
+    // repository. Beside the build they are gitignored, so the later tasks on the same NX agent,
+    // such as `oxfmt --check .`, do not read them.
+    const reportDir = dirname(storybookBuildDir);
+
     // Run from the repository, because Chromatic reads the commit, branch and baselines from git and
     // the sandbox lives outside of it.
     await exec(
@@ -48,6 +54,8 @@ export const chromatic: Task = {
           --debug \
           --exit-zero-on-changes \
           --storybook-build-dir=${storybookBuildDir} \
+          --log-file=${join(reportDir, 'chromatic.log')} \
+          --diagnostics-file=${join(reportDir, 'chromatic-diagnostics.json')} \
           ${junitFilename ? `--junit-report=${junitFilename}` : ''}`,
       // Through the environment, so the token never shows up in a logged command line. The timeout
       // bounds a Chromatic that never answers, which the heartbeat would otherwise keep alive.

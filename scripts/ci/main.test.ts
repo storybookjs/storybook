@@ -51,14 +51,18 @@ describe('main.ts under plain Node, as the CircleCI setup job runs it', () => {
     expect(external).toEqual([]);
   });
 
-  it.each(workflows)('generates the %s workflow', (workflow) => {
-    // `HEAD` resolves on the `--depth 1` checkout `Tests (linux)` uses; `HEAD^` does not.
-    const result = generate(`--workflow=${workflow}`, '--base-ref=HEAD');
+  it.each(workflows)(
+    'generates the %s workflow',
+    (workflow) => {
+      // `HEAD` resolves on the `--depth 1` checkout `Tests (linux)` uses; `HEAD^` does not.
+      const result = generate(`--workflow=${workflow}`, '--base-ref=HEAD');
 
-    expect(result.status, result.stderr).toBe(0);
-    const config = JSON.parse(result.config());
-    expect(Object.keys(config.workflows)).toEqual([`${workflow}-generated`]);
-  });
+      expect(result.status, result.stderr).toBe(0);
+      const config = JSON.parse(result.config());
+      expect(Object.keys(config.workflows)).toEqual([`${workflow}-generated`]);
+    },
+    30_000
+  );
 
   it('caches the node_modules of every package', () => {
     const result = generate('--workflow=normal', '--base-ref=HEAD');

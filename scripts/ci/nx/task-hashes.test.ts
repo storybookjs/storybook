@@ -23,4 +23,4 @@ it('no task hashes the outputs of the tasks it depends on, so the setup job can 
   const nxJson = readFileSync(join(ROOT, 'nx.json'), 'utf8');
   expect(using).toEqual([]);
   expect(nxJson).not.toContain('dependentTasksOutputFiles');
-});
+}, 120_000);

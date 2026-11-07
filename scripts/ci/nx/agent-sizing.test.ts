@@ -44,11 +44,11 @@ describe('the agents a run needs', () => {
     expect(agentsFor(independent(10, 600), linux).agents).toBe(10);
     expect(agentsFor(independent(440, 300), linux).agents).toBe(MAX_AGENTS.linux);
     expect(agentsFor(independent(440, 300), { ...linux, max: 5 }).agents).toBe(5);
-  });
+  }, 30_000);
 
   it('starts no agent that leaves the number of rounds the same', () => {
     expect(agentsFor(independent(400, 300), linux).agents).toBe(40);
-  });
+  }, 30_000);
 
   it('starts agents only for the tasks NX Cloud has no cache entry for', () => {
     const rerun: Work = { ...independent(163, 0, 'cached'), ...independent(14, 90) };

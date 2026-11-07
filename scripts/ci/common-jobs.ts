@@ -543,7 +543,7 @@ export const affectedLintAndFormatSteps = (changedFiles: readonly string[]) => {
   ];
 };
 
-/** The NX pipeline runs the same steps (scripts/ci/nx/affected.ts). */
+// The NX pipeline runs the same steps (scripts/ci/nx/affected.ts).
 export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) =>
   defineJob(
     'Lint and format (affected)',
@@ -561,7 +561,7 @@ export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) =>
     [commonJobsNoOpJob]
   );
 
-/** Followed by the changed files. The NX pipeline runs it too (scripts/ci/nx/affected.ts). */
+// Followed by the changed files. The NX pipeline runs it too (scripts/ci/nx/affected.ts).
 export const AFFECTED_UNIT_TESTS_COMMAND =
   "NODE_OPTIONS=--max_old_space_size=4096 yarn vitest related --run --project '!storybook-ui'";
 

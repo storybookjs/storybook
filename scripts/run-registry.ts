@@ -38,10 +38,8 @@ const pathExists = async (p: string) => {
 
 type Servers = { close: () => Promise<void> };
 
-/**
- * Listens on `port`, retrying while it is still taken. NX stops a worker's previous registry while
- * the next task starts one, so its servers can hold a port for a moment after the kill check.
- */
+// Retries while `port` is still taken: NX stops a worker's previous registry while the next task
+// starts one, so its servers can hold a port for a moment after the kill check.
 const listenWhenFree = (server: http.Server, port: number, tries = 40) =>
   new Promise<void>((resolve, reject) => {
     const onError = (error: NodeJS.ErrnoException) => {

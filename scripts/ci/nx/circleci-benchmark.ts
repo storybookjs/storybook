@@ -116,13 +116,15 @@ export type WorkflowReport = {
   // NX DTE workflows only: the main job from its start until `Run nx`, and `Run nx` itself.
   setupMinutes?: number;
   taskMinutes?: number;
+  // Jobs whose details could not be read: the minutes and credits then miss their share.
+  unreadJobs: number;
 };
 
-// @param setup - The pipeline's setup job, whose start the times count from.
+// The times count from the start of `setup`, the pipeline's setup job.
 export function report(
   workflow: { name: string; status: string; created_at: string; stopped_at?: string },
   workflowJobs: JobTiming[],
-  setup?: JobTiming
+  { setup, unreadJobs = 0 }: { setup?: JobTiming; unreadJobs?: number } = {}
 ): WorkflowReport {
   const jobs = setup ? [setup, ...workflowJobs] : workflowJobs;
   const start = Math.min(time(workflow.created_at)!, setup?.queuedAt ?? Infinity);
@@ -145,6 +147,7 @@ export function report(
     ),
     containerMinutes: jobs.reduce((sum, job) => sum + job.containerMinutes, 0),
     credits: jobs.reduce((sum, job) => sum + creditsOf(job), 0),
+    unreadJobs,
     ...(main?.stoppedAt ? { mainMinutes: minutes(main.stoppedAt - start) } : {}),
     ...(windowsMain?.stoppedAt
       ? { windowsMainMinutes: minutes(windowsMain.stoppedAt - start) }
@@ -167,11 +170,12 @@ const mmss = (minutes?: number) => {
 };
 
 export function toMarkdown(reports: WorkflowReport[]) {
-  const rows = reports.map((r) =>
-    [
+  const rows = reports.map((r) => {
+    const atLeast = r.unreadJobs > 0 ? '≥ ' : '';
+    return [
       r.name,
       r.status,
-      r.jobs,
+      r.unreadJobs > 0 ? `${r.jobs} (+${r.unreadJobs} unread)` : r.jobs,
       mmss(r.greenMinutes),
       mmss(r.mainMinutes),
       mmss(r.windowsMainMinutes),
@@ -179,10 +183,10 @@ export function toMarkdown(reports: WorkflowReport[]) {
       mmss(r.maxQueueMinutes),
       mmss(r.setupMinutes),
       mmss(r.taskMinutes),
-      Math.round(r.containerMinutes),
-      `${Math.round(r.credits)} (~$${(r.credits * DOLLARS_PER_CREDIT).toFixed(2)})`,
-    ].join(' | ')
-  );
+      `${atLeast}${Math.round(r.containerMinutes)}`,
+      `${atLeast}${Math.round(r.credits)} (~$${(r.credits * DOLLARS_PER_CREDIT).toFixed(2)})`,
+    ].join(' | ');
+  });
   return [
     '| Workflow | Status | Jobs | Green | Main | Windows main | Wall | Max queue | Setup | Tasks | Container-min | Credits |',
     '|---|---|---|---|---|---|---|---|---|---|---|---|',
@@ -264,6 +268,7 @@ async function main() {
     const queue = jobs.filter((job) => job.job_number);
     const firstJob = queue[0]?.job_number;
     const timings: JobTiming[] = [];
+    let unreadJobs = 0;
     await Promise.all(
       Array.from({ length: 8 }, async () => {
         for (let job = queue.shift(); job; job = queue.shift()) {
@@ -282,11 +287,13 @@ async function main() {
               throw error;
             }
             console.error(`Skipping job ${job.job_number}: ${(error as Error).message}`);
+            unreadJobs++;
           }
         }
       })
     );
-    reports.push(report(workflow, timings, await setupJob(workflow.pipeline_id, firstJob)));
+    const setup = await setupJob(workflow.pipeline_id, firstJob);
+    reports.push(report(workflow, timings, { setup, unreadJobs: unreadJobs + (setup ? 0 : 1) }));
   }
   console.log(toMarkdown(reports));
 }

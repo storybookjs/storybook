@@ -105,7 +105,7 @@ describe('circleci-benchmark', () => {
     const result = report(
       { name: 'daily-nx-dte-generated', status: 'success', created_at: at(0), stopped_at: at(10) },
       [windowsMain],
-      setup
+      { setup }
     );
 
     expect(result).toMatchObject({
@@ -114,5 +114,21 @@ describe('circleci-benchmark', () => {
       windowsMainMinutes: 10,
       credits: 1 * 20 + 8 * 40,
     });
+  });
+
+  it('marks the totals as a lower bound when a job could not be read', () => {
+    const agent = jobTiming({
+      workflows: { job_name: 'nx-agent' },
+      picard: { executor: 'docker', resource_class: { class: 'large' } },
+      steps: [step('Run the tasks NX Cloud assigns', [[0, at(0), at(10)]])],
+    });
+    const result = report(
+      { name: 'normal-nx-dte-generated', status: 'success', created_at: at(0), stopped_at: at(10) },
+      [agent],
+      { unreadJobs: 2 }
+    );
+
+    expect(toMarkdown([result])).toContain('| normal-nx-dte-generated | success | 1 (+2 unread) |');
+    expect(toMarkdown([result])).toContain('| ≥ 10 | ≥ 200 (~$0.12) |');
   });
 });

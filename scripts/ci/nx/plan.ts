@@ -277,10 +277,8 @@ export function planFor(selected: readonly Workflow[], changedFiles: readonly st
 // `nx run-many -t <targets> -p <projects>` runs every target on every project that has it, so one
 // command can run more than the plan asks for, for example the dev E2E tests of a sandbox that a
 // focused run only sends to Chromatic. Projects that one shared command would over-run get a
-// command of their own per set of targets.
-//
-// @param wanted - The targets to run, by project. Each must be one of the project's targets.
-// @param targetsOf - Every target a project has.
+// command of their own per set of targets. Every target in `wanted` must be one of the project's
+// targets (`targetsOf`).
 export function groupTasks(
   wanted: ReadonlyMap<string, ReadonlySet<string>>,
   targetsOf: (project: string) => ReadonlySet<string>

@@ -26,7 +26,8 @@ export const agentEnvironment = (os: Os): Record<string, string> => ({
   // The sandboxes install from the global yarn cache (scripts/utils/yarn.ts), so the installs of one
   // sandbox, and of every sandbox task an agent runs after it, share their downloads.
   ...(os === 'linux' ? { STORYBOOK_NX_CLOUD_AGENT: 'true' } : {}),
-  // CircleCI's own e2e jobs run 3 workers on 4 vCPUs; the dev-server E2E targets set 4 in nx.json.
+  // As CircleCI's own e2e jobs on 4 vCPUs. The dev-server E2E targets also share the machine with
+  // their dev server; with 4 workers their tests timed out at random, on Windows most.
   PLAYWRIGHT_WORKERS: '3',
 });
 

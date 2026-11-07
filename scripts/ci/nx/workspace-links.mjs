@@ -16,7 +16,7 @@ function links() {
   const result = [];
   let workspace;
   let inLocations = false;
-  for (const line of fs.readFileSync(STATE, 'utf8').split('\n')) {
+  for (const line of fs.readFileSync(STATE, 'utf8').split(/\r?\n/)) {
     if (line.startsWith('"')) {
       // A workspace's locator ends in `workspace:<directory>`.
       const match = /workspace:([^"]+)":$/.exec(line);
@@ -31,6 +31,10 @@ function links() {
         result.push({ location, workspace });
       }
     }
+  }
+  // A state file with workspaces but none of their links found: the format is not what this reads.
+  if (result.length === 0 && /workspace:(?!\.")/.test(fs.readFileSync(STATE, 'utf8'))) {
+    throw new Error(`Found no workspace links in ${STATE}, which names workspaces.`);
   }
   return result;
 }

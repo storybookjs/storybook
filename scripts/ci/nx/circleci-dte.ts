@@ -70,7 +70,8 @@ const NODE_MODULES_PATHS: Record<
   },
   windows: {
     archives: 'C:\\Users\\circleci\\nx-dte-node_modules',
-    sum: 'C:\\Users\\circleci\\nx-dte-manifests.sha256',
+    // Forward slashes: in a cache key's template a backslash starts an escape.
+    sum: 'C:/Users/circleci/nx-dte-manifests.sha256',
     bash: {
       archives: '/c/Users/circleci/nx-dte-node_modules',
       sum: '/c/Users/circleci/nx-dte-manifests.sha256',

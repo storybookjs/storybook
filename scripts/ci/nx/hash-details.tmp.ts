@@ -1,11 +1,7 @@
-import { readNxJson } from 'nx/src/config/nx-json.js';
-import { createTaskHasher } from 'nx/src/hasher/create-task-hasher.js';
+// Diagnostic for #37221 (not for merging): every external node's hash, as Nx sees it here.
 import { createProjectGraphAsync } from 'nx/src/project-graph/project-graph.js';
-import { createTaskGraph } from 'nx/src/tasks-runner/create-task-graph.js';
-const [project, target] = process.argv[2].split(':');
 const graph = await createProjectGraphAsync({ exitOnError: false });
-const hasher = createTaskHasher(graph, readNxJson());
-const tg = createTaskGraph(graph, {}, [project], [target], 'production', {});
-const id = Object.keys(tg.tasks).find((k) => k.startsWith(`${project}:${target}`))!;
-const [h] = await hasher.hashTasks([tg.tasks[id]], tg, { ...process.env, OS: 'Windows_NT' });
-console.log(JSON.stringify({ id, value: h.value, details: h.details }, null, 1));
+const nodes = Object.fromEntries(
+  Object.entries(graph.externalNodes ?? {}).map(([k, v]) => [k, `${v.data.version}|${v.data.hash ?? ''}`])
+);
+process.stdout.write('EXTNODES ' + JSON.stringify(nodes) + '\n');

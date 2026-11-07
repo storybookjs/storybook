@@ -2,8 +2,10 @@
 # EXPERIMENT, not for merging. Ways to put the NX DTE node_modules on a CircleCI Windows machine
 # without `yarn install`. Runs after an install. Prints one BENCH line per measurement.
 set -uo pipefail
+PATH="/usr/bin:$PATH"
 cd "$(dirname "$0")/../../.."
 find=/usr/bin/find
+echo "STATE sample:"; grep -m1 -A4 "workspace:code/core\"" node_modules/.yarn-state.yml | od -c | head -12
 LIST=node_modules/.circleci-node-modules-dirs
 WINTAR=/c/Windows/System32/tar.exe
 

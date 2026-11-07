@@ -28,14 +28,9 @@ import { type FocusDiff, changedFilesEnvironment, focusDiff } from '../utils/cha
 import { isTrustedAuthor } from '../utils/runtime.ts';
 import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
 import { linuxRuns, planFor, windowsTasksOf } from './plan.ts';
-import {
-  AGENT_EXECUTORS,
-  type Os,
-  agentEnvironment,
-  agentSetup,
-  windowsInstall,
-} from './agent-environment.ts';
+import { AGENT_EXECUTORS, type Os, agentEnvironment, agentSetup } from './agent-environment.ts';
 import { MAX_AGENTS } from './agent-sizing.ts';
+import { installNodeOnWindows } from '../utils/windows-node.ts';
 import type { Selection } from './selection.ts';
 
 export type NxDteOptions = {
@@ -62,61 +57,96 @@ export const NX_AGENT_JOB_IDS: readonly string[] = ['nx-agent', 'nx-agent-window
 // client that `npx nx-cloud` loads cannot find.
 const NX_CLOUD = 'npx --yes nx-cloud@19.1.5';
 
-export const NODE_MODULES_ARCHIVE = '/tmp/nx-dte-node_modules.tar.zst';
-export const MANIFESTS_SUM = '/tmp/nx-dte-manifests.sha256';
-// Hashes the workspaces' manifests and Yarn's patches into MANIFESTS_SUM, for the key below.
-export const HASH_MANIFESTS_COMMAND = `shopt -s nullglob; cat package.json */package.json code/*/package.json code/*/*/package.json .yarn/patches/* | sha256sum > ${MANIFESTS_SUM}`;
-// Everything that decides the installed tree, as CircleCI's own node_modules key (helpers.ts).
-// The setup job (.circleci/config.yml) restores the same key; circleci-dte.test.ts keeps them equal.
-export const NODE_MODULES_KEY = [
-  'v1-nx-dte-node_modules',
-  '{{ arch }}',
-  '{{ checksum ".nvmrc" }}',
-  '{{ checksum ".yarnrc.yml" }}',
-  '{{ checksum "yarn.lock" }}',
-  '{{ checksum ".nx/workflows/prune-other-platforms.cjs" }}',
-  '{{ checksum "scripts/ci/nx/circleci-node-modules.sh" }}',
-  // The workspaces' manifests and the patches:
-  // a change such as `installConfig` alters the installed tree without touching yarn.lock, and the
-  // install that a changed patch needs is skipped on a hit.
-  `{{ checksum "${MANIFESTS_SUM}" }}`,
-].join('/');
-
-const restoreNodeModules = () => [
-  { run: { name: 'Hash the package manifests and patches', command: HASH_MANIFESTS_COMMAND } },
-  cache.attach([NODE_MODULES_KEY]),
-  {
-    run: {
-      name: 'Restore node_modules',
-      command: `bash scripts/ci/nx/circleci-node-modules.sh restore ${NODE_MODULES_ARCHIVE}`,
+// The directory circleci-node-modules.sh keeps its archives in, and the hash of the manifests for
+// the cache key, on each OS: as CircleCI's cache steps name them, and as Git Bash does on Windows.
+const NODE_MODULES_PATHS: Record<
+  Os,
+  { archives: string; sum: string; bash: { archives: string; sum: string } }
+> = {
+  linux: {
+    archives: '/tmp/nx-dte-node_modules',
+    sum: '/tmp/nx-dte-manifests.sha256',
+    bash: { archives: '/tmp/nx-dte-node_modules', sum: '/tmp/nx-dte-manifests.sha256' },
+  },
+  windows: {
+    archives: 'C:\\Users\\circleci\\nx-dte-node_modules',
+    sum: 'C:\\Users\\circleci\\nx-dte-manifests.sha256',
+    bash: {
+      archives: '/c/Users/circleci/nx-dte-node_modules',
+      sum: '/c/Users/circleci/nx-dte-manifests.sha256',
     },
   },
-];
+};
+export const NODE_MODULES_ARCHIVE = NODE_MODULES_PATHS.linux.archives;
+export const MANIFESTS_SUM = NODE_MODULES_PATHS.linux.sum;
+// Hashes the workspaces' manifests and Yarn's patches into the given file, for the key below.
+const hashManifests = (sum: string) =>
+  `shopt -s nullglob; cat package.json */package.json code/*/package.json code/*/*/package.json .yarn/patches/* | sha256sum > ${sum}`;
+export const HASH_MANIFESTS_COMMAND = hashManifests(MANIFESTS_SUM);
+// Everything that decides the installed tree, as CircleCI's own node_modules key (helpers.ts).
+// The setup job (.circleci/config.yml) restores the Linux key; circleci-dte.test.ts keeps them equal.
+const nodeModulesKey = (sum: string) =>
+  [
+    'v2-nx-dte-node_modules',
+    '{{ arch }}',
+    '{{ checksum ".nvmrc" }}',
+    '{{ checksum ".yarnrc.yml" }}',
+    '{{ checksum "yarn.lock" }}',
+    '{{ checksum ".nx/workflows/prune-other-platforms.cjs" }}',
+    '{{ checksum "scripts/ci/nx/circleci-node-modules.sh" }}',
+    '{{ checksum "scripts/ci/nx/workspace-links.mjs" }}',
+    // The workspaces' manifests and the patches:
+    // a change such as `installConfig` alters the installed tree without touching yarn.lock, and the
+    // install that a changed patch needs is skipped on a hit.
+    `{{ checksum "${sum}" }}`,
+  ].join('/');
+export const NODE_MODULES_KEY = nodeModulesKey(MANIFESTS_SUM);
 
-// `nx-main` stores a fresh tree at its end, and only for a trusted author, as CircleCI's other jobs
-// do (common-jobs.ts `installWithCache`), so a fork PR cannot hand its tree to the next run. The
-// setup job stores it first when it installed (.circleci/config.yml); then this finds the tree
-// came from the cache and packs nothing. At the end, because packing takes about a minute and
-// nothing in the main job waits for it.
-const saveNodeModules = () =>
-  isTrustedAuthor()
+const restoreNodeModules = (os: Os) => {
+  const paths = NODE_MODULES_PATHS[os];
+  return [
+    {
+      run: {
+        name: 'Hash the package manifests and patches',
+        command: hashManifests(paths.bash.sum),
+      },
+    },
+    cache.attach([nodeModulesKey(paths.sum)]),
+    {
+      run: {
+        name: 'Restore node_modules',
+        command: `bash scripts/ci/nx/circleci-node-modules.sh restore ${paths.bash.archives}`,
+      },
+    },
+  ];
+};
+
+// The main jobs store a fresh tree at their end, and only for a trusted author, as CircleCI's other
+// jobs do (common-jobs.ts `installWithCache`), so a fork PR cannot hand its tree to the next run.
+// On Linux the setup job stores it first when it installed (.circleci/config.yml); then this finds
+// the tree came from the cache and packs nothing. At the end, because nothing in the main job waits
+// for it.
+const saveNodeModules = (os: Os) => {
+  const paths = NODE_MODULES_PATHS[os];
+  return isTrustedAuthor()
     ? [
         {
           run: {
             name: 'Pack node_modules',
             // Also when a task failed: the tree is the same either way.
             when: 'always',
-            command: `bash scripts/ci/nx/circleci-node-modules.sh pack ${NODE_MODULES_ARCHIVE}`,
+            command: `bash scripts/ci/nx/circleci-node-modules.sh pack ${paths.bash.archives}`,
           },
         },
         {
           save_cache: {
-            ...cache.persist([NODE_MODULES_ARCHIVE], NODE_MODULES_KEY).save_cache,
+            ...cache.persist([paths.archives], nodeModulesKey(paths.sum)).save_cache,
             when: 'always',
           },
         },
       ]
     : [];
+};
 
 // How long a main job's run and an agent may take, so a run that never ends frees its machines.
 const TIMEOUT_MINUTES: Record<Os, number> = { linux: 45, windows: 75 };
@@ -262,11 +292,11 @@ const mainJob = (
       // a focused run fetches the commit its diff starts at (scripts/ci/utils/changed-files.ts).
       git.checkout(),
       startCiRun('linux', targets, NX_CLOUD),
-      ...restoreNodeModules(),
+      ...restoreNodeModules('linux'),
       ...fetchBase(base),
       runNx('linux', selected, base),
       stopAgents(),
-      ...saveNodeModules(),
+      ...saveNodeModules('linux'),
     ],
   }));
 
@@ -282,7 +312,7 @@ const agentJob = (diff: FocusDiff | undefined, agents: number) =>
     },
     steps: [
       git.checkout(),
-      ...restoreNodeModules(),
+      ...restoreNodeModules('linux'),
       ...agentSetup('linux'),
       {
         run: {
@@ -318,10 +348,12 @@ const windowsMainJob = (
     steps: [
       windowsCheckout(),
       startCiRun('windows', targets, NX_CLOUD),
-      ...windowsInstall(),
+      installNodeOnWindows(),
+      ...restoreNodeModules('windows'),
       ...fetchBase(base),
       runNx('windows', selected, base),
       stopAgents(),
+      ...saveNodeModules('windows'),
     ],
   }));
 
@@ -336,6 +368,8 @@ const windowsAgentJob = (diff: FocusDiff | undefined, agents: number) =>
     },
     steps: [
       windowsCheckout(),
+      installNodeOnWindows(),
+      ...restoreNodeModules('windows'),
       ...agentSetup('windows'),
       {
         run: {

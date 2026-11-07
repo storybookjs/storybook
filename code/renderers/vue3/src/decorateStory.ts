@@ -84,3 +84,4 @@ export function decorateStory(
   );
 }
 // Bench: a vue3 change, count rule (not for merging).
+// Bench: a vue3 change, count rule, run 2 (not for merging).

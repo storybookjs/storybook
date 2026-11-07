@@ -292,7 +292,7 @@
       "{workspaceRoot}/code/**/*",
       "!{workspaceRoot}/code/**/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
       "!{workspaceRoot}/code/{e2e-sandbox,e2e-internal,sandbox,.storybook}/**/*",
-      "!{workspaceRoot}/code/*/*/*.md"
+      "!{workspaceRoot}/code/{*,*/*}/*.md"
     ]
   },
   "analytics": false

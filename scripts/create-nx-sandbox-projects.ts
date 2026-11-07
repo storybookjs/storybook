@@ -1,7 +1,8 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'pathe';
 
 import { esMain } from './utils/esmain.ts';
+import { workspacePackages as packages } from './utils/workspace-packages.ts';
 import { BEFORE_SANDBOX_NPM_MIN_VERSION } from './utils/npm-constants.ts';
 
 import { type Template } from '../code/lib/cli-storybook/src/sandbox-templates.ts';
@@ -20,31 +21,8 @@ const SANDBOX_ENV: Record<string, string> = JSON.parse(
 ).targetDefaults.sandbox.options.env;
 
 // The workspace packages under code/ that are Nx projects, by package name.
-const workspacePackages = new Map(
-  ['', 'addons', 'builders', 'frameworks', 'lib', 'presets', 'renderers'].flatMap((group) =>
-    readdirSync(join(CODE, group), { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => join(CODE, group, entry.name))
-      .filter(
-        (dir) => existsSync(join(dir, 'package.json')) && existsSync(join(dir, 'project.json'))
-      )
-      .map((dir) => {
-        const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
-        const project: string = JSON.parse(readFileSync(join(dir, 'project.json'), 'utf8')).name;
-        // The manifest fields Nx draws a project's dependencies from.
-        const dependencies = Object.keys({
-          ...pkg.dependencies,
-          ...pkg.devDependencies,
-          ...pkg.peerDependencies,
-          ...pkg.optionalDependencies,
-        });
-        return [pkg.name as string, { project, dependencies }] as const;
-      })
-  )
-);
-const projectsByPackage = new Map(
-  [...workspacePackages].map(([name, { project }]) => [name, project])
-);
+const workspacePackages = new Map(packages.map((pkg) => [pkg.name, pkg]));
+const projectsByPackage = new Map(packages.map((pkg) => [pkg.name, pkg.project.name]));
 
 // What every sandbox installs: `storybook` (core), the CLI that creates it, and the addons that
 // `storybook init` adds.
@@ -73,7 +51,7 @@ export function sandboxDependencies(template: Template): string[] {
 // reaches neither directly nor through a package's own dependencies, so its tasks do not hash them.
 export function unhashedSandboxPackages(template: Template, installed: readonly string[]) {
   const reached = new Set<string>();
-  const byProject = new Map([...workspacePackages].map(([name, { project }]) => [project, name]));
+  const byProject = new Map(packages.map((pkg) => [pkg.project.name, pkg.name]));
   const visit = (name: string) => {
     if (!reached.has(name) && workspacePackages.has(name)) {
       reached.add(name);

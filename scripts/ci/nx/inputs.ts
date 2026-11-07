@@ -1,12 +1,13 @@
 // The workspace packages and the files their Nx inputs (nx.json) hash, for the tests that guard
 // those inputs (compile-inputs.test.ts, check-inputs.test.ts, nx-shared-globals.test.ts).
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 
 import { minimatch } from 'minimatch';
-import { join, relative } from 'pathe';
+import { join } from 'pathe';
+
+import { type WorkspacePackage, workspacePackages } from '../../utils/workspace-packages.ts';
 
 export const ROOT = join(import.meta.dirname, '../../..');
-const CODE = join(ROOT, 'code');
 
 const read = (file: string) => JSON.parse(readFileSync(file, 'utf8'));
 
@@ -14,50 +15,9 @@ export const nxJson = read(join(ROOT, 'nx.json'));
 
 export type NamedInputs = Record<string, unknown[]>;
 
-export type Package = {
-  // Relative to the workspace root.
-  root: string;
-  name: string;
-  file: string;
-  project: {
-    name: string;
-    targets: Record<string, Record<string, any>>;
-    namedInputs?: NamedInputs;
-  };
-  dependencies: string[];
-};
+export type Package = WorkspacePackage;
 
-export const packages: Package[] = [
-  '',
-  'addons',
-  'builders',
-  'frameworks',
-  'lib',
-  'presets',
-  'renderers',
-]
-  .flatMap((group) =>
-    readdirSync(join(CODE, group), { withFileTypes: true })
-      .filter((entry) => entry.isDirectory())
-      .map((entry) => join(CODE, group, entry.name))
-  )
-  .filter((dir) => existsSync(join(dir, 'package.json')) && existsSync(join(dir, 'project.json')))
-  .map((dir) => {
-    const pkg = read(join(dir, 'package.json'));
-    return {
-      root: relative(ROOT, dir),
-      name: pkg.name,
-      file: join(dir, 'project.json'),
-      project: read(join(dir, 'project.json')),
-      // The manifest fields Nx draws a project's dependencies from.
-      dependencies: Object.keys({
-        ...pkg.dependencies,
-        ...pkg.devDependencies,
-        ...pkg.peerDependencies,
-        ...pkg.optionalDependencies,
-      }),
-    };
-  });
+export const packages: Package[] = workspacePackages;
 
 const byName = new Map(packages.map((pkg) => [pkg.name, pkg]));
 

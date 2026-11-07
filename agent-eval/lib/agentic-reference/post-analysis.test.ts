@@ -1316,7 +1316,7 @@ describe('DS misuse judged hint', () => {
       coverage: false,
       misuse: false,
     });
-    expect(output).toContain('DS misuse: 0/2 runs judged — run: yarn judge:ds-misuse');
+    expect(output).toContain('DS misuse: 0/2 runs judged — run: pnpm judge:ds-misuse');
   });
 
   it('counts partially judged runs', () => {
@@ -1326,7 +1326,7 @@ describe('DS misuse judged hint', () => {
       coverage: false,
       misuse: false,
     });
-    expect(output).toContain('DS misuse: 1/2 runs judged — run: yarn judge:ds-misuse');
+    expect(output).toContain('DS misuse: 1/2 runs judged — run: pnpm judge:ds-misuse');
   });
 
   it('prints nothing extra when every run is judged and --misuse is off', () => {
@@ -1347,7 +1347,7 @@ describe('DS misuse judged hint', () => {
       coverage: false,
       misuse: false,
     });
-    expect(output).toContain('DS misuse: 0/1 runs judged — run: yarn judge:ds-misuse');
+    expect(output).toContain('DS misuse: 0/1 runs judged — run: pnpm judge:ds-misuse');
     expect(output).not.toContain('No table families selected.');
   });
 });

@@ -162,7 +162,7 @@ export function resolveDispatcherPath(): string {
   if (!existsSync(DISPATCHER_PATH)) {
     throw new Error(
       `Storybook dispatcher not found at ${DISPATCHER_PATH}. ` +
-        `Run \`yarn task compile -s compile\` from the repo root before running the eval.`
+        `Run \`pnpm task compile -s compile\` from the repo root before running the eval.`
     );
   }
   return DISPATCHER_PATH;

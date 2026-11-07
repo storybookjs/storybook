@@ -17,7 +17,7 @@ const checkDependencies = async () => {
   if (!existsSync(join(ROOT_DIRECTORY, 'node_modules'))) {
     logger.log('installing dependencies');
 
-    const task = spawn('yarn', ['install'], {
+    const task = spawn('pnpm', ['install'], {
       cwd: ROOT_DIRECTORY,
       shell: true,
       stdio: ['inherit', 'inherit', 'inherit'],

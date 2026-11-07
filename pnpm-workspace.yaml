@@ -1,0 +1,113 @@
+packages:
+  - agent-eval
+  - code
+  - code/addons/*
+  - code/builders/*
+  - code/core
+  - code/frameworks/*
+  - code/lib/*
+  - code/presets/*
+  - code/renderers/*
+  - scripts
+
+# Their install scripts only build optional native add-ons (ssh2, cpu-features), check versions
+# (protobufjs) or print funding messages (core-js).
+ignoredBuiltDependencies:
+  - core-js
+  - core-js-pure
+  - cpu-features
+  - protobufjs
+  - ssh2
+
+# Only resolve versions published at least 7 days ago.
+minimumReleaseAge: 10080
+
+# Only packages whose install script builds or fetches a native binary the repo uses.
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - '@swc/core'
+  - esbuild
+  - fast-folder-size
+  - lmdb
+  - msgpackr-extract
+  - nx
+  - sharp
+
+# See RESOLUTIONS.md for the conventions around this list.
+overrides:
+  '@ai-sdk/anthropic': ^2.0.0
+  # Babel 8's @babel/runtime drops the helpers/esm/* exports that polished imports.
+  '@babel/runtime': ^7.28.4
+  '@babel/traverse': ^7.28.5
+  '@babel/types': ^7.28.4
+  '@playwright/test': 1.58.2
+  '@testing-library/jest-dom': 7.0.1
+  '@testing-library/user-event@^14.6.8': 14.6.8
+  '@types/babel__traverse': 7.20.6
+  '@types/node': ^22.19.1
+  '@types/react': ^18.0.0
+  '@typescript-eslint/types': 8.60.0
+  # agent-eval's Next.js playground runs on React 19, unlike the rest of the repo.
+  'agent-eval>react': ^19.2.0
+  'agent-eval>react-dom': ^19.2.0
+  '@vercel/agent-eval-playground>react': ^19.2.0
+  '@vercel/agent-eval-playground>react-dom': ^19.2.0
+  'aria-query@5.3.0': ^5.3.0
+  caniuse-lite: 1.0.30001810
+  'dom-accessibility-api@^0.5.14': ^0.6.3
+  'dom-accessibility-api@^0.5.9': ^0.6.3
+  esbuild: ^0.28.0
+  playwright: 1.58.2
+  playwright-core: 1.58.2
+  'polka@1.0.0-next.28>@polka/url': 1.0.0-next.29
+  'radix-ui@^1.4.3': 1.6.0
+  react: ^18.2.0
+  # Keeps addon-docs on React 18 like the rest of the repo, although its dependencies allow 19.
+  '@storybook/addon-docs>react-dom': ^18.2.0
+  react-aria: 3.52.1
+  react-joyride>type-fest: ~2.19
+  react-stately: 3.50.0
+  rxjs: ^7.8.2
+  typescript: ^6.0.3
+  # Without this, packages that don't declare happy-dom get a second vitest built against
+  # happy-dom 20, and the two vitest copies have incompatible types.
+  'vitest>happy-dom': ^17.6.3
+  # Optional peer of storybook that pnpm would install into code/core, pulling in a second vitest.
+  vite-plus: '-'
+  # @angular/build's optional vitest 4 peer would add a second vitest next to the repo's vitest 5.
+  '@angular/build>vitest': '-'
+  valibot: ^1.4.0
+
+patchedDependencies:
+  '@7rulnik/react-element-to-jsx-string@15.0.1': patches/@7rulnik-react-element-to-jsx-string-npm-15.0.1-e53b67c4b3.patch
+  '@testing-library/user-event@14.6.8': patches/@testing-library-user-event-npm-14.6.8-5f12b4535c.patch
+  '@types/babel__traverse@7.20.6': patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch
+  '@vercel/agent-eval@1.2.0': patches/@vercel-agent-eval-npm-1.2.0-861deb21a0.patch
+  '@vitest/expect@5.0.5': patches/@vitest-expect-npm-5.0.5-5df289c822.patch
+  'buffer-equal-constant-time@1.0.1': patches/buffer-equal-constant-time-npm-1.0.1-41826f3419.patch
+  # Yarn's Plug'n'Play patch, for Yarn PnP users of the React packages that bundle resolve.
+  resolve@1.22.12: patches/resolve@1.22.12.patch
+
+# ESLint runs from code/ with legacy eslintrc and resolves plugins declared in scripts/package.json
+# through the root node_modules.
+publicHoistPattern:
+  - '*eslint*'
+  - '*prettier*'
+
+# The scripts use POSIX syntax such as `VAR=value command`, which cmd.exe on Windows cannot run.
+shellEmulator: true
+
+# Keeps node_modules content-identical across macOS and Linux CI machines so NX remote cache
+# hashes match (https://github.com/nrwl/nx/issues/22177).
+supportedArchitectures:
+  cpu:
+    - current
+    - x64
+    - arm64
+  os:
+    - current
+    - linux
+    - darwin
+
+# Keeps .pnpm paths short enough for Windows MAX_PATH on CI.
+virtualStoreDirMaxLength: 60

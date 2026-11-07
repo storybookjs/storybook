@@ -14,7 +14,6 @@
  * Run directly, from code/lib/docgen-harness (--out defaults into the sandbox directory):
  *   node --import jiti/register src/perf/docgen-memory/generate-project.ts --components 5000 --variants 5
  */
-import { createRequire } from 'node:module';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -22,10 +21,9 @@ import { pathToFileURL } from 'node:url';
 import { z } from 'zod';
 
 import { countOption, parseHarnessOptions, positiveCountOption } from '../docgen-shared/args.ts';
+import { copyPackages } from '../docgen-shared/copy-packages.ts';
 import { SANDBOX_DIRECTORY } from '../docgen-shared/paths.ts';
 import type { ComponentRefLike, StoryRefLike } from '../docgen-shared/react-renderer-module.ts';
-
-const require = createRequire(import.meta.url);
 
 export interface GenerateOptions {
   /** Absolute (or cwd-relative) output directory for the generated project. */
@@ -76,26 +74,12 @@ export interface GeneratedProject {
   storyPaths: string[];
 }
 
-const NODE_MODULES_DIR = path.resolve(require.resolve('react/package.json'), '../..');
-
 /** Copy the minimal node_modules packages TypeScript needs for React type resolution. */
 function copyNodeModules(projectDir: string): void {
-  const dest = path.join(projectDir, 'node_modules');
-  const typesSrc = path.join(NODE_MODULES_DIR, '@types');
-  fs.mkdirSync(path.join(dest, '@types'), { recursive: true });
-
-  for (const pkg of ['react', 'csstype']) {
-    fs.cpSync(path.join(NODE_MODULES_DIR, pkg), path.join(dest, pkg), {
-      recursive: true,
-      dereference: true,
-    });
-  }
-  for (const pkg of ['react', 'prop-types']) {
-    fs.cpSync(path.join(typesSrc, pkg), path.join(dest, '@types', pkg), {
-      recursive: true,
-      dereference: true,
-    });
-  }
+  copyPackages(path.join(projectDir, 'node_modules'), {
+    react: {},
+    '@types/react': { csstype: {}, '@types/prop-types': {} },
+  });
 }
 
 const TSCONFIG = {

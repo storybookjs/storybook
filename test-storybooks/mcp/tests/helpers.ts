@@ -89,7 +89,7 @@ export function startStorybook(
 	port: number,
 	env?: Record<string, string>,
 ): ReturnType<typeof x> {
-	return x('yarn', ['storybook', '--config-dir', configDir, '--port', String(port)], {
+	return x('pnpm', ['storybook', '--config-dir', configDir, '--port', String(port)], {
 		nodeOptions: {
 			cwd: STORYBOOK_DIR,
 			...(env ? { env: { ...process.env, ...env } } : {}),

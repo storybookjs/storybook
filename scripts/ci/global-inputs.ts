@@ -1,6 +1,6 @@
 const GLOBAL_INPUTS = [
-  /(^|\/)(package\.json|yarn\.lock|\.yarnrc[^/]*|nx\.json|\.nvmrc|tsconfig[^/]*\.json|vite(st)?((\.[\w-]+)*\.(config|workspace|shared|setup)|-setup)\.[^/]*)$/,
-  /^(\.yarn\/patches|code\/__mocks__)\//,
+  /(^|\/)(package\.json|pnpm-lock\.yaml|pnpm-workspace\.yaml|\.npmrc|nx\.json|\.nvmrc|tsconfig[^/]*\.json|vite(st)?((\.[\w-]+)*\.(config|workspace|shared|setup)|-setup)\.[^/]*)$/,
+  /^(patches|code\/__mocks__)\//,
 ];
 
 /** A change to a global input can affect any test, so it needs the full suite. */

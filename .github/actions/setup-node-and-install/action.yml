@@ -1,11 +1,16 @@
 name: 'Setup Node.js and Install Dependencies'
-description: 'Sets up Node.js, caches dependencies, and installs packages for Storybook'
+description: 'Sets up Node.js and the package manager of the checkout, and installs packages for Storybook'
 
 inputs:
   install-code-deps:
     description: 'Whether to install code dependencies in addition to script dependencies'
     required: false
     default: 'false'
+
+outputs:
+  package-manager:
+    description: 'The package manager of the checked-out tree: `pnpm`, or `yarn` for a tree from before the pnpm migration'
+    value: ${{ steps.package-manager.outputs.name }}
 
 runs:
   using: 'composite'
@@ -22,10 +27,55 @@ runs:
       # zizmor: ignore[adhoc-packages]  # replaces the runner's npm before the lockfile install
       run: npm install -g npm@12
 
+    # The checkout can be a tree from before the pnpm migration, such as main.
+    - name: Select package manager
+      id: package-manager
+      shell: bash
+      run: |
+        package_manager="$(node -p "require('./package.json').packageManager ?? ''")"
+        case "$package_manager" in
+          pnpm@*)
+            bash "$GITHUB_ACTION_PATH/package-managers/install.sh" pnpm
+            # A workflow that loads this action with `$/` can check out a tree that pins another
+            # pnpm, which pnpm then switches to.
+            pinned="${package_manager#pnpm@}"
+            pinned="${pinned%%+*}"
+            actual="$(pnpm --version)"
+            if [[ "$actual" != "$pinned" ]]; then
+              echo "::error::pnpm in the checkout is $actual, not the pinned $pinned"
+              exit 1
+            fi
+            echo "name=pnpm" >> "$GITHUB_OUTPUT"
+            ;;
+          yarn@*)
+            # The tree runs the Yarn release it vendors through .yarnrc.yml `yarnPath`.
+            echo "name=yarn" >> "$GITHUB_OUTPUT"
+            ;;
+          *)
+            echo "::error::package.json has no pnpm or yarn packageManager field"
+            exit 1
+            ;;
+        esac
+
+    # pnpm installs are not cached, since pnpm trusts a restored store without rehashing it and
+    # publish-canary builds fork PRs whose code could write next's cache.
+
+    # The `...` suffix also installs the workspace packages that @storybook/scripts depends on.
+    - name: Install script dependencies
+      if: steps.package-manager.outputs.name == 'pnpm' && inputs.install-code-deps != 'true'
+      shell: bash
+      run: pnpm install --frozen-lockfile --filter @storybook/scripts...
+
+    - name: Install all dependencies
+      if: steps.package-manager.outputs.name == 'pnpm' && inputs.install-code-deps == 'true'
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
     # Restore only — save is gated below. actions/cache's post-job save step uses a
     # runner-internal token that bypasses `permissions:`, so splitting is the only
     # reliable way to prevent pull_request_target runs from poisoning the shared cache.
-    - name: Restore cached dependencies
+    - name: Restore cached dependencies (Yarn)
+      if: steps.package-manager.outputs.name == 'yarn'
       uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: |
@@ -35,19 +85,20 @@ runs:
           yarn-v1-${{ hashFiles('yarn.lock') }}
           yarn-v1
 
-    - name: Install script dependencies
+    - name: Install script dependencies (Yarn)
+      if: steps.package-manager.outputs.name == 'yarn'
       shell: bash
       working-directory: scripts
       run: yarn install
 
-    - name: Install code dependencies
-      if: inputs.install-code-deps == 'true'
+    - name: Install code dependencies (Yarn)
+      if: steps.package-manager.outputs.name == 'yarn' && inputs.install-code-deps == 'true'
       shell: bash
       working-directory: code
       run: yarn install
 
-    - name: Save cached dependencies
-      if: github.event_name != 'pull_request_target'
+    - name: Save cached dependencies (Yarn)
+      if: steps.package-manager.outputs.name == 'yarn' && github.event_name != 'pull_request_target'
       uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: |

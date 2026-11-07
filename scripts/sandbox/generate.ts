@@ -27,6 +27,7 @@ import {
   SCRIPT_TIMEOUT,
 } from '../utils/constants.ts';
 import { esMain } from '../utils/esmain.ts';
+import { dropInheritedPnpmConfig } from '../utils/package-manager-env.ts';
 import type { OptionValues } from '../utils/options.ts';
 import { createOptions } from '../utils/options.ts';
 import { getStackblitzUrl, renderTemplate } from './utils/template.ts';
@@ -34,6 +35,7 @@ import {
   BEFORE_SANDBOX_MIN_AGE_GATE,
   BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS,
   ensureNpmSupportsMinReleaseAge,
+  PublishedSandboxYarnError,
   localizeYarnConfigFiles,
   preapproveLocallyPublishedPackages,
   refreshBeforeStorybookLockfile,
@@ -360,8 +362,8 @@ const runGenerators = async (
               minAgeGateExemptions,
             });
           } catch (error) {
-            if (minAgeGateExemptions?.length) {
-              const message = `❌ Failed to refresh Yarn 4 lockfile for prerelease template: ${name} (${dirName})`;
+            if (minAgeGateExemptions?.length || error instanceof PublishedSandboxYarnError) {
+              const message = `❌ Failed to refresh Yarn 4 lockfile for template: ${name} (${dirName})`;
               if (isCI) {
                 ghActions.error(dedent`${message}
                   ${formatCommandError(error)}`);
@@ -561,6 +563,8 @@ async function addResolutions(beforeDir: string) {
 }
 
 if (esMain(import.meta.url)) {
+  dropInheritedPnpmConfig();
+
   program
     .description('Generate sandboxes from a set of possible templates')
     .option('--templates [templates...]', 'Space-delimited list of templates to include')

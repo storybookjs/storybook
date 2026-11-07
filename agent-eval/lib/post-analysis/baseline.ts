@@ -94,7 +94,7 @@ export function writeNodeCensus(
   const path = nodeCensusPath(baselinesDir, pin);
   mkdirSync(dirname(path), { recursive: true });
   const payload: CommittedNodeCensus = { repo: pin.repo, ref: pin.ref, metricsVersion, nodes };
-  // Tab-indented for the same reason the baseline is, and needing `yarn fmt:write`
+  // Tab-indented for the same reason the baseline is, and needing `pnpm fmt:write`
   // afterwards for the same reason too — more urgently here: JSON.stringify puts
   // every array element on its own line, oxfmt collapses short ones, and every
   // NodeRecord carries a `props` array. Committing a generated census file without
@@ -220,10 +220,10 @@ export async function loadOrBuildBaselineAnalysis(
     nodeCensus: hasNodeCensus,
     analysis: analysisWithoutNodes,
   };
-  // Tab-indented because the file is committed, and `yarn fmt:check` would
+  // Tab-indented because the file is committed, and `pnpm fmt:check` would
   // otherwise fail on it the moment --recompute regenerates it. The match is
   // close but not exact — JSON.stringify always expands an array the formatter
-  // would keep on one line — so run `yarn fmt:write` after a rebuild.
+  // would keep on one line — so run `pnpm fmt:write` after a rebuild.
   writeFileSync(path, JSON.stringify(payload, null, '\t') + '\n');
 
   const built = { dir, analysis: analysisWithoutNodes };

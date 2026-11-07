@@ -18,10 +18,10 @@ First of all, thank you so much for taking the time to contribute to this projec
 
 ### Creating a new rule
 
-Run the following command and answer the prompts:
+Run the following command in `code/lib/eslint-plugin` and answer the prompts:
 
 ```sh
-yarn generate-rule
+pnpm generate-rule
 ```
 
 This command will generate the rule file, tests as well as the documentation page.
@@ -54,10 +54,10 @@ module.exports = {
 
 ### Testing rules
 
-Run the following command for testing the rules:
+Run the following command from the repository root for testing the rules:
 
 ```sh
-yarn test
+pnpm test code/lib/eslint-plugin
 ```
 
 If you want to run tests for a particular rule and skip the rest, you can do so like this:
@@ -80,16 +80,16 @@ ruleTester.run('my-rule-name', rule, {
 
 ### Updating configs or documentation
 
-When you make changes to rules or create/delete rules, the configuration files and documentation have to be updated. For that, run the following command:
+When you make changes to rules or create/delete rules, the configuration files and documentation have to be updated. For that, run the following command in `code/lib/eslint-plugin`:
 
 ```sh
-yarn update-rules
+pnpm exec jiti scripts/update-all.ts
 ```
 
-or rebuild the package:
+or rebuild the package from the repository root:
 
 ```sh
-nx build eslint-plugin
+pnpm exec nx compile eslint-plugin
 ```
 
 ### Useful resources

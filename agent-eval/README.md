@@ -10,7 +10,7 @@ tests through the MCP server or the plugin skills.
 1. **Install dependencies:**
 
    ```bash
-   yarn install
+   pnpm install
    ```
 
 2. **Configure environment variables:**
@@ -32,7 +32,7 @@ Run the commands below from inside `agent-eval/`.
 See what will run without making API calls:
 
 ```bash
-yarn eval:dry
+pnpm eval:dry
 ```
 
 ### Run Experiments
@@ -40,13 +40,13 @@ yarn eval:dry
 Run the default experiments:
 
 ```bash
-yarn eval
+pnpm eval
 ```
 
 Run a single experiment:
 
 ```bash
-yarn exec agent-eval cc-mcp-opus-5.5-medium
+pnpm exec agent-eval cc-mcp-opus-5.5-medium
 ```
 
 AI agents validate their changes locally: only the evals affected by the change
@@ -61,8 +61,8 @@ workflow evals on every experiment plus the lifecycle 82x evals
 or `EVAL_ONLY=<name>[,<name>]` to debug specific evals one at a time:
 
 ```bash
-EVAL_ALL=1 yarn eval
-EVAL_ONLY=803-edit-component yarn eval
+EVAL_ALL=1 pnpm eval
+EVAL_ONLY=803-edit-component pnpm eval
 ```
 
 A full `EVAL_ALL=1` run (14 workflow evals × 4 experiments + 4
@@ -86,9 +86,9 @@ effort explicitly, so a CLI default change cannot silently change what runs.
 Sandbox setup installs every Storybook package from the checkout under test,
 so an eval run measures the code of the branch it runs on. Template and fixture
 manifests list those packages as `workspace:*`. Setup compiles each of them
-with `yarn nx run-many -t compile -c production`, the build a publish uses
+with `pnpm exec nx run-many -t compile -c production`, the build a publish uses
 (only it emits type declarations), together with the monorepo packages they
-depend on, packs them with `yarn pack`
+depend on, packs them with `pnpm pack`
 into `local-packages/`, and points the sandbox manifests and the root
 `overrides` at those tarballs. The sandbox `postinstall` then fails the install
 if `package-lock.json` resolves any of those packages from the registry,
@@ -98,11 +98,11 @@ records the commit the run used and whether the working tree was dirty, under
 `metadata.checkout`.
 
 Setup runs inside each eval's timeout, so warm the nx cache before a run,
-as CI does. A plain `yarn nx run-many -t compile` does not warm it, because the
+as CI does. A plain `pnpm exec nx run-many -t compile` does not warm it, because the
 production build is cached separately:
 
 ```bash
-yarn workspace agent-eval run compile:checkout
+pnpm --filter agent-eval run compile:checkout
 ```
 
 This covers what the sandbox installs up front. In the lifecycle evals
@@ -152,7 +152,7 @@ every Storybook package instead, to check whether a behavior change (e.g. in
 the documentation tooling) regressed since the last stable release:
 
 ```bash
-EVAL_STORYBOOK_LATEST=1 yarn eval
+EVAL_STORYBOOK_LATEST=1 pnpm eval
 ```
 
 Configured experiments (Claude Code experiments use the direct Anthropic API
@@ -164,7 +164,7 @@ via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 - `codex-mcp-gpt-6.1-sol-medium`: Codex (gpt-6.1-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
 - `codex-plugin-gpt-6.1-sol-low`: Codex (gpt-6.1-sol at low reasoning effort) with Storybook plugin skills copied to `.agents/skills`, and the Storybook section that `create storybook` writes in `AGENTS.md`.
 
-These four are the default set: a bare `yarn eval`, which is what CI runs, runs them and they have to stay green. Four more plugin experiments run only when you name them by their exact file name (a glob does not select them), for example `yarn exec agent-eval codex-plugin-gpt-6-luna-low`:
+These four are the default set: a bare `pnpm eval`, which is what CI runs, runs them and they have to stay green. Four more plugin experiments run only when you name them by their exact file name (a glob does not select them), for example `pnpm exec agent-eval codex-plugin-gpt-6-luna-low`:
 
 - `cc-plugin-sonnet-5.5-low`: Claude Code (Sonnet 5.5 at low effort).
 - `cc-plugin-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort).
@@ -316,16 +316,16 @@ run — so it lives behind its own command rather than running as part of
 `results:analyze`:
 
 ```bash
-yarn results:analyze --recompute   # builds the baselines and node census first
-yarn judge:ds-misuse --latest      # then judges; roughly $0.10-0.15 per run
-yarn results:analyze --misuse      # reads the artifacts and prints the tables
+pnpm results:analyze --recompute   # builds the baselines and node census first
+pnpm judge:ds-misuse --latest      # then judges; roughly $0.10-0.15 per run
+pnpm results:analyze --misuse      # reads the artifacts and prints the tables
 ```
 
 It needs `ANTHROPIC_API_KEY` and aborts naming it if absent. Each run's
 judgement is cached in its run directory as `ds-misuse.json` and reused until
 the guidelines pin or `metricsVersion` moves; `--recompute` re-judges.
 
-`--dry` (or `yarn judge:ds-misuse:dry`) resolves the same selection, runs every
+`--dry` (or `pnpm judge:ds-misuse:dry`) resolves the same selection, runs every
 local check the real pass runs, and prints which runs it would judge, reuse from
 cache, or skip.
 
@@ -408,7 +408,7 @@ Much of agentic reference eval is about comparing these different MCP contents
 to see which ones perform a set of workflows best. This is configured in
 `lib/agentic-reference/cases.ts`, where `storybookMcpPackage` or `storybookMcpUrl`
 can be passed to point to a published MCP package or deployed Chromatic MCP.
-Experiments are generated with the `yarn gen:agentic-ref` command, into a git
+Experiments are generated with the `pnpm gen:agentic-ref` command, into a git
 ignored folder, to avoid having to hand maintain dozens of experiments.
 
 Control cases to compare against the Storybook MCP can choose to not provide any
@@ -422,15 +422,15 @@ See below for options for this command. Runs can cost up to $25 each for larger
 workflows.
 
 ```bash
-yarn eval:agentic-ref:dry
+pnpm eval:agentic-ref:dry
 ```
 
 If you have run capture in the cloud via the GitHub action, you'll need to
-download data locally with `yarn results:download`.
+download data locally with `pnpm results:download`.
 
 Once runs have been captured, the agentic reference post-analysis computes
 metrics for a control case and Storybook cases. This happens in
-`scripts/analyze-results.ts`, via `yarn results:analyze`.
+`scripts/analyze-results.ts`, via `pnpm results:analyze`.
 
 Its tables cover one comparable set each — every stored run measuring the same
 thing, however many result directories they were collected in, since a plan tops
@@ -458,7 +458,7 @@ it.
 
 Once all metrics have been computed, a separate script compares them for
 statistical significance between experiments. The command for that is
-`yarn results:compare`.
+`pnpm results:compare`.
 
 ### Selecting what runs
 
@@ -478,8 +478,8 @@ beats its env var.
 `--experiments` and `--evals` have alternative names to account for how we talk about them in the day to day (`--cases` and `--flows`).
 These options take comma-separated values. Each value can be a full name, or a glob pattern. For evals, a number can also be passed.
 
-The same options drive `yarn eval:agentic-ref:dry`, `yarn results:analyze` and
-`yarn results:compare`. `results:analyze` adds `--since <ISO date>`, `--latest`,
+The same options drive `pnpm eval:agentic-ref:dry`, `pnpm results:analyze` and
+`pnpm results:compare`. `results:analyze` adds `--since <ISO date>`, `--latest`,
 `--recompute`, `--superseded` and the `--general`/`--complexity`/`--coverage`
 table flags, each with the same `AGENTIC_REF_` fallback.
 
@@ -490,28 +490,28 @@ would go on to rebuild every committed baseline in the next analysis pass.
 
 ```bash
 # Preview any invocation below at zero cost
-yarn eval:agentic-ref:dry
+pnpm eval:agentic-ref:dry
 
 # Everything: every experiment × its evals
-yarn eval:agentic-ref
+pnpm eval:agentic-ref
 
 # One experiment, all of its evals
-yarn eval:agentic-ref --experiments agentic-ref-cc-control-none-opus-high
+pnpm eval:agentic-ref --experiments agentic-ref-cc-control-none-opus-high
 
 # A group of experiments, by glob (make sure to quote it)
-yarn eval:agentic-ref --experiments "agentic-ref-cc-*"
+pnpm eval:agentic-ref --experiments "agentic-ref-cc-*"
 
 # One eval across every experiment that includes it
-yarn eval:agentic-ref --evals 703
+pnpm eval:agentic-ref --evals 703
 
 # One cell: one experiment against one eval
-yarn eval:agentic-ref --experiments agentic-ref-cc-control-none-opus-high --evals 703
+pnpm eval:agentic-ref --experiments agentic-ref-cc-control-none-opus-high --evals 703
 
 # Research sample: repeat every selected cell once
-yarn eval:agentic-ref --experiments "agentic-ref-cc-*" --runs 1
+pnpm eval:agentic-ref --experiments "agentic-ref-cc-*" --runs 1
 
 # Spend guard: run only if this selection is exactly the size expected
-yarn eval:agentic-ref --experiments "agentic-ref-cc-*" --evals 703 --runs 1 --expect 3
+pnpm eval:agentic-ref --experiments "agentic-ref-cc-*" --evals 703 --runs 1 --expect 3
 ```
 
 Completed (experiment, eval) cells are fingerprint-cached: re-running a
@@ -526,12 +526,12 @@ verdicts at 5%, and ECDF curves. Reproducible: everything derives from
 `results/` alone.
 
 ```shell
-yarn results:compare:setup                   # one-time: installs uv + Python deps
-yarn results:compare                        # control-none vs all cases, auto workflows
-yarn results:compare --cases=do-dont --workflows=701          # one pair, one workflow
-yarn results:compare --cases=do-dont,full --workflows=701,703 # aggregation mode
-yarn results:compare --plan=1-levels-create                   # one plan's cases and workflows
-yarn results:compare --min-runs=5                             # quick look at a smaller gate
+pnpm results:compare:setup                   # one-time: installs uv + Python deps
+pnpm results:compare                        # control-none vs all cases, auto workflows
+pnpm results:compare --cases=do-dont --workflows=701          # one pair, one workflow
+pnpm results:compare --cases=do-dont,full --workflows=701,703 # aggregation mode
+pnpm results:compare --plan=1-levels-create                   # one plan's cases and workflows
+pnpm results:compare --min-runs=5                             # quick look at a smaller gate
 ```
 
 `--plan` scopes the comparison to one collection plan (`plans/<name>.plan.ts`,
@@ -548,12 +548,12 @@ Output lands in `comparisons/<slug>/`: `report.md`, `estimates.csv|json`,
 `curves/`, `dataset.csv`, `manifest.json`. When usable data is missing —
 never collected, superseded, or not yet analyzed by the current metrics
 code — the command exits and prints the exact
-`yarn eval:agentic-ref` / `yarn results:analyze` commands to run.
+`pnpm eval:agentic-ref` / `pnpm results:analyze` commands to run.
 
 ### View Results
 
 ```bash
-yarn playground
+pnpm playground
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to browse results.
@@ -565,8 +565,8 @@ Pull the eval results produced by recent CI runs into the local
 and inspected by analysis tooling:
 
 ```bash
-yarn results:download        # latest 20 agent-eval-results artifacts
-yarn results:download 5      # or any count between 1 and 100
+pnpm results:download        # latest 20 agent-eval-results artifacts
+pnpm results:download 5      # or any count between 1 and 100
 ```
 
 Requires an authenticated GitHub CLI (`gh auth login`) and a `tar` binary
@@ -583,17 +583,17 @@ container — still leaves a `run-N` directory behind, holding a transcript of h
 far it got and no `project` tree. There is nothing in it to measure, so the
 analysis skips it and the plan runner does not count it towards a cell's sample.
 
-`yarn results:prune` is what removes them:
+`pnpm results:prune` is what removes them:
 
 ```bash
-yarn results:prune                                  # list them, delete nothing
-yarn results:prune --experiments "agentic-ref-cc-*" # same selection grammar as the runner
-yarn results:prune --delete                         # remove them
+pnpm results:prune                                  # list them, delete nothing
+pnpm results:prune --experiments "agentic-ref-cc-*" # same selection grammar as the runner
+pnpm results:prune --delete                         # remove them
 ```
 
 It reports what stopped each run (billing, timeout, network), and `--delete`
 removes the directories, along with any eval or result directory they leave
-empty. Re-run `yarn eval:plan --dry` afterwards to see the gaps they were
+empty. Re-run `pnpm eval:plan --dry` afterwards to see the gaps they were
 hiding.
 
 ### Deploy Results Playground
@@ -614,7 +614,7 @@ workflow status still fails when the eval, build, or deploy step fails.
 The workflow links the Vercel project at runtime instead of committing
 `.vercel/project.json`. It uses the same Vercel access token for the Sandbox
 evals and the Vercel CLI preview deployment, but those are separate steps:
-Sandbox auth happens in `yarn eval`, while the preview playground deployment
+Sandbox auth happens in `pnpm eval`, while the preview playground deployment
 runs `vercel link`, `vercel pull`, `vercel build`, and
 `vercel deploy --prebuilt`.
 
@@ -626,4 +626,4 @@ Configure these GitHub secrets before enabling the workflow:
 
 The thin app wrapper in `agent-eval/app` re-exports routes from
 `@vercel/agent-eval-playground` so Next.js can discover them from this package.
-Run `yarn playground:check-routes` after upgrading the playground package.
+Run `pnpm playground:check-routes` after upgrading the playground package.

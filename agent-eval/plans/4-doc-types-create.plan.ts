@@ -8,8 +8,8 @@
 // 5 arm(s) × 2 eval(s) = 10 cells, 100 runs, 6 batches of at most 2 cells.
 // Cells collected by an earlier group are skipped.
 //
-//   yarn eval:plan --config plans/4-doc-types-create.plan.ts --dry
-//   yarn eval:plan --config plans/4-doc-types-create.plan.ts
+//   pnpm eval:plan --config plans/4-doc-types-create.plan.ts --dry
+//   pnpm eval:plan --config plans/4-doc-types-create.plan.ts
 import type { RunPlan } from '../lib/agentic-reference/run-plan.ts';
 
 export default {

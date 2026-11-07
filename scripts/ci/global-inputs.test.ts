@@ -4,8 +4,9 @@ import { isGlobalInput, isTestFixture } from './global-inputs.ts';
 
 describe('isGlobalInput', () => {
   it.each([
-    'yarn.lock',
-    '.yarnrc.yml',
+    'pnpm-lock.yaml',
+    'pnpm-workspace.yaml',
+    '.npmrc',
     'nx.json',
     '.nvmrc',
     'tsconfig.json',
@@ -18,7 +19,7 @@ describe('isGlobalInput', () => {
     'code/addons/a11y/vitest.config.ts',
     'code/builders/builder-vite/vite.config.ts',
     'code/__mocks__/fs.ts',
-    '.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch',
+    'patches/@vitest-expect-npm-5.0.5-5df289c822.patch',
   ])('treats %s as a global input', (file) => {
     expect(isGlobalInput(file)).toBe(true);
   });

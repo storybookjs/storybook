@@ -13,7 +13,7 @@
  *      the flip, not just survival, is what guards the fix rather than the cap.
  *
  * Run from code/lib/docgen-harness:
- *   yarn bench:docgen-memory
+ *   pnpm bench:docgen-memory
  *   node --import jiti/register src/perf/docgen-memory/gate.ts
  */
 import { spawnSync } from 'node:child_process';

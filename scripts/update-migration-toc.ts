@@ -104,7 +104,7 @@ if (currentToc === newToc) {
 
 if (check) {
   console.error(
-    `${file}: TOC is out of date. Run \`yarn --cwd scripts update-migration-toc\` to fix.`
+    `${file}: TOC is out of date. Run \`pnpm --dir scripts run update-migration-toc\` to fix.`
   );
   exit(1);
 }

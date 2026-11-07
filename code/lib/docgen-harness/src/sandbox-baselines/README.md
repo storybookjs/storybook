@@ -25,10 +25,10 @@ A template that is flagged but has nothing recorded yet fails rather than skippi
 ## Updating
 
 ```bash
-yarn task build --template <template> --start-from auto
+pnpm task build --template <template> --start-from auto
 cd code/lib/docgen-harness
-yarn baselines:sandbox            # verify every server-docgen template
-yarn baselines:sandbox --update   # re-record
+pnpm baselines:sandbox            # verify every server-docgen template
+pnpm baselines:sandbox --update   # re-record
 ```
 
 Pass `--template <key>` to work on one of them, and `--sandbox <dir>` to point at a sandbox somewhere other than the default location.

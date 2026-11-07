@@ -1,0 +1,18 @@
+# Without its own workspace root here, pnpm would install the monorepo's workspace.
+packages:
+  - .
+
+nodeLinker: hoisted
+
+minimumReleaseAge: 10080
+
+# Cypress's postinstall downloads the binary that `cypress run` needs.
+onlyBuiltDependencies:
+  - cypress
+
+# @swc/core and esbuild work without their postinstall, using their platform package's binary.
+ignoredBuiltDependencies:
+  - '@swc/core'
+  - esbuild
+
+pnpmfile: ../../../scripts/utils/workspace-peers.pnpmfile.cjs

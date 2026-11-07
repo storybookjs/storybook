@@ -71,6 +71,17 @@ describe('isPackageVersionPublished', () => {
     ).resolves.toBe(false);
   });
 
+  it('returns false when reading the response body fails', async () => {
+    fetchMock.mockResolvedValue({
+      status: 200,
+      json: () => Promise.reject(new DOMException('The operation was aborted', 'TimeoutError')),
+    });
+
+    await expect(
+      isPackageVersionPublished({ packageName: 'storybook', version: '10.6.0-alpha.6' })
+    ).resolves.toBe(false);
+  });
+
   it('throws on unexpected status codes', async () => {
     fetchMock.mockImplementation(() => jsonResponse(401, { error: 'unauthorized' }));
 
@@ -138,26 +149,29 @@ describe('waitForPackagesToBePublished', () => {
 });
 
 describe('packagesAcceptedByRegistry', () => {
-  it('extracts workspaces npm already reserved or published', () => {
+  it('extracts packages npm already reserved or published', () => {
     expect(
       packagesAcceptedByRegistry(
         [
-          '[storybook]: YN0035: Cannot publish over previously staged version',
-          '[@storybook/react]: Package archive published',
-          '[@storybook/vue3]: YN0033: network error',
+          '+ @storybook/react@10.6.0',
+          'npm notice Publishing to https://registry.npmjs.org/ with tag next and public access',
+          'npm error code E409',
+          'npm error 409 Conflict - PUT https://registry.npmjs.org/storybook - Cannot publish over previously staged version "10.6.0".',
+          'npm error 403 403 Forbidden - PUT https://registry.npmjs.org/@storybook%2fvue3 - You cannot publish over the previously published versions: 10.6.0.',
+          'npm error 503 Service Unavailable - PUT https://registry.npmjs.org/@storybook%2fsvelte',
         ].join('\n')
       )
-    ).toEqual(['storybook', '@storybook/react']);
+    ).toEqual(['@storybook/react', 'storybook', '@storybook/vue3']);
   });
 
-  it('extracts workspaces when Yarn prefixes lines with ANSI color codes', () => {
+  it('extracts packages when npm colors its output', () => {
     expect(
       packagesAcceptedByRegistry(
         [
-          '\u001b[38;5;167m[storybook]:\u001b[39m YN0035: Cannot publish over previously staged version "10.5.9".',
-          '\u001b[38;5;73m[@storybook/react]:\u001b[39m Package archive published',
+          '\u001b[31mnpm\u001b[39m \u001b[41merror\u001b[49m 409 Conflict - PUT https://registry.npmjs.org/@storybook%2freact - Cannot publish over previously staged version "10.5.9".',
+          '\u001b[1m+ storybook@10.5.9\u001b[22m',
         ].join('\n')
       )
-    ).toEqual(['storybook', '@storybook/react']);
+    ).toEqual(['@storybook/react', 'storybook']);
   });
 });

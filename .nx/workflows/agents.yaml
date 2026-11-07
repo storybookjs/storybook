@@ -6,30 +6,35 @@ linux-init-steps: &linux-init-steps
   - name: Restore Node Modules Cache
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
     inputs:
-      key: 'yarn.lock|.yarn/patches/**'
+      key: 'pnpm-lock.yaml|pnpm-workspace.yaml|patches/**'
       paths: |
-        ~/.yarn/berry
+        ~/.local/share/pnpm/store
       base-branch: 'next'
+  # This step runs corepack, which Node 25 and later do not ship.
   - name: Install Node
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node/main.yaml'
   - name: Install Node Modules
     script: |
-      yarn install --immutable
+      pinned="$(node -p "require('./package.json').packageManager.replace(/^pnpm@|\\+.*$/g, '')")"
+      bash .github/actions/setup-node-and-install/package-managers/install.sh "pnpm=$pinned"
+      pnpm install --frozen-lockfile
 
 linux-browsers-init-steps: &linux-browsers-init-steps
   - name: Checkout
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/checkout/main.yaml'
+  # The store keys packages by tarball integrity, so it never serves a stale copy of the
+  # @storybook/* versions that the local registry republishes with new contents.
   - name: Restore Node Modules Cache
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
     inputs:
-      key: 'yarn.lock|.yarn/patches/**'
+      key: 'pnpm-lock.yaml|pnpm-workspace.yaml|patches/**'
       paths: |
-        ~/.yarn/berry
+        ~/.local/share/pnpm/store
       base-branch: 'next'
   - name: Restore Browser Binary Cache
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/cache/main.yaml'
     inputs:
-      key: '"browsers"|yarn.lock|.yarn/patches/**'
+      key: '"browsers"|pnpm-lock.yaml|patches/**'
       paths: |
         ~/.cache/ms-playwright
       base-branch: 'next'
@@ -37,35 +42,24 @@ linux-browsers-init-steps: &linux-browsers-init-steps
     uses: 'nrwl/nx-cloud-workflows/v5/workflow-steps/install-node/main.yaml'
   - name: Install Node Modules
     script: |
-      yarn install --immutable
-  - name: Clean stale Storybook packages from yarn cache
-    # NX Cloud agents use the global yarn cache (enableGlobalCache: true) to
-    # avoid duplicating .yarn/cache across sandboxes. However, sandboxes install
-    # @storybook/* packages from a local verdaccio registry using the same
-    # version number but different contents on each run. The global cache may
-    # hold a stale copy from a previous pipeline, causing `yarn install` to
-    # silently use the published version instead of the local verdaccio build.
-    # Purging these entries forces yarn to fetch fresh copies from verdaccio.
-    # TODO: publish unique versions to verdaccio so this workaround is unnecessary.
-    script: |
-      rm -f ~/.yarn/berry/cache/storybook-npm-*.zip 2>/dev/null || true
-      rm -f ~/.yarn/berry/cache/@storybook-*.zip 2>/dev/null || true
+      pinned="$(node -p "require('./package.json').packageManager.replace(/^pnpm@|\\+.*$/g, '')")"
+      bash .github/actions/setup-node-and-install/package-managers/install.sh "pnpm=$pinned"
+      pnpm install --frozen-lockfile
   - name: Install Browsers
     script: |
-      yarn exec playwright install chromium --with-deps
+      pnpm exec playwright install chromium --with-deps
   - name: Verify
     script: |
       echo "node:         $(node --version)"
-      echo "yarn:         $(yarn --version)"
+      echo "pnpm:         $(pnpm --version)"
+      echo "pnpm store:   $(pnpm store path)"
       echo "home:         $HOME"
       git diff --exit-code
-      yarn dedupe --check
 
 common-env-vars: &common-env-vars
   STORYBOOK_DISABLE_TELEMETRY: true
   IN_STORYBOOK_SANDBOX: true
   STORYBOOK_SANDBOX_ROOT: ../storybook-sandboxes
-  STORYBOOK_NX_CLOUD_AGENT: true
   CI: true
   NODE_OPTIONS: --max_old_space_size=6144
 

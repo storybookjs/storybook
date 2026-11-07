@@ -21,7 +21,7 @@ function formatCategory(category: TCategory) {
     return `/*
       * IMPORTANT!
       * This file has been automatically generated,
-      * in order to update its content, execute "yarn update-rules" or rebuild this package.
+      * in order to update its content, execute "pnpm exec jiti scripts/update-all.ts" or rebuild this package.
       */
       export default {
         plugins: [
@@ -40,7 +40,7 @@ function formatCategory(category: TCategory) {
   return `/*
     * IMPORTANT!
     * This file has been automatically generated,
-    * in order to update its content, execute "yarn update-rules" or rebuild this package.
+    * in order to update its content, execute "pnpm exec jiti scripts/update-all.ts" or rebuild this package.
     */
     export default {
       // This file is bundled in an index.js file at the root

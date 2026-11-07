@@ -50,17 +50,17 @@ You can use any version manager to install the correct version of Node.js. We re
   pnpm env use --global 22
   ```
 
-2. Install [fnm](https://github.com/Schniz/fnm/tree/master?tab=readme-ov-file#installation) and adjust your shell configuration to include the following parameters: `fnm env`, `use-on-cd`, `corepack-enabled`, and `version-file-strategy recursive`.
+2. Install [fnm](https://github.com/Schniz/fnm/tree/master?tab=readme-ov-file#installation) and adjust your shell configuration to include the following parameters: `fnm env`, `use-on-cd`, and `version-file-strategy recursive`.
    
    ```shell
-   eval "$(fnm env --use-on-cd --corepack-enabled --version-file-strategy recursive)"
+   eval "$(fnm env --use-on-cd --version-file-strategy recursive)"
    ```
 
 3. If you're a Windows user, you'll need to enable Windows Subsystem for Linux (WSL). You can follow the instructions [here](https://docs.microsoft.com/en-us/windows/wsl/install).
 
 ### Editor setup
 
-CI type-checks the monorepo with TypeScript 7 (`yarn task check` and the `*.test-d.ts` type tests). The workspace `typescript` package stays on TypeScript 6, because some tooling still needs its compiler API, so VS Code uses TypeScript 6 by default and can occasionally report different errors than CI.
+CI type-checks the monorepo with TypeScript 7 (`pnpm task check` and the `*.test-d.ts` type tests). The workspace `typescript` package stays on TypeScript 6, because some tooling still needs its compiler API, so VS Code uses TypeScript 6 by default and can occasionally report different errors than CI.
 
 To use the TypeScript 7 language server in VS Code instead (optional):
 
@@ -140,14 +140,16 @@ Here's a highlight of notable directories and files:
 │   ├── writing-stories
 │   └── writing-tests
 ├── node_modules
-├── package.json                      # Root of the yarn monorepo
+├── package.json                      # Root of the pnpm monorepo
 ├── .oxfmtrc.json
+├── patches                           # Patches for dependencies (pnpm patch)
+├── pnpm-lock.yaml
+├── pnpm-workspace.yaml               # Workspace packages, overrides and other pnpm settings
 ├── scripts                           # Build and Helper Scripts
-├── test-storybooks
-│   ├── external-docs
-│   ├── portable-stories-kitchen-sink
-│   └── server-kitchen-sink
-└── yarn.lock
+└── test-storybooks
+    ├── external-docs
+    ├── portable-stories-kitchen-sink
+    └── server-kitchen-sink
 ```
 
 ### Fork the repository 
@@ -164,23 +166,29 @@ git branch --set-upstream-to upstream/next next
 
 ### Running the local development environment 
 
-If you're interested in contributing to Storybook's codebase, you can run it locally to get a feel for the codebase and the development environment. To get started with the development environment, you should always run `yarn start` from the root directory. Running `yarn start` will install the required dependencies, build the project, including the packages, and generate a sandbox environment using React with TypeScript with a set of test stories to help you get started.
+If you're interested in contributing to Storybook's codebase, you can run it locally to get a feel for the codebase and the development environment. To get started with the development environment, you should always run `pnpm start` from the root directory. Running `pnpm start` will install the required dependencies, build the project, including the packages, and generate a sandbox environment using React with TypeScript with a set of test stories to help you get started.
+
+The repository uses the pnpm version pinned in the `packageManager` field of the root `package.json`. Install pnpm 10 or later once, with npm as below or [any other method](https://pnpm.io/installation), and it switches to that version by itself. Installs that do not run the pinned pnpm fail on purpose.
+
+If Corepack already provides pnpm, nothing changes; to use an npm-installed pnpm instead, run `corepack disable pnpm` first. If you work offline, install the exact version the `packageManager` field pins beforehand, so pnpm never needs to download it.
 
 ```shell
 # Navigate to the root directory of the Storybook repository 
 cd path/to/your/storybook/fork 
 
+# Install pnpm (once per Node.js installation)
+npm install --global pnpm@latest-10
 # Install the required dependencies
-yarn
+pnpm install
 # start the development environment 
-yarn start
+pnpm start
 ```
 
 ### Making code changes 
 
 If you want to make code changes to Storybook packages while running a sandbox, you'll need to do the following: 
 
-1. In a second terminal, run `yarn build --watch <package-1> <package-2>` in the `code/` directory.
+1. In a second terminal, run `pnpm build --watch <package-1> <package-2>` in the `code/` directory.
 
 For example, to build the `@storybook/react`, `storybook` itself, `@storybook/builder-vite`, and `@storybook/addon-docs` packages, you would run: 
 
@@ -189,7 +197,7 @@ For example, to build the `@storybook/react`, `storybook` itself, `@storybook/bu
 cd path/to/your/storybook/fork/code 
 
 # Build the specified packages in watch mode 
-yarn build --watch react core-server api addon-docs 
+pnpm build --watch react core-server api addon-docs 
 
 Most package names can be found after `@storybook/` in the published package.
 
@@ -197,18 +205,22 @@ For instance, to build the `@storybook/react storybook @storybook/builder-vite @
 
 ```shell 
 cd code
-yarn build --watch react storybook builder-vite addon-docs 
+pnpm build --watch react storybook builder-vite addon-docs 
 ```
 
-2. If you are running the sandbox in ["linked"](https://yarnpkg.com/cli/link) mode (the default), you should see the changes reflected on a refresh (you may need to restart it if changing server packages) 
+2. If you are running the sandbox in "linked" mode (the default), a sandbox that is already running doesn't pick up the rebuilt packages: the sandbox installs a copy of each package from `code/` when a sandbox task starts. After a rebuild, stop the sandbox and start it again, which copies the latest build into it first: 
+
+```shell 
+pnpm task --task dev --template <your template> --start-from=auto 
+``` 
 
 3. If you are running the sandbox in "unlinked" mode, you'll need to rerun the sandbox from the `publish` step to see the changes: 
 
 ```shell 
-yarn task --task dev --template <your template> --start-from=publish 
+pnpm task --task dev --template <your template> --start-from=publish 
 ``` 
 
-4. If you have made any changes inside `/code` or other packages, remember to run `yarn test` inside the package to ensure that your changes do not break any tests. 
+4. If you have made any changes inside `/code` or other packages, remember to run `pnpm test` from the root directory to ensure that your changes do not break any tests. You can pass a path to only run the tests of one package, e.g. `pnpm test code/addons/docs`. 
 
 ### Angular-specific code
 
@@ -216,17 +228,17 @@ If you are working on Angular-specific code, you will need to append `--prod` to
 
 ```shell
 # Starts the build process in production mode
-yarn task --prod
+pnpm task --prod
 ```
 
 ```shell
 # Builds the specified packages in production mode
-yarn build --prod --watch angular storybook addon-docs
+pnpm build --prod --watch angular storybook addon-docs
 ```
 
 ### Running against different sandbox templates 
 
-You can pick a specific template to use as your sandbox by running `yarn task`, which will prompt you to make further choices about which template you want and which task you want to run.
+You can pick a specific template to use as your sandbox by running `pnpm task`, which will prompt you to make further choices about which template you want and which task you want to run.
 
 ### Focussing on fixing a sandbox in CI
 
@@ -243,13 +255,15 @@ In fact you can filter on any job you wish, only running `vitest`, `e2e`, `vite`
 
 ### The initialization process throws an error 
 
-If you run `yarn start` and encounter the following error, try rerunning `yarn start` a second time: 
+If you run `pnpm start` and encounter the following error, try rerunning `pnpm start` a second time: 
 
 ```shell 
 > NX ENOENT: no such file or directory, open 'storybook/code/node_modules/nx/package.json' 
 ```
 
 ### Storybook doesn't detect changes in the codebase 
+
+A running sandbox does not pick up rebuilt packages, even in linked mode. Stop it and start it again with `pnpm task --task dev --template <your template> --start-from=auto`, which copies the latest build into it first.
 
 If you are a Storybook contributor and still experience issues, it is recommended that you verify your local Storybook instance for any unintentional local changes. To do this, you can use the following command: 
 

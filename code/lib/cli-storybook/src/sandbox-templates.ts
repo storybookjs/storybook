@@ -79,11 +79,6 @@ export type Template = {
    */
   inDevelopment?: boolean;
   /**
-   * Some sandboxes have partial or total incompatibilities when running with linked dependencies.
-   * Set this flag to use --no-link by default (but still support --link for local testing).
-   */
-  preferNoLink?: boolean;
-  /**
    * Some sandboxes might need extra modifications in the initialized Storybook, such as extend
    * main.js, for setting specific feature flags.
    */
@@ -459,8 +454,6 @@ export const baseTemplates = {
       renderer: '@storybook-astro/renderer',
       builder: '@storybook/builder-vite',
     },
-    // TODO: remove `inDevelopment` once the nightly sandbox generation has published this template.
-    inDevelopment: true,
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration', 'chromatic'],
   },
   'tanstack-react-router/default-ts': {
@@ -632,7 +625,6 @@ export const baseTemplates = {
     name: 'Angular CLI Latest (Webpack | TypeScript)',
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
-    preferNoLink: true,
     modifications: {
       // The latest CLI scaffolds Angular 22 but omits @angular/forms and @angular/animations. Match
       // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
@@ -761,7 +753,6 @@ export const baseTemplates = {
   'preact-vite/default-ts': {
     name: 'Preact Latest (Vite | TypeScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template preact-ts',
-    preferNoLink: true,
     expected: {
       framework: '@storybook/preact-vite',
       renderer: '@storybook/preact',
@@ -779,7 +770,6 @@ export const baseTemplates = {
   'preact-vite/10-ts': {
     name: 'Preact v10 (Vite | TypeScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template preact-ts',
-    preferNoLink: true,
     expected: {
       framework: '@storybook/preact-vite',
       renderer: '@storybook/preact',

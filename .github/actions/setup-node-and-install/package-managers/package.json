@@ -1,0 +1,9 @@
+{
+  "name": "storybook-package-managers",
+  "private": true,
+  "description": "The pnpm and Yarn releases that install.sh installs. package-lock.json pins their integrity.",
+  "dependencies": {
+    "@yarnpkg/cli-dist": "4.18.0",
+    "pnpm": "10.34.9"
+  }
+}

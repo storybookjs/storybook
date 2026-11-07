@@ -10,6 +10,6 @@ export const smokeTest: Task = {
   async run({ sandboxDir }, { dryRun, debug }) {
     console.log(`smoke testing in ${sandboxDir}`);
 
-    return exec(`yarn storybook --smoke-test`, { cwd: sandboxDir }, { dryRun, debug });
+    return exec(`pnpm storybook --smoke-test`, { cwd: sandboxDir }, { dryRun, debug });
   },
 };

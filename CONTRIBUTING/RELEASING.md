@@ -374,6 +374,8 @@ Done! 🚀
 
 If you need to release a change to an older minor version that is not the latest, you have to do it manually, locally. The process is described below, with an example of releasing a new `v8.3.7` in a situation where `8.4.0` is currently the latest version.
 
+The steps use Yarn, because tags from before the switch to pnpm, like `v8.3.6` here, use Yarn. They vendor their Yarn release through `yarnPath` in `.yarnrc.yml`, so any global Yarn runs it, such as one from `npm install --global yarn`. For a tag whose root `package.json` pins pnpm in its `packageManager` field, run the pnpm equivalents instead, as in [Releasing Locally in an Emergency](#releasing-locally-in-an-emergency-): `pnpm install`, `pnpm task ...`, and the `pnpm release:...` scripts from the `scripts` directory.
+
 1. Checkout the _existing_ tag that matches the latest minor release you want to bump, and create a new branch from it. In this case, we want to do:
     1. `git fetch --all --tags`
     2. `git checkout tags/v8.3.6 -b patch-8-3-7`
@@ -427,49 +429,51 @@ Done. 🎉
 
 Things can fail, code can break, and bugs can exist. When automation is broken, there may be a need for an emergency escape hatch to release new fixes. In such a situation, it's valid to run the whole release process locally instead of relying on pull requests and workflows. You don't need to create pull requests or split preparation and publishing; you can do it all at once, but make sure you still follow the correct branching strategy.
 
-You can either prepare the release locally and use the automatic workflow for publishing it or you can do the whole release workflow locally. If you choose the latter approach, you need a token to the npm registry to publish (set as `YARN_NPM_AUTH_TOKEN`), which you can get from @shilman or @ndelangen.
+You can either prepare the release locally and use the automatic workflow for publishing it or you can do the whole release workflow locally. If you choose the latter approach, you need a token to the npm registry to publish, which you can get from @shilman or @ndelangen. `pnpm publish` uploads through the npm CLI, so add the token to your user npm config by adding the line `//registry.npmjs.org/:_authToken=<NPM_TOKEN>` to `~/.npmrc` (editing the file keeps the token out of your shell history), and remove the line again afterwards.
+
+`main` keeps using Yarn until a release brings the switch to pnpm there. On a branch from `main` that still has a `yarn.lock`, run the Yarn versions of the commands below instead (`yarn install`, `yarn release:...`), and pass the token to the publish step as `YARN_NPM_AUTH_TOKEN=<NPM_TOKEN> yarn release:publish ...`.
 
 You can inspect the workflows to see what they are running and copy that, but here is a general sequence of steps to mimic the automated workflow. Feel free to deviate from this as needed.
 
 Before you start you should make sure that your working tree is clean and the repository is in a clean state by running `git clean -xdf`.
 
+Run every step from the repository root.
+
 1. Create a new branch from either `next` or `main` (patches)
 2. Get all tags: `git fetch --tags origin`
-3. Install dependencies: `yarn task --task=install --start-from=install`
-4. `cd scripts`
-5. (If patch release) Cherry pick:
-   1. `yarn release:pick-patches`
+3. Install dependencies: `pnpm install`
+4. (If patch release) Cherry pick:
+   1. `pnpm --dir scripts release:pick-patches`
    2. Manually cherry pick any necessary patches based on the previous output
-6. Bump versions:
-   1. If you plan on using automatic publishing (ie. stop at step 12), bump with deferred: `yarn release:version --verbose --deferred --release-type <RELEASE_TYPE> --pre-id <PRE_ID>`
-   2. If doing the whole release locally, **do not** defer the bump: `yarn release:version --verbose --release-type <RELEASE_TYPE> --pre-id <PRE_ID>`
-7. To see a list of changes (for your own to-do list), run `yarn release:generate-pr-description --current-version <CURRENT_VERSION> --next-version <NEXT_VERSION_FROM_PREVIOUS_STEP> --verbose`
-8. Write changelogs: `yarn release:write-changelog <NEXT_VERSION_FROM_PREVIOUS_STEP> --verbose`
-9. `git add .`.
-10. Commit changes: `git commit -m "Bump version from <CURRENT_VERSION> to <NEXT_VERSION_FROM_PREVIOUS_STEP> MANUALLY"`
-11. Merge changes to the release branch:
+5. Bump versions:
+   1. If you plan on using automatic publishing (ie. stop at step 11), bump with deferred: `pnpm --dir scripts release:version --verbose --deferred --release-type <RELEASE_TYPE> --pre-id <PRE_ID>`
+   2. If doing the whole release locally, **do not** defer the bump: `pnpm --dir scripts release:version --verbose --release-type <RELEASE_TYPE> --pre-id <PRE_ID>`
+6. To see a list of changes (for your own to-do list), run `pnpm --dir scripts release:generate-pr-description --current-version <CURRENT_VERSION> --next-version <NEXT_VERSION_FROM_PREVIOUS_STEP> --verbose`
+7. Write changelogs: `pnpm --dir scripts release:write-changelog <NEXT_VERSION_FROM_PREVIOUS_STEP> --verbose`
+8. `git add .`.
+9. Commit changes: `git commit -m "Bump version from <CURRENT_VERSION> to <NEXT_VERSION_FROM_PREVIOUS_STEP> MANUALLY"`
+10. Merge changes to the release branch:
     1. `git checkout <"latest-release" | "next-release">`
     2. `git pull`
     3. `git merge <PREVIOUS_BRANCH>`
     4. `git push origin`
-12. (If automatic publishing is still working, it should kick in now and the rest of the steps can be skipped)
-13. `cd ..`
-14. Publish to the registry: `YARN_NPM_AUTH_TOKEN=<NPM_TOKEN> yarn release:publish --tag <"next" OR "latest"> --verbose`
-15. (If patch release) `yarn release:label-patches`
-16. Manually create a GitHub Release with a tag that is the new version and the target being `latest-release` or `next-release`.
-17. Merge to core branch:
+11. (If automatic publishing is still working, it should kick in now and the rest of the steps can be skipped)
+12. Publish to the registry: `pnpm --dir scripts release:publish --tag <"next" OR "latest"> --verbose`
+13. (If patch release) `pnpm --dir scripts release:label-patches`
+14. Manually create a GitHub Release with a tag that is the new version and the target being `latest-release` or `next-release`.
+15. Merge to core branch:
     1. `git checkout <"next"|"main">`
     2. `git pull`
     3. `git merge <"next-release"|"latest-release">`
     4. `git push origin`
-18. (If patch release) Sync `CHANGELOG.md` to `next` with:
+16. (If patch release) Sync `CHANGELOG.md` to `next` with:
     1. `git checkout next`
     2. `git pull`
     3. `git checkout origin/main ./CHANGELOG.md`
     4. `git add ./CHANGELOG.md`
     5. `git commit -m "Update CHANGELOG.md for v<NEXT_VERSION>"`
     6. `git push origin`
-19. Sync the skills by hand, as described in [When the skills were not synced](#when-the-skills-were-not-synced).
+17. Sync the skills by hand, as described in [When the skills were not synced](#when-the-skills-were-not-synced).
 
 ## Canary Releases
 

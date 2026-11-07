@@ -58,7 +58,7 @@ const { document } = global;
 
 // The internal Storybook's manager stories (sidebar context menu, onboarding guide, …) demonstrate
 // DEVELOPMENT-only UI, so they must render as if in development even though this Storybook is itself
-// built and served statically (`yarn storybook:ui`, Chromatic, Vitest portable stories). In Vitest the
+// built and served statically (`pnpm storybook:ui`, Chromatic, Vitest portable stories). In Vitest the
 // preview builder never injects CONFIG_TYPE (it is undefined); in Chromatic it is injected as PRODUCTION.
 // The one exception is the open-service static-load E2E, which serves a plain production build to
 // exercise the real static-loading path — there CONFIG_TYPE is PRODUCTION and Chromatic is not driving

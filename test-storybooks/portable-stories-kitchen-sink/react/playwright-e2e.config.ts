@@ -53,7 +53,7 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: "yarn storybook",
+    command: "pnpm storybook",
     url: "http://127.0.0.1:6006",
     reuseExistingServer: true,
   },

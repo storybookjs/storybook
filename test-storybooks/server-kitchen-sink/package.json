@@ -58,5 +58,6 @@
     "pug": "^3.0.0",
     "safe-identifier": "^0.4.1",
     "storybook": "*"
-  }
+  },
+  "packageManager": "yarn@4.18.0"
 }

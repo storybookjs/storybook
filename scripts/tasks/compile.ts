@@ -14,8 +14,8 @@ const CI_VCPUS = 8;
 
 const parallel = `--parallel=${process.env.CI ? CI_VCPUS : maxConcurrentTasks}`;
 
-const linkCommand = `yarn nx run-many -t compile ${parallel}`;
-const noLinkCommand = `yarn nx run-many -t compile -c production ${parallel}`;
+const linkCommand = `pnpm exec nx run-many -t compile ${parallel}`;
+const noLinkCommand = `pnpm exec nx run-many -t compile -c production ${parallel}`;
 
 export const compile: Task<MonorepoDetails> = {
   description: 'Compile the source code of the monorepo',

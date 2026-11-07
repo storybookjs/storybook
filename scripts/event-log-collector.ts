@@ -7,7 +7,7 @@
  *   node scripts/event-log-collector.ts [--include <regex>] [--exclude <regex>]
  *
  * Then point Storybook at it:
- *   STORYBOOK_TELEMETRY_URL=http://localhost:6007/event-log yarn storybook
+ *   STORYBOOK_TELEMETRY_URL=http://localhost:6007/event-log pnpm storybook
  *
  * Options:
  *   --include <regex>   Only collect events whose eventType matches the regex

@@ -26,7 +26,7 @@ This automatically sets up the correct remote tracking and switches to the PR br
 ## Step 3 — Install dependencies
 
 ```bash
-yarn
+pnpm install
 ```
 
 ## Step 4 — Compile the repo
@@ -34,13 +34,13 @@ yarn
 Compiling first ensures TS declarations referenced by the linter are present:
 
 ```bash
-yarn nx run-many -t compile
+pnpm exec nx run-many -t compile
 ```
 
 ## Step 5 — Fix linting errors
 
 ```bash
-yarn lint
+pnpm lint
 ```
 
 ## Step 6 — Fix TypeScript errors
@@ -48,7 +48,7 @@ yarn lint
 Run the TypeScript checker to surface remaining type errors:
 
 ```bash
-yarn nx run-many -t check
+pnpm exec nx run-many -t check
 ```
 
 Read the output carefully. Fix each type error manually by editing the relevant file(s). Common fixes:
@@ -58,7 +58,7 @@ Read the output carefully. Fix each type error manually by editing the relevant 
 - Resolve `any` assignments that violate strict mode
 - Add missing imports or re-exports
 
-Re-run `yarn nx run-many -t check` after each batch of edits to confirm errors are resolved.
+Re-run `pnpm exec nx run-many -t check` after each batch of edits to confirm errors are resolved.
 
 ## Step 7 — Commit the fixes
 
@@ -82,6 +82,7 @@ git push
 ## Notes
 
 - Only fix errors that are clearly linting or TypeScript issues. Do not refactor logic.
+- If the PR branch predates the pnpm migration (the root `package.json` `packageManager` is `yarn@...`), run the Yarn equivalents of these commands (`yarn`, `yarn nx ...`, `yarn lint`) instead.
 - If a TypeScript error requires a non-trivial code change, surface it to the user and ask before proceeding.
 - If `gh pr checkout` fails due to permissions on a fork, inform the user — they may need to grant write access to the fork or the maintainer must push directly.
 - After pushing, confirm with the user that the CI is green.

@@ -2417,8 +2417,8 @@ and gives a reason for each verdict.</p>`;
 <p><b>No run in this comparison has been judged yet.</b> Judging is a separate, paid step
 (one model call per run) and its verdicts are cached per run, so a bundle regenerated after
 judging picks them up automatically.</p>
-<p class="mono">yarn judge:ds-misuse --dry &nbsp;# plan first, spend nothing<br>
-yarn judge:ds-misuse ${manifest.spec.plan === null ? '' : `--plan ${escapeHtml(manifest.spec.plan)} `}&nbsp;# then judge, and re-run results:compare</p>
+<p class="mono">pnpm judge:ds-misuse --dry &nbsp;# plan first, spend nothing<br>
+pnpm judge:ds-misuse ${manifest.spec.plan === null ? '' : `--plan ${escapeHtml(manifest.spec.plan)} `}&nbsp;# then judge, and re-run results:compare</p>
 </div>`;
   }
 
@@ -2426,7 +2426,7 @@ yarn judge:ds-misuse ${manifest.spec.plan === null ? '' : `--plan ${escapeHtml(m
     panel.judgedRuns === panel.usableRuns
       ? `<p class="lede">All ${panel.usableRuns} usable runs are judged.</p>`
       : `<p class="lede"><b class="partial">${panel.judgedRuns} of ${panel.usableRuns}</b> usable runs
-are judged; unjudged runs contribute nothing below. <span class="mono">yarn judge:ds-misuse</span>
+are judged; unjudged runs contribute nothing below. <span class="mono">pnpm judge:ds-misuse</span>
 judges the rest and a fresh <span class="mono">results:compare</span> picks them up.</p>`;
 
   const pinWarning =
@@ -2435,7 +2435,7 @@ judges the rest and a fresh <span class="mono">results:compare</span> picks them
 ${panel.guidelinesRefs.length} different guideline versions (${panel.guidelinesRefs
           .map((ref) => `<span class="mono">${escapeHtml(ref)}</span>`)
           .join(', ')}), so their scores are not comparable. Re-judge with
-<span class="mono">yarn judge:ds-misuse --recompute</span>.</div>`
+<span class="mono">pnpm judge:ds-misuse --recompute</span>.</div>`
       : '';
 
   const controlShortName = manifest.spec.control.shortName;
@@ -2492,17 +2492,17 @@ relative to the repo root; the <i>open</i> buttons resolve them against
 <p class="fineprint">Comparing the src trees keeps the harness's __agent_eval__ directory and the
 lockfiles out of the diff. The pin is ${escapeHtml(fixture)}. On a machine that has never analyzed
 or judged, materialize the baseline cache once:</p>
-<p class="mono mcmd" data-cmd="yarn --cwd $ROOT/agent-eval results:analyze --recompute"></p>
+<p class="mono mcmd" data-cmd="pnpm --dir $ROOT/agent-eval run results:analyze --recompute"></p>
 <h3>Read the agent's reasoning</h3>
 <p class="mono mcmd" data-cmd="less $ROOT/${escapeHtml(exampleProject)}/__agent_eval__/transcript.txt"></p>
 <p class="fineprint">The transcript shows why the agent chose the flagged component — often the real answer.</p>
 <h3>Run the app</h3>
 <p class="mono mcmd" data-cmd="cd $ROOT/${escapeHtml(exampleProject)}"></p>
 <p class="fineprint">Then install and start it the way its own package.json scripts say — fixtures
-differ. The tree sits inside this repo's yarn workspace, so yarn resolves against the workspace and
-fails; use npm here, or copy the tree outside the repo first.</p>
+differ. The tree sits inside this repo's pnpm workspace, so pnpm installs the workspace instead of
+this tree; use npm here, or copy the tree outside the repo first.</p>
 <h3>Re-judge after changing the rubric</h3>
-<p class="mono mcmd" data-cmd="yarn --cwd $ROOT/agent-eval judge:ds-misuse --dry"></p>
+<p class="mono mcmd" data-cmd="pnpm --dir $ROOT/agent-eval run judge:ds-misuse --dry"></p>
 <p class="fineprint">Reading artifacts is always free; only judging spends. Paths above name this
 bundle's first finding — swap in any finding's run directory.</p>
 </div>
@@ -3170,7 +3170,7 @@ document.addEventListener('click', function (e) {
     body2.appendChild(prime);
     var primeCmd = document.createElement('p');
     primeCmd.className = 'mono mcmd';
-    primeCmd.textContent = 'yarn --cwd ' + root2 + '/agent-eval results:analyze --recompute';
+    primeCmd.textContent = 'pnpm --dir ' + root2 + '/agent-eval run results:analyze --recompute';
     body2.appendChild(primeCmd);
     byId('misuseCmdModal').showModal();
     return;

@@ -32,7 +32,7 @@ async function mcpRequest(method: string, params: any = {}, id: number = 1) {
 describe('MCP Endpoint E2E Tests', () => {
 	beforeAll(async () => {
 		await killPort(PORT);
-		storybookProcess = x('yarn', ['storybook'], {
+		storybookProcess = x('pnpm', ['storybook'], {
 			nodeOptions: {
 				cwd: STORYBOOK_DIR,
 			},

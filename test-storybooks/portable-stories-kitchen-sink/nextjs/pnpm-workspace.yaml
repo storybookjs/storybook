@@ -1,0 +1,16 @@
+# Without its own workspace root here, pnpm would install the monorepo's workspace.
+packages:
+  - .
+
+nodeLinker: hoisted
+
+minimumReleaseAge: 10080
+
+# @swc/core and esbuild work without their postinstall, using their platform package's binary.
+# core-js-pure's postinstall only prints a funding message.
+ignoredBuiltDependencies:
+  - '@swc/core'
+  - core-js-pure
+  - esbuild
+
+pnpmfile: ../../../scripts/utils/workspace-peers.pnpmfile.cjs

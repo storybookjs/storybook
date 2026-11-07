@@ -29,7 +29,7 @@
     "marketplace:add": "claude plugin marketplace add ./ --scope user",
     "marketplace:remove": "claude plugin marketplace remove storybook",
     "marketplace:update": "claude plugin marketplace update storybook",
-    "plugin:install": "yarn run validate && yarn run marketplace:add && claude plugin install storybook@storybook --scope user",
+    "plugin:install": "pnpm run validate && pnpm run marketplace:add && claude plugin install storybook@storybook --scope user",
     "plugin:list": "claude plugin list --json",
     "plugin:remove": "claude plugin uninstall storybook@storybook --scope user",
     "plugin:update": "claude plugin update storybook@storybook",

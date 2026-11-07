@@ -206,7 +206,7 @@ export class CompodocEngine extends BenchEngine<OneShotRepetition> {
     this.#resolved = resolveCompodoc(this.#pin);
     return this.#resolved
       ? undefined
-      : `${this.#pin} did not resolve; it is pinned in code/lib/docgen-harness/package.json, so run yarn install`;
+      : `${this.#pin} did not resolve; it is pinned in code/lib/docgen-harness/package.json, so run pnpm install`;
   }
 
   version(): string | undefined {

@@ -11,8 +11,8 @@ import { expect, test } from '@playwright/test';
  * Attach coverage for `storybook tools` against the internal Storybook UI.
  *
  * Run locally (from repo root) with internal Storybook on port 6006:
- *   cd code && yarn storybook:ui
- *   yarn playwright test -c e2e-internal/playwright.config.ts e2e-internal/tools-attach.spec.ts
+ *   cd code && pnpm storybook:ui
+ *   cd code && pnpm exec playwright test -c e2e-internal/playwright.config.ts e2e-internal/tools-attach.spec.ts
  */
 
 const execFileAsync = promisify(execFile);

@@ -105,7 +105,7 @@ Edit `code/lib/docgen-harness/package.json` and install, so the candidate is on 
 ```
 
 ```bash
-yarn install
+pnpm install
 ```
 
 Pin the candidate exactly rather than with a range.
@@ -115,7 +115,7 @@ A range on both sides can resolve to one install, and then the run compares an e
 From `code/lib/docgen-harness/`:
 
 ```bash
-yarn bench:docgen-perf --engine vue-component-meta --engine vue-component-meta-next
+pnpm bench:docgen-perf --engine vue-component-meta --engine vue-component-meta-next
 ```
 
 Both ids are required.
@@ -144,7 +144,7 @@ Both engines are named on the line, and a header above the block says which way 
   The ratio is the current side's median over the candidate's, so `1.04` means the candidate was 4% faster on that scenario.
   A number below 1.00 is the candidate costing more.
 
-An engine whose package does not resolve is reported as skipped with a reason rather than measured, so a forgotten `yarn install` cannot quietly turn into a missing comparison.
+An engine whose package does not resolve is reported as skipped with a reason rather than measured, so a forgotten `pnpm install` cannot quietly turn into a missing comparison.
 
 #### Adding a version pair for another engine
 
@@ -204,7 +204,7 @@ When that breaks, the warm figure climbs toward the cold one, and the ratio catc
 
 ## The gate
 
-`yarn bench:docgen-perf-gate` runs the suite once at the pinned profile and asserts every recorded budget against the results.
+`pnpm bench:docgen-perf-gate` runs the suite once at the pinned profile and asserts every recorded budget against the results.
 
 Four rules exist so that a green gate means something:
 

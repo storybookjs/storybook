@@ -60,23 +60,19 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      - name: Setup Node.js and Install Dependencies
+        uses: $/.github/actions/setup-node-and-install
         with:
-          node-version-file: '.nvmrc'
-          cache: 'yarn'
-
-      - name: Install dependencies
-        run: yarn install --immutable
+          install-code-deps: true
 
       # Sandbox setup compiles these again, but inside each eval's timeout, so warm the nx cache here.
       - name: Compile the Storybook packages the sandboxes install
         env:
           NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
-        run: yarn workspace agent-eval run compile:checkout
+        run: pnpm --dir agent-eval run compile:checkout
 
       - name: Type check agent eval config
-        run: yarn workspace agent-eval run typecheck
+        run: pnpm --dir agent-eval run typecheck
 
       - name: Validate credentials
         shell: bash
@@ -120,7 +116,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: yarn workspace agent-eval run eval:agentic-ref
+        run: pnpm --dir agent-eval run eval:agentic-ref
 
       - name: Compute metrics and archive results
         if: ${{ always() && inputs.dry == false }}
@@ -131,7 +127,7 @@ jobs:
         run: |
           # Writes analysis.json next to each run's result.json so the metrics
           # ride along in the uploaded artifact.
-          yarn results:analyze || echo "::warning title=Analysis failed::Archiving raw results without offline metrics."
+          pnpm results:analyze || echo "::warning title=Analysis failed::Archiving raw results without offline metrics."
 
           # Tar before upload: result files may contain characters that
           # actions/upload-artifact rejects.

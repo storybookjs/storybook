@@ -4,7 +4,7 @@ import { join } from 'path';
 
 import semver from 'semver';
 
-import { BEFORE_SANDBOX_NPM_MIN_VERSION, ROOT_DIRECTORY } from '../../utils/constants.ts';
+import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../../utils/constants.ts';
 
 export { BEFORE_SANDBOX_NPM_MIN_VERSION };
 import { runCommand } from '../generate.ts';
@@ -38,9 +38,12 @@ interface SetupYarnOptions {
  * removed.
  */
 export async function setupYarn({ cwd }: SetupYarnOptions) {
+  const { stdout } = await runCommand('yarn --version', { cwd });
+  // Yarn 1 has no `set version self`, so it downloads the latest Yarn 4 instead.
+  const release = semver.major(String(stdout).trim()) >= 2 ? 'self' : 'berry';
   // `yarn set version` treats `cwd` as a project when a yarn.lock is present.
   await writeFile(join(cwd, 'yarn.lock'), '', { flag: 'a' });
-  await runCommand(`yarn set version berry`, { cwd });
+  await runCommand(`yarn set version ${release}`, { cwd });
   await runCommand('yarn config set nodeLinker node-modules', { cwd });
   await rm(join(cwd, 'package.json'), { force: true });
   await rm(join(cwd, 'yarn.lock'), { force: true });
@@ -113,8 +116,8 @@ interface RefreshLockfileOptions {
  *
  * 1. Drop any non-Yarn-4 lockfile the template's CLI produced (`package-lock.json`,
  *    legacy `yarn.lock`, `pnpm-lock.yaml`).
- * 2. Pin Yarn 4 via the `package.json` `packageManager` field so corepack
- *    resolves it deterministically (no network `yarn set version`).
+ * 2. Pin Yarn 4 via the `package.json` `packageManager` field for the sandbox's
+ *    users, and fail unless `yarn` runs that release.
  * 3. Set `npmMinimalAgeGate` to 7 days so resolution skips quarantined versions,
  *    plus any per-template `npmPreapprovedPackages` allowlist.
  * 4. Run `yarn install --mode=update-lockfile`, narrowing only the ranges that
@@ -130,9 +133,8 @@ export async function refreshBeforeStorybookLockfile({
 }: RefreshLockfileOptions) {
   // Start from a clean Yarn state. Drop the lockfiles the template's CLI
   // produced, plus any `.yarnrc.yml` / `.yarn/` left behind by the staged
-  // setup: a stale `yarnPath` there points at a different Yarn release than
-  // the `packageManager` field we pin below, and corepack aborts on that
-  // version mismatch.
+  // setup: a stale `yarnPath` there would run a different Yarn release than
+  // the `packageManager` field we pin below.
   await Promise.allSettled([
     rm(join(cwd, 'package-lock.json'), { force: true }),
     rm(join(cwd, 'pnpm-lock.yaml'), { force: true }),
@@ -150,10 +152,8 @@ export async function refreshBeforeStorybookLockfile({
   // would make Yarn 4 think `cwd` is a workspace of a non-existent project.
   await rm(join(cwd, '..', 'yarn.lock'), { force: true });
 
-  // Pin Yarn 4 via the package.json `packageManager` field so corepack resolves
-  // it deterministically. We deliberately do NOT run `yarn set version` here: it
-  // re-downloads Yarn over the network (and fails intermittently in CI), and is
-  // redundant — the sandbox only needs *a* Yarn 4 to produce the lockfile.
+  // We deliberately do NOT run `yarn set version` here: it re-downloads Yarn
+  // over the network (and fails intermittently in CI).
   await pinYarnPackageManager(cwd);
 
   const env = {
@@ -167,6 +167,8 @@ export async function refreshBeforeStorybookLockfile({
     YARN_ENABLE_COLORS: 'false',
     YARN_ENABLE_HYPERLINKS: 'false',
   };
+
+  await assertPublishedSandboxYarn(cwd, env);
 
   await runCommand(`yarn config set nodeLinker node-modules`, { cwd, env }, debug);
 
@@ -336,22 +338,25 @@ async function narrowQuarantinedRanges({
   await runCommand(`yarn install --mode=update-lockfile`, { cwd, env }, debug);
 }
 
-/**
- * Copy the monorepo's pinned Yarn version into the sandbox `package.json`
- * `packageManager` field. corepack then resolves Yarn 4 deterministically for
- * every `yarn` command run in the sandbox, with no network `yarn set version`.
- */
-async function pinYarnPackageManager(cwd: string) {
-  const rootPackageJson = JSON.parse(await readFile(join(ROOT_DIRECTORY, 'package.json'), 'utf-8'));
-  const packageManager: string | undefined = rootPackageJson.packageManager;
-  if (!packageManager?.startsWith('yarn@')) {
-    throw new Error(
-      `Expected a yarn "packageManager" in the monorepo package.json, got: ${packageManager}`
-    );
-  }
+// Users download published sandboxes as Yarn projects, so they pin Yarn, not the monorepo's pnpm.
+export const PUBLISHED_SANDBOX_PACKAGE_MANAGER = 'yarn@4.18.0';
 
+async function pinYarnPackageManager(cwd: string) {
   const packageJsonPath = join(cwd, 'package.json');
   const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf-8'));
-  packageJson.packageManager = packageManager;
+  packageJson.packageManager = PUBLISHED_SANDBOX_PACKAGE_MANAGER;
   await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
+}
+
+export class PublishedSandboxYarnError extends Error {}
+
+async function assertPublishedSandboxYarn(cwd: string, env: NodeJS.ProcessEnv) {
+  const expected = PUBLISHED_SANDBOX_PACKAGE_MANAGER.replace(/^yarn@/, '');
+  const { stdout } = await runCommand('yarn --version', { cwd, env });
+  const actual = String(stdout).trim();
+  if (actual !== expected) {
+    throw new PublishedSandboxYarnError(
+      `Published sandboxes pin Yarn ${expected}, but \`yarn\` in ${cwd} is ${actual}. Install it with \`bash .github/actions/setup-node-and-install/package-managers/install.sh yarn\`.`
+    );
+  }
 }

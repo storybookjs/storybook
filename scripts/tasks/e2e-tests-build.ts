@@ -37,8 +37,8 @@ export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
     // after the parallel chromium pass (see code/playwright.config.ts).
     const projects = '--project=chromium --project=chromium-mutating';
     const playwrightCommand = process.env.DEBUG
-      ? `yarn playwright test ${projects} --ui ${testFiles.join(' ')}`
-      : `yarn playwright test ${projects} ${testFiles.join(' ')}`;
+      ? `pnpm exec playwright test ${projects} --ui ${testFiles.join(' ')}`
+      : `pnpm exec playwright test ${projects} ${testFiles.join(' ')}`;
 
     await waitOn({ resources: [`http://localhost:${port}`], interval: 16, timeout: 200000 });
     await exec(

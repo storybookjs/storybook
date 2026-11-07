@@ -11,7 +11,7 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "playwright-e2e": "playwright test -c playwright-e2e.config.ts",
     "preview": "vite preview",
-    "storybook": "NODE_OPTIONS=\"--preserve-symlinks --preserve-symlinks-main\" storybook dev -p 6006",
+    "storybook": "NODE_OPTIONS=\"--preserve-symlinks\" storybook dev -p 6006",
     "vitest": "SKIP_FAIL_ON_PURPOSE=true vitest run"
   },
   "resolutions": {
@@ -25,8 +25,8 @@
     "@storybook/builder-vite": "file:../../../code/builders/builder-vite",
     "@storybook/builder-webpack5": "file:../../../code/builders/builder-webpack5",
     "@storybook/codemod": "file:../../../code/lib/codemod",
-    "@storybook/core-webpack": "portal:../../../code/lib/core-webpack",
-    "@storybook/ember": "portal:../../../code/frameworks/ember",
+    "@storybook/core-webpack": "file:../../../code/lib/core-webpack",
+    "@storybook/ember": "file:../../../code/frameworks/ember",
     "@storybook/html": "file:../../../code/renderers/html",
     "@storybook/nextjs": "file:../../../code/frameworks/nextjs",
     "@storybook/preact": "file:../../../code/renderers/preact",
@@ -48,7 +48,7 @@
     "@storybook/web-components-vite": "file:../../../code/frameworks/web-components-vite",
     "eslint-plugin-storybook": "file:../../../code/lib/eslint-plugin",
     "playwright": "1.58.2",
-    "storybook": "portal:../../../code/core"
+    "storybook": "file:../../../code/core"
   },
   "dependencies": {
     "react": "^18.0.0",
@@ -88,6 +88,7 @@
     "vite": "^7",
     "vitest": "4.0.4"
   },
+  "packageManager": "pnpm@10.34.9+sha512.f49b5a8ea0fdedb44bb3c0c1d6575092a53c2950d95b7ad15df11f17974877a2de3a01c07e934e9b28ce716e51c09a94962c7306d09be2e1e4b18a8c8762fd32",
   "nx": {
     "includedScripts": []
   }

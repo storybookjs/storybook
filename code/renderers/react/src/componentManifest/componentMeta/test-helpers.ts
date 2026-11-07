@@ -2,28 +2,29 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-/** Resolve the real node_modules directory (may be hoisted to the workspace root). */
-const NODE_MODULES_DIR = path.resolve(require.resolve('react/package.json'), '../..');
+// A transitive dependency such as csstype resolves only from the package that depends on it.
+function packageDir(pkg: string, fromDir?: string): string {
+  return path.dirname(
+    require.resolve(`${pkg}/package.json`, fromDir ? { paths: [fromDir] } : undefined)
+  );
+}
 
 /** Copy the minimal node_modules packages TypeScript needs for React type resolution. */
 function copyNodeModules(projectDir: string): void {
   const dest = path.join(projectDir, 'node_modules');
-  const typesSrc = path.join(NODE_MODULES_DIR, '@types');
+  const typesReactDir = packageDir('@types/react');
 
   fs.mkdirSync(path.join(dest, '@types'), { recursive: true });
 
-  for (const pkg of ['react', 'csstype']) {
-    fs.cpSync(path.join(NODE_MODULES_DIR, pkg), path.join(dest, pkg), {
-      recursive: true,
-      dereference: true,
-    });
-  }
+  const copies: Array<[src: string, target: string]> = [
+    [packageDir('react'), path.join(dest, 'react')],
+    [packageDir('csstype', typesReactDir), path.join(dest, 'csstype')],
+    [typesReactDir, path.join(dest, '@types', 'react')],
+    [packageDir('@types/prop-types', typesReactDir), path.join(dest, '@types', 'prop-types')],
+  ];
 
-  for (const pkg of ['react', 'prop-types']) {
-    fs.cpSync(path.join(typesSrc, pkg), path.join(dest, '@types', pkg), {
-      recursive: true,
-      dereference: true,
-    });
+  for (const [src, target] of copies) {
+    fs.cpSync(src, target, { recursive: true, dereference: true });
   }
 }
 

@@ -4,7 +4,7 @@ import { cp, rm } from 'node:fs/promises';
 import { join } from 'path';
 import waitOn from 'wait-on';
 
-import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants.ts';
+import { ROOT_DIRECTORY } from './utils/constants.ts';
 import { exec } from './utils/exec.ts';
 import { isNxTaskExecution } from './utils/nx.ts';
 
@@ -17,29 +17,40 @@ import { isNxTaskExecution } from './utils/nx.ts';
  *
  * 1. Copying the cached sandbox to the working directory (if needed)
  * 2. Waiting for the local verdaccio registry (when using --no-link)
- * 3. Running `yarn install` to restore node_modules
+ * 3. Running `pnpm install` to restore node_modules
  * 4. Running framework-specific setup (e.g. svelte-kit sync)
  * 5. Copying storybook-static from cache (if a build was cached)
  *
  * This is called at the start of each downstream task's `run()` (dev, build, serve, etc.)
  * instead of being a separate NX target, so that NX Cloud doesn't have uncacheable tasks.
  *
- * No-op when not running under NX (i.e. when using `yarn task` directly),
- * or when the sandbox is already prepared (node_modules exist).
+ * When not running under NX (i.e. when using `pnpm task` directly), it only syncs the monorepo
+ * packages into a linked sandbox, so the task runs the latest compile. It is a no-op under NX when
+ * the sandbox is already prepared (node_modules exist).
  */
-export async function prepareSandbox({ key, link }: { key: string; link: boolean }): Promise<void> {
-  // When running via `yarn task`, the sandbox task already fully initializes
-  // the sandbox (including node_modules), so no preparation is needed.
+export async function prepareSandbox({
+  key,
+  link,
+  sandboxDir,
+}: {
+  key: string;
+  link: boolean;
+  // Where tasks actually run, e.g. ../storybook-sandboxes/react-vite-default-ts.
+  sandboxDir: string;
+}): Promise<void> {
+  // Where NX caches sandbox output (e.g. sandbox/react-vite-default-ts, inside repo)
+  const cacheDir = join(ROOT_DIRECTORY, 'sandbox', key.replace('/', '-'));
+
+  // When running via `pnpm task`, the sandbox task already fully initializes
+  // the sandbox (including node_modules), so only linked packages need a refresh.
   if (!isNxTaskExecution()) {
+    // Imported lazily because it imports from `code/`, which may not be installed yet.
+    const { isLinkedSandbox, syncLinkedPackages } = await import('./utils/pnpm.ts');
+    if (link && (await isLinkedSandbox(sandboxDir))) {
+      await syncLinkedPackages({ cwd: sandboxDir, dryRun: false, debug: false });
+    }
     return;
   }
-
-  const templateDir = key.replace('/', '-');
-
-  // sandboxDir: where tasks actually run (e.g. ../storybook-sandboxes/react-vite-default-ts)
-  // cacheDir: where NX caches sandbox output (e.g. sandbox/react-vite-default-ts, inside repo)
-  const sandboxDir = join(SANDBOX_DIRECTORY, templateDir);
-  const cacheDir = join(ROOT_DIRECTORY, 'sandbox', templateDir);
 
   // Fast path: if node_modules already exist, the sandbox was already prepared
   // by a previous task in the same pipeline (e.g. build already prepared, so serve can skip)
@@ -69,13 +80,13 @@ export async function prepareSandbox({ key, link }: { key: string; link: boolean
     }
 
     // Restore node_modules — the NX cache deliberately excludes them to keep
-    // the remote cache small. The yarn cache is shared, so this is fast.
-    await exec('yarn install --immutable', { cwd: sandboxDir }, { debug: true });
+    // the remote cache small. The pnpm store is shared, so this is fast.
+    await exec('pnpm install --frozen-lockfile', { cwd: sandboxDir }, { debug: true });
   }
 
   // SvelteKit requires a sync step to generate types after install
   if (key.includes('svelte-kit')) {
-    await exec('yarn exec svelte-kit sync', { cwd: sandboxDir }, { debug: true });
+    await exec('pnpm exec svelte-kit sync', { cwd: sandboxDir }, { debug: true });
   }
 
   // If a `build` task already ran and cached storybook-static, copy it over

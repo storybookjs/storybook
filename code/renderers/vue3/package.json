@@ -50,6 +50,7 @@
     "template/cli/**/*",
     "README.md",
     "*.js",
+    "template/**/*.js",
     "*.d.ts",
     "!src/**/*"
   ],
@@ -66,6 +67,8 @@
   "devDependencies": {
     "@testing-library/vue": "^8.0.0",
     "@vitejs/plugin-vue": "^4.6.2",
+    "expect-type": "^0.15.0",
+    "memfs": "^4.11.1",
     "typescript": "^6.0.3",
     "vue": "^3.2.47",
     "vue-tsc": "latest"

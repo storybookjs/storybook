@@ -1,43 +1,43 @@
 /**
- * Set of resolutions from the root package.json that should NOT be copied to sandbox package.json.
- * These are the "existing" resolutions that Storybook maintains, as opposed to resolutions that
- * might be injected by ecosystem-ci repos.
+ * Keys of the overrides Storybook maintains in pnpm-workspace.yaml, as opposed to the overrides an
+ * ecosystem CI runner injects there. These are NOT copied to the sandbox package.json.
  *
- * This set must stay in sync with the resolutions in the root package.json. Run the test in
- * before-test.test.ts to verify they match.
+ * existing-resolutions.test.ts checks that this set stays in sync with pnpm-workspace.yaml.
  */
 export const EXISTING_RESOLUTIONS = new Set([
+  '@angular/build>vitest',
   '@ai-sdk/anthropic',
   '@babel/runtime',
   '@babel/traverse',
   '@babel/types',
   '@playwright/test',
+  '@storybook/addon-docs>react-dom',
   '@testing-library/jest-dom',
-  '@testing-library/user-event@npm:^14.6.8',
-  '@types/babel__traverse@npm:*',
-  '@types/babel__traverse@npm:^7.18.0',
+  '@testing-library/user-event@^14.6.8',
+  '@types/babel__traverse',
   '@types/node',
   '@types/react',
   '@typescript-eslint/types',
-  '@vercel/agent-eval-playground/react',
-  '@vercel/agent-eval-playground/react-dom',
-  '@vercel/agent-eval@npm:1.2.0',
-  '@vitest/expect@npm:5.0.5',
+  '@vercel/agent-eval-playground>react',
+  '@vercel/agent-eval-playground>react-dom',
+  'agent-eval>react',
+  'agent-eval>react-dom',
   'aria-query@5.3.0',
-  'buffer-equal-constant-time@npm:1.0.1',
   'caniuse-lite',
-  'dom-accessibility-api@npm:^0.5.14',
-  'dom-accessibility-api@npm:^0.5.9',
+  'dom-accessibility-api@^0.5.14',
+  'dom-accessibility-api@^0.5.9',
   'esbuild',
   'playwright',
   'playwright-core',
-  'polka@npm:1.0.0-next.28/@polka/url',
-  'radix-ui@npm:^1.4.3',
+  'polka@1.0.0-next.28>@polka/url',
+  'radix-ui@^1.4.3',
   'react',
   'react-aria',
+  'react-joyride>type-fest',
   'react-stately',
   'rxjs',
-  'react-joyride/type-fest',
   'typescript',
   'valibot',
+  'vite-plus',
+  'vitest>happy-dom',
 ]);

@@ -17,8 +17,8 @@
     "eval:sync-storybook-version": "node ./eval/sync-storybook-version.ts",
     "generate-sandboxes": "jiti ./sandbox/generate.ts",
     "get-sandbox-dir": "jiti ./get-sandbox-dir.ts",
-    "lint": "yarn lint:js",
-    "lint:js": "yarn lint:js:cmd .  --quiet",
+    "lint": "pnpm run lint:js",
+    "lint:js": "pnpm run lint:js:cmd . --quiet",
     "lint:js:cmd": "oxlint --report-unused-disable-directives-severity=error",
     "lint:package": "sort-package-json",
     "local-registry": "jiti ./run-registry.ts",
@@ -95,7 +95,7 @@
     "eslint-plugin-compat": "^6.0.2",
     "eslint-plugin-depend": "^1.4.0",
     "eslint-plugin-eslint-comments": "^3.2.0",
-    "eslint-plugin-local-rules": "portal:./eslint-plugin-local-rules",
+    "eslint-plugin-local-rules": "link:./eslint-plugin-local-rules",
     "eslint-plugin-playwright": "^1.8.3",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-storybook": "workspace:*",
@@ -152,8 +152,10 @@
     "typescript": "^6.0.3",
     "typescript-native": "npm:typescript@^7.0.2",
     "uuid": "^9.0.1",
+    "vite": "^7.0.4",
     "vitest": "5.0.5",
     "wait-on": "^8.0.3",
+    "watchpack": "^2.5.0",
     "window-size": "^1.1.1",
     "yaml": "^2.8.1",
     "zod": "^3.25.76"
@@ -163,7 +165,6 @@
     "verdaccio": "^5.33.0",
     "verdaccio-auth-memory": "^10.3.1"
   },
-  "packageManager": "yarn@4.18.0",
   "nx": {
     "includedScripts": []
   }

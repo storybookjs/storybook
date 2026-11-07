@@ -998,7 +998,7 @@ describe('DS misuse panel', () => {
     const html = render({});
     expect(html).toContain('DS misuse');
     expect(html).toContain('No run in this comparison has been judged yet');
-    expect(html).toContain('yarn judge:ds-misuse --dry');
+    expect(html).toContain('pnpm judge:ds-misuse --dry');
   });
 
   it('names the plan in the empty state when the comparison was plan-scoped', () => {

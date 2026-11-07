@@ -8,8 +8,8 @@
  * Contract: ../PERF-METHODOLOGY.md. Budgets: ../docgen-shared/budgets.ts.
  *
  * Run from code/lib/docgen-harness:
- *   yarn bench:docgen-perf-gate
- *   yarn bench:docgen-perf-gate --out <dir>   # where the results are written
+ *   pnpm bench:docgen-perf-gate
+ *   pnpm bench:docgen-perf-gate --out <dir>   # where the results are written
  */
 import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';

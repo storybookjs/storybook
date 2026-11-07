@@ -246,7 +246,7 @@ const generateRule = async () => {
   }
 
   logger.log(
-    '\n🚀 All done! Make sure to run `yarn test` as you write the rule and `yarn update-rules` when you are done. This script will update the necessary config and docs files to reflect your changes.'
+    '\n🚀 All done! Make sure to run `pnpm exec vitest run` as you write the rule and `pnpm exec jiti scripts/update-all.ts` when you are done, both from code/lib/eslint-plugin. This script will update the necessary config and docs files to reflect your changes.'
   );
   logger.log(`❤️  Thanks for helping this plugin get better, ${authorName.split(' ')[0]}!`);
 };

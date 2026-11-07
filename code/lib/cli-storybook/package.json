@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
+    "@types/jscodeshift": "^17.3.0",
     "@types/prompts": "^2.0.9",
     "comment-json": "^4.2.5",
     "cross-spawn": "^7.0.6",
@@ -56,6 +57,7 @@
     "leven": "^4.0.0",
     "memfs": "^4.11.1",
     "p-limit": "^7.2.0",
+    "pathe": "^2.0.3",
     "picocolors": "^1.1.0",
     "semver": "^7.7.3",
     "slash": "^5.0.0",

@@ -59,7 +59,7 @@ Pin explicit versions (do not leave a live query):
 - `docs/get-started/install.mdx` — public list and older-browser fallback guidance, scoped to the same Storybook versions as `MIGRATION.md`; preserve the preview-only limitations
 - `MIGRATION.md` — next major `From version X.x to Y.0.0` section. Create that section at the top if it does not exist.
 
-If browserslist cannot resolve the new pins, bump `caniuse-lite` (root `resolutions` + lockfile). The repo has a 7-day npm age gate.
+If browserslist cannot resolve the new pins, bump `caniuse-lite` (`overrides` in `pnpm-workspace.yaml` + `pnpm-lock.yaml`). The repo has a 7-day release age gate (`minimumReleaseAge` in `pnpm-workspace.yaml`).
 
 ## PR
 

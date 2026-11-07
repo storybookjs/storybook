@@ -31,6 +31,7 @@
   "files": [
     "dist/**/*",
     "README.md",
+    "CHANGELOG.md",
     "*.js",
     "*.d.ts",
     "!src/**/*"
@@ -42,6 +43,7 @@
     "valibot": "^1.4.0"
   },
   "devDependencies": {
+    "@standard-schema/spec": "^1.1.0",
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-vitest": "workspace:*",
     "storybook": "workspace:*",

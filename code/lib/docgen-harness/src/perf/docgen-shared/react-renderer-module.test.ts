@@ -5,7 +5,7 @@ import { loadReactRendererModule, rendererModuleError } from './react-renderer-m
 /**
  * The message below is the reason this module exists rather than a hardcoded path: without the
  * redirect, a missing `code/core` build surfaces as a resolution failure naming a file no harness
- * ever mentions, and the reader has no way to get from it to `yarn nx compile core`.
+ * ever mentions, and the reader has no way to get from it to `pnpm exec nx compile core`.
  */
 const missingCoreBuild = new Error(
   "Cannot find module '/repo/node_modules/storybook/dist/common/index.js' imported from " +
@@ -15,7 +15,7 @@ const missingCoreBuild = new Error(
 describe('rendererModuleError', () => {
   it('turns a missing core build into the command that fixes it', () => {
     const error = rendererModuleError('utils.ts', missingCoreBuild);
-    expect(error.message).toContain('yarn nx compile core');
+    expect(error.message).toContain('pnpm exec nx compile core');
     expect(error.message).toContain('utils.ts');
   });
 

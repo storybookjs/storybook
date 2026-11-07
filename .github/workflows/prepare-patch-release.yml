@@ -38,15 +38,20 @@ jobs:
           ref: main
           token: ${{ secrets.GH_TOKEN }}
 
+      # Loaded from the workflow commit (`$/`) because main, checked out above, uses Yarn until a
+      # release brings pnpm to it.
       - name: Setup Node.js and Install Dependencies
-        uses: ./.github/actions/setup-node-and-install
+        id: setup
+        uses: $/.github/actions/setup-node-and-install
 
       - name: Check if pull request is frozen
         if: github.event_name != 'workflow_dispatch'
         id: check-frozen
         env:
+          PM: ${{ steps.setup.outputs.package-manager }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:is-pr-frozen --patch
+        run: |
+          "$PM" release:is-pr-frozen --patch
 
       - name: Cancel when frozen
         if: steps.check-frozen.outputs.frozen == 'true' && github.event_name != 'workflow_dispatch'
@@ -61,8 +66,10 @@ jobs:
       - name: Check for unreleased changes
         id: unreleased-changes
         env:
+          PM: ${{ steps.setup.outputs.package-manager }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: yarn release:unreleased-changes-exists --unpicked-patches
+        run: |
+          "$PM" release:unreleased-changes-exists --unpicked-patches
 
       - name: Fetch next branch
         run:
@@ -73,11 +80,12 @@ jobs:
       - name: Pick patches
         id: pick-patches
         env:
+          PM: ${{ steps.setup.outputs.package-manager }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name 'storybook-bot'
           git config --global user.email '32066757+storybook-bot@users.noreply.github.com'
-          yarn release:pick-patches
+          "$PM" release:pick-patches
 
       - name: Cancel when no patches to pick
         if: steps.pick-patches.outputs.no-patch-prs == 'true'
@@ -92,15 +100,19 @@ jobs:
       - name: Bump version deferred
         id: bump-version
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'true'
+        env:
+          PM: ${{ steps.setup.outputs.package-manager }}
         run: |
-          yarn release:version --deferred --release-type patch --verbose
+          "$PM" release:version --deferred --release-type patch --verbose
 
       # We need the current version to set the branch name, even when not bumping the version
       - name: Get current version
         id: current-version
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'false'
+        env:
+          PM: ${{ steps.setup.outputs.package-manager }}
         run: |
-          yarn release:get-current-version --verbose
+          "$PM" release:get-current-version --verbose
 
       - name: Set version output
         id: versions
@@ -115,10 +127,11 @@ jobs:
       - name: Write changelog
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'true'
         env:
+          PM: ${{ steps.setup.outputs.package-manager }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NEXT_VERSION: ${{ steps.versions.outputs.next }}
         run: |
-          yarn release:write-changelog "$NEXT_VERSION" --unpicked-patches --verbose
+          "$PM" release:write-changelog "$NEXT_VERSION" --unpicked-patches --verbose
 
       - name: 'Commit changes to branch: version-patch-from-${{ steps.versions.outputs.current }}'
         working-directory: .
@@ -136,6 +149,7 @@ jobs:
       - name: Generate PR description
         id: description
         env:
+          PM: ${{ steps.setup.outputs.package-manager }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HAS_CHANGES: ${{ steps.unreleased-changes.outputs.has-changes-to-release }}
           CURRENT_VERSION: ${{ steps.versions.outputs.current }}
@@ -146,7 +160,7 @@ jobs:
           if [[ "$HAS_CHANGES" == "true" ]]; then
             ARGS+=(--current-version "$CURRENT_VERSION" --next-version "$NEXT_VERSION")
           fi
-          yarn release:generate-pr-description "${ARGS[@]}" --verbose
+          "$PM" release:generate-pr-description "${ARGS[@]}" --verbose
 
       - name: Create or update pull request with release
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'true'

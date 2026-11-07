@@ -54,6 +54,8 @@
     "knitwork": "^1.1.0",
     "magic-string": "^1.1.0",
     "pathe": "^1.1.2",
+    "picocolors": "^1.1.0",
+    "rollup": "^4.43.0",
     "ts-dedent": "^2.2.0",
     "vite": "^7.0.4"
   },

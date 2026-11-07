@@ -15,7 +15,7 @@ Rerun the test on an OXC upgrade. When an upgrade changes a transform on purpose
 record `transforms.json` again, then review the diff:
 
 ```sh
-yarn nx compile core
+pnpm exec nx compile core
 node code/core/src/csf-tools/__corpus__/record.mjs transforms
 ```
 

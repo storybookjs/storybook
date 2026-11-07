@@ -70,7 +70,7 @@ export const dev: Task = {
     }
   },
   async run({ sandboxDir, key, selectedTask }, { dryRun, debug, link }) {
-    await prepareSandbox({ key, link });
+    await prepareSandbox({ key, link, sandboxDir });
 
     if (!dryRun) {
       try {
@@ -84,7 +84,7 @@ export const dev: Task = {
 
     const controller = new AbortController();
     const port = getDevPort(key);
-    const devCommand = `yarn storybook --port ${port}${selectedTask === 'dev' ? '' : ' --ci'}`;
+    const devCommand = `pnpm storybook --port ${port}${selectedTask === 'dev' ? '' : ' --ci'}`;
 
     const start = now();
     exec(

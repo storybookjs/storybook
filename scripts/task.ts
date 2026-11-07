@@ -14,6 +14,7 @@ import {
   type TemplateKey,
 } from '../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { version } from '../code/package.json';
+import { dropInheritedPnpmConfig } from './utils/package-manager-env.ts';
 import { bench } from './tasks/bench.ts';
 import { build } from './tasks/build.ts';
 import { check } from './tasks/check.ts';
@@ -167,11 +168,6 @@ export const options = createOptions({
     type: 'boolean',
     description: 'Build code and link for local development?',
     inverse: true,
-    promptType: false,
-  },
-  forceLink: {
-    type: 'boolean',
-    description: 'Force dependencies to be linked even with incompatible frameworks?',
     promptType: false,
   },
   dir: {
@@ -409,10 +405,12 @@ async function runTask(
 const controllers: AbortController[] = [];
 
 async function run() {
+  dropInheritedPnpmConfig();
+
   // useful for other scripts to know whether they're running in the creation of a sandbox in the monorepo
   process.env.IN_STORYBOOK_SANDBOX = 'true';
 
-  const allOptionValues = await getOptionsOrPrompt('yarn task', options);
+  const allOptionValues = await getOptionsOrPrompt('pnpm task', options);
 
   const { junit, startFrom, ...optionValues } = allOptionValues;
 
@@ -586,7 +584,7 @@ async function run() {
             To reproduce this error locally, run:
 
             ${picocolors.bold(
-              getCommand('yarn task', options, {
+              getCommand('pnpm task', options, {
                 ...allOptionValues,
                 link: true,
                 startFrom: 'auto',

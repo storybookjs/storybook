@@ -70,23 +70,25 @@ const owner = (file: string) =>
     .filter((pkg) => file.startsWith(`${pkg.dir}/`))
     .sort((a, b) => b.dir.length - a.dir.length)[0];
 
-const bundledFiles = () =>
-  readdirSync(METAFILES).flatMap((folder) =>
-    readdirSync(join(METAFILES, folder))
+const projectOf = (folder: string) => packages.find((pkg) => pkg.project === folder);
+
+const bundledFiles = (): { pkg: Package; file: string }[] =>
+  readdirSync(METAFILES).flatMap((folder) => {
+    const pkg = projectOf(folder);
+    if (!pkg) {
+      return [];
+    }
+    return readdirSync(join(METAFILES, folder))
       .filter((file) => file.endsWith('.json'))
       .flatMap((metafile) => {
-        const pkg = packages.find((candidate) => candidate.project === folder);
-        if (!pkg) {
-          return [{ folder, pkg, file: '' }];
-        }
         const { inputs } = read(join(METAFILES, folder, metafile)) as {
           inputs: Record<string, unknown>;
         };
         return Object.keys(inputs)
           .filter((input) => !input.includes('node_modules/') && !input.includes(':'))
-          .map((input) => ({ folder, pkg, file: join(pkg.dir, input) }));
-      })
-  );
+          .map((input) => ({ pkg, file: join(pkg.dir, input) }));
+      });
+  });
 
 // CI compiles everything before the unit tests run, so the metafiles are there; locally, compile
 // first.
@@ -96,12 +98,12 @@ const compiled = existsSync(METAFILES) || !!process.env.CI;
 // `^production`: a sandbox, for one. A bundled file outside `production` changes the bundle without
 // changing those hashes, so they restore stale results and `nx affected` skips them.
 it.skipIf(!compiled)("every package's production covers the sources it bundles", () => {
-  const missing = new Set<string>();
-  for (const { folder, pkg, file } of bundledFiles()) {
-    if (!pkg) {
-      missing.add(`no Nx project is named ${folder}`);
-      continue;
-    }
+  const missing = new Set(
+    readdirSync(METAFILES)
+      .filter((folder) => !projectOf(folder))
+      .map((folder) => `no Nx project is named ${folder}`)
+  );
+  for (const { pkg, file } of bundledFiles()) {
     const from = owner(file);
     const path = relative(ROOT, file);
     const hashedBy =
@@ -120,7 +122,6 @@ it.skipIf(!compiled)('all-production covers every bundled source', () => {
   const allProduction = globsOf(['all-production'], nxJson.namedInputs, '');
   const missing = new Set(
     bundledFiles()
-      .filter(({ pkg }) => pkg)
       .map(({ file }) => relative(ROOT, file))
       .filter((path) => !covers(allProduction, path))
   );

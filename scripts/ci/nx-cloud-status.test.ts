@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process';
+
 import { describe, expect, it } from 'vitest';
 
 import { logLines, parseTarget, summarizeLog } from './nx-cloud-status.ts';
@@ -91,5 +93,21 @@ describe('summarizeLog', () => {
 
   it('returns a short log whole', () => {
     expect(summarizeLog(['a', 'b'])).toEqual(['a', 'b']);
+  });
+});
+
+describe('--help', () => {
+  it('prints the usage from the leading comment, not the source', () => {
+    const help = execFileSync(
+      process.execPath,
+      [`${import.meta.dirname}/nx-cloud-status.ts`, '--help'],
+      {
+        encoding: 'utf8',
+      }
+    );
+
+    expect(help).toMatch(/^Reports what an NX Cloud CI pipeline execution/);
+    expect(help).toContain('Exit code: 0 when the pipeline succeeded');
+    expect(help).not.toMatch(/^import /m);
   });
 });

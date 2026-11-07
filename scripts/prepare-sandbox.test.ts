@@ -5,6 +5,7 @@ import * as memfs from 'memfs';
 import { vol } from 'memfs';
 import { join, relative } from 'pathe';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import waitOn from 'wait-on';
 
 import { prepareSandbox } from './prepare-sandbox.ts';
 import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants.ts';
@@ -12,8 +13,8 @@ import { exec } from './utils/exec.ts';
 
 vi.mock('node:fs', { spy: true });
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('./utils/exec.ts', () => ({ exec: vi.fn() }));
-vi.mock('wait-on', () => ({ default: vi.fn() }));
+vi.mock('./utils/exec.ts', { spy: true });
+vi.mock('wait-on', { spy: true });
 
 const KEY = 'react-vite/default-ts';
 const CACHE = join(ROOT_DIRECTORY, 'sandbox', 'react-vite-default-ts');
@@ -34,6 +35,8 @@ const files = (dir: string) => {
 
 beforeEach(() => {
   vol.reset();
+  vi.mocked(exec).mockResolvedValue(undefined as never);
+  vi.mocked(waitOn).mockResolvedValue(undefined as never);
   vi.mocked(fs.existsSync).mockImplementation(memfs.fs.existsSync as never);
   for (const name of ['cp', 'readFile', 'readdir', 'rm'] as const) {
     vi.mocked(fsp[name]).mockImplementation(memfs.fs.promises[name] as never);

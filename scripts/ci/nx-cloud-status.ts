@@ -867,8 +867,15 @@ async function main() {
     },
   });
   if (values.help) {
-    const doc = readFileSync(import.meta.filename, 'utf8').split('*/')[0];
-    print(doc.replace(/^\/\*\*\n/, '').replace(/^ \* ?/gm, ''));
+    // The leading comment block of this file.
+    const lines = readFileSync(import.meta.filename, 'utf8').split('\n');
+    const end = lines.findIndex((line) => !line.startsWith('//'));
+    print(
+      lines
+        .slice(0, end)
+        .map((line) => line.replace(/^\/\/ ?/, ''))
+        .join('\n')
+    );
     return EXIT.succeeded;
   }
 

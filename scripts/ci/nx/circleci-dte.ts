@@ -205,8 +205,13 @@ const runNx = (os: Os, selected: readonly Workflow[], base: string | undefined) 
 
 // As Nx's manual DTE recipes and lerna's Windows run do: once the command has ended, even when it
 // failed or timed out, the run's agents need not wait for NX Cloud to notice.
+// Also when the job failed before its install: the pinned CLI that started the run stops it then.
 const stopAgents = () => ({
-  run: { name: 'Stop the agents', when: 'always', command: 'yarn nx stop-all-agents' },
+  run: {
+    name: 'Stop the agents',
+    when: 'always',
+    command: `yarn nx stop-all-agents || ${NX_CLOUD} stop-all-agents`,
+  },
 });
 
 // Each task writes its results to a folder of its own (scripts/utils/nx.ts `nxTaskResultsDirectory`).

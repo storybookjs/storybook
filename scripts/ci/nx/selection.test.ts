@@ -89,18 +89,25 @@ describe('weighing the selected tasks', () => {
     expect(selection.tasks['a:sandbox']).toMatchObject({ cached: true, seconds: 0 });
   });
 
-  it("runs a task Nx may not restore for NX Cloud's average, not its last quick rerun", () => {
+  it("times a task Nx may not restore by NX Cloud's average when its runs were quicker", () => {
     const selection = mergeTaskGraphs([devE2eGraph]);
     weigh(selection, hashes, history, durations);
 
     expect(selection.tasks['a:chromatic']).toMatchObject({ cached: false, seconds: 90 });
   });
 
-  it("prefers the pull request's own time for a task over NX Cloud's average", () => {
+  it("takes the longer of the pull request's own time and NX Cloud's average", () => {
     const selection = mergeTaskGraphs([devE2eGraph]);
-    weigh(selection, hashes, history, durations);
+    weigh(
+      selection,
+      hashes,
+      { ...history, seconds: new Map([['a:e2e-tests-dev-1', 400]]) },
+      durations
+    );
 
-    expect(selection.tasks['a:e2e-tests-dev-1']).toMatchObject({ cached: false, seconds: 200 });
+    expect(selection.tasks['a:e2e-tests-dev-1']).toMatchObject({ cached: false, seconds: 400 });
+    weigh(selection, hashes, history, durations);
+    expect(selection.tasks['a:e2e-tests-dev-1']).toMatchObject({ cached: false, seconds: 300 });
   });
 
   it('counts every task as one that runs without NX Cloud', () => {

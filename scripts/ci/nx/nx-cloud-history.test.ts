@@ -52,19 +52,19 @@ describe('the history of a branch', () => {
     expect([...history.seconds.keys()]).toEqual(['h-pr:compile']);
   });
 
-  it("takes the newest run's time for a task, and only the time of a run that missed the cache", () => {
+  it("takes the longest run's time for a task, and only the time of a run that missed the cache", () => {
     const newer = task('h1', { completedAt: '2026-11-01T10:02:00Z' });
     const hit = task('h2', { cacheStatus: 'remote-cache-hit' });
 
     const history = historyOf(
       [
         { id: 'new', tasks: [newer, hit] },
-        { id: 'old', tasks: [task('h1')] },
+        { id: 'old', tasks: [task('h1', { completedAt: '2026-11-01T10:03:00Z' })] },
       ],
       []
     );
 
-    expect(history.seconds).toEqual(new Map([['h1:compile', 120]]));
+    expect(history.seconds).toEqual(new Map([['h1:compile', 180]]));
   });
 
   it('reads the base branch in every environment', async () => {

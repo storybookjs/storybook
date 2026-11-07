@@ -154,7 +154,9 @@ export type History = {
   // Every hash the branch's own runs recorded, also of failed tasks. None of them matching the
   // selection means the setup job hashes differently from Nx in the run.
   seen: Set<string>;
-  // How long each task (`project:target`) took when it ran, on this OS, in the latest run that ran it.
+  // How long each task (`project:target`) took when it ran, on this OS: the longest of the runs that
+  // ran it, since a quick run (Chromatic with nothing new to upload, a light agent) says little about
+  // the next.
   seconds: Map<string, number>;
 };
 
@@ -187,10 +189,10 @@ export function historyOf(
       task.status === 'SUCCEEDED' &&
       /miss/i.test(task.cacheStatus ?? '') &&
       task.startedAt &&
-      task.completedAt &&
-      !history.seconds.has(key)
+      task.completedAt
     ) {
-      history.seconds.set(key, (Date.parse(task.completedAt) - Date.parse(task.startedAt)) / 1000);
+      const seconds = (Date.parse(task.completedAt) - Date.parse(task.startedAt)) / 1000;
+      history.seconds.set(key, Math.max(seconds, history.seconds.get(key) ?? 0));
     }
   }
   return history;
@@ -215,7 +217,7 @@ export async function osHistory(
   base: Promise<Run[]>
 ): Promise<History> {
   const own = branch ? await latestRuns({ branch, ciExecutionEnv: os }, { limit: RUNS }) : [];
-  const timed = own.length > 0 ? own : await latestRuns({ ciExecutionEnv: os }, { limit: 1 });
+  const timed = own.length > 0 ? own : await latestRuns({ ciExecutionEnv: os }, { limit: RUNS });
   return historyOf(own, await base, timed);
 }
 

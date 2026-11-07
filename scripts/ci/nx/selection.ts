@@ -88,10 +88,10 @@ export function mergeTaskGraphs(graphs: readonly NxTaskGraph[]): Selection {
 
 // A task the setup job knows nothing more about: a few CI tasks take less, the E2E tests more.
 export const UNKNOWN_TASK_SECONDS = 60;
-// Fill in each task's hash, whether it is cached, and its seconds: the time the latest run on this
-// OS took for it (`History.seconds`), else NX Cloud's average on CI, else a guess. A task Nx may
-// not cache (Chromatic) takes NX Cloud's average: its last run may have been a rerun of the same
-// commit, which Chromatic had already built.
+// Fill in each task's hash, whether it is cached, and its seconds: the longest of the time the
+// recent runs on this OS took for it (`History.seconds`) and NX Cloud's average on CI, else a guess.
+// Both alone ran short in a cold core run, by 17% of the work: Chromatic's average (14 s) comes
+// mostly from reruns with nothing to upload, where a new commit takes 76 s.
 export function weigh(
   selection: Selection,
   hashes: Readonly<Record<string, string>>,
@@ -102,10 +102,10 @@ export function weigh(
     const key = `${task.project}:${task.target}`;
     task.hash = hashes[id];
     task.cached = task.cache && !!task.hash && !!history?.succeeded.has(task.hash);
-    const ran = task.cache ? history?.seconds.get(key) : undefined;
-    task.seconds = task.cached
-      ? 0
-      : Math.round(ran ?? durations?.get(key)?.missSeconds ?? UNKNOWN_TASK_SECONDS);
+    // The longest of what the branch's runs took and NX Cloud's average: a run that takes fewer
+    // agents than it needs costs minutes, one more agent costs little.
+    const seconds = Math.max(history?.seconds.get(key) ?? 0, durations?.get(key)?.missSeconds ?? 0);
+    task.seconds = task.cached ? 0 : Math.round(seconds || UNKNOWN_TASK_SECONDS);
   }
 }
 

@@ -4,19 +4,22 @@
 // says when the tasks that wait for it can start.
 //
 // A simulation of the run gives, for each number of agents, when the run ends and how many
-// agent-seconds it bills: agents boot, then each takes the ready task with the longest chain of work
-// behind it, one task at a time (.nx/workflows/*assignment-rules.yaml), and stops once no task is
-// left to hand out. The run gets the number with the lowest cost, where a second the run takes
-// longer weighs as {@link WAIT_WORTH} agent-seconds.
+// agent-seconds it bills: agents boot, then each takes the task that has been ready longest, one
+// task at a time (.nx/workflows/*assignment-rules.yaml), and stops once no task is left to hand out.
+// NX Cloud does not start the longest chain of work first (in a cold core run it handed out the
+// task ready longest 71% of the time, the longest chain 28%): a model that did saw no gain from 33
+// agents to 44, which ran 46 s faster. The run gets the number with the lowest cost, where a second
+// the run takes longer weighs as {@link WAIT_WORTH} agent-seconds.
 //
 // Plain Node with no dependencies: main.ts imports it before `yarn install`.
 
 export type WorkTask = { seconds: number; dependsOn: readonly string[] };
 export type Work = Readonly<Record<string, WorkTask>>;
 
-// Speed first: a minute sooner green is worth this many agent-minutes (about 400 credits on Linux),
-// so an agent starts when it makes the run at least three seconds faster for each minute it bills.
-export const WAIT_WORTH = 20;
+// Speed first: a minute sooner green is worth this many agent-minutes (about 1,200 credits on
+// Linux), so an agent starts when it makes the run at least a second faster for each minute it
+// bills. With 20, a cold core run got 33 agents and was green 46 s later than with 44.
+export const WAIT_WORTH = 60;
 
 // Linux agents are `large` containers (4 vCPUs; a task costs more on `xlarge`, which bills twice
 // the credits per minute and ran the dev-server E2E tests only a quarter faster). A Windows `large`
@@ -27,28 +30,6 @@ export const MAX_AGENTS = { linux: 44, windows: 4 } as const;
 // 45 seconds on Linux), then the outputs of every `compile` the task depends on, which NX Cloud
 // downloads once per agent (about 55).
 export const AGENT_BOOT_SECONDS = { linux: 100, windows: 240 } as const;
-
-// Each task's chain: its own seconds plus the longest chain of the tasks that wait for it.
-function chains(work: Work) {
-  const dependents = new Map<string, string[]>();
-  for (const [id, task] of Object.entries(work)) {
-    for (const dependency of task.dependsOn) {
-      dependents.set(dependency, [...(dependents.get(dependency) ?? []), id]);
-    }
-  }
-  const chain = new Map<string, number>();
-  const of = (id: string): number => {
-    const known = chain.get(id);
-    if (known !== undefined) {
-      return known;
-    }
-    const after = (dependents.get(id) ?? []).filter((d) => d in work).map(of);
-    const value = work[id].seconds + Math.max(0, ...after);
-    chain.set(id, value);
-    return value;
-  };
-  return new Map(Object.keys(work).map((id) => [id, of(id)]));
-}
 
 export type Simulation = {
   // When the last task ends, from the start of the run.
@@ -62,7 +43,6 @@ export function simulate(work: Work, agents: number, bootSeconds: number): Simul
   if (ids.length === 0) {
     return { seconds: 0, agentSeconds: 0 };
   }
-  const chain = chains(work);
   const finish = new Map<string, number>();
   const free = Array.from({ length: agents }, () => bootSeconds);
   const waiting = new Set(ids);
@@ -79,7 +59,7 @@ export function simulate(work: Work, agents: number, bootSeconds: number): Simul
     const start = Math.max(free[agent], Math.min(...ready.map((task) => task.at)));
     const next = ready
       .filter((task) => task.at <= start)
-      .sort((a, b) => chain.get(b.id)! - chain.get(a.id)!)[0];
+      .sort((a, b) => a.at - b.at || a.id.localeCompare(b.id))[0];
     const done = start + work[next.id].seconds;
     finish.set(next.id, done);
     free[agent] = done;

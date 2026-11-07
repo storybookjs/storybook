@@ -43,17 +43,14 @@ const isSandboxReady = (sandboxDir: string, selectedTask: TaskKey) =>
 export const sandbox: Task = {
   description: 'Create the sandbox from a template',
   dependsOn: (details, options) => {
-    // An in-development template has no published repro, so `generate` creates it locally.
-    if ('inDevelopment' in details.template && details.template.inDevelopment) {
-      const install = options.link ? 'compile' : 'run-registry';
-      return isSandboxReady(details.sandboxDir, options.task) ? [install] : [install, 'generate'];
-    }
-
-    if (options.link) {
-      return ['compile'];
-    }
-
-    return ['run-registry'];
+    const install = options.link ? 'compile' : 'run-registry';
+    // An in-development template has no published repro, so `generate` creates it locally. That
+    // publishes to the local registry once, even when the sandbox is linked.
+    const needsRepro =
+      'inDevelopment' in details.template &&
+      details.template.inDevelopment &&
+      !isSandboxReady(details.sandboxDir, options.task);
+    return needsRepro ? [install, 'generate'] : [install];
   },
   async ready({ sandboxDir }, { task: selectedTask }) {
     return isSandboxReady(sandboxDir, selectedTask);

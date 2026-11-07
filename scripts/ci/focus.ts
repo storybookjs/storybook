@@ -6,7 +6,7 @@ import {
   daily,
   type TemplateKey,
 } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
-import { isGlobalInput, isTestFixture } from './global-inputs.ts';
+import { isGlobalInput, needsAllUnitTests } from './global-inputs.ts';
 import { focusDiff } from './utils/changed-files.ts';
 import {
   build_linux,
@@ -191,9 +191,7 @@ export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
   return [
     build_linux,
     defineAffectedCheck(changedFiles),
-    changedFiles.some((file) => isGlobalInput(file) || isTestFixture(file))
-      ? testsUnit_linux
-      : defineAffectedUnitTests(changedFiles),
+    changedFiles.some(needsAllUnitTests) ? testsUnit_linux : defineAffectedUnitTests(changedFiles),
     defineAffectedLintAndFormat(changedFiles),
     // The internal Storybook loads stories from across `code`, and TurboSnap snapshots only those the diff affects.
     storybookChromatic,

@@ -5,9 +5,7 @@ name: nx
 #
 # NX Cloud license has expired. Triggers are disabled so this workflow does not run on PRs, pushes,
 # or schedules. It can still be started manually via workflow_dispatch once the license is restored.
-# The pull-request and schedule paths below stay, so the triggers that start them can come back:
-#   pull_request: { types: [opened, synchronize, labeled, reopened] }
-#   schedule: [{ cron: '0 23 * * *' }]
+# The jobs still handle pull_request and schedule events, so those triggers can come back.
 
 on:
   workflow_dispatch:

@@ -11,7 +11,7 @@ import { join } from 'pathe';
 import { ROOT_DIRECTORY } from '../../utils/constants.ts';
 import { esMain } from '../../utils/esmain.ts';
 import { AFFECTED_UNIT_TESTS_COMMAND, affectedLintAndFormatChecks } from '../common-jobs.ts';
-import { isGlobalInput, isTestFixture } from '../global-inputs.ts';
+import { needsAllUnitTests } from '../global-inputs.ts';
 import { changedFilesFromEnvironment } from '../utils/changed-files.ts';
 
 // The exit status of `command`, run with `files` as its arguments. They go through stdin and xargs:
@@ -48,12 +48,9 @@ function main(mode: string | undefined) {
       }
     }
   } else if (mode === 'test') {
-    // CircleCI runs the whole suite instead when a global input or a test fixture changed; the focus
-    // plan then asks for `code:test-1` and `code:test-2` and this task is not part of it.
-    if (changedFiles.some((file) => isGlobalInput(file) || isTestFixture(file))) {
-      throw new Error(
-        'A global input or test fixture changed: run `code:test-1` and `-2` instead.'
-      );
+    // The focus plan asks for `code:test-1` and `code:test-2` instead (scripts/ci/focus.ts).
+    if (changedFiles.some(needsAllUnitTests)) {
+      throw new Error('The diff needs the whole suite: run `code:test-1` and `-2` instead.');
     }
     const status = runOnFiles(AFFECTED_UNIT_TESTS_COMMAND, changedFiles);
     if (status !== 0) {

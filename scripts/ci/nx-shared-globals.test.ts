@@ -6,7 +6,10 @@ import { minimatch } from 'minimatch';
 import { join } from 'pathe';
 import { expect, it } from 'vitest';
 
-const ROOT = join(import.meta.dirname, '../..');
+import { needsAllUnitTests } from './global-inputs.ts';
+import { agentEnvironment, agentSetup } from './nx/agent-environment.ts';
+import { getNxDteJobs } from './nx/circleci-dte.ts';
+import { ROOT, covers, globsOf, nxJson } from './nx/inputs.ts';
 
 // The scripts that Nx tasks run (see the `command`s in the generated project.json files).
 const TASK_ENTRY_POINTS = [
@@ -16,11 +19,7 @@ const TASK_ENTRY_POINTS = [
   'run-registry.ts',
 ];
 
-// `sharedGlobals` in nx.json lists the parts of `scripts/` that every task hashes. A script that a
-// task imports from outside that list would not invalidate the cache when it changes, so tasks
-// would restore stale results. This keeps the list in step with what the tasks actually import.
-it('sharedGlobals covers every script that Nx tasks import', async () => {
-  const nxJson = JSON.parse(readFileSync(join(ROOT, 'nx.json'), 'utf8'));
+it('sharedGlobals covers every script that Nx tasks import, so a change to one runs the tasks again', async () => {
   const sharedGlobals: string[] = nxJson.namedInputs.sharedGlobals.filter(
     (input: unknown) => typeof input === 'string'
   );
@@ -48,14 +47,10 @@ it('sharedGlobals covers every script that Nx tasks import', async () => {
     .filter((file) => file.includes('/') && !coveredDirs.includes(file.split('/')[0]));
 
   expect(uncovered).toEqual([]);
-});
+}, 30_000);
 
-// The NX DTE pipeline runs the same targets on Linux and on Windows (scripts/ci/nx/circleci-dte.ts).
-// `OS` is `Windows_NT` on Windows and unset elsewhere, so every task that hashes sharedGlobals,
-// directly or through a dependency's inputs, keeps its Windows results apart, while macOS and Linux
-// still share theirs.
-it('sharedGlobals keeps the Windows cache apart', () => {
-  const nxJson = JSON.parse(readFileSync(join(ROOT, 'nx.json'), 'utf8'));
+// `OS` is `Windows_NT` on Windows and unset elsewhere.
+it('sharedGlobals keeps the Windows cache apart from the Linux and macOS cache', () => {
   expect(nxJson.namedInputs.sharedGlobals).toContainEqual({ env: 'OS' });
 });
 
@@ -64,74 +59,79 @@ const git = (args: string) =>
 
 // Every target of every project, with the globs its inputs hash (a dependency's `^` input as if
 // it were the project's own, which is enough for the workspace files the tests below look for).
-const targets = (() => {
-  const nxJson = JSON.parse(readFileSync(join(ROOT, 'nx.json'), 'utf8'));
-  return git('ls-files "*project.json"').flatMap((file) => {
-    const project = JSON.parse(readFileSync(join(ROOT, file), 'utf8'));
-    const root = file.replace(/\/?project\.json$/, '');
-    const named: Record<string, unknown[]> = { ...nxJson.namedInputs, ...project.namedInputs };
-    const globsOf = (inputs: unknown[]): string[] =>
-      inputs.flatMap((input) => {
-        if (typeof input !== 'string') {
-          return [];
-        }
-        const name = input.replace(/^\^/, '');
-        if (named[name]) {
-          return globsOf(named[name]);
-        }
-        return [input.replace('{workspaceRoot}/', '').replace('{projectRoot}', root)];
-      });
-    return Object.entries<Record<string, any>>(project.targets ?? {}).map(([name, own]) => {
-      const target = { ...nxJson.targetDefaults[name], ...own };
-      return {
-        id: `${root || '.'}:${name}`,
-        command: (target.command ?? target.options?.command ?? '') as string,
-        globs: globsOf(target.inputs ?? ['default']),
-      };
-    });
+const targets = git('ls-files "*project.json"').flatMap((file) => {
+  const project = JSON.parse(readFileSync(join(ROOT, file), 'utf8'));
+  const root = file.replace(/\/?project\.json$/, '');
+  return Object.entries<Record<string, any>>(project.targets ?? {}).map(([name, own]) => {
+    const target = { ...nxJson.targetDefaults[name], ...own };
+    const inputs: unknown[] = target.inputs ?? ['default'];
+    return {
+      id: `${root || '.'}:${name}`,
+      command: (target.command ?? target.options?.command ?? '') as string,
+      globs: globsOf(
+        inputs.map((input) => (typeof input === 'string' ? input.replace(/^\^/, '') : input)),
+        project.namedInputs ?? {},
+        root
+      ),
+    };
   });
-})();
+});
 
-const hashes = (globs: string[], path: string) => {
-  const matches = (glob: string) => minimatch(path, glob, { dot: true });
-  return (
-    globs.some((glob) => !glob.startsWith('!') && matches(glob)) &&
-    !globs.some((glob) => glob.startsWith('!') && matches(glob.slice(1)))
-  );
-};
-
-// A target whose command runs a script from `scripts/` must hash it, through `sharedGlobals`, a
-// named input, or its own inputs: otherwise a change to the script restores the old result, and
-// `nx affected` does not run the task.
-it('every target hashes the scripts its command runs', () => {
+it('every target hashes the scripts its command runs, so a change to one runs the target again', () => {
   const unhashed = targets.flatMap(({ id, command, globs }) =>
     (command.match(/scripts\/[\w./-]+\.(?:ts|sh|mjs|cjs|js)/g) ?? [])
       .map((script) => (script.startsWith('../') ? script.slice(3) : script))
-      .filter((path) => !hashes(globs, path))
+      .filter((path) => !covers(globs, path))
       .map((path) => `${id} runs ${path}`)
   );
   expect(unhashed).toEqual([]);
-});
+}, 30_000);
 
-// The files that set up the machine a task runs on: its environment variables, its node_modules,
-// the GitHub workflow and the NX Cloud workers. A change to one can break any task, so every task
-// runs again instead of restoring a result from the old environment.
-it('every target hashes the CI environment', () => {
-  const nxJson = JSON.parse(readFileSync(join(ROOT, 'nx.json'), 'utf8'));
-  const environment: string[] = nxJson.namedInputs['ci-environment'].map((input: string) =>
-    input.replace('{workspaceRoot}/', '')
-  );
-  expect(environment.filter((file) => !existsSync(join(ROOT, file)))).toEqual([]);
+const ciEnvironment: string[] = nxJson.namedInputs['ci-environment'].map((input: string) =>
+  input.replace('{workspaceRoot}/', '')
+);
+
+it('every target hashes the files that set up the machine it runs on', () => {
+  expect(ciEnvironment.filter((file) => !existsSync(join(ROOT, file)))).toEqual([]);
   const unhashed = targets.flatMap(({ id, globs }) =>
-    environment.filter((file) => !hashes(globs, file)).map((file) => `${id} misses ${file}`)
+    ciEnvironment.filter((file) => !covers(globs, file)).map((file) => `${id} misses ${file}`)
   );
   expect(unhashed).toEqual([]);
+}, 30_000);
+
+it("the NX DTE agents take every environment variable and setup step their tasks see from the CI environment's files", () => {
+  expect(ciEnvironment).toEqual(
+    expect.arrayContaining([
+      'scripts/ci/nx/agent-environment.ts',
+      'scripts/ci/utils/executors.ts',
+      'scripts/ci/utils/orbs.ts',
+    ])
+  );
+  const jobs = getNxDteJobs(['daily'], 'unused');
+  for (const [os, id] of [
+    ['linux', 'nx-agent'],
+    ['windows', 'nx-agent-windows'],
+  ] as const) {
+    const agent = jobs.find((job) => job.id === id)!.implementation('daily') as {
+      environment: Record<string, string>;
+      steps: { run?: { name: string } }[];
+    };
+    const ownEnvironment = Object.fromEntries(
+      Object.entries(agent.environment).filter(
+        ([name]) => !name.startsWith('NX_') && !name.startsWith('CI_CHANGED_FILES_')
+      )
+    );
+    expect(ownEnvironment).toEqual(agentEnvironment(os));
+
+    const setup = agentSetup(os);
+    const start = agent.steps.findIndex(
+      (step) => step.run?.name === 'Run the tasks NX Cloud assigns'
+    );
+    expect(agent.steps.slice(start - setup.length, start)).toEqual(setup);
+  }
 });
 
-// The tests of `scripts/` read repository files such as `.nx/workflows/*.yaml` to check the CI
-// config against them; outside the inputs of the targets that run the tests, a change to such a
-// file restores the old test result. (The tests in `code/` read fixtures in `code/` or memfs.)
-it('the unit-test targets hash the files the tests read', () => {
+it('a change to a file the scripts tests read runs the unit-test targets, and every unit test in a focused run', () => {
   const tracked = git('ls-files');
   const read = git('ls-files "scripts/*.test.ts"').flatMap((test) =>
     [
@@ -143,12 +143,12 @@ it('the unit-test targets hash the files the tests read', () => {
       return tracked.filter((file) => minimatch(file, glob, { dot: true }));
     })
   );
+  const files = [...new Set(read)];
   const unhashed = targets
     .filter(({ id }) => /^code:test(-\d+)?$/.test(id))
     .flatMap(({ id, globs }) =>
-      [...new Set(read)]
-        .filter((file) => !hashes(globs, file))
-        .map((file) => `${id} misses ${file}`)
+      files.filter((file) => !covers(globs, file)).map((file) => `${id} misses ${file}`)
     );
   expect(unhashed).toEqual([]);
-});
+  expect(files.filter((file) => !needsAllUnitTests(file))).toEqual([]);
+}, 30_000);

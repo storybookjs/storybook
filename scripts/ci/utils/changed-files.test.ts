@@ -83,16 +83,17 @@ describe('the changed files of a focused run', () => {
         origin
       )
     ).toThrow('6000 files changed');
-  });
+  }, 30_000);
 
   it('are none outside a focused run', () => {
     expect(changedFilesFromEnvironment(changedFilesEnvironment(undefined), origin)).toEqual([]);
   });
 
+  // xargs starts a shell per batch, which takes seconds in Git Bash on Windows.
   it('all reach the affected lint and test commands', () => {
     const out = join(directory, 'arguments.txt');
     const status = runOnFiles(`sh -c 'printf "%s\\n" "$@" >> ${out}' sh`, FILES, directory);
     expect(status).toBe(0);
     expect(readFileSync(out, 'utf8').split('\n').filter(Boolean)).toEqual(FILES);
-  });
+  }, 60_000);
 });

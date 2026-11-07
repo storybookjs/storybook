@@ -36,7 +36,7 @@ import { vitestTests } from './tasks/vitest-test.ts';
 import { checkoutChanges, checkoutChangesSince } from './utils/checkout.ts';
 import { CODE_DIRECTORY, JUNIT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants.ts';
 import { findMostMatchText } from './utils/diff.ts';
-import { isNxTaskExecution } from './utils/nx.ts';
+import { isNxTaskExecution, nxTaskResultsDirectory } from './utils/nx.ts';
 import type { OptionValues } from './utils/options.ts';
 import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options.ts';
 
@@ -224,7 +224,7 @@ export type PassedOptionValues = Omit<OptionValues<typeof options>, 'startFrom' 
 const logger = console;
 
 function getJunitFilename(taskKey: TaskKey) {
-  return join(JUNIT_DIRECTORY, `${taskKey}.xml`);
+  return join(nxTaskResultsDirectory(JUNIT_DIRECTORY), `${taskKey}.xml`);
 }
 
 async function pathExists(path: string) {

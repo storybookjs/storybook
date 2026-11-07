@@ -1,10 +1,11 @@
+import { join } from 'pathe';
 import { dedent } from 'ts-dedent';
 import waitOn from 'wait-on';
 
 import { getPort } from '../sandbox/utils/getPort.ts';
 import type { Task } from '../task.ts';
 import { exec } from '../utils/exec.ts';
-import { isNxTaskExecution } from '../utils/nx.ts';
+import { isNxTaskExecution, nxTaskResultsDirectory } from '../utils/nx.ts';
 import { PORT } from './serve.ts';
 
 const testFileRegex = /(test|spec)\.(js|ts|mjs)$/;
@@ -43,9 +44,11 @@ export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
       STORYBOOK_SANDBOX_DIR: sandboxDir,
       ...(junitName && { PLAYWRIGHT_JUNIT_OUTPUT_NAME: junitName }),
     });
-    const playwright = (args: string, junitName = junitFilename) =>
+    const results = nxTaskResultsDirectory(join(codeDir, 'playwright-results'));
+    // Playwright empties its output folder as it starts, so each run of one task gets its own.
+    const playwright = (args: string, junitName = junitFilename, output = results) =>
       exec(
-        `yarn playwright test ${args} ${testFiles.join(' ')}`,
+        `yarn playwright test ${args} --output=${output} ${testFiles.join(' ')}`,
         { env: env(junitName), cwd: codeDir },
         { dryRun, debug }
       );
@@ -71,7 +74,8 @@ export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
     if (part[1] === part[2]) {
       await playwright(
         '--project=chromium-mutating --no-deps',
-        junitFilename?.replace(/(\.xml)?$/, '-mutating.xml')
+        junitFilename?.replace(/(\.xml)?$/, '-mutating.xml'),
+        join(results, 'mutating')
       );
     }
   },

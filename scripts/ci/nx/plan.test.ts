@@ -127,13 +127,14 @@ describe('the split NX targets', () => {
 
   it('run the target they split, each with its part', () => {
     const code = targets('code');
-    const without = (target: Record<string, any>, env: string[] = []) => {
-      const copy = structuredClone(target);
-      env.forEach((name) => delete copy.options.env?.[name]);
+    const without = (name: string, env: string[] = []) => {
+      const copy = structuredClone(code[name]);
+      env.forEach((variable) => delete copy.options.env?.[variable]);
       if (copy.options.env && Object.keys(copy.options.env).length === 0) {
         delete copy.options.env;
       }
       copy.options.command = copy.options.command.replace(/ --shard=\d+\/\d+$/, '');
+      copy.outputs = copy.outputs?.map((output: string) => output.replace(`/${name}`, '/<target>'));
       return copy;
     };
     for (const [base, parts] of [
@@ -150,7 +151,7 @@ describe('the split NX targets', () => {
       ],
     ] as const) {
       for (const part of parts) {
-        expect(without(code[part], ['PLAYWRIGHT_SHARD'])).toEqual(without(code[base]));
+        expect(without(part, ['PLAYWRIGHT_SHARD'])).toEqual(without(base));
       }
       const shardOf = (name: string) =>
         code[name].options.env?.PLAYWRIGHT_SHARD ??
@@ -177,9 +178,10 @@ describe('the split NX targets', () => {
     const defaults = JSON.parse(read('nx.json')).targetDefaults['e2e-ui'];
     const parts = Object.entries(targets('test-storybooks/portable-stories-kitchen-sink/react'))
       .filter(([name]) => /^e2e-ui-\d+$/.test(name))
-      .map(([, target]) => structuredClone(target) as Record<string, any>);
-    for (const part of parts) {
+      .map(([name, target]) => [name, structuredClone(target) as Record<string, any>] as const);
+    for (const [name, part] of parts) {
       part.options.command = part.options.command.replace(/ --grep(-invert)? "[^"]+"$/, '');
+      part.outputs = part.outputs.map((output: string) => output.replace(`/${name}`, '/e2e-ui'));
       expect(part).toEqual(defaults);
     }
   });

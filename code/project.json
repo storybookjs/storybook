@@ -187,7 +187,10 @@
       },
       "cache": true,
       "inputs": ["code-internal"],
-      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "outputs": [
+        "{workspaceRoot}/test-results/{projectName}/e2e-internal",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-internal"
+      ],
       "configurations": {
         "production": {}
       }
@@ -204,7 +207,10 @@
       },
       "cache": true,
       "inputs": ["code-internal"],
-      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "outputs": [
+        "{workspaceRoot}/test-results/{projectName}/e2e-internal-1",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-internal-1"
+      ],
       "configurations": {
         "production": {}
       }
@@ -221,7 +227,10 @@
       },
       "cache": true,
       "inputs": ["code-internal"],
-      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "outputs": [
+        "{workspaceRoot}/test-results/{projectName}/e2e-internal-2",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-internal-2"
+      ],
       "configurations": {
         "production": {}
       }
@@ -238,7 +247,10 @@
       },
       "cache": true,
       "inputs": ["code-internal"],
-      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "outputs": [
+        "{workspaceRoot}/test-results/{projectName}/e2e-internal-3",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-internal-3"
+      ],
       "configurations": {
         "production": {}
       }
@@ -255,7 +267,10 @@
       },
       "cache": true,
       "inputs": ["code-internal"],
-      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "outputs": [
+        "{workspaceRoot}/test-results/{projectName}/e2e-internal-4",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-internal-4"
+      ],
       "configurations": {
         "production": {}
       }
@@ -286,7 +301,10 @@
       },
       "cache": true,
       "inputs": ["code-internal"],
-      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "outputs": [
+        "{workspaceRoot}/test-results/{projectName}/e2e-internal-static",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-internal-static"
+      ],
       "configurations": {
         "production": {}
       }
@@ -305,7 +323,10 @@
       },
       "cache": true,
       "inputs": ["code-internal"],
-      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "outputs": [
+        "{workspaceRoot}/test-results/{projectName}/e2e-internal-static-1",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-internal-static-1"
+      ],
       "configurations": {
         "production": {}
       }
@@ -324,7 +345,10 @@
       },
       "cache": true,
       "inputs": ["code-internal"],
-      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "outputs": [
+        "{workspaceRoot}/test-results/{projectName}/e2e-internal-static-2",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-internal-static-2"
+      ],
       "configurations": {
         "production": {}
       }
@@ -343,7 +367,10 @@
       },
       "cache": true,
       "inputs": ["code-internal"],
-      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "outputs": [
+        "{workspaceRoot}/test-results/{projectName}/e2e-internal-static-3",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-internal-static-3"
+      ],
       "configurations": {
         "production": {}
       }
@@ -362,7 +389,10 @@
       },
       "cache": true,
       "inputs": ["code-internal"],
-      "outputs": ["{workspaceRoot}/test-results", "{projectRoot}/playwright-results"],
+      "outputs": [
+        "{workspaceRoot}/test-results/{projectName}/e2e-internal-static-4",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-internal-static-4"
+      ],
       "configurations": {
         "production": {}
       }

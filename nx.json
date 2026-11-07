@@ -135,7 +135,10 @@
       "command": "yarn task e2e-tests --junit -s task --debug --no-link --template={projectName}",
       "cache": true,
       "inputs": ["^production", "e2e-specs"],
-      "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
+      "outputs": [
+        "{workspaceRoot}/test-results/{projectName}/e2e-tests",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-tests"
+      ],
       "configurations": { "production": {} }
     },
     "e2e-tests-dev": {
@@ -144,7 +147,10 @@
       "options": { "env": { "PLAYWRIGHT_WORKERS": "4" } },
       "cache": true,
       "inputs": ["^production", "e2e-specs"],
-      "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
+      "outputs": [
+        "{workspaceRoot}/test-results/{projectName}/e2e-tests-dev",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-tests-dev"
+      ],
       "configurations": { "production": {} }
     },
     "e2e-tests-dev-1": {
@@ -153,7 +159,10 @@
       "options": { "env": { "PLAYWRIGHT_WORKERS": "4", "PLAYWRIGHT_SHARD": "1/2" } },
       "cache": true,
       "inputs": ["^production", "e2e-specs"],
-      "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
+      "outputs": [
+        "{workspaceRoot}/test-results/{projectName}/e2e-tests-dev-1",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-tests-dev-1"
+      ],
       "configurations": { "production": {} }
     },
     "e2e-tests-dev-2": {
@@ -162,7 +171,10 @@
       "options": { "env": { "PLAYWRIGHT_WORKERS": "4", "PLAYWRIGHT_SHARD": "2/2" } },
       "cache": true,
       "inputs": ["^production", "e2e-specs"],
-      "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
+      "outputs": [
+        "{workspaceRoot}/test-results/{projectName}/e2e-tests-dev-2",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-tests-dev-2"
+      ],
       "configurations": { "production": {} }
     },
 
@@ -182,7 +194,10 @@
       },
       "cache": true,
       "inputs": ["default", "all-production"],
-      "outputs": ["{workspaceRoot}/test-results", "{workspaceRoot}/code/playwright-results"],
+      "outputs": [
+        "{workspaceRoot}/test-results/{projectName}/e2e-ui",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-ui"
+      ],
       "configurations": { "production": {} }
     },
     "jest": {
@@ -191,7 +206,6 @@
       "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn jest" },
       "cache": true,
       "inputs": ["default", "all-production"],
-      "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
     },
     "vitest": {
@@ -200,7 +214,6 @@
       "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn vitest" },
       "cache": true,
       "inputs": ["default", "all-production"],
-      "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
     },
     "cypress": {
@@ -209,7 +222,6 @@
       "options": { "cwd": "{projectRoot}", "command": "yarn --no-immutable && yarn cypress" },
       "cache": true,
       "inputs": ["default", "all-production"],
-      "outputs": ["{workspaceRoot}/test-results"],
       "configurations": { "production": {} }
     }
   },

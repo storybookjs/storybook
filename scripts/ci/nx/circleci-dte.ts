@@ -21,7 +21,7 @@
 // jobs instead of the per-job ones. Like main.ts, this runs under plain Node before `yarn install`.
 import { installWithCache, node26Smoke } from '../common-jobs.ts';
 import { getChangedFiles } from '../focus.ts';
-import { cache, git, node, testResults } from '../utils/helpers.ts';
+import { artifact, cache, git, node, testResults } from '../utils/helpers.ts';
 import { isTrustedAuthor } from '../utils/runtime.ts';
 import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
 import { linuxRuns, planFor, windowsTasksOf } from './plan.ts';
@@ -211,6 +211,13 @@ const stopAgents = () => ({
   run: { name: 'Stop the agents', when: 'always', command: 'yarn nx stop-all-agents' },
 });
 
+// Each task writes its results to a folder of its own (scripts/utils/nx.ts `nxTaskResultsDirectory`).
+const storeResults = () => [
+  artifact.persist('test-results', 'test-results'),
+  artifact.persist('code/playwright-results', 'playwright-results'),
+  testResults.persist('test-results'),
+];
+
 // The tasks of an agent share its checkout, so a file one of them leaves there is read by the tasks
 // NX Cloud happens to run after it, such as `oxfmt --check .`. scripts/task.ts fails the `yarn task`
 // tasks that leave one; this step names what any other task, or a restored output, left.
@@ -310,7 +317,7 @@ const agentJob = (changedFiles: readonly string[], agents: number) =>
           no_output_timeout: '20m',
         },
       },
-      testResults.persist('test-results'),
+      ...storeResults(),
       checkCheckout(),
     ],
   }));
@@ -391,7 +398,7 @@ const windowsAgentJob = (changedFiles: readonly string[], agents: number) =>
           no_output_timeout: '20m',
         },
       },
-      testResults.persist('test-results'),
+      ...storeResults(),
       checkCheckout(),
     ],
   }));

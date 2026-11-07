@@ -27,8 +27,8 @@
         "all-production"
       ],
       "outputs": [
-        "{workspaceRoot}/test-results",
-        "{workspaceRoot}/code/playwright-results"
+        "{workspaceRoot}/test-results/{projectName}/e2e-ui-1",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-ui-1"
       ],
       "configurations": {
         "production": {}
@@ -54,8 +54,8 @@
         "all-production"
       ],
       "outputs": [
-        "{workspaceRoot}/test-results",
-        "{workspaceRoot}/code/playwright-results"
+        "{workspaceRoot}/test-results/{projectName}/e2e-ui-2",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-ui-2"
       ],
       "configurations": {
         "production": {}
@@ -81,8 +81,8 @@
         "all-production"
       ],
       "outputs": [
-        "{workspaceRoot}/test-results",
-        "{workspaceRoot}/code/playwright-results"
+        "{workspaceRoot}/test-results/{projectName}/e2e-ui-3",
+        "{workspaceRoot}/code/playwright-results/{projectName}/e2e-ui-3"
       ],
       "configurations": {
         "production": {}

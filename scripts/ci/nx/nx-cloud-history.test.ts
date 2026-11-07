@@ -162,6 +162,20 @@ describe('the requests to NX Cloud', () => {
     expect(fetch).toHaveBeenCalledTimes(4);
   });
 
+  it('does not wait longer than the setup job can spare, and goes on without history', async () => {
+    vi.useFakeTimers();
+    const fetch = vi.fn(
+      async () => new Response('', { status: 503, headers: { 'retry-after': '120' } })
+    );
+    vi.stubGlobal('fetch', fetch);
+
+    const durations = taskDurations();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(await durations).toBeUndefined();
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
   it('has at most four requests in flight, well under the burst limit of 10', async () => {
     let inFlight = 0;
     let most = 0;

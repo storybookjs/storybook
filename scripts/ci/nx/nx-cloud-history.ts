@@ -7,8 +7,8 @@
 // as one that runs, as without it.
 //
 // Every request counts against a rate limit the whole organization shares (60 a minute, bursts of
-// 10), so a setup job makes few, at most CONCURRENCY at a time, and waits as long as a 429 or 503
-// asks before it tries again.
+// 10), so a setup job makes few, at most CONCURRENCY at a time. After a 429 or 503 it waits as long
+// as asked before it tries again, up to MAX_WAIT_SECONDS; longer, and it goes on without history.
 
 const API = `${process.env.NX_CLOUD_API ?? 'https://cloud.nx.app'}/nx-cloud/data/v1`;
 const RUNS = 3;
@@ -42,10 +42,13 @@ async function limited<T>(work: () => Promise<T>): Promise<T> {
   }
 }
 
+// How long to wait before trying again, or undefined when NX Cloud asks for longer than the setup job
+// can spare: it then sizes the run without history instead of asking again too soon.
 function retryAfterSeconds(response: Response, attempt: number) {
   const header = response.headers.get('retry-after');
   const seconds = header === null ? NaN : Number(header);
-  return Math.min(MAX_WAIT_SECONDS, Number.isNaN(seconds) ? 2 ** attempt : seconds);
+  const wait = Number.isNaN(seconds) ? 2 ** attempt : seconds;
+  return wait <= MAX_WAIT_SECONDS ? wait : undefined;
 }
 
 async function request<T>(path: string, query: URLSearchParams): Promise<Page<T>> {
@@ -59,8 +62,11 @@ async function request<T>(path: string, query: URLSearchParams): Promise<Page<T>
         headers: { Authorization: `Bearer ${token}` },
         signal: AbortSignal.timeout(15_000),
       });
-      if ((response.status === 429 || response.status === 503) && attempt < ATTEMPTS) {
-        const seconds = retryAfterSeconds(response, attempt);
+      const seconds =
+        (response.status === 429 || response.status === 503) && attempt < ATTEMPTS
+          ? retryAfterSeconds(response, attempt)
+          : undefined;
+      if (seconds !== undefined) {
         await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
         continue;
       }

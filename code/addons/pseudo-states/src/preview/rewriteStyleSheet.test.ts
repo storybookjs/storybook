@@ -365,7 +365,7 @@ describe('rewriteStyleSheet', () => {
     const sheet = new Sheet(':not(:hover) { color: red }');
     rewriteStyleSheet(sheet as any);
     expect(sheet.cssRules[0].selectorText).toEqual(
-      ':not(:hover), :not(.pseudo-hover), :not(.pseudo-hover-all *)'
+      ':not(:is(:hover, .pseudo-hover, :where(.pseudo-hover-all *)))'
     );
   });
 
@@ -373,49 +373,66 @@ describe('rewriteStyleSheet', () => {
     const sheet = new Sheet(':not(:hover) { color: red }');
     rewriteStyleSheet(sheet as any, true);
     expect(sheet.cssRules[0].selectorText).toEqual(
-      ':not(:hover), :not(.pseudo-hover), :not(:host(.pseudo-hover-all) *)'
+      ':not(:is(:hover, .pseudo-hover, :where(:host(.pseudo-hover-all) *)))'
+    );
+  });
+
+  it('keeps native states working in negated selectors', () => {
+    const sheet = new Sheet('.row:not(:hover):not(:focus-visible) .icon { visibility: hidden }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].selectorText).toEqual(
+      '.row:not(:is(:hover, .pseudo-hover, :where(.pseudo-hover-all *))):not(:is(:focus-visible, .pseudo-focus-visible, :where(.pseudo-focus-visible-all *))) .icon'
+    );
+  });
+
+  it('supports deeply nested pseudo-states inside ":not"', () => {
+    const sheet = new Sheet('.a:not(:is(:is(:is(.b:hover)))) .c { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].selectorText).toEqual(
+      '.a:not(:is(:is(:is(.b:is(:hover, .pseudo-hover, :where(.pseudo-hover-all *)))))) .c'
     );
   });
 
   it('supports complex use of ":not"', () => {
     const sheet = new Sheet('foo:focus:not(:hover, .bar:active) .baz { color: red }');
     rewriteStyleSheet(sheet as any);
-    const selectors = sheet.cssRules[0].getSelectors();
-    expect(selectors).toContain('foo:focus:not(:hover, .bar:active) .baz');
-    expect(selectors).toContain('foo.pseudo-focus:not(.pseudo-hover, .bar.pseudo-active) .baz');
-    expect(selectors).toContain(
-      '.pseudo-focus-all foo:not(.pseudo-hover-all *, .pseudo-active-all .bar) .baz'
-    );
+    const negation =
+      ':not(:is(:hover, .pseudo-hover, :where(.pseudo-hover-all *)), .bar:is(:active, .pseudo-active, :where(.pseudo-active-all *)))';
+    expect(sheet.cssRules[0].getSelectors()).toEqual([
+      `foo:focus${negation} .baz`,
+      `foo.pseudo-focus${negation} .baz`,
+      `.pseudo-focus-all foo${negation} .baz`,
+    ]);
   });
 
   it('supports complex use of ":not" in shadow DOM', () => {
     const sheet = new Sheet('foo:focus:not(:hover, .bar:active) .baz { color: red }');
     rewriteStyleSheet(sheet as any, true);
-    const selectors = sheet.cssRules[0].getSelectors();
-    expect(selectors).toContain('foo:focus:not(:hover, .bar:active) .baz');
-    expect(selectors).toContain('foo.pseudo-focus:not(.pseudo-hover, .bar.pseudo-active) .baz');
-    expect(selectors).toContain(
-      ':host(.pseudo-focus-all) foo:not(:host(.pseudo-hover-all) *, :host(.pseudo-active-all) .bar) .baz'
-    );
+    const negation =
+      ':not(:is(:hover, .pseudo-hover, :where(:host(.pseudo-hover-all) *)), .bar:is(:active, .pseudo-active, :where(:host(.pseudo-active-all) *)))';
+    expect(sheet.cssRules[0].getSelectors()).toEqual([
+      `foo:focus${negation} .baz`,
+      `foo.pseudo-focus${negation} .baz`,
+      `:host(.pseudo-focus-all) foo${negation} .baz`,
+    ]);
   });
 
   it('supports ":not" inside ":host"', () => {
     const sheet = new Sheet(':host(.foo:not(:hover)) .baz:active { color: red }');
     rewriteStyleSheet(sheet as any, true);
-    const selectors = sheet.cssRules[0].getSelectors();
-    expect(selectors).toContain(':host(.foo:not(:hover)) .baz:active');
-    expect(selectors).toContain(':host(.foo:not(.pseudo-hover)) .baz.pseudo-active');
-    expect(selectors).toContain(':host(.foo:not(.pseudo-hover-all).pseudo-active-all) .baz');
+    const host = '.foo:not(:is(:hover, .pseudo-hover, .pseudo-hover-all))';
+    expect(sheet.cssRules[0].getSelectors()).toEqual([
+      `:host(${host}) .baz:active`,
+      `:host(${host}) .baz.pseudo-active`,
+      `:host(${host}.pseudo-active-all) .baz`,
+    ]);
   });
 
   it('supports ":not" inside and outside of ":host"', () => {
     const sheet = new Sheet(':host(.foo:not(:hover)) .baz:not(:active) { color: red }');
     rewriteStyleSheet(sheet as any, true);
-    const selectors = sheet.cssRules[0].getSelectors();
-    expect(selectors).toContain(':host(.foo:not(:hover)) .baz:not(:active)');
-    expect(selectors).toContain(':host(.foo:not(.pseudo-hover)) .baz:not(.pseudo-active)');
-    expect(selectors).toContain(
-      ':host(.foo:not(.pseudo-hover-all)) .baz:not(:host(.pseudo-active-all) *)'
+    expect(sheet.cssRules[0].selectorText).toEqual(
+      ':host(.foo:not(:is(:hover, .pseudo-hover, .pseudo-hover-all))) .baz:not(:is(:active, .pseudo-active, :where(:host(.pseudo-active-all) *)))'
     );
   });
 
@@ -447,7 +464,7 @@ describe('rewriteStyleSheet', () => {
     const sheet = new Sheet(':has(:not(:hover, :has(:focus), :has(:active))) { color: red }');
     rewriteStyleSheet(sheet as any);
     expect(sheet.cssRules[0].cssText).toEqual(
-      ':has(:not(:hover, :has(:focus), :has(:active))), :has(:not(.pseudo-hover, :has(.pseudo-focus), :has(.pseudo-active))), :has(:not(.pseudo-hover-all *, .pseudo-focus-all :has(*), .pseudo-active-all :has(*))) { color: red }'
+      ':has(:not(:is(:hover, .pseudo-hover, :where(.pseudo-hover-all *)), :has(:is(:focus, .pseudo-focus, :where(.pseudo-focus-all *))), :has(:is(:active, .pseudo-active, :where(.pseudo-active-all *))))) { color: red }'
     );
   });
 

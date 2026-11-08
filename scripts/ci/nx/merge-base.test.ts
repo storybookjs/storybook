@@ -1,9 +1,10 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 
 import { join } from 'pathe';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const SCRIPT = join(import.meta.dirname, 'merge-base.sh');
 
@@ -30,9 +31,15 @@ describe('merge-base.sh', () => {
     return git(origin, 'rev-parse', 'HEAD');
   };
   const commits: Record<string, string> = {};
+  const dirs: string[] = [];
+  const tempDir = (prefix: string) => {
+    const dir = mkdtempSync(join(tmpdir(), prefix));
+    dirs.push(dir);
+    return dir;
+  };
 
   beforeAll(() => {
-    origin = mkdtempSync(join(tmpdir(), 'merge-base-origin-'));
+    origin = tempDir('merge-base-origin-');
     git(origin, 'init', '--quiet', '--initial-branch=next');
     // As GitHub: a clone may leave trees and blobs out.
     git(origin, 'config', 'uploadpack.allowFilter', 'true');
@@ -53,14 +60,32 @@ describe('merge-base.sh', () => {
     git(origin, 'checkout', '--quiet', 'next');
   });
 
+  afterAll(() => {
+    for (const dir of dirs) {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   // A checkout of `branch` with one commit, as the setup job's.
-  const run = (branch: string, baseBranch: string) => {
-    const checkout = mkdtempSync(join(tmpdir(), 'merge-base-checkout-'));
-    git(checkout, 'clone', '--quiet', '--depth=1', '--branch', branch, `file://${origin}`, '.');
-    const out = join(mkdtempSync(join(tmpdir(), 'merge-base-out-')), 'merge-base');
+  const checkOut = (branch: string) => {
+    const checkout = tempDir('merge-base-checkout-');
+    git(
+      checkout,
+      'clone',
+      '--quiet',
+      '--depth=1',
+      '--branch',
+      branch,
+      pathToFileURL(origin).href,
+      '.'
+    );
+    return checkout;
+  };
+  const run = (branch: string, baseBranch: string, checkout = checkOut(branch)) => {
+    const out = join(tempDir('merge-base-out-'), 'merge-base');
     let failed = false;
     try {
-      execFileSync('bash', [SCRIPT, branch, baseBranch, out], { cwd: checkout, stdio: 'pipe' });
+      execFileSync('bash', [SCRIPT, baseBranch, out], { cwd: checkout, stdio: 'pipe' });
     } catch {
       failed = true;
     }
@@ -85,6 +110,16 @@ describe('merge-base.sh', () => {
       failedMarker: false,
       mergeBase: '',
     });
+  });
+
+  it('finds the merge base of the checked-out commit after a force-push moved the branch', () => {
+    const checkout = checkOut('feature');
+    git(origin, 'branch', '--force', 'feature', commits.u1);
+
+    const result = run('feature', 'next', checkout);
+
+    git(origin, 'branch', '--force', 'feature', commits.f2);
+    expect(result).toMatchObject({ failed: false, mergeBase: commits.n3 });
   });
 
   it('leaves a marker for the step that waits when git fails', () => {

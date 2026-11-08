@@ -81,16 +81,22 @@ jobs:
                 clone_options: '--depth 1'
                 tag_fetch_options: '--no-tags'
             # The merge base for `nx affected`, as nx/set-shas finds it in 100 commits of history,
-            # which this checkout lacks: about 7 s faster, and fetched while node_modules restores.
+            # which this checkout lacks. Fetched while node_modules restores, and only for a pull
+            # request: anything else runs every task.
             - when:
-                condition: << pipeline.parameters.nxDte >>
+                condition:
+                  and:
+                    - << pipeline.parameters.nxDte >>
+                    - << pipeline.parameters.nxDteAffected >>
+                    - not:
+                        equal: ['', << pipeline.parameters.ghPrNumber >>]
                 steps:
                   - run:
                       name: Find the commit the pull request branched from
                       background: true
                       environment:
                         GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
-                      command: bash scripts/ci/nx/merge-base.sh "$CIRCLE_BRANCH" "$GH_BASE_BRANCH" /tmp/nx-dte-merge-base
+                      command: bash scripts/ci/nx/merge-base.sh "$GH_BASE_BRANCH" /tmp/nx-dte-merge-base
       # The NX DTE pipeline sizes its agents to the tasks Nx will run (scripts/ci/nx/select.ts), so
       # this job installs (from the cache nx-main stores) and asks Nx. The key is circleci-dte.ts
       # `NODE_MODULES_KEY`; circleci-dte.test.ts keeps the two equal.
@@ -137,7 +143,13 @@ jobs:
                 steps:
                   - run:
                       name: Wait for the commit the pull request branched from
+                      environment:
+                        GH_PR_NUMBER: << pipeline.parameters.ghPrNumber >>
                       command: |
+                        # Nothing to wait for outside a pull request (the step above did not run).
+                        if [ -z "$GH_PR_NUMBER" ] || [ "<< pipeline.parameters.nxDteAffected >>" != true ]; then
+                          exit 0
+                        fi
                         for _ in $(seq 600); do
                           [ -e /tmp/nx-dte-merge-base ] && break
                           [ -e /tmp/nx-dte-merge-base.failed ] && { echo "Finding the merge base failed."; exit 1; }

@@ -28,7 +28,7 @@ import { changedFilesEnvironment, focusDiff } from '../utils/changed-files.ts';
 import { AGENT_BOOT_SECONDS, MAX_AGENTS, agentsFor } from './agent-sizing.ts';
 import { baseRuns, osHistory, taskDurations } from './nx-cloud-history.ts';
 import { linuxRuns, parseWorkflows, planFor, windowsTasksOf } from './plan.ts';
-import { cliWorkspace, nxCommands, workspaceOf } from './run.ts';
+import { nxCommands, workspaceOf } from './run.ts';
 import {
   EMPTY_SELECTION,
   type NxTaskGraph,
@@ -76,13 +76,9 @@ const max = {
 
 // Built once, in-process, for both OSes: the commands (run.ts `nxCommands`) and the hashes
 // (task-hashes.ts) come from it. Only the task graphs of the commands come from the Nx CLI, which
-// nx-main runs them with.
+// nx-main runs them with. A project graph Nx cannot build fails the job, as `nx affected` would.
 const projectGraph = createProjectGraphAsync({ exitOnError: false });
-const workspace = projectGraph.then(workspaceOf, (error) => {
-  // These are Nx internals; the CLI gives the same, a few seconds slower.
-  console.warn(`Building the project graph in-process failed, so the Nx CLI reads it: ${error}`);
-  return cliWorkspace();
-});
+const workspace = projectGraph.then(workspaceOf);
 
 const directory = mkdtempSync(join(tmpdir(), 'nx-selection-'));
 // The tasks `command` runs, from `nx … --graph=<file>`.
@@ -122,7 +118,8 @@ const baseBranchRuns =
     : Promise.resolve([]);
 const history = (os: Os) => (runsOn[os] ? osHistory(os, branch, baseBranchRuns) : undefined);
 // NX Cloud answers while Nx selects the tasks.
-const [linux, windows, linuxHistory, windowsHistory, durations] = await Promise.all([
+const [, linux, windows, linuxHistory, windowsHistory, durations] = await Promise.all([
+  workspace,
   runsOn.linux ? select('linux') : EMPTY_SELECTION,
   runsOn.windows ? select('windows') : EMPTY_SELECTION,
   history('linux'),
@@ -133,10 +130,7 @@ console.log(
   `${base ? `Affected since ${base}` : 'Everything'}: ${Object.keys(linux.tasks).length} Linux and ${Object.keys(windows.tasks).length} Windows tasks.`
 );
 
-const hashes = await hashSelections(
-  { linux, windows },
-  await projectGraph.catch(() => undefined)
-).catch((error) => {
+const hashes = await hashSelections({ linux, windows }, await projectGraph).catch((error) => {
   console.warn(`Hashing the tasks failed, so every task counts as one that runs: ${error}`);
   return { linux: {}, windows: {} };
 });

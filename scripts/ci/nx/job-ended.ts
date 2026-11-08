@@ -1,6 +1,7 @@
-// Whether this CircleCI workflow's main NX job (`nx-main`, `nx-main-windows`) has ended, for the
-// agent jobs (run-agent.sh): an agent waits for its NX Cloud run, also for one the main job never
-// started, as when it failed to check out. Exits 0 when the job has ended, 1 while it runs or when
+// Whether a job of this CircleCI workflow has ended, for run-until-ended.sh: an NX agent stops once
+// its main job (`nx-main`, `nx-main-windows`) has ended, and a main job once all of its agents have
+// (`nx-agent`, `nx-agent-windows`; CircleCI ends a parallel job when its last container ends).
+// Exits 0 when the job has ended, 1 while it runs, when the workflow has no such job, or when
 // CircleCI does not answer.
 //
 // CircleCI's API needs no token for this public project. Plain Node, run after `yarn install`.

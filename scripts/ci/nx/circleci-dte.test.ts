@@ -14,10 +14,11 @@ import {
   MANIFESTS_SUM,
   NODE_MODULES_ARCHIVES,
   NODE_MODULES_KEY,
+  RUN_NX_STEP,
   getNxDteJobs,
 } from './circleci-dte.ts';
 import { MAX_AGENTS } from './agent-sizing.ts';
-import { hasEnded } from './main-job-ended.ts';
+import { hasEnded } from './job-ended.ts';
 import { planFor } from './plan.ts';
 import { EMPTY_SELECTION, type Selection } from './selection.ts';
 
@@ -125,8 +126,13 @@ describe('the CircleCI NX DTE pipeline', () => {
       const steps = job(jobs, main)!.steps.map((step) => step.run);
       const start = steps.find((run) => run?.name === 'Start the NX Cloud run')!;
       expect((start as { background?: boolean }).background).toBe(true);
-      const run = steps.find((step) => step?.name === 'Run nx')!.command;
-      expect(run.indexOf('/tmp/nx-ci-run-started')).toBeLessThan(run.indexOf('yarn '));
+      const step = steps.find((candidate) => candidate?.name === RUN_NX_STEP)!.command;
+      expect(step.indexOf('/tmp/nx-ci-run-started')).toBeLessThan(step.indexOf('bash -c '));
+      // The commands, as the `bash -c` that run-until-ended.sh runs gets them.
+      const run = step
+        .slice(step.indexOf('bash -c ') + 'bash -c '.length)
+        .replace(/^'|'$/g, '')
+        .replaceAll(`'\\''`, `'`);
       expect(run).not.toContain('run.ts');
       expect(run).toContain(
         `yarn 'nx' 'affected' '--targets=fmt' '--exclude=*,!tag:library,!it'\\''s' '--base=abc123' & pids+=($!)`
@@ -190,10 +196,23 @@ describe('the CircleCI NX DTE pipeline', () => {
     ]) {
       const commands = job(jobs, agent)!.steps.map((step) => step.run?.command ?? '');
       expect(
-        commands.some((command) =>
-          command.includes(`scripts/ci/nx/run-agent.sh ${main} /usr/bin/timeout --kill-after=1m `)
+        commands.some(
+          (command) =>
+            command.includes(`scripts/ci/nx/run-until-ended.sh ${main} 0 `) &&
+            command.includes(' /usr/bin/timeout --kill-after=1m ')
         )
       ).toBe(true);
+    }
+  });
+
+  it('stops each main job once all of its agents have ended, since nothing is left to run its tasks', () => {
+    const jobs = withSelection(tasks('fmt', 1), tasks('test-1', 1));
+    for (const [main, agent] of [
+      ['nx-main', 'nx-agent'],
+      ['nx-main-windows', 'nx-agent-windows'],
+    ]) {
+      const runNx = job(jobs, main)!.steps.find((step) => step.run?.name === RUN_NX_STEP);
+      expect(runNx?.run?.command).toContain(`scripts/ci/nx/run-until-ended.sh ${agent} 1 `);
     }
   });
 

@@ -27,10 +27,10 @@ import { artifact, cache, git, testResults } from '../utils/helpers.ts';
 import { type FocusDiff, changedFilesEnvironment, focusDiff } from '../utils/changed-files.ts';
 import { isTrustedAuthor } from '../utils/runtime.ts';
 import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
+import { installNodeOnWindows } from '../utils/windows-node.ts';
 import { linuxRuns, planFor, windowsTasksOf } from './plan.ts';
 import { AGENT_EXECUTORS, type Os, agentEnvironment, agentSetup } from './agent-environment.ts';
 import { MAX_AGENTS } from './agent-sizing.ts';
-import { installNodeOnWindows } from '../utils/windows-node.ts';
 import type { Selection } from './selection.ts';
 
 export type NxDteOptions = {
@@ -58,27 +58,21 @@ export const NX_AGENT_JOB_IDS: readonly string[] = ['nx-agent', 'nx-agent-window
 const NX_CLOUD = 'npx --yes nx-cloud@19.1.5';
 
 // The directory circleci-node-modules.sh keeps its archives in, and the hash of the manifests for
-// the cache key, on each OS: as CircleCI's cache steps name them, and as Git Bash does on Windows.
-const NODE_MODULES_PATHS: Record<
-  Os,
-  { archives: string; sum: string; bash: { archives: string; sum: string } }
-> = {
-  linux: {
-    archives: '/tmp/nx-dte-node_modules',
-    sum: '/tmp/nx-dte-manifests.sha256',
-    bash: { archives: '/tmp/nx-dte-node_modules', sum: '/tmp/nx-dte-manifests.sha256' },
-  },
+// the cache key, on each OS. The hash with forward slashes, as a backslash in a cache key's template
+// starts an escape.
+const NODE_MODULES_PATHS: Record<Os, { archives: string; sum: string }> = {
+  linux: { archives: '/tmp/nx-dte-node_modules', sum: '/tmp/nx-dte-manifests.sha256' },
   windows: {
     archives: 'C:\\Users\\circleci\\nx-dte-node_modules',
-    // Forward slashes: in a cache key's template a backslash starts an escape.
     sum: 'C:/Users/circleci/nx-dte-manifests.sha256',
-    bash: {
-      archives: '/c/Users/circleci/nx-dte-node_modules',
-      sum: '/c/Users/circleci/nx-dte-manifests.sha256',
-    },
   },
 };
-export const NODE_MODULES_ARCHIVE = NODE_MODULES_PATHS.linux.archives;
+// A Windows path as Git Bash names it: `C:\Users\…` or `C:/Users/…` as `/c/Users/…`.
+export const inBash = (file: string) =>
+  file
+    .replace(/^([A-Za-z]):[\\/]/, (_, drive: string) => `/${drive.toLowerCase()}/`)
+    .replaceAll('\\', '/');
+export const NODE_MODULES_ARCHIVES = NODE_MODULES_PATHS.linux.archives;
 export const MANIFESTS_SUM = NODE_MODULES_PATHS.linux.sum;
 // Hashes the workspaces' manifests and Yarn's patches into the given file, for the key below.
 const hashManifests = (sum: string) =>
@@ -95,7 +89,7 @@ const nodeModulesKey = (sum: string) =>
     '{{ checksum "yarn.lock" }}',
     '{{ checksum ".nx/workflows/prune-other-platforms.cjs" }}',
     '{{ checksum "scripts/ci/nx/circleci-node-modules.sh" }}',
-    '{{ checksum "scripts/ci/nx/workspace-links.mjs" }}',
+    '{{ checksum "scripts/ci/nx/workspace-links.ts" }}',
     // The workspaces' manifests and the patches:
     // a change such as `installConfig` alters the installed tree without touching yarn.lock, and the
     // install that a changed patch needs is skipped on a hit.
@@ -109,14 +103,14 @@ const restoreNodeModules = (os: Os) => {
     {
       run: {
         name: 'Hash the package manifests and patches',
-        command: hashManifests(paths.bash.sum),
+        command: hashManifests(inBash(paths.sum)),
       },
     },
     cache.attach([nodeModulesKey(paths.sum)]),
     {
       run: {
         name: 'Restore node_modules',
-        command: `bash scripts/ci/nx/circleci-node-modules.sh restore ${paths.bash.archives}`,
+        command: `bash scripts/ci/nx/circleci-node-modules.sh restore ${inBash(paths.archives)}`,
       },
     },
   ];
@@ -136,7 +130,7 @@ const saveNodeModules = (os: Os) => {
             name: 'Pack node_modules',
             // Also when a task failed: the tree is the same either way.
             when: 'always',
-            command: `bash scripts/ci/nx/circleci-node-modules.sh pack ${paths.bash.archives}`,
+            command: `bash scripts/ci/nx/circleci-node-modules.sh pack ${inBash(paths.archives)}`,
           },
         },
         {
@@ -393,8 +387,9 @@ const windowsMainJob = (
     },
     steps: [
       windowsCheckout(),
-      startCiRun('windows', targets, NX_CLOUD),
+      // Before the NX Cloud run starts: `nvm use` swaps the Node that npx runs.
       installNodeOnWindows(),
+      startCiRun('windows', targets, NX_CLOUD),
       ...restoreNodeModules('windows'),
       ...fetchBase(base),
       runNx('windows', selected, base, commands),

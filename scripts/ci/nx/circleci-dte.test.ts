@@ -12,7 +12,7 @@ import {
   HASH_MANIFESTS_COMMAND,
   LAUNCH_TEMPLATES,
   MANIFESTS_SUM,
-  NODE_MODULES_ARCHIVE,
+  NODE_MODULES_ARCHIVES,
   NODE_MODULES_KEY,
   getNxDteJobs,
 } from './circleci-dte.ts';
@@ -109,6 +109,47 @@ describe('the CircleCI NX DTE pipeline', () => {
     }
     const noBase = job(withSelection(tasks('fmt', 1)), 'nx-main')!.steps.map((step) => step.run);
     expect(noBase.find((run) => run?.name === 'Run nx')!.command).not.toContain('--base');
+  });
+
+  it('runs the commands the setup job worked out as they are, once the NX Cloud run has started', () => {
+    const commands = [
+      ['nx', 'affected', '--targets=fmt', "--exclude=*,!tag:library,!it's", '--base=abc123'],
+      ['nx', 'affected', '--targets=check', '--exclude=*,!scripts', '--base=abc123'],
+    ];
+    const jobs = withSelection(
+      { ...tasks('fmt', 1), commands },
+      { ...tasks('test-1', 1), commands },
+      'abc123'
+    );
+    for (const main of ['nx-main', 'nx-main-windows']) {
+      const steps = job(jobs, main)!.steps.map((step) => step.run);
+      const start = steps.find((run) => run?.name === 'Start the NX Cloud run')!;
+      expect((start as { background?: boolean }).background).toBe(true);
+      const run = steps.find((step) => step?.name === 'Run nx')!.command;
+      expect(run.indexOf('/tmp/nx-ci-run-started')).toBeLessThan(run.indexOf('yarn '));
+      expect(run).not.toContain('run.ts');
+      expect(run).toContain(
+        `yarn 'nx' 'affected' '--targets=fmt' '--exclude=*,!tag:library,!it'\\''s' '--base=abc123' & pids+=($!)`
+      );
+      expect(run).toContain(`yarn 'nx' 'affected' '--targets=check'`);
+    }
+  });
+
+  it('writes the Windows cache keys without a backslash, which starts an escape in their template', () => {
+    const jobs = withSelection(tasks('fmt', 1), tasks('test-1', 1));
+    for (const id of ['nx-main-windows', 'nx-agent-windows']) {
+      const keys = job(jobs, id)!.steps.flatMap((step) => {
+        const { restore_cache, save_cache } = step as {
+          restore_cache?: { keys: string[] };
+          save_cache?: { key: string };
+        };
+        return [...(restore_cache?.keys ?? []), ...(save_cache ? [save_cache.key] : [])];
+      });
+      expect(keys.length).toBeGreaterThan(0);
+      for (const key of keys) {
+        expect(key).not.toContain('\\');
+      }
+    }
   });
 
   it('keeps the Linux and the Windows run apart, each with its own agents', () => {
@@ -236,7 +277,7 @@ describe('the CircleCI NX DTE pipeline', () => {
     const config = read('.circleci/config.yml');
     expect(config.split(NODE_MODULES_KEY).length - 1).toBe(2);
     expect(config).toContain(`command: ${HASH_MANIFESTS_COMMAND}\n`);
-    expect(config).toContain(`restore ${NODE_MODULES_ARCHIVE}\n`);
+    expect(config).toContain(`restore ${NODE_MODULES_ARCHIVES}\n`);
   });
 
   it('leaves the agents out of circleci-completion', () => {

@@ -21,8 +21,8 @@ if (typeof zlib.createZstdCompress !== 'function') {
 }
 
 const level = Number(levelArg ?? 3);
-// zlib's default 16 KiB output chunks make decompression the bottleneck: a 610 MiB node_modules
-// archive (3.3 GB of tar) took 17 s to decompress, and 4 s with 1 MiB chunks.
+// zlib's default 16 KiB output chunks slow decompression down: the 610 MiB NX DTE node_modules
+// archive (3.3 GB of tar) decompresses in 5 s instead of 8 s on a CircleCI Docker large machine.
 const chunkSize = 1024 * 1024;
 
 const transform =

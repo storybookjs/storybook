@@ -5,26 +5,29 @@
 // otherwise (nx/src/plugins/js/lock-file/yarn-parser.ts): a package with one version always counts
 // as hoisted, one with several by the version that node_modules holds. Each OS holds other native
 // packages: `supportedArchitectures` in .yarnrc.yml installs the glibc ones only on Linux and the
-// win32 ones only on Windows, and the setup job's node_modules also lost the darwin ones
-// (prune-other-platforms.cjs). For a native package with several versions the names then differ,
-// and with them every task's hash (`AllExternalDependencies`).
+// win32 ones only on Windows, and prune-other-platforms.cjs then removes every package for another
+// OS or CPU, on both (circleci-node-modules.sh). For a native package with several versions the
+// names then differ, and with them every task's hash (`AllExternalDependencies`).
 //
-// So each such package is named here as on Windows: hoisted at the version the install hoisted
-// (node_modules/.yarn-state.yml, written before the prune), and for a package this OS never
-// installs, at the version the other platforms' packages of its family hoisted (the bindings of
-// one rolldown or next release, …), as Windows does. A package Windows does not install has no
-// hoisted version.
+// So each such package is named here as on Windows: a win32 x64 one hoisted at the version the
+// install hoisted (node_modules/.yarn-state.yml, written before the prune), and for one this OS
+// never installs, at the version the other platforms' packages of its family hoisted (the bindings
+// of one rolldown or next release, …), as Windows does. A package the Windows tree does not hold has
+// no hoisted version.
 import { existsSync, readFileSync } from 'node:fs';
 
 import type { ProjectGraph } from 'nx/src/config/project-graph.js';
 import { join } from 'pathe';
-import { parse } from 'yaml';
 
 export type Platform = { os: string; cpu: string; libc: string | null };
 
 export const WINDOWS: Platform = { os: 'win32', cpu: 'x64', libc: null };
 
-type Architectures = Partial<Record<'os' | 'cpu' | 'libc', string[]>>;
+export type Architectures = Partial<Record<'os' | 'cpu' | 'libc', string[]>>;
+
+// What the Windows jobs' node_modules holds: only the current OS and CPU, whatever .yarnrc.yml
+// installs, since the prune removes the rest.
+export const PRUNED: Architectures = {};
 
 // What yarn installs on `platform`: `current` is the platform's own value, and a key yarn is not
 // told about means the current value only (no libc outside Linux).
@@ -176,19 +179,13 @@ export function windowsGraph(graph: ProjectGraph, root: string) {
     console.warn(`No ${state}: the Windows tasks are hashed with this OS's npm packages.`);
     return graph;
   }
-  const architectures =
-    (
-      parse(readFileSync(join(root, '.yarnrc.yml'), 'utf8')) as {
-        supportedArchitectures?: Architectures;
-      }
-    ).supportedArchitectures ?? {};
   return renameExternalNodes(
     graph,
     renamesFor(
       graph.externalNodes as unknown as Record<string, Node>,
       lockfileConditions(readFileSync(join(root, 'yarn.lock'), 'utf8')),
       hoistedVersions(readFileSync(state, 'utf8')),
-      architectures
+      PRUNED
     )
   );
 }

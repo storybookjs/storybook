@@ -95,7 +95,7 @@ jobs:
                 command: shopt -s nullglob; cat package.json */package.json code/*/package.json code/*/*/package.json .yarn/patches/* | sha256sum > /tmp/nx-dte-manifests.sha256
             - restore_cache:
                 keys:
-                  - v2-nx-dte-node_modules/{{ arch }}/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}/{{ checksum ".nx/workflows/prune-other-platforms.cjs" }}/{{ checksum "scripts/ci/nx/circleci-node-modules.sh" }}/{{ checksum "scripts/ci/nx/workspace-links.mjs" }}/{{ checksum "/tmp/nx-dte-manifests.sha256" }}
+                  - v2-nx-dte-node_modules/{{ arch }}/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}/{{ checksum ".nx/workflows/prune-other-platforms.cjs" }}/{{ checksum "scripts/ci/nx/circleci-node-modules.sh" }}/{{ checksum "scripts/ci/nx/workspace-links.ts" }}/{{ checksum "/tmp/nx-dte-manifests.sha256" }}
             - run:
                 name: Restore node_modules
                 command: bash scripts/ci/nx/circleci-node-modules.sh restore /tmp/nx-dte-node_modules
@@ -109,7 +109,7 @@ jobs:
                       name: Pack node_modules
                       command: bash scripts/ci/nx/circleci-node-modules.sh pack /tmp/nx-dte-node_modules
                   - save_cache:
-                      key: v2-nx-dte-node_modules/{{ arch }}/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}/{{ checksum ".nx/workflows/prune-other-platforms.cjs" }}/{{ checksum "scripts/ci/nx/circleci-node-modules.sh" }}/{{ checksum "scripts/ci/nx/workspace-links.mjs" }}/{{ checksum "/tmp/nx-dte-manifests.sha256" }}
+                      key: v2-nx-dte-node_modules/{{ arch }}/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}/{{ checksum ".nx/workflows/prune-other-platforms.cjs" }}/{{ checksum "scripts/ci/nx/circleci-node-modules.sh" }}/{{ checksum "scripts/ci/nx/workspace-links.ts" }}/{{ checksum "/tmp/nx-dte-manifests.sha256" }}
                       paths:
                         - /tmp/nx-dte-node_modules
             # NX_BASE and NX_HEAD for `nx affected`, as Nx's CircleCI recipe for manual DTE does: on a

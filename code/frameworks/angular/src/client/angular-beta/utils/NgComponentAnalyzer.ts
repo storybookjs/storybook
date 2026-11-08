@@ -85,7 +85,19 @@ export const getComponentInputsOutputs = (component: any): ComponentInputsOutput
       }, initialValue);
 
   // Add signal-based I/O, which the decorator path above cannot see.
-  return addSignalInputsOutputs(component, decoratorDerived);
+  const result = addSignalInputsOutputs(component, decoratorDerived);
+  for (const hostDirective of componentMetadata?.hostDirectives ?? []) {
+    if (typeof hostDirective === 'function') {
+      continue;
+    }
+    for (const input of hostDirective.inputs ?? []) {
+      const [name, alias = name] = input.split(':').map((part) => part.trim());
+      if (!result.inputs.some((entry) => entry.templateName === alias)) {
+        result.inputs.push({ propName: alias, templateName: alias });
+      }
+    }
+  }
+  return result;
 };
 
 const hasEntry = (

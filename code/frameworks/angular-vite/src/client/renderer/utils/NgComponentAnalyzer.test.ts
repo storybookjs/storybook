@@ -27,6 +27,43 @@ import {
 } from './NgComponentAnalyzer.ts';
 
 describe('getComponentInputsOutputs', () => {
+  it('includes only inputs exposed by host directives under their public names', () => {
+    @Directive({ standalone: true })
+    class HostDirective {
+      @Input() value?: string;
+      @Input('directiveAlias') aliased?: string;
+      @Input() hidden?: string;
+    }
+
+    @Component({
+      template: '',
+      hostDirectives: [
+        { directive: HostDirective, inputs: ['value', 'directiveAlias: publicValue'] },
+      ],
+    })
+    class HostComponent {}
+
+    expect(getComponentInputsOutputs(HostComponent)).toEqual({
+      inputs: [
+        { propName: 'value', templateName: 'value' },
+        { propName: 'publicValue', templateName: 'publicValue' },
+      ],
+      outputs: [],
+    });
+  });
+
+  it('does not expose inputs from a bare host directive reference', () => {
+    @Directive({ standalone: true })
+    class HostDirective {
+      @Input() hidden?: string;
+    }
+
+    @Component({ template: '', hostDirectives: [HostDirective] })
+    class HostComponent {}
+
+    expect(getComponentInputsOutputs(HostComponent)).toEqual({ inputs: [], outputs: [] });
+  });
+
   it('should return empty if no I/O found', () => {
     @Component({
       standalone: false,

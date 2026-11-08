@@ -19,7 +19,6 @@ module.exports = {
       ImportDeclaration: (node) => {
         const fileName = context.getPhysicalFilename();
         const isInCLI = !!fileName.includes(path.join('code', 'lib', 'cli') + path.sep);
-        const isInCodemod = !!fileName.includes(path.join('code', 'lib', 'codemod'));
         const isInCreateStorybook = !!fileName.includes(
           path.join('code', 'lib', 'create-storybook')
         );
@@ -29,7 +28,6 @@ module.exports = {
           node.source.value.startsWith('@storybook/core/') &&
           !isInCLI &&
           !isInCore &&
-          !isInCodemod &&
           !isInCreateStorybook
         ) {
           const newPath = node.source.value

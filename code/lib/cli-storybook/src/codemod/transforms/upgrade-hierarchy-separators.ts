@@ -7,7 +7,7 @@ import {
   walk,
 } from 'storybook/internal/csf-tools';
 
-import type { TransformFile } from '../lib/utils.ts';
+import type { FileInfo } from '../../automigrate/codemod.ts';
 
 function upgradeSeparators(editor: SourceEditor, node: Node | undefined) {
   if (!isStringLiteral(node)) {
@@ -21,7 +21,7 @@ function upgradeSeparators(editor: SourceEditor, node: Node | undefined) {
   }
 }
 
-export default function transform(info: TransformFile) {
+export default function transform(info: FileInfo) {
   const editor = new SourceEditor(info.source, info.path);
 
   walk(editor.program, (node) => {

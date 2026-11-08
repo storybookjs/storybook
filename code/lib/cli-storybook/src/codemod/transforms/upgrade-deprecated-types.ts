@@ -8,7 +8,7 @@ import {
   walk,
 } from 'storybook/internal/csf-tools';
 
-import type { TransformFile } from '../lib/utils.ts';
+import type { FileInfo } from '../../automigrate/codemod.ts';
 
 const deprecatedTypes = [
   'ComponentStory',
@@ -25,7 +25,7 @@ function migrateType(oldType: string) {
   return oldType.replace('Component', '');
 }
 
-export default async function transform(info: TransformFile) {
+export default async function transform(info: FileInfo) {
   const editor = new SourceEditor(info.source, info.path);
 
   upgradeDeprecatedTypes(editor);

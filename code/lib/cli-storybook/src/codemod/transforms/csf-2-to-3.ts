@@ -17,7 +17,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import invariant from 'tiny-invariant';
 
-import type { TransformFile } from '../lib/utils.ts';
+import type { FileInfo } from '../../automigrate/codemod.ts';
 import { upgradeDeprecatedTypes } from './upgrade-deprecated-types.ts';
 
 const renameAnnotation = (annotation: string) => {
@@ -136,7 +136,7 @@ function removeUnusedTemplates(editor: SourceEditor, templates: string[]) {
   editor.commit();
 }
 
-export default async function transform(info: TransformFile) {
+export default async function transform(info: FileInfo) {
   // Svelte CSF files are never CSF 2, but the glob of the csf-factories automigration includes them
   if (info.path.endsWith('.svelte')) {
     return info.source;

@@ -4,13 +4,13 @@ import { readFile, rename as renameAsync, writeFile } from 'node:fs/promises';
 import { normalize } from 'pathe';
 import { glob as tinyglobby } from 'tinyglobby';
 
-import type { TransformFile } from './lib/utils.ts';
+import type { FileInfo } from '../automigrate/codemod.ts';
 import csf2To3 from './transforms/csf-2-to-3.ts';
 import findImplicitSpies from './transforms/find-implicit-spies.ts';
 import upgradeDeprecatedTypes from './transforms/upgrade-deprecated-types.ts';
 import upgradeHierarchySeparators from './transforms/upgrade-hierarchy-separators.ts';
 
-type Transform = (info: TransformFile) => string | void | Promise<string | void>;
+type Transform = (info: FileInfo) => string | void | Promise<string | void>;
 
 const transforms: Record<string, Transform> = {
   'csf-2-to-3': csf2To3,

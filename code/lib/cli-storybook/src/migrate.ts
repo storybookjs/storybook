@@ -1,6 +1,6 @@
 import { logger } from 'storybook/internal/node-logger';
 
-import { listCodemods, runCodemod } from '@storybook/codemod';
+import { listCodemods, runCodemod } from './codemod/migrations.ts';
 
 type CLIOptions = {
   glob: string;

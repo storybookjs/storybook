@@ -5,25 +5,23 @@
 //   workspace-links.ts record  write the links of the tree to LINKS and print where each one is
 //   workspace-links.ts make    make every link in LINKS that is missing or points elsewhere
 //
-// Runs under plain Node (`node --experimental-transform-types`) before anything is installed, from
-// the repository root, with paths as circleci-node-modules.sh lists the node_modules directories
-// (`./node_modules`).
+// Runs under plain Node (`node --experimental-transform-types`) once the archives are extracted or
+// Yarn has installed, from the repository root, with paths as circleci-node-modules.sh lists the
+// node_modules directories (`./node_modules`).
 import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+
+import { dirname, join, relative, resolve } from 'pathe';
 
 // Every node_modules directory of the tree, as circleci-node-modules.sh lists them.
 const DIRS = 'node_modules/.circleci-node-modules-dirs';
 // Each link of the tree and what it points to, tab-separated; archived with the tree.
 export const LINKS = 'node_modules/.circleci-node-modules-links';
 
-const posix = (file: string) => file.split(path.sep).join('/');
-
 // The links among the packages of each node_modules directory, scoped ones included, with paths
 // relative to `root`.
 export function record(root: string, dirs: readonly string[]) {
   const links: [string, string][] = [];
-  const at = (file: string) => path.join(root, file);
+  const at = (file: string) => join(root, file);
   for (const dir of dirs) {
     for (const name of fs.readdirSync(at(dir))) {
       if (name.startsWith('.')) {
@@ -34,10 +32,7 @@ export function record(root: string, dirs: readonly string[]) {
         : [`${dir}/${name}`];
       for (const entry of entries) {
         if (fs.lstatSync(at(entry)).isSymbolicLink()) {
-          links.push([
-            entry,
-            posix(path.relative(fs.realpathSync(root), fs.realpathSync(at(entry)))),
-          ]);
+          links.push([entry, relative(fs.realpathSync(root), fs.realpathSync(at(entry)))]);
         }
       }
     }
@@ -48,7 +43,7 @@ export function record(root: string, dirs: readonly string[]) {
 export function make(root: string, links: readonly (readonly string[])[]) {
   let made = 0;
   for (const [location, target] of links) {
-    const [link, to] = [path.resolve(root, location), path.resolve(root, target)];
+    const [link, to] = [resolve(root, location), resolve(root, target)];
     let current: string | undefined;
     try {
       current = fs.realpathSync(link);
@@ -57,12 +52,12 @@ export function make(root: string, links: readonly (readonly string[])[]) {
       continue;
     }
     fs.rmSync(link, { recursive: true, force: true });
-    fs.mkdirSync(path.dirname(link), { recursive: true });
+    fs.mkdirSync(dirname(link), { recursive: true });
     // As Yarn links them: a junction on Windows, which needs no symlink privilege.
     if (process.platform === 'win32') {
       fs.symlinkSync(to, link, 'junction');
     } else {
-      fs.symlinkSync(path.relative(path.dirname(link), to), link);
+      fs.symlinkSync(relative(dirname(link), to), link);
     }
     made++;
   }
@@ -70,9 +65,7 @@ export function make(root: string, links: readonly (readonly string[])[]) {
 }
 
 const [mode] = process.argv.slice(2);
-const same = (a: string, b: string) =>
-  path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
-if (!same(process.argv[1] ?? '', fileURLToPath(import.meta.url))) {
+if (!import.meta.main) {
   // Imported, by its test.
 } else if (mode === 'record') {
   const dirs = fs.readFileSync(DIRS, 'utf8').split(/\r?\n/).filter(Boolean);

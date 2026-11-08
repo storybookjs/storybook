@@ -1,5 +1,19 @@
+import { describe, expect, it, vi } from 'vitest';
+
+// Before Nx loads: this file builds project graphs in-process and through the Nx CLI, which must
+// not touch the workspace data of an NX agent that runs it (`code:test-*`). A Windows agent whose
+// unit tests ran them in its own `.nx/workspace-data` lost its NX Cloud session ("400: Invalid
+// request to Nx Cloud") and left its task unfinished. The CLI calls inherit this environment.
+await vi.hoisted(async () => {
+  const { mkdtempSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('pathe');
+  process.env.NX_WORKSPACE_DATA_DIRECTORY = mkdtempSync(join(tmpdir(), 'nx-run-test-'));
+  process.env.NX_DAEMON = 'false';
+  process.env.NX_NO_CLOUD = 'true';
+});
+
 import { createProjectGraphAsync } from 'nx/src/project-graph/project-graph.js';
-import { describe, expect, it } from 'vitest';
 
 import { workflows } from '../utils/types.ts';
 import { projectPattern } from './plan.ts';

@@ -86,6 +86,38 @@ describe('runCodemod', () => {
     `);
   });
 
+  it('indents multi-line annotations in a project without Prettier', async () => {
+    const storyFile = join(tempDir, 'button.stories.tsx');
+    writeFileSync(
+      storyFile,
+      `export default { title: 'Button' };
+
+export const Primary = (args) => {
+  return <Button {...args} />;
+};
+Primary.args = {
+  label: 'Button',
+};
+`
+    );
+
+    await runCodemod('csf-2-to-3', { glob: storyFile, logger });
+
+    expect(readFileSync(storyFile, 'utf-8')).toMatchInlineSnapshot(`
+      "export default { title: 'Button' };
+
+      export const Primary = {
+        render: (args) => {
+          return <Button {...args} />;
+        },
+        args: {
+          label: 'Button',
+        },
+      };
+      "
+    `);
+  });
+
   it('should handle filenames with spaces', async () => {
     const storyFile = join(tempDir, 'my component.stories.tsx');
     writeFileSync(storyFile, csf2Source);

@@ -527,6 +527,32 @@ describe('vitestSetupFile', () => {
       `);
     });
 
+    it('leaves an empty setupFiles array of another project alone', async () => {
+      await migrate({
+        '.storybook/vitest.setup.ts': PREVIEW_ONLY_SETUP_FILE,
+        'vitest.config.ts': dedent`
+          import { defineConfig } from 'vitest/config';
+          import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+
+          export default defineConfig({
+            test: {
+              projects: [
+                {
+                  plugins: [storybookTest({ configDir: '.storybook' })],
+                  test: { setupFiles: ['./.storybook/vitest.setup.ts'] },
+                },
+                { test: { name: 'unit', setupFiles: [] } },
+              ],
+            },
+          });
+        `,
+      });
+
+      expect(readFixture('vitest.config.ts')).toContain(
+        `{ test: { name: 'unit', setupFiles: [] } }`
+      );
+    });
+
     it('resolves path.join(import.meta.dirname, ...) and __dirname entries', async () => {
       const { setupFilePath } = await migrate({
         '.storybook/vitest.setup.ts': PREVIEW_ONLY_SETUP_FILE,

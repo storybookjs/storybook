@@ -36,7 +36,14 @@ it('rewrites the separators of storiesOf and keeps the quotes as written', () =>
   `);
 });
 
+it('rewrites the separators of a CSF title with a type assertion', () => {
+  expect(run(`export default { title: 'a|b' } as Meta;`)).toBe(
+    `export default { title: 'a/b' } as Meta;`
+  );
+});
+
 it.each([
+  ['an empty title', `export default { title: '' };`],
   ['a dynamic storiesOf kind', `const foo = 'a|b';\nstoriesOf(foo, module);`],
   ['a dynamic CSF title', `const title = 'a|b';\nexport default { title };`],
   [

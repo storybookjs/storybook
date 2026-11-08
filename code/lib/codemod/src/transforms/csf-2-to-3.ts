@@ -8,6 +8,7 @@ import {
   loadCsf,
   placeableTextOf,
   printCsf,
+  printMembers,
   removeFromList,
   removeStatement,
   walk,
@@ -196,7 +197,7 @@ export default async function transform(info: TransformFile) {
     editor.edits.overwrite(
       init.start,
       init.end,
-      properties.length === 0 ? '{}' : `{\n${properties.map((it) => `  ${it},\n`).join('')}}`
+      printMembers(properties, { indent: editor.indent, trailingComma: true })
     );
   });
 

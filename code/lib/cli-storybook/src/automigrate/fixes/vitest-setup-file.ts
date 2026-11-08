@@ -992,7 +992,7 @@ function removeSetupFileEntries(
     }
 
     const removed = value.elements.filter((element): element is E.Expression => isTarget(element));
-    if (removed.length === value.elements.length) {
+    if (removed.length > 0 && removed.length === value.elements.length) {
       removeProperty();
     } else if (removed.length > 0) {
       removeFromList(editor, arrayList(editor, value), removed);

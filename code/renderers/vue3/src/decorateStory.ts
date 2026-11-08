@@ -83,3 +83,4 @@ export function decorateStory(
     (context) => prepare(storyFn(context)) as LegacyStoryFn<VueRenderer>
   );
 }
+// bench s1100 vue1 1794132071983279000

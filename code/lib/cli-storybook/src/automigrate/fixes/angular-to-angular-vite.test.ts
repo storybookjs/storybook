@@ -12,8 +12,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { ANALOG_VITE_PLUGIN_ANGULAR_VERSION } from 'storybook/internal/cli';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { globby } from 'globby';
+import { glob } from 'tinyglobby';
 import { fs, vol } from 'memfs';
 
 import { resolveZoneless } from '../../../../../frameworks/angular-vite/src/preset.ts';
@@ -29,7 +28,12 @@ import {
 
 vi.mock('node:fs', { spy: true });
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('globby', { spy: true });
+vi.mock('tinyglobby', { spy: true });
+
+type GlobByPatterns = (
+  patterns: string | string[],
+  options?: { ignore?: string[] }
+) => Promise<string[]>;
 
 vi.mock('storybook/internal/node-logger', () => ({
   logger: {
@@ -117,9 +121,9 @@ describe('angular-to-angular-vite', () => {
     vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
     vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
     vi.mocked(existsSync).mockImplementation(fs.existsSync as typeof existsSync);
-    // globby walks the real disk, which memfs has replaced, so workspace files are discovered out
+    // tinyglobby walks the real disk, which memfs has replaced, so workspace files are discovered out
     // of the virtual volume instead.
-    vi.mocked(globby).mockImplementation(async (patterns, options) => {
+    vi.mocked(glob as unknown as GlobByPatterns).mockImplementation(async (patterns, options) => {
       const basenames = [patterns].flat().map((pattern) => pattern.replaceAll('**/', ''));
       return Object.keys(vol.toJSON()).filter(
         (path) =>
@@ -127,7 +131,7 @@ describe('angular-to-angular-vite', () => {
           !options?.ignore?.some((pattern) =>
             path.includes(`/${pattern.replaceAll('**/', '').replaceAll('/**', '')}/`)
           )
-      ) as never;
+      );
     });
   });
 
@@ -697,7 +701,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
 
       await runMigration();
 
-      expect(globby).toHaveBeenCalledWith(
+      expect(glob).toHaveBeenCalledWith(
         ['**/project.json'],
         expect.objectContaining({
           cwd: '/project',

@@ -1,3 +1,5 @@
+import { spawnSync } from 'node:child_process';
+
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 import {
   HandledError,
@@ -21,10 +23,10 @@ import {
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
-// eslint-disable-next-line depend/ban-dependencies
-import { globby, globbySync } from 'globby';
+import { resolve } from 'pathe';
 import picocolors from 'picocolors';
 import { lt, prerelease, rsort } from 'semver';
+import { glob, globSync } from 'tinyglobby';
 
 import { autoblock } from './autoblock/index.ts';
 import type { AutoblockerResult } from './autoblock/types.ts';
@@ -89,6 +91,20 @@ interface VersionModifier {
 
 /** Glob pattern for finding Storybook directories */
 const STORYBOOK_DIR_PATTERN = ['**/.storybook', '**/.rnstorybook'];
+
+const withoutGitIgnored = (paths: string[], cwd: string) => {
+  const { status, stdout } = spawnSync('git', ['check-ignore', '-z', '--stdin'], {
+    cwd,
+    input: paths.join('\0'),
+    encoding: 'utf8',
+  });
+  // 0 means some paths are ignored, 1 none, and any other status that git cannot tell.
+  if (status !== 0) {
+    return paths;
+  }
+  const ignored = new Set(stdout.split('\0'));
+  return paths.filter((path) => !ignored.has(path));
+};
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -214,17 +230,16 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
   try {
     logger.debug(`Finding Storybook projects...`);
     // Find all .storybook directories, accounting for custom config dirs later
-    const storybookDirs = await globby(STORYBOOK_DIR_PATTERN, {
+    const candidates = await glob(STORYBOOK_DIR_PATTERN, {
       cwd,
       dot: true,
-      gitignore: true,
-      // Packages like @nx/storybook ship .storybook templates, and globby misses .gitignore patterns
-      // like `**/**/node_modules/`, so never rely on .gitignore to skip them.
+      // Packages like @nx/storybook ship .storybook templates, so never rely on .gitignore to skip them.
       ignore: ['**/node_modules/**'],
-      absolute: true,
       onlyDirectories: true,
+      expandDirectories: false,
       followSymbolicLinks: false,
     });
+    const storybookDirs = withoutGitIgnored(candidates, cwd).map((dir) => resolve(cwd, dir));
 
     logger.debug(`Found ${storybookDirs.length} Storybook projects`);
 
@@ -782,9 +797,7 @@ export const getProjects = async (
 export const findFilesUp = (matchers: string[], cwd: string) => {
   const matchingFiles: string[] = [];
   for (const directory of walk.up(cwd, { last: getProjectRoot() })) {
-    // The matchers only name files directly inside `directory`, so `gitignore: true` would only add
-    // a read of every .gitignore below it, which takes seconds per call in a large monorepo.
-    matchingFiles.push(...globbySync(matchers, { absolute: true, cwd: directory }));
+    matchingFiles.push(...globSync(matchers, { absolute: true, cwd: directory }));
   }
 
   return matchingFiles;

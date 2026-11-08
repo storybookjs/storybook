@@ -13,6 +13,8 @@ import {
   restoreLineEndings,
 } from 'storybook/internal/csf-tools';
 
+import { glob } from 'tinyglobby';
+
 import { createFixFiles } from './fix-files.ts';
 import { editParsedFile } from './helpers/edit-parsed-file.ts';
 import type { CheckOptions, Fix, RunOptions, TransformOptions } from './types.ts';
@@ -144,10 +146,8 @@ export const collectFiles = async (project: ProjectPaths, kinds: Set<FileKind>) 
   }
   project.storiesPaths.forEach((id) => claim(id, 'story'));
   if (kinds.has('config')) {
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
     // A pattern with a Windows path in it matches nothing, because glob patterns read `\` as an escape.
-    const configFiles = await globby('**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}', {
+    const configFiles = await glob('**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}', {
       cwd: project.configDir,
       absolute: true,
       ignore: ['**/node_modules/**', '**/dist/**'],

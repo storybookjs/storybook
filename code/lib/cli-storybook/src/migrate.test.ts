@@ -4,12 +4,11 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { runCodemod } from './migrations.ts';
+import { logger } from 'storybook/internal/node-logger';
 
-const logger = {
-  step: vi.fn(),
-  log: vi.fn(),
-};
+import { migrate } from './migrate.ts';
+
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 const csf2Source = `import { Meta, Story } from '@storybook/react-vite'
 
@@ -26,7 +25,7 @@ export const SimpleBar = Template.bind({})
 SimpleBar.args = { name: 'test' }
 `;
 
-describe('runCodemod', () => {
+describe('migrate', () => {
   const tempDir = join(tmpdir(), 'storybook-codemod-test');
 
   beforeEach(() => {
@@ -51,9 +50,8 @@ describe('runCodemod', () => {
     const storyFile = join(tempDir, 'chart.stories.tsx');
     writeFileSync(storyFile, csf2Source);
 
-    await runCodemod('csf-2-to-3', {
+    await migrate('csf-2-to-3', {
       glob: storyFile,
-      logger,
     });
 
     const result = readFileSync(storyFile, 'utf-8');
@@ -67,7 +65,7 @@ describe('runCodemod', () => {
     const storyFile = join(tempDir, 'chart.stories.tsx');
     writeFileSync(storyFile, csf2Source);
 
-    await runCodemod('csf-2-to-3', { glob: storyFile, logger });
+    await migrate('csf-2-to-3', { glob: storyFile });
 
     expect(readFileSync(storyFile, 'utf-8')).toMatchInlineSnapshot(`
       "import { Meta, StoryFn } from '@storybook/react-vite'
@@ -101,7 +99,7 @@ Primary.args = {
 `
     );
 
-    await runCodemod('csf-2-to-3', { glob: storyFile, logger });
+    await migrate('csf-2-to-3', { glob: storyFile });
 
     expect(readFileSync(storyFile, 'utf-8')).toMatchInlineSnapshot(`
       "export default { title: 'Button' };
@@ -122,9 +120,8 @@ Primary.args = {
     const storyFile = join(tempDir, 'my component.stories.tsx');
     writeFileSync(storyFile, csf2Source);
 
-    await runCodemod('csf-2-to-3', {
+    await migrate('csf-2-to-3', {
       glob: storyFile,
-      logger,
     });
 
     const result = readFileSync(storyFile, 'utf-8');
@@ -139,9 +136,8 @@ Primary.args = {
     writeFileSync(storyFile1, csf2Source);
     writeFileSync(storyFile2, csf2Source);
 
-    await runCodemod('csf-2-to-3', {
+    await migrate('csf-2-to-3', {
       glob: join(tempDir, '*.stories.tsx'),
-      logger,
     });
 
     const result1 = readFileSync(storyFile1, 'utf-8');
@@ -157,9 +153,8 @@ Primary.args = {
     writeFileSync(brokenFile, 'export const = ;');
     writeFileSync(storyFile, csf2Source);
 
-    await runCodemod('upgrade-hierarchy-separators', {
+    await migrate('upgrade-hierarchy-separators', {
       glob: join(tempDir, '*.stories.tsx'),
-      logger,
       rename: '.tsx:.ts',
     });
 
@@ -177,9 +172,8 @@ Primary.args = {
     writeFileSync(storyFile1, csf2Source);
     writeFileSync(storyFile2, csf2Source);
 
-    await runCodemod('csf-2-to-3', {
+    await migrate('csf-2-to-3', {
       glob: join(tempDir, '**/*.stories.tsx'),
-      logger,
     });
 
     const result1 = readFileSync(storyFile1, 'utf-8');

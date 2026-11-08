@@ -6,6 +6,7 @@ import {
   storyShapeError,
   walk,
 } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 
 import type { FileInfo } from '../../automigrate/codemod.ts';
 
@@ -16,7 +17,7 @@ function findImplicitSpies(editor: SourceEditor, node: Node, keys: string[]) {
       !keys.includes(identifier.name) &&
       /^on[A-Z].*/.test(identifier.name)
     ) {
-      console.warn(storyShapeError('Possible implicit spy found', identifier, editor).message);
+      logger.warn(storyShapeError('Possible implicit spy found', identifier, editor).message);
     }
   });
 }
@@ -112,4 +113,6 @@ export default async function transform(info: FileInfo) {
       }
     });
   });
+
+  return info.source;
 }

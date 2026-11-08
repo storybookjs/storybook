@@ -16,12 +16,12 @@ import type { ConfigFile } from 'storybook/internal/csf-tools';
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/csf-tools', { spy: true });
-vi.mock('globby', async (importOriginal) => {
-  const { globby } = await importOriginal<typeof import('globby')>();
+vi.mock('tinyglobby', async (importOriginal) => {
+  const { glob } = await importOriginal<typeof import('tinyglobby')>();
   const { fs: memoryFs } = await import('memfs');
   return {
-    globby: (patterns: string, options: object) =>
-      globby(patterns, { ...options, fs: memoryFs as never }),
+    glob: (patterns: string, options: object) =>
+      glob(patterns, { ...options, fs: memoryFs as never }),
   };
 });
 

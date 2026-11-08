@@ -7,6 +7,7 @@ import { promises as fs } from 'fs';
 import picocolors from 'picocolors';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
+import { glob } from 'tinyglobby';
 
 export const maxConcurrentTasks = Math.max(1, os.cpus().length - 1);
 
@@ -33,20 +34,15 @@ export interface FileInfo {
  */
 export async function runCodemod(
   globPattern = '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx}',
-  transform: (source: FileInfo, ...rest: any) => Promise<string>,
+  transform: (source: FileInfo, ...rest: any) => string | Promise<string>,
   { dryRun = false, skipFormatting = false }: { dryRun?: boolean; skipFormatting?: boolean } = {}
 ) {
   let modifiedCount = 0;
   let unmodifiedCount = 0;
   let errorCount = 0;
 
-  // Dynamically import these packages because they are pure ESM modules
-  // eslint-disable-next-line depend/ban-dependencies
-  const { globby } = await import('globby');
-
   // glob only supports forward slashes
-  const files = await globby(slash(globPattern), {
-    followSymbolicLinks: true,
+  const files = await glob(slash(globPattern), {
     ignore: ['**/node_modules/**', '**/dist/**', '**/storybook-static/**', '**/build/**'],
   });
 
@@ -112,4 +108,6 @@ export async function runCodemod(
       )
     );
   }
+
+  return { files, errorCount };
 }

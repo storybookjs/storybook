@@ -1,11 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import {
-  type JsPackageManager,
-  optionalEnvToBoolean,
-  syncStorybookAddons,
-} from 'storybook/internal/common';
+import { optionalEnvToBoolean, syncStorybookAddons } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
@@ -24,16 +20,16 @@ import type { CommandFix } from '../automigrate/types.ts';
 import { configToCsfFactory } from './helpers/config-to-csf-factory.ts';
 import { storyToCsfFactory } from './helpers/story-to-csf-factory.ts';
 import { svelteCsfToCsfFactory } from './helpers/svelte-csf-to-csf-factory.ts';
+import csf2To3 from './transforms/csf-2-to-3.ts';
 
 async function runStoriesCodemod(options: {
   dryRun: boolean | undefined;
-  packageManager: JsPackageManager;
   useSubPathImports: boolean;
   previewConfigPath: string;
   yes: boolean | undefined;
   glob: string | undefined;
 }) {
-  const { dryRun, packageManager, yes, glob, ...codemodOptions } = options;
+  const { dryRun, yes, glob, ...codemodOptions } = options;
   const inSandbox = optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX) ?? false;
   const promptsForGlob = !glob && !inSandbox && !yes;
   try {
@@ -52,9 +48,7 @@ async function runStoriesCodemod(options: {
 
     logger.step('Applying codemod on your stories, this might take some time...');
 
-    await packageManager.runPackageCommand({
-      args: ['storybook', 'migrate', 'csf-2-to-3', `--glob="${globString}"`],
-    });
+    await runCodemod(globString, csf2To3, { dryRun, skipFormatting: true });
 
     await runCodemod(
       globString,
@@ -143,7 +137,6 @@ export const csfFactories: CommandFix = {
 
     await runStoriesCodemod({
       dryRun,
-      packageManager,
       useSubPathImports,
       previewConfigPath: previewConfigPath!,
       yes,

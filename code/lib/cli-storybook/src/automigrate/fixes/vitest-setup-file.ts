@@ -647,8 +647,13 @@ function extractSetupFileEntries(
 function findSetupFilesProperties(editor: SourceEditor) {
   const properties: E.ObjectProperty[] = [];
   walk(editor.program, (node) => {
-    if (node.type === 'Property' && !node.method && staticKey(node) === 'setupFiles') {
-      properties.push(node);
+    if (node.type === 'ObjectExpression') {
+      properties.push(
+        ...node.properties.filter(
+          (member): member is E.ObjectProperty =>
+            member.type === 'Property' && !member.method && staticKey(member) === 'setupFiles'
+        )
+      );
     }
   });
   return properties;
@@ -731,7 +736,7 @@ function inheritsRootConfig(
 /** Walks from a property of a `test: {}` object up to the project or root config object owning it. */
 function getEnclosingConfigObject(
   editor: SourceEditor,
-  testField: E.ObjectProperty
+  testField: Node
 ): E.ObjectExpression | null {
   const testObject = editor.parentOf(testField);
   const testProperty = testObject && editor.parentOf(testObject);

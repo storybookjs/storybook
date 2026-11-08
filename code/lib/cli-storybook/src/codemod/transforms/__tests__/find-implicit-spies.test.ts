@@ -3,6 +3,8 @@ import { beforeEach, expect, test, vi } from 'vitest';
 import ansiRegex from 'ansi-regex';
 import { dedent } from 'ts-dedent';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import transform from '../find-implicit-spies.ts';
 
 expect.addSnapshotSerializer({
@@ -12,7 +14,7 @@ expect.addSnapshotSerializer({
 
 const tsTransform = async (source: string) => transform({ source, path: 'Component.stories.tsx' });
 
-const warn = vi.spyOn(console, 'warn');
+const warn = vi.spyOn(logger, 'warn');
 
 beforeEach(() => {
   warn.mockImplementation(() => {});

@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -31,6 +32,21 @@ describe('findStorybookProjects', () => {
       'packages/ui/.storybook/main.ts': 'export default {};',
       'node_modules/@nx/storybook/files/project-files/.storybook/main.ts': 'export default {};',
     });
+
+    expect(await findStorybookProjects(root)).toEqual([
+      join(root, 'packages/ui/.storybook').replace(/\\/g, '/'),
+    ]);
+  });
+});
+
+describe('findStorybookProjects in a git repository', () => {
+  it('skips .storybook directories that git ignores', async () => {
+    createFixture({
+      '.gitignore': 'generated/\n',
+      'packages/ui/.storybook/main.ts': 'export default {};',
+      'generated/app/.storybook/main.ts': 'export default {};',
+    });
+    execFileSync('git', ['init', '-q'], { cwd: root });
 
     expect(await findStorybookProjects(root)).toEqual([
       join(root, 'packages/ui/.storybook').replace(/\\/g, '/'),

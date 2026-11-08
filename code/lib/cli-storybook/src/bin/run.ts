@@ -12,7 +12,6 @@ import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
 import { InvalidArgumentError, Option, program } from 'commander';
-import envinfo from 'envinfo';
 import leven from 'leven';
 import picocolors from 'picocolors';
 
@@ -22,6 +21,7 @@ import { doAutomigrate } from '../automigrate/index.ts';
 import { resolveRequestedFeatures } from '../automigrate/fixes/experimental-features.ts';
 import { doctor } from '../doctor/index.ts';
 import { link } from '../link.ts';
+import { info } from '../info.ts';
 import { migrate } from '../migrate.ts';
 import { sandbox } from '../sandbox.ts';
 import { type UpgradeOptions, upgrade } from '../upgrade.ts';
@@ -209,25 +209,7 @@ command('upgrade')
 
 command('info')
   .description('Prints debugging information about the local environment')
-  .action(async () => {
-    logger.log(picocolors.bold('\nStorybook Environment Info:'));
-    const pkgManager = JsPackageManagerFactory.getPackageManager();
-    const activePackageManager = pkgManager.type.replace(/\d/, ''); // 'yarn1' -> 'yarn'
-    const output = await envinfo.run({
-      System: ['OS', 'CPU', 'Shell'],
-      Binaries: ['Node', 'Yarn', 'npm', 'pnpm'],
-      Browsers: ['Chrome', 'Edge', 'Firefox', 'Safari'],
-      npmPackages: '{@storybook/*,*storybook*,sb,chromatic}',
-      npmGlobalPackages: '{@storybook/*,*storybook*,sb,chromatic}',
-    });
-    const activePackageManagerLine = output.match(new RegExp(`${activePackageManager}:.*`, 'i'));
-    logger.log(
-      output.replace(
-        activePackageManagerLine,
-        picocolors.bold(`${activePackageManagerLine} <----- active`)
-      )
-    );
-  });
+  .action((options) => info().catch(handleCommandFailure(options.logfile)));
 
 command('migrate [migration]')
   .description('Run a Storybook codemod migration on your source files')

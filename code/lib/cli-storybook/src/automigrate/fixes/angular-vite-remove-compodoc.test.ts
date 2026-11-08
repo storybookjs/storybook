@@ -6,8 +6,7 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 import * as fs from 'node:fs';
 import * as fsPromises from 'node:fs/promises';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { globby } from 'globby';
+import { glob } from 'tinyglobby';
 import { fs as memfs, vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
@@ -23,7 +22,12 @@ import {
 vi.mock('node:fs', { spy: true });
 vi.mock('node:fs/promises', { spy: true });
 
-vi.mock('globby', { spy: true });
+vi.mock('tinyglobby', { spy: true });
+
+type GlobByPatterns = (
+  patterns: string | string[],
+  options?: { ignore?: string[] }
+) => Promise<string[]>;
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 
@@ -121,9 +125,9 @@ beforeEach(() => {
   vi.mocked(fs.existsSync).mockImplementation(memfs.existsSync as never);
   vi.mocked(fsPromises.readFile).mockImplementation(memfs.promises.readFile as never);
   vi.mocked(fsPromises.writeFile).mockImplementation(memfs.promises.writeFile as never);
-  // globby walks the real disk, which memfs has replaced. Resolve `project.json` files out of the
+  // tinyglobby walks the real disk, which memfs has replaced. Resolve `project.json` files out of the
   // virtual volume instead, so discovery is still what decides which files the fix sees.
-  vi.mocked(globby).mockImplementation(async (patterns, options) => {
+  vi.mocked(glob as unknown as GlobByPatterns).mockImplementation(async (patterns, options) => {
     const basenames = [patterns].flat().map((pattern) => pattern.replaceAll('**/', ''));
     return Object.keys(vol.toJSON()).filter(
       (path) =>
@@ -131,7 +135,7 @@ beforeEach(() => {
         !options?.ignore?.some((pattern) =>
           path.includes(`/${pattern.replaceAll('**/', '').replaceAll('/**', '')}/`)
         )
-    ) as never;
+    );
   });
 });
 
@@ -218,7 +222,7 @@ describe('check', () => {
 
     await checkFix(angularViteRemoveCompodoc, checkOptions({}));
 
-    expect(globby).toHaveBeenCalledWith(
+    expect(glob).toHaveBeenCalledWith(
       ['**/project.json'],
       expect.objectContaining({
         cwd: '/project',

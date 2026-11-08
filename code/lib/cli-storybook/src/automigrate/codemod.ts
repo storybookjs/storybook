@@ -1,6 +1,6 @@
 import os from 'node:os';
 
-import { formatFileContent } from 'storybook/internal/common';
+import { HandledError, formatFileContent } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { promises as fs } from 'fs';
@@ -33,7 +33,8 @@ export interface FileInfo {
  * ```
  */
 export async function runCodemod(
-  globPattern = '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx}',
+  // A list of files is used as is, so a path with `(` or `[` in it is not read as a glob.
+  globPattern: string | string[] = '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx}',
   transform: (source: FileInfo, ...rest: any) => string | Promise<string>,
   { dryRun = false, skipFormatting = false }: { dryRun?: boolean; skipFormatting?: boolean } = {}
 ) {
@@ -42,16 +43,19 @@ export async function runCodemod(
   let errorCount = 0;
 
   // glob only supports forward slashes
-  const files = await glob(slash(globPattern), {
-    ignore: ['**/node_modules/**', '**/dist/**', '**/storybook-static/**', '**/build/**'],
-  });
+  const files =
+    typeof globPattern === 'string'
+      ? await glob(slash(globPattern), {
+          ignore: ['**/node_modules/**', '**/dist/**', '**/storybook-static/**', '**/build/**'],
+        })
+      : globPattern;
 
   if (!files.length) {
     logger.error(
       `No files found for glob pattern "${globPattern}".\nPlease try a different pattern.\n`
     );
-    // eslint-disable-next-line local-rules/no-uncategorized-errors
-    throw new Error('No files matched');
+    // Handled, so the CLI exits without repeating the message above.
+    throw new HandledError('No files matched');
   }
 
   try {

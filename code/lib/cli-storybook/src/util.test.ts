@@ -52,6 +52,66 @@ describe('findStorybookProjects in a git repository', () => {
       join(root, 'packages/ui/.storybook').replace(/\\/g, '/'),
     ]);
   });
+
+  it('skips .storybook directories that a submodule ignores', async () => {
+    createFixture({
+      'vendor/.gitignore': 'generated/\n',
+      'vendor/.storybook/main.ts': 'export default {};',
+      'vendor/generated/.storybook/main.ts': 'export default {};',
+    });
+    const vendor = join(root, 'vendor');
+    execFileSync('git', ['init', '-q'], { cwd: vendor });
+    execFileSync(
+      'git',
+      [
+        '-c',
+        'user.name=test',
+        '-c',
+        'user.email=test@test',
+        'commit',
+        '-q',
+        '--allow-empty',
+        '-m',
+        'x',
+      ],
+      { cwd: vendor }
+    );
+    execFileSync('git', ['init', '-q'], { cwd: root });
+    execFileSync('git', ['add', 'vendor'], { cwd: root, stdio: 'ignore' });
+
+    expect(await findStorybookProjects(root)).toEqual([
+      join(root, 'vendor/.storybook').replace(/\\/g, '/'),
+    ]);
+  });
+});
+
+describe('findStorybookProjects with a repository inside an ignored directory', () => {
+  it('skips the .storybook directories of that repository', async () => {
+    createFixture({
+      '.gitignore': 'repros/\n',
+      'packages/ui/.storybook/main.ts': 'export default {};',
+      'repros/clone/.storybook/main.ts': 'export default {};',
+    });
+    execFileSync('git', ['init', '-q'], { cwd: root });
+    execFileSync('git', ['init', '-q'], { cwd: join(root, 'repros/clone') });
+
+    expect(await findStorybookProjects(root)).toEqual([
+      join(root, 'packages/ui/.storybook').replace(/\\/g, '/'),
+    ]);
+  });
+});
+
+describe('findStorybookProjects in a directory that git ignores', () => {
+  it('still finds the project', async () => {
+    createFixture({
+      '.gitignore': 'repro/\n',
+      'repro/app/.storybook/main.ts': 'export default {};',
+    });
+    execFileSync('git', ['init', '-q'], { cwd: root });
+
+    const cwd = join(root, 'repro/app');
+    expect(await findStorybookProjects(cwd)).toEqual([join(cwd, '.storybook').replace(/\\/g, '/')]);
+  });
 });
 
 describe('getProjects', () => {

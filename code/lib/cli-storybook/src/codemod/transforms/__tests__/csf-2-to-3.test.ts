@@ -28,6 +28,49 @@ const tsTransform = async (source: string) =>
   (await _transform({ source, path: 'Component.stories.tsx' })).trim();
 
 describe('csf-2-to-3', () => {
+  it('lifts a story whose play function calls a later binding', async () => {
+    const output = await jsTransform(dedent`
+      export default { component: Button };
+      export const Primary = (args) => <Button {...args} />;
+      Primary.play = async () => {
+        await helper();
+      };
+      const helper = async () => {};
+    `);
+
+    expect(output).toBe(dedent`
+      export default { component: Button };
+      export const Primary = {
+        play: async () => {
+          await helper();
+        },
+      };
+      const helper = async () => {};
+    `);
+  });
+
+  it('lifts a story whose keys only share a name with a later binding', async () => {
+    const output = await jsTransform(dedent`
+      export default { component: Button };
+      export const Empty = (args) => <Button {...args} />;
+      Empty.args = { items: [] };
+      const items = ['a'];
+      export const WithItems = (args) => <Button {...args} />;
+      WithItems.args = { items };
+    `);
+
+    expect(output).toBe(dedent`
+      export default { component: Button };
+      export const Empty = {
+        args: { items: [] },
+      };
+      const items = ["a"];
+      export const WithItems = {
+        args: { items },
+      };
+    `);
+  });
+
   it('leaves Svelte CSF files unchanged', async () => {
     const source = dedent`
       <script module>

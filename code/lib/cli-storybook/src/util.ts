@@ -92,19 +92,17 @@ interface VersionModifier {
 /** Glob pattern for finding Storybook directories */
 const STORYBOOK_DIR_PATTERN = ['**/.storybook', '**/.rnstorybook'];
 
-const withoutGitIgnored = (paths: string[], cwd: string) => {
-  const { status, stdout } = spawnSync('git', ['check-ignore', '-z', '--stdin'], {
-    cwd,
-    input: paths.join('\0'),
-    encoding: 'utf8',
-  });
-  // 0 means some paths are ignored, 1 none, and any other status that git cannot tell.
-  if (status !== 0) {
-    return paths;
-  }
-  const ignored = new Set(stdout.split('\0'));
-  return paths.filter((path) => !ignored.has(path));
-};
+const gitIgnores = (cwd: string, path: string) =>
+  spawnSync('git', ['check-ignore', '-q', '--', path], { cwd }).status === 0;
+
+// The repository of `cwd` answers for a worktree or clone in a directory it ignores. Inside a
+// submodule it errors, so the submodule's own repository is asked too.
+const isGitIgnored = (cwd: string, path: string) =>
+  gitIgnores(cwd, path) || gitIgnores(resolve(cwd, path), '.');
+
+// A project can live in a directory that a parent repository ignores, such as a reproduction.
+const withoutGitIgnored = (paths: string[], cwd: string) =>
+  gitIgnores(cwd, '.') ? paths : paths.filter((path) => !isGitIgnored(cwd, path));
 
 // ============================================================================
 // UTILITY FUNCTIONS

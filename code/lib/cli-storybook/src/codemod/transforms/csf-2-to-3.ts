@@ -76,6 +76,8 @@ const isSingleConstExport = (stmt: Node | undefined) =>
 const isReactGlobalRenderFn = (csf: CsfFile, storyFn: Node | undefined) => {
   if (
     csf._meta?.component &&
+    // The render of the meta would replace the removed function, and it is not the default one.
+    !csf._metaAnnotations.render &&
     storyFn?.type === 'ArrowFunctionExpression' &&
     storyFn.params.length === 1 &&
     storyFn.body.type === 'JSXElement'
@@ -105,6 +107,56 @@ const isReactGlobalRenderFn = (csf: CsfFile, storyFn: Node | undefined) => {
 // A simple CSF story is a no-arg story without any extra annotations (params, args, etc.)
 const isSimpleCSFStory = (init: Node, annotations: string[]) =>
   annotations.length === 0 && init.type === 'ArrowFunctionExpression' && init.params.length === 0;
+
+// `A.args = { x }` can follow `const x`, and `const x` can follow `export const A`. Moving those
+// args into the story would read `x` before it is initialized.
+const readsLaterBinding = (editor: SourceEditor, story: Node, annotations: Node[]) => {
+  const later = new Set<string>();
+  for (const statement of editor.program.body) {
+    const declaration =
+      statement.type === 'ExportNamedDeclaration' ? statement.declaration : statement;
+    if (statement.start < story.end) {
+      continue;
+    }
+    if (declaration?.type === 'VariableDeclaration') {
+      for (const { id } of declaration.declarations) {
+        walk(id, (node) => {
+          if (node.type === 'Identifier') {
+            later.add(node.name);
+          }
+        });
+      }
+    } else if (declaration?.type === 'ClassDeclaration' && declaration.id) {
+      later.add(declaration.id.name);
+    }
+  }
+
+  let reads = false;
+  for (const annotation of annotations) {
+    walk(annotation, (node, parent) => {
+      // A function, such as a `play`, only reads its bindings when the story runs.
+      if (
+        node.type === 'ArrowFunctionExpression' ||
+        node.type === 'FunctionExpression' ||
+        node.type === 'FunctionDeclaration'
+      ) {
+        return false;
+      }
+      if (node.type !== 'Identifier' || !later.has(node.name)) {
+        return;
+      }
+      // `{ label: 'a' }` and `args.label` name no binding of the file.
+      const isName =
+        (parent?.type === 'Property' &&
+          parent.key === node &&
+          !parent.computed &&
+          !parent.shorthand) ||
+        (parent?.type === 'MemberExpression' && parent.property === node && !parent.computed);
+      reads ||= !isName;
+    });
+  }
+  return reads;
+};
 
 function removeUnusedTemplates(editor: SourceEditor, templates: string[]) {
   templates.forEach((template) => {
@@ -136,8 +188,12 @@ function removeUnusedTemplates(editor: SourceEditor, templates: string[]) {
   editor.commit();
 }
 
-export default async function transform(info: FileInfo) {
-  // Svelte CSF files are never CSF 2, but the glob of the csf-factories automigration includes them
+export default async function transform(
+  info: FileInfo,
+  // For `csf-factories`, which needs `ComponentMeta<T>` to tell that `T` is a component and not args.
+  { keepStoryTypes = false }: { keepStoryTypes?: boolean } = {}
+) {
+  // Svelte CSF files are never CSF 2, but a broad glob can include them
   if (info.path.endsWith('.svelte')) {
     return info.source;
   }
@@ -173,14 +229,17 @@ export default async function transform(info: FileInfo) {
     if (init.type !== 'ArrowFunctionExpression' && !template) {
       return;
     }
-    const replaceExport = isSingleConstExport(csf._storyStatements[key]);
+    const replaceExport =
+      isSingleConstExport(csf._storyStatements[key]) &&
+      !readsLaterBinding(editor, decl, Object.values(csf._storyAnnotations[key]));
+    const updateType = replaceExport && !keepStoryTypes;
 
     // Do change the type of no-arg stories without annotations to StoryFn when applicable
     if (isSimpleCSFStory(init, annotations)) {
-      importHelper.updateTypeTo(id, 'StoryFn', replaceExport);
+      importHelper.updateTypeTo(id, 'StoryFn', updateType);
       return;
     }
-    importHelper.updateTypeTo(id, 'StoryObj', replaceExport);
+    importHelper.updateTypeTo(id, 'StoryObj', updateType);
     if (!replaceExport) {
       return;
     }
@@ -208,7 +267,9 @@ export default async function transform(info: FileInfo) {
   }
   editor.commit();
 
-  upgradeDeprecatedTypes(editor);
+  if (!keepStoryTypes) {
+    upgradeDeprecatedTypes(editor);
+  }
   removeUnusedTemplates(editor, templates);
 
   return formatExistingFile(info.path, printCsf(csf).code);

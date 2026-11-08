@@ -59,10 +59,12 @@ export async function migrate(
   }
 
   const [from, to] = renameParts;
-  logger.step(`Renaming ${rename}: ${files.length} files`);
+  // `from` is a suffix, not a pattern, so `.js` doesn't match `.mjs`.
+  const renamed = files.filter((file) => file.endsWith(from));
+  logger.step(`Renaming ${rename}: ${renamed.length} files`);
   await Promise.all(
-    files.map((file) => {
-      const newFile = file.replace(new RegExp(`${from}$`), to);
+    renamed.map((file) => {
+      const newFile = file.slice(0, -from.length) + to;
       logger.log(`Rename: ${file} ${newFile}`);
       return renameFile(file, newFile);
     })

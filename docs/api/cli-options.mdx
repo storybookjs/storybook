@@ -222,19 +222,19 @@ changes to your project. You can find the list of available codemods by running 
 
 </Callout>
 
-For example, `storybook@latest migrate csf-2-to-3 --dry-run`, checks your project to verify if the codemod can be applied without making any changes, providing you with a report of which files would be affected.
+For example, `storybook@latest migrate csf-2-to-3 --dry-run` runs the codemod without writing any files, and reports how many files it would change.
 
 Options include:
 
-| Option                          | Description                                                                                                           |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `-h`, `--help`                  | Output usage information.<br />`storybook migrate --help`                                                             |
-| `-c`, `--config-dir [dir-name]` | Storybook configuration directory.<br />`storybook migrate --config-dir .storybook`                                   |
-| `-n`, `--dry-run`               | Verify the migration exists and show the files to which it will be applied.<br />`storybook migrate --dry-run`        |
-| `-l`, `--list`                  | Shows a list of available codemods.<br />`storybook migrate --list`                                                   |
-| `-g`, `--glob`                  | Glob for files upon which to apply the codemods.<br />`storybook migrate --glob src/**/*.stories.tsx`                 |
-| `-r`, `--rename [from-to]`      | Renames the files affected by the codemod to include the provided suffix.<br />`storybook migrate --rename ".js:.ts"` |
-| `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook migrate --debug`                                    |
+| Option                          | Description                                                                                                            |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `-h`, `--help`                  | Output usage information.<br />`storybook migrate --help`                                                              |
+| `-c`, `--config-dir [dir-name]` | Storybook configuration directory.<br />`storybook migrate --config-dir .storybook`                                    |
+| `-n`, `--dry-run`               | Runs the codemod without writing files, and reports how many files it would change.<br />`storybook migrate --dry-run` |
+| `-l`, `--list`                  | Shows a list of available codemods.<br />`storybook migrate --list`                                                    |
+| `-g`, `--glob`                  | Glob for files upon which to apply the codemods.<br />`storybook migrate --glob src/**/*.stories.tsx`                  |
+| `-r`, `--rename [from-to]`      | Renames the files affected by the codemod to include the provided suffix.<br />`storybook migrate --rename ".js:.ts"`  |
+| `--debug`                       | Outputs more logs in the CLI to assist debugging.<br />`storybook migrate --debug`                                     |
 
 ### `automigrate`
 

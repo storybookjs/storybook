@@ -219,7 +219,7 @@ command('migrate [migration]')
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option(
     '-n --dry-run',
-    'Dry run: verify the migration exists and show the files to which it will be applied'
+    'Dry run: verify the migration exists and show how many files it would change'
   )
   .option(
     '-r --rename <from-to>',

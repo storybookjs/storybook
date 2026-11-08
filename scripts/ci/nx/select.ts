@@ -4,9 +4,10 @@
 // Usage: select.ts --workflow=<workflows> --base-ref=<ref> [--base=<sha>] [--nx-branch=<branch>]
 //                  [--max-agents=<n>] --out=<file>
 //
-// - With `--base` (NX_BASE from the `nx/set-shas` orb command, on a pull request), the run covers
-//   only what a change since that commit reaches (`nx affected`); the file records it as `base`.
-//   `--base-ref` is what a focused run diffs against.
+// - With `--base` (NX_BASE, the merge base on a pull request: from merge-base.sh, or for a focused
+//   run from the `nx/set-shas` orb command), the run covers only what a change since that commit
+//   reaches (`nx affected`); the file records it as `base`. `--base-ref` is what a focused run
+//   diffs against.
 // - Each task gets its hash, whether the latest NX Cloud runs on `--nx-branch` (NX_BRANCH, the pull
 //   request's number) or on the branch of `--base-ref` already stored it, and how long it takes
 //   (nx-cloud-history.ts).

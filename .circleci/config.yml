@@ -44,15 +44,14 @@ jobs:
       - image: cimg/node:22.22.3
     resource_class: large
     steps:
-      # Only focus and the NX DTE pipeline (`nx affected`) diff against the base branch, so only
-      # they pay for 100 commits of history.
+      # Only focus diffs against the base branch in this job's checkout, so only it pays for 100
+      # commits of history. The NX DTE pipeline finds the commit `nx affected` diffs against in the
+      # background, below.
       - when:
           condition:
-            or:
-              - matches:
-                  pattern: '(.*,)?focus(,.*)?'
-                  value: << pipeline.parameters.workflow >>
-              - << pipeline.parameters.nxDte >>
+            matches:
+              pattern: '(.*,)?focus(,.*)?'
+              value: << pipeline.parameters.workflow >>
           steps:
             - git-shallow-clone/checkout_advanced:
                 # Only the commits: the setup job diffs commits by file name, and git fetches the
@@ -70,20 +69,28 @@ jobs:
                     "$GH_BASE_BRANCH:refs/remotes/origin/$GH_BASE_BRANCH"
                   if ! git merge-base "origin/$GH_BASE_BRANCH" HEAD >/dev/null; then
                     echo "No merge base found between origin/$GH_BASE_BRANCH and HEAD within 100 commits." >&2
-                    # The NX DTE pipeline then runs every task (nx/set-shas finds no base).
-                    case "<< pipeline.parameters.workflow >>" in *focus*) exit 1 ;; esac
+                    exit 1
                   fi
       - unless:
           condition:
-            or:
-              - matches:
-                  pattern: '(.*,)?focus(,.*)?'
-                  value: << pipeline.parameters.workflow >>
-              - << pipeline.parameters.nxDte >>
+            matches:
+              pattern: '(.*,)?focus(,.*)?'
+              value: << pipeline.parameters.workflow >>
           steps:
             - git-shallow-clone/checkout_advanced:
                 clone_options: '--depth 1'
                 tag_fetch_options: '--no-tags'
+            # The merge base for `nx affected`, as nx/set-shas finds it in 100 commits of history,
+            # which this checkout lacks: about 7 s faster, and fetched while node_modules restores.
+            - when:
+                condition: << pipeline.parameters.nxDte >>
+                steps:
+                  - run:
+                      name: Find the commit the pull request branched from
+                      background: true
+                      environment:
+                        GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
+                      command: bash scripts/ci/nx/merge-base.sh "$CIRCLE_BRANCH" "$GH_BASE_BRANCH" /tmp/nx-dte-merge-base
       # The NX DTE pipeline sizes its agents to the tasks Nx will run (scripts/ci/nx/select.ts), so
       # this job installs (from the cache nx-main stores) and asks Nx. The key is circleci-dte.ts
       # `NODE_MODULES_KEY`; circleci-dte.test.ts keeps the two equal.
@@ -114,8 +121,31 @@ jobs:
                         - /tmp/nx-dte-node_modules
             # NX_BASE and NX_HEAD for `nx affected`, as Nx's CircleCI recipe for manual DTE does: on a
             # pull request the merge base with the base branch.
-            - nx/set-shas:
-                main-branch-name: << pipeline.parameters.ghBaseBranch >>
+            - when:
+                condition:
+                  matches:
+                    pattern: '(.*,)?focus(,.*)?'
+                    value: << pipeline.parameters.workflow >>
+                steps:
+                  - nx/set-shas:
+                      main-branch-name: << pipeline.parameters.ghBaseBranch >>
+            - unless:
+                condition:
+                  matches:
+                    pattern: '(.*,)?focus(,.*)?'
+                    value: << pipeline.parameters.workflow >>
+                steps:
+                  - run:
+                      name: Wait for the commit the pull request branched from
+                      command: |
+                        for _ in $(seq 600); do
+                          [ -e /tmp/nx-dte-merge-base ] && break
+                          [ -e /tmp/nx-dte-merge-base.failed ] && { echo "Finding the merge base failed."; exit 1; }
+                          sleep 0.2
+                        done
+                        [ -e /tmp/nx-dte-merge-base ] || { echo "Finding the merge base took over 2 minutes."; exit 1; }
+                        echo "export NX_BASE=\"$(cat /tmp/nx-dte-merge-base)\";" >> "$BASH_ENV"
+                        echo "export NX_HEAD=\"$(git rev-parse HEAD)\";" >> "$BASH_ENV"
             - run:
                 name: Select the tasks to run
                 environment:

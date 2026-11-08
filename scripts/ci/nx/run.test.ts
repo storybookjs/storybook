@@ -1,9 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
 // Before Nx loads: this file builds project graphs in-process and through the Nx CLI, which must
-// not touch the workspace data of an NX agent that runs it (`code:test-*`). A Windows agent whose
-// unit tests ran them in its own `.nx/workspace-data` lost its NX Cloud session ("400: Invalid
-// request to Nx Cloud") and left its task unfinished. The CLI calls inherit this environment.
+// not touch the workspace data of the NX agent that runs it (`code:test-*`). The CLI calls inherit
+// this environment.
 await vi.hoisted(async () => {
   const { mkdtempSync } = await import('node:fs');
   const { tmpdir } = await import('node:os');
@@ -12,8 +11,6 @@ await vi.hoisted(async () => {
   process.env.NX_DAEMON = 'false';
   process.env.NX_NO_CLOUD = 'true';
 });
-
-import { createProjectGraphAsync } from 'nx/src/project-graph/project-graph.js';
 
 import { workflows } from '../utils/types.ts';
 import { projectPattern } from './plan.ts';
@@ -46,16 +43,26 @@ describe('the NX command of a run', () => {
 });
 
 // The setup job (select.ts) makes the run's commands from a project graph it builds in-process,
-// which nx-main then runs through the Nx CLI.
-it('reads the same targets and project patterns from an in-process project graph as from the Nx CLI', async () => {
-  const cli = cliWorkspace();
-  const inProcess = workspaceOf(await createProjectGraphAsync({ exitOnError: false }));
-  const sorted = (workspace: typeof cli) =>
-    Object.fromEntries(
-      [...workspace.targetsByProject].map(([project, targets]) => [project, [...targets].sort()])
-    );
-  expect(sorted(inProcess)).toEqual(sorted(cli));
-  for (const pattern of [projectPattern(workflows), ...workflows.map((w) => projectPattern([w]))]) {
-    expect(inProcess.matching(pattern).sort()).toEqual(cli.matching(pattern).sort());
-  }
-}, 120_000);
+// which nx-main then runs through the Nx CLI. Not on Windows, where no setup job runs: there the
+// vitest process exited without a summary right after this test, in both runs of `code:test-2` that
+// had it, and once the agent lost its NX Cloud session with it.
+it.skipIf(process.platform === 'win32')(
+  'reads the same targets and project patterns from an in-process project graph as from the Nx CLI',
+  async () => {
+    const { createProjectGraphAsync } = await import('nx/src/project-graph/project-graph.js');
+    const cli = cliWorkspace();
+    const inProcess = workspaceOf(await createProjectGraphAsync({ exitOnError: false }));
+    const sorted = (workspace: typeof cli) =>
+      Object.fromEntries(
+        [...workspace.targetsByProject].map(([project, targets]) => [project, [...targets].sort()])
+      );
+    expect(sorted(inProcess)).toEqual(sorted(cli));
+    for (const pattern of [
+      projectPattern(workflows),
+      ...workflows.map((w) => projectPattern([w])),
+    ]) {
+      expect(inProcess.matching(pattern).sort()).toEqual(cli.matching(pattern).sort());
+    }
+  },
+  120_000
+);

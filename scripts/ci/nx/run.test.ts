@@ -7,9 +7,9 @@ await vi.hoisted(async () => {
   const { mkdtempSync } = await import('node:fs');
   const { tmpdir } = await import('node:os');
   const { join } = await import('pathe');
-  process.env.NX_WORKSPACE_DATA_DIRECTORY = mkdtempSync(join(tmpdir(), 'nx-run-test-'));
-  process.env.NX_DAEMON = 'false';
-  process.env.NX_NO_CLOUD = 'true';
+  vi.stubEnv('NX_WORKSPACE_DATA_DIRECTORY', mkdtempSync(join(tmpdir(), 'nx-run-test-')));
+  vi.stubEnv('NX_DAEMON', 'false');
+  vi.stubEnv('NX_NO_CLOUD', 'true');
 });
 
 import { workflows } from '../utils/types.ts';

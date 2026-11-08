@@ -17,7 +17,6 @@ describe('the agents a run needs', () => {
       a2: { seconds: 10, dependsOn: [] },
       z: { seconds: 100, dependsOn: [] },
     };
-    // Longest chain first would start `z` at once and end at 100.
     expect(simulate(work, 2, 0).seconds).toBe(110);
   });
 

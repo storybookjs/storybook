@@ -96,17 +96,12 @@ describe('weighing the selected tasks', () => {
     expect(selection.tasks['a:chromatic']).toMatchObject({ cached: false, seconds: 90 });
   });
 
-  it("takes the longer of the pull request's own time and NX Cloud's average", () => {
+  it("times a task by the pull request's own runs before NX Cloud's average over every OS", () => {
     const selection = mergeTaskGraphs([devE2eGraph]);
-    weigh(
-      selection,
-      hashes,
-      { ...history, seconds: new Map([['a:e2e-tests-dev-1', 400]]) },
-      durations
-    );
-
-    expect(selection.tasks['a:e2e-tests-dev-1']).toMatchObject({ cached: false, seconds: 400 });
     weigh(selection, hashes, history, durations);
+    expect(selection.tasks['a:e2e-tests-dev-1']).toMatchObject({ cached: false, seconds: 200 });
+
+    weigh(selection, hashes, { ...history, seconds: new Map() }, durations);
     expect(selection.tasks['a:e2e-tests-dev-1']).toMatchObject({ cached: false, seconds: 300 });
   });
 

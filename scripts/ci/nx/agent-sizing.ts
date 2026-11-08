@@ -6,10 +6,9 @@
 // A simulation of the run gives, for each number of agents, when the run ends and how many
 // agent-seconds it bills: agents boot, then each takes the task that has been ready longest, one
 // task at a time (.nx/workflows/*assignment-rules.yaml), and stops once no task is left to hand out.
-// NX Cloud does not start the longest chain of work first (in a cold core run it handed out the
-// task ready longest 71% of the time, the longest chain 28%): a model that did saw no gain from 33
-// agents to 44, which ran 46 s faster. The run gets the number with the lowest cost, where a second
-// the run takes longer weighs as {@link WAIT_WORTH} agent-seconds.
+// That is how NX Cloud hands out tasks; it does not start the longest chain of work first. The run
+// gets the number with the lowest cost, where a second the run takes longer weighs as
+// {@link WAIT_WORTH} agent-seconds.
 //
 // Plain Node with no dependencies: main.ts imports it before `yarn install`.
 
@@ -18,18 +17,18 @@ export type Work = Readonly<Record<string, WorkTask>>;
 
 // Speed first: a minute sooner green is worth this many agent-minutes (about 1,200 credits on
 // Linux), so an agent starts when it makes the run at least a second faster for each minute it
-// bills. With 20, a cold core run got 33 agents and was green 46 s later than with 44.
+// bills.
 export const WAIT_WORTH = 60;
 
 // Linux agents are `large` containers (4 vCPUs; a task costs more on `xlarge`, which bills twice
 // the credits per minute and ran the dev-server E2E tests only a quarter faster). A Windows `large`
-// agent costs 120 credits a minute and boots in about four minutes, which also bounds how many pay
+// agent costs 120 credits a minute and boots in about two minutes, which also bounds how many pay
 // off.
 export const MAX_AGENTS = { linux: 44, windows: 4 } as const;
 // From the job's start until an agent's first task runs: checkout, node_modules and Chromium (about
-// 45 seconds on Linux), then the outputs of every `compile` the task depends on, which NX Cloud
-// downloads once per agent (about 55).
-export const AGENT_BOOT_SECONDS = { linux: 100, windows: 240 } as const;
+// 30 seconds on Linux, 125 on Windows), then the outputs of every `compile` the task depends on,
+// which NX Cloud downloads once per agent (about 55 on Linux, 15 on Windows).
+export const AGENT_BOOT_SECONDS = { linux: 85, windows: 140 } as const;
 
 export type Simulation = {
   // When the last task ends, from the start of the run.

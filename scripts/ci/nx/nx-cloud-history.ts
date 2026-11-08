@@ -209,7 +209,7 @@ export const baseRuns = (baseBranch: string) =>
 
 // What NX Cloud knows about one OS's tasks (NX_CI_EXECUTION_ENV): the latest runs of the branch
 // (NX_BRANCH, the pull request's number) on it, and what the base branch's runs stored. Before the
-// branch has a run on this OS, the times come from the latest run on it on any branch: CircleCI's
+// branch has a run on this OS, the times come from the latest runs on it on any branch: CircleCI's
 // jobs are the only ones that set NX_CI_EXECUTION_ENV.
 export async function osHistory(
   os: 'linux' | 'windows',

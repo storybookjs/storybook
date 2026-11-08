@@ -195,7 +195,7 @@ async function main() {
       yarn([...command, `--graph=${file}`]);
       return JSON.parse(readFileSync(file, 'utf8')).tasks;
     });
-    const selection: Selection = mergeTaskGraphs(graphs);
+    const selection: Selection = { ...mergeTaskGraphs(graphs), commands };
     writeFileSync(values.graph, JSON.stringify(selection));
     console.log(`${Object.keys(selection.tasks).length} tasks to run → ${values.graph}`);
     return;

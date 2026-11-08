@@ -27,14 +27,9 @@ import { artifact, cache, git, testResults } from '../utils/helpers.ts';
 import { type FocusDiff, changedFilesEnvironment, focusDiff } from '../utils/changed-files.ts';
 import { isTrustedAuthor } from '../utils/runtime.ts';
 import { type JobOrNoOpJob, type Workflow, defineJob } from '../utils/types.ts';
+import { installNodeOnWindows } from '../utils/windows-node.ts';
 import { linuxRuns, planFor, windowsTasksOf } from './plan.ts';
-import {
-  AGENT_EXECUTORS,
-  type Os,
-  agentEnvironment,
-  agentSetup,
-  windowsInstall,
-} from './agent-environment.ts';
+import { AGENT_EXECUTORS, type Os, agentEnvironment, agentSetup } from './agent-environment.ts';
 import { MAX_AGENTS } from './agent-sizing.ts';
 import type { Selection } from './selection.ts';
 
@@ -62,61 +57,91 @@ export const NX_AGENT_JOB_IDS: readonly string[] = ['nx-agent', 'nx-agent-window
 // client that `npx nx-cloud` loads cannot find.
 const NX_CLOUD = 'npx --yes nx-cloud@19.1.5';
 
-export const NODE_MODULES_ARCHIVE = '/tmp/nx-dte-node_modules.tar.zst';
-export const MANIFESTS_SUM = '/tmp/nx-dte-manifests.sha256';
-// Hashes the workspaces' manifests and Yarn's patches into MANIFESTS_SUM, for the key below.
-export const HASH_MANIFESTS_COMMAND = `shopt -s nullglob; cat package.json */package.json code/*/package.json code/*/*/package.json .yarn/patches/* | sha256sum > ${MANIFESTS_SUM}`;
-// Everything that decides the installed tree, as CircleCI's own node_modules key (helpers.ts).
-// The setup job (.circleci/config.yml) restores the same key; circleci-dte.test.ts keeps them equal.
-export const NODE_MODULES_KEY = [
-  'v1-nx-dte-node_modules',
-  '{{ arch }}',
-  '{{ checksum ".nvmrc" }}',
-  '{{ checksum ".yarnrc.yml" }}',
-  '{{ checksum "yarn.lock" }}',
-  '{{ checksum ".nx/workflows/prune-other-platforms.cjs" }}',
-  '{{ checksum "scripts/ci/nx/circleci-node-modules.sh" }}',
-  // The workspaces' manifests and the patches:
-  // a change such as `installConfig` alters the installed tree without touching yarn.lock, and the
-  // install that a changed patch needs is skipped on a hit.
-  `{{ checksum "${MANIFESTS_SUM}" }}`,
-].join('/');
-
-const restoreNodeModules = () => [
-  { run: { name: 'Hash the package manifests and patches', command: HASH_MANIFESTS_COMMAND } },
-  cache.attach([NODE_MODULES_KEY]),
-  {
-    run: {
-      name: 'Restore node_modules',
-      command: `bash scripts/ci/nx/circleci-node-modules.sh restore ${NODE_MODULES_ARCHIVE}`,
-    },
+// The directory circleci-node-modules.sh keeps its archives in, and the hash of the manifests for
+// the cache key, on each OS. The hash with forward slashes, as a backslash in a cache key's template
+// starts an escape.
+const NODE_MODULES_PATHS: Record<Os, { archives: string; sum: string }> = {
+  linux: { archives: '/tmp/nx-dte-node_modules', sum: '/tmp/nx-dte-manifests.sha256' },
+  windows: {
+    archives: 'C:\\Users\\circleci\\nx-dte-node_modules',
+    sum: 'C:/Users/circleci/nx-dte-manifests.sha256',
   },
-];
+};
+// A Windows path as Git Bash names it: `C:\Users\…` or `C:/Users/…` as `/c/Users/…`.
+export const inBash = (file: string) =>
+  file
+    .replace(/^([A-Za-z]):[\\/]/, (_, drive: string) => `/${drive.toLowerCase()}/`)
+    .replaceAll('\\', '/');
+export const NODE_MODULES_ARCHIVES = NODE_MODULES_PATHS.linux.archives;
+export const MANIFESTS_SUM = NODE_MODULES_PATHS.linux.sum;
+// Hashes the workspaces' manifests and Yarn's patches into the given file, for the key below.
+const hashManifests = (sum: string) =>
+  `shopt -s nullglob; cat package.json */package.json code/*/package.json code/*/*/package.json .yarn/patches/* | sha256sum > ${sum}`;
+export const HASH_MANIFESTS_COMMAND = hashManifests(MANIFESTS_SUM);
+// Everything that decides the installed tree, as CircleCI's own node_modules key (helpers.ts).
+// The setup job (.circleci/config.yml) restores the Linux key; circleci-dte.test.ts keeps them equal.
+const nodeModulesKey = (sum: string) =>
+  [
+    'v2-nx-dte-node_modules',
+    '{{ arch }}',
+    '{{ checksum ".nvmrc" }}',
+    '{{ checksum ".yarnrc.yml" }}',
+    '{{ checksum "yarn.lock" }}',
+    '{{ checksum ".nx/workflows/prune-other-platforms.cjs" }}',
+    '{{ checksum "scripts/ci/nx/circleci-node-modules.sh" }}',
+    '{{ checksum "scripts/ci/nx/workspace-links.ts" }}',
+    // The workspaces' manifests and the patches:
+    // a change such as `installConfig` alters the installed tree without touching yarn.lock, and the
+    // install that a changed patch needs is skipped on a hit.
+    `{{ checksum "${sum}" }}`,
+  ].join('/');
+export const NODE_MODULES_KEY = nodeModulesKey(MANIFESTS_SUM);
 
-// `nx-main` stores a fresh tree at its end, and only for a trusted author, as CircleCI's other jobs
-// do (common-jobs.ts `installWithCache`), so a fork PR cannot hand its tree to the next run. The
-// setup job stores it first when it installed (.circleci/config.yml); then this finds the tree
-// came from the cache and packs nothing. At the end, because packing takes about a minute and
-// nothing in the main job waits for it.
-const saveNodeModules = () =>
-  isTrustedAuthor()
+const restoreNodeModules = (os: Os) => {
+  const paths = NODE_MODULES_PATHS[os];
+  return [
+    {
+      run: {
+        name: 'Hash the package manifests and patches',
+        command: hashManifests(inBash(paths.sum)),
+      },
+    },
+    cache.attach([nodeModulesKey(paths.sum)]),
+    {
+      run: {
+        name: 'Restore node_modules',
+        command: `bash scripts/ci/nx/circleci-node-modules.sh restore ${inBash(paths.archives)}`,
+      },
+    },
+  ];
+};
+
+// The main jobs store a fresh tree at their end, and only for a trusted author, as CircleCI's other
+// jobs do (common-jobs.ts `installWithCache`), so a fork PR cannot hand its tree to the next run.
+// On Linux the setup job stores it first when it installed (.circleci/config.yml); then this finds
+// the tree came from the cache and packs nothing. At the end, because nothing in the main job waits
+// for it.
+const saveNodeModules = (os: Os) => {
+  const paths = NODE_MODULES_PATHS[os];
+  return isTrustedAuthor()
     ? [
         {
           run: {
             name: 'Pack node_modules',
             // Also when a task failed: the tree is the same either way.
             when: 'always',
-            command: `bash scripts/ci/nx/circleci-node-modules.sh pack ${NODE_MODULES_ARCHIVE}`,
+            command: `bash scripts/ci/nx/circleci-node-modules.sh pack ${inBash(paths.archives)}`,
           },
         },
         {
           save_cache: {
-            ...cache.persist([NODE_MODULES_ARCHIVE], NODE_MODULES_KEY).save_cache,
+            ...cache.persist([paths.archives], nodeModulesKey(paths.sum)).save_cache,
             when: 'always',
           },
         },
       ]
     : [];
+};
 
 // How long a main job's run and an agent may take, so a run that never ends frees its machines.
 const TIMEOUT_MINUTES: Record<Os, number> = { linux: 45, windows: 75 };
@@ -156,17 +181,28 @@ export const LAUNCH_TEMPLATES: Record<Os, string> = {
 const commandTargets = (tasks: readonly string[]) =>
   [...new Set(tasks.map((task) => task.slice(task.lastIndexOf(':') + 1)))].sort();
 
+// The background `start-ci-run` (startCiRun) leaves one of these for `Run nx`.
+const CI_RUN_STARTED = '/tmp/nx-ci-run-started';
+const CI_RUN_FAILED = '/tmp/nx-ci-run-failed';
+
 const startCiRun = (os: Os, targets: readonly string[], npx: string) => ({
   run: {
     name: 'Start the NX Cloud run',
-    // Before the install, so NX Cloud knows the run while the agents boot. A failed task does not
-    // stop the agents: the run reports every failure, as CircleCI does.
+    // Before the install, so NX Cloud knows the run while the agents boot, and in the background,
+    // so the install does not wait for npx to download the CLI. `Run nx` waits for it (waitForCiRun).
+    // A failed task does not stop the agents: the run reports every failure, as CircleCI does.
+    background: true,
     command: [
-      `${npx} start-ci-run --distribute-on=manual`,
-      `--assignment-rules=${ASSIGNMENT_RULES[os]}`,
-      `--stop-workers-after=${targets.join(',')}`,
-      '--stop-workers-on-failure=false',
-    ].join(' \\\n  '),
+      `if ${[
+        `${npx} start-ci-run --distribute-on=manual`,
+        `--assignment-rules=${ASSIGNMENT_RULES[os]}`,
+        `--stop-workers-after=${targets.join(',')}`,
+        '--stop-workers-on-failure=false',
+      ].join(' \\\n  ')}`,
+      `then touch ${CI_RUN_STARTED}`,
+      `else touch ${CI_RUN_FAILED}; exit 1`,
+      'fi',
+    ].join('\n'),
   },
 });
 
@@ -183,18 +219,55 @@ const fetchBase = (base: string | undefined) =>
       ]
     : [];
 
-const runNx = (os: Os, selected: readonly Workflow[], base: string | undefined) => ({
+// One argument for bash, as it is.
+const quote = (arg: string) => `'${arg.replaceAll("'", `'\\''`)}'`;
+
+// The setup job already worked out the run's Nx commands (select.ts): the main job runs them as
+// they are, at the same time, instead of starting run.ts and the two Nx processes it needs for them.
+const runCommands = (os: Os, commands: readonly (readonly string[])[]) =>
+  [
+    'status=0',
+    'pids=()',
+    ...commands.map(
+      (command) =>
+        `/usr/bin/timeout --kill-after=1m ${TIMEOUT_MINUTES[os]}m yarn ${command.map(quote).join(' ')} & pids+=($!)`
+    ),
+    'for pid in "${pids[@]}"; do wait "$pid" || status=1; done',
+    'exit "$status"',
+  ].join('\n');
+
+const waitForCiRun = [
+  'for _ in $(seq 300); do',
+  `  [ -e ${CI_RUN_STARTED} ] && break`,
+  `  [ -e ${CI_RUN_FAILED} ] && { echo "Starting the NX Cloud run failed."; exit 1; }`,
+  '  sleep 1',
+  'done',
+  `[ -e ${CI_RUN_STARTED} ] || { echo "Starting the NX Cloud run took over 5 minutes."; exit 1; }`,
+].join('\n');
+
+const runNx = (
+  os: Os,
+  selected: readonly Workflow[],
+  base: string | undefined,
+  commands: readonly (readonly string[])[] | undefined
+) => ({
   run: {
     name: RUN_NX_STEP,
     no_output_timeout: '30m',
+    // Without the setup job's commands (locally and in tests), run.ts works them out.
     command: [
-      // Bounded, as the agents are (TIMEOUT_MINUTES). Git Bash's `timeout` on Windows.
-      `/usr/bin/timeout --kill-after=1m ${TIMEOUT_MINUTES[os]}m`,
-      'yarn exec jiti ./scripts/ci/nx/run.ts',
-      `--workflow=${selected.join(',')}`,
-      `--env=${os}`,
-      ...(base ? [`--base=${base}`] : []),
-    ].join(' '),
+      waitForCiRun,
+      commands
+        ? runCommands(os, commands)
+        : [
+            // Bounded, as the agents are (TIMEOUT_MINUTES). Git Bash's `timeout` on Windows.
+            `/usr/bin/timeout --kill-after=1m ${TIMEOUT_MINUTES[os]}m`,
+            'yarn exec jiti ./scripts/ci/nx/run.ts',
+            `--workflow=${selected.join(',')}`,
+            `--env=${os}`,
+            ...(base ? [`--base=${base}`] : []),
+          ].join(' '),
+    ].join('\n'),
   },
 });
 
@@ -243,7 +316,8 @@ const mainJob = (
   diff: FocusDiff | undefined,
   targets: readonly string[],
   base: string | undefined,
-  agents: number
+  agents: number,
+  commands: readonly (readonly string[])[] | undefined
 ) =>
   defineJob(NX_MAIN_JOBS.linux, () => ({
     executor: { name: 'sb_node_22_classic', class: 'large' },
@@ -257,11 +331,11 @@ const mainJob = (
       // a focused run fetches the commit its diff starts at (scripts/ci/utils/changed-files.ts).
       git.checkout(),
       startCiRun('linux', targets, NX_CLOUD),
-      ...restoreNodeModules(),
+      ...restoreNodeModules('linux'),
       ...fetchBase(base),
-      runNx('linux', selected, base),
+      runNx('linux', selected, base, commands),
       stopAgents(),
-      ...saveNodeModules(),
+      ...saveNodeModules('linux'),
     ],
   }));
 
@@ -277,7 +351,7 @@ const agentJob = (diff: FocusDiff | undefined, agents: number) =>
     },
     steps: [
       git.checkout(),
-      ...restoreNodeModules(),
+      ...restoreNodeModules('linux'),
       ...agentSetup('linux'),
       {
         run: {
@@ -301,7 +375,8 @@ const windowsMainJob = (
   diff: FocusDiff | undefined,
   targets: readonly string[],
   base: string | undefined,
-  agents: number
+  agents: number,
+  commands: readonly (readonly string[])[] | undefined
 ) =>
   defineJob(NX_MAIN_JOBS.windows, () => ({
     // Runs no task; on Windows so that it hashes the tasks on the OS that runs them.
@@ -312,11 +387,14 @@ const windowsMainJob = (
     },
     steps: [
       windowsCheckout(),
+      // Before the NX Cloud run starts: `nvm use` swaps the Node that npx runs.
+      installNodeOnWindows(),
       startCiRun('windows', targets, NX_CLOUD),
-      ...windowsInstall(),
+      ...restoreNodeModules('windows'),
       ...fetchBase(base),
-      runNx('windows', selected, base),
+      runNx('windows', selected, base, commands),
       stopAgents(),
+      ...saveNodeModules('windows'),
     ],
   }));
 
@@ -331,6 +409,8 @@ const windowsAgentJob = (diff: FocusDiff | undefined, agents: number) =>
     },
     steps: [
       windowsCheckout(),
+      installNodeOnWindows(),
+      ...restoreNodeModules('windows'),
       ...agentSetup('windows'),
       {
         run: {
@@ -363,7 +443,10 @@ export function getNxDteJobs(
   if (linuxRuns(selected, plan) && (!linux || Object.keys(linux.tasks).length > 0)) {
     const agents = options.agents?.linux ?? options.maxAgents ?? MAX_AGENTS.linux;
     const targets = commandTargets([...plan.tasks, ...(plan.affectedCheck ? ['*:check'] : [])]);
-    jobs.push(mainJob(selected, diff, targets, base, agents), agentJob(diff, agents));
+    jobs.push(
+      mainJob(selected, diff, targets, base, agents, linux?.commands),
+      agentJob(diff, agents)
+    );
   }
 
   const windowsTasks = windowsTasksOf(plan);
@@ -371,7 +454,10 @@ export function getNxDteJobs(
   if (windowsTasks.length > 0 && (!windows || Object.keys(windows.tasks).length > 0)) {
     const targets = commandTargets(windowsTasks);
     const agents = options.agents?.windows ?? MAX_AGENTS.windows;
-    jobs.push(windowsMainJob(selected, diff, targets, base, agents), windowsAgentJob(diff, agents));
+    jobs.push(
+      windowsMainJob(selected, diff, targets, base, agents, windows?.commands),
+      windowsAgentJob(diff, agents)
+    );
   }
 
   if (plan.sideJobs.includes('node-26-smoke')) {

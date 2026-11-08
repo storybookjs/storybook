@@ -244,6 +244,7 @@
       "{workspaceRoot}/.nx/workflows/prune-other-platforms.cjs",
       "{workspaceRoot}/scripts/ci/nx/agent-environment.ts",
       "{workspaceRoot}/scripts/ci/nx/circleci-node-modules.sh",
+      "{workspaceRoot}/scripts/ci/nx/workspace-links.ts",
       "{workspaceRoot}/scripts/ci/utils/executors.ts",
       "{workspaceRoot}/scripts/ci/utils/orbs.ts",
       "{workspaceRoot}/scripts/ci/utils/windows-node.ts"

@@ -54,9 +54,11 @@ it('sharedGlobals keeps the Windows cache apart from the Linux and macOS cache',
   expect(nxJson.namedInputs.sharedGlobals).toContainEqual({ env: 'OS' });
 });
 
-// The steps an NX agent may run before agentSetup(): its checkout and the Linux node_modules restore.
+// The steps an NX agent may run before agentSetup(): its checkout, Node and Yarn on Windows
+// (windows-node.ts, which every task hashes), and the node_modules restore.
 const BEFORE_SETUP = [
   'git-shallow-clone/checkout_advanced',
+  'Install Node + Yarn',
   'Hash the package manifests and patches',
   'restore_cache',
   'Restore node_modules',

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { ProjectGraph } from 'nx/src/config/project-graph.js';
 
 import {
+  PRUNED,
   type Platform,
   WINDOWS,
   hoistedVersions,
@@ -147,5 +148,31 @@ describe('the npm packages as Nx names them on Windows, worked out in the setup 
       'npm:@rolldown/binding-win32-x64-msvc'
     );
     expect(graph.externalNodes?.['npm:@rolldown/binding-win32-x64-msvc@1.0.0']).toBeDefined();
+  });
+});
+
+describe('the npm packages as Nx names them in a pruned Windows tree', () => {
+  // As above, but Windows too prunes the darwin packages and fsevents (circleci-node-modules.sh).
+  const renames = renamesFor(
+    Object.fromEntries([
+      node('@rolldown/binding-darwin-arm64', '1.0.0'),
+      node('@rolldown/binding-darwin-arm64', '1.1.0'),
+      node('@rolldown/binding-linux-x64-gnu', '1.0.0', true),
+      node('@rolldown/binding-linux-x64-gnu', '1.1.0'),
+      node('@rolldown/binding-win32-x64-msvc', '1.0.0'),
+      node('@rolldown/binding-win32-x64-msvc', '1.1.0'),
+      node('fsevents', '1.0.0'),
+      node('fsevents', '1.1.0'),
+    ]),
+    lockfileConditions(LOCKFILE),
+    hoistedVersions(YARN_STATE),
+    PRUNED
+  );
+
+  it('hoists only the win32 x64 packages, as the pruned tree holds no other', () => {
+    expect(Object.fromEntries(renames)).toEqual({
+      'npm:@rolldown/binding-linux-x64-gnu': 'npm:@rolldown/binding-linux-x64-gnu@1.0.0',
+      'npm:@rolldown/binding-win32-x64-msvc@1.0.0': 'npm:@rolldown/binding-win32-x64-msvc',
+    });
   });
 });

@@ -21,10 +21,14 @@ if (typeof zlib.createZstdCompress !== 'function') {
 }
 
 const level = Number(levelArg ?? 3);
+// zlib's default 16 KiB output chunks slow decompression down: the 610 MiB NX DTE node_modules
+// archive (3.3 GB of tar) decompresses in 5 s instead of 8 s on a CircleCI Docker large machine.
+const chunkSize = 1024 * 1024;
 
 const transform =
   mode === 'compress'
     ? zlib.createZstdCompress({
+        chunkSize,
         params: {
           [zlib.constants.ZSTD_c_compressionLevel]: level,
           // Long-distance matching helps on multi-GB node_modules payloads
@@ -33,7 +37,7 @@ const transform =
         },
       })
     : mode === 'decompress'
-      ? zlib.createZstdDecompress()
+      ? zlib.createZstdDecompress({ chunkSize })
       : null;
 
 if (!transform) {

@@ -403,6 +403,41 @@ describe('rewriteStyleSheet', () => {
     ]);
   });
 
+  it('supports nested ":not"', () => {
+    const sheet = new Sheet('.a:not(:not(:hover)) .x { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].selectorText).toEqual(
+      '.a:not(:not(:is(:hover, .pseudo-hover, :where(.pseudo-hover-all *)))) .x'
+    );
+  });
+
+  it('supports ":not" as the only pseudo-state inside ":host"', () => {
+    const sheet = new Sheet(':host(:not(:hover)) { color: red }');
+    rewriteStyleSheet(sheet as any, true);
+    expect(sheet.cssRules[0].selectorText).toEqual(
+      ':host(:not(:is(:hover, .pseudo-hover, .pseudo-hover-all)))'
+    );
+  });
+
+  it('does not rewrite negated pseudo-states after "::part()"', () => {
+    const sheet = new Sheet('::part(foo):not(:hover) { color: red }');
+    rewriteStyleSheet(sheet as any, true);
+    expect(sheet.cssRules[0].selectorText).toEqual('::part(foo):not(:hover)');
+  });
+
+  it('ignores ":not(" inside quoted attribute values', () => {
+    const sheet = new Sheet('.a[t=":not("]:hover:not(:focus) { color: red }');
+    rewriteStyleSheet(sheet as any);
+    const negation = ':not(:is(:focus, .pseudo-focus, :where(.pseudo-focus-all *)))';
+    expect(sheet.cssRules[0].selectorText).toEqual(
+      [
+        `.a[t=":not("]:hover${negation}`,
+        `.a[t=":not("].pseudo-hover${negation}`,
+        `.pseudo-hover-all .a[t=":not("]${negation}`,
+      ].join(', ')
+    );
+  });
+
   it('does not treat escaped quotes as the start of a quoted value', () => {
     const sheet = new Sheet('.x\\"y .a:not([t="q"]:hover) { color: red }');
     rewriteStyleSheet(sheet as any);

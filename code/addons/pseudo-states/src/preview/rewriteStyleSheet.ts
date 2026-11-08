@@ -23,36 +23,29 @@ type IndexRange = {
   end: number;
 };
 
-const isEscaped = (selector: string, index: number) => {
-  let precedingBackslashes = 0;
-  for (let cursor = index - 1; cursor >= 0 && selector[cursor] === '\\'; cursor--) {
-    precedingBackslashes++;
-  }
-  return precedingBackslashes % 2 === 1;
-};
-
 const isInRanges = (index: number, ranges: IndexRange[]) =>
   ranges.some(({ start, end }) => index >= start && index < end);
 
-const quotedStringPattern = /\\[^]|"(?:\\[^]|[^"\\])*"|'(?:\\[^]|[^'\\])*'/g;
+// \X escapes and quoted strings
+const literalPattern = /\\[\s\S]|"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'/g;
 
-const findQuotedRanges = (selector: string): IndexRange[] =>
-  Array.from(selector.matchAll(quotedStringPattern))
-    .filter(({ 0: text }) => text[0] !== '\\')
-    .map(({ index, 0: text }) => ({ start: index, end: index + text.length }));
+const findLiteralRanges = (selector: string): IndexRange[] =>
+  Array.from(selector.matchAll(literalPattern), ({ index, 0: text }) => ({
+    start: index,
+    end: index + text.length,
+  }));
 
 const findClosingParenthesis = (
   selector: string,
   openIndex: number,
-  quotedRanges = findQuotedRanges(selector)
+  literalRanges = findLiteralRanges(selector)
 ) => {
   let depth = 0;
   for (let index = openIndex; index < selector.length; index++) {
-    if (selector[index] === '\\') {
-      index++;
-    } else if (isInRanges(index, quotedRanges)) {
+    if (isInRanges(index, literalRanges)) {
       continue;
-    } else if (selector[index] === '(') {
+    }
+    if (selector[index] === '(') {
       depth++;
     } else if (selector[index] === ')' && --depth === 0) {
       return index;
@@ -61,35 +54,35 @@ const findClosingParenthesis = (
   return selector.length;
 };
 
-const findNegationRanges = (selector: string, quotedRanges: IndexRange[]) => {
+const findNegationRanges = (selector: string, literalRanges: IndexRange[]) => {
   const ranges: IndexRange[] = [];
   let start = selector.indexOf(':not(');
   while (start !== -1) {
-    if (isEscaped(selector, start) || isInRanges(start, quotedRanges)) {
+    if (isInRanges(start, literalRanges)) {
       start = selector.indexOf(':not(', start + 1);
       continue;
     }
-    const end = findClosingParenthesis(selector, start + 4, quotedRanges) + 1;
+    const end = findClosingParenthesis(selector, start + ':not'.length, literalRanges) + 1;
     ranges.push({ start, end });
     start = selector.indexOf(':not(', end);
   }
   return ranges;
 };
 
-// Skips states inside quotes, and inside :not() unless includeNegated is set, as
+// Skips escaped and quoted states, and states inside :not() unless includeNegated is set, as
 // rewriteNegatedPseudoStates handles those in place.
 const findPseudoStates = (selector: string, includeNegated = false) => {
   const matches: PseudoStateMatch[] = [];
-  const quotedRanges = findQuotedRanges(selector);
+  const literalRanges = findLiteralRanges(selector);
   const skippedRanges = includeNegated
-    ? quotedRanges
-    : [...quotedRanges, ...findNegationRanges(selector, quotedRanges)];
+    ? literalRanges
+    : [...literalRanges, ...findNegationRanges(selector, literalRanges)];
   pseudoStatePattern.lastIndex = 0;
 
   let match = pseudoStatePattern.exec(selector);
   while (match) {
     const index = match.index;
-    if (!isEscaped(selector, index) && !isInRanges(index, skippedRanges)) {
+    if (!isInRanges(index, skippedRanges)) {
       matches.push({ index, state: match[1], text: match[0] });
     }
     match = pseudoStatePattern.exec(selector);
@@ -209,7 +202,7 @@ const extractPseudoStates = (selector: string) => {
 };
 
 const findHostEnd = (selector: string) =>
-  selector.startsWith(':host(') ? findClosingParenthesis(selector, 5) : -1;
+  selector.startsWith(':host(') ? findClosingParenthesis(selector, ':host'.length) : -1;
 
 // Negated states must also match forced states, or the negation holds whenever nothing is forced.
 const rewriteNegatedPseudoStates = (
@@ -218,8 +211,11 @@ const rewriteNegatedPseudoStates = (
   forShadowDOM: boolean
 ) => {
   const hostEnd = findHostEnd(selector);
-  const negationRanges = findNegationRanges(selector, findQuotedRanges(selector));
-  const matches = pseudoStateMatches.filter(({ index }) => isInRanges(index, negationRanges));
+  const negationRanges = findNegationRanges(selector, findLiteralRanges(selector));
+  const excludedRanges = findExcludedPseudoElementRanges(selector);
+  const matches = pseudoStateMatches.filter(
+    ({ index }) => isInRanges(index, negationRanges) && !isInRanges(index, excludedRanges)
+  );
 
   return replacePseudoStateMatches(selector, matches, ({ state, index }) => {
     const forcedAncestor =
@@ -266,7 +262,10 @@ const rewriteRules = ({ cssText, selectorText }: CSSStyleRule, forShadowDOM: boo
         // Simple replacement won't work on pseudo-state selectors outside of :host().
         // E.g. :host(.foo) .bar:hover -> :host(.foo.pseudo-hover-all) .bar
         // E.g. :host(.foo:focus) .bar:hover -> :host(.foo.pseudo-focus-all.pseudo-hover-all) .bar
-        const hostInnerSelector = replacePseudoStates(nativeSelector.slice(6, hostEnd), true);
+        const hostInnerSelector = replacePseudoStates(
+          nativeSelector.slice(':host('.length, hostEnd),
+          true
+        );
         // Any remaining pseudo-states in the descendant selector need to be moved into the host selector.
         ancestorSelector = replacePseudoStatesWithAncestorSelector(
           matches[1],

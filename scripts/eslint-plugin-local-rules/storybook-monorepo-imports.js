@@ -1,6 +1,5 @@
 // @ts-nocheck
 
-const path = require('path');
 const cache = {};
 
 module.exports = {
@@ -17,35 +16,7 @@ module.exports = {
   create(context) {
     return {
       ImportDeclaration: (node) => {
-        const fileName = context.getPhysicalFilename();
-        const isInCLI = !!fileName.includes(path.join('code', 'lib', 'cli') + path.sep);
-        const isInCreateStorybook = !!fileName.includes(
-          path.join('code', 'lib', 'create-storybook')
-        );
-        const isInCore = !!fileName.includes(path.join('code', 'core'));
-
-        if (
-          node.source.value.startsWith('@storybook/core/') &&
-          !isInCLI &&
-          !isInCore &&
-          !isInCreateStorybook
-        ) {
-          const newPath = node.source.value
-            .replace('@storybook/core', 'storybook/internal')
-            .replace('/src', '');
-          context.report({
-            node: node,
-            message: `Cannot import from @storybook/core in this package. Use storybook/internal instead.`,
-            fix: (fixer) => {
-              return fixer.replaceText(node.source, `'${newPath}'`);
-            },
-          });
-        }
-
-        if (
-          node.source.value.startsWith('@storybook/core/') &&
-          (isInCore || isInCLI || isInCodemod || isInCreateStorybook)
-        ) {
+        if (node.source.value.startsWith('@storybook/core/')) {
           const newPath = node.source.value
             .replace('@storybook/core', 'storybook/internal')
             .replace('/src', '');

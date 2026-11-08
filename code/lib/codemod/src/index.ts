@@ -1,22 +1,26 @@
 /* eslint import-x/prefer-default-export: "off" */
-import { readdirSync } from 'node:fs';
-import { rename as renameAsync } from 'node:fs/promises';
-import { extname, join } from 'node:path';
+import { readFile, rename as renameAsync, writeFile } from 'node:fs/promises';
 
-import { resolvePackageDir } from 'storybook/internal/common';
-
-import { sync as spawnSync } from 'cross-spawn';
 import { normalize } from 'pathe';
 import { glob as tinyglobby } from 'tinyglobby';
 
-import { jscodeshiftToPrettierParser } from './lib/utils.ts';
+import type { TransformFile } from './lib/utils.ts';
+import csf2To3 from './transforms/csf-2-to-3.ts';
+import findImplicitSpies from './transforms/find-implicit-spies.ts';
+import upgradeDeprecatedTypes from './transforms/upgrade-deprecated-types.ts';
+import upgradeHierarchySeparators from './transforms/upgrade-hierarchy-separators.ts';
 
-const TRANSFORM_DIR = join(resolvePackageDir('@storybook/codemod'), 'dist', 'transforms');
+type Transform = (info: TransformFile) => string | void | Promise<string | void>;
+
+const transforms: Record<string, Transform> = {
+  'csf-2-to-3': csf2To3,
+  'find-implicit-spies': findImplicitSpies,
+  'upgrade-deprecated-types': upgradeDeprecatedTypes,
+  'upgrade-hierarchy-separators': upgradeHierarchySeparators,
+};
 
 export function listCodemods() {
-  return readdirSync(TRANSFORM_DIR)
-    .filter((fname) => fname.endsWith('.js'))
-    .map((fname) => fname.slice(0, -3));
+  return Object.keys(transforms);
 }
 
 async function renameFile(file: any, from: any, to: any, { logger }: any) {
@@ -25,18 +29,36 @@ async function renameFile(file: any, from: any, to: any, { logger }: any) {
   return renameAsync(file, newFile);
 }
 
+async function applyTransform(transform: Transform, files: string[], logger: any) {
+  let ok = 0;
+  let unmodified = 0;
+  let errors = 0;
+
+  for (const file of files) {
+    try {
+      const source = await readFile(file, 'utf-8');
+      const output = await transform({ path: file, source });
+      if (typeof output !== 'string' || output === source) {
+        unmodified += 1;
+      } else {
+        await writeFile(file, output);
+        ok += 1;
+      }
+    } catch (error) {
+      logger.log(`Failed to transform ${file}: ${String(error)}`);
+      errors += 1;
+    }
+  }
+
+  logger.log(`Results: ${errors} errors, ${unmodified} unmodified, ${ok} ok`);
+  return errors;
+}
+
 export async function runCodemod(
   codemod: any,
-  {
-    glob,
-    logger,
-    dryRun,
-    rename,
-    parser,
-  }: { glob: any; logger: any; dryRun?: any; rename?: any; parser?: any }
+  { glob, logger, dryRun, rename }: { glob: any; logger: any; dryRun?: any; rename?: any }
 ) {
-  const codemods = listCodemods();
-  if (!codemods.includes(codemod)) {
+  if (!Object.hasOwn(transforms, codemod)) {
     throw new Error(`Unknown codemod ${codemod}. Run --list for options.`);
   }
 
@@ -48,23 +70,8 @@ export async function runCodemod(
     }
   }
 
-  // jscodeshift/prettier know how to handle .ts/.tsx extensions,
-  // so if the user uses one of those globs, we can auto-infer
-  let inferredParser = parser;
-
-  if (!parser) {
-    const extension = extname(glob).slice(1);
-    const knownParser = jscodeshiftToPrettierParser(extension);
-
-    if (knownParser !== 'babel') {
-      inferredParser = extension;
-    }
-  }
-
   // Normalize the glob pattern to use forward slashes (required for glob patterns on Windows)
   const files = await tinyglobby([normalize(glob), '!**/node_modules', '!**/dist']);
-  const extensions = new Set(files.map((file) => extname(file).slice(1)));
-  const commaSeparatedExtensions = Array.from(extensions).join(',');
 
   logger.step(`Applying ${codemod}: ${files.length} files`);
 
@@ -73,36 +80,9 @@ export async function runCodemod(
     return;
   }
 
-  if (!dryRun && files.length > 0) {
-    const parserArgs = inferredParser ? ['--parser', inferredParser] : [];
-    const result = spawnSync(
-      'node',
-      [
-        join(resolvePackageDir('jscodeshift'), 'bin', 'jscodeshift'),
-        // this makes sure codeshift doesn't transform our own source code with babel
-        // which is faster, and also makes sure the user won't see babel messages such as:
-        // [BABEL] Note: The code generator has deoptimised the styling of repo/node_modules/prettier/index.js as it exceeds the max of 500KB.
-        '--no-babel',
-        `--extensions=${commaSeparatedExtensions}`,
-        '--fail-on-error',
-        '-t',
-        `${TRANSFORM_DIR}/${codemod}.js`,
-        ...parserArgs,
-        ...files,
-      ],
-      {
-        stdio: 'inherit',
-      }
-    );
-
-    if (codemod === 'mdx-to-csf' && result.status === 1) {
-      logger.log(
-        'The codemod was not able to transform the files mentioned above. We have renamed the files to .mdx.broken. Please check the files and rename them back to .mdx after you have either manually transformed them to mdx + csf or fixed the issues so that the codemod can transform them.'
-      );
-    } else if (result.status === 1) {
-      logger.log('Skipped renaming because of errors.');
-      return;
-    }
+  if (!dryRun && (await applyTransform(transforms[codemod], files, logger)) > 0) {
+    logger.log('Skipped renaming because of errors.');
+    return;
   }
 
   if (renameParts) {

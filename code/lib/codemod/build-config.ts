@@ -24,7 +24,7 @@ const config: BuildEntries = {
       },
       {
         exportEntries: ['./transforms/upgrade-hierarchy-separators'],
-        entryPoint: './src/transforms/upgrade-hierarchy-separators.js',
+        entryPoint: './src/transforms/upgrade-hierarchy-separators.ts',
         dts: false,
       },
     ],

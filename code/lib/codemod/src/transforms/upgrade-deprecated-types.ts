@@ -1,3 +1,4 @@
+import { formatExistingFile } from 'storybook/internal/common';
 import {
   type ESTree as E,
   SourceEditor,
@@ -6,9 +7,6 @@ import {
   storyShapeError,
   walk,
 } from 'storybook/internal/csf-tools';
-import { logger } from 'storybook/internal/node-logger';
-
-import prettier from 'prettier';
 
 import type { TransformFile } from '../lib/utils.ts';
 
@@ -32,21 +30,8 @@ export default async function transform(info: TransformFile) {
 
   upgradeDeprecatedTypes(editor);
 
-  let output = editor.toString();
-
-  try {
-    output = await prettier.format(output, {
-      ...(await prettier.resolveConfig(info.path)),
-      filepath: info.path,
-    });
-  } catch (e) {
-    logger.log(`Failed applying prettier to ${info.path}.`);
-  }
-
-  return output;
+  return formatExistingFile(info.path, editor.toString());
 }
-
-export const parser = 'tsx';
 
 const importedName = (specifier: E.ImportDeclarationSpecifier) =>
   specifier.type === 'ImportSpecifier' && specifier.imported.type === 'Identifier'

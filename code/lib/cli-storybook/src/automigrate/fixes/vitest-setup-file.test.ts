@@ -557,7 +557,9 @@ describe('vitestSetupFile', () => {
         export default defineConfig({
           plugins: [storybookTest({ configDir: '.storybook' })],
           test: {
-            setupFiles: ['./other-setup.ts'],
+            setupFiles: [
+              './other-setup.ts',
+            ],
           },
         });"
       `);

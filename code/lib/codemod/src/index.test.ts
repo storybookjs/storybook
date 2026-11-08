@@ -1,14 +1,10 @@
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { runCodemod } from './index.ts';
-
-// runCodemod reads the built transforms from the real package directory, so it needs the real
-// resolvePackageDir instead of the stub from vitest-setup.ts.
-vi.unmock('../../../core/src/shared/utils/module.ts');
 
 const logger = {
   step: vi.fn(),
@@ -67,6 +63,29 @@ describe('runCodemod', () => {
     expect(result).toContain('export const SimpleBar = {');
   });
 
+  it('keeps the code it does not change as written in a project without Prettier', async () => {
+    const storyFile = join(tempDir, 'chart.stories.tsx');
+    writeFileSync(storyFile, csf2Source);
+
+    await runCodemod('csf-2-to-3', { glob: storyFile, logger });
+
+    expect(readFileSync(storyFile, 'utf-8')).toMatchInlineSnapshot(`
+      "import { Meta, StoryFn } from '@storybook/react-vite'
+
+      import { Chart, ChartProps } from './chart'
+
+      export default {
+        component: Chart,
+        title: 'Chart',
+      } as Meta
+
+      export const SimpleBar = {
+        args: { name: 'test' },
+      }
+      "
+    `);
+  });
+
   it('should handle filenames with spaces', async () => {
     const storyFile = join(tempDir, 'my component.stories.tsx');
     writeFileSync(storyFile, csf2Source);
@@ -98,6 +117,23 @@ describe('runCodemod', () => {
 
     expect(result1).not.toContain('Template.bind({})');
     expect(result2).not.toContain('Template.bind({})');
+  });
+
+  it('leaves a file that does not parse alone and skips renaming', async () => {
+    const brokenFile = join(tempDir, 'broken.stories.tsx');
+    const storyFile = join(tempDir, 'chart.stories.tsx');
+    writeFileSync(brokenFile, 'export const = ;');
+    writeFileSync(storyFile, csf2Source);
+
+    await runCodemod('upgrade-hierarchy-separators', {
+      glob: join(tempDir, '*.stories.tsx'),
+      logger,
+      rename: '.tsx:.ts',
+    });
+
+    expect(readFileSync(brokenFile, 'utf-8')).toBe('export const = ;');
+    expect(logger.log).toHaveBeenCalledWith('Skipped renaming because of errors.');
+    expect(existsSync(storyFile)).toBe(true);
   });
 
   it('should handle recursive glob patterns', async () => {

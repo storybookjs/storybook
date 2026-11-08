@@ -113,5 +113,3 @@ export default async function transform(info: TransformFile) {
     });
   });
 }
-
-export const parser = 'tsx';

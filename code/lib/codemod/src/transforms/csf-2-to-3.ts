@@ -1,3 +1,4 @@
+import { formatExistingFile } from 'storybook/internal/common';
 import {
   type CsfFile,
   type ESTree as E,
@@ -13,7 +14,6 @@ import {
 } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
-import prettier from 'prettier';
 import invariant from 'tiny-invariant';
 
 import type { TransformFile } from '../lib/utils.ts';
@@ -210,18 +210,7 @@ export default async function transform(info: TransformFile) {
   upgradeDeprecatedTypes(editor);
   removeUnusedTemplates(editor, templates);
 
-  let output = printCsf(csf).code;
-
-  try {
-    output = await prettier.format(output, {
-      ...(await prettier.resolveConfig(info.path)),
-      filepath: info.path,
-    });
-  } catch (e) {
-    logger.log(`Failed applying prettier to ${info.path}.`);
-  }
-
-  return output;
+  return formatExistingFile(info.path, printCsf(csf).code);
 }
 
 const storyTypes = [
@@ -320,5 +309,3 @@ class StorybookImportHelper {
     }
   };
 }
-
-export const parser = 'tsx';

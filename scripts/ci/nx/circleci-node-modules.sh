@@ -13,7 +13,9 @@
 # On Linux and on Windows (Git Bash). Runs from the repository root. Changing this file changes the
 # cache key, and every NX task's hash.
 set -euo pipefail
-if [ "${OSTYPE:-}" = msys ]; then
+# Git Bash on Windows.
+case "$(uname -s)" in MINGW* | MSYS* | CYGWIN*) windows=true ;; *) windows=false ;; esac
+if [ "$windows" = true ]; then
   # Git Bash's own tools first: on CircleCI's Windows machines, Windows' find, sort and tar and
   # Sysinternals' du come first on the PATH.
   PATH="/usr/bin:$PATH"

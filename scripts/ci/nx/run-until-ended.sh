@@ -8,7 +8,7 @@
 #   shows how the run ended, and a red agent is noise.
 # - The main job runs no task itself, so once every agent has ended, nothing can run what is left:
 #   when CircleCI lost an agent with tasks NX Cloud had handed it, the main job waited for them
-#   until its timeout (70 minutes on Windows). It stops then, with 1.
+#   until its timeout (75 minutes on Windows). It stops then, with 1.
 set -u
 job=$1
 code=$2
@@ -27,19 +27,21 @@ descendants() {
   done
 }
 
+# Every process the command started, not only the command: a `bash -c` that runs several
+# commands in the background leaves them running when it alone is killed.
 stop() {
-  # On Windows, `kill` reaches the MSYS `timeout` only: the native node processes of `yarn nx …`
-  # are not in its Windows process tree, and keep the step open until Nx exits by itself. Each of
-  # them goes with its own tree.
-  if [ -r "/proc/$child_pid/winpid" ]; then
-    local pid
-    for pid in "$child_pid" $(descendants "$child_pid"); do
-      if [ -r "/proc/$pid/winpid" ]; then
-        taskkill //F //T //PID "$(cat "/proc/$pid/winpid" 2>/dev/null)" >/dev/null 2>&1
-      fi
-    done
-  fi
-  kill "$child_pid" 2>/dev/null
+  local pid pids
+  pids="$child_pid $(descendants "$child_pid")"
+  # On Windows, `kill` reaches the MSYS processes only: the native node processes of `yarn nx …`
+  # are not in their Windows process trees, and keep the step open until Nx exits by itself. Each
+  # of them goes with its own tree.
+  for pid in $pids; do
+    if [ -r "/proc/$pid/winpid" ]; then
+      taskkill //F //T //PID "$(cat "/proc/$pid/winpid" 2>/dev/null)" >/dev/null 2>&1
+    fi
+  done
+  # shellcheck disable=SC2086
+  kill $pids 2>/dev/null
 }
 
 ticks=0

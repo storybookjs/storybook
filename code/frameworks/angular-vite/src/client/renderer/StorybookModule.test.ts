@@ -314,14 +314,24 @@ describe('StorybookModule', () => {
         directive = inject(HostDirective);
       }
 
-      it('initializes and updates exposed host directive inputs', async () => {
+      @Component({
+        selector: 'inherited-host-inputs',
+        template:
+          '<p id="value">{{ directive.value }}</p><p id="alias">{{ directive.aliasedValue }}</p>',
+      })
+      class ChildComponent extends HostComponent {}
+
+      it.each([
+        { component: HostComponent, label: 'direct' },
+        { component: ChildComponent, label: 'inherited' },
+      ])('initializes and updates $label host directive inputs', async ({ component }) => {
         const props = { value: 'initial', publicValue: 'initial alias' };
         const storyProps$ = new BehaviorSubject<ICollection | undefined>(props);
-        const analyzedMetadata = new PropertyExtractor({}, HostComponent);
+        const analyzedMetadata = new PropertyExtractor({}, component);
         await analyzedMetadata.init();
         const application = getApplication({
           storyFnAngular: { props },
-          component: HostComponent,
+          component,
           targetSelector: 'my-selector',
           analyzedMetadata,
         });

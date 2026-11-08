@@ -55,15 +55,18 @@ jobs:
               - << pipeline.parameters.nxDte >>
           steps:
             - git-shallow-clone/checkout_advanced:
-                clone_options: '--depth 100 --filter=blob:none --no-tags'
-                fetch_options: '--depth 100 --filter=blob:none --no-tags'
+                # Only the commits: the setup job diffs commits by file name, and git fetches the
+                # trees it needs for that. Twice as fast as `blob:none`, which also fetches every
+                # commit's trees.
+                clone_options: '--depth 100 --filter=tree:0 --no-tags'
+                fetch_options: '--depth 100 --filter=tree:0 --no-tags'
                 tag_fetch_options: '--no-tags'
             - run:
                 name: Fetch the base branch
                 environment:
                   GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
                 command: |
-                  git fetch --depth=100 --filter=blob:none --no-tags origin \
+                  git fetch --depth=100 --filter=tree:0 --no-tags origin \
                     "$GH_BASE_BRANCH:refs/remotes/origin/$GH_BASE_BRANCH"
                   if ! git merge-base "origin/$GH_BASE_BRANCH" HEAD >/dev/null; then
                     echo "No merge base found between origin/$GH_BASE_BRANCH and HEAD within 100 commits." >&2

@@ -13,6 +13,7 @@ const nxTask = process.env.NX_TASK_TARGET_PROJECT
  */
 export default defineConfig({
   testDir: "./e2e-tests",
+  globalSetup: "./e2e-tests/storybook-ready.setup.ts",
   outputDir: nxTask.length > 0 ? path.join(root, "code", "playwright-results", ...nxTask) : "./test-results",
   /* Maximum time one test can run for. */
   timeout: (process.env.CI ? 60 : 30) * 1000,

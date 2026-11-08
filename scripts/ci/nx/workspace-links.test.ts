@@ -62,8 +62,17 @@ it('makes the links a restore lacks, and replaces a directory tar left in place 
   expect(lstatSync(join(root, 'node_modules/eslint-plugin-local-rules')).isSymbolicLink()).toBe(
     true
   );
-  expect(readlinkSync(join(root, 'node_modules/@storybook/addon-a11y'))).toBe(
-    '../../code/addons/a11y'
-  );
-  expect(realpathSync(join(root, 'node_modules/storybook'))).toBe(join(root, 'code/core'));
+  for (const [link, target] of [
+    ['node_modules/storybook', 'code/core'],
+    ['node_modules/@storybook/addon-a11y', 'code/addons/a11y'],
+    ['node_modules/eslint-plugin-local-rules', 'scripts/rules'],
+  ]) {
+    expect(realpathSync(join(root, link))).toBe(realpathSync(join(root, target)));
+  }
+  // Relative, as Yarn makes them; on Windows a junction, which holds an absolute path.
+  if (process.platform !== 'win32') {
+    expect(readlinkSync(join(root, 'node_modules/@storybook/addon-a11y'))).toBe(
+      '../../code/addons/a11y'
+    );
+  }
 });

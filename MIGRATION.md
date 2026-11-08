@@ -645,14 +645,16 @@
 
 ### `@storybook/codemod` is no longer published
 
-The codemods now ship inside the Storybook CLI, so `@storybook/codemod` has no 11.x release. Run them with `storybook migrate`, and remove the package if your `package.json` lists it:
+The codemods now ship inside the Storybook CLI, so `@storybook/codemod` has no stable 11.0 release; `11.0.0-beta.0` is its last prerelease. Run the codemods with `storybook migrate`:
 
 ```sh
 npx storybook@latest migrate --list
 npx storybook@latest migrate csf-2-to-3 --glob="**/*.stories.tsx"
 ```
 
-The transforms can no longer be run directly with `jscodeshift`. The `--parser` flag of `storybook migrate`, `storybook init` and `create storybook` is still accepted, but ignored.
+If your `package.json` lists `@storybook/codemod`, remove it. Left in place, it stays on 10.x and installs its own copy of `storybook`.
+
+The transforms can no longer be run directly with `jscodeshift`. The `--parser` flag of `storybook migrate`, `storybook init` and `create storybook` is still accepted, but ignored, so `upgrade-hierarchy-separators` now fails on files that use Flow-only syntax.
 
 ### ESLint plugin: `meta-inline-properties` replaced by `static-csf-properties`
 

@@ -393,6 +393,32 @@ describe('rewriteStyleSheet', () => {
     );
   });
 
+  it('leaves pseudo-states inside quoted attribute values alone', () => {
+    const sheet = new Sheet('.row:hover:not([data-state=":focus"]) .icon { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].getSelectors()).toEqual([
+      '.row:hover:not([data-state=":focus"]) .icon',
+      '.row.pseudo-hover:not([data-state=":focus"]) .icon',
+      '.pseudo-hover-all .row:not([data-state=":focus"]) .icon',
+    ]);
+  });
+
+  it('does not treat escaped quotes as the start of a quoted value', () => {
+    const sheet = new Sheet('.x\\"y .a:not([t="q"]:hover) { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].selectorText).toEqual(
+      '.x\\"y .a:not([t="q"]:is(:hover, .pseudo-hover, :where(.pseudo-hover-all *)))'
+    );
+  });
+
+  it('ignores parentheses inside quoted attribute values in ":not"', () => {
+    const sheet = new Sheet(".a:not([title=')']:hover) .b { color: red }");
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].selectorText).toEqual(
+      ".a:not([title=')']:is(:hover, .pseudo-hover, :where(.pseudo-hover-all *))) .b"
+    );
+  });
+
   it('supports complex use of ":not"', () => {
     const sheet = new Sheet('foo:focus:not(:hover, .bar:active) .baz { color: red }');
     rewriteStyleSheet(sheet as any);

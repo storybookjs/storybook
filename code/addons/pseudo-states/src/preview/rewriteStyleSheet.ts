@@ -34,10 +34,25 @@ const isEscaped = (selector: string, index: number) => {
 const isInRanges = (index: number, ranges: IndexRange[]) =>
   ranges.some(({ start, end }) => index >= start && index < end);
 
-const findClosingParenthesis = (selector: string, openIndex: number) => {
+const quotedStringPattern = /\\[^]|"(?:\\[^]|[^"\\])*"|'(?:\\[^]|[^'\\])*'/g;
+
+const findQuotedRanges = (selector: string): IndexRange[] =>
+  Array.from(selector.matchAll(quotedStringPattern))
+    .filter(({ 0: text }) => text[0] !== '\\')
+    .map(({ index, 0: text }) => ({ start: index, end: index + text.length }));
+
+const findClosingParenthesis = (
+  selector: string,
+  openIndex: number,
+  quotedRanges = findQuotedRanges(selector)
+) => {
   let depth = 0;
   for (let index = openIndex; index < selector.length; index++) {
-    if (selector[index] === '(') {
+    if (selector[index] === '\\') {
+      index++;
+    } else if (isInRanges(index, quotedRanges)) {
+      continue;
+    } else if (selector[index] === '(') {
       depth++;
     } else if (selector[index] === ')' && --depth === 0) {
       return index;
@@ -46,27 +61,35 @@ const findClosingParenthesis = (selector: string, openIndex: number) => {
   return selector.length;
 };
 
-const findNegationRanges = (selector: string) => {
+const findNegationRanges = (selector: string, quotedRanges: IndexRange[]) => {
   const ranges: IndexRange[] = [];
   let start = selector.indexOf(':not(');
   while (start !== -1) {
-    const end = findClosingParenthesis(selector, start + 4) + 1;
+    if (isEscaped(selector, start) || isInRanges(start, quotedRanges)) {
+      start = selector.indexOf(':not(', start + 1);
+      continue;
+    }
+    const end = findClosingParenthesis(selector, start + 4, quotedRanges) + 1;
     ranges.push({ start, end });
     start = selector.indexOf(':not(', end);
   }
   return ranges;
 };
 
-// Skips states inside :not() unless includeNegated is set, as rewriteNegatedPseudoStates handles those in place.
+// Skips states inside quotes, and inside :not() unless includeNegated is set, as
+// rewriteNegatedPseudoStates handles those in place.
 const findPseudoStates = (selector: string, includeNegated = false) => {
   const matches: PseudoStateMatch[] = [];
-  const negationRanges = includeNegated ? [] : findNegationRanges(selector);
+  const quotedRanges = findQuotedRanges(selector);
+  const skippedRanges = includeNegated
+    ? quotedRanges
+    : [...quotedRanges, ...findNegationRanges(selector, quotedRanges)];
   pseudoStatePattern.lastIndex = 0;
 
   let match = pseudoStatePattern.exec(selector);
   while (match) {
     const index = match.index;
-    if (!isEscaped(selector, index) && !isInRanges(index, negationRanges)) {
+    if (!isEscaped(selector, index) && !isInRanges(index, skippedRanges)) {
       matches.push({ index, state: match[1], text: match[0] });
     }
     match = pseudoStatePattern.exec(selector);
@@ -195,7 +218,7 @@ const rewriteNegatedPseudoStates = (
   forShadowDOM: boolean
 ) => {
   const hostEnd = findHostEnd(selector);
-  const negationRanges = findNegationRanges(selector);
+  const negationRanges = findNegationRanges(selector, findQuotedRanges(selector));
   const matches = pseudoStateMatches.filter(({ index }) => isInRanges(index, negationRanges));
 
   return replacePseudoStateMatches(selector, matches, ({ state, index }) => {

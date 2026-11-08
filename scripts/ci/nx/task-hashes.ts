@@ -11,6 +11,7 @@
 // repository checks files out unchanged, `* -text`), and with the npm packages as Nx names them on
 // Windows, where other native packages are installed (windows-graph.ts).
 import { readNxJson } from 'nx/src/config/nx-json.js';
+import type { ProjectGraph } from 'nx/src/config/project-graph.js';
 import { createTaskHasher } from 'nx/src/hasher/create-task-hasher.js';
 import { createProjectGraphAsync } from 'nx/src/project-graph/project-graph.js';
 import { createTaskGraph } from 'nx/src/tasks-runner/create-task-graph.js';
@@ -21,11 +22,13 @@ import { windowsGraph } from './windows-graph.ts';
 
 type Os = 'linux' | 'windows';
 
+// `projectGraph` is this OS's project graph, when the caller already built one.
 export async function hashSelections(
-  selections: Record<Os, Selection>
+  selections: Record<Os, Selection>,
+  projectGraph?: ProjectGraph
 ): Promise<Record<Os, Record<string, string>>> {
   // Throws instead of exiting, so select.ts can fall back to counting every task.
-  const linuxGraph = await createProjectGraphAsync({ exitOnError: false });
+  const linuxGraph = projectGraph ?? (await createProjectGraphAsync({ exitOnError: false }));
   const graphs = { linux: linuxGraph, windows: linuxGraph };
   if (Object.keys(selections.windows.tasks).length > 0) {
     try {

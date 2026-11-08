@@ -1,6 +1,6 @@
 // The tasks a run of the NX DTE pipeline will run.
 //
-// CircleCI's setup job asks Nx which tasks the run's commands select (run.ts `--graph`): on a pull
+// CircleCI's setup job asks Nx which tasks the run's commands select (`nx … --graph`): on a pull
 // request only the tasks the change reaches (`nx affected`), elsewhere all of them. It then looks up
 // which of them NX Cloud already has in its cache and how long each takes, and works out the
 // agents each OS needs (select.ts, agent-sizing.ts).

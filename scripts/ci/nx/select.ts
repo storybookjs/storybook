@@ -19,6 +19,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { parseArgs } from 'node:util';
 
+import { createProjectGraphAsync } from 'nx/src/project-graph/project-graph.js';
 import { join } from 'pathe';
 
 import { ROOT_DIRECTORY } from '../../utils/constants.ts';
@@ -26,7 +27,15 @@ import { changedFilesEnvironment, focusDiff } from '../utils/changed-files.ts';
 import { AGENT_BOOT_SECONDS, MAX_AGENTS, agentsFor } from './agent-sizing.ts';
 import { baseRuns, osHistory, taskDurations } from './nx-cloud-history.ts';
 import { linuxRuns, parseWorkflows, planFor, windowsTasksOf } from './plan.ts';
-import { EMPTY_SELECTION, type Selection, weigh, workOf } from './selection.ts';
+import { cliWorkspace, nxCommands, workspaceOf } from './run.ts';
+import {
+  EMPTY_SELECTION,
+  type NxTaskGraph,
+  type Selection,
+  mergeTaskGraphs,
+  weigh,
+  workOf,
+} from './selection.ts';
 import { hashSelections } from './task-hashes.ts';
 
 type Os = 'linux' | 'windows';
@@ -64,29 +73,45 @@ const max = {
   windows: MAX_AGENTS.windows,
 };
 
+// Built once, in-process, for both OSes: the commands (run.ts `nxCommands`) and the hashes
+// (task-hashes.ts) come from it. Only the task graphs of the commands come from the Nx CLI, which
+// nx-main runs them with.
+const projectGraph = createProjectGraphAsync({ exitOnError: false });
+const workspace = projectGraph.then(workspaceOf, (error) => {
+  // These are Nx internals; the CLI gives the same, a few seconds slower.
+  console.warn(`Building the project graph in-process failed, so the Nx CLI reads it: ${error}`);
+  return cliWorkspace();
+});
+
 const directory = mkdtempSync(join(tmpdir(), 'nx-selection-'));
-const select = (os: Os): Promise<Selection> => {
-  const file = join(directory, `${os}.json`);
-  const args = [
-    'exec',
-    'jiti',
-    './scripts/ci/nx/run.ts',
-    `--workflow=${selected.join(',')}`,
-    `--env=${os}`,
-    ...(base ? [`--base=${base}`] : []),
-    `--graph=${file}`,
-  ];
-  return new Promise((resolve, reject) => {
-    spawn('yarn', args, {
+// The tasks `command` runs, from `nx … --graph=<file>`.
+const taskGraph = (command: string[], file: string) =>
+  new Promise<NxTaskGraph>((resolve, reject) => {
+    let stderr = '';
+    const child = spawn('yarn', [...command, `--graph=${file}`], {
       cwd: ROOT_DIRECTORY,
-      stdio: 'inherit',
+      stdio: ['ignore', 'ignore', 'pipe'],
       env: { ...process.env, ...changedFilesEnvironment(diff) },
-    }).on('close', (code) =>
+    });
+    child.stderr.on('data', (chunk) => (stderr += chunk));
+    child.on('close', (code) =>
       code === 0
-        ? resolve(JSON.parse(readFileSync(file, 'utf8')))
-        : reject(new Error(`Selecting the ${os} tasks failed.`))
+        ? resolve(JSON.parse(readFileSync(file, 'utf8')).tasks)
+        : reject(new Error(`yarn ${command.join(' ')} --graph=${file} failed:\n${stderr}`))
     );
   });
+const select = async (os: Os): Promise<Selection> => {
+  const commands = nxCommands({
+    selected,
+    env: os,
+    base,
+    changedFiles: diff?.files ?? [],
+    workspace: await workspace,
+  });
+  const graphs = await Promise.all(
+    commands.map((command, i) => taskGraph(command, join(directory, `${os}-${i}.json`)))
+  );
+  return { ...mergeTaskGraphs(graphs), commands };
 };
 
 const runsOn = { linux: linuxRuns(selected, plan), windows: windowsTasksOf(plan).length > 0 };
@@ -107,7 +132,10 @@ console.log(
   `${base ? `Affected since ${base}` : 'Everything'}: ${Object.keys(linux.tasks).length} Linux and ${Object.keys(windows.tasks).length} Windows tasks.`
 );
 
-const hashes = await hashSelections({ linux, windows }).catch((error) => {
+const hashes = await hashSelections(
+  { linux, windows },
+  await projectGraph.catch(() => undefined)
+).catch((error) => {
   console.warn(`Hashing the tasks failed, so every task counts as one that runs: ${error}`);
   return { linux: {}, windows: {} };
 });

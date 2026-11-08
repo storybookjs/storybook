@@ -3,7 +3,8 @@
 # archives in one directory that CircleCI caches. A few files restore much faster than CircleCI's
 # own tar of ~200k files, and they hold every node_modules directory, including the nested ones the
 # other CircleCI jobs leave out. One tar writes the files on one CPU, so there is one archive per
-# CPU of a large machine, extracted at the same time: 6 s instead of 16 s on Linux.
+# CPU of a large machine, extracted at the same time: on Linux (4 CPUs) 6 s instead of 16 s, on
+# Windows (8 CPUs) 69 s instead of CircleCI's Windows cache and `yarn install`, 207 s.
 #
 #   circleci-node-modules.sh restore <directory>  extract the archives, or install when there are none
 #   circleci-node-modules.sh pack <directory>     archive the tree a fresh install left
@@ -21,7 +22,8 @@ archives=$2
 list=node_modules/.circleci-node-modules-dirs
 # Set by a fresh install in this job: only that tree is packed, never one restored from the cache.
 fresh="$archives.fresh"
-PARTS=4
+# Git Bash on Windows.
+if [ "${OSTYPE:-}" = msys ]; then PARTS=8; else PARTS=4; fi
 
 extract() {
   local pids=() part status=0

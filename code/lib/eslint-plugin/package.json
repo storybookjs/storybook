@@ -42,10 +42,6 @@
     "generate-rule": "jiti ./scripts/generate-rule",
     "prep": "jiti ../../../scripts/build/build-package.ts"
   },
-  "dependencies": {
-    "@typescript-eslint/types": "^8.60.0",
-    "@typescript-eslint/utils": "^8.60.0"
-  },
   "devDependencies": {
     "@types/eslint": "^8.56.2",
     "@types/node": "^22.19.1",
@@ -53,6 +49,8 @@
     "@typescript-eslint/eslint-plugin": "^8.60.0",
     "@typescript-eslint/parser": "^8.60.0",
     "@typescript-eslint/rule-tester": "^8.60.0",
+    "@typescript-eslint/types": "^8.60.0",
+    "@typescript-eslint/utils": "^8.60.0",
     "@vitest/coverage-v8": "^5.0.0",
     "eslint": "^8.57.1",
     "eslint-plugin-eslint-plugin": "^6.5.0",

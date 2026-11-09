@@ -25,7 +25,7 @@ on:
         description: 'Write proposals to the Step Summary instead of filing them'
         type: boolean
         default: true
-  # A pull request runs only the smoke job: typecheck, tests and the free fake engine.
+  # A pull request runs only the smoke job: typecheck, tests and a free fake run.
   pull_request:
     paths: ['ecosystem-qa/**', '.github/workflows/ecosystem-qa.yml']
 
@@ -75,11 +75,11 @@ jobs:
       - name: Install Chromium for the evidence tools
         run: cd ecosystem-qa && npx playwright install --with-deps chromium
 
-      - name: Run the fake engine
+      - name: Run a fake Claude run
         env:
           ECOSYSTEM_QA_FAKE: '1'
         run: >-
-          node ecosystem-qa/run.ts --repo mealdrop --version "$QA_VERSION" --engine fake
+          node ecosystem-qa/run.ts --repo mealdrop --version "$QA_VERSION" --engine claude --fake
           --sandbox none --out ecosystem-qa/results/mealdrop/linux/claude
 
       - name: Collect proposals

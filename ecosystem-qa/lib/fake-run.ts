@@ -1,4 +1,4 @@
-// Test seam for `--engine fake`: no clone, no Sandcastle, no agent. It writes canned output through the
+// Test seam for `--fake`: no clone, no Sandcastle, no agent. It writes canned output through the
 // real evidence tools so collect.ts and file.ts can be exercised end to end without an API key.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -14,7 +14,7 @@ const TOOLS_DIR = fileURLToPath(new URL('../tools', import.meta.url));
 const NULL_SHA = '0'.repeat(40);
 
 const frame = (title: string, color: string) =>
-  `data:text/html,<body style="font:32px sans-serif;background:${color}"><h1>${title}</h1><p>ecosystem-qa --engine fake</p></body>`;
+  `data:text/html,<body style="font:32px sans-serif;background:${color}"><h1>${title}</h1><p>ecosystem-qa --fake</p></body>`;
 
 export const runFake = (request: RunRequest): Outcome => {
   const evidenceDir = join(request.outDir, 'evidence');
@@ -27,8 +27,8 @@ export const runFake = (request: RunRequest): Outcome => {
   tool('shot.mjs', frame('After: canned fake frame', '%23fee2e2'), join(framesDir, '02.png'));
   tool('shot.mjs', frame('Fake finding screenshot', '%23fee2e2'), join(evidenceDir, 'fake.png'));
   tool('gif.mjs', framesDir, join(evidenceDir, 'fake.gif'), '--delay', '800');
-  writeFileSync(join(evidenceDir, 'fake.log'), 'Error: canned fake failure from --engine fake\n');
-  writeFileSync(join(request.outDir, 'run.log'), 'ecosystem-qa --engine fake: no agent ran.\n');
+  writeFileSync(join(evidenceDir, 'fake.log'), 'Error: canned fake failure from --fake\n');
+  writeFileSync(join(request.outDir, 'run.log'), 'ecosystem-qa --fake: no agent ran.\n');
   writeFileSync(
     join(request.outDir, 'agent-stream.jsonl'),
     `${JSON.stringify({
@@ -54,20 +54,20 @@ export const runFake = (request: RunRequest): Outcome => {
       storybookVersionInstalled: request.version,
       checks: CHECKS.map(({ id, label }) =>
         id === failing
-          ? { id, label, state: 'fail', note: 'Canned failure from --engine fake.' }
+          ? { id, label, state: 'fail', note: 'Canned failure from --fake.' }
           : { id, label, state: 'pass' }
       ),
       findings: [
         {
           checkId: failing,
-          title: 'Fake finding from the --engine fake test seam',
+          title: 'Fake finding from the --fake test seam',
           baseline: 'pass',
           expected: 'Nothing; this finding is canned',
-          actual: 'The fake engine always reports this finding',
+          actual: 'A fake run always reports this finding',
           errorText: `Error: canned fake failure at ${evidenceDir}/fake.log:1:1 on ${request.version}`,
           reproSteps: [
             `git clone https://github.com/${request.entry.repo}`,
-            'Run node ecosystem-qa/run.ts with --engine fake and ECOSYSTEM_QA_FAKE=1',
+            'Run node ecosystem-qa/run.ts with --fake and ECOSYSTEM_QA_FAKE=1',
           ],
           evidence: { png: 'fake.png', gif: 'fake.gif', logs: ['fake.log'] },
           windowsOnly: false,

@@ -93,6 +93,7 @@ export const RunRequestRecord = z.strictObject({
   effort: Effort,
   sandbox: SandboxKind,
   os: Os,
+  fake: z.boolean(),
 });
 
 export const RunResultFile = z.strictObject({
@@ -140,6 +141,7 @@ const Source = z.strictObject({
   model: z.string(),
   sandbox: SandboxKind,
   version: z.string(),
+  fake: z.boolean(),
 });
 
 // The filer pushes with a write token to the repository, branch and head named here, so they come

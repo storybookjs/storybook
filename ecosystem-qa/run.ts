@@ -38,7 +38,8 @@ Options:
   --image <name>      Docker image for --sandbox docker (default: sb-ecosystem-qa)
 
 Writes <out>/result.json and exits 0 whenever it did, findings or not.
-Set ECOSYSTEM_QA_FAKE=1 and pass --engine fake to write a canned result without running an agent.`;
+Set ECOSYSTEM_QA_FAKE=1 and pass --fake to write a canned result for --engine without running an agent;
+the result records fake: true and costs $0.`;
 
 const DEFAULT_MODEL: Record<z.infer<typeof Engine>, string> = {
   claude: 'claude-sonnet-5-5',
@@ -101,6 +102,7 @@ const parseRequest = () => {
       effort: { type: 'string', default: 'medium' },
       'clone-dir': { type: 'string' },
       image: { type: 'string', default: 'sb-ecosystem-qa' },
+      fake: { type: 'boolean', default: false },
       help: { type: 'boolean', default: false },
     },
   });
@@ -118,11 +120,10 @@ const parseRequest = () => {
     return fail((error as Error).message);
   }
   const os = HOST_OS[process.platform] ?? fail(`Unsupported platform ${process.platform}.`);
-  const isFake = values.engine === 'fake';
-  if (isFake && process.env.ECOSYSTEM_QA_FAKE !== '1') {
-    return fail('--engine fake needs ECOSYSTEM_QA_FAKE=1.');
+  if (values.fake && process.env.ECOSYSTEM_QA_FAKE !== '1') {
+    return fail('--fake needs ECOSYSTEM_QA_FAKE=1.');
   }
-  const engine = isFake ? 'claude' : Engine.parse(values.engine);
+  const engine = Engine.parse(values.engine);
   const entry = loadCatalogEntry(repo);
   const outDir = resolve(out);
   const request: RunRequest = {
@@ -133,11 +134,12 @@ const parseRequest = () => {
     effort: Effort.parse(values.effort),
     sandbox: SandboxKind.parse(values.sandbox),
     os,
+    fake: values.fake,
     outDir,
     monorepoDir: resolve(QA_DIR, '..'),
   };
   const cloneDir = resolve(values['clone-dir'] ?? join(outDir, '../../../work', entry.id));
-  return { request, isFake, cloneDir, image: values.image };
+  return { request, cloneDir, image: values.image };
 };
 
 const clone = (entry: CatalogEntry, cloneDir: string): string => {
@@ -340,7 +342,8 @@ const writeResult = (request: RunRequest, outcome: Outcome, startedAt: Date) => 
   if (outcome.sessionSource && existsSync(outcome.sessionSource)) {
     copyFileSync(outcome.sessionSource, join(outDir, 'session.jsonl'));
   }
-  const usage = usageFromStream(streamFile, request.engine, request.model);
+  const counted = usageFromStream(streamFile, request.engine, request.model);
+  const usage = request.fake ? { ...counted, usd: 0, priceSource: 'agent' as const } : counted;
   if (usage.usd === null) {
     console.warn(`No price for model "${request.model}" in the shared price table; usd is null.`);
   }
@@ -374,6 +377,9 @@ const writeResult = (request: RunRequest, outcome: Outcome, startedAt: Date) => 
   return result;
 };
 
+const engineLabel = ({ request }: z.infer<typeof RunResultFile>) =>
+  request.fake ? `${request.engine} (fake)` : request.engine;
+
 const summarize = (result: z.infer<typeof RunResultFile>, resultPath: string): string => {
   const failed = result.checks.filter((check) => check.state === 'fail').length;
   const usd =
@@ -381,7 +387,7 @@ const summarize = (result: z.infer<typeof RunResultFile>, resultPath: string): s
       ? 'unpriced'
       : `$${result.usage.usd.toFixed(2)}${result.usage.priceSource === 'table' ? ' (priced from the shared price table, not from the agent)' : ''}`;
   return [
-    `${result.request.entry.repo} on ${result.request.os} with ${result.request.engine} (${result.request.model}) finished with status ${result.status} in ${result.timing.wallSeconds}s.`,
+    `${result.request.entry.repo} on ${result.request.os} with ${engineLabel(result)} (${result.request.model}) finished with status ${result.status} in ${result.timing.wallSeconds}s.`,
     `Storybook ${result.storybookVersionInstalled ?? 'version unknown'} installed${result.timing.installSeconds === undefined ? '' : ` (the project install took ${result.timing.installSeconds}s)`}, ${result.checks.length} checks reported, ${failed} failed, ${result.findings.length} findings.`,
     `Usage was ${result.usage.inputTokens} input, ${result.usage.outputTokens} output, ${result.usage.cacheReadTokens ?? 0} cache-read and ${result.usage.cacheWriteTokens ?? 0} cache-write tokens, ${usd}.`,
     `Cycle branch ${cycleBranchName(result.request.version, result.request.os, result.request.engine)} head ${result.headSha ?? 'has no commits'}.${result.machine.freeDiskMbAtEnd === undefined ? '' : ` ${result.machine.freeDiskMbAtEnd} MB disk free at the end.`} Result: ${resultPath}.`,
@@ -389,17 +395,17 @@ const summarize = (result: z.infer<typeof RunResultFile>, resultPath: string): s
   ].join(' ');
 };
 
-const { request, isFake, cloneDir, image } = parseRequest();
+const { request, cloneDir, image } = parseRequest();
 const startedAt = new Date();
 mkdirSync(join(request.outDir, 'evidence'), { recursive: true });
-const outcome = isFake ? runFake(request) : await runSandcastle(request, cloneDir, image);
+const outcome = request.fake ? runFake(request) : await runSandcastle(request, cloneDir, image);
 const result = writeResult(request, outcome, startedAt);
 const summary = summarize(result, relative(process.cwd(), join(request.outDir, 'result.json')));
 console.log(summary);
 if (process.env.GITHUB_STEP_SUMMARY) {
   writeStepSummary(
     [
-      `### ${result.request.entry.repo} on ${result.request.os} with ${result.request.engine}`,
+      `### ${result.request.entry.repo} on ${result.request.os} with ${engineLabel(result)}`,
       '',
       summary,
       '',

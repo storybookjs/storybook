@@ -102,7 +102,7 @@ export const renderDry = (proposal: Proposal, repo: string): string => {
   return [
     `<details><summary><b>${proposal.kind}</b> ${proposal.title} <code>${proposal.fingerprint}</code></summary>`,
     '',
-    `Sources: ${proposal.sources.map((source) => `${source.os}/${source.engine} (\`${source.resultPath}\`)`).join(', ')}`,
+    `Sources: ${proposal.sources.map((source) => `${source.os}/${source.engine}${source.fake ? ' (fake)' : ''} (\`${source.resultPath}\`)`).join(', ')}`,
     '',
     ...steps.map((step, index) => `${index + 1}. ${describeStep(step, repo)}`),
     '',

@@ -44,12 +44,12 @@ node ecosystem-qa/file.ts --proposals ecosystem-qa/results/proposals.json --repo
 
 `collect.ts` calls `gh search issues`, so it needs a logged-in `gh`.
 
-To exercise collect and file without an agent or an API key, use the fake engine.
-It writes a canned result with one finding and a real PNG and GIF made by the evidence tools:
+To exercise collect and file without an agent or an API key, add `--fake`.
+It writes a canned result with one finding and a real PNG and GIF made by the evidence tools, recorded as `fake: true` at no cost:
 
 ```sh
 ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-beta.0 \
-  --engine fake --sandbox none --out ecosystem-qa/results/mealdrop/macos/claude
+  --engine claude --fake --sandbox none --out ecosystem-qa/results/mealdrop/macos/claude
 ```
 
 ## Run it in CI
@@ -60,7 +60,7 @@ The agent keys live in the `ecosystem-qa` environment, and the push token in `ec
 Each runner uploads `qa-result-<os>-<engine>` with `result.json`, the run log, the raw agent stream, the session, the evidence and the cycle branch bundle.
 `run.ts` writes the status, wall time, tokens, dollars, free disk and every check to the Step Summary.
 
-A pull request that touches `ecosystem-qa/` or the workflow runs only the smoke job: typecheck, tests and the fake engine through collect and a dry filing, with no environment and no secrets.
+A pull request that touches `ecosystem-qa/` or the workflow runs only the smoke job: typecheck, tests and a fake run through collect and a dry filing, with no environment and no secrets.
 
 ## Where results land
 

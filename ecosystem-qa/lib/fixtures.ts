@@ -42,6 +42,7 @@ export const loaded = (
       effort: 'medium',
       sandbox: os === 'windows' ? 'none' : 'docker',
       os,
+      fake: false,
     },
     storybookVersionInstalled: VERSION,
     startSha: 'a'.repeat(40),

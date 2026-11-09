@@ -102,8 +102,8 @@ export const fence = (text: string, info = '') => {
 };
 
 const sourceLines = (proposal: IssueProposal | CommentProposal, withVersion = false): string[] =>
-  proposal.sources.map(({ os, engine, model, sandbox, version }) => {
-    const where = `${os}, ${engine} (${model}), sandbox ${sandbox}`;
+  proposal.sources.map(({ os, engine, model, sandbox, version, fake }) => {
+    const where = `${os}, ${engine} (${model}${fake ? ', fake run' : ''}), sandbox ${sandbox}`;
     return `- ${withVersion ? `${version}: ` : ''}${where}`;
   });
 
@@ -222,6 +222,7 @@ export const toProposal = (group: FindingGroup, hits: IssueHit[], runUrl: string
       model: result.request.model,
       sandbox: result.request.sandbox,
       version: result.request.version,
+      fake: result.request.fake,
     })),
   };
   const known = hits.find((hit) => hit.labels.includes('qa:known'));

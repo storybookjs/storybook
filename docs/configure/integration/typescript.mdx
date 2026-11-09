@@ -14,17 +14,17 @@ TypeScript 7.0 does not include an API that Storybook can use to read your compo
 
 <If renderer="react">
 
-React projects can use TypeScript 7.1 or newer as their `typescript` package. If your project is on TypeScript 7.0, upgrade to `typescript@^7.1`. `storybook init` and `storybook upgrade` offer to do that for you.
+React projects can use TypeScript 7.1 or newer as their `typescript` package.
 
-Storybook 11.0 added `react-docgen` to React projects on TypeScript 7.0, so that they kept their docs. Once your project is on TypeScript 7.1, Storybook no longer uses it, and you can remove it from your devDependencies.
+`storybook init` and `storybook upgrade` add `react-docgen` to React projects on TypeScript 7.0, so that they keep their docs. Once your project is on TypeScript 7.1, Storybook no longer uses it, and you can remove it from your devDependencies.
 
-If another tool in your project needs the compiler API of TypeScript 6, such as typescript-eslint, install TypeScript 7 and TypeScript 6 side by side as described below. Then set [`typescript.docgenSpecifier`](../../api/main-config/main-config-typescript.mdx#docgenspecifier) to `'@typescript/native'`, so Storybook reads your component types with TypeScript 7.
+If your project stays on TypeScript 7.0, or another tool in it needs the compiler API of TypeScript 6, such as typescript-eslint, install TypeScript 7 and TypeScript 6 side by side as described below. When the TypeScript 7 package is 7.1 or newer, set [`typescript.docgenSpecifier`](../../api/main-config/main-config-typescript.mdx#docgenspecifier) to `'@typescript/native'`, so Storybook reads your component types with it.
 
 </If>
 
 <If renderer="angular">
 
-Angular's compiler needs TypeScript 6, so install TypeScript 7 and TypeScript 6 side by side as described below. With `@storybook/angular-vite`, set [`typescript.docgenSpecifier`](../../api/main-config/main-config-typescript.mdx#docgenspecifier) to `'@typescript/native'`, so Storybook reads your component types with TypeScript 7.1.
+Angular's compiler needs TypeScript 6, so install TypeScript 7 and TypeScript 6 side by side as described below. With `@storybook/angular-vite`, when the TypeScript 7 package is 7.1 or newer, set [`typescript.docgenSpecifier`](../../api/main-config/main-config-typescript.mdx#docgenspecifier) to `'@typescript/native'`, so Storybook reads your component types with it.
 
 </If>
 
@@ -39,7 +39,7 @@ To keep `tsc` on TypeScript 7, install TypeScript 7 and TypeScript 6 side by sid
 ```json
 {
   "devDependencies": {
-    "@typescript/native": "npm:typescript@^7.1.0",
+    "@typescript/native": "npm:typescript@^7",
     "typescript": "npm:@typescript/typescript6@^6.0.2"
   }
 }

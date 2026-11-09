@@ -26,9 +26,18 @@ const keyPaths = (value: unknown, depth = 0): string[] => {
   });
 };
 
+// The current render of each canvas, to tell if it mounted
+const renders = new WeakMap<Element, { mounted: boolean }>();
+
 // The framework's annotations come before the project's, so this runs before every other
 // `beforeEach`, and stories set their mocks on top of the defaults
-export const beforeEach: Preview['beforeEach'] = ({ id, parameters, canvasElement, viewMode }) => {
+export const beforeEach: Preview['beforeEach'] = ({
+  id,
+  parameters,
+  canvasElement,
+  viewMode,
+  abortSignal,
+}) => {
   if (parameters?.sveltekit_experimental !== undefined) {
     const keys = keyPaths(parameters.sveltekit_experimental);
     throw new SvelteKitMockParametersRemovedError({
@@ -45,15 +54,36 @@ export const beforeEach: Preview['beforeEach'] = ({ id, parameters, canvasElemen
     setAfterNavigate({});
   });
   const stopLinkClicks = interceptLinkClicks({ canvasElement, viewMode });
-  return () => {
+  const cleanup = () => {
     stopLinkClicks();
     endDocsStory?.();
   };
+  // Core drops this cleanup when a later `beforeEach` throws, so the story never mounts. Core
+  // aborts it when it tears it down. A mounted story also gets aborts, such as on a hot update
+  // during play, and keeps going.
+  const render = { mounted: false };
+  if (canvasElement) {
+    renders.set(canvasElement, render);
+  }
+  abortSignal?.addEventListener(
+    'abort',
+    () => {
+      if (!render.mounted) {
+        cleanup();
+      }
+    },
+    { once: true }
+  );
+  return cleanup;
 };
 
 // Runs when a story mounts, after every `beforeEach`, so the setup of a story on a docs page ends
 export const decorators: Preview['decorators'] = [
   (Story, { canvasElement, viewMode }) => {
+    const render = renders.get(canvasElement);
+    if (render) {
+      render.mounted = true;
+    }
     if (viewMode === 'docs') {
       endDocsSetup(canvasElement, pageDefaultsChanged());
     }

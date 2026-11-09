@@ -137,11 +137,9 @@ const meta = {
       </MockManagerProvider>
     ),
   ],
+  globals: { viewport: { value: 'mobile1' } },
   parameters: {
     layout: 'fullscreen',
-    viewport: {
-      defaultViewport: 'mobile1',
-    },
     chromatic: { viewports: [320] },
   },
   args: {

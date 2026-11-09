@@ -1,8 +1,4 @@
-import { readdir, rm } from 'node:fs/promises';
-import { homedir } from 'node:os';
-
 import { expect, test } from '@playwright/test';
-import { join } from 'pathe';
 import process from 'process';
 
 import { SbPage, hasOnboardingFeature } from './util.ts';
@@ -11,49 +7,29 @@ const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 const type = process.env.STORYBOOK_TYPE || 'dev';
 
-async function clearChecklistCache() {
-  const storybookCacheDir = join(
-    process.env.STORYBOOK_SANDBOX_DIR!,
-    'node_modules',
-    '.cache',
-    'storybook'
-  );
-  const storybookCacheEntries = await readdir(storybookCacheDir, { withFileTypes: true }).catch(
-    () => []
-  );
-
-  // Storybook scopes cache entries by version, so remove the checklist for any installed version.
-  await Promise.all(
-    storybookCacheEntries
-      .filter((entry) => entry.isDirectory())
-      .map((entry) =>
-        rm(join(storybookCacheDir, entry.name, 'default', 'checklist'), {
-          recursive: true,
-          force: true,
-        })
-      )
-  );
-}
-
 test.describe('addon-onboarding', () => {
   test.skip(type === 'build', `Skipping addon tests for production Storybooks`);
   test.skip(
     !hasOnboardingFeature(templateName),
     `Skipping ${templateName}, which does not have addon-onboarding set up.`
   );
-  test.skip(
-    templateName === 'vue3-vite/docgen-server-ts',
-    `Skipping ${templateName}, whose onboarding coverage is carried by vue3-vite/default-ts.`
-  );
   test('the onboarding flow', async ({ page }) => {
-    // eslint-disable-next-line playwright/no-conditional-in-test
-    if (process.env.CI) {
-      await rm(join(homedir(), '.storybook', 'settings.json'), { force: true });
-      await clearChecklistCache();
-    }
+    test.setTimeout(60_000);
+
+    const sbPage = new SbPage(page, expect);
+    await page.goto(`${storybookUrl}/?path=/story/example-button--primary`);
+    await sbPage.waitUntilLoaded();
+    await page.evaluate(async () => {
+      const { internal_checklistStore, internal_universalChecklistStore } = (
+        window as unknown as {
+          __STORYBOOK_API__: typeof import('storybook/manager-api');
+        }
+      ).__STORYBOOK_API__;
+      await internal_universalChecklistStore.untilReady();
+      internal_checklistStore.reset('onboardingSurvey');
+    });
 
     await page.goto(`${storybookUrl}/?path=/onboarding`);
-    const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
 
     await expect(page.getByRole('heading', { name: 'Meet your new frontend' })).toBeVisible();

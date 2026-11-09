@@ -2,8 +2,11 @@ import * as v from 'valibot';
 
 import { defineService } from '../../service-definition.ts';
 import type { ServiceInstanceOf } from '../../types.ts';
-import type { ModuleGraphIndexService } from '../module-graph-index/definition.ts';
-import { storiesByFileSchema, storyIndexPathSchema } from './schemas.ts';
+import {
+  storiesForFilesInputSchema,
+  storiesForFilesOutputSchema,
+  storyIndexPathSchema,
+} from './schemas.ts';
 import type { ModuleGraphServiceState } from './types.ts';
 import { toStoryIndexPath } from './types.ts';
 
@@ -58,7 +61,7 @@ const changeDetectionReadinessSchema = v.variant('status', [
     status: v.literal('unavailable'),
     reason: v.pipe(
       v.string(),
-      v.description('Why change detection cannot publish statuses, such as disabled or no git.')
+      v.description('Why change detection cannot publish statuses, such as no git.')
     ),
     error: v.optional(
       v.object({
@@ -85,7 +88,7 @@ export const moduleGraphServiceDef = defineService({
   id: 'core/module-graph',
   internal: true,
   description:
-    'Story module dependency graph: status and revision counters for reactive updates. The reverse index lives in `core/module-graph-index`.',
+    'Story module dependency graph: status and revision counters for reactive updates, plus on-demand reverse-index lookups answered by the process that owns the graph.',
   initialState: {
     workingDir: process.cwd(),
     status: { value: 'booting' },
@@ -109,7 +112,7 @@ export const moduleGraphServiceDef = defineService({
     },
     changeDetectionReadiness: {
       description:
-        'Change-detection scan readiness. Distinct from `status`: the graph can be ready while change detection is disabled or its initial scan has failed.',
+        'Change-detection scan readiness. Distinct from `status`: the graph can be ready while git is unusable or the initial scan has failed.',
       input: noInputSchema,
       output: changeDetectionReadinessSchema,
       load: async (_input, ctx) => {
@@ -188,68 +191,30 @@ export const moduleGraphServiceDef = defineService({
         storyFiles: ctx.self.state.latestChangedStoryFiles,
       }),
     },
-    /** @deprecated Use {@link status} instead. */
-    getStatus: {
-      description: 'Deprecated alias for `status`. Use `status` instead.',
-      input: noInputSchema,
-      output: moduleGraphStatusSchema,
-      handler: (input, ctx) => ctx.self.queries.status.get(input),
-      load: async (input, ctx) => {
-        await ctx.self.queries.status.loaded(input);
-      },
-    },
-    /** @deprecated Use {@link graphRevision} instead. */
-    getGraphRevision: {
-      description: 'Deprecated alias for `graphRevision`. Use `graphRevision` instead.',
-      input: v.optional(
-        v.object({
-          storyFiles: v.array(
-            v.pipe(
-              v.string(),
-              v.description(
-                'Story file to scope the watch to. Accepts absolute paths, story-index-style relative paths with `./`, or relative paths without `./`. Pass an empty array to watch nothing (returns 0).'
-              )
-            )
-          ),
-        })
-      ),
-      output: v.number(),
-      handler: (input, ctx) => ctx.self.queries.graphRevision.get(input),
-      load: async (input, ctx) => {
-        await ctx.self.queries.graphRevision.loaded(input);
-      },
-    },
   },
   commands: {
     _applyGraphSnapshot: {
       internal: true,
       description:
-        'Replaces the reverse index after the initial graph build. Called by the graph engine, not by external consumers.',
+        'Marks the graph ready after the initial build and seeds a revision for every story file. Called by the graph engine, not by external consumers.',
       input: v.object({
-        storiesByFile: v.pipe(
-          storiesByFileSchema,
+        storyFiles: v.pipe(
+          v.array(storyIndexPathSchema),
           v.description(
-            'Complete relative reverse index keyed by story-index-style source file paths. Values map affected story-index-style story file paths to breadth-first-search depths.'
+            'Every story file in the story index at build time, as story-index-style paths.'
           )
         ),
       }),
       output: v.void(),
       handler: async (input, ctx) => {
-        await ctx
-          .getService<ModuleGraphIndexService>('core/module-graph-index', { internal: true })
-          .commands._applyIndex({
-            storiesByFile: input.storiesByFile,
-          });
         ctx.self.setState((state) => {
           state.status = { value: 'ready' };
           // The snapshot is the baseline, not a change, so it does not advance the revision. Seed
           // every known story to revision 0 so scoped `graphRevision` reads track existing keys
           // and observe later per-story bumps.
           state.storyChangeRevisions = {};
-          for (const stories of Object.values(input.storiesByFile)) {
-            for (const storyFile of Object.keys(stories)) {
-              state.storyChangeRevisions[storyFile] = 0;
-            }
+          for (const storyFile of input.storyFiles) {
+            state.storyChangeRevisions[storyFile] = 0;
           }
           state.latestChangedStoryFiles = [];
         });
@@ -258,7 +223,7 @@ export const moduleGraphServiceDef = defineService({
     _applyGraphUpdate: {
       internal: true,
       description:
-        'Advances file activity for every processed file event. When `bumpedStoryFiles` is non-empty, also bumps graph revision, advances `graphChangedAt`, and records those stories. Called by the graph engine after any index apply for the same patch; does not write the reverse index.',
+        'Advances file activity for every processed file event. When `bumpedStoryFiles` is non-empty, also bumps graph revision, advances `graphChangedAt`, and records those stories. Called by the graph engine after each settled patch.',
       input: v.object({
         bumpedStoryFiles: v.pipe(
           v.array(storyIndexPathSchema),
@@ -304,6 +269,12 @@ export const moduleGraphServiceDef = defineService({
           state.status = input as ModuleGraphServiceState['status'];
         });
       },
+    },
+    storiesForFiles: {
+      description:
+        'Returns, for each input file (same order), story-index-relative story files that depend on it and their breadth-first-search depth: the shortest number of import edges between the input file and the story file. Waits for in-flight graph updates first.',
+      input: storiesForFilesInputSchema,
+      output: storiesForFilesOutputSchema,
     },
     _waitForSettledEngine: {
       internal: true,

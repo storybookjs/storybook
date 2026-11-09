@@ -6,9 +6,12 @@ const DEFAULT_VIEWPORT_SIZE = { width: 1280, height: 720 };
 
 module.exports = {
   async preVisit(page, story) {
-    // Accesses the story's parameters and retrieves the viewport used to render it
+    // Accesses the story's globals and retrieves the viewport used to render it
     const context = await getStoryContext(page, story);
-    const viewportName = context.parameters?.viewport?.defaultViewport;
+    const viewportGlobal = context.globals?.viewport;
+    // The viewport global may be a string or a `{ value }` object depending on how it was set
+    const viewportName =
+      typeof viewportGlobal === 'string' ? viewportGlobal : viewportGlobal?.value;
     const viewportParameter = MINIMAL_VIEWPORTS[viewportName];
 
     if (viewportParameter) {
@@ -38,9 +41,12 @@ const DEFAULT_VIEWPORT_SIZE = { width: 1280, height: 720 };
 
 const config: TestRunnerConfig = {
   async preVisit(page, story) {
-    // Accesses the story's parameters and retrieves the viewport used to render it
+    // Accesses the story's globals and retrieves the viewport used to render it
     const context = await getStoryContext(page, story);
-    const viewportName = context.parameters?.viewport?.defaultViewport;
+    const viewportGlobal = context.globals?.viewport;
+    // The viewport global may be a string or a `{ value }` object depending on how it was set
+    const viewportName =
+      typeof viewportGlobal === 'string' ? viewportGlobal : viewportGlobal?.value;
     const viewportParameter = MINIMAL_VIEWPORTS[viewportName];
 
     if (viewportParameter) {

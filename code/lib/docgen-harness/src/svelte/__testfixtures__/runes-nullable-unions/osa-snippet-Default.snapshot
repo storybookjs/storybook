@@ -1,0 +1,5 @@
+<script>
+  import GradioButton from './GradioButton.svelte';
+</script>
+
+<GradioButton value={null} scale={0.5} />

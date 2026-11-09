@@ -16,12 +16,12 @@ import {
 import {
   batchTestsRule,
   editOverWriteRule,
+  keepUserWorkRule,
   nodeModuleReadsRule,
   noPolishRule,
   packageManagerRule,
   preferSharedFixesRule,
   readBudgetRule,
-  toolsVsShellRule,
 } from './partials/rules.ts';
 import {
   buildPortalStep,
@@ -62,10 +62,10 @@ export function instructions(projectInfo: ProjectInfo): string {
     ## Rules of engagement (follow strictly — these are time budgets, not suggestions)
 
     ${listRules([
-      toolsVsShellRule(ctx),
       nodeModuleReadsRule(ctx),
       readBudgetRule(ctx),
       editOverWriteRule(ctx),
+      keepUserWorkRule(ctx),
       batchTestsRule(ctx),
       packageManagerRule(ctx),
       preferSharedFixesRule(ctx),
@@ -105,7 +105,7 @@ export function instructions(projectInfo: ProjectInfo): string {
     - Writing stories: ${docsUrl('writing-stories')}
     - Decorators: ${docsUrl('writing-stories/decorators')}
     - Play functions: ${docsUrl('writing-stories/play-function')}
-    - Vitest integration: ${docsUrl('writing-tests/vitest-plugin')}
+    - Vitest integration: ${docsUrl('writing-tests/integrations/vitest-addon')}
 
     Append \`?codeOnly=true\` to any docs URL for code-only snippets. Don't fetch unless a specific question can't be answered from this prompt.
   `;

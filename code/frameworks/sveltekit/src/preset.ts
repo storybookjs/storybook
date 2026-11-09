@@ -1,12 +1,17 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { PresetProperty } from 'storybook/internal/types';
+import type { PresetProperty, PresetPropertyFn } from 'storybook/internal/types';
 
 import { withoutVitePlugins } from '@storybook/builder-vite';
 import { viteFinal as svelteViteFinal } from '@storybook/svelte-vite/preset';
 
 import { configOverrides } from './plugins/config-overrides.ts';
-import { mockSveltekitStores } from './plugins/mock-sveltekit-stores.ts';
+import { devPublicEnv } from './plugins/dev-public-env.ts';
+import { guardServerModules } from './plugins/guard-server-modules.ts';
+import { mockSveltekitModules } from './plugins/mock-sveltekit-modules.ts';
+import { syncSvelteKit } from './plugins/sync.ts';
 import { type StorybookConfig } from './types.ts';
 
 export const core: PresetProperty<'core'> = {
@@ -17,6 +22,17 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
   ...entry,
   fileURLToPath(import.meta.resolve('@storybook/sveltekit/preview')),
 ];
+
+// SvelteKit makes its `static` directory Vite's public directory. In dev mode Vite serves it, but
+// Storybook's build only copies the public directory from the Vite config file
+export const staticDirs: PresetPropertyFn<'staticDirs'> = async (values = [], options) => {
+  if (options.configType !== 'PRODUCTION') {
+    return values;
+  }
+
+  const assetsDir = resolve(options.configDir, '..', 'static');
+  return existsSync(assetsDir) ? [...values, { from: assetsDir, to: '/' }] : values;
+};
 
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, options) => {
   const baseConfig = await svelteViteFinal(config, options);
@@ -30,7 +46,10 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
         'vite-plugin-sveltekit-guard',
       ])),
       configOverrides(),
-      mockSveltekitStores(),
+      syncSvelteKit(),
+      devPublicEnv(),
+      mockSveltekitModules(),
+      guardServerModules(),
     ],
   };
 };
@@ -38,6 +57,5 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
 export const optimizeViteDeps = [
   '@storybook/sveltekit/internal/mocks/app/forms',
   '@storybook/sveltekit/internal/mocks/app/navigation',
-  '@storybook/sveltekit/internal/mocks/app/stores',
   '@storybook/sveltekit/internal/mocks/app/state.svelte.js',
 ];

@@ -1,0 +1,17 @@
+{
+  "id": "webcomponentsstorydocs-csf4-shapes",
+  "name": "csf-shapes",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsstorydocs-csf4-shapes--bare": {
+      "id": "webcomponentsstorydocs-csf4-shapes--bare",
+      "name": "Bare",
+      "snippet": "<csf-shapes label="Factory"></csf-shapes>",
+    },
+    "webcomponentsstorydocs-csf4-shapes--primary": {
+      "id": "webcomponentsstorydocs-csf4-shapes--primary",
+      "name": "Primary",
+      "snippet": "<csf-shapes label="Factory" count="3"></csf-shapes>",
+    },
+  },
+}

@@ -3,7 +3,7 @@ import React from 'react';
 import { CheckIcon, CircleIcon, PlayIcon, StopAltIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
-import { styled, useTheme } from 'storybook/theming';
+import { styled, useTheme } from 'storybook/theming/emotion';
 
 import { type Call, CallStates } from '../../instrumenter/types.ts';
 

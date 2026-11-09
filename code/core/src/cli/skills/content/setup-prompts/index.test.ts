@@ -147,3 +147,50 @@ it('uses the detected renderer instead of guessing React from a custom framework
   expect(markdown).toContain('@custom/framework');
   expect(markdown).not.toMatch(/react|jsx|tsx|<Story|SessionProvider/i);
 });
+
+it.each([...new Set(PROMPT_NAMES)])(
+  'names no Glob or Grep tools and no broken Vitest docs link in the %s prompt',
+  async (name) => {
+    vi.stubEnv('EVAL_SETUP_PROMPT', name);
+    const { markdown } = await getSetupMarkdownOutput(projectInfo);
+
+    expect(markdown).not.toMatch(/\b(Glob|Grep)\b/);
+    expect(markdown).not.toContain('writing-tests/vitest-plugin');
+  }
+);
+
+it('only warns against npx when the project uses another package manager', async () => {
+  vi.stubEnv('EVAL_SETUP_PROMPT', '');
+  const npm = await getSetupMarkdownOutput(projectInfo);
+  const pnpm = await getSetupMarkdownOutput({
+    ...projectInfo,
+    packageManager: JsPackageManagerFactory.getPackageManager({ force: PackageManagerName.PNPM }),
+    packageManagerName: 'pnpm',
+  });
+
+  expect(npm.markdown).not.toContain('Do not use `npx`');
+  expect(pnpm.markdown).toContain('Do not use `npx`');
+});
+
+it('has the agent add the Vitest addon only when the project lacks it', async () => {
+  vi.stubEnv('EVAL_SETUP_PROMPT', '');
+  const without = await getSetupMarkdownOutput(projectInfo);
+  const withAddon = await getSetupMarkdownOutput({
+    ...projectInfo,
+    addons: ['@storybook/addon-vitest'],
+  });
+
+  expect(without.markdown).toContain('npx storybook add @storybook/addon-vitest --yes');
+  expect(without.markdown).not.toContain('storybook build');
+  expect(withAddon.markdown).not.toContain('storybook add @storybook/addon-vitest');
+});
+
+it('only lets the agent delete the examples that storybook init generated', async () => {
+  vi.stubEnv('EVAL_SETUP_PROMPT', '');
+  const { markdown } = await getSetupMarkdownOutput(projectInfo);
+
+  expect(markdown).toContain('`Configure.mdx` next to `Button`, `Header`, and `Page`');
+  expect(markdown).toContain("Don't delete any other stories.");
+  expect(markdown).toContain('Never delete, move, or rewrite the stories');
+  expect(markdown).toContain('add your stories to that file instead of writing a second one');
+});

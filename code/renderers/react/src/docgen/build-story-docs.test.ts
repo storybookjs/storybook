@@ -50,6 +50,26 @@ afterEach(() => {
 });
 
 describe('buildStoryDocsPayload', () => {
+  it('uses the declared component name for an args-only story with a local component', async () => {
+    tempDir = createTempDir('story-docs-local-component');
+    const files = writeFiles(tempDir, {
+      'Grid.stories.tsx': dedent`
+        import React from 'react';
+        const Component = ({ label }: { label: string }) => <div>{label}</div>;
+        export default { component: Component, title: 'Curation/Grid' };
+        export const WithMedia = { args: { label: 'image' } };
+      `,
+    });
+    const payload = await buildStoryDocsPayload(
+      { entry: makeStoryIndexEntry(files['Grid.stories.tsx'], 'Curation/Grid') },
+      { resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)) }
+    );
+
+    expect(Object.values(payload!.stories)[0]).toMatchObject({
+      snippet: expect.stringContaining('<Component label="image"'),
+    });
+  });
+
   it('extracts snippets, descriptions, and imports for one component', async () => {
     tempDir = createTempDir('story-docs-build');
 

@@ -226,6 +226,7 @@ export const automigrate = async ({
       fixSummary,
       skippedFiles: fileFailures.filter(({ fixId }) => fixResults[fixId] === FixStatus.SUCCEEDED)
         .length,
+      dryRun,
     });
   }
 

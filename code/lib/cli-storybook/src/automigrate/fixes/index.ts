@@ -2,14 +2,17 @@ import { csfFactories } from '../../codemod/csf-factories.ts';
 import type { CommandFix, Fix } from '../types.ts';
 import { angularToAngularVite } from './angular-to-angular-vite.ts';
 import { angularViteRemoveCompodoc } from './angular-vite-remove-compodoc.ts';
+import { webComponentsRuntimeManifest } from './web-components-runtime-manifest.ts';
 import { csfNextMockedArgs } from './csf-next-mocked-args.ts';
 import { addonSvelteCsfToCore } from './addon-svelte-csf-to-core.ts';
 import { argtypesDefaultValue } from './argtypes-default-value.ts';
 import { componentSubtitle } from './component-subtitle.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
-import { enableExperimentalDocgenServer } from './experimental-features.ts';
+import { docgenServer } from './docgen-server.ts';
 import { nextjsToNextjsVite } from './nextjs-to-nextjs-vite.ts';
 import { reactViteToTanstackReact } from './react-vite-to-tanstack-react.ts';
+import { removeChangeDetectionFlag } from './remove-change-detection-flag.ts';
+import { removeLegacyFeatureFlags } from './remove-legacy-feature-flags.ts';
 import { removeExperimentalReview } from './remove-experimental-review.ts';
 import { rnOndeviceAddonsToDeviceAddons } from './rn-ondevice-addons-to-device-addons.ts';
 import { storybookPackageNameConflict } from './storybook-package-name-conflict.ts';
@@ -18,6 +21,8 @@ import { setConfigLayout } from './set-config-layout.ts';
 import { sidebarFilters } from './sidebar-filters.ts';
 import { skills } from './skills.ts';
 import { tagFilterApi } from './tag-filter-api.ts';
+import { typescriptCompilerApi, typescriptDependency } from './typescript-dependency.ts';
+import { typescript7ReactDocgen } from './typescript-7-react-docgen.ts';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies.ts';
 import { vitestSetupFile } from './vitest-setup-file.ts';
 import { wrapGetAbsolutePath } from './wrap-getAbsolutePath.ts';
@@ -34,6 +39,7 @@ export const allFixes: Fix[] = [
   nextjsToNextjsVite,
   angularToAngularVite,
   angularViteRemoveCompodoc,
+  webComponentsRuntimeManifest,
   reactViteToTanstackReact,
   addonSvelteCsfToCore,
   wrapGetAbsolutePath,
@@ -44,8 +50,14 @@ export const allFixes: Fix[] = [
   sidebarFilters,
   csfNextMockedArgs,
   removeExperimentalReview,
-  enableExperimentalDocgenServer,
+  removeChangeDetectionFlag,
+  removeLegacyFeatureFlags,
   skills,
+  docgenServer,
+  typescriptDependency,
+  typescriptCompilerApi,
+  // TEMPORARY(ts-7.1): see `typescript-7-react-docgen.ts`.
+  typescript7ReactDocgen,
 ];
 
 export const commandFixes: CommandFix[] = [csfFactories];

@@ -1,4 +1,5 @@
 import { versions } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import type { ToolsetMethodReport } from '../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId, toCliMethodName } from '../../shared/open-service/toolset-names.ts';
@@ -193,7 +194,7 @@ export async function runToolsCommand(
   };
 
   // `-o/--output` applies to whatever the run produced — help, intercepts, and tool results
-  // alike — matching the ai CLI, where the output file always receives the printed text.
+  // alike.
   const result = (
     partial: Omit<ToolsRunResult, 'outputPath' | 'attachMode' | 'requestedMode'>
   ): ToolsRunResult => ({
@@ -337,6 +338,13 @@ async function dispatchTools(
     });
   }
 
+  // Warnings logged while a tool runs, such as an empty stories glob, would print on stdout ahead of
+  // the result. They are muted only at the default level, and only in-process: a child host's
+  // stderr, its errors included, is forwarded at warn level and has to stay visible.
+  const previousLogLevel = logger.getLogLevel();
+  if (previousLogLevel === 'info' && tools.host === 'in-process') {
+    logger.setLogLevel('error');
+  }
   try {
     const outcome = await tools.call(method.ref, parsed.args, {
       ...(tools.storybook.url ? { origin: tools.storybook.url } : {}),
@@ -366,6 +374,8 @@ async function dispatchTools(
       output: error instanceof Error ? error.message : String(error),
       outcome: { kind: 'error', error },
     });
+  } finally {
+    logger.setLogLevel(previousLogLevel);
   }
 }
 

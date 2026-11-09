@@ -174,14 +174,14 @@ const map =
     };
   };
 
-async function getContent(input: any) {
+async function getContent(input: any, configDir: string) {
   if (input.type === 'virtual') {
     const { type, name, ...rest } = input;
     return rest;
   }
   const name = input.name ? input.name : input;
 
-  return importModule(name);
+  return importModule(safeResolveModule({ specifier: name, parent: configDir }) ?? name);
 }
 
 export async function loadPreset(
@@ -196,7 +196,7 @@ export async function loadPreset(
     // @ts-expect-error (Converted from ts-ignore)
     const presetOptions = input.options ? input.options : {};
 
-    let contents = await getContent(input);
+    let contents = await getContent(input, storybookOptions.configDir);
 
     if (typeof contents === 'function') {
       // allow the export of a preset to be a function, that gets storybookOptions
@@ -282,15 +282,13 @@ async function loadPresets(
     return [];
   }
 
-  return (
-    await Promise.all(
-      presets.map(async (preset) => {
-        return loadPreset(preset, level, storybookOptions);
-      })
-    )
-  ).reduce((acc, loaded) => {
-    return acc.concat(loaded);
-  }, []);
+  // Sequential on purpose: a CJS preset that require()s an ESM module still being import()ed in parallel crashes with ERR_INTERNAL_ASSERTION.
+  const loaded: LoadedPreset[] = [];
+  for (const preset of presets) {
+    loaded.push(...(await loadPreset(preset, level, storybookOptions)));
+  }
+
+  return loaded;
 }
 
 function applyPresets(

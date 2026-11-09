@@ -5,6 +5,8 @@ import { dirname, join } from 'node:path';
 import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
 import type { Options } from 'storybook/internal/types';
 
+import { previewRuntimePath } from '../utils/preview-runtime-path.ts';
+
 import * as pkg from 'empathic/package';
 import { init, parse } from 'es-module-lexer';
 import MagicString from 'magic-string';
@@ -101,22 +103,36 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
 
         const [imports] = parse(code);
         const src = new MagicString(code);
+        let didRewrite = false;
         imports.forEach(({ n: path, ss: startPosition, se: endPosition }) => {
           const packageName = path;
           if (packageName && globalsList.includes(packageName)) {
             const importStatement = src.slice(startPosition, endPosition);
             const transformedImport = rewriteImport(importStatement, externals, packageName);
             src.update(startPosition, endPosition, transformedImport);
+            didRewrite = true;
           }
         });
 
+        const rewritten = src.toString();
         return {
-          code: src.toString(),
+          code: didRewrite ? ensurePreviewRuntimePrecedesGlobals(rewritten, id) : rewritten,
           map: null,
         };
       },
     },
   } satisfies Plugin;
+}
+
+const bundledPreviewRuntimePattern = /[/\\]dist[/\\]preview[/\\]/;
+
+// Call setup() so init still runs when side-effect imports of this package are dropped.
+export function ensurePreviewRuntimePrecedesGlobals(code: string, id: string) {
+  if (bundledPreviewRuntimePattern.test(id.split('?')[0])) {
+    return code;
+  }
+
+  return `import { setup as __sbInitializePreviewGlobals } from ${JSON.stringify(previewRuntimePath)};\n__sbInitializePreviewGlobals();\n${code}`;
 }
 
 function getDefaultImportReplacement(match: string) {

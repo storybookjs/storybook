@@ -75,8 +75,9 @@ vi.mock('./automigrate/helpers/mainConfigFile', () => {
   return MockedMainConfigFileHelper;
 });
 vi.mock('./codemod/helpers/csf-factories-utils');
-vi.mock('storybook/internal/common', () => {
+vi.mock('storybook/internal/common', async (importOriginal) => {
   return {
+    ...(await importOriginal<typeof import('storybook/internal/common')>()),
     getStorybookInfo: vi.fn(() => ({ mainConfig: {}, configDir: '' })),
     serverRequire: vi.fn(() => ({})),
     loadMainConfig: vi.fn(() => ({})),

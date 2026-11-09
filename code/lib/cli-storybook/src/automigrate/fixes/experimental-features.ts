@@ -1,7 +1,5 @@
-import type { StorybookConfigRaw, StorybookFeatures } from 'storybook/internal/types';
-import { SupportedRenderer } from 'storybook/internal/types';
+import type { StorybookFeatures } from 'storybook/internal/types';
 
-import { getFrameworkPackageName, getRendererName } from '../helpers/mainConfigFile.ts';
 import { crossesVersionBoundary, isAtOrPastVersion } from '../helpers/versionBoundary.ts';
 import type { Fix } from '../types.ts';
 
@@ -11,7 +9,6 @@ interface ExperimentalFeatureFixOptions {
   introducedIn: string;
   link: string;
   prompt: string;
-  isSupported?: (mainConfig: StorybookConfigRaw) => boolean;
 }
 
 export const createExperimentalFeatureFix = ({
@@ -20,7 +17,6 @@ export const createExperimentalFeatureFix = ({
   introducedIn,
   link,
   prompt,
-  isSupported,
 }: ExperimentalFeatureFixOptions): Fix => ({
   id,
   link,
@@ -28,9 +24,6 @@ export const createExperimentalFeatureFix = ({
   prompt: () => prompt,
 
   async check({ mainConfig, beforeVersion, storybookVersion, requested }) {
-    if (isSupported && !isSupported(mainConfig)) {
-      return null;
-    }
     if (!isAtOrPastVersion(storybookVersion, introducedIn)) {
       return null;
     }
@@ -52,22 +45,7 @@ export const createExperimentalFeatureFix = ({
   ],
 });
 
-export const enableExperimentalDocgenServer = createExperimentalFeatureFix({
-  id: 'enable-experimental-docgen-server',
-  name: 'experimentalDocgenServer',
-  introducedIn: '10.5.0',
-  isSupported: (mainConfig) =>
-    getRendererName(mainConfig) === SupportedRenderer.REACT ||
-    ['@storybook/vue3-vite', '@storybook/angular-vite'].includes(
-      getFrameworkPackageName(mainConfig) ?? ''
-    ),
-  link: 'https://storybook.js.org/docs/api/main-config/main-config-features#experimentaldocgenserver',
-  prompt: 'Enable experimentalDocgenServer for faster startup and more accurate Controls/ArgTypes.',
-});
-
-const FEATURE_FLAG_FIXES = {
-  experimentalDocgenServer: enableExperimentalDocgenServer,
-} satisfies Partial<Record<keyof StorybookFeatures, Fix>>;
+const FEATURE_FLAG_FIXES: Partial<Record<keyof StorybookFeatures, Fix>> = {};
 
 export const resolveRequestedFeatures = (
   features: string | undefined
@@ -81,12 +59,12 @@ export const resolveRequestedFeatures = (
   const unknown = names.filter((name) => !Object.hasOwn(FEATURE_FLAG_FIXES, name));
   if (unknown.length > 0) {
     throw new Error(
-      `Unknown feature flag(s): ${unknown.join(', ')}. Available: ${Object.keys(FEATURE_FLAG_FIXES).join(', ')}.`
+      `Unknown feature flag(s): ${unknown.join(', ')}. Available: ${Object.keys(FEATURE_FLAG_FIXES).join(', ') || 'none'}.`
     );
   }
 
   return names.map((name) => ({
     name,
-    fixId: FEATURE_FLAG_FIXES[name as keyof typeof FEATURE_FLAG_FIXES].id,
+    fixId: FEATURE_FLAG_FIXES[name as keyof StorybookFeatures]!.id,
   }));
 };

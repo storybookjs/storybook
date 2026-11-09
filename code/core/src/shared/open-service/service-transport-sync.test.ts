@@ -9,7 +9,7 @@ import {
   type EntryPayload,
 } from './service-channel.ts';
 import { createReconciler, formatFrontier, type LogWindow } from './service-sync.ts';
-import { connectRuntimeToChannel } from './service-transport.ts';
+import { SYNC_REQUEST_SILENCE_MS, connectRuntimeToChannel } from './service-transport.ts';
 
 vi.mock('storybook/internal/client-logger', { spy: true });
 
@@ -89,6 +89,21 @@ describe('connectRuntimeToChannel request policy', () => {
     channel.emitExternal(SERVICE_ENTRY, entry('w', 1, '/missing/y'));
 
     expect(emitted(SERVICE_SYNC_REQUEST)).toHaveLength(1);
+  });
+
+  it('does not keep the process alive while it waits for sync replies', () => {
+    const { channel, emitted } = connect();
+    vi.advanceTimersByTime(1000);
+    channel.emit.mockClear();
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+
+    channel.emitExternal(SERVICE_ENTRY, entry('w', 1, '/missing/y'));
+
+    expect(emitted(SERVICE_SYNC_REQUEST)).toHaveLength(1);
+    const silence = setTimeoutSpy.mock.calls.findIndex(([, ms]) => ms === SYNC_REQUEST_SILENCE_MS);
+    expect(silence).not.toBe(-1);
+    expect((setTimeoutSpy.mock.results[silence].value as NodeJS.Timeout).hasRef()).toBe(false);
+    setTimeoutSpy.mockRestore();
   });
 
   it('keeps one request outstanding, queues the next repair, and sends it after 1 s of silence', () => {

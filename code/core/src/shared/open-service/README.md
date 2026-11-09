@@ -227,6 +227,7 @@ Query handlers do **not** receive `commands` or `setState`. Mutations belong in 
 **`load` is a reactive, idempotent warming step.** For an active subscription, `load` re-fires whenever the external signals it reads synchronously change — same-service fields and cross-service reads via `getService(...).queries.*` alike — turning a query into a reactive async resource (like a TanStack Query / SolidJS `createResource` / Vue async `watchEffect`). This means:
 
 - **`load` must be idempotent.** Re-running it with the same dependencies must produce the same state. Any genuinely one-shot side effect belongs in a command invoked conditionally, never in `load` itself.
+- **Don't read state that the load's own command writes.** That write re-runs the load at once, and the first run's later writes are dropped: a command that writes twice loses its second write, and a status check runs the command twice. In development the runtime warns when this drops a write. Put the check in the command, and let the load just call the command.
 - **Read dependencies synchronously, up front.** Only reads in the load's synchronous prefix (before the first `await`) are tracked. Read the values you depend on first, then do async work — the same idiom every signal-based resource uses.
 - **Loads that read no external signal fire exactly once** (the common case: `await ctx.self.commands.x(input)`), so existing loads are unaffected.
 - A bare `query.get()` read never fires a load and is never reactive. A `.loaded()` call fires loads but keeps one-shot-per-call semantics. Reactivity is scoped to subscriptions and is torn down when the last subscriber unsubscribes.
@@ -309,9 +310,6 @@ be overridden at `registerService()` time. Static snapshot building is unaffecte
 
 Public query names are nouns or noun phrases (`docgen`, `status`, `recordFields`) without a `get`
 prefix — callers already use `.get()`, `.loaded()`, and `.subscribe()` on the query handle.
-
-`core/module-graph` keeps deprecated `getStatus` and `getGraphRevision` aliases that delegate to
-`status` and `graphRevision` for backwards compatibility with external consumers.
 
 ### Internal operation naming
 
@@ -542,7 +540,10 @@ State is a **deep reactive proxy** (`deepSignal` from `deepsignal`, backed by `@
 created in [service-runtime.ts](./service-runtime.ts). There is no top-level state atom and no Immer:
 
 - Reading a field through `ctx.self.state` tracks a fine-grained signal for exactly that field
-  (including not-yet-present record keys, which fire when the key is later added).
+  (including not-yet-present record keys, which fire when the key is later added). Only property
+  reads and key enumeration (`Object.keys`) are tracked. `key in state.record`, `Object.hasOwn` and
+  other own-key checks are not, so a handler that checks a key this way does not re-run when the key
+  is added. The lint rule `local-rules/no-untracked-service-state-key-check` flags these checks.
 - `setState((state) => …)` mutates the proxy **in place** inside a batch, so one call notifies
   subscribers once, and only the fields it actually changed are invalidated. The recipe writes
   through a recording proxy, and **one `setState` call is one sync entry**: when the recipe returns,
@@ -578,7 +579,7 @@ Subscriptions are implemented in [query-runtime.ts](./query-runtime.ts):
 2. Setup validates the input synchronously. If the query has a `load`, it is run inside its own `effect()` so the external signals it reads synchronously are tracked: when they change, the effect re-runs and the load re-fires (see "Load"). Writes from a superseded run are dropped (each run carries an epoch; `setState` is gated on it), so a slow stale load can't clobber a newer result. The effect is torn down with the subscription.
 3. A `computed()` runs the synchronous handler against the deep-signal proxy, so its dependency footprint is exactly what it reads. The output is always validated, but where validation runs depends on the subscription:
    - **No selector:** the value is validated here and emitted. Reading the whole value to validate it is the correct footprint for a whole-value subscriber, and it keeps the emitted value identical to a direct `query.get()` pull.
-   - **With a selector:** validation runs untracked (so it does not register dependencies) and only `selector(value)` is read (then detached to a plain snapshot), so a sibling field the selector ignores never re-runs the handler.
+   - **With a selector:** validation runs untracked (so it does not register dependencies) and only `selector(value)` is read, with every field inside it (it is detached to a plain snapshot), so an in-place change inside the selected slice re-runs the handler and a sibling field the selector ignores does not.
 4. A per-subscription **lifecycle signal** carries `status` / `loadStatus` / `error` (see [Query state](#query-state)). The reactive-load effect writes it: it flips to `loading` when a load starts (preserving `pending` vs `success` so the first load reads as `isInitialLoading` and a re-load as `isRefreshing`), then to `success`/`idle` or `error`/`idle` as the load settles — all gated on the same epoch so a superseded run can't write a stale lifecycle.
 5. An `effect()` reads **both** the lifecycle signal and the data computed, builds a `QueryState`, and emits it. It runs immediately (delivering the current state) and re-runs when the computed's tracked fields change **or** the lifecycle changes — so a status-only change (e.g. a background re-load over an unchanged selected slice) still fires the callback. A write to an unrelated key or field never re-runs the handler. A synchronous handler / output-validation throw is caught here and emitted as `status: 'error'` keeping the last good `data`.
 6. Emissions are deduped on the **whole `QueryState`**: the effect compares the new state with the last emitted one via `es-toolkit` `isEqual` and skips the callback when they are equal. So a load that rewrites a deeply-equal value with no status change does not re-fire subscribers, but a status change always does.
@@ -1053,9 +1054,7 @@ export const exampleServiceDef = defineService({
       output: valueSchema,
       handler: (input, ctx) => ctx.self.state.values[input.entryId] ?? null,
       load: async (input, ctx) => {
-        if (!(input.entryId in ctx.self.state.values)) {
-          await ctx.self.commands.preloadValue(input);
-        }
+        await ctx.self.commands.preloadValue(input);
       },
       staticPath: () => 'state.json',
       staticInputs: async () => [{ entryId: 'a' }, { entryId: 'b' }],
@@ -1063,10 +1062,15 @@ export const exampleServiceDef = defineService({
   },
   commands: {
     preloadValue: {
-      description: 'Fills state for one id.',
+      description: 'Fills state for one id, unless it is already filled.',
       input: entryIdSchema,
       output: v.void(),
       handler: async (input, ctx) => {
+        // Check here, not in the load: state the load reads becomes a dependency, so the
+        // load would re-run when this command writes the value.
+        if (ctx.self.state.values[input.entryId] !== undefined) {
+          return;
+        }
         ctx.self.setState((state) => {
           state.values[input.entryId] = 'ready';
         });

@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { execaSync } from 'execa';
 
 import {
+  createHyperlink,
   getTerminalWidth,
   protectUrls,
   wrapTextForClack,
@@ -31,9 +32,10 @@ function getVisibleLength(str: string): number {
   return stripVTControlCharacters(str).length;
 }
 
-const stubStdoutColumns = (descriptor: PropertyDescriptor) => {
+const stubStdoutColumns = (descriptor: PropertyDescriptor, isTTY = true) => {
   const stdout = Object.create(process.stdout);
   Object.defineProperty(stdout, 'columns', { configurable: true, ...descriptor });
+  Object.defineProperty(stdout, 'isTTY', { configurable: true, value: isTTY });
 
   const stubbedProcess = Object.create(process);
   Object.defineProperty(stubbedProcess, 'stdout', { value: stdout, configurable: true });
@@ -381,6 +383,33 @@ describe('wrap-utils', () => {
 
       expect(result).toMatchInlineSnapshot(
         `"Visit ]8;;https://example.comhttps://example.com]8;; for more info"`
+      );
+    });
+
+    it('should keep URLs plain when stdout is piped', () => {
+      stubStdoutColumns({ value: undefined }, false);
+      vi.stubEnv('TERM_PROGRAM', 'iTerm.app');
+
+      const url = 'https://example.com/path/to/guide';
+
+      expect(protectUrls(`Visit ${url}`)).toBe(`Visit ${url}`);
+      expect(createHyperlink('Guide', url)).toBe(`Guide: ${url}`);
+    });
+
+    it('should keep hyperlink targets on a supported TTY', () => {
+      vi.stubEnv('TERM_PROGRAM', 'iTerm.app');
+      vi.stubEnv('TERM_PROGRAM_VERSION', '3.4.0');
+
+      expect(createHyperlink('Guide', 'https://example.com/guide')).toBe(
+        '\u001b]8;;https://example.com/guide\u0007Guide\u001b]8;;\u0007'
+      );
+    });
+
+    it('should use the titled URL fallback in Apple Terminal', () => {
+      vi.stubEnv('TERM_PROGRAM', 'Apple_Terminal');
+
+      expect(createHyperlink('Guide', 'https://example.com/guide')).toBe(
+        'Guide: https://example.com/guide'
       );
     });
 

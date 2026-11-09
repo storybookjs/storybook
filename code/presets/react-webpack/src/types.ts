@@ -3,9 +3,21 @@ import type {
   TypescriptOptions as TypescriptOptionsBase,
   WebpackConfiguration as WebpackConfigurationBase,
 } from '@storybook/core-webpack';
-import type { PluginOptions as ReactDocgenTypescriptOptions } from '@storybook/react-docgen-typescript-plugin';
+import type { ReactDocgenTypescriptParserOptions } from '@storybook/react';
 
 export type { BuilderResult } from '@storybook/core-webpack';
+
+/** Options of `@storybook/react-docgen-typescript-plugin`, copied from its declarations. */
+export type ReactDocgenTypescriptOptions = ReactDocgenTypescriptParserOptions & {
+  docgenCollectionName?: string | null;
+  setDisplayName?: boolean;
+  typePropName?: string;
+  tsconfigPath?: string;
+  /** TypeScript `CompilerOptions`. */
+  compilerOptions?: Record<string, any>;
+  exclude?: string[];
+  include?: string[];
+};
 
 export interface ReactOptions {
   strictMode?: boolean;
@@ -16,6 +28,7 @@ export type TypescriptOptions = TypescriptOptionsBase & {
    * Sets the type of Docgen when working with React and TypeScript
    *
    * @default `'react-docgen'`
+   * @deprecated Builder docgen is removed in Storybook 12. Use `features.docgenServer`.
    */
   reactDocgen: 'react-docgen-typescript' | 'react-docgen' | false;
   /**
@@ -23,6 +36,7 @@ export type TypescriptOptions = TypescriptOptionsBase & {
    *
    * @default
    * @see https://github.com/storybookjs/storybook/blob/next/code/builders/builder-webpack5/src/config/defaults.js#L4-L6
+   * @deprecated Builder docgen is removed in Storybook 12. Use `features.docgenServer`.
    */
   reactDocgenTypescriptOptions: ReactDocgenTypescriptOptions;
 };

@@ -92,7 +92,27 @@ function countA11yViolations(a11yReports: Record<string, A11yReport[]>): number 
   return count;
 }
 
-/** Result counts, shared with the handler so telemetry reports the numbers the text shows. */
+function pluralize(count: number, singular: string, plural = `${singular}s`): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+type TestRunFailureCounts = {
+  componentTests: number;
+  a11yChecks: number;
+  unhandledErrors: number;
+};
+
+// What fails a completed run, shared with the handler so its outcome matches the report.
+export function countTestRunFailures(result: TestRunResult, a11y: boolean): TestRunFailureCounts {
+  return {
+    componentTests: result.componentTestCount.error,
+    a11yChecks: a11y ? result.a11yCount.error : 0,
+    unhandledErrors: result.unhandledErrors.length,
+  };
+}
+
+// Telemetry counts keep their original meaning across versions: `passingStoryCount` counts passing
+// component tests even when the report lists the story as failing its accessibility check.
 export function summarizeTestRun(result: TestRunResult, a11y: boolean): TestRunSummary {
   return {
     passingStoryCount: result.componentTestStatuses.filter(isPassing).length,
@@ -108,13 +128,18 @@ function formatPassingStoriesSection(passingStories: ComponentTestStatus[]): str
 - ${passingStories.map((status) => status.storyId).join('\n- ')}`;
 }
 
-function formatFailingStoriesSection(statuses: ComponentTestStatus[]): string {
-  const entries = statuses.map(
-    (status) =>
-      `### ${status.storyId}
+const A11Y_CHECK_FAILED = 'The accessibility check failed; see Accessibility Violations below.';
 
-${status.description || 'No failure details available.'}`
-  );
+// A story whose component test fails gets no accessibility result, so it fails for one reason.
+function formatFailingStoriesSection(statuses: ComponentTestStatus[]): string {
+  const entries = statuses.map((status) => {
+    const details = isFailing(status)
+      ? status.description || 'No failure details available.'
+      : A11Y_CHECK_FAILED;
+    return `### ${status.storyId}
+
+${details}`;
+  });
 
   return `## Failing Stories
 
@@ -204,17 +229,89 @@ ${unhandledError.stack || 'No stack trace available'}`
 ${formattedErrors.join('\n\n')}`;
 }
 
-/**
- * Only the sections that carry information are emitted, so a run with nothing to report renders as
- * an empty string.
- */
+function formatA11yCounts(
+  { success, warning, error }: TestRunResult['a11yCount'],
+  a11yEnabled: boolean
+): string {
+  const checked = success + warning + error;
+  if (checked === 0) {
+    // Without addon-a11y every run ends here, so the reason keeps it from reading as a fault.
+    return a11yEnabled
+      ? 'Accessibility: not checked.'
+      : 'Accessibility: not checked (addon-a11y is not enabled).';
+  }
+  if (warning === 0 && error === 0) {
+    return `Accessibility: ${pluralize(checked, 'story', 'stories')} checked, no violations.`;
+  }
+  const parts = [
+    success > 0 ? `${success} without violations` : undefined,
+    warning > 0
+      ? `${warning} with violations reported as warnings, which do not fail the run`
+      : undefined,
+    error > 0 ? `${error} failing the run` : undefined,
+  ].filter(Boolean);
+  return `Accessibility: ${pluralize(checked, 'story', 'stories')} checked; ${parts.join('; ')}.`;
+}
+
+function formatA11yResult(
+  result: TestRunResult,
+  { a11y, a11yEnabled }: { a11y: boolean; a11yEnabled: boolean }
+): string {
+  if (!a11y) {
+    return 'Accessibility: skipped (a11y: false).';
+  }
+  const counts = formatA11yCounts(result.a11yCount, a11yEnabled);
+  // Otherwise "no violations" reads as if the failing stories were clean too.
+  return result.componentTestCount.error > 0
+    ? `${counts} Stories with a failing component test get no accessibility result.`
+    : counts;
+}
+
+// Keyed by every failure count, so a new way to fail a run cannot be left out of the verdict.
+const FAILURE_LABELS: Record<keyof TestRunFailureCounts, (count: number) => string> = {
+  componentTests: (count) => `${pluralize(count, 'component test')} failed`,
+  a11yChecks: (count) => `${pluralize(count, 'accessibility check')} failed`,
+  unhandledErrors: (count) => pluralize(count, 'unhandled error'),
+};
+
+function formatResultSection(
+  result: TestRunResult,
+  { a11y, a11yEnabled }: { a11y: boolean; a11yEnabled: boolean }
+): string {
+  const failures = countTestRunFailures(result, a11y);
+  const failureParts = (Object.keys(FAILURE_LABELS) as (keyof TestRunFailureCounts)[])
+    .filter((key) => failures[key] > 0)
+    .map((key) => FAILURE_LABELS[key](failures[key]));
+  const verdict =
+    failureParts.length > 0
+      ? `Failed: ${failureParts.join(', ')}.`
+      : result.componentTestCount.success === 0
+        ? 'No component tests ran.'
+        : `Passed: ${pluralize(result.componentTestCount.success, 'component test')} passed.`;
+
+  return `## Result
+
+${verdict}
+${formatA11yResult(result, { a11y, a11yEnabled })}`;
+}
+
+// Only the sections that carry information are emitted before the closing result.
 function formatCompletedRun(
   result: TestRunResult,
-  { a11y, origin }: { a11y: boolean; origin?: string }
+  { a11y, a11yEnabled, origin }: { a11y: boolean; a11yEnabled: boolean; origin?: string }
 ): string {
   const sections: string[] = [];
-  const passingStories = result.componentTestStatuses.filter(isPassing);
-  const failingStories = result.componentTestStatuses.filter(isFailing);
+  // An error-level accessibility result fails the run without failing the component test, so the
+  // story is listed as failing rather than passing.
+  const a11yFailingStoryIds = new Set(
+    a11y ? result.a11yStatuses.filter(isFailing).map((status) => status.storyId) : []
+  );
+  const passingStories = result.componentTestStatuses.filter(
+    (status) => isPassing(status) && !a11yFailingStoryIds.has(status.storyId)
+  );
+  const failingStories = result.componentTestStatuses.filter(
+    (status) => isFailing(status) || a11yFailingStoryIds.has(status.storyId)
+  );
 
   if (passingStories.length > 0) {
     sections.push(formatPassingStoriesSection(passingStories));
@@ -236,6 +333,9 @@ function formatCompletedRun(
     sections.push(formatUnhandledErrorsSection(result.unhandledErrors as UnhandledError[]));
   }
 
+  // Last, because agents mostly read this report through `tail`.
+  sections.push(formatResultSection(result, { a11y, a11yEnabled }));
+
   return sections.join('\n\n');
 }
 
@@ -245,14 +345,24 @@ function formatCompletedRun(
  * Failed and cancelled runs read as `Error: …` because the MCP tool surfaced them by throwing; the
  * `isError` flag that accompanied them belongs to the adapter, not to text.
  */
-export function formatTestRun(data: TestRunData, ctx: ToolsetCtx): string {
+export function formatTestRun(
+  data: TestRunData,
+  ctx: ToolsetCtx,
+  { a11yEnabled }: { a11yEnabled: boolean }
+): string {
   switch (data.status) {
     case 'no-stories':
-      return `No stories found matching the provided input.
+      return data.notFoundMessages.length === 0
+        ? 'No stories were given, so no tests ran. Pass story IDs in `stories`, or omit it to run every story test.'
+        : `No stories found matching the provided input.
 
 ${data.notFoundMessages.join('\n')}`;
     case 'completed':
-      return formatCompletedRun(data.result, { a11y: data.a11y, origin: ctx.origin });
+      return formatCompletedRun(data.result, {
+        a11y: data.a11y,
+        a11yEnabled,
+        origin: ctx.origin,
+      });
     case 'error':
       return `Error: ${data.error.message}`;
     case 'cancelled':

@@ -13,7 +13,7 @@ import type { WebComponentsRenderer } from './types.ts';
 
 const { Node } = global;
 
-/** With `experimentalDocgenServer`, returns a DocumentFragment so scoped CSS part and state rules can precede the element. */
+/** With `docgenServer`, returns a DocumentFragment so scoped CSS part and state rules can precede the element. */
 export const render: ArgsStoryFn<WebComponentsRenderer> = (args, context) => {
   const { id, component } = context;
   if (!component) {
@@ -23,7 +23,7 @@ export const render: ArgsStoryFn<WebComponentsRenderer> = (args, context) => {
   }
 
   const element = document.createElement(component);
-  if (!global.FEATURES?.experimentalDocgenServer) {
+  if (!global.FEATURES?.docgenServer) {
     return Object.assign(element, args);
   }
 
@@ -41,7 +41,7 @@ export const render: ArgsStoryFn<WebComponentsRenderer> = (args, context) => {
 };
 
 export function renderToCanvas(
-  { storyFn, kind, name, showMain, showError, forceRemount }: RenderContext<WebComponentsRenderer>,
+  { storyFn, title, name, showMain, showError, forceRemount }: RenderContext<WebComponentsRenderer>,
   canvasElement: WebComponentsRenderer['canvasElement']
 ): void {
   const element = storyFn();
@@ -72,7 +72,7 @@ export function renderToCanvas(
     simulateDOMContentLoaded();
   } else {
     showError({
-      title: `Expecting an HTML snippet or DOM node from the story: "${name}" of "${kind}".`,
+      title: `Expecting an HTML snippet or DOM node from the story: "${name}" of "${title}".`,
       description: dedent`
         Did you forget to return the HTML snippet from the story?
         Use "() => <your snippet or node>" or when defining the story.

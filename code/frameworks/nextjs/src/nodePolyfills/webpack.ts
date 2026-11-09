@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
 import type { Configuration } from 'webpack';
-import webpack from 'webpack';
+import type webpack from 'webpack';
 
 const NODE_PROTOCOL_REGEX = /^node:/;
 const require = createRequire(import.meta.url);
@@ -14,17 +14,20 @@ const nodePolyfillFallback = {
   zlib: require.resolve('browserify-zlib'),
 } satisfies NonNullable<Configuration['resolve']>['fallback'];
 
-export const configureNodePolyfills = (baseConfig: Configuration) => {
+export const configureNodePolyfills = (
+  baseConfig: Configuration,
+  webpackInstance: typeof webpack
+) => {
   // Next.js internals that reach the preview bundle (gzip-size) import `stream` and `zlib`;
   // the remaining fallbacks are what those two polyfills require.
   // Newer Next.js releases import builtins through the node: scheme, but webpack's
   // polyfill and fallback handling only applies once the request is normalized.
   baseConfig.plugins = [
     ...(baseConfig.plugins || []),
-    new webpack.NormalModuleReplacementPlugin(NODE_PROTOCOL_REGEX, (resource) => {
+    new webpackInstance.NormalModuleReplacementPlugin(NODE_PROTOCOL_REGEX, (resource) => {
       resource.request = resource.request.replace(NODE_PROTOCOL_REGEX, '');
     }),
-    new webpack.ProvidePlugin({
+    new webpackInstance.ProvidePlugin({
       Buffer: [nodePolyfillFallback.buffer, 'Buffer'],
       process: nodePolyfillFallback.process,
     }),

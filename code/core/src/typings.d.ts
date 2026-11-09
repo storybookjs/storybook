@@ -53,6 +53,7 @@ declare module 'storybook/internal/bin/loader' {
 declare var STORIES: any;
 
 declare var CHANNEL_OPTIONS: any;
+declare var INSECURE_IFRAME_MESSAGING: boolean | undefined;
 declare var DOCS_OPTIONS: any;
 declare var TAGS_OPTIONS: import('./types/modules/core-common').StorybookConfigRaw['tags'];
 

@@ -209,6 +209,20 @@ const formatProjectDirs = (list: AutomigrationCheckResult['reports']) => {
   return `${relativeDirs.slice(0, amountOfProjectsShown).join(', ')}${remaining > 0 ? ` and ${remaining} more...` : ''}`;
 };
 
+// A fix's prompt can say more with its check result, such as the files it changes, than the
+// one-line hint in the selection shows.
+export const logAutomigrationDetails = (automigrations: AutomigrationCheckResult[]) => {
+  for (const { fix, reports } of automigrations) {
+    const hint = fix.prompt();
+    for (const { result, status, project } of reports) {
+      const details = status === 'check_succeeded' ? fix.prompt(result) : hint;
+      if (details !== hint) {
+        logger.logBox(details, { title: `${fix.id} (${shortenPath(project.configDir) || '.'})` });
+      }
+    }
+  }
+};
+
 /** Prompts user to select which automigrations to run */
 export async function promptForAutomigrations(
   automigrations: AutomigrationCheckResult[],
@@ -229,6 +243,7 @@ export async function promptForAutomigrations(
 
   if (options.dryRun) {
     logSelection('Detected automigrations (dry run - no changes will be made):', automigrations);
+    logAutomigrationDetails(automigrations);
     return [];
   }
 
@@ -336,6 +351,8 @@ export async function runAutomigrationsForProjects(
       }
     }
   }
+
+  logAutomigrationDetails(applicableAutomigrations);
 
   // Run automigrations for each project
   let projectIndex = 0;

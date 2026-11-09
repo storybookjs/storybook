@@ -75,7 +75,11 @@ const HARNESS_TOOLS = [
 
 const RENDER_HINT = 'Run `yarn nx compile claude-plugin` and commit the Codex skills.';
 
-const storiesSkill = readFileSync(resolve(packageRoot, 'skills/stories/SKILL.md'), 'utf8');
+const uiWorkflowSkill = readFileSync(resolve(packageRoot, 'skills/ui-workflow/SKILL.md'), 'utf8');
+const componentDocsSkill = readFileSync(
+  resolve(packageRoot, 'skills/component-docs/SKILL.md'),
+  'utf8'
+);
 
 function readSkillDescription(skill: string) {
   const description = skill.match(/^description: (.*)$/m)?.[1];
@@ -103,19 +107,27 @@ describe('canonical skills', () => {
   });
 });
 
-describe('stories skill', () => {
-  it('uses Storybook documentation and treats setup as upgrade approval', () => {
-    expect(storiesSkill).toContain('docs list');
-    expect(storiesSkill).toContain('docs show');
-    expect(storiesSkill.indexOf('docs list')).toBeLessThan(storiesSkill.indexOf('docs show'));
-    expect(storiesSkill).toContain('set up or install Storybook');
+describe('ui-workflow and component-docs skills', () => {
+  it.each([uiWorkflowSkill, componentDocsSkill])(
+    'run when the agent instructions or the user ask, not on every UI change',
+    (skill) => {
+      const description = readSkillDescription(skill);
+      expect(description).toContain("the project's agent instructions (such as AGENTS.md)");
+      expect(description).not.toMatch(/FIRST|no exceptions|before creating, editing/i);
+    }
+  );
+
+  it('serve their workflow from the Storybook CLI of the project', () => {
+    expect(uiWorkflowSkill).toContain('`npx storybook skills ui-workflow`');
+    expect(componentDocsSkill).toContain('`npx storybook skills component-docs`');
+    expect(uiWorkflowSkill).toContain('set up or install Storybook');
   });
 
   it('starts the dev server from the package.json script without shell interpolation', () => {
-    expect(storiesSkill).toContain('preferred package manager');
-    expect(storiesSkill).toContain('existing `package.json` Storybook script');
-    expect(storiesSkill).not.toMatch(/(?:^|[^\w])--port\b|\$\{?PORT\}?|\$env:PORT|%PORT%/i);
-    expect(storiesSkill).not.toContain('--ci');
+    expect(uiWorkflowSkill).toContain('preferred package manager');
+    expect(uiWorkflowSkill).toContain('existing `package.json` Storybook script');
+    expect(uiWorkflowSkill).not.toMatch(/(?:^|[^\w])--port\b|\$\{?PORT\}?|\$env:PORT|%PORT%/i);
+    expect(uiWorkflowSkill).not.toContain('--ci');
   });
 });
 

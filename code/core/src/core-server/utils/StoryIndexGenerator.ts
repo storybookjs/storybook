@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import {
   commonGlobOptions,
@@ -40,6 +41,7 @@ import { userOrAutoTitleFromSpecifier } from '../../shared/story-index/autoTitle
 import { combineStorySorts, sortStoriesV7 } from '../../shared/story-index/sortStories.ts';
 import { Tag } from '../../shared/constants/tags.ts';
 import { isMdxEntry } from '../../shared/utils/story-index-filters.ts';
+import { StorybookError } from '../../storybook-error.ts';
 import { IndexingError, MultipleIndexingError } from './IndexingError.ts';
 import { autoName } from './autoName.ts';
 import { analyzeMdx } from './analyze-mdx.ts';
@@ -119,6 +121,9 @@ export class StoryIndexGenerator {
 
   // Same as the above but for the error case
   private lastError?: Error | null;
+
+  // Callers that ask while the index is computed share the computation, so its errors log once
+  private pendingIndexAndStats?: Promise<{ storyIndex: StoryIndex; stats: IndexStatsSummary }>;
 
   private invalidationListeners: Set<() => void> = new Set();
 
@@ -232,8 +237,7 @@ export class StoryIndexGenerator {
       this.specifierToCache.set(specifier, cache)
     );
 
-    const previewCode = await this.getPreviewCode();
-    const projectTags = this.getProjectTags(previewCode);
+    const projectTags = this.getProjectTags(await this.getPreviewFile());
 
     // Extract stories for each file
     await this.ensureExtracted({ projectTags });
@@ -273,7 +277,15 @@ export class StoryIndexGenerator {
                 err: new IndexingError(
                   err instanceof Error ? err.message : String(err),
                   [relativePath],
-                  err instanceof Error ? err.stack : undefined
+                  err instanceof Error ? err.stack : undefined,
+                  err instanceof StorybookError
+                    ? {
+                        code: err.fullErrorCode,
+                        messageWithoutPath: err.message
+                          .replaceAll(pathToFileURL(absolutePath).href, '')
+                          .replaceAll(absolutePath, ''),
+                      }
+                    : undefined
                 ),
               };
             }
@@ -751,8 +763,23 @@ export class StoryIndexGenerator {
       throw this.lastError;
     }
 
-    const previewCode = await this.getPreviewCode();
-    const projectTags = this.getProjectTags(previewCode);
+    if (!this.pendingIndexAndStats) {
+      const pending = this.computeIndexAndStats().finally(() => {
+        if (this.pendingIndexAndStats === pending) {
+          this.pendingIndexAndStats = undefined;
+        }
+      });
+      this.pendingIndexAndStats = pending;
+    }
+
+    return this.pendingIndexAndStats;
+  }
+
+  private async computeIndexAndStats(): Promise<{
+    storyIndex: StoryIndex;
+    stats: IndexStatsSummary;
+  }> {
+    const projectTags = this.getProjectTags(await this.getPreviewFile());
 
     // Extract any entries that are currently missing
     // Pull out each file's stories into a list of stories, to be composed and sorted
@@ -814,6 +841,7 @@ export class StoryIndexGenerator {
     });
     this.lastIndex = null;
     this.lastError = null;
+    this.pendingIndexAndStats = undefined;
     this.invalidationListeners.forEach((listener) => listener());
   }
 
@@ -866,6 +894,7 @@ export class StoryIndexGenerator {
     }
     this.lastIndex = null;
     this.lastError = null;
+    this.pendingIndexAndStats = undefined;
     this.invalidationListeners.forEach((listener) => listener());
   }
 
@@ -876,27 +905,28 @@ export class StoryIndexGenerator {
     };
   }
 
-  async getPreviewCode() {
+  async getPreviewFile(): Promise<{ path: string; code: string } | undefined> {
     const previewFile = ['js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'mts']
       .map((ext) => join(this.options.configDir, `preview.${ext}`))
       .find((fname) => existsSync(fname));
 
-    return previewFile && (await readFile(previewFile, { encoding: 'utf8' })).toString();
+    return previewFile
+      ? { path: previewFile, code: (await readFile(previewFile, { encoding: 'utf8' })).toString() }
+      : undefined;
   }
 
-  getProjectTags(previewCode?: string) {
+  getProjectTags(preview?: { path: string; code: string }) {
     let projectTags = [] as Tag[];
     const defaultTags = [Tag.DEV, Tag.TEST, Tag.MANIFEST];
-    if (previewCode) {
+    if (preview) {
       try {
-        const projectAnnotations = loadConfig(previewCode).parse();
-        const tags = projectAnnotations.getValue(['tags']) ?? [];
+        const projectAnnotations = loadConfig(preview.code, preview.path).parse();
+        const tags =
+          projectAnnotations.inspect(['tags']).kind === 'value'
+            ? projectAnnotations.getValue(['tags'])
+            : [];
         invariant(
-          !projectAnnotations.mutationDiagnostics.some(
-            ({ code }) => code === 'unsupported-value'
-          ) &&
-            Array.isArray(tags) &&
-            tags.every((tag) => typeof tag === 'string'),
+          Array.isArray(tags) && tags.every((tag) => typeof tag === 'string'),
           'Preview tags must be a static array of strings'
         );
         projectTags = tags;
@@ -912,7 +942,7 @@ export class StoryIndexGenerator {
 
           Received:
 
-          ${previewCode}
+          ${preview.code}
         `);
       }
     }

@@ -8,7 +8,7 @@ import type {
   TypedMetaArgKeys,
   WithRenderArgs,
   Preview,
-  PreviewAddon,
+  PreviewAddonEntry,
   Story,
 } from 'storybook/internal/csf';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
@@ -46,7 +46,7 @@ import { type AngularRenderer } from './types.ts';
  * });
  * ```
  */
-export function __definePreview<Addons extends PreviewAddon<never>[]>(
+export function __definePreview<Addons extends PreviewAddonEntry[]>(
   input: { addons: Addons } & ProjectAnnotations<AngularRenderer & InferTypes<Addons>>
 ): AngularPreview<AngularRenderer & InferTypes<Addons>> {
   const preview = definePreviewBase({

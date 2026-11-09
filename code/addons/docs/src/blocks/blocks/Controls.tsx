@@ -210,7 +210,7 @@ const ControlsImpl: FC<ControlsProps> = (props) => {
 
   const storyProps = { ...props, story, context };
 
-  return globalThis.FEATURES?.experimentalDocgenServer ? (
+  return globalThis.FEATURES?.docgenServer ? (
     <DocgenServiceControls {...storyProps} />
   ) : (
     <LegacyControls {...storyProps} />

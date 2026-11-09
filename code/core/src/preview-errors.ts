@@ -36,6 +36,17 @@ export enum Category {
   ADDON_A11Y = 'ADDON_A11Y',
 }
 
+export class InvalidChannelPageError extends StorybookError {
+  constructor(public data: { page: string }) {
+    super({
+      name: 'InvalidChannelPageError',
+      category: Category.PREVIEW_CHANNELS,
+      code: 1,
+      message: `The postMessage channel transport needs "config.page" to be "manager" or "preview", but received "${data.page}".`,
+    });
+  }
+}
+
 export class MissingStoryAfterHmrError extends StorybookError {
   constructor(public data: { storyId: string }) {
     super({
@@ -54,16 +65,15 @@ export class MissingStoryAfterHmrError extends StorybookError {
 }
 
 export class ImplicitActionsDuringRendering extends StorybookError {
-  constructor(public data: { phase: string; name: string; deprecated: boolean }) {
+  constructor(public data: { phase: string; name: string }) {
     super({
       name: 'ImplicitActionsDuringRendering',
       category: Category.PREVIEW_API,
       code: 2,
       documentation:
-        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#using-implicit-actions-during-rendering-is-deprecated-for-example-in-the-play-function',
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#disallowimplicitactionsinrenderv8-feature-flag-removed',
       message: dedent`
         We detected that you use an implicit action arg while ${data.phase} of your story.  
-        ${data.deprecated ? `\nThis is deprecated and won't work in Storybook 8 anymore.\n` : ``}
         Please provide an explicit spy to your args like this:
           import { fn } from 'storybook/test';
           ... 

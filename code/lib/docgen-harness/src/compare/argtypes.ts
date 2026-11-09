@@ -224,6 +224,19 @@ const describeDefault = (entry: StrictInputType): string =>
 
 const printType = (type: SBType): string => JSON.stringify(canonicalType(type));
 
+function isExactCallableClassification(
+  baseline: SBType | undefined,
+  candidate: SBType | undefined
+): boolean {
+  return (
+    baseline?.name === 'other' &&
+    typeof baseline.value === 'string' &&
+    baseline.value.trim() !== '' &&
+    candidate?.name === 'function' &&
+    candidate.raw === baseline.value
+  );
+}
+
 // Deep equality after normalization, or an enumerated improvement. Everything lateral fails and is
 // accepted only through a reviewed baseline update. Both sides are already normalized recorded
 // types, so the discriminants can be trusted.
@@ -235,6 +248,7 @@ function typeCurrentOrBetter(
   if (deepEqual(canonicalType(baseline), canonicalType(candidate))) {
     return true;
   }
+  if (isExactCallableClassification(baseline, candidate)) return true;
   if (baseline.name === 'other') {
     if (
       candidate.name === 'other' &&

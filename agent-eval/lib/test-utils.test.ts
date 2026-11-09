@@ -8,7 +8,6 @@ vi.mock('node:fs', { spy: true });
 
 import {
   expectDevServerLeftRunning,
-  expectPreviewOpenedInBrowser,
   expectReviewOpenedInBrowser,
   findDevServerKillCommands,
   parseCodexBrowserNavigations,
@@ -338,7 +337,7 @@ describe('expectStoryTestsRanAndPassed', () => {
         return options.transcript ?? '';
       }
       if (String(path) === '__agent_eval__/agent.json') {
-        return JSON.stringify({ agent: 'claude-code', integration: 'plugin', review: true });
+        return JSON.stringify({ agent: 'claude-code', integration: 'plugin' });
       }
       if (String(path) === '__agent_eval__/results.json') {
         return JSON.stringify({
@@ -526,6 +525,18 @@ describe('expectStoryTestsRanAndPassed', () => {
 
     await expect(expectStoryTestsRanAndPassed()).rejects.toThrow(/Expected test-run to be called/);
   });
+
+  test('lets the agent skip the tests with requireAgentRun false, but still runs them in the sandbox', async () => {
+    givenRun({
+      commands: ['npm run typecheck'],
+      stdout: testRunDocument({ 'example-badge--accent': 'status-value:success' }),
+    });
+    const { expectStoryTestsRanAndPassed } = await loadTestUtils();
+
+    await expectStoryTestsRanAndPassed({ requireAgentRun: false, covering: ['badge'] });
+
+    expect(execFile).toHaveBeenCalled();
+  });
 });
 
 describe('parseCodexBrowserNavigations', () => {
@@ -628,162 +639,12 @@ describe('expectDevServerLeftRunning', () => {
   test('fails loud when integration is mcp', () => {
     vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
       if (String(path) === agentContextPath) {
-        return JSON.stringify({ agent: 'claude-code', integration: 'mcp', review: false });
+        return JSON.stringify({ agent: 'claude-code', integration: 'mcp' });
       }
       throw new Error(`Unexpected readFileSync path in fail-loud helper test: ${String(path)}`);
     }) as typeof readFileSync);
 
     expect(() => expectDevServerLeftRunning()).toThrow(/only for plugin.*integration=mcp/);
-  });
-});
-
-describe('expectPreviewOpenedInBrowser', () => {
-  function mockSandbox(options: { agent: 'claude-code' | 'codex'; transcript: string[] }): void {
-    vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
-      if (String(path) === '__agent_eval__/agent.json') {
-        return JSON.stringify({ agent: options.agent, integration: 'mcp', review: false });
-      }
-      if (String(path) === '__agent_eval__/transcript.txt') {
-        return options.transcript.join('\n');
-      }
-      throw new Error(`Unexpected readFileSync path in browser assertion test: ${String(path)}`);
-    }) as typeof readFileSync);
-  }
-
-  function claudeToolUseLine(name: string, input: Record<string, unknown>): string {
-    return JSON.stringify({
-      type: 'assistant',
-      message: { content: [{ type: 'tool_use', id: 'toolu_1', name, input }] },
-    });
-  }
-
-  function codexItemLine(item: Record<string, unknown>): string {
-    return JSON.stringify({ type: 'item.completed', item });
-  }
-
-  function codexGotoLine(url: string): string {
-    return codexItemLine({
-      type: 'mcp_tool_call',
-      server: 'node_repl',
-      tool: 'js',
-      status: 'completed',
-      error: null,
-      arguments: { code: `await tab.goto('${url}');` },
-    });
-  }
-
-  function codexStoriesPreviewLine(status: 'completed' | 'failed'): string {
-    return codexItemLine({
-      type: 'mcp_tool_call',
-      server: 'storybook',
-      tool: 'stories-preview',
-      arguments: {},
-      status,
-      error: status === 'failed' ? { message: 'No story found' } : null,
-    });
-  }
-
-  const claudeStoriesPreview = claudeToolUseLine('mcp__storybook-dev-mcp__stories-preview', {
-    stories: [{ storyId: 'button--primary' }],
-  });
-  const storyUrl = 'http://localhost:6006/?path=/story/button--primary';
-
-  beforeEach(() => {
-    vi.mocked(readFileSync).mockReset();
-  });
-
-  afterEach(() => {
-    vi.mocked(readFileSync).mockRestore();
-  });
-
-  test('passes on a Claude navigation to a story after the first stories-preview', () => {
-    mockSandbox({
-      agent: 'claude-code',
-      transcript: [
-        claudeStoriesPreview,
-        claudeToolUseLine('mcp__Browser__navigate', { url: storyUrl }),
-        claudeStoriesPreview,
-      ],
-    });
-
-    expect(() => expectPreviewOpenedInBrowser()).not.toThrow();
-  });
-
-  test('passes on a Claude browser_batch that navigates to a story', () => {
-    mockSandbox({
-      agent: 'claude-code',
-      transcript: [
-        claudeStoriesPreview,
-        claudeToolUseLine('mcp__Browser__browser_batch', {
-          actions: [
-            { name: 'navigate', input: { url: storyUrl } },
-            { name: 'computer', input: { action: 'screenshot' } },
-          ],
-        }),
-      ],
-    });
-
-    expect(() => expectPreviewOpenedInBrowser()).not.toThrow();
-  });
-
-  test('passes on a Claude browser_batch whose navigate action carries the tool prefix', () => {
-    mockSandbox({
-      agent: 'claude-code',
-      transcript: [
-        claudeStoriesPreview,
-        claudeToolUseLine('mcp__Browser__browser_batch', {
-          actions: [{ name: 'mcp__Browser__navigate', input: { url: storyUrl } }],
-        }),
-      ],
-    });
-
-    expect(() => expectPreviewOpenedInBrowser()).not.toThrow();
-  });
-
-  test('ignores a navigation before stories-preview', () => {
-    mockSandbox({
-      agent: 'claude-code',
-      transcript: [
-        claudeToolUseLine('mcp__Browser__navigate', { url: storyUrl }),
-        claudeStoriesPreview,
-      ],
-    });
-
-    expect(() => expectPreviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
-  });
-
-  test('passes on a Codex goto of an iframe story preview', () => {
-    mockSandbox({
-      agent: 'codex',
-      transcript: [
-        codexStoriesPreviewLine('completed'),
-        codexGotoLine('http://127.0.0.1:6006/iframe.html?id=button--primary'),
-      ],
-    });
-
-    expect(() => expectPreviewOpenedInBrowser()).not.toThrow();
-  });
-
-  test('ignores a failed Codex stories-preview', () => {
-    mockSandbox({
-      agent: 'codex',
-      transcript: [codexStoriesPreviewLine('failed'), codexGotoLine(storyUrl)],
-    });
-
-    expect(() => expectPreviewOpenedInBrowser()).toThrow(/successful stories-preview/);
-  });
-
-  test.each([
-    ['the review page', 'http://localhost:6006/?path=/review/'],
-    ['the bare Storybook origin', 'http://localhost:6006/'],
-    ['the app dev server', 'http://localhost:3000/'],
-  ])('fails when the browser opened %s instead of a story', (_label, url) => {
-    mockSandbox({
-      agent: 'codex',
-      transcript: [codexStoriesPreviewLine('completed'), codexGotoLine(url)],
-    });
-
-    expect(() => expectPreviewOpenedInBrowser()).toThrow(/a story preview on the local dev server/);
   });
 });
 
@@ -794,7 +655,7 @@ describe('expectReviewOpenedInBrowser', () => {
   function mockSandbox(options: { agent: 'claude-code' | 'codex'; transcript: string[] }): void {
     vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
       if (String(path) === agentContextPath) {
-        return JSON.stringify({ agent: options.agent, integration: 'plugin', review: true });
+        return JSON.stringify({ agent: options.agent, integration: 'plugin' });
       }
       if (String(path) === transcriptPath) {
         return options.transcript.join('\n');
@@ -868,6 +729,42 @@ describe('expectReviewOpenedInBrowser', () => {
 
   test('passes on a Claude navigate to the review page', () => {
     mockSandbox({ agent: 'claude-code', transcript: [claudeReviewCreate, claudeOpenReview] });
+
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+  });
+
+  test('passes on a Claude browser_batch that navigates to the review page', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: [
+        claudeReviewCreate,
+        claudeToolUseLine('mcp__Browser__browser_batch', {
+          actions: [
+            { name: 'navigate', input: { url: 'http://localhost:6006/?path=/review/' } },
+            { name: 'computer', input: { action: 'screenshot' } },
+          ],
+        }),
+      ],
+    });
+
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+  });
+
+  test('passes on a Claude browser_batch whose navigate action carries the tool prefix', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: [
+        claudeReviewCreate,
+        claudeToolUseLine('mcp__Browser__browser_batch', {
+          actions: [
+            {
+              name: 'mcp__Browser__navigate',
+              input: { url: 'http://localhost:6006/?path=/review/' },
+            },
+          ],
+        }),
+      ],
+    });
 
     expect(() => expectReviewOpenedInBrowser()).not.toThrow();
   });

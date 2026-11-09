@@ -19,7 +19,7 @@ on:
         type: string
         default: ''
       evals:
-        description: 'Comma-separated eval names to run (overrides all_evals), e.g. 803-edit-component'
+        description: 'Comma-separated eval names to run (overrides all_evals), e.g. 803-edit-component; only 9xx evals with storybook_latest'
         type: string
         default: ''
       all_evals:

@@ -56,8 +56,11 @@ export class FrameworkDetectionCommand {
         builder = metadata.builderOverride;
       }
     } else {
-      // Detect builder from project configuration
-      builder = await this.frameworkDetectionService.detectBuilder();
+      // Detect builder from project configuration. A generator with a fixed framework has no
+      // renderer-builder pair to check.
+      builder = await this.frameworkDetectionService.detectBuilder(
+        metadata.framework === undefined ? metadata.renderer : undefined
+      );
     }
 
     // Get framework and renderer from metadata

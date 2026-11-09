@@ -1,9 +1,9 @@
-import type { ComponentImportRef } from 'storybook/internal/csf-tools';
+import type { ComponentImportRef, JsDocTagMap } from 'storybook/internal/csf-tools';
 
 import type ts from 'typescript';
 
 export type ComponentRef = ComponentImportRef & {
-  componentJsDocTags?: Record<string, string[]>;
+  componentJsDocTags?: JsDocTagMap;
   path?: string;
   isPackage: boolean;
   /** Minimum JSX nesting depth where this component first appears (1 = outermost JSX element). */

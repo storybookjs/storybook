@@ -5,10 +5,8 @@ import TSLegacy from './ts-legacy.svelte';
 const meta = {
   component: TSLegacy,
   tags: ['autodocs'],
-  render: (args, { argTypes }) => ({
-    Component: TSLegacy,
-    props: { ...args, argTypes } as any,
-  }),
+  // These stories exist for the docgen sandbox baselines; the canvas shows no docgen output.
+  parameters: { chromatic: { disableSnapshot: true } },
 } satisfies Meta<typeof TSLegacy>;
 
 export default meta;

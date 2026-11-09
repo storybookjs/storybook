@@ -11,6 +11,8 @@ import invariant from 'tiny-invariant';
 import { getService } from '../../../shared/open-service/server.ts';
 import { Tag } from '../../../shared/constants/tags.ts';
 import type { ComponentsManifest } from '../../../types/modules/core-common.ts';
+import { getOwn } from '../../../shared/open-service/plain-object.ts';
+import { readAllComponents } from '../../../shared/open-service/services/component-state-key.ts';
 import type { DocgenPayload } from '../../../shared/open-service/services/docgen/types.ts';
 import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
 import {
@@ -61,8 +63,8 @@ function mergeServicePayloads(
 ): Record<string, ComponentManifestWithStoryDocs> {
   return Object.fromEntries(
     componentIds.flatMap((id) => {
-      const docgen = docgenPayloads[id];
-      const storyDocs = storyDocsPayloads[id];
+      const docgen = getOwn(docgenPayloads, id);
+      const storyDocs = getOwn(storyDocsPayloads, id);
       if (!docgen) {
         // A componentless component (its story file names no `meta.component`, so no docgen
         // provider claims it) still has stories to show. Without a stub row here it would disappear
@@ -90,10 +92,10 @@ function mergeServicePayloads(
  * cover, so it is deferred to its own change.
  */
 function isDocgenServerManifestMode(features: {
-  experimentalDocgenServer?: boolean;
+  docgenServer?: boolean;
   componentsManifest?: boolean;
 }): boolean {
-  return features.experimentalDocgenServer === true && features.componentsManifest === true;
+  return features.docgenServer === true && features.componentsManifest === true;
 }
 
 /** Narrows an unknown manifest value to the docs manifest shape used by the HTML debugger. */
@@ -162,7 +164,7 @@ function resolveDocgenMeta(manifests: Manifests, durationMs: number): Components
   const presetMeta = manifests.components?.meta;
   invariant(
     presetMeta?.docgen,
-    'experimental_manifests must supply components.meta.docgen when experimentalDocgenServer is enabled'
+    'experimental_manifests must supply components.meta.docgen when docgenServer is enabled'
   );
 
   return { docgen: presetMeta.docgen, durationMs };
@@ -176,7 +178,7 @@ function withDocsOnlyComponents(
   const next = { ...components };
 
   for (const id of manifestComponentIds) {
-    if (!next[id] && docsByComponentId[id]) {
+    if (!getOwn(next, id) && getOwn(docsByComponentId, id)) {
       next[id] = mergeManifestPayloads(createDocsOnlyDocgenPayload(id));
     }
   }
@@ -206,7 +208,11 @@ async function renderComponentsHtmlFromService(
   const durationMs = Math.round(performance.now() - startTime);
   const docsByComponentId = getAttachedDocsByComponent(manifests.components);
   const components = withDocsOnlyComponents(
-    mergeServicePayloads(allDocgenPayloads, allStoryDocsPayloads, manifestComponentIds),
+    mergeServicePayloads(
+      readAllComponents(allDocgenPayloads),
+      readAllComponents(allStoryDocsPayloads),
+      manifestComponentIds
+    ),
     manifestComponentIds,
     docsByComponentId
   );
@@ -239,7 +245,7 @@ async function writeManifestJsonFiles(
 }
 
 /**
- * Static build path when `features.experimentalDocgenServer` is enabled.
+ * Static build path when `features.docgenServer` is enabled.
  *
  * Writes a ref-based `components.json` (with MDX summaries layered in from the snapshots), other
  * manifests from `experimental_manifests`, and `components.html` rendered from the docgen,
@@ -374,7 +380,7 @@ export async function writeManifests(outputDir: string, presets: Presets) {
 /**
  * Registers dev-server routes for manifest JSON and the components HTML debugger.
  *
- * When `experimentalDocgenServer` is enabled, `components.json` is not served (404) and
+ * When `docgenServer` is enabled, `components.json` is not served (404) and
  * `components.html` is rendered from the docgen service instead of the inline manifest.
  */
 export function registerManifests({ app, presets }: { app: Polka; presets: Presets }) {
@@ -395,7 +401,7 @@ export function registerManifests({ app, presets }: { app: Polka; presets: Prese
       ) {
         res.statusCode = 404;
         res.end(
-          `Manifest "${req.params.name}" is not available in dev when experimentalDocgenServer is enabled`
+          `Manifest "${req.params.name}" is not available in dev when docgenServer is enabled`
         );
         return;
       }

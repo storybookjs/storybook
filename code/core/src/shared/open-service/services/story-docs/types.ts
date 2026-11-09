@@ -4,9 +4,9 @@ import type { IndexEntry } from '../../../../types/modules/indexer.ts';
 /**
  * Caller-facing input to a story-docs provider middleware.
  *
- * `entry` is the authoritative story-index entry for the requested component, selected with the
- * same rules as the React component manifest generator (`selectComponentEntriesByComponentId` in
- * `storybook/internal/common`).
+ * `entry` is a story-index entry of the CSF file to extract. A component whose stories are spread
+ * over several files is extracted once per file, so a provider must not assume `entry` is the one
+ * `selectComponentEntriesByComponentId` (in `storybook/internal/common`) selects for the component.
  */
 export interface StoryDocsProviderInput {
   entry: IndexEntry;

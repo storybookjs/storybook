@@ -4,6 +4,8 @@ import {
   expectShellCommandMatching,
   expectSkillInvoked,
   expectStorybookBoots,
+  expectStorybookDependenciesAtLeast,
+  expectStorybookInstalledFromCheckout,
   isRecord,
   parseJson,
 } from '#test-utils';
@@ -33,6 +35,16 @@ describe('initializing Storybook in a project without it', () => {
 
     const scripts = isRecord(packageJson.scripts) ? packageJson.scripts : {};
     expect(scripts.storybook, 'Expected a storybook script').toBeTypeOf('string');
+  });
+
+  // The plugin requires Storybook >= 11.0, so initializing the 10.x stable release must not
+  // count. Prerelease specs like 11.0.0-alpha.2 parse as (11,0,0) and satisfy the floor.
+  test('installs the plugin-required release', () => {
+    expectStorybookDependenciesAtLeast('11.0.0', ['storybook', '@storybook/react-vite']);
+  });
+
+  test('installs the Storybook build of this checkout', () => {
+    expectStorybookInstalledFromCheckout();
   });
 
   test('the initialized Storybook boots', async () => {

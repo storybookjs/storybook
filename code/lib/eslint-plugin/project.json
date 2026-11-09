@@ -4,7 +4,16 @@
   "projectType": "library",
   "targets": {
     "compile": {},
-    "check": {}
+    "check": {
+      "inputs": [
+        "default",
+        "^own-production",
+        {
+          "projects": ["core"],
+          "input": "production"
+        }
+      ]
+    }
   },
   "tags": ["library"]
 }

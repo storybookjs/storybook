@@ -8,7 +8,8 @@
     "addon-a11y",
     "addon-docs",
     "addon-vitest",
-    "addon-onboarding"
+    "addon-onboarding",
+    "builder-vite"
   ],
   "targets": {
     "sandbox": {
@@ -22,7 +23,7 @@
         "dir": "solid-vite-default-ts"
       }
     },
-    "chromatic": {},
+    "smoke-test": {},
     "serve": {}
   },
   "tags": ["ci:daily"]

@@ -66,15 +66,16 @@ test.describe('Storybook hooks', () => {
     // Save the file to trigger HMR, then wait for it
     await fs.writeFile(previewFilePath, newContent);
 
-    await page.waitForFunction(
-      () =>
-        window.__STORYBOOK_BEFORE_ALL_CALLS__ === 2 &&
-        window.__STORYBOOK_BEFORE_ALL_CLEANUP_CALLS__ === 1,
-      undefined,
-      { timeout: 2000 }
-    );
-
-    // Restore the original content of the preview file
-    await fs.writeFile(previewFilePath, originalContent);
+    try {
+      await page.waitForFunction(
+        () =>
+          window.__STORYBOOK_BEFORE_ALL_CALLS__ === 2 &&
+          window.__STORYBOOK_BEFORE_ALL_CLEANUP_CALLS__ === 1,
+        undefined,
+        { timeout: 2000 }
+      );
+    } finally {
+      await fs.writeFile(previewFilePath, originalContent);
+    }
   });
 });

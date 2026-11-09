@@ -107,10 +107,14 @@ describe('watchStorySpecifiers', () => {
 
     onInvalidate.mockClear();
     onChange('src/nested', 1234);
-    // Wait for the batching timeout and globby to complete
-    await vi.waitFor(() => {
-      expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.stories.ts`, false);
-    });
+    // Wait for the batching timeout and globby to complete; the scan took over a second on
+    // CircleCI's Windows executors.
+    await vi.waitFor(
+      () => {
+        expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.stories.ts`, false);
+      },
+      { timeout: 5_000 }
+    );
   });
 
   it('watches single file globs', async () => {

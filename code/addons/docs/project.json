@@ -1,10 +1,42 @@
 {
   "name": "addon-docs",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "namedInputs": {
+    "production": [
+      "own-production",
+      "{workspaceRoot}/code/renderers/react/src/**/*",
+      "!{workspaceRoot}/code/**/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+    ]
+  },
   "projectType": "library",
   "targets": {
     "compile": {},
-    "check": {}
+    "check": {
+      "inputs": [
+        "default",
+        "^own-production",
+        {
+          "projects": ["addon-docs"],
+          "input": "production"
+        },
+        {
+          "projects": ["builder-vite"],
+          "input": "production"
+        },
+        {
+          "projects": ["core"],
+          "input": "production"
+        },
+        {
+          "projects": ["react-vite"],
+          "input": "production"
+        },
+        {
+          "projects": ["react"],
+          "input": "production"
+        }
+      ]
+    }
   },
   "tags": ["library"]
 }

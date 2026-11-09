@@ -6,6 +6,7 @@ setup: true
 orbs:
   git-shallow-clone: guitarrapc/git-shallow-clone@2.8.0
   continuation: circleci/continuation@2.0.1
+  nx: nrwl/nx@1.7.0
 
 parameters:
   ghBaseBranch:
@@ -20,6 +21,18 @@ parameters:
     default: 'false'
     description: Whether the PR author is a trusted author who should be allowed to persist to shared caches
     type: string
+  nxDte:
+    default: false
+    description: Run the workflow as one NX task graph distributed over CircleCI agents (scripts/ci/nx/circleci-dte.ts)
+    type: boolean
+  nxDteAffected:
+    default: true
+    description: When nxDte is set on a pull request, run only the tasks the change reaches (nx affected) instead of all of them
+    type: boolean
+  nxDteMaxAgents:
+    default: 44
+    description: At most how many Linux CircleCI agents a run starts when nxDte is set; the setup job works out how many its work needs
+    type: integer
   workflow:
     default: skipped
     description: Which workflows to run, comma-separated, out of daily, normal, focus, docs, windows (e.g. `normal,windows`)
@@ -31,7 +44,9 @@ jobs:
       - image: cimg/node:22.22.3
     resource_class: large
     steps:
-      # Only focus diffs against the base branch, so only it pays for 100 commits of history.
+      # Only focus diffs against the base branch in this job's checkout, so only it pays for 100
+      # commits of history. The NX DTE pipeline finds the commit `nx affected` diffs against in the
+      # background, below.
       - when:
           condition:
             matches:
@@ -39,15 +54,18 @@ jobs:
               value: << pipeline.parameters.workflow >>
           steps:
             - git-shallow-clone/checkout_advanced:
-                clone_options: '--depth 100 --filter=blob:none --no-tags'
-                fetch_options: '--depth 100 --filter=blob:none --no-tags'
+                # Only the commits: the setup job diffs commits by file name, and git fetches the
+                # trees it needs for that. Twice as fast as `blob:none`, which also fetches every
+                # commit's trees.
+                clone_options: '--depth 100 --filter=tree:0 --no-tags'
+                fetch_options: '--depth 100 --filter=tree:0 --no-tags'
                 tag_fetch_options: '--no-tags'
             - run:
-                name: Fetch base branch for focused CI
+                name: Fetch the base branch
                 environment:
                   GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
                 command: |
-                  git fetch --depth=100 --filter=blob:none --no-tags origin \
+                  git fetch --depth=100 --filter=tree:0 --no-tags origin \
                     "$GH_BASE_BRANCH:refs/remotes/origin/$GH_BASE_BRANCH"
                   if ! git merge-base "origin/$GH_BASE_BRANCH" HEAD >/dev/null; then
                     echo "No merge base found between origin/$GH_BASE_BRANCH and HEAD within 100 commits." >&2
@@ -62,6 +80,110 @@ jobs:
             - git-shallow-clone/checkout_advanced:
                 clone_options: '--depth 1'
                 tag_fetch_options: '--no-tags'
+            # The merge base for `nx affected`, as nx/set-shas finds it in 100 commits of history,
+            # which this checkout lacks. Fetched while node_modules restores, and only for a pull
+            # request: anything else runs every task.
+            - when:
+                condition:
+                  and:
+                    - << pipeline.parameters.nxDte >>
+                    - << pipeline.parameters.nxDteAffected >>
+                    - not:
+                        equal: ['', << pipeline.parameters.ghPrNumber >>]
+                steps:
+                  - run:
+                      name: Find the commit the pull request branched from
+                      background: true
+                      environment:
+                        GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
+                      command: bash scripts/ci/nx/merge-base.sh "$GH_BASE_BRANCH" /tmp/nx-dte-merge-base
+      # The NX DTE pipeline sizes its agents to the tasks Nx will run (scripts/ci/nx/select.ts), so
+      # this job installs (from the cache nx-main stores) and asks Nx. The key is circleci-dte.ts
+      # `NODE_MODULES_KEY`; circleci-dte.test.ts keeps the two equal.
+      - when:
+          condition: << pipeline.parameters.nxDte >>
+          steps:
+            - run:
+                name: Hash the package manifests and patches
+                command: shopt -s nullglob; cat package.json */package.json code/*/package.json code/*/*/package.json .yarn/patches/* | sha256sum > /tmp/nx-dte-manifests.sha256
+            - restore_cache:
+                keys:
+                  - v2-nx-dte-node_modules/{{ arch }}/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}/{{ checksum ".nx/workflows/prune-other-platforms.cjs" }}/{{ checksum "scripts/ci/nx/circleci-node-modules.sh" }}/{{ checksum "scripts/ci/nx/workspace-links.ts" }}/{{ checksum "/tmp/nx-dte-manifests.sha256" }}
+            - run:
+                name: Restore node_modules
+                command: bash scripts/ci/nx/circleci-node-modules.sh restore /tmp/nx-dte-node_modules
+            # After an install (a new lockfile), store the tree at once, so the main job and the
+            # agents restore it instead of each installing. Only for trusted authors, as nx-main.
+            - when:
+                condition:
+                  equal: ['true', << pipeline.parameters.ghTrustedAuthor >>]
+                steps:
+                  - run:
+                      name: Pack node_modules
+                      command: bash scripts/ci/nx/circleci-node-modules.sh pack /tmp/nx-dte-node_modules
+                  - save_cache:
+                      key: v2-nx-dte-node_modules/{{ arch }}/{{ checksum ".nvmrc" }}/{{ checksum ".yarnrc.yml" }}/{{ checksum "yarn.lock" }}/{{ checksum ".nx/workflows/prune-other-platforms.cjs" }}/{{ checksum "scripts/ci/nx/circleci-node-modules.sh" }}/{{ checksum "scripts/ci/nx/workspace-links.ts" }}/{{ checksum "/tmp/nx-dte-manifests.sha256" }}
+                      paths:
+                        - /tmp/nx-dte-node_modules
+            # NX_BASE and NX_HEAD for `nx affected`, as Nx's CircleCI recipe for manual DTE does: on a
+            # pull request the merge base with the base branch.
+            - when:
+                condition:
+                  matches:
+                    pattern: '(.*,)?focus(,.*)?'
+                    value: << pipeline.parameters.workflow >>
+                steps:
+                  - nx/set-shas:
+                      main-branch-name: << pipeline.parameters.ghBaseBranch >>
+            - unless:
+                condition:
+                  matches:
+                    pattern: '(.*,)?focus(,.*)?'
+                    value: << pipeline.parameters.workflow >>
+                steps:
+                  - run:
+                      name: Wait for the commit the pull request branched from
+                      environment:
+                        GH_PR_NUMBER: << pipeline.parameters.ghPrNumber >>
+                      command: |
+                        # Nothing to wait for outside a pull request (the step above did not run).
+                        if [ -z "$GH_PR_NUMBER" ] || [ "<< pipeline.parameters.nxDteAffected >>" != true ]; then
+                          exit 0
+                        fi
+                        for _ in $(seq 600); do
+                          [ -e /tmp/nx-dte-merge-base ] && break
+                          [ -e /tmp/nx-dte-merge-base.failed ] && { echo "Finding the merge base failed."; exit 1; }
+                          sleep 0.2
+                        done
+                        [ -e /tmp/nx-dte-merge-base ] || { echo "Finding the merge base took over 2 minutes."; exit 1; }
+                        echo "export NX_BASE=\"$(cat /tmp/nx-dte-merge-base)\";" >> "$BASH_ENV"
+                        echo "export NX_HEAD=\"$(git rev-parse HEAD)\";" >> "$BASH_ENV"
+            - run:
+                name: Select the tasks to run
+                environment:
+                  GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
+                  GH_PR_NUMBER: << pipeline.parameters.ghPrNumber >>
+                  NX_NO_CLOUD: 'true'
+                  NX_DAEMON: 'false'
+                  # As the root .env, which select.ts's in-process hashing does not load.
+                  NX_ISOLATE_PLUGINS: 'false'
+                command: |
+                  # Only a pull request has a base to diff against; anything else runs every task.
+                  # The parameter inline: a boolean in `environment` does not reach the step as `true`.
+                  BASE=
+                  if [ -n "$GH_PR_NUMBER" ] && [ "<< pipeline.parameters.nxDteAffected >>" = true ]; then
+                    BASE=$NX_BASE
+                  fi
+                  echo "Pull request: ${GH_PR_NUMBER:-none}; nx affected since: ${BASE:-nothing, all tasks run}"
+                  yarn exec jiti ./scripts/ci/nx/select.ts \
+                    --workflow=<< pipeline.parameters.workflow >> \
+                    --base-ref="origin/$GH_BASE_BRANCH" \
+                    --base="$BASE" \
+                    --nx-branch="${GH_PR_NUMBER:-<< pipeline.git.branch >>}" \
+                    --max-agents=<< pipeline.parameters.nxDteMaxAgents >> \
+                    --out=/tmp/nx-dte-selection.json
+            - store_artifacts:
+                path: /tmp/nx-dte-selection.json
       - run:
           name: Generate config
           environment:
@@ -71,7 +193,10 @@ jobs:
               --workflow=<< pipeline.parameters.workflow >> \
               --base-ref="origin/$GH_BASE_BRANCH" \
               --gh-trusted-author=<< pipeline.parameters.ghTrustedAuthor >> \
-              --branch="<< pipeline.git.branch >>"
+              --branch="<< pipeline.git.branch >>" \
+              --nx-dte=<< pipeline.parameters.nxDte >> \
+              --nx-dte-max-agents=<< pipeline.parameters.nxDteMaxAgents >> \
+              $([ "<< pipeline.parameters.nxDte >>" = true ] && echo --nx-dte-selection=/tmp/nx-dte-selection.json)
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml
 workflows:

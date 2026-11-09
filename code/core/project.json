@@ -1,10 +1,88 @@
 {
   "name": "core",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "namedInputs": {
+    "production": [
+      "own-production",
+      "{workspaceRoot}/package.json",
+      "{workspaceRoot}/code/*/package.json",
+      "{workspaceRoot}/code/*/*/package.json",
+      "{workspaceRoot}/code/addons/docs/src/**/*",
+      "{workspaceRoot}/code/addons/a11y/src/**/*",
+      "{workspaceRoot}/code/addons/vitest/src/**/*",
+      "{workspaceRoot}/code/lib/cli-storybook/src/**/*",
+      "{workspaceRoot}/code/addons/onboarding/src/constants.ts",
+      "!{workspaceRoot}/code/**/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)"
+    ]
+  },
   "projectType": "library",
   "targets": {
     "compile": {},
-    "check": {}
+    "check": {
+      "inputs": [
+        "default",
+        "^own-production",
+        {
+          "projects": ["addon-a11y"],
+          "input": "production"
+        },
+        {
+          "projects": ["addon-docs"],
+          "input": "production"
+        },
+        {
+          "projects": ["storybook-addon-pseudo-states"],
+          "input": "production"
+        },
+        {
+          "projects": ["addon-themes"],
+          "input": "production"
+        },
+        {
+          "projects": ["addon-vitest"],
+          "input": "production"
+        },
+        {
+          "projects": ["builder-vite"],
+          "input": "production"
+        },
+        {
+          "projects": ["builder-webpack5"],
+          "input": "production"
+        },
+        {
+          "projects": ["core"],
+          "input": "production"
+        },
+        {
+          "projects": ["react-vite"],
+          "input": "production"
+        },
+        {
+          "projects": ["react-webpack5"],
+          "input": "production"
+        },
+        {
+          "projects": ["core-webpack"],
+          "input": "production"
+        },
+        {
+          "projects": ["react-webpack"],
+          "input": "production"
+        },
+        {
+          "projects": ["react"],
+          "input": "production"
+        },
+        "{workspaceRoot}/code/addons/onboarding/src/**/*",
+        "!{workspaceRoot}/code/addons/onboarding/src/**/*.{test,spec,stories}.?(c|m)[jt]s?(x)?(.snap)",
+        "{workspaceRoot}/code/.storybook/isChromatic.ts",
+        "{workspaceRoot}/code/.storybook/preview.tsx",
+        "{workspaceRoot}/code/.storybook/vitest.preview.ts",
+        "{workspaceRoot}/code/__mocks__/fs.ts",
+        "{workspaceRoot}/code/vitest.helpers.ts"
+      ]
+    }
   },
   "tags": ["library"]
 }

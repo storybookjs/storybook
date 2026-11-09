@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 
 import { storyNameFromExport } from 'storybook/internal/csf';
-import type { Args, StoryContext, StrictArgTypes } from 'storybook/internal/types';
+import type {
+  Args,
+  StoryContext,
+  StorybookConfigRaw,
+  StrictArgTypes,
+} from 'storybook/internal/types';
 
 import type { StoryObj } from '@storybook/react';
 
@@ -59,7 +64,9 @@ export default {
   },
   loaders: [
     async ({ componentId, name }: StoryContext) => {
-      if (!globalThis.FEATURES?.docgenServer) {
+      // `FEATURES` is declared only inside the monorepo, so a sandbox typechecks it from scratch.
+      const { FEATURES } = globalThis as { FEATURES?: StorybookConfigRaw['features'] };
+      if (!FEATURES?.docgenServer) {
         return {};
       }
       const docgen = await getService('core/docgen', { internal: true }).queries.docgen.loaded({

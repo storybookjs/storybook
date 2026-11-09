@@ -1,0 +1,10 @@
+{
+  "name": "init-empty/lit-vite-ts",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "description": "Runs scripts/ci/nx/init-empty.ts, like CircleCI's init-empty jobs (scripts/ci/init-empty.ts).",
+  "projectType": "application",
+  "targets": {
+    "init-empty": {}
+  },
+  "tags": ["ci:daily"]
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isGlobalInput, isTestFixture } from './global-inputs.ts';
+import { isGlobalInput, isTestFixture, needsAllUnitTests } from './global-inputs.ts';
 
 describe('isGlobalInput', () => {
   it.each([
@@ -51,4 +51,21 @@ describe('isTestFixture', () => {
       expect(isTestFixture(file)).toBe(false);
     }
   );
+});
+
+describe('needsAllUnitTests', () => {
+  it.each([
+    '.nx/workflows/circleci-assignment-rules.yaml',
+    '.circleci/config.yml',
+    '.github/workflows/nx-cache.yml',
+    'code/project.json',
+    'yarn.lock',
+    'code/addons/a11y/src/__fixtures__/axe-result.ts',
+  ])('runs every unit test for a change to %s', (file) => {
+    expect(needsAllUnitTests(file)).toBe(true);
+  });
+
+  it('runs only the related unit tests for a change to a source file', () => {
+    expect(needsAllUnitTests('code/addons/a11y/src/a11yRunner.ts')).toBe(false);
+  });
 });

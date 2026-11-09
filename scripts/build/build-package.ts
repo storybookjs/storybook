@@ -17,6 +17,8 @@ import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import prettyTime from 'pretty-hrtime';
 
+import { checkoutChanges, checkoutChangesSince } from '../utils/checkout.ts';
+import { isCiNxTask } from '../utils/nx.ts';
 import { type BuildEntries, measure } from './utils/entry-utils.ts';
 import { generateBundle } from './utils/generate-bundle.ts';
 import { generatePackageJsonFile } from './utils/generate-package-json.ts';
@@ -66,6 +68,10 @@ async function run() {
   if (isProduction && isWatch) {
     throw new Error('Cannot watch and build for production at the same time');
   }
+
+  // CircleCI's build job runs `git.check()` after compiling; an NX agent compiles in its own task.
+  // Limited to the package, which is all a compile writes, so a task running beside it is not blamed.
+  const changesBefore = isCiNxTask() && !isWatch ? checkoutChanges(DIR_ROOT, [DIR_CWD]) : undefined;
 
   const { default: pkg } = await import(pathToFileURL(join(DIR_CWD, 'package.json')).href, {
     with: { type: 'json' },
@@ -123,6 +129,17 @@ async function run() {
     isProduction ? 'Generated types in' : 'Generated type mappers in',
     picocolors.yellow(prettyTime(typesTime))
   );
+
+  const changed = changesBefore ? checkoutChangesSince(changesBefore, DIR_ROOT, [DIR_CWD]) : [];
+  if (changed.length > 0) {
+    throw new Error(
+      [
+        `Compiling ${DIR_REL} changed files that are committed or not ignored:`,
+        ...changed.map((entry) => `  ${entry}`),
+        'Run `yarn task --task compile` locally and commit the generated files.',
+      ].join('\n')
+    );
+  }
 }
 
 run();

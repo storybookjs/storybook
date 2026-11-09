@@ -8,12 +8,18 @@
     "addon-a11y",
     "addon-docs",
     "addon-vitest",
-    "addon-onboarding"
+    "addon-onboarding",
+    "builder-vite"
   ],
   "targets": {
     "sandbox": {
+      "command": "npm install --silent --global --prefix \"${TMPDIR:-/tmp}/npm-11.17.0\" npm@11.17.0 && PATH=\"${TMPDIR:-/tmp}/npm-11.17.0/bin:$PATH\" yarn task generate -s task --debug --no-link --template={projectName} && yarn task sandbox -s task --debug --no-link --template={projectName}",
       "options": {
-        "dir": "astro-vite-default-ts"
+        "dir": "astro-vite-default-ts",
+        "env": {
+          "STORYBOOK_CLI_SKIP_PLAYWRIGHT_INSTALLATION": "1",
+          "STORYBOOK_SANDBOX_GENERATE": "1"
+        }
       }
     },
     "dev": {},
@@ -22,8 +28,8 @@
         "dir": "astro-vite-default-ts"
       }
     },
-    "chromatic": {},
+    "smoke-test": {},
     "serve": {}
   },
-  "tags": []
+  "tags": ["ci:daily"]
 }

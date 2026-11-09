@@ -25,7 +25,6 @@ import {
 } from './entry-utils.ts';
 import { tiePreviewRuntimeSetup } from './preview-runtime-entry.ts';
 
-// repo root/bench/esbuild-metafiles/core
 const DIR_METAFILE_BASE = join(
   import.meta.dirname,
   '..',
@@ -113,9 +112,6 @@ function rolldownGlobalExternalsPlugin(): RolldownPlugin {
 /*
  * This plugin writes the metafile to a file in the output directory.
  * It is used to analyze the bundle size of the different entry points.
- * The outputDir must be the package's directory, as that is the projectName in the NX config,
- * and what will become part of the build output cache. If there is a mismatch,
- * the metafiles won't be available whenever NX uses its cached results of the build step.
  */
 function metafileWriterPlugin(entryType: EntryType, outputDir: string): esbuild.Plugin {
   return {
@@ -148,7 +144,11 @@ export async function generateBundle({
 }) {
   const DIR_CWD = cwd;
   const DIR_REL = relative(DIR_CODE, DIR_CWD);
-  const PACKAGE_DIR_NAME = basename(DIR_CWD);
+  // `compile` caches this folder as its output: `{projectName}` in nx.json.
+  const DIR_METAFILES = join(
+    DIR_METAFILE_BASE,
+    JSON.parse(await readFile(join(DIR_CWD, 'project.json'), 'utf8')).name
+  );
   const external = (await getExternal(DIR_CWD)).runtimeExternal;
   const { entries, postbuild } = entry;
 
@@ -280,7 +280,7 @@ export async function generateBundle({
       treeshake: true,
     });
 
-    await build.write({
+    const { output } = await build.write({
       dir: join(DIR_CWD, 'dist'),
       format: 'es',
       entryFileNames: `${outDir}/[name].js`,
@@ -291,6 +291,18 @@ export async function generateBundle({
       },
     });
     await build.close();
+
+    // The sources Rolldown bundled, one path per line relative to the package, for the input check
+    // in scripts/ci/nx/compile-inputs.test.ts. Not `.json`: the bench story reads every metafile.
+    const inputs = output
+      .flatMap((chunk) => (chunk.type === 'chunk' ? chunk.moduleIds : []))
+      .filter((id) => !id.startsWith('\0') && !id.includes('node_modules/'))
+      .map((id) => relative(DIR_CWD, id));
+    await mkdir(DIR_METAFILES, { recursive: true });
+    await writeFile(
+      join(DIR_METAFILES, `${outDir}-${name}.rolldown-inputs`),
+      [...new Set(inputs)].sort().join('\n')
+    );
 
     if (outDir === 'preview' && name === 'runtime') {
       const entryFile = join(DIR_CWD, 'dist', outDir, `${name}.js`);
@@ -353,7 +365,7 @@ export async function generateBundle({
         },
         plugins: [
           ...sharedOptions.plugins,
-          metafileWriterPlugin('node', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
+          metafileWriterPlugin('node', DIR_METAFILES),
         ],
       })
     );
@@ -375,7 +387,7 @@ export async function generateBundle({
         plugins: [
           esbuildNoDynamicRequireGuard,
           ...sharedOptions.plugins,
-          metafileWriterPlugin('browser', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
+          metafileWriterPlugin('browser', DIR_METAFILES),
         ],
       })
     );
@@ -406,7 +418,7 @@ export async function generateBundle({
         entryPoints: esbuildRuntimeEntries.map(({ entryPoint }) => entryPoint),
         plugins: [
           ...runtimeOptions.plugins,
-          metafileWriterPlugin('runtime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
+          metafileWriterPlugin('runtime', DIR_METAFILES),
         ],
       })
     );
@@ -420,7 +432,7 @@ export async function generateBundle({
         plugins: [
           ...runtimeOptions.plugins,
           globalExternals(globalsModuleInfoMap),
-          metafileWriterPlugin('globalizedRuntime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
+          metafileWriterPlugin('globalizedRuntime', DIR_METAFILES),
         ],
       })
     );

@@ -4,7 +4,17 @@
   "projectType": "library",
   "targets": {
     "compile": {},
-    "check": {}
+    "check": {
+      "inputs": [
+        "default",
+        "^own-production",
+        {
+          "projects": ["core"],
+          "input": "production"
+        },
+        "{workspaceRoot}/code/vitest.shared.ts"
+      ]
+    }
   },
   "tags": ["library"]
 }

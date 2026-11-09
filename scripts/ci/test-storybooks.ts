@@ -24,7 +24,8 @@ export function definePortableStoryTest(directory: string) {
           run: {
             name: 'Install dependencies',
             working_directory,
-            command: 'yarn install --no-immutable',
+            // The lockfile is not tracked; an empty one keeps the folder out of the root workspace.
+            command: 'touch yarn.lock && yarn install --no-immutable',
             environment: {
               YARN_ENABLE_IMMUTABLE_INSTALLS: false,
             },

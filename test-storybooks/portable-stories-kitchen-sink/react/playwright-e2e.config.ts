@@ -1,12 +1,20 @@
 import { defineConfig, devices } from "@playwright/test";
 import path from "node:path";
 
+const root = path.join(__dirname, "..", "..", "..");
+// Under NX each task (`e2e-ui-1`, `e2e-ui-2`, …) keeps its own results, as the `outputs` in its
+// project.json and scripts/utils/nx.ts `nxTaskResultsDirectory` have it.
+const nxTask = process.env.NX_TASK_TARGET_PROJECT
+  ? [process.env.NX_TASK_TARGET_PROJECT, process.env.NX_TASK_TARGET_TARGET ?? ""]
+  : [];
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
   testDir: "./e2e-tests",
-  outputDir: "./test-results",
+  globalSetup: "./e2e-tests/storybook-ready.setup.ts",
+  outputDir: nxTask.length > 0 ? path.join(root, "code", "playwright-results", ...nxTask) : "./test-results",
   /* Maximum time one test can run for. */
   timeout: (process.env.CI ? 60 : 30) * 1000,
   /* Run tests in files in parallel */
@@ -24,7 +32,7 @@ export default defineConfig({
       "junit",
       {
         embedAnnotationsAsProperties: true,
-        outputFile: path.join(__dirname, "..", "..", "..", "test-results", "react-e2e-ui.xml"),
+        outputFile: path.join(root, "test-results", ...nxTask, "react-e2e-ui.xml"),
       },
     ],
   ],

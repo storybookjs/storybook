@@ -6,7 +6,16 @@
     "compile": {},
     "check": {
       "executor": "nx:run-commands",
-      "options": { "cwd": "{projectRoot}", "command": "vue-tsc --noEmit" }
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "vue-tsc --noEmit"
+      },
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/code/**/src/**/*",
+        "{workspaceRoot}/code/.storybook/**/*"
+      ]
     }
   },
   "tags": ["library"]

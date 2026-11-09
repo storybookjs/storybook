@@ -1,7 +1,9 @@
+import { join } from 'pathe';
 import waitOn from 'wait-on';
 
 import type { MonorepoDetails, Task } from '../task.ts';
 import { exec } from '../utils/exec.ts';
+import { nxTaskResultsDirectory } from '../utils/nx.ts';
 
 const STORYBOOK_PORT = 6006;
 const READY_TIMEOUT_MS = 25_000;
@@ -14,7 +16,8 @@ export const e2eTestsInternal: Task<MonorepoDetails> = {
     return false;
   },
   async run({ codeDir, junitFilename }, { dryRun, debug }) {
-    const storybookUrl = `http://localhost:${STORYBOOK_PORT}`;
+    // NX serves the static build on another port than the dev server, so both can share a worker.
+    const storybookUrl = process.env.STORYBOOK_URL || `http://localhost:${STORYBOOK_PORT}`;
     const env = {
       CI: 'true',
       STORYBOOK_URL: storybookUrl,
@@ -32,8 +35,12 @@ export const e2eTestsInternal: Task<MonorepoDetails> = {
       });
     }
 
+    // `code:e2e-internal-<n>` runs one shard each, so NX can spread the suite over several workers,
+    // each with its own Storybook and still one Playwright worker.
+    const shard = process.env.PLAYWRIGHT_SHARD ? ` --shard=${process.env.PLAYWRIGHT_SHARD}` : '';
+    const output = nxTaskResultsDirectory(join(codeDir, 'playwright-results'));
     await exec(
-      'yarn playwright test -c e2e-internal/playwright.config.ts',
+      `yarn playwright test -c e2e-internal/playwright.config.ts${shard} --output=${output}`,
       {
         env,
         cwd: codeDir,

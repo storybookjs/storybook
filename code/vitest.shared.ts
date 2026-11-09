@@ -31,6 +31,9 @@ export const vitestCommonConfig = defineConfig({
   },
   ssr: { resolve: { conditions: ['code', ...defaultServerConditions] } },
   test: {
+    // Tests compare printed text. Nx forces colour on the tasks it runs (and some shells set
+    // FORCE_COLOR), which would put ANSI codes in that text; this keeps it plain everywhere.
+    env: { FORCE_COLOR: '0', NO_COLOR: '1' },
     passWithNoTests: true,
     clearMocks: true,
     server: {

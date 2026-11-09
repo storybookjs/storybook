@@ -1,4 +1,6 @@
 import { expect, test } from '@playwright/test';
+import { readFile, writeFile } from 'node:fs/promises';
+import { join } from 'pathe';
 import process from 'process';
 
 import { SbPage, hasOnboardingFeature } from './util.ts';
@@ -6,8 +8,18 @@ import { SbPage, hasOnboardingFeature } from './util.ts';
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 const type = process.env.STORYBOOK_TYPE || 'dev';
+const sandboxDir = process.env.STORYBOOK_SANDBOX_DIR || '';
+
+let restoreStoryFile: (() => Promise<void>) | undefined;
 
 test.describe('addon-onboarding', () => {
+  // The flow saves a new story into the Button's story file, which the later specs and tasks on the
+  // same sandbox would otherwise see; also after a failure.
+  test.afterEach(async () => {
+    await restoreStoryFile?.();
+    restoreStoryFile = undefined;
+  });
+
   test.skip(type === 'build', `Skipping addon tests for production Storybooks`);
   test.skip(
     !hasOnboardingFeature(templateName),
@@ -19,6 +31,12 @@ test.describe('addon-onboarding', () => {
     const sbPage = new SbPage(page, expect);
     await page.goto(`${storybookUrl}/?path=/story/example-button--primary`);
     await sbPage.waitUntilLoaded();
+    if (sandboxDir) {
+      const { entries } = await (await page.request.get(`${storybookUrl}/index.json`)).json();
+      const storyFile = join(sandboxDir, entries['example-button--primary'].importPath);
+      const original = await readFile(storyFile, 'utf8');
+      restoreStoryFile = () => writeFile(storyFile, original);
+    }
     await page.evaluate(async () => {
       const { internal_checklistStore, internal_universalChecklistStore } = (
         window as unknown as {

@@ -3,6 +3,7 @@ import { join } from 'pathe';
 import { versionLine } from './cycle.ts';
 import { fingerprint } from './fingerprint.ts';
 import type { LoadedResult } from './results.ts';
+import { sanitizeFinding, sanitizeTitle } from './sanitize.ts';
 import type {
   CommentProposal,
   Cycle,
@@ -122,15 +123,30 @@ const reproductionLink = (cycle: Cycle): string[] => {
   ];
 };
 
-/** Render the bug-template issue body, linking each evidence file through `evidenceUrl`. */
+const reproLines = (raw: Finding, capped: Finding): string[] => {
+  const omitted = raw.reproSteps.length - capped.reproSteps.length;
+  return [
+    ...capped.reproSteps.map((step, index) => `${index + 1}. ${step}`),
+    ...(omitted > 0 ? [`... ${omitted} more steps omitted`] : []),
+  ];
+};
+
+/**
+ * Render the bug-template issue body, linking each evidence file through `evidenceUrl`.
+ *
+ * Every field the agent wrote is capped and rendered inside a fence, so none of it can mention,
+ * reference, link or format anything.
+ */
 export const renderIssueBody = (
   proposal: IssueProposal,
   evidenceUrl: (name: string) => string
 ): string => {
-  const { finding } = proposal;
+  const finding = sanitizeFinding(proposal.finding);
   const images = [
-    finding.evidence.png && `![${finding.title}](${evidenceUrl(finding.evidence.png)})`,
-    finding.evidence.gif && `![${finding.title}, recording](${evidenceUrl(finding.evidence.gif)})`,
+    finding.evidence.png &&
+      `![Screenshot of the actual result](${evidenceUrl(finding.evidence.png)})`,
+    finding.evidence.gif &&
+      `![Recording of the actual result](${evidenceUrl(finding.evidence.gif)})`,
   ].filter(Boolean);
   const logs = finding.evidence.logs.map((log) => `- [${log}](${evidenceUrl(log)})`);
 
@@ -139,7 +155,7 @@ export const renderIssueBody = (
     '',
     '### Describe the bug',
     '',
-    finding.actual,
+    fence(finding.actual, 'text'),
     '',
     ...(finding.errorText ? [fence(finding.errorText), ''] : []),
     `**Baseline:** ${BASELINE_TEXT[finding.baseline]}`,
@@ -150,9 +166,11 @@ export const renderIssueBody = (
     '',
     '### Reproduction steps',
     '',
-    ...finding.reproSteps.map((step, index) => `${index + 1}. ${step}`),
+    fence(reproLines(proposal.finding, finding).join('\n'), 'text'),
     '',
-    `**Expected:** ${finding.expected}`,
+    '**Expected:**',
+    '',
+    fence(finding.expected, 'text'),
     '',
     '### System',
     '',
@@ -177,7 +195,7 @@ export const renderCommentBody = (proposal: CommentProposal): string =>
     '',
     ...sourceLines(proposal, true),
     '',
-    proposal.finding.actual,
+    fence(sanitizeFinding(proposal.finding).actual, 'text'),
     '',
     metadataBlock(proposal),
     '',
@@ -195,7 +213,7 @@ export const toProposal = (group: FindingGroup, hits: IssueHit[], runUrl: string
   }
   const common = {
     fingerprint: group.fingerprint,
-    title: `[SB ${major} QA]: ${group.finding.title}`,
+    title: `[SB ${major} QA]: ${sanitizeTitle(group.finding.title)}`,
     sources: group.occurrences.map(({ result, resultPath, cycle }) => ({
       resultPath,
       repo: cycle.repo,

@@ -8,7 +8,6 @@ import { versionLine } from './lib/cycle.ts';
 import { searchFingerprint } from './lib/github.ts';
 import { groupFindings, toProposal } from './lib/proposals.ts';
 import { loadResults } from './lib/results.ts';
-import { sanitizeFinding } from './lib/sanitize.ts';
 import { Proposal } from './lib/schema.ts';
 
 const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>]
@@ -52,10 +51,7 @@ const loaded = loadResults(results, {
   version,
   catalog: parseCatalog(JSON.parse(readFileSync(CATALOG_FILE, 'utf8'))),
   warn: (message) => console.warn(`::warning::${message}`),
-}).map((run) => ({
-  ...run,
-  result: { ...run.result, findings: run.result.findings.map(sanitizeFinding) },
-}));
+});
 
 const proposals = z
   .array(Proposal)

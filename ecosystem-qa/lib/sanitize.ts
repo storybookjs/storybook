@@ -2,42 +2,58 @@ import type { Finding } from './types.ts';
 
 const LIMITS = { title: 150, actual: 500, expected: 300, errorText: 4000, reproStep: 300 };
 const MAX_REPRO_STEPS = 12;
-const TRUNCATED = ' [truncated]';
 
-const ALLOWED_LINK = /^https:\/\/(?:github\.com|raw\.githubusercontent\.com)\/storybookjs\//i;
+const ALLOWED_HOSTS = new Set(['github.com', 'raw.githubusercontent.com']);
+const LINK = /\b(?:https?:\/\/|www\.)\S+|\b(?:[a-z0-9-]+\.)+[a-z]{2,}\/\S*/gi;
 
 const cap = (text: string, max: number): string =>
-  text.length > max ? `${text.slice(0, max)}${TRUNCATED}` : text;
+  text.length > max ? `${text.slice(0, max)} [truncated]` : text;
 
-// Prose fields come from an agent that read an untrusted repository, so they are rendered as inert
-// text: no HTML, no notifications, no links off storybookjs.
-export const sanitizeText = (text: string): string =>
-  text
-    .replace(/<[^>]*>/g, '')
-    .replace(/\[([^\]]*)\]\((\S+?)\)/g, (match, label: string, url: string) =>
-      ALLOWED_LINK.test(url) ? match : `${label} (link removed)`
-    )
-    .replace(/https?:\/\/\S+/g, (url) => (ALLOWED_LINK.test(url) ? url : '(link removed)'))
-    .replace(/(^|[^\w`])@([a-z0-9][a-z0-9-]*)/gi, '$1`@$2`')
-    .replace(/(^|[^\w`&])#(\d+)\b/g, '$1`#$2`');
-
-// errorText is only capped: it is always rendered inside a fence, where markdown stays literal, and
-// stripping angle brackets would mangle type names in real errors.
-export const sanitizeFinding = (finding: Finding): Finding => {
-  const steps = finding.reproSteps
-    .slice(0, MAX_REPRO_STEPS)
-    .map((step) => cap(sanitizeText(step), LIMITS.reproStep));
-  if (finding.reproSteps.length > MAX_REPRO_STEPS) {
-    steps[MAX_REPRO_STEPS - 1] = `${steps[MAX_REPRO_STEPS - 1]}${TRUNCATED}`;
+// URL parsing resolves dot segments and percent-encoded dots before the owner is compared.
+const isStorybookLink = (candidate: string): boolean => {
+  try {
+    const url = new URL(/^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`);
+    const [, owner] = url.pathname.split('/');
+    return (
+      url.protocol === 'https:' &&
+      ALLOWED_HOSTS.has(url.hostname) &&
+      owner?.toLowerCase() === 'storybookjs'
+    );
+  } catch {
+    return false;
   }
-  return {
-    ...finding,
-    title: cap(sanitizeText(finding.title), LIMITS.title),
-    actual: cap(sanitizeText(finding.actual), LIMITS.actual),
-    expected: cap(sanitizeText(finding.expected), LIMITS.expected),
-    ...(finding.errorText === undefined
-      ? {}
-      : { errorText: cap(finding.errorText, LIMITS.errorText) }),
-    reproSteps: steps,
-  };
 };
+
+/**
+ * Make a line of agent prose safe for an issue title: capped, no HTML, no links off storybookjs,
+ * and every mention and issue reference inside a code span.
+ *
+ * Backticks become quotes first, so the only code spans are the ones added here.
+ */
+export const sanitizeTitle = (text: string): string =>
+  cap(text, LIMITS.title)
+    .replaceAll('`', "'")
+    .replace(/<[^>]*>/g, '')
+    .replace(/\[([^\]]*)\]\(([^)\s]*)\)/g, (match, label: string, url: string) =>
+      isStorybookLink(url) ? match : `${label} (link removed)`
+    )
+    .replace(LINK, (url) => (isStorybookLink(url) ? url : '(link removed)'))
+    .replace(/(^|[^\w`])(@[a-z0-9][\w.-]*(?:\/[\w.-]+)?)/gi, '$1`$2`')
+    .replace(/(^|[^\w`&/])((?:[\w.-]+\/[\w.-]+)?#\d+)\b/g, '$1`$2`');
+
+/**
+ * Cap the prose fields of a finding for an issue body, where each one is rendered inside a fence.
+ *
+ * Only the first repro steps are kept. The title is left alone; `sanitizeTitle` owns it.
+ */
+export const sanitizeFinding = (finding: Finding): Finding => ({
+  ...finding,
+  actual: cap(finding.actual, LIMITS.actual),
+  expected: cap(finding.expected, LIMITS.expected),
+  ...(finding.errorText === undefined
+    ? {}
+    : { errorText: cap(finding.errorText, LIMITS.errorText) }),
+  reproSteps: finding.reproSteps
+    .slice(0, MAX_REPRO_STEPS)
+    .map((step) => cap(step, LIMITS.reproStep)),
+});

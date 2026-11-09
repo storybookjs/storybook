@@ -78,6 +78,15 @@ describe('toProposal', () => {
     );
   });
 
+  it('neutralises the title and keeps the finding as the agent wrote it', () => {
+    const [mention] = groupFindings([
+      loaded('linux', 'claude', [finding({ title: 'Ask @someone' })]),
+    ]);
+
+    expect(issueFor(mention).title).toBe('[SB 11 QA]: Ask `@someone`');
+    expect(issueFor(mention).finding.title).toBe('Ask @someone');
+  });
+
   it('proposes an issue titled for the target major when nothing matches', () => {
     const proposal = issueFor(group);
 
@@ -109,10 +118,28 @@ describe('renderIssueBody', () => {
 
     const body = renderIssueBody(issueFor(group), byName);
 
-    expect(body).toContain(
-      '![New story export never reaches the sidebar](https://assets.example/hmr.png)'
-    );
+    expect(body).toContain('![Screenshot of the actual result](https://assets.example/hmr.png)');
     expect(body).toContain('- [dev.log](https://assets.example/dev.log)');
+  });
+
+  it('renders the agent prose inside text fences and says how many steps it left out', () => {
+    const [group] = groupFindings([
+      loaded('linux', 'claude', [
+        finding({
+          actual: 'Broken, ping @someone and see storybookjs/storybook#1 ```',
+          expected: '[click](https://evil.example)',
+          reproSteps: Array.from({ length: 14 }, (_, index) => `step ${index + 1}`),
+        }),
+      ]),
+    ]);
+
+    const body = renderIssueBody(issueFor(group), byName);
+
+    expect(body).toContain(
+      '````text\nBroken, ping @someone and see storybookjs/storybook#1 ```\n````'
+    );
+    expect(body).toContain('**Expected:**\n\n```text\n[click](https://evil.example)\n```');
+    expect(body).toContain('11. step 11\n12. step 12\n... 2 more steps omitted\n```');
   });
 
   it('links the cycle branch head when the agent committed the upgrade', () => {

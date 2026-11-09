@@ -217,6 +217,12 @@ jobs:
         shell: pwsh
         run: Get-PSDrive -PSProvider FileSystem
 
+      # The upload stores what a symlink points to, so a link the agent left in its evidence
+      # directory would publish a runner file; collect only sees the links that survive.
+      - name: Remove symlinks from the run result
+        if: ${{ always() }}
+        run: if [[ -d ecosystem-qa/results ]]; then find ecosystem-qa/results -type l -print -delete; fi
+
       - name: Upload the run result
         if: ${{ always() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

@@ -52,7 +52,7 @@
     "table": {
       "category": "properties",
       "defaultValue": {
-        "summary": "...",
+        "summary": """",
       },
       "jsDocTags": {
         "bindable": [
@@ -135,7 +135,7 @@
     "table": {
       "category": "properties",
       "defaultValue": {
-        "summary": "...",
+        "summary": undefined,
       },
       "jsDocTags": {
         "bindable": [

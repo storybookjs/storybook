@@ -1,3 +1,6 @@
+import codePackage from '../../code/package.json' with { type: 'json' };
+import scriptsPackage from '../package.json' with { type: 'json' };
+
 import { existsSync } from 'node:fs';
 
 import { join } from 'pathe';
@@ -109,6 +112,19 @@ describe('selectChromaticSiblings', () => {
     ).toEqual([]);
   });
 
+  it.each([
+    'code/core/template/stories/args.stories.ts',
+    'code/core/template/__mocks__/lodash-es.js',
+    'code/addons/docs/template/stories/docspage/basic.stories.ts',
+  ])('covers every other template that runs Chromatic when %s changes', (file) => {
+    expect(selectChromaticSiblings(['react-vite/default-ts'], [file]).toSorted()).toEqual(
+      FOCUS_TEMPLATES.filter(
+        (key) =>
+          key !== 'react-vite/default-ts' && !allTemplates[key].skipTasks?.includes('chromatic')
+      ).toSorted()
+    );
+  });
+
   it.each(packageChanges)(
     'covers every other template loading $dir that runs Chromatic',
     ({ dir, file }) => {
@@ -135,6 +151,7 @@ describe('getFocusJobs', () => {
       'typescript-validation--affected',
       'tests--linux--affected',
       'lint-and-format--affected',
+      'local-storybook---chromatic',
       'sandboxes',
       'react-latest--vite---typescript---create',
       'react-latest--vite---typescript---dev',
@@ -251,12 +268,11 @@ describe('selectPathTriggeredJobs', () => {
     ]);
   });
 
-  it('adds the internal Storybook E2E, story tests, and Chromatic for a manager change', () => {
+  it('adds the internal Storybook E2E and story tests for a manager change', () => {
     expect(triggeredIds('code/core/src/manager/App.tsx')).toEqual([
       'internal-storybook-e2e',
       'internal-storybook-build-e2e',
       'tests-stories--linux',
-      'local-storybook---chromatic',
     ]);
   });
 });
@@ -266,7 +282,7 @@ describe('defineAffectedLintAndFormat', () => {
     (
       getFocusJobs(changedFiles)
         .find(({ id }) => id === 'lint-and-format--affected')!
-        .implementation('focus') as { steps: { run?: { name: string } }[] }
+        .implementation('focus') as { steps: { run?: { name: string; command: string } }[] }
     ).steps.flatMap(({ run }) => (run && /Format|Lint/.test(run.name) ? [run] : []));
 
   it('checks only the changed files, linting each directory with paths relative to it', () => {
@@ -290,6 +306,18 @@ describe('defineAffectedLintAndFormat', () => {
         environment: { FILES: 'ci/focus.ts' },
       }),
     ]);
+  });
+
+  it('passes the unmatched-pattern flag once to each workspace linter', () => {
+    const steps = runSteps('code/core/src/manager/App.tsx', 'scripts/ci/focus.ts');
+    for (const [directory, manifest] of [
+      ['code', codePackage],
+      ['scripts', scriptsPackage],
+    ] as const) {
+      const step = steps.find((step) => step.name === `Lint changed ${directory} files`)!;
+      const expanded = step.command.replace('yarn lint:js:cmd', manifest.scripts['lint:js:cmd']);
+      expect(expanded.match(/--no-error-on-unmatched-pattern/g)).toHaveLength(1);
+    }
   });
 
   it('skips linting when no changed file is under code/ or scripts/', () => {

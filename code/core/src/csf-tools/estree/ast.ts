@@ -1,6 +1,10 @@
 import type * as E from 'oxc-parser';
 import { parseSync, rawTransferSupported, visitorKeys } from 'oxc-parser';
 
+import { isNode } from './nodes.ts';
+
+export * from './nodes.ts';
+
 export type { E };
 
 export type Node = E.Node;
@@ -242,9 +246,6 @@ export const codeFrame = (fileName: string | undefined, code: string, index: num
   return `${fileName ? `${fileName}: ` : ''}(${line}:${column})\n> ${line} | ${text}\n  ${gutter} | ${' '.repeat(column)}^`;
 };
 
-export const isNode = (value: unknown): value is Node =>
-  !!value && typeof value === 'object' && typeof (value as Node).type === 'string';
-
 // Keys that hold type annotations rather than runtime code.
 export const TYPE_KEYS = new Set([
   'typeAnnotation',
@@ -296,96 +297,6 @@ export const walk = (
     walk(child, enter, node);
   }
 };
-
-export const isStringLiteral = (node: unknown): node is E.StringLiteral =>
-  isNode(node) && node.type === 'Literal' && typeof (node as E.StringLiteral).value === 'string';
-
-export const isNumericLiteral = (node: unknown): node is E.NumericLiteral =>
-  isNode(node) && node.type === 'Literal' && typeof (node as E.NumericLiteral).value === 'number';
-
-export const isBooleanLiteral = (node: unknown): node is E.BooleanLiteral =>
-  isNode(node) && node.type === 'Literal' && typeof (node as E.BooleanLiteral).value === 'boolean';
-
-export const isNullLiteral = (node: unknown): node is E.NullLiteral =>
-  isNode(node) &&
-  node.type === 'Literal' &&
-  (node as E.NullLiteral).value === null &&
-  !('regex' in node) &&
-  !('bigint' in node);
-
-export const isRegExpLiteral = (node: unknown): node is E.RegExpLiteral =>
-  isNode(node) && node.type === 'Literal' && 'regex' in node && !!(node as E.RegExpLiteral).regex;
-
-/** Whether `node` is an identifier, and one named `name` when given. */
-export const isIdentifier = (
-  node: unknown,
-  name?: string
-): node is E.IdentifierReference | E.BindingIdentifier | E.IdentifierName =>
-  isNode(node) &&
-  node.type === 'Identifier' &&
-  (name === undefined || (node as E.IdentifierReference).name === name);
-
-export const isFunction = (node: unknown): node is E.Function | E.ArrowFunctionExpression =>
-  isNode(node) &&
-  (node.type === 'FunctionDeclaration' ||
-    node.type === 'FunctionExpression' ||
-    node.type === 'ArrowFunctionExpression');
-
-const WRAPPERS = new Set([
-  'TSAsExpression',
-  'TSSatisfiesExpression',
-  'TSNonNullExpression',
-  'TSTypeAssertion',
-]);
-
-/** Whether a node is a TS assertion, satisfies or non-null wrapper around an expression. */
-export const isTSWrapper = (node: Node) => WRAPPERS.has(node.type);
-
-/** Peel TS assertion/satisfies wrappers off an expression node. */
-export const unwrapExpression = <T extends Node | null | undefined>(node: T): T => {
-  let current: Node | null | undefined = node;
-  while (current && isTSWrapper(current)) {
-    current = (current as { expression: Node }).expression;
-  }
-  return current as T;
-};
-
-// Object literal properties written as `key: value`, methods or accessors (not spreads).
-export type Property = E.ObjectProperty;
-
-/**
- * Static key of an object member, or `undefined` for a spread or a key only running the code would
- * produce. A computed key written as a literal is static: `{ ['a']: 1 }` names `a`, `{ [a]: 1 }`
- * does not.
- */
-export const staticKey = (member: Node): string | undefined => {
-  if (member.type !== 'Property') {
-    return undefined;
-  }
-  const key = member.key as Node;
-  if (isStringLiteral(key)) {
-    return key.value;
-  }
-  if (isNumericLiteral(key)) {
-    return String(key.value);
-  }
-  if (key.type === 'Identifier' && !member.computed) {
-    return key.name;
-  }
-  if (key.type === 'TemplateLiteral' && key.expressions.length === 0) {
-    return key.quasis[0]?.value.cooked ?? key.quasis[0]?.value.raw;
-  }
-  return undefined;
-};
-
-/**
- * The first property of `object` whose `staticKey` is `name`, a method or accessor included: the
- * first, not the one that wins at runtime.
- */
-export const objectProperty = (object: E.ObjectExpression, name: string): Property | undefined =>
-  object.properties.find(
-    (member): member is Property => member.type === 'Property' && staticKey(member) === name
-  );
 
 export type Span = { start: number; end: number };
 

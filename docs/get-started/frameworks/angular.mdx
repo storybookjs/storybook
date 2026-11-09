@@ -138,11 +138,12 @@ Use `applicationConfig` for providers that belong to the application bootstrap e
 If your component has dependencies on other Angular directives and modules, these can be supplied using the `moduleMetadata` [decorator](../../writing-stories/decorators.mdx) either for all stories of a component or for individual stories.
 
 ```ts title="YourComponent.stories.ts"
-import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+import preview from '../.storybook/preview';
+import { moduleMetadata } from '@storybook/angular';
 
 import { YourComponent } from './your.component';
 
-const meta: Meta<YourComponent> = {
+const meta = preview.meta({
   component: YourComponent,
   decorators: [
     // Apply metadata to all stories
@@ -155,13 +156,11 @@ const meta: Meta<YourComponent> = {
       providers: [...],
     }),
   ],
-};
-export default meta;
-type Story = StoryObj<YourComponent>;
+});
 
-export const Base: Story = {};
+export const Base = meta.story();
 
-export const WithCustomProvider: Story = {
+export const WithCustomProvider = meta.story({
   decorators: [
     // Apply metadata to a specific story
     moduleMetadata({
@@ -170,7 +169,7 @@ export const WithCustomProvider: Story = {
       providers: [...],
     }),
   ],
-};
+});
 ```
 
 ## FAQ
@@ -285,7 +284,7 @@ These are common options you may need for the Angular builder:
 | `"sslKey"`                   | Provides an SSL key to serve Storybook. <br /> `"sslKey": "your-ssl-key"`                                                                                                                   |
 | `"smokeTest"`                | Exit Storybook after successful start. <br /> `"smokeTest": true`                                                                                                                           |
 | `"ci"`                       | Starts Storybook in CI mode (skips interactive prompts and will not open browser window). <br /> `"ci": true`                                                                               |
-| `"open"`                     | Whether to open Storybook automatically in the browser. <br /> `"open": true`                                                                                                               |
+| `"open"`                     | Whether to open Storybook automatically in the browser. Defaults to `false`. <br /> `"open": true`                                                                                          |
 | `"quiet"`                    | Filters Storybook verbose build output. <br /> `"quiet": true`                                                                                                                              |
 | `"enableProdMode"`           | Disable Angular's development mode, which turns off assertions and other checks within the framework. <br /> `"enableProdMode": true`                                                       |
 | `"docs"`                     | Starts Storybook in [documentation mode](../../writing-docs/build-documentation.mdx#preview-storybooks-documentation). <br /> `"docs": true`                                                |

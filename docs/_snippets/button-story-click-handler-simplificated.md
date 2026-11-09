@@ -1,4 +1,19 @@
+```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { Button } from './button.component';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Text = meta.story({
+  args: {},
+});
+```
+
 ```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/angular';
 
 import { Button } from './button.component';
@@ -15,10 +30,10 @@ export const Text: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
-import { Button } from './button.component';
+import { Button } from './Button';
 
 const meta = preview.meta({
   component: Button,
@@ -29,19 +44,22 @@ export const Text = meta.story({
 });
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import { Button } from './Button';
 
-export default {
+const meta = preview.meta({
   component: Button,
-};
+});
 
-export const Text = {
+export const Text = meta.story({
   args: {},
-};
+});
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -59,32 +77,17 @@ export const Text: Story = {
 };
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { Button } from './Button';
 
-const meta = preview.meta({
+export default {
   component: Button,
-});
+};
 
-export const Text = meta.story({
+export const Text = {
   args: {},
-});
-```
-
-```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-});
-
-export const Text = meta.story({
-  args: {},
-});
+};
 ```
 
 ```js filename="Button.stories.js|jsx" renderer="solid" language="js"
@@ -146,22 +149,42 @@ export const Text: Story = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
 import Button from './Button.vue';
 
-export default {
+const meta = preview.meta({
   component: Button,
   argTypes: {
     onClick: {},
   },
-};
+});
 
-export const Text = {
+export const Text = meta.story({
   args: {},
-};
+});
+```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import Button from './Button.vue';
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    onClick: {},
+  },
+});
+
+export const Text = meta.story({
+  args: {},
+});
 ```
 
 ```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
@@ -182,15 +205,29 @@ export const Text: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import Button from './Button.vue';
 
-const meta = preview.meta({
+export default {
   component: Button,
   argTypes: {
     onClick: {},
+  },
+};
+
+export const Text = {
+  args: {},
+};
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+const meta = preview.meta({
+  component: 'custom-button',
+  argTypes: {
+    onClick: { action: 'onClick' },
   },
 });
 
@@ -199,15 +236,13 @@ export const Text = meta.story({
 });
 ```
 
-```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
+```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
-import Button from './Button.vue';
-
 const meta = preview.meta({
-  component: Button,
+  component: 'custom-button',
   argTypes: {
-    onClick: {},
+    onClick: { action: 'onClick' },
   },
 });
 
@@ -217,6 +252,7 @@ export const Text = meta.story({
 ```
 
 ```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 export default {
   component: 'custom-button',
   argTypes: {
@@ -230,6 +266,7 @@ export const Text = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
@@ -245,34 +282,4 @@ type Story = StoryObj;
 export const Text: Story = {
   args: {},
 };
-```
-
-```js filename="Button.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'custom-button',
-  argTypes: {
-    onClick: { action: 'onClick' },
-  },
-});
-
-export const Text = meta.story({
-  args: {},
-});
-```
-
-```ts filename="Button.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-const meta = preview.meta({
-  component: 'custom-button',
-  argTypes: {
-    onClick: { action: 'onClick' },
-  },
-});
-
-export const Text = meta.story({
-  args: {},
-});
 ```

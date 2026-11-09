@@ -48,6 +48,13 @@ export type BuildEntries = {
    * This can be useful to expose non-compiled/non-js files such as Svelte components,
    */
   extraOutputs?: Record<string, any>;
+  /**
+   * Package-owned rewrite of a dependency's declaration file, applied when the dts bundler loads it.
+   * For bundled dependencies whose types are inlined but cannot be bundled as published, e.g.
+   * CommonJS-style declarations (see `convertCommonJsNamespaceDeclaration`). Return `null` to keep
+   * the file as is.
+   */
+  transformDependencyDeclaration?: (context: { id: string; code: string }) => string | null;
   /** Package-owned rewrite of pre-bundled declarations, applied before the dts bundler. */
   transformEmittedDeclarations?: (context: { emitDir: string; packageName: string }) => void;
   /**
@@ -75,9 +82,8 @@ export const getExternal = async (cwd: string) => {
     with: { type: 'json' },
   });
 
-  const runtimeExternalInclude: string[] = [
+  const runtimeExternal: string[] = [
     'react',
-    'use-sync-external-store',
     'react-dom',
     'react-dom/client',
     '@storybook/icons',
@@ -93,20 +99,8 @@ export const getExternal = async (cwd: string) => {
     ...Object.keys(packageJson.dependencies || {}),
     ...Object.keys(packageJson.peerDependencies || {}),
   ];
-  const runtimeExternalExclude = [
-    '@testing-library/jest-dom',
-    '@testing-library/user-event',
-    'chai',
-    '@vitest/expect',
-    '@vitest/mocker',
-    '@vitest/spy',
-    '@vitest/utils',
-  ];
-  const runtimeExternal = runtimeExternalInclude.filter(
-    (dep) => !runtimeExternalExclude.includes(dep)
-  );
   const typesExternal = [
-    ...runtimeExternalInclude,
+    ...runtimeExternal,
     'ast-types',
     // typescript ships CommonJS dts that rolldown-plugin-dts cannot bundle. It is only
     // reachable through devDep type imports (e.g. react-docgen-typescript); keeping it

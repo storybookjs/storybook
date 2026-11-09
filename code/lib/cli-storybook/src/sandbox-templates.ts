@@ -305,7 +305,17 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDevDependencies: ['prop-types', '@types/prop-types', '@storybook/addon-mcp'],
+      // create-vite >= 9.3.3 scaffolds TypeScript 7.0, which Storybook's TS docgen cannot use
+      // (TS 7.0 has no compiler API; #37004 supports 7.1+). Keep this pin until docgen supports
+      // the TypeScript version that create-vite scaffolds (#36987, #37004). Overwrite the
+      // scaffold's own devDependencies range; pinning via devDependencies avoids a conflicting
+      // duplicate entry.
+      extraDevDependencies: [
+        'prop-types',
+        '@types/prop-types',
+        '@storybook/addon-mcp',
+        'typescript@^6',
+      ],
       editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
       mainConfig: {
         features: {
@@ -333,7 +343,13 @@ export const baseTemplates = {
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['react@canary', 'react-dom@canary'],
-      extraDevDependencies: ['prop-types', '@types/react@latest', '@types/react-dom@latest'],
+      extraDevDependencies: [
+        'prop-types',
+        '@types/react@latest',
+        '@types/react-dom@latest',
+        // See `react-vite/default-ts` for why TypeScript is pinned to 6.
+        'typescript@^6',
+      ],
       resolutions: {
         '@types/react': 'npm:@types/react@latest',
         '@types/react-dom': 'npm:@types/react-dom@latest',
@@ -432,6 +448,19 @@ export const baseTemplates = {
     // `renderToCanvas` field"). Creating and building the sandbox still pass.
     // Fix: https://github.com/solidjs-community/storybook/pull/76
     // Re-enable once storybook-solidjs-vite releases a version that works with Storybook 11.
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration', 'chromatic'],
+  },
+  'astro-vite/default-ts': {
+    name: 'Astro Latest (Vite | TypeScript)',
+    script:
+      'npx create-astro@latest {{beforeDir}} --template minimal --no-install --no-git --no-ai --skip-houston --yes',
+    expected: {
+      framework: '@storybook-astro/framework',
+      renderer: '@storybook-astro/renderer',
+      builder: '@storybook/builder-vite',
+    },
+    // TODO: remove `inDevelopment` once the nightly sandbox generation has published this template.
+    inDevelopment: true,
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration', 'chromatic'],
   },
   'tanstack-react-router/default-ts': {
@@ -609,9 +638,6 @@ export const baseTemplates = {
       // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
       // Also, Angular 22 needs TypeScript 6 or more recent.
       extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
-      resolutions: {
-        webpack: '5.107.2',
-      },
       useCsfFactory: true,
     },
     extraCiSteps: {
@@ -901,6 +927,9 @@ const benchTemplates = {
     modifications: {
       skipTemplateStories: true,
       skipMocking: true,
+      // This modifications block replaces the base template's, so the pin must be repeated here.
+      // See `react-vite/default-ts` for why TypeScript is pinned to 6.
+      extraDevDependencies: ['typescript@^6'],
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'chromatic', 'vitest-integration'],
     typeCheck: false,
@@ -923,6 +952,9 @@ const benchTemplates = {
       skipTemplateStories: true,
       disableDocs: true,
       skipMocking: true,
+      // This modifications block replaces the base template's, so the pin must be repeated here.
+      // See `react-vite/default-ts` for why TypeScript is pinned to 6.
+      extraDevDependencies: ['typescript@^6'],
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'chromatic', 'vitest-integration'],
     typeCheck: false,
@@ -935,6 +967,9 @@ const benchTemplates = {
       skipTemplateStories: true,
       testBuild: true,
       skipMocking: true,
+      // This modifications block replaces the base template's, so the pin must be repeated here.
+      // See `react-vite/default-ts` for why TypeScript is pinned to 6.
+      extraDevDependencies: ['typescript@^6'],
     },
     skipTasks: ['e2e-tests', 'e2e-tests-dev', 'vitest-integration'],
     typeCheck: false,
@@ -991,6 +1026,7 @@ export const daily: TemplateKey[] = [
   'preact-vite/default-ts',
   'html-vite/default-ts',
   'solid-vite/default-ts',
+  'astro-vite/default-ts',
   // Disabled in CI: the published storybook-builder-rsbuild imports `babelParser` from
   // `storybook/internal/mocking-utils`, which Storybook 11 removed, so the sandbox cannot be
   // created. Fix: https://github.com/rstackjs/storybook-rsbuild/pull/603

@@ -1,0 +1,23 @@
+---
+interface Props {
+  label: string;
+  primary?: boolean;
+}
+
+const { label, primary = false } = Astro.props;
+---
+
+<button class:list={['button', { primary }]}>{label}</button>
+
+<style>
+  .button {
+    border: 1px solid #333;
+    border-radius: 3em;
+    padding: 0.75em 1.5em;
+  }
+  .primary {
+    background: #1ea7fd;
+    border-color: #1ea7fd;
+    color: white;
+  }
+</style>

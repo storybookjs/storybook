@@ -17,6 +17,7 @@ import type {
   ModuleGraphStatus,
 } from '../../shared/open-service/services/module-graph/types.ts';
 import { storyIndexPathToAbsolutePath } from '../../shared/open-service/services/module-graph/types.ts';
+import { MultipleIndexingError } from '../utils/IndexingError.ts';
 import type { StoryIndexGenerator } from '../utils/StoryIndexGenerator.ts';
 import { ChangeDetectionFailureError, ChangeDetectionUnavailableError } from './errors.ts';
 import { GitDiffProvider } from './GitDiffProvider.ts';
@@ -352,7 +353,10 @@ export class ChangeDetectionService {
           error instanceof Error ? error.message : String(error),
           { cause: error instanceof Error ? error : undefined }
         );
-        logger.error(`Change detection failed: ${failure.message}`);
+        // The story index generator logs its own errors
+        if (!(error instanceof MultipleIndexingError)) {
+          logger.error(`Change detection failed: ${failure.message}`);
+        }
         this.resolveReadiness({
           status: 'error',
           error: failure,

@@ -10,20 +10,13 @@ import {
 } from '../../../utils/error/parser/extract/svelte.ts';
 
 interface Result {
-  /** `true` when the meta comes from `preview.meta()`, which creates a CSF factories meta. */
+  // `true` for `preview.meta()`, which creates a CSF factories meta
   isFactory: boolean;
-  /**
-   * Variable declaration with the meta call: `const { Story } = defineMeta({ })`, or
-   * `preview.meta({ })` in place of `defineMeta({ })`. It can also be `const meta =
-   * preview.meta({ })`, followed by `const { Story } = meta`.
-   */
+  // `const { Story } = defineMeta({})` or `preview.meta({})`, or `const meta = preview.meta({})` then `const { Story } = meta`
   defineMetaVariableDeclaration: ESTreeAST.VariableDeclaration;
-  /** `meta` in `const meta = preview.meta({ })`. */
+  // `meta` in `const meta = preview.meta({})`
   metaIdentifier?: ESTreeAST.Identifier;
-  /**
-   * The names of the `<Story />` components.
-   * It could be destructured with rename - e.g. `const { Story: S } = defineMeta({ ... })`
-   */
+  // Local names, because the destructuring can rename `Story`, as in `const { Story: S } = defineMeta({})`
   storyNames: string[];
 }
 
@@ -32,11 +25,6 @@ interface Params {
   filename?: string;
 }
 
-/**
- * Extract Svelte AST nodes via `svelte.compile`,
- * and from the module tag - `<script module>`.
- * They are needed for further code analysis/transformation.
- */
 export async function extractModuleNodes(options: Params): Promise<Result> {
   const { module, filename } = options;
 

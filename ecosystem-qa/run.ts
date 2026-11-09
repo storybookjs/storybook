@@ -61,6 +61,15 @@ const STORYBOOK_CLI: Record<CatalogEntry['packageManager'], (version: string) =>
   yarn: (version) => `yarn dlx storybook@${version}`,
 };
 
+// The upgrade must rewrite the lockfile, but GitHub runners set CI and GITHUB_ACTIONS, which make
+// yarn and pnpm default to a frozen install. Both detect CI with ci-info, which treats CI=false as
+// not CI even when GITHUB_ACTIONS is set; an empty CI is still detected through GITHUB_ACTIONS.
+const UPGRADE_ENV = {
+  CI: 'false',
+  YARN_ENABLE_IMMUTABLE_INSTALLS: 'false',
+  npm_config_frozen_lockfile: 'false',
+};
+
 const HOST_OS: Partial<Record<NodeJS.Platform, Os>> = {
   linux: 'linux',
   win32: 'windows',
@@ -200,8 +209,11 @@ const agentFor = (request: RunRequest) => {
   const keyName = API_KEY_ENV[request.engine];
   const key = process.env[keyName] || fail(`${keyName} is not set.`);
   return request.engine === 'claude'
-    ? claudeCode(request.model, { effort: request.effort, env: { ANTHROPIC_API_KEY: key } })
-    : codex(request.model, { effort: request.effort, env: { CODEX_API_KEY: key } });
+    ? claudeCode(request.model, {
+        effort: request.effort,
+        env: { ...UPGRADE_ENV, ANTHROPIC_API_KEY: key },
+      })
+    : codex(request.model, { effort: request.effort, env: { ...UPGRADE_ENV, CODEX_API_KEY: key } });
 };
 
 const statusOf = (error: unknown): Outcome['status'] => {

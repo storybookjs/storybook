@@ -31,8 +31,8 @@
     "./entry-preview-docs": "./dist/entry-preview-docs.js",
     "./entry-preview-rsc": "./dist/entry-preview-rsc.js",
     "./internal/builder-docgen": {
-      "types": "./dist/builder-docgen.d.ts",
       "code": "./src/builder-docgen.ts",
+      "types": "./dist/builder-docgen.d.ts",
       "default": "./dist/builder-docgen.js"
     },
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",

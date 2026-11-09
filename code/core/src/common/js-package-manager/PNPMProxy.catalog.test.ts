@@ -87,6 +87,12 @@ describe('PNPMProxy catalogs', () => {
       await expect(pnpmProxy.getDeclaredVersionSpecifier('vitest')).resolves.toBe('^3.2.0');
     });
 
+    it('falls back to the range of an npm: alias of the same package', async () => {
+      vi.spyOn(pnpmProxy, 'getAllDependencies').mockReturnValue({ vitest: 'npm:vitest@^3.2.0' });
+
+      await expect(pnpmProxy.getDeclaredVersionSpecifier('vitest')).resolves.toBe('^3.2.0');
+    });
+
     it('returns null for a non-semver, non-catalog specifier', async () => {
       vi.spyOn(pnpmProxy, 'getAllDependencies').mockReturnValue({ vitest: 'workspace:*' });
 

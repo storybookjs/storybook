@@ -47,6 +47,14 @@ describe('upgradeDeclaredDependency', () => {
     expect(read(COMPONENTS)).toEqual({ dependencies: { typescript: '^7.1' } });
   });
 
+  it('upgrades an npm: alias of the same package, in its field', () => {
+    write(ROOT, { dependencies: { typescript: 'npm:typescript@7.0.2' } });
+
+    create([ROOT]).upgradeDeclaredDependency('typescript@^7.1', '7.0.2');
+
+    expect(read(ROOT)).toEqual({ dependencies: { typescript: '^7.1' } });
+  });
+
   it('leaves a declaration that the installed version does not satisfy alone', () => {
     write(ROOT, { devDependencies: { typescript: '^6.0.3' } });
     write(STORYBOOK, { devDependencies: { storybook: '^11.0.0', typescript: '~7.0.2' } });

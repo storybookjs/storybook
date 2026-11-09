@@ -340,7 +340,8 @@ export abstract class JsPackageManager {
       return installed;
     }
     const declared = this.getAllDependencies()[packageName];
-    return declared && validRange(declared) ? declared : null;
+    const range = declared && this.getDeclaredRange(packageName, declared);
+    return range && validRange(range) ? range : null;
   }
 
   /**
@@ -494,8 +495,9 @@ export abstract class JsPackageManager {
   /**
    * Upgrade a dependency that the project resolves to `installedVersion`. Every package.json that
    * declares it in `dependencies` or `devDependencies` with a range that `installedVersion`
-   * satisfies gets the version in `specifier`, in the same field. A catalog reference stays in
-   * package.json, and the catalog gets the new version. When no package.json declares it that way,
+   * satisfies gets the version in `specifier`, in the same field. An `npm:` alias of the same
+   * package counts as its range. A catalog reference stays in package.json, and the catalog gets
+   * the new version. When no package.json declares it that way,
    * the primary package.json gets it in `devDependencies`. The method does not run a package
    * manager install.
    *
@@ -536,11 +538,13 @@ export abstract class JsPackageManager {
   }
 
   /**
-   * The semver range that a package.json declaration stands for, or null when it has none.
-   * PNPMProxy resolves a catalog reference to the catalog's range.
+   * The semver range that a package.json declaration stands for, or null when it has none: the
+   * declaration itself, or the range of an `npm:` alias of the same package. PNPMProxy resolves a
+   * catalog reference to the catalog's range.
    */
-  protected getDeclaredRange(_packageName: string, declared: string): string | null {
-    return declared;
+  protected getDeclaredRange(packageName: string, declared: string): string | null {
+    const alias = `npm:${packageName}@`;
+    return declared.startsWith(alias) ? declared.slice(alias.length) : declared;
   }
 
   /**

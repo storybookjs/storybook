@@ -1,8 +1,7 @@
-import { relative, sep } from 'node:path';
-
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 import memoize from 'memoizerific';
+import { relative } from 'pathe';
 
 import { ROOT_DIRECTORY } from './constants.ts';
 
@@ -23,7 +22,7 @@ export async function getCodeWorkspaces(includePrivate = true) {
     .filter((it) => includePrivate || !it.private)
     .filter(({ name }) => name !== '@storybook/root' && name !== '@storybook/scripts')
     .map((it) => {
-      const location = relative(ROOT_DIRECTORY, it.path).split(sep).join('/');
+      const location = relative(ROOT_DIRECTORY, it.path);
       return {
         name: it.name,
         // strip code from the location for backwards compatibility; workspaces

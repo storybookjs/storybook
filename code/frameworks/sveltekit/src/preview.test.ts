@@ -320,6 +320,15 @@ describe('on a docs page', () => {
     expect(() => a.mount()).toThrowError(SvelteKitMocksSharedOnDocsPageError);
   });
 
+  it('allows a story set up later, after a rendered story wrote into a default value', () => {
+    const a = setUpDocsStory('story--a');
+    a.mount();
+    // Such as in a play function, or when a form is submitted
+    page.data.user = 'Ada';
+
+    expect(() => setUpDocsStory('story--b').mount()).not.toThrow();
+  });
+
   it('keeps checking a copy of a story that is still set up after the other copy rendered', () => {
     const primary = setUpDocsStory('story--a');
     setUpDocsStory('story--a');

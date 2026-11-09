@@ -138,6 +138,7 @@ export async function refreshBeforeStorybookLockfile({
   await Promise.allSettled([
     rm(join(cwd, 'package-lock.json'), { force: true }),
     rm(join(cwd, 'pnpm-lock.yaml'), { force: true }),
+    rm(join(cwd, 'pnpm-workspace.yaml'), { force: true }),
     rm(join(cwd, '.yarnrc.yml'), { force: true }),
     rm(join(cwd, '.yarnrc'), { force: true }),
     rm(join(cwd, '.yarn'), { recursive: true, force: true }),
@@ -340,6 +341,9 @@ async function narrowQuarantinedRanges({
 
 // Users download published sandboxes as Yarn projects, so they pin Yarn, not the monorepo's pnpm.
 export const PUBLISHED_SANDBOX_PACKAGE_MANAGER = 'yarn@4.18.0';
+
+/** The user agent the pinned Yarn sends, so scaffolding CLIs set the project up for Yarn. */
+export const PUBLISHED_SANDBOX_USER_AGENT = `${PUBLISHED_SANDBOX_PACKAGE_MANAGER.replace('@', '/')} npm/? node/${process.version} ${process.platform} ${process.arch}`;
 
 async function pinYarnPackageManager(cwd: string) {
   const packageJsonPath = join(cwd, 'package.json');

@@ -11,6 +11,7 @@ import {
   BEFORE_SANDBOX_NPM_MIN_VERSION,
   LOCALLY_PUBLISHED_PACKAGE_PATTERNS,
   PUBLISHED_SANDBOX_PACKAGE_MANAGER,
+  PUBLISHED_SANDBOX_USER_AGENT,
   PublishedSandboxYarnError,
   ensureNpmSupportsMinReleaseAge,
   preapproveLocallyPublishedPackages,
@@ -167,6 +168,18 @@ describe('refreshBeforeStorybookLockfile', () => {
     const manifest = JSON.parse(vol.readFileSync(`${SANDBOX}/package.json`, 'utf-8') as string);
     expect(manifest.packageManager).toBe(PUBLISHED_SANDBOX_PACKAGE_MANAGER);
     expect(PUBLISHED_SANDBOX_PACKAGE_MANAGER).toMatch(/^yarn@4\./);
+  });
+
+  it('removes the pnpm workspace file a scaffolding CLI can leave in a Yarn sandbox', async () => {
+    vol.writeFileSync(`${SANDBOX}/pnpm-workspace.yaml`, 'packages:\n  - .\n');
+
+    await refreshBeforeStorybookLockfile({ cwd: SANDBOX });
+
+    expect(vol.existsSync(`${SANDBOX}/pnpm-workspace.yaml`)).toBe(false);
+  });
+
+  it('scaffolds published sandboxes as the Yarn they pin', () => {
+    expect(PUBLISHED_SANDBOX_USER_AGENT.split(' ')[0]).toBe(`yarn/${PUBLISHED_YARN}`);
   });
 
   it('fails unless `yarn` runs the Yarn release the published sandboxes pin', async () => {

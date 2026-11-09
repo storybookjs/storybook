@@ -35,6 +35,7 @@ import {
   BEFORE_SANDBOX_MIN_AGE_GATE,
   BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS,
   ensureNpmSupportsMinReleaseAge,
+  PUBLISHED_SANDBOX_USER_AGENT,
   PublishedSandboxYarnError,
   localizeYarnConfigFiles,
   preapproveLocallyPublishedPackages,
@@ -294,6 +295,7 @@ const runGenerators = async (
           const scaffoldEnv = {
             ...env,
             CI: 'true',
+            npm_config_user_agent: PUBLISHED_SANDBOX_USER_AGENT,
             YARN_NPM_MINIMAL_AGE_GATE: BEFORE_SANDBOX_MIN_AGE_GATE,
             NPM_CONFIG_MIN_RELEASE_AGE: String(BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS),
           };

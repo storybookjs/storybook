@@ -482,7 +482,7 @@ describe('story-docs open service', () => {
       const provider = vi.fn<StoryDocsProvider['extract']>(async () => makeStoryDocsPayload());
       const getIndex = makeGetIndex([entry]);
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
-      subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
       await service.queries.storyDocs.loaded({ id: 'button' });
       provider.mockImplementationOnce(() => new Promise(() => {}));
       void service.commands.extractStoryDocs({ id: 'button' });
@@ -505,7 +505,7 @@ describe('story-docs open service', () => {
         .mockImplementation(async () => makeStoryDocsPayload({ name: 'New' }));
       const getIndex = makeGetIndex([entry]);
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
-      subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
       const firstLoad = service.commands.extractStoryDocs({ id: 'button' });
       await vi.waitFor(() => expect(provider).toHaveBeenCalledOnce());
 
@@ -531,7 +531,7 @@ describe('story-docs open service', () => {
         .mockImplementation(async () => makeStoryDocsPayload({ name: 'New' }));
       const getIndex = makeGetIndex([entry]);
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
-      subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
       await service.queries.storyDocs.loaded({ id: 'button' });
       const replaced = service.commands.extractStoryDocs({ id: 'button' });
       await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(2));
@@ -555,7 +555,7 @@ describe('story-docs open service', () => {
       const getIndex = makeGetIndex([entry]);
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
       registerStoryDocsService({ getIndex, storyDocsProvider: provider });
-      subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
       await service.queries.storyDocs.loaded({ id: 'button' });
       provider.mockImplementationOnce(() => new Promise(() => {}));
       void service.commands.extractStoryDocs({ id: 'button' });
@@ -634,7 +634,7 @@ describe('story-docs open service', () => {
         ];
         const getIndex = () => makeGetIndex(entries)();
         const extraction = Promise.withResolvers<StoryDocsPayload>();
-        const provider = vi.fn<StoryDocsProvider>(() => extraction.promise);
+        const provider = vi.fn<StoryDocsProvider['extract']>(() => extraction.promise);
         const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
         subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
         if (stored) {
@@ -661,7 +661,7 @@ describe('story-docs open service', () => {
       ];
       const getIndex = () => makeGetIndex(entries)();
       const buttonExtraction = Promise.withResolvers<StoryDocsPayload>();
-      const provider = vi.fn<StoryDocsProvider>(({ entry }) =>
+      const provider = vi.fn<StoryDocsProvider['extract']>(({ entry }) =>
         entry.title === 'Button'
           ? buttonExtraction.promise
           : Promise.resolve(makeStoryDocsPayload({ id: 'card' }))
@@ -767,7 +767,7 @@ describe('story-docs open service', () => {
       const original = [makeStoryEntry('button--primary', 'Button')];
       let entries = original;
       const getIndex = () => makeGetIndex(entries)();
-      const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
+      const provider = vi.fn<StoryDocsProvider['extract']>(async () => makeStoryDocsPayload());
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
       subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
       const emitted: Array<StoryDocsPayload | undefined> = [];
@@ -798,7 +798,7 @@ describe('story-docs open service', () => {
       const getIndex = () => makeGetIndex(entries)();
       const firstExtraction = Promise.withResolvers<StoryDocsPayload>();
       const provider = vi
-        .fn<StoryDocsProvider>(async () => makeStoryDocsPayload())
+        .fn<StoryDocsProvider['extract']>(async () => makeStoryDocsPayload())
         .mockReturnValueOnce(firstExtraction.promise);
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
       subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });

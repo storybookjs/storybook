@@ -42,9 +42,10 @@ type AllComponentsQuery = { get(): unknown };
 const pendingIdsByService = new WeakMap<object, Set<string>>();
 
 // Extractions still running, by registered service and component id. A call joins the one running
-// for its component, so a manager and a preview that load it at once extract it once. A file change
-// drops it, so the refresh reads the files as they are now.
-const runningExtractions = new WeakMap<object, Map<string, Promise<unknown>>>();
+// for its component in the same runtime, so a manager and a preview that load it at once extract it
+// once. A refresh never joins, so it reads the files as they are now.
+type RunningExtraction = { state: object; extraction: Promise<unknown> };
+const runningExtractions = new WeakMap<object, Map<string, RunningExtraction>>();
 
 export type ExtractionInput = {
   /** The entry {@link selectComponentEntriesByComponentId} picks for the component. */
@@ -122,7 +123,10 @@ export function subscribeExtractionServiceToModuleGraphChanges<
   const extract = (runtime.commands as Record<string, (input: { id: string }) => Promise<unknown>>)[
     options.extractCommand
   ];
-  const refreshComponent = (id: string) => extract({ id }).catch(() => undefined);
+  const refreshComponent = (id: string) => {
+    runningExtractions.get(runtime)?.delete(id);
+    return extract({ id }).catch(() => undefined);
+  };
 
   const refreshExtracted = async (componentIds: Iterable<string>) => {
     // An extraction still running read the files before the change, so it is refreshed too.
@@ -132,9 +136,6 @@ export function subscribeExtractionServiceToModuleGraphChanges<
     );
     if (idsToRefresh.length === 0) {
       return;
-    }
-    for (const id of idsToRefresh) {
-      running?.delete(id);
     }
     await Promise.all(idsToRefresh.map(refreshComponent));
   };
@@ -247,7 +248,7 @@ export function registerExtractionService<
   );
 
   const pendingIds = new Set<string>();
-  const running = new Map<string, Promise<unknown>>();
+  const running = new Map<string, RunningExtraction>();
   // The latest extraction of each component in each runtime, so an older one that finishes later
   // does not overwrite its payload. The static build runs these handlers on runtimes of its own.
   const latestRunsByState = new WeakMap<object, Map<string, Promise<void>>>();
@@ -379,17 +380,17 @@ export function registerExtractionService<
       [extractCommand]: {
         handler: (input: { id: string }, ctx: CommandCtx<TState>) => {
           const joined = running.get(input.id);
-          if (joined) {
-            return joined;
+          if (joined?.state === ctx.self.state) {
+            return joined.extraction;
           }
           const run = startRun(ctx, input.id);
           const extraction = extractComponent(input.id, ctx, run.isLatest).finally(async () => {
-            if (running.get(input.id) === extraction) {
+            if (running.get(input.id)?.extraction === extraction) {
               running.delete(input.id);
             }
             await run.settle();
           });
-          running.set(input.id, extraction);
+          running.set(input.id, { state: ctx.self.state, extraction });
           return extraction;
         },
       },

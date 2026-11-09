@@ -43,13 +43,24 @@ const resultPaths = readdirSync(resolve(values.results), { recursive: true, enco
   .map((path) => relative(process.cwd(), join(resolve(values.results!), path)))
   .sort();
 
+// `storybook info` runs through the package manager's dlx, whose install log precedes the report.
+const environmentInfo = (captured: string): string => {
+  const start = captured.indexOf('Storybook Environment Info');
+  const lines = (start < 0 ? captured : captured.slice(start)).split('\n');
+  return lines
+    .map((line) => line.replace(/^│\s?/, '').trimEnd())
+    .filter((line, index, all) => line !== '' || all[index - 1] !== '')
+    .join('\n')
+    .trim();
+};
+
 const loaded: LoadedResult[] = resultPaths.map((resultPath) => {
   const result = RunResultFile.parse(JSON.parse(readFileSync(resultPath, 'utf8')));
   const infoFile = join(dirname(resultPath), result.paths.evidenceDir, 'storybook-info.txt');
   return {
     resultPath,
     result,
-    ...(existsSync(infoFile) ? { systemInfo: readFileSync(infoFile, 'utf8') } : {}),
+    ...(existsSync(infoFile) ? { systemInfo: environmentInfo(readFileSync(infoFile, 'utf8')) } : {}),
   };
 });
 

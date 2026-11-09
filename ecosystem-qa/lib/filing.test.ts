@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { planFiling, type FilingStep } from './filing.ts';
+import { missingPrerequisites, planFiling, renderFilingReport, type FilingStep } from './filing.ts';
 import { asIssue, finding, loaded, RUN_URL, VERSION } from './fixtures.ts';
 import { groupFindings, toProposal, type IssueHit } from './proposals.ts';
 import type { Finding } from './types.ts';
@@ -110,5 +110,49 @@ describe('planFiling', () => {
     expect(planFiling(proposal, { repo: REPO, evidenceLinks: 'assets' })).toEqual([
       { kind: 'skip', reason: '#7 is labelled qa:known' },
     ]);
+  });
+});
+
+describe('missingPrerequisites', () => {
+  it('names the milestones and labels a new issue needs that the repository lacks', () => {
+    const issue = proposalFor({ windowsOnly: true });
+    const comment = proposalFor({ title: 'Other' }, [{ number: 9, labels: [] }]);
+
+    expect(
+      missingPrerequisites([issue, comment], {
+        openMilestones: ['10'],
+        labels: ['bug', 'internal-qa'],
+      })
+    ).toEqual([
+      'milestone "11" does not exist or is closed',
+      'label "upgrade:11.0" does not exist',
+    ]);
+    expect(
+      missingPrerequisites([issue], {
+        openMilestones: ['11'],
+        labels: ['bug', 'internal-qa', 'upgrade:11.0'],
+      })
+    ).toEqual([]);
+  });
+});
+
+describe('renderFilingReport', () => {
+  it('lists every proposal with its result and counts the failures', () => {
+    const filed = proposalFor();
+    const failed = proposalFor({ title: 'a | b' });
+
+    const report = renderFilingReport([
+      {
+        proposal: filed,
+        state: 'done',
+        detail: 'https://github.com/storybookjs/storybook/issues/1',
+      },
+      { proposal: failed, state: 'failed', detail: 'HTTP 502' },
+    ]);
+
+    expect(report).toContain('2 proposals, 1 failed.');
+    expect(report).toContain(
+      `| \`${failed.fingerprint}\` | issue | [SB 11 QA]: a \\| b | failed: HTTP 502 |`
+    );
   });
 });

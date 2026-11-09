@@ -111,3 +111,46 @@ export const renderDry = (proposal: Proposal, repo: string): string => {
     '',
   ].join('\n');
 };
+
+/** Name each milestone or label the issue proposals need that `repo` does not have open. */
+export const missingPrerequisites = (
+  proposals: Proposal[],
+  existing: { openMilestones: string[]; labels: string[] }
+): string[] => {
+  const issues = proposals.filter((proposal) => proposal.kind === 'issue');
+  const milestones = new Set(issues.map((issue) => issue.milestone));
+  const labels = new Set(issues.flatMap((issue) => issue.labels));
+  return [
+    ...[...milestones]
+      .filter((milestone) => !existing.openMilestones.includes(milestone))
+      .map((milestone) => `milestone "${milestone}" does not exist or is closed`),
+    ...[...labels]
+      .filter((label) => !existing.labels.includes(label))
+      .map((label) => `label "${label}" does not exist`),
+  ];
+};
+
+export interface FilingOutcome {
+  proposal: Proposal;
+  state: 'done' | 'skipped' | 'failed';
+  detail: string;
+}
+
+const cell = (text: string) => text.replaceAll('|', '\\|').replaceAll('\n', ' ');
+
+export const renderFilingReport = (outcomes: FilingOutcome[]): string => {
+  const failed = outcomes.filter((outcome) => outcome.state === 'failed').length;
+  return [
+    '## Ecosystem QA filing',
+    '',
+    `${outcomes.length} proposals, ${failed} failed.`,
+    '',
+    '| Fingerprint | Kind | Title | Result |',
+    '| --- | --- | --- | --- |',
+    ...outcomes.map(
+      ({ proposal, state, detail }) =>
+        `| \`${proposal.fingerprint}\` | ${proposal.kind} | ${cell(proposal.title)} | ${state}: ${cell(detail)} |`
+    ),
+    '',
+  ].join('\n');
+};

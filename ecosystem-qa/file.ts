@@ -1,12 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import {
-  appendFileSync,
-  copyFileSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  writeFileSync,
-} from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { parseArgs } from 'node:util';
 
@@ -16,19 +9,28 @@ import { z } from 'zod';
 import {
   ASSETS_BRANCH,
   describeStep,
+  missingPrerequisites,
   planFiling,
   renderDry,
+  renderFilingReport,
+  type FilingOutcome,
   type FilingStep,
 } from './lib/filing.ts';
 import { gh, searchFingerprint } from './lib/github.ts';
 import { Proposal } from './lib/schema.ts';
+import { writeStepSummary } from './lib/step-summary.ts';
 import type { Proposal as ProposalType } from './lib/types.ts';
 
 const HELP = `Usage: node ecosystem-qa/file.ts --proposals <proposals.json> --repo <owner/name> [--dry]
 
 --dry writes each proposal to $GITHUB_STEP_SUMMARY (stdout when unset) and changes nothing.
-Without --dry it pushes the cycle branch to the catalog repo with ECOSYSTEM_QA_PUSH_TOKEN, pushes
-evidence to the qa-assets branch of --repo and creates the issue or comment with GH_TOKEN.`;
+Without --dry it checks that the milestones and labels exist, then for each proposal pushes the
+cycle branch to the catalog repo with ECOSYSTEM_QA_PUSH_TOKEN, pushes evidence to the qa-assets
+branch of --repo and creates the issue or comment with GH_TOKEN. A failed proposal does not stop
+the others; the filed and failed table goes to the Step Summary and the exit code is 1 if any failed.
+Rerunning is safe: a filed fingerprint, an identical comment and pushed evidence are skipped.`;
+
+const EVIDENCE_PUSH_ATTEMPTS = 3;
 
 const { values } = parseArgs({
   options: {
@@ -87,7 +89,22 @@ const pushCycle = (step: Extract<FilingStep, { kind: 'push-cycle' }>) => {
   git(dir, ['push', '--quiet', remote, `${step.headSha}:${ref}`], token);
 };
 
-const pushEvidence = (step: Extract<FilingStep, { kind: 'push-evidence' }>) => {
+// Another filing job can move qa-assets between our fetch and push, so a rejected push starts over
+// from the new tip.
+const pushEvidence = (step: Extract<FilingStep, { kind: 'push-evidence' }>): void => {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return commitEvidence(step);
+    } catch (error) {
+      if (attempt === EVIDENCE_PUSH_ATTEMPTS) {
+        throw error;
+      }
+      console.warn(`Evidence push attempt ${attempt} failed, retrying from the new tip.`);
+    }
+  }
+};
+
+const commitEvidence = (step: Extract<FilingStep, { kind: 'push-evidence' }>) => {
   const token = requireEnv('GH_TOKEN');
   const dir = mkdtempSync(join(tmpdir(), 'qa-assets-'));
   const remote = `https://github.com/${repo}`;
@@ -104,6 +121,9 @@ const pushEvidence = (step: Extract<FilingStep, { kind: 'push-evidence' }>) => {
     copyFileSync(resolve(file.localPath), target);
   }
   git(dir, ['add', '--all']);
+  if (git(dir, ['status', '--porcelain']) === '') {
+    return;
+  }
   git(dir, [
     '-c',
     'user.name=Storybook Ecosystem QA',
@@ -117,33 +137,32 @@ const pushEvidence = (step: Extract<FilingStep, { kind: 'push-evidence' }>) => {
   git(dir, ['push', '--quiet', remote, `HEAD:refs/heads/${ASSETS_BRANCH}`], token);
 };
 
-const runStep = (step: FilingStep) => {
+const runStep = (step: FilingStep): string | undefined => {
   switch (step.kind) {
     case 'skip':
-      return;
+      return undefined;
     case 'push-cycle':
-      return pushCycle(step);
+      pushCycle(step);
+      return undefined;
     case 'push-evidence':
-      return pushEvidence(step);
+      pushEvidence(step);
+      return undefined;
     case 'create-issue':
-      console.log(
-        gh(
-          'issue',
-          'create',
-          '--repo',
-          repo,
-          '--title',
-          step.title,
-          '--body-file',
-          writeBody(step.body),
-          '--milestone',
-          step.milestone,
-          ...step.labels.flatMap((label) => ['--label', label])
-        ).trim()
-      );
-      return;
+      return gh(
+        'issue',
+        'create',
+        '--repo',
+        repo,
+        '--title',
+        step.title,
+        '--body-file',
+        writeBody(step.body),
+        '--milestone',
+        step.milestone,
+        ...step.labels.flatMap((label) => ['--label', label])
+      ).trim();
     case 'comment':
-      gh(
+      return gh(
         'issue',
         'comment',
         String(step.issue),
@@ -151,8 +170,7 @@ const runStep = (step: FilingStep) => {
         repo,
         '--body-file',
         writeBody(step.body)
-      );
-      return;
+      ).trim();
   }
 };
 
@@ -165,7 +183,10 @@ const commentsOn = (issue: number): string[] =>
     .flat()
     .map((comment) => comment.body);
 
-const fileProposal = (proposal: ProposalType) => {
+const firstLine = (error: unknown) =>
+  (error instanceof Error ? error.message : String(error)).split('\n')[0]!.slice(0, 160);
+
+const fileProposal = (proposal: ProposalType): FilingOutcome => {
   const steps = planFiling(proposal, {
     repo,
     evidenceLinks: 'assets',
@@ -174,9 +195,36 @@ const fileProposal = (proposal: ProposalType) => {
       : {}),
     ...(proposal.kind === 'comment' ? { comments: commentsOn(proposal.existingIssue) } : {}),
   });
+  let detail = '';
   for (const step of steps) {
     console.log(`${proposal.fingerprint}: ${describeStep(step, repo)}`);
-    runStep(step);
+    try {
+      detail = step.kind === 'skip' ? step.reason : (runStep(step) ?? detail);
+    } catch (error) {
+      throw new Error(`${step.kind}: ${firstLine(error)}`, { cause: error });
+    }
+  }
+  return { proposal, state: steps[0]?.kind === 'skip' ? 'skipped' : 'done', detail };
+};
+
+const names = <T extends string>(path: string, field: T): string[] =>
+  z
+    .array(z.array(z.record(z.literal(field), z.string())))
+    .parse(JSON.parse(gh('api', '--paginate', '--slurp', path)))
+    .flat()
+    .map((item) => item[field]);
+
+const checkPrerequisites = () => {
+  if (!proposals.some((proposal) => proposal.kind === 'issue')) {
+    return;
+  }
+  const problems = missingPrerequisites(proposals, {
+    openMilestones: names(`repos/${repo}/milestones?state=open`, 'title'),
+    labels: names(`repos/${repo}/labels`, 'name'),
+  });
+  if (problems.length > 0) {
+    console.error(`Nothing was filed. In ${repo}: ${problems.join('; ')}.`);
+    process.exit(1);
   }
 };
 
@@ -184,18 +232,25 @@ if (values.dry) {
   const counts = ['issue', 'comment', 'suppressed']
     .map((kind) => `${proposals.filter((proposal) => proposal.kind === kind).length} ${kind}`)
     .join(', ');
-  const summary = [
-    '## Ecosystem QA proposals (dry run, nothing was filed)',
-    '',
-    `${proposals.length} proposals: ${counts}.`,
-    '',
-    ...proposals.map((proposal) => renderDry(proposal, repo)),
-  ].join('\n');
-  if (process.env.GITHUB_STEP_SUMMARY) {
-    appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${summary}\n`);
-  } else {
-    console.log(summary);
-  }
+  writeStepSummary(
+    [
+      '## Ecosystem QA proposals (dry run, nothing was filed)',
+      '',
+      `${proposals.length} proposals: ${counts}.`,
+      '',
+      ...proposals.map((proposal) => renderDry(proposal, repo)),
+    ].join('\n')
+  );
 } else {
-  proposals.forEach(fileProposal);
+  checkPrerequisites();
+  const outcomes = proposals.map((proposal): FilingOutcome => {
+    try {
+      return fileProposal(proposal);
+    } catch (error) {
+      console.error(`${proposal.fingerprint} failed:`, error);
+      return { proposal, state: 'failed', detail: firstLine(error) };
+    }
+  });
+  writeStepSummary(renderFilingReport(outcomes));
+  process.exitCode = outcomes.some((outcome) => outcome.state === 'failed') ? 1 : 0;
 }

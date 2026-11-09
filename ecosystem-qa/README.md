@@ -71,3 +71,6 @@ Dry mode is the default.
 The filer writes each proposal, with its full issue body and the evidence it would upload, to the Step Summary and changes nothing.
 Without dry mode it pushes the evidence to the `qa-assets` branch with the job token, pushes the cycle branch to the catalog repo with `ECOSYSTEM_QA_PUSH_TOKEN` from the `ecosystem-qa` environment, and files the issue in milestone 11.
 A fingerprint that is already on an issue becomes a comment, and one on a `qa:known` issue is suppressed.
+It checks first that the milestone is open and every label exists, and files nothing otherwise.
+A proposal that fails does not stop the others; the job writes a filed and failed table to the Step Summary and fails at the end.
+Rerunning the job is safe: a filed fingerprint and a repeated comment are skipped, and evidence already on `qa-assets` makes no new commit.

@@ -415,7 +415,7 @@ export const testsUnit_linux = defineJob(
   () => ({
     executor: {
       name: 'sb_node_22_classic',
-      class: 'large',
+      class: 'xlarge',
     },
     steps: [
       ...workflow.restoreLinux(),

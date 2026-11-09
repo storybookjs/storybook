@@ -33,8 +33,6 @@ const byPrimaryOrder = (a: LoadedResult, b: LoadedResult): number =>
   a.result.request.engine.localeCompare(b.result.request.engine) ||
   a.resultPath.localeCompare(b.resultPath);
 
-// The first run in os, engine, path order supplies the finding text and the evidence by policy,
-// so a GIF that only a later occurrence captured is dropped on purpose.
 export const groupFindings = (results: LoadedResult[]): FindingGroup[] => {
   const groups = new Map<string, FindingGroup>();
   for (const loaded of [...results].sort(byPrimaryOrder)) {

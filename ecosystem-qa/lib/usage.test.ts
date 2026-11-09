@@ -51,7 +51,7 @@ describe('usageFromStream', () => {
     });
   });
 
-  it('counts each Claude call once, using the last copy of its usage, when no result line exists', () => {
+  it('counts each Claude call once, using the last copy of its usage, when no result line has per-model totals', () => {
     const file = streamFile([
       assistant('msg_1', {
         input_tokens: 10,
@@ -73,7 +73,6 @@ describe('usageFromStream', () => {
       }),
       { type: 'result', usage: { input_tokens: 999999, output_tokens: 999999 } },
     ]);
-    // A result line without per-model totals (an aborted run) must not be trusted.
 
     const usage = usageFromStream(file, 'claude', 'claude-test', PRICES);
 

@@ -1,5 +1,3 @@
-// Test seam for `--fake`: no clone, no Sandcastle, no agent. It writes canned output through the
-// real evidence tools so collect.ts and file.ts can be exercised end to end without an API key.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

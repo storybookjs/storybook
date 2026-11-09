@@ -25,7 +25,6 @@ on:
         description: 'Write proposals to the Step Summary instead of filing them'
         type: boolean
         default: true
-  # A pull request runs only the smoke job: typecheck, tests and a free fake run.
   pull_request:
     paths: ['ecosystem-qa/**', '.github/workflows/ecosystem-qa.yml']
 
@@ -326,8 +325,6 @@ jobs:
     permissions:
       contents: write # push evidence to the qa-assets branch
       issues: write # create the issue or the comment
-    # ECOSYSTEM_QA_PUSH_TOKEN pushes the cycle branch to the catalog repo. It lives only in this
-    # environment, apart from the agent keys.
     environment: ecosystem-qa-file
     steps:
       - name: Checkout

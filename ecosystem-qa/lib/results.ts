@@ -40,7 +40,6 @@ const runDirs = (resultsDir: string, { entry, os, engine }: RunKey) => [
   join(resultsDir, entry.id, os, engine),
 ];
 
-/** Return why an evidence file must not be published, or undefined when it may be. */
 const evidenceProblem = (evidenceDir: string, name: string): string | undefined => {
   const path = join(evidenceDir, name);
   const stats = lstatSync(path, { throwIfNoEntry: false });

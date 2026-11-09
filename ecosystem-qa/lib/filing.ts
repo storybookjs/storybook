@@ -21,7 +21,6 @@ export interface FilingOptions {
   repo: string;
   /** `assets` links evidence on the qa-assets branch of `repo`; `local` links the downloaded files. */
   evidenceLinks: 'assets' | 'local';
-  /** The issue that already carries this fingerprint, if any. */
   filedAs?: number;
   /** Bodies of the comments already on the issue a comment proposal targets. */
   comments?: string[];
@@ -90,7 +89,6 @@ export const describeStep = (step: FilingStep, repo: string): string => {
   }
 };
 
-/** Render what filing one proposal would do, with evidence linked to the local files. */
 export const renderDry = (proposal: Proposal, repo: string): string => {
   const steps = planFiling(proposal, { repo, evidenceLinks: 'local' });
   const body = steps.flatMap((step) =>
@@ -109,7 +107,6 @@ export const renderDry = (proposal: Proposal, repo: string): string => {
   ].join('\n');
 };
 
-/** Name each milestone or label the issue proposals need that `repo` does not have open. */
 export const missingPrerequisites = (
   proposals: Proposal[],
   existing: { openMilestones: string[]; labels: string[] }

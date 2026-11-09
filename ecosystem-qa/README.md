@@ -44,6 +44,7 @@ Pick the sandbox for your machine:
 Codex runs read `CODEX_API_KEY` and default to `gpt-6.1-sol`; pass `--model` to change it.
 Claude's cost comes from its own result line.
 Codex, and a Claude run that ended without one, is priced from the price table in `agent-eval/lib/usage.ts`, which both harnesses share; a run priced that way says so in its summary.
+A model missing from that table gives `usd: null`.
 The repo is cloned to `ecosystem-qa/work/<id>` by default, and the run stops if that directory already exists.
 
 Then collect and look at the proposals without filing anything:
@@ -77,7 +78,6 @@ A pull request that touches `ecosystem-qa/` or the workflow runs only the smoke 
 
 `<out>/result.json` is the record of one run, and every later stage reads only these files.
 Next to it are `run.log`, `agent-stream.jsonl` (the token counts come from here), `session.jsonl`, `evidence/` and `cycle.bundle` when the agent committed.
-Dollars come from Claude's result line or the shared price table; a model missing from the table gives `usd: null`.
 
 ## Dry mode
 

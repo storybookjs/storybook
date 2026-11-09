@@ -78,8 +78,6 @@
   - [Web Components: the runtime Custom Elements Manifest API is deprecated](#web-components-the-runtime-custom-elements-manifest-api-is-deprecated)
   - [SvelteKit: Require v3 and up](#sveltekit-require-v3-and-up)
   - [SvelteKit: `sveltekit_experimental` parameters removed](#sveltekit-sveltekit_experimental-parameters-removed)
-    - [Migrate a SvelteKit stories file](#migrate-a-sveltekit-stories-file)
-    - [SvelteKit migration example](#sveltekit-migration-example)
   - [Svelte CSF is built into the Svelte frameworks](#svelte-csf-is-built-into-the-svelte-frameworks)
   - [Svelte CSF: legacy story syntax removed](#svelte-csf-legacy-story-syntax-removed)
     - [`<Meta>` component](#meta-component)
@@ -2126,43 +2124,75 @@ Storybook still mocks `$app/forms`, `$app/navigation` and `$app/state`, because 
 - `@storybook/sveltekit/forms.mock` exports `formAction`, a mock function that a form with `use:enhance` calls instead of the server. Its result drives the rest of SvelteKit's submit flow.
 - Set up the mocks in `beforeEach`. Storybook resets them before every story.
 
-See [How to mock](https://storybook.js.org/docs/get-started/frameworks/sveltekit#how-to-mock) in the SvelteKit docs for the full API.
+See [Mocking modules](https://storybook.js.org/docs/get-started/frameworks/sveltekit#mocking-modules) in the SvelteKit docs for the full API.
 
-#### Migrate a SvelteKit stories file
+To migrate your stories, give this prompt to your AI agent, or follow it by hand:
 
-Do these steps for each `sveltekit_experimental` in each stories file and in `.storybook/preview`:
+<details>
+<summary>Prompt: migrate SvelteKit stories from <code>sveltekit_experimental</code></summary>
+
+````md
+Migrate this project's Storybook stories from `parameters.sveltekit_experimental` to the SvelteKit mocks of Storybook 11.
+
+## Background
+
+Storybook 11 removed `parameters.sveltekit_experimental`. A story that still sets it fails with `SvelteKitMockParametersRemovedError`. Storybook still replaces `$app/forms`, `$app/navigation` and `$app/state` with mocks, but stories now set them up in `beforeEach`:
+
+- Every function of `$app/navigation` and `$app/forms` is a Storybook mock function (`fn()`). A stories file imports it from the same module as the component, for example `import { goto } from '$app/navigation'`, and gets the same function. It asserts on it in `play`, and changes it with `mocked(goto)` from `storybook/test`.
+- `page`, `navigating` and `updated` from `$app/state` are writable.
+- `@storybook/sveltekit/navigation.mock` exports `link`, a mock function that link clicks call, and `setAfterNavigate()`, which sets the navigation that `afterNavigate` callbacks receive.
+- `@storybook/sveltekit/forms.mock` exports `formAction`, a mock function that a form with `use:enhance` calls instead of the server. Its result drives the rest of SvelteKit's submit flow.
+- Storybook resets all mocks before every story.
+
+Docs: https://storybook.js.org/docs/get-started/frameworks/sveltekit#mocking-modules
+
+## Find the code to migrate
+
+Search the project for `sveltekit_experimental`: in `*.stories.svelte` files, in `*.stories.{js,jsx,ts,tsx,mjs}` files, in `.storybook/preview.*`, and in helper modules that stories import parameters from. Migrate every occurrence.
+
+## Steps for each `sveltekit_experimental`
 
 1. Find the `beforeEach` at the same level as the `parameters`: the `<Story beforeEach={...}>` prop, the `beforeEach` of `defineMeta()` or `preview.meta()`, a CSF story's or meta's `beforeEach`, or the `beforeEach` export of `.storybook/preview`. Add one if there is none. If it already exists, add the new statements at its start.
 2. Replace each key with the code in the table below, inside that `beforeEach`.
 3. Add the imports that the new code needs. In a `.stories.svelte` file, add them to `<script module>`.
 4. Delete the `sveltekit_experimental` key, and the `parameters` prop or property if it is now empty.
 5. If a story passed a `fn()` as a value, for example `navigation: { goto }` with `const goto = fn()`, delete that `fn()` and import the function from the SvelteKit module instead. The `expect(goto)` assertions stay the same.
+6. If the file has a docs page (the `autodocs` tag on the meta or in `.storybook/preview`, or an MDX file with `<Stories>` or `<Story of={...}>` for it), and its stories now set the mocks in `beforeEach`, add `parameters: { docs: { story: { inline: false } } }` to the meta. Inline stories on a docs page share one instance of the mocks, and Storybook fails with `SvelteKitMocksSharedOnDocsPageError` when they set them.
 
-| Old key                                                    | Replacement in `beforeEach`                                                                                               | Imports                                                                                    |
-| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `state.page: { data: X, url: Y, ... }`                     | One assignment per property: `page.data = X; page.url = Y;`                                                               | `import { page } from '$app/state';`                                                       |
-| `state.navigating: { to: X, type: Y, ... }`                | One assignment per property: `navigating.to = X; navigating.type = Y;`                                                    | `import { navigating } from '$app/state';`                                                 |
-| `state.updated: { current: X }`                            | `Object.assign(updated, { current: X });`                                                                                 | `import { updated } from '$app/state';`                                                    |
-| `navigation.goto: callback`                                | `mocked(goto).mockImplementation(async (...args) => { callback(...args); });`                                             | `import { goto } from '$app/navigation';`<br>`import { mocked } from 'storybook/test';`    |
-| `navigation.goto: goto`, where `const goto = fn()`         | Nothing. Delete the `fn()`, and assert on the imported `goto`.                                                            | `import { goto } from '$app/navigation';`                                                  |
-| `navigation.invalidate`, `invalidateAll`, `refreshAll`, `pushState`, `replaceState` | Same as `navigation.goto`, with that function.                                                   | Same as `navigation.goto`, with that function.                                             |
-| `navigation.afterNavigate: X`                              | `setAfterNavigate(X);`                                                                                                    | `import { setAfterNavigate } from '@storybook/sveltekit/navigation.mock';`                 |
-| `hrefs: { '/a': callback }`                                | `link.mockImplementation((href, event) => { if (href === '/a') callback(href, event); });`                                | `import { link } from '@storybook/sveltekit/navigation.mock';`                             |
-| `hrefs: { 'pattern': { callback, asRegex: true } }`        | `link.mockImplementation((href, event) => { if (new RegExp('pattern').test(href)) callback(href, event); });`             | `import { link } from '@storybook/sveltekit/navigation.mock';`                             |
-| `hrefs` with several keys                                  | One `link.mockImplementation()` with one `if` per key. Every matching key runs, as before.                                | `import { link } from '@storybook/sveltekit/navigation.mock';`                             |
-| `forms.enhance: callback`                                  | `formAction.mockImplementation(async (submission) => { callback(); return { type: 'success', status: 200 }; });` See the note on `forms.enhance` below. | `import { formAction } from '@storybook/sveltekit/forms.mock';`                            |
+| Old key | Replacement in `beforeEach` | Imports |
+| --- | --- | --- |
+| `state.page: { data: X, url: Y, ... }` | One assignment per property: `page.data = X; page.url = Y;` | `import { page } from '$app/state';` |
+| `state.navigating: { to: X, type: Y, ... }` | One assignment per property: `navigating.to = X; navigating.type = Y;` | `import { navigating } from '$app/state';` |
+| `state.updated: { current: X }` | `Object.assign(updated, { current: X });` | `import { updated } from '$app/state';` |
+| `navigation.goto: callback` | `mocked(goto).mockImplementation(async (...args) => { callback(...args); });` | `import { goto } from '$app/navigation';` and `import { mocked } from 'storybook/test';` |
+| `navigation.goto: goto`, where `const goto = fn()` | Nothing. Delete the `fn()`, and assert on the imported `goto`. | `import { goto } from '$app/navigation';` |
+| `navigation.invalidate`, `invalidateAll`, `refreshAll`, `pushState`, `replaceState` | Same as `navigation.goto`, with that function. | Same as `navigation.goto`, with that function. |
+| `navigation.afterNavigate: X` | `setAfterNavigate(X);` | `import { setAfterNavigate } from '@storybook/sveltekit/navigation.mock';` |
+| `hrefs: { '/a': callback }` | `link.mockImplementation((href, event) => { if (href === '/a') callback(href, event); });` | `import { link } from '@storybook/sveltekit/navigation.mock';` |
+| `hrefs: { 'pattern': { callback, asRegex: true } }` | `link.mockImplementation((href, event) => { if (new RegExp('pattern').test(href)) callback(href, event); });` | `import { link } from '@storybook/sveltekit/navigation.mock';` |
+| `hrefs` with several keys | One `link.mockImplementation()` with one `if` per key. Every matching key runs, as before. | `import { link } from '@storybook/sveltekit/navigation.mock';` |
+| `forms.enhance: callback` | `formAction.mockImplementation(async (submission) => { callback(); return { type: 'success', status: 200 }; });` See the note on `forms.enhance` below. | `import { formAction } from '@storybook/sveltekit/forms.mock';` |
 
-Notes on behavior that changed:
+## Behavior that changed
+
+Keep these in mind, and update assertions that depend on the old behavior:
 
 - Every call of a mocked function is logged in the Actions panel, also when a story gives it an implementation. Before, a callback in the parameters replaced the log entry.
-- On a docs page, stories that set the mocks now fail with `SvelteKitMocksSharedOnDocsPageError`, because inline stories share one instance of the mocks. Before, they rendered with the state of another story on the page. Add `parameters: { docs: { story: { inline: false } } }` to the meta of those files. See [Docs pages](https://storybook.js.org/docs/get-started/frameworks/sveltekit#docs-pages).
-- Link clicks call `link`, not a `navigate` action. Links that open another window, links with `download`, and clicks that the component already handled are left to the browser.
-- `forms.enhance` received the `SubmitEvent`, and nothing else happened after a submit. Now `use:enhance` runs SvelteKit's submit flow with the result of `formAction`, which receives `{ action, formData, formElement, submitter }`. If the old callback read the event, read `submission.formElement`, `submission.formData` or `submission.submitter` instead. The default result, `{ type: 'success', status: 200 }`, resets the form, calls `refreshAll()` and sets `page.form` to `undefined` and `page.status` to `200`. To keep the form as it is, resolve another result, for example `formAction.mockResolvedValue({ type: 'failure', status: 400, data: { error: 'Invalid email' } })` to test what the component shows for an invalid submission.
+- Link clicks call `link`, not a `navigate` action. Links that open another window, links with `download`, and clicks that the component already handled are left to the browser. An `href` that matched no `hrefs` key logged a `navigate` action. Now every click is a call of `link`, which the Actions panel logs as `$app/navigation::link`.
+- `forms.enhance` received the `SubmitEvent`, and nothing else happened after a submit. Now `use:enhance` runs SvelteKit's submit flow with the result of `formAction`, which receives `{ action, formData, formElement, submitter }`. If the old callback read the event, read `submission.formElement`, `submission.formData` or `submission.submitter` instead. The default result, `{ type: 'success', status: 200 }`, resets the form, calls `refreshAll()` and sets `page.form` to `undefined` and `page.status` to `200`. To keep the form as it is, resolve another result, for example `formAction.mockResolvedValue({ type: 'failure', status: 400, data: { error: 'Invalid email' } })`.
 - Like in SvelteKit, `use:enhance` handles only forms with `method="post"`. The old mock stopped every submit. Now the browser submits other forms, which replaces the story with another page.
 - `setAfterNavigate()` merges its argument into `{ type: 'enter', from: null, to: null, shallow: false, willUnload: false, complete: Promise.resolve() }`, like `navigation.afterNavigate` did.
-- An `href` that matched no `hrefs` key logged a `navigate` action. Now every click is a call of `link`, which the Actions panel logs as `$app/navigation::link`.
 
-#### SvelteKit migration example
+## TypeScript
+
+The SvelteKit modules have SvelteKit's types:
+
+- `goto` and the other functions are typed as functions, not mocks. Use `mocked(goto)` from `storybook/test` to reach the mock API, for example `mocked(goto).mockImplementation(...)`. `expect(goto)` works as is.
+- `updated.current` is read-only, so `updated.current = true` doesn't type-check. `Object.assign(updated, { current: true })` does, and it sets the mock's property the same way.
+- `page.url` is a read-only URL. To resolve a path against it, pass `page.url.href`, for example `new URL(href, page.url.href)`.
+- `link`, `setAfterNavigate` and `formAction` have their mock types already.
+
+## Example
 
 A Svelte CSF file, before:
 
@@ -2267,12 +2297,15 @@ export const LoggedIn = {
 };
 ```
 
-In TypeScript, the SvelteKit modules have SvelteKit's types:
+## Check your work
 
-- `goto` and the other functions are typed as functions, not mocks. Use `mocked(goto)` from `storybook/test` to reach the mock API, for example `mocked(goto).mockImplementation(...)`. `expect(goto)` works as is.
-- `updated.current` is read-only, so `updated.current = true` doesn't type-check. `Object.assign(updated, { current: true })` does, and it sets the mock's property the same way.
-- `page.url` is a read-only URL. To resolve a path against it, pass `page.url.href`, for example `new URL(href, page.url.href)`.
-- `link`, `setAfterNavigate` and `formAction` have their mock types already.
+1. Search the project for `sveltekit_experimental` again. Nothing should remain.
+2. Type-check the changed files, for example with `npx svelte-check`, if the project uses TypeScript.
+3. Run the changed stories, for example with `npx vitest --project=storybook` if the project uses the Vitest addon. Otherwise, open each changed story and its docs page in Storybook.
+4. List the parameters you couldn't migrate, such as parameters built at runtime or spread from a variable you can't follow, with their file and line. Don't guess a replacement for them.
+````
+
+</details>
 
 ### Svelte CSF is built into the Svelte frameworks
 

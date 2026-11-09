@@ -25,11 +25,16 @@ on:
         description: 'Write proposals to the Step Summary instead of filing them'
         type: boolean
         default: true
+  # A push runs the free fake engine only: it smoke-tests the pipeline and registers the workflow,
+  # which GitHub dispatches by name only once it has run or exists on the default branch.
+  push:
+    branches: [valentin/ecosystem-qa-cycle-0]
+    paths: ['ecosystem-qa/**', '.github/workflows/ecosystem-qa.yml']
 
 permissions: {}
 
 concurrency:
-  group: ecosystem-qa-${{ inputs.repo }}-${{ inputs.version }}
+  group: ecosystem-qa-${{ inputs.repo || 'mealdrop' }}-${{ inputs.version || github.sha }}
   cancel-in-progress: false
 
 jobs:
@@ -39,31 +44,49 @@ jobs:
     permissions: {}
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
+      repo: ${{ steps.matrix.outputs.repo }}
+      version: ${{ steps.matrix.outputs.version }}
+      dry: ${{ steps.matrix.outputs.dry }}
     steps:
       - name: Build the os x engine matrix
         id: matrix
         env:
-          QA_VERSION: ${{ inputs.version }}
-          QA_ENGINES: ${{ inputs.engines }}
-          QA_OS: ${{ inputs.os }}
+          QA_EVENT: ${{ github.event_name }}
+          QA_REPO: ${{ inputs.repo || 'mealdrop' }}
+          QA_VERSION: ${{ inputs.version || '11.0.0-beta.0' }}
+          QA_ENGINES: ${{ inputs.engines || 'claude' }}
+          QA_OS: ${{ inputs.os || 'linux' }}
+          QA_DRY: ${{ inputs.dry }}
         run: |
           if [[ ! "$QA_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
             echo "::error::version '$QA_VERSION' is not a semver version"
             exit 1
+          fi
+          dry=true
+          if [[ "$QA_EVENT" == "workflow_dispatch" ]]; then
+            dry="$QA_DRY"
+          else
+            QA_ENGINES=fake
+            QA_OS=linux
           fi
           matrix="$(jq -cn --arg engines "$QA_ENGINES" --arg oses "$QA_OS" '{include: [
             ($oses | split(",")[]) as $os | ($engines | split(",")[]) as $engine | {
               os: $os,
               engine: $engine,
               runner: (if $os == "windows" then "windows-latest" else "ubuntu-latest" end),
-              sandbox: (if $os == "windows" then "none" else "docker" end)
+              sandbox: (if $os == "windows" or $engine == "fake" then "none" else "docker" end)
             }
           ]}')"
-          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          {
+            echo "matrix=$matrix"
+            echo "repo=$QA_REPO"
+            echo "version=$QA_VERSION"
+            echo "dry=$dry"
+          } >> "$GITHUB_OUTPUT"
           echo "$matrix" | jq .
 
   runner:
-    name: QA ${{ inputs.repo }} on ${{ matrix.os }} with ${{ matrix.engine }}
+    name: QA ${{ needs.plan.outputs.repo }} on ${{ matrix.os }} with ${{ matrix.engine }}
     needs: plan
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 180
@@ -75,8 +98,8 @@ jobs:
       run:
         shell: bash
     env:
-      QA_REPO: ${{ inputs.repo }}
-      QA_VERSION: ${{ inputs.version }}
+      QA_REPO: ${{ needs.plan.outputs.repo }}
+      QA_VERSION: ${{ needs.plan.outputs.version }}
       QA_ENGINE: ${{ matrix.engine }}
       QA_OS: ${{ matrix.os }}
       QA_SANDBOX: ${{ matrix.sandbox }}
@@ -116,16 +139,19 @@ jobs:
         if: ${{ matrix.sandbox == 'docker' }}
         run: docker build --build-arg AGENT_UID="$(id -u)" --build-arg AGENT_GID="$(id -g)" -t sb-ecosystem-qa ecosystem-qa
 
-      - name: Install the agent CLIs and Chromium on the host
+      - name: Install Chromium for the evidence tools on the host
         if: ${{ matrix.sandbox == 'none' }}
-        run: |
-          npm install -g @anthropic-ai/claude-code@2.1.312 @openai/codex@0.166.0
-          cd ecosystem-qa && npx playwright install chromium
+        run: cd ecosystem-qa && npx playwright install --with-deps chromium
+
+      - name: Install the agent CLIs on the host
+        if: ${{ matrix.sandbox == 'none' && matrix.engine != 'fake' }}
+        run: npm install -g @anthropic-ai/claude-code@2.1.312 @openai/codex@0.166.0
 
       - name: Run the QA agent
         env:
           ANTHROPIC_API_KEY: ${{ matrix.engine == 'claude' && secrets.ANTHROPIC_API_KEY || '' }}
           CODEX_API_KEY: ${{ matrix.engine == 'codex' && secrets.OPENAI_API_KEY || '' }}
+          ECOSYSTEM_QA_FAKE: ${{ matrix.engine == 'fake' && '1' || '' }}
         run: >-
           node ecosystem-qa/run.ts --repo "$QA_REPO" --version "$QA_VERSION" --engine "$QA_ENGINE"
           --sandbox "$QA_SANDBOX" --out "ecosystem-qa/results/$QA_REPO/$QA_OS/$QA_ENGINE"
@@ -212,8 +238,8 @@ jobs:
 
   file-dry:
     name: Propose issues (dry run)
-    needs: collect
-    if: ${{ inputs.dry }}
+    needs: [plan, collect]
+    if: ${{ needs.plan.outputs.dry == 'true' }}
     runs-on: ubuntu-latest
     permissions: {}
     steps:
@@ -246,8 +272,8 @@ jobs:
 
   file:
     name: File issues
-    needs: collect
-    if: ${{ !inputs.dry }}
+    needs: [plan, collect]
+    if: ${{ needs.plan.outputs.dry == 'false' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write # push evidence to the qa-assets branch

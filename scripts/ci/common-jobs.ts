@@ -521,7 +521,7 @@ export const defineAffectedLintAndFormat = (changedFiles: readonly string[]) => 
                 `Lint changed ${dir} files`,
                 dir,
                 changedFiles,
-                'pnpm lint:js:cmd --quiet --no-error-on-unmatched-pattern'
+                'pnpm lint:js:cmd --quiet'
               )
             )),
         ...workflow.cancelOnFailure(),

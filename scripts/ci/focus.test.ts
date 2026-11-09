@@ -1,3 +1,6 @@
+import codePackage from '../../code/package.json' with { type: 'json' };
+import scriptsPackage from '../package.json' with { type: 'json' };
+
 import { existsSync } from 'node:fs';
 
 import { join } from 'pathe';
@@ -279,7 +282,7 @@ describe('defineAffectedLintAndFormat', () => {
     (
       getFocusJobs(changedFiles)
         .find(({ id }) => id === 'lint-and-format--affected')!
-        .implementation('focus') as { steps: { run?: { name: string } }[] }
+        .implementation('focus') as { steps: { run?: { name: string; command: string } }[] }
     ).steps.flatMap(({ run }) => (run && /Format|Lint/.test(run.name) ? [run] : []));
 
   it('checks only the changed files, linting each directory with paths relative to it', () => {
@@ -303,6 +306,18 @@ describe('defineAffectedLintAndFormat', () => {
         environment: { FILES: 'ci/focus.ts' },
       }),
     ]);
+  });
+
+  it('passes the unmatched-pattern flag once to each workspace linter', () => {
+    const steps = runSteps('code/core/src/manager/App.tsx', 'scripts/ci/focus.ts');
+    for (const [directory, manifest] of [
+      ['code', codePackage],
+      ['scripts', scriptsPackage],
+    ] as const) {
+      const step = steps.find((step) => step.name === `Lint changed ${directory} files`)!;
+      const expanded = step.command.replace('pnpm lint:js:cmd', manifest.scripts['lint:js:cmd']);
+      expect(expanded.match(/--no-error-on-unmatched-pattern/g)).toHaveLength(1);
+    }
   });
 
   it('skips linting when no changed file is under code/ or scripts/', () => {

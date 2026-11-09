@@ -91,6 +91,8 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 180
     permissions: {}
+    # The agent keys live only in this environment, so no other workflow can read them.
+    environment: ecosystem-qa
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
@@ -149,8 +151,8 @@ jobs:
 
       - name: Run the QA agent
         env:
-          ANTHROPIC_API_KEY: ${{ matrix.engine == 'claude' && secrets.ANTHROPIC_API_KEY || '' }}
-          CODEX_API_KEY: ${{ matrix.engine == 'codex' && secrets.OPENAI_API_KEY || '' }}
+          ANTHROPIC_API_KEY: ${{ matrix.engine == 'claude' && secrets.ECOSYSTEM_QA_ANTHROPIC_API_KEY || '' }}
+          CODEX_API_KEY: ${{ matrix.engine == 'codex' && secrets.ECOSYSTEM_QA_OPENAI_API_KEY || '' }}
           ECOSYSTEM_QA_FAKE: ${{ matrix.engine == 'fake' && '1' || '' }}
         run: >-
           node ecosystem-qa/run.ts --repo "$QA_REPO" --version "$QA_VERSION" --engine "$QA_ENGINE"

@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@ai-hero/sandcastle": "0.14.0",
+    "@ai-hero/sandcastle": "0.13.0",
     "gifenc": "1.0.3",
     "pathe": "^2.0.3",
     "playwright": "1.58.2",

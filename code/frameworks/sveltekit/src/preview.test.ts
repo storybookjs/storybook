@@ -2,7 +2,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
-import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 import {
   SvelteKitMockParametersRemovedError,
   SvelteKitMocksSharedOnDocsPageError,
@@ -15,7 +14,7 @@ import { navigating, page, updated } from '@storybook/sveltekit/internal/mocks/a
 import { goto, link, setAfterNavigate } from '@storybook/sveltekit/navigation.mock';
 import { formAction } from '@storybook/sveltekit/forms.mock';
 
-import { beforeEach as svelteKitBeforeEach } from './preview.ts';
+import { decorators as svelteKitDecorators, beforeEach as svelteKitBeforeEach } from './preview.ts';
 
 // The cleanups of the stories that are set up and not yet torn down
 const storyCleanups: Array<() => void> = [];
@@ -242,9 +241,18 @@ describe('link clicks', () => {
 });
 
 describe('on a docs page', () => {
-  const setUpDocsStory = (id: string) => runStoryBeforeEach({ id, viewMode: 'docs' });
-  const startRender = (storyId: string) =>
-    channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: 'rendering', storyId, renderId: 1 });
+  // A render of a story on a docs page, with its own canvas element
+  const setUpDocsStory = (id: string) => {
+    const canvasElement = document.createElement('div');
+    const cleanup = runStoryBeforeEach({ id, viewMode: 'docs', canvasElement });
+    const mount = () => {
+      const [decorator] = svelteKitDecorators as Array<
+        (story: () => unknown, context: unknown) => unknown
+      >;
+      decorator(() => ({}), { canvasElement, viewMode: 'docs' });
+    };
+    return { cleanup, mount };
+  };
 
   it('throws when a story sets a mock while another story on the page is set up', () => {
     setUpDocsStory('story--a');
@@ -256,9 +264,9 @@ describe('on a docs page', () => {
   });
 
   it('throws when a story is set up after another story on the page set a mock', () => {
-    setUpDocsStory('story--a');
+    const a = setUpDocsStory('story--a');
     page.data = { user: 'Ada' };
-    startRender('story--a');
+    a.mount();
 
     expect(() => setUpDocsStory('story--b')).toThrowError(SvelteKitMocksSharedOnDocsPageError);
     // The story that set the mock keeps its setup
@@ -280,10 +288,10 @@ describe('on a docs page', () => {
   });
 
   it('allows a page of stories that set no mocks', () => {
-    setUpDocsStory('story--a');
-    setUpDocsStory('story--b');
-    startRender('story--a');
-    startRender('story--b');
+    const a = setUpDocsStory('story--a');
+    const b = setUpDocsStory('story--b');
+    a.mount();
+    b.mount();
 
     expect(() => setUpDocsStory('story--c')).not.toThrow();
   });
@@ -295,11 +303,33 @@ describe('on a docs page', () => {
     expect(() => setUpDocsStory('story--a')).not.toThrow();
   });
 
-  it('allows a rendered story to change the mocks, such as when a form is submitted', () => {
-    setUpDocsStory('story--a');
+  it('counts a write into a default value as setting a mock', () => {
+    const a = setUpDocsStory('story--a');
     setUpDocsStory('story--b');
-    startRender('story--a');
-    startRender('story--b');
+    page.data.user = 'Ada';
+
+    expect(() => a.mount()).toThrowError(SvelteKitMocksSharedOnDocsPageError);
+  });
+
+  it('keeps checking a copy of a story that is still set up after the other copy rendered', () => {
+    const primary = setUpDocsStory('story--a');
+    setUpDocsStory('story--a');
+    const b = setUpDocsStory('story--b');
+    primary.mount();
+    b.mount();
+
+    // The copy of story A is still set up
+
+    expect(() => {
+      page.data = { user: 'Ada' };
+    }).toThrowError(SvelteKitMocksSharedOnDocsPageError);
+  });
+
+  it('allows a rendered story to change the mocks, such as when a form is submitted', () => {
+    const a = setUpDocsStory('story--a');
+    const b = setUpDocsStory('story--b');
+    a.mount();
+    b.mount();
 
     expect(() => {
       page.form = { error: 'Invalid email' };
@@ -307,9 +337,9 @@ describe('on a docs page', () => {
   });
 
   it('starts over on the next docs page', () => {
-    const cleanupA = setUpDocsStory('story--a');
+    const a = setUpDocsStory('story--a');
     page.data = { user: 'Ada' };
-    cleanupA();
+    a.cleanup();
 
     expect(() => setUpDocsStory('story--b')).not.toThrow();
   });

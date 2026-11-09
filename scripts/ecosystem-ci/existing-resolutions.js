@@ -29,6 +29,7 @@ export const EXISTING_RESOLUTIONS = new Set([
   'dom-accessibility-api@npm:^0.5.14',
   'dom-accessibility-api@npm:^0.5.9',
   'esbuild',
+  'form-data@npm:~2.3.2',
   'playwright',
   'playwright-core',
   'polka@npm:1.0.0-next.28/@polka/url',

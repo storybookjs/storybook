@@ -63,6 +63,7 @@
     "dom-accessibility-api@npm:^0.5.14": "^0.6.3",
     "dom-accessibility-api@npm:^0.5.9": "^0.6.3",
     "esbuild": "^0.28.0",
+    "form-data@npm:~2.3.2": "2.5.4",
     "playwright": "1.58.2",
     "playwright-core": "1.58.2",
     "polka@npm:1.0.0-next.28/@polka/url": "1.0.0-next.29",

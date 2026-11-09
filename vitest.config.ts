@@ -42,6 +42,9 @@ export default defineConfig({
     maxWorkers: threadCount,
     projects,
 
+    // Prints console output for failing tests only. Pass `--silent=false` to see every log.
+    silent: 'passed-only',
+
     coverage: {
       provider: 'istanbul',
       exclude: [

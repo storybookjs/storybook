@@ -32,6 +32,21 @@ const ALLOWED_CONSOLE_PREDICATES: ((...args: any[]) => boolean)[] = [
   (message) => message.includes('Please ensure the tabIndex prop is passed through.'),
 ];
 
+// Vitest cannot tie direct stream writes (from @clack/prompts, or Node's own warnings) to a test,
+// so `silent: 'passed-only'` cannot hide them. Route them through the console Vitest captures,
+// keeping a reference from before any test spies on `console.log`.
+const logStreamWrite = console.log.bind(console);
+for (const stream of [process.stdout, process.stderr]) {
+  stream.write = ((chunk: string | Uint8Array, encoding?: unknown, callback?: unknown) => {
+    logStreamWrite('%s', Buffer.from(chunk).toString().replace(/\n$/, ''));
+    const done = typeof encoding === 'function' ? encoding : callback;
+    if (typeof done === 'function') {
+      done();
+    }
+    return true;
+  }) as typeof stream.write;
+}
+
 (['warn', 'error'] as const).forEach((type) => {
   const failOnConsole = vi.defineHelper((...args) => {
     if (ALLOWED_CONSOLE_PREDICATES.some((predicate) => predicate(...args))) {

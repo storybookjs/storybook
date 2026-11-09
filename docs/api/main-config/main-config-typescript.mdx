@@ -74,7 +74,7 @@ Type: `string`
 
 Default: `'typescript'`
 
-The TypeScript package that Storybook loads to read your component types for Controls and the Docs args table. Storybook resolves it as if your main config imported it, so the value is a package name or a path to the package's folder, absolute or relative to the config directory. Do not include a subpath such as `/sync`. For Angular, `@storybook/angular-vite` reads this option.
+The TypeScript package that Storybook loads to read your component types for Controls and the Docs args table. Storybook resolves it as if your main config imported it, so the value is a package name, a `file:` URL, or a path to the package's folder, absolute or relative to the config directory. Do not include a subpath such as `/sync`. For Angular, `@storybook/angular-vite` reads this option.
 
 Storybook reads the package's version and uses the API that version has: the compiler API of TypeScript 5.9 and 6, or the API of TypeScript 7.1 and newer, which is faster. TypeScript 7.0 has neither.
 

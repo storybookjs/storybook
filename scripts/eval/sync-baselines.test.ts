@@ -14,7 +14,6 @@ vi.setConfig({ testTimeout: 30_000 });
 
 let TMP = '';
 
-/** Runs git with its output captured, so pushes and clones do not print into the test log. */
 const git = (args: string[]) => execFileSync('git', args, { stdio: 'pipe' });
 
 afterEach(() => {

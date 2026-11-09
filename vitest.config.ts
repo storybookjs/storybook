@@ -2,12 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { coverageConfigDefaults, defineConfig } from 'vitest/config';
 
-/**
- * Returns the CPUs the container may use, from its cgroup CPU quota, or `undefined` when there is
- * no quota. Docker executors report the host's CPU count to Node.js, not the container's.
- *
- * @see https://jahed.dev/2022/11/20/fixing-node-js-multi-threading-on-circleci/
- */
+// Docker executors report the host's CPU count to Node.js, not the container's quota.
 function getCgroupCpuLimit(): number | undefined {
   const read = (path: string) => {
     try {
@@ -26,13 +21,8 @@ function getCgroupCpuLimit(): number | undefined {
   return quota > 0 && period > 0 ? Math.max(1, Math.floor(quota / period)) : undefined;
 }
 
-/**
- * On Linux, leave one CPU for the main process, which transforms modules for the workers, as
- * Vitest's default does. The Windows large resource class has 8 vCPUs and no cgroup to read.
- *
- * @see https://vitest.dev/config/maxworkers.html#maxworkers
- * @see https://circleci.com/docs/configuration-reference/#x86
- */
+// One CPU stays free for the main process, as in Vitest's default. Windows has no cgroup; its
+// large resource class has 8 vCPUs.
 const getCiThreadCount = () => {
   if (process.platform === 'win32') {
     return 8;

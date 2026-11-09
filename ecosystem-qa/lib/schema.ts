@@ -126,7 +126,6 @@ export const RunResultFile = z.strictObject({
   machine: z.strictObject({
     node: z.string(),
     freeDiskMbAtEnd: z.number().optional(),
-    peakRssMb: z.number().optional(),
   }),
   paths: z.strictObject({
     runLog: z.string(),

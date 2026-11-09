@@ -7,7 +7,6 @@ import { fileURLToPath } from 'node:url';
 import { join } from 'pathe';
 
 import { CHECKS } from '../checks.ts';
-import { AgentOutput } from './schema.ts';
 import type { Outcome, RunRequest } from './types.ts';
 
 const TOOLS_DIR = fileURLToPath(new URL('../tools', import.meta.url));
@@ -50,7 +49,7 @@ export const runFake = (request: RunRequest): Outcome => {
     status: 'ok',
     startSha: NULL_SHA,
     headSha: null,
-    output: AgentOutput.parse({
+    output: {
       storybookVersionInstalled: request.version,
       checks: CHECKS.map(({ id, label }) =>
         id === failing
@@ -74,6 +73,6 @@ export const runFake = (request: RunRequest): Outcome => {
           severityHint: 'S4',
         },
       ],
-    }),
+    },
   };
 };

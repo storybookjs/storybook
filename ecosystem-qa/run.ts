@@ -24,8 +24,8 @@ import { renderChecklist } from './checks.ts';
 import { loadCatalogEntry } from './lib/catalog.ts';
 import { cycleBranchName, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
-import { AgentOutput, Effort, Engine, RunResultFile, SandboxKind } from './lib/schema.ts';
-import type { CatalogEntry, Os, Outcome, RunRequest } from './lib/types.ts';
+import { AgentOutput, Effort, Engine, SandboxKind } from './lib/schema.ts';
+import type { CatalogEntry, Os, Outcome, RunRequest, RunResultFile } from './lib/types.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
 import { usageFromStream } from './lib/usage.ts';
 
@@ -336,9 +336,6 @@ const writeResult = (request: RunRequest, outcome: Outcome, startedAt: Date) => 
   const finishedAt = new Date();
   const { outDir } = request;
   const streamFile = join(outDir, 'agent-stream.jsonl');
-  if (!existsSync(streamFile)) {
-    writeFileSync(streamFile, '');
-  }
   if (outcome.sessionSource && existsSync(outcome.sessionSource)) {
     copyFileSync(outcome.sessionSource, join(outDir, 'session.jsonl'));
   }
@@ -349,7 +346,7 @@ const writeResult = (request: RunRequest, outcome: Outcome, startedAt: Date) => 
   }
   const installSeconds = readInstallSeconds(join(outDir, 'evidence/install-seconds.txt'));
   const { outDir: _out, monorepoDir: _monorepo, ...recorded } = request;
-  const result = RunResultFile.parse({
+  const result: RunResultFile = {
     request: recorded,
     storybookVersionInstalled: outcome.output?.storybookVersionInstalled ?? null,
     startSha: outcome.startSha,
@@ -372,15 +369,15 @@ const writeResult = (request: RunRequest, outcome: Outcome, startedAt: Date) => 
     },
     status: outcome.status,
     ...(outcome.error ? { error: outcome.error } : {}),
-  });
+  };
   writeFileSync(join(outDir, 'result.json'), `${JSON.stringify(result, null, 2)}\n`);
   return result;
 };
 
-const engineLabel = ({ request }: z.infer<typeof RunResultFile>) =>
+const engineLabel = ({ request }: RunResultFile) =>
   request.fake ? `${request.engine} (fake)` : request.engine;
 
-const summarize = (result: z.infer<typeof RunResultFile>, resultPath: string): string => {
+const summarize = (result: RunResultFile, resultPath: string): string => {
   const failed = result.checks.filter((check) => check.state === 'fail').length;
   const usd =
     result.usage.usd === null

@@ -1,14 +1,11 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
-import { z } from 'zod';
-
 import { CATALOG_FILE, parseCatalog } from './lib/catalog.ts';
 import { versionLine } from './lib/cycle.ts';
 import { searchFingerprint } from './lib/github.ts';
 import { groupFindings, toProposal } from './lib/proposals.ts';
 import { loadResults } from './lib/results.ts';
-import { Proposal } from './lib/schema.ts';
 
 const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>]
 
@@ -53,13 +50,9 @@ const loaded = loadResults(results, {
   warn: (message) => console.warn(`::warning::${message}`),
 });
 
-const proposals = z
-  .array(Proposal)
-  .parse(
-    groupFindings(loaded).map((group) =>
-      toProposal(group, searchFingerprint(repo, group.fingerprint), runUrl)
-    )
-  );
+const proposals = groupFindings(loaded).map((group) =>
+  toProposal(group, searchFingerprint(repo, group.fingerprint), runUrl)
+);
 writeFileSync(out, `${JSON.stringify(proposals, null, 2)}\n`);
 
 for (const { result, resultPath } of loaded) {

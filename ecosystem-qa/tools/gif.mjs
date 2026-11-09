@@ -36,8 +36,8 @@ const height = Math.round(Math.max(...frames.map((frame) => frame.height)) * sca
 // Nearest-neighbour onto one white canvas, so frames of different sizes share the GIF's dimensions.
 const toCanvas = (frame) => {
   const pixels = new Uint8Array(width * height * 4).fill(255);
-  for (let y = 0; y < Math.min(height, Math.floor(frame.height * scale)); y++) {
-    for (let x = 0; x < Math.min(width, Math.floor(frame.width * scale)); x++) {
+  for (let y = 0; y < Math.floor(frame.height * scale); y++) {
+    for (let x = 0; x < Math.floor(frame.width * scale); x++) {
       const source = (Math.floor(y / scale) * frame.width + Math.floor(x / scale)) * 4;
       pixels.set(frame.data.subarray(source, source + 4), (y * width + x) * 4);
     }

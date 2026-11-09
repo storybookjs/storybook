@@ -20,10 +20,8 @@ export const versionLine = (version: string): string => {
 
 // The full version keeps each prerelease on its own branch: a later prerelease starts from a fresh
 // clone, so its head never descends from the previous one and could not fast-forward.
-export const cycleBranchName = (version: string, os: Os, engine: Engine): string => {
-  versionLine(version);
-  return `qa/sb-${version}/${os}-${engine}`;
-};
+export const cycleBranchName = (version: string, os: Os, engine: Engine): string =>
+  `qa/sb-${version}/${os}-${engine}`;
 
 export interface BundleHeader {
   prerequisites: string[];

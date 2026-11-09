@@ -128,11 +128,11 @@ jobs:
           corepack enable
           yarn workspaces focus ecosystem-qa
 
-      - name: Free disk before the run (Linux)
+      - name: Report free disk before the run (Linux)
         if: ${{ matrix.os == 'linux' }}
         run: df -h
 
-      - name: Free disk before the run (Windows)
+      - name: Report free disk before the run (Windows)
         if: ${{ matrix.os == 'windows' }}
         shell: pwsh
         run: Get-PSDrive -PSProvider FileSystem
@@ -159,11 +159,11 @@ jobs:
           --sandbox "$QA_SANDBOX" --out "ecosystem-qa/results/$QA_REPO/$QA_OS/$QA_ENGINE"
           --clone-dir "$RUNNER_TEMP/qa-work/$QA_REPO"
 
-      - name: Free disk after the run (Linux)
+      - name: Report free disk after the run (Linux)
         if: ${{ always() && matrix.os == 'linux' }}
         run: df -h
 
-      - name: Free disk after the run (Windows)
+      - name: Report free disk after the run (Windows)
         if: ${{ always() && matrix.os == 'windows' }}
         shell: pwsh
         run: Get-PSDrive -PSProvider FileSystem

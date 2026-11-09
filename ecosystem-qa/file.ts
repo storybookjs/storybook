@@ -50,23 +50,34 @@ if (!values.proposals || !values.repo) {
 const repo = values.repo;
 const proposals = z.array(Proposal).parse(JSON.parse(readFileSync(values.proposals, 'utf8')));
 
-const git = (cwd: string, args: string[], token?: string) =>
-  execFileSync(
-    'git',
-    token
-      ? [
-          '-c',
-          `http.https://github.com/.extraheader=AUTHORIZATION: basic ${Buffer.from(`x-access-token:${token}`).toString('base64')}`,
-          ...args,
-        ]
-      : args,
-    { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] }
-  ).trim();
+// The token travels in git's config environment, never in argv: a failed command's error message
+// repeats the argv, and the job log is public. Actions masks a secret only in the form it was
+// stored, so the encoded form is registered as a mask too.
+const authHeader = (token: string) =>
+  `AUTHORIZATION: basic ${Buffer.from(`x-access-token:${token}`).toString('base64')}`;
 
-const requireEnv = (name: string) => {
+const git = (cwd: string, args: string[], token?: string) =>
+  execFileSync('git', args, {
+    cwd,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'inherit'],
+    env: token
+      ? {
+          ...process.env,
+          GIT_CONFIG_COUNT: '1',
+          GIT_CONFIG_KEY_0: 'http.https://github.com/.extraheader',
+          GIT_CONFIG_VALUE_0: authHeader(token),
+        }
+      : process.env,
+  }).trim();
+
+const requireToken = (name: string) => {
   const value = process.env[name];
   if (!value) {
     throw new Error(`${name} is not set.`);
+  }
+  if (process.env.GITHUB_ACTIONS) {
+    console.log(`::add-mask::${authHeader(value).slice('AUTHORIZATION: basic '.length)}`);
   }
   return value;
 };
@@ -78,7 +89,7 @@ const writeBody = (body: string) => {
 };
 
 const pushCycle = (step: Extract<FilingStep, { kind: 'push-cycle' }>) => {
-  const token = requireEnv('ECOSYSTEM_QA_PUSH_TOKEN');
+  const token = requireToken('ECOSYSTEM_QA_PUSH_TOKEN');
   const dir = mkdtempSync(join(tmpdir(), 'qa-cycle-'));
   const remote = `https://github.com/${step.repo}`;
   const ref = `refs/heads/${step.branch}`;
@@ -104,7 +115,7 @@ const pushEvidence = (step: Extract<FilingStep, { kind: 'push-evidence' }>): voi
 };
 
 const commitEvidence = (step: Extract<FilingStep, { kind: 'push-evidence' }>) => {
-  const token = requireEnv('GH_TOKEN');
+  const token = requireToken('GH_TOKEN');
   const dir = mkdtempSync(join(tmpdir(), 'qa-assets-'));
   const remote = `https://github.com/${repo}`;
   git(dir, ['init', '--quiet']);

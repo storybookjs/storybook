@@ -281,6 +281,8 @@ jobs:
     permissions:
       contents: write # push evidence to the qa-assets branch
       issues: write # create the issue or the comment
+    # ECOSYSTEM_QA_PUSH_TOKEN pushes the cycle branch to the catalog repo; it lives in the same environment as the agent keys.
+    environment: ecosystem-qa
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -307,7 +309,7 @@ jobs:
       - name: File issues and push evidence
         env:
           GH_TOKEN: ${{ github.token }}
-          PAT_STORYBOOK_BOT: ${{ secrets.PAT_STORYBOOK_BOT }}
+          ECOSYSTEM_QA_PUSH_TOKEN: ${{ secrets.ECOSYSTEM_QA_PUSH_TOKEN }}
         run: >-
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/qa-proposals/proposals.json
           --repo "$GITHUB_REPOSITORY"

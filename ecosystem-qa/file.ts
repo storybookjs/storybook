@@ -21,7 +21,7 @@ const HELP = `Usage: node ecosystem-qa/file.ts --proposals <proposals.json> --re
 
 --dry writes each proposal to $GITHUB_STEP_SUMMARY (stdout when unset) and changes nothing.
 Without --dry it pushes evidence to the qa-assets branch of --repo, pushes the cycle branch to the
-catalog repo with PAT_STORYBOOK_BOT, and creates the issue or comment with GH_TOKEN.`;
+catalog repo with ECOSYSTEM_QA_PUSH_TOKEN, and creates the issue or comment with GH_TOKEN.`;
 
 const ASSETS_BRANCH = 'qa-assets';
 
@@ -145,7 +145,7 @@ const pushCycleBranch = (proposal: z.infer<typeof Proposal>) => {
   if (!result.paths.bundle || !result.headSha) {
     return;
   }
-  const token = requireEnv('PAT_STORYBOOK_BOT');
+  const token = requireEnv('ECOSYSTEM_QA_PUSH_TOKEN');
   const dir = mkdtempSync(join(tmpdir(), 'qa-cycle-'));
   const remote = `https://github.com/${result.request.entry.repo}`;
   git(dir, ['init', '--quiet']);

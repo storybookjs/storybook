@@ -67,5 +67,5 @@ Dollars come from `pricing.json`; a model missing there gives `usd: null`.
 
 Dry mode is the default.
 The filer writes each proposal, with its full issue body and the evidence it would upload, to the Step Summary and changes nothing.
-Without dry mode it pushes the evidence to the `qa-assets` branch, pushes the cycle branch to the catalog repo, and files the issue in milestone 11.
+Without dry mode it pushes the evidence to the `qa-assets` branch with the job token, pushes the cycle branch to the catalog repo with `ECOSYSTEM_QA_PUSH_TOKEN` from the `ecosystem-qa` environment, and files the issue in milestone 11.
 A fingerprint that is already on an issue becomes a comment, and one on a `qa:known` issue is suppressed.

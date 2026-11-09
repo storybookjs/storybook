@@ -25,10 +25,8 @@ on:
         description: 'Write proposals to the Step Summary instead of filing them'
         type: boolean
         default: true
-  # A push runs the free fake engine only: it smoke-tests the pipeline and registers the workflow,
-  # which GitHub dispatches by name only once it has run or exists on the default branch.
-  push:
-    branches: [valentin/ecosystem-qa-cycle-0]
+  # A pull request runs only the smoke job: typecheck, tests and the free fake engine.
+  pull_request:
     paths: ['ecosystem-qa/**', '.github/workflows/ecosystem-qa.yml']
 
 permissions: {}
@@ -38,8 +36,67 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  smoke:
+    name: Smoke-test the harness
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      issues: read # gh search for each fingerprint
+    env:
+      QA_VERSION: '11.0.0-beta.0'
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install the ecosystem-qa workspace
+        run: |
+          corepack enable
+          yarn workspaces focus ecosystem-qa
+
+      - name: Typecheck
+        run: yarn workspace ecosystem-qa typecheck
+
+      - name: Test
+        run: yarn workspace ecosystem-qa test
+
+      - name: Install Chromium for the evidence tools
+        run: cd ecosystem-qa && npx playwright install --with-deps chromium
+
+      - name: Run the fake engine
+        env:
+          ECOSYSTEM_QA_FAKE: '1'
+        run: >-
+          node ecosystem-qa/run.ts --repo mealdrop --version "$QA_VERSION" --engine fake
+          --sandbox none --out ecosystem-qa/results/mealdrop/linux/claude
+
+      - name: Collect proposals
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          node ecosystem-qa/collect.ts --results ecosystem-qa/results --version "$QA_VERSION"
+          --out ecosystem-qa/results/proposals.json --repo "$GITHUB_REPOSITORY"
+
+      - name: Write proposals to the Step Summary
+        run: >-
+          node ecosystem-qa/file.ts --proposals ecosystem-qa/results/proposals.json
+          --repo "$GITHUB_REPOSITORY" --dry
+
   plan:
     name: Plan the matrix
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     permissions: {}
     outputs:
@@ -51,37 +108,29 @@ jobs:
       - name: Build the os x engine matrix
         id: matrix
         env:
-          QA_EVENT: ${{ github.event_name }}
-          QA_REPO: ${{ inputs.repo || 'mealdrop' }}
-          QA_VERSION: ${{ inputs.version || '11.0.0-beta.0' }}
-          QA_ENGINES: ${{ inputs.engines || 'claude' }}
-          QA_OS: ${{ inputs.os || 'linux' }}
+          QA_REPO: ${{ inputs.repo }}
+          QA_VERSION: ${{ inputs.version }}
+          QA_ENGINES: ${{ inputs.engines }}
+          QA_OS: ${{ inputs.os }}
           QA_DRY: ${{ inputs.dry }}
         run: |
-          if [[ ! "$QA_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
+          if [[ ! "$QA_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
             echo "::error::version '$QA_VERSION' is not a semver version"
             exit 1
-          fi
-          dry=true
-          if [[ "$QA_EVENT" == "workflow_dispatch" ]]; then
-            dry="$QA_DRY"
-          else
-            QA_ENGINES=fake
-            QA_OS=linux
           fi
           matrix="$(jq -cn --arg engines "$QA_ENGINES" --arg oses "$QA_OS" '{include: [
             ($oses | split(",")[]) as $os | ($engines | split(",")[]) as $engine | {
               os: $os,
               engine: $engine,
               runner: (if $os == "windows" then "windows-latest" else "ubuntu-latest" end),
-              sandbox: (if $os == "windows" or $engine == "fake" then "none" else "docker" end)
+              sandbox: (if $os == "windows" then "none" else "docker" end)
             }
           ]}')"
           {
             echo "matrix=$matrix"
             echo "repo=$QA_REPO"
             echo "version=$QA_VERSION"
-            echo "dry=$dry"
+            echo "dry=$QA_DRY"
           } >> "$GITHUB_OUTPUT"
           echo "$matrix" | jq .
 
@@ -91,7 +140,8 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 180
     permissions: {}
-    # The agent keys live only in this environment, so no other workflow can read them.
+    # The agent keys live in this environment. The push token lives in ecosystem-qa-file, which only
+    # the file job enters, so no job that runs the agent can read it.
     environment: ecosystem-qa
     strategy:
       fail-fast: false
@@ -146,14 +196,13 @@ jobs:
         run: cd ecosystem-qa && npx playwright install --with-deps chromium
 
       - name: Install the agent CLIs on the host
-        if: ${{ matrix.sandbox == 'none' && matrix.engine != 'fake' }}
+        if: ${{ matrix.sandbox == 'none' }}
         run: npm install -g @anthropic-ai/claude-code@2.1.312 @openai/codex@0.166.0
 
       - name: Run the QA agent
         env:
           ANTHROPIC_API_KEY: ${{ matrix.engine == 'claude' && secrets.ECOSYSTEM_QA_ANTHROPIC_API_KEY || '' }}
           CODEX_API_KEY: ${{ matrix.engine == 'codex' && secrets.ECOSYSTEM_QA_OPENAI_API_KEY || '' }}
-          ECOSYSTEM_QA_FAKE: ${{ matrix.engine == 'fake' && '1' || '' }}
         run: >-
           node ecosystem-qa/run.ts --repo "$QA_REPO" --version "$QA_VERSION" --engine "$QA_ENGINE"
           --sandbox "$QA_SANDBOX" --out "ecosystem-qa/results/$QA_REPO/$QA_OS/$QA_ENGINE"
@@ -177,25 +226,12 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
 
-      - name: Write timing and usage to the Step Summary
+      - name: Note a run that wrote no result in the Step Summary
         if: ${{ always() }}
         run: |
-          result="ecosystem-qa/results/$QA_REPO/$QA_OS/$QA_ENGINE/result.json"
-          if [[ ! -f "$result" ]]; then
+          if [[ ! -f "ecosystem-qa/results/$QA_REPO/$QA_OS/$QA_ENGINE/result.json" ]]; then
             echo "### $QA_REPO on $QA_OS with $QA_ENGINE: no result.json was written" >> "$GITHUB_STEP_SUMMARY"
-            exit 0
           fi
-          jq -r '
-            "### \(.request.entry.repo) on \(.request.os) with \(.request.engine) (\(.request.model))",
-            "",
-            "| Status | Wall s | Install s | Input | Output | Cache read | Cache write | USD | Free disk MB | Findings |",
-            "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
-            "| \(.status) | \(.timing.wallSeconds) | \(.timing.installSeconds // "-") | \(.usage.inputTokens) | \(.usage.outputTokens) | \(.usage.cacheReadTokens // 0) | \(.usage.cacheWriteTokens // 0) | \(.usage.usd // "unpriced") | \(.machine.freeDiskMbAtEnd // "-") | \(.findings | length) |",
-            "",
-            (if .usage.priceSource == "table" then "USD priced from the shared price table, not from the agent." else empty end),
-            "",
-            (.checks[] | "- `\(.id)`: \(.state)\(if .note then " (\(.note))" else "" end)")
-          ' "$result" >> "$GITHUB_STEP_SUMMARY"
 
   collect:
     name: Collect and dedupe findings
@@ -284,8 +320,9 @@ jobs:
     permissions:
       contents: write # push evidence to the qa-assets branch
       issues: write # create the issue or the comment
-    # ECOSYSTEM_QA_PUSH_TOKEN pushes the cycle branch to the catalog repo; it lives in the same environment as the agent keys.
-    environment: ecosystem-qa
+    # ECOSYSTEM_QA_PUSH_TOKEN pushes the cycle branch to the catalog repo. It lives only in this
+    # environment, apart from the agent keys.
+    environment: ecosystem-qa-file
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

@@ -56,8 +56,11 @@ ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-be
 
 Start the `Ecosystem QA` workflow by hand and pick the repo, version, engines and operating systems.
 Linux runs the agent in `docker()`; Windows runs it with `noSandbox()`, and the API key is the only secret in that job.
+The agent keys live in the `ecosystem-qa` environment, and the push token in `ecosystem-qa-file`, which only the filing job enters.
 Each runner uploads `qa-result-<os>-<engine>` with `result.json`, the run log, the raw agent stream, the session, the evidence and the cycle branch bundle.
-Its Step Summary shows the status, wall time, tokens, dollars and free disk.
+`run.ts` writes the status, wall time, tokens, dollars, free disk and every check to the Step Summary.
+
+A pull request that touches `ecosystem-qa/` or the workflow runs only the smoke job: typecheck, tests and the fake engine through collect and a dry filing, with no environment and no secrets.
 
 ## Where results land
 
@@ -69,7 +72,7 @@ Dollars come from Claude's result line or the shared price table; a model missin
 
 Dry mode is the default.
 The filer writes each proposal, with its full issue body and the evidence it would upload, to the Step Summary and changes nothing.
-Without dry mode it pushes the evidence to the `qa-assets` branch with the job token, pushes the cycle branch to the catalog repo with `ECOSYSTEM_QA_PUSH_TOKEN` from the `ecosystem-qa` environment, and files the issue in milestone 11.
+Without dry mode it pushes the evidence to the `qa-assets` branch with the job token, pushes the cycle branch to the catalog repo with `ECOSYSTEM_QA_PUSH_TOKEN` from the `ecosystem-qa-file` environment, and files the issue in milestone 11.
 A fingerprint that is already on an issue becomes a comment, and one on a `qa:known` issue is suppressed.
 It checks first that the milestone is open and every label exists, and files nothing otherwise.
 A proposal that fails does not stop the others; the job writes a filed and failed table to the Step Summary and fails at the end.

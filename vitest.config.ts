@@ -21,6 +21,7 @@ const projects = [
   'code/builders/*/vitest.config.ts',
   'code/presets/*/vitest.config.ts',
   'code/renderers/*/vitest.config.ts',
+  'ecosystem-qa/vitest.config.ts',
   'scripts/vitest.config.ts',
 ];
 

@@ -26,6 +26,7 @@ import { cycleBranchName, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
 import { AgentOutput, Effort, Engine, RunResultFile, SandboxKind } from './lib/schema.ts';
 import type { CatalogEntry, Os, Outcome, RunRequest } from './lib/types.ts';
+import { writeStepSummary } from './lib/step-summary.ts';
 import { usageFromStream } from './lib/usage.ts';
 
 const HELP = `Usage: node ecosystem-qa/run.ts --repo <catalog id> --version <storybook version> --engine <claude|codex> --sandbox <docker|bwrap|seatbelt|none> --out <dir>
@@ -381,9 +382,9 @@ const summarize = (result: z.infer<typeof RunResultFile>, resultPath: string): s
       : `$${result.usage.usd.toFixed(2)}${result.usage.priceSource === 'table' ? ' (priced from the shared price table, not from the agent)' : ''}`;
   return [
     `${result.request.entry.repo} on ${result.request.os} with ${result.request.engine} (${result.request.model}) finished with status ${result.status} in ${result.timing.wallSeconds}s.`,
-    `Storybook ${result.storybookVersionInstalled ?? 'version unknown'} installed, ${result.checks.length} checks reported, ${failed} failed, ${result.findings.length} findings.`,
+    `Storybook ${result.storybookVersionInstalled ?? 'version unknown'} installed${result.timing.installSeconds === undefined ? '' : ` (the project install took ${result.timing.installSeconds}s)`}, ${result.checks.length} checks reported, ${failed} failed, ${result.findings.length} findings.`,
     `Usage was ${result.usage.inputTokens} input, ${result.usage.outputTokens} output, ${result.usage.cacheReadTokens ?? 0} cache-read and ${result.usage.cacheWriteTokens ?? 0} cache-write tokens, ${usd}.`,
-    `Cycle branch ${cycleBranchName(result.request.version, result.request.os, result.request.engine)} head ${result.headSha ?? 'has no commits'}. Result: ${resultPath}.`,
+    `Cycle branch ${cycleBranchName(result.request.version, result.request.os, result.request.engine)} head ${result.headSha ?? 'has no commits'}.${result.machine.freeDiskMbAtEnd === undefined ? '' : ` ${result.machine.freeDiskMbAtEnd} MB disk free at the end.`} Result: ${resultPath}.`,
     ...(result.error ? [`Error: ${result.error}`] : []),
   ].join(' ');
 };
@@ -393,4 +394,19 @@ const startedAt = new Date();
 mkdirSync(join(request.outDir, 'evidence'), { recursive: true });
 const outcome = isFake ? runFake(request) : await runSandcastle(request, cloneDir, image);
 const result = writeResult(request, outcome, startedAt);
-console.log(summarize(result, relative(process.cwd(), join(request.outDir, 'result.json'))));
+const summary = summarize(result, relative(process.cwd(), join(request.outDir, 'result.json')));
+console.log(summary);
+if (process.env.GITHUB_STEP_SUMMARY) {
+  writeStepSummary(
+    [
+      `### ${result.request.entry.repo} on ${result.request.os} with ${result.request.engine}`,
+      '',
+      summary,
+      '',
+      ...result.checks.map(
+        (check) => `- \`${check.id}\`: ${check.state}${check.note ? ` (${check.note})` : ''}`
+      ),
+      '',
+    ].join('\n')
+  );
+}

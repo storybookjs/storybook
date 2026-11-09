@@ -124,43 +124,47 @@ describe('loadResults', () => {
     expect(warnings).toContainEqual(expect.stringMatching(/has no ref for/));
   });
 
-  it('keeps regular evidence files and drops missing ones, symlinks and escapes', () => {
-    const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
-    const outside = mkdtempSync(join(tmpdir(), 'qa-outside-'));
-    write(join(outside, 'secret.log'), 'token');
-    const runDir = artifactRun(resultsDir);
-    const evidence = join(runDir, 'evidence');
-    write(join(evidence, 'hmr-frames/01.png'), 'png');
-    write(join(evidence, 'dev.log'), 'log');
-    symlinkSync(join(outside, 'secret.log'), join(evidence, 'link.log'));
-    symlinkSync(outside, join(evidence, 'escape'));
-    writeRun(
-      runDir,
-      record({
-        findings: [
-          finding({
-            evidence: {
-              png: 'hmr-frames/01.png',
-              gif: 'missing.gif',
-              logs: ['dev.log', 'link.log', 'escape/secret.log'],
-            },
-          }),
-        ],
-      })
-    );
+  // Collect runs on Linux, and creating a symlink on Windows needs a privilege CI does not have.
+  it.skipIf(process.platform === 'win32')(
+    'keeps regular evidence files and drops missing ones, symlinks and escapes',
+    () => {
+      const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
+      const outside = mkdtempSync(join(tmpdir(), 'qa-outside-'));
+      write(join(outside, 'secret.log'), 'token');
+      const runDir = artifactRun(resultsDir);
+      const evidence = join(runDir, 'evidence');
+      write(join(evidence, 'hmr-frames/01.png'), 'png');
+      write(join(evidence, 'dev.log'), 'log');
+      symlinkSync(join(outside, 'secret.log'), join(evidence, 'link.log'));
+      symlinkSync(outside, join(evidence, 'escape'));
+      writeRun(
+        runDir,
+        record({
+          findings: [
+            finding({
+              evidence: {
+                png: 'hmr-frames/01.png',
+                gif: 'missing.gif',
+                logs: ['dev.log', 'link.log', 'escape/secret.log'],
+              },
+            }),
+          ],
+        })
+      );
 
-    const { results, warnings } = load(resultsDir);
+      const { results, warnings } = load(resultsDir);
 
-    expect(results[0]?.result.findings[0]?.evidence).toEqual({
-      png: 'hmr-frames/01.png',
-      logs: ['dev.log'],
-    });
-    expect(warnings).toEqual([
-      expect.stringMatching(/missing\.gif .*does not exist/),
-      expect.stringMatching(/link\.log .*is a symlink/),
-      expect.stringMatching(/escape\/secret\.log .*outside the evidence directory/),
-    ]);
-  });
+      expect(results[0]?.result.findings[0]?.evidence).toEqual({
+        png: 'hmr-frames/01.png',
+        logs: ['dev.log'],
+      });
+      expect(warnings).toEqual([
+        expect.stringMatching(/missing\.gif .*does not exist/),
+        expect.stringMatching(/link\.log .*is a symlink/),
+        expect.stringMatching(/escape\/secret\.log .*outside the evidence directory/),
+      ]);
+    }
+  );
 });
 
 describe('evidence names in a finding', () => {

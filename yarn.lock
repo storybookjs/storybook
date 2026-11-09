@@ -19160,6 +19160,7 @@ __metadata:
     playwright: "npm:1.58.2"
     pngjs: "npm:^7.0.0"
     typescript: "npm:^6.0.3"
+    vite: "npm:^7.0.4"
     vitest: "npm:5.0.5"
     zod: "npm:^4.4.3"
   languageName: unknown

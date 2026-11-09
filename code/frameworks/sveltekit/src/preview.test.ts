@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
+import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 import {
   SvelteKitMockParametersRemovedError,
   SvelteKitMocksSharedOnDocsPageError,
@@ -341,6 +342,18 @@ describe('on a docs page', () => {
     expect(() => {
       page.data = { user: 'Ada' };
     }).toThrowError(SvelteKitMocksSharedOnDocsPageError);
+  });
+
+  it('allows a rendered story to change the mocks after another story failed in its setup', () => {
+    const a = setUpDocsStory('story--a');
+    setUpDocsStory('story--b');
+    a.mount();
+    // A later `beforeEach` of story B throws, so it never mounts
+    channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: 'errored', storyId: 'story--b' });
+
+    expect(() => {
+      page.form = { error: 'Invalid email' };
+    }).not.toThrow();
   });
 
   it('allows a rendered story to change the mocks, such as when a form is submitted', () => {

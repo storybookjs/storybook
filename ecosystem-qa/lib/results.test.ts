@@ -4,22 +4,9 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
-import { finding, loaded, VERSION } from './fixtures.ts';
+import { ENTRY, finding, loaded, VERSION } from './fixtures.ts';
 import { loadResults } from './results.ts';
-import { Finding } from './schema.ts';
-import type { CatalogEntry, RunResultFile } from './types.ts';
-
-const CATALOG: CatalogEntry[] = [
-  {
-    id: 'mealdrop',
-    repo: 'storybookjs/mealdrop',
-    ref: 'main',
-    class: 'owned',
-    packageManager: 'yarn',
-    storybookDir: '.',
-    windows: true,
-  },
-];
+import { Finding, type RunResultFile } from './schema.ts';
 
 const write = (path: string, content: string) => {
   mkdirSync(dirname(path), { recursive: true });
@@ -38,7 +25,7 @@ const load = (resultsDir: string) => {
   const warnings: string[] = [];
   const results = loadResults(resultsDir, {
     version: VERSION,
-    catalog: CATALOG,
+    catalog: [ENTRY],
     warn: (message) => warnings.push(message),
   });
   return { results, warnings };
@@ -88,7 +75,7 @@ describe('loadResults', () => {
       ...record(),
       request: {
         ...record().request,
-        entry: { ...CATALOG[0]!, repo: 'attacker/target' },
+        entry: { ...ENTRY, repo: 'attacker/target' },
       },
       headSha: 'f'.repeat(40),
     });

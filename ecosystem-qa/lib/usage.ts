@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 
+import { z } from 'zod';
+
 import { MODEL_PRICING } from '../../agent-eval/lib/usage.ts';
-import type { Engine, RunResultFile } from './types.ts';
+import type { Engine, RunResultFile } from './schema.ts';
 
 interface Tokens {
   inputTokens: number;
@@ -10,9 +12,45 @@ interface Tokens {
   cacheWriteTokens: number;
 }
 
-export type PriceTable = typeof MODEL_PRICING;
+const count = z
+  .number()
+  .nullish()
+  .transform((value) => value ?? 0);
 
-const parseLine = (line: string): Record<string, any> | undefined => {
+const ResultLine = z.object({ type: z.literal('result') });
+
+const ClaudeResult = ResultLine.extend({
+  model_usage_since_last_result: z.record(
+    z.string(),
+    z.object({
+      inputTokens: count,
+      outputTokens: count,
+      cacheReadInputTokens: count,
+      cacheCreationInputTokens: count,
+      costUSD: count,
+    })
+  ),
+});
+
+const ClaudeAssistant = z.object({
+  type: z.literal('assistant'),
+  message: z.object({
+    id: z.string(),
+    usage: z.object({
+      input_tokens: count,
+      output_tokens: count,
+      cache_read_input_tokens: count,
+      cache_creation_input_tokens: count,
+    }),
+  }),
+});
+
+const CodexTurn = z.object({
+  type: z.literal('turn.completed'),
+  usage: z.object({ input_tokens: count, cached_input_tokens: count, output_tokens: count }),
+});
+
+const parseLine = (line: string): unknown => {
   if (!line.startsWith('{')) {
     return undefined;
   }
@@ -29,10 +67,11 @@ interface ClaudeTotals extends Tokens {
 
 // Claude Code's final `result` line carries the run's totals and its own cost figure per model.
 // It is the authority; the per-message sum below undercounts output tokens on streamed replies.
-const claudeResultTotals = (lines: string[]): ClaudeTotals | undefined => {
-  const result = lines.map(parseLine).findLast((event) => event?.type === 'result');
-  const perModel = result?.model_usage_since_last_result;
-  if (!perModel || typeof perModel !== 'object') {
+const claudeResultTotals = (events: unknown[]): ClaudeTotals | undefined => {
+  const result = ClaudeResult.safeParse(
+    events.findLast((event) => ResultLine.safeParse(event).success)
+  );
+  if (!result.success) {
     return undefined;
   }
   const totals: ClaudeTotals = {
@@ -42,28 +81,29 @@ const claudeResultTotals = (lines: string[]): ClaudeTotals | undefined => {
     cacheWriteTokens: 0,
     usd: 0,
   };
-  for (const usage of Object.values(perModel) as Record<string, number>[]) {
-    totals.inputTokens += usage.inputTokens ?? 0;
-    totals.outputTokens += usage.outputTokens ?? 0;
-    totals.cacheReadTokens += usage.cacheReadInputTokens ?? 0;
-    totals.cacheWriteTokens += usage.cacheCreationInputTokens ?? 0;
-    totals.usd += usage.costUSD ?? 0;
+  for (const usage of Object.values(result.data.model_usage_since_last_result)) {
+    totals.inputTokens += usage.inputTokens;
+    totals.outputTokens += usage.outputTokens;
+    totals.cacheReadTokens += usage.cacheReadInputTokens;
+    totals.cacheWriteTokens += usage.cacheCreationInputTokens;
+    totals.usd += usage.costUSD;
   }
   return totals;
 };
 
 // Fallback when the run ended without a `result` line: Claude Code repeats a call's usage on every
 // stream line split from that call, and the last copy is final.
-const claudeTokens = (lines: string[]): Tokens => {
-  const byMessage = new Map<string, Record<string, number>>();
-  for (const event of lines.map(parseLine)) {
-    const id = event?.message?.id;
-    if (event?.type === 'assistant' && typeof id === 'string' && event.message.usage) {
-      byMessage.set(id, event.message.usage);
+const claudeTokens = (events: unknown[]): Tokens => {
+  const byMessage = new Map<string, z.infer<typeof ClaudeAssistant>['message']['usage']>();
+  for (const event of events) {
+    const parsed = ClaudeAssistant.safeParse(event);
+    if (parsed.success) {
+      byMessage.set(parsed.data.message.id, parsed.data.message.usage);
     }
   }
-  const sum = (field: string) =>
-    [...byMessage.values()].reduce((total, usage) => total + (usage[field] ?? 0), 0);
+  const usages = [...byMessage.values()];
+  const sum = (field: keyof (typeof usages)[number]) =>
+    usages.reduce((total, usage) => total + usage[field], 0);
   return {
     inputTokens: sum('input_tokens'),
     outputTokens: sum('output_tokens'),
@@ -73,19 +113,20 @@ const claudeTokens = (lines: string[]): Tokens => {
 };
 
 // Codex reports one cumulative usage per `exec` turn; `input_tokens` already includes the cached part.
-const codexTokens = (lines: string[]): Tokens => {
+const codexTokens = (events: unknown[]): Tokens => {
   const tokens: Tokens = {
     inputTokens: 0,
     outputTokens: 0,
     cacheReadTokens: 0,
     cacheWriteTokens: 0,
   };
-  for (const event of lines.map(parseLine)) {
-    const usage = event?.type === 'turn.completed' ? event.usage : undefined;
-    if (usage) {
-      tokens.inputTokens += (usage.input_tokens ?? 0) - (usage.cached_input_tokens ?? 0);
-      tokens.cacheReadTokens += usage.cached_input_tokens ?? 0;
-      tokens.outputTokens += usage.output_tokens ?? 0;
+  for (const event of events) {
+    const parsed = CodexTurn.safeParse(event);
+    if (parsed.success) {
+      const { input_tokens, cached_input_tokens, output_tokens } = parsed.data.usage;
+      tokens.inputTokens += input_tokens - cached_input_tokens;
+      tokens.cacheReadTokens += cached_input_tokens;
+      tokens.outputTokens += output_tokens;
     }
   }
   return tokens;
@@ -101,15 +142,15 @@ export const usageFromStream = (
   streamFile: string,
   engine: Engine,
   model: string,
-  prices: PriceTable = MODEL_PRICING
+  prices: typeof MODEL_PRICING = MODEL_PRICING
 ): RunResultFile['usage'] => {
-  const lines = readFileSync(streamFile, 'utf8').split('\n');
-  const claudeTotals = engine === 'claude' ? claudeResultTotals(lines) : undefined;
+  const events = readFileSync(streamFile, 'utf8').split('\n').map(parseLine);
+  const claudeTotals = engine === 'claude' ? claudeResultTotals(events) : undefined;
   if (claudeTotals) {
     const { usd, ...tokens } = claudeTotals;
     return { ...tokens, usd, model, priceSource: 'agent' };
   }
-  const tokens = engine === 'claude' ? claudeTokens(lines) : codexTokens(lines);
+  const tokens = engine === 'claude' ? claudeTokens(events) : codexTokens(events);
   const price = prices[model];
   if (!price) {
     return { ...tokens, usd: null, model, priceSource: 'table' };

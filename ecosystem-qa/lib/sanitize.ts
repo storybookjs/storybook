@@ -1,4 +1,4 @@
-import type { Finding } from './types.ts';
+import type { Finding } from './schema.ts';
 
 const LIMITS = { title: 150, actual: 500, expected: 300, errorText: 4000, reproStep: 300 };
 const MAX_REPRO_STEPS = 12;
@@ -50,9 +50,7 @@ export const sanitizeFinding = (finding: Finding): Finding => ({
   ...finding,
   actual: cap(finding.actual, LIMITS.actual),
   expected: cap(finding.expected, LIMITS.expected),
-  ...(finding.errorText === undefined
-    ? {}
-    : { errorText: cap(finding.errorText, LIMITS.errorText) }),
+  errorText: finding.errorText && cap(finding.errorText, LIMITS.errorText),
   reproSteps: finding.reproSteps
     .slice(0, MAX_REPRO_STEPS)
     .map((step) => cap(step, LIMITS.reproStep)),

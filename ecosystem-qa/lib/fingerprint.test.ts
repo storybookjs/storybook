@@ -1,19 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { fingerprint, normalizeErrorSignature } from './fingerprint.ts';
-import type { Finding } from './types.ts';
-
-const finding = (errorText: string): Finding => ({
-  checkId: 'core.dev-server',
-  title: 'Dev server fails to start',
-  baseline: 'pass',
-  expected: 'The dev server starts',
-  actual: 'The dev server exits',
-  errorText,
-  reproSteps: ['yarn storybook'],
-  evidence: { logs: [] },
-  windowsOnly: false,
-});
+import { finding } from './fixtures.ts';
 
 describe('normalizeErrorSignature', () => {
   it('keeps the package path under node_modules and strips the checkout prefix, versions, line:col and whitespace runs', () => {
@@ -73,15 +61,17 @@ describe('normalizeErrorSignature', () => {
 
   it('tells the same message apart when it names different files', () => {
     const createJs = fingerprint(
-      finding(
-        '[MISSING_EXPORT] "css" is not exported by "node_modules/storybook/dist/theming/create.js".'
-      ),
+      finding({
+        errorText:
+          '[MISSING_EXPORT] "css" is not exported by "node_modules/storybook/dist/theming/create.js".',
+      }),
       'owned'
     );
     const blocksJs = fingerprint(
-      finding(
-        '[MISSING_EXPORT] "css" is not exported by "node_modules/@storybook/addon-docs/dist/blocks.js".'
-      ),
+      finding({
+        errorText:
+          '[MISSING_EXPORT] "css" is not exported by "node_modules/@storybook/addon-docs/dist/blocks.js".',
+      }),
       'owned'
     );
 
@@ -100,11 +90,13 @@ describe('normalizeErrorSignature', () => {
 describe('fingerprint', () => {
   it('is equal for the same failure on different Storybook versions and machines', () => {
     const onBeta = fingerprint(
-      finding('Missing addon at /home/runner/work/x/node_modules/a.js:3:9 in 11.0.0-beta.0'),
+      finding({
+        errorText: 'Missing addon at /home/runner/work/x/node_modules/a.js:3:9 in 11.0.0-beta.0',
+      }),
       'owned'
     );
     const onRc = fingerprint(
-      finding('Missing addon at D:\\a\\x\\node_modules\\a.js:4:1 in 11.0.0-rc.2'),
+      finding({ errorText: 'Missing addon at D:\\a\\x\\node_modules\\a.js:4:1 in 11.0.0-rc.2' }),
       'owned'
     );
 
@@ -113,12 +105,14 @@ describe('fingerprint', () => {
   });
 
   it('differs by check, repo class and error', () => {
-    const base = finding('Missing addon');
+    const base = finding({ errorText: 'Missing addon' });
 
     expect(fingerprint(base, 'owned')).not.toBe(fingerprint(base, 'tier1'));
     expect(fingerprint(base, 'owned')).not.toBe(
       fingerprint({ ...base, checkId: 'build.static' }, 'owned')
     );
-    expect(fingerprint(base, 'owned')).not.toBe(fingerprint(finding('Missing preset'), 'owned'));
+    expect(fingerprint(base, 'owned')).not.toBe(
+      fingerprint(finding({ errorText: 'Missing preset' }), 'owned')
+    );
   });
 });

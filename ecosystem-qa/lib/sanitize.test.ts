@@ -1,19 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { finding } from './fixtures.ts';
 import { sanitizeFinding, sanitizeTitle } from './sanitize.ts';
-import type { Finding } from './types.ts';
-
-const finding = (overrides: Partial<Finding> = {}): Finding => ({
-  checkId: 'core.dev-server',
-  title: 'Dev server fails',
-  baseline: 'pass',
-  expected: 'It starts',
-  actual: 'It exits',
-  reproSteps: ['yarn storybook'],
-  evidence: { logs: [] },
-  windowsOnly: false,
-  ...overrides,
-});
 
 describe('sanitizeTitle', () => {
   it('renders HTML, mentions, issue references and external links inert', () => {

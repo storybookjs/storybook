@@ -1,7 +1,7 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
-import { CATALOG_FILE, parseCatalog } from './lib/catalog.ts';
+import { loadCatalog } from './lib/catalog.ts';
 import { versionLine } from './lib/cycle.ts';
 import { searchFingerprint } from './lib/github.ts';
 import { groupFindings, toProposal } from './lib/proposals.ts';
@@ -46,7 +46,7 @@ const runUrl =
 
 const loaded = loadResults(results, {
   version,
-  catalog: parseCatalog(JSON.parse(readFileSync(CATALOG_FILE, 'utf8'))),
+  catalog: loadCatalog(),
   warn: (message) => console.warn(`::warning::${message}`),
 });
 

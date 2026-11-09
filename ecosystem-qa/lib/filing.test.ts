@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { missingPrerequisites, planFiling, renderFilingReport, type FilingStep } from './filing.ts';
 import { asIssue, finding, loaded, RUN_URL, VERSION } from './fixtures.ts';
 import { groupFindings, toProposal, type IssueHit } from './proposals.ts';
-import type { Finding } from './types.ts';
+import type { Finding } from './schema.ts';
 
 const REPO = 'storybookjs/storybook';
 

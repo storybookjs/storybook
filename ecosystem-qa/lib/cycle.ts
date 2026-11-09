@@ -1,6 +1,6 @@
 import { closeSync, openSync, readSync } from 'node:fs';
 
-import type { Engine, Os } from './types.ts';
+import type { Engine, Os } from './schema.ts';
 
 const SEMVER = /^(\d+)\.(\d+)\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 const SHA = /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/;

@@ -3,8 +3,14 @@ import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, relative } from 'pathe';
 
 import { cycleBranchName, readBundleHeader } from './cycle.ts';
-import * as schema from './schema.ts';
-import type { CatalogEntry, Cycle, Engine, Finding, Os, RunResultFile } from './types.ts';
+import {
+  Engine,
+  Os,
+  RunResultFile,
+  type CatalogEntry,
+  type Cycle,
+  type Finding,
+} from './schema.ts';
 
 export interface LoadedResult {
   resultPath: string;
@@ -35,7 +41,7 @@ const runDirs = (resultsDir: string, { entry, os, engine }: RunKey) => [
 ];
 
 /** Return why an evidence file must not be published, or undefined when it may be. */
-export const evidenceProblem = (evidenceDir: string, name: string): string | undefined => {
+const evidenceProblem = (evidenceDir: string, name: string): string | undefined => {
   const path = join(evidenceDir, name);
   const stats = lstatSync(path, { throwIfNoEntry: false });
   if (!stats) {
@@ -52,7 +58,7 @@ export const evidenceProblem = (evidenceDir: string, name: string): string | und
 };
 
 // `storybook info` runs through the package manager's dlx, whose install log precedes the report.
-export const environmentInfo = (captured: string): string => {
+const environmentInfo = (captured: string): string => {
   const start = captured.indexOf('Storybook Environment Info');
   const lines = (start < 0 ? captured : captured.slice(start)).split('\n');
   return lines
@@ -127,7 +133,7 @@ const loadRun = (
   warn: (message: string) => void
 ): LoadedResult | undefined => {
   const resultPath = join(dir, 'result.json');
-  const parsed = schema.RunResultFile.safeParse(JSON.parse(readFileSync(resultPath, 'utf8')));
+  const parsed = RunResultFile.safeParse(JSON.parse(readFileSync(resultPath, 'utf8')));
   if (!parsed.success) {
     warn(`${resultPath} is not a valid result record; ignoring it: ${parsed.error.message}`);
     return undefined;
@@ -177,8 +183,8 @@ export const loadResults = (
   { version, catalog, warn }: LoadOptions
 ): LoadedResult[] =>
   catalog.flatMap((entry) =>
-    schema.Os.options.flatMap((os) =>
-      schema.Engine.options.flatMap((engine) => {
+    Os.options.flatMap((os) =>
+      Engine.options.flatMap((engine) => {
         const key = { entry, os, engine, version };
         return runDirs(resultsDir, key)
           .filter((dir) => existsSync(join(dir, 'result.json')))

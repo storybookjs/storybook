@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 
-import type { Finding, RepoClass } from './types.ts';
+import type { Finding, RepoClass } from './schema.ts';
 
 // A path outside node_modules keeps only its file name: anything above it can be the checkout
 // directory, whose name differs per repo, sandbox and machine.

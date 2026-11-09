@@ -11,8 +11,7 @@ const SearchResults = z.array(
   z.object({ number: z.number(), labels: z.array(z.object({ name: z.string() })) })
 );
 
-export const ghText = (args: string[]): string =>
-  gh(args, { ...QUIET, encoding: 'utf8' }) as string;
+export const ghText = (args: string[]): string => gh(args, QUIET).toString();
 
 export const ghParse = <T>(schema: z.ZodType<T>, args: string[]): T =>
   schema.parse(ghJson<unknown>(args, QUIET));

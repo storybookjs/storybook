@@ -12,7 +12,7 @@ import type {
   IssueProposal,
   Os,
   Proposal,
-} from './types.ts';
+} from './schema.ts';
 
 export interface FindingGroup {
   fingerprint: string;

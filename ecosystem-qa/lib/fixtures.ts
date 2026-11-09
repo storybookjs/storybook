@@ -1,9 +1,27 @@
 import { cycleBranchName } from './cycle.ts';
 import type { LoadedResult } from './results.ts';
-import type { Engine, Finding, IssueProposal, Os, Proposal, RunResultFile } from './types.ts';
+import type {
+  CatalogEntry,
+  Engine,
+  Finding,
+  IssueProposal,
+  Os,
+  Proposal,
+  RunResultFile,
+} from './schema.ts';
 
 export const VERSION = '11.0.0-beta.0';
 export const RUN_URL = 'https://github.com/storybookjs/storybook/actions/runs/1';
+
+export const ENTRY: CatalogEntry = {
+  id: 'mealdrop',
+  repo: 'storybookjs/mealdrop',
+  ref: 'main',
+  class: 'owned',
+  packageManager: 'yarn',
+  storybookDir: '.',
+  windows: true,
+};
 
 export const finding = (overrides: Partial<Finding> = {}): Finding => ({
   checkId: 'core.hmr.stories-file',
@@ -27,15 +45,7 @@ export const loaded = (
   const dir = `results/mealdrop/${os}/${engine}`;
   const result: RunResultFile = {
     request: {
-      entry: {
-        id: 'mealdrop',
-        repo: 'storybookjs/mealdrop',
-        ref: 'main',
-        class: 'owned',
-        packageManager: 'yarn',
-        storybookDir: '.',
-        windows: true,
-      },
+      entry: ENTRY,
       version: VERSION,
       engine,
       model: engine === 'claude' ? 'claude-sonnet-5-5' : 'gpt-5.4',

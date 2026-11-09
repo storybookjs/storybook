@@ -1,9 +1,7 @@
-export type CheckPhase = 'upgrade' | 'dev' | 'build' | 'test';
-
 interface CheckDefinition {
   readonly id: string;
   readonly label: string;
-  readonly phase: CheckPhase;
+  readonly phase: 'upgrade' | 'dev' | 'build' | 'test';
   readonly probe: string;
 }
 

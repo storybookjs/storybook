@@ -1,5 +1,5 @@
 import { fence, renderCommentBody, renderIssueBody } from './proposals.ts';
-import type { EvidenceFile, Proposal } from './types.ts';
+import type { EvidenceFile, Proposal } from './schema.ts';
 
 export const ASSETS_BRANCH = 'qa-assets';
 
@@ -27,9 +27,6 @@ export interface FilingOptions {
   comments?: string[];
 }
 
-export const assetUrl = (repo: string, assetDir: string, name: string) =>
-  `https://raw.githubusercontent.com/${repo}/${ASSETS_BRANCH}/${assetDir}/${name}`;
-
 const METADATA_MARKER = '<!-- sb-qa-metadata -->';
 
 /** Return the ordered steps that file one proposal; a skip step is always the only step. */
@@ -53,7 +50,7 @@ export const planFiling = (proposal: Proposal, options: FilingOptions): FilingSt
   const evidenceUrl = (name: string) =>
     options.evidenceLinks === 'local'
       ? (localPaths.get(name) ?? name)
-      : assetUrl(options.repo, assetDir, name);
+      : `https://raw.githubusercontent.com/${options.repo}/${ASSETS_BRANCH}/${assetDir}/${name}`;
   return [
     ...(cycle.headSha && cycle.bundle
       ? [{ kind: 'push-cycle' as const, ...cycle, headSha: cycle.headSha, bundle: cycle.bundle }]

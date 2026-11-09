@@ -3,9 +3,12 @@ import { z } from 'zod';
 import { CHECK_IDS } from '../checks.ts';
 
 export const RepoClass = z.enum(['owned', 'tier1', 'tier2']);
+export type RepoClass = z.infer<typeof RepoClass>;
 export const Engine = z.enum(['claude', 'codex']);
+export type Engine = z.infer<typeof Engine>;
 export const SandboxKind = z.enum(['docker', 'bwrap', 'seatbelt', 'none']);
 export const Os = z.enum(['linux', 'windows', 'macos']);
+export type Os = z.infer<typeof Os>;
 export const Effort = z.enum(['low', 'medium', 'high']);
 
 export const CatalogEntry = z.strictObject({
@@ -22,6 +25,7 @@ export const CatalogEntry = z.strictObject({
   storybookDir: z.string().min(1),
   windows: z.boolean(),
 });
+export type CatalogEntry = z.infer<typeof CatalogEntry>;
 
 export const Catalog = z
   .array(CatalogEntry)
@@ -59,6 +63,7 @@ export const Finding = z.strictObject({
   windowsOnly: z.boolean(),
   severityHint: z.enum(['S0', 'S1', 'S2', 'S3', 'S4']).optional(),
 });
+export type Finding = z.infer<typeof Finding>;
 
 export const AgentOutput = z
   .strictObject({
@@ -127,6 +132,7 @@ export const RunResultFile = z.strictObject({
     node: z.string(),
     freeDiskMbAtEnd: z.number().optional(),
   }),
+  // Relative to the directory of result.json, so a downloaded artifact still resolves.
   paths: z.strictObject({
     runLog: z.string(),
     session: z.string().optional(),
@@ -136,6 +142,7 @@ export const RunResultFile = z.strictObject({
   status: z.enum(['ok', 'agent-failed', 'output-invalid', 'timeout']),
   error: z.string().optional(),
 });
+export type RunResultFile = z.infer<typeof RunResultFile>;
 
 const Source = z.strictObject({
   resultPath: z.string(),
@@ -157,8 +164,10 @@ export const Cycle = z.strictObject({
   headSha: Sha.nullable(),
   bundle: z.string().nullable(),
 });
+export type Cycle = z.infer<typeof Cycle>;
 
 export const EvidenceFile = z.strictObject({ localPath: z.string(), name: EvidenceName });
+export type EvidenceFile = z.infer<typeof EvidenceFile>;
 
 const ProposalBase = {
   fingerprint: z.string().regex(/^[0-9a-f]{16}$/),
@@ -190,3 +199,6 @@ export const Proposal = z.discriminatedUnion('kind', [
     existingIssue: z.number().int(),
   }),
 ]);
+export type Proposal = z.infer<typeof Proposal>;
+export type IssueProposal = Extract<Proposal, { kind: 'issue' }>;
+export type CommentProposal = Extract<Proposal, { kind: 'comment' }>;

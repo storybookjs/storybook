@@ -1,14 +1,12 @@
 import { readFileSync } from 'node:fs';
 
-import { Catalog } from './schema.ts';
-import type { CatalogEntry } from './types.ts';
+import { Catalog, type CatalogEntry } from './schema.ts';
 
-export const CATALOG_FILE = new URL('../catalog.json', import.meta.url);
+export const loadCatalog = (): CatalogEntry[] =>
+  Catalog.parse(JSON.parse(readFileSync(new URL('../catalog.json', import.meta.url), 'utf8')));
 
-export const parseCatalog = (json: unknown): CatalogEntry[] => Catalog.parse(json);
-
-export const loadCatalogEntry = (id: string, file: URL | string = CATALOG_FILE): CatalogEntry => {
-  const entries = parseCatalog(JSON.parse(readFileSync(file, 'utf8')));
+export const loadCatalogEntry = (id: string): CatalogEntry => {
+  const entries = loadCatalog();
   const entry = entries.find((candidate) => candidate.id === id);
   if (!entry) {
     throw new Error(

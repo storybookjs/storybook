@@ -19,7 +19,6 @@ import {
 import { ghParse, ghText, searchFingerprint } from './lib/github.ts';
 import { Proposal } from './lib/schema.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
-import type { Proposal as ProposalType } from './lib/types.ts';
 
 const HELP = `Usage: node ecosystem-qa/file.ts --proposals <proposals.json> --repo <owner/name> [--dry]
 
@@ -140,7 +139,7 @@ const commitEvidence = (step: Extract<FilingStep, { kind: 'push-evidence' }>) =>
 const runStep = (step: FilingStep): string | undefined => {
   switch (step.kind) {
     case 'skip':
-      return undefined;
+      return step.reason;
     case 'push-cycle':
       pushCycle(step);
       return undefined;
@@ -185,7 +184,7 @@ const commentsOn = (issue: number): string[] =>
 const firstLine = (error: unknown) =>
   (error instanceof Error ? error.message : String(error)).split('\n')[0]!.slice(0, 160);
 
-const fileProposal = (proposal: ProposalType): FilingOutcome => {
+const fileProposal = (proposal: Proposal): FilingOutcome => {
   const steps = planFiling(proposal, {
     repo,
     evidenceLinks: 'assets',
@@ -198,7 +197,7 @@ const fileProposal = (proposal: ProposalType): FilingOutcome => {
   for (const step of steps) {
     console.log(`${proposal.fingerprint}: ${describeStep(step, repo)}`);
     try {
-      detail = step.kind === 'skip' ? step.reason : (runStep(step) ?? detail);
+      detail = runStep(step) ?? detail;
     } catch (error) {
       throw new Error(`${step.kind}: ${firstLine(error)}`, { cause: error });
     }

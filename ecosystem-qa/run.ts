@@ -24,8 +24,16 @@ import { renderChecklist } from './checks.ts';
 import { loadCatalogEntry } from './lib/catalog.ts';
 import { cycleBranchName, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
-import { AgentOutput, Effort, Engine, SandboxKind } from './lib/schema.ts';
-import type { CatalogEntry, Os, Outcome, RunRequest, RunResultFile } from './lib/types.ts';
+import {
+  AgentOutput,
+  Effort,
+  Engine,
+  SandboxKind,
+  type CatalogEntry,
+  type Os,
+  type RunResultFile,
+} from './lib/schema.ts';
+import type { Outcome, RunRequest } from './lib/types.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
 import { usageFromStream } from './lib/usage.ts';
 
@@ -41,12 +49,12 @@ Writes <out>/result.json and exits 0 whenever it did, findings or not.
 Set ECOSYSTEM_QA_FAKE=1 and pass --fake to write a canned result for --engine without running an agent;
 the result records fake: true and costs $0.`;
 
-const DEFAULT_MODEL: Record<z.infer<typeof Engine>, string> = {
+const DEFAULT_MODEL: Record<Engine, string> = {
   claude: 'claude-sonnet-5-5',
   codex: 'gpt-6.1-sol',
 };
 
-const API_KEY_ENV: Record<z.infer<typeof Engine>, string> = {
+const API_KEY_ENV: Record<Engine, string> = {
   claude: 'ANTHROPIC_API_KEY',
   codex: 'CODEX_API_KEY',
 };
@@ -190,19 +198,9 @@ const planSandbox = (request: RunRequest, evidenceDir: string, image: string): S
       };
     }
     case 'bwrap':
-      return {
-        provider: bwrap({ mounts: nativeMounts }),
-        toolsDir,
-        migrationFile,
-        evidenceDir,
-      };
+      return { provider: bwrap({ mounts: nativeMounts }), toolsDir, migrationFile, evidenceDir };
     case 'seatbelt':
-      return {
-        provider: seatbelt({ mounts: nativeMounts }),
-        toolsDir,
-        migrationFile,
-        evidenceDir,
-      };
+      return { provider: seatbelt({ mounts: nativeMounts }), toolsDir, migrationFile, evidenceDir };
     case 'none':
       return { provider: noSandbox(), toolsDir, migrationFile, evidenceDir };
   }
@@ -210,21 +208,22 @@ const planSandbox = (request: RunRequest, evidenceDir: string, image: string): S
 
 const agentFor = (request: RunRequest) => {
   const keyName = API_KEY_ENV[request.engine];
-  const key = process.env[keyName] || fail(`${keyName} is not set.`);
+  const options = {
+    effort: request.effort,
+    env: { ...UPGRADE_ENV, [keyName]: process.env[keyName] || fail(`${keyName} is not set.`) },
+  };
   return request.engine === 'claude'
-    ? claudeCode(request.model, {
-        effort: request.effort,
-        env: { ...UPGRADE_ENV, ANTHROPIC_API_KEY: key },
-      })
-    : codex(request.model, { effort: request.effort, env: { ...UPGRADE_ENV, CODEX_API_KEY: key } });
+    ? claudeCode(request.model, options)
+    : codex(request.model, options);
 };
 
 const statusOf = (error: unknown): Outcome['status'] => {
   if (error instanceof StructuredOutputError) {
     return 'output-invalid';
   }
-  const tag = (error as { _tag?: unknown } | null)?._tag;
-  return tag === 'AgentIdleTimeoutError' ? 'timeout' : 'agent-failed';
+  return error instanceof Object && '_tag' in error && error._tag === 'AgentIdleTimeoutError'
+    ? 'timeout'
+    : 'agent-failed';
 };
 
 const runSandcastle = async (

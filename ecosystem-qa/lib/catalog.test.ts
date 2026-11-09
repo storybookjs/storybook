@@ -1,16 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { loadCatalogEntry, parseCatalog } from './catalog.ts';
-
-const valid = {
-  id: 'mealdrop',
-  repo: 'storybookjs/mealdrop',
-  ref: 'main',
-  class: 'owned',
-  packageManager: 'yarn',
-  storybookDir: '.',
-  windows: true,
-};
+import { loadCatalogEntry } from './catalog.ts';
+import { ENTRY } from './fixtures.ts';
+import { Catalog } from './schema.ts';
 
 describe('catalog', () => {
   it('loads the checked-in entry by id', () => {
@@ -18,19 +10,19 @@ describe('catalog', () => {
   });
 
   it.each([
-    ['an unknown repo class', { ...valid, class: 'tier3' }],
-    ['a repo without an owner', { ...valid, repo: 'mealdrop' }],
-    ['an unsupported package manager', { ...valid, packageManager: 'bun' }],
-    ['an unknown field', { ...valid, branch: 'main' }],
-    ['a push target outside storybookjs', { ...valid, pushTo: 'twentyhq/twenty' }],
+    ['an unknown repo class', { ...ENTRY, class: 'tier3' }],
+    ['a repo without an owner', { ...ENTRY, repo: 'mealdrop' }],
+    ['an unsupported package manager', { ...ENTRY, packageManager: 'bun' }],
+    ['an unknown field', { ...ENTRY, branch: 'main' }],
+    ['a push target outside storybookjs', { ...ENTRY, pushTo: 'twentyhq/twenty' }],
   ])('rejects %s', (_, entry) => {
-    expect(() => parseCatalog([entry])).toThrow();
+    expect(() => Catalog.parse([entry])).toThrow();
   });
 
   it('accepts a fork under storybookjs as the push target of an upstream repo', () => {
-    const [entry] = parseCatalog([
+    const [entry] = Catalog.parse([
       {
-        ...valid,
+        ...ENTRY,
         id: 'twenty',
         repo: 'twentyhq/twenty',
         class: 'tier1',
@@ -42,6 +34,6 @@ describe('catalog', () => {
   });
 
   it('rejects duplicate ids', () => {
-    expect(() => parseCatalog([valid, valid])).toThrow(/unique/);
+    expect(() => Catalog.parse([ENTRY, ENTRY])).toThrow(/unique/);
   });
 });

@@ -1,5 +1,5 @@
 /**
- * Inspired by the the code:
+ * Inspired by the code:
  * {@link https://github.com/sveltejs/kit/blob/main/packages/kit/src/runtime/client/state.svelte.js}
  *
  * The differences:

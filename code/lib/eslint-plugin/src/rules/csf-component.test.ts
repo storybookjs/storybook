@@ -18,9 +18,25 @@ ruleTester.run('csf-component', rule, {
   valid: [
     "export default { title: 'Button', component: Button }",
     "export default { title: 'Button', component: Button } as ComponentMeta<typeof Button>",
+    `
+      import preview from '../../.storybook/preview'
+      const meta = preview.meta({ component: Button })
+    `,
   ],
 
   invalid: [
+    {
+      code: `
+        import preview from '../../.storybook/preview'
+        const meta = preview.meta({ title: 'Button' })
+      `,
+      errors: [
+        {
+          messageId: 'missingComponentProperty',
+          type: AST_NODE_TYPES.CallExpression,
+        },
+      ],
+    },
     {
       code: "export default { title: 'Button' }",
       errors: [

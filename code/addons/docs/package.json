@@ -39,42 +39,42 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "code": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./angular": {
-      "types": "./dist/angular/index.d.ts",
       "code": "./src/angular/index.ts",
+      "types": "./dist/angular/index.d.ts",
       "default": "./dist/angular/index.js"
     },
     "./blocks": {
-      "types": "./dist/blocks.d.ts",
       "code": "./src/blocks.ts",
+      "types": "./dist/blocks.d.ts",
       "default": "./dist/blocks.js"
     },
     "./ember": {
-      "types": "./dist/ember/index.d.ts",
       "code": "./src/ember/index.ts",
+      "types": "./dist/ember/index.d.ts",
       "default": "./dist/ember/index.js"
     },
     "./manager": "./dist/manager.js",
     "./mdx-loader": "./dist/mdx-loader.js",
     "./mdx-react-shim": {
-      "types": "./dist/mdx-react-shim.d.ts",
       "code": "./src/mdx-react-shim.ts",
+      "types": "./dist/mdx-react-shim.d.ts",
       "default": "./dist/mdx-react-shim.js"
     },
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
     "./preview": {
-      "types": "./dist/preview.d.ts",
       "code": "./src/preview.ts",
+      "types": "./dist/preview.d.ts",
       "default": "./dist/preview.js"
     },
     "./web-components": {
-      "types": "./dist/web-components/index.d.ts",
       "code": "./src/web-components/index.ts",
+      "types": "./dist/web-components/index.d.ts",
       "default": "./dist/web-components/index.js"
     }
   },

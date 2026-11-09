@@ -130,6 +130,16 @@ describe('story-sort-to-main', () => {
     expect(preview).toContain(`tags = ['test']`);
   });
 
+  it('adds storySorts after a spread of a local object literal that lacks it', async () => {
+    const { main } = await expectMoved(
+      `const shared = { stories: [] }; export default { ...shared }`,
+      legacy,
+      { order: ['Legacy'] }
+    );
+
+    expect(main).toContain('...shared, storySorts:');
+  });
+
   it('inlines a local constant, so main does not reference the preview module', async () => {
     const { main } = await expectMoved(
       `export default { stories: [] }`,
@@ -364,7 +374,7 @@ describe('story-sort-to-main', () => {
       'a storySorts getter',
       `export default { stories: [], get storySorts() { return existingSorters } }`,
     ],
-    ['an unresolved spread', `const shared = { stories: [] }; export default { ...shared }`],
+    ['an unresolved spread', `import shared from './shared'; export default { ...shared }`],
     ['a bracket CommonJS export', `module['exports'] = { stories: [] }`],
     ['a direct call wrapper', `export default configure({ stories: [] })`],
     [

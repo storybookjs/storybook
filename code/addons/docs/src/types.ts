@@ -9,7 +9,7 @@ import type {
   Renderer,
 } from 'storybook/internal/types';
 
-import type { ThemeVars } from 'storybook/theming';
+import type { ThemeVars } from 'storybook/theming/emotion';
 
 import type { DocsContainerProps } from './blocks/blocks';
 import type { TocParameters } from './blocks/components';

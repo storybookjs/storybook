@@ -1,6 +1,6 @@
 {
   "name": "storybook-addon-pseudo-states",
-  "version": "11.0.0-alpha.6",
+  "version": "11.0.0-beta.0",
   "description": "Storybook Pseudo-states addon: Manipulate CSS pseudo states",
   "keywords": [
     "storybook",
@@ -34,15 +34,15 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "code": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
     "./package.json": "./package.json",
     "./preview": {
-      "types": "./dist/preview.d.ts",
       "code": "./src/preview.ts",
+      "types": "./dist/preview.d.ts",
       "default": "./dist/preview.js"
     }
   },

@@ -1,14 +1,19 @@
-import { types as t } from 'storybook/internal/babel';
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
-import type { CsfFile, StoryArgsResolver, StoryReferences } from 'storybook/internal/csf-tools';
+import type {
+  CsfFile,
+  ESTreeNode as Node,
+  StoryArgsResolver,
+  StoryReferences,
+} from 'storybook/internal/csf-tools';
 import {
   authoredSource,
   createStoryArgsResolver,
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
   noSnippetWarning,
-  sourceOf,
+  resolveEffectiveRender,
+  oneLineTextOf,
   unwrapExpression,
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
@@ -22,13 +27,13 @@ import {
   parseStoryFile,
   resolveStoryComponent,
 } from '../component-docgen/resolve-component/resolve-component.ts';
-import { evaluateArgValue } from './arg-values.ts';
+import { evaluateArgValue, isFunctionNode } from './arg-values.ts';
 import { classifyArg, type ArgBinding } from './classify-args.ts';
 import type { ElementSnippet } from './print-element.ts';
 import { printElementSnippet } from './print-element.ts';
+import { handlerText } from './template-holes.ts';
 import { printHtmlTemplate } from './template-print.ts';
 import { resolveHtmlTemplate } from './template-scope.ts';
-import { resolveEffectiveRender } from '../../../../../core/src/csf-tools/story-shape/render.ts';
 
 export interface BuildStoryDocsContext {
   getDocgenPayload: (componentId: string) => Promise<WebComponentsDocgenPayload | undefined>;
@@ -146,7 +151,10 @@ const baseStoryDoc = (
   story: CsfFile['_stories'][string],
   result: SnippetResult
 ): StoryDoc => {
-  const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[exportName]);
+  const { description, summary } = extractStoryJSDocInfo(
+    csf._storyStatements[exportName],
+    csf.editor
+  );
   return {
     id: story.id,
     name: story.name ?? storyNameFromExport(exportName),
@@ -219,7 +227,7 @@ const renderedArgsSnippet = (
   const warnings: (string | undefined)[] = [];
   const render = resolveEffectiveRender(deps.csf, exportName, deps.resolveStoryArgs.ctx);
   if (render.kind === 'resolved') {
-    const template = resolveHtmlTemplate(render.path, deps.csf);
+    const template = resolveHtmlTemplate(render.node, deps.csf);
     if (template) {
       const printed = printHtmlTemplate(template, resolved.args, deps.declaration);
       const unresolved = [...resolved.unresolved, ...printed.unresolved];
@@ -237,7 +245,7 @@ const renderedArgsSnippet = (
         ...joinWarnings(hasSnippet ? warnings : [...warnings, noSnippetWarning(unresolved)]),
       };
     }
-    warnings.push(unresolvedWarning([sourceOf(render.path.node)]));
+    warnings.push(unresolvedWarning([oneLineTextOf(render.node)]));
   } else if (render.kind === 'unresolved') {
     warnings.push(unresolvedWarning(unresolvedRenderSource(render, resolved)));
   }
@@ -258,7 +266,7 @@ const renderedArgsSnippet = (
 };
 
 const unboundTemplateArgs = (
-  args: Record<string, t.Node>,
+  args: Record<string, Node>,
   referenced: readonly string[]
 ): string | undefined => {
   const bound = new Set(referenced);
@@ -275,12 +283,12 @@ const unresolvedRenderSource = (
   const node =
     resolved.storyMembers.properties.render ??
     resolved.metaMembers.properties.render ??
-    render.shadowedRender?.node;
-  return node ? [sourceOf(node)] : [];
+    render.shadowedRender;
+  return node ? [oneLineTextOf(node)] : [];
 };
 
 const argsSnippet = (
-  args: Record<string, t.Node>,
+  args: Record<string, Node>,
   declaration: ManifestDeclaration,
   argTypes: WebComponentsDocgenPayload['argTypes'],
   tag: string,
@@ -427,10 +435,8 @@ const hasSnippetContent = (snippet: ElementSnippet): boolean =>
   snippet.slots.length > 0 ||
   snippet.styleRules.length > 0;
 
-const listenerHandler = (node: t.Node): string => {
-  const unwrapped = t.isExpression(node) ? unwrapExpression(node) : node;
-  return t.isFunction(unwrapped) ? sourceOf(node) : '() => {}';
-};
+const listenerHandler = (node: Node): string =>
+  isFunctionNode(unwrapExpression(node)) ? handlerText(node) : '() => {}';
 
 const incompleteList = (names: string[], suffix: string): string | undefined =>
   names.length === 0

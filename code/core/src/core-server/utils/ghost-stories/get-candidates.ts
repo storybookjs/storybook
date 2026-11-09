@@ -1,55 +1,31 @@
 import { readFile } from 'node:fs/promises';
 
-import { babelParse, traverse } from 'storybook/internal/babel';
-
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 
+import { parseModule, walk } from '../../../csf-tools/estree/ast.ts';
 import { getComponentComplexity } from './component-analyzer.ts';
 
 // A valid candidate includes React code and at least one export
-function isValidCandidate(source: string): boolean {
-  const ast = babelParse(source);
+function isValidCandidate(source: string, file: string): boolean {
+  const { program } = parseModule(source, file);
 
   let hasJSX = false;
   let hasExport = false;
 
-  traverse(ast, {
-    JSXElement(path) {
+  walk(program, (node) => {
+    if (hasJSX && hasExport) {
+      return false;
+    }
+    if (node.type === 'JSXElement' || node.type === 'JSXFragment') {
       hasJSX = true;
-
-      if (hasExport) {
-        path.stop();
-      }
-    },
-    JSXFragment(path) {
-      hasJSX = true;
-
-      if (hasExport) {
-        path.stop();
-      }
-    },
-    ExportNamedDeclaration(path) {
+    } else if (
+      node.type === 'ExportNamedDeclaration' ||
+      node.type === 'ExportDefaultDeclaration' ||
+      node.type === 'ExportAllDeclaration'
+    ) {
       hasExport = true;
-
-      if (hasJSX) {
-        path.stop();
-      }
-    },
-    ExportDefaultDeclaration(path) {
-      hasExport = true;
-
-      if (hasJSX) {
-        path.stop();
-      }
-    },
-    ExportAllDeclaration(path) {
-      hasExport = true;
-
-      if (hasJSX) {
-        path.stop();
-      }
-    },
+    }
   });
 
   return hasJSX && hasExport;
@@ -76,7 +52,7 @@ export async function getCandidatesForStorybook(
     try {
       source = await readFile(file, 'utf-8');
       // filter out non-React code or files without exports
-      if (!isValidCandidate(source)) {
+      if (!isValidCandidate(source, file)) {
         continue;
       }
     } catch {

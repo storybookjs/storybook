@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-vitest",
-  "version": "11.0.0-alpha.6",
+  "version": "11.0.0-beta.0",
   "description": "Storybook Vitest addon: Blazing fast component testing using stories",
   "keywords": [
     "storybook",
@@ -39,13 +39,13 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "code": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./constants": {
-      "types": "./dist/constants.d.ts",
       "code": "./src/constants.ts",
+      "types": "./dist/constants.d.ts",
       "default": "./dist/constants.js"
     },
     "./internal/coverage-reporter": "./dist/node/coverage-reporter.js",
@@ -60,8 +60,8 @@
     "./preset": "./dist/preset.js",
     "./vitest": "./dist/node/vitest.js",
     "./vitest-plugin": {
-      "types": "./dist/vitest-plugin/index.d.ts",
       "code": "./src/vitest-plugin/index.ts",
+      "types": "./dist/vitest-plugin/index.d.ts",
       "default": "./dist/vitest-plugin/index.js"
     }
   },
@@ -87,7 +87,7 @@
     "@types/micromatch": "^4.0.0",
     "@types/node": "^22.19.1",
     "@types/semver": "^7.7.1",
-    "@vitest/browser-playwright": "^5.0.0",
+    "@vitest/browser-playwright": "5.0.5",
     "@vitest/istanbul-lib-report": "^1.0.1",
     "empathic": "^2.0.0",
     "es-toolkit": "^1.43.0",
@@ -105,7 +105,7 @@
     "tree-kill": "^1.2.2",
     "ts-dedent": "^2.2.0",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.0"
+    "vitest": "5.0.5"
   },
   "peerDependencies": {
     "@vitest/browser": "^4.0.0 || ^5.0.0",

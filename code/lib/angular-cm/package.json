@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular-cm",
-  "version": "11.0.0-alpha.6",
+  "version": "11.0.0-beta.0",
   "private": true,
   "description": "In-process Angular component metadata analyzer for Storybook docgen",
   "keywords": [
@@ -26,8 +26,8 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "code": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./package.json": "./package.json"

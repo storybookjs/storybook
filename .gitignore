@@ -42,7 +42,6 @@ tsconfig.dts-tmp-*.json
 !/**/.yarn/versions
 
 # test-storybooks
-test-storybooks/ember-cli/ember-output
 test-storybooks/angular-cli/addon-jest.testresults.json
 
 .circleci/*.generated.yml

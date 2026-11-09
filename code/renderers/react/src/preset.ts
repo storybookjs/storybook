@@ -1,13 +1,18 @@
 import path, { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import {
+  getProjectRoot,
+  isModuleNotFoundError,
+  isTypeScriptReadyForDocgen,
+} from 'storybook/internal/common';
 import type { ArgTypes } from 'storybook/internal/csf';
+import { logger } from 'storybook/internal/node-logger';
 import type { Options, PresetProperty } from 'storybook/internal/types';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
-import { extractArgTypesFromDocgen } from './componentManifest/reactDocgen/extractReactDocgenInfo.ts';
-import { extractArgTypesFromDocgenTypescript } from './componentManifest/reactDocgen/extractReactTypescriptDocgenInfo.ts';
+import { REACT_BUILDER_DOCGEN_PACKAGES } from './builder-docgen.ts';
+import { aliasReactInWebpack, prependReactDedupePlugin } from './preview-react-alias.ts';
 import type {
   GetArgTypesDataOptions,
   ReactDocgenConfig,
@@ -28,16 +33,18 @@ export { enrichCsf as experimental_enrichCsf } from './enrichCsf.ts';
 
 export { experimental_docgenProvider } from './docgen/preset.ts';
 
-// Turns `features.docgenServer` on by default; read through `presets.apply('isDocgenProviderEnabled')`
-// so the default never has to call the provider, which itself reads `features`. Server docgen runs on
-// the optional `typescript` peer, so a project without it keeps builder docgen.
-export const isDocgenProviderEnabled = () => {
-  try {
-    import.meta.resolve('typescript');
-    return true;
-  } catch {
-    return false;
-  }
+// Default for `features.docgenServer`; a project without a usable `typescript` keeps builder docgen,
+// which needs the optional `react-docgen` package, unless `typescript.reactDocgen` turns it off
+// (as `storybook build --test` does).
+export const isDocgenProviderEnabled = async (_existing: unknown, options: Options) => {
+  const { reactDocgen } =
+    (await options.presets?.apply<TypescriptOptionsWithDocgen>('typescript', {})) ?? {};
+  return isTypeScriptReadyForDocgen((specifier) => import.meta.resolve(specifier), options, {
+    builderDocgenFallback:
+      reactDocgen === false
+        ? undefined
+        : { packageName: 'react-docgen', range: REACT_BUILDER_DOCGEN_PACKAGES['react-docgen'] },
+  });
 };
 
 export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
@@ -76,22 +83,50 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
 };
 
 /**
- * Try to resolve react and react-dom from the root node_modules of the project addon-docs uses this
- * to alias react and react-dom to the project's version when possible If the user doesn't have an
- * explicit dependency on react this will return the existing values Which will be the versions
- * shipped with addon-docs
+ * Resolve react and react-dom starting from this package. `@storybook/react` declares them as peer
+ * dependencies, so every package manager links the project's React here, including pnpm's global
+ * virtual store where the `storybook` package itself cannot see React. The preview alias below and
+ * addon-docs both read this value.
  */
 export const resolvedReact = async (existing: any) => {
   try {
     return {
       ...existing,
-      react: resolvePackageDir('react'),
-      reactDom: resolvePackageDir('react-dom'),
+      react: resolvePackageDir('react', import.meta.url),
+      reactDom: resolvePackageDir('react-dom', import.meta.url),
     };
   } catch {
     return existing;
   }
 };
+
+const readReactAliasTarget = async (options: Options) => {
+  const resolved = (await options.presets.apply('resolvedReact', {})) as {
+    react?: string;
+    reactDom?: string;
+  };
+  if (!resolved?.react || !resolved.reactDom) {
+    return null;
+  }
+  return { react: resolved.react, reactDom: resolved.reactDom };
+};
+
+export const viteFinal = async (config: { plugins?: unknown[] } = {}, options: Options) => {
+  const target = await readReactAliasTarget(options);
+  return target ? prependReactDedupePlugin(config, target) : config;
+};
+
+export async function webpack(
+  config: {
+    resolve?: {
+      alias?: Record<string, string> | Array<{ name: string; alias: string }>;
+    };
+  } = {},
+  options: Options
+) {
+  const target = await readReactAliasTarget(options);
+  return target ? aliasReactInWebpack(config, target) : config;
+}
 
 export async function internal_getArgTypesData(
   _input: unknown,
@@ -102,6 +137,22 @@ export async function internal_getArgTypesData(
 
   if (!componentFilePath) {
     return null;
+  }
+
+  const absoluteComponentFilePath = path.isAbsolute(componentFilePath)
+    ? componentFilePath
+    : join(getProjectRoot(), componentFilePath);
+
+  // On the docgen server, infer arg types with its engine, so the optional builder docgen packages
+  // are not needed. The docgen server ignores `typescript.reactDocgen`.
+  const features = await presets?.apply('features', {});
+  if (features?.docgenServer) {
+    const { extractArgTypesFromComponentFile } =
+      await import('./docgen/extractArgTypesFromComponentFile.ts');
+    return extractArgTypesFromComponentFile({
+      componentFilePath: absoluteComponentFilePath,
+      componentExportName,
+    });
   }
 
   // Get typescript options from presets to determine which docgen to use
@@ -122,30 +173,48 @@ export async function internal_getArgTypesData(
     return null;
   }
 
-  const resolvedFilePath = path.isAbsolute(componentFilePath)
-    ? componentFilePath
-    : join(getProjectRoot(), componentFilePath);
-
-  // Choose the appropriate extractor based on the reactDocgen option
+  // Builder docgen: choose the extractor based on the reactDocgen option. Both engines are optional
+  // peer dependencies, so import them only here; without them there are no arg types to infer.
   let argTypesData;
-  if (reactDocgen === 'react-docgen-typescript') {
-    argTypesData = await extractArgTypesFromDocgenTypescript({
-      componentFilePath: resolvedFilePath,
-      componentExportName,
-      reactDocgenTypescriptOptions,
-    });
-  } else {
-    // Default to 'react-docgen'
-    argTypesData = extractArgTypesFromDocgen({
-      componentFilePath: resolvedFilePath,
-      componentExportName,
-    });
+  try {
+    if (reactDocgen === 'react-docgen-typescript') {
+      const { extractArgTypesFromDocgenTypescript } =
+        await import('./componentManifest/reactDocgen/extractReactTypescriptDocgenInfo.ts');
+      argTypesData = await extractArgTypesFromDocgenTypescript({
+        componentFilePath: absoluteComponentFilePath,
+        componentExportName,
+        reactDocgenTypescriptOptions,
+      });
+    } else {
+      // Default to 'react-docgen'
+      const { extractArgTypesFromDocgen } =
+        await import('./componentManifest/reactDocgen/extractReactDocgenInfo.ts');
+      argTypesData = extractArgTypesFromDocgen({
+        componentFilePath: absoluteComponentFilePath,
+        componentExportName,
+      });
+    }
+  } catch (error) {
+    if (!isModuleNotFoundError(error)) {
+      throw error;
+    }
+    logger.debug(`Skipping arg types inference, because ${reactDocgen} is not installed: ${error}`);
+    return null;
   }
 
   return argTypesData;
 }
 
 export const optimizeViteDeps: string[] = [
+  // The vitest project-annotations setup file imports this renderer's entry previews through a
+  // virtual module, and those chunks import React by the bare specifier. In the observed failure
+  // (react 19.3.1, vite 7.3.7, vitest 5.0.5, chromium browser mode) the dependency scan had not
+  // registered plain `react`, so the browser loaded react's CJS index.js raw and module linking
+  // failed with "The requested module 'react/index.js' does not provide an export named 'default'".
+  // Projects only hit this when their stories use the automatic JSX runtime and never import
+  // `react` by name; a story importing `react` (for `useState`, say) registers it in the scan
+  // and masks the failure.
+  'react',
   'react-dom/client',
   'react-dom/test-utils',
   'react/jsx-runtime',

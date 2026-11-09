@@ -413,9 +413,27 @@ describe('vitestSetupFile', () => {
         "import { MotionGlobalConfig } from 'framer-motion';
 
         // Skip animations
-        MotionGlobalConfig.skipAnimations = true;"
+        MotionGlobalConfig.skipAnimations = true;
+        "
       `);
       expect(readFixture('vitest.config.ts')).toBe(STANDARD_VITEST_CONFIG);
+    });
+
+    it('keeps the line endings of a CRLF setup file it rewrites', async () => {
+      await migrate({
+        '.storybook/vitest.setup.ts': CUSTOM_CODE_SETUP_FILE.replaceAll('\n', '\r\n'),
+        'vitest.config.ts': STANDARD_VITEST_CONFIG,
+      });
+
+      expect(readFixture('.storybook/vitest.setup.ts')).toBe(
+        [
+          "import { MotionGlobalConfig } from 'framer-motion';",
+          '',
+          '// Skip animations',
+          'MotionGlobalConfig.skipAnimations = true;',
+          '',
+        ].join('\r\n')
+      );
     });
 
     it('keeps unrelated setupFiles entries', async () => {
@@ -1037,7 +1055,6 @@ describe('transformSetupFile', () => {
       //
 
       import { setupTests } from './setup';
-
       setupTests();"
     `);
   });
@@ -1062,7 +1079,6 @@ describe('transformSetupFile', () => {
       "// Copyright Example
 
       import { setupTests } from './setup';
-
       setupTests();"
     `);
   });

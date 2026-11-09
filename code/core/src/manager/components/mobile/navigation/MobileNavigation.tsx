@@ -8,7 +8,7 @@ import { BottomBarToggleIcon, MenuIcon } from '@storybook/icons';
 
 import { useId } from 'react-aria/useId';
 import { type API_KeyCollection, useStorybookApi, useStorybookState } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { useLandmark } from '../../../hooks/useLandmark.ts';
 import { useLayout } from '../../layout/LayoutProvider.tsx';

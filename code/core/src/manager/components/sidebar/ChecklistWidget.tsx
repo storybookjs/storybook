@@ -19,7 +19,7 @@ import {
 
 import { type TransitionMapOptions, useTransitionMap } from 'react-transition-state';
 import { useStorybookApi } from 'storybook/manager-api';
-import { keyframes, styled } from 'storybook/theming';
+import { keyframes, styled } from 'storybook/theming/emotion';
 
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import { Optional } from '../Optional/Optional.tsx';
@@ -58,13 +58,22 @@ const useTransitionArray = <K, V>(
     allowMultiple: true,
     mountOnEnter: true,
     unmountOnExit: true,
-    preEnter: true,
     ...options,
   });
 
+  // setItem resets the transition state of a key, even for a key it already tracks. Register
+  // each key only once. A call on every array identity change would replay the enter transition
+  // of every visible item.
+  const knownKeys = useRef(new Set<K>());
   useEffect(() => {
     const keyFn = keyFnRef.current;
-    array.forEach((task) => setItem(keyFn(task)));
+    array.forEach((task) => {
+      const key = keyFn(task);
+      if (!knownKeys.current.has(key)) {
+        knownKeys.current.add(key);
+        setItem(key);
+      }
+    });
   }, [array, setItem]);
 
   useEffect(() => {

@@ -39,10 +39,7 @@ describe('createFixFiles', () => {
     await commit();
     expect(fs.readFileSync(main, 'utf8')).toMatchInlineSnapshot(`
       "// banner
-      export default {
-        addons: ['a'],
-        framework: 'x'
-      };"
+      export default { addons: ['a'], framework: 'x' };"
     `);
     expect(fs.readFileSync(resolve('.storybook/new.ts'), 'utf8')).toBe('export {};');
   });
@@ -78,6 +75,19 @@ describe('createFixFiles', () => {
         source.replace('@storybook/test', 'storybook/test')
       )
     ).toEqual([story]);
+  });
+
+  it('reads a CRLF file with LF line endings and writes it back with CRLF', async () => {
+    const { files, commit } = createFixFiles();
+    fs.writeFileSync(main, "export default {\r\n  addons: ['a'],\r\n};\r\n");
+
+    expect(await files.editConfig(main, () => {})).toBe(false);
+    expect(await files.editConfig(main, (config) => config.set(['framework'], 'x'))).toBe(true);
+    await commit();
+
+    expect(fs.readFileSync(main, 'utf8')).toBe(
+      "export default {\r\n  addons: ['a'],\r\n  framework: 'x',\r\n};\r\n"
+    );
   });
 
   it('refuses to overwrite a file another writer changed after it was read', async () => {

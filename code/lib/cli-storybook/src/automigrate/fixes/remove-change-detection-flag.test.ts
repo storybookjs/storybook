@@ -113,10 +113,7 @@ describe('remove-change-detection-flag', () => {
         const config: StorybookConfig = {
           stories: ['../src/**/*.stories.@(ts|tsx)'],
           framework: '@storybook/react-vite',
-          features: {
-            controls: true,
-            experimentalTestSyntax: true
-          },
+          features: { controls: true, experimentalTestSyntax: true },
         };
         export default config;"
       `);
@@ -129,7 +126,7 @@ describe('remove-change-detection-flag', () => {
 
       const config: StorybookConfig = {
         stories: ['../src/**/*.stories.@(ts|tsx)'],
-        framework: '@storybook/react-vite'
+        framework: '@storybook/react-vite',
       };
       export default config;"
     `);

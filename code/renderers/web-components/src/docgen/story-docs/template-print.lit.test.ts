@@ -8,8 +8,7 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import {
   createStoryArgsResolver,
   loadCsf,
-  normalizeStoryDeclaration,
-  resolveRenderFunction,
+  resolveEffectiveRender,
 } from 'storybook/internal/csf-tools';
 
 import type {
@@ -123,20 +122,12 @@ const renderSnippet = (attrs: readonly AttributeSlot[]): string => {
   `;
   const csf = loadCsf(storySource, { makeTitle: (title) => title ?? 'Example/Lit' }).parse();
   const resolver = createStoryArgsResolver(csf);
-  const normalized = normalizeStoryDeclaration(csf._storyDeclarationPath.Primary);
-  const renderFunction =
-    normalized.type === 'fn'
-      ? { kind: 'resolved' as const, path: normalized.path }
-      : resolveRenderFunction(
-          normalized.type === 'config' ? normalized.path : undefined,
-          csf._storyDeclarationPath.Primary,
-          resolver.ctx
-        );
+  const renderFunction = resolveEffectiveRender(csf, 'Primary', resolver.ctx);
   expect(renderFunction.kind).toBe('resolved');
   if (renderFunction.kind !== 'resolved') {
     throw new Error('Expected render to resolve');
   }
-  const template = resolveHtmlTemplate(renderFunction.path, csf);
+  const template = resolveHtmlTemplate(renderFunction.node, csf);
   expect(template).toBeDefined();
   return printHtmlTemplate(template!, {}, declaration).snippet;
 };

@@ -24,7 +24,7 @@ import { ArgsFormattingComponent } from './args-formatting.component.ts';
     />`,
 })
 export class DemoComponent {
-  formatter = (value) => value.replace('"', '\'');
+  formatter = (value) => value.replace('"', "'");
 }",
     },
   },

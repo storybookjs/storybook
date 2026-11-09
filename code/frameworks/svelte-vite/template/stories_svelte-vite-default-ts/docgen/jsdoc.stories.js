@@ -6,10 +6,8 @@ import JSDoc from './jsdoc.svelte';
 const meta = {
   component: JSDoc,
   tags: ['autodocs'],
-  render: (args, { argTypes }) => ({
-    Component: JSDoc,
-    props: { ...args, argTypes },
-  }),
+  // These stories exist for the docgen sandbox baselines; the canvas shows no docgen output.
+  parameters: { chromatic: { disableSnapshot: true } },
 };
 
 export default meta;

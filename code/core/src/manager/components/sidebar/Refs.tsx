@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BookIcon } from '@storybook/icons';
 
 import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { getActiveFilterCount } from '../../../shared/utils/story-index-filters.ts';
 import { getStateType } from '../../utils/tree.ts';
@@ -50,7 +50,10 @@ const RefHead = styled.div(({ theme }) => ({
   ...iconSwap(['&:hover', '&:has(button:focus-visible)']),
 }));
 
-const RefTitle = styled.span(truncatedLabel);
+const RefTitle = styled.span(({ theme }) => ({
+  ...truncatedLabel,
+  fontSize: theme.typography.size.s2,
+}));
 
 const CollapseButton = styled.button(({ theme }) => ({
   all: 'unset',

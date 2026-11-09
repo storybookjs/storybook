@@ -17,9 +17,9 @@
     "**/*.svelte",
     "storybook-static",
     "built-storybooks",
-    "ember-output",
     "**/__testfixtures__",
     "**/__mockdata__",
+    "**/__corpus__/inputs",
     "renderers/svelte/src/svelte-csf/__tests__/__compiled__",
     "core/assets",
     "core/report",
@@ -92,6 +92,12 @@
       "rules": {
         "local-rules/no-uncategorized-errors": "warn",
         "local-rules/storybook-monorepo-imports": "error"
+      }
+    },
+    {
+      "files": ["**/*.ts", "**/*.tsx"],
+      "rules": {
+        "local-rules/no-untracked-service-state-key-check": "error"
       }
     },
     {
@@ -204,6 +210,7 @@
         "storybook/no-redundant-story-name": "warn",
         "storybook/no-renderer-packages": "error",
         "storybook/prefer-pascal-case": "warn",
+        "storybook/static-csf-properties": "error",
         "storybook/story-exports": "error",
         "storybook/use-storybook-expect": "error",
         "storybook/use-storybook-testing-library": "error"
@@ -213,6 +220,12 @@
       "files": ["**/renderers/**/*.stories.*", "**/core/template/**/*.stories.*"],
       "rules": {
         "storybook/no-renderer-packages": "off"
+      }
+    },
+    {
+      "files": ["renderers/*/src/__test__/**/*.stories.*"],
+      "rules": {
+        "storybook/default-exports": "off"
       }
     },
     {

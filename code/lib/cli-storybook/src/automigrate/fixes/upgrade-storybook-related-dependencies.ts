@@ -6,6 +6,7 @@ import { logger } from 'storybook/internal/node-logger';
 import { gt } from 'semver';
 
 import { getIncompatibleStorybookPackages } from '../../doctor/getIncompatibleStorybookPackages.ts';
+import { isAtOrPastVersion } from '../helpers/versionBoundary.ts';
 import type { Fix } from '../types.ts';
 
 type PackageMetadata = {
@@ -19,6 +20,11 @@ const NON_REGISTRY_SPECIFIER = /^(patch|file|link|portal|git|http|https|workspac
 
 // Scopes whose packages are released in lockstep and must share a major version.
 const LOCKSTEP_SCOPES = new Set(['@nx']);
+
+// Packages whose next major breaks existing setups, mapped to the first version not to upgrade to.
+const VERSION_CEILINGS: Record<string, string> = {
+  'msw-storybook-addon': '3.0.0',
+};
 
 const scopeOf = (packageName: string) =>
   packageName.startsWith('@') ? packageName.slice(0, packageName.indexOf('/')) : null;
@@ -71,13 +77,16 @@ export const upgradeStorybookRelatedDependencies = {
       [...packageNames].map(async (packageName) => {
         const beforeVersion = await packageManager.getInstalledVersion(packageName);
         const keepMajor = !!beforeVersion && scopesStayingBehind.has(scopeOf(packageName));
+        const ceiling = VERSION_CEILINGS[packageName];
+        const belowCeiling =
+          !!beforeVersion && !!ceiling && !isAtOrPastVersion(beforeVersion, ceiling);
+        const constraint = [keepMajor && `^${beforeVersion}`, belowCeiling && `<${ceiling}`]
+          .filter(Boolean)
+          .join(' ');
         return {
           packageName,
           beforeVersion,
-          afterVersion: await packageManager.latestVersion(
-            packageName,
-            keepMajor ? `^${beforeVersion}` : undefined
-          ),
+          afterVersion: await packageManager.latestVersion(packageName, constraint || undefined),
         };
       })
     );

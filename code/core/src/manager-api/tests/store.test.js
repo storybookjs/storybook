@@ -33,7 +33,7 @@ describe('store', () => {
     });
   });
 
-  it('omits v10.3 tag filters from local storage', () => {
+  it('omits v10.3 tag filters from local storage and deletes them', () => {
     store2.local.get.mockReturnValueOnce({
       includedTagFilters: ['legacy'],
       excludedTagFilters: ['blocked'],
@@ -46,6 +46,15 @@ describe('store', () => {
       foo: 'local',
       bar: 'session',
     });
+    expect(store2.local.set).toHaveBeenCalledWith(STORAGE_KEY, { foo: 'local' });
+  });
+
+  it('leaves local storage untouched when it holds no v10.3 tag filters', () => {
+    store2.local.get.mockReturnValueOnce({ foo: 'local' });
+    store2.session.get.mockReturnValueOnce({});
+
+    new Store({}).getInitialState();
+    expect(store2.local.set).not.toHaveBeenCalled();
   });
 
   it('passes getState right through', () => {

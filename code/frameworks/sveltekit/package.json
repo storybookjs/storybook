@@ -1,6 +1,6 @@
 {
   "name": "@storybook/sveltekit",
-  "version": "11.0.0-alpha.6",
+  "version": "11.0.0-beta.0",
   "description": "Storybook for SvelteKit: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -29,8 +29,8 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "code": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./internal/MockProvider.svelte": "./static/MockProvider.svelte",
@@ -38,8 +38,8 @@
     "./internal/mocks/app/navigation": "./dist/mocks/app/navigation.js",
     "./internal/mocks/app/state.svelte.js": "./static/app-state-mock.svelte.js",
     "./node": {
-      "types": "./dist/node/index.d.ts",
       "code": "./src/node/index.ts",
+      "types": "./dist/node/index.d.ts",
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
@@ -70,6 +70,7 @@
     "@sveltejs/kit": "^3.0.0",
     "storybook": "workspace:^",
     "svelte": "^5.0.0",
+    "typescript": "^5.9.0 || ^6.0.0 || ^7.0.0",
     "vite": "^8.0.0"
   },
   "publishConfig": {

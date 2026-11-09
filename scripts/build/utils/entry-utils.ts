@@ -49,6 +49,15 @@ export type BuildEntries = {
    */
   extraOutputs?: Record<string, any>;
   /**
+   * Package-owned rewrite of a dependency's declaration file, applied when the dts bundler loads it.
+   * For bundled dependencies whose types are inlined but cannot be bundled as published, e.g.
+   * CommonJS-style declarations (see `convertCommonJsNamespaceDeclaration`). Return `null` to keep
+   * the file as is.
+   */
+  transformDependencyDeclaration?: (context: { id: string; code: string }) => string | null;
+  /** Package-owned rewrite of pre-bundled declarations, applied before the dts bundler. */
+  transformEmittedDeclarations?: (context: { emitDir: string; packageName: string }) => void;
+  /**
    * The function to run before the build
    *
    * @note this runs only **once** when watch-mode is enabled
@@ -62,8 +71,6 @@ export type BuildEntries = {
   postbuild?: (cwd: string) => Promise<void>;
 };
 
-export type BuildEntriesByPackageName = Record<string, BuildEntries>;
-
 export const measure = async (fn: () => Promise<void>) => {
   const start = process.hrtime();
   await fn();
@@ -75,9 +82,8 @@ export const getExternal = async (cwd: string) => {
     with: { type: 'json' },
   });
 
-  const runtimeExternalInclude: string[] = [
+  const runtimeExternal: string[] = [
     'react',
-    'use-sync-external-store',
     'react-dom',
     'react-dom/client',
     '@storybook/icons',
@@ -93,20 +99,8 @@ export const getExternal = async (cwd: string) => {
     ...Object.keys(packageJson.dependencies || {}),
     ...Object.keys(packageJson.peerDependencies || {}),
   ];
-  const runtimeExternalExclude = [
-    '@testing-library/jest-dom',
-    '@testing-library/user-event',
-    'chai',
-    '@vitest/expect',
-    '@vitest/mocker',
-    '@vitest/spy',
-    '@vitest/utils',
-  ];
-  const runtimeExternal = runtimeExternalInclude.filter(
-    (dep) => !runtimeExternalExclude.includes(dep)
-  );
   const typesExternal = [
-    ...runtimeExternalInclude,
+    ...runtimeExternal,
     'ast-types',
     // typescript ships CommonJS dts that rolldown-plugin-dts cannot bundle. It is only
     // reachable through devDep type imports (e.g. react-docgen-typescript); keeping it
@@ -117,3 +111,32 @@ export const getExternal = async (cwd: string) => {
 
   return { runtimeExternal, typesExternal };
 };
+
+/**
+ * Create a predicate that tells whether a module id is one of `packages`, a subpath of one, or a
+ * file inside `node_modules/<package>/` (with `separator` between path segments).
+ */
+export function createPackageMatcher(packages: readonly string[], separator: string) {
+  const names = new Set(packages);
+  const nodeModules = `${separator}node_modules${separator}`;
+  const hasPrefixBefore = (value: string, delimiter: string) => {
+    for (let i = value.indexOf(delimiter); i !== -1; i = value.indexOf(delimiter, i + 1)) {
+      if (names.has(value.slice(0, i))) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  return (id: string): boolean => {
+    if (names.has(id) || hasPrefixBefore(id, '/')) {
+      return true;
+    }
+    for (let i = id.indexOf(nodeModules); i !== -1; i = id.indexOf(nodeModules, i + 1)) {
+      if (hasPrefixBefore(id.slice(i + nodeModules.length), separator)) {
+        return true;
+      }
+    }
+    return false;
+  };
+}

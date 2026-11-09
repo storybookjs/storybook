@@ -169,3 +169,19 @@ describe('evidence names in a finding', () => {
     ).toBe(true);
   });
 });
+
+describe('system info', () => {
+  it('strips the colour codes and the box prefix the CLI prints', () => {
+    const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
+    const runDir = artifactRun(resultsDir);
+    writeRun(runDir);
+    write(
+      join(runDir, 'evidence/storybook-info.txt'),
+      'yarn dlx noise\n\x1b[1mStorybook Environment Info:\x1b[22m\n\x1b[90m│\x1b[39m\n\x1b[90m│\x1b[39m  System:\n\x1b[90m│\x1b[39m  OS: Linux\n'
+    );
+
+    const { results } = load(resultsDir);
+
+    expect(results[0]?.systemInfo).toBe('Storybook Environment Info:\n\nSystem:\nOS: Linux');
+  });
+});

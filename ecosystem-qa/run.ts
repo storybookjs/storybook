@@ -283,6 +283,12 @@ const runSandcastle = async (
         onAgentStreamEvent: (event) => {
           if (event.type === 'raw') {
             stream.write(`${event.line}\n`);
+          } else if (event.type === 'text') {
+            console.log(event.message.trim());
+          } else if (event.type === 'toolCall') {
+            console.log(
+              `▶ ${event.name}(${event.formattedArgs.replace(/\s+/g, ' ').slice(0, 300)})`
+            );
           }
         },
       },

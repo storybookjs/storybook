@@ -5,6 +5,7 @@ import { basename, dirname, join, relative, resolve } from 'pathe';
 
 import { searchFingerprint } from './lib/github.ts';
 import { groupFindings, toProposal, type LoadedResult } from './lib/proposals.ts';
+import { sanitizeFinding } from './lib/sanitize.ts';
 import { RunResultFile } from './lib/schema.ts';
 
 const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --out <proposals.json> --repo <owner/name> [--run-url <url>]
@@ -55,12 +56,15 @@ const environmentInfo = (captured: string): string => {
 };
 
 const loaded: LoadedResult[] = resultPaths.map((resultPath) => {
-  const result = RunResultFile.parse(JSON.parse(readFileSync(resultPath, 'utf8')));
+  const parsed = RunResultFile.parse(JSON.parse(readFileSync(resultPath, 'utf8')));
+  const result = { ...parsed, findings: parsed.findings.map(sanitizeFinding) };
   const infoFile = join(dirname(resultPath), result.paths.evidenceDir, 'storybook-info.txt');
   return {
     resultPath,
     result,
-    ...(existsSync(infoFile) ? { systemInfo: environmentInfo(readFileSync(infoFile, 'utf8')) } : {}),
+    ...(existsSync(infoFile)
+      ? { systemInfo: environmentInfo(readFileSync(infoFile, 'utf8')) }
+      : {}),
   };
 });
 

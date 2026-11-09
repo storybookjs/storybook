@@ -234,8 +234,35 @@ export let updated = {
 };
 
 /** Resets `page`, `navigating` and `updated` to their defaults. The framework calls it before every story. */
+// The page values of the last reset, to find writes into them, such as `page.data.user = user`
+let pageDefaults = initialPage;
+
 export function resetAppState() {
-  Object.assign(page, defaultStatePageValues());
+  pageDefaults = defaultStatePageValues();
+  Object.assign(page, pageDefaults);
   Object.assign(navigating, defaultStateNavigatingValues);
   updated.current = false;
+}
+
+/**
+ * Tells if a write went into a default value of `page`, which its setters don't see. The defaults
+ * are flat, so a shallow comparison finds every write.
+ *
+ * @returns {boolean}
+ */
+export function pageDefaultsChanged() {
+  const fresh = defaultStatePageValues();
+  return Object.entries(pageDefaults).some(([key, value]) => {
+    if (page[key] !== value || value === null || typeof value !== 'object') {
+      return false;
+    }
+    if (value instanceof URL) {
+      return value.href !== fresh[key].href;
+    }
+    const expected = fresh[key];
+    return (
+      Object.keys(value).length !== Object.keys(expected).length ||
+      Object.entries(expected).some(([field, fieldValue]) => value[field] !== fieldValue)
+    );
+  });
 }

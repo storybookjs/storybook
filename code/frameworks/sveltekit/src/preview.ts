@@ -1,9 +1,16 @@
 import { SvelteKitMockParametersRemovedError } from 'storybook/internal/preview-errors';
 
 import type { Preview } from '@storybook/svelte';
-// @ts-expect-error no declaration file for this JS module
-import { resetAppState } from '@storybook/sveltekit/internal/mocks/app/state.svelte.js';
-import { beginDocsStory, resetMocks } from '@storybook/sveltekit/internal/mocks/docs-isolation';
+import {
+  pageDefaultsChanged,
+  resetAppState,
+  // @ts-expect-error no declaration file for this JS module
+} from '@storybook/sveltekit/internal/mocks/app/state.svelte.js';
+import {
+  beginDocsStory,
+  endDocsSetup,
+  resetMocks,
+} from '@storybook/sveltekit/internal/mocks/docs-isolation';
 import { setAfterNavigate } from '@storybook/sveltekit/navigation.mock';
 
 import { interceptLinkClicks } from './mocks/link-clicks.ts';
@@ -30,7 +37,8 @@ export const beforeEach: Preview['beforeEach'] = ({ id, parameters, canvasElemen
   }
 
   // Before the reset, so a story that can't share the page doesn't reset another story's mocks
-  const endDocsStory = viewMode === 'docs' ? beginDocsStory(id) : undefined;
+  const endDocsStory =
+    viewMode === 'docs' ? beginDocsStory(id, canvasElement, pageDefaultsChanged()) : undefined;
   resetMocks(() => {
     resetAppState();
     // Merges nothing into the default navigation
@@ -42,3 +50,13 @@ export const beforeEach: Preview['beforeEach'] = ({ id, parameters, canvasElemen
     endDocsStory?.();
   };
 };
+
+// Runs when a story mounts, after every `beforeEach`, so the setup of a story on a docs page ends
+export const decorators: Preview['decorators'] = [
+  (Story, { canvasElement, viewMode }) => {
+    if (viewMode === 'docs') {
+      endDocsSetup(canvasElement, pageDefaultsChanged());
+    }
+    return Story();
+  },
+];

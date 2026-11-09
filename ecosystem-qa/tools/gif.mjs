@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 
 import gifenc from 'gifenc';
+import { join } from 'pathe';
 import { PNG } from 'pngjs';
 
 const { GIFEncoder, quantize, applyPalette } = gifenc;

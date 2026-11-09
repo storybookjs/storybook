@@ -16,7 +16,7 @@ const finding = (errorText: string): Finding => ({
 });
 
 describe('normalizeErrorSignature', () => {
-  it('strips POSIX and Windows paths, versions, line:col and whitespace runs', () => {
+  it('keeps the package path under node_modules and strips the checkout prefix, versions, line:col and whitespace runs', () => {
     const linux = normalizeErrorSignature(
       'Error: Cannot read  properties of undefined\n    at /home/agent/workspace/node_modules/storybook/dist/core-server/index.js:1204:17 (storybook 11.0.0-beta.0)'
     );
@@ -25,9 +25,34 @@ describe('normalizeErrorSignature', () => {
     );
 
     expect(linux).toBe(
-      'error: cannot read properties of undefined at <path> (storybook <version>)'
+      'error: cannot read properties of undefined at node_modules/storybook/dist/core-server/index.js (storybook <version>)'
     );
     expect(windows).toBe(linux);
+  });
+
+  it('keeps the last two segments of a project file path', () => {
+    expect(
+      normalizeErrorSignature(
+        'Failed to load /home/agent/workspace/.storybook/main.ts and ./src/Button.stories.tsx:12:4 and D:\\a\\x\\vite.config.ts'
+      )
+    ).toBe('failed to load .storybook/main.ts and src/button.stories.tsx and x/vite.config.ts');
+  });
+
+  it('tells the same message apart when it names different files', () => {
+    const createJs = fingerprint(
+      finding(
+        '[MISSING_EXPORT] "css" is not exported by "node_modules/storybook/dist/theming/create.js".'
+      ),
+      'owned'
+    );
+    const blocksJs = fingerprint(
+      finding(
+        '[MISSING_EXPORT] "css" is not exported by "node_modules/@storybook/addon-docs/dist/blocks.js".'
+      ),
+      'owned'
+    );
+
+    expect(createJs).not.toBe(blocksJs);
   });
 
   it('strips commit and chunk hashes but keeps package names', () => {

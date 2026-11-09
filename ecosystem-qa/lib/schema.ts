@@ -106,6 +106,8 @@ export const RunResultFile = z.strictObject({
     cacheWriteTokens: z.number().optional(),
     usd: z.number().nullable(),
     model: z.string(),
+    // Present only when usd came from pricing.json rather than from the agent's own cost line.
+    ratesVerifiedOn: z.string().optional(),
   }),
   timing: z.strictObject({
     startedAt: z.string(),

@@ -14,6 +14,12 @@ interface Price {
   output: number;
   cacheRead: number;
   cacheWrite: number;
+  source: string;
+}
+
+interface PriceTable {
+  verifiedOn: string;
+  models: Record<string, Price>;
 }
 
 const PRICING_FILE = new URL('../pricing.json', import.meta.url);
@@ -109,14 +115,16 @@ export const usageFromStream = (
     return { ...tokens, usd, model };
   }
   const tokens = engine === 'claude' ? claudeTokens(lines) : codexTokens(lines);
-  const pricing: Record<string, Price> = JSON.parse(readFileSync(PRICING_FILE, 'utf8'));
-  const price = pricing[model];
-  const usd = price
-    ? (tokens.inputTokens * price.input +
-        tokens.outputTokens * price.output +
-        tokens.cacheReadTokens * price.cacheRead +
-        tokens.cacheWriteTokens * price.cacheWrite) /
-      1_000_000
-    : null;
-  return { ...tokens, usd, model };
+  const pricing: PriceTable = JSON.parse(readFileSync(PRICING_FILE, 'utf8'));
+  const price = pricing.models[model];
+  if (!price) {
+    return { ...tokens, usd: null, model };
+  }
+  const usd =
+    (tokens.inputTokens * price.input +
+      tokens.outputTokens * price.output +
+      tokens.cacheReadTokens * price.cacheRead +
+      tokens.cacheWriteTokens * price.cacheWrite) /
+    1_000_000;
+  return { ...tokens, usd, model, ratesVerifiedOn: pricing.verifiedOn };
 };

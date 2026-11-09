@@ -30,7 +30,7 @@ import { usageFromStream } from './lib/usage.ts';
 const HELP = `Usage: node ecosystem-qa/run.ts --repo <catalog id> --version <storybook version> --engine <claude|codex> --sandbox <docker|bwrap|seatbelt|none> --out <dir>
 
 Options:
-  --model <id>        Model id (default: claude-sonnet-5-5 for claude, gpt-5.4 for codex)
+  --model <id>        Model id (default: claude-sonnet-5-5 for claude, gpt-6.1-sol for codex)
   --effort <level>    low, medium or high (default: medium)
   --clone-dir <dir>   Where to clone the catalog repo (default: <out>/../../../work/<id>)
   --image <name>      Docker image for --sandbox docker (default: sb-ecosystem-qa)
@@ -40,7 +40,7 @@ Set ECOSYSTEM_QA_FAKE=1 and pass --engine fake to write a canned result without 
 
 const DEFAULT_MODEL: Record<z.infer<typeof Engine>, string> = {
   claude: 'claude-sonnet-5-5',
-  codex: 'gpt-5.4',
+  codex: 'gpt-6.1-sol',
 };
 
 const API_KEY_ENV: Record<z.infer<typeof Engine>, string> = {
@@ -363,7 +363,11 @@ const writeResult = (request: RunRequest, outcome: Outcome, startedAt: Date) => 
 
 const summarize = (result: z.infer<typeof RunResultFile>, resultPath: string): string => {
   const failed = result.checks.filter((check) => check.state === 'fail').length;
-  const usd = result.usage.usd === null ? 'unpriced' : `$${result.usage.usd.toFixed(2)}`;
+  const { ratesVerifiedOn } = result.usage;
+  const usd =
+    result.usage.usd === null
+      ? 'unpriced'
+      : `$${result.usage.usd.toFixed(2)}${ratesVerifiedOn ? ` (priced with rates verified on ${ratesVerifiedOn})` : ''}`;
   return [
     `${result.request.entry.repo} on ${result.request.os} with ${result.request.engine} (${result.request.model}) finished with status ${result.status} in ${result.timing.wallSeconds}s.`,
     `Storybook ${result.storybookVersionInstalled ?? 'version unknown'} installed, ${result.checks.length} checks reported, ${failed} failed, ${result.findings.length} findings.`,

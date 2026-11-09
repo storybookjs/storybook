@@ -92,11 +92,30 @@ describe('usageFromStream', () => {
       },
     ]);
 
-    expect(usageFromStream(file, 'codex', 'gpt-5.4')).toMatchObject({
+    expect(usageFromStream(file, 'codex', 'gpt-6.1-sol')).toEqual({
       inputTokens: 700,
       cacheReadTokens: 800,
+      cacheWriteTokens: 0,
       outputTokens: 150,
+      usd: (700 * 2 + 150 * 10 + 800 * 0.1) / 1_000_000,
+      model: 'gpt-6.1-sol',
+      ratesVerifiedOn: '2026-11-09',
     });
+  });
+
+  it("carries no rate date when the dollar figure is the agent's own", () => {
+    const file = streamFile([
+      {
+        type: 'result',
+        model_usage_since_last_result: {
+          'claude-sonnet-5-5': { inputTokens: 1, outputTokens: 1, costUSD: 0.001 },
+        },
+      },
+    ]);
+
+    expect(usageFromStream(file, 'claude', 'claude-sonnet-5-5')).not.toHaveProperty(
+      'ratesVerifiedOn'
+    );
   });
 
   it('reports no dollar figure for a model missing from pricing.json', () => {

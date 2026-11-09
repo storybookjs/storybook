@@ -192,6 +192,8 @@ jobs:
             "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
             "| \(.status) | \(.timing.wallSeconds) | \(.timing.installSeconds // "-") | \(.usage.inputTokens) | \(.usage.outputTokens) | \(.usage.cacheReadTokens // 0) | \(.usage.cacheWriteTokens // 0) | \(.usage.usd // "unpriced") | \(.machine.freeDiskMbAtEnd // "-") | \(.findings | length) |",
             "",
+            (if .usage.ratesVerifiedOn then "USD priced with rates verified on \(.usage.ratesVerifiedOn), not from the agent." else empty end),
+            "",
             (.checks[] | "- `\(.id)`: \(.state)\(if .note then " (\(.note))" else "" end)")
           ' "$result" >> "$GITHUB_STEP_SUMMARY"
 

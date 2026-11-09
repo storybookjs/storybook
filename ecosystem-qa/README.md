@@ -30,7 +30,9 @@ Pick the sandbox for your machine:
 - `--sandbox docker` on Linux with the image built first: `docker build --build-arg AGENT_UID=$(id -u) --build-arg AGENT_GID=$(id -g) -t sb-ecosystem-qa ecosystem-qa`.
 - `--sandbox none` runs the agent on the host with your environment, so use it only for a trusted owned repo.
 
-Codex runs read `CODEX_API_KEY` and default to `gpt-5.4`; pass `--model` to change it.
+Codex runs read `CODEX_API_KEY` and default to `gpt-6.1-sol`; pass `--model` to change it.
+Claude's cost comes from its own result line.
+Codex is priced from `pricing.json`, whose rates are third-party figures with a `verifiedOn` date; a run priced that way says so in its summary.
 The repo is cloned to `ecosystem-qa/work/<id>` by default, and the run stops if that directory already exists.
 
 Then collect and look at the proposals without filing anything:

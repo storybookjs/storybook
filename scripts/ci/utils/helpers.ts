@@ -240,7 +240,7 @@ export const git = {
           '  echo "Uncommitted changes detected in the working tree. If the build generated files, run \`pnpm task --task compile\` locally and commit them."',
           '  echo ""',
           '  git status --porcelain',
-          '  git diff',
+          '  git --no-pager diff',
           '  exit 1',
           'fi',
         ].join('\n'),

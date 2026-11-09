@@ -28,7 +28,13 @@ const keyPaths = (value: unknown, depth = 0): string[] => {
 
 // The framework's annotations come before the project's, so this runs before every other
 // `beforeEach`, and stories set their mocks on top of the defaults
-export const beforeEach: Preview['beforeEach'] = ({ id, parameters, canvasElement, viewMode }) => {
+export const beforeEach: Preview['beforeEach'] = ({
+  id,
+  parameters,
+  canvasElement,
+  viewMode,
+  abortSignal,
+}) => {
   if (parameters?.sveltekit_experimental !== undefined) {
     const keys = keyPaths(parameters.sveltekit_experimental);
     throw new SvelteKitMockParametersRemovedError({
@@ -45,10 +51,14 @@ export const beforeEach: Preview['beforeEach'] = ({ id, parameters, canvasElemen
     setAfterNavigate({});
   });
   const stopLinkClicks = interceptLinkClicks({ canvasElement, viewMode });
-  return () => {
+  const cleanup = () => {
     stopLinkClicks();
     endDocsStory?.();
   };
+  // Core gets this cleanup only when every `beforeEach` succeeds, but it always aborts the render
+  // when it tears the story down
+  abortSignal?.addEventListener('abort', cleanup, { once: true });
+  return cleanup;
 };
 
 // Runs when a story mounts, after every `beforeEach`, so the setup of a story on a docs page ends

@@ -21,6 +21,7 @@ let resetting = false;
 
 const hasOtherStory = (storyId: string) =>
   [...renders.values()].some((render) => render.storyId !== storyId);
+const isSettingUp = () => [...renders.values()].some((render) => render.settingUp);
 
 const sharedError = () => new SvelteKitMocksSharedOnDocsPageError();
 
@@ -29,10 +30,11 @@ const sharedError = () => new SvelteKitMocksSharedOnDocsPageError();
  * Throws when another story on the page already set the mocks. Returns the cleanup.
  *
  * `mocksChanged` tells if the current values differ from the defaults, such as after `page.data.user
- * = user`, which no setter sees.
+ * = user`, which no setter sees. It counts only while a story is set up, because a rendered story
+ * can change them, such as in a play function.
  */
 export function beginDocsStory(storyId: string, canvasElement: Element, mocksChanged: boolean) {
-  if ((mocksSetOnPage || mocksChanged) && hasOtherStory(storyId)) {
+  if ((mocksSetOnPage || (mocksChanged && isSettingUp())) && hasOtherStory(storyId)) {
     throw sharedError();
   }
   renders.set(canvasElement, { storyId, settingUp: true });
@@ -58,7 +60,7 @@ export function endDocsSetup(canvasElement: Element, mocksChanged: boolean) {
 
 /** Called by every write to a SvelteKit mock. Throws when stories on a docs page would share it. */
 export function noteMockSet() {
-  if (resetting || ![...renders.values()].some((render) => render.settingUp)) {
+  if (resetting || !isSettingUp()) {
     return;
   }
   if (new Set([...renders.values()].map((render) => render.storyId)).size >= 2) {

@@ -7,14 +7,17 @@ import { dedent } from 'ts-dedent';
 import ts from 'typescript';
 
 import { ComponentMetaManager } from '../componentManifest/componentMeta/ComponentMetaManager.ts';
-import type { ComponentDoc } from '../componentManifest/componentMeta/componentMetaExtractor.ts';
+import type {
+  ComponentDoc,
+  PropItemType,
+} from '../componentManifest/componentMeta/componentMetaExtractor.ts';
 import {
   cleanup,
   createTempDir,
   tsconfigJSON,
   writeFiles,
 } from '../componentManifest/componentMeta/test-helpers.ts';
-import { buildDocgenPayload } from './buildDocgen.ts';
+import { buildDocgenPayload, extractArgTypesFromComponentMeta } from './buildDocgen.ts';
 
 let tempDir: string | undefined;
 let componentMetaManager: ComponentMetaManager | undefined;
@@ -28,6 +31,22 @@ function makeStoryIndexEntry(importPath: string, title: string): IndexEntry {
     type: 'story',
     subtype: 'story',
     importPath,
+  };
+}
+
+function componentDoc(
+  props: Record<string, { type: PropItemType; required?: boolean }>
+): ComponentDoc {
+  return {
+    exportName: 'List',
+    filePath: '/List.tsx',
+    description: '',
+    props: Object.fromEntries(
+      Object.entries(props).map(([name, { type, required = true }]) => [
+        name,
+        { name, required, description: '', defaultValue: null, type },
+      ])
+    ),
   };
 }
 
@@ -160,6 +179,103 @@ describe('buildDocgenPayload', () => {
       expect(payload!.argTypes?.label.table?.defaultValue).toEqual({ summary: 'imported' });
     }
   );
+
+  it('gives array props the array type in argTypes', () => {
+    const argTypes = extractArgTypesFromComponentMeta(
+      componentDoc({
+        items: { type: { name: 'string[]', elements: [{ name: 'string' }] } },
+        tags: {
+          type: { name: 'readonly string[]', elements: [{ name: 'string' }] },
+          required: false,
+        },
+        values: { type: { name: '(string | number)[]', elements: [{ name: 'string | number' }] } },
+        matrix: {
+          type: {
+            name: 'number[][]',
+            elements: [{ name: 'number[]', elements: [{ name: 'number' }] }],
+          },
+        },
+        selected: { type: { name: 'string[] | null', elements: [{ name: 'string' }] } },
+        pair: { type: { name: '[string, number]' } },
+      })
+    );
+
+    expect(argTypes?.items.type).toEqual({
+      name: 'array',
+      raw: 'string[]',
+      value: { name: 'string' },
+      required: true,
+    });
+    expect(argTypes?.tags.type).toEqual({
+      name: 'array',
+      raw: 'readonly string[]',
+      value: { name: 'string' },
+      required: false,
+    });
+    expect(argTypes?.values.type).toEqual({
+      name: 'array',
+      raw: '(string | number)[]',
+      value: { name: 'other', value: 'string | number' },
+      required: true,
+    });
+    expect(argTypes?.matrix.type).toEqual({
+      name: 'array',
+      raw: 'number[][]',
+      value: { name: 'array', raw: 'number[]', value: { name: 'number' } },
+      required: true,
+    });
+    expect(argTypes?.selected.type).toEqual({
+      name: 'array',
+      raw: 'string[] | null',
+      value: { name: 'string' },
+      required: true,
+    });
+    expect(argTypes?.pair.type).toEqual({
+      name: 'other',
+      value: '[string, number]',
+      required: true,
+    });
+    expect(argTypes?.items.table?.type).toEqual({ summary: 'string[]' });
+    expect(argTypes?.tags.table?.type).toEqual({ summary: 'readonly string[]' });
+    expect(argTypes?.values.table?.type).toEqual({ summary: '(string | number)[]' });
+    expect(argTypes?.selected.table?.type).toEqual({ summary: 'string[] | null' });
+  });
+
+  it('converts the element type of array props', () => {
+    const argTypes = extractArgTypesFromComponentMeta(
+      componentDoc({
+        kinds: {
+          type: {
+            name: '("a" | "b")[]',
+            elements: [
+              { name: 'enum', raw: '"a" | "b"', value: [{ value: '"a"' }, { value: '"b"' }] },
+            ],
+          },
+        },
+        flags: { type: { name: 'boolean[]', elements: [{ name: 'boolean' }] } },
+        handlers: { type: { name: '(() => void)[]', elements: [{ name: '() => void' }] } },
+      })
+    );
+
+    expect(argTypes?.kinds.type).toEqual({
+      name: 'array',
+      raw: '("a" | "b")[]',
+      value: { name: 'enum', raw: '"a" | "b"', value: ['a', 'b'] },
+      required: true,
+    });
+    expect(argTypes?.flags.type).toEqual({
+      name: 'array',
+      raw: 'boolean[]',
+      value: { name: 'boolean' },
+      required: true,
+    });
+    expect(argTypes?.handlers.type).toEqual({
+      name: 'array',
+      raw: '(() => void)[]',
+      value: { name: 'function', value: '() => void' },
+      required: true,
+    });
+  });
 
   it(
     "leaves React's own ref and key out of argTypes, like builder docgen did",

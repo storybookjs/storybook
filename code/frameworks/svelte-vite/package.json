@@ -27,19 +27,19 @@
   "type": "module",
   "exports": {
     ".": {
-      "code": "./src/index.ts",
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./node": {
-      "code": "./src/node/index.ts",
       "types": "./dist/node/index.d.ts",
+      "code": "./src/node/index.ts",
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
     "./preset": {
-      "code": "./src/preset.ts",
       "types": "./dist/preset.d.ts",
+      "code": "./src/preset.ts",
       "default": "./dist/preset.js"
     }
   },

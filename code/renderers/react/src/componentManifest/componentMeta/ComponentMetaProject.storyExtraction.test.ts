@@ -110,6 +110,47 @@ describe('prop extraction via story JSX', () => {
     });
   });
 
+  it('generic component with an args story (TypeScript keeps the type parameters)', async () => {
+    const entry = await extractFromStory(
+      {
+        'path1/SortableList.tsx': dedent`
+          import React from 'react';
+          interface SortableListProps<T> {
+            items: T[];
+            /** The property to sort the items by */
+            sortBy: keyof T;
+            /** The item to highlight */
+            selected?: T | null;
+          }
+          export function SortableList<T>(props: SortableListProps<T>) {
+            return <ul />;
+          }
+        `,
+        'path1/SortableList.stories.tsx': dedent`
+          import { SortableList } from './SortableList';
+          export default { component: SortableList };
+          export const Default = { args: { items: [], sortBy: 'id' } };
+        `,
+      },
+      'path1/SortableList.stories.tsx'
+    );
+
+    expect(entry.component?.reactComponentMeta).toMatchObject({
+      props: {
+        sortBy: {
+          type: { name: 'string | number | symbol' },
+          required: true,
+          description: 'The property to sort the items by',
+        },
+        selected: {
+          type: { name: 'T | null | undefined' },
+          required: false,
+          description: 'The item to highlight',
+        },
+      },
+    });
+  });
+
   it('forwardRef component', async () => {
     const entry = await extractFromStory(
       {

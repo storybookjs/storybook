@@ -5,7 +5,6 @@ import type {
   Signature as NativeSignature,
   Symbol as NativeSymbol,
   Type as NativeType,
-  TypeParameter,
 } from 'typescript-native/sync';
 
 import type { NativeFacades } from './native-facades.ts';
@@ -167,9 +166,7 @@ export class TypeFacade {
   }
 
   getConstraint(): ts.Type | undefined {
-    return this.native.isTypeParameter()
-      ? this.facades.type((this.native as TypeParameter).getConstraint())
-      : undefined;
+    return this.facades.type(this.facades.checker.getBaseConstraintOfType(this.native));
   }
 }
 

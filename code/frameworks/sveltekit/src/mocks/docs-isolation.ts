@@ -1,4 +1,7 @@
+import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 import { SvelteKitMocksSharedOnDocsPageError } from 'storybook/internal/preview-errors';
+
+import { addons } from 'storybook/preview-api';
 
 import type { Mock } from 'storybook/test';
 
@@ -25,6 +28,33 @@ const isSettingUp = () => [...renders.values()].some((render) => render.settingU
 
 const sharedError = () => new SvelteKitMocksSharedOnDocsPageError();
 
+let listening = false;
+
+// A story that fails in a later `beforeEach` never mounts, and core keeps it on the page with its
+// error, so its setup ends when it fails. The event names only the story, so this ends the setup of
+// every copy of it, which run the same `beforeEach`
+const listenForFailures = () => {
+  if (listening) {
+    return;
+  }
+  listening = true;
+  addons
+    .getChannel()
+    .on(
+      STORY_RENDER_PHASE_CHANGED,
+      ({ newPhase, storyId }: { newPhase: string; storyId: string }) => {
+        if (newPhase !== 'errored') {
+          return;
+        }
+        for (const render of renders.values()) {
+          if (render.storyId === storyId) {
+            render.settingUp = false;
+          }
+        }
+      }
+    );
+};
+
 /**
  * Called by the framework `beforeEach` of a story on a docs page, before it resets the mocks.
  * Throws when another story on the page already set the mocks. Returns the cleanup.
@@ -34,6 +64,7 @@ const sharedError = () => new SvelteKitMocksSharedOnDocsPageError();
  * can change them, such as in a play function.
  */
 export function beginDocsStory(storyId: string, canvasElement: Element, mocksChanged: boolean) {
+  listenForFailures();
   if ((mocksSetOnPage || (mocksChanged && isSettingUp())) && hasOtherStory(storyId)) {
     throw sharedError();
   }

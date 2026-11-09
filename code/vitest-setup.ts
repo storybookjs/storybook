@@ -45,7 +45,7 @@ const toConsole = (log: (...args: unknown[]) => void) =>
     },
   });
 const stdout = toConsole(console.log.bind(console));
-const stderr = toConsole(console.log.bind(console));
+const stderr = toConsole(console.error.bind(console));
 process.stdout.write = stdout.write.bind(stdout);
 process.stderr.write = stderr.write.bind(stderr);
 

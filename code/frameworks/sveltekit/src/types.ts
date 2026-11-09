@@ -50,7 +50,7 @@ export interface SvelteKitTypes {
     /**
      * Removed in Storybook 11. Mock the SvelteKit modules in `beforeEach` instead.
      *
-     * @deprecated See https://storybook.js.org/docs/get-started/frameworks/sveltekit#how-to-mock
+     * @deprecated See https://storybook.js.org/docs/get-started/frameworks/sveltekit#mocking-modules
      */
     sveltekit_experimental?: never;
   };

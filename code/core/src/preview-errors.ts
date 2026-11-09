@@ -381,7 +381,7 @@ export class SvelteKitMockParametersRemovedError extends StorybookError {
       code: 1,
       documentation: [
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-sveltekit_experimental-parameters-removed',
-        'https://storybook.js.org/docs/get-started/frameworks/sveltekit#how-to-mock',
+        'https://storybook.js.org/docs/get-started/frameworks/sveltekit#mocking-modules',
       ],
       message: dedent`
         \`parameters.sveltekit_experimental\` was removed in Storybook 11, and this story still sets it: ${data.keys.map((key) => `\`${key}\``).join(', ')}.
@@ -399,16 +399,23 @@ export class SvelteKitMocksSharedOnDocsPageError extends StorybookError {
       category: Category.FRAMEWORK_SVELTEKIT,
       code: 2,
       documentation: 'https://storybook.js.org/docs/get-started/frameworks/sveltekit#docs-pages',
+      // Short lines: a docs page shows this in a box that doesn't wrap them
       message: dedent`
-        Stories on this docs page set up SvelteKit mocks, but they render in the same document, so they would share them.
+        Inline stories can't set up SvelteKit mocks.
 
-        The mocks of \`$app/state\`, \`$app/navigation\` and \`$app/forms\` are one instance per document, like SvelteKit's own modules. On a docs page, every story would show the setup of the story that set the mocks last. Storybook stops here instead of showing the wrong state.
-
-        Render the stories of this file in iframes, where each story has its own mocks. Add this to the meta (\`defineMeta()\` or the default export):
+        To fix this, render the stories of this file in iframes. Add this
+        to the meta (\`defineMeta()\` or the default export):
 
           parameters: { docs: { story: { inline: false } } }
 
-        This happens when a story sets \`page\`, \`navigating\` or \`updated\`, calls \`setAfterNavigate()\`, or configures a mock function such as \`goto\` or \`formAction\` in \`beforeEach\`.
+        Inline stories render in one document, so they share the mocks of
+        \`$app/state\`, \`$app/navigation\` and \`$app/forms\`. Every story would
+        show the setup of the story that ran last, so Storybook stops here.
+        In an iframe, each story has its own mocks.
+
+        A story sets up the mocks when its \`beforeEach\` sets \`page\`,
+        \`navigating\` or \`updated\`, calls \`setAfterNavigate()\`, or
+        configures a mock function such as \`goto\` or \`formAction\`.
       `,
     });
   }

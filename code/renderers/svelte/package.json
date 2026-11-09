@@ -25,8 +25,8 @@
   "type": "module",
   "exports": {
     ".": {
-      "code": "./src/index.ts",
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./entry-preview": "./dist/entry-preview.js",
@@ -35,40 +35,40 @@
     "./internal/createReactiveProps": "./static/createReactiveProps.svelte.js",
     "./internal/DecoratorHandler.svelte": "./static/DecoratorHandler.svelte",
     "./internal/docgen-engine": {
-      "code": "./src/docgen/component-docgen/svelte2tsx/generate-docgen.ts",
       "types": "./dist/docgen/component-docgen/svelte2tsx/generate-docgen.d.ts",
+      "code": "./src/docgen/component-docgen/svelte2tsx/generate-docgen.ts",
       "default": "./dist/docgen/component-docgen/svelte2tsx/generate-docgen.js"
     },
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./internal/PreviewRender.svelte": "./static/PreviewRender.svelte",
     "./internal/svelte-csf/addon-check": {
-      "code": "./src/svelte-csf/addon-check.ts",
       "types": "./dist/svelte-csf/addon-check.d.ts",
+      "code": "./src/svelte-csf/addon-check.ts",
       "default": "./dist/svelte-csf/addon-check.js"
     },
     "./internal/svelte-csf/component-helpers": {
-      "code": "./src/svelte-csf/runtime/component-helpers.ts",
       "types": "./dist/svelte-csf/runtime/component-helpers.d.ts",
+      "code": "./src/svelte-csf/runtime/component-helpers.ts",
       "default": "./dist/svelte-csf/runtime/component-helpers.js"
     },
     "./internal/svelte-csf/contexts/extractor": "./static/svelte-csf/contexts/extractor.svelte.js",
     "./internal/svelte-csf/contexts/renderer": "./static/svelte-csf/contexts/renderer.svelte.js",
     "./internal/svelte-csf/create-runtime-stories": {
-      "code": "./src/svelte-csf/runtime/create-runtime-stories.ts",
       "types": "./dist/svelte-csf/runtime/create-runtime-stories.d.ts",
+      "code": "./src/svelte-csf/runtime/create-runtime-stories.ts",
       "default": "./dist/svelte-csf/runtime/create-runtime-stories.js"
     },
     "./internal/svelte-csf/indexer": {
-      "code": "./src/svelte-csf/indexer/index.ts",
       "types": "./dist/svelte-csf/indexer/index.d.ts",
+      "code": "./src/svelte-csf/indexer/index.ts",
       "default": "./dist/svelte-csf/indexer/index.js"
     },
     "./internal/svelte-csf/StoriesExtractor.svelte": "./static/svelte-csf/StoriesExtractor.svelte",
     "./internal/svelte-csf/Story.svelte": "./static/svelte-csf/Story.svelte",
     "./internal/svelte-csf/StoryRenderer.svelte": "./static/svelte-csf/StoryRenderer.svelte",
     "./internal/svelte-csf/transform": {
-      "code": "./src/svelte-csf/compiler/transform.ts",
       "types": "./dist/svelte-csf/compiler/transform.d.ts",
+      "code": "./src/svelte-csf/compiler/transform.ts",
       "default": "./dist/svelte-csf/compiler/transform.js"
     },
     "./package.json": "./package.json",

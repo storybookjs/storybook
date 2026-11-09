@@ -68,7 +68,7 @@ describe('parameters.sveltekit_experimental', () => {
     );
     expect(run).toThrowError('MIGRATION.md#sveltekit-sveltekit_experimental-parameters-removed');
     expect(run).toThrowError(
-      'storybook.js.org/docs/get-started/frameworks/sveltekit?ref=error#how-to-mock'
+      'storybook.js.org/docs/get-started/frameworks/sveltekit?ref=error#mocking-modules'
     );
   });
 

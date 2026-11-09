@@ -1,8 +1,18 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
+import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
+
+import { getChannel } from '../../../../channels/channel-slot.ts';
+import { createTestChannel, type SpiedTestChannel } from '../../../../channels/test-channel.ts';
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
 import { clearRegistry, getService } from '../../server.ts';
+import { SERVICE_ENTRY, type EntryPayload } from '../../service-channel.ts';
+import { serviceRegistryApi } from '../../service-registry.ts';
+import { createServiceRuntime } from '../../service-runtime.ts';
+import { createReconciler } from '../../service-sync.ts';
+import { readAllComponents } from '../component-state-key.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
+import { storyDocsServiceDef } from './definition.ts';
 import { registerStoryDocsService, subscribeStoryDocsToModuleGraphChanges } from './server.ts';
 import type { SnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
 import type { StoryDocsPayload, StoryDocsProvider } from './types.ts';
@@ -52,26 +62,6 @@ function makeGetIndex(entries: IndexEntry[]) {
 }
 
 describe('story-docs open service', () => {
-  it('updates a subscription that started before the payload was stored', async () => {
-    const entry = makeStoryEntry('button--primary', 'Button');
-    const payload = makeStoryDocsPayload();
-    const service = registerStoryDocsService({
-      getIndex: makeGetIndex([entry]),
-      storyDocsProvider: async () => payload,
-    });
-    const selected: unknown[] = [];
-    const unsubscribe = service.queries.storyDocs.subscribe(
-      { id: 'button' },
-      (value) => value?.name,
-      (state) => selected.push(state.data)
-    );
-
-    await service.commands.extractStoryDocs({ id: 'button' });
-    unsubscribe();
-
-    expect(selected.at(-1)).toBe('Button');
-  });
-
   it('stores and returns story-docs payloads from the provider', async () => {
     const entry = makeStoryEntry('button--primary', 'Button');
     const payload = makeStoryDocsPayload({
@@ -164,6 +154,82 @@ describe('story-docs open service', () => {
     unsubscribe();
 
     expect(selected.at(-1)).toEqual(buttonTemplate('label="Hi"', 'title'));
+  });
+
+  describe('storyDocs query', () => {
+    it('emits a payload that is extracted after the subscription starts', async () => {
+      const payload = makeStoryDocsPayload();
+      const extracted = Promise.withResolvers<StoryDocsPayload>();
+      const service = registerStoryDocsService({
+        getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
+        storyDocsProvider: () => extracted.promise,
+      });
+      const emitted: Array<StoryDocsPayload | undefined> = [];
+
+      const unsubscribe = service.queries.storyDocs.subscribe({ id: 'button' }, (state) =>
+        emitted.push(state.data)
+      );
+      extracted.resolve(payload);
+
+      await vi.waitFor(() => expect(emitted.at(-1)).toEqual(payload));
+      unsubscribe();
+    });
+
+    it('answers undefined for a prototype member such as constructor', () => {
+      const service = registerStoryDocsService({
+        getIndex: makeGetIndex([]),
+        storyDocsProvider: async () => undefined,
+      });
+
+      expect(service.queries.storyDocs.get({ id: 'constructor' })).toBeUndefined();
+    });
+
+    it.each(['Constructor', 'Prototype'])(
+      'emits and lists the payload of a component titled %s, whose id is a reserved key',
+      async (title) => {
+        const id = title.toLowerCase();
+        const payload = makeStoryDocsPayload({ id, name: title });
+        const service = registerStoryDocsService({
+          getIndex: makeGetIndex([makeStoryEntry(`${id}--primary`, title)]),
+          storyDocsProvider: async () => payload,
+        });
+        const emitted: Array<StoryDocsPayload | undefined> = [];
+
+        const unsubscribe = service.queries.storyDocs.subscribe({ id }, (state) =>
+          emitted.push(state.data)
+        );
+
+        await vi.waitFor(() => expect(emitted.at(-1)).toEqual(payload));
+        expect(readAllComponents(service.queries.storyDocsForAllComponents.get())).toEqual({
+          [id]: payload,
+        });
+        unsubscribe();
+      }
+    );
+
+    it('gives a peer the payload of a component titled Constructor', async () => {
+      const emit = vi.spyOn(getChannel()!, 'emit');
+      onTestFinished(() => emit.mockRestore());
+      const payload = makeStoryDocsPayload({ id: 'constructor', name: 'Constructor' });
+      const service = registerStoryDocsService({
+        getIndex: makeGetIndex([makeStoryEntry('constructor--primary', 'Constructor')]),
+        storyDocsProvider: async () => payload,
+      });
+      await service.commands.extractStoryDocs({ id: 'constructor' });
+
+      const peer = createServiceRuntime(storyDocsServiceDef, { registryApi: serviceRegistryApi });
+      const reconciler = createReconciler({
+        serviceId: storyDocsServiceDef.id,
+        setState: (mutate) => peer.applyLocal((state) => mutate(state)),
+      });
+      for (const [event, entry] of emit.mock.calls) {
+        if (event === SERVICE_ENTRY) {
+          reconciler.tryPlaceEntry(entry as EntryPayload);
+        }
+      }
+
+      expect(peer.queries.storyDocs.get({ id: 'constructor' })).toEqual(payload);
+    });
   });
 
   describe('a component with several story files', () => {
@@ -297,9 +363,25 @@ describe('story-docs open service', () => {
   });
 
   describe('module graph hot refresh', () => {
+    let channel: SpiedTestChannel;
+
     beforeEach(() => {
+      channel = createTestChannel();
       registerTestModuleGraphService();
     });
+
+    // The module graph reports the changed file, and its refresh reads the index, before the story
+    // index is invalidated.
+    const changeButtonStoryFile = async (
+      applyChange: () => void,
+      storyFile = './button.stories.tsx'
+    ) => {
+      const moduleGraph = getService('core/module-graph', { internal: true });
+      await moduleGraph.commands._applyGraphUpdate({ bumpedStoryFiles: [storyFile] });
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      applyChange();
+      channel.emitExternal(STORY_INDEX_INVALIDATED);
+    };
 
     it('re-extracts a component when any of its story files changes', async () => {
       const entries = [
@@ -309,7 +391,7 @@ describe('story-docs open service', () => {
       const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
       const getIndex = makeGetIndex(entries);
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
-      subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
 
       await service.queries.storyDocs.loaded({ id: 'vega' });
       expect(provider).toHaveBeenCalledTimes(2);
@@ -329,7 +411,7 @@ describe('story-docs open service', () => {
       const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
       const getIndex = makeGetIndex([entry]);
       const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
-      subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
 
       await service.queries.storyDocs.loaded({ id: 'button' });
       expect(provider).toHaveBeenCalledTimes(1);
@@ -346,7 +428,7 @@ describe('story-docs open service', () => {
       const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
       const getIndex = makeGetIndex([makeStoryEntry('button--primary', 'Button')]);
       registerStoryDocsService({ getIndex, storyDocsProvider: provider });
-      subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
 
       const moduleGraph = getService('core/module-graph', { internal: true });
       await moduleGraph.commands._applyGraphUpdate({
@@ -355,6 +437,305 @@ describe('story-docs open service', () => {
 
       // Nothing was extracted, so the story-file update has no component to refresh.
       await expect(vi.waitFor(() => expect(provider).toHaveBeenCalled())).rejects.toThrow();
+    });
+
+    it.each([
+      {
+        change: 'its title was renamed',
+        nextEntries: [
+          { ...makeStoryEntry('buttons--primary', 'Buttons'), importPath: './button.stories.tsx' },
+          makeStoryEntry('card--primary', 'Card'),
+        ],
+      },
+      {
+        change: 'its story file was deleted',
+        nextEntries: [makeStoryEntry('card--primary', 'Card')],
+      },
+    ])('drops the payload of an extracted component when $change', async ({ nextEntries }) => {
+      let entries = [
+        makeStoryEntry('button--primary', 'Button'),
+        makeStoryEntry('card--primary', 'Card'),
+      ];
+      const getIndex = () => makeGetIndex(entries)();
+      const service = registerStoryDocsService({
+        getIndex,
+        storyDocsProvider: async ({ entry }) =>
+          makeStoryDocsPayload({ id: entry.id.split('--')[0] }),
+      });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+      const emitted: Array<StoryDocsPayload | undefined> = [];
+      const unsubscribe = service.queries.storyDocs.subscribe({ id: 'button' }, (state) =>
+        emitted.push(state.data)
+      );
+      await vi.waitFor(() =>
+        expect(emitted.at(-1)).toEqual(makeStoryDocsPayload({ id: 'button' }))
+      );
+
+      await changeButtonStoryFile(() => {
+        entries = nextEntries;
+      });
+
+      await vi.waitFor(() => expect(emitted.at(-1)).toBeUndefined());
+      expect(service.queries.storyDocsForAllComponents.get()).not.toHaveProperty('button');
+      unsubscribe();
+    });
+
+    it.each([{ stored: false }, { stored: true }])(
+      'drops the payload of a component whose story file is deleted while it is extracted (stored before: $stored)',
+      async ({ stored }) => {
+        let entries = [
+          makeStoryEntry('button--primary', 'Button'),
+          makeStoryEntry('card--primary', 'Card'),
+        ];
+        const getIndex = () => makeGetIndex(entries)();
+        const extraction = Promise.withResolvers<StoryDocsPayload>();
+        const provider = vi.fn<StoryDocsProvider>(() => extraction.promise);
+        const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
+        subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+        if (stored) {
+          provider.mockResolvedValueOnce(makeStoryDocsPayload());
+          await service.commands.extractStoryDocs({ id: 'button' });
+        }
+        const extracting = service.commands.extractStoryDocs({ id: 'button' }).catch(() => {});
+        await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(stored ? 2 : 1));
+
+        await changeButtonStoryFile(() => {
+          entries = [makeStoryEntry('card--primary', 'Card')];
+        });
+        extraction.resolve(makeStoryDocsPayload());
+        await extracting;
+
+        expect(service.queries.storyDocs.get({ id: 'button' })).toBeUndefined();
+      }
+    );
+
+    it('drops the payload of a component whose story file is deleted while every component is extracted', async () => {
+      let entries = [
+        makeStoryEntry('button--primary', 'Button'),
+        makeStoryEntry('card--primary', 'Card'),
+      ];
+      const getIndex = () => makeGetIndex(entries)();
+      const buttonExtraction = Promise.withResolvers<StoryDocsPayload>();
+      const provider = vi.fn<StoryDocsProvider>(({ entry }) =>
+        entry.title === 'Button'
+          ? buttonExtraction.promise
+          : Promise.resolve(makeStoryDocsPayload({ id: 'card' }))
+      );
+      const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+      const extracting = service.commands.extractAllStoryDocs(undefined);
+      await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(2));
+
+      await changeButtonStoryFile(() => {
+        entries = [makeStoryEntry('card--primary', 'Card')];
+      });
+      buttonExtraction.resolve(makeStoryDocsPayload());
+      await extracting;
+
+      expect(Object.keys(service.queries.storyDocsForAllComponents.get())).toEqual(['card']);
+    });
+
+    it('drops the stories of a file whose title was renamed from a component that keeps another file', async () => {
+      let entries = [
+        makeStoryEntry('button--primary', 'Button'),
+        { ...makeStoryEntry('button--secondary', 'Button'), importPath: './more.stories.tsx' },
+      ];
+      const getIndex = () => makeGetIndex(entries)();
+      const service = registerStoryDocsService({
+        getIndex,
+        storyDocsProvider: async ({ entry }) =>
+          makeStoryDocsPayload({
+            stories: Object.fromEntries(
+              entries
+                .filter((story) => story.importPath === entry.importPath)
+                .map((story) => [story.id, { id: story.id, name: story.name }])
+            ),
+          }),
+      });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+      await service.commands.extractStoryDocs({ id: 'button' });
+
+      await changeButtonStoryFile(() => {
+        entries = [
+          makeStoryEntry('button--primary', 'Button'),
+          { ...makeStoryEntry('buttons--secondary', 'Buttons'), importPath: './more.stories.tsx' },
+        ];
+      }, './more.stories.tsx');
+
+      await vi.waitFor(() =>
+        expect(Object.keys(service.queries.storyDocs.get({ id: 'button' })!.stories)).toEqual([
+          'button--primary',
+        ])
+      );
+    });
+
+    it('keeps the newer extraction when an older one of the same component finishes later', async () => {
+      let entries = [
+        makeStoryEntry('button--primary', 'Button'),
+        { ...makeStoryEntry('button--secondary', 'Button'), importPath: './more.stories.tsx' },
+      ];
+      const getIndex = () => makeGetIndex(entries)();
+      const storiesOf = (importPath: string) =>
+        Object.fromEntries(
+          entries
+            .filter((story) => story.importPath === importPath)
+            .map((story) => [story.id, { id: story.id, name: story.name }])
+        );
+      let slowFile: PromiseWithResolvers<StoryDocsPayload> | undefined;
+      const service = registerStoryDocsService({
+        getIndex,
+        storyDocsProvider: async ({ entry }) => {
+          const payload = makeStoryDocsPayload({ stories: storiesOf(entry.importPath) });
+          if (slowFile && entry.importPath === './more.stories.tsx') {
+            const pending = slowFile;
+            slowFile = undefined;
+            return pending.promise.then(() => payload);
+          }
+          return payload;
+        },
+      });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+      await service.commands.extractStoryDocs({ id: 'button' });
+      const olderExtraction = Promise.withResolvers<StoryDocsPayload>();
+      slowFile = olderExtraction;
+
+      await changeButtonStoryFile(() => {
+        entries = [
+          makeStoryEntry('button--primary', 'Button'),
+          { ...makeStoryEntry('buttons--secondary', 'Buttons'), importPath: './more.stories.tsx' },
+        ];
+      }, './more.stories.tsx');
+      await vi.waitFor(() =>
+        expect(Object.keys(service.queries.storyDocs.get({ id: 'button' })!.stories)).toEqual([
+          'button--primary',
+        ])
+      );
+      olderExtraction.resolve(makeStoryDocsPayload());
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      expect(Object.keys(service.queries.storyDocs.get({ id: 'button' })!.stories)).toEqual([
+        'button--primary',
+      ]);
+    });
+
+    it('retries a restore whose extraction failed on the next index change', async () => {
+      const original = [makeStoryEntry('button--primary', 'Button')];
+      let entries = original;
+      const getIndex = () => makeGetIndex(entries)();
+      const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
+      const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+      const emitted: Array<StoryDocsPayload | undefined> = [];
+      const unsubscribe = service.queries.storyDocs.subscribe({ id: 'button' }, (state) =>
+        emitted.push(state.data)
+      );
+      await vi.waitFor(() => expect(emitted.at(-1)).toEqual(makeStoryDocsPayload()));
+      await changeButtonStoryFile(() => {
+        entries = [];
+      });
+      await vi.waitFor(() => expect(emitted.at(-1)).toBeUndefined());
+
+      provider.mockRejectedValueOnce(new Error('The docgen worker exited'));
+      await changeButtonStoryFile(() => {
+        entries = original;
+      });
+      await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(2));
+      expect(emitted.at(-1)).toBeUndefined();
+      await changeButtonStoryFile(() => {});
+
+      await vi.waitFor(() => expect(emitted.at(-1)).toEqual(makeStoryDocsPayload()));
+      unsubscribe();
+    });
+
+    it('gives an open subscriber the payload when a file deleted during its first extraction is restored', async () => {
+      const original = [makeStoryEntry('button--primary', 'Button')];
+      let entries = original;
+      const getIndex = () => makeGetIndex(entries)();
+      const firstExtraction = Promise.withResolvers<StoryDocsPayload>();
+      const provider = vi
+        .fn<StoryDocsProvider>(async () => makeStoryDocsPayload())
+        .mockReturnValueOnce(firstExtraction.promise);
+      const service = registerStoryDocsService({ getIndex, storyDocsProvider: provider });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+      const emitted: Array<StoryDocsPayload | undefined> = [];
+      const unsubscribe = service.queries.storyDocs.subscribe({ id: 'button' }, (state) =>
+        emitted.push(state.data)
+      );
+      await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(1));
+
+      await changeButtonStoryFile(() => {
+        entries = [];
+      });
+      firstExtraction.resolve(makeStoryDocsPayload());
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(service.queries.storyDocs.get({ id: 'button' })).toBeUndefined();
+      await changeButtonStoryFile(() => {
+        entries = original;
+      });
+
+      await vi.waitFor(() => expect(emitted.at(-1)).toEqual(makeStoryDocsPayload()));
+      unsubscribe();
+    });
+
+    it.each([
+      {
+        change: 'a renamed title is reverted',
+        changedEntries: [
+          { ...makeStoryEntry('buttons--primary', 'Buttons'), importPath: './button.stories.tsx' },
+        ],
+      },
+      { change: 'a deleted story file is restored', changedEntries: [] },
+    ])('gives an open subscriber the payload again when $change', async ({ changedEntries }) => {
+      const original = [makeStoryEntry('button--primary', 'Button')];
+      let entries = original;
+      const getIndex = () => makeGetIndex(entries)();
+      const service = registerStoryDocsService({
+        getIndex,
+        storyDocsProvider: async ({ entry }) =>
+          makeStoryDocsPayload({ id: entry.id.split('--')[0] }),
+      });
+      subscribeStoryDocsToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+      const emitted: Array<StoryDocsPayload | undefined> = [];
+      const unsubscribe = service.queries.storyDocs.subscribe({ id: 'button' }, (state) =>
+        emitted.push(state.data)
+      );
+      await vi.waitFor(() =>
+        expect(emitted.at(-1)).toEqual(makeStoryDocsPayload({ id: 'button' }))
+      );
+
+      await changeButtonStoryFile(() => {
+        entries = changedEntries;
+      });
+      await vi.waitFor(() => expect(emitted.at(-1)).toBeUndefined());
+      await changeButtonStoryFile(() => {
+        entries = original;
+      });
+
+      await vi.waitFor(() =>
+        expect(emitted.at(-1)).toEqual(makeStoryDocsPayload({ id: 'button' }))
+      );
+      unsubscribe();
+    });
+  });
+
+  it('keeps a component whose custom id starts with ~ apart from a component titled Constructor', async () => {
+    const service = registerStoryDocsService({
+      getIndex: makeGetIndex([
+        makeStoryEntry('constructor--primary', 'Constructor'),
+        // A story can set its own id with `parameters: { __id }`, which is not sanitized.
+        { ...makeStoryEntry('~constructor--primary', 'Other'), importPath: './other.stories.tsx' },
+      ]),
+      storyDocsProvider: async ({ entry }) => makeStoryDocsPayload({ id: entry.id.split('--')[0] }),
+    });
+
+    await service.commands.extractAllStoryDocs(undefined);
+
+    expect(service.queries.storyDocs.get({ id: 'constructor' })).toEqual(
+      makeStoryDocsPayload({ id: 'constructor' })
+    );
+    expect(readAllComponents(service.queries.storyDocsForAllComponents.get())).toEqual({
+      constructor: makeStoryDocsPayload({ id: 'constructor' }),
+      '~constructor': makeStoryDocsPayload({ id: '~constructor' }),
     });
   });
 });

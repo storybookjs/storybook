@@ -4,6 +4,7 @@ import { type SnippetTemplate, isSnippetTemplate } from '../../../../docs-tools/
 
 import { defineService } from 'storybook/open-service';
 import type { ServiceInstanceOf } from '../../types.ts';
+import { readComponent } from '../component-state-key.ts';
 import type { StoryDocsPayload } from './types.ts';
 import { storyDocsQueryStaticPath } from './paths.ts';
 
@@ -66,12 +67,7 @@ export const storyDocsServiceDef = defineService({
         'Returns the story-docs payload for one component id, or undefined when not loaded.',
       input: storyDocsInputSchema,
       output: storyDocsOutputSchema,
-      // Reads the entry before `Object.hasOwn`, which is not tracked, so a subscription made before
-      // the entry is stored still updates once it is.
-      handler: (input, ctx) => {
-        const entry = ctx.self.state.components[input.id];
-        return Object.hasOwn(ctx.self.state.components, input.id) ? entry : undefined;
-      },
+      handler: (input, ctx) => readComponent(ctx.self.state.components, input.id),
       load: async (input, ctx) => {
         await ctx.self.commands.extractStoryDocs(input);
       },

@@ -454,6 +454,8 @@ export const baseTemplates = {
     name: 'Astro Latest (Vite | TypeScript)',
     script:
       'npx create-astro@latest {{beforeDir}} --template minimal --no-install --no-git --no-ai --skip-houston --yes',
+    // `init` installs the framework's `next` dist-tag during a Storybook prerelease.
+    minAgeGateExemptions: ['@storybook-astro/*'],
     expected: {
       framework: '@storybook-astro/framework',
       renderer: '@storybook-astro/renderer',

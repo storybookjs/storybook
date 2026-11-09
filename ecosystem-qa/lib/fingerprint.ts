@@ -2,30 +2,29 @@ import { createHash } from 'node:crypto';
 
 import type { Finding, RepoClass } from './types.ts';
 
-// A path keeps the part that names what failed (the package under node_modules, or the last two
-// segments of a project file) and loses the checkout prefix, which differs per machine.
-const lastTwoSegments = (path: string): string =>
-  path.split('/').filter(Boolean).slice(-2).join('/');
+// A path outside node_modules keeps only its file name: anything above it can be the checkout
+// directory, whose name differs per repo, sandbox and machine.
+const fileName = (path: string): string =>
+  path
+    .split('/')
+    .filter((segment) => segment !== '' && segment !== '.' && segment !== '..')
+    .at(-1) ?? path;
 
-const SIGNATURE_RULES: readonly (readonly [RegExp, string | ((match: string) => string)])[] = [
-  [/\\/g, '/'],
-  [/\b(?:https?|file):\/\/\S+/g, '<url>'],
-  [/\S*?(node_modules\/\S*)/g, '$1'],
-  [/(?:^|(?<=[\s'"`(=]))(?:[a-z]:\/|~\/|\.{1,2}\/|\/)\S*/g, lastTwoSegments],
-  [/\bv?\d+\.\d+(?:\.\d+)?(?:-[0-9a-z.-]+)?\b/g, '<version>'],
-  [/:\d+(?::\d+)?\b/g, ''],
-  [/\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{7,}\b/g, '<hash>'],
-  [/\s+/g, ' '],
+const SIGNATURE_RULES: readonly ((text: string) => string)[] = [
+  (text) => text.replace(/\\/g, '/'),
+  (text) => text.replace(/\b(?:https?|file):\/\/\S+/g, '<url>'),
+  // From the last node_modules/ on, which drops pnpm's .pnpm/<name>@<version>_<peers> store
+  // directory and Yarn PnP cache prefixes along with the checkout.
+  (text) => text.replace(/[^\s'"`]*node_modules\/(\S*)/g, 'node_modules/$1'),
+  (text) => text.replace(/(?:^|(?<=[\s'"`(=]))(?:[a-z]:\/|~\/|\.{1,2}\/|\/)\S*/g, fileName),
+  (text) => text.replace(/\bv?\d+\.\d+(?:\.\d+)?(?:-[0-9a-z.-]+)?\b/g, '<version>'),
+  (text) => text.replace(/:\d+(?::\d+)?\b/g, ''),
+  (text) => text.replace(/\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{7,}\b/g, '<hash>'),
+  (text) => text.replace(/\s+/g, ' '),
 ];
 
 export const normalizeErrorSignature = (text: string): string =>
-  SIGNATURE_RULES.reduce(
-    (current, [pattern, replacement]) =>
-      typeof replacement === 'string'
-        ? current.replace(pattern, replacement)
-        : current.replace(pattern, replacement),
-    text.toLowerCase()
-  ).trim();
+  SIGNATURE_RULES.reduce((current, rule) => rule(current), text.toLowerCase()).trim();
 
 // The Storybook version is never an input, so one bug keeps its fingerprint across prereleases.
 export const fingerprint = (finding: Finding, repoClass: RepoClass): string =>

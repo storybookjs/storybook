@@ -30,12 +30,45 @@ describe('normalizeErrorSignature', () => {
     expect(windows).toBe(linux);
   });
 
-  it('keeps the last two segments of a project file path', () => {
+  it('keeps only the file name of a project file path', () => {
     expect(
       normalizeErrorSignature(
         'Failed to load /home/agent/workspace/.storybook/main.ts and ./src/Button.stories.tsx:12:4 and D:\\a\\x\\vite.config.ts'
       )
-    ).toBe('failed to load .storybook/main.ts and src/button.stories.tsx and x/vite.config.ts');
+    ).toBe('failed to load main.ts and button.stories.tsx and vite.config.ts');
+  });
+
+  it('gives a root config file the same signature in every checkout directory', () => {
+    expect(
+      normalizeErrorSignature('Cannot parse /home/runner/work/qa/work/repo-a/vite.config.ts')
+    ).toBe(normalizeErrorSignature('Cannot parse /home/agent/workspace/vite.config.ts'));
+    expect(normalizeErrorSignature('Cannot parse C:\\qa\\work\\repo-b\\vite.config.ts')).toBe(
+      'cannot parse vite.config.ts'
+    );
+  });
+
+  it('keeps the path after the last node_modules, so pnpm peer versions stay out', () => {
+    const pnpmPath = (peers: string) =>
+      normalizeErrorSignature(
+        `at /w/node_modules/.pnpm/@storybook+react@11.0.0-beta.0_${peers}/node_modules/@storybook/react/dist/index.js:4:2`
+      );
+
+    expect(pnpmPath('react@18.2.0_typescript@5.3.3')).toBe(
+      'at node_modules/@storybook/react/dist/index.js'
+    );
+    expect(pnpmPath('react@19.1.0_typescript@5.9.2')).toBe(
+      pnpmPath('react@18.2.0_typescript@5.3.3')
+    );
+  });
+
+  it('keeps quotes around a node_modules path and leaves a lone slash alone', () => {
+    expect(
+      normalizeErrorSignature(
+        '"css" is not exported by "/w/node_modules/storybook/dist/theming/create.js". expected a / b and ./ here'
+      )
+    ).toBe(
+      '"css" is not exported by "node_modules/storybook/dist/theming/create.js". expected a / b and ./ here'
+    );
   });
 
   it('tells the same message apart when it names different files', () => {

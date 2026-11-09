@@ -25,15 +25,7 @@ tsconfig.dts-tmp-*.json
 
 .env.local
 
-# https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
-
-# For sandboxes
+# Yarn projects such as test-storybooks/server-kitchen-sink and generated sandboxes
 /**/.yarn/*
 !/**/.yarn/patches
 !/**/.yarn/plugins

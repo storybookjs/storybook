@@ -188,14 +188,14 @@ Storybook is organized as a monorepo. Useful scripts include:
 
 #### `pnpm lint`
 
-> boolean check if code conforms to linting rules - uses remark & eslint
+> boolean check if code conforms to linting rules - uses oxlint
 
 - `pnpm --dir code lint:js` - will check js
 - `pnpm --dir code lint:js --fix` - will automatically fix js
 
 #### `pnpm test`
 
-> boolean check if unit tests all pass - uses jest
+> boolean check if unit tests all pass - uses Vitest
 
 - `pnpm test:watch --project core` - will run core tests in watch-mode
 

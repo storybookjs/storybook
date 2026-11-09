@@ -132,6 +132,15 @@ Sometimes it is desired to pick pull requests back to `main` even if they are no
 
 The preparation workflow sequentially cherry-picks each patch pull request to its branch. If this cherry-picking fails due to conflicts or other reasons, it is ignored and the next pull request is processed. All failing cherry-picks are listed in the release pull request's description, for the Releaser to manually cherry-pick during the release process. This problem occurs more often when `main` and `next` diverge, i.e. the longer it has been since a stable major/minor release.
 
+Until a release brings pnpm to `main`, `main` still uses Yarn while `next` uses pnpm. `main` has no `pnpm-lock.yaml` or `pnpm-workspace.yaml`, so a patch pull request that changes either file fails to cherry-pick with a modify/delete conflict, and the release pull request lists it for a manual cherry-pick. To pick it on the `version-patch-from-<CURRENT-STABLE-VERSION>` branch:
+
+1. Run the `git cherry-pick -m1 -x <merge-commit>` command that the release pull request lists.
+2. Drop the pnpm files from the pick with `git rm pnpm-lock.yaml`, and `git rm pnpm-workspace.yaml` if the conflict lists it too.
+3. If the pull request added or changed an entry in `overrides` in `pnpm-workspace.yaml`, add it to `resolutions` in the root `package.json`. Yarn writes `parent>child` as `parent/child` and `pkg@range` as `pkg@npm:range`.
+4. Run `yarn install` from the repository root to update `yarn.lock`, stage `yarn.lock` and the root `package.json`, and run `git cherry-pick --continue`.
+
+Keep pull requests that change the repository's tooling (`scripts/`, `.github/` or CI config) at "**patch:no**" until `main` uses pnpm. They rely on pnpm, so picking them breaks CI on `main`.
+
 Similar to the non-patch release flow, the preparation workflow for patches will create a new branch from `main` called `version-patch-from-<CURRENT-STABLE-VERSION>`, and open a pull request that targets `latest-release`. When the pull request is merged by the Releaser, the [publish workflow](#publishing) will eventually merge `latest-release` into `main`.
 
 Here is an example of a workflow where a feature and two bug fixes have been merged to `next`. Only the bug fixes have the "**patch:yes**" label, so only those two go into the new `7.0.19` release. Note that it is the merge commits to `next` that are cherry-picked, not the commits on the bugfix branches.
@@ -542,7 +551,7 @@ This is the default patch release scenario, which cherry picks patches to `main`
 
 ### Patch releases to earlier versions - subset of `7.1.0-alpha.13` -> `6.5.14`
 
-This happens so rarely on a case by case basis, so this is a completely manual process. The Releaser will find the git tag that matches the patch to bump, eg. `v6.5.14`, check it out, make the necessary changes and follow [the manual release process](#releasing-locally-in-case-of-emergency-🚨).
+This happens so rarely on a case by case basis, so this is a completely manual process. The Releaser will find the git tag that matches the patch to bump, eg. `v6.5.14`, check it out, make the necessary changes and follow [the process for releasing changes to older minor versions](#releasing-changes-to-older-minor-versions).
 
 ### Prerelease of upcoming patch release - `7.0.20` -> `7.0.21-alpha.0`
 
@@ -570,7 +579,7 @@ When in doubt ask the core team for their input.
 
 The whole process is based on [GitHub Action workflows](../.github/workflows/) and [scripts](../scripts/release/), so you can modify them if you know what you're doing.
 
-The short answer to "how", is to make changes as a regular pull request that is also patched back to `main`.
+The short answer to "how", is to make changes as a regular pull request that is also patched back to `main`. Until a release brings pnpm to `main`, tooling pull requests stay at "**patch:no**" instead, as explained in [Patch Releases](#patch-releases).
 
 <details>
   <summary>There's a longer answer too, but it's pretty confusing</summary>

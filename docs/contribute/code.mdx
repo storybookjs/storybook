@@ -10,7 +10,7 @@ Contribute a new feature or bug fix to [Storybook's monorepo](https://github.com
 
 ## Prerequisites
 
-- Ensure you have Node version 18 installed (suggestion: v18.16.0).
+- Use the Node.js version pinned in the repository's `.nvmrc` file. A version manager such as [fnm](https://github.com/Schniz/fnm) or [nvm](https://github.com/nvm-sh/nvm) can pick it up for you.
 - If you're working with Windows, all commands should be run in a terminal with administrator privileges.
 
 ## Initial setup
@@ -28,6 +28,8 @@ Storybook uses the [pnpm](https://pnpm.io/) package manager. Install pnpm 10 or 
 npm install --global pnpm@latest-10
 pnpm install
 ```
+
+If `pnpm install` stops with `This repository uses pnpm <version>`, check `pnpm --version` outside the repository. If it prints a version below 10, an older pnpm comes first on your `PATH`, for example one in `$PNPM_HOME` or one from Homebrew. Update that copy outside the repository, with `pnpm add --global pnpm@latest-10` or `brew upgrade pnpm`, or remove it.
 
 ## Run your first sandbox
 
@@ -205,7 +207,7 @@ If you are having trouble reproducing, try rerunning the command with the `--no-
 
 We encourage bug reports to include reproductions. In the same way that it's possible to [develop interactively](#start-developing) against example projects in the monorepo, it's also possible to develop against a reproduction repository.
 
-To do so, run the following command in the root of the monorepo:
+To do so, run the following command in the `code` directory of the monorepo:
 
 ```shell
 npx storybook@next link https://github.com/your-username/your-project.git
@@ -221,7 +223,9 @@ npx storybook@next link --local /path/to/local-repro-directory
 
 <Callout variant="info" icon="💡">
 
-The `storybook link` command relies on [Yarn linking](https://yarnpkg.com/cli/link/) under the hood. It requires your local reproduction to be using [Yarn 2 or higher](https://yarnpkg.com/) as well, which is the case if you've already enabled it with the [`storybook sandbox`](./how-to-reproduce.mdx) command per our contribution guidelines. The process will fail if you're trying to link a non-Yarn 2 project.
+The `storybook link` command relies on [Yarn linking](https://yarnpkg.com/cli/link/) under the hood, so your reproduction must use [Yarn 2 or higher](https://yarnpkg.com/), even though the Storybook monorepo itself uses pnpm. Reproductions created with the [`storybook sandbox`](./how-to-reproduce.mdx) command already do. The process will fail if you're trying to link a project that doesn't use Yarn 2 or higher.
+
+Unlike a sandbox, a linked reproduction uses Yarn `portal:` links into the `code` directory, so rebuilt packages reach it without reinstalling.
 
 </Callout>
 
@@ -269,6 +273,8 @@ pnpm task --task dev --template <template-key> --start-from=install
 
 The first time, a template with `inDevelopment` is generated locally, which starts the local registry. The sandbox itself is then linked like any other, unless you pass `--no-link`.
 
+Generating the template needs Yarn as well as pnpm, because published sandboxes are Yarn projects. `yarn` must run the version that `PUBLISHED_SANDBOX_PACKAGE_MANAGER` pins in `scripts/sandbox/utils/yarn.ts`. To get that version, run `corepack enable yarn` once, or run `bash .github/actions/setup-node-and-install/package-managers/install.sh yarn` from the repository root, which installs that release with `npm install --global`.
+
 Once the PR is merged, the template will be generated on a nightly cadence and you can remove the `inDevelopment` flag and the sandbox will pull the code from our templates repository.
 
 ## Troubleshooting
@@ -277,6 +283,22 @@ Once the PR is merged, the template will be generated on a nightly cadence and y
 <summary><code>pnpm build --all --watch</code> watches everything but is resource-intensive</summary>
 
 It's troublesome to know which packages you'll change ahead of time, and watching them can be highly demanding, even on modern machines. If you're working on a powerful enough machine, you can use `pnpm build --all --watch` instead of `pnpm build`.
+
+</details>
+
+<details>
+<summary>My branch or checkout is from before the switch to pnpm</summary>
+
+Storybook's own tooling moved from Yarn to pnpm. If you installed your checkout with Yarn, delete every `node_modules` folder before your first `pnpm install`, for example with `find . -name node_modules -type d -prune -exec rm -rf {} +` from the repository root. Packages that Yarn hoisted can otherwise stay behind and hide missing dependencies that CI catches. A sandbox in `../storybook-sandboxes` that was created with Yarn pins Yarn in its `package.json`, so the pnpm commands that `pnpm task` runs in it fail with `This project is configured to use yarn`. Delete the sandbox folder and create it again with `pnpm task --task dev --template <your template> --start-from=auto`.
+
+When you merge `next` into a branch from before the switch:
+
+- If Git reports a conflict on `yarn.lock`, delete the file with `git rm yarn.lock`. Also delete any leftover `.yarn/` folder and `.yarnrc.yml`.
+- Move any entries you added to `resolutions` in the root `package.json` to `overrides` in `pnpm-workspace.yaml`. pnpm selectors use `parent>child` instead of `parent/child` and `pkg@range` instead of `pkg@npm:range` (see [`RESOLUTIONS.md`](https://github.com/storybookjs/storybook/blob/next/RESOLUTIONS.md)).
+- Recreate any patch you added under `.yarn/patches` with `pnpm patch <pkg>@<version>` and `pnpm patch-commit <dir>`, which adds it to `patches/` and `patchedDependencies`.
+- Run `pnpm install` from the root and commit the updated `pnpm-lock.yaml`. CI installs with `--frozen-lockfile`, so it fails when the lockfile does not match the `package.json` files. If the dedupe check fails, run `pnpm dedupe` and commit the result.
+
+If `pnpm-lock.yaml` itself has a merge conflict, run `pnpm install`, which resolves the conflict markers, then `pnpm dedupe`.
 
 </details>
 

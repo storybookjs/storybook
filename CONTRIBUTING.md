@@ -44,10 +44,10 @@ You can use any version manager to install the correct version of Node.js. We re
   ```shell
   # Check which version you're using
   node --version
-  # node version manager
-  nvm use 22
-  # pnpm
-  pnpm env use --global 22
+  # fnm (reads .nvmrc)
+  fnm use
+  # nvm (reads .nvmrc)
+  nvm use
   ```
 
 2. Install [fnm](https://github.com/Schniz/fnm/tree/master?tab=readme-ov-file#installation) and adjust your shell configuration to include the following parameters: `fnm env`, `use-on-cd`, and `version-file-strategy recursive`.
@@ -106,18 +106,15 @@ Here's a highlight of notable directories and files:
 │   ├── frameworks               # Different framework-bundler versions of Storybook
 │   ├── lib                      # CLI and plugins
 │   ├── node_modules
-│   ├── nx.json
 │   ├── package.json
 │   ├── playwright.config.ts
 │   ├── presets                  # Preset packages
-│   ├── .oxfmtrc.json
 │   ├── renderers                # Storybook renderers for different frameworks
 │   ├── sandbox                  # Sandboxes for Bug Reproductions or experimentation
 │   ├── tsconfig.json
 │   ├── vitest-setup.ts
 │   ├── vitest.config.ts
-│   ├── vitest.helpers.ts
-│   └── vitest.workspace.ts
+│   └── vitest.helpers.ts
 ├── codecov.yml
 ├── dependabot.yml
 ├── docs                         # Documentation
@@ -140,16 +137,18 @@ Here's a highlight of notable directories and files:
 │   ├── writing-stories
 │   └── writing-tests
 ├── node_modules
+├── nx.json
 ├── package.json                      # Root of the pnpm monorepo
 ├── .oxfmtrc.json
 ├── patches                           # Patches for dependencies (pnpm patch)
 ├── pnpm-lock.yaml
 ├── pnpm-workspace.yaml               # Workspace packages, overrides and other pnpm settings
 ├── scripts                           # Build and Helper Scripts
-└── test-storybooks
-    ├── external-docs
-    ├── portable-stories-kitchen-sink
-    └── server-kitchen-sink
+├── test-storybooks
+│   ├── mcp
+│   ├── portable-stories-kitchen-sink
+│   └── server-kitchen-sink
+└── vitest.config.ts
 ```
 
 ### Fork the repository 
@@ -172,6 +171,8 @@ The repository uses the pnpm version pinned in the `packageManager` field of the
 
 If Corepack already provides pnpm, nothing changes; to use an npm-installed pnpm instead, run `corepack disable pnpm` first. If you work offline, install the exact version the `packageManager` field pins beforehand, so pnpm never needs to download it.
 
+To check which pnpm you run, run `pnpm --version` outside the repository. If it prints a version below 10, an older pnpm comes first on your `PATH`, for example one in `$PNPM_HOME` or one from Homebrew. Update that copy outside the repository, with `pnpm add --global pnpm@latest-10` or `brew upgrade pnpm`, or remove it.
+
 ```shell
 # Navigate to the root directory of the Storybook repository 
 cd path/to/your/storybook/fork 
@@ -192,21 +193,15 @@ If you want to make code changes to Storybook packages while running a sandbox, 
 
 For example, to build the `@storybook/react`, `storybook` itself, `@storybook/builder-vite`, and `@storybook/addon-docs` packages, you would run: 
 
-```shell 
-# Navigate to the code directory 
-cd path/to/your/storybook/fork/code 
+```shell
+# Navigate to the code directory
+cd path/to/your/storybook/fork/code
 
-# Build the specified packages in watch mode 
-pnpm build --watch react core-server api addon-docs 
+# Build the specified packages in watch mode
+pnpm build --watch react storybook builder-vite addon-docs
+```
 
 Most package names can be found after `@storybook/` in the published package.
-
-For instance, to build the `@storybook/react storybook @storybook/builder-vite @storybook/addon-docs` packages at the same time in watch mode:
-
-```shell 
-cd code
-pnpm build --watch react storybook builder-vite addon-docs 
-```
 
 2. If you are running the sandbox in "linked" mode (the default), a sandbox that is already running doesn't pick up the rebuilt packages: the sandbox installs a copy of each package from `code/` when a sandbox task starts. After a rebuild, stop the sandbox and start it again, which copies the latest build into it first: 
 
@@ -253,13 +248,9 @@ In fact you can filter on any job you wish, only running `vitest`, `e2e`, `vite`
 
 ## Troubleshooting 
 
-### The initialization process throws an error 
+### `pnpm install` stops with `This repository uses pnpm <version>`
 
-If you run `pnpm start` and encounter the following error, try rerunning `pnpm start` a second time: 
-
-```shell 
-> NX ENOENT: no such file or directory, open 'storybook/code/node_modules/nx/package.json' 
-```
+The install did not run the pnpm version that the `packageManager` field of the root `package.json` pins. Usually an older pnpm comes first on your `PATH`, for example one from Homebrew or in `$PNPM_HOME`. Run `which -a pnpm` to list every pnpm on your `PATH`, then update the old one outside the repository, with `pnpm add --global pnpm@latest-10` or `brew upgrade pnpm`, or remove it. Then run `pnpm install` again.
 
 ### Storybook doesn't detect changes in the codebase 
 
@@ -273,6 +264,23 @@ git clean -dx --dry-run
 
 By executing this command, you can see which untracked or ignored files and directories will be removed from your working directory if you run it with the `--force` flag. Before running the command with the `--force` flag, please commit any local changes you want to keep. Otherwise, they will be lost.
 
+### `pnpm install` tries to reach `localhost:6002`
+
+Publishing to the local registry, for example in a `pnpm task` run with `--no-link`, writes a temporary `.npmrc` at the repository root and deletes it when publishing ends. If you interrupt the publish, the file stays behind and points every `pnpm install` at the stopped local registry. Git ignores the file, so `git status` does not show it. Delete it.
+
+### My branch or checkout is from before the switch to pnpm
+
+Storybook's own tooling moved from Yarn to pnpm. If you installed your checkout with Yarn, delete every `node_modules` folder before your first `pnpm install`, for example with `find . -name node_modules -type d -prune -exec rm -rf {} +` from the repository root. Packages that Yarn hoisted can otherwise stay behind and hide missing dependencies that CI catches. A sandbox in `../storybook-sandboxes` that was created with Yarn pins Yarn in its `package.json`, so the pnpm commands that `pnpm task` runs in it fail with `This project is configured to use yarn`. Delete the sandbox folder and create it again with `pnpm task --task dev --template <your template> --start-from=auto`.
+
+When you merge `next` into a branch from before the switch:
+
+- If Git reports a conflict on `yarn.lock`, delete the file with `git rm yarn.lock`. Also delete any leftover `.yarn/` folder and `.yarnrc.yml`.
+- Move any entries you added to `resolutions` in the root `package.json` to `overrides` in `pnpm-workspace.yaml`. pnpm selectors use `parent>child` instead of `parent/child` and `pkg@range` instead of `pkg@npm:range` (see [RESOLUTIONS.md](./RESOLUTIONS.md)).
+- Recreate any patch you added under `.yarn/patches` with `pnpm patch <pkg>@<version>` and `pnpm patch-commit <dir>`, which adds it to `patches/` and `patchedDependencies`.
+- Run `pnpm install` from the root and commit the updated `pnpm-lock.yaml`. CI installs with `--frozen-lockfile`, so it fails when the lockfile does not match the `package.json` files. If the dedupe check fails, run `pnpm dedupe` and commit the result.
+
+If `pnpm-lock.yaml` itself has a merge conflict, run `pnpm install`, which resolves the conflict markers, then `pnpm dedupe`.
+
 ## Contributing to Storybook 
 
-For further advice on contributing, please refer to our [NEW contributing guide on the Storybook website](https://storybook.js.org/docs/contribute).
+For further advice on contributing, please refer to our [contributing guide](https://github.com/storybookjs/storybook/blob/next/docs/contribute/index.mdx).

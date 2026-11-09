@@ -1,6 +1,6 @@
-# Resolutions and Exact versions
+# Overrides and exact versions
 
-This file keeps track of any overrides specified in `pnpm-workspace.yaml` and any exact versions specified in any `package.json` file. Overrides are used to specify a specific version of a package to be used, even if a different version is specified as a dependency of another package.
+This file explains overrides in `pnpm-workspace.yaml` and exact versions in `package.json` files that need more than a line of explanation. A short reason for an override goes in a YAML comment above it in `pnpm-workspace.yaml`. Overrides are used to specify a specific version of a package to be used, even if a different version is specified as a dependency of another package.
 
 The repository's overrides live in the `overrides` field of the root `pnpm-workspace.yaml`, which replaced the `resolutions` field of the root `package.json` that Yarn used. Each key selects the dependencies that an override applies to:
 
@@ -8,7 +8,9 @@ The repository's overrides live in the `overrides` field of the root `pnpm-works
 - `pkg@range` only overrides dependencies on `pkg` whose requested range falls within `range`, e.g. `dom-accessibility-api@^0.5.9`.
 - `parent>child` only overrides `child` where `parent` depends on it, e.g. `react-joyride>type-fest`. The parent can be narrowed to a version or range as well, e.g. `polka@1.0.0-next.28>@polka/url`.
 
-An override with the value `-` removes the dependency instead of replacing its version, e.g. `'@angular/build>vitest': '-'`. Patched packages are listed under `patchedDependencies` in the same file, not under `overrides`; the patches live in `patches/` and are created with `pnpm patch <pkg>@<version>` followed by `pnpm patch-commit <dir>`.
+An override with the value `-` removes the dependency instead of replacing its version, e.g. `'@angular/build>vitest': '-'`. When you add, rename or remove an override key, also update `EXISTING_RESOLUTIONS` in `scripts/ecosystem-ci/existing-resolutions.js`. Ecosystem CI copies every override that is not in that set into its sandboxes, and `existing-resolutions.test.ts` fails until the two match.
+
+Patched packages are listed under `patchedDependencies` in the same file, not under `overrides`; the patches live in `patches/` and are created with `pnpm patch <pkg>@<version>` followed by `pnpm patch-commit <dir>`. Each `patchedDependencies` key pins an exact version, and pnpm fails the install with `ERR_PNPM_UNUSED_PATCH` when a key no longer matches an installed version. So when you upgrade a patched package, move its patch in the same change. Remove the old key from `pnpm-workspace.yaml` before you install the new version: the install fails while the old key is unused, and `pnpm patch` only finds versions that are in `pnpm-lock.yaml`. Then run `pnpm patch <pkg>@<new version>`, reapply the changes from the old patch file, run `pnpm patch-commit <dir>`, and delete the old file from `patches/`. If the upgrade makes the patch unnecessary, remove the key and the file instead.
 
 ## path/to/package.json
 

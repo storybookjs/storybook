@@ -11,18 +11,13 @@ This Storybook repository uses Vitest as the test runner. Here are the key comma
 
 ### Test Directory Structure
 
-- Tests live under `code/` and `scripts/`
+- Tests live under `code/`, `scripts/` and `agent-eval/`
 - Vitest configuration: root `vitest.config.ts` (projects)
 - Test files typically follow the pattern `*.test.ts`, `*.test.tsx`, `*.spec.ts`, or `*.spec.tsx`
 
 ### Running Tests in Cursor
 
-1. Use Cmd+Shift+P (or Ctrl+Shift+P) and search for "Tasks: Run Task"
-2. Select from the available test tasks:
-   - "Run All Tests" - Runs all tests
-   - "Run Test (Watch Mode)" - Runs tests in watch mode
-   - "Run Focused Test" - Prompts for test name/pattern to run specific tests
-   - "Run Focused Test (Watch Mode)" - Runs specific tests in watch mode
+There are no predefined editor tasks. Run the commands under "Test Scripts" (`pnpm test <test-name>`, `pnpm test:watch <test-name>`) from the repository root in the integrated terminal.
 
 ### Vitest Configuration
 

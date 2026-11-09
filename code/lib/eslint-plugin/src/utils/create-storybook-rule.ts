@@ -10,7 +10,8 @@ export function createStorybookRule<
 >({
   create,
   meta,
-  ...remainingConfig
+  name,
+  defaultOptions,
 }: Readonly<{
   name: string;
   meta: StorybookRuleMeta<TMessageIds>;
@@ -21,18 +22,18 @@ export function createStorybookRule<
   ) => TRuleListener;
 }>): StorybookRule<TMessageIds, TOptions> {
   return {
-    name: remainingConfig.name,
+    name,
     meta: {
       ...meta,
       docs: {
         ...meta.docs!,
-        url: docsUrl(remainingConfig.name),
+        url: docsUrl(name),
       },
-      defaultOptions: remainingConfig.defaultOptions,
+      defaultOptions,
     },
-    defaultOptions: remainingConfig.defaultOptions,
+    defaultOptions,
     create(context: Readonly<TSESLint.RuleContext<TMessageIds, TOptions>>) {
-      const options = remainingConfig.defaultOptions.map(
+      const options = defaultOptions.map(
         (option, index) => context.options[index] ?? option
       ) as unknown as TOptions;
       return create(context, options);

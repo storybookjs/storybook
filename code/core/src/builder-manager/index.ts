@@ -1,11 +1,11 @@
-import { cp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 
 import { stringifyProcessEnvs } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { resolveModulePath } from 'exsolve';
-import { join, parse } from 'pathe';
+import { dirname, extname, join } from 'pathe';
 import sirv from 'sirv';
 
 import { globalsModuleInfoMap } from '../manager/globals/globals-module-info.ts';
@@ -28,6 +28,30 @@ import { getTemplatePath, renderHTML } from './utils/template.ts';
 export { BROWSER_TARGETS, NODE_TARGET } from '../shared/constants/environments-support.ts';
 
 const CORE_DIR_ORIGIN = join(resolvePackageDir('storybook'), 'dist/manager');
+
+// The published `dist/manager` is not minified, so it is minified here for the static build.
+async function copyMinifiedManagerFiles(target: string) {
+  const { transform } = await import('esbuild');
+  const files = (await readdir(CORE_DIR_ORIGIN, { recursive: true })).filter(
+    (file) => extname(file) === '.js'
+  );
+
+  await Promise.all(
+    files.map(async (file) => {
+      const { code } = await transform(await readFile(join(CORE_DIR_ORIGIN, file), 'utf-8'), {
+        format: 'esm',
+        minify: true,
+        // `StorybookError` derives its name from `constructor.name`
+        keepNames: true,
+        target: BROWSER_TARGETS,
+        supported: SUPPORTED_FEATURES,
+      });
+      const outputFile = join(target, file);
+      await mkdir(dirname(outputFile), { recursive: true });
+      await writeFile(outputFile, code);
+    })
+  );
+}
 
 const isRootPath = /^\/($|\?)/;
 let compilation: Compilation;
@@ -283,16 +307,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
 
   yield;
 
-  const managerFiles = cp(CORE_DIR_ORIGIN, coreDirTarget, {
-    filter: (src) => {
-      const { ext } = parse(src);
-      if (ext) {
-        return ext === '.js';
-      }
-      return true;
-    },
-    recursive: true,
-  });
+  const managerFiles = copyMinifiedManagerFiles(coreDirTarget);
   const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles);
 
   // Build additional global values

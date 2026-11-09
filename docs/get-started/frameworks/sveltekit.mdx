@@ -111,24 +111,30 @@ The default values are as follows:
 
 ```ts
 // Default values of $app/state
-page.url = new URL(window.location.origin); // The origin of the Storybook preview
-page.params = {};
-page.route = { id: null };
-page.status = -1;
-page.error = null;
-page.data = {};
-page.form = null;
-page.state = {};
-
-navigating.from = null;
-navigating.to = null;
-navigating.type = null;
-navigating.willUnload = null;
-navigating.delta = null;
-navigating.complete = null;
-
-updated.current = false;
-updated.check = fn(() => Promise.resolve(updated.current));
+{
+  page: {
+    url: new URL(window.location.origin), // The origin of the Storybook preview
+    params: {},
+    route: { id: null },
+    status: -1,
+    error: null,
+    data: {},
+    form: null,
+    state: {},
+  },
+  navigating: {
+    from: null,
+    to: null,
+    type: null,
+    willUnload: null,
+    delta: null,
+    complete: null,
+  },
+  updated: {
+    current: false,
+    check: fn(() => Promise.resolve(updated.current)),
+  },
+}
 ```
 
 <Callout variant="info">
@@ -247,7 +253,7 @@ The `@storybook/sveltekit` package exports two modules that enable you to [mock]
 
 #### `@storybook/sveltekit/forms.mock`
 
-Type: `typeof import('$app/forms') & { formAction }`
+Type: [`typeof import('$app/forms')`](https://svelte.dev/docs/kit/$app-forms) `& { formAction }`
 
 This module exports the mocked implementations of the `$app/forms` module's exports, and `formAction`. Storybook uses it in place of `$app/forms`, so `import { applyAction } from '$app/forms'` in a story gets the same mock function as the component.
 
@@ -261,7 +267,7 @@ Called instead of the server when a form with `use:enhance` is submitted. The [`
 
 #### `@storybook/sveltekit/navigation.mock`
 
-Type: `typeof import('$app/navigation') & { link, setAfterNavigate }`
+Type: [`typeof import('$app/navigation')`](https://svelte.dev/docs/kit/$app-navigation) `& { link, setAfterNavigate }`
 
 This module exports the mocked implementations of the `$app/navigation` module's exports, `link` and `setAfterNavigate`. Storybook uses it in place of `$app/navigation`, so `import { goto } from '$app/navigation'` in a story gets the same mock function as the component.
 

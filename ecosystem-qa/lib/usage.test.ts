@@ -18,7 +18,34 @@ const assistant = (id: string, usage: Record<string, number>) => ({
 });
 
 describe('usageFromStream', () => {
-  it('counts each Claude call once, using the last copy of its usage', () => {
+  it("takes Claude's own totals and cost from the result line when the run finished", () => {
+    const file = streamFile([
+      assistant('msg_1', { input_tokens: 10, output_tokens: 50 }),
+      {
+        type: 'result',
+        model_usage_since_last_result: {
+          'claude-sonnet-5-5': {
+            inputTokens: 98,
+            outputTokens: 17438,
+            cacheReadInputTokens: 2294960,
+            cacheCreationInputTokens: 61711,
+            costUSD: 0.5583495,
+          },
+        },
+      },
+    ]);
+
+    expect(usageFromStream(file, 'claude', 'claude-sonnet-5-5')).toEqual({
+      inputTokens: 98,
+      outputTokens: 17438,
+      cacheReadTokens: 2294960,
+      cacheWriteTokens: 61711,
+      usd: 0.5583495,
+      model: 'claude-sonnet-5-5',
+    });
+  });
+
+  it('counts each Claude call once, using the last copy of its usage, when no result line exists', () => {
     const file = streamFile([
       assistant('msg_1', {
         input_tokens: 10,
@@ -40,6 +67,7 @@ describe('usageFromStream', () => {
       }),
       { type: 'result', usage: { input_tokens: 999999, output_tokens: 999999 } },
     ]);
+    // A result line without per-model totals (an aborted run) must not be trusted.
 
     const usage = usageFromStream(file, 'claude', 'claude-sonnet-5-5');
 

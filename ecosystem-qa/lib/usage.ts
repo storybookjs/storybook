@@ -29,7 +29,37 @@ const parseLine = (line: string): Record<string, any> | undefined => {
   }
 };
 
-// Claude Code repeats a call's usage on every stream line split from that call, and the last copy is final.
+interface ClaudeTotals extends Tokens {
+  usd: number;
+}
+
+// Claude Code's final `result` line carries the run's totals and its own cost figure per model.
+// It is the authority; the per-message sum below undercounts output tokens on streamed replies.
+const claudeResultTotals = (lines: string[]): ClaudeTotals | undefined => {
+  const result = lines.map(parseLine).findLast((event) => event?.type === 'result');
+  const perModel = result?.model_usage_since_last_result;
+  if (!perModel || typeof perModel !== 'object') {
+    return undefined;
+  }
+  const totals: ClaudeTotals = {
+    inputTokens: 0,
+    outputTokens: 0,
+    cacheReadTokens: 0,
+    cacheWriteTokens: 0,
+    usd: 0,
+  };
+  for (const usage of Object.values(perModel) as Record<string, number>[]) {
+    totals.inputTokens += usage.inputTokens ?? 0;
+    totals.outputTokens += usage.outputTokens ?? 0;
+    totals.cacheReadTokens += usage.cacheReadInputTokens ?? 0;
+    totals.cacheWriteTokens += usage.cacheCreationInputTokens ?? 0;
+    totals.usd += usage.costUSD ?? 0;
+  }
+  return totals;
+};
+
+// Fallback when the run ended without a `result` line: Claude Code repeats a call's usage on every
+// stream line split from that call, and the last copy is final.
 const claudeTokens = (lines: string[]): Tokens => {
   const byMessage = new Map<string, Record<string, number>>();
   for (const event of lines.map(parseLine)) {
@@ -73,6 +103,11 @@ export const usageFromStream = (
   model: string
 ): RunResultFile['usage'] => {
   const lines = readFileSync(streamFile, 'utf8').split('\n');
+  const claudeTotals = engine === 'claude' ? claudeResultTotals(lines) : undefined;
+  if (claudeTotals) {
+    const { usd, ...tokens } = claudeTotals;
+    return { ...tokens, usd, model };
+  }
   const tokens = engine === 'claude' ? claudeTokens(lines) : codexTokens(lines);
   const pricing: Record<string, Price> = JSON.parse(readFileSync(PRICING_FILE, 'utf8'));
   const price = pricing[model];

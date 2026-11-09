@@ -16,7 +16,7 @@ import {
   type FilingOutcome,
   type FilingStep,
 } from './lib/filing.ts';
-import { gh, searchFingerprint } from './lib/github.ts';
+import { ghParse, ghText, searchFingerprint } from './lib/github.ts';
 import { Proposal } from './lib/schema.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
 import type { Proposal as ProposalType } from './lib/types.ts';
@@ -148,7 +148,7 @@ const runStep = (step: FilingStep): string | undefined => {
       pushEvidence(step);
       return undefined;
     case 'create-issue':
-      return gh(
+      return ghText([
         'issue',
         'create',
         '--repo',
@@ -159,29 +159,28 @@ const runStep = (step: FilingStep): string | undefined => {
         writeBody(step.body),
         '--milestone',
         step.milestone,
-        ...step.labels.flatMap((label) => ['--label', label])
-      ).trim();
+        ...step.labels.flatMap((label) => ['--label', label]),
+      ]).trim();
     case 'comment':
-      return gh(
+      return ghText([
         'issue',
         'comment',
         String(step.issue),
         '--repo',
         repo,
         '--body-file',
-        writeBody(step.body)
-      ).trim();
+        writeBody(step.body),
+      ]).trim();
   }
 };
 
-const CommentPages = z.array(z.array(z.object({ body: z.string() })));
+const pages = <T extends z.ZodType>(item: T, path: string): z.infer<T>[] =>
+  ghParse(z.array(z.array(item)), ['api', '--paginate', '--slurp', path]).flat();
 
 const commentsOn = (issue: number): string[] =>
-  CommentPages.parse(
-    JSON.parse(gh('api', '--paginate', '--slurp', `repos/${repo}/issues/${issue}/comments`))
-  )
-    .flat()
-    .map((comment) => comment.body);
+  pages(z.object({ body: z.string() }), `repos/${repo}/issues/${issue}/comments`).map(
+    (comment) => comment.body
+  );
 
 const firstLine = (error: unknown) =>
   (error instanceof Error ? error.message : String(error)).split('\n')[0]!.slice(0, 160);
@@ -207,20 +206,18 @@ const fileProposal = (proposal: ProposalType): FilingOutcome => {
   return { proposal, state: steps[0]?.kind === 'skip' ? 'skipped' : 'done', detail };
 };
 
-const names = <T extends string>(path: string, field: T): string[] =>
-  z
-    .array(z.array(z.record(z.literal(field), z.string())))
-    .parse(JSON.parse(gh('api', '--paginate', '--slurp', path)))
-    .flat()
-    .map((item) => item[field]);
-
 const checkPrerequisites = () => {
   if (!proposals.some((proposal) => proposal.kind === 'issue')) {
     return;
   }
   const problems = missingPrerequisites(proposals, {
-    openMilestones: names(`repos/${repo}/milestones?state=open`, 'title'),
-    labels: names(`repos/${repo}/labels`, 'name'),
+    openMilestones: pages(
+      z.object({ title: z.string() }),
+      `repos/${repo}/milestones?state=open`
+    ).map((milestone) => milestone.title),
+    labels: pages(z.object({ name: z.string() }), `repos/${repo}/labels`).map(
+      (label) => label.name
+    ),
   });
   if (problems.length > 0) {
     console.error(`Nothing was filed. In ${repo}: ${problems.join('; ')}.`);

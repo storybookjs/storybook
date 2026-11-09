@@ -13,6 +13,17 @@ catalog.json ──> run.ts ──> results/<repo>/<os>/<engine>/result.json ─
 The checks the agent must report live in `checks.ts`.
 The same list renders into the prompt and validates the agent's answer, so the agent cannot invent a check id.
 
+## Why a third agent harness
+
+The repo already runs agents in two places.
+[`scripts/eval/`](../scripts/eval/README.md) grades how well an agent sets up Storybook and writes stories in benchmark repos, running the agent CLI in a worktree on the host and publishing draft PRs.
+[`agent-eval/`](../agent-eval/README.md) asserts that agents follow this repo's Storybook workflows on fixture projects, in a Vercel Sandbox or Docker through `@vercel/agent-eval`.
+Neither fits an upgrade sweep over real projects.
+The sweep has to cover Windows, which a Linux container cannot, so there the agent runs on the GitHub runner host.
+A local run of an untrusted repo needs a native sandbox, bwrap on Linux or seatbelt on macOS, which Sandcastle provides next to Docker.
+The answer is a schema-checked JSON object, and Sandcastle sends a malformed one back to the agent up to twice.
+Each run keeps the agent session, so a finding can be reopened with `claude --resume`.
+
 ## Run it locally
 
 Install from the repo root with `yarn install`.

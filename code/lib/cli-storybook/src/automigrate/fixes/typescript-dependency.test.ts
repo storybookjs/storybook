@@ -166,7 +166,10 @@ describe('typescript-native-api', () => {
       storybookVersion: '11.0.0',
     } as unknown as Omit<RunOptions<{ version: string; dependency: string }>, 'files'>);
 
-    expect(packageManager.upgradeDeclaredDependency).toHaveBeenCalledWith('typescript@^7.1');
+    expect(packageManager.upgradeDeclaredDependency).toHaveBeenCalledWith(
+      'typescript@^7.1',
+      '7.0.2'
+    );
     expect(packageManager.addDependencies).not.toHaveBeenCalled();
   });
 });

@@ -297,10 +297,27 @@ describe('PNPMProxy catalogs', () => {
       JsPackageManager.packageJsonCache.clear();
       pnpmProxy.packageJsonPaths = [PACKAGE_JSON];
 
-      pnpmProxy.upgradeDeclaredDependency('typescript@^7.1');
+      pnpmProxy.upgradeDeclaredDependency('typescript@^7.1', '7.0.2');
 
       expect(writtenYaml()).toBe('catalog:\n  typescript: ^7.1\n');
       expect(vol.toJSON()[PACKAGE_JSON]).toContain('"typescript": "catalog:"');
+    });
+
+    it('leaves a catalog entry that the installed version does not satisfy alone', () => {
+      const ROOT_PACKAGE_JSON = '/root/package.json';
+      vol.fromJSON({
+        [WORKSPACE_YAML]: 'catalog:\n  typescript: ^6.0.3\n',
+        [ROOT_PACKAGE_JSON]: '{\n  "devDependencies": {\n    "typescript": "catalog:"\n  }\n}\n',
+        [PACKAGE_JSON]: '{\n  "devDependencies": {\n    "typescript": "~7.0.2"\n  }\n}\n',
+      });
+      JsPackageManager.packageJsonCache.clear();
+      pnpmProxy.packageJsonPaths = [PACKAGE_JSON, ROOT_PACKAGE_JSON];
+
+      pnpmProxy.upgradeDeclaredDependency('typescript@^7.1', '7.0.2');
+
+      expect(writtenYaml()).toBe('catalog:\n  typescript: ^6.0.3\n');
+      expect(vol.toJSON()[ROOT_PACKAGE_JSON]).toContain('"typescript": "catalog:"');
+      expect(vol.toJSON()[PACKAGE_JSON]).toContain('"typescript": "^7.1"');
     });
   });
 

@@ -18,10 +18,13 @@ const write = (path: string, packageJson: object) =>
 const read = (path: string) => JSON.parse(String(fs.readFileSync(path, 'utf8')));
 
 describe('upgradeDeclaredDependency', () => {
-  const create = (packageJsonPaths: string[]) => {
+  const create = (packageJsonPaths: string[], primary = packageJsonPaths[0]) => {
     // @ts-expect-error Ignore abstract class error
     const packageManager: JsPackageManager = new JsPackageManager({ cwd: resolve('/project') });
     packageManager.packageJsonPaths = packageJsonPaths;
+    Object.assign(packageManager, {
+      primaryPackageJson: JsPackageManager.getPackageJsonInfo(primary),
+    });
     return packageManager;
   };
 
@@ -37,11 +40,23 @@ describe('upgradeDeclaredDependency', () => {
     write(STORYBOOK, { devDependencies: { storybook: '^11.0.0' } });
     write(COMPONENTS, { dependencies: { typescript: '7.0.2' } });
 
-    create([STORYBOOK, ROOT, COMPONENTS]).upgradeDeclaredDependency('typescript@^7.1');
+    create([STORYBOOK, ROOT, COMPONENTS]).upgradeDeclaredDependency('typescript@^7.1', '7.0.2');
 
     expect(read(ROOT)).toEqual({ devDependencies: { typescript: '^7.1' } });
     expect(read(STORYBOOK)).toEqual({ devDependencies: { storybook: '^11.0.0' } });
     expect(read(COMPONENTS)).toEqual({ dependencies: { typescript: '^7.1' } });
+  });
+
+  it('leaves a declaration that the installed version does not satisfy alone', () => {
+    write(ROOT, { devDependencies: { typescript: '^6.0.3' } });
+    write(STORYBOOK, { devDependencies: { storybook: '^11.0.0', typescript: '~7.0.2' } });
+
+    create([STORYBOOK, ROOT]).upgradeDeclaredDependency('typescript@^7.1', '7.0.2');
+
+    expect(read(ROOT)).toEqual({ devDependencies: { typescript: '^6.0.3' } });
+    expect(read(STORYBOOK)).toEqual({
+      devDependencies: { storybook: '^11.0.0', typescript: '^7.1' },
+    });
   });
 
   it('leaves a peer dependency range alone', () => {
@@ -50,7 +65,7 @@ describe('upgradeDeclaredDependency', () => {
       peerDependencies: { typescript: '>=5.9' },
     });
 
-    create([COMPONENTS]).upgradeDeclaredDependency('typescript@^7.1');
+    create([COMPONENTS]).upgradeDeclaredDependency('typescript@^7.1', '7.0.2');
 
     expect(read(COMPONENTS)).toEqual({
       devDependencies: { typescript: '^7.1' },
@@ -58,11 +73,15 @@ describe('upgradeDeclaredDependency', () => {
     });
   });
 
-  it('does not add the dependency to a package.json without it', () => {
+  it('adds the dependency to the primary package.json when no package.json declares it', () => {
+    write(ROOT, { private: true });
     write(STORYBOOK, { devDependencies: { storybook: '^11.0.0' } });
 
-    create([STORYBOOK]).upgradeDeclaredDependency('typescript@^7.1');
+    create([STORYBOOK, ROOT]).upgradeDeclaredDependency('typescript@^7.1', '7.0.2');
 
-    expect(read(STORYBOOK)).toEqual({ devDependencies: { storybook: '^11.0.0' } });
+    expect(read(ROOT)).toEqual({ private: true });
+    expect(read(STORYBOOK)).toEqual({
+      devDependencies: { storybook: '^11.0.0', typescript: '^7.1' },
+    });
   });
 });

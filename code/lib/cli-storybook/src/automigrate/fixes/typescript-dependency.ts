@@ -84,7 +84,7 @@ export const typescriptNativeApi: Fix<{ version: string; dependency: string }> =
   },
 
   async run({ packageManager, result }) {
-    packageManager.upgradeDeclaredDependency(result.dependency);
+    packageManager.upgradeDeclaredDependency(result.dependency, result.version);
   },
 };
 

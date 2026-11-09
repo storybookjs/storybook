@@ -492,29 +492,35 @@ export abstract class JsPackageManager {
   }
 
   /**
-   * Set a dependency to a new version in every package.json of the project that declares it in
-   * `dependencies` or `devDependencies`, in the same field. A catalog reference stays in
-   * package.json, and the catalog gets the new version. The method does not run a package manager
-   * install.
+   * Upgrade a dependency that the project resolves to `installedVersion`. Every package.json that
+   * declares it in `dependencies` or `devDependencies` with a range that `installedVersion`
+   * satisfies gets the version in `specifier`, in the same field. A catalog reference stays in
+   * package.json, and the catalog gets the new version. When no package.json declares it that way,
+   * the primary package.json gets it in `devDependencies`. The method does not run a package
+   * manager install.
    *
    * @example
    *
    * ```ts
-   * upgradeDeclaredDependency('typescript@^7.1');
+   * upgradeDeclaredDependency('typescript@^7.1', '7.0.2');
    * ```
    */
-  upgradeDeclaredDependency(specifier: string): void {
+  upgradeDeclaredDependency(specifier: string, installedVersion: string): void {
     const [dependency, version = 'latest'] = getPackageDetails(specifier);
+    let declared = false;
     for (const packageJsonPath of this.packageJsonPaths) {
       const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
       let modified = false;
       for (const field of ['dependencies', 'devDependencies'] as const) {
-        const declared = packageJson[field];
-        if (!declared?.[dependency]) {
+        const declarations = packageJson[field];
+        const range =
+          declarations?.[dependency] && this.getDeclaredRange(dependency, declarations[dependency]);
+        if (!range || !satisfies(installedVersion, range)) {
           continue;
         }
-        if (this.writeCatalogUpgrades([specifier], declared).length > 0) {
-          declared[dependency] = version;
+        declared = true;
+        if (this.writeCatalogUpgrades([specifier], declarations).length > 0) {
+          declarations[dependency] = version;
           modified = true;
         }
       }
@@ -522,6 +528,19 @@ export abstract class JsPackageManager {
         this.writePackageJson(packageJson, dirname(packageJsonPath));
       }
     }
+    if (!declared) {
+      const { packageJson, operationDir } = this.primaryPackageJson;
+      packageJson.devDependencies = { ...packageJson.devDependencies, [dependency]: version };
+      this.writePackageJson(packageJson, operationDir);
+    }
+  }
+
+  /**
+   * The semver range that a package.json declaration stands for, or null when it has none.
+   * PNPMProxy resolves a catalog reference to the catalog's range.
+   */
+  protected getDeclaredRange(_packageName: string, declared: string): string | null {
+    return declared;
   }
 
   /**

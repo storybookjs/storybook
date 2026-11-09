@@ -244,9 +244,16 @@ export class PNPMProxy extends JsPackageManager {
     if (specifier) {
       return specifier;
     }
-    const catalogName = this.#getCatalogName(this.getAllDependencies()[packageName]);
+    const declared = this.getAllDependencies()[packageName];
+    return declared && this.#getCatalogName(declared) !== null
+      ? this.getDeclaredRange(packageName, declared)
+      : null;
+  }
+
+  protected override getDeclaredRange(packageName: string, declared: string): string | null {
+    const catalogName = this.#getCatalogName(declared);
     if (catalogName === null) {
-      return null;
+      return declared;
     }
     const workspace = this.#readWorkspaceYaml();
     if (!workspace) {

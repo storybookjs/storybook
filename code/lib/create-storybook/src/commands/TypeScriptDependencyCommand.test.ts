@@ -157,7 +157,10 @@ describe('TypeScriptDependencyCommand', () => {
       expect.anything()
     );
     expect(result).toBe('upgraded');
-    expect(packageManager.upgradeDeclaredDependency).toHaveBeenCalledWith('typescript@^7.1');
+    expect(packageManager.upgradeDeclaredDependency).toHaveBeenCalledWith(
+      'typescript@^7.1',
+      '7.0.2'
+    );
     expect(dependencies).toEqual([]);
     expect(devDependencies).toEqual([]);
     expect(logger.warn).not.toHaveBeenCalled();

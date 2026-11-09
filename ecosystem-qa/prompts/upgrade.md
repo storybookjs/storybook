@@ -29,7 +29,7 @@ Your job is to upgrade this project to Storybook {{VERSION}}, check that Storybo
 ## Step 1. Capture the baseline before you change anything
 
 1. Record the installed version: `node -p "require('storybook/package.json').version"`.
-2. Start the dev server with the project's own Storybook command and `--ci --exact-port --no-open -p 6006`. Wait until `http://localhost:6006/index.json` answers.
+2. Start the dev server with the project's own Storybook command and `--ci --exact-port -p 6006`. Wait until `http://localhost:6006/index.json` answers.
 3. Count the entries in `index.json` and note the first story id and the first docs id.
 4. Screenshot that story: `node {{TOOLS_DIR}}/shot.mjs "http://localhost:6006/iframe.html?id=<story-id>&viewMode=story" {{EVIDENCE_DIR}}/baseline-story.png`.
 5. Run any other probe from the checklist below that you can run cheaply on this version, and note its result. A probe you ran here is what makes a later failure a regression.
@@ -43,7 +43,7 @@ Your job is to upgrade this project to Storybook {{VERSION}}, check that Storybo
 4. Read `git diff` for every file the upgrade changed. Check that each automigration did what its message said.
 5. Note every non-Storybook package the upgrade bumped.
 6. Check the installed version again. It must equal {{VERSION}}.
-7. Commit the upgrade: `git add -A && git commit -q -m "qa: upgrade storybook to {{VERSION}}"`. If a commit hook fails or rejects the message, use `git -c core.hooksPath=/dev/null commit -q -m "..."` and say so in the check note.
+7. Commit the upgrade: `git add -A && git commit -q -m "qa: upgrade storybook to {{VERSION}}"`. If a commit hook fails or rejects the message, use `git -c core.hooksPath=/dev/null commit -q -m "..."` and say so in the check note. Commit messages are one line, with no trailers such as `Co-Authored-By`.
 
 ## Step 3. Apply the migration notes
 
@@ -86,18 +86,31 @@ Write a short note for every state except a plain `pass`.
 ## What is a finding
 
 Report a finding for each `fail` that is a Storybook problem.
+Storybook owns every package in the `@storybook/*` scope and every repository under the `storybookjs` organization, addons included.
+A package the upgrade itself installed or bumped is Storybook's responsibility, whoever publishes it.
+
+These are findings:
+
+- A breaking change from the migration guide that the automigration or the error message fails to point at. The finding is about the missing pointer.
+- A Storybook-owned package that the upgrade installed or bumped and that then fails to install, build or run.
+- A CLI flag, option or command that worked before the upgrade and errors after it, when the migration guide does not say it was removed.
+- An automigration message with a broken or missing link, for example a link that prints `undefined`.
+- `doctor` saying the project looks good while a Storybook-owned package in the project cannot load.
+
 These are not findings:
 
-- A breaking change documented in the migration guide, unless the automigration or the error message fails to point at it. In that case the finding is about the missing pointer.
+- A breaking change documented in the migration guide that the project's own code hits, when the automigration or the error message points at the guide.
 - Peer range warnings from third-party addons, unless they cause a real install, build or runtime failure.
+- A third-party addon that the migration guide already lists as broken on this version.
 - Problems caused by this harness: a missing global tool, a killed background process, a port taken by your own server, a read-only git config, a missing Playwright browser. Install a missing browser with `npx playwright install chromium` and say so in the note.
 
 Baseline rule: set `baseline` to `pass` or `fail` only when you ran the same probe in Step 1.
 Otherwise use `not-captured`.
 Use `not-applicable` only for a step the upgrade itself performs, such as the upgrade command or an automigration.
 
-Before you report a finding, reproduce it a second time.
+Before you report a finding that depends on timing or a running server, reproduce it a second time.
 A first-attempt flake is not a finding.
+Output the upgrade or doctor already printed is its own reproduction; the saved log is the evidence, no second upgrade is needed.
 
 ## How to write a finding
 

@@ -230,8 +230,9 @@ jobs:
       - name: Collect proposals
         env:
           GH_TOKEN: ${{ github.token }}
+          QA_VERSION: ${{ needs.plan.outputs.version }}
         run: >-
-          node ecosystem-qa/collect.ts --results ecosystem-qa/results
+          node ecosystem-qa/collect.ts --results ecosystem-qa/results --version "$QA_VERSION"
           --out ecosystem-qa/proposals.json --repo "$GITHUB_REPOSITORY"
 
       - name: Upload the proposals

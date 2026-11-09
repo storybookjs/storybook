@@ -26,6 +26,11 @@ export const Catalog = z
 
 const CheckId = z.enum(CHECK_IDS);
 
+// Evidence is named relative to the evidence directory, at most one directory deep, and no segment
+// may start with a dot, so a name can never climb out of that directory.
+const EvidenceName = z.string().regex(/^[\w-][\w.-]*(?:\/[\w-][\w.-]*)?$/);
+const Sha = z.string().regex(/^[0-9a-f]{40}(?:[0-9a-f]{24})?$/);
+
 export const CheckResult = z.strictObject({
   id: CheckId,
   label: z.string(),
@@ -42,9 +47,9 @@ export const Finding = z.strictObject({
   errorText: z.string().optional(),
   reproSteps: z.array(z.string().min(1)).min(1),
   evidence: z.strictObject({
-    png: z.string().optional(),
-    gif: z.string().optional(),
-    logs: z.array(z.string()),
+    png: EvidenceName.optional(),
+    gif: EvidenceName.optional(),
+    logs: z.array(EvidenceName),
   }),
   windowsOnly: z.boolean(),
   severityHint: z.enum(['S0', 'S1', 'S2', 'S3', 'S4']).optional(),
@@ -80,7 +85,7 @@ export const AgentOutput = z
     }
   });
 
-const RunRequestRecord = z.strictObject({
+export const RunRequestRecord = z.strictObject({
   entry: CatalogEntry,
   version: z.string(),
   engine: Engine,
@@ -88,15 +93,13 @@ const RunRequestRecord = z.strictObject({
   effort: Effort,
   sandbox: SandboxKind,
   os: Os,
-  cycleBranch: z.string(),
 });
 
 export const RunResultFile = z.strictObject({
   request: RunRequestRecord,
   storybookVersionInstalled: z.string().nullable(),
-  startSha: z.string(),
-  cycleBranch: z.string(),
-  headSha: z.string().nullable(),
+  startSha: Sha,
+  headSha: Sha.nullable(),
   checks: z.array(CheckResult),
   findings: z.array(Finding),
   usage: z.strictObject({
@@ -116,7 +119,6 @@ export const RunResultFile = z.strictObject({
     installSeconds: z.number().optional(),
   }),
   machine: z.strictObject({
-    os: Os,
     node: z.string(),
     freeDiskMbAtEnd: z.number().optional(),
     peakRssMb: z.number().optional(),
@@ -131,16 +133,55 @@ export const RunResultFile = z.strictObject({
   error: z.string().optional(),
 });
 
-export const Proposal = z.strictObject({
-  kind: z.enum(['issue', 'comment', 'suppressed']),
+const Source = z.strictObject({
+  resultPath: z.string(),
+  repo: z.string(),
+  os: Os,
+  engine: Engine,
+  model: z.string(),
+  sandbox: SandboxKind,
+  version: z.string(),
+});
+
+// The filer pushes with a write token to the repository, branch and head named here, so they come
+// from the catalog, the run request and the bundle header, never from what result.json says.
+export const Cycle = z.strictObject({
+  repo: CatalogEntry.shape.repo,
+  branch: z.string(),
+  startSha: Sha,
+  headSha: Sha.nullable(),
+  bundle: z.string().nullable(),
+});
+
+export const EvidenceFile = z.strictObject({ localPath: z.string(), name: EvidenceName });
+
+const ProposalBase = {
   fingerprint: z.string().regex(/^[0-9a-f]{16}$/),
-  existingIssue: z.number().int().optional(),
-  title: z.string(),
-  body: z.string(),
+  title: z.string().min(1),
+  sources: z.array(Source).min(1),
+};
+
+const ReportBase = {
+  ...ProposalBase,
   labels: z.array(z.string()),
   milestone: z.string(),
-  evidenceFiles: z.array(z.string()),
-  sources: z.array(
-    z.strictObject({ repo: z.string(), os: Os, engine: Engine, resultPath: z.string() })
-  ),
-});
+  finding: Finding,
+  cycle: Cycle,
+  runUrl: z.string(),
+};
+
+export const Proposal = z.discriminatedUnion('kind', [
+  z.strictObject({
+    kind: z.literal('issue'),
+    ...ReportBase,
+    system: z.string(),
+    assetDir: z.string(),
+    evidence: z.array(EvidenceFile),
+  }),
+  z.strictObject({ kind: z.literal('comment'), ...ReportBase, existingIssue: z.number().int() }),
+  z.strictObject({
+    kind: z.literal('suppressed'),
+    ...ProposalBase,
+    existingIssue: z.number().int(),
+  }),
+]);

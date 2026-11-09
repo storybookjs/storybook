@@ -22,6 +22,7 @@ import { z } from 'zod';
 
 import { renderChecklist } from './checks.ts';
 import { loadCatalogEntry } from './lib/catalog.ts';
+import { cycleBranchName, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
 import { AgentOutput, Effort, Engine, RunResultFile, SandboxKind } from './lib/schema.ts';
 import type { CatalogEntry, Os, Outcome, RunRequest } from './lib/types.ts';
@@ -101,9 +102,10 @@ const parseRequest = () => {
   if (!repo || !version || !out || !values.engine || !values.sandbox) {
     return fail('Missing one of --repo, --version, --engine, --sandbox, --out.');
   }
-  const [major, minor] = version.split('.');
-  if (!major || !minor) {
-    return fail(`--version "${version}" is not a Storybook version.`);
+  try {
+    versionLine(version);
+  } catch (error) {
+    return fail((error as Error).message);
   }
   const os = HOST_OS[process.platform] ?? fail(`Unsupported platform ${process.platform}.`);
   const isFake = values.engine === 'fake';
@@ -123,8 +125,6 @@ const parseRequest = () => {
     os,
     outDir,
     monorepoDir: resolve(QA_DIR, '..'),
-    // One branch per os and engine, so parallel runs of the same cycle never race on a push.
-    cycleBranch: `qa/sb-${major}.${minor}/${os}-${engine}`,
   };
   const cloneDir = resolve(values['clone-dir'] ?? join(outDir, '../../../work', entry.id));
   return { request, isFake, cloneDir, image: values.image };
@@ -219,6 +219,7 @@ const runSandcastle = async (
 ): Promise<Outcome> => {
   const agent = agentFor(request);
   const evidenceDir = join(request.outDir, 'evidence');
+  const cycleBranch = cycleBranchName(request.version, request.os, request.engine);
   const startSha = clone(request.entry, cloneDir);
   const { packageManager, storybookDir, repo } = request.entry;
   const stream = createWriteStream(join(request.outDir, 'agent-stream.jsonl'));
@@ -233,7 +234,7 @@ const runSandcastle = async (
       agent,
       sandbox: plan.provider,
       name: `${request.entry.id}-${request.os}-${request.engine}`,
-      branchStrategy: { type: 'branch', branch: request.cycleBranch },
+      branchStrategy: { type: 'branch', branch: cycleBranch },
       promptFile: PROMPT_FILE,
       promptArgs: {
         REPO: repo,
@@ -283,7 +284,7 @@ const runSandcastle = async (
     await new Promise((done) => stream.end(done));
   }
 
-  const branchRef = `refs/heads/${request.cycleBranch}`;
+  const branchRef = `refs/heads/${cycleBranch}`;
   const head = git(cloneDir, 'for-each-ref', '--format=%(objectname)', branchRef);
   const headSha = head && head !== startSha ? head : null;
   if (headSha) {
@@ -336,7 +337,6 @@ const writeResult = (request: RunRequest, outcome: Outcome, startedAt: Date) => 
     request: recorded,
     storybookVersionInstalled: outcome.output?.storybookVersionInstalled ?? null,
     startSha: outcome.startSha,
-    cycleBranch: request.cycleBranch,
     headSha: outcome.headSha,
     checks: outcome.output?.checks ?? [],
     findings: outcome.output?.findings ?? [],
@@ -347,7 +347,7 @@ const writeResult = (request: RunRequest, outcome: Outcome, startedAt: Date) => 
       wallSeconds: Math.round((finishedAt.getTime() - startedAt.getTime()) / 1000),
       ...(installSeconds === undefined ? {} : { installSeconds }),
     },
-    machine: { os: request.os, node: process.version, freeDiskMbAtEnd: freeDiskMb(outDir) },
+    machine: { node: process.version, freeDiskMbAtEnd: freeDiskMb(outDir) },
     paths: {
       runLog: 'run.log',
       evidenceDir: 'evidence',
@@ -372,7 +372,7 @@ const summarize = (result: z.infer<typeof RunResultFile>, resultPath: string): s
     `${result.request.entry.repo} on ${result.request.os} with ${result.request.engine} (${result.request.model}) finished with status ${result.status} in ${result.timing.wallSeconds}s.`,
     `Storybook ${result.storybookVersionInstalled ?? 'version unknown'} installed, ${result.checks.length} checks reported, ${failed} failed, ${result.findings.length} findings.`,
     `Usage was ${result.usage.inputTokens} input, ${result.usage.outputTokens} output, ${result.usage.cacheReadTokens ?? 0} cache-read and ${result.usage.cacheWriteTokens ?? 0} cache-write tokens, ${usd}.`,
-    `Cycle branch ${result.cycleBranch} head ${result.headSha ?? 'has no commits'}. Result: ${resultPath}.`,
+    `Cycle branch ${cycleBranchName(result.request.version, result.request.os, result.request.engine)} head ${result.headSha ?? 'has no commits'}. Result: ${resultPath}.`,
     ...(result.error ? [`Error: ${result.error}`] : []),
   ].join(' ');
 };

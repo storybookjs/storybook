@@ -1,22 +1,29 @@
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
-import { basename, dirname, join, relative, resolve } from 'pathe';
+import { z } from 'zod';
 
+import { CATALOG_FILE, parseCatalog } from './lib/catalog.ts';
+import { versionLine } from './lib/cycle.ts';
 import { searchFingerprint } from './lib/github.ts';
-import { groupFindings, toProposal, type LoadedResult } from './lib/proposals.ts';
+import { groupFindings, toProposal } from './lib/proposals.ts';
+import { loadResults } from './lib/results.ts';
 import { sanitizeFinding } from './lib/sanitize.ts';
-import { RunResultFile } from './lib/schema.ts';
+import { Proposal } from './lib/schema.ts';
 
-const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --out <proposals.json> --repo <owner/name> [--run-url <url>]
+const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>]
 
-Reads every result.json under --results, merges findings by fingerprint, searches --repo for each
-fingerprint with gh, and writes one proposal per fingerprint to --out.
+Reads the result.json of every catalog repo, os and engine under --results, either from a downloaded
+artifact (<results>/qa-result-<os>-<engine>/<id>/<os>/<engine>) or from a local run
+(<results>/<id>/<os>/<engine>). Merges findings by fingerprint, searches --repo for each fingerprint
+with gh, and writes one proposal per fingerprint to --out.
+--version is the version the cycle ran; a record that names another version is ignored.
 --run-url defaults to this GitHub Actions run, or "local" outside Actions.`;
 
 const { values } = parseArgs({
   options: {
     results: { type: 'string' },
+    version: { type: 'string' },
     out: { type: 'string' },
     repo: { type: 'string' },
     'run-url': { type: 'string' },
@@ -27,10 +34,12 @@ if (values.help) {
   console.log(HELP);
   process.exit(0);
 }
-if (!values.results || !values.out || !values.repo) {
-  console.error(`Missing one of --results, --out, --repo.\n\n${HELP}`);
+const { results, version, out, repo } = values;
+if (!results || !version || !out || !repo) {
+  console.error(`Missing one of --results, --version, --out, --repo.\n\n${HELP}`);
   process.exit(1);
 }
+versionLine(version);
 
 const { GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_RUN_ID } = process.env;
 const runUrl =
@@ -39,39 +48,23 @@ const runUrl =
     ? `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
     : 'local');
 
-const resultPaths = readdirSync(resolve(values.results), { recursive: true, encoding: 'utf8' })
-  .filter((path) => basename(path) === 'result.json')
-  .map((path) => relative(process.cwd(), join(resolve(values.results!), path)))
-  .sort();
+const loaded = loadResults(results, {
+  version,
+  catalog: parseCatalog(JSON.parse(readFileSync(CATALOG_FILE, 'utf8'))),
+  warn: (message) => console.warn(`::warning::${message}`),
+}).map((run) => ({
+  ...run,
+  result: { ...run.result, findings: run.result.findings.map(sanitizeFinding) },
+}));
 
-// `storybook info` runs through the package manager's dlx, whose install log precedes the report.
-const environmentInfo = (captured: string): string => {
-  const start = captured.indexOf('Storybook Environment Info');
-  const lines = (start < 0 ? captured : captured.slice(start)).split('\n');
-  return lines
-    .map((line) => line.replace(/^│\s?/, '').trimEnd())
-    .filter((line, index, all) => line !== '' || all[index - 1] !== '')
-    .join('\n')
-    .trim();
-};
-
-const loaded: LoadedResult[] = resultPaths.map((resultPath) => {
-  const parsed = RunResultFile.parse(JSON.parse(readFileSync(resultPath, 'utf8')));
-  const result = { ...parsed, findings: parsed.findings.map(sanitizeFinding) };
-  const infoFile = join(dirname(resultPath), result.paths.evidenceDir, 'storybook-info.txt');
-  return {
-    resultPath,
-    result,
-    ...(existsSync(infoFile)
-      ? { systemInfo: environmentInfo(readFileSync(infoFile, 'utf8')) }
-      : {}),
-  };
-});
-
-const proposals = groupFindings(loaded).map((group) =>
-  toProposal(group, searchFingerprint(values.repo!, group.fingerprint), runUrl)
-);
-writeFileSync(values.out, `${JSON.stringify(proposals, null, 2)}\n`);
+const proposals = z
+  .array(Proposal)
+  .parse(
+    groupFindings(loaded).map((group) =>
+      toProposal(group, searchFingerprint(repo, group.fingerprint), runUrl)
+    )
+  );
+writeFileSync(out, `${JSON.stringify(proposals, null, 2)}\n`);
 
 for (const { result, resultPath } of loaded) {
   const failed = result.checks.filter((check) => check.state === 'fail').map((check) => check.id);
@@ -80,7 +73,7 @@ for (const { result, resultPath } of loaded) {
   );
 }
 for (const proposal of proposals) {
-  const target = proposal.existingIssue ? ` #${proposal.existingIssue}` : '';
+  const target = proposal.kind === 'issue' ? '' : ` #${proposal.existingIssue}`;
   console.log(`${proposal.kind}${target} ${proposal.fingerprint} ${proposal.title}`);
 }
-console.log(`${loaded.length} results, ${proposals.length} proposals written to ${values.out}`);
+console.log(`${loaded.length} results, ${proposals.length} proposals written to ${out}`);

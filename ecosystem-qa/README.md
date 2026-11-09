@@ -38,7 +38,7 @@ The repo is cloned to `ecosystem-qa/work/<id>` by default, and the run stops if 
 Then collect and look at the proposals without filing anything:
 
 ```sh
-node ecosystem-qa/collect.ts --results ecosystem-qa/results --out ecosystem-qa/results/proposals.json --repo storybookjs/storybook
+node ecosystem-qa/collect.ts --results ecosystem-qa/results --version 11.0.0-beta.0 --out ecosystem-qa/results/proposals.json --repo storybookjs/storybook
 node ecosystem-qa/file.ts --proposals ecosystem-qa/results/proposals.json --repo storybookjs/storybook --dry
 ```
 
@@ -49,7 +49,7 @@ It writes a canned result with one finding and a real PNG and GIF made by the ev
 
 ```sh
 ECOSYSTEM_QA_FAKE=1 node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-beta.0 \
-  --engine fake --sandbox none --out ecosystem-qa/results/mealdrop/macos/fake
+  --engine fake --sandbox none --out ecosystem-qa/results/mealdrop/macos/claude
 ```
 
 ## Run it in CI

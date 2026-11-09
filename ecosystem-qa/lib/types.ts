@@ -15,19 +15,15 @@ export type AgentOutput = z.infer<typeof schema.AgentOutput>;
 // `paths` hold paths relative to the directory of result.json, so a downloaded artifact still resolves.
 export type RunResultFile = z.infer<typeof schema.RunResultFile>;
 export type Proposal = z.infer<typeof schema.Proposal>;
+export type IssueProposal = Extract<Proposal, { kind: 'issue' }>;
+export type CommentProposal = Extract<Proposal, { kind: 'comment' }>;
+export type Cycle = z.infer<typeof schema.Cycle>;
+export type EvidenceFile = z.infer<typeof schema.EvidenceFile>;
 
-export interface RunRequest {
-  entry: CatalogEntry;
-  version: string;
-  engine: Engine;
-  model: string;
-  effort: Effort;
-  sandbox: SandboxKind;
-  os: Os;
+export type RunRequest = z.infer<typeof schema.RunRequestRecord> & {
   outDir: string;
   monorepoDir: string;
-  cycleBranch: string;
-}
+};
 
 export interface Outcome {
   status: RunResultFile['status'];

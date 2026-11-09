@@ -10,20 +10,25 @@ import {
 import { tmpdir } from 'node:os';
 import { parseArgs } from 'node:util';
 
-import { basename, dirname, join, resolve } from 'pathe';
+import { dirname, join, resolve } from 'pathe';
 import { z } from 'zod';
 
+import {
+  ASSETS_BRANCH,
+  describeStep,
+  planFiling,
+  renderDry,
+  type FilingStep,
+} from './lib/filing.ts';
 import { gh, searchFingerprint } from './lib/github.ts';
-import { fence } from './lib/proposals.ts';
-import { Proposal, RunResultFile } from './lib/schema.ts';
+import { Proposal } from './lib/schema.ts';
+import type { Proposal as ProposalType } from './lib/types.ts';
 
 const HELP = `Usage: node ecosystem-qa/file.ts --proposals <proposals.json> --repo <owner/name> [--dry]
 
 --dry writes each proposal to $GITHUB_STEP_SUMMARY (stdout when unset) and changes nothing.
-Without --dry it pushes evidence to the qa-assets branch of --repo, pushes the cycle branch to the
-catalog repo with ECOSYSTEM_QA_PUSH_TOKEN, and creates the issue or comment with GH_TOKEN.`;
-
-const ASSETS_BRANCH = 'qa-assets';
+Without --dry it pushes the cycle branch to the catalog repo with ECOSYSTEM_QA_PUSH_TOKEN, pushes
+evidence to the qa-assets branch of --repo and creates the issue or comment with GH_TOKEN.`;
 
 const { values } = parseArgs({
   options: {
@@ -43,44 +48,6 @@ if (!values.proposals || !values.repo) {
 }
 const repo = values.repo;
 const proposals = z.array(Proposal).parse(JSON.parse(readFileSync(values.proposals, 'utf8')));
-
-const readResult = (proposal: z.infer<typeof Proposal>) => {
-  const [primary] = proposal.sources;
-  if (!primary) {
-    throw new Error(`Proposal ${proposal.fingerprint} has no sources.`);
-  }
-  const result = RunResultFile.parse(JSON.parse(readFileSync(primary.resultPath, 'utf8')));
-  return { result, resultDir: dirname(primary.resultPath) };
-};
-
-const assetDir = (proposal: z.infer<typeof Proposal>) =>
-  `assets/${readResult(proposal).result.request.version}/${proposal.fingerprint}`;
-
-const renderDry = (proposal: z.infer<typeof Proposal>): string => {
-  const { result, resultDir } = readResult(proposal);
-  const target =
-    proposal.kind === 'issue'
-      ? `new issue in ${repo}, milestone ${proposal.milestone}`
-      : proposal.kind === 'comment'
-        ? `comment on ${repo}#${proposal.existingIssue}`
-        : `nothing: ${repo}#${proposal.existingIssue} is labelled qa:known`;
-  const bundle = result.paths.bundle
-    ? `push \`${join(resultDir, result.paths.bundle)}\` to ${result.request.entry.repo} as \`${result.cycleBranch}\``
-    : 'none, the run made no commits';
-  return [
-    `<details><summary><b>${proposal.kind}</b> ${proposal.title} <code>${proposal.fingerprint}</code></summary>`,
-    '',
-    `- Target: ${target}`,
-    `- Labels: ${proposal.labels.map((label) => `\`${label}\``).join(', ')}`,
-    `- Sources: ${proposal.sources.map((source) => `${source.os}/${source.engine} (\`${source.resultPath}\`)`).join(', ')}`,
-    `- Evidence for \`${ASSETS_BRANCH}/${assetDir(proposal)}/\`: ${proposal.evidenceFiles.map((file) => `\`${file}\``).join(', ') || 'none'}`,
-    `- Cycle branch: ${bundle}`,
-    '',
-    ...(proposal.body ? [fence(proposal.body, 'markdown'), ''] : []),
-    '</details>',
-    '',
-  ].join('\n');
-};
 
 const git = (cwd: string, args: string[], token?: string) =>
   execFileSync(
@@ -103,27 +70,38 @@ const requireEnv = (name: string) => {
   return value;
 };
 
-const pushEvidence = (proposal: z.infer<typeof Proposal>): string => {
+const writeBody = (body: string) => {
+  const file = join(mkdtempSync(join(tmpdir(), 'qa-body-')), 'body.md');
+  writeFileSync(file, body);
+  return file;
+};
+
+const pushCycle = (step: Extract<FilingStep, { kind: 'push-cycle' }>) => {
+  const token = requireEnv('ECOSYSTEM_QA_PUSH_TOKEN');
+  const dir = mkdtempSync(join(tmpdir(), 'qa-cycle-'));
+  const remote = `https://github.com/${step.repo}`;
+  const ref = `refs/heads/${step.branch}`;
+  git(dir, ['init', '--quiet']);
+  git(dir, ['fetch', '--quiet', '--depth', '1', remote, step.startSha], token);
+  git(dir, ['fetch', '--quiet', resolve(step.bundle), `${ref}:${ref}`]);
+  git(dir, ['push', '--quiet', remote, `${step.headSha}:${ref}`], token);
+};
+
+const pushEvidence = (step: Extract<FilingStep, { kind: 'push-evidence' }>) => {
   const token = requireEnv('GH_TOKEN');
   const dir = mkdtempSync(join(tmpdir(), 'qa-assets-'));
   const remote = `https://github.com/${repo}`;
   git(dir, ['init', '--quiet']);
-  const exists = git(dir, ['ls-remote', '--heads', remote, ASSETS_BRANCH], token) !== '';
-  if (exists) {
+  if (git(dir, ['ls-remote', '--heads', remote, ASSETS_BRANCH], token) !== '') {
     git(dir, ['fetch', '--quiet', '--depth', '1', remote, ASSETS_BRANCH], token);
     git(dir, ['checkout', '--quiet', '-B', ASSETS_BRANCH, 'FETCH_HEAD']);
   } else {
     git(dir, ['checkout', '--quiet', '--orphan', ASSETS_BRANCH]);
   }
-  const target = assetDir(proposal);
-  mkdirSync(join(dir, target), { recursive: true });
-  let body = proposal.body;
-  for (const file of proposal.evidenceFiles) {
-    copyFileSync(resolve(file), join(dir, target, basename(file)));
-    body = body.replaceAll(
-      `](${file})`,
-      `](https://raw.githubusercontent.com/${repo}/${ASSETS_BRANCH}/${target}/${basename(file)})`
-    );
+  for (const file of step.files) {
+    const target = join(dir, step.assetDir, file.name);
+    mkdirSync(dirname(target), { recursive: true });
+    copyFileSync(resolve(file.localPath), target);
   }
   git(dir, ['add', '--all']);
   git(dir, [
@@ -134,87 +112,72 @@ const pushEvidence = (proposal: z.infer<typeof Proposal>): string => {
     'commit',
     '--quiet',
     '-m',
-    `qa: evidence for ${proposal.fingerprint}`,
+    step.message,
   ]);
   git(dir, ['push', '--quiet', remote, `HEAD:refs/heads/${ASSETS_BRANCH}`], token);
-  return body;
 };
 
-const pushCycleBranch = (proposal: z.infer<typeof Proposal>) => {
-  const { result, resultDir } = readResult(proposal);
-  if (!result.paths.bundle || !result.headSha) {
-    return;
-  }
-  const token = requireEnv('ECOSYSTEM_QA_PUSH_TOKEN');
-  const dir = mkdtempSync(join(tmpdir(), 'qa-cycle-'));
-  const remote = `https://github.com/${result.request.entry.repo}`;
-  git(dir, ['init', '--quiet']);
-  git(dir, ['fetch', '--quiet', '--depth', '1', remote, result.startSha], token);
-  git(dir, [
-    'fetch',
-    '--quiet',
-    resolve(resultDir, result.paths.bundle),
-    `${result.cycleBranch}:refs/heads/${result.cycleBranch}`,
-  ]);
-  git(
-    dir,
-    ['push', '--quiet', remote, `${result.headSha}:refs/heads/${result.cycleBranch}`],
-    token
-  );
-};
-
-const alreadyCommented = (issue: number, body: string) => {
-  const metadata = body.slice(body.indexOf('<!-- sb-qa-metadata -->'));
-  return gh(
-    'api',
-    '--paginate',
-    `repos/${repo}/issues/${issue}/comments`,
-    '--jq',
-    '.[].body'
-  ).includes(metadata.trim());
-};
-
-const fileProposal = (proposal: z.infer<typeof Proposal>) => {
-  if (proposal.kind === 'suppressed') {
-    console.log(`Suppressed ${proposal.fingerprint}: #${proposal.existingIssue} is qa:known.`);
-    return;
-  }
-  if (proposal.kind === 'comment') {
-    const issue = proposal.existingIssue!;
-    if (alreadyCommented(issue, proposal.body)) {
-      console.log(`#${issue} already has this comment.`);
+const runStep = (step: FilingStep) => {
+  switch (step.kind) {
+    case 'skip':
       return;
-    }
-    const bodyFile = join(mkdtempSync(join(tmpdir(), 'qa-body-')), 'body.md');
-    writeFileSync(bodyFile, proposal.body);
-    gh('issue', 'comment', String(issue), '--repo', repo, '--body-file', bodyFile);
-    console.log(`Commented on #${issue}.`);
-    return;
+    case 'push-cycle':
+      return pushCycle(step);
+    case 'push-evidence':
+      return pushEvidence(step);
+    case 'create-issue':
+      console.log(
+        gh(
+          'issue',
+          'create',
+          '--repo',
+          repo,
+          '--title',
+          step.title,
+          '--body-file',
+          writeBody(step.body),
+          '--milestone',
+          step.milestone,
+          ...step.labels.flatMap((label) => ['--label', label])
+        ).trim()
+      );
+      return;
+    case 'comment':
+      gh(
+        'issue',
+        'comment',
+        String(step.issue),
+        '--repo',
+        repo,
+        '--body-file',
+        writeBody(step.body)
+      );
+      return;
   }
-  const [existing] = searchFingerprint(repo, proposal.fingerprint);
-  if (existing) {
-    console.log(
-      `${proposal.fingerprint} is already filed as #${existing.number}; not filing again.`
-    );
-    return;
-  }
-  pushCycleBranch(proposal);
-  const bodyFile = join(mkdtempSync(join(tmpdir(), 'qa-body-')), 'body.md');
-  writeFileSync(bodyFile, pushEvidence(proposal));
-  const url = gh(
-    'issue',
-    'create',
-    '--repo',
+};
+
+const CommentPages = z.array(z.array(z.object({ body: z.string() })));
+
+const commentsOn = (issue: number): string[] =>
+  CommentPages.parse(
+    JSON.parse(gh('api', '--paginate', '--slurp', `repos/${repo}/issues/${issue}/comments`))
+  )
+    .flat()
+    .map((comment) => comment.body);
+
+const fileProposal = (proposal: ProposalType) => {
+  const steps = planFiling(proposal, {
     repo,
-    '--title',
-    proposal.title,
-    '--body-file',
-    bodyFile,
-    '--milestone',
-    proposal.milestone,
-    ...proposal.labels.flatMap((label) => ['--label', label])
-  ).trim();
-  console.log(`Filed ${url}.`);
+    evidenceLinks: 'assets',
+    ...(proposal.kind === 'issue'
+      ? { filedAs: searchFingerprint(repo, proposal.fingerprint)[0]?.number }
+      : {}),
+    ...(proposal.kind === 'comment' ? { comments: commentsOn(proposal.existingIssue) } : {}),
+  });
+  for (const step of steps) {
+    console.log(`${proposal.fingerprint}: ${describeStep(step, repo)}`);
+    runStep(step);
+  }
 };
 
 if (values.dry) {
@@ -226,7 +189,7 @@ if (values.dry) {
     '',
     `${proposals.length} proposals: ${counts}.`,
     '',
-    ...proposals.map(renderDry),
+    ...proposals.map((proposal) => renderDry(proposal, repo)),
   ].join('\n');
   if (process.env.GITHUB_STEP_SUMMARY) {
     appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${summary}\n`);

@@ -6,6 +6,11 @@ import { describe, expect, it } from 'vitest';
 
 import { usageFromStream } from './usage.ts';
 
+const PRICES = {
+  'claude-test': { input: 2, output: 10, cacheRead: 0.2 },
+  'codex-test': { input: 2, output: 10, cacheRead: 0.1 },
+};
+
 const streamFile = (events: unknown[]) => {
   const file = join(mkdtempSync(join(tmpdir(), 'qa-usage-')), 'agent-stream.jsonl');
   writeFileSync(file, [...events.map((event) => JSON.stringify(event)), 'not json'].join('\n'));
@@ -42,6 +47,7 @@ describe('usageFromStream', () => {
       cacheWriteTokens: 61711,
       usd: 0.5583495,
       model: 'claude-sonnet-5-5',
+      priceSource: 'agent',
     });
   });
 
@@ -69,15 +75,16 @@ describe('usageFromStream', () => {
     ]);
     // A result line without per-model totals (an aborted run) must not be trusted.
 
-    const usage = usageFromStream(file, 'claude', 'claude-sonnet-5-5');
+    const usage = usageFromStream(file, 'claude', 'claude-test', PRICES);
 
     expect(usage).toMatchObject({
       inputTokens: 15,
       outputTokens: 70,
       cacheReadTokens: 1000,
       cacheWriteTokens: 1000,
+      priceSource: 'table',
     });
-    expect(usage.usd).toBeCloseTo(0.00343, 8);
+    expect(usage.usd).toBeCloseTo((15 * 2 + 70 * 10 + 1000 * 0.2 + 1000 * 2 * 1.25) / 1_000_000, 8);
   });
 
   it('sums every Codex turn and splits cached input out of the input total', () => {
@@ -92,35 +99,23 @@ describe('usageFromStream', () => {
       },
     ]);
 
-    expect(usageFromStream(file, 'codex', 'gpt-6.1-sol')).toEqual({
+    expect(usageFromStream(file, 'codex', 'codex-test', PRICES)).toEqual({
       inputTokens: 700,
       cacheReadTokens: 800,
       cacheWriteTokens: 0,
       outputTokens: 150,
       usd: (700 * 2 + 150 * 10 + 800 * 0.1) / 1_000_000,
-      model: 'gpt-6.1-sol',
-      ratesVerifiedOn: '2026-11-09',
+      model: 'codex-test',
+      priceSource: 'table',
     });
   });
 
-  it("carries no rate date when the dollar figure is the agent's own", () => {
-    const file = streamFile([
-      {
-        type: 'result',
-        model_usage_since_last_result: {
-          'claude-sonnet-5-5': { inputTokens: 1, outputTokens: 1, costUSD: 0.001 },
-        },
-      },
-    ]);
-
-    expect(usageFromStream(file, 'claude', 'claude-sonnet-5-5')).not.toHaveProperty(
-      'ratesVerifiedOn'
-    );
-  });
-
-  it('reports no dollar figure for a model missing from pricing.json', () => {
+  it('reports no dollar figure for a model missing from the price table', () => {
     const file = streamFile([assistant('msg_1', { input_tokens: 1, output_tokens: 1 })]);
 
-    expect(usageFromStream(file, 'claude', 'claude-unknown').usd).toBeNull();
+    expect(usageFromStream(file, 'claude', 'claude-unknown', PRICES)).toMatchObject({
+      usd: null,
+      priceSource: 'table',
+    });
   });
 });

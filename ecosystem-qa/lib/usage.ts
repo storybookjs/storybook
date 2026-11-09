@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 
+import { MODEL_PRICING } from '../../agent-eval/lib/usage.ts';
 import type { Engine, RunResultFile } from './types.ts';
 
 interface Tokens {
@@ -9,20 +10,7 @@ interface Tokens {
   cacheWriteTokens: number;
 }
 
-interface Price {
-  input: number;
-  output: number;
-  cacheRead: number;
-  cacheWrite: number;
-  source: string;
-}
-
-interface PriceTable {
-  verifiedOn: string;
-  models: Record<string, Price>;
-}
-
-const PRICING_FILE = new URL('../pricing.json', import.meta.url);
+export type PriceTable = typeof MODEL_PRICING;
 
 const parseLine = (line: string): Record<string, any> | undefined => {
   if (!line.startsWith('{')) {
@@ -103,28 +91,36 @@ const codexTokens = (lines: string[]): Tokens => {
   return tokens;
 };
 
+/**
+ * Count the tokens of one agent run and price them.
+ *
+ * Claude's own cost line wins when the run finished; otherwise the tokens are priced from the price
+ * table agent-eval also uses, and a model missing there gives `usd: null`.
+ */
 export const usageFromStream = (
   streamFile: string,
   engine: Engine,
-  model: string
+  model: string,
+  prices: PriceTable = MODEL_PRICING
 ): RunResultFile['usage'] => {
   const lines = readFileSync(streamFile, 'utf8').split('\n');
   const claudeTotals = engine === 'claude' ? claudeResultTotals(lines) : undefined;
   if (claudeTotals) {
     const { usd, ...tokens } = claudeTotals;
-    return { ...tokens, usd, model };
+    return { ...tokens, usd, model, priceSource: 'agent' };
   }
   const tokens = engine === 'claude' ? claudeTokens(lines) : codexTokens(lines);
-  const pricing: PriceTable = JSON.parse(readFileSync(PRICING_FILE, 'utf8'));
-  const price = pricing.models[model];
+  const price = prices[model];
   if (!price) {
-    return { ...tokens, usd: null, model };
+    return { ...tokens, usd: null, model, priceSource: 'table' };
   }
+  // The same rule as agent-eval: a cache write costs 1.25x input (Anthropic's 5-minute TTL rate),
+  // and a cache read 0.1x input when the table has no rate of its own.
   const usd =
     (tokens.inputTokens * price.input +
       tokens.outputTokens * price.output +
-      tokens.cacheReadTokens * price.cacheRead +
-      tokens.cacheWriteTokens * price.cacheWrite) /
+      tokens.cacheReadTokens * (price.cacheRead ?? price.input * 0.1) +
+      tokens.cacheWriteTokens * price.input * 1.25) /
     1_000_000;
-  return { ...tokens, usd, model, ratesVerifiedOn: pricing.verifiedOn };
+  return { ...tokens, usd, model, priceSource: 'table' };
 };

@@ -341,7 +341,7 @@ const writeResult = (request: RunRequest, outcome: Outcome, startedAt: Date) => 
   }
   const usage = usageFromStream(streamFile, request.engine, request.model);
   if (usage.usd === null) {
-    console.warn(`No price for model "${request.model}" in pricing.json; usd is null.`);
+    console.warn(`No price for model "${request.model}" in the shared price table; usd is null.`);
   }
   const installSeconds = readInstallSeconds(join(outDir, 'evidence/install-seconds.txt'));
   const { outDir: _out, monorepoDir: _monorepo, ...recorded } = request;
@@ -375,11 +375,10 @@ const writeResult = (request: RunRequest, outcome: Outcome, startedAt: Date) => 
 
 const summarize = (result: z.infer<typeof RunResultFile>, resultPath: string): string => {
   const failed = result.checks.filter((check) => check.state === 'fail').length;
-  const { ratesVerifiedOn } = result.usage;
   const usd =
     result.usage.usd === null
       ? 'unpriced'
-      : `$${result.usage.usd.toFixed(2)}${ratesVerifiedOn ? ` (priced with rates verified on ${ratesVerifiedOn})` : ''}`;
+      : `$${result.usage.usd.toFixed(2)}${result.usage.priceSource === 'table' ? ' (priced from the shared price table, not from the agent)' : ''}`;
   return [
     `${result.request.entry.repo} on ${result.request.os} with ${result.request.engine} (${result.request.model}) finished with status ${result.status} in ${result.timing.wallSeconds}s.`,
     `Storybook ${result.storybookVersionInstalled ?? 'version unknown'} installed, ${result.checks.length} checks reported, ${failed} failed, ${result.findings.length} findings.`,

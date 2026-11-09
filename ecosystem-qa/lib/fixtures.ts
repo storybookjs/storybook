@@ -48,7 +48,7 @@ export const loaded = (
     headSha,
     checks: [],
     findings,
-    usage: { inputTokens: 1, outputTokens: 1, usd: 0, model: 'm' },
+    usage: { inputTokens: 1, outputTokens: 1, usd: 0, model: 'm', priceSource: 'agent' },
     timing: { startedAt: '', finishedAt: '', wallSeconds: 1 },
     machine: { node: 'v22.22.3' },
     paths: { runLog: 'run.log', evidenceDir: 'evidence' },

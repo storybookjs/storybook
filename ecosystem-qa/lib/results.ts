@@ -96,7 +96,7 @@ const readCycle = (
 ): Cycle => {
   const branch = cycleBranchName(key.version, key.os, key.engine);
   const noCommits = {
-    repo: key.entry.repo,
+    repo: key.entry.pushTo ?? key.entry.repo,
     branch,
     startSha: recordedStartSha,
     headSha: null,

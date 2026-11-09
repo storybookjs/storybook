@@ -22,8 +22,23 @@ describe('catalog', () => {
     ['a repo without an owner', { ...valid, repo: 'mealdrop' }],
     ['an unsupported package manager', { ...valid, packageManager: 'bun' }],
     ['an unknown field', { ...valid, branch: 'main' }],
+    ['a push target outside storybookjs', { ...valid, pushTo: 'twentyhq/twenty' }],
   ])('rejects %s', (_, entry) => {
     expect(() => parseCatalog([entry])).toThrow();
+  });
+
+  it('accepts a fork under storybookjs as the push target of an upstream repo', () => {
+    const [entry] = parseCatalog([
+      {
+        ...valid,
+        id: 'twenty',
+        repo: 'twentyhq/twenty',
+        class: 'tier1',
+        pushTo: 'storybookjs/twenty',
+      },
+    ]);
+
+    expect(entry?.pushTo).toBe('storybookjs/twenty');
   });
 
   it('rejects duplicate ids', () => {

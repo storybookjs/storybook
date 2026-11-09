@@ -11,6 +11,11 @@ export const Effort = z.enum(['low', 'medium', 'high']);
 export const CatalogEntry = z.strictObject({
   id: z.string().regex(/^[a-z0-9-]+$/),
   repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/),
+  // Where the cycle branch is pushed: a fork under storybookjs for tier 1, the repo itself when owned.
+  pushTo: z
+    .string()
+    .regex(/^storybookjs\/[\w.-]+$/)
+    .optional(),
   ref: z.string().min(1),
   class: RepoClass,
   packageManager: z.enum(['npm', 'pnpm', 'yarn']),

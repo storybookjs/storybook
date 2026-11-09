@@ -28,7 +28,8 @@ const byPrimaryOrder = (a: LoadedResult, b: LoadedResult): number =>
   a.result.request.engine.localeCompare(b.result.request.engine) ||
   a.resultPath.localeCompare(b.resultPath);
 
-// The first run in os, engine, path order supplies the finding text and the evidence.
+// The first run in os, engine, path order supplies the finding text and the evidence by policy,
+// so a GIF that only a later occurrence captured is dropped on purpose.
 export const groupFindings = (results: LoadedResult[]): FindingGroup[] => {
   const groups = new Map<string, FindingGroup>();
   for (const loaded of [...results].sort(byPrimaryOrder)) {
@@ -74,6 +75,7 @@ const metadataBlock = (group: FindingGroup, runUrl: string): string => {
     `storybook: ${unique(all.map((request) => request.version))}`,
     `repo: ${result.request.entry.repo}`,
     `sha: ${result.headSha ?? result.startSha}`,
+    `cycleBranch: ${result.headSha ? result.cycleBranch : 'none'}`,
     `os: ${unique(all.map((request) => request.os))}`,
     `engine: ${unique(all.map((request) => request.engine))}`,
     `model: ${unique(all.map((request) => request.model))}`,
@@ -95,17 +97,32 @@ export const fence = (text: string, info = '') => {
   return [marker + info, text.trim(), marker].join('\n');
 };
 
-const sourceLines = (group: FindingGroup): string[] =>
-  group.occurrences.map(
-    ({ result }) =>
-      `- ${result.request.os}, ${result.request.engine} (${result.request.model}), sandbox ${result.request.sandbox}`
-  );
+const sourceLines = (group: FindingGroup, withVersion = false): string[] =>
+  group.occurrences.map(({ result }) => {
+    const { os, engine, model, sandbox, version } = result.request;
+    const where = `${os}, ${engine} (${model}), sandbox ${sandbox}`;
+    return `- ${withVersion ? `${version}: ` : ''}${where}`;
+  });
+
+const reproductionLink = (result: RunResultFile): string[] => {
+  const repoUrl = `https://github.com/${result.request.entry.repo}`;
+  if (result.headSha) {
+    return [
+      `${repoUrl}/tree/${result.headSha}`,
+      '',
+      `Branch \`${result.cycleBranch}\` in ${result.request.entry.repo} holds the upgraded state.`,
+    ];
+  }
+  return [
+    `${repoUrl}/tree/${result.startSha}`,
+    '',
+    'The upgraded state was not committed. The steps below reproduce from this commit.',
+  ];
+};
 
 export const renderIssueBody = (group: FindingGroup, runUrl: string): string => {
   const { finding, primary } = group;
   const { result } = primary;
-  const sha = result.headSha ?? result.startSha;
-  const repoUrl = `https://github.com/${result.request.entry.repo}`;
   const images = [
     finding.evidence.png && `![${finding.title}](${evidencePath(primary, finding.evidence.png)})`,
     finding.evidence.gif &&
@@ -131,9 +148,7 @@ export const renderIssueBody = (group: FindingGroup, runUrl: string): string => 
     '',
     '### Reproduction link',
     '',
-    `${repoUrl}/tree/${sha}`,
-    '',
-    `Branch \`${result.cycleBranch}\` in ${result.request.entry.repo} holds the upgraded state.`,
+    ...reproductionLink(result),
     '',
     '### Reproduction steps',
     '',
@@ -160,9 +175,9 @@ export const renderIssueBody = (group: FindingGroup, runUrl: string): string => 
 
 const renderCommentBody = (group: FindingGroup, runUrl: string): string =>
   [
-    `Seen again by the ecosystem QA agent on ${group.primary.result.request.version}:`,
+    'Seen again by the ecosystem QA agent on:',
     '',
-    ...sourceLines(group),
+    ...sourceLines(group, true),
     '',
     group.finding.actual,
     '',

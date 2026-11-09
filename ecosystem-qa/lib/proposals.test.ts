@@ -20,7 +20,12 @@ const finding = (overrides: Partial<Finding> = {}): Finding => ({
   ...overrides,
 });
 
-const loaded = (os: Os, engine: Engine, findings: Finding[]): LoadedResult => {
+const loaded = (
+  os: Os,
+  engine: Engine,
+  findings: Finding[],
+  headSha: string | null = os === 'linux' ? 'b'.repeat(40) : 'c'.repeat(40)
+): LoadedResult => {
   const result: RunResultFile = {
     request: {
       entry: {
@@ -43,7 +48,7 @@ const loaded = (os: Os, engine: Engine, findings: Finding[]): LoadedResult => {
     storybookVersionInstalled: '11.0.0-beta.0',
     startSha: 'a'.repeat(40),
     cycleBranch: 'qa/sb-11.0',
-    headSha: os === 'linux' ? 'b'.repeat(40) : 'c'.repeat(40),
+    headSha,
     checks: [],
     findings,
     usage: { inputTokens: 1, outputTokens: 1, usd: 0, model: 'm' },
@@ -140,5 +145,40 @@ describe('renderIssueBody', () => {
     expect(body.trimEnd()).toMatch(
       /<!-- sb-qa-metadata -->\n```yaml\nfingerprint: [0-9a-f]{16}\n[\s\S]*\nrun: https:\S+\n```$/
     );
+  });
+
+  it('links the cycle branch head when the agent committed the upgrade', () => {
+    const [group] = groupFindings([loaded('linux', 'claude', [finding()])]);
+
+    const body = renderIssueBody(group!, RUN_URL);
+
+    expect(body).toContain(`https://github.com/storybookjs/mealdrop/tree/${'b'.repeat(40)}`);
+    expect(body).toContain('Branch `qa/sb-11.0` in storybookjs/mealdrop holds the upgraded state.');
+    expect(body).toContain(`sha: ${'b'.repeat(40)}\ncycleBranch: qa/sb-11.0`);
+  });
+
+  it('links the start commit and says so when the agent made no commits', () => {
+    const [group] = groupFindings([loaded('linux', 'claude', [finding()], null)]);
+
+    const body = renderIssueBody(group!, RUN_URL);
+
+    expect(body).toContain(`https://github.com/storybookjs/mealdrop/tree/${'a'.repeat(40)}`);
+    expect(body).toContain('The upgraded state was not committed.');
+    expect(body).not.toContain('holds the upgraded state');
+    expect(body).toContain(`sha: ${'a'.repeat(40)}\ncycleBranch: none`);
+  });
+
+  it('lists each occurrence with its own version in a comment', () => {
+    const [group] = groupFindings([
+      loaded('linux', 'claude', [finding()]),
+      loaded('windows', 'codex', [finding()]),
+    ]);
+
+    const proposal = toProposal(group!, [{ number: 9, labels: ['bug'] }], RUN_URL);
+
+    expect(proposal.body).toContain(
+      '- 11.0.0-beta.0: linux, claude (claude-sonnet-5-5), sandbox docker'
+    );
+    expect(proposal.body).toContain('- 11.0.0-beta.0: windows, codex (gpt-5.4), sandbox none');
   });
 });

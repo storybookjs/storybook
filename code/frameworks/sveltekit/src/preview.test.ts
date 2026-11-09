@@ -27,6 +27,7 @@ const runStoryBeforeEach = (context: {
   parameters?: Record<string, unknown>;
   canvasElement?: HTMLElement | null;
   viewMode?: string;
+  abortSignal?: AbortSignal;
 }) => {
   const result = (svelteKitBeforeEach as (context: unknown) => unknown)({
     id: 'story--default',
@@ -244,14 +245,22 @@ describe('on a docs page', () => {
   // A render of a story on a docs page, with its own canvas element
   const setUpDocsStory = (id: string) => {
     const canvasElement = document.createElement('div');
-    const cleanup = runStoryBeforeEach({ id, viewMode: 'docs', canvasElement });
+    const abortController = new AbortController();
+    const cleanup = runStoryBeforeEach({
+      id,
+      viewMode: 'docs',
+      canvasElement,
+      abortSignal: abortController.signal,
+    });
     const mount = () => {
       const [decorator] = svelteKitDecorators as Array<
         (story: () => unknown, context: unknown) => unknown
       >;
       decorator(() => ({}), { canvasElement, viewMode: 'docs' });
     };
-    return { cleanup, mount };
+    // Core aborts the render when it tears the story down
+    const teardown = () => abortController.abort();
+    return { cleanup, mount, teardown };
   };
 
   it('throws when a story sets a mock while another story on the page is set up', () => {
@@ -342,6 +351,19 @@ describe('on a docs page', () => {
     a.cleanup();
 
     expect(() => setUpDocsStory('story--b')).not.toThrow();
+  });
+
+  it('starts over on the next docs page after a story failed before core got its cleanup', () => {
+    // Core registers the cleanups only after every `beforeEach` succeeds
+    const a = setUpDocsStory('story--a');
+    setUpDocsStory('story--b').teardown();
+    a.teardown();
+
+    setUpDocsStory('story--c');
+
+    expect(() => {
+      page.data = { user: 'Ada' };
+    }).not.toThrow();
   });
 
   it('allows any number of stories in story mode', () => {

@@ -50,8 +50,9 @@ Your job is to upgrade this project to Storybook {{VERSION}}, check that Storybo
 1. Open `{{MIGRATION_FILE}}` and read the section "From version 10.x to 11.0.0".
 2. Read the parts that apply to this project: its framework, builder, addons, `main` config and test setup.
 3. Apply the manual steps that apply here and that the automigrations did not already do.
-4. Commit them separately: `git add -A && git commit -q -m "qa: apply migration notes"`. Skip the commit when nothing applied.
-5. Remember each step you applied. Put the list in the note of `upgrade.automigrations`.
+4. If a third-party addon that the guide lists as broken on this version stops Storybook from starting, remove it from the `addons` list in the main config and go on. Record the removal in the note of `upgrade.automigrations`. Do not remove a Storybook-owned package this way; its failure is a finding.
+5. Commit them separately: `git add -A && git commit -q -m "qa: apply migration notes"`. Skip the commit when nothing applied.
+6. Remember each step you applied. Put the list in the note of `upgrade.automigrations`.
 
 ## Step 4. Doctor and info
 

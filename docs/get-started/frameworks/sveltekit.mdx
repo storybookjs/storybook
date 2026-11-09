@@ -58,11 +58,11 @@ However, SvelteKit has some [Kit-specific modules](https://kit.svelte.dev/docs/m
 | ------------------------------------------------------------------------ | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`$app/env`](https://svelte.dev/docs/kit/$app-env)                       | ✅ Supported           | `version` is always empty in Storybook. The deprecated `$app/environment` works the same way.                                                                                                                                                                         |
 | [`$app/env/public`](https://svelte.dev/docs/kit/$app-env-public)         | 🚧 Partially supported | Static variables are supported. Dynamic variables are always `undefined`, because Storybook has no server to provide them.                                                                                                                                            |
-| [`$app/forms`](https://svelte.dev/docs/kit/$app-forms)                   | ✅ Supported (mocked)  | Storybook mocks it. See [How to mock](#how-to-mock).                                                                                                                                                                                                                  |
+| [`$app/forms`](https://svelte.dev/docs/kit/$app-forms)                   | ✅ Supported (mocked)  | Storybook mocks it. See [Mocking modules](#mocking-modules).                                                                                                                                                                                                          |
 | [`$app/manifest`](https://svelte.dev/docs/kit/$app-manifest)             | 🚧 Partially supported | Only has values in development mode. In a built Storybook, every list is empty.                                                                                                                                                                                       |
-| [`$app/navigation`](https://svelte.dev/docs/kit/$app-navigation)         | ✅ Supported (mocked)  | Storybook mocks it. See [How to mock](#how-to-mock).                                                                                                                                                                                                                  |
+| [`$app/navigation`](https://svelte.dev/docs/kit/$app-navigation)         | ✅ Supported (mocked)  | Storybook mocks it. See [Mocking modules](#mocking-modules).                                                                                                                                                                                                          |
 | [`$app/paths`](https://svelte.dev/docs/kit/$app-paths)                   | ✅ Supported           |                                                                                                                                                                                                                                                                       |
-| [`$app/state`](https://svelte.dev/docs/kit/$app-state)                   | ✅ Supported (mocked)  | Storybook mocks it. See [How to mock](#how-to-mock).                                                                                                                                                                                                                  |
+| [`$app/state`](https://svelte.dev/docs/kit/$app-state)                   | ✅ Supported (mocked)  | Storybook mocks it. See [Mocking modules](#mocking-modules).                                                                                                                                                                                                          |
 | [`$env/*/public`](https://svelte.dev/docs/kit/$env-static-public)        | 🚧 Partially supported | Deprecated by SvelteKit. Works the same way as `$app/env/public`.                                                                                                                                                                                                     |
 | `#lib`                                                                   | ✅ Supported           |                                                                                                                                                                                                                                                                       |
 | [`@sveltejs/kit/*`](https://svelte.dev/docs/kit/@sveltejs-kit)           | ✅ Supported           |                                                                                                                                                                                                                                                                       |
@@ -76,58 +76,113 @@ However, SvelteKit has some [Kit-specific modules](https://kit.svelte.dev/docs/m
 
 Storybook serves the files in your SvelteKit `static` directory at the root, like SvelteKit does. If you set `files.assets` to another directory in your SvelteKit config, add that directory to [`staticDirs`](../../configure/integration/images-and-assets.mdx#serving-static-files-via-storybook-configuration) so that `storybook build` includes it.
 
-### How to mock
+### Mocking modules
 
-SvelteKit's `$app/forms`, `$app/navigation` and `$app/state` modules need SvelteKit's router, which doesn't run in Storybook. So Storybook always replaces them with mocks. Your components import them as usual, and your stories import the same modules to control and inspect them:
-
-- Every function is a [mock function](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#using-automocked-modules-in-stories) (`fn()`). Calls such as `goto()` and `invalidate()` show in the [Actions panel](../../essentials/actions.mdx). Assert on them in a [`play` function](../../writing-stories/play-function.mdx), and change them with `mocked()` from `storybook/test`.
-- `page`, `navigating` and `updated` from `$app/state` are reactive and writable.
-- Set up the mocks in [`beforeEach`](../../writing-tests/interaction-testing.mdx#run-code-before-the-component-gets-rendered), in a story, in the meta, or in `.storybook/preview`. Storybook resets them before every story.
-- `@storybook/sveltekit/navigation.mock` and `@storybook/sveltekit/forms.mock` add a few mocks for things that SvelteKit does without a function call: [link clicks](#links), [`afterNavigate`](#afternavigate) and [form actions](#forms).
-
-For other modules, such as `#lib/*` imports, use [module mocking](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx) as usual.
+SvelteKit's `$app/forms`, `$app/navigation` and `$app/state` modules need SvelteKit's router, which doesn't run in Storybook. So Storybook replaces them with mocks. Your components import these modules as usual, and your stories import the same modules to set up the mocks and to assert on them.
 
 <Callout variant="info">
 
-Storybook 10 used `parameters.sveltekit_experimental` for these mocks. Storybook 11 removed it, and a story that still sets it fails with an error. The [migration guide](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-sveltekit_experimental-parameters-removed) shows the replacement for every key.
+Storybook 10 used `parameters.sveltekit_experimental` for these mocks. Storybook 11 removes it, and a story that still sets it fails with an error. See the [migration guide](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-sveltekit_experimental-parameters-removed) to update your stories.
 
 </Callout>
 
+#### Built-in mocked modules
+
+This framework mocks these SvelteKit modules:
+
+1. [`$app/forms`](#forms)
+2. [`$app/navigation`](#appnavigation)
+3. [`$app/state`](#appstate)
+
+It also provides two modules with mocks for things that SvelteKit does without a function call, such as following a link or sending a form to the server:
+
+1. [`@storybook/sveltekit/forms.mock`](#storybooksveltekitformsmock)
+2. [`@storybook/sveltekit/navigation.mock`](#storybooksveltekitnavigationmock)
+
+Every function in these modules is a [mock function](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#using-automocked-modules-in-stories). Calls such as `goto()` show up in the [Actions panel](../../essentials/actions.mdx), and you can assert on them in a [play function](../../writing-stories/play-function.mdx). To change what they do, set them up in [`beforeEach`](../../writing-tests/interaction-testing.mdx#run-code-before-the-component-gets-rendered), in a story, in the meta, or in `.storybook/preview`. Storybook resets every mock before each story.
+
 #### `$app/state`
 
-Set `page`, `navigating` and `updated` in `beforeEach`. When you set them in a `play` function, the component re-renders.
+`page`, `navigating` and `updated` are reactive, and you can write to them. Set them in `beforeEach` to render a component in a given state. When you set them in a play function, the component re-renders:
 
 <CodeSnippets path="sveltekit-mock-state.md" />
 
-By default, `page.url` is the origin of the Storybook preview, `page.status` is `-1`, and the other `page` properties are empty. `navigating` has only `null` values, and `updated.current` is `false`. `updated.check()` is a mock function that resolves `updated.current`.
+The default values are as follows:
 
-In TypeScript, SvelteKit types `updated.current` as read-only, so `updated.current = true` doesn't type-check. Use `Object.assign(updated, { current: true })` instead, which sets the same property.
+```ts
+// Default values of $app/state
+page.url = new URL(window.location.origin); // The origin of the Storybook preview
+page.params = {};
+page.route = { id: null };
+page.status = -1;
+page.error = null;
+page.data = {};
+page.form = null;
+page.state = {};
+
+navigating.from = null;
+navigating.to = null;
+navigating.type = null;
+navigating.willUnload = null;
+navigating.delta = null;
+navigating.complete = null;
+
+updated.current = false;
+updated.check = fn(() => Promise.resolve(updated.current));
+```
+
+<Callout variant="info">
+
+SvelteKit types `updated.current` as read-only, so `updated.current = true` doesn't type-check in TypeScript. Use `Object.assign(updated, { current: true })` instead.
+
+</Callout>
 
 #### `$app/navigation`
 
-Every function of `$app/navigation` is a mock function. `goto()`, `invalidate()`, `invalidateAll()`, `refreshAll()`, `pushState()`, `replaceState()`, `preloadData()` and `preloadCode()` do nothing by default. Give one an implementation with `mocked(goto).mockImplementation(...)`.
+Every function of `$app/navigation` is a mock function that does nothing by default. To give one an implementation, use `mocked()` from `storybook/test`:
 
 <CodeSnippets path="sveltekit-mock-navigation.md" />
 
-`beforeNavigate()`, `onNavigate()` and `snapshot()` never call their callbacks, because Storybook never navigates. For `afterNavigate()`, see [below](#afternavigate).
+Storybook never navigates, so `beforeNavigate()`, `onNavigate()` and `snapshot()` never call their callbacks. `afterNavigate()` calls its callback once, when the component mounts. See [`afterNavigate`](#afternavigate).
 
 #### Links
 
-When you click a link in a story, SvelteKit would load another page. Instead, Storybook calls the `link` mock function from `@storybook/sveltekit/navigation.mock` with the `href` and the click event. It's also logged in the Actions panel.
+When you click a link in a story, SvelteKit would load another page. Instead, Storybook calls the [`link`](#link) mock function from `@storybook/sveltekit/navigation.mock`, with the `href` and the click event:
 
 <CodeSnippets path="sveltekit-mock-links.md" />
 
-Like SvelteKit, Storybook leaves links that open another window (`target="_blank"` or a window name), links with a `download` attribute, clicks with a modifier key or another mouse button than the main one, and clicks that a component already handled with `event.preventDefault()` to the browser. It intercepts all other links, including links to other origins, links with `data-sveltekit-reload`, and links with `target="_top"` or `target="_parent"`, so the story stays in the preview. On a docs page, Storybook intercepts only the links inside each story, so the links of the page itself keep working.
+Like SvelteKit, Storybook leaves some clicks to the browser:
+
+- Links that open another window, with `target="_blank"` or a window name
+- Links with a `download` attribute
+- Clicks with a modifier key, or with another mouse button than the main one
+- Clicks that a component already handled with `event.preventDefault()`
+
+Storybook intercepts all other links, including links to other sites and links with `data-sveltekit-reload`, `target="_top"` or `target="_parent"`, so the story stays in the preview. On a docs page, Storybook intercepts only the links inside each story, so the links of the docs page itself keep working.
 
 #### `afterNavigate`
 
-`afterNavigate()` calls its callback once, after the component mounts, like SvelteKit does on the first page load. By default, the callback receives `{ type: 'enter', from: null, to: null, shallow: false, willUnload: false, complete: Promise.resolve() }`. To render a component as if the user came from another page, call `setAfterNavigate()` from `@storybook/sveltekit/navigation.mock` in `beforeEach`. It merges the properties you pass into the default.
+`afterNavigate()` calls its callback once, after the component mounts, like SvelteKit does on the first page load. By default, the callback receives a navigation from nowhere:
+
+```ts
+// Default navigation of afterNavigate
+{
+  type: 'enter',
+  from: null,
+  to: null,
+  shallow: false,
+  willUnload: false,
+  complete: Promise.resolve(),
+}
+```
+
+To render a component as if the user came from another page, call [`setAfterNavigate()`](#setafternavigate) in `beforeEach`. It merges the properties you pass into the default:
 
 <CodeSnippets path="sveltekit-mock-after-navigate.md" />
 
 #### Forms
 
-A form with [`use:enhance`](https://svelte.dev/docs/kit/form-actions#Progressive-enhancement-use:enhance) runs SvelteKit's submit flow in Storybook. Instead of sending the form to the server, it calls the `formAction` mock function from `@storybook/sveltekit/forms.mock`, with `{ action, formData, formElement, submitter }`. The result of `formAction` drives the rest of the flow, as a server result would:
+A form with [`use:enhance`](https://svelte.dev/docs/kit/form-actions#Progressive-enhancement-use:enhance) runs SvelteKit's submit flow in Storybook. Instead of sending the form to the server, it calls the [`formAction`](#formaction) mock function from `@storybook/sveltekit/forms.mock`. The result of `formAction` drives the rest of the flow, as the result of a server action would:
 
 | Result                                        | What happens                                                                                                           |
 | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
@@ -136,23 +191,31 @@ A form with [`use:enhance`](https://svelte.dev/docs/kit/form-actions#Progressive
 | `{ type: 'redirect', status, location }`      | `goto(location)` is called.                                                                                            |
 | `{ type: 'error', status, error }`            | `page.error` and `page.status` are set. A `formAction` that throws or rejects gives an error result with status `500`. |
 
-By default, `formAction` resolves `{ type: 'success', status: 200 }`. Set another result with `formAction.mockResolvedValue(...)` in `beforeEach`:
+To test how a component handles a result, set it with `formAction.mockResolvedValue()` in `beforeEach`:
 
 <CodeSnippets path="sveltekit-mock-forms.md" />
 
-Like in SvelteKit, `use:enhance` handles only forms with `method="post"`. A route component that reads the `form` prop instead of `page.form` gets it from the story's args, so set `form` in `args` to show a result.
+The `submit` function you pass to `use:enhance` runs as it does in SvelteKit. It can call `cancel()`, and it can return a callback that receives the `result` and the `update()` function. `applyAction()` applies a result as the table above shows.
 
-The `submit` function you pass to `use:enhance` runs as in SvelteKit: it can call `cancel()`, and it can return a callback that receives the `result` and the `update()` function. `applyAction()` from `$app/forms` applies a result as the table above shows, and `deserialize()` is a mock function that returns `undefined`.
+<Callout variant="info">
+
+Like SvelteKit, `use:enhance` handles only forms with `method="post"`. If a route component reads the `form` prop instead of `page.form`, set `form` in the story's [args](../../writing-stories/args.mdx) to show a result.
+
+</Callout>
 
 #### Docs pages
 
-The SvelteKit mocks are one instance per document, like SvelteKit's own modules. A docs page renders its stories in one document, so stories that set the mocks would share them: each story would show the setup of the story that set the mocks last. Storybook doesn't render that wrong state. Instead, the stories on the docs page fail with a `SvelteKitMocksSharedOnDocsPageError`.
+On a docs page, stories render inline by default, all in one document. The SvelteKit mocks are one instance per document, like SvelteKit's own modules, so inline stories would share them. Each story would show the setup of the story that ran last. Rather than render the wrong state, Storybook shows a `SvelteKitMocksSharedOnDocsPageError` for the stories on that docs page.
 
-This happens when a story on a docs page sets `page`, `navigating` or `updated`, calls `setAfterNavigate()`, or configures a mock function such as `goto` or `formAction`, in `beforeEach` or in the meta's `beforeEach`. It doesn't happen when you view a story on its own, in tests, or on a docs page whose stories don't set the mocks.
-
-To fix it, render the stories of that file in iframes on the docs page, where each story has its own mocks:
+To fix it, render the stories of that file in iframes, where each story has its own mocks:
 
 <CodeSnippets path="sveltekit-mock-docs-pages.md" />
+
+This only matters for stories that set up the mocks, by setting `page`, `navigating` or `updated`, calling `setAfterNavigate()`, or configuring a mock function such as `goto` or `formAction` in `beforeEach`. Docs pages of other stories, and stories viewed on their own or run as tests, aren't affected.
+
+#### Mocking other modules
+
+To mock other modules, such as your `#lib/*` imports, use [automocking](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#automocking) or one of the [alternative methods](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#alternative-methods) documented in the mocking modules guide.
 
 ## Writing native Svelte stories
 
@@ -177,6 +240,42 @@ Finally, these packages are now either obsolete or part of `@storybook/sveltekit
 - `@storybook/builder-vite`
 
 ## API
+
+### Modules
+
+The `@storybook/sveltekit` package exports two modules that enable you to [mock](#mocking-modules) what SvelteKit does without a function call.
+
+#### `@storybook/sveltekit/forms.mock`
+
+Type: `typeof import('$app/forms') & { formAction }`
+
+This module exports the mocked implementations of the `$app/forms` module's exports, and `formAction`. Storybook uses it in place of `$app/forms`, so `import { applyAction } from '$app/forms'` in a story gets the same mock function as the component.
+
+##### `formAction`
+
+Type: `Mock<(submission: { action: URL; formData: FormData; formElement: HTMLFormElement; submitter: HTMLElement | null }) => Promise<ActionResult>>`
+
+Default: resolves `{ type: 'success', status: 200 }`
+
+Called instead of the server when a form with `use:enhance` is submitted. The [`ActionResult`](https://svelte.dev/docs/kit/@sveltejs-kit#ActionResult) it resolves drives the rest of the submit flow. See [Forms](#forms) for an example.
+
+#### `@storybook/sveltekit/navigation.mock`
+
+Type: `typeof import('$app/navigation') & { link, setAfterNavigate }`
+
+This module exports the mocked implementations of the `$app/navigation` module's exports, `link` and `setAfterNavigate`. Storybook uses it in place of `$app/navigation`, so `import { goto } from '$app/navigation'` in a story gets the same mock function as the component.
+
+##### `link`
+
+Type: `Mock<(href: string, event: MouseEvent) => void>`
+
+Called instead of navigating when a link in a story is clicked. Logged in the Actions panel as `$app/navigation::link`. See [Links](#links) for an example and for the clicks that Storybook leaves to the browser.
+
+##### `setAfterNavigate`
+
+Type: `(navigation: Partial<AfterNavigate>) => void`
+
+Sets the [navigation](https://svelte.dev/docs/kit/@sveltejs-kit#AfterNavigate) that `afterNavigate()` callbacks receive when the component mounts. It merges `navigation` into the [default navigation](#afternavigate). Call it in `beforeEach`. Storybook resets it before each story.
 
 ### Options
 

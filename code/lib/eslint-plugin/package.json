@@ -61,7 +61,13 @@
     "typescript": "^6.0.3"
   },
   "peerDependencies": {
+    "@typescript-eslint/utils": "^8.60.0",
     "eslint": ">=8"
+  },
+  "peerDependenciesMeta": {
+    "@typescript-eslint/utils": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

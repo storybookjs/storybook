@@ -20180,7 +20180,11 @@ __metadata:
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^6.0.3"
   peerDependencies:
+    "@typescript-eslint/utils": ^8.60.0
     eslint: ">=8"
+  peerDependenciesMeta:
+    "@typescript-eslint/utils":
+      optional: true
   languageName: unknown
   linkType: soft
 

@@ -22,6 +22,19 @@ const renders = new Map<Element, { storyId: string; settingUp: boolean }>();
 let mocksSetOnPage = false;
 let resetting = false;
 
+// Core runs the cleanup of a story only when every `beforeEach` succeeds, so a story that failed
+// in its setup stays here when the user leaves the page. The page removes its canvas element.
+const forgetRemovedRenders = () => {
+  for (const canvasElement of renders.keys()) {
+    if (!canvasElement.isConnected) {
+      renders.delete(canvasElement);
+    }
+  }
+  if (renders.size === 0) {
+    mocksSetOnPage = false;
+  }
+};
+
 const hasOtherStory = (storyId: string) =>
   [...renders.values()].some((render) => render.storyId !== storyId);
 const isSettingUp = () => [...renders.values()].some((render) => render.settingUp);
@@ -65,6 +78,7 @@ const listenForFailures = () => {
  */
 export function beginDocsStory(storyId: string, canvasElement: Element, mocksChanged: boolean) {
   listenForFailures();
+  forgetRemovedRenders();
   if ((mocksSetOnPage || (mocksChanged && isSettingUp())) && hasOtherStory(storyId)) {
     throw sharedError();
   }
@@ -91,6 +105,7 @@ export function endDocsSetup(canvasElement: Element, mocksChanged: boolean) {
 
 /** Called by every write to a SvelteKit mock. Throws when stories on a docs page would share it. */
 export function noteMockSet() {
+  forgetRemovedRenders();
   if (resetting || !isSettingUp()) {
     return;
   }

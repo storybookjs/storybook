@@ -18,6 +18,16 @@ ruleTester.run('story-exports', rule, {
   valid: [
     'export const Primary = {}',
     dedent`
+      import preview from '../../.storybook/preview'
+      const meta = preview.meta({ component: Button })
+      export const Primary = meta.story({})
+    `,
+    dedent`
+      import preview from '../../.storybook/preview'
+      const meta = preview.meta({ component: Button })
+      export const Primary = meta.extend({})
+    `,
+    dedent`
       export default {}
       export const Primary = {}
     `,
@@ -65,6 +75,22 @@ ruleTester.run('story-exports', rule, {
     `,
   ],
   invalid: [
+    {
+      code: dedent`
+        import preview from '../../.storybook/preview'
+        const meta = preview.meta({ component: Button })
+      `,
+      errors: [{ messageId: 'shouldHaveStoryExport' }],
+    },
+    {
+      // non-factory exports are not stories in a factory file
+      code: dedent`
+        import preview from '../../.storybook/preview'
+        export const meta = preview.meta({ component: Button })
+        export const mockData = {}
+      `,
+      errors: [{ messageId: 'shouldHaveStoryExport' }],
+    },
     {
       code: dedent`
         export default {

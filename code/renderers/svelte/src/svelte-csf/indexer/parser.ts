@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 
-import { parse } from 'svelte/compiler';
+import { type CompileError, parse } from 'svelte/compiler';
 import { findMeta, findMetaImports, hasMetaImport } from '../utils/import-source.ts';
 import { unwrapExpression } from 'storybook/internal/csf-tools';
 import type { IndexInput } from 'storybook/internal/types';
@@ -56,11 +56,20 @@ export function parseSvelteSource(file: string): { source: string; ast: SvelteAS
 function getIndexableAST(code: string): SvelteAST.Root {
   try {
     return parse(code, { modern: true });
-  } catch {
+  } catch (error) {
     const blanked = code.replace(styleBlocks, (match, open?: string, content = '', close = '') =>
       open === undefined ? match : open + content.replace(/[^\r\n]/g, ' ') + close
     );
-    return parse(blanked, { modern: true });
+    if (blanked === code) {
+      throw error;
+    }
+    try {
+      return parse(blanked, { modern: true });
+    } catch (blankedError) {
+      // Svelte builds the code frame from the blanked code, which isn't the file
+      delete (blankedError as Partial<CompileError>).frame;
+      throw blankedError;
+    }
   }
 }
 
@@ -149,10 +158,7 @@ export async function parseForIndexer(filename: string): Promise<Results> {
       const metaObject = firstArgument && unwrapExpression(firstArgument);
 
       if (metaObject?.type !== 'ObjectExpression') {
-        throw new GetDefineMetaFirstArgumentError({
-          filename,
-          defineMetaVariableDeclaration: meta.declaration,
-        });
+        throw new GetDefineMetaFirstArgumentError(filename);
       }
 
       visit(metaObject, state);
@@ -234,8 +240,6 @@ export async function parseForIndexer(filename: string): Promise<Results> {
         const hasTemplate = storyAttributes.template || templateSnippet;
         const hasAsChild = storyAttributes.asChild !== undefined;
 
-        // TODO: This could actually work in the future, by supporting referencing a template
-        // and forwarding any children to that.
         if (storyAttributes.template && hasChildren) {
           throw new StoryTemplateAndChildrenError({ component: node, filename });
         }

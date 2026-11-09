@@ -57,7 +57,7 @@ export const typescript7ReactDocgen: Fix<true> = {
   },
 
   prompt() {
-    return `Until Storybook supports TypeScript 7.1, server-side docgen cannot read your component types on TypeScript 7.0 (see the ${picocolors.cyan('typescript-compiler-api')} notice). Storybook then falls back to the deprecated builder docgen with ${picocolors.cyan('react-docgen')}, which it no longer installs. Add ${picocolors.cyan('react-docgen')} for now, so Controls and the Docs args table keep working? Once Storybook supports TypeScript 7.1, it offers to remove it again.`;
+    return `Until Storybook supports TypeScript 7.1, server-side docgen cannot read your component types on TypeScript 7.0 (see the ${picocolors.cyan('typescript-compiler-api')} notice). Storybook then falls back to the deprecated builder docgen with ${picocolors.cyan('react-docgen')}, which it no longer installs. Add ${picocolors.cyan('react-docgen')} for now, so Controls and the Docs args table keep working? Once your project is on TypeScript 7.1, you can remove it again.`;
   },
 
   async run({ packageManager }) {

@@ -27,13 +27,13 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "code": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./node": {
-      "types": "./dist/node/index.d.ts",
       "code": "./src/node/index.ts",
+      "types": "./dist/node/index.d.ts",
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
@@ -58,7 +58,7 @@
     "vite": "^7.0.4"
   },
   "peerDependencies": {
-    "preact": "^10.8.0 || >= 11.0.0-0",
+    "preact": "^10.9.0 || >= 11.0.0-0",
     "storybook": "workspace:^",
     "vite": "^6.3.0 || ^7.0.0 || ^8.0.0"
   },

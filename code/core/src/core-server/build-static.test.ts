@@ -57,12 +57,7 @@ describe('buildStaticStandalone', () => {
 
     expect(memfs.vol.toJSON(outputDir, {}, true)).toMatchInlineSnapshot(`
       {
-        "favicon-wrapper.svg": "favicon-wrapper",
         "favicon.svg": "favicon",
-        "nunito-sans-bold-italic.woff2": "bold-italic",
-        "nunito-sans-bold.woff2": "bold",
-        "nunito-sans-italic.woff2": "italic",
-        "nunito-sans-regular.woff2": "regular",
         "sb-common-assets/favicon-wrapper.svg": "favicon-wrapper",
         "sb-common-assets/favicon.svg": "favicon",
         "sb-common-assets/nunito-sans-bold-italic.woff2": "bold-italic",

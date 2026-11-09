@@ -123,7 +123,8 @@ const parseRequest = () => {
     os,
     outDir,
     monorepoDir: resolve(QA_DIR, '..'),
-    cycleBranch: `qa/sb-${major}.${minor}`,
+    // One branch per os and engine, so parallel runs of the same cycle never race on a push.
+    cycleBranch: `qa/sb-${major}.${minor}/${os}-${engine}`,
   };
   const cloneDir = resolve(values['clone-dir'] ?? join(outDir, '../../../work', entry.id));
   return { request, isFake, cloneDir, image: values.image };

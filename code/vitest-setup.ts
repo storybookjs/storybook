@@ -1,3 +1,5 @@
+import { Writable } from 'node:stream';
+
 import '@testing-library/jest-dom/vitest';
 import { expect, vi } from 'vitest';
 
@@ -34,18 +36,18 @@ const ALLOWED_CONSOLE_PREDICATES: ((...args: any[]) => boolean)[] = [
 
 // Vitest cannot tie direct stream writes (from @clack/prompts, or Node's own warnings) to a test,
 // so `silent: 'passed-only'` cannot hide them. Route them through the console Vitest captures,
-// keeping a reference from before any test spies on `console.log`.
-const logStreamWrite = console.log.bind(console);
-for (const stream of [process.stdout, process.stderr]) {
-  stream.write = ((chunk: string | Uint8Array, encoding?: unknown, callback?: unknown) => {
-    logStreamWrite('%s', Buffer.from(chunk).toString().replace(/\n$/, ''));
-    const done = typeof encoding === 'function' ? encoding : callback;
-    if (typeof done === 'function') {
-      done();
-    }
-    return true;
-  }) as typeof stream.write;
-}
+// keeping references from before the spies below and any test replace `console` methods.
+const toConsole = (log: (...args: unknown[]) => void) =>
+  new Writable({
+    write(chunk: Buffer, _encoding, callback) {
+      log('%s', chunk.toString().replace(/\n$/, ''));
+      callback();
+    },
+  });
+const stdout = toConsole(console.log.bind(console));
+const stderr = toConsole(console.log.bind(console));
+process.stdout.write = stdout.write.bind(stdout);
+process.stderr.write = stderr.write.bind(stderr);
 
 (['warn', 'error'] as const).forEach((type) => {
   const failOnConsole = vi.defineHelper((...args) => {

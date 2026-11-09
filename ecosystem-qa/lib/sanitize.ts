@@ -1,3 +1,4 @@
+import { redactSecrets } from './redact.ts';
 import type { Finding } from './schema.ts';
 
 const LIMITS = { title: 150, actual: 500, expected: 300, errorText: 4000, reproStep: 300 };
@@ -31,7 +32,7 @@ const isStorybookLink = (candidate: string): boolean => {
  * Backticks become quotes first, so the only code spans are the ones added here.
  */
 export const sanitizeTitle = (text: string): string =>
-  cap(text, LIMITS.title)
+  cap(redactSecrets(text), LIMITS.title)
     .replaceAll('`', "'")
     .replace(/<[^>]*>/g, '')
     .replace(/\[([^\]]*)\]\(([^)\s]*)\)/g, (match, label: string, url: string) =>
@@ -48,10 +49,10 @@ export const sanitizeTitle = (text: string): string =>
  */
 export const sanitizeFinding = (finding: Finding): Finding => ({
   ...finding,
-  actual: cap(finding.actual, LIMITS.actual),
-  expected: cap(finding.expected, LIMITS.expected),
-  errorText: finding.errorText && cap(finding.errorText, LIMITS.errorText),
+  actual: cap(redactSecrets(finding.actual), LIMITS.actual),
+  expected: cap(redactSecrets(finding.expected), LIMITS.expected),
+  errorText: finding.errorText && cap(redactSecrets(finding.errorText), LIMITS.errorText),
   reproSteps: finding.reproSteps
     .slice(0, MAX_REPRO_STEPS)
-    .map((step) => cap(step, LIMITS.reproStep)),
+    .map((step) => cap(redactSecrets(step), LIMITS.reproStep)),
 });

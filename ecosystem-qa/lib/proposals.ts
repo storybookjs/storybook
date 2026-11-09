@@ -3,6 +3,7 @@ import { join } from 'pathe';
 import { versionLine } from './cycle.ts';
 import { fingerprint } from './fingerprint.ts';
 import type { LoadedResult } from './results.ts';
+import { redactSecrets } from './redact.ts';
 import { sanitizeFinding, sanitizeTitle } from './sanitize.ts';
 import type {
   CommentProposal,
@@ -58,7 +59,7 @@ const evidenceFiles = ({ finding, primary }: FindingGroup): EvidenceFile[] => {
 };
 
 const systemText = ({ result, systemInfo }: LoadedResult): string =>
-  systemInfo ??
+  (systemInfo && redactSecrets(systemInfo)) ??
   [
     `OS: ${result.request.os}`,
     `Node: ${result.machine.node}`,

@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { parseArgs } from 'node:util';
 
@@ -17,6 +17,7 @@ import {
   type FilingStep,
 } from './lib/filing.ts';
 import { ghParse, ghText, searchFingerprint } from './lib/github.ts';
+import { copyRedacted } from './lib/redact.ts';
 import { Proposal } from './lib/schema.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
 
@@ -128,7 +129,7 @@ const commitEvidence = (step: Extract<FilingStep, { kind: 'push-evidence' }>) =>
   for (const file of step.files) {
     const target = join(dir, step.assetDir, file.name);
     mkdirSync(dirname(target), { recursive: true });
-    copyFileSync(resolve(file.localPath), target);
+    copyRedacted(resolve(file.localPath), target);
   }
   git(dir, ['add', '--all']);
   if (git(dir, ['status', '--porcelain']) === '') {

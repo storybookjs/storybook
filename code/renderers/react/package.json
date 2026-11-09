@@ -22,8 +22,8 @@
   "type": "module",
   "exports": {
     ".": {
-      "code": "./src/index.ts",
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./entry-preview": "./dist/entry-preview.js",
@@ -31,16 +31,16 @@
     "./entry-preview-docs": "./dist/entry-preview-docs.js",
     "./entry-preview-rsc": "./dist/entry-preview-rsc.js",
     "./internal/builder-docgen": {
-      "code": "./src/builder-docgen.ts",
       "types": "./dist/builder-docgen.d.ts",
+      "code": "./src/builder-docgen.ts",
       "default": "./dist/builder-docgen.js"
     },
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
     "./preview": {
-      "code": "./src/preview.tsx",
       "types": "./dist/preview.d.ts",
+      "code": "./src/preview.tsx",
       "default": "./dist/preview.js"
     }
   },

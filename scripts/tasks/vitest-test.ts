@@ -22,8 +22,8 @@ export const vitestTests: Task = {
   async ready() {
     return false;
   },
-  async run({ sandboxDir, key }, { dryRun, link }) {
-    await prepareSandbox({ key, link, sandboxDir });
+  async run({ sandboxDir, key }, { dryRun, debug, link }) {
+    await prepareSandbox({ key, link, sandboxDir, dryRun, debug });
     console.log(`running Vitest tests in ${sandboxDir}`);
 
     // The angular-vite sandbox JIT-compiles every story in browser mode, holding many Chromium

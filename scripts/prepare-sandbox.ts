@@ -32,11 +32,15 @@ export async function prepareSandbox({
   key,
   link,
   sandboxDir,
+  dryRun,
+  debug,
 }: {
   key: string;
   link: boolean;
   // Where tasks actually run, e.g. ../storybook-sandboxes/react-vite-default-ts.
   sandboxDir: string;
+  dryRun: boolean;
+  debug: boolean;
 }): Promise<void> {
   // Where NX caches sandbox output (e.g. sandbox/react-vite-default-ts, inside repo)
   const cacheDir = join(ROOT_DIRECTORY, 'sandbox', key.replace('/', '-'));
@@ -47,7 +51,7 @@ export async function prepareSandbox({
     // Imported lazily because it imports from `code/`, which may not be installed yet.
     const { isLinkedSandbox, syncLinkedPackages } = await import('./utils/pnpm.ts');
     if (link && (await isLinkedSandbox(sandboxDir))) {
-      await syncLinkedPackages({ cwd: sandboxDir, dryRun: false, debug: false });
+      await syncLinkedPackages({ cwd: sandboxDir, dryRun, debug });
     }
     return;
   }

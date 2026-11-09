@@ -10,7 +10,7 @@ export const chromatic: Task = {
     return false;
   },
   async run({ key, sandboxDir, builtSandboxDir, junitFilename }, { dryRun, debug, link }) {
-    await prepareSandbox({ key, link, sandboxDir });
+    await prepareSandbox({ key, link, sandboxDir, dryRun, debug });
     const tokenEnvVarName = `CHROMATIC_TOKEN_${key.toUpperCase().replace(/\/|-|\./g, '_')}`;
     const token = process.env[tokenEnvVarName];
     console.log('Reading Chromatic token from environment variable', tokenEnvVarName);

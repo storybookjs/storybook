@@ -70,7 +70,7 @@ export const dev: Task = {
     }
   },
   async run({ sandboxDir, key, selectedTask }, { dryRun, debug, link }) {
-    await prepareSandbox({ key, link, sandboxDir });
+    await prepareSandbox({ key, link, sandboxDir, dryRun, debug });
 
     if (!dryRun) {
       try {

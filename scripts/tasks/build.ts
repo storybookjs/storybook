@@ -27,7 +27,7 @@ export const build: Task = {
     return pathExists(builtSandboxDir);
   },
   async run({ builtSandboxDir, sandboxDir, template, key }, { dryRun, debug, link }) {
-    await prepareSandbox({ key, link, sandboxDir });
+    await prepareSandbox({ key, link, sandboxDir, dryRun, debug });
     const start = now();
 
     await exec(

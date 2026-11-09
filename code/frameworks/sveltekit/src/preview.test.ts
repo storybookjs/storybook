@@ -28,7 +28,6 @@ const runStoryBeforeEach = (context: {
   parameters?: Record<string, unknown>;
   canvasElement?: HTMLElement | null;
   viewMode?: string;
-  abortSignal?: AbortSignal;
 }) => {
   const result = (svelteKitBeforeEach as (context: unknown) => unknown)({
     id: 'story--default',
@@ -245,23 +244,17 @@ describe('link clicks', () => {
 describe('on a docs page', () => {
   // A render of a story on a docs page, with its own canvas element
   const setUpDocsStory = (id: string) => {
-    const canvasElement = document.createElement('div');
-    const abortController = new AbortController();
-    const cleanup = runStoryBeforeEach({
-      id,
-      viewMode: 'docs',
-      canvasElement,
-      abortSignal: abortController.signal,
-    });
+    const canvasElement = document.body.appendChild(document.createElement('div'));
+    const cleanup = runStoryBeforeEach({ id, viewMode: 'docs', canvasElement });
     const mount = () => {
       const [decorator] = svelteKitDecorators as Array<
         (story: () => unknown, context: unknown) => unknown
       >;
       decorator(() => ({}), { canvasElement, viewMode: 'docs' });
     };
-    // Core aborts the render when it tears the story down
-    const teardown = () => abortController.abort();
-    return { cleanup, mount, teardown };
+    // Leaving the docs page removes the canvas element of every story
+    const remove = () => canvasElement.remove();
+    return { cleanup, mount, remove };
   };
 
   it('throws when a story sets a mock while another story on the page is set up', () => {
@@ -376,10 +369,11 @@ describe('on a docs page', () => {
   });
 
   it('starts over on the next docs page after a story failed before core got its cleanup', () => {
-    // Core registers the cleanups only after every `beforeEach` succeeds
+    // Core runs the cleanups only when every `beforeEach` succeeds
     const a = setUpDocsStory('story--a');
-    setUpDocsStory('story--b').teardown();
-    a.teardown();
+    const b = setUpDocsStory('story--b');
+    a.remove();
+    b.remove();
 
     setUpDocsStory('story--c');
 

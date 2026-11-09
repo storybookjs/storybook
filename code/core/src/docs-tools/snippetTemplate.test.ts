@@ -27,6 +27,8 @@ const hole = (ref: HoleRef<Place>, text: string, space?: string): TemplateHole<P
   ...(space !== undefined && { space }),
 });
 
+// A test printer, not a renderer's: it prints a filled hole as `[place arg=value]`, so a test
+// shows which hole the template asked for and with what value. A renderer prints real code.
 const echo: PrintHole<Place> = (ref, value) =>
   `[${ref.kind} ${ref.spread ? '*' : ref.arg}=${JSON.stringify(value)}]`;
 

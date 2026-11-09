@@ -28,6 +28,7 @@ const runStoryBeforeEach = (context: {
   parameters?: Record<string, unknown>;
   canvasElement?: HTMLElement | null;
   viewMode?: string;
+  abortSignal?: AbortSignal;
 }) => {
   const result = (svelteKitBeforeEach as (context: unknown) => unknown)({
     id: 'story--default',
@@ -184,6 +185,32 @@ describe('link clicks', () => {
 
     expect(event.defaultPrevented).toBe(false);
     expect(link).not.toHaveBeenCalled();
+  });
+
+  it('stops when core aborts a story that failed in its setup, as core drops its cleanup', () => {
+    const abortController = new AbortController();
+    runStoryBeforeEach({ abortSignal: abortController.signal });
+    // A later `beforeEach` throws, so the story never mounts, and core aborts it on teardown
+    abortController.abort();
+
+    const event = clickLink('<a data-click href="/settings">Settings</a>');
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(link).not.toHaveBeenCalled();
+  });
+
+  it('keeps going when core aborts a mounted story, such as on a hot update during play', () => {
+    const abortController = new AbortController();
+    runStoryBeforeEach({ abortSignal: abortController.signal });
+    const [decorator] = svelteKitDecorators as Array<
+      (story: () => unknown, context: unknown) => unknown
+    >;
+    decorator(() => ({}), { canvasElement: document.body, viewMode: 'story' });
+    abortController.abort();
+
+    const event = clickLink('<a data-click href="/settings">Settings</a>');
+
+    expect(event.defaultPrevented).toBe(true);
   });
 
   it('works without a canvas, as in the load() of a portable story', () => {

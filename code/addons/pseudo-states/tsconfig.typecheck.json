@@ -1,0 +1,8 @@
+{
+  // Vitest's type tests on CI, where every package's dist exists: resolve other workspace packages
+  // to their built `types` instead of their sources (the `code` condition).
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "customConditions": []
+  }
+}

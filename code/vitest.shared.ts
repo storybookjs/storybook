@@ -52,6 +52,8 @@ export const vitestCommonConfig = defineConfig({
       checker: join(dirname(require.resolve('typescript-native/package.json')), 'bin', 'tsc'),
       // Diagnostics outside the type test files are `yarn task check`'s job.
       ignoreSourceErrors: true,
+      // Each project that enables type tests has one; locally the `code` condition needs no build.
+      tsconfig: process.env.CI ? 'tsconfig.typecheck.json' : undefined,
     },
   },
 });

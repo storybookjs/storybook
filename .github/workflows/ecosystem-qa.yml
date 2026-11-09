@@ -155,6 +155,7 @@ jobs:
         run: >-
           node ecosystem-qa/run.ts --repo "$QA_REPO" --version "$QA_VERSION" --engine "$QA_ENGINE"
           --sandbox "$QA_SANDBOX" --out "ecosystem-qa/results/$QA_REPO/$QA_OS/$QA_ENGINE"
+          --clone-dir "$RUNNER_TEMP/qa-work/$QA_REPO"
 
       - name: Free disk after the run (Linux)
         if: ${{ always() && matrix.os == 'linux' }}

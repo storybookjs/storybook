@@ -2159,7 +2159,7 @@ Storybook still mocks `$app/forms`, `$app/navigation` and `$app/state`, because 
 
 See [Mocking modules](https://storybook.js.org/docs/get-started/frameworks/sveltekit#mocking-modules) in the SvelteKit docs for the full API.
 
-The `sveltekit-mocking-before-each` automigration migrates most stories files when you upgrade, or when you run `npx storybook automigrate sveltekit-mocking-before-each`. It lists the files that it can't migrate, with the reasons, in `automigrations-summary.md`. For those files, use the prompt below.
+The `sveltekit-mocking-before-each` automigration migrates most stories files when you upgrade, or when you run `npx storybook automigrate sveltekit-mocking-before-each`. It lists the files that it can't migrate, with the reasons, in `automigrations-summary.md`. For those files, use the prompt below: it runs the automigration first and works from that list.
 
 To migrate your stories, give this prompt to your AI agent, or follow it by hand:
 
@@ -2181,9 +2181,13 @@ Storybook 11 removed `parameters.sveltekit_experimental`. A story that still set
 
 Docs: https://storybook.js.org/docs/get-started/frameworks/sveltekit#mocking-modules
 
+## Run the automigration first
+
+Run `npx storybook automigrate sveltekit-mocking-before-each` in the project. It does the steps below for most files. It leaves a file unchanged when it can't migrate every `sveltekit_experimental` in it, and lists that file in `automigrations-summary.md` in the project root, with the line and the reason for each one it couldn't migrate. While that file lists files, the command exits with an error. Fix the files it lists first, and use the reasons: they say what to change, for example a shared variable to inline into each story, or a `play` function that reads `parameters.sveltekit_experimental`. Then run the command again: it migrates the files that it can now read, and it removes `automigrations-summary.md` when no file is left. Migrate by hand what it still lists. If the command doesn't run, for example because the project isn't on Storybook 11 yet, do every step by hand.
+
 ## Find the code to migrate
 
-Search the project for `sveltekit_experimental`: in `*.stories.svelte` files, in `*.stories.{js,jsx,ts,tsx,mjs}` files, in `.storybook/preview.*`, and in helper modules that stories import parameters from. Migrate every occurrence.
+The automigration doesn't read parameters that stories import from files outside `.storybook`. Search the project for `sveltekit_experimental`: in `*.stories.svelte` files, in `*.stories.{js,jsx,ts,tsx,mjs}` files, in `.storybook/preview.*`, and in helper modules that stories import parameters from. Migrate every occurrence.
 
 ## Steps for each `sveltekit_experimental`
 

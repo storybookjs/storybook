@@ -115,7 +115,7 @@ The minimum supported TypeScript version is now 5.9. Update your TypeScript depe
 
 #### Preact
 
-If your addon or its development Storybook uses Preact, upgrade Preact before Storybook 11. The supported peer range is `^10.8.0 || >=11.0.0-0` because Storybook relies on `preact/compat/client` roots with `unmount()` support. Preact 10.7.1 roots don't provide that method, which Storybook needs for cleanup and root recreation.
+If your addon or its development Storybook uses Preact, upgrade Preact before Storybook 11. The supported peer range is `^10.9.0 || >=11.0.0-0`. Storybook relies on `preact/compat/client` roots with `unmount()` support, which Preact 10.7.1 roots don't provide, and its UI components call `useSyncExternalStore`, which `preact/compat` exports from Preact 10.9.0.
 
 The official Preact framework is `@storybook/preact-vite`. The same minimum applies to custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack.
 

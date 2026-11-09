@@ -450,7 +450,11 @@ export const services = async (_value: void, options: Options): Promise<void> =>
         docgenProvider: (input) => docgenWorker.extract(input.entry),
       });
       devServerSubscriptions.push(() =>
-        subscribeDocgenToModuleGraphChanges({ getIndex, workingDir: process.cwd() })
+        subscribeDocgenToModuleGraphChanges({
+          channel: options.channel,
+          getIndex,
+          workingDir: process.cwd(),
+        })
       );
     }
 
@@ -463,7 +467,11 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       storyDocsProvider,
     });
     devServerSubscriptions.push(() =>
-      subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() })
+      subscribeStoryDocsToModuleGraphChanges({
+        channel: options.channel,
+        getIndex,
+        workingDir: process.cwd(),
+      })
     );
   }
 

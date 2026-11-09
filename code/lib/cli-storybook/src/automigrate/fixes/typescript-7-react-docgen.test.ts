@@ -127,26 +127,38 @@ describe('typescript-7-react-docgen', () => {
     };
     const inConfigDir = { ...upgrade, configDir: '/project/.storybook' };
 
-    it('skips a project whose specifier names TypeScript 7.1, whatever typescript is', async () => {
-      vi.mocked(readTypeScriptPackageForDocgen).mockReturnValue({
-        version: '7.1.0',
-        packageDir: '/project/node_modules/@typescript/native',
+    describe('to TypeScript 7.1', () => {
+      beforeEach(() => {
+        vi.mocked(readTypeScriptPackageForDocgen).mockReturnValue({
+          version: '7.1.0',
+          packageDir: '/project/node_modules/@typescript/native',
+        });
       });
 
-      await expect(check(withSpecifier, { typescript: '~7.0.2' }, inConfigDir)).resolves.toBeNull();
-      expect(readTypeScriptPackageForDocgen).toHaveBeenCalledWith({
-        specifier: '@typescript/native',
-        configDir: '/project/.storybook',
+      it('skips the project, whatever typescript is', async () => {
+        await expect(
+          check(withSpecifier, { typescript: '~7.0.2' }, inConfigDir)
+        ).resolves.toBeNull();
+        expect(readTypeScriptPackageForDocgen).toHaveBeenCalledWith({
+          specifier: '@typescript/native',
+          configDir: '/project/.storybook',
+        });
       });
     });
 
-    it('applies to a project whose specifier names TypeScript 7.0', async () => {
-      vi.mocked(readTypeScriptPackageForDocgen).mockReturnValue({
-        version: '7.0.2',
-        packageDir: '/project/node_modules/@typescript/native',
+    describe('to TypeScript 7.0', () => {
+      beforeEach(() => {
+        vi.mocked(readTypeScriptPackageForDocgen).mockReturnValue({
+          version: '7.0.2',
+          packageDir: '/project/node_modules/@typescript/native',
+        });
       });
 
-      await expect(check(withSpecifier, { typescript: '^6.0.3' }, inConfigDir)).resolves.toBe(true);
+      it('applies to the project, whatever typescript is', async () => {
+        await expect(check(withSpecifier, { typescript: '^6.0.3' }, inConfigDir)).resolves.toBe(
+          true
+        );
+      });
     });
   });
 

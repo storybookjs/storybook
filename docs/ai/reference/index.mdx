@@ -1,0 +1,24 @@
+---
+title: Reference
+hideRendererSelector: true
+sidebar:
+  order: 6
+---
+
+<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+
+This section has reference material for Storybook's AI features, which aren't available for your framework yet. See [supported frameworks](../connect.mdx#supported-frameworks).
+
+</If>
+
+<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+
+Reference material for Storybook's AI features.
+
+- [**Manifests**](./manifests.mdx): the structured data about your components and docs that agents read.
+- [**MCP server**](./mcp-server.mdx): set up the Storybook MCP server, and the options of `@storybook/addon-mcp`.
+
+For the `storybook skills` and `storybook tools` commands, see the [CLI options](../../api/cli-options.mdx#skills).
+
+</If>
+{/* End supported renderers */}

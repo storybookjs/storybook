@@ -114,7 +114,7 @@ For each of these tasks, invoke its Storybook skill first, before you edit any f
 
 Storybook replaces the text between the markers when you upgrade. To change when the agent uses the skills, for example to leave out the review, remove both markers and edit the section. Remove the whole section to stop the agent from using them on its own. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
 
-If you're using Claude Desktop, the agent will use the plugin to automatically open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/agentic-review) in the ADE preview, so you can review the agent's work.
+If you're using Claude Desktop, the agent will use the plugin to automatically open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/skills/agentic-review) in the ADE preview, so you can review the agent's work.
 
 ## Skills
 
@@ -126,7 +126,7 @@ Initializes Storybook in your project (i.e. runs [`npm create storybook@latest`]
 
 ### `setup`
 
-Sets up your Storybook for agentic workflows, automatically configures your project to correctly render your components, and writes story files for a variety of component types. See the [agentic setup docs](https://storybook.js.org/docs/ai/agentic-setup) for more details.
+Sets up your Storybook for agentic workflows, automatically configures your project to correctly render your components, and writes story files for a variety of component types. See the [agentic setup docs](https://storybook.js.org/docs/ai/skills/setup) for more details.
 
 ### `component-docs`
 
@@ -134,7 +134,7 @@ Looks up the components of your Storybook, with their props and usage examples, 
 
 ### `ui-workflow`
 
-The workflow for UI changes: the agent looks up the components to reuse, writes and updates stories for every component it changes, runs the story tests, and publishes an [agentic review](https://storybook.js.org/docs/ai/agentic-review) of the result.
+The workflow for UI changes: the agent looks up the components to reuse, writes and updates stories for every component it changes, runs the story tests, and publishes an [agentic review](https://storybook.js.org/docs/ai/skills/agentic-review) of the result.
 
 ### `upgrade`
 
@@ -142,4 +142,4 @@ Upgrades your Storybook to the latest version. This is the same as running [`npx
 
 ## Tools
 
-Agents with the plugin get the same tools as the [Storybook MCP server](https://storybook.js.org/docs/ai/mcp/overview#toolsets), through the `storybook tools` CLI.
+Agents with the plugin get the same tools as the [Storybook MCP server](https://storybook.js.org/docs/ai/reference/mcp-server), through the `storybook tools` CLI.

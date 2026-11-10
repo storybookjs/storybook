@@ -1,0 +1,90 @@
+---
+title: Set up Storybook with an agent
+sidebar:
+  order: 1
+  title: Setup
+---
+
+<If notRenderer={['react', 'angular', 'vue']}>
+
+The setup skill lets your agent configure Storybook for your project and write the first stories. It isn't available for your framework yet.
+
+</If>
+
+<If renderer={['react', 'angular', 'vue']}>
+
+Your agent can add Storybook to your project, configure it to render your components, and write the first stories. Configuring Storybook for an existing app is repetitive, project-specific work, and agents do it well.
+
+<Callout variant="info">
+
+The setup skill needs the [Vite](../../builders/vite.mdx) builder, so it isn't available for every framework. See [supported frameworks](#supported-frameworks) to check yours.
+
+</Callout>
+
+## Set up Storybook
+
+Copy this prompt into your agent's chat:
+
+<CodeSnippets path="prompt-install-storybook.md" />
+
+The agent runs [`storybook init`](../../api/cli-options.mdx#init), which adds Storybook and [installs the skills](../connect.mdx#install-the-skills). Then the agent follows the instructions from the `storybook-setup` skill to configure Storybook for your project.
+
+If Storybook is already installed, ask your agent to "Use the storybook-setup skill". If your project uses a version of Storybook older than 11, the agent asks you before it upgrades.
+
+## What the agent does
+
+The setup skill gives your agent instructions for your framework, renderer, language, and package manager. The agent:
+
+1. **Studies your app:** reads your entry file, providers, global CSS, data fetching, and portals.
+2. **Configures the [preview](../../configure/story-rendering.mdx):** adds your providers as [decorators](../../writing-stories/decorators.mdx) and imports your [global styles](../../configure/styling-and-css.mdx).
+3. **Adds portal roots:** if your components render into portals, it adds the root elements in a decorator.
+4. **Mocks only what stories need:** it adds [MSW](../../writing-stories/mocking-data-and-modules/mocking-network-requests.mdx) only if a story makes network requests, and MockDate only if a story depends on the current date.
+5. **Writes [stories](../../writing-stories/index.mdx):** up to 10 story files, from simple components to pages. It adds a story to an existing story file instead of writing a second one.
+6. **Adds [play functions](../../writing-stories/play-function.mdx) where they prove something:** interactions, async data, portals, and accessibility. Stories that only show a variant get no play function.
+7. **Tests the stories:** runs [Vitest](../../writing-tests/integrations/vitest-addon/index.mdx) on all new stories and fixes the failures, then runs your type checker.
+8. **Cleans up:** removes debug code and the example stories that `storybook init` added.
+
+The agent changes your existing stories, components, and configuration only to add to them. It doesn't delete or rewrite them.
+
+## Check the result
+
+The agent [tags](../../writing-stories/tags.mdx) each story file it writes:
+
+- `ai-generated`: the agent wrote this file.
+- `needs-work`: the agent couldn't make the stories in this file pass. Fix them yourself or ask your agent to try again.
+
+The agent also adds one `CssCheck` story. Its play function checks a computed style from your components, which proves that the preview loads your styles.
+
+Then:
+
+- [Run Storybook](../../get-started/install.mdx#start-storybook) and look at the new stories.
+- Check the [main](../../configure/index.mdx#configure-your-storybook-project) and [preview](../../configure/index.mdx#configure-story-rendering) configuration files.
+- Remove the `ai-generated` tag from each story file after you review it.
+
+## Next steps
+
+- Ask your agent to change some UI. It follows the [UI workflow](./ui-workflow.mdx).
+- Follow the [best practices](../best-practices.mdx) to make your stories and docs more useful to people and agents.
+
+</If>
+{/* End supported renderers */}
+
+## Supported frameworks
+
+The setup skill is available for these frameworks:
+
+| Renderer | Frameworks                                    |
+| -------- | --------------------------------------------- |
+| React    | `react-vite`, `nextjs-vite`, `tanstack-react` |
+| Vue 3    | `vue3-vite`                                   |
+| Angular  | `angular-vite`                                |
+
+For other frameworks, [install Storybook](../../get-started/install.mdx) yourself. To see which frameworks the other skills support, see [Connect your agent](../connect.mdx#supported-frameworks).
+
+**More AI resources**
+
+- [Connect your agent](../connect.mdx)
+- [UI workflow](./ui-workflow.mdx)
+- [Component info](./component-info.mdx)
+- [Agentic review](./agentic-review.mdx)
+- [Best practices for using Storybook with AI](../best-practices.mdx)

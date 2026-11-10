@@ -664,6 +664,29 @@ describe('stories API', () => {
       const { indexError } = store.getState();
       expect(indexError).toBeDefined();
     });
+    it('reports a throwing filter as an index error and keeps the previous index', async () => {
+      fetch.mockReturnValue(
+        Promise.resolve({ status: 200, json: () => ({ v: 5, entries: mockEntries }) } as any)
+      );
+      // The real store runs updaters at commit time, outside `fetchIndex`'s try/catch
+      const moduleArgs = { ...createMockModuleArgs({}), store: createCommitLaggingStore() };
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+      await api.fetchIndex();
+      const previousIndex = store.getState().index;
+
+      await store.setState({
+        filters: {
+          broken: () => {
+            throw new Error('filter failed');
+          },
+        },
+      });
+      await api.fetchIndex();
+
+      expect(store.getState().indexError).toEqual(new Error('filter failed'));
+      expect(store.getState().index).toBe(previousIndex);
+    });
     it('watches for the INVALIDATE event and re-fetches -- and resets the hash', async () => {
       fetch.mockReturnValue(
         Promise.resolve({

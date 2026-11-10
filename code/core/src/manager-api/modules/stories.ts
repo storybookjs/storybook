@@ -813,6 +813,15 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     // so we can cast one to the other easily enough
     setIndex: async (input) => {
       const allStatuses = fullStatusStore.getAll();
+      // Run filters here, not in the updater, so a throwing filter reaches the caller's catch.
+      // `setFilters` re-runs `setIndex` once its filters are committed.
+      const newFilteredHash = transformStoryIndexToStoriesHash(input, {
+        provider,
+        docsOptions,
+        filters: store.getState().filters,
+        allStatuses,
+        statusFilterKey: STATUS_FILTER,
+      });
       const newHash = transformStoryIndexToStoriesHash(input, {
         provider,
         docsOptions,
@@ -820,19 +829,11 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         allStatuses,
       });
 
-      // Patch from the state at commit time: `getState()` lags behind uncommitted updates
+      // Merge prepared stories from the state at commit time: `getState()` lags behind
+      // uncommitted updates
       await store.setState((state) => ({
         internal_index: input,
-        filteredIndex: addPreparedStories(
-          transformStoryIndexToStoriesHash(input, {
-            provider,
-            docsOptions,
-            filters: state.filters,
-            allStatuses,
-            statusFilterKey: STATUS_FILTER,
-          }),
-          state.filteredIndex
-        ),
+        filteredIndex: addPreparedStories(newFilteredHash, state.filteredIndex),
         index: addPreparedStories(newHash, state.index),
         indexError: undefined,
       }));

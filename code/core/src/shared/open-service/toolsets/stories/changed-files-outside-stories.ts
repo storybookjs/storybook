@@ -79,11 +79,10 @@ export async function detectChangedFilesOutsideStories({
   }
 
   const matchesStories = await storybookDirs.getStoriesMatcher();
-  // A story file the `stories` globs match renders itself, so it misses only while the index has
-  // not picked it up yet. Any other story file, such as one of another package's Storybook, never
+  // A file the `stories` globs match renders itself, so it misses only while the index has not
+  // picked it up yet. Any other story file, such as one of another package's Storybook, never
   // reaches this index.
-  const isIndexedStoryFile = (file: string) =>
-    STORY_FILE_RE.test(basename(file)) && matchesStories(resolvePath(repoRoot, file));
+  const isIndexedStoryFile = (file: string) => matchesStories(resolvePath(repoRoot, file));
   const configDir = relative(repoRoot, storybookDirs.configDir);
   const projectDir = dirname(configDir) === '.' ? '' : dirname(configDir);
   const staticDirs = (await storybookDirs.getStaticDirs()).map((dir) => relative(repoRoot, dir));

@@ -72,15 +72,16 @@ const moduleGraph = {
 const storyIndex = { getIndex };
 const git = { getChangedFiles, getRepoRoot };
 const changeStatuses = { getAll: getStatuses };
+// The matcher of `stories: ['<dir>/**/*.stories.*']`.
+const storiesIn = (dir: string) => (file: string) =>
+  file.startsWith(`${dir}/`) && /\.stories\.[^/]+$/.test(file);
 const storybookDirs = {
   configDir: resolve(storybookWorkingDir, '.storybook'),
   getStaticDirs: async () => [
     resolve(storybookWorkingDir, 'public'),
     resolve(storybookWorkingDir, '.storybook/static'),
   ],
-  // Mirrors `stories: ['../src/**/*.stories.*']` in packages/ui/.storybook/main.ts.
-  getStoriesMatcher: async () => (file: string) =>
-    file.startsWith(`${resolve(storybookWorkingDir, 'src')}/`),
+  getStoriesMatcher: async () => storiesIn(resolve(storybookWorkingDir, 'src')),
 };
 
 let statusesFixture: Record<string, Record<string, unknown>>;
@@ -493,6 +494,31 @@ Story files that are not in the story index yet: \`packages/ui/src/OrderHistory.
       expect(outcome.data.unreachableFiles).toHaveLength(10);
     });
 
+    it('waits for a new story file that the stories globs match under another name', async () => {
+      const storyToolset = createStoriesToolset({
+        storyIndex,
+        git,
+        changeStatuses,
+        storybookDirs: {
+          ...storybookDirs,
+          getStoriesMatcher: async () => (file) => file.endsWith('.story.tsx'),
+        },
+      });
+      getChangedFiles.mockResolvedValue({
+        changed: new Set(),
+        new: new Set(['packages/ui/src/OrderHistory.story.tsx']),
+      });
+
+      const pending = runChanged(mcpCtx, storyToolset);
+      await vi.advanceTimersByTimeAsync(5_000);
+      const outcome = await pending;
+
+      expect(outcome.data).toMatchObject({
+        unreachableFiles: [],
+        unindexedStoryFiles: ['packages/ui/src/OrderHistory.story.tsx'],
+      });
+    });
+
     it("does not wait for a story file of another package's Storybook", async () => {
       getChangedFiles.mockResolvedValue({
         changed: new Set(),
@@ -516,7 +542,7 @@ Story files that are not in the story index yet: \`packages/ui/src/OrderHistory.
         storybookDirs: {
           configDir: resolve(repoRoot, '.storybook'),
           getStaticDirs: async () => [],
-          getStoriesMatcher: async () => (file) => file.startsWith(`${resolve(repoRoot, 'src')}/`),
+          getStoriesMatcher: async () => storiesIn(resolve(repoRoot, 'src')),
         },
       });
       getChangedFiles.mockResolvedValue({
@@ -541,7 +567,7 @@ Story files that are not in the story index yet: \`packages/ui/src/OrderHistory.
         storybookDirs: {
           configDir: resolve(repoRoot, '.storybook'),
           getStaticDirs: async () => [],
-          getStoriesMatcher: async () => (file) => file.startsWith(`${resolve(repoRoot, 'src')}/`),
+          getStoriesMatcher: async () => storiesIn(resolve(repoRoot, 'src')),
         },
       });
       const otherStories = Array.from(

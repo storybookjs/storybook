@@ -252,7 +252,6 @@ describe('createStorybookMcpHandler', () => {
       { id: 'remote', title: 'Remote', url: 'https://example.com/storybook' },
     ];
 
-    /** The `storybookId` property of each listed tool's input schema, by tool name. */
     async function listedStorybookIdInputs() {
       const { tools } = await client.listTools();
       return Object.fromEntries(
@@ -337,6 +336,27 @@ describe('createStorybookMcpHandler', () => {
         './manifests/components.json',
         sources[1]
       );
+    });
+
+    it('should follow the sources of each request on one handler', async () => {
+      const context: StorybookContext = {};
+      const handler = await createStorybookMcpHandler({
+        manifestProvider: createManifestProviderMockWithDocs(),
+      });
+      await setupClient(handler, context);
+      const showFromRemote = () =>
+        client.callTool({ name: 'docs-show', arguments: { id: 'button', storybookId: 'remote' } });
+
+      expect((await listedStorybookIdInputs())['docs-show']).toBeUndefined();
+      expect((await showFromRemote()).isError).toBe(true);
+
+      context.sources = sources;
+      expect((await listedStorybookIdInputs())['docs-show']).toMatchObject({ type: 'string' });
+      expect((await showFromRemote()).isError).toBeFalsy();
+
+      context.sources = undefined;
+      expect((await listedStorybookIdInputs())['docs-show']).toBeUndefined();
+      expect((await showFromRemote()).isError).toBe(true);
     });
   });
 

@@ -136,7 +136,7 @@ function defineSandboxJob_dev({
                   },
                   command: [
                     'TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")',
-                    `echo "$TEST_FILES" | circleci tests run --command="xargs pnpm task e2e-tests-dev --template ${template} --no-link -s task --junit" --verbose --index=0 --total=1`,
+                    `echo "$TEST_FILES" | circleci tests run --command="xargs pnpm task e2e-tests-dev --template ${template} --no-link -s task --junit" --index=0 --total=1`,
                   ].join('\n'),
                 },
               },
@@ -355,7 +355,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             },
             command: [
               `TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")`,
-              `echo "$TEST_FILES" | circleci tests run --command="xargs pnpm task e2e-tests --template ${key} --no-link -s e2e-tests --junit" --verbose --index=0 --total=1`,
+              `echo "$TEST_FILES" | circleci tests run --command="xargs pnpm task e2e-tests --template ${key} --no-link -s e2e-tests --junit" --index=0 --total=1`,
             ].join('\n'),
           },
         },

@@ -20,6 +20,10 @@ This document is canonical for testing practice: which kind of test to write, ho
 
 Fork CI compiles with `--no-link` before unit tests to generate the declarations required by distribution contract tests.
 
+Test runs print console output only for failing tests (`silent: 'passed-only'` in the root `vitest.config.ts`).
+In `code/` packages, `code/vitest-setup.ts` routes direct `process.stdout` and `process.stderr` writes, such as `@clack/prompts` output, through the console, so the same rule applies to them.
+Add `--silent=false` to see the logs of passing tests, for example `pnpm test csf-tools --silent=false`.
+
 When writing tests for components:
 
 - Add or update `<Component>.stories.tsx` with stories covering each behavior; use `play` functions with `expect`, `userEvent`, `within` from `storybook/test`

@@ -12,6 +12,10 @@ import type { ReactDocgenTypescriptParserOptions } from '@storybook/react';
  * declarations. Its TypeScript 7.1 `native` mode is left out: Storybook uses the docgen server there.
  */
 export type ReactDocgenTypescriptOptions = ReactDocgenTypescriptParserOptions & {
+  /**
+   * TEMPORARY(ts-7.1): needs plugin 0.8 or newer. Storybook accepts only 0.7 until TypeScript 7.1 is
+   * stable, so this option has no effect for now.
+   */
   docgenMode?: 'legacy' | 'project-service';
   setDisplayName?: boolean;
   typePropName?: string;

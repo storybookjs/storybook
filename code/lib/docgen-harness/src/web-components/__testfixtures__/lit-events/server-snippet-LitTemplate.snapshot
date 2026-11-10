@@ -1,8 +1,5 @@
-<lit-events value="changed"></lit-events>
-<script>
-  {
-    const host = document.currentScript.previousElementSibling;
-    host.addEventListener('my-change', () => {});
-    host.addEventListener('my-close', () => {});
-  }
-</script>
+html`<lit-events
+  value=${'changed'}
+  @my-change=${() => {}}
+  @my-close=${() => {}}
+></lit-events>`

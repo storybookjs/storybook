@@ -3,6 +3,17 @@ import { describe, expect, it } from 'vitest';
 
 import { type ESTreeNode as Node, parseExpression, staticKey } from 'storybook/internal/csf-tools';
 
+import {
+  type SnippetTemplate,
+  fillTemplate,
+  formatTemplate,
+  printValue,
+  stripHoles,
+} from 'storybook/internal/docs-tools';
+import type { Args } from 'storybook/internal/types';
+
+import { printHole } from '../../docs/print-hole.ts';
+import type { SvelteHolePlace } from '../../snippet-values.ts';
 import { type TemplateParameter, printTemplate } from './print-template.ts';
 
 const args = (source: string): Record<string, Node> => {
@@ -15,8 +26,16 @@ const args = (source: string): Record<string, Node> => {
   );
 };
 
+// Prints the snippet, and checks that its template prints it while no arg changes.
+const printChecked = (options: Parameters<typeof printTemplate>[0]) => {
+  const { snippet, template } = printTemplate(options);
+  expect(template).toBeDefined();
+  expect(stripHoles(template!)).toBe(snippet);
+  return snippet;
+};
+
 const print = (code: string, source = '{}', typescript = false, parameter?: TemplateParameter) =>
-  printTemplate({ code, args: args(source), typescript, parameter });
+  printChecked({ code, args: args(source), typescript, parameter });
 
 describe('printTemplate', () => {
   it('spreads every arg, including the ones that equal a default', () => {
@@ -164,7 +183,7 @@ describe('printTemplate', () => {
 
   it('prints undefined for an arg the story does not set, when all args are known', () => {
     const printComplete = (code: string, source: string, parameter?: TemplateParameter) =>
-      printTemplate({ code, args: args(source), typescript: false, parameter, argsComplete: true });
+      printChecked({ code, args: args(source), typescript: false, parameter, argsComplete: true });
 
     expect(
       printComplete(
@@ -218,6 +237,15 @@ describe('printTemplate', () => {
     ).toBe('<Button label="Save" />');
   });
 
+  it('writes the long form of a shorthand whose arg is written as the same name', () => {
+    expect(
+      print('<Button {label} class:active />', '{ label: label, active: active }', false, {
+        name: 'rest',
+        aliases: { label: 'label', active: 'active' },
+      })
+    ).toBe('<Button label={label} class:active={active} />');
+  });
+
   it('keeps the name of a shorthand property that reads a destructured arg', () => {
     expect(
       print('<Button value={{ label }} />', "{ label: 'Save' }", false, {
@@ -268,5 +296,191 @@ describe('printTemplate', () => {
     expect(print('<Input bind:value={args.value} />', "{ value: 'Hello' }")).toBe(
       '<Input bind:value={args.value} />'
     );
+  });
+});
+
+describe('printTemplate template', () => {
+  // The template, which prints the snippet while no arg changes.
+  const template = (code: string, source = '{}', parameter?: TemplateParameter) => {
+    const { snippet, template: written } = printTemplate({
+      code,
+      args: args(source),
+      typescript: false,
+      parameter,
+    });
+    expect(stripHoles(written!)).toBe(snippet);
+    return written!;
+  };
+  const fill = (written: SnippetTemplate<SvelteHolePlace>, initialArgs: Args, unmappedArgs: Args) =>
+    fillTemplate(written, { initialArgs, unmappedArgs }, printHole);
+
+  it('wraps each place an arg prints in a hole that holds what it prints there', () => {
+    expect(formatTemplate(template('<Panel {...args} />', "{ label: 'Go' }"))).toBe(
+      '<Panel⟦prop label ~" "⟫ label="Go"⟧⟦props * except=["label"] separator=" " ~" "⟫⟧ />'
+    );
+    expect(formatTemplate(template('<h1>{args.title}</h1>', "{ title: 'Save' }"))).toBe(
+      '<h1>⟦fragment title before="{" after="}"⟫Save⟧</h1>'
+    );
+  });
+
+  it('names the attribute or property of a hole only where it is not its arg', () => {
+    const parameter = { aliases: { label: 'label', text: 'label' } };
+    expect(formatTemplate(template('<Panel title={args.label} />', "{ label: 'Go' }"))).toBe(
+      '<Panel ⟦attrvalue label name="title" before="title={" after="}"⟫title="Go"⟧ />'
+    );
+    expect(formatTemplate(template('<Panel {label} />', "{ label: 'Go' }", parameter))).toBe(
+      '<Panel ⟦attrvalue label before="label={" after="}"⟫label="Go"⟧ />'
+    );
+    const properties = template('<Panel data={{ label, text }} />', "{ label: 'Go' }", parameter);
+    expect(formatTemplate(properties)).toBe(
+      `<Panel data={{ ⟦property label⟫label: 'Go'⟧, ⟦property label name="text"⟫text: 'Go'⟧ }} />`
+    );
+    expect(fill(properties, { label: 'Go' }, { label: 'Stop' })).toBe(
+      `<Panel data={{ label: "Stop", text: "Stop" }} />`
+    );
+  });
+
+  it('adds the args a control adds after the props of the spread, but those the element writes', () => {
+    const written = template('<Panel {...args} title="T" />', "{ label: 'Go' }");
+    expect(fill(written, { label: 'Go' }, { label: 'Go', count: 3, title: 'X' })).toBe(
+      '<Panel label="Go" count={3} title="T" />'
+    );
+    const wrapped = template(
+      '<Panel {...args} />',
+      "{ label: 'A label that is long enough to wrap the spread' }"
+    );
+    const initialArgs = { label: 'A label that is long enough to wrap the spread' };
+    expect(fill(wrapped, initialArgs, { ...initialArgs, count: 3, size: 'sm' })).toBe(
+      '<Panel\n  label="A label that is long enough to wrap the spread"\n  count={3}\n  size="sm"\n />'
+    );
+  });
+
+  it('passes an arg the spread passes, also where another place reads it', () => {
+    const written = template('<Panel {...args}>{args.label}</Panel>', "{ size: 'sm' }");
+    expect(fill(written, { size: 'sm' }, { size: 'sm', label: 'Go' })).toBe(
+      '<Panel size="sm" label="Go">Go</Panel>'
+    );
+  });
+
+  it('adds the args a control adds on the line of a spread that passes none', () => {
+    const written = template('<Button\n  {...args}\n  primary\n/>');
+    expect(stripHoles(written)).toBe('<Button\n  primary\n/>');
+    expect(fill(written, {}, { label: 'Go', size: 'sm' })).toBe(
+      '<Button\n  label="Go"\n  size="sm"\n  primary\n/>'
+    );
+    expect(fill(template('<Button {...args} />'), {}, { label: 'Go' })).toBe(
+      '<Button label="Go" />'
+    );
+  });
+
+  it('leaves out a prop a control clears', () => {
+    const written = template('<Panel {...args} />', "{ label: 'Go', count: 3 }");
+    expect(fill(written, { label: 'Go', count: 3 }, { count: 3 })).toBe('<Panel count={3} />');
+  });
+
+  it('keeps the read of an arg the story does not set until a control sets it', () => {
+    const written = template('<Panel title={args.title}>{args.label}</Panel>', "{ label: 'Go' }");
+    expect(fill(written, { label: 'Go' }, { label: 'Stop' })).toBe(
+      '<Panel title={args.title}>Stop</Panel>'
+    );
+    expect(fill(written, { label: 'Go' }, { label: 'Go', title: 'Hi' })).toBe(
+      '<Panel title="Hi">Go</Panel>'
+    );
+  });
+
+  it('keeps an arg written as code while it is unchanged', () => {
+    const written = template(
+      '<Button onclick={args.onclick} label={args.label} />',
+      "{ onclick: () => alert('hi'), label: 'Go' }"
+    );
+    const initialArgs = { onclick: () => {}, label: 'Go' };
+    expect(fill(written, initialArgs, { ...initialArgs, label: 'Stop' })).toBe(
+      '<Button onclick={(() => alert(\'hi\'))} label="Stop" />'
+    );
+  });
+
+  it('writes the long form of a directive shorthand once a control sets its arg', () => {
+    const written = template('<div class:active>{active}</div>', "{ label: 'Go' }", {
+      aliases: { active: 'active' },
+    });
+    expect(stripHoles(written)).toBe('<div class:active>{active}</div>');
+    expect(fill(written, {}, { active: true })).toBe('<div class:active={true}>{true}</div>');
+  });
+
+  it('writes the holes of markup that holds private-use characters', () => {
+    const written = template(
+      '<Panel title="\uE000\uE001\uE002">{args.label}</Panel>',
+      "{ label: 'Go' }"
+    );
+    expect(stripHoles(written)).toBe('<Panel title="\uE000\uE001\uE002">Go</Panel>');
+    expect(fill(written, { label: 'Go' }, { label: 'Stop' })).toBe(
+      '<Panel title="\uE000\uE001\uE002">Stop</Panel>'
+    );
+  });
+
+  it('writes the holes of an arg whose escaped value prints a private-use character', () => {
+    const written = template('<Panel title={args.title} />', "{ title: '\\uE000x' }");
+    expect(stripHoles(written)).toBe('<Panel title="\uE000x" />');
+    expect(fill(written, { title: '\uE000x' }, { title: 'y' })).toBe('<Panel title="y" />');
+  });
+
+  it.each([
+    '<p>{args.user.name}</p>',
+    '<Panel title={args.user.name} />',
+    '<Panel title="By {args.user.name}" onclick={() => greet(args.user.name)} />',
+    '<p>{args.user.tags.length}</p>',
+  ])('prints a read of a member of an arg in %j as a story that writes the arg', (code) => {
+    const jane = { name: 'Jane', tags: ['a'] };
+    const written = template(code, "{ user: { name: 'Jane', tags: ['a'] } }");
+    for (const user of [{ name: 'John', tags: ['a', 'b'] }, { tags: [] }, 'Jane', undefined]) {
+      const source = `{ user: ${printValue(user, 'user')} }`;
+      const story = printTemplate({ code, args: args(source), typescript: false });
+      expect(fill(written, { user: jane }, { user }), JSON.stringify(user)).toBe(story.snippet);
+    }
+  });
+
+  it.each([
+    '<Panel title={heading} {...args} />',
+    '<Panel title={args.title} {...args} />',
+    '<Panel title="By {args.title}" {...args} />',
+    '<Panel title={args.title.trim()} {...args} />',
+  ])('prints %j as the spread writes over it once a control sets its arg', (code) => {
+    const written = template(code, "{ label: 'Go' }");
+    expect(fill(written, { label: 'Go' }, { label: 'Go', title: 'Hi' })).toBe(
+      '<Panel title="Hi" label="Go" />'
+    );
+  });
+
+  it('prints an attribute before a spread as written, with the args it reads, until a control sets the arg it names', () => {
+    const code = '<Panel\n  title={args.label}\n  {...args}\n/>';
+    const written = template(code, "{ label: 'Go' }");
+    const initialArgs = { label: 'Go' };
+    expect(fill(written, initialArgs, { label: 'Stop' })).toBe(
+      '<Panel\n  title="Go"\n  label="Stop"\n/>'
+    );
+    expect(fill(written, initialArgs, { label: 'Go', title: 'Hi' })).toBe(
+      '<Panel\n  title="Hi"\n  label="Go"\n/>'
+    );
+    expect(fill(written, initialArgs, { label: 'Go', size: 'sm' })).toBe(
+      '<Panel\n  title="Go"\n  label="Go" size="sm"\n/>'
+    );
+    const unset = template(code);
+    expect(fill(unset, {}, { title: 'Hi' })).toBe('<Panel\n  title="Hi"\n/>');
+    expect(fill(unset, {}, { size: 'sm' })).toBe('<Panel\n  title={args.label}\n  size="sm"\n/>');
+  });
+
+  it('follows the reads of an attribute before a spread of the rest that leaves out its arg', () => {
+    const written = template('<Button label={label + "!"} {...rest} />', "{ size: 'sm' }", {
+      name: 'rest',
+      aliases: { label: 'label' },
+    });
+    expect(fill(written, { size: 'sm' }, { size: 'sm', label: 'Stop' })).toBe(
+      '<Button label={"Stop" + "!"} size="sm" />'
+    );
+  });
+
+  it('wraps a number before a member access', () => {
+    const written = template('<p>{args.price.toFixed(2)}</p>', '{ price: 9.99 }');
+    expect(fill(written, { price: 9.99 }, { price: 10 })).toBe('<p>{(10).toFixed(2)}</p>');
   });
 });

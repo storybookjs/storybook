@@ -34,7 +34,7 @@ import { init as initStories } from '../modules/stories.ts';
 import { parseStatusesParam, serializeStatusesParam } from '../modules/statuses.ts';
 import type { API, State } from '../root.tsx';
 import type Store from '../store.ts';
-import { createCommitLaggingStore as createCommitLaggingStoreBase } from '../test-utils/store.ts';
+import { createCommitLaggingStore } from '../test-utils/store.ts';
 import { fullStatusStore } from '../stores/status.ts';
 import {
   docsEntries,
@@ -76,8 +76,8 @@ function createMockStore(initialState: Partial<State> = {}) {
     }),
   } as any as Store;
 }
-function createCommitLaggingStore() {
-  return createCommitLaggingStoreBase({ filters: {}, status: {} } as Partial<State>);
+function createLaggingStoriesStore() {
+  return createCommitLaggingStore({ filters: {}, status: {} } as Partial<State>);
 }
 function createMockProvider() {
   return {
@@ -645,12 +645,11 @@ describe('stories API', () => {
       const { indexError } = store.getState();
       expect(indexError).toBeDefined();
     });
-    it('reports a throwing filter as an index error and keeps the previous index', async () => {
+    it('still reports a throwing filter as an index error with a commit-lagging store', async () => {
       fetch.mockReturnValue(
         Promise.resolve({ status: 200, json: () => ({ v: 5, entries: mockEntries }) } as any)
       );
-      // The real store runs updaters at commit time, outside `fetchIndex`'s try/catch
-      const moduleArgs = { ...createMockModuleArgs({}), store: createCommitLaggingStore() };
+      const moduleArgs = { ...createMockModuleArgs({}), store: createLaggingStoriesStore() };
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
       await api.fetchIndex();
@@ -1396,11 +1395,11 @@ describe('stories API', () => {
         args: { c: 'd' },
       });
     });
-    it('makes the update readable before the store commits it', async () => {
+    it('still makes the update readable synchronously, as `useParameter` needs', async () => {
       // `useParameter` reads the current story's parameters synchronously on STORY_PREPARED
       const moduleArgs = {
         ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }),
-        store: createCommitLaggingStore(),
+        store: createLaggingStoriesStore(),
       };
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { provider, store } = moduleArgs;
@@ -1416,11 +1415,11 @@ describe('stories API', () => {
         parameters: { backgrounds: { disable: false } },
       });
     });
-    it('keeps the index and entry references stable once the update is committed', async () => {
+    it('still keeps the index and entry references stable on an update', async () => {
       // The sidebar memoizes on `index`; `useParameter` holds the entry it read synchronously
       const moduleArgs = {
         ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }),
-        store: createCommitLaggingStore(),
+        store: createLaggingStoriesStore(),
       };
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { provider, store } = moduleArgs;
@@ -1437,7 +1436,7 @@ describe('stories API', () => {
     it('keeps preparing a story that only a not-yet-committed index has', async () => {
       const moduleArgs = {
         ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }),
-        store: createCommitLaggingStore(),
+        store: createLaggingStoriesStore(),
       };
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { provider, store } = moduleArgs;
@@ -1454,7 +1453,7 @@ describe('stories API', () => {
     it('keeps stories added by a not-yet-committed setIndex', async () => {
       const moduleArgs = {
         ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }),
-        store: createCommitLaggingStore(),
+        store: createLaggingStoriesStore(),
       };
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { provider, store } = moduleArgs;
@@ -2318,7 +2317,7 @@ describe('stories API', () => {
 
     it('keeps a not-yet-committed index when a status change rebuilds it', async () => {
       fullStatusStore.unset();
-      const moduleArgs = { ...createMockModuleArgs({}), store: createCommitLaggingStore() };
+      const moduleArgs = { ...createMockModuleArgs({}), store: createLaggingStoriesStore() };
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
       const { 'component-b--story-3': newStory, ...oldEntries } = mockEntries;

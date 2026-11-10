@@ -23,13 +23,12 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 describe(transformStory.name, () => {
   it("each transformed compiled 'Story' component matches inlined snapshots", async () => {
-    const filename = path.resolve(__dirname, '../../../__tests__/stories/Example.stories.svelte');
+    const filename = path.resolve(
+      __dirname,
+      '../../../../__test__/svelte-csf/example.stories.svelte'
+    );
     const originalCode = fs.readFileSync(filename).toString();
-    const compiledCode = fs
-      .readFileSync(
-        path.resolve(__dirname, '../../../__tests__/__compiled__/Example.stories.dev.js')
-      )
-      .toString();
+    const compiledCode = compile(originalCode, { filename, dev: true }).js.code;
     const svelteAST = getSvelteAST({ code: originalCode, filename });
     const svelteASTNodes = await extractSvelteASTNodes({
       ast: svelteAST,
@@ -70,9 +69,12 @@ describe(transformStory.name, () => {
     });
 
     expect(print(compiledPostTransformedStories[0], ts()).code).toMatchInlineSnapshot(`
-      "Story(node_1, {
+      "Story(node, {
       	name: 'Default',
-      	template,
+      	get template() {
+      		return template;
+      	},
+
       	parameters: {
       		docs: { description: { story: 'Description for the default story' } },
       		__svelteCsf: {
@@ -83,10 +85,13 @@ describe(transformStory.name, () => {
     `);
 
     expect(print(compiledPostTransformedStories[1], ts()).code).toMatchInlineSnapshot(`
-      "Story(node_2, {
+      "Story(node_1, {
       	name: 'Rounded',
       	args: { rounded: true },
-      	template,
+      	get template() {
+      		return template;
+      	},
+
       	parameters: {
       		docs: { description: { story: 'Description for the rounded story' } },
       		__svelteCsf: {
@@ -96,10 +101,13 @@ describe(transformStory.name, () => {
       })"
     `);
     expect(print(compiledPostTransformedStories[2], ts()).code).toMatchInlineSnapshot(`
-      "Story(node_3, {
+      "Story(node_2, {
       	name: 'Square',
       	args: { rounded: false },
-      	template,
+      	get template() {
+      		return template;
+      	},
+
       	parameters: {
       		docs: { description: { story: 'Description for the squared story' } },
       		__svelteCsf: {
@@ -109,32 +117,34 @@ describe(transformStory.name, () => {
       })"
     `);
     expect(print(compiledPostTransformedStories[3], ts()).code).toMatchInlineSnapshot(`
-      "Story(node_4, {
+      "Story(node_3, {
       	name: 'As child',
       	asChild: true,
       	children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
-      		var fragment_3 = $.comment();
-      		var node_5 = $.first_child(fragment_3);
+      		$.add_svelte_meta(
+      			() => Example($$anchor, {
+      				children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
+      					$.next();
 
-      		Example(node_5, {
-      			children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
-      				$.next();
+      					var text_2 = $.text('Label');
 
-      				var text_2 = $.text('Label');
-
-      				$.append($$anchor, text_2);
+      					$.append($$anchor, text_2);
+      				}),
+      				$$slots: { default: true }
       			}),
-      			$$slots: { default: true }
-      		});
-
-      		$.append($$anchor, fragment_3);
+      			'component',
+      			Example_stories,
+      			53,
+      			2,
+      			{ componentTag: 'Example' }
+      		);
       	}),
       	$$slots: { default: true },
       	parameters: { __svelteCsf: { rawCode: '<Example>Label</Example>' } }
       })"
     `);
     expect(print(compiledPostTransformedStories[4], ts()).code).toMatchInlineSnapshot(`
-      "Story(node_6, {
+      "Story(node_4, {
       	name: 'Children forwared',
       	children: $.wrap_snippet(Example_stories, ($$anchor, $$slotProps) => {
       		$.next();
@@ -174,7 +184,10 @@ describe(transformStory.name, () => {
   }
 
   it('names the stories file when the defineMeta component value is invalid', async () => {
-    const filename = path.resolve(__dirname, '../../../__tests__/stories/Invalid.stories.svelte');
+    const filename = path.resolve(
+      __dirname,
+      '../../../../__test__/svelte-csf/invalid.stories.svelte'
+    );
     const originalCode = dedent`
       <script module>
         import { defineMeta } from "${SVELTE_CSF_RENDERER_IMPORT_SOURCE}";

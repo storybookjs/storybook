@@ -121,19 +121,7 @@ describe(extractModuleNodes.name, () => {
     `);
   });
 
-  it('works when it has valid required entry snippet', async () => {
-    const { module } = getSvelteAST({
-      code: `
-        <script module>
-          import { defineMeta } from "@storybook/svelte"
-          const { Story } = defineMeta();
-        </script>`,
-    });
-
-    await expect(extractModuleNodes({ module })).resolves.not.toThrow();
-  });
-
-  it('works when meta was destructured too', async () => {
+  it('extracts the Story name when meta is destructured from defineMeta() too', async () => {
     const { module } = getSvelteAST({
       code: `
         <script module>
@@ -143,7 +131,12 @@ describe(extractModuleNodes.name, () => {
       `,
     });
 
-    await expect(extractModuleNodes({ module })).resolves.not.toThrow();
+    const nodes = await extractModuleNodes({ module });
+
+    expect(nodes.defineMetaVariableDeclaration.declarations[0].init).toMatchObject({
+      callee: { name: 'defineMeta' },
+    });
+    expect(nodes.storyNames).toEqual(['Story']);
   });
 
   it('extracts module nodes', async () => {

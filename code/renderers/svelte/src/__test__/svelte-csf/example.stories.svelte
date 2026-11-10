@@ -2,7 +2,7 @@
   import { fn } from 'storybook/test';
   import { defineMeta, type StoryContext } from '@storybook/svelte';
 
-  import Example from './Example.svelte';
+  import Example from './example.svelte';
 
   /**
    * Description set explicitly in the comment above `defineMeta`.

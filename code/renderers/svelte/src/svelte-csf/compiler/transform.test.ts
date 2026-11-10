@@ -14,7 +14,7 @@ import { SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE } from '../constants.ts';
 const filename = normalizePath(
   path.resolve(
     path.dirname(url.fileURLToPath(import.meta.url)),
-    '../__tests__/stories/Example.stories.svelte'
+    '../../__test__/svelte-csf/example.stories.svelte'
   )
 );
 

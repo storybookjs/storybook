@@ -254,6 +254,7 @@ const runSandcastle = async (
       promptArgs: {
         REPO: repo,
         VERSION: request.version,
+        MAJOR: versionLine(request.version).split('.')[0]!,
         STORYBOOK_DIR: storybookDir,
         PACKAGE_MANAGER: packageManager,
         INSTALL_COMMAND: INSTALL_COMMAND[packageManager],

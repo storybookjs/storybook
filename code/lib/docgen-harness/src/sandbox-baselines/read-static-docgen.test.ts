@@ -3,7 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { vol } from 'memfs';
 
 import type { DocgenPayload } from '../../../../core/src/shared/open-service/services/docgen/types.ts';
-import { SANDBOX_TOKEN, readStaticDocgen, toBaseline } from './read-static-docgen.ts';
+import {
+  REPO_TOKEN,
+  SANDBOX_TOKEN,
+  normalizePaths,
+  readStaticDocgen,
+  toBaseline,
+} from './read-static-docgen.ts';
 
 vi.mock('node:fs', async () => {
   const memfs = await vi.importActual<typeof import('memfs')>('memfs');
@@ -179,5 +185,19 @@ describe('toBaseline', () => {
     );
 
     expect(result.error?.message).toBe(`Source: ${SANDBOX_TOKEN}/documentation.json`);
+  });
+});
+
+describe('normalizePaths', () => {
+  it('rewrites a path into the repository, where linked template stories resolve', () => {
+    expect(
+      normalizePaths('/repo/code/renderers/react/input.tsx', '/sandboxes/react', '/repo')
+    ).toBe(`${REPO_TOKEN}/code/renderers/react/input.tsx`);
+  });
+
+  it('rewrites a sandbox inside the repository as the sandbox', () => {
+    expect(
+      normalizePaths('/repo/sandbox/react/src/Button.tsx', '/repo/sandbox/react', '/repo')
+    ).toBe(`${SANDBOX_TOKEN}/src/Button.tsx`);
   });
 });

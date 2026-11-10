@@ -302,7 +302,7 @@
       "import": "import { component as JsDefaultValuesComponent } from '@storybook/react';",
       "jsDocTags": {},
       "name": "JsDefaultValues",
-      "path": "/home/agent/worktrees/storybook/ts71-regression-guards/code/renderers/react/template/stories/docgen-components/9626-js-default-values/input.jsx"
+      "path": "<repo>/code/renderers/react/template/stories/docgen-components/9626-js-default-values/input.jsx"
     },
     "JsFunctionComponentInlineDefaults": {
       "argTypes": {
@@ -584,7 +584,7 @@
       "import": "import { component as JsFunctionComponentInlineDefaultsComponent } from '@storybook/react';",
       "jsDocTags": {},
       "name": "JsFunctionComponentInlineDefaults",
-      "path": "/home/agent/worktrees/storybook/ts71-regression-guards/code/renderers/react/template/stories/docgen-components/js-function-component-inline-defaults/input.jsx"
+      "path": "<repo>/code/renderers/react/template/stories/docgen-components/js-function-component-inline-defaults/input.jsx"
     },
     "JsFunctionComponentInlineDefaultsNoPropTypes": {
       "argTypes": {
@@ -773,7 +773,7 @@
       "import": "import { component as JsFunctionComponentInlineDefaultsNoPropTypesComponent } from '@storybook/react';",
       "jsDocTags": {},
       "name": "JsFunctionComponentInlineDefaultsNoPropTypes",
-      "path": "/home/agent/worktrees/storybook/ts71-regression-guards/code/renderers/react/template/stories/docgen-components/js-function-component-inline-defaults-no-propTypes/input.jsx"
+      "path": "<repo>/code/renderers/react/template/stories/docgen-components/js-function-component-inline-defaults-no-propTypes/input.jsx"
     },
     "JsReactMemo": {
       "argTypes": {
@@ -808,7 +808,7 @@
       "import": "import { component as JsReactMemoComponent } from '@storybook/react';",
       "jsDocTags": {},
       "name": "JsReactMemo",
-      "path": "/home/agent/worktrees/storybook/ts71-regression-guards/code/renderers/react/template/stories/docgen-components/9586-js-react-memo/input.jsx"
+      "path": "<repo>/code/renderers/react/template/stories/docgen-components/9586-js-react-memo/input.jsx"
     }
   }
 }

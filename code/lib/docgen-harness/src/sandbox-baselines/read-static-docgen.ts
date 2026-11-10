@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
 import type {
   DocgenPayload,
@@ -10,6 +10,9 @@ import type {
 export const DOCGEN_SNAPSHOT_DIR = join('services', 'core', 'docgen');
 
 export const SANDBOX_TOKEN = '<sandbox>';
+export const REPO_TOKEN = '<repo>';
+
+const REPO_DIR = resolve(import.meta.dirname, '../../../../..');
 
 // An allow-list rather than an exclude-list because `DocgenPayload` carries an index signature: the
 // Angular provider hangs the raw Compodoc entry off it, over 100KB of mostly `sourceCode` per
@@ -44,10 +47,17 @@ export type SandboxBaseline = Pick<DocgenPayload, (typeof PORTABLE_FIELDS)[numbe
 export type SandboxBaselines = Record<string, SandboxBaseline>;
 
 // Both native and POSIX spelling, so a baseline recorded on one platform verifies on another.
-export const normalizePaths = (value: string, sandboxDir: string): string =>
-  value
-    .replaceAll(sandboxDir, SANDBOX_TOKEN)
-    .replaceAll(sandboxDir.replace(/\\/g, '/'), SANDBOX_TOKEN);
+export const normalizePaths = (value: string, sandboxDir: string, repoDir = REPO_DIR): string =>
+  [
+    [sandboxDir, SANDBOX_TOKEN],
+    [repoDir, REPO_TOKEN],
+  ]
+    .toSorted(([a], [b]) => b.length - a.length)
+    .reduce(
+      (normalized, [dir, token]) =>
+        normalized.replaceAll(dir, token).replaceAll(dir.replace(/\\/g, '/'), token),
+      value
+    );
 
 const normalizeDeep = (value: unknown, sandboxDir: string): unknown => {
   if (typeof value === 'string') {

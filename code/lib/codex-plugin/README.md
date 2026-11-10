@@ -62,7 +62,7 @@ The plugin's [skills](#skills) tell the agent how to work with your Storybook: r
 
 ## Storybook
 
-For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill: invoke it when you reach the step, and follow it.
+For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill: invoke the skills of all your steps before you edit any file, and follow each one when you reach its step.
 
 1. `component-docs`, before you edit any file: look up the components to reuse, with their props and usage examples. Also when the user asks about a component's props, API, or usage.
 2. `write-stories`, before you write the code: every component you create or change gets stories.

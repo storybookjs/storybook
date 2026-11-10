@@ -49,16 +49,18 @@ function buildWorkflow(inputs: ServerInstructionsInputs, transport: SkillTextTra
     ({ skill, when, does, also }, index) =>
       `${index + 1}. \`${cli ? skill : `npx storybook skills ${skill} --mcp`}\`, ${when}: ${does}.${also ? ` Also when ${also}.` : ''}`
   );
-  const how = cli
-    ? 'invoke it when you reach the step, and follow it.'
-    : 'run it when you reach the step, and follow it. Run a skill in a command of its own, from the package where Storybook is installed, and read its whole output, without `head` or `tail`.';
+  // An agent opens every skill it is told to open at the start of its task. One it has to open
+  // halfway is the one it skips, so all of them come first.
+  const open = cli
+    ? 'invoke the skills of all your steps before you edit any file, and follow each one when you reach its step.'
+    : 'run the skills of all your steps before you edit any file, and follow each one when you reach its step. Run a skill in a command of its own, from the package where Storybook is installed, and read its whole output, without `head` or `tail`.';
   const follow =
     steps.length > 1
-      ? 'follow these steps in order. Each step has a Storybook skill'
-      : 'follow this step. It has a Storybook skill';
+      ? `follow these steps in order. Each step has a Storybook skill: ${open}`
+      : `follow this step. It has a Storybook skill: ${cli ? 'invoke' : 'run'} it before you edit any file, and follow it.${cli ? '' : ' Run it in a command of its own, from the package where Storybook is installed, and read its whole output, without `head` or `tail`.'}`;
   return `## Storybook
 
-For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), ${follow}: ${how}
+For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), ${follow}
 
 ${steps.join('\n')}`;
 }

@@ -18,7 +18,7 @@ describe('buildAgentInstructions', () => {
     expect(buildAgentInstructions()).toMatchInlineSnapshot(`
       "## Storybook
 
-      For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill: invoke it when you reach the step, and follow it.
+      For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill: invoke the skills of all your steps before you edit any file, and follow each one when you reach its step.
 
       1. \`component-docs\`, before you edit any file: look up the components to reuse, with their props and usage examples. Also when the user asks about a component's props, API, or usage.
       2. \`write-stories\`, before you write the code: every component you create or change gets stories.
@@ -46,7 +46,7 @@ describe('buildServerInstructions', () => {
     expect(buildServerInstructions(everything)).toMatchInlineSnapshot(`
       "## Storybook
 
-      For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill: run it when you reach the step, and follow it. Run a skill in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`.
+      For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill: run the skills of all your steps before you edit any file, and follow each one when you reach its step. Run a skill in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`.
 
       1. \`npx storybook skills component-docs --mcp\`, before you edit any file: look up the components to reuse, with their props and usage examples. Also when the user asks about a component's props, API, or usage.
       2. \`npx storybook skills write-stories --mcp\`, before you write the code: every component you create or change gets stories.
@@ -92,12 +92,12 @@ describe('buildServerInstructions', () => {
   it('names one step for one toolset', () => {
     expect(buildServerInstructions({ devEnabled: false, testSupported: false, docsEnabled: true }))
       .toMatchInlineSnapshot(`
-      "## Storybook
+        "## Storybook
 
-      For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow this step. It has a Storybook skill: run it when you reach the step, and follow it. Run a skill in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`.
+        For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow this step. It has a Storybook skill: run it before you edit any file, and follow it. Run it in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`.
 
-      1. \`npx storybook skills component-docs --mcp\`, before you edit any file: look up the components to reuse, with their props and usage examples. Also when the user asks about a component's props, API, or usage."
-    `);
+        1. \`npx storybook skills component-docs --mcp\`, before you edit any file: look up the components to reuse, with their props and usage examples. Also when the user asks about a component's props, API, or usage."
+      `);
   });
 
   it('returns empty instructions when all toolsets are disabled', () => {

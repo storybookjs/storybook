@@ -10,7 +10,7 @@ import {
 } from '#test-utils';
 import { describe, test } from 'vitest';
 
-// The steps of the workflow in AGENTS.md that this task goes through.
+// The steps of the workflow in AGENTS.md that this task cannot do without.
 const WORKFLOW_SKILLS = ['component-docs', 'write-stories', 'test-stories', 'ui-review'];
 
 describe('editing ReviewCard to add date and optional onReport', () => {
@@ -20,7 +20,7 @@ describe('editing ReviewCard to add date and optional onReport', () => {
     });
   });
 
-  test('runs the skill of every workflow step and publishes a display review', () => {
+  test('runs the skill of each of these steps and publishes a display review', () => {
     expectWorkflowCalls([...WORKFLOW_SKILLS, 'review-create']);
     expectDisplayReviewForVisualChange();
   });
@@ -42,7 +42,7 @@ describe('editing ReviewCard to add date and optional onReport', () => {
       expectWorkflowCalls(['docs-show']);
     });
 
-    test.skipIf(integration === 'mcp')('invokes the skill of every workflow step', () => {
+    test.skipIf(integration === 'mcp')('invokes the skill of each of these steps', () => {
       for (const skill of WORKFLOW_SKILLS) {
         expectSkillInvoked(skill);
       }

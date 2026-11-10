@@ -1,6 +1,6 @@
 ---
 name: test-stories
-description: Run the Storybook story tests of a project, with their accessibility checks, and fix what fails. Use after a change to a component or a story, or when the user asks to run or fix story tests.
+description: Run the Storybook story tests of a project, with their accessibility checks, and fix what fails.
 ---
 
 Prerequisites:

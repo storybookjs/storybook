@@ -1,6 +1,9 @@
 import {
   expectFinalResponseMatches,
+  expectSkillInvoked,
   expectStoryTestsRanAndPassed,
+  expectWorkflowCalls,
+  getEvalContext,
   getWorkflowCalls,
   getWorkflowToolResults,
   runStoryTestsInSandbox,
@@ -60,5 +63,13 @@ describe('fixing Button accessibility violations', () => {
   // fine, but the final response has to tell the user about it either way.
   test('addresses the contrast violation', () => {
     expectFinalResponseMatches([/contrast/i]);
+  });
+
+  test('runs the test-stories skill for a request to run the story tests', () => {
+    expectWorkflowCalls(['test-stories']);
+  });
+
+  test.skipIf(getEvalContext().integration === 'mcp')('invokes the test-stories skill', () => {
+    expectSkillInvoked('test-stories');
   });
 });

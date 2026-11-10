@@ -18,7 +18,8 @@ function workflowSteps({ devEnabled, testSupported, docsEnabled }: ServerInstruc
       does: 'look up the components to reuse, with their props and usage examples',
       also: "the user asks about a component's props, API, or usage",
     },
-    {
+    // Without the `dev` toolset the server is for lookups and test runs, not for the story workflow.
+    devEnabled && {
       skill: 'write-stories',
       when: 'before you write the code',
       does: 'every component you create or change gets stories',
@@ -50,17 +51,18 @@ function buildWorkflow(inputs: ServerInstructionsInputs, transport: SkillTextTra
   const how = cli
     ? 'invoke it when you reach the step, and follow it.'
     : 'run it when you reach the step, and follow it. Run a skill in a command of its own, from the package where Storybook is installed, and read its whole output, without `head` or `tail`.';
+  const follow =
+    steps.length > 1
+      ? 'follow these steps in order. Each step has a Storybook skill'
+      : 'follow this step. It has a Storybook skill';
   return `## Storybook
 
-For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill: ${how}
+For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), ${follow}: ${how}
 
 ${steps.join('\n')}`;
 }
 
-/**
- * The `## Storybook` section that `create storybook` and `storybook upgrade` write in `AGENTS.md`,
- * next to the skills they install.
- */
+// The `## Storybook` section that `create storybook` and `storybook upgrade` write in `AGENTS.md`.
 export function buildAgentInstructions(): string {
   return buildWorkflow({ devEnabled: true, testSupported: true, docsEnabled: true }, 'cli');
 }

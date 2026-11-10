@@ -96,7 +96,7 @@ To remove a plugin:
 
 ## Usage
 
-The plugin's [skills](#skills) tell the agent how to work with your Storybook: reuse your components, generate stories, run tests, and preview its work. You decide when the agent uses them. Add this section to the `AGENTS.md` of each project where the agent should use them. When you set up Storybook 11 with AI features, or accept the `skills` automigration when you upgrade, Storybook adds it for you (and to your `CLAUDE.md` or `CLAUDE.local.md`, if it does not import `AGENTS.md`):
+The plugin's [skills](#skills) tell the agent how to work with your Storybook: reuse your components, generate stories, run tests, and preview its work. The `AGENTS.md` section below is the workflow that tells the agent which skill to use at which step. Add it to the `AGENTS.md` of each project where the agent should follow it. When you set up Storybook 11 with AI features, or accept the `skills` automigration when you upgrade, Storybook adds it for you (and to your `CLAUDE.md` or `CLAUDE.local.md`, if it does not import `AGENTS.md`):
 
 ```md
 <!-- BEGIN:storybook-skills -->
@@ -114,7 +114,7 @@ For every change to how the UI looks (you create, change, or delete a component,
 <!-- END:storybook-skills -->
 ```
 
-Storybook replaces the text between the markers when you upgrade. The section is the workflow: each step names the skill the agent uses for it. To change the workflow, for example to leave out the review, remove both markers and edit the section. Remove the whole section to stop the agent from using them on its own. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
+Storybook replaces the text between the markers when you upgrade. The section is the workflow: each step names the skill the agent uses for it. To change the workflow, for example to leave out the review, remove both markers and edit the section. Remove the whole section to stop the agent from following the workflow: it then uses a skill only when you ask for it, or when it finds one that fits its task. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
 
 If you're using Claude Desktop, the agent will use the plugin to automatically open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/agentic-review) in the ADE preview, so you can review the agent's work.
 

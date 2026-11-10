@@ -29,13 +29,19 @@ export function findStoriesSection(
         docsEnabled && `- ${v.name('docs.list')} with \`withStoryIds: true\`: every story id`,
       ].filter(Boolean);
   if (commands.length === 0) {
-    return v.cli
-      ? `## Find the stories
+    const select = v.cli
+      ? `\`--stories '[{"absoluteStoryPath":"/abs/path/Button.stories.tsx","exportName":"Primary"}]'\``
+      : '`stories: [{ "absoluteStoryPath": "/abs/path/Button.stories.tsx", "exportName": "Primary" }]`';
+    const none = v.cli
+      ? 'This project has no command that lists story ids.'
+      : 'This Storybook has no tool that lists story ids.';
+    // A review takes story ids only, and a story link ends with the id of its story.
+    const use = forReview
+      ? `Get the link of each story from ${v.name('stories.preview')}, which selects a story by its file and export: ${select}. The id follows \`/story/\` in the link.`
+      : `Select a story by its file and export instead: ${select}.`;
+    return `## Find the stories
 
-This project has no command that lists story ids. Select a story by its file and export instead: \`--stories '[{"absoluteStoryPath":"/abs/path/Button.stories.tsx","exportName":"Primary"}]'\`.`
-      : `## Find the stories
-
-This Storybook has no tool that lists story ids. Select a story by its file and export instead: \`stories: [{ "absoluteStoryPath": "/abs/path/Button.stories.tsx", "exportName": "Primary" }]\`.`;
+${none} ${use}`;
   }
   const several = commands.length > 1;
   const guidance = [

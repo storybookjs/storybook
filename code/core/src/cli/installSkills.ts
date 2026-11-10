@@ -145,6 +145,9 @@ export async function installSkills({
 
   if (removedSkills.length > 0) {
     await removeSkills(packageManager, removedSkills, stdio);
+    logger.log(
+      `The ${formatList(removedSkills)} ${removedSkills.length > 1 ? 'skills are' : 'skill is'} replaced by component-docs, write-stories, test-stories and ui-review. Agent instructions of your own that name ${removedSkills.length > 1 ? 'them' : 'it'} need the new names.`
+    );
   }
   await addAgentInstructions(
     source === 'refresh' && removedSkills.length === 0 ? 'update' : 'install'
@@ -179,7 +182,7 @@ async function removeSkills(
   }
 }
 
-const listFiles = (files: string[]) =>
+const formatList = (files: string[]) =>
   new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }).format(files);
 
 async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> {
@@ -189,11 +192,11 @@ async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> 
     const updated = changes.filter(({ change }) => change === 'updated').map(({ file }) => file);
     if (added.length > 0) {
       logger.log(
-        `Added a Storybook section to ${listFiles(added)} that tells agents when to use the skills. Storybook keeps it current on upgrade: remove its markers to keep your own edits, or remove the section to opt out.`
+        `Added a Storybook section to ${formatList(added)} that tells agents when to use the skills. Storybook keeps it current on upgrade: remove its markers to keep your own edits, or remove the section to opt out of the workflow.`
       );
     }
     if (updated.length > 0) {
-      logger.log(`Updated the Storybook section in ${listFiles(updated)}.`);
+      logger.log(`Updated the Storybook section in ${formatList(updated)}.`);
     }
   } catch (error) {
     logger.warn(

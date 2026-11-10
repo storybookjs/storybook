@@ -12,7 +12,7 @@ import {
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 
-// The steps of the workflow in AGENTS.md that this task goes through.
+// The steps of the workflow in AGENTS.md that this task cannot do without.
 const WORKFLOW_SKILLS = ['test-stories', 'ui-review'];
 
 describe('changing a shared accent token and surfacing consumer stories', () => {
@@ -71,7 +71,7 @@ describe('changing a shared accent token and surfacing consumer stories', () => 
   describe('depending on the current agent and integration', () => {
     const { integration } = getEvalContext();
 
-    test.skipIf(integration === 'mcp')('invokes the skill of every workflow step', () => {
+    test.skipIf(integration === 'mcp')('invokes the skill of each of these steps', () => {
       for (const skill of WORKFLOW_SKILLS) {
         expectSkillInvoked(skill);
       }

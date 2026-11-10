@@ -88,6 +88,17 @@ describe('resolveSkillsIntent', () => {
     });
   });
 
+  it('keeps --mcp in the command it names for a replaced skill', () => {
+    expect(resolveSkillsIntent({ tokens: ['ui-workflow'], mcp: true })).toEqual({
+      kind: 'error',
+      message: expect.stringContaining('Run `npx storybook skills <id> --mcp` for the step'),
+    });
+    expect(resolveSkillsIntent({ tokens: ['write-story'], mcp: true })).toEqual({
+      kind: 'error',
+      message: expect.stringContaining('Run `npx storybook skills write-stories --mcp`.'),
+    });
+  });
+
   it('rejects surplus positional arguments and an id combined with --all', () => {
     expect(resolveSkillsIntent({ tokens: ['ui-review', 'typo'] })).toEqual({
       kind: 'error',

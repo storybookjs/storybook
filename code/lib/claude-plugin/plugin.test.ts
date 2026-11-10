@@ -109,11 +109,12 @@ describe('canonical skills', () => {
 
 describe('workflow skills', () => {
   it.each(WORKFLOW_SKILLS)(
-    '%s says plainly when it is useful, and leaves the workflow to the agent instructions',
+    '%s describes what it does, and leaves when to use it to the agent instructions',
     (name) => {
       const description = readSkillDescription(readSkill(name));
-      expect(description).toMatch(/\. Use /);
-      expect(description).not.toMatch(/FIRST|no exceptions|always|must/i);
+      expect(description).not.toMatch(
+        /FIRST|no exceptions|always|must|\bUse (it )?(when|after)\b/i
+      );
     }
   );
 

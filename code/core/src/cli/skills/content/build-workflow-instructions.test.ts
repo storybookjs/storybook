@@ -79,12 +79,26 @@ describe('buildServerInstructions', () => {
     expect(instructions).not.toContain('component-docs');
   });
 
-  it('asks for the review lines only when the server can publish a review', () => {
+  it('leaves out writing stories and the review without the dev toolset', () => {
     const instructions = buildServerInstructions({ ...everything, devEnabled: false });
 
-    expect(instructions).toContain('npx storybook skills test-stories --mcp');
+    expect(instructions).toContain('1. `npx storybook skills component-docs --mcp`');
+    expect(instructions).toContain('2. `npx storybook skills test-stories --mcp`');
+    expect(instructions).not.toContain('write-stories');
     expect(instructions).not.toContain('ui-review');
     expect(instructions).not.toContain('review-create');
+  });
+
+  it('names one step for one toolset', () => {
+    expect(
+      buildServerInstructions({ devEnabled: false, testSupported: false, docsEnabled: true })
+    ).toMatchInlineSnapshot(`
+      "## Storybook
+
+      For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow this step. It has a Storybook skill: run it when you reach the step, and follow it. Run a skill in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`.
+
+      1. \`npx storybook skills component-docs --mcp\`, before you edit any file: look up the components to reuse, with their props and usage examples. Also when the user asks about a component's props, API, or usage."
+    `);
   });
 
   it('returns empty instructions when all toolsets are disabled', () => {

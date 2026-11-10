@@ -10,7 +10,7 @@ import {
 } from '#test-utils';
 import { describe, test } from 'vitest';
 
-// The steps of the workflow in AGENTS.md that this task goes through.
+// The steps of the workflow in AGENTS.md that this task cannot do without.
 const WORKFLOW_SKILLS = ['component-docs', 'write-stories', 'test-stories', 'ui-review'];
 
 describe('creating a ProfileCard component', () => {
@@ -20,7 +20,7 @@ describe('creating a ProfileCard component', () => {
     });
   });
 
-  test('runs the skill of every workflow step and publishes a display review', () => {
+  test('runs the skill of each of these steps and publishes a display review', () => {
     expectWorkflowCalls([...WORKFLOW_SKILLS, 'review-create']);
     expectDisplayReviewForVisualChange();
   });
@@ -39,7 +39,7 @@ describe('creating a ProfileCard component', () => {
     // Building the ProfileCard from Reshaped primitives requires the docs tools.
     test('uses the documentation tooling', () => expectWorkflowCalls(['docs-show']));
 
-    test.skipIf(integration === 'mcp')('invokes the skill of every workflow step', () => {
+    test.skipIf(integration === 'mcp')('invokes the skill of each of these steps', () => {
       for (const skill of WORKFLOW_SKILLS) {
         expectSkillInvoked(skill);
       }

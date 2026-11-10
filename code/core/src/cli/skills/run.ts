@@ -69,22 +69,25 @@ export type SkillsIntent =
   | { kind: 'get'; id: SkillId }
   | { kind: 'error'; message: string };
 
-const SPLIT_WORKFLOW =
-  'is replaced by one skill per step: `component-docs` (look up the components to reuse), `write-stories` (the story rules), `test-stories` (run the story tests) and `ui-review` (publish the review). Run `npx storybook skills <id>` for the step you are on.';
-
 // Skill ids of 11.0 prereleases, which an `AGENTS.md` or a plugin from then can still name.
-const REPLACED_SKILLS: Record<string, string> = {
-  stories: `The \`stories\` skill ${SPLIT_WORKFLOW}`,
-  'ui-workflow': `The \`ui-workflow\` skill ${SPLIT_WORKFLOW}`,
-  'write-story':
-    'The `write-story` skill is renamed to `write-stories`. Run `npx storybook skills write-stories`.',
-};
+const SPLIT_SKILLS = ['stories', 'ui-workflow'];
+const RENAMED_SKILLS: Record<string, SkillId> = { 'write-story': 'write-stories' };
+
+function replacedSkillMessage(id: string, mcp: boolean): string | undefined {
+  const run = (skill: string) => `\`npx storybook skills ${skill}${mcp ? ' --mcp' : ''}\``;
+  if (SPLIT_SKILLS.includes(id)) {
+    return `The \`${id}\` skill is replaced by one skill per step: \`component-docs\` (look up the components to reuse), \`write-stories\` (the story rules), \`test-stories\` (run the story tests) and \`ui-review\` (publish the review). Run ${run('<id>')} for the step you are on.`;
+  }
+  const renamed = Object.hasOwn(RENAMED_SKILLS, id) ? RENAMED_SKILLS[id] : undefined;
+  return renamed && `The \`${id}\` skill is renamed to \`${renamed}\`. Run ${run(renamed)}.`;
+}
 
 export function resolveSkillsIntent({
   tokens,
   help,
   all,
-}: Pick<SkillsRunInput, 'tokens' | 'help' | 'all'>): SkillsIntent {
+  mcp = false,
+}: Pick<SkillsRunInput, 'tokens' | 'help' | 'all' | 'mcp'>): SkillsIntent {
   const [id, ...rest] = tokens;
   if (help) {
     return { kind: 'catalog' };
@@ -92,8 +95,9 @@ export function resolveSkillsIntent({
   if (id === undefined) {
     return all ? { kind: 'all' } : { kind: 'catalog' };
   }
-  if (Object.hasOwn(REPLACED_SKILLS, id)) {
-    return { kind: 'error', message: REPLACED_SKILLS[id] };
+  const replaced = replacedSkillMessage(id, mcp);
+  if (replaced) {
+    return { kind: 'error', message: replaced };
   }
   if (!isSkillId(id)) {
     return {

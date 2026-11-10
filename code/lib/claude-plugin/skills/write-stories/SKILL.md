@@ -1,6 +1,6 @@
 ---
 name: write-stories
-description: The rules for writing Storybook stories in a project - which states get a story, the imports, play functions, and mocks for network requests and modules. Use when you create or change a component or its stories.
+description: The rules for writing Storybook stories in a project: which states get a story, the imports, play functions, and mocks for network requests and modules.
 ---
 
 Prerequisites:

@@ -395,6 +395,7 @@ describe('mcpServerHandler', () => {
     expect(parsedResponse.result.instructions).toContain(
       '1. `npx storybook skills component-docs --mcp`'
     );
+    expect(parsedResponse.result.instructions).not.toContain('write-stories');
     expect(parsedResponse.result.instructions).not.toContain('ui-review');
     expect(parsedResponse.result.instructions).not.toContain('test-stories');
   });

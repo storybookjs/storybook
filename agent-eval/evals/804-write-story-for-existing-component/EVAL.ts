@@ -10,7 +10,7 @@ import {
   expectWorkflowCalls,
 } from '#test-utils';
 
-// The steps of the workflow in AGENTS.md that this task goes through.
+// The steps of the workflow in AGENTS.md that this task cannot do without.
 const WORKFLOW_SKILLS = ['write-stories', 'test-stories', 'ui-review'];
 
 describe('writing stories for an existing AlertBanner', () => {
@@ -20,7 +20,7 @@ describe('writing stories for an existing AlertBanner', () => {
     });
   });
 
-  test('runs the skill of every workflow step and publishes a display review', () => {
+  test('runs the skill of each of these steps and publishes a display review', () => {
     expectWorkflowCalls([...WORKFLOW_SKILLS, 'review-create']);
     expectDisplayReviewForVisualChange();
   });
@@ -36,7 +36,7 @@ describe('writing stories for an existing AlertBanner', () => {
   describe('depending on the current agent and integration', () => {
     const { integration } = getEvalContext();
 
-    test.skipIf(integration === 'mcp')('invokes the skill of every workflow step', () => {
+    test.skipIf(integration === 'mcp')('invokes the skill of each of these steps', () => {
       for (const skill of WORKFLOW_SKILLS) {
         expectSkillInvoked(skill);
       }

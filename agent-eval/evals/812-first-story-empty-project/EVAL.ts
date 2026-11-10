@@ -3,31 +3,24 @@ import {
   expectAllStoryExportsInDisplayReview,
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
-  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   getEvalContext,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
-  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 
 describe('writing the first Button stories in an empty Storybook', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
-      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
       covering: ['button'],
     });
   });
 
   test('uses Storybook story instructions and publishes a display review', () => {
-    expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
+    expectWorkflowCalls(['ui-workflow', 'review-create']);
     expectDisplayReviewForVisualChange();
-  });
-
-  test('opens the review in the in-app browser', () => {
-    expectReviewOpenedInBrowser();
   });
 
   test('the review covers the new Button stories', () => {

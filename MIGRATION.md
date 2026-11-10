@@ -1,12 +1,14 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [ESLint plugin: `meta-inline-properties` replaced by `static-csf-properties`](#eslint-plugin-meta-inline-properties-replaced-by-static-csf-properties)
   - [Deprecated addon UI APIs removed](#deprecated-addon-ui-apis-removed)
   - [Theming imports](#theming-imports)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging)
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
   - [Tag filtering API](#tag-filtering-api)
+  - [`storybook/test` is no longer a manager global](#storybooktest-is-no-longer-a-manager-global)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`useThemeParameters` removed](#usethemeparameters-removed)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
@@ -64,7 +66,7 @@
   - [`mockChannel` removed from `storybook/preview-api` and `storybook/manager-api`](#mockchannel-removed-from-storybookpreview-api-and-storybookmanager-api)
   - [React: Require v18 and up](#react-require-v18-and-up)
   - [`@storybook/react-dom-shim` removed](#storybookreact-dom-shim-removed)
-  - [Preact: Require v10.8.0 and up](#preact-require-v1080-and-up)
+  - [Preact: Require v10.9.0 and up](#preact-require-v1090-and-up)
   - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
   - [`experimentalReview` feature flag removed](#experimentalreview-feature-flag-removed)
   - [`changeDetection` feature flag removed](#changedetection-feature-flag-removed)
@@ -640,6 +642,11 @@
 
 ## From version 10.x to 11.0.0
 
+### ESLint plugin: `meta-inline-properties` replaced by `static-csf-properties`
+
+The `storybook/meta-inline-properties` rule has been removed from `eslint-plugin-storybook`. It checked a different property set than Storybook statically analyzes. If your ESLint config enables it explicitly, delete that entry, or the config will fail to load.
+
+Its replacement, `storybook/static-csf-properties`, ships at `error` severity in the `recommended`, `csf`, and `csf-strict` configs (flat and legacy). It reports exactly what breaks Storybook's static analysis of a story file: dynamic values for `title`, `id`, `tags`, `includeStories`, and `excludeStories` (on the meta, on stories, and in `preview.meta()` factory files), statically-read properties placed before an object spread that can override them at runtime, a `preview.meta()` argument that cannot be resolved statically, and a `preview` factory imported from a path that is not a `.storybook/preview` file. Every report corresponds to a file that already fails to index or silently diverges from what renders.
 ### Deprecated addon UI APIs removed
 
 Storybook 11 removes the deprecated UI APIs from `storybook/internal/components`. Update addons to the replacements below. `TooltipProvider`, `Tooltip`, `TooltipNote`, `PopoverProvider`, `Popover`, `ActionList`, `Select`, and the current tab components remain available.
@@ -873,6 +880,10 @@ Storybook 11 removes the experimental and undocumented tag filtering names. They
 `sidebar.filters` in `manager.ts` is removed and is not rewritten. Replace a tag exclusion with `hideFromSidebar`. Replace a custom filter function with `setFilter`. Automigration prints a notice when it finds `sidebar.filters`.
 
 `storybook automigrate` rewrites the tag option keys in `main.ts`, including when the value is an expression, and renames `experimental_setFilter` / `experimental_setFilters` identifiers in `.storybook` and story files. A call written as `api['experimental_setFilters']` is left unchanged. Rename those calls yourself in addon source outside `.storybook` and story files.
+
+### `storybook/test` is no longer a manager global
+
+The manager no longer provides `storybook/test` as a global (`__STORYBOOK_TEST__`), so the browser no longer downloads its test libraries with every manager load. `storybook/test` is for stories and their tests, and no known manager addon imported it. If your addon's manager entry imports `storybook/test` anyway, it still builds, but the addon then bundles its own copy. Move that code to the addon's preview entry, or drop the import.
 
 ### Addon `TAB` registration removed
 
@@ -1125,7 +1136,7 @@ The manager resolves `SELECT_STORY` payloads from `storyId` or `title`/`name`, a
 
 The `experimentalDocgenServer` feature is now `docgenServer`, and Storybook no longer reads the old name.
 Server-side component metadata extraction is enabled by default for every React and Vue 3 framework, including Webpack-based ones, for `@storybook/angular-vite`, for `@storybook/web-components-vite`, and for `@storybook/svelte-vite` and `@storybook/sveltekit`.
-Server-side docgen reads components with the TypeScript compiler API, also in JavaScript projects. The default is only on when the `typescript` package is installed and is TypeScript 5.9 or 6, or, for Web Components, when a Custom Elements Manifest is configured. Otherwise Storybook keeps builder docgen and prints a warning that tells you what to install. Set `features.docgenServer: false` in `.storybook/main.ts` to opt out of server-side docgen without that warning.
+Server-side docgen reads components with the TypeScript API, also in JavaScript projects. The default is only on when the `typescript` package is installed and is TypeScript 5.9 or 6 (or, for React and Angular with `@storybook/angular-vite`, also TypeScript 7.1 or newer; `typescript.docgenSpecifier` in `.storybook/main.ts` names another package to read TypeScript from), or, for Web Components, when a Custom Elements Manifest is configured. TypeScript 7.0 has no API that Storybook can use. Otherwise Storybook keeps builder docgen and prints a warning that tells you what to install. Set `features.docgenServer: false` in `.storybook/main.ts` to opt out of server-side docgen without that warning.
 Other frameworks keep builder docgen.
 
 The `docgen-server` automigration renames `experimentalDocgenServer` to `docgenServer` and keeps its value.
@@ -1167,10 +1178,10 @@ Storybook loads them only when builder docgen runs. When your main config sets `
 | `typescript.reactDocgen` | Add to devDependencies |
 | --- | --- |
 | `'react-docgen'` (default) | `react-docgen` |
-| `'react-docgen-typescript'` | Vite: `@joshwooding/vite-plugin-react-docgen-typescript` and `react-docgen-typescript`. Webpack: `@storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0` (this exact version; the `latest` tag is older) and `react-docgen-typescript` |
+| `'react-docgen-typescript'` | Vite: `@joshwooding/vite-plugin-react-docgen-typescript@^0.7.0` (Storybook does not accept a newer version yet) and `react-docgen-typescript`. Webpack: `@storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0` (this exact version; the `latest` tag is older) and `react-docgen-typescript` |
 
-Projects without a usable `typescript` (no `typescript` package, or TypeScript 7 without the [side-by-side setup](#typescript-59-or-newer)) only get docgen from the `react-docgen` fallback when `react-docgen` is installed. <!-- TEMPORARY(ts-7.1): update once Storybook supports TypeScript 7.1. -->
-Until Storybook supports TypeScript 7.1, `storybook init` and the `typescript-7-react-docgen` automigration add `react-docgen` to React projects on TypeScript 7.0 and note that in the Storybook cache in `node_modules`. A later Storybook update offers to remove it again once TypeScript 7 projects can use server-side docgen; without that note it leaves `react-docgen` alone. Setting up TypeScript 6 side by side gives you server-side docgen today.
+Projects without a usable `typescript` (no `typescript` package, or TypeScript 7.0) only get docgen from the `react-docgen` fallback when `react-docgen` is installed. Projects on TypeScript 7.1 or newer use server-side docgen.
+`storybook init` and the `typescript-7-react-docgen` automigration add `react-docgen` to React projects on TypeScript 7.0. Once a project is on TypeScript 7.1 or newer, Storybook no longer uses it, and you can remove `react-docgen` from your devDependencies.
 
 In `react-docgen-typescript` mode, `react-docgen` is optional and only documents JavaScript files. Without it, JavaScript components get no props, and Storybook does not warn about that.
 
@@ -1202,20 +1213,22 @@ Storybook 11 requires TypeScript 5.9 or newer. Upgrade your project's TypeScript
 
 There is no automatic source migration. Updating the compiler can expose errors in application code or dependencies that require project-specific fixes.
 
-`typescript` is now a required peer dependency of the React, Vue 3, Svelte and Web Components renderers and their frameworks, also in JavaScript projects, because server-side docgen uses it to read components and JSDoc. If your project has no `typescript` dependency, add `typescript@^6` to your devDependencies, whatever your package manager. Yarn does not install a missing peer dependency. npm and pnpm do, but they install the newest version in the range, TypeScript 7, which docgen cannot use. The `typescript-dependency` automigration adds `typescript@^6` for you when your project has no TypeScript.
+`typescript` is now a required peer dependency of the React, Vue 3, Svelte and Web Components renderers and their frameworks, also in JavaScript projects, because server-side docgen uses it to read components and JSDoc. If your project has no `typescript` dependency, add `typescript@^6` to your devDependencies, whatever your package manager. Yarn does not install a missing peer dependency. npm and pnpm do, but they install the newest version in the range, which can be TypeScript 7.0, which docgen cannot use. The `typescript-dependency` automigration adds `typescript@^6` for you when your project has no TypeScript.
 
-Svelte and Web Components no longer ship their own TypeScript 6. Before, their docgen also worked in projects on TypeScript 7. Now these projects need the side-by-side setup below, like React and Vue 3 projects.
+Svelte and Web Components no longer ship their own TypeScript 6. Before, their docgen also worked in projects on TypeScript 7. Now these projects need the side-by-side setup below, like Vue 3 and Angular projects.
 
-TypeScript 7 does not include the compiler API that Storybook uses to generate Controls and the Docs args table. Keep TypeScript 7 for `tsc`, and point the `typescript` package at TypeScript 6. npm, Yarn, and pnpm all accept this alias:
+TypeScript 7.0 does not include an API that Storybook can use to generate Controls and the Docs args table. TypeScript 7.1 and newer include one, which React and `@storybook/angular-vite` use. For the other renderers, and for React projects that stay on TypeScript 7.0, keep TypeScript 7 for `tsc`, and point the `typescript` package at TypeScript 6. npm, Yarn, and pnpm all accept this alias:
 
 ```json
 {
   "devDependencies": {
-    "@typescript/native": "npm:typescript@^7.0.2",
+    "@typescript/native": "npm:typescript@^7",
     "typescript": "npm:@typescript/typescript6@^6.0.2"
   }
 }
 ```
+
+With `@storybook/angular-vite`, and in React projects that keep TypeScript 6 for other tools, set `typescript.docgenSpecifier: '@typescript/native'` in `.storybook/main.ts` once that package is TypeScript 7.1 or newer, so docgen reads your components with it.
 
 `npx tsc` stays on TypeScript 7. Replacing only the `typescript` entry removes `tsc` and leaves `tsc6`. This is the [side-by-side setup from the TypeScript team](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0). The same steps are on the [TypeScript page](https://storybook.js.org/docs/configure/integration/typescript#typescript-7).
 
@@ -1810,17 +1823,19 @@ There is no supported import-only replacement for third-party code that imports 
 
 If your code renders React elements itself, keep one root for each container and reuse it across renders. Apply root options when you first create the root. On unmount, call `root.unmount()`, remove the stored root, and create a new root if that container renders again. Preserve any promise or `act` semantics that callers use to wait for a committed render. A bare `createRoot(container).render(element)` replacement does not preserve these behaviors.
 
-### Preact: Require v10.8.0 and up
+### Preact: Require v10.9.0 and up
 
-Storybook 11 requires Preact 10.8.0 or newer. Upgrade Preact before you upgrade Storybook:
+Storybook 11 requires Preact 10.9.0 or newer. Upgrade Preact before you upgrade Storybook:
 
 ```sh
-npm install preact@^10.8.0
+npm install preact@^10.9.0
 ```
 
-The accepted peer dependency range is `^10.8.0 || >=11.0.0-0`. Storybook uses the `preact/compat/client` entry and calls `unmount()` on its roots when it cleans up a rendered story. Although Preact 10.7.1 includes that entry, its roots don't provide `unmount()`. Preact 10.8.0 provides the root lifecycle that Storybook needs to clean up and render into the same container again.
+The accepted peer dependency range is `^10.9.0 || >=11.0.0-0`. Storybook uses the `preact/compat/client` entry and calls `unmount()` on its roots when it cleans up a rendered story. Although Preact 10.7.1 includes that entry, its roots don't provide `unmount()`. Preact 10.8.0 provides the root lifecycle that Storybook needs to clean up and render into the same container again.
 
-The official Preact framework is `@storybook/preact-vite`. Custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack must also use Preact 10.8.0 or newer.
+Storybook's UI components, which addon-docs renders in the preview, also call `useSyncExternalStore`. `preact/compat` exports it from Preact 10.9.0.
+
+The official Preact framework is `@storybook/preact-vite`. Custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack must also use Preact 10.9.0 or newer.
 
 ### `features.legacyDecoratorFileOrder` removed
 

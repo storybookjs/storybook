@@ -4,7 +4,7 @@
  */
 import type { TSESTree } from '@typescript-eslint/types';
 
-import { getMetaObjectExpression } from '../utils/index.ts';
+import { getFactoryMetaObjectExpression, getMetaObjectExpression } from '../utils/index.ts';
 import { isSpreadElement } from '../utils/ast.ts';
 import { CategoryId } from '../utils/constants.ts';
 import { createStorybookRule } from '../utils/create-storybook-rule.ts';
@@ -32,40 +32,48 @@ export default createStorybookRule({
     schema: [],
   },
   create: function (context) {
+    const checkTitle = (meta: TSESTree.ObjectExpression) => {
+      const titleNode = meta.properties.find(
+        (prop) => !isSpreadElement(prop) && 'name' in prop.key && prop.key?.name === 'title'
+      );
+
+      if (titleNode) {
+        context.report({
+          node: titleNode,
+          messageId: 'noTitleInMeta',
+          suggest: [
+            {
+              messageId: 'removeTitleInMeta',
+              fix(fixer) {
+                const fullText = context.sourceCode.text;
+                const propertyTextWithExtraCharacter = fullText.slice(
+                  titleNode.range[0],
+                  titleNode.range[1] + 1
+                );
+                const hasComma = propertyTextWithExtraCharacter.slice(-1) === ',';
+                const propertyRange: TSESTree.Range = [
+                  titleNode.range[0],
+                  hasComma ? titleNode.range[1] + 1 : titleNode.range[1],
+                ];
+                return fixer.removeRange(propertyRange);
+              },
+            },
+          ],
+        });
+      }
+    };
+
     return {
       ExportDefaultDeclaration: function (node) {
         const meta = getMetaObjectExpression(node, context);
-        if (!meta) {
-          return null;
+        if (meta) {
+          checkTitle(meta);
         }
-
-        const titleNode = meta.properties.find(
-          (prop) => !isSpreadElement(prop) && 'name' in prop.key && prop.key?.name === 'title'
-        );
-
-        if (titleNode) {
-          context.report({
-            node: titleNode,
-            messageId: 'noTitleInMeta',
-            suggest: [
-              {
-                messageId: 'removeTitleInMeta',
-                fix(fixer) {
-                  const fullText = context.sourceCode.text;
-                  const propertyTextWithExtraCharacter = fullText.slice(
-                    titleNode.range[0],
-                    titleNode.range[1] + 1
-                  );
-                  const hasComma = propertyTextWithExtraCharacter.slice(-1) === ',';
-                  const propertyRange: TSESTree.Range = [
-                    titleNode.range[0],
-                    hasComma ? titleNode.range[1] + 1 : titleNode.range[1],
-                  ];
-                  return fixer.removeRange(propertyRange);
-                },
-              },
-            ],
-          });
+      },
+      CallExpression: function (node) {
+        const meta = getFactoryMetaObjectExpression(node, context);
+        if (meta) {
+          checkTitle(meta);
         }
       },
     };

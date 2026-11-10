@@ -1,5 +1,7 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { join, sep } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { chmodSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { delimiter, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Sandbox } from '@vercel/agent-eval';
@@ -7,9 +9,12 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
   addMcpAddon,
+  LUNA_INSTRUCTIONS_SCRIPT_PATH,
+  LUNA_TEST_RULE,
   pointStorybookAtCheckout,
   readStorybookWorkspace,
   readTemplateCheckoutPackages,
+  SOL_TEST_RULES,
   type StorybookWorkspace,
   type WorkspacePackage,
   writeCodexLunaTestRules,
@@ -249,6 +254,63 @@ describe('writeCodexLunaTestRules', () => {
       'Failed to write the gpt-6-luna instructions: do not have the line'
     );
     expect(files).toEqual({});
+  });
+});
+
+// The script runs `codex`, so each test puts a `codex` on the PATH that prints its catalog.
+describe.skipIf(process.platform === 'win32')('the Luna instructions script', () => {
+  const solRules = [
+    '- Do not write tests for reversible one-off changes.',
+    '- Run tests appropriate to the change.',
+  ];
+
+  function runScript(models: Array<{ slug: string; base_instructions: string }>) {
+    const home = mkdtempSync(join(tmpdir(), 'luna-instructions-'));
+    const catalog = join(home, 'catalog.json');
+    writeFileSync(catalog, JSON.stringify({ models }));
+    const codex = join(home, 'codex');
+    writeFileSync(
+      codex,
+      `#!/bin/sh\nif [ "$1" = "--version" ]; then echo "codex-cli 1.2.3"; else cat "${catalog}"; fi\n`
+    );
+    chmodSync(codex, 0o755);
+    return execFileSync(
+      'node',
+      ['-e', readFileSync(LUNA_INSTRUCTIONS_SCRIPT_PATH, 'utf8'), 'gpt-6-luna', LUNA_TEST_RULE, SOL_TEST_RULES],
+      {
+        encoding: 'utf8',
+        env: { ...process.env, HOME: home, PATH: `${home}${delimiter}${process.env.PATH}` },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      }
+    );
+  }
+
+  it("swaps Luna's test rule for the two of Sol and keeps the rest", () => {
+    const file = runScript([
+      { slug: 'gpt-6-luna', base_instructions: `Be brief.\n${LUNA_TEST_RULE}\nUse rg.` },
+      { slug: 'gpt-6.1-sol', base_instructions: `Intro.\n${solRules.join('\n')}\nOutro.` },
+    ]);
+
+    expect(file.endsWith(join('.codex', 'storybook-eval-instructions.md'))).toBe(true);
+    expect(readFileSync(file, 'utf8')).toBe(`Be brief.\n${solRules.join('\n')}\nUse rg.`);
+  });
+
+  it("fails when Luna's instructions no longer have the rule", () => {
+    expect(() =>
+      runScript([
+        { slug: 'gpt-6-luna', base_instructions: 'Be brief.' },
+        { slug: 'gpt-6.1-sol', base_instructions: solRules.join('\n') },
+      ])
+    ).toThrow('The base instructions of gpt-6-luna do not have the line');
+  });
+
+  it('fails when Sol does not have exactly two test rules', () => {
+    expect(() =>
+      runScript([
+        { slug: 'gpt-6-luna', base_instructions: LUNA_TEST_RULE },
+        { slug: 'gpt-6.1-sol', base_instructions: solRules[0] ?? '' },
+      ])
+    ).toThrow('have 1 test rules instead of 2 in the catalog of codex-cli 1.2.3');
   });
 });
 

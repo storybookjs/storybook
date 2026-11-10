@@ -954,55 +954,13 @@ export async function writeMcpAgentInstructions(sandbox: Sandbox): Promise<void>
   );
 }
 
-const LUNA_TEST_RULE =
+export const LUNA_INSTRUCTIONS_SCRIPT_PATH = path.join(__dirname, 'codex-luna-instructions.cjs');
+export const LUNA_TEST_RULE =
   '- Do not add or run tests unless the user asks you to test or verify implementation.';
-const SOL_TEST_RULES = '^- (Do not write tests for reversible|Run tests appropriate)';
+export const SOL_TEST_RULES = '^- (Do not write tests for reversible|Run tests appropriate)';
 
-// Runs in the sandbox after the Codex CLI is installed, with the model slug, LUNA_TEST_RULE and
-// SOL_TEST_RULES as arguments. Reads the catalog bundled with that CLI and prints the path of the
-// instructions it writes.
-const LUNA_INSTRUCTIONS_SCRIPT = `
-const { execFileSync } = require('node:child_process');
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-
-const [slug, lunaRule, solRulesPattern] = process.argv.slice(1);
-const codex = (args) =>
-  execFileSync('codex', args, { cwd: os.tmpdir(), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-const catalog = JSON.parse(codex(['debug', 'models', '--bundled']));
-const instructions = (model) =>
-  catalog.models.find((entry) => entry.slug === model)?.base_instructions ?? '';
-const fail = (problem) => {
-  throw new Error(
-    problem + ' in the catalog of ' + codex(['--version']).trim() + '. Update LUNA_TEST_RULE or SOL_TEST_RULES in agent-eval/lib/templates.ts.'
-  );
-};
-
-const own = instructions(slug);
-if (!own.includes(lunaRule)) {
-  fail('The base instructions of ' + slug + ' do not have the line ' + JSON.stringify(lunaRule));
-}
-const solRules = instructions('gpt-6.1-sol')
-  .split('\\n')
-  .map((line) => line.trimEnd())
-  .filter((line) => new RegExp(solRulesPattern).test(line));
-if (solRules.length !== 2) {
-  fail('The base instructions of gpt-6.1-sol have ' + solRules.length + ' test rules instead of 2');
-}
-
-const file = path.join(os.homedir(), '.codex', 'storybook-eval-instructions.md');
-fs.mkdirSync(path.dirname(file), { recursive: true });
-fs.writeFileSync(file, own.replace(lunaRule, solRules.join('\\n')));
-process.stdout.write(file);
-`;
-
-/**
- * Give a gpt-6-luna model the test rules of gpt-6.1-sol, and keep the rest of its own base
- * instructions. Luna's say "Do not add or run tests unless the user asks", which makes it skip
- * `test-run` on most UI tasks. With Sol's rules, the Luna experiments stand in for Sol in CI at a
- * fraction of the cost.
- */
+// Luna's own rule makes it skip `test-run` on most UI tasks. With Sol's rules, the Luna experiments
+// stand in for Sol in CI at a fraction of the cost.
 export async function writeCodexLunaTestRules(sandbox: Sandbox, model: string): Promise<void> {
   // The harness installs the same CLI after `setup`; installing it here first lets the script
   // read the catalog of the binary that runs. Retried once, as the harness retries its install.
@@ -1017,7 +975,7 @@ export async function writeCodexLunaTestRules(sandbox: Sandbox, model: string): 
   const slug = model.split('?', 1)[0] ?? model;
   const result = await sandbox.runCommand('node', [
     '-e',
-    LUNA_INSTRUCTIONS_SCRIPT,
+    await fs.readFile(LUNA_INSTRUCTIONS_SCRIPT_PATH, 'utf8'),
     slug,
     LUNA_TEST_RULE,
     SOL_TEST_RULES,

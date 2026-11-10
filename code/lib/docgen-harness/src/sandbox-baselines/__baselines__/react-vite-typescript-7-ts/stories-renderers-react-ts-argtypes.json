@@ -5,7 +5,7 @@
       "name": "arrayOptional",
       "table": {
         "defaultValue": {
-          "summary": "['array',    'optional']"
+          "summary": "['array', 'optional']"
         },
         "type": {
           "summary": "string[]"
@@ -1136,7 +1136,7 @@
           "name": "arrayOptional",
           "table": {
             "defaultValue": {
-              "summary": "['array',    'optional']"
+              "summary": "['array', 'optional']"
             },
             "type": {
               "summary": "string[]"
@@ -1437,7 +1437,7 @@
           "name": "arrayOptional",
           "table": {
             "defaultValue": {
-              "summary": "['array',    'optional']"
+              "summary": "['array', 'optional']"
             },
             "type": {
               "summary": "string[]"
@@ -2042,7 +2042,7 @@
           "name": "arrayOfComplexObject",
           "table": {
             "defaultValue": {
-              "summary": "[{        text: 'foo',        value: 'bar'    }]"
+              "summary": "[{ text: 'foo', value: 'bar' }]"
             },
             "type": {
               "summary": "ItemInterface[]"
@@ -2059,7 +2059,7 @@
           "name": "arrayOfPrimitive",
           "table": {
             "defaultValue": {
-              "summary": "['foo',    'bar']"
+              "summary": "['foo', 'bar']"
             },
             "type": {
               "summary": "string[]"
@@ -2257,7 +2257,7 @@
           "name": "interface",
           "table": {
             "defaultValue": {
-              "summary": "{    text: 'foo',    value: 'bar' }"
+              "summary": "{ text: 'foo', value: 'bar' }"
             },
             "type": {
               "summary": "ItemInterface"
@@ -2274,8 +2274,7 @@
           "name": "intersectionType",
           "table": {
             "defaultValue": {
-              "detail": "{\n  text: 'foo',\n  value: 'bar',\n  name: 'foo-bar'\n}",
-              "summary": "object"
+              "summary": "{ text: 'foo', value: 'bar', name: 'foo-bar' }"
             },
             "type": {
               "summary": "InterfaceIntersection"
@@ -2452,7 +2451,7 @@
           "name": "recordOfPrimitive",
           "table": {
             "defaultValue": {
-              "summary": "{    foo: 1,    bar: 2 }"
+              "summary": "{ foo: 1, bar: 2 }"
             },
             "type": {
               "summary": "Record<string, number>"
@@ -2519,7 +2518,7 @@
           "name": "tupleOfPrimitive",
           "table": {
             "defaultValue": {
-              "summary": "['string value',    5]"
+              "summary": "['string value', 5]"
             },
             "type": {
               "summary": "[string, number]"
@@ -2536,8 +2535,7 @@
           "name": "tupleWithComplexType",
           "table": {
             "defaultValue": {
-              "detail": "[\n  'string value',\n  {\n    text: 'foo',\n    value: 'bar'\n  }\n]",
-              "summary": "array"
+              "summary": "['string value', { text: 'foo', value: 'bar' }]"
             },
             "type": {
               "summary": "[string, ItemInterface]"
@@ -2570,7 +2568,7 @@
           "name": "unionOfComplexType",
           "table": {
             "defaultValue": {
-              "summary": "{    text: 'foo',    value: 'bar' }"
+              "summary": "{ text: 'foo', value: 'bar' }"
             },
             "type": {
               "summary": "ItemInterface | InterfaceIntersection"

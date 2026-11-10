@@ -5,7 +5,7 @@
       "name": "arrayOptional",
       "table": {
         "defaultValue": {
-          "summary": "['array',    'optional']"
+          "summary": "['array', 'optional']"
         },
         "type": {
           "summary": "string[]"
@@ -311,7 +311,7 @@
           "name": "arrayOptional",
           "table": {
             "defaultValue": {
-              "summary": "['array',    'optional']"
+              "summary": "['array', 'optional']"
             },
             "type": {
               "summary": "string[]"
@@ -593,7 +593,7 @@
           "name": "arrayOptional",
           "table": {
             "defaultValue": {
-              "summary": "['array',    'optional']"
+              "summary": "['array', 'optional']"
             },
             "type": {
               "summary": "string[]"

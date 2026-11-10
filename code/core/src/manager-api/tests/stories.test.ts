@@ -1451,6 +1451,23 @@ describe('stories API', () => {
       expect(store.getState().index).toBe(index);
       expect(store.getState().index!['component-a--story-1']).toBe(entry);
     });
+    it('keeps preparing a story that only a not-yet-committed index has', async () => {
+      const moduleArgs = {
+        ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }),
+        store: createCommitLaggingStore(),
+      };
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider, store } = moduleArgs;
+      const { 'component-b--story-3': newStory, ...oldEntries } = mockEntries;
+      await api.setIndex({ v: 5, entries: oldEntries });
+
+      const firstSet = api.setIndex({ v: 5, entries: mockEntries });
+      provider.channel.emit(STORY_PREPARED, { id: 'component-b--story-3', parameters: {} });
+      const secondSet = api.setIndex({ v: 5, entries: mockEntries });
+      await Promise.all([firstSet, secondSet]);
+
+      expect(store.getState().index!['component-b--story-3']).toMatchObject({ prepared: true });
+    });
     it('keeps stories added by a not-yet-committed setIndex', async () => {
       const moduleArgs = {
         ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }),

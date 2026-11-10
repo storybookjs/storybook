@@ -46,14 +46,7 @@ const ctx: ToolsetCtx = {
   },
 };
 
-/**
- * Whether a configured source list composes several Storybooks.
- *
- * This is the one hosted-specific test: a configured source without a URL is this Storybook
- * itself, so only a source with one makes the list a composition. The schema a tool publishes and
- * the toolset that serves a request both decide multi-source through this predicate, so the two
- * cannot disagree about what `storybookId` means.
- */
+// A source without a URL is this Storybook itself, so only one with a URL makes a composition.
 function isComposition(sources: Source[] | undefined): sources is Source[] {
   return !!sources?.some((source) => source.url);
 }
@@ -162,32 +155,28 @@ export function getStoryDocumentationToolMetadata(options?: {
   return toolMetadata('docs.showStory', !!options?.multiSource);
 }
 
-/**
- * The metadata a tool is registered with, whose input schema follows the request being served.
- *
- * The handler assembles its toolset per request, so whether `storybookId` is accepted is decided by
- * the sources of that request. tmcp reads a tool's schema on every `tools/list` and `tools/call`,
- * inside the request's context, so the schema is a getter that decides the same way at that moment.
- * An embedder that registers the tools on its own server can still fix the shape with
- * `multiSource`, which is what the exported metadata helpers do.
- */
+// tmcp reads a registered tool's schema on every `tools/list` and `tools/call`, inside the request's
+// context, so the getters publish the shape that request's sources call for.
 function requestMetadata(
   server: Server,
   method: 'docs.list' | 'docs.show' | 'docs.showStory',
   options: { multiSource?: boolean } | undefined
 ): DocsToolMetadata {
-  const fixed = options?.multiSource;
-  const resolve = () => toolMetadata(method, fixed ?? isComposition(server.ctx.custom?.sources));
-  const { name, title, description } = resolve();
+  const single = toolMetadata(method, false);
+  const composed = toolMetadata(method, true);
+  const current = () =>
+    (options?.multiSource ?? isComposition(server.ctx.custom?.sources)) ? composed : single;
+  const { name, title, description } = current();
+
   return {
     name,
     title,
     description,
     get schema() {
-      return resolve().schema;
+      return current().schema;
     },
     get outputSchema() {
-      return resolve().outputSchema;
+      return current().outputSchema;
     },
   };
 }

@@ -41,7 +41,7 @@ This Storybook has no tool that lists story ids. Select a story by its file and 
   const guidance = [
     forReview &&
       moduleGraphSupported &&
-      `${v.Run} ${changed} after your last edit and before every review, also when you already know the ids of the stories you wrote: it adds the stories of other components that your change affects. The list covers your edits so far, so checks in between, such as a type check, need no new call.`,
+      `${v.Run} ${changed} after your last edit and before every review, also when you already know the ids of the stories you wrote: it adds the stories of other components that your change affects.${v.cli ? ' Run it in a command of its own and read its whole output, without `head` or `tail`.' : ''} The list covers your edits so far, so checks in between, such as a type check, need no new call.`,
     `Story ids come only from the ${v.output} of ${several ? `these ${v.commands}` : `this ${v.command}`}, so wait for it before you use an id. Never build one yourself from a file name, an export name, a title or memory.`,
     forReview &&
       moduleGraphSupported &&

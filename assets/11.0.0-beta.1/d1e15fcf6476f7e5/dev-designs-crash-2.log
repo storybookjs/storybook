@@ -1,0 +1,80 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm.
+
+[90m┌[39m  storybook v11.0.0-beta.1
+[90m│[39m
+[33m▲[39m  Storybook found TypeScript 7.0.2 as the `typescript` package.
+[90m│[39m  TypeScript 7 does not include the compiler API that Storybook uses to
+[90m│[39m  read your component types for Controls and the Docs args table.
+
+[90m│[39m  If package.json has no `typescript` entry, your package manager
+[90m│[39m  installed TypeScript 7 for Storybook's peer dependency. Add
+[90m│[39m  `typescript@^6` to the devDependencies in package.json.
+
+[90m│[39m  If your project uses TypeScript 7, install TypeScript 7 and TypeScript
+[90m│[39m  6 side by side. In package.json, replace the `typescript` entry in
+[90m│[39m  devDependencies with these two entries:
+
+[90m│[39m  "@typescript/native": "npm:typescript@^7.0.2",
+[90m│[39m  "typescript": "npm:@typescript/typescript6@^6.0.2"
+
+[90m│[39m  `tsc` stays on TypeScript 7, and the `typescript` package is
+[90m│[39m  TypeScript 6. Both entries are necessary.
+
+[90m│[39m  Then install dependencies and restart Storybook.
+
+[90m│[39m  Until then, Storybook falls back to the deprecated builder docgen with
+[90m│[39m  `react-docgen`, which will be removed in Storybook 12.
+
+[90m│[39m  More info:
+[90m│[39m  https://storybook.js.org/docs/configure/integration/typescript?ref=error#typescript-7
+
+[90m│[39m
+[33m▲[39m  No story files found for the specified pattern: [34msrc/docs/*.mdx[39m
+[90m│[39m
+[33m▲[39m  No story files found for the specified pattern:
+[90m│[39m  [34msrc/docs/Introduction.mdx[39m
+[90m│[39m
+[33m▲[39m  No story files found for the specified pattern: [34msrc/**/*.mdx[39m
+[90m│[39m
+[34m●[39m  Starting...
+│ [38;2;255;71;133m╭[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╮[39m
+│ [38;2;255;71;133m│[39m   Storybook ready!                                                         [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                                            [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - Local:                http://127.0.0.1:6006/                           [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - On your network:      run with --host <ip> to expose to local          [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   network                                                                  [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                                            [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m╰[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╯[39m
+[90m│[39m
+[34m●[39m  [4m1.83 s[24m for manager and [4m368 ms[24m for preview
+file:///home/agent/workspace/node_modules/rolldown/dist/shared/error-C7pxws0W.mjs:48
+	const wrapper = new Error(summary);
+	                ^
+
+Error: [31mError during dependency optimization:
+
+[39mBuild failed with 5 errors:
+
+[31m[MISSING_EXPORT] [0m"css" is not exported by "node_modules/storybook/dist/theming/create.js".
+ - Missing export in node_modules/@storybook/addon-designs/dist/blocks.js at 266..269
+
+[31m[MISSING_EXPORT] [0m"styled" is not exported by "node_modules/storybook/dist/theming/create.js".
+ - Missing export in node_modules/@storybook/addon-designs/dist/blocks.js at 270..276
+
+[31m[MISSING_EXPORT] [0m"jsx" is not exported by "node_modules/storybook/dist/theming/create.js".
+ - Missing export in node_modules/@storybook/addon-designs/dist/blocks.js at 277..280
+
+[31m[MISSING_EXPORT] [0m"css" is not exported by "node_modules/storybook/dist/theming/create.js".
+ - Missing export in node_modules/@storybook/addon-designs/dist/chunk-MYZEECTK.js at 186..189
+
+[31m[MISSING_EXPORT] [0m"jsx" is not exported by "node_modules/storybook/dist/theming/create.js".
+ - Missing export in node_modules/@storybook/addon-designs/dist/chunk-MYZEECTK.js at 190..193
+
+    at aggregateBindingErrorsIntoJsError (file:///home/agent/workspace/node_modules/rolldown/dist/shared/error-C7pxws0W.mjs:48:18)
+    at unwrapBindingResult (file:///home/agent/workspace/node_modules/rolldown/dist/shared/error-C7pxws0W.mjs:18:128)
+    at #build (file:///home/agent/workspace/node_modules/rolldown/dist/shared/rolldown-CgWItHdG.mjs:133:34)
+    at async Object.build (file:///home/agent/workspace/node_modules/vite/dist/node/chunks/node.js:28484:11) {
+  errors: [Getter/Setter]
+}
+
+Node.js v24.13.0

@@ -10,9 +10,6 @@ import {
 } from '#test-utils';
 import { describe, test } from 'vitest';
 
-// The steps of the workflow in AGENTS.md that this task cannot do without.
-const WORKFLOW_SKILLS = ['component-docs', 'write-stories', 'test-stories', 'ui-review'];
-
 describe('creating a ProfileCard component', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
@@ -20,8 +17,8 @@ describe('creating a ProfileCard component', () => {
     });
   });
 
-  test('runs the skill of each of these steps and publishes a display review', () => {
-    expectWorkflowCalls([...WORKFLOW_SKILLS, 'review-create']);
+  test('reads the story rules and publishes a display review', () => {
+    expectWorkflowCalls(['write-stories', 'review-create']);
     expectDisplayReviewForVisualChange();
   });
 

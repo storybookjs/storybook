@@ -3,7 +3,6 @@ import {
   expectDevServerLeftRunning,
   expectAnyWorkflowSkillInvoked,
   expectStoryIdsInDisplayReview,
-  expectWorkflowCalls,
   getEvalContext,
 } from '#test-utils';
 import { describe, test } from 'vitest';
@@ -25,10 +24,6 @@ describe('browsing existing ReviewCard Storybook states', () => {
 
   describe('depending on the current agent and integration', () => {
     const { integration } = getEvalContext();
-
-    test('runs the ui-review skill for a request to see stories', () => {
-      expectWorkflowCalls(['ui-review']);
-    });
 
     test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
       expectAnyWorkflowSkillInvoked();

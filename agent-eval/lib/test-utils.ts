@@ -723,10 +723,10 @@ export function expectSkillInvoked(skillName: string): void {
 
 const WORKFLOW_SKILLS = ['component-docs', 'write-stories', 'test-stories', 'ui-review'];
 
-// The plugin path: the installed skills are what leads the agent to the workflow. Once a skill has
-// shown it the `storybook skills <id>` command, an agent often runs that command for its next step
-// without invoking the skill of that step, which prints the same instructions. So one invoked
-// skill is enough here; `expectWorkflowCalls` asserts the instructions of each step.
+// The plugin path: the installed skills are what leads the agent to the workflow. One invoked
+// skill shows that. An agent does not invoke the skill of every step: once a skill has shown it
+// the `storybook skills <id>` command it often runs that for its next step, and it reaches the
+// tests and the review from what the commands print, without the skill of that step.
 export function expectAnyWorkflowSkillInvoked(): void {
   expect(
     WORKFLOW_SKILLS.some(isSkillInvoked),

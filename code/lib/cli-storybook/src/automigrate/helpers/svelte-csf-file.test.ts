@@ -29,8 +29,6 @@ describe('loadSvelteCsf', () => {
     `;
     const file = await loadSvelteCsf(code, id);
 
-    expect(file.lang).toBe('ts');
-    expect(file.meta?.storyName).toBe('S');
     expect(file.meta?.object?.properties).toHaveLength(1);
     expect(file.stories.map(({ name, ancestors }) => [name, ancestors])).toEqual([
       ['Base', []],

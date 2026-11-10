@@ -1068,6 +1068,52 @@ describe('sveltekit-mocking-before-each', () => {
       `);
     });
 
+    it('reports a legacy Svelte CSF file, which has no <script module>', async () => {
+      const story = dedent`
+        <script>
+          import { Meta, Story } from '@storybook/addon-svelte-csf';
+        </script>
+
+        <Meta title="Page" />
+        <Story name="A" parameters={{ sveltekit_experimental: { state: { page: { status: 1 } } } }} />
+      `;
+      const { failures, svelte } = await migrate({ svelte: story });
+
+      expect(svelte).toBe(story);
+      expect(failures[0]).toContain(
+        "line 6: `sveltekit_experimental` is outside the `<script module>` and the `<Story>` attributes, so the fix can't tell which stories use it."
+      );
+    });
+
+    it('reports a meta with a docs page that renders its stories inline', async () => {
+      const csf = dedent`
+        export default { tags: ['autodocs'], parameters: { docs: { story: { inline: true } } } };
+        export const A = { parameters: { sveltekit_experimental: { state: { page: { status: 1 } } } } };
+      `;
+      const svelte = dedent`
+        <script module>
+          import { defineMeta } from '@storybook/sveltekit';
+          const { Story } = defineMeta({
+            tags: ['autodocs'],
+            parameters: { docs: { story: { inline: true } } },
+          });
+        </script>
+
+        <Story name="A" parameters={{ sveltekit_experimental: { state: { page: { status: 1 } } } }} />
+      `;
+      const result = await migrate({ csf, svelte });
+
+      expect(result.csf).toBe(csf);
+      expect(result.svelte).toBe(svelte);
+      expect(result.failures.map((failure) => failure.match(/line \d+/)?.[0])).toEqual([
+        'line 1',
+        'line 5',
+      ]);
+      expect(result.failures[0]).toContain(
+        'the meta sets `parameters.docs.story.inline` to a value other than `false`'
+      );
+    });
+
     it('keeps a {beforeEach} shorthand attribute, and ignores markup comments', async () => {
       const { failures, svelte } = await migrate({
         svelte: dedent`

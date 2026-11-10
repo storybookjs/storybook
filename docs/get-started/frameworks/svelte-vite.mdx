@@ -27,7 +27,7 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
     },
     {
       name: 'Vite',
-      range: '≥ 5',
+      range: '≥ 6.3',
       icon: '/images/logos/builders/vite.svg',
     },
   ]}
@@ -45,9 +45,84 @@ To build Storybook, run:
 
 You will find the output in the configured `outputDir` (default is `storybook-static`).
 
-## Writing native Svelte stories
+## Write stories with Svelte CSF
 
-The Svelte frameworks ship with built-in support for writing stories for your Svelte components using the template syntax, via Svelte CSF.
+Svelte CSF lets you write stories in Svelte's template syntax, in files that end in `.stories.svelte`. It is built into `@storybook/svelte-vite`, so you don't need an addon. If your project still has `@storybook/addon-svelte-csf`, remove it: Storybook doesn't start while it is in `addons`. The [migration guide](../../releases/migration-guide.mdx) explains how to upgrade.
+
+In a stories file, call [`preview.meta`](../../writing-stories/csf/api.mdx#previewmeta) in a `<script module>` block. It returns the `Story` component, which you use once per story. The content between the `Story` tags is passed to the component as its `children` snippet. This example uses the `Button` component from [Component documentation](#component-documentation):
+
+```svelte title="Button.stories.svelte"
+<script module lang="ts">
+  import preview from '../.storybook/preview';
+
+  import Button from './Button.svelte';
+
+  const { Story } = preview.meta({
+    component: Button,
+  });
+</script>
+
+<Story name="Primary" args={{ primary: true }}>Primary</Story>
+
+<Story name="Large" args={{ size: 'large' }}>Large</Story>
+```
+
+The `stories` field in `.storybook/main.ts` must include the `svelte` extension, for example `'../src/**/*.stories.@(js|ts|svelte)'`. `storybook init` sets this for you.
+
+A Svelte CSF file compiles to regular [CSF](../../writing-stories/csf/index.mdx) stories, so you can use `.stories.svelte` and `.stories.ts` files in the same project. Stories files that use `defineMeta` from `@storybook/svelte-vite` work too. The [CSF 4 upgrade guide](../../writing-stories/csf/upgrade.mdx) explains how to move them to `preview.meta`.
+
+To learn more about Svelte CSF, read these guides:
+
+- [How to write stories](../../writing-stories/index.mdx), including children and custom templates
+- [CSF API](../../writing-stories/csf/api.mdx), including `extend` to build a story from another one
+- [TypeScript](../../writing-stories/typescript.mdx), including `meta.type` for args that only a template uses
+- [Args](../../writing-stories/args.mdx), [decorators](../../writing-stories/decorators.mdx), and [parameters](../../writing-stories/parameters.mdx)
+
+## Component documentation
+
+Storybook 11 reads Svelte component props on the server by default, with [`svelte2tsx`](https://github.com/sveltejs/language-tools/tree/master/packages/svelte2tsx) and the [`typescript`](../../configure/integration/typescript.mdx) package (TypeScript 5.9 or 6, even in JavaScript projects, where it reads types from JSDoc comments). New projects need no docgen configuration and no extra packages. Storybook uses the props for [controls](../../essentials/controls.mdx), [autodocs](../../writing-docs/autodocs.mdx), the code snippets in the [Code panel](../../writing-docs/code-panel.mdx), and the [components manifest](../../ai/manifests.mdx) that AI agents read.
+
+Without a usable `typescript` package, Storybook prints a warning that tells you what to install, and reads no props: controls and autodocs then show only the [`argTypes`](../../api/arg-types.mdx#manually-specifying-argtypes) that you write yourself. TypeScript 7 has no compiler API that Storybook can use for Svelte. To keep `tsc` on TypeScript 7, install TypeScript 6 side by side, as [TypeScript 7](../../configure/integration/typescript.mdx#typescript-7) explains.
+
+<Callout variant="info">
+
+The Storybook 10 builder-based docgen is still available, but it is deprecated. It will be removed in Storybook 12. To use it, set [`features.docgenServer: false`](../../api/main-config/main-config-features.mdx#docgenserver) in your main config. See the [`docgen`](#docgen) option.
+
+</Callout>
+
+Storybook reads this information from a component:
+
+- The props and their types, from the type of `$props()`. In JavaScript, write the type in a JSDoc `@type` comment.
+- The default values, from the destructuring of `$props()`.
+- The JSDoc comment of each prop, and its tags.
+- The component description, from a `<!-- @component -->` comment.
+- Which props are `$bindable()`.
+
+For example:
+
+```svelte title="Button.svelte"
+<!--
+  @component
+  The main action on a page.
+-->
+<script lang="ts">
+  import type { Snippet } from 'svelte';
+
+  interface Props {
+    /** Makes the button stand out. Use it for one action per page. */
+    primary?: boolean;
+    size?: 'small' | 'medium' | 'large';
+    onclick?: (event: MouseEvent) => void;
+    children?: Snippet;
+  }
+
+  let { primary = false, size = 'medium', onclick, children }: Props = $props();
+</script>
+```
+
+In the Controls panel, `size` gets a control that offers its three values. `children` is in the **slots** category and `onclick` is in the **events** category, without a control. Props that a component gets from a whole attribute interface, such as `HTMLButtonAttributes`, are not listed. Props that it picks from one, such as `Pick<HTMLButtonAttributes, 'disabled'>`, are.
+
+The Code panel shows the story as Svelte markup. The snippet starts with a `<script>` block that imports the components and values the story uses. By default, it shows the story as you wrote it, so it does not change when you change a control.
 
 ## FAQ
 
@@ -83,10 +158,18 @@ Type: `boolean`
 
 Default: `true`
 
-Enables or disables automatic documentation generation for component properties. When disabled, Storybook will skip the docgen processing step during build, which can improve build performance.
+Turns builder docgen on or off. Builder docgen reads your components in the Vite build, and Storybook only uses it when [`docgenServer`](../../api/main-config/main-config-features.mdx#docgenserver) is off. Like the server, it needs a usable `typescript` package. `docgenServer` is on by default, so this option has no effect unless you turn the server off. See [Component documentation](#component-documentation).
+
+<Callout variant="warning">
+
+Builder docgen is deprecated and will be removed in Storybook 12. Storybook warns when it runs, because your `.storybook/main.ts` sets `docgenServer: false`. Remove that setting to use server-side docgen.
+
+</Callout>
+
+To turn docgen off completely, turn off both `docgenServer` and builder docgen:
 
 <CodeSnippets path="svelte-framework-options-docgen.md" />
 
-#### When to disable docgen
+##### When to turn docgen off completely
 
-Disabling docgen can improve build performance for large projects, but [argTypes won't be inferred automatically](../../api/arg-types.mdx#automatic-argtype-inference), which will prevent features like [Controls](../../essentials/controls.mdx) and [docs](../../writing-docs/autodocs.mdx) from working as expected. To use those features, you will need to [define `argTypes` manually](../../api/arg-types.mdx#manually-specifying-argtypes).
+Turning docgen off can improve build performance for large projects, but [argTypes won't be inferred automatically](../../api/arg-types.mdx#automatic-argtype-inference), which will prevent features like [Controls](../../essentials/controls.mdx) and [docs](../../writing-docs/autodocs.mdx) from working as expected. To use those features, you will need to [define `argTypes` manually](../../api/arg-types.mdx#manually-specifying-argtypes).

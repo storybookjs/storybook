@@ -126,8 +126,9 @@ describe('rolldownHoistedModulePaths', () => {
     const before = await bundle([]);
     const after = await bundle([rolldownHoistedModulePaths]);
 
-    expect(before.shared.code).toContain(
-      '//#region node_modules/.pnpm/shared@1.0.0/node_modules/shared/index.js\n'
+    // On Windows, rolldown cannot make the POSIX module ids relative to `cwd` and keeps them absolute.
+    expect(before.shared.code).toMatch(
+      /^\/\/#region (\/repo\/)?node_modules\/\.pnpm\/shared@1\.0\.0\/node_modules\/shared\/index\.js$/m
     );
     expect(after.shared.code).toBe(
       before.shared.code.replace('.pnpm/shared@1.0.0/node_modules/', '')

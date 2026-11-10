@@ -153,7 +153,7 @@ Primary.args = {
     writeFileSync(brokenFile, 'export const = ;');
     writeFileSync(storyFile, csf2Source);
 
-    await migrate('upgrade-hierarchy-separators', {
+    await migrate('upgrade-deprecated-types', {
       glob: join(tempDir, '*.stories.tsx'),
       rename: '.tsx:.ts',
     });

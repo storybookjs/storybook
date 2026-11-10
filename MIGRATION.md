@@ -654,9 +654,11 @@ npx storybook@latest migrate csf-2-to-3 --glob="**/*.stories.tsx"
 
 If your `package.json` lists `@storybook/codemod`, remove it. Left in place, it stays on 10.x and installs its own copy of `storybook`.
 
-The transforms can no longer be run directly with `jscodeshift`. The `--parser` flag of `storybook migrate`, `storybook init` and `create storybook` is still accepted, but ignored, so `upgrade-hierarchy-separators` now fails on files that use Flow-only syntax.
+The transforms can no longer be run directly with `jscodeshift`. The `--parser` flag of `storybook migrate`, `storybook init` and `create storybook` is still accepted, but ignored.
 
 `storybook migrate` now exits with code 1 when the glob matches no files. Next to `node_modules` and `dist`, it also skips files in `build` and `storybook-static` folders. With `--dry-run`, it no longer renames files.
+
+The `upgrade-hierarchy-separators` codemod has been removed. It replaced `|` and `.` in titles and `storiesOf` calls with `/`, for the move to Storybook 6.0. `storiesOf` was removed in Storybook 8.0, and a `.` in a title is now an ordinary character. The `storybook/hierarchy-separator` ESLint rule still reports a `|` in a title, and `eslint --fix` replaces it.
 
 ### ESLint plugin: `meta-inline-properties` replaced by `static-csf-properties`
 

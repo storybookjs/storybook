@@ -6,13 +6,11 @@ import { type FileInfo, runCodemod } from './automigrate/codemod.ts';
 import csf2To3 from './codemod/transforms/csf-2-to-3.ts';
 import findImplicitSpies from './codemod/transforms/find-implicit-spies.ts';
 import upgradeDeprecatedTypes from './codemod/transforms/upgrade-deprecated-types.ts';
-import upgradeHierarchySeparators from './codemod/transforms/upgrade-hierarchy-separators.ts';
 
 const codemods: Record<string, (info: FileInfo) => string | Promise<string>> = {
   'csf-2-to-3': csf2To3,
   'find-implicit-spies': findImplicitSpies,
   'upgrade-deprecated-types': upgradeDeprecatedTypes,
-  'upgrade-hierarchy-separators': upgradeHierarchySeparators,
 };
 
 type CLIOptions = {

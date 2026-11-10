@@ -122,6 +122,24 @@ If you're using Storybook's hooks API in the story's render function, **do not**
 
 </If>
 
+<If renderer="svelte">
+
+## Setting args from within a story
+
+Interactive components often need to be controlled by their containing component or page to respond to events, modify their state and reflect those changes in the UI. For example, when a user toggles a checkbox component, the checkbox should be checked, and the arg shown in Storybook should reflect the change. To enable this in a Svelte CSF file, keep the value in `$state` in the module script (`<script module>`) and pass it to the `args` of the `Story` component. When the state changes, Storybook updates the arg and the story renders the new value:
+
+<CodeSnippets path="page-story-args-within-story.md" />
+
+The Controls panel shows the new value of the arg. If you change the arg in the Controls panel, the story uses your value until the state changes again.
+
+<Callout variant="info" icon="💡">
+
+Only the `args` of the `Story` component follow state. Storybook reads the `args` of `defineMeta` and `preview.meta` once, so a later change to state passed there does not update the stories. To use state in every story of a file, read it directly in a [`template` snippet](./index.mdx#custom-rendering) instead of passing it as an arg.
+
+</Callout>
+
+</If>
+
 ## Mapping to complex arg values
 
 Complex values such as JSX elements cannot be serialized to the manager (e.g., the Controls panel) or synced with the URL. Arg values can be "mapped" from a simple string to a complex type using the `mapping` property in `argTypes` to work around this limitation. It works in any arg but makes the most sense when used with the `select` control type.

@@ -89,7 +89,7 @@ const resolvePackageDirLikeMainConfig = ({
   configDir,
 }: TypeScriptSpecifierForDocgen) => {
   if (specifier.startsWith('file:')) {
-    return fileURLToPath(specifier);
+    return resolve(fileURLToPath(specifier));
   }
   if (isAbsolute(specifier) || specifier.startsWith('.')) {
     return resolve(configDir, specifier);

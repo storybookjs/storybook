@@ -743,16 +743,20 @@ function isSkillInvoked(skillName: string): boolean {
     // Match the skill argument exactly — a substring match would credit any
     // Skill invocation whose free-text args merely mention the word. When
     // AGENTS.md names a skill, Claude Code sometimes reads its SKILL.md
-    // instead, which loads the same instructions.
+    // instead, with its Read tool or with a shell command such as `cat`,
+    // which loads the same instructions.
     const skillFile = `/skills/${skillName}/SKILL.md`;
-    return getTranscript().events.some(
-      (event) =>
-        event.type === 'tool_call' &&
-        isRecord(event.tool?.args) &&
-        ((event.tool.originalName === 'Skill' && event.tool.args.skill === skillName) ||
-          (event.tool.originalName === 'Read' &&
-            typeof event.tool.args.file_path === 'string' &&
-            event.tool.args.file_path.endsWith(skillFile)))
+    return (
+      getShellCommands().some((command) => command.includes(skillFile)) ||
+      getTranscript().events.some(
+        (event) =>
+          event.type === 'tool_call' &&
+          isRecord(event.tool?.args) &&
+          ((event.tool.originalName === 'Skill' && event.tool.args.skill === skillName) ||
+            (event.tool.originalName === 'Read' &&
+              typeof event.tool.args.file_path === 'string' &&
+              event.tool.args.file_path.endsWith(skillFile)))
+      )
     );
   }
 

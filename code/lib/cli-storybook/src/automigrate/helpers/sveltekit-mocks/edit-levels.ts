@@ -181,7 +181,7 @@ export const editObjectSite = (
     prependToBeforeEach(editor, beforeEach.value, statements, { semicolon, step: editor.indent });
   }
   if (replacesWithDocs) {
-    editor.edits.overwrite(sveltekit.start, sveltekit.end, INLINE_FALSE);
+    editor.edits.overwrite(sveltekit.start, sveltekit.end, docsMember(editor, params, sveltekit));
   } else if (docs) {
     removeFromList(editor, objectList(editor, params), [sveltekit]);
     addInlineFalse(editor, docs);
@@ -209,7 +209,7 @@ export const editObjectSite = (
 const readText = (editor: SourceEditor, source: string, keys: string[]) => {
   const path = keys.join('?.');
   if (!/\.[cm]?tsx?$/.test(editor.fileName ?? '')) {
-    return `${source}?.${path}`;
+    return /^[\w$.]+$/.test(source) ? `${source}?.${path}` : `(${source})?.${path}`;
   }
   const type = keys.reduceRight((inner, key) => `{ ${key}?: ${inner} }`, 'object');
   return `(${source} as ${type} | undefined)?.${path}`;
@@ -254,9 +254,33 @@ const addInlineFalse = (editor: SourceEditor, docs: E.ObjectProperty) => {
   } else if (story) {
     spreadShared(editor, story, () => 'inline: false');
   } else {
-    appendMember(editor, docsObject, 'story: { inline: false }');
+    appendMember(
+      editor,
+      docsObject,
+      `story: { ${spreadsOf(editor, docsObject, ['story'])}inline: false }`
+    );
   }
 };
+
+// What the spreads of an object literal before `member` set at `keys`, as spreads for a new member
+// that replaces it, such as `docs` after `...shared`
+const spreadsOf = (
+  editor: SourceEditor,
+  object: E.ObjectExpression,
+  keys: string[],
+  member?: Node
+) =>
+  object.properties
+    .filter(
+      (property): property is E.SpreadElement =>
+        property.type === 'SpreadElement' && (!member || property.start < member.start)
+    )
+    .map((spread) => `...${readText(editor, editor.source(spread.argument), keys)}, `)
+    .join('');
+
+// `docs: { story: { inline: false } }` for the parameters `params`, keeping the docs of its spreads
+const docsMember = (editor: SourceEditor, params: E.ObjectExpression, member?: Node) =>
+  `docs: { ${spreadsOf(editor, params, ['docs'], member)}story: { ${spreadsOf(editor, params, ['docs', 'story'], member)}inline: false } }`;
 
 const appendMember = (editor: SourceEditor, object: E.ObjectExpression, text: string) =>
   appendToList(editor, objectList(editor, object), [text]);
@@ -301,7 +325,7 @@ export const addInlineFalseToMeta = (editor: SourceEditor, meta: E.ObjectExpress
   if (docs) {
     addInlineFalse(editor, docs);
   } else {
-    appendMember(editor, params, INLINE_FALSE);
+    appendMember(editor, params, docsMember(editor, params));
   }
 };
 

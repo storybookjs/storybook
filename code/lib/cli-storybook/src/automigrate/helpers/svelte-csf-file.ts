@@ -384,9 +384,11 @@ export const loadSvelteCsf = async (code: string, id: string): Promise<SvelteCsf
         all.push({ ...span(region.span), text: region.print() });
       }
     }
-    // From the end, so earlier offsets stay right; a removal before an insertion at the same offset
+    // From the end, so earlier offsets stay right; a removal before an insertion at the same offset,
+    // and insertions at one offset from the last call, so they end up in the order of the calls
     return all
-      .sort((a, b) => b.start - a.start || b.end - a.end)
+      .map((splice, order) => ({ ...splice, order }))
+      .sort((a, b) => b.start - a.start || b.end - a.end || b.order - a.order)
       .reduce(
         (result, { start, end, text }) => result.slice(0, start) + text + result.slice(end),
         code

@@ -21,18 +21,24 @@ import type { Fix } from '../types.ts';
 
 const SCRIPT_FILE = /\.[cm]?[jt]sx?$/;
 const STORY_EXTENSION = /\.(svelte|[cm]?[jt]sx?)$/;
-const RELATIVE_IMPORT = /\bimport\s+(?:[^'"]*?\s+from\s+)?['"](\.{1,2}\/[^'"]+)['"]/g;
+// A relative import, or one through SvelteKit's `$lib` alias
+const LOCAL_IMPORT = /\bimport\s+(?:[^'"]*?\s+from\s+)?['"]((?:\.{1,2}|\$lib)\/[^'"]+)['"]/g;
 
-// The stories files, without extension, that an MDX file imports: its docs page can render them
+// The stories files, without extension, that an MDX file imports: its docs page can render them.
+// `$lib` is `src/lib` of the project that holds the config directory, as SvelteKit sets it up.
 const findMdxDocsPages = async (
   storiesPaths: string[],
-  read: (path: string) => Promise<string>
+  read: (path: string) => Promise<string>,
+  configDir: string
 ) => {
   const pages = new Set<string>();
   for (const path of storiesPaths.filter((file) => file.endsWith('.mdx'))) {
     const code = await read(path).catch(() => '');
-    for (const [, source] of code.matchAll(RELATIVE_IMPORT)) {
-      pages.add(resolve(dirname(path), source).replace(STORY_EXTENSION, ''));
+    for (const [, source] of code.matchAll(LOCAL_IMPORT)) {
+      const file = source.startsWith('$lib/')
+        ? resolve(configDir, '..', 'src/lib', source.slice('$lib/'.length))
+        : resolve(dirname(path), source);
+      pages.add(file.replace(STORY_EXTENSION, ''));
     }
   }
   return [...pages];
@@ -54,7 +60,7 @@ export const sveltekitMockingBeforeEach: Fix<SvelteKitMockingBeforeEachResult> =
       : message;
   },
 
-  async check({ mainConfig, storybookVersion, previewConfigPath, storiesPaths, files }) {
+  async check({ mainConfig, storybookVersion, previewConfigPath, storiesPaths, files, configDir }) {
     if (
       !isAtOrPastVersion(storybookVersion, '11.0.0') ||
       getFrameworkPackageName(mainConfig) !== '@storybook/sveltekit'
@@ -67,7 +73,11 @@ export const sveltekitMockingBeforeEach: Fix<SvelteKitMockingBeforeEachResult> =
           previewConfigPath
         )
       : noPreviewMocks();
-    const mdxDocsPages = await findMdxDocsPages(storiesPaths, (path) => files.read(path));
+    const mdxDocsPages = await findMdxDocsPages(
+      storiesPaths,
+      (path) => files.read(path),
+      configDir ?? '.storybook'
+    );
     return { preview, mdxDocsPages };
   },
 

@@ -41,6 +41,7 @@ import {
   mergeKeys,
   noMergedKeys,
   readMocks,
+  writesMocks,
 } from './mock-statements.ts';
 import { printMocks } from './print-mocks.ts';
 
@@ -169,6 +170,15 @@ export const migrateSvelteStories = async (
     return { ...site, mocks };
   });
 
+  // A docs page renders the stories inline, where they share the mocks
+  const docsPage =
+    !!meta.object &&
+    [...(metaMocks ? [metaMocks] : []), ...stories.map(({ mocks }) => mocks)].some(writesMocks) &&
+    (!!preview.mdxDocsPage || storyAutodocs || hasAutodocs(meta.object, preview.autodocs));
+  const inline = docsPage ? inlineOf(meta.object!) : undefined;
+  if (inline && !isFalse(inline.value)) {
+    problems.push({ index: module.toFile(inline.start), message: INLINE_PROBLEM });
+  }
   problems.push(...unparsed());
   if (problems.length > 0) {
     failWith(code, problems);
@@ -199,15 +209,6 @@ export const migrateSvelteStories = async (
   const storyStatements = stories.map((story) =>
     printMocks(story.parameters.editor, story.mocks, imports.local, style)
   );
-  // A docs page renders the stories inline, where they share the mocks
-  const docsPage =
-    !!meta.object &&
-    [metaStatements, ...storyStatements].some((statements) => statements.length > 0) &&
-    (!!preview.mdxDocsPage || storyAutodocs || hasAutodocs(meta.object, preview.autodocs));
-  const inline = docsPage ? inlineOf(meta.object!) : undefined;
-  if (inline && !isFalse(inline.value)) {
-    failWith(code, [{ index: module.toFile(inline.start), message: INLINE_PROBLEM }]);
-  }
   const inlineFalse = docsPage && !inline;
 
   if (metaSite) {

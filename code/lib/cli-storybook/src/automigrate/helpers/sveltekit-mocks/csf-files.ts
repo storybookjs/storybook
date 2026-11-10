@@ -52,6 +52,7 @@ import {
   objectValue,
   readMocks,
   recordMerged,
+  writesMocks,
 } from './mock-statements.ts';
 import { printMocks, printStatements } from './print-mocks.ts';
 
@@ -445,6 +446,19 @@ export const migrateCsfStories = (
     ...spreadsOfLevels(editor, storyNodes, new Set(levels.map(({ site }) => site.object))),
     ...assignedBeforeEach(editor, new Set(levels.map(({ site }) => site.object))),
   ];
+  // A docs page renders the stories inline, where they share the mocks
+  const docsPage =
+    !!meta &&
+    levels.some(({ mocks }) => writesMocks(mocks)) &&
+    (!!preview.mdxDocsPage ||
+      hasAutodocs(meta, preview.autodocs) ||
+      [...storyNodes].some((story) =>
+        tagsOf(objectProperty(story, 'tags')?.value)?.includes('autodocs')
+      ));
+  const inline = docsPage && meta ? inlineOf(meta) : undefined;
+  if (inline && !isFalse(inline.value)) {
+    problems.push({ index: inline.start, message: INLINE_PROBLEM });
+  }
   if (problems.length > 0) {
     failWith(code, problems);
   }
@@ -462,19 +476,6 @@ export const migrateCsfStories = (
   const imports = new MockImports(editor, takenNames(editor, spies));
   const style = styleOf(editor);
   const printed = levels.map((level) => printMocks(editor, level.mocks, imports.local, style));
-  // A docs page renders the stories inline, where they share the mocks
-  const docsPage =
-    !!meta &&
-    printed.some((statements) => statements.length > 0) &&
-    (!!preview.mdxDocsPage ||
-      hasAutodocs(meta, preview.autodocs) ||
-      [...storyNodes].some((story) =>
-        tagsOf(objectProperty(story, 'tags')?.value)?.includes('autodocs')
-      ));
-  const inline = docsPage && meta ? inlineOf(meta) : undefined;
-  if (inline && !isFalse(inline.value)) {
-    failWith(code, [{ index: inline.start, message: INLINE_PROBLEM }]);
-  }
   const inlineFalse = docsPage && !inline;
   const semicolon = style.semicolons ? ';' : '';
   levels.forEach((level, index) =>

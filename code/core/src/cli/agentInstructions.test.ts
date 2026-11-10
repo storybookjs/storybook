@@ -59,7 +59,7 @@ describe('addStorybookAgentInstructions', () => {
   });
 
   it.each([
-    '## Storybook\n\n1. `write-stories`, before you write the code.\n2. `test-stories`, after every change.\n',
+    '## Storybook\n\n1. `write-stories`: every component gets stories.\n2. `test-stories`: run the story tests.\n',
     '## Storybook\n\n- `ui-workflow`: for UI changes, without the review.\n',
     'Run /component-docs for questions about a component.\n',
   ])('leaves a file alone that already names a Storybook skill (%j)', async (custom) => {
@@ -101,7 +101,7 @@ describe('addStorybookAgentInstructions', () => {
   });
 
   it('leaves a section without markers alone on an update', async () => {
-    const custom = '## Storybook\n\n1. `write-stories`, before you write the code.\n';
+    const custom = '## Storybook\n\n1. `write-stories`: every component gets stories.\n';
     vol.writeFileSync(join(ROOT, 'AGENTS.md'), custom);
 
     expect(await addStorybookAgentInstructions(ROOT, 'update')).toEqual([]);

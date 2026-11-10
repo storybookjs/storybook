@@ -1651,6 +1651,9 @@ importers:
       memfs:
         specifier: ^4.11.1
         version: 4.72.1
+      pathe:
+        specifier: ^2.0.3
+        version: 2.0.3
       rimraf:
         specifier: ^6.0.1
         version: 6.1.2

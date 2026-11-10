@@ -25,14 +25,12 @@ import {
 import { extractArgTypes } from '../../../../renderers/svelte/src/extractArgTypes.ts';
 import { extractComponentDescription } from '../../../../renderers/svelte/src/extractComponentDescription.ts';
 import { generateSvelteSource } from '../../../../renderers/svelte/src/docs/sourceDecorator.ts';
-import {
-  composeStory,
-  setProjectAnnotations,
-} from '../../../../renderers/svelte/src/portable-stories.ts';
 import type { SvelteRenderer } from '../../../../renderers/svelte/src/types.ts';
 import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
+import { composeModuleStory, readStoriesModule } from './stories-module.ts';
+import type { StoriesModule } from './stories-module.ts';
 
 if (BASELINE_PATH !== 'legacy') {
   throw new Error(
@@ -51,8 +49,6 @@ const CHANNEL_WAIT_MS = 1000;
 
 const channel = createTestChannel();
 installTestChannel(channel);
-setProjectAnnotations([]);
-
 type ComponentWithDocgen = Component & {
   __docgen?: unknown;
 };
@@ -86,8 +82,6 @@ type SvelteStoryFunction = AnnotatedStoryFn<SvelteRenderer, Args> & {
 
 type SvelteStory = SvelteStoryFunction | SvelteStoryObject;
 
-type SvelteStoriesModule = { default: SvelteMeta } & Record<string, unknown>;
-
 afterEach(() => {
   cleanup();
   document.body.replaceChildren();
@@ -98,24 +92,16 @@ describe('svelte legacy baselines', () => {
     const testDir = join(fixturesDir, fixtureCase);
     const storiesModule = (await import(
       `./__testfixtures__/${fixtureCase}/input.stories.svelte`
-    )) as SvelteStoriesModule;
-    const { default: meta, ...exports } = storiesModule;
-    const stories = Object.fromEntries(
-      Object.entries(exports).filter(([, value]) => isStoryExport(value))
-    ) as Record<string, SvelteStory>;
+    )) as Record<string, unknown>;
+    const svelteModule = readStoriesModule<SvelteMeta, SvelteStory>(storiesModule);
+    const { meta, stories } = svelteModule;
     const plainStoriesPath = join(testDir, 'input.stories.ts');
-    const plainStoriesModule = existsSync(plainStoriesPath)
-      ? ((await import(
-          `./__testfixtures__/${fixtureCase}/input.stories.ts`
-        )) as SvelteStoriesModule)
+    const plain = existsSync(plainStoriesPath)
+      ? readStoriesModule<SvelteMeta, SvelteStory>(
+          await import(`./__testfixtures__/${fixtureCase}/input.stories.ts`)
+        )
       : undefined;
-    const plainStories = plainStoriesModule
-      ? (Object.fromEntries(
-          Object.entries(plainStoriesModule).filter(
-            ([exportName, value]) => exportName !== 'default' && isStoryExport(value)
-          )
-        ) as Record<string, SvelteStory>)
-      : {};
+    const plainStories = plain?.stories ?? {};
     const component = meta.component;
     await expect({
       component: meta.parameters?.docs?.description?.component,
@@ -143,7 +129,7 @@ describe('svelte legacy baselines', () => {
     await expect(description).toMatchFileSnapshot(join(testDir, 'description.snapshot'));
 
     for (const [exportName, story] of Object.entries(stories)) {
-      const snippet = await generateSvelteCsfSnippet(meta, story, exportName, fixtureCase);
+      const snippet = await generateSvelteCsfSnippet(svelteModule, story, exportName, fixtureCase);
       const snippetPath = join(testDir, `snippet-${exportName}.snapshot`);
       const committedSnippet = existsSync(snippetPath)
         ? readFileSync(snippetPath, 'utf8')
@@ -159,14 +145,11 @@ describe('svelte legacy baselines', () => {
       await expect(snippet).toMatchFileSnapshot(snippetPath);
     }
 
-    if (plainStoriesModule) {
+    if (plain) {
       for (const [exportName, story] of Object.entries(plainStories)) {
-        const args = { ...plainStoriesModule.default.args, ...story.args };
-        const snippetComponent = getPlainCsfSnippetComponent(
-          plainStoriesModule.default,
-          story,
-          args
-        );
+        // The composed args include the preview args, as in Storybook's source decorator.
+        const { args } = composeModuleStory(plain, story, exportName);
+        const snippetComponent = getPlainCsfSnippetComponent(plain.meta, story, args);
         const snippet = generateSvelteSource(
           snippetComponent,
           args,
@@ -200,21 +183,13 @@ describe('svelte legacy baselines', () => {
   });
 });
 
-function isStoryExport(value: unknown): value is SvelteStory {
-  return (
-    value !== null &&
-    (typeof value === 'object' || typeof value === 'function') &&
-    ('args' in value || 'parameters' in value || 'render' in value || 'tags' in value)
-  );
-}
-
 async function generateSvelteCsfSnippet(
-  meta: SvelteMeta,
+  storiesModule: StoriesModule<SvelteMeta, SvelteStory>,
   story: SvelteStory,
   exportName: string,
   fixtureCase: string
 ): Promise<string> {
-  const Story = composeStory(story, meta, undefined, exportName);
+  const Story = composeModuleStory(storiesModule, story, exportName);
   const snippetRendered = waitForSnippetRendered(fixtureCase, exportName, Story.id);
   const canvasElement = document.createElement('div');
   document.body.appendChild(canvasElement);

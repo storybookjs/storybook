@@ -147,9 +147,11 @@ Snapshots must stay deterministic: no timestamps, no absolute paths.
 - angular: one kebab-case `<case>.component.ts` (the class name must match the compodoc capture exactly) plus `input.stories.ts` and a captured `compodoc-input.json`.
   Signal fixtures also commit an `aot-cmp.ts` with the `ɵcmp` input/output maps, captured once from real `ngc` output - JIT leaves them empty.
   Stories import their CSF types from `src/angular/csf-types.ts`; the two runtime test files are excluded from the vue-tsc program because angular-vite client source is not strict-clean.
-- svelte: one component plus `input.stories.svelte`; add supporting component/type files and `input.stories.ts` when the plain CSF snippet path is relevant.
+- svelte: one PascalCase component (the runtime snippet takes its tag from the filename) plus `input.stories.svelte`; add supporting component/type files and `input.stories.ts` when the plain CSF snippet path is relevant.
   `input.stories.ts` imports `Meta`/`StoryObj` from `@storybook/svelte`.
+  CSF4 fixtures (`csf4-*`) add a `preview.ts` with `__definePreview` from the Svelte renderer source and use `preview.meta()` in both story files; `stories-module.ts` reads a CSF3 or CSF4 module into one meta and its stories.
   New fixtures need two focused Svelte test runs: the first creates `toMatchFileSnapshot` files at suite end, and the second proves the stale-file checks and comparator gates.
+  If a new fixture fails with `Unknown variable dynamic import`, delete the Vitest module cache in `node_modules/.vitest-cache` at the repo root: a cached transform of the recorder does not see the new folder.
 - web-components: one component source plus `input.stories.ts` and `custom-elements.json`.
   Lit TypeScript fixtures include a per-case `tsconfig.json` with decorator settings; vanilla fixtures are plain `.js` and do not need one.
   Every story file keeps the default export's `component` as the target tag name string.

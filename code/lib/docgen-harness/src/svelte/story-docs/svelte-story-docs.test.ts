@@ -21,6 +21,8 @@ import {
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '../__testfixtures__');
 const indexer = createIndexer();
+// Stories whose server snippet leaves out an arg on purpose, keyed `<fixture>/<export> (<extension>)`.
+const DECLARED_OMISSIONS: Record<string, readonly string[]> = {};
 
 const cases = readdirSync(fixturesDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
@@ -82,7 +84,7 @@ const indexedCases = await Promise.all(
 describe('svelte story-docs server snippets', () => {
   it.each(indexedCases)(
     '$fixtureCase ($extension)',
-    async ({ testDir, storyPath, stories, prefix, legacyPrefix }) => {
+    async ({ fixtureCase, extension, testDir, storyPath, stories, prefix, legacyPrefix }) => {
       expect(stories.length).toBeGreaterThan(0);
       for (const story of stories) {
         const entry: IndexEntry = {
@@ -119,6 +121,8 @@ describe('svelte story-docs server snippets', () => {
             ...(storyDoc?.warning === undefined ? [] : [`warning: ${storyDoc.warning}`]),
           ].join('\n\n'),
           legacyParity: true,
+          declaredOmissions:
+            DECLARED_OMISSIONS[`${fixtureCase}/${story.exportName} (${extension})`],
         });
       }
       expectNoStaleSnippets(
@@ -141,6 +145,13 @@ it('every story has its legacy and server snippet baselines', () => {
   }
 });
 
+it('every declared omission names an indexed story', () => {
+  const storyKeys = indexedCases.flatMap(({ fixtureCase, extension, stories }) =>
+    stories.map(({ exportName }) => `${fixtureCase}/${exportName} (${extension})`)
+  );
+  expect(Object.keys(DECLARED_OMISSIONS).filter((key) => !storyKeys.includes(key))).toEqual([]);
+});
+
 describe('svelte server snippets hold the legacy baseline', () => {
   for (const { fixtureCase, extension, testDir, stories, prefix, legacyPrefix } of indexedCases) {
     for (const { exportName } of stories) {
@@ -150,6 +161,7 @@ describe('svelte server snippets hold the legacy baseline', () => {
           framework: 'svelte',
           baseline: readFileSync(join(testDir, `${legacyPrefix}${exportName}.snapshot`), 'utf8'),
           candidate: readFileSync(join(testDir, `${prefix}${exportName}.snapshot`), 'utf8'),
+          declaredOmissions: DECLARED_OMISSIONS[`${fixtureCase}/${exportName} (${extension})`],
         });
       });
     }

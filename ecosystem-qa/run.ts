@@ -6,6 +6,7 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  realpathSync,
   renameSync,
   statfsSync,
   writeFileSync,
@@ -87,6 +88,10 @@ const UPGRADE_ENV = {
   npm_config_frozen_lockfile: 'false',
 };
 
+// The real path, because git writes real paths into a worktree's gitdir pointer and the sandboxes
+// bind-mount whatever path they are given: on macOS tmpdir() is a symlink under /private.
+const scratchDir = () => join(realpathSync(tmpdir()), 'ecosystem-qa');
+
 const HOST_OS: Partial<Record<NodeJS.Platform, Os>> = {
   linux: 'linux',
   win32: 'windows',
@@ -164,7 +169,7 @@ const parseRequest = () => {
   };
   // Outside the monorepo: yarn and npm read every .yarnrc and .npmrc above the clone, and a native
   // sandbox denies the monorepo's own config files to the agent.
-  const cloneDir = resolve(values['clone-dir'] ?? join(tmpdir(), 'ecosystem-qa', 'work', entry.id));
+  const cloneDir = resolve(values['clone-dir'] ?? join(scratchDir(), 'work', entry.id));
 
   return { request, cloneDir, image: values.image };
 };
@@ -217,7 +222,7 @@ const planSandbox = (
     .map((path) => identity(path, true));
   // Claude Code keeps its own state under /tmp/claude-<uid> on the host whatever TMPDIR says, which
   // a native sandbox denies, so it gets a directory of its own that the sandbox can write.
-  const agentTmp = join(tmpdir(), 'ecosystem-qa', 'agent-tmp', request.entry.id);
+  const agentTmp = join(scratchDir(), 'agent-tmp', request.entry.id);
   mkdirSync(agentTmp, { recursive: true });
   const nativeMounts = [
     ...toolMounts,

@@ -24,6 +24,8 @@ interface ControlPair {
 // engines behind it land.
 export const CONTROL_PAIRS: ControlPair[] = [
   { name: 'react', legacy: 'react-legacy', next: 'react-osa' },
+  { name: 'react-native-api', legacy: 'react-osa', next: 'react-osa-native' },
+  { name: 'angular-native-api', legacy: 'angular-cm', next: 'angular-cm-native' },
   { name: 'vue', legacy: 'vue-docgen-api', next: 'vue-component-meta' },
   { name: 'svelte', legacy: 'svelte-legacy', next: 'svelte-component-meta' },
   {

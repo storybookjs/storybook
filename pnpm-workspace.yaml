@@ -22,6 +22,12 @@ ignoredBuiltDependencies:
 # Only resolve versions published at least 7 days ago.
 minimumReleaseAge: 10080
 
+# TypeScript 7.1 and its platform binaries are younger than the age gate. Remove seven days after
+# the stable 7.1.0 release, which the gate would hold back until then (tracked in PR #37004).
+minimumReleaseAgeExclude:
+  - typescript
+  - '@typescript/typescript-*'
+
 # Only packages whose install script builds or fetches a native binary the repo uses.
 onlyBuiltDependencies:
   - '@parcel/watcher'

@@ -13,4 +13,9 @@ export { ProjectFileTracker, filterSourceFilePaths } from './ProjectFileTracker.
 export { ProgramBackedProject } from './ProgramBackedProject.ts';
 export type { ProgramLike, ProgramProvider } from './ProgramBackedProject.ts';
 export type { FileSnapshotCache } from './ProjectFileTracker.ts';
-export type { ComponentMetaProjectBase, ComponentMetaProjectFactory, FileChange } from './types.ts';
+export type {
+  ComponentMetaProjectBase,
+  ComponentMetaProjectFactory,
+  FileChange,
+  ProjectCommandLine,
+} from './types.ts';

@@ -136,7 +136,7 @@ function defineSandboxJob_dev({
                   },
                   command: [
                     'TEST_FILES=$(circleci tests glob "code/e2e-sandbox/*.{test,spec}.{ts,js,mjs}")',
-                    `echo "$TEST_FILES" | circleci tests run --command="xargs pnpm task e2e-tests-dev --template ${template} --no-link -s e2e-tests-dev --junit" --verbose --index=0 --total=1`,
+                    `echo "$TEST_FILES" | circleci tests run --command="xargs pnpm task e2e-tests-dev --template ${template} --no-link -s task --junit" --verbose --index=0 --total=1`,
                   ].join('\n'),
                 },
               },
@@ -422,16 +422,16 @@ export function defineWindowsSandboxDev(sandbox: ReturnType<typeof defineSandbox
           run: {
             name: 'Run storybook',
             background: true,
-            working_directory: `${WINDOWS_ROOT_DIR}\\${SANDBOX_DIR}\\${sandbox.path}`,
-            command: 'pnpm storybook --port 8001',
+            working_directory: 'code',
+            command: `pnpm task dev --template ${sandbox.name} --no-link -s dev`,
           },
         },
-        server.wait(['8001']),
+        server.wait(['6006']),
         {
           run: {
             name: 'Running E2E Tests',
             working_directory: 'code',
-            command: `pnpm task e2e-tests-dev --template ${sandbox.name} --no-link -s e2e-tests-dev --junit`,
+            command: `pnpm task e2e-tests-dev --template ${sandbox.name} --no-link -s task --junit`,
           },
         },
         testResults.persist(`${WINDOWS_ROOT_DIR}\\${WORKING_DIR}\\test-results`),

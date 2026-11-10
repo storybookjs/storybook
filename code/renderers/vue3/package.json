@@ -70,6 +70,7 @@
     "expect-type": "^0.15.0",
     "memfs": "^4.11.1",
     "typescript": "^6.0.3",
+    "vite": "^7.0.4",
     "vue": "^3.2.47",
     "vue-tsc": "latest"
   },

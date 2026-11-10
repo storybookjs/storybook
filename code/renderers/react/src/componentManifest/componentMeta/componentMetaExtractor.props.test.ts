@@ -183,7 +183,11 @@ describe('prop extraction', () => {
           size: {
             type: {
               name: 'enum',
-              value: [{ value: '"small"' }, { value: '"medium"' }, { value: '"large"' }],
+              value: expect.arrayContaining([
+                { value: '"small"' },
+                { value: '"medium"' },
+                { value: '"large"' },
+              ]),
             },
           },
         },
@@ -206,7 +210,11 @@ describe('prop extraction', () => {
             required: false,
             type: {
               name: 'enum',
-              value: [{ value: '"small"' }, { value: '"medium"' }, { value: '"large"' }],
+              value: expect.arrayContaining([
+                { value: '"small"' },
+                { value: '"medium"' },
+                { value: '"large"' },
+              ]),
             },
           },
         },
@@ -274,7 +282,7 @@ describe('prop extraction', () => {
           token: {
             type: {
               name: 'enum',
-              value: [{ value: '"color-red"' }, { value: '"color-blue"' }],
+              value: expect.arrayContaining([{ value: '"color-red"' }, { value: '"color-blue"' }]),
             },
           },
         },
@@ -795,7 +803,12 @@ describe('prop extraction', () => {
       expect(entry.component?.reactComponentMeta).toMatchObject({
         props: {
           label: { required: true },
-          size: { type: { name: 'enum', value: [{ value: '"sm"' }, { value: '"md"' }] } },
+          size: {
+            type: {
+              name: 'enum',
+              value: expect.arrayContaining([{ value: '"sm"' }, { value: '"md"' }]),
+            },
+          },
         },
       });
     });

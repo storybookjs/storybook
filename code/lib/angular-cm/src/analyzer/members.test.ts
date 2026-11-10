@@ -25,6 +25,8 @@ import {
   analyzeInline as analyze,
   analyzeWithUnresolvableAngular,
   byName,
+  checkerOrder,
+  checkerUnion,
   componentIn,
   names,
 } from './__testutils__/inline-source.ts';
@@ -605,14 +607,17 @@ describe('the miscellaneous type index', () => {
     const component = soleComponent(meta);
 
     expect(byName(meta.miscellaneous.typealiases, 'Tone').rawtype).toBe(
-      '"info" | "warn" | "legacy"'
+      checkerUnion('"info"', '"warn"', '"legacy"')
     );
 
     const argTypes = extractArgTypesFromData(component, {
       metadataJson: meta,
       ...ANALYZER_EXTRACT_OPTIONS,
     });
-    expect(argTypes.tone.type).toEqual({ name: 'enum', value: ['info', 'warn', 'legacy'] });
+    expect(argTypes.tone.type).toEqual({
+      name: 'enum',
+      value: checkerOrder(['info', 'warn', 'legacy']),
+    });
   });
 
   it('resolves a keyof typeof alias to the keys of the map behind it', () => {
@@ -637,13 +642,15 @@ describe('the miscellaneous type index', () => {
     );
     const component = soleComponent(meta);
 
-    expect(byName(meta.miscellaneous.typealiases, 'IconSize').rawtype).toBe('"sm" | "md" | "lg"');
+    expect(byName(meta.miscellaneous.typealiases, 'IconSize').rawtype).toBe(
+      checkerUnion('"sm"', '"md"', '"lg"')
+    );
 
     const argTypes = extractArgTypesFromData(component, {
       metadataJson: meta,
       ...ANALYZER_EXTRACT_OPTIONS,
     });
-    expect(argTypes.size.type).toEqual({ name: 'enum', value: ['sm', 'md', 'lg'] });
+    expect(argTypes.size.type).toEqual({ name: 'enum', value: checkerOrder(['sm', 'md', 'lg']) });
   });
 
   it('resolves a union alias re-exported through a barrel file', () => {
@@ -1061,7 +1068,7 @@ describe('inheritance', () => {
       type: 'string',
       required: true,
     });
-    expect(byName(component.inputsClass, 'size').type).toBe('"sm" | "md"');
+    expect(byName(component.inputsClass, 'size').type).toBe(checkerUnion('"sm"', '"md"'));
     expect(names(component.outputsClass)).toEqual(['pressed']);
     expect(component.propertiesClass).toEqual([]);
   });

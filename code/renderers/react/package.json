@@ -62,6 +62,7 @@
     "@babel/preset-env": "^7.28.5",
     "@babel/preset-react": "^7.28.5",
     "@babel/preset-typescript": "^7.28.5",
+    "@storybook/component-meta-typescript": "workspace:*",
     "@types/babel__core": "^7",
     "@types/babel-plugin-react-docgen": "^4.2.3",
     "@types/escodegen": "^0.0.6",
@@ -93,7 +94,8 @@
     "ts-dedent": "^2.2.0",
     "tsconfig-paths": "^4.2.0",
     "type-fest": "^5.6.0",
-    "typescript-5": "npm:typescript@5.9.3"
+    "typescript-5": "npm:typescript@5.9.3",
+    "typescript-native": "npm:typescript@7.1.0-beta"
   },
   "peerDependencies": {
     "@types/react": "^18.0.0 || ^19.0.0",

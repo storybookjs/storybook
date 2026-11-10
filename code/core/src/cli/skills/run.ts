@@ -5,7 +5,7 @@ import type { Options } from '../../types/index.ts';
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
 import { ALL_MCP_TOOLSETS } from './availability.ts';
 import { buildComponentDocsSkill } from './content/build-component-docs-skill.ts';
-import { buildUiWorkflowSkill } from './content/build-ui-workflow-skill.ts';
+import { buildUiWorkflowSkill, buildWriteStorySkill } from './content/build-ui-workflow-skill.ts';
 import type { SkillTextTransport } from './content/skill-vocabulary.ts';
 import type { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
 import { SKILLS, SKILL_IDS, isSkillId, type SkillId } from './content/skills.ts';
@@ -152,8 +152,9 @@ async function serveSkills(
   let inputs: SkillInputs | undefined;
   let setupRun: SetupRun | undefined;
   const docs: string[] = [];
-  // `write-story` is the earlier name of `ui-workflow`, so `--all` prints that document once.
-  for (const id of new Set(ids.map((id) => (id === 'write-story' ? 'ui-workflow' : id)))) {
+  // `write-story` is a section of `ui-workflow`, so `--all` prints it once, inside that document.
+  const served = ids.length > 1 ? ids.filter((id) => id !== 'write-story') : ids;
+  for (const id of served) {
     if (id === 'setup') {
       const setup = await serveSetup(configDir, deps);
       docs.push(setup.markdown);
@@ -161,6 +162,9 @@ async function serveSkills(
     } else if (id === 'component-docs') {
       // The same text for every project, so it needs no configuration.
       docs.push(buildComponentDocsSkill(transport));
+    } else if (id === 'write-story') {
+      inputs ??= await loadInputs(configDir, deps);
+      docs.push(buildWriteStorySkill({ ...inputs, transport }));
     } else {
       inputs ??= await loadInputs(configDir, deps);
       docs.push(assembleUiWorkflow(inputs, transport));

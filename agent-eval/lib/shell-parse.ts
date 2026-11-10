@@ -11,8 +11,8 @@ export type StorybookWorkflowCall = {
 };
 
 // Assertions ask for the workflow document as `ui-workflow`: `storybook skills
-// ui-workflow`, with or without `--mcp`, its earlier name `write-story`, or
-// `--all` serve it. The stable addon-mcp (EVAL_STORYBOOK_LATEST=1) still serves
+// ui-workflow`, with or without `--mcp`, or `--all` serve it (`write-story`
+// prints only its write section). The stable addon-mcp (EVAL_STORYBOOK_LATEST=1) still serves
 // it as the get-storybook-story-instructions tool; drop that name once 11 is
 // the latest release.
 export function workflowCallMatchesName(call: StorybookWorkflowCall, name: string): boolean {
@@ -25,7 +25,7 @@ export function workflowCallMatchesName(call: StorybookWorkflowCall, name: strin
   return (
     name === 'ui-workflow' &&
     call.name === 'skills-get' &&
-    (call.input.id === 'write-story' || call.input.id === 'ui-workflow' || call.input.all === true)
+    (call.input.id === 'ui-workflow' || call.input.all === true)
   );
 }
 

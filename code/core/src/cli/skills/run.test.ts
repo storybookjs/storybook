@@ -128,9 +128,6 @@ describe('runSkillsCommand', () => {
 
     const uiWorkflow = await runSkillsCommand({ tokens: ['ui-workflow'], target: {} }, d);
     expect(uiWorkflow.output).toContain('npx storybook tools docs show --id <id>');
-
-    const writeStory = await runSkillsCommand({ tokens: ['write-story'], target: {} }, d);
-    expect(writeStory.output).toContain('npx storybook tools docs list');
   });
 
   it('--mcp names the MCP tools, on the MCP docs gate', async () => {
@@ -219,14 +216,24 @@ describe('runSkillsCommand', () => {
     expect(uiWorkflow.output).not.toContain('npx storybook tools docs');
   });
 
-  it('write-story prints the ui-workflow document, under its earlier name', async () => {
+  it('write-story prints the write section of ui-workflow, and nothing else of it', async () => {
     const d = deps();
     const result = await runSkillsCommand({ tokens: ['write-story'], target: {} }, d);
     const uiWorkflow = await runSkillsCommand({ tokens: ['ui-workflow'], target: {} }, d);
+    const section = uiWorkflow.output
+      .split(/^## /m)
+      .find((part) => part.startsWith('Write the component and its stories'));
     expect(result.exitCode).toBe(0);
-    expect(result.output).toBe(uiWorkflow.output);
+    expect(result.output).toContain(`# ${section?.trim()}`);
     expect(result.output).toContain('@storybook/react');
-    expect(result.output).toContain('npx storybook tools stories changed');
+    expect(result.output).not.toContain('npx storybook tools');
+    expect(result.output).toContain('use the `ui-workflow` skill');
+  });
+
+  it('write-story --mcp points to ui-workflow --mcp', async () => {
+    const d = deps();
+    const result = await runSkillsCommand({ tokens: ['write-story'], mcp: true, target: {} }, d);
+    expect(result.output).toContain('npx storybook skills ui-workflow --mcp');
   });
 
   it('ui-workflow and component-docs teach each command inline, without a command reference', async () => {
@@ -252,6 +259,8 @@ describe('runSkillsCommand', () => {
     expect(result.output.split('# Storybook UI workflow')).toHaveLength(2);
     expect(result.output.split('# Storybook component docs')).toHaveLength(2);
     expect(result.output.split('# Storybook Setup')).toHaveLength(2);
+    // `write-story` is a section of `ui-workflow`, so it is not printed a second time.
+    expect(result.output.split('Write the component and its stories')).toHaveLength(2);
     expect(result.skill).toBe('all');
   });
 

@@ -175,7 +175,7 @@ describe('parseStorybookWorkflowShellCommands', () => {
     ]);
   });
 
-  test('matches write-story, ui-workflow (also with --mcp) and --all, but not other ids, to ui-workflow', () => {
+  test('matches ui-workflow (also with --mcp) and --all, but not write-story or other ids, to ui-workflow', () => {
     const calls = parseStorybookWorkflowShellCommands([
       'npx storybook skills write-story',
       'npx storybook skills --all',
@@ -196,7 +196,7 @@ describe('parseStorybookWorkflowShellCommands', () => {
       { id: 'setup' },
     ]);
     expect(calls.map((call) => workflowCallMatchesName(call, 'ui-workflow'))).toEqual([
-      true,
+      false,
       true,
       true,
       true,

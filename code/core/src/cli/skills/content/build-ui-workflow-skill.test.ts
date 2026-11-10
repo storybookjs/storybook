@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { componentLookup } from './build-component-docs-skill.ts';
-import { buildUiWorkflowSkill, type UiWorkflowSkillInputs } from './build-ui-workflow-skill.ts';
+import {
+  buildUiWorkflowSkill,
+  buildWriteStorySkill,
+  type UiWorkflowSkillInputs,
+} from './build-ui-workflow-skill.ts';
 
 const everything: UiWorkflowSkillInputs = {
   transport: 'cli',
@@ -464,5 +468,34 @@ describe('buildUiWorkflowSkill full text', () => {
 
       "
     `);
+  });
+});
+
+describe('buildWriteStorySkill', () => {
+  const writeSectionOf = (text: string) =>
+    text
+      .split(/^## /m)
+      .find((part) => part.startsWith('Write the component and its stories'))
+      ?.trim();
+
+  it.each([
+    { csfFactories: false, typescript: true },
+    { csfFactories: true, typescript: true },
+    { csfFactories: false, typescript: false },
+  ])('prints the write section of ui-workflow, word for word (%o)', (format) => {
+    const inputs = { ...everything, ...format };
+    const section = writeSectionOf(buildUiWorkflowSkill(inputs));
+
+    expect(section).toBeDefined();
+    expect(buildWriteStorySkill(inputs)).toContain(`# ${section}`);
+  });
+
+  it('names no tool, and sends a UI change to ui-workflow', () => {
+    const cli = buildWriteStorySkill(everything);
+    const mcp = buildWriteStorySkill({ ...everything, transport: 'mcp' });
+
+    expect(cli).not.toContain('npx storybook tools');
+    expect(cli).toContain('use the `ui-workflow` skill');
+    expect(mcp).toContain('`npx storybook skills ui-workflow --mcp`');
   });
 });

@@ -1,4 +1,4 @@
-import { componentLookup, MCP_TOOLS_NOTE } from './build-component-docs-skill.ts';
+import { componentLookup, MCP_TOOLS_NOTE, uiWorkflowRef } from './build-component-docs-skill.ts';
 import {
   type SkillTextTransport,
   type SkillVocabulary,
@@ -30,26 +30,38 @@ export type UiWorkflowSkillInputs = {
   devEnabled: boolean;
 };
 
-function writeSection({
+export type WriteStorySkillInputs = Pick<
+  UiWorkflowSkillInputs,
+  'transport' | 'framework' | 'csfFactories' | 'previewFile' | 'typescript'
+>;
+
+const WRITE_SECTION_TITLE = 'Write the component and its stories';
+
+// The text of the write section, which `ui-workflow` and `write-story` both print.
+function storyRules({
   framework,
   csfFactories,
   previewFile,
   typescript,
-}: UiWorkflowSkillInputs): string {
+}: Omit<WriteStorySkillInputs, 'transport'>): string {
   const format = csfFactories
     ? `This project writes stories with CSF Factories, because \`${previewFile}\` uses \`definePreview\`: \`import preview from '../.storybook/preview'\` (the path to that file), then \`const meta = preview.meta({ component: Button })\` and \`export const Primary = meta.story({ args: { ... } })\`. Do not import \`Meta\` or \`StoryObj\`. Import`
     : typescript
       ? `Import \`Meta\` and \`StoryObj\` from \`${framework}\` (in a new story file also when other stories import them from another package; a file you only edit keeps its imports), and`
       : 'Import';
-  return `## Write the component and its stories
-
-Every component you create or change gets stories: one per distinct state it can reach (variants, loading, empty, error, disabled), with realistic props. ${ERROR_EXPORT_RULE} An interactive component also gets a \`play\` function that drives it and asserts the visible result; for a callback passed as \`fn()\`, assert whether it was called, as that state expects. The rules below are for the stories you write; do not rewrite existing stories only to match them.
+  return `Every component you create or change gets stories: one per distinct state it can reach (variants, loading, empty, error, disabled), with realistic props. ${ERROR_EXPORT_RULE} An interactive component also gets a \`play\` function that drives it and asserts the visible result; for a callback passed as \`fn()\`, assert whether it was called, as that state expects. The rules below are for the stories you write; do not rewrite existing stories only to match them.
 
 - ${format} \`fn\`, \`expect\`, \`mocked\` and \`sb\` from \`storybook/test\`.
 - Leave \`title\` out of a new story file, so Storybook derives it from the file path.
 - \`play: async ({ canvas, userEvent }) => { ... }\`: query \`canvas\` directly, by role or label. Never wrap it in \`within()\`. ${USER_EVENT_RULE}
 - ${networkMockRule({ csfFactories, previewFile })}
 - Mock a module only for a dependency that is not a network call: register it in \`${previewFile}\` with \`sb.mock(import('../src/api.${typescript ? 'ts' : 'js'}'), { spy: true })\` (path relative to that file, with its extension), then set the result per story in \`beforeEach\` with \`mocked(getUser).mockResolvedValue(...)\`.`;
+}
+
+function writeSection(inputs: UiWorkflowSkillInputs): string {
+  return `## ${WRITE_SECTION_TITLE}
+
+${storyRules(inputs)}`;
 }
 
 function testSection(v: SkillVocabulary, a11yEnabled: boolean, devEnabled: boolean): string {
@@ -191,4 +203,16 @@ Follow this for every change to how the UI looks (components, stories, styles, t
   ]
     .filter(Boolean)
     .join('\n\n');
+}
+
+/**
+ * `write-story`: the write section of `ui-workflow` on its own. Both print the same rules, so
+ * they cannot drift apart.
+ */
+export function buildWriteStorySkill(inputs: WriteStorySkillInputs): string {
+  return `# ${WRITE_SECTION_TITLE}
+
+${storyRules(inputs)}
+
+These are the story rules of the \`ui-workflow\` skill. For a change to the UI, use ${uiWorkflowRef(inputs.transport)} instead: it includes these rules, and it also looks up the components to reuse, runs the tests and publishes the review.`;
 }

@@ -17,7 +17,8 @@ export const SKILLS: Record<SkillId, { blurb: string }> = {
       'Look up components, with their props and usage, to answer questions about them or to reuse them instead of building duplicates.',
   },
   'write-story': {
-    blurb: 'Earlier name of ui-workflow; prints the same document.',
+    blurb:
+      'How to write the stories of a component in this project: imports, play functions and mocks. A section of ui-workflow.',
   },
   setup: {
     blurb: 'Setup instructions to write stories for the real components in this project.',

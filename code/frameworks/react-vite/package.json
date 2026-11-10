@@ -56,7 +56,7 @@
     "@storybook/react": "workspace:*"
   },
   "devDependencies": {
-    "@joshwooding/vite-plugin-react-docgen-typescript": "^0.9.0",
+    "@joshwooding/vite-plugin-react-docgen-typescript": "^0.7.0",
     "@rollup/pluginutils": "^5.0.2",
     "@types/node": "^22.19.1",
     "magic-string": "^1.1.0",
@@ -67,7 +67,7 @@
     "vite": "^7.0.4"
   },
   "peerDependencies": {
-    "@joshwooding/vite-plugin-react-docgen-typescript": "^0.7.0 || ^0.8.0 || ^0.9.0",
+    "@joshwooding/vite-plugin-react-docgen-typescript": "^0.7.0",
     "react": "^18.0.0 || ^19.0.0",
     "react-docgen": "^8.0.2",
     "react-docgen-typescript": "^2.2.2",

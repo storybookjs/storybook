@@ -340,23 +340,27 @@ describe('createStorybookMcpHandler', () => {
 
     it('should follow the sources of each request on one handler', async () => {
       const context: StorybookContext = {};
-      const handler = await createStorybookMcpHandler({
-        manifestProvider: createManifestProviderMockWithDocs(),
-      });
+      const manifestProvider = createManifestProviderMockWithDocs();
+      const handler = await createStorybookMcpHandler({ manifestProvider });
       await setupClient(handler, context);
       const showFromRemote = () =>
         client.callTool({ name: 'docs-show', arguments: { id: 'button', storybookId: 'remote' } });
+      const remoteRead = [expect.any(Request), expect.any(String), sources[1]];
 
       expect((await listedStorybookIdInputs())['docs-show']).toBeUndefined();
-      expect((await showFromRemote()).isError).toBe(true);
+      await showFromRemote();
+      expect(manifestProvider).not.toHaveBeenCalledWith(...remoteRead);
 
       context.sources = sources;
       expect((await listedStorybookIdInputs())['docs-show']).toMatchObject({ type: 'string' });
-      expect((await showFromRemote()).isError).toBeFalsy();
+      await showFromRemote();
+      expect(manifestProvider).toHaveBeenCalledWith(...remoteRead);
 
+      manifestProvider.mockClear();
       context.sources = undefined;
       expect((await listedStorybookIdInputs())['docs-show']).toBeUndefined();
-      expect((await showFromRemote()).isError).toBe(true);
+      await showFromRemote();
+      expect(manifestProvider).not.toHaveBeenCalledWith(...remoteRead);
     });
   });
 

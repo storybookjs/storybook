@@ -72,7 +72,9 @@ export function resolveSkillsIntent({
   help,
   all,
 }: Pick<SkillsRunInput, 'tokens' | 'help' | 'all'>): SkillsIntent {
-  const [id, ...rest] = tokens;
+  const [first, ...rest] = tokens;
+  // Skill files of 11.0 prereleases still run the old name, and a plugin or a global install keeps them.
+  const id = first === 'component-docs' ? 'component-info' : first;
   if (help) {
     return { kind: 'catalog' };
   }

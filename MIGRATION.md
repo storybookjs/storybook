@@ -72,6 +72,7 @@
   - [`changeDetection` feature flag removed](#changedetection-feature-flag-removed)
   - [`storybook ai` command removed](#storybook-ai-command-removed)
   - [`stories` skill renamed to `ui-workflow`](#stories-skill-renamed-to-ui-workflow)
+  - [`component-docs` skill renamed to `component-info`](#component-docs-skill-renamed-to-component-info)
   - [`--preview-url` and `--force-build-preview` removed](#--preview-url-and---force-build-preview-removed)
   - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
   - [Web Components: server-side docgen suffixes event, slot and part argType keys](#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys)
@@ -1902,6 +1903,14 @@ For each of these tasks, invoke its Storybook skill first, before you edit any f
 ```
 
 See [Skills and plugins](docs/ai/skills.mdx) for more details.
+
+### `component-docs` skill renamed to `component-info`
+
+The 11.0 prereleases named the `component-info` skill `component-docs`. The skill is the same, and `npx storybook skills component-docs` still prints it.
+
+`storybook upgrade` replaces an installed `component-docs` skill with `component-info`, and updates the section in `AGENTS.md` between the `<!-- BEGIN:storybook-skills -->` and `<!-- END:storybook-skills -->` markers. If your section has no markers, rename the skill there yourself.
+
+If you use the Claude Code or Codex plugin, update the plugin after you upgrade Storybook: remove it and install it again. An older plugin only has `component-docs`, which the updated section in `AGENTS.md` no longer names.
 
 ### `--preview-url` and `--force-build-preview` removed
 

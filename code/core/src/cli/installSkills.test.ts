@@ -257,6 +257,45 @@ describe('installSkills', () => {
     expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install');
   });
 
+  it('removes the component-docs skill of an 11.0 prerelease on a refresh, and only updates the section', async () => {
+    vol.fromNestedJSON({
+      [LOCK_PATH]: JSON.stringify({
+        version: 1,
+        skills: {
+          'component-docs': { source: 'storybookjs/skills' },
+          'ui-workflow': { source: 'storybookjs/skills' },
+        },
+      }),
+    });
+
+    await installSkills({ packageManager, source: 'refresh' });
+
+    expect(vi.mocked(packageManager.runPackageCommand).mock.calls[1][0]).toMatchObject({
+      args: ['skills@latest', 'remove', 'component-docs', '--yes'],
+      cwd: PROJECT_ROOT,
+    });
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'update');
+  });
+
+  it('removes both replaced skills and adds the section when stories is one of them', async () => {
+    vol.fromNestedJSON({
+      [LOCK_PATH]: JSON.stringify({
+        version: 1,
+        skills: {
+          stories: { source: 'storybookjs/skills' },
+          'component-docs': { source: 'storybookjs/skills' },
+        },
+      }),
+    });
+
+    await installSkills({ packageManager, source: 'refresh' });
+
+    expect(vi.mocked(packageManager.runPackageCommand).mock.calls[1][0]).toMatchObject({
+      args: ['skills@latest', 'remove', 'stories', 'component-docs', '--yes'],
+    });
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install');
+  });
+
   it('keeps the installed skills when removing the stories skill fails', async () => {
     vol.fromNestedJSON({
       [LOCK_PATH]: JSON.stringify({

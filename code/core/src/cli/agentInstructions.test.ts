@@ -61,6 +61,7 @@ describe('addStorybookAgentInstructions', () => {
   it.each([
     '## Storybook\n\n- `ui-workflow`: for UI changes. Follow it to update your stories and run the tests.\n',
     'Run /component-info for questions about a component.\n',
+    'Run /component-docs for questions about a component.\n',
   ])('leaves a file alone that already names a Storybook skill (%j)', async (custom) => {
     vol.writeFileSync(join(ROOT, 'AGENTS.md'), custom);
 

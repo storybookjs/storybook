@@ -75,6 +75,13 @@ describe('resolveSkillsIntent', () => {
     });
   });
 
+  it('serves component-info under component-docs, its name in 11.0 prereleases', () => {
+    expect(resolveSkillsIntent({ tokens: ['component-docs'] })).toEqual({
+      kind: 'get',
+      id: 'component-info',
+    });
+  });
+
   it('rejects surplus positional arguments and an id combined with --all', () => {
     expect(resolveSkillsIntent({ tokens: ['ui-workflow', 'typo'] })).toEqual({
       kind: 'error',

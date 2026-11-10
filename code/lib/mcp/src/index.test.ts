@@ -246,6 +246,100 @@ describe('createStorybookMcpHandler', () => {
     );
   });
 
+  describe('composition schema', () => {
+    const sources = [
+      { id: 'local', title: 'Local' },
+      { id: 'remote', title: 'Remote', url: 'https://example.com/storybook' },
+    ];
+
+    /** The `storybookId` property of each listed tool's input schema, by tool name. */
+    async function listedStorybookIdInputs() {
+      const { tools } = await client.listTools();
+      return Object.fromEntries(
+        tools.map((tool) => [
+          tool.name,
+          (tool.inputSchema.properties as Record<string, unknown> | undefined)?.storybookId,
+        ])
+      );
+    }
+
+    it('should advertise storybookId on the lookup tools when handler-level sources compose', async () => {
+      const handler = await createStorybookMcpHandler({
+        manifestProvider: createManifestProviderMockWithDocs(),
+        sources,
+      });
+      await setupClient(handler);
+
+      const inputs = await listedStorybookIdInputs();
+      expect(inputs['docs-show']).toMatchObject({ type: 'string' });
+      expect(inputs['docs-show-story']).toMatchObject({ type: 'string' });
+      expect(inputs['docs-list']).toBeUndefined();
+    });
+
+    it('should not advertise storybookId for a single Storybook', async () => {
+      const handler = await createStorybookMcpHandler({
+        manifestProvider: createManifestProviderMockWithDocs(),
+      });
+      await setupClient(handler);
+
+      const inputs = await listedStorybookIdInputs();
+      expect(inputs['docs-show']).toBeUndefined();
+      expect(inputs['docs-show-story']).toBeUndefined();
+    });
+
+    it('should advertise storybookId when only the per-request sources compose', async () => {
+      const handler = await createStorybookMcpHandler({
+        manifestProvider: createManifestProviderMockWithDocs(),
+      });
+      await setupClient(handler, { sources });
+
+      const inputs = await listedStorybookIdInputs();
+      expect(inputs['docs-show']).toMatchObject({ type: 'string' });
+      expect(inputs['docs-show-story']).toMatchObject({ type: 'string' });
+    });
+
+    it('should route docs-show to the source named by storybookId', async () => {
+      const manifestProvider = createManifestProviderMockWithDocs();
+      const handler = await createStorybookMcpHandler({ manifestProvider, sources });
+      await setupClient(handler);
+
+      const result = await client.callTool({
+        name: 'docs-show',
+        arguments: { id: 'button', storybookId: 'remote' },
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(manifestProvider).toHaveBeenCalledWith(
+        expect.any(Request),
+        './manifests/components.json',
+        sources[1]
+      );
+      expect(manifestProvider).not.toHaveBeenCalledWith(
+        expect.any(Request),
+        expect.any(String),
+        sources[0]
+      );
+    });
+
+    it('should route docs-show-story to the source named by storybookId', async () => {
+      const manifestProvider = createManifestProviderMockWithDocs();
+      const handler = await createStorybookMcpHandler({ manifestProvider, sources });
+      await setupClient(handler);
+
+      const result = await client.callTool({
+        name: 'docs-show-story',
+        arguments: { storyId: 'button--primary', storybookId: 'remote' },
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(manifestProvider).toHaveBeenCalledWith(
+        expect.any(Request),
+        './manifests/components.json',
+        sources[1]
+      );
+    });
+  });
+
   it('should call onListAllDocumentation handler when tool is invoked', async () => {
     const onListAllDocumentation = vi.fn();
     const manifestProvider = createManifestProviderMock();

@@ -23,6 +23,7 @@ import {
   type DocsListOutput,
   type DocsSource,
   type DocsToolset,
+  type Source,
   type ToolsetCtx,
   type ToolsetOutcome,
 } from 'storybook/internal/toolsets-docs';
@@ -46,15 +47,26 @@ const ctx: ToolsetCtx = {
 };
 
 /**
+ * Whether a configured source list composes several Storybooks.
+ *
+ * This is the one hosted-specific test: a configured source without a URL is this Storybook
+ * itself, so only a source with one makes the list a composition. The schema a tool publishes and
+ * the toolset that serves a request both decide multi-source through this predicate, so the two
+ * cannot disagree about what `storybookId` means.
+ */
+function isComposition(sources: Source[] | undefined): sources is Source[] {
+  return !!sources?.some((source) => source.url);
+}
+
+/**
  * The composed sources this request serves, or nothing when this Storybook stands alone.
  *
- * Only the "is this a composition" test is hosted-specific — a configured source without a URL is
- * this Storybook itself. Building the accesses is the shared helper's job, so hosted and dev-server
- * compositions cannot drift apart.
+ * Building the accesses is the shared helper's job, so hosted and dev-server compositions cannot
+ * drift apart.
  */
 function getSources(context: StorybookContext | undefined): DocsSource[] | undefined {
   const sources = context?.sources;
-  if (!sources?.some((source) => source.url)) {
+  if (!isComposition(sources)) {
     return undefined;
   }
 
@@ -151,15 +163,52 @@ export function getStoryDocumentationToolMetadata(options?: {
 }
 
 /**
+ * The metadata a tool is registered with, whose input schema follows the request being served.
+ *
+ * The handler assembles its toolset per request, so whether `storybookId` is accepted is decided by
+ * the sources of that request. tmcp reads a tool's schema on every `tools/list` and `tools/call`,
+ * inside the request's context, so the schema is a getter that decides the same way at that moment.
+ * An embedder that registers the tools on its own server can still fix the shape with
+ * `multiSource`, which is what the exported metadata helpers do.
+ */
+function requestMetadata(
+  server: Server,
+  method: 'docs.list' | 'docs.show' | 'docs.showStory',
+  options: { multiSource?: boolean } | undefined
+): DocsToolMetadata {
+  const fixed = options?.multiSource;
+  const resolve = () => toolMetadata(method, fixed ?? isComposition(server.ctx.custom?.sources));
+  const { name, title, description } = resolve();
+  return {
+    name,
+    title,
+    description,
+    get schema() {
+      return resolve().schema;
+    },
+    get outputSchema() {
+      return resolve().outputSchema;
+    },
+  };
+}
+
+/**
  * The one place this package crosses the tmcp type-inference boundary: tmcp types a tool's metadata
  * and handler from a literal schema generic, but these schemas come from the bundled core toolset
  * and resolve only at runtime, so registration steps out of that inference here.
+ *
+ * The metadata object is handed over as is, not copied: its schema getter must keep answering per
+ * request after registration.
  */
 function registerTool(
   server: Server,
-  metadata: DocsToolMetadata & { enabled?: ToolEnabled },
+  metadata: DocsToolMetadata,
+  enabled: ToolEnabled | undefined,
   handler: (input: never) => Promise<unknown>
 ): void {
+  if (enabled !== undefined) {
+    Object.assign(metadata, { enabled });
+  }
   server.tool(metadata as never, handler as never);
 }
 
@@ -268,7 +317,8 @@ export async function addListAllDocumentationTool(
 ) {
   registerTool(
     server,
-    { ...getListAllDocumentationToolMetadata(options), enabled },
+    requestMetadata(server, 'docs.list', options),
+    enabled,
     async (input: unknown) => {
       const context = server.ctx.custom;
       const { data, result } = await call(server, 'list', input);
@@ -298,7 +348,8 @@ export async function addGetDocumentationTool(
 ) {
   registerTool(
     server,
-    { ...getDocumentationToolMetadata(options), enabled },
+    requestMetadata(server, 'docs.show', options),
+    enabled,
     async (input: { id: string; storybookId?: string }) => {
       const context = server.ctx.custom;
       const { data, result } = await call(server, 'show', input);
@@ -341,7 +392,8 @@ export async function addGetStoryDocumentationTool(
 ) {
   registerTool(
     server,
-    { ...getStoryDocumentationToolMetadata(options), enabled },
+    requestMetadata(server, 'docs.showStory', options),
+    enabled,
     async (input: unknown) => (await call(server, 'showStory', input)).result
   );
 }

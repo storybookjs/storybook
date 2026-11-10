@@ -296,16 +296,6 @@ When the `typescript` package is not installed, Vue 3 falls back to builder docg
 
 </If>
 
-<If renderer="svelte">
-
-<Callout variant="info" icon="💡">
-
-Server-side docgen needs TypeScript 5.9 or 6. When the `typescript` package is not installed, or is TypeScript 7, Svelte reads no props, and Storybook prints a warning that tells you what to install.
-
-</Callout>
-
-</If>
-
 <If renderer={['react','angular','vue','svelte','web-components']}>
 
 Enable server-side docgen. Storybook extracts component metadata on the dev server using the TypeScript Language Service instead of injecting docgen into the preview bundle. This provides faster startup, more accurate [Controls](../../essentials/controls.mdx) and ArgTypes tables in [autodocs](../../writing-docs/autodocs.mdx), and improved static code snippets in docs and the Code panel. [Manifests](../../ai/manifests.mdx) and the [MCP server](../../ai/mcp/overview.mdx) use an optimized, ref-based format that loads faster for AI agents.

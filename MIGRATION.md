@@ -2169,7 +2169,7 @@ Or migrate by hand:
 + import { defineMeta, type Args } from '@storybook/sveltekit'; // or '@storybook/svelte-vite'
 ```
 
-The error codes stay the same. Their docs are in [`code/renderers/svelte/src/svelte-csf/ERRORS.md`](https://github.com/storybookjs/storybook/blob/next/code/renderers/svelte/src/svelte-csf/ERRORS.md).
+The error codes stay the same. Each error message now says how to fix the error.
 
 ### Svelte CSF: legacy story syntax removed
 
@@ -2361,7 +2361,7 @@ After:
 
 Storybook used to run the preprocessors from `svelte.config.js` on a stories file before it indexed the file. It now indexes stories files without preprocessors, so indexing works the same when your Svelte config is in the Vite config, as in SvelteKit 3. The indexer ignores the content of `<style>` blocks, so styles that need a preprocessor, such as SCSS, are fine. Preprocessors still apply when Storybook renders your stories.
 
-If a stories file needs a preprocessor outside of `<style>`, for example for TypeScript enums, indexing fails with [`SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009`](https://github.com/storybookjs/storybook/blob/next/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0009). Move that code to a separate module, and import it into the stories file.
+If a stories file needs a preprocessor outside of `<style>`, for example for TypeScript enums, indexing fails with `SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009`. Move that code to a separate module, and import it into the stories file.
 
 ### Svelte: `parameters.component` removed from the source decorator
 

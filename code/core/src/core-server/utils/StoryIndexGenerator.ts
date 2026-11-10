@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -126,6 +126,13 @@ export class StoryIndexGenerator {
   private pendingIndexAndStats?: Promise<{ storyIndex: StoryIndex; stats: IndexStatsSummary }>;
 
   private invalidationListeners: Set<() => void> = new Set();
+
+  // Results of work started before an invalidation of what it read must not be stored
+  private invalidationCount = 0;
+
+  private slotInvalidatedAt = new Map<Path, number>();
+
+  private allInvalidatedAt = 0;
 
   constructor(
     public readonly specifiers: NormalizedStoriesSpecifier[],
@@ -267,32 +274,59 @@ export class StoryIndexGenerator {
               return;
             }
 
+            const slotVersion = this.slotVersion(absolutePath);
+            let result: CacheEntry | undefined;
             try {
-              entry[absolutePath] = await updater(specifier, absolutePath, entry[absolutePath]);
+              result = await updater(specifier, absolutePath, entry[absolutePath]);
             } catch (err) {
-              const relativePath = `.${sep}${relative(this.options.workingDir, absolutePath)}`;
-
-              entry[absolutePath] = {
-                type: 'error',
-                err: new IndexingError(
-                  err instanceof Error ? err.message : String(err),
-                  [relativePath],
-                  err instanceof Error ? err.stack : undefined,
-                  err instanceof StorybookError
-                    ? {
-                        code: err.fullErrorCode,
-                        messageWithoutPath: err.message
-                          .replaceAll(pathToFileURL(absolutePath).href, '')
-                          .replaceAll(absolutePath, ''),
-                      }
-                    : undefined
-                ),
-              };
+              const exists = await access(absolutePath).then(
+                () => true,
+                () => false
+              );
+              result = exists ? this.toErrorEntry(err, absolutePath) : undefined;
             }
+
+            // The slot was invalidated or removed while the updater ran, so the result describes a
+            // file that has changed since. Keep what `invalidate` left for the next extraction.
+            if (this.slotVersion(absolutePath) !== slotVersion) {
+              return;
+            }
+
+            if (result === undefined) {
+              delete entry[absolutePath];
+              return;
+            }
+
+            entry[absolutePath] = result;
           })
         );
       })
     );
+  }
+
+  private slotVersion(absolutePath: Path) {
+    return Math.max(this.allInvalidatedAt, this.slotInvalidatedAt.get(absolutePath) ?? 0);
+  }
+
+  private toErrorEntry(err: unknown, absolutePath: Path): ErrorEntry {
+    const relativePath = `.${sep}${relative(this.options.workingDir, absolutePath)}`;
+
+    return {
+      type: 'error',
+      err: new IndexingError(
+        err instanceof Error ? err.message : String(err),
+        [relativePath],
+        err instanceof Error ? err.stack : undefined,
+        err instanceof StorybookError
+          ? {
+              code: err.fullErrorCode,
+              messageWithoutPath: err.message
+                .replaceAll(pathToFileURL(absolutePath).href, '')
+                .replaceAll(absolutePath, ''),
+            }
+          : undefined
+      ),
+    };
   }
 
   isDocsMdx(absolutePath: Path) {
@@ -314,8 +348,10 @@ export class StoryIndexGenerator {
         : this.extractStories(specifier, absolutePath, projectTags)
     );
 
+    // A story file can still be unextracted here when it changed during the first pass, which
+    // discards that result. It is not a docs file, so leave it for the next extraction.
     await this.updateExtracted(async (specifier, absolutePath) =>
-      this.extractDocs(specifier, absolutePath, projectTags)
+      this.isDocsMdx(absolutePath) ? this.extractDocs(specifier, absolutePath, projectTags) : false
     );
 
     const statsSummary = {} as IndexStatsSummary;
@@ -779,11 +815,17 @@ export class StoryIndexGenerator {
     storyIndex: StoryIndex;
     stats: IndexStatsSummary;
   }> {
+    const startedAt = this.invalidationCount;
     const projectTags = this.getProjectTags(await this.getPreviewFile());
 
     // Extract any entries that are currently missing
     // Pull out each file's stories into a list of stories, to be composed and sorted
     const { entries: storiesList, stats } = await this.ensureExtracted({ projectTags });
+
+    const isStale = () => this.invalidationCount !== startedAt;
+    if (isStale()) {
+      return this.getIndexAndStats();
+    }
 
     try {
       const errorEntries = storiesList.filter((entry) => entry.type === 'error');
@@ -818,6 +860,10 @@ export class StoryIndexGenerator {
         combineStorySorts(this.options.storySorts ?? [])
       );
 
+      if (isStale()) {
+        return this.getIndexAndStats();
+      }
+
       this.lastStats = stats;
       this.lastIndex = {
         v: 5,
@@ -826,6 +872,9 @@ export class StoryIndexGenerator {
 
       return { storyIndex: this.lastIndex, stats: this.lastStats };
     } catch (err) {
+      if (isStale()) {
+        return this.getIndexAndStats();
+      }
       this.lastError = err == null || err instanceof Error ? err : undefined;
       invariant(this.lastError);
       logger.warn(`🚨 ${this.lastError.toString()}`);
@@ -834,6 +883,7 @@ export class StoryIndexGenerator {
   }
 
   invalidateAll() {
+    this.allInvalidatedAt = ++this.invalidationCount;
     this.specifierToCache.forEach((cache) => {
       Object.keys(cache).forEach((key) => {
         cache[key] = false;
@@ -862,6 +912,8 @@ export class StoryIndexGenerator {
       )}`
     );
     const cacheEntry = cache[absolutePath];
+    const invalidatedAt = ++this.invalidationCount;
+    this.slotInvalidatedAt.set(absolutePath, invalidatedAt);
     if (cacheEntry && cacheEntry.type === 'stories') {
       const { dependents } = cacheEntry;
 
@@ -873,6 +925,7 @@ export class StoryIndexGenerator {
             invalidated.add(dep);
 
             otherCache[dep] = false;
+            this.slotInvalidatedAt.set(dep, invalidatedAt);
           }
         });
       });

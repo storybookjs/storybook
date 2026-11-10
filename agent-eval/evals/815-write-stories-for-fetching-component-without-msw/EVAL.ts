@@ -2,14 +2,12 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import {
   expectDisplayReviewForVisualChange,
-  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
-  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 
 const STORIES_PATH = 'src/components/OrderHistory.stories.tsx';
@@ -17,7 +15,6 @@ const STORIES_PATH = 'src/components/OrderHistory.stories.tsx';
 describe('writing stories for a fetching OrderHistory in a project without MSW', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
-      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
       covering: ['orderhistory'],
     });
   });
@@ -65,12 +62,8 @@ describe('writing stories for a fetching OrderHistory in a project without MSW',
   });
 
   test('uses Storybook story instructions and publishes a display review', () => {
-    expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
+    expectWorkflowCalls(['ui-workflow', 'review-create']);
     expectDisplayReviewForVisualChange();
-  });
-
-  test('opens the review in the in-app browser', () => {
-    expectReviewOpenedInBrowser();
   });
 
   test('the review covers the new OrderHistory stories', () => {

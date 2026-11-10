@@ -3863,19 +3863,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@joshwooding/vite-plugin-react-docgen-typescript@npm:^0.9.0":
-  version: 0.9.0
-  resolution: "@joshwooding/vite-plugin-react-docgen-typescript@npm:0.9.0"
+"@joshwooding/vite-plugin-react-docgen-typescript@npm:^0.7.0":
+  version: 0.7.0
+  resolution: "@joshwooding/vite-plugin-react-docgen-typescript@npm:0.7.0"
   dependencies:
-    glob: "npm:^13.0.6"
+    glob: "npm:^13.0.1"
     react-docgen-typescript: "npm:^2.2.2"
   peerDependencies:
-    typescript: ">=4.3.0 <7 || >=7.1.0-0 <8"
+    typescript: ">= 4.3.x"
     vite: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10c0/403ed899d877f9be2e90a53a91fefa0da8b9ff398c26b616fb75ff7de606b9be8aaa86aab7884875ba8b15a7f4a0c31d9dba02074ed9385ecc6fee705f42e8ed
+  checksum: 10c0/6d1a353e4dd0d9d641beafcf8d5c36805ad7f916ae07b817642033bc85c388f819f92dc94db192117dedfaa5d981ac5ef72911315e3e4bf2fe9e23d8956618e6
   languageName: node
   linkType: hard
 
@@ -10625,7 +10625,7 @@ __metadata:
     typescript: "npm:^6.0.3"
     vite-plugin-storybook-nextjs: "workspace:*"
   peerDependencies:
-    "@joshwooding/vite-plugin-react-docgen-typescript": ^0.7.0 || ^0.8.0 || ^0.9.0
+    "@joshwooding/vite-plugin-react-docgen-typescript": ^0.7.0
     "@types/react": ^18.0.0 || ^19.0.0
     "@types/react-dom": ^18.0.0 || ^19.0.0
     next: ^15.0.0 || ^16.0.0
@@ -10840,7 +10840,7 @@ __metadata:
     vite-plugin-rnw: "npm:~0.0.12"
     vite-tsconfig-paths: "npm:^6.1.1"
   peerDependencies:
-    "@joshwooding/vite-plugin-react-docgen-typescript": ^0.7.0 || ^0.8.0 || ^0.9.0
+    "@joshwooding/vite-plugin-react-docgen-typescript": ^0.7.0
     react: ^18.0.0 || ^19.0.0
     react-docgen: ^8.0.2
     react-docgen-typescript: ^2.2.2
@@ -10864,7 +10864,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/react-vite@workspace:code/frameworks/react-vite"
   dependencies:
-    "@joshwooding/vite-plugin-react-docgen-typescript": "npm:^0.9.0"
+    "@joshwooding/vite-plugin-react-docgen-typescript": "npm:^0.7.0"
     "@rollup/pluginutils": "npm:^5.0.2"
     "@storybook/builder-vite": "workspace:*"
     "@storybook/react": "workspace:*"
@@ -10876,7 +10876,7 @@ __metadata:
     typescript: "npm:^6.0.3"
     vite: "npm:^7.0.4"
   peerDependencies:
-    "@joshwooding/vite-plugin-react-docgen-typescript": ^0.7.0 || ^0.8.0 || ^0.9.0
+    "@joshwooding/vite-plugin-react-docgen-typescript": ^0.7.0
     react: ^18.0.0 || ^19.0.0
     react-docgen: ^8.0.2
     react-docgen-typescript: ^2.2.2
@@ -11236,7 +11236,7 @@ __metadata:
     typescript: "npm:^6.0.3"
     vite: "npm:^7.0.4"
   peerDependencies:
-    "@joshwooding/vite-plugin-react-docgen-typescript": ^0.7.0 || ^0.8.0 || ^0.9.0
+    "@joshwooding/vite-plugin-react-docgen-typescript": ^0.7.0
     "@tanstack/react-router": ^1.168.10
     "@tanstack/react-start": ^1.167.16
     "@tanstack/router-core": ^1.168.9
@@ -22340,7 +22340,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"glob@npm:^13.0.0, glob@npm:^13.0.6":
+"glob@npm:^13.0.0, glob@npm:^13.0.1":
   version: 13.0.6
   resolution: "glob@npm:13.0.6"
   dependencies:

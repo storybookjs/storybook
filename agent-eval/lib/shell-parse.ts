@@ -1,4 +1,4 @@
-// Pure shell-command parsing for plugin-path workflow scoring: no vitest, no
+// Pure shell-command parsing for workflow scoring: no vitest, no
 // filesystem access. This file is copied into eval sandboxes next to
 // test-utils.ts, so it must stay dependency-free.
 
@@ -10,18 +10,22 @@ export type StorybookWorkflowCall = {
   source: 'mcp' | 'cli';
 };
 
-// `storybook skills write-story` and `ui-workflow` serve the document the MCP
-// channel exposes as the get-storybook-story-instructions tool, which
-// assertions ask for by name. Remove the alias once the MCP tool and the skill
-// share one name (or the tool is retired).
+// Assertions ask for the workflow document as `ui-workflow`: `storybook skills
+// ui-workflow`, with or without `--mcp`, or `--all` serve it (`write-story`
+// prints only its write section). The stable addon-mcp (EVAL_STORYBOOK_LATEST=1) still serves
+// it as the get-storybook-story-instructions tool; drop that name once 11 is
+// the latest release.
 export function workflowCallMatchesName(call: StorybookWorkflowCall, name: string): boolean {
   if (call.name === name) {
     return true;
   }
+  if (name === 'ui-workflow' && call.name === 'get-storybook-story-instructions') {
+    return true;
+  }
   return (
-    name === 'get-storybook-story-instructions' &&
+    name === 'ui-workflow' &&
     call.name === 'skills-get' &&
-    (call.input.id === 'write-story' || call.input.id === 'ui-workflow' || call.input.all === true)
+    (call.input.id === 'ui-workflow' || call.input.all === true)
   );
 }
 
@@ -91,6 +95,25 @@ function parsePluginWorkflowCalls(command: string): StorybookWorkflowCall[] {
   return parseStorybookCliWorkflowCalls(command);
 }
 
+// The options of `storybook skills` that take a value, so the value is not read as the skill id.
+const SKILLS_VALUE_OPTIONS = new Set(['--cwd', '-c', '--config-dir', '--loglevel']);
+
+function parseSkillsArgs(segment: string[]): { positionals: string[]; flags: Set<string> } {
+  const positionals: string[] = [];
+  const flags = new Set<string>();
+  for (let position = 0; position < segment.length; position += 1) {
+    const token = segment[position]!;
+    if (SKILLS_VALUE_OPTIONS.has(token)) {
+      position += 1;
+    } else if (token.startsWith('-')) {
+      flags.add(token.split('=')[0]!);
+    } else {
+      positionals.push(token);
+    }
+  }
+  return { positionals, flags };
+}
+
 function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[] {
   const words = tokenizeShellWords(command);
   const tokens = words.map((word) => word.value);
@@ -109,18 +132,19 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
       // is workflowCallMatchesName's concern. A help request prints usage instead
       // of the skill, so it does not count — same rule as the tools branch below.
       const segment = segmentUntilSeparator(tokens, index + 2);
-      const [first, ...rest] = segment;
-      const all = first === '--all' && rest.length === 0;
-      const single =
-        first !== undefined &&
-        !first.startsWith('-') &&
-        !rest.includes('--all') &&
-        !rest.includes('--help') &&
-        !rest.includes('-h');
+      const { positionals, flags } = parseSkillsArgs(segment);
+      // `--mcp` only changes how the skill names the tools.
+      const mcp = flags.has('--mcp');
+      const help = flags.has('--help') || flags.has('-h');
+      const all = flags.has('--all') && positionals.length === 0 && !help;
+      const single = positionals.length > 0 && !flags.has('--all') && !help;
       if (all || single) {
         calls.push({
           name: 'skills-get',
-          input: all ? { all: true } : { id: first },
+          input: {
+            ...(all ? { all: true } : { id: positionals[0] }),
+            ...(mcp ? { mcp: true } : {}),
+          },
           source: 'cli',
         });
         index += 1 + segment.length;

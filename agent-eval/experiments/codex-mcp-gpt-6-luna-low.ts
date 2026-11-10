@@ -3,12 +3,12 @@ import { DEFAULT_EXPERIMENT_CONFIG, WORKFLOW_STORYBOOK_EVALS } from '../lib/expe
 import {
   commitSandboxBaseline,
   setupSandbox,
-  writeCodexAgentsMd,
-  writeCodexInAppBrowserMock,
+  writeCodexLunaTestRules,
   writeCodexMcpConfig,
+  writeMcpAgentInstructions,
 } from '../lib/templates.ts';
 
-const model = 'gpt-6.1-sol?reasoningEffort=medium';
+const model = 'gpt-6-luna?reasoningEffort=low';
 
 export default {
   ...DEFAULT_EXPERIMENT_CONFIG,
@@ -21,8 +21,8 @@ export default {
   setup: async (sandbox) => {
     await setupSandbox(sandbox, { agent: 'codex', integration: 'mcp', model });
     await writeCodexMcpConfig(sandbox);
-    await writeCodexAgentsMd(sandbox);
-    await writeCodexInAppBrowserMock(sandbox);
+    await writeMcpAgentInstructions(sandbox);
+    await writeCodexLunaTestRules(sandbox, model);
     await commitSandboxBaseline(sandbox);
   },
 } satisfies ExperimentConfig;

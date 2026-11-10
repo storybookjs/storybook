@@ -1907,8 +1907,8 @@ importers:
   code/frameworks/nextjs-vite:
     dependencies:
       '@joshwooding/vite-plugin-react-docgen-typescript':
-        specifier: ^0.7.0 || ^0.8.0 || ^0.9.0
-        version: 0.9.0(typescript@6.0.3)(vite@8.0.16(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
+        specifier: ^0.7.0
+        version: 0.7.0(typescript@6.0.3)(vite@8.0.16(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
       '@storybook/builder-vite':
         specifier: workspace:*
         version: link:../../builders/builder-vite
@@ -1999,8 +1999,8 @@ importers:
   code/frameworks/react-native-web-vite:
     dependencies:
       '@joshwooding/vite-plugin-react-docgen-typescript':
-        specifier: ^0.7.0 || ^0.8.0 || ^0.9.0
-        version: 0.9.0(typescript@6.0.3)(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
+        specifier: ^0.7.0
+        version: 0.7.0(typescript@6.0.3)(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
       '@storybook/builder-vite':
         specifier: workspace:*
         version: link:../../builders/builder-vite
@@ -2067,8 +2067,8 @@ importers:
         version: link:../../core
     devDependencies:
       '@joshwooding/vite-plugin-react-docgen-typescript':
-        specifier: ^0.9.0
-        version: 0.9.0(typescript@6.0.3)(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
+        specifier: ^0.7.0
+        version: 0.7.0(typescript@6.0.3)(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
       '@rollup/pluginutils':
         specifier: ^5.0.2
         version: 5.4.0(rollup@4.53.2)
@@ -2239,8 +2239,8 @@ importers:
   code/frameworks/tanstack-react:
     dependencies:
       '@joshwooding/vite-plugin-react-docgen-typescript':
-        specifier: ^0.7.0 || ^0.8.0 || ^0.9.0
-        version: 0.9.0(typescript@6.0.3)(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
+        specifier: ^0.7.0
+        version: 0.7.0(typescript@6.0.3)(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))
       '@storybook/builder-vite':
         specifier: workspace:*
         version: link:../../builders/builder-vite
@@ -5681,9 +5681,8 @@ packages:
     resolution: {integrity: sha512-u3UPsIilWKOM3F9CXtrG8LEJmNxwoCQC/XVj4IKYXvvpx7QIi/Kg1LI5uDmDpKlac62NUtX7eLjRh+jVZcLOzw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
 
-  '@joshwooding/vite-plugin-react-docgen-typescript@0.9.0':
-    resolution: {integrity: sha512-8hCKe3l3eO9fznMc4ULvqbaWoErvyvz/2yyBn1O2X56PbAMRICYn7+EAiVv4+nHVXvgdKPsuP+cldM8rlA6eag==}
-    engines: {node: 20 || >=22}
+  '@joshwooding/vite-plugin-react-docgen-typescript@0.7.0':
+    resolution: {integrity: sha512-qvsTEwEFefhdirGOPnu9Wp6ChfIwy2dBCRuETU3uE+4cC+PFoxMSiiEhxk4lOluA34eARHA0OxqsEUYDqRMgeQ==}
     peerDependencies:
       typescript: ^6.0.3
       vite: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
@@ -23015,7 +23014,7 @@ snapshots:
       '@types/yargs': 17.0.35
       chalk: 4.1.2
 
-  '@joshwooding/vite-plugin-react-docgen-typescript@0.9.0(typescript@6.0.3)(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))':
+  '@joshwooding/vite-plugin-react-docgen-typescript@0.7.0(typescript@6.0.3)(vite@7.3.6(@types/node@22.19.15)(jiti@2.7.0)(less@4.4.2)(lightningcss@1.33.0)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))':
     dependencies:
       glob: 13.0.6
       react-docgen-typescript: 2.4.0(typescript@6.0.3)
@@ -23023,7 +23022,7 @@ snapshots:
     optionalDependencies:
       typescript: 6.0.3
 
-  '@joshwooding/vite-plugin-react-docgen-typescript@0.9.0(typescript@6.0.3)(vite@8.0.16(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))':
+  '@joshwooding/vite-plugin-react-docgen-typescript@0.7.0(typescript@6.0.3)(vite@8.0.16(@types/node@22.19.15)(esbuild@0.28.1)(jiti@2.7.0)(less@4.4.2)(sass-embedded@1.107.0)(sass@1.107.0)(terser@5.46.0)(tsx@4.21.0)(yaml@2.9.1))':
     dependencies:
       glob: 13.0.6
       react-docgen-typescript: 2.4.0(typescript@6.0.3)

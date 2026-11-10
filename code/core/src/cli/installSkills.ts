@@ -12,7 +12,7 @@ import { type AgentInstructionsMode, addStorybookAgentInstructions } from './age
 const SKILLS_REPO = 'storybookjs/skills';
 
 // Skills of 11.0 prereleases that the skills repository no longer has, so a refresh removes them.
-const REMOVED_SKILLS = ['stories'];
+const REMOVED_SKILLS = ['stories', 'ui-workflow'];
 
 export type SkillsSource = 'ai-feature' | 'refresh' | 'automigration';
 
@@ -87,8 +87,8 @@ export async function hasStorybookSkills(): Promise<boolean> {
  * add the section that tells agents when to use them to `AGENTS.md`.
  *
  * A refresh only updates a section that still has Storybook's markers, so a section without them
- * and a removed section stay that way, unless the refresh replaces the `stories` skill of an 11.0
- * prerelease. Never runs in CI, and a failed install is reported in the result instead of thrown.
+ * and a removed section stay that way, unless the refresh replaces a skill of an 11.0 prerelease.
+ * Never runs in CI, and a failed install is reported in the result instead of thrown.
  */
 export async function installSkills({
   packageManager,

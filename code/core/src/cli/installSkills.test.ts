@@ -237,12 +237,13 @@ describe('installSkills', () => {
     expect(logger.log).not.toHaveBeenCalledWith(expect.stringContaining('Storybook section'));
   });
 
-  it('replaces the stories skill of an 11.0 prerelease on a refresh', async () => {
+  it('replaces the skills of an 11.0 prerelease on a refresh', async () => {
     vol.fromNestedJSON({
       [LOCK_PATH]: JSON.stringify({
         version: 1,
         skills: {
           stories: { source: 'storybookjs/skills' },
+          'ui-workflow': { source: 'storybookjs/skills' },
           'storybook-init': { source: 'storybookjs/skills' },
         },
       }),
@@ -251,7 +252,7 @@ describe('installSkills', () => {
     await installSkills({ packageManager, source: 'refresh' });
 
     expect(vi.mocked(packageManager.runPackageCommand).mock.calls[1][0]).toMatchObject({
-      args: ['skills@latest', 'remove', 'stories', '--yes'],
+      args: ['skills@latest', 'remove', 'stories', 'ui-workflow', '--yes'],
       cwd: PROJECT_ROOT,
     });
     expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install');

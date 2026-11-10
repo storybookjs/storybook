@@ -737,7 +737,7 @@ export function expectSkillInvoked(skillName: string): void {
   }
 
   // The codex plugin names its skill directories without the storybook-
-  // prefix (.agents/skills/init, .agents/skills/ui-workflow, …).
+  // prefix (.agents/skills/init, .agents/skills/ui-review, …).
   const codexSkillName = skillName.replace(/^storybook-/, '');
   const skillPathPattern = new RegExp(`skills/${codexSkillName}\\b`);
   const read = getShellCommands().some((command) => skillPathPattern.test(command));

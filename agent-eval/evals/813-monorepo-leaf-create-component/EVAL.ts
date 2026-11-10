@@ -11,8 +11,11 @@ import {
   expectWorkflowCalls,
 } from '#test-utils';
 
+// The steps of the workflow in AGENTS.md that this task goes through.
+const WORKFLOW_SKILLS = ['write-stories', 'test-stories', 'ui-review'];
+
 describe('creating a Callout in a monorepo UI package', () => {
-  // Workflow asserts are enabled. The ui-workflow skills direct the dev server and
+  // Workflow asserts are enabled. The skills direct the dev server and
   // every Storybook CLI command to the package where Storybook is installed,
   // which avoids the degraded help output at the monorepo root (historical
   // context: storybookjs/storybook#35359).
@@ -31,8 +34,8 @@ describe('creating a Callout in a monorepo UI package', () => {
     });
   });
 
-  test('uses Storybook story instructions and publishes a display review', () => {
-    expectWorkflowCalls(['ui-workflow', 'review-create']);
+  test('runs the skill of every workflow step and publishes a display review', () => {
+    expectWorkflowCalls([...WORKFLOW_SKILLS, 'review-create']);
     expectDisplayReviewForVisualChange();
   });
 
@@ -47,8 +50,10 @@ describe('creating a Callout in a monorepo UI package', () => {
   describe('depending on the current agent and integration', () => {
     const { integration } = getEvalContext();
 
-    test.skipIf(integration === 'mcp')('invokes the ui-workflow skill', () => {
-      expectSkillInvoked('ui-workflow');
+    test.skipIf(integration === 'mcp')('invokes the skill of every workflow step', () => {
+      for (const skill of WORKFLOW_SKILLS) {
+        expectSkillInvoked(skill);
+      }
     });
 
     test.skipIf(integration !== 'plugin')(

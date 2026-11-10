@@ -11,6 +11,9 @@ import {
   expectWorkflowCalls,
 } from '#test-utils';
 
+// The steps of the workflow in AGENTS.md that this task goes through.
+const WORKFLOW_SKILLS = ['write-stories', 'test-stories', 'ui-review'];
+
 describe('writing the first Button stories in an empty Storybook', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
@@ -18,8 +21,8 @@ describe('writing the first Button stories in an empty Storybook', () => {
     });
   });
 
-  test('uses Storybook story instructions and publishes a display review', () => {
-    expectWorkflowCalls(['ui-workflow', 'review-create']);
+  test('runs the skill of every workflow step and publishes a display review', () => {
+    expectWorkflowCalls([...WORKFLOW_SKILLS, 'review-create']);
     expectDisplayReviewForVisualChange();
   });
 
@@ -38,8 +41,10 @@ describe('writing the first Button stories in an empty Storybook', () => {
   describe('depending on the current agent and integration', () => {
     const { integration } = getEvalContext();
 
-    test.skipIf(integration === 'mcp')('invokes the ui-workflow skill', () => {
-      expectSkillInvoked('ui-workflow');
+    test.skipIf(integration === 'mcp')('invokes the skill of every workflow step', () => {
+      for (const skill of WORKFLOW_SKILLS) {
+        expectSkillInvoked(skill);
+      }
     });
 
     test.skipIf(integration !== 'plugin')(

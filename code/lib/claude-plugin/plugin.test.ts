@@ -75,11 +75,11 @@ const HARNESS_TOOLS = [
 
 const RENDER_HINT = 'Run `yarn nx compile claude-plugin` and commit the Codex skills.';
 
-const uiWorkflowSkill = readFileSync(resolve(packageRoot, 'skills/ui-workflow/SKILL.md'), 'utf8');
-const componentDocsSkill = readFileSync(
-  resolve(packageRoot, 'skills/component-docs/SKILL.md'),
-  'utf8'
-);
+const readSkill = (name: string) =>
+  readFileSync(resolve(packageRoot, 'skills', name, 'SKILL.md'), 'utf8');
+
+const WORKFLOW_SKILLS = ['component-docs', 'write-stories', 'test-stories', 'ui-review'];
+const uiReviewSkill = readSkill('ui-review');
 
 function readSkillDescription(skill: string) {
   const description = skill.match(/^description: (.*)$/m)?.[1];
@@ -107,27 +107,30 @@ describe('canonical skills', () => {
   });
 });
 
-describe('ui-workflow and component-docs skills', () => {
-  it.each([uiWorkflowSkill, componentDocsSkill])(
-    'run when the agent instructions or the user ask, not on every UI change',
-    (skill) => {
-      const description = readSkillDescription(skill);
-      expect(description).toContain("the project's agent instructions (such as AGENTS.md)");
-      expect(description).not.toMatch(/FIRST|no exceptions|before creating, editing/i);
+describe('workflow skills', () => {
+  it.each(WORKFLOW_SKILLS)(
+    '%s says plainly when it is useful, and leaves the workflow to the agent instructions',
+    (name) => {
+      const description = readSkillDescription(readSkill(name));
+      expect(description).toMatch(/\. Use /);
+      expect(description).not.toMatch(/FIRST|no exceptions|always|must/i);
     }
   );
 
-  it('serve their workflow from the Storybook CLI of the project', () => {
-    expect(uiWorkflowSkill).toContain('`npx storybook skills ui-workflow`');
-    expect(componentDocsSkill).toContain('`npx storybook skills component-docs`');
-    expect(uiWorkflowSkill).toContain('set up or install Storybook');
+  it.each(WORKFLOW_SKILLS)('%s serves its text from the Storybook CLI of the project', (name) => {
+    expect(readSkill(name)).toContain(`\`npx storybook skills ${name}\``);
   });
 
-  it('starts the dev server from the package.json script without shell interpolation', () => {
-    expect(uiWorkflowSkill).toContain('preferred package manager');
-    expect(uiWorkflowSkill).toContain('existing `package.json` Storybook script');
-    expect(uiWorkflowSkill).not.toMatch(/(?:^|[^\w])--port\b|\$\{?PORT\}?|\$env:PORT|%PORT%/i);
-    expect(uiWorkflowSkill).not.toContain('--ci');
+  it.each(WORKFLOW_SKILLS)('%s names no other workflow skill', (name) => {
+    const others = WORKFLOW_SKILLS.filter((other) => other !== name);
+    expect(readSkill(name)).not.toMatch(new RegExp(others.join('|')));
+  });
+
+  it('ui-review starts the dev server from the package.json script without shell interpolation', () => {
+    expect(uiReviewSkill).toContain('preferred package manager');
+    expect(uiReviewSkill).toContain('existing `package.json` Storybook script');
+    expect(uiReviewSkill).not.toMatch(/(?:^|[^\w])--port\b|\$\{?PORT\}?|\$env:PORT|%PORT%/i);
+    expect(uiReviewSkill).not.toContain('--ci');
   });
 });
 

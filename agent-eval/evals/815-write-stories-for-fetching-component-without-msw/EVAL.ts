@@ -12,6 +12,9 @@ import {
 
 const STORIES_PATH = 'src/components/OrderHistory.stories.tsx';
 
+// The steps of the workflow in AGENTS.md that this task goes through.
+const WORKFLOW_SKILLS = ['write-stories', 'test-stories', 'ui-review'];
+
 describe('writing stories for a fetching OrderHistory in a project without MSW', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
@@ -61,8 +64,8 @@ describe('writing stories for a fetching OrderHistory in a project without MSW',
     ).toBeGreaterThanOrEqual(3);
   });
 
-  test('uses Storybook story instructions and publishes a display review', () => {
-    expectWorkflowCalls(['ui-workflow', 'review-create']);
+  test('runs the skill of every workflow step and publishes a display review', () => {
+    expectWorkflowCalls([...WORKFLOW_SKILLS, 'review-create']);
     expectDisplayReviewForVisualChange();
   });
 
@@ -74,7 +77,12 @@ describe('writing stories for a fetching OrderHistory in a project without MSW',
     expectStoryDiscoveryBeforeReview();
   });
 
-  test.skipIf(getEvalContext().integration === 'mcp')('invokes the ui-workflow skill', () => {
-    expectSkillInvoked('ui-workflow');
-  });
+  test.skipIf(getEvalContext().integration === 'mcp')(
+    'invokes the skill of every workflow step',
+    () => {
+      for (const skill of WORKFLOW_SKILLS) {
+        expectSkillInvoked(skill);
+      }
+    }
+  );
 });

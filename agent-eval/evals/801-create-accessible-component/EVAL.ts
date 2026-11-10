@@ -12,6 +12,9 @@ import {
 import { transcript } from '@vercel/agent-eval/eval';
 import { describe, expect, test } from 'vitest';
 
+// The steps of the workflow in AGENTS.md that this task goes through.
+const WORKFLOW_SKILLS = ['component-docs', 'write-stories', 'test-stories', 'ui-review'];
+
 describe('creating an accessible ToggleSwitch', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
@@ -19,8 +22,8 @@ describe('creating an accessible ToggleSwitch', () => {
     });
   });
 
-  test('uses Storybook story instructions and publishes a display review', () => {
-    expectWorkflowCalls(['ui-workflow', 'review-create']);
+  test('runs the skill of every workflow step and publishes a display review', () => {
+    expectWorkflowCalls([...WORKFLOW_SKILLS, 'review-create']);
     expectDisplayReviewForVisualChange();
   });
 
@@ -50,9 +53,11 @@ describe('creating an accessible ToggleSwitch', () => {
     // must not be guessed or read out of node_modules.
     test('uses the documentation tooling', () => expectWorkflowCalls(['docs-show']));
 
-    test.skipIf(integration === 'mcp')('invokes the ui-workflow skill', () =>
-      expectSkillInvoked('ui-workflow')
-    );
+    test.skipIf(integration === 'mcp')('invokes the skill of every workflow step', () => {
+      for (const skill of WORKFLOW_SKILLS) {
+        expectSkillInvoked(skill);
+      }
+    });
 
     test.skipIf(integration !== 'plugin')(
       'leaves the dev server running when using the plugin',

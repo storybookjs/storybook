@@ -10,22 +10,22 @@ export type StorybookWorkflowCall = {
   source: 'mcp' | 'cli';
 };
 
-// Assertions ask for the workflow document as `ui-workflow`: `storybook skills
-// ui-workflow`, with or without `--mcp`, or `--all` serve it (`write-story`
-// prints only its write section). The stable addon-mcp (EVAL_STORYBOOK_LATEST=1) still serves
-// it as the get-storybook-story-instructions tool; drop that name once 11 is
-// the latest release.
+const SKILL_IDS = ['component-docs', 'write-stories', 'test-stories', 'ui-review', 'setup'];
+
+// Assertions ask for a skill by its id: `storybook skills <id>`, with or without `--mcp`, or
+// `--all` serve it. The stable addon-mcp (EVAL_STORYBOOK_LATEST=1) still serves the story rules
+// as the get-storybook-story-instructions tool; drop that name once 11 is the latest release.
 export function workflowCallMatchesName(call: StorybookWorkflowCall, name: string): boolean {
   if (call.name === name) {
     return true;
   }
-  if (name === 'ui-workflow' && call.name === 'get-storybook-story-instructions') {
+  if (name === 'write-stories' && call.name === 'get-storybook-story-instructions') {
     return true;
   }
   return (
-    name === 'ui-workflow' &&
+    SKILL_IDS.includes(name) &&
     call.name === 'skills-get' &&
-    (call.input.id === 'ui-workflow' || call.input.all === true)
+    (call.input.id === name || call.input.all === true)
   );
 }
 

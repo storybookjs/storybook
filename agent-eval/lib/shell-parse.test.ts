@@ -149,53 +149,53 @@ describe('parseStorybookWorkflowShellCommands', () => {
 
   test('records `skills <id>` invocations literally, with their skill id', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook skills write-story 2>&1 | grep -v "npm warn"',
-      'npx storybook skills ui-workflow',
+      'npx storybook skills write-stories 2>&1 | grep -v "npm warn"',
+      'npx storybook skills ui-review',
       'npx storybook skills',
     ]);
 
     expect(calls).toEqual([
-      { name: 'skills-get', input: { id: 'write-story' }, source: 'cli' },
-      { name: 'skills-get', input: { id: 'ui-workflow' }, source: 'cli' },
+      { name: 'skills-get', input: { id: 'write-stories' }, source: 'cli' },
+      { name: 'skills-get', input: { id: 'ui-review' }, source: 'cli' },
     ]);
   });
 
   test('records the skill id after options, also ones that take a value', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook skills --cwd packages/ui ui-workflow --mcp',
+      'npx storybook skills --cwd packages/ui ui-review --mcp',
       'npx storybook skills -c .storybook --debug component-docs',
-      'npx storybook skills --config-dir=.storybook ui-workflow',
+      'npx storybook skills --config-dir=.storybook ui-review',
       'npx storybook skills --cwd packages/ui --help',
     ]);
 
     expect(calls.map((call) => call.input)).toEqual([
-      { id: 'ui-workflow', mcp: true },
+      { id: 'ui-review', mcp: true },
       { id: 'component-docs' },
-      { id: 'ui-workflow' },
+      { id: 'ui-review' },
     ]);
   });
 
-  test('matches ui-workflow (also with --mcp) and --all, but not write-story or other ids, to ui-workflow', () => {
+  test('matches a skill id to its `skills` call (also with --mcp) and to --all, but not to other ids', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook skills write-story',
+      'npx storybook skills write-stories',
       'npx storybook skills --all',
-      'npx storybook skills ui-workflow',
-      'npx storybook skills ui-workflow --mcp',
+      'npx storybook skills ui-review',
+      'npx storybook skills ui-review --mcp',
       'npx storybook skills --mcp component-docs',
       'npx storybook skills all',
       'npx storybook skills setup',
     ]);
 
     expect(calls.map((call) => call.input)).toEqual([
-      { id: 'write-story' },
+      { id: 'write-stories' },
       { all: true },
-      { id: 'ui-workflow' },
-      { id: 'ui-workflow', mcp: true },
+      { id: 'ui-review' },
+      { id: 'ui-review', mcp: true },
       { id: 'component-docs', mcp: true },
       { id: 'all' },
       { id: 'setup' },
     ]);
-    expect(calls.map((call) => workflowCallMatchesName(call, 'ui-workflow'))).toEqual([
+    expect(calls.map((call) => workflowCallMatchesName(call, 'ui-review'))).toEqual([
       false,
       true,
       true,
@@ -206,11 +206,18 @@ describe('parseStorybookWorkflowShellCommands', () => {
     ]);
   });
 
-  test("matches the stable server's get-storybook-story-instructions tool to ui-workflow", () => {
+  test('matches --all to skill ids only, not to a tool name', () => {
+    const [all] = parseStorybookWorkflowShellCommands(['npx storybook skills --all']);
+
+    expect(workflowCallMatchesName(all!, 'test-stories')).toBe(true);
+    expect(workflowCallMatchesName(all!, 'test-run')).toBe(false);
+  });
+
+  test("matches the stable server's get-storybook-story-instructions tool to write-stories", () => {
     expect(
       workflowCallMatchesName(
         { name: 'get-storybook-story-instructions', input: {}, source: 'mcp' },
-        'ui-workflow'
+        'write-stories'
       )
     ).toBe(true);
     expect(normalizeStorybookWorkflowName('mcp__storybook__get-storybook-story-instructions')).toBe(
@@ -220,11 +227,11 @@ describe('parseStorybookWorkflowShellCommands', () => {
 
   test('does not record skills help requests, rejected --all combinations, or quoted mentions', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook skills write-story --help',
-      'npx storybook skills write-story -h && npx storybook skills --all --help',
-      'npx storybook skills ui-workflow --all',
-      'npx storybook skills --all ui-workflow',
-      "echo 'storybook skills write-story'",
+      'npx storybook skills write-stories --help',
+      'npx storybook skills write-stories -h && npx storybook skills --all --help',
+      'npx storybook skills ui-review --all',
+      'npx storybook skills --all ui-review',
+      "echo 'storybook skills write-stories'",
     ]);
 
     expect(calls).toHaveLength(0);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildComponentDocsSkill, componentLookup } from './build-component-docs-skill.ts';
+import { buildComponentDocsSkill } from './build-component-docs-skill.ts';
 
 describe('buildComponentDocsSkill', () => {
   it('teaches docs list before docs show, with the source of a composed Storybook', () => {
@@ -19,22 +19,20 @@ describe('buildComponentDocsSkill', () => {
     );
   });
 
-  it('sends a UI change or a request to see stories to ui-workflow when the agent instructions name it', () => {
-    expect(buildComponentDocsSkill()).toContain(
-      "For a change to the UI, and when the user asks to see components or stories, use the `ui-workflow` skill when the project's agent instructions"
-    );
+  it('names no other skill, so the agent instructions decide the workflow', () => {
+    expect(buildComponentDocsSkill()).not.toMatch(/write-stories|test-stories|ui-review/);
   });
-});
 
-describe('componentLookup over MCP', () => {
-  it('names the MCP tools and their inputs instead of commands and flags', () => {
-    const text = componentLookup('mcp');
+  it('names the MCP tools and their inputs instead of commands and flags over MCP', () => {
+    const text = buildComponentDocsSkill('mcp');
 
+    expect(text).toContain('The tools named here are tools of the Storybook MCP server.');
     expect(text).toContain('- `docs-show` with an `id`: props and usage examples of one entry');
     expect(text).toContain('Call `docs-show` once per id and read its whole result');
     expect(text).toContain(
       'pass the source of the entry as `storybookId: "acme"` to `docs-show` and `docs-show-story`'
     );
     expect(text).not.toContain('npx storybook');
+    expect(text).not.toContain('--help');
   });
 });

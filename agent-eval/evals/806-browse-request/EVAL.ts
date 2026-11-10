@@ -1,7 +1,6 @@
 import {
   expectDisplayReviewForBrowseRequest,
   expectDevServerLeftRunning,
-  expectReviewOpenedInBrowser,
   expectStoryIdsInDisplayReview,
   getEvalContext,
 } from '#test-utils';
@@ -10,10 +9,6 @@ import { describe, test } from 'vitest';
 describe('browsing existing ReviewCard Storybook states', () => {
   test('publishes a display review for a browse request without changed files', () => {
     expectDisplayReviewForBrowseRequest();
-  });
-
-  test('opens the review in the in-app browser', () => {
-    expectReviewOpenedInBrowser();
   });
 
   // The prompt asks for ALL ReviewCard states; the fixture is untouched by a

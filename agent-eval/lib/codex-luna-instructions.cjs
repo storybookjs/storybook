@@ -14,7 +14,10 @@ const instructions = (model) =>
   catalog.models.find((entry) => entry.slug === model)?.base_instructions ?? '';
 const fail = (problem) => {
   throw new Error(
-    problem + ' in the catalog of ' + codex(['--version']).trim() + '. Update LUNA_TEST_RULE or SOL_TEST_RULES in agent-eval/lib/templates.ts.'
+    problem +
+      ' in the catalog of ' +
+      codex(['--version']).trim() +
+      '. Update LUNA_TEST_RULE or SOL_TEST_RULES in agent-eval/lib/templates.ts.'
   );
 };
 

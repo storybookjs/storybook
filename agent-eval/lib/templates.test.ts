@@ -276,7 +276,13 @@ describe.skipIf(process.platform === 'win32')('the Luna instructions script', ()
     chmodSync(codex, 0o755);
     return execFileSync(
       'node',
-      ['-e', readFileSync(LUNA_INSTRUCTIONS_SCRIPT_PATH, 'utf8'), 'gpt-6-luna', LUNA_TEST_RULE, SOL_TEST_RULES],
+      [
+        '-e',
+        readFileSync(LUNA_INSTRUCTIONS_SCRIPT_PATH, 'utf8'),
+        'gpt-6-luna',
+        LUNA_TEST_RULE,
+        SOL_TEST_RULES,
+      ],
       {
         encoding: 'utf8',
         env: { ...process.env, HOME: home, PATH: `${home}${delimiter}${process.env.PATH}` },

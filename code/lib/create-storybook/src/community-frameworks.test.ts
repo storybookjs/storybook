@@ -26,7 +26,6 @@ describe('COMMUNITY_FRAMEWORK_PACKAGES', () => {
     expect([...COMMUNITY_FRAMEWORK_PACKAGES].sort()).toMatchInlineSnapshot(`
       [
         "@nuxtjs/storybook",
-        "@storybook-astro/framework",
         "@storybook-vue/nuxt",
         "storybook-framework-qwik",
         "storybook-html-rsbuild",
@@ -112,27 +111,27 @@ describe('communityFrameworkDistTag', () => {
 describe('communityPackageSpecifier', () => {
   beforeEach(() => {
     mockRegistry({
-      '@storybook-astro/framework@next': '1.0.0-beta.1',
-      '@storybook-astro/framework': '0.9.0',
+      'storybook-solidjs-vite@next': '1.0.0-beta.1',
+      'storybook-solidjs-vite': '0.9.0',
     });
   });
 
   it('tags a community framework package for a Storybook prerelease', async () => {
     await expect(
-      communityPackageSpecifier(packageManager, '@storybook-astro/framework', '11.0.0-beta.1')
-    ).resolves.toBe('@storybook-astro/framework@next');
+      communityPackageSpecifier(packageManager, 'storybook-solidjs-vite', '11.0.0-beta.1')
+    ).resolves.toBe('storybook-solidjs-vite@next');
   });
 
   it('leaves a community framework package untagged for a stable Storybook', async () => {
     await expect(
-      communityPackageSpecifier(packageManager, '@storybook-astro/framework', '11.0.0')
-    ).resolves.toBe('@storybook-astro/framework');
+      communityPackageSpecifier(packageManager, 'storybook-solidjs-vite', '11.0.0')
+    ).resolves.toBe('storybook-solidjs-vite');
   });
 
   it('keeps an explicitly requested version', async () => {
     await expect(
-      communityPackageSpecifier(packageManager, '@storybook-astro/framework@0.8.0', '11.0.0-beta.1')
-    ).resolves.toBe('@storybook-astro/framework@0.8.0');
+      communityPackageSpecifier(packageManager, 'storybook-solidjs-vite@0.8.0', '11.0.0-beta.1')
+    ).resolves.toBe('storybook-solidjs-vite@0.8.0');
     expect(packageManager.latestVersion).not.toHaveBeenCalled();
   });
 

@@ -1,11 +1,12 @@
 import type * as ts from 'typescript';
+import type { DocgenTypeScript } from '@storybook/component-meta-typescript';
 
 import type { PropertyInitializer } from '../types.ts';
 import { resolvedSymbol, type AnalyzerContext } from './context.ts';
 
 type LiteralKind = Extract<PropertyInitializer, { kind: 'literal' }>['literalKind'];
 
-const unwrapInitializer = (ts: typeof import('typescript'), expression: ts.Expression) => {
+const unwrapInitializer = (ts: DocgenTypeScript, expression: ts.Expression) => {
   let unwrapped = expression;
   while (
     ts.isParenthesizedExpression(unwrapped) ||

@@ -21,7 +21,11 @@ import { setConfigLayout } from './set-config-layout.ts';
 import { sidebarFilters } from './sidebar-filters.ts';
 import { skills } from './skills.ts';
 import { tagFilterApi } from './tag-filter-api.ts';
-import { typescriptCompilerApi, typescriptDependency } from './typescript-dependency.ts';
+import {
+  typescriptCompilerApi,
+  typescriptDependency,
+  typescriptNativeApi,
+} from './typescript-dependency.ts';
 import { typescript7ReactDocgen } from './typescript-7-react-docgen.ts';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies.ts';
 import { vitestSetupFile } from './vitest-setup-file.ts';
@@ -55,6 +59,7 @@ export const allFixes: Fix[] = [
   skills,
   docgenServer,
   typescriptDependency,
+  typescriptNativeApi,
   typescriptCompilerApi,
   // TEMPORARY(ts-7.1): see `typescript-7-react-docgen.ts`.
   typescript7ReactDocgen,

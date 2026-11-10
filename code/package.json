@@ -119,7 +119,7 @@
     "storybook-addon-pseudo-states": "workspace:*",
     "ts-dedent": "^2.2.0",
     "typescript": "^6.0.3",
-    "typescript-native": "npm:typescript@^7.0.2",
+    "typescript-native": "npm:typescript@7.1.0-beta",
     "uuid": "^11.1.0",
     "vite": "^7.0.4",
     "vite-plugin-inspect": "^11.0.0",

@@ -41,7 +41,9 @@ Pick the sandbox for your machine:
 - `--sandbox docker` on Linux with the image built first: `docker build --build-arg AGENT_UID=$(id -u) --build-arg AGENT_GID=$(id -g) -t sb-ecosystem-qa ecosystem-qa`.
 - `--sandbox none` runs the agent on the host with your environment, so use it only for a trusted owned repo.
 
+To bill your Claude subscription instead of an API key, run `claude setup-token` once and pass the result as `CLAUDE_CODE_OAUTH_TOKEN` in place of `ANTHROPIC_API_KEY`; the native sandboxes hide the login in `~/.claude`, so the token is the only way in.
 Codex runs read `CODEX_API_KEY` and default to `gpt-6.1-sol`; pass `--model` to change it.
+A Codex ChatGPT login works only with `--sandbox none`, because the sandboxes hide `~/.codex` and the provider knows no login token.
 Claude's cost comes from its own result line.
 Codex, and a Claude run that ended without one, is priced from the price table in `agent-eval/lib/usage.ts`, which both harnesses share; a run priced that way says so in its summary.
 A model missing from that table gives `usd: null`.

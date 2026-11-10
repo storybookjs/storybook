@@ -55,9 +55,11 @@ const DEFAULT_MODEL: Record<Engine, string> = {
   codex: 'gpt-6.1-sol',
 };
 
-const API_KEY_ENV: Record<Engine, string> = {
-  claude: 'ANTHROPIC_API_KEY',
-  codex: 'CODEX_API_KEY',
+// The first variable that is set wins. CLAUDE_CODE_OAUTH_TOKEN (from `claude setup-token`) bills a
+// subscription, for local runs; CI passes the API key.
+const CREDENTIAL_ENV: Record<Engine, string[]> = {
+  claude: ['ANTHROPIC_API_KEY', 'CLAUDE_CODE_OAUTH_TOKEN'],
+  codex: ['CODEX_API_KEY'],
 };
 
 const INSTALL_COMMAND: Record<CatalogEntry['packageManager'], string> = {
@@ -208,10 +210,12 @@ const planSandbox = (request: RunRequest, evidenceDir: string, image: string): S
 };
 
 const agentFor = (request: RunRequest) => {
-  const keyName = API_KEY_ENV[request.engine];
+  const names = CREDENTIAL_ENV[request.engine];
+  const keyName =
+    names.find((name) => process.env[name]) ?? fail(`None of ${names.join(', ')} is set.`);
   const options = {
     effort: request.effort,
-    env: { ...UPGRADE_ENV, [keyName]: process.env[keyName] || fail(`${keyName} is not set.`) },
+    env: { ...UPGRADE_ENV, [keyName]: process.env[keyName]! },
   };
   return request.engine === 'claude'
     ? claudeCode(request.model, options)

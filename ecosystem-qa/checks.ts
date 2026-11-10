@@ -1,5 +1,5 @@
-// The cycle-0 subset of `references/basic-qa.md`, whose Agent column maps rows to these ids and
-// names the rows the registry should gain next.
+// The agent-runnable rows of `references/basic-qa.md`, whose Agent column maps each row to one of
+// these ids; `checks.test.ts` keeps the two in sync.
 // `must` runs on every repo of every sweep; `extended` only when a dispatch asks for it.
 export type Tier = 'must' | 'extended';
 
@@ -123,6 +123,176 @@ export const CHECKS = [
     tier: 'must',
     probe:
       'Read `git diff -- AGENTS.md CLAUDE.md .claude/CLAUDE.md CLAUDE.local.md`. A marked Storybook section is added, existing content is kept, and no `CLAUDE.md` is created where none existed. `n/a` when the automigration did not run.',
+  },
+  {
+    id: 'upgrade.typescript',
+    label: 'The `typescript-dependency` automigration adds `typescript@^6` to a project without it',
+    phase: 'upgrade',
+    tier: 'extended',
+    probe:
+      'Check whether `typescript` was a dependency before the upgrade (`git show HEAD~1:package.json` or the baseline). `n/a` when it was. Otherwise the upgrade must offer the `typescript-dependency` automigration and `devDependencies` must now hold `typescript@^6`.',
+  },
+  {
+    id: 'upgrade.skills',
+    label:
+      'The skills automigration installs the Storybook skills and records them in `skills-lock.json`',
+    phase: 'upgrade',
+    tier: 'extended',
+    probe:
+      'In `upgrade.log` find the `npx skills@latest add storybookjs/skills#v<version> --yes --agent claude-code universal --copy` line and check that `skills-lock.json` lists the Storybook skills. `n/a` when the automigration was skipped because the run was detected as CI.',
+  },
+  {
+    id: 'upgrade.index-cli',
+    label: '`storybook index` writes the same entries as the dev server without starting one',
+    phase: 'upgrade',
+    tier: 'extended',
+    probe:
+      "Run `storybook index` from the Storybook directory (bounded wait) and compare the entry ids of its `index.json` with the dev server's. Save the output to `index-cli.log`.",
+  },
+  {
+    id: 'upgrade.removed-commands',
+    label: 'Removed CLI commands and options fail with a pointer to their replacement',
+    phase: 'upgrade',
+    tier: 'extended',
+    probe:
+      'Run `storybook ai setup` (must exit 1 and name `storybook skills setup` and `storybook tools`), `storybook dev --preview-url http://localhost:1234 --ci -p 6007` (must be rejected, or start and load its own `iframe.html`; stop it by pid), and `storybook automigrate --renderer react` plus `storybook automigrate remove-essentials` (`--renderer` is an unknown option, the id is not found). Save every output to `removed-commands.log`. Any removed command that silently works is a failure.',
+  },
+  {
+    id: 'core.smoke-test',
+    label: '`storybook dev --smoke-test` starts and exits 0',
+    phase: 'dev',
+    tier: 'extended',
+    probe:
+      'Run `storybook dev --smoke-test --ci -p 6007` with a bounded wait and save the output to `smoke-test.log`. A non-zero exit or a hang is a failure.',
+  },
+  {
+    id: 'core.frame-ancestors',
+    label: 'The dev server sends a `frame-ancestors` policy that blocks remote embedding',
+    phase: 'dev',
+    tier: 'extended',
+    probe:
+      'Run `curl -sI http://localhost:6006/` and save it to `headers.txt`. The `content-security-policy` header must contain `frame-ancestors`. `n/a` when main sets `security.insecureRemoteIframeEmbed: true`.',
+  },
+  {
+    id: 'core.hmr.preview-file',
+    label: 'Editing `.storybook/preview.*` updates every story without a restart',
+    phase: 'dev',
+    tier: 'extended',
+    probe:
+      'While the dev server runs, add a decorator that wraps the story in an element with a visible marker (a red 4px border or a data attribute) to `.storybook/preview.*`. Screenshot the baseline story before and after. The marker must appear without restarting the server. Restore the file afterwards.',
+  },
+  {
+    id: 'core.hmr.rename-story',
+    label: 'Renaming a story export updates the sidebar and keeps the story rendering',
+    phase: 'dev',
+    tier: 'extended',
+    probe:
+      'Rename one export in an existing stories file. Poll `/index.json`: the new id must appear and the old one disappear within 60 seconds. Screenshot the renamed story. Restore the file afterwards.',
+  },
+  {
+    id: 'core.hmr.new-file',
+    label: 'A new stories file is picked up while the dev server runs',
+    phase: 'dev',
+    tier: 'extended',
+    probe:
+      'Create a new `*.stories.*` file next to an existing one, matching the `stories` globs in main, with one story. Poll `/index.json` for its id and screenshot it. Delete the file afterwards.',
+  },
+  {
+    id: 'core.hmr.delete-file',
+    label: 'Deleting a stories file removes its entries without crashing the manager',
+    phase: 'dev',
+    tier: 'extended',
+    probe:
+      'Copy one stories file aside, open one of its stories, then delete the file. Poll `/index.json` until its ids are gone, then screenshot the manager at `/` and check its `.errors.json`. Restore the file afterwards.',
+  },
+  {
+    id: 'core.hmr.argtypes',
+    label: 'Adding a typed prop to a component updates Controls and the docs args table live',
+    phase: 'dev',
+    tier: 'extended',
+    probe:
+      "Add a typed prop with a default to the component of the baseline story and save. Fetch the story's docs page or the Controls panel again: the new prop must appear without navigating away. `n/a` when the framework has no docgen (check `storybook info`). Restore the file afterwards.",
+  },
+  {
+    id: 'core.module-mocking',
+    label: '`sb.mock()` in preview replaces the module for a story',
+    phase: 'dev',
+    tier: 'extended',
+    probe:
+      'Search `.storybook/preview.*` for `sb.mock(`. `n/a` when there is none. Otherwise open a story that imports a mocked module and check that the mocked value renders, with no page errors.',
+  },
+  {
+    id: 'core.mcp-info',
+    label: 'The MCP info page lists the enabled toolsets',
+    phase: 'dev',
+    tier: 'extended',
+    probe:
+      'Check whether `@storybook/addon-mcp` is in the `addons` list of main. `n/a` when it is not. Otherwise fetch `http://localhost:6006/mcp` and screenshot it: it must list the enabled toolsets and link to the manifest debugger.',
+  },
+  {
+    id: 'core.components-manifest',
+    label: "The components manifest is on by default and lists the project's components",
+    phase: 'dev',
+    tier: 'extended',
+    probe:
+      'Without setting `features.componentsManifest`, fetch `http://localhost:6006/manifests/components.html` and `/manifests/components.json`. `n/a` for a framework without docgen. The page must list components and the JSON must name at least one component with props.',
+  },
+  {
+    id: 'core.static-dirs',
+    label: 'A `staticDirs` entry is served in dev and in the build',
+    phase: 'dev',
+    tier: 'extended',
+    probe:
+      'Read `staticDirs` from main. `n/a` when it is empty. Pick one file under a configured directory and fetch it at its served path from the dev server (port 6006) and from the static build (port 6008). Both must return 200.',
+  },
+  {
+    id: 'build.docs-mode',
+    label: '`storybook build --docs` builds only docs pages and they render',
+    phase: 'build',
+    tier: 'extended',
+    probe:
+      'Build with `--docs` into `storybook-docs`, serve it on port 6009, and screenshot one docs entry. Its `index.json` must list no `story` entries. Save the build output to `build-docs.log`.',
+  },
+  {
+    id: 'build.test-mode',
+    label: '`storybook build --test` succeeds and stories render',
+    phase: 'build',
+    tier: 'extended',
+    probe:
+      'Build with `--test` into `storybook-test`, serve it on port 6009, and screenshot the baseline story. Save the build output to `build-test.log`.',
+  },
+  {
+    id: 'test.coverage-cli',
+    label: 'Vitest coverage runs and serves its report',
+    phase: 'test',
+    tier: 'extended',
+    probe:
+      'Run `npx vitest run --project storybook --coverage` from the Storybook directory and save the output to `coverage.log`. `n/a` without `@storybook/addon-vitest`. Coverage must report a statement percentage and write `coverage/index.html`.',
+  },
+  {
+    id: 'test.setup-annotations',
+    label:
+      '`setProjectAnnotations` in a Vitest setup file is migrated or rejected with `SB_ADDON_VITEST_0002`',
+    phase: 'test',
+    tier: 'extended',
+    probe:
+      'Search the Vitest setup files for `setProjectAnnotations`. `n/a` when the project never called it (check the baseline too). If it was there before the upgrade, the automigration must have removed it; if it is still there, `vitest run --project storybook` must fail with `SB_ADDON_VITEST_0002` naming the file.',
+  },
+  {
+    id: 'test.test-libraries',
+    label: 'Test libraries are no longer installed transitively by `storybook/test`',
+    phase: 'test',
+    tier: 'extended',
+    probe:
+      'Add `import { screen } from "@testing-library/dom";` to a stories file without adding the package to `package.json`, then open that story. `n/a` when `@testing-library/dom` is already a direct dependency. The import must fail to resolve. Restore the file afterwards.',
+  },
+  {
+    id: 'test.test-runner',
+    label: '`@storybook/test-runner` still runs and warns that it is no longer supported',
+    phase: 'test',
+    tier: 'extended',
+    probe:
+      'Check `package.json` for `@storybook/test-runner`. `n/a` when absent. Otherwise run it against the static build on port 6008 with a bounded wait and save the output to `test-runner.log`. It must finish and print the end-of-support warning.',
   },
 ] as const satisfies readonly CheckDefinition[];
 

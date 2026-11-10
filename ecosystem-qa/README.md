@@ -11,7 +11,7 @@ catalog.json ──> run.ts ──> results/<repo>/<os>/<engine>/result.json ─
 ```
 
 The full manual QA checklist for Storybook 11 is `references/basic-qa.md`, derived from this repo's migration guide, changelog, docs and E2E specs; humans use it in a bug bash.
-The checks the agent must report live in `checks.ts`, a subset of that list; the checklist's Agent column says which rows map to which id and which rows come next.
+The checks the agent can run live in `checks.ts`; the checklist's Agent column maps each row to its id or says why a person has to judge it, and `lib/checks.test.ts` keeps the two in sync.
 The same list renders into the prompt and validates the agent's answer, so the agent cannot invent a check id.
 
 ## Why a third agent harness

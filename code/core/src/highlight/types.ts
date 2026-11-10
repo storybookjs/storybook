@@ -32,15 +32,18 @@ export interface HighlightMenuItem {
   iconLeft?: IconName;
   /** Icon for the menu item, right side */
   iconRight?: IconName;
-  /** Name for a channel event to trigger when the menu item is clicked */
-  clickEvent?: string;
+  /**
+   * Render the item as a button. Clicking it emits `HIGHLIGHT_MENU_CLICK` with the highlight `id`,
+   * the item `id` and the `ClickEventDetails` of the clicked element.
+   */
+  clickable?: boolean;
   /** HTML selectors for which this menu item should show (subset of `selectors`) */
   selectors?: HighlightOptions['selectors'];
 }
 
 export interface HighlightOptions {
-  /** Unique identifier for the highlight, required if you want to remove the highlight later */
-  id?: string;
+  /** Unique identifier for the highlight, used to remove it later and to attribute menu clicks */
+  id: string;
   /** HTML selectors of the elements */
   selectors: string[];
   /** Priority of the highlight, higher takes precedence, defaults to 0 */
@@ -64,14 +67,12 @@ export interface ClickEventDetails {
   height: number;
   selectors: string[];
   element: {
-    attributes: Record<string, string>;
     localName: string;
     tagName: string;
-    outerHTML: string;
   };
 }
 
-// Legacy format
+/** @deprecated Use `HighlightOptions` instead */
 export interface LegacyHighlightOptions {
   /** @deprecated Use selectors instead */
   elements: string[];
@@ -84,7 +85,7 @@ export interface LegacyHighlightOptions {
 export type RawHighlightOptions = HighlightOptions | LegacyHighlightOptions;
 
 export type Highlight = {
-  id?: string;
+  id: string;
   priority: number;
   selectors: string[];
   styles: Record<string, string>;
@@ -95,6 +96,7 @@ export type Highlight = {
 
 export type Box = {
   element: HTMLElement;
+  id: Highlight['id'];
   selectors: Highlight['selectors'];
   styles: Highlight['styles'];
   hoverStyles?: Highlight['hoverStyles'];

@@ -251,6 +251,7 @@ const StoryPreviewCell: FC<{
     <div data-preview-scale>
       <Preview
         ref={iframeRef}
+        data-is-storybook-thumbnail
         title={readableTitle}
         src={src}
         data-content-width={rememberedDimensions?.width}

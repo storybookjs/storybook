@@ -118,7 +118,9 @@ export type Template = {
    *
    * The gate is enforced transitively, so this has to name the whole family of
    * packages published in lockstep with the prerelease, not just the direct
-   * dependency. Stable templates should leave this unset.
+   * dependency. Stable templates should leave this unset, unless a dependency
+   * must adopt a compatibility release as soon as a peer it tracks clears the
+   * gate.
    */
   minAgeGateExemptions?: string[];
   /** Additional options to pass to the initiate command when initializing Storybook. */
@@ -757,8 +759,13 @@ export const baseTemplates = {
   },
   'svelte-kit/skeleton-ts': {
     name: 'SvelteKit Latest (Vite | TypeScript)',
+    // Storybook 10 supports SvelteKit 2 only. `sv` 1.x scaffolds SvelteKit 3, so the template is
+    // pinned to the last `sv` 0.x release.
+    // TODO: Remove `inDevelopment` once the published sandbox on the `main` branch of
+    // storybookjs/sandboxes has SvelteKit 2 again. Until then, CI scaffolds the sandbox itself.
     script:
-      'npx sv@latest create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
+      'npx sv@0.17.1 create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
+    inDevelopment: true,
     expected: {
       framework: '@storybook/sveltekit',
       renderer: '@storybook/svelte',
@@ -775,9 +782,6 @@ export const baseTemplates = {
       // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
       // Also, Angular 22 needs TypeScript 6 or more recent.
       extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
-      resolutions: {
-        webpack: '5.107.2',
-      },
       useCsfFactory: true,
     },
     extraCiSteps: {
@@ -809,6 +813,7 @@ export const baseTemplates = {
     extraCiSteps: {
       ensureMinNodeVersion: true,
     },
+    minAgeGateExemptions: ['@analogjs/vite-plugin-angular'],
     expected: {
       framework: '@storybook/angular-vite',
       renderer: '@storybook/angular-vite',
@@ -846,6 +851,7 @@ export const baseTemplates = {
     extraCiSteps: {
       ensureMinNodeVersion: true,
     },
+    minAgeGateExemptions: ['@analogjs/vite-plugin-angular'],
     expected: {
       framework: '@storybook/angular-vite',
       renderer: '@storybook/angular-vite',
@@ -886,6 +892,7 @@ export const baseTemplates = {
     extraCiSteps: {
       ensureMinNodeVersion: true,
     },
+    minAgeGateExemptions: ['@analogjs/vite-plugin-angular'],
     expected: {
       framework: '@storybook/angular-vite',
       renderer: '@storybook/angular-vite',
@@ -951,7 +958,11 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
-      extraDependencies: ['preact-render-to-string'],
+      // create-vite still scaffolds Preact 10.
+      extraDependencies: ['preact-render-to-string', 'preact@^11'],
+      resolutions: {
+        preact: 'npm:preact@^11',
+      },
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
@@ -964,7 +975,11 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
-      extraDependencies: ['preact-render-to-string'],
+      // create-vite still scaffolds Preact 10.
+      extraDependencies: ['preact-render-to-string', 'preact@^11'],
+      resolutions: {
+        preact: 'npm:preact@^11',
+      },
     },
     skipTasks: ['e2e-tests', 'bench'],
   },

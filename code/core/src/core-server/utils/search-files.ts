@@ -1,4 +1,12 @@
+import { braces } from 'micromatch';
+
 export type SearchResult = Array<string>;
+
+export class InvalidSearchQueryError extends Error {
+  constructor() {
+    super('Invalid search query.');
+  }
+}
 
 /** File extensions that should be searched for */
 const FILE_EXTENSIONS = ['js', 'mjs', 'cjs', 'jsx', 'mts', 'ts', 'tsx', 'cts'];
@@ -10,6 +18,14 @@ const IGNORED_FILES = [
   '**/*.stories.*',
   '**/storybook-static/**',
 ];
+
+function isOutsideSearchRoot(pattern: string) {
+  return (
+    /^([\\/]|[a-z]:)/i.test(pattern) ||
+    // Windows strips trailing dots from path segments, so `...` is not a plain name there.
+    pattern.split(/[\\/]/).some((segment) => /^\.{2,}$/.test(segment))
+  );
+}
 
 /**
  * Search for files in a directory that match the search query
@@ -30,6 +46,12 @@ export async function searchFiles({
   ignoredFiles?: string[];
   fileExtensions?: string[];
 }): Promise<SearchResult> {
+  // globby expands braces before resolving each pattern's base directory, so `{x,}/etc/*` escapes `cwd`.
+  const expandedQueries = braces(searchQuery, { expand: true, nodupes: true, keepEscaping: true });
+  if (expandedQueries.some(isOutsideSearchRoot)) {
+    throw new InvalidSearchQueryError();
+  }
+
   // Dynamically import globby because it is a pure ESM module
   // eslint-disable-next-line depend/ban-dependencies
   const { globby, isDynamicPattern } = await import('globby');

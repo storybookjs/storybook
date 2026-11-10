@@ -33,6 +33,7 @@ import { getWsToken } from './presets/wsToken.ts';
 import { buildOrThrow } from './utils/build-or-throw.ts';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders.ts';
 import { getServerChannel } from './utils/get-server-channel.ts';
+import { warnOnDisabledHostValidation } from './utils/host-validation-warning.ts';
 import { outputStartupInformation } from './utils/output-startup-information.ts';
 import { outputStats } from './utils/output-stats.ts';
 import {
@@ -217,18 +218,13 @@ export async function buildDevStandalone(
 
   const { allowedHosts, renderer, builder } = await presets.apply('core', {});
 
-  // '0.0.0.0' binds to all interfaces, which is useful for Docker and other containerized environments.
-  // By default we allow requests from all hosts in this case, but the user should be made aware of the risk.
-  if (
-    options.host === '0.0.0.0' &&
-    (!allowedHosts || (allowedHosts !== true && allowedHosts.length === 0))
-  ) {
-    logger.warn(dedent`
-      --host is set to 0.0.0.0 but no allowedHosts are defined. Allowing all hosts.
-      To restrict allowed hosts, set core.allowedHosts in your main Storybook config.
-      See: https://storybook.js.org/docs/api/main-config/main-config-core
-    `);
-  }
+  await warnOnDisabledHostValidation({
+    host: options.host,
+    allowedHosts,
+    ci: options.ci,
+    smokeTest: options.smokeTest,
+    cacheKey,
+  });
 
   if (!builder) {
     throw new MissingBuilderError();
@@ -377,6 +373,7 @@ export async function buildDevStandalone(
         version: storybookVersion,
         name,
         address: localAddress,
+        host: options.host,
         networkAddress,
         allowedHosts,
         managerTotalTime,

@@ -1,5 +1,5 @@
-// The cycle-0 subset of `references/basic-qa.md`; `references/basic-qa.checks.md` maps rows to ids
-// and lists the rows the registry should gain next.
+// The cycle-0 subset of `references/basic-qa.md`, whose Agent column maps rows to these ids and
+// names the rows the registry should gain next.
 interface CheckDefinition {
   readonly id: string;
   readonly label: string;

@@ -10,6 +10,7 @@ import {
   statfsSync,
   writeFileSync,
 } from 'node:fs';
+import { homedir, tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
@@ -46,7 +47,7 @@ Options:
   --model <id>        Model id (default: claude-sonnet-5-5 for claude, gpt-6.1-sol for codex)
   --effort <level>    low, medium or high (default: medium)
   --tier <tier>       must (default) runs the checks every sweep needs; extended runs all of them
-  --clone-dir <dir>   Where to clone the catalog repo (default: <out>/../../../work/<id>)
+  --clone-dir <dir>   Where to clone the catalog repo (default: <tmpdir>/ecosystem-qa/work/<id>)
   --image <name>      Docker image for --sandbox docker (default: sb-ecosystem-qa)
 
 Writes <out>/result.json and exits 0 whenever it did, findings or not.
@@ -161,7 +162,9 @@ const parseRequest = () => {
     outDir,
     monorepoDir: resolve(QA_DIR, '..'),
   };
-  const cloneDir = resolve(values['clone-dir'] ?? join(outDir, '../../../work', entry.id));
+  // Outside the monorepo: yarn and npm read every .yarnrc and .npmrc above the clone, and a native
+  // sandbox denies the monorepo's own config files to the agent.
+  const cloneDir = resolve(values['clone-dir'] ?? join(tmpdir(), 'ecosystem-qa', 'work', entry.id));
 
   return { request, cloneDir, image: values.image };
 };
@@ -183,9 +186,16 @@ interface SandboxPlan {
   toolsDir: string;
   migrationFile: string;
   evidenceDir: string;
+  // Extra variables the agent process needs inside this sandbox.
+  agentEnv: Record<string, string>;
 }
 
-const planSandbox = (request: RunRequest, evidenceDir: string, image: string): SandboxPlan => {
+const planSandbox = (
+  request: RunRequest,
+  cloneDir: string,
+  evidenceDir: string,
+  image: string
+): SandboxPlan => {
   const toolsDir = join(QA_DIR, 'tools');
   const migrationFile = join(request.monorepoDir, 'MIGRATION.md');
   const identity = (path: string, readonly: boolean) => ({
@@ -194,7 +204,29 @@ const planSandbox = (request: RunRequest, evidenceDir: string, image: string): S
     readonly,
   });
   const toolMounts = [identity(toolsDir, true), identity(join(QA_DIR, 'node_modules'), true)];
-  const nativeMounts = [...toolMounts, identity(migrationFile, true), identity(evidenceDir, false)];
+  // Package managers read every rc file from the working directory up to the root, and the yarn 1
+  // shim reads the real home's .yarnrc rather than the sandbox's private home. The agent's worktree
+  // sits under the clone, so the native sandboxes expose those files read-only, one by one: a
+  // read-only mount of the whole clone would also deny writes inside the worktree. The home .npmrc
+  // stays hidden, it can hold a registry token.
+  const rcMounts = [
+    join(homedir(), '.yarnrc'),
+    ...['.yarnrc', '.yarnrc.yml', '.npmrc'].map((name) => join(cloneDir, name)),
+  ]
+    .filter((path) => existsSync(path))
+    .map((path) => identity(path, true));
+  // Claude Code keeps its own state under /tmp/claude-<uid> on the host whatever TMPDIR says, which
+  // a native sandbox denies, so it gets a directory of its own that the sandbox can write.
+  const agentTmp = join(tmpdir(), 'ecosystem-qa', 'agent-tmp', request.entry.id);
+  mkdirSync(agentTmp, { recursive: true });
+  const nativeMounts = [
+    ...toolMounts,
+    ...rcMounts,
+    identity(migrationFile, true),
+    identity(evidenceDir, false),
+    identity(agentTmp, false),
+  ];
+  const nativeEnv = { CLAUDE_CODE_TMPDIR: agentTmp };
   switch (request.sandbox) {
     case 'docker': {
       const sandboxMigration = `${DOCKER_HOME}/qa-input/MIGRATION.md`;
@@ -211,24 +243,37 @@ const planSandbox = (request: RunRequest, evidenceDir: string, image: string): S
         toolsDir,
         migrationFile: sandboxMigration,
         evidenceDir: sandboxEvidence,
+        agentEnv: {},
       };
     }
     case 'bwrap':
-      return { provider: bwrap({ mounts: nativeMounts }), toolsDir, migrationFile, evidenceDir };
+      return {
+        provider: bwrap({ mounts: nativeMounts }),
+        toolsDir,
+        migrationFile,
+        evidenceDir,
+        agentEnv: nativeEnv,
+      };
     case 'seatbelt':
-      return { provider: seatbelt({ mounts: nativeMounts }), toolsDir, migrationFile, evidenceDir };
+      return {
+        provider: seatbelt({ mounts: nativeMounts }),
+        toolsDir,
+        migrationFile,
+        evidenceDir,
+        agentEnv: nativeEnv,
+      };
     case 'none':
-      return { provider: noSandbox(), toolsDir, migrationFile, evidenceDir };
+      return { provider: noSandbox(), toolsDir, migrationFile, evidenceDir, agentEnv: {} };
   }
 };
 
-const agentFor = (request: RunRequest) => {
+const agentFor = (request: RunRequest, agentEnv: Record<string, string>) => {
   const names = CREDENTIAL_ENV[request.engine];
   const keyName =
     names.find((name) => process.env[name]) ?? fail(`None of ${names.join(', ')} is set.`);
   const options = {
     effort: request.effort,
-    env: { ...UPGRADE_ENV, [keyName]: process.env[keyName]! },
+    env: { ...UPGRADE_ENV, ...agentEnv, [keyName]: process.env[keyName]! },
   };
   return request.engine === 'claude'
     ? claudeCode(request.model, options)
@@ -249,7 +294,6 @@ const runSandcastle = async (
   cloneDir: string,
   image: string
 ): Promise<Outcome> => {
-  const agent = agentFor(request);
   const evidenceDir = join(request.outDir, 'evidence');
   const cycleBranch = cycleBranchName(request.version, request.os, request.engine);
   const startSha = clone(request.entry, cloneDir);
@@ -261,7 +305,8 @@ const runSandcastle = async (
   let failure: { status: Outcome['status']; error: string } | undefined;
 
   try {
-    const plan = planSandbox(request, evidenceDir, image);
+    const plan = planSandbox(request, cloneDir, evidenceDir, image);
+    const agent = agentFor(request, plan.agentEnv);
     const answerSchema = agentOutput(checksFor(request.tier).map((check) => check.id));
     const result = await run({
       cwd: cloneDir,

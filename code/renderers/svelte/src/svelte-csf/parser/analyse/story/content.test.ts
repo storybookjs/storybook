@@ -8,7 +8,7 @@ import { dedent } from 'ts-dedent';
 
 describe(getStoryContentRawCode.name, () => {
   describe('When a `<Story />` is a self-closing tag...', () => {
-    it('works when `template` attribute was provided with a reference to snippet at the root of fragment', async () => {
+    it('prints the snippet that the `template` attribute references', async () => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";
@@ -41,7 +41,7 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe('<SomeComponent {...args} />');
     });
 
-    it('works when `render` is set in `defineMeta`', async () => {
+    it('prints the `render` snippet of `defineMeta`', async () => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";
@@ -75,7 +75,7 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe('<SomeComponent {...args} />');
     });
 
-    it('works implicit `template` attribute takes precedence over `render` in `defineMeta`', async () => {
+    it('prints the `template` attribute snippet over the `render` snippet of `defineMeta`', async () => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";
@@ -113,7 +113,7 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe(`<SomeComponent wins="templateAttribute" {...args} />`);
     });
 
-    it('works when no `render` in `defineMeta`, no `template` attribute, just a story', async () => {
+    it('prints the meta component with the args without `render` or `template`', async () => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";
@@ -202,7 +202,7 @@ describe(getStoryContentRawCode.name, () => {
   });
 
   describe('When a `<Story />` is NOT a self-closing tag...', () => {
-    it('works when a static children content provided with asChild', async () => {
+    it('prints the static children of an `asChild` story', async () => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";
@@ -233,7 +233,7 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe(`<h1>Static content</h1>`);
     });
 
-    it('works when a static children content provided as a child to the component', async () => {
+    it('wraps the static children in the meta component', async () => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";
@@ -299,7 +299,7 @@ describe(getStoryContentRawCode.name, () => {
         </Input.Select>`);
     });
 
-    it("works when a `template` svelte's snippet block used inside", async () => {
+    it('prints the content of a `template` snippet inside the story', async () => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";
@@ -369,7 +369,7 @@ describe(getStoryContentRawCode.name, () => {
       expect(rawSource).toBe(`<SomeComponent wins="inner-template" {...args} />`);
     });
 
-    it('works when a static children content provided without component in defineMeta', async () => {
+    it('prints the static children when `defineMeta` has no component', async () => {
       const code = `
         <script module>
           import { defineMeta } from "@storybook/svelte";

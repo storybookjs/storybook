@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call.ts';
 
 describe(createVariableFromRuntimeStoriesCall.name, () => {
-  it('creates a variable correctly', () => {
+  it('declares the stories from createRuntimeStories() with the stories function and the meta', () => {
     const stringified = print(
       createVariableFromRuntimeStoriesCall({
         storiesFunctionDeclaration: {

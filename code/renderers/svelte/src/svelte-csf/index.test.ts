@@ -15,7 +15,7 @@ import type {
 import Button from '../__test__/svelte-csf/button.svelte';
 
 describe(defineMeta.name, () => {
-  it('works with provided meta entry "component" entry', () => {
+  it('types the args, the play context and the Story component from the meta component', () => {
     const { Story } = defineMeta({
       component: Button,
       args: {

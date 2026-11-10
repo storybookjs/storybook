@@ -22,7 +22,7 @@ import { extractStoriesNodesFromExportDefaultFn } from '../../../parser/extract/
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 describe(transformStory.name, () => {
-  it("each transformed compiled 'Story' component matches inlined snapshots", async () => {
+  it('adds the description and the raw code to the parameters of each compiled Story component', async () => {
     const filename = path.resolve(
       __dirname,
       '../../../../__test__/svelte-csf/example.stories.svelte'

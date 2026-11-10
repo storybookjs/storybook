@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { createRuntimeStoriesImport } from './create-import.ts';
 
 describe(createRuntimeStoriesImport.name, () => {
-  it('creates import correctly', () => {
+  it('imports createRuntimeStories from the internal entry', () => {
     const stringified = print(createRuntimeStoriesImport(), ts()).code;
 
     expect(stringified).toMatchInlineSnapshot(

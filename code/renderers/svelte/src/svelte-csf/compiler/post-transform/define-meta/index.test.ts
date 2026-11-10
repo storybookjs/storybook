@@ -20,7 +20,7 @@ import { replaceDefineMetaArgument } from './replace-argument.ts';
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 describe(transformDefineMeta.name, () => {
-  it("transformed 'defineMeta' matches inlined snapshot", async () => {
+  it('passes the $__meta variable to defineMeta()', async () => {
     const filename = path.resolve(
       __dirname,
       '../../../../__test__/svelte-csf/example.stories.svelte'
@@ -58,7 +58,7 @@ describe(transformDefineMeta.name, () => {
 });
 
 describe(createMetaVariableDeclaration.name, () => {
-  it('parameters are transformed correctly', async () => {
+  it('declares the meta with the component description in its parameters', async () => {
     const filename = path.resolve(
       __dirname,
       '../../../../__test__/svelte-csf/example.stories.svelte'

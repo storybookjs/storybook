@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { createExportOrderVariableDeclaration } from './create-export-order.ts';
 
 describe(createExportOrderVariableDeclaration.name, () => {
-  it('correctly creates a variable with named exports order', () => {
+  it('exports the order of the stories by export name', () => {
     const stringified = print(
       createExportOrderVariableDeclaration({
         storiesIdentifiers: [

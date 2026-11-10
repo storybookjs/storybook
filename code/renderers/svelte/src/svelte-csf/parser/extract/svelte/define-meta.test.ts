@@ -6,7 +6,7 @@ import { getSvelteAST, type ESTreeAST } from '../../ast.ts';
 import { extractSvelteASTNodes } from './nodes.ts';
 
 describe(extractDefineMetaPropertiesNodes.name, () => {
-  it('extracts correctly selected properties', async () => {
+  it('extracts the selected properties that defineMeta() sets', async () => {
     const ast = getSvelteAST({
       code: `
         <script module>

@@ -18,7 +18,7 @@ import { extractCompiledASTNodes } from '../../parser/extract/compiled/nodes.ts'
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 describe(transformStoriesCode.name, () => {
-  it('transformed code matches inlined snapshot', async () => {
+  it('appends the runtime stories, the default export and the named story exports', async () => {
     const filename = path.resolve(__dirname, '../../../__test__/svelte-csf/example.stories.svelte');
     const originalCode = fs.readFileSync(filename).toString();
     const compiledCode = compile(originalCode, { filename, dev: true }).js.code;
@@ -76,7 +76,7 @@ describe(transformStoriesCode.name, () => {
     `);
   });
 
-  it('works with empty object and array literals', async () => {
+  it('adds the descriptions and the raw code with empty object and array literals', async () => {
     const filename = 'Empty.stories.svelte';
     const originalCode = dedent`
       <script module>

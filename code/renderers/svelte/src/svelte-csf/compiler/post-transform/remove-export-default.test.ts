@@ -14,7 +14,7 @@ import { extractCompiledASTNodes } from '../../parser/extract/compiled/nodes.ts'
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 describe(removeExportDefault.name, () => {
-  it('removes the compiled export default correctly', async () => {
+  it('removes the export default of the compiled stories file', async () => {
     const filename = path.resolve(__dirname, '../../../__test__/svelte-csf/example.stories.svelte');
     const originalCode = fs.readFileSync(filename).toString();
     const compiledCode = compile(originalCode, { filename, dev: true }).js.code;

@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 import { createNamedExportStories } from './create-named-export-stories.ts';
 
-describe(createNamedExportStories, () => {
-  it('works', () => {
+describe(createNamedExportStories.name, () => {
+  it('exports each story variable under its export name', () => {
     const namedExportDeclaration = createNamedExportStories({
       storiesIdentifiers: [
         {

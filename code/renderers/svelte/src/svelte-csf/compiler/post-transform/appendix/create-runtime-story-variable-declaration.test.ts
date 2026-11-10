@@ -7,8 +7,8 @@ import { createASTArrayExpression, createASTIdentifier } from '../../../parser/a
 import { createRuntimeStoryVariableDeclaration } from './create-runtime-story-variable-declaration.ts';
 import { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call.ts';
 
-describe(createRuntimeStoryVariableDeclaration, () => {
-  it('correctly creates a runtime story variable', () => {
+describe(createRuntimeStoryVariableDeclaration.name, () => {
+  it('declares a story from the runtime stories with the svelte-csf-v5 tag', () => {
     const stringified = print(
       createRuntimeStoryVariableDeclaration({
         exportName: 'Default',

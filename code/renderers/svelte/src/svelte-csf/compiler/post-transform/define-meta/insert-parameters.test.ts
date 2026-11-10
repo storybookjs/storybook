@@ -21,7 +21,7 @@ describe(insertDefineMetaParameters.name, () => {
     vi.clearAllMocks();
   });
 
-  it('works when defineMeta gets an empty object', async () => {
+  it('inserts the parameters into an empty defineMeta() object', async () => {
     const code = dedent`
       <script module>
         import { defineMeta } from "${SVELTE_CSF_RENDERER_IMPORT_SOURCE}";

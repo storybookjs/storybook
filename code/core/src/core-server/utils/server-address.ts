@@ -58,10 +58,53 @@ export function getServerAddresses(
 
 interface PortOptions {
   exactPort?: boolean;
+  host?: string;
 }
 
-export const getServerPort = (port?: number, { exactPort }: PortOptions = {}) =>
-  detectFreePort(port)
+// Without a hostname, detect-port reads the network interfaces in a listen callback, where a
+// throw cannot be caught. Probe the listen host directly when the interfaces cannot be read.
+const canReadNetworkInterfaces = () => {
+  try {
+    os.networkInterfaces();
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const tryListen = (port: number, host: string) =>
+  new Promise<number>((resolve, reject) => {
+    const server = net.createServer();
+    server.once('error', reject);
+    server.listen(port, host, () => {
+      const { port: freePort } = server.address() as AddressInfo;
+      server.close(() => resolve(freePort));
+    });
+  });
+
+// Tries the same ports as detect-port (the requested one, the next nine, then a random one), but
+// gives up after that. detect-port with a hostname keeps retrying forever when every bind fails.
+const findFreePortOnHost = async (port: number | undefined, host: string) => {
+  const candidates = port
+    ? Array.from({ length: Math.min(10, 65535 - port) }, (_, i) => port + i)
+    : [];
+  for (const candidate of [...candidates, 0]) {
+    try {
+      return await tryListen(candidate, host);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'EADDRNOTAVAIL') {
+        return undefined;
+      }
+    }
+  }
+  return undefined;
+};
+
+export const getServerPort = (port?: number, { exactPort, host }: PortOptions = {}) =>
+  (canReadNetworkInterfaces()
+    ? detectFreePort(port)
+    : findFreePortOnHost(port, getListenHost(host))
+  )
     .catch((error) => {
       logger.error(error);
       process.exit(-1);
@@ -85,8 +128,17 @@ export const getServerChannelUrl = (port: number, { https }: { https?: boolean }
   return `${https ? 'wss' : 'ws'}://127.0.0.1:${port}${SERVER_CHANNEL_PATH}`;
 };
 
+// Sandboxed environments can deny listing the network interfaces, which makes Node throw.
+export const getNetworkInterfaces = () => {
+  try {
+    return os.networkInterfaces();
+  } catch {
+    return {};
+  }
+};
+
 const getExternalIpv4Addresses = () =>
-  Object.values(os.networkInterfaces())
+  Object.values(getNetworkInterfaces())
     .flat()
     .filter((ip) => ip && ip.family === 'IPv4' && !ip.internal)
     .map((ip) => ip!.address);

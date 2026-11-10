@@ -1,16 +1,18 @@
-import { describe, expect, it, vi } from 'vitest';
+import os from 'node:os';
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getHostValidationMiddleware, isValidHost } from '../getHostValidationMiddleware.ts';
 
 vi.mock('node:os', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:os')>();
-  const networkInterfaces = () => ({
+  const networkInterfaces = vi.fn(() => ({
     lo: [{ address: '127.0.0.1', family: 'IPv4', internal: true }],
     eth0: [
       { address: '10.1.2.3', family: 'IPv4', internal: false },
       { address: 'fe80::1', family: 'IPv6', internal: false },
     ],
-  });
+  }));
   return { ...actual, default: { ...actual, networkInterfaces }, networkInterfaces };
 });
 
@@ -333,5 +335,21 @@ describe('isValidHost', () => {
     expect(isValidHost('my-host.com:6006', optionsWithHostname)).toBe(true);
     expect(isValidHost('my-host.com', optionsWithHostname)).toBe(true);
     expect(isValidHost('other-host.com:6006', optionsWithHostname)).toBe(false);
+  });
+});
+
+describe('when the network interfaces cannot be read', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.mocked(os.networkInterfaces).mockImplementationOnce(() => {
+      throw new Error('uv_interface_addresses returned Unknown system error 1');
+    });
+  });
+
+  it('only allows known hosts', async () => {
+    const { isValidHost } = await import('../getHostValidationMiddleware.ts');
+    const options = { localAddress: 'http://localhost:6006', allowedHosts: [] };
+    expect(isValidHost('localhost:6006', options)).toBe(true);
+    expect(isValidHost('10.1.2.3:6006', options)).toBe(false);
   });
 });

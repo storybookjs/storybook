@@ -460,8 +460,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   };
 
   let urlFilterTelemetryEmitted = false;
-  // The index most recently passed to `setIndex`, which `internal_index` lags until React commits
-  let latestIndexInput: API_PreparedStoryIndex | undefined;
 
   const addFilters = async (
     type: FilterType,
@@ -814,14 +812,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     // The story index we receive on fetchStoryIndex is not, but all the prepared fields are optional
     // so we can cast one to the other easily enough
     setIndex: async (input) => {
-      latestIndexInput = input;
+      const { filteredIndex: oldFilteredHash, index: oldHash, filters } = store.getState();
       const allStatuses = fullStatusStore.getAll();
-      // Run filters here, not in the updater, so a throwing filter reaches the caller's catch.
-      // `setFilters` re-runs `setIndex` once its filters are committed.
       const newFilteredHash = transformStoryIndexToStoriesHash(input, {
         provider,
         docsOptions,
-        filters: store.getState().filters,
+        filters,
         allStatuses,
         statusFilterKey: STATUS_FILTER,
       });
@@ -832,14 +828,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         allStatuses,
       });
 
-      // Merge prepared stories from the state at commit time: `getState()` lags behind
-      // uncommitted updates
-      await store.setState((state) => ({
+      await store.setState({
         internal_index: input,
-        filteredIndex: addPreparedStories(newFilteredHash, state.filteredIndex),
-        index: addPreparedStories(newHash, state.index),
+        filteredIndex: addPreparedStories(newFilteredHash, oldFilteredHash),
+        index: addPreparedStories(newHash, oldHash),
         indexError: undefined,
-      }));
+      });
     },
     // FIXME: is there a bug where filtered stories get added back in on updateStory???
     updateStory: async (
@@ -848,23 +842,22 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       ref?: API_ComposedRef
     ): Promise<void> => {
       if (!ref) {
-        const patchEntry = (hash: API_IndexHash | undefined) => {
-          if (hash?.[storyId]) {
-            hash[storyId] = { ...hash[storyId], ...update } as API_StoryEntry;
-          }
-          return hash;
-        };
-        // Mutate in place so STORY_PREPARED listeners (e.g. `useParameter`) can read the update
-        // through `getState()` before React commits it.
         const { index, filteredIndex } = store.getState();
-        patchEntry(index);
-        patchEntry(filteredIndex);
-        // Commit against the state at commit time, which may hold an index `getState()` lags behind
-        await store.setState((state) => ({
-          index: state.index === index ? index : patchEntry(state.index),
-          filteredIndex:
-            state.filteredIndex === filteredIndex ? filteredIndex : patchEntry(state.filteredIndex),
-        }));
+        if (index && index[storyId]) {
+          index[storyId] = {
+            ...index[storyId],
+            ...update,
+          } as API_StoryEntry;
+        }
+        if (filteredIndex && filteredIndex[storyId]) {
+          filteredIndex[storyId] = {
+            ...filteredIndex[storyId],
+            ...update,
+          } as API_StoryEntry;
+        }
+        if (index || filteredIndex) {
+          await store.setState({ index, filteredIndex });
+        }
       } else {
         const { id: refId, index, filteredIndex }: any = ref;
         // Cache the runtime enrichment on the ref so it survives index (re)builds in `setRef` and is
@@ -1065,7 +1058,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   };
 
   const applyCurrentFilters = async () => {
-    const index = latestIndexInput ?? store.getState().internal_index;
+    const { internal_index: index } = store.getState();
 
     if (!index) {
       return false;

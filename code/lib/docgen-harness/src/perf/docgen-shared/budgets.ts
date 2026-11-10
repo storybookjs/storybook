@@ -12,6 +12,9 @@ export interface MemoryBudgets {
 
 const MEMORY_BUDGETS: Partial<Record<EngineId, MemoryBudgets>> = {
   'react-osa': { maxTransientMb: 90, maxRetainedGrowthMb: 60, maxRetainedSlopeMb: 3 },
+  // The same work on the native API of TypeScript 7.1. These figures are the V8 heap of the docgen
+  // process only: the TypeScript compiler runs in its own process, which the gate does not measure.
+  'react-osa-native': { maxTransientMb: 90, maxRetainedGrowthMb: 60, maxRetainedSlopeMb: 3 },
 };
 
 export function memoryBudgetsFor(engine: EngineId): MemoryBudgets {

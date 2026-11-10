@@ -309,7 +309,7 @@ The slope there measures that growth as well as any leak, which is why its budge
 
 `react-osa-native` is `react-osa` on the native API of TypeScript 7.1 (the `typescript-native` alias) instead of the compiler API of this package's `typescript`.
 It is the same `ComponentMetaManager`, so the pair `react-native-api` compares the two APIs on equal work, and both children report the props they documented.
-It stays out of the default run until it has a budget row; measure it with `--engine react-osa --engine react-osa-native`.
+It is in the default run, so the daily gate measures it beside `react-osa`.
 
 Pinned profile on the dev box (8 cores, Node 22, TypeScript 6.0.3 against 7.1.0-beta):
 
@@ -334,7 +334,7 @@ Warm, both shapes favour the native API, and its retained growth and slope are t
 
 `angular-cm` and `angular-cm-native` run `AngularComponentMetaManager` from `@storybook/angular-cm` over the generated Angular project (100 components, 8 extra inputs each, a stub `@angular/core`), on the compiler API of this package's `typescript` and on the native API of the `typescript-native` alias.
 A save rewrites one component with one more input; the manager notices it through its mtime check, as the docgen server does.
-Both stay out of the default run until they have budget rows; measure them with `--engine angular-cm --engine angular-cm-native`.
+Both are in the default run, so the daily gate measures the pair.
 
 Pinned profile on the dev box (8 cores, Node 22, TypeScript 6.0.3 against 7.1.0-beta):
 

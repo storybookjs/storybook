@@ -2640,11 +2640,7 @@ describe('StoryIndexGenerator', () => {
         options
       );
 
-      /**
-       * Wraps the CSF indexer so that, once armed, indexing `B.stories.ts` waits until the test
-       * releases it. That leaves room to change the file while its extraction is in flight.
-       */
-      const createPausingIndexer = ({ fail = false } = {}) => {
+      const createIndexerPausingOnB = ({ fail = false } = {}) => {
         let armed: { reached: () => void; gate: Promise<void> } | undefined;
         const indexer: Indexer = {
           test: csfIndexer.test,
@@ -2675,10 +2671,16 @@ describe('StoryIndexGenerator', () => {
       };
 
       it.each([
-        { case: 'returns its stories', fail: false },
-        { case: 'fails to read it', fail: true },
-      ])('does not bring back a file removed while its extraction $case', async ({ fail }) => {
-        const { indexer, arm } = createPausingIndexer({ fail });
+        {
+          case: 'does not bring back a file removed while its extraction ran',
+          fail: false,
+        },
+        {
+          case: 'discards the error of an extraction that ran while its file was removed',
+          fail: true,
+        },
+      ])('$case', async ({ fail }) => {
+        const { indexer, arm } = createIndexerPausingOnB({ fail });
         const generator = new StoryIndexGenerator([specifier], { ...options, indexers: [indexer] });
         await generator.initialize();
         await generator.getIndex();
@@ -2695,7 +2697,7 @@ describe('StoryIndexGenerator', () => {
       });
 
       it('extracts a file again when it changes while its extraction is in flight', async () => {
-        const { indexer, arm } = createPausingIndexer();
+        const { indexer, arm } = createIndexerPausingOnB();
         const createIndexSpy = vi.spyOn(indexer, 'createIndex');
         const generator = new StoryIndexGenerator([specifier], { ...options, indexers: [indexer] });
         await generator.initialize();
@@ -2713,8 +2715,8 @@ describe('StoryIndexGenerator', () => {
         expect(createIndexSpy).toHaveBeenCalledTimes(2);
       });
 
-      it('does not cache an index computed before another file changed', async () => {
-        const { indexer, arm } = createPausingIndexer();
+      it('does not hand a story file that changed during the stories pass to the docs pass', async () => {
+        const { indexer, arm } = createIndexerPausingOnB();
         const generator = new StoryIndexGenerator([specifier], { ...options, indexers: [indexer] });
         await generator.initialize();
         await generator.getIndex();
@@ -2730,12 +2732,35 @@ describe('StoryIndexGenerator', () => {
         expect(Object.keys((await generator.getIndex()).entries)).toContain('a--story-one');
       });
 
+      it('does not cache an index computed before another file changed', async () => {
+        let removeDuringSort = false;
+        const generator = new StoryIndexGenerator([specifier], {
+          ...options,
+          storySorts: [
+            () => {
+              if (removeDuringSort) {
+                removeDuringSort = false;
+                generator.invalidate('./src/A.stories.js', true);
+              }
+              return 0;
+            },
+          ],
+        });
+        await generator.initialize();
+        await generator.getIndex();
+
+        generator.invalidate('./src/B.stories.ts', false);
+        removeDuringSort = true;
+        await generator.getIndex();
+
+        expect(Object.keys((await generator.getIndex()).entries)).not.toContain('a--story-one');
+      });
+
       it('drops a file that no longer exists instead of reporting an indexing error', async () => {
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         const before = Object.keys((await generator.getIndex()).entries);
 
-        // The watcher reported a change, but the file was deleted before it could be read
         generator.invalidate('./src/Deleted.stories.ts', false);
 
         expect(Object.keys((await generator.getIndex()).entries)).toEqual(before);

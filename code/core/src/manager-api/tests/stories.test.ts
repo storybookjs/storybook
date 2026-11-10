@@ -1433,6 +1433,24 @@ describe('stories API', () => {
         parameters: { backgrounds: { disable: false } },
       });
     });
+    it('keeps the index and entry references stable once the update is committed', async () => {
+      // The sidebar memoizes on `index`; `useParameter` holds the entry it read synchronously
+      const moduleArgs = {
+        ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }),
+        store: createCommitLaggingStore(),
+      };
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider, store } = moduleArgs;
+      await api.setIndex({ v: 5, entries: mockEntries });
+      const index = store.getState().index;
+
+      provider.channel.emit(STORY_PREPARED, { id: 'component-a--story-1', parameters: {} });
+      const entry = store.getState().index!['component-a--story-1'];
+      await wait(0);
+
+      expect(store.getState().index).toBe(index);
+      expect(store.getState().index!['component-a--story-1']).toBe(entry);
+    });
     it('keeps stories added by a not-yet-committed setIndex', async () => {
       const moduleArgs = {
         ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }),

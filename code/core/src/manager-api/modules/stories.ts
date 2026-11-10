@@ -861,8 +861,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         patchEntry(filteredIndex);
         // Commit against the state at commit time, which may hold an index `getState()` lags behind
         await store.setState((state) => ({
-          index: patchEntry(state.index),
-          filteredIndex: patchEntry(state.filteredIndex),
+          index: state.index === index ? index : patchEntry(state.index),
+          filteredIndex:
+            state.filteredIndex === filteredIndex ? filteredIndex : patchEntry(state.filteredIndex),
         }));
       } else {
         const { id: refId, index, filteredIndex }: any = ref;

@@ -460,6 +460,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   };
 
   let urlFilterTelemetryEmitted = false;
+  // The index most recently passed to `setIndex`, which `internal_index` lags until React commits
+  let latestIndexInput: API_PreparedStoryIndex | undefined;
 
   const addFilters = async (
     type: FilterType,
@@ -812,6 +814,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     // The story index we receive on fetchStoryIndex is not, but all the prepared fields are optional
     // so we can cast one to the other easily enough
     setIndex: async (input) => {
+      latestIndexInput = input;
       const allStatuses = fullStatusStore.getAll();
       // Run filters here, not in the updater, so a throwing filter reaches the caller's catch.
       // `setFilters` re-runs `setIndex` once its filters are committed.
@@ -1061,7 +1064,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   };
 
   const applyCurrentFilters = async () => {
-    const { internal_index: index } = store.getState();
+    const index = latestIndexInput ?? store.getState().internal_index;
 
     if (!index) {
       return false;

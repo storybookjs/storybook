@@ -2298,6 +2298,31 @@ describe('stories API', () => {
       }
     });
 
+    it('keeps a not-yet-committed index when a status change rebuilds it', async () => {
+      fullStatusStore.unset();
+      const moduleArgs = { ...createMockModuleArgs({}), store: createCommitLaggingStore() };
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+      const { 'component-b--story-3': newStory, ...oldEntries } = mockEntries;
+      await api.setIndex({ v: 5, entries: oldEntries });
+
+      const indexSet = api.setIndex({ v: 5, entries: mockEntries });
+      fullStatusStore.set([
+        {
+          typeId: 'addon-id',
+          storyId: 'component-a--story-1',
+          value: 'status-value:error',
+          title: 'title',
+          description: 'desc',
+        },
+      ]);
+      await indexSet;
+      await wait(600);
+
+      expect(store.getState().index).toHaveProperty('component-b--story-3');
+      expect(store.getState().internal_index!.entries).toHaveProperty('component-b--story-3');
+    });
+
     it('applies the last status update after a burst (trailing edge of the throttle)', async () => {
       vi.useFakeTimers();
       try {

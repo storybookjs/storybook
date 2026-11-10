@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
@@ -9,8 +9,13 @@ const agentCells = checklist
   .split('\n')
   .filter((line) => line.startsWith('| '))
   .map((line) => line.split(/(?<!\\)\|/).map((cell) => cell.trim()))
-  .filter((cells) => cells.length >= 8 && cells[1] !== 'Row' && !(cells[1] ?? '').startsWith('-'))
-  .map((cells) => cells[6] ?? '');
+  .filter((cells) => cells.length >= 7 && cells[1] !== 'Row' && !(cells[1] ?? '').startsWith('-'))
+  .map((cells) => cells[5] ?? '');
+
+// Test paths in the Agent column are relative to code/, except the kitchen-sink's e2e-tests/.
+const testRoots = ['../../code/', '../../test-storybooks/portable-stories-kitchen-sink/react/'];
+const testExists = (path: string) =>
+  testRoots.some((root) => existsSync(new URL(root + path, import.meta.url)));
 
 describe('check registry', () => {
   it('has unique ids', () => {
@@ -42,5 +47,13 @@ describe('check registry', () => {
       .map((cell) => cell.replace('planned:', '').trim())
       .filter((id) => CHECK_IDS.includes(id as never));
     expect(stale).toEqual([]);
+  });
+
+  it('names only test files that exist in monorepo and e2e notes', () => {
+    const paths = agentCells
+      .filter((cell) => cell.startsWith('monorepo:') || cell.includes('e2e:'))
+      .flatMap((cell) => [...cell.matchAll(/`([^`]+\.(?:spec|test)\.ts)`/g)].map((m) => m[1]!));
+    const missing = paths.filter((path) => !testExists(path));
+    expect(missing).toEqual([]);
   });
 });

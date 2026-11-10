@@ -69,14 +69,6 @@ export const CHECKS = [
       'Pick a `docs` entry from `index.json`, open its iframe URL with the shot tool, and check for page errors and visible body text.',
   },
   {
-    id: 'core.controls',
-    label: 'Changing a control rerenders the story',
-    phase: 'dev',
-    tier: 'must',
-    probe:
-      'Open a story with Controls, change one value through the URL `args` parameter or the Controls panel, and take a screenshot before and after.',
-  },
-  {
     id: 'core.hmr.stories-file',
     label: 'Editing a stories file updates the running Storybook (HMR)',
     phase: 'dev',

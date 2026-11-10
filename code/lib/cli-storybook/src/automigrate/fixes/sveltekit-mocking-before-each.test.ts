@@ -1967,6 +1967,62 @@ describe('sveltekit-mocking-before-each', () => {
       );
     });
 
+    it('reports the spreads whose docs `inline: false` would read again or merge', async () => {
+      const csf = dedent`
+        import { makeParameters } from './shared';
+
+        export default { tags: ['autodocs'], parameters: { ...makeParameters(), sveltekit_experimental: { state: { page: { status: 1 } } } } };
+        export const A = {};
+      `;
+      const svelte = dedent`
+        <script module>
+          import { defineMeta } from '@storybook/sveltekit';
+          import { base, local } from './shared';
+
+          const { Story } = defineMeta({ tags: ['autodocs'], parameters: { ...base, ...local } });
+        </script>
+
+        <Story name="A" parameters={{ sveltekit_experimental: { state: { page: { status: 1 } } } }} />
+      `;
+      const result = await migrate({ csf, svelte });
+
+      expect(result.csf).toBe(csf);
+      expect(result.svelte).toBe(svelte);
+      expect(result.failures).toHaveLength(2);
+      expect(result.failures[0]).toContain('line 3: The file has a docs page');
+      expect(result.failures[1]).toContain('line 5: The file has a docs page');
+    });
+
+    it('renders in iframes the stories of a docs page whose spies an aliased import keeps', async () => {
+      const { csf, svelte } = await migrate({
+        csf: dedent`
+          import { goto as navigate } from '$app/navigation';
+          import { fn } from 'storybook/test';
+
+          const goto = fn();
+          export default { tags: ['autodocs'] };
+          export const A = { parameters: { sveltekit_experimental: { navigation: { goto } } } };
+        `,
+        svelte: dedent`
+          <script module>
+            import { goto as navigate } from '$app/navigation';
+            import { defineMeta } from '@storybook/sveltekit';
+            import { fn } from 'storybook/test';
+
+            const goto = fn();
+            const { Story } = defineMeta({ tags: ['autodocs'] });
+          </script>
+
+          <Story name="A" parameters={{ sveltekit_experimental: { navigation: { goto } } }} />
+        `,
+      });
+
+      expect(csf).toContain('mocked(navigate).mockImplementation(');
+      expect(csf).toContain('inline: false');
+      expect(svelte).toContain('mocked(navigate).mockImplementation(');
+      expect(svelte).toContain('inline: false');
+    });
+
     it('renders in iframes the stories that an MDX docs page imports through `$lib`', async () => {
       const storyPath = resolve(project, 'src/lib/Page.stories.ts');
       const mdxPath = resolve(project, 'src/docs/Page.mdx');

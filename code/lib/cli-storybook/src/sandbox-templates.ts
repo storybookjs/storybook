@@ -136,6 +136,7 @@ export type Template = {
    * page or the repro CLI command.
    */
   isInternal?: boolean;
+  docgenBaselinesFrom?: string;
 };
 
 type BaseTemplates = Template & {
@@ -326,6 +327,45 @@ export const baseTemplates = {
     },
     skipTasks: ['bench'],
     typeCheck: true,
+  },
+  'react-vite/typescript-7-ts': {
+    name: 'React with TypeScript 7.1 Latest (Vite | TypeScript)',
+    script: 'npm create vite --yes {{beforeDir}} -- --template react-ts',
+    expected: {
+      framework: '@storybook/react-vite',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
+      // React's docgen server reads component types through TypeScript's native API, which 7.0
+      // does not have. The beta is pinned exactly: a range such as `^7.1.0-beta` also matches the
+      // nightly `7.1.0-dev.*` builds. TODO: Use `^7.1` once TypeScript 7.1 is stable.
+      extraDevDependencies: [
+        'prop-types',
+        '@types/prop-types',
+        '@storybook/addon-mcp',
+        'typescript@7.1.0-beta',
+      ],
+      editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
+      mainConfig: {
+        features: {
+          developmentModeForBuild: true,
+          experimentalTestSyntax: true,
+          // React turns both on by default. They are set here so that the docgen baselines cover
+          // this sandbox, and so that builder docgen cannot stand in for a broken docgen server.
+          componentsManifest: true,
+          docgenServer: true,
+        },
+      },
+    },
+    // Chromatic would only repeat `react-vite/default-ts`: the stories render the same.
+    skipTasks: ['bench', 'chromatic'],
+    typeCheck: true,
+    // TODO: Remove in a follow-up PR, once the nightly generate-sandboxes run has published this
+    // template to storybookjs/sandboxes. Until then CI generates it in each run.
+    inDevelopment: true,
+    isInternal: true,
   },
   'react-vite/prerelease-ts': {
     name: 'React Prerelease (Vite | TypeScript)',
@@ -712,6 +752,55 @@ export const baseTemplates = {
     skipTasks: ['bench'],
     initOptions: { builder: SupportedBuilder.VITE },
   },
+  'angular-vite/typescript-7-ts': {
+    name: 'Angular CLI with TypeScript 7.1 Latest (Vite | TypeScript)',
+    script:
+      'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    modifications: {
+      // See `angular-vite/default-ts` for the Angular packages and Compodoc. Angular's compiler
+      // needs TypeScript 6, so `typescript` stays on 6 and TypeScript 7 is installed beside it, as
+      // the TypeScript docs page tells Angular projects to do. The beta is pinned exactly, as in
+      // `react-vite/typescript-7-ts`. TODO: Use `^7.1` once TypeScript 7.1 is stable.
+      extraDependencies: [
+        '@angular/forms@^22',
+        '@angular/animations@^22',
+        'typescript@^6',
+        '@typescript/native@npm:typescript@7.1.0-beta',
+        '@compodoc/compodoc',
+      ],
+      extraDevDependencies: ['@storybook/addon-mcp'],
+      editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
+      useCsfFactory: true,
+      mainConfig: {
+        features: {
+          componentsManifest: true,
+          // Builder docgen cannot stand in for a docgen server that fails to load TypeScript 7.1.
+          docgenServer: true,
+        },
+        typescript: {
+          docgenSpecifier: '@typescript/native',
+        },
+      },
+    },
+    extraCiSteps: {
+      ensureMinNodeVersion: true,
+    },
+    minAgeGateExemptions: ['@analogjs/vite-plugin-angular'],
+    expected: {
+      framework: '@storybook/angular-vite',
+      renderer: '@storybook/angular-vite',
+      builder: '@storybook/builder-vite',
+    },
+    // Chromatic would only repeat `angular-vite/default-ts`: the stories render the same.
+    skipTasks: ['bench', 'chromatic'],
+    initOptions: { builder: SupportedBuilder.VITE },
+    // TODO: Remove in a follow-up PR, once the nightly generate-sandboxes run has published this
+    // template to storybookjs/sandboxes. Until then CI generates it in each run.
+    inDevelopment: true,
+    isInternal: true,
+    // TypeScript 7.1 must read the same component types as TypeScript 6 does.
+    docgenBaselinesFrom: 'angular-vite/default-ts',
+  },
   'lit-vite/default-ts': {
     name: 'Lit Latest (Vite | TypeScript)',
     script:
@@ -1036,6 +1125,8 @@ export const daily: TemplateKey[] = [
   // Re-enable once storybook-builder-rsbuild releases a version that works with Storybook 11.
   // 'vue3-rsbuild/default-ts',
   'angular-vite/21-ts',
+  'react-vite/typescript-7-ts',
+  'angular-vite/typescript-7-ts',
   'react-vite/default-js',
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',

@@ -75,10 +75,8 @@ function createMockStore(initialState: Partial<State> = {}) {
     }),
   } as any as Store;
 }
-/**
- * Like the real React-backed store, `getState()` only reflects a `setState()` once it is committed,
- * which happens later and in order.
- */
+// Like the real React-backed store, `getState()` only reflects a `setState()` once it is committed,
+// which happens later and in order.
 function createCommitLaggingStore(initialState: Partial<State> = { filters: {}, status: {} }) {
   let committed = initialState;
   let pending: Array<Partial<State> | ((s: Partial<State>) => Partial<State>)> = [];
@@ -686,6 +684,9 @@ describe('stories API', () => {
 
       expect(store.getState().indexError).toEqual(new Error('filter failed'));
       expect(store.getState().index).toBe(previousIndex);
+
+      // Status updates in later tests would otherwise re-run the throwing filter
+      await store.setState({ filters: {} });
     });
     it('watches for the INVALIDATE event and re-fetches -- and resets the hash', async () => {
       fetch.mockReturnValue(

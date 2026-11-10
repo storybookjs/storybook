@@ -3,7 +3,7 @@ import {
   expectAllStoryExportsInDisplayReview,
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
-  expectSkillInvoked,
+  expectAnyWorkflowSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
@@ -53,10 +53,8 @@ describe('creating an accessible ToggleSwitch', () => {
     // must not be guessed or read out of node_modules.
     test('uses the documentation tooling', () => expectWorkflowCalls(['docs-show']));
 
-    test.skipIf(integration === 'mcp')('invokes the skill of each of these steps', () => {
-      for (const skill of WORKFLOW_SKILLS) {
-        expectSkillInvoked(skill);
-      }
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
     });
 
     test.skipIf(integration !== 'plugin')(

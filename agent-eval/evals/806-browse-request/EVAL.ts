@@ -1,7 +1,7 @@
 import {
   expectDisplayReviewForBrowseRequest,
   expectDevServerLeftRunning,
-  expectSkillInvoked,
+  expectAnyWorkflowSkillInvoked,
   expectStoryIdsInDisplayReview,
   expectWorkflowCalls,
   getEvalContext,
@@ -30,8 +30,8 @@ describe('browsing existing ReviewCard Storybook states', () => {
       expectWorkflowCalls(['ui-review']);
     });
 
-    test.skipIf(integration === 'mcp')('invokes the ui-review skill', () => {
-      expectSkillInvoked('ui-review');
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
     });
 
     test.skipIf(integration !== 'plugin')(

@@ -1,10 +1,11 @@
 import {
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
-  expectSkillInvoked,
+  expectAnyWorkflowSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
+  expectWorkflowCalls,
   getEvalContext,
   getWorkflowCalls,
   getWorkflowToolResults,
@@ -30,6 +31,10 @@ describe('changing a shared accent token and surfacing consumer stories', () => 
     await expectStoryTestsRanAndPassed({
       covering: ['badge', 'statuspill'],
     });
+  });
+
+  test('runs the skill of each of these steps', () => {
+    expectWorkflowCalls(WORKFLOW_SKILLS);
   });
 
   describe('reviewing the visual token change', () => {
@@ -71,10 +76,8 @@ describe('changing a shared accent token and surfacing consumer stories', () => 
   describe('depending on the current agent and integration', () => {
     const { integration } = getEvalContext();
 
-    test.skipIf(integration === 'mcp')('invokes the skill of each of these steps', () => {
-      for (const skill of WORKFLOW_SKILLS) {
-        expectSkillInvoked(skill);
-      }
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
     });
 
     test.skipIf(integration !== 'plugin')(

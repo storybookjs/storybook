@@ -2,7 +2,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import {
   expectDisplayReviewForVisualChange,
-  expectSkillInvoked,
+  expectAnyWorkflowSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
@@ -78,11 +78,9 @@ describe('writing stories for a fetching OrderHistory in a project without MSW',
   });
 
   test.skipIf(getEvalContext().integration === 'mcp')(
-    'invokes the skill of each of these steps',
+    'finds the workflow through the plugin skills',
     () => {
-      for (const skill of WORKFLOW_SKILLS) {
-        expectSkillInvoked(skill);
-      }
+      expectAnyWorkflowSkillInvoked();
     }
   );
 });

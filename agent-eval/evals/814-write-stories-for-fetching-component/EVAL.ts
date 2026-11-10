@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest';
 import {
   expectDevServerLeftRunning,
   expectDisplayReviewForVisualChange,
-  expectSkillInvoked,
+  expectAnyWorkflowSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
@@ -65,10 +65,8 @@ describe('writing stories for an existing OrderHistory that fetches its data', (
   describe('depending on the current agent and integration', () => {
     const { integration } = getEvalContext();
 
-    test.skipIf(integration === 'mcp')('invokes the skill of each of these steps', () => {
-      for (const skill of WORKFLOW_SKILLS) {
-        expectSkillInvoked(skill);
-      }
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
     });
 
     test.skipIf(integration !== 'plugin')(

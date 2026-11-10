@@ -1,7 +1,7 @@
 import {
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
-  expectSkillInvoked,
+  expectAnyWorkflowSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
@@ -42,10 +42,8 @@ describe('editing ReviewCard to add date and optional onReport', () => {
       expectWorkflowCalls(['docs-show']);
     });
 
-    test.skipIf(integration === 'mcp')('invokes the skill of each of these steps', () => {
-      for (const skill of WORKFLOW_SKILLS) {
-        expectSkillInvoked(skill);
-      }
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
     });
 
     test.skipIf(integration !== 'plugin')(

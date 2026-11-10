@@ -1,5 +1,5 @@
 import {
-  expectSkillInvoked,
+  expectAnyWorkflowSkillInvoked,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
@@ -35,7 +35,10 @@ describe('fixing failing Button story tests', () => {
     expectWorkflowCalls(['test-stories']);
   });
 
-  test.skipIf(getEvalContext().integration === 'mcp')('invokes the test-stories skill', () => {
-    expectSkillInvoked('test-stories');
-  });
+  test.skipIf(getEvalContext().integration === 'mcp')(
+    'finds the workflow through the plugin skills',
+    () => {
+      expectAnyWorkflowSkillInvoked();
+    }
+  );
 });

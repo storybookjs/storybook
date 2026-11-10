@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest';
 import {
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
-  expectSkillInvoked,
+  expectAnyWorkflowSkillInvoked,
   getEvalContext,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
@@ -50,10 +50,8 @@ describe('creating a Callout in a monorepo UI package', () => {
   describe('depending on the current agent and integration', () => {
     const { integration } = getEvalContext();
 
-    test.skipIf(integration === 'mcp')('invokes the skill of each of these steps', () => {
-      for (const skill of WORKFLOW_SKILLS) {
-        expectSkillInvoked(skill);
-      }
+    test.skipIf(integration === 'mcp')('finds the workflow through the plugin skills', () => {
+      expectAnyWorkflowSkillInvoked();
     });
 
     test.skipIf(integration !== 'plugin')(

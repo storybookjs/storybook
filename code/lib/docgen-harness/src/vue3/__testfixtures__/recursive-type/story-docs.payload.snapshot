@@ -20,6 +20,18 @@ const node = {
   <RecursiveTree :node="node" />
 </template>",
       "summary": undefined,
+      "template": "<script lang="ts" setup>
+import RecursiveTree from './RecursiveTree.vue';
+
+const node = ⟦value node in="script"⟫{
+  value: 'root',
+  children: [{ value: 'leaf', children: [] }],
+}⟧;
+</script>
+
+<template>
+  <RecursiveTree :node="node"⟦props * except=["node"] ~" "⟫⟧ />
+</template>",
     },
   },
 }

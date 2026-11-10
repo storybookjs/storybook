@@ -21,6 +21,7 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
+import { prependToTemplate } from 'storybook/internal/docs-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
 import { printTemplate } from './print-template.ts';
@@ -110,7 +111,7 @@ function storySnippet(
   exportName: string,
   resolved: ResolvedStoryArgs,
   { file, bindings, importOverride, componentName }: StoryContext
-): Pick<StoryDoc, 'snippet' | 'warning'> {
+): Pick<StoryDoc, 'snippet' | 'warning' | 'template'> {
   const story = file.stories.get(exportName);
   const template =
     story?.template ?? (componentName ? `<${componentName} {...args} />` : undefined);
@@ -125,7 +126,7 @@ function storySnippet(
     if (snippet !== undefined) snippets[key] = snippet;
   }
 
-  let markup = printTemplate({
+  const printed = printTemplate({
     code: template,
     args: resolved.args,
     typescript: file.typescript,
@@ -133,6 +134,8 @@ function storySnippet(
     snippets,
     argsComplete: resolved.unresolved.length === 0,
   });
+  let markup = printed.snippet;
+  let holes = printed.template;
   const importBlock = () =>
     buildSnippetImportBlock(markup, {
       bindings,
@@ -155,7 +158,9 @@ function storySnippet(
     for (const name of missing) {
       declared.add(name);
       const { parameters, body } = file.snippets.get(name)!;
-      markup += `\n\n{#snippet ${name}(${parameters})}${body}{/snippet}`;
+      const declaration = `\n\n{#snippet ${name}(${parameters})}${body}{/snippet}`;
+      markup += declaration;
+      holes &&= [...holes, declaration];
     }
     imported = importBlock();
   }
@@ -167,9 +172,12 @@ function storySnippet(
     unresolvedWarning(resolved.unresolved.filter((name) => !imported.declared.includes(name))),
     renders ? RENDER_WARNING : undefined,
   ].filter(Boolean);
+  const importCode = imported.block ? `${imported.block}\n\n` : '';
+  const warning = warnings.length ? warnings.join(' ') : undefined;
   return {
-    snippet: imported.block ? `${imported.block}\n\n${markup}` : markup,
-    ...(warnings.length ? { warning: warnings.join(' ') } : {}),
+    snippet: importCode + markup,
+    ...(warning === undefined ? {} : { warning }),
+    ...(holes === undefined ? {} : { template: prependToTemplate(importCode, holes) }),
   };
 }
 

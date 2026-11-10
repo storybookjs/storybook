@@ -1,0 +1,21 @@
+{
+  "ArgsDefaultRender": "<lit-basic-attributes label="Default render &amp; &lt;changed>" count="4"></lit-basic-attributes>",
+  "DomNode": "const DomNode = () => {
+  const el = document.createElement('lit-basic-attributes');
+  el.setAttribute('label', String('Open panel & <changed>'));
+  el.setAttribute('count', String(8));
+  if (true) {
+    el.setAttribute('disabled', '');
+  }
+  if (false) {
+    el.setAttribute('is-open', '');
+  }
+  return el;
+};",
+  "LitTemplate": "html`<lit-basic-attributes
+  label=${'Open panel & <changed>'}
+  count=${8}
+  ?disabled=${true}
+  ?is-open=${false}
+></lit-basic-attributes>`",
+}

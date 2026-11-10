@@ -1,0 +1,55 @@
+{
+  "id": "webcomponentsstorydocs-lit-helper-shapes",
+  "name": "lit-template-shapes",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsstorydocs-lit-helper-shapes--branching-helper": {
+      "id": "webcomponentsstorydocs-lit-helper-shapes--branching-helper",
+      "name": "Branching Helper",
+      "snippet": "const BranchingHelper = () => {
+  if (true) {
+    return html`<lit-template-shapes disabled></lit-template-shapes>`;
+  }
+  return Card({ label: 'Alpha', disabled: true });
+};",
+    },
+    "webcomponentsstorydocs-lit-helper-shapes--csf-2-helper": {
+      "id": "webcomponentsstorydocs-lit-helper-shapes--csf-2-helper",
+      "name": "Csf 2 Helper",
+      "snippet": "Card({ ...{ label: 'Alpha' }, disabled: true })",
+    },
+    "webcomponentsstorydocs-lit-helper-shapes--helper-call": {
+      "id": "webcomponentsstorydocs-lit-helper-shapes--helper-call",
+      "name": "Helper Call",
+      "snippet": "Card({ label: 'Alpha', count: 2 })",
+    },
+    "webcomponentsstorydocs-lit-helper-shapes--helper-defaults": {
+      "id": "webcomponentsstorydocs-lit-helper-shapes--helper-defaults",
+      "name": "Helper Defaults",
+      "snippet": "Card({ ...{ heading: 'Head' }, count: 5 }, html`<b>${'Head'}</b>`)",
+    },
+    "webcomponentsstorydocs-lit-helper-shapes--helper-in-html": {
+      "id": "webcomponentsstorydocs-lit-helper-shapes--helper-in-html",
+      "name": "Helper In Html",
+      "snippet": "html`<section>${List({ label: 'Alpha', count: 2 })}</section>`",
+    },
+    "webcomponentsstorydocs-lit-helper-shapes--re-exported-html": {
+      "id": "webcomponentsstorydocs-lit-helper-shapes--re-exported-html",
+      "name": "Re Exported Html",
+      "snippet": "html`<lit-template-shapes label=${'Alpha'}></lit-template-shapes>`",
+      "template": "html`<lit-template-shapes label=${⟦code label⟫'Alpha'⟧}></lit-template-shapes>`",
+    },
+    "webcomponentsstorydocs-lit-helper-shapes--spread-directive": {
+      "id": "webcomponentsstorydocs-lit-helper-shapes--spread-directive",
+      "name": "Spread Directive",
+      "snippet": "html`<lit-template-shapes ${spreadProps({ label: 'Alpha', count: 2, disabled: true })}></lit-template-shapes>`",
+    },
+    "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute": {
+      "id": "webcomponentsstorydocs-lit-helper-shapes--spread-next-to-attribute",
+      "name": "Spread Next To Attribute",
+      "snippet": "html`<lit-template-shapes label="Written" ${spreadProps({ count: 2 })}
+  >${undefined}</lit-template-shapes
+>`",
+    },
+  },
+}

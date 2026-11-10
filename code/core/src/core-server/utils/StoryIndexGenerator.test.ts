@@ -2756,6 +2756,56 @@ describe('StoryIndexGenerator', () => {
         expect(Object.keys((await generator.getIndex()).entries)).not.toContain('a--story-one');
       });
 
+      describe('docs file referencing a story file that changes while the docs file is extracted', () => {
+        const storiesSpecifier = normalizeStoriesEntry('./src/A.stories.js', options);
+        const docsSpecifier = normalizeStoriesEntry('./src/docs2/MetaOf.mdx', options);
+
+        const pauseMetaOfExtraction = (generator: StoryIndexGenerator) => {
+          const reached = Promise.withResolvers<void>();
+          const gate = Promise.withResolvers<void>();
+          const extractDocs = generator.extractDocs.bind(generator);
+          vi.spyOn(generator, 'extractDocs').mockImplementation(async (...args) => {
+            if (args[1].endsWith('MetaOf.mdx')) {
+              reached.resolve();
+              await gate.promise;
+            }
+            return extractDocs(...args);
+          });
+          return { reached: reached.promise, release: gate.resolve };
+        };
+
+        it('re-extracts a docs file already registered as a dependent of that story file', async () => {
+          const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
+          await generator.initialize();
+          await generator.getIndex();
+
+          generator.invalidate('./src/docs2/MetaOf.mdx', false);
+          const { reached, release } = pauseMetaOfExtraction(generator);
+          const pending = generator.getIndex();
+          await reached;
+          generator.invalidate('./src/A.stories.js', false);
+          release();
+
+          expect(Object.keys((await pending).entries)).toContain('a--metaof');
+        });
+
+        it('re-extracts a new docs file not yet registered as a dependent', async () => {
+          const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
+          await generator.initialize();
+          await generator.getIndex();
+
+          generator.invalidate('./src/docs2/MetaOf.mdx', true);
+          generator.invalidate('./src/docs2/MetaOf.mdx', false);
+          const { reached, release } = pauseMetaOfExtraction(generator);
+          const pending = generator.getIndex();
+          await reached;
+          generator.invalidate('./src/A.stories.js', false);
+          release();
+
+          expect(Object.keys((await pending).entries)).toContain('a--metaof');
+        });
+      });
+
       it('drops a file that no longer exists instead of reporting an indexing error', async () => {
         const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();

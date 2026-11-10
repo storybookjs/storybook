@@ -257,8 +257,12 @@ export class StoryIndexGenerator {
       absolutePath: Path,
       existingEntry: CacheEntry
     ) => Promise<CacheEntry>,
-    overwrite = false
+    overwrite = false,
+    { readsOtherFiles = false } = {}
   ) {
+    const version = (absolutePath: Path) =>
+      readsOtherFiles ? this.invalidationCount : this.slotVersion(absolutePath);
+
     await Promise.all(
       this.specifiers.map(async (specifier) => {
         const entry = this.specifierToCache.get(specifier);
@@ -274,7 +278,7 @@ export class StoryIndexGenerator {
               return;
             }
 
-            const slotVersion = this.slotVersion(absolutePath);
+            const startedAt = version(absolutePath);
             let result: CacheEntry | undefined;
             try {
               result = await updater(specifier, absolutePath, entry[absolutePath]);
@@ -286,9 +290,8 @@ export class StoryIndexGenerator {
               result = exists ? this.toErrorEntry(err, absolutePath) : undefined;
             }
 
-            // The slot was invalidated or removed while the updater ran, so the result describes a
-            // file that has changed since. Keep what `invalidate` left for the next extraction.
-            if (this.slotVersion(absolutePath) !== slotVersion) {
+            // Leave the slot as `invalidate` set it
+            if (version(absolutePath) !== startedAt) {
               return;
             }
 
@@ -348,10 +351,14 @@ export class StoryIndexGenerator {
         : this.extractStories(specifier, absolutePath, projectTags)
     );
 
-    // A story file can still be unextracted here when it changed during the first pass, which
-    // discards that result. It is not a docs file, so leave it for the next extraction.
-    await this.updateExtracted(async (specifier, absolutePath) =>
-      this.isDocsMdx(absolutePath) ? this.extractDocs(specifier, absolutePath, projectTags) : false
+    // Docs files read the story files they reference, so any invalidation makes them stale
+    await this.updateExtracted(
+      async (specifier, absolutePath) =>
+        this.isDocsMdx(absolutePath)
+          ? this.extractDocs(specifier, absolutePath, projectTags)
+          : false,
+      false,
+      { readsOtherFiles: true }
     );
 
     const statsSummary = {} as IndexStatsSummary;

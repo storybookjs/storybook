@@ -21,8 +21,11 @@ import {
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '../__testfixtures__');
 const indexer = createIndexer();
-// Stories whose server snippet leaves out an arg on purpose, keyed `<fixture>/<export> (<extension>)`.
-const DECLARED_OMISSIONS: Record<string, readonly string[]> = {};
+// The template turns the `initials` arg into the `name` prop. The server snippet prints
+// `name="AL"`; the runtime snippet also prints `initials`, which isn't an Avatar prop.
+const DECLARED_OMISSIONS: Record<string, readonly string[]> = {
+  'csf4-meta-type/Initials (svelte)': ['initials'],
+};
 
 const cases = readdirSync(fixturesDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())

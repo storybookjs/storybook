@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { Addon_TypesEnum as types } from 'storybook/internal/types';
 
 import { init as initAddons } from '../modules/addons';
+import Store from '../store';
+import { createLaggingUpstream } from '../test-utils/store';
 
 const PANELS = {
   a11y: {
@@ -180,6 +182,25 @@ describe('Addons API', () => {
 
       expect(() => api.clearStatuses()).not.toThrow();
       expect(clearOk).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('#setAddonState', () => {
+    it('does not hide a route the provider sets in the same commit', async () => {
+      const upstream = createLaggingUpstream({ storyId: 'story-1', addons: {} });
+      const store = new Store(upstream);
+      const { api } = initAddons({ provider, store });
+      const storyIdsDuringCommit = [];
+
+      const write = api.setAddonState('my-addon', { open: true });
+      upstream.commit({
+        derived: { storyId: 'story-2' },
+        beforeCallbacks: () => storyIdsDuringCommit.push(store.getState().storyId),
+      });
+      await write;
+
+      expect(storyIdsDuringCommit).toEqual(['story-2']);
+      expect(api.getAddonState('my-addon')).toEqual({ open: true });
     });
   });
 });

@@ -336,6 +336,30 @@ describe('initModule', () => {
     );
   });
 
+  it('drops an empty nested custom query param on GLOBALS_UPDATED', async () => {
+    const location = {};
+    store.setState({
+      ...storyState('test--story'),
+      location,
+      customQueryParams: { cfg: {}, foo: 'bar' },
+    });
+
+    const navigate = vi.fn();
+    const channel = new EventEmitter();
+    initURL({ store, provider: { channel }, state: { location }, navigate, fullAPI });
+
+    channel.emit(GLOBALS_UPDATED, {
+      userGlobals: { a: 2 },
+      storyGlobals: {},
+      globals: { a: 2 },
+      initialGlobals: { a: 1 },
+    });
+    expect(navigate).toHaveBeenCalledWith(
+      '/story/test--story&foo=bar&globals=a:2',
+      expect.objectContaining({ replace: true })
+    );
+  });
+
   it('adds url params alphabetically', async () => {
     const location = {};
     store.setState({ ...storyState('test--story'), customQueryParams: { full: 1 }, location });

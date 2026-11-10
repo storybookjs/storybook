@@ -182,6 +182,12 @@ jobs:
           corepack enable
           yarn workspaces focus ecosystem-qa
 
+      # A node_modules tree under the Sandcastle worktree exceeds Windows' 260-character path
+      # limit, and git refuses to remove the worktree without this.
+      - name: Allow long paths in git (Windows)
+        if: ${{ matrix.os == 'windows' }}
+        run: git config --global core.longpaths true
+
       - name: Report free disk before the run (Linux)
         if: ${{ matrix.os == 'linux' }}
         run: df -h

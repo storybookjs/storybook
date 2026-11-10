@@ -75,6 +75,29 @@ function createMockStore(initialState: Partial<State> = {}) {
     }),
   } as any as Store;
 }
+/**
+ * Like the real React-backed store, `getState()` only reflects a `setState()` once it is committed,
+ * which happens later and in order.
+ */
+function createCommitLaggingStore(initialState: Partial<State> = { filters: {}, status: {} }) {
+  let committed = initialState;
+  let pending: Array<Partial<State> | ((s: Partial<State>) => Partial<State>)> = [];
+  return {
+    getState: () => committed,
+    setState: (patch: Partial<State> | ((s: Partial<State>) => Partial<State>)) => {
+      pending.push(patch);
+      return new Promise<Partial<State>>((resolve) =>
+        setTimeout(() => {
+          for (const p of pending) {
+            committed = { ...committed, ...(typeof p === 'function' ? p(committed) : p) };
+          }
+          pending = [];
+          resolve(committed);
+        })
+      );
+    },
+  };
+}
 function createMockProvider() {
   return {
     getConfig: vi.fn().mockReturnValue({}),
@@ -1366,29 +1389,33 @@ describe('stories API', () => {
         args: { c: 'd' },
       });
     });
-    it('keeps stories added by a not-yet-committed setIndex', async () => {
-      // The real store is backed by React state: `getState()` only reflects a `setState()` once
-      // React commits it. Mimic that so read-modify-write races on the index are observable.
-      let committed: Partial<State> = { filters: {}, status: {} };
-      let pending: Array<Partial<State> | ((s: Partial<State>) => Partial<State>)> = [];
-      const store = {
-        getState: () => committed,
-        setState: (patch: Partial<State> | ((s: Partial<State>) => Partial<State>)) => {
-          pending.push(patch);
-          return new Promise((resolve) =>
-            setTimeout(() => {
-              for (const p of pending) {
-                committed = { ...committed, ...(typeof p === 'function' ? p(committed) : p) };
-              }
-              pending = [];
-              resolve(committed);
-            })
-          );
-        },
+    it('makes the update readable before the store commits it', async () => {
+      // `useParameter` reads the current story's parameters synchronously on STORY_PREPARED
+      const moduleArgs = {
+        ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }),
+        store: createCommitLaggingStore(),
       };
-      const moduleArgs = { ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }), store };
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
-      const { provider } = moduleArgs;
+      const { provider, store } = moduleArgs;
+      await api.setIndex({ v: 5, entries: mockEntries });
+
+      provider.channel.emit(STORY_PREPARED, {
+        id: 'component-a--story-1',
+        parameters: { backgrounds: { disable: false } },
+      });
+
+      expect(store.getState().index!['component-a--story-1']).toMatchObject({
+        prepared: true,
+        parameters: { backgrounds: { disable: false } },
+      });
+    });
+    it('keeps stories added by a not-yet-committed setIndex', async () => {
+      const moduleArgs = {
+        ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }),
+        store: createCommitLaggingStore(),
+      };
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider, store } = moduleArgs;
 
       const { 'component-b--story-3': newStory, ...oldEntries } = mockEntries;
       await api.setIndex({ v: 5, entries: oldEntries });

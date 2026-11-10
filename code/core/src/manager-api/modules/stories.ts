@@ -844,11 +844,18 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       ref?: API_ComposedRef
     ): Promise<void> => {
       if (!ref) {
-        const patchEntry = (hash: API_IndexHash | undefined) =>
-          hash?.[storyId]
-            ? { ...hash, [storyId]: { ...hash[storyId], ...update } as API_StoryEntry }
-            : hash;
-        // Patch from the state at commit time: `getState()` lags behind uncommitted updates
+        const patchEntry = (hash: API_IndexHash | undefined) => {
+          if (hash?.[storyId]) {
+            hash[storyId] = { ...hash[storyId], ...update } as API_StoryEntry;
+          }
+          return hash;
+        };
+        // Mutate in place so STORY_PREPARED listeners (e.g. `useParameter`) can read the update
+        // through `getState()` before React commits it.
+        const { index, filteredIndex } = store.getState();
+        patchEntry(index);
+        patchEntry(filteredIndex);
+        // Commit against the state at commit time, which may hold an index `getState()` lags behind
         await store.setState((state) => ({
           index: patchEntry(state.index),
           filteredIndex: patchEntry(state.filteredIndex),

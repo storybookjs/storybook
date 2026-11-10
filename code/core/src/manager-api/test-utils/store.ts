@@ -1,7 +1,7 @@
 import type { State } from '../root.tsx';
 import Store, { type Upstream } from '../store.ts';
 
-/** Store guaranteed not to read from storage, for testing purposes. */
+// Never reads from storage.
 class InMemoryStore extends Store {
   constructor({ setState, getState }: Upstream) {
     super({ allowPersistence: false, setState, getState });
@@ -12,14 +12,7 @@ class InMemoryStore extends Store {
   }
 }
 
-/**
- * Factory function to create a valid Store instance for testing purposes. Provides a simple
- * in-memory store without persistence logic. Useful for mocking the store in stories.
- *
- * @param initialState - The initial state for the store
- * @param onChange - Optional callback invoked whenever state changes
- * @returns A Store instance configured for testing
- */
+// Commits synchronously; onChange runs after each commit.
 export function createTestingStore(
   initialState: State,
   onChange?: (internalState: State) => void
@@ -48,32 +41,26 @@ interface QueuedPatch {
 }
 
 export interface CommitOptions {
-  /** A write the provider makes during the commit, outside the store (e.g. route fields from props) */
+  // A write the provider makes during the commit, outside the store (e.g. route fields from props)
   derived?: Partial<State>;
-  /** Runs once the commit is applied and before the `setState` callbacks, like a render */
+  // Runs once the commit is applied and before the `setState` callbacks, like a render
   beforeCallbacks?: () => void;
 }
 
-/** An upstream that, like React, commits `setState` patches later and can commit them out of order. */
+// Like React, commits `setState` patches later and can commit them out of order.
 export interface LaggingUpstream {
   allowPersistence: false;
   getState: () => State;
   setState: (patch: Partial<State>, callback: (state: State) => void) => void;
-  /** Commits every queued patch, in order */
+  // Commits every queued patch, in order
   commit: (options?: CommitOptions) => void;
-  /** Commits one queued patch ahead of earlier ones, like a sync-lane update overtaking a default one */
+  // Commits one queued patch ahead of earlier ones, like a sync-lane update overtaking a default one
   commitOutOfOrder: (queueIndex: number) => void;
 }
 
-/**
- * Creates an upstream that commits like React's class state. Committed state is the base state plus
- * every committed patch in queue order. A patch committed ahead of earlier ones is applied again
- * after them once they commit, so the final state is always every patch applied in order.
- *
- * @param initialState - The initial committed state
- * @param autoCommit - Commit the whole queue on a macrotask after the first queued patch
- * @returns The upstream, with `commit` and `commitOutOfOrder` to control commits by hand
- */
+// Committed state is the base state plus every committed patch in queue order. A patch committed
+// ahead of earlier ones is applied again after them once they commit, so the final state is every
+// patch in order. `autoCommit` commits the whole queue on a macrotask after the first queued patch.
 export function createLaggingUpstream(
   initialState: Partial<State> = {},
   { autoCommit = false } = {}
@@ -129,14 +116,7 @@ export function createLaggingUpstream(
   return upstream;
 }
 
-/**
- * Creates a Store whose upstream commits like React's: `setState` patches are applied later (on a
- * macrotask), in order, before their callbacks run. Use it to test code against writes that have
- * not been committed yet.
- *
- * @param initialState - The initial committed state
- * @returns A Store instance backed by a deferred-commit upstream
- */
+// Commits on a macrotask, in order, before the `setState` callbacks run.
 export function createCommitLaggingStore(initialState: Partial<State> = {}): Store {
   return new InMemoryStore(createLaggingUpstream(initialState, { autoCommit: true }));
 }

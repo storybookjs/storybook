@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { CHECK_IDS } from '../checks.ts';
+import { CHECK_IDS, type CheckId } from '../checks.ts';
 
 export const RepoClass = z.enum(['owned', 'tier1', 'tier2']);
 export type RepoClass = z.infer<typeof RepoClass>;
@@ -65,35 +65,41 @@ export const Finding = z.strictObject({
 });
 export type Finding = z.infer<typeof Finding>;
 
-export const AgentOutput = z
-  .strictObject({
-    storybookVersionInstalled: z.string().nullable(),
-    checks: z.array(CheckResult),
-    findings: z.array(Finding),
-  })
-  .superRefine((output, ctx) => {
-    const reported = output.checks.map((check) => check.id);
-    for (const id of CHECK_IDS) {
-      const count = reported.filter((reportedId) => reportedId === id).length;
-      if (count !== 1) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['checks'],
-          message: `check "${id}" must be reported exactly once, found ${count}`,
-        });
+export const Tier = z.enum(['must', 'extended']);
+
+/** The answer schema for one run: every check of the tier exactly once, findings only on failures. */
+export const agentOutput = (ids: readonly CheckId[]) =>
+  z
+    .strictObject({
+      storybookVersionInstalled: z.string().nullable(),
+      checks: z.array(CheckResult),
+      findings: z.array(Finding),
+    })
+    .superRefine((output, ctx) => {
+      const reported = output.checks.map((check) => check.id);
+      for (const id of ids) {
+        const count = reported.filter((reportedId) => reportedId === id).length;
+        if (count !== 1) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['checks'],
+            message: `check "${id}" must be reported exactly once, found ${count}`,
+          });
+        }
       }
-    }
-    for (const [index, finding] of output.findings.entries()) {
-      const check = output.checks.find((candidate) => candidate.id === finding.checkId);
-      if (check?.state !== 'fail') {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['findings', index, 'checkId'],
-          message: `finding for "${finding.checkId}" needs that check to be "fail"`,
-        });
+      for (const [index, finding] of output.findings.entries()) {
+        const check = output.checks.find((candidate) => candidate.id === finding.checkId);
+        if (check?.state !== 'fail') {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['findings', index, 'checkId'],
+            message: `finding for "${finding.checkId}" needs that check to be "fail"`,
+          });
+        }
       }
-    }
-  });
+    });
+
+export const AgentOutput = agentOutput(CHECK_IDS);
 
 export const RunRequestRecord = z.strictObject({
   entry: CatalogEntry,
@@ -101,6 +107,7 @@ export const RunRequestRecord = z.strictObject({
   engine: Engine,
   model: z.string(),
   effort: Effort,
+  tier: Tier,
   sandbox: SandboxKind,
   os: Os,
   fake: z.boolean(),

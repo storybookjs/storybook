@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import { join } from 'pathe';
 
-import { CHECKS } from '../checks.ts';
+import { checksFor } from '../checks.ts';
 import type { Outcome, RunRequest } from './types.ts';
 
 const TOOLS_DIR = fileURLToPath(new URL('../tools', import.meta.url));
@@ -49,7 +49,7 @@ export const runFake = (request: RunRequest): Outcome => {
     headSha: null,
     output: {
       storybookVersionInstalled: request.version,
-      checks: CHECKS.map(({ id, label }) =>
+      checks: checksFor(request.tier).map(({ id, label }) =>
         id === failing
           ? { id, label, state: 'fail', note: 'Canned failure from --fake.' }
           : { id, label, state: 'pass' }

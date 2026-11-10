@@ -21,15 +21,16 @@ import { seatbelt } from '@ai-hero/sandcastle/sandboxes/seatbelt';
 import { join, relative, resolve } from 'pathe';
 import { z } from 'zod';
 
-import { renderChecklist } from './checks.ts';
+import { checksFor, renderChecklist } from './checks.ts';
 import { loadCatalogEntry } from './lib/catalog.ts';
 import { cycleBranchName, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
 import {
-  AgentOutput,
+  agentOutput,
   Effort,
   Engine,
   SandboxKind,
+  Tier,
   type CatalogEntry,
   type Os,
   type RunResultFile,
@@ -43,6 +44,7 @@ const HELP = `Usage: node ecosystem-qa/run.ts --repo <catalog id> --version <sto
 Options:
   --model <id>        Model id (default: claude-sonnet-5-5 for claude, gpt-6.1-sol for codex)
   --effort <level>    low, medium or high (default: medium)
+  --tier <tier>       must (default) runs the checks every sweep needs; extended runs all of them
   --clone-dir <dir>   Where to clone the catalog repo (default: <out>/../../../work/<id>)
   --image <name>      Docker image for --sandbox docker (default: sb-ecosystem-qa)
 
@@ -111,6 +113,7 @@ const parseRequest = () => {
       out: { type: 'string' },
       model: { type: 'string' },
       effort: { type: 'string', default: 'medium' },
+      tier: { type: 'string', default: 'must' },
       'clone-dir': { type: 'string' },
       image: { type: 'string', default: 'sb-ecosystem-qa' },
       fake: { type: 'boolean', default: false },
@@ -150,6 +153,7 @@ const parseRequest = () => {
     engine,
     model: values.model ?? DEFAULT_MODEL[engine],
     effort: Effort.parse(values.effort),
+    tier: Tier.parse(values.tier),
     sandbox: SandboxKind.parse(values.sandbox),
     os,
     fake: values.fake,
@@ -257,6 +261,7 @@ const runSandcastle = async (
 
   try {
     const plan = planSandbox(request, evidenceDir, image);
+    const answerSchema = agentOutput(checksFor(request.tier).map((check) => check.id));
     const result = await run({
       cwd: cloneDir,
       agent,
@@ -277,10 +282,10 @@ const runSandcastle = async (
         MIGRATION_FILE: plan.migrationFile,
         TOOLS_DIR: plan.toolsDir,
         EVIDENCE_DIR: plan.evidenceDir,
-        CHECKLIST: renderChecklist(),
-        OUTPUT_SCHEMA: JSON.stringify(z.toJSONSchema(AgentOutput), null, 2),
+        CHECKLIST: renderChecklist(request.tier),
+        OUTPUT_SCHEMA: JSON.stringify(z.toJSONSchema(answerSchema), null, 2),
       },
-      output: Output.object({ tag: 'qa-result', schema: AgentOutput, maxRetries: 2 }),
+      output: Output.object({ tag: 'qa-result', schema: answerSchema, maxRetries: 2 }),
       hooks: {
         sandbox: {
           onSandboxReady: [

@@ -21,6 +21,11 @@ on:
         type: choice
         options: ['linux', 'windows', 'linux,windows']
         default: 'linux'
+      tier:
+        description: 'must runs the checks every sweep needs; extended runs the whole registry'
+        type: choice
+        options: ['must', 'extended']
+        default: 'must'
       dry:
         description: 'Write proposals to the Step Summary instead of filing them'
         type: boolean
@@ -159,6 +164,7 @@ jobs:
       QA_ENGINE: ${{ matrix.engine }}
       QA_OS: ${{ matrix.os }}
       QA_SANDBOX: ${{ matrix.sandbox }}
+      QA_TIER: ${{ inputs.tier }}
     steps:
       - name: Harden the runner
         if: ${{ matrix.os == 'linux' }}
@@ -219,7 +225,7 @@ jobs:
         run: >-
           node ecosystem-qa/run.ts --repo "$QA_REPO" --version "$QA_VERSION" --engine "$QA_ENGINE"
           --sandbox "$QA_SANDBOX" --out "ecosystem-qa/results/$QA_REPO/$QA_OS/$QA_ENGINE"
-          --clone-dir "$RUNNER_TEMP/qa-work/$QA_REPO"
+          --clone-dir "$RUNNER_TEMP/qa-work/$QA_REPO" --tier "$QA_TIER"
 
       - name: Report free disk after the run (Linux)
         if: ${{ always() && matrix.os == 'linux' }}

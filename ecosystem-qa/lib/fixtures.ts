@@ -50,6 +50,7 @@ export const loaded = (
       engine,
       model: engine === 'claude' ? 'claude-sonnet-5-5' : 'gpt-5.4',
       effort: 'medium',
+      tier: 'must',
       sandbox: os === 'windows' ? 'none' : 'docker',
       os,
       fake: false,

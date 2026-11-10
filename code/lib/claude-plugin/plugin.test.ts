@@ -79,8 +79,6 @@ const readSkill = (name: string) =>
   readFileSync(resolve(packageRoot, 'skills', name, 'SKILL.md'), 'utf8');
 
 const WORKFLOW_SKILLS = ['component-docs', 'write-stories', 'test-stories', 'ui-review'];
-const uiReviewSkill = readSkill('ui-review');
-
 function readSkillDescription(skill: string) {
   const description = skill.match(/^description: (.*)$/m)?.[1];
   if (description === undefined) {
@@ -125,13 +123,6 @@ describe('workflow skills', () => {
   it.each(WORKFLOW_SKILLS)('%s names no other workflow skill', (name) => {
     const others = WORKFLOW_SKILLS.filter((other) => other !== name);
     expect(readSkill(name)).not.toMatch(new RegExp(others.join('|')));
-  });
-
-  it('ui-review starts the dev server from the package.json script without shell interpolation', () => {
-    expect(uiReviewSkill).toContain('preferred package manager');
-    expect(uiReviewSkill).toContain('existing `package.json` Storybook script');
-    expect(uiReviewSkill).not.toMatch(/(?:^|[^\w])--port\b|\$\{?PORT\}?|\$env:PORT|%PORT%/i);
-    expect(uiReviewSkill).not.toContain('--ci');
   });
 });
 

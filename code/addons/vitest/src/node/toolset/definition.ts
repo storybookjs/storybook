@@ -7,6 +7,8 @@ import {
 } from 'storybook/internal/core-server';
 import {
   defineToolset,
+  getSkillCommand,
+  type ToolsetCtx,
   type ToolsetDefinition,
   type ToolsetMethod,
   type ToolsetOutcome,
@@ -159,9 +161,10 @@ export type TestToolset = ToolsetDefinition<
  * The accessibility half of this tool's contract only holds when addon-a11y is enabled, so the
  * promise is dropped from the description rather than made and then broken.
  */
-function describeRun(a11yEnabled: boolean): string {
+function describeRun(a11yEnabled: boolean, ctx: ToolsetCtx): string {
   return (
     `Run story tests.
+First run ${getSkillCommand(ctx)('test-stories')} once and follow it: it has the rules for running the tests and fixing what fails.
 Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
 Provide stories for focused runs (faster while iterating),
 or omit stories to run all tests for full-project verification.
@@ -252,7 +255,7 @@ export function createTestToolset({
       run: {
         input: runInputSchema,
         title: 'Run Storybook tests',
-        description: describeRun(a11yEnabled),
+        description: (ctx) => describeRun(a11yEnabled, ctx),
         handler: async (
           input,
           ctx

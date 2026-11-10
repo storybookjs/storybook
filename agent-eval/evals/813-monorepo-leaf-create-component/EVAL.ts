@@ -11,6 +11,9 @@ import {
   expectWorkflowCalls,
 } from '#test-utils';
 
+// The steps of the workflow in AGENTS.md that this task cannot do without.
+const WORKFLOW_SKILLS = ['write-stories', 'test-stories', 'ui-review'];
+
 describe('creating a Callout in a monorepo UI package', () => {
   // Workflow asserts are enabled. The skills direct the dev server and
   // every Storybook CLI command to the package where Storybook is installed,
@@ -31,8 +34,8 @@ describe('creating a Callout in a monorepo UI package', () => {
     });
   });
 
-  test('reads the story rules and publishes a display review', () => {
-    expectWorkflowCalls(['write-stories', 'review-create']);
+  test('runs the skill of each of these steps and publishes a display review', () => {
+    expectWorkflowCalls([...WORKFLOW_SKILLS, 'review-create']);
     expectDisplayReviewForVisualChange();
   });
 

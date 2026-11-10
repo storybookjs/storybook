@@ -5,12 +5,16 @@ import {
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
+  expectWorkflowCalls,
   getEvalContext,
   getWorkflowCalls,
   getWorkflowToolResults,
 } from '#test-utils';
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
+
+// The steps of the workflow in AGENTS.md that this task cannot do without.
+const WORKFLOW_SKILLS = ['test-stories', 'ui-review'];
 
 describe('changing a shared accent token and surfacing consumer stories', () => {
   // The edited token file has no stories of its own, so the run must surface
@@ -27,6 +31,10 @@ describe('changing a shared accent token and surfacing consumer stories', () => 
     await expectStoryTestsRanAndPassed({
       covering: ['badge', 'statuspill'],
     });
+  });
+
+  test('runs the skill of each of these steps', () => {
+    expectWorkflowCalls(WORKFLOW_SKILLS);
   });
 
   describe('reviewing the visual token change', () => {

@@ -708,6 +708,7 @@ Change detection has not processed these changed files yet, although stories ren
       );
       expect(outcome.markdown).toBe(
         String(mcpOutcome.markdown)
+          .replaceAll('skills ui-review --mcp', 'skills ui-review')
           .replaceAll('review-create', 'npx storybook tools review create')
           .replaceAll('stories-find-by-component', 'npx storybook tools stories find-by-component')
       );
@@ -724,7 +725,7 @@ Change detection has not processed these changed files yet, although stories ren
 New stories:
 - \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)
 
-Next: if the change is visually observable, publish the review as your last step, after your remaining tests and checks — call **review-create** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it. A change with no visible effect, such as to a callback, tests or types, gets no review unless the user asked to see stories: say that nothing visible changed. This list covers your edits so far: run it again only after another edit.`
+Next: if the change is visually observable, publish the review as your last step, after your remaining tests and checks — run \`npx storybook skills ui-review --mcp\` first if you have not yet, then call **review-create** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it. A change with no visible effect, such as to a callback, tests or types, gets no review unless the user asked to see stories: say that nothing visible changed. This list covers your edits so far: run it again only after another edit.`
       );
     });
 
@@ -746,7 +747,7 @@ Changed files in the Storybook config directory, which can affect every story: \
 
 Coverage sanity check: the working tree also contains modified file(s) that aren't reachable from any story (no static import path connects them), so this result can miss stories they affect: \`${changedThemeFile}\`. A component: write its stories, or tell the user. A file used without an import, such as a CSS-variable token: pass the components that use it to \`stories-find-by-component\`. Anything else, such as an app entry file: leave it out of the review. Never invent story IDs to fill the gap.
 
-Next: if the change is visually observable, publish the review as your last step, after your remaining tests and checks — call **review-create** curating these story IDs and any you found for the files listed above. That review link is how you finish; do not substitute individual preview URLs for it. A change with no visible effect, such as to a callback, tests or types, gets no review unless the user asked to see stories: say that nothing visible changed. This list covers your edits so far: run it again only after another edit.`
+Next: if the change is visually observable, publish the review as your last step, after your remaining tests and checks — run \`npx storybook skills ui-review --mcp\` first if you have not yet, then call **review-create** curating these story IDs and any you found for the files listed above. That review link is how you finish; do not substitute individual preview URLs for it. A change with no visible effect, such as to a callback, tests or types, gets no review unless the user asked to see stories: say that nothing visible changed. This list covers your edits so far: run it again only after another edit.`
       );
     });
 

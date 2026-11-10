@@ -12,6 +12,9 @@ import {
 
 const STORIES_PATH = 'src/components/OrderHistory.stories.tsx';
 
+// The steps of the workflow in AGENTS.md that this task cannot do without.
+const WORKFLOW_SKILLS = ['write-stories', 'test-stories', 'ui-review'];
+
 describe('writing stories for a fetching OrderHistory in a project without MSW', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
@@ -61,8 +64,8 @@ describe('writing stories for a fetching OrderHistory in a project without MSW',
     ).toBeGreaterThanOrEqual(3);
   });
 
-  test('reads the story rules and publishes a display review', () => {
-    expectWorkflowCalls(['write-stories', 'review-create']);
+  test('runs the skill of each of these steps and publishes a display review', () => {
+    expectWorkflowCalls([...WORKFLOW_SKILLS, 'review-create']);
     expectDisplayReviewForVisualChange();
   });
 

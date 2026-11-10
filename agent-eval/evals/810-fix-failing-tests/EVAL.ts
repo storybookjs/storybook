@@ -1,6 +1,7 @@
 import {
   expectAnyWorkflowSkillInvoked,
   expectStoryTestsRanAndPassed,
+  expectWorkflowCalls,
   getEvalContext,
 } from '#test-utils';
 import { readFileSync } from 'node:fs';
@@ -28,6 +29,10 @@ describe('fixing failing Button story tests', () => {
     expect(stories, 'Expected the Default story to keep asserting the onClick behavior').toMatch(
       /toHaveBeenCalled/
     );
+  });
+
+  test('runs the test-stories skill for a request to run the story tests', () => {
+    expectWorkflowCalls(['test-stories']);
   });
 
   test.skipIf(getEvalContext().integration === 'mcp')(

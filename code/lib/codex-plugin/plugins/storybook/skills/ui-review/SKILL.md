@@ -12,11 +12,6 @@ Run the Storybook dev server and every Storybook CLI command from the same worki
 
 If the sandbox blocks network access or ports, request escalated permissions for Storybook CLI commands; otherwise the dev server can fail in confusing ways (for example, it finds no free port to bind to).
 
-Run `npx storybook skills ui-review` in a command of its own, without `head` or `tail`, and follow its output: the commands that find the stories your change affects and publish a review of them.
-
-The review requires a running Storybook dev server:
-
-1. Probe the URL (usually `http://localhost:6006`) in a command of its own. If it serves this project's Storybook, reuse that dev server and never start a second one. Otherwise start one in the background with the project's preferred package manager and existing `package.json` Storybook script (e.g. `npm run storybook`), without adding flags, and wait until the URL responds before running commands that need it.
-2. The dev server is part of the deliverable, not a temporary verification tool: leave it running when your work is done so the user can keep browsing stories. Never kill it after verification.
+Run `npx storybook skills ui-review` in a command of its own, without `head` or `tail`, and follow its output: how to use the running Storybook dev server, and the commands that find the stories your change affects and publish a review of them.
 
 When you publish a review, end your final answer with the three lines `review create` prints, unchanged, and mention the review link nowhere else in it.

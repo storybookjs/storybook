@@ -12,6 +12,9 @@ import {
 import { transcript } from '@vercel/agent-eval/eval';
 import { describe, expect, test } from 'vitest';
 
+// The steps of the workflow in AGENTS.md that this task cannot do without.
+const WORKFLOW_SKILLS = ['component-docs', 'write-stories', 'test-stories', 'ui-review'];
+
 describe('creating an accessible ToggleSwitch', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
@@ -19,8 +22,8 @@ describe('creating an accessible ToggleSwitch', () => {
     });
   });
 
-  test('reads the story rules and publishes a display review', () => {
-    expectWorkflowCalls(['write-stories', 'review-create']);
+  test('runs the skill of each of these steps and publishes a display review', () => {
+    expectWorkflowCalls([...WORKFLOW_SKILLS, 'review-create']);
     expectDisplayReviewForVisualChange();
   });
 

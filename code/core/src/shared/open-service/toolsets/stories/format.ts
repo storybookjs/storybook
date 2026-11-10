@@ -1,5 +1,5 @@
 import type { ToolsetCtx } from '../../toolset-definition.ts';
-import { getToolName } from '../../toolset-names.ts';
+import { getSkillCommand, getToolName } from '../../toolset-names.ts';
 import type {
   ChangedStoriesOutput,
   FindByComponentOutput,
@@ -118,7 +118,7 @@ export function formatChangedStories(data: ChangedStoriesOutput, ctx: ToolsetCtx
       ? ' and any you found for the files listed above'
       : '';
   // Last, so output read through `tail` still ends on this step.
-  text += `\n\nNext: if the change is visually observable, publish the review as your last step, after your remaining tests and checks — call **${getToolName(ctx)('review.create')}** curating these story IDs${gapStories}. That review link is how you finish; do not substitute individual preview URLs for it. A change with no visible effect, such as to a callback, tests or types, gets no review unless the user asked to see stories: say that nothing visible changed. This list covers your edits so far: run it again only after another edit.`;
+  text += `\n\nNext: if the change is visually observable, publish the review as your last step, after your remaining tests and checks — run \`${getSkillCommand(ctx)('ui-review')}\` first if you have not yet, then call **${getToolName(ctx)('review.create')}** curating these story IDs${gapStories}. That review link is how you finish; do not substitute individual preview URLs for it. A change with no visible effect, such as to a callback, tests or types, gets no review unless the user asked to see stories: say that nothing visible changed. This list covers your edits so far: run it again only after another edit.`;
 
   return text;
 }

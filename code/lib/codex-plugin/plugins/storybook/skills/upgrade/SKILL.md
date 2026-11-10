@@ -11,6 +11,6 @@ If the latest stable release is below 11.0, upgrade to the 11.0 prerelease with 
 
 Never run `create storybook` here: it installs Storybook in a project without one, and on top of an installed Storybook it mixes versions.
 
-The upgrade goes one major version at a time: from Storybook 9 or older, run `npx storybook@10 upgrade` first, then the upgrade to 11.0. Stop only when the installed `storybook` is 11.0 or later.
+The upgrade goes one major version at a time: from Storybook 9, run `npx storybook@10 upgrade` first, then the upgrade to 11.0. From an older version, first run the upgrade of each major in between, such as `npx storybook@9 upgrade` from Storybook 8. Stop only when the installed `storybook` is 11.0 or later.
 
 Keep the files the upgrade adds, such as the Storybook agent skills and `skills-lock.json`: they are part of the upgrade.

@@ -115,13 +115,15 @@ describe('RendererFactory', () => {
     });
 
     it('should destroy the root components before the application injector', async () => {
+      const injectorReadsOnDestroy: unknown[] = [];
+
       @Component({ selector: 'foo', template: '🦊' })
       class FooComponent {
         private injector = inject(EnvironmentInjector);
 
         ngOnDestroy() {
           // Teardown paths like CDK overlay removal read from the injector.
-          this.injector.get(ApplicationRef);
+          injectorReadsOnDestroy.push(this.injector.get(ApplicationRef));
         }
       }
 
@@ -141,6 +143,7 @@ describe('RendererFactory', () => {
         storyId: 'second-story',
       });
 
+      expect(injectorReadsOnDestroy).toEqual([expect.any(ApplicationRef)]);
       expect(document.body.querySelector('first-story')).toBeNull();
       expect(document.body.getElementsByTagName('second-story')[0].innerHTML).toBe('🐼');
     });

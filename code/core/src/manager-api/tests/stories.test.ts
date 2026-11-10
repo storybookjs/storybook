@@ -1366,6 +1366,44 @@ describe('stories API', () => {
         args: { c: 'd' },
       });
     });
+    it('keeps stories added by a not-yet-committed setIndex', async () => {
+      // The real store is backed by React state: `getState()` only reflects a `setState()` once
+      // React commits it. Mimic that so read-modify-write races on the index are observable.
+      let committed: Partial<State> = { filters: {}, status: {} };
+      let pending: Array<Partial<State> | ((s: Partial<State>) => Partial<State>)> = [];
+      const store = {
+        getState: () => committed,
+        setState: (patch: Partial<State> | ((s: Partial<State>) => Partial<State>)) => {
+          pending.push(patch);
+          return new Promise((resolve) =>
+            setTimeout(() => {
+              for (const p of pending) {
+                committed = { ...committed, ...(typeof p === 'function' ? p(committed) : p) };
+              }
+              pending = [];
+              resolve(committed);
+            })
+          );
+        },
+      };
+      const moduleArgs = { ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }), store };
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider } = moduleArgs;
+
+      const { 'component-b--story-3': newStory, ...oldEntries } = mockEntries;
+      await api.setIndex({ v: 5, entries: oldEntries });
+
+      // A file write invalidates the index (adding story-3) and HMR re-prepares story-1
+      // before React has committed the new index.
+      const indexSet = api.setIndex({ v: 5, entries: mockEntries });
+      provider.channel.emit(STORY_PREPARED, { id: 'component-a--story-1', parameters: {} });
+      await indexSet;
+      await wait(0);
+
+      expect(store.getState().index).toHaveProperty('component-b--story-3');
+      expect(store.getState().filteredIndex).toHaveProperty('component-b--story-3');
+      expect(store.getState().index!['component-a--story-1']).toMatchObject({ prepared: true });
+    });
     it('sets options the first time it is called', async () => {
       const fullAPI = { setOptions: vi.fn() };
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };

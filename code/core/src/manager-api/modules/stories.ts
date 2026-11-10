@@ -812,15 +812,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     // The story index we receive on fetchStoryIndex is not, but all the prepared fields are optional
     // so we can cast one to the other easily enough
     setIndex: async (input) => {
-      const { filteredIndex: oldFilteredHash, index: oldHash, filters } = store.getState();
       const allStatuses = fullStatusStore.getAll();
-      const newFilteredHash = transformStoryIndexToStoriesHash(input, {
-        provider,
-        docsOptions,
-        filters,
-        allStatuses,
-        statusFilterKey: STATUS_FILTER,
-      });
       const newHash = transformStoryIndexToStoriesHash(input, {
         provider,
         docsOptions,
@@ -828,12 +820,22 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         allStatuses,
       });
 
-      await store.setState({
+      // Patch from the state at commit time: `getState()` lags behind uncommitted updates
+      await store.setState((state) => ({
         internal_index: input,
-        filteredIndex: addPreparedStories(newFilteredHash, oldFilteredHash),
-        index: addPreparedStories(newHash, oldHash),
+        filteredIndex: addPreparedStories(
+          transformStoryIndexToStoriesHash(input, {
+            provider,
+            docsOptions,
+            filters: state.filters,
+            allStatuses,
+            statusFilterKey: STATUS_FILTER,
+          }),
+          state.filteredIndex
+        ),
+        index: addPreparedStories(newHash, state.index),
         indexError: undefined,
-      });
+      }));
     },
     // FIXME: is there a bug where filtered stories get added back in on updateStory???
     updateStory: async (
@@ -842,22 +844,15 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       ref?: API_ComposedRef
     ): Promise<void> => {
       if (!ref) {
-        const { index, filteredIndex } = store.getState();
-        if (index && index[storyId]) {
-          index[storyId] = {
-            ...index[storyId],
-            ...update,
-          } as API_StoryEntry;
-        }
-        if (filteredIndex && filteredIndex[storyId]) {
-          filteredIndex[storyId] = {
-            ...filteredIndex[storyId],
-            ...update,
-          } as API_StoryEntry;
-        }
-        if (index || filteredIndex) {
-          await store.setState({ index, filteredIndex });
-        }
+        const patchEntry = (hash: API_IndexHash | undefined) =>
+          hash?.[storyId]
+            ? { ...hash, [storyId]: { ...hash[storyId], ...update } as API_StoryEntry }
+            : hash;
+        // Patch from the state at commit time: `getState()` lags behind uncommitted updates
+        await store.setState((state) => ({
+          index: patchEntry(state.index),
+          filteredIndex: patchEntry(state.filteredIndex),
+        }));
       } else {
         const { id: refId, index, filteredIndex }: any = ref;
         // Cache the runtime enrichment on the ref so it survives index (re)builds in `setRef` and is

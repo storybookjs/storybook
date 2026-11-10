@@ -1,4 +1,5 @@
 import type * as tsModule from 'typescript';
+import type { DocgenTypeScript } from '@storybook/component-meta-typescript';
 
 import type { JsDocTag } from '../types.ts';
 
@@ -31,25 +32,29 @@ const cleanCommentText = (raw: string): string => {
   return cleaned.join('\n');
 };
 
-const rawJsDocComment = (sourceText: string, jsDoc: tsModule.JSDoc): string => {
+const rawJsDocComment = (
+  ts: DocgenTypeScript,
+  sourceText: string,
+  jsDoc: tsModule.JSDoc
+): string => {
   const end = jsDoc.tags?.length ? jsDoc.tags[0].pos : jsDoc.end;
   return sourceText
-    .slice(jsDoc.pos, end)
+    .slice(ts.getJSDocStart(jsDoc), end)
     .replace(/^\/\*\*/, '')
     .replace(/\*\/$/, '');
 };
 
 const rawTagComment = (
-  ts: typeof tsModule,
+  ts: DocgenTypeScript,
   sourceText: string,
   tag: tsModule.JSDocTag
 ): string | undefined => {
   let start: number | undefined;
-  if (ts.isJSDocSeeTag(tag) && tag.name) {
-    start = tag.name.pos;
+  const seeReference = ts.isJSDocSeeTag(tag) ? ts.getSeeTagReference(tag) : undefined;
+  if (seeReference) {
+    start = seeReference.pos;
   } else if (tag.comment !== undefined) {
-    start = typeof tag.comment === 'string' ? tag.getChildren().at(-1)?.end : tag.comment.pos;
-    start ??= tag.tagName.end;
+    start = ts.getJSDocTagCommentStart(tag);
   }
   return start === undefined
     ? undefined
@@ -59,7 +64,7 @@ const rawTagComment = (
 // `description` and `rawdescription` both carry the same plain text; nothing downstream parses it
 // as HTML, unlike the Markdown-rendered comments Compodoc produced.
 export function getJsDocDescription(
-  ts: typeof tsModule,
+  ts: DocgenTypeScript,
   node: tsModule.Node
 ): { description?: string; rawdescription?: string } {
   const sourceText = node.getSourceFile().text;
@@ -68,7 +73,9 @@ export function getJsDocDescription(
     .filter((doc): doc is tsModule.JSDoc => ts.isJSDoc(doc))
     .at(-1);
   let text =
-    jsDoc?.comment === undefined ? undefined : cleanCommentText(rawJsDocComment(sourceText, jsDoc));
+    jsDoc?.comment === undefined
+      ? undefined
+      : cleanCommentText(rawJsDocComment(ts, sourceText, jsDoc));
   // `/*****`-style openers leak pure-asterisk lines into the comment text.
   text = text?.replace(/^(?:[ \t]*\*+[ \t]*\n)+/, '').replace(/^[ \t]*\*+[ \t]*$/, '');
   // An explicit `@description` tag wins: the text before it is usually a `property foo` header,
@@ -86,7 +93,7 @@ export function getJsDocDescription(
   return { description: trimmed, rawdescription: trimmed };
 }
 
-function getJsDocTags(ts: typeof tsModule, node: tsModule.Node): JsDocTag[] | undefined {
+function getJsDocTags(ts: DocgenTypeScript, node: tsModule.Node): JsDocTag[] | undefined {
   const tags = ts.getJSDocTags(node);
   if (tags.length === 0) {
     return undefined;
@@ -102,13 +109,13 @@ function getJsDocTags(ts: typeof tsModule, node: tsModule.Node): JsDocTag[] | un
 }
 
 export function getJsDocTagsField(
-  ts: typeof tsModule,
+  ts: DocgenTypeScript,
   node: tsModule.Node
 ): { jsdoctags?: JsDocTag[] } {
   const tags = getJsDocTags(ts, node);
   return tags ? { jsdoctags: tags } : {};
 }
 
-export function hasJsDocTag(ts: typeof tsModule, node: tsModule.Node, tagName: string): boolean {
+export function hasJsDocTag(ts: DocgenTypeScript, node: tsModule.Node, tagName: string): boolean {
   return ts.getJSDocTags(node).some((tag) => tag.tagName.text === tagName);
 }

@@ -26,7 +26,7 @@ if (BASELINE_PATH !== 'legacy') {
 
 // One manager for the whole suite: each fixture directory carries its own tsconfig.json
 // (include: ["./*.ts"]), so every component file resolves to its own per-fixture project.
-const manager = new AngularComponentMetaManager(ts);
+const manager = new AngularComponentMetaManager({ api: 'compiler', typescript: ts });
 
 type LegacyArgTypesRecording = 'argtypes' | 'argtypes-filtered';
 

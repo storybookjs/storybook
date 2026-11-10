@@ -101,6 +101,12 @@
       }
     },
     {
+      "files": ["renderers/react/src/componentManifest/**", "lib/angular-cm/src/**"],
+      "rules": {
+        "local-rules/docgen-node-fields-through-contract": "error"
+      }
+    },
+    {
       "files": ["core/src/cli/skills/content/**"],
       "rules": {
         "no-restricted-imports": [

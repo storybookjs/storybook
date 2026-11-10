@@ -19,6 +19,9 @@ ignoredBuiltDependencies:
   - protobufjs
   - ssh2
 
+# Compression of the tarballs `pnpm pack` and `pnpm publish` write (zlib's default is 6).
+packGzipLevel: 9
+
 # Only resolve versions published at least 7 days ago.
 minimumReleaseAge: 10080
 

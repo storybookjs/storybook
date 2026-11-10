@@ -26,6 +26,7 @@ import type ts from 'typescript';
 import { extractComponentJsDocInfo } from 'storybook/internal/component-meta';
 
 import type { ComponentRef, ResolvedComponentTarget } from '../types.ts';
+import type { DocgenTypeChecker, DocgenTypeScript } from '@storybook/component-meta-typescript';
 
 // ---------------------------------------------------------------------------
 // Output types — compatible with react-docgen-typescript's ComponentDoc shape
@@ -93,7 +94,7 @@ function isUnionType(type: ts.Type): type is ts.UnionType {
 }
 
 function isWrappedExpression(
-  typescript: typeof ts,
+  typescript: DocgenTypeScript,
   expression: ts.Expression
 ): expression is WrappedExpression {
   return (
@@ -105,8 +106,8 @@ function isWrappedExpression(
 }
 
 function resolveAliasedSymbol(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
+  typescript: DocgenTypeScript,
+  checker: DocgenTypeChecker,
   symbol: ts.Symbol
 ): ts.Symbol {
   return symbol.flags & typescript.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
@@ -117,8 +118,8 @@ function getSymbolContextNode(symbol: ts.Symbol): ts.Node | undefined {
 }
 
 function resolveComponentSymbolFromNode(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
+  typescript: DocgenTypeScript,
+  checker: DocgenTypeChecker,
   node: ts.Node | undefined
 ): ts.Symbol | undefined {
   if (!node) {
@@ -145,8 +146,8 @@ function resolveComponentSymbolFromNode(
  * to the actual component declaration before serialization.
  */
 function resolveComponentSymbol(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
+  typescript: DocgenTypeScript,
+  checker: DocgenTypeChecker,
   symbol: ts.Symbol,
   contextNode: ts.Node,
   depth = 0
@@ -240,8 +241,8 @@ function resolveComponentSymbol(
 
 /** Finds the story-local import binding for a {@link ComponentRef}. */
 export function findImportSymbolInStoryFile(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
+  typescript: DocgenTypeScript,
+  checker: DocgenTypeChecker,
   storySourceFile: ts.SourceFile,
   componentRef: ComponentRef
 ): ts.Symbol | undefined {
@@ -326,8 +327,8 @@ export function findImportSymbolInStoryFile(
 
 /** Returns whether `componentRef` is the story meta's `component`, not a declared subcomponent. */
 export function metaComponentMatchesRef(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
+  typescript: DocgenTypeScript,
+  checker: DocgenTypeChecker,
   storySourceFile: ts.SourceFile,
   componentRef: ComponentRef,
   metaComponentInitializer: ts.Expression
@@ -374,8 +375,8 @@ export function metaComponentMatchesRef(
  * @param memberAccess - For compound components (e.g., 'Root' in `<Accordion.Root />`)
  */
 export function resolvePropsFromStoryFile(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
+  typescript: DocgenTypeScript,
+  checker: DocgenTypeChecker,
   storySourceFile: ts.SourceFile,
   componentRef: ComponentRef
 ): ResolvedComponentTarget | undefined {
@@ -404,7 +405,7 @@ export function resolvePropsFromStoryFile(
     const params = sig.getParameters();
     if (params.length === 0) {
       // Component with no props
-      return checker.getTypeFromTypeNode(typescript.factory.createTypeLiteralNode([]));
+      return typescript.getEmptyObjectType(checker);
     }
     return checker.getTypeOfSymbolAtLocation(params[0], node);
   }
@@ -476,8 +477,8 @@ export function resolvePropsFromStoryFile(
  * polymorphic components don't exist in practice.
  */
 export function resolvePropsFromComponentType(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
+  typescript: DocgenTypeScript,
+  checker: DocgenTypeChecker,
   componentType: ts.Type
 ): ts.Type | undefined {
   // Try call signatures first (functional components — the common case)
@@ -521,8 +522,8 @@ export function resolvePropsFromComponentType(
  * batch entry.
  */
 export function resolvePropsFromComponentExport(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
+  typescript: DocgenTypeScript,
+  checker: DocgenTypeChecker,
   componentSourceFile: ts.SourceFile,
   componentRef: ComponentRef
 ): ResolvedComponentTarget | undefined {
@@ -620,7 +621,7 @@ function getPropSourceFile(prop: ts.Symbol): string | undefined {
   return declarations[0].getSourceFile().fileName;
 }
 
-function getParentType(typescript: typeof ts, prop: ts.Symbol): ParentType | undefined {
+function getParentType(typescript: DocgenTypeScript, prop: ts.Symbol): ParentType | undefined {
   const declarations = prop.getDeclarations();
   if (!declarations?.length) {
     return undefined;
@@ -644,7 +645,7 @@ function getParentType(typescript: typeof ts, prop: ts.Symbol): ParentType | und
 }
 
 function getAllDeclarationParents(
-  typescript: typeof ts,
+  typescript: DocgenTypeScript,
   prop: ts.Symbol
 ): ParentType[] | undefined {
   const declarations = prop.getDeclarations();
@@ -681,8 +682,8 @@ function getAllDeclarationParents(
 // ---------------------------------------------------------------------------
 
 function serializeType(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
+  typescript: DocgenTypeScript,
+  checker: DocgenTypeChecker,
   type: ts.Type,
   isRequired: boolean,
   depth = 0
@@ -757,10 +758,10 @@ function serializeType(
  * expression or declaration.
  */
 function unwrapToFunction(
-  typescript: typeof ts,
+  typescript: DocgenTypeScript,
   node: ts.Node,
   depth = 0,
-  checker?: ts.TypeChecker
+  checker?: DocgenTypeChecker
 ): ts.FunctionLikeDeclaration | undefined {
   if (depth > MAX_UNWRAP_DEPTH) {
     return undefined;
@@ -822,8 +823,8 @@ function unwrapToFunction(
  * enum members, and property accesses. Falls back to `.getText()` for unresolvable expressions.
  */
 function resolveLiteralValue(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
+  typescript: DocgenTypeScript,
+  checker: DocgenTypeChecker,
   node: ts.Expression,
   depth = 0
 ): string {
@@ -905,10 +906,10 @@ function resolveLiteralValue(
  * (e.g. `'md'`).
  */
 function collectBindingDefaults(
-  typescript: typeof ts,
+  typescript: DocgenTypeScript,
   pattern: ts.ObjectBindingPattern,
   defaults: Map<string, string>,
-  checker?: ts.TypeChecker
+  checker?: DocgenTypeChecker
 ): void {
   for (const element of pattern.elements) {
     if (element.initializer) {
@@ -927,7 +928,7 @@ function collectBindingDefaults(
   }
 }
 
-function unwrapExpression(typescript: typeof ts, expression: ts.Expression): ts.Expression {
+function unwrapExpression(typescript: DocgenTypeScript, expression: ts.Expression): ts.Expression {
   let current = expression;
 
   while (isWrappedExpression(typescript, current)) {
@@ -938,10 +939,10 @@ function unwrapExpression(typescript: typeof ts, expression: ts.Expression): ts.
 }
 
 function isPropsIdentifier(
-  typescript: typeof ts,
+  typescript: DocgenTypeScript,
   node: ts.Expression,
   paramName: ts.Identifier,
-  checker?: ts.TypeChecker
+  checker?: DocgenTypeChecker
 ): boolean {
   if (!typescript.isIdentifier(node)) {
     return false;
@@ -958,10 +959,10 @@ function isPropsIdentifier(
 }
 
 function isPropsDerivedInitializer(
-  typescript: typeof ts,
+  typescript: DocgenTypeScript,
   initializer: ts.Expression,
   paramName: ts.Identifier,
-  checker?: ts.TypeChecker
+  checker?: DocgenTypeChecker
 ): boolean {
   const expr = unwrapExpression(typescript, initializer);
 
@@ -1018,9 +1019,9 @@ function isPropsDerivedInitializer(
  * empty map.
  */
 function extractDestructuringDefaults(
-  typescript: typeof ts,
+  typescript: DocgenTypeScript,
   resolved: ts.Symbol,
-  checker?: ts.TypeChecker
+  checker?: DocgenTypeChecker
 ): Map<string, string> {
   const defaults = new Map<string, string>();
   const decl = resolved.valueDeclaration;
@@ -1101,8 +1102,8 @@ function extractDestructuringDefaults(
  * and ShorthandPropertyAssignment.
  */
 function collectObjectLiteralDefaults(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
+  typescript: DocgenTypeScript,
+  checker: DocgenTypeChecker,
   obj: ts.ObjectLiteralExpression,
   defaults: Map<string, string>
 ): void {
@@ -1130,8 +1131,8 @@ function collectObjectLiteralDefaults(
 }
 
 function followVariableReferences(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
+  typescript: DocgenTypeScript,
+  checker: DocgenTypeChecker,
   symbol: ts.Symbol
 ): ts.Symbol {
   let current = symbol;
@@ -1162,8 +1163,8 @@ function followVariableReferences(
  * priority than destructuring defaults.
  */
 function extractStaticDefaultProps(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
+  typescript: DocgenTypeScript,
+  checker: DocgenTypeChecker,
   resolved: ts.Symbol
 ): Map<string, string> {
   const defaults = new Map<string, string>();
@@ -1259,11 +1260,11 @@ function extractStaticDefaultProps(
 
 /** Extracts a default value from JSDoc @default / @defaultValue tags on a prop's declaration. */
 function getJSDocDefault(
-  typescript: typeof ts,
+  typescript: DocgenTypeScript,
   prop: ts.Symbol,
-  checker: ts.TypeChecker
+  checker: DocgenTypeChecker
 ): string | undefined {
-  const tags = prop.getJsDocTags(checker);
+  const tags = prop.getJsDocTags(checker as ts.TypeChecker);
   for (const tag of tags) {
     if (tag.name === 'default' || tag.name === 'defaultValue') {
       return typescript.displayPartsToString(tag.text) || undefined;
@@ -1277,8 +1278,8 @@ function getJSDocDefault(
 // ---------------------------------------------------------------------------
 
 function extractPropItem(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
+  typescript: DocgenTypeScript,
+  checker: DocgenTypeChecker,
   prop: ts.Symbol,
   contextNode: ts.Node,
   defaultsMap?: Map<string, string>,
@@ -1291,7 +1292,9 @@ function extractPropItem(
   const propType = typeOverride ?? checker.getTypeOfSymbolAtLocation(prop, contextNode);
   const type = serializeType(typescript, checker, propType, isRequired);
 
-  const description = typescript.displayPartsToString(prop.getDocumentationComment(checker));
+  const description = typescript.displayPartsToString(
+    prop.getDocumentationComment(checker as ts.TypeChecker)
+  );
 
   const parent = getParentType(typescript, prop);
   const declarations = getAllDeclarationParents(typescript, prop);
@@ -1327,7 +1330,10 @@ function extractPropItem(
  * hundreds of CSS properties. Project-local `.d.ts` with fewer than 30 props per file are
  * unaffected.
  */
-function getBulkSourceExclusions(typescript: typeof ts, properties: ts.Symbol[]): Set<string> {
+function getBulkSourceExclusions(
+  typescript: DocgenTypeScript,
+  properties: ts.Symbol[]
+): Set<string> {
   const bulkCandidates = properties.flatMap((prop) => {
     const source = getPropSourceFile(prop);
     if (!source || !(source.includes('node_modules') || source.endsWith('.d.ts'))) {
@@ -1402,8 +1408,8 @@ function computeDisplayName({
  * serialized format for a single story/component pair.
  */
 export function serializeComponentDoc(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
+  typescript: DocgenTypeScript,
+  checker: DocgenTypeChecker,
   {
     sourceFile,
     resolvedComponent,
@@ -1535,7 +1541,7 @@ export function serializeComponentDoc(
   for (const prop of allProperties) {
     if (
       excluded.has(prop.getName()) ||
-      prop.getJsDocTags(checker).some((tag) => tag.name === 'ignore')
+      prop.getJsDocTags(checker as ts.TypeChecker).some((tag) => tag.name === 'ignore')
     ) {
       continue;
     }
@@ -1610,7 +1616,7 @@ export function serializeComponentDoc(
  * are extracted. Identifier references (e.g. `noop`, `DEFAULT_SIZE`) are included as-is.
  */
 function extractDefaultsFromSourceFile(
-  typescript: typeof ts,
+  typescript: DocgenTypeScript,
   filePath: string,
   {
     exportName,
@@ -1629,12 +1635,7 @@ function extractDefaultsFromSourceFile(
     return defaults;
   }
 
-  const sf = typescript.createSourceFile(
-    filePath,
-    content,
-    typescript.ScriptTarget.Latest,
-    /* setParentNodes */ true
-  );
+  const sf = typescript.createSourceFile(filePath, content);
 
   // Build a map of top-level variable names → initializer nodes.
   // This lets us follow references like: export const Stack = Object.assign(StackImpl, ...)
@@ -1700,7 +1701,7 @@ function extractDefaultsFromSourceFile(
 }
 
 function findLocalFunction(
-  typescript: typeof ts,
+  typescript: DocgenTypeScript,
   sf: ts.SourceFile,
   localName: string | undefined,
   varMap: Map<string, ts.Expression | ts.FunctionDeclaration>
@@ -1722,7 +1723,7 @@ function findLocalFunction(
  * follows Object.assign, forwardRef, memo, as-casts, and identifier refs.
  */
 function findExportedFunction(
-  typescript: typeof ts,
+  typescript: DocgenTypeScript,
   sf: ts.SourceFile,
   exportName: string,
   varMap: Map<string, ts.Expression | ts.FunctionDeclaration>
@@ -1800,7 +1801,7 @@ function findExportedFunction(
  * parenthesized expressions, and identifier references via varMap.
  */
 function unwrapToFunctionAST(
-  typescript: typeof ts,
+  typescript: DocgenTypeScript,
   node: ts.Node,
   varMap: Map<string, ts.Expression | ts.FunctionDeclaration>,
   depth: number
@@ -1865,7 +1866,7 @@ function unwrapToFunctionAST(
 
 /** Finds the implementation body for an overloaded function declaration. */
 function findFunctionImpl(
-  typescript: typeof ts,
+  typescript: DocgenTypeScript,
   sf: ts.SourceFile,
   name: string
 ): ts.FunctionDeclaration | undefined {
@@ -1878,7 +1879,7 @@ function findFunctionImpl(
 }
 
 /** Check if a statement has the `export` modifier. */
-function hasExportModifier(typescript: typeof ts, node: ts.Statement): boolean {
+function hasExportModifier(typescript: DocgenTypeScript, node: ts.Statement): boolean {
   return (
     typescript.canHaveModifiers(node) &&
     typescript.getModifiers(node)?.some((m) => m.kind === typescript.SyntaxKind.ExportKeyword) ===

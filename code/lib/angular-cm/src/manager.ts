@@ -1,17 +1,36 @@
 import {
   ComponentMetaManager,
-  type ComponentMetaProjectFactory,
+  type ProjectCommandLine,
   parseTsconfigCommandLine,
 } from 'storybook/internal/component-meta';
 
 import type * as ts from 'typescript';
+import type { RawCompilerOptions } from 'typescript-native/sync';
+import {
+  type ComponentMetaBackend,
+  type LoadedDocgenTypeScript,
+  createComponentMetaBackend,
+  createNativeBackend,
+} from '@storybook/component-meta-typescript';
 
+import type { ComponentNames } from './extract-component.ts';
+import { NativeAngularComponentMetaProject } from './native-project.ts';
 import { AngularComponentMetaProject, type FsFileSnapshots } from './project.ts';
 import type { AngularComponentMetaResult } from './types.ts';
 
-function createAngularProjectFactory(
+type ManagedProject = AngularComponentMetaProject | NativeAngularComponentMetaProject;
+
+// Permissive defaults for files no tsconfig claims, which still use legacy decorators.
+const INFERRED_OPTIONS = {
+  strict: false,
+  allowJs: true,
+  skipLibCheck: true,
+  experimentalDecorators: true,
+} as const;
+
+function createCompilerApiBackend(
   typescript: typeof ts
-): ComponentMetaProjectFactory<AngularComponentMetaProject, ts.ParsedCommandLine> {
+): ComponentMetaBackend<AngularComponentMetaProject, ts.ParsedCommandLine> {
   const fsFileSnapshots: FsFileSnapshots = new Map();
 
   // Shared so projects reuse parsed SourceFiles instead of each holding a private copy of lib.d.ts.
@@ -19,7 +38,10 @@ function createAngularProjectFactory(
     typescript.sys.useCaseSensitiveFileNames
   );
 
-  return {
+  const factory: ComponentMetaBackend<
+    AngularComponentMetaProject,
+    ts.ParsedCommandLine
+  >['factory'] = {
     parseCommandLine: (tsconfig) =>
       parseTsconfigCommandLine<ts.ParsedCommandLine>(typescript, tsconfig),
     createConfiguredProject: (commandLine, tsconfig, getCommandLine) =>
@@ -36,11 +58,7 @@ function createAngularProjectFactory(
         typescript,
         {
           options: {
-            // Permissive defaults for files no tsconfig claims, which still use legacy decorators.
-            strict: false,
-            allowJs: true,
-            skipLibCheck: true,
-            experimentalDecorators: true,
+            ...INFERRED_OPTIONS,
             target: typescript.ScriptTarget.Latest,
             module: typescript.ModuleKind.ESNext,
             moduleResolution: typescript.ModuleResolutionKind.Bundler,
@@ -58,20 +76,33 @@ function createAngularProjectFactory(
     recycle: () => fsFileSnapshots.clear(),
     dispose: () => fsFileSnapshots.clear(),
   };
+
+  return { fileSystem: typescript, factory };
 }
 
 /**
  * Extract argTypes-ready metadata for Angular components straight from their TypeScript sources.
  *
- * Keeps one warm LanguageService per matched tsconfig, so bracket the manager's lifetime with
- * `startWatching()`/`dispose()`.
+ * Keeps one warm program per matched tsconfig, so bracket the manager's lifetime with
+ * `startWatching()`/`dispose()`. `typescript` is the result of `loadDocgenTypeScript`, which selects
+ * the native API for TypeScript 7.1 and newer.
  */
 export class AngularComponentMetaManager extends ComponentMetaManager<
-  AngularComponentMetaProject,
-  ts.ParsedCommandLine
+  ManagedProject,
+  ProjectCommandLine
 > {
-  constructor(typescript: typeof ts) {
-    super(typescript, createAngularProjectFactory(typescript));
+  constructor(typescript: LoadedDocgenTypeScript) {
+    const { fileSystem, factory } = createComponentMetaBackend(typescript, {
+      compiler: createCompilerApiBackend,
+      native: (modules) =>
+        createNativeBackend(modules, NativeAngularComponentMetaProject, {
+          ...(INFERRED_OPTIONS as RawCompilerOptions),
+          target: modules.ast.ScriptTarget.Latest,
+          module: modules.sync.ModuleKind.ESNext,
+          moduleResolution: modules.sync.ModuleResolutionKind.Bundler,
+        }),
+    });
+    super(fileSystem, factory);
   }
 
   /**
@@ -80,7 +111,7 @@ export class AngularComponentMetaManager extends ComponentMetaManager<
    */
   extractComponentMeta(
     componentPath: string,
-    names: { exportName: string; localName?: string }
+    names: ComponentNames
   ): AngularComponentMetaResult | undefined {
     return this.getProjectForFile(componentPath).extract(componentPath, names);
   }

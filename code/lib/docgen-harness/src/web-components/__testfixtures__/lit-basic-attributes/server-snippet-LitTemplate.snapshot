@@ -1,1 +1,6 @@
-<lit-basic-attributes label="Open panel" count="7" is-open></lit-basic-attributes>
+html`<lit-basic-attributes
+  label=${'Open panel'}
+  count=${7}
+  ?disabled=${false}
+  ?is-open=${true}
+></lit-basic-attributes>`

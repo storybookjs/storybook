@@ -1,0 +1,21 @@
+export {
+  DOCGEN_NODE_GUARDS,
+  createCompilerDocgenTypeScript,
+  type DocgenNodeGuards,
+  type DocgenNodeRewriter,
+  type DocgenSystem,
+  type DocgenTypeChecker,
+  type DocgenTypeScript,
+} from './docgen-typescript.ts';
+export { NativeFacades } from './native/native-facades.ts';
+export {
+  createNativeDocgenTypeScript,
+  createNativeSystem,
+  type NativeDocgenTypeScript,
+  type NativeRequest,
+  type NativeTypeScriptModules,
+} from './native/native-typescript.ts';
+export { NativeProject, type NativeCommandLine } from './native/native-project.ts';
+export { createNativeBackend } from './native/native-backend.ts';
+export { loadDocgenTypeScript, type LoadedDocgenTypeScript } from './load-docgen-typescript.ts';
+export { createComponentMetaBackend, type ComponentMetaBackend } from './component-meta-backend.ts';

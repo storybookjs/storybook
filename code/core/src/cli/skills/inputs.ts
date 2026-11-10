@@ -21,9 +21,9 @@ export type SkillInputs = ToolAvailability & {
   previewFile: string;
   /** The preview file, or `main` when there is none, is TypeScript. */
   typescript: boolean;
-  /** The toolsets of addon-mcp that `main.ts` turns on; all of them without addon-mcp. */
+  // The toolsets of addon-mcp that `main.ts` turns on; all of them without addon-mcp.
   mcpToolsets: McpToolsets;
-  /** `refs` compose other Storybooks, whose docs the MCP docs tools serve even without local manifests. */
+  // `refs` compose other Storybooks, whose docs the MCP docs tools serve without local manifests.
   composed: boolean;
 };
 
@@ -31,14 +31,10 @@ export type SkillInputs = ToolAvailability & {
 // server registers. An `X-MCP-Toolsets` request header replaces these toolsets for one client; the
 // CLI cannot see that.
 async function resolveMcpToolsets(options: Options): Promise<McpToolsets> {
-  try {
-    return (
-      (await options.presets.apply<McpToolsets | undefined>('mcpToolsets', undefined)) ??
-      ALL_MCP_TOOLSETS
-    );
-  } catch {
-    return ALL_MCP_TOOLSETS;
-  }
+  return (
+    (await options.presets.apply<McpToolsets | undefined>('mcpToolsets', undefined)) ??
+    ALL_MCP_TOOLSETS
+  );
 }
 
 const isTypeScriptFile = (path: string) => /\.[cm]?tsx?$/.test(path);

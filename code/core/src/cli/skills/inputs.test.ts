@@ -130,17 +130,18 @@ describe('resolveSkillInputs', () => {
     expect(withoutAddon.mcpToolsets).toEqual({ dev: true, docs: true, test: true });
   });
 
-  it('turns every MCP toolset on when addon-mcp rejects its options', async () => {
-    const inputs = await resolveSkillInputs(
-      createMockOptions({
-        presets: {
-          mcpToolsets: () => {
-            throw new Error('Invalid type: Expected boolean but received "false"');
+  it('fails when addon-mcp rejects its options, as its server does', async () => {
+    await expect(
+      resolveSkillInputs(
+        createMockOptions({
+          presets: {
+            mcpToolsets: () => {
+              throw new Error('Invalid type: Expected boolean but received "false"');
+            },
           },
-        },
-      })
-    );
-    expect(inputs.mcpToolsets).toEqual({ dev: true, docs: true, test: true });
+        })
+      )
+    ).rejects.toThrow('Expected boolean but received "false"');
   });
 
   it('marks a project that composes other Storybooks', async () => {

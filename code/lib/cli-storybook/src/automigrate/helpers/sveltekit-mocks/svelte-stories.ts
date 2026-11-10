@@ -24,7 +24,9 @@ import {
   findObjectSite,
   hasAutodocs,
   prependToBeforeEach,
-  setsInline,
+  INLINE_PROBLEM,
+  inlineOf,
+  isFalse,
   SPREAD_PROBLEM,
   spreadsBeforeEach,
   tagsOf,
@@ -88,10 +90,23 @@ export const migrateSvelteStories = async (
       problems.push(...findUnmigrated(region.editor.program, sites, region.toFile));
     }
   }
+  const unparsed = () =>
+    file.unparsed(new RegExp(`\\b${KEY}\\b`, 'g')).map((index) => ({
+      index,
+      message: `\`${KEY}\` is outside the \`<script module>\` and the \`<Story>\` attributes, so the fix can't tell which stories use it.`,
+    }));
+  // Without a meta, such as in the legacy syntax, the file has no stories to migrate
+  if (!module || !meta) {
+    problems.push(...unparsed());
+    if (problems.length > 0) {
+      failWith(code, problems);
+    }
+    return null;
+  }
 
   const outer = mergeKeys(
     metaMocks ? mergeKeys(preview.merged, metaMocks.merged) : preview.merged,
-    migratedKeys(module!.editor, meta?.object && objectProperty(meta.object, 'beforeEach')?.value)
+    migratedKeys(module.editor, meta.object && objectProperty(meta.object, 'beforeEach')?.value)
   );
   const sites: Omit<StoryLevel, 'mocks'>[] = [];
   // A story's own `autodocs` tag gives the file a docs page too
@@ -131,7 +146,7 @@ export const migrateSvelteStories = async (
   const ownKeys = new Map<string, MergedKeys>();
   for (const { story, parameters, sveltekit } of sites) {
     if (story.name) {
-      const context = readContext(parameters.editor, module!.editor, outer, instance?.editor);
+      const context = readContext(parameters.editor, module.editor, outer, instance?.editor);
       ownKeys.set(story.name, readMocks(parameters.editor, sveltekit.value, context).merged);
     }
   }
@@ -143,7 +158,7 @@ export const migrateSvelteStories = async (
     const mocks = readMocks(
       site.parameters.editor,
       site.sveltekit.value,
-      readContext(site.parameters.editor, module!.editor, storyOuter, instance?.editor)
+      readContext(site.parameters.editor, module.editor, storyOuter, instance?.editor)
     );
     problems.push(
       ...mocks.problems.map((problem) => ({
@@ -154,16 +169,11 @@ export const migrateSvelteStories = async (
     return { ...site, mocks };
   });
 
-  for (const index of file.unparsed(new RegExp(`\\b${KEY}\\b`, 'g'))) {
-    problems.push({
-      index,
-      message: `\`${KEY}\` is outside the \`<script module>\` and the \`<Story>\` attributes, so the fix can't tell which stories use it.`,
-    });
-  }
+  problems.push(...unparsed());
   if (problems.length > 0) {
     failWith(code, problems);
   }
-  if (!module || !meta || (!metaSite && stories.length === 0)) {
+  if (!metaSite && stories.length === 0) {
     return null;
   }
 
@@ -189,12 +199,16 @@ export const migrateSvelteStories = async (
   const storyStatements = stories.map((story) =>
     printMocks(story.parameters.editor, story.mocks, imports.local, style)
   );
-  // MIGRATION.md step 6: a docs page renders the stories inline, where they share the mocks
-  const inlineFalse =
+  // A docs page renders the stories inline, where they share the mocks
+  const docsPage =
     !!meta.object &&
     [metaStatements, ...storyStatements].some((statements) => statements.length > 0) &&
-    (!!preview.mdxDocsPage || storyAutodocs || hasAutodocs(meta.object, preview.autodocs)) &&
-    !setsInline(meta.object);
+    (!!preview.mdxDocsPage || storyAutodocs || hasAutodocs(meta.object, preview.autodocs));
+  const inline = docsPage ? inlineOf(meta.object!) : undefined;
+  if (inline && !isFalse(inline.value)) {
+    failWith(code, [{ index: module.toFile(inline.start), message: INLINE_PROBLEM }]);
+  }
+  const inlineFalse = docsPage && !inline;
 
   if (metaSite) {
     editObjectSite(module.editor, metaSite, metaStatements, { inlineFalse, semicolon });

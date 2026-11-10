@@ -23,7 +23,9 @@ import {
   findObjectSite,
   hasAutodocs,
   prependToBeforeEach,
-  setsInline,
+  INLINE_PROBLEM,
+  inlineOf,
+  isFalse,
   SPREAD_PROBLEM,
   spreadsBeforeEach,
   tagsOf,
@@ -460,16 +462,20 @@ export const migrateCsfStories = (
   const imports = new MockImports(editor, takenNames(editor, spies));
   const style = styleOf(editor);
   const printed = levels.map((level) => printMocks(editor, level.mocks, imports.local, style));
-  // MIGRATION.md step 6: a docs page renders the stories inline, where they share the mocks
-  const inlineFalse =
+  // A docs page renders the stories inline, where they share the mocks
+  const docsPage =
     !!meta &&
     printed.some((statements) => statements.length > 0) &&
     (!!preview.mdxDocsPage ||
       hasAutodocs(meta, preview.autodocs) ||
       [...storyNodes].some((story) =>
         tagsOf(objectProperty(story, 'tags')?.value)?.includes('autodocs')
-      )) &&
-    !setsInline(meta);
+      ));
+  const inline = docsPage && meta ? inlineOf(meta) : undefined;
+  if (inline && !isFalse(inline.value)) {
+    failWith(code, [{ index: inline.start, message: INLINE_PROBLEM }]);
+  }
+  const inlineFalse = docsPage && !inline;
   const semicolon = style.semicolons ? ';' : '';
   levels.forEach((level, index) =>
     editObjectSite(editor, level.site, printed[index], {

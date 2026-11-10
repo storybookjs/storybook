@@ -206,7 +206,7 @@ export const editObjectSite = (
 
 // A property of a shared value that its type may not declare, which TypeScript then needs widened.
 // The value can be `undefined`, as `docs: Base.parameters.docs` is when `Base` has no docs.
-const read = (editor: SourceEditor, source: string, keys: string[]) => {
+const readText = (editor: SourceEditor, source: string, keys: string[]) => {
   const path = keys.join('?.');
   if (!/\.[cm]?tsx?$/.test(editor.fileName ?? '')) {
     return `${source}?.${path}`;
@@ -241,7 +241,7 @@ const addInlineFalse = (editor: SourceEditor, docs: E.ObjectProperty) => {
     spreadShared(
       editor,
       docs,
-      (source) => `story: { ...${read(editor, source, ['story'])}, inline: false }`
+      (source) => `story: { ...${readText(editor, source, ['story'])}, inline: false }`
     );
     return;
   }
@@ -261,15 +261,24 @@ const addInlineFalse = (editor: SourceEditor, docs: E.ObjectProperty) => {
 const appendMember = (editor: SourceEditor, object: E.ObjectExpression, text: string) =>
   appendToList(editor, objectList(editor, object), [text]);
 
-export const setsInline = (meta: E.ObjectExpression) => {
+// The meta's `parameters.docs.story.inline`, when object literals hold it
+export const inlineOf = (meta: E.ObjectExpression) => {
   const parameters = objectProperty(meta, 'parameters');
   const params = parameters && objectValue(parameters.value);
   const docs = params && objectProperty(params, 'docs');
   const docsObject = docs && objectValue(docs.value);
   const story = docsObject && objectProperty(docsObject, 'story');
   const storyObject = story && objectValue(story.value);
-  return !!storyObject && !!objectProperty(storyObject, 'inline');
+  return storyObject ? objectProperty(storyObject, 'inline') : undefined;
 };
+
+export const isFalse = (node: Node) => {
+  const value = unwrapExpression(node);
+  return value.type === 'Literal' && value.value === false;
+};
+
+export const INLINE_PROBLEM =
+  'The file has a docs page, which renders the stories inline, where they share the mocks, but the meta sets `parameters.docs.story.inline` to a value other than `false`. Set it to `false`.';
 
 // Add `parameters.docs.story.inline: false` to a meta that has no `sveltekit_experimental`.
 export const addInlineFalseToMeta = (editor: SourceEditor, meta: E.ObjectExpression) => {
@@ -284,7 +293,7 @@ export const addInlineFalseToMeta = (editor: SourceEditor, meta: E.ObjectExpress
       editor,
       parameters,
       (source) =>
-        `docs: { ...${read(editor, source, ['docs'])}, story: { ...${read(editor, source, ['docs', 'story'])}, inline: false } }`
+        `docs: { ...${readText(editor, source, ['docs'])}, story: { ...${readText(editor, source, ['docs', 'story'])}, inline: false } }`
     );
     return;
   }

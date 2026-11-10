@@ -64,59 +64,44 @@ interface Splice extends Span {
 
 const span = ({ start, end }: Span): Span => ({ start, end });
 
-/** JavaScript in a Svelte file, parsed on its own: a script's content or an attribute's expression. */
+// JavaScript in a Svelte file, parsed on its own: a script, or an attribute's expression
 export interface ParsedRegion {
   editor: SourceEditor;
-  /** The offset in the file of an offset in `editor.code`. */
+  // Maps an offset in `editor.code` to one in the file
   toFile: (index: number) => number;
 }
 
-/** A `<Story>` attribute whose value is one expression, such as `parameters={{ … }}`. */
+// A `<Story>` attribute whose value is one expression. An expression that the methods add is
+// written at indent 0, and its later lines get the indent of the attribute's line
 export interface StoryAttribute extends ParsedRegion {
-  /** The expression, in `editor.program`. */
   node: Node;
-  /** Remove the attribute and the space before it. */
   remove(): void;
-  /** Replace the attribute with `name={expression}`. */
   replaceWith(name: string, expression: string): void;
-  /** Add `name={expression}` after the attribute, on a line of its own when this one starts a line. */
+  // On a line of its own when this attribute starts one
   insertAfter(name: string, expression: string): void;
 }
 
 export interface SvelteCsfStory {
-  /** Where the `<Story>` starts in the file. */
   start: number;
-  /** The static text of the `name` and `extend` attributes. */
   name?: string;
-  extend?: string;
-  /** The names of the stories it extends, the nearest first. */
+  // The names of the stories it extends, the nearest first
   ancestors: string[];
   attributes: Map<string, StoryAttribute>;
-  /** Whether it spreads attributes, which can set any of them. */
+  // Spread attributes can set any of the others
   spreads: boolean;
 }
 
-/**
- * A Svelte CSF file, read with the project's own `svelte/compiler`. Its scripts and the expressions
- * of its `<Story>` attributes are parsed on their own into `SourceEditor`s, so a fix reads and edits
- * them like any module. `toString()` puts the edits back and keeps the rest of the file as written.
- *
- * An expression that an attribute's methods add is written at indent 0: its later lines get the
- * indent of the attribute's line.
- */
+// A Svelte CSF file, parsed with the project's own `svelte/compiler`. `toString()` puts back the
+// edits of the regions and the attributes, and keeps the rest of the file as written
 export interface SvelteCsfFile {
-  lang: 'ts' | 'js';
-  /** `<script module>`, where the meta is. */
   module?: ParsedRegion;
-  /** The instance `<script>`, whose names the markup reads. */
   instance?: ParsedRegion;
-  /** `defineMeta({…})` or `preview.meta({…})`, and the local name of its `Story`. */
-  meta?: { object?: E.ObjectExpression; storyName: string };
-  /** The `<Story>` components of the meta. */
+  // `defineMeta({…})` or `preview.meta({…})`
+  meta?: { object?: E.ObjectExpression };
   stories: SvelteCsfStory[];
-  /** Where a global `pattern` matches outside the parsed code and the HTML comments. */
+  // Where a global `pattern` matches outside the parsed code and the HTML comments
   unparsed(pattern: RegExp): number[];
-  /** The file with its edits, without the content of `<script module>`. */
+  // The file with its edits, without the content of `<script module>`
   markup(): string;
   toString(): string;
 }
@@ -276,7 +261,7 @@ const findMeta = (editor: SourceEditor) => {
   return undefined;
 };
 
-/** Read a Svelte CSF file. A part that it can't find, such as the meta, is `undefined`. */
+// A part that the file doesn't have, or that can't be read statically, is `undefined`
 export const loadSvelteCsf = async (code: string, id: string): Promise<SvelteCsfFile> => {
   const { parse } = await loadSvelteCompiler(id);
   const root = parse(code, { modern: true });
@@ -361,7 +346,6 @@ export const loadSvelteCsf = async (code: string, id: string): Promise<SvelteCsf
     return {
       start: component.start,
       name: textAttribute(component, 'name'),
-      extend: textAttribute(component, 'extend'),
       ancestors: [],
       attributes,
       spreads: component.attributes.some((attribute) => attribute.type === 'SpreadAttribute'),
@@ -371,17 +355,19 @@ export const loadSvelteCsf = async (code: string, id: string): Promise<SvelteCsf
   const module = script(root.module);
   const instance = script(root.instance);
   const meta = module && findMeta(module.editor);
-  const stories = meta ? findComponents(root.fragment, meta.storyName).map(story) : [];
+  const components = meta ? findComponents(root.fragment, meta.storyName) : [];
+  const stories = components.map(story);
   const parents = new Map<string, string>();
-  for (const { name, extend } of stories) {
-    if (name && extend) {
-      parents.set(name, extend);
+  const extended = components.map((component) => textAttribute(component, 'extend'));
+  stories.forEach(({ name }, index) => {
+    if (name && extended[index]) {
+      parents.set(name, extended[index]);
     }
-  }
+  });
   // A cycle, which the renderer rejects, stops at the story itself
-  for (const { name, extend, ancestors } of stories) {
+  for (const [index, { name, ancestors }] of stories.entries()) {
     for (
-      let parent = extend;
+      let parent = extended[index];
       parent && parent !== name && !ancestors.includes(parent);
       parent = parents.get(parent)
     ) {
@@ -408,10 +394,9 @@ export const loadSvelteCsf = async (code: string, id: string): Promise<SvelteCsf
   };
 
   return {
-    lang,
     module,
     instance,
-    meta,
+    meta: meta && { object: meta.object },
     stories,
     unparsed(pattern) {
       const comments = [...code.matchAll(/<!--[\s\S]*?-->/g)].map((match) => ({

@@ -94,12 +94,18 @@ export const mergeKeys = (outer: MergedKeys, inner: MergedKeys): MergedKeys => (
   replaced: [...new Set([...outer.replaced, ...inner.replaced])],
 });
 
-// Whether a path holds what the old parameters could merge with a plain object at `keys`' level
-const mergesWith = (keys: MergedKeys, path: string) =>
-  keys.objects.includes(path) ||
+// Whether a level set a value that isn't an object literal at a path, or under a path ending in `.*`
+const holdsValue = (keys: MergedKeys, path: string) =>
   keys.values.some((value) =>
     value.endsWith('.*') ? path.startsWith(value.slice(0, -1)) : value === path
   );
+
+// Whether a path holds what the old parameters could merge with a plain object at `keys`' level
+const mergesWith = (keys: MergedKeys, path: string) =>
+  keys.objects.includes(path) || holdsValue(keys, path);
+
+const ENHANCE_READS_EVENT =
+  '`forms.enhance` reads the submit event. `formAction` receives `{ action, formData, formElement, submitter }` instead.';
 
 // Record the paths of a value that a level inside this one could merge with
 export const recordMerged = (keys: MergedKeys, node: Node, path: string) => {
@@ -497,9 +503,7 @@ export const readMocks = (
       return;
     }
     const object = objectValue(node);
-    const opaque = outer.values.some((value) =>
-      value.endsWith('.*') ? path.startsWith(value.slice(0, -1)) : value === path
-    );
+    const opaque = holdsValue(outer, path);
     if (!object || opaque) {
       if (!object ? canBePlainObject(node) : true) {
         problem(node, deepMergeMessage(`state.${path}`));
@@ -718,20 +722,14 @@ export const readMocks = (
         return;
       }
       if ((callback as FunctionLiteral).params.length > 0) {
-        problem(
-          enhance,
-          '`forms.enhance` reads the submit event. `formAction` receives `{ action, formData, formElement, submitter }` instead.'
-        );
+        problem(enhance, ENHANCE_READS_EVENT);
         return;
       }
     } else if (isNotAFunction(callback) || isSpyCall(callback)) {
       nothing();
       return;
     } else if ((functionOf(callback)?.params.length ?? 0) > 0) {
-      problem(
-        enhance,
-        '`forms.enhance` reads the submit event. `formAction` receives `{ action, formData, formElement, submitter }` instead.'
-      );
+      problem(enhance, ENHANCE_READS_EVENT);
       return;
     }
     mocks.merged.functions.push('formAction');

@@ -15,7 +15,7 @@ import {
   readPreviewMocks,
 } from '../helpers/sveltekit-mocks/csf-files.ts';
 import { KEY } from '../helpers/sveltekit-mocks/mock-statements.ts';
-import { migrateSvelteStories } from '../helpers/sveltekit-mocks/svelte-csf-files.ts';
+import { migrateSvelteStories } from '../helpers/sveltekit-mocks/svelte-stories.ts';
 import { isAtOrPastVersion } from '../helpers/versionBoundary.ts';
 import type { Fix } from '../types.ts';
 

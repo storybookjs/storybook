@@ -138,7 +138,6 @@ export type Template = {
    */
   isInternal?: boolean;
   docgenBaselinesFrom?: string;
-  docgenBaselineComponents?: string[];
 };
 
 type BaseTemplates = Template & {
@@ -1023,13 +1022,6 @@ const typeScript7Templates = {
     skipTasks: [...reactVite.skipTasks, 'chromatic'],
     inDevelopment: true,
     isInternal: true,
-    docgenBaselineComponents: [
-      'example-button',
-      'example-header',
-      'example-page',
-      'stories-renderers-react-js-argtypes',
-      'stories-renderers-react-ts-argtypes',
-    ],
   },
   'angular-vite/typescript-7-ts': {
     ...angularVite,

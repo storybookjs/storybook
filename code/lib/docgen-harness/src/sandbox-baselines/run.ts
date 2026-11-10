@@ -103,11 +103,7 @@ function runTemplate(
   const staticDir = join(sandboxDir, 'storybook-static');
   const baselineDir = baselineDirFor(template);
 
-  const candidate = readStaticDocgen({
-    staticDir,
-    sandboxDir,
-    componentIds: allTemplates[template as TemplateKey]?.docgenBaselineComponents,
-  });
+  const candidate = readStaticDocgen({ staticDir, sandboxDir });
   const documented = Object.values(candidate).filter((entry) => entry.argTypes).length;
   console.log(
     `${template}: read ${Object.keys(candidate).length} component(s) from ${staticDir} (${documented} documented)`

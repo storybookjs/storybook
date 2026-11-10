@@ -12,9 +12,9 @@ That is where component name collisions, unresolvable imports, and tsconfig cove
 The recorder reads that directory and keeps only the portable `DocgenPayload` fields, so engine-specific extras (the raw Compodoc entry, roughly 117KB of source text across a stock sandbox) stay out of the repository.
 Absolute sandbox paths inside error messages are rewritten to `<sandbox>`, because a sandbox lives somewhere different on every machine and every CI run.
 
-Components referenced through a global rather than an import are skipped.
-The monorepo's shared template stories point at `globalThis.__TEMPLATE_COMPONENTS__.*`, which leaves no import to resolve and no scanned file to find, so all of them error by construction and say nothing about docgen.
-Skipping them takes the Angular sandbox from 111 recorded components to 37, of which 30 are documented and 7 are Angular classes declared inline in story files.
+Components whose docgen failed are skipped.
+Most of them fail by construction: the monorepo's shared template stories point at `globalThis.__TEMPLATE_COMPONENTS__.*` or declare their component in the story file, so there is no component file to read, and the error says nothing about docgen.
+A component that has a baseline and starts to fail is still caught: it disappears from the build, and the comparison reports that as a regression.
 
 ## Which templates are covered
 
@@ -24,10 +24,6 @@ A template that is flagged but has nothing recorded yet fails rather than skippi
 
 A template that sets `docgenBaselinesFrom` records nothing of its own: it is checked against the baselines of the template it names.
 `angular-vite/typescript-7-ts` uses this to require the same docgen on TypeScript 7.1 as `angular-vite/default-ts` records on TypeScript 6.
-
-A template that sets `docgenBaselineComponents` records only the components it lists, by id.
-`react-vite/typescript-7-ts` lists the example components and the `ts-argtypes` and `js-argtypes` stories, which document React's `docgen-components` as subcomponents.
-The other shared React stories declare their component in the story file, so they record only an error.
 
 ## Updating
 

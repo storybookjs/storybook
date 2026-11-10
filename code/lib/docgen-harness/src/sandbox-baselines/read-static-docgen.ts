@@ -92,21 +92,12 @@ export const toBaseline = (payload: DocgenPayload, sandboxDir: string): SandboxB
   return normalizeDeep(baseline, sandboxDir) as SandboxBaseline;
 };
 
-// The monorepo's shared template stories reference their component through a global, so there is no
-// import for the resolver to follow and every one of them is an error payload by construction.
-// Recording them would say something about the template-story harness, not about docgen.
-// Web Components names such a payload after its title and quotes the global in the error instead.
-const isGloballyReferenced = (payload: SandboxBaseline): boolean =>
-  payload.name.startsWith('globalThis') || payload.error?.message.includes('`globalThis.') === true;
-
 export function readStaticDocgen({
   staticDir,
   sandboxDir,
-  componentIds,
 }: {
   staticDir: string;
   sandboxDir: string;
-  componentIds?: readonly string[];
 }): SandboxBaselines {
   const docgenDir = join(staticDir, DOCGEN_SNAPSHOT_DIR);
 
@@ -132,23 +123,8 @@ export function readStaticDocgen({
 
     for (const [id, payload] of Object.entries(components ?? {})) {
       const baseline = toBaseline(payload, sandboxDir);
-      if (!isGloballyReferenced(baseline)) {
+      if (!baseline.error) {
         baselines[id] = baseline;
-      }
-    }
-  }
-
-  if (componentIds) {
-    const missing = componentIds.filter((id) => !(id in baselines));
-    if (missing.length > 0) {
-      // eslint-disable-next-line local-rules/no-uncategorized-errors
-      throw new Error(
-        `${docgenDir} has no docgen for the listed component(s): ${missing.join(', ')}`
-      );
-    }
-    for (const id of Object.keys(baselines)) {
-      if (!componentIds.includes(id)) {
-        delete baselines[id];
       }
     }
   }
@@ -157,7 +133,7 @@ export function readStaticDocgen({
     // eslint-disable-next-line local-rules/no-uncategorized-errors
     throw new Error(
       `${docgenDir} yielded no components to record; refusing to record an empty run. ` +
-        `Either the build produced no payloads, or every one of them is globally referenced.`
+        `Either the build produced no payloads, or docgen failed for every one of them.`
     );
   }
 

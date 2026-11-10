@@ -5,7 +5,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createDocgenProvider } from '../../../../renderers/svelte/src/docgen/docgen-worker.ts';
 import { createIndexer } from '../../../../renderers/svelte/src/svelte-csf/indexer/index.ts';
@@ -72,6 +72,13 @@ const withoutOwnSnapshots = (
 
 const readFixtureFile = (fixtureCase: string, fileName: string): string =>
   readFileSync(join(fixturesDir, fixtureCase, fileName), 'utf8');
+
+// The provider's first request builds its program; pay that once, outside the per-case timeout.
+beforeAll(async () => {
+  vi.spyOn(process, 'cwd').mockReturnValue(join(fixturesDir, fixtureCases[0]));
+  await provider({ entry: entries.get(fixtureCases[0])! });
+  vi.restoreAllMocks();
+}, 60_000);
 
 afterEach(() => {
   vi.restoreAllMocks();

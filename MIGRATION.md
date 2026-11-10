@@ -1178,7 +1178,7 @@ Storybook loads them only when builder docgen runs. When your main config sets `
 | `typescript.reactDocgen` | Add to devDependencies |
 | --- | --- |
 | `'react-docgen'` (default) | `react-docgen` |
-| `'react-docgen-typescript'` | Vite: `@joshwooding/vite-plugin-react-docgen-typescript` and `react-docgen-typescript`. Webpack: `@storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0` (this exact version; the `latest` tag is older) and `react-docgen-typescript` |
+| `'react-docgen-typescript'` | Vite: `@joshwooding/vite-plugin-react-docgen-typescript@^0.7.0` (Storybook does not accept a newer version yet) and `react-docgen-typescript`. Webpack: `@storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0` (this exact version; the `latest` tag is older) and `react-docgen-typescript` |
 
 Projects without a usable `typescript` (no `typescript` package, or TypeScript 7.0) only get docgen from the `react-docgen` fallback when `react-docgen` is installed. Projects on TypeScript 7.1 or newer use server-side docgen.
 `storybook init` and the `typescript-7-react-docgen` automigration add `react-docgen` to React projects on TypeScript 7.0. Once a project is on TypeScript 7.1 or newer, Storybook no longer uses it, and you can remove `react-docgen` from your devDependencies.

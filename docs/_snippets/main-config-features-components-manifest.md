@@ -130,3 +130,57 @@ export default {
   },
 };
 ```
+
+```js filename=".storybook/main.js" renderer="svelte" language="js" tabTitle="CSF 4"
+// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
+  framework: '@storybook/your-framework',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|ts|svelte)'],
+  features: {
+    componentsManifest: true,
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="svelte" language="ts" tabTitle="CSF 4"
+// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+import { defineMain } from '@storybook/your-framework/node';
+
+export default defineMain({
+  framework: '@storybook/your-framework',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|ts|svelte)'],
+  features: {
+    componentsManifest: true,
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+import type { StorybookConfig } from '@storybook/your-framework';
+
+const config: StorybookConfig = {
+  framework: '@storybook/your-framework',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|ts|svelte)'],
+  features: {
+    componentsManifest: true,
+  },
+};
+
+export default config;
+```
+
+```js filename=".storybook/main.js" renderer="svelte" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+export default {
+  framework: '@storybook/your-framework',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|ts|svelte)'],
+  features: {
+    componentsManifest: true,
+  },
+};
+```

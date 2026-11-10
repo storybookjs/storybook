@@ -32,6 +32,12 @@ describe('upgrade-storybook-related-dependencies fix', () => {
     vi.restoreAllMocks();
   });
 
+  it('should define a link for the upgrade summary', () => {
+    expect(upgradeStorybookRelatedDependencies.link).toBe(
+      'https://github.com/storybookjs/storybook/issues/25731'
+    );
+  });
+
   it('should detect storyshots registered in main.js', async () => {
     const analyzedPackages = [
       {

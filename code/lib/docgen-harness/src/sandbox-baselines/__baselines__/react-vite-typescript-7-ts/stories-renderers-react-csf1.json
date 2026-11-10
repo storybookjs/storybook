@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "No component file found for the \"{}\" component.\n<sandbox>/src/stories/renderers/react/csf1.stories.tsx: (3:0)\n> 3 | export default {\n    | ^\n\n./src/stories/renderers/react/csf1.stories.tsx:\nimport React from 'react';\n\nexport default {\n  component: {},\n  parameters: {\n    chromatic: { disableSnapshot: true },\n  },\n};\n\nexport const Hello1 = () => <div>Hello1</div>;\nexport const Hello2 = () => <div>Hello2</div>;\n",
+    "name": "No component import found"
+  },
+  "id": "stories-renderers-react-csf1",
+  "jsDocTags": {},
+  "name": "{}",
+  "path": "./src/stories/renderers/react/csf1.stories.tsx"
+}

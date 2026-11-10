@@ -22,6 +22,9 @@ Every supported default-on sandbox template whose main config turns on `componen
 Turning on `componentsManifest` for a supported template is all it takes to bring it into this coverage, and there is nothing to keep in sync.
 A template that is flagged but has nothing recorded yet fails rather than skipping quietly.
 
+A template that sets `docgenBaselinesFrom` records nothing of its own: it is checked against the baselines of the template it names.
+`angular-vite/typescript-7-ts` uses this to require the same docgen on TypeScript 7.1 as `angular-vite/default-ts` records on TypeScript 6.
+
 ## Updating
 
 ```bash

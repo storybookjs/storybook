@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "No component file found for the \"Component\" component.\n<sandbox>/src/stories/renderers/react/jsx-docgen.stories.tsx: (7:0)\n> 7 | export default {\n    | ^\n\n./src/stories/renderers/react/jsx-docgen.stories.tsx:\nimport React, { type FC } from 'react';\n\nconst Component: FC<{ children: React.ReactNode }> = ({ children }) => {\n  return <div>{children}</div>;\n};\n\nexport default {\n  component: Component,\n  tags: ['autodocs'],\n};\n\n// This story is used to test whether JSX elements render correctly in autodocs and controls panel\nexport const Default = {\n  args: {\n    children: <div>Test</div>,\n  },\n};\n",
+    "name": "No component import found"
+  },
+  "id": "stories-renderers-react-jsx-docgen",
+  "jsDocTags": {},
+  "name": "Component",
+  "path": "./src/stories/renderers/react/jsx-docgen.stories.tsx"
+}

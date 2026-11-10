@@ -1,0 +1,83 @@
+{
+  "argTypes": {
+    "backgroundColor": {
+      "description": "What background color to use",
+      "name": "backgroundColor",
+      "table": {
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "label": {
+      "description": "Button contents",
+      "name": "label",
+      "table": {
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": true
+      }
+    },
+    "onClick": {
+      "description": "Optional click handler",
+      "name": "onClick",
+      "table": {
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "function",
+        "required": false,
+        "value": "() => void"
+      }
+    },
+    "primary": {
+      "description": "Is this the principal call to action on the page?",
+      "name": "primary",
+      "table": {
+        "defaultValue": {
+          "summary": "false"
+        },
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean",
+        "required": false
+      }
+    },
+    "size": {
+      "description": "How large should the button be?",
+      "name": "size",
+      "table": {
+        "defaultValue": {
+          "summary": "'medium'"
+        },
+        "type": {
+          "summary": "\"large\" | \"medium\" | \"small\""
+        }
+      },
+      "type": {
+        "name": "enum",
+        "raw": "\"large\" | \"medium\" | \"small\"",
+        "required": false,
+        "value": ["large", "medium", "small"]
+      }
+    }
+  },
+  "description": "Primary UI component for user interaction",
+  "id": "example-button",
+  "jsDocTags": {},
+  "name": "Button",
+  "path": "./src/stories/Button.stories.ts"
+}

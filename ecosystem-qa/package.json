@@ -1,0 +1,30 @@
+{
+  "name": "ecosystem-qa",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "collect": "node collect.ts",
+    "file": "node file.ts",
+    "run": "node run.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-hero/sandcastle": "0.13.0",
+    "gifenc": "1.0.3",
+    "pathe": "^2.0.3",
+    "playwright": "1.58.2",
+    "pngjs": "^7.0.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.1",
+    "typescript": "^6.0.3",
+    "vite": "^7.0.4",
+    "vitest": "5.0.5"
+  },
+  "installConfig": {
+    "hoistingLimits": "workspaces"
+  }
+}

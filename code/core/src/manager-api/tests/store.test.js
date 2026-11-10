@@ -4,6 +4,7 @@ import flushPromises from 'flush-promises';
 import store2 from 'store2';
 
 import Store, { STORAGE_KEY } from '../store';
+import { createLaggingUpstream } from '../test-utils/store';
 
 vi.mock('store2', () => ({
   default: {
@@ -186,24 +187,8 @@ describe('store', () => {
   });
 
   describe('writes the upstream has not committed yet', () => {
-    // Mimics React: patches are queued and committed later, callbacks run after the commit
-    function createDeferredUpstream(initial) {
-      let committed = initial;
-      const queue = [];
-      return {
-        getState: () => committed,
-        setState: (patch, cb) => queue.push({ patch, cb }),
-        commit: () => {
-          for (const { patch } of queue) {
-            committed = { ...committed, ...patch };
-          }
-          queue.splice(0).forEach(({ cb }) => cb());
-        },
-      };
-    }
-
     it('are visible to getState before the commit', () => {
-      const upstream = createDeferredUpstream({ a: 1, b: 1 });
+      const upstream = createLaggingUpstream({ a: 1, b: 1 });
       const store = new Store(upstream);
 
       void store.setState({ a: 2 });
@@ -212,7 +197,7 @@ describe('store', () => {
     });
 
     it('are not overwritten by a later write based on getState', async () => {
-      const upstream = createDeferredUpstream({ list: ['old'], other: 0 });
+      const upstream = createLaggingUpstream({ list: ['old'], other: 0 });
       const store = new Store(upstream);
 
       const first = store.setState({ list: ['old', 'new'] });
@@ -222,11 +207,11 @@ describe('store', () => {
       await Promise.all([first, second]);
 
       expect(upstream.getState()).toEqual({ list: ['old', 'new'], other: 1 });
-      expect(store.getState()).toBe(upstream.getState());
+      expect(store.getState()).toEqual(upstream.getState());
     });
 
     it('are passed to patch functions', async () => {
-      const upstream = createDeferredUpstream({ count: 0 });
+      const upstream = createLaggingUpstream({ count: 0 });
       const store = new Store(upstream);
 
       const first = store.setState((s) => ({ count: s.count + 1 }));
@@ -235,6 +220,53 @@ describe('store', () => {
       await Promise.all([first, second]);
 
       expect(store.getState()).toEqual({ count: 2 });
+    });
+
+    it('match the final state when a later write commits first', async () => {
+      const upstream = createLaggingUpstream({ k: 'base', n: 0 });
+      const store = new Store(upstream);
+
+      const channelWrite = store.setState({ k: 'A', n: 1 });
+      const clickWrite = store.setState({ k: 'B', n: 10 });
+      upstream.commitOutOfOrder(1);
+
+      expect(upstream.getState()).toMatchObject({ k: 'B', n: 10 });
+      expect(store.getState()).toMatchObject({ k: 'B', n: 10 });
+
+      const increment = store.setState((s) => ({ n: s.n + 1 }));
+      upstream.commit();
+      await Promise.all([channelWrite, clickWrite, increment]);
+
+      expect(upstream.getState()).toEqual({ k: 'B', n: 11 });
+      expect(store.getState()).toEqual({ k: 'B', n: 11 });
+    });
+
+    it('keep only the keys a patch function changed', async () => {
+      const upstream = createLaggingUpstream({ storyId: 'story-1', addons: {} });
+      const store = new Store(upstream);
+      const storyIdsDuringCommit = [];
+
+      const write = store.setState((s) => ({ ...s, addons: { a: 1 } }));
+      upstream.commit({
+        derived: { storyId: 'story-2' },
+        beforeCallbacks: () => storyIdsDuringCommit.push(store.getState().storyId),
+      });
+      await write;
+
+      expect(storyIdsDuringCommit).toEqual(['story-2']);
+      expect(store.getState()).toEqual({ storyId: 'story-2', addons: { a: 1 } });
+    });
+
+    it('are dropped when the upstream throws', async () => {
+      const store = new Store({
+        getState: () => ({ a: 1 }),
+        setState: () => {
+          throw new Error('upstream failed');
+        },
+      });
+
+      await expect(store.setState({ a: 2 })).rejects.toThrow('upstream failed');
+      expect(store.getState()).toEqual({ a: 1 });
     });
   });
 });

@@ -25,7 +25,7 @@ function update(storage: StoreAPI, patch: Patch) {
 }
 
 type GetState = () => State;
-type SetState = (a: any, b: any) => any;
+type SetState = (patch: Partial<State>, callback: (state: State) => void) => void;
 
 export interface Upstream {
   /**
@@ -38,6 +38,11 @@ export interface Upstream {
 }
 
 type Patch = Partial<State>;
+
+interface PendingPatch {
+  patch: Patch;
+  committed: boolean;
+}
 
 type InputFnPatch = (s: State) => Patch;
 type InputPatch = Patch | InputFnPatch;
@@ -54,6 +59,16 @@ export interface Options {
 type CallBack = (s: State) => void;
 type CallbackOrOptions = CallBack | Options;
 
+// Run an updater once, now, against the latest state, and keep only the keys it changed. A key it
+// returns unchanged (e.g. from spreading the whole state) would otherwise pin that value while the
+// patch is pending, hiding a newer one such as a route field set by the provider.
+function resolveUpdater(updater: InputFnPatch, state: State): Patch {
+  const result = updater(state);
+  return Object.fromEntries(
+    Object.entries(result).filter(([key, value]) => value !== state[key as keyof State])
+  ) as Patch;
+}
+
 // Our store piggybacks off the internal React state of the Context Provider
 // It has been augmented to persist state to local/sessionStorage
 export default class Store {
@@ -61,9 +76,12 @@ export default class Store {
   upstreamGetState: GetState;
   upstreamSetState: SetState;
   private persistenceHandlers: Map<string, PersistenceHandler> = new Map();
-  // Patches handed to React that it has not committed yet, oldest first. `getState()` applies them
-  // on top of the committed state, so reads always see every earlier write.
-  private pendingPatches: Patch[] = [];
+  // Patches handed to React, oldest first, from the oldest one it has not committed yet. React can
+  // commit a later patch first (e.g. a click before a channel event), so committed patches stay
+  // until every earlier one has committed: re-applying them in order then gives React's final state.
+  // `getState()` applies these on top of the committed state, so `api.*` reads see every earlier
+  // write, even while the rendered context is still a commit behind.
+  private pendingPatches: PendingPatch[] = [];
 
   constructor({ allowPersistence, setState, getState }: Upstream) {
     this.upstreamPersistence = allowPersistence ?? true;
@@ -96,7 +114,7 @@ export default class Store {
     if (this.pendingPatches.length === 0) {
       return committed;
     }
-    return this.pendingPatches.reduce<State>((acc, patch) => ({ ...acc, ...patch }), committed);
+    return this.pendingPatches.reduce<State>((acc, { patch }) => ({ ...acc, ...patch }), committed);
   }
 
   async setState(inputPatch: InputPatch, options?: Options): Promise<State>;
@@ -118,19 +136,24 @@ export default class Store {
     }
     const { persistence = 'none' } = options || {};
 
-    // Resolve an updater against the latest state now, so it sees every earlier write and runs once
     const delta: Patch =
-      typeof inputPatch === 'function' ? (inputPatch as InputFnPatch)(this.getState()) : inputPatch;
-    this.pendingPatches.push(delta);
+      typeof inputPatch === 'function' ? resolveUpdater(inputPatch, this.getState()) : inputPatch;
+    const pending: PendingPatch = { patch: delta, committed: false };
+    this.pendingPatches.push(pending);
 
     const newState: State = await new Promise((resolve) => {
-      this.upstreamSetState(delta, () => {
-        const index = this.pendingPatches.indexOf(delta);
-        if (index !== -1) {
-          this.pendingPatches.splice(index, 1);
-        }
-        resolve(this.getState());
-      });
+      try {
+        this.upstreamSetState(delta, () => {
+          pending.committed = true;
+          while (this.pendingPatches[0]?.committed) {
+            this.pendingPatches.shift();
+          }
+          resolve(this.getState());
+        });
+      } catch (error) {
+        this.pendingPatches.splice(this.pendingPatches.indexOf(pending), 1);
+        throw error;
+      }
     });
 
     if (persistence !== 'none' && this.upstreamPersistence) {

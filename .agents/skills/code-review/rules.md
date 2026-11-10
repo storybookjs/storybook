@@ -1,4 +1,16 @@
-# Code review
+# Code review rules
+
+The reference of the [`code-review` skill](./SKILL.md). Every review follows it: a human review, a review skill, a subagent, or a reply to a review bot.
+
+## Edge cases and guards
+
+Explore what can reach the changed code before you decide what is impossible: user files and config,
+CLI arguments, channel messages, a file system left behind by an interrupted run, events that arrive
+out of order, concurrent runs, rejected promises. Each of these is a real input in this codebase.
+
+A finding names the scenario and its producer: the user action, editor, build tool, framework or
+earlier Storybook run that creates the input. When you cannot name a producer, keep the finding,
+say so, and rank it last. The person acting on the findings has the whole repo and can judge.
 
 ## Scope and evidence
 
@@ -44,7 +56,7 @@ Include a command a maintainer can rerun with the finding.
 
 ### React UI and accessibility
 
-- Follow [Testing](./testing.md).
+- Follow [Testing](../../guidelines/testing.md).
 - Check keyboard and pointer interaction, accessible names and descriptions, and the consumers of the surrounding component.
 - Review fresh-page and first-attempt behavior when tests depend on focus, hover, timers, or retained state.
 
@@ -63,7 +75,7 @@ Check whether these changes add complexity without serving the new behavior. Rep
 
 ## Verification
 
-Read [Testing](./testing.md) when reviewing tests in the diff.
+Read [Testing](../../guidelines/testing.md) when reviewing tests in the diff.
 
 ### Bug fixes
 

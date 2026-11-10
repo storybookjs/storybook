@@ -1,12 +1,14 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [ESLint plugin: `meta-inline-properties` replaced by `static-csf-properties`](#eslint-plugin-meta-inline-properties-replaced-by-static-csf-properties)
   - [Deprecated addon UI APIs removed](#deprecated-addon-ui-apis-removed)
   - [Theming imports](#theming-imports)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging)
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
   - [Tag filtering API](#tag-filtering-api)
+  - [`storybook/test` is no longer a manager global](#storybooktest-is-no-longer-a-manager-global)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`useThemeParameters` removed](#usethemeparameters-removed)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
@@ -64,7 +66,7 @@
   - [`mockChannel` removed from `storybook/preview-api` and `storybook/manager-api`](#mockchannel-removed-from-storybookpreview-api-and-storybookmanager-api)
   - [React: Require v18 and up](#react-require-v18-and-up)
   - [`@storybook/react-dom-shim` removed](#storybookreact-dom-shim-removed)
-  - [Preact: Require v10.8.0 and up](#preact-require-v1080-and-up)
+  - [Preact: Require v10.9.0 and up](#preact-require-v1090-and-up)
   - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
   - [`experimentalReview` feature flag removed](#experimentalreview-feature-flag-removed)
   - [`changeDetection` feature flag removed](#changedetection-feature-flag-removed)
@@ -640,6 +642,11 @@
 
 ## From version 10.x to 11.0.0
 
+### ESLint plugin: `meta-inline-properties` replaced by `static-csf-properties`
+
+The `storybook/meta-inline-properties` rule has been removed from `eslint-plugin-storybook`. It checked a different property set than Storybook statically analyzes. If your ESLint config enables it explicitly, delete that entry, or the config will fail to load.
+
+Its replacement, `storybook/static-csf-properties`, ships at `error` severity in the `recommended`, `csf`, and `csf-strict` configs (flat and legacy). It reports exactly what breaks Storybook's static analysis of a story file: dynamic values for `title`, `id`, `tags`, `includeStories`, and `excludeStories` (on the meta, on stories, and in `preview.meta()` factory files), statically-read properties placed before an object spread that can override them at runtime, a `preview.meta()` argument that cannot be resolved statically, and a `preview` factory imported from a path that is not a `.storybook/preview` file. Every report corresponds to a file that already fails to index or silently diverges from what renders.
 ### Deprecated addon UI APIs removed
 
 Storybook 11 removes the deprecated UI APIs from `storybook/internal/components`. Update addons to the replacements below. `TooltipProvider`, `Tooltip`, `TooltipNote`, `PopoverProvider`, `Popover`, `ActionList`, `Select`, and the current tab components remain available.
@@ -873,6 +880,10 @@ Storybook 11 removes the experimental and undocumented tag filtering names. They
 `sidebar.filters` in `manager.ts` is removed and is not rewritten. Replace a tag exclusion with `hideFromSidebar`. Replace a custom filter function with `setFilter`. Automigration prints a notice when it finds `sidebar.filters`.
 
 `storybook automigrate` rewrites the tag option keys in `main.ts`, including when the value is an expression, and renames `experimental_setFilter` / `experimental_setFilters` identifiers in `.storybook` and story files. A call written as `api['experimental_setFilters']` is left unchanged. Rename those calls yourself in addon source outside `.storybook` and story files.
+
+### `storybook/test` is no longer a manager global
+
+The manager no longer provides `storybook/test` as a global (`__STORYBOOK_TEST__`), so the browser no longer downloads its test libraries with every manager load. `storybook/test` is for stories and their tests, and no known manager addon imported it. If your addon's manager entry imports `storybook/test` anyway, it still builds, but the addon then bundles its own copy. Move that code to the addon's preview entry, or drop the import.
 
 ### Addon `TAB` registration removed
 
@@ -1810,17 +1821,19 @@ There is no supported import-only replacement for third-party code that imports 
 
 If your code renders React elements itself, keep one root for each container and reuse it across renders. Apply root options when you first create the root. On unmount, call `root.unmount()`, remove the stored root, and create a new root if that container renders again. Preserve any promise or `act` semantics that callers use to wait for a committed render. A bare `createRoot(container).render(element)` replacement does not preserve these behaviors.
 
-### Preact: Require v10.8.0 and up
+### Preact: Require v10.9.0 and up
 
-Storybook 11 requires Preact 10.8.0 or newer. Upgrade Preact before you upgrade Storybook:
+Storybook 11 requires Preact 10.9.0 or newer. Upgrade Preact before you upgrade Storybook:
 
 ```sh
-npm install preact@^10.8.0
+npm install preact@^10.9.0
 ```
 
-The accepted peer dependency range is `^10.8.0 || >=11.0.0-0`. Storybook uses the `preact/compat/client` entry and calls `unmount()` on its roots when it cleans up a rendered story. Although Preact 10.7.1 includes that entry, its roots don't provide `unmount()`. Preact 10.8.0 provides the root lifecycle that Storybook needs to clean up and render into the same container again.
+The accepted peer dependency range is `^10.9.0 || >=11.0.0-0`. Storybook uses the `preact/compat/client` entry and calls `unmount()` on its roots when it cleans up a rendered story. Although Preact 10.7.1 includes that entry, its roots don't provide `unmount()`. Preact 10.8.0 provides the root lifecycle that Storybook needs to clean up and render into the same container again.
 
-The official Preact framework is `@storybook/preact-vite`. Custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack must also use Preact 10.8.0 or newer.
+Storybook's UI components, which addon-docs renders in the preview, also call `useSyncExternalStore`. `preact/compat` exports it from Preact 10.9.0.
+
+The official Preact framework is `@storybook/preact-vite`. Custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack must also use Preact 10.9.0 or newer.
 
 ### `features.legacyDecoratorFileOrder` removed
 

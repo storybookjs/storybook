@@ -25,7 +25,7 @@ If the app's own Storybook can compose the published one, you can use [compositi
 
 ## Publish with Chromatic
 
-When you [publish your Storybook with Chromatic](../sharing/publish-storybook.mdx#publish-storybook-with-chromatic), Chromatic also [publishes its MCP server](https://chromatic.com/docs/mcp/). The server is at your published Storybook's URL, followed by `/mcp`.
+When you [publish your Storybook with Chromatic](../sharing/publish-storybook.mdx#publish-storybook-with-chromatic), Chromatic also [publishes its MCP server](https://chromatic.com/docs/storybook-mcp/). The server is at your published Storybook's URL, followed by `/mcp`.
 
 Each build has its own URL. For a URL that always points to your latest Storybook, use the permalink of your default branch:
 
@@ -39,7 +39,7 @@ Before you publish, make sure that the [components manifest is on](./reference/m
 
 The published MCP server has the same access as your Storybook. If your Storybook is private, people sign in to Chromatic the first time their agent connects, and only people with access to your Chromatic project can use it. If your Storybook is public, anyone with the URL can use it.
 
-To add the server to an agent, follow [Add the MCP server to your agent](./reference/mcp-server.mdx#3-add-the-mcp-server-to-your-agent) with the [published URL](https://chromatic.com/docs/mcp/#grab-your-mcp-server-url).
+To add the server to an agent, follow [Add the MCP server to your agent](./reference/mcp-server.mdx#3-add-the-mcp-server-to-your-agent) with the [published URL](https://chromatic.com/docs/storybook-mcp/#use-the-mcp-server-without-a-local-storybook).
 
 ## Self-host with `@storybook/mcp`
 

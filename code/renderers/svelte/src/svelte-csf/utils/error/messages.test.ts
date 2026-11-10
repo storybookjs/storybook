@@ -2,6 +2,8 @@ import { join } from 'pathe';
 
 import { describe, expect, it } from 'vitest';
 
+import { parse } from 'svelte/compiler';
+
 import { createASTProperty, getSvelteAST, type SvelteAST } from '../../parser/ast.ts';
 import * as defineMeta from './parser/analyse/define-meta.ts';
 import * as story from './parser/analyse/story.ts';
@@ -63,6 +65,17 @@ const cases: [string, () => Error][] = [
       new svelte.IndexerParseError(filename, {
         cause: new SyntaxError('Unexpected token'),
       }),
+  ],
+  [
+    'IndexerParseError (Svelte compile error)',
+    () => {
+      try {
+        parse('<Story name="A">\n  {#if}\n</Story>');
+      } catch (cause) {
+        return new svelte.IndexerParseError(filename, { cause });
+      }
+      throw new Error('parse should throw');
+    },
   ],
   ['MixedMetaError', () => new svelte.MixedMetaError(filename)],
   ['PreviewNotImportedError', () => new svelte.PreviewNotImportedError(filename)],

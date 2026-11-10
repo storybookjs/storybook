@@ -1016,7 +1016,10 @@ export const daily: TemplateKey[] = [
   'preact-vite/default-ts',
   'html-vite/default-ts',
   'solid-vite/default-ts',
-  'astro-vite/default-ts',
+  // Disabled in CI: during a Storybook prerelease `init` installs @storybook-astro's `next`
+  // dist-tag, and 1.16.0-next.0 stays inside the sandboxes' 7-day age gate until 2026-11-12.
+  // Re-enable once the @storybook-astro `next` release in use is older than the gate.
+  // 'astro-vite/default-ts',
   // Disabled in CI: the published storybook-builder-rsbuild imports `babelParser` from
   // `storybook/internal/mocking-utils`, which Storybook 11 removed, so the sandbox cannot be
   // created. Fix: https://github.com/rstackjs/storybook-rsbuild/pull/603

@@ -111,6 +111,31 @@ describe('readStaticDocgen', () => {
       /globally referenced/
     );
   });
+
+  it('records only the listed components', () => {
+    vol.fromJSON({
+      [`${DOCGEN}/kept.json`]: snapshot('kept', {}),
+      [`${DOCGEN}/dropped.json`]: snapshot('dropped', {}),
+    });
+
+    expect(
+      Object.keys(
+        readStaticDocgen({ staticDir: STATIC, sandboxDir: SANDBOX, componentIds: ['kept'] })
+      )
+    ).toEqual(['kept']);
+  });
+
+  it('names a listed component that the build has no docgen for', () => {
+    vol.fromJSON({ [`${DOCGEN}/kept.json`]: snapshot('kept', {}) });
+
+    expect(() =>
+      readStaticDocgen({
+        staticDir: STATIC,
+        sandboxDir: SANDBOX,
+        componentIds: ['kept', 'renamed'],
+      })
+    ).toThrow(/listed component\(s\): renamed$/);
+  });
 });
 
 describe('toBaseline', () => {

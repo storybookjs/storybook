@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 import { dedent } from 'ts-dedent';
-import { z } from 'zod';
+import * as v from 'valibot';
 
 import { migrateLegacySettings } from '../common/utils/migrate-legacy-settings.ts';
 import { getStorybookConfigDir } from '../common/utils/storybook-config-dir.ts';
@@ -14,23 +14,31 @@ const getDefaultSettingsPath = () => join(getStorybookConfigDir(), SETTINGS_FILE
 
 const VERSION = 1;
 
-const statusValue = z
-  .strictObject({
-    status: z.enum(['open', 'accepted', 'done', 'skipped']).optional(),
-    mutedAt: z.number().optional(),
-  })
-  .optional();
+// zod's objects rejected arrays, where valibot's read them as objects. Keep rejecting them, so a
+// broken file is still replaced by fresh settings.
+const notArray = v.check((input: unknown) => !Array.isArray(input));
+const object = <TEntries extends v.ObjectEntries>(entries: TEntries) =>
+  v.pipe(v.unknown(), notArray, v.object(entries));
+const strictObject = <TEntries extends v.ObjectEntries>(entries: TEntries) =>
+  v.pipe(v.unknown(), notArray, v.strictObject(entries));
 
-const userSettingSchema = z.object({
-  version: z.number(),
+const statusValue = v.optional(
+  strictObject({
+    status: v.optional(v.picklist(['open', 'accepted', 'done', 'skipped'])),
+    mutedAt: v.optional(v.number()),
+  })
+);
+
+const userSettingSchema = object({
+  version: v.number(),
   // NOTE: every key (and subkey) below must be optional, for forwards compatibility reasons
   // (we can remove keys once they are deprecated)
-  userSince: z.number().optional(),
-  init: z.object({ skipOnboarding: z.boolean().optional() }).optional(),
-  checklist: z
-    .object({
-      items: z
-        .object({
+  userSince: v.optional(v.number()),
+  init: v.optional(object({ skipOnboarding: v.optional(v.boolean()) })),
+  checklist: v.optional(
+    object({
+      items: v.optional(
+        object({
           accessibilityTests: statusValue,
           aiSetup: statusValue,
           autodocs: statusValue,
@@ -56,11 +64,13 @@ const userSettingSchema = z.object({
           whatsNewStorybook10: statusValue,
           writeInteractions: statusValue,
         })
-        .optional(),
-      widget: z.object({ disable: z.boolean().optional() }).optional(),
+      ),
+      widget: v.optional(object({ disable: v.optional(v.boolean()) })),
     })
-    .optional(),
+  ),
 });
+
+type UserSettings = v.InferOutput<typeof userSettingSchema>;
 
 let settings: Settings | undefined;
 export async function globalSettings(filePath = getDefaultSettingsPath()) {
@@ -80,7 +90,7 @@ export async function globalSettings(filePath = getDefaultSettingsPath()) {
 
   try {
     const content = await fs.readFile(filePath, 'utf8');
-    const settingsValue = userSettingSchema.parse(JSON.parse(content));
+    const settingsValue = v.parse(userSettingSchema, JSON.parse(content));
     settings = new Settings(filePath, settingsValue);
   } catch (err: any) {
     // We don't currently log the issue we have loading the setting file here, but if it doesn't
@@ -106,7 +116,7 @@ export function _clearGlobalSettings() {
 export class Settings {
   private filePath: string;
 
-  public value: z.infer<typeof userSettingSchema>;
+  public value: UserSettings;
 
   /**
    * Create a new Settings instance
@@ -114,7 +124,7 @@ export class Settings {
    * @param filePath Path to the JSON settings file
    * @param value Loaded value of settings
    */
-  constructor(filePath: string, value: z.infer<typeof userSettingSchema>) {
+  constructor(filePath: string, value: UserSettings) {
     this.filePath = filePath;
     this.value = value;
   }

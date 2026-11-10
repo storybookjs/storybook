@@ -162,15 +162,20 @@ describe('configureEslintPlugin', () => {
       `);
     });
 
-    it('should correctly parse, configure, and preserve comments in comment-json .eslintrc.json', async () => {
-      const mockPackageManager = {
-        getAllDependencies: vi.fn(),
-      } satisfies Partial<JsPackageManager>;
+    const configureJson = async (code: string) => {
+      vi.mocked(readFile).mockResolvedValue(code);
+      await configureEslintPlugin({
+        eslintConfigFile: '.eslintrc.json',
+        packageManager: { getAllDependencies: vi.fn() } as Partial<JsPackageManager> as any,
+        isFlatConfig: false,
+      });
+      return vi.mocked(writeFile).mock.calls[0]?.[1];
+    };
 
-      // Mock file content with JSON5 features (comments, trailing comma)
-      const mockConfigFile = dedent`{
+    it('appends to the last of duplicate extends keys, which is the one ESLint reads', async () => {
+      const content = await configureJson(dedent`{
         // Some comment here
-        "extends": ["plugin:other"],
+        "extends": ["plugin:first"],
         // Top-level comment
         "extends": [
           // Comment before existing item
@@ -181,58 +186,182 @@ describe('configureEslintPlugin', () => {
           "no-unused-vars": "warn", // Another comment
         },
         // Trailing comment
-      }`;
+      }`);
 
-      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+      expect(content).toMatchInlineSnapshot(`
+        "{
+          // Some comment here
+          // Top-level comment
+          "extends": [
+            // Comment before existing item
+            "plugin:other", // Inline comment for existing item
+            "plugin:storybook/recommended",
+          ],
+          "rules": {
+            // Comment for rules object
+            "no-unused-vars": "warn", // Another comment
+          },
+          // Trailing comment
+        }"
+      `);
+    });
 
-      await configureEslintPlugin({
-        eslintConfigFile: '.eslintrc.json',
-        packageManager: mockPackageManager as any,
-        isFlatConfig: false,
+    it('removes earlier duplicate extends keys on the same line', async () => {
+      expect(
+        await configureJson('{"extends":["plugin:first"],"root":true,"extends":"plugin:other"}')
+      ).toMatchInlineSnapshot(`
+          "{"root":true,"extends":[
+              "plugin:other",
+              "plugin:storybook/recommended"
+            ]}"
+        `);
+    });
+
+    it.each([
+      [
+        'a comment after the comma',
+        '{\n  "extends": ["plugin:first"], // Old\n  "extends": ["plugin:other"]\n}\n',
+      ],
+      [
+        'a comment before the comma',
+        '{\n  "extends": ["plugin:first"] /* Old */,\n  "root": true,\n  "extends": ["plugin:other"]\n}\n',
+      ],
+      [
+        'a leading comma',
+        '{\n  "extends": ["plugin:first"] // Old\n  , "root": true\n  , "extends": ["plugin:other"]\n}\n',
+      ],
+    ])('removes an earlier duplicate extends with %s', async (_, code) => {
+      const content = await configureJson(code);
+
+      expect(JSON.parse(String(content).replace(/\/\/.*|\/\*.*?\*\//g, ''))).toMatchObject({
+        extends: ['plugin:other', 'plugin:storybook/recommended'],
       });
+      expect(content).toMatch(/^  (\/\/|\/\*) Old/m);
+    });
 
-      // Expect writeFile to have been called (meaning parsing didn't crash)
-      expect(vi.mocked(writeFile)).toHaveBeenCalledTimes(1);
-      const [filePath, content] = vi.mocked(writeFile).mock.calls[0];
+    it.each([
+      [
+        '{\n  "extends": "plugin:other"\n}\n',
+        '{\n  "extends": [\n    "plugin:other",\n    "plugin:storybook/recommended"\n  ]\n}\n',
+      ],
+      [
+        '{\n  "root": true\n}\n',
+        '{\n  "extends": [\n    "plugin:storybook/recommended"\n  ],\n  "root": true\n}\n',
+      ],
+      [
+        '{\n  "extends": ["plugin:first"],\n  "extends": ["plugin:other"]\n}\n',
+        '{\n  "extends": [\n    "plugin:other",\n    "plugin:storybook/recommended"\n  ]\n}\n',
+      ],
+    ])('keeps a byte order mark in %j', async (code, expected) => {
+      expect(await configureJson(`\uFEFF${code}`)).toBe(`\uFEFF${expected}`);
+    });
 
-      expect(filePath).toBe('.eslintrc.json');
+    it('keeps CRLF line endings', async () => {
+      expect(
+        await configureJson('{\r\n  "extends": [\r\n    "plugin:other" // Other\r\n  ]\r\n}\r\n')
+      ).toBe(
+        '{\r\n  "extends": [\r\n    "plugin:other", // Other\r\n    "plugin:storybook/recommended"\r\n  ]\r\n}\r\n'
+      );
+    });
+
+    it('reads the indentation from the properties, not from a header comment', async () => {
+      expect(
+        await configureJson('/*\n * ESLint config\n */\n{\n\t"root": true,\n\t"extends": "a"\n}\n')
+      ).toBe(
+        '/*\n * ESLint config\n */\n{\n\t"root": true,\n\t"extends": [\n\t\t"a",\n\t\t"plugin:storybook/recommended"\n\t]\n}\n'
+      );
+    });
+
+    it('keeps a comment on the last extends entry with that entry', async () => {
+      const content = await configureJson(dedent`{
+        "extends": [
+          "eslint:recommended",
+          "plugin:react/recommended" // For React
+        ]
+      }`);
+
       expect(content).toMatchInlineSnapshot(`
         "{
-          // Top-level comment
           "extends": [
-            // Comment before existing item
-            "plugin:other", // Inline comment for existing item
+            "eslint:recommended",
+            "plugin:react/recommended", // For React
             "plugin:storybook/recommended"
-          ],
-          "rules": {
-            // Comment for rules object
-            "no-unused-vars": "warn" // Another comment
-          }
-          // Trailing comment
+          ]
         }"
       `);
-      // Check that the output contains the new extend AND the original comments
-      expect(content).toContain('// Top-level comment');
-      expect(content).toContain('plugin:storybook/recommended');
-      expect(content).toContain('// Trailing comment');
+    });
 
-      // Optionally, check the full snapshot if formatting needs to be precise
-      // Note: comment-json might slightly alter whitespace/placement vs original
+    it('turns a string extends into an array', async () => {
+      const content = await configureJson(dedent`{
+        "root": true,
+        "extends": "plugin:other", // Inline comment
+        "rules": {}
+      }`);
+
       expect(content).toMatchInlineSnapshot(`
         "{
-          // Top-level comment
+          "root": true,
           "extends": [
-            // Comment before existing item
-            "plugin:other", // Inline comment for existing item
+            "plugin:other",
             "plugin:storybook/recommended"
-          ],
-          "rules": {
-            // Comment for rules object
-            "no-unused-vars": "warn" // Another comment
-          }
-          // Trailing comment
+          ], // Inline comment
+          "rules": {}
         }"
       `);
+    });
+
+    it('adds a missing extends first, so comments stay with their properties', async () => {
+      const content = await configureJson(
+        '{\n  // About root\n  "root": true, // Inline root comment\n  "rules": { "eqeqeq": "error" } // Inline rules comment\n}\n'
+      );
+
+      expect(content).toBe(
+        '{\n  "extends": [\n    "plugin:storybook/recommended"\n  ],\n  // About root\n  "root": true, // Inline root comment\n  "rules": { "eqeqeq": "error" } // Inline rules comment\n}\n'
+      );
+    });
+
+    it('replaces an empty extends', async () => {
+      const content = await configureJson('{\n  "extends": "",\n  "root": true\n}\n');
+
+      expect(content).toBe(
+        '{\n  "extends": [\n    "plugin:storybook/recommended"\n  ],\n  "root": true\n}\n'
+      );
+    });
+
+    it('keeps tab indentation', async () => {
+      const content = await configureJson('{\n\t"extends": [\n\t\t"plugin:other"\n\t]\n}\n');
+
+      expect(content).toBe(
+        '{\n\t"extends": [\n\t\t"plugin:other",\n\t\t"plugin:storybook/recommended"\n\t]\n}\n'
+      );
+    });
+
+    it('keeps 4-space indentation', async () => {
+      const content = await configureJson('{\n    "extends": "plugin:other"\n}\n');
+
+      expect(content).toBe(
+        '{\n    "extends": [\n        "plugin:other",\n        "plugin:storybook/recommended"\n    ]\n}\n'
+      );
+    });
+
+    it('does not rewrite a config that extends the plugin as a string', async () => {
+      expect(await configureJson('{ "extends": "plugin:storybook/recommended" }')).toBeUndefined();
+    });
+
+    it('throws on invalid JSON without writing', async () => {
+      await expect(configureJson('{ "extends": [ }')).rejects.toThrow(SyntaxError);
+      expect(writeFile).not.toHaveBeenCalled();
+    });
+
+    it('throws when the config is not an object', async () => {
+      await expect(configureJson('[]')).rejects.toThrow(
+        'Expected .eslintrc.json to contain a JSON object'
+      );
+      expect(writeFile).not.toHaveBeenCalled();
+    });
+
+    it('throws on an invalid extends', async () => {
+      await expect(configureJson('{ "extends": [1] }')).rejects.toThrow('Invalid eslint extends');
     });
   });
 

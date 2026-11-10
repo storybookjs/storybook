@@ -14,12 +14,12 @@ import {
 describe('docgenServerTemplates', () => {
   it('includes supported default-on templates that record component manifests', () => {
     expect(docgenServerTemplates()).toEqual([
-      'react-vite/typescript-7-ts',
       'vue3-vite/default-ts',
       'svelte-vite/default-ts',
       'angular-vite/default-ts',
-      'angular-vite/typescript-7-ts',
       'lit-vite/default-ts',
+      'react-vite/typescript-7-ts',
+      'angular-vite/typescript-7-ts',
     ]);
   });
 

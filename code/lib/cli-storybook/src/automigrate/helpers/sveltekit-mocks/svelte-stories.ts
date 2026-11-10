@@ -26,6 +26,8 @@ import {
   prependToBeforeEach,
   INLINE_PROBLEM,
   inlineOf,
+  SPREAD_DOCS_PROBLEM,
+  uncopiedSpread,
   isFalse,
   SPREAD_PROBLEM,
   spreadsBeforeEach,
@@ -170,14 +172,24 @@ export const migrateSvelteStories = async (
     return { ...site, mocks };
   });
 
+  const levels = [...(metaMocks ? [metaMocks] : []), ...stories.map(({ mocks }) => mocks)];
+  const implemented = new Set([
+    ...preview.merged.functions,
+    ...levels.flatMap(({ merged }) => merged.functions),
+  ]);
+  const kept = new Set([...implemented, ...aliasedImports(module.editor)]);
   // A docs page renders the stories inline, where they share the mocks
   const docsPage =
     !!meta.object &&
-    [...(metaMocks ? [metaMocks] : []), ...stories.map(({ mocks }) => mocks)].some(writesMocks) &&
+    levels.some((mocks) => writesMocks(mocks, kept)) &&
     (!!preview.mdxDocsPage || storyAutodocs || hasAutodocs(meta.object, preview.autodocs));
   const inline = docsPage ? inlineOf(meta.object!) : undefined;
   if (inline && !isFalse(inline.value)) {
     problems.push({ index: module.toFile(inline.start), message: INLINE_PROBLEM });
+  }
+  const spread = docsPage && !inline ? uncopiedSpread(meta.object!) : undefined;
+  if (spread) {
+    problems.push({ index: module.toFile(spread.start), message: SPREAD_DOCS_PROBLEM });
   }
   problems.push(...unparsed());
   if (problems.length > 0) {
@@ -187,12 +199,6 @@ export const migrateSvelteStories = async (
     return null;
   }
 
-  const levels = [...(metaMocks ? [metaMocks] : []), ...stories.map(({ mocks }) => mocks)];
-  const implemented = new Set([
-    ...preview.merged.functions,
-    ...levels.flatMap(({ merged }) => merged.functions),
-  ]);
-  const kept = new Set([...implemented, ...aliasedImports(module.editor)]);
   levels.forEach((mocks) => keepSpies(mocks, kept));
   const spies = levels.flatMap(({ spies }) => spies);
   const instanceNames = instance ? [...instance.editor.scopes.program.bindings.keys()] : [];

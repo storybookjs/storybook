@@ -743,9 +743,9 @@ export const readMocks = (
 };
 
 // Whether a level writes code that sets up the mocks: every op but the import that replaces a spy
-// prints a statement, and `keepSpies` turns an import into a statement only when another op
-// implements that function
-export const writesMocks = (mocks: LevelMocks) => mocks.ops.some((op) => op.kind !== 'import');
+// prints a statement, and `keepSpies` turns an import into a statement when `kept` has its function
+export const writesMocks = (mocks: LevelMocks, kept: ReadonlySet<string>) =>
+  mocks.ops.some((op) => op.kind !== 'import' || kept.has(op.fn));
 
 // Keep the `const goto = fn()` spies of the functions that a level of the file or the preview gives
 // an implementation: other code can call the spy, which the imported mock would run that

@@ -25,6 +25,8 @@ import {
   prependToBeforeEach,
   INLINE_PROBLEM,
   inlineOf,
+  SPREAD_DOCS_PROBLEM,
+  uncopiedSpread,
   isFalse,
   SPREAD_PROBLEM,
   spreadsBeforeEach,
@@ -446,10 +448,15 @@ export const migrateCsfStories = (
     ...spreadsOfLevels(editor, storyNodes, new Set(levels.map(({ site }) => site.object))),
     ...assignedBeforeEach(editor, new Set(levels.map(({ site }) => site.object))),
   ];
+  const implemented = new Set([
+    ...preview.merged.functions,
+    ...levels.flatMap(({ mocks }) => mocks.merged.functions),
+  ]);
+  const kept = new Set([...implemented, ...aliasedImports(editor)]);
   // A docs page renders the stories inline, where they share the mocks
   const docsPage =
     !!meta &&
-    levels.some(({ mocks }) => writesMocks(mocks)) &&
+    levels.some(({ mocks }) => writesMocks(mocks, kept)) &&
     (!!preview.mdxDocsPage ||
       hasAutodocs(meta, preview.autodocs) ||
       [...storyNodes].some((story) =>
@@ -459,6 +466,10 @@ export const migrateCsfStories = (
   if (inline && !isFalse(inline.value)) {
     problems.push({ index: inline.start, message: INLINE_PROBLEM });
   }
+  const spread = docsPage && meta && !inline ? uncopiedSpread(meta) : undefined;
+  if (spread) {
+    problems.push({ index: spread.start, message: SPREAD_DOCS_PROBLEM });
+  }
   if (problems.length > 0) {
     failWith(code, problems);
   }
@@ -466,11 +477,6 @@ export const migrateCsfStories = (
     return null;
   }
 
-  const implemented = new Set([
-    ...preview.merged.functions,
-    ...levels.flatMap(({ mocks }) => mocks.merged.functions),
-  ]);
-  const kept = new Set([...implemented, ...aliasedImports(editor)]);
   levels.forEach(({ mocks }) => keepSpies(mocks, kept));
   const spies = levels.flatMap(({ mocks }) => mocks.spies);
   const imports = new MockImports(editor, takenNames(editor, spies));

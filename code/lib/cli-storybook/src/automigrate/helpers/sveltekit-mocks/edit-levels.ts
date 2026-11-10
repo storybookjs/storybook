@@ -296,6 +296,34 @@ export const inlineOf = (meta: E.ObjectExpression) => {
   return storyObject ? objectProperty(storyObject, 'inline') : undefined;
 };
 
+// A spread whose docs `inline: false` can't keep: a spread that isn't a name, whose call would run
+// again, or a second spread, whose docs replace the docs of the spreads before it
+export const uncopiedSpread = (meta: E.ObjectExpression) => {
+  const parameters = objectProperty(meta, 'parameters');
+  const params = parameters && objectValue(parameters.value);
+  const docs = params && objectProperty(params, 'docs');
+  const docsObject = docs && objectValue(docs.value);
+  // The object literal that gets the new `docs` or `story` member, which copies its spreads
+  const target = docs ? docsObject && !objectProperty(docsObject, 'story') && docsObject : params;
+  if (!target) {
+    return undefined;
+  }
+  return target.properties
+    .filter((property): property is E.SpreadElement => property.type === 'SpreadElement')
+    .find((spread, index) => index > 0 || !isName(spread.argument));
+};
+
+const isName = (node: Node): boolean => {
+  const value = unwrapExpression(node);
+  return (
+    value.type === 'Identifier' ||
+    (value.type === 'MemberExpression' && !value.computed && isName(value.object))
+  );
+};
+
+export const SPREAD_DOCS_PROBLEM =
+  'The file has a docs page, which renders the stories inline, where they share the mocks, so the meta needs `parameters.docs.story.inline: false`. The automigration adds it only next to one spread of a name, and here it would run a spread again or change which spread sets `docs`. Add `inline: false` yourself.';
+
 export const isFalse = (node: Node) => {
   const value = unwrapExpression(node);
   return value.type === 'Literal' && value.value === false;

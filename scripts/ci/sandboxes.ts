@@ -174,7 +174,6 @@ function defineSandboxJob_dev({
                 run: {
                   name: 'Run storybook smoke test',
                   working_directory: 'code',
-                  background: true,
                   command: `yarn task smoke-test --template ${template} --no-link -s dev`,
                 },
               },

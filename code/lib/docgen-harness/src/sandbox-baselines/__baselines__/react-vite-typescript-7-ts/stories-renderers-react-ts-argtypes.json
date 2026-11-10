@@ -318,10 +318,10 @@
           }
         }
       },
-      "import": "import { component as TsCamelCaseComponent } from '@storybook/react';",
+      "import": "import { component as TsCamelCaseComponent } from './docgen-components/9575-ts-camel-case/input';",
       "jsDocTags": {},
       "name": "TsCamelCase",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/9575-ts-camel-case/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9575-ts-camel-case/input.tsx"
     },
     "TsComponentProps": {
       "argTypes": {
@@ -367,10 +367,10 @@
           }
         }
       },
-      "import": "import { component as TsComponentPropsComponent } from '@storybook/react';",
+      "import": "import { component as TsComponentPropsComponent } from './docgen-components/9922-ts-component-props/input';",
       "jsDocTags": {},
       "name": "TsComponentProps",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/9922-ts-component-props/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9922-ts-component-props/input.tsx"
     },
     "TsDefaultValues": {
       "argTypes": {
@@ -418,10 +418,10 @@
           }
         }
       },
-      "import": "import { component as TsDefaultValuesComponent } from '@storybook/react';",
+      "import": "import { component as TsDefaultValuesComponent } from './docgen-components/9827-ts-default-values/input';",
       "jsDocTags": {},
       "name": "TsDefaultValues",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/9827-ts-default-values/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9827-ts-default-values/input.tsx"
     },
     "TsDeprecatedJsdoc": {
       "argTypes": {
@@ -440,10 +440,10 @@
           }
         }
       },
-      "import": "import { component as TsDeprecatedJsdocComponent } from '@storybook/react';",
+      "import": "import { component as TsDeprecatedJsdocComponent } from './docgen-components/9721-ts-deprecated-jsdoc/input';",
       "jsDocTags": {},
       "name": "TsDeprecatedJsdoc",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/9721-ts-deprecated-jsdoc/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9721-ts-deprecated-jsdoc/input.tsx"
     },
     "TsDisplayName": {
       "argTypes": {
@@ -479,10 +479,10 @@
           }
         }
       },
-      "import": "import { component as TsDisplayNameComponent } from '@storybook/react';",
+      "import": "import { component as TsDisplayNameComponent } from './docgen-components/9493-ts-display-name/input';",
       "jsDocTags": {},
       "name": "TsDisplayName",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/9493-ts-display-name/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9493-ts-display-name/input.tsx"
     },
     "TsExtendProps": {
       "argTypes": {
@@ -527,10 +527,10 @@
           }
         }
       },
-      "import": "import { component as TsExtendPropsComponent } from '@storybook/react';",
+      "import": "import { component as TsExtendPropsComponent } from './docgen-components/9764-ts-extend-props/input';",
       "jsDocTags": {},
       "name": "TsExtendProps",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/9764-ts-extend-props/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9764-ts-extend-props/input.tsx"
     },
     "TsFC": {
       "argTypes": {
@@ -1068,10 +1068,10 @@
           }
         }
       },
-      "import": "import { component as TsFCComponent } from '@storybook/react';",
+      "import": "import { component as TsFCComponent } from './docgen-components/ts-react-fc/input';",
       "jsDocTags": {},
       "name": "TsFC",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/ts-react-fc/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/ts-react-fc/input.tsx"
     },
     "TsForwardRef": {
       "argTypes": {
@@ -1124,10 +1124,10 @@
           }
         }
       },
-      "import": "import { component as TsForwardRefComponent } from '@storybook/react';",
+      "import": "import { component as TsForwardRefComponent } from './docgen-components/8894-9511-ts-forward-ref/input';",
       "jsDocTags": {},
       "name": "TsForwardRef",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/8894-9511-ts-forward-ref/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/8894-9511-ts-forward-ref/input.tsx"
     },
     "TsFunctionComponent": {
       "argTypes": {
@@ -1425,10 +1425,10 @@
           }
         }
       },
-      "import": "import { component as TsFunctionComponentComponent } from '@storybook/react';",
+      "import": "import { component as TsFunctionComponentComponent } from './docgen-components/ts-function-component/input';",
       "jsDocTags": {},
       "name": "TsFunctionComponent",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/ts-function-component/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/ts-function-component/input.tsx"
     },
     "TsFunctionComponentInlineDefaults": {
       "argTypes": {
@@ -1759,10 +1759,10 @@
           }
         }
       },
-      "import": "import { component as TsFunctionComponentInlineDefaultsComponent } from '@storybook/react';",
+      "import": "import { component as TsFunctionComponentInlineDefaultsComponent } from './docgen-components/ts-function-component-inline-defaults/input';",
       "jsDocTags": {},
       "name": "TsFunctionComponentInlineDefaults",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/ts-function-component-inline-defaults/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/ts-function-component-inline-defaults/input.tsx"
     },
     "TsHtml": {
       "argTypes": {
@@ -1780,10 +1780,10 @@
           }
         }
       },
-      "import": "import { component as TsHtmlComponent } from '@storybook/react';",
+      "import": "import { component as TsHtmlComponent } from './docgen-components/ts-html/input';",
       "jsDocTags": {},
       "name": "TsHtml",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/ts-html/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/ts-html/input.tsx"
     },
     "TsImportedTypes": {
       "argTypes": {
@@ -1801,10 +1801,10 @@
           }
         }
       },
-      "import": "import { component as TsImportedTypesComponent } from '@storybook/react';",
+      "import": "import { component as TsImportedTypesComponent } from './docgen-components/8143-ts-imported-types/input';",
       "jsDocTags": {},
       "name": "TsImportedTypes",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/8143-ts-imported-types/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/8143-ts-imported-types/input.tsx"
     },
     "TsImportTypes": {
       "argTypes": {
@@ -1835,10 +1835,10 @@
           }
         }
       },
-      "import": "import { component as TsImportTypesComponent } from '@storybook/react';",
+      "import": "import { component as TsImportTypesComponent } from './docgen-components/9591-ts-import-types/input';",
       "jsDocTags": {},
       "name": "TsImportTypes",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/9591-ts-import-types/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9591-ts-import-types/input.tsx"
     },
     "TsJsdoc": {
       "argTypes": {
@@ -1857,10 +1857,10 @@
           }
         }
       },
-      "import": "import { component as TsJsdocComponent } from '@storybook/react';",
+      "import": "import { component as TsJsdocComponent } from './docgen-components/ts-jsdoc/input';",
       "jsDocTags": {},
       "name": "TsJsdoc",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/ts-jsdoc/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/ts-jsdoc/input.tsx"
     },
     "TsMultiProps": {
       "argTypes": {
@@ -1897,10 +1897,10 @@
           }
         }
       },
-      "import": "import { component as TsMultiPropsComponent } from '@storybook/react';",
+      "import": "import { component as TsMultiPropsComponent } from './docgen-components/8740-ts-multi-props/input';",
       "jsDocTags": {},
       "name": "TsMultiProps",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/8740-ts-multi-props/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/8740-ts-multi-props/input.tsx"
     },
     "TsReactDefaultExports": {
       "argTypes": {
@@ -1921,10 +1921,10 @@
           }
         }
       },
-      "import": "import { component as TsReactDefaultExportsComponent } from '@storybook/react';",
+      "import": "import { component as TsReactDefaultExportsComponent } from './docgen-components/9556-ts-react-default-exports/input';",
       "jsDocTags": {},
       "name": "TsReactDefaultExports",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/9556-ts-react-default-exports/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9556-ts-react-default-exports/input.tsx"
     },
     "TsReactFcGenerics": {
       "argTypes": {
@@ -1958,10 +1958,10 @@
           }
         }
       },
-      "import": "import { component as TsReactFcGenericsComponent } from '@storybook/react';",
+      "import": "import { component as TsReactFcGenericsComponent } from './docgen-components/8143-ts-react-fc-generics/input';",
       "jsDocTags": {},
       "name": "TsReactFcGenerics",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/8143-ts-react-fc-generics/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/8143-ts-react-fc-generics/input.tsx"
     },
     "TsTypeProps": {
       "argTypes": {
@@ -1982,10 +1982,10 @@
           }
         }
       },
-      "import": "import { component as TsTypePropsComponent } from '@storybook/react';",
+      "import": "import { component as TsTypePropsComponent } from './docgen-components/9465-ts-type-props/input';",
       "jsDocTags": {},
       "name": "TsTypeProps",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/9465-ts-type-props/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9465-ts-type-props/input.tsx"
     },
     "TsTypes": {
       "argTypes": {
@@ -2617,10 +2617,10 @@
           }
         }
       },
-      "import": "import { component as TsTypesComponent } from '@storybook/react';",
+      "import": "import { component as TsTypesComponent } from './docgen-components/ts-types/input';",
       "jsDocTags": {},
       "name": "TsTypes",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/ts-types/input.tsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/ts-types/input.tsx"
     }
   }
 }

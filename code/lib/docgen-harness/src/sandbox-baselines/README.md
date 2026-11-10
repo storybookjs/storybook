@@ -28,11 +28,13 @@ A template that sets `docgenBaselinesFrom` records nothing of its own: it is che
 ## Updating
 
 ```bash
-yarn task build --template <template> --start-from auto
+CI=true yarn task build --template <template> --no-link --start-from auto
 cd code/lib/docgen-harness
 yarn baselines:sandbox            # verify every server-docgen template
 yarn baselines:sandbox --update   # re-record
 ```
+
+Build with `CI=true`, as CI does: it copies the template stories into the sandbox. Without it they are symlinks into this repository, so React records their components as imports from `@storybook/react` and the baselines do not match CI.
 
 Pass `--template <key>` to work on one of them, and `--sandbox <dir>` to point at a sandbox somewhere other than the default location.
 CI runs the verify form after building each covered sandbox.

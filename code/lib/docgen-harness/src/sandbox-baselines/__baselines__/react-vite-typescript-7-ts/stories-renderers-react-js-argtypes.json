@@ -299,10 +299,10 @@
           }
         }
       },
-      "import": "import { component as JsDefaultValuesComponent } from '@storybook/react';",
+      "import": "import { component as JsDefaultValuesComponent } from './docgen-components/9626-js-default-values/input.jsx';",
       "jsDocTags": {},
       "name": "JsDefaultValues",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/9626-js-default-values/input.jsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9626-js-default-values/input.jsx"
     },
     "JsFunctionComponentInlineDefaults": {
       "argTypes": {
@@ -581,10 +581,10 @@
           }
         }
       },
-      "import": "import { component as JsFunctionComponentInlineDefaultsComponent } from '@storybook/react';",
+      "import": "import { component as JsFunctionComponentInlineDefaultsComponent } from './docgen-components/js-function-component-inline-defaults/input.jsx';",
       "jsDocTags": {},
       "name": "JsFunctionComponentInlineDefaults",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/js-function-component-inline-defaults/input.jsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/js-function-component-inline-defaults/input.jsx"
     },
     "JsFunctionComponentInlineDefaultsNoPropTypes": {
       "argTypes": {
@@ -770,10 +770,10 @@
           }
         }
       },
-      "import": "import { component as JsFunctionComponentInlineDefaultsNoPropTypesComponent } from '@storybook/react';",
+      "import": "import { component as JsFunctionComponentInlineDefaultsNoPropTypesComponent } from './docgen-components/js-function-component-inline-defaults-no-propTypes/input.jsx';",
       "jsDocTags": {},
       "name": "JsFunctionComponentInlineDefaultsNoPropTypes",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/js-function-component-inline-defaults-no-propTypes/input.jsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/js-function-component-inline-defaults-no-propTypes/input.jsx"
     },
     "JsReactMemo": {
       "argTypes": {
@@ -805,10 +805,10 @@
           }
         }
       },
-      "import": "import { component as JsReactMemoComponent } from '@storybook/react';",
+      "import": "import { component as JsReactMemoComponent } from './docgen-components/9586-js-react-memo/input.jsx';",
       "jsDocTags": {},
       "name": "JsReactMemo",
-      "path": "<repo>/code/renderers/react/template/stories/docgen-components/9586-js-react-memo/input.jsx"
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9586-js-react-memo/input.jsx"
     }
   }
 }

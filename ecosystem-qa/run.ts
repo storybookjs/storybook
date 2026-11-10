@@ -34,8 +34,8 @@ import {
   type Os,
   type RunResultFile,
 } from './lib/schema.ts';
-import type { Outcome, RunRequest } from './lib/types.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
+import type { Outcome, RunRequest } from './lib/types.ts';
 import { usageFromStream } from './lib/usage.ts';
 
 const HELP = `Usage: node ecosystem-qa/run.ts --repo <catalog id> --version <storybook version> --engine <claude|codex> --sandbox <docker|bwrap|seatbelt|none> --out <dir>
@@ -117,23 +117,30 @@ const parseRequest = () => {
       help: { type: 'boolean', default: false },
     },
   });
+
   if (values.help) {
     console.log(HELP);
     process.exit(0);
   }
+
   const { repo, version, out } = values;
+
   if (!repo || !version || !out || !values.engine || !values.sandbox) {
     return fail('Missing one of --repo, --version, --engine, --sandbox, --out.');
   }
+
   try {
     versionLine(version);
   } catch (error) {
     return fail((error as Error).message);
   }
+
   const os = HOST_OS[process.platform] ?? fail(`Unsupported platform ${process.platform}.`);
+
   if (values.fake && process.env.ECOSYSTEM_QA_FAKE !== '1') {
     return fail('--fake needs ECOSYSTEM_QA_FAKE=1.');
   }
+
   const engine = Engine.parse(values.engine);
   const entry = loadCatalogEntry(repo);
   const outDir = resolve(out);
@@ -150,6 +157,7 @@ const parseRequest = () => {
     monorepoDir: resolve(QA_DIR, '..'),
   };
   const cloneDir = resolve(values['clone-dir'] ?? join(outDir, '../../../work', entry.id));
+
   return { request, cloneDir, image: values.image };
 };
 
@@ -242,6 +250,7 @@ const runSandcastle = async (
   const startSha = clone(request.entry, cloneDir);
   const { packageManager, storybookDir, repo } = request.entry;
   const stream = createWriteStream(join(request.outDir, 'agent-stream.jsonl'));
+
   let sessionSource: string | undefined;
   let output: Outcome['output'];
   let failure: { status: Outcome['status']; error: string } | undefined;

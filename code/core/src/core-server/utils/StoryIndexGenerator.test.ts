@@ -16,6 +16,8 @@ import type {
   StoryIndexEntry,
 } from 'storybook/internal/types';
 
+import { relative } from 'pathe';
+
 import { Tag } from '../../shared/constants/tags.ts';
 import { StorybookError } from '../../storybook-error.ts';
 import { csfIndexer } from '../presets/common-preset.ts';
@@ -2175,6 +2177,23 @@ describe('StoryIndexGenerator', () => {
             - ./src/Empty.stories.ts: the same error as above (SB_EXAMPLE_0001)
             - ./src/Button.stories.ts: The file '<cwd>/src/Button.stories.ts' has a syntax error at 3:1"
           `);
+      });
+    });
+
+    describe('matching', () => {
+      it('finds stories in dot folders that a ** reaches with zero or more segments', async () => {
+        const specifier = normalizeStoriesEntry('./dot-folders/**/.docs/*.stories.ts', options);
+
+        const files = await StoryIndexGenerator.findMatchingFiles(
+          specifier,
+          options.workingDir,
+          true
+        );
+
+        expect(Object.keys(files).map((file) => relative(options.workingDir, file))).toEqual([
+          'dot-folders/.docs/Cached.stories.ts',
+          'dot-folders/nested/.docs/Nested.stories.ts',
+        ]);
       });
     });
 

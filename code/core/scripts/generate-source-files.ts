@@ -1,13 +1,12 @@
 import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { readFile, readdir, rename, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
 import { isNotNil } from 'es-toolkit/predicate';
-// eslint-disable-next-line depend/ban-dependencies
-import { glob } from 'glob';
 import { format } from 'oxfmt';
 import { rolldown } from 'rolldown';
+import { glob } from 'tinyglobby';
 import { dedent } from 'ts-dedent';
 
 const CODE_DIR = join(import.meta.dirname, '..', '..', '..', 'code');
@@ -27,13 +26,15 @@ async function getWorkspace(): Promise<WorkspacePackage[]> {
   } = JSON.parse(await readFile(join(ROOT_DIR, 'package.json'), 'utf-8'));
 
   const workspaces: string[][] = await Promise.all(
-    patterns.map((pattern: string) => glob(pattern, { cwd: ROOT_DIR }))
+    patterns.map((pattern: string) =>
+      glob(pattern, { cwd: ROOT_DIR, onlyDirectories: true, expandDirectories: false })
+    )
   );
 
   const packages = await Promise.all(
     workspaces
       .flat()
-      .map((relativePath) => join(ROOT_DIR, relativePath))
+      .map((relativePath) => resolve(ROOT_DIR, relativePath))
       .map(async (packagePath) => {
         const content = await readFile(join(packagePath, 'package.json'), 'utf-8').catch(
           (error: NodeJS.ErrnoException) => {

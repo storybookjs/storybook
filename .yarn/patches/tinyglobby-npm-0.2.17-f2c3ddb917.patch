@@ -1,0 +1,64 @@
+diff --git a/dist/index.cjs b/dist/index.cjs
+index c93b23393d316a44a19b6821e69afad47b714101..f4a6d9285bc9a62c2f4bd9c093410fb9f4833894 100644
+--- a/dist/index.cjs
++++ b/dist/index.cjs
+@@ -53,16 +53,22 @@ function getPartialMatcher(patterns, options = {}) {
+ 			const patternParts = patternsParts[i];
+ 			const matcher = matchers[i];
+ 			const inputPatternCount = inputParts.length;
+-			const minParts = Math.min(inputPatternCount, patternParts.length);
++			const patternPartsCount = patternParts.length;
++			let k = 0;
+ 			j = 0;
+-			while (j < minParts) {
++			while (j < patternPartsCount && k < inputPatternCount) {
+ 				const part = patternParts[j];
+ 				if (part.includes("/")) return true;
+-				if (!matcher[j](inputParts[j])) break;
+-				if (!options.noglobstar && part === "**") return true;
++				if (!options.noglobstar && part === "**") {
++					if (matcher[j](inputParts[k])) return true;
++					j++;
++					continue;
++				}
++				if (!matcher[j](inputParts[k])) break;
+ 				j++;
++				k++;
+ 			}
+-			if (j === inputPatternCount) return true;
++			if (k === inputPatternCount) return true;
+ 		}
+ 		return false;
+ 	};
+diff --git a/dist/index.mjs b/dist/index.mjs
+index f5db1ed7627736963cec8db6d5ec0b3c6f5915ff..5aef7cb0a2e25edccae43bc24ef3cf2a46afaa25 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -29,16 +29,22 @@ function getPartialMatcher(patterns, options = {}) {
+ 			const patternParts = patternsParts[i];
+ 			const matcher = matchers[i];
+ 			const inputPatternCount = inputParts.length;
+-			const minParts = Math.min(inputPatternCount, patternParts.length);
++			const patternPartsCount = patternParts.length;
++			let k = 0;
+ 			j = 0;
+-			while (j < minParts) {
++			while (j < patternPartsCount && k < inputPatternCount) {
+ 				const part = patternParts[j];
+ 				if (part.includes("/")) return true;
+-				if (!matcher[j](inputParts[j])) break;
+-				if (!options.noglobstar && part === "**") return true;
++				if (!options.noglobstar && part === "**") {
++					if (matcher[j](inputParts[k])) return true;
++					j++;
++					continue;
++				}
++				if (!matcher[j](inputParts[k])) break;
+ 				j++;
++				k++;
+ 			}
+-			if (j === inputPatternCount) return true;
++			if (k === inputPatternCount) return true;
+ 		}
+ 		return false;
+ 	};

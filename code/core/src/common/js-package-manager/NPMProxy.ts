@@ -10,14 +10,14 @@ import {
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
-// eslint-disable-next-line depend/ban-dependencies
-import { globSync } from 'glob';
 import { normalize } from 'pathe';
 import sort from 'semver/functions/sort.js';
+import { globSync } from 'tinyglobby';
 import { dedent } from 'ts-dedent';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
+import { globCaseSensitiveMatch } from '../utils/common-glob-options.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
@@ -226,6 +226,8 @@ export class NPMProxy extends JsPackageManager {
             ignore: patterns
               .filter((pattern: string) => pattern.startsWith('!'))
               .map((pattern: string) => `${pattern.slice(1)}/package.json`),
+            caseSensitiveMatch: globCaseSensitiveMatch,
+            expandDirectories: false,
           }
         )
           .map(normalize)

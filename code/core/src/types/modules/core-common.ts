@@ -675,6 +675,15 @@ export interface StorybookFeatures {
   docgenServer?: boolean;
 
   /**
+   * Let story snippets follow the controls. With `docgenServer` on, a snippet in the Code panel,
+   * Canvas › Show code and the MDX `<Source>` block shows the args a control changed.
+   *
+   * @default false
+   * @experimental
+   */
+  experimentalLiveServerSnippets?: boolean;
+
+  /**
    * Keep Vite from merging the pre-split preview runtime back into one output chunk.
    *
    * Webpack always serves the chunked `dist/preview` at `/sb-preview`. This flag only

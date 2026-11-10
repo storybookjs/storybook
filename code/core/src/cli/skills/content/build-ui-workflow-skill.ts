@@ -7,10 +7,7 @@ import {
 import { ERROR_EXPORT_RULE, networkMockRule, USER_EVENT_RULE } from './story-rules.ts';
 
 export type UiWorkflowSkillInputs = {
-  /**
-   * `cli` for `storybook skills ui-workflow`, `mcp` for the same command with `--mcp`: the same
-   * workflow, in commands to run or in tools of the Storybook MCP server to call.
-   */
+  // `mcp` for `skills ui-workflow --mcp`: tools of the Storybook MCP server instead of commands.
   transport: SkillTextTransport;
   framework: string;
   /** The preview file uses `definePreview`, so story files use CSF Factories. */
@@ -22,11 +19,7 @@ export type UiWorkflowSkillInputs = {
   testSupported: boolean;
   a11yEnabled: boolean;
   moduleGraphSupported: boolean;
-  /**
-   * The `dev` toolset is on: `stories-changed`, `stories-preview`, `review-create` and, with
-   * `moduleGraphSupported`, `stories-find-by-component`. Always for the CLI; over MCP, unless
-   * `main.ts` turns it off. Turn `moduleGraphSupported` off with it.
-   */
+  // The `dev` toolset is on: the review, story links and `stories-changed`. Always for the CLI.
   devEnabled: boolean;
 };
 
@@ -205,10 +198,7 @@ Follow this for every change to how the UI looks (components, stories, styles, t
     .join('\n\n');
 }
 
-/**
- * `write-story`: the write section of `ui-workflow` on its own. Both print the same rules, so
- * they cannot drift apart.
- */
+// `write-story`: the write section of `ui-workflow` on its own, from the same code.
 export function buildWriteStorySkill(inputs: WriteStorySkillInputs): string {
   return `# ${WRITE_SECTION_TITLE}
 

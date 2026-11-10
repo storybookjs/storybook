@@ -46,7 +46,7 @@ describe('addStorybookAgentInstructions', () => {
 
   it('wraps the section in markers, with the heading and both skills', () => {
     expect(STORYBOOK_AGENT_INSTRUCTIONS).toMatch(
-      /^<!-- BEGIN:storybook-skills -->\n[\s\S]*## Storybook skills\n[\s\S]*`ui-workflow`[\s\S]*`component-docs`[\s\S]*<!-- END:storybook-skills -->\n$/
+      /^<!-- BEGIN:storybook-skills -->\n[\s\S]*## Storybook skills\n[\s\S]*`ui-workflow`[\s\S]*`component-info`[\s\S]*<!-- END:storybook-skills -->\n$/
     );
   });
 
@@ -60,7 +60,7 @@ describe('addStorybookAgentInstructions', () => {
 
   it.each([
     '## Storybook\n\n- `ui-workflow`: for UI changes. Follow it to update your stories and run the tests.\n',
-    'Run /component-docs for questions about a component.\n',
+    'Run /component-info for questions about a component.\n',
   ])('leaves a file alone that already names a Storybook skill (%j)', async (custom) => {
     vol.writeFileSync(join(ROOT, 'AGENTS.md'), custom);
 

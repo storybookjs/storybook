@@ -107,7 +107,7 @@ The plugin's [skills](#skills) tell the agent how to work with your Storybook: r
 For each of these tasks, invoke its Storybook skill first, before you edit any file, and follow it:
 
 - `ui-workflow`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results.
-- `component-docs`: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. It lists the project's components with their props and usage examples.
+- `component-info`: you look for an existing component to reuse instead of building a new one, or the user asks about the project's components: which ones exist, which one fits a use case, which props one takes (for example, for accessibility), or where the component library has gaps. It lists the project's components with their props and usage examples.
 
 <!-- END:storybook-skills -->
 ```
@@ -128,9 +128,9 @@ Initializes Storybook in your project (i.e. runs [`npm create storybook@latest`]
 
 Sets up your Storybook for agentic workflows, automatically configures your project to correctly render your components, and writes story files for a variety of component types. See the [agentic setup docs](https://storybook.js.org/docs/ai/agentic-setup) for more details.
 
-### `component-docs`
+### `component-info`
 
-Looks up the components of your Storybook, with their props and usage examples, so the agent reuses them instead of building duplicates. Also answers questions about a component's props, API, and usage.
+Looks up the components of your Storybook, with their props and usage examples, so the agent reuses them instead of building duplicates. Also answers questions about your components: which ones exist, which one fits a use case, which props one takes, and where the component library has gaps.
 
 ### `ui-workflow`
 

@@ -16,8 +16,8 @@ describe('answering which props ReviewCard accepts', () => {
     expect(getWorkflowToolResults('docs-show').some((result) => !result.isError)).toBe(true);
   });
 
-  test.skipIf(integration === 'mcp')('invokes the component-docs skill', () => {
-    expectSkillInvoked('component-docs');
+  test.skipIf(integration === 'mcp')('invokes the component-info skill', () => {
+    expectSkillInvoked('component-info');
   });
 
   // The fixture component has exactly these three props; a grounded answer

@@ -5,7 +5,7 @@ export const MCP_TOOLS_NOTE = 'The tools named here are tools of the Storybook M
 
 /**
  * How to look up the components to reuse. `ui-workflow` inlines it, so an agent cannot skip the
- * lookup by not invoking `component-docs`. With `--mcp`, both skills render it with the MCP tool
+ * lookup by not invoking `component-info`. With `--mcp`, both skills render it with the MCP tool
  * names.
  */
 export function componentLookup(transport: SkillTextTransport = 'cli'): string {
@@ -39,8 +39,8 @@ export function uiWorkflowRef(transport: SkillTextTransport): string {
     : "`npx storybook skills ui-workflow --mcp` when your agent instructions or the Storybook MCP server's instructions name it";
 }
 
-export function buildComponentDocsSkill(transport: SkillTextTransport = 'cli'): string {
-  return `# Storybook component docs
+export function buildComponentInfoSkill(transport: SkillTextTransport = 'cli'): string {
+  return `# Storybook component info
 
 ${transport === 'mcp' ? `${MCP_TOOLS_NOTE}\n\n` : ''}${componentLookup(transport)}
 

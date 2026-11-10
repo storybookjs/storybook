@@ -35,7 +35,7 @@ export function buildServerInstructions({
       testSupported &&
       `- \`${ref('test.run')}\`: you run or fix story tests. It is the only way to run them, never a \`package.json\` test script; finish with one run without \`stories\`, and never finish with failing tests.`,
     docsEnabled &&
-      `- \`npx storybook skills component-docs --mcp\`: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. It lists the project's components with their props and usage examples.`,
+      `- \`npx storybook skills component-info --mcp\`: you look for an existing component to reuse instead of building a new one, or the user asks about the project's components: which ones exist, which one fits a use case, which props one takes (for example, for accessibility), or where the component library has gaps. It lists the project's components with their props and usage examples.`,
   ].filter(Boolean);
 
   if (tasks.length === 0) {

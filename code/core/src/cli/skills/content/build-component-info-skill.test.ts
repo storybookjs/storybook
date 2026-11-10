@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildComponentDocsSkill, componentLookup } from './build-component-docs-skill.ts';
+import { buildComponentInfoSkill, componentLookup } from './build-component-info-skill.ts';
 
-describe('buildComponentDocsSkill', () => {
+describe('buildComponentInfoSkill', () => {
   it('teaches docs list before docs show, with the source of a composed Storybook', () => {
-    const text = buildComponentDocsSkill();
+    const text = buildComponentInfoSkill();
 
     expect(text).toContain('npx storybook tools docs list');
     expect(text).toContain('npx storybook tools docs show --id <id>');
@@ -14,13 +14,13 @@ describe('buildComponentDocsSkill', () => {
   });
 
   it('asks to read each docs show output whole, one id per command', () => {
-    expect(buildComponentDocsSkill()).toContain(
+    expect(buildComponentInfoSkill()).toContain(
       'Run `docs show` once per id, each in its own command, and read its whole output without `head` or `tail`'
     );
   });
 
   it('sends a UI change or a request to see stories to ui-workflow when the agent instructions name it', () => {
-    expect(buildComponentDocsSkill()).toContain(
+    expect(buildComponentInfoSkill()).toContain(
       "For a change to the UI, and when the user asks to see components or stories, use the `ui-workflow` skill when the project's agent instructions"
     );
   });

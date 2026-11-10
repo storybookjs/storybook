@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { componentLookup } from './build-component-docs-skill.ts';
+import { componentLookup } from './build-component-info-skill.ts';
 import {
   buildUiWorkflowSkill,
   buildWriteStorySkill,
@@ -40,11 +40,11 @@ describe('buildUiWorkflowSkill', () => {
     expect(text).toContain('accessibility violations');
   });
 
-  it('includes the lookup of component-docs, so the agent cannot skip it', () => {
+  it('includes the lookup of component-info, so the agent cannot skip it', () => {
     const text = buildUiWorkflowSkill(everything);
 
     expect(text).toContain(`## Look up components first\n\n${componentLookup()}`);
-    expect(text).not.toContain('npx storybook skills component-docs');
+    expect(text).not.toContain('npx storybook skills component-info');
   });
 
   it('looks up components before it writes any', () => {

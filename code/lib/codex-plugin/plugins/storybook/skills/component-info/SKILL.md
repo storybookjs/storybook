@@ -1,5 +1,5 @@
 ---
-name: component-docs
+name: component-info
 description: Look up the components of a project with Storybook, with their props and usage examples, to answer questions about them or to reuse them instead of building duplicates. Use when the project's agent instructions (such as AGENTS.md) or the user ask for it. To change the UI or show stories, use ui-workflow, which includes the same lookup.
 ---
 
@@ -12,4 +12,4 @@ Run every Storybook CLI command from the package where Storybook is installed (i
 
 If the sandbox blocks network access, request escalated permissions for Storybook CLI commands.
 
-Run `npx storybook skills component-docs` in a command of its own before you read any component's source, and follow its output: it lists the commands that show this project's components, props, and usage examples, and when to use them.
+Run `npx storybook skills component-info` in a command of its own before you read any component's source, and follow its output: it lists the commands that show this project's components, props, and usage examples, and when to use them.

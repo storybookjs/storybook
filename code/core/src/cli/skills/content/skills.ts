@@ -3,7 +3,7 @@
  * which addon-mcp's server instructions run with `--mcp`. The ids are public CLI vocabulary —
  * plugin stubs (M7) will reference them — so treat renames as breaking.
  */
-export const SKILL_IDS = ['ui-workflow', 'component-docs', 'write-story', 'setup'] as const;
+export const SKILL_IDS = ['ui-workflow', 'component-info', 'write-story', 'setup'] as const;
 
 export type SkillId = (typeof SKILL_IDS)[number];
 
@@ -12,7 +12,7 @@ export const SKILLS: Record<SkillId, { blurb: string }> = {
     blurb:
       'The workflow for UI changes, with every command it needs: look up components, write stories, test, and publish a review.',
   },
-  'component-docs': {
+  'component-info': {
     blurb:
       'Look up components, with their props and usage, to answer questions about them or to reuse them instead of building duplicates.',
   },

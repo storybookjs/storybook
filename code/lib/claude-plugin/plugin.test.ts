@@ -76,8 +76,8 @@ const HARNESS_TOOLS = [
 const RENDER_HINT = 'Run `yarn nx compile claude-plugin` and commit the Codex skills.';
 
 const uiWorkflowSkill = readFileSync(resolve(packageRoot, 'skills/ui-workflow/SKILL.md'), 'utf8');
-const componentDocsSkill = readFileSync(
-  resolve(packageRoot, 'skills/component-docs/SKILL.md'),
+const componentInfoSkill = readFileSync(
+  resolve(packageRoot, 'skills/component-info/SKILL.md'),
   'utf8'
 );
 
@@ -107,8 +107,8 @@ describe('canonical skills', () => {
   });
 });
 
-describe('ui-workflow and component-docs skills', () => {
-  it.each([uiWorkflowSkill, componentDocsSkill])(
+describe('ui-workflow and component-info skills', () => {
+  it.each([uiWorkflowSkill, componentInfoSkill])(
     'run when the agent instructions or the user ask, not on every UI change',
     (skill) => {
       const description = readSkillDescription(skill);
@@ -119,7 +119,7 @@ describe('ui-workflow and component-docs skills', () => {
 
   it('serve their workflow from the Storybook CLI of the project', () => {
     expect(uiWorkflowSkill).toContain('`npx storybook skills ui-workflow`');
-    expect(componentDocsSkill).toContain('`npx storybook skills component-docs`');
+    expect(componentInfoSkill).toContain('`npx storybook skills component-info`');
     expect(uiWorkflowSkill).toContain('set up or install Storybook');
   });
 

@@ -163,14 +163,14 @@ describe('parseStorybookWorkflowShellCommands', () => {
   test('records the skill id after options, also ones that take a value', () => {
     const calls = parseStorybookWorkflowShellCommands([
       'npx storybook skills --cwd packages/ui ui-workflow --mcp',
-      'npx storybook skills -c .storybook --debug component-docs',
+      'npx storybook skills -c .storybook --debug component-info',
       'npx storybook skills --config-dir=.storybook ui-workflow',
       'npx storybook skills --cwd packages/ui --help',
     ]);
 
     expect(calls.map((call) => call.input)).toEqual([
       { id: 'ui-workflow', mcp: true },
-      { id: 'component-docs' },
+      { id: 'component-info' },
       { id: 'ui-workflow' },
     ]);
   });
@@ -181,7 +181,7 @@ describe('parseStorybookWorkflowShellCommands', () => {
       'npx storybook skills --all',
       'npx storybook skills ui-workflow',
       'npx storybook skills ui-workflow --mcp',
-      'npx storybook skills --mcp component-docs',
+      'npx storybook skills --mcp component-info',
       'npx storybook skills all',
       'npx storybook skills setup',
     ]);
@@ -191,7 +191,7 @@ describe('parseStorybookWorkflowShellCommands', () => {
       { all: true },
       { id: 'ui-workflow' },
       { id: 'ui-workflow', mcp: true },
-      { id: 'component-docs', mcp: true },
+      { id: 'component-info', mcp: true },
       { id: 'all' },
       { id: 'setup' },
     ]);

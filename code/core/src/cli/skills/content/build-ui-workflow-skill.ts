@@ -1,4 +1,4 @@
-import { componentLookup, MCP_TOOLS_NOTE, uiWorkflowRef } from './build-component-docs-skill.ts';
+import { componentLookup, MCP_TOOLS_NOTE, uiWorkflowRef } from './build-component-info-skill.ts';
 import {
   type SkillTextTransport,
   type SkillVocabulary,

@@ -4,7 +4,7 @@ import type { Options } from '../../types/index.ts';
 
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
 import { ALL_MCP_TOOLSETS } from './availability.ts';
-import { buildComponentDocsSkill } from './content/build-component-docs-skill.ts';
+import { buildComponentInfoSkill } from './content/build-component-info-skill.ts';
 import { buildUiWorkflowSkill, buildWriteStorySkill } from './content/build-ui-workflow-skill.ts';
 import type { SkillTextTransport } from './content/skill-vocabulary.ts';
 import type { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
@@ -83,7 +83,7 @@ export function resolveSkillsIntent({
     return {
       kind: 'error',
       message:
-        'The `stories` skill is renamed to `ui-workflow`. Run `npx storybook skills ui-workflow`, or `npx storybook skills component-docs` to look up the components to reuse.',
+        'The `stories` skill is renamed to `ui-workflow`. Run `npx storybook skills ui-workflow`, or `npx storybook skills component-info` to look up the components to reuse.',
     };
   }
   if (!isSkillId(id)) {
@@ -159,9 +159,9 @@ async function serveSkills(
       const setup = await serveSetup(configDir, deps);
       docs.push(setup.markdown);
       setupRun = setup.run;
-    } else if (id === 'component-docs') {
+    } else if (id === 'component-info') {
       // The same text for every project, so it needs no configuration.
-      docs.push(buildComponentDocsSkill(transport));
+      docs.push(buildComponentInfoSkill(transport));
     } else if (id === 'write-story') {
       inputs ??= await loadInputs(configDir, deps);
       docs.push(buildWriteStorySkill({ ...inputs, transport }));

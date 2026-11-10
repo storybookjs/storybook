@@ -37,7 +37,7 @@ describe('buildServerInstructions', () => {
       For each of these tasks, run its Storybook skill first, before you edit any file, and follow it. Run a skill in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`.
 
       - \`npx storybook skills ui-workflow --mcp\`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results.
-      - \`npx storybook skills component-docs --mcp\`: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. It lists the project's components with their props and usage examples.
+      - \`npx storybook skills component-info --mcp\`: you look for an existing component to reuse instead of building a new one, or the user asks about the project's components: which ones exist, which one fits a use case, which props one takes (for example, for accessibility), or where the component library has gaps. It lists the project's components with their props and usage examples.
 
       When you publish a review with \`review-create\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it."
     `);
@@ -54,7 +54,7 @@ describe('buildServerInstructions', () => {
       'It updates your stories and publishes a review of the results.'
     );
     expect(instructions).not.toContain('story tests');
-    expect(instructions).not.toContain('component-docs');
+    expect(instructions).not.toContain('component-info');
   });
 
   it('names test-run itself when the dev toolset is off', () => {
@@ -72,14 +72,14 @@ describe('buildServerInstructions', () => {
     expect(instructions).not.toContain('review-create');
   });
 
-  it('names only the component-docs skill for docs only', () => {
+  it('names only the component-info skill for docs only', () => {
     const instructions = buildServerInstructions({
       devEnabled: false,
       testSupported: false,
       docsEnabled: true,
     });
 
-    expect(instructions).toContain('- `npx storybook skills component-docs --mcp`');
+    expect(instructions).toContain('- `npx storybook skills component-info --mcp`');
     expect(instructions).not.toContain('ui-workflow');
     expect(instructions).not.toContain('review-create');
   });

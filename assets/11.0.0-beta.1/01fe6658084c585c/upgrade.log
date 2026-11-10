@@ -1,0 +1,165 @@
+➤ YN0000: · Yarn 4.18.0
+➤ YN0000: ┌ Resolution step
+➤ YN0085: │ + storybook@npm:11.0.0-beta.1, @emnapi/core@npm:1.11.0, @emnapi/runtime@npm:1.11.0, @emnapi/wasi-threads@npm:1.2.2, @esbuild/aix-ppc64@npm:0.28.2, and 72 more.
+➤ YN0000: └ Completed in 1s 2ms
+➤ YN0000: ┌ Post-resolution validation
+➤ YN0086: │ Some peer dependencies are incorrectly met by dependencies; run yarn explain peer-requirements for details.
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Fetch step
+➤ YN0013: │ 16 packages were added to the project (+ 38.04 MiB).
+➤ YN0000: └ Completed in 0s 683ms
+➤ YN0000: ┌ Link step
+➤ YN0007: │ esbuild@npm:0.28.2 must be built because it never has been before or the last one failed
+➤ YN0000: └ Completed in 0s 251ms
+➤ YN0000: · Done with warnings in 1s 950ms
+
+➤ YN0000: · Yarn 4.18.0
+➤ YN0000: ┌ Resolution step
+➤ YN0085: │ + @storybook/cli@npm:11.0.0-beta.1, @babel/code-frame@npm:7.29.7, @babel/compat-data@npm:7.29.7, @babel/core@npm:7.29.13, @babel/generator@npm:7.29.13, and 186 more.
+➤ YN0000: └ Completed in 1s 444ms
+➤ YN0000: ┌ Post-resolution validation
+➤ YN0086: │ Some peer dependencies are incorrectly met by dependencies; run yarn explain peer-requirements for details.
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Fetch step
+➤ YN0013: │ 130 packages were added to the project (+ 75.33 MiB).
+➤ YN0000: └ Completed in 0s 850ms
+➤ YN0000: ┌ Link step
+➤ YN0007: │ esbuild@npm:0.28.2 must be built because it never has been before or the last one failed
+➤ YN0000: └ Completed in 0s 994ms
+➤ YN0000: · Done with warnings in 3s 309ms
+
+
+[90m┌[39m  Storybook upgrade - v11.0.0-beta.1
+[90m│[39m
+[90m│[39m  Detecting projects...
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[34m●[39m  Upgrading from [1m10.6.0[22m to [1m11.0.0-beta.1[22m
+[90m│[39m
+[90m│[39m  /package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for /.storybook...
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m upgrade-storybook-related-dependencies[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m set-config-layout[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m remove-experimental-review[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m typescript-compiler-api[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m typescript-7-react-docgen[39m
+[90m│[39m
+[90m│[39m  6 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running all detected automigrations:
+[90m│[39m
+[90m│[39m  - upgrade-storybook-related-dependencies (/.storybook)
+[90m│[39m
+[90m│[39m  - set-config-layout (/.storybook)
+[90m│[39m
+[90m│[39m  - remove-experimental-review (/.storybook)
+[90m│[39m
+[90m│[39m  - skills (/.storybook)
+[90m│[39m
+[90m│[39m  - typescript-compiler-api (/.storybook)
+[90m│[39m
+[90m│[39m  - typescript-7-react-docgen (/.storybook)
+│ ┌─typescript-compiler-api (/.storybook)──────────────────────────────────────┐
+│ │  TypeScript 7 has no compiler API, so Storybook cannot read your           │
+│ │  component types. In package.json, replace the [36mtypescript[39m devDependency    │
+│ │  with [36m"@typescript/native": "npm:typescript@^7.0.2"[39m and [36m"typescript": [39m     │
+│ │  [36m"npm:@typescript/typescript6@^6.0.2"[39m. This is not automigrated.           │
+│ └────────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[90m│[39m  [36myarn dlx skills@latest add storybookjs/skills#v11.0.0-beta.1 --yes[39m
+[90m│[39m  [36m--agent claude-code universal --copy[39m
+[90m│[39m
+[90m│[39m  Added a Storybook section to AGENTS.md that tells agents when to use
+[90m│[39m  the skills. Storybook keeps it current on upgrade: remove its markers
+[90m│[39m  to keep your own edits, or remove the section to opt out.
+[90m│[39m
+[90m│[39m  Remove the Storybook skills with: yarn dlx skills@latest remove
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m upgrade-storybook-related-dependencies[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m set-config-layout[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m remove-experimental-review[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m typescript-7-react-docgen[39m
+[90m│[39m
+[90m│[39m  Completed automigrations for /.storybook
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: · Yarn 4.18.0
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: ┌ Resolution st
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0085: │ + @chromatic-
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0085: │ - @chromatic-
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: └ Completed in
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: ┌ Post-resoluti
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0060: │ react is list
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: └ Completed
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: ┌ Fetch step
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0013: │ 15 packages w
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: └ Completed in
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: ┌ Link step
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0007: │ @swc/core@npm
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: └ Completed in
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: · Done with war
+[90m│[39m
+[90m│[39m  Dependencies installed
+[90m│[39m
+[32m◇[39m  Checking the health of your project(s)..
+[90m│[39m
+[90m│[39m  Your Storybook project looks good!
+[90m│[39m
+[32m◇[39m  [32mYour project(s) have been upgraded successfully! 🎉[39m
+[90m│[39m
+[90m│[39m  If you want to learn more about the automigrations that executed in
+[90m│[39m  your project(s), please check the following links:
+[90m│[39m  • upgrade-storybook-related-dependencies: undefined
+[90m│[39m  • set-config-layout:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#top-level-setconfig-layout-and-ui-options-removed
+[90m│[39m  • remove-experimental-review:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#experimentalreview-feature-flag-removed
+[90m│[39m  • skills: https://github.com/storybookjs/skills
+[90m│[39m  • typescript-7-react-docgen:
+[90m│[39m  https://storybook.js.org/docs/configure/integration/typescript#typescript-7
+[90m│[39m
+[90m│[39m  For a full list of changes, please check our migration guide:
+[90m│[39m  [36mhttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade[39m
+[90m│[39m
+[34m●[39m  Storybook collects completely anonymous usage telemetry. We use it to
+[90m│[39m  shape Storybook's roadmap and prioritize features. You can learn more,
+[90m│[39m  including how to opt out, at https://storybook.js.org/telemetry
+[90m│[39m
+[90m└[39m  Storybook upgrade completed!
+

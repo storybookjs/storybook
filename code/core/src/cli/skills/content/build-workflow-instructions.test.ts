@@ -22,7 +22,7 @@ describe('buildAgentInstructions', () => {
 
       1. \`component-docs\`, before you edit any file: look up the components to reuse, with their props and usage examples. Also when the user asks about a component's props, API, or usage.
       2. \`write-stories\`, before you write the code: every component you create or change gets stories.
-      3. \`test-stories\`, after every change: run the story tests, and fix what fails. Also when the user asks to run or fix story tests.
+      3. \`test-stories\`, after every change: run the story tests the way this skill says, never with a \`package.json\` test script, and fix what fails. Also when the user asks to run or fix story tests.
       4. \`ui-review\`, as your last step: publish a review that shows the user what changed. Also when the user asks to see components or stories."
     `);
   });
@@ -50,7 +50,7 @@ describe('buildServerInstructions', () => {
 
       1. \`npx storybook skills component-docs --mcp\`, before you edit any file: look up the components to reuse, with their props and usage examples. Also when the user asks about a component's props, API, or usage.
       2. \`npx storybook skills write-stories --mcp\`, before you write the code: every component you create or change gets stories.
-      3. \`npx storybook skills test-stories --mcp\`, after every change: run the story tests, and fix what fails. Also when the user asks to run or fix story tests.
+      3. \`npx storybook skills test-stories --mcp\`, after every change: run the story tests the way this skill says, never with a \`package.json\` test script, and fix what fails. Also when the user asks to run or fix story tests.
       4. \`npx storybook skills ui-review --mcp\`, as your last step: publish a review that shows the user what changed. Also when the user asks to see components or stories.
 
       When you publish a review with \`review-create\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it."
@@ -90,9 +90,8 @@ describe('buildServerInstructions', () => {
   });
 
   it('names one step for one toolset', () => {
-    expect(
-      buildServerInstructions({ devEnabled: false, testSupported: false, docsEnabled: true })
-    ).toMatchInlineSnapshot(`
+    expect(buildServerInstructions({ devEnabled: false, testSupported: false, docsEnabled: true }))
+      .toMatchInlineSnapshot(`
       "## Storybook
 
       For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow this step. It has a Storybook skill: run it when you reach the step, and follow it. Run a skill in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`.

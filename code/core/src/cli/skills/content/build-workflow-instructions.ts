@@ -27,7 +27,8 @@ function workflowSteps({ devEnabled, testSupported, docsEnabled }: ServerInstruc
     testSupported && {
       skill: 'test-stories',
       when: 'after every change',
-      does: 'run the story tests, and fix what fails',
+      // An agent that skips the skill runs the test script of the project, so this rule is here too.
+      does: 'run the story tests the way this skill says, never with a `package.json` test script, and fix what fails',
       also: 'the user asks to run or fix story tests',
     },
     devEnabled && {

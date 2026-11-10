@@ -162,16 +162,3 @@ describe('docgenBaselinesFrom', () => {
     }
   });
 });
-
-describe('docgenBaselineComponents', () => {
-  it('is set only on a docgen server template that records its own baselines', () => {
-    const withServer = docgenServerTemplates();
-    for (const [key, template] of Object.entries(allTemplates)) {
-      if (!template.docgenBaselineComponents) {
-        continue;
-      }
-      expect(withServer, key).toContain(key);
-      expect(template.docgenBaselinesFrom, key).toBeUndefined();
-    }
-  });
-});

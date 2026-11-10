@@ -71,70 +71,43 @@ describe('readStaticDocgen', () => {
 
   it.each([
     {
-      inputName: 'named after the global',
-      input: { name: 'globalThis.__TEMPLATE_COMPONENTS__.Html', jsDocTags: {} },
-      expectedIds: ['real'],
+      inputName: 'a component referenced through a global',
+      input: {
+        name: 'globalThis.__TEMPLATE_COMPONENTS__.Html',
+        jsDocTags: {},
+        error: { name: 'No component import found', message: 'No component file found' },
+      },
     },
     {
-      inputName: 'quoting the global in its error',
+      inputName: 'a component declared in its story file',
       input: {
-        name: 'args',
+        name: 'ButtonWithState',
         jsDocTags: {},
-        error: {
-          name: 'component-not-a-tag',
-          message:
-            "`meta.component` must be the element's tag name as a string, got `globalThis.__TEMPLATE_COMPONENTS__.Pre`",
-        },
+        error: { name: 'No component import found', message: 'No component file found' },
       },
-      expectedIds: ['real'],
     },
-  ])('skips a globally referenced component $inputName', ({ input, expectedIds }) => {
+  ])('skips $inputName, whose docgen failed', ({ input }) => {
     vol.fromJSON({
-      [`${DOCGEN}/global.json`]: snapshot('global', input),
+      [`${DOCGEN}/failed.json`]: snapshot('failed', input),
       [`${DOCGEN}/real.json`]: snapshot('real', { name: 'ButtonComponent', jsDocTags: {} }),
     });
 
-    expect(Object.keys(readStaticDocgen({ staticDir: STATIC, sandboxDir: SANDBOX }))).toEqual(
-      expectedIds
-    );
+    expect(Object.keys(readStaticDocgen({ staticDir: STATIC, sandboxDir: SANDBOX }))).toEqual([
+      'real',
+    ]);
   });
 
-  it('refuses to record when every component is globally referenced', () => {
+  it('refuses to record when docgen failed for every component', () => {
     vol.fromJSON({
-      [`${DOCGEN}/global.json`]: snapshot('global', {
-        name: 'globalThis.__TEMPLATE_COMPONENTS__.Html',
+      [`${DOCGEN}/failed.json`]: snapshot('failed', {
         jsDocTags: {},
+        error: { name: 'No component found', message: 'Specify meta.component.' },
       }),
     });
 
     expect(() => readStaticDocgen({ staticDir: STATIC, sandboxDir: SANDBOX })).toThrow(
-      /globally referenced/
+      /docgen failed for every one of them/
     );
-  });
-
-  it('records only the listed components', () => {
-    vol.fromJSON({
-      [`${DOCGEN}/kept.json`]: snapshot('kept', {}),
-      [`${DOCGEN}/dropped.json`]: snapshot('dropped', {}),
-    });
-
-    expect(
-      Object.keys(
-        readStaticDocgen({ staticDir: STATIC, sandboxDir: SANDBOX, componentIds: ['kept'] })
-      )
-    ).toEqual(['kept']);
-  });
-
-  it('names a listed component that the build has no docgen for', () => {
-    vol.fromJSON({ [`${DOCGEN}/kept.json`]: snapshot('kept', {}) });
-
-    expect(() =>
-      readStaticDocgen({
-        staticDir: STATIC,
-        sandboxDir: SANDBOX,
-        componentIds: ['kept', 'renamed'],
-      })
-    ).toThrow(/listed component\(s\): renamed$/);
   });
 });
 

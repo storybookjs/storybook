@@ -3,10 +3,6 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
 import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
-import {
-  SvelteKitMockParametersRemovedError,
-  SvelteKitMocksSharedOnDocsPageError,
-} from 'storybook/internal/preview-errors';
 
 import { addons } from 'storybook/preview-api';
 
@@ -15,6 +11,10 @@ import { navigating, page, updated } from '@storybook/sveltekit/internal/mocks/a
 import { goto, link, setAfterNavigate } from '@storybook/sveltekit/navigation.mock';
 import { formAction } from '@storybook/sveltekit/forms.mock';
 
+import {
+  SvelteKitMockParametersRemovedError,
+  SvelteKitMocksSharedOnDocsPageError,
+} from './errors.ts';
 import { decorators as svelteKitDecorators, beforeEach as svelteKitBeforeEach } from './preview.ts';
 
 // The cleanups of the stories that are set up and not yet torn down

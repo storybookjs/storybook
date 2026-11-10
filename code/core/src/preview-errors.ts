@@ -4,6 +4,8 @@ import type { Status } from './shared/status-store/index.ts';
 import type { StatusTypeId } from './shared/status-store/index.ts';
 import { StorybookError } from './storybook-error.ts';
 
+export { StorybookError } from './storybook-error.ts';
+
 /**
  * If you can't find a suitable category for your error, create one based on the package name/file
  * path of which the error is thrown. For instance: If it's from `storybook/internal/client-logger`,
@@ -32,7 +34,6 @@ export enum Category {
   RENDERER_VUE3 = 'RENDERER_VUE3',
   RENDERER_WEB_COMPONENTS = 'RENDERER_WEB-COMPONENTS',
   FRAMEWORK_NEXTJS = 'FRAMEWORK_NEXTJS',
-  FRAMEWORK_SVELTEKIT = 'FRAMEWORK_SVELTEKIT',
   ADDON_VITEST = 'ADDON_VITEST',
   ADDON_A11Y = 'ADDON_A11Y',
 }
@@ -368,54 +369,6 @@ export class NextjsRouterMocksNotAvailable extends StorybookError {
       code: 2,
       message: dedent`
         Tried to access router mocks from "${data.importType}" but they were not created yet. You might be running code in an unsupported environment.
-      `,
-    });
-  }
-}
-
-export class SvelteKitMockParametersRemovedError extends StorybookError {
-  constructor(public data: { keys: string[] }) {
-    super({
-      name: 'SvelteKitMockParametersRemovedError',
-      category: Category.FRAMEWORK_SVELTEKIT,
-      code: 1,
-      documentation: [
-        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-sveltekit_experimental-parameters-removed',
-        'https://storybook.js.org/docs/get-started/frameworks/sveltekit#mocking-modules',
-      ],
-      message: dedent`
-        \`parameters.sveltekit_experimental\` was removed in Storybook 11, and this story still sets it: ${data.keys.map((key) => `\`${key}\``).join(', ')}.
-
-        Mock SvelteKit modules in \`beforeEach\` instead. Import \`goto\` and the other functions from \`$app/navigation\`, set \`page\` from \`$app/state\`, and use \`link\` and \`setAfterNavigate\` from \`@storybook/sveltekit/navigation.mock\` and \`formAction\` from \`@storybook/sveltekit/forms.mock\`. The migration guide maps every key to its replacement.
-      `,
-    });
-  }
-}
-
-export class SvelteKitMocksSharedOnDocsPageError extends StorybookError {
-  constructor() {
-    super({
-      name: 'SvelteKitMocksSharedOnDocsPageError',
-      category: Category.FRAMEWORK_SVELTEKIT,
-      code: 2,
-      documentation: 'https://storybook.js.org/docs/get-started/frameworks/sveltekit#docs-pages',
-      // Short lines: a docs page shows this in a box that doesn't wrap them
-      message: dedent`
-        Inline stories can't set up SvelteKit mocks.
-
-        To fix this, render the stories of this file in iframes. Add this
-        to the meta (\`defineMeta()\` or the default export):
-
-          parameters: { docs: { story: { inline: false } } }
-
-        Inline stories render in one document, so they share the mocks of
-        \`$app/state\`, \`$app/navigation\` and \`$app/forms\`. Every story would
-        show the setup of the story that ran last, so Storybook stops here.
-        In an iframe, each story has its own mocks.
-
-        A story sets up the mocks when its \`beforeEach\` sets \`page\`,
-        \`navigating\` or \`updated\`, calls \`setAfterNavigate()\`, or
-        configures a mock function such as \`goto\` or \`formAction\`.
       `,
     });
   }

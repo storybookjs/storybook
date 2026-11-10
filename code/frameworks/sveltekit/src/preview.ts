@@ -1,4 +1,4 @@
-import { SvelteKitMockParametersRemovedError } from 'storybook/internal/preview-errors';
+import { SvelteKitMockParametersRemovedError } from './errors.ts';
 
 import type { Preview } from '@storybook/svelte';
 import {

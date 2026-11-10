@@ -1,5 +1,5 @@
 import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
-import { SvelteKitMocksSharedOnDocsPageError } from 'storybook/internal/preview-errors';
+import { SvelteKitMocksSharedOnDocsPageError } from '../errors.ts';
 
 import { addons } from 'storybook/preview-api';
 

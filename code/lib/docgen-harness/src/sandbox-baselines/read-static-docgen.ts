@@ -102,9 +102,11 @@ const isGloballyReferenced = (payload: SandboxBaseline): boolean =>
 export function readStaticDocgen({
   staticDir,
   sandboxDir,
+  componentIds,
 }: {
   staticDir: string;
   sandboxDir: string;
+  componentIds?: readonly string[];
 }): SandboxBaselines {
   const docgenDir = join(staticDir, DOCGEN_SNAPSHOT_DIR);
 
@@ -132,6 +134,21 @@ export function readStaticDocgen({
       const baseline = toBaseline(payload, sandboxDir);
       if (!isGloballyReferenced(baseline)) {
         baselines[id] = baseline;
+      }
+    }
+  }
+
+  if (componentIds) {
+    const missing = componentIds.filter((id) => !(id in baselines));
+    if (missing.length > 0) {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
+      throw new Error(
+        `${docgenDir} has no docgen for the listed component(s): ${missing.join(', ')}`
+      );
+    }
+    for (const id of Object.keys(baselines)) {
+      if (!componentIds.includes(id)) {
+        delete baselines[id];
       }
     }
   }

@@ -25,6 +25,10 @@ A template that is flagged but has nothing recorded yet fails rather than skippi
 A template that sets `docgenBaselinesFrom` records nothing of its own: it is checked against the baselines of the template it names.
 `angular-vite/typescript-7-ts` uses this to require the same docgen on TypeScript 7.1 as `angular-vite/default-ts` records on TypeScript 6.
 
+A template that sets `docgenBaselineComponents` records only the components it lists, by id.
+`react-vite/typescript-7-ts` lists the example components and the `ts-argtypes` and `js-argtypes` stories, which document React's `docgen-components` as subcomponents.
+The other shared React stories declare their component in the story file, so they record only an error.
+
 ## Updating
 
 ```bash

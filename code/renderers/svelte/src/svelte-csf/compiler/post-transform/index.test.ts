@@ -7,7 +7,7 @@ import { dedent } from 'ts-dedent';
 import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
 import { compile } from 'svelte/compiler';
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { transformStoriesCode } from './index.ts';
 
@@ -18,7 +18,7 @@ import { extractCompiledASTNodes } from '../../parser/extract/compiled/nodes.ts'
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 describe(transformStoriesCode.name, () => {
-  it('transformed code matches inlined snapshot', async ({ expect }) => {
+  it('transformed code matches inlined snapshot', async () => {
     const filename = path.resolve(__dirname, '../../__tests__/stories/Example.stories.svelte');
     const originalCode = fs.readFileSync(filename).toString();
     const compiledCode = fs
@@ -258,7 +258,7 @@ describe(transformStoriesCode.name, () => {
     );
   });
 
-  it('works with empty object and array literals', async ({ expect }) => {
+  it('works with empty object and array literals', async () => {
     const filename = 'Empty.stories.svelte';
     const originalCode = dedent`
       <script module>
@@ -323,7 +323,7 @@ describe('CSF factories', () => {
     return code.toString();
   }
 
-  it('names the meta and creates the stories with meta.story()', async ({ expect }) => {
+  it('names the meta and creates the stories with meta.story()', async () => {
     const output = await transform(dedent`
       <script module>
         import preview from '#.storybook/preview';
@@ -435,7 +435,7 @@ describe('CSF factories', () => {
     `);
   });
 
-  it('names the meta from preview.type<>().meta()', async ({ expect }) => {
+  it('names the meta from preview.type<>().meta()', async () => {
     const output = await transform(dedent`
       <script module lang="ts">
         import preview from '#.storybook/preview';
@@ -495,7 +495,7 @@ describe('CSF factories', () => {
     `);
   });
 
-  it('names the meta from preview.meta().type<>()', async ({ expect }) => {
+  it('names the meta from preview.meta().type<>()', async () => {
     const output = await transform(dedent`
       <script module lang="ts">
         import preview from '#.storybook/preview';
@@ -555,7 +555,7 @@ describe('CSF factories', () => {
     `);
   });
 
-  it('creates the stories of the Story components from meta.type<>()', async ({ expect }) => {
+  it('creates the stories of the Story components from meta.type<>()', async () => {
     const output = await transform(dedent`
       <script module lang="ts">
         import preview from '#.storybook/preview';
@@ -677,9 +677,7 @@ describe('CSF factories', () => {
     `);
   });
 
-  it('declares each story after the story it extends, and keeps the file order', async ({
-    expect,
-  }) => {
+  it('declares each story after the story it extends, and keeps the file order', async () => {
     const output = await transform(dedent`
       <script module>
         import preview from '#.storybook/preview';
@@ -738,9 +736,7 @@ describe('CSF factories', () => {
     `);
   });
 
-  it('renders the content of the parent for a story whose children are only whitespace or a comment', async ({
-    expect,
-  }) => {
+  it('renders the content of the parent for a story whose children are only whitespace or a comment', async () => {
     const output = await transform(dedent`
       <script module>
         import preview from '#.storybook/preview';
@@ -762,7 +758,7 @@ describe('CSF factories', () => {
     );
   });
 
-  it('uses the meta variable of the file', async ({ expect }) => {
+  it('uses the meta variable of the file', async () => {
     const output = await transform(dedent`
       <script module>
         import preview from '#.storybook/preview';

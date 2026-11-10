@@ -4,7 +4,7 @@ import url from 'node:url';
 
 import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { removeExportDefault } from './remove-export-default.ts';
 
@@ -13,7 +13,7 @@ import { extractCompiledASTNodes } from '../../parser/extract/compiled/nodes.ts'
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 describe(removeExportDefault.name, () => {
-  it('removes the compiled export default correctly', async ({ expect }) => {
+  it('removes the compiled export default correctly', async () => {
     const compiledCode = fs
       .readFileSync(path.resolve(__dirname, '../../__tests__/__compiled__/Example.stories.dev.js'))
       .toString();

@@ -22,9 +22,7 @@ import { extractStoriesNodesFromExportDefaultFn } from '../../../parser/extract/
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 describe(transformStory.name, () => {
-  it("each transformed compiled 'Story' component matches inlined snapshots", async ({
-    expect,
-  }) => {
+  it("each transformed compiled 'Story' component matches inlined snapshots", async () => {
     const filename = path.resolve(__dirname, '../../../__tests__/stories/Example.stories.svelte');
     const originalCode = fs.readFileSync(filename).toString();
     const compiledCode = fs
@@ -175,9 +173,7 @@ describe(transformStory.name, () => {
     return code.toString();
   }
 
-  it('names the stories file when the defineMeta component value is invalid', async ({
-    expect,
-  }) => {
+  it('names the stories file when the defineMeta component value is invalid', async () => {
     const filename = path.resolve(__dirname, '../../../__tests__/stories/Invalid.stories.svelte');
     const originalCode = dedent`
       <script module>

@@ -1,4 +1,4 @@
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { extractModuleNodes } from './module-nodes.ts';
 
@@ -7,7 +7,7 @@ import { SVELTE_CSF_IMPORT_SOURCES } from '../../../constants.ts';
 import { getSvelteAST } from '../../ast.ts';
 
 describe(extractModuleNodes.name, () => {
-  it('fails when module tag not found', async ({ expect }) => {
+  it('fails when module tag not found', async () => {
     const { module } = getSvelteAST({
       code: `<script></script>`,
     });
@@ -34,7 +34,7 @@ describe(extractModuleNodes.name, () => {
     `);
   });
 
-  it("fails when 'defineMeta' not imported", async ({ expect }) => {
+  it("fails when 'defineMeta' not imported", async () => {
     const { module } = getSvelteAST({
       code: `<script module></script>`,
     });
@@ -61,7 +61,7 @@ describe(extractModuleNodes.name, () => {
     `);
   });
 
-  it("fails when 'defineMeta' not used", async ({ expect }) => {
+  it("fails when 'defineMeta' not used", async () => {
     const { module } = getSvelteAST({
       code: `
         <script module>
@@ -91,7 +91,7 @@ describe(extractModuleNodes.name, () => {
     `);
   });
 
-  it("fails when 'Story' is not destructured", async ({ expect }) => {
+  it("fails when 'Story' is not destructured", async () => {
     const { module } = getSvelteAST({
       code: `
         <script module>
@@ -121,7 +121,7 @@ describe(extractModuleNodes.name, () => {
     `);
   });
 
-  it('works when it has valid required entry snippet', async ({ expect }) => {
+  it('works when it has valid required entry snippet', async () => {
     const { module } = getSvelteAST({
       code: `
         <script module>
@@ -133,7 +133,7 @@ describe(extractModuleNodes.name, () => {
     await expect(extractModuleNodes({ module })).resolves.not.toThrow();
   });
 
-  it('works when meta was destructured too', async ({ expect }) => {
+  it('works when meta was destructured too', async () => {
     const { module } = getSvelteAST({
       code: `
         <script module>
@@ -146,7 +146,7 @@ describe(extractModuleNodes.name, () => {
     await expect(extractModuleNodes({ module })).resolves.not.toThrow();
   });
 
-  it('extracts module nodes', async ({ expect }) => {
+  it('extracts module nodes', async () => {
     const { module } = getSvelteAST({
       code: `
         <script module>
@@ -164,7 +164,7 @@ describe(extractModuleNodes.name, () => {
     expect(nodes.storyNames).toEqual(['Story']);
   });
 
-  it('extracts module nodes with renamed identifiers', async ({ expect }) => {
+  it('extracts module nodes with renamed identifiers', async () => {
     const { module } = getSvelteAST({
       code: `
         <script module>
@@ -183,28 +183,25 @@ describe(extractModuleNodes.name, () => {
     expect(nodes.storyNames).toEqual(['S']);
   });
 
-  it.for(SVELTE_CSF_IMPORT_SOURCES)(
-    'finds defineMeta imported from %s',
-    async (source, { expect }) => {
-      const { module } = getSvelteAST({
-        code: `
+  it.for(SVELTE_CSF_IMPORT_SOURCES)('finds defineMeta imported from %s', async (source) => {
+    const { module } = getSvelteAST({
+      code: `
         <script module>
           import { defineMeta } from "${source}";
           const { Story } = defineMeta();
         </script>
       `,
-      });
+    });
 
-      const nodes = await extractModuleNodes({ module });
+    const nodes = await extractModuleNodes({ module });
 
-      expect(nodes.defineMetaVariableDeclaration.declarations[0].init).toMatchObject({
-        callee: { name: 'defineMeta' },
-      });
-    }
-  );
+    expect(nodes.defineMetaVariableDeclaration.declarations[0].init).toMatchObject({
+      callee: { name: 'defineMeta' },
+    });
+  });
 
   describe('other imports of @storybook/svelte', () => {
-    it('ignores a type-only import next to defineMeta', async ({ expect }) => {
+    it('ignores a type-only import next to defineMeta', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module lang="ts">
@@ -222,7 +219,7 @@ describe(extractModuleNodes.name, () => {
       });
     });
 
-    it('ignores other named imports', async ({ expect }) => {
+    it('ignores other named imports', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>
@@ -240,7 +237,7 @@ describe(extractModuleNodes.name, () => {
       });
     });
 
-    it('allows a namespace import next to a named defineMeta import', async ({ expect }) => {
+    it('allows a namespace import next to a named defineMeta import', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>
@@ -258,7 +255,7 @@ describe(extractModuleNodes.name, () => {
       });
     });
 
-    it('fails with only a namespace import', async ({ expect }) => {
+    it('fails with only a namespace import', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>
@@ -283,7 +280,7 @@ describe(extractModuleNodes.name, () => {
     });
   });
   describe('CSF factories', () => {
-    it('extracts the nodes of preview.meta()', async ({ expect }) => {
+    it('extracts the nodes of preview.meta()', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>
@@ -300,7 +297,7 @@ describe(extractModuleNodes.name, () => {
       expect(nodes.storyNames).toEqual(['Story']);
     });
 
-    it('extracts the nodes of a meta variable', async ({ expect }) => {
+    it('extracts the nodes of a meta variable', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>
@@ -318,7 +315,7 @@ describe(extractModuleNodes.name, () => {
       expect(nodes.storyNames).toEqual(['S']);
     });
 
-    it('extracts the Story components of meta.type<>()', async ({ expect }) => {
+    it('extracts the Story components of meta.type<>()', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module lang="ts">
@@ -339,7 +336,7 @@ describe(extractModuleNodes.name, () => {
       expect(nodes.storyNames).toEqual(['Story', 'IconStory', 'SizeStory']);
     });
 
-    it('extracts the nodes of preview.type<>().meta()', async ({ expect }) => {
+    it('extracts the nodes of preview.type<>().meta()', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module lang="ts">
@@ -355,7 +352,7 @@ describe(extractModuleNodes.name, () => {
       expect(nodes.storyNames).toEqual(['Story']);
     });
 
-    it('extracts a Story component of meta.type<>() alone', async ({ expect }) => {
+    it('extracts a Story component of meta.type<>() alone', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module lang="ts">
@@ -371,7 +368,7 @@ describe(extractModuleNodes.name, () => {
       expect(nodes.storyNames).toEqual(['IconStory']);
     });
 
-    it('fails when Story is not destructured from the meta', async ({ expect }) => {
+    it('fails when Story is not destructured from the meta', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>
@@ -402,7 +399,7 @@ describe(extractModuleNodes.name, () => {
       `);
     });
 
-    it('fails when a file calls defineMeta() and preview.meta()', async ({ expect }) => {
+    it('fails when a file calls defineMeta() and preview.meta()', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>
@@ -424,7 +421,7 @@ describe(extractModuleNodes.name, () => {
       `);
     });
 
-    it('fails when a file calls preview.meta() twice', async ({ expect }) => {
+    it('fails when a file calls preview.meta() twice', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>
@@ -441,7 +438,7 @@ describe(extractModuleNodes.name, () => {
       });
     });
 
-    it('fails when preview is not imported from a preview file', async ({ expect }) => {
+    it('fails when preview is not imported from a preview file', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>
@@ -468,7 +465,7 @@ describe(extractModuleNodes.name, () => {
       `);
     });
 
-    it('ignores a .meta() call on another object', async ({ expect }) => {
+    it('ignores a .meta() call on another object', async () => {
       const { module } = getSvelteAST({
         code: `
           <script module>

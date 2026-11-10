@@ -1,11 +1,11 @@
 import { print } from 'esrap';
 import ts from 'esrap/languages/ts';
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { createExportOrderVariableDeclaration } from './create-export-order.ts';
 
 describe(createExportOrderVariableDeclaration.name, () => {
-  it('correctly creates a variable with named exports order', ({ expect }) => {
+  it('correctly creates a variable with named exports order', () => {
     const stringified = print(
       createExportOrderVariableDeclaration({
         storiesIdentifiers: [

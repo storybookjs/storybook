@@ -6,7 +6,7 @@ import { print } from 'esrap';
 import ts from 'esrap/languages/ts';
 import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { createMetaVariableDeclaration, transformDefineMeta } from './index.ts';
 
@@ -19,7 +19,7 @@ import { replaceDefineMetaArgument } from './replace-argument.ts';
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 describe(transformDefineMeta.name, () => {
-  it("transformed 'defineMeta' matches inlined snapshot", async ({ expect }) => {
+  it("transformed 'defineMeta' matches inlined snapshot", async () => {
     const filename = path.resolve(__dirname, '../../../__tests__/stories/Example.stories.svelte');
     const originalCode = fs.readFileSync(filename).toString();
     const compiledCode = fs
@@ -58,7 +58,7 @@ describe(transformDefineMeta.name, () => {
 });
 
 describe(createMetaVariableDeclaration.name, () => {
-  it('parameters are transformed correctly', async ({ expect }) => {
+  it('parameters are transformed correctly', async () => {
     const filename = path.resolve(__dirname, '../../../__tests__/stories/Example.stories.svelte');
     const originalCode = fs.readFileSync(filename).toString();
     const compiledCode = fs

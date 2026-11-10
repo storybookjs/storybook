@@ -1,11 +1,11 @@
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { extractSvelteASTNodes } from './nodes.ts';
 
 import { getSvelteAST } from '../../ast.ts';
 
 describe(extractSvelteASTNodes.name, () => {
-  it('works with a simple example', async ({ expect }) => {
+  it('works with a simple example', async () => {
     const ast = getSvelteAST({
       code: `
         <script module>

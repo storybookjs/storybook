@@ -1,6 +1,6 @@
 import { print } from 'esrap';
 import ts from 'esrap/languages/ts';
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { createASTArrayExpression, createASTIdentifier } from '../../../parser/ast.ts';
 
@@ -8,7 +8,7 @@ import { createRuntimeStoryVariableDeclaration } from './create-runtime-story-va
 import { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call.ts';
 
 describe(createRuntimeStoryVariableDeclaration, () => {
-  it('correctly creates a runtime story variable', ({ expect }) => {
+  it('correctly creates a runtime story variable', () => {
     const stringified = print(
       createRuntimeStoryVariableDeclaration({
         exportName: 'Default',
@@ -34,7 +34,7 @@ describe(createRuntimeStoryVariableDeclaration, () => {
     );
   });
 
-  it('allows passing Story-level tags', ({ expect }) => {
+  it('allows passing Story-level tags', () => {
     const stringified = print(
       createRuntimeStoryVariableDeclaration({
         exportName: 'Default',

@@ -1,11 +1,11 @@
 import { print } from 'esrap';
 import ts from 'esrap/languages/ts';
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call.ts';
 
 describe(createVariableFromRuntimeStoriesCall.name, () => {
-  it('creates a variable correctly', ({ expect }) => {
+  it('creates a variable correctly', () => {
     const stringified = print(
       createVariableFromRuntimeStoriesCall({
         storiesFunctionDeclaration: {

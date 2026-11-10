@@ -16,6 +16,7 @@ ARG AGENT_GID=1000
 RUN groupmod -o -g $AGENT_GID pwuser && usermod -o -u $AGENT_UID -g $AGENT_GID -d /home/agent -m -l agent pwuser
 USER ${AGENT_UID}:${AGENT_GID}
 
+# The defaults match the workflow env; the workflow passes its own values as build args.
 ARG CLAUDE_CODE_VERSION=2.1.312
 ARG CODEX_VERSION=0.166.0
 ENV NPM_CONFIG_PREFIX=/home/agent/.npm-global

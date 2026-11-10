@@ -30,6 +30,11 @@ on:
 
 permissions: {}
 
+# The agent CLI versions, used both for the Linux image and for the Windows host install.
+env:
+  CLAUDE_CODE_VERSION: '2.1.312'
+  CODEX_VERSION: '0.166.0'
+
 concurrency:
   group: ecosystem-qa-${{ inputs.repo || 'mealdrop' }}-${{ inputs.version || github.sha }}
   cancel-in-progress: false
@@ -188,7 +193,10 @@ jobs:
 
       - name: Build the sandbox image
         if: ${{ matrix.sandbox == 'docker' }}
-        run: docker build --build-arg AGENT_UID="$(id -u)" --build-arg AGENT_GID="$(id -g)" -t sb-ecosystem-qa ecosystem-qa
+        run: >-
+          docker build --build-arg AGENT_UID="$(id -u)" --build-arg AGENT_GID="$(id -g)"
+          --build-arg CLAUDE_CODE_VERSION="$CLAUDE_CODE_VERSION" --build-arg CODEX_VERSION="$CODEX_VERSION"
+          -t sb-ecosystem-qa ecosystem-qa
 
       - name: Install Chromium for the evidence tools on the host
         if: ${{ matrix.sandbox == 'none' }}
@@ -196,7 +204,7 @@ jobs:
 
       - name: Install the agent CLIs on the host
         if: ${{ matrix.sandbox == 'none' }}
-        run: npm install -g @anthropic-ai/claude-code@2.1.312 @openai/codex@0.166.0
+        run: npm install -g "@anthropic-ai/claude-code@$CLAUDE_CODE_VERSION" "@openai/codex@$CODEX_VERSION"
 
       - name: Run the QA agent
         env:

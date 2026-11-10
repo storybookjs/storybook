@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular-cm",
-  "version": "11.0.0-beta.0",
+  "version": "11.0.0-beta.1",
   "private": true,
   "description": "In-process Angular component metadata analyzer for Storybook docgen",
   "keywords": [
@@ -40,9 +40,12 @@
     "!src/**/*"
   ],
   "devDependencies": {
-    "typescript": "^6.0.3"
+    "@storybook/component-meta-typescript": "workspace:*",
+    "typescript": "^6.0.3",
+    "typescript-native": "npm:typescript@7.1.0-beta"
   },
   "peerDependencies": {
-    "storybook": "workspace:^"
+    "storybook": "workspace:^",
+    "typescript": "^5.9.0 || ^6.0.0 || ^7.0.0"
   }
 }

@@ -82,8 +82,24 @@ describe('registerSkillsCommand', () => {
       tokens: ['ui-workflow'],
       help: undefined,
       all: undefined,
+      mcp: undefined,
       target: { cwd: undefined, configDir: undefined },
     });
+  });
+
+  it('forwards `--mcp` and records it in telemetry', async () => {
+    const { program } = buildProgram();
+    await parse(program, ['skills', 'ui-workflow', '--mcp']);
+
+    expect(vi.mocked(runSkillsCommand).mock.calls[0]?.[0]).toMatchObject({
+      tokens: ['ui-workflow'],
+      mcp: true,
+    });
+    expect(telemetry).toHaveBeenCalledWith(
+      'skills-get',
+      { skill: 'ui-workflow', mcp: true },
+      expect.anything()
+    );
   });
 
   it('forwards `--all` as a flag, not a token', async () => {

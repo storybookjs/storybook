@@ -642,6 +642,8 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
         ### Other Stories
 
+        Get the code of one of these stories with the docs show-story tool and its story ID.
+
         - Disabled (button--disabled): Button in disabled state
         - WithIcon (button--with-icon): Button with an icon"
       `);
@@ -742,15 +744,17 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       const result = formatComponentManifest(manifest);
 
       expect(result).toMatchInlineSnapshot(`
-				"# abstractions-billboard
+        "# abstractions-billboard
 
-				ID: abstractions-billboard
+        ID: abstractions-billboard
 
-				## Stories
+        ## Stories
 
-				- Default (abstractions-billboard--default)
-				- Text (abstractions-billboard--text)"
-			`);
+        Get the code of one of these stories with the docs show-story tool and its story ID.
+
+        - Default (abstractions-billboard--default)
+        - Text (abstractions-billboard--text)"
+      `);
     });
 
     it('should list snippet-less stories under the ones it shows in full', () => {
@@ -768,27 +772,29 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       const result = formatComponentManifest(manifest);
 
       expect(result).toMatchInlineSnapshot(`
-				"# Button
+        "# Button
 
-				ID: button
+        ID: button
 
-				## Stories
+        ## Stories
 
-				### Default
+        ### Default
 
-				Story ID: button--default
+        Story ID: button--default
 
-				\`\`\`
-				import { Button } from "@/components";
+        \`\`\`
+        import { Button } from "@/components";
 
-				<Button>Default</Button>
-				\`\`\`
+        <Button>Default</Button>
+        \`\`\`
 
-				### Other Stories
+        ### Other Stories
 
-				- Primary (button--primary)
-				- Secondary (button--secondary): The quiet one"
-			`);
+        Get the code of one of these stories with the docs show-story tool and its story ID.
+
+        - Primary (button--primary)
+        - Secondary (button--secondary): The quiet one"
+      `);
     });
   });
 

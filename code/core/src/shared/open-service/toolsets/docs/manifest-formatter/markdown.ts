@@ -350,7 +350,10 @@ function formatSubcomponentsSection(
 /**
  * Format a single component manifest into markdown.
  */
-export function formatComponentManifest(componentManifest: ComponentManifest): string {
+export function formatComponentManifest(
+  componentManifest: ComponentManifest,
+  showStoryTool = 'docs show-story'
+): string {
   const parts: string[] = [];
   const parsedDocgen = getParsedDocgen(componentManifest);
   const jsDocTags = getComponentTags(componentManifest, parsedDocgen);
@@ -422,6 +425,10 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
         parts.push('### Other Stories');
         parts.push('');
       }
+      parts.push(
+        `Get the code of one of these stories with the ${showStoryTool} tool and its story ID.`
+      );
+      parts.push('');
       for (const story of remainingStories) {
         const summary = extractSummary(story);
         const summaryPart = summary ? `: ${summary}` : '';

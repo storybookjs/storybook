@@ -1,5 +1,7 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { join, sep } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { chmodSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { delimiter, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Sandbox } from '@vercel/agent-eval';
@@ -7,12 +9,15 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
   addMcpAddon,
+  LUNA_INSTRUCTIONS_SCRIPT_PATH,
+  LUNA_TEST_RULE,
   pointStorybookAtCheckout,
   readStorybookWorkspace,
   readTemplateCheckoutPackages,
+  SOL_TEST_RULES,
   type StorybookWorkspace,
   type WorkspacePackage,
-  writeClaudeInAppBrowserMock,
+  writeCodexLunaTestRules,
   writeStorybookAgentInstructions,
 } from './templates.ts';
 
@@ -39,36 +44,6 @@ describe('addMcpAddon', () => {
         '@storybook/addon-mcp': 'workspace:*',
       });
     }
-  });
-});
-
-// The Codex MCP experiment copies the server instructions into AGENTS.md, so a
-// change to them must update the copy too.
-describe('Codex AGENTS.md instructions', () => {
-  let buildServerInstructions: (options: Record<string, unknown>) => string;
-
-  // Imported by path, not statically: agent-eval's tsc would otherwise type-check core's
-  // sources. Inside `beforeAll`, a moved file fails only these tests.
-  beforeAll(async () => {
-    ({ buildServerInstructions } = await import(
-      join(AGENT_EVAL_ROOT, '..', 'code/core/src/cli/skills/content/build-server-instructions.ts')
-    ));
-  });
-
-  // The server derives these flags from the sandbox (`getToolAvailability`); they match the MCP
-  // fixtures, which are all react-vite with addon-vitest, docs and MCP. Keep them in sync.
-  it('match the server instructions', () => {
-    const copy = readFileSync(join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'codex-agents.md'), 'utf8');
-
-    expect(copy.trim()).toBe(
-      buildServerInstructions({
-        transport: 'mcp',
-        devEnabled: true,
-        testSupported: true,
-        docsEnabled: true,
-        moduleGraphSupported: true,
-      }).trim()
-    );
   });
 });
 
@@ -233,24 +208,115 @@ function createSandbox(files: Record<string, string>): Sandbox {
   } as unknown as Sandbox;
 }
 
-describe('writeClaudeInAppBrowserMock', () => {
-  it('registers the Browser server next to existing servers and writes the prompt block', async () => {
-    const storybookServer = { type: 'http', url: 'http://127.0.0.1:6006/mcp' };
-    const files: Record<string, string> = {
-      '.mcp.json': JSON.stringify({ mcpServers: { 'storybook-dev-mcp': storybookServer } }),
+describe('writeCodexLunaTestRules', () => {
+  const instructionsFile = '/home/user/.codex/storybook-eval-instructions.md';
+
+  function createCodexSandbox(files: Record<string, string>, nodeExitCode = 0) {
+    const sandbox = createSandbox(files);
+    const commands: string[][] = [];
+    sandbox.runCommand = async (command: string, args: string[] = []) => {
+      commands.push([command, ...args]);
+      const node = command === 'node';
+      return {
+        stdout: node && nodeExitCode === 0 ? instructionsFile : '',
+        stderr: node && nodeExitCode !== 0 ? 'do not have the line' : '',
+        exitCode: node ? nodeExitCode : 0,
+      };
     };
+    return { sandbox, commands };
+  }
 
-    await writeClaudeInAppBrowserMock(createSandbox(files));
+  it('points the Codex config at the instructions it writes, above the tables', async () => {
+    const files: Record<string, string> = {
+      '.codex/config.toml': '[mcp_servers.storybook]\nurl = "http://127.0.0.1:6006/mcp"\n',
+    };
+    const { sandbox, commands } = createCodexSandbox(files);
 
-    expect(JSON.parse(files['.mcp.json'] ?? '')).toEqual({
-      mcpServers: {
-        'storybook-dev-mcp': storybookServer,
-        Browser: { command: 'node', args: ['.agent-eval/mcp/claude-browser-mock.mjs'] },
-      },
-    });
-    expect(files['.claude/rules/built-in-browser.md']).toContain('<built_in_browser>');
-    expect(files['CLAUDE.md']).toBeUndefined();
-    expect(files['.agent-eval/mcp/claude-browser-mock.mjs']).toBeDefined();
+    await writeCodexLunaTestRules(sandbox, 'gpt-6-luna?reasoningEffort=low');
+    await writeCodexLunaTestRules(sandbox, 'gpt-6-luna?reasoningEffort=low');
+
+    expect(commands[1]?.slice(0, 2)).toEqual(['node', '-e']);
+    expect(commands[1]?.[3]).toBe('gpt-6-luna');
+    const config = files['.codex/config.toml'] ?? '';
+    expect(
+      config.startsWith(
+        `model_instructions_file = "${instructionsFile}"\n\n[mcp_servers.storybook]\n`
+      )
+    ).toBe(true);
+    expect(config.match(/model_instructions_file/g)).toHaveLength(1);
+  });
+
+  it('fails when the script cannot write the instructions', async () => {
+    const files: Record<string, string> = {};
+    const { sandbox } = createCodexSandbox(files, 1);
+
+    await expect(writeCodexLunaTestRules(sandbox, 'gpt-6-luna')).rejects.toThrow(
+      'Failed to write the gpt-6-luna instructions: do not have the line'
+    );
+    expect(files).toEqual({});
+  });
+});
+
+// The script runs `codex`, so each test puts a `codex` on the PATH that prints its catalog.
+describe.skipIf(process.platform === 'win32')('the Luna instructions script', () => {
+  const solRules = [
+    '- Do not write tests for reversible one-off changes.',
+    '- Run tests appropriate to the change.',
+  ];
+
+  function runScript(models: Array<{ slug: string; base_instructions: string }>) {
+    const home = mkdtempSync(join(tmpdir(), 'luna-instructions-'));
+    const catalog = join(home, 'catalog.json');
+    writeFileSync(catalog, JSON.stringify({ models }));
+    const codex = join(home, 'codex');
+    writeFileSync(
+      codex,
+      `#!/bin/sh\nif [ "$1" = "--version" ]; then echo "codex-cli 1.2.3"; else cat "${catalog}"; fi\n`
+    );
+    chmodSync(codex, 0o755);
+    return execFileSync(
+      'node',
+      [
+        '-e',
+        readFileSync(LUNA_INSTRUCTIONS_SCRIPT_PATH, 'utf8'),
+        'gpt-6-luna',
+        LUNA_TEST_RULE,
+        SOL_TEST_RULES,
+      ],
+      {
+        encoding: 'utf8',
+        env: { ...process.env, HOME: home, PATH: `${home}${delimiter}${process.env.PATH}` },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      }
+    );
+  }
+
+  it("swaps Luna's test rule for the two of Sol and keeps the rest", () => {
+    const file = runScript([
+      { slug: 'gpt-6-luna', base_instructions: `Be brief.\n${LUNA_TEST_RULE}\nUse rg.` },
+      { slug: 'gpt-6.1-sol', base_instructions: `Intro.\n${solRules.join('\n')}\nOutro.` },
+    ]);
+
+    expect(file.endsWith(join('.codex', 'storybook-eval-instructions.md'))).toBe(true);
+    expect(readFileSync(file, 'utf8')).toBe(`Be brief.\n${solRules.join('\n')}\nUse rg.`);
+  });
+
+  it("fails when Luna's instructions no longer have the rule", () => {
+    expect(() =>
+      runScript([
+        { slug: 'gpt-6-luna', base_instructions: 'Be brief.' },
+        { slug: 'gpt-6.1-sol', base_instructions: solRules.join('\n') },
+      ])
+    ).toThrow('The base instructions of gpt-6-luna do not have the line');
+  });
+
+  it('fails when Sol does not have exactly two test rules', () => {
+    expect(() =>
+      runScript([
+        { slug: 'gpt-6-luna', base_instructions: LUNA_TEST_RULE },
+        { slug: 'gpt-6.1-sol', base_instructions: solRules[0] ?? '' },
+      ])
+    ).toThrow('have 1 test rules instead of 2 in the catalog of codex-cli 1.2.3');
   });
 });
 
@@ -263,9 +329,8 @@ describe('writeStorybookAgentInstructions', () => {
     ));
   });
 
-  it('writes the section of create storybook to AGENTS.md, next to the browser rule', async () => {
+  it('writes the section of create storybook to AGENTS.md', async () => {
     const files: Record<string, string> = {};
-    await writeClaudeInAppBrowserMock(createSandbox(files));
 
     await writeStorybookAgentInstructions(createSandbox(files));
 
@@ -304,3 +369,17 @@ function findStorybookMainFiles(rootDir: string): string[] {
       : [];
   });
 }
+
+describe('sharedPackState', () => {
+  it('is one state for every copy of the module, as agent-eval loads one per experiment', async () => {
+    const { createJiti } = await import('jiti');
+    const load = () =>
+      createJiti(import.meta.url, { interopDefault: true, moduleCache: false }).import<
+        typeof import('./templates.ts')
+      >(join(fileURLToPath(new URL('.', import.meta.url)), 'templates.ts'));
+    const [first, second] = await Promise.all([load(), load()]);
+
+    expect(first).not.toBe(second);
+    expect(first.sharedPackState()).toBe(second.sharedPackState());
+  });
+});

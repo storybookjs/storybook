@@ -1,4 +1,6 @@
 import picocolors from 'picocolors';
+import { isTypeScript71Stable } from './common/utils/typescript-7-1-stable.ts';
+import type { TypeScriptDocgenApi } from './common/utils/typescript-for-docgen.ts';
 import { dedent } from 'ts-dedent';
 
 import type { ValidationMeta } from './shared/open-service/errors.ts';
@@ -361,9 +363,98 @@ const describeBuilderDocgenFallback = (fallback: BuilderDocgenFallback | undefin
 const withBuilderDocgenFallback = (message: string, fallback: BuilderDocgenFallback | undefined) =>
   [message, describeBuilderDocgenFallback(fallback)].filter(Boolean).join('\n\n');
 
+type TypeScriptDocgenApis = readonly TypeScriptDocgenApi[];
+
+type TypeScriptRemedy = 'specifier' | 'native' | 'compiler';
+
+const typeScriptRemedy = ({
+  apis = ['compiler'],
+  specifier,
+}: {
+  apis?: TypeScriptDocgenApis;
+  specifier?: string;
+}): TypeScriptRemedy =>
+  specifier
+    ? 'specifier'
+    : apis.includes('native') && isTypeScript71Stable()
+      ? 'native'
+      : 'compiler';
+
+const missingTypeScriptMessage = (remedy: TypeScriptRemedy, specifier?: string) => {
+  switch (remedy) {
+    case 'specifier':
+      return dedent`
+        Storybook cannot find the TypeScript package \`${specifier}\`, which \`typescript.docgenSpecifier\` in your main config names.
+
+        Set it to a package name, such as \`@typescript/native\`, or to the path of the package's folder, absolute or relative to the config directory. Do not include a subpath such as \`/sync\`. Then restart Storybook.`;
+    case 'native':
+    case 'compiler':
+      return dedent`
+        Storybook cannot find the \`typescript\` package. Storybook uses TypeScript to read your component types for Controls and the Docs args table, also in JavaScript projects.
+
+        Add \`${remedy === 'native' ? 'typescript@^7.1' : 'typescript@^6'}\` to the devDependencies in package.json, install it with your package manager, then restart Storybook.`;
+  }
+};
+
+const unusableTypeScriptMessage = (
+  remedy: TypeScriptRemedy,
+  version: string,
+  specifier?: string
+) => {
+  switch (remedy) {
+    case 'specifier':
+      return dedent`
+        Storybook found TypeScript ${version} at \`${specifier}\`, which \`typescript.docgenSpecifier\` in your main config names. TypeScript 7.0 does not include an API that Storybook can use to read your component types for Controls and the Docs args table.
+
+        Install TypeScript 7.1 or newer under that name, or point \`typescript.docgenSpecifier\` at TypeScript 6. Then restart Storybook.`;
+    case 'native':
+      return dedent`
+        Storybook found TypeScript ${version} as the \`typescript\` package. TypeScript 7.0 does not include an API that Storybook can use to read your component types for Controls and the Docs args table. TypeScript 7.1 and newer do, and so does TypeScript 6.
+
+        Upgrade to \`typescript@^7.1\` in the devDependencies in package.json. If package.json has no \`typescript\` entry, your package manager installed TypeScript 7.0 for Storybook's peer dependency; add the entry.
+
+        Then install dependencies and restart Storybook.`;
+    case 'compiler':
+      return dedent`
+        Storybook found TypeScript ${version} as the \`typescript\` package. TypeScript 7 does not include the compiler API that Storybook uses to read your component types for Controls and the Docs args table.
+
+        If package.json has no \`typescript\` entry, your package manager installed TypeScript 7 for Storybook's peer dependency. Add \`typescript@^6\` to the devDependencies in package.json.
+
+        If your project uses TypeScript 7, install TypeScript 7 and TypeScript 6 side by side. In package.json, replace the \`typescript\` entry in devDependencies with these two entries:
+
+          "@typescript/native": "npm:typescript@^${version}",
+          "typescript": "npm:@typescript/typescript6@^6.0.2"
+
+        \`tsc\` stays on TypeScript 7, and the \`typescript\` package is TypeScript 6. Both entries are necessary.
+
+        Then install dependencies and restart Storybook.`;
+  }
+};
+
+const docgenServerNeedsTypeScriptMessage = (
+  remedy: TypeScriptRemedy,
+  them: string,
+  specifier?: string
+) => {
+  const prefix = `Builder docgen is deprecated and will be removed in Storybook 12. It runs because your Storybook main config sets \`features.docgenServer: false\`. Server-side docgen does not need ${them}, but it needs`;
+  switch (remedy) {
+    case 'specifier':
+      return `${prefix} TypeScript 5.9, 6, or 7.1 and newer at \`${specifier}\`, which \`typescript.docgenSpecifier\` names: remove that setting, and install TypeScript 7.1 or newer under that name or point \`typescript.docgenSpecifier\` at TypeScript 6.`;
+    case 'native':
+      return `${prefix} TypeScript 5.9, 6, or 7.1 and newer as the \`typescript\` package: remove that setting and install \`typescript@^7.1\`.`;
+    case 'compiler':
+      return `${prefix} TypeScript 5.9 or 6 as the \`typescript\` package: remove that setting and install \`typescript@^6\`, side by side with TypeScript 7 if your project uses it.`;
+  }
+};
+
 export class TypeScriptMissingForDocgenError extends StorybookError {
   constructor(
-    public data: { cause?: unknown; builderDocgenFallback?: BuilderDocgenFallback } = {}
+    public data: {
+      cause?: unknown;
+      apis?: TypeScriptDocgenApis;
+      specifier?: string;
+      builderDocgenFallback?: BuilderDocgenFallback;
+    } = {}
   ) {
     super({
       name: 'TypeScriptMissingForDocgenError',
@@ -372,10 +463,7 @@ export class TypeScriptMissingForDocgenError extends StorybookError {
       cause: data.cause,
       documentation: 'https://storybook.js.org/docs/configure/integration/typescript',
       message: withBuilderDocgenFallback(
-        dedent`
-          Storybook cannot find the \`typescript\` package. Storybook uses TypeScript to read your component types for Controls and the Docs args table, also in JavaScript projects.
-
-          Add \`typescript@^6\` to the devDependencies in package.json, install it with your package manager, then restart Storybook.`,
+        missingTypeScriptMessage(typeScriptRemedy(data), data.specifier),
         data.builderDocgenFallback
       ),
     });
@@ -383,26 +471,21 @@ export class TypeScriptMissingForDocgenError extends StorybookError {
 }
 
 export class TypeScriptWithoutCompilerApiError extends StorybookError {
-  constructor(public data: { version: string; builderDocgenFallback?: BuilderDocgenFallback }) {
+  constructor(
+    public data: {
+      version: string;
+      apis?: TypeScriptDocgenApis;
+      specifier?: string;
+      builderDocgenFallback?: BuilderDocgenFallback;
+    }
+  ) {
     super({
       name: 'TypeScriptWithoutCompilerApiError',
       category: Category.CORE_COMMON,
       code: 34,
       documentation: 'https://storybook.js.org/docs/configure/integration/typescript#typescript-7',
       message: withBuilderDocgenFallback(
-        dedent`
-        Storybook found TypeScript ${data.version} as the \`typescript\` package. TypeScript 7 does not include the compiler API that Storybook uses to read your component types for Controls and the Docs args table.
-
-        If package.json has no \`typescript\` entry, your package manager installed TypeScript 7 for Storybook's peer dependency. Add \`typescript@^6\` to the devDependencies in package.json.
-
-        If your project uses TypeScript 7, install TypeScript 7 and TypeScript 6 side by side. In package.json, replace the \`typescript\` entry in devDependencies with these two entries:
-
-          "@typescript/native": "npm:typescript@^${data.version}",
-          "typescript": "npm:@typescript/typescript6@^6.0.2"
-
-        \`tsc\` stays on TypeScript 7, and the \`typescript\` package is TypeScript 6. Both entries are necessary.
-
-        Then install dependencies and restart Storybook.`,
+        unusableTypeScriptMessage(typeScriptRemedy(data), data.version, data.specifier),
         data.builderDocgenFallback
       ),
     });
@@ -426,8 +509,9 @@ export class BuilderDocgenPackagesMissingError extends StorybookError {
       installCommand: string;
       /** Whether the main config turns the docgen server off with `features.docgenServer: false`. */
       docgenServerDisabledInMainConfig: boolean;
-      /** Whether `typescript` has the compiler API the docgen server needs. */
       typescriptUsable: boolean;
+      apis?: TypeScriptDocgenApis;
+      specifier?: string;
       /** Versions of missing packages that resolve, but outside the supported range. */
       foundVersions?: Record<string, string>;
     }
@@ -461,7 +545,7 @@ export class BuilderDocgenPackagesMissingError extends StorybookError {
           ? 'Builder docgen is deprecated and will be removed in Storybook 12.'
           : data.typescriptUsable
             ? `Builder docgen is deprecated and will be removed in Storybook 12. It runs because your Storybook main config sets \`features.docgenServer: false\`. Remove that setting to use server-side docgen, which does not need ${them}.`
-            : `Builder docgen is deprecated and will be removed in Storybook 12. It runs because your Storybook main config sets \`features.docgenServer: false\`. Server-side docgen does not need ${them}, but it needs TypeScript 5.9 or 6 as the \`typescript\` package: remove that setting and install \`typescript@^6\`, side by side with TypeScript 7 if your project uses it.`,
+            : docgenServerNeedsTypeScriptMessage(typeScriptRemedy(data), them, data.specifier),
       ]
         .filter(Boolean)
         .join('\n\n'),

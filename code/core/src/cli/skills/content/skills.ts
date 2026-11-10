@@ -1,8 +1,7 @@
 /**
- * The Storybook skills: agent-facing instruction documents served by `storybook skills <id>`
- * and, on the MCP side, by addon-mcp (server instructions and the story-instructions tool). The
- * ids are public CLI vocabulary — plugin stubs (M7) will reference them — so treat renames as
- * breaking.
+ * The Storybook skills: agent-facing instruction documents served by `storybook skills <id>`,
+ * which addon-mcp's server instructions run with `--mcp`. The ids are public CLI vocabulary —
+ * plugin stubs (M7) will reference them — so treat renames as breaking.
  */
 export const SKILL_IDS = ['ui-workflow', 'component-docs', 'write-story', 'setup'] as const;
 
@@ -19,7 +18,7 @@ export const SKILLS: Record<SkillId, { blurb: string }> = {
   },
   'write-story': {
     blurb:
-      'How to write, update, and test Storybook stories for this project: imports, patterns, and conventions.',
+      'How to write the stories of a component in this project: imports, play functions and mocks. A section of ui-workflow.',
   },
   setup: {
     blurb: 'Setup instructions to write stories for the real components in this project.',

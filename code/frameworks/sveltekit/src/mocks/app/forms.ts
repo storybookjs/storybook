@@ -1,4 +1,3 @@
-// @ts-expect-error no declaration file for this JS module
 import { page } from '@storybook/sveltekit/internal/mocks/app/state.svelte.js';
 // The same module instance as `$app/navigation`, so stories see the calls of `goto` and `refreshAll`
 import { goto, refreshAll } from '@storybook/sveltekit/navigation.mock';

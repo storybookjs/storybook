@@ -6,7 +6,6 @@ import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 
 import { addons } from 'storybook/preview-api';
 
-// @ts-expect-error no declaration file for this JS module
 import { navigating, page, updated } from '@storybook/sveltekit/internal/mocks/app/state.svelte.js';
 import { goto, link, setAfterNavigate } from '@storybook/sveltekit/navigation.mock';
 import { formAction } from '@storybook/sveltekit/forms.mock';

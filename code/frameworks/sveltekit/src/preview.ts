@@ -4,7 +4,6 @@ import type { Preview } from '@storybook/svelte';
 import {
   pageDefaultsChanged,
   resetAppState,
-  // @ts-expect-error no declaration file for this JS module
 } from '@storybook/sveltekit/internal/mocks/app/state.svelte.js';
 import {
   beginDocsStory,

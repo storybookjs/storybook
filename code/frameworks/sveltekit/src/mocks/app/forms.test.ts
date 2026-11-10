@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { restoreAllMocks } from 'storybook/test';
 
-// @ts-expect-error no declaration file for this JS module
 import { page, resetAppState } from '@storybook/sveltekit/internal/mocks/app/state.svelte.js';
 import { refreshAll } from '@storybook/sveltekit/navigation.mock';
 

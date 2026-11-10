@@ -279,6 +279,41 @@ test.describe('Manager UI', () => {
       await newPage.close();
     });
 
+    test('Isolation mode preserves a cleared arg', async ({ page }) => {
+      const sbPage = new SbPage(page, expect);
+
+      await sbPage.navigateToStory('example/button', 'primary');
+      await sbPage.viewAddonPanel('Controls');
+
+      const label = sbPage.panelContent().locator('textarea[name=label]');
+      await label.fill('');
+
+      // An empty value is written to the URL as `label:` (no value after the colon)
+      await page.waitForURL((url) => {
+        const args = new URL(url).searchParams.get('args');
+        return !!args && decodeURIComponent(args).split(';').includes('label:');
+      });
+
+      const isolationButton = page.locator('[aria-label="Open in isolation mode"]');
+      const [newPage] = await Promise.all([
+        page.context().waitForEvent('page'),
+        isolationButton.click(),
+      ]);
+
+      await newPage
+        .locator('#storybook-root > *')
+        .first()
+        .waitFor({ state: 'attached', timeout: 10000 });
+
+      const newArgs = new URL(newPage.url()).searchParams.get('args');
+      expect((newArgs ?? '').split(';')).toContain('label:');
+
+      // The story's button renders with no text, not with the story's default label
+      await expect(newPage.locator('#storybook-root').getByRole('button')).toHaveText('');
+
+      await newPage.close();
+    });
+
     test('Settings page', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
       await sbPage.page.locator('[aria-label="Settings"]').click();

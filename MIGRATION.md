@@ -2187,7 +2187,7 @@ Run `npx storybook automigrate sveltekit-mocking-before-each` in the project. It
 
 ## Find the code to migrate
 
-The automigration doesn't read parameters that stories import from files outside `.storybook`. Search the project for `sveltekit_experimental`: in `*.stories.svelte` files, in `*.stories.{js,jsx,ts,tsx,mjs}` files, in `.storybook/preview.*`, and in helper modules that stories import parameters from. Migrate every occurrence.
+The automigration doesn't migrate parameters that stories import from other modules. It lists the helpers in `.storybook` that hold `sveltekit_experimental`, and it doesn't read the files outside `.storybook`. Search the project for `sveltekit_experimental`: in `*.stories.svelte` files, in `*.stories.{js,jsx,ts,tsx,mjs}` files, in `.storybook/preview.*`, and in helper modules that stories import parameters from. Migrate every occurrence.
 
 ## Steps for each `sveltekit_experimental`
 

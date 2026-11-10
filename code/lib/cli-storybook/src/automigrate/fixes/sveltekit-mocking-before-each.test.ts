@@ -1904,5 +1904,88 @@ describe('sveltekit-mocking-before-each', () => {
         `if (href === '/c') (function () { return notify(arguments[1]); })(href, event);`
       );
     });
+
+    it('names the `inline` problem together with the other problems of the file', async () => {
+      const csf = dedent`
+        export default { tags: ['autodocs'], parameters: { docs: { story: { inline: true } } } };
+        export const A = {
+          parameters: { sveltekit_experimental: { state: { page: { status: 1 } } } },
+          play: ({ parameters }) => parameters.sveltekit_experimental,
+        };
+      `;
+      const svelte = dedent`
+        <script module>
+          import { defineMeta } from '@storybook/sveltekit';
+
+          const { Story } = defineMeta({ tags: ['autodocs'], parameters: { docs: { story: { inline: true } } } });
+        </script>
+
+        <Story
+          name="A"
+          parameters={{ sveltekit_experimental: { state: { page: { status: 1 } } } }}
+          play={({ parameters }) => parameters.sveltekit_experimental}
+        />
+      `;
+      const result = await migrate({ csf, svelte });
+
+      expect(result.csf).toBe(csf);
+      expect(result.svelte).toBe(svelte);
+      expect(result.failures).toHaveLength(2);
+      for (const [failure, lines] of [
+        [result.failures[0], ['line 1: The file has a docs page', 'line 4: Reads']],
+        [result.failures[1], ['line 4: The file has a docs page', 'line 10: Reads']],
+      ] as const) {
+        lines.forEach((line) => expect(failure).toContain(line));
+      }
+    });
+
+    it('keeps the docs that a spread in the parameters or in `docs` sets, when it adds `inline: false`', async () => {
+      const { csf, svelte } = await migrate({
+        csf: dedent`
+          import { shared } from './shared';
+
+          export default { tags: ['autodocs'], parameters: { ...shared, sveltekit_experimental: { state: { page: { status: 1 } } } } };
+          export const A = {};
+        `,
+        svelte: dedent`
+          <script module>
+            import { defineMeta } from '@storybook/sveltekit';
+            import { sharedDocs, sharedParameters } from './shared';
+
+            const { Story } = defineMeta({ tags: ['autodocs'], parameters: { ...sharedParameters, docs: { ...sharedDocs } } });
+          </script>
+
+          <Story name="A" parameters={{ sveltekit_experimental: { state: { page: { status: 1 } } } }} />
+        `,
+      });
+
+      expect(csf).toContain(
+        'parameters: { ...shared, docs: { ...(shared as { docs?: object } | undefined)?.docs, story: { ...(shared as { docs?: { story?: object } } | undefined)?.docs?.story, inline: false } } }'
+      );
+      expect(svelte).toContain(
+        'parameters: { ...sharedParameters, docs: { ...sharedDocs, story: { ...sharedDocs?.story, inline: false } } }'
+      );
+    });
+
+    it('renders in iframes the stories that an MDX docs page imports through `$lib`', async () => {
+      const storyPath = resolve(project, 'src/lib/Page.stories.ts');
+      const mdxPath = resolve(project, 'src/docs/Page.mdx');
+      vol.fromJSON({
+        [previewConfigPath]: '',
+        [storyPath]: dedent`
+          export default {};
+          export const A = { parameters: { sveltekit_experimental: { state: { page: { status: 1 } } } } };
+        `,
+        [mdxPath]:
+          "import { Meta, Stories } from '@storybook/addon-docs/blocks';\nimport * as PageStories from '$lib/Page.stories';\n\n<Meta of={PageStories} />\n\n<Stories />",
+      });
+      const storiesPaths = [storyPath, mdxPath];
+      const result = await checkFix(sveltekitMockingBeforeEach, { ...options, storiesPaths });
+      await runFix(sveltekitMockingBeforeEach, { ...options, storiesPaths, result: result! });
+
+      expect(fs.readFileSync(storyPath, 'utf8')).toContain(
+        'parameters: { docs: { story: { inline: false } } }'
+      );
+    });
   });
 });

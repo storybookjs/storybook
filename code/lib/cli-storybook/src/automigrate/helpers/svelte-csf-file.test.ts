@@ -134,4 +134,23 @@ describe('loadSvelteCsf', () => {
 
     expect(file.unparsed(/\bkey\b/g)).toEqual([code.lastIndexOf('key')]);
   });
+
+  it('keeps the order of the calls for insertions after one attribute', async () => {
+    const code = dedent`
+      <script module>
+        import { defineMeta } from '@storybook/sveltekit';
+        const { Story } = defineMeta({});
+      </script>
+
+      <Story name="A" parameters={{ a: 1 }} />
+    `;
+    const file = await loadSvelteCsf(code, id);
+    const parameters = file.stories[0].attributes.get('parameters')!;
+    parameters.insertAfter('beforeEach', 'setup');
+    parameters.insertAfter('tags', "['x']");
+
+    expect(file.toString()).toContain(
+      `<Story name="A" parameters={{ a: 1 }} beforeEach={setup} tags={['x']} />`
+    );
+  });
 });

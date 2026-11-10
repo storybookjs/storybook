@@ -5,15 +5,14 @@ import picocolors from 'picocolors';
 
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import {
-  MIGRATION_LINK,
   type PreviewMocks,
-  failWith,
   findUnmigrated,
   migrateCsfStories,
   migratePreview,
   noPreviewMocks,
   readPreviewMocks,
 } from '../helpers/sveltekit-mocks/csf-files.ts';
+import { MIGRATION_LINK, failWith } from '../helpers/sveltekit-mocks/migrate-levels.ts';
 import { KEY } from '../helpers/sveltekit-mocks/mock-statements.ts';
 import { migrateSvelteStories } from '../helpers/sveltekit-mocks/svelte-stories.ts';
 import { isAtOrPastVersion } from '../helpers/versionBoundary.ts';

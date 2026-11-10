@@ -1,4 +1,3 @@
-import { HandledError } from 'storybook/internal/common';
 import {
   type ConfigFile,
   type ESTree as E,
@@ -6,7 +5,6 @@ import {
   type SourceEditor,
   loadConfig,
   loadCsf,
-  locationOf,
   objectList,
   objectProperty,
   removeFromList,
@@ -18,27 +16,13 @@ import {
 
 import {
   type ObjectSite,
-  addInlineFalseToMeta,
   editObjectSite,
   findObjectSite,
   hasAutodocs,
   prependToBeforeEach,
-  INLINE_PROBLEM,
-  inlineOf,
-  SPREAD_DOCS_PROBLEM,
-  uncopiedSpread,
-  isFalse,
-  SPREAD_PROBLEM,
-  spreadsBeforeEach,
   tagsOf,
 } from './edit-levels.ts';
-import {
-  MockImports,
-  findImport,
-  isTestFnBinding,
-  aliasedImports,
-  readsName,
-} from './mock-imports.ts';
+import { findImport, isTestFnBinding } from './mock-imports.ts';
 import {
   type LevelMocks,
   type MergedKeys,
@@ -48,18 +32,14 @@ import {
   KEY,
   MOCK_EXPORTS,
   canBePlainObject,
-  keepSpies,
   mergeKeys,
   noMergedKeys,
   objectValue,
   readMocks,
   recordMerged,
-  writesMocks,
 } from './mock-statements.ts';
-import { printMocks, printStatements } from './print-mocks.ts';
-
-export const MIGRATION_LINK =
-  'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-sveltekit_experimental-parameters-removed';
+import { type Level, failWith, migrateLevels } from './migrate-levels.ts';
+import { printStatements } from './print-mocks.ts';
 
 // What the preview sets, which the old parameters merged into every story.
 export interface PreviewMocks {
@@ -73,16 +53,6 @@ export const noPreviewMocks = (): PreviewMocks => ({
   autodocs: false,
   setsMocks: false,
 });
-
-// Throw one error that lists every problem with its line, so the runner reports the file.
-export const failWith = (code: string, problems: Problem[]): never => {
-  const reasons = [...problems]
-    .sort((a, b) => a.index - b.index)
-    .map(({ index, message }) => `line ${locationOf(code, index, index).start.line}: ${message}`);
-  throw new HandledError(
-    `Could not migrate \`${KEY}\`, so this file is unchanged. ${[...new Set(reasons)].join(' ')} Migrate it by hand: ${MIGRATION_LINK}`
-  );
-};
 
 const isKey = (node: Node) => node.type === 'Property' && staticKey(node) === KEY;
 
@@ -270,18 +240,6 @@ export const readContext = (
 };
 
 // The module-level names that a new import must not take, except the spies it replaces.
-export const takenNames = (editor: SourceEditor, spies: E.VariableDeclarator[]) => {
-  const freed = new Set(spies.map((spy) => (spy.id as E.BindingIdentifier).name));
-  return [...editor.scopes.program.bindings.keys(), ...editor.scopes.tsDeclarationNames].filter(
-    (name) => !freed.has(name)
-  );
-};
-
-export const styleOf = (editor: SourceEditor) => ({
-  quote: editor.quote,
-  semicolons: editor.semicolons,
-  indent: editor.indent,
-});
 
 // A story that spreads one whose mocks move into its `beforeEach`, and has a `beforeEach` of its own
 const spreadsOfLevels = (
@@ -391,11 +349,22 @@ const extendedStory = (editor: SourceEditor, object: Node): Node | undefined => 
   return argument && unwrapExpression(argument);
 };
 
-interface ObjectLevel {
-  kind: 'meta' | 'story';
-  site: ObjectSite;
-  mocks: LevelMocks;
-}
+// The level of an object literal: a CSF meta or story, a preview object or a Svelte meta
+export const objectLevel = (
+  kind: Level['kind'],
+  editor: SourceEditor,
+  site: ObjectSite,
+  mocks: LevelMocks,
+  toFile = (index: number) => index
+): Level => ({
+  kind,
+  editor,
+  toFile,
+  sveltekit: site.sveltekit,
+  object: site.object,
+  mocks,
+  edit: (statements, options) => editObjectSite(editor, site, statements, options),
+});
 
 // Migrate the `sveltekit_experimental` parameters of a CSF stories file, or `null` for none.
 export const migrateCsfStories = (
@@ -411,12 +380,12 @@ export const migrateCsfStories = (
     objects.flatMap(({ target, node }) => (target.kind === 'story' && node ? [node] : []))
   );
 
-  const levels: ObjectLevel[] = [];
+  const levels: Level[] = [];
   const metaSite = meta && findObjectSite(meta);
   let outer = preview.merged;
   if (metaSite) {
     const mocks = readMocks(editor, metaSite.sveltekit.value, readContext(editor, editor, outer));
-    levels.push({ kind: 'meta', site: metaSite, mocks });
+    levels.push(objectLevel('meta', editor, metaSite, mocks));
     outer = mergeKeys(outer, mocks.merged);
   }
   outer = mergeKeys(outer, migratedKeys(editor, meta && objectProperty(meta, 'beforeEach')?.value));
@@ -434,71 +403,34 @@ export const migrateCsfStories = (
         site.sveltekit.value,
         readContext(editor, editor, storyOuter)
       );
-      levels.push({ kind: 'story', site, mocks });
+      levels.push(objectLevel('story', editor, site, mocks));
       merged.set(node, mocks.merged);
     }
   }
 
-  const problems = [
-    ...levels.flatMap(({ mocks }) => mocks.problems),
-    ...findUnmigrated(editor.program, new Set(levels.map(({ site }) => site.sveltekit))),
-    ...levels
-      .filter(({ site, mocks }) => spreadsBeforeEach(site.object) && mocks.ops.length > 0)
-      .map(({ site }) => ({ index: site.object.start, message: SPREAD_PROBLEM })),
-    ...spreadsOfLevels(editor, storyNodes, new Set(levels.map(({ site }) => site.object))),
-    ...assignedBeforeEach(editor, new Set(levels.map(({ site }) => site.object))),
-  ];
-  const implemented = new Set([
-    ...preview.merged.functions,
-    ...levels.flatMap(({ mocks }) => mocks.merged.functions),
-  ]);
-  const kept = new Set([...implemented, ...aliasedImports(editor)]);
-  // A docs page renders the stories inline, where they share the mocks
-  const docsPage =
-    !!meta &&
-    levels.some(({ mocks }) => writesMocks(mocks, kept)) &&
-    (!!preview.mdxDocsPage ||
-      hasAutodocs(meta, preview.autodocs) ||
-      [...storyNodes].some((story) =>
-        tagsOf(objectProperty(story, 'tags')?.value)?.includes('autodocs')
-      ));
-  const inline = docsPage && meta ? inlineOf(meta) : undefined;
-  if (inline && !isFalse(inline.value)) {
-    problems.push({ index: inline.start, message: INLINE_PROBLEM });
-  }
-  const spread = docsPage && meta && !inline ? uncopiedSpread(meta) : undefined;
-  if (spread) {
-    problems.push({ index: spread.start, message: SPREAD_DOCS_PROBLEM });
-  }
-  if (problems.length > 0) {
-    failWith(code, problems);
-  }
-  if (levels.length === 0) {
-    return null;
-  }
-
-  levels.forEach(({ mocks }) => keepSpies(mocks, kept));
-  const spies = levels.flatMap(({ mocks }) => mocks.spies);
-  const imports = new MockImports(editor, takenNames(editor, spies));
-  const style = styleOf(editor);
-  const printed = levels.map((level) => printMocks(editor, level.mocks, imports.local, style));
-  const inlineFalse = docsPage && !inline;
-  const semicolon = style.semicolons ? ';' : '';
-  levels.forEach((level, index) =>
-    editObjectSite(editor, level.site, printed[index], {
-      inlineFalse: inlineFalse && level.kind === 'meta',
-      semicolon,
-    })
-  );
-  if (inlineFalse && !metaSite) {
-    addInlineFalseToMeta(editor, meta);
-  }
-  imports.apply(
-    spies,
-    levels.map(({ site }) => site.sveltekit),
-    (name) => readsName(printed.flat(), name)
-  );
-  return editor.toString();
+  const objectsOfLevels = new Set(levels.map(({ object }) => object!));
+  return migrateLevels({
+    code,
+    module: editor,
+    levels,
+    problems: [
+      ...findUnmigrated(editor.program, new Set(levels.map(({ sveltekit }) => sveltekit))),
+      ...spreadsOfLevels(editor, storyNodes, objectsOfLevels),
+      ...assignedBeforeEach(editor, objectsOfLevels),
+    ],
+    implemented: preview.merged.functions,
+    docs: meta && {
+      meta,
+      toFile: (index) => index,
+      hasDocsPage:
+        !!preview.mdxDocsPage ||
+        hasAutodocs(meta, preview.autodocs) ||
+        [...storyNodes].some((story) =>
+          tagsOf(objectProperty(story, 'tags')?.value)?.includes('autodocs')
+        ),
+    },
+    toString: () => editor.toString(),
+  });
 };
 
 interface NamedSite {
@@ -555,9 +487,6 @@ const readPreviewLevel = (config: ConfigFile): PreviewLevel | undefined => {
   );
   mocks.problems.push(...problems);
   if (mocks.ops.length > 0) {
-    if (found.kind === 'object' && spreadsBeforeEach(found.site.object)) {
-      mocks.problems.push({ index: found.site.object.start, message: SPREAD_PROBLEM });
-    }
     const inherits = editor.program.body.some(
       (statement) =>
         statement.type === 'ExportAllDeclaration' ||
@@ -601,27 +530,33 @@ export const readPreviewMocks = (code: string | undefined, id: string): PreviewM
 
 // Migrate the `sveltekit_experimental` parameters of `.storybook/preview`, or `null` for none.
 export const migratePreview = (code: string, id: string) => {
-  const level = readPreviewLevel(loadConfig(code, id).parse());
+  const config = loadConfig(code, id).parse();
+  const level = readPreviewLevel(config);
   if (!level) {
     return null;
   }
-  const { config, mocks } = level;
   const { editor } = config;
-  if (mocks.problems.length > 0) {
-    failWith(code, mocks.problems);
-  }
-  keepSpies(mocks, new Set([...mocks.merged.functions, ...aliasedImports(editor)]));
-  const imports = new MockImports(editor, takenNames(editor, mocks.spies));
-  const style = styleOf(editor);
-  const statements = printMocks(editor, mocks, imports.local, style);
-  const semicolon = style.semicolons ? ';' : '';
-  if (level.kind === 'object') {
-    editObjectSite(editor, level.site, statements, { inlineFalse: false, semicolon });
-  } else {
-    editNamedPreview(config, level.site, statements, semicolon);
-  }
-  imports.apply(mocks.spies, [level.site.sveltekit], (name) => readsName(statements, name));
-  return editor.toString();
+  const { site, mocks } = level;
+  return migrateLevels({
+    code,
+    module: editor,
+    levels: [
+      level.kind === 'object'
+        ? objectLevel('preview', editor, level.site, mocks)
+        : {
+            kind: 'preview',
+            editor,
+            toFile: (index) => index,
+            sveltekit: site.sveltekit,
+            mocks,
+            edit: (statements, { semicolon }) =>
+              editNamedPreview(config, level.site, statements, semicolon),
+          },
+    ],
+    problems: [],
+    implemented: [],
+    toString: () => editor.toString(),
+  });
 };
 
 const editNamedPreview = (

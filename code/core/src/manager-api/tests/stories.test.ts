@@ -34,6 +34,7 @@ import { init as initStories } from '../modules/stories.ts';
 import { parseStatusesParam, serializeStatusesParam } from '../modules/statuses.ts';
 import type { API, State } from '../root.tsx';
 import type Store from '../store.ts';
+import { createCommitLaggingStore as createCommitLaggingStoreBase } from '../test-utils/store.ts';
 import { fullStatusStore } from '../stores/status.ts';
 import {
   docsEntries,
@@ -75,26 +76,8 @@ function createMockStore(initialState: Partial<State> = {}) {
     }),
   } as any as Store;
 }
-// Like the real React-backed store, `getState()` only reflects a `setState()` once it is committed,
-// which happens later and in order.
-function createCommitLaggingStore(initialState: Partial<State> = { filters: {}, status: {} }) {
-  let committed = initialState;
-  let pending: Array<Partial<State> | ((s: Partial<State>) => Partial<State>)> = [];
-  return {
-    getState: () => committed,
-    setState: (patch: Partial<State> | ((s: Partial<State>) => Partial<State>)) => {
-      pending.push(patch);
-      return new Promise<Partial<State>>((resolve) =>
-        setTimeout(() => {
-          for (const p of pending) {
-            committed = { ...committed, ...(typeof p === 'function' ? p(committed) : p) };
-          }
-          pending = [];
-          resolve(committed);
-        })
-      );
-    },
-  };
+function createCommitLaggingStore() {
+  return createCommitLaggingStoreBase({ filters: {}, status: {} } as Partial<State>);
 }
 function createMockProvider() {
   return {

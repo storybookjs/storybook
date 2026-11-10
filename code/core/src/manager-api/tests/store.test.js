@@ -172,18 +172,69 @@ describe('store', () => {
       }));
 
     it('allows a patch function and persists its results', async () => {
-      const setState = vi.fn().mockImplementation((x, cb) => {
-        x('OLD_STATE');
-        cb();
-      });
-      const getState = vi.fn();
+      const setState = vi.fn().mockImplementation((x, cb) => cb());
+      const getState = vi.fn().mockReturnValue({ foo: 'OLD' });
       const store = new Store({ setState, getState });
 
       const patch = vi.fn().mockReturnValue({ foo: 'bar' });
       await store.setState(patch, { persistence: 'session' });
 
-      expect(patch).toHaveBeenCalledWith('OLD_STATE');
+      expect(patch).toHaveBeenCalledWith({ foo: 'OLD' });
+      expect(setState).toHaveBeenCalledWith({ foo: 'bar' }, expect.any(Function));
       expect(store2.session.set).toHaveBeenCalledWith(STORAGE_KEY, { foo: 'bar' });
+    });
+  });
+
+  describe('writes the upstream has not committed yet', () => {
+    // Mimics React: patches are queued and committed later, callbacks run after the commit
+    function createDeferredUpstream(initial) {
+      let committed = initial;
+      const queue = [];
+      return {
+        getState: () => committed,
+        setState: (patch, cb) => queue.push({ patch, cb }),
+        commit: () => {
+          for (const { patch } of queue) {
+            committed = { ...committed, ...patch };
+          }
+          queue.splice(0).forEach(({ cb }) => cb());
+        },
+      };
+    }
+
+    it('are visible to getState before the commit', () => {
+      const upstream = createDeferredUpstream({ a: 1, b: 1 });
+      const store = new Store(upstream);
+
+      void store.setState({ a: 2 });
+
+      expect(store.getState()).toEqual({ a: 2, b: 1 });
+    });
+
+    it('are not overwritten by a later write based on getState', async () => {
+      const upstream = createDeferredUpstream({ list: ['old'], other: 0 });
+      const store = new Store(upstream);
+
+      const first = store.setState({ list: ['old', 'new'] });
+      const { list } = store.getState();
+      const second = store.setState({ list, other: 1 });
+      upstream.commit();
+      await Promise.all([first, second]);
+
+      expect(upstream.getState()).toEqual({ list: ['old', 'new'], other: 1 });
+      expect(store.getState()).toBe(upstream.getState());
+    });
+
+    it('are passed to patch functions', async () => {
+      const upstream = createDeferredUpstream({ count: 0 });
+      const store = new Store(upstream);
+
+      const first = store.setState((s) => ({ count: s.count + 1 }));
+      const second = store.setState((s) => ({ count: s.count + 1 }));
+      upstream.commit();
+      await Promise.all([first, second]);
+
+      expect(store.getState()).toEqual({ count: 2 });
     });
   });
 });

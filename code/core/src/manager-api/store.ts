@@ -61,6 +61,9 @@ export default class Store {
   upstreamGetState: GetState;
   upstreamSetState: SetState;
   private persistenceHandlers: Map<string, PersistenceHandler> = new Map();
+  // Patches handed to React that it has not committed yet, oldest first. `getState()` applies them
+  // on top of the committed state, so reads always see every earlier write.
+  private pendingPatches: Patch[] = [];
 
   constructor({ allowPersistence, setState, getState }: Upstream) {
     this.upstreamPersistence = allowPersistence ?? true;
@@ -88,8 +91,12 @@ export default class Store {
     return { ...base, ...local, ...session };
   }
 
-  getState() {
-    return this.upstreamGetState();
+  getState(): State {
+    const committed = this.upstreamGetState();
+    if (this.pendingPatches.length === 0) {
+      return committed;
+    }
+    return this.pendingPatches.reduce<State>((acc, patch) => ({ ...acc, ...patch }), committed);
   }
 
   async setState(inputPatch: InputPatch, options?: Options): Promise<State>;
@@ -111,23 +118,17 @@ export default class Store {
     }
     const { persistence = 'none' } = options || {};
 
-    let patch: Patch = {};
-    // What did the patch actually return
-    let delta: Patch = {};
-    if (typeof inputPatch === 'function') {
-      // Pass the same function, but set delta on the way
-      patch = (state: State) => {
-        const getDelta = inputPatch as InputFnPatch;
-        delta = getDelta(state);
-        return delta;
-      };
-    } else {
-      patch = inputPatch;
-      delta = patch;
-    }
+    // Resolve an updater against the latest state now, so it sees every earlier write and runs once
+    const delta: Patch =
+      typeof inputPatch === 'function' ? (inputPatch as InputFnPatch)(this.getState()) : inputPatch;
+    this.pendingPatches.push(delta);
 
     const newState: State = await new Promise((resolve) => {
-      this.upstreamSetState(patch, () => {
+      this.upstreamSetState(delta, () => {
+        const index = this.pendingPatches.indexOf(delta);
+        if (index !== -1) {
+          this.pendingPatches.splice(index, 1);
+        }
         resolve(this.getState());
       });
     });

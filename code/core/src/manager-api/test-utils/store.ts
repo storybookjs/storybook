@@ -46,3 +46,38 @@ export function createTestingStore(
 
   return new InMemoryStore(upstream);
 }
+
+/**
+ * Creates a Store whose upstream commits like React's: `setState` patches are applied later (on a
+ * macrotask), in order, before their callbacks run. Use it to test code against writes that have
+ * not been committed yet.
+ *
+ * @param initialState - The initial committed state
+ * @returns A Store instance backed by a deferred-commit upstream
+ */
+export function createCommitLaggingStore(initialState: Partial<State> = {}): Store {
+  let committed = { ...initialState } as State;
+  let queue: Array<{ patch: Partial<State>; callback?: (s: State) => void }> = [];
+
+  const upstream = {
+    allowPersistence: false,
+    getState: () => committed,
+    setState: (patch: Partial<State>, callback?: (s: State) => void) => {
+      queue.push({ patch, callback });
+      if (queue.length === 1) {
+        setTimeout(() => {
+          const batch = queue;
+          queue = [];
+          for (const item of batch) {
+            committed = { ...committed, ...item.patch };
+          }
+          for (const item of batch) {
+            item.callback?.(committed);
+          }
+        });
+      }
+    },
+  };
+
+  return new InMemoryStore(upstream);
+}

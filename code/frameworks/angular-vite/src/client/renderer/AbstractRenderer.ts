@@ -38,15 +38,16 @@ export abstract class AbstractRenderer {
   public static resetApplications(domNode?: HTMLElement) {
     applicationRefs.forEach((appRef, appDOMNode) => {
       if (!appRef.destroyed && (!domNode || appDOMNode === domNode)) {
-        // componentRef.destroy runs remove(appRef.components, componentRef).
-        // Copy the array first, or the loop skips the next component.
-        const components = appRef.components.slice();
-        // Destroy the views now, while the injector is still alive. A teardown
-        // path that reads the injector throws NG0205 after it is destroyed.
-        components.forEach((componentRef) => componentRef.destroy());
-        // appRef.destroy calls environmentInjector.destroy. R3Injector marks
-        // itself destroyed, then ApplicationRef.ngOnDestroy destroys any view left.
-        appRef.destroy();
+        try {
+          // componentRef.destroy runs remove(appRef.components, componentRef).
+          // Copy the array first, or the loop skips the next component.
+          const components = appRef.components.slice();
+          // Destroy the views now, while the injector is still alive. A teardown
+          // path that reads the injector throws NG0205 after it is destroyed.
+          components.forEach((componentRef) => componentRef.destroy());
+        } finally {
+          appRef.destroy();
+        }
       }
     });
   }

@@ -62,7 +62,8 @@ export async function migrate(
   logger.step(`Renaming ${rename}: ${renamed.length} files`);
   await Promise.all(
     renamed.map((file) => {
-      const newFile = file.slice(0, -from.length) + to;
+      // Not `slice(0, -from.length)`: with an empty `from`, that would be `slice(0, 0)`.
+      const newFile = file.slice(0, file.length - from.length) + to;
       logger.log(`Rename: ${file} ${newFile}`);
       return renameFile(file, newFile);
     })

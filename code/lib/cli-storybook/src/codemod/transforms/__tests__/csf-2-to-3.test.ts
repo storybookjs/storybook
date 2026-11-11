@@ -49,6 +49,17 @@ describe('csf-2-to-3', () => {
     `);
   });
 
+  it('keeps a story whose args call a function that reads a later binding', async () => {
+    const source = dedent`
+      export default { component: Button };
+      export const Primary = (args) => <Button {...args} />;
+      Primary.args = (() => ({ label }))();
+      const label = 'Button';
+    `;
+
+    expect(await jsTransform(source)).not.toContain('export const Primary = {');
+  });
+
   it('lifts a story whose keys only share a name with a later binding', async () => {
     const output = await jsTransform(dedent`
       export default { component: Button };

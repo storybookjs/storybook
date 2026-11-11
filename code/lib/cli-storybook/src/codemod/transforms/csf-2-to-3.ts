@@ -108,6 +108,20 @@ const isReactGlobalRenderFn = (csf: CsfFile, storyFn: Node | undefined) => {
 const isSimpleCSFStory = (init: Node, annotations: string[]) =>
   annotations.length === 0 && init.type === 'ArrowFunctionExpression' && init.params.length === 0;
 
+// `(() => ({ x }))()`, with or without the parentheses.
+const isCalledRightAway = (editor: SourceEditor, fn: Node) => {
+  let callee: Node = fn;
+  let parent = editor.parentOf(fn);
+  while (parent?.type === 'ParenthesizedExpression') {
+    callee = parent;
+    parent = editor.parentOf(parent);
+  }
+  return (
+    (parent?.type === 'CallExpression' || parent?.type === 'NewExpression') &&
+    parent.callee === callee
+  );
+};
+
 // `A.args = { x }` can follow `const x`, and `const x` can follow `export const A`. Moving those
 // args into the story would read `x` before it is initialized.
 const readsLaterBinding = (editor: SourceEditor, story: Node, annotations: Node[]) => {
@@ -134,11 +148,13 @@ const readsLaterBinding = (editor: SourceEditor, story: Node, annotations: Node[
   let reads = false;
   for (const annotation of annotations) {
     walk(annotation, (node, parent) => {
-      // A function, such as a `play`, only reads its bindings when the story runs.
+      // A function, such as a `play`, only reads its bindings when the story runs, unless it is
+      // called right away.
       if (
-        node.type === 'ArrowFunctionExpression' ||
-        node.type === 'FunctionExpression' ||
-        node.type === 'FunctionDeclaration'
+        (node.type === 'ArrowFunctionExpression' ||
+          node.type === 'FunctionExpression' ||
+          node.type === 'FunctionDeclaration') &&
+        !isCalledRightAway(editor, node)
       ) {
         return false;
       }

@@ -1,8 +1,8 @@
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-
 import { afterEach, expect, it, vi } from 'vitest';
+
+import { join } from 'pathe';
 
 import { runCodemod } from './codemod.ts';
 

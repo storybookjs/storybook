@@ -176,6 +176,19 @@ Primary.args = {
     expect(existsSync(join(tempDir, 'b.stories.mjs'))).toBe(true);
   });
 
+  it('appends the new suffix when the old one is empty', async () => {
+    writeFileSync(join(tempDir, 'a.stories'), 'export default {};');
+    writeFileSync(join(tempDir, 'b.stories'), 'export default {};');
+
+    await migrate('upgrade-deprecated-types', {
+      glob: join(tempDir, '*.stories'),
+      rename: ':.ts',
+    });
+
+    expect(existsSync(join(tempDir, 'a.stories.ts'))).toBe(true);
+    expect(existsSync(join(tempDir, 'b.stories.ts'))).toBe(true);
+  });
+
   it('should handle recursive glob patterns', async () => {
     const nestedDir = join(tempDir, 'components', 'charts');
     mkdirSync(nestedDir, { recursive: true });

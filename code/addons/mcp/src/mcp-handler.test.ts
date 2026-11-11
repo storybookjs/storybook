@@ -334,9 +334,11 @@ describe('mcpServerHandler', () => {
     expect(parsedResponse.result.instructions).toBeDefined();
     expect(parsedResponse.result.instructions).toContain('## Storybook');
     expect(parsedResponse.result.instructions).toContain(
-      '- `npx storybook skills ui-workflow --mcp`'
+      '`npx storybook skills ui-review --mcp`: publish a review'
     );
-    expect(parsedResponse.result.instructions).toContain('you run or fix story tests');
+    expect(parsedResponse.result.instructions).toContain(
+      'Also when the user asks to run or fix story tests'
+    );
     expect(parsedResponse.result.instructions).not.toContain('component-docs');
   });
 
@@ -391,10 +393,11 @@ describe('mcpServerHandler', () => {
     const parsedResponse = JSON.parse(responseText);
 
     expect(parsedResponse.result.instructions).toContain(
-      '- `npx storybook skills component-docs --mcp`'
+      '1. `npx storybook skills component-docs --mcp`'
     );
-    expect(parsedResponse.result.instructions).not.toContain('ui-workflow');
-    expect(parsedResponse.result.instructions).not.toContain('test-run');
+    expect(parsedResponse.result.instructions).not.toContain('write-stories');
+    expect(parsedResponse.result.instructions).not.toContain('ui-review');
+    expect(parsedResponse.result.instructions).not.toContain('test-stories');
   });
 
   it('should respect disableTelemetry setting', async () => {

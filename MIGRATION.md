@@ -72,7 +72,7 @@
   - [`experimentalReview` feature flag removed](#experimentalreview-feature-flag-removed)
   - [`changeDetection` feature flag removed](#changedetection-feature-flag-removed)
   - [`storybook ai` command removed](#storybook-ai-command-removed)
-  - [`stories` skill renamed to `ui-workflow`](#stories-skill-renamed-to-ui-workflow)
+  - [`stories` skill split into four skills](#stories-skill-split-into-four-skills)
   - [`--preview-url` and `--force-build-preview` removed](#--preview-url-and---force-build-preview-removed)
   - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
   - [Web Components: server-side docgen suffixes event, slot and part argType keys](#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys)
@@ -1902,22 +1902,31 @@ When `skills setup` cannot produce the instructions (for example because it find
 
 The experimental `storybook ai <tool>` commands behind the `STORYBOOK_FEATURE_AI_CLI` environment variable are removed as well. Use `npx storybook tools` instead, and run `npx storybook tools --help` to list the available tools.
 
-### `stories` skill renamed to `ui-workflow`
+### `stories` skill split into four skills
 
-The `stories` skill is renamed to `ui-workflow`: it still looks up the components to reuse, writes stories, runs the story tests and publishes a review. A new `component-docs` skill looks up the components to reuse, with their props and usage examples, and answers questions about them. Run `npx storybook skills ui-workflow` instead of `npx storybook skills stories`, which now exits with code 1. The Claude Code and Codex plugins ship `ui-workflow` and `component-docs` instead of `stories`.
+The `stories` skill is split into one skill per step of the workflow:
 
-The skills no longer run for every UI change on their own. A section in `AGENTS.md`, between `<!-- BEGIN:storybook-skills -->` and `<!-- END:storybook-skills -->` markers, tells agents when to use them. `create storybook` and the `skills` automigration add it when they install the skills, and also to a `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` that does not import `AGENTS.md`, because Claude Code reads those instead. `storybook upgrade` replaces the text between the markers when the skills change, and never adds the section back. So remove both markers to keep your own edits, or remove the whole section to opt out, in each file that has it. When `storybook upgrade` updates skills that still include `stories` from an 11.0 prerelease, it removes that skill and adds the section. If you use the Claude Code or Codex plugin, or install the skills yourself, add the section to the `AGENTS.md` of each project yourself:
+- `component-docs` looks up the components to reuse, with their props and usage examples, and answers questions about them.
+- `write-stories` has the rules for the stories of your project.
+- `test-stories` runs the story tests.
+- `ui-review` finds the stories a change affects and publishes a review of them.
+
+Run `npx storybook skills <id>` with one of these ids instead of `npx storybook skills stories`, which now exits with code 1. The Claude Code and Codex plugins ship these four skills instead of `stories`. The `write-story` skill is renamed to `write-stories`.
+
+The skills no longer tell agents to run them for every UI change. A section in `AGENTS.md`, between `<!-- BEGIN:storybook-skills -->` and `<!-- END:storybook-skills -->` markers, is the workflow: it tells agents which skill to use at which step. `create storybook` and the `skills` automigration add it when they install the skills, and also to a `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` that does not import `AGENTS.md`, because Claude Code reads those instead. `storybook upgrade` replaces the text between the markers when the skills change, and never adds the section back. So remove both markers to keep your own edits, for example to leave out the review, or remove the whole section to opt out of the workflow, in each file that has it. Without the section, an agent uses a skill only when you ask for it or when it finds one that fits its task. When `storybook upgrade` updates skills that still include `stories` from an 11.0 prerelease, it removes that skill and adds the section. If you use the Claude Code or Codex plugin, or install the skills yourself, add the section to the `AGENTS.md` of each project yourself:
 
 ```md
 <!-- BEGIN:storybook-skills -->
 <!-- Storybook updates this section on upgrade. Remove both markers to keep your own edits. -->
 
-## Storybook skills
+## Storybook
 
-For each of these tasks, invoke its Storybook skill first, before you edit any file, and follow it:
+For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill. First invoke the skills of all the steps, before you edit any file. Then follow each skill at its step.
 
-- `ui-workflow`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results.
-- `component-docs`: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. It lists the project's components with their props and usage examples.
+1. `component-docs`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
+2. `write-stories`: every component you create or change gets stories.
+3. `test-stories`: run the story tests after every change, the way this skill says, never with a `package.json` test script, and fix what fails. Also when the user asks to run or fix story tests.
+4. `ui-review`: publish a review that shows the user what changed, as your last step. Also when the user asks to see components or stories.
 
 <!-- END:storybook-skills -->
 ```

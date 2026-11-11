@@ -10,23 +10,34 @@ export type StorybookWorkflowCall = {
   source: 'mcp' | 'cli';
 };
 
-// Assertions ask for the workflow document as `ui-workflow`: `storybook skills
-// ui-workflow`, with or without `--mcp`, or `--all` serve it (`write-story`
-// prints only its write section). The stable addon-mcp (EVAL_STORYBOOK_LATEST=1) still serves
-// it as the get-storybook-story-instructions tool; drop that name once 11 is
-// the latest release.
+const SKILL_IDS = ['component-docs', 'write-stories', 'test-stories', 'ui-review', 'setup'];
+
+// Assertions ask for a skill by its id: `storybook skills <id>`, with or without `--mcp`, or
+// `--all` serve it. The stable addon-mcp (EVAL_STORYBOOK_LATEST=1) still serves the story rules
+// as the get-storybook-story-instructions tool; drop that name once 11 is the latest release.
 export function workflowCallMatchesName(call: StorybookWorkflowCall, name: string): boolean {
   if (call.name === name) {
     return true;
   }
-  if (name === 'ui-workflow' && call.name === 'get-storybook-story-instructions') {
+  if (name === 'write-stories' && call.name === 'get-storybook-story-instructions') {
     return true;
   }
   return (
-    name === 'ui-workflow' &&
+    SKILL_IDS.includes(name) &&
     call.name === 'skills-get' &&
-    (call.input.id === 'ui-workflow' || call.input.all === true)
+    (call.input.id === name || call.input.all === true)
   );
+}
+
+// True when the tool was never called: then there is no step to do without its rules.
+export function skillComesBeforeTool(
+  calls: StorybookWorkflowCall[],
+  skill: string,
+  tool: string
+): boolean {
+  const firstTool = calls.findIndex((call) => workflowCallMatchesName(call, tool));
+  const firstSkill = calls.findIndex((call) => workflowCallMatchesName(call, skill));
+  return firstTool === -1 || (firstSkill !== -1 && firstSkill < firstTool);
 }
 
 export const STORYBOOK_WORKFLOW_TOOL_NAMES = [
@@ -169,6 +180,22 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
 // A `$(…)` runs before the command that uses its output.
 function parseSubstitutedCalls(words: ShellWord[]): StorybookWorkflowCall[] {
   return words.flatMap((word) => word.substitutions ?? []).flatMap(parsePluginWorkflowCalls);
+}
+
+const FILE_READERS = new Set(['cat', 'head', 'tail', 'less', 'more', 'bat', 'nl', 'sed', 'awk']);
+
+// A command such as `cat` prints the file whose path ends with `pathSuffix`. A command that only
+// names the path, such as `ls` or `echo`, does not.
+export function shellCommandReadsFile(command: string, pathSuffix: string): boolean {
+  const tokens = tokenizeShellCommand(command);
+  return tokens.some((token, index) => {
+    const isCommand = index === 0 || SHELL_COMMAND_SEPARATORS.has(tokens[index - 1] ?? '');
+    return (
+      isCommand &&
+      FILE_READERS.has(token) &&
+      segmentUntilSeparator(tokens, index + 1).some((argument) => argument.endsWith(pathSuffix))
+    );
+  });
 }
 
 function segmentUntilSeparator(tokens: string[], start: number): string[] {

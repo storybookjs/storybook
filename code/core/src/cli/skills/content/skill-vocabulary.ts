@@ -30,6 +30,11 @@ export function skillVocabulary(transport: SkillTextTransport) {
     output: cli ? 'output' : 'result',
     command: cli ? 'command' : 'tool',
     commands: cli ? 'commands' : 'tools',
+    // Opens every skill that names commands. Over MCP it also tells the agent to call the names
+    // as tools, not to run them as commands.
+    notes: cli
+      ? 'Some commands print what to do next; follow that too. Add `--help` to a command only when a call fails.'
+      : 'The tools named here are tools of the Storybook MCP server. Some tools return what to do next; follow that too.',
   };
 }
 

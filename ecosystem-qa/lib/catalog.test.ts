@@ -16,7 +16,7 @@ describe('catalog', () => {
   it.each([
     ['an unknown repo class', { ...ENTRY, class: 'tier3' }],
     ['a repo without an owner', { ...ENTRY, repo: 'mealdrop' }],
-    ['an unsupported package manager', { ...ENTRY, packageManager: 'bun' }],
+    ['an unsupported package manager', { ...ENTRY, packageManager: 'deno' }],
     ['an unknown field', { ...ENTRY, branch: 'main' }],
     ['a tier 1 entry without a push target', { ...ENTRY, class: 'tier1' }],
     ['a push target outside the orgs with a push token', { ...ENTRY, pushTo: 'twentyhq/twenty' }],

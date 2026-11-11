@@ -23,7 +23,7 @@ export const CatalogEntry = z
       .optional(),
     ref: z.string().min(1),
     class: RepoClass,
-    packageManager: z.enum(['npm', 'pnpm', 'yarn']),
+    packageManager: z.enum(['npm', 'pnpm', 'yarn', 'bun']),
     storybookDir: z.string().min(1),
     windows: z.boolean(),
   })

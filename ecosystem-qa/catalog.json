@@ -59,6 +59,16 @@
     "windows": true
   },
   {
+    "id": "shadcn-storybook-registry",
+    "repo": "lloydrichards/shadcn-storybook-registry",
+    "pushTo": "storybook-tmp/shadcn-storybook-registry",
+    "ref": "qa/base",
+    "class": "tier1",
+    "packageManager": "bun",
+    "storybookDir": ".",
+    "windows": false
+  },
+  {
     "id": "n8n",
     "repo": "n8n-io/n8n",
     "pushTo": "storybook-tmp/n8n",

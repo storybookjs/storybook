@@ -72,12 +72,14 @@ const INSTALL_COMMAND: Record<CatalogEntry['packageManager'], string> = {
   npm: 'npm ci',
   pnpm: 'pnpm install --frozen-lockfile',
   yarn: 'yarn install --immutable',
+  bun: 'bun install --frozen-lockfile',
 };
 
 const STORYBOOK_CLI: Record<CatalogEntry['packageManager'], (version: string) => string> = {
   npm: (version) => `npx storybook@${version}`,
   pnpm: (version) => `pnpm dlx storybook@${version}`,
   yarn: (version) => `yarn dlx storybook@${version}`,
+  bun: (version) => `bunx storybook@${version}`,
 };
 
 // The upgrade must rewrite the lockfile, but GitHub runners set CI and GITHUB_ACTIONS, which make

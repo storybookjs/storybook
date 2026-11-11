@@ -19,11 +19,12 @@ USER ${AGENT_UID}:${AGENT_GID}
 # The defaults match the workflow env; the workflow passes its own values as build args.
 ARG CLAUDE_CODE_VERSION=2.1.312
 ARG CODEX_VERSION=0.166.0
+ARG BUN_VERSION=1.4.4
 ENV NPM_CONFIG_PREFIX=/home/agent/.npm-global
 ENV PATH="/home/agent/.local/bin:/home/agent/.npm-global/bin:$PATH"
 RUN curl -fsSL https://claude.ai/install.sh | bash -s "$CLAUDE_CODE_VERSION" \
-  && npm install -g "@openai/codex@$CODEX_VERSION" \
-  && claude --version && codex --version
+  && npm install -g "@openai/codex@$CODEX_VERSION" "bun@$BUN_VERSION" \
+  && claude --version && codex --version && bun --version
 
 WORKDIR /home/agent
 ENTRYPOINT ["sleep", "infinity"]

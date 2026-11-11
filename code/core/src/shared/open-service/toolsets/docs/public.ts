@@ -34,6 +34,12 @@ export {
   resolveDocEntry,
 } from './access-provider.ts';
 export type { ManifestProvider, ProviderDocsAccessOptions } from './access-provider.ts';
+export {
+  fetchWithIdleTimeout,
+  FetchTimeoutError,
+  REMOTE_FETCH_TIMEOUTS,
+} from './fetch-with-idle-timeout.ts';
+export type { IdleTimeoutOptions } from './fetch-with-idle-timeout.ts';
 export { estimateTokens } from '../estimate-tokens.ts';
 export { createCompositionDocsSources, listSources } from './multi-source.ts';
 export type { CompositionDocsSourcesOptions, DocsSource } from './multi-source.ts';

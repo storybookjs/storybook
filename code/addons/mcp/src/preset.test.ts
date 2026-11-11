@@ -341,6 +341,45 @@ describe('experimental_devServer', () => {
     expect(mcpServerHandler).not.toHaveBeenCalled();
   });
 
+  it('challenges for OAuth once a private ref that was down at boot is reachable', async () => {
+    vi.useFakeTimers();
+    try {
+      const mcpServerHandler = vi
+        .spyOn(mcpHandlerModule, 'mcpServerHandler')
+        .mockResolvedValue(undefined);
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed')));
+
+      await (experimental_devServer as any)(mockApp, createOptionsWithPrivateRef());
+
+      const before = { writeHead: vi.fn(), end: vi.fn() } as any;
+      await mcpHandler({ headers: { 'content-type': 'application/json' } }, before);
+      expect(before.writeHead).not.toHaveBeenCalledWith(401, expect.anything());
+      expect(mcpServerHandler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          multiSource: true,
+          sources: [
+            { id: 'local', title: 'Local' },
+            { id: 'private', title: 'Private', url: 'https://private.example.com' },
+          ],
+        })
+      );
+
+      stubPrivateRefDiscovery();
+      await vi.advanceTimersByTimeAsync(5_000);
+
+      const after = { writeHead: vi.fn(), end: vi.fn() } as any;
+      await mcpHandler({ headers: { 'content-type': 'application/json' } }, after);
+      expect(after.writeHead).toHaveBeenCalledWith(
+        401,
+        expect.objectContaining({
+          'WWW-Authenticate': expect.stringContaining('/.well-known/oauth-protected-resource'),
+        })
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('should advertise the basePath-prefixed resource metadata in the OAuth challenge', async () => {
     vi.spyOn(mcpHandlerModule, 'mcpServerHandler').mockResolvedValue(undefined);
     stubPrivateRefDiscovery();

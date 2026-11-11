@@ -29,6 +29,7 @@ import {
   type DocEntry,
 } from './manifest-formatter/manifest-types.ts';
 import { emptyManifests, type DocsAccess, type ResolvedDocsEntry } from './access.ts';
+import { fetchWithIdleTimeout } from './fetch-with-idle-timeout.ts';
 import { mapWithConcurrency } from './map-with-concurrency.ts';
 import { ManifestGetError, RequiresOwnMcpError, type Source } from './sources.ts';
 
@@ -90,17 +91,12 @@ export const sourceUrlManifestProvider: ManifestProvider = async (_request, path
   // Concatenated rather than resolved with `new URL`, which would let a `$ref` such as
   // `../http:evil.example/x.json` from the remote manifest leave the source's origin.
   const manifestUrl = `${source.url.replace(/\/$/, '')}${path.replace(/^\.\//, '/')}`;
-  const response = await fetch(manifestUrl, {
-    signal: AbortSignal.timeout(REF_MANIFEST_FETCH_TIMEOUT_MS),
-  });
+  const response = await fetchWithIdleTimeout(manifestUrl);
   if (response.status === 401) {
     throw new RequiresOwnMcpError({ ...source, url: source.url });
   }
   return readManifestText(response, manifestUrl);
 };
-
-// A composed source that does not answer in time is reported like an unreachable one.
-const REF_MANIFEST_FETCH_TIMEOUT_MS = 3_000;
 
 async function readManifestText(response: Response, manifestUrl: string): Promise<string> {
   if (!response.ok) {

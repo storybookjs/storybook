@@ -170,17 +170,18 @@ describe('resolveCompositionSources', () => {
     );
   });
 
-  it('skips an unreachable ref and warns with the network error and a restart hint', async () => {
+  it('keeps an unreachable ref and warns with the network error and that it is checked again', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')));
 
     const result = await resolveCompositionSources(
       optionsWithRefs({ ds: { title: 'Design System', url: 'https://ds.example.com' } })
     );
 
-    expect(result.sources?.map((source) => source.id)).toEqual(['local']);
+    expect(result.sources?.map((source) => source.id)).toEqual(['local', 'ds']);
+    expect(result.multiSource).toBe(true);
     expect(logger.warn).toHaveBeenCalledTimes(1);
     expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringMatching(/"Design System".*could not be reached.*ECONNREFUSED.*restart/s)
+      expect.stringMatching(/"Design System".*could not be reached.*ECONNREFUSED.*checked again/s)
     );
   });
 

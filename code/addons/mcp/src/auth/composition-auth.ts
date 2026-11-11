@@ -9,6 +9,7 @@
 import {
   ComponentManifestMap,
   DocsManifestMap,
+  fetchWithIdleTimeout,
   type Source,
 } from 'storybook/internal/toolsets-docs';
 import { logger } from 'storybook/internal/node-logger';
@@ -42,6 +43,36 @@ interface AuthRequirement {
 }
 
 type NoManifestReason = 'manifest-not-found' | 'manifest-invalid';
+type RefCheckResult = 'public' | NoManifestReason | AuthRequirement;
+
+/**
+ * What is known about a composed ref. `unreachable` is the only state that is checked again: the
+ * others describe how the ref is configured, which takes a restart to change.
+ */
+type RefStatus =
+  | { kind: 'public' }
+  | { kind: 'auth'; requirement: AuthRequirement }
+  | { kind: 'excluded' }
+  | { kind: 'unreachable'; failures: number; retryAt: number };
+
+interface RefState {
+  ref: ComposedRef;
+  status: RefStatus;
+}
+
+/** Wait before checking an unreachable ref again, doubling per failure up to the cap. */
+const RECHECK_BASE_DELAY = 5 * 1000;
+const RECHECK_MAX_DELAY = 60 * 1000;
+
+/** A response that says the ref is down right now, rather than how it is configured. */
+const isTransientStatus = (status: number) => status >= 500 || status === 408 || status === 429;
+
+class TransientRefError extends Error {
+  constructor(url: string, status: number) {
+    super(`${url} responded with ${status}`);
+    this.name = 'TransientRefError';
+  }
+}
 
 export type ManifestProvider = (
   request: Request | undefined,
@@ -66,72 +97,116 @@ export class AuthenticationError extends Error {
   }
 }
 
-// Every probe fetch, OAuth discovery included, gets this budget, so `initialize` always settles and
-// a ref that does not answer in time is skipped like an unreachable one.
-const REF_PROBE_TIMEOUT_MS = 3_000;
-
 export class CompositionAuth {
-  #authRequirement: AuthRequirement | null = null;
-  #authRequiredUrls: string[] = [];
-  #refsWithManifests: ComposedRef[] = [];
+  #refStates: RefState[] = [];
+  #recheck: Promise<void> | null = null;
+  #warnedAuthServer = new WeakSet<ComposedRef>();
   #manifestCache = new Map<string, CacheEntry>();
   #lastToken: string | null = null;
   #authErrors = new WeakMap<Request, AuthenticationError>();
 
   /** Initialize by checking which refs require authentication and have manifests. */
   async initialize(refs: ComposedRef[]): Promise<void> {
-    // Probed concurrently, read in config order: `buildSources` keeps that order and the first
-    // authenticated ref decides the OAuth server.
-    const outcomes = await Promise.allSettled(refs.map((ref) => this.#checkRef(ref.url)));
-    for (const [index, ref] of refs.entries()) {
-      const outcome = outcomes[index];
-      if (outcome.status === 'rejected') {
-        const error = outcome.reason;
-        logger.warn(
-          `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): the ref could not be reached (${error instanceof Error ? error.message : String(error)}). Refs are only checked at dev-server boot — restart Storybook once the ref is reachable.`
-        );
-        continue;
-      }
-      const result = outcome.value;
-      if (result === 'manifest-not-found') {
-        logger.warn(
-          `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): components manifest not found at ${ref.url}/manifests/components.json. Enable the \`componentsManifest\` feature on that Storybook to compose it into MCP.`
-        );
-        continue;
-      }
-      if (result === 'manifest-invalid') {
-        logger.warn(
-          `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): its components manifest failed validation. This usually means a version mismatch between the composed Storybook and this one — upgrade the older side.`
-        );
-        continue;
-      }
+    this.#refStates = refs.map((ref) => ({
+      ref,
+      status: { kind: 'unreachable', failures: 0, retryAt: 0 },
+    }));
+    await Promise.all(this.#refStates.map((state) => this.#check(state)));
+    this.#warnAboutOtherAuthServers();
+  }
 
-      this.#refsWithManifests.push(ref);
+  /**
+   * Check again the refs that could not be reached earlier and are due for another try. Concurrent
+   * callers share one round of checks, so every MCP request can call this before it is answered.
+   */
+  async recheckUnreachableRefs(): Promise<void> {
+    if (!this.#recheck) {
+      const due = this.#refStates.filter(
+        ({ status }) => status.kind === 'unreachable' && status.retryAt <= Date.now()
+      );
+      if (due.length === 0) return;
+      this.#recheck = Promise.all(due.map((state) => this.#check(state))).then(() => {
+        this.#warnAboutOtherAuthServers();
+        this.#recheck = null;
+      });
+    }
+    await this.#recheck;
+  }
 
-      if (result === 'public') continue;
+  /** Check one ref and record what was learned. Never throws. */
+  async #check(state: RefState): Promise<void> {
+    const { ref } = state;
+    const previous = state.status;
+    let result: RefCheckResult;
+    try {
+      result = await this.#checkRef(ref.url);
+    } catch (error) {
+      const failures = previous.kind === 'unreachable' ? previous.failures + 1 : 1;
+      const delay = Math.min(RECHECK_BASE_DELAY * 2 ** (failures - 1), RECHECK_MAX_DELAY);
+      state.status = { kind: 'unreachable', failures, retryAt: Date.now() + delay };
+      if (failures === 1) {
+        logger.warn(
+          `[addon-mcp] Composed ref "${ref.title}" (${ref.url}) could not be reached (${error instanceof Error ? error.message : String(error)}). It will be checked again when the MCP server is next used.`
+        );
+      }
+      return;
+    }
 
-      // Auth required
-      this.#authRequiredUrls.push(ref.url);
-      if (!this.#authRequirement) {
-        this.#authRequirement = result;
-      } else {
-        const existingServer = this.#authRequirement.resourceMetadata.authorization_servers[0];
-        const newServer = result.resourceMetadata.authorization_servers[0];
-        if (existingServer !== newServer) {
-          logger.warn(
-            `[addon-mcp] Composed ref "${ref.title}" uses a different OAuth server (${newServer}) than the first authenticated ref (${existingServer}). Only the first OAuth server will be used for authentication.`
-          );
-        }
+    if (previous.kind === 'unreachable' && previous.failures > 0) {
+      logger.info(`[addon-mcp] Composed ref "${ref.title}" (${ref.url}) is reachable again.`);
+    }
+
+    if (result === 'manifest-not-found') {
+      state.status = { kind: 'excluded' };
+      logger.warn(
+        `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): components manifest not found at ${ref.url}/manifests/components.json. Enable the \`componentsManifest\` feature on that Storybook to compose it into MCP.`
+      );
+      return;
+    }
+    if (result === 'manifest-invalid') {
+      state.status = { kind: 'excluded' };
+      logger.warn(
+        `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): its components manifest failed validation. This usually means a version mismatch between the composed Storybook and this one — upgrade the older side.`
+      );
+      return;
+    }
+    if (result === 'public') {
+      state.status = { kind: 'public' };
+      return;
+    }
+
+    state.status = { kind: 'auth', requirement: result };
+  }
+
+  /** Warn once per private ref that names another OAuth server than the first private ref. */
+  #warnAboutOtherAuthServers(): void {
+    const first = this.#authRequirement?.resourceMetadata.authorization_servers[0];
+    for (const { ref, status } of this.#refStates) {
+      if (status.kind !== 'auth' || this.#warnedAuthServer.has(ref)) continue;
+      const server = status.requirement.resourceMetadata.authorization_servers[0];
+      if (server !== first) {
+        this.#warnedAuthServer.add(ref);
+        logger.warn(
+          `[addon-mcp] Composed ref "${ref.title}" uses a different OAuth server (${server}) than the first authenticated ref (${first}). Only the first OAuth server will be used for authentication.`
+        );
       }
     }
   }
 
+  /** The OAuth requirement of the first private ref, in config order. */
+  get #authRequirement(): AuthRequirement | null {
+    for (const { status } of this.#refStates) {
+      if (status.kind === 'auth') return status.requirement;
+    }
+    return null;
+  }
+
   get requiresAuth(): boolean {
-    return this.#authRequiredUrls.length > 0;
+    return this.authUrls.length > 0;
   }
 
   get authUrls(): string[] {
-    return this.#authRequiredUrls;
+    return this.#refStates.filter(({ status }) => status.kind === 'auth').map(({ ref }) => ref.url);
   }
 
   /** Check if a request encountered an auth error during manifest fetching. */
@@ -141,7 +216,7 @@ export class CompositionAuth {
 
   /** Check if a URL requires authentication based on discovered auth requirements. */
   #isAuthRequiredUrl(url: string): boolean {
-    return this.#authRequiredUrls.some((authUrl) => url.startsWith(authUrl));
+    return this.authUrls.some((authUrl) => url.startsWith(authUrl));
   }
 
   /** Build .well-known/oauth-protected-resource response for the MCP endpoint at `resource`. */
@@ -159,15 +234,20 @@ export class CompositionAuth {
     return `Bearer error="unauthorized", error_description="Authorization needed for composed Storybooks", resource_metadata="${baseUrl}/.well-known/oauth-protected-resource"`;
   }
 
-  /** Build sources configuration: local first, then refs that have manifests. */
+  /**
+   * Build sources configuration: local first, then refs that have manifests. A ref that could not
+   * be reached yet stays listed, so the tools report it as unreachable instead of hiding it.
+   */
   buildSources(): Source[] {
     return [
       { id: 'local', title: 'Local' },
-      ...this.#refsWithManifests.map((ref) => ({
-        id: ref.id,
-        title: ref.title,
-        url: ref.url,
-      })),
+      ...this.#refStates
+        .filter(({ status }) => status.kind !== 'excluded')
+        .map(({ ref }) => ({
+          id: ref.id,
+          title: ref.title,
+          url: ref.url,
+        })),
     ];
   }
 
@@ -250,7 +330,7 @@ export class CompositionAuth {
     const headers: HeadersInit = { Accept: 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const response = await fetch(url, { headers });
+    const response = await fetchWithIdleTimeout(url, { headers });
 
     if (response.status === 401) {
       throw new AuthenticationError(url);
@@ -295,11 +375,14 @@ export class CompositionAuth {
    * 'manifest-not-found' for a non-OK or non-JSON response (SPA fallback pages land here),
    * 'manifest-invalid' for real JSON that fails the manifest schema.
    */
-  async #checkRef(refUrl: string): Promise<'public' | NoManifestReason | AuthRequirement> {
-    const response = await fetch(`${refUrl}/manifests/components.json`, {
+  async #checkRef(refUrl: string): Promise<RefCheckResult> {
+    const manifestUrl = `${refUrl}/manifests/components.json`;
+    const response = await fetchWithIdleTimeout(manifestUrl, {
       headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(REF_PROBE_TIMEOUT_MS),
     });
+    if (isTransientStatus(response.status)) {
+      throw new TransientRefError(manifestUrl, response.status);
+    }
 
     // 401 with WWW-Authenticate = auth needed
     const authReq = await this.#parseAuthFromResponse(response);
@@ -328,11 +411,10 @@ export class CompositionAuth {
 
   /** Check /mcp endpoint for 401 auth requirement. */
   async #checkMcpAuth(refUrl: string): Promise<AuthRequirement | null> {
-    const response = await fetch(`${refUrl}/mcp`, {
+    const response = await fetchWithIdleTimeout(`${refUrl}/mcp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
-      signal: AbortSignal.timeout(REF_PROBE_TIMEOUT_MS),
     });
     return this.#parseAuthFromResponse(response);
   }
@@ -340,11 +422,10 @@ export class CompositionAuth {
   /** Quick check: does the remote /mcp return 401? */
   async #isMcpUnauthorized(origin: string): Promise<boolean> {
     try {
-      const response = await fetch(`${origin}/mcp`, {
+      const response = await fetchWithIdleTimeout(`${origin}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
-        signal: AbortSignal.timeout(REF_PROBE_TIMEOUT_MS),
       });
       return response.status === 401;
     } catch {
@@ -362,9 +443,10 @@ export class CompositionAuth {
     if (!match?.[1]) return null;
 
     const resourceMetadataUrl = match[1];
-    const resourceResponse = await fetch(resourceMetadataUrl, {
-      signal: AbortSignal.timeout(REF_PROBE_TIMEOUT_MS),
-    });
+    const resourceResponse = await fetchWithIdleTimeout(resourceMetadataUrl);
+    if (isTransientStatus(resourceResponse.status)) {
+      throw new TransientRefError(resourceMetadataUrl, resourceResponse.status);
+    }
     if (!resourceResponse.ok) {
       logger.warn(
         `[addon-mcp] Failed to fetch OAuth resource metadata from ${resourceMetadataUrl}: ${resourceResponse.status}`
@@ -381,9 +463,10 @@ export class CompositionAuth {
 
     const authServer = resourceResult.output.authorization_servers[0];
     const serverMetadataUrl = `${authServer}/.well-known/oauth-authorization-server`;
-    const serverResponse = await fetch(serverMetadataUrl, {
-      signal: AbortSignal.timeout(REF_PROBE_TIMEOUT_MS),
-    });
+    const serverResponse = await fetchWithIdleTimeout(serverMetadataUrl);
+    if (isTransientStatus(serverResponse.status)) {
+      throw new TransientRefError(serverMetadataUrl, serverResponse.status);
+    }
     if (!serverResponse.ok) {
       logger.warn(
         `[addon-mcp] Failed to fetch OAuth server metadata from ${serverMetadataUrl}: ${serverResponse.status}`

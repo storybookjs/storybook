@@ -9,7 +9,7 @@
 import {
   ComponentManifestMap,
   DocsManifestMap,
-  fetchWithIdleTimeout,
+  REF_MANIFEST_FETCH_TIMEOUT_MS,
   type Source,
 } from 'storybook/internal/toolsets-docs';
 import { logger } from 'storybook/internal/node-logger';
@@ -62,6 +62,9 @@ const RECHECK_MAX_DELAY = 60 * 1000;
 
 const isTransientStatus = (status: number) => status >= 500 || status === 408 || status === 429;
 
+const fetchRef = (url: string, init: RequestInit = {}) =>
+  fetch(url, { ...init, signal: AbortSignal.timeout(REF_MANIFEST_FETCH_TIMEOUT_MS) });
+
 class TransientRefError extends Error {
   constructor(url: string, status: number) {
     super(`${url} responded with ${status}`);
@@ -95,7 +98,6 @@ export class AuthenticationError extends Error {
 export class CompositionAuth {
   #refStates: RefState[] = [];
   #recheck: Promise<void> | null = null;
-  #warnedAuthServer = new WeakSet<ComposedRef>();
   #manifestCache = new Map<string, CacheEntry>();
   #lastToken: string | null = null;
   #authErrors = new WeakMap<Request, AuthenticationError>();
@@ -106,8 +108,9 @@ export class CompositionAuth {
       ref,
       status: { kind: 'unreachable', failures: 0, retryAt: 0 },
     }));
-    await Promise.all(this.#refStates.map((state) => this.#check(state)));
-    this.#warnAboutOtherAuthServers();
+    for (const state of this.#refStates) {
+      await this.#check(state);
+    }
   }
 
   // Concurrent callers share one round of checks.
@@ -117,10 +120,12 @@ export class CompositionAuth {
         ({ status }) => status.kind === 'unreachable' && status.retryAt <= Date.now()
       );
       if (due.length === 0) return;
-      this.#recheck = Promise.all(due.map((state) => this.#check(state))).then(() => {
-        this.#warnAboutOtherAuthServers();
+      this.#recheck = (async () => {
+        for (const state of due) {
+          await this.#check(state);
+        }
         this.#recheck = null;
-      });
+      })();
     }
     await this.#recheck;
   }
@@ -166,20 +171,13 @@ export class CompositionAuth {
       return;
     }
 
+    const existingServer = this.#authRequirement?.resourceMetadata.authorization_servers[0];
+    const newServer = result.resourceMetadata.authorization_servers[0];
     state.status = { kind: 'auth', requirement: result };
-  }
-
-  #warnAboutOtherAuthServers(): void {
-    const first = this.#authRequirement?.resourceMetadata.authorization_servers[0];
-    for (const { ref, status } of this.#refStates) {
-      if (status.kind !== 'auth' || this.#warnedAuthServer.has(ref)) continue;
-      const server = status.requirement.resourceMetadata.authorization_servers[0];
-      if (server !== first) {
-        this.#warnedAuthServer.add(ref);
-        logger.warn(
-          `[addon-mcp] Composed ref "${ref.title}" uses a different OAuth server (${server}) than the first authenticated ref (${first}). Only the first OAuth server will be used for authentication.`
-        );
-      }
+    if (existingServer && existingServer !== newServer) {
+      logger.warn(
+        `[addon-mcp] Composed ref "${ref.title}" uses a different OAuth server (${newServer}) than the first authenticated ref (${existingServer}). Only the first OAuth server will be used for authentication.`
+      );
     }
   }
 
@@ -316,7 +314,7 @@ export class CompositionAuth {
     const headers: HeadersInit = { Accept: 'application/json' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const response = await fetchWithIdleTimeout(url, { headers });
+    const response = await fetchRef(url, { headers });
 
     if (response.status === 401) {
       throw new AuthenticationError(url);
@@ -363,7 +361,7 @@ export class CompositionAuth {
    */
   async #checkRef(refUrl: string): Promise<RefCheckResult> {
     const manifestUrl = `${refUrl}/manifests/components.json`;
-    const response = await fetchWithIdleTimeout(manifestUrl, {
+    const response = await fetchRef(manifestUrl, {
       headers: { Accept: 'application/json' },
     });
     if (isTransientStatus(response.status)) {
@@ -397,7 +395,7 @@ export class CompositionAuth {
 
   /** Check /mcp endpoint for 401 auth requirement. */
   async #checkMcpAuth(refUrl: string): Promise<AuthRequirement | null> {
-    const response = await fetchWithIdleTimeout(`${refUrl}/mcp`, {
+    const response = await fetchRef(`${refUrl}/mcp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
@@ -408,7 +406,7 @@ export class CompositionAuth {
   /** Quick check: does the remote /mcp return 401? */
   async #isMcpUnauthorized(origin: string): Promise<boolean> {
     try {
-      const response = await fetchWithIdleTimeout(`${origin}/mcp`, {
+      const response = await fetchRef(`${origin}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
@@ -429,7 +427,7 @@ export class CompositionAuth {
     if (!match?.[1]) return null;
 
     const resourceMetadataUrl = match[1];
-    const resourceResponse = await fetchWithIdleTimeout(resourceMetadataUrl);
+    const resourceResponse = await fetchRef(resourceMetadataUrl);
     if (isTransientStatus(resourceResponse.status)) {
       throw new TransientRefError(resourceMetadataUrl, resourceResponse.status);
     }
@@ -449,7 +447,7 @@ export class CompositionAuth {
 
     const authServer = resourceResult.output.authorization_servers[0];
     const serverMetadataUrl = `${authServer}/.well-known/oauth-authorization-server`;
-    const serverResponse = await fetchWithIdleTimeout(serverMetadataUrl);
+    const serverResponse = await fetchRef(serverMetadataUrl);
     if (isTransientStatus(serverResponse.status)) {
       throw new TransientRefError(serverMetadataUrl, serverResponse.status);
     }

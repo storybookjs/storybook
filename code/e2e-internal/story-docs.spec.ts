@@ -19,6 +19,7 @@ const codePanelStoryPath = join(
 /** Story id for the Default export in the Code Panel demo (see internal Storybook index). */
 const storyPath = '/story/addons-docs-codepanel--default';
 const docsPath = '/docs/addons-docs-codepanel--docs';
+const liveSourceDocsPath = '/docs/addons-docs-codepanel--live-source';
 const defaultStoryBlockId = 'story--addons-docs-codepanel--default';
 const primaryStoryBlockId = `${defaultStoryBlockId}--primary`;
 const componentId = 'addons-docs-codepanel';
@@ -30,9 +31,6 @@ const E2E_STORY_DOCS_HOT_UPDATE_LABEL_AFTER = 'e2eStoryDocsAfter';
 const defaultArgsLine = `  args: { label: '${E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE}' }`;
 const hotUpdateArgsLine = `  args: { label: '${E2E_STORY_DOCS_HOT_UPDATE_LABEL_AFTER}' }`;
 
-// Start the internal dev server with STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true before running the
-// hot-update test. CI sets that env var in the internal Storybook e2e job. Static tests require a
-// build produced with the same flag so story-docs snapshots exist under storybook-static/services/.
 let originalCodePanelStorySource: string | undefined;
 
 async function restoreFile(path: string, contents: string) {
@@ -45,7 +43,7 @@ function previewFrame(page: Page) {
   return page.frameLocator('#storybook-preview-iframe');
 }
 
-async function expectExperimentalDocgenServer(page: Page) {
+async function expectDocgenServer(page: Page) {
   await expect
     .poll(
       () =>
@@ -53,9 +51,9 @@ async function expectExperimentalDocgenServer(page: Page) {
           Boolean(
             (
               globalThis as {
-                FEATURES?: { experimentalDocgenServer?: boolean };
+                FEATURES?: { docgenServer?: boolean };
               }
-            ).FEATURES?.experimentalDocgenServer
+            ).FEATURES?.docgenServer
           )
         ),
       { timeout: PREVIEW_STORY_TIMEOUT }
@@ -114,7 +112,7 @@ async function expectPreviewButtonLabel(page: Page, label: string) {
 
 async function gotoCodePanelStory(page: Page) {
   await page.goto(`${storybookUrl}/?path=${storyPath}`);
-  await expectExperimentalDocgenServer(page);
+  await expectDocgenServer(page);
   await waitForPreviewReady(page);
   await expect(
     previewFrame(page)
@@ -125,7 +123,7 @@ async function gotoCodePanelStory(page: Page) {
 
 async function gotoAutodocsPage(page: Page) {
   await page.goto(`${storybookUrl}/?path=${docsPath}`);
-  await expectExperimentalDocgenServer(page);
+  await expectDocgenServer(page);
   await waitForPreviewReady(page);
 }
 
@@ -187,6 +185,63 @@ test.describe('story-docs open service', () => {
     });
   });
 
+  // Runs against the dev server and the static build: once the args change, the preview fills the
+  // snippet template with them.
+  test.describe('live snippets', () => {
+    const LIVE_LABEL = 'e2eLiveSnippet';
+
+    test('the Code panel follows the controls', async ({ page }) => {
+      await gotoCodePanelStory(page);
+      await openCodePanel(page);
+      await expectCodePanelToContainLabel(page, E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE);
+      // The templates come with the story docs, so changing the args loads nothing again.
+      const storyDocsRequests: string[] = [];
+      page.on('request', (request) => {
+        if (request.url().includes('/services/core/story-docs/')) {
+          storyDocsRequests.push(new URL(request.url()).pathname);
+        }
+      });
+
+      await page.getByRole('tab', { name: 'Controls' }).click();
+      const label = page.locator('#storybook-panel-root textarea[name=label]');
+      await label.fill(`${LIVE_LABEL}First`);
+      await expectPreviewButtonLabel(page, `${LIVE_LABEL}First`);
+      await label.fill(LIVE_LABEL);
+      await expectPreviewButtonLabel(page, LIVE_LABEL);
+
+      await openCodePanel(page);
+      await expectCodePanelToContainLabel(page, LIVE_LABEL);
+      await expect(page.getByRole('tabpanel', { name: 'Code' })).not.toContainText(
+        E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE
+      );
+      expect(storyDocsRequests).toStrictEqual([]);
+    });
+
+    test('autodocs Show code follows the controls', async ({ page }) => {
+      await gotoAutodocsPage(page);
+      await expectAutodocsDefaultSourceToContainLabel(page, E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE);
+
+      await previewFrame(page).locator('textarea[name=label]').fill(LIVE_LABEL);
+      const source = await autodocsDefaultSourceLocator(page);
+      await expect(source).toContainText(LIVE_LABEL);
+      await expect(source).not.toContainText(E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE);
+    });
+
+    test('an MDX Source block follows the controls', async ({ page }) => {
+      await page.goto(`${storybookUrl}/?path=${liveSourceDocsPath}`);
+      await expectDocgenServer(page);
+      await waitForPreviewReady(page);
+      const source = previewFrame(page).locator('pre.prismjs');
+      await expect(source).toContainText(E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE, {
+        timeout: PREVIEW_STORY_TIMEOUT,
+      });
+
+      await previewFrame(page).locator('textarea[name=label]').fill(LIVE_LABEL);
+      await expect(source).toContainText(LIVE_LABEL);
+      await expect(source).not.toContainText(E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE);
+    });
+  });
+
   test.describe('static build', () => {
     test('serves prebuilt story-docs JSON and renders snippets in the Code panel and autodocs', async ({
       page,
@@ -205,7 +260,7 @@ test.describe('story-docs open service', () => {
           string,
           {
             id: string;
-            stories: Record<string, { snippet?: string }>;
+            stories: Record<string, { snippet?: string; template?: unknown[] }>;
           }
         >;
       };
@@ -217,6 +272,12 @@ test.describe('story-docs open service', () => {
         story.snippet?.includes(E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE)
       );
       expect(defaultStory?.snippet).toContain(E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE);
+      expect(defaultStory?.template).toContainEqual({
+        kind: 'attr',
+        arg: 'label',
+        text: ` label="${E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE}"`,
+        space: ' ',
+      });
 
       await gotoAutodocsPage(page);
       await expectAutodocsDefaultSourceToContainLabel(

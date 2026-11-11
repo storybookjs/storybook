@@ -1,0 +1,27 @@
+{
+  "id": "as-cast",
+  "name": "AsCastButton",
+  "path": "__PATH__",
+  "stories": {
+    "forms-as-cast--primary": {
+      "description": "Cast story description.",
+      "id": "forms-as-cast--primary",
+      "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import AsCastButton from './AsCastButton.vue';
+</script>
+
+<template>
+  <AsCastButton label="Cast" />
+</template>",
+      "summary": undefined,
+      "template": "<script lang="ts" setup>
+import AsCastButton from './AsCastButton.vue';
+</script>
+
+<template>
+  <AsCastButton⟦attr label ~" "⟫ label="Cast"⟧⟦props * except=["label"] ~" "⟫⟧ />
+</template>",
+    },
+  },
+}

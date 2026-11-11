@@ -12,6 +12,8 @@ import {
   execaNode,
 } from 'execa';
 
+import { categorizeExecaError } from './categorize-execa-error.ts';
+
 const COMMON_ENV_VARS = {
   COREPACK_ENABLE_STRICT: '0',
   COREPACK_ENABLE_AUTO_PIN: '0',
@@ -26,6 +28,30 @@ export type ExecuteCommandOptions = Omit<Options, 'cancelSignal'> & {
   env?: Record<string, string>;
   signal?: AbortSignal; // Alias for cancelSignal (execa v9 uses cancelSignal)
 };
+
+function attachCategorizedExecaFailureHandler(
+  execaProcess: ResultPromise,
+  context: { command: string; args: string[] }
+) {
+  const categorize = (error: unknown) => categorizeExecaError(error, context);
+  const originalThen = execaProcess.then.bind(execaProcess);
+  const originalCatch = execaProcess.catch.bind(execaProcess);
+
+  execaProcess.then = ((onFulfilled, onRejected) =>
+    originalThen(
+      onFulfilled,
+      typeof onRejected === 'function'
+        ? (error) => onRejected(categorize(error))
+        : (error) => {
+            throw categorize(error);
+          }
+    )) as ResultPromise['then'];
+
+  execaProcess.catch = ((onRejected) =>
+    originalCatch((error) => {
+      throw categorize(error);
+    }).catch(typeof onRejected === 'function' ? onRejected : undefined)) as ResultPromise['catch'];
+}
 
 function getExecaOptions({
   stdio,
@@ -59,6 +85,8 @@ export function executeCommand(options: ExecuteCommandOptions): ResultPromise {
     execaProcess.catch(() => {
       // Silently ignore errors when ignoreError is true
     });
+  } else {
+    attachCategorizedExecaFailureHandler(execaProcess, { command, args });
   }
 
   return execaProcess;
@@ -75,7 +103,7 @@ export function executeCommandSync(options: ExecuteCommandOptions): string {
     );
   } catch (err) {
     if (!ignoreError) {
-      throw err;
+      throw categorizeExecaError(err, { command, args });
     }
     return '';
   }

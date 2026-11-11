@@ -25,7 +25,7 @@ export { makeDecorator } from './addons.ts';
  *
  * @deprecated
  */
-export { addons, mockChannel } from './addons.ts';
+export { addons } from './addons.ts';
 
 // TODO: Universal Stores are disabled in the preview, until we get automatic leader negotiation in place
 // export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
@@ -68,7 +68,7 @@ export {
 } from './store.ts';
 
 /** CSF API */
-export { createPlaywrightTest, getCsfFactoryAnnotations } from './modules/store/csf/index.ts';
+export { getCsfFactoryAnnotations } from './modules/store/csf/index.ts';
 
 export type { PropDescriptor } from './store.ts';
 

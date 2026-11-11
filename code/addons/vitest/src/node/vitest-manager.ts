@@ -1,15 +1,10 @@
 import { existsSync, readFileSync } from 'node:fs';
 
-import type {
-  CoverageOptions,
-  ResolvedCoverageOptions,
-  TestProject,
-  TestSpecification,
-  Vitest,
-} from 'vitest/node';
+import type { CoverageOptions, TestProject, TestSpecification, Vitest } from 'vitest/node';
 
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import { Tag } from 'storybook/internal/core-server';
+import { logger } from 'storybook/internal/node-logger';
 import type { StoryId, StoryIndexEntry } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
@@ -27,8 +22,6 @@ import { StorybookReporter } from './reporter.ts';
 import type { TestManager } from './test-manager.ts';
 
 const VITEST_CONFIG_FILE_EXTENSIONS = ['mts', 'mjs', 'cts', 'cjs', 'ts', 'tsx', 'js', 'jsx'];
-const VITEST_WORKSPACE_FILE_EXTENSION = ['ts', 'js', 'json'];
-
 // We have to tell Vitest that it runs as part of Storybook
 process.env.VITEST_STORYBOOK = 'true';
 
@@ -41,10 +34,18 @@ process.env.VITEST_STORYBOOK = 'true';
  * double spaces, we circumvent the issue.
  */
 export const DOUBLE_SPACES = '  ';
+
+/**
+ * Turns a story index `importPath` into the absolute module ID Vitest uses for the test file. Test
+ * files are registered and test specifications are matched to stories by this exact key.
+ */
+export const toModuleId = (importPath: string) => path.join(process.cwd(), importPath);
 const getTestName = (name: string) => `${name}${DOUBLE_SPACES}`;
 
 export class VitestManager {
   vitest: Vitest | null = null;
+
+  private testNameSeparator = ' ';
 
   vitestStartupCounter = 0;
 
@@ -52,30 +53,32 @@ export class VitestManager {
 
   runningPromise: Promise<any> | null = null;
 
+  // Tracked here because `vitest.config.coverage.enabled` does not follow `disableCoverage()`.
+  coverageEnabled = false;
+
   constructor(private testManager: TestManager) {}
 
   async startVitest({ coverage }: { coverage: boolean }) {
-    const { createVitest } = await import('vitest/node');
+    const { createVitest, version } = await import('vitest/node');
+    this.testNameSeparator = Number.parseInt(version, 10) >= 5 ? ' > ' : ' ';
 
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
       '@storybook/addon-vitest/internal/coverage-reporter',
       {
-        testManager: this.testManager,
-        coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions | undefined,
+        // A function, not the manager itself: Vitest deep-clones coverage options when coverage
+        // is toggled at runtime, and the reporter must reach the live manager.
+        getTestManager: () => this.testManager,
       },
     ];
-    const coverageOptions = (
-      coverage
-        ? {
-            enabled: true,
-            clean: true,
-            cleanOnRerun: true,
-            reportOnFailure: true,
-            reporter: [['html', {}], storybookCoverageReporter],
-            reportsDirectory: resolvePathInStorybookCache(COVERAGE_DIRECTORY),
-          }
-        : { enabled: false }
-    ) as CoverageOptions;
+    // Always pass the full options so `enableCoverage()` can turn coverage on later.
+    const coverageOptions = {
+      enabled: coverage,
+      clean: true,
+      cleanOnRerun: true,
+      reportOnFailure: true,
+      reporter: [['html', {}], storybookCoverageReporter],
+      reportsDirectory: resolvePathInStorybookCache(COVERAGE_DIRECTORY),
+    } as CoverageOptions;
 
     // In monorepos, the Storybook configDir (e.g. packages/web-app/.storybook) identifies
     // the sub-package. We start the Vitest config search from its parent (the package root)
@@ -86,7 +89,6 @@ export class VitestManager {
     const packageRoot = configDir ? dirname(resolve(configDir)) : undefined;
 
     const configFiles = [
-      ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
       ...VITEST_CONFIG_FILE_EXTENSIONS.flatMap((ext) => [
         `vitest.config.${ext}`,
         `vite.config.${ext}`,
@@ -97,7 +99,7 @@ export class VitestManager {
       last: getProjectRoot(),
     });
 
-    let vitestWorkspaceConfig: string | undefined;
+    let vitestConfigLocation: string | undefined;
     let firstVitestConfig: string | undefined;
 
     for (const location of potentialConfigFileLocations) {
@@ -110,12 +112,12 @@ export class VitestManager {
           firstVitestConfig ??= dirname(maybe);
           const content = readFileSync(maybe, 'utf8');
           if (content.includes('storybookTest') || content.includes('@storybook/addon-vitest')) {
-            vitestWorkspaceConfig = dirname(maybe);
+            vitestConfigLocation = dirname(maybe);
             break;
           }
         }
       }
-      if (vitestWorkspaceConfig) {
+      if (vitestConfigLocation) {
         break;
       }
     }
@@ -126,7 +128,7 @@ export class VitestManager {
 
     try {
       this.vitest = await createVitest('test', {
-        root: vitestWorkspaceConfig ?? vitestConfigFallbackLocation,
+        root: vitestConfigLocation ?? vitestConfigFallbackLocation,
         configLoader: this.testManager.configLoader,
         watch: true,
         passWithNoTests: false,
@@ -139,6 +141,7 @@ export class VitestManager {
         reporters: ['default', new StorybookReporter(this.testManager)],
         coverage: coverageOptions,
       });
+      this.coverageEnabled = coverage;
     } catch (err: any) {
       const originalMessage = String(err.message);
       if (originalMessage.includes('Found multiple projects')) {
@@ -162,7 +165,11 @@ export class VitestManager {
     }
 
     try {
-      await this.vitest.init();
+      if (typeof this.vitest.standalone === 'function') {
+        await this.vitest.standalone();
+      } else {
+        await this.vitest.init();
+      }
     } catch (e: any) {
       let message = 'Failed to initialize Vitest';
       const isV8 = e.message?.includes('@vitest/coverage-v8');
@@ -190,6 +197,11 @@ export class VitestManager {
       try {
         await this.runningPromise;
         await this.vitest?.close();
+        // Drop the closed instance before restarting. The coverage reporter options passed to
+        // createVitest reference this manager, and Vitest deep-clones its options — on Vite 6
+        // that traversal reaches the closed module runner's `import.meta.env` proxy (an own
+        // property of ModuleRunner there), whose get trap throws on any dynamic access.
+        this.vitest = null;
         await this.startVitest({ coverage });
         resolve();
       } catch (e) {
@@ -201,17 +213,26 @@ export class VitestManager {
     return this.vitestRestartPromise;
   }
 
+  async setCoverage(enabled: boolean) {
+    await this.vitestRestartPromise;
+    if (!this.vitest || this.coverageEnabled === enabled) {
+      return;
+    }
+    await this.cancelCurrentRun();
+    if (enabled) {
+      await this.vitest.enableCoverage();
+    } else {
+      this.vitest.disableCoverage();
+    }
+    this.coverageEnabled = enabled;
+  }
+
   private resetGlobalTestNamePattern() {
     this.vitest?.setGlobalTestNamePattern('');
   }
 
   private updateLastChanged(filepath: string) {
-    // @ts-expect-error `server` only exists in Vitest 3
-    this.vitest!.projects.forEach(({ browser, vite, server }) => {
-      if (server) {
-        const serverMods = server.moduleGraph.getModulesByFile(filepath);
-        serverMods?.forEach((mod: any) => server.moduleGraph.invalidateModule(mod));
-      }
+    this.vitest!.projects.forEach(({ browser, vite }) => {
       if (vite) {
         const serverMods = vite.moduleGraph.getModulesByFile(filepath);
         serverMods?.forEach((mod) => vite.moduleGraph.invalidateModule(mod));
@@ -224,7 +245,7 @@ export class VitestManager {
   }
 
   private getStories(requestStoryIds?: string[]): StoryIndexEntry[] {
-    const index = this.testManager.store.getState().index;
+    const index = this.testManager.storyIndex;
     if (requestStoryIds) {
       const stories: StoryIndexEntry[] = [];
       for (const id of requestStoryIds) {
@@ -264,7 +285,7 @@ export class VitestManager {
         throw new Error(`Parent story not found for story ${story.id}`);
       }
 
-      return `^${escapeRegExp(getTestName(parentStory.name))} ${escapeRegExp(story.name)}$`;
+      return `^${escapeRegExp(getTestName(parentStory.name))}${this.testNameSeparator}${escapeRegExp(story.name)}$`;
     }
 
     return `^${escapeRegExp(story.name)}$`;
@@ -320,7 +341,7 @@ export class VitestManager {
     const storiesByImportPath: Record<StoryIndexEntry['importPath'], StoryIndexEntry[]> = {};
 
     for (const story of stories) {
-      const absoluteImportPath = path.join(process.cwd(), story.importPath);
+      const absoluteImportPath = toModuleId(story.importPath);
       if (!storiesByImportPath[absoluteImportPath]) {
         storiesByImportPath[absoluteImportPath] = [];
       }
@@ -380,14 +401,11 @@ export class VitestManager {
     const runConfig = this.getCurrentRunConfig();
     const coverageShouldBeEnabled =
       !!runConfig.coverage && !watching && (runPayload?.storyIds?.length ?? 0) === 0;
-    const currentCoverage = this.vitest?.config.coverage?.enabled;
 
     if (!this.vitest) {
       await this.startVitest({ coverage: coverageShouldBeEnabled });
-    } else if (currentCoverage !== coverageShouldBeEnabled) {
-      await this.restartVitest({ coverage: coverageShouldBeEnabled });
     } else {
-      await this.vitestRestartPromise;
+      await this.setCoverage(coverageShouldBeEnabled);
     }
 
     this.provideRunConfig();
@@ -396,8 +414,8 @@ export class VitestManager {
 
     await this.cancelCurrentRun();
 
-    const testSpecifications = await this.getStorybookTestSpecifications();
     const allStories = this.getStories();
+    const testSpecifications = await this.getStorybookTestSpecifications();
 
     const filteredStories = runPayload.storyIds
       ? allStories.filter((story) => runPayload.storyIds?.includes(story.id))
@@ -432,6 +450,34 @@ export class VitestManager {
     await this.runningPromise;
   }
 
+  /**
+   * Makes sure every Storybook project knows about the given test files.
+   *
+   * Vitest caches its list of test files after the first glob and only adds new files when its
+   * Vite watcher reports them. Story files created outside the Vite root after startup never reach
+   * that watcher, even though Storybook has already indexed them, so they'd be silently dropped
+   * from every run. `matchesTestGlob` both checks a file against a project's include/exclude globs
+   * and adds it to that project's cached list (it returns early for files the project already
+   * has), so this mirrors what Vitest itself does on file creation.
+   */
+  registerTestFiles(moduleIds: Iterable<string>) {
+    if (!this.vitest) {
+      // Vitest globs all test files when it starts, nothing to register yet
+      return;
+    }
+    const storybookProjects = this.vitest.projects.filter((p) => this.isStorybookProject(p));
+    for (const moduleId of moduleIds) {
+      for (const project of storybookProjects) {
+        try {
+          project.matchesTestGlob(moduleId);
+        } catch (e) {
+          // e.g. a stale index entry for a file that was just deleted, with includeSource enabled
+          logger.debug(`Could not check ${moduleId} against the Vitest test globs: ${e}`);
+        }
+      }
+    }
+  }
+
   async getStorybookTestSpecifications() {
     const globTestSpecifications = (await this.vitest?.globTestSpecifications()) ?? [];
     return (
@@ -447,10 +493,7 @@ export class VitestManager {
     this.updateLastChanged(id);
 
     if (event === 'add') {
-      const project = this.vitest?.projects.find(this.isStorybookProject.bind(this));
-      // This function not only tests whether a file matches the test globs, but it also
-      // adds the file to the project's internal testFilesList
-      project?.matchesTestGlob(id);
+      this.registerTestFiles([id]);
     }
 
     // when watch mode is disabled, don't trigger any tests (below)
@@ -465,15 +508,15 @@ export class VitestManager {
 
     const storybookProject = this.vitest!.projects.find((p) => this.isStorybookProject(p));
     // we create synthetic TestSpecifications for the preview annotations and setup files, so that we can analyze their dependencies
-    const previewAnnotationSpecifications = this.testManager.store
-      .getState()
-      .previewAnnotations.map((previewAnnotation) => {
+    const previewAnnotationSpecifications = this.testManager.previewAnnotations.map(
+      (previewAnnotation) => {
         return {
           project: storybookProject ?? this.vitest!.projects[0],
           moduleId:
             typeof previewAnnotation === 'string' ? previewAnnotation : previewAnnotation.absolute,
         };
-      }) as TestSpecification[];
+      }
+    ) as TestSpecification[];
     const setupFilesSpecifications = this.vitest!.projects.flatMap((project) =>
       project.config.setupFiles.map((setupFile) => ({
         project,

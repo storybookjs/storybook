@@ -6,7 +6,7 @@ import { dedent } from 'ts-dedent';
 
 import { ErrorFormatter } from './ErrorFormatter.tsx';
 
-const meta: Meta<typeof ErrorFormatter> = {
+const meta = {
   component: ErrorFormatter,
   decorators: [
     (Story) => (
@@ -15,7 +15,7 @@ const meta: Meta<typeof ErrorFormatter> = {
       </pre>
     ),
   ],
-};
+} satisfies Meta<typeof ErrorFormatter>;
 
 export default meta;
 

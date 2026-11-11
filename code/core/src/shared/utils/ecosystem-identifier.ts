@@ -18,8 +18,30 @@ export const TEST_PACKAGES = [
   'msw',
   'miragejs',
   'sinon',
-  'chromatic',
+] as const;
+
+export const VRT_PACKAGES = [
+  '@alwaysmeticulous/*',
+  '@applitools/*',
+  '@argos-ci/*',
+  '@blazediff/*',
   '@chromatic-com/*',
+  '@lambdatest/smartui-*',
+  '@percy/*',
+  '@saucelabs/visual*',
+  '@visual-regression-tracker/*',
+  '@vizzly-testing/*',
+  'backstopjs',
+  'chromatic',
+  'happo',
+  'happo.io',
+  'jest-image-snapshot',
+  'loki',
+  'lost-pixel',
+  'reg-cli',
+  'reg-suit',
+  'sherlo',
+  'testplane',
 ] as const;
 
 export const STYLING_PACKAGES = [
@@ -31,6 +53,7 @@ export const STYLING_PACKAGES = [
   '@emotion/*',
   'less',
   'styled-components',
+  '@stylexjs/*',
   'bootstrap',
   'goober',
   'stylus',
@@ -107,6 +130,22 @@ export const ROUTER_PACKAGES = [
   '@tanstack/*-router',
   'wouter',
   '@reach/router',
+] as const;
+
+// Bundlers and their direct tooling. Storybook's own builder packages are reported separately
+// (as storybookPackages), so patterns here stay exact or scoped to avoid re-matching them.
+export const BUNDLER_PACKAGES = [
+  'webpack',
+  'webpack-cli',
+  'webpack-dev-server',
+  'vite',
+  'rolldown',
+  'rolldown-vite',
+  'esbuild',
+  'parcel',
+  '@parcel/*',
+  '@rspack/*',
+  '@rsbuild/*',
 ] as const;
 
 export function globToRegex(pattern: string): RegExp {

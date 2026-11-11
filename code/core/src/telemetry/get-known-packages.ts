@@ -3,6 +3,7 @@ import type { PackageJson } from 'storybook/internal/types';
 import semver from 'semver';
 
 import {
+  BUNDLER_PACKAGES,
   DATA_FETCHING_PACKAGES,
   I18N_PACKAGES,
   ROUTER_PACKAGES,
@@ -10,6 +11,7 @@ import {
   STYLING_PACKAGES,
   TEST_PACKAGES,
   UI_LIBRARY_PACKAGES,
+  VRT_PACKAGES,
   matchesPackagePattern,
 } from '../shared/utils/ecosystem-identifier.ts';
 import { getActualPackageVersion } from './package-json.ts';
@@ -18,6 +20,14 @@ type PackageGroupResult = Record<string, string | null | undefined>;
 
 export type KnownPackagesList = {
   testPackages?: PackageGroupResult;
+  vrtPackages?: PackageGroupResult;
+  bundlerPackages?: PackageGroupResult;
+  /**
+   * Installed versions of the active renderer's UI framework runtime packages. Unlike the other
+   * groups, this is keyed off the detected Storybook renderer rather than the project's declared
+   * dependencies, so monorepos don't report sibling frameworks.
+   */
+  rendererPackages?: PackageGroupResult;
   stylingPackages?: PackageGroupResult;
   stateManagementPackages?: PackageGroupResult;
   dataFetchingPackages?: PackageGroupResult;
@@ -94,19 +104,32 @@ export async function analyzeEcosystemPackages(
     return Object.keys(result).length === 0 ? null : result;
   };
 
-  const testPackagesResult = Object.fromEntries(
-    await Promise.all(
-      depNames
-        .filter((dep) => matchesPackagePattern(dep, TEST_PACKAGES))
-        .map(async (dep) => {
+  // Groups whose exact installed version matters are resolved from the install tree, with the
+  // declared specifier as a fallback.
+  const resolveDeps = async (names: string[]) => {
+    const result = Object.fromEntries(
+      await Promise.all(
+        names.map(async (dep) => {
           const resolved = (await getActualPackageVersion(dep))?.version ?? allDependencies[dep];
 
           const version = getSafeVersionSpecifier(resolved);
           return [dep, version];
         })
-    )
-  );
-  const testPackages = Object.keys(testPackagesResult).length === 0 ? null : testPackagesResult;
+      )
+    );
+    return Object.keys(result).length === 0 ? null : result;
+  };
+
+  const vrtNames = pickMatches(VRT_PACKAGES);
+  const vrtNameSet = new Set(vrtNames);
+  // *playwright* and *vitest* also match VRT adapters. Those stay in the VRT group.
+  const testNames = pickMatches(TEST_PACKAGES).filter((dep) => !vrtNameSet.has(dep));
+
+  const [testPackages, vrtPackages, bundlerPackages] = await Promise.all([
+    resolveDeps(testNames),
+    resolveDeps(vrtNames),
+    resolveDeps(pickMatches(BUNDLER_PACKAGES)),
+  ]);
 
   const stylingPackages = pickDepsObject(STYLING_PACKAGES);
   const stateManagementPackages = pickDepsObject(STATE_MANAGEMENT_PACKAGES);
@@ -117,6 +140,8 @@ export async function analyzeEcosystemPackages(
 
   return {
     ...(testPackages && { testPackages: testPackages }),
+    ...(vrtPackages && { vrtPackages }),
+    ...(bundlerPackages && { bundlerPackages: bundlerPackages }),
     ...(stylingPackages && { stylingPackages: stylingPackages }),
     ...(stateManagementPackages && {
       stateManagementPackages: stateManagementPackages,

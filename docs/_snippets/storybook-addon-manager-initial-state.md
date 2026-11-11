@@ -9,7 +9,7 @@ addons.register(ADDON_ID, () => {
   addons.add(TOOL_ID, {
     type: types.TOOL,
     title: 'My addon',
-    match: ({ tabId, viewMode }) => !tabId && viewMode === 'story',
+    match: ({ viewMode }) => viewMode === 'story',
     render: Tool,
   });
 });

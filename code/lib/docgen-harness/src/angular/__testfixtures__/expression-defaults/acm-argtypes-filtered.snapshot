@@ -1,0 +1,34 @@
+{
+  "rows": {
+    "description": undefined,
+    "name": "rows",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "timeoutMs": {
+    "description": undefined,
+    "name": "timeoutMs",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+}

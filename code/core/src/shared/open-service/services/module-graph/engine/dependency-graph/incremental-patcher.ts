@@ -82,6 +82,12 @@ export class IncrementalPatcher {
       });
   }
 
+  /**
+   * Applies one file-system event to the graph and reverse index.
+   *
+   * Most events in a dev session leave the reverse index untouched: a comment-only edit keeps the
+   * same dependency set, and a write to a file the graph has never seen matches nothing at all.
+   */
   async patch(event: FileChangeEvent): Promise<void> {
     const path = normalize(event.path);
     // File contents may have changed (or the file is gone); drop any stale cached

@@ -1,0 +1,47 @@
+import { describe, test } from 'vitest';
+import {
+  expectDisplayReviewForVisualChange,
+  expectDevServerLeftRunning,
+  expectSkillInvoked,
+  getEvalContext,
+  expectStoryDiscoveryBeforeReview,
+  expectStoryIdsInDisplayReview,
+  expectStoryTestsRanAndPassed,
+  expectWorkflowCalls,
+} from '#test-utils';
+
+describe('writing stories for an existing AlertBanner', () => {
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({
+      covering: ['alertbanner'],
+    });
+  });
+
+  test('uses Storybook story instructions and publishes a display review', () => {
+    expectWorkflowCalls(['ui-workflow', 'review-create']);
+    expectDisplayReviewForVisualChange();
+  });
+
+  test('the review covers the new AlertBanner stories', () => {
+    expectStoryIdsInDisplayReview(['alertbanner']);
+  });
+
+  test('discovers stories through the workflow tools before publishing the review', () => {
+    expectStoryDiscoveryBeforeReview();
+  });
+
+  describe('depending on the current agent and integration', () => {
+    const { integration } = getEvalContext();
+
+    test.skipIf(integration === 'mcp')('invokes the ui-workflow skill', () => {
+      expectSkillInvoked('ui-workflow');
+    });
+
+    test.skipIf(integration !== 'plugin')(
+      'leaves the dev server running when using the plugin',
+      () => {
+        expectDevServerLeftRunning();
+      }
+    );
+  });
+});

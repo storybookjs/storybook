@@ -17,7 +17,6 @@ export const extractArgTypes = (componentName: string) => {
   return componentDoc.attributes.arguments.reduce((acc: any, prop: any) => {
     acc[prop.name] = {
       name: prop.name,
-      defaultValue: prop.defaultValue,
       description: prop.description,
       table: {
         defaultValue: { summary: prop.defaultValue },

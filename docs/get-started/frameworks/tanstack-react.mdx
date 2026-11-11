@@ -183,11 +183,38 @@ TanStack Query is not automatically set up. The recommended approach is to creat
 
 <CodeSnippets path="tanstack-react-query-setup.md" />
 
+This setup keeps the router context and React provider pointed at the same `QueryClient` no matter how Storybook renders the story: in the sidebar, in the Docs page, through portable stories, or in a test run. Clearing the cache before each story gives every story fresh query state while preserving one predictable integration point for loaders, route context, decorators, and story-level setup.
+
+You can create a separate `QueryClient` for each story when you need stronger isolation, such as rendering several stories with the same query keys on one Docs page and keeping their cached responses independent. The tradeoff is that you must make the per-story client available to both the router context and the `QueryClientProvider` for that story. If those two places receive different clients, route loaders and components can read different caches, and story setup that calls `setQueryData` may not affect the component being rendered. Per-story clients also require explicit cleanup of timers, subscriptions, and cached data owned by each client.
+
 #### Seeding query data per story
 
 In individual stories, use [`beforeEach`](../../writing-tests/interaction-testing.mdx#beforeeach) to call [`setQueryData`](https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientsetquerydata) on the shared `QueryClient` before the component renders. Access it from `parameters.tanstack.router.context`:
 
 <CodeSnippets path="tanstack-react-query-in-story.md" />
+
+## Component documentation
+
+Storybook 11 reads React component props on the server by default, with the [`typescript`](../../configure/integration/typescript.mdx) package (TypeScript 5.9 or 6, even in JavaScript projects, where it reads types from JSDoc comments). New projects need no docgen configuration and no extra packages.
+
+<Callout variant="info">
+
+The Storybook 10 builder-based docgen is still available, but it is deprecated. It will be removed in Storybook 12. To use it:
+
+1. Set [`features.docgenServer: false`](../../api/main-config/main-config-features.mdx#docgenserver) in your main config.
+2. Set the package you want to use in [`typescript.reactDocgen`](../../api/main-config/main-config-typescript.mdx#reactdocgen). The default is `'react-docgen'`.
+3. Install the packages for that mode in your devDependencies:
+
+| `typescript.reactDocgen`    | Packages to install                                                                     |
+| --------------------------- | --------------------------------------------------------------------------------------- |
+| `'react-docgen'` (default)  | `react-docgen`                                                                          |
+| `'react-docgen-typescript'` | `@joshwooding/vite-plugin-react-docgen-typescript@^0.7.0` and `react-docgen-typescript` |
+
+When a docgen package is missing, Storybook stops and prints the install command. To run without docgen instead, set `typescript.reactDocgen: false`.
+
+Projects on TypeScript 7.0 cannot use server-side docgen. Projects on TypeScript 7.1 or newer can. See [TypeScript 7](../../configure/integration/typescript.mdx#typescript-7).
+
+</Callout>
 
 ## FAQ
 
@@ -204,8 +231,8 @@ npx storybook automigrate react-vite-to-tanstack-react
 This automigration tool performs the following actions:
 
 1. Updates `package.json` files to replace `@storybook/react-vite` with `@storybook/tanstack-react`.
-2. Updates `.storybook/main.js|ts` to change the framework property (works with both regular and CSF factories `defineMain` configs).
-3. Scans and updates import statements that reference `@storybook/react-vite` in your story files and Storybook configuration files (including `@storybook/react-vite/node` used by CSF factories).
+2. Updates `.storybook/main.js|ts` to change the framework property (works with both regular and CSF 4 `defineMain` configs).
+3. Scans and updates import statements that reference `@storybook/react-vite` in your story files and Storybook configuration files (including `@storybook/react-vite/node` used by CSF 4).
 4. Detects manual TanStack Router decorators in `.storybook/preview.*`, the rest of `.storybook/`, and any `*.stories.*` file. When one is found, the CLI offers to copy a ready-to-paste AI prompt to your clipboard that walks an AI assistant through removing the now-redundant decorator.
 
 <Callout variant="info">
@@ -300,9 +327,23 @@ When `route` is supplied as a plain object, it may also include TanStack route o
 
 #### `context`
 
-Type: `Record<string, unknown>`
+Type: `Record<string, unknown> | (({ storyContext }) => Record<string, unknown>)`
 
-Router context values injected into the story router.
+Router context values injected into the story router. Accepts a static object, or a factory function that receives the story context. The factory runs before the router's initial load and outside React rendering, so its values are available to route [`loader`](https://tanstack.com/router/latest/docs/api/router/RouteOptionsType#loader-method) and [`beforeLoad`](https://tanstack.com/router/latest/docs/api/router/RouteOptionsType#beforeload-method):
+
+```ts
+parameters: {
+  tanstack: {
+    router: {
+      context: ({ storyContext }) => ({
+        queryClient: storyContext.loaded.queryClient,
+      }),
+    },
+  },
+}
+```
+
+Because the factory cannot call React hooks, use [`useRouterContext`](#useroutercontext) when the value can only be read from a React provider rendered around the story.
 
 #### `params`
 
@@ -338,18 +379,25 @@ Per-route overrides keyed by route ID, applied to the story's route and root rou
 
 Type: `({ storyContext }) => RouterContext`
 
-Dynamically computes the router context from the story context. Use this when the router context depends on values that are already available in the story (for example, a `QueryClient` that is loaded by a story loader).
+Computes the router context during rendering, as a React hook. Use this when the value can only be read from a React provider rendered around the story (for example, a `QueryClient` obtained from `useQueryClient()`):
 
 ```ts
 parameters: {
   tanstack: {
     router: {
-      useRouterContext: ({ storyContext }) => ({
-        queryClient: storyContext.loaded.queryClient,
+      useRouterContext: () => ({
+        queryClient: useQueryClient(),
       }),
     },
   },
 }
 ```
 
-This is an alternative to [`context`](#context) for cases where the router context needs a React context provider (e.g., TanStack Query's `QueryClientProvider`) that must be rendered in the story before the context value can be accessed.
+<Callout variant="info">
+  Because this is a hook, it runs during rendering — after the router's initial load has already
+  completed. Its values reach rendered components, but not the initial
+  [`loader`](https://tanstack.com/router/latest/docs/api/router/RouteOptionsType#loader-method) or
+  [`beforeLoad`](https://tanstack.com/router/latest/docs/api/router/RouteOptionsType#beforeload-method).
+  When a route loader reads a value from router context, supply it through the [`context`](#context)
+  factory instead, which runs before the initial load.
+</Callout>

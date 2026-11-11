@@ -1,0 +1,7 @@
+{
+  "//": "Read only by oxc-resolver in resolve-component.test.ts, to prove `paths` aliases resolve. Not part of any build; the package tsconfig excludes this directory.",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": { "@ui/*": ["./aliased/*"] }
+  }
+}

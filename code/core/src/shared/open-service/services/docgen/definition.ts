@@ -4,6 +4,7 @@ import * as v from 'valibot';
 
 import { defineService } from 'storybook/open-service';
 import type { ServiceInstanceOf } from '../../types.ts';
+import { readComponent } from '../component-state-key.ts';
 import type { DocgenPayload } from './types.ts';
 import { docgenQueryStaticPath } from './paths.ts';
 
@@ -74,32 +75,33 @@ const docgenOutputSchema = v.optional(docgenPayloadSchema);
  * here — consumers layer those in from their own sources (the docs blocks resolve the prepared
  * meta/story locally; the manager Controls panel reads them from the `STORY_PREPARED` channel).
  *
- * The query is a thin synchronous read of `state.components[id]` — it returns undefined when
- * nothing has been extracted yet rather than throwing, matching the open-service convention for
- * sync reads. The real work — story index lookup, provider invocation, error handling — lives in
+ * The query is a thin synchronous read of one entry in `state.components` — it returns undefined
+ * when nothing has been extracted yet rather than throwing, matching the open-service convention
+ * for sync reads. The real work — story index lookup, provider invocation, error handling — lives in
  * the `extractDocgen` command, whose body is supplied at registration time because it needs to
  * close over the server-only story index and the composed `experimental_docgenProvider` chain.
- * The query's `load` hook calls `extractDocgen`, so `getDocgen.loaded()` is the awaitable form and
- * surfaces extraction errors. `getDocgenForAllComponents` delegates to the `extractAllDocgen`
+ * The query's `load` hook calls `extractDocgen`, so `docgen.loaded()` is the awaitable form and
+ * surfaces extraction errors. `docgenForAllComponents` delegates to the `extractAllDocgen`
  * command, whose handler is supplied at registration because it needs the story index.
  */
 export const docgenServiceDef = defineService({
   id: 'core/docgen',
+  internal: true,
   description:
     'Component documentation (name, description, props, JSDoc tags) keyed by component id.',
   initialState: { components: {} } as DocgenServiceState,
   queries: {
-    getDocgen: {
+    docgen: {
       description: 'Returns the docgen payload for one component id, or undefined when not loaded.',
       input: docgenInputSchema,
       output: docgenOutputSchema,
-      handler: (input, ctx) => ctx.self.state.components[input.id],
+      handler: (input, ctx) => readComponent(ctx.self.state.components, input.id),
       load: async (input, ctx) => {
         await ctx.self.commands.extractDocgen(input);
       },
       staticPath: (input) => docgenQueryStaticPath(input.id),
     },
-    getDocgenForAllComponents: {
+    docgenForAllComponents: {
       description: 'Returns docgen payloads for every component in the story index.',
       input: v.void(),
       output: v.record(v.string(), docgenPayloadSchema),

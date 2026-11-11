@@ -7,7 +7,7 @@ import {
 } from 'storybook/internal/components';
 
 import { addons, types, useChannel, useParameter } from 'storybook/manager-api';
-import { ignoreSsrWarning, styled, useTheme } from 'storybook/theming';
+import { ignoreSsrWarning, styled, useTheme } from 'storybook/theming/emotion';
 
 import {
   ADDON_ID,
@@ -19,6 +19,7 @@ import {
 } from 'storybook/internal/docs-tools';
 import type { StoryId } from 'storybook/internal/types';
 import type { SourceParameters } from './blocks/blocks';
+import { SnippetWarning } from './blocks/components/SnippetWarning';
 import { Source } from './blocks/components/Source';
 
 /** Payload emitted on the `SNIPPET_RENDERED` channel event (see `emitTransformCode`). */
@@ -27,6 +28,7 @@ type SnippetRenderedEvent = {
   source?: string;
   format?: SyntaxHighlighterFormatTypes;
   language?: SupportedLanguage;
+  warning?: string;
 };
 
 const CodePanel = ({
@@ -47,10 +49,12 @@ const CodePanel = ({
     source: string | undefined;
     format: SyntaxHighlighterFormatTypes | undefined;
     language: SupportedLanguage | undefined;
+    warning: string | undefined;
   }>({
     source: lastEventMatchesCurrentStory ? lastEvent?.source : undefined,
-    format: lastEventMatchesCurrentStory ? lastEvent?.format : undefined,
+    format: lastEventMatchesCurrentStory ? (lastEvent?.format ?? undefined) : undefined,
     language: lastEventMatchesCurrentStory ? lastEvent?.language : undefined,
+    warning: lastEventMatchesCurrentStory ? lastEvent?.warning : undefined,
   });
 
   const parameter = useParameter(PARAM_KEY, {
@@ -62,13 +66,14 @@ const CodePanel = ({
     setSourceCode({
       source: undefined,
       format: undefined,
+      warning: undefined,
       language: undefined,
     });
   }, [currentStoryId]);
 
   useChannel(
     {
-      [SNIPPET_RENDERED]: ({ id, source, format, language }) => {
+      [SNIPPET_RENDERED]: ({ id, source, format, language, warning }) => {
         // Ignore snippets emitted for other stories: a slow extraction for the previously selected
         // story can resolve after navigation and would otherwise overwrite the current panel.
         // `useChannel` captures this handler per `deps`, so it must list `currentStoryId` to compare
@@ -76,7 +81,7 @@ const CodePanel = ({
         if (id !== undefined && id !== currentStoryId) {
           return;
         }
-        setSourceCode({ source, format, language });
+        setSourceCode({ source, format, language, warning });
       },
     },
     [currentStoryId]
@@ -90,8 +95,12 @@ const CodePanel = ({
     parameter.source?.code ||
     codeSnippet.source ||
     (awaitingServiceSnippet ? '' : parameter.source?.originalSource);
+  // The warning describes the emitted snippet, so a `docs.source.code` override retires it.
+  const warning = parameter.source?.code ? undefined : codeSnippet.warning;
 
-  const language = parameter.source?.language ?? codeSnippet.language;
+  const language =
+    parameter.source?.language ??
+    (!parameter.source?.code && codeSnippet.source ? codeSnippet.language : undefined);
 
   return (
     <AddonPanel active={!!active}>
@@ -103,6 +112,7 @@ const CodePanel = ({
           format={codeSnippet.format}
           dark={isDark}
         />
+        <PositionedSnippetWarning warning={warning} />
       </SourceStyles>
     </AddonPanel>
   );
@@ -113,20 +123,7 @@ addons.register(ADDON_ID, (api) => {
     title: 'Code',
     type: types.PANEL,
     paramKey: PARAM_KEY,
-    /**
-     * This code panel can be enabled by adding this parameter:
-     *
-     * @example
-     *
-     * ```ts
-     *  parameters: {
-     *    docs: {
-     *      codePanel: true,
-     *    },
-     *  },
-     * ```
-     */
-    disabled: (parameters) => !parameters?.docs?.codePanel,
+    disabled: (parameters) => parameters?.docs?.codePanel === false,
     match: ({ viewMode }) => viewMode === 'story',
     render: ({ active }) => {
       const channel = api.getChannel();
@@ -147,11 +144,18 @@ addons.register(ADDON_ID, (api) => {
   });
 });
 
-const SourceStyles = styled.div(() => ({
+const SourceStyles = styled.div({
   height: '100%',
+  position: 'relative',
   [`> :first-child${ignoreSsrWarning}`]: {
     margin: 0,
     height: '100%',
     boxShadow: 'none',
   },
-}));
+});
+
+const PositionedSnippetWarning = styled(SnippetWarning)({
+  position: 'absolute',
+  top: 8,
+  right: 10,
+});

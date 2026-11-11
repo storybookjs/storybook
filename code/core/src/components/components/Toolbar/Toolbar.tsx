@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import React, { useRef } from 'react';
 
-import { useToolbar } from '@react-aria/toolbar';
+import { useToolbar } from 'react-aria/useToolbar';
 
 import { Bar, type BarProps } from '../Bar/Bar.tsx';
 
@@ -10,6 +10,7 @@ export interface AbstractToolbarProps {
   children?: React.ReactNode;
   'aria-label'?: string;
   'aria-labelledby'?: string;
+  lang?: string;
 }
 
 export const AbstractToolbar: FC<AbstractToolbarProps> = ({

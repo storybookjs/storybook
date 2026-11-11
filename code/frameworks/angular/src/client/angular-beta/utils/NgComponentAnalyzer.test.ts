@@ -47,6 +47,24 @@ describe('getComponentInputsOutputs', () => {
     });
   });
 
+  it('binds an object-form metadata input without an alias under its own name', () => {
+    @Component({
+      template: '',
+      inputs: [{ name: 'plain' }, { name: 'aliased', alias: 'aliasedName' }],
+      standalone: false,
+    })
+    class FooComponent {
+      public plain?: string;
+
+      public aliased?: string;
+    }
+
+    expect(getComponentInputsOutputs(FooComponent).inputs).toEqual([
+      { propName: 'plain', templateName: 'plain' },
+      { propName: 'aliased', templateName: 'aliasedName' },
+    ]);
+  });
+
   /* Commented out until we figure out how to handle the removal of ComponentFactoryResolver in Angular 22
   See https://github.com/angular/angular/releases/tag/v22.0.0-next.7
 
@@ -227,9 +245,9 @@ describe('getComponentInputsOutputs (signal-based I/O)', () => {
   it('detects @Input / @Output (decorator path, unchanged)', () => {
     @Component({ template: '', standalone: false })
     class FooComponent {
-      @Input() public input: string;
+      @Input() public input?: string;
 
-      @Input('inputPropertyName') public inputWithBindingPropertyName: string;
+      @Input('inputPropertyName') public inputWithBindingPropertyName?: string;
 
       @Output() public output = new EventEmitter<Event>();
 

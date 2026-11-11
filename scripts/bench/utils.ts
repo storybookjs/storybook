@@ -50,7 +50,7 @@ export async function getPreviewPage(page: Page) {
    */
   for (let i = 0; i < 10; i++) {
     await page.waitForFunction(() => {
-      return document.querySelector('iframe')?.contentDocument.readyState === 'complete';
+      return document.querySelector('iframe')?.contentDocument?.readyState === 'complete';
     });
 
     const previewPage = page.frame({ url: /iframe.html/ })?.page();

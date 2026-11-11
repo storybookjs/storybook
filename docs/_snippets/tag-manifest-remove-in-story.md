@@ -1,19 +1,77 @@
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
-import { MyComponent } from './MyComponent';
+```ts filename="my-component.stories.ts" renderer="angular" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
 
-export default {
+import { MyComponent } from './my-component.component';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// 👇 This story will be included in the manifest because it has the implicit 'manifest' tag
+export const Basic = meta.story();
+
+export const ForInstructionOnly = meta.story({
+  tags: ['!manifest'], // 👈 Remove the 'manifest' tag to exclude this story from the manifests
+});
+```
+
+```ts filename="my-component.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta, StoryObj } from '@storybook/angular-vite';
+
+import { MyComponent } from './my-component.component';
+
+const meta: Meta<MyComponent> = {
   component: MyComponent,
 };
 
-// 👇 This story will be included in the manifest because it has the implicit 'manifest' tag
-export const Basic = {};
+export default meta;
+type Story = StoryObj<MyComponent>;
 
-export const ForInstructionOnly = {
+// 👇 This story will be included in the manifest because it has the implicit 'manifest' tag
+export const Basic: Story = {};
+
+export const ForInstructionOnly: Story = {
   tags: ['!manifest'], // 👈 Remove the 'manifest' tag to exclude this story from the manifests
 };
 ```
 
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// 👇 This story will be included in the manifest because it has the implicit 'manifest' tag
+export const Basic = meta.story();
+
+export const ForInstructionOnly = meta.story({
+  tags: ['!manifest'], // 👈 Remove the 'manifest' tag to exclude this story from the manifests
+});
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 4"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// 👇 This story will be included in the manifest because it has the implicit 'manifest' tag
+export const Basic = meta.story();
+
+export const ForInstructionOnly = meta.story({
+  tags: ['!manifest'], // 👈 Remove the 'manifest' tag to exclude this story from the manifests
+});
+```
+
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -35,10 +93,26 @@ export const ForInstructionOnly = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import { MyComponent } from './MyComponent';
+
+export default {
+  component: MyComponent,
+};
+
+// 👇 This story will be included in the manifest because it has the implicit 'manifest' tag
+export const Basic = {};
+
+export const ForInstructionOnly = {
+  tags: ['!manifest'], // 👈 Remove the 'manifest' tag to exclude this story from the manifests
+};
+```
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
-import { MyComponent } from './MyComponent';
+import MyComponent from './MyComponent.vue';
 
 const meta = preview.meta({
   component: MyComponent,
@@ -52,12 +126,10 @@ export const ForInstructionOnly = meta.story({
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 4"
 import preview from '../.storybook/preview';
 
-import { MyComponent } from './MyComponent';
+import MyComponent from './MyComponent.vue';
 
 const meta = preview.meta({
   component: MyComponent,
@@ -69,4 +141,42 @@ export const Basic = meta.story();
 export const ForInstructionOnly = meta.story({
   tags: ['!manifest'], // 👈 Remove the 'manifest' tag to exclude this story from the manifests
 });
+```
+
+```ts filename="MyComponent.stories.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
+
+import MyComponent from './MyComponent.vue';
+
+const meta = {
+  component: MyComponent,
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+// 👇 This story will be included in the manifest because it has the implicit 'manifest' tag
+export const Basic: Story = {};
+
+export const ForInstructionOnly: Story = {
+  tags: ['!manifest'], // 👈 Remove the 'manifest' tag to exclude this story from the manifests
+};
+```
+
+```js filename="MyComponent.stories.js" renderer="vue" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import MyComponent from './MyComponent.vue';
+
+export default {
+  component: MyComponent,
+};
+
+// 👇 This story will be included in the manifest because it has the implicit 'manifest' tag
+export const Basic = {};
+
+export const ForInstructionOnly = {
+  tags: ['!manifest'], // 👈 Remove the 'manifest' tag to exclude this story from the manifests
+};
 ```

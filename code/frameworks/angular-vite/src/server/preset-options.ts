@@ -6,7 +6,8 @@ import type { StandaloneOptions } from '../builders/utils/standalone-options.ts'
 export type PresetOptions = CoreOptions & {
   /* Allow to get the options of a targeted "browser builder"  */
   angularBrowserTarget?: string | null;
-  /* Defined set of options. These will take over priority from angularBrowserTarget options  */
+  /* Options of the Storybook target, already merged over the angularBrowserTarget options by
+   * the builders before Storybook runs */
   angularBuilderOptions?: StandaloneOptions['angularBuilderOptions'];
   /* Angular context from builder */
   angularBuilderContext?: BuilderContext | null;

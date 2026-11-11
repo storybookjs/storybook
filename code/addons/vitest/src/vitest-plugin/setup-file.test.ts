@@ -127,7 +127,6 @@ describe('resetMousePositionBeforeTests', () => {
     vi.clearAllMocks();
     vi.resetModules();
     vi.doUnmock('vitest/browser');
-    vi.doUnmock('@vitest/browser/context');
   });
 
   it('should reset the mouse position when the browser command exists', async () => {

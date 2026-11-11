@@ -1,0 +1,5 @@
+html`<lit-template-shapes
+  label=${'Alpha'}
+  count=${2}
+  ?disabled=${true}
+></lit-template-shapes>`

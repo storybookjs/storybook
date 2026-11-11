@@ -1,0 +1,1 @@
+html`<lit-template-shapes .items=${[{ name: 'Alpha' }]}></lit-template-shapes>`

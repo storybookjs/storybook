@@ -1,0 +1,5 @@
+# Mirrors the .md/.html text loaders from the esbuild bundler and the package
+# vitest configs so Bun can run scripts that import the instruction files.
+[loader]
+".md" = "text"
+".html" = "text"

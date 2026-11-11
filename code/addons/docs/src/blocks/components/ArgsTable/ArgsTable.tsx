@@ -3,13 +3,15 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { once } from 'storybook/internal/client-logger';
 import { Button, Link, ResetWrapper } from 'storybook/internal/components';
-import { includeConditionalArg } from 'storybook/internal/csf';
 
 import { DocumentIcon, UndoIcon } from '@storybook/icons';
 
 import { pickBy } from 'es-toolkit/object';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
+// Bundled, rather than imported from `storybook/internal/csf`, which also pulls in the preview
+// annotations and storybook/test: the manager renders this table in the Controls panel.
+import { includeConditionalArg } from '../../../../../../core/src/csf/includeConditionalArg.ts';
 import { EmptyBlock } from '../EmptyBlock';
 import { ArgRow } from './ArgRow';
 import { Empty } from './Empty';
@@ -38,7 +40,7 @@ export const TableWrapper = styled.table<{
 
     fontSize: theme.typography.size.s2 - 1,
     lineHeight: '19px',
-    textAlign: 'left',
+    textAlign: 'start',
     width: '100%',
 
     // Margin collapse
@@ -51,7 +53,7 @@ export const TableWrapper = styled.table<{
     },
 
     'th:first-of-type, td:first-of-type': {
-      paddingLeft: 20,
+      paddingInlineStart: 20,
     },
 
     'th:nth-of-type(2), td:nth-of-type(2)': {
@@ -73,7 +75,7 @@ export const TableWrapper = styled.table<{
     },
 
     'th:last-of-type, td:last-of-type': {
-      paddingRight: 20,
+      paddingInlineEnd: 20,
       ...(compact
         ? null
         : {
@@ -84,10 +86,11 @@ export const TableWrapper = styled.table<{
 
     th: {
       color: theme.textMutedColor,
+      // Browsers center a th that inherits the initial text-align (`start`).
+      textAlign: 'start',
       paddingTop: 10,
       paddingBottom: 10,
-      paddingLeft: 15,
-      paddingRight: 15,
+      paddingInline: 15,
     },
 
     td: {
@@ -95,12 +98,11 @@ export const TableWrapper = styled.table<{
       paddingBottom: '10px',
 
       '&:not(:first-of-type)': {
-        paddingLeft: 15,
-        paddingRight: 15,
+        paddingInline: 15,
       },
 
       '&:last-of-type': {
-        paddingRight: 20,
+        paddingInlineEnd: 20,
       },
     },
 
@@ -147,16 +149,16 @@ export const TableWrapper = styled.table<{
 
             // Thank you, Safari, for making me write code like this.
             '> tr:first-of-type > td:first-of-type': {
-              borderTopLeftRadius: theme.appBorderRadius,
+              borderStartStartRadius: theme.appBorderRadius,
             },
             '> tr:first-of-type > td:last-of-type': {
-              borderTopRightRadius: theme.appBorderRadius,
+              borderStartEndRadius: theme.appBorderRadius,
             },
             '> tr:last-of-type > td:first-of-type': {
-              borderBottomLeftRadius: theme.appBorderRadius,
+              borderEndStartRadius: theme.appBorderRadius,
             },
             '> tr:last-of-type > td:last-of-type': {
-              borderBottomRightRadius: theme.appBorderRadius,
+              borderEndEndRadius: theme.appBorderRadius,
             },
           }),
     },
@@ -192,6 +194,7 @@ const StyledButton = styled(Button)({
 export enum ArgsTableError {
   NO_COMPONENT = 'No component found.',
   ARGS_UNSUPPORTED = 'Args unsupported. See Args documentation for your framework.',
+  NOT_A_STORY_COMPONENT = 'No docs found for this component on this page. Import the story file whose meta.component is this component, or pass `of={ComponentStories}`.',
 }
 
 export type SortType = 'alpha' | 'requiredFirst' | 'none';
@@ -217,6 +220,7 @@ export interface ArgsTableOptionProps {
   sort?: SortType;
   storyId?: string;
   controlsId?: string;
+  docsLang?: string;
 }
 interface ArgsTableDataProps {
   rows: ArgTypes;
@@ -342,6 +346,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
     isLoading,
     storyId,
     controlsId,
+    docsLang,
   } = props;
 
   const { rows, args, globals } =
@@ -431,6 +436,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
               onClick={handleResetClick}
               disabled={isResetting}
               ariaLabel={isResetting ? 'Resetting controls...' : 'Reset controls'}
+              lang="en"
             >
               <UndoIcon />
             </StyledButton>
@@ -440,6 +446,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
         <TableWrapper
           {...{ compact, inAddonPanel, inTabPanel }}
           className="docblock-argstable sb-unstyled"
+          lang="en"
         >
           <thead className="docblock-argstable-head">
             <tr>
@@ -465,7 +472,13 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
           </thead>
           <tbody className="docblock-argstable-body">
             {groups.ungrouped.map((row) => (
-              <ArgRow key={row.key} row={row} arg={args && args[row.key]} {...common} />
+              <ArgRow
+                key={row.key}
+                row={row}
+                arg={args && args[row.key]}
+                docsLang={docsLang}
+                {...common}
+              />
             ))}
 
             {Object.entries(groups.ungroupedSubsections).map(([subcategory, subsection]) => (

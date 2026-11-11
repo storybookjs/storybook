@@ -1,7 +1,7 @@
 ---
 title: typescript
 sidebar:
-  order: 22
+  order: 24
 ---
 
 Parent: [main.js|ts configuration](./main-config.mdx)
@@ -14,6 +14,7 @@ Type:
 {
   check?: boolean;
   checkOptions?: CheckOptions;
+  docgenSpecifier?: string;
   reactDocgen?: 'react-docgen' | 'react-docgen-typescript' | false;
   reactDocgenTypescriptOptions?: ReactDocgenTypescriptOptions;
   skipCompiler?: boolean;
@@ -22,7 +23,20 @@ Type:
 
 </If>
 
-<If renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'svelte', 'preact', 'qwik','solid' ]}>
+<If renderer="angular">
+
+```ts
+{
+  check?: boolean;
+  checkOptions?: CheckOptions;
+  docgenSpecifier?: string;
+  skipCompiler?: boolean;
+}
+```
+
+</If>
+
+<If renderer={['vue', 'web-components', 'ember', 'html', 'svelte', 'preact', 'qwik','solid' ]}>
 
 ```ts
 {
@@ -52,26 +66,66 @@ Options to pass to `fork-ts-checker-webpack-plugin`, if [enabled](#check). See [
 
 <CodeSnippets path="main-config-typescript-check-options.md" />
 
+<If renderer={['react', 'angular']}>
+
+## `docgenSpecifier`
+
+Type: `string`
+
+Default: `'typescript'`
+
+The TypeScript package that Storybook loads to read your component types for Controls and the Docs args table. Storybook resolves it as if your main config imported it, so the value is a package name, a `file:` URL, or a path to the package's folder, absolute or relative to the config directory. Do not include a subpath such as `/sync`. For Angular, `@storybook/angular-vite` reads this option.
+
+Storybook reads the package's version and uses the API that version has: the compiler API of TypeScript 5.9 and 6, or the API of TypeScript 7.1 and newer, which is faster. TypeScript 7.0 has neither.
+
+Set this option when the `typescript` package must stay on TypeScript 6, for example because Angular's compiler or `typescript-eslint` requires it, and you install TypeScript 7.1 or newer under another name. The [TypeScript 7 announcement](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/) recommends this side-by-side setup in `package.json`:
+
+```json
+{
+  "devDependencies": {
+    "@typescript/native": "npm:typescript@^7.1",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
+  }
+}
+```
+
+<CodeSnippets path="main-config-typescript-docgen-specifier.md" />
+
+</If>
+
 <If renderer="react">
 
 ## `reactDocgen`
+
+(⛔️ **Deprecated**)
 
 Type: `'react-docgen' | 'react-docgen-typescript' | false`
 
 Default:
 
 - `false`: if `@storybook/react` is not installed
-- `'react-docgen'`: if `@storybook/react` is installed
+- `'react-docgen'`: if `@storybook/react` is installed and [`docgenServer`](./main-config-features.mdx#docgenserver) is off
 
-Configures which library, if any, Storybook uses to parse React components, [react-docgen](https://github.com/reactjs/react-docgen) or [react-docgen-typescript](https://github.com/styleguidist/react-docgen-typescript). Set to `false` to disable parsing React components. `react-docgen-typescript` invokes the TypeScript compiler, which makes it slow but generally accurate. `react-docgen` performs its own analysis, which is much faster but incomplete.
+Configures which library, if any, Storybook uses to parse React components on the legacy builder-based path: [react-docgen](https://github.com/reactjs/react-docgen) or [react-docgen-typescript](https://github.com/styleguidist/react-docgen-typescript). Set to `false` to disable parsing React components. `react-docgen-typescript` invokes the TypeScript compiler, which makes it slow but generally accurate. `react-docgen` performs its own analysis, which is much faster but incomplete.
+
+Builder docgen is deprecated and will be removed in Storybook 12.
+This option only applies when [`docgenServer`](./main-config-features.mdx#docgenserver) is off, and Storybook warns when it runs.
+Storybook 11 enables server-side docgen by default.
+
+Storybook does not install the libraries for builder docgen. See the Component documentation section of your framework, for example [React & Vite](../../get-started/frameworks/react-vite.mdx#component-documentation), for the packages to install.
 
 <CodeSnippets path="main-config-typescript-react-docgen.md" />
 
 ## `reactDocgenTypescriptOptions`
 
+(⛔️ **Deprecated**)
+
 Type: `ReactDocgenTypescriptOptions`
 
-Configures the options to pass to `react-docgen-typescript-plugin` if `react-docgen-typescript` is enabled. See docs for available options [for Webpack projects](https://github.com/hipstersmoothie/react-docgen-typescript-plugin) or [for Vite projects](https://github.com/joshwooding/vite-plugin-react-docgen-typescript).
+Configures the options to pass to `react-docgen-typescript-plugin` if `react-docgen-typescript` is enabled and [`docgenServer`](./main-config-features.mdx#docgenserver) is off. See docs for available options [for Webpack projects](https://github.com/hipstersmoothie/react-docgen-typescript-plugin) or [for Vite projects](https://github.com/joshwooding/vite-plugin-react-docgen-typescript).
+
+Server-side docgen does not translate these options.
+Like [`reactDocgen`](#reactdocgen), this option is deprecated and will be removed in Storybook 12.
 
 <CodeSnippets path="main-config-typescript-react-docgen-typescript-options.md" />
 

@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "lit-property-only.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "",
+          "name": "LitPropertyOnly",
+          "members": [
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Items'",
+              "description": "Visible label for the list.",
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "items",
+              "type": {
+                "text": "Item[]"
+              },
+              "default": "[]",
+              "description": "Items rendered by the list."
+            },
+            {
+              "kind": "field",
+              "name": "config",
+              "type": {
+                "text": "PanelConfig"
+              },
+              "default": "{ dense: false, theme: 'light' }",
+              "description": "Rendering options for the list."
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Items'",
+              "description": "Visible label for the list.",
+              "fieldName": "label"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "lit-property-only",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "LitPropertyOnly",
+          "declaration": {
+            "name": "LitPropertyOnly",
+            "module": "lit-property-only.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "lit-property-only",
+          "declaration": {
+            "name": "LitPropertyOnly",
+            "module": "lit-property-only.ts"
+          }
+        }
+      ]
+    }
+  ]
+}

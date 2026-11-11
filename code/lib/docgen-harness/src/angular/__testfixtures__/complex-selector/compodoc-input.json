@@ -1,0 +1,87 @@
+{
+  "pipes": [],
+  "interfaces": [],
+  "injectables": [],
+  "guards": [],
+  "interceptors": [],
+  "classes": [],
+  "directives": [],
+  "components": [
+    {
+      "name": "ComplexSelectorComponent",
+      "id": "component-ComplexSelectorComponent-260b1794ac77a84b6b28eeb3fb7556027fee759d38af2efefa3ffdf647d02ed32f9173bec3e05c06eaa6a6d2d2f15ac373da8443e93a0edf15f5d8f13887aaa0",
+      "file": "complex-selector.component.ts",
+      "encapsulation": [],
+      "entryComponents": [],
+      "inputs": [],
+      "outputs": [],
+      "providers": [],
+      "selector": "button[sb-harness-action], a[sb-harness-action]",
+      "styleUrls": [],
+      "styles": [],
+      "template": "<span class=\"chip\">{{ emphasis }}</span>",
+      "templateUrl": [],
+      "templateVariables": [],
+      "viewProviders": [],
+      "hostDirectives": [],
+      "inputsClass": [
+        {
+          "coverageIgnore": false,
+          "name": "emphasis",
+          "defaultValue": "false",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 8,
+          "type": "boolean",
+          "decorators": []
+        }
+      ],
+      "outputsClass": [],
+      "propertiesClass": [],
+      "methodsClass": [],
+      "coverageIgnore": false,
+      "deprecated": false,
+      "deprecationMessage": "",
+      "hostBindings": [],
+      "hostListeners": [],
+      "standalone": false,
+      "imports": [],
+      "description": "",
+      "rawdescription": "\n",
+      "type": "component",
+      "sourceCode": "import { Component, Input } from '@angular/core';\n\n@Component({\n  selector: 'button[sb-harness-action], a[sb-harness-action]',\n  template: '<span class=\"chip\">{{ emphasis }}</span>',\n})\nexport class ComplexSelectorComponent {\n  @Input() emphasis = false;\n}\n",
+      "assetsDirs": [],
+      "styleUrlsData": "",
+      "stylesData": "",
+      "extends": [],
+      "relationships": {
+        "incoming": [],
+        "outgoing": []
+      }
+    }
+  ],
+  "modules": [],
+  "miscellaneous": [],
+  "routes": {
+    "name": "<root>",
+    "kind": "module",
+    "children": []
+  },
+  "coverage": {
+    "count": 0,
+    "status": "low",
+    "files": [
+      {
+        "filePath": "complex-selector.component.ts",
+        "type": "component",
+        "linktype": "component",
+        "name": "ComplexSelectorComponent",
+        "coveragePercent": 0,
+        "coverageCount": "0/2",
+        "status": "low"
+      }
+    ]
+  }
+}

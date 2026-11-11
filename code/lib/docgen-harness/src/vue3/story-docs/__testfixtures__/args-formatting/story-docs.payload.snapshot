@@ -1,0 +1,59 @@
+{
+  "id": "args-formatting",
+  "name": "ArgsFormattingButton",
+  "path": "__PATH__",
+  "stories": {
+    "forms-args-formatting--primary": {
+      "description": undefined,
+      "id": "forms-args-formatting--primary",
+      "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import ArgsFormattingButton from './ArgsFormattingButton.vue';
+
+const items = ['one', 'two'];
+
+const options = { tone: 'neutral', compact: true };
+
+const quotationLabel = 'She said "hi" and it\'s fine';
+</script>
+
+<template>
+  <ArgsFormattingButton :count="3" :disabled="false" enabled :items="items" label="Formatted" :options="options" :quotationLabel="quotationLabel" />
+</template>",
+      "summary": undefined,
+      "template": "<script lang="ts" setup>
+import ArgsFormattingButton from './ArgsFormattingButton.vue';
+
+const items = ⟦value items in="script"⟫['one', 'two']⟧;
+
+const options = ⟦value options in="script"⟫{ tone: 'neutral', compact: true }⟧;
+
+const quotationLabel = ⟦value quotationLabel in="script"⟫'She said "hi" and it\'s fine'⟧;
+</script>
+
+<template>
+  <ArgsFormattingButton⟦attr count ~" "⟫ :count="3"⟧⟦attr disabled ~" "⟫ :disabled="false"⟧⟦attr enabled ~" "⟫ enabled⟧ :items="items"⟦attr label ~" "⟫ label="Formatted"⟧ :options="options" :quotationLabel="quotationLabel"⟦props * except=["label","quotationLabel","enabled","disabled","count","options","items"] ~" "⟫⟧ />
+</template>",
+    },
+    "forms-args-formatting--unset-arg": {
+      "description": undefined,
+      "id": "forms-args-formatting--unset-arg",
+      "name": "Unset Arg",
+      "snippet": "<script lang="ts" setup>
+import ArgsFormattingButton from './ArgsFormattingButton.vue';
+</script>
+
+<template>
+  <ArgsFormattingButton :count="3" />
+</template>",
+      "summary": undefined,
+      "template": "<script lang="ts" setup>
+import ArgsFormattingButton from './ArgsFormattingButton.vue';
+</script>
+
+<template>
+  <ArgsFormattingButton⟦attr count ~" "⟫ :count="3"⟧⟦props * except=["count"] ~" "⟫⟧ />
+</template>",
+    },
+  },
+}

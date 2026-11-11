@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "lit-schema-warning.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Exercises Lit schema warning handling.",
+          "name": "LitSchemaWarning",
+          "members": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Label'",
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "count",
+              "type": {
+                "text": "number"
+              },
+              "default": "0",
+              "attribute": "count"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Label'",
+              "fieldName": "label"
+            },
+            {
+              "name": "count",
+              "type": {
+                "text": "number"
+              },
+              "default": "0",
+              "fieldName": "count"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "lit-schema-warning",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "LitSchemaWarning",
+          "declaration": {
+            "name": "LitSchemaWarning",
+            "module": "lit-schema-warning.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "lit-schema-warning",
+          "declaration": {
+            "name": "LitSchemaWarning",
+            "module": "lit-schema-warning.ts"
+          }
+        }
+      ]
+    }
+  ]
+}

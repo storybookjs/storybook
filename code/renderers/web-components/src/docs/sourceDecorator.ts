@@ -1,10 +1,15 @@
 import { SourceType } from 'storybook/internal/docs-tools';
-import type { ArgsStoryFn, PartialStoryFn, StoryContext } from 'storybook/internal/types';
+import type {
+  ArgsStoryFn,
+  PartialStoryFn,
+  StoryContext,
+  StoryContextForRender,
+} from 'storybook/internal/types';
 
 import { render } from 'lit';
 import { emitTransformCode, useEffect } from 'storybook/preview-api';
 
-import type { WebComponentsRenderer } from '../types';
+import type { WebComponentsRenderer } from '../types.ts';
 
 // Taken from https://github.com/lit/lit/blob/main/packages/lit-html/src/test/test-utils/strip-markers.ts
 const LIT_EXPRESSION_COMMENTS = /<!--\?lit\$[0-9]+\$-->|<!--\??-->/g;
@@ -23,16 +28,26 @@ function skipSourceRender(context: StoryContext<WebComponentsRenderer>) {
   return !isArgsStory || sourceParams?.code || sourceParams?.type === SourceType.CODE;
 }
 
+export function renderStorySource(storyResult: WebComponentsRenderer['storyResult']): string {
+  const container = window.document.createElement('div');
+  if (storyResult instanceof DocumentFragment) {
+    render(storyResult.cloneNode(true), container);
+  } else {
+    render(storyResult, container);
+  }
+  return container.innerHTML.replace(LIT_EXPRESSION_COMMENTS, '');
+}
+
 export function sourceDecorator(
   storyFn: PartialStoryFn<WebComponentsRenderer>,
-  context: StoryContext<WebComponentsRenderer>
+  context: StoryContextForRender<WebComponentsRenderer>
 ): WebComponentsRenderer['storyResult'] {
   const story = storyFn();
   const renderedForSource = context?.parameters.docs?.source?.excludeDecorators
     ? (context.originalStoryFn as ArgsStoryFn<WebComponentsRenderer>)(context.args, context)
     : story;
 
-  let source: string;
+  let source: string | undefined;
 
   useEffect(() => {
     if (source) {
@@ -41,13 +56,7 @@ export function sourceDecorator(
   });
 
   if (!skipSourceRender(context)) {
-    const container = window.document.createElement('div');
-    if (renderedForSource instanceof DocumentFragment) {
-      render(renderedForSource.cloneNode(true), container);
-    } else {
-      render(renderedForSource, container);
-    }
-    source = container.innerHTML.replace(LIT_EXPRESSION_COMMENTS, '');
+    source = renderStorySource(renderedForSource);
   }
 
   return story;

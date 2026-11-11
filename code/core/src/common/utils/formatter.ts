@@ -1,3 +1,7 @@
+import { createRequire } from 'node:module';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
 // Prettier interface definition
 // Note: We want to avoid importing prettier directly to prevent bundling its type import
 // because prettier is an optional peer dependency and might not be available
@@ -81,4 +85,22 @@ async function formatWithEditorConfig(filePath: string, content: string): Promis
     ...(config as any),
     filepath: filePath,
   });
+}
+
+/**
+ * Format an edit of an existing file the way the project formats it: with the Prettier the project
+ * installed and its Prettier config. Without such a config the content is returned as is, since
+ * Prettier's defaults would restyle the whole file.
+ */
+export async function formatExistingFile(filePath: string, content: string): Promise<string> {
+  try {
+    const prettierPath = createRequire(resolve(filePath)).resolve('prettier');
+    const module = await import(pathToFileURL(prettierPath).href);
+    // Node exposes a CommonJS Prettier, such as prettier@3's index.cjs, only as the default export.
+    const prettier: Prettier = 'resolveConfig' in module ? module : module.default;
+    const config = await prettier.resolveConfig(filePath);
+    return config ? await prettier.format(content, { ...config, filepath: filePath }) : content;
+  } catch {
+    return content;
+  }
 }

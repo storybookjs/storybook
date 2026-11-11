@@ -175,7 +175,7 @@ describe('framework-preset-angular-cli', () => {
     it('should use browser target tsConfig when no other tsConfig is available', async () => {
       const mockTarget = { project: 'test-project', target: 'build' };
       mockedTargetFromTargetString.mockReturnValue(mockTarget);
-      mockedFindUp.mockReturnValue(null);
+      mockedFindUp.mockReturnValue(undefined);
 
       const browserTargetOptions = { tsConfig: '/browser/tsconfig.json' };
       vi.mocked(mockBuilderContext.getTargetOptions).mockResolvedValue(browserTargetOptions);

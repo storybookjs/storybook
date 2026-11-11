@@ -1,0 +1,176 @@
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 4"
+import { defineMain } from '@storybook/react-vite/node';
+
+export default defineMain({
+  framework: '@storybook/react-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    docgenServer: false,
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 4"
+import { defineMain } from '@storybook/react-vite/node';
+
+export default defineMain({
+  framework: '@storybook/react-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    docgenServer: false,
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { StorybookConfig } from '@storybook/react-vite';
+
+const config: StorybookConfig = {
+  framework: '@storybook/react-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    docgenServer: false,
+  },
+};
+
+export default config;
+```
+
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+export default {
+  framework: '@storybook/react-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    docgenServer: false,
+  },
+};
+```
+
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF 4"
+import { defineMain } from '@storybook/angular-vite/node';
+
+export default defineMain({
+  framework: '@storybook/angular-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    docgenServer: false,
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { StorybookConfig } from '@storybook/angular-vite';
+
+const config: StorybookConfig = {
+  framework: '@storybook/angular-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    docgenServer: false,
+  },
+};
+
+export default config;
+```
+
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF 4"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    docgenServer: false,
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF 4"
+import { defineMain } from '@storybook/vue3-vite/node';
+
+export default defineMain({
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    docgenServer: false,
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="vue" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { StorybookConfig } from '@storybook/vue3-vite';
+
+const config: StorybookConfig = {
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    docgenServer: false,
+  },
+};
+
+export default config;
+```
+
+```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+export default {
+  framework: '@storybook/vue3-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    docgenServer: false,
+  },
+};
+```
+
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF 4"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+export default defineMain({
+  framework: '@storybook/web-components-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    docgenServer: false,
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
+import { defineMain } from '@storybook/web-components-vite/node';
+
+export default defineMain({
+  framework: '@storybook/web-components-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    docgenServer: false,
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+import type { StorybookConfig } from '@storybook/web-components-vite';
+
+const config: StorybookConfig = {
+  framework: '@storybook/web-components-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    docgenServer: false,
+  },
+};
+
+export default config;
+```
+
+```js filename=".storybook/main.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
+export default {
+  framework: '@storybook/web-components-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    docgenServer: false,
+  },
+};
+```

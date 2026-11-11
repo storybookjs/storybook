@@ -1,0 +1,37 @@
+{
+  "id": "slots-with-events",
+  "name": "SlotsWithEvents",
+  "path": "__PATH__",
+  "stories": {
+    "forms-slots-with-events--string-child": {
+      "description": undefined,
+      "id": "forms-slots-with-events--string-child",
+      "name": "String Child",
+      "snippet": "<script lang="ts" setup>
+import SlotsWithEvents from './SlotsWithEvents.vue';
+</script>
+
+<template>
+  <SlotsWithEvents title="Notice">
+    Body text
+    <template #leading>
+      !
+    </template>
+  </SlotsWithEvents>
+</template>",
+      "summary": undefined,
+      "template": "<script lang="ts" setup>
+import SlotsWithEvents from './SlotsWithEvents.vue';
+</script>
+
+<template>
+  <SlotsWithEvents⟦attr title ~" "⟫ title="Notice"⟧⟦props * except=["title","leading","default"] ~" "⟫⟧>
+    ⟦text default slot=true⟫Body text⟧
+    <template #leading>
+      ⟦text leading slot=true⟫!⟧
+    </template>
+  </SlotsWithEvents>
+</template>",
+    },
+  },
+}

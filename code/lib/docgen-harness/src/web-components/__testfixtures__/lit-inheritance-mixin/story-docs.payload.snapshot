@@ -1,0 +1,49 @@
+{
+  "id": "webcomponentsfixtures-lit-inheritance-mixin",
+  "name": "lit-inheritance-mixin",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsfixtures-lit-inheritance-mixin--args-default-render": {
+      "id": "webcomponentsfixtures-lit-inheritance-mixin--args-default-render",
+      "name": "Args Default Render",
+      "snippet": "<lit-inheritance-mixin base-label="Default base" mixed-active count="2"></lit-inheritance-mixin>",
+      "template": "<lit-inheritance-mixin⟦attr baseLabel name="base-label" mode="field" ~" "⟫ base-label="Default base"⟧⟦attr mixedActive name="mixed-active" mode="field" ~" "⟫ mixed-active⟧⟦attr count mode="field" ~" "⟫ count="2"⟧></lit-inheritance-mixin>",
+    },
+    "webcomponentsfixtures-lit-inheritance-mixin--dom-node": {
+      "id": "webcomponentsfixtures-lit-inheritance-mixin--dom-node",
+      "name": "Dom Node",
+      "snippet": "const DomNode = () => {
+  const el = document.createElement('lit-inheritance-mixin');
+  el.setAttribute('base-label', String('Inherited'));
+  if (true) {
+    el.setAttribute('mixed-active', '');
+  }
+  el.setAttribute('count', String(5));
+  return el;
+};",
+      "template": "const DomNode = () => {
+  const el = document.createElement('lit-inheritance-mixin');
+  el.setAttribute('base-label', String(⟦code baseLabel⟫'Inherited'⟧));
+  if (⟦code mixedActive⟫true⟧) {
+    el.setAttribute('mixed-active', '');
+  }
+  el.setAttribute('count', String(⟦code count⟫5⟧));
+  return el;
+};",
+    },
+    "webcomponentsfixtures-lit-inheritance-mixin--lit-template": {
+      "id": "webcomponentsfixtures-lit-inheritance-mixin--lit-template",
+      "name": "Lit Template",
+      "snippet": "html`<lit-inheritance-mixin
+  base-label=${'Inherited'}
+  ?mixed-active=${true}
+  count=${5}
+></lit-inheritance-mixin>`",
+      "template": "html`<lit-inheritance-mixin
+  base-label=${⟦code baseLabel⟫'Inherited'⟧}
+  ?mixed-active=${⟦code mixedActive⟫true⟧}
+  count=${⟦code count⟫5⟧}
+></lit-inheritance-mixin>`",
+    },
+  },
+}

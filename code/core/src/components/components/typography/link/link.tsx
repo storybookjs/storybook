@@ -1,12 +1,10 @@
 import type { AnchorHTMLAttributes, MouseEvent } from 'react';
 import React, { forwardRef } from 'react';
 
-import { deprecate } from 'storybook/internal/client-logger';
-
 import { ChevronRightIcon } from '@storybook/icons';
 
 import { darken } from 'polished';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 // Cmd/Ctrl/Shift/Alt + Click should trigger default browser behavior. Same applies to non-left clicks
 const LEFT_BUTTON = 0;
@@ -26,7 +24,6 @@ export interface LinkStylesProps {
   tertiary?: boolean;
   nochrome?: boolean;
   inverse?: boolean;
-  isButton?: boolean;
 }
 
 export interface LinkInnerProps {
@@ -85,6 +82,14 @@ const A = styled.a<LinkStylesProps>(
       'svg path:not([fill])': {
         fill: darken(0.1, theme.color.secondary),
       },
+    },
+
+    '&:focus-visible': {
+      outline: `2px solid ${theme.color.secondary}`,
+      outlineOffset: 2,
+      borderRadius: theme.input.borderRadius,
+      // Should ensure focus outline gets drawn above next sibling
+      zIndex: '1',
     },
 
     svg: {
@@ -167,8 +172,8 @@ const A = styled.a<LinkStylesProps>(
           },
         }
       : {},
-  ({ isButton, theme }) =>
-    isButton
+  ({ href, theme }) =>
+    !href
       ? {
           border: 0,
           borderRadius: theme.input.borderRadius,
@@ -176,13 +181,6 @@ const A = styled.a<LinkStylesProps>(
           padding: 0,
           fontSize: 'inherit',
           lineHeight: 'inherit',
-
-          '&:focus-visible': {
-            outline: `2px solid ${theme.color.secondary}`,
-            outlineOffset: 2,
-            // Should ensure focus outline gets drawn above next sibling
-            zIndex: '1',
-          },
         }
       : {}
 );
@@ -204,25 +202,17 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(
       withArrow = false,
       containsIcon = false,
       className = undefined,
-      isButton = undefined,
       href,
       ...rest
     },
     ref
   ) => {
-    if (isButton !== undefined) {
-      deprecate(
-        'Link: `isButton` is deprecated and will be removed in Storybook 11. Links without a `href` are automatically rendered as buttons.'
-      );
-    }
-
     return (
       <A
         as={href ? 'a' : 'button'}
         href={href}
         {...rest}
         ref={ref}
-        isButton={!href || isButton === true}
         onClick={onClick && cancel ? (e) => cancelled(e, onClick) : onClick}
         className={className}
       >

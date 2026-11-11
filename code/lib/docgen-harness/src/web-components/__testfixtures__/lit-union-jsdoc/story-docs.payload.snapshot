@@ -1,0 +1,45 @@
+{
+  "id": "webcomponentsfixtures-lit-union-jsdoc",
+  "name": "lit-union-jsdoc",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsfixtures-lit-union-jsdoc--args-default-render": {
+      "id": "webcomponentsfixtures-lit-union-jsdoc--args-default-render",
+      "name": "Args Default Render",
+      "snippet": "<lit-union-jsdoc variant="ghost" old-label="Legacy" label="Default render"></lit-union-jsdoc>",
+      "template": "<lit-union-jsdoc⟦attr variant mode="field" ~" "⟫ variant="ghost"⟧⟦attr oldLabel name="old-label" mode="field" ~" "⟫ old-label="Legacy"⟧⟦attr label mode="field" ~" "⟫ label="Default render"⟧></lit-union-jsdoc>",
+    },
+    "webcomponentsfixtures-lit-union-jsdoc--dom-node": {
+      "id": "webcomponentsfixtures-lit-union-jsdoc--dom-node",
+      "name": "Dom Node",
+      "snippet": "const DomNode = () => {
+  const el = document.createElement('lit-union-jsdoc');
+  el.setAttribute('variant', String('secondary'));
+  el.setAttribute('old-label', String('Old'));
+  el.setAttribute('label', String('Current'));
+  return el;
+};",
+      "template": "const DomNode = () => {
+  const el = document.createElement('lit-union-jsdoc');
+  el.setAttribute('variant', String(⟦code variant⟫'secondary'⟧));
+  el.setAttribute('old-label', String(⟦code oldLabel⟫'Old'⟧));
+  el.setAttribute('label', String(⟦code label⟫'Current'⟧));
+  return el;
+};",
+    },
+    "webcomponentsfixtures-lit-union-jsdoc--lit-template": {
+      "id": "webcomponentsfixtures-lit-union-jsdoc--lit-template",
+      "name": "Lit Template",
+      "snippet": "html`<lit-union-jsdoc
+  variant=${'secondary'}
+  old-label=${'Old'}
+  label=${'Current'}
+></lit-union-jsdoc>`",
+      "template": "html`<lit-union-jsdoc
+  variant=${⟦code variant⟫'secondary'⟧}
+  old-label=${⟦code oldLabel⟫'Old'⟧}
+  label=${⟦code label⟫'Current'⟧}
+></lit-union-jsdoc>`",
+    },
+  },
+}

@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "storybook/internal/*": ["../../lib/cli/core/*"]
     }

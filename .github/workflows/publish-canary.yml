@@ -1,0 +1,159 @@
+name: Publish Canary Packages
+
+on:
+  # Manual run from the Actions UI or `gh workflow run`. Select any branch as the
+  # workflow source. Optional inputs can point at a different PR, branch, or SHA.
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: >-
+          Optional pull request number in this repository (digits, or #123). Use
+          this to publish a fork PR; the fork author does not need to do anything.
+          If you also set branch or sha, they must be this PR's current head
+          (sha may be 7-40 hex chars). Leave pr, branch, and sha empty to publish
+          the branch selected above.
+        type: string
+        required: false
+      branch:
+        description: >-
+          Optional branch name. An in-repo branch, or the PR head branch when pr
+          is also set (name or owner:name). If you also set pr or sha, they must
+          identify the same commit. Leave pr, branch, and sha empty to publish
+          the branch selected above.
+        type: string
+        required: false
+      sha:
+        description: >-
+          Optional commit SHA (7-40 hex characters). If you also set pr or
+          branch, this must be that ref's tip (PR head or branch tip). Leave pr,
+          branch, and sha empty to publish the branch selected above.
+        type: string
+        required: false
+  push:
+    branches: [next]
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+
+env:
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
+
+# Fork pull_request runs get a read-only token. Do not request pull-requests: write here; PR body
+# updates live in publish-canary-pr-body.yml (`workflow_run`) so this job never holds a write token
+# while compiling untrusted PR code.
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.event_name == 'workflow_dispatch' && format('manual-{0}-{1}-{2}-{3}', github.ref_name, inputs.pr, inputs.branch, inputs.sha) || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  # Labelled fork PRs do not auto-publish (a later push would republish). A
+  # maintainer publishes a fork from this repo with workflow_dispatch + pr.
+  skip-fork-pr:
+    name: Skip fork pull request
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name != github.repository &&
+      github.event.pull_request.state == 'open' &&
+      contains(github.event.pull_request.labels.*.name, 'ci:canary') &&
+      (github.event.action != 'labeled' || github.event.label.name == 'ci:canary')
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - env:
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          echo "::notice::Fork PRs are not published by the ci:canary label. A maintainer can publish ${HEAD_REPO} from this repository: Run workflow on publish-canary.yml and set the pr input. Later pushes do not republish until a maintainer runs it again."
+
+  publish-canary:
+    name: Publish Canary Packages
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
+      (
+        github.event.pull_request.state == 'open' &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        contains(github.event.pull_request.labels.*.name, 'ci:canary') &&
+        (github.event.action != 'labeled' || github.event.label.name == 'ci:canary')
+      )
+    runs-on: ubuntu-latest
+    steps:
+      # Resolve uses this run's script, not the target tree (which may be a fork).
+      - name: Checkout workflow
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Resolve canary ref
+        id: canary-ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CANARY_PR: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number || '' }}
+          CANARY_BRANCH: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || '' }}
+          CANARY_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.sha || '' }}
+          DEFAULT_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          DEFAULT_BRANCH: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
+          DEFAULT_REPOSITORY: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+        run: |
+          node .github/scripts/resolve-canary-ref.ts \
+            --repo "$GITHUB_REPOSITORY" \
+            --pr "$CANARY_PR" \
+            --branch "$CANARY_BRANCH" \
+            --sha "$CANARY_SHA" \
+            --default-sha "$DEFAULT_SHA" \
+            --default-branch "$DEFAULT_BRANCH" \
+            --default-repository "$DEFAULT_REPOSITORY"
+
+      - name: ${{ steps.canary-ref.outputs.step_name }}
+        run: 'true'
+
+      - name: Checkout canary source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: ${{ steps.canary-ref.outputs.repository }}
+          ref: ${{ steps.canary-ref.outputs.sha }}
+          persist-credentials: false
+
+      # After checkout of PR head, ./ would run that tree's action.yml.
+      - name: Setup Node.js and Install Dependencies
+        uses: $/.github/actions/setup-node-and-install
+        with:
+          install-code-deps: true
+
+      - name: Build
+        working-directory: code
+        run: yarn task --task compile --start-from=auto --no-link
+
+      - name: Publish
+        working-directory: scripts
+        env:
+          # Compact URLs resolve via the npm repository field (storybookjs/storybook).
+          # A publish from any other GITHUB_REPOSITORY must use owner/repo URLs.
+          PKG_PR_NEW_NO_COMPACT: ${{ github.repository != 'storybookjs/storybook' }}
+        run: |
+          extra=()
+          if [ "$PKG_PR_NEW_NO_COMPACT" = true ]; then
+            extra+=(--no-compact)
+          fi
+
+          # --yarn uses `yarn pack`, which rewrites leftover workspace: ranges
+          # (npm pack leaves them; npm install then fails with EUNSUPPORTEDPROTOCOL).
+          yarn workspaces list --json --no-private \
+            | jq -j '"../" + .location + "\u0000"' \
+            | xargs -0 -r yarn pkg-pr-new publish --yarn --no-template --comment=off \
+              "${extra[@]}" --json=./pkg-pr-new-output.json
+
+          test -s ./pkg-pr-new-output.json
+          jq -er '.packages[] | select(.name == "create-storybook") | .name' ./pkg-pr-new-output.json >/dev/null
+          jq -er '.packages[] | select(.name == "storybook") | .name' ./pkg-pr-new-output.json >/dev/null
+          jq -er '.packages[] | select(.name == "@storybook/react-vite") | .name' ./pkg-pr-new-output.json >/dev/null
+
+      # Continues in publish-canary-pr-body.yml: after this job completes, a
+      # trusted workflow_run updates the PR body with canary install commands.

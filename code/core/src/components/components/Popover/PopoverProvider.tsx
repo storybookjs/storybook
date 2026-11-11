@@ -1,21 +1,16 @@
 import type { DOMAttributes, ReactElement, ReactNode } from 'react';
 import React, { cloneElement, useCallback, useState } from 'react';
 
-import { deprecate } from 'storybook/internal/client-logger';
-
-import { Pressable } from '@react-aria/interactions';
-import { DialogTrigger } from 'react-aria-components/patched-dist/Dialog';
-import { Popover as PopoverUpstream } from 'react-aria-components/patched-dist/Popover';
+import { Pressable } from 'react-aria-components/Pressable';
+import { DialogTrigger } from 'react-aria-components/Dialog';
+import { Popover as PopoverUpstream } from 'react-aria-components/Popover';
 
 import { type PopperPlacement, convertToReactAriaPlacement } from '../shared/overlayHelpers.tsx';
 import { Popover } from './Popover.tsx';
 
 export interface PopoverProviderProps {
-  /**
-   * An accessible label for the popover dialog, announced by screen readers. This prop will become
-   * mandatory in Storybook 11. Provide a concise description of the popover's purpose.
-   */
-  ariaLabel?: string;
+  /** A concise accessible name for the popover dialog, announced by screen readers. */
+  ariaLabel: string;
 
   /** Whether to display the Popover in a prestyled container. True by default. */
   hasChrome?: boolean;
@@ -31,6 +26,15 @@ export interface PopoverProviderProps {
 
   /** Optional custom padding for the popover overlay. */
   padding?: number | string;
+
+  /**
+   * Whether the content scrolls once the popover is as tall as the space left in the viewport, or
+   * wider than the viewport. True by default.
+   *
+   * ScrollArea clips Popover content, so turn this off for content that draws outside the
+   * popover box, like the Color control handle.
+   */
+  scrollable?: boolean;
 
   /** Distance between the trigger and Popover. Customize only if you have a good reason to. */
   offset?: number;
@@ -68,6 +72,7 @@ export const PopoverProvider = ({
   closeLabel,
   offset = 8,
   padding,
+  scrollable = true,
   popover,
   children,
   defaultVisible,
@@ -75,12 +80,6 @@ export const PopoverProvider = ({
   onVisibleChange,
   ...props
 }: PopoverProviderProps) => {
-  if (!ariaLabel) {
-    deprecate(
-      "The 'ariaLabel' prop on 'PopoverProvider' will become mandatory in Storybook 11. Provide a concise, accessible label describing the popover's purpose."
-    );
-  }
-
   // Map Popper.js placement to react-aria placement best we can.
   const placement = convertToReactAriaPlacement(placementProp);
 
@@ -122,6 +121,7 @@ export const PopoverProvider = ({
           hideLabel={closeLabel}
           onHide={hasCloseButton ? onHide : undefined}
           padding={padding}
+          scrollable={scrollable}
         >
           {typeof popover === 'function' ? popover({ onHide }) : popover}
         </Popover>

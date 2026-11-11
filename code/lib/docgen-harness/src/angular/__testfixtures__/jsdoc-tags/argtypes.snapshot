@@ -1,0 +1,48 @@
+{
+  "accent": {
+    "description": "
+
+Accent color applied to the chip text.
+
+'steelblue'
+",
+    "name": "accent",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "'steelblue'
+",
+      },
+      "type": {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "text": {
+    "description": "
+
+Chip text.
+
+See https://example.com/docs/chip-text
+presentation
+",
+    "name": "text",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "",
+      },
+      "type": {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

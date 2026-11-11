@@ -3,7 +3,7 @@ import React, { createElement, isValidElement } from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
 import { SourceType, getDocgenSection } from 'storybook/internal/docs-tools';
-import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
+import type { PartialStoryFn, StoryContext, StoryContextForRender } from 'storybook/internal/types';
 
 import type { Options } from 'react-element-to-jsx-string';
 import type reactElementToJSXStringType from 'react-element-to-jsx-string';
@@ -217,6 +217,12 @@ export const skipJsxRender = (context: StoryContext<ReactRenderer>) => {
   const sourceParams = context?.parameters.docs?.source;
   const isArgsStory = context?.parameters.__isArgsStory;
 
+  // Portable stories (vitest, playwright/jest portable) have no Source doc block consuming the
+  // emitted snippet, so serializing the story to a JSX string is pure overhead. Skip it.
+  if (context?.parameters.__isPortableStory) {
+    return true;
+  }
+
   // always render if the user forces it
   if (sourceParams?.type === SourceType.DYNAMIC) {
     return false;
@@ -244,7 +250,7 @@ const mdxToJsx = (node: any) => {
 
 export const jsxDecorator = (
   storyFn: PartialStoryFn<ReactRenderer>,
-  context: StoryContext<ReactRenderer>
+  context: StoryContextForRender<ReactRenderer>
 ) => {
   const jsx = useRef<undefined | string>(undefined);
   const story = storyFn();

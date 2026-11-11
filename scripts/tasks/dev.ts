@@ -4,6 +4,7 @@ import { join } from 'node:path';
 
 import waitOn from 'wait-on';
 
+import { isCI } from '../../code/core/src/common/utils/envs.ts';
 import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { now, saveBench } from '../bench/utils.ts';
 import { getPort } from '../sandbox/utils/getPort.ts';
@@ -55,7 +56,14 @@ export const dev: Task = {
   async ready({ key }) {
     const port = getDevPort(key);
     try {
-      await fetch(`http://localhost:${port}/iframe.html`, { signal: AbortSignal.timeout(1000) });
+      // When no server is running the fetch fails fast (connection refused),
+      // so a long timeout only applies while a server is listening but still
+      // compiling its first preview bundle. On CI that state must count as
+      // ready: giving up after 1s makes the e2e task spawn a second dev
+      // server on the same port, which crashes with EADDRINUSE once its own
+      // compile finishes. Locally keep the probe snappy.
+      const timeout = isCI() ? 180_000 : 1_000;
+      await fetch(`http://localhost:${port}/iframe.html`, { signal: AbortSignal.timeout(timeout) });
       return true;
     } catch {
       return false;

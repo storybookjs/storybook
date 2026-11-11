@@ -10,19 +10,21 @@ import {
   storyDocsStaticStorePath,
 } from '../../../shared/open-service/services/story-docs/paths.ts';
 import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
+import { getOwn } from '../../../shared/open-service/plain-object.ts';
+import { readComponent } from '../../../shared/open-service/services/component-state-key.ts';
 import type { ComponentManifest, ComponentsManifest } from '../../../types/modules/core-common.ts';
 
 import { join } from 'pathe';
 
+import type { DocsManifestEntry, JsonRef } from './mdx-manifest.ts';
+
 /** Version for ref-based `manifests/components.json` (nested `docgen.$ref` index rows). */
 export const COMPONENTS_REF_MANIFEST_VERSION = 1;
-
-export type JsonRef = { $ref: string };
 
 /**
  * One component row in the ref-based `manifests/components.json` index.
  *
- * Summary fields are inlined for cheap listing; full docgen and story-docs live behind nested
+ * Summary fields are inlined for cheap listing; full docgen, story-docs, and MDX live behind nested
  * `$ref`s.
  */
 export type ComponentManifestIndexEntry = {
@@ -32,6 +34,7 @@ export type ComponentManifestIndexEntry = {
   summary?: string;
   docgen?: JsonRef;
   stories?: JsonRef;
+  docs?: Record<string, DocsManifestEntry>;
 };
 
 export type ComponentsRefManifest = {
@@ -46,13 +49,13 @@ export type ComponentManifestWithStoryDocs = Omit<ComponentManifest, 'stories'> 
 
 function readDocgenSnapshotPayload(document: unknown, id: string): DocgenPayload | undefined {
   const components = (document as { components?: Record<string, unknown> } | null)?.components;
-  const payload = components?.[id];
+  const payload = components && readComponent(components, id);
   return payload !== null && typeof payload === 'object' ? (payload as DocgenPayload) : undefined;
 }
 
 function readStoryDocsSnapshotPayload(document: unknown, id: string): StoryDocsPayload | undefined {
   const components = (document as { components?: Record<string, unknown> } | null)?.components;
-  const payload = components?.[id];
+  const payload = components && readComponent(components, id);
   return payload !== null && typeof payload === 'object'
     ? (payload as StoryDocsPayload)
     : undefined;
@@ -127,23 +130,26 @@ export async function loadStoryDocsPayloadsFromDisk(
 export function toComponentManifestIndexEntries(
   componentIds: string[],
   docgenPayloads: Record<string, DocgenPayload>,
-  storyDocsPayloads: Record<string, StoryDocsPayload> = {}
+  storyDocsPayloads: Record<string, StoryDocsPayload> = {},
+  docsByComponentId: Record<string, Record<string, DocsManifestEntry>> = {}
 ): Record<string, ComponentManifestIndexEntry> {
   const entries: Record<string, ComponentManifestIndexEntry> = {};
 
   for (const id of componentIds) {
-    const payload = docgenPayloads[id];
-    const storyDocs = storyDocsPayloads[id];
-    entries[id] = payload
-      ? {
-          id: payload.id ?? id,
-          name: payload.name ?? id,
-          ...(payload.description !== undefined ? { description: payload.description } : {}),
-          ...(payload.summary !== undefined ? { summary: payload.summary } : {}),
-          docgen: { $ref: docgenManifestRef(id) },
-          ...(storyDocs ? { stories: { $ref: storyDocsManifestRef(id) } } : {}),
-        }
-      : { id, name: id };
+    const payload = getOwn(docgenPayloads, id);
+    const storyDocs = getOwn(storyDocsPayloads, id);
+    const docs = getOwn(docsByComponentId, id);
+    entries[id] = {
+      id: payload?.id ?? id,
+      name: payload?.name ?? id,
+      ...(payload?.description !== undefined ? { description: payload.description } : {}),
+      ...(payload?.summary !== undefined ? { summary: payload.summary } : {}),
+      ...(payload ? { docgen: { $ref: docgenManifestRef(id) } } : {}),
+      // Stories are indexed whether or not a component was extracted, so the ref does not hang off
+      // the docgen payload: dropping it hid every story of a componentless component.
+      ...(storyDocs ? { stories: { $ref: storyDocsManifestRef(id) } } : {}),
+      ...(docs ? { docs } : {}),
+    };
   }
 
   return entries;

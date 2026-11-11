@@ -1,0 +1,518 @@
+import { describe, expect, it, vi } from 'vitest';
+
+import type { StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
+
+import { findStoryIds } from './find-story-ids.ts';
+import type { StoryInput } from './story-input.ts';
+
+describe('findStoryIds', () => {
+  const mockStoryIndex: StoryIndex = {
+    v: 5,
+    entries: {
+      'button--primary': {
+        type: 'story',
+        subtype: 'story',
+        id: 'button--primary',
+        name: 'Primary',
+        title: 'Button',
+        importPath: './src/Button.stories.tsx',
+        tags: ['story'],
+      },
+      'button--secondary': {
+        type: 'story',
+        subtype: 'story',
+        id: 'button--secondary',
+        name: 'Secondary',
+        title: 'Button',
+        importPath: './src/Button.stories.tsx',
+        tags: ['story'],
+      },
+      'input--default': {
+        type: 'story',
+        subtype: 'story',
+        id: 'input--default',
+        name: 'Default',
+        title: 'Input',
+        importPath: './src/Input.stories.tsx',
+        tags: ['story'],
+      },
+    },
+  };
+
+  const primaryStory = mockStoryIndex.entries['button--primary'] as StoryIndexEntry;
+
+  const ordersIndex: StoryIndex = {
+    v: 5,
+    entries: Object.fromEntries(
+      ['loaded', 'empty', 'error-state'].map((name) => [
+        `orders--${name}`,
+        {
+          type: 'story',
+          subtype: 'story',
+          id: `orders--${name}`,
+          name,
+          title: 'Orders',
+          importPath: './src/Orders.stories.tsx',
+          tags: ['story'],
+        },
+      ])
+    ),
+  };
+
+  it('finds a story by storyId', () => {
+    const stories: StoryInput[] = [{ storyId: 'button--primary' }];
+
+    const result = findStoryIds(mockStoryIndex, stories);
+
+    expect(result).toEqual([
+      { entry: mockStoryIndex.entries['button--primary'], input: stories[0] },
+    ]);
+  });
+
+  it('returns not found for a missing storyId', () => {
+    const stories: StoryInput[] = [{ storyId: 'button--does-not-exist' }];
+
+    const result = findStoryIds(mockStoryIndex, stories);
+
+    expect(result).toHaveLength(1);
+    expect((result[0] as { errorMessage: string }).errorMessage).toContain(
+      'button--does-not-exist'
+    );
+  });
+
+  it('suggests the closest story IDs of the same component first', () => {
+    const result = findStoryIds(mockStoryIndex, [{ storyId: 'button--primry' }]);
+
+    expect((result[0] as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "button--primry". Did you mean "button--primary", "button--secondary"?'
+    );
+  });
+
+  it('ranks a story whose name extends the guess first', () => {
+    const [result] = findStoryIds(ordersIndex, [{ storyId: 'orders--error' }]);
+
+    expect((result as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "orders--error". Did you mean "orders--error-state", "orders--empty", "orders--loaded"?'
+    );
+  });
+
+  it('ranks a story whose name the guess contains first', () => {
+    const [result] = findStoryIds(ordersIndex, [{ storyId: 'orders--empty-state' }]);
+
+    expect((result as { errorMessage: string }).errorMessage).toMatch(
+      /Did you mean "orders--empty", /
+    );
+  });
+
+  it('suggests the same component when the guess lacks the title prefix', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'example-button--primary': {
+          ...primaryStory,
+          id: 'example-button--primary',
+          title: 'Example/Button',
+        },
+      },
+    };
+
+    const [result] = findStoryIds(index, [{ storyId: 'button--primary' }]);
+
+    expect((result as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "button--primary". Did you mean "example-button--primary"?'
+    );
+  });
+
+  it('ranks the guessed component before one under a title prefix', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'example-button--error': {
+          ...primaryStory,
+          id: 'example-button--error',
+          title: 'Example/Button',
+        },
+        'button--error-state-with-retry': { ...primaryStory, id: 'button--error-state-with-retry' },
+      },
+    };
+
+    const [result] = findStoryIds(index, [{ storyId: 'button--error' }]);
+
+    expect((result as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "button--error". Did you mean "button--error-state-with-retry", "example-button--error"?'
+    );
+  });
+
+  it('does not count a component whose name only ends in the guess as the same one', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'icon-button--primary': {
+          ...primaryStory,
+          id: 'icon-button--primary',
+          title: 'Example/Icon Button',
+        },
+        'example-button--primary': {
+          ...primaryStory,
+          id: 'example-button--primary',
+          title: 'Example/Button',
+        },
+        'icon-button--disabled': {
+          ...primaryStory,
+          id: 'icon-button--disabled',
+          title: 'Example/Icon Button',
+        },
+      },
+    };
+
+    const [result] = findStoryIds(index, [{ storyId: 'button--primary' }]);
+
+    expect((result as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "button--primary". Did you mean "example-button--primary", "icon-button--primary"?'
+    );
+  });
+
+  it('suggests the same component when the guess has an extra title prefix', () => {
+    const [result] = findStoryIds(mockStoryIndex, [{ storyId: 'components-button--primary' }]);
+
+    expect((result as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "components-button--primary". Did you mean "button--primary", "button--secondary"?'
+    );
+  });
+
+  it('counts a misspelled component ID as the same component', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: Object.fromEntries(
+        ['input--default', 'input--disabled', 'input--invalid', 'forms-input--default'].map(
+          (id) => [
+            id,
+            { ...primaryStory, id, title: id.startsWith('forms') ? 'Forms/Input' : 'Input' },
+          ]
+        )
+      ),
+    };
+
+    const [sameName, otherName] = findStoryIds(index, [
+      { storyId: 'form-input--default' },
+      { storyId: 'form-input--primary' },
+    ]);
+
+    expect((sameName as { errorMessage: string }).errorMessage).toMatch(
+      /Did you mean "forms-input--default", "input--default", /
+    );
+    expect((otherName as { errorMessage: string }).errorMessage).toMatch(
+      /Did you mean "forms-input--default", /
+    );
+  });
+
+  it('does not count a short component ID two edits away as misspelled', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'bar--default': { ...primaryStory, id: 'bar--default', title: 'Bar' },
+        'ui-tab--selected': { ...primaryStory, id: 'ui-tab--selected', title: 'Ui/Tab' },
+      },
+    };
+
+    const [result] = findStoryIds(index, [{ storyId: 'tab--default' }]);
+
+    expect((result as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "tab--default". Did you mean "ui-tab--selected", "bar--default"?'
+    );
+  });
+
+  it('does not suggest docs or test entries for a story ID', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'button--docs': {
+          type: 'docs',
+          id: 'button--docs',
+          name: 'Docs',
+          title: 'Button',
+          importPath: primaryStory.importPath,
+          storiesImports: [],
+        },
+        'button--primary:renders': {
+          ...primaryStory,
+          subtype: 'test',
+          id: 'button--primary:renders',
+          name: 'renders',
+        },
+      },
+    };
+
+    const [result] = findStoryIds(index, [{ storyId: 'button--doc' }]);
+
+    expect((result as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "button--doc"'
+    );
+  });
+
+  it('matches an export name on the story, not on its tests', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'button--primary:renders': {
+          ...primaryStory,
+          subtype: 'test',
+          id: 'button--primary:renders',
+          name: 'renders',
+          exportName: 'Primary',
+        },
+        'button--primary': { ...primaryStory, name: 'Main button', exportName: 'Primary' },
+      },
+    };
+    const stories: StoryInput[] = [
+      { exportName: 'Primary', absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx` },
+    ];
+
+    expect(findStoryIds(index, stories)).toEqual([
+      { entry: index.entries['button--primary'], input: stories[0] },
+    ]);
+  });
+
+  it('matches an explicit story name on the story, not on a test with that name', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'button--primary:small': {
+          ...primaryStory,
+          subtype: 'test',
+          id: 'button--primary:small',
+          name: 'Small',
+        },
+        'button--small': { ...primaryStory, id: 'button--small', name: 'Small' },
+      },
+    };
+    const stories: StoryInput[] = [
+      {
+        exportName: 'SmallButton',
+        explicitStoryName: 'Small',
+        absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx`,
+      },
+    ];
+
+    expect(findStoryIds(index, stories)).toEqual([
+      { entry: index.entries['button--small'], input: stories[0] },
+    ]);
+  });
+
+  it('suggests an ID of another component only when it is a few edits away', () => {
+    const [nearMiss, farMiss] = findStoryIds(mockStoryIndex, [
+      { storyId: 'btn--primary' },
+      { storyId: 'checkbox--checked' },
+    ]);
+
+    expect((nearMiss as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "btn--primary". Did you mean "button--primary"?'
+    );
+    expect((farMiss as { errorMessage: string }).errorMessage).toBe(
+      'No story found for story ID "checkbox--checked"'
+    );
+  });
+
+  it('finds a story by path and exportName', () => {
+    const stories: StoryInput[] = [
+      {
+        exportName: 'Primary',
+        absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx`,
+      },
+    ];
+
+    const result = findStoryIds(mockStoryIndex, stories);
+
+    expect(result).toEqual([
+      { entry: mockStoryIndex.entries['button--primary'], input: stories[0] },
+    ]);
+  });
+
+  it('finds a story by explicitStoryName when it differs from exportName', () => {
+    const stories: StoryInput[] = [
+      {
+        exportName: 'SomeExport',
+        explicitStoryName: 'Primary',
+        absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx`,
+      },
+    ];
+
+    const result = findStoryIds(mockStoryIndex, stories);
+
+    expect(result).toEqual([
+      { entry: mockStoryIndex.entries['button--primary'], input: stories[0] },
+    ]);
+  });
+
+  it('finds a story by exportName when the story has a custom name', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'button--primary': {
+          ...primaryStory,
+          name: 'Main button',
+          exportName: 'Primary',
+        },
+      },
+    };
+    const stories: StoryInput[] = [
+      { exportName: 'Primary', absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx` },
+    ];
+
+    expect(findStoryIds(index, stories)).toEqual([
+      { entry: index.entries['button--primary'], input: stories[0] },
+    ]);
+  });
+
+  it('does not resolve an export name to the docs entry', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'button--docs': {
+          type: 'docs',
+          id: 'button--docs',
+          name: 'Docs',
+          title: 'Button',
+          importPath: primaryStory.importPath,
+          storiesImports: [],
+        },
+      },
+    };
+
+    const [result] = findStoryIds(index, [
+      { exportName: 'Docs', absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx` },
+    ]);
+
+    expect(result).toHaveProperty('errorMessage');
+  });
+
+  it('says when the index has no stories for the file', () => {
+    const stories: StoryInput[] = [
+      {
+        exportName: 'NonExistent',
+        absoluteStoryPath: `${process.cwd()}/src/NonExistent.stories.tsx`,
+      },
+    ];
+
+    const result = findStoryIds(mockStoryIndex, stories);
+
+    expect((result[0] as { errorMessage: string }).errorMessage).toBe(
+      `No story found for export name "NonExistent" with absolute file path "${process.cwd()}/src/NonExistent.stories.tsx". Storybook has no stories indexed for that file. Check the path, and that the file matches the \`stories\` globs in the Storybook config`
+    );
+  });
+
+  it('lists the stories of a known file when the export name misses', () => {
+    const [result] = findStoryIds(mockStoryIndex, [
+      { exportName: 'ErrorState', absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx` },
+    ]);
+
+    expect((result as { errorMessage: string }).errorMessage).toBe(
+      `No story found for export name "ErrorState" with absolute file path "${process.cwd()}/src/Button.stories.tsx". Closest stories in that file: "button--primary" (named "Primary"), "button--secondary" (named "Secondary"). If one of these is the story you meant, pass its ID as { storyId }`
+    );
+  });
+
+  it('lists only stories, the closest five, when the export name misses', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: {
+        'button--docs': {
+          type: 'docs',
+          id: 'button--docs',
+          name: 'Docs',
+          title: 'Button',
+          importPath: primaryStory.importPath,
+          storiesImports: [],
+        },
+        'button--small:renders': {
+          ...primaryStory,
+          subtype: 'test',
+          id: 'button--small:renders',
+          name: 'Small',
+        },
+        ...Object.fromEntries(
+          ['Small', 'Medium', 'Large', 'Huge', 'Tiny', 'Disabled'].map((name) => [
+            `button--${name.toLowerCase()}`,
+            { ...primaryStory, id: `button--${name.toLowerCase()}`, name },
+          ])
+        ),
+      },
+    };
+
+    const [result] = findStoryIds(index, [
+      { exportName: 'Smal', absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx` },
+    ]);
+
+    const { errorMessage } = result as { errorMessage: string };
+    expect(errorMessage).toContain(
+      'Closest stories in that file: "button--small" (named "Small"), '
+    );
+    expect(errorMessage.match(/"button--[a-z]+" \(named/g)).toHaveLength(5);
+    expect(errorMessage).toContain(' (+1 more). If one of these');
+    expect(errorMessage).not.toMatch(/button--docs|:renders/);
+  });
+
+  it('lists a story first when the export name is a typo of its export', () => {
+    const index: StoryIndex = {
+      v: 5,
+      entries: Object.fromEntries(
+        [
+          ['ErrorState', 'Shows a retry banner'],
+          ['Small', 'Small'],
+          ['Medium', 'Medium'],
+          ['Large', 'Large'],
+          ['Huge', 'Huge'],
+          ['Tiny', 'Tiny'],
+        ].map(([exportName, name]) => [
+          `button--${exportName.toLowerCase()}`,
+          { ...primaryStory, id: `button--${exportName.toLowerCase()}`, exportName, name },
+        ])
+      ),
+    };
+
+    const [result] = findStoryIds(index, [
+      { exportName: 'ErorState', absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx` },
+    ]);
+
+    expect((result as { errorMessage: string }).errorMessage).toContain(
+      'Closest stories in that file: "button--errorstate" (named "Shows a retry banner"), '
+    );
+  });
+
+  it('preserves input order for mixed found and not found results', () => {
+    const stories: StoryInput[] = [
+      { storyId: 'button--does-not-exist' },
+      { exportName: 'Primary', absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx` },
+      { storyId: 'input--default' },
+      { exportName: 'Missing', absoluteStoryPath: `${process.cwd()}/src/Button.stories.tsx` },
+    ];
+
+    const result = findStoryIds(mockStoryIndex, stories);
+
+    expect(result).toHaveLength(4);
+    expect((result[0] as { errorMessage: string }).errorMessage).toContain(
+      'button--does-not-exist'
+    );
+    expect((result[1] as { entry: { id: string } }).entry.id).toBe('button--primary');
+    expect((result[2] as { entry: { id: string } }).entry.id).toBe('input--default');
+    expect((result[3] as { errorMessage: string }).errorMessage).toContain('Missing');
+  });
+
+  it('matches when cwd and absolute path use Windows separators', () => {
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(String.raw`C:\repo`);
+
+    const stories: StoryInput[] = [
+      {
+        exportName: 'Primary',
+        absoluteStoryPath: String.raw`C:\repo\src\Button.stories.tsx`,
+      },
+    ];
+
+    const result = findStoryIds(mockStoryIndex, stories);
+
+    expect(result).toEqual([
+      { entry: mockStoryIndex.entries['button--primary'], input: stories[0] },
+    ]);
+
+    cwdSpy.mockRestore();
+  });
+});

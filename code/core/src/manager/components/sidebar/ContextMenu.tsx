@@ -1,259 +1,275 @@
-import type { ComponentProps, FC, MouseEvent, SyntheticEvent } from 'react';
-import React, { useContext, useMemo, useState } from 'react';
+import type { FC, SyntheticEvent } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 
-import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
+import { PopoverProvider } from 'storybook/internal/components';
 import {
   type API_HashEntry,
   type Addon_Collection,
   type Addon_TestProviderType,
   Addon_TypesEnum,
-  type StatusValue,
 } from 'storybook/internal/types';
 
-import { CopyIcon, EditorIcon, EllipsisIcon } from '@storybook/icons';
+import { CollapseIcon, CopyIcon, EditorIcon, EllipsisIcon, ExpandAltIcon } from '@storybook/icons';
 
-import { useStorybookApi } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { useStorybookApi } from 'storybook/manager-api';
 
-import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
-import { getMostCriticalStatusValue } from '../../utils/status.tsx';
+import { isStoryRow } from '../../utils/tree.ts';
+
 import { Shortcut } from '../Shortcut.tsx';
-import { UseSymbol } from './IconSymbols.tsx';
-import { StatusButton } from './StatusButton.tsx';
-import { StatusContext } from './StatusContext.tsx';
-import type { ExcludesNull } from './Tree.tsx';
+import { ContextMenuButton } from './ContextMenuButton.tsx';
+import { type MenuItem, type SidebarMenuItem, SidebarMenuList } from './Menu.tsx';
+import { TypeIconWithSymbol } from './TypeIcon.tsx';
 
-const empty = {
-  onMouseEnter: () => {},
-  node: null,
-};
+/** How the user opened a context menu. A keyboard open prepends a nav link item and autofocuses it. */
+export type ContextMenuTrigger = 'pointer' | 'keyboard';
 
-const FloatingStatusButton = styled(StatusButton)({
-  background: 'var(--tree-node-background-hover)',
-  boxShadow: '0 0 5px 5px var(--tree-node-background-hover)',
-  position: 'absolute',
-  right: 0,
-  zIndex: 1,
-  '&:focus-visible': {
-    outlineOffset: -2,
-  },
-});
+function getGoToLabel(context: API_HashEntry): string | null {
+  if (context.type === 'docs') {
+    return 'Go to page';
+  }
 
-export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) => {
-  const [hoverCount, setHoverCount] = useState(0);
-  const [isOpen, setIsOpen] = useState(false);
-  const { allStatuses, groupStatus } = useContext(StatusContext);
+  if (context.type === 'story') {
+    if (context.subtype === 'test') {
+      return 'Go to test';
+    }
+    return 'Go to story';
+  }
+  return null;
+}
 
-  const exportName = context && 'exportName' in context ? (context.exportName ?? '') : '';
-  const { children: copyText, buttonProps: copyButtonProps } = useCopyButton<string>({
-    children: 'Copy story name',
-    content: exportName,
-  });
+export function hasContextMenu(context: API_HashEntry, hasProviderMenuEntries = false): boolean {
+  // Never show the ContextMenu in production.
+  if (globalThis.CONFIG_TYPE !== 'DEVELOPMENT') {
+    return false;
+  }
 
-  const shortcutKeys = api.getShortcutKeys();
-  const enableShortcuts = !!shortcutKeys;
+  // The "Story" row of a story with tests stands in for a row that has the menu already.
+  if (context.refId || isStoryRow(context)) {
+    return false;
+  }
 
-  const topLinks = useMemo<Link[]>(() => {
-    const defaultLinks = [];
+  return (
+    ('importPath' in context && Boolean(context.importPath)) ||
+    context.type === 'story' ||
+    context.type === 'docs' ||
+    // Root rows always get expand/collapse; test providers can also contribute entries.
+    context.type === 'root' ||
+    // Test providers contribute entries (e.g. "run tests for this group") to branch rows.
+    (hasProviderMenuEntries && (context.type === 'group' || context.type === 'component'))
+  );
+}
 
-    if (context && 'importPath' in context && context.importPath) {
-      defaultLinks.push({
-        id: 'open-in-editor',
-        title: 'Open in editor',
-        icon: <EditorIcon />,
-        right: enableShortcuts ? <Shortcut keys={shortcutKeys.openInEditor} /> : null,
-        onClick: (e: SyntheticEvent) => {
-          if (context.importPath) {
+/**
+ * Whether a registered test provider contributes menu entries for this entry. Used to gate the
+ * ⋯ button on group and component rows (root rows always get the button for expand/collapse).
+ * Providers receive the full `API_HashEntry` context, including root entries.
+ *
+ * @param hasTestProviders Whether any test provider addon is registered at all.
+ */
+export function hasProviderMenuEntriesFor(
+  api: API,
+  context: API_HashEntry,
+  hasTestProviders: boolean
+): boolean {
+  // Test providers never see a "Story" row: its id names no story they could run.
+  if (!hasTestProviders || isStoryRow(context)) {
+    return false;
+  }
+  return (
+    generateTestProviderLinks(api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER), context)
+      .length > 0
+  );
+}
+
+export const ContextMenu: FC<{
+  context: API_HashEntry;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  onSelectStoryId: (id: string) => void;
+  api: API;
+  openedBy?: ContextMenuTrigger;
+  /** Whether a test provider contributes menu entries for this entry. */
+  hasProviderMenuEntries?: boolean;
+  /** The current shortcuts, read once by the tree. */
+  shortcutKeys: ReturnType<API['getShortcutKeys']>;
+  /** For root nodes: whether all descendant branches are currently expanded. */
+  isFullyExpanded?: boolean;
+  /** For root nodes: toggle expanding or collapsing all descendants. */
+  onExpandCollapseAll?: () => void;
+}> = memo(
+  ({
+    context,
+    isOpen,
+    setIsOpen,
+    onSelectStoryId,
+    api,
+    openedBy,
+    hasProviderMenuEntries = false,
+    shortcutKeys,
+    isFullyExpanded,
+    onExpandCollapseAll,
+  }) => {
+    const exportName = context && 'exportName' in context ? (context.exportName ?? '') : '';
+    const { children: copyText, buttonProps: copyButtonProps } = useCopyButton<string>({
+      children: 'Copy story name',
+      content: exportName,
+    });
+
+    const topLinks = useMemo<MenuItem[]>(() => {
+      const defaultLinks: MenuItem[] = [];
+
+      // Add a navigation link at the top when the menu opens from the keyboard.
+      // Keyboard-only users then have a way to open a story that has child tests.
+      if (openedBy === 'keyboard') {
+        const goToLabel = getGoToLabel(context);
+        if (goToLabel) {
+          defaultLinks.push({
+            id: 'go-to-item',
+            title: goToLabel,
+            icon: <TypeIconWithSymbol item={context} />,
+            onClick: (e: SyntheticEvent) => {
+              e.preventDefault();
+              onSelectStoryId(context.id);
+              setIsOpen(false);
+            },
+          });
+        }
+      }
+
+      if (context && 'importPath' in context && context.importPath) {
+        defaultLinks.push({
+          id: 'open-in-editor',
+          title: 'Open in editor',
+          icon: <EditorIcon />,
+          right: shortcutKeys?.openInEditor ? <Shortcut keys={shortcutKeys.openInEditor} /> : null,
+          onClick: (e: SyntheticEvent) => {
+            if (context.importPath) {
+              e.preventDefault();
+              api.openInEditor({ file: context.importPath });
+            }
+          },
+        });
+      }
+
+      if (context.type === 'story') {
+        defaultLinks.push({
+          id: 'copy-story-name',
+          title: copyText,
+          icon: <CopyIcon />,
+          onClick: (e: SyntheticEvent) => {
             e.preventDefault();
-            api.openInEditor({ file: context.importPath });
-          }
-        },
-      });
-    }
+            copyButtonProps.onClick(e);
+          },
+        });
+      }
 
-    if (context.type === 'story') {
-      defaultLinks.push({
-        id: 'copy-story-name',
-        title: copyText,
-        icon: <CopyIcon />,
-        // TODO: bring this back once we want to add shortcuts for this
-        // right:
-        //   enableShortcuts && shortcutKeys.copyStoryName ? (
-        //     <Shortcut keys={shortcutKeys.copyStoryName} />
-        //   ) : null,
-        onClick: (e: SyntheticEvent) => {
-          e.preventDefault();
-          copyButtonProps.onClick(e);
-        },
-      });
-    }
+      if (context.type === 'root' && onExpandCollapseAll !== undefined) {
+        defaultLinks.push({
+          id: isFullyExpanded ? 'collapse-all' : 'expand-all',
+          title: isFullyExpanded ? 'Collapse all' : 'Expand all',
+          icon: isFullyExpanded ? <CollapseIcon /> : <ExpandAltIcon />,
+          onClick: () => {
+            onExpandCollapseAll();
+            setIsOpen(false);
+          },
+        });
+      }
 
-    return defaultLinks;
-  }, [api, context, copyText, copyButtonProps, enableShortcuts, shortcutKeys]);
+      // Move focus to the first item when opening from the keyboard, so the user can operate the
+      // menu without a Tab press. A pointer open keeps focus on the dialog container, because a
+      // focused item makes screen readers announce it twice. React honors autoFocus on the
+      // buttons these links render as.
+      if (openedBy === 'keyboard' && defaultLinks[0]) {
+        defaultLinks[0].autoFocus = true;
+      }
 
-  const handlers = useMemo(() => {
-    return {
-      onMouseEnter: () => {
-        setHoverCount((c) => c + 1);
-      },
-      onOpen: (event: SyntheticEvent) => {
+      return defaultLinks;
+    }, [
+      api,
+      onSelectStoryId,
+      context,
+      copyText,
+      copyButtonProps,
+      openedBy,
+      setIsOpen,
+      shortcutKeys,
+      isFullyExpanded,
+      onExpandCollapseAll,
+    ]);
+
+    const handleOpen = useCallback(
+      (event: SyntheticEvent) => {
         event.stopPropagation();
         setIsOpen(true);
       },
-      onClose: () => {
-        setIsOpen(false);
-      },
-    };
-  }, []);
-  /**
-   * Calculate the providerLinks whenever the user mouses over the container. We use an incrementor,
-   * instead of a simple boolean to ensure that the links are recalculated
-   */
-  const providerLinks = useMemo(() => {
-    const registeredTestProviders = api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER);
+      [setIsOpen]
+    );
 
-    if (hoverCount) {
-      return generateTestProviderLinks(registeredTestProviders, context);
-    }
-    return [];
-  }, [api, context, hoverCount]);
-
-  // We just don't want to render the context menu for composed storybook stories
-  const shouldRender =
-    !context.refId && (providerLinks.length > 0 || links.length > 0 || topLinks.length > 0);
-
-  const isLeafNode = context.type === 'story' || context.type === 'docs';
-
-  const itemStatus = useMemo<StatusValue>(() => {
-    let status: StatusValue = 'status-value:unknown';
-    if (!context) {
-      return status;
-    }
-
-    if (isLeafNode) {
-      const values = Object.values(allStatuses?.[context.id] || {}).map((s) => s.value);
-      status = getMostCriticalStatusValue(values);
-    }
-
-    if (!isLeafNode) {
-      // On component/groups we only show non-ellipsis on hover on non-success status colors
-      const groupValue = groupStatus && groupStatus[context.id];
-      status =
-        groupValue === 'status-value:success' || groupValue === undefined
-          ? 'status-value:unknown'
-          : groupValue;
-    }
-
-    return status;
-  }, [allStatuses, groupStatus, context, isLeafNode]);
-
-  const MenuIcon = useMemo(() => {
-    // On component/groups we only show non-ellipsis on hover on non-success statuses
-    if (context.type !== 'story' && context.type !== 'docs') {
-      if (itemStatus !== 'status-value:success' && itemStatus !== 'status-value:unknown') {
-        return (
-          <svg key="icon" viewBox="0 0 6 6" width="6" height="6">
-            <UseSymbol type="dot" />
-          </svg>
-        );
-      }
-
-      return <EllipsisIcon />;
-    }
-
-    if (itemStatus === 'status-value:error') {
-      return (
-        <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-          <UseSymbol type="error" />
-        </svg>
-      );
-    }
-    if (itemStatus === 'status-value:warning') {
-      return (
-        <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-          <UseSymbol type="warning" />
-        </svg>
-      );
-    }
-    if (itemStatus === 'status-value:success') {
-      return (
-        <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-          <UseSymbol type="success" />
-        </svg>
-      );
-    }
-    return <EllipsisIcon />;
-  }, [itemStatus, context.type]);
-
-  return useMemo(() => {
-    // Never show the SidebarContextMenu in production
+    // Never show the ContextMenu in production.
     if (globalThis.CONFIG_TYPE !== 'DEVELOPMENT') {
-      return empty;
+      return null;
     }
 
-    return {
-      onMouseEnter: handlers.onMouseEnter,
-      node: shouldRender ? (
-        <PopoverProvider
-          ariaLabel="Context menu"
-          placement="bottom-end"
-          defaultVisible={false}
-          visible={isOpen}
-          onVisibleChange={setIsOpen}
-          popover={<LiveContextMenu context={context} links={[...topLinks, ...links]} />}
-          hasChrome={true}
-          padding={0}
+    const shouldRender = !context.refId && (topLinks.length > 0 || hasProviderMenuEntries);
+    if (!shouldRender) {
+      return null;
+    }
+
+    return (
+      <PopoverProvider
+        ariaLabel="Context menu"
+        placement="bottom-end"
+        defaultVisible={false}
+        visible={isOpen}
+        onVisibleChange={setIsOpen}
+        popover={({ onHide }) => (
+          <ContextMenuContent context={context} links={topLinks} onHide={onHide} />
+        )}
+        hasChrome={true}
+        padding={0}
+      >
+        <ContextMenuButton
+          data-displayed={isOpen ? 'on' : 'off'}
+          data-testid="context-menu"
+          ariaLabel="Open context menu"
+          type="button"
+          onClick={handleOpen}
+          shortcut={shortcutKeys?.contextMenu}
+          tooltipPlacement="bottom-end"
+          disableAllTooltips={isOpen}
         >
-          <FloatingStatusButton
-            data-displayed={isOpen ? 'on' : 'off'}
-            data-testid="context-menu"
-            ariaLabel="Open context menu"
-            type="button"
-            status={itemStatus}
-            onClick={handlers.onOpen}
-          >
-            {MenuIcon}
-          </FloatingStatusButton>
-        </PopoverProvider>
-      ) : null,
-    };
-  }, [context, handlers, isOpen, shouldRender, links, topLinks, itemStatus, MenuIcon]);
-};
+          <EllipsisIcon />
+        </ContextMenuButton>
+      </PopoverProvider>
+    );
+  }
+);
+ContextMenu.displayName = 'ContextMenu';
 
 /**
- * This component re-subscribes to storybook's core state, hence the Live prefix. It is used to
- * render the context menu for the sidebar. it self is a tooltip link list that renders the links
- * provided to it. In addition to the links, it also renders the test providers.
+ * The body of the sidebar context menu. It reads the registered test providers on every render, so
+ * the provider links stay current, and it renders them below the given links.
  */
-const LiveContextMenu: FC<{ context: API_HashEntry } & ComponentProps<typeof TooltipLinkList>> = ({
-  context,
-  links,
-  ...rest
-}) => {
+const ContextMenuContent: FC<{
+  context: API_HashEntry;
+  links: SidebarMenuItem[];
+  onHide: () => void;
+}> = ({ context, links, onHide }) => {
   const registeredTestProviders = useStorybookApi().getElements(
     Addon_TypesEnum.experimental_TEST_PROVIDER
   );
-  const providerLinks: Link[] = generateTestProviderLinks(registeredTestProviders, context);
+  const providerLinks = generateTestProviderLinks(registeredTestProviders, context);
 
-  /**
-   * The context menu can take a list of lists of links, so that the links are grouped and separated
-   * by a line separator, so we need to make sure that links are contained within arrays (but not
-   * more than one level deep)
-   */
-  const groups: Link[][] =
-    Array.isArray(links[0]) || links.length === 0 ? (links as Link[][]) : [links as Link[]];
-
-  const all = groups.concat([providerLinks]);
-
-  return <TooltipLinkList {...rest} links={all} />;
+  return <SidebarMenuList menu={[links, providerLinks]} onHide={onHide} />;
 };
 
+type ExcludesNull = <T>(x: T | null) => x is T;
 export function generateTestProviderLinks(
   registeredTestProviders: Addon_Collection<Addon_TestProviderType>,
   context: API_HashEntry
-): Link[] {
+): SidebarMenuItem[] {
   return Object.entries(registeredTestProviders)
     .map(([testProviderId, state]) => {
       if (!state) {

@@ -1,0 +1,198 @@
+import * as v from 'valibot';
+
+import {
+  OpenServiceMissingOriginError,
+  describeUnknownStoryIds,
+  OpenServiceUnknownStoryIdsError,
+} from '../../../../server-errors.ts';
+import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
+import { getToolName } from '../../toolset-names.ts';
+import type { ReviewService } from '../../services/review/definition.ts';
+
+/** Storybook manager route the review page is registered at. */
+const REVIEW_PAGE_PATH = '/review/';
+
+const reviewCollectionSchema = v.object({
+  title: v.pipe(
+    v.string(),
+    v.description(
+      'Title describing **what** this collection consists of, phrased the way a person would say it. Avoid typographic marks and CamelCase. Plain text, no markdown.'
+    )
+  ),
+  rationale: v.pipe(
+    v.string(),
+    v.description(
+      'Rationale explaining **why** this collection is relevant to the user. Shown alongside the title. One or two sentences. Plain text, no markdown.'
+    )
+  ),
+  storyIds: v.pipe(
+    v.array(v.string()),
+    v.description(
+      'Story IDs that represent this collection (e.g. "button--primary"). The page renders exactly these.'
+    )
+  ),
+});
+
+const reviewCreateInputSchema = v.strictObject({
+  title: v.pipe(
+    v.string(),
+    v.description(
+      'Terse, human-readable title for the overall review. What is this review about? Avoid typographic marks and CamelCase. Plain text, no markdown.'
+    )
+  ),
+  description: v.pipe(
+    v.string(),
+    v.description(
+      "Description of the review scope, including what's there, why it's relevant, and what to look for. Preferably one or two sentences. At most 2 paragraphs for reviews spanning multiple topics. Markdown formatting restricted to **bold**, _italic_, and `code` (backticks). Use emphasis for the key **what** and _why_, and backticks for literal source code references like component or token names."
+    )
+  ),
+  collections: v.pipe(
+    v.array(reviewCollectionSchema),
+    v.description(
+      'Groups of stories to show in the review, most relevant first. Prefer 2-5 groups.'
+    )
+  ),
+  changedFiles: v.pipe(
+    v.array(v.string()),
+    v.description(
+      'Paths of the files you changed, most central first. Pass an empty array `[]` only when no code changed (e.g. browse requests).'
+    )
+  ),
+});
+
+type ReviewCreateInput = v.InferOutput<typeof reviewCreateInputSchema>;
+
+// No MCP output schema: Claude Code would hand the model this as JSON instead of the text, and
+// the review lines, escaped inside a JSON string, then go missing from the answer.
+export type ReviewCreateOutput = {
+  reviewUrl: string;
+  collectionCount: number;
+  storyCount: number;
+  instructions: string;
+};
+
+function describeCreate(ctx: ToolsetCtx): string {
+  const ref = getToolName(ctx);
+  return `Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.
+
+## When to call
+- Visual change (components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers'. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; use ${ref('stories.findByComponent')} only for a file it leaves out, or when it is unavailable. Include changedFiles.
+- Last: publish it after your tests and other checks (type check, lint), then end your answer with the three lines it returns.
+- Browse request ("show me the Badge component"): resolve via ${ref('stories.findByComponent')} / ${ref('docs.list')}. Show exactly what was asked. Pass changedFiles: [].
+
+## Hard rules
+1. Every storyId MUST come from those tools, never from file paths, story names or memory.
+2. Every story you CREATED MUST appear, play-function stories too. Curate by grouping, never by omission.
+3. Prefer 2-5 collections when the change reaches that many layers (one for a new, unused component). Avoid one-story collections unless truly isolated; never add stories the change cannot reach.
+4. In follow-up reviews, keep collection and story order stable.
+5. Follow each field's formatting rules; no em-dashes in field values.
+6. Don't tell the user what to do unless they ask for guidance.
+7. Never say "collection" to the user unless they did; say "group of stories".
+
+## Curating a visual change
+Trace the visual cascade up the import graph to page-level surfaces, one collection per layer (changed component → direct importers → page context). Include control stories where the change should not be visible. Theme tokens, shared styles and layout primitives need page-level coverage even for a one-file edit. Larger features: central page → lower-level pieces → usage locations.`;
+}
+
+/**
+ * Recovery coaching for fabricated story ids.
+ *
+ * The service reports which ids missed the index; the actionable part — which tools resolve real
+ * ids on this surface — is consumer-specific, so it is composed here rather than in the service.
+ */
+function formatUnknownStoryIdsError(unknownIds: string[], ctx: ToolsetCtx): string {
+  const ref = getToolName(ctx);
+  const list = unknownIds.map((id) => `- \`${id}\``).join('\n');
+  return `${describeUnknownStoryIds(unknownIds)}\n${list}\n\nThis usually means the IDs were inferred from file paths or naming conventions rather than returned by a tool. Resolve real IDs by calling \`${ref('stories.findByComponent')}\` (for components you've edited or want covered) or \`${ref('docs.list')}\` (to browse the index), then retry \`${ref('review.create')}\` with the verified IDs. Do not invent IDs to satisfy this check.`;
+}
+
+function storyNoun(storyCount: number): string {
+  return storyCount === 1 ? 'story' : 'stories';
+}
+
+function reviewInstructions(reviewUrl: string, storyCount: number, browse: boolean): string {
+  // Agents were observed ending visual work at the tool result, or summarizing the review in
+  // their own words, so the result carries the lines the final response has to end with.
+  // The instruction comes after the lines too, so it is the last thing the agent reads.
+  return `End your final response with these three lines, copied unchanged:
+
+${
+  // A browse request changes no files, so its heading must not speak of changes.
+  browse
+    ? `## 👀 See the stories
+The review shows the ${storyCount} ${storyNoun(storyCount)} you asked to see.`
+    : `## 👀 Review your changes
+The review shows the ${storyCount} ${storyNoun(storyCount)} most relevant for you to review right now.`
+} Because this is AI-curated, results may be inaccurate or incomplete.
+👉 [Open the Storybook review page](${reviewUrl})
+
+Above these three lines, first answer the user's request, such as what you changed or the stories they asked to see. Your final response ends with the three lines, with nothing after them.`;
+}
+
+function formatReviewApplied({
+  collectionCount,
+  storyCount,
+  instructions,
+}: ReviewCreateOutput): string {
+  return `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} ${storyNoun(storyCount)}. ${instructions}`;
+}
+
+export const reviewToolset = defineToolset({
+  id: 'review',
+  description: 'Create a curated Storybook review.',
+  methods: {
+    create: {
+      input: reviewCreateInputSchema,
+      title: 'Create Storybook review',
+      // Reviews publish into the running Storybook's review service and link into its UI.
+      requiresDevServer: true,
+      description: describeCreate,
+      handler: async (
+        review: ReviewCreateInput,
+        ctx
+      ): Promise<ToolsetOutcome<ReviewCreateOutput, never>> => {
+        if (!ctx.origin) {
+          throw new OpenServiceMissingOriginError({
+            toolsetId: 'review',
+            methodName: 'create',
+          });
+        }
+
+        try {
+          await ctx
+            .getService<ReviewService>('core/review', { internal: true })
+            .commands.setReview(review);
+        } catch (error) {
+          if (error instanceof OpenServiceUnknownStoryIdsError) {
+            throw new Error(formatUnknownStoryIdsError(error.data.unknownIds, ctx));
+          }
+          throw error;
+        }
+
+        const collectionCount = review.collections.length;
+        const storyCount = review.collections.reduce(
+          (total, collection) => total + collection.storyIds.length,
+          0
+        );
+
+        const reviewUrl = `${ctx.origin.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`;
+        const data: ReviewCreateOutput = {
+          reviewUrl,
+          collectionCount,
+          storyCount,
+          instructions: reviewInstructions(reviewUrl, storyCount, review.changedFiles.length === 0),
+        };
+
+        return {
+          ok: true,
+          data,
+          markdown: formatReviewApplied(data),
+          telemetry: {
+            payload: { collectionCount, storyCount, changedFileCount: review.changedFiles.length },
+          },
+        };
+      },
+    },
+  },
+});
+
+export type ReviewToolset = typeof reviewToolset;

@@ -25,17 +25,20 @@ export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
 
     if (process.env.DEBUG) {
       console.log(dedent`
-        Running e2e tests in Playwright's ui mode for chromium only (for brevity sake).
-        You can change the browser by changing the --project flag in the e2e-tests task file.
+        Running e2e tests in Playwright's ui mode for the chromium and chromium-mutating projects only (for brevity sake).
+        You can change the browser by changing the --project flags in the e2e-tests task file.
       `);
     }
 
     const firstTestFileArgIndex = process.argv.findIndex((arg) => testFileRegex.test(arg));
     const testFiles = firstTestFileArgIndex === -1 ? [] : process.argv.slice(firstTestFileArgIndex);
 
+    // chromium-mutating holds the specs that write to sandbox files; it runs
+    // after the parallel chromium pass (see code/playwright.config.ts).
+    const projects = '--project=chromium --project=chromium-mutating';
     const playwrightCommand = process.env.DEBUG
-      ? `yarn playwright test --project=chromium --ui ${testFiles.join(' ')}`
-      : `yarn playwright test --project=chromium ${testFiles.join(' ')}`;
+      ? `yarn playwright test ${projects} --ui ${testFiles.join(' ')}`
+      : `yarn playwright test ${projects} ${testFiles.join(' ')}`;
 
     await waitOn({ resources: [`http://localhost:${port}`], interval: 16, timeout: 200000 });
     await exec(

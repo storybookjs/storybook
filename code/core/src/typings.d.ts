@@ -26,7 +26,6 @@ declare var STORYBOOK_LAST_EVENTS: Record<
 >;
 declare var STORYBOOK_SESSION_ID: string | undefined;
 declare var STORYBOOK_NETWORK_ADDRESS: string | undefined;
-declare var PREVIEW_URL: string | undefined;
 
 declare var __STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER__: any;
 declare var __STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__: any;
@@ -35,7 +34,6 @@ declare var __STORYBOOK_ADDONS_MANAGER: any;
 declare var __STORYBOOK_ADDONS_PREVIEW: import('./preview-api/modules/addons/main').AddonStore;
 declare var __STORYBOOK_PREVIEW__: import('./preview-api/modules/preview-web/PreviewWeb').PreviewWeb<any>;
 declare var __STORYBOOK_STORY_STORE__: any;
-declare var __STORYBOOK_TEST__: any;
 declare var __STORYBOOK_TEST_SPY_LISTENERS__: Set<any>;
 declare var __STORYBOOK_ACTIONS__: any;
 declare var __STORYBOOK_VITEST_MOCKER__: any;
@@ -43,12 +41,18 @@ declare var __STORYBOOK_VITEST_MOCKER__: any;
 declare module '@aw-web-design/x-default-browser';
 declare module 'ansi-to-html';
 declare module 'lazy-universal-dotenv';
-declare module 'pnp-webpack-plugin';
 declare module 'react-inspector';
+// CLI-only entry with no "types" condition in package.json exports.
+declare module 'storybook/internal/bin/loader' {
+  type LoadHookSync = (url: string, context: any, nextLoad: any) => any;
+  const load: LoadHookSync;
+  export { load };
+}
 
 declare var STORIES: any;
 
 declare var CHANNEL_OPTIONS: any;
+declare var INSECURE_IFRAME_MESSAGING: boolean | undefined;
 declare var DOCS_OPTIONS: any;
 declare var TAGS_OPTIONS: import('./types/modules/core-common').StorybookConfigRaw['tags'];
 

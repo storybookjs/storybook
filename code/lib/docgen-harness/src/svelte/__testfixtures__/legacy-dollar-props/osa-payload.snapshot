@@ -1,0 +1,9 @@
+{
+  "description": undefined,
+  "id": "sveltefixtures-leobutton",
+  "jsDocTags": {},
+  "name": "LeoButton",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": undefined,
+}

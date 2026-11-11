@@ -37,6 +37,17 @@ export type UserOptions = {
    * @default true
    */
   disableAddonDocs?: boolean;
+
+  /**
+   * Globals applied to every story run by this project, merged under the values Storybook sets
+   * internally. Use it to pin a toolbar global for the whole run — most usefully to test a
+   * specific theme: define one Vitest project per theme, each with a different value, e.g.
+   * `storybookTest({ initialGlobals: { theme: 'dark' } })`. Equivalent to `initialGlobals` in
+   * `.storybook/preview`, but per project instead of global.
+   *
+   * @default {}
+   */
+  initialGlobals?: Record<string, unknown>;
 };
 
 export type InternalOptions = Required<UserOptions> & {

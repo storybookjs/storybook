@@ -1,0 +1,77 @@
+{
+  "label": {
+    "description": "Current label.",
+    "name": "label",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'Union label'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "old-label": {
+    "description": "Old label field.",
+    "name": "old-label",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "''",
+      },
+      "jsDocTags": {
+        "deprecated": "Use label instead.",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "oldLabel": {
+    "description": "Old label field.",
+    "name": "oldLabel",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "''",
+      },
+      "jsDocTags": {
+        "deprecated": "Use label instead.",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "variant": {
+    "description": "Visual variant.",
+    "name": "variant",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'primary'",
+      },
+      "type": {
+        "summary": "'primary' | 'secondary' | 'ghost'",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "value": [
+        "primary",
+        "secondary",
+        "ghost",
+      ],
+    },
+  },
+}

@@ -1,4 +1,3 @@
-import { deprecate } from 'storybook/internal/client-logger';
 import { SourceType } from 'storybook/internal/docs-tools';
 import type {
   ArgTypes,
@@ -37,15 +36,6 @@ const skipSourceRender = (context: StoryContext<SvelteRenderer>) => {
   return !isArgsStory || sourceParams?.code || sourceParams?.type === SourceType.CODE;
 };
 
-/**
- * Transform a key/value to a svelte declaration as string.
- *
- * Default values are ommited
- *
- * @param key Key
- * @param value Value
- * @param argTypes Component ArgTypes
- */
 function toSvelteProperty(key: string, value: any, argTypes: ArgTypes): string | null {
   if (value === undefined || value === null) {
     return null;
@@ -53,12 +43,6 @@ function toSvelteProperty(key: string, value: any, argTypes: ArgTypes): string |
 
   const argType = argTypes[key];
 
-  // default value ?
-  if (argType && argType.defaultValue === value) {
-    return null;
-  }
-
-  // event should be skipped
   if (argType && argType.action) {
     return null;
   }
@@ -188,7 +172,7 @@ export const sourceDecorator: DecoratorFunction<SvelteRenderer> = (storyFn, cont
       return;
     }
 
-    const { parameters = {}, args = {}, component: ctxComponent } = context || {};
+    const { args = {}, component: ctxComponent } = context || {};
 
     // excludeDecorators from source generation as they'll generate the wrong code
     // instead get the component directly from the original story function instead
@@ -198,10 +182,6 @@ export const sourceDecorator: DecoratorFunction<SvelteRenderer> = (storyFn, cont
     );
     const { wrapper, slotProperty } = getWrapperProperties(component);
     if (wrapper) {
-      if (parameters.component) {
-        deprecate('parameters.component is deprecated. Using context.component instead.');
-      }
-
       component = ctxComponent;
     }
 

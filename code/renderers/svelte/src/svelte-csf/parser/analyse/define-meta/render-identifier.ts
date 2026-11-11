@@ -1,0 +1,35 @@
+import { unwrapExpression } from 'storybook/internal/csf-tools';
+
+import type { ESTreeAST } from '../../ast.ts';
+import { extractDefineMetaPropertiesNodes } from '../../extract/svelte/define-meta.ts';
+import type { SvelteASTNodes } from '../../extract/svelte/nodes.ts';
+import { InvalidRenderValueError } from '../../../utils/error/parser/analyse/define-meta.ts';
+
+interface Params {
+  nodes: SvelteASTNodes;
+  filename?: string;
+}
+
+export function getDefineMetaRenderValue(params: Params): ESTreeAST.Identifier | undefined {
+  const { nodes, filename } = params;
+  const { render } = extractDefineMetaPropertiesNodes({
+    nodes,
+    properties: ['render'],
+    filename,
+  });
+
+  if (!render) {
+    return;
+  }
+
+  const value = unwrapExpression(render.value);
+
+  if (value.type !== 'Identifier') {
+    throw new InvalidRenderValueError({
+      filename,
+      renderProperty: render,
+    });
+  }
+
+  return value;
+}

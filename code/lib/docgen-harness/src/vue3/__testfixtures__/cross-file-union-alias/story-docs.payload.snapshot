@@ -1,0 +1,27 @@
+{
+  "id": "cross-file-union-alias",
+  "name": "CrossFileUnionAlias",
+  "path": "__PATH__",
+  "stories": {
+    "forms-cross-file-union-alias--props-as-written": {
+      "description": undefined,
+      "id": "forms-cross-file-union-alias--props-as-written",
+      "name": "Props As Written",
+      "snippet": "<script lang="ts" setup>
+import CrossFileUnionAlias from './CrossFileUnionAlias.vue';
+</script>
+
+<template>
+  <CrossFileUnionAlias size="small" variant="danger" />
+</template>",
+      "summary": undefined,
+      "template": "<script lang="ts" setup>
+import CrossFileUnionAlias from './CrossFileUnionAlias.vue';
+</script>
+
+<template>
+  <CrossFileUnionAlias⟦attr size ~" "⟫ size="small"⟧⟦attr variant ~" "⟫ variant="danger"⟧⟦props * except=["variant","size","default"] ~" "⟫⟧⟦slots * slots=["default"] indent="    " tag="CrossFileUnionAlias"⟫ />⟧
+</template>",
+    },
+  },
+}

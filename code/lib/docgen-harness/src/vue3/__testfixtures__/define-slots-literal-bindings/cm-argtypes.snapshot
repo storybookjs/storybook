@@ -1,0 +1,30 @@
+{
+  "default": {
+    "description": "",
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "any",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "any",
+    },
+  },
+  "icon": {
+    "description": "",
+    "name": "icon",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{ size: "md"; fill: "currentColor"; }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "{ size: "md"; fill: "currentColor"; }",
+    },
+  },
+}

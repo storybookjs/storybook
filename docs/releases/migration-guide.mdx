@@ -1,74 +1,291 @@
 ---
-title: Migration guide for Storybook 10
+title: Migration guide for Storybook 11
 sidebar:
   order: 1
-  title: Migrate to Storybook 10
+  title: Migrate to Storybook 11
 ---
 
-[full-migration-notes]: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#from-version-9x-to-1000
+[full-migration-notes]: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#from-version-10x-to-1100
 
-Storybook 10 is a breaking maintenance release focused on ESM-only package distribution. Its main features include:
+Storybook 11 is agent-ready for React, Vue, Angular, Web Components, Svelte:
 
-- 💎 ESM-only to reduce install size
-- ↗️ CSF Next preview with better typesafety and autocompletion
-- 🏷 Improved tags-based filtering
+- 🏗️ Automated setup and upgrade
+- 🧠 Optimized docgen and code examples
+- ✅ Typesafe stories
+- 🧪 Fast component testing
+- 👀 Agentic UI review
 
-Coming soon:
+Browse the [changelog](https://github.com/storybookjs/storybook/blob/next/CHANGELOG.md) for the full list of changes.
 
-- 🧪 Familiar and ergonomic CSF test functions (experimental)
+---
 
-This guide is meant to help you **upgrade from Storybook 9.x to 10** successfully!
+This guide is meant to help you **upgrade from Storybook 10.x to 11** successfully!
 
 <Callout variant="info">
 
-**Migrating from a Storybook version prior to 9?**
+**Using a Storybook version older than 10?**
 
-You'll first need to [upgrade to Storybook 9](./migration-guide-from-older-version.mdx). Then you can return to this guide.
+First [upgrade to Storybook 10](./migration-guide-from-older-version.mdx), then come back to this guide.
+
+Don't skip this step. The Storybook 11 upgrade [does not include the automigrations](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#automigrations-for-storybook-10-and-earlier-removed) for earlier versions. If you upgrade directly to 11, your old configuration stays unchanged and your Storybook project will be broken. You then have to make each of those changes by hand.
 
 </Callout>
 
-## Major breaking changes
+For most projects, the migration has four steps:
 
-The rest of this guide will help you upgrade successfully, either automatically or manually. But first, there are some [breaking changes][full-migration-notes] in Storybook 10. Here are the most impactful changes you should know about before you go further:
+1. [Check that your project meets the new requirements](#before-you-upgrade).
+2. [Run the upgrade command](#automatic-upgrade). It updates your dependencies and runs automigrations for most configuration changes.
+3. [Make the manual changes that apply to your project](#manual-migrations). Each one depends on a feature you may not use, so skip the ones that don't apply.
+4. [Consider optional migration steps](#optional-migrations). These will help you take advantage of new features and improvements in Storybook 11.
 
-- [Main configuration (`.storybook/main.js|ts`) and other presets must be valid ESM](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#the-storybookmain-file-and-other-presets-must-be-valid-esm)
-- Ecosystem updates
-  - [Node 20.19+ or 22.12+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nodejs-2019-or-2212-required)
+If you maintain an addon, also read the [addon migration guide](../addons/addon-migration-guide.mdx).
 
-If any of these changes apply to your project, please read through the linked migration notes before continuing.
+## Before you upgrade
 
-If any of these new requirements or changes are blockers for your project, we recommend to continue using Storybook 8.x.
+### Check the minimum versions
 
-You may wish to read the [full migration notes][full-migration-notes] before migrating. Or you can run the upgrade command below and we’ll try to take care of everything for you!
+Storybook 11 raises these minimum versions. Upgrade any that apply before you upgrade Storybook.
+
+| Dependency                                      | Minimum version                                |
+| ----------------------------------------------- | ---------------------------------------------- |
+| Node.js                                         | 22.12                                          |
+| TypeScript                                      | 5.9 (see [TypeScript](#typescript))            |
+| Vite                                            | 6.3                                            |
+| Webpack                                         | 5.101                                          |
+| Vitest (for `@storybook/addon-vitest`)          | 4.0                                            |
+| React                                           | 18                                             |
+| Preact                                          | 10.9.0                                         |
+| Next.js                                         | 15                                             |
+| Angular                                         | 21                                             |
+| SvelteKit                                       | 3                                              |
+| Chromatic CLI (for TurboSnap with Vite)         | 18.13.1                                        |
+| Visual Tests addon (`@chromatic-com/storybook`) | 5.5.0                                          |
+| Browsers for the Storybook UI                   | Chrome 147, Edge 150, Firefox 152, Safari 26.5 |
+
+For the framework-specific details, see the [full migration notes][full-migration-notes].
+
+### TypeScript
+
+`typescript` is now a required peer dependency of the React, Vue 3, Svelte, and Web Components renderers and frameworks. This applies to JavaScript projects too (`typescript` will be installed, but does not need to be used for compiling). This is because [server-side docgen](#server-side-docgen-is-on-by-default) uses TypeScript to read the JSDoc and type annotations in your components.
+
+Additionally, the latest version of TypeScript, 7.0, does not include the compiler API that Storybook uses to generate Controls and the args table. Therefore, Storybook cannot use TypeScript 7 for these purposes and requires TypeScript 5.9 or 6.x.
+
+Package managers vary in their peer dependency handling. Yarn does not install a missing peer dependency. npm and pnpm do, but they install TypeScript 7, which docgen cannot use.
+
+If your project has no `typescript` dependency, run this command to add `typescript@^6` for you:
+
+```sh
+npx storybook@next automigrate typescript-dependency
+```
+
+To use TypeScript 6 for Storybook while keeping TypeScript 7 for `tsc` (i.e. for your app), point the `typescript` package at TypeScript 6:
+
+```json title="package.json"
+{
+  "devDependencies": {
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
+  }
+}
+```
+
+See [TypeScript 7 configuration](../configure/integration/typescript.mdx#typescript-7) for details.
+
+### Check for removed support
+
+Storybook 11 removes support for the following setups. If your project is impacted, switch before you upgrade:
+
+- **Create React App preset.** `@storybook/preset-create-react-app` is no longer published, and the upgrade stops while it is installed. Use `@storybook/react-vite` instead. See the [Create React App notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#create-react-app-support-removed).
+- **Yarn Plug'n'Play.** Set `nodeLinker: node-modules` in `.yarnrc.yml` and run `yarn install`. See the [Yarn PnP notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#yarn-pnp-support-removed).
+- **Some community addons and builders.** Packages that import `storybook/internal/babel` stop loading until they publish a release for Storybook 11. Check the [list of affected packages](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#community-packages-that-need-a-release).
+
+If any of these requirements block your project, we recommend that you keep using Storybook 10.x.
 
 ## Automatic upgrade
 
 To upgrade your Storybook, run the [upgrade](./upgrading.mdx) command in the root of your repository:
 
-<CodeSnippets path="storybook-upgrade.md" />
+<CodeSnippets path="storybook-upgrade-prerelease.md" />
 
 This will:
 
 1. Find all of the Storybook projects in your repository
 2. For each project
-   1. Determine that none of the [breaking changes](#major-breaking-changes) apply to your project
+   1. Determine that none of the [blocking requirements](#before-you-upgrade) apply to your project
       - If they do, you will receive instructions on how to resolve them before continuing
    2. Upgrade your Storybook dependencies to the latest version
-   3. Run a collection of _automigrations_, which will:
+   3. Run a collection of [automigrations](#automigrations), which will:
       - Check for common upgrade tasks
       - Explain the necessary changes with links to more information
       - Ask for approval, then perform the task automatically on your behalf
+
+### Automigrations
+
+These automigrations are new in Storybook 11. To run one again later, use `npx storybook automigrate <id>`.
+
+| Automigration                     | What it changes                                                                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `addon-svelte-csf-to-core`        | Replaces `@storybook/addon-svelte-csf` with imports from your Svelte framework                                                  |
+| `argtypes-default-value`          | Deletes `argTypes.<name>.defaultValue`, which has not set an arg's value since Storybook 7                                      |
+| `component-subtitle`              | Moves `parameters.componentSubtitle` to `parameters.docs.subtitle`                                                              |
+| `csf-next-mocked-args`            | Wraps mock API calls on args in `mocked()` in CSF 4 (aka CSF Next) stories                                                      |
+| `docgen-server`                   | Renames `features.experimentalDocgenServer` to `docgenServer`                                                                   |
+| `remove-change-detection-flag`    | Deletes the removed `features.changeDetection` flag                                                                             |
+| `remove-experimental-review`      | Deletes the removed `features.experimentalReview` flag                                                                          |
+| `remove-legacy-feature-flags`     | Deletes the removed `features.argTypeTargetsV7` and `features.disallowImplicitActionsInRenderV8` flags                          |
+| `set-config-layout`               | Moves top-level `addons.setConfig` options into `layout` and `ui`                                                               |
+| `skills`                          | Replaces the `stories` agent skill with `ui-workflow` and `component-docs`                                                      |
+| `story-sort-to-main`              | Moves `parameters.options.storySort` from the preview to [`storySorts`](../api/main-config/main-config-story-sorts.mdx) in main |
+| `tag-filter-api`                  | Renames the tag options `excludeFromSidebar` and `excludeFromDocsStories`, and `experimental_setFilter(s)`                      |
+| `typescript-dependency`           | Adds `typescript@^6` when your project has no TypeScript                                                                        |
+| `vitest-setup-file`               | Removes `setProjectAnnotations` calls from Vitest setup files                                                                   |
+| `web-components-runtime-manifest` | Replaces `setCustomElementsManifest()` with `framework.options.customElementsManifest`                                          |
+
+An automigration stops when it cannot safely edit a file. It then prints instructions for you to make the necessary changes manually, and lists affected files in `automigrations-summary.md`.
+
+## What changes after you upgrade
+
+These changes need no action, but can affect your project.
+
+### Server-side docgen is on by default
+
+Storybook 11 reads your components' props on the Storybook server with the TypeScript compiler API. This data is then used to generate [manifests](../ai/manifests.mdx), [Controls](../essentials/controls.mdx), [story snippets](../writing-docs/autodocs.mdx), and [code panels](../writing-docs/code-panel.mdx).
+
+This [`docgenServer`](../api/main-config/main-config-features.mdx#docgenserver) feature is on by default for these frameworks:
+
+- `@storybook/angular-vite`
+- `@storybook/nextjs`
+- `@storybook/nextjs-vite`
+- `@storybook/react-native-web-vite`
+- `@storybook/react-vite`
+- `@storybook/react-webpack5`
+- `@storybook/svelte-vite`
+- `@storybook/sveltekit`
+- `@storybook/tanstack-react`
+- `@storybook/vue3-vite`
+- `@storybook/web-components-vite`
+
+It replaces React's `typescript.reactDocgen` and Vue's `framework.options.docgen`.
+
+Check your Controls panel, docs pages, and args tables after you upgrade:
+
+- Story snippets and the code panel are static and do not update after changing controls. Dynamic snippets are expected in Storybook 11.1.
+- Builder docgen options such as `propFilter` have no server-side equivalent. Unlike before, we now read prop types from `node_modules` by default, but we have heuristics in place to avoid picking up unnecessary types.
+- **React** props come from TypeScript types. Defaults come from destructuring and `defaultProps`, with destructuring taking precedence. Storybook no longer reads `propTypes`, so a component that declares props only with `propTypes` shows no props.
+- **Web Components** event, slot, and part argType keys get a suffix, such as `my-change-event`. See [Manual migrations](#web-components).
+- **Svelte** `Snippet` and callback props [move to the slots and events categories](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte).
+
+To keep builder docgen, set `features.docgenServer: false` in `.storybook/main.js|ts`. Builder docgen is [deprecated](#builder-docgen-to-server-side-docgen) and will be removed in Storybook 12.
+
+### Other changed defaults
+
+- **`storybook dev` no longer opens a browser.** It prints the local URL. To open a browser, add `--open` to your `storybook dev` script, or set `"open": true` in the Angular builder options.
+- **The Code panel is on.** With `@storybook/addon-docs` installed, every story has a Code panel. To hide it, set `parameters.docs.codePanel` to `false` in `.storybook/preview.js|ts`.
+- **Change detection and agentic review are always on.** In `storybook dev`, the sidebar shows new and modified stories and the **Review** button. You can no longer turn them off.
+- **Standalone docs pages are single sidebar entries.** An MDX page that is not attached to a component is no longer wrapped in a component with one `Docs` child. If your `sidebar.renderLabel` function or sidebar filters read that wrapper, see the [sidebar notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sidebar-standalone-docs-pages-are-no-longer-wrapped-in-a-component).
+
+## Manual migrations
+
+The upgrade cannot make these changes for you. Each row starts with the condition that makes it apply. If none apply, your migration is done.
+
+### Configuration
+
+Rows are grouped by where the change happens: `.storybook/main`, `.storybook/preview`, `.storybook/manager`, then the CLI.
+
+| If you…                                                                                                               | Do this                                                                                                                                                                                                                                                                                                                                          |
+| --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Pass `--preview-url` or `--force-build-preview` to `storybook dev` or `storybook build`                               | Remove them. There is no replacement. See the [preview URL notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#--preview-url-and---force-build-preview-removed).                                                                                                                                                              |
+| Embed a `storybook dev` server in an `<iframe>` on a page served from an origin other than `localhost` or `127.0.0.1` | Embed a built Storybook instead. Or set [`security.insecureRemoteIframeEmbed`](../api/main-config/main-config-security.mdx#insecureremoteiframeembed) in the embedded Storybook. See the [iframe embedding notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybook-dev-now-blocks-remote-iframe-embedding).             |
+| Compose a `storybook dev` server from an origin other than `localhost` or `127.0.0.1`                                 | Compose a built Storybook instead. Or set both [`security.insecureRemoteIframeEmbed` and `security.insecureIframeMessaging`](../api/main-config/main-config-security.mdx) in the composed Storybook. See the [iframe messaging notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybook-now-restricts-iframe-messaging). |
+| Run `storybook ai setup`                                                                                              | Run `storybook skills setup` instead. See the [`storybook ai` notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybook-ai-command-removed).                                                                                                                                                                              |
+| Set `framework.options.legacyRootApi` in `.storybook/main`                                                            | Delete it. The upgrade stops until you do. See the [React notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-require-v18-and-up).                                                                                                                                                                                      |
+| Set `features.legacyDecoratorFileOrder` in `.storybook/main`                                                          | Delete it, then check that your preview decorators still work. See the [decorator order notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#featureslegacydecoratorfileorder-removed).                                                                                                                                        |
+| Set `defaultValue` on a toolbar entry in `globalTypes` in `.storybook/preview`                                        | Set the value in `initialGlobals`. Also move any undocumented keys out of the entry. See the [`globalTypes` notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#toolbar-globaltypes-entries-index-signature-and-defaultvalue-removed).                                                                                        |
+| Set `parameters.viewport.defaultViewport` or import `responsiveViewport` in `.storybook/preview`                      | Set `initialGlobals.viewport.value` instead, and remove the import. See the [viewport notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#viewportdefaultviewport-parameter-and-responsiveviewport-removed).                                                                                                                  |
+| Set `sidebar.filters` in `.storybook/manager`                                                                         | Use the `hideFromSidebar` tag option or `setFilter`. See the [tag filtering notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#tag-filtering-api).                                                                                                                                                                           |
+
+### Stories and tests
+
+| If you…                                                                                   | Do this                                                                                                                                                                                                                                                                               |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Set meta args in CSF 4 that are not component props                                       | Declare them with `preview.type<{ args }>()`. See the [CSF 4 (aka CSF Next) notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#csf-next-every-key-in-meta-args-must-be-an-arg).                                                                                   |
+| Read `argTypes` in a loader, `beforeEach`, `play`, or `afterEach` function                | Read `args` instead. Reading `argTypes` there throws an error. See the [`argTypes` notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-removed-from-loaders-beforeeach-play-and-aftereach).                                                               |
+| Type a decorator or `render` helper's context as `StoryContext` and read `argTypes`       | Change the type to `StoryContextForRender`. Decorators and `render` functions still receive `argTypes`, so keep those reads. See the [`argTypes` notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-removed-from-loaders-beforeeach-play-and-aftereach). |
+| Read `kind` or `story` from a story context, or use the `LinkTo` `kind` and `story` props | Use `title` and `name`. Also replace the removed type aliases, such as `PlayFunctionContext`. See the [type alias notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#deprecated-csf-and-manager-type-aliases-removed).                                            |
+| Set annotations on `Story.story`                                                          | Move each field onto the story itself. For a function story, `name` becomes `storyName`. See the [CSF notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#csf-story-annotations-removed).                                                                          |
+| Use Flow syntax in story files                                                            | Convert those files to TypeScript or JavaScript. See the [parser notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#behavior-that-changes-for-every-project).                                                                                                     |
+| Pass custom annotations to `setProjectAnnotations` in a Vitest setup file                 | Move them into `.storybook/preview.js` or `.ts` and delete the call. See the [Vitest notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files).                                                    |
+| Use `mockChannel` in tests                                                                | Use `new Channel({})` from `storybook/internal/channels`. See the [`mockChannel` notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#mockchannel-removed-from-storybookpreview-api-and-storybookmanager-api).                                                      |
+| Use `ExternalDocs` or `ExternalDocsContainer`                                             | Write MDX docs that Storybook renders. See the [`ExternalDocs` notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#externaldocs-and-externaldocscontainer-are-removed).                                                                                            |
+
+### Frameworks
+
+#### Next.js (Webpack-only)
+
+If a story or component imports a Node.js built-in such as `path` or `url`, `storybook build` now fails with `Module not found`. Remove the import, or add a browser polyfill in `webpackFinal`. See the [Next.js polyfill notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-most-nodejs-built-in-polyfills-removed-from-storybooknextjs).
+
+#### Angular
+
+With `@storybook/angular-vite`, `BrowserAnimationsModule` and `NoopAnimationsModule` in `moduleMetadata.imports` are no longer converted for you. Add `provideAnimations()` or `provideNoopAnimations()` to the `providers` of the `applicationConfig` decorator. See the [Angular animation notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted).
+
+#### Svelte and SvelteKit
+
+- Svelte CSF supports only stories defined with `defineMeta` (Svelte CSF 3) or `preview.meta` (Svelte CSF 4). The automigration lists files that use `<Meta>`, `<Template>`, `let:args`, or the `id`, `autodocs`, and `source` props on `<Story>`. Migrate them by hand with the [Svelte CSF notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte-csf-legacy-story-syntax-removed).
+- If a stories file needs a preprocessor outside of `<style>`, for example for TypeScript enums, move that code to a separate module. See the [indexing notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte-csf-stories-files-are-indexed-without-preprocessors).
+- With SvelteKit 3, replace `$app/stores` with `$app/state`, and `parameters.sveltekit_experimental.stores` with `parameters.sveltekit_experimental.state`. See the [SvelteKit notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-require-v3-and-up).
+
+#### Web Components
+
+- Add the category suffix to `argTypes` keys for events, slots, and CSS parts, for example `my-change-event` instead of `my-change`. Custom `render` functions read the same suffixed keys. See the [argType key notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys).
+- Stories without a `render` function no longer log events by themselves. Pass `fn()` as the `<name>-event` arg for each event you want in the Actions panel. See the [default render notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#web-components-the-default-render-binds-args-by-key).
+- If you use `@wc-toolkit/storybook-helpers`, remove it. Storybook now does the same work. See the [`@wc-toolkit/storybook-helpers` notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#web-components-wc-toolkitstorybook-helpers-is-built-in).
+
+### Custom tooling
+
+If you build tools on `storybook/internal/*` entry points, read the [internal tooling notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#changes-for-tooling-that-imports-storybooks-internal-entry-points). `storybook/internal/babel` is removed, `csf-tools` uses ESTree nodes, and several internal APIs changed or became private.
+
+## Optional migrations
+
+These migrations are not required to upgrade. They move your project off formats and features that Storybook 11 still supports but no longer recommends.
+
+### CSF 3 to CSF 4
+
+CSF 4 (previously called CSF Next) has better type safety with less boilerplate and is the recommended story format in Storybook 11. Your CSF 3 stories still work, and you can upgrade one file at a time. CSF 4 is available for React, Vue, Angular, Web Components, and Svelte.
+
+To upgrade all of your CSF 3 stories automatically, run:
+
+<CodeSnippets path="csf-factories-automigrate.md" />
+
+For monorepos and manual upgrade steps, see [Upgrade to CSF 4](../writing-stories/csf/upgrade.mdx).
+
+### Builder docgen to server-side docgen
+
+Builder docgen is deprecated. This covers React's `react-docgen` and `react-docgen-typescript`, the Vue 3 Vite `docgen` option, and the Svelte `docgen` option. It runs when you set `features.docgenServer: false`, and Storybook then prints a deprecation warning. React projects on TypeScript 7.0 also fall back to it until Storybook supports TypeScript 7.1. Remove that setting to use [server-side docgen](#server-side-docgen-is-on-by-default). React no longer installs the builder docgen packages: if you keep `docgenServer: false`, add `react-docgen` (or, for `typescript.reactDocgen: 'react-docgen-typescript'`, the plugin for your builder and `react-docgen-typescript`) to your devDependencies, or Storybook stops with the install command. See the [builder docgen notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#builder-docgen-is-deprecated).
+
+`angular-vite` projects may opt-in to server-side docgen by setting `features.experimentalDocgenServer: true` in `.storybook/main.js|ts`. For more details, see the [framework documentation](../get-started/frameworks/angular-vite.mdx#component-documentation).
+
+### Next.js Webpack to Next.js Vite
+
+The Webpack-based `@storybook/nextjs` framework is deprecated. Follow the [instructions to migrate to `@storybook/nextjs-vite`](../get-started/frameworks/nextjs-vite.mdx#how-do-i-migrate-from-the-nextjs-webpack-5-addon), or run `npx storybook automigrate nextjs-to-nextjs-vite`. The automigration does not change `webpackFinal`, so move any custom Webpack configuration to `viteFinal` yourself. Also add Vite's `?raw` suffix to direct `.md` imports.
+
+### Web Components runtime manifest API to `customElementsManifest`
+
+`setCustomElementsManifest()` and `setCustomElements()` are deprecated. With server-side docgen, Storybook reads your elements from your source files, so you can remove the call from `.storybook/preview.js|ts`. To keep a manifest you generate yourself, set its path in `framework.options.customElementsManifest` in `.storybook/main.js|ts`. The `web-components-runtime-manifest` automigration does both for you. See the [Web Components manifest notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#web-components-the-runtime-custom-elements-manifest-api-is-deprecated).
+
+### `test-runner` to `addon-vitest`
+
+Official support for the `test-runner` has ended. It still runs with Storybook 11, but it no longer receives fixes or compatibility updates. Follow the [instructions to migrate to `addon-vitest`](../writing-tests/integrations/vitest-addon/migration-guide.mdx). If your project uses a Webpack-based framework, the [test runner notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#test-runner-support-ended) explain how to switch to Vite first.
 
 ## New projects
 
 To add Storybook to a project that isn’t currently using Storybook:
 
-<CodeSnippets path="create-command.md" copyEvent="CreateCommandCopy" />
+<CodeSnippets path="create-command-prerelease.md" copyEvent="CreateCommandCopy" />
 
 This will:
 
 1. Figure out which renderer (React, Vue, Angular, Web Components), builder (Webpack, Vite), or meta-framework (Next.js, SvelteKit) you’re using
-2. Install Storybook 10 and auto-configure it to mirror project settings
+2. Install Storybook 11 and auto-configure it to mirror project settings
 
 ## Troubleshooting
 
@@ -76,19 +293,11 @@ The automatic upgrade should get your Storybook into a working state. If you enc
 
 1. Try running the [`doctor` command](../api/cli-options.mdx#doctor) to check for common issues (such as duplicate dependencies, incompatible addons, or mismatched versions) and see suggestions for fixing them.
 2. If you’re running `storybook` with the `dev` command, try using the `build` command instead. Sometimes `build` errors are more legible than `dev` errors!
-3. Check [the full migration notes][full-migration-notes], which contains an exhaustive list of noteworthy changes in Storybook 10. Many of these are already handled by automigrations when you upgrade, but not all are. It’s also possible that you’re experiencing a corner case that we’re not aware of.
+3. Check [the full migration notes][full-migration-notes], which contains an exhaustive list of noteworthy changes in Storybook 11. Many of these are already handled by automigrations when you upgrade, but not all are. It’s also possible that you’re experiencing a corner case that we’re not aware of.
 4. Search [Storybook issues on GitHub](https://github.com/storybookjs/storybook/issues). If you’re seeing a problem, there’s a good chance other people are too. If so, upvote the issue, try out any workarounds described in the comments, and comment back if you have useful info to contribute.
-5. If there’s no existing issue, you can [file one](https://github.com/storybookjs/storybook/issues/new/choose), ideally with a reproduction attached. We’ll be on top of Storybook 10 issues as we’re stabilizing the release.
+5. If there’s no existing issue, you can [file one](https://github.com/storybookjs/storybook/issues/new/choose), ideally with a reproduction attached. We’ll be on top of Storybook 11 issues as we’re stabilizing the release.
 
 If you prefer to debug yourself, here are a few useful things you can do to help narrow down the problem:
 
-1. Try removing all addons that are not in the `@storybook` npm namespace (make sure you don't remove the `storybook` package). Community addons that work well with 9.x might not yet be compatible with 10.x, and this is the fastest way to isolate that possibility. If you find an addon that needs to be upgraded to work with Storybook 10, please post an issue on the addon’s repository, or better yet, a pull request to upgrade it!
-2. Another debugging technique is to bisect to older prerelease versions of Storybook to figure out which release broke your Storybook. For example, assuming that the current prerelease of Storybook is `10.0.0-beta.56`, you could set the version to `10.0.0-alpha.0` in your `package.json` and reinstall to verify that it still works (`alpha.0` should be nearly identical to `9.1.x`). If it works, you could then try `10.0.0-beta.0`, then `10.0.0-beta.28` and so forth. Once you’ve isolated the bad release, read through its [CHANGELOG](https://github.com/storybookjs/storybook/blob/next/CHANGELOG.prerelease.md) entry and perhaps there’s a change that jumps out as the culprit. If you find the problem, please submit an issue or pull request to the Storybook monorepo and we’ll do our best to take care of it quickly.
-
-## Optional migrations
-
-In addition to the automigrations and manual migrations above, there are also optional migrations that you should consider. These are features that we’ve deprecated in Storybook 10 (but remain backwards compatible), or best practices that should help you be more productive in the future.
-
-### `test-runner` to `addon-vitest`
-
-`addon-vitest` and the rest of the [Storybook Test experience](https://storybook.js.org/blog/storybook-test-sneak-peek/) is designed to supercede the `test-runner`. It's faster and provides a better experience for writing and running tests. If your project uses React, Vue, or Svelte and is built with Vite, you should consider migrating to `addon-vitest`, by following the [installation instructions](../writing-tests/integrations/vitest-addon/index.mdx#automatic-setup).
+1. Try removing all addons that are not in the `@storybook` npm namespace (make sure you don't remove the `storybook` package). Community addons that work well with 10.x might not yet be compatible with 11.x, and this is the fastest way to isolate that possibility. Check the [packages known to need a release](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#community-packages-that-need-a-release). If you find an addon that needs to be upgraded to work with Storybook 11, please post an issue on the addon’s repository, or better yet, a pull request to upgrade it!
+2. Another debugging technique is to bisect to older prerelease versions of Storybook to figure out which release broke your Storybook. For example, assuming that the current prerelease of Storybook is `11.0.0-beta.56`, you could set the version to `11.0.0-alpha.0` in your `package.json` and reinstall to verify that it still works (`alpha.0` should be nearly identical to `10.6.x`). If it works, you could then try `11.0.0-beta.0`, then `11.0.0-beta.28` and so forth. Once you’ve isolated the bad release, read through its [CHANGELOG](https://github.com/storybookjs/storybook/blob/next/CHANGELOG.prerelease.md) entry and perhaps there’s a change that jumps out as the culprit. If you find the problem, please submit an issue or pull request to the Storybook monorepo and we’ll do our best to take care of it quickly.

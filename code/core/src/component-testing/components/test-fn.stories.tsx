@@ -124,6 +124,25 @@ ExtendedStorySingleTestExample.test(
   }
 );
 
+export const StoryWithOwnArgType = meta.type<{ args: { caption: string } }>().story({
+  args: {
+    children: 'Arg from story',
+    caption: 'Arg only this story has',
+  },
+  render: ({ caption, ...args }) => (
+    <span>
+      {caption}
+      <br />
+      <br />
+      <button {...args} />
+    </span>
+  ),
+});
+
+StoryWithOwnArgType.test('reads the arg typed with meta.type', async ({ canvas, args }) => {
+  await expect(canvas.getByText(args.caption)).toBeInTheDocument();
+});
+
 // This is intentionally defined out-of-order
 PlayFunction.test('should be clicked by play function', async ({ args }) => {
   await expect(args.onClick).toHaveBeenCalled();

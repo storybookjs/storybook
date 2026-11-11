@@ -1,0 +1,11 @@
+## Attributes
+
+```
+export type VanillaBasicAttributes = {
+  label?: string;
+  count?: string;
+  disabled?: string;
+  /** Old name for label. @deprecated Use label instead. */
+  'legacy-label'?: string;
+}
+```

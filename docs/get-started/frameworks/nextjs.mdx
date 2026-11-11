@@ -6,6 +6,12 @@ sidebar:
   title: Next.js (Webpack)
 ---
 
+<Callout variant="warning" icon="⚠️">
+
+**`@storybook/nextjs` is deprecated and will be removed in Storybook 12.** Migrate to [`@storybook/nextjs-vite`](./nextjs-vite.mdx) — the automigration is available via `storybook upgrade` (accept the fix) or `storybook automigrate nextjs-to-nextjs-vite`. See the [migration instructions](./nextjs-vite.mdx#how-do-i-migrate-from-the-nextjs-webpack-5-addon) for details.
+
+</Callout>
+
 Storybook for Next.js (Webpack) is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Next.js](https://nextjs.org/) applications using [Webpack 5](https://webpack.js.org/).
 
 <Callout variant="info">
@@ -36,12 +42,12 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
   versions={[
     {
       name: 'Next.js',
-      range: '≥ 14.1',
+      range: '≥ 15',
       icon: '/images/logos/renderers/logo-nextjs.svg',
     },
     {
       name: 'Webpack',
-      range: '5',
+      range: '≥ 5.101',
       icon: '/images/logos/builders/webpack.svg',
     },
   ]}
@@ -155,7 +161,7 @@ The following features are not supported (yet). Support for these features might
 - [fallback](https://nextjs.org/docs/pages/api-reference/components/font#fallback) option
 - [adjustFontFallback](https://nextjs.org/docs/pages/api-reference/components/font#adjustfontfallback) option
 - [preload](https://nextjs.org/docs/pages/api-reference/components/font#preload) option gets ignored. Storybook handles Font loading its own way.
-- [display](https://nextjs.org/docs/pages/api-reference/components/font#display) option gets ignored. All fonts are loaded with display set to "block" to make Storybook load the font properly.
+- [display](https://nextjs.org/docs/pages/api-reference/components/font#display) is respected (defaulting to `swap`); `optional` is loaded as `block` so fonts render reliably.
 
 #### Mocking fonts during testing
 
@@ -600,6 +606,29 @@ Module not found: Error: Can't resolve 'style-loader'
 ```
 
 This is because those versions of Yarn have different package resolution rules than Yarn v1.x. If this is the case for you, please install the package directly.
+
+## Component documentation
+
+Storybook 11 reads React component props on the server by default, with the [`typescript`](../../configure/integration/typescript.mdx) package (TypeScript 5.9 or 6, even in JavaScript projects, where it reads types from JSDoc comments). New projects need no docgen configuration and no extra packages.
+
+<Callout variant="info">
+
+The Storybook 10 builder-based docgen is still available, but it is deprecated. It will be removed in Storybook 12. To use it:
+
+1. Set [`features.docgenServer: false`](../../api/main-config/main-config-features.mdx#docgenserver) in your main config.
+2. Set the package you want to use in [`typescript.reactDocgen`](../../api/main-config/main-config-typescript.mdx#reactdocgen). The default is `'react-docgen'`.
+3. Install the packages for that mode in your devDependencies:
+
+| `typescript.reactDocgen`    | Packages to install                                                                                                                                 |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'react-docgen'` (default)  | `react-docgen`                                                                                                                                      |
+| `'react-docgen-typescript'` | `@storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0` (this exact version; its `latest` tag is older) and `react-docgen-typescript` |
+
+When a docgen package is missing, Storybook stops and prints the install command. To run without docgen instead, set `typescript.reactDocgen: false`.
+
+Projects on TypeScript 7.0 cannot use server-side docgen. Projects on TypeScript 7.1 or newer can. See [TypeScript 7](../../configure/integration/typescript.mdx#typescript-7).
+
+</Callout>
 
 ## FAQ
 

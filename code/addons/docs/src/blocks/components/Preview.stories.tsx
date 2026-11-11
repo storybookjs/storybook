@@ -4,7 +4,7 @@ import React from 'react';
 import { Button, Spaced } from 'storybook/internal/components';
 import type { DocsContextProps, ModuleExport } from 'storybook/internal/types';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import * as ButtonStories from '../examples/Button.stories';
 import { Preview, PreviewSkeleton } from './Preview';
@@ -45,6 +45,14 @@ export const CodeExpanded = () => (
 
 export const CodeError = () => (
   <Preview inline isExpanded withSource={sourceStories.SourceUnavailable.args}>
+    <Button ariaLabel={false} variant="outline">
+      Button 1
+    </Button>
+  </Preview>
+);
+
+export const IncompleteSnippet = () => (
+  <Preview inline isExpanded withSource={sourceStories.IncompleteSnippet.args}>
     <Button ariaLabel={false} variant="outline">
       Button 1
     </Button>

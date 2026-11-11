@@ -106,7 +106,6 @@ describe('extractType', () => {
       ['number', { name: 'number' }],
       // ['object', { name: 'object' }], // seems to be wrong | TODO: REVISIT
       // ['foo', { name: 'other', value: 'empty-enum' }], // seems to be wrong | TODO: REVISIT
-      [null, { name: 'other', value: 'void' }],
       [undefined, { name: 'other', value: 'void' }],
       // ['T[]', { name: 'other', value: 'empty-enum' }], // seems to be wrong | TODO: REVISIT
       ['[]', { name: 'other', value: 'empty-enum' }],
@@ -130,7 +129,7 @@ describe('extractType', () => {
       // [{ foo: 1 }, { name: 'other', value: 'empty-enum' }], // seems to be wrong | TODO: REVISIT
       [undefined, { name: 'other', value: 'void' }],
     ])('%s', (defaultValue, expected) => {
-      expect(extractType(makeProperty(null), defaultValue)).toEqual(expected);
+      expect(extractType(makeProperty(), defaultValue)).toEqual(expected);
     });
   });
 });

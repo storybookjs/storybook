@@ -143,4 +143,27 @@ describe('inferArgTypes', () => {
       },
     });
   });
+
+  it('does not infer types for args that already have an argType', () => {
+    expect(
+      inferArgTypes({
+        initialArgs: {
+          size: 'large',
+        },
+        argTypes: {
+          size: {
+            type: {
+              name: 'enum',
+              value: ['small', 'medium', 'large'],
+            },
+          },
+        },
+      } as any)
+    ).toEqual({
+      size: {
+        name: 'size',
+        type: { name: 'enum', value: ['small', 'medium', 'large'] },
+      },
+    });
+  });
 });

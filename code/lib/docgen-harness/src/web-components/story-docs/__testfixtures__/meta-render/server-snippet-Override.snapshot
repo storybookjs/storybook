@@ -1,0 +1,1 @@
+html`<meta-render label=${'override'} class="override"></meta-render>`

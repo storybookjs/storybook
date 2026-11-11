@@ -43,6 +43,23 @@ describe('BUN Proxy', () => {
     expect(bunProxy.type).toEqual('bun');
   });
 
+  describe('getRegistryURL', () => {
+    it('uses npm 12-compatible workspace flags', async () => {
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValueOnce({
+        stdout: 'https://registry.npmjs.org/',
+      } as Awaited<ReturnType<typeof executeCommand>>);
+
+      await expect(bunProxy.getRegistryURL()).resolves.toBe('https://registry.npmjs.org/');
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'npm',
+          args: ['config', 'get', 'registry', '--workspaces=false', '--include-workspace-root'],
+        })
+      );
+    });
+  });
+
   describe('installDependencies', () => {
     it('should run `bun install`', async () => {
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
@@ -161,7 +178,7 @@ describe('BUN Proxy', () => {
         [
           '[install]',
           'minimumReleaseAge = 3600',
-          'minimumReleaseAgeExcludes = ["storybook", "@storybook/*", "eslint-plugin-storybook", "@chromatic-com/storybook"]',
+          'minimumReleaseAgeExcludes = ["storybook", "@storybook/*", "eslint-plugin-storybook", "@chromatic-com/storybook", "chromatic"]',
           '',
         ].join('\n')
       );
@@ -208,6 +225,7 @@ describe('BUN Proxy', () => {
             '  "@storybook/*",',
             '  "eslint-plugin-storybook",',
             '  "@chromatic-com/storybook",',
+            '  "chromatic",',
             ']',
             '[test]',
             'coverageThreshold = 0.9',
@@ -217,6 +235,47 @@ describe('BUN Proxy', () => {
       } finally {
         rmSync(tempDir, { recursive: true, force: true });
       }
+    });
+  });
+
+  describe('getPublishedPeerDependencies', () => {
+    const readPeers = () =>
+      bunProxy.getPublishedPeerDependencies('@storybook/react-native', '11.0.0-next.0');
+
+    describe('when the version has peer dependencies', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({ stdout: '{"storybook":"^10.5.4"}' } as any);
+      });
+
+      it('reads them through the package manager', async () => {
+        await expect(readPeers()).resolves.toEqual({ storybook: '^10.5.4' });
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({
+            command: 'npm',
+            args: ['info', '@storybook/react-native@11.0.0-next.0', 'peerDependencies', '--json'],
+          })
+        );
+      });
+    });
+
+    describe('when the version has no peer dependencies', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+      });
+
+      it('returns an empty object', async () => {
+        await expect(readPeers()).resolves.toEqual({});
+      });
+    });
+
+    describe('when the lookup fails', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockRejectedValue(new Error('401 Unauthorized'));
+      });
+
+      it('returns null', async () => {
+        await expect(readPeers()).resolves.toBeNull();
+      });
     });
   });
 });

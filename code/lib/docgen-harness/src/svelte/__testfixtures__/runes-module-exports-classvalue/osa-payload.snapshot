@@ -1,0 +1,9 @@
+{
+  "description": undefined,
+  "id": "sveltefixtures-avatar",
+  "jsDocTags": {},
+  "name": "Avatar",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": undefined,
+}

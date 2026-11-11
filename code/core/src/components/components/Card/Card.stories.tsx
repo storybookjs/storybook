@@ -1,3 +1,5 @@
+import { expect } from 'storybook/test';
+
 import preview from '../../../../../.storybook/preview.tsx';
 import { Card } from './Card.tsx';
 
@@ -15,11 +17,46 @@ export const Default = meta.story(() => (
   </Card>
 ));
 
-export const Rainbow = meta.story(() => (
-  <Card outlineAnimation="rainbow">
-    <Contents>Rainbow</Contents>
-  </Card>
-));
+export const Rainbow = meta.story({
+  render: () => (
+    <Card outlineAnimation="rainbow">
+      <Contents>Rainbow</Contents>
+    </Card>
+  ),
+  play: async ({ canvasElement }) => {
+    const animations = canvasElement.getAnimations({ subtree: true });
+    await expect(animations).not.toHaveLength(0);
+    for (const animation of animations) {
+      await expect(animation.effect?.getComputedTiming().endTime).toBeLessThanOrEqual(5000);
+    }
+  },
+});
+
+/** Shows the outline's resting gradient without animating it. */
+export const RainbowPaused = meta.story({
+  render: () => (
+    <Card outlineAnimation="rainbow" outlineAnimationPaused>
+      <Contents>Rainbow, paused</Contents>
+    </Card>
+  ),
+  play: async ({ canvasElement }) => {
+    const animations = canvasElement.getAnimations({ subtree: true });
+    await expect(animations).not.toHaveLength(0);
+    for (const animation of animations) {
+      await expect(animation.playState).toBe('paused');
+    }
+  },
+});
+
+/** Reduced-motion variant. Chromatic emulates the preference; locally, enable it in your OS. */
+export const RainbowReducedMotion = meta.story({
+  render: () => (
+    <Card outlineAnimation="rainbow">
+      <Contents>Rainbow with reduced motion</Contents>
+    </Card>
+  ),
+  parameters: { chromatic: { prefersReducedMotion: 'reduce' } },
+});
 
 export const Spinning = meta.story(() => (
   <Card outlineAnimation="spin">
@@ -27,19 +64,68 @@ export const Spinning = meta.story(() => (
   </Card>
 ));
 
+/** Reduced-motion variant. Chromatic emulates the preference; locally, enable it in your OS. */
+export const SpinningReducedMotion = meta.story({
+  render: () => (
+    <Card outlineAnimation="spin">
+      <Contents>Spinning with reduced motion</Contents>
+    </Card>
+  ),
+  parameters: { chromatic: { prefersReducedMotion: 'reduce' } },
+});
+
+export const SpinningAgentic = meta.story(() => (
+  <Card outlineAnimation="spin" outlineColor="agentic">
+    <Contents>Spinning agentic</Contents>
+  </Card>
+));
+
+// Filled agentic card with a spinning outline (as used by ReviewWidget). The
+// `agentic` content background is translucent in dark mode, so this guards
+// against the spinning gradient bleeding through the content instead of the ring.
+export const SpinningAgenticFilled = meta.story(() => (
+  <Card outlineAnimation="spin" color="agentic">
+    <Contents>Spinning agentic filled</Contents>
+  </Card>
+));
+
+export const Agentic = meta.story(() => (
+  <Card color="agentic">
+    <Contents>Agentic</Contents>
+  </Card>
+));
+
 export const Positive = meta.story(() => (
-  <Card outlineColor="positive">
+  <Card color="positive">
     <Contents>Positive</Contents>
   </Card>
 ));
 
 export const Warning = meta.story(() => (
-  <Card outlineColor="warning">
+  <Card color="warning">
     <Contents>Warning</Contents>
   </Card>
 ));
 
 export const Negative = meta.story(() => (
+  <Card color="negative">
+    <Contents>Negative</Contents>
+  </Card>
+));
+
+export const PositiveOutline = meta.story(() => (
+  <Card outlineColor="positive">
+    <Contents>Positive</Contents>
+  </Card>
+));
+
+export const WarningOutline = meta.story(() => (
+  <Card outlineColor="warning">
+    <Contents>Warning</Contents>
+  </Card>
+));
+
+export const NegativeOutline = meta.story(() => (
   <Card outlineColor="negative">
     <Contents>Negative</Contents>
   </Card>

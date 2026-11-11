@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('storyDocsCodePanel', () => {
   beforeEach(() => {
-    vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+    vi.stubGlobal('FEATURES', { docgenServer: true });
   });
 
   afterEach(() => {
@@ -16,11 +16,21 @@ describe('storyDocsCodePanel', () => {
     it('skips non-args stories', () => {
       expect(shouldSkipStoryDocsEmit({ __isArgsStory: false })).toBe(true);
     });
+
+    it('skips portable stories even when the source would otherwise render dynamically', () => {
+      expect(
+        shouldSkipStoryDocsEmit({
+          __isArgsStory: true,
+          __isPortableStory: true,
+          docs: { source: { type: SourceType.DYNAMIC } },
+        })
+      ).toBe(true);
+    });
   });
 
   describe('shouldWaitForServiceSnippet', () => {
-    it('is false when experimentalDocgenServer is disabled', () => {
-      vi.stubGlobal('FEATURES', { experimentalDocgenServer: false });
+    it('is false when docgenServer is disabled', () => {
+      vi.stubGlobal('FEATURES', { docgenServer: false });
       expect(shouldWaitForServiceSnippet(undefined, false)).toBe(false);
     });
 

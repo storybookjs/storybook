@@ -1,0 +1,34 @@
+{
+  "count": {
+    "description": "Number of repetitions.",
+    "name": "count",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": false,
+    },
+  },
+  "label": {
+    "description": "Visible label.",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+}

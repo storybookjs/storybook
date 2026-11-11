@@ -140,7 +140,6 @@ describe('GeneratorExecutionCommand', () => {
         skipInstall: true,
         builder: SupportedBuilder.VITE,
         linkable: true,
-        usePnp: true,
         yes: true,
         packageManager: PackageManagerName.NPM,
       };
@@ -169,7 +168,6 @@ describe('GeneratorExecutionCommand', () => {
         expect.objectContaining({
           builder: SupportedBuilder.VITE,
           linkable: true,
-          pnp: true,
           yes: true,
           projectType: ProjectType.VUE3,
           features: expect.any(Set),

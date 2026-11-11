@@ -9,7 +9,7 @@ import { SyncIcon } from '@storybook/icons';
 
 import { Consumer, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 interface AnimatedButtonProps {
   animating?: boolean;
@@ -37,7 +37,7 @@ export const remountTool: Addon_BaseType = {
   title: 'remount',
   id: 'remount',
   type: types.TOOL,
-  match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
+  match: ({ viewMode }) => viewMode === 'story',
   render: () => (
     <Consumer filter={menuMapper}>
       {({ remount, storyId, api }) => {

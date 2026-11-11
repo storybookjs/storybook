@@ -1,0 +1,64 @@
+{
+  "customElementsManifest": {
+    "declaration": {
+      "attributes": [
+        {
+          "default": "'Items'",
+          "description": "Visible label for the list.",
+          "fieldName": "label",
+          "name": "label",
+          "type": {
+            "text": "string",
+          },
+        },
+      ],
+      "customElement": true,
+      "description": "",
+      "kind": "class",
+      "members": [
+        {
+          "attribute": "label",
+          "default": "'Items'",
+          "description": "Visible label for the list.",
+          "kind": "field",
+          "name": "label",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "default": "[]",
+          "description": "Items rendered by the list.",
+          "kind": "field",
+          "name": "items",
+          "type": {
+            "text": "Item[]",
+          },
+        },
+        {
+          "default": "{ dense: false, theme: 'light' }",
+          "description": "Rendering options for the list.",
+          "kind": "field",
+          "name": "config",
+          "type": {
+            "text": "PanelConfig",
+          },
+        },
+      ],
+      "name": "LitPropertyOnly",
+      "superclass": {
+        "name": "LitElement",
+        "package": "lit",
+      },
+      "tagName": "lit-property-only",
+    },
+    "manifestPath": "custom-elements.json",
+  },
+  "description": undefined,
+  "id": "lit-property-only",
+  "jsDocTags": {},
+  "name": "lit-property-only",
+  "path": "./input.stories.ts",
+  "renderer": "web-components",
+  "summary": undefined,
+}

@@ -25,7 +25,7 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
     } = {};
 
     // Initialize contextual data; if ghost stories are triggered to assess the
-    // quality of an ai setup workflow, inject the runId for the ai setup session.
+    // quality of a `skills setup` workflow, inject the runId for that setup session.
     const aiSetupRunId = await getAiSetupRunId(options.configDir);
 
     try {
@@ -38,24 +38,20 @@ export function initGhostStoriesChannel(channel: Channel, options: Options) {
           const lastSetupStoryScoringRun = lastEvents?.['ai-setup-final-scoring'];
           const lastGhostStoriesRun = lastEvents?.['ghost-stories'];
 
-          // We only want to run ghost stories immediately after init or ai setup.
+          // We only want to run ghost stories immediately after init or `skills setup`.
           const lastRelevantEvent = lastAISetup ?? lastInit;
           if (!lastRelevantEvent) {
             throw new SkipGhostStoriesTelemetry();
           }
 
           // Already ran once for this project — re-run it only when we need fresh
-          // data for a new instance of `ai setup`.
+          // data for a new instance of `skills setup`.
           if (
             lastGhostStoriesRun &&
             lastSetupStoryScoringRun.body.payload.runId === lastAISetup.body.payload.runId
           ) {
             throw new SkipGhostStoriesTelemetry();
           }
-
-          // No session-ID match: `storybook ai setup` runs as a separate CLI
-          // process, so its sessionId never matches the dev server's. The
-          // `lastGhostStoriesRun` guard above is enough to enforce once-per-project.
 
           const metadata = await getStorybookMetadata(options.configDir);
           const isReactStorybook = metadata?.renderer?.includes('@storybook/react');

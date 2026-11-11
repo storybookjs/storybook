@@ -1,0 +1,44 @@
+{
+  "id": "slots-template-only",
+  "name": "TemplateOnlySlots",
+  "path": "__PATH__",
+  "stories": {
+    "forms-slots-template-only--scoped-bindings": {
+      "description": undefined,
+      "id": "forms-slots-template-only--scoped-bindings",
+      "name": "Scoped Bindings",
+      "summary": undefined,
+      "warning": "No static snippet: a slot function could not be resolved statically.",
+    },
+    "forms-slots-template-only--string-child": {
+      "description": undefined,
+      "id": "forms-slots-template-only--string-child",
+      "name": "String Child",
+      "snippet": "<script lang="ts" setup>
+import TemplateOnlySlots from './TemplateOnlySlots.vue';
+</script>
+
+<template>
+  <TemplateOnlySlots>
+    Plain text content
+    <template #header>
+      Header text
+    </template>
+  </TemplateOnlySlots>
+</template>",
+      "summary": undefined,
+      "template": "<script lang="ts" setup>
+import TemplateOnlySlots from './TemplateOnlySlots.vue';
+</script>
+
+<template>
+  <TemplateOnlySlots⟦props * except=["default","header","item"] ~" "⟫⟧>
+    ⟦text default slot=true⟫Plain text content⟧
+    <template #header>
+      ⟦text header slot=true⟫Header text⟧
+    </template>⟦slots * slots=["item"] indent="    "⟫⟧
+  </TemplateOnlySlots>
+</template>",
+    },
+  },
+}

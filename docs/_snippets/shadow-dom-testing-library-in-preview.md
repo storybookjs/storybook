@@ -1,4 +1,41 @@
+```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF 4"
+import { definePreview } from '@storybook/web-components-vite';
+
+import { within as withinShadow } from 'shadow-dom-testing-library';
+
+// 👇 Extend TypeScript types for safety
+export type ShadowQueries = ReturnType<typeof withinShadow>;
+
+// Since Storybook@8.6
+declare module 'storybook/internal/csf' {
+  interface Canvas extends ShadowQueries {}
+}
+
+export default definePreview({
+  // 👇 Augment the canvas with the shadow DOM queries
+  beforeEach({ canvasElement, canvas }) {
+    Object.assign(canvas, { ...withinShadow(canvasElement) });
+  },
+  // ...
+});
+```
+
+```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF 4"
+import { definePreview } from '@storybook/web-components-vite';
+
+import { within as withinShadow } from 'shadow-dom-testing-library';
+
+export default definePreview({
+  // 👇 Augment the canvas with the shadow DOM queries
+  beforeEach({ canvasElement, canvas }) {
+    Object.assign(canvas, { ...withinShadow(canvasElement) });
+  },
+  // ...
+});
+```
+
 ```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import type { Preview } from '@storybook/web-components-vite';
 
 import { within as withinShadow } from 'shadow-dom-testing-library';
@@ -23,6 +60,7 @@ export default preview;
 ```
 
 ```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF 3"
+// ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
 import { within as withinShadow } from 'shadow-dom-testing-library';
 
 export default {
@@ -32,42 +70,4 @@ export default {
   },
   // ...
 };
-```
-
-```ts filename=".storybook/preview.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
-import { definePreview } from '@storybook/web-components-vite';
-
-import { within as withinShadow } from 'shadow-dom-testing-library';
-
-// 👇 Extend TypeScript types for safety
-export type ShadowQueries = ReturnType<typeof withinShadow>;
-
-// Since Storybook@8.6
-declare module 'storybook/internal/csf' {
-  interface Canvas extends ShadowQueries {}
-}
-
-export default definePreview({
-  // 👇 Augment the canvas with the shadow DOM queries
-  beforeEach({ canvasElement, canvas }) {
-    Object.assign(canvas, { ...withinShadow(canvasElement) });
-  },
-  // ...
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/preview.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
-import { definePreview } from '@storybook/web-components-vite';
-
-import { within as withinShadow } from 'shadow-dom-testing-library';
-
-export default definePreview({
-  // 👇 Augment the canvas with the shadow DOM queries
-  beforeEach({ canvasElement, canvas }) {
-    Object.assign(canvas, { ...withinShadow(canvasElement) });
-  },
-  // ...
-});
 ```

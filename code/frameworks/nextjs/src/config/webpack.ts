@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 
 import type { NextConfig } from 'next';
 import type { Configuration as WebpackConfig } from 'webpack';
+import type webpack from 'webpack';
 
 import { addScopedAlias, isNextVersionGte, resolveNextConfig } from '../utils.ts';
 
@@ -18,9 +19,11 @@ const tryResolve = (path: string) => {
 export const configureConfig = async ({
   baseConfig,
   nextConfigPath,
+  webpackInstance,
 }: {
   baseConfig: WebpackConfig;
   nextConfigPath?: string;
+  webpackInstance: typeof webpack;
 }): Promise<NextConfig> => {
   const nextConfig = await resolveNextConfig({ nextConfigPath });
 
@@ -54,15 +57,16 @@ export const configureConfig = async ({
     addScopedAlias(baseConfig, 'react-dom/server', 'next/dist/compiled/react-dom/server');
   }
 
-  await setupRuntimeConfig(baseConfig, nextConfig);
+  setupRuntimeConfig(baseConfig, nextConfig, webpackInstance);
 
   return nextConfig;
 };
 
-const setupRuntimeConfig = async (
+const setupRuntimeConfig = (
   baseConfig: WebpackConfig,
-  nextConfig: NextConfig
-): Promise<void> => {
+  nextConfig: NextConfig,
+  webpackInstance: typeof webpack
+): void => {
   const definePluginConfig: Record<string, any> = {};
 
   // TODO: Remove this once we only support Next.js 16 and above
@@ -79,7 +83,10 @@ const setupRuntimeConfig = async (
 
   definePluginConfig['process.env.__NEXT_NEW_LINK_BEHAVIOR'] = newNextLinkBehavior;
 
-  // Load DefinePlugin with a dynamic import to ensure that Next.js can first
-  // replace webpack with its own internal instance, and we get that here.
-  baseConfig.plugins?.push(new (await import('webpack')).default.DefinePlugin(definePluginConfig));
+  // Consumed by the next/link mock to normalize hrefs the way the real <Link> does.
+  definePluginConfig['process.env.__NEXT_TRAILING_SLASH'] = nextConfig.trailingSlash;
+  definePluginConfig['process.env.__NEXT_MANUAL_TRAILING_SLASH'] =
+    nextConfig.skipTrailingSlashRedirect;
+
+  baseConfig.plugins?.push(new webpackInstance.DefinePlugin(definePluginConfig));
 };

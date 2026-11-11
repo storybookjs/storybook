@@ -1,0 +1,3 @@
+html`<lit-template-shapes @shape-change=${() => {}}
+  >${html`<button @click=${() => {}}>Go</button>`}</lit-template-shapes
+>`

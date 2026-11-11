@@ -1,7 +1,8 @@
-import type { TSESTree } from '@typescript-eslint/utils';
-import { AST_NODE_TYPES } from '@typescript-eslint/utils';
+import { AST_NODE_TYPES } from '@typescript-eslint/types';
+import * as ASTUtils from '@typescript-eslint/utils/ast-utils';
+import type { TSESTree } from '@typescript-eslint/types';
 
-export { ASTUtils } from '@typescript-eslint/utils';
+export { ASTUtils };
 
 const isNodeOfType =
   <NodeType extends AST_NODE_TYPES>(nodeType: NodeType) =>
@@ -42,4 +43,5 @@ export const isTSInterfaceDeclaration = isNodeOfType(AST_NODE_TYPES.TSInterfaceD
 export const isTSAsExpression = isNodeOfType(AST_NODE_TYPES.TSAsExpression);
 export const isTSSatisfiesExpression = isNodeOfType(AST_NODE_TYPES.TSSatisfiesExpression);
 export const isTSNonNullExpression = isNodeOfType(AST_NODE_TYPES.TSNonNullExpression);
+export const isTSTypeAssertion = isNodeOfType(AST_NODE_TYPES.TSTypeAssertion);
 export const isMetaProperty = isNodeOfType(AST_NODE_TYPES.MetaProperty);

@@ -21,7 +21,7 @@ describe('loadTemplate', () => {
     // Windows-style path with backslashes (need to escape them in JS strings)
     const windowsPath = '.\\apps\\frontend-storybook\\.storybook';
 
-    const result = await loadTemplate('vitest.config.template', {
+    const result = await loadTemplate('vitest.config.4.template', {
       CONFIG_DIR: windowsPath,
       SETUP_FILE: '.\\apps\\frontend-storybook\\.storybook\\vitest.setup.ts',
     });
@@ -35,7 +35,7 @@ describe('loadTemplate', () => {
     // Unix-style path with forward slashes
     const unixPath = './apps/frontend-storybook/.storybook';
 
-    const result = await loadTemplate('vitest.config.template', {
+    const result = await loadTemplate('vitest.config.4.template', {
       CONFIG_DIR: unixPath,
       SETUP_FILE: './apps/frontend-storybook/.storybook/vitest.setup.ts',
     });

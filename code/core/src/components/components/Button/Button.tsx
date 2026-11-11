@@ -1,12 +1,11 @@
 import type { ComponentProps } from 'react';
 import React, { forwardRef, useEffect, useMemo, useState } from 'react';
 
-import { deprecate } from 'storybook/internal/client-logger';
-
 import { Slot } from '@radix-ui/react-slot';
 import { darken, lighten, rgba, transparentize } from 'polished';
-import { type API_KeyCollection, shortcutToAriaKeyshortcuts } from 'storybook/manager-api';
-import { isPropValid, styled } from 'storybook/theming';
+import { shortcutToAriaKeyshortcuts, type API_KeyCollection } from 'storybook/manager-api';
+import { isPropValid, styled } from 'storybook/theming/emotion';
+import type { PopperPlacement } from '../shared/overlayHelpers.tsx';
 
 import { InteractiveTooltipWrapper } from './helpers/InteractiveTooltipWrapper.tsx';
 import { useAriaDescription } from './helpers/useAriaDescription.tsx';
@@ -21,13 +20,18 @@ export interface ButtonProps extends Omit<ComponentProps<typeof StyledButton>, '
    * Button's content is already accessible to all. When a string is passed, it is also used as the
    * default tooltip text.
    */
-  ariaLabel?: string | false;
+  ariaLabel: string | false;
 
   /**
    * An optional tooltip to display when the Button is hovered. If the Button has no text content,
    * consider making this the same as the aria-label.
    */
   tooltip?: string;
+
+  /**
+   * The preferred placement of the tooltip.
+   */
+  tooltipPlacement?: PopperPlacement;
 
   /**
    * Only use this flag when tooltips on button interfere with other keyboard interactions, like
@@ -57,15 +61,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       asChild = false,
       animation = 'none',
       size = 'small',
+      appearance = 'default',
       variant = 'outline',
       padding = 'medium',
       disabled = false,
       readOnly = false,
-      active,
       onClick,
       ariaLabel,
       ariaDescription = undefined,
       tooltip = undefined,
+      tooltipPlacement = 'top',
       shortcut = undefined,
       disableAllTooltips = false,
       ...props
@@ -73,26 +78,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const Comp = asChild ? Slot : as;
-
-    let deprecated = undefined;
-    if (!readOnly && (ariaLabel === undefined || ariaLabel === '')) {
-      deprecated = 'ariaLabel';
-      deprecate(
-        `The 'ariaLabel' prop on 'Button' will become mandatory in Storybook 11. Buttons with text content should set 'ariaLabel={false}' to indicate that they are accessible as-is. Buttons without text content must provide a meaningful 'ariaLabel' for accessibility. The button content is: ${props.children}.`
-      );
-
-      // TODO in Storybook 11
-      // throw new Error(
-      //   'Button requires an ARIA label to be accessible. Please provide a valid ariaLabel prop.'
-      // );
-    }
-
-    if (active !== undefined) {
-      deprecated = 'active';
-      deprecate(
-        'The `active` prop on `Button` is deprecated and will be removed in Storybook 11. Use specialized components like `ToggleButton` or `Select` instead.'
-      );
-    }
 
     const { ariaDescriptionAttrs, AriaDescription } = useAriaDescription(ariaDescription);
 
@@ -114,11 +99,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     useEffect(() => {
-      const timer = setTimeout(() => {
-        if (isAnimating) {
-          setIsAnimating(false);
-        }
-      }, 1000);
+      // Only arm the timer while animating: an unconditional timeout costs one timer per
+      // mounted Button, which adds up fast (the sidebar mounts one per visible tree row).
+      if (!isAnimating) {
+        return undefined;
+      }
+      const timer = setTimeout(() => setIsAnimating(false), 1000);
       return () => clearTimeout(timer);
     }, [isAnimating]);
 
@@ -130,18 +116,18 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           disableAllTooltips={disableAllTooltips}
           shortcut={shortcut}
           tooltip={finalTooltip}
+          tooltipPlacement={tooltipPlacement}
         >
           <StyledButton
-            data-deprecated={deprecated}
             as={Comp}
             ref={ref}
+            appearance={appearance}
             variant={variant}
             size={size}
             padding={padding}
             $disabled={disabled || readOnly}
             aria-disabled={disabled || readOnly ? 'true' : undefined}
             readOnly={readOnly}
-            active={active}
             animating={isAnimating}
             animation={animation}
             onClick={disabled || readOnly ? undefined : handleClick}
@@ -164,24 +150,37 @@ const StyledButton = styled('button', {
 })<{
   size?: 'small' | 'medium';
   padding?: 'small' | 'medium' | 'none';
+  appearance?: 'default' | 'agentic';
   variant?: 'outline' | 'solid' | 'ghost';
-  active?: boolean;
   $disabled?: boolean;
   readOnly?: boolean;
   animating?: boolean;
   animation?: 'none' | 'rotate360' | 'glow' | 'jiggle';
-}>(
-  ({
-    theme,
-    variant,
-    size,
-    $disabled,
-    readOnly,
-    active,
-    animating,
-    animation = 'none',
-    padding,
-  }) => ({
+}>(({
+  theme,
+  appearance,
+  variant,
+  size,
+  $disabled,
+  readOnly,
+  animating,
+  animation = 'none',
+  padding,
+}) => {
+  const colors =
+    appearance === 'agentic'
+      ? {
+          foreground: theme.fgColor.agentic,
+          background: theme.bgColor.agentic,
+          outline: theme.borderColor.agentic,
+        }
+      : {
+          foreground: theme.color.secondary,
+          background: theme.button.background,
+          outline: theme.button.border,
+        };
+
+  return {
     border: 0,
     cursor: readOnly ? 'inherit' : $disabled ? 'not-allowed' : 'pointer',
     display: 'inline-flex',
@@ -224,15 +223,11 @@ const StyledButton = styled('button', {
     lineHeight: '1',
     background: (() => {
       if (variant === 'solid') {
-        return theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary);
+        return theme.base === 'light' ? colors.foreground : darken(0.18, colors.foreground);
       }
 
       if (variant === 'outline') {
-        return theme.button.background;
-      }
-
-      if (variant === 'ghost' && active) {
-        return transparentize(0.93, theme.barSelectedColor);
+        return colors.background;
       }
 
       return 'transparent';
@@ -243,11 +238,7 @@ const StyledButton = styled('button', {
       }
 
       if (variant === 'outline') {
-        return theme.input.color;
-      }
-
-      if (variant === 'ghost' && active) {
-        return theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary;
+        return appearance === 'agentic' ? theme.fgColor.agentic : theme.input.color;
       }
 
       if (variant === 'ghost') {
@@ -255,57 +246,59 @@ const StyledButton = styled('button', {
       }
       return theme.input.color;
     })(),
-    boxShadow: variant === 'outline' ? `${theme.button.border} 0 0 0 1px inset` : 'none',
+    boxShadow: variant === 'outline' ? `${colors.outline} 0 0 0 1px inset` : 'none',
     borderRadius: theme.input.borderRadius,
     // Making sure that the button never shrinks below its minimum size
     flexShrink: 0,
 
     ...(!readOnly && {
       '&:hover': {
-        color: variant === 'ghost' ? theme.color.secondary : undefined,
+        color: variant === 'ghost' ? colors.foreground : undefined,
         background: (() => {
-          let bgColor = theme.color.secondary;
+          let bgColor = colors.foreground;
 
           if (variant === 'solid') {
             bgColor =
               theme.base === 'light'
-                ? lighten(0.1, theme.color.secondary)
-                : darken(0.3, theme.color.secondary);
+                ? lighten(0.1, colors.foreground)
+                : darken(0.3, colors.foreground);
           }
 
           if (variant === 'outline') {
-            bgColor = theme.button.background;
+            bgColor = colors.background;
           }
 
           if (variant === 'ghost') {
-            return transparentize(0.86, theme.color.secondary);
+            return transparentize(0.86, colors.foreground);
           }
+
           return theme.base === 'light' ? darken(0.02, bgColor) : lighten(0.03, bgColor);
         })(),
       },
 
       '&:active': {
-        color: variant === 'ghost' ? theme.color.secondary : undefined,
+        color: variant === 'ghost' ? colors.foreground : undefined,
         background: (() => {
-          let bgColor = theme.color.secondary;
+          let bgColor = colors.foreground;
 
           if (variant === 'solid') {
-            bgColor = theme.color.secondary;
+            bgColor = colors.foreground;
           }
 
           if (variant === 'outline') {
-            bgColor = theme.button.background;
+            bgColor = colors.background;
           }
 
           if (variant === 'ghost') {
-            return theme.background.hoverable;
+            return appearance === 'agentic' ? theme.bgColor.agentic : theme.background.hoverable;
           }
+
           return theme.base === 'light' ? darken(0.02, bgColor) : lighten(0.03, bgColor);
         })(),
       },
 
       '&:focus-visible': {
-        outline: `2px solid ${rgba(theme.color.secondary, 1)}`,
+        outline: `2px solid ${rgba(colors.foreground, 1)}`,
         outlineOffset: 2,
         // Should ensure focus outline gets drawn above next sibling
         zIndex: '1',
@@ -321,14 +314,5 @@ const StyledButton = styled('button', {
       animation:
         animating && animation !== 'none' ? `${theme.animation[animation]} 1000ms ease-out` : '',
     },
-  })
-);
-
-export const IconButton = forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
-  deprecate(
-    '`IconButton` is deprecated and will be removed in Storybook 11, use `Button` instead.'
-  );
-
-  return <Button ref={ref} {...props} data-deprecated="IconButton" />;
+  };
 });
-IconButton.displayName = 'IconButton';

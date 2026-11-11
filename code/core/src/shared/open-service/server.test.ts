@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 
 import * as v from 'valibot';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -19,6 +19,7 @@ import {
   type MutableRecordLookupService,
   mutableRecordLookupServiceDef,
 } from './fixtures.ts';
+import { docgenQueryStaticPath } from './services/docgen/paths.ts';
 
 // Spy-only mock: keep the real `node:fs/promises` module shape, then redirect the calls used by
 // the static-files writer (and this test's own `readFile` assertions) to `memfs` so disk state
@@ -36,6 +37,9 @@ beforeEach(async () => {
   );
   vi.mocked(readFile).mockImplementation(
     memfs.fs.promises.readFile as unknown as typeof import('node:fs/promises').readFile
+  );
+  vi.mocked(readdir).mockImplementation(
+    memfs.fs.promises.readdir as unknown as typeof import('node:fs/promises').readdir
   );
 });
 
@@ -97,7 +101,7 @@ describe('server static builds', () => {
         description: 'Copies state from another registered service during static load.',
         initialState: { value: null as string | null },
         queries: {
-          getValue: {
+          value: {
             description: 'Returns the value copied during static load.',
             input: v.object({ build: v.literal('once') }),
             output: v.nullable(v.string()),
@@ -118,7 +122,7 @@ describe('server static builds', () => {
               const source = ctx.getService<MutableRecordLookupService>(
                 'internal-fixture/mutable-record-lookup'
               );
-              const record = source.queries.getRecordFields({
+              const record = source.queries.recordFields.get({
                 entryId: 'entry-a',
               });
 
@@ -148,7 +152,7 @@ describe('server static builds', () => {
         description: 'Publishes static input ids once its own load task starts running.',
         initialState: { built: false },
         queries: {
-          getReadyEntryIds: {
+          readyEntryIds: {
             description: 'Returns the entry ids published by the source static build task.',
             input: v.undefined(),
             output: v.array(v.string()),
@@ -184,7 +188,7 @@ describe('server static builds', () => {
           'Waits for another service query to publish its static inputs before running load.',
         initialState: { value: null as string | null },
         queries: {
-          getValue: {
+          value: {
             description: 'Stores one value for each id discovered through another service query.',
             input: v.object({ entryId: v.string() }),
             output: v.nullable(v.string()),
@@ -214,14 +218,12 @@ describe('server static builds', () => {
       registerService(parallelSourceServiceDef);
       registerService(parallelLookupServiceDef, {
         queries: {
-          getValue: {
+          value: {
             staticInputs: async (ctx) => {
               const source = ctx.getService('internal-fixture/parallel-static-input-source');
 
               for (let attempt = 0; attempt < 5; attempt += 1) {
-                const entryIds = (await source.queries.getReadyEntryIds.loaded(
-                  undefined
-                )) as string[];
+                const entryIds = (await source.queries.readyEntryIds.loaded(undefined)) as string[];
 
                 if (entryIds.length > 0) {
                   return entryIds.map((entryId) => ({ entryId }));
@@ -254,7 +256,7 @@ describe('server static builds', () => {
         description: 'Exercises logical static path normalization.',
         initialState: { value: null as string | null },
         queries: {
-          getValue: {
+          value: {
             description: 'Stores one custom value per static input.',
             input: v.object({
               path: v.string(),
@@ -307,7 +309,7 @@ describe('server static builds', () => {
         description: 'Uses the same relative staticPath as another service.',
         initialState: { value: 'a' },
         queries: {
-          getValue: {
+          value: {
             description: 'Returns one scoped value.',
             input: v.undefined(),
             output: v.string(),
@@ -325,7 +327,7 @@ describe('server static builds', () => {
         description: 'Uses the same relative staticPath as another service.',
         initialState: { value: 'b' },
         queries: {
-          getValue: {
+          value: {
             description: 'Returns one scoped value.',
             input: v.undefined(),
             output: v.string(),
@@ -353,7 +355,7 @@ describe('server static builds', () => {
         description: 'Attempts to escape the static snapshot root.',
         initialState: { value: null as string | null },
         queries: {
-          getValue: {
+          value: {
             description: 'Uses an invalid static path.',
             input: v.object({ build: v.literal('once') }),
             output: v.nullable(v.string()),
@@ -387,7 +389,7 @@ describe('server static builds', () => {
         fromStorybook: true,
         code: 10,
         message:
-          'Invalid static path "../escape.json" for query "internal-fixture/invalid-static-path.getValue": use a relative path with forward slashes and no ".." segments.',
+          'Invalid static path "../escape.json" for query "internal-fixture/invalid-static-path.value": use a relative path with forward slashes and no ".." segments.',
       });
     });
   });
@@ -400,7 +402,7 @@ describe('server static builds', () => {
         description: 'Writes custom static paths to disk.',
         initialState: { value: null as string | null },
         queries: {
-          getValue: {
+          value: {
             description: 'Stores one custom value per static input.',
             input: v.object({
               path: v.string(),
@@ -480,6 +482,94 @@ describe('server static builds', () => {
           'utf8'
         )
       ).resolves.toBe(JSON.stringify({ value: 'windows' }, null, 2));
+    });
+
+    it('writes non-ASCII-id snapshots under names a decoded fetch can resolve', async () => {
+      const outputDir = '/app/dist';
+
+      // Mirrors the real `core/docgen` service: same service id, and the same `staticPath`
+      // composition the real definition uses — so the writer must land on the exact
+      // `docgenQueryStaticPath` names under the production scoping. Only the extraction is
+      // stubbed: loads mutate state only through commands, so the stub load routes through a
+      // fixture command that writes one docgen payload.
+      registerService(
+        defineService({
+          id: 'core/docgen',
+          description: 'Component documentation keyed by component id.',
+          initialState: {
+            components: {} as Record<
+              string,
+              { id: string; name: string; path: string; jsDocTags: Record<string, string[]> }
+            >,
+          },
+          queries: {
+            docgen: {
+              description:
+                'Returns the docgen payload for one component id, or undefined when not loaded.',
+              input: v.object({ id: v.string() }),
+              output: v.optional(v.unknown()),
+              handler: (input, ctx) => ctx.self.state.components[input.id],
+              staticPath: (input) => docgenQueryStaticPath(input.id),
+              load: async (input, ctx) => {
+                await ctx.self.commands.setDocgenFixture({
+                  id: input.id,
+                  name: 'Fixture',
+                  path: './fixture.tsx',
+                  jsDocTags: {},
+                });
+              },
+              staticInputs: async () => [{ id: '😀' }, { id: '界'.repeat(30) }],
+            },
+          },
+          commands: {
+            setDocgenFixture: {
+              description: 'Writes one docgen payload into state without extraction.',
+              input: v.object({
+                id: v.string(),
+                name: v.string(),
+                path: v.string(),
+                jsDocTags: v.record(v.string(), v.array(v.string())),
+              }),
+              output: v.undefined(),
+              handler: async (input, ctx) => {
+                ctx.self.setState((state) => {
+                  state.components[input.id] = input;
+                });
+
+                return undefined;
+              },
+            },
+          },
+        })
+      );
+
+      await writeOpenServiceStaticFiles(outputDir);
+
+      const snapshotDir = join(outputDir, 'services', 'core', 'docgen');
+      const written = await readdir(snapshotDir);
+
+      expect(new Set(written)).toEqual(
+        new Set([docgenQueryStaticPath('😀'), docgenQueryStaticPath('界'.repeat(30))])
+      );
+
+      // The names must survive the fetch round-trip: static hosts percent-decode request
+      // paths before their filesystem lookup, so a literal `%` on disk would be unreachable.
+      for (const name of written) {
+        expect(decodeURIComponent(name)).toBe(name);
+        expect(name.length).toBeLessThanOrEqual(255);
+      }
+
+      await expect(readFile(join(snapshotDir, docgenQueryStaticPath('😀')), 'utf8')).resolves.toBe(
+        JSON.stringify(
+          {
+            components: {
+              '😀': { id: '😀', name: 'Fixture', path: './fixture.tsx', jsDocTags: {} },
+            },
+          },
+          null,
+          2
+        )
+      );
     });
   });
 });

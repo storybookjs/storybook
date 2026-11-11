@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import { useServiceCommand, useServiceQuery } from 'storybook/manager-api';
 
 import type {
+  ConcurrentWritesSyncService,
   LocalCommandSyncService,
   OpenServiceDemoServices,
   RemoteCommandSyncService,
@@ -74,7 +75,7 @@ function CommandDemoSection({
   inputLabel,
   rawValueTestId,
 }: CommandDemoSectionProps) {
-  const value = useServiceQuery(service, 'getValue');
+  const value = useServiceQuery(service.queries.value).data ?? '';
   const setValue = useServiceCommand(service, 'setValue');
 
   return (
@@ -100,57 +101,87 @@ function CommandDemoSection({
   );
 }
 
+function ConcurrentWritesDemoSection({ service }: { service: ConcurrentWritesSyncService }) {
+  const slots = useServiceQuery(service.queries.slots).data ?? {};
+  const setSlot = useServiceCommand(service, 'setSlot');
+  const clearSlots = useServiceCommand(service, 'clearSlots');
+  const [slot, setSlotName] = useState('panel-slot');
+  const [value, setValue] = useState('from-panel');
+
+  return (
+    <DemoSection title="Concurrent Writes">
+      <p style={{ lineHeight: 1.5, margin: 0 }}>
+        Concurrent writes demo — each Write click is one <code>setSlot</code> entry. Use a distinct
+        slot per writer so both values stay visible.
+      </p>
+      <label style={{ display: 'grid', gap: 6 }}>
+        <span>Slot</span>
+        <input
+          aria-label="Concurrent writes manager panel slot input"
+          type="text"
+          value={slot}
+          onChange={(event) => setSlotName(event.currentTarget.value)}
+          style={{ font: 'inherit', padding: '6px 8px', width: '100%' }}
+        />
+      </label>
+      <label style={{ display: 'grid', gap: 6 }}>
+        <span>Value</span>
+        <input
+          aria-label="Concurrent writes manager panel value input"
+          type="text"
+          value={value}
+          onChange={(event) => setValue(event.currentTarget.value)}
+          style={{ font: 'inherit', padding: '6px 8px', width: '100%' }}
+        />
+      </label>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          type="button"
+          aria-label="Concurrent writes manager panel write"
+          onClick={() => {
+            void setSlot({ slot, value });
+          }}
+        >
+          Write
+        </button>
+        <button
+          type="button"
+          aria-label="Concurrent writes manager panel clear slots"
+          onClick={() => {
+            void clearSlots();
+          }}
+        >
+          Clear slots
+        </button>
+      </div>
+      <ValueBlock
+        title="Raw slots"
+        testId="concurrent-writes-manager-panel-raw-service-state-slots"
+      >
+        {JSON.stringify(slots)}
+      </ValueBlock>
+    </DemoSection>
+  );
+}
+
 function StaticLoadDemoSection({ service }: { service: StaticLoadSyncService }) {
-  const alpha = useServiceQuery(service, 'getEntry', { id: 'alpha' });
-  const beta = useServiceQuery(service, 'getEntry', { id: 'beta' });
-  const [unbacked, setUnbacked] = React.useState<string | null>(null);
-  const [unbackedError, setUnbackedError] = React.useState<string | null>(null);
-
-  // `getUnbacked` is read via the query's own subscribe/loaded rather than `useServiceQuery`: it is a
-  // void-input query with a `load`, a shape whose input type the hook's conditional signature infers
-  // inconsistently across the package boundary. The query methods are stable, and this also lets us
-  // surface the load error, which `useServiceQuery` does not expose yet.
-  React.useEffect(() => {
-    let active = true;
-
-    const unsubscribe = service.queries.getUnbacked.subscribe((value) => {
-      if (active && value !== null) {
-        setUnbacked(value);
-      }
-    });
-
-    void service.queries.getUnbacked
-      .loaded()
-      .then((value) => {
-        if (active) {
-          setUnbacked(value);
-          setUnbackedError(null);
-        }
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          setUnbackedError(error instanceof Error ? error.message : String(error));
-        }
-      });
-
-    return () => {
-      active = false;
-      unsubscribe();
-    };
-  }, [service]);
+  const { data: alpha } = useServiceQuery(service.queries.entry, { id: 'alpha' });
+  const { data: beta } = useServiceQuery(service.queries.entry, { id: 'beta' });
+  // `unbacked` has no static snapshot: in a static build its `load` invokes a server-only command
+  // that no peer acknowledges, so the subscription surfaces a load error in `QueryState`.
+  const { data: unbacked, error: unbackedError } = useServiceQuery(service.queries.unbacked);
 
   // Prefer the resolved state over the load error: a remote command is best-effort, so a slow peer
-  // can still execute it (populating state) after the load promise already rejected on the ack
-  // timeout. Only surface the error while state is still unset — the steady state in a static build
-  // with no server to run the command.
+  // can still execute it (populating state) after the load already rejected on the ack timeout. Only
+  // surface the error while state is still unset — the steady state in a static build with no server.
   const unbackedStatus =
-    unbacked !== null ? JSON.stringify(unbacked) : (unbackedError ?? 'pending');
+    unbacked != null ? JSON.stringify(unbacked) : (unbackedError?.message ?? 'pending');
 
   return (
     <DemoSection title="Static Load">
       <p style={{ lineHeight: 1.5, margin: 0 }}>
-        Static load demo — <code>getEntry</code> reads prebuilt JSON in production builds;
-        <code>getUnbacked</code> has no static snapshot.
+        Static load demo — <code>entry</code> reads prebuilt JSON in production builds;
+        <code>unbacked</code> has no static snapshot.
       </p>
       <ValueBlock title="Entry alpha" testId="static-load-manager-panel-entry-alpha-value">
         {JSON.stringify(alpha ?? null)}
@@ -191,6 +222,7 @@ export function OpenServiceDemoPanel({ services }: Props) {
         inputLabel="Remote command manager panel sync input"
         rawValueTestId="remote-command-manager-panel-raw-service-state-value"
       />
+      <ConcurrentWritesDemoSection service={services.concurrentWrites} />
       <StaticLoadDemoSection service={services.staticLoad} />
     </div>
   );

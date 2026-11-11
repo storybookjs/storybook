@@ -8,5 +8,4 @@ export type { WebpackStatsPlugin } from './webpack-stats-plugin.ts';
 export { injectExportOrderPlugin } from './inject-export-order-plugin.ts';
 export { stripStoryHMRBoundary } from './strip-story-hmr-boundaries.ts';
 export { codeGeneratorPlugin } from './code-generator-plugin.ts';
-export { csfPlugin } from './csf-plugin.ts';
 export { storybookExternalGlobalsPlugin } from './storybook-external-globals-plugin.ts';

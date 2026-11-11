@@ -11,12 +11,12 @@ import {
 } from 'node:fs';
 import { join } from 'node:path';
 
-import type { Task } from '../task.ts';
+import type { MonorepoDetails, Task } from '../task.ts';
 import { ask } from '../utils/ask.ts';
 
 const logger = console;
 
-export const syncDocs: Task = {
+export const syncDocs: Task<MonorepoDetails> = {
   description: 'Synchronize documentation',
   service: true,
   async ready() {
@@ -34,14 +34,21 @@ export const syncDocs: Task = {
       mkdirSync(frontpageDocsPath);
     }
 
-    logger.info(`Rebuilding docs at ${frontpageDocsPath}`);
+    const rebuildDocs = () => {
+      logger.info(`Rebuilding docs at ${frontpageDocsPath}`);
+      rmSync(frontpageDocsPath, { recursive: true });
+      cpSync(docsDir, frontpageDocsPath, { recursive: true });
+    };
 
-    rmSync(frontpageDocsPath, { recursive: true });
-    cpSync(docsDir, frontpageDocsPath, { recursive: true });
+    rebuildDocs();
 
     logger.info(`Synchronizing files from: \n${docsDir} \nto: \n${frontpageDocsPath}`);
 
     watch(docsDir, { recursive: true }, (_, filename) => {
+      if (!filename) {
+        rebuildDocs();
+        return;
+      }
       const srcFilePath = join(docsDir, filename);
       const targetFilePath = join(frontpageDocsPath, filename);
       const targetDir = targetFilePath.split('/').slice(0, -1).join('/');

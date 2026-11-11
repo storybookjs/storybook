@@ -2,9 +2,8 @@
 export {};
 
 const { isNodeVersionSupported } = await import('storybook/internal/common');
-const [major, minor, patch] = process.versions.node.split('.').map(Number);
 
-if (!isNodeVersionSupported(major, minor, patch)) {
+if (!isNodeVersionSupported(process.versions.node)) {
   const { MIN_SUPPORTED_NODE_DESCRIPTION } = await import('storybook/internal/common');
   const { logger } = await import('storybook/internal/node-logger');
   logger.error(

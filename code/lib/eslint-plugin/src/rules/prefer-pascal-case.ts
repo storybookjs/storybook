@@ -2,14 +2,19 @@
  * @file Prefer pascal case
  * @author Yann Braga
  */
-import type { IncludeExcludeOptions } from 'storybook/internal/csf';
-import { isExportStory } from 'storybook/internal/csf';
+import type { IncludeExcludeOptions } from '../utils/csf-helpers.ts';
+import { isExportStory } from '../utils/csf-helpers.ts';
 
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
-import { ASTUtils } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/types';
+import type { TSESLint } from '@typescript-eslint/utils';
 
-import { getDescriptor, getMetaObjectExpression } from '../utils/index.ts';
-import { isIdentifier, isVariableDeclaration } from '../utils/ast.ts';
+import {
+  getNonStoryExportsConfig,
+  getMetaObjectExpression,
+  isFactoryStoryExport,
+  parseFactoryMetaCall,
+} from '../utils/index.ts';
+import { ASTUtils, isIdentifier, isVariableDeclaration } from '../utils/ast.ts';
 import { CategoryId } from '../utils/constants.ts';
 import { createStorybookRule } from '../utils/create-storybook-rule.ts';
 
@@ -121,6 +126,7 @@ export default createStorybookRule({
     //----------------------------------------------------------------------
 
     let meta;
+    let metaIsFactory = false;
     let nonStoryExportsConfig: IncludeExcludeOptions;
     const namedExports: TSESTree.Identifier[] = [];
     let hasStoriesOfImport = false;
@@ -134,13 +140,15 @@ export default createStorybookRule({
       ExportDefaultDeclaration: function (node) {
         meta = getMetaObjectExpression(node, context);
         if (meta) {
-          try {
-            nonStoryExportsConfig = {
-              excludeStories: getDescriptor(meta, 'excludeStories'),
-              includeStories: getDescriptor(meta, 'includeStories'),
-            };
-          } catch (err) {
-            //
+          nonStoryExportsConfig = getNonStoryExportsConfig(meta);
+        }
+      },
+      CallExpression: function (node: TSESTree.CallExpression) {
+        const factoryMeta = parseFactoryMetaCall(node, context);
+        if (factoryMeta?.validPreviewImport) {
+          metaIsFactory = true;
+          if (factoryMeta.metaObject) {
+            nonStoryExportsConfig = getNonStoryExportsConfig(factoryMeta.metaObject);
           }
         }
       },
@@ -167,7 +175,9 @@ export default createStorybookRule({
       },
       'Program:exit': function () {
         if (namedExports.length && !hasStoriesOfImport) {
-          namedExports.forEach((n) => checkAndReportError(n, nonStoryExportsConfig));
+          namedExports
+            .filter((n) => !metaIsFactory || isFactoryStoryExport(n))
+            .forEach((n) => checkAndReportError(n, nonStoryExportsConfig));
         }
       },
     };

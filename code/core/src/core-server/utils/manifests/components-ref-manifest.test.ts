@@ -1,13 +1,17 @@
 import { readFile } from 'node:fs/promises';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { vol } from 'memfs';
 
+import { buildStaticFiles, clearRegistry } from '../../../shared/open-service/server.ts';
 import { docgenManifestRef } from '../../../shared/open-service/services/docgen/paths.ts';
+import { registerDocgenService } from '../../../shared/open-service/services/docgen/server.ts';
 import { storyDocsManifestRef } from '../../../shared/open-service/services/story-docs/paths.ts';
+import { registerStoryDocsService } from '../../../shared/open-service/services/story-docs/server.ts';
 import type { DocgenPayload } from '../../../shared/open-service/services/docgen/types.ts';
 import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
+import type { StoryIndex } from '../../../types/modules/indexer.ts';
 
 import {
   COMPONENTS_REF_MANIFEST_VERSION,
@@ -27,6 +31,10 @@ beforeEach(async () => {
   vi.mocked(readFile).mockImplementation(
     memfs.fs.promises.readFile as unknown as typeof import('node:fs/promises').readFile
   );
+});
+
+afterEach(() => {
+  clearRegistry();
 });
 
 describe('components-ref-manifest', () => {
@@ -159,6 +167,35 @@ describe('components-ref-manifest', () => {
     expect(Object.keys(merged.stories)).toEqual(['button--primary', 'button--secondary']);
   });
 
+  it('carries a story warning into the manifest alongside its snippet', () => {
+    const docgen: DocgenPayload = {
+      id: 'button',
+      name: 'Button',
+      path: './button.stories.tsx',
+      jsDocTags: {},
+    };
+    const storyDocs: StoryDocsPayload = {
+      id: 'button',
+      name: 'Button',
+      path: './button.stories.tsx',
+      stories: {
+        'button--primary': {
+          id: 'button--primary',
+          name: 'Primary',
+          snippet: '<Button />',
+          warning: 'Incomplete snippet: `...sharedArgs` could not be resolved statically.',
+        },
+      },
+    };
+
+    expect(mergeManifestPayloads(docgen, storyDocs).stories['button--primary']).toEqual({
+      id: 'button--primary',
+      name: 'Primary',
+      snippet: '<Button />',
+      warning: 'Incomplete snippet: `...sharedArgs` could not be resolved statically.',
+    });
+  });
+
   it('loads story-docs payloads from built snapshots on disk', async () => {
     const payload: StoryDocsPayload = {
       id: 'button',
@@ -174,6 +211,52 @@ describe('components-ref-manifest', () => {
 
     await expect(loadStoryDocsPayloadsFromDisk('/output', ['button'])).resolves.toEqual({
       button: payload,
+    });
+  });
+
+  it('loads the payloads of a component titled Constructor from the snapshots the services built', async () => {
+    const getIndex = async (): Promise<StoryIndex> => ({
+      v: 5,
+      entries: {
+        'constructor--primary': {
+          id: 'constructor--primary',
+          name: 'Primary',
+          title: 'Constructor',
+          type: 'story',
+          subtype: 'story',
+          importPath: './constructor.stories.tsx',
+        },
+      },
+    });
+    const docgen: DocgenPayload = {
+      id: 'constructor',
+      name: 'Constructor',
+      path: './constructor.stories.tsx',
+      jsDocTags: {},
+    };
+    const storyDocs: StoryDocsPayload = {
+      id: 'constructor',
+      name: 'Constructor',
+      path: './constructor.stories.tsx',
+      stories: {},
+    };
+    registerDocgenService({ getIndex, docgenProvider: async () => docgen });
+    registerStoryDocsService({ getIndex, storyDocsProvider: async () => storyDocs });
+    const store = await buildStaticFiles();
+    vol.fromJSON(
+      Object.fromEntries(
+        Object.entries(store).map(([path, state]) => [
+          `/output/services/${path}`,
+          JSON.stringify(state),
+        ])
+      )
+    );
+
+    await expect(loadDocgenPayloadsFromDisk('/output', ['constructor'])).resolves.toEqual({
+      constructor: docgen,
+    });
+    await expect(loadStoryDocsPayloadsFromDisk('/output', ['constructor'])).resolves.toEqual({
+      constructor: storyDocs,
     });
   });
 
@@ -201,6 +284,34 @@ describe('components-ref-manifest', () => {
   it('builds a minimal index entry (no docgen ref) when a payload is missing', () => {
     expect(toComponentManifestIndexEntries(['button'], {})).toEqual({
       button: { id: 'button', name: 'button' },
+    });
+  });
+
+  it('keeps the story-docs ref when no docgen payload was extracted', () => {
+    const storyDocs: StoryDocsPayload = {
+      id: 'abstractions-billboard',
+      name: 'Billboard',
+      path: './billboard.stories.ts',
+      stories: {
+        'abstractions-billboard--default': {
+          id: 'abstractions-billboard--default',
+          name: 'Default',
+        },
+      },
+    };
+
+    expect(
+      toComponentManifestIndexEntries(
+        ['abstractions-billboard'],
+        {},
+        { 'abstractions-billboard': storyDocs }
+      )
+    ).toEqual({
+      'abstractions-billboard': {
+        id: 'abstractions-billboard',
+        name: 'abstractions-billboard',
+        stories: { $ref: storyDocsManifestRef('abstractions-billboard') },
+      },
     });
   });
 });

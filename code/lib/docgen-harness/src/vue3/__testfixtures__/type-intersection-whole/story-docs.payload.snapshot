@@ -1,0 +1,27 @@
+{
+  "id": "type-intersection-whole",
+  "name": "TypeIntersectionWhole",
+  "path": "__PATH__",
+  "stories": {
+    "forms-type-intersection-whole--props-as-written": {
+      "description": undefined,
+      "id": "forms-type-intersection-whole--props-as-written",
+      "name": "Props As Written",
+      "snippet": "<script lang="ts" setup>
+import TypeIntersectionWhole from './TypeIntersectionWhole.vue';
+</script>
+
+<template>
+  <TypeIntersectionWhole id="save-button" size="medium" />
+</template>",
+      "summary": undefined,
+      "template": "<script lang="ts" setup>
+import TypeIntersectionWhole from './TypeIntersectionWhole.vue';
+</script>
+
+<template>
+  <TypeIntersectionWhole⟦attr id ~" "⟫ id="save-button"⟧⟦attr size ~" "⟫ size="medium"⟧⟦props * except=["id","size","default"] ~" "⟫⟧⟦slots * slots=["default"] indent="    " tag="TypeIntersectionWhole"⟫ />⟧
+</template>",
+    },
+  },
+}

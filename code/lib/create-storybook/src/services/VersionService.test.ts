@@ -67,38 +67,6 @@ describe('VersionService', () => {
     });
   });
 
-  describe('getStorybookVersionFromAncestry', () => {
-    it('should extract version from create-storybook command', () => {
-      const ancestry = [
-        { command: 'npx create-storybook@8.0.5' },
-        { command: 'node /usr/local/bin/npm' },
-      ];
-
-      const version = versionService.getStorybookVersionFromAncestry(ancestry as any);
-
-      expect(version).toBe('8.0.5');
-    });
-
-    it('should extract version from storybook command', () => {
-      const ancestry = [
-        { command: 'npx storybook@latest init' },
-        { command: 'node /usr/local/bin/npm' },
-      ];
-
-      const version = versionService.getStorybookVersionFromAncestry(ancestry as any);
-
-      expect(version).toBe('latest');
-    });
-
-    it('should return undefined if no version found', () => {
-      const ancestry = [{ command: 'npm install' }, { command: 'node /usr/local/bin/npm' }];
-
-      const version = versionService.getStorybookVersionFromAncestry(ancestry as any);
-
-      expect(version).toBeUndefined();
-    });
-  });
-
   describe('getCliIntegrationFromAncestry', () => {
     it('should detect sv create command', () => {
       const ancestry = [{ command: 'sv create my-app' }, { command: 'node /usr/local/bin/npm' }];

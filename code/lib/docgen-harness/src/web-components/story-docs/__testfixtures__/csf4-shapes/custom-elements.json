@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "csf-shapes.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Plain element for CSF factory story-docs shapes.",
+          "name": "CsfShapes",
+          "members": [
+            {
+              "kind": "field",
+              "name": "label",
+              "attribute": "label"
+            },
+            {
+              "kind": "field",
+              "name": "count",
+              "attribute": "count"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "label",
+              "fieldName": "label"
+            },
+            {
+              "name": "count",
+              "fieldName": "count"
+            }
+          ],
+          "superclass": {
+            "name": "HTMLElement"
+          },
+          "tagName": "csf-shapes",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "csf-shapes",
+          "declaration": {
+            "name": "CsfShapes",
+            "module": "csf-shapes.js"
+          }
+        }
+      ]
+    }
+  ]
+}

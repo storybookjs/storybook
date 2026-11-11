@@ -1,0 +1,8 @@
+const DomNode = () => {
+  const el = document.createElement('stencil-props');
+  el.setAttribute('value', String(3));
+  el.setAttribute('max', String(5));
+  el.setAttribute('variant', String('compact'));
+  el.setAttribute('aria-label-text', String('Rating'));
+  return el;
+};

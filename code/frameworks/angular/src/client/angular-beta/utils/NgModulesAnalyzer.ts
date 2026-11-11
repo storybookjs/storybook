@@ -9,8 +9,8 @@ const reflectionCapabilities = new ReflectionCapabilities();
  */
 export const isComponentAlreadyDeclared = (
   componentToFind: any,
-  moduleDeclarations: any[],
-  moduleImports: any[]
+  moduleDeclarations: unknown[] | undefined,
+  moduleImports: unknown[] | undefined
 ): boolean => {
   if (
     moduleDeclarations &&
@@ -37,7 +37,7 @@ export const isComponentAlreadyDeclared = (
   });
 };
 
-const extractNgModuleMetadata = (importItem: any): NgModule => {
+const extractNgModuleMetadata = (importItem: any): NgModule | null => {
   const target = importItem && importItem.ngModule ? importItem.ngModule : importItem;
   const decorators = reflectionCapabilities.annotations(target);
 

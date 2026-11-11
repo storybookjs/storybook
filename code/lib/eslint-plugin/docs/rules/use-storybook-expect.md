@@ -3,7 +3,6 @@
 <!-- RULE-CATEGORIES:START -->
 
 **Included in these configurations**: <ul><li>addon-interactions</li><li>flat/addon-interactions</li><li>recommended</li><li>flat/recommended</li></ul>
-
 <!-- RULE-CATEGORIES:END -->
 
 ## Rule Details

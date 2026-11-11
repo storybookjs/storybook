@@ -1,28 +1,34 @@
+import type { TypeScriptSpecifierForDocgen } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
+
+import { loadDocgenTypeScript } from '@storybook/component-meta-typescript';
 
 import { ComponentMetaManager } from './componentMeta/ComponentMetaManager.ts';
 
 let componentMetaManagerPromise: Promise<ComponentMetaManager | undefined> | undefined;
 
 /**
- * Process-wide {@link ComponentMetaManager} shared by the experimental manifest generator and the
- * docgen provider so static builds do not construct duplicate TypeScript language services.
+ * Process-wide {@link ComponentMetaManager} for the experimental manifest generator: building a full
+ * TypeScript program over every tsconfig project in the workspace is expensive, so the manifest
+ * generator keeps a single set of programs (and one file-snapshot cache) hot for the lifetime of the
+ * process rather than rebuilding per request.
  *
- * Both features build full TypeScript programs over every tsconfig project in the workspace. When
- * each owned its own manager, enabling both at once kept two complete sets of programs resident
- * simultaneously and exhausted the heap. Sharing one manager keeps a single set of programs (and
- * one file-snapshot cache) hot for the lifetime of the process.
+ * `docgenServer` deliberately does NOT share this manager: its extraction runs in a
+ * worker thread ({@link ../docgen/docgen-worker.ts}) with its own manager so the synchronous program
+ * build stays off the main event loop. Worker threads have separate V8 heaps but share process RSS,
+ * so enabling both the manifest generator and the docgen server keeps two full program sets resident
+ * at once — acceptable today, but the reason this singleton is scoped to the manifest path and to
+ * `internal_getArgTypesData` (ghost stories), which only run in their own processes.
  */
-export function getSharedComponentMetaManager(): Promise<ComponentMetaManager | undefined> {
+export function getSharedComponentMetaManager(
+  typeScriptSpecifier?: TypeScriptSpecifierForDocgen
+): Promise<ComponentMetaManager | undefined> {
   if (!componentMetaManagerPromise) {
     componentMetaManagerPromise = (async () => {
       try {
-        const ts = await import('typescript');
-        return new ComponentMetaManager(ts);
-      } catch {
-        logger.debug(
-          '[reactComponentMeta] TypeScript not available, skipping component meta extraction.'
-        );
+        return new ComponentMetaManager(await loadDocgenTypeScript(typeScriptSpecifier));
+      } catch (err) {
+        logger.debug(`[reactComponentMeta] Skipping component metadata extraction: ${err}`);
         return undefined;
       }
     })();

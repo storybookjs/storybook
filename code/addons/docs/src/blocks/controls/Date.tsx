@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import { Form } from 'storybook/internal/components';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { getControlId } from './helpers';
 import type { ControlProps, DateConfig, DateValue } from './types';
@@ -75,6 +75,7 @@ export const DateControl: FC<DateProps> = ({
   onFocus,
   onBlur,
   argType,
+  required,
 }) => {
   const [valid, setValid] = useState(true);
   const dateRef = useRef<HTMLInputElement>();
@@ -138,6 +139,7 @@ export const DateControl: FC<DateProps> = ({
         id={`${controlId}-date`}
         name={`${controlId}-date`}
         readOnly={readonly}
+        aria-required={required || undefined}
         onChange={onDateChange}
         {...{ onFocus, onBlur }}
       />
@@ -151,6 +153,7 @@ export const DateControl: FC<DateProps> = ({
         ref={timeRef as RefObject<HTMLInputElement>}
         onChange={onTimeChange}
         readOnly={readonly}
+        aria-required={required || undefined}
         {...{ onFocus, onBlur }}
       />
       {!valid ? <div>invalid</div> : null}

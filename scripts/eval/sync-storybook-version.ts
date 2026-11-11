@@ -7,13 +7,13 @@ import { installDeps } from './lib/package-manager.ts';
 import { ensureSourceClone } from './lib/prepare-trial.ts';
 import { PROJECTS, type Project } from './lib/projects.ts';
 import {
+  NODE_EVAL_SYNC_STORYBOOK_VERSION_SCRIPT,
+  REPOS_DIR,
   createLogger,
   formatHelp,
   formatTable,
   getProjectPath,
   getStorybookDir,
-  NODE_EVAL_SYNC_STORYBOOK_VERSION_SCRIPT,
-  REPOS_DIR,
   toPosixPath,
 } from './lib/utils.ts';
 
@@ -28,7 +28,7 @@ type RunUpgrade = (args: HookArgs & { version: string }) => Promise<void>;
 type RunInstall = (args: HookArgs) => Promise<void>;
 
 export interface SyncStorybookVersionOptions {
-  /** Storybook version to upgrade to (e.g. `latest`, `9.1.0`, `0.0.0-pr-1-sha-abc`). */
+  /** Storybook version to upgrade to (e.g. `latest`, `9.1.0`, `https://pkg.pr.new/storybookjs/storybook/storybook@<SHA>`). */
   version: string;
   /** Per-project clones live under `reposRoot/<project.name>`. Defaults to `REPOS_DIR`. */
   reposRoot?: string;
@@ -53,7 +53,8 @@ const cliOptions = {
   version: {
     type: 'string' as const,
     short: 'V',
-    description: 'Storybook version to upgrade to (e.g. latest, 9.1.0, 0.0.0-pr-1-sha-abc)',
+    description:
+      'Storybook version to upgrade to (e.g. latest, 9.1.0, https://pkg.pr.new/storybookjs/storybook/storybook@<SHA>)',
   },
   project: {
     type: 'string' as const,

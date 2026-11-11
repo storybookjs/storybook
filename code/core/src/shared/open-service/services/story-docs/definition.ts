@@ -1,7 +1,10 @@
 import * as v from 'valibot';
 
+import { type SnippetTemplate, isSnippetTemplate } from '../../../../docs-tools/snippetTemplate.ts';
+
 import { defineService } from 'storybook/open-service';
 import type { ServiceInstanceOf } from '../../types.ts';
+import { readComponent } from '../component-state-key.ts';
 import type { StoryDocsPayload } from './types.ts';
 import { storyDocsQueryStaticPath } from './paths.ts';
 
@@ -12,13 +15,23 @@ const storyDocsErrorSchema = v.object({
   message: v.string(),
 });
 
+// A `SnippetTemplate`: code, and holes whose place only its renderer reads.
+const snippetTemplateSchema = v.custom<SnippetTemplate>(
+  isSnippetTemplate,
+  'Expected a snippet template: code and holes'
+);
+
+// The query output is parsed with these schemas, which drop every key they don't list; the type
+// test next to this file keeps them equal to the hand-written types in `types.ts`.
 const storyDocSchema = v.object({
   id: v.string(),
   name: v.string(),
   snippet: v.optional(v.string()),
   description: v.optional(v.string()),
   summary: v.optional(v.string()),
+  warning: v.optional(v.string()),
   error: v.optional(storyDocsErrorSchema),
+  template: v.optional(snippetTemplateSchema),
 });
 
 const storyDocsPayloadSchema = v.object({
@@ -45,24 +58,22 @@ export type StoryDocsServiceState = {
  */
 export const storyDocsServiceDef = defineService({
   id: 'core/story-docs',
+  internal: true,
   description: 'Story documentation (snippets, descriptions, imports) keyed by component id.',
   initialState: { components: {} } as StoryDocsServiceState,
   queries: {
-    getStoryDocs: {
+    storyDocs: {
       description:
         'Returns the story-docs payload for one component id, or undefined when not loaded.',
       input: storyDocsInputSchema,
       output: storyDocsOutputSchema,
-      handler: (input, ctx) =>
-        Object.hasOwn(ctx.self.state.components, input.id)
-          ? ctx.self.state.components[input.id]
-          : undefined,
+      handler: (input, ctx) => readComponent(ctx.self.state.components, input.id),
       load: async (input, ctx) => {
         await ctx.self.commands.extractStoryDocs(input);
       },
       staticPath: (input) => storyDocsQueryStaticPath(input.id),
     },
-    getStoryDocsForAllComponents: {
+    storyDocsForAllComponents: {
       description: 'Returns story-docs payloads for every component in the story index.',
       input: v.void(),
       output: v.record(v.string(), storyDocsPayloadSchema),

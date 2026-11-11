@@ -2,8 +2,8 @@ import React from 'react';
 
 import { FaceHappyIcon } from '@storybook/icons';
 
-import { expect, fn } from 'storybook/test';
-import { styled } from 'storybook/theming';
+import { expect, fn, screen, waitFor } from 'storybook/test';
+import { styled } from 'storybook/theming/emotion';
 
 import preview from '../../../../../.storybook/preview.tsx';
 import { Button } from './Button.tsx';
@@ -31,6 +31,17 @@ export const IconButton = meta.story({
     padding: 'small',
     variant: 'ghost',
   },
+  play: async ({ canvas, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Button' });
+
+    await userEvent.tab();
+    await expect(button).toHaveFocus();
+    await expect(await screen.findByRole('tooltip')).toHaveTextContent('Button');
+    await expect(button).not.toHaveAccessibleDescription();
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument());
+    button.blur();
+  },
 });
 
 export const Variants = meta.story({
@@ -38,36 +49,25 @@ export const Variants = meta.story({
   render: (args) => (
     <Stack>
       <Row>
-        <Button {...args} variant="solid" ariaLabel={false}>
+        <Button {...args} variant="solid">
           Solid
         </Button>
-        <Button {...args} variant="outline" ariaLabel={false}>
+        <Button {...args} variant="outline">
           Outline
         </Button>
-        <Button {...args} variant="ghost" ariaLabel={false}>
+        <Button {...args} variant="ghost">
           Ghost
         </Button>
       </Row>
       <Row>
-        <Button {...args} variant="solid" ariaLabel={false}>
-          <FaceHappyIcon /> Solid
+        <Button {...args} variant="solid" appearance="agentic">
+          Agentic
         </Button>
-        <Button {...args} variant="outline" ariaLabel={false}>
-          <FaceHappyIcon /> Outline
+        <Button {...args} variant="outline" appearance="agentic">
+          Agentic
         </Button>
-        <Button {...args} variant="ghost" ariaLabel={false}>
-          <FaceHappyIcon /> Ghost
-        </Button>
-      </Row>
-      <Row>
-        <Button {...args} variant="solid" padding="small" ariaLabel="Button">
-          <FaceHappyIcon />
-        </Button>
-        <Button {...args} variant="outline" padding="small" ariaLabel="Button">
-          <FaceHappyIcon />
-        </Button>
-        <Button {...args} variant="ghost" padding="small" ariaLabel="Button">
-          <FaceHappyIcon />
+        <Button {...args} variant="ghost" appearance="agentic">
+          Agentic
         </Button>
       </Row>
     </Stack>
@@ -87,6 +87,15 @@ export const PseudoStates = meta.story({
         <Button ariaLabel={false} variant="ghost">
           Button
         </Button>
+        <Button ariaLabel={false} variant="solid" appearance="agentic">
+          Agentic
+        </Button>
+        <Button ariaLabel={false} variant="outline" appearance="agentic">
+          Agentic
+        </Button>
+        <Button ariaLabel={false} variant="ghost" appearance="agentic">
+          Agentic
+        </Button>
       </Row>
       <Row id="hover">
         <Button ariaLabel={false} variant="solid">
@@ -96,6 +105,15 @@ export const PseudoStates = meta.story({
           Hover
         </Button>
         <Button ariaLabel={false} variant="ghost">
+          Hover
+        </Button>
+        <Button ariaLabel={false} variant="solid" appearance="agentic">
+          Hover
+        </Button>
+        <Button ariaLabel={false} variant="outline" appearance="agentic">
+          Hover
+        </Button>
+        <Button ariaLabel={false} variant="ghost" appearance="agentic">
           Hover
         </Button>
       </Row>
@@ -109,6 +127,15 @@ export const PseudoStates = meta.story({
         <Button ariaLabel={false} variant="ghost">
           Active
         </Button>
+        <Button ariaLabel={false} variant="solid" appearance="agentic">
+          Active
+        </Button>
+        <Button ariaLabel={false} variant="outline" appearance="agentic">
+          Active
+        </Button>
+        <Button ariaLabel={false} variant="ghost" appearance="agentic">
+          Active
+        </Button>
       </Row>
       <Row id="focus">
         <Button ariaLabel={false} variant="solid">
@@ -118,6 +145,15 @@ export const PseudoStates = meta.story({
           Focus
         </Button>
         <Button ariaLabel={false} variant="ghost">
+          Focus
+        </Button>
+        <Button ariaLabel={false} variant="solid" appearance="agentic">
+          Focus
+        </Button>
+        <Button ariaLabel={false} variant="outline" appearance="agentic">
+          Focus
+        </Button>
+        <Button ariaLabel={false} variant="ghost" appearance="agentic">
           Focus
         </Button>
       </Row>
@@ -132,75 +168,14 @@ export const PseudoStates = meta.story({
           Focus Visible
         </Button>
       </Row>
-    </Stack>
-  ),
-  parameters: {
-    pseudo: {
-      hover: '#hover button',
-      active: '#active button',
-      focus: '#focus button',
-      focusVisible: '#focus-visible button',
-    },
-  },
-});
-
-export const Active = meta.story({
-  name: 'Active (deprecated)',
-  args: { ariaLabel: false, active: true },
-  render: (args) => (
-    <Stack>
-      <Row>
-        <Button {...args} variant="solid">
-          Button
-        </Button>
-        <Button {...args} variant="outline">
-          Button
-        </Button>
-        <Button {...args} variant="ghost">
-          Button
-        </Button>
-      </Row>
-      <Row id="hover">
-        <Button {...args} variant="solid">
-          Hover
-        </Button>
-        <Button {...args} variant="outline">
-          Hover
-        </Button>
-        <Button {...args} variant="ghost">
-          Hover
-        </Button>
-      </Row>
-      <Row id="active">
-        <Button {...args} variant="solid">
-          active
-        </Button>
-        <Button {...args} variant="outline">
-          active
-        </Button>
-        <Button {...args} variant="ghost">
-          active
-        </Button>
-      </Row>
-      <Row id="focus">
-        <Button {...args} variant="solid">
-          Focus
-        </Button>
-        <Button {...args} variant="outline">
-          Focus
-        </Button>
-        <Button {...args} variant="ghost">
-          Focus
-        </Button>
-      </Row>
-      <Row id="focus-visible">
-        <Button {...args} variant="solid">
+      <Row id="focus-visible-agentic">
+        <Button ariaLabel={false} variant="solid" appearance="agentic">
           Focus Visible
         </Button>
-        <Button {...args} variant="outline">
+        <Button ariaLabel={false} variant="outline" appearance="agentic">
           Focus Visible
         </Button>
-        <Button {...args} variant="ghost">
+        <Button ariaLabel={false} variant="ghost" appearance="agentic">
           Focus Visible
         </Button>
       </Row>
@@ -211,7 +186,7 @@ export const Active = meta.story({
       hover: '#hover button',
       active: '#active button',
       focus: '#focus button',
-      focusVisible: '#focus-visible button',
+      focusVisible: '#focus-visible button, #focus-visible-agentic button',
     },
   },
 });
@@ -397,6 +372,28 @@ export const Tooltip = meta.story({
     ariaLabel: false,
     children: 'Button',
     tooltip: 'A button can be pressed to perform an action',
+  },
+  play: async ({ args, canvas, canvasElement, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Button' });
+
+    await userEvent.keyboard('{Escape}');
+    // React Aria requires pointer modality before the trigger's pointerenter event.
+    await userEvent.hover(canvasElement);
+    await userEvent.hover(button);
+    await expect(await screen.findByRole('tooltip')).toHaveTextContent(args.tooltip!);
+    await expect(button).toHaveAccessibleName('Button');
+    await expect(button).not.toHaveAccessibleDescription();
+    await userEvent.unhover(button);
+    await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument());
+  },
+});
+
+export const CustomTooltipPlacement = meta.story({
+  args: {
+    ariaLabel: false,
+    children: 'Button',
+    tooltip: 'A button can be pressed to perform an action',
+    tooltipPlacement: 'bottom-end',
   },
 });
 

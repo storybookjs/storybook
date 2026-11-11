@@ -95,13 +95,21 @@ The table below lists the available options:
 
 <Callout variant="info" icon="💡">
 
-By default, Storybook will open a new Chrome window as part of its startup process. If you don't have Chrome installed, make sure to include one of the following options, or set your default browser accordingly.
+When you run `storybook dev --open` without an environment variable, Storybook opens your default browser. On macOS, Storybook first tries to reuse a tab in a browser that already has Storybook open (for Chrome, Edge, Brave, Vivaldi or Chromium).
 
 </Callout>
 
 You can pass additional arguments to the browser by setting the `BROWSER_ARGS` environment variable. For example, if you want to open Chrome in incognito mode, you can set `BROWSER_ARGS="--incognito"`. This only works if `BROWSER` is also explicitly set.
 
 ## Troubleshooting
+
+<If renderer={['angular', 'ember' ]}>
+
+### The `process` variable not being detected
+
+If you're using a Webpack-based framework (e.g., Angular with Webpack) and you run into a runtime error such as `Can't find variable: process` when referencing Storybook's prefixed environment variables (e.g., `STORYBOOK_`), this is likely because one or more environment variables are missing or not properly configured. To fix this, ensure they are configured via `.env` files, injected via command-line arguments, and include default values as outlined in the [section above](#using-storybook-configuration).
+
+</If>
 
 ### Environment variables are not working
 

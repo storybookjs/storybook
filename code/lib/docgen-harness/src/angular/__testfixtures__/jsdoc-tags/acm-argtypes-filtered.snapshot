@@ -1,0 +1,37 @@
+{
+  "accent": {
+    "description": "Accent color applied to the chip text.",
+    "name": "accent",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "steelblue",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "text": {
+    "description": "Chip text.",
+    "name": "text",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "",
+      },
+      "jsDocTags": {
+        "deprecated": "Use `label` on the parent panel instead.",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

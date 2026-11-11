@@ -3,6 +3,7 @@
     goto,
     invalidate,
     invalidateAll,
+    refreshAll,
     afterNavigate,
     replaceState,
     pushState,
@@ -29,6 +30,12 @@
   on:click={() => {
     invalidateAll();
   }}>invalidateAll</button
+>
+
+<button
+  on:click={() => {
+    refreshAll();
+  }}>refreshAll</button
 >
 
 <button

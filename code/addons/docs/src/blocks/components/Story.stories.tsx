@@ -6,7 +6,7 @@ import {
   STORY_ARGS_UPDATED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
-import type { PlayFunctionContext } from 'storybook/internal/csf';
+import type { StoryContext } from 'storybook/internal/csf';
 import type { ModuleExport, WebRenderer } from 'storybook/internal/types';
 
 import type { Meta, ReactRenderer, StoryObj } from '@storybook/react-vite';
@@ -27,7 +27,7 @@ type ExtendedStoryProps = Omit<StoryProps, 'story'> & {
   storyExport: ModuleExport;
 };
 
-const meta: Meta<ExtendedStoryProps> = {
+const meta = {
   // @ts-expect-error getting too complex with props
   component: StoryComponent,
   parameters: {
@@ -47,10 +47,10 @@ const meta: Meta<ExtendedStoryProps> = {
     // @ts-expect-error getting too complex with props
     return <StoryComponent {...args} story={resolved.story} />;
   },
-};
+} satisfies Meta<ExtendedStoryProps>;
 export default meta;
 
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<Meta<ExtendedStoryProps>>;
 
 export const Loading = {
   globals: { sb_theme: 'side-by-side' },
@@ -97,7 +97,7 @@ export const ForceInitialArgs = {
     chromatic: { disableSnapshot: true },
   },
   // test that it ignores updated args by emitting an arg update and assert that it isn't reflected in the DOM
-  play: async ({ args, canvasElement, loaded }: PlayFunctionContext<WebRenderer>) => {
+  play: async ({ args, canvasElement, loaded }: StoryContext<WebRenderer>) => {
     const docsContext = loaded.docsContext as DocsContextProps;
     const resolved = docsContext.resolveOf(args.storyExport, ['story']);
 

@@ -1,0 +1,1 @@
+html`<lit-template-shapes .heading=${'Closed'} .open=${false}></lit-template-shapes>`

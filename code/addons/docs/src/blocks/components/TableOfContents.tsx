@@ -1,10 +1,10 @@
-import React, { useEffect } from 'react';
 import type { FC, ReactElement } from 'react';
+import React, { useEffect } from 'react';
 
 import type { Channel } from 'storybook/internal/channels';
 import { NAVIGATE_URL } from 'storybook/internal/core-events';
 
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 import tocbot from 'tocbot';
 
 // Define our own interface based on tocbot's actual options
@@ -145,7 +145,12 @@ const Title: FC<{
   // General case.
   if (typeof title === 'string' || !title) {
     return (
-      <Heading as="h2" id={headingId} className={title ? '' : 'sb-sr-only'}>
+      <Heading
+        as="h2"
+        id={headingId}
+        className={title ? '' : 'sb-sr-only'}
+        lang={title ? undefined : 'en'}
+      >
         {title || 'Table of contents'}
       </Heading>
     );

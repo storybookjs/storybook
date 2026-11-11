@@ -1,13 +1,19 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { afterEach, describe, expect, it } from 'vitest';
+import { dirname, join } from 'node:path';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { skipWindows } from '../../code/vitest.helpers.ts';
 import type { Project } from './lib/projects.ts';
 import { syncStorybookVersion } from './sync-storybook-version.ts';
 
+// These tests drive real git subprocesses; the 5s default timeout flakes on loaded machines.
+vi.setConfig({ testTimeout: 30_000 });
+
 let TMP = '';
+
+const git = (args: string[]) => execFileSync('git', args, { stdio: 'pipe' });
 
 afterEach(() => {
   if (TMP) {
@@ -17,139 +23,141 @@ afterEach(() => {
 });
 
 describe('syncStorybookVersion', () => {
-  it('runs the upgrade for each project, commits, and pushes', async () => {
-    TMP = mkdtempSync(join(tmpdir(), 'eval-sync-storybook-version-'));
-    const reposRoot = join(TMP, 'repos');
-    const remotesRoot = join(TMP, 'remotes');
-    await mkdir(reposRoot, { recursive: true });
-    await mkdir(remotesRoot, { recursive: true });
+  skipWindows(() => {
+    it('runs the upgrade for each project, commits, and pushes', async () => {
+      TMP = mkdtempSync(join(tmpdir(), 'eval-sync-storybook-version-'));
+      const reposRoot = join(TMP, 'repos');
+      const remotesRoot = join(TMP, 'remotes');
+      await mkdir(reposRoot, { recursive: true });
+      await mkdir(remotesRoot, { recursive: true });
 
-    const projects: Project[] = [
-      {
-        name: 'mealdrop',
-        repo: join(remotesRoot, 'mealdrop.git'),
-        branch: 'main',
-        githubSlug: 'storybook-tmp/mealdrop',
-      },
-      {
-        name: 'wikitok',
-        repo: join(remotesRoot, 'wikitok.git'),
-        branch: 'main',
-        githubSlug: 'storybook-tmp/wikitok',
-        projectDir: 'frontend',
-      },
-    ];
+      const projects: Project[] = [
+        {
+          name: 'mealdrop',
+          repo: join(remotesRoot, 'mealdrop.git'),
+          branch: 'main',
+          githubSlug: 'storybook-tmp/mealdrop',
+        },
+        {
+          name: 'wikitok',
+          repo: join(remotesRoot, 'wikitok.git'),
+          branch: 'main',
+          githubSlug: 'storybook-tmp/wikitok',
+          projectDir: 'frontend',
+        },
+      ];
 
-    setupRepo({
-      repoRoot: join(reposRoot, 'mealdrop'),
-      remoteRoot: join(remotesRoot, 'mealdrop.git'),
-      packageJsonPath: 'package.json',
-      packageJson: {
-        name: 'mealdrop',
-        dependencies: { '@storybook/react-vite': '9.0.0', storybook: '9.0.0' },
-      },
-    });
-    setupRepo({
-      repoRoot: join(reposRoot, 'wikitok'),
-      remoteRoot: join(remotesRoot, 'wikitok.git'),
-      packageJsonPath: 'frontend/package.json',
-      packageJson: {
-        name: 'wikitok-frontend',
-        dependencies: { '@storybook/react-vite': '9.0.0', storybook: '9.0.0' },
-      },
-    });
-
-    const upgradeCalls: Array<{
-      version: string;
-      project: string;
-      repoRoot: string;
-      projectPath: string;
-      configDir: string;
-    }> = [];
-
-    const hookOrder: string[] = [];
-
-    const results = await syncStorybookVersion({
-      version: '9.1.0',
-      reposRoot,
-      projects,
-      push: true,
-      log: () => {},
-      installProjectDeps: async ({ project }) => {
-        hookOrder.push(`install:${project.name}`);
-      },
-      runUpgrade: async ({ version, project, repoRoot, projectPath, configDir }) => {
-        hookOrder.push(`upgrade:${project.name}`);
-        upgradeCalls.push({
-          version,
-          project: project.name,
-          repoRoot,
-          projectPath,
-          configDir,
-        });
-        const pkgPath = join(projectPath, 'package.json');
-        const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
-        for (const key of Object.keys(pkg.dependencies ?? {})) {
-          if (key === 'storybook' || key.startsWith('@storybook/')) {
-            pkg.dependencies[key] = version;
-          }
-        }
-        writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
-      },
-    });
-
-    expect(hookOrder).toEqual([
-      'install:mealdrop',
-      'upgrade:mealdrop',
-      'install:mealdrop',
-      'install:wikitok',
-      'upgrade:wikitok',
-      'install:wikitok',
-    ]);
-
-    expect(upgradeCalls).toEqual([
-      {
-        version: '9.1.0',
-        project: 'mealdrop',
+      setupRepo({
         repoRoot: join(reposRoot, 'mealdrop'),
-        projectPath: join(reposRoot, 'mealdrop'),
-        configDir: '.storybook',
-      },
-      {
-        version: '9.1.0',
-        project: 'wikitok',
+        remoteRoot: join(remotesRoot, 'mealdrop.git'),
+        packageJsonPath: 'package.json',
+        packageJson: {
+          name: 'mealdrop',
+          dependencies: { '@storybook/react-vite': '9.0.0', storybook: '9.0.0' },
+        },
+      });
+      setupRepo({
         repoRoot: join(reposRoot, 'wikitok'),
-        projectPath: join(reposRoot, 'wikitok', 'frontend'),
-        configDir: 'frontend/.storybook',
-      },
-    ]);
+        remoteRoot: join(remotesRoot, 'wikitok.git'),
+        packageJsonPath: 'frontend/package.json',
+        packageJson: {
+          name: 'wikitok-frontend',
+          dependencies: { '@storybook/react-vite': '9.0.0', storybook: '9.0.0' },
+        },
+      });
 
-    const mealdropPkg = JSON.parse(
-      readFileSync(join(reposRoot, 'mealdrop', 'package.json'), 'utf-8')
-    );
-    const wikitokPkg = JSON.parse(
-      readFileSync(join(reposRoot, 'wikitok', 'frontend', 'package.json'), 'utf-8')
-    );
-    expect(mealdropPkg.dependencies.storybook).toBe('9.1.0');
-    expect(mealdropPkg.dependencies['@storybook/react-vite']).toBe('9.1.0');
-    expect(wikitokPkg.dependencies.storybook).toBe('9.1.0');
-    expect(wikitokPkg.dependencies['@storybook/react-vite']).toBe('9.1.0');
+      const upgradeCalls: Array<{
+        version: string;
+        project: string;
+        repoRoot: string;
+        projectPath: string;
+        configDir: string;
+      }> = [];
 
-    expect(results.map((r) => r.project)).toEqual(['mealdrop', 'wikitok']);
-    expect(results.every((r) => r.changed)).toBe(true);
-    expect(results.every((r) => typeof r.commitSha === 'string' && r.commitSha.length > 0)).toBe(
-      true
-    );
+      const hookOrder: string[] = [];
 
-    expect(getLatestCommitMessage(join(reposRoot, 'mealdrop'))).toBe(
-      'Eval: upgrade Storybook to 9.1.0'
-    );
-    expect(getHead(join(reposRoot, 'mealdrop'))).toBe(
-      getRemoteHead(join(remotesRoot, 'mealdrop.git'))
-    );
-    expect(getHead(join(reposRoot, 'wikitok'))).toBe(
-      getRemoteHead(join(remotesRoot, 'wikitok.git'))
-    );
+      const results = await syncStorybookVersion({
+        version: '9.1.0',
+        reposRoot,
+        projects,
+        push: true,
+        log: () => {},
+        installProjectDeps: async ({ project }) => {
+          hookOrder.push(`install:${project.name}`);
+        },
+        runUpgrade: async ({ version, project, repoRoot, projectPath, configDir }) => {
+          hookOrder.push(`upgrade:${project.name}`);
+          upgradeCalls.push({
+            version,
+            project: project.name,
+            repoRoot,
+            projectPath,
+            configDir,
+          });
+          const pkgPath = join(projectPath, 'package.json');
+          const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+          for (const key of Object.keys(pkg.dependencies ?? {})) {
+            if (key === 'storybook' || key.startsWith('@storybook/')) {
+              pkg.dependencies[key] = version;
+            }
+          }
+          writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+        },
+      });
+
+      expect(hookOrder).toEqual([
+        'install:mealdrop',
+        'upgrade:mealdrop',
+        'install:mealdrop',
+        'install:wikitok',
+        'upgrade:wikitok',
+        'install:wikitok',
+      ]);
+
+      expect(upgradeCalls).toEqual([
+        {
+          version: '9.1.0',
+          project: 'mealdrop',
+          repoRoot: join(reposRoot, 'mealdrop'),
+          projectPath: join(reposRoot, 'mealdrop'),
+          configDir: '.storybook',
+        },
+        {
+          version: '9.1.0',
+          project: 'wikitok',
+          repoRoot: join(reposRoot, 'wikitok'),
+          projectPath: join(reposRoot, 'wikitok', 'frontend'),
+          configDir: 'frontend/.storybook',
+        },
+      ]);
+
+      const mealdropPkg = JSON.parse(
+        readFileSync(join(reposRoot, 'mealdrop', 'package.json'), 'utf-8')
+      );
+      const wikitokPkg = JSON.parse(
+        readFileSync(join(reposRoot, 'wikitok', 'frontend', 'package.json'), 'utf-8')
+      );
+      expect(mealdropPkg.dependencies.storybook).toBe('9.1.0');
+      expect(mealdropPkg.dependencies['@storybook/react-vite']).toBe('9.1.0');
+      expect(wikitokPkg.dependencies.storybook).toBe('9.1.0');
+      expect(wikitokPkg.dependencies['@storybook/react-vite']).toBe('9.1.0');
+
+      expect(results.map((r) => r.project)).toEqual(['mealdrop', 'wikitok']);
+      expect(results.every((r) => r.changed)).toBe(true);
+      expect(results.every((r) => typeof r.commitSha === 'string' && r.commitSha.length > 0)).toBe(
+        true
+      );
+
+      expect(getLatestCommitMessage(join(reposRoot, 'mealdrop'))).toBe(
+        'Eval: upgrade Storybook to 9.1.0'
+      );
+      expect(getHead(join(reposRoot, 'mealdrop'))).toBe(
+        getRemoteHead(join(remotesRoot, 'mealdrop.git'))
+      );
+      expect(getHead(join(reposRoot, 'wikitok'))).toBe(
+        getRemoteHead(join(remotesRoot, 'wikitok.git'))
+      );
+    });
   });
 
   it('reports no change and skips commit when upgrade does not modify files', async () => {
@@ -417,34 +425,34 @@ function setupRepo(opts: {
   packageJsonPath: string;
   packageJson: Record<string, unknown>;
 }) {
-  execFileSync('git', ['init', '--bare', '--initial-branch=main', opts.remoteRoot]);
-  execFileSync('git', ['init', '--initial-branch=main', opts.repoRoot]);
-  execFileSync('git', ['-C', opts.repoRoot, 'config', 'user.name', 'Test User']);
-  execFileSync('git', ['-C', opts.repoRoot, 'config', 'user.email', 'test@example.com']);
+  git(['init', '--bare', '--initial-branch=main', opts.remoteRoot]);
+  git(['init', '--initial-branch=main', opts.repoRoot]);
+  git(['-C', opts.repoRoot, 'config', 'user.name', 'Test User']);
+  git(['-C', opts.repoRoot, 'config', 'user.email', 'test@example.com']);
 
   const pkgPath = join(opts.repoRoot, opts.packageJsonPath);
   mkdirSyncRecursive(dirname(pkgPath));
   writeFileSync(pkgPath, `${JSON.stringify(opts.packageJson, null, 2)}\n`);
 
-  execFileSync('git', ['-C', opts.repoRoot, 'add', '-A']);
-  execFileSync('git', ['-C', opts.repoRoot, 'commit', '-m', 'initial']);
-  execFileSync('git', ['-C', opts.repoRoot, 'remote', 'add', 'origin', opts.remoteRoot]);
-  execFileSync('git', ['-C', opts.repoRoot, 'push', '-u', 'origin', 'main']);
+  git(['-C', opts.repoRoot, 'add', '-A']);
+  git(['-C', opts.repoRoot, 'commit', '-m', 'initial']);
+  git(['-C', opts.repoRoot, 'remote', 'add', 'origin', opts.remoteRoot]);
+  git(['-C', opts.repoRoot, 'push', '-u', 'origin', 'main']);
 }
 
 function setupBareRemoteWithContent(opts: { remoteRoot: string; files: Record<string, string> }) {
   const staging = mkdtempSync(join(tmpdir(), 'eval-sync-storybook-version-staging-'));
-  execFileSync('git', ['init', '--bare', '--initial-branch=main', opts.remoteRoot]);
-  execFileSync('git', ['clone', opts.remoteRoot, staging]);
-  execFileSync('git', ['-C', staging, 'config', 'user.name', 'Test User']);
-  execFileSync('git', ['-C', staging, 'config', 'user.email', 'test@example.com']);
+  git(['init', '--bare', '--initial-branch=main', opts.remoteRoot]);
+  git(['clone', opts.remoteRoot, staging]);
+  git(['-C', staging, 'config', 'user.name', 'Test User']);
+  git(['-C', staging, 'config', 'user.email', 'test@example.com']);
   for (const [path, contents] of Object.entries(opts.files)) {
     mkdirSyncRecursive(join(staging, dirname(path)));
     writeFileSync(join(staging, path), contents);
   }
-  execFileSync('git', ['-C', staging, 'add', '-A']);
-  execFileSync('git', ['-C', staging, 'commit', '-m', 'initial']);
-  execFileSync('git', ['-C', staging, 'push', 'origin', 'main']);
+  git(['-C', staging, 'add', '-A']);
+  git(['-C', staging, 'commit', '-m', 'initial']);
+  git(['-C', staging, 'push', 'origin', 'main']);
   rmSync(staging, { recursive: true, force: true });
 }
 

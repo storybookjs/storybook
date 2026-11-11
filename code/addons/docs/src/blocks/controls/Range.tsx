@@ -2,7 +2,7 @@ import type { ChangeEvent, FC } from 'react';
 import React, { useMemo } from 'react';
 
 import { darken, lighten, rgba } from 'polished';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { parse } from './Number';
 import { getControlId } from './helpers';
@@ -187,6 +187,7 @@ export const RangeControl: FC<RangeProps> = ({
   onBlur,
   onFocus,
   argType,
+  required,
 }) => {
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange(parse(event.target.value));
@@ -209,6 +210,7 @@ export const RangeControl: FC<RangeProps> = ({
         type="range"
         disabled={readonly}
         onChange={handleChange}
+        aria-required={required || undefined}
         {...{ name, min, max, step, onFocus, onBlur }}
         value={value ?? min}
       />

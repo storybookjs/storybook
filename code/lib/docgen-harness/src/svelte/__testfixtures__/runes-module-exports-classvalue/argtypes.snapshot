@@ -1,0 +1,105 @@
+{
+  "class": {
+    "description": "Extra class value.",
+    "name": "class",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string | ClassArray | ClassDictionary",
+      },
+    },
+    "type": {
+      "name": "string | ClassArray | ClassDictionary",
+      "required": false,
+    },
+  },
+  "href": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Linked profile URL.",
+    "name": "href",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+  "letter": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Override display letter.",
+    "name": "letter",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+  "name": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Display name.",
+    "name": "name",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "size": {
+    "control": {
+      "type": "radio",
+    },
+    "description": "Avatar size.",
+    "name": "size",
+    "options": [
+      16,
+      24,
+      32,
+      48,
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "32",
+      },
+      "type": {
+        "summary": "16 | 24 | 32 | 48",
+      },
+    },
+    "type": {
+      "name": "16 | 24 | 32 | 48",
+      "required": false,
+    },
+  },
+}

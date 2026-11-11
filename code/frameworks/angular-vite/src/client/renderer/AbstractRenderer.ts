@@ -19,6 +19,7 @@ type StoryRenderInfo = {
 declare global {
   const STORYBOOK_ANGULAR_OPTIONS: {
     zoneless: boolean;
+    propsTable?: import('@storybook/angular-cm').PropsTableMode;
   };
 }
 
@@ -37,7 +38,16 @@ export abstract class AbstractRenderer {
   public static resetApplications(domNode?: HTMLElement) {
     applicationRefs.forEach((appRef, appDOMNode) => {
       if (!appRef.destroyed && (!domNode || appDOMNode === domNode)) {
-        appRef.destroy();
+        try {
+          // componentRef.destroy runs remove(appRef.components, componentRef).
+          // Copy the array first, or the loop skips the next component.
+          const components = appRef.components.slice();
+          // Destroy the views now, while the injector is still alive. A teardown
+          // path that reads the injector throws NG0205 after it is destroyed.
+          components.forEach((componentRef) => componentRef.destroy());
+        } finally {
+          appRef.destroy();
+        }
       }
     });
   }
@@ -45,7 +55,7 @@ export abstract class AbstractRenderer {
   protected previousStoryRenderInfo = new Map<HTMLElement, StoryRenderInfo>();
 
   // Observable to change the properties dynamically without reloading angular module&component
-  protected storyProps$: Subject<ICollection | undefined>;
+  protected storyProps$?: Subject<ICollection | undefined>;
 
   protected abstract beforeFullRender(domNode?: HTMLElement): Promise<void>;
 
@@ -77,18 +87,17 @@ export abstract class AbstractRenderer {
   }) {
     const targetSelector = this.generateTargetSelectorFromStoryId(storyId);
 
-    const newStoryProps$ = new BehaviorSubject<ICollection>(storyFnAngular.props);
+    const newStoryProps$ = new BehaviorSubject<ICollection | undefined>(storyFnAngular.props);
 
-    if (
-      !this.fullRendererRequired({
-        targetDOMNode,
-        storyFnAngular,
-        moduleMetadata: {
-          ...storyFnAngular.moduleMetadata,
-        },
-        forced,
-      })
-    ) {
+    const fullRendererRequired = this.fullRendererRequired({
+      targetDOMNode,
+      storyFnAngular,
+      moduleMetadata: {
+        ...storyFnAngular.moduleMetadata,
+      },
+      forced,
+    });
+    if (this.storyProps$ && !fullRendererRequired) {
       this.storyProps$.next(storyFnAngular.props);
 
       return;
@@ -113,6 +122,9 @@ export abstract class AbstractRenderer {
     const componentSelector = storyUid !== null ? `${targetSelector}[${storyUid}]` : targetSelector;
     if (storyUid !== null) {
       const element = targetDOMNode.querySelector(targetSelector);
+      if (!element) {
+        throw new Error(`Storybook could not find the story root element "${targetSelector}"`);
+      }
       element.toggleAttribute(storyUid, true);
     }
 
@@ -230,12 +242,8 @@ export abstract class AbstractRenderer {
 
     this.previousStoryRenderInfo.set(targetDOMNode, currentStoryRender);
 
-    if (
-      // check `forceRender` of story RenderContext
-      !forced ||
-      // if it's the first rendering and storyProps$ is not init
-      !this.storyProps$
-    ) {
+    // check `forceRender` of story RenderContext
+    if (!forced) {
       return true;
     }
 

@@ -1,0 +1,36 @@
+{
+  "argTypes": {
+    "bar": {
+      "description": "Optional number bar",
+      "name": "bar",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "number",
+        "required": false
+      }
+    },
+    "foo": {
+      "description": "String foo",
+      "name": "foo",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": true
+      }
+    }
+  },
+  "id": "stories-renderers-vue3-vue3-vite-default-ts-component-meta-tscomponent",
+  "jsDocTags": {},
+  "name": "Component",
+  "path": "./src/stories/renderers/vue3_vue3-vite-default-ts/component-meta/TsComponent.stories.ts"
+}

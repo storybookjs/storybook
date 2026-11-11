@@ -6,6 +6,7 @@ import {
   planFiling,
   renderDry,
   renderFilingReport,
+  reportedOn,
   type FilingStep,
 } from './filing.ts';
 import { asIssue, finding, issueOn, loaded, RUN_URL, single, VERSION } from './fixtures.ts';
@@ -142,16 +143,28 @@ describe('planFiling', () => {
   it('does not report a sighting again when another run collects the same result', () => {
     const [group] = groupFindings([loaded('linux', 'claude', [finding()])]);
     const filed = asIssue(toProposal(single(group), [], { runUrl: RUN_URL }));
-    const body = issueBody(planFiling(filed, { repo: REPO, evidenceLinks: 'assets' }));
-    const collectedAgain = toProposal(
-      single(group),
-      [issueOn(group, { number: 9, labels: ['bug'], state: 'open' })],
-      { runUrl: `${RUN_URL}0` }
-    );
+    const issue = {
+      ...issueOn(group, { number: 9, labels: ['bug'], state: 'open' }),
+      body: issueBody(planFiling(filed, { repo: REPO, evidenceLinks: 'assets' })),
+    };
+    const collectedAgain = toProposal(single(group), [issue], { runUrl: `${RUN_URL}0` });
 
     expect(
-      planFiling(collectedAgain, { repo: REPO, evidenceLinks: 'assets', existing: [body] })
+      planFiling(collectedAgain, {
+        repo: REPO,
+        evidenceLinks: 'assets',
+        existing: reportedOn([issue], 9, []),
+      })
     ).toEqual([{ kind: 'skip', reason: '#9 already has this sighting' }]);
+  });
+
+  it('takes what an issue already reports from its own body and then its comments', () => {
+    const issues = [
+      { number: 8, body: 'another issue' },
+      { number: 9, body: 'the issue' },
+    ];
+
+    expect(reportedOn(issues, 9, ['first comment'])).toEqual(['the issue', 'first comment']);
   });
 
   it('reports the sighting of a later run of the same repo', () => {

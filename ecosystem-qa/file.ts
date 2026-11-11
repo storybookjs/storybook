@@ -14,6 +14,7 @@ import {
   planFiling,
   renderDry,
   renderFilingReport,
+  reportedOn,
   type FilingOutcome,
   type FilingStep,
 } from './lib/filing.ts';
@@ -213,12 +214,7 @@ const fileProposal = (proposal: Proposal, issues: QaIssue[]): FilingOutcome => {
       : {}),
     ...(proposal.kind === 'comment'
       ? {
-          existing: [
-            ...issues
-              .filter((issue) => issue.number === proposal.existingIssue)
-              .map((issue) => issue.body),
-            ...commentsOn(proposal.existingIssue),
-          ],
+          existing: reportedOn(issues, proposal.existingIssue, commentsOn(proposal.existingIssue)),
         }
       : {}),
   });

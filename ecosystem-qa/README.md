@@ -137,3 +137,6 @@ A proposal that fails does not stop the others; the job writes a filed and faile
 Rerunning the job is safe: a filed fingerprint and a repeated comment are skipped, and evidence already on `qa-assets` makes no new commit.
 Filing the same results again from another run, for example with `from_runs`, is safe too: a sighting is the same when its fingerprints, version, repo, commit, system and engine match, whichever run collected it, and the issue's own body counts as reporting it.
 A later agent run of the same repo has another commit, so it is a new sighting and gets its comment.
+The repo and commit are those of the group's first finding, which has two consequences.
+Pass only new runs to `from_runs`: a new repo that reports a fingerprint behind an unchanged first finding would not get its comment.
+And a run in which the agent committed nothing looks like the run before it on the same start commit, so it is not reported again.

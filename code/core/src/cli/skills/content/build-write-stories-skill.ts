@@ -2,9 +2,9 @@ import { ERROR_EXPORT_RULE, networkMockRule, USER_EVENT_RULE } from './story-rul
 
 export type WriteStoriesSkillInputs = {
   framework: string;
-  /** The preview file uses `definePreview`, so story files use CSF Factories. */
+  // The preview file uses `definePreview`, so story files use CSF Factories.
   csfFactories: boolean;
-  /** Path of the preview file, relative to the working directory. */
+  // Relative to the working directory.
   previewFile: string;
   typescript: boolean;
 };

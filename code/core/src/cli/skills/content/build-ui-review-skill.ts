@@ -4,8 +4,8 @@ import { type SkillTextTransport, skillVocabulary } from './skill-vocabulary.ts'
 export type UiReviewSkillInputs = FindStoriesInputs & {
   // `mcp` for `skills ui-review --mcp`: tools of the Storybook MCP server instead of commands.
   transport: SkillTextTransport;
-  // The `dev` toolset is on: the review, story links and `stories-changed`. Always for the CLI.
-  devEnabled: boolean;
+  // `main.ts` turns the `dev` toolset of the MCP server off. Never for the CLI.
+  toolsetOff?: boolean;
 };
 
 const REVIEW_EXAMPLE = `{
@@ -28,11 +28,10 @@ The review needs a running Storybook dev server:
 
 export function buildUiReviewSkill(inputs: UiReviewSkillInputs): string {
   const v = skillVocabulary(inputs.transport);
-  if (!inputs.devEnabled) {
-    return `# Storybook UI review
-
-The Storybook MCP server of this project cannot publish a review: its \`dev\` toolset is off. Skip this step.`;
-  }
+  // A client can turn the toolset on for itself with a request header, which this text cannot see.
+  const toolsetOff = inputs.toolsetOff
+    ? `\n\nThe \`main.ts\` of this project turns the \`dev\` toolset of the Storybook MCP server off. When the server does not give you ${v.name('review.create')}, skip this step.`
+    : '';
   const discoverFirst = inputs.moduleGraphSupported
     ? ` When you changed files, take the story ids from ${v.name('stories.changed')}, ${v.cli ? 'run' : 'called'} after your last edit (and from ${v.name('stories.findByComponent')} only for a file it leaves out), also when you only wrote stories; never take them from the test ${v.output}.`
     : '';
@@ -52,7 +51,7 @@ ${v.ref('stories.preview')} --stories '[{"storyId":"<id>"}]'   # direct links to
     : `- ${v.name('stories.preview')} with \`stories: [{ "storyId": "<id>" }]\`: direct links to stories`;
   return `# Storybook UI review
 
-${v.notes}
+${v.notes}${toolsetOff}
 ${v.cli ? `\n${DEV_SERVER}\n` : ''}
 ${findStoriesSection(v, inputs, { forReview: true })}
 

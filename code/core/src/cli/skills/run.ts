@@ -251,17 +251,23 @@ function buildProjectSkill(
   // composed Storybooks.
   const mcp = transport === 'mcp';
   const toolsets = mcp ? inputs.mcpToolsets : ALL_MCP_TOOLSETS;
-  const findStories = {
-    docsEnabled:
-      toolsets.docs && ((mcp ? inputs.docsEnabled : inputs.docsEnabledForCli) || inputs.composed),
-    moduleGraphSupported: toolsets.dev && inputs.moduleGraphSupported,
-  };
+  const docsEnabled =
+    toolsets.docs && ((mcp ? inputs.docsEnabled : inputs.docsEnabledForCli) || inputs.composed);
+  // A skill names the tools of its own toolset also when `main.ts` turns that toolset off, and
+  // says so: a client that turns it on with the `X-MCP-Toolsets` header has those tools.
   return id === 'test-stories'
     ? buildTestStoriesSkill({
-        ...findStories,
+        docsEnabled,
+        moduleGraphSupported: toolsets.dev && inputs.moduleGraphSupported,
         transport,
-        testSupported: toolsets.test && inputs.testSupported,
+        testSupported: inputs.testSupported,
+        toolsetOff: !toolsets.test,
         a11yEnabled: inputs.a11yEnabled,
       })
-    : buildUiReviewSkill({ ...findStories, transport, devEnabled: toolsets.dev });
+    : buildUiReviewSkill({
+        docsEnabled,
+        moduleGraphSupported: inputs.moduleGraphSupported,
+        transport,
+        toolsetOff: !toolsets.dev,
+      });
 }

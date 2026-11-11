@@ -13,6 +13,7 @@ import {
   normalizeStorybookWorkflowName,
   parseJson,
   parseStorybookWorkflowShellCommands,
+  shellCommandReadsFile,
   workflowCallMatchesName,
 } from './shell-parse.ts';
 import type { StorybookWorkflowCall } from './shell-parse.ts';
@@ -747,7 +748,7 @@ function isSkillInvoked(skillName: string): boolean {
     // which loads the same instructions.
     const skillFile = `/skills/${skillName}/SKILL.md`;
     return (
-      getShellCommands().some((command) => command.includes(skillFile)) ||
+      getShellCommands().some((command) => shellCommandReadsFile(command, skillFile)) ||
       getTranscript().events.some(
         (event) =>
           event.type === 'tool_call' &&

@@ -79,12 +79,7 @@ export function getToolName(context: Pick<ToolsetCtx, 'transport'>) {
   };
 }
 
-/**
- * Renders the command that prints a Storybook skill for the active transport.
- *
- * A tool that is one step of the workflow names its skill with this, so an agent that reaches the
- * tool before the skill still reads the rules of the step.
- */
+/** Renders the command that prints the skill of a workflow step, for the active transport. */
 export function getSkillCommand(context: Pick<ToolsetCtx, 'transport'>) {
   return (skill: 'test-stories' | 'ui-review'): string =>
     `npx storybook skills ${skill}${context.transport === 'mcp' ? ' --mcp' : ''}`;

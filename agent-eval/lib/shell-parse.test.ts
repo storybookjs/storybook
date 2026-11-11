@@ -4,6 +4,7 @@ import heredocCommands from './__fixtures__/claude-plugin-801-heredoc-commands.j
 import {
   normalizeStorybookWorkflowName,
   parseStorybookWorkflowShellCommands,
+  shellCommandReadsFile,
   workflowCallMatchesName,
 } from './shell-parse.ts';
 
@@ -535,5 +536,27 @@ npx storybook tools stories changed`,
       'test-run',
       'stories-find-by-component',
     ]);
+  });
+});
+
+describe('shellCommandReadsFile', () => {
+  const skillFile = '/skills/storybook-upgrade/SKILL.md';
+
+  test.each([
+    'cat /tmp/plugin/skills/storybook-upgrade/SKILL.md',
+    'cd /tmp/plugin && head -100 "./skills/storybook-upgrade/SKILL.md"',
+    'ls /tmp/plugin/skills; sed -n 1,80p /tmp/plugin/skills/storybook-upgrade/SKILL.md | tail -40',
+  ])('counts a command that prints the file: %s', (command) => {
+    expect(shellCommandReadsFile(command, skillFile)).toBe(true);
+  });
+
+  test.each([
+    'ls /tmp/plugin/skills/storybook-upgrade/SKILL.md',
+    'test -f /tmp/plugin/skills/storybook-upgrade/SKILL.md && echo found',
+    'echo "read /skills/storybook-upgrade/SKILL.md first"',
+    'cat package.json; ls /tmp/plugin/skills/storybook-upgrade/SKILL.md',
+    'cat /tmp/plugin/skills/storybook-init/SKILL.md',
+  ])('does not count a command that only names the file: %s', (command) => {
+    expect(shellCommandReadsFile(command, skillFile)).toBe(false);
   });
 });

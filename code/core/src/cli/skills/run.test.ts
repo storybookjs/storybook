@@ -197,7 +197,7 @@ describe('runSkillsCommand', () => {
     expect(uiReview.output).toContain('Call `review-create` with:');
   });
 
-  it('--mcp leaves out the tools of the toolsets main.ts turns off', async () => {
+  it('--mcp leaves out the tools of the other toolsets main.ts turns off, and says when its own is off', async () => {
     const d = deps();
     d.resolveSkillInputs.mockResolvedValue({
       ...(await d.resolveSkillInputs()),
@@ -214,12 +214,14 @@ describe('runSkillsCommand', () => {
     expect(testStories.output).not.toContain('stories-changed');
     expect(testStories.output).toContain('This Storybook has no tool that lists story ids.');
 
+    // A client that turns the toolset on with the `X-MCP-Toolsets` header has the tool.
     const uiReview = await runSkillsCommand({ tokens: ['ui-review'], mcp: true, target: {} }, d);
-    expect(uiReview.output).toContain('Skip this step.');
-    expect(uiReview.output).not.toContain('review-create');
+    expect(uiReview.output).toContain('When the server does not give you `review-create`, skip');
+    expect(uiReview.output).toContain('Call `review-create` with:');
 
     const cli = await runSkillsCommand({ tokens: ['ui-review'], target: {} }, d);
     expect(cli.output).toContain('## Publish the review');
+    expect(cli.output).not.toContain('skip this step');
 
     d.resolveSkillInputs.mockResolvedValue({
       ...(await d.resolveSkillInputs()),
@@ -229,7 +231,8 @@ describe('runSkillsCommand', () => {
       { tokens: ['test-stories'], mcp: true, target: {} },
       d
     );
-    expect(withoutTests.output).toContain('Skip this step.');
+    expect(withoutTests.output).toContain('When the server does not give you `test-run`, skip');
+    expect(withoutTests.output).toContain('Call `test-run` after every change');
   });
 
   it('--all prints each skill once', async () => {

@@ -98,6 +98,11 @@ describe('canonical skills', () => {
     }
   );
 
+  // A plain YAML scalar ends at `: ` or ` #`, so a strict loader rejects such a description.
+  it.each(claudeSkills)('$name has a description that is valid YAML unquoted', ({ content }) => {
+    expect(readSkillDescription(content)).not.toMatch(/: | #|:$|^[-?:,[\]{}#&*!|>'"%@`]/);
+  });
+
   it.each(claudeSkills)('$name names no harness-specific tool or file', ({ content }) => {
     for (const harnessTool of HARNESS_TOOLS) {
       expect(content).not.toContain(harnessTool);

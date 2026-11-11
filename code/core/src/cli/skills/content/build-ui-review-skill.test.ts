@@ -6,7 +6,6 @@ const everything: UiReviewSkillInputs = {
   transport: 'cli',
   docsEnabled: true,
   moduleGraphSupported: true,
-  devEnabled: true,
 };
 
 describe('buildUiReviewSkill', () => {
@@ -44,19 +43,14 @@ describe('buildUiReviewSkill', () => {
     expect(text).not.toContain('find-by-component');
   });
 
-  it('tells the agent to skip the step when the MCP server has no review tool', () => {
-    expect(
-      buildUiReviewSkill({
-        ...everything,
-        transport: 'mcp',
-        devEnabled: false,
-        moduleGraphSupported: false,
-      })
-    ).toMatchInlineSnapshot(`
-      "# Storybook UI review
+  it('says when to skip the step, and keeps its tools, when main.ts turns the dev toolset off', () => {
+    const text = buildUiReviewSkill({ ...everything, transport: 'mcp', toolsetOff: true });
 
-      The Storybook MCP server of this project cannot publish a review: its \`dev\` toolset is off. Skip this step."
-    `);
+    expect(text).toContain(
+      'The `main.ts` of this project turns the `dev` toolset of the Storybook MCP server off. When the server does not give you `review-create`, skip this step.'
+    );
+    expect(text).toContain('Call `review-create` with:');
+    expect(buildUiReviewSkill({ ...everything, transport: 'mcp' })).not.toContain('skip this step');
   });
 
   it('starts the dev server from the package.json script without shell interpolation', () => {

@@ -9,14 +9,15 @@ import type { DocsContextProps, StoryId } from 'storybook/internal/types';
  * Serializes the user's current globals the same way the manager does for its "Open in isolation
  * mode" link (see `buildArgsParam` usage in `manager-api`'s `url` module), so docs preview links
  * can carry the active globals. Globals still at their default are omitted, matching the manager's
- * URL. Returns an empty string when there is no story (e.g. a loading preview).
+ * URL. Returns an empty string when there is no story (e.g. a loading preview) or no docs context
+ * (e.g. a `Story` component rendered on its own).
  */
 export const useGlobalsParam = (
   storyId: StoryId | undefined,
-  context: DocsContextProps
+  context: DocsContextProps | null
 ): string => {
   const [param, setParam] = useState(() => {
-    if (!storyId) {
+    if (!storyId || !context) {
       return '';
     }
     try {
@@ -28,7 +29,7 @@ export const useGlobalsParam = (
   });
 
   useEffect(() => {
-    if (!storyId) {
+    if (!storyId || !context) {
       return undefined;
     }
     const onGlobalsUpdated = ({
@@ -42,7 +43,7 @@ export const useGlobalsParam = (
     };
     context.channel.on(GLOBALS_UPDATED, onGlobalsUpdated);
     return () => context.channel.off(GLOBALS_UPDATED, onGlobalsUpdated);
-  }, [context.channel, storyId]);
+  }, [context?.channel, storyId]);
 
   return param;
 };

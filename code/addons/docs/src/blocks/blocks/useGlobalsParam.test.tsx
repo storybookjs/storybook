@@ -32,6 +32,11 @@ describe('useGlobalsParam', () => {
     expect(result.current).toBe('');
   });
 
+  it('returns an empty string when rendered outside a docs context', () => {
+    const { result } = renderHook(() => useGlobalsParam('button--primary', null));
+    expect(result.current).toBe('');
+  });
+
   it('serializes the active globals, omitting those left at their default', () => {
     const context = createMockContext(
       { initialGlobals: { theme: 'light' }, globals: { theme: 'dark' } },

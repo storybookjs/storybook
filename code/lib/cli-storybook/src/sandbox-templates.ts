@@ -19,7 +19,8 @@ export type SkippableTask =
 export type TemplateKey =
   | keyof typeof baseTemplates
   | keyof typeof internalTemplates
-  | keyof typeof benchTemplates;
+  | keyof typeof benchTemplates
+  | keyof typeof typeScript7Templates;
 
 // Some properties e.g. experimentalTestSyntax are only available in framework specific types for StorybookConfig, therefore we loosen the type here otherwise it would always fail
 type LoosenedStorybookConfig = Omit<Partial<StorybookConfigRaw>, 'features'> & {
@@ -131,6 +132,7 @@ export type Template = {
    * page or the repro CLI command.
    */
   isInternal?: boolean;
+  docgenBaselinesFrom?: string;
 };
 
 type BaseTemplates = Template & {
@@ -977,10 +979,72 @@ const benchTemplates = {
   },
 } satisfies Record<string, Template & { isInternal: true }>;
 
+const replaceTypeScript6 = (dependencies: string[], replacements: string[]) =>
+  dependencies.flatMap((dependency) =>
+    dependency === 'typescript@^6' ? replacements : [dependency]
+  );
+
+const reactVite = baseTemplates['react-vite/default-ts'];
+const angularVite = baseTemplates['angular-vite/default-ts'];
+
+/**
+ * TypeScript is pinned to the exact beta: a range such as `^7.1.0-beta` also matches the nightly
+ * `7.1.0-dev.*` builds.
+ */
+const typeScript7Templates = {
+  'react-vite/typescript-7-ts': {
+    ...reactVite,
+    name: 'React with TypeScript 7.1 (Vite | TypeScript)',
+    modifications: {
+      ...reactVite.modifications,
+      extraDevDependencies: replaceTypeScript6(reactVite.modifications.extraDevDependencies, [
+        'typescript@7.1.0-beta',
+      ]),
+      mainConfig: {
+        ...reactVite.modifications.mainConfig,
+        features: {
+          ...reactVite.modifications.mainConfig.features,
+          componentsManifest: true,
+          docgenServer: true,
+        },
+      },
+    },
+    skipTasks: [...reactVite.skipTasks, 'chromatic'],
+    inDevelopment: true,
+    isInternal: true,
+  },
+  'angular-vite/typescript-7-ts': {
+    ...angularVite,
+    name: 'Angular CLI with TypeScript 7.1 (Vite | TypeScript)',
+    modifications: {
+      ...angularVite.modifications,
+      // Angular's compiler needs TypeScript 6, so `typescript` stays on 6 and TypeScript 7.1 is
+      // installed beside it, as the TypeScript docs page tells Angular projects to do.
+      extraDependencies: replaceTypeScript6(angularVite.modifications.extraDependencies, [
+        'typescript@^6',
+        '@typescript/native@npm:typescript@7.1.0-beta',
+      ]),
+      mainConfig: {
+        ...angularVite.modifications.mainConfig,
+        features: {
+          ...angularVite.modifications.mainConfig.features,
+          docgenServer: true,
+        },
+        typescript: { docgenSpecifier: '@typescript/native' },
+      },
+    },
+    skipTasks: [...angularVite.skipTasks, 'chromatic'],
+    inDevelopment: true,
+    isInternal: true,
+    docgenBaselinesFrom: 'angular-vite/default-ts',
+  },
+} satisfies Record<string, Template>;
+
 export const allTemplates: Record<TemplateKey, Template> = {
   ...baseTemplates,
   ...internalTemplates,
   ...benchTemplates,
+  ...typeScript7Templates,
 };
 
 export const normal: TemplateKey[] = [
@@ -1026,6 +1090,8 @@ export const daily: TemplateKey[] = [
   // Re-enable once storybook-builder-rsbuild releases a version that works with Storybook 11.
   // 'vue3-rsbuild/default-ts',
   'angular-vite/21-ts',
+  'react-vite/typescript-7-ts',
+  'angular-vite/typescript-7-ts',
   'react-vite/default-js',
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',

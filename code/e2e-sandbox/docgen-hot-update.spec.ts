@@ -9,8 +9,7 @@ const sandboxDir = process.env.STORYBOOK_SANDBOX_DIR || '';
 const type = process.env.STORYBOOK_TYPE || 'dev';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 
-/** Only this template runs the docgen open service (docgenServer) for Angular. */
-const SUPPORTED_TEMPLATES = ['angular-vite/default-ts'];
+const ANGULAR_DOCGEN_SERVER_TEMPLATES = ['angular-vite/default-ts', 'angular-vite/typescript-7-ts'];
 
 const PREVIEW_STORY_TIMEOUT = 30_000;
 
@@ -52,8 +51,8 @@ test.describe('docgen open service hot updates (Angular)', () => {
   test.skip(!sandboxDir, 'Set STORYBOOK_SANDBOX_DIR to run docgen hot update tests');
   test.skip(type !== 'dev', 'Docgen hot updates require the dev server file watcher.');
   test.skip(
-    !!templateName && !SUPPORTED_TEMPLATES.includes(templateName),
-    `Docgen hot update E2E tests only run for: ${SUPPORTED_TEMPLATES.join(', ')}`
+    !!templateName && !ANGULAR_DOCGEN_SERVER_TEMPLATES.includes(templateName),
+    `Docgen hot update E2E tests only run for: ${ANGULAR_DOCGEN_SERVER_TEMPLATES.join(', ')}`
   );
 
   test.beforeAll(async () => {

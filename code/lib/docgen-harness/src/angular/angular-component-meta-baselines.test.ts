@@ -6,10 +6,9 @@ import { join } from 'node:path';
 
 import { afterAll, describe, expect, it } from 'vitest';
 
-import ts from 'typescript';
-
 import type { PropsTableMode } from '@storybook/angular-cm';
 import { AngularComponentMetaManager, extractArgTypesFromData } from '@storybook/angular-cm';
+import { loadTestTypeScript } from '@storybook/component-meta-typescript/testing';
 import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
 import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
 import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
@@ -26,7 +25,7 @@ if (BASELINE_PATH !== 'legacy') {
 
 // One manager for the whole suite: each fixture directory carries its own tsconfig.json
 // (include: ["./*.ts"]), so every component file resolves to its own per-fixture project.
-const manager = new AngularComponentMetaManager({ api: 'compiler', typescript: ts });
+const manager = new AngularComponentMetaManager(await loadTestTypeScript());
 
 type LegacyArgTypesRecording = 'argtypes' | 'argtypes-filtered';
 

@@ -233,7 +233,7 @@ export const create: Task['run'] = async ({ key, template, sandboxDir }, { dryRu
   await mkdir(parentDir, { recursive: true });
 
   if ('inDevelopment' in template && template.inDevelopment) {
-    const srcDir = join(REPROS_DIRECTORY, key, 'after-storybook');
+    const srcDir = join(REPROS_DIRECTORY, key, 'before-storybook');
     if (!existsSync(srcDir)) {
       throw new Error(`Missing repro directory '${srcDir}', did the generate task run?`);
     }

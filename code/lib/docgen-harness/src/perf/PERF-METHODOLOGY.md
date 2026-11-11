@@ -309,7 +309,7 @@ The slope there measures that growth as well as any leak, which is why its budge
 
 `react-osa-native` is `react-osa` on the native API of TypeScript 7.1 (the `typescript-native` alias) instead of the compiler API of this package's `typescript`.
 It is the same `ComponentMetaManager`, so the pair `react-native-api` compares the two APIs on equal work, and both children report the props they documented.
-It stays out of the default run until it has a budget row; measure it with `--engine react-osa --engine react-osa-native`.
+It is in the default run, so the daily gate measures it beside `react-osa`.
 
 Pinned profile on the dev box (8 cores, Node 22, TypeScript 6.0.3 against 7.1.0-beta):
 
@@ -334,7 +334,7 @@ Warm, both shapes favour the native API, and its retained growth and slope are t
 
 `angular-cm` and `angular-cm-native` run `AngularComponentMetaManager` from `@storybook/angular-cm` over the generated Angular project (100 components, 8 extra inputs each, a stub `@angular/core`), on the compiler API of this package's `typescript` and on the native API of the `typescript-native` alias.
 A save rewrites one component with one more input; the manager notices it through its mtime check, as the docgen server does.
-Both stay out of the default run until they have budget rows; measure them with `--engine angular-cm --engine angular-cm-native`.
+Both are in the default run, so the daily gate measures the pair.
 
 Pinned profile on the dev box (8 cores, Node 22, TypeScript 6.0.3 against 7.1.0-beta):
 
@@ -361,6 +361,10 @@ Recorded in `docgen-shared/budgets.ts`, keyed by engine and scenario, above the 
 | react-legacy/first-story           | 0.60            | 15MB           | 10MB            | 1MB/save       | daily |
 | react-osa/whole-index              | 0.08            | 45MB           | -50MB           | 0.5MB/save     | daily |
 | react-osa/first-story              | 0.15            | 30MB           | 10MB            | 1MB/save       | daily |
+| react-osa-native/whole-index       | 0.05            | 30MB           | -50MB           | 0.3MB/save     | daily |
+| react-osa-native/first-story       | 0.60            | 15MB           | 10MB            | 1MB/save       | daily |
+| angular-cm/default                 | 0.06            | 10MB           | 5MB             | 0.5MB/save     | daily |
+| angular-cm-native/default          | 0.08            | 10MB           | 5MB             | 0.5MB/save     | daily |
 | vue-docgen-api/flat                | 0.08            | 4MB            | 3MB             | 0.2MB/save     | daily |
 | vue-docgen-api/workspace           | 0.10            | 4MB            | 3MB             | 0.2MB/save     | daily |
 | vue-docgen-api/base-type-touch     | 0.25            | 4MB            | 3MB             | 0.2MB/save     | daily |
@@ -376,8 +380,13 @@ Retained growth is a signed ceiling rather than a multiple of what was observed,
 `react-osa/whole-index` measures -82.9MB, and the regression worth catching there is the engine no longer releasing its whole-project state, which would land near 0MB and pass any positive budget.
 Its budget is therefore -50MB: the run has to still drop at least that far to be green.
 
+The four TypeScript 7.1 rows come from the CI run on 2026-11-10 (pull request #37293), in milliseconds 5326/27, 189/33, 737/7 and 516/8 cold/warm.
+`react-osa-native/whole-index` releases its whole-project state like `react-osa` does (-88.0MB), so it carries the same -50MB ceiling.
+`react-osa-native/first-story` has a cold pass of only ~190ms, so its warm/cold ratio (0.17) is budgeted like `react-legacy/first-story`'s.
+
 `react-legacy-rdt` and `vue-component-meta-next` are measurable but carry no budget: neither runs by default, and a budget on something CI never runs would be decoration.
 The `cem` stretch row waits on an engine that does not exist yet.
 
 The docgen-memory gate keeps its own, heavier `react-osa` row (90MB transient, 60MB growth, 3MB/save) over a 600-component project.
+Its `react-osa-native` row (45MB transient, -50MB growth, 0.5MB/save) runs the same project on TypeScript 7.1, observed on CI at 12.6MB, -174.7MB and 0.02MB/save. These figures cover the docgen process only: the TypeScript 7.1 compiler runs in a process of its own, which neither gate measures.
 It measures the same shape and the same save scope as `react-osa/whole-index` above; only the project size differs, which is why its budgets sit so much higher.

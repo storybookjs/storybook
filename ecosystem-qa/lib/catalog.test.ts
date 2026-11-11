@@ -20,6 +20,7 @@ describe('catalog', () => {
     ['an unknown field', { ...ENTRY, branch: 'main' }],
     ['a tier 1 entry without a push target', { ...ENTRY, class: 'tier1' }],
     ['a push target outside the orgs with a push token', { ...ENTRY, pushTo: 'twentyhq/twenty' }],
+    ['a Node version that is not a plain version', { ...ENTRY, node: 'lts/*' }],
   ])('rejects %s', (_, entry) => {
     expect(() => Catalog.parse([entry])).toThrow();
   });
@@ -34,6 +35,12 @@ describe('catalog', () => {
       expect(entry?.pushTo).toBe(pushTo);
     }
   );
+
+  it('accepts a plain Node version', () => {
+    const [entry] = Catalog.parse([{ ...ENTRY, node: '24.11.0' }]);
+
+    expect(entry?.node).toBe('24.11.0');
+  });
 
   it('rejects duplicate ids', () => {
     expect(() => Catalog.parse([ENTRY, ENTRY])).toThrow(/unique/);

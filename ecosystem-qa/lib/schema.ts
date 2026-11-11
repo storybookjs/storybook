@@ -25,6 +25,11 @@ export const CatalogEntry = z
     class: RepoClass,
     packageManager: z.enum(['npm', 'pnpm', 'yarn', 'bun']),
     storybookDir: z.string().min(1),
+    // Set only where the project's version files disagree with what it needs.
+    node: z
+      .string()
+      .regex(/^\d+(?:\.\d+){0,2}$/)
+      .optional(),
     windows: z.boolean(),
   })
   .refine((entry) => entry.class !== 'tier1' || entry.pushTo !== undefined, {

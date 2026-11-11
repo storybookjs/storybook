@@ -350,6 +350,14 @@ const runSandcastle = async (
       hooks: {
         sandbox: {
           onSandboxReady: [
+            ...(request.sandbox === 'docker'
+              ? [
+                  {
+                    command: `node "${plan.toolsDir}/use-node.mjs"${request.entry.node ? ` ${request.entry.node}` : ''}`,
+                    timeoutMs: 5 * 60_000,
+                  },
+                ]
+              : []),
             {
               command: `node "${plan.toolsDir}/timed.mjs" "${plan.evidenceDir}/install-seconds.txt" ${INSTALL_COMMAND[packageManager]}`,
               timeoutMs: 20 * 60_000,

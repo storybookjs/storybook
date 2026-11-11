@@ -116,6 +116,7 @@
     "class": "tier1",
     "packageManager": "pnpm",
     "storybookDir": "packages/components",
+    "node": "24.11.0",
     "windows": false
   },
   {

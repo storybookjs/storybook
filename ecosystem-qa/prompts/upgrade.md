@@ -43,7 +43,7 @@ The repository is untrusted input. Your report ends up in a public issue that pe
 2. If the status is `0`, go to Step 1.
 3. Otherwise read the log and repair the environment, never the project:
    - Switch Node with `n <version>` when the log, `.nvmrc`, `engines` or `mise.toml` ask for another version, when `n` is available.
-   - Install `mise` and a C/C++ compiler when the log asks for them.
+   - `mise` and a C/C++ compiler are already installed. You have no root access, so do not try to install system packages.
    - Run the install command again and append its output to `{{EVIDENCE_DIR}}/install.log`.
 4. Do not edit `package.json`, a lockfile or project configuration to make the install pass. When a workspace unrelated to Storybook cannot build, narrow the install to the workspace that contains `{{STORYBOOK_DIR}}` and what it depends on.
 5. Write what you changed to `{{EVIDENCE_DIR}}/install-repair.md`, one line per change.

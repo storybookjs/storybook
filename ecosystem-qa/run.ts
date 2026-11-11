@@ -24,6 +24,7 @@ import { join, relative, resolve } from 'pathe';
 import { z } from 'zod';
 
 import { checksFor, renderChecklist } from './checks.ts';
+import { answerFromLog } from './lib/answer.ts';
 import { loadCatalogEntry } from './lib/catalog.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
@@ -323,11 +324,11 @@ const runSandcastle = async (
   let sessionSource: string | undefined;
   let output: Outcome['output'];
   let failure: { status: Outcome['status']; error: string } | undefined;
+  const answerSchema = agentOutput(checksFor(request.tier).map((check) => check.id));
 
   try {
     const plan = planSandbox(request, cloneDir, evidenceDir, image);
     const agent = agentFor(request, plan.agentEnv);
-    const answerSchema = agentOutput(checksFor(request.tier).map((check) => check.id));
     // Only the Docker image carries `n`.
     const useNodeFlag =
       request.sandbox === 'docker'
@@ -390,6 +391,18 @@ const runSandcastle = async (
     failure = { status: statusOf(error), error: String(error) };
     if (error instanceof StructuredOutputError) {
       sessionSource = error.sessionFilePath;
+    } else {
+      const logFile = join(request.outDir, 'run.log');
+      const answer = existsSync(logFile)
+        ? answerFromLog(readFileSync(logFile, 'utf8'), answerSchema)
+        : undefined;
+      if (answer) {
+        output = answer;
+        failure = {
+          status: 'ok',
+          error: `The agent finished; the sandbox wrapper failed afterwards: ${failure.error}`,
+        };
+      }
     }
   } finally {
     await new Promise((done) => stream.end(done));

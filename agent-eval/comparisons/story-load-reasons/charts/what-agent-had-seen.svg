@@ -1,9 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 500" width="880" height="500" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" role="img">
 <title>What the agent had seen of a story before loading it</title>
-<desc>Name only 159 (61%); Name + description 80 (31%); Source already shown 19 (7%); Guessed name 3 (1%)</desc>
+<desc>261 story loads. Name only 159 (61%); Name + description 80 (31%); Source already shown 19 (7%); Guessed name 3 (1%)</desc>
 <rect id="background" width="880" height="500" fill="#ffffff"/>
 <text id="title" x="40" y="44" font-size="20" font-weight="600" fill="#1f1f1e">What the agent had seen of a story before loading it</text>
-<text id="subtitle" x="40" y="68" font-size="13.5" fill="#5c5b56">261 story loads.</text>
 <g id="slices" stroke="#ffffff" stroke-width="2" stroke-linejoin="round">
 <path id="slice-name-only" d="M440.0,280.0 L440.00,140.00 A140,140 0 1 1 351.31,388.32 Z" fill="#0072B2"><title>Name only: 159 of 261 (61%)</title></path>
 <path id="slice-name-description" d="M440.0,280.0 L351.31,388.32 A140,140 0 0 1 369.27,159.18 Z" fill="#E69F00"><title>Name + description: 80 of 261 (31%)</title></path>

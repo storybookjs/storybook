@@ -23,10 +23,9 @@ def pie(filename, title, subtitle, slices, caption=()):
     height = 500 + (26 + 19 * len(caption) if caption else 0)
     out = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" width="%d" height="%d" font-family="%s" role="img">' % (W, height, W, height, FONT),
            '<title>%s</title>' % escape(title),
-           '<desc>%s</desc>' % escape('; '.join('%s %d (%d%%)' % (l, n, round(100 * n / total)) for l, n in slices)),
+           '<desc>%s</desc>' % escape(subtitle + ' ' + '; '.join('%s %d (%d%%)' % (l, n, round(100 * n / total)) for l, n in slices)),
            '<rect id="background" width="%d" height="%d" fill="#ffffff"/>' % (W, height),
            '<text id="title" x="40" y="44" font-size="20" font-weight="600" fill="%s">%s</text>' % (INK, escape(title)),
-           '<text id="subtitle" x="40" y="68" font-size="13.5" fill="%s">%s</text>' % (MUTED, escape(subtitle)),
            '<g id="slices" stroke="#ffffff" stroke-width="2" stroke-linejoin="round">']
     angle, labels = -math.pi / 2, []
     for k, (label, n) in enumerate(slices):
@@ -80,15 +79,15 @@ def pie(filename, title, subtitle, slices, caption=()):
     print(filename, [(l, n, round(100 * n / total)) for l, n in slices])
 
 # purge-docgen prints every story in its docs output, so its loads are re-loads, not picks from a list.
-EXCLUDED_ARMS = ('purge-docgen',)
-calls = [c for c in map(json.loads, open(os.path.join(OUT, 'story-loads.final.jsonl'))) if c['arm'] not in EXCLUDED_ARMS]
+EXCLUDED_CASES = ('purge-docgen',)
+calls = [c for c in map(json.loads, open(os.path.join(OUT, 'story-loads.final.jsonl'))) if c['arm'] not in EXCLUDED_CASES]
 n = len(calls)
 
 FAMILY = [('worked-example', 'Worked example'), ('undocumented-contract', 'Undocumented contract'), ('second-look', 'Second look'),
           ('component-basics', 'Component basics'), ('accessibility', 'Accessibility'), ('component-choice', 'Component choice')]
 fam = collections.Counter(c['cluster_family'] for c in calls)
 pie('reason-families.svg', 'Why agents loaded a specific story',
-    '%d story loads in 550 runs across 11 arms. Reasons reconstructed from transcripts.' % n,
+    '%d story loads in 550 runs across 11 cases. Reasons reconstructed from transcripts.' % n,
     [(label, fam[k]) for k, label in FAMILY])
 
 seen = collections.Counter(('Source already shown' if c['exposure_before'] == 'inlined' else 'Guessed name' if c['exposure_before'] == 'unseen'
@@ -98,11 +97,7 @@ pie('what-agent-had-seen.svg', 'What the agent had seen of a story before loadin
 
 align = collections.Counter(c['name_alignment'] for c in calls)
 pie('name-alignment.svg', 'How the story name related to what the agent needed', '%d story loads, each judged by three independent coders.' % n,
-    [('Names the UI being built', align['context']), ('States the information', align['direct']), ('Does not match', align['none'])],
-    caption=('In %d%% of loads the story name pointed at what the agent needed. It either named the piece of UI the agent was' % round(100 * (align['context'] + align['direct']) / n),
-             'building ("Mealdrop Checkout Form") or stated the information it was after ("Test Defaults To Type Button").',
-             'The rest were generic names such as "Anatomy" or "Empty", loaded as a fallback.',
-             'Needs were reconstructed by an annotator who could see the story name, so part of this match is built in.'))
+    [('Names the UI being built', align['context']), ('States the information', align['direct']), ('Does not match', align['none'])])
 
 coded = sorted(glob.glob(os.path.join(OUT, 'clustering', 'cited-coded-*.json')))
 if len(coded) == 3:

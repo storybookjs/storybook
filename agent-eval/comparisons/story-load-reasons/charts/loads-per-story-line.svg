@@ -1,9 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 540" width="880" height="540" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 480" width="880" height="480" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" role="img">
 <title>How many stories received exactly this many loads</title>
-<desc>1 loads: 12 stories; 2 loads: 7 stories; 3 loads: 1 stories; 4 loads: 1 stories; 5 loads: 2 stories; 7 loads: 1 stories; 8 loads: 2 stories; 10 loads: 1 stories; 11 loads: 2 stories; 18 loads: 1 stories; 26 loads: 1 stories; 29 loads: 1 stories; 42 loads: 1 stories; 45 loads: 1 stories</desc>
-<rect id="background" width="880" height="540" fill="#ffffff"/>
+<desc>34 distinct stories, 258 loads, 550 runs across 11 cases. Each dot is an exact count. 1 loads: 12 stories; 2 loads: 7 stories; 3 loads: 1 stories; 4 loads: 1 stories; 5 loads: 2 stories; 7 loads: 1 stories; 8 loads: 2 stories; 10 loads: 1 stories; 11 loads: 2 stories; 18 loads: 1 stories; 26 loads: 1 stories; 29 loads: 1 stories; 42 loads: 1 stories; 45 loads: 1 stories</desc>
+<rect id="background" width="880" height="480" fill="#ffffff"/>
 <text id="title" x="40" y="44" font-size="20" font-weight="600" fill="#1f1f1e">How many stories received exactly this many loads</text>
-<text id="subtitle" x="40" y="68" font-size="13.5" fill="#5c5b56">34 distinct stories, 258 loads, 550 runs across 11 arms. Each dot is an exact count.</text>
 <text id="y-title" x="40" y="106" font-size="12.5" fill="#5c5b56">Number of stories</text>
 <g id="grid" stroke="#e4e3df" stroke-width="1">
 <line x1="70" y1="319.3" x2="840" y2="319.3"/>
@@ -65,9 +64,5 @@
 <text x="840" y="216" font-size="12.5" fill="#5c5b56">Mealdrop Checkout Form · 29 loads</text>
 <text x="840" y="234" font-size="12.5" fill="#5c5b56">Mealdrop Cart Line · 26 loads</text>
 <text x="840" y="252" font-size="12.5" fill="#5c5b56">Mealdrop Checkout Steps · 18 loads</text>
-</g>
-<g id="note" font-size="12.5" fill="#5c5b56">
-<text x="40" y="500">The line joins observed values only: no story received 6 or 9, or 12 to 17, loads.</text>
-<text x="40" y="518">The curve passes through every dot; smoothing rounds the corners and changes no value.</text>
 </g>
 </svg>

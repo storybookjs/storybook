@@ -1,84 +1,78 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 628" width="880" height="628" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 510" width="880" height="510" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" role="img">
 <title>How stories reached the agent, by size of the Storybook instance</title>
-<desc>33 stories: Loaded individually 4.2%, Inlined by the first-three rule only 66.1%, Never loaded 29.7%; 111 stories: Loaded individually 0.9%, Inlined by the first-three rule only 57.7%, Never loaded 41.4%; 127 stories: Loaded individually 3.9%, Inlined by the first-three rule only 53.5%, Never loaded 42.5%; 220 stories: Loaded individually 0.9%, Inlined by the first-three rule only 30.0%, Never loaded 69.1%; 400+ stories: Loaded individually 3.2%, Inlined by the first-three rule only 17.1%, Never loaded 79.7%</desc>
-<rect id="background" width="880" height="628" fill="#ffffff"/>
+<desc>Share of an instance's stories over 50 runs. 11 cases with the Storybook MCP, grouped by story count. 33 stories: Loaded individually 4.2%, Inlined by the first-three rule only 66.1%, Never loaded 29.7%; 111 stories: Loaded individually 0.9%, Inlined by the first-three rule only 57.7%, Never loaded 41.4%; 127 stories: Loaded individually 3.9%, Inlined by the first-three rule only 53.5%, Never loaded 42.5%; 220 stories: Loaded individually 0.9%, Inlined by the first-three rule only 30.0%, Never loaded 69.1%; 400+ stories: Loaded individually 3.2%, Inlined by the first-three rule only 17.1%, Never loaded 79.7%</desc>
+<rect id="background" width="880" height="510" fill="#ffffff"/>
 <text id="title" x="40" y="44" font-size="20" font-weight="600" fill="#1f1f1e">How stories reached the agent, by size of the Storybook instance</text>
-<text id="subtitle" x="40" y="68" font-size="13.5" fill="#5c5b56">Share of an instance's stories over 50 runs. 11 arms with the Storybook MCP, grouped by story count.</text>
 <g id="legend" font-size="13" fill="#1f1f1e">
-<rect x="40" y="91" width="11" height="11" rx="2" fill="#0072B2"/>
-<text x="57" y="101">Loaded individually</text>
-<rect x="219" y="91" width="11" height="11" rx="2" fill="#E69F00"/>
-<text x="236" y="101">Inlined by the first-three rule only</text>
-<rect x="522" y="91" width="11" height="11" rx="2" fill="#b9b8b2"/>
-<text x="539" y="101">Never loaded</text>
+<rect x="40" y="67" width="11" height="11" rx="2" fill="#0072B2"/>
+<text x="57" y="77">Loaded individually</text>
+<rect x="219" y="67" width="11" height="11" rx="2" fill="#E69F00"/>
+<text x="236" y="77">Inlined by the first-three rule only</text>
+<rect x="522" y="67" width="11" height="11" rx="2" fill="#b9b8b2"/>
+<text x="539" y="77">Never loaded</text>
 </g>
 <g id="grid" stroke="#e4e3df" stroke-width="1">
-<line x1="210.0" y1="144" x2="210.0" y2="494"/>
-<line x1="367.5" y1="144" x2="367.5" y2="494"/>
-<line x1="525.0" y1="144" x2="525.0" y2="494"/>
-<line x1="682.5" y1="144" x2="682.5" y2="494"/>
-<line x1="840.0" y1="144" x2="840.0" y2="494"/>
+<line x1="210.0" y1="120" x2="210.0" y2="470"/>
+<line x1="367.5" y1="120" x2="367.5" y2="470"/>
+<line x1="525.0" y1="120" x2="525.0" y2="470"/>
+<line x1="682.5" y1="120" x2="682.5" y2="470"/>
+<line x1="840.0" y1="120" x2="840.0" y2="470"/>
 </g>
 <g id="x-ticks" font-size="12.5" fill="#5c5b56" text-anchor="middle">
-<text x="210.0" y="512">0%</text>
-<text x="367.5" y="512">25%</text>
-<text x="525.0" y="512">50%</text>
-<text x="682.5" y="512">75%</text>
-<text x="840.0" y="512">100%</text>
+<text x="210.0" y="488">0%</text>
+<text x="367.5" y="488">25%</text>
+<text x="525.0" y="488">50%</text>
+<text x="682.5" y="488">75%</text>
+<text x="840.0" y="488">100%</text>
 </g>
 <g id="row-33">
-<text x="40" y="183" font-size="15" font-weight="600" fill="#1f1f1e">33 stories</text>
-<text x="40" y="200" font-size="12.5" fill="#5c5b56">5 arms</text>
-<rect id="seg-33-individually" x="210.0" y="170" width="26.7" height="28" fill="#0072B2" stroke="#ffffff" stroke-width="2"><title>33 stories, loaded individually: 4.2% (1.4 stories per arm)</title></rect>
-<text x="210.0" y="163" font-size="12.5" fill="#1f1f1e">4.2% · 1.4 stories loaded individually</text>
-<rect id="seg-33-first3_only" x="236.7" y="170" width="416.2" height="28" fill="#E69F00" stroke="#ffffff" stroke-width="2"><title>33 stories, inlined by the first-three rule only: 66.1% (21.8 stories per arm)</title></rect>
-<text x="444.8" y="188" font-size="12.5" fill="#1f1f1e" text-anchor="middle">66.1% · 21.8 stories</text>
-<rect id="seg-33-never" x="652.9" y="170" width="187.1" height="28" fill="#b9b8b2" stroke="#ffffff" stroke-width="2"><title>33 stories, never loaded: 29.7% (9.8 stories per arm)</title></rect>
-<text x="746.5" y="188" font-size="12.5" fill="#1f1f1e" text-anchor="middle">29.7% · 9.8 stories</text>
+<text x="40" y="159" font-size="15" font-weight="600" fill="#1f1f1e">33 stories</text>
+<text x="40" y="176" font-size="12.5" fill="#5c5b56">5 cases</text>
+<rect id="seg-33-individually" x="210.0" y="146" width="26.7" height="28" fill="#0072B2" stroke="#ffffff" stroke-width="2"><title>33 stories, loaded individually: 4.2% (1.4 stories per case)</title></rect>
+<text x="210.0" y="139" font-size="12.5" fill="#1f1f1e">4.2% · 1.4 stories</text>
+<rect id="seg-33-first3_only" x="236.7" y="146" width="416.2" height="28" fill="#E69F00" stroke="#ffffff" stroke-width="2"><title>33 stories, inlined by the first-three rule only: 66.1% (21.8 stories per case)</title></rect>
+<text x="444.8" y="164" font-size="12.5" fill="#1f1f1e" text-anchor="middle">66.1% · 21.8 stories</text>
+<rect id="seg-33-never" x="652.9" y="146" width="187.1" height="28" fill="#b9b8b2" stroke="#ffffff" stroke-width="2"><title>33 stories, never loaded: 29.7% (9.8 stories per case)</title></rect>
+<text x="746.5" y="164" font-size="12.5" fill="#1f1f1e" text-anchor="middle">29.7% · 9.8 stories</text>
 </g>
 <g id="row-111">
-<text x="40" y="255" font-size="15" font-weight="600" fill="#1f1f1e">111 stories</text>
-<text x="40" y="272" font-size="12.5" fill="#5c5b56">1 arm</text>
-<rect id="seg-111-individually" x="210.0" y="242" width="5.7" height="28" fill="#0072B2" stroke="#ffffff" stroke-width="2"><title>111 stories, loaded individually: 0.9% (1 stories per arm)</title></rect>
-<text x="210.0" y="235" font-size="12.5" fill="#1f1f1e">0.9% · 1 story loaded individually</text>
-<rect id="seg-111-first3_only" x="215.7" y="242" width="363.2" height="28" fill="#E69F00" stroke="#ffffff" stroke-width="2"><title>111 stories, inlined by the first-three rule only: 57.7% (64 stories per arm)</title></rect>
-<text x="397.3" y="260" font-size="12.5" fill="#1f1f1e" text-anchor="middle">57.7% · 64 stories</text>
-<rect id="seg-111-never" x="578.9" y="242" width="261.1" height="28" fill="#b9b8b2" stroke="#ffffff" stroke-width="2"><title>111 stories, never loaded: 41.4% (46 stories per arm)</title></rect>
-<text x="709.5" y="260" font-size="12.5" fill="#1f1f1e" text-anchor="middle">41.4% · 46 stories</text>
+<text x="40" y="231" font-size="15" font-weight="600" fill="#1f1f1e">111 stories</text>
+<text x="40" y="248" font-size="12.5" fill="#5c5b56">1 case</text>
+<rect id="seg-111-individually" x="210.0" y="218" width="5.7" height="28" fill="#0072B2" stroke="#ffffff" stroke-width="2"><title>111 stories, loaded individually: 0.9% (1 stories per case)</title></rect>
+<text x="210.0" y="211" font-size="12.5" fill="#1f1f1e">0.9% · 1 story</text>
+<rect id="seg-111-first3_only" x="215.7" y="218" width="363.2" height="28" fill="#E69F00" stroke="#ffffff" stroke-width="2"><title>111 stories, inlined by the first-three rule only: 57.7% (64 stories per case)</title></rect>
+<text x="397.3" y="236" font-size="12.5" fill="#1f1f1e" text-anchor="middle">57.7% · 64 stories</text>
+<rect id="seg-111-never" x="578.9" y="218" width="261.1" height="28" fill="#b9b8b2" stroke="#ffffff" stroke-width="2"><title>111 stories, never loaded: 41.4% (46 stories per case)</title></rect>
+<text x="709.5" y="236" font-size="12.5" fill="#1f1f1e" text-anchor="middle">41.4% · 46 stories</text>
 </g>
 <g id="row-127">
-<text x="40" y="327" font-size="15" font-weight="600" fill="#1f1f1e">127 stories</text>
-<text x="40" y="344" font-size="12.5" fill="#5c5b56">1 arm</text>
-<rect id="seg-127-individually" x="210.0" y="314" width="24.8" height="28" fill="#0072B2" stroke="#ffffff" stroke-width="2"><title>127 stories, loaded individually: 3.9% (5 stories per arm)</title></rect>
-<text x="210.0" y="307" font-size="12.5" fill="#1f1f1e">3.9% · 5 stories loaded individually</text>
-<rect id="seg-127-first3_only" x="234.8" y="314" width="337.3" height="28" fill="#E69F00" stroke="#ffffff" stroke-width="2"><title>127 stories, inlined by the first-three rule only: 53.5% (68 stories per arm)</title></rect>
-<text x="403.5" y="332" font-size="12.5" fill="#1f1f1e" text-anchor="middle">53.5% · 68 stories</text>
-<rect id="seg-127-never" x="572.1" y="314" width="267.9" height="28" fill="#b9b8b2" stroke="#ffffff" stroke-width="2"><title>127 stories, never loaded: 42.5% (54 stories per arm)</title></rect>
-<text x="706.1" y="332" font-size="12.5" fill="#1f1f1e" text-anchor="middle">42.5% · 54 stories</text>
+<text x="40" y="303" font-size="15" font-weight="600" fill="#1f1f1e">127 stories</text>
+<text x="40" y="320" font-size="12.5" fill="#5c5b56">1 case</text>
+<rect id="seg-127-individually" x="210.0" y="290" width="24.8" height="28" fill="#0072B2" stroke="#ffffff" stroke-width="2"><title>127 stories, loaded individually: 3.9% (5 stories per case)</title></rect>
+<text x="210.0" y="283" font-size="12.5" fill="#1f1f1e">3.9% · 5 stories</text>
+<rect id="seg-127-first3_only" x="234.8" y="290" width="337.3" height="28" fill="#E69F00" stroke="#ffffff" stroke-width="2"><title>127 stories, inlined by the first-three rule only: 53.5% (68 stories per case)</title></rect>
+<text x="403.5" y="308" font-size="12.5" fill="#1f1f1e" text-anchor="middle">53.5% · 68 stories</text>
+<rect id="seg-127-never" x="572.1" y="290" width="267.9" height="28" fill="#b9b8b2" stroke="#ffffff" stroke-width="2"><title>127 stories, never loaded: 42.5% (54 stories per case)</title></rect>
+<text x="706.1" y="308" font-size="12.5" fill="#1f1f1e" text-anchor="middle">42.5% · 54 stories</text>
 </g>
 <g id="row-220">
-<text x="40" y="399" font-size="15" font-weight="600" fill="#1f1f1e">220 stories</text>
-<text x="40" y="416" font-size="12.5" fill="#5c5b56">1 arm</text>
-<rect id="seg-220-individually" x="210.0" y="386" width="5.7" height="28" fill="#0072B2" stroke="#ffffff" stroke-width="2"><title>220 stories, loaded individually: 0.9% (2 stories per arm)</title></rect>
-<text x="210.0" y="379" font-size="12.5" fill="#1f1f1e">0.9% · 2 stories loaded individually</text>
-<rect id="seg-220-first3_only" x="215.7" y="386" width="189.0" height="28" fill="#E69F00" stroke="#ffffff" stroke-width="2"><title>220 stories, inlined by the first-three rule only: 30.0% (66 stories per arm)</title></rect>
-<text x="310.2" y="404" font-size="12.5" fill="#1f1f1e" text-anchor="middle">30.0% · 66 stories</text>
-<rect id="seg-220-never" x="404.7" y="386" width="435.3" height="28" fill="#b9b8b2" stroke="#ffffff" stroke-width="2"><title>220 stories, never loaded: 69.1% (152 stories per arm)</title></rect>
-<text x="622.4" y="404" font-size="12.5" fill="#1f1f1e" text-anchor="middle">69.1% · 152 stories</text>
+<text x="40" y="375" font-size="15" font-weight="600" fill="#1f1f1e">220 stories</text>
+<text x="40" y="392" font-size="12.5" fill="#5c5b56">1 case</text>
+<rect id="seg-220-individually" x="210.0" y="362" width="5.7" height="28" fill="#0072B2" stroke="#ffffff" stroke-width="2"><title>220 stories, loaded individually: 0.9% (2 stories per case)</title></rect>
+<text x="210.0" y="355" font-size="12.5" fill="#1f1f1e">0.9% · 2 stories</text>
+<rect id="seg-220-first3_only" x="215.7" y="362" width="189.0" height="28" fill="#E69F00" stroke="#ffffff" stroke-width="2"><title>220 stories, inlined by the first-three rule only: 30.0% (66 stories per case)</title></rect>
+<text x="310.2" y="380" font-size="12.5" fill="#1f1f1e" text-anchor="middle">30.0% · 66 stories</text>
+<rect id="seg-220-never" x="404.7" y="362" width="435.3" height="28" fill="#b9b8b2" stroke="#ffffff" stroke-width="2"><title>220 stories, never loaded: 69.1% (152 stories per case)</title></rect>
+<text x="622.4" y="380" font-size="12.5" fill="#1f1f1e" text-anchor="middle">69.1% · 152 stories</text>
 </g>
 <g id="row-400plus">
-<text x="40" y="471" font-size="15" font-weight="600" fill="#1f1f1e">400+ stories</text>
-<text x="40" y="488" font-size="12.5" fill="#5c5b56">3 arms</text>
-<rect id="seg-400plus-individually" x="210.0" y="458" width="20.3" height="28" fill="#0072B2" stroke="#ffffff" stroke-width="2"><title>400+ stories, loaded individually: 3.2% (13 stories per arm)</title></rect>
-<text x="210.0" y="451" font-size="12.5" fill="#1f1f1e">3.2% · 13 stories loaded individually</text>
-<rect id="seg-400plus-first3_only" x="230.3" y="458" width="107.6" height="28" fill="#E69F00" stroke="#ffffff" stroke-width="2"><title>400+ stories, inlined by the first-three rule only: 17.1% (69 stories per arm)</title></rect>
-<text x="284.1" y="476" font-size="12.5" fill="#1f1f1e" text-anchor="middle">17.1% · 69 stories</text>
-<rect id="seg-400plus-never" x="337.9" y="458" width="502.1" height="28" fill="#b9b8b2" stroke="#ffffff" stroke-width="2"><title>400+ stories, never loaded: 79.7% (322 stories per arm)</title></rect>
-<text x="588.9" y="476" font-size="12.5" fill="#1f1f1e" text-anchor="middle">79.7% · 322 stories</text>
-</g>
-<g id="notes" font-size="12.5" fill="#5c5b56">
-<text x="40" y="542">Each bar is the mean share across the arms of that size; story counts are per arm.</text>
-<text x="40" y="560">purge-docgen is left out: it inlines every story of a fetched component, so the first-three rule does not apply to it.</text>
-<text x="40" y="578">The 127-story arm never listed its stories, so its total is a lower bound and its "never" share is understated.</text>
+<text x="40" y="447" font-size="15" font-weight="600" fill="#1f1f1e">400+ stories</text>
+<text x="40" y="464" font-size="12.5" fill="#5c5b56">3 cases</text>
+<rect id="seg-400plus-individually" x="210.0" y="434" width="20.3" height="28" fill="#0072B2" stroke="#ffffff" stroke-width="2"><title>400+ stories, loaded individually: 3.2% (13 stories per case)</title></rect>
+<text x="210.0" y="427" font-size="12.5" fill="#1f1f1e">3.2% · 13 stories</text>
+<rect id="seg-400plus-first3_only" x="230.3" y="434" width="107.6" height="28" fill="#E69F00" stroke="#ffffff" stroke-width="2"><title>400+ stories, inlined by the first-three rule only: 17.1% (69 stories per case)</title></rect>
+<text x="284.1" y="452" font-size="12.5" fill="#1f1f1e" text-anchor="middle">17.1% · 69</text>
+<rect id="seg-400plus-never" x="337.9" y="434" width="502.1" height="28" fill="#b9b8b2" stroke="#ffffff" stroke-width="2"><title>400+ stories, never loaded: 79.7% (322 stories per case)</title></rect>
+<text x="588.9" y="452" font-size="12.5" fill="#1f1f1e" text-anchor="middle">79.7% · 322 stories</text>
 </g>
 </svg>

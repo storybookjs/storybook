@@ -1,9 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 602" width="880" height="602" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 500" width="880" height="500" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" role="img">
 <title>How the story name related to what the agent needed</title>
-<desc>Names the UI being built 120 (46%); States the information 110 (42%); Does not match 31 (12%)</desc>
-<rect id="background" width="880" height="602" fill="#ffffff"/>
+<desc>261 story loads, each judged by three independent coders. Names the UI being built 120 (46%); States the information 110 (42%); Does not match 31 (12%)</desc>
+<rect id="background" width="880" height="500" fill="#ffffff"/>
 <text id="title" x="40" y="44" font-size="20" font-weight="600" fill="#1f1f1e">How the story name related to what the agent needed</text>
-<text id="subtitle" x="40" y="68" font-size="13.5" fill="#5c5b56">261 story loads, each judged by three independent coders.</text>
 <g id="slices" stroke="#ffffff" stroke-width="2" stroke-linejoin="round">
 <path id="slice-names-the-ui-being-built" d="M440.0,280.0 L440.00,140.00 A140,140 0 0 1 475.01,415.55 Z" fill="#0072B2"><title>Names the UI being built: 120 of 261 (46%)</title></path>
 <path id="slice-states-the-information" d="M440.0,280.0 L475.01,415.55 A140,140 0 0 1 344.95,177.21 Z" fill="#E69F00"><title>States the information: 110 of 261 (42%)</title></path>
@@ -31,10 +30,4 @@
 <text x="213.0" y="139.7" font-size="13" fill="#5c5b56" text-anchor="end">31 loads · 12%</text>
 </g>
 </g>
-<text id="caption" x="40" y="505" font-size="13.5" fill="#1f1f1e">
-<tspan x="40" dy="0">In 88% of loads the story name pointed at what the agent needed. It either named the piece of UI the agent was</tspan>
-<tspan x="40" dy="19">building ("Mealdrop Checkout Form") or stated the information it was after ("Test Defaults To Type Button").</tspan>
-<tspan x="40" dy="19">The rest were generic names such as "Anatomy" or "Empty", loaded as a fallback.</tspan>
-<tspan x="40" dy="19">Needs were reconstructed by an annotator who could see the story name, so part of this match is built in.</tspan>
-</text>
 </svg>

@@ -1,9 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 500" width="880" height="500" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" role="img">
 <title>What agents said when they explained a story load</title>
-<desc>Quotes the story's name 15 (37%); Points at the story 12 (29%); A decision hinges on it 5 (12%); Sweeps remaining stories 4 (10%); Gap in the docs 3 (7%); Other 2 (5%)</desc>
+<desc>41 loads where the agent stated its purpose. Quotes the story's name 15 (37%); Points at the story 12 (29%); A decision hinges on it 5 (12%); Sweeps remaining stories 4 (10%); Gap in the docs 3 (7%); Other 2 (5%)</desc>
 <rect id="background" width="880" height="500" fill="#ffffff"/>
 <text id="title" x="40" y="44" font-size="20" font-weight="600" fill="#1f1f1e">What agents said when they explained a story load</text>
-<text id="subtitle" x="40" y="68" font-size="13.5" fill="#5c5b56">41 loads where the agent stated its purpose.</text>
 <g id="slices" stroke="#ffffff" stroke-width="2" stroke-linejoin="round">
 <path id="slice-quotes-the-story-s-name" d="M440.0,280.0 L440.00,140.00 A140,140 0 0 1 544.52,373.15 Z" fill="#0072B2"><title>Quotes the story's name: 15 of 41 (37%)</title></path>
 <path id="slice-points-at-the-story" d="M440.0,280.0 L544.52,373.15 A140,140 0 0 1 322.49,356.10 Z" fill="#E69F00"><title>Points at the story: 12 of 41 (29%)</title></path>

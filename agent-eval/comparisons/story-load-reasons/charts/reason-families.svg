@@ -1,9 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 500" width="880" height="500" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" role="img">
 <title>Why agents loaded a specific story</title>
-<desc>Worked example 113 (43%); Undocumented contract 72 (28%); Second look 10 (4%); Component basics 27 (10%); Accessibility 22 (8%); Component choice 17 (7%)</desc>
+<desc>261 story loads in 550 runs across 11 cases. Reasons reconstructed from transcripts. Worked example 113 (43%); Undocumented contract 72 (28%); Second look 10 (4%); Component basics 27 (10%); Accessibility 22 (8%); Component choice 17 (7%)</desc>
 <rect id="background" width="880" height="500" fill="#ffffff"/>
 <text id="title" x="40" y="44" font-size="20" font-weight="600" fill="#1f1f1e">Why agents loaded a specific story</text>
-<text id="subtitle" x="40" y="68" font-size="13.5" fill="#5c5b56">261 story loads in 550 runs across 11 arms. Reasons reconstructed from transcripts.</text>
 <g id="slices" stroke="#ffffff" stroke-width="2" stroke-linejoin="round">
 <path id="slice-worked-example" d="M440.0,280.0 L440.00,140.00 A140,140 0 0 1 497.25,407.76 Z" fill="#0072B2"><title>Worked example: 113 of 261 (43%)</title></path>
 <path id="slice-undocumented-contract" d="M440.0,280.0 L497.25,407.76 A140,140 0 0 1 304.66,315.83 Z" fill="#E69F00"><title>Undocumented contract: 72 of 261 (28%)</title></path>

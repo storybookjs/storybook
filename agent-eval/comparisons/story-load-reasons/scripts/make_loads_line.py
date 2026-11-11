@@ -10,11 +10,11 @@ from xml.sax.saxutils import escape
 OUT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INK, MUTED, GRID, LINE = '#1f1f1e', '#5c5b56', '#e4e3df', '#0072B2'
 FONT = "Inter, 'Helvetica Neue', Arial, sans-serif"
-W, H, LEFT, RIGHT, TOP, BASE = 880, 540, 70, 840, 138, 410
+W, H, LEFT, RIGHT, TOP, BASE = 880, 480, 70, 840, 138, 410
 
 # purge-docgen prints every story in its docs output, so its loads are re-loads, not picks from a list.
-EXCLUDED_ARMS = ('purge-docgen',)
-calls = [c for c in map(json.loads, open(os.path.join(OUT, 'story-loads.final.jsonl'))) if c['arm'] not in EXCLUDED_ARMS]
+EXCLUDED_CASES = ('purge-docgen',)
+calls = [c for c in map(json.loads, open(os.path.join(OUT, 'story-loads.final.jsonl'))) if c['arm'] not in EXCLUDED_CASES]
 found = [c for c in calls if c['story_found']]
 per_story = collections.Counter(c['story_id'] for c in found)
 label = {c['story_id']: c['story_name'] for c in found}
@@ -45,13 +45,12 @@ def monotone_path(pts):
 pix = [(px(loads), py(n)) for loads, n in points]
 top_five = {n for _, n in per_story.most_common(5)}
 title = 'How many stories received exactly this many loads'
-subtitle = '%d distinct stories, %d loads, 550 runs across 11 arms. Each dot is an exact count.' % (len(per_story), len(found))
+subtitle = '%d distinct stories, %d loads, 550 runs across 11 cases. Each dot is an exact count.' % (len(per_story), len(found))
 out = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" width="%d" height="%d" font-family="%s" role="img">' % (W, H, W, H, FONT),
        '<title>%s</title>' % escape(title),
-       '<desc>%s</desc>' % escape('; '.join('%d loads: %d stories' % p for p in points)),
+       '<desc>%s</desc>' % escape(subtitle + ' ' + '; '.join('%d loads: %d stories' % p for p in points)),
        '<rect id="background" width="%d" height="%d" fill="#ffffff"/>' % (W, H),
        '<text id="title" x="40" y="44" font-size="20" font-weight="600" fill="%s">%s</text>' % (INK, escape(title)),
-       '<text id="subtitle" x="40" y="68" font-size="13.5" fill="%s">%s</text>' % (MUTED, escape(subtitle)),
        '<text id="y-title" x="%d" y="%d" font-size="12.5" fill="%s">Number of stories</text>' % (LEFT - 30, TOP - 32, MUTED),
        '<g id="grid" stroke="%s" stroke-width="1">' % GRID]
 for v in (4, 8, 12):
@@ -89,12 +88,6 @@ out.append('<g id="most-loaded" text-anchor="end">')
 out.append('<text x="%d" y="%d" font-size="12.5" font-weight="600" fill="%s">The five dots on the right, one story each</text>' % (RIGHT, TOP + 22, INK))
 for i, (sid, n) in enumerate(per_story.most_common(5)):
     out.append('<text x="%d" y="%d" font-size="12.5" fill="%s">%s · %d loads</text>' % (RIGHT, TOP + 42 + 18 * i, MUTED, escape(label[sid]), n))
-out.append('</g>')
-missing = [v for v in range(1, 12) if v not in dict(points)]
-next_seen = min(v for v, _ in points if v > 11)
-out.append('<g id="note" font-size="12.5" fill="%s">' % MUTED)
-out.append('<text x="40" y="%d">The line joins observed values only: no story received %s, or 12 to %d, loads.</text>' % (H - 40, ' or '.join(str(v) for v in missing), next_seen - 1))
-out.append('<text x="40" y="%d">The curve passes through every dot; smoothing rounds the corners and changes no value.</text>' % (H - 22))
 out.append('</g>')
 out.append('</svg>')
 open(os.path.join(OUT, 'charts', 'loads-per-story-line.svg'), 'w').write('\n'.join(out) + '\n')

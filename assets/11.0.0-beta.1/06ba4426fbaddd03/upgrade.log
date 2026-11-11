@@ -1,0 +1,183 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[90m┌[39m  Storybook upgrade - v11.0.0-beta.1
+[90m│[39m
+[90m│[39m  Detecting projects...
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[34m●[39m  Upgrading from [1m10.6.6[22m to [1m11.0.0-beta.1[22m
+[90m│[39m
+[90m│[39m  /package.json
+[90m│[39m  /storybook/package.json
+[90m│[39m  /packages/widget-primitives/package.json
+[90m│[39m  /packages/widget-dashboard/package.json
+[90m│[39m  /packages/ui/package.json
+[90m│[39m  /packages/theme/package.json
+[90m│[39m  /packages/media-fields/package.json
+[90m│[39m  /packages/media-editor/package.json
+[90m│[39m  /packages/image-editor/package.json
+[90m│[39m  /packages/image-cropper/package.json
+[90m│[39m  /packages/icons/package.json
+[90m│[39m  /packages/grid/package.json
+[90m│[39m  /packages/global-styles-ui/package.json
+[90m│[39m  /packages/editor/package.json
+[90m│[39m  /packages/dataviews/package.json
+[90m│[39m  /packages/data/package.json
+[90m│[39m  /packages/components/package.json
+[90m│[39m  /packages/block-editor/package.json
+[90m│[39m  /packages/admin-ui/package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for ....
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m eslintPlugin[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m argtypes-default-value[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m tag-filter-api[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  5 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running all detected automigrations:
+[90m│[39m
+[90m│[39m  - eslintPlugin (.)
+[90m│[39m
+[90m│[39m  - argtypes-default-value (.)
+[90m│[39m
+[90m│[39m  - story-sort-to-main (.)
+[90m│[39m
+[90m│[39m  - tag-filter-api (.)
+[90m│[39m
+[90m│[39m  - skills (.)
+[90m│[39m
+[90m│[39m  [36mnpx skills@latest add storybookjs/skills#v11.0.0-beta.1 --yes --agent[39m
+[90m│[39m  [36mclaude-code universal --copy[39m
+[90m│[39m
+[90m│[39m  Added a Storybook section to AGENTS.md that tells agents when to use
+[90m│[39m  the skills. Storybook keeps it current on upgrade: remove its markers
+[90m│[39m  to keep your own edits, or remove the section to opt out.
+[90m│[39m
+[90m│[39m  Remove the Storybook skills with: npx skills@latest remove
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m eslintPlugin[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m argtypes-default-value (2 files skipped)[39m
+[90m│[39m
+[90m│[39m  [31m[31m✕[31m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  main.ts: Cannot automigrate storySort: storySort must be a statically
+[90m│[39m  readable object or array. Storybook no longer reads
+[90m│[39m  parameters.options.storySort from the preview. Move it to storySorts
+[90m│[39m  in the main config manually and remove the preview property.
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m tag-filter-api[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  1 automigrations failed for .
+[90m│[39m
+[33m▲[39m  3 files could not be migrated automatically. See
+[90m│[39m  [36m../automigrations-summary.md[39m for which ones and why.
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[31m■[39m  [31mInstallation of dependencies failed![39m
+[90m│[39m
+[31m■[39m  Failed to install dependencies using npm.
+
+[90m│[39m  Command failed with exit code 1: npm install
+[90m│[39m  npm warn Unknown env config "frozen-lockfile". This will stop working
+[90m│[39m  in the next major version of npm. See `npm help npmrc` for supported
+[90m│[39m  config options.
+[90m│[39m  npm error code EALLOWSCRIPTS
+[90m│[39m  npm error --allow-scripts is not allowed in project-scoped installs.
+[90m│[39m  Add the entries to the "allowScripts" field in package.json, or to
+[90m│[39m  .npmrc, instead.
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-11T15_32_29_740Z-debug-0.log
+[90m│[39m  Command failed with exit code 1: npm install
+
+[90m│[39m  npm warn Unknown env config "frozen-lockfile". This will stop working
+[90m│[39m  in the next major version of npm. See `npm help npmrc` for supported
+[90m│[39m  config options.
+[90m│[39m  npm error code EALLOWSCRIPTS
+[90m│[39m  npm error --allow-scripts is not allowed in project-scoped installs.
+[90m│[39m  Add the entries to the "allowScripts" field in package.json, or to
+[90m│[39m  .npmrc, instead.
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-11T15_32_29_740Z-debug-0.log
+[90m│[39m
+[31m■[39m  [38;2;241;97;97mSB_CLI_INIT_0010 (PackageInstallFailedError): Failed to install
+[90m│[39m  dependencies using npm.
+
+[90m│[39m  Command failed with exit code 1: npm install
+[90m│[39m  npm warn Unknown env config "frozen-lockfile". This will stop working
+[90m│[39m  in the next major version of npm. See `npm help npmrc` for supported
+[90m│[39m  config options.
+[90m│[39m  npm error code EALLOWSCRIPTS
+[90m│[39m  npm error --allow-scripts is not allowed in project-scoped installs.
+[90m│[39m  Add the entries to the "allowScripts" field in package.json, or to
+[90m│[39m  .npmrc, instead.
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-11T15_32_29_740Z-debug-0.log
+[90m│[39m  Command failed with exit code 1: npm install
+
+[90m│[39m  npm warn Unknown env config "frozen-lockfile". This will stop working
+[90m│[39m  in the next major version of npm. See `npm help npmrc` for supported
+[90m│[39m  config options.
+[90m│[39m  npm error code EALLOWSCRIPTS
+[90m│[39m  npm error --allow-scripts is not allowed in project-scoped installs.
+[90m│[39m  Add the entries to the "allowScripts" field in package.json, or to
+[90m│[39m  .npmrc, instead.
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-11T15_32_29_740Z-debug-0.log[39m
+[90m│[39m  at categorizeExecaError
+[90m│[39m  (file:///home/agent/.npm/_npx/192d7f770c10a1b7/node_modules/@storybook/cli/node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:7452:717)
+[90m│[39m  at categorize
+[90m│[39m  (file:///home/agent/.npm/_npx/192d7f770c10a1b7/node_modules/@storybook/cli/node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:7462:31)
+[90m│[39m  at
+[90m│[39m  file:///home/agent/.npm/_npx/192d7f770c10a1b7/node_modules/@storybook/cli/node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:7465:61
+[90m│[39m
+[31m■[39m  SB_CLI_INIT_0010 (PackageInstallFailedError): Failed to install
+[90m│[39m  dependencies using npm.
+
+[90m│[39m  Command failed with exit code 1: npm install
+[90m│[39m  npm warn Unknown env config "frozen-lockfile". This will stop working
+[90m│[39m  in the next major version of npm. See `npm help npmrc` for supported
+[90m│[39m  config options.
+[90m│[39m  npm error code EALLOWSCRIPTS
+[90m│[39m  npm error --allow-scripts is not allowed in project-scoped installs.
+[90m│[39m  Add the entries to the "allowScripts" field in package.json, or to
+[90m│[39m  .npmrc, instead.
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-11T15_32_29_740Z-debug-0.log
+[90m│[39m  Command failed with exit code 1: npm install
+
+[90m│[39m  npm warn Unknown env config "frozen-lockfile". This will stop working
+[90m│[39m  in the next major version of npm. See `npm help npmrc` for supported
+[90m│[39m  config options.
+[90m│[39m  npm error code EALLOWSCRIPTS
+[90m│[39m  npm error --allow-scripts is not allowed in project-scoped installs.
+[90m│[39m  Add the entries to the "allowScripts" field in package.json, or to
+[90m│[39m  .npmrc, instead.
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-11T15_32_29_740Z-debug-0.log
+[90m│[39m
+[90m│[39m  Debug logs are written to:
+[90m│[39m  /home/agent/workspace/storybook/debug-storybook.log
+[90m│[39m
+[90m└[39m  
+
+exit=1

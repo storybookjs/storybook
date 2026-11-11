@@ -1,0 +1,32 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm error code ERESOLVE
+npm error ERESOLVE unable to resolve dependency tree
+npm error
+npm error While resolving: @wordpress/admin-ui@3.1.0
+npm error Found: typescript@7.1.0-dev.20261110.1
+npm error node_modules/typescript
+npm error   peerOptional typescript@">=4.3.0 <7 || >=7.1.0-0 <8" from @joshwooding/vite-plugin-react-docgen-typescript@0.9.1
+npm error   node_modules/@joshwooding/vite-plugin-react-docgen-typescript
+npm error     peerOptional @joshwooding/vite-plugin-react-docgen-typescript@"^0.7.0 || ^0.8.0 || ^0.9.0" from @storybook/react-vite@11.0.0-beta.1
+npm error     node_modules/@storybook/react-vite
+npm error       dev @storybook/react-vite@"^11.0.0-beta.1" from @wordpress/admin-ui@3.1.0
+npm error       packages/admin-ui
+npm error         @wordpress/admin-ui@3.1.0
+npm error         node_modules/@wordpress/admin-ui
+npm error
+npm error Could not resolve dependency:
+npm error peer typescript@"^5.9.0 || ^6.0.0 || ^7.0.0" from @storybook/react-vite@11.0.0-beta.1
+npm error node_modules/@storybook/react-vite
+npm error   dev @storybook/react-vite@"^11.0.0-beta.1" from @wordpress/admin-ui@3.1.0
+npm error   packages/admin-ui
+npm error     @wordpress/admin-ui@3.1.0
+npm error     node_modules/@wordpress/admin-ui
+npm error       workspace packages/admin-ui from the root project
+npm error       25 more (@wordpress/boot, @wordpress/connectors-home-route, ...)
+npm error
+npm error Fix the upstream dependency conflict, or retry this command with --force or --legacy-peer-deps to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /home/agent/.npm/_logs/2026-11-11T15_34_03_189Z-eresolve-report.txt
+npm error A complete log of this run can be found in: /home/agent/.npm/_logs/2026-11-11T15_34_03_189Z-debug-0.log

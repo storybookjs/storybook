@@ -1,0 +1,157 @@
+{
+ "q01": {
+  "component": "Button",
+  "story_loaded": "Anatomy",
+  "agent_said": "Let me check the remaining docs for any documented form-submit pattern before deciding."
+ },
+ "q02": {
+  "component": "Button",
+  "story_loaded": "Mealdrop Checkout Actions",
+  "agent_said": "The DS has a story specifically for Mealdrop's cart action stack \u2014 let me fetch it, plus the spacing and color tokens."
+ },
+ "q03": {
+  "component": "Button",
+  "story_loaded": "Test Defaults To Type Button",
+  "agent_said": "Let me check it, since that determines whether a `<form>` wrapper alone would work."
+ },
+ "q04": {
+  "component": "Button",
+  "story_loaded": "Test Defaults To Type Button",
+  "agent_said": "Important: `Button`'s documented props have no `type`, and there's a test story named \"Defaults To Type Button\"."
+ },
+ "q05": {
+  "component": "Button",
+  "story_loaded": "Test Defaults To Type Button",
+  "agent_said": "Let me verify the Button's `type` behavior before designing the fix."
+ },
+ "q06": {
+  "component": "QuantityStepper",
+  "story_loaded": "Mealdrop Cart Line",
+  "agent_said": "Let me check the reference story and the cart state handling."
+ },
+ "q07": {
+  "component": "Button",
+  "story_loaded": "Test Defaults To Type Button",
+  "agent_said": "Let me dig into that before deciding how to submit."
+ },
+ "q08": {
+  "component": "Button",
+  "story_loaded": "Test Defaults To Type Button",
+  "agent_said": "Let me check that story before assuming anything."
+ },
+ "q09": {
+  "component": "Button",
+  "story_loaded": "Test Defaults To Type Button",
+  "agent_said": "Let me check that story and the technical guidelines before deciding how to wire submission."
+ },
+ "q10": {
+  "component": "Button",
+  "story_loaded": "Test Defaults To Type Button",
+  "agent_said": "Let me check that story and whether `type` can be overridden."
+ },
+ "q11": {
+  "component": "Button",
+  "story_loaded": "Test Defaults To Type Button",
+  "agent_said": "Let me check that Button story about `type`, plus look for existing tests and how forms are handled elsewhere in the app."
+ },
+ "q12": {
+  "component": "QuantityStepper",
+  "story_loaded": "Mealdrop Cart Line",
+  "agent_said": "Let me check the cart-line story and the cart state semantics."
+ },
+ "q13": {
+  "component": "QuantityStepper",
+  "story_loaded": "Mealdrop Cart Line",
+  "agent_said": "Let me check the design system's guidance on choosing between these, plus the cart-line story and the cart state logic."
+ },
+ "q14": {
+  "component": "QuantityStepper",
+  "story_loaded": "Mealdrop Cart Line",
+  "agent_said": "Let me check the cart-line example story and how quantity 0 is handled today."
+ },
+ "q15": {
+  "component": "Button",
+  "story_loaded": "Test Defaults To Type Button",
+  "agent_said": "Let me check it \u2014 this decides whether a real submit button is possible."
+ },
+ "q16": {
+  "component": "Button",
+  "story_loaded": "Test Defaults To Type Button",
+  "agent_said": "Key constraint from the docs: Droppy's `Button` has a closed prop set (`clear`, `round`, `large`, `icon`, `iconSize`, `disabled`, `children`, `onClick`) with **no `type` prop**, and a test story confirms it always renders `type=\"button\"`."
+ },
+ "q17": {
+  "component": "Button",
+  "story_loaded": "Test Defaults To Type Button",
+  "agent_said": "Let me check the \"Defaults to type button\" story."
+ },
+ "q18": {
+  "component": "Button",
+  "story_loaded": "Test Defaults To Type Button",
+  "agent_said": "Let me confirm what that means for implicit form submission."
+ },
+ "q19": {
+  "component": "Button",
+  "story_loaded": "Test Defaults To Type Button",
+  "agent_said": "Button's documented props have no `type`, and there's a test story about type defaults. Let me check that."
+ },
+ "q20": {
+  "component": "Button",
+  "story_loaded": "Anatomy",
+  "agent_said": "Let me check the story docs and the shipped types to see how the underlying `<button>` behaves inside a form."
+ },
+ "q21": {
+  "component": "Button",
+  "story_loaded": "Anatomy",
+  "agent_said": "Let me check the remaining Button stories and how the real component renders."
+ },
+ "q22": {
+  "component": "Button",
+  "story_loaded": "Anatomy",
+  "agent_said": "Let me check the remaining stories in case native passthrough is documented anywhere."
+ },
+ "q23": {
+  "component": "Button",
+  "story_loaded": "Class Name",
+  "agent_said": "Let me check the remaining stories in case native passthrough is documented anywhere."
+ },
+ "q24": {
+  "component": "Button",
+  "story_loaded": "Mealdrop Checkout Actions",
+  "agent_said": "Let me check those and the checkout-specific stories."
+ },
+ "q25": {
+  "component": "Button",
+  "story_loaded": "Test Defaults To Type Button",
+  "agent_said": "Let me check those before assuming a `<form>` wrapper is enough."
+ },
+ "q26": {
+  "component": "Input",
+  "story_loaded": "Mealdrop Checkout Form",
+  "agent_said": "Let me verify the built component and check the Input form story."
+ },
+ "q27": {
+  "component": "Input",
+  "story_loaded": "Mealdrop Checkout Form",
+  "agent_said": "Let me check the Input's checkout-form story for the intended pattern, and look for existing form patterns in the codebase."
+ },
+ "q28": {
+  "component": "Button",
+  "story_loaded": "Mealdrop Checkout Actions",
+  "agent_said": "Let me check those plus the checkout-specific stories."
+ },
+ "q29": {
+  "component": "Heading",
+  "story_loaded": "Size Decoupled From Level",
+  "agent_said": "Confirmed the DS supports decoupling size from level."
+ },
+ "q30": {
+  "component": "Input",
+  "story_loaded": "Mealdrop Checkout Form",
+  "agent_said": "Let me check the anatomy and Mealdrop-specific stories."
+ },
+ "q31": {
+  "component": "Input",
+  "story_loaded": "Test Error Is Announced",
+  "agent_said": "Let me check error announcement behavior and existing tests."
+ }
+}

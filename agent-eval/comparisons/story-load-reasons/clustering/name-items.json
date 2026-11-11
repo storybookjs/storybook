@@ -1,0 +1,1712 @@
+{
+ "n001": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button default to type=\"button\", meaning a checkout step wrapped in a form needs an explicit submit type?"
+ },
+ "n002": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": null,
+  "need": "How does the design system's cart-line example use QuantityStepper in a cart row (props, bounds, layout)?"
+ },
+ "n003": {
+  "component": "Modal",
+  "story_name": "Open",
+  "listed_description": null,
+  "need": "How is Modal opened and closed, and which props control its open state, for the \"Get help\" dialog?"
+ },
+ "n004": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "How does Mealdrop's cart panel stack its action buttons, and which Button props set the primary action apart from the secondary?"
+ },
+ "n005": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": null,
+  "need": "How does the design system's checkout step indicator example label and announce step progress with ProgressBar?"
+ },
+ "n006": {
+  "component": "Input",
+  "story_name": "Test Error Is Announced",
+  "listed_description": null,
+  "need": "How does Input announce its error message to assistive technology: live region, role=\"alert\" or aria-describedby?"
+ },
+ "n007": {
+  "component": "QuantityStepper",
+  "story_name": "aria-label",
+  "listed_description": "`aria-label` names the group, since the two buttons alone don't say what of.",
+  "need": "What should QuantityStepper's `aria-label` say on a cart line, and is it passed straight to the component as a prop?"
+ },
+ "n008": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button render type=\"button\" by default, so that it would not submit a surrounding form unless told to?"
+ },
+ "n009": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": null,
+  "need": "How does the design system's checkout step indicator use ProgressBar: which value, max and label, and what text sits beside it?"
+ },
+ "n010": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Droppy Button always render type=\"button\", leaving a form without a default submit button for Enter?"
+ },
+ "n011": {
+  "component": "Button",
+  "story_name": "Class Name",
+  "listed_description": "`className` merges with the component's own class rather than replacing it.",
+  "need": "Does the Class Name story show Button forwarding props beyond its documented list, hinting that `type` could be passed too?"
+ },
+ "n012": {
+  "component": "Button",
+  "story_name": "Variants",
+  "listed_description": null,
+  "need": "Which Button props produce a primary versus a secondary look, given that Button has no variant prop?"
+ },
+ "n013": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": "Mealdrop's checkout form, with two fields in error.",
+  "need": "Does Droppy's reference checkout form show a documented way to submit: form element, submit button or handler?"
+ },
+ "n014": {
+  "component": "QuantityStepper",
+  "story_name": "aria-label",
+  "listed_description": "`aria-label` names the group, since the two buttons alone don't say what of.",
+  "need": "What accessible name should a QuantityStepper carry on a cart line, and how is `aria-label` passed to it?"
+ },
+ "n015": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": null,
+  "need": "How does the design system itself show quantity changes in a cart line with QuantityStepper, and with what layout?"
+ },
+ "n016": {
+  "component": "ProgressBar",
+  "story_name": "Label",
+  "listed_description": null,
+  "need": "What does ProgressBar's `label` prop do: render visible text, or only give the bar an accessible name?"
+ },
+ "n017": {
+  "component": "Select",
+  "story_name": "Mealdrop Burger Extras",
+  "listed_description": null,
+  "need": "What does the design system use Select for in MealDrop: picking options such as extras, rather than setting a quantity?"
+ },
+ "n018": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": null,
+  "need": "How does Droppy's checkout step indicator use ProgressBar to tell users which step they are on?"
+ },
+ "n019": {
+  "component": "Modal",
+  "story_name": "Empty",
+  "listed_description": null,
+  "need": "How is Modal really composed and controlled (content, title, open/close), beyond the opaque ModalDemo wrapper already shown in its docs?"
+ },
+ "n020": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": null,
+  "need": "How does the design system's cart-line example let a user remove a dish when QuantityStepper cannot go to 0?"
+ },
+ "n021": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": "Mealdrop's checkout step indicator.",
+  "need": "How is ProgressBar used in Droppy's Mealdrop checkout step indicator: label text, value/max per step, and accompanying heading or body copy?"
+ },
+ "n022": {
+  "component": "Input",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "Does Input accept native attributes such as autoComplete, name or type beyond its two documented props, label and error?"
+ },
+ "n023": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "What Button variants and layout does Droppy use for the cart panel's actions, to place \"Schedule delivery\" beside \"Order now\"?"
+ },
+ "n024": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Can Button's default type=\"button\" be overridden, for example with type=\"submit\", as the story about that default might show?"
+ },
+ "n025": {
+  "component": "Heading",
+  "story_name": "Test Forwards Ref And Props",
+  "listed_description": null,
+  "need": "Does Heading forward a ref and native props like id or tabIndex, so focus can be moved to the new step's heading?"
+ },
+ "n026": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "How does Droppy's own cart panel stack its primary and secondary Buttons: which props distinguish them and how are they laid out?"
+ },
+ "n027": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": null,
+  "need": "How does the design system's checkout step indicator use ProgressBar to convey the current step (value, max, label)?"
+ },
+ "n028": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "How does Droppy's cart-panel example pair a primary and a secondary Button: which props distinguish them and how are they stacked?"
+ },
+ "n029": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "How does Mealdrop's cart panel arrange and style its checkout button alongside a secondary action?"
+ },
+ "n030": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button default to type=\"button\", so a real `<form>` around the checkout fields needs an explicit submit type?"
+ },
+ "n031": {
+  "component": "Select",
+  "story_name": "Native Control",
+  "listed_description": null,
+  "need": "Is Droppy's Select a native <select>, and how is it driven, for choosing the help type inside the 'Get help' modal?"
+ },
+ "n032": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "Does the design system's checkout example show Buttons submitting a form, for instance through a `type` prop or a form wrapper?"
+ },
+ "n033": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Droppy Button render type=\"button\" by default, so the checkout step buttons would not submit a wrapping form?"
+ },
+ "n034": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button always render type=\"button\", or can it be made a submit button for the checkout forms?"
+ },
+ "n035": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": null,
+  "need": "How does the design system build a basket line with QuantityStepper, as a model for replacing the basket's Select?"
+ },
+ "n036": {
+  "component": "QuantityStepper",
+  "story_name": "Empty",
+  "listed_description": null,
+  "need": "Does the story-level documentation for QuantityStepper carry any usage guidance or description beyond the terse component page?"
+ },
+ "n037": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "How does the design system's cart example stack its two actions, and which Button props give the checkout action priority?"
+ },
+ "n038": {
+  "component": "Input",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "Which DOM parts does Input render (label, control, error slot), and how are label and error tied to the control?"
+ },
+ "n039": {
+  "component": "Button",
+  "story_name": "Variants",
+  "listed_description": null,
+  "need": "Which Button variants exist for telling a primary action (\"Order now\") from a secondary one (\"Schedule delivery\")?"
+ },
+ "n040": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": "Cart lines with per-dish quantity steppers.",
+  "need": "How does the design system's reference cart line wire up QuantityStepper for each dish, so the basket can follow it?"
+ },
+ "n041": {
+  "component": "Button",
+  "story_name": "Variants",
+  "listed_description": null,
+  "need": "Which visual variants does Button offer, and which one should serve as the secondary style beside a primary button?"
+ },
+ "n042": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "Does the design system's checkout action example pass `type` to Button or otherwise show how a form gets submitted?"
+ },
+ "n043": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does this test story say anything more about Button's default type, i.e. whether a Button can ever submit a form?"
+ },
+ "n044": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button always render type=\"button\", so that it cannot submit a form wrapped around the checkout fields?"
+ },
+ "n045": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "How does the design system lay out the cart panel's action buttons, and which Button props distinguish the primary action from the secondary one?"
+ },
+ "n046": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "How does the design system's cart-panel example lay out and style its primary and secondary action Buttons?"
+ },
+ "n047": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": "Mealdrop's checkout form, with two fields in error.",
+  "need": "How does the design system's reference checkout form group its Inputs: in a native `<form>`, with a submit control or handler?"
+ },
+ "n048": {
+  "component": "IconButton",
+  "story_name": "Class Name",
+  "listed_description": null,
+  "need": "Does IconButton accept a className and extra attributes, so an order's actions-menu trigger can be styled and positioned?"
+ },
+ "n049": {
+  "component": "QuantityStepper",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "What parts does QuantityStepper consist of and how is it meant to be used, given the cart-line example revealed nothing?"
+ },
+ "n050": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": null,
+  "need": "How does the design system's checkout step example use ProgressBar to tell users which step they are on?"
+ },
+ "n051": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": "Cart lines with per-dish quantity steppers.",
+  "need": "How does Droppy's cart-line example use QuantityStepper per dish, as a reference for the basket's quantity control?"
+ },
+ "n052": {
+  "component": "Modal",
+  "story_name": "Mealdrop Food Item Modal",
+  "listed_description": null,
+  "need": "How does Droppy's real Mealdrop modal arrange content inside Modal (heading, body, quantity control, action buttons) and size itself?"
+ },
+ "n053": {
+  "component": "Button",
+  "story_name": "Variants",
+  "listed_description": null,
+  "need": "Which visual variants does Button have, and is there any secondary style other than `clear` to pair with the primary button?"
+ },
+ "n054": {
+  "component": "Input",
+  "story_name": "Test Error Is Announced",
+  "listed_description": null,
+  "need": "How does Input announce a validation error to screen-reader users: a live region, a role, or aria-describedby?"
+ },
+ "n055": {
+  "component": "Input",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "Which parts does Input render (label, control, error slot) and how are they linked, to judge labelling and where native attributes go?"
+ },
+ "n056": {
+  "component": "QuantityStepper",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "What parts make up QuantityStepper and how should it be composed, since the cart-line example showed no JSX?"
+ },
+ "n057": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button default to type=\"button\", so a real form around the checkout fields would have no submit button unless type is set?"
+ },
+ "n058": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": null,
+  "need": "Does Droppy's checkout form example place Inputs in a real `<form>` with native props, and how is that form submitted?"
+ },
+ "n059": {
+  "component": "Select",
+  "story_name": "Mealdrop Burger Extras",
+  "listed_description": null,
+  "need": "How does Droppy use Select in a real Mealdrop screen, and is that use option picking rather than quantity entry?"
+ },
+ "n060": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button render type=\"button\" by default, and so how would it behave inside a real checkout form?"
+ },
+ "n061": {
+  "component": "Heading",
+  "story_name": "Size Decoupled From Level",
+  "listed_description": null,
+  "need": "Can Heading's visual size be set independently of its semantic level, so heading levels can be corrected without changing appearance?"
+ },
+ "n062": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "How does the design system's own cart example stack its checkout buttons, and which props give the main action more weight than the other?"
+ },
+ "n063": {
+  "component": "QuantityStepper",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "What are QuantityStepper's parts and intended interaction, as a basis for choosing it over the cart's Select?"
+ },
+ "n064": {
+  "component": "QuantityStepper",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "What parts make up QuantityStepper, and how is the component composed in JSX?"
+ },
+ "n065": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button always render type=\"button\", and does this story show any way to make it submit the surrounding form?"
+ },
+ "n066": {
+  "component": "Modal",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "What goes inside Droppy's Modal in its reference example, and how are the heading and action buttons arranged?"
+ },
+ "n067": {
+  "component": "Modal",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "How is Droppy's Modal composed: which props (isOpen, onClose, aria-label) and does it offer title or footer parts for the 'Get help' dialog?"
+ },
+ "n068": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": "Mealdrop's checkout form, with two fields in error.",
+  "need": "How does Droppy's checkout form example structure the fields: form element, section headings, and which props each Input receives?"
+ },
+ "n069": {
+  "component": "Button",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "Does Button's Anatomy story expose anything about the rendered element, such as a type attribute or pass-through native props?"
+ },
+ "n070": {
+  "component": "Button",
+  "story_name": "Anatomy",
+  "listed_description": "The control and its optional leading glyph.",
+  "need": "How does Button's underlying <button> behave inside a form: does any story show its type or submit behaviour?"
+ },
+ "n071": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button pass native button attributes such as `type` through to the element, beyond the closed list in its props table?"
+ },
+ "n072": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button force type=\"button\", or could the checkout's step buttons become submit buttons inside a real form?"
+ },
+ "n073": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": "Mealdrop's checkout form, with two fields in error.",
+  "need": "Does the design system's reference checkout form wrap its Inputs in a real `<form>`, and how is it submitted?"
+ },
+ "n074": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": null,
+  "need": "How does Droppy's own checkout step indicator combine ProgressBar with a heading and step text so the current step is conveyed?"
+ },
+ "n075": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "How does Droppy's cart panel stack a primary checkout Button with a secondary action, and which props distinguish them?"
+ },
+ "n076": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": null,
+  "need": "What markup does the design system's own checkout step indicator put around ProgressBar (label, step text, heading) beyond the one-line wrapper?"
+ },
+ "n077": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button render type=\"button\" by default, so it would not submit once the checkout steps become real forms?"
+ },
+ "n078": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": "Mealdrop's checkout form, with two fields in error.",
+  "need": "How does Droppy's own checkout form wire its Inputs: inside a real `<form>`, and with what submit control or handler?"
+ },
+ "n079": {
+  "component": "Button",
+  "story_name": "Anatomy",
+  "listed_description": "The control and its optional leading glyph.",
+  "need": "What does Button's one unseen story show about the control, in particular any `type` or submit behaviour for the checkout forms?"
+ },
+ "n080": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": "Mealdrop's checkout step indicator.",
+  "need": "How does Droppy's reference checkout step indicator use ProgressBar, including its accessible label and the step wording?"
+ },
+ "n081": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": "Mealdrop's checkout form, with two fields in error.",
+  "need": "Does the design system's own checkout example wrap its Inputs in a real `<form>`, and how is it submitted?"
+ },
+ "n082": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": "Mealdrop's checkout step indicator.",
+  "need": "How does Droppy's checkout step indicator present the current step with ProgressBar, its `label` and accompanying text?"
+ },
+ "n083": {
+  "component": "Modal",
+  "story_name": "Empty",
+  "listed_description": null,
+  "need": "What does Modal's only story actually render: what the ModalDemo wrapper and its body contain, as a model for the Get help modal?"
+ },
+ "n084": {
+  "component": "QuantityStepper",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "How is QuantityStepper used in code (value, onChange and aria-label wiring) before putting it into the basket rows?"
+ },
+ "n085": {
+  "component": "QuantityStepper",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "What does a complete QuantityStepper usage look like: its parts, and how value, onChange and labelling are wired?"
+ },
+ "n086": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": null,
+  "need": "How does the design system's checkout step indicator use ProgressBar, and does it tell assistive technology which step is current?"
+ },
+ "n087": {
+  "component": "QuantityStepper",
+  "story_name": "aria-label",
+  "listed_description": "`aria-label` names the group, since the two buttons alone don't say what of.",
+  "need": "What accessible name should each basket QuantityStepper get through aria-label, and what wording does the design system use?"
+ },
+ "n088": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button default to type=\"button\" with no way to change it, which would block implicit submission of a real form?"
+ },
+ "n089": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button default to type=\"button\", with no way to make it the submit button of the checkout form?"
+ },
+ "n090": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button default to type=\"button\", so it would not submit a form on Enter in the checkout steps?"
+ },
+ "n091": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "How does the design system's MealDrop example pair a primary and a secondary button in the cart's action area?"
+ },
+ "n092": {
+  "component": "Modal",
+  "story_name": "Empty",
+  "listed_description": null,
+  "need": "How is Modal actually composed (what goes inside it, how it opens and closes) for the planned 'Get help' dialog?"
+ },
+ "n093": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": null,
+  "need": "How does Droppy's reference cart line let users change a dish's quantity: a QuantityStepper, and with what props and layout?"
+ },
+ "n094": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": "Cart lines with per-dish quantity steppers.",
+  "need": "How does the design system's cart-line example use QuantityStepper per dish (props, bounds, layout) in a cart?"
+ },
+ "n095": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": null,
+  "need": "How does the design system's checkout step indicator use ProgressBar, and does it tell assistive technology which step is current?"
+ },
+ "n096": {
+  "component": "Button",
+  "story_name": "Anatomy",
+  "listed_description": "The control and its optional leading glyph.",
+  "need": "Does the one Button story not yet seen document a form-submit pattern, such as passing type=\"submit\"?"
+ },
+ "n097": {
+  "component": "ProgressBar",
+  "story_name": "Test Reports Its Range",
+  "listed_description": null,
+  "need": "What does ProgressBar report about its range to assistive technology, and how are value, max and label supplied?"
+ },
+ "n098": {
+  "component": "Button",
+  "story_name": "Anatomy",
+  "listed_description": "The control and its optional leading glyph.",
+  "need": "Does Button's one remaining unseen story reveal anything about its rendered element or a type/submit option beyond the documented props?"
+ },
+ "n099": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": "Cart lines with per-dish quantity steppers.",
+  "need": "How does the design system's cart-line example wire QuantityStepper into a cart row (props, bounds, labelling, layout)?"
+ },
+ "n100": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button really default to type=\"button\", with no documented way to make it submit the checkout form?"
+ },
+ "n101": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button default to type=\"button\", and can callers override it so checkout steps can use a real submitting form?"
+ },
+ "n102": {
+  "component": "Modal",
+  "story_name": "Empty",
+  "listed_description": null,
+  "need": "How is Modal opened, closed and filled with content, for building the 'Get help' dialog?"
+ },
+ "n103": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": "Cart lines with per-dish quantity steppers.",
+  "need": "How does Droppy's own cart line lay out QuantityStepper beside the dish name and price, and with which props?"
+ },
+ "n104": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Can a Droppy Button ever be a form's submit button, or does it always render type=\"button\"?"
+ },
+ "n105": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": "Cart lines with per-dish quantity steppers.",
+  "need": "What does a Mealdrop cart line built with QuantityStepper look like in code: the props per dish and the surrounding row layout?"
+ },
+ "n106": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": "Mealdrop's checkout form, with two fields in error.",
+  "need": "Does Droppy's reference checkout form put Inputs in a real `<form>`, and does it include a submit button or handler?"
+ },
+ "n107": {
+  "component": "Input",
+  "story_name": "Test Error Is Announced",
+  "listed_description": null,
+  "need": "How does Input expose its error message to assistive technology (live region, role=alert or aria-describedby)?"
+ },
+ "n108": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "Does Mealdrop's checkout-actions example show Buttons given a `type` or used inside a form to submit?"
+ },
+ "n109": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": null,
+  "need": "How does the design system's own cart line present quantity editing: with QuantityStepper, and in what arrangement?"
+ },
+ "n110": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "Does Droppy's cart panel place the primary and secondary buttons side by side or stacked, and with which variants?"
+ },
+ "n111": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": "Mealdrop's checkout step indicator.",
+  "need": "How does the design system's reference checkout step indicator use ProgressBar to expose the current step to assistive technology?"
+ },
+ "n112": {
+  "component": "Button",
+  "story_name": "Anatomy",
+  "listed_description": "The control and its optional leading glyph.",
+  "need": "Does any Button story document native attributes such as `type`, given the package types allow them but the props table does not?"
+ },
+ "n113": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "How does Mealdrop's cart panel arrange its action buttons, and which Button props separate the primary action from the secondary?"
+ },
+ "n114": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": null,
+  "need": "How does Droppy's own checkout step indicator use ProgressBar to convey the current step: label, value and max, visible step text?"
+ },
+ "n115": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "What does the 'Test Defaults To Type Button' story show about Button's `type`, and can a Button act as a form's submit button?"
+ },
+ "n116": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": null,
+  "need": "Does the design system's own checkout-form example wrap its Inputs in a native form element, and how does it submit?"
+ },
+ "n117": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Droppy's Button render type=\"button\" by default, so step buttons would not submit a <form> wrapped around the checkout fields?"
+ },
+ "n118": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Droppy's Button always render type=\"button\", so that it cannot act as the submit button of a checkout form?"
+ },
+ "n119": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "How does Droppy's checkout example combine its primary and secondary Buttons, in props and layout?"
+ },
+ "n120": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "How does Droppy's checkout example pair a primary and a secondary Button, in props and layout?"
+ },
+ "n121": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button always render type=\"button\", so it cannot be the submit button that makes Enter work in checkout?"
+ },
+ "n122": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": "Mealdrop's checkout form, with two fields in error.",
+  "need": "How does Droppy's reference checkout form structure its Inputs: form element, section headings, and any name, type or autocomplete attributes?"
+ },
+ "n123": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": null,
+  "need": "How does the design system's own checkout form use Input: does it pass autocomplete, name or type, and how are the two steps grouped?"
+ },
+ "n124": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": "Mealdrop's checkout form, with two fields in error.",
+  "need": "Does Droppy's checkout form example show how the form is submitted: a <form> wrapper, a submit button or an onSubmit handler?"
+ },
+ "n125": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": null,
+  "need": "How does Droppy's checkout step indicator use ProgressBar and surrounding text to tell users which step they are on?"
+ },
+ "n126": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button render type=\"button\" by default, so it cannot act as a form's default submit button on Enter?"
+ },
+ "n127": {
+  "component": "QuantityStepper",
+  "story_name": "Bounds Disable Rather Than Clamp",
+  "listed_description": null,
+  "need": "How does QuantityStepper behave at its min and max, and would those limits suit quantities in the cart?"
+ },
+ "n128": {
+  "component": "QuantityStepper",
+  "story_name": "aria-label",
+  "listed_description": "`aria-label` names the group, since the two buttons alone don't say what of.",
+  "need": "What should QuantityStepper's aria-label contain when each basket line gets its own stepper?"
+ },
+ "n129": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button default to type=\"button\", so a Button inside a newly added <form> will not submit it by itself?"
+ },
+ "n130": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": null,
+  "need": "What markup sits behind the cart-line example: how is QuantityStepper placed and labelled per dish in a Mealdrop cart row?"
+ },
+ "n131": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": null,
+  "need": "What is the design system's intended pattern for submitting the checkout form, given Button hardcodes type=\"button\"?"
+ },
+ "n132": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button always render type=\"button\", meaning it can never be the checkout form's submit button?"
+ },
+ "n133": {
+  "component": "QuantityStepper",
+  "story_name": "aria-label",
+  "listed_description": "`aria-label` names the group, since the two buttons alone don't say what of.",
+  "need": "How should each basket row's QuantityStepper be named for assistive technology, and what aria-label wording does the design system show?"
+ },
+ "n134": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": null,
+  "need": "Does Droppy's checkout form example wrap Inputs in a `<form>`, and how does it submit without a submit-type Button?"
+ },
+ "n135": {
+  "component": "QuantityStepper",
+  "story_name": "aria-label",
+  "listed_description": "`aria-label` names the group, since the two buttons alone don't say what of.",
+  "need": "What should QuantityStepper's aria-label say when a stepper sits on each basket line?"
+ },
+ "n136": {
+  "component": "Input",
+  "story_name": "Test Error Is Announced",
+  "listed_description": null,
+  "need": "How does Input announce a validation error to screen readers: a live region, role alert, or aria-describedby?"
+ },
+ "n137": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "Does Droppy's checkout actions example show a Button wired to submit a form, or any form/submit pattern?"
+ },
+ "n138": {
+  "component": "QuantityStepper",
+  "story_name": "Empty",
+  "listed_description": null,
+  "need": "How is QuantityStepper meant to be used: does its only story show label, bounds or context beyond the props table?"
+ },
+ "n139": {
+  "component": "QuantityStepper",
+  "story_name": "Bounds Disable Rather Than Clamp",
+  "listed_description": null,
+  "need": "At its min and max, do QuantityStepper's buttons disable rather than clamp or wrap, and how are bounds set?"
+ },
+ "n140": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": "Mealdrop's checkout step indicator.",
+  "need": "How does the design system's reference checkout step indicator combine ProgressBar with visible step text and an accessible label?"
+ },
+ "n141": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "How does the design system stack the cart panel's primary and secondary buttons, and which Button props distinguish them?"
+ },
+ "n142": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "How does the design system's cart panel arrange its primary and secondary Buttons, and with which props?"
+ },
+ "n143": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": "Cart lines with per-dish quantity steppers.",
+  "need": "How does Droppy's cart-line example lay out and wire QuantityStepper for each dish in the basket?"
+ },
+ "n144": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "How does the design system's Mealdrop cart example arrange and style its checkout Buttons, primary versus secondary?"
+ },
+ "n145": {
+  "component": "QuantityStepper",
+  "story_name": "Bounds Disable Rather Than Clamp",
+  "listed_description": null,
+  "need": "At its min and max, does QuantityStepper disable its buttons rather than clamp, and can the quantity ever reach 0?"
+ },
+ "n146": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": "Cart lines with per-dish quantity steppers.",
+  "need": "How does the cart-line example use QuantityStepper for each dish, and what happens at the lower bound (removing a dish at quantity 0)?"
+ },
+ "n147": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": null,
+  "need": "Does Droppy's own checkout form pass native attributes like name, type or autocomplete to Input, beyond label and error?"
+ },
+ "n148": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": null,
+  "need": "How does the Mealdrop cart-line example wire QuantityStepper per dish (props, labels, any remove control), given the docs had no props table?"
+ },
+ "n149": {
+  "component": "Input",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "What parts make up Input (label, control, error slot), and how is the error wired to the control for assistive technology?"
+ },
+ "n150": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": "Cart lines with per-dish quantity steppers.",
+  "need": "How does Droppy's own Mealdrop cart line wire a QuantityStepper per dish (value/onChange, min, aria-label, removal), so the basket can copy it?"
+ },
+ "n151": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button default to type=\"button\", so the existing checkout Buttons cannot trigger implicit form submission?"
+ },
+ "n152": {
+  "component": "QuantityStepper",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "What is QuantityStepper made of and how is it meant to be composed, since the cart-line story hid its markup?"
+ },
+ "n153": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "How does the design system's checkout example use Button for its main action: inside a form, with a submit type?"
+ },
+ "n154": {
+  "component": "QuantityStepper",
+  "story_name": "aria-label",
+  "listed_description": null,
+  "need": "How should each QuantityStepper be named for assistive technology when one sits on every basket line, and what does an aria-label look like?"
+ },
+ "n155": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "How does Mealdrop's cart panel stack its action buttons, and which Button props mark the primary versus the secondary action?"
+ },
+ "n156": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": "Cart lines with per-dish quantity steppers.",
+  "need": "How does Droppy's Mealdrop cart-line example use QuantityStepper for each dish: props, bounds and row layout?"
+ },
+ "n157": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "Does the design system's checkout example show a Button submitting a form, for instance with type=\"submit\"?"
+ },
+ "n158": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "How does Droppy's cart panel combine a primary and a secondary Button, in props and layout, for the footer actions?"
+ },
+ "n159": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "Do the design system's checkout action Buttons show any form or submit wiring that the checkout steps should copy?"
+ },
+ "n160": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Is Button's type fixed to \"button\", or can a Droppy Button submit the checkout form when Enter is pressed?"
+ },
+ "n161": {
+  "component": "Button",
+  "story_name": "Variants",
+  "listed_description": null,
+  "need": "Which Button variants exist, and which should style the secondary 'Schedule delivery' action beside primary 'Order now'?"
+ },
+ "n162": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "Does Mealdrop's checkout-actions example give its Buttons a `type` or put them in a form, showing how checkout actions should submit?"
+ },
+ "n163": {
+  "component": "ProgressBar",
+  "story_name": "Test Fill Is Not Announced",
+  "listed_description": null,
+  "need": "What does ProgressBar expose to assistive technology: is the fill hidden and the bar named by its label?"
+ },
+ "n164": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "How does the design system's cart example arrange its action buttons, and which Button props mark the main action versus the lesser one?"
+ },
+ "n165": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button default to type=\"button\", and is there any way to make it a form's submit button?"
+ },
+ "n166": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": null,
+  "need": "What markup does Droppy's checkout step indicator put around ProgressBar (heading, step text, label) to announce the current step?"
+ },
+ "n167": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button default to type=\"button\" with no way to make it a submit button for the checkout form?"
+ },
+ "n168": {
+  "component": "Button",
+  "story_name": "Variants",
+  "listed_description": "The variants side by side \u2014 the vocabulary a screen picks from.",
+  "need": "Does Button offer any documented variant or prop that makes it a submit button?"
+ },
+ "n169": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": null,
+  "need": "What does the hidden CheckoutStepIndicator helper do with ProgressBar: how are the step label and current step exposed?"
+ },
+ "n170": {
+  "component": "Sidebar",
+  "story_name": "Mealdrop Cart Panel",
+  "listed_description": "Mealdrop's cart panel, opened from the header's cart button.",
+  "need": "How does the design system compose the cart Sidebar's children and pinned footer, where the scheduling steps must appear?"
+ },
+ "n171": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": null,
+  "need": "How does Droppy's cart-line example place and wire QuantityStepper for each dish in a basket?"
+ },
+ "n172": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button default to type=\"button\", and can it be made a submit button once the fields are wrapped in a <form>?"
+ },
+ "n173": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "Does the Mealdrop checkout-actions example show a Button that submits (a type prop or form wrapper) for the checkout call to action?"
+ },
+ "n174": {
+  "component": "Input",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "Does Input accept native attributes such as autocomplete, name and type beyond the documented label and error props?"
+ },
+ "n175": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Droppy's Button always render type=\"button\", meaning it cannot act as the submit button of a checkout form?"
+ },
+ "n176": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button render type=\"button\" by default, so it would not submit a <form> wrapped around the checkout fields unless told otherwise?"
+ },
+ "n177": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": null,
+  "need": "How does the design system's reference checkout form configure its Inputs: are autoComplete, name or type passed?"
+ },
+ "n178": {
+  "component": "Button",
+  "story_name": "Variants",
+  "listed_description": null,
+  "need": "Which visual variants does Button offer, and which props produce a secondary look beside a default primary button?"
+ },
+ "n179": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button render type=\"button\" by default, and can it ever act as a submit button for implicit form submission?"
+ },
+ "n180": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": null,
+  "need": "What does the hidden CartLines helper render: how a basket line pairs QuantityStepper with dish name, price and a way to remove the dish?"
+ },
+ "n181": {
+  "component": "ProgressBar",
+  "story_name": "Test Reports Its Range",
+  "listed_description": null,
+  "need": "What does ProgressBar expose to assistive technology (value range, accessible name from `label`) when used as a step indicator?"
+ },
+ "n182": {
+  "component": "QuantityStepper",
+  "story_name": "Empty",
+  "listed_description": null,
+  "need": "Does QuantityStepper's story say anything about when to use it, rather than Select or NumberField, for order quantities?"
+ },
+ "n183": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button default to type=\"button\" with no `type` prop, so it cannot be the checkout form's submit button?"
+ },
+ "n184": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": null,
+  "need": "How does the design system's own checkout form use Input: does it pass autocomplete, type or name beyond label and error?"
+ },
+ "n185": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": null,
+  "need": "How does the design system's reference checkout form set up its Inputs: labels, grouping, and any autocomplete or other native attributes?"
+ },
+ "n186": {
+  "component": "Badge",
+  "story_name": "Class Name",
+  "listed_description": null,
+  "need": "Can Badge be restyled through className so cancelled, on-the-way and delivered orders get different colours?"
+ },
+ "n187": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": null,
+  "need": "What does the reference CheckoutStepIndicator actually render around ProgressBar, such as heading, step text and accessible label?"
+ },
+ "n188": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": null,
+  "need": "Does the design system show QuantityStepper as the control for basket lines, and how is it placed and wired in a cart row?"
+ },
+ "n189": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "How do the design system's checkout action Buttons get wired: do they sit in a form or use a submit type?"
+ },
+ "n190": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button default to type=\"button\", and is a caller's type=\"submit\" forwarded so Enter can submit the form?"
+ },
+ "n191": {
+  "component": "Input",
+  "story_name": "Test Error Slot Is Always Mounted",
+  "listed_description": null,
+  "need": "Is Input's error element always in the DOM, even without an error, so that later messages appear in an existing node?"
+ },
+ "n192": {
+  "component": "Button",
+  "story_name": "Class Name",
+  "listed_description": "`className` merges with the component's own class rather than replacing it.",
+  "need": "Is passing attributes outside Button's documented props (such as `type`) a documented pattern, as the className story's pass-through might indicate?"
+ },
+ "n193": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": null,
+  "need": "How does Droppy's reference checkout form mark up its fields: form and section structure, headings, and any name or autocomplete attributes?"
+ },
+ "n194": {
+  "component": "Button",
+  "story_name": "Variants",
+  "listed_description": null,
+  "need": "Which Button variants exist, and which props distinguish a primary action from a secondary one?"
+ },
+ "n195": {
+  "component": "QuantityStepper",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "What does QuantityStepper's one story say about its structure and intended use, now that the choosing-components guidance page is unavailable?"
+ },
+ "n196": {
+  "component": "QuantityStepper",
+  "story_name": "Bounds Disable Rather Than Clamp",
+  "listed_description": null,
+  "need": "How does QuantityStepper behave at min and max: do the buttons disable, and can a basket line be stepped below one?"
+ },
+ "n197": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Droppy's Button always render type=\"button\", or can it act as the submit button of a checkout form?"
+ },
+ "n198": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": "Cart lines with per-dish quantity steppers.",
+  "need": "How does the design system compose a basket line around a per-dish QuantityStepper (layout, props, labelling)?"
+ },
+ "n199": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button always render type=\"button\", meaning a plain form wrapper would not make the checkout buttons submit?"
+ },
+ "n200": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": null,
+  "need": "How does the design system's cart-line example use QuantityStepper for per-item quantities (props, bounds, row layout)?"
+ },
+ "n201": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button default to type=\"button\", and could a type=\"submit\" override make Enter submit the checkout form?"
+ },
+ "n202": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": "Cart lines with per-dish quantity steppers.",
+  "need": "How does the design system's own cart-line example place and configure QuantityStepper for each dish in the basket?"
+ },
+ "n203": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": "Mealdrop's checkout form, with two fields in error.",
+  "need": "How does Droppy's own checkout form structure its Inputs: form element, section headings, error messages, any autofill attributes?"
+ },
+ "n204": {
+  "component": "Input",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "What parts make up Input (label, control, error slot), and how are they tied together for assistive technology?"
+ },
+ "n205": {
+  "component": "QuantityStepper",
+  "story_name": "Empty",
+  "listed_description": null,
+  "need": "Does QuantityStepper's sole story show anything beyond the props table about how or where the stepper should be used?"
+ },
+ "n206": {
+  "component": "Badge",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "What props does Badge take: just text, or a variant/colour option to distinguish cancelled, on-the-way and delivered orders?"
+ },
+ "n207": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": null,
+  "need": "How does the design system's cart-line example place QuantityStepper in a basket row, and what else does the row contain?"
+ },
+ "n208": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Is Button's type=\"button\" default a tested, documented behaviour, so wrapping checkout steps in a form will not make its buttons submit?"
+ },
+ "n209": {
+  "component": "QuantityStepper",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "What parts make up QuantityStepper and how is it meant to be operated, compared with the cart's Select?"
+ },
+ "n210": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": null,
+  "need": "How does Droppy's own checkout step indicator compose ProgressBar: value/max, label and the step text around it?"
+ },
+ "n211": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": "Mealdrop's checkout step indicator.",
+  "need": "How does the design system's checkout step indicator use ProgressBar and label it so the current step reaches screen-reader users?"
+ },
+ "n212": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": "Mealdrop's checkout step indicator.",
+  "need": "How does the design system's checkout step indicator use ProgressBar and label it so the current step reaches screen-reader users?"
+ },
+ "n213": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button always render type=\"button\", meaning the checkout steps have no submit button for Enter?"
+ },
+ "n214": {
+  "component": "ProgressBar",
+  "story_name": "Anatomy",
+  "listed_description": "The track carries the ARIA; the fill is a decorative sibling underneath it.",
+  "need": "How is ProgressBar called and what ARIA does it expose (value, max, label) before it replaces the hand-rolled checkout step bar?"
+ },
+ "n215": {
+  "component": "QuantityStepper",
+  "story_name": "Empty",
+  "listed_description": null,
+  "need": "How is QuantityStepper meant to be used: what does a rendered example look like beyond the bare props table?"
+ },
+ "n216": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": "Mealdrop's checkout step indicator.",
+  "need": "How does Mealdrop's reference checkout step indicator use ProgressBar: its label, value/max and the visible step text?"
+ },
+ "n217": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": null,
+  "need": "Does the design system's cart-line example use QuantityStepper for basket quantities, and how is it set up per line?"
+ },
+ "n218": {
+  "component": "QuantityStepper",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "How is QuantityStepper structured and controlled, and does its anatomy story carry any guidance on intended use?"
+ },
+ "n219": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": null,
+  "need": "Does the design system's reference checkout form pass native attributes like autoComplete or type to Input so browsers can autofill?"
+ },
+ "n220": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": null,
+  "need": "Does Droppy's checkout form example pass native attributes such as name, type or autoComplete to Input, and how does it group the two steps?"
+ },
+ "n221": {
+  "component": "Heading",
+  "story_name": "Test Forwards Ref And Props",
+  "listed_description": null,
+  "need": "Does Heading forward a ref and extra native props such as id or tabIndex, so focus can be moved to the step heading?"
+ },
+ "n222": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Droppy's Button default to type=\"button\", and can it be made a submit button for the checkout forms?"
+ },
+ "n223": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "How does the design system stack the cart panel's primary and secondary buttons, and which Button props distinguish them?"
+ },
+ "n224": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Droppy Button hard-code type=\"button\", or can it serve as the submit button of a real form?"
+ },
+ "n225": {
+  "component": "Button",
+  "story_name": "Icon Only Needs A Label",
+  "listed_description": null,
+  "need": "How should an icon-only Button, such as an order's actions-menu trigger, be given an accessible name?"
+ },
+ "n226": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": "Mealdrop's checkout form, with two fields in error.",
+  "need": "Does the design system's reference checkout form place Inputs in a native form element, and with what submit control?"
+ },
+ "n227": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Droppy's Button hard-default to type=\"button\", preventing it from submitting a form wrapped around the checkout fields?"
+ },
+ "n228": {
+  "component": "QuantityStepper",
+  "story_name": "aria-label",
+  "listed_description": null,
+  "need": "What should QuantityStepper's aria-label say: what does it name, and how is it phrased?"
+ },
+ "n229": {
+  "component": "Modal",
+  "story_name": "Open",
+  "listed_description": null,
+  "need": "How is Modal used when open: its isOpen/onClose wiring and how content is composed inside it for the 'Get help' dialog?"
+ },
+ "n230": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": "Mealdrop's checkout form, with two fields in error.",
+  "need": "How does the design system's reference checkout form structure its two steps: form element, sections, headings and Input error messages?"
+ },
+ "n231": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": null,
+  "need": "How does the reference checkout step indicator label ProgressBar and present the current step so a step change is perceivable?"
+ },
+ "n232": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button default to type=\"button\", and so how will the checkout buttons behave once the fields sit inside a real form?"
+ },
+ "n233": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": "Mealdrop's checkout form, with two fields in error.",
+  "need": "Does the design system's reference checkout form put Inputs inside a native form element, and what submits it?"
+ },
+ "n234": {
+  "component": "Button",
+  "story_name": "Variants",
+  "listed_description": null,
+  "need": "Which Button variants exist and which props select them, so the cart can show a primary 'Order now' and a secondary 'Schedule delivery'?"
+ },
+ "n235": {
+  "component": "QuantityStepper",
+  "story_name": "Empty",
+  "listed_description": null,
+  "need": "Does QuantityStepper's only story reveal usage or guidance on choosing it over Select for quantities, beyond the bare props table?"
+ },
+ "n236": {
+  "component": "Button",
+  "story_name": "Anatomy",
+  "listed_description": "The control and its optional leading glyph.",
+  "need": "Is passing native attributes such as `type` through Button documented in any of the stories not yet seen?"
+ },
+ "n237": {
+  "component": "QuantityStepper",
+  "story_name": "Empty",
+  "listed_description": null,
+  "need": "Does loading QuantityStepper's only story reveal any description or usage guidance that the terse component docs lacked?"
+ },
+ "n238": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": null,
+  "need": "How does the design system itself build a basket line around QuantityStepper, as a model for replacing the basket's Select?"
+ },
+ "n239": {
+  "component": "Button",
+  "story_name": "Anatomy",
+  "listed_description": "The control and its optional leading glyph.",
+  "need": "Do Droppy's Button docs show or sanction a `type` attribute, so a Button can act as a form's submit button?"
+ },
+ "n240": {
+  "component": "Modal",
+  "story_name": "Open",
+  "listed_description": null,
+  "need": "How is Modal shown and dismissed, and what controls its open state, for the \"Get help\" flow?"
+ },
+ "n241": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "How does Mealdrop's cart panel arrange its action buttons, and which Button props make one action primary and the other secondary?"
+ },
+ "n242": {
+  "component": "Input",
+  "story_name": "Test Error Is Announced",
+  "listed_description": null,
+  "need": "How does Input announce its validation error to assistive technology: a live region or an aria link to the field?"
+ },
+ "n243": {
+  "component": "Button",
+  "story_name": "Variants",
+  "listed_description": null,
+  "need": "Which Button variants exist, and which props make a primary versus a secondary button for the cart footer?"
+ },
+ "n244": {
+  "component": "ProgressBar",
+  "story_name": "Mealdrop Checkout Steps",
+  "listed_description": null,
+  "need": "How does the design system's checkout step indicator use ProgressBar, and does it tell assistive technology which step is current?"
+ },
+ "n245": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": null,
+  "need": "How does Droppy's reference checkout form mark up its fields: form element, grouping, and any autocomplete or name attributes on Input?"
+ },
+ "n246": {
+  "component": "Sidebar",
+  "story_name": "Mealdrop Cart Panel",
+  "listed_description": "Mealdrop's cart panel, opened from the header's cart button.",
+  "need": "How does Droppy's reference cart panel compose Sidebar: what goes in children and footer, and where do the action buttons sit?"
+ },
+ "n247": {
+  "component": "ProgressBar",
+  "story_name": "Label",
+  "listed_description": null,
+  "need": "What does ProgressBar's `label` prop do: is it a visible caption or only the accessible name, and how is it passed?"
+ },
+ "n248": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "How does the design system's cart panel arrange its primary and secondary action Buttons, and with which props?"
+ },
+ "n249": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "Does Droppy's checkout actions example show how a checkout Button should trigger submission, such as a form or submit pattern?"
+ },
+ "n250": {
+  "component": "Button",
+  "story_name": "Anatomy",
+  "listed_description": "The control and its optional leading glyph.",
+  "need": "Do the remaining Button stories show a `type` attribute or any native-prop passthrough on the rendered button?"
+ },
+ "n251": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button force type=\"button\", or can `type=\"submit\"` be passed so the checkout forms submit on Enter?"
+ },
+ "n252": {
+  "component": "Button",
+  "story_name": "Anatomy",
+  "listed_description": "The control and its optional leading glyph.",
+  "need": "What does Button's Anatomy story show about the rendered control: its element, parts and any native attributes such as type?"
+ },
+ "n253": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": null,
+  "need": "How does the design system's own checkout form use Input: does it pass autocomplete, type or name, and how are the steps grouped?"
+ },
+ "n254": {
+  "component": "ToastProvider",
+  "story_name": "Children",
+  "listed_description": null,
+  "need": "How is a toast actually raised with `useToast` inside ToastProvider, for example to confirm an order action?"
+ },
+ "n255": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": "Cart lines with per-dish quantity steppers.",
+  "need": "How does the design system compose a basket line around a per-dish QuantityStepper (layout, props, labelling)?"
+ },
+ "n256": {
+  "component": "Input",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "What parts and props make up Input, and does its anatomy expose the native input for name, type or autocomplete?"
+ },
+ "n257": {
+  "component": "Badge",
+  "story_name": "Class Name",
+  "listed_description": null,
+  "need": "Can Badge take a className to restyle it, so cancelled, on-the-way and delivered orders get distinct badge colours?"
+ },
+ "n258": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": null,
+  "need": "How does the design system's cart-line example lay out a QuantityStepper per dish, including any control for removing a line?"
+ },
+ "n259": {
+  "component": "Input",
+  "story_name": "Empty",
+  "listed_description": null,
+  "need": "Does Input accept anything beyond label and error (autocomplete, name, type), as the checkout fields require?"
+ },
+ "n260": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button always render type=\"button\", meaning it cannot serve as a form's default submit button?"
+ },
+ "n261": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "How does Droppy's cart panel pair a primary checkout Button with a secondary one, in props and layout?"
+ },
+ "n262": {
+  "component": "QuantityStepper",
+  "story_name": "Anatomy",
+  "listed_description": null,
+  "need": "What parts make up QuantityStepper and how is it operated, to judge it against Select for the cart?"
+ },
+ "n263": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "How does the design system arrange the cart panel's action buttons, and which props mark the primary versus the secondary action?"
+ },
+ "n264": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Droppy's Button default to type=\"button\", and therefore not submit a form when the checkout steps are wrapped in one?"
+ },
+ "n265": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button default to type=\"button\", so it would not submit if the checkout steps were turned into real forms?"
+ },
+ "n266": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "How does the design system's cart-panel example stack its action buttons, to model 'Order now' and 'Schedule delivery' on it?"
+ },
+ "n267": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "How does the design system wire Buttons in Mealdrop's checkout: does any submit a form or receive a `type`?"
+ },
+ "n268": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Droppy's Button default to type=\"button\", so that wrapping the checkout fields in a <form> alone would not make Enter submit?"
+ },
+ "n269": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button default to type=\"button\", and can it be given type=\"submit\" so Enter submits the checkout form?"
+ },
+ "n270": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": "Cart lines with per-dish quantity steppers.",
+  "need": "How does the design system's cart-line example lay out and wire a QuantityStepper per dish (bounds, label, removal)?"
+ },
+ "n271": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": null,
+  "need": "Does Droppy's checkout form example wrap its Inputs in a <form>, and does it show a submit button or onSubmit handler?"
+ },
+ "n272": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": null,
+  "need": "How are Buttons used for checkout actions in the design system's own example: inside a form, with any submit behaviour?"
+ },
+ "n273": {
+  "component": "Input",
+  "story_name": "Mealdrop Checkout Form",
+  "listed_description": "Mealdrop's checkout form, with two fields in error.",
+  "need": "Does Droppy's checkout form example wrap its Inputs in a <form> with a submit button or handler to copy?"
+ },
+ "n274": {
+  "component": "QuantityStepper",
+  "story_name": "Empty",
+  "listed_description": null,
+  "need": "Does QuantityStepper's only story reveal more about its intended use or markup than the short docs page, to justify using it for basket quantities?"
+ },
+ "n275": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": "Cart lines with per-dish quantity steppers.",
+  "need": "How does Droppy's cart-line example set out QuantityStepper beside each dish, and with what bounds and label?"
+ },
+ "n276": {
+  "component": "Heading",
+  "story_name": "Test Forwards Ref And Props",
+  "listed_description": null,
+  "need": "Does Heading forward a ref and native props such as id or tabIndex, so focus can move to the step heading?"
+ },
+ "n277": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "How does Droppy arrange a primary and a secondary Button in MealDrop's cart panel footer, and which props mark each?"
+ },
+ "n278": {
+  "component": "QuantityStepper",
+  "story_name": "Bounds Disable Rather Than Clamp",
+  "listed_description": null,
+  "need": "What does QuantityStepper do at its min and max, and what would that mean for quantities in the cart?"
+ },
+ "n279": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does Button really default to type=\"button\", with no documented way to make it the form's submit button?"
+ },
+ "n280": {
+  "component": "Input",
+  "story_name": "Test Label Names The Control",
+  "listed_description": null,
+  "need": "Does Input's label prop give the control its accessible name, so checkout fields are properly labelled for screen readers?"
+ },
+ "n281": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": "Cart lines with per-dish quantity steppers.",
+  "need": "How does Droppy lay out a cart line with a QuantityStepper: which props, label and surrounding text?"
+ },
+ "n282": {
+  "component": "Button",
+  "story_name": "Mealdrop Checkout Actions",
+  "listed_description": "The action stack in Mealdrop's cart panel.",
+  "need": "How are primary and secondary Buttons composed in MealDrop's cart panel footer, where \"Schedule delivery\" must join \"Order now\"?"
+ },
+ "n283": {
+  "component": "QuantityStepper",
+  "story_name": "Mealdrop Cart Line",
+  "listed_description": null,
+  "need": "How does the design system's cart line handle quantity changes: is QuantityStepper the intended control there?"
+ },
+ "n284": {
+  "component": "Button",
+  "story_name": "Test Defaults To Type Button",
+  "listed_description": null,
+  "need": "Does the test story assert or show that Button always renders type=\"button\", so it cannot submit the checkout form?"
+ },
+ "n285": {
+  "component": "Button",
+  "story_name": "Variants",
+  "listed_description": null,
+  "need": "Which Button variants exist and how are they set through props, so 'Order now' can be primary and 'Schedule delivery' secondary?"
+ }
+}

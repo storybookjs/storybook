@@ -1,0 +1,133 @@
+{
+ "version": "v1",
+ "how_to_decide": [
+  "Each item has `need` (the question the agent wanted answered), `trigger` (what it had just observed), `cue` (why this story), and `already_shown` (true when the full source of this very story had already been displayed to the agent before it loaded it).",
+  "Step 1. If the agent asked for a story name it had never been shown (a guess) -> guessed-story.",
+  "Step 2. If `already_shown` is true, ask what the second load was for: real markup hidden behind a helper or wrapper -> reload-opaque; isolating or confirming a fact that was already printed in a long docs page -> reload-isolate; hoping the story view carries when-to-use guidance -> usage-guidance. Only if none of these fits, continue with the steps below.",
+  "Step 3. If the story loaded is the design system's own in-app example (a story depicting real app UI such as a cart line, checkout form, checkout steps or action stack): native form mechanics -> example-form-wiring; deciding WHICH component the design system uses for a job -> example-precedent; anything else about HOW that UI is built, laid out, labelled or presents state -> example-model.",
+  "Step 4. Otherwise decide by the need: see each cluster's definition and its exclude rule.",
+  "Use `none` only when no cluster fits even loosely; do not use it for hard borderline cases."
+ ],
+ "clusters": [
+  {
+   "id": "example-model",
+   "family": "worked-example",
+   "label": "Model the UI on an in-app example",
+   "definition": "The design system ships a story depicting the very piece of app UI the agent is building or changing. The agent loads it to see how the design system itself composes that UI: which components and props, layout, primary versus secondary emphasis, labels, how state or progress is presented.",
+   "include": "Composition templates, primary/secondary action arrangement, how the example labels or conveys status, a post-build check against the reference.",
+   "exclude": "Need is specifically native form mechanics -> example-form-wiring. Need is which component to choose -> example-precedent. Story had already been shown in full and came back as an opaque helper -> reload-opaque."
+  },
+  {
+   "id": "example-form-wiring",
+   "family": "worked-example",
+   "label": "Check an in-app example for native form wiring",
+   "definition": "The agent has a hypothesis about native form mechanics that the component docs do not cover (a real form element, which control submits, a submit type, name/type/autocomplete on fields) and loads the design system's in-app example to see whether real usage embodies it.",
+   "include": "Does the checkout example wrap fields in a form, use a submit button, pass autocomplete/name/type.",
+   "exclude": "The story loaded is not an in-app example but a test, anatomy or prop story -> native-contract or indirect-probe."
+  },
+  {
+   "id": "example-precedent",
+   "family": "component-choice",
+   "label": "In-app example as precedent for component choice",
+   "definition": "The agent is deciding which component the design system intends for a job (often because the app uses two controls for the same task) and loads an in-app example as evidence of what the design system itself uses.",
+   "include": "Which control does the cart example use for quantity; what the incumbent component is used for in the examples.",
+   "exclude": "Choice already made and the agent wants to know how to build it -> example-model."
+  },
+  {
+   "id": "native-contract",
+   "family": "undocumented-contract",
+   "label": "Story name asserts an unstated native behaviour",
+   "definition": "The props table is silent on one precise fact about the underlying native element (a hard-coded attribute default, whether it can be overridden, whether refs and native attributes are forwarded). A story, usually a test story, is listed whose name states that fact, and the agent loads it to confirm it.",
+   "include": "Button defaults to type=button; forwards ref and props; renders a native control.",
+   "exclude": "No story is named for the fact and the agent digs in a neighbouring story -> indirect-probe. Fact concerns accessibility announcements, roles or ranges -> a11y-semantics. Fact concerns limits of a numeric range -> bounds-behaviour. The same story had already been printed in full -> reload-isolate."
+  },
+  {
+   "id": "indirect-probe",
+   "family": "undocumented-contract",
+   "label": "Probe an unrelated story for native-attribute hints",
+   "definition": "The agent wants to know which element a component renders or whether native attributes or a submit capability reach it, but no listed story is named for that. It opens a structural, catalogue or adjacent-prop story hoping it leaks a hint.",
+   "include": "Loading Anatomy, Variants, Class Name or Types to see whether type/name/autocomplete pass through.",
+   "exclude": "Story name states the fact -> native-contract. Agent wants parts and basic usage rather than a native-attribute answer -> parts-wiring. Wants styling freedom via className -> classname-hook."
+  },
+  {
+   "id": "bounds-behaviour",
+   "family": "undocumented-contract",
+   "label": "Behaviour rule at value limits",
+   "definition": "The props table gives bounds or defaults but not what the component does at an edge (disable, clamp, wrap, whether zero is reachable). The agent loads the story whose name states the rule.",
+   "include": "Bounds disable rather than clamp; min/max edge handling; over-max clamping.",
+   "exclude": "Edge behaviour read off an in-app example -> example-model."
+  },
+  {
+   "id": "a11y-name",
+   "family": "accessibility",
+   "label": "How to name the control accessibly",
+   "definition": "The agent needs to know how a control gets its accessible name and what the name should say: which prop carries it, whether it is visible, the wording the design system uses. It loads the story dedicated to that prop or rule.",
+   "include": "aria-label story, label story, 'icon only needs a label'.",
+   "exclude": "What the component announces by itself -> a11y-semantics. Labelling read off an in-app example -> example-model."
+  },
+  {
+   "id": "a11y-semantics",
+   "family": "accessibility",
+   "label": "Built-in assistive-technology semantics",
+   "definition": "The agent needs to know what the component exposes or announces to assistive technology without extra work: how an error is announced, whether the message node stays mounted, what role, name or value range is reported.",
+   "include": "Test or anatomy stories about error announcement, role=progressbar range, live regions.",
+   "exclude": "What name the caller must supply -> a11y-name."
+  },
+  {
+   "id": "parts-wiring",
+   "family": "component-basics",
+   "label": "Parts, slots and basic wiring",
+   "definition": "The agent needs the component's basic operating model: its parts or slots, which props drive it, how value, handlers, open state and labels are wired. Docs were thin or the example opaque, so it loads a structural story (typically Anatomy) or a basic one.",
+   "include": "Anatomy loaded to learn structure, including as a fallback after an uninformative example; baseline usage of a component being adopted.",
+   "exclude": "Looking for native attribute pass-through -> indirect-probe. Looking for when to use the component -> usage-guidance. Looking for the list of visual styles -> variant-catalogue."
+  },
+  {
+   "id": "variant-catalogue",
+   "family": "component-basics",
+   "label": "Catalogue of visual variants",
+   "definition": "The agent needs to know which visual styles a component offers and which props produce them, typically to give two actions different emphasis when there is no variant prop. It loads the catalogue story.",
+   "include": "Variants, Sizes, Weights stories loaded to pick a look.",
+   "exclude": "Primary/secondary arrangement taken from an in-app example -> example-model."
+  },
+  {
+   "id": "classname-hook",
+   "family": "undocumented-contract",
+   "label": "className as styling escape hatch",
+   "definition": "Built-in styles do not cover what is needed, so the agent checks whether the component accepts className (and extra attributes) to restyle or position it from outside.",
+   "include": "Class Name story loaded for styling or placement freedom.",
+   "exclude": "Class Name story loaded to learn whether native attributes pass through -> indirect-probe."
+  },
+  {
+   "id": "guessed-story",
+   "family": "component-basics",
+   "label": "Guessed a story name",
+   "definition": "The agent requested a story it had never been shown, betting on a conventional name (such as Open) for the state or usage it needed to understand.",
+   "include": "Any load where the trigger or cue says the name was assumed, never listed.",
+   "exclude": "Story was listed anywhere beforehand -> decide by need."
+  },
+  {
+   "id": "usage-guidance",
+   "family": "component-choice",
+   "label": "Mine a story for when-to-use guidance",
+   "definition": "The agent wants to know what a component is for or when to use it instead of a sibling, and found no written guidance. It loads the component's only or most generic story hoping its description or structure reveals intended use.",
+   "include": "Sole 'Empty' story or Anatomy loaded as the last documented source about intended use.",
+   "exclude": "Precedent taken from an in-app example -> example-precedent. Wants parts and wiring of a component already chosen -> parts-wiring."
+  },
+  {
+   "id": "reload-opaque",
+   "family": "second-look",
+   "label": "Re-load an example to see behind a helper",
+   "definition": "The story had already been displayed, but its source was a one-line call to a helper or wrapper that hid the real markup or API. The agent loads the same story on its own hoping the single-story view shows more.",
+   "include": "`already_shown` true and the earlier view was terse, wrapper-only or too thin to act on.",
+   "exclude": "Earlier view was complete and merely buried in a long page -> reload-isolate."
+  },
+  {
+   "id": "reload-isolate",
+   "family": "second-look",
+   "label": "Re-load a printed story to isolate a fact",
+   "definition": "The fact the agent needs was already on screen inside a long docs page that printed every story. The agent loads the one story again to isolate, re-read or confirm it.",
+   "include": "`already_shown` true, content was adequate, load is a targeted confirmation.",
+   "exclude": "Earlier view hid the real markup -> reload-opaque."
+  }
+ ]
+}

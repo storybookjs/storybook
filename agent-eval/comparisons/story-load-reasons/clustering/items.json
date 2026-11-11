@@ -1,0 +1,1767 @@
+{
+ "i001": {
+  "need": "Does Button always render type=\"button\", so it cannot be the submit button that makes Enter work in checkout?",
+  "trigger": "Button's documented props contained no `type`, and the story list included \"Test Defaults To Type Button\".",
+  "cue": "The name states the default type outright; no other listed Button story concerns type or form submission."
+ },
+ "i002": {
+  "need": "How does the design system's Mealdrop cart example arrange and style its checkout Buttons, primary versus secondary?",
+  "trigger": "The Variants story had shown isolated styles only, while the task changes the button row in the sidebar cart.",
+  "cue": "Named for Mealdrop's checkout actions, the same button group the task extends; a real composition, not a prop demo."
+ },
+ "i003": {
+  "need": "How does Droppy's own cart panel stack its primary and secondary Buttons: which props distinguish them and how are they laid out?",
+  "trigger": "Task needs a primary 'Order now' and secondary 'Schedule delivery' in the cart sidebar; Button docs offered only clear/round/large flags and listed this cart story unseen.",
+  "cue": "Listed as \"The action stack in Mealdrop's cart panel\", the exact UI being edited; other unseen stories covered single props or tests."
+ },
+ "i004": {
+  "need": "Does the Mealdrop checkout-actions example show a Button that submits (a type prop or form wrapper) for the checkout call to action?",
+  "trigger": "The type-default story had just returned a bare Button; Button docs listed 'Mealdrop Checkout Actions' by name only.",
+  "cue": "The only Button story named after checkout, the flow being fixed, and an app-level example rather than a single-prop demo."
+ },
+ "i005": {
+  "need": "Does Button's documented anatomy show a native button whose type can be set, so passing type=\"submit\" is supported?",
+  "trigger": "Shipped d.ts says ButtonProps extends button props, but Storybook's closed prop list documents no type.",
+  "cue": "'Anatomy' (the control and its optional leading glyph) was the only listed story likely to show the underlying element."
+ },
+ "i006": {
+  "need": "What should QuantityStepper's `aria-label` say on a cart line, and is it passed straight to the component as a prop?",
+  "trigger": "Had settled on replacing the basket's Select with QuantityStepper and inspected its CSS; the docs listed an `aria-label` story without its source.",
+  "cue": "Named after the stepper's one accessibility prop; the only listed story about naming the group for assistive technology."
+ },
+ "i007": {
+  "need": "Does the design system's reference checkout form pass native attributes like autoComplete or type to Input so browsers can autofill?",
+  "trigger": "Input props table listed only label and error, while the checkout passes native props and the task reports autofill never being offered.",
+  "cue": "Named after the exact screen under repair, a checkout form built from Input; other listed names are single props and tests."
+ },
+ "i008": {
+  "need": "Does loading QuantityStepper's only story reveal any description or usage guidance that the terse component docs lacked?",
+  "trigger": "QuantityStepper and Select docs gave props and one 'Empty' story each; no guideline pages or MDX found; list-all with story ids showed only 'Empty' stories.",
+  "cue": "It was the sole story listed for QuantityStepper, the control whose intended use the agent was trying to establish."
+ },
+ "i009": {
+  "need": "How does Droppy's own checkout step indicator combine ProgressBar with a heading and step text so the current step is conveyed?",
+  "trigger": "Had moved from Input to the step-change complaint, reading Heading docs and grepping the ProgressBar declaration in index.d.ts.",
+  "cue": "Only ProgressBar story named after MealDrop's checkout steps, the UI whose step change users could not perceive."
+ },
+ "i010": {
+  "need": "Can Badge take a className to restyle it, so cancelled, on-the-way and delivered orders get distinct badge colours?",
+  "trigger": "Order statuses need visually distinct badges; a token grep had just shown badge colours only for default and 'positive'.",
+  "cue": "'Class Name' is the story about passing custom classes to Badge, the styling hook for extra status colours."
+ },
+ "i011": {
+  "need": "Does Button default to type=\"button\", so a Button inside a newly added <form> will not submit it by itself?",
+  "trigger": "A probe test confirmed the checkout problems; the fix involved real forms, and Button's props table listed no `type`.",
+  "cue": "Only Button story about the type attribute; picked from an undescribed list after the agent said it would check Button's API."
+ },
+ "i012": {
+  "need": "How does the design system's reference checkout form group its Inputs: in a native `<form>`, with a submit control or handler?",
+  "trigger": "Input docs listed a story described as Mealdrop's checkout form; the agent had just loaded the Button type story for the same fix.",
+  "cue": "Described as \"Mealdrop's checkout form\", the very screen where Enter fails; other listed stories are prop demos and tests."
+ },
+ "i013": {
+  "need": "Does ProgressBar announce progress changes to screen readers, or must the step change be announced some other way?",
+  "trigger": "The Mealdrop Checkout Steps story was an opaque wrapper; users can't tell the checkout moved to the next step.",
+  "cue": "'Test Fill Is Not Announced' speaks directly to screen-reader announcement of the progress fill."
+ },
+ "i014": {
+  "need": "How does the design system's own cart-line example place and configure QuantityStepper for each dish in the basket?",
+  "trigger": "Agent had read the basket (Select) and modal (QuantityStepper) code, then the stepper docs listed a cart-lines story without source.",
+  "cue": "Description \"Cart lines with per-dish quantity steppers\" matches the basket rows being changed; siblings are prop demos and tests."
+ },
+ "i015": {
+  "need": "How is QuantityStepper meant to be used: what does a rendered example look like beyond the bare props table?",
+  "trigger": "Stepper and Select docs each returned only a props table and one story called \"Empty\", with no usage guidance.",
+  "cue": "\"Empty\" was the only story the docs offered for the component, so there was nothing else to open."
+ },
+ "i016": {
+  "need": "Does Droppy's Button always render type=\"button\", meaning it cannot act as the submit button of a checkout form?",
+  "trigger": "Root cause found (fields in a div, no form); agent saw no type prop in the Button docs and a story named 'Test Defaults To Type Button'.",
+  "cue": "Agent quoted the name: a test story about the default type attribute, the only one bearing on implicit form submission."
+ },
+ "i017": {
+  "need": "How does Input expose its error message to assistive technology (live region, role=alert or aria-describedby)?",
+  "trigger": "After reading Input, Button and ProgressBar internals in dist, the agent turned to validation errors; the Input docs listed a test named for error announcement.",
+  "cue": "Its name promises the screen-reader behaviour of errors; the sibling tests cover label naming and the always-mounted error slot."
+ },
+ "i018": {
+  "need": "What should QuantityStepper's aria-label contain when each basket line gets its own stepper?",
+  "trigger": "Agent had reviewed the basket, cart state and dish list and was about to place a stepper on every basket line; the stepper takes an optional aria-label.",
+  "cue": "The story dedicated to the aria-label prop, the one stepper prop whose expected wording the type alone does not reveal."
+ },
+ "i019": {
+  "need": "Does the design system's reference checkout form put Inputs inside a native form element, and what submits it?",
+  "trigger": "Checkout steps rendered Inputs without a form; Input docs listed a story described as \"Mealdrop's checkout form, with two fields in error.\"",
+  "cue": "The design system's own version of the form being fixed; the other Input stories are per-prop demos or tests."
+ },
+ "i020": {
+  "need": "How does the design system compose QuantityStepper inside a Mealdrop cart line, so the basket can use the same quantity control as the dish modal?",
+  "trigger": "Cart sidebar (ShoppingCartMenu) uses Select for quantity while FoodItemModal uses QuantityStepper; QuantityStepper docs list 'Mealdrop Cart Line' without source.",
+  "cue": "The only app-specific QuantityStepper story; its name matches the basket cart line the agent is about to change."
+ },
+ "i021": {
+  "need": "Which Button variants exist and which props select them, so the cart can show a primary 'Order now' and a secondary 'Schedule delivery'?",
+  "trigger": "Task asks for primary and secondary cart buttons; Button docs showed only clear, round and large flags and listed stories by name.",
+  "cue": "'Variants' names the catalogue of Button styles, the likeliest place to find a secondary look."
+ },
+ "i022": {
+  "need": "Does Mealdrop's checkout action stack show a Droppy-sanctioned way to make a Button submit a form?",
+  "trigger": "Compiled source showed Button hard-codes type=\"button\"; the agent wanted to know whether Droppy exposes any form or submit pattern.",
+  "cue": "'Mealdrop Checkout Actions' (the action stack in Mealdrop's cart panel) was the only checkout-related Button story left unseen."
+ },
+ "i023": {
+  "need": "How is Modal opened, closed and filled with content, for building the 'Get help' dialog?",
+  "trigger": "Each component's docs in this run carried a single 'Empty' story and a props table; the help flow depends on Modal.",
+  "cue": "'Empty' was the only story Modal had; reloaded alone, probably hoping for fuller source than the docs showed."
+ },
+ "i024": {
+  "need": "How does Droppy's cart-line example use QuantityStepper per dish, as a reference for the basket's quantity control?",
+  "trigger": "Basket sidebar uses Select while the dish modal uses QuantityStepper; stepper docs listed a cart-line story without its source.",
+  "cue": "Listed as \"Cart lines with per-dish quantity steppers\": the basket half of the inconsistency, done the design-system way."
+ },
+ "i025": {
+  "need": "Can Button's default type=\"button\" be overridden with type=\"submit\" so the checkout step button submits on Enter?",
+  "trigger": "Button docs (all stories in full) showed it defaults to type=\"button\" and documented no props.",
+  "cue": "The test story is the one about the type default; the agent named it, though its source was already shown."
+ },
+ "i026": {
+  "need": "How is Modal used when open: its isOpen/onClose wiring and how content is composed inside it for the 'Get help' dialog?",
+  "trigger": "Every component's docs in this run showed only an 'Anatomy' story; the help flow needs a working modal example.",
+  "cue": "A guessed name: 'Open' is a conventional overlay state story, though no docs output had listed it."
+ },
+ "i027": {
+  "need": "Which Button variants exist, and which should style the secondary 'Schedule delivery' action beside primary 'Order now'?",
+  "trigger": "Button props offered only clear/round/large flags, with no primary/secondary variant, for a footer needing both.",
+  "cue": "'Variants' suggested all styles in one view; the rest of the undescribed list were single props, anatomy or tests."
+ },
+ "i028": {
+  "need": "How does the design system's own checkout form use Input: does it pass autocomplete, name or type, and how are the two steps grouped?",
+  "trigger": "Input props table listed only label and error, while the checkout complaints concern missing autofill and an unannounced step change.",
+  "cue": "Name matches the exact MealDrop screen under repair; the other listed stories cover single props or tests."
+ },
+ "i029": {
+  "need": "How does the design system's own cart line present quantity editing: with QuantityStepper, and in what arrangement?",
+  "trigger": "Dish modal uses QuantityStepper and a grep showed quantity handled in other files too; stepper docs listed a cart-line story without source.",
+  "cue": "Only story tied to Mealdrop's cart, the second place quantities are set; others were prop, anatomy or test stories."
+ },
+ "i030": {
+  "need": "Does Droppy's own checkout form pass native attributes like name, type or autocomplete to Input, beyond label and error?",
+  "trigger": "Docs prop table lists only label/error, but the app's checkout code passes name, value and type to Input.",
+  "cue": "The Mealdrop-specific story is the design system's version of the very checkout form being fixed; the names-only list offered nothing closer."
+ },
+ "i031": {
+  "need": "How does the design system's cart example stack its two actions, and which Button props give the checkout action priority?",
+  "trigger": "'Variants' had shown only flag-based styles; the Button docs also listed a story named for Mealdrop's checkout actions.",
+  "cue": "Named after Mealdrop's checkout actions, the cart footer being changed; remaining stories are prop demos or tests."
+ },
+ "i032": {
+  "need": "What parts does QuantityStepper render (buttons, live value, group label), so it can replace the cart's Select?",
+  "trigger": "The Mealdrop Cart Line and Burger Extras stories returned opaque wrappers, and the component browser docs page added nothing concrete.",
+  "cue": "'Anatomy' promises the component's internal structure, the next most concrete story after the opaque Mealdrop example."
+ },
+ "i033": {
+  "need": "How does Input announce its error message to assistive technology: live region, role=\"alert\" or aria-describedby?",
+  "trigger": "Had just read Input's compiled source and found autoComplete hardcoded off; the next question was how validation errors are announced.",
+  "cue": "Its name is the question: among Input's test stories it is the one about the error being announced."
+ },
+ "i034": {
+  "need": "How does Droppy's real Mealdrop modal arrange content inside Modal (heading, body, quantity control, action buttons) and size itself?",
+  "trigger": "Task needs a Get help modal; Modal docs (fetched earlier, not shown in the packet) listed this story without its source.",
+  "cue": "Name promises a complete in-app dialog, the food item modal, rather than a single-prop demo; Modal's other stories aren't visible in the packet."
+ },
+ "i035": {
+  "need": "What parts make up QuantityStepper and how is it operated, to judge it against Select for the cart?",
+  "trigger": "Cart-line story was an opaque helper and Select's docs were as bare as the stepper's, leaving no usage guidance.",
+  "cue": "'Anatomy' implied a structural overview; the other unseen names were props, bounds or test cases."
+ },
+ "i036": {
+  "need": "Does Heading forward a ref and extra native props such as id or tabIndex, so focus can be moved to the step heading?",
+  "trigger": "Heading docs' props table listed only className, size and level, and named a 'Test Forwards Ref And Props' story without source.",
+  "cue": "The name says exactly 'Forwards Ref And Props', the capability missing from the three-prop table."
+ },
+ "i037": {
+  "need": "How are Buttons used for checkout actions in the design system's own example: inside a form, with any submit behaviour?",
+  "trigger": "The type-default story had shown only a bare Button; \"Mealdrop Checkout Actions\" was the other listed story tied to checkout.",
+  "cue": "Named for checkout actions, the same kind of buttons the two checkout steps end with; other names are generic prop demos."
+ },
+ "i038": {
+  "need": "What goes inside Droppy's Modal in its reference example, and how are the heading and action buttons arranged?",
+  "trigger": "Agent had just re-read the app's FoodItemModal; in this run Modal's docs offered only an Anatomy story, already seen.",
+  "cue": "Anatomy is the only story this docs set offers for Modal, so the sole usage example available."
+ },
+ "i039": {
+  "need": "Does Droppy Button always render type=\"button\", leaving a form without a default submit button for Enter?",
+  "trigger": "Button props table showed no `type` prop, and the docs listed a test story named Test Defaults To Type Button.",
+  "cue": "Its name states the exact behaviour in question, the button's default type; no other listed story concerns form submission."
+ },
+ "i040": {
+  "need": "How should ProgressBar be used as Mealdrop's checkout step indicator so users can tell they moved from contact to delivery details?",
+  "trigger": "StepIndicator in the checkout is custom; ProgressBar docs list an unexpanded 'Mealdrop Checkout Steps' story.",
+  "cue": "Its name matches the checkout step indicator the complaint is about; other ProgressBar stories cover generic props and clamping."
+ },
+ "i041": {
+  "need": "How does Droppy's own Mealdrop cart line wire a QuantityStepper per dish (value/onChange, min, aria-label, removal), so the basket can copy it?",
+  "trigger": "App's basket sidebar uses Select while the dish modal uses QuantityStepper; QuantityStepper docs showed only Default/Value/Min in full and listed the rest.",
+  "cue": "Listed as 'Cart lines with per-dish quantity steppers': the only Mealdrop-context story, matching exactly the basket row being changed."
+ },
+ "i042": {
+  "need": "Does Button default to type=\"button\" with no way to change it, which would block implicit submission of a real form?",
+  "trigger": "Agent noted Button's documented props have no `type` and that a story is literally named \"Test Defaults To Type Button\".",
+  "cue": "The agent called out the story by its literal name: it promises to show Button's default type."
+ },
+ "i043": {
+  "need": "What does Modal's only story actually render: what the ModalDemo wrapper and its body contain, as a model for the Get help modal?",
+  "trigger": "Component docs visible in this run each showed a single terse `Empty` story; the task needs a multi-step help modal built on Modal.",
+  "cue": "Empty was the only story Modal offered, so there was no alternative to choose from."
+ },
+ "i044": {
+  "need": "What is QuantityStepper made of and how is it meant to be composed, since the cart-line story hid its markup?",
+  "trigger": "The cart-line story had just returned only `<CartLines />`, leaving the agent without any concrete QuantityStepper usage beyond the basic props.",
+  "cue": "Anatomy was the remaining structural story for the component; the others listed were single props, bounds behaviour and tests."
+ },
+ "i045": {
+  "need": "Does Button really default to type=\"button\", with no documented way to make it the form's submit button?",
+  "trigger": "Button's documented props had no `type`, and the docs listed a test story named \"Defaults To Type Button\".",
+  "cue": "Its name asserts the default button type, the one fact that decides how Enter-to-submit can be built."
+ },
+ "i046": {
+  "need": "How is the cart panel's checkout action stack composed, and which Button props make the primary and secondary actions?",
+  "trigger": "Button docs listed 'Mealdrop Checkout Actions: the action stack in Mealdrop's cart panel'; task adds Schedule delivery beside Checkout.",
+  "cue": "Description names the cart panel's action stack, exactly where 'Order now' and 'Schedule delivery' go."
+ },
+ "i047": {
+  "need": "What does a Mealdrop cart line built with QuantityStepper look like in code: the props per dish and the surrounding row layout?",
+  "trigger": "Both UIs read (Select in basket, QuantityStepper in dish modal), 'Choosing components' read; QuantityStepper docs gave source for only Default, Value and Min.",
+  "cue": "'Mealdrop Cart Line: Cart lines with per-dish quantity steppers' is the one app-context example, and it names the exact UI being fixed."
+ },
+ "i048": {
+  "need": "Does Droppy's Button default to type=\"button\", and can it be made a submit button for the checkout forms?",
+  "trigger": "Checkout steps use div wrappers with onClick buttons; agent saw no documented type prop on Button but a 'Test Defaults To Type Button' story.",
+  "cue": "Agent singled it out by name: the story about the default type attribute, decisive for Enter-to-submit."
+ },
+ "i049": {
+  "need": "How should ProgressBar present the checkout steps so users notice the move from contact to delivery details?",
+  "trigger": "Complaint that users can't tell the page moved on; ProgressBar docs list an unexpanded 'Mealdrop Checkout Steps'.",
+  "cue": "Name matches the checkout step indicator; the remaining ProgressBar stories cover generic props and clamping."
+ },
+ "i050": {
+  "need": "How does QuantityStepper behave at min and max: do the buttons disable, and can a basket line be stepped below one?",
+  "trigger": "After finding no written guidance in the package, the agent re-read the cart reducer and hooks, then returned to the stepper's listed stories.",
+  "cue": "Name states the edge behaviour at min/max, relevant to how a basket row should decrement or remove; remaining stories were props and tests."
+ },
+ "i051": {
+  "need": "Does QuantityStepper's sole story show anything beyond the props table about how or where the stepper should be used?",
+  "trigger": "Docs for the stepper, Select and NumberField were minimal, and a look inside the design-system package for docs files returned nothing.",
+  "cue": "'Empty' is QuantityStepper's only story; with no guidance pages found, it was the last documented source."
+ },
+ "i052": {
+  "need": "Does QuantityStepper's only story reveal more about its intended use or markup than the short docs page, to justify using it for basket quantities?",
+  "trigger": "Docs for QuantityStepper, Select and NumberField each gave a props table plus one 'Empty' story; the package README mentioned only Select.",
+  "cue": "'Empty' was the sole story listed for QuantityStepper in the story-id listing, so it was the only one available."
+ },
+ "i053": {
+  "need": "How does the design system's checkout step indicator use ProgressBar and label it so the current step reaches screen-reader users?",
+  "trigger": "Step-change complaint in checkout; ProgressBar docs, fetched alongside the accessibility guidelines, described a story as Mealdrop's checkout step indicator.",
+  "cue": "Described as Mealdrop's checkout step indicator; the other listed stories are prop demos, Anatomy and tests."
+ },
+ "i054": {
+  "need": "How should the checkout step indicator use ProgressBar to convey step changes, given the reference example's actual source?",
+  "trigger": "ProgressBar and Progress docs showed all stories in full; complaint is that users can't tell checkout moved on.",
+  "cue": "Name matches the app's checkout step indicator directly, the component tied to the step-change complaint."
+ },
+ "i055": {
+  "need": "How does the design system's cart-line example use QuantityStepper in a cart row (props, bounds, layout)?",
+  "trigger": "The dish modal used QuantityStepper while the cart did not; the stepper docs listed a story named \"Mealdrop Cart Line\".",
+  "cue": "The only QuantityStepper story set in a Mealdrop cart line, where the app's quantity interaction differs."
+ },
+ "i056": {
+  "need": "Can a Droppy Button ever be a form's submit button, or does it always render type=\"button\"?",
+  "trigger": "Button's props table had no `type`, and the docs listed a story named \"Test Defaults To Type Button\".",
+  "cue": "Its name states the default type directly, the one fact deciding whether a Button can submit a form."
+ },
+ "i057": {
+  "need": "How does the design system's cart panel arrange its primary and secondary action Buttons, and with which props?",
+  "trigger": "Variants story showed the available styles but not which pairing the cart panel uses; the task changes that panel's action buttons.",
+  "cue": "Named for the checkout actions in the cart, the exact button stack the task asks to rename and extend."
+ },
+ "i058": {
+  "need": "Does the design system's Mealdrop checkout form use a form element, and does it include any submit control for Enter?",
+  "trigger": "Agent was checking how the design system supports submit behaviour, after learning Button has no type prop.",
+  "cue": "Description \"Mealdrop's checkout form\" marks it as the design system's reference for the screen being fixed."
+ },
+ "i059": {
+  "need": "Can Heading's visual size be set independently of its semantic level, so heading levels can be corrected without changing appearance?",
+  "trigger": "Grep showed the checkout page title rendered at level 2 with no level-1 heading; Heading props list both size and level.",
+  "cue": "Its name states the exact capability needed: size decoupled from level."
+ },
+ "i060": {
+  "need": "How is Modal actually composed (what goes inside it, how it opens and closes) for the planned 'Get help' dialog?",
+  "trigger": "Docs sweep across components returned only a props table and one 'Empty' story each; the task needs a 'Get help' modal.",
+  "cue": "Modal backs the required 'Get help' flow, and 'Empty' is its only story."
+ },
+ "i061": {
+  "need": "How does the design system's reference checkout form set up its Inputs: labels, grouping, and any autocomplete or other native attributes?",
+  "trigger": "Complaints concern missing autofill and unclear step change; Input's props table lists only label and error, with other stories named only.",
+  "cue": "Named after Mealdrop's checkout form, the screen under repair; the other listed stories are prop demos or tests."
+ },
+ "i062": {
+  "need": "Does Button always render type=\"button\", meaning the checkout steps have no submit button for Enter?",
+  "trigger": "After reading the checkout form code, Button docs showed no `type` in the props table and listed \"Test Defaults To Type Button\".",
+  "cue": "Only Button story name mentioning the native type; it was loaded alongside the checkout-specific actions story."
+ },
+ "i063": {
+  "need": "How does Droppy's reference checkout step indicator use ProgressBar, including its accessible label and the step wording?",
+  "trigger": "App StepIndicator read; ProgressBar docs listed 'Mealdrop Checkout Steps: Mealdrop's checkout step indicator' without source; accessibility guidelines just read.",
+  "cue": "Describes itself as Mealdrop's checkout step indicator, the component whose step change users cannot perceive."
+ },
+ "i064": {
+  "need": "How does Droppy's cart panel stack a primary checkout Button with a secondary action, and which props distinguish them?",
+  "trigger": "Task needs primary \"Order now\" beside secondary \"Schedule delivery\" in the cart sidebar; Button docs listed this story with a description only.",
+  "cue": "Described as \"The action stack in Mealdrop's cart panel\", which is exactly the footer the task modifies."
+ },
+ "i065": {
+  "need": "How does the design system's cart panel arrange its primary and secondary Buttons, and with which props?",
+  "trigger": "Sidebar and Button docs fetched for the cart footer change; Button props lack a variant, and this cart story was listed unseen.",
+  "cue": "Described as \"The action stack in Mealdrop's cart panel\", the footer being reworked; others were per-prop or test stories."
+ },
+ "i066": {
+  "need": "How does the design system compose a basket line around a per-dish QuantityStepper (layout, props, labelling)?",
+  "trigger": "Basket uses a Select for quantity while the dish modal uses QuantityStepper; stepper docs described a story as cart lines with per-dish steppers.",
+  "cue": "Its description, cart lines with per-dish quantity steppers, is exactly the basket UI about to be converted."
+ },
+ "i067": {
+  "need": "What does the hidden CheckoutStepIndicator helper do with ProgressBar: how are the step label and current step exposed?",
+  "trigger": "ProgressBar docs had printed every story including this one; the agent had just fetched both ProgressBar and Progress docs.",
+  "cue": "The only ProgressBar story about checkout steps, the widget tied to the step-change complaint."
+ },
+ "i068": {
+  "need": "Do Droppy's Button docs show or sanction a `type` attribute, so a Button can act as a form's submit button?",
+  "trigger": "Docs prop table had no `type`, yet the shipped .d.ts says ButtonProps extends native button props; agent wanted the docs' word before relying on it.",
+  "cue": "Among unseen stories (Round, Icon, Icon Size, Disabled, Class Name, Anatomy), Anatomy describes the control itself rather than one visual prop."
+ },
+ "i069": {
+  "need": "Does the design system's reference checkout form place Inputs in a native form element, and with what submit control?",
+  "trigger": "Agent had diagnosed fields in a div rather than a form; Input docs listed \"Mealdrop's checkout form, with two fields in error.\"",
+  "cue": "The design system's rendition of the form being fixed; other Input stories are single-prop demos, Anatomy or tests."
+ },
+ "i070": {
+  "need": "How should each QuantityStepper be named for assistive technology when one sits on every basket line, and what does an aria-label look like?",
+  "trigger": "Props table listed an unexplained aria-label prop; the basket will render one stepper per dish instead of the modal's single stepper.",
+  "cue": "Named after the one prop the fully shown stories had not demonstrated and that per-dish steppers would need."
+ },
+ "i071": {
+  "need": "Does Button render type=\"button\" by default, so that it would not submit a surrounding form unless told to?",
+  "trigger": "DOM walkthrough reported zero form elements in checkout; the Button props table just fetched listed no `type` prop.",
+  "cue": "Only Button story whose name mentions the type attribute."
+ },
+ "i072": {
+  "need": "What parts and props make up Input, and does its anatomy expose the native input for name, type or autocomplete?",
+  "trigger": "Documented props are only label/error while checkout code passes name/value/type; the Mealdrop story just loaded had shown no such attributes.",
+  "cue": "Anatomy is the structural story, the natural place to see what Input renders and accepts; the agent named it in its plan."
+ },
+ "i073": {
+  "need": "Does the story-level documentation for QuantityStepper carry any usage guidance or description beyond the terse component page?",
+  "trigger": "Component docs were terse (props plus one 'Empty' story); the guidelines search found only a component browser; list-all with story ids showed just 'Empty' stories.",
+  "cue": "'Empty' was the only story any component had; QuantityStepper was the component whose when-to-use guidance the agent needed."
+ },
+ "i074": {
+  "need": "Does Input announce its error to screen readers itself, or must the rewritten checkout add its own announcement?",
+  "trigger": "Agent had read Button's dist implementation and ProgressBar CSS; Input docs list Test Error Is Announced without source.",
+  "cue": "Test name claims the error is announced, directly addressing how validation errors reach assistive technology."
+ },
+ "i075": {
+  "need": "How should an icon-only Button, such as an order's actions-menu trigger, be given an accessible name?",
+  "trigger": "Planning an actions menu per order while surveying component docs; Button's story list included \"Icon Only Needs A Label\" without source.",
+  "cue": "Its name promises the rule for icon-only buttons, the likely shape of a compact menu trigger; other names are plain props or tests."
+ },
+ "i076": {
+  "need": "How are primary and secondary Buttons composed in MealDrop's cart panel footer, where \"Schedule delivery\" must join \"Order now\"?",
+  "trigger": "Fetched Button and Sidebar docs for the cart change; Button listed a story described as the action stack in Mealdrop's cart panel.",
+  "cue": "Description names the exact surface being edited; other listed stories cover single props, anatomy or tests."
+ },
+ "i077": {
+  "need": "How does the design system lay out the cart panel's action buttons, and which Button props distinguish the primary action from the secondary one?",
+  "trigger": "Task needs a primary 'Order now' and a secondary 'Schedule delivery' in the cart sidebar; Button's props table offers only clear, round and large flags.",
+  "cue": "Its name ties Button to Mealdrop's checkout actions, the very buttons the task changes; most other stories are single-prop demos."
+ },
+ "i078": {
+  "need": "How does the design system render quantity on a cart line: a QuantityStepper per dish rather than the basket's Select?",
+  "trigger": "Dish modal uses QuantityStepper, basket uses Select; QuantityStepper docs list a Mealdrop Cart Line story.",
+  "cue": "Description 'Cart lines with per-dish quantity steppers' matches the basket view being made consistent."
+ },
+ "i079": {
+  "need": "How is Droppy's Modal composed: which props (isOpen, onClose, aria-label) and does it offer title or footer parts for the 'Get help' dialog?",
+  "trigger": "Had just re-read FoodItemModal, the app's existing Modal usage, while planning a new help modal; Modal's Anatomy story was listed without source.",
+  "cue": "'Anatomy' is the story expected to lay out a component's parts and slots, which is what a new modal flow needs."
+ },
+ "i080": {
+  "need": "Does Droppy's checkout form example place Inputs in a real `<form>` with native props, and how is that form submitted?",
+  "trigger": "Checkout steps lacked a `<form>`; the agent chose to check the Mealdrop-specific stories for Button and Input.",
+  "cue": "The Mealdrop-specific Input story, showing an entire checkout form rather than one prop."
+ },
+ "i081": {
+  "need": "How does Droppy's checkout step indicator use ProgressBar to tell users which step they are on?",
+  "trigger": "Users can't tell checkout moved to delivery details; the app has a StepIndicator, and ProgressBar docs listed a checkout-steps story.",
+  "cue": "Named for the checkout step indicator itself; other ProgressBar stories were prop, clamping or test cases."
+ },
+ "i082": {
+  "need": "How does the design system's cart-line example place QuantityStepper in a basket row, and what else does the row contain?",
+  "trigger": "Choosing-components page and stepper docs read; agent had just reviewed the cart slice and dish list before redesigning the basket rows.",
+  "cue": "The stepper story set in a Mealdrop cart, matching the basket under change; other stories isolate props or tests."
+ },
+ "i083": {
+  "need": "How does the design system's checkout step indicator use ProgressBar: which value, max and label, and what text sits beside it?",
+  "trigger": "ProgressBar docs showed Default/Value/Max and listed 'Mealdrop Checkout Steps' by name; users cannot tell the page moved to delivery details.",
+  "cue": "The name matches the app's own StepIndicator; it is the only ProgressBar story set in the checkout flow."
+ },
+ "i084": {
+  "need": "How is QuantityStepper used in code (value, onChange and aria-label wiring) before putting it into the basket rows?",
+  "trigger": "Agent had just concluded from 'Choosing components' that the basket must converge on QuantityStepper; its docs offered a single story, Anatomy.",
+  "cue": "Anatomy was the only QuantityStepper story the docs offered; there was no other example to choose."
+ },
+ "i085": {
+  "need": "How does Mealdrop's cart panel compose its checkout action stack, and which Button props mark the primary and secondary actions?",
+  "trigger": "Variants story just listed large/clear options; the task puts Schedule delivery beside Checkout in the cart sidebar.",
+  "cue": "Name 'Mealdrop Checkout Actions' points to the exact cart action stack the task modifies."
+ },
+ "i086": {
+  "need": "Which Button variants exist for telling a primary action (\"Order now\") from a secondary one (\"Schedule delivery\")?",
+  "trigger": "Task requires a primary and a secondary button in the cart sidebar; Button props show only clear, round, large, with no explicit primary/secondary.",
+  "cue": "\"Variants\" promised every Button style side by side, the quickest way to map primary and secondary onto real props."
+ },
+ "i087": {
+  "need": "Does Droppy's Button default to type=\"button\", so the checkout step buttons cannot trigger implicit form submission?",
+  "trigger": "Root cause: fields are in a div, not a form; Button docs list props without type.",
+  "cue": "The test story's name is about the type default, the fact that decides whether a form will submit on Enter."
+ },
+ "i088": {
+  "need": "How does the design system's cart-line example lay out and wire a QuantityStepper per dish (bounds, label, removal)?",
+  "trigger": "After reading cart and modal code plus QuantityStepper, Select and choosing-components docs, the stepper listing offered a cart-line story without source.",
+  "cue": "Described as \"Cart lines with per-dish quantity steppers\", matching the basket UI being changed; other listed stories are prop demos and tests."
+ },
+ "i089": {
+  "need": "Does Droppy Button hard-code type=\"button\", or can it serve as the submit button of a real form?",
+  "trigger": "Agent diagnosed missing `<form>` as root cause, then saw Button props without `type` and a test story named for a type=button default.",
+  "cue": "Name directly addresses the button's native type, the one fact deciding whether Enter can submit; no other Button story does."
+ },
+ "i090": {
+  "need": "How does the design system's own checkout form use Input: does it pass autocomplete, type or name, and how are the steps grouped?",
+  "trigger": "Input props table listed only label and error, leaving open whether autofill hints can be passed for the checkout fields.",
+  "cue": "Named after the MealDrop checkout form being audited; the other stories are single props or tests."
+ },
+ "i091": {
+  "need": "How should QuantityStepper's aria-label name each basket line's stepper group, e.g. with the dish name?",
+  "trigger": "Agent was inspecting QuantityStepper markup and CSS in dist while preparing to replace the basket Select.",
+  "cue": "Description says aria-label names the group because the buttons alone don't say what of, which matters for several cart rows."
+ },
+ "i092": {
+  "need": "Does Heading forward a ref and native props like id or tabIndex, so focus can be moved to the new step's heading?",
+  "trigger": "Walkthrough confirmed the step change is not perceivable; Heading's props table lists only className, size and level.",
+  "cue": "Only Heading story whose name promises ref and native prop forwarding, which programmatic focus needs."
+ },
+ "i093": {
+  "need": "How does Droppy's checkout example combine its primary and secondary Buttons, in props and layout?",
+  "trigger": "Variants showed the available looks but not how two actions are paired; the cart footer needs primary plus secondary.",
+  "cue": "Only Button story named after Mealdrop's checkout actions, the area being changed; loaded right after Variants."
+ },
+ "i094": {
+  "need": "Does Droppy's reference checkout form put Inputs in a real `<form>`, and does it include a submit button or handler?",
+  "trigger": "App checkout steps had no `<form>` element; Input docs listed a checkout-form story with only a one-line description.",
+  "cue": "Listed as \"Mealdrop's checkout form, with two fields in error\": the design system's version of the screen under repair."
+ },
+ "i095": {
+  "need": "Does Button default to type=\"button\", with no way to make it the submit button of the checkout form?",
+  "trigger": "Button's props table lists no `type`, and the docs list a story literally named \"Test Defaults To Type Button\".",
+  "cue": "Its name states the exact behaviour in question, the default button type; no other listed Button story mentions type or forms."
+ },
+ "i096": {
+  "need": "Does the design system's Mealdrop checkout form wrap its Inputs in a real <form> element, enabling Enter to submit?",
+  "trigger": "Root cause identified as a missing <form>; agent checking directly relevant stories before changing code.",
+  "cue": "'Mealdrop Checkout Form' is the Input story about the same checkout form being fixed."
+ },
+ "i097": {
+  "need": "Does Button always render type=\"button\", meaning it can never be the checkout form's submit button?",
+  "trigger": "Button's documented props had no `type`, and a story was literally named \"Test Defaults To Type Button\".",
+  "cue": "The name spells out the default type; nothing else in the Button story list touches form submission."
+ },
+ "i098": {
+  "need": "How are Mealdrop's checkout action Buttons composed: is there a type, form wrapper or submit pattern to copy?",
+  "trigger": "Agent checking 'directly relevant stories' after finding no <form> and no documented Button type.",
+  "cue": "Name points at Mealdrop's own checkout actions, the kind of buttons whose Enter behaviour must change."
+ },
+ "i099": {
+  "need": "Does Button default to type=\"button\", so the existing checkout Buttons cannot trigger implicit form submission?",
+  "trigger": "Button's props table had no `type` prop, and the story list contained \"Test Defaults To Type Button\".",
+  "cue": "Its name speaks directly to the default type; the agent called it one of two directly relevant stories."
+ },
+ "i100": {
+  "need": "Does the design system's own checkout example wrap its Inputs in a real `<form>`, and how is it submitted?",
+  "trigger": "Diagnosis was a missing `<form>`; Input docs listed \"Mealdrop's checkout form, with two fields in error\" just as Button's type question arose.",
+  "cue": "The only Input story showing a whole checkout form rather than a single field or prop."
+ },
+ "i101": {
+  "need": "What does the reference CheckoutStepIndicator actually render around ProgressBar, such as heading, step text and accessible label?",
+  "trigger": "ProgressBar docs showed all stories in full but no props table; the checkout-steps story appears to have been just a wrapper call.",
+  "cue": "The only ProgressBar story modelled on MealDrop's checkout step indicator, the component the accessibility complaint points at."
+ },
+ "i102": {
+  "need": "What parts make up QuantityStepper and how should it be composed, since the cart-line example showed no JSX?",
+  "trigger": "The cart-line story had been an opaque wrapper; the agent had since read the cart's Select-based menu and the Select docs.",
+  "cue": "\"Anatomy\" suggests a structural overview of the stepper; the other listed stories cover single props or tests."
+ },
+ "i103": {
+  "need": "How does the design system arrange the cart panel's action buttons, and which props mark the primary versus the secondary action?",
+  "trigger": "Task adds a secondary Schedule delivery button beside a primary Order now; Button docs described a story as the cart panel's action stack.",
+  "cue": "Description says it is the action stack in Mealdrop's cart panel, the exact area being changed."
+ },
+ "i104": {
+  "need": "How does Droppy's own checkout step indicator compose ProgressBar: value/max, label and the step text around it?",
+  "trigger": "App StepIndicator is a hand-rolled bar; ProgressBar and Progress docs printed every story in full but documented no props.",
+  "cue": "'Mealdrop Checkout Steps' is the app-specific ProgressBar example, the same checkout step indicator the agent had just read in the app."
+ },
+ "i105": {
+  "need": "What accessible name should a QuantityStepper carry on a cart line, and how is `aria-label` passed to it?",
+  "trigger": "Ready to replace the basket Select with QuantityStepper after tracing cart state and remove handlers; the `aria-label` story was listed without source.",
+  "cue": "Named for the stepper's only accessibility prop; a quick check of label wording before writing the JSX."
+ },
+ "i106": {
+  "need": "Does Mealdrop's checkout-actions example show Buttons given a `type` or used inside a form to submit?",
+  "trigger": "Button had no `type` prop; the agent decided to check the type test \"and the Mealdrop-specific stories\".",
+  "cue": "One of the \"Mealdrop-specific stories\": Button's only Mealdrop example, and it is about checkout actions."
+ },
+ "i107": {
+  "need": "How does Droppy's checkout step indicator use ProgressBar and surrounding text to tell users which step they are on?",
+  "trigger": "ProgressBar docs listed story names only, among them \"Mealdrop Checkout Steps\", shortly after the agent read the app's StepIndicator.",
+  "cue": "The Mealdrop-specific ProgressBar story, matching the app's checkout step indicator; loaded alongside Input's Mealdrop story."
+ },
+ "i108": {
+  "need": "Does the design system's checkout example show a Button submitting a form, for instance with type=\"submit\"?",
+  "trigger": "The type-default test story showed only a bare button; the agent planned to wrap checkout fields in a form needing a submit button.",
+  "cue": "The Button story set in MealDrop's checkout context, the most likely place to show a submit action."
+ },
+ "i109": {
+  "need": "How does the design system itself build a basket line around QuantityStepper, as a model for replacing the basket's Select?",
+  "trigger": "Dish modal uses QuantityStepper but the basket uses a Select; the stepper docs listed a MealDrop cart-line story without its source.",
+  "cue": "Only stepper story named after the basket use case being changed; the others cover single props, Anatomy or tests."
+ },
+ "i110": {
+  "need": "How does the design system's cart-panel example lay out and style its primary and secondary action Buttons?",
+  "trigger": "Task adds a secondary \"Schedule delivery\" beside a primary \"Order now\" in the cart sidebar; Button docs listed a cart-panel action-stack story.",
+  "cue": "Its description, \"The action stack in Mealdrop's cart panel\", matches the footer being changed; other stories demo single props."
+ },
+ "i111": {
+  "need": "Does Droppy Button render type=\"button\" by default, so the checkout step buttons would not submit a wrapping form?",
+  "trigger": "Button docs listed props without `type` and a test story named for a type=button default, while the agent was auditing checkout form semantics.",
+  "cue": "Only story whose name mentions the button's native type; the other listed stories cover size, icon, disabled state and click handling."
+ },
+ "i112": {
+  "need": "How does the design system's checkout step indicator use ProgressBar to convey the current step (value, max, label)?",
+  "trigger": "Users cannot tell checkout has moved to delivery details; ProgressBar docs listed a story named \"Mealdrop Checkout Steps\".",
+  "cue": "Named for checkout steps, mirroring the app's step indicator; the other ProgressBar stories are prop demos or clamp tests."
+ },
+ "i113": {
+  "need": "Does Droppy's Button default to type=\"button\" with no way to make it a submit button, so the checkout forms cannot submit on Enter?",
+  "trigger": "Fields sit in a plain div; Button's documented props include no type, and a 'Test Defaults To Type Button' story is listed.",
+  "cue": "Story name states the precise behaviour the agent suspected; it singled it out by name."
+ },
+ "i114": {
+  "need": "How does the design system render quantity on a cart line: a QuantityStepper per dish rather than the basket's current Select?",
+  "trigger": "Basket uses Select for quantity while the restaurant modal uses QuantityStepper; agent had read Choosing components and the QuantityStepper docs.",
+  "cue": "Listed description 'Cart lines with per-dish quantity steppers' matches the basket UI being reconciled; other stories cover generic props."
+ },
+ "i115": {
+  "need": "How does the design system expect ProgressBar to show and announce the current checkout step in Mealdrop's checkout?",
+  "trigger": "Complaint that users can't tell checkout moved on; ProgressBar docs list Mealdrop Checkout Steps without source.",
+  "cue": "Name matches the app's checkout StepIndicator, unlike the generic ProgressBar stories."
+ },
+ "i116": {
+  "need": "How does the design system's checkout step example use ProgressBar to tell users which step they are on?",
+  "trigger": "ProgressBar docs listed a 'Mealdrop Checkout Steps' story by name only; the app's step indicator is where users lose track of progress.",
+  "cue": "Named for Mealdrop's checkout steps, the step indicator in the flow being fixed; other listed stories are prop or test cases."
+ },
+ "i117": {
+  "need": "How does the design system's own cart example stack its checkout buttons, and which props give the main action more weight than the other?",
+  "trigger": "'Variants' had just shown only flag-based styles; the Button docs also listed a story named after Mealdrop's checkout actions.",
+  "cue": "Named for Mealdrop's checkout actions, matching the cart footer under change; the other unloaded stories are prop demos or tests."
+ },
+ "i118": {
+  "need": "How does Droppy's cart panel pair a primary checkout Button with a secondary one, in props and layout?",
+  "trigger": "Agent had studied Button's props and source; the task adds a secondary \"Schedule delivery\" beside the primary cart button.",
+  "cue": "Described as \"The action stack in Mealdrop's cart panel\", the footer the task changes."
+ },
+ "i119": {
+  "need": "How does the Sidebar story compose Mealdrop's cart panel, and where do footer actions like Checkout live?",
+  "trigger": "Checkout Actions story showed the stack inside a Card, not Sidebar; Sidebar docs list a footer prop and Mealdrop Cart Panel.",
+  "cue": "Description 'Mealdrop's cart panel, opened from the header's cart button' matches the sidebar being extended."
+ },
+ "i120": {
+  "need": "Does Input accept anything beyond label and error (autocomplete, name, type), as the checkout fields require?",
+  "trigger": "Input docs were 454 characters: a label/error prop table and a single \"Empty\" story.",
+  "cue": "\"Empty\" was the only story Input had; loading it directly was the one remaining Storybook lookup."
+ },
+ "i121": {
+  "need": "Does Heading forward a ref and native props such as id or tabIndex, so focus can move to the step heading?",
+  "trigger": "Heading docs showed only className/size/level props, but listed a test story named \"Test Forwards Ref And Props\".",
+  "cue": "The name answers whether a ref can reach the heading element; other Heading stories are about size, level and tag."
+ },
+ "i122": {
+  "need": "Is passing attributes outside Button's documented props (such as `type`) a documented pattern, as the className story's pass-through might indicate?",
+  "trigger": "Shipped types showed ButtonProps extends native button props, but the Storybook props table did not list `type`.",
+  "cue": "Only listed Button story about how an extra attribute reaches the underlying element ('merges ... rather than replacing')."
+ },
+ "i123": {
+  "need": "Does Droppy's Button default to type=\"button\", and therefore not submit a form when the checkout steps are wrapped in one?",
+  "trigger": "Button's documented props have no type; the docs listed 'Test Defaults To Type Button' without source.",
+  "cue": "Agent named it directly: the story asserting the default type, the missing piece in the props table."
+ },
+ "i124": {
+  "need": "How is QuantityStepper structured and controlled, and does its anatomy story carry any guidance on intended use?",
+  "trigger": "Cart-line story returned an opaque wrapper; NumberField and component-browser docs gave no guidance on which quantity control to use.",
+  "cue": "Anatomy stories usually spell out a component's parts; it was the remaining non-prop, non-test story for QuantityStepper."
+ },
+ "i125": {
+  "need": "Which visual variants does Button offer, and which one should serve as the secondary style beside a primary button?",
+  "trigger": "Task wants a primary 'Order now' and secondary 'Schedule delivery'; Button's props had only clear/round/large flags, no variant prop.",
+  "cue": "'Variants' promised every button style side by side; other undisplayed names were single props or tests."
+ },
+ "i126": {
+  "need": "Does Button default to type=\"button\", and can it be given type=\"submit\" so Enter submits the checkout form?",
+  "trigger": "Button props table listed no `type`; the story list included a test story named after type defaults.",
+  "cue": "The one story about the type attribute, which decides whether Enter can submit through this button."
+ },
+ "i127": {
+  "need": "Does the design system's Mealdrop checkout form use a real form element around the Inputs, as a model for wiring Enter?",
+  "trigger": "Fields sit in a plain div; Input docs list 'Mealdrop Checkout Form' (description: Mealdrop's checkout form, two fields in error).",
+  "cue": "The Mealdrop checkout-form story is the design system's version of the exact screen being fixed."
+ },
+ "i128": {
+  "need": "Does Droppy's checkout actions example show a Button wired to submit a form, or any form/submit pattern?",
+  "trigger": "Compiled Button hard-codes type \"button\"; a listing of the package's exports had just been printed in search of a form pattern.",
+  "cue": "The Button story tied to checkout actions, where a submit pattern would appear if the design system had one."
+ },
+ "i129": {
+  "need": "What does ProgressBar expose to assistive technology (value range, accessible name from `label`) when used as a step indicator?",
+  "trigger": "A scripted walk of checkout had confirmed both complaints; agent had moved on to design-system semantics and just fetched docs for a similarly named Progress component.",
+  "cue": "A test story named for reporting the range, i.e. the ARIA values; the same name appeared in the Progress docs just fetched."
+ },
+ "i130": {
+  "need": "Will Droppy Button default to type=\"button\", so checkout Buttons inside a new <form> need an explicit type=\"submit\"?",
+  "trigger": "Happy-dom walk showed zero forms and autocomplete=\"off\"; agent checking remaining component APIs before fixing.",
+  "cue": "Name 'Test Defaults To Type Button' states the default type, decisive once fields move into a form."
+ },
+ "i131": {
+  "need": "Does the design system's Mealdrop checkout form wrap Inputs in a real form element, and how does it handle submission?",
+  "trigger": "App checkout inputs sit in a div with class form; Input docs list 'Mealdrop Checkout Form' with its description.",
+  "cue": "Description \"Mealdrop's checkout form, with two fields in error\" matches the screen being fixed."
+ },
+ "i132": {
+  "need": "How is the cart panel's action stack composed, and which Button props make Checkout primary versus a secondary action?",
+  "trigger": "Button docs listed 'Mealdrop Checkout Actions: the action stack in Mealdrop's cart panel'; task adds Schedule delivery beside Checkout.",
+  "cue": "Description 'The action stack in Mealdrop's cart panel' names the exact spot the new buttons go."
+ },
+ "i133": {
+  "need": "Does Input's label prop give the control its accessible name, so checkout fields are properly labelled for screen readers?",
+  "trigger": "Auditing checkout for assistive-technology users; the checkout form story showed Inputs identified only by a label prop.",
+  "cue": "Test title states the label-names-control behaviour directly; loaded straight after the checkout form story."
+ },
+ "i134": {
+  "need": "How does Button's underlying <button> behave inside a form: does any story show its type or submit behaviour?",
+  "trigger": "Button docs had no documented type prop; only six stories were listed without source, none about type or forms.",
+  "cue": "'Anatomy: The control and its optional leading glyph' was the only structural story; the others cover Round, Icon, Icon Size, Disabled, Class Name."
+ },
+ "i135": {
+  "need": "Can Button's default type=\"button\" be overridden, for example with type=\"submit\", as the story about that default might show?",
+  "trigger": "Full Button docs included a story titled 'Test Defaults To Type Button'; agent concluded Button defaults to type=\"button\", which blocks implicit submit.",
+  "cue": "The story whose title states the `type` default, the exact behaviour the fix depends on."
+ },
+ "i136": {
+  "need": "What does QuantityStepper's one story say about its structure and intended use, now that the choosing-components guidance page is unavailable?",
+  "trigger": "Lookup of 'choosing-components--docs' had just failed, leaving only short docs with one 'Anatomy' story each for stepper, Select and NumberField.",
+  "cue": "'Anatomy' is the only story the stepper docs offer, so it was the remaining component-level source."
+ },
+ "i137": {
+  "need": "Does the test story assert or show that Button always renders type=\"button\", so it cannot submit the checkout form?",
+  "trigger": "A 20 KB Button docs dump documented no `type` prop but contained a story titled \"Test Defaults To Type Button\".",
+  "cue": "Its name states the default type, the property governing Enter-to-submit; loading it alone isolates it from the long dump."
+ },
+ "i138": {
+  "need": "How does Droppy's reference checkout form mark up its fields: form and section structure, headings, and any name or autocomplete attributes?",
+  "trigger": "Complaints concern autofill and step orientation in checkout; Input's props table listed only label and error.",
+  "cue": "Only Input story modelled on the checkout form itself; the rest were single-prop, anatomy or test stories."
+ },
+ "i139": {
+  "need": "Does Button's Anatomy story expose anything about the rendered element, such as a type attribute or pass-through native props?",
+  "trigger": "Button's type handling was still being pieced together from the bundle; 'Anatomy' was listed without source in the Button docs.",
+  "cue": "'Anatomy' conventionally shows a component's parts and markup, unlike the visual-variant stories (Large, Round, Icon, Disabled)."
+ },
+ "i140": {
+  "need": "How does Mealdrop's cart panel arrange and style its checkout button alongside a secondary action?",
+  "trigger": "Task renames the cart's \"Checkout\" to \"Order now\" and adds a secondary \"Schedule delivery\" beside it.",
+  "cue": "Name points at the checkout action buttons, the very group the task changes; other names are prop demos or tests."
+ },
+ "i141": {
+  "need": "Does Button force type=\"button\", or could the checkout's step buttons become submit buttons inside a real form?",
+  "trigger": "Having found Input hard-codes autoComplete off in dist, the agent fetched Button docs: no `type` prop, plus a test story about a type default.",
+  "cue": "Only Button story named after the native type attribute; the rest cover appearance, icons, disabled state and click handling."
+ },
+ "i142": {
+  "need": "Does any Button story document native attributes such as `type`, given the package types allow them but the props table does not?",
+  "trigger": "Package types and compiled source showed Button spreads native button props, but the docs' props table and three displayed stories never mention `type`.",
+  "cue": "The only Button story listed without source; its blurb about 'the control' hinted at the rendered element."
+ },
+ "i143": {
+  "need": "What does ProgressBar's `label` prop do: is it a visible caption or only the accessible name, and how is it passed?",
+  "trigger": "ProgressBar props listed an unexplained `label?: string`; the checkout-steps story was opaque and the package types had just been inspected.",
+  "cue": "Named after the `label` prop, the one ProgressBar feature that could name the step for screen readers."
+ },
+ "i144": {
+  "need": "How does the design system compose QuantityStepper inside a Mealdrop cart line, as the model for the basket's quantity control?",
+  "trigger": "ShoppingCartMenu uses Select while FoodItemModal uses QuantityStepper; QuantityStepper docs list 'Mealdrop Cart Line' without source.",
+  "cue": "The only Mealdrop-specific QuantityStepper story; its name matches the basket rows under review."
+ },
+ "i145": {
+  "need": "What does a complete QuantityStepper usage look like: its parts, and how value, onChange and labelling are wired?",
+  "trigger": "Both Mealdrop stories had returned one-line wrappers, and the component browser page gave no component guidance.",
+  "cue": "With the Mealdrop story a dead end, Anatomy was the remaining unseen story likely to show the whole component, not one prop."
+ },
+ "i146": {
+  "need": "How does the design system lay out the cart panel's primary and secondary Buttons, for placing 'Order now' and 'Schedule delivery' side by side?",
+  "trigger": "Task asks for a primary 'Order now' and secondary 'Schedule delivery' in the cart sidebar; Button docs list 'Mealdrop Checkout Actions'.",
+  "cue": "Description \"The action stack in Mealdrop's cart panel\" matches exactly where the new buttons go."
+ },
+ "i147": {
+  "need": "Does this test story say anything more about Button's default type, i.e. whether a Button can ever submit a form?",
+  "trigger": "Button docs had printed seventeen stories in full with no props documented; one was titled \"Test Defaults To Type Button\".",
+  "cue": "The only Button story whose name concerns `type`, the attribute deciding whether Enter can submit a form."
+ },
+ "i148": {
+  "need": "How does Droppy's cart-panel example pair a primary and a secondary Button: which props distinguish them and how are they stacked?",
+  "trigger": "Task needs 'Order now' primary beside a secondary 'Schedule delivery' in the cart sidebar; Button docs showed only Default/Children/Clear in full.",
+  "cue": "'The action stack in Mealdrop's cart panel': the same sidebar footer the agent must extend with a second button."
+ },
+ "i149": {
+  "need": "What accessible name should each basket QuantityStepper get through aria-label, and what wording does the design system use?",
+  "trigger": "Agent had settled on QuantityStepper for basket rows; props include aria-label and the listing said the two buttons alone don't say what of.",
+  "cue": "Description says aria-label names the group; with several steppers in one basket, each needs a distinct name. Other listed stories were className, bounds, anatomy."
+ },
+ "i150": {
+  "need": "Does Button always render type=\"button\", meaning it cannot serve as a form's default submit button?",
+  "trigger": "Button's props table was a closed list with no `type`, while Enter-to-submit needs a submit button; a listed test story named the default type.",
+  "cue": "Title names the type default directly; none of the other listed stories concerns submission."
+ },
+ "i151": {
+  "need": "Does the design system's checkout example show Buttons submitting a form, for instance through a `type` prop or a form wrapper?",
+  "trigger": "Button documented no `type` prop while the agent planned to turn checkout steps into real forms; one listed story was named after checkout.",
+  "cue": "The only Button story set in Mealdrop's checkout context; the rest are single-prop demos, Anatomy or tests."
+ },
+ "i152": {
+  "need": "How does Droppy's checkout step indicator present the current step with ProgressBar, its `label` and accompanying text?",
+  "trigger": "ProgressBar docs listed \"Mealdrop's checkout step indicator\" without source, just after the accessibility guidelines and a similar Progress component were read.",
+  "cue": "Its description matches the app's StepIndicator exactly; other listed stories cover single props, clamping or tests."
+ },
+ "i153": {
+  "need": "Which parts does Input render (label, control, error) and how are they associated for assistive technology?",
+  "trigger": "Mealdrop checkout stories gave no internals; agent had just opened the design-system package directory.",
+  "cue": "'Anatomy' promises the component's parts, the closest story to Input's internal structure."
+ },
+ "i154": {
+  "need": "How does the design system's checkout step indicator use ProgressBar, and does it tell assistive technology which step is current?",
+  "trigger": "Step-change complaint; the app's StepIndicator file had just been read and ProgressBar docs listed a checkout-steps story by name only.",
+  "cue": "Name matches the app's checkout step indicator; the rest are prop demos, Anatomy and tests."
+ },
+ "i155": {
+  "need": "What parts make up QuantityStepper and how is it meant to be operated, compared with the cart's Select?",
+  "trigger": "The cart-line story returned an opaque helper, and the component-browser page and an .mdx search gave no usage guidance.",
+  "cue": "'Anatomy' promised a structural breakdown of the control; remaining unseen stories were single props, bounds or tests."
+ },
+ "i156": {
+  "need": "Does IconButton accept a className and extra attributes, so an order's actions-menu trigger can be styled and positioned?",
+  "trigger": "Finishing component research for order history; each order needs a compact actions-menu trigger, and a 'Class Name' story existed for IconButton.",
+  "cue": "'Class Name' is the story about custom styling hooks; loaded together with Badge's identically named story."
+ },
+ "i157": {
+  "need": "Does Droppy's Button render type=\"button\" by default, so it never submits the checkout form?",
+  "trigger": "Button docs list no type prop; the agent had just been reading Button's bundled source and d.ts around the hard-coded attributes.",
+  "cue": "The test story's name states the exact behaviour in question, the type default."
+ },
+ "i158": {
+  "need": "How is Modal opened and closed, and which props control its open state, for the \"Get help\" dialog?",
+  "trigger": "Docs pages in this run each showed a single Anatomy story; the task's help flow needs a Modal driven by state.",
+  "cue": "\"Open\" was a guessed name, never listed; probably chosen expecting a prop-named story for the modal's open state."
+ },
+ "i159": {
+  "need": "How does Mealdrop's cart panel arrange its action buttons, and which Button props separate the primary action from the secondary?",
+  "trigger": "Sidebar and Button docs fetched for the cart change; Button listed a story described as the action stack in Mealdrop's cart panel.",
+  "cue": "Description 'The action stack in Mealdrop's cart panel' matches the footer gaining a second button; other stories are single-prop demos."
+ },
+ "i160": {
+  "need": "Does Droppy's Button always render type=\"button\", or can it act as the submit button of a checkout form?",
+  "trigger": "Button's props table listed no `type` prop while the fix needs Enter to submit; a listed test story's title mentioned the default type.",
+  "cue": "Its name alone addresses the button's type attribute; no other listed Button story touches form submission."
+ },
+ "i161": {
+  "need": "Does Button always render type=\"button\", and does this story show any way to make it submit the surrounding form?",
+  "trigger": "Checkout steps use design-system Buttons with click handlers and no form; Button's props table lists no `type`, yet a story name mentions the type default.",
+  "cue": "Only Button story whose name refers to the native `type` attribute, which decides whether Enter can submit a form."
+ },
+ "i162": {
+  "need": "Does Button really default to type=\"button\", with no documented way to make it submit the checkout form?",
+  "trigger": "Full Button docs showed every story but documented no props, so nothing said whether `type` exists; inputs sat in a div.",
+  "cue": "Agent singled out the story \"literally named\" after the type default; reloaded alone although its source was already in the docs dump."
+ },
+ "i163": {
+  "need": "What parts does QuantityStepper consist of and how is it meant to be used, given the cart-line example revealed nothing?",
+  "trigger": "Mealdrop Cart Line returned an opaque wrapper; NumberField docs and the component browser page added no guidance on which control fits quantities.",
+  "cue": "Anatomy promises the component's structure; the remaining unloaded stories were single props or tests."
+ },
+ "i164": {
+  "need": "Do the remaining Button stories show a `type` attribute or any native-prop passthrough on the rendered button?",
+  "trigger": "Button's documented props did not include `type`, on which the Enter-to-submit fix depends.",
+  "cue": "Anatomy covers the whole control and its parts; the other unread stories each demonstrate one unrelated prop."
+ },
+ "i165": {
+  "need": "Does Button render type=\"button\" by default, so it cannot act as a form's default submit button on Enter?",
+  "trigger": "After reading the multi-step form, Button docs showed a props table without `type` and listed a test story named for a type=button default.",
+  "cue": "Only Button story about the native type attribute; the others cover appearance, icons, disabled state and click handling."
+ },
+ "i166": {
+  "need": "Does Button always render type=\"button\", meaning a plain form wrapper would not make the checkout buttons submit?",
+  "trigger": "Button's props had no `type`, and the story list included one named \"Test Defaults To Type Button\".",
+  "cue": "The story's name states the default type outright; the agent called it an important signal."
+ },
+ "i167": {
+  "need": "Does Droppy Button default to type=\"button\", and can type=\"submit\" be passed so Enter submits a real checkout form?",
+  "trigger": "Root cause found: fields sit in div.form with no <form>; Button docs show no type prop.",
+  "cue": "Name directly states Button's default type, the attribute that decides whether Enter-submission works."
+ },
+ "i168": {
+  "need": "Does the design system's reference checkout form wrap its Inputs in a real `<form>`, and how is it submitted?",
+  "trigger": "Agent had diagnosed a div instead of a form; Input docs listed a story described as Mealdrop's checkout form, without source.",
+  "cue": "Described as Mealdrop's checkout form, the same screen being fixed; other listed Input stories are single-prop demos and tests."
+ },
+ "i169": {
+  "need": "What are QuantityStepper's parts and intended interaction, as a basis for choosing it over the cart's Select?",
+  "trigger": "Cart-line story gave only an opaque helper, and the Select docs fetched next were an equally bare props table.",
+  "cue": "'Anatomy' suggested a description of the control's structure; other unseen stories were prop names, bounds or tests."
+ },
+ "i170": {
+  "need": "How does Droppy's own checkout step indicator use ProgressBar to convey the current step: label, value and max, visible step text?",
+  "trigger": "ProgressBar docs showed every story but no props table; the app's StepIndicator is where the move to delivery details goes unannounced.",
+  "cue": "The only ProgressBar story about a checkout step indicator, the exact widget the accessibility complaint concerns."
+ },
+ "i171": {
+  "need": "How does the design system's reference checkout form configure its Inputs: are autoComplete, name or type passed?",
+  "trigger": "Input's props table listed only label and error, while the complaint was that browsers never offer saved email or address.",
+  "cue": "Named for the exact checkout form under repair; other listed Input stories are prop demos, Anatomy or tests."
+ },
+ "i172": {
+  "need": "How does the design system structure Mealdrop's checkout form with Input (form element, sections, headings), as a reference for an accessible two-step checkout?",
+  "trigger": "Input docs listed only label/error props and an unexpanded 'Mealdrop Checkout Form' story, while the app's checkout uses a div with class form.",
+  "cue": "Its name matches the exact checkout form under repair; the other unexpanded stories are generic prop or test cases."
+ },
+ "i173": {
+  "need": "Does the design system's cart-line example use QuantityStepper for basket quantities, and how is it set up per line?",
+  "trigger": "Agent found modal uses QuantityStepper while the basket uses Select, and the stepper docs listed \"Mealdrop Cart Line\" without source.",
+  "cue": "Its name points at the basket row, the place where the two modalities diverge; other names are props, anatomy and tests."
+ },
+ "i174": {
+  "need": "What parts does QuantityStepper render (round buttons, live value, named group), to fit it into a cart row?",
+  "trigger": "Mealdrop Cart Line returned only <CartLines />, the component browser gave nothing, and no QuantityStepper MDX was found on disk.",
+  "cue": "'Anatomy' promises the component's structure, the next concrete source after the empty Mealdrop example."
+ },
+ "i175": {
+  "need": "How does the design system's reference checkout step indicator use ProgressBar to expose the current step to assistive technology?",
+  "trigger": "App's checkout has its own StepIndicator; ProgressBar docs listed a story described as Mealdrop's checkout step indicator.",
+  "cue": "Described as 'Mealdrop's checkout step indicator', the widget in the flow under repair; other stories are prop demos or tests."
+ },
+ "i176": {
+  "need": "How does the design system compose the cart panel's action buttons (primary vs secondary), for adding 'Schedule delivery' next to 'Order now'?",
+  "trigger": "Task requires a primary 'Order now' and secondary 'Schedule delivery' in the Sidebar footer; Button and Sidebar docs just read.",
+  "cue": "Description \"The action stack in Mealdrop's cart panel\" matches the sidebar footer the task modifies."
+ },
+ "i177": {
+  "need": "How does the design system's cart-line example use QuantityStepper for per-item quantities (props, bounds, row layout)?",
+  "trigger": "The cart sidebar used Select for quantity while the dish modal used QuantityStepper; the stepper docs listed a story named \"Mealdrop Cart Line\".",
+  "cue": "The only story placing QuantityStepper in a Mealdrop cart line, the spot that currently uses a different control."
+ },
+ "i178": {
+  "need": "Is Button's type=\"button\" default a tested, documented behaviour, so wrapping checkout steps in a form will not make its buttons submit?",
+  "trigger": "Agent had just sliced the package bundle and d.ts around Button; Button docs listed a 'Test Defaults To Type Button' story by name.",
+  "cue": "The story name states the exact fact under investigation in the bundle: the Button's default type attribute."
+ },
+ "i179": {
+  "need": "Can Badge be restyled through className so cancelled, on-the-way and delivered orders get different colours?",
+  "trigger": "Token grep showed badge colours only for default and 'positive', yet three order statuses must be distinguishable.",
+  "cue": "'Class Name' is Badge's story about custom classes, the hook for status-specific colour; third in a three-story burst."
+ },
+ "i180": {
+  "need": "Does Button offer any documented variant or prop that makes it a submit button?",
+  "trigger": "Compiled Button hard-codes type: \"button\", the docs props list no `type`, and the app has no `<form>` or type=\"submit\" anywhere.",
+  "cue": "Described as all variants side by side, \"the vocabulary a screen picks from\": the one place a submit variant would appear."
+ },
+ "i181": {
+  "need": "Does Droppy's Button default to type=\"button\", which would mean wrapping the fields in a form alone will not make Enter submit?",
+  "trigger": "Button's documented props have no type; checkout fields are in a div, not a form.",
+  "cue": "Story name 'Test Defaults To Type Button' targets exactly the default the agent's plan depends on."
+ },
+ "i182": {
+  "need": "Does Droppy's Button render type=\"button\" by default, so step buttons would not submit a <form> wrapped around the checkout fields?",
+  "trigger": "Checkout fields sit in a div.form, not a form; Button docs showed no type among visible props but named a 'Test Defaults To Type Button' story.",
+  "cue": "The only Button story whose name speaks to the native type attribute, which decides whether a form wrapper submits."
+ },
+ "i183": {
+  "need": "Which Button variants exist, and which props distinguish a primary action from a secondary one?",
+  "trigger": "Task needs a primary \"Order now\" and secondary \"Schedule delivery\"; Button's props list only clear, round and large, with undescribed story names.",
+  "cue": "\"Variants\" promises every button style side by side, the quickest way to map primary and secondary onto props."
+ },
+ "i184": {
+  "need": "Does Button force type=\"button\", or can `type=\"submit\"` be passed so the checkout forms submit on Enter?",
+  "trigger": "Full Button docs (every story printed, no props documented) included a test story about defaulting to type button.",
+  "cue": "The only Button story whose name concerns the type attribute; reloaded alone, probably to isolate it from a 20,000-character page."
+ },
+ "i185": {
+  "need": "Which parts does Input render (label, control, error) and how are they wired for accessibility, e.g. aria-describedby to the error?",
+  "trigger": "Checkout stories showed composition but no internals; agent had just found the package's d.ts files.",
+  "cue": "'Anatomy' promises the component's parts, the closest available story to Input's internal structure."
+ },
+ "i186": {
+  "need": "Does Input's label prop actually name the control for screen readers, with label and input associated?",
+  "trigger": "Auditing checkout for screen-reader users; the checkout-form story showed only label props with no explicit association.",
+  "cue": "'Test Label Names The Control' states the exact accessibility guarantee in question."
+ },
+ "i187": {
+  "need": "How does the design system's checkout step indicator use ProgressBar and label it so the current step reaches screen-reader users?",
+  "trigger": "Complaint that users cannot tell checkout moved to delivery details; ProgressBar docs described a story as Mealdrop's checkout step indicator.",
+  "cue": "Described as Mealdrop's checkout step indicator, the same widget the app renders above its form."
+ },
+ "i188": {
+  "need": "What does ProgressBar expose to assistive technology: is the fill hidden and the bar named by its label?",
+  "trigger": "The checkout-steps story had just returned an opaque helper; the complaint is that step changes go unnoticed by assistive-tech users.",
+  "cue": "Title concerns what is announced, the accessibility behaviour at issue; other test stories covered range and clamping."
+ },
+ "i189": {
+  "need": "How does the design system's MealDrop example pair a primary and a secondary button in the cart's action area?",
+  "trigger": "Variants had shown the available styles in isolation; the task turns the cart sidebar's Checkout button into two actions.",
+  "cue": "Only Button story set in MealDrop's cart and checkout context."
+ },
+ "i190": {
+  "need": "Is passing native attributes such as `type` through Button documented in any of the stories not yet seen?",
+  "trigger": "Package source showed Button hardcodes type=\"button\" and docs list no `type` prop; six listed stories were still unread.",
+  "cue": "Anatomy describes the whole control, so among the unread stories it seemed likeliest to show extra attributes on the element."
+ },
+ "i191": {
+  "need": "Does Button default to type=\"button\", and could a type=\"submit\" override make Enter submit the checkout form?",
+  "trigger": "After reading the checkout step components, Button docs showed no `type` prop and listed a test story about a type=button default.",
+  "cue": "Only Button story whose name concerns the native type attribute, which decides whether a form has a default submit button."
+ },
+ "i192": {
+  "need": "What does QuantityStepper render (group, two round buttons, live value) so it can replace the basket's Select per line?",
+  "trigger": "Agent had just decided the basket should switch from Select to QuantityStepper, citing the Choosing components doc.",
+  "cue": "Anatomy was the only story offered for QuantityStepper in this docs output."
+ },
+ "i193": {
+  "need": "How does Droppy's reference checkout form mark up its fields: form element, grouping, and any autocomplete or name attributes on Input?",
+  "trigger": "Input docs gave a two-prop table and a names-only story list that included \"Mealdrop Checkout Form\".",
+  "cue": "Named after the app's own checkout form; the other listed names are single props, Anatomy or tests."
+ },
+ "i194": {
+  "need": "Does Button's one remaining unseen story reveal anything about its rendered element or a type/submit option beyond the documented props?",
+  "trigger": "Button props table had no `type`; the package types showed native button props are accepted; Anatomy was the only story not shown in full.",
+  "cue": "The only Button story listed without source, described as the control and its optional leading glyph."
+ },
+ "i195": {
+  "need": "How does Droppy use Select in a real Mealdrop screen, and is that use option picking rather than quantity entry?",
+  "trigger": "Basket uses Select for quantities; Select docs listed one Mealdrop story by name and gave no usage guidance.",
+  "cue": "The only Mealdrop-context Select story; its name suggests picking extras, a contrast with entering a quantity."
+ },
+ "i196": {
+  "need": "Which visual variants does Button have, and is there any secondary style other than `clear` to pair with the primary button?",
+  "trigger": "Checkout-actions story just showed a `large` button with a `clear` one; props table has no variant prop.",
+  "cue": "'Variants' promises all Button styles in one place, complementing the single in-context example just read."
+ },
+ "i197": {
+  "need": "What does ProgressBar's `label` prop do: render visible text, or only give the bar an accessible name?",
+  "trigger": "The test story just loaded passed label=\"Checkout progress\", but the fully shown stories (Default, Value, Max) never demonstrated `label`.",
+  "cue": "The story named after the `label` prop, the one ProgressBar prop without an example in the docs output."
+ },
+ "i198": {
+  "need": "How does Droppy's own cart line lay out QuantityStepper beside the dish name and price, and with which props?",
+  "trigger": "Basket uses Select while the dish modal uses QuantityStepper; stepper docs listed a story described as cart lines with per-dish quantity steppers.",
+  "cue": "Only QuantityStepper story showing it in a Mealdrop cart line, the exact place the agent was about to put it."
+ },
+ "i199": {
+  "need": "What should QuantityStepper's aria-label say: what does it name, and how is it phrased?",
+  "trigger": "A grep had just shown the cart's existing quantity control carries an aria-label of the quantity followed by \"times\".",
+  "cue": "Named after the aria-label prop itself, promising an example of the intended accessible name."
+ },
+ "i200": {
+  "need": "How does the design system's reference cart line wire up QuantityStepper for each dish, so the basket can follow it?",
+  "trigger": "Choosing-components guidance and the stepper docs pointed to QuantityStepper for cart quantities, while the basket sidebar still used Select.",
+  "cue": "Listed as 'Cart lines with per-dish quantity steppers': the basket case itself, unlike the prop and test stories."
+ },
+ "i201": {
+  "need": "At its min and max, do QuantityStepper's buttons disable rather than clamp or wrap, and how are bounds set?",
+  "trigger": "After Anatomy returned only a wrapper, the agent had read cart state and NumberField docs while weighing the stepper for the cart.",
+  "cue": "Its name describes behaviour at the bounds, which matters for a cart quantity control; not a plain prop demo."
+ },
+ "i202": {
+  "need": "Is Input's error element always in the DOM, even without an error, so that later messages appear in an existing node?",
+  "trigger": "Having read Input's implementation and just loaded the announced-error story, the agent was checking error behaviour before rewriting validation.",
+  "cue": "Name states the error slot is always mounted, complementing \"Test Error Is Announced\" on Input's error mechanics."
+ },
+ "i203": {
+  "need": "How is Modal shown and dismissed, and what controls its open state, for the \"Get help\" flow?",
+  "trigger": "Component docs in this run each printed just one Anatomy story; the help modal needed open/close wiring.",
+  "cue": "Guessed name, never listed; \"Open\" is what a story demonstrating the modal's open state would plausibly be called."
+ },
+ "i204": {
+  "need": "How is a toast actually raised with `useToast` inside ToastProvider, for example to confirm an order action?",
+  "trigger": "Toast docs mention `useToast`, but the Children story already shown in full hides the call inside a `CreateToastButton` helper.",
+  "cue": "Children is the story about the tree that raises toasts; the unseen ones (Container, Class Name, Anatomy) concern portal target and styling."
+ },
+ "i205": {
+  "need": "How does Mealdrop's cart panel stack its action buttons, and which Button props set the primary action apart from the secondary?",
+  "trigger": "Button docs, fetched after reading the cart and header code, listed a story described as the action stack in Mealdrop's cart panel.",
+  "cue": "Description 'The action stack in Mealdrop's cart panel' matches the sidebar footer being changed; other stories demo single props."
+ },
+ "i206": {
+  "need": "What does Button's one unseen story show about the control, in particular any `type` or submit behaviour for the checkout forms?",
+  "trigger": "Had just read ButtonProps in index.d.ts and Button's compiled implementation; Anatomy was the only Button story the docs had not shown in full.",
+  "cue": "The single listed-only Button story (\"The control and its optional leading glyph\"); Default, Icon Only Needs A Label and Variants were already printed."
+ },
+ "i207": {
+  "need": "What does the 'Test Defaults To Type Button' story show about Button's `type`, and can a Button act as a form's submit button?",
+  "trigger": "Button docs dumped seventeen stories with no props table; one was titled 'Test Defaults To Type Button', bearing on why Enter does not submit.",
+  "cue": "Its title names the native `type` attribute, the Button behaviour that decides whether Enter submits a form."
+ },
+ "i208": {
+  "need": "Is Button's type fixed to \"button\", or can a Droppy Button submit the checkout form when Enter is pressed?",
+  "trigger": "Checkout steps render Droppy Button and Input; the Button docs just fetched listed a test story named \"Test Defaults To Type Button\".",
+  "cue": "Its name is about button type, the property that governs form submission; no other Button story touches it."
+ },
+ "i209": {
+  "need": "How does Mealdrop's reference checkout step indicator use ProgressBar: its label, value/max and the visible step text?",
+  "trigger": "App StepIndicator is hand-rolled; ProgressBar docs gave Default/Value/Max in full and listed 'Mealdrop Checkout Steps: Mealdrop's checkout step indicator'.",
+  "cue": "Described as Mealdrop's checkout step indicator: the design-system counterpart of the component failing to announce step changes."
+ },
+ "i210": {
+  "need": "How does Input announce a validation error to screen readers: a live region, role alert, or aria-describedby?",
+  "trigger": "Accessibility audit of checkout; Anatomy had just returned a bare label-plus-error example with no hint of how errors reach assistive technology.",
+  "cue": "Only story whose name mentions announcing errors, the screen-reader behaviour the audit cares about."
+ },
+ "i211": {
+  "need": "Does Button default to type=\"button\", meaning a checkout step wrapped in a form needs an explicit submit type?",
+  "trigger": "Button docs just fetched showed no `type` in the props table but listed a test story about defaulting to type button.",
+  "cue": "Only Button story whose name concerns the type attribute."
+ },
+ "i212": {
+  "need": "What does QuantityStepper do at its min and max, and what would that mean for quantities in the cart?",
+  "trigger": "Two stepper stories had returned opaque helpers; typings JSDoc contrasted QuantityStepper with NumberField, and props showed min=1 and max=10 defaults.",
+  "cue": "Its name states a behavioural rule about bounds, unlike the prop-named stories; relevant to replacing a Select's fixed option range."
+ },
+ "i213": {
+  "need": "Does Button default to type=\"button\", and can callers override it so checkout steps can use a real submitting form?",
+  "trigger": "Button docs fetched while checking patterns before editing: props without `type`, and a listed test story named for a type=button default.",
+  "cue": "Only listed Button story about the native type attribute; the others concern appearance, icons, disabled and click handling."
+ },
+ "i214": {
+  "need": "Does Button default to type=\"button\", and is a caller's type=\"submit\" forwarded so Enter can submit the form?",
+  "trigger": "Button props table exposed no `type` prop and the story list contained \"Test Defaults To Type Button\"; the agent called both important signals.",
+  "cue": "Agent singled it out by name: a test asserting Button's default type, directly relevant to implicit form submission."
+ },
+ "i215": {
+  "need": "What markup does the design system's own checkout step indicator put around ProgressBar (label, step text, heading) beyond the one-line wrapper?",
+  "trigger": "ProgressBar docs had shown every story in full with no props table; the checkout-steps story appears to have been only a `<CheckoutStepIndicator />` wrapper.",
+  "cue": "The one story modelled on the exact UI under repair, MealDrop's checkout step indicator; the rest are prop demos and tests."
+ },
+ "i216": {
+  "need": "What does the hidden CartLines helper render: how a basket line pairs QuantityStepper with dish name, price and a way to remove the dish?",
+  "trigger": "Docs had printed every stepper story; the agent had just read the stepper and Select type declarations and was about to rewrite the basket.",
+  "cue": "The only stepper story depicting basket lines, the UI about to be rewritten."
+ },
+ "i217": {
+  "need": "Which parts does Input render (label, control, error slot) and how are they linked, to judge labelling and where native attributes go?",
+  "trigger": "Reference checkout-form story showed Inputs with only label and error; agent had just opened the design-system package to inspect components.",
+  "cue": "'Anatomy' suggests a breakdown of Input's internal parts, unlike the prop-named, Mealdrop and test stories."
+ },
+ "i218": {
+  "need": "How does QuantityStepper behave at its min and max, and would those limits suit quantities in the cart?",
+  "trigger": "Two stepper stories and the component-browser page gave nothing; an .mdx search in the package failed.",
+  "cue": "Title describes a behaviour rule about limits, unlike prop-named stories; relevant to replacing a Select's fixed range."
+ },
+ "i219": {
+  "need": "How does the design system expect ProgressBar to show and announce the current checkout step in Mealdrop's checkout?",
+  "trigger": "Users cannot tell the page moved to delivery details; ProgressBar docs list a Mealdrop Checkout Steps story without source.",
+  "cue": "Name matches the app's StepIndicator purpose, unlike the generic Value, Max and Label stories."
+ },
+ "i220": {
+  "need": "Is Droppy's Select a native <select>, and how is it driven, for choosing the help type inside the 'Get help' modal?",
+  "trigger": "The help modal needs a choice among predefined options; a 'Native Control' story existed for Select beyond the basic prop stories.",
+  "cue": "'Native Control' hinted at what element Select renders and how it behaves, unlike the per-prop stories."
+ },
+ "i221": {
+  "need": "Is Input's error element mounted even when empty, so a later error appears in an existing region without layout shift?",
+  "trigger": "Test Error Is Announced gave only usage; agent still checking error behaviour before writing fixes.",
+  "cue": "Test name says the error slot is always mounted, the condition for reliable announcement of new errors."
+ },
+ "i222": {
+  "need": "At its min and max does QuantityStepper disable its buttons or clamp, and how would removing a cart item at quantity 1 work?",
+  "trigger": "After reading QuantityStepper and NumberField declarations, the agent weighed how the stepper's bounds fit cart quantities (min defaults to 1).",
+  "cue": "'Bounds Disable Rather Than Clamp' names the exact bound behaviour that matters when replacing the cart's Select."
+ },
+ "i223": {
+  "need": "How does the design system's cart line render per-dish QuantitySteppers, to replace the Select in the basket?",
+  "trigger": "Basket (ShoppingCartMenu) uses Select while FoodItemModal uses QuantityStepper; QuantityStepper docs list 'Mealdrop Cart Line'.",
+  "cue": "Description \"Cart lines with per-dish quantity steppers\" names the basket UI the agent must align."
+ },
+ "i224": {
+  "need": "Does Button default to type=\"button\", so a real form around the checkout fields would have no submit button unless type is set?",
+  "trigger": "Root cause found: fields sit in a div, not a form; Button's documented props have no `type`, yet a story is named Test Defaults To Type Button.",
+  "cue": "Its name literally states the type default, the fact that decides whether Enter will submit."
+ },
+ "i225": {
+  "need": "How does the cart-line example use QuantityStepper for each dish, and what happens at the lower bound (removing a dish at quantity 0)?",
+  "trigger": "'Choosing components' said cart line and add-to-cart dialog must share one control; QuantityStepper docs listed a cart-line story without source; min defaults to 1.",
+  "cue": "Agent calls it 'the cart-line example story'; its description 'Cart lines with per-dish quantity steppers' matches the basket rows it must convert."
+ },
+ "i226": {
+  "need": "How does the reference checkout step indicator label ProgressBar and present the current step so a step change is perceivable?",
+  "trigger": "ProgressBar docs listed \"Mealdrop Checkout Steps\" without source, right after the checkout-form story had shown a realistic reference composition.",
+  "cue": "Named for the checkout step indicator, the component the app's StepIndicator mirrors; other listed stories are prop demos, anatomy and tests."
+ },
+ "i227": {
+  "need": "How does the design system's cart-line example lay out a QuantityStepper per dish, including any control for removing a line?",
+  "trigger": "About to rebuild basket rows around QuantityStepper after reading cart state and header wiring; Button and Icon docs just fetched for row controls.",
+  "cue": "The only stepper story set in a Mealdrop cart, matching the basket rows being rewritten; other stories isolate single props."
+ },
+ "i228": {
+  "need": "How does the design system build the Mealdrop checkout form with Input: real <form>, labelled fields, autocomplete attributes?",
+  "trigger": "Input props show only label and error; checkout fields don't autofill and step changes aren't perceived.",
+  "cue": "'Mealdrop Checkout Form' is the only Input story about the checkout form being fixed."
+ },
+ "i229": {
+  "need": "How does the Mealdrop cart-line example wire QuantityStepper per dish (props, labels, any remove control), given the docs had no props table?",
+  "trigger": "QuantityStepper docs printed every story but documented no props; agent had read the basket's Select code, the cart reducer and Header wiring.",
+  "cue": "The cart-line story is the one QuantityStepper example set in the basket, the component about to be rewritten."
+ },
+ "i230": {
+  "need": "How does the design system itself show quantity changes in a cart line with QuantityStepper, and with what layout?",
+  "trigger": "App basket uses Select, dish modal uses QuantityStepper; the stepper and Select docs just fetched listed Mealdrop stories by name only.",
+  "cue": "\"Mealdrop Cart Line\" names the basket row itself; the other stepper stories are prop demos, Anatomy and tests."
+ },
+ "i231": {
+  "need": "Does ProgressBar expose its range and label to assistive tech (aria-valuenow/valuemax) so a three-step checkout is announced?",
+  "trigger": "Agent had found Input and Progress regions in dist; the step change is not perceivable; ProgressBar docs list Test Reports Its Range.",
+  "cue": "Test name says the bar reports its range, the accessibility behaviour relevant to announcing step progress."
+ },
+ "i232": {
+  "need": "How does the design system compose the cart Sidebar's children and pinned footer, where the scheduling steps must appear?",
+  "trigger": "Scheduling UI must live inside the cart sidebar; Sidebar docs described a story as Mealdrop's cart panel.",
+  "cue": "Described as Mealdrop's cart panel opened from the header, the exact panel being extended."
+ },
+ "i233": {
+  "need": "Does Button default to type=\"button\", so a real `<form>` around the checkout fields needs an explicit submit type?",
+  "trigger": "Planning to turn each step into a real `<form>`; Button docs listed no `type` prop but a test story about defaulting to type button.",
+  "cue": "Only Button story whose name mentions type; decisive for how Button behaves once placed inside a form."
+ },
+ "i234": {
+  "need": "Does Droppy's Button default to type=\"button\", so that wrapping the checkout fields in a <form> alone would not make Enter submit?",
+  "trigger": "Button props list had no type, and the docs listed a story called 'Test Defaults To Type Button'.",
+  "cue": "Its name asserts the default type attribute, exactly what decides whether a form wrapper alone would work."
+ },
+ "i235": {
+  "need": "How is Mealdrop's cart action stack composed, and which Button props distinguish primary from secondary actions?",
+  "trigger": "Button docs listed 'Mealdrop Checkout Actions: the action stack in Mealdrop's cart panel'; task adds Schedule delivery next to Checkout.",
+  "cue": "The agent noted it is a story specifically for Mealdrop's cart action stack, the area the task changes."
+ },
+ "i236": {
+  "need": "Does Droppy's reference checkout form show a documented way to submit: form element, submit button or handler?",
+  "trigger": "Button story had just shown a bare Button with no type; Input docs listed 'Mealdrop Checkout Form: Mealdrop's checkout form, with two fields in error'.",
+  "cue": "The only Input story depicting the checkout form itself, so the likeliest place for a submission pattern."
+ },
+ "i237": {
+  "need": "Which Button variants exist, and which props make a primary versus a secondary button for the cart footer?",
+  "trigger": "Task asks for a primary Order now and secondary Schedule delivery; Button props show only clear, round and large booleans, no variant prop.",
+  "cue": "Variants is the one story promising all visual styles side by side, rather than a single prop."
+ },
+ "i238": {
+  "need": "How does the design system's checkout step indicator use ProgressBar, and does it tell assistive technology which step is current?",
+  "trigger": "Step-change complaint visible in the source; ProgressBar docs listed a checkout-steps story by name only.",
+  "cue": "Name matches the app's checkout step indicator; the rest are prop demos, Anatomy and tests."
+ },
+ "i239": {
+  "need": "Does Droppy Button hard-code type=\"button\", and can the app pass type=\"submit\" so Enter submits a wrapping form?",
+  "trigger": "Checkout forms use div wrappers with onClick Buttons; Button docs document no props yet include a story named Test Defaults To Type Button.",
+  "cue": "Its name addresses Button's default type attribute, the exact behaviour deciding whether a button inside a form would submit."
+ },
+ "i240": {
+  "need": "How is ProgressBar used in Droppy's Mealdrop checkout step indicator: label text, value/max per step, and accompanying heading or body copy?",
+  "trigger": "App StepIndicator is a hand-rolled bar; ProgressBar docs showed Default/Value/Max only and listed 'Mealdrop Checkout Steps: Mealdrop's checkout step indicator'.",
+  "cue": "Its description says it is Mealdrop's checkout step indicator, i.e. the design-system version of the component the agent was about to rewrite."
+ },
+ "i241": {
+  "need": "How does Droppy's checkout form example structure the fields: form element, section headings, and which props each Input receives?",
+  "trigger": "Input props table listed only label and error; the docs listed 'Mealdrop Checkout Form: Mealdrop's checkout form, with two fields in error' without source.",
+  "cue": "It is the design-system rendition of the checkout form under audit, and the only Input story in app context."
+ },
+ "i242": {
+  "need": "Does Button default to type=\"button\", and is there any way to make it a form's submit button?",
+  "trigger": "Docs showed Button's props have no `type`; checkout fields sit in a plain div with no form to submit.",
+  "cue": "Agent named it: a test story titled \"Test Defaults To Type Button\" speaks directly to the missing `type` prop."
+ },
+ "i243": {
+  "need": "Does Button default to type=\"button\" with no way to make it a submit button for the checkout form?",
+  "trigger": "Button's documented props had no `type`, and the docs listed a test story named \"Test Defaults To Type Button\".",
+  "cue": "Its name answers the type question directly; the other listed stories are about appearance, icons and clicks."
+ },
+ "i244": {
+  "need": "Does Droppy's checkout form example show how the form is submitted: a <form> wrapper, a submit button or an onSubmit handler?",
+  "trigger": "Button story had just returned a bare Button; Input docs listed 'Mealdrop Checkout Form: Mealdrop's checkout form, with two fields in error' without source.",
+  "cue": "It is the design-system example of the very checkout form being fixed, the only Input story in app context."
+ },
+ "i245": {
+  "need": "How does Mealdrop itself use Select in a real screen, and does that suggest Select is meant for choices rather than cart quantities?",
+  "trigger": "ShoppingCartMenu renders quantity with Select; Select docs list a 'Mealdrop Burger Extras' story without source.",
+  "cue": "The only Mealdrop-specific Select story, showing the app's own intended use of Select, unlike the generic prop stories."
+ },
+ "i246": {
+  "need": "Does Input accept native attributes such as autoComplete, name or type beyond its two documented props, label and error?",
+  "trigger": "Input docs showed only label and error props and a single Anatomy story; the task concerns browsers not offering autofill.",
+  "cue": "Anatomy was the only Input story in this docs set, so the only place further detail could be."
+ },
+ "i247": {
+  "need": "Does Droppy's Button default to type=\"button\", so a form wrapper alone would not make Enter submit the checkout step?",
+  "trigger": "Checkout fields are not in a form; Button docs list props without type and an unexpanded 'Test Defaults To Type Button' story.",
+  "cue": "Its name states the exact behaviour, the type default, among otherwise visual Button stories."
+ },
+ "i248": {
+  "need": "What Button variants and layout does Droppy use for the cart panel's actions, to place \"Schedule delivery\" beside \"Order now\"?",
+  "trigger": "Had read Sidebar and Button docs and the technical guidelines; Button listed a story for the action stack in Mealdrop's cart panel.",
+  "cue": "The listed description points at the cart panel's actions, the exact spot where the new secondary button goes."
+ },
+ "i249": {
+  "need": "How does the design system lay out a cart line with QuantityStepper, as the target for the basket's quantity control?",
+  "trigger": "Cart sidebar uses Select while the modal uses QuantityStepper; the agent had just read the Choosing components guide.",
+  "cue": "The Mealdrop Cart Line story is described as cart lines with per-dish steppers; its full source was already in the docs output."
+ },
+ "i250": {
+  "need": "Does Droppy's checkout form example wrap its Inputs in a <form>, and does it show a submit button or onSubmit handler?",
+  "trigger": "Agent had been digging in the package for Button's type handling; Input docs listed 'Mealdrop Checkout Form' by name while the app's steps use plain divs.",
+  "cue": "Named 'Mealdrop Checkout Form': the design-system rendition of the two-step form the agent was about to restructure."
+ },
+ "i251": {
+  "need": "At its min and max, does QuantityStepper disable its buttons rather than clamp, and can the quantity ever reach 0?",
+  "trigger": "Props table showed min defaulting to 1 and max to 10; the Mealdrop Cart Line story had just returned an opaque wrapper.",
+  "cue": "Its name describes boundary behaviour directly, unlike the plain Max prop story or the test stories."
+ },
+ "i252": {
+  "need": "Which Button variants exist and how are they set through props, so 'Order now' can be primary and 'Schedule delivery' secondary?",
+  "trigger": "Task requires a primary and a secondary cart button; Button's props table lists only clear, round and large, with stories named but not shown.",
+  "cue": "'Variants' reads as the catalogue of Button's visual styles, the obvious place to look for primary versus secondary."
+ },
+ "i253": {
+  "need": "Does Droppy's checkout actions example show how a checkout Button should trigger submission, such as a form or submit pattern?",
+  "trigger": "Type-default story returned a bare Button; the agent had said it would also check the checkout-specific stories.",
+  "cue": "The Button story named after Mealdrop's checkout, one of the agent's \"checkout-specific stories\"."
+ },
+ "i254": {
+  "need": "Does Button default to type=\"button\" with no `type` prop, so it cannot be the checkout form's submit button?",
+  "trigger": "Button's props had no `type`, and a story was \"literally named\" Test Defaults To Type Button.",
+  "cue": "Its name spells out the default type; the agent called it one of two critical details."
+ },
+ "i255": {
+  "need": "How does the design system's cart-panel example stack its action buttons, to model 'Order now' and 'Schedule delivery' on it?",
+  "trigger": "Button docs listed 'Mealdrop Checkout Actions', described as the action stack in Mealdrop's cart panel, while the task changes that same button stack.",
+  "cue": "Agent called it 'exactly our use case': the story depicts the cart panel's actions, unlike the single-prop demos."
+ },
+ "i256": {
+  "need": "How is Modal really composed and controlled (content, title, open/close), beyond the opaque ModalDemo wrapper already shown in its docs?",
+  "trigger": "Modal's docs had offered a single story, \"Empty\", whose source was a one-line ModalDemo wrapper; the task needs a multi-step help modal.",
+  "cue": "\"Empty\" was apparently the only Modal story on offer, so requesting it directly was the sole way to seek more."
+ },
+ "i257": {
+  "need": "How does the design system build a basket line with QuantityStepper, as a model for replacing the basket's Select?",
+  "trigger": "Dish modal uses QuantityStepper, basket uses Select; stepper docs listed a MealDrop cart-line story by name only.",
+  "cue": "Only stepper story named after the basket; the rest are single props, Anatomy or tests."
+ },
+ "i258": {
+  "need": "Does Button always render type=\"button\", so that it cannot submit a form wrapped around the checkout fields?",
+  "trigger": "Button docs surfaced what the agent called API constraints, and listed a test story named \"Test Defaults To Type Button\".",
+  "cue": "The only Button story whose name mentions `type`, which is precisely the behaviour the agent said it would verify."
+ },
+ "i259": {
+  "need": "How does the design system build the Mealdrop checkout form with Input: a real <form>, labelled fields, autocomplete attributes?",
+  "trigger": "Input props show only label and error; checkout uses div-wrapped fields; complaints concern autofill and an unannounced step change.",
+  "cue": "'Mealdrop Checkout Form' is the only Input story about the very checkout form being fixed."
+ },
+ "i260": {
+  "need": "How does Droppy arrange a primary and a secondary Button in MealDrop's cart panel footer, and which props mark each?",
+  "trigger": "Task adds \"Schedule delivery\" beside the cart's Checkout button; Button docs listed a story described as the action stack in Mealdrop's cart panel.",
+  "cue": "Only Button story set in the exact UI being changed: \"The action stack in Mealdrop's cart panel.\""
+ },
+ "i261": {
+  "need": "What is the design system's intended pattern for submitting the checkout form, given Button hardcodes type=\"button\"?",
+  "trigger": "The package bundle had just confirmed Button hardcodes type \"button\", so a Droppy Button could not be the form's submit control.",
+  "cue": "Named after the checkout form itself, the likeliest place for the design system to show its intended form wiring."
+ },
+ "i262": {
+  "need": "Does Input accept native props such as name and autoComplete beyond the documented label and error, so autofill can work at checkout?",
+  "trigger": "Agent spotted two checkout problems (step change not perceivable, no autofill); Input docs gave props label/error only and one story.",
+  "cue": "'Empty' was the only Input story on offer; it had already been shown in full in the docs output."
+ },
+ "i263": {
+  "need": "Does the Class Name story show Button forwarding props beyond its documented list, hinting that `type` could be passed too?",
+  "trigger": "Agent had listed Button's documented props without className, yet a listed story says className is accepted and merged.",
+  "cue": "Its description shows a prop outside the documented list being accepted, the nearest thing to passthrough evidence among unread stories."
+ },
+ "i264": {
+  "need": "How does Droppy's own checkout form structure its Inputs: form element, section headings, error messages, any autofill attributes?",
+  "trigger": "Input docs listed \"Mealdrop's checkout form, with two fields in error\"; the step-indicator story loaded a moment earlier had shown nothing.",
+  "cue": "The Input story that is a whole Mealdrop checkout form with errors, mirroring the flow under repair."
+ },
+ "i265": {
+  "need": "What does the design system's recommended cart line with QuantityStepper look like, so the basket can match the dish modal's stepper?",
+  "trigger": "Cart sidebar uses Select for quantity, the modal uses QuantityStepper; the docs list 'Mealdrop Cart Line' with a stepper description.",
+  "cue": "Description \"Cart lines with per-dish quantity steppers\" names the exact basket UI under review."
+ },
+ "i266": {
+  "need": "Does Droppy Button default to type=\"button\", so a Button inside a new <form> needs type=\"submit\" to submit on Enter?",
+  "trigger": "Agent was moving checkout fields into real forms; Button props table lists onClick but no type.",
+  "cue": "Name 'Test Defaults To Type Button' states the default type, which decides form submission."
+ },
+ "i267": {
+  "need": "How does the design system's cart example arrange its action buttons, and which Button props mark the main action versus the lesser one?",
+  "trigger": "Sidebar and Button docs fetched for the cart change; Button has only clear, round and large flags, and lists a story named for Mealdrop's checkout actions.",
+  "cue": "Name points at Mealdrop's checkout actions, the footer getting a second button; other stories are prop demos or tests."
+ },
+ "i268": {
+  "need": "Does Droppy's checkout form example pass native attributes such as name, type or autoComplete to Input, and how does it group the two steps?",
+  "trigger": "Input docs' props table listed only label and error, while the complaint is that browsers never offer saved email or address.",
+  "cue": "Named after the very screen under repair; among name-only listed stories it was the one showing Inputs in a real checkout form."
+ },
+ "i269": {
+  "need": "What markup does Droppy's checkout step indicator put around ProgressBar (heading, step text, label) to announce the current step?",
+  "trigger": "Full docs dump had already printed this story; agent had since read ProgressBar, Heading and Body types and was about to rewrite StepIndicator.",
+  "cue": "The one ProgressBar story about MealDrop's checkout step indicator, the component the agent was about to fix first."
+ },
+ "i270": {
+  "need": "Does Button default to type=\"button\", and can it be made a submit button once the fields are wrapped in a <form>?",
+  "trigger": "Root cause was inputs in a div, not a form; Button's props table showed no `type` prop.",
+  "cue": "Agent named it as the story \"literally named\" after the type default; the undescribed list had nothing else on submission."
+ },
+ "i271": {
+  "need": "Does Droppy's Button default to type=\"button\", which affects how the checkout step forms submit?",
+  "trigger": "After probing the app the agent checked Button's API; docs list props without type and an unexpanded type-default test story.",
+  "cue": "The test story's name targets the button type default, the one Button fact relevant to form submission."
+ },
+ "i272": {
+  "need": "How does Droppy's cart-line example lay out and wire QuantityStepper for each dish in the basket?",
+  "trigger": "Choosing components guide and stepper docs were just read; the basket uses Select while the dish modal uses QuantityStepper.",
+  "cue": "Listed as \"Cart lines with per-dish quantity steppers\": the basket context the task must bring into line."
+ },
+ "i273": {
+  "need": "How should each basket row's QuantityStepper be named for assistive technology, and what aria-label wording does the design system show?",
+  "trigger": "About to swap the basket Select for QuantityStepper, the agent had read the stepper's compiled markup and Header's aria-labelled buttons.",
+  "cue": "Story covers the aria-label prop that names the stepper group; its description says the two buttons alone don't say what of."
+ },
+ "i274": {
+  "need": "How does the design system's Mealdrop checkout form set up Inputs (form element, name, autoComplete) so browsers offer saved email and address?",
+  "trigger": "Complaint says the browser never offers autofill; Input docs show only label/error props and list an unexpanded 'Mealdrop Checkout Form'.",
+  "cue": "Its name matches the checkout form being audited, the most likely place to show real-form attributes."
+ },
+ "i275": {
+  "need": "Which parts does Input render (label, control, error) and how are they associated for assistive technology?",
+  "trigger": "Mealdrop checkout stories gave no internals; agent had just located the package's d.ts files.",
+  "cue": "'Anatomy' promises Input's parts, the closest story to its internal structure."
+ },
+ "i276": {
+  "need": "Does the design system show QuantityStepper as the control for basket lines, and how is it placed and wired in a cart row?",
+  "trigger": "Agent found the modal uses QuantityStepper and the basket uses Select, then saw \"Mealdrop Cart Line\" listed under QuantityStepper without source.",
+  "cue": "Named for the basket row itself, the place where the app uses Select; other names are props, bounds, anatomy and tests."
+ },
+ "i277": {
+  "need": "Does Button default to type=\"button\", and so how will the checkout buttons behave once the fields sit inside a real form?",
+  "trigger": "Button docs listed no `type` prop and a test story named for its default type; the checkout steps had no form element.",
+  "cue": "The only Button story naming `type`, which matters if the checkout steps become real forms."
+ },
+ "i278": {
+  "need": "Does the one Button story not yet seen document a form-submit pattern, such as passing type=\"submit\"?",
+  "trigger": "The package bundle showed Button defaults to type=\"button\" but spreads incoming props after it; the docs listed no `type` prop.",
+  "cue": "Anatomy was the only Button story listed without its source, so it was all that remained unread."
+ },
+ "i279": {
+  "need": "How does Droppy's own checkout form wire its Inputs: inside a real `<form>`, and with what submit control or handler?",
+  "trigger": "Input props list only label and error; the agent had just found the app's checkout fields sit in a div, not a form.",
+  "cue": "Described as \"Mealdrop's checkout form\", matching the screen being fixed; the other Input stories are single-prop demos or tests."
+ },
+ "i280": {
+  "need": "Does Droppy's Button default to type=\"button\", meaning it cannot be the checkout form's submit button for Enter?",
+  "trigger": "Fields sit in a div with class form, not a form; Button's documented API has no type prop.",
+  "cue": "The test story's name directly states the type default; the agent singled it out by name."
+ },
+ "i281": {
+  "need": "Does Droppy's checkout form example wrap Inputs in a `<form>`, and how does it submit without a submit-type Button?",
+  "trigger": "Agent had just concluded Button always renders type=\"button\", so a form wrapper alone would not submit.",
+  "cue": "The \"Input form story\": the only Input story showing a whole checkout form rather than a single prop."
+ },
+ "i282": {
+  "need": "How does the design system's checkout example use Button for its main action: inside a form, with a submit type?",
+  "trigger": "Walkthrough found no form element in checkout; Button props had no `type`; the type-default test story showed only a bare button.",
+  "cue": "Only Button story set in MealDrop's checkout context, where a submit-style action might be shown."
+ },
+ "i283": {
+  "need": "Is Input's error message announced to assistive technology when validation fails at checkout?",
+  "trigger": "Auditing checkout accessibility; agent was reading Input's compiled source just before this call.",
+  "cue": "'Test Error Is Announced' names the exact accessibility behaviour of validation errors."
+ },
+ "i284": {
+  "need": "Does Droppy's Button always render type=\"button\", so that it cannot act as the submit button of a checkout form?",
+  "trigger": "Button's props table listed no `type` prop, yet the story list included one named \"Test Defaults To Type Button\".",
+  "cue": "Its name asserts Button's default type, the property deciding implicit form submission; no other listed story mentions type."
+ },
+ "i285": {
+  "need": "Does Droppy's cart panel place the primary and secondary buttons side by side or stacked, and with which variants?",
+  "trigger": "Feature finished and tests green; agent had just reprinted the cart menu's footer code, where the brief wanted \"Schedule delivery\" next to \"Order now\".",
+  "cue": "Listed as \"The action stack in Mealdrop's cart panel\": the design system's own example of the footer just built."
+ },
+ "i286": {
+  "need": "What parts make up Input (label, control, error slot), and how are they tied together for assistive technology?",
+  "trigger": "Props table showed only label and error; the checkout-form story had shown usage but nothing about Input's internal structure or wiring.",
+  "cue": "Anatomy is the story name that promises the component's parts rather than a single prop."
+ },
+ "i287": {
+  "need": "How does Droppy's cart-line example set out QuantityStepper beside each dish, and with what bounds and label?",
+  "trigger": "Choosing components guide and stepper docs were just read; the basket uses Select while the dish modal uses QuantityStepper.",
+  "cue": "Listed as \"Cart lines with per-dish quantity steppers\", the basket situation the task has to make consistent."
+ },
+ "i288": {
+  "need": "How does Input announce its validation error to assistive technology: a live region or an aria link to the field?",
+  "trigger": "Reading Input's compiled implementation while fixing checkout accessibility; validation errors appear on fields when a step is submitted.",
+  "cue": "Test title is about error announcement specifically; the similar 'Error Slot Is Always Mounted' story concerns layout."
+ },
+ "i289": {
+  "need": "Which visual variants does Button offer, and which props produce a secondary look beside a default primary button?",
+  "trigger": "Button's props table has no variant prop; the checkout-actions story just loaded paired a `large` button with a `clear` one.",
+  "cue": "'Variants' promises every Button style side by side, rather than one flag per story."
+ },
+ "i290": {
+  "need": "How does Droppy's cart panel combine a primary and a secondary Button, in props and layout, for the footer actions?",
+  "trigger": "Cart footer must gain a secondary 'Schedule delivery' beside primary 'Order now'; Button docs exposed only clear/round/large flags and listed this cart story unseen.",
+  "cue": "Described as \"The action stack in Mealdrop's cart panel\", matching the sidebar footer under change; alternatives were per-prop or test stories."
+ },
+ "i291": {
+  "need": "What parts make up QuantityStepper, and how is the component composed in JSX?",
+  "trigger": "The Mealdrop Cart Line story had just returned an opaque CartLines element with no usable JSX.",
+  "cue": "\"Anatomy\" suggests a structural overview; the remaining listed stories cover single props or tests."
+ },
+ "i292": {
+  "need": "How does the design system's cart line handle quantity changes: is QuantityStepper the intended control there?",
+  "trigger": "Dish modal uses QuantityStepper but the cart menu uses Select; stepper docs were a bare props table listing a cart-line story.",
+  "cue": "Only story about a Mealdrop cart line, the screen whose Select conflicts with the dish modal's stepper."
+ },
+ "i293": {
+  "need": "Does QuantityStepper's only story reveal usage or guidance on choosing it over Select for quantities, beyond the bare props table?",
+  "trigger": "Docs pages were terse (647 chars, one \"Empty\" story); a listing with story ids confirmed each component has only Empty.",
+  "cue": "\"Empty\" was the sole story for QuantityStepper, as the story-id listing just fetched confirmed."
+ },
+ "i294": {
+  "need": "How does the design system's reference checkout form structure its two steps: form element, sections, headings and Input error messages?",
+  "trigger": "Input docs described a story as Mealdrop's checkout form with two fields in error, mirroring the screen being fixed.",
+  "cue": "Described as Mealdrop's checkout form, the screen under repair, and it includes error states."
+ },
+ "i295": {
+  "need": "Does Button default to type=\"button\", so it would not submit if the checkout steps were turned into real forms?",
+  "trigger": "After reproducing the complaints, the agent fetched Button docs: no `type` prop was listed, but this test story was.",
+  "cue": "Its name directly states Button's default type; other listed stories concern appearance, icons or click handling."
+ },
+ "i296": {
+  "need": "Does Button always render type=\"button\", or can it be made a submit button for the checkout forms?",
+  "trigger": "Button docs had no documented `type` prop but included a story literally named \"Test Defaults To Type Button\".",
+  "cue": "The name states the exact behaviour that decides whether a Button inside a form can trigger submission on Enter."
+ },
+ "i297": {
+  "need": "Do the design system's checkout action Buttons show any form or submit wiring that the checkout steps should copy?",
+  "trigger": "Agent had noted Button documents no `type` prop and said it would check the checkout-specific stories.",
+  "cue": "The only Button story tied to MealDrop's checkout, so the natural place to look for a checkout submit pattern."
+ },
+ "i298": {
+  "need": "Does the design system's own checkout-form example wrap its Inputs in a native form element, and how does it submit?",
+  "trigger": "Agent had found checkout fields in a div, not a form; Input's props listed only label/error and a story was named \"Mealdrop Checkout Form\".",
+  "cue": "Named after the exact form being fixed; the other listed Input stories cover single props, anatomy or error behaviour."
+ },
+ "i299": {
+  "need": "How is the Droppy Modal opened and controlled (open-state prop, close handler) for the 'Get help' dialog?",
+  "trigger": "Surveying components for the Order History page; docs in this run show only Anatomy stories with prop tables.",
+  "cue": "Guessed name 'Open', a conventional story for a modal's open state; no listing offered it."
+ },
+ "i300": {
+  "need": "How does the design system's cart-line example let a user remove a dish when QuantityStepper cannot go to 0?",
+  "trigger": "Agent noted the Select's 0 option was the basket's only removal path and had just read the cart reducer; docs had already printed this story.",
+  "cue": "The one stepper story showing basket lines, where a removal pattern would appear if the design system had one."
+ },
+ "i301": {
+  "need": "Does QuantityStepper's story say anything about when to use it, rather than Select or NumberField, for order quantities?",
+  "trigger": "Dish modal used QuantityStepper and the basket used Select; both docs pages were bare, and no .mdx guidance existed in the package.",
+  "cue": "'Empty' is the only story QuantityStepper has, so it was the single remaining source on the component."
+ },
+ "i302": {
+  "need": "What does Button's Anatomy story show about the rendered control: its element, parts and any native attributes such as type?",
+  "trigger": "Had just read ButtonProps/InputProps/ProgressBarProps in the package d.ts; Button docs listed 'Anatomy: The control and its optional leading glyph' without source.",
+  "cue": "Of the six source-less Button stories it is the only structural one; the rest demonstrate single visual props."
+ },
+ "i303": {
+  "need": "Does Mealdrop's checkout-actions example give its Buttons a `type` or put them in a form, showing how checkout actions should submit?",
+  "trigger": "Button's props had no `type`; the agent said it would check \"those\" stories before trusting a form wrapper.",
+  "cue": "Button's only Mealdrop story, and about checkout actions, the same kind of button the Enter fix touches."
+ },
+ "i304": {
+  "need": "How does the design system stack the cart panel's primary and secondary buttons, and which Button props distinguish them?",
+  "trigger": "Task needs Order now as primary and Schedule delivery as secondary in the cart sidebar; Button docs described a cart action-stack story.",
+  "cue": "Described as the action stack in Mealdrop's cart panel, the footer the task modifies."
+ },
+ "i305": {
+  "need": "How does the design system's checkout step indicator use ProgressBar, and does it tell assistive technology which step is current?",
+  "trigger": "Users reportedly cannot tell the page moved on, and the app has its own StepIndicator; ProgressBar docs listed a checkout-steps story.",
+  "cue": "Name matches the app's checkout step indicator; the other listed stories are prop demos, Anatomy and tests."
+ },
+ "i306": {
+  "need": "Does Heading forward refs and extra props like id or tabIndex, so focus can move to the step heading after advancing?",
+  "trigger": "Step change isn't perceived; Heading props list only className, size and level.",
+  "cue": "Test name promises ref and prop forwarding, needed to focus a heading or give it an id."
+ },
+ "i307": {
+  "need": "How does Mealdrop's cart panel arrange its action buttons, and which Button props make one action primary and the other secondary?",
+  "trigger": "Sidebar and Button docs fetched for the cart work; Button listed a story described as the action stack in Mealdrop's cart panel.",
+  "cue": "Described as the cart panel's action stack, the footer the task extends; other listed stories are prop demos or tests."
+ },
+ "i308": {
+  "need": "What does the design system use Select for in MealDrop: picking options such as extras, rather than setting a quantity?",
+  "trigger": "Basket sets quantity with a Select; Select's only MealDrop story is about burger extras, and the stepper stories had yielded no guidance.",
+  "cue": "Select's only MealDrop-context story, showing its intended use in this app."
+ },
+ "i309": {
+  "need": "Does Button default to type=\"button\", so it would not submit a form on Enter in the checkout steps?",
+  "trigger": "Checkout steps use Button with onClick and no form; Button props table had no type, but the story list named 'Test Defaults To Type Button'.",
+  "cue": "Only Button story name mentioning the type attribute, the property that governs form submission."
+ },
+ "i310": {
+  "need": "Does the design system's Mealdrop checkout form put Inputs inside a real form element, and with what submit mechanism?",
+  "trigger": "Root cause is the div-based form; Input docs list 'Mealdrop Checkout Form' with its description.",
+  "cue": "Description \"Mealdrop's checkout form, with two fields in error\" matches the screen being repaired."
+ },
+ "i311": {
+  "need": "How does the design system's checkout step indicator example label and announce step progress with ProgressBar?",
+  "trigger": "ProgressBar docs showed every story, including one for Mealdrop's checkout steps; the app's own StepIndicator is central to the complaint.",
+  "cue": "The only ProgressBar story modelling Mealdrop's checkout steps, the screen being fixed; re-fetched alone, probably for fuller source."
+ },
+ "i312": {
+  "need": "How does the design system's cart-line example wire QuantityStepper into a cart row (props, bounds, labelling, layout)?",
+  "trigger": "Choosing-components guidance pointed to QuantityStepper for small bounded counts, and its docs listed a story about cart lines with per-dish steppers.",
+  "cue": "Its description is the target design itself: per-dish quantity steppers on cart lines, where the app still uses Select."
+ },
+ "i313": {
+  "need": "What markup sits behind the cart-line example: how is QuantityStepper placed and labelled per dish in a Mealdrop cart row?",
+  "trigger": "Docs had already shown every stepper story, but the cart-line one was only a one-line <CartLines /> helper while the cart still used Select.",
+  "cue": "The one story modelled on the cart row being reworked; reloaded alone, probably hoping for fuller source than the docs page gave."
+ },
+ "i314": {
+  "need": "What parts make up Input (label, control, error slot), and how is the error wired to the control for assistive technology?",
+  "trigger": "The checkout-form story showed only basic Input usage and the steps story was opaque; the agent had begun locating package typings.",
+  "cue": "\"Anatomy\" promises the component's internal parts, which prop demos such as Types, Disabled or Placeholder would not show."
+ },
+ "i315": {
+  "need": "What does ProgressBar report about its range to assistive technology, and how are value, max and label supplied?",
+  "trigger": "The checkout-steps story had been an opaque wrapper, and the agent had just located Progress in the bundle while reading Input's source.",
+  "cue": "Name says the bar reports its range, the accessibility behaviour that could tell users which checkout step they are on."
+ },
+ "i316": {
+  "need": "Which DOM parts does Input render (label, control, error slot), and how are label and error tied to the control?",
+  "trigger": "Checkout-form story showed only label/defaultValue/error and the steps story was opaque; the agent had just located the package's .d.ts files.",
+  "cue": "Anatomy promised the component's internal structure, which the prop stories and the checkout example did not reveal."
+ },
+ "i317": {
+  "need": "What props does Badge take: just text, or a variant/colour option to distinguish cancelled, on-the-way and delivered orders?",
+  "trigger": "Task requires a status badge per order; Badge's Anatomy story was listed without source and loaded right after Modal's.",
+  "cue": "'Anatomy' promised the basic structure and props of Badge; it was requested in the same burst as Modal's Anatomy."
+ },
+ "i318": {
+  "need": "How does the design system expect ProgressBar to show and announce the current checkout step in Mealdrop's checkout?",
+  "trigger": "Complaint that users can't tell the page moved on; ProgressBar docs list Mealdrop Checkout Steps without source.",
+  "cue": "Name matches the app's step indicator, unlike the generic ProgressBar stories."
+ },
+ "i319": {
+  "need": "Does Button render type=\"button\" by default, and can it ever act as a submit button for implicit form submission?",
+  "trigger": "Button's documented props had no `type`, and the story list included a test named \"Test Defaults To Type Button\".",
+  "cue": "The name speaks directly to button type, which decides whether Enter in a form can submit through a Droppy Button."
+ },
+ "i320": {
+  "need": "How does the design system wire Buttons in Mealdrop's checkout: does any submit a form or receive a `type`?",
+  "trigger": "Agent had found checkout buttons relying on onClick outside any form, and Button's props listed no `type`.",
+  "cue": "Named for checkout actions, the buttons at issue; the agent called it one of two directly relevant stories."
+ },
+ "i321": {
+  "need": "Does Input announce its error to screen readers itself (live region or role=alert), or must the app add that?",
+  "trigger": "Search of dist found no role=\"alert\"; agent planning error handling for the rewritten checkout forms.",
+  "cue": "Test name claims the error is announced, directly answering whether Input handles error announcements."
+ },
+ "i322": {
+  "need": "Does Heading forward refs and extra props (id, tabIndex) so focus can be moved to the new step's heading after the checkout step changes?",
+  "trigger": "Heading docs list only className/size/level props; agent needed to announce the step change to screen-reader users.",
+  "cue": "'Test Forwards Ref And Props' names exactly the ref and prop forwarding needed for programmatic focus."
+ },
+ "i323": {
+  "need": "Does Droppy's checkout form example wrap its Inputs in a <form> with a submit button or handler to copy?",
+  "trigger": "Fields sat in a plain div; the type-button test story had just returned a bare Button with no submission details.",
+  "cue": "Described as \"Mealdrop's checkout form\", the same screen being fixed; other Input stories were per-prop or tests."
+ },
+ "i324": {
+  "need": "Which Button props produce a primary versus a secondary look, given that Button has no variant prop?",
+  "trigger": "Task demands a primary \"Order now\" and a secondary \"Schedule delivery\"; the agent knew this story only by name from the global listing.",
+  "cue": "\"Variants\" is the one Button story name promising all styles side by side rather than a single prop or a test."
+ },
+ "i325": {
+  "need": "Does Button render type=\"button\" by default, so it would not submit once the checkout steps become real forms?",
+  "trigger": "Button docs listed no `type` prop, the typings showed it accepts native button props, and a story was named \"Test Defaults To Type Button\".",
+  "cue": "Its name addresses the default type directly; no other listed Button story relates to form submission."
+ },
+ "i326": {
+  "need": "How does Droppy's reference cart panel compose Sidebar: what goes in children and footer, and where do the action buttons sit?",
+  "trigger": "Task puts a date picker and time grid inside the cart sidebar; Sidebar docs listed this story by description only.",
+  "cue": "Described as Mealdrop's cart panel, the very sidebar the scheduling flow must live in."
+ },
+ "i327": {
+  "need": "Does the design system's checkout action example pass `type` to Button or otherwise show how a form gets submitted?",
+  "trigger": "Button documented no `type` prop, and the test story just loaded was a bare Button revealing nothing about submission.",
+  "cue": "Name contains \"Checkout\" and it is the only real-usage Button story; the others are single-prop demos or tests."
+ },
+ "i328": {
+  "need": "How does Droppy's Mealdrop cart-line example use QuantityStepper for each dish: props, bounds and row layout?",
+  "trigger": "Basket sidebar uses Select, dish modal uses QuantityStepper; after 'Choosing components', QuantityStepper docs listed the cart-line story without source.",
+  "cue": "'Cart lines with per-dish quantity steppers': the Mealdrop example for the exact basket row that uses a different control today."
+ },
+ "i329": {
+  "need": "How does the design system build the Mealdrop checkout form with Input: real <form>, labelled fields, autocomplete attributes?",
+  "trigger": "Input props show only label and error; the checkout's fields don't autofill and the step change isn't perceivable.",
+  "cue": "'Mealdrop Checkout Form' is the only Input story about the checkout form under audit."
+ },
+ "i330": {
+  "need": "How does the design system compose a basket line around a per-dish QuantityStepper (layout, props, labelling)?",
+  "trigger": "Basket uses a Select while the dish modal uses QuantityStepper; stepper docs described a story as cart lines with per-dish steppers.",
+  "cue": "Its description, cart lines with per-dish quantity steppers, is the basket UI about to be converted."
+ },
+ "i331": {
+  "need": "How does Mealdrop's cart panel stack its action buttons, and which Button props mark the primary versus the secondary action?",
+  "trigger": "Button docs listed a story described as 'The action stack in Mealdrop's cart panel' while the task adds a second button to that stack.",
+  "cue": "Its listed description names the cart panel's action stack, exactly the footer being extended; other stories cover single props."
+ },
+ "i332": {
+  "need": "Does Input accept native attributes such as autocomplete, name and type beyond the documented label and error props?",
+  "trigger": "Input docs showed only a label/error prop table and one story, Anatomy; nothing on autofill, which the checkout complaint is about.",
+  "cue": "Anatomy was the only story Input offered, so loading it directly was the only further Storybook lookup available."
+ },
+ "i333": {
+  "need": "What should QuantityStepper's aria-label say when a stepper sits on each basket line?",
+  "trigger": "Inspection of the compiled stepper and its CSS gave markup but no naming example; the props include an optional aria-label for the group.",
+  "cue": "The one story devoted to the aria-label prop, described as naming the group because the two buttons alone do not."
+ },
+ "i334": {
+  "need": "Which Button variants exist for telling a primary 'Order now' action apart from a secondary 'Schedule delivery' action?",
+  "trigger": "Button docs list clear/large/round props but show only Default, Children and Clear; the task requires one primary and one secondary button.",
+  "cue": "Name 'Variants' suggests every Button style side by side, the most direct overview for picking primary versus secondary styling."
+ },
+ "i335": {
+  "need": "How does the design system's reference checkout step indicator combine ProgressBar with visible step text and an accessible label?",
+  "trigger": "Checkout StepIndicator code just read uses ProgressBar; its docs listed a story described as Mealdrop's checkout step indicator, without source.",
+  "cue": "Described as \"Mealdrop's checkout step indicator\", the same UI the task concerns; other listed stories cover single props, anatomy and tests."
+ },
+ "i336": {
+  "need": "How does Droppy's reference cart line let users change a dish's quantity: a QuantityStepper, and with what props and layout?",
+  "trigger": "Cart menu sets quantity with Select while the dish modal uses QuantityStepper; stepper docs were a bare props table listing this story unseen.",
+  "cue": "The only story named after a Mealdrop cart line, the exact screen whose quantity control was in question."
+ },
+ "i337": {
+  "need": "How is ProgressBar called and what ARIA does it expose (value, max, label) before it replaces the hand-rolled checkout step bar?",
+  "trigger": "Audit found no progressbar role or live region in the step indicator; the agent had decided to rewrite it with the DS ProgressBar.",
+  "cue": "Anatomy's description is about the track's ARIA and parts; ProgressBar's other listed stories are not visible in the packet."
+ },
+ "i338": {
+  "need": "How does Droppy's cart-line example place and wire QuantityStepper for each dish in a basket?",
+  "trigger": "Stepper docs (all stories, no props table) and the Choosing components guide were just read; the app's basket uses Select instead.",
+  "cue": "It is the stepper story set in cart lines, the basket context whose quantity control the task must align."
+ },
+ "i339": {
+  "need": "How does Droppy's reference checkout form structure its Inputs: form element, section headings, and any name, type or autocomplete attributes?",
+  "trigger": "Input props list only label and error, yet the task needs browser autofill and a clearer step structure in checkout.",
+  "cue": "Described as \"Mealdrop's checkout form\": the design system's own version of the flow being fixed."
+ },
+ "i340": {
+  "need": "How does the design system's own checkout form use Input: does it pass autocomplete, type or name beyond label and error?",
+  "trigger": "Both complaints were visible in the app source; Input's props table listed only label and error.",
+  "cue": "Named after the MealDrop checkout form being fixed; the other stories are single props or tests."
+ },
+ "i341": {
+  "need": "How does Input announce a validation error to screen-reader users: a live region, a role, or aria-describedby?",
+  "trigger": "Agent was about to rewrite the checkout forms with focus-to-first-error, having searched Input's bundle for alert and aria-describedby wiring.",
+  "cue": "Name claims the error is announced, the accessibility behaviour at stake; its sibling covers the error slot."
+ },
+ "i342": {
+  "need": "How is QuantityStepper meant to be used: does its only story show label, bounds or context beyond the props table?",
+  "trigger": "Stepper docs were 647 characters: a props table and one story, \"Empty\", with nothing on when to use it.",
+  "cue": "The only story the component has; there was nothing else to pick."
+ },
+ "i343": {
+  "need": "How does Droppy lay out a cart line with a QuantityStepper: which props, label and surrounding text?",
+  "trigger": "Basket menu uses Select; stepper docs and the choosing-components guide had just been read, and a cart-line story was listed without source.",
+  "cue": "Described as \"Cart lines with per-dish quantity steppers\": the stepper in the exact context the basket needs."
+ },
+ "i344": {
+  "need": "How does the design system stack the cart panel's primary and secondary buttons, and which Button props distinguish them?",
+  "trigger": "Task needs a primary Order now and a secondary Schedule delivery in the cart sidebar; Button docs described a cart action-stack story.",
+  "cue": "Described as the action stack in Mealdrop's cart panel, the area the task changes first."
+ },
+ "i345": {
+  "need": "How does the design system's cart-line example use QuantityStepper per dish (props, bounds, layout) in a cart?",
+  "trigger": "Agent had read the cart's Select-based quantity UI and the choosing-components guide; stepper docs listed \"Cart lines with per-dish quantity steppers.\"",
+  "cue": "Described as cart lines with per-dish steppers, the cart context under review; other stories are prop demos or tests."
+ },
+ "i346": {
+  "need": "How does the design system's cart line use QuantityStepper, as the pattern to apply to the basket's quantity control?",
+  "trigger": "Basket uses Select for quantity while the modal uses QuantityStepper; Choosing components guide and both components' docs read.",
+  "cue": "Description \"Cart lines with per-dish quantity steppers\" matches the basket UI to be made consistent."
+ },
+ "i347": {
+  "need": "What does ProgressBar's label prop do: render a visible caption or only supply the bar's accessible name?",
+  "trigger": "Test Reports Its Range just showed label=\"Checkout progress\"; agent still deciding how to make the step change perceivable.",
+  "cue": "'Label' is the story dedicated to the label prop, next to the range test just loaded."
+ },
+ "i348": {
+  "need": "Does Button pass native button attributes such as `type` through to the element, beyond the closed list in its props table?",
+  "trigger": "Props table lists a closed set (no type, tabIndex or key handlers); agent had just located the package's type declarations to check components.",
+  "cue": "Only Button story whose name mentions a native attribute, hinting at how the underlying button element is configured."
+ },
+ "i349": {
+  "need": "Does Button render type=\"button\" by default, so it would not submit a <form> wrapped around the checkout fields unless told otherwise?",
+  "trigger": "happy-dom walkthrough reported zero forms and autocomplete off; before fixing, agent re-fetched Button docs, whose props table has no `type`.",
+  "cue": "Its name states Button's native `type` default, which matters once the checkout fields sit inside a real form."
+ },
+ "i350": {
+  "need": "Does Droppy's Button hard-default to type=\"button\", preventing it from submitting a form wrapped around the checkout fields?",
+  "trigger": "Read the multi-step form (buttons with onClick, no form); Button docs came back with every story and no props table, including 'Test Defaults To Type Button'.",
+  "cue": "The one Button story about the native type attribute, which governs whether Enter submits a form."
+ },
+ "i351": {
+  "need": "How does Droppy's checkout example pair a primary and a secondary Button, in props and layout?",
+  "trigger": "Variants listed the looks without showing two actions together; the cart footer needs 'Order now' plus 'Schedule delivery'.",
+  "cue": "Only Button story named for Mealdrop's checkout actions, the UI being changed; loaded right after Variants."
+ },
+ "i352": {
+  "need": "Does Button render type=\"button\" by default, and so how would it behave inside a real checkout form?",
+  "trigger": "Button docs listed the test story, and a script to print Button's source from the compiled package had just returned nothing.",
+  "cue": "Name states Button's default type outright, the fact the failed source lookup was probably after; no other story covers it."
+ },
+ "i353": {
+  "need": "How do the design system's checkout action Buttons get wired: do they sit in a form or use a submit type?",
+  "trigger": "Agent had flagged that Button exposes no `type` prop and announced it would check the checkout-specific stories.",
+  "cue": "The only Button story set in MealDrop's checkout/cart context, so the likeliest place to show a checkout submit action."
+ }
+}

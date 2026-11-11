@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 602" width="880" height="602" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" role="img">
+<title>How the story name related to what the agent needed</title>
+<desc>Names the UI being built 134 (47%); States the information 120 (42%); Does not match 31 (11%)</desc>
+<rect id="background" width="880" height="602" fill="#ffffff"/>
+<text id="title" x="40" y="44" font-size="20" font-weight="600" fill="#1f1f1e">How the story name related to what the agent needed</text>
+<text id="subtitle" x="40" y="68" font-size="13.5" fill="#5c5b56">285 story loads, each judged by three independent coders.</text>
+<g id="slices" stroke="#ffffff" stroke-width="2" stroke-linejoin="round">
+<path id="slice-names-the-ui-being-built" d="M440.0,280.0 L440.00,140.00 A140,140 0 0 1 466.08,417.55 Z" fill="#0072B2"><title>Names the UI being built: 134 of 285 (47%)</title></path>
+<path id="slice-states-the-information" d="M440.0,280.0 L466.08,417.55 A140,140 0 0 1 351.60,171.44 Z" fill="#E69F00"><title>States the information: 120 of 285 (42%)</title></path>
+<path id="slice-does-not-match" d="M440.0,280.0 L351.60,171.44 A140,140 0 0 1 440.00,140.00 Z" fill="#009E73"><title>Does not match: 31 of 285 (11%)</title></path>
+</g>
+<g id="leaders" fill="none" stroke="#5c5b56" stroke-width="1">
+<polyline points="584.4,266.4 599.3,265.0 642.0,259.1"/>
+<polyline points="308.5,341.2 294.9,347.5 238.0,346.7"/>
+<polyline points="391.4,143.4 386.4,129.3 238.0,114.8"/>
+</g>
+<g id="labels">
+<g id="label-names-the-ui-being-built">
+<rect x="650.0" y="253.1" width="11" height="11" rx="2" fill="#0072B2"/>
+<text x="667.0" y="264.1" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="start">Names the UI being built</text>
+<text x="667.0" y="282.1" font-size="13" fill="#5c5b56" text-anchor="start">134 loads · 47%</text>
+</g>
+<g id="label-states-the-information">
+<rect x="219.0" y="340.7" width="11" height="11" rx="2" fill="#E69F00"/>
+<text x="213.0" y="351.7" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">States the information</text>
+<text x="213.0" y="369.7" font-size="13" fill="#5c5b56" text-anchor="end">120 loads · 42%</text>
+</g>
+<g id="label-does-not-match">
+<rect x="219.0" y="108.8" width="11" height="11" rx="2" fill="#009E73"/>
+<text x="213.0" y="119.8" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">Does not match</text>
+<text x="213.0" y="137.8" font-size="13" fill="#5c5b56" text-anchor="end">31 loads · 11%</text>
+</g>
+</g>
+<text id="caption" x="40" y="505" font-size="13.5" fill="#1f1f1e">
+<tspan x="40" dy="0">In 89% of loads the story name pointed at what the agent needed. It either named the piece of UI the agent was</tspan>
+<tspan x="40" dy="19">building ("Mealdrop Checkout Form") or stated the information it was after ("Test Defaults To Type Button").</tspan>
+<tspan x="40" dy="19">The rest were generic names such as "Anatomy" or "Empty", loaded as a fallback.</tspan>
+<tspan x="40" dy="19">Needs were reconstructed by an annotator who could see the story name, so part of this match is built in.</tspan>
+</text>
+</svg>

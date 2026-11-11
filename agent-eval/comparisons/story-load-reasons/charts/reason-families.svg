@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 500" width="880" height="500" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" role="img">
+<title>Why agents loaded a specific story</title>
+<desc>Worked example 113 (40%); Undocumented contract 72 (25%); Second look 34 (12%); Component basics 27 (9%); Accessibility 22 (8%); Component choice 17 (6%)</desc>
+<rect id="background" width="880" height="500" fill="#ffffff"/>
+<text id="title" x="40" y="44" font-size="20" font-weight="600" fill="#1f1f1e">Why agents loaded a specific story</text>
+<text id="subtitle" x="40" y="68" font-size="13.5" fill="#5c5b56">285 story loads in 600 runs with the Storybook MCP. Reasons reconstructed from transcripts.</text>
+<g id="slices" stroke="#ffffff" stroke-width="2" stroke-linejoin="round">
+<path id="slice-worked-example" d="M440.0,280.0 L440.00,140.00 A140,140 0 0 1 524.77,391.42 Z" fill="#0072B2"><title>Worked example: 113 of 285 (40%)</title></path>
+<path id="slice-undocumented-contract" d="M440.0,280.0 L524.77,391.42 A140,140 0 0 1 327.19,362.91 Z" fill="#E69F00"><title>Undocumented contract: 72 of 285 (25%)</title></path>
+<path id="slice-second-look" d="M440.0,280.0 L327.19,362.91 A140,140 0 0 1 300.94,263.83 Z" fill="#009E73"><title>Second look: 34 of 285 (12%)</title></path>
+<path id="slice-component-basics" d="M440.0,280.0 L300.94,263.83 A140,140 0 0 1 333.92,188.64 Z" fill="#56B4E9"><title>Component basics: 27 of 285 (9%)</title></path>
+<path id="slice-accessibility" d="M440.0,280.0 L333.92,188.64 A140,140 0 0 1 388.75,149.72 Z" fill="#CC79A7"><title>Accessibility: 22 of 285 (8%)</title></path>
+<path id="slice-component-choice" d="M440.0,280.0 L388.75,149.72 A140,140 0 0 1 440.00,140.00 Z" fill="#D55E00"><title>Component choice: 17 of 285 (6%)</title></path>
+</g>
+<g id="leaders" fill="none" stroke="#5c5b56" stroke-width="1">
+<polyline points="577.4,233.7 591.6,228.9 642.0,220.7"/>
+<polyline points="419.3,423.5 417.2,438.4 238.0,443.3"/>
+<polyline points="299.8,317.1 285.3,321.0 238.0,318.5"/>
+<polyline points="307.2,221.8 293.5,215.7 238.0,206.7"/>
+<polyline points="356.1,161.8 347.4,149.5 238.0,159.0"/>
+<polyline points="413.0,137.5 410.2,122.8 238.0,113.0"/>
+</g>
+<g id="labels">
+<g id="label-worked-example">
+<rect x="650.0" y="214.7" width="11" height="11" rx="2" fill="#0072B2"/>
+<text x="667.0" y="225.7" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="start">Worked example</text>
+<text x="667.0" y="243.7" font-size="13" fill="#5c5b56" text-anchor="start">113 loads · 40%</text>
+</g>
+<g id="label-undocumented-contract">
+<rect x="219.0" y="437.3" width="11" height="11" rx="2" fill="#E69F00"/>
+<text x="213.0" y="448.3" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">Undocumented contract</text>
+<text x="213.0" y="466.3" font-size="13" fill="#5c5b56" text-anchor="end">72 loads · 25%</text>
+</g>
+<g id="label-second-look">
+<rect x="219.0" y="312.5" width="11" height="11" rx="2" fill="#009E73"/>
+<text x="213.0" y="323.5" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">Second look</text>
+<text x="213.0" y="341.5" font-size="13" fill="#5c5b56" text-anchor="end">34 loads · 12%</text>
+</g>
+<g id="label-component-basics">
+<rect x="219.0" y="200.7" width="11" height="11" rx="2" fill="#56B4E9"/>
+<text x="213.0" y="211.7" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">Component basics</text>
+<text x="213.0" y="229.7" font-size="13" fill="#5c5b56" text-anchor="end">27 loads · 9%</text>
+</g>
+<g id="label-accessibility">
+<rect x="219.0" y="153.0" width="11" height="11" rx="2" fill="#CC79A7"/>
+<text x="213.0" y="164.0" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">Accessibility</text>
+<text x="213.0" y="182.0" font-size="13" fill="#5c5b56" text-anchor="end">22 loads · 8%</text>
+</g>
+<g id="label-component-choice">
+<rect x="219.0" y="107.0" width="11" height="11" rx="2" fill="#D55E00"/>
+<text x="213.0" y="118.0" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">Component choice</text>
+<text x="213.0" y="136.0" font-size="13" fill="#5c5b56" text-anchor="end">17 loads · 6%</text>
+</g>
+</g>
+</svg>

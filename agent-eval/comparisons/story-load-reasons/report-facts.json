@@ -1,0 +1,10 @@
+{
+ "n": 285,
+ "runs": 177,
+ "opaque": 99,
+ "opaque_examples": 63,
+ "examples": 134,
+ "opaque_top": "QuantityStepper \"Mealdrop Cart Line\" (33), ProgressBar \"Mealdrop Checkout Steps\" (25), Sidebar \"Mealdrop Cart Panel\" (2)",
+ "kind_v": 0.6,
+ "kind_pred": 72
+}

@@ -1,0 +1,1634 @@
+{
+ "propensity": {
+  "api-ref": {
+   "701": [
+    0,
+    0
+   ],
+   "702": [
+    5,
+    5
+   ],
+   "703": [
+    1,
+    1
+   ],
+   "704": [
+    0,
+    0
+   ],
+   "706": [
+    0,
+    0
+   ]
+  },
+  "basic-docs": {
+   "701": [
+    0,
+    0
+   ],
+   "702": [
+    0,
+    0
+   ],
+   "703": [
+    3,
+    3
+   ],
+   "704": [
+    1,
+    1
+   ],
+   "706": [
+    0,
+    0
+   ]
+  },
+  "control-none": {
+   "701": [
+    0,
+    0
+   ],
+   "702": [
+    0,
+    0
+   ],
+   "703": [
+    0,
+    0
+   ],
+   "704": [
+    0,
+    0
+   ],
+   "706": [
+    0,
+    0
+   ]
+  },
+  "do-dont": {
+   "701": [
+    0,
+    0
+   ],
+   "702": [
+    1,
+    1
+   ],
+   "703": [
+    0,
+    0
+   ],
+   "704": [
+    0,
+    0
+   ],
+   "706": [
+    0,
+    0
+   ]
+  },
+  "docs-full": {
+   "701": [
+    0,
+    0
+   ],
+   "702": [
+    0,
+    0
+   ],
+   "703": [
+    0,
+    0
+   ],
+   "704": [
+    0,
+    0
+   ],
+   "706": [
+    0,
+    0
+   ]
+  },
+  "empty": {
+   "701": [
+    4,
+    4
+   ],
+   "702": [
+    8,
+    8
+   ],
+   "703": [
+    0,
+    0
+   ],
+   "704": [
+    1,
+    1
+   ],
+   "706": [
+    0,
+    0
+   ]
+  },
+  "full": {
+   "701": [
+    0,
+    0
+   ],
+   "702": [
+    6,
+    6
+   ],
+   "703": [
+    10,
+    17
+   ],
+   "704": [
+    6,
+    8
+   ],
+   "706": [
+    10,
+    11
+   ]
+  },
+  "history-issues": {
+   "701": [
+    1,
+    1
+   ],
+   "702": [
+    0,
+    0
+   ],
+   "703": [
+    0,
+    0
+   ],
+   "704": [
+    0,
+    0
+   ],
+   "706": [
+    0,
+    0
+   ]
+  },
+  "purge-docgen": {
+   "701": [
+    0,
+    0
+   ],
+   "702": [
+    7,
+    7
+   ],
+   "703": [
+    10,
+    10
+   ],
+   "704": [
+    7,
+    7
+   ],
+   "706": [
+    0,
+    0
+   ]
+  },
+  "purge-jsdoc": {
+   "701": [
+    0,
+    0
+   ],
+   "702": [
+    10,
+    10
+   ],
+   "703": [
+    10,
+    15
+   ],
+   "704": [
+    7,
+    12
+   ],
+   "706": [
+    9,
+    10
+   ]
+  },
+  "stories-api-ref": {
+   "701": [
+    1,
+    1
+   ],
+   "702": [
+    1,
+    1
+   ],
+   "703": [
+    5,
+    6
+   ],
+   "704": [
+    2,
+    2
+   ],
+   "706": [
+    0,
+    0
+   ]
+  },
+  "stories-full": {
+   "701": [
+    5,
+    8
+   ],
+   "702": [
+    10,
+    28
+   ],
+   "703": [
+    10,
+    26
+   ],
+   "704": [
+    10,
+    48
+   ],
+   "706": [
+    10,
+    21
+   ]
+  },
+  "when-to-use": {
+   "701": [
+    3,
+    3
+   ],
+   "702": [
+    1,
+    1
+   ],
+   "703": [
+    0,
+    0
+   ],
+   "704": [
+    2,
+    2
+   ],
+   "706": [
+    0,
+    0
+   ]
+  }
+ },
+ "arm_pairs_propensity": [
+  {
+   "groups": [
+    "full",
+    "stories-full"
+   ],
+   "present": [
+    32,
+    45
+   ],
+   "n": [
+    50,
+    50
+   ],
+   "chi2": 9.543,
+   "cramers_v": 0.309,
+   "p": 9.99950002499875e-05,
+   "target": "stories-full vs full",
+   "note": "role of docs",
+   "mean_calls_diff": 1.78,
+   "p_mean_calls": 4.999750012499375e-05
+  },
+  {
+   "groups": [
+    "full",
+    "purge-jsdoc"
+   ],
+   "present": [
+    32,
+    36
+   ],
+   "n": [
+    50,
+    50
+   ],
+   "chi2": 0.735,
+   "cramers_v": 0.086,
+   "p": 0.31488425578721063,
+   "target": "purge-jsdoc vs full",
+   "note": "role of JSDoc",
+   "mean_calls_diff": 0.1,
+   "p_mean_calls": 0.4785760711964402
+  },
+  {
+   "groups": [
+    "full",
+    "purge-docgen"
+   ],
+   "present": [
+    32,
+    24
+   ],
+   "n": [
+    50,
+    50
+   ],
+   "chi2": 2.597,
+   "cramers_v": 0.161,
+   "p": 0.06704664766761662,
+   "target": "purge-docgen vs full",
+   "note": "role of docgen; purge-docgen inlines every story, so its loads are re-loads",
+   "mean_calls_diff": -0.36,
+   "p_mean_calls": 0.0006499675016249188
+  }
+ ],
+ "family_x_workflow": {
+  "title": "B1. Family x workflow",
+  "units": 177,
+  "note": "runs with >=1 load; workflow shuffled within arm",
+  "tests": [
+   {
+    "groups": [
+     "701",
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     1,
+     21,
+     21,
+     19,
+     29
+    ],
+    "n": [
+     14,
+     49,
+     49,
+     36,
+     29
+    ],
+    "chi2": 41.289,
+    "cramers_v": 0.483,
+    "p": 4.999750012499375e-05,
+    "target": "worked-example",
+    "q": 0.0001,
+    "significant": true
+   },
+   {
+    "groups": [
+     "701",
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     2,
+     5,
+     39,
+     18,
+     1
+    ],
+    "n": [
+     14,
+     49,
+     49,
+     36,
+     29
+    ],
+    "chi2": 73.163,
+    "cramers_v": 0.643,
+    "p": 4.999750012499375e-05,
+    "target": "undocumented-contract",
+    "q": 0.0001,
+    "significant": true
+   },
+   {
+    "groups": [
+     "701",
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     6,
+     8,
+     10,
+     10,
+     0
+    ],
+    "n": [
+     14,
+     49,
+     49,
+     36,
+     29
+    ],
+    "chi2": 13.951,
+    "cramers_v": 0.281,
+    "p": 0.02134893255337233,
+    "target": "second-look",
+    "q": 0.0213,
+    "significant": true
+   },
+   {
+    "groups": [
+     "701",
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     4,
+     8,
+     0,
+     4,
+     10
+    ],
+    "n": [
+     14,
+     49,
+     49,
+     36,
+     29
+    ],
+    "chi2": 20.129,
+    "cramers_v": 0.337,
+    "p": 0.0032998350082495873,
+    "target": "component-basics",
+    "q": 0.004,
+    "significant": true
+   },
+   {
+    "groups": [
+     "701",
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     1,
+     8,
+     0,
+     8,
+     0
+    ],
+    "n": [
+     14,
+     49,
+     49,
+     36,
+     29
+    ],
+    "chi2": 17.537,
+    "cramers_v": 0.315,
+    "p": 0.0006999650017499125,
+    "target": "accessibility",
+    "q": 0.001,
+    "significant": true
+   },
+   {
+    "groups": [
+     "701",
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     0,
+     16,
+     0,
+     0,
+     0
+    ],
+    "n": [
+     14,
+     49,
+     49,
+     36,
+     29
+    ],
+    "chi2": 45.95,
+    "cramers_v": 0.51,
+    "p": 9.99950002499875e-05,
+    "target": "component-choice",
+    "q": 0.0002,
+    "significant": true
+   }
+  ]
+ },
+ "cluster_x_workflow": {
+  "title": "B2. Cluster x workflow",
+  "units": 177,
+  "note": "runs with >=1 load; workflow shuffled within arm",
+  "tests": [
+   {
+    "groups": [
+     "701",
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     1,
+     21,
+     0,
+     18,
+     29
+    ],
+    "n": [
+     14,
+     49,
+     49,
+     36,
+     29
+    ],
+    "chi2": 84.81,
+    "cramers_v": 0.692,
+    "p": 4.999750012499375e-05,
+    "target": "example-model",
+    "q": 0.0001,
+    "significant": true
+   },
+   {
+    "groups": [
+     "701",
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     1,
+     0,
+     30,
+     15,
+     1
+    ],
+    "n": [
+     14,
+     49,
+     49,
+     36,
+     29
+    ],
+    "chi2": 62.776,
+    "cramers_v": 0.596,
+    "p": 4.999750012499375e-05,
+    "target": "native-contract",
+    "q": 0.0001,
+    "significant": true
+   },
+   {
+    "groups": [
+     "701",
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     0,
+     0,
+     21,
+     13,
+     0
+    ],
+    "n": [
+     14,
+     49,
+     49,
+     36,
+     29
+    ],
+    "chi2": 46.158,
+    "cramers_v": 0.511,
+    "p": 4.999750012499375e-05,
+    "target": "example-form-wiring",
+    "q": 0.0001,
+    "significant": true
+   },
+   {
+    "groups": [
+     "701",
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     0,
+     5,
+     10,
+     3,
+     0
+    ],
+    "n": [
+     14,
+     49,
+     49,
+     36,
+     29
+    ],
+    "chi2": 10.624,
+    "cramers_v": 0.245,
+    "p": 0.05194740262986851,
+    "target": "reload-isolate",
+    "q": 0.0519,
+    "significant": false
+   },
+   {
+    "groups": [
+     "701",
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     6,
+     3,
+     0,
+     7,
+     0
+    ],
+    "n": [
+     14,
+     49,
+     49,
+     36,
+     29
+    ],
+    "chi2": 32.471,
+    "cramers_v": 0.428,
+    "p": 0.01749912504374781,
+    "target": "reload-opaque",
+    "q": 0.0199,
+    "significant": true
+   },
+   {
+    "groups": [
+     "701",
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     0,
+     0,
+     10,
+     3,
+     0
+    ],
+    "n": [
+     14,
+     49,
+     49,
+     36,
+     29
+    ],
+    "chi2": 19.632,
+    "cramers_v": 0.333,
+    "p": 0.0008499575021248938,
+    "target": "indirect-probe",
+    "q": 0.0017,
+    "significant": true
+   },
+   {
+    "groups": [
+     "701",
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     1,
+     8,
+     0,
+     4,
+     0
+    ],
+    "n": [
+     14,
+     49,
+     49,
+     36,
+     29
+    ],
+    "chi2": 12.743,
+    "cramers_v": 0.268,
+    "p": 0.017949102544872756,
+    "target": "parts-wiring",
+    "q": 0.0199,
+    "significant": true
+   },
+   {
+    "groups": [
+     "701",
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     1,
+     8,
+     0,
+     3,
+     0
+    ],
+    "n": [
+     14,
+     49,
+     49,
+     36,
+     29
+    ],
+    "chi2": 12.88,
+    "cramers_v": 0.27,
+    "p": 0.014649267536623168,
+    "target": "a11y-name",
+    "q": 0.0199,
+    "significant": true
+   },
+   {
+    "groups": [
+     "701",
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     0,
+     10,
+     0,
+     0,
+     0
+    ],
+    "n": [
+     14,
+     49,
+     49,
+     36,
+     29
+    ],
+    "chi2": 27.687,
+    "cramers_v": 0.396,
+    "p": 0.0111994400279986,
+    "target": "usage-guidance",
+    "q": 0.0187,
+    "significant": true
+   },
+   {
+    "groups": [
+     "701",
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     0,
+     0,
+     0,
+     0,
+     10
+    ],
+    "n": [
+     14,
+     49,
+     49,
+     36,
+     29
+    ],
+    "chi2": 54.09,
+    "cramers_v": 0.553,
+    "p": 4.999750012499375e-05,
+    "target": "variant-catalogue",
+    "q": 0.0001,
+    "significant": true
+   }
+  ]
+ },
+ "family_x_workflow_stated": {
+  "title": "B3. Family x workflow, stated or partial evidence only",
+  "units": 94,
+  "note": "sensitivity check",
+  "tests": [
+   {
+    "groups": [
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     8,
+     18,
+     14,
+     9
+    ],
+    "n": [
+     16,
+     41,
+     28,
+     9
+    ],
+    "chi2": 9.457,
+    "cramers_v": 0.317,
+    "p": 0.08084595770211489,
+    "target": "worked-example",
+    "q": 0.1213,
+    "significant": false
+   },
+   {
+    "groups": [
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     1,
+     32,
+     9,
+     0
+    ],
+    "n": [
+     16,
+     41,
+     28,
+     9
+    ],
+    "chi2": 37.08,
+    "cramers_v": 0.628,
+    "p": 4.999750012499375e-05,
+    "target": "undocumented-contract",
+    "q": 0.0001,
+    "significant": true
+   },
+   {
+    "groups": [
+     "702",
+     "703",
+     "704",
+     "706"
+    ],
+    "present": [
+     3,
+     9,
+     10,
+     0
+    ],
+    "n": [
+     16,
+     41,
+     28,
+     9
+    ],
+    "chi2": 5.359,
+    "cramers_v": 0.239,
+    "p": 0.247937603119844,
+    "target": "second-look",
+    "q": 0.2479,
+    "significant": false
+   }
+  ]
+ },
+ "family_x_arm_all_runs": {
+  "title": "C1. Family x arm (stories-full, full, purge-jsdoc), all 150 runs",
+  "units": 150,
+  "note": "arm shuffled within workflow",
+  "tests": [
+   {
+    "groups": [
+     "full",
+     "purge-jsdoc",
+     "stories-full"
+    ],
+    "present": [
+     26,
+     29,
+     36
+    ],
+    "n": [
+     50,
+     50,
+     50
+    ],
+    "chi2": 4.414,
+    "cramers_v": 0.172,
+    "p": 0.02769861506924654,
+    "target": "worked-example",
+    "q": 0.0277,
+    "significant": true
+   },
+   {
+    "groups": [
+     "full",
+     "purge-jsdoc",
+     "stories-full"
+    ],
+    "present": [
+     14,
+     14,
+     26
+    ],
+    "n": [
+     50,
+     50,
+     50
+    ],
+    "chi2": 8.333,
+    "cramers_v": 0.236,
+    "p": 0.00014999250037498125,
+    "target": "undocumented-contract",
+    "q": 0.0002,
+    "significant": true
+   },
+   {
+    "groups": [
+     "full",
+     "purge-jsdoc",
+     "stories-full"
+    ],
+    "present": [
+     0,
+     0,
+     23
+    ],
+    "n": [
+     50,
+     50,
+     50
+    ],
+    "chi2": 54.331,
+    "cramers_v": 0.602,
+    "p": 4.999750012499375e-05,
+    "target": "component-basics",
+    "q": 0.0001,
+    "significant": true
+   },
+   {
+    "groups": [
+     "full",
+     "purge-jsdoc",
+     "stories-full"
+    ],
+    "present": [
+     0,
+     0,
+     10
+    ],
+    "n": [
+     50,
+     50,
+     50
+    ],
+    "chi2": 21.429,
+    "cramers_v": 0.378,
+    "p": 4.999750012499375e-05,
+    "target": "accessibility",
+    "q": 0.0001,
+    "significant": true
+   }
+  ]
+ },
+ "cluster_x_arm_all_runs": {
+  "title": "C2. Cluster x arm, all 150 runs",
+  "units": 150,
+  "note": "arm shuffled within workflow",
+  "tests": [
+   {
+    "groups": [
+     "full",
+     "purge-jsdoc",
+     "stories-full"
+    ],
+    "present": [
+     20,
+     23,
+     26
+    ],
+    "n": [
+     50,
+     50,
+     50
+    ],
+    "chi2": 1.449,
+    "cramers_v": 0.098,
+    "p": 0.20038998050097495,
+    "target": "example-model",
+    "q": 0.2004,
+    "significant": false
+   },
+   {
+    "groups": [
+     "full",
+     "purge-jsdoc",
+     "stories-full"
+    ],
+    "present": [
+     14,
+     14,
+     19
+    ],
+    "n": [
+     50,
+     50,
+     50
+    ],
+    "chi2": 1.549,
+    "cramers_v": 0.102,
+    "p": 0.09764511774411279,
+    "target": "native-contract",
+    "q": 0.1221,
+    "significant": false
+   },
+   {
+    "groups": [
+     "full",
+     "purge-jsdoc",
+     "stories-full"
+    ],
+    "present": [
+     6,
+     8,
+     20
+    ],
+    "n": [
+     50,
+     50,
+     50
+    ],
+    "chi2": 13.083,
+    "cramers_v": 0.295,
+    "p": 4.999750012499375e-05,
+    "target": "example-form-wiring",
+    "q": 0.0001,
+    "significant": true
+   },
+   {
+    "groups": [
+     "full",
+     "purge-jsdoc",
+     "stories-full"
+    ],
+    "present": [
+     0,
+     0,
+     13
+    ],
+    "n": [
+     50,
+     50,
+     50
+    ],
+    "chi2": 28.467,
+    "cramers_v": 0.436,
+    "p": 4.999750012499375e-05,
+    "target": "parts-wiring",
+    "q": 0.0001,
+    "significant": true
+   },
+   {
+    "groups": [
+     "full",
+     "purge-jsdoc",
+     "stories-full"
+    ],
+    "present": [
+     0,
+     0,
+     10
+    ],
+    "n": [
+     50,
+     50,
+     50
+    ],
+    "chi2": 21.429,
+    "cramers_v": 0.378,
+    "p": 4.999750012499375e-05,
+    "target": "variant-catalogue",
+    "q": 0.0001,
+    "significant": true
+   }
+  ]
+ },
+ "family_x_arm_loaders": {
+  "title": "C3. Family x arm, only runs with >=1 load",
+  "units": 113,
+  "note": "mix of reasons given that the run loaded something",
+  "tests": [
+   {
+    "groups": [
+     "full",
+     "purge-jsdoc",
+     "stories-full"
+    ],
+    "present": [
+     26,
+     29,
+     36
+    ],
+    "n": [
+     32,
+     36,
+     45
+    ],
+    "chi2": 0.019,
+    "cramers_v": 0.013,
+    "p": 1.0,
+    "target": "worked-example",
+    "q": 1.0,
+    "significant": false
+   },
+   {
+    "groups": [
+     "full",
+     "purge-jsdoc",
+     "stories-full"
+    ],
+    "present": [
+     14,
+     14,
+     26
+    ],
+    "n": [
+     32,
+     36,
+     45
+    ],
+    "chi2": 3.152,
+    "cramers_v": 0.167,
+    "p": 0.008899555022248887,
+    "target": "undocumented-contract",
+    "q": 0.0119,
+    "significant": true
+   },
+   {
+    "groups": [
+     "full",
+     "purge-jsdoc",
+     "stories-full"
+    ],
+    "present": [
+     0,
+     0,
+     23
+    ],
+    "n": [
+     32,
+     36,
+     45
+    ],
+    "chi2": 43.638,
+    "cramers_v": 0.621,
+    "p": 4.999750012499375e-05,
+    "target": "component-basics",
+    "q": 0.0001,
+    "significant": true
+   },
+   {
+    "groups": [
+     "full",
+     "purge-jsdoc",
+     "stories-full"
+    ],
+    "present": [
+     0,
+     0,
+     10
+    ],
+    "n": [
+     32,
+     36,
+     45
+    ],
+    "chi2": 16.578,
+    "cramers_v": 0.383,
+    "p": 4.999750012499375e-05,
+    "target": "accessibility",
+    "q": 0.0001,
+    "significant": true
+   }
+  ]
+ },
+ "family_stories-full_vs_full": {
+  "title": "C4. Family, stories-full vs full, all 100 runs",
+  "units": 100,
+  "note": "arm shuffled within workflow",
+  "tests": [
+   {
+    "groups": [
+     "full",
+     "stories-full"
+    ],
+    "present": [
+     26,
+     36
+    ],
+    "n": [
+     50,
+     50
+    ],
+    "chi2": 4.244,
+    "cramers_v": 0.206,
+    "p": 0.014799260036998151,
+    "target": "worked-example",
+    "q": 0.0148,
+    "significant": true
+   },
+   {
+    "groups": [
+     "full",
+     "stories-full"
+    ],
+    "present": [
+     14,
+     26
+    ],
+    "n": [
+     50,
+     50
+    ],
+    "chi2": 6.0,
+    "cramers_v": 0.245,
+    "p": 0.0007999600019999,
+    "target": "undocumented-contract",
+    "q": 0.0011,
+    "significant": true
+   },
+   {
+    "groups": [
+     "full",
+     "stories-full"
+    ],
+    "present": [
+     0,
+     23
+    ],
+    "n": [
+     50,
+     50
+    ],
+    "chi2": 29.87,
+    "cramers_v": 0.547,
+    "p": 4.999750012499375e-05,
+    "target": "component-basics",
+    "q": 0.0002,
+    "significant": true
+   },
+   {
+    "groups": [
+     "full",
+     "stories-full"
+    ],
+    "present": [
+     0,
+     10
+    ],
+    "n": [
+     50,
+     50
+    ],
+    "chi2": 11.111,
+    "cramers_v": 0.333,
+    "p": 0.00024998750062496874,
+    "target": "accessibility",
+    "q": 0.0005,
+    "significant": true
+   }
+  ]
+ },
+ "family_purge-jsdoc_vs_full": {
+  "title": "C4. Family, purge-jsdoc vs full, all 100 runs",
+  "units": 100,
+  "note": "arm shuffled within workflow",
+  "tests": [
+   {
+    "groups": [
+     "full",
+     "purge-jsdoc"
+    ],
+    "present": [
+     26,
+     29
+    ],
+    "n": [
+     50,
+     50
+    ],
+    "chi2": 0.364,
+    "cramers_v": 0.06,
+    "p": 0.6020698965051747,
+    "target": "worked-example",
+    "q": 1.0,
+    "significant": false
+   },
+   {
+    "groups": [
+     "full",
+     "purge-jsdoc"
+    ],
+    "present": [
+     14,
+     14
+    ],
+    "n": [
+     50,
+     50
+    ],
+    "chi2": 0.0,
+    "cramers_v": 0.0,
+    "p": 1.0,
+    "target": "undocumented-contract",
+    "q": 1.0,
+    "significant": false
+   }
+  ]
+ },
+ "family_purge-docgen_vs_full": {
+  "title": "C4. Family, purge-docgen vs full, all 100 runs",
+  "units": 100,
+  "note": "arm shuffled within workflow",
+  "tests": [
+   {
+    "groups": [
+     "full",
+     "purge-docgen"
+    ],
+    "present": [
+     26,
+     0
+    ],
+    "n": [
+     50,
+     50
+    ],
+    "chi2": 35.135,
+    "cramers_v": 0.593,
+    "p": 4.999750012499375e-05,
+    "target": "worked-example",
+    "q": 0.0,
+    "significant": true
+   },
+   {
+    "groups": [
+     "full",
+     "purge-docgen"
+    ],
+    "present": [
+     0,
+     24
+    ],
+    "n": [
+     50,
+     50
+    ],
+    "chi2": 31.579,
+    "cramers_v": 0.562,
+    "p": 4.999750012499375e-05,
+    "target": "second-look",
+    "q": 0.0,
+    "significant": true
+   },
+   {
+    "groups": [
+     "full",
+     "purge-docgen"
+    ],
+    "present": [
+     14,
+     0
+    ],
+    "n": [
+     50,
+     50
+    ],
+    "chi2": 16.279,
+    "cramers_v": 0.403,
+    "p": 4.999750012499375e-05,
+    "target": "undocumented-contract",
+    "q": 0.0,
+    "significant": true
+   }
+  ]
+ },
+ "family_x_kind": {
+  "kinds": [
+   "anatomy",
+   "api-ref-prop",
+   "app-example",
+   "autogen-empty",
+   "not-in-instance",
+   "showcase-highlight",
+   "test"
+  ],
+  "families": [
+   "accessibility",
+   "component-basics",
+   "component-choice",
+   "second-look",
+   "undocumented-contract",
+   "worked-example"
+  ],
+  "table": [
+   [
+    1,
+    10,
+    0,
+    0,
+    0,
+    1,
+    10
+   ],
+   [
+    14,
+    0,
+    0,
+    0,
+    3,
+    10,
+    0
+   ],
+   [
+    2,
+    0,
+    7,
+    8,
+    0,
+    0,
+    0
+   ],
+   [
+    4,
+    1,
+    14,
+    5,
+    0,
+    0,
+    10
+   ],
+   [
+    11,
+    5,
+    0,
+    0,
+    0,
+    8,
+    48
+   ],
+   [
+    0,
+    0,
+    113,
+    0,
+    0,
+    0,
+    0
+   ]
+  ],
+  "cramers_v": 0.6,
+  "kind_predicts_family": 0.723,
+  "cluster_by_kind": {
+   "api-ref-prop": {
+    "a11y-name": 10,
+    "reload-opaque": 1,
+    "indirect-probe": 2,
+    "classname-hook": 3
+   },
+   "showcase-highlight": {
+    "indirect-probe": 1,
+    "a11y-name": 1,
+    "native-contract": 2,
+    "variant-catalogue": 10,
+    "bounds-behaviour": 5
+   },
+   "anatomy": {
+    "indirect-probe": 11,
+    "usage-guidance": 2,
+    "reload-opaque": 4,
+    "a11y-semantics": 1,
+    "parts-wiring": 14
+   },
+   "autogen-empty": {
+    "reload-opaque": 5,
+    "usage-guidance": 8
+   },
+   "app-example": {
+    "example-model": 72,
+    "example-form-wiring": 41,
+    "reload-opaque": 6,
+    "reload-isolate": 8,
+    "example-precedent": 7
+   },
+   "test": {
+    "native-contract": 48,
+    "reload-isolate": 10,
+    "a11y-semantics": 9,
+    "a11y-name": 1
+   },
+   "not-in-instance": {
+    "guessed-story": 3
+   }
+  }
+ },
+ "outcome_by_cluster": {
+  "a11y-name": {
+   "adopted": 5,
+   "unclear": 5,
+   "no_new_info": 2
+  },
+  "indirect-probe": {
+   "answered_negative": 8,
+   "no_new_info": 4,
+   "confirmed": 2
+  },
+  "usage-guidance": {
+   "no_new_info": 10
+  },
+  "reload-opaque": {
+   "no_new_info": 16
+  },
+  "example-model": {
+   "unclear": 28,
+   "no_new_info": 39,
+   "confirmed": 2,
+   "answered_negative": 3
+  },
+  "native-contract": {
+   "answered_negative": 14,
+   "confirmed": 12,
+   "no_new_info": 18,
+   "unclear": 4,
+   "adopted": 2
+  },
+  "example-form-wiring": {
+   "answered_negative": 26,
+   "confirmed": 10,
+   "unclear": 2,
+   "adopted": 3
+  },
+  "reload-isolate": {
+   "no_new_info": 14,
+   "answered_negative": 3,
+   "confirmed": 1
+  },
+  "a11y-semantics": {
+   "adopted": 1,
+   "unclear": 2,
+   "no_new_info": 6,
+   "answered_negative": 1
+  },
+  "classname-hook": {
+   "no_new_info": 2,
+   "unclear": 1
+  },
+  "parts-wiring": {
+   "unclear": 1,
+   "answered_negative": 2,
+   "no_new_info": 11
+  },
+  "variant-catalogue": {
+   "confirmed": 4,
+   "unclear": 6
+  },
+  "example-precedent": {
+   "no_new_info": 7
+  },
+  "bounds-behaviour": {
+   "no_new_info": 5
+  },
+  "guessed-story": {
+   "answered_negative": 3
+  }
+ },
+ "params": {
+  "n_perm": 20000,
+  "seed": 20261111,
+  "min_runs_per_test": 8,
+  "fdr": 0.05
+ }
+}

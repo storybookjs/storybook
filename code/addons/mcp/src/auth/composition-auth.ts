@@ -111,9 +111,7 @@ export class CompositionAuth {
       ref,
       status: { kind: 'unreachable', failures: 0, retryAt: 0 },
     }));
-    for (const state of this.#refStates) {
-      await this.#check(state);
-    }
+    await this.#checkRefs(this.#refStates);
   }
 
   // Concurrent callers share one round of checks.
@@ -124,22 +122,29 @@ export class CompositionAuth {
       );
       if (due.length === 0) return;
       this.#recheck = (async () => {
-        for (const state of due) {
-          await this.#check(state);
+        try {
+          await this.#checkRefs(due);
+        } finally {
+          this.#recheck = null;
         }
-        this.#recheck = null;
       })();
     }
     await this.#recheck;
   }
 
-  async #check(state: RefState): Promise<void> {
+  async #checkRefs(states: RefState[]): Promise<void> {
+    const outcomes = await Promise.allSettled(states.map(({ ref }) => this.#checkRef(ref.url)));
+    // Apply in config order so response timing cannot choose the OAuth server.
+    for (const [index, state] of states.entries()) {
+      this.#applyCheck(state, outcomes[index]);
+    }
+  }
+
+  #applyCheck(state: RefState, outcome: PromiseSettledResult<RefCheckResult>): void {
     const { ref } = state;
     const previous = state.status;
-    let result: RefCheckResult;
-    try {
-      result = await this.#checkRef(ref.url);
-    } catch (error) {
+    if (outcome.status === 'rejected') {
+      const error = outcome.reason;
       const failures = previous.kind === 'unreachable' ? previous.failures + 1 : 1;
       const delay = Math.min(RECHECK_BASE_DELAY * 2 ** (failures - 1), RECHECK_MAX_DELAY);
       state.status = { kind: 'unreachable', failures, retryAt: Date.now() + delay };
@@ -151,6 +156,7 @@ export class CompositionAuth {
       return;
     }
 
+    const result = outcome.value;
     if (previous.kind === 'unreachable' && previous.failures > 0) {
       logger.info(`[addon-mcp] Composed ref "${ref.title}" (${ref.url}) is reachable again.`);
     }

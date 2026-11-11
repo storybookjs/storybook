@@ -366,6 +366,12 @@ describe('experimental_devServer', () => {
 
       stubPrivateRefDiscovery();
       await vi.advanceTimersByTimeAsync(5_000);
+      // This request starts the re-check in the background; the next one sees its result.
+      await mcpHandler({ headers: { 'content-type': 'application/json' } }, {
+        writeHead: vi.fn(),
+        end: vi.fn(),
+      } as any);
+      await vi.advanceTimersByTimeAsync(0);
 
       const after = { writeHead: vi.fn(), end: vi.fn() } as any;
       await mcpHandler({ headers: { 'content-type': 'application/json' } }, after);

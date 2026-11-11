@@ -67,7 +67,11 @@ function buildComposition(
     refs.length > 0 ? compositionAuth.createManifestProvider(baseUrl) : undefined;
 
   return {
-    sources,
+    currentSources: () => {
+      void compositionAuth.recheckUnreachableRefs();
+      return refs.length > 0 ? compositionAuth.buildSources() : sources;
+    },
+    multiSource,
     compositionAuth,
     manifestAccess: { manifestProvider, localAccess },
     // Same gates the MCP server uses to register these tools, so the page can't
@@ -194,7 +198,8 @@ export const experimental_devServer: PresetPropertyFn<
 
   app!.post(endpoint, async (req, res) => {
     if (rejectDisallowedOrigin(req, res)) return;
-    const { sources, compositionAuth, manifestAccess } = await composition;
+    const { currentSources, compositionAuth, manifestAccess, multiSource } = await composition;
+    const sources = currentSources();
     if (requireAuth(req, res, compositionAuth)) return;
     if (rejectNonJsonBody(req, res)) return;
 
@@ -207,6 +212,7 @@ export const experimental_devServer: PresetPropertyFn<
       basePath,
       endpoint,
       sources,
+      multiSource,
       ...manifestAccess,
       compositionAuth,
     });
@@ -216,8 +222,10 @@ export const experimental_devServer: PresetPropertyFn<
 
   app!.get(endpoint, async (req, res) => {
     if (rejectDisallowedOrigin(req, res)) return;
-    const { sources, compositionAuth, manifestAccess, availability } = await composition;
+    const { currentSources, compositionAuth, manifestAccess, availability, multiSource } =
+      await composition;
     if (!req.headers['accept']?.includes('text/html')) {
+      const sources = currentSources();
       if (requireAuth(req, res, compositionAuth)) return;
 
       return mcpServerHandler({
@@ -229,6 +237,7 @@ export const experimental_devServer: PresetPropertyFn<
         basePath,
         endpoint,
         sources,
+        multiSource,
         ...manifestAccess,
         compositionAuth,
       });

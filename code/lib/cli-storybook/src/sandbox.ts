@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { mkdir, readdir, rm } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import { isAbsolute } from 'node:path';
 
 import { PackageManagerName } from 'storybook/internal/common';
@@ -31,6 +31,28 @@ interface SandboxOptions {
 type Choice = keyof typeof TEMPLATES;
 
 const toChoices = (c: Choice) => ({ label: TEMPLATES[c].name, value: c });
+
+// The package manager to print commands for: the one init ran with, or else the one the downloaded
+// sandbox pins. The sandboxes repository holds both pnpm and Yarn sandboxes.
+export async function getSandboxPackageManager(
+  directory: string,
+  { initiated, force }: { initiated: boolean; force?: PackageManagerName }
+): Promise<string> {
+  if (initiated) {
+    return JsPackageManagerFactory.getPackageManager({ force }, directory).getCommandName();
+  }
+
+  try {
+    const { packageManager } = JSON.parse(await readFile(join(directory, 'package.json'), 'utf-8'));
+    return (
+      ['pnpm', 'yarn', 'bun'].find(
+        (name) => typeof packageManager === 'string' && packageManager.startsWith(`${name}@`)
+      ) ?? 'npm'
+    );
+  } catch {
+    return 'npm';
+  }
+}
 
 export const sandbox = async ({
   output: outputDirectory,
@@ -238,10 +260,16 @@ export const sandbox = async ({
       throw err;
     }
 
-    const initMessage = init
+    const sandboxPackageManager =
+      init &&
+      (await getSandboxPackageManager(templateDestination, {
+        initiated: downloadType === 'before-storybook',
+        force: options.packageManager,
+      }));
+    const initMessage = sandboxPackageManager
       ? picocolors.yellow(dedent`
-          yarn install
-          yarn storybook
+          ${sandboxPackageManager} install
+          ${sandboxPackageManager} run storybook
         `)
       : `Recreate your setup, then ${picocolors.yellow(`npx storybook@latest init`)}`;
 

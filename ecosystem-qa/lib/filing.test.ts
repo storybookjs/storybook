@@ -48,20 +48,42 @@ describe('planFiling', () => {
     expect(steps[1]).toMatchObject({
       kind: 'push-evidence',
       files: [
-        { name: 'hmr.png', localPath: 'results/mealdrop/linux/claude/evidence/hmr.png' },
+        { name: 'hmr.png', localPath: 'results/mealdrop/linux/claude/evidence/hmr.png', bytes: 0 },
         {
           name: 'baseline/dev.log',
           localPath: 'results/mealdrop/linux/claude/evidence/baseline/dev.log',
+          bytes: 0,
         },
         {
           name: 'upgraded/dev.log',
           localPath: 'results/mealdrop/linux/claude/evidence/upgraded/dev.log',
+          bytes: 0,
         },
       ],
     });
     expect(issueBody(steps)).toContain(`(${assets}/hmr.png)`);
     expect(issueBody(steps)).toContain(`- [baseline/dev.log](${assets}/baseline/dev.log)`);
     expect(issueBody(steps)).toContain(`- [upgraded/dev.log](${assets}/upgraded/dev.log)`);
+  });
+
+  it('keeps a file over the cap out of the push and says so in the issue', () => {
+    const proposal = asIssue(
+      proposalFor({ evidence: { png: 'hmr.png', logs: ['upgraded/dev.log'] } })
+    );
+    const big = {
+      ...proposal,
+      evidence: proposal.evidence.map((file) =>
+        file.name === 'upgraded/dev.log' ? { ...file, bytes: 48 * 1024 * 1024 } : file
+      ),
+    };
+
+    const steps = planFiling(big, { repo: REPO, evidenceLinks: 'assets' });
+
+    expect(steps[1]).toMatchObject({ kind: 'push-evidence', files: [{ name: 'hmr.png' }] });
+    expect(issueBody(steps)).toContain(
+      '- `upgraded/dev.log` (48 MB, kept out of the evidence branch)'
+    );
+    expect(issueBody(steps)).not.toContain('upgraded/dev.log)');
   });
 
   it('links the downloaded files in a dry run', () => {

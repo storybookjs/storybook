@@ -38,9 +38,9 @@ describe('groupFindings', () => {
     ]);
     expect(hmr.labels).toEqual(['bug', 'internal-qa', 'upgrade:11.0']);
     expect(hmr.evidence).toEqual([
-      { name: 'hmr.png', localPath: 'results/mealdrop/linux/claude/evidence/hmr.png' },
-      { name: 'hmr.gif', localPath: 'results/mealdrop/linux/claude/evidence/hmr.gif' },
-      { name: 'dev.log', localPath: 'results/mealdrop/linux/claude/evidence/dev.log' },
+      { name: 'hmr.png', localPath: 'results/mealdrop/linux/claude/evidence/hmr.png', bytes: 0 },
+      { name: 'hmr.gif', localPath: 'results/mealdrop/linux/claude/evidence/hmr.gif', bytes: 0 },
+      { name: 'dev.log', localPath: 'results/mealdrop/linux/claude/evidence/dev.log', bytes: 0 },
     ]);
     const body = renderIssueBody(hmr, byName);
     expect(body).toContain(`https://github.com/storybookjs/mealdrop/tree/${'b'.repeat(40)}`);

@@ -178,7 +178,11 @@ export const Cycle = z.strictObject({
 });
 export type Cycle = z.infer<typeof Cycle>;
 
-export const EvidenceFile = z.strictObject({ localPath: z.string(), name: EvidenceName });
+export const EvidenceFile = z.strictObject({
+  localPath: z.string(),
+  name: EvidenceName,
+  bytes: z.number().int().nonnegative(),
+});
 export type EvidenceFile = z.infer<typeof EvidenceFile>;
 
 const ProposalBase = {

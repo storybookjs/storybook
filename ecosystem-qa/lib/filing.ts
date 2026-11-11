@@ -3,6 +3,9 @@ import { fence, renderCommentBody, renderIssueBody } from './proposals.ts';
 import type { Cycle, EvidenceFile, Proposal } from './schema.ts';
 
 export const ASSETS_BRANCH = 'qa-assets';
+// Well under GitHub's 100 MB push limit, and small enough that a release cycle's evidence does not
+// turn the orphan branch into a download.
+export const MAX_EVIDENCE_BYTES = 10 * 1024 * 1024;
 
 export type FilingStep =
   | { kind: 'skip'; reason: string }
@@ -52,19 +55,24 @@ export const planFiling = (proposal: Proposal, options: FilingOptions): FilingSt
     return [{ kind: 'skip', reason: `already filed as #${options.filedAs}` }];
   }
   const { cycle, evidence, assetDir } = proposal;
-  const localPaths = new Map(evidence.map((file) => [file.name, file.localPath]));
+  // A file over the cap stays out of the push, which would otherwise fail and take the issue with
+  // it; the issue names it with its size, and the run artifact still holds it.
+  const kept = evidence.filter((file) => file.bytes <= MAX_EVIDENCE_BYTES);
+  const localPaths = new Map(kept.map((file) => [file.name, file.localPath]));
   const evidenceUrl = (name: string) =>
-    options.evidenceLinks === 'local'
-      ? (localPaths.get(name) ?? name)
-      : `https://raw.githubusercontent.com/${options.repo}/${ASSETS_BRANCH}/${assetDir}/${name}`;
+    !localPaths.has(name)
+      ? null
+      : options.evidenceLinks === 'local'
+        ? localPaths.get(name)!
+        : `https://raw.githubusercontent.com/${options.repo}/${ASSETS_BRANCH}/${assetDir}/${name}`;
   return [
     ...pushCycle(cycle),
-    ...(evidence.length > 0
+    ...(kept.length > 0
       ? [
           {
             kind: 'push-evidence' as const,
             assetDir,
-            files: evidence,
+            files: kept,
             message: `qa: evidence for ${proposal.fingerprint}`,
           },
         ]

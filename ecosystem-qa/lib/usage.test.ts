@@ -51,6 +51,32 @@ describe('usageFromStream', () => {
     });
   });
 
+  it('adds up every result line of a run whose answer was sent back to the agent', () => {
+    const since = (outputTokens: number, costUSD: number) => ({
+      type: 'result',
+      model_usage_since_last_result: {
+        'claude-haiku-5-5': {
+          inputTokens: 1,
+          outputTokens,
+          cacheReadInputTokens: 100,
+          cacheCreationInputTokens: 10,
+          costUSD,
+        },
+      },
+    });
+    const file = streamFile([since(85771, 1.25), since(4475, 0.5)]);
+
+    expect(usageFromStream(file, 'claude', 'claude-haiku-5-5')).toEqual({
+      inputTokens: 2,
+      outputTokens: 90246,
+      cacheReadTokens: 200,
+      cacheWriteTokens: 20,
+      usd: 1.75,
+      model: 'claude-haiku-5-5',
+      priceSource: 'agent',
+    });
+  });
+
   it('counts each Claude call once, using the last copy of its usage, when no result line has per-model totals', () => {
     const file = streamFile([
       assistant('msg_1', {

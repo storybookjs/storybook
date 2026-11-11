@@ -31,7 +31,12 @@ on:
         type: boolean
         default: true
   pull_request:
-    paths: ['ecosystem-qa/**', '.github/workflows/ecosystem-qa.yml']
+    paths:
+      - 'ecosystem-qa/**'
+      - '.github/workflows/ecosystem-qa.yml'
+      # The harness imports these, so a change there must run the smoke job too.
+      - 'agent-eval/lib/usage.ts'
+      - 'scripts/utils/gh.ts'
 
 permissions: {}
 

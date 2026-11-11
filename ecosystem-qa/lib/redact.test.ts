@@ -27,6 +27,15 @@ describe('redactSecrets', () => {
     );
   });
 
+  it('leaves package names that merely contain sk- alone', () => {
+    const names = 'react-mask-input-component-for-forms task-queue-worker-process-helper';
+
+    expect(redactSecrets(names)).toBe(names);
+    expect(redactSecrets(`OPENAI_API_KEY=sk-proj-${'k'.repeat(30)}`)).toBe(
+      'OPENAI_API_KEY=[redacted]'
+    );
+  });
+
   it('replaces a base64 run that decodes to a credential and keeps other runs', () => {
     const encoded = Buffer.from(`x-access-token:${token}`).toString('base64');
     const hash = 'a'.repeat(64);

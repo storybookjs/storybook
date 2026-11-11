@@ -7,8 +7,8 @@ const REDACTED = '[redacted]';
 // Credential shapes a run could leak through agent prose or a log: provider keys, GitHub tokens,
 // and HTTP auth headers. Actions masks only the exact secret value, so encoded forms need this.
 const SECRET_PATTERNS = [
-  /sk-ant-[\w-]{10,}/g,
-  /sk-(?:proj-)?[\w-]{20,}/g,
+  /(?<![\w-])sk-ant-[\w-]{10,}/g,
+  /(?<![\w-])sk-(?:proj-)?[\w-]{20,}/g,
   /github_pat_\w{20,}/g,
   /gh[pousr]_[A-Za-z0-9]{20,}/g,
   /(authorization:\s*basic\s+)\S+/gi,

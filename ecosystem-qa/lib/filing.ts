@@ -1,3 +1,4 @@
+import { cycleRef } from './cycle.ts';
 import { fence, renderCommentBody, renderIssueBody } from './proposals.ts';
 import type { EvidenceFile, Proposal } from './schema.ts';
 
@@ -79,7 +80,7 @@ export const describeStep = (step: FilingStep, repo: string): string => {
     case 'skip':
       return `Skip: ${step.reason}.`;
     case 'push-cycle':
-      return `Push \`${step.bundle}\` head ${step.headSha} to ${step.repo} as \`${step.branch}\`.`;
+      return `Push \`${step.bundle}\` head ${step.headSha} to ${step.repo} as \`${cycleRef(step.branch)}\`.`;
     case 'push-evidence':
       return `Push ${step.files.map((file) => `\`${file.name}\``).join(', ')} to \`${ASSETS_BRANCH}/${step.assetDir}/\` of ${repo}.`;
     case 'create-issue':

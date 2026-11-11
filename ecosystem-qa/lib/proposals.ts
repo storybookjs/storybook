@@ -1,6 +1,6 @@
 import { join } from 'pathe';
 
-import { versionLine } from './cycle.ts';
+import { cycleRef, versionLine } from './cycle.ts';
 import { fingerprint } from './fingerprint.ts';
 import type { LoadedResult } from './results.ts';
 import { redactSecrets } from './redact.ts';
@@ -78,7 +78,7 @@ const metadataBlock = (proposal: IssueProposal | CommentProposal): string => {
     `storybook: ${unique(sources.map((source) => source.version))}`,
     `repo: ${cycle.repo}`,
     `sha: ${cycle.headSha ?? cycle.startSha}`,
-    `cycleBranch: ${cycle.headSha ? cycle.branch : 'none'}`,
+    `cycleRef: ${cycle.headSha ? cycleRef(cycle.branch) : 'none'}`,
     `os: ${unique(sources.map((source) => source.os))}`,
     `engine: ${unique(sources.map((source) => source.engine))}`,
     `model: ${unique(sources.map((source) => source.model))}`,
@@ -109,10 +109,11 @@ const sourceLines = (proposal: IssueProposal | CommentProposal, withVersion = fa
 const reproductionLink = (cycle: Cycle): string[] => {
   const repoUrl = `https://github.com/${cycle.repo}`;
   if (cycle.headSha) {
+    const ref = cycleRef(cycle.branch);
     return [
       `${repoUrl}/tree/${cycle.headSha}`,
       '',
-      `Branch \`${cycle.branch}\` in ${cycle.repo} holds the upgraded state.`,
+      `That commit holds the upgraded state, published in ${cycle.repo} as \`${ref}\` so that no workflow ran it. To work with it: \`git fetch ${repoUrl} ${ref} && git checkout FETCH_HEAD\`. To turn it into a branch after reading the diff: \`git push ${repoUrl} ${ref}:refs/heads/${cycle.branch}\`.`,
     ];
   }
   return [

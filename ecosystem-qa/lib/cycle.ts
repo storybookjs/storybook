@@ -29,6 +29,12 @@ export const cycleBranchName = (version: string, os: Os, engine: Engine): string
 export const publishedCycleBranch = (cycleBranch: string, headSha: string): string =>
   `${cycleBranch}-${headSha.slice(0, 10)}`;
 
+// The upgraded state is published under refs/qa/, not as a branch: a branch push starts the
+// catalog repo's own workflows, which would run the agent's commits with that repo's secrets before
+// anyone read the diff. A ref outside refs/heads and refs/tags triggers nothing, keeps the commits
+// reachable, and becomes a branch with one push once a person has looked at it.
+export const cycleRef = (published: string): string => `refs/qa/${published.replace(/^qa\//, '')}`;
+
 export interface BundleHeader {
   prerequisites: string[];
   refs: Map<string, string>;

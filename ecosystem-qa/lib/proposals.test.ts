@@ -149,9 +149,12 @@ describe('renderIssueBody', () => {
 
     expect(body).toContain(`https://github.com/storybookjs/mealdrop/tree/${'b'.repeat(40)}`);
     expect(body).toContain(
-      `Branch \`qa/sb-${VERSION}/linux-claude\` in storybookjs/mealdrop holds the upgraded state.`
+      `published in storybookjs/mealdrop as \`refs/qa/sb-${VERSION}/linux-claude\` so that no workflow ran it`
     );
-    expect(body).toContain(`sha: ${'b'.repeat(40)}\ncycleBranch: qa/sb-${VERSION}/linux-claude`);
+    expect(body).toContain(
+      `git push https://github.com/storybookjs/mealdrop refs/qa/sb-${VERSION}/linux-claude:refs/heads/qa/sb-${VERSION}/linux-claude`
+    );
+    expect(body).toContain(`sha: ${'b'.repeat(40)}\ncycleRef: refs/qa/sb-${VERSION}/linux-claude`);
   });
 
   it('links the start commit and says so when the agent made no commits', () => {
@@ -162,7 +165,7 @@ describe('renderIssueBody', () => {
     expect(body).toContain(`https://github.com/storybookjs/mealdrop/tree/${'a'.repeat(40)}`);
     expect(body).toContain('The upgraded state was not committed.');
     expect(body).not.toContain('holds the upgraded state');
-    expect(body).toContain(`sha: ${'a'.repeat(40)}\ncycleBranch: none`);
+    expect(body).toContain(`sha: ${'a'.repeat(40)}\ncycleRef: none`);
   });
 
   it('lists each occurrence with its own version in a comment', () => {

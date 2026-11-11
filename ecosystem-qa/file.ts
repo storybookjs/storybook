@@ -16,6 +16,7 @@ import {
   type FilingOutcome,
   type FilingStep,
 } from './lib/filing.ts';
+import { cycleRef } from './lib/cycle.ts';
 import { ghParse, ghText, searchFingerprint } from './lib/github.ts';
 import { copyRedacted } from './lib/redact.ts';
 import { Proposal } from './lib/schema.ts';
@@ -96,7 +97,7 @@ const pushCycle = (step: Extract<FilingStep, { kind: 'push-cycle' }>) => {
   git(dir, ['init', '--quiet']);
   git(dir, ['fetch', '--quiet', '--depth', '1', remote, step.startSha], token);
   git(dir, ['fetch', '--quiet', resolve(step.bundle), 'refs/heads/*:refs/bundle/*']);
-  git(dir, ['push', '--quiet', remote, `${step.headSha}:refs/heads/${step.branch}`], token);
+  git(dir, ['push', '--quiet', remote, `${step.headSha}:${cycleRef(step.branch)}`], token);
 };
 
 // Another filing job can move qa-assets between our fetch and push, so a rejected push starts over

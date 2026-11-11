@@ -13,7 +13,7 @@ import type { SourceContextProps, SourceItem } from './SourceContainer';
 import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
 import { useArgs } from './useArgs.ts';
 import { useServiceStoryLiveSnippet } from './use-service-story-docs.ts';
-import { useTransformCode } from './useTransformCode';
+import { useTransformCode } from './useTransformCode.tsx';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
 export type SourceParameters = SourceCodeProps & {
@@ -106,23 +106,20 @@ const useCode = ({
 
   // The emitted snippet is already transformed by emitTransformCode,
   // so only transformFromProps applies to it.
-  const hasTransformer = Boolean(transformFromProps ?? sourceParameters.transform);
   const activeTransformer =
-    transformFromProps ??
-    (sourceKind === 'emitted' ? (rawCode: string) => rawCode : sourceParameters.transform);
+    transformFromProps ?? (sourceKind === 'emitted' ? undefined : sourceParameters.transform);
 
-  const transformedCode = hasTransformer
-    ? useTransformCode(code, activeTransformer!, storyContext)
-    : code;
+  const transformedSource = useTransformCode(
+    { code, language: sourceKind === 'emitted' ? snippet?.language : undefined },
+    activeTransformer,
+    storyContext
+  );
 
   if (sourceParameters.code !== undefined) {
     return { code: sourceParameters.code };
   }
 
-  return {
-    code: transformedCode,
-    language: sourceKind === 'emitted' ? snippet?.language : undefined,
-  };
+  return transformedSource;
 };
 
 // state is used by the Canvas block, which also calls useSourceProps

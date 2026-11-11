@@ -2,8 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// eslint-disable-next-line depend/ban-dependencies
-import { globby } from 'globby';
+import { glob } from 'tinyglobby';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
@@ -20,7 +19,7 @@ import {
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
-vi.mock('globby', { spy: true });
+vi.mock('tinyglobby', { spy: true });
 vi.mock('tinyclip', { spy: true });
 
 describe('react-vite-to-tanstack-react', () => {
@@ -37,7 +36,7 @@ describe('react-vite-to-tanstack-react', () => {
     vol.reset();
     vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
     vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
-    vi.mocked(globby).mockResolvedValue([]);
+    vi.mocked(glob).mockResolvedValue([]);
     vi.mocked(writeText).mockResolvedValue(undefined);
     vi.mocked(logger.step).mockImplementation(() => {});
     vi.mocked(logger.debug).mockImplementation(() => {});

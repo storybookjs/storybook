@@ -10258,7 +10258,6 @@ __metadata:
     create-storybook: "workspace:*"
     cross-spawn: "npm:^7.0.6"
     empathic: "npm:^2.0.0"
-    globby: "npm:^14.1.0"
     leven: "npm:^4.0.0"
     memfs: "npm:^4.11.1"
     p-limit: "npm:^7.2.0"
@@ -10270,6 +10269,7 @@ __metadata:
     storybook: "workspace:*"
     tiny-invariant: "npm:^1.3.3"
     tinyclip: "npm:^0.1.12"
+    tinyglobby: "npm:^0.2.13"
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^6.0.3"
     valibot: "npm:^1.4.0"
@@ -34531,7 +34531,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tinyglobby@npm:^0.2.10, tinyglobby@npm:^0.2.12, tinyglobby@npm:^0.2.14, tinyglobby@npm:^0.2.15, tinyglobby@npm:^0.2.17":
+"tinyglobby@npm:^0.2.10, tinyglobby@npm:^0.2.12, tinyglobby@npm:^0.2.13, tinyglobby@npm:^0.2.14, tinyglobby@npm:^0.2.15, tinyglobby@npm:^0.2.17":
   version: 0.2.17
   resolution: "tinyglobby@npm:0.2.17"
   dependencies:

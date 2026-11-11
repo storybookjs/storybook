@@ -1,3 +1,5 @@
+import { spawnSync } from 'node:child_process';
+
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 import {
   HandledError,
@@ -21,10 +23,10 @@ import {
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
-// eslint-disable-next-line depend/ban-dependencies
-import { globby, globbySync } from 'globby';
+import { resolve } from 'pathe';
 import picocolors from 'picocolors';
 import { lt, prerelease, rsort } from 'semver';
+import { glob, globSync } from 'tinyglobby';
 
 import { autoblock } from './autoblock/index.ts';
 import type { AutoblockerResult } from './autoblock/types.ts';
@@ -89,6 +91,41 @@ interface VersionModifier {
 
 /** Glob pattern for finding Storybook directories */
 const STORYBOOK_DIR_PATTERN = ['**/.storybook', '**/.rnstorybook'];
+
+/**
+ * Leaves out the paths that git ignores, asking git once for all of them. Outside a git repository,
+ * or when git is missing, it leaves all paths in.
+ */
+const withoutGitIgnored = (paths: string[], cwd: string) => {
+  if (paths.length === 0) {
+    return paths;
+  }
+  const git = (args: string[], input?: string) => spawnSync('git', args, { cwd, input });
+  // `--no-index` throughout: a path inside a submodule would fail the whole call otherwise, and
+  // both checks then agree about a tracked file in an ignored directory.
+  const prefix = git(['rev-parse', '--show-prefix']);
+  if (prefix.status !== 0) {
+    return paths;
+  }
+  // A project can live in a directory that a parent repository ignores, such as a reproduction.
+  // At the root itself, `.` is only ignored by an allow-list `.gitignore` that starts with `*`.
+  const insideIgnored =
+    prefix.stdout.toString().trim() !== '' &&
+    git(['check-ignore', '-q', '--no-index', '.']).status === 0;
+  if (insideIgnored) {
+    return paths;
+  }
+  // `./` so that git does not read a directory named like `:gen` as pathspec magic.
+  const { status, stdout } = git(
+    ['check-ignore', '--stdin', '-z', '--no-index'],
+    paths.map((path) => `./${path}\0`).join('')
+  );
+  if (status !== 0 && status !== 1) {
+    return paths;
+  }
+  const ignored = new Set(stdout.toString().split('\0'));
+  return paths.filter((path) => !ignored.has(`./${path}`));
+};
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -214,17 +251,18 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
   try {
     logger.debug(`Finding Storybook projects...`);
     // Find all .storybook directories, accounting for custom config dirs later
-    const storybookDirs = await globby(STORYBOOK_DIR_PATTERN, {
+    const candidates = await glob(STORYBOOK_DIR_PATTERN, {
       cwd,
       dot: true,
-      gitignore: true,
-      // Packages like @nx/storybook ship .storybook templates, and globby misses .gitignore patterns
-      // like `**/**/node_modules/`, so never rely on .gitignore to skip them.
+      // Packages like @nx/storybook ship .storybook templates, so never rely on .gitignore to skip them.
       ignore: ['**/node_modules/**'],
-      absolute: true,
       onlyDirectories: true,
+      expandDirectories: false,
       followSymbolicLinks: false,
     });
+    // Without the trailing slash, so that git does not read `app/.storybook/` as its own contents.
+    const dirs = candidates.map((dir) => dir.replace(/\/$/, ''));
+    const storybookDirs = withoutGitIgnored(dirs, cwd).map((dir) => resolve(cwd, dir));
 
     logger.debug(`Found ${storybookDirs.length} Storybook projects`);
 
@@ -782,9 +820,9 @@ export const getProjects = async (
 export const findFilesUp = (matchers: string[], cwd: string) => {
   const matchingFiles: string[] = [];
   for (const directory of walk.up(cwd, { last: getProjectRoot() })) {
-    // The matchers only name files directly inside `directory`, so `gitignore: true` would only add
-    // a read of every .gitignore below it, which takes seconds per call in a large monorepo.
-    matchingFiles.push(...globbySync(matchers, { absolute: true, cwd: directory }));
+    matchingFiles.push(
+      ...globSync(matchers, { absolute: true, cwd: directory, expandDirectories: false })
+    );
   }
 
   return matchingFiles;

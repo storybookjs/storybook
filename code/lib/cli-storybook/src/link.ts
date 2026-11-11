@@ -5,6 +5,7 @@ import { executeCommand } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { sync as spawnSync } from 'cross-spawn';
+import { dedent } from 'ts-dedent';
 
 export function isYarnBerryVersion(version: string) {
   const major = Number.parseInt(version, 10);
@@ -56,10 +57,11 @@ export const link = async ({ target, local, start }: LinkOptions) => {
   }).stdout.toString();
 
   if (!isYarnBerryVersion(version)) {
-    logger.warn(`🚨 Expected yarn 2 or higher in ${reproDir}!`);
-    logger.warn('');
-    logger.warn('Please set it up with `yarn set version berry`,');
-    logger.warn(`then link '${reproDir}' with the '--local' flag.`);
+    logger.warn(dedent`
+      🚨 Expected yarn 2 or higher in ${reproDir}!
+      \`storybook link\` only links Yarn 2+ projects, so it cannot link a pnpm or npm project, such as a reproduction created with \`storybook sandbox\`.
+      To link a Yarn 1 project, run \`yarn set version berry\` in '${reproDir}', then link it with the '--local' flag.
+    `);
     return;
   }
 

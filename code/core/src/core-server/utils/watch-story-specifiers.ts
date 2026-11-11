@@ -11,7 +11,7 @@ import Watchpack from 'watchpack';
 const isDirectory = (directory: Path) => {
   try {
     return lstatSync(directory).isDirectory();
-  } catch (err) {
+  } catch {
     return false;
   }
 };
@@ -64,23 +64,28 @@ export function watchStorySpecifiers(
     return slash(relativePath.startsWith('.') ? relativePath : `./${relativePath}`);
   };
 
-  async function onChangeOrRemove(absolutePath: Path, removed: boolean) {
+  async function onChangeOrRemove(absolutePath: Path, removed: boolean, wasRemoved: boolean) {
     // Watchpack should return absolute paths, given we passed in absolute paths
     // to watch. Convert to an import path so we can run against the specifiers.
     const importPath = toImportPath(absolutePath);
 
     const matchingSpecifier = specifiers.find((ns) => ns.importPathMatcher.exec(importPath));
-    if (matchingSpecifier) {
+    // A removed path can be a directory, and watchpack does not report every file within a
+    // removed directory, so the removal is passed on for the receiver to drop what was under it.
+    if (matchingSpecifier || removed) {
       onInvalidate(importPath, removed);
       return;
     }
 
-    // When a directory is removed, watchpack will fire a removed event for each file also
-    // (so we don't need to do anything special).
-    // However, when a directory is added, it does not fire events for any files *within* the directory,
+    // A directory that was removed and added again within one batch holds other files now
+    if (wasRemoved) {
+      onInvalidate(importPath, true);
+    }
+
+    // When a directory is added, watchpack does not fire events for any files *within* the directory,
     // so we need to scan within that directory for new files. It is tricky to use a glob for this,
     // so we'll do something a bit more "dumb" for now
-    if (!removed && isDirectory(absolutePath)) {
+    if (isDirectory(absolutePath)) {
       await Promise.all(
         specifiers
           // We only receive events for files (incl. directories) that are *within* a specifier,
@@ -119,12 +124,15 @@ export function watchStorySpecifiers(
   // Batch rapid file events to avoid redundant processing.
   // Watchpack fires multiple events for the same file in rapid succession.
   // We collect events for 100ms, then process unique paths only.
-  const pendingEvents = new Map<Path, { removed: boolean }>();
+  const pendingEvents = new Map<Path, { removed: boolean; wasRemoved: boolean }>();
   let batchTimeout: ReturnType<typeof setTimeout> | undefined;
 
   function queueEvent(absolutePath: Path, removed: boolean) {
     // Store/overwrite the event for this path (last event type wins)
-    pendingEvents.set(absolutePath, { removed });
+    pendingEvents.set(absolutePath, {
+      removed,
+      wasRemoved: removed || !!pendingEvents.get(absolutePath)?.wasRemoved,
+    });
 
     // Reset the timer on each new event to batch them together
     if (batchTimeout) {
@@ -136,12 +144,14 @@ export function watchStorySpecifiers(
       pendingEvents.clear();
 
       await Promise.all(
-        Array.from(events.entries()).map(([path, { removed }]) => onChangeOrRemove(path, removed))
+        Array.from(events.entries()).map(([path, { removed, wasRemoved }]) =>
+          onChangeOrRemove(path, removed, wasRemoved)
+        )
       );
     }, 100);
   }
 
-  wp.on('change', (filePath: Path, mtime: Date, explanation: string) => {
+  wp.on('change', (filePath: Path, mtime: Date) => {
     // When a file is renamed (including being moved out of the watched dir)
     // we see first an event with explanation=rename and no mtime for the old name.
     // then an event with explanation=rename with an mtime for the new name.

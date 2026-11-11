@@ -560,6 +560,84 @@ describe('registerIndexJsonRoute', () => {
       expect(mockServerChannel.emit).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED);
     });
 
+    it('drops the stories of a removed directory and sends an invalidation', async () => {
+      const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
+      registerIndexJsonRoute({
+        app,
+        channel: mockServerChannel,
+        workingDir,
+        normalizedStories,
+        storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
+      });
+      const route = use.mock.calls[0][1];
+
+      await route(request, response);
+      expect(JSON.parse(end.mock.calls[0][0]).entries).toHaveProperty('nested-button--story-one');
+
+      const onChange = Watchpack.mock.instances[0].on.mock.calls[0][1];
+      onChange(`${workingDir}/src/nested`);
+      await vi.waitFor(() => {
+        expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
+      });
+
+      end.mockClear();
+      await route(request, response);
+      expect(JSON.parse(end.mock.calls[0][0]).entries).not.toHaveProperty(
+        'nested-button--story-one'
+      );
+    });
+
+    it('does not send an invalidation for a removed file that is not in the index', async () => {
+      const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
+      registerIndexJsonRoute({
+        app,
+        channel: mockServerChannel,
+        workingDir,
+        normalizedStories,
+        storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
+      });
+      const route = use.mock.calls[0][1];
+      await route(request, response);
+
+      const onChange = Watchpack.mock.instances[0].on.mock.calls[0][1];
+      onChange(`${workingDir}/src/nested/Button.ts`);
+      onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      await vi.waitFor(() => {
+        expect(mockServerChannel.emit).toHaveBeenCalled();
+      });
+
+      expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves no rejection unhandled for a file event when the generator failed to start', async () => {
+      const unhandled: unknown[] = [];
+      const onUnhandled = (reason: unknown) => unhandled.push(reason);
+      process.on('unhandledRejection', onUnhandled);
+      try {
+        registerIndexJsonRoute({
+          app,
+          channel: { emit: vi.fn() } as any as ServerChannel,
+          workingDir,
+          normalizedStories,
+          storyIndexGeneratorPromise: Promise.reject(new Error('Failed to start')),
+        });
+        const route = use.mock.calls[0][1];
+        const failedResponse = { ...response, end: vi.fn() } as any;
+        await route(request, failedResponse);
+        expect(failedResponse.statusCode).toBe(500);
+
+        const onChange = Watchpack.mock.instances[0].on.mock.calls[0][1];
+        onChange(`${workingDir}/src/nested/Button.ts`);
+        onChange(`${workingDir}/src/nested/Button.stories.ts`, 1234);
+        // Longer than the watcher's 100 ms batch: a rejection has nothing else to wait for
+        await new Promise((resolve) => setTimeout(resolve, 250));
+
+        expect(unhandled).toEqual([]);
+      } finally {
+        process.off('unhandledRejection', onUnhandled);
+      }
+    });
+
     it('only sends one invalidation when multiple event listeners are listening', async () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
       registerIndexJsonRoute({

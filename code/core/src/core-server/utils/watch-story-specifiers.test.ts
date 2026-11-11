@@ -67,11 +67,11 @@ describe('watchStorySpecifiers', () => {
     await flushEvents();
     expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.stories.ts`, true);
 
-    // File removed, NOT matching
+    // Path removed, NOT matching: passed on, because it may have been a directory of story files
     onInvalidate.mockClear();
     onRemove('src/nested/Button.ts');
     await flushEvents();
-    expect(onInvalidate).not.toHaveBeenCalled();
+    expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.ts`, true);
 
     // File moved out, matching
     onInvalidate.mockClear();
@@ -113,6 +113,48 @@ describe('watchStorySpecifiers', () => {
     });
   });
 
+  it('passes on the removal of a directory that is added again in the same batch', async () => {
+    // Real timers, because globby performs actual filesystem I/O
+    vi.useRealTimers();
+
+    const specifier = normalizeStoriesEntry('../src/**/*.stories.@(ts|js)', options);
+
+    const onInvalidate = vi.fn();
+    close = watchStorySpecifiers([specifier], { workingDir }, onInvalidate);
+
+    const watcher = Watchpack.mock.instances[0];
+    const baseOnChange = watcher.on.mock.calls[0][1];
+    const onChange = (filename: string, ...args: any[]) => baseOnChange(abspath(filename), ...args);
+
+    onChange('src/nested', null);
+    onChange('src/nested', 1234);
+    await vi.waitFor(() => {
+      expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.stories.ts`, false);
+    });
+
+    expect(onInvalidate.mock.calls).toEqual([
+      [`./src/nested`, true],
+      [`./src/nested/Button.stories.ts`, false],
+    ]);
+  });
+
+  it('keeps the place of a file that is removed and added again in the same batch', async () => {
+    const specifier = normalizeStoriesEntry('../src/**/*.stories.@(ts|js)', options);
+
+    const onInvalidate = vi.fn();
+    close = watchStorySpecifiers([specifier], { workingDir }, onInvalidate);
+
+    const watcher = Watchpack.mock.instances[0];
+    const baseOnChange = watcher.on.mock.calls[0][1];
+    const onChange = (filename: string, ...args: any[]) => baseOnChange(abspath(filename), ...args);
+
+    onChange('src/nested/Button.stories.ts', null);
+    onChange('src/nested/Button.stories.ts', 1234);
+    await flushEvents();
+
+    expect(onInvalidate.mock.calls).toEqual([[`./src/nested/Button.stories.ts`, false]]);
+  });
+
   it('watches single file globs', async () => {
     const specifier = normalizeStoriesEntry('../src/nested/Button.mdx', options);
 
@@ -146,11 +188,11 @@ describe('watchStorySpecifiers', () => {
     await flushEvents();
     expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.mdx`, true);
 
-    // File removed, NOT matching
+    // Path removed, NOT matching: passed on, because it may have been a directory of story files
     onInvalidate.mockClear();
     onRemove('src/nested/Button.tsx');
     await flushEvents();
-    expect(onInvalidate).not.toHaveBeenCalled();
+    expect(onInvalidate).toHaveBeenCalledWith(`./src/nested/Button.tsx`, true);
 
     // File moved out, matching
     onInvalidate.mockClear();

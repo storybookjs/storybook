@@ -104,6 +104,29 @@ describe('fingerprint', () => {
     expect(onRc).toBe(onBeta);
   });
 
+  it('keeps the package of a file URL, so errors from different packages stay apart', () => {
+    const runner = normalizeErrorSignature(
+      'TypeError: x is not a function at file:///home/a/node_modules/@storybook/test-runner/dist/a.js:1:2'
+    );
+    const vitest = normalizeErrorSignature(
+      'TypeError: x is not a function at file:///home/a/node_modules/@storybook/addon-vitest/dist/a.js:1:2'
+    );
+
+    expect(runner).toContain('node_modules/@storybook/test-runner/dist/a.js');
+    expect(runner).not.toBe(vitest);
+    expect(normalizeErrorSignature('see https://example.com/x')).toBe('see <url>');
+  });
+
+  it('falls back to the actual text when the error text is empty', () => {
+    const a = fingerprint(finding({ errorText: '', actual: 'Sidebar is empty' }), 'owned');
+    const b = fingerprint(finding({ errorText: '  ', actual: 'Docs page is blank' }), 'owned');
+
+    expect(a).not.toBe(b);
+    expect(a).toBe(
+      fingerprint(finding({ errorText: undefined, actual: 'Sidebar is empty' }), 'owned')
+    );
+  });
+
   it('differs by check, repo class and error', () => {
     const base = finding({ errorText: 'Missing addon' });
 

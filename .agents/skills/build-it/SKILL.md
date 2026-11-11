@@ -40,5 +40,5 @@ Each step names the skill that does the work. Read that skill when you reach the
 The human leads from here:
 
 - **Human review.** Fix the feedback as new commits; the [`pr` skill](../pr/SKILL.md) "Commit history" section says why. After a big change, run steps 3 to 5 again.
-- **CI and merge.** A maintainer adds the CI label, as [Pull requests](../../guidelines/pull-requests.md) says. When the user asks, watch the checks and fix the failures.
+- **CI and the review by a maintainer.** When the user approves the PR, they invoke [`ready-for-review`](../ready-for-review/SKILL.md) and name the reviewer.
 - **The next PR.** When the work needs several PRs, continue in the same conversation and start again at step 1 for the next one.

@@ -6,7 +6,8 @@ import { print } from 'esrap';
 import ts from 'esrap/languages/ts';
 import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
-import { describe, it } from 'vitest';
+import { compile } from 'svelte/compiler';
+import { describe, expect, it } from 'vitest';
 
 import { createMetaVariableDeclaration, transformDefineMeta } from './index.ts';
 
@@ -19,14 +20,13 @@ import { replaceDefineMetaArgument } from './replace-argument.ts';
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 describe(transformDefineMeta.name, () => {
-  it("transformed 'defineMeta' matches inlined snapshot", async ({ expect }) => {
-    const filename = path.resolve(__dirname, '../../../__tests__/stories/Example.stories.svelte');
+  it('passes the $__meta variable to defineMeta()', async () => {
+    const filename = path.resolve(
+      __dirname,
+      '../../../../__test__/svelte-csf/example.stories.svelte'
+    );
     const originalCode = fs.readFileSync(filename).toString();
-    const compiledCode = fs
-      .readFileSync(
-        path.resolve(__dirname, '../../../__tests__/__compiled__/Example.stories.dev.js')
-      )
-      .toString();
+    const compiledCode = compile(originalCode, { filename, dev: true }).js.code;
     const svelteAST = getSvelteAST({ code: originalCode, filename });
     const svelteASTNodes = await extractSvelteASTNodes({
       ast: svelteAST,
@@ -58,14 +58,13 @@ describe(transformDefineMeta.name, () => {
 });
 
 describe(createMetaVariableDeclaration.name, () => {
-  it('parameters are transformed correctly', async ({ expect }) => {
-    const filename = path.resolve(__dirname, '../../../__tests__/stories/Example.stories.svelte');
+  it('declares the meta with the component description in its parameters', async () => {
+    const filename = path.resolve(
+      __dirname,
+      '../../../../__test__/svelte-csf/example.stories.svelte'
+    );
     const originalCode = fs.readFileSync(filename).toString();
-    const compiledCode = fs
-      .readFileSync(
-        path.resolve(__dirname, '../../../__tests__/__compiled__/Example.stories.dev.js')
-      )
-      .toString();
+    const compiledCode = compile(originalCode, { filename, dev: true }).js.code;
     const svelteAST = getSvelteAST({ code: originalCode, filename });
     const svelteASTNodes = await extractSvelteASTNodes({
       ast: svelteAST,

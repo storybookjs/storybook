@@ -5,7 +5,7 @@ import { print } from 'esrap';
 import ts from 'esrap/languages/ts';
 import { parseAst } from 'rollup/parseAst';
 import { compile } from 'svelte/compiler';
-import { beforeEach, describe, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { insertDefineMetaParameters } from './insert-parameters.ts';
 
@@ -21,7 +21,7 @@ describe(insertDefineMetaParameters.name, () => {
     vi.clearAllMocks();
   });
 
-  it('works when defineMeta gets an empty object', async ({ expect }) => {
+  it('inserts the parameters into an empty defineMeta() object', async () => {
     const code = dedent`
       <script module>
         import { defineMeta } from "${SVELTE_CSF_RENDERER_IMPORT_SOURCE}";
@@ -51,9 +51,7 @@ describe(insertDefineMetaParameters.name, () => {
     `);
   });
 
-  it('warns through the node logger when defineMeta parameters is not an object expression', async ({
-    expect,
-  }) => {
+  it('warns through the node logger when defineMeta parameters is not an object expression', async () => {
     const code = dedent`
       <script module>
         import { defineMeta } from "${SVELTE_CSF_RENDERER_IMPORT_SOURCE}";

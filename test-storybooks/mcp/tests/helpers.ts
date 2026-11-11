@@ -1,4 +1,6 @@
 import { x } from 'tinyexec';
+import { createWriteStream, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const STORYBOOK_DIR = fileURLToPath(new URL('..', import.meta.url));
@@ -84,17 +86,26 @@ export async function killPort(port: number): Promise<void> {
 	}
 }
 
+export const STORYBOOK_LOG_DIR = join(STORYBOOK_DIR, 'storybook-logs');
+
+// Storybook's own output goes to `storybook-logs/<config dir>.log`, which CI uploads as an
+// artifact, so a failing run shows what the dev server logged at boot.
 export function startStorybook(
 	configDir: string,
 	port: number,
 	env?: Record<string, string>,
 ): ReturnType<typeof x> {
-	return x('yarn', ['storybook', '--config-dir', configDir, '--port', String(port)], {
+	const storybookProcess = x('yarn', ['storybook', '--config-dir', configDir, '--port', String(port)], {
 		nodeOptions: {
 			cwd: STORYBOOK_DIR,
 			...(env ? { env: { ...process.env, ...env } } : {}),
 		},
 	});
+	mkdirSync(STORYBOOK_LOG_DIR, { recursive: true });
+	const log = createWriteStream(join(STORYBOOK_LOG_DIR, `${configDir.replace(/^\./, '')}.log`));
+	storybookProcess.process?.stdout?.pipe(log);
+	storybookProcess.process?.stderr?.pipe(log);
+	return storybookProcess;
 }
 
 export async function stopStorybook(storybookProcess: ReturnType<typeof x> | null): Promise<void> {

@@ -13,6 +13,7 @@ import {
   setReactActEnvironment,
 } from './act-compat.ts';
 import type { Decorator } from './public-types.ts';
+import { clearAsyncComponentCache } from './rsc/async-component.tsx';
 
 export { render } from './render.tsx';
 export { renderToCanvas } from './renderToCanvas.tsx';
@@ -49,6 +50,11 @@ export const decorators: Decorator[] = [
 
 export const parameters = {
   renderer: 'react',
+};
+
+// Server component results are cached for the duration of a story render, see ./rsc/async-component.tsx
+export const beforeEach = () => {
+  clearAsyncComponentCache();
 };
 
 export const beforeAll = async () => {

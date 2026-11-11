@@ -1,0 +1,154 @@
+[2m> [22mstorybook dev --config-dir=.storybook --port=6006 --ci --exact-port
+
+
+[90m┌[39m  storybook v11.0.0-beta.1
+[90m│[39m
+[33m▲[39m  You are currently using Storybook [1m11.0.0-beta.1[22m but you have packages
+[90m│[39m  which are incompatible with it:
+
+[90m│[39m  - @storybook-community/storybook-addon-cookie@5.0.2 which depends on
+[90m│[39m  ^10.0.0
+[90m│[39m  - storybook-addon-mock-date@3.2.1 which depends on ^10.0.0
+[90m│[39m  - @nx/storybook@23.3.1 which depends on >=8.0.0 <11.0.0
+[90m│[39m  Repo: https://nx.dev
+
+[90m│[39m  Please consider updating your packages or contacting the maintainers
+[90m│[39m  for compatibility details.
+
+[90m│[39m  For more details on compatibility guidance, see:
+[90m│[39m  https://github.com/storybookjs/storybook/issues/32836
+[90m│[39m
+[31m■[39m  [38;2;241;97;97mSB_CORE-SERVER_0002 (CriticalPresetLoadError): Storybook failed to
+[90m│[39m  load the following preset: ./.storybook/main.ts.
+
+[90m│[39m  Please check whether your setup is correct, the Storybook dependencies
+[90m│[39m  (and their peer dependencies) are installed correctly and there are no
+[90m│[39m  package version clashes.
+
+[90m│[39m  If you believe this is a bug, please open an issue on Github.
+
+[90m│[39m  SB_CORE-SERVER_0002 (CriticalPresetLoadError): Storybook failed to
+[90m│[39m  load the following preset:
+[90m│[39m  ./node_modules/@storybook-community/storybook-addon-cookie.
+
+[90m│[39m  Please check whether your setup is correct, the Storybook dependencies
+[90m│[39m  (and their peer dependencies) are installed correctly and there are no
+[90m│[39m  package version clashes.
+
+[90m│[39m  If you believe this is a bug, please open an issue on Github.
+
+[90m│[39m  SB_CORE-SERVER_0002 (CriticalPresetLoadError): Storybook failed to
+[90m│[39m  load the following preset:
+[90m│[39m  ./node_modules/@storybook-community/storybook-addon-cookie/preset.js.
+
+[90m│[39m  Please check whether your setup is correct, the Storybook dependencies
+[90m│[39m  (and their peer dependencies) are installed correctly and there are no
+[90m│[39m  package version clashes.
+
+[90m│[39m  If you believe this is a bug, please open an issue on Github.
+
+[90m│[39m  Error [ERR_MODULE_NOT_FOUND]: Cannot find module
+[90m│[39m  './node_modules/@storybook-community/storybook-addon-cookie/dist/preset.js'
+[90m│[39m  imported from
+[90m│[39m  ./node_modules/@storybook-community/storybook-addon-cookie/preset.js
+[90m│[39m  at finalizeResolution (node:internal/modules/esm/resolve:241:11)
+[90m│[39m  at moduleResolve (node:internal/modules/esm/resolve:846:10)
+[90m│[39m  at defaultResolve (node:internal/modules/esm/resolve:973:11)
+[90m│[39m  at #cachedDefaultResolve (node:internal/modules/esm/loader:708:20)
+[90m│[39m  at #resolveAndMaybeBlockOnLoaderThread
+[90m│[39m  (node:internal/modules/esm/loader:728:38)
+[90m│[39m  at ModuleLoader.resolveSync (node:internal/modules/esm/loader:766:56)
+[90m│[39m  at #resolve (node:internal/modules/esm/loader:690:17)
+[90m│[39m  at ModuleLoader.getOrCreateModuleJob
+[90m│[39m  (node:internal/modules/esm/loader:610:35)
+[90m│[39m  at ModuleJob.syncLink (node:internal/modules/esm/module_job:277:33)
+[90m│[39m  at ModuleJob.link (node:internal/modules/esm/module_job:389:17)
+
+[90m│[39m  More info:
+
+[90m│[39m  at loadPreset
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:5728:13)
+[90m│[39m  at async loadPresets
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:5741:20)
+[90m│[39m  at async loadPreset
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:5710:12)
+[90m│[39m  at async loadPresets
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:5741:20)
+[90m│[39m  at async loadPreset
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:5711:12)
+[90m│[39m  at async loadPresets
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:5741:20)
+[90m│[39m  at async getPresets
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:5771:23)
+[90m│[39m  at async buildDevStandalone
+[90m│[39m  (file://./node_modules/storybook/dist/core-server/index.js:11309:52)
+[90m│[39m  at async withTelemetry
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-LBR5YCV6.js:3591:12)
+[90m│[39m  at async dev (file://./node_modules/storybook/dist/bin/core.js:4189:3)
+
+[90m│[39m  More info:
+
+[90m│[39m  at loadPreset
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:5728:13)
+[90m│[39m  at async loadPresets
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:5741:20)
+[90m│[39m  at async loadPreset
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:5711:12)
+[90m│[39m  at async loadPresets
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:5741:20)
+[90m│[39m  at async getPresets
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:5771:23)
+[90m│[39m  at async buildDevStandalone
+[90m│[39m  (file://./node_modules/storybook/dist/core-server/index.js:11309:52)
+[90m│[39m  at async withTelemetry
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-LBR5YCV6.js:3591:12)
+[90m│[39m  at async dev (file://./node_modules/storybook/dist/bin/core.js:4189:3)
+[90m│[39m  at async _Command.<anonymous>
+[90m│[39m  (file://./node_modules/storybook/dist/bin/core.js:4291:3)
+
+[90m│[39m  More info:
+[90m│[39m  [39m
+[90m│[39m  at loadPreset
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:5728:13)
+[90m│[39m  at async loadPresets
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:5741:20)
+[90m│[39m  at async getPresets
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:5771:23)
+[90m│[39m  at async buildDevStandalone
+[90m│[39m  (file://./node_modules/storybook/dist/core-server/index.js:11309:52)
+[90m│[39m  at async withTelemetry
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-LBR5YCV6.js:3591:12)
+[90m│[39m  at async dev (file://./node_modules/storybook/dist/bin/core.js:4189:3)
+[90m│[39m  at async _Command.<anonymous>
+[90m│[39m  (file://./node_modules/storybook/dist/bin/core.js:4291:3)
+[90m│[39m
+[33m▲[39m  Broken build, fix the error above.
+[90m│[39m  You may need to refresh the browser.
+[90m│[39m
+[33m▲[39m  Failed to load preset:
+[90m│[39m  {"name":"/home/agent/workspace/packages/twenty-front/node_modules/@storybook-community/storybook-addon-cookie/preset.js"}
+[90m│[39m  on level 2
+[90m│[39m
+[31m■[39m  [38;2;241;97;97mError [ERR_MODULE_NOT_FOUND]: Cannot find module
+[90m│[39m  './node_modules/@storybook-community/storybook-addon-cookie/dist/preset.js'
+[90m│[39m  imported from
+[90m│[39m  ./node_modules/@storybook-community/storybook-addon-cookie/preset.js[39m
+[90m│[39m  at finalizeResolution (node:internal/modules/esm/resolve:241:11)
+[90m│[39m  at moduleResolve (node:internal/modules/esm/resolve:846:10)
+[90m│[39m  at defaultResolve (node:internal/modules/esm/resolve:973:11)
+[90m│[39m  at #cachedDefaultResolve (node:internal/modules/esm/loader:708:20)
+[90m│[39m  at #resolveAndMaybeBlockOnLoaderThread
+[90m│[39m  (node:internal/modules/esm/loader:728:38)
+[90m│[39m  at ModuleLoader.resolveSync (node:internal/modules/esm/loader:766:56)
+[90m│[39m  at #resolve (node:internal/modules/esm/loader:690:17)
+[90m│[39m  at ModuleLoader.getOrCreateModuleJob
+[90m│[39m  (node:internal/modules/esm/loader:610:35)
+[90m│[39m  at ModuleJob.syncLink (node:internal/modules/esm/module_job:277:33)
+[90m│[39m  at ModuleJob.link (node:internal/modules/esm/module_job:389:17)
+[90m│[39m
+[90m│[39m  Debug logs are written to:
+[90m│[39m  /home/agent/workspace/packages/twenty-front/debug-storybook.log
+[90m│[39m
+[90m└[39m  Storybook exited with an error
+
+Warning: command "storybook dev --config-dir=.storybook --port=6006 --ci --exact-port" exited with non-zero status code

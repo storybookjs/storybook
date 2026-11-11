@@ -96,7 +96,6 @@ export const ENGINES: BenchEngine[] = [
     child: '../docgen-memory/memory-harness.ts',
     scenarios: reactScenarios,
     jiti: true,
-    inDefaultRun: false,
     args: (scenario) => [
       ...reactArgs(scenario),
       '--mode',
@@ -151,7 +150,6 @@ export const ENGINES: BenchEngine[] = [
     child: 'engines/angular-cm.ts',
     scenarios: angularScenarios,
     jiti: true,
-    inDefaultRun: false,
     args: angularArgs,
   }),
   new SeriesChildEngine({
@@ -159,7 +157,6 @@ export const ENGINES: BenchEngine[] = [
     child: 'engines/angular-cm.ts',
     scenarios: angularScenarios,
     jiti: true,
-    inDefaultRun: false,
     args: (scenario) => [...angularArgs(scenario), '--typescript', 'native'],
   }),
   // Always fails. The gate names it explicitly to prove the gate reports a failing engine as a

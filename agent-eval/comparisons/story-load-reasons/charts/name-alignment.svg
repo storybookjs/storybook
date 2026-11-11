@@ -1,33 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 500" width="880" height="500" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 500" width="920" height="500" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" role="img">
 <title>How the story name related to what the agent needed</title>
 <desc>261 story loads, each judged by three independent coders. Names the UI being built 120 (46%); States the information 110 (42%); Does not match 31 (12%)</desc>
-<rect id="background" width="880" height="500" fill="#ffffff"/>
+<rect id="background" width="920" height="500" fill="#ffffff"/>
 <text id="title" x="40" y="44" font-size="20" font-weight="600" fill="#1f1f1e">How the story name related to what the agent needed</text>
 <g id="slices" stroke="#ffffff" stroke-width="2" stroke-linejoin="round">
-<path id="slice-names-the-ui-being-built" d="M440.0,280.0 L440.00,140.00 A140,140 0 0 1 475.01,415.55 Z" fill="#0072B2"><title>Names the UI being built: 120 of 261 (46%)</title></path>
-<path id="slice-states-the-information" d="M440.0,280.0 L475.01,415.55 A140,140 0 0 1 344.95,177.21 Z" fill="#E69F00"><title>States the information: 110 of 261 (42%)</title></path>
-<path id="slice-does-not-match" d="M440.0,280.0 L344.95,177.21 A140,140 0 0 1 440.00,140.00 Z" fill="#009E73"><title>Does not match: 31 of 261 (12%)</title></path>
+<path id="slice-names-the-ui-being-built" d="M470.0,280.0 L470.00,140.00 A140,140 0 0 1 505.01,415.55 Z" fill="#0072B2"><title>Names the UI being built: 120 of 261 (46%)</title></path>
+<path id="slice-states-the-information" d="M470.0,280.0 L505.01,415.55 A140,140 0 0 1 374.95,177.21 Z" fill="#E69F00"><title>States the information: 110 of 261 (42%)</title></path>
+<path id="slice-does-not-match" d="M470.0,280.0 L374.95,177.21 A140,140 0 0 1 470.00,140.00 Z" fill="#009E73"><title>Does not match: 31 of 261 (12%)</title></path>
 </g>
 <g id="leaders" fill="none" stroke="#5c5b56" stroke-width="1">
-<polyline points="583.8,261.7 598.7,259.8 642.0,253.6"/>
-<polyline points="312.7,349.5 299.6,356.6 238.0,356.4"/>
-<polyline points="387.1,145.0 381.7,131.0 238.0,116.7"/>
+<polyline points="613.8,261.7 628.7,259.8 672.0,253.6"/>
+<polyline points="342.7,349.5 329.6,356.6 268.0,356.4"/>
+<polyline points="417.1,145.0 411.7,131.0 268.0,116.7"/>
 </g>
 <g id="labels">
 <g id="label-names-the-ui-being-built">
-<rect x="650.0" y="247.6" width="11" height="11" rx="2" fill="#0072B2"/>
-<text x="667.0" y="258.6" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="start">Names the UI being built</text>
-<text x="667.0" y="276.6" font-size="13" fill="#5c5b56" text-anchor="start">120 loads · 46%</text>
+<rect x="680.0" y="247.6" width="11" height="11" rx="2" fill="#0072B2"/>
+<text x="697.0" y="258.6" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="start">Names the UI being built</text>
+<text x="697.0" y="276.6" font-size="13" fill="#5c5b56" text-anchor="start">120 loads · 46%</text>
 </g>
 <g id="label-states-the-information">
-<rect x="219.0" y="350.4" width="11" height="11" rx="2" fill="#E69F00"/>
-<text x="213.0" y="361.4" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">States the information</text>
-<text x="213.0" y="379.4" font-size="13" fill="#5c5b56" text-anchor="end">110 loads · 42%</text>
+<rect x="249.0" y="350.4" width="11" height="11" rx="2" fill="#E69F00"/>
+<text x="243.0" y="361.4" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">States the information</text>
+<text x="243.0" y="379.4" font-size="13" fill="#5c5b56" text-anchor="end">110 loads · 42%</text>
 </g>
 <g id="label-does-not-match">
-<rect x="219.0" y="110.7" width="11" height="11" rx="2" fill="#009E73"/>
-<text x="213.0" y="121.7" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">Does not match</text>
-<text x="213.0" y="139.7" font-size="13" fill="#5c5b56" text-anchor="end">31 loads · 12%</text>
+<rect x="249.0" y="110.7" width="11" height="11" rx="2" fill="#009E73"/>
+<text x="243.0" y="121.7" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">Does not match</text>
+<text x="243.0" y="139.7" font-size="13" fill="#5c5b56" text-anchor="end">31 loads · 12%</text>
 </g>
 </g>
 </svg>

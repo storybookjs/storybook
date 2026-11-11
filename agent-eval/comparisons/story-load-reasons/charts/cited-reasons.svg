@@ -1,54 +1,54 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 500" width="880" height="500" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" role="img">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 500" width="920" height="500" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" role="img">
 <title>What agents said when they explained a story load</title>
 <desc>41 loads where the agent stated its purpose. Quotes the story's name 15 (37%); Points at the story 12 (29%); A decision hinges on it 5 (12%); Sweeps remaining stories 4 (10%); Gap in the docs 3 (7%); Other 2 (5%)</desc>
-<rect id="background" width="880" height="500" fill="#ffffff"/>
+<rect id="background" width="920" height="500" fill="#ffffff"/>
 <text id="title" x="40" y="44" font-size="20" font-weight="600" fill="#1f1f1e">What agents said when they explained a story load</text>
 <g id="slices" stroke="#ffffff" stroke-width="2" stroke-linejoin="round">
-<path id="slice-quotes-the-story-s-name" d="M440.0,280.0 L440.00,140.00 A140,140 0 0 1 544.52,373.15 Z" fill="#0072B2"><title>Quotes the story's name: 15 of 41 (37%)</title></path>
-<path id="slice-points-at-the-story" d="M440.0,280.0 L544.52,373.15 A140,140 0 0 1 322.49,356.10 Z" fill="#E69F00"><title>Points at the story: 12 of 41 (29%)</title></path>
-<path id="slice-a-decision-hinges-on-it" d="M440.0,280.0 L322.49,356.10 A140,140 0 0 1 302.56,253.35 Z" fill="#009E73"><title>A decision hinges on it: 5 of 41 (12%)</title></path>
-<path id="slice-sweeps-remaining-stories" d="M440.0,280.0 L302.56,253.35 A140,140 0 0 1 342.92,179.13 Z" fill="#56B4E9"><title>Sweeps remaining stories: 4 of 41 (10%)</title></path>
-<path id="slice-gap-in-the-docs" d="M440.0,280.0 L342.92,179.13 A140,140 0 0 1 397.76,146.52 Z" fill="#CC79A7"><title>Gap in the docs: 3 of 41 (7%)</title></path>
-<path id="slice-other" d="M440.0,280.0 L397.76,146.52 A140,140 0 0 1 440.00,140.00 Z" fill="#D55E00"><title>Other: 2 of 41 (5%)</title></path>
+<path id="slice-quotes-the-story-s-name" d="M470.0,280.0 L470.00,140.00 A140,140 0 0 1 574.52,373.15 Z" fill="#0072B2"><title>Quotes the story's name: 15 of 41 (37%)</title></path>
+<path id="slice-points-at-the-story" d="M470.0,280.0 L574.52,373.15 A140,140 0 0 1 352.49,356.10 Z" fill="#E69F00"><title>Points at the story: 12 of 41 (29%)</title></path>
+<path id="slice-a-decision-hinges-on-it" d="M470.0,280.0 L352.49,356.10 A140,140 0 0 1 332.56,253.35 Z" fill="#009E73"><title>A decision hinges on it: 5 of 41 (12%)</title></path>
+<path id="slice-sweeps-remaining-stories" d="M470.0,280.0 L332.56,253.35 A140,140 0 0 1 372.92,179.13 Z" fill="#56B4E9"><title>Sweeps remaining stories: 4 of 41 (10%)</title></path>
+<path id="slice-gap-in-the-docs" d="M470.0,280.0 L372.92,179.13 A140,140 0 0 1 427.76,146.52 Z" fill="#CC79A7"><title>Gap in the docs: 3 of 41 (7%)</title></path>
+<path id="slice-other" d="M470.0,280.0 L427.76,146.52 A140,140 0 0 1 470.00,140.00 Z" fill="#D55E00"><title>Other: 2 of 41 (5%)</title></path>
 </g>
 <g id="leaders" fill="none" stroke="#5c5b56" stroke-width="1">
-<polyline points="572.3,220.7 586.0,214.5 642.0,205.5"/>
-<polyline points="428.9,424.6 427.8,439.5 238.0,444.5"/>
-<polyline points="297.7,307.6 282.9,310.5 238.0,307.4"/>
-<polyline points="312.6,210.7 299.4,203.6 238.0,205.0"/>
-<polyline points="365.9,155.4 358.2,142.5 238.0,159.0"/>
-<polyline points="417.9,136.7 415.6,121.9 238.0,113.0"/>
+<polyline points="602.3,220.7 616.0,214.5 672.0,205.5"/>
+<polyline points="458.9,424.6 457.8,439.5 268.0,444.5"/>
+<polyline points="327.7,307.6 312.9,310.5 268.0,307.4"/>
+<polyline points="342.6,210.7 329.4,203.6 268.0,205.0"/>
+<polyline points="395.9,155.4 388.2,142.5 268.0,159.0"/>
+<polyline points="447.9,136.7 445.6,121.9 268.0,113.0"/>
 </g>
 <g id="labels">
 <g id="label-quotes-the-story-s-name">
-<rect x="650.0" y="199.5" width="11" height="11" rx="2" fill="#0072B2"/>
-<text x="667.0" y="210.5" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="start">Quotes the story's name</text>
-<text x="667.0" y="228.5" font-size="13" fill="#5c5b56" text-anchor="start">15 loads · 37%</text>
+<rect x="680.0" y="199.5" width="11" height="11" rx="2" fill="#0072B2"/>
+<text x="697.0" y="210.5" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="start">Quotes the story's name</text>
+<text x="697.0" y="228.5" font-size="13" fill="#5c5b56" text-anchor="start">15 loads · 37%</text>
 </g>
 <g id="label-points-at-the-story">
-<rect x="219.0" y="438.5" width="11" height="11" rx="2" fill="#E69F00"/>
-<text x="213.0" y="449.5" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">Points at the story</text>
-<text x="213.0" y="467.5" font-size="13" fill="#5c5b56" text-anchor="end">12 loads · 29%</text>
+<rect x="249.0" y="438.5" width="11" height="11" rx="2" fill="#E69F00"/>
+<text x="243.0" y="449.5" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">Points at the story</text>
+<text x="243.0" y="467.5" font-size="13" fill="#5c5b56" text-anchor="end">12 loads · 29%</text>
 </g>
 <g id="label-a-decision-hinges-on-it">
-<rect x="219.0" y="301.4" width="11" height="11" rx="2" fill="#009E73"/>
-<text x="213.0" y="312.4" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">A decision hinges on it</text>
-<text x="213.0" y="330.4" font-size="13" fill="#5c5b56" text-anchor="end">5 loads · 12%</text>
+<rect x="249.0" y="301.4" width="11" height="11" rx="2" fill="#009E73"/>
+<text x="243.0" y="312.4" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">A decision hinges on it</text>
+<text x="243.0" y="330.4" font-size="13" fill="#5c5b56" text-anchor="end">5 loads · 12%</text>
 </g>
 <g id="label-sweeps-remaining-stories">
-<rect x="219.0" y="199.0" width="11" height="11" rx="2" fill="#56B4E9"/>
-<text x="213.0" y="210.0" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">Sweeps remaining stories</text>
-<text x="213.0" y="228.0" font-size="13" fill="#5c5b56" text-anchor="end">4 loads · 10%</text>
+<rect x="249.0" y="199.0" width="11" height="11" rx="2" fill="#56B4E9"/>
+<text x="243.0" y="210.0" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">Sweeps remaining stories</text>
+<text x="243.0" y="228.0" font-size="13" fill="#5c5b56" text-anchor="end">4 loads · 10%</text>
 </g>
 <g id="label-gap-in-the-docs">
-<rect x="219.0" y="153.0" width="11" height="11" rx="2" fill="#CC79A7"/>
-<text x="213.0" y="164.0" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">Gap in the docs</text>
-<text x="213.0" y="182.0" font-size="13" fill="#5c5b56" text-anchor="end">3 loads · 7%</text>
+<rect x="249.0" y="153.0" width="11" height="11" rx="2" fill="#CC79A7"/>
+<text x="243.0" y="164.0" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">Gap in the docs</text>
+<text x="243.0" y="182.0" font-size="13" fill="#5c5b56" text-anchor="end">3 loads · 7%</text>
 </g>
 <g id="label-other">
-<rect x="219.0" y="107.0" width="11" height="11" rx="2" fill="#D55E00"/>
-<text x="213.0" y="118.0" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">Other</text>
-<text x="213.0" y="136.0" font-size="13" fill="#5c5b56" text-anchor="end">2 loads · 5%</text>
+<rect x="249.0" y="107.0" width="11" height="11" rx="2" fill="#D55E00"/>
+<text x="243.0" y="118.0" font-size="14.5" font-weight="600" fill="#1f1f1e" text-anchor="end">Other</text>
+<text x="243.0" y="136.0" font-size="13" fill="#5c5b56" text-anchor="end">2 loads · 5%</text>
 </g>
 </g>
 </svg>

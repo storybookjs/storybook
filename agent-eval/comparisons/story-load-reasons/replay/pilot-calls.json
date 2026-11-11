@@ -1,7 +1,7 @@
 [
  {
   "call_id": "c109",
-  "arm": "purge-jsdoc",
+  "case": "purge-jsdoc",
   "workflow_id": "702",
   "run_dir": "results/agentic-ref-cc-purge-jsdoc-opus-high/2026-08-20T11-35-09.397Z/702-rework-ui-flow/run-7",
   "component": "QuantityStepper",
@@ -14,7 +14,7 @@
  },
  {
   "call_id": "c208",
-  "arm": "stories-full",
+  "case": "stories-full",
   "workflow_id": "703",
   "run_dir": "results/agentic-ref-cc-stories-full-opus-high/2026-08-20T01-24-59.258Z/703-fix-bug-flow/run-10",
   "component": "Button",
@@ -27,7 +27,7 @@
  },
  {
   "call_id": "c270",
-  "arm": "stories-full",
+  "case": "stories-full",
   "workflow_id": "704",
   "run_dir": "results/agentic-ref-cc-stories-full-opus-high/2026-08-20T01-43-49.007Z/704-fix-a11y-flow/run-8",
   "component": "Input",
@@ -40,7 +40,7 @@
  },
  {
   "call_id": "c181",
-  "arm": "stories-full",
+  "case": "stories-full",
   "workflow_id": "702",
   "run_dir": "results/agentic-ref-cc-stories-full-opus-high/2026-08-20T01-07-19.501Z/702-rework-ui-flow/run-10",
   "component": "QuantityStepper",
@@ -53,7 +53,7 @@
  },
  {
   "call_id": "c005",
-  "arm": "api-ref",
+  "case": "api-ref",
   "workflow_id": "702",
   "run_dir": "results/agentic-ref-cc-api-ref-opus-high/2026-08-20T16-45-40.235Z/702-rework-ui-flow/run-9",
   "component": "QuantityStepper",
@@ -66,7 +66,7 @@
  },
  {
   "call_id": "c164",
-  "arm": "stories-full",
+  "case": "stories-full",
   "workflow_id": "706",
   "run_dir": "results/agentic-ref-cc-stories-full-opus-high/2026-08-20T00-35-33.644Z/706-new-ui-scheduled-flow/run-3",
   "component": "Button",
@@ -79,7 +79,7 @@
  },
  {
   "call_id": "c144",
-  "arm": "stories-api-ref",
+  "case": "stories-api-ref",
   "workflow_id": "703",
   "run_dir": "results/agentic-ref-cc-stories-api-ref-opus-high/2026-08-19T22-04-08.900Z/703-fix-bug-flow/run-3",
   "component": "Button",
@@ -92,7 +92,7 @@
  },
  {
   "call_id": "c022",
-  "arm": "empty",
+  "case": "empty",
   "workflow_id": "702",
   "run_dir": "results/agentic-ref-cc-empty-opus-high/2026-08-19T21-24-43.577Z/702-rework-ui-flow/run-4",
   "component": "QuantityStepper",
@@ -105,7 +105,7 @@
  },
  {
   "call_id": "c077",
-  "arm": "purge-docgen",
+  "case": "purge-docgen",
   "workflow_id": "703",
   "run_dir": "results/agentic-ref-cc-purge-docgen-opus-high/2026-09-07T11-43-31.040Z/703-fix-bug-flow/run-2",
   "component": "Button",
@@ -118,7 +118,7 @@
  },
  {
   "call_id": "c024",
-  "arm": "empty",
+  "case": "empty",
   "workflow_id": "704",
   "run_dir": "results/agentic-ref-cc-empty-opus-high/2026-08-20T05-14-32.266Z/704-fix-a11y-flow/run-1",
   "component": "Input",

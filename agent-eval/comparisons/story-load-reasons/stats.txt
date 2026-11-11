@@ -17,7 +17,7 @@ when-to-use        3 ( 3)     1 ( 1)     0 ( 0)     2 ( 2)     0 ( 0)     6/50 (
   purge-jsdoc vs full (role of JSDoc): runs with a load {'full': '32/50', 'purge-jsdoc': '36/50'}  p=0.3149 | mean calls/run diff +0.10  p=0.4786
   purge-docgen vs full (role of docgen; purge-docgen inlines every story, so its loads are re-loads): runs with a load {'full': '32/50', 'purge-docgen': '24/50'}  p=0.0670 | mean calls/run diff -0.36  p=0.0006
 
-## B1. Family x workflow  (units=177; runs with >=1 load; workflow shuffled within arm)
+## B1. Family x workflow  (units=177; runs with >=1 load; workflow shuffled within case)
   worked-example         V=0.48 p=0.0000 q=0.0001 *  701:1/14 702:21/49 703:21/49 704:19/36 706:29/29
   undocumented-contract  V=0.64 p=0.0000 q=0.0001 *  701:2/14 702:5/49 703:39/49 704:18/36 706:1/29
   component-choice       V=0.51 p=0.0001 q=0.0002 *  701:0/14 702:16/49 703:0/49 704:0/36 706:0/29
@@ -25,7 +25,7 @@ when-to-use        3 ( 3)     1 ( 1)     0 ( 0)     2 ( 2)     0 ( 0)     6/50 (
   component-basics       V=0.34 p=0.0033 q=0.0040 *  701:4/14 702:8/49 703:0/49 704:4/36 706:10/29
   second-look            V=0.28 p=0.0213 q=0.0213 *  701:6/14 702:8/49 703:10/49 704:10/36 706:0/29
 
-## B2. Cluster x workflow  (units=177; runs with >=1 load; workflow shuffled within arm)
+## B2. Cluster x workflow  (units=177; runs with >=1 load; workflow shuffled within case)
   example-model          V=0.69 p=0.0000 q=0.0001 *  701:1/14 702:21/49 703:0/49 704:18/36 706:29/29
   native-contract        V=0.60 p=0.0000 q=0.0001 *  701:1/14 702:0/49 703:30/49 704:15/36 706:1/29
   example-form-wiring    V=0.51 p=0.0000 q=0.0001 *  701:0/14 702:0/49 703:21/49 704:13/36 706:0/29
@@ -42,36 +42,36 @@ when-to-use        3 ( 3)     1 ( 1)     0 ( 0)     2 ( 2)     0 ( 0)     6/50 (
   worked-example         V=0.32 p=0.0808 q=0.1213    702:8/16 703:18/41 704:14/28 706:9/9
   second-look            V=0.24 p=0.2479 q=0.2479    702:3/16 703:9/41 704:10/28 706:0/9
 
-## C1. Family x arm (stories-full, full, purge-jsdoc), all 150 runs  (units=150; arm shuffled within workflow)
+## C1. Family x case (stories-full, full, purge-jsdoc), all 150 runs  (units=150; case shuffled within workflow)
   component-basics       V=0.60 p=0.0000 q=0.0001 *  full:0/50 purge-jsdoc:0/50 stories-full:23/50
   accessibility          V=0.38 p=0.0000 q=0.0001 *  full:0/50 purge-jsdoc:0/50 stories-full:10/50
   undocumented-contract  V=0.24 p=0.0001 q=0.0002 *  full:14/50 purge-jsdoc:14/50 stories-full:26/50
   worked-example         V=0.17 p=0.0277 q=0.0277 *  full:26/50 purge-jsdoc:29/50 stories-full:36/50
 
-## C2. Cluster x arm, all 150 runs  (units=150; arm shuffled within workflow)
+## C2. Cluster x case, all 150 runs  (units=150; case shuffled within workflow)
   example-form-wiring    V=0.29 p=0.0000 q=0.0001 *  full:6/50 purge-jsdoc:8/50 stories-full:20/50
   parts-wiring           V=0.44 p=0.0000 q=0.0001 *  full:0/50 purge-jsdoc:0/50 stories-full:13/50
   variant-catalogue      V=0.38 p=0.0000 q=0.0001 *  full:0/50 purge-jsdoc:0/50 stories-full:10/50
   native-contract        V=0.10 p=0.0976 q=0.1221    full:14/50 purge-jsdoc:14/50 stories-full:19/50
   example-model          V=0.10 p=0.2004 q=0.2004    full:20/50 purge-jsdoc:23/50 stories-full:26/50
 
-## C3. Family x arm, only runs with >=1 load  (units=113; mix of reasons given that the run loaded something)
+## C3. Family x case, only runs with >=1 load  (units=113; mix of reasons given that the run loaded something)
   component-basics       V=0.62 p=0.0000 q=0.0001 *  full:0/32 purge-jsdoc:0/36 stories-full:23/45
   accessibility          V=0.38 p=0.0000 q=0.0001 *  full:0/32 purge-jsdoc:0/36 stories-full:10/45
   undocumented-contract  V=0.17 p=0.0089 q=0.0119 *  full:14/32 purge-jsdoc:14/36 stories-full:26/45
   worked-example         V=0.01 p=1.0000 q=1.0000    full:26/32 purge-jsdoc:29/36 stories-full:36/45
 
-## C4. Family, stories-full vs full, all 100 runs  (units=100; arm shuffled within workflow)
+## C4. Family, stories-full vs full, all 100 runs  (units=100; case shuffled within workflow)
   component-basics       V=0.55 p=0.0000 q=0.0002 *  full:0/50 stories-full:23/50
   accessibility          V=0.33 p=0.0002 q=0.0005 *  full:0/50 stories-full:10/50
   undocumented-contract  V=0.24 p=0.0008 q=0.0011 *  full:14/50 stories-full:26/50
   worked-example         V=0.21 p=0.0148 q=0.0148 *  full:26/50 stories-full:36/50
 
-## C4. Family, purge-jsdoc vs full, all 100 runs  (units=100; arm shuffled within workflow)
+## C4. Family, purge-jsdoc vs full, all 100 runs  (units=100; case shuffled within workflow)
   worked-example         V=0.06 p=0.6021 q=1.0000    full:26/50 purge-jsdoc:29/50
   undocumented-contract  V=0.00 p=1.0000 q=1.0000    full:14/50 purge-jsdoc:14/50
 
-## C4. Family, purge-docgen vs full, all 100 runs  (units=100; arm shuffled within workflow)
+## C4. Family, purge-docgen vs full, all 100 runs  (units=100; case shuffled within workflow)
   worked-example         V=0.59 p=0.0000 q=0.0000 *  full:26/50 purge-docgen:0/50
   second-look            V=0.56 p=0.0000 q=0.0000 *  full:0/50 purge-docgen:24/50
   undocumented-contract  V=0.40 p=0.0000 q=0.0000 *  full:14/50 purge-docgen:0/50

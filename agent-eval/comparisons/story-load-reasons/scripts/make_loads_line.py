@@ -14,7 +14,7 @@ W, H, LEFT, RIGHT, TOP, BASE = 880, 480, 70, 840, 138, 410
 
 # purge-docgen prints every story in its docs output, so its loads are re-loads, not picks from a list.
 EXCLUDED_CASES = ('purge-docgen',)
-calls = [c for c in map(json.loads, open(os.path.join(OUT, 'story-loads.final.jsonl'))) if c['arm'] not in EXCLUDED_CASES]
+calls = [c for c in map(json.loads, open(os.path.join(OUT, 'story-loads.final.jsonl'))) if c['case'] not in EXCLUDED_CASES]
 found = [c for c in calls if c['story_found']]
 per_story = collections.Counter(c['story_id'] for c in found)
 label = {c['story_id']: c['story_name'] for c in found}

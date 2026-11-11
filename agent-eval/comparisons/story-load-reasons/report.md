@@ -4,8 +4,8 @@ Agentic-reference transcripts, analysed 2026-11-11. Every call with its reason i
 
 ## What we found
 
-1. **Agents rarely ask for a specific story, and when they do they ask for very few.** Across 650 current runs there are 285 `get-documentation-for-story` calls, in 177 runs. Five stories account for 184 of them (65%). Among stories that were listed without source in at least five runs, at least 87% were never loaded in every arm (87% in `stories-full`, 96% in `full`, 99% in `api-ref`).
-2. **Two reasons dominate.** 113 calls (40%) wanted the design system's own in-app example of the UI being built (`worked-example`). 72 calls (25%) wanted a fact the props table does not state, usually via a story whose name asserts it (`undocumented-contract`).
+1. **Agents rarely ask for a specific story, and when they do they ask for very few.** Across 650 current runs there are 285 `get-documentation-for-story` calls, in 177 runs. Five stories account for 184 of them (65%). Among stories that were listed without source in at least five runs, at least 87% were never loaded in every case (87% in `stories-full`, 96% in `full`, 99% in `api-ref`).
+2. **Two reasons dominate.** 113 calls (40%) wanted the design system's own in-app example of the UI being built (Real-screen examples). 72 calls (25%) wanted a fact the props table does not state, usually via a story whose name asserts it (Undocumented contract stories).
 3. **In-app examples are the kind of story in highest demand.** In `stories-full` an app-example story is loaded on 15.3% of the occasions it is listed, against 2.4% to 4.5% for test, anatomy and showcase stories and 0.6% for prop stories.
 4. **Documentation removes some reasons but not those two.** With full docs (`full`), no run loaded a story to learn a component's parts, variants or accessibility behaviour; without docs (`stories-full`) 23 and 10 of 50 runs did. In-app examples and undocumented contracts were still loaded with docs present (26 and 14 of 50 runs).
 5. **The most-wanted examples often returned nothing usable.** 63 of 134 app-example loads returned a one-line call to a local demo helper instead of markup, mostly QuantityStepper "Mealdrop Cart Line" (33), ProgressBar "Mealdrop Checkout Steps" (25), Sidebar "Mealdrop Cart Panel" (2). Sixteen calls are agents re-loading a story of this sort, hoping the single-story view would show more.
@@ -16,14 +16,14 @@ Agentic-reference transcripts, analysed 2026-11-11. Every call with its reason i
 
 - **Ship usage examples of real product UI, named after that UI.** Agents went to "Mealdrop Checkout Form" and "Mealdrop Cart Line" because the name matched what they were building, with or without docs.
 - **Make the example's source show the real markup.** A story whose source is a call to a demo helper gives the agent the name it wanted and none of the content.
-- **Put hidden contracts in story names.** "Test Defaults To Type Button" was loaded in every `703` run of three arms because its name stated a fact absent from the props table. Defaults of native attributes, attribute pass-through and edge-case rules are the candidates.
+- **Put hidden contracts in story names.** "Test Defaults To Type Button" was loaded in every `703` run of three cases because its name stated a fact absent from the props table. Defaults of native attributes, attribute pass-through and edge-case rules are the candidates.
 - **Anatomy, variants and accessibility stories matter mainly when there are no docs.** With written docs present, agents did not load them.
 
 What it does **not** support: that loading a story improved the result. This analysis measures demand (what agents reach for and why), not payoff. The one payoff field we collected is unreliable; see section E.
 
 ## Population
 
-- **Runs:** 650, the current generation only: 13 arms, 5 workflows, 10 runs each (pin `droppy-70pc`, provider `anthropic`, identical `PROMPT.md`). Superseded runs are excluded.
+- **Runs:** 650, the current generation only: 13 cases, 5 workflows, 10 runs each (pin `droppy-70pc`, provider `anthropic`, identical `PROMPT.md`). Superseded runs are excluded.
 - **Calls:** 285 `get-documentation-for-story` calls in 177 runs. No story was loaded any other way.
 - **When:** 272 calls happen before the run's first edit; the median call sits 22% of the way through the run's tool calls.
 - **What the agent had seen before the call:** 232 calls target a story listed without its source in the component docs, 43 a story already shown in full, 7 a story seen only in the global listing, and 3 a name the agent guessed.
@@ -32,40 +32,51 @@ What it does **not** support: that loading a story improved the result. This ana
 Two properties of the Storybook MCP shape this population:
 
 - `get-documentation` inlines a component's first three stories in full and lists the rest by name, sometimes with a one-line description. A story call therefore means "expanded a story outside the first three". Stories inside the first three are consumed without a trace.
-- In `purge-docgen` the docs output inlines every story, so all 24 of its calls re-load a story already shown. That arm cannot tell us what docgen does to story selection.
+- In `purge-docgen` the docs output inlines every story, so all 24 of its calls re-load a story already shown. That case cannot tell us what docgen does to story selection.
 
 ## Reason clusters
 
 Fifteen clusters in six families. Definitions and decision rules are in [clustering/codebook-v1.json](clustering/codebook-v1.json).
 
-| Family | Cluster | What the agent wanted | Calls | Runs | Arms | Most-loaded stories |
+Families carry their publication names here and in the charts. The data files keep the working ids:
+
+| Family | Id in the data files |
+|---|---|
+| Real-screen examples | `worked-example` |
+| Undocumented contract stories | `undocumented-contract` |
+| Stories loaded twice | `second-look` |
+| Anatomy and variant stories | `component-basics` |
+| Accessibility stories | `accessibility` |
+| When-to-use guidance | `component-choice` |
+
+| Family | Cluster | What the agent wanted | Calls | Runs | Cases | Most-loaded stories |
 |---|---|---|---:|---:|---:|---|
-| worked-example | `example-model` | Model the UI on an in-app example | 72 | 69 | 3 | Button "Mealdrop Checkout Actions" (29); QuantityStepper "Mealdrop Cart Line" (21) |
-| worked-example | `example-form-wiring` | Check an in-app example for native form wiring | 41 | 34 | 3 | Input "Mealdrop Checkout Form" (28); Button "Mealdrop Checkout Actions" (13) |
-| undocumented-contract | `native-contract` | Story name asserts an unstated native behaviour | 50 | 47 | 3 | Button "Test Defaults To Type Button" (45); Heading "Test Forwards Ref And Props" (3) |
-| undocumented-contract | `indirect-probe` | Probe an unrelated story for native-attribute hints | 14 | 13 | 4 | Button "Anatomy" (10); Button "Class Name" (2) |
-| undocumented-contract | `bounds-behaviour` | Behaviour rule at value limits | 5 | 5 | 1 | QuantityStepper "Bounds Disable Rather Than Clamp" (5) |
-| undocumented-contract | `classname-hook` | className as styling escape hatch | 3 | 2 | 1 | Badge "Class Name" (2); IconButton "Class Name" (1) |
-| second-look | `reload-isolate` | Re-load a printed story to isolate a fact | 18 | 18 | 1 | Button "Test Defaults To Type Button" (10); QuantityStepper "Mealdrop Cart Line" (5) |
-| second-look | `reload-opaque` | Re-load an example to see behind a helper | 16 | 16 | 5 | Modal "Empty" (4); ProgressBar "Mealdrop Checkout Steps" (4) |
-| component-basics | `parts-wiring` | Parts, slots and basic wiring | 14 | 13 | 1 | QuantityStepper "Anatomy" (8); Input "Anatomy" (4) |
-| component-basics | `variant-catalogue` | Catalogue of visual variants | 10 | 10 | 1 | Button "Variants" (10) |
-| component-basics | `guessed-story` | Guessed a story name | 3 | 3 | 1 | Modal "Open" (3) |
-| accessibility | `a11y-name` | How to name the control accessibly | 12 | 12 | 3 | QuantityStepper "aria-label" (8); ProgressBar "Label" (2) |
-| accessibility | `a11y-semantics` | Built-in assistive-technology semantics | 10 | 7 | 2 | Input "Test Error Is Announced" (5); ProgressBar "Test Reports Its Range" (2) |
-| component-choice | `usage-guidance` | Mine a story for when-to-use guidance | 10 | 10 | 3 | QuantityStepper "Empty" (8); QuantityStepper "Anatomy" (2) |
-| component-choice | `example-precedent` | In-app example as precedent for component choice | 7 | 7 | 1 | QuantityStepper "Mealdrop Cart Line" (5); Select "Mealdrop Burger Extras" (2) |
+| Real-screen examples | `example-model` | Model the UI on an in-app example | 72 | 69 | 3 | Button "Mealdrop Checkout Actions" (29); QuantityStepper "Mealdrop Cart Line" (21) |
+| Real-screen examples | `example-form-wiring` | Check an in-app example for native form wiring | 41 | 34 | 3 | Input "Mealdrop Checkout Form" (28); Button "Mealdrop Checkout Actions" (13) |
+| Undocumented contract stories | `native-contract` | Story name asserts an unstated native behaviour | 50 | 47 | 3 | Button "Test Defaults To Type Button" (45); Heading "Test Forwards Ref And Props" (3) |
+| Undocumented contract stories | `indirect-probe` | Probe an unrelated story for native-attribute hints | 14 | 13 | 4 | Button "Anatomy" (10); Button "Class Name" (2) |
+| Undocumented contract stories | `bounds-behaviour` | Behaviour rule at value limits | 5 | 5 | 1 | QuantityStepper "Bounds Disable Rather Than Clamp" (5) |
+| Undocumented contract stories | `classname-hook` | className as styling escape hatch | 3 | 2 | 1 | Badge "Class Name" (2); IconButton "Class Name" (1) |
+| Stories loaded twice | `reload-isolate` | Re-load a printed story to isolate a fact | 18 | 18 | 1 | Button "Test Defaults To Type Button" (10); QuantityStepper "Mealdrop Cart Line" (5) |
+| Stories loaded twice | `reload-opaque` | Re-load an example to see behind a helper | 16 | 16 | 5 | Modal "Empty" (4); ProgressBar "Mealdrop Checkout Steps" (4) |
+| Anatomy and variant stories | `parts-wiring` | Parts, slots and basic wiring | 14 | 13 | 1 | QuantityStepper "Anatomy" (8); Input "Anatomy" (4) |
+| Anatomy and variant stories | `variant-catalogue` | Catalogue of visual variants | 10 | 10 | 1 | Button "Variants" (10) |
+| Anatomy and variant stories | `guessed-story` | Guessed a story name | 3 | 3 | 1 | Modal "Open" (3) |
+| Accessibility stories | `a11y-name` | How to name the control accessibly | 12 | 12 | 3 | QuantityStepper "aria-label" (8); ProgressBar "Label" (2) |
+| Accessibility stories | `a11y-semantics` | Built-in assistive-technology semantics | 10 | 7 | 2 | Input "Test Error Is Announced" (5); ProgressBar "Test Reports Its Range" (2) |
+| When-to-use guidance | `usage-guidance` | Mine a story for when-to-use guidance | 10 | 10 | 3 | QuantityStepper "Empty" (8); QuantityStepper "Anatomy" (2) |
+| When-to-use guidance | `example-precedent` | In-app example as precedent for component choice | 7 | 7 | 1 | QuantityStepper "Mealdrop Cart Line" (5); Select "Mealdrop Burger Extras" (2) |
 
-Calls per family and arm:
+Calls per family and case:
 
-| Family | stories-full | purge-jsdoc | full | purge-docgen | empty | stories-api-ref | api-ref | when-to-use | basic-docs | history-issues | do-dont |
+| Family | stories-full | purge-jsdoc | full | purge-docgen | empty | stories-api-ref | api-ref | when-to-use | basic-docs | do-dont | history-issues |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| worked-example | 52 | 33 | 28 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| undocumented-contract | 32 | 14 | 14 | 0 | 0 | 7 | 1 | 0 | 4 | 0 | 0 |
-| second-look | 0 | 0 | 0 | 24 | 5 | 1 | 0 | 3 | 0 | 1 | 0 |
-| component-basics | 24 | 0 | 0 | 0 | 0 | 0 | 0 | 3 | 0 | 0 | 0 |
-| accessibility | 15 | 0 | 0 | 0 | 0 | 2 | 5 | 0 | 0 | 0 | 0 |
-| component-choice | 8 | 0 | 0 | 0 | 8 | 0 | 0 | 0 | 0 | 0 | 1 |
+| Real-screen examples | 52 | 33 | 28 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Undocumented contract stories | 32 | 14 | 14 | 0 | 0 | 7 | 1 | 0 | 4 | 0 | 0 |
+| Stories loaded twice | 0 | 0 | 0 | 24 | 5 | 1 | 0 | 3 | 0 | 0 | 1 |
+| Anatomy and variant stories | 24 | 0 | 0 | 0 | 0 | 0 | 0 | 3 | 0 | 0 | 0 |
+| Accessibility stories | 15 | 0 | 0 | 0 | 0 | 2 | 5 | 0 | 0 | 0 | 0 |
+| When-to-use guidance | 8 | 0 | 0 | 0 | 8 | 0 | 0 | 0 | 0 | 1 | 0 |
 
 ## Reliability
 
@@ -92,7 +103,7 @@ The unit of analysis is the run, because calls within a run are not independent.
 
 ### A. How often runs load a story
 
-| Arm | Runs with a load (of 50) | Calls |
+| Case | Runs with a load (of 50) | Calls |
 |---|---:|---:|
 | `stories-full` | 45 | 131 |
 | `purge-jsdoc` | 36 | 47 |
@@ -111,16 +122,16 @@ The unit of analysis is the run, because calls within a run are not independent.
 
 ### B. Reason by workflow
 
-Among the 177 runs that loaded a story; workflow labels shuffled within arm.
+Among the 177 runs that loaded a story; workflow labels shuffled within case.
 
 | Target | Cramér's V | p | q (BH) | Runs with it, by workflow |
 |---|---:|---:|---:|---|
-| `worked-example` * | 0.48 | 0.0000 | 0.0001 | 701 1/14, 702 21/49, 703 21/49, 704 19/36, 706 29/29 |
-| `undocumented-contract` * | 0.64 | 0.0000 | 0.0001 | 701 2/14, 702 5/49, 703 39/49, 704 18/36, 706 1/29 |
-| `component-choice` * | 0.51 | 0.0001 | 0.0002 | 701 0/14, 702 16/49, 703 0/49, 704 0/36, 706 0/29 |
-| `accessibility` * | 0.32 | 0.0007 | 0.0010 | 701 1/14, 702 8/49, 703 0/49, 704 8/36, 706 0/29 |
-| `component-basics` * | 0.34 | 0.0033 | 0.0040 | 701 4/14, 702 8/49, 703 0/49, 704 4/36, 706 10/29 |
-| `second-look` * | 0.28 | 0.0213 | 0.0213 | 701 6/14, 702 8/49, 703 10/49, 704 10/36, 706 0/29 |
+| Real-screen examples * | 0.48 | 0.0000 | 0.0001 | 701 1/14, 702 21/49, 703 21/49, 704 19/36, 706 29/29 |
+| Undocumented contract stories * | 0.64 | 0.0000 | 0.0001 | 701 2/14, 702 5/49, 703 39/49, 704 18/36, 706 1/29 |
+| When-to-use guidance * | 0.51 | 0.0001 | 0.0002 | 701 0/14, 702 16/49, 703 0/49, 704 0/36, 706 0/29 |
+| Accessibility stories * | 0.32 | 0.0007 | 0.0010 | 701 1/14, 702 8/49, 703 0/49, 704 8/36, 706 0/29 |
+| Anatomy and variant stories * | 0.34 | 0.0033 | 0.0040 | 701 4/14, 702 8/49, 703 0/49, 704 4/36, 706 10/29 |
+| Stories loaded twice * | 0.28 | 0.0213 | 0.0213 | 701 6/14, 702 8/49, 703 10/49, 704 10/36, 706 0/29 |
 
 By cluster:
 
@@ -137,24 +148,24 @@ By cluster:
 | `parts-wiring` * | 0.27 | 0.0179 | 0.0199 | 701 1/14, 702 8/49, 703 0/49, 704 4/36, 706 0/29 |
 | `reload-isolate` | 0.24 | 0.0519 | 0.0519 | 701 0/14, 702 5/49, 703 10/49, 704 3/36, 706 0/29 |
 
-Restricted to calls where the agent stated its purpose at least partly (94 runs), three families have enough runs to test. `undocumented-contract` stays significant (V = 0.63, q = 0.0001); `worked-example` (q = 0.12) and `second-look` (q = 0.25) do not, though their pattern across workflows is unchanged.
+Restricted to calls where the agent stated its purpose at least partly (94 runs), three families have enough runs to test. Undocumented contract stories stay significant (V = 0.63, q = 0.0001); Real-screen examples (q = 0.12) and Stories loaded twice (q = 0.25) do not, though their pattern across workflows is unchanged.
 
 Read this as "the task decides the need", not as a law about workflow types. In `703` the bug is a Button that does not submit, so agents load the story about Button's default type; a different bug would produce a different cluster.
 
-### C. Reason by arm
+### C. Reason by case
 
-`stories-full`, `full` and `purge-jsdoc` serve the same stories behind the same name-only list, so they can be compared. All 150 runs; arm labels shuffled within workflow.
+`stories-full`, `full` and `purge-jsdoc` serve the same stories behind the same name-only list, so they can be compared. All 150 runs; case labels shuffled within workflow.
 
-| Target | Cramér's V | p | q (BH) | Runs with it, by arm |
+| Target | Cramér's V | p | q (BH) | Runs with it, by case |
 |---|---:|---:|---:|---|
-| `component-basics` * | 0.60 | 0.0000 | 0.0001 | full 0/50, purge-jsdoc 0/50, stories-full 23/50 |
-| `accessibility` * | 0.38 | 0.0000 | 0.0001 | full 0/50, purge-jsdoc 0/50, stories-full 10/50 |
-| `undocumented-contract` * | 0.24 | 0.0001 | 0.0002 | full 14/50, purge-jsdoc 14/50, stories-full 26/50 |
-| `worked-example` * | 0.17 | 0.0277 | 0.0277 | full 26/50, purge-jsdoc 29/50, stories-full 36/50 |
+| Anatomy and variant stories * | 0.60 | 0.0000 | 0.0001 | full 0/50, purge-jsdoc 0/50, stories-full 23/50 |
+| Accessibility stories * | 0.38 | 0.0000 | 0.0001 | full 0/50, purge-jsdoc 0/50, stories-full 10/50 |
+| Undocumented contract stories * | 0.24 | 0.0001 | 0.0002 | full 14/50, purge-jsdoc 14/50, stories-full 26/50 |
+| Real-screen examples * | 0.17 | 0.0277 | 0.0277 | full 26/50, purge-jsdoc 29/50, stories-full 36/50 |
 
 By cluster:
 
-| Target | Cramér's V | p | q (BH) | Runs with it, by arm |
+| Target | Cramér's V | p | q (BH) | Runs with it, by case |
 |---|---:|---:|---:|---|
 | `example-form-wiring` * | 0.29 | 0.0000 | 0.0001 | full 6/50, purge-jsdoc 8/50, stories-full 20/50 |
 | `parts-wiring` * | 0.44 | 0.0000 | 0.0001 | full 0/50, purge-jsdoc 0/50, stories-full 13/50 |
@@ -164,20 +175,20 @@ By cluster:
 
 `stories-full` against `full` alone:
 
-| Target | Cramér's V | p | q (BH) | Runs with it, by arm |
+| Target | Cramér's V | p | q (BH) | Runs with it, by case |
 |---|---:|---:|---:|---|
-| `component-basics` * | 0.55 | 0.0000 | 0.0002 | full 0/50, stories-full 23/50 |
-| `accessibility` * | 0.33 | 0.0002 | 0.0005 | full 0/50, stories-full 10/50 |
-| `undocumented-contract` * | 0.24 | 0.0008 | 0.0011 | full 14/50, stories-full 26/50 |
-| `worked-example` * | 0.21 | 0.0148 | 0.0148 | full 26/50, stories-full 36/50 |
+| Anatomy and variant stories * | 0.55 | 0.0000 | 0.0002 | full 0/50, stories-full 23/50 |
+| Accessibility stories * | 0.33 | 0.0002 | 0.0005 | full 0/50, stories-full 10/50 |
+| Undocumented contract stories * | 0.24 | 0.0008 | 0.0011 | full 14/50, stories-full 26/50 |
+| Real-screen examples * | 0.21 | 0.0148 | 0.0148 | full 26/50, stories-full 36/50 |
 
-`purge-jsdoc` against `full` shows no difference in any family (`worked-example` 29 vs 26 of 50, p = 0.60; `undocumented-contract` 14 vs 14).
+`purge-jsdoc` against `full` shows no difference in any family (Real-screen examples 29 vs 26 of 50, p = 0.60; Undocumented contract stories 14 vs 14).
 
-Among only the runs that loaded something, the share with a `worked-example` load is the same in all three arms (36/45, 26/32, 29/36; p = 1.0). Docs lower how often agents load stories, and remove the component-basics and accessibility reasons, but leave the pull of in-app examples unchanged.
+Among only the runs that loaded something, the share that loaded a real-screen example is the same in all three cases (36/45, 26/32, 29/36; p = 1.0). Docs lower how often agents load stories, and remove the component-basics and accessibility reasons, but leave the pull of in-app examples unchanged.
 
 ### D. Reason against story kind
 
-Story kind is a deterministic label from the story's name and the content tier that ships it (`app-example`, `test`, `anatomy`, `showcase-highlight`, `api-ref-prop`, `default`). Across calls, kind and reason family are strongly associated (Cramér's V = 0.6); knowing the kind predicts the family for 72% of calls. All 113 `worked-example` calls are app-example stories, by construction of the codebook, and 48 of 68 test-story calls are `undocumented-contract`.
+Story kind is a deterministic label from the story's name and the content tier that ships it (`app-example`, `test`, `anatomy`, `showcase-highlight`, `api-ref-prop`, `default`). Across calls, kind and reason family are strongly associated (Cramér's V = 0.6); knowing the kind predicts the family for 72% of calls. All 113 Real-screen examples calls are app-example stories, by construction of the codebook, and 48 of 68 test-story calls are Undocumented contract stories.
 
 So story kind is a workable cheap proxy for the two large families. It cannot separate the smaller ones: anatomy stories are loaded for parts, for native-attribute hints and for usage guidance alike.
 
@@ -200,7 +211,7 @@ Selection rate is manual loads divided by the number of runs that listed the sto
 | api-ref-prop | 142 | 0.6% (7/1126) | 0.0% (0/874) | 0.0% (0/1088) |
 | default | 33 | 0.0% (0/52) | – | 0.0% (0/46) |
 
-- Eleven story-and-cell combinations were loaded in 10 of 10 runs, including Button "Test Defaults To Type Button" in `703` (three arms), QuantityStepper "Mealdrop Cart Line" in `702`, and Input "Mealdrop Checkout Form" in `704`.
+- Eleven story-and-cell combinations were loaded in 10 of 10 runs, including Button "Test Defaults To Type Button" in `703` (three cases), QuantityStepper "Mealdrop Cart Line" in `702`, and Input "Mealdrop Checkout Form" in `704`.
 - In `stories-full`, over 50 runs, 7% of its 404 stories were loaded manually at least once, 19% were only ever inlined, and 74% were listed but never loaded.
 - `default` and many `api-ref-prop` stories are usually among the three inlined ones, so their low manual rate partly reflects that they were already on screen.
 
@@ -217,14 +228,14 @@ Three coders judged, for each load, how the story's name relates to what the age
 
 - 239 of 285 loads (84%) were of a story the agent had only seen in a list: 159 by name alone, 80 with a one-line description.
 - In 17 of the 48 loads where the agent stated its purpose, it quoted the story's name as the reason.
-- The 31 `none` loads are fallbacks: Button "Anatomy" (10) probed for native attributes in arms that do not list "Test Defaults To Type Button", and the autogenerated "Empty" stories (13).
+- The 31 `none` loads are fallbacks: Button "Anatomy" (10) probed for native attributes in cases that do not list "Test Defaults To Type Button", and the autogenerated "Empty" stories (13).
 - Of the 35 distinct stories loaded, 27 have a name that matches the need they were loaded for.
 
 ### Loads made with more than a list entry
 
 46 of the 285 loads (16%) were not picked from a name in a list.
 
-- **43 re-loaded a story whose full source was already on screen.** 24 are in `purge-docgen`, whose docs output prints every story; 13 are the single autogenerated "Empty" story in `empty`; 6 are a story among the three inlined ones in other arms (five "Anatomy", one "Children").
+- **43 re-loaded a story whose full source was already on screen.** 24 are in `purge-docgen`, whose docs output prints every story; 13 are the single autogenerated "Empty" story in `empty`; 6 are a story among the three inlined ones in other cases (five "Anatomy", one "Children").
 - **3 asked for a name the agent had never been shown** (Modal "Open", in `when-to-use`). All three failed: the story does not exist.
 
 The 43 re-loads fall into three reason clusters: isolating one story from a long page (18), trying to see behind a helper (16), and looking for usage guidance in the only story (9).
@@ -251,12 +262,12 @@ Two cautions. The need was reconstructed by an annotator who could see the story
 - **Reasons are reconstructed.** Thinking was not recorded. 48 reasons rest on a stated purpose, 99 on partial narration and 138 on actions alone. A wrong reconstruction that is worded consistently would still cluster consistently.
 - **One design system, one app, five tasks, one model.** The clusters describe Droppy, MealDrop and `claude-opus-5` at high effort.
 - **Demand, not value.** Nothing here shows that a loaded story led to better code.
-- **Arms differ in what they offer.** Only `stories-full`, `full` and `purge-jsdoc` are comparable for reasons; the other arms list different stories, or inline all of them.
+- **Cases differ in what they offer.** Only `stories-full`, `full` and `purge-jsdoc` are comparable for reasons; the other cases list different stories, or inline all of them.
 - **Coders share a lineage.** All annotators and coders are Claude models. No human has checked a sample.
 
 ## Options to strengthen the evidence
 
-- **Turn on thinking summaries before the next collection.** The `showThinkingSummaries` setting does not do it: in headless mode Claude Code ignores that setting and forces the thinking display to `omitted` (read from the CLI's own code, version 2.1.232). The `--thinking-display summarized` flag overrides this. As of 2026-11-11 the working tree carries that change, uncommitted: the repo's `@vercel/agent-eval` patch forwards a `thinkingDisplay` agent option, and agentic-reference Claude Code runs set it. A local headless call on CLI 2.1.232 confirmed the transcript then holds the summary text and the agent's printed output is unchanged. It has not been run in a sandbox, where a newer CLI is installed, so check one transcript from the first collection. Land it before the `story-types` arms are collected. Expect short summaries: in the three calls measured below, the stored reasoning was about 60 tokens per thinking block.
+- **Turn on thinking summaries before the next collection.** The `showThinkingSummaries` setting does not do it: in headless mode Claude Code ignores that setting and forces the thinking display to `omitted` (read from the CLI's own code, version 2.1.232). The `--thinking-display summarized` flag overrides this. As of 2026-11-11 the working tree carries that change, uncommitted: the repo's `@vercel/agent-eval` patch forwards a `thinkingDisplay` agent option, and agentic-reference Claude Code runs set it. A local headless call on CLI 2.1.232 confirmed the transcript then holds the summary text and the agent's printed output is unchanged. It has not been run in a sandbox, where a newer CLI is installed, so check one transcript from the first collection. Land it before the `story-types` cases are collected. Expect short summaries: in the three calls measured below, the stored reasoning was about 60 tokens per thinking block.
 - **Replay and ask is not viable as piloted.** It trips the API's reasoning-extraction safeguard on most calls; see the next section.
 - **Have a person code 30 calls blind** against the codebook, to measure validity rather than consistency.
 
@@ -276,11 +287,11 @@ The safeguard is there to stop a model's reasoning being extracted through its r
 | File | Contents |
 |---|---|
 | `calls.md` | Every call with its context line, need and reason paragraph, grouped by cluster |
-| `story-loads.csv`, `story-loads.final.jsonl` | One row per call with arm, workflow, run, story, exposure, evidence, cluster and family |
-| `story-selection.csv` | Per arm, workflow and story: runs inlined, runs listed, runs loaded, selection rate |
+| `story-loads.csv`, `story-loads.final.jsonl` | One row per call with case, workflow, run, story, exposure, evidence, cluster and family |
+| `story-selection.csv` | Per case, workflow and story: runs inlined, runs listed, runs loaded, selection rate |
 | `clustering/codebook-v1.json` | Cluster definitions and decision rules |
 | `clustering/open-*.json`, `clustering/coded-r1-*.json` | The three open clusterings and the three coders' labels |
 | `stats.json`, `stats.txt` | Every test, with group counts |
 | `replay/results.jsonl`, `replay/pilot-calls.json` | The replay pilot: the ten calls, each response, stop reason and token usage |
-| `charts/*.svg` | Seven charts: four pies (reason families, what the agent had seen, name alignment, cited reasons), two loads-per-story distributions and story reach by instance size. All leave out `purge-docgen` (261 loads in 550 runs), because that arm prints every story in its docs output, so its 24 loads are re-loads rather than picks from a list. The tables and tests in this report include it unless stated. |
+| `charts/*.svg` | Seven charts: four pies (reason families, what the agent had seen, name alignment, cited reasons), two loads-per-story distributions and story reach by instance size. All leave out `purge-docgen` (261 loads in 550 runs), because that case prints every story in its docs output, so its 24 loads are re-loads rather than picks from a list. The tables and tests in this report include it unless stated. |
 | `scripts/` | Extraction, selection metric, agreement, statistics, replay and report scripts |

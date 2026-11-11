@@ -1,4 +1,4 @@
-| arm | stories seen | manual | auto (inlined) | listed, never loaded | unseen |
+| case | stories seen | manual | auto (inlined) | listed, never loaded | unseen |
 |---|---:|---:|---:|---:|---:|
 | api-ref | 220 | 1% | 30% | 69% | 0% |
 | basic-docs | 111 | 1% | 58% | 41% | 0% |

@@ -1,6 +1,6 @@
 [
  {
-  "arm": "stories-full",
+  "case": "stories-full",
   "kind": "app-example",
   "stories": 32,
   "listed_exposures": 385,
@@ -10,7 +10,7 @@
   "auto_inlined_exposures": 0
  },
  {
-  "arm": "stories-full",
+  "case": "stories-full",
   "kind": "test",
   "stories": 111,
   "listed_exposures": 1250,
@@ -20,7 +20,7 @@
   "auto_inlined_exposures": 0
  },
  {
-  "arm": "stories-full",
+  "case": "stories-full",
   "kind": "anatomy",
   "stories": 33,
   "listed_exposures": 381,
@@ -30,7 +30,7 @@
   "auto_inlined_exposures": 0
  },
  {
-  "arm": "stories-full",
+  "case": "stories-full",
   "kind": "showcase-highlight",
   "stories": 45,
   "listed_exposures": 473,
@@ -40,7 +40,7 @@
   "auto_inlined_exposures": 0
  },
  {
-  "arm": "stories-full",
+  "case": "stories-full",
   "kind": "api-ref-prop",
   "stories": 142,
   "listed_exposures": 1126,
@@ -50,7 +50,7 @@
   "auto_inlined_exposures": 658
  },
  {
-  "arm": "stories-full",
+  "case": "stories-full",
   "kind": "other-full-only",
   "stories": 8,
   "listed_exposures": 40,
@@ -60,7 +60,7 @@
   "auto_inlined_exposures": 0
  },
  {
-  "arm": "stories-full",
+  "case": "stories-full",
   "kind": "default",
   "stories": 33,
   "listed_exposures": 52,
@@ -70,7 +70,7 @@
   "auto_inlined_exposures": 329
  },
  {
-  "arm": "full",
+  "case": "full",
   "kind": "app-example",
   "stories": 22,
   "listed_exposures": 304,
@@ -80,7 +80,7 @@
   "auto_inlined_exposures": 0
  },
  {
-  "arm": "full",
+  "case": "full",
   "kind": "test",
   "stories": 75,
   "listed_exposures": 959,
@@ -90,7 +90,7 @@
   "auto_inlined_exposures": 0
  },
  {
-  "arm": "full",
+  "case": "full",
   "kind": "anatomy",
   "stories": 23,
   "listed_exposures": 291,
@@ -100,7 +100,7 @@
   "auto_inlined_exposures": 0
  },
  {
-  "arm": "full",
+  "case": "full",
   "kind": "showcase-highlight",
   "stories": 28,
   "listed_exposures": 378,
@@ -110,7 +110,7 @@
   "auto_inlined_exposures": 0
  },
  {
-  "arm": "full",
+  "case": "full",
   "kind": "api-ref-prop",
   "stories": 103,
   "listed_exposures": 874,
@@ -120,7 +120,7 @@
   "auto_inlined_exposures": 582
  },
  {
-  "arm": "full",
+  "case": "full",
   "kind": "other-full-only",
   "stories": 3,
   "listed_exposures": 23,
@@ -130,7 +130,7 @@
   "auto_inlined_exposures": 0
  },
  {
-  "arm": "full",
+  "case": "full",
   "kind": "default",
   "stories": 23,
   "listed_exposures": 0,
@@ -140,7 +140,7 @@
   "auto_inlined_exposures": 291
  },
  {
-  "arm": "purge-jsdoc",
+  "case": "purge-jsdoc",
   "kind": "app-example",
   "stories": 32,
   "listed_exposures": 355,
@@ -150,7 +150,7 @@
   "auto_inlined_exposures": 0
  },
  {
-  "arm": "purge-jsdoc",
+  "case": "purge-jsdoc",
   "kind": "test",
   "stories": 111,
   "listed_exposures": 1134,
@@ -160,7 +160,7 @@
   "auto_inlined_exposures": 0
  },
  {
-  "arm": "purge-jsdoc",
+  "case": "purge-jsdoc",
   "kind": "anatomy",
   "stories": 33,
   "listed_exposures": 341,
@@ -170,7 +170,7 @@
   "auto_inlined_exposures": 0
  },
  {
-  "arm": "purge-jsdoc",
+  "case": "purge-jsdoc",
   "kind": "showcase-highlight",
   "stories": 45,
   "listed_exposures": 460,
@@ -180,7 +180,7 @@
   "auto_inlined_exposures": 0
  },
  {
-  "arm": "purge-jsdoc",
+  "case": "purge-jsdoc",
   "kind": "api-ref-prop",
   "stories": 142,
   "listed_exposures": 1088,
@@ -190,7 +190,7 @@
   "auto_inlined_exposures": 590
  },
  {
-  "arm": "purge-jsdoc",
+  "case": "purge-jsdoc",
   "kind": "other-full-only",
   "stories": 8,
   "listed_exposures": 34,
@@ -200,7 +200,7 @@
   "auto_inlined_exposures": 0
  },
  {
-  "arm": "purge-jsdoc",
+  "case": "purge-jsdoc",
   "kind": "default",
   "stories": 33,
   "listed_exposures": 46,
@@ -210,7 +210,7 @@
   "auto_inlined_exposures": 295
  },
  {
-  "arm": "api-ref",
+  "case": "api-ref",
   "kind": "anatomy",
   "stories": 33,
   "listed_exposures": 418,
@@ -220,7 +220,7 @@
   "auto_inlined_exposures": 16
  },
  {
-  "arm": "api-ref",
+  "case": "api-ref",
   "kind": "showcase-highlight",
   "stories": 45,
   "listed_exposures": 550,
@@ -230,7 +230,7 @@
   "auto_inlined_exposures": 0
  },
  {
-  "arm": "api-ref",
+  "case": "api-ref",
   "kind": "api-ref-prop",
   "stories": 142,
   "listed_exposures": 1137,
@@ -240,7 +240,7 @@
   "auto_inlined_exposures": 890
  },
  {
-  "arm": "stories-api-ref",
+  "case": "stories-api-ref",
   "kind": "anatomy",
   "stories": 23,
   "listed_exposures": 296,
@@ -250,7 +250,7 @@
   "auto_inlined_exposures": 20
  },
  {
-  "arm": "stories-api-ref",
+  "case": "stories-api-ref",
   "kind": "showcase-highlight",
   "stories": 1,
   "listed_exposures": 0,
@@ -260,7 +260,7 @@
   "auto_inlined_exposures": 2
  },
  {
-  "arm": "stories-api-ref",
+  "case": "stories-api-ref",
   "kind": "api-ref-prop",
   "stories": 103,
   "listed_exposures": 600,
@@ -270,7 +270,7 @@
   "auto_inlined_exposures": 926
  },
  {
-  "arm": "purge-docgen",
+  "case": "purge-docgen",
   "kind": "app-example",
   "stories": 22,
   "listed_exposures": 0,
@@ -280,7 +280,7 @@
   "auto_inlined_exposures": 313
  },
  {
-  "arm": "purge-docgen",
+  "case": "purge-docgen",
   "kind": "test",
   "stories": 75,
   "listed_exposures": 0,
@@ -290,7 +290,7 @@
   "auto_inlined_exposures": 997
  },
  {
-  "arm": "purge-docgen",
+  "case": "purge-docgen",
   "kind": "anatomy",
   "stories": 23,
   "listed_exposures": 0,
@@ -300,7 +300,7 @@
   "auto_inlined_exposures": 299
  },
  {
-  "arm": "purge-docgen",
+  "case": "purge-docgen",
   "kind": "showcase-highlight",
   "stories": 29,
   "listed_exposures": 0,
@@ -310,7 +310,7 @@
   "auto_inlined_exposures": 409
  },
  {
-  "arm": "purge-docgen",
+  "case": "purge-docgen",
   "kind": "api-ref-prop",
   "stories": 101,
   "listed_exposures": 0,
@@ -320,7 +320,7 @@
   "auto_inlined_exposures": 1502
  },
  {
-  "arm": "purge-docgen",
+  "case": "purge-docgen",
   "kind": "other-full-only",
   "stories": 4,
   "listed_exposures": 0,
@@ -330,7 +330,7 @@
   "auto_inlined_exposures": 29
  },
  {
-  "arm": "purge-docgen",
+  "case": "purge-docgen",
   "kind": "default",
   "stories": 23,
   "listed_exposures": 0,

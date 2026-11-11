@@ -1,4 +1,4 @@
-"""Do reason clusters associate with workflow or arm?  Unit of analysis: the run.
+"""Do reason clusters associate with workflow or case?  Unit of analysis: the run.
 
 Every test is a stratified Monte Carlo permutation test on a chi-square statistic of a
 presence-by-group table, so sparse cells and non-independent calls within a run are not a problem.
@@ -88,25 +88,25 @@ def block(title, units, group, strata, level_sets, rng, note=''):
 rng = random.Random(SEED)
 results = {}
 loaders = [r for r in runs if r['n_calls']]
-ARMS3 = ('stories-full', 'full', 'purge-jsdoc')
+CASES3 = ('stories-full', 'full', 'purge-jsdoc')
 
 # A. propensity to load any story
 print('## A. Runs that loaded at least one story')
-arms = sorted({r['arm'] for r in runs}); wfs = sorted({r['workflow_id'] for r in runs})
-prop = {a: {w: [sum(1 for r in runs if r['arm'] == a and r['workflow_id'] == w and r['n_calls']), sum(r['n_calls'] for r in runs if r['arm'] == a and r['workflow_id'] == w)] for w in wfs} for a in arms}
+cases = sorted({r['case'] for r in runs}); wfs = sorted({r['workflow_id'] for r in runs})
+prop = {a: {w: [sum(1 for r in runs if r['case'] == a and r['workflow_id'] == w and r['n_calls']), sum(r['n_calls'] for r in runs if r['case'] == a and r['workflow_id'] == w)] for w in wfs} for a in cases}
 print('%-16s' % 'runs/10 (calls)' + ' '.join('%9s' % w for w in wfs) + '   total')
-for a in arms:
+for a in cases:
     print('%-16s' % a + ' '.join('%4d (%2d) ' % tuple(prop[a][w]) for w in wfs) + '  %3d/50 (%d)' % (sum(prop[a][w][0] for w in wfs), sum(prop[a][w][1] for w in wfs)))
 results['propensity'] = prop
 pair_tests = []
 for a, b, note in (('stories-full', 'full', 'role of docs'), ('purge-jsdoc', 'full', 'role of JSDoc'), ('purge-docgen', 'full', 'role of docgen; purge-docgen inlines every story, so its loads are re-loads')):
-    units = [r for r in runs if r['arm'] in (a, b)]
-    t = perm_test(units, lambda u: u['arm'], lambda u: u['n_calls'] > 0, lambda u: u['workflow_id'], rng)
+    units = [r for r in runs if r['case'] in (a, b)]
+    t = perm_test(units, lambda u: u['case'], lambda u: u['n_calls'] > 0, lambda u: u['workflow_id'], rng)
     # mean calls per run, permutation on the difference of means, stratified by workflow
     def diff(labels):
         xa = [u['n_calls'] for u, l in zip(units, labels) if l == a]; xb = [u['n_calls'] for u, l in zip(units, labels) if l == b]
         return sum(xa) / len(xa) - sum(xb) / len(xb)
-    labels = [u['arm'] for u in units]; obs = diff(labels)
+    labels = [u['case'] for u in units]; obs = diff(labels)
     idx = collections.defaultdict(list)
     for k, u in enumerate(units):
         idx[u['workflow_id']].append(k)
@@ -121,22 +121,22 @@ for a, b, note in (('stories-full', 'full', 'role of docs'), ('purge-jsdoc', 'fu
     t.update({'target': '%s vs %s' % (a, b), 'note': note, 'mean_calls_diff': round(obs, 3), 'p_mean_calls': (ge + 1) / (N_PERM + 1)})
     pair_tests.append(t)
     print('  %s vs %s (%s): runs with a load %s  p=%.4f | mean calls/run diff %+.2f  p=%.4f' % (a, b, note, dict(zip(t['groups'], ['%d/%d' % (p, n) for p, n in zip(t['present'], t['n'])])), t['p'], obs, t['p_mean_calls']))
-results['arm_pairs_propensity'] = pair_tests
+results['case_pairs_propensity'] = pair_tests
 
-# B. cluster x workflow, among runs that loaded a story, shuffling workflow within arm
-results['family_x_workflow'] = block('B1. Family x workflow', loaders, lambda u: u['workflow_id'], lambda u: u['arm'], lambda u: u['families'], rng, 'runs with >=1 load; workflow shuffled within arm')
-results['cluster_x_workflow'] = block('B2. Cluster x workflow', loaders, lambda u: u['workflow_id'], lambda u: u['arm'], lambda u: u['clusters'], rng, 'runs with >=1 load; workflow shuffled within arm')
-results['family_x_workflow_stated'] = block('B3. Family x workflow, stated or partial evidence only', [r for r in loaders if r['families_stated']], lambda u: u['workflow_id'], lambda u: u['arm'], lambda u: u['families_stated'], rng, 'sensitivity check')
+# B. cluster x workflow, among runs that loaded a story, shuffling workflow within case
+results['family_x_workflow'] = block('B1. Family x workflow', loaders, lambda u: u['workflow_id'], lambda u: u['case'], lambda u: u['families'], rng, 'runs with >=1 load; workflow shuffled within case')
+results['cluster_x_workflow'] = block('B2. Cluster x workflow', loaders, lambda u: u['workflow_id'], lambda u: u['case'], lambda u: u['clusters'], rng, 'runs with >=1 load; workflow shuffled within case')
+results['family_x_workflow_stated'] = block('B3. Family x workflow, stated or partial evidence only', [r for r in loaders if r['families_stated']], lambda u: u['workflow_id'], lambda u: u['case'], lambda u: u['families_stated'], rng, 'sensitivity check')
 
-# C. cluster x arm among the three arms that serve the same stories behind a name-only list
-u3 = [r for r in runs if r['arm'] in ARMS3]
-results['family_x_arm_all_runs'] = block('C1. Family x arm (stories-full, full, purge-jsdoc), all 150 runs', u3, lambda u: u['arm'], lambda u: u['workflow_id'], lambda u: u['families'], rng, 'arm shuffled within workflow')
-results['cluster_x_arm_all_runs'] = block('C2. Cluster x arm, all 150 runs', u3, lambda u: u['arm'], lambda u: u['workflow_id'], lambda u: u['clusters'], rng, 'arm shuffled within workflow')
+# C. cluster x case among the three cases that serve the same stories behind a name-only list
+u3 = [r for r in runs if r['case'] in CASES3]
+results['family_x_case_all_runs'] = block('C1. Family x case (stories-full, full, purge-jsdoc), all 150 runs', u3, lambda u: u['case'], lambda u: u['workflow_id'], lambda u: u['families'], rng, 'case shuffled within workflow')
+results['cluster_x_case_all_runs'] = block('C2. Cluster x case, all 150 runs', u3, lambda u: u['case'], lambda u: u['workflow_id'], lambda u: u['clusters'], rng, 'case shuffled within workflow')
 l3 = [r for r in u3 if r['n_calls']]
-results['family_x_arm_loaders'] = block('C3. Family x arm, only runs with >=1 load', l3, lambda u: u['arm'], lambda u: u['workflow_id'], lambda u: u['families'], rng, 'mix of reasons given that the run loaded something')
+results['family_x_case_loaders'] = block('C3. Family x case, only runs with >=1 load', l3, lambda u: u['case'], lambda u: u['workflow_id'], lambda u: u['families'], rng, 'mix of reasons given that the run loaded something')
 for a, b in (('stories-full', 'full'), ('purge-jsdoc', 'full'), ('purge-docgen', 'full')):
-    units = [r for r in runs if r['arm'] in (a, b)]
-    results['family_%s_vs_%s' % (a, b)] = block('C4. Family, %s vs %s, all 100 runs' % (a, b), units, lambda u: u['arm'], lambda u: u['workflow_id'], lambda u: u['families'], rng, 'arm shuffled within workflow')
+    units = [r for r in runs if r['case'] in (a, b)]
+    results['family_%s_vs_%s' % (a, b)] = block('C4. Family, %s vs %s, all 100 runs' % (a, b), units, lambda u: u['case'], lambda u: u['workflow_id'], lambda u: u['families'], rng, 'case shuffled within workflow')
 
 # D. reason cluster vs deterministic story kind (call level, descriptive)
 kinds = sorted({c['story_kind'] for c in calls}); fams = sorted({c['cluster_family'] for c in calls})

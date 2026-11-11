@@ -1,6 +1,6 @@
 """SVG 100%-stacked bars: how an instance's stories reached the agent, grouped by instance size.
 
-Reads story-reach-by-arm.json. Cases with 404 to 406 stories are grouped as "400+". Each bar is the mean
+Reads story-reach-by-case.json. Cases with 404 to 406 stories are grouped as "400+". Each bar is the mean
 of the per-case shares in its group, so every case weighs the same whatever its size.
 """
 import collections, json, os
@@ -14,9 +14,9 @@ W, X0, X1, TOP, ROW, BAR = 880, 210, 840, 126, 72, 28
 
 # purge-docgen inlines every story of a fetched component, so the first-three rule does not apply to it.
 EXCLUDED_CASES = ('purge-docgen',)
-arms = [a for a in json.load(open(os.path.join(OUT, 'story-reach-by-arm.json'))) if a['arm'] not in EXCLUDED_CASES]
+cases = [a for a in json.load(open(os.path.join(OUT, 'story-reach-by-case.json'))) if a['case'] not in EXCLUDED_CASES]
 groups = collections.defaultdict(list)
-for a in arms:
+for a in cases:
     groups['400+' if a['stories'] >= 400 else str(a['stories'])].append(a)
 order = sorted(groups, key=lambda g: min(a['stories'] for a in groups[g]))
 rows = []

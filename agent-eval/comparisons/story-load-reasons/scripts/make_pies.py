@@ -11,7 +11,7 @@ from xml.sax.saxutils import escape
 OUT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PALETTE = ['#0072B2', '#E69F00', '#009E73', '#56B4E9', '#CC79A7', '#D55E00']
 INK, MUTED, FONT = '#1f1f1e', '#5c5b56', "Inter, 'Helvetica Neue', Arial, sans-serif"
-W, CX, CY, R = 880, 440, 280, 140
+W, CX, CY, R = 920, 470, 280, 140
 TOP, BOTTOM, GAP = 118, 455, 46
 
 def slug(s):
@@ -28,14 +28,16 @@ def pie(filename, title, subtitle, slices, caption=()):
            '<text id="title" x="40" y="44" font-size="20" font-weight="600" fill="%s">%s</text>' % (INK, escape(title)),
            '<g id="slices" stroke="#ffffff" stroke-width="2" stroke-linejoin="round">']
     angle, labels = -math.pi / 2, []
-    for k, (label, n) in enumerate(slices):
+    # Largest slice first; each label keeps its own colour whatever its rank. "Other" always goes last.
+    ordered = sorted(((label, n, PALETTE[k]) for k, (label, n) in enumerate(slices)), key=lambda s: (s[0] == 'Other', -s[1]))
+    for label, n, color in ordered:
         sweep = 2 * math.pi * n / total
         a0, a1 = angle, angle + sweep
         x0, y0, x1, y1 = CX + R * math.cos(a0), CY + R * math.sin(a0), CX + R * math.cos(a1), CY + R * math.sin(a1)
         d = 'M%.1f,%.1f L%.2f,%.2f A%d,%d 0 %d 1 %.2f,%.2f Z' % (CX, CY, x0, y0, R, R, 1 if sweep > math.pi else 0, x1, y1)
         pct = round(100 * n / total)
-        out.append('<path id="slice-%s" d="%s" fill="%s"><title>%s: %d of %d (%d%%)</title></path>' % (slug(label), d, PALETTE[k], escape(label), n, total, pct))
-        labels.append({'label': label, 'n': n, 'pct': pct, 'mid': (a0 + a1) / 2, 'color': PALETTE[k]})
+        out.append('<path id="slice-%s" d="%s" fill="%s"><title>%s: %d of %d (%d%%)</title></path>' % (slug(label), d, color, escape(label), n, total, pct))
+        labels.append({'label': label, 'n': n, 'pct': pct, 'mid': (a0 + a1) / 2, 'color': color})
         angle = a1
     out.append('</g>')
 
@@ -80,11 +82,12 @@ def pie(filename, title, subtitle, slices, caption=()):
 
 # purge-docgen prints every story in its docs output, so its loads are re-loads, not picks from a list.
 EXCLUDED_CASES = ('purge-docgen',)
-calls = [c for c in map(json.loads, open(os.path.join(OUT, 'story-loads.final.jsonl'))) if c['arm'] not in EXCLUDED_CASES]
+calls = [c for c in map(json.loads, open(os.path.join(OUT, 'story-loads.final.jsonl'))) if c['case'] not in EXCLUDED_CASES]
 n = len(calls)
 
-FAMILY = [('worked-example', 'Worked example'), ('undocumented-contract', 'Undocumented contract'), ('second-look', 'Second look'),
-          ('component-basics', 'Component basics'), ('accessibility', 'Accessibility'), ('component-choice', 'Component choice')]
+# Publication names live in family-names.json; the data keeps the working ids. This order fixes each family's colour.
+FAMILY_NAMES = json.load(open(os.path.join(OUT, 'family-names.json')))
+FAMILY = [(k, FAMILY_NAMES[k]) for k in ('worked-example', 'undocumented-contract', 'second-look', 'component-basics', 'accessibility', 'component-choice')]
 fam = collections.Counter(c['cluster_family'] for c in calls)
 pie('reason-families.svg', 'Why agents loaded a specific story',
     '%d story loads in 550 runs across 11 cases. Reasons reconstructed from transcripts.' % n,

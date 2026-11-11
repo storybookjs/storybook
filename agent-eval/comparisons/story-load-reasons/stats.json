@@ -287,7 +287,7 @@
    ]
   }
  },
- "arm_pairs_propensity": [
+ "case_pairs_propensity": [
   {
    "groups": [
     "full",
@@ -355,7 +355,7 @@
  "family_x_workflow": {
   "title": "B1. Family x workflow",
   "units": 177,
-  "note": "runs with >=1 load; workflow shuffled within arm",
+  "note": "runs with >=1 load; workflow shuffled within case",
   "tests": [
    {
     "groups": [
@@ -536,7 +536,7 @@
  "cluster_x_workflow": {
   "title": "B2. Cluster x workflow",
   "units": 177,
-  "note": "runs with >=1 load; workflow shuffled within arm",
+  "note": "runs with >=1 load; workflow shuffled within case",
   "tests": [
    {
     "groups": [
@@ -915,10 +915,10 @@
    }
   ]
  },
- "family_x_arm_all_runs": {
-  "title": "C1. Family x arm (stories-full, full, purge-jsdoc), all 150 runs",
+ "family_x_case_all_runs": {
+  "title": "C1. Family x case (stories-full, full, purge-jsdoc), all 150 runs",
   "units": 150,
-  "note": "arm shuffled within workflow",
+  "note": "case shuffled within workflow",
   "tests": [
    {
     "groups": [
@@ -1014,10 +1014,10 @@
    }
   ]
  },
- "cluster_x_arm_all_runs": {
-  "title": "C2. Cluster x arm, all 150 runs",
+ "cluster_x_case_all_runs": {
+  "title": "C2. Cluster x case, all 150 runs",
   "units": 150,
-  "note": "arm shuffled within workflow",
+  "note": "case shuffled within workflow",
   "tests": [
    {
     "groups": [
@@ -1136,8 +1136,8 @@
    }
   ]
  },
- "family_x_arm_loaders": {
-  "title": "C3. Family x arm, only runs with >=1 load",
+ "family_x_case_loaders": {
+  "title": "C3. Family x case, only runs with >=1 load",
   "units": 113,
   "note": "mix of reasons given that the run loaded something",
   "tests": [
@@ -1238,7 +1238,7 @@
  "family_stories-full_vs_full": {
   "title": "C4. Family, stories-full vs full, all 100 runs",
   "units": 100,
-  "note": "arm shuffled within workflow",
+  "note": "case shuffled within workflow",
   "tests": [
    {
     "groups": [
@@ -1325,7 +1325,7 @@
  "family_purge-jsdoc_vs_full": {
   "title": "C4. Family, purge-jsdoc vs full, all 100 runs",
   "units": 100,
-  "note": "arm shuffled within workflow",
+  "note": "case shuffled within workflow",
   "tests": [
    {
     "groups": [
@@ -1372,7 +1372,7 @@
  "family_purge-docgen_vs_full": {
   "title": "C4. Family, purge-docgen vs full, all 100 runs",
   "units": 100,
-  "note": "arm shuffled within workflow",
+  "note": "case shuffled within workflow",
   "tests": [
    {
     "groups": [

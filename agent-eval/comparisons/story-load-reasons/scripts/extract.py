@@ -3,8 +3,8 @@
 Reads current-runs.json (650 runs: pin droppy-70pc, provider anthropic, no harness error) and writes:
   story-loads.jsonl   one record per call, with everything needed to regroup for statistics
   exposures.jsonl     one record per run: which stories were inlined, named, manually loaded
-  universe.json       per arm: every story id seen in any MCP output of that arm
-  packets/*.json      arm-blind context packets for the rationale annotators
+  universe.json       per case: every story id seen in any MCP output of that case
+  packets/*.json      case-blind context packets for the rationale annotators
 """
 import collections, hashlib, json, os, re, sys
 
@@ -143,11 +143,11 @@ def render(e, target=False, docs_cache=None):
 
 
 records, exposures, packets = [], [], []
-universe = collections.defaultdict(dict)   # arm -> story id -> name
+universe = collections.defaultdict(dict)   # case -> story id -> name
 prompts = {}
 
 for run in sorted(RUNS, key=lambda r: r['runDir']):
-    arm = run['experiment'].replace('agentic-ref-cc-', '').replace('-opus-high', '')
+    case = run['experiment'].replace('agentic-ref-cc-', '').replace('-opus-high', '')
     wf = run['evalName'][:3]
     raw = os.path.join(run['runDir'], 'transcript-raw.jsonl')
     if not os.path.exists(raw):
@@ -185,20 +185,20 @@ for run in sorted(RUNS, key=lambda r: r['runDir']):
                 fetched.append(cid)
                 comp_names[cid] = cname
             for n, sid in inline:
-                inlined.setdefault(sid, k); name_to_id[sid.split('--')[0]][n] = sid; universe[arm][sid] = n
+                inlined.setdefault(sid, k); name_to_id[sid.split('--')[0]][n] = sid; universe[case][sid] = n
             for n, sid in other:
-                named.setdefault(sid, (k, 'named_in_docs')); name_to_id[sid.split('--')[0]][n] = sid; universe[arm][sid] = n
+                named.setdefault(sid, (k, 'named_in_docs')); name_to_id[sid.split('--')[0]][n] = sid; universe[case][sid] = n
                 if sid in parse_docs.descriptions:
                     described[sid] = parse_docs.descriptions[sid]
         elif e['short'] == 'list-all-documentation' and not e['error']:
             for n, sid in parse_listing(r):
-                named.setdefault(sid, (k, 'named_in_listing')); name_to_id[sid.split('--')[0]][n] = sid; universe[arm][sid] = n
+                named.setdefault(sid, (k, 'named_in_listing')); name_to_id[sid.split('--')[0]][n] = sid; universe[case][sid] = n
         elif e['short'] == 'get-documentation-for-story':
             comp, sname = e['input'].get('componentId', ''), e['input'].get('storyName', '')
             sid, exposure = exposure_at(k, comp, sname)
             found = not (e['error'] or re.match(r'\s*Story ".*" not found', r))
             if found:
-                manual.append(sid); universe[arm].setdefault(sid, sname)
+                manual.append(sid); universe[case].setdefault(sid, sname)
             # narration: assistant text since the previous tool result, else nearest earlier text
             stated, j = None, k - 1
             while j >= 0 and events[j]['kind'] != 'tool':
@@ -217,7 +217,7 @@ for run in sorted(RUNS, key=lambda r: r['runDir']):
             call_id = 'c%03d' % (len(records) + 1)
             ordinal = story_calls.index(k) + 1
             rec = {
-                'call_id': call_id, 'arm': arm, 'workflow': run['evalName'], 'workflow_id': wf,
+                'call_id': call_id, 'case': case, 'workflow': run['evalName'], 'workflow_id': wf,
                 'run_key': run_key, 'run_dir': os.path.relpath(run['runDir'], os.path.join(OUT, '..', '..')),
                 'result_ts': run['ts'], 'run': run['run'], 'run_status': status,
                 'component_id': comp, 'component': cexport, 'story_name': sname, 'story_id': sid,
@@ -254,7 +254,7 @@ for run in sorted(RUNS, key=lambda r: r['runDir']):
                 'after': [render(x) for x in events[k + 1:hi + 1]],
                 'first_later_edit_mentioning_component': render(later_edit) if later_edit else None,
             })
-    exposures.append({'arm': arm, 'workflow_id': wf, 'run_key': run_key, 'components_fetched': fetched,
+    exposures.append({'case': case, 'workflow_id': wf, 'run_key': run_key, 'components_fetched': fetched,
                       'inlined': sorted(inlined), 'named': sorted(named), 'manual': manual, 'n_tool_calls': len(tool_idx)})
 
 with open(os.path.join(OUT, 'story-loads.jsonl'), 'w') as f:
@@ -266,7 +266,7 @@ with open(os.path.join(OUT, 'exposures.jsonl'), 'w') as f:
 json.dump({a: dict(sorted(s.items())) for a, s in sorted(universe.items())}, open(os.path.join(OUT, 'universe.json'), 'w'), indent=1)
 json.dump(prompts, open(os.path.join(OUT, 'workflow-prompts.json'), 'w'), indent=1)
 
-# Arm-blind batches: whole runs stay together, batches balanced by call count.
+# Case-blind batches: whole runs stay together, batches balanced by call count.
 by_run = collections.defaultdict(list)
 for p in packets:
     by_run[p['run_key']].append(p)
@@ -283,6 +283,6 @@ print('exposure_before', c(r['exposure_before'] for r in records).most_common())
 print('found', c(r['story_found'] for r in records), 'stated narration', sum(1 for r in records if r['stated_narration']),
       'thinking before', sum(r['thinking_block_before'] for r in records))
 print('phase', c(r['phase'] for r in records).most_common())
-print('by arm', sorted(c(r['arm'] for r in records).items()))
+print('by case', sorted(c(r['case'] for r in records).items()))
 print('by workflow', sorted(c(r['workflow_id'] for r in records).items()))
 print('batch sizes', [len(b) for b in batches], 'batch bytes', [os.path.getsize(os.path.join(OUT, 'packets', 'batch-%02d.json' % n)) for n in range(1, N_BATCHES + 1)])

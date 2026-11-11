@@ -2,7 +2,7 @@
 
 285 `get-documentation-for-story` calls from 650 current runs, grouped by reason cluster. Reasons are reconstructed by an annotator from the transcript; `evidence` says how directly the agent stated its purpose. The same rows are in `story-loads.csv`.
 
-## Family: worked-example
+## Family: Real-screen examples (`worked-example`)
 
 ### example-model — Model the UI on an in-app example (72 calls)
 
@@ -1044,7 +1044,7 @@ The agent has a hypothesis about native form mechanics that the component docs d
 
 **Reason.** The agent had read the checkout step components and fetched the Input docs, whose props table showed only label and error. The complaints are that browsers never offer saved details and that users cannot tell the step changed, so it probably wanted the design system's own checkout form as a model for field markup. The story showed a form element with a headed section per step and Inputs carrying only label, defaultValue and error. The agent loaded a label test story next and then read Input's typings and compiled code. Its later edit wraps the fields in a form and adds name and autoComplete.
 
-## Family: undocumented-contract
+## Family: Undocumented contract stories (`undocumented-contract`)
 
 ### native-contract — Story name asserts an unstated native behaviour (50 calls)
 
@@ -1726,7 +1726,7 @@ Built-in styles do not cover what is needed, so the agent checks whether the com
 
 **Reason.** Third in a burst of three story loads before implementation. The agent had earlier listed the colour tokens and seen badge colours for a default and a positive variant, while the task wants cancelled, on-the-way and delivered orders told apart. It probably loaded this story to see how a custom class combines with Badge's own styling. The source only applied a margin through className. The agent immediately grepped the compiled Badge, found the positive variant switch, and looked up the badge colour token values, so the real answer came from the package source. It then began implementing via shell-written files.
 
-## Family: second-look
+## Family: Stories loaded twice (`second-look`)
 
 ### reload-isolate — Re-load a printed story to isolate a fact (18 calls)
 
@@ -2052,7 +2052,7 @@ The story had already been displayed, but its source was a one-line call to a he
 
 > Now let me check the design system docs for the relevant components.
 
-## Family: component-basics
+## Family: Anatomy and variant stories (`component-basics`)
 
 ### parts-wiring — Parts, slots and basic wiring (14 calls)
 
@@ -2296,7 +2296,7 @@ The agent requested a story it had never been shown, betting on a conventional n
 
 **Reason.** The agent was working through design-system docs for the Order History page, with Card, Review, Select, Link, Body, Heading, Toast, PageSection and ErrorBlock fetched in sequence, each exposing a single Anatomy story. The task's "Get help" action needs a modal, and the agent requested a Modal story named "Open" that no output had listed, apparently guessing a story for the open state existed. The server replied that only Anatomy is available. The agent then read the app's existing FoodItemModal, which already uses Modal, and the Modal declaration in index.d.ts, and later wrote GetHelpModal.
 
-## Family: accessibility
+## Family: Accessibility stories (`accessibility`)
 
 ### a11y-name — How to name the control accessibly (12 calls)
 
@@ -2490,7 +2490,7 @@ The agent needs to know what the component exposes or announces to assistive tec
 
 **Reason.** The agent had already begun editing and was reading Input's compiled implementation and Button's typings. Checkout validation shows errors on the fields when a step is submitted, and for the users in the complaint those errors need to be announced. It probably loaded this test story to learn the mechanism without reverse-engineering minified code. The source was only an Input with a label and an error string. The agent went straight back to the compiled package, grepping for the field error component and progress bar internals, and then fetched the Heading docs, apparently for the step heading it would focus.
 
-## Family: component-choice
+## Family: When-to-use guidance (`component-choice`)
 
 ### usage-guidance — Mine a story for when-to-use guidance (10 calls)
 

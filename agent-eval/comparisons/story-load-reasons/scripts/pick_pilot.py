@@ -37,8 +37,8 @@ for cluster in TARGETS:
     pool = sorted((c for c in pool if c['context_tokens']), key=lambda c: c['context_tokens'])
     if pool:
         picked.append(pool[0])
-json.dump([{k: c[k] for k in ('call_id', 'arm', 'workflow_id', 'run_dir', 'component', 'component_id', 'story_name', 'call_ordinal_in_run',
+json.dump([{k: c[k] for k in ('call_id', 'case', 'workflow_id', 'run_dir', 'component', 'component_id', 'story_name', 'call_ordinal_in_run',
                                'cluster', 'evidence', 'context_tokens')} for c in picked], open(os.path.join(OUT, 'replay', 'pilot-calls.json'), 'w'), indent=1)
 for c in picked:
-    print('%s %-20s %-13s %s %-9s ctx=%6d  %s / %s' % (c['call_id'], c['cluster'], c['arm'], c['workflow_id'], c['evidence'], c['context_tokens'], c['component'], c['story_name']))
+    print('%s %-20s %-13s %s %-9s ctx=%6d  %s / %s' % (c['call_id'], c['cluster'], c['case'], c['workflow_id'], c['evidence'], c['context_tokens'], c['component'], c['story_name']))
 print('total context tokens', sum(c['context_tokens'] for c in picked))

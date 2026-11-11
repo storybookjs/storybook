@@ -4,8 +4,8 @@ Agentic-reference transcripts, analysed 2026-11-11. Every call with its reason i
 
 ## What we found
 
-1. **Agents rarely ask for a specific story, and when they do they ask for very few.** Across 650 current runs there are {n} `get-documentation-for-story` calls, in {runs} runs. Five stories account for 184 of them (65%). Among stories that were listed without source in at least five runs, at least 87% were never loaded in every arm (87% in `stories-full`, 96% in `full`, 99% in `api-ref`).
-2. **Two reasons dominate.** 113 calls (40%) wanted the design system's own in-app example of the UI being built (`worked-example`). 72 calls (25%) wanted a fact the props table does not state, usually via a story whose name asserts it (`undocumented-contract`).
+1. **Agents rarely ask for a specific story, and when they do they ask for very few.** Across 650 current runs there are {n} `get-documentation-for-story` calls, in {runs} runs. Five stories account for 184 of them (65%). Among stories that were listed without source in at least five runs, at least 87% were never loaded in every case (87% in `stories-full`, 96% in `full`, 99% in `api-ref`).
+2. **Two reasons dominate.** 113 calls (40%) wanted the design system's own in-app example of the UI being built (Real-screen examples). 72 calls (25%) wanted a fact the props table does not state, usually via a story whose name asserts it (Undocumented contract stories).
 3. **In-app examples are the kind of story in highest demand.** In `stories-full` an app-example story is loaded on 15.3% of the occasions it is listed, against 2.4% to 4.5% for test, anatomy and showcase stories and 0.6% for prop stories.
 4. **Documentation removes some reasons but not those two.** With full docs (`full`), no run loaded a story to learn a component's parts, variants or accessibility behaviour; without docs (`stories-full`) 23 and 10 of 50 runs did. In-app examples and undocumented contracts were still loaded with docs present (26 and 14 of 50 runs).
 5. **The most-wanted examples often returned nothing usable.** {opaque_examples} of {examples} app-example loads returned a one-line call to a local demo helper instead of markup, mostly {opaque_top}. Sixteen calls are agents re-loading a story of this sort, hoping the single-story view would show more.
@@ -16,14 +16,14 @@ Agentic-reference transcripts, analysed 2026-11-11. Every call with its reason i
 
 - **Ship usage examples of real product UI, named after that UI.** Agents went to "Mealdrop Checkout Form" and "Mealdrop Cart Line" because the name matched what they were building, with or without docs.
 - **Make the example's source show the real markup.** A story whose source is a call to a demo helper gives the agent the name it wanted and none of the content.
-- **Put hidden contracts in story names.** "Test Defaults To Type Button" was loaded in every `703` run of three arms because its name stated a fact absent from the props table. Defaults of native attributes, attribute pass-through and edge-case rules are the candidates.
+- **Put hidden contracts in story names.** "Test Defaults To Type Button" was loaded in every `703` run of three cases because its name stated a fact absent from the props table. Defaults of native attributes, attribute pass-through and edge-case rules are the candidates.
 - **Anatomy, variants and accessibility stories matter mainly when there are no docs.** With written docs present, agents did not load them.
 
 What it does **not** support: that loading a story improved the result. This analysis measures demand (what agents reach for and why), not payoff. The one payoff field we collected is unreliable; see section E.
 
 ## Population
 
-- **Runs:** 650, the current generation only: 13 arms, 5 workflows, 10 runs each (pin `droppy-70pc`, provider `anthropic`, identical `PROMPT.md`). Superseded runs are excluded.
+- **Runs:** 650, the current generation only: 13 cases, 5 workflows, 10 runs each (pin `droppy-70pc`, provider `anthropic`, identical `PROMPT.md`). Superseded runs are excluded.
 - **Calls:** {n} `get-documentation-for-story` calls in {runs} runs. No story was loaded any other way.
 - **When:** 272 calls happen before the run's first edit; the median call sits 22% of the way through the run's tool calls.
 - **What the agent had seen before the call:** 232 calls target a story listed without its source in the component docs, 43 a story already shown in full, 7 a story seen only in the global listing, and 3 a name the agent guessed.
@@ -32,17 +32,21 @@ What it does **not** support: that loading a story improved the result. This ana
 Two properties of the Storybook MCP shape this population:
 
 - `get-documentation` inlines a component's first three stories in full and lists the rest by name, sometimes with a one-line description. A story call therefore means "expanded a story outside the first three". Stories inside the first three are consumed without a trace.
-- In `purge-docgen` the docs output inlines every story, so all 24 of its calls re-load a story already shown. That arm cannot tell us what docgen does to story selection.
+- In `purge-docgen` the docs output inlines every story, so all 24 of its calls re-load a story already shown. That case cannot tell us what docgen does to story selection.
 
 ## Reason clusters
 
 Fifteen clusters in six families. Definitions and decision rules are in [clustering/codebook-v1.json](clustering/codebook-v1.json).
 
+Families carry their publication names here and in the charts. The data files keep the working ids:
+
+{family_table}
+
 {cluster_table}
 
-Calls per family and arm:
+Calls per family and case:
 
-{arm_table}
+{case_table}
 
 ## Reliability
 
@@ -69,7 +73,7 @@ The unit of analysis is the run, because calls within a run are not independent.
 
 ### A. How often runs load a story
 
-| Arm | Runs with a load (of 50) | Calls |
+| Case | Runs with a load (of 50) | Calls |
 |---|---:|---:|
 | `stories-full` | 45 | 131 |
 | `purge-jsdoc` | 36 | 47 |
@@ -88,7 +92,7 @@ The unit of analysis is the run, because calls within a run are not independent.
 
 ### B. Reason by workflow
 
-Among the 177 runs that loaded a story; workflow labels shuffled within arm.
+Among the 177 runs that loaded a story; workflow labels shuffled within case.
 
 {b1}
 
@@ -96,13 +100,13 @@ By cluster:
 
 {b2}
 
-Restricted to calls where the agent stated its purpose at least partly (94 runs), three families have enough runs to test. `undocumented-contract` stays significant (V = 0.63, q = 0.0001); `worked-example` (q = 0.12) and `second-look` (q = 0.25) do not, though their pattern across workflows is unchanged.
+Restricted to calls where the agent stated its purpose at least partly (94 runs), three families have enough runs to test. Undocumented contract stories stay significant (V = 0.63, q = 0.0001); Real-screen examples (q = 0.12) and Stories loaded twice (q = 0.25) do not, though their pattern across workflows is unchanged.
 
 Read this as "the task decides the need", not as a law about workflow types. In `703` the bug is a Button that does not submit, so agents load the story about Button's default type; a different bug would produce a different cluster.
 
-### C. Reason by arm
+### C. Reason by case
 
-`stories-full`, `full` and `purge-jsdoc` serve the same stories behind the same name-only list, so they can be compared. All 150 runs; arm labels shuffled within workflow.
+`stories-full`, `full` and `purge-jsdoc` serve the same stories behind the same name-only list, so they can be compared. All 150 runs; case labels shuffled within workflow.
 
 {c1}
 
@@ -114,13 +118,13 @@ By cluster:
 
 {c4}
 
-`purge-jsdoc` against `full` shows no difference in any family (`worked-example` 29 vs 26 of 50, p = 0.60; `undocumented-contract` 14 vs 14).
+`purge-jsdoc` against `full` shows no difference in any family (Real-screen examples 29 vs 26 of 50, p = 0.60; Undocumented contract stories 14 vs 14).
 
-Among only the runs that loaded something, the share with a `worked-example` load is the same in all three arms (36/45, 26/32, 29/36; p = 1.0). Docs lower how often agents load stories, and remove the component-basics and accessibility reasons, but leave the pull of in-app examples unchanged.
+Among only the runs that loaded something, the share that loaded a real-screen example is the same in all three cases (36/45, 26/32, 29/36; p = 1.0). Docs lower how often agents load stories, and remove the component-basics and accessibility reasons, but leave the pull of in-app examples unchanged.
 
 ### D. Reason against story kind
 
-Story kind is a deterministic label from the story's name and the content tier that ships it (`app-example`, `test`, `anatomy`, `showcase-highlight`, `api-ref-prop`, `default`). Across calls, kind and reason family are strongly associated (Cramér's V = {kind_v}); knowing the kind predicts the family for {kind_pred}% of calls. All 113 `worked-example` calls are app-example stories, by construction of the codebook, and 48 of 68 test-story calls are `undocumented-contract`.
+Story kind is a deterministic label from the story's name and the content tier that ships it (`app-example`, `test`, `anatomy`, `showcase-highlight`, `api-ref-prop`, `default`). Across calls, kind and reason family are strongly associated (Cramér's V = {kind_v}); knowing the kind predicts the family for {kind_pred}% of calls. All 113 Real-screen examples calls are app-example stories, by construction of the codebook, and 48 of 68 test-story calls are Undocumented contract stories.
 
 So story kind is a workable cheap proxy for the two large families. It cannot separate the smaller ones: anatomy stories are loaded for parts, for native-attribute hints and for usage guidance alike.
 
@@ -136,7 +140,7 @@ Selection rate is manual loads divided by the number of runs that listed the sto
 
 {kind_table}
 
-- Eleven story-and-cell combinations were loaded in 10 of 10 runs, including Button "Test Defaults To Type Button" in `703` (three arms), QuantityStepper "Mealdrop Cart Line" in `702`, and Input "Mealdrop Checkout Form" in `704`.
+- Eleven story-and-cell combinations were loaded in 10 of 10 runs, including Button "Test Defaults To Type Button" in `703` (three cases), QuantityStepper "Mealdrop Cart Line" in `702`, and Input "Mealdrop Checkout Form" in `704`.
 - In `stories-full`, over 50 runs, 7% of its 404 stories were loaded manually at least once, 19% were only ever inlined, and 74% were listed but never loaded.
 - `default` and many `api-ref-prop` stories are usually among the three inlined ones, so their low manual rate partly reflects that they were already on screen.
 
@@ -153,14 +157,14 @@ Three coders judged, for each load, how the story's name relates to what the age
 
 - 239 of 285 loads (84%) were of a story the agent had only seen in a list: 159 by name alone, 80 with a one-line description.
 - In 17 of the 48 loads where the agent stated its purpose, it quoted the story's name as the reason.
-- The 31 `none` loads are fallbacks: Button "Anatomy" (10) probed for native attributes in arms that do not list "Test Defaults To Type Button", and the autogenerated "Empty" stories (13).
+- The 31 `none` loads are fallbacks: Button "Anatomy" (10) probed for native attributes in cases that do not list "Test Defaults To Type Button", and the autogenerated "Empty" stories (13).
 - Of the 35 distinct stories loaded, 27 have a name that matches the need they were loaded for.
 
 ### Loads made with more than a list entry
 
 46 of the 285 loads (16%) were not picked from a name in a list.
 
-- **43 re-loaded a story whose full source was already on screen.** 24 are in `purge-docgen`, whose docs output prints every story; 13 are the single autogenerated "Empty" story in `empty`; 6 are a story among the three inlined ones in other arms (five "Anatomy", one "Children").
+- **43 re-loaded a story whose full source was already on screen.** 24 are in `purge-docgen`, whose docs output prints every story; 13 are the single autogenerated "Empty" story in `empty`; 6 are a story among the three inlined ones in other cases (five "Anatomy", one "Children").
 - **3 asked for a name the agent had never been shown** (Modal "Open", in `when-to-use`). All three failed: the story does not exist.
 
 The 43 re-loads fall into three reason clusters: isolating one story from a long page (18), trying to see behind a helper (16), and looking for usage guidance in the only story (9).
@@ -187,12 +191,12 @@ Two cautions. The need was reconstructed by an annotator who could see the story
 - **Reasons are reconstructed.** Thinking was not recorded. 48 reasons rest on a stated purpose, 99 on partial narration and 138 on actions alone. A wrong reconstruction that is worded consistently would still cluster consistently.
 - **One design system, one app, five tasks, one model.** The clusters describe Droppy, MealDrop and `claude-opus-5` at high effort.
 - **Demand, not value.** Nothing here shows that a loaded story led to better code.
-- **Arms differ in what they offer.** Only `stories-full`, `full` and `purge-jsdoc` are comparable for reasons; the other arms list different stories, or inline all of them.
+- **Cases differ in what they offer.** Only `stories-full`, `full` and `purge-jsdoc` are comparable for reasons; the other cases list different stories, or inline all of them.
 - **Coders share a lineage.** All annotators and coders are Claude models. No human has checked a sample.
 
 ## Options to strengthen the evidence
 
-- **Turn on thinking summaries before the next collection.** The `showThinkingSummaries` setting does not do it: in headless mode Claude Code ignores that setting and forces the thinking display to `omitted` (read from the CLI's own code, version 2.1.232). The `--thinking-display summarized` flag overrides this. As of 2026-11-11 the working tree carries that change, uncommitted: the repo's `@vercel/agent-eval` patch forwards a `thinkingDisplay` agent option, and agentic-reference Claude Code runs set it. A local headless call on CLI 2.1.232 confirmed the transcript then holds the summary text and the agent's printed output is unchanged. It has not been run in a sandbox, where a newer CLI is installed, so check one transcript from the first collection. Land it before the `story-types` arms are collected. Expect short summaries: in the three calls measured below, the stored reasoning was about 60 tokens per thinking block.
+- **Turn on thinking summaries before the next collection.** The `showThinkingSummaries` setting does not do it: in headless mode Claude Code ignores that setting and forces the thinking display to `omitted` (read from the CLI's own code, version 2.1.232). The `--thinking-display summarized` flag overrides this. As of 2026-11-11 the working tree carries that change, uncommitted: the repo's `@vercel/agent-eval` patch forwards a `thinkingDisplay` agent option, and agentic-reference Claude Code runs set it. A local headless call on CLI 2.1.232 confirmed the transcript then holds the summary text and the agent's printed output is unchanged. It has not been run in a sandbox, where a newer CLI is installed, so check one transcript from the first collection. Land it before the `story-types` cases are collected. Expect short summaries: in the three calls measured below, the stored reasoning was about 60 tokens per thinking block.
 - **Replay and ask is not viable as piloted.** It trips the API's reasoning-extraction safeguard on most calls; see the next section.
 - **Have a person code 30 calls blind** against the codebook, to measure validity rather than consistency.
 
@@ -212,11 +216,11 @@ The safeguard is there to stop a model's reasoning being extracted through its r
 | File | Contents |
 |---|---|
 | `calls.md` | Every call with its context line, need and reason paragraph, grouped by cluster |
-| `story-loads.csv`, `story-loads.final.jsonl` | One row per call with arm, workflow, run, story, exposure, evidence, cluster and family |
-| `story-selection.csv` | Per arm, workflow and story: runs inlined, runs listed, runs loaded, selection rate |
+| `story-loads.csv`, `story-loads.final.jsonl` | One row per call with case, workflow, run, story, exposure, evidence, cluster and family |
+| `story-selection.csv` | Per case, workflow and story: runs inlined, runs listed, runs loaded, selection rate |
 | `clustering/codebook-v1.json` | Cluster definitions and decision rules |
 | `clustering/open-*.json`, `clustering/coded-r1-*.json` | The three open clusterings and the three coders' labels |
 | `stats.json`, `stats.txt` | Every test, with group counts |
 | `replay/results.jsonl`, `replay/pilot-calls.json` | The replay pilot: the ten calls, each response, stop reason and token usage |
-| `charts/*.svg` | Seven charts: four pies (reason families, what the agent had seen, name alignment, cited reasons), two loads-per-story distributions and story reach by instance size. All leave out `purge-docgen` (261 loads in 550 runs), because that arm prints every story in its docs output, so its 24 loads are re-loads rather than picks from a list. The tables and tests in this report include it unless stated. |
+| `charts/*.svg` | Seven charts: four pies (reason families, what the agent had seen, name alignment, cited reasons), two loads-per-story distributions and story reach by instance size. All leave out `purge-docgen` (261 loads in 550 runs), because that case prints every story in its docs output, so its 24 loads are re-loads rather than picks from a list. The tables and tests in this report include it unless stated. |
 | `scripts/` | Extraction, selection metric, agreement, statistics, replay and report scripts |

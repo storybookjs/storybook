@@ -1,7 +1,7 @@
 """Deterministic story-kind taxonomy, independent of the LLM reason clusters.
 
 Kind comes from the story name and from which content tier of the design-system Storybook first
-ships the story (the arms are nested content variants, so set membership recovers the authoring facet).
+ships the story (the cases are nested content variants, so set membership recovers the authoring facet).
 Also reports the selection rate per kind: manual loads / runs that listed the story without source.
 """
 import collections, csv, json, os
@@ -28,7 +28,7 @@ def kind(story_id, name):
     return 'other-full-only'
 
 kinds = {}
-for arm, stories in universe.items():
+for case, stories in universe.items():
     for sid, name in stories.items():
         kinds[sid] = kind(sid, name)
 json.dump(dict(sorted(kinds.items())), open(os.path.join(OUT, 'story-kinds.json'), 'w'), indent=1)
@@ -38,10 +38,10 @@ order = ['app-example', 'test', 'anatomy', 'showcase-highlight', 'api-ref-prop',
 print('kind counts in the full instance:', collections.Counter(kinds[s] for s in universe['stories-full']).most_common())
 print('examples of other-full-only:', [n for s, n in universe['stories-full'].items() if kinds[s] == 'other-full-only'][:14])
 table = []
-for arm in ('stories-full', 'full', 'purge-jsdoc', 'api-ref', 'stories-api-ref', 'purge-docgen'):
-    print('\n%s — per kind: stories | listed-without-source run-exposures | manual loads | rate | stories ever loaded' % arm)
+for case in ('stories-full', 'full', 'purge-jsdoc', 'api-ref', 'stories-api-ref', 'purge-docgen'):
+    print('\n%s — per kind: stories | listed-without-source run-exposures | manual loads | rate | stories ever loaded' % case)
     for k in order:
-        rs = [r for r in rows if r['arm'] == arm and r['workflow_id'] == 'all' and kinds[r['story_id']] == k]
+        rs = [r for r in rows if r['case'] == case and r['workflow_id'] == 'all' and kinds[r['story_id']] == k]
         if not rs:
             continue
         listed = sum(int(r['runs_listed_no_source']) for r in rs)
@@ -50,7 +50,7 @@ for arm in ('stories-full', 'full', 'purge-jsdoc', 'api-ref', 'stories-api-ref',
         auto = sum(int(r['runs_auto_inlined']) for r in rs)
         rate = manual / listed if listed else float('nan')
         print('  %-19s %3d | %5d | %3d | %5.1f%% | %2d   (auto-inlined exposures %d)' % (k, len(rs), listed, manual, 100 * rate if listed else 0, ever, auto))
-        table.append({'arm': arm, 'kind': k, 'stories': len(rs), 'listed_exposures': listed, 'manual_loads': manual,
+        table.append({'case': case, 'kind': k, 'stories': len(rs), 'listed_exposures': listed, 'manual_loads': manual,
                       'selection_rate': round(rate, 4) if listed else None, 'stories_ever_loaded': ever, 'auto_inlined_exposures': auto})
 json.dump(table, open(os.path.join(OUT, 'selection-by-kind.json'), 'w'), indent=1)
 recs = [json.loads(l) for l in open(os.path.join(OUT, 'story-loads.annotated.jsonl'))]

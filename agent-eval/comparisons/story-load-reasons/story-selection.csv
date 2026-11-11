@@ -1,4 +1,4 @@
-arm,workflow_id,story_id,story_name,component_id,runs,runs_manual,runs_auto_inlined,runs_listed_no_source,selection_rate,category
+case,workflow_id,story_id,story_name,component_id,runs,runs_manual,runs_auto_inlined,runs_listed_no_source,selection_rate,category
 api-ref,701,actions-button--anatomy,Anatomy,actions-button,10,0,0,10,0.0,listed
 api-ref,701,actions-button--children,Children,actions-button,10,0,10,0,,auto
 api-ref,701,actions-button--class-name,Class Name,actions-button,10,0,0,10,0.0,listed

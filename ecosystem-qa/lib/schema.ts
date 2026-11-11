@@ -35,6 +35,11 @@ export const Catalog = z
 
 const CheckId = z.enum(CHECK_IDS);
 
+// A model id is letters, digits, dots, colons and hyphens. The value reaches the issue body
+// from result.json, which the Windows cell writes on a host the agent shares, so nothing that
+// could close the metadata fence may pass.
+const ModelId = z.string().regex(/^[A-Za-z0-9][\w.:-]{0,99}$/);
+
 // Evidence is named relative to the evidence directory, at most one directory deep, and no segment
 // may start with a dot, so a name can never climb out of that directory.
 const EvidenceName = z.string().regex(/^[\w-][\w.-]*(?:\/[\w-][\w.-]*)?$/);
@@ -105,7 +110,7 @@ export const RunRequestRecord = z.strictObject({
   entry: CatalogEntry,
   version: z.string(),
   engine: Engine,
-  model: z.string(),
+  model: ModelId,
   effort: Effort,
   tier: Tier,
   sandbox: SandboxKind,
@@ -126,7 +131,7 @@ export const RunResultFile = z.strictObject({
     cacheReadTokens: z.number().optional(),
     cacheWriteTokens: z.number().optional(),
     usd: z.number().nullable(),
-    model: z.string(),
+    model: ModelId,
     priceSource: z.enum(['agent', 'table']),
   }),
   timing: z.strictObject({
@@ -156,7 +161,7 @@ const Source = z.strictObject({
   repo: z.string(),
   os: Os,
   engine: Engine,
-  model: z.string(),
+  model: ModelId,
   sandbox: SandboxKind,
   version: z.string(),
   fake: z.boolean(),

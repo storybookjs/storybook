@@ -96,6 +96,20 @@ describe('loadResults', () => {
     expect(result?.result.request.entry.repo).toBe('storybookjs/mealdrop');
   });
 
+  it('rejects a model id that could close the metadata fence in the issue body', () => {
+    const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
+    const base = record();
+    writeRun(artifactRun(resultsDir), {
+      ...base,
+      request: { ...base.request, model: 'claude\n```\n@everyone' },
+    });
+
+    const { results, warnings } = load(resultsDir);
+
+    expect(results).toHaveLength(0);
+    expect(warnings).toContainEqual(expect.stringMatching(/not a valid result record/));
+  });
+
   it('skips a truncated result.json and still collects the other runs', () => {
     const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
     write(

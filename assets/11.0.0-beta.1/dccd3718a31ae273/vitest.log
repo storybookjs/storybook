@@ -1,0 +1,55 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+config_option_deprecated_alias
+The `config.alias` option is deprecated, and will be removed in a future version of SvelteKit. Use subpath imports instead: https://svelte.dev/docs/kit/$lib
+https://svelte.dev/e/kit/config_option_deprecated_alias
+config_option_deprecated_alias
+The `config.alias` option is deprecated, and will be removed in a future version of SvelteKit. Use subpath imports instead: https://svelte.dev/docs/kit/$lib
+https://svelte.dev/e/kit/config_option_deprecated_alias
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Warning: Starting in Storybook 8.5.0-alpha.18, the "test.include" option in Vitest is discouraged in favor of just using the "stories" field in your Storybook configuration.
+
+The values you passed to "test.include" will be ignored, please remove them from your Vitest configuration where the Storybook plugin is applied.
+
+More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#addon-test-indexing-behavior-of-storybookaddon-test-is-changed
+
+ RUN  v4.1.12 /home/agent/workspace/packages/ui-svelte
+
+config_option_deprecated_alias
+The `config.alias` option is deprecated, and will be removed in a future version of SvelteKit. Use subpath imports instead: https://svelte.dev/docs/kit/$lib
+https://svelte.dev/e/kit/config_option_deprecated_alias
+Warning: Starting in Storybook 8.5.0-alpha.18, the "test.include" option in Vitest is discouraged in favor of just using the "stories" field in your Storybook configuration.
+
+The values you passed to "test.include" will be ignored, please remove them from your Vitest configuration where the Storybook plugin is applied.
+
+More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#addon-test-indexing-behavior-of-storybookaddon-test-is-changed
+transform_index_html_unsupported
+The following plugins may not work correctly because they use the `transformIndexHtml` hook which is not supported:
+  - vitest:browser:transform-tester-html
+https://svelte.dev/e/kit/transform_index_html_unsupported
+4:08:35 PM [vite] (client) Forced re-optimization of dependencies
+Failed to resolve dependency: react-dom/client, present in client 'optimizeDeps.include'
+Failed to resolve dependency: react/jsx-runtime, present in client 'optimizeDeps.include'
+Failed to resolve dependency: react, present in client 'optimizeDeps.include'
+4:08:37 PM [vite] (client) [optimizer] bundling dependencies...
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')
+TypeError: Cannot read properties of undefined (reading 'wrapDynamicImport')

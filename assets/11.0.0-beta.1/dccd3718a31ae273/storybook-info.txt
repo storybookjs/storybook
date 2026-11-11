@@ -1,0 +1,23 @@
+│
+
+│  Storybook Environment Info:
+│
+
+│  System:
+│  OS: Linux 7.0 Ubuntu 24.04.3 LTS 24.04.3 LTS (Noble Numbat)
+│  CPU: (4) x64 AMD EPYC 7763 64-Core Processor
+│  Shell: 5.2.21 - /bin/bash
+│  Binaries:
+│  Node: 24.22.2 - /home/agent/workspace/node_modules/.bin/node
+│  Yarn: 1.22.22 - /usr/local/bin/yarn
+│  npm: 11.19.1 - /usr/local/bin/npm
+│  pnpm: 12.5.1 - /usr/local/bin/pnpm <----- active
+│  npmPackages:
+│  @storybook/addon-docs: ^11.0.0-beta.1 => 11.0.0-beta.1
+│  @storybook/addon-links: ^11.0.0-beta.1 => 11.0.0-beta.1
+│  @storybook/addon-vitest: ^11.0.0-beta.1 => 11.0.0-beta.1
+│  @storybook/sveltekit: ^11.0.0-beta.1 => 11.0.0-beta.1
+│  storybook: ^11.0.0-beta.1 => 11.0.0-beta.1
+
+Done in 1.1s using pnpm v12.5.1
+Done in 1.8s using pnpm v12.5.1

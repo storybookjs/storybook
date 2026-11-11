@@ -1,0 +1,81 @@
+[2m> [22mstorybook dev --config-dir=.storybook --port=6006 --ci --exact-port
+
+
+[90m┌[39m  storybook v11.0.0-beta.1
+[90m│[39m
+[33m▲[39m  You are currently using Storybook [1m11.0.0-beta.1[22m but you have packages
+[90m│[39m  which are incompatible with it:
+
+[90m│[39m  - @storybook-community/storybook-addon-cookie@5.0.2 which depends on
+[90m│[39m  ^10.0.0
+[90m│[39m  - storybook-addon-mock-date@3.2.1 which depends on ^10.0.0
+[90m│[39m  - @nx/storybook@23.3.1 which depends on >=8.0.0 <11.0.0
+[90m│[39m  Repo: https://nx.dev
+
+[90m│[39m  Please consider updating your packages or contacting the maintainers
+[90m│[39m  for compatibility details.
+
+[90m│[39m  For more details on compatibility guidance, see:
+[90m│[39m  https://github.com/storybookjs/storybook/issues/32836
+[90m│[39m
+[33m▲[39m  No story files found for the specified pattern: [34msrc/**/*.docs.mdx[39m
+[90m│[39m
+[34m●[39m  Starting...
+✘ [ERROR] No matching export in "global-externals:storybook/manager-api" for import "experimental_UniversalStore"
+
+    ../../node_modules/@storybook/addon-vitest/dist/manager.js:24:2:
+      24 │   experimental_UniversalStore,
+         ╵   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+✘ [ERROR] No matching export in "global-externals:storybook/manager-api" for import "experimental_useUniversalStore"
+
+    ../../node_modules/@storybook/addon-vitest/dist/manager.js:95:2:
+      95 │   experimental_useUniversalStore
+         ╵   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+✘ [ERROR] No matching export in "global-externals:storybook/internal/components" for import "WithTooltip"
+
+    node_modules/storybook-addon-mock-date/dist/manager.js:5:23:
+      5 │ import { ToggleButton, WithTooltip } from "storybook/internal/compo...
+        ╵                        ~~~~~~~~~~~
+
+[90m│[39m
+[31m■[39m  [38;2;241;97;97mSB_CORE-SERVER_0004 (NoMatchingExportError): There was an exports
+[90m│[39m  mismatch error when trying to build Storybook.
+[90m│[39m  Please check whether the versions of your Storybook packages match
+[90m│[39m  whenever possible, as this might be the cause.
+
+[90m│[39m  Problematic example:
+[90m│[39m  { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.4.5",
+[90m│[39m  "storybook": "7.3.0" }
+
+[90m│[39m  Correct example:
+[90m│[39m  { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.5.3",
+[90m│[39m  "storybook": "7.5.3" }
+
+[90m│[39m  Please run `npx storybook doctor` for guidance on how to fix this
+[90m│[39m  issue.
+
+[90m│[39m  More info:
+[90m│[39m  [39m
+[90m│[39m  at buildOrThrow
+[90m│[39m  (file://./node_modules/storybook/dist/core-server/index.js:8696:9)
+[90m│[39m  at process.processTicksAndRejections
+[90m│[39m  (node:internal/process/task_queues:104:5)
+[90m│[39m  at async buildDevStandalone
+[90m│[39m  (file://./node_modules/storybook/dist/core-server/index.js:11377:41)
+[90m│[39m  at async withTelemetry
+[90m│[39m  (file://./node_modules/storybook/dist/_node-chunks/chunk-LBR5YCV6.js:3591:12)
+[90m│[39m  at async dev (file://./node_modules/storybook/dist/bin/core.js:4189:3)
+[90m│[39m  at async _Command.<anonymous>
+[90m│[39m  (file://./node_modules/storybook/dist/bin/core.js:4291:3)
+[90m│[39m
+[33m▲[39m  Broken build, fix the error above.
+[90m│[39m  You may need to refresh the browser.
+[90m│[39m
+[90m│[39m  Debug logs are written to:
+[90m│[39m  /home/agent/workspace/packages/twenty-front/debug-storybook.log
+[90m│[39m
+[90m└[39m  Storybook exited with an error
+
+Warning: command "storybook dev --config-dir=.storybook --port=6006 --ci --exact-port" exited with non-zero status code

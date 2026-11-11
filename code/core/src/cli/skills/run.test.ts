@@ -66,19 +66,14 @@ describe('resolveSkillsIntent', () => {
     }
   });
 
-  it.each(['stories', 'ui-workflow'])(
-    'names the four skills that replace %s, a skill of an 11.0 prerelease',
-    (id) => {
-      expect(resolveSkillsIntent({ tokens: [id] })).toEqual({
-        kind: 'error',
-        message: expect.stringMatching(
-          new RegExp(
-            `^The \`${id}\` skill is replaced by one skill per step: \`component-docs\` .*\`write-stories\` .*\`test-stories\` .*\`ui-review\``
-          )
-        ),
-      });
-    }
-  );
+  it('names the four skills that replace stories, the skill of Storybook 10.6', () => {
+    expect(resolveSkillsIntent({ tokens: ['stories'] })).toEqual({
+      kind: 'error',
+      message: expect.stringMatching(
+        /^The `stories` skill is replaced by one skill per step: `component-docs` .*`write-stories` .*`test-stories` .*`ui-review`/
+      ),
+    });
+  });
 
   it('names write-stories, the new name of write-story', () => {
     expect(resolveSkillsIntent({ tokens: ['write-story'] })).toEqual({
@@ -89,7 +84,7 @@ describe('resolveSkillsIntent', () => {
   });
 
   it('keeps --mcp in the command it names for a replaced skill', () => {
-    expect(resolveSkillsIntent({ tokens: ['ui-workflow'], mcp: true })).toEqual({
+    expect(resolveSkillsIntent({ tokens: ['stories'], mcp: true })).toEqual({
       kind: 'error',
       message: expect.stringContaining(
         'Run `npx storybook skills <id> --mcp` for each of the four now'

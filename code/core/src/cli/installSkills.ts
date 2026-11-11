@@ -12,7 +12,7 @@ import { type AgentInstructionsMode, addStorybookAgentInstructions } from './age
 const SKILLS_REPO = 'storybookjs/skills';
 
 // Skills of 11.0 prereleases that the skills repository no longer has, so a refresh removes them.
-const REMOVED_SKILLS = ['stories', 'ui-workflow'];
+const REMOVED_SKILLS = ['stories'];
 
 export type SkillsSource = 'ai-feature' | 'refresh' | 'automigration';
 
@@ -87,8 +87,8 @@ export async function hasStorybookSkills(): Promise<boolean> {
  * add the section that tells agents when to use them to `AGENTS.md`.
  *
  * A refresh only updates a section that still has Storybook's markers, so a section without them
- * and a removed section stay that way, unless the refresh replaces a skill of an 11.0 prerelease.
- * Never runs in CI, and a failed install is reported in the result instead of thrown.
+ * and a removed section stay that way, unless the refresh replaces the `stories` skill of an 11.0
+ * prerelease. Never runs in CI, and a failed install is reported in the result instead of thrown.
  */
 export async function installSkills({
   packageManager,
@@ -145,14 +145,9 @@ export async function installSkills({
 
   if (removedSkills.length > 0) {
     await removeSkills(packageManager, removedSkills, stdio);
-    logger.log(
-      `The ${formatList(removedSkills)} ${removedSkills.length > 1 ? 'skills are' : 'skill is'} replaced by component-docs, write-stories, test-stories and ui-review. Agent instructions of your own that name ${removedSkills.length > 1 ? 'them' : 'it'} need the new names.`
-    );
   }
-  // The `stories` skill had no section yet. `ui-workflow` came with one, so a project without it
-  // removed it.
   await addAgentInstructions(
-    source === 'refresh' && !removedSkills.includes('stories') ? 'update' : 'install'
+    source === 'refresh' && removedSkills.length === 0 ? 'update' : 'install'
   );
 
   logger.log(
@@ -184,7 +179,7 @@ async function removeSkills(
   }
 }
 
-const formatList = (files: string[]) =>
+const listFiles = (files: string[]) =>
   new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }).format(files);
 
 async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> {
@@ -194,11 +189,11 @@ async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> 
     const updated = changes.filter(({ change }) => change === 'updated').map(({ file }) => file);
     if (added.length > 0) {
       logger.log(
-        `Added a Storybook section to ${formatList(added)} that tells agents when to use the skills. Storybook keeps it current on upgrade: remove its markers to keep your own edits, or remove the section to opt out of the workflow.`
+        `Added a Storybook section to ${listFiles(added)} that tells agents when to use the skills. Storybook keeps it current on upgrade: remove its markers to keep your own edits, or remove the section to opt out of the workflow.`
       );
     }
     if (updated.length > 0) {
-      logger.log(`Updated the Storybook section in ${formatList(updated)}.`);
+      logger.log(`Updated the Storybook section in ${listFiles(updated)}.`);
     }
   } catch (error) {
     logger.warn(

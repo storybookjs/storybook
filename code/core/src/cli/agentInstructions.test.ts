@@ -60,7 +60,6 @@ describe('addStorybookAgentInstructions', () => {
 
   it.each([
     '## Storybook\n\n1. `write-stories`: every component gets stories.\n2. `test-stories`: run the story tests.\n',
-    '## Storybook\n\n- `ui-workflow`: for UI changes, without the review.\n',
     'Run /component-docs for questions about a component.\n',
   ])('leaves a file alone that already names a Storybook skill (%j)', async (custom) => {
     vol.writeFileSync(join(ROOT, 'AGENTS.md'), custom);
@@ -69,7 +68,7 @@ describe('addStorybookAgentInstructions', () => {
     expect(read('AGENTS.md')).toBe(custom);
   });
 
-  const OUTDATED = `# Rules\n\n<!-- BEGIN:storybook-skills -->\n## Storybook\n\n- \`ui-workflow\`: for UI changes.\n- \`component-docs\`: to reuse components.\n<!-- END:storybook-skills -->\n\nUse pnpm.\n`;
+  const OUTDATED = `# Rules\n\n<!-- BEGIN:storybook-skills -->\n## Storybook\n\n- \`component-docs\`: to reuse components.\n<!-- END:storybook-skills -->\n\nUse pnpm.\n`;
 
   it.each(['install', 'update'] as const)(
     'replaces an outdated section between the markers and keeps the rest (%s)',

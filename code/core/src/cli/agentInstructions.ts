@@ -34,10 +34,8 @@ const CLAUDE_FILES = [
   { file: 'CLAUDE.local.md', importsAgentsMd: /(^|\s)@(\.\/)?AGENTS\.md\b/m },
 ];
 
-// Also matches a section the user customized, so it is not added a second time. `ui-workflow` is
-// the skill of the 11.0 prereleases: a section that names it stays as the user wrote it.
-const NAMES_A_STORYBOOK_SKILL =
-  /\b(component-docs|write-stories|test-stories|ui-review|ui-workflow)\b/;
+// Also matches a section the user customized, so it is not added a second time.
+const NAMES_A_STORYBOOK_SKILL = /\b(component-docs|write-stories|test-stories|ui-review)\b/;
 
 // The block between the markers, when the file has one.
 const findSection = (content: string | undefined): string | undefined =>

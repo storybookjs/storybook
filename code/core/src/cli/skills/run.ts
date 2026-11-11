@@ -69,17 +69,16 @@ export type SkillsIntent =
   | { kind: 'get'; id: SkillId }
   | { kind: 'error'; message: string };
 
-// Skill ids of 11.0 prereleases, which an `AGENTS.md` or a plugin from then can still name.
-const SPLIT_SKILLS = ['stories', 'ui-workflow'];
-const RENAMED_SKILLS: Record<string, SkillId> = { 'write-story': 'write-stories' };
-
+// The skill ids of Storybook 10.6, which an `AGENTS.md` or a plugin from then can still name.
 function replacedSkillMessage(id: string, mcp: boolean): string | undefined {
   const run = (skill: string) => `\`npx storybook skills ${skill}${mcp ? ' --mcp' : ''}\``;
-  if (SPLIT_SKILLS.includes(id)) {
-    return `The \`${id}\` skill is replaced by one skill per step: \`component-docs\` (look up the components to reuse), \`write-stories\` (the story rules), \`test-stories\` (run the story tests) and \`ui-review\` (publish the review). Run ${run('<id>')} for each of the four now, each in a command of its own, and follow each one at its step.`;
+  if (id === 'stories') {
+    return `The \`stories\` skill is replaced by one skill per step: \`component-docs\` (look up the components to reuse), \`write-stories\` (the story rules), \`test-stories\` (run the story tests) and \`ui-review\` (publish the review). Run ${run('<id>')} for each of the four now, each in a command of its own, and follow each one at its step.`;
   }
-  const renamed = Object.hasOwn(RENAMED_SKILLS, id) ? RENAMED_SKILLS[id] : undefined;
-  return renamed && `The \`${id}\` skill is renamed to \`${renamed}\`. Run ${run(renamed)}.`;
+  if (id === 'write-story') {
+    return `The \`write-story\` skill is renamed to \`write-stories\`. Run ${run('write-stories')}.`;
+  }
+  return undefined;
 }
 
 export function resolveSkillsIntent({

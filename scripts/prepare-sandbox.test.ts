@@ -1,14 +1,18 @@
 import { resolve } from 'pathe';
-import { expect, it, vi } from 'vitest';
+import { beforeEach, expect, it, vi } from 'vitest';
 
 import { prepareSandbox } from './prepare-sandbox.ts';
-import { syncLinkedPackages } from './utils/pnpm.ts';
+import { isNxTaskExecution } from './utils/nx.ts';
+import { isLinkedSandbox, syncLinkedPackages } from './utils/pnpm.ts';
 
-vi.mock('./utils/nx.ts', () => ({ isNxTaskExecution: vi.fn(() => false) }));
-vi.mock('./utils/pnpm.ts', () => ({
-  isLinkedSandbox: vi.fn(async () => true),
-  syncLinkedPackages: vi.fn(async () => {}),
-}));
+vi.mock('./utils/nx.ts', { spy: true });
+vi.mock('./utils/pnpm.ts', { spy: true });
+
+beforeEach(() => {
+  vi.mocked(isNxTaskExecution).mockReturnValue(false);
+  vi.mocked(isLinkedSandbox).mockResolvedValue(true);
+  vi.mocked(syncLinkedPackages).mockResolvedValue(undefined);
+});
 
 it('refreshes a linked sandbox with the dry run and debug settings of the task', async () => {
   const sandboxDir = resolve('sandboxes', 'react-vite-default-ts');

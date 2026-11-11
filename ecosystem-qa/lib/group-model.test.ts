@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { finding, loaded } from './fixtures.ts';
-import { groupingInput, groupWithModel, toGrouping, type GroupingInput } from './group-model.ts';
+import {
+  groupingInput,
+  groupingMode,
+  groupWithModel,
+  toGrouping,
+  type GroupingInput,
+} from './group-model.ts';
 import { groupFindings, type QaIssue } from './proposals.ts';
 
 const A = 'aaaaaaaaaaaaaaaa';
@@ -90,5 +96,21 @@ describe('toGrouping', () => {
     expect(toGrouping({ groups: [{ members: [A], existingIssue: null }] })).toEqual({
       groups: [{ members: [A] }],
     });
+  });
+});
+
+describe('groupingMode', () => {
+  it('asks the model whenever a key is set', () => {
+    expect(groupingMode({ ANTHROPIC_API_KEY: 'key' })).toBe('model');
+    expect(groupingMode({ ANTHROPIC_API_KEY: 'key', GITHUB_ACTIONS: 'true' })).toBe('model');
+  });
+
+  it('skips the grouping on a local run without a key', () => {
+    expect(groupingMode({})).toBe('skip');
+    expect(groupingMode({ ANTHROPIC_API_KEY: '' })).toBe('skip');
+  });
+
+  it('fails on a runner without a key', () => {
+    expect(groupingMode({ GITHUB_ACTIONS: 'true' })).toBe('fail');
   });
 });

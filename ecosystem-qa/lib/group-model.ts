@@ -76,6 +76,21 @@ Set \`existingIssue\` to the number of an issue from \`issues\` when that issue 
 
 Every finding id appears in exactly one group. A finding with nothing in common with the others is a group of one.`;
 
+/**
+ * Decide whether to ask the model: `skip` leaves every fingerprint on its own.
+ *
+ * Without a key a local run skips, but a runner fails: a sweep that files ungrouped creates one
+ * issue per fingerprint, which is the over-filing the grouping exists to prevent.
+ */
+export const groupingMode = (
+  env: Record<string, string | undefined>
+): 'model' | 'skip' | 'fail' => {
+  if (env.ANTHROPIC_API_KEY) {
+    return 'model';
+  }
+  return env.GITHUB_ACTIONS ? 'fail' : 'skip';
+};
+
 export type Ask = (messages: Anthropic.Beta.BetaMessageParam[]) => Promise<unknown>;
 
 const review = (answer: unknown, input: GroupingInput): string[] | Grouping => {

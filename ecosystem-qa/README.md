@@ -77,8 +77,11 @@ node ecosystem-qa/collect.ts --results ecosystem-qa/results --version 11.0.0-bet
 It is one Messages API request with a schema-checked answer and no tools, so text the agents wrote inside a third-party repository can at worst produce a wrong grouping.
 The model only says which fingerprints belong together; none of its text reaches an issue, and `collect.ts` checks the file again before it uses it.
 It sends the titles, actual results and error texts of the findings, capped, to the Anthropic API.
-It needs `ANTHROPIC_API_KEY`; the subscription token from `claude setup-token` that agent runs accept does not work for the Messages API.
-With at most one fingerprint it writes the identity grouping without calling the API.
+It reads `ANTHROPIC_API_KEY`; the subscription token from `claude setup-token` that agent runs accept does not work for the Messages API.
+The key is optional on a local run: without it nothing is grouped, each fingerprint stays on its own, and `collect.ts` makes one proposal per fingerprint.
+In GitHub Actions a missing key is an error, because a sweep that files ungrouped creates one issue per fingerprint.
+A key that is set but rejected is an error everywhere.
+With at most one fingerprint it never calls the API.
 `collect.ts` works without it: leave out `--groups`, or pass a `groups.json` written by hand.
 
 To exercise collect and file without an agent or an API key, add `--fake`.

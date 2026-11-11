@@ -9,6 +9,7 @@ import { listQaIssues } from './lib/github.ts';
 import {
   GroupingAnswer,
   groupingInput,
+  groupingMode,
   groupWithModel,
   SYSTEM_PROMPT,
   type Ask,
@@ -23,8 +24,10 @@ Reads the results under --results the way collect.ts does, lists the issues of -
 internal-qa label with gh, and asks Claude which fingerprints share a root cause and which listed
 issue each group resembles. Writes the answer to --out for collect.ts --groups.
 The model only groups: no text of its answer reaches an issue. Finding text is sent to the
-Anthropic API, so ANTHROPIC_API_KEY must be set; the subscription token of agent runs does not work.
-With at most one fingerprint it writes the identity grouping without calling the model.`;
+Anthropic API with ANTHROPIC_API_KEY; the subscription token of agent runs does not work.
+Without that key a local run groups nothing and leaves each fingerprint on its own, so collect.ts
+makes one proposal per fingerprint. In GitHub Actions a missing key is an error.
+With at most one fingerprint it never calls the model.`;
 
 const { values } = parseArgs({
   options: {
@@ -74,11 +77,19 @@ const NO_KEY =
   'Grouping needs ANTHROPIC_API_KEY. The subscription token used for agent runs (CLAUDE_CODE_OAUTH_TOKEN) does not work for the Messages API.';
 
 const modelGrouping = async (): Promise<Grouping> => {
+  const ungrouped = identityGrouping(groups.map((group) => group.fingerprint));
   if (groups.length <= 1) {
-    return identityGrouping(groups.map((group) => group.fingerprint));
+    return ungrouped;
   }
-  if (!process.env.ANTHROPIC_API_KEY) {
+  const mode = groupingMode(process.env);
+  if (mode === 'fail') {
     throw new Error(NO_KEY);
+  }
+  if (mode === 'skip') {
+    console.warn(
+      `ANTHROPIC_API_KEY is not set, so nothing was grouped: each fingerprint stays on its own and becomes its own proposal. ${NO_KEY}`
+    );
+    return ungrouped;
   }
   return groupWithModel(groupingInput(groups, listQaIssues(repo)), askClaude(new Anthropic()));
 };

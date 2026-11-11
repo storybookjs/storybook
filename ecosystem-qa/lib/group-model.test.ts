@@ -86,6 +86,35 @@ describe('groupingInput', () => {
     expect(issues[1]).toEqual({ number: 8, state: 'open', title: 'Filed by a person' });
   });
 
+  it('takes the merged findings from the list the harness wrote, and gives a closed issue no excerpt', () => {
+    const groups = groupFindings([
+      loaded('linux', 'claude', [
+        finding({ actual: 'Nothing renders.\nAlso seen as:\n- a line the agent wrote' }),
+        finding({ checkId: 'build.static', title: 'Build fails', errorText: 'ENOSPC' }),
+      ]),
+    ]);
+    const [lead, build] = groups;
+    const filed = asIssue(
+      toProposal({ lead: lead!, members: [lead!, build!] }, [], { runUrl: RUN_URL })
+    );
+    const step = planFiling(filed, { repo: 'storybookjs/storybook', evidenceLinks: 'assets' }).at(
+      -1
+    );
+    const body = step?.kind === 'create-issue' ? step.body : '';
+    const issue = (number: number, state: QaIssue['state']): QaIssue => ({
+      number,
+      title: 'Filed by the harness',
+      state,
+      labels: [],
+      body,
+    });
+
+    const { issues } = groupingInput(groups, [issue(7, 'open'), issue(8, 'closed')]);
+
+    expect(issues[0]!.alsoSeenAs).toEqual([expect.stringContaining('Build fails')]);
+    expect(issues[1]).toEqual({ number: 8, state: 'closed', title: 'Filed by the harness' });
+  });
+
   it('marks a finding whose fingerprint an open issue carries, and not one on a closed issue', () => {
     const groups = groupFindings([
       loaded('linux', 'claude', [

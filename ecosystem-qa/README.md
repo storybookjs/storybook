@@ -78,7 +78,7 @@ It is one Messages API request with a schema-checked answer and no tools, so tex
 A wrong grouping is not harmless: it reports a finding on the issue of another one, or silences it together with a known one, so the dry run lists every member of a group, also of a suppressed one.
 The model only says which fingerprints belong together; none of its text reaches an issue, and `collect.ts` checks the file again before it uses it.
 It sends the titles, actual results and error texts of the findings, capped, to the Anthropic API.
-Of the QA issues it sends the titles, and for an issue the harness filed also the start of its bug description and the findings already merged into it: a title names one symptom, and a later run words the same defect differently.
+Of the QA issues it sends the titles, and for an open issue the harness filed also the start of its bug description and the findings already merged into it: a title names one symptom, and a later run words the same defect differently. Sightings that were added as comments are not sent.
 It reads `ANTHROPIC_API_KEY`; the subscription token from `claude setup-token` that agent runs accept does not work for the Messages API.
 The key is optional on a local run: without it nothing is grouped, each fingerprint stays on its own, and `collect.ts` makes one proposal per fingerprint.
 In GitHub Actions a missing key is an error, because a sweep that files ungrouped creates one issue per fingerprint.

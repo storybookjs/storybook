@@ -1,0 +1,213 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm.
+npm warn Unknown project config "min-release-age". This will stop working in the next major version of npm.
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (.storybook/vitest.config.ts:2:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (.storybook/vitest.config.ts:2:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (.storybook/vitest.config.ts:2:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+
+ RUN  v4.1.11 /home/agent/workspace
+
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (.storybook/vitest.config.ts:2:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+stdout | unknown test
+Documentation: https://mswjs.io/docs
+stdout | unknown test
+Found an issue? https://github.com/mswjs/msw/issues
+stdout | unknown test
+Worker script URL: http://localhost:63315/mockServiceWorker.js
+stdout | unknown test
+Worker scope: http://localhost:63315/
+stdout | unknown test
+Client ID: 92cf1cee-e4b7-4e19-988d-0e623c810018 (nested)
+3:32:43 PM [vite] [33m[2m(client)[22m[39m [2m[console.warn] [22mNG0914: The application is using zoneless change detection, but is still loading Zone.js. Consider removing Zone.js to get the full benefits of zoneless. In applications using the Angular CLI, Zone.js is typically included in the "polyfills" section of the angular.json file.
+stderr | stories/e2e/date-input/date-input-field.stories.ts > Basic TEST
+NG0914: The application is using zoneless change detection, but is still loading Zone.js. Consider removing Zone.js to get the full benefits of zoneless. In applications using the Angular CLI, Zone.js is typically included in the "polyfills" section of the angular.json file.
+3:32:44 PM [vite] [31m[2m(client)[22m[39m [2m[console.error] [22mERROR Error: NG0950: Input is required but no value is available yet. Find more at https://v22.angular.dev/errors/NG0950
+    at FormFieldComponent.inputValueFn [as label] (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:17567:10)
+    at FormFieldComponent_ng_template_2_Conditional_1_Conditional_1_Template (ng:///FormFieldComponent.js:167:40)
+    at executeTemplate (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:4371:3)
+    at refreshView (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:4928:28)
+    at detectChangesInView (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5063:25)
+    at detectChangesInViewIfAttached (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5049:2)
+    at detectChangesInEmbeddedViews (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5023:3)
+    at refreshView (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:4942:3)
+    at detectChangesInView (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5063:25)
+    at detectChangesInViewIfAttached (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5049:2)
+stderr | stories/e2e/date-input/date-input-field.stories.ts > Basic TEST
+ERROR [Error: NG0950: Input is required but no value is available yet. Find more at https://v22.angular.dev/errors/NG0950]
+stdout | stories/e2e/date-input/date-input-field.stories.ts > Basic TEST
+Angular is running in development mode.
+3:32:44 PM [vite] [31m[2m(client)[22m[39m [2m[console.error] [22mERROR Error: NG0950: Input is required but no value is available yet. Find more at https://v22.angular.dev/errors/NG0950
+    at FormFieldComponent.inputValueFn [as label] (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:17567:10)
+    at FormFieldComponent_ng_template_2_Conditional_1_Conditional_1_Template (ng:///FormFieldComponent.js:167:40)
+    at executeTemplate (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:4371:3)
+    at refreshView (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:4928:28)
+    at detectChangesInView (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5063:25)
+    at detectChangesInViewIfAttached (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5049:2)
+    at detectChangesInEmbeddedViews (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5023:3)
+    at refreshView (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:4942:3)
+    at detectChangesInView (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5063:25)
+    at detectChangesInViewIfAttached (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5049:2)
+stderr | stories/e2e/date-input/date-input-field.stories.ts > Basic TEST
+ERROR [Error: NG0950: Input is required but no value is available yet. Find more at https://v22.angular.dev/errors/NG0950]
+3:32:44 PM [vite] [31m[2m(client)[22m[39m [31m[Unhandled error] [1mError[22m: NG0950: Input is required but no value is available yet. Find more at https://v22.angular.dev/errors/NG0950
+[39m > FormFieldComponent.inputValueFn [as label] node_modules/@angular/core/fesm2022/core.mjs:37:12
+ > FormFieldComponent_ng_template_2_Conditional_1_Conditional_1_Template ng:/FormFieldComponent.js:167:40
+ > executeTemplate node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:5498:4
+ > refreshView node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6204:6
+ > detectChangesInView node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6378:4
+ > detectChangesInViewIfAttached node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6361:2
+ > detectChangesInEmbeddedViews node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6332:6
+ > refreshView node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6225:4
+ > detectChangesInView node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6378:4
+ > detectChangesInViewIfAttached node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6361:2
+
+3:32:44 PM [vite] [33m[2m(client)[22m[39m [2m[console.warn] [22mNG0914: The application is using zoneless change detection, but is still loading Zone.js. Consider removing Zone.js to get the full benefits of zoneless. In applications using the Angular CLI, Zone.js is typically included in the "polyfills" section of the angular.json file.
+stderr | stories/e2e/date-input/date-input-field.stories.ts > Basic TEST
+NG0914: The application is using zoneless change detection, but is still loading Zone.js. Consider removing Zone.js to get the full benefits of zoneless. In applications using the Angular CLI, Zone.js is typically included in the "polyfills" section of the angular.json file.
+3:32:44 PM [vite] [31m[2m(client)[22m[39m [2m[console.error] [22mERROR Error: NG0950: Input is required but no value is available yet. Find more at https://v22.angular.dev/errors/NG0950
+    at FormFieldComponent.inputValueFn [as label] (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:17567:10)
+    at FormFieldComponent_ng_template_2_Conditional_1_Conditional_1_Template (ng:///FormFieldComponent.js:167:40)
+    at executeTemplate (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:4371:3)
+    at refreshView (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:4928:28)
+    at detectChangesInView (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5063:25)
+    at detectChangesInViewIfAttached (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5049:2)
+    at detectChangesInEmbeddedViews (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5023:3)
+    at refreshView (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:4942:3)
+    at detectChangesInView (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5063:25)
+    at detectChangesInViewIfAttached (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5049:2)
+stderr | stories/e2e/date-input/date-input-field.stories.ts > Basic TEST
+ERROR [Error: NG0950: Input is required but no value is available yet. Find more at https://v22.angular.dev/errors/NG0950]
+stdout | stories/e2e/date-input/date-input-field.stories.ts > Basic TEST
+Angular is running in development mode.
+3:32:44 PM [vite] [31m[2m(client)[22m[39m [2m[console.error] [22mERROR Error: NG0950: Input is required but no value is available yet. Find more at https://v22.angular.dev/errors/NG0950
+    at FormFieldComponent.inputValueFn [as label] (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:17567:10)
+    at FormFieldComponent_ng_template_2_Conditional_1_Conditional_1_Template (ng:///FormFieldComponent.js:167:40)
+    at executeTemplate (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:4371:3)
+    at refreshView (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:4928:28)
+    at detectChangesInView (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5063:25)
+    at detectChangesInViewIfAttached (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5049:2)
+    at detectChangesInEmbeddedViews (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5023:3)
+    at refreshView (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:4942:3)
+    at detectChangesInView (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5063:25)
+    at detectChangesInViewIfAttached (http://localhost:63315/node_modules/.cache/storybook/11.0.0-beta.1/d8b35cbd3ce204bd033b599d3b103fd6c23d14ed609aa5368caf9a7e88d83b40/sb-vitest/deps/core-C1ITUa9F.js?v=917c611c:5049:2)
+stderr | stories/e2e/date-input/date-input-field.stories.ts > Basic TEST
+ERROR [Error: NG0950: Input is required but no value is available yet. Find more at https://v22.angular.dev/errors/NG0950]
+3:32:44 PM [vite] [31m[2m(client)[22m[39m [31m[Unhandled error] [1mError[22m: NG0950: Input is required but no value is available yet. Find more at https://v22.angular.dev/errors/NG0950
+[39m > FormFieldComponent.inputValueFn [as label] node_modules/@angular/core/fesm2022/core.mjs:37:12
+ > FormFieldComponent_ng_template_2_Conditional_1_Conditional_1_Template ng:/FormFieldComponent.js:167:40
+ > executeTemplate node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:5498:4
+ > refreshView node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6204:6
+ > detectChangesInView node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6378:4
+ > detectChangesInViewIfAttached node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6361:2
+ > detectChangesInEmbeddedViews node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6332:6
+ > refreshView node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6225:4
+ > detectChangesInView node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6378:4
+ > detectChangesInViewIfAttached node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6361:2
+
+ ❯ |storybook (chromium)| stories/e2e/date-input/date-input-field.stories.ts (1 test | 1 failed) 491ms
+   × Basic TEST 486ms (retry x1)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |storybook (chromium)| stories/e2e/date-input/date-input-field.stories.ts > Basic TEST
+ FAIL  |storybook (chromium)| stories/e2e/date-input/date-input-field.stories.ts > Basic TEST
+TestingLibraryElementError: 
+[34mClick to debug the error directly in Storybook: http://localhost:6006/?path=/story/e2e-dateinput-field--basic-test&addonPanel=storybook/interactions/panel[39m
+
+
+[34mClick to debug the error directly in Storybook: http://localhost:6006/?path=/story/e2e-dateinput-field--basic-test&addonPanel=storybook/interactions/panel[39m
+
+Unable to find an element by: [data-testid="lu-date-input"]
+
+Ignored nodes: comments, script, style
+<div>
+  <e2e-dateinput-field--basic-test
+    ng-version="22.2.3"
+  >
+    <lu-form-field
+      class="form-field"
+    >
+      <label
+        class="formLabel"
+        for=""
+        id="-label"
+        luformlabel=""
+      >
+        <span />
+      </label>
+    </lu-form-field>
+    <pr-story-model-display>
+      <lu-callout
+        heading="NgModel value"
+        icon="settingsGear"
+        size="S"
+      />
+    </pr-story-model-display>
+  </e2e-dateinput-field--basic-test>
+</div>
+ ❯ stories/e2e/date-input/date-input-field.stories.ts:17:22
+     15|  // Get input using label text to make sure the label link is properly…
+     16|  ////const input = canvas.getByLabelText(`${args['label']}${args['tool…
+     17|  const input = canvas.getByTestId('lu-date-input');
+       |                      ^
+     18|
+     19|  await userEvent.click(input);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 2 unhandled errors during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Error ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Error: NG0950: Input is required but no value is available yet. Find more at https://v22.angular.dev/errors/NG0950
+ ❯ FormFieldComponent.inputValueFn [as label] node_modules/@angular/core/fesm2022/core.mjs:37:12
+ ❯ FormFieldComponent_ng_template_2_Conditional_1_Conditional_1_Template ng:/FormFieldComponent.js:167:40
+ ❯ executeTemplate node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:5498:4
+ ❯ refreshView node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6204:6
+ ❯ detectChangesInView node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6378:4
+ ❯ detectChangesInViewIfAttached node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6361:2
+ ❯ detectChangesInEmbeddedViews node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6332:6
+ ❯ refreshView node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6225:4
+ ❯ detectChangesInView node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6378:4
+ ❯ detectChangesInViewIfAttached node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6361:2
+
+This error originated in "stories/e2e/date-input/date-input-field.stories.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "Basic TEST". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Error ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Error: NG0950: Input is required but no value is available yet. Find more at https://v22.angular.dev/errors/NG0950
+ ❯ FormFieldComponent.inputValueFn [as label] node_modules/@angular/core/fesm2022/core.mjs:37:12
+ ❯ FormFieldComponent_ng_template_2_Conditional_1_Conditional_1_Template ng:/FormFieldComponent.js:167:40
+ ❯ executeTemplate node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:5498:4
+ ❯ refreshView node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6204:6
+ ❯ detectChangesInView node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6378:4
+ ❯ detectChangesInViewIfAttached node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6361:2
+ ❯ detectChangesInEmbeddedViews node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6332:6
+ ❯ refreshView node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6225:4
+ ❯ detectChangesInView node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6378:4
+ ❯ detectChangesInViewIfAttached node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:6361:2
+
+This error originated in "stories/e2e/date-input/date-input-field.stories.ts" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.
+The latest test that might've caused the error is "Basic TEST". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+     Errors  2 errors
+   Start at  15:32:35
+   Duration  8.63s (transform 0ms, setup 5.46s, import 859ms, tests 491ms, environment 0ms)
+

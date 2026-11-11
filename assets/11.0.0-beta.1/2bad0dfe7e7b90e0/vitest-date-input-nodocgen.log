@@ -1,0 +1,83 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm.
+npm warn Unknown project config "min-release-age". This will stop working in the next major version of npm.
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (.storybook/vitest.config.ts:2:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+[90m│[39m
+[33m▲[39m  [storybook-angular-vite] Compodoc generation failed:
+[90m│[39m  @compodoc/compodoc could not be resolved. Install it as a
+[90m│[39m  devDependency, or set framework.options.compodoc to false to turn
+[90m│[39m  Angular docgen off.
+[90m│[39m
+[33m▲[39m  The `componentsManifest` feature needs the `docgenServer` feature,
+[90m│[39m  which is off, so this Storybook publishes no components manifest and
+[90m│[39m  MCP clients get no component API from it. Turn the docgen server on
+[90m│[39m  with `features: { docgenServer: true }` in your `main.ts`.
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (.storybook/vitest.config.ts:2:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (.storybook/vitest.config.ts:2:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+[90m│[39m
+[33m▲[39m  [storybook-angular-vite] Compodoc generation failed:
+[90m│[39m  @compodoc/compodoc could not be resolved. Install it as a
+[90m│[39m  devDependency, or set framework.options.compodoc to false to turn
+[90m│[39m  Angular docgen off.
+[90m│[39m
+[33m▲[39m  The `componentsManifest` feature needs the `docgenServer` feature,
+[90m│[39m  which is off, so this Storybook publishes no components manifest and
+[90m│[39m  MCP clients get no component API from it. Turn the docgen server on
+[90m│[39m  with `features: { docgenServer: true }` in your `main.ts`.
+[90m│[39m
+[33m▲[39m  [storybook-angular-vite] Compodoc generation failed:
+[90m│[39m  @compodoc/compodoc could not be resolved. Install it as a
+[90m│[39m  devDependency, or set framework.options.compodoc to false to turn
+[90m│[39m  Angular docgen off.
+[90m│[39m
+[33m▲[39m  The `componentsManifest` feature needs the `docgenServer` feature,
+[90m│[39m  which is off, so this Storybook publishes no components manifest and
+[90m│[39m  MCP clients get no component API from it. Turn the docgen server on
+[90m│[39m  with `features: { docgenServer: true }` in your `main.ts`.
+
+ RUN  v4.1.11 /home/agent/workspace
+
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (.storybook/vitest.config.ts:2:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+[90m│[39m
+[33m▲[39m  [storybook-angular-vite] Compodoc generation failed:
+[90m│[39m  @compodoc/compodoc could not be resolved. Install it as a
+[90m│[39m  devDependency, or set framework.options.compodoc to false to turn
+[90m│[39m  Angular docgen off.
+[90m│[39m
+[33m▲[39m  The `componentsManifest` feature needs the `docgenServer` feature,
+[90m│[39m  which is off, so this Storybook publishes no components manifest and
+[90m│[39m  MCP clients get no component API from it. Turn the docgen server on
+[90m│[39m  with `features: { docgenServer: true }` in your `main.ts`.
+3:33:02 PM [vite] [90m[2m(client)[22m[39m Re-optimizing dependencies because vite config has changed
+3:33:03 PM [vite] [90m[2m(client)[22m[39m [optimizer] scanning dependencies...
+3:33:05 PM [vite] [90m[2m(client)[22m[39m [optimizer] bundling dependencies...
+stdout | unknown test
+Documentation: https://mswjs.io/docs
+stdout | unknown test
+Found an issue? https://github.com/mswjs/msw/issues
+stdout | unknown test
+Worker script URL: http://localhost:63315/mockServiceWorker.js
+stdout | unknown test
+Worker scope: http://localhost:63315/
+stdout | unknown test
+Client ID: 5a76c80d-66c0-4376-bdba-5f8f8fc02720 (nested)
+3:33:11 PM [vite] [33m[2m(client)[22m[39m [2m[console.warn] [22mNG0914: The application is using zoneless change detection, but is still loading Zone.js. Consider removing Zone.js to get the full benefits of zoneless. In applications using the Angular CLI, Zone.js is typically included in the "polyfills" section of the angular.json file.
+stderr | stories/e2e/date-input/date-input-field.stories.ts > Basic TEST
+NG0914: The application is using zoneless change detection, but is still loading Zone.js. Consider removing Zone.js to get the full benefits of zoneless. In applications using the Angular CLI, Zone.js is typically included in the "polyfills" section of the angular.json file.
+stdout | stories/e2e/date-input/date-input-field.stories.ts > Basic TEST
+Angular is running in development mode.
+ ✓ |storybook (chromium)| stories/e2e/date-input/date-input-field.stories.ts (1 test) 1209ms
+   ✓ Basic TEST  1207ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  15:33:02
+   Duration  11.18s (transform 0ms, setup 5.35s, import 884ms, tests 1.21s, environment 0ms)
+

@@ -156,7 +156,7 @@ The JSON must match this JSON Schema:
 Every check id from the list appears exactly once in `checks`.
 Each finding's `checkId` must be a check whose state is `fail`.
 `storybookVersionInstalled` is the version you read in Step 2, or `null` when you could not read it.
-`storybookVersionBefore` is the version you read in Step 1, or `null` when you could not read it.
+`storybookVersionBefore` is the exact version you read in Step 1, such as `10.6.3` and never a range, or `null` when you could not read it.
 
 Example of the shape:
 

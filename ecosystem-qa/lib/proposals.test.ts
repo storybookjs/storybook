@@ -82,6 +82,13 @@ describe('toProposal', () => {
     );
   });
 
+  it('falls back to the run record when the captured system info is empty', () => {
+    const [empty] = groupFindings([{ ...loaded('linux', 'claude', [finding()]), systemInfo: '' }]);
+    const proposal = toProposal(empty!, [], RUN_URL);
+
+    expect(proposal.kind === 'issue' && proposal.system).toContain('OS: linux');
+  });
+
   it('comments on the open issue when a closed one has the same fingerprint', () => {
     const proposal = toProposal(
       group!,

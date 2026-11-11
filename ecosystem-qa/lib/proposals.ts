@@ -65,7 +65,7 @@ const evidenceFiles = ({ finding, primary }: FindingGroup): EvidenceFile[] => {
 };
 
 const systemText = ({ result, systemInfo }: LoadedResult): string =>
-  (systemInfo && redactSecrets(systemInfo)) ??
+  (systemInfo && redactSecrets(systemInfo)) ||
   [
     `OS: ${result.request.os}`,
     `Node: ${result.machine.node}`,

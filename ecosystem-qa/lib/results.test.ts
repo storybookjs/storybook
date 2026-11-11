@@ -212,4 +212,18 @@ describe('system info', () => {
 
     expect(results[0]?.systemInfo).toBe('Storybook Environment Info:\n\nSystem:\nOS: Linux');
   });
+
+  it('treats a capture without the report as no info', () => {
+    const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
+    const runDir = artifactRun(resultsDir);
+    writeRun(runDir);
+    write(
+      join(runDir, 'evidence/storybook-info.txt'),
+      'yarn dlx noise\nEPERM: operation not permitted\n'
+    );
+
+    const { results } = load(resultsDir);
+
+    expect(results[0]?.systemInfo).toBeUndefined();
+  });
 });

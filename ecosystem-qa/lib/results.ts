@@ -57,11 +57,16 @@ const evidenceProblem = (evidenceDir: string, name: string): string | undefined 
 };
 
 // `storybook info` runs through the package manager's dlx, whose install log precedes the report.
-const environmentInfo = (captured: string): string => {
+// A capture without the report, because the command crashed, is no info at all.
+const environmentInfo = (captured: string): string | undefined => {
   const plain = captured.replace(/\x1b\[[0-9;]*m/g, '');
   const start = plain.indexOf('Storybook Environment Info');
-  const lines = (start < 0 ? plain : plain.slice(start)).split('\n');
-  return lines
+  if (start < 0) {
+    return undefined;
+  }
+  return plain
+    .slice(start)
+    .split('\n')
     .map((line) => line.replace(/^│\s*/, '').trimEnd())
     .filter((line, index, all) => line !== '' || all[index - 1] !== '')
     .join('\n')

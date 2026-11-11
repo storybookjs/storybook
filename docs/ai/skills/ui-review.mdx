@@ -1,19 +1,19 @@
 ---
-title: Agentic review
+title: UI review
 hideRendererSelector: true
 sidebar:
-  order: 4
+  order: 6
 ---
 
 <If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
 
-An agentic review shows you the UI your agent changed, in one place: a summary of its work and the stories that the change affects. It isn't available for your framework yet. See [supported frameworks](../connect.mdx#supported-frameworks).
+The `ui-review` skill lets your agent publish an agentic review: a summary of its work and the stories that its change affects, in one place. It isn't available for your framework yet. See [supported frameworks](../connect.mdx#supported-frameworks).
 
 </If>
 
 <If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
 
-An agentic review shows you the UI your agent changed, in one place. After a UI change, your agent publishes a review: a summary of its work and the stories that the change affects, grouped from the changed component up to the pages that use it.
+The `ui-review` skill lets your agent show you the UI it changed, in one place. After a UI change, your agent publishes an agentic review: a summary of its work and the stories that the change affects, grouped from the changed component up to the pages that use it.
 
 ![Review summary page, showing a text summary of the work and curated collections of stories](../../_assets/ai/agentic-review-summary-in-ade.png)
 
@@ -22,14 +22,23 @@ An agentic review shows you the UI your agent changed, in one place. After a UI 
 - Storybook 11
 - An agent connected with [skills](../connect.mdx#install-the-skills) or the [MCP server](../reference/mcp-server.mdx)
 - A running Storybook dev server. With skills, your agent starts it if it isn't running.
+- With the [MCP server](../reference/mcp-server.mdx), the [`dev` toolset](../reference/mcp-server.mdx#dev) turned on
+
+## When your agent uses it
+
+The skill is step 4 of the [UI workflow](./ui-workflow.mdx), the last one. With the [Storybook section in `AGENTS.md`](../connect.mdx#tell-your-agent-when-to-use-the-skills), your agent publishes a review after every change you can see, and again after each later change. It skips the review when nothing visible changed, such as a change to tests or types, and tells you so.
+
+When you ask to see something, such as "Show me the Button in all its states", the agent publishes a review of those stories without changing any files.
 
 ## How your agent builds a review
 
-The review is the last step of the [UI workflow](./ui-workflow.mdx). Your agent finds the stories that its change affects, then puts them into two to five groups, from the changed component up to the pages that show it. For example, a change to `Button` can give one group for the button's own stories, one for the forms that use it, and one for the pages around them. Every story the agent created is in the review.
+Your agent finds the stories that its change affects, then puts them into two to five groups, from the changed component up to the pages that show it. For example, a change to `Button` can give one group for the button's own stories, one for the forms that use it, and one for the pages around them. Every story the agent created is in the review.
 
 A review is a curated selection, not a complete list of affected stories. The agent writes the summary and chooses the groups, so check them as you would check any other work by your agent.
 
-The agent publishes a new review after each later change. You can also ask for one at any time, or ask to see components, for example "Show me the Button in all its states".
+## The dev server
+
+The review needs a running Storybook dev server. The agent uses the dev server that's already running for your project, and never starts a second one. If none is running, the agent starts it with your project's Storybook script, such as `npm run storybook`. The agent leaves the dev server running when it's done, so you can keep looking at your stories.
 
 ## Review the changes
 
@@ -62,4 +71,6 @@ When you're done, click the Storybook logo in the top-left corner to return to y
 
 - [Connect your agent](../connect.mdx)
 - [UI workflow](./ui-workflow.mdx)
+- [Write stories](./write-stories.mdx)
+- [Test stories](./test-stories.mdx)
 - [Best practices for using Storybook with AI](../best-practices.mdx)

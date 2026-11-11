@@ -34,7 +34,7 @@ To install the skills at any other time, run this command from the root of your 
 
 Every install method adds the same files:
 
-- The skills: `storybook-init`, [`storybook-setup`](./skills/setup.mdx), `storybook-upgrade`, [`component-info`](./skills/component-info.mdx), and [`ui-workflow`](./skills/ui-workflow.mdx). They're installed for Claude Code (`.claude/skills/`) and for other agents (`.agents/skills/`).
+- The skills: `storybook-init`, [`storybook-setup`](./skills/setup.mdx), `storybook-upgrade`, and the skills of the [UI workflow](./skills/ui-workflow.mdx): [`component-docs`](./skills/component-docs.mdx), [`write-stories`](./skills/write-stories.mdx), [`test-stories`](./skills/test-stories.mdx), and [`ui-review`](./skills/ui-review.mdx). They're installed for Claude Code (`.claude/skills/`) and for other agents (`.agents/skills/`).
 - `skills-lock.json`, which records the installed version.
 - A Storybook section in `AGENTS.md` (see below)
 
@@ -49,23 +49,27 @@ Storybook also has plugins for [Claude Code](https://github.com/storybookjs/stor
 
 ## Tell your agent when to use the skills
 
-Agents don't use the Storybook skills on their own. The section that Storybook adds to `AGENTS.md` tells your agent to use `ui-workflow` for UI changes and `component-info` for questions about components:
+The section that Storybook adds to `AGENTS.md` is the [UI workflow](./skills/ui-workflow.mdx). For every UI change, it tells your agent which skill to use at each step:
 
 ```md title="AGENTS.md"
 <!-- BEGIN:storybook-skills -->
 <!-- Storybook updates this section on upgrade. Remove both markers to keep your own edits. -->
 
-## Storybook skills
+## Storybook
 
-For each of these tasks, invoke its Storybook skill first, before you edit any file, and follow it:
+For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill. First invoke the skills of all the steps, before you edit any file. Then follow each skill at its step.
 
-- `ui-workflow`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results.
-- `component-info`: you look for an existing component to reuse instead of building a new one, or the user asks about the project's components: which ones exist, which one fits a use case, which props one takes (for example, for accessibility), or where the component library has gaps. It lists the project's components with their props and usage examples.
+1. `component-docs`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
+2. `write-stories`: every component you create or change gets stories.
+3. `test-stories`: run the story tests after every change, the way this skill says, never with a `package.json` test script, and fix what fails. Also when the user asks to run or fix story tests.
+4. `ui-review`: publish a review that shows the user what changed, as your last step. Also when the user asks to see components or stories.
 
 <!-- END:storybook-skills -->
 ```
 
-Storybook replaces the text between the markers when you upgrade. To customize the section, remove both markers, then edit the text. Storybook doesn't change a section without markers. To stop your agent from using the skills on its own, remove the whole section. You can still ask your agent to use a skill by name, for example "Use the ui-workflow skill to add a dark mode toggle".
+Storybook replaces the text between the markers when you upgrade. To change the workflow, for example to leave out the review, remove both markers, then edit the steps. Storybook doesn't change a section without markers. To stop your agent from following the workflow, remove the whole section. Your agent then uses a skill only when you ask for it by name, for example "Use the write-stories skill to add stories for the user list", or when it finds one that fits its task.
+
+If you upgrade from an 11.0 prerelease, Storybook replaces the `ui-workflow` skill with these four skills. A section without markers that names `ui-workflow` stays as you wrote it, so name the new skills in it yourself.
 
 If your project has a `CLAUDE.md` that doesn't import `AGENTS.md`, Storybook adds the same section to `CLAUDE.md`, so Claude Code sees it too.
 
@@ -92,24 +96,27 @@ You can also connect your agent to a published Storybook instead of running it l
 
 Skills are available for these frameworks:
 
-| Renderer                | Frameworks                                          | [Setup](./skills/setup.mdx) | [UI workflow](./skills/ui-workflow.mdx) | [Component info](./skills/component-info.mdx) |
-| ----------------------- | --------------------------------------------------- | --------------------------- | --------------------------------------- | --------------------------------------------- |
-| React (Setup supported) | `react-vite`, `nextjs-vite`, `tanstack-react`       | Yes                         | Yes                                     | Yes                                           |
-| React (other)           | `react-webpack5`, `nextjs`, `react-native-web-vite` | No                          | Yes                                     | Yes                                           |
-| Vue 3                   | `vue3-vite`                                         | Yes                         | Yes                                     | Yes                                           |
-| Angular                 | `angular-vite`                                      | Yes                         | Yes                                     | Yes                                           |
-| Svelte                  | `svelte-vite`, `sveltekit`                          | No                          | Yes                                     | Yes                                           |
-| Web Components          | `web-components-vite`                               | No                          | Yes                                     | Yes                                           |
+| Renderer                | Frameworks                                          | [Setup](./skills/setup.mdx) | [UI workflow](./skills/ui-workflow.mdx) |
+| ----------------------- | --------------------------------------------------- | --------------------------- | --------------------------------------- |
+| React (Setup supported) | `react-vite`, `nextjs-vite`, `tanstack-react`       | Yes                         | Yes                                     |
+| React (other)           | `react-webpack5`, `nextjs`, `react-native-web-vite` | No                          | Yes                                     |
+| Vue 3                   | `vue3-vite`                                         | Yes                         | Yes                                     |
+| Angular                 | `angular-vite`                                      | Yes                         | Yes                                     |
+| Svelte                  | `svelte-vite`, `sveltekit`                          | No                          | Yes                                     |
+| Web Components          | `web-components-vite`                               | No                          | Yes                                     |
 
+The UI workflow column covers its four skills: `component-docs`, `write-stories`, `test-stories`, and `ui-review`. `test-stories` also needs the [Vitest addon](../writing-tests/integrations/vitest-addon/index.mdx), which needs the Vite builder.
 The `storybook-init` and `storybook-upgrade` skills work with every framework in this table.
 The [MCP server](./reference/mcp-server.mdx) supports the same renderers.
 
 **More AI resources**
 
 - [Setup](./skills/setup.mdx)
-- [Component info](./skills/component-info.mdx)
 - [UI workflow](./skills/ui-workflow.mdx)
-- [Agentic review](./skills/agentic-review.mdx)
+- [Component docs](./skills/component-docs.mdx)
+- [Write stories](./skills/write-stories.mdx)
+- [Test stories](./skills/test-stories.mdx)
+- [UI review](./skills/ui-review.mdx)
 - [Use a published Storybook](./published-storybook.mdx)
 - [Best practices for using Storybook with AI](./best-practices.mdx)
 - [Manifests](./reference/manifests.mdx)

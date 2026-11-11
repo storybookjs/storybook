@@ -19,14 +19,14 @@ Storybook helps your coding agent build UI that fits your project. Your agent re
 
 - [**Set up Storybook**](./skills/setup.mdx): configure Storybook for your project and write the first stories.
 - [**Change UI**](./skills/ui-workflow.mdx): look up existing components, write or update stories for each change, run story tests with accessibility checks, and publish a review.
-- [**Answer questions about components**](./skills/component-info.mdx): get an overview of your components, choose the right one, use only the props it documents, and find gaps in your library.
-- [**Show you its work**](./skills/agentic-review.mdx): a review groups the stories that a change affects, so you can check them in one place.
+- [**Answer questions about components**](./skills/component-docs.mdx): choose the right component and use only the props it documents.
+- [**Show you its work**](./skills/ui-review.mdx): a review groups the stories that a change affects, so you can check them in one place.
 
 ## How it works
 
 Storybook gives your agent _skills_: short instruction files in your repository that tell the agent what to do and when. Each skill gets its full instructions from your installed Storybook. The instructions match your framework, renderer, and Storybook version, so they stay correct when you upgrade.
 
-A section in your project's `AGENTS.md` tells your agent when to use the skills. You can edit or remove it.
+A section in your project's `AGENTS.md` is the [UI workflow](./skills/ui-workflow.mdx): it tells your agent which skill to use at each step of a UI change. You can edit or remove it.
 
 Agents that can't use skills can connect to the [Storybook MCP server](./reference/mcp-server.mdx) instead.
 
@@ -34,7 +34,7 @@ Agents that can't use skills can connect to the [Storybook MCP server](./referen
 
 1. [Connect your agent](./connect.mdx) to Storybook.
 2. If your project doesn't have stories yet, have your agent [set up Storybook](./skills/setup.mdx).
-3. Ask your agent to build some UI. It follows the [UI workflow](./skills/ui-workflow.mdx) and ends with a link to a [review](./skills/agentic-review.mdx).
+3. Ask your agent to build some UI. It follows the [UI workflow](./skills/ui-workflow.mdx) and ends with a link to a [review](./skills/ui-review.mdx).
 
 To get the best results, follow the [best practices](./best-practices.mdx) for documenting your components.
 
@@ -45,9 +45,11 @@ To get the best results, follow the [best practices](./best-practices.mdx) for d
 
 - [Connect your agent](./connect.mdx)
 - [Setup](./skills/setup.mdx)
-- [Component info](./skills/component-info.mdx)
 - [UI workflow](./skills/ui-workflow.mdx)
-- [Agentic review](./skills/agentic-review.mdx)
+- [Component docs](./skills/component-docs.mdx)
+- [Write stories](./skills/write-stories.mdx)
+- [Test stories](./skills/test-stories.mdx)
+- [UI review](./skills/ui-review.mdx)
 - [Use a published Storybook](./published-storybook.mdx)
 - [Best practices for using Storybook with AI](./best-practices.mdx)
 - [Manifests](./reference/manifests.mdx)

@@ -1,53 +1,58 @@
 ---
 title: UI workflow
 sidebar:
-  order: 3
+  order: 2
 ---
 
 <If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
 
-The `ui-workflow` skill gives your agent one workflow for every UI change: reuse your components, write stories, run tests, and publish a review. It isn't available for your framework yet. See [supported frameworks](../connect.mdx#supported-frameworks).
+The UI workflow gives your agent one way to make every UI change: reuse your components, write stories, run tests, and publish a review. It isn't available for your framework yet. See [supported frameworks](../connect.mdx#supported-frameworks).
 
 </If>
 
 <If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
 
-The `ui-workflow` skill gives your agent one workflow for every UI change: reuse your components, write stories, test, and show you the result. You get UI that fits your project, stories that prove it works, and one link to review it.
+The UI workflow gives your agent one way to make every UI change: reuse your components, write stories, test, and show you the result. You get UI that fits your project, stories that prove it works, and one link to review it.
 
-## When your agent uses it
+## How it works
 
-With the [Storybook section in `AGENTS.md`](../connect.mdx#tell-your-agent-when-to-use-the-skills), your agent uses the skill when it:
+The workflow is the [Storybook section in `AGENTS.md`](../connect.mdx#tell-your-agent-when-to-use-the-skills). It lists four steps in order, and each step has its own skill:
 
-- Creates, changes, or deletes a component, story, style, theme, or design token
-- Runs or fixes story tests
-- Shows you components or stories that you ask to see
+| Step | Skill                                    | What the agent does                                                   |
+| ---- | ---------------------------------------- | --------------------------------------------------------------------- |
+| 1    | [`component-docs`](./component-docs.mdx) | Looks up the components to reuse, with their props and usage examples |
+| 2    | [`write-stories`](./write-stories.mdx)   | Writes stories for every component it creates or changes              |
+| 3    | [`test-stories`](./test-stories.mdx)     | Runs the story tests after every change, and fixes what fails         |
+| 4    | [`ui-review`](./ui-review.mdx)           | Publishes a review that shows you what changed, as its last step      |
 
-Without that section, ask for the skill by name, for example "Use the ui-workflow skill to add a loading state to the user list".
+Your agent opens the skills of all four steps before it edits any file, then follows each skill at its step.
+
+## When your agent follows it
+
+With the Storybook section in `AGENTS.md`, your agent follows the workflow for every change to how your UI looks: when it creates, changes, or deletes a component, story, style, theme, or design token.
+
+Some steps also run on their own:
+
+- `component-docs`, when you ask about a component's props, API, or usage
+- `test-stories`, when you ask your agent to run or fix the story tests
+- `ui-review`, when you ask to see components or stories
+
+Without that section, your agent doesn't follow the workflow. It can still use a skill that fits its task, and you can ask for one by name, for example "Use the write-stories skill to add stories for the user list".
 
 ## What the agent does
 
 For example, you ask your agent to "Build a login form". The agent:
 
-1. **Looks up your components.** Before it edits any file, it lists the components in your Storybook and reads the props and examples of the ones it needs, such as `TextField` and `Button`. It uses only documented props. See [Component info](./component-info.mdx).
-2. **Writes the component and its stories.** It writes one story for each state the component can reach, such as empty, filled, invalid, and submitting, with realistic data. Interactive states get a [play function](../../writing-stories/play-function.mdx) that tests the behavior.
-3. **Mocks what the stories need.** It mocks [network requests](../../writing-stories/mocking-data-and-modules/mocking-network-requests.mdx) with MSW and sets up MSW if your project doesn't have it. For other dependencies, it uses [module mocks](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx).
-4. **Runs the story tests.** If your project has the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx), it runs [component tests](../../writing-tests/index.mdx) with [accessibility checks](../../writing-tests/accessibility-testing.mdx) after each change, and one full run before it finishes. It fixes failures and doesn't finish with failing tests.
-5. **Finds every affected story.** It finds the stories for the components it changed, and the stories of other components that use them, such as a `LoginPage` that renders the form.
-6. **Publishes a review.** It groups those stories into a [review](./agentic-review.mdx) and ends its reply with a link to it.
+1. **Looks up your components.** Before it edits any file, it lists the components in your Storybook and reads the props and examples of the ones it needs, such as `TextField` and `Button`. It uses only documented props. See [Component docs](./component-docs.mdx).
+2. **Writes the component and its stories.** It writes one story for each state the component can reach, such as empty, filled, invalid, and submitting, with realistic data. Interactive states get a [play function](../../writing-stories/play-function.mdx) that tests the behavior. It mocks network requests and modules that the stories need. See [Write stories](./write-stories.mdx).
+3. **Runs the story tests.** If your project has the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx), it runs [component tests](../../writing-tests/index.mdx) with [accessibility checks](../../writing-tests/accessibility-testing.mdx) after each change, and one full run before it finishes. See [Test stories](./test-stories.mdx).
+4. **Publishes a review.** It finds the stories that its change affects, such as those of a `LoginPage` that renders the form, groups them into a review, and ends its reply with a link to it. See [UI review](./ui-review.mdx).
 
-The agent follows your project's conventions. For example, it writes stories in the [story format](../../writing-stories/csf/index.mdx) that your project uses, and it doesn't rewrite your existing stories to match its own rules.
+## Change the workflow
 
-### Accessibility issues
+To change the workflow, remove both markers around the Storybook section in `AGENTS.md`, then edit the steps. For example, delete step 4 to leave out the review. Storybook doesn't change a section without markers when you upgrade.
 
-If you are using the [accessibility addon](../../writing-tests/accessibility-testing.mdx), the agent fixes semantic accessibility issues, such as missing labels, roles, or alt text. For visual issues, such as low color contrast, it doesn't change your design. It describes the problem, gives you two or three options, and asks you to choose.
-
-### Requests to see UI
-
-When you ask to see something, such as "Show me the Button in all its states", the agent publishes a [review](./agentic-review.mdx) of those stories without changing any files.
-
-## The dev server
-
-The review needs a running Storybook dev server. The other steps don't. The agent uses the dev server that's already running for your project. If none is running, the agent starts it with your project's Storybook script, such as `npm run storybook`. The agent leaves the dev server running when it's done, so you can keep looking at your stories.
+A step also skips itself when your project can't do it. `test-stories` skips the tests when your project doesn't have the Vitest addon. With the [MCP server](../reference/mcp-server.mdx), a step is left out when you turn off the [toolset](../reference/mcp-server.mdx#toolsets) that it needs.
 
 ## Requirements
 
@@ -62,7 +67,6 @@ These addons are optional. Without one, the agent skips the step that needs it:
 
 - **Monorepos:** the agent runs Storybook commands from the package where Storybook is installed, such as `packages/ui`.
 - **Sandboxed agents:** some agents block network access and ports by default. Allow the agent to run Storybook commands and start the dev server.
-- **Change the workflow:** to leave out a step, such as the review, edit the [Storybook section in `AGENTS.md`](../connect.mdx#tell-your-agent-when-to-use-the-skills). The skill skips the steps that your instructions leave out.
 
 </If>
 {/* End supported renderers */}
@@ -71,6 +75,8 @@ These addons are optional. Without one, the agent skips the step that needs it:
 
 - [Connect your agent](../connect.mdx)
 - [Setup](./setup.mdx)
-- [Component info](./component-info.mdx)
-- [Agentic review](./agentic-review.mdx)
+- [Component docs](./component-docs.mdx)
+- [Write stories](./write-stories.mdx)
+- [Test stories](./test-stories.mdx)
+- [UI review](./ui-review.mdx)
 - [Best practices for using Storybook with AI](../best-practices.mdx)

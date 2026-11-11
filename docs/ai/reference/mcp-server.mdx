@@ -78,7 +78,7 @@ Default:
 }
 ```
 
-Turns each toolset of the MCP server on or off. All toolsets are on by default.
+Turns each toolset of the MCP server on or off. All toolsets are on by default. The MCP server leaves out the steps of the [UI workflow](../skills/ui-workflow.mdx) whose tools you turn off.
 
 #### `dev`
 
@@ -86,7 +86,7 @@ Type: `boolean`
 
 Default: `true`
 
-Turns on the development tools, which write stories, find the stories that a change affects, preview them, and publish an [agentic review](../skills/agentic-review.mdx). Finding affected stories requires a builder that supports the module graph, such as Vite.
+Turns on the development tools, which write stories, find the stories that a change affects, preview them, and publish an [agentic review](../skills/ui-review.mdx). Finding affected stories requires a builder that supports the module graph, such as Vite.
 
 #### `docs`
 

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 520" width="880" height="520" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" role="img">
+<title>How often each story was loaded</title>
+<desc>1 loads: 12 stories; 2 loads: 7 stories; 3 to 5 loads: 4 stories; 6 to 10 loads: 4 stories; 11 to 20 loads: 2 stories; 21 to 40 loads: 3 stories; 41 to 55 loads: 2 stories</desc>
+<rect id="background" width="880" height="520" fill="#ffffff"/>
+<text id="title" x="40" y="44" font-size="20" font-weight="600" fill="#1f1f1e">How often each story was loaded</text>
+<text id="subtitle" x="40" y="68" font-size="13.5" fill="#5c5b56">34 distinct stories received 282 loads in 600 runs. Five stories account for 65% of them.</text>
+<text id="y-title" x="40" y="106" font-size="12.5" fill="#5c5b56">Number of stories</text>
+<g id="grid" stroke="#e4e3df" stroke-width="1">
+<line x1="70" y1="319.3" x2="840" y2="319.3"/>
+<line x1="70" y1="228.7" x2="840" y2="228.7"/>
+<line x1="70" y1="138.0" x2="840" y2="138.0"/>
+</g>
+<g id="y-ticks" font-size="12.5" fill="#5c5b56" text-anchor="end">
+<text x="60" y="414.0">0</text>
+<text x="60" y="323.3">4</text>
+<text x="60" y="232.7">8</text>
+<text x="60" y="142.0">12</text>
+</g>
+<g id="bars" fill="#0072B2">
+<path id="bar-1" d="M96.0,410 L96.0,142.0 Q96.0,138.0 100.0,138.0 L150.0,138.0 Q154.0,138.0 154.0,142.0 L154.0,410 Z"><title>1 loads: 12 stories</title></path>
+<path id="bar-2" d="M206.0,410 L206.0,255.3 Q206.0,251.3 210.0,251.3 L260.0,251.3 Q264.0,251.3 264.0,255.3 L264.0,410 Z"><title>2 loads: 7 stories</title></path>
+<path id="bar-3-to-5" d="M316.0,410 L316.0,323.3 Q316.0,319.3 320.0,319.3 L370.0,319.3 Q374.0,319.3 374.0,323.3 L374.0,410 Z"><title>3 to 5 loads: 4 stories</title></path>
+<path id="bar-6-to-10" d="M426.0,410 L426.0,323.3 Q426.0,319.3 430.0,319.3 L480.0,319.3 Q484.0,319.3 484.0,323.3 L484.0,410 Z"><title>6 to 10 loads: 4 stories</title></path>
+<path id="bar-11-to-20" d="M536.0,410 L536.0,368.7 Q536.0,364.7 540.0,364.7 L590.0,364.7 Q594.0,364.7 594.0,368.7 L594.0,410 Z"><title>11 to 20 loads: 2 stories</title></path>
+<path id="bar-21-to-40" d="M646.0,410 L646.0,346.0 Q646.0,342.0 650.0,342.0 L700.0,342.0 Q704.0,342.0 704.0,346.0 L704.0,410 Z"><title>21 to 40 loads: 3 stories</title></path>
+<path id="bar-41-to-55" d="M756.0,410 L756.0,368.7 Q756.0,364.7 760.0,364.7 L810.0,364.7 Q814.0,364.7 814.0,368.7 L814.0,410 Z"><title>41 to 55 loads: 2 stories</title></path>
+</g>
+<line id="baseline" x1="70" y1="410" x2="840" y2="410" stroke="#5c5b56" stroke-width="1"/>
+<g id="bar-values" font-size="14" font-weight="600" fill="#1f1f1e" text-anchor="middle">
+<text x="125.0" y="130.0">12</text>
+<text x="235.0" y="243.3">7</text>
+<text x="345.0" y="311.3">4</text>
+<text x="455.0" y="311.3">4</text>
+<text x="565.0" y="356.7">2</text>
+<text x="675.0" y="334.0">3</text>
+<text x="785.0" y="356.7">2</text>
+</g>
+<g id="x-labels" font-size="13" fill="#1f1f1e" text-anchor="middle">
+<text x="125.0" y="432">1</text>
+<text x="235.0" y="432">2</text>
+<text x="345.0" y="432">3–5</text>
+<text x="455.0" y="432">6–10</text>
+<text x="565.0" y="432">11–20</text>
+<text x="675.0" y="432">21–40</text>
+<text x="785.0" y="432">41–55</text>
+</g>
+<text id="x-title" x="455.0" y="458" font-size="12.5" fill="#5c5b56" text-anchor="middle">Loads received by one story (bins widen to the right)</text>
+<g id="most-loaded" text-anchor="end">
+<text x="840" y="160" font-size="12.5" font-weight="600" fill="#1f1f1e">Most-loaded stories</text>
+<text x="840" y="180" font-size="12.5" fill="#5c5b56">Test Defaults To Type Button · 55</text>
+<text x="840" y="198" font-size="12.5" fill="#5c5b56">Mealdrop Checkout Actions · 42</text>
+<text x="840" y="216" font-size="12.5" fill="#5c5b56">Mealdrop Cart Line · 33</text>
+<text x="840" y="234" font-size="12.5" fill="#5c5b56">Mealdrop Checkout Form · 29</text>
+<text x="840" y="252" font-size="12.5" fill="#5c5b56">Mealdrop Checkout Steps · 25</text>
+</g>
+<text id="note" x="40" y="498" font-size="12.5" fill="#5c5b56">Three further loads asked for a story that does not exist and are not counted. 12 stories were loaded only once.</text>
+</svg>

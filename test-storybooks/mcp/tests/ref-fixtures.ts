@@ -1,4 +1,5 @@
-import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import { once } from 'node:events';
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
 export type RefFixtures = {
@@ -86,41 +87,45 @@ const privateRef: Handler = (req, res, origin) => {
 	return sendNotFound(res);
 };
 
-async function listen(handler: Handler): Promise<{ url: string; server: Server }> {
+function createFixture(handler: Handler) {
 	let origin = '';
 	const server = createServer((req, res) => handler(req, res, origin));
-	await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-	origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-	return { url: origin, server };
+	const listen = async () => {
+		await once(server.listen(0, '127.0.0.1'), 'listening');
+		origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+		return origin;
+	};
+	const close = () =>
+		new Promise<void>((resolve) => {
+			server.closeAllConnections();
+			server.close(() => resolve());
+		});
+	return { listen, close };
 }
 
 export async function startRefFixtures(): Promise<RefFixtures> {
-	const [publicFixture, noManifestFixture, privateFixture] = await Promise.all([
-		listen(publicRef),
-		listen(noManifestRef),
-		listen(privateRef),
-	]);
-	const servers = [publicFixture.server, noManifestFixture.server, privateFixture.server];
+	const fixtures = [createFixture(publicRef), createFixture(noManifestRef), createFixture(privateRef)] as const;
+	const close = async () => {
+		await Promise.all(fixtures.map((fixture) => fixture.close()));
+	};
+	const [publicRefUrl, noManifestRefUrl, privateRefUrl] = await Promise.all([
+		fixtures[0].listen(),
+		fixtures[1].listen(),
+		fixtures[2].listen(),
+	]).catch(async (error) => {
+		await close();
+		throw error;
+	});
 
 	return {
-		publicRefUrl: publicFixture.url,
-		noManifestRefUrl: noManifestFixture.url,
-		privateRefUrl: privateFixture.url,
+		publicRefUrl,
+		noManifestRefUrl,
+		privateRefUrl,
 		env: {
-			MCP_TEST_PUBLIC_REF_URL: publicFixture.url,
-			MCP_TEST_NO_MANIFEST_REF_URL: noManifestFixture.url,
-			MCP_TEST_PRIVATE_REF_URL: privateFixture.url,
+			MCP_TEST_PUBLIC_REF_URL: publicRefUrl,
+			MCP_TEST_NO_MANIFEST_REF_URL: noManifestRefUrl,
+			MCP_TEST_PRIVATE_REF_URL: privateRefUrl,
 		},
-		close: async () => {
-			await Promise.all(
-				servers.map(
-					(server) =>
-						new Promise<void>((resolve) => {
-							server.closeAllConnections();
-							server.close(() => resolve());
-						}),
-				),
-			);
-		},
+		close,
 	};
 }

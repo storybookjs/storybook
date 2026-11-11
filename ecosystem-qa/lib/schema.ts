@@ -203,6 +203,8 @@ export const Proposal = z.discriminatedUnion('kind', [
     system: z.string(),
     assetDir: z.string(),
     evidence: z.array(EvidenceFile),
+    // A closed issue with this fingerprint: the bug came back, so it is filed anew and linked.
+    previousIssue: z.number().int().optional(),
   }),
   z.strictObject({ kind: z.literal('comment'), ...ReportBase, existingIssue: z.number().int() }),
   z.strictObject({

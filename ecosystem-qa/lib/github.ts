@@ -8,7 +8,11 @@ import type { IssueHit } from './proposals.ts';
 const QUIET: ExecFileSyncOptions = { stdio: ['ignore', 'pipe', 'inherit'] };
 
 const SearchResults = z.array(
-  z.object({ number: z.number(), labels: z.array(z.object({ name: z.string() })) })
+  z.object({
+    number: z.number(),
+    labels: z.array(z.object({ name: z.string() })),
+    state: z.enum(['open', 'closed']),
+  })
 );
 
 export const ghText = (args: string[]): string => gh(args, QUIET).toString();
@@ -29,4 +33,8 @@ export const searchFingerprint = (repo: string, fingerprint: string): IssueHit[]
     'number,labels,state',
     '--limit',
     '5',
-  ]).map((hit) => ({ number: hit.number, labels: hit.labels.map((label) => label.name) }));
+  ]).map((hit) => ({
+    number: hit.number,
+    labels: hit.labels.map((label) => label.name),
+    state: hit.state,
+  }));

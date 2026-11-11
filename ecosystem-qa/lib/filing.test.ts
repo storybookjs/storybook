@@ -91,7 +91,7 @@ describe('planFiling', () => {
   });
 
   it('pushes the cycle ref, then comments once on the matching issue', () => {
-    const proposal = proposalFor({}, [{ number: 9, labels: ['bug'] }]);
+    const proposal = proposalFor({}, [{ number: 9, labels: ['bug'], state: 'open' }]);
     const steps = planFiling(proposal, { repo: REPO, evidenceLinks: 'assets', comments: [] });
     const comment = steps.at(-1);
 
@@ -107,7 +107,7 @@ describe('planFiling', () => {
   });
 
   it('files nothing for a qa:known issue', () => {
-    const proposal = proposalFor({}, [{ number: 7, labels: ['qa:known'] }]);
+    const proposal = proposalFor({}, [{ number: 7, labels: ['qa:known'], state: 'open' }]);
 
     expect(planFiling(proposal, { repo: REPO, evidenceLinks: 'assets' })).toEqual([
       { kind: 'skip', reason: '#7 is labelled qa:known' },
@@ -118,7 +118,7 @@ describe('planFiling', () => {
 describe('missingPrerequisites', () => {
   it('names the milestones and labels a new issue needs that the repository lacks', () => {
     const issue = proposalFor({ windowsOnly: true });
-    const comment = proposalFor({ title: 'Other' }, [{ number: 9, labels: [] }]);
+    const comment = proposalFor({ title: 'Other' }, [{ number: 9, labels: [], state: 'open' }]);
 
     expect(
       missingPrerequisites([issue, comment], {

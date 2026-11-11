@@ -64,18 +64,54 @@ describe('toProposal', () => {
   const [group] = groupFindings([loaded('linux', 'claude', [finding()])]);
 
   it('suppresses a finding whose fingerprint is on a qa:known issue', () => {
-    const proposal = toProposal(group!, [{ number: 7, labels: ['bug', 'qa:known'] }], RUN_URL);
+    const proposal = toProposal(
+      group!,
+      [{ number: 7, labels: ['bug', 'qa:known'], state: 'open' }],
+      RUN_URL
+    );
 
     expect(proposal).toMatchObject({ kind: 'suppressed', existingIssue: 7 });
   });
 
   it('turns any other hit into a comment on that issue', () => {
-    const proposal = toProposal(group!, [{ number: 9, labels: ['bug'] }], RUN_URL);
+    const proposal = toProposal(group!, [{ number: 9, labels: ['bug'], state: 'open' }], RUN_URL);
 
     expect(proposal).toMatchObject({ kind: 'comment', existingIssue: 9 });
     expect(proposal.kind === 'comment' && renderCommentBody(proposal)).toContain(
       `fingerprint: ${group!.fingerprint}`
     );
+  });
+
+  it('comments on the open issue when a closed one has the same fingerprint', () => {
+    const proposal = toProposal(
+      group!,
+      [
+        { number: 9, labels: ['bug'], state: 'closed' },
+        { number: 12, labels: ['bug'], state: 'open' },
+      ],
+      RUN_URL
+    );
+
+    expect(proposal).toMatchObject({ kind: 'comment', existingIssue: 12 });
+  });
+
+  it('files a bug that came back as a new issue linked to the closed one', () => {
+    const proposal = toProposal(group!, [{ number: 9, labels: ['bug'], state: 'closed' }], RUN_URL);
+
+    expect(proposal).toMatchObject({ kind: 'issue', previousIssue: 9 });
+    expect(proposal.kind === 'issue' && renderIssueBody(proposal, (name) => name)).toContain(
+      'Seen before as #9, which is closed; this run saw it again.'
+    );
+  });
+
+  it('keeps a qa:known suppression even when that issue is closed', () => {
+    const proposal = toProposal(
+      group!,
+      [{ number: 7, labels: ['bug', 'qa:known'], state: 'closed' }],
+      RUN_URL
+    );
+
+    expect(proposal).toMatchObject({ kind: 'suppressed', existingIssue: 7 });
   });
 
   it('neutralises the title and keeps the finding as the agent wrote it', () => {
@@ -174,7 +210,7 @@ describe('renderIssueBody', () => {
       loaded('windows', 'codex', [finding()]),
     ]);
 
-    const proposal = toProposal(group!, [{ number: 9, labels: ['bug'] }], RUN_URL);
+    const proposal = toProposal(group!, [{ number: 9, labels: ['bug'], state: 'open' }], RUN_URL);
     const body = proposal.kind === 'comment' ? renderCommentBody(proposal) : '';
 
     expect(body).toContain(`- ${VERSION}: linux, claude (claude-sonnet-5-5), sandbox docker`);

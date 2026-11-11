@@ -949,6 +949,9 @@ Keep any existing precedence between the theme parameters and your selected them
 Storybook now starts the development server without automatically opening it in a browser. The CLI
 continues to print the local URL, which you can open manually.
 
+The `--no-open` flag has been removed. Remove it from your scripts, otherwise `storybook dev` fails
+with `unknown option '--no-open'`.
+
 To keep opening Storybook automatically, add `--open` to your command or package script:
 
 ```json

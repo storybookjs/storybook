@@ -107,7 +107,7 @@ test.describe('navigating', () => {
       await page.getByRole('searchbox').fill('Primary');
       await page
         .getByRole('option', {
-          name: 'Docs / Primary Example / Button',
+          name: 'Button / Primary Example / Button',
           exact: true,
         })
         .click();

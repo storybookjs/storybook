@@ -1,0 +1,110 @@
+[
+ {
+  "arm": "api-ref",
+  "stories": 220,
+  "individually": 2,
+  "first3_only": 66,
+  "never": 152,
+  "both": 0,
+  "universe_basis": "complete listing"
+ },
+ {
+  "arm": "basic-docs",
+  "stories": 111,
+  "individually": 1,
+  "first3_only": 64,
+  "never": 46,
+  "both": 0,
+  "universe_basis": "complete listing"
+ },
+ {
+  "arm": "do-dont",
+  "stories": 33,
+  "individually": 1,
+  "first3_only": 22,
+  "never": 10,
+  "both": 1,
+  "universe_basis": "complete listing"
+ },
+ {
+  "arm": "docs-full",
+  "stories": 33,
+  "individually": 0,
+  "first3_only": 22,
+  "never": 11,
+  "both": 0,
+  "universe_basis": "complete listing"
+ },
+ {
+  "arm": "empty",
+  "stories": 33,
+  "individually": 3,
+  "first3_only": 24,
+  "never": 6,
+  "both": 3,
+  "universe_basis": "complete listing"
+ },
+ {
+  "arm": "full",
+  "stories": 404,
+  "individually": 6,
+  "first3_only": 69,
+  "never": 329,
+  "both": 0,
+  "universe_basis": "full instance (inferred)"
+ },
+ {
+  "arm": "history-issues",
+  "stories": 33,
+  "individually": 1,
+  "first3_only": 22,
+  "never": 10,
+  "both": 1,
+  "universe_basis": "complete listing"
+ },
+ {
+  "arm": "purge-docgen",
+  "stories": 406,
+  "individually": 3,
+  "first3_only": 274,
+  "never": 129,
+  "both": 3,
+  "universe_basis": "full instance (inferred)"
+ },
+ {
+  "arm": "purge-jsdoc",
+  "stories": 404,
+  "individually": 6,
+  "first3_only": 60,
+  "never": 338,
+  "both": 0,
+  "universe_basis": "complete listing"
+ },
+ {
+  "arm": "stories-api-ref",
+  "stories": 127,
+  "individually": 5,
+  "first3_only": 68,
+  "never": 54,
+  "both": 1,
+  "universe_basis": "observed only (lower bound)"
+ },
+ {
+  "arm": "stories-full",
+  "stories": 404,
+  "individually": 27,
+  "first3_only": 78,
+  "never": 299,
+  "both": 0,
+  "universe_basis": "complete listing"
+ },
+ {
+  "arm": "when-to-use",
+  "stories": 33,
+  "individually": 2,
+  "first3_only": 19,
+  "never": 12,
+  "both": 2,
+  "universe_basis": "complete listing"
+ }
+]

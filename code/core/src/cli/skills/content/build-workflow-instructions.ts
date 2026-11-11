@@ -87,5 +87,11 @@ export function buildServerInstructions(inputs: ServerInstructionsInputs): strin
   const review = inputs.devEnabled
     ? `\n\nWhen you publish a review with \`${getToolName({ transport: 'mcp' })('review.create')}\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it.`
     : '';
-  return `${buildWorkflow(inputs, 'mcp')}${review}`;
+  // The tools are at hand over MCP, so an agent can do a step without its skill. It did for a
+  // request that is one step, where no file edit comes first.
+  const skillFirst =
+    workflowSteps(inputs).length > 1
+      ? '\n\nRun the skill of a step before you call a tool of that step, also when the request is only that step.'
+      : '\n\nRun the skill before you call a tool of this step, also when the request is only this step.';
+  return `${buildWorkflow(inputs, 'mcp')}${skillFirst}${review}`;
 }

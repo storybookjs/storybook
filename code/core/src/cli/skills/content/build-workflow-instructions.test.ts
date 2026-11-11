@@ -53,6 +53,8 @@ describe('buildServerInstructions', () => {
       3. \`npx storybook skills test-stories --mcp\`: run the story tests after every change, the way this skill says, never with a \`package.json\` test script, and fix what fails. Also when the user asks to run or fix story tests.
       4. \`npx storybook skills ui-review --mcp\`: publish a review that shows the user what changed, as your last step. Also when the user asks to see components or stories.
 
+      Run the skill of a step before you call a tool of that step, also when the request is only that step.
+
       When you publish a review with \`review-create\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it."
     `);
   });
@@ -96,7 +98,9 @@ describe('buildServerInstructions', () => {
 
         For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow this step. It has a Storybook skill. Run it before you edit any file, in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`, and follow it.
 
-        1. \`npx storybook skills component-docs --mcp\`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage."
+        1. \`npx storybook skills component-docs --mcp\`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
+
+        Run the skill before you call a tool of this step, also when the request is only this step."
       `);
   });
 

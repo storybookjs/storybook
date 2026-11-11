@@ -35,7 +35,6 @@ export const upgradeStorybookRelatedDependencies = {
   id: 'upgrade-storybook-related-dependencies',
   promptType: 'auto',
   defaultSelected: false,
-  link: 'https://github.com/storybookjs/storybook/issues/25731',
 
   async check({ packageManager, storybookVersion }) {
     logger.debug('Checking for incompatible storybook packages...');

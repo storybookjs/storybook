@@ -306,7 +306,8 @@ jobs:
   file-dry:
     name: Propose issues (dry run)
     needs: [plan, collect]
-    if: ${{ needs.plan.outputs.dry == 'true' }}
+    # Not the implicit success(): one failed runner in the matrix must not silence the filing.
+    if: ${{ !cancelled() && needs.collect.result == 'success' && needs.plan.outputs.dry == 'true' }}
     runs-on: ubuntu-latest
     permissions: {}
     steps:
@@ -340,7 +341,7 @@ jobs:
   file:
     name: File issues
     needs: [plan, collect]
-    if: ${{ needs.plan.outputs.dry == 'false' }}
+    if: ${{ !cancelled() && needs.collect.result == 'success' && needs.plan.outputs.dry == 'false' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write # push evidence to the qa-assets branch

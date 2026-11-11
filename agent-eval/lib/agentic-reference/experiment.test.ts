@@ -1,8 +1,22 @@
 import { describe, expect, it } from 'vitest';
 
-import { agenticRefExperiment, providerOf } from './experiment.ts';
+import { buildClaudeCodeCliArgs } from '@vercel/agent-eval/dist/lib/agents/claude-code/run.mjs';
+
+import { AGENT_CONFIG, agenticRefExperiment, providerOf } from './experiment.ts';
 
 import type { RunCompleteContext } from '@vercel/agent-eval';
+
+describe('Claude Code command line', () => {
+  // The runner only forwards thinkingDisplay because of this repo's patch to @vercel/agent-eval.
+  it('asks headless Claude Code for thinking summaries', () => {
+    const args = buildClaudeCodeCliArgs({
+      prompt: 'the prompt',
+      agentOptions: AGENT_CONFIG['claude-code'].agentOptions,
+    });
+
+    expect(args.slice(-3)).toEqual(['--thinking-display', 'summarized', 'the prompt']);
+  });
+});
 
 describe('providerOf', () => {
   it('reads a gateway-routed agent as the AI gateway', () => {

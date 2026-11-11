@@ -31,6 +31,21 @@ index 62513a2fa69ed14348fac25528074ad7415abae5..5a50e3f011bac2d034c369cc30ff9b06
          }
          // Rate-limit sandbox starts across all experiments to avoid 429s (20 starts per 2 seconds)
          const rateLimiter = new StartRateLimiter(20, 2_000);
+diff --git a/dist/lib/agents/claude-code/run.mjs b/dist/lib/agents/claude-code/run.mjs
+index 4f675aa9647c8d6df415a8a15c9e47b3dc81b165..bcb0bee37bde80fad62eddc1b4e0eec3beea5dfb 100644
+--- a/dist/lib/agents/claude-code/run.mjs
++++ b/dist/lib/agents/claude-code/run.mjs
+@@ -51,6 +51,10 @@ export function buildClaudeCodeCliArgs(input) {
+   if (effort) {
+     cliArgs.push('--effort', String(effort));
+   }
++  const thinkingDisplay = input.agentOptions?.thinkingDisplay;
++  if (thinkingDisplay) {
++    cliArgs.push('--thinking-display', String(thinkingDisplay));
++  }
+   cliArgs.push(input.prompt);
+   return cliArgs;
+ }
 diff --git a/dist/lib/agents/codex/run.mjs b/dist/lib/agents/codex/run.mjs
 index 12ff2d6758852593b29792c9b7ad0e7fdb9b56d2..a6a3c5e0d3764cc0b83757988299b5ff32c35195 100644
 --- a/dist/lib/agents/codex/run.mjs

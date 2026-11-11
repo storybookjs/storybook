@@ -84,7 +84,8 @@ export const AGENT_CONFIG: Record<EvalAgent, AgentConfig> = {
   'claude-code': {
     agent: 'claude-code',
     model: 'opus',
-    agentOptions: { effort: 'high' },
+    // Without thinkingDisplay, headless Claude Code records empty thinking blocks.
+    agentOptions: { effort: 'high', thinkingDisplay: 'summarized' },
   },
   codex: {
     agent: 'codex',

@@ -16,3 +16,11 @@ declare module '@vercel/agent-eval/eval' {
   export const environment: JudgeSubject;
   export const transcript: JudgeSubject;
 }
+
+declare module '@vercel/agent-eval/dist/lib/agents/claude-code/run.mjs' {
+  export function buildClaudeCodeCliArgs(input: {
+    prompt: string;
+    model?: string;
+    agentOptions?: Record<string, unknown>;
+  }): string[];
+}

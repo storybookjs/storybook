@@ -57,6 +57,8 @@ node ecosystem-qa/collect.ts --results ecosystem-qa/results --version 11.0.0-bet
 node ecosystem-qa/file.ts --proposals ecosystem-qa/results/proposals.json --repo storybookjs/storybook --dry
 ```
 
+Only the workflow is dry by default, through its `dry` input. The filer itself files for real unless `--dry` is passed, so keep the flag on a local run.
+
 `collect.ts` calls `gh search issues`, so it needs a logged-in `gh`.
 
 To exercise collect and file without an agent or an API key, add `--fake`.

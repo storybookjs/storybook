@@ -1,6 +1,5 @@
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { configDefaults, mergeConfig } from 'vitest/config';
@@ -10,6 +9,8 @@ import { validateConfigurationFiles } from 'storybook/internal/common';
 import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 
+import { match } from 'micromatch';
+import { dirname, join } from 'pathe';
 import { glob } from 'tinyglobby';
 
 import { storybookTest } from './index.ts';
@@ -142,10 +143,18 @@ describe('test exclude', () => {
       '../../packages/ui/src/**/*.stories.tsx',
       'stories/**/*.stories.tsx',
     ]);
-    expect(test.exclude).toEqual([
-      '**/node_modules/**',
-      '../../packages/ui/src/**/node_modules/**',
-      '**/*.mdx',
+    expect(test.exclude).toEqual(['**/node_modules/**', '../../**/node_modules/**', '**/*.mdx']);
+  });
+
+  // Inside the root, `**/legacy/**` also excludes `legacy/**/*.stories.tsx`. The same must hold
+  // when the excluded directory is in the fixed part of a glob outside the root.
+  it('excludes a directory that is in the fixed part of a story glob outside the root', async () => {
+    useStories(['../../../packages/ui/legacy/**/*.stories.tsx']);
+
+    const { test } = await getPluginConfig(PACKAGE_ROOT, { exclude: ['**/legacy/**'] });
+
+    expect(match(['../../packages/ui/legacy/Old.stories.tsx'], test.exclude!)).toEqual([
+      '../../packages/ui/legacy/Old.stories.tsx',
     ]);
   });
 

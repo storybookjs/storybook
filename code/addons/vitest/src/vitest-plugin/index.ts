@@ -32,7 +32,7 @@ import {
 } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
-import { match, scan } from 'micromatch';
+import { match } from 'micromatch';
 import { join, normalize, relative, resolve, sep } from 'pathe';
 import path from 'pathe';
 import picocolors from 'picocolors';
@@ -184,16 +184,17 @@ const createComponentTestTransformPlugin = (presets: Presets, configDir: string)
 // Vitest matches excludes against paths relative to its root, and `**` never matches a `..`
 // segment. So `**/node_modules/**` does not apply to story globs outside the root, such as
 // `../../packages/ui/**/*.stories.tsx` in a monorepo, and Vitest crawls every `node_modules` below
-// them. Each exclude that starts with `**/` is also added under the base of such a glob.
+// them. Each exclude that starts with `**/` is also added after the leading `../` segments of such
+// a glob, so it matches every directory below them, as it does inside the root.
 const getTestExclude = (userExclude: string[] | undefined, includeStories: string[]) => {
   const exclude = userExclude ?? [...configDefaults.exclude];
 
-  const basesOutsideRoot = new Set(
-    includeStories.filter((story) => story.startsWith('../')).map((story) => scan(story).base)
+  const parentPrefixes = new Set(
+    includeStories.flatMap((story) => story.match(/^(?:\.\.\/)+/) ?? [])
   );
 
-  const rebasedExclude = [...basesOutsideRoot].flatMap((base) =>
-    exclude.filter((pattern) => pattern.startsWith('**/')).map((pattern) => `${base}/${pattern}`)
+  const rebasedExclude = [...parentPrefixes].flatMap((prefix) =>
+    exclude.filter((pattern) => pattern.startsWith('**/')).map((pattern) => `${prefix}${pattern}`)
   );
 
   return [...exclude, ...rebasedExclude];

@@ -108,7 +108,7 @@ export type Template = {
     ensureMinNodeVersion?: boolean;
   };
   /**
-   * Package names or glob patterns exempted from the sandbox `npmMinimalAgeGate`,
+   * Package names or glob patterns exempted from the sandbox `minimumReleaseAge`,
    * for templates that deliberately track a prerelease line. The gate still
    * applies to every other dependency, so only the packages named here can be
    * installed fresh.
@@ -626,7 +626,7 @@ export const baseTemplates = {
   'angular-cli/default-ts': {
     name: 'Angular CLI Latest (Webpack | TypeScript)',
     script:
-      'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+      'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=pnpm --ssr',
     modifications: {
       // The latest CLI scaffolds Angular 22 but omits @angular/forms and @angular/animations. Match
       // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
@@ -648,7 +648,7 @@ export const baseTemplates = {
   'angular-vite/21-ts': {
     name: 'Angular CLI v21 (Vite | TypeScript)',
     script:
-      'npx -p @angular/cli@21 ng new angular-v21 --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+      'npx -p @angular/cli@21 ng new angular-v21 --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=pnpm --ssr',
     modifications: {
       // Match the `^21.2.0` range `ng new` uses for the other @angular packages so every
       // @angular/* resolves to the same patch. An exact pin would leave forms a patch behind core.
@@ -671,7 +671,7 @@ export const baseTemplates = {
   'angular-vite/default-ts': {
     name: 'Angular CLI Latest (Vite | TypeScript)',
     script:
-      'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+      'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=pnpm --ssr',
     modifications: {
       // The latest CLI scaffolds Angular 22 but omits @angular/forms. Match the `^22` major
       // `ng new` uses for the other @angular packages so every @angular/* aligns.
@@ -897,7 +897,8 @@ const internalTemplates = {
   },
   'internal/server-webpack5': {
     name: 'Server Webpack5',
-    script: 'yarn init -y && echo "module.exports = {}" > webpack.config.js',
+    script:
+      'echo \'{ "name": "before-storybook" }\' > package.json && echo "module.exports = {}" > webpack.config.js',
     expected: {
       framework: '@storybook/server-webpack5',
       renderer: '@storybook/server',

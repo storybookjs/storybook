@@ -1,15 +1,16 @@
 import { mkdir, mkdtemp, readFile, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'pathe';
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 
 import {
   EXCLUDE_GLOBS,
-  STRIP_KEYS,
+  GITIGNORE_LOCKFILE_RULES,
+  assertPublishedTree,
   ensureLockfilePublishRules,
   sanitizePublishedSandboxes,
 } from './sanitize-published-sandbox.ts';
@@ -23,23 +24,28 @@ const exists = async (path: string) => {
   }
 };
 
-describe('STRIP_KEYS', () => {
-  it('contains exactly the documented host-local / verdaccio keys', () => {
-    // Mutating this list requires deliberate code review — if you are touching it,
-    // make sure the published sandboxes repository contract is intentional.
-    expect([...STRIP_KEYS]).toEqual([
-      'npmRegistryServer',
-      'unsafeHttpWhitelist',
-      'enableImmutableInstalls',
-      'enableMirror',
-      'logFilters',
-      'npmMinimalAgeGate',
-      'npmPreapprovedPackages',
-      'enableGlobalCache',
-      'checksumBehavior',
-    ]);
-  });
-});
+const GIT = 'git -c user.name=test -c user.email=test@example.com -c commit.gpgsign=false';
+
+/** The `.gitignore` of storybookjs/sandboxes on `next`, with the managed block for Yarn. */
+const SANDBOXES_GITIGNORE = `node_modules
+.angular
+
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+.pnp.*
+
+# Yarn files
+/**/.yarn/*
+!/**/.yarn/releases
+!/**/.yarn/plugins
+!/**/.yarn/sdks
+!/**/.yarn/versions
+
+# Managed by publish-sandboxes: publish only the before-storybook lockfile
+yarn.lock
+!**/before-storybook/yarn.lock
+`;
 
 describe('EXCLUDE_GLOBS', () => {
   it('targets only known install / build artifacts', () => {
@@ -60,55 +66,6 @@ describe('sanitizePublishedSandboxes', () => {
 
   beforeEach(async () => {
     root = await mkdtemp(join(tmpdir(), 'sanitize-sandbox-'));
-  });
-
-  afterEach(async () => {
-    // tmpdir cleanup is best-effort; not strictly required for correctness
-  });
-
-  it('strips every STRIP_KEYS entry from after-storybook/.yarnrc.yml', async () => {
-    const afterDir = join(root, 'react-vite', 'default-ts', 'after-storybook');
-    await mkdir(afterDir, { recursive: true });
-    const yarnrc = [
-      'nodeLinker: node-modules',
-      'npmRegistryServer: "http://localhost:6001/"',
-      'unsafeHttpWhitelist: "localhost"',
-      'enableImmutableInstalls: false',
-      'enableMirror: false',
-      'logFilters: []',
-      'npmMinimalAgeGate: 0',
-      'npmPreapprovedPackages: ["next", "@next/*"]',
-      'enableGlobalCache: true',
-      'checksumBehavior: ignore',
-      '',
-    ].join('\n');
-    await writeFile(join(afterDir, '.yarnrc.yml'), yarnrc);
-
-    const result = await sanitizePublishedSandboxes(root);
-
-    expect(result.filteredYarnrcCount).toBe(1);
-    expect(result.strippedKeyCount).toBe(STRIP_KEYS.length);
-
-    const sanitized = await readFile(join(afterDir, '.yarnrc.yml'), 'utf-8');
-    for (const key of STRIP_KEYS) {
-      expect(sanitized).not.toContain(key);
-    }
-    // Non-stripped keys are preserved
-    expect(sanitized).toContain('nodeLinker');
-  });
-
-  it('leaves before-storybook/.yarnrc.yml untouched', async () => {
-    const beforeDir = join(root, 'react-vite', 'default-ts', 'before-storybook');
-    await mkdir(beforeDir, { recursive: true });
-    const yarnrc = ['nodeLinker: node-modules', 'enableGlobalCache: true', ''].join('\n');
-    await writeFile(join(beforeDir, '.yarnrc.yml'), yarnrc);
-
-    const result = await sanitizePublishedSandboxes(root);
-
-    expect(result.filteredYarnrcCount).toBe(0);
-    const preserved = await readFile(join(beforeDir, '.yarnrc.yml'), 'utf-8');
-    expect(preserved).toContain('enableGlobalCache');
-    expect(preserved).toContain('nodeLinker');
   });
 
   it('removes EXCLUDE_GLOBS matches from the tree', async () => {
@@ -132,30 +89,25 @@ describe('sanitizePublishedSandboxes', () => {
     expect(await exists(join(afterDir, 'README.md'))).toBe(true);
   });
 
-  it('writes an empty file when stripping leaves no keys', async () => {
-    const afterDir = join(root, 'svelte-vite', 'default-ts', 'after-storybook');
+  it('leaves the pnpm config of after-storybook as init wrote it', async () => {
+    const afterDir = join(root, 'react-vite', 'default-ts', 'after-storybook');
     await mkdir(afterDir, { recursive: true });
-    await writeFile(join(afterDir, '.yarnrc.yml'), 'npmRegistryServer: "http://localhost:6001/"\n');
+    const config = 'packages:\n  - .\nminimumReleaseAge: 1440\nallowBuilds:\n  esbuild: true\n';
+    await writeFile(join(afterDir, 'pnpm-workspace.yaml'), config);
 
     await sanitizePublishedSandboxes(root);
 
-    const sanitized = await readFile(join(afterDir, '.yarnrc.yml'), 'utf-8');
-    expect(sanitized).toBe('');
+    expect(await readFile(join(afterDir, 'pnpm-workspace.yaml'), 'utf-8')).toBe(config);
   });
 
   it('is idempotent — a second run is a no-op', async () => {
-    const afterDir = join(root, 'react-vite', 'default-ts', 'after-storybook');
-    await mkdir(afterDir, { recursive: true });
-    await writeFile(
-      join(afterDir, '.yarnrc.yml'),
-      'nodeLinker: node-modules\nnpmRegistryServer: "http://localhost:6001/"\n'
-    );
+    await mkdir(join(root, 'react-vite', 'default-ts', 'after-storybook', 'node_modules'), {
+      recursive: true,
+    });
 
     await sanitizePublishedSandboxes(root);
     const second = await sanitizePublishedSandboxes(root);
 
-    expect(second.filteredYarnrcCount).toBe(0);
-    expect(second.strippedKeyCount).toBe(0);
     expect(second.removedPaths).toBe(0);
   });
 });
@@ -165,10 +117,15 @@ describe('ensureLockfilePublishRules', () => {
 
   beforeEach(async () => {
     root = await mkdtemp(join(tmpdir(), 'sandbox-gitignore-'));
+    await execaCommand('git init -q .', { cwd: root });
   });
 
+  const write = async (file: string, contents = '# lockfile\n') => {
+    await mkdir(dirname(join(root, file)), { recursive: true });
+    await writeFile(join(root, file), contents);
+  };
+
   const stagedFiles = async () => {
-    await execaCommand('git init -q .', { cwd: root });
     await execaCommand('git add .', { cwd: root });
     const { stdout } = await execaCommand('git diff --cached --name-only', { cwd: root });
     return stdout.split('\n').filter(Boolean);
@@ -176,21 +133,30 @@ describe('ensureLockfilePublishRules', () => {
 
   const seedSandbox = async () => {
     for (const dir of ['before-storybook', 'after-storybook']) {
-      await mkdir(join(root, 'angular-cli-default-ts', dir), { recursive: true });
-      await writeFile(join(root, 'angular-cli-default-ts', dir, 'yarn.lock'), '# lockfile\n');
+      await write(`angular-cli/default-ts/${dir}/pnpm-lock.yaml`);
     }
+    // A stray Yarn lockfile must not be published either.
+    await write('angular-cli/default-ts/after-storybook/yarn.lock');
   };
 
-  it('publishes the before-storybook lockfile and still withholds the after-storybook one', async () => {
-    // The sandboxes repository ignores lockfiles wholesale.
-    await writeFile(join(root, '.gitignore'), 'node_modules\n\nyarn.lock\npackage-lock.json\n');
+  it('publishes exactly the before-storybook pnpm lockfile', () => {
+    expect([...GITIGNORE_LOCKFILE_RULES]).toEqual([
+      'yarn.lock',
+      'pnpm-lock.yaml',
+      '!**/before-storybook/pnpm-lock.yaml',
+    ]);
+  });
+
+  it('publishes the before-storybook lockfile and withholds every after-storybook one', async () => {
+    await writeFile(join(root, '.gitignore'), SANDBOXES_GITIGNORE);
     await seedSandbox();
 
     await ensureLockfilePublishRules(root);
 
     const staged = await stagedFiles();
-    expect(staged).toContain('angular-cli-default-ts/before-storybook/yarn.lock');
-    expect(staged).not.toContain('angular-cli-default-ts/after-storybook/yarn.lock');
+    expect(staged).toContain('angular-cli/default-ts/before-storybook/pnpm-lock.yaml');
+    expect(staged).not.toContain('angular-cli/default-ts/after-storybook/pnpm-lock.yaml');
+    expect(staged).not.toContain('angular-cli/default-ts/after-storybook/yarn.lock');
   });
 
   it('withholds the after-storybook lockfile even when nothing was ignored before', async () => {
@@ -199,18 +165,57 @@ describe('ensureLockfilePublishRules', () => {
     await ensureLockfilePublishRules(root);
 
     const staged = await stagedFiles();
-    expect(staged).toContain('angular-cli-default-ts/before-storybook/yarn.lock');
-    expect(staged).not.toContain('angular-cli-default-ts/after-storybook/yarn.lock');
+    expect(staged).toContain('angular-cli/default-ts/before-storybook/pnpm-lock.yaml');
+    expect(staged).not.toContain('angular-cli/default-ts/after-storybook/pnpm-lock.yaml');
+  });
+
+  it('replaces the managed Yarn block instead of adding a second one', async () => {
+    await writeFile(join(root, '.gitignore'), SANDBOXES_GITIGNORE);
+
+    expect(await ensureLockfilePublishRules(root)).toBe(true);
+
+    const contents = await readFile(join(root, '.gitignore'), 'utf-8');
+    expect(contents).toBe(
+      SANDBOXES_GITIGNORE.replace(
+        'yarn.lock\n!**/before-storybook/yarn.lock\n',
+        'yarn.lock\npnpm-lock.yaml\n!**/before-storybook/pnpm-lock.yaml\n'
+      )
+    );
+  });
+
+  it('moves the managed block to the end, where it takes precedence', async () => {
+    await writeFile(
+      join(root, '.gitignore'),
+      '# Managed by publish-sandboxes: publish only the before-storybook lockfile\nyarn.lock\n!**/before-storybook/yarn.lock\n\npnpm-lock.yaml\n'
+    );
+
+    await ensureLockfilePublishRules(root);
+
+    expect(await readFile(join(root, '.gitignore'), 'utf-8')).toBe(
+      'pnpm-lock.yaml\n\n# Managed by publish-sandboxes: publish only the before-storybook lockfile\nyarn.lock\npnpm-lock.yaml\n!**/before-storybook/pnpm-lock.yaml\n'
+    );
   });
 
   it('is idempotent', async () => {
-    await writeFile(join(root, '.gitignore'), 'yarn.lock\n');
+    await writeFile(join(root, '.gitignore'), SANDBOXES_GITIGNORE);
 
-    expect(await ensureLockfilePublishRules(root)).toBe(true);
+    await ensureLockfilePublishRules(root);
     const afterFirst = await readFile(join(root, '.gitignore'), 'utf-8');
 
     expect(await ensureLockfilePublishRules(root)).toBe(false);
     expect(await readFile(join(root, '.gitignore'), 'utf-8')).toBe(afterFirst);
+  });
+
+  it('keeps a Yarn lockfile tracked in a folder that is not regenerated', async () => {
+    await writeFile(join(root, '.gitignore'), SANDBOXES_GITIGNORE);
+    await write('nextjs/13-ts/before-storybook/yarn.lock');
+    await execaCommand('git add .', { cwd: root });
+    await execaCommand(`${GIT} commit -qm seed`, { cwd: root });
+    await write('nextjs/13-ts/before-storybook/yarn.lock', '# changed\n');
+
+    await ensureLockfilePublishRules(root);
+
+    expect(await stagedFiles()).toContain('nextjs/13-ts/before-storybook/yarn.lock');
   });
 
   it('keeps the repository’s existing ignore rules', async () => {
@@ -221,5 +226,84 @@ describe('ensureLockfilePublishRules', () => {
     const contents = await readFile(join(root, '.gitignore'), 'utf-8');
     expect(contents).toContain('node_modules');
     expect(contents).toContain('.angular');
+  });
+});
+
+describe('assertPublishedTree', () => {
+  const TEMPLATE = 'react-vite/default-ts';
+  let root: string;
+
+  beforeEach(async () => {
+    root = await mkdtemp(join(tmpdir(), 'sandbox-publish-'));
+    await execaCommand('git init -q .', { cwd: root });
+    await write(`${TEMPLATE}/before-storybook/package.json`, '{"packageManager":"pnpm@10.34.9"}');
+    await write(
+      `${TEMPLATE}/before-storybook/pnpm-lock.yaml`,
+      "lockfileVersion: '9.0'\npackages:\n  vite@8.3.5:\n    resolution: {integrity: sha512-abc}\n"
+    );
+    await write(`${TEMPLATE}/after-storybook/README.md`, '# React\n');
+    await write(`${TEMPLATE}/after-storybook/pnpm-lock.yaml`);
+    await writeFile(join(root, '.gitignore'), SANDBOXES_GITIGNORE);
+    await ensureLockfilePublishRules(root);
+  });
+
+  const write = async (file: string, contents = '# lockfile\n') => {
+    await mkdir(dirname(join(root, file)), { recursive: true });
+    await writeFile(join(root, file), contents);
+  };
+
+  const stageAndAssert = async (templates = [TEMPLATE]) => {
+    await execaCommand('git add .', { cwd: root });
+    return assertPublishedTree(root, templates);
+  };
+
+  it('accepts a template whose lockfile is tracked and installable from npm', async () => {
+    await expect(stageAndAssert()).resolves.toBeUndefined();
+  });
+
+  it('refuses a before-storybook lockfile that git would drop', async () => {
+    await writeFile(join(root, '.gitignore'), SANDBOXES_GITIGNORE);
+
+    await expect(stageAndAssert()).rejects.toThrow(
+      `${TEMPLATE}/before-storybook/pnpm-lock.yaml is not tracked`
+    );
+  });
+
+  it('refuses a file that points at the local registry', async () => {
+    await write(`${TEMPLATE}/after-storybook/.npmrc`, 'registry=http://localhost:6001/\n');
+
+    await expect(stageAndAssert()).rejects.toThrow(
+      `${TEMPLATE}/after-storybook/.npmrc points at the local registry`
+    );
+  });
+
+  it('refuses a before-storybook lockfile that pins tarball URLs', async () => {
+    await write(
+      `${TEMPLATE}/before-storybook/pnpm-lock.yaml`,
+      "lockfileVersion: '9.0'\npackages:\n  vite@8.3.5:\n    resolution: {integrity: sha512-abc, tarball: https://registry.npmjs.org/vite/-/vite-8.3.5.tgz}\n"
+    );
+
+    await expect(stageAndAssert()).rejects.toThrow(
+      `${TEMPLATE}/before-storybook/pnpm-lock.yaml has tarball URLs`
+    );
+  });
+
+  it('refuses a folder with both a Yarn and a pnpm lockfile', async () => {
+    // Tracked from an earlier publish, which ignored rules do not untrack.
+    await write(`${TEMPLATE}/before-storybook/yarn.lock`);
+    await execaCommand(`git add -f ${TEMPLATE}/before-storybook/yarn.lock`, { cwd: root });
+
+    await expect(stageAndAssert()).rejects.toThrow(
+      `${TEMPLATE}/before-storybook tracks both yarn.lock and pnpm-lock.yaml`
+    );
+  });
+
+  it('only checks the templates this run publishes', async () => {
+    await write(
+      'nextjs/13-ts/after-storybook/.yarnrc.yml',
+      'npmRegistryServer: http://localhost:6001\n'
+    );
+
+    await expect(stageAndAssert()).resolves.toBeUndefined();
   });
 });

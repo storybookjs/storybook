@@ -55,7 +55,7 @@ async function readYaml(path: string): Promise<Record<string, any>> {
 
 const workspaceConfigPath = (cwd: string) => join(cwd, 'pnpm-workspace.yaml');
 
-async function updateWorkspaceConfig(
+export async function updateWorkspaceConfig(
   cwd: string,
   update: (config: Record<string, any>) => Record<string, any>
 ) {
@@ -70,7 +70,7 @@ async function getMonorepoPackageManager(): Promise<string> {
 
 // An older pnpm on PATH ignores the `packageManager` pin and silently drops settings it does not
 // know, such as the age gate.
-async function assertPinnedPnpm(cwd: string) {
+export async function assertPinnedPnpm(cwd: string) {
   const expected = (await getMonorepoPackageManager()).replace(/^pnpm@/, '').split('+')[0];
   const { stdout } = await execaCommand('pnpm --version', { cwd, shell: true });
   const actual = stdout.trim();
@@ -105,7 +105,7 @@ export const installPnpm = async ({
   await updateWorkspaceConfig(cwd, (config) => ({
     ...config,
     packages: ['.'],
-    // Matches the flat node_modules of the published sandboxes, which are Yarn projects.
+    // Matches the published sandboxes.
     nodeLinker: 'hoisted',
     minimumReleaseAge: SANDBOX_MINIMUM_RELEASE_AGE,
     minimumReleaseAgeExclude: Array.from(
@@ -233,8 +233,7 @@ export const addWorkaroundResolutions = async ({
   await writeJson(packageJsonPath, packageJson);
 };
 
-// pnpm ignores a `registry` key in pnpm-workspace.yaml. Each run republishes the same versions
-// with new contents, which pnpm's metadata cache would hide.
+// pnpm ignores a `registry` key in pnpm-workspace.yaml.
 export const configurePnpmForVerdaccio = async ({ cwd, dryRun, debug }: SandboxPmOptions) => {
   if (dryRun) {
     return;
@@ -249,6 +248,14 @@ export const configurePnpmForVerdaccio = async ({ cwd, dryRun, debug }: SandboxP
     `${existing}${existing && !existing.endsWith('\n') ? '\n' : ''}registry=${LOCAL_REGISTRY_URL}\n`
   );
 
+  await dropCachedLocalRegistryMetadata({ cwd, debug });
+};
+
+// Each run republishes the same versions with new contents, which pnpm's metadata cache would hide.
+export async function dropCachedLocalRegistryMetadata({
+  cwd,
+  debug,
+}: Pick<SandboxPmOptions, 'cwd' | 'debug'>) {
   const patterns = LOCALLY_PUBLISHED_PACKAGE_PATTERNS.map((pattern) => `'${pattern}'`).join(' ');
   await exec(
     [
@@ -264,7 +271,7 @@ export const configurePnpmForVerdaccio = async ({ cwd, dryRun, debug }: SandboxP
       errorMessage: `🚨 Dropping cached registry metadata failed`,
     }
   );
-};
+}
 
 // `file:` installs each package's dependencies and peers in the sandbox, where `link:` would
 // resolve them from the monorepo's `node_modules`. `syncLinkedPackages` picks up a new build.

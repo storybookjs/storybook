@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { join } from 'path';
+import { join } from 'pathe';
 
 import yml from 'yaml';
 
@@ -24,14 +24,14 @@ export const LOCALLY_PUBLISHED_PACKAGE_PATTERNS = [
  *
  * Merges with whatever is already allowed, so a template that names its own prerelease
  * packages does not lose them. `extraPatterns` carries the template's `minAgeGateExemptions`
- * for dependencies that only `storybook init` adds, which the published `.yarnrc.yml` cannot
- * know about.
+ * for dependencies that only `storybook init` adds, which the published `pnpm-workspace.yaml`
+ * cannot know about.
  */
 export async function preapproveLocallyPublishedPackages(
   cwd: string,
   extraPatterns: string[] = []
 ) {
-  const configPath = join(cwd, '.yarnrc.yml');
+  const configPath = join(cwd, 'pnpm-workspace.yaml');
 
   let config: Record<string, unknown> = {};
   try {
@@ -40,11 +40,11 @@ export async function preapproveLocallyPublishedPackages(
     // No config yet; start from scratch.
   }
 
-  const existing = Array.isArray(config.npmPreapprovedPackages)
-    ? (config.npmPreapprovedPackages as string[])
+  const existing = Array.isArray(config.minimumReleaseAgeExclude)
+    ? (config.minimumReleaseAgeExclude as string[])
     : [];
 
-  config.npmPreapprovedPackages = Array.from(
+  config.minimumReleaseAgeExclude = Array.from(
     new Set([...existing, ...LOCALLY_PUBLISHED_PACKAGE_PATTERNS, ...extraPatterns])
   );
 

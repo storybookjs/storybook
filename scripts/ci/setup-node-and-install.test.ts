@@ -5,8 +5,6 @@ import { join } from 'pathe';
 import { describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 
-import { PUBLISHED_SANDBOX_PACKAGE_MANAGER } from '../sandbox/utils/yarn.ts';
-
 const repoRoot = join(import.meta.dirname, '../..');
 const ACTION = '.github/actions/setup-node-and-install';
 const PACKAGE_MANAGERS = `${ACTION}/package-managers`;
@@ -56,8 +54,10 @@ describe(PACKAGE_MANAGERS, () => {
     expect(pins.filter(([, pin]) => pin !== packageManager)).toEqual([]);
   });
 
-  it('locks the Yarn release that the published sandboxes pin', () => {
-    expect(`yarn@${locked('@yarnpkg/cli-dist').version}`).toBe(PUBLISHED_SANDBOX_PACKAGE_MANAGER);
+  it('locks the Yarn release that server-kitchen-sink pins', () => {
+    expect(`yarn@${locked('@yarnpkg/cli-dist').version}`).toBe(
+      readJson('test-storybooks/server-kitchen-sink/package.json').packageManager
+    );
   });
 
   it('locks the exact versions its package.json names', () => {

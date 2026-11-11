@@ -56,6 +56,24 @@ const publishedSandbox = (yarnConfig: Record<string, unknown> = {}) => {
   );
 };
 
+const pnpmPublishedSandbox = () => {
+  vol.writeFileSync(
+    `${SANDBOX}/package.json`,
+    JSON.stringify({ name: 'before-storybook', packageManager: PNPM })
+  );
+  vol.writeFileSync(`${SANDBOX}/pnpm-lock.yaml`, "lockfileVersion: '9.0'\n");
+  vol.writeFileSync(
+    `${SANDBOX}/pnpm-workspace.yaml`,
+    yml.stringify({
+      ignoredBuiltDependencies: ['sharp'],
+      packages: ['.'],
+      nodeLinker: 'hoisted',
+      minimumReleaseAge: 10080,
+      minimumReleaseAgeExclude: ['next', '@next/*'],
+    })
+  );
+};
+
 const readJson = (path: string) => JSON.parse(vol.readFileSync(path, 'utf-8') as string);
 const readWorkspaceConfig = () =>
   yml.parse(vol.readFileSync(`${SANDBOX}/pnpm-workspace.yaml`, 'utf-8') as string);
@@ -142,6 +160,20 @@ describe('installPnpm', () => {
     expect(readWorkspaceConfig().shellEmulator).toBe(true);
   });
 
+  it('keeps the exemptions and settings of a sandbox published with pnpm', async () => {
+    pnpmPublishedSandbox();
+
+    await install();
+
+    expect(readWorkspaceConfig()).toMatchObject({
+      ignoredBuiltDependencies: ['sharp'],
+      minimumReleaseAge: 10080,
+    });
+    expect(readWorkspaceConfig().minimumReleaseAgeExclude).toEqual(
+      expect.arrayContaining(['next', '@next/*', 'storybook'])
+    );
+  });
+
   it('refuses a pnpm that would ignore the pinned version and drop the age gate', async () => {
     publishedSandbox();
     vi.mocked(execaCommand).mockResolvedValue({ stdout: '9.6.0\n' } as never);
@@ -166,6 +198,17 @@ describe('importYarnLockfile', () => {
 
     expect(vol.existsSync(`${SANDBOX}/yarn.lock`)).toBe(false);
     expect(vol.existsSync(`${SANDBOX}/.yarnrc.yml`)).toBe(false);
+  });
+});
+
+describe('importYarnLockfile on a sandbox published with pnpm', () => {
+  it('keeps the published lockfile and imports nothing', async () => {
+    pnpmPublishedSandbox();
+
+    await importYarnLockfile({ cwd: SANDBOX, dryRun: false, debug: false });
+
+    expect(commands()).toEqual([]);
+    expect(vol.readFileSync(`${SANDBOX}/pnpm-lock.yaml`, 'utf-8')).toBe("lockfileVersion: '9.0'\n");
   });
 });
 

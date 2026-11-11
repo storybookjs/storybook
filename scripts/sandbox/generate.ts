@@ -24,25 +24,24 @@ import {
   BEFORE_DIR_NAME,
   LOCAL_REGISTRY_URL,
   REPROS_DIRECTORY,
+  ROOT_DIRECTORY,
   SCRIPT_TIMEOUT,
 } from '../utils/constants.ts';
 import { esMain } from '../utils/esmain.ts';
 import { dropInheritedPnpmConfig } from '../utils/package-manager-env.ts';
 import type { OptionValues } from '../utils/options.ts';
 import { createOptions } from '../utils/options.ts';
-import { getStackblitzUrl, renderTemplate } from './utils/template.ts';
+import { assertPinnedPnpm, dropCachedLocalRegistryMetadata } from '../utils/pnpm.ts';
 import {
-  BEFORE_SANDBOX_MIN_AGE_GATE,
   BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS,
-  ensureNpmSupportsMinReleaseAge,
   PUBLISHED_SANDBOX_USER_AGENT,
-  PublishedSandboxYarnError,
-  localizeYarnConfigFiles,
+  ensureNpmSupportsMinReleaseAge,
+  finishAfterStorybook,
   preapproveLocallyPublishedPackages,
   refreshBeforeStorybookLockfile,
-  setupYarn,
   writeScaffoldNpmrc,
-} from './utils/yarn.ts';
+} from './utils/package-manager.ts';
+import { getStackblitzUrl, renderTemplate } from './utils/template.ts';
 
 const isCI = process.env.GITHUB_ACTIONS === 'true' || process.env.CI === 'true';
 
@@ -60,34 +59,6 @@ const sbInit = async (
   const env = { STORYBOOK_DISABLE_TELEMETRY: 'true', ...envVars, CI: 'true' };
   const fullFlags = ['--yes', ...(flags || [])];
   await runCommand(`${sbCliBinaryPath} ${fullFlags.join(' ')}`, { cwd, env }, debug);
-};
-
-type LocalRegistryProps = {
-  action: () => Promise<void>;
-  cwd: string;
-  env: Record<string, any>;
-  debug: boolean;
-};
-
-const withLocalRegistry = async ({ action, cwd, env, debug }: LocalRegistryProps) => {
-  const prevUrl = 'https://registry.npmjs.org/';
-  let error;
-  try {
-    console.log(`📦 Configuring local registry: ${LOCAL_REGISTRY_URL}`);
-    // NOTE: for some reason yarn prefers the npm registry in
-    // local development, so always use npm
-    await runCommand(`npm config set registry ${LOCAL_REGISTRY_URL} -g`, { cwd, env }, debug);
-    await action();
-  } catch (e) {
-    error = e;
-  } finally {
-    console.log(`📦 Restoring registry: ${prevUrl}`);
-    await runCommand(`npm config set registry ${prevUrl} -g`, { cwd, env }, debug);
-
-    if (error) {
-      throw error;
-    }
-  }
 };
 
 const emptyDir = async (dir: string): Promise<void> => {
@@ -142,20 +113,23 @@ const addStorybook = async ({
     // allowlisted by name rather than the gate being switched off.
     await preapproveLocallyPublishedPackages(tmpDir);
 
-    // Adding Storybook necessarily rewrites the lockfile this template now
-    // ships, and `sbInit` forces `CI=true`, which makes Yarn immutable by
-    // default. Without this the install aborts, nothing is linked, and the
-    // addon postinstall hooks then fail on the missing node_modules state.
-    // Set it here rather than relying on the generate-sandboxes workflow env,
-    // so a local run behaves the same as CI.
-    const sbInitEnv = { ...env, YARN_ENABLE_IMMUTABLE_INSTALLS: 'false' };
+    // `sbInit` forces `CI=true`, which makes pnpm install frozen, but adding
+    // Storybook changes the manifest. The registry is set for this step only,
+    // so the before-storybook lockfile never resolves through the local one.
+    const sbInitEnv = {
+      ...env,
+      npm_config_frozen_lockfile: 'false',
+      ...(localRegistry && { npm_config_registry: LOCAL_REGISTRY_URL }),
+    };
 
     await sbInit(
       tmpDir,
       sbInitEnv,
-      [...flags, `--package-manager=${PackageManagerName.YARN2}`],
+      [...flags, `--package-manager=${PackageManagerName.PNPM}`],
       debug
     );
+
+    await finishAfterStorybook(tmpDir);
   } catch (e) {
     console.log('error', e);
     await rm(tmpDir, { recursive: true, force: true });
@@ -243,6 +217,11 @@ const runGenerators = async (
   debug = false
 ) => {
   await ensureNpmSupportsMinReleaseAge();
+  await assertPinnedPnpm(ROOT_DIRECTORY);
+
+  if (localRegistry) {
+    await dropCachedLocalRegistryMetadata({ cwd: ROOT_DIRECTORY, debug });
+  }
 
   if (debug) {
     console.log('Debug mode enabled. Verbose logs will be printed to the console.');
@@ -270,33 +249,15 @@ const runGenerators = async (
           console.log(`🧬 Generating ${name} (${dirName})`);
           await emptyDir(baseDir);
 
-          // We do the creation inside a temp dir to avoid yarn container problems
           createBaseDir = await temporaryDirectory();
-          try {
-            await setupYarn({ cwd: createBaseDir });
-          } catch (error) {
-            const message = `❌ Failed to setup yarn in template: ${name} (${dirName})`;
-            if (isCI) {
-              ghActions.error(dedent`${message}
-                ${formatCommandError(error)}`);
-            } else {
-              console.error(message);
-              console.error(error);
-            }
-            throw new Error(message, {
-              cause: error,
-            });
-          }
-
           const createBeforeDir = join(createBaseDir, BEFORE_DIR_NAME);
 
-          // Age-gate scaffold installs (Yarn + npm). Most templates skip-install;
-          // CRA and similar still install under npm and need the npm knob.
+          // Most templates skip the install; CRA and similar still install
+          // with npm, which this gates.
           const scaffoldEnv = {
             ...env,
             CI: 'true',
             npm_config_user_agent: PUBLISHED_SANDBOX_USER_AGENT,
-            YARN_NPM_MINIMAL_AGE_GATE: BEFORE_SANDBOX_MIN_AGE_GATE,
             NPM_CONFIG_MIN_RELEASE_AGE: String(BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS),
           };
 
@@ -343,20 +304,7 @@ const runGenerators = async (
             throw new BeforeScriptExecutionError(message, { cause: error });
           }
 
-          await localizeYarnConfigFiles(createBaseDir, createBeforeDir);
-
-          // Refresh the lockfile to a Yarn 4 one with a 7-day npmMinimalAgeGate
-          // so consumers who clone the published sandbox install a reproducible,
-          // non-freshly-quarantined dependency tree.
-          //
-          // Stable templates (no allowlist): any failure except a Yarn version
-          // mismatch degrades gracefully — the template's original lockfile is
-          // already gone, but the consumer can still install from package.json.
-          //
-          // Prerelease templates (allowlist set): a failure here means a package
-          // published in lockstep with the prerelease is still quarantined and
-          // needs adding to the allowlist. That must stay fatal; soft-failing
-          // would ship a "prerelease" sandbox that no longer tracks a prerelease.
+          // A template that cannot be resolved under the gate keeps its last published pair.
           try {
             await refreshBeforeStorybookLockfile({
               cwd: createBeforeDir,
@@ -364,26 +312,15 @@ const runGenerators = async (
               minAgeGateExemptions,
             });
           } catch (error) {
-            if (minAgeGateExemptions?.length || error instanceof PublishedSandboxYarnError) {
-              const message = `❌ Failed to refresh Yarn 4 lockfile for template: ${name} (${dirName})`;
-              if (isCI) {
-                ghActions.error(dedent`${message}
-                  ${formatCommandError(error)}`);
-              } else {
-                console.error(message);
-                console.error(error);
-              }
-              throw error;
-            }
-
-            const message = `⚠️ Failed to refresh Yarn 4 lockfile for template: ${name} (${dirName}); shipping template default state`;
+            const message = `❌ Failed to refresh the pnpm lockfile for template: ${name} (${dirName})`;
             if (isCI) {
-              ghActions.warning(dedent`${message}
+              ghActions.error(dedent`${message}
                 ${formatCommandError(error)}`);
             } else {
-              console.warn(message);
-              console.warn(error);
+              console.error(message);
+              console.error(error);
             }
+            throw error;
           }
 
           // Now move the created before dir into it's final location and add storybook
@@ -577,22 +514,7 @@ if (esMain(import.meta.url)) {
     .option('--debug', 'Print all the logs to the console')
     .option('--local-registry', 'Use local registry', false)
     .action((optionValues) => {
-      let result;
-      if (optionValues.localRegistry) {
-        result = withLocalRegistry({
-          debug: optionValues.debug,
-
-          action: async () => {
-            await generate(optionValues);
-          },
-          cwd: process.cwd(),
-          env: {},
-        });
-      } else {
-        result = generate(optionValues);
-      }
-
-      result
+      generate(optionValues)
         .catch((e) => {
           console.error(e);
           process.exit(1);

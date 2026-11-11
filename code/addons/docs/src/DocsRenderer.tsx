@@ -45,10 +45,27 @@ class ErrorBoundary extends Component<
   }
 }
 
+// Keys are handed out from a single counter, so an unchanged key means "the same docs page".
+let nextTreeKey = 0;
+
 export class DocsRenderer<TRenderer extends Renderer> {
   public render: DocsRenderFunction<TRenderer>;
 
   public unmount: (element: HTMLElement) => void;
+
+  /**
+   * Key of the error boundary around the docs tree. It stays the same for re-renders of this docs
+   * page, so React reconciles the tree (and inline stories keep their state) instead of remounting
+   * it. It changes when another docs page takes over, and after the boundary caught an error so the
+   * next render starts with a clean `hasError` state.
+   */
+  private treeKey = nextTreeKey++;
+
+  /**
+   * The docs page currently rendered. A docs render creates its `DocsContext` once and passes the
+   * same instance to every re-render, so a different context means another page took over.
+   */
+  private mountedContext?: DocsContextProps<TRenderer>;
 
   constructor() {
     this.render = async (
@@ -56,6 +73,11 @@ export class DocsRenderer<TRenderer extends Renderer> {
       docsParameter: Parameters,
       element: HTMLElement
     ): Promise<void> => {
+      if (this.mountedContext !== context) {
+        this.mountedContext = context;
+        this.treeKey = nextTreeKey++;
+      }
+
       const components = {
         ...defaultComponents,
         ...docsParameter?.components,
@@ -66,9 +88,15 @@ export class DocsRenderer<TRenderer extends Renderer> {
       return new Promise((resolve, reject) => {
         import('@mdx-js/react')
           .then(({ MDXProvider }) =>
-            // We use a `key={}` here to reset the `hasError` state each time we render ErrorBoundary
             renderElement(
-              <ErrorBoundary showException={reject} key={Math.random()}>
+              <ErrorBoundary
+                showException={(err) => {
+                  // Render a new boundary next time, so it can recover from the error.
+                  this.treeKey = nextTreeKey++;
+                  reject(err);
+                }}
+                key={this.treeKey}
+              >
                 <MDXProvider components={components}>
                   <TDocs context={context} docsParameter={docsParameter} />
                 </MDXProvider>

@@ -30,6 +30,16 @@ export interface IssueHit {
   state: 'open' | 'closed';
 }
 
+export const QA_LABEL = 'internal-qa';
+
+export interface QaIssue extends IssueHit {
+  body: string;
+}
+
+/** Return the issues whose body carries the fingerprint, in the order given. */
+export const hitsFor = (issues: QaIssue[], fingerprint: string): IssueHit[] =>
+  issues.filter((issue) => issue.body.includes(fingerprint));
+
 const OS_ORDER: Record<Os, number> = { linux: 0, macos: 1, windows: 2 };
 
 const byPrimaryOrder = (a: LoadedResult, b: LoadedResult): number =>
@@ -224,7 +234,7 @@ export const toProposal = (group: FindingGroup, hits: IssueHit[], runUrl: string
   const line = versionLine(version);
   const [major = line] = line.split('.');
   const allWindows = group.occurrences.every(({ result }) => result.request.os === 'windows');
-  const labels = ['bug', 'internal-qa', `upgrade:${line}`];
+  const labels = ['bug', QA_LABEL, `upgrade:${line}`];
   if (allWindows && group.finding.windowsOnly) {
     labels.push('windows');
   }

@@ -61,7 +61,7 @@ node ecosystem-qa/file.ts --proposals ecosystem-qa/results/proposals.json --repo
 
 Only the workflow is dry by default, through its `dry` input. The filer itself files for real unless `--dry` is passed, so keep the flag on a local run.
 
-`collect.ts` calls `gh search issues`, so it needs a logged-in `gh`.
+`collect.ts` lists the issues that carry the `internal-qa` label, so it needs a logged-in `gh`.
 
 To exercise collect and file without an agent or an API key, add `--fake`.
 It writes a canned result with one finding and a real PNG and GIF made by the evidence tools, recorded as `fake: true` at no cost:
@@ -95,6 +95,7 @@ That is `ECOSYSTEM_QA_PUSH_TOKEN` for `storybookjs` and `ECOSYSTEM_QA_PUSH_TOKEN
 The upgraded state lands under `refs/qa/`, never as a branch: a branch push would start the catalog repo's own workflows and run the agent's commits with that repo's secrets before anyone read the diff.
 The issue body carries the fetch command, and the one push that turns the ref into a branch once a person has looked at it.
 A fingerprint that is already on an issue becomes a comment, and one on a `qa:known` issue is suppressed.
+An issue counts as already filed only while it carries the `internal-qa` label.
 It checks first that the milestone is open and every label exists, and files nothing otherwise.
 A proposal that fails does not stop the others; the job writes a filed and failed table to the Step Summary and fails at the end.
 Rerunning the job is safe: a filed fingerprint and a repeated comment are skipped, and evidence already on `qa-assets` makes no new commit.

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { missingPrerequisites, planFiling, renderFilingReport, type FilingStep } from './filing.ts';
+import {
+  alreadyFiled,
+  missingPrerequisites,
+  planFiling,
+  renderFilingReport,
+  type FilingStep,
+} from './filing.ts';
 import { asIssue, finding, loaded, RUN_URL, VERSION } from './fixtures.ts';
 import { groupFindings, toProposal, type IssueHit } from './proposals.ts';
 import type { Finding } from './schema.ts';
@@ -134,6 +140,22 @@ describe('planFiling', () => {
     expect(planFiling(proposal, { repo: REPO, evidenceLinks: 'assets' })).toEqual([
       { kind: 'skip', reason: '#7 is labelled qa:known' },
     ]);
+  });
+});
+
+describe('alreadyFiled', () => {
+  const hit = (number: number, state: IssueHit['state']): IssueHit => ({
+    number,
+    labels: ['internal-qa'],
+    state,
+  });
+
+  it('does not count a closed issue as filed', () => {
+    expect(alreadyFiled([hit(7, 'closed')])).toBeUndefined();
+  });
+
+  it('returns the open issue when a closed one exists too', () => {
+    expect(alreadyFiled([hit(7, 'closed'), hit(12, 'open')])).toBe(12);
   });
 });
 

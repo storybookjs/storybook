@@ -7,6 +7,7 @@ import { dirname, join, resolve } from 'pathe';
 import { z } from 'zod';
 
 import {
+  alreadyFiled,
   ASSETS_BRANCH,
   describeStep,
   missingPrerequisites,
@@ -17,8 +18,9 @@ import {
   type FilingStep,
 } from './lib/filing.ts';
 import { cycleRef, pushTokenEnv } from './lib/cycle.ts';
-import { ghParse, ghText, searchFingerprint } from './lib/github.ts';
+import { listQaIssues, ghText, pages } from './lib/github.ts';
 import { copyRedacted } from './lib/redact.ts';
+import { hitsFor, type QaIssue } from './lib/proposals.ts';
 import { Proposal } from './lib/schema.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
 
@@ -30,6 +32,7 @@ cycle branch to the catalog repo with the push token of that repo's org, pushes 
 qa-assets branch of --repo and creates the issue or comment with GH_TOKEN. A failed proposal does
 not stop the others; the filed and failed table goes to the Step Summary and the exit code is 1 if
 any failed.
+An issue counts as already filed only while it is open and carries the internal-qa label.
 Rerunning is safe: a filed fingerprint, an identical comment and pushed evidence are skipped.`;
 
 const EVIDENCE_PUSH_ATTEMPTS = 3;
@@ -186,9 +189,6 @@ const runStep = (step: FilingStep): string | undefined => {
   }
 };
 
-const pages = <T extends z.ZodType>(item: T, path: string): z.infer<T>[] =>
-  ghParse(z.array(z.array(item)), ['api', '--paginate', '--slurp', path]).flat();
-
 const commentsOn = (issue: number): string[] =>
   pages(z.object({ body: z.string() }), `repos/${repo}/issues/${issue}/comments`).map(
     (comment) => comment.body
@@ -197,12 +197,12 @@ const commentsOn = (issue: number): string[] =>
 const firstLine = (error: unknown) =>
   (error instanceof Error ? error.message : String(error)).split('\n')[0]!.slice(0, 160);
 
-const fileProposal = (proposal: Proposal): FilingOutcome => {
+const fileProposal = (proposal: Proposal, issues: QaIssue[]): FilingOutcome => {
   const steps = planFiling(proposal, {
     repo,
     evidenceLinks: 'assets',
     ...(proposal.kind === 'issue'
-      ? { filedAs: searchFingerprint(repo, proposal.fingerprint)[0]?.number }
+      ? { filedAs: alreadyFiled(hitsFor(issues, proposal.fingerprint)) }
       : {}),
     ...(proposal.kind === 'comment' ? { comments: commentsOn(proposal.existingIssue) } : {}),
   });
@@ -252,9 +252,10 @@ if (values.dry) {
   );
 } else {
   checkPrerequisites();
+  const issues = listQaIssues(repo);
   const outcomes = proposals.map((proposal): FilingOutcome => {
     try {
-      return fileProposal(proposal);
+      return fileProposal(proposal, issues);
     } catch (error) {
       console.error(`${proposal.fingerprint} failed:`, error);
       return { proposal, state: 'failed', detail: firstLine(error) };

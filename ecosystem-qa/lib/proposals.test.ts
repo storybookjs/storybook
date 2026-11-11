@@ -5,14 +5,35 @@ import { describe, expect, it } from 'vitest';
 import { asIssue, finding, loaded, RUN_URL, VERSION } from './fixtures.ts';
 import {
   groupFindings,
+  hitsFor,
   renderCommentBody,
   renderIssueBody,
   toProposal,
   type FindingGroup,
+  type QaIssue,
 } from './proposals.ts';
 
 const issueFor = (group: FindingGroup | undefined) => asIssue(toProposal(group!, [], RUN_URL));
 const byName = (name: string) => `https://assets.example/${name}`;
+
+describe('hitsFor', () => {
+  const issue = (number: number, body: string): QaIssue => ({
+    number,
+    body,
+    labels: ['internal-qa'],
+    state: 'open',
+  });
+
+  it('returns only the issues whose body carries the fingerprint', () => {
+    const issues = [
+      issue(1, 'fingerprint: 0123456789abcdef'),
+      issue(2, 'fingerprint: fedcba9876543210'),
+      issue(3, 'seen again: 0123456789abcdef'),
+    ];
+
+    expect(hitsFor(issues, '0123456789abcdef').map((hit) => hit.number)).toEqual([1, 3]);
+  });
+});
 
 describe('groupFindings', () => {
   it('merges the same failure from different os and engine runs into one proposal', () => {

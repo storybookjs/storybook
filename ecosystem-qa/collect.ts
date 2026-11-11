@@ -4,16 +4,16 @@ import { parseArgs } from 'node:util';
 import { loadCatalog } from './lib/catalog.ts';
 import { versionLine } from './lib/cycle.ts';
 import { compareExpected, loadExpected, renderExpectReport } from './lib/expected.ts';
-import { searchFingerprint } from './lib/github.ts';
-import { groupFindings, toProposal } from './lib/proposals.ts';
+import { listQaIssues } from './lib/github.ts';
+import { groupFindings, hitsFor, toProposal } from './lib/proposals.ts';
 import { loadResults } from './lib/results.ts';
 
 const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>] [--expect <expected-findings.json>]
 
 Reads the result.json of every catalog repo, os and engine under --results, either from a downloaded
 artifact (<results>/qa-result-<os>-<engine>/<id>/<os>/<engine>) or from a local run
-(<results>/<id>/<os>/<engine>). Merges findings by fingerprint, searches --repo for each fingerprint
-with gh, and writes one proposal per fingerprint to --out.
+(<results>/<id>/<os>/<engine>). Merges findings by fingerprint, lists the issues of --repo that carry
+the internal-qa label with gh, and writes one proposal per fingerprint to --out.
 --version is the version the cycle ran; a record that names another version is ignored.
 --run-url defaults to this GitHub Actions run, or "local" outside Actions.
 --expect compares the findings with the known ones of the repos that ran and prints which were missed.`;
@@ -54,8 +54,9 @@ const loaded = loadResults(results, {
 });
 
 const groups = groupFindings(loaded);
+const issues = listQaIssues(repo);
 const proposals = groups.map((group) =>
-  toProposal(group, searchFingerprint(repo, group.fingerprint), runUrl)
+  toProposal(group, hitsFor(issues, group.fingerprint), runUrl)
 );
 writeFileSync(out, `${JSON.stringify(proposals, null, 2)}\n`);
 

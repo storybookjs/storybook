@@ -5,18 +5,14 @@ import { toMcpToolName } from '../../toolset-names.ts';
 /**
  * Per-shape props/globals selectors, shared by both story selector variants.
  *
- * The prose predates the toolsets and is eval-tuned, so it is kept verbatim. It names sibling
- * capabilities by their MCP tool names rather than through `getToolName`, because valibot descriptions
- * are static strings with no per-consumer rendering. One of them, `get-storybook-story-instructions`,
- * is an `@storybook/addon-mcp` tool with no toolset method;
- * a CLI consumer would need this sentence rewritten rather than re-rendered.
+ * Valibot descriptions are static strings, so the CLI and the MCP server share this prose.
  */
 const storyInputProps = {
   props: v.pipe(
     v.optional(v.record(v.string(), v.any())),
     v.description(`Optional custom props to pass to the story for rendering. Use this when you don't want to render the default story,
 but you want to customize some args or other props.
-You can look up the component's documentation using the get-storybook-story-instructions tool to see what props are available.`)
+The component's documentation lists the props it takes.`)
   ),
   globals: v.pipe(
     v.optional(v.record(v.string(), v.any())),
@@ -36,7 +32,7 @@ export const storyInputSchema = v.union([
       v.string(),
       v.description(
         `The export name of the story from the story file.
-Use this path-based shape only when you're already editing a .stories.* file and know the export names in that file.
+Use this path-based shape only when you're already editing a .stories.* file and know the export names in that file. Never guess one such as "Primary": read the file first.
 If you do not already have story file context, prefer the storyId shape instead of searching files.`
       )
     ),

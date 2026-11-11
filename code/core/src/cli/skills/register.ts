@@ -4,10 +4,7 @@ import type { CLIOptions } from 'storybook/internal/types';
 
 import type { Command } from 'commander';
 
-import { getService } from '../../shared/open-service/server.ts';
-import { getRegisteredToolsets } from '../../shared/open-service/toolset-registry.ts';
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
-import { toCatalogEntry } from '../tools/sdk/catalog.ts';
 import type { CommandFailureHandler } from '../tools/register.ts';
 import { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
 import { resolveSkillInputs } from './inputs.ts';
@@ -26,6 +23,7 @@ type SkillsCommandOptions = {
   configDir?: string;
   help?: boolean;
   all?: boolean;
+  mcp?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by `withTelemetry`. */
   disableTelemetry?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by the failure handler. */
@@ -59,6 +57,7 @@ export function registerSkillsCommand(
       tokens: tokens ?? [],
       help: options.help,
       all: options.all,
+      mcp: options.mcp,
       target: { cwd: options.cwd, configDir: options.configDir },
     };
     const intent = resolveSkillsIntent(invocation);
@@ -69,7 +68,11 @@ export function registerSkillsCommand(
         await recordSetupRun(result.setupRun);
       }
       if (result.skill) {
-        await telemetry('skills-get', { skill: result.skill }, { configDir: cliOptions.configDir });
+        await telemetry(
+          'skills-get',
+          { skill: result.skill, ...(options.mcp ? { mcp: true } : {}) },
+          { configDir: cliOptions.configDir }
+        );
       }
     };
     if (intent.kind === 'catalog') {
@@ -91,13 +94,6 @@ function defaultDeps(): SkillsRunDeps {
     resolveSkillInputs,
     getProjectInfo,
     getSetupMarkdown: getSetupMarkdownOutput,
-    describeToolsets: () =>
-      getRegisteredToolsets().map((toolset) =>
-        toCatalogEntry(toolset, {
-          transport: 'cli',
-          getService: (serviceId, options) => getService(serviceId as never, options),
-        })
-      ),
   };
 }
 

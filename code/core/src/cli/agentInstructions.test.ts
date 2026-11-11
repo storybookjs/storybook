@@ -8,6 +8,7 @@ import { vol } from 'memfs';
 import {
   STORYBOOK_AGENT_INSTRUCTIONS,
   addStorybookAgentInstructions,
+  planStorybookAgentInstructions,
 } from './agentInstructions.ts';
 
 vi.mock('node:fs/promises', { spy: true });
@@ -43,9 +44,9 @@ describe('addStorybookAgentInstructions', () => {
     expect(read('AGENTS.md')).toBe(STORYBOOK_AGENT_INSTRUCTIONS);
   });
 
-  it('wraps the section in markers, with the heading and both skills', () => {
+  it('wraps the section in markers, with the heading and a step for every skill', () => {
     expect(STORYBOOK_AGENT_INSTRUCTIONS).toMatch(
-      /^<!-- BEGIN:storybook-skills -->\n[\s\S]*## Storybook skills\n[\s\S]*`ui-workflow`[\s\S]*`component-docs`[\s\S]*<!-- END:storybook-skills -->\n$/
+      /^<!-- BEGIN:storybook-skills -->\n[\s\S]*## Storybook\n[\s\S]*1\. `component-docs`[\s\S]*2\. `write-stories`[\s\S]*3\. `test-stories`[\s\S]*4\. `ui-review`[\s\S]*<!-- END:storybook-skills -->\n$/
     );
   });
 
@@ -58,7 +59,7 @@ describe('addStorybookAgentInstructions', () => {
   });
 
   it.each([
-    '## Storybook\n\n- `ui-workflow`: for UI changes. Follow it to update your stories and run the tests.\n',
+    '## Storybook\n\n1. `write-stories`: every component gets stories.\n2. `test-stories`: run the story tests.\n',
     'Run /component-docs for questions about a component.\n',
   ])('leaves a file alone that already names a Storybook skill (%j)', async (custom) => {
     vol.writeFileSync(join(ROOT, 'AGENTS.md'), custom);
@@ -67,7 +68,7 @@ describe('addStorybookAgentInstructions', () => {
     expect(read('AGENTS.md')).toBe(custom);
   });
 
-  const OUTDATED = `# Rules\n\n<!-- BEGIN:storybook-skills -->\n## Storybook\n\n- \`ui-workflow\`: for UI changes.\n<!-- END:storybook-skills -->\n\nUse pnpm.\n`;
+  const OUTDATED = `# Rules\n\n<!-- BEGIN:storybook-skills -->\n## Storybook\n\n- \`component-docs\`: to reuse components.\n<!-- END:storybook-skills -->\n\nUse pnpm.\n`;
 
   it.each(['install', 'update'] as const)(
     'replaces an outdated section between the markers and keeps the rest (%s)',
@@ -99,7 +100,7 @@ describe('addStorybookAgentInstructions', () => {
   });
 
   it('leaves a section without markers alone on an update', async () => {
-    const custom = '## Storybook\n\n- `ui-workflow`: for UI changes, without the review.\n';
+    const custom = '## Storybook\n\n1. `write-stories`: every component gets stories.\n';
     vol.writeFileSync(join(ROOT, 'AGENTS.md'), custom);
 
     expect(await addStorybookAgentInstructions(ROOT, 'update')).toEqual([]);
@@ -262,5 +263,18 @@ describe('addStorybookAgentInstructions', () => {
     await addStorybookAgentInstructions(ROOT);
 
     expect(vol.existsSync(join(ROOT, 'CLAUDE.md'))).toBe(false);
+  });
+});
+
+describe('planStorybookAgentInstructions', () => {
+  it('writes another section, such as the MCP server instructions, in place of the skills section', async () => {
+    const section = '## Storybook\n\nRun `npx storybook skills ui-review --mcp`.\n';
+    const files = await planStorybookAgentInstructions(
+      async (file) => (file === 'CLAUDE.md' ? '# Rules\n' : undefined),
+      'install',
+      section
+    );
+
+    expect(files).toEqual({ 'AGENTS.md': section, 'CLAUDE.md': `# Rules\n\n${section}` });
   });
 });

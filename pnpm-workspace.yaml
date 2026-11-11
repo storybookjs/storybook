@@ -42,6 +42,9 @@ onlyBuiltDependencies:
   - nx
   - sharp
 
+# Fails the install when a dependency's install script is in neither list.
+strictDepBuilds: true
+
 # See RESOLUTIONS.md for the conventions around this list.
 overrides:
   '@ai-sdk/anthropic': ^2.0.0

@@ -1,0 +1,56 @@
+
+[90m┌[39m  Setting up your project for @storybook/addon-vitest
+[90m│[39m
+[90m│[39m  Verifying @storybook/addon-vitest
+[90m│[39m
+[90m│[39m  Installing @storybook/addon-vitest@^11.0.0-beta.1
+[90m│[39m
+[90m│[39m  Adding '@storybook/addon-vitest' to the "addons" field in
+[90m│[39m  .storybook/main.ts
+[90m│[39m
+[31m■[39m  Automated setup failed
+[90m│[39m  The following packages have incompatibilities that prevent automated
+[90m│[39m  setup:
+
+[90m│[39m  • [31mThe addon requires Vitest 4.0.0 or higher. You are currently using[39m
+[90m│[39m  [31m3.2.6.[39m
+
+[90m│[39m  You can fix these issues and rerun the command to reinstall. If you
+[90m│[39m  wish to roll back the installation, remove @storybook/addon-vitest
+[90m│[39m  from the "addons" array
+[90m│[39m  in your main Storybook config file and remove the dependency from your
+[90m│[39m  package.json file.
+
+[90m│[39m  Please check the documentation for more information about its
+[90m│[39m  requirements and installation:
+[90m│[39m  https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+[90m│[39m
+[31m■[39m  [38;2;241;97;97mSB_CLI_INIT_0004 (AddonVitestPostinstallPrerequisiteCheckError): The
+[90m│[39m  prerequisite check for the Vitest addon failed.
+
+[90m│[39m  More info:
+[90m│[39m  [39m
+[90m│[39m  at postInstall
+[90m│[39m  (file:///home/agent/workspace/node_modules/.pnpm/@storybook+addon-vitest@11.0.0-beta.1_@vitest+browser@3.2.7_react@19.2.4_storybook@11.0_bd68c40553057d7087f9e961124b0035/node_modules/@storybook/addon-vitest/dist/postinstall.js:365:33)
+[90m│[39m  at async postinstallAddon
+[90m│[39m  (file:///home/agent/.cache/pnpm/dlx/84fa558e13bacd455510a0151ee90f4a/mwca57xg-1lt/node_modules/.pacquet/@storybook+cli@11.0.0-beta.1_prettier@3.9.10_react@19.3.1/node_modules/@storybook/cli/dist/_node-chunks/run-GZ5OBPUT.js:5083:5)
+[90m│[39m  at async add
+[90m│[39m  (file:///home/agent/.cache/pnpm/dlx/84fa558e13bacd455510a0151ee90f4a/mwca57xg-1lt/node_modules/.pacquet/@storybook+cli@11.0.0-beta.1_prettier@3.9.10_react@19.3.1/node_modules/@storybook/cli/dist/_node-chunks/run-GZ5OBPUT.js:5152:54)
+[90m│[39m  at async
+[90m│[39m  file:///home/agent/.cache/pnpm/dlx/84fa558e13bacd455510a0151ee90f4a/mwca57xg-1lt/node_modules/.pacquet/@storybook+cli@11.0.0-beta.1_prettier@3.9.10_react@19.3.1/node_modules/@storybook/cli/dist/_node-chunks/run-GZ5OBPUT.js:11653:63
+[90m│[39m  at async withTelemetry
+[90m│[39m  (file:///home/agent/.cache/pnpm/dlx/84fa558e13bacd455510a0151ee90f4a/mwca57xg-1lt/node_modules/.pacquet/storybook@11.0.0-beta.1_prettier@3.9.10_react@19.3.1/node_modules/storybook/dist/_node-chunks/chunk-LBR5YCV6.js:3591:12)
+[90m│[39m  at async Command.parseAsync
+[90m│[39m  (/home/agent/.cache/pnpm/dlx/84fa558e13bacd455510a0151ee90f4a/mwca57xg-1lt/node_modules/.pacquet/commander@14.0.3/node_modules/commander/lib/command.js:1122:5)
+[90m│[39m
+[31m■[39m  SB_CLI_INIT_0004 (AddonVitestPostinstallPrerequisiteCheckError): The
+[90m│[39m  prerequisite check for the Vitest addon failed.
+
+[90m│[39m  More info:
+
+[90m│[39m
+[90m│[39m  Debug logs are written to:
+[90m│[39m  /home/agent/workspace/packages/ui-svelte/debug-storybook.log
+[90m│[39m
+[90m└[39m  
+

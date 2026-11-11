@@ -1,9 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-// Local stand-ins for the composed Storybooks the composition configs use. The E2E tests point
-// the refs at these through environment variables, so they never depend on a live Chromatic host.
-
 export type RefFixtures = {
 	publicRefUrl: string;
 	noManifestRefUrl: string;
@@ -60,8 +57,7 @@ const noManifestRef: Handler = (req, res) => {
 	return sendNotFound(res);
 };
 
-// Answers like a private Chromatic Storybook: every manifest and MCP request needs a token it never
-// accepts, and the OAuth metadata it points to is served from the same origin.
+// Rejects every token, like a private Chromatic Storybook.
 const privateRef: Handler = (req, res, origin) => {
 	const path = pathOf(req);
 	if (path === '/.well-known/oauth-protected-resource') {

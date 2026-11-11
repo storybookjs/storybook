@@ -35,7 +35,7 @@ describe('MCP Composition E2E Tests', () => {
 	beforeAll(async () => {
 		await killPort(PORT);
 		fixtures = await startRefFixtures();
-		storybookProcess = startStorybook('.storybook-composition', PORT, fixtures.env);
+		({ storybookProcess } = await startStorybook('.storybook-composition', PORT, fixtures.env));
 		await waitForMcpEndpoint(MCP_ENDPOINT);
 	}, STARTUP_TIMEOUT);
 

@@ -35,7 +35,7 @@ describe('MCP Composition + Docgen Server E2E Tests', () => {
 	beforeAll(async () => {
 		await killPort(PORT);
 		fixtures = await startRefFixtures();
-		storybookProcess = startStorybook('.storybook-composition-docgen-server', PORT, fixtures.env);
+		({ storybookProcess } = await startStorybook('.storybook-composition-docgen-server', PORT, fixtures.env));
 		await waitForMcpEndpoint(MCP_ENDPOINT);
 	}, STARTUP_TIMEOUT);
 

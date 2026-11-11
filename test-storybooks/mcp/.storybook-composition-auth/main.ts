@@ -3,8 +3,7 @@ import baseConfig from '../.storybook/main';
 
 /**
  * Multi-source Storybook configuration with a private Chromatic ref.
- * The E2E tests point the ref at a local fixture (`tests/ref-fixtures.ts`); without that
- * environment variable it composes the live private Chromatic Storybook, for manual testing.
+ * Used for manual testing of the OAuth composition auth flow.
  */
 const config = defineMain({
 	...baseConfig,

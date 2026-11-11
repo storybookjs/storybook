@@ -12,7 +12,7 @@ const config = defineMain({
 		componentsManifest: true,
 		docgenServer: true,
 	},
-	// Same refs as `.storybook-composition/`, also pointed at local fixtures by the E2E tests.
+	// Same public refs as `.storybook-composition/` — remote storybook-ui serves v0 manifests.
 	// Prefer main-- over next--: next builds currently omit /manifests/components.json.
 	refs: {
 		'storybook-ui': {

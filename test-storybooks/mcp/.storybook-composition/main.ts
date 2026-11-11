@@ -7,8 +7,6 @@ import baseConfig from '../.storybook/main';
  */
 const config = defineMain({
 	...baseConfig,
-	// The E2E tests point these refs at local fixtures (`tests/ref-fixtures.ts`); without those
-	// environment variables they compose the live Chromatic Storybooks, for manual testing.
 	// Composition with public Chromatic Storybook (storybook-ui main branch).
 	// Prefer main-- over next--: next builds currently omit /manifests/components.json.
 	refs: {

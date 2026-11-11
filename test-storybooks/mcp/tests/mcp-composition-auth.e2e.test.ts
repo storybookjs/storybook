@@ -37,7 +37,7 @@ describe('MCP Composition Auth E2E Tests', () => {
 	beforeAll(async () => {
 		await killPort(PORT);
 		fixtures = await startRefFixtures();
-		storybookProcess = startStorybook('.storybook-composition-auth', PORT, fixtures.env);
+		({ storybookProcess } = await startStorybook('.storybook-composition-auth', PORT, fixtures.env));
 		await waitForMcpEndpoint(MCP_ENDPOINT, { acceptStatuses: [401] });
 	}, STARTUP_TIMEOUT);
 

@@ -180,7 +180,14 @@ export const editObjectSite = (
   } else if (statements.length > 0 && beforeEach) {
     prependToBeforeEach(editor, beforeEach.value, statements, { semicolon, step: editor.indent });
   }
-  if (replacesWithDocs) {
+  // A spread after `sveltekit_experimental` would replace a `docs` in its place, so `docs` goes last
+  const spreadAfter = params.properties.some(
+    (property) => property.type === 'SpreadElement' && property.start > sveltekit.start
+  );
+  if (replacesWithDocs && spreadAfter) {
+    removeFromList(editor, objectList(editor, params), [sveltekit]);
+    appendMember(editor, params, docsMember(editor, params));
+  } else if (replacesWithDocs) {
     editor.edits.overwrite(sveltekit.start, sveltekit.end, docsMember(editor, params, sveltekit));
   } else if (docs) {
     removeFromList(editor, objectList(editor, params), [sveltekit]);

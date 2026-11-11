@@ -113,10 +113,13 @@ const systemText = ({ result, systemInfo }: LoadedResult): string =>
 
 const unique = (values: string[]) => [...new Set(values)].join(', ');
 
+/** Opens the metadata block of every issue and comment the harness writes. */
+export const METADATA_MARKER = '<!-- sb-qa-metadata -->';
+
 const metadataBlock = (proposal: IssueProposal | CommentProposal): string => {
   const { cycle, sources } = proposal;
   return [
-    '<!-- sb-qa-metadata -->',
+    METADATA_MARKER,
     '```yaml',
     `fingerprint: ${proposal.fingerprint}`,
     ...(proposal.related.length > 0

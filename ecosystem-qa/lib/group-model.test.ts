@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { finding, loaded } from './fixtures.ts';
+import { planFiling } from './filing.ts';
+import { asIssue, finding, loaded, RUN_URL } from './fixtures.ts';
 import {
   groupingInput,
   groupingMode,
@@ -8,7 +9,7 @@ import {
   toGrouping,
   type GroupingInput,
 } from './group-model.ts';
-import { groupFindings, type QaIssue } from './proposals.ts';
+import { groupFindings, toProposal, type QaIssue } from './proposals.ts';
 
 const A = 'aaaaaaaaaaaaaaaa';
 const B = 'bbbbbbbbbbbbbbbb';
@@ -50,6 +51,39 @@ describe('groupingInput', () => {
       { repo: 'storybookjs/mealdrop', os: 'linux', engine: 'claude' },
     ]);
     expect(issues).toEqual([{ number: 7, state: 'open', title: 'Build fails' }]);
+  });
+
+  it('shows the start of the description and the merged findings of an issue the harness filed', () => {
+    const groups = groupFindings([
+      loaded('linux', 'claude', [
+        finding(),
+        finding({ checkId: 'build.static', title: 'Build fails', errorText: 'ENOSPC' }),
+      ]),
+    ]);
+    const [hmr, build] = groups;
+    const filed = asIssue(
+      toProposal({ lead: hmr!, members: [hmr!, build!] }, [], { runUrl: RUN_URL })
+    );
+    const step = planFiling(filed, { repo: 'storybookjs/storybook', evidenceLinks: 'assets' }).at(
+      -1
+    );
+    const issue = (number: number, title: string, body: string): QaIssue => ({
+      number,
+      title,
+      state: 'open',
+      labels: [],
+      body,
+    });
+
+    const { issues } = groupingInput(groups, [
+      issue(7, 'Filed by the harness', step?.kind === 'create-issue' ? step.body : ''),
+      issue(8, 'Filed by a person', '### Describe the bug\n\nSomething else entirely'),
+    ]);
+
+    expect(issues[0]!.about).toContain('index.json keeps the old entries until restart');
+    expect(issues[0]!.about!.length).toBeLessThanOrEqual(500);
+    expect(issues[0]!.alsoSeenAs).toEqual([expect.stringContaining('Build fails')]);
+    expect(issues[1]).toEqual({ number: 8, state: 'open', title: 'Filed by a person' });
   });
 
   it('marks a finding whose fingerprint an open issue carries, and not one on a closed issue', () => {

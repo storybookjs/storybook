@@ -2,11 +2,15 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 
 import { checkGrouping } from './grouping.ts';
-import { openIssueOf, type FindingGroup, type QaIssue } from './proposals.ts';
+import { METADATA_MARKER, openIssueOf, type FindingGroup, type QaIssue } from './proposals.ts';
 import { sanitizeFinding, sanitizeTitle } from './sanitize.ts';
 import type { Engine, Grouping, Os } from './schema.ts';
 
-/** What the model sees of one collect: the capped findings, and the QA issues by title only. */
+/**
+ * What the model sees of one collect: the capped findings, and the QA issues by title. An issue the
+ * harness filed also shows the start of its bug description and the findings merged into it, because
+ * a title alone does not say that a differently worded finding is the same defect.
+ */
 export interface GroupingInput {
   findings: {
     id: string;
@@ -18,8 +22,39 @@ export interface GroupingInput {
     /** The open issue that already carries this fingerprint. */
     filedAs?: number;
   }[];
-  issues: { number: number; state: QaIssue['state']; title: string }[];
+  issues: {
+    number: number;
+    state: QaIssue['state'];
+    title: string;
+    about?: string;
+    alsoSeenAs?: string[];
+  }[];
 }
+
+const ABOUT_CHARS = 500;
+const SEEN_AS_LINES = 6;
+const SEEN_AS_CHARS = 200;
+
+const excerptOf = (body: string): Pick<GroupingInput['issues'][number], 'about' | 'alsoSeenAs'> => {
+  if (!body.includes(METADATA_MARKER)) {
+    return {};
+  }
+  const section = body.split('### Describe the bug')[1]?.split(/\n### /)[0] ?? '';
+  const about = section
+    .replaceAll(/```\w*/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, ABOUT_CHARS);
+  const alsoSeenAs = (body.split('Also seen as:')[1] ?? '')
+    .split('\n')
+    .filter((line) => line.startsWith('- '))
+    .slice(0, SEEN_AS_LINES)
+    .map((line) => line.slice(2, 2 + SEEN_AS_CHARS));
+  return {
+    ...(about ? { about } : {}),
+    ...(alsoSeenAs.length > 0 ? { alsoSeenAs } : {}),
+  };
+};
 
 export const groupingInput = (groups: FindingGroup[], issues: QaIssue[]): GroupingInput => {
   const filed = openIssueOf(
@@ -44,7 +79,12 @@ export const groupingInput = (groups: FindingGroup[], issues: QaIssue[]): Groupi
         ...(filedAs !== undefined ? { filedAs } : {}),
       };
     }),
-    issues: issues.map(({ number, state, title }) => ({ number, state, title })),
+    issues: issues.map(({ number, state, title, body }) => ({
+      number,
+      state,
+      title,
+      ...excerptOf(body),
+    })),
   };
 };
 
@@ -82,7 +122,7 @@ Keep findings apart when they only share an area, a check, a package or a kind o
 
 In each group, list first the finding that states the cause most directly.
 
-Set \`existingIssue\` to the number of an issue from \`issues\` when that issue describes the same defect as the group, and to null otherwise. Use only numbers from the list. Prefer an open issue over a closed one when both fit.
+Set \`existingIssue\` to the number of an issue from \`issues\` when that issue describes the same defect as the group, and to null otherwise. An issue can carry \`about\`, the start of its bug description, and \`alsoSeenAs\`, the findings already merged into it. Read them before you decide: a title often names only one symptom of the defect. Use only numbers from the list. Prefer an open issue over a closed one when both fit.
 
 A finding with \`filedAs\` is already reported on that open issue, and it stays there. Never put two findings in one group when they are filed as different issues, even when they are the same defect. A group that holds a filed finding has that issue as its \`existingIssue\`. This comes before every other rule here: where it conflicts with one, split the group.
 

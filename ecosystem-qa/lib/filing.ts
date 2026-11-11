@@ -1,6 +1,7 @@
 import { cycleRef } from './cycle.ts';
 import {
   fence,
+  METADATA_MARKER,
   relatedLines,
   renderCommentBody,
   renderIssueBody,
@@ -35,8 +36,6 @@ export interface FilingOptions {
   /** What the issue a comment proposal targets already says: its own body and its comments. */
   existing?: string[];
 }
-
-const METADATA_MARKER = '<!-- sb-qa-metadata -->';
 
 // The run line names the run that collected. Collecting the same results again gives another run,
 // so the line is not part of what makes two sightings the same.

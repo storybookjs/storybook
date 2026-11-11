@@ -1,0 +1,31 @@
+[
+  {
+    "repo": "mealdrop",
+    "fingerprint": "d1e15fcf6476f7e5",
+    "issue": 37311,
+    "title": "addon-designs 12.0.0 crashes the dev server after 'Storybook ready!'"
+  },
+  {
+    "repo": "mealdrop",
+    "fingerprint": "6715e4610e32a58e",
+    "issue": 37284,
+    "title": "storybook dev --no-open errors with unknown option"
+  },
+  {
+    "repo": "mealdrop",
+    "fingerprint": "5b34acfdc0f977e0",
+    "issue": 37285,
+    "title": "storybook doctor reports looks good while the dev server cannot start"
+  },
+  {
+    "repo": "mealdrop",
+    "fingerprint": "01fe6658084c585c",
+    "issue": 37310,
+    "title": "upgrade summary prints undefined as an automigration link"
+  },
+  {
+    "repo": "mealdrop",
+    "fingerprint": "009e18a6ad9b33d2",
+    "title": "@storybook/test-runner 0.26.0 crashes with previewConfig.getFieldValue is not a function"
+  }
+]

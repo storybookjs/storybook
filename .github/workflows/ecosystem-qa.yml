@@ -30,6 +30,14 @@ on:
         description: 'Write proposals to the Step Summary instead of filing them'
         type: boolean
         default: true
+      from_runs:
+        description: 'Comma-separated run ids: collect and group the results of these earlier runs instead of running agents'
+        type: string
+        default: ''
+      groups:
+        description: 'A groups.json document to use instead of asking the model, for splitting a wrong merge by hand'
+        type: string
+        default: ''
   pull_request:
     paths:
       - 'ecosystem-qa/**'
@@ -119,6 +127,8 @@ jobs:
       repo: ${{ steps.matrix.outputs.repo }}
       version: ${{ steps.matrix.outputs.version }}
       dry: ${{ steps.matrix.outputs.dry }}
+      from_runs: ${{ steps.matrix.outputs.from_runs }}
+      groups: ${{ steps.matrix.outputs.groups }}
     steps:
       - name: Build the os x engine matrix
         id: matrix
@@ -128,9 +138,21 @@ jobs:
           QA_ENGINES: ${{ inputs.engines }}
           QA_OS: ${{ inputs.os }}
           QA_DRY: ${{ inputs.dry }}
+          QA_FROM_RUNS: ${{ inputs.from_runs }}
+          QA_GROUPS: ${{ inputs.groups }}
         run: |
           if [[ ! "$QA_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
             echo "::error::version '$QA_VERSION' is not a semver version"
+            exit 1
+          fi
+          if [[ -n "$QA_FROM_RUNS" && ! "$QA_FROM_RUNS" =~ ^[0-9]+(,[0-9]+)*$ ]]; then
+            echo "::error::from_runs '$QA_FROM_RUNS' is not a comma-separated list of run ids"
+            exit 1
+          fi
+          groups=''
+          # One compact line, so the document cannot add a line of its own to GITHUB_OUTPUT.
+          if [[ -n "$QA_GROUPS" ]] && ! groups="$(jq -cs 'if length == 1 then .[0] else error("not one document") end' <<<"$QA_GROUPS")"; then
+            echo "::error::groups is not one JSON document"
             exit 1
           fi
           matrix="$(jq -cn --arg engines "$QA_ENGINES" --arg oses "$QA_OS" '{include: [
@@ -146,12 +168,15 @@ jobs:
             echo "repo=$QA_REPO"
             echo "version=$QA_VERSION"
             echo "dry=$QA_DRY"
+            echo "from_runs=$QA_FROM_RUNS"
+            echo "groups=$groups"
           } >> "$GITHUB_OUTPUT"
           echo "$matrix" | jq .
 
   runner:
     name: QA ${{ needs.plan.outputs.repo }} on ${{ matrix.os }} with ${{ matrix.engine }}
     needs: plan
+    if: ${{ needs.plan.outputs.from_runs == '' }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 180
     permissions: {}
@@ -270,7 +295,15 @@ jobs:
     if: ${{ always() && needs.plan.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
-      issues: read # gh search for each fingerprint
+      actions: read # download the artifacts of earlier runs
+      issues: read # list the QA issues
+    # The model key for the grouping lives in this environment; only the grouping step reads it.
+    environment: ecosystem-qa
+    env:
+      QA_VERSION: ${{ needs.plan.outputs.version }}
+      # Earlier results are uploaded again as the artifact of the same name, so the filing jobs find
+      # the evidence and bundles at the paths the proposals name.
+      QA_RESULTS: ${{ needs.plan.outputs.from_runs != '' && 'ecosystem-qa/results/qa-earlier-results' || 'ecosystem-qa/results' }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -289,24 +322,59 @@ jobs:
           yarn workspaces focus ecosystem-qa
 
       - name: Download the run results
+        if: ${{ needs.plan.outputs.from_runs == '' }}
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: qa-result-*
           path: ecosystem-qa/results
 
+      - name: Fetch the results of earlier runs
+        if: ${{ needs.plan.outputs.from_runs != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          QA_FROM_RUNS: ${{ needs.plan.outputs.from_runs }}
+        run: |
+          IFS=, read -ra run_ids <<<"$QA_FROM_RUNS"
+          node ecosystem-qa/tools/fetch-runs.mjs "$QA_RESULTS" "${run_ids[@]}"
+
+      - name: Upload the results of earlier runs for the filing jobs
+        if: ${{ needs.plan.outputs.from_runs != '' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: qa-earlier-results
+          path: ecosystem-qa/results/qa-earlier-results/
+          retention-days: 14
+
+      - name: Use the given grouping
+        if: ${{ needs.plan.outputs.groups != '' }}
+        env:
+          QA_GROUPS: ${{ needs.plan.outputs.groups }}
+        run: printf '%s\n' "$QA_GROUPS" > ecosystem-qa/groups.json
+
+      - name: Group findings by root cause
+        if: ${{ needs.plan.outputs.groups == '' }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ECOSYSTEM_QA_ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          node ecosystem-qa/group.ts --results "$QA_RESULTS" --version "$QA_VERSION"
+          --repo "$GITHUB_REPOSITORY" --out ecosystem-qa/groups.json
+
       - name: Collect proposals
         env:
           GH_TOKEN: ${{ github.token }}
-          QA_VERSION: ${{ needs.plan.outputs.version }}
         run: >-
-          node ecosystem-qa/collect.ts --results ecosystem-qa/results --version "$QA_VERSION"
-          --out ecosystem-qa/proposals.json --repo "$GITHUB_REPOSITORY"
+          node ecosystem-qa/collect.ts --results "$QA_RESULTS" --version "$QA_VERSION"
+          --out ecosystem-qa/proposals.json --repo "$GITHUB_REPOSITORY" --groups ecosystem-qa/groups.json
 
       - name: Upload the proposals
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: qa-proposals
-          path: ecosystem-qa/proposals.json
+          path: |
+            ecosystem-qa/proposals.json
+            ecosystem-qa/groups.json
           retention-days: 14
 
   file-dry:

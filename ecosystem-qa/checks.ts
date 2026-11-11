@@ -163,7 +163,7 @@ export const CHECKS = [
     phase: 'dev',
     tier: 'extended',
     probe:
-      'Without setting `features.componentsManifest`, fetch `http://localhost:6006/manifests/components.html` and `/manifests/components.json`. `n/a` for a framework without docgen. The page must list components and the JSON must name at least one component with props.',
+      'Without setting `features.componentsManifest`, fetch `/manifests/components.html` and `/manifests/components.json` from the static build on port 6008, not from the dev server: in dev the JSON answers 404 with "not available in dev when docgenServer is enabled", which is by design and not a finding. `n/a` for a framework without docgen. The page must list components and the JSON must name at least one component with props.',
   },
   {
     id: 'test.coverage-cli',
@@ -196,7 +196,7 @@ export const CHECKS = [
     phase: 'test',
     tier: 'extended',
     probe:
-      'Check `package.json` for `@storybook/test-runner`. `n/a` when absent. Otherwise run it against the static build on port 6008 with a bounded wait and save the output to `test-runner.log`. It must finish and print the end-of-support warning.',
+      'Check `package.json` for `@storybook/test-runner`. `n/a` when absent. Otherwise run exactly `npx test-storybook --url http://localhost:6008 --ci` against the static build, with a bounded wait, and save the output to `test-runner.log`. Do not add `--index-json`: it skips the preview config that the runner reads. It must finish and print the end-of-support warning.',
   },
 ] as const satisfies readonly CheckDefinition[];
 

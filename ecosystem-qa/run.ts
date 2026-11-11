@@ -45,8 +45,8 @@ import { usageFromStream } from './lib/usage.ts';
 const HELP = `Usage: node ecosystem-qa/run.ts --repo <catalog id> --version <storybook version> --engine <claude|codex> --sandbox <docker|bwrap|seatbelt|none> --out <dir>
 
 Options:
-  --model <id>        Model id (default: claude-sonnet-5-5 for claude, gpt-6.1-sol for codex)
-  --effort <level>    low, medium or high (default: medium)
+  --model <id>        Model id (default: claude-haiku-5-5 for claude, gpt-6.1-sol for codex)
+  --effort <level>    low, medium or high (default: low)
   --tier <tier>       must (default) runs the checks every sweep needs; extended runs all of them
   --clone-dir <dir>   Where to clone the catalog repo (default: <tmpdir>/ecosystem-qa/work/<id>)
   --image <name>      Docker image for --sandbox docker (default: sb-ecosystem-qa)
@@ -55,8 +55,9 @@ Writes <out>/result.json and exits 0 whenever it did, findings or not.
 Set ECOSYSTEM_QA_FAKE=1 and pass --fake to write a canned result for --engine without running an agent;
 the result records fake: true and costs $0.`;
 
+// The cheapest configuration that found every known mealdrop finding in the bake-off (SB-2504).
 const DEFAULT_MODEL: Record<Engine, string> = {
-  claude: 'claude-sonnet-5-5',
+  claude: 'claude-haiku-5-5',
   codex: 'gpt-6.1-sol',
 };
 
@@ -119,7 +120,7 @@ const parseRequest = () => {
       sandbox: { type: 'string' },
       out: { type: 'string' },
       model: { type: 'string' },
-      effort: { type: 'string', default: 'medium' },
+      effort: { type: 'string', default: 'low' },
       tier: { type: 'string', default: 'must' },
       'clone-dir': { type: 'string' },
       image: { type: 'string', default: 'sb-ecosystem-qa' },

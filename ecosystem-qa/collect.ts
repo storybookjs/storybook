@@ -101,7 +101,8 @@ for (const proposal of proposals) {
       : proposal.kind === 'suppressed'
         ? ` (${proposal.reason}) #${proposal.existingIssue}`
         : ` #${proposal.existingIssue}`;
-  console.log(`${proposal.kind}${target} ${proposal.fingerprint} ${proposal.title}`);
+  const more = proposal.related.length > 0 ? ` (+${proposal.related.length} more)` : '';
+  console.log(`${proposal.kind}${target} ${proposal.fingerprint} ${proposal.title}${more}`);
 }
 console.log(`${loaded.length} results, ${proposals.length} proposals written to ${out}`);
 

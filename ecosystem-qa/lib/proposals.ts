@@ -159,13 +159,14 @@ const sourceLines = (proposal: IssueProposal | CommentProposal, withVersion = fa
 const inlineTitle = (title: string): string =>
   sanitizeTitle(title.replace(/\s+/g, ' ')).replaceAll('<', '&lt;');
 
-const relatedLines = (proposal: IssueProposal | CommentProposal): string[] =>
-  proposal.related.length === 0
+/** List the other members of a group under `heading`, or nothing for a group of one. */
+export const relatedLines = (related: Proposal['related'], heading = 'Also seen as:'): string[] =>
+  related.length === 0
     ? []
     : [
-        'Also seen as:',
+        heading,
         '',
-        ...proposal.related.map(
+        ...related.map(
           ({ checkId, title, sources }) =>
             `- \`${checkId}\` on ${unique(sources.map(({ repo, os, engine }) => `${repo} (${os}, ${engine})`))}: ${inlineTitle(title)}`
         ),
@@ -261,7 +262,7 @@ export const renderIssueBody = (
     '',
     ...sourceLines(proposal),
     '',
-    ...relatedLines(proposal),
+    ...relatedLines(proposal.related),
     metadataBlock(proposal),
     '',
   ].join('\n');
@@ -275,7 +276,7 @@ export const renderCommentBody = (proposal: CommentProposal): string =>
     '',
     fence(sanitizeFinding(proposal.finding).actual, 'text'),
     '',
-    ...relatedLines(proposal),
+    ...relatedLines(proposal.related),
     metadataBlock(proposal),
     '',
   ].join('\n');
@@ -367,6 +368,14 @@ export const toProposal = (
     fingerprint: lead.fingerprint,
     title: `[SB ${major} QA]: ${sanitizeTitle(lead.finding.title)}`,
     sources: sourcesOf(members),
+    related: members
+      .filter((member) => member !== lead)
+      .map((member) => ({
+        fingerprint: member.fingerprint,
+        checkId: member.finding.checkId,
+        title: member.finding.title,
+        sources: sourcesOf([member]),
+      })),
   };
   const decision = decide(
     hitsFor(
@@ -391,14 +400,6 @@ export const toProposal = (
     finding: lead.finding,
     cycle: primary.cycle,
     runUrl,
-    related: members
-      .filter((member) => member !== lead)
-      .map((member) => ({
-        fingerprint: member.fingerprint,
-        checkId: member.finding.checkId,
-        title: member.finding.title,
-        sources: sourcesOf([member]),
-      })),
   };
   if (decision.kind === 'comment') {
     return { kind: 'comment', ...report, existingIssue: decision.issue };

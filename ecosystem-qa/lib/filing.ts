@@ -1,5 +1,11 @@
 import { cycleRef } from './cycle.ts';
-import { fence, renderCommentBody, renderIssueBody, type IssueHit } from './proposals.ts';
+import {
+  fence,
+  relatedLines,
+  renderCommentBody,
+  renderIssueBody,
+  type IssueHit,
+} from './proposals.ts';
 import type { Cycle, EvidenceFile, Proposal } from './schema.ts';
 
 export const ASSETS_BRANCH = 'qa-assets';
@@ -120,13 +126,17 @@ export const renderDry = (proposal: Proposal, repo: string): string => {
   const body = steps.flatMap((step) =>
     step.kind === 'create-issue' || step.kind === 'comment' ? [fence(step.body, 'markdown')] : []
   );
+  // A suppressed group has no body, so without this a finding merged into it by mistake would
+  // leave no trace in the dry run.
+  const silenced = proposal.kind === 'suppressed' ? proposal.related : [];
   return [
-    `<details><summary><b>${proposal.kind}</b> ${proposal.title} <code>${proposal.fingerprint}</code></summary>`,
+    `<details><summary><b>${proposal.kind}</b> ${proposal.title} <code>${proposal.fingerprint}</code>${silenced.length > 0 ? ` and ${silenced.length} more` : ''}</summary>`,
     '',
     `Sources: ${proposal.sources.map((source) => `${source.os}/${source.engine}${source.fake ? ' (fake)' : ''} (\`${source.resultPath}\`)`).join(', ')}`,
     '',
     ...steps.map((step, index) => `${index + 1}. ${describeStep(step, repo)}`),
     '',
+    ...relatedLines(silenced, 'Silenced with it:'),
     ...body.flatMap((block) => [block, '']),
     '</details>',
     '',

@@ -4,6 +4,7 @@ import {
   alreadyFiled,
   missingPrerequisites,
   planFiling,
+  renderDry,
   renderFilingReport,
   type FilingStep,
 } from './filing.ts';
@@ -221,5 +222,38 @@ describe('renderFilingReport', () => {
     expect(report).toContain(
       `| \`${failed.fingerprint}\` | issue | [SB 11 QA]: a \\| b | failed: HTTP 502 |`
     );
+  });
+});
+
+describe('renderDry', () => {
+  it('lists every finding that a suppressed group silences', () => {
+    const [hmr, build] = groupFindings([
+      loaded('linux', 'claude', [
+        finding(),
+        finding({ checkId: 'build.static', title: 'Build fails', errorText: 'ENOSPC' }),
+      ]),
+    ]);
+    const proposal = toProposal(
+      { lead: hmr!, members: [hmr!, build!] },
+      [issueOn(hmr, { number: 7, labels: ['qa:known'], state: 'open' })],
+      { runUrl: RUN_URL }
+    );
+
+    const summary = renderDry(proposal, REPO);
+
+    expect(summary).toContain(`<code>${hmr!.fingerprint}</code> and 1 more</summary>`);
+    expect(summary).toContain('Silenced with it:');
+    expect(summary).toContain(
+      '- `build.static` on storybookjs/mealdrop (linux, claude): Build fails'
+    );
+  });
+
+  it('adds nothing for a suppressed finding that stands alone', () => {
+    const proposal = proposalFor({}, [{ number: 7, labels: ['qa:known'], state: 'open' }]);
+
+    const summary = renderDry(proposal, REPO);
+
+    expect(summary).toContain(`<code>${proposal.fingerprint}</code></summary>`);
+    expect(summary).not.toContain('Silenced with it:');
   });
 });

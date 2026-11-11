@@ -75,6 +75,7 @@ node ecosystem-qa/collect.ts --results ecosystem-qa/results --version 11.0.0-bet
 ```
 
 It is one Messages API request with a schema-checked answer and no tools, so text the agents wrote inside a third-party repository can at worst produce a wrong grouping.
+A wrong grouping is not harmless: it reports a finding on the issue of another one, or silences it together with a known one, so the dry run lists every member of a group, also of a suppressed one.
 The model only says which fingerprints belong together; none of its text reaches an issue, and `collect.ts` checks the file again before it uses it.
 It sends the titles, actual results and error texts of the findings, capped, to the Anthropic API.
 It reads `ANTHROPIC_API_KEY`; the subscription token from `claude setup-token` that agent runs accept does not work for the Messages API.

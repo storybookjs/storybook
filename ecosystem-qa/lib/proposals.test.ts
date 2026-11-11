@@ -201,6 +201,19 @@ describe('toProposal for a cluster', () => {
     expect(proposal).toMatchObject({ kind: 'suppressed', existingIssue: 7 });
   });
 
+  it('names the members a suppressed cluster silences along with its lead', () => {
+    const proposal = toProposal(
+      cluster(),
+      [issueOn(hmr, { number: 7, labels: ['qa:known'], state: 'open' })],
+      OPTIONS
+    );
+
+    expect(proposal.kind).toBe('suppressed');
+    expect(proposal.related.map(({ fingerprint, checkId }) => ({ fingerprint, checkId }))).toEqual([
+      { fingerprint: build!.fingerprint, checkId: 'build.static' },
+    ]);
+  });
+
   it('comments on an open exact hit before an open similar issue', () => {
     const proposal = toProposal(
       cluster(20),

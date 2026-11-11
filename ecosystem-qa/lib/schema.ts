@@ -218,18 +218,20 @@ export const Grouping = z.strictObject({
 });
 export type Grouping = z.infer<typeof Grouping>;
 
-const ProposalBase = {
-  fingerprint: Fingerprint,
-  title: z.string().min(1),
-  sources: z.array(Source).min(1),
-};
-
 const Related = z.strictObject({
   fingerprint: Fingerprint,
   checkId: CheckId,
   title: z.string().min(1),
   sources: z.array(Source).min(1),
 });
+
+const ProposalBase = {
+  fingerprint: Fingerprint,
+  title: z.string().min(1),
+  sources: z.array(Source).min(1),
+  /** The other members of the group, which share the fate of the lead: filed with it or silenced with it. */
+  related: z.array(Related),
+};
 
 const ReportBase = {
   ...ProposalBase,
@@ -238,7 +240,6 @@ const ReportBase = {
   finding: Finding,
   cycle: Cycle,
   runUrl: z.string(),
-  related: z.array(Related),
 };
 
 export const Proposal = z.discriminatedUnion('kind', [

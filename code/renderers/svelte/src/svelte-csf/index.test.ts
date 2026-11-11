@@ -1,4 +1,4 @@
-import { createRawSnippet, mount, type ComponentProps, type Snippet } from 'svelte';
+import { createRawSnippet, type ComponentProps, type Snippet } from 'svelte';
 import type { StoryContext as StorybookStoryContext } from 'storybook/internal/types';
 import { describe, expectTypeOf, it } from 'vitest';
 
@@ -6,11 +6,7 @@ import type StoryComponent from '../../static/svelte-csf/Story.svelte';
 
 import { defineMeta } from './index.ts';
 import type { Args } from '../public-types.ts';
-import type {
-  StoryAnnotations,
-  StoryComponent as StoryComponentType,
-  SvelteRenderer,
-} from './types.ts';
+import type { StoryComponent as StoryComponentType, SvelteRenderer } from './types.ts';
 
 import Button from '../__test__/svelte-csf/button.svelte';
 

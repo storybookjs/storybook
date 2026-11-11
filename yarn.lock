@@ -11178,7 +11178,7 @@ __metadata:
     "@types/estree": "npm:^1.0.6"
     es-toolkit: "npm:^1.43.0"
     esrap: "npm:^2.4.0"
-    magic-string: "npm:^0.30.12"
+    magic-string: "npm:^1.1.0"
     memfs: "npm:^4.11.1"
     rollup: "npm:^4.43.0"
     svelte: "npm:^5.39.5"
@@ -11194,10 +11194,6 @@ __metadata:
     storybook: "workspace:^"
     svelte: ^5.0.0
     typescript: ^5.9.0 || ^6.0.0 || ^7.0.0
-    vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
-  peerDependenciesMeta:
-    vite:
-      optional: true
   languageName: unknown
   linkType: soft
 
@@ -25836,7 +25832,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"magic-string@npm:0.30.21, magic-string@npm:^0.30.11, magic-string@npm:^0.30.12, magic-string@npm:^0.30.17, magic-string@npm:^0.30.21":
+"magic-string@npm:0.30.21, magic-string@npm:^0.30.11, magic-string@npm:^0.30.17, magic-string@npm:^0.30.21":
   version: 0.30.21
   resolution: "magic-string@npm:0.30.21"
   dependencies:

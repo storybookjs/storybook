@@ -361,7 +361,15 @@ const runSandcastle = async (
       output: Output.object({ tag: 'qa-result', schema: answerSchema, maxRetries: 2 }),
       hooks: {
         ...(request.sandbox === 'docker'
-          ? { host: { onSandboxReady: [{ command: `node "${plan.toolsDir}/cap-memory.mjs"` }] } }
+          ? {
+              host: {
+                onSandboxReady: [
+                  {
+                    command: `node "${plan.toolsDir}/cap-memory.mjs" "${evidenceDir}/memory-limit.txt"`,
+                  },
+                ],
+              },
+            }
           : {}),
         sandbox: {
           onSandboxReady: [

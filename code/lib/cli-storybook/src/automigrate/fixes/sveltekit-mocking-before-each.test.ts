@@ -1967,6 +1967,21 @@ describe('sveltekit-mocking-before-each', () => {
       );
     });
 
+    it('adds `inline: false` after a spread that follows `sveltekit_experimental`, so the spread does not replace it', async () => {
+      const { csf } = await migrate({
+        csf: dedent`
+          import { shared } from './shared';
+
+          export default { tags: ['autodocs'], parameters: { sveltekit_experimental: { state: { page: { status: 1 } } }, ...shared } };
+          export const A = {};
+        `,
+      });
+
+      expect(csf).toContain(
+        'parameters: { ...shared, docs: { ...(shared as { docs?: object } | undefined)?.docs, story: { ...(shared as { docs?: { story?: object } } | undefined)?.docs?.story, inline: false } } }'
+      );
+    });
+
     it('reports the spreads whose docs `inline: false` would read again or merge', async () => {
       const csf = dedent`
         import { makeParameters } from './shared';

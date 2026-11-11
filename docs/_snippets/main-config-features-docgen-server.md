@@ -176,11 +176,10 @@ export default {
 ```
 
 ```js filename=".storybook/main.js" renderer="svelte" language="js" tabTitle="CSF 4"
-// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-import { defineMain } from '@storybook/your-framework/node';
+import { defineMain } from '@storybook/svelte-vite/node';
 
 export default defineMain({
-  framework: '@storybook/your-framework',
+  framework: '@storybook/svelte-vite', // or '@storybook/sveltekit'
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|ts|svelte)'],
   features: {
     docgenServer: false,
@@ -189,11 +188,10 @@ export default defineMain({
 ```
 
 ```ts filename=".storybook/main.ts" renderer="svelte" language="ts" tabTitle="CSF 4"
-// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-import { defineMain } from '@storybook/your-framework/node';
+import { defineMain } from '@storybook/svelte-vite/node';
 
 export default defineMain({
-  framework: '@storybook/your-framework',
+  framework: '@storybook/svelte-vite', // or '@storybook/sveltekit'
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|ts|svelte)'],
   features: {
     docgenServer: false,
@@ -203,11 +201,10 @@ export default defineMain({
 
 ```ts filename=".storybook/main.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
-import type { StorybookConfig } from '@storybook/your-framework';
+import type { StorybookConfig } from '@storybook/svelte-vite';
 
 const config: StorybookConfig = {
-  framework: '@storybook/your-framework',
+  framework: '@storybook/svelte-vite', // or '@storybook/sveltekit'
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|ts|svelte)'],
   features: {
     docgenServer: false,
@@ -219,9 +216,8 @@ export default config;
 
 ```js filename=".storybook/main.js" renderer="svelte" language="js" tabTitle="CSF 3"
 // ⚠️ CSF versions 1, 2, and 3 will be removed in a future version of Storybook. Upgrade to CSF 4: https://storybook.js.org/docs/writing-stories/csf#upgrade-to-csf-4
-// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
 export default {
-  framework: '@storybook/your-framework',
+  framework: '@storybook/svelte-vite', // or '@storybook/sveltekit'
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|ts|svelte)'],
   features: {
     docgenServer: false,

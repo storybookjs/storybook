@@ -162,6 +162,21 @@ describe('compareBaselines', () => {
     expect(findings[0].message).toContain('name differs');
   });
 
+  it('names the first value that differs when the field summaries are equal', () => {
+    const subcomponent = (path: string) => ({
+      Icon: { name: 'Icon', path, jsDocTags: {} },
+    });
+    const findings = compareBaselines(
+      { button: documented({ subcomponents: subcomponent('<repo>/icon.tsx') }) },
+      { button: documented({ subcomponents: subcomponent('/elsewhere/icon.tsx') }) }
+    );
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toBe(
+      'subcomponents differs at subcomponents.Icon.path (baseline "<repo>/icon.tsx", candidate "/elsewhere/icon.tsx")'
+    );
+  });
+
   it('ignores key ordering, which a producer may change without changing meaning', () => {
     const findings = compareBaselines(
       { button: { ...documented(), jsDocTags: { a: ['1'], b: ['2'] } } },

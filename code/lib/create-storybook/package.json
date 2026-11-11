@@ -38,7 +38,6 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "semver": "^7.7.3",
     "storybook": "workspace:*"
   },
   "devDependencies": {
@@ -48,6 +47,7 @@
     "empathic": "^2.0.0",
     "picocolors": "^1.1.0",
     "react": "^18.2.0",
+    "semver": "^7.7.3",
     "tiny-invariant": "^1.3.1",
     "ts-dedent": "^2.2.0",
     "typescript": "^6.0.3"

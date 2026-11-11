@@ -7,6 +7,8 @@ import {
 } from 'storybook/internal/core-server';
 import {
   defineToolset,
+  getSkillCommand,
+  type ToolsetCtx,
   type ToolsetDefinition,
   type ToolsetMethod,
   type ToolsetOutcome,
@@ -123,7 +125,7 @@ const runInputSchema = v.strictObject({
       v.description(
         `Stories to test for focused feedback. Omit this field to run tests for all available stories.
 Prefer running tests for specific stories while developing to get faster feedback,
-and only omit this when you explicitly need to run all tests for comprehensive verification.
+and omit it once before you finish, to verify every story.
 Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
 Use { storyId } when IDs were discovered from documentation tools.
 Use { absoluteStoryPath + exportName } only when you're currently working in a story file and already know those values.`
@@ -159,9 +161,10 @@ export type TestToolset = ToolsetDefinition<
  * The accessibility half of this tool's contract only holds when addon-a11y is enabled, so the
  * promise is dropped from the description rather than made and then broken.
  */
-function describeRun(a11yEnabled: boolean): string {
+function describeRun(a11yEnabled: boolean, ctx: ToolsetCtx): string {
+  const skill = getSkillCommand(ctx)('test-stories');
   return (
-    `Run story tests.
+    `Run story tests.${skill ? `\nFirst run ${skill} once and follow it: it has the rules for running the tests and fixing what fails.` : ''}
 Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
 Provide stories for focused runs (faster while iterating),
 or omit stories to run all tests for full-project verification.
@@ -252,7 +255,7 @@ export function createTestToolset({
       run: {
         input: runInputSchema,
         title: 'Run Storybook tests',
-        description: describeRun(a11yEnabled),
+        description: (ctx) => describeRun(a11yEnabled, ctx),
         handler: async (
           input,
           ctx

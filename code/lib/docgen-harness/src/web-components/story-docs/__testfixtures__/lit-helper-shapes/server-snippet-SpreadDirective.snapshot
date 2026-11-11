@@ -1,0 +1,1 @@
+html`<lit-template-shapes ${spreadProps({ label: 'Alpha', count: 2, disabled: true })}></lit-template-shapes>`

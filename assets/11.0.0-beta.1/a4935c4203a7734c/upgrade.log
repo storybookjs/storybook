@@ -1,0 +1,252 @@
+npm warn Unknown env config "min-release-age". This will stop working in the next major version of npm.
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm.
+npm warn Unknown project config "min-release-age". This will stop working in the next major version of npm.
+npm warn Unknown env config "min-release-age". This will stop working in the next major version of npm.
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm.
+npm warn Unknown project config "min-release-age". This will stop working in the next major version of npm.
+
+[90m┌[39m  Storybook upgrade - v11.0.0-beta.1
+[90m│[39m
+[90m│[39m  Detecting projects...
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[34m●[39m  Upgrading from [1m10.5.10[22m to [1m11.0.0-beta.1[22m
+[90m│[39m
+[90m│[39m  /package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for /.storybook...
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m argtypes-default-value[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m angular-vite-remove-compodoc[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m wrap-getAbsolutePath[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  4 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running all detected automigrations:
+[90m│[39m
+[90m│[39m  - argtypes-default-value (/.storybook)
+[90m│[39m
+[90m│[39m  - angular-vite-remove-compodoc (/.storybook)
+[90m│[39m
+[90m│[39m  - wrap-getAbsolutePath (/.storybook)
+[90m│[39m
+[90m│[39m  - skills (/.storybook)
+[90m│[39m
+[90m│[39m  [36mnpx skills@latest add storybookjs/skills#v11.0.0-beta.1 --yes --agent[39m
+[90m│[39m  [36mclaude-code universal --copy[39m
+[90m│[39m
+[90m│[39m  Added a Storybook section to AGENTS.md and CLAUDE.md that tells agents
+[90m│[39m  when to use the skills. Storybook keeps it current on upgrade: remove
+[90m│[39m  its markers to keep your own edits, or remove the section to opt out.
+[90m│[39m
+[90m│[39m  Remove the Storybook skills with: npx skills@latest remove
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m argtypes-default-value (43 files skipped)[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m angular-vite-remove-compodoc[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m wrap-getAbsolutePath[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  Completed automigrations for /.storybook
+[90m│[39m
+[33m▲[39m  43 files could not be migrated automatically. See
+[90m│[39m  [36mautomigrations-summary.md[39m for which ones and why.
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[31m■[39m  [31mInstallation of dependencies failed![39m
+[90m│[39m
+[31m■[39m  npm error   dev storybook@"^11.0.0-beta.1" from the root project
+[90m│[39m  npm error
+[90m│[39m  npm error Could not resolve dependency:
+[90m│[39m  npm error peer overridden storybook@"~10.5.3" (was "^11.0.0-beta.1")
+[90m│[39m  from @storybook/addon-mcp@11.0.0-beta.1
+[90m│[39m  npm error node_modules/@storybook/addon-mcp
+[90m│[39m  npm error   dev @storybook/addon-mcp@"^11.0.0-beta.1" from the root
+[90m│[39m  project
+[90m│[39m  npm error
+[90m│[39m  npm error Fix the upstream dependency conflict, or retry
+[90m│[39m  npm error this command with --force or --legacy-peer-deps
+[90m│[39m  npm error to accept an incorrect (and potentially broken) dependency
+[90m│[39m  resolution.
+[90m│[39m  npm error
+[90m│[39m  npm error
+[90m│[39m  npm error For a full report see:
+[90m│[39m  npm error
+[90m│[39m  /home/agent/.npm/_logs/2026-11-11T15_14_34_606Z-eresolve-report.txt
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-11T15_14_34_606Z-debug-0.log
+[90m│[39m
+[33m▲[39m  Peer dependency conflict detected; retrying with --legacy-peer-deps
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[90m│[39m  Installing dependencies...: > prepare
+[90m│[39m  > node scripts/
+[90m│[39m
+[90m│[39m  Installing dependencies...: added 3 packages, removed
+[90m│[39m
+[90m│[39m  Installing dependencies...: 246 packages are looking
+[90m│[39m
+[90m│[39m  Installing dependencies...: 33 vulnerabilities (3 low
+[90m│[39m
+[90m│[39m  Dependencies installed
+[90m│[39m
+[33m▲[39m  Since you are in a monorepo, we advise you to deduplicate your
+[90m│[39m  dependencies. We can do this for you but it might take some time.
+[90m│[39m
+[90m│[39m  Deduplicating dependencies...
+[90m│[39m
+[90m│[39m  [31mCommand failed: npm dedupe
+
+[90m│[39m  Command failed with exit code 1: npm dedupe
+[90m│[39m  npm warn Unknown env config "min-release-age". This will stop working
+[90m│[39m  in the next major version of npm.
+[90m│[39m  npm warn Unknown env config "frozen-lockfile". This will stop working
+[90m│[39m  in the next major version of npm.
+[90m│[39m  npm warn Unknown project config "min-release-age". This will stop
+[90m│[39m  working in the next major version of npm.
+[90m│[39m  npm error code ERESOLVE
+[90m│[39m  npm error ERESOLVE could not resolve
+[90m│[39m  npm error
+[90m│[39m  npm error While resolving: @storybook/addon-mcp@11.0.0-beta.1
+[90m│[39m  npm error Found: @storybook/addon-vitest@11.0.0-beta.1
+[90m│[39m  npm error node_modules/@storybook/addon-vitest
+[90m│[39m  npm error   dev @storybook/addon-vitest@"^11.0.0-beta.1" from the root
+[90m│[39m  project
+[90m│[39m  npm error
+[90m│[39m  npm error Could not resolve dependency:
+[90m│[39m  npm error peerOptional overridden @storybook/addon-vitest@"~10.5.3"
+[90m│[39m  (was "^11.0.0-beta.1") from @storybook/addon-mcp@11.0.0-beta.1
+[90m│[39m  npm error node_modules/@storybook/addon-mcp
+[90m│[39m  npm error   dev @storybook/addon-mcp@"^11.0.0-beta.1" from the root
+[90m│[39m  project
+[90m│[39m  npm error
+[90m│[39m  npm error Conflicting peer dependency: @storybook/addon-vitest@10.5.10
+[90m│[39m  npm error node_modules/@storybook/addon-vitest
+[90m│[39m  npm error   peerOptional overridden @storybook/addon-vitest@"~10.5.3"
+[90m│[39m  (was "^11.0.0-beta.1") from @storybook/addon-mcp@11.0.0-beta.1
+[90m│[39m  npm error   node_modules/@storybook/addon-mcp
+[90m│[39m  npm error     dev @storybook/addon-mcp@"^11.0.0-beta.1" from the root
+[90m│[39m  project
+[90m│[39m  npm error
+[90m│[39m  npm error Fix the upstream dependency conflict, or retry
+[90m│[39m  npm error this command with --force or --legacy-peer-deps
+[90m│[39m  npm error to accept an incorrect (and potentially broken) dependency
+[90m│[39m  resolution.
+[90m│[39m  npm error
+[90m│[39m  npm error
+[90m│[39m  npm error For a full report see:
+[90m│[39m  npm error
+[90m│[39m  /home/agent/.npm/_logs/2026-11-11T15_14_43_802Z-eresolve-report.txt
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-11T15_14_43_802Z-debug-0.log
+[90m│[39m  Command failed with exit code 1: npm dedupe
+
+[90m│[39m  npm warn Unknown env config "min-release-age". This will stop working
+[90m│[39m  in the next major version of npm.
+[90m│[39m  npm warn Unknown env config "frozen-lockfile". This will stop working
+[90m│[39m  in the next major version of npm.
+[90m│[39m  npm warn Unknown project config "min-release-age". This will stop
+[90m│[39m  working in the next major version of npm.
+[90m│[39m  npm error code ERESOLVE
+[90m│[39m  npm error ERESOLVE could not resolve
+[90m│[39m  npm error
+[90m│[39m  npm error While resolving: @storybook/addon-mcp@11.0.0-beta.1
+[90m│[39m  npm error Found: @storybook/addon-vitest@11.0.0-beta.1
+[90m│[39m  npm error node_modules/@storybook/addon-vitest
+[90m│[39m  npm error   dev @storybook/addon-vitest@"^11.0.0-beta.1" from the root
+[90m│[39m  project
+[90m│[39m  npm error
+[90m│[39m  npm error Could not resolve dependency:
+[90m│[39m  npm error peerOptional overridden @storybook/addon-vitest@"~10.5.3"
+[90m│[39m  (was "^11.0.0-beta.1") from @storybook/addon-mcp@11.0.0-beta.1
+[90m│[39m  npm error node_modules/@storybook/addon-mcp
+[90m│[39m  npm error   dev @storybook/addon-mcp@"^11.0.0-beta.1" from the root
+[90m│[39m  project
+[90m│[39m  npm error
+[90m│[39m  npm error Conflicting peer dependency: @storybook/addon-vitest@10.5.10
+[90m│[39m  npm error node_modules/@storybook/addon-vitest
+[90m│[39m  npm error   peerOptional overridden @storybook/addon-vitest@"~10.5.3"
+[90m│[39m  (was "^11.0.0-beta.1") from @storybook/addon-mcp@11.0.0-beta.1
+[90m│[39m  npm error   node_modules/@storybook/addon-mcp
+[90m│[39m  npm error     dev @storybook/addon-mcp@"^11.0.0-beta.1" from the root
+[90m│[39m  project
+[90m│[39m  npm error
+[90m│[39m  npm error Fix the upstream dependency conflict, or retry
+[90m│[39m  npm error this command with --force or --legacy-peer-deps
+[90m│[39m  npm error to accept an incorrect (and potentially broken) dependency
+[90m│[39m  resolution.
+[90m│[39m  npm error
+[90m│[39m  npm error
+[90m│[39m  npm error For a full report see:
+[90m│[39m  npm error
+[90m│[39m  /home/agent/.npm/_logs/2026-11-11T15_14_43_802Z-eresolve-report.txt
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-11T15_14_43_802Z-debug-0.log[39m
+[90m│[39m
+[33m▲[39m  Peer dependency conflict detected; retrying with --legacy-peer-deps
+[90m│[39m
+[90m│[39m  Deduplicating dependencies...
+[90m│[39m
+[90m│[39m  added 24 packages, removed 19 packages, changed 85 packages, and
+[90m│[39m  audited 1300 packages in 23s
+[90m│[39m
+[90m│[39m  247 packages are looking for funding
+[90m│[39m  run `npm fund` for details
+[90m│[39m
+[90m│[39m  33 vulnerabilities (3 low, 28 moderate, 2 high)
+
+[90m│[39m  To address issues that do not require attention, run:
+[90m│[39m  npm audit fix
+
+[90m│[39m  To address all issues (including breaking changes), run:
+[90m│[39m  npm audit fix --force
+
+[90m│[39m  Run `npm audit` for details.
+[90m│[39m
+[90m│[39m  [32mDependencies deduplicated[39m
+[90m│[39m
+[32m◇[39m  Checking the health of your project(s)..
+[90m│[39m
+[90m│[39m  Your Storybook project looks good!
+[90m│[39m
+[32m◇[39m  The upgrade is complete, but some projects failed to upgrade or
+[90m│[39m  migrate completely. Please see the debug logs for more details.
+[90m│[39m
+[90m│[39m  [31mFailed to upgrade:[39m
+[90m│[39m  Some automigrations failed or skipped files. Review the upgrade output
+[90m│[39m  for details.
+[90m│[39m  • /.storybook
+[90m│[39m
+[90m│[39m  If you want to learn more about the automigrations that executed in
+[90m│[39m  your project(s), please check the following links:
+[90m│[39m  • argtypes-default-value:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-defaultvalue-removed
+[90m│[39m  • angular-vite-remove-compodoc:
+[90m│[39m  https://storybook.js.org/docs/get-started/frameworks/angular-vite
+[90m│[39m  • wrap-getAbsolutePath:
+[90m│[39m  https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environments
+[90m│[39m  • skills: https://github.com/storybookjs/skills
+[90m│[39m
+[90m│[39m  For a full list of changes, please check our migration guide:
+[90m│[39m  [36mhttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade[39m
+[90m│[39m
+[90m│[39m  Debug logs are written to: /home/agent/workspace/debug-storybook.log
+[90m│[39m
+[90m└[39m  
+

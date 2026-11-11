@@ -1,0 +1,29 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm.
+npm warn Unknown project config "min-release-age". This will stop working in the next major version of npm.
+npm error code ERESOLVE
+npm error ERESOLVE could not resolve
+npm error
+npm error While resolving: @storybook/addon-mcp@11.0.0-beta.1
+npm error Found: @storybook/addon-vitest@11.0.0-beta.1
+npm error node_modules/@storybook/addon-vitest
+npm error   dev @storybook/addon-vitest@"^11.0.0-beta.1" from the root project
+npm error
+npm error Could not resolve dependency:
+npm error peerOptional overridden @storybook/addon-vitest@"~10.5.3" (was "^11.0.0-beta.1") from @storybook/addon-mcp@11.0.0-beta.1
+npm error node_modules/@storybook/addon-mcp
+npm error   dev @storybook/addon-mcp@"^11.0.0-beta.1" from the root project
+npm error
+npm error Conflicting peer dependency: @storybook/addon-vitest@10.5.10
+npm error node_modules/@storybook/addon-vitest
+npm error   peerOptional overridden @storybook/addon-vitest@"~10.5.3" (was "^11.0.0-beta.1") from @storybook/addon-mcp@11.0.0-beta.1
+npm error   node_modules/@storybook/addon-mcp
+npm error     dev @storybook/addon-mcp@"^11.0.0-beta.1" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /home/agent/.npm/_logs/2026-11-11T15_36_22_171Z-eresolve-report.txt
+npm error A complete log of this run can be found in: /home/agent/.npm/_logs/2026-11-11T15_36_22_171Z-debug-0.log

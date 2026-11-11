@@ -22,6 +22,7 @@ const byName = (name: string) => `https://assets.example/${name}`;
 describe('hitsFor', () => {
   const issue = (number: number, body: string): QaIssue => ({
     number,
+    title: `Issue ${number}`,
     body,
     labels: ['internal-qa'],
     state: 'open',

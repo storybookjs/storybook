@@ -97,5 +97,6 @@ export const single = (lead: FindingGroup | undefined): Cluster => ({
 /** A listed QA issue whose body carries the group's fingerprint, or no fingerprint without a group. */
 export const issueOn = (group: FindingGroup | undefined, hit: IssueHit): QaIssue => ({
   ...hit,
+  title: `Issue ${hit.number}`,
   body: group ? `fingerprint: ${group.fingerprint}` : 'fingerprint: 0000000000000000',
 });

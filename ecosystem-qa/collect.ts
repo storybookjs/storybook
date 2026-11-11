@@ -3,13 +3,12 @@ import { parseArgs } from 'node:util';
 
 import { z } from 'zod';
 
-import { loadCatalog } from './lib/catalog.ts';
 import { versionLine } from './lib/cycle.ts';
 import { compareExpected, loadExpected, renderExpectReport } from './lib/expected.ts';
 import { listQaIssues, releasePublishedAt } from './lib/github.ts';
 import { checkGrouping, clusterFindings, identityGrouping } from './lib/grouping.ts';
-import { groupFindings, toProposal } from './lib/proposals.ts';
-import { loadResults, upgraded } from './lib/results.ts';
+import { loadFindingGroups, toProposal } from './lib/proposals.ts';
+import { upgraded } from './lib/results.ts';
 import { Grouping } from './lib/schema.ts';
 
 const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>] [--expect <expected-findings.json>] [--groups <groups.json>]
@@ -55,13 +54,7 @@ const runUrl =
     ? `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`
     : 'local');
 
-const loaded = loadResults(results, {
-  version,
-  catalog: loadCatalog(),
-  warn: (message) => console.warn(`::warning::${message}`),
-});
-
-const groups = groupFindings(loaded);
+const { loaded, groups } = loadFindingGroups(results, version);
 const fingerprints = groups.map((group) => group.fingerprint);
 const issues = listQaIssues(repo);
 const publishedAt = releasePublishedAt(repo, version);

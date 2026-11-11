@@ -2,10 +2,11 @@ import { existsSync, statSync } from 'node:fs';
 
 import { join } from 'pathe';
 
+import { loadCatalog } from './catalog.ts';
 import { cycleRef, versionLine } from './cycle.ts';
 import { fingerprint } from './fingerprint.ts';
 import type { Cluster } from './grouping.ts';
-import type { LoadedResult } from './results.ts';
+import { loadResults, type LoadedResult } from './results.ts';
 import { redactSecrets } from './redact.ts';
 import { sanitizeFinding, sanitizeTitle } from './sanitize.ts';
 import type {
@@ -35,6 +36,7 @@ export interface IssueHit {
 export const QA_LABEL = 'internal-qa';
 
 export interface QaIssue extends IssueHit {
+  title: string;
   body: string;
   closedAt?: string;
   stateReason?: string;
@@ -67,6 +69,19 @@ export const groupFindings = (results: LoadedResult[]): FindingGroup[] => {
     }
   }
   return [...groups.values()];
+};
+
+/** Load the results of the catalog's runs of `version` under `resultsDir` and merge their findings by fingerprint. */
+export const loadFindingGroups = (
+  resultsDir: string,
+  version: string
+): { loaded: LoadedResult[]; groups: FindingGroup[] } => {
+  const loaded = loadResults(resultsDir, {
+    version,
+    catalog: loadCatalog(),
+    warn: (message) => console.warn(`::warning::${message}`),
+  });
+  return { loaded, groups: groupFindings(loaded) };
 };
 
 const evidenceFiles = ({ finding, primary }: FindingGroup): EvidenceFile[] => {

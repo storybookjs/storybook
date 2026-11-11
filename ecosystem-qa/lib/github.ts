@@ -10,6 +10,7 @@ const QUIET: ExecFileSyncOptions = { stdio: ['ignore', 'pipe', 'inherit'] };
 const IssueListing = z.array(
   z.object({
     number: z.number(),
+    title: z.string(),
     state: z.enum(['open', 'closed']),
     labels: z.array(z.object({ name: z.string() })),
     body: z.string().nullable(),
@@ -32,6 +33,7 @@ export const qaIssuesFrom = (items: unknown): QaIssue[] =>
     .filter((item) => item.pull_request === undefined)
     .map((item) => ({
       number: item.number,
+      title: item.title,
       state: item.state,
       labels: item.labels.map((label) => label.name),
       body: item.body ?? '',

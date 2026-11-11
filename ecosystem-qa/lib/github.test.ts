@@ -4,6 +4,7 @@ import { publishedAtFrom, qaIssuesFrom } from './github.ts';
 
 const item = (extra: object = {}) => ({
   number: 5,
+  title: 'Dev server crashes',
   state: 'closed',
   labels: [{ name: 'bug' }, { name: 'internal-qa' }],
   body: 'fingerprint: 0123456789abcdef',
@@ -17,6 +18,7 @@ describe('qaIssuesFrom', () => {
     expect(issues).toEqual([
       {
         number: 5,
+        title: 'Dev server crashes',
         state: 'closed',
         labels: ['bug', 'internal-qa'],
         body: 'fingerprint: 0123456789abcdef',

@@ -1,0 +1,15 @@
+Probe: add `qaProbe?: string` (default "qa-default") to ProfileButton.svelte, which the
+avatar-profilebutton--playground story renders. Each attempt restored the file afterwards.
+
+Dev server (port 6006):
+- Save 1: manager Controls captured 20s after save (argtypes-frames/02.png, 02-retry.png): qaProbe not listed.
+- Save 2: captured 15s + 20s after save (argtypes-frames/03-edit-second-try.png): qaProbe not listed.
+- Restart with the edit present (dev-argtypes-restart.log, argtypes-frames/04-edit-after-restart.png): qaProbe not listed.
+
+Static build (storybook build), docgen file services/core/docgen/avatar-profilebutton.json:
+- Build with prop in component (argtypes-build.log): "qaProbe in docgen: false".
+- Build with prop used in the template as data-qa-probe (argtypes-build2.log): "qaProbe in docgen (used in template): false".
+- Build with prop plus a touched AccountButton.stories.svelte (argtypes-build3.log): "qaProbe in docgen (stories file also touched): false".
+
+Docgen entry in the unedited build lists onclick and srcUrl only.
+Not isolated: whether Storybook 10.3.3 behaves the same way was not tested.

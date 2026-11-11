@@ -1,8 +1,6 @@
 import { parseJsonText } from 'storybook/internal/cli';
 import { getProjectRoot } from 'storybook/internal/common';
 
-import { glob } from 'tinyglobby';
-
 import type { FixFiles } from '../fix-files.ts';
 
 /** `null` when the file cannot be read or is not valid JSON with comments. */
@@ -18,7 +16,9 @@ export const readJsonFile = async (
 };
 
 export const findWorkspaceFiles = async (basename: string): Promise<string[]> => {
-  return glob([`**/${basename}`], {
+  // eslint-disable-next-line depend/ban-dependencies
+  const { globby } = await import('globby');
+  return globby([`**/${basename}`], {
     cwd: getProjectRoot(),
     ignore: ['**/node_modules/**', '**/dist/**', '**/storybook-static/**'],
     absolute: true,

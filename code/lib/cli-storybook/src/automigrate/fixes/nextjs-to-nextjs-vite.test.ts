@@ -12,8 +12,8 @@ import { VITE_DEFAULT_VERSION, nextjsToNextjsVite } from './nextjs-to-nextjs-vit
 
 vi.mock('node:fs/promises', { spy: true });
 
-vi.mock('tinyglobby', () => ({
-  glob: vi.fn().mockResolvedValue(['/project/.storybook/preview.ts']),
+vi.mock('globby', () => ({
+  globby: vi.fn().mockResolvedValue(['/project/.storybook/preview.ts']),
 }));
 
 describe('nextjs-to-nextjs-vite', () => {

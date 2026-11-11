@@ -8,14 +8,14 @@ vi.mock('storybook/internal/node-logger');
 
 const mocks = vi.hoisted(() => {
   return {
-    glob: vi.fn(),
+    globby: vi.fn(),
   };
 });
 
-vi.mock('tinyglobby', async (importOriginal) => {
+vi.mock('globby', async (importOriginal) => {
   return {
-    ...(await importOriginal<typeof import('tinyglobby')>()),
-    glob: mocks.glob,
+    ...(await importOriginal<typeof import('globby')>()),
+    globby: mocks.globby,
   };
 });
 
@@ -35,7 +35,7 @@ describe('warn', () => {
 
   describe('when TypeScript is not installed as a dependency', () => {
     it('should not warn if `.tsx?` files are not found', async () => {
-      mocks.glob.mockResolvedValue([]);
+      mocks.globby.mockResolvedValue([]);
       await warn({
         hasTSDependency: false,
       });
@@ -43,7 +43,7 @@ describe('warn', () => {
     });
 
     it('should warn if `.tsx?` files are found', async () => {
-      mocks.glob.mockResolvedValue(['a.ts']);
+      mocks.globby.mockResolvedValue(['a.ts']);
       await warn({
         hasTSDependency: false,
       });

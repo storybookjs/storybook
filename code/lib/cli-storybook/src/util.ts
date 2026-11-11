@@ -1,5 +1,3 @@
-import { spawnSync } from 'node:child_process';
-
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 import {
   HandledError,
@@ -23,10 +21,10 @@ import {
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import * as walk from 'empathic/walk';
-import { resolve } from 'pathe';
+// eslint-disable-next-line depend/ban-dependencies
+import { globby, globbySync } from 'globby';
 import picocolors from 'picocolors';
 import { lt, prerelease, rsort } from 'semver';
-import { glob, globSync } from 'tinyglobby';
 
 import { autoblock } from './autoblock/index.ts';
 import type { AutoblockerResult } from './autoblock/types.ts';
@@ -91,18 +89,6 @@ interface VersionModifier {
 
 /** Glob pattern for finding Storybook directories */
 const STORYBOOK_DIR_PATTERN = ['**/.storybook', '**/.rnstorybook'];
-
-const gitIgnores = (cwd: string, path: string) =>
-  spawnSync('git', ['check-ignore', '-q', '--', path], { cwd }).status === 0;
-
-// The repository of `cwd` answers for a worktree or clone in a directory it ignores. Inside a
-// submodule it errors, so the submodule's own repository is asked too.
-const isGitIgnored = (cwd: string, path: string) =>
-  gitIgnores(cwd, path) || gitIgnores(resolve(cwd, path), '.');
-
-// A project can live in a directory that a parent repository ignores, such as a reproduction.
-const withoutGitIgnored = (paths: string[], cwd: string) =>
-  gitIgnores(cwd, '.') ? paths : paths.filter((path) => !isGitIgnored(cwd, path));
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -228,16 +214,17 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
   try {
     logger.debug(`Finding Storybook projects...`);
     // Find all .storybook directories, accounting for custom config dirs later
-    const candidates = await glob(STORYBOOK_DIR_PATTERN, {
+    const storybookDirs = await globby(STORYBOOK_DIR_PATTERN, {
       cwd,
       dot: true,
-      // Packages like @nx/storybook ship .storybook templates, so never rely on .gitignore to skip them.
+      gitignore: true,
+      // Packages like @nx/storybook ship .storybook templates, and globby misses .gitignore patterns
+      // like `**/**/node_modules/`, so never rely on .gitignore to skip them.
       ignore: ['**/node_modules/**'],
+      absolute: true,
       onlyDirectories: true,
-      expandDirectories: false,
       followSymbolicLinks: false,
     });
-    const storybookDirs = withoutGitIgnored(candidates, cwd).map((dir) => resolve(cwd, dir));
 
     logger.debug(`Found ${storybookDirs.length} Storybook projects`);
 
@@ -795,7 +782,9 @@ export const getProjects = async (
 export const findFilesUp = (matchers: string[], cwd: string) => {
   const matchingFiles: string[] = [];
   for (const directory of walk.up(cwd, { last: getProjectRoot() })) {
-    matchingFiles.push(...globSync(matchers, { absolute: true, cwd: directory }));
+    // The matchers only name files directly inside `directory`, so `gitignore: true` would only add
+    // a read of every .gitignore below it, which takes seconds per call in a large monorepo.
+    matchingFiles.push(...globbySync(matchers, { absolute: true, cwd: directory }));
   }
 
   return matchingFiles;

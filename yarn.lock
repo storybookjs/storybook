@@ -11106,6 +11106,7 @@ __metadata:
     verdaccio-auth-memory: "npm:^10.3.1"
     vitest: "npm:5.0.5"
     wait-on: "npm:^8.0.3"
+    watchpack: "npm:^2.5.0"
     window-size: "npm:^1.1.1"
     yaml: "npm:^2.8.1"
     zod: "npm:^3.25.76"
@@ -17381,6 +17382,15 @@ __metadata:
   dependencies:
     readdirp: "npm:^5.0.0"
   checksum: 10c0/42fc907cb2a7ff5c9e220f84dae75380a77997f851c2a5e7865a2cf9ae45dd407a23557208cdcdbf3ac8c93341135a1748e4c48c31855f3bfa095e5159b6bdec
+  languageName: node
+  linkType: hard
+
+"chokidar@npm:^6.0.0":
+  version: 6.0.0
+  resolution: "chokidar@npm:6.0.0"
+  dependencies:
+    readdirp: "npm:^5.1.1"
+  checksum: 10c0/75651391e81b0cf7efa8ec373b68afaf1ad13283e8cae01737976bd0ff72fcb5afac75942ac3c07393d414269737229eb7648d74d32a1373764ecd0711b626b9
   languageName: node
   linkType: hard
 
@@ -31254,6 +31264,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"readdirp@npm:^5.1.1":
+  version: 5.1.1
+  resolution: "readdirp@npm:5.1.1"
+  checksum: 10c0/5e99755684b9104761e48801828f4d2614efa33b1698629929c5985184dc63a7f8233c827832c40dc7be16b00cc871d303cf9de396d2fb74b9465ee2aa2424a1
+  languageName: node
+  linkType: hard
+
 "readdirp@npm:~3.6.0":
   version: 3.6.0
   resolution: "readdirp@npm:3.6.0"
@@ -33683,6 +33700,7 @@ __metadata:
     bundle-require: "npm:^5.1.0"
     camelcase: "npm:^9.0.0"
     chai: "npm:^6.3.0"
+    chokidar: "npm:^6.0.0"
     commander: "npm:^14.0.2"
     comment-parser: "npm:^1.4.1"
     copy-to-clipboard: "npm:^3.3.1"
@@ -33773,7 +33791,6 @@ __metadata:
     unique-string: "npm:^3.0.0"
     use-resize-observer: "npm:^9.1.0"
     valibot: "npm:^1.4.0"
-    watchpack: "npm:^2.5.0"
     wrap-ansi: "npm:^9.0.2"
     ws: "npm:^8.21.1"
     wsl-utils: "npm:^0.1.0"

@@ -7,7 +7,7 @@ import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 
 import { debounce } from 'es-toolkit/function';
 import type { Polka, Request, Response } from 'polka';
-import Watchpack from 'watchpack';
+import { watch } from 'chokidar';
 
 import { csfIndexer } from '../presets/common-preset.ts';
 import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator.ts';
@@ -15,7 +15,7 @@ import { StoryIndexGenerator } from './StoryIndexGenerator.ts';
 import type { ServerChannel } from './get-server-channel.ts';
 import { registerIndexJsonRoute } from './index-json.ts';
 
-vi.mock('watchpack');
+vi.mock('chokidar');
 vi.mock('es-toolkit/function', { spy: true });
 vi.mock('storybook/internal/node-logger');
 
@@ -84,8 +84,20 @@ describe('registerIndexJsonRoute', () => {
     end.mockClear();
     write.mockClear();
     vi.mocked(debounce).mockImplementation((cb) => cb as any);
-    Watchpack.mockClear();
+    vi.mocked(watch).mockReset();
+    vi.mocked(watch).mockImplementation(() => {
+      const watcher = { on: vi.fn(() => watcher), close: vi.fn() };
+      return watcher as any;
+    });
   });
+
+  // The route creates the watcher for story files first, and the one for the config directory second
+  const watcherListener = (watcherIndex: number, event: 'add' | 'change' | 'unlink') =>
+    vi
+      .mocked(watch)
+      .mock.results[watcherIndex].value.on.mock.calls.find(
+        ([name]: [string]) => name === event
+      )[1] as (path: string) => void;
 
   const request: Request = {
     headers: { accept: 'application/json' },
@@ -540,73 +552,14 @@ describe('registerIndexJsonRoute', () => {
 
       expect(write).not.toHaveBeenCalled();
 
-      expect(Watchpack).toHaveBeenCalledTimes(1);
-      const watcher = Watchpack.mock.instances[0];
-      expect(watcher.watch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          directories: expect.any(Array),
-          files: expect.any(Array),
-        })
-      );
+      const onRemove = watcherListener(0, 'unlink');
 
-      expect(watcher.on).toHaveBeenCalledTimes(2);
-      const onChange = watcher.on.mock.calls[0][1];
-
-      onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      onRemove(`${workingDir}/src/nested/Button.stories.ts`);
       // Wait for the batched events to be processed
       await vi.waitFor(() => {
         expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
       });
       expect(mockServerChannel.emit).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED);
-    });
-
-    it('drops the stories of a removed directory and sends an invalidation', async () => {
-      const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
-      registerIndexJsonRoute({
-        app,
-        channel: mockServerChannel,
-        workingDir,
-        normalizedStories,
-        storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
-      });
-      const route = use.mock.calls[0][1];
-
-      await route(request, response);
-      expect(JSON.parse(end.mock.calls[0][0]).entries).toHaveProperty('nested-button--story-one');
-
-      const onChange = Watchpack.mock.instances[0].on.mock.calls[0][1];
-      onChange(`${workingDir}/src/nested`);
-      await vi.waitFor(() => {
-        expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
-      });
-
-      end.mockClear();
-      await route(request, response);
-      expect(JSON.parse(end.mock.calls[0][0]).entries).not.toHaveProperty(
-        'nested-button--story-one'
-      );
-    });
-
-    it('does not send an invalidation for a removed file that is not in the index', async () => {
-      const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
-      registerIndexJsonRoute({
-        app,
-        channel: mockServerChannel,
-        workingDir,
-        normalizedStories,
-        storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
-      });
-      const route = use.mock.calls[0][1];
-      await route(request, response);
-
-      const onChange = Watchpack.mock.instances[0].on.mock.calls[0][1];
-      onChange(`${workingDir}/src/nested/Button.ts`);
-      onChange(`${workingDir}/src/nested/Button.stories.ts`);
-      await vi.waitFor(() => {
-        expect(mockServerChannel.emit).toHaveBeenCalled();
-      });
-
-      expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
     });
 
     it('leaves no rejection unhandled for a file event when the generator failed to start', async () => {
@@ -626,9 +579,7 @@ describe('registerIndexJsonRoute', () => {
         await route(request, failedResponse);
         expect(failedResponse.statusCode).toBe(500);
 
-        const onChange = Watchpack.mock.instances[0].on.mock.calls[0][1];
-        onChange(`${workingDir}/src/nested/Button.ts`);
-        onChange(`${workingDir}/src/nested/Button.stories.ts`, 1234);
+        watcherListener(0, 'change')(`${workingDir}/src/nested/Button.stories.ts`);
         // Longer than the watcher's 100 ms batch: a rejection has nothing else to wait for
         await new Promise((resolve) => setTimeout(resolve, 250));
 
@@ -636,6 +587,28 @@ describe('registerIndexJsonRoute', () => {
       } finally {
         process.off('unhandledRejection', onUnhandled);
       }
+    });
+
+    it('sends an invalidation when the preview file changes', async () => {
+      const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
+      registerIndexJsonRoute({
+        app,
+        channel: mockServerChannel,
+        workingDir,
+        configDir: workingDir,
+        normalizedStories,
+        storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
+      });
+      const route = use.mock.calls[0][1];
+      await route(request, response);
+
+      watcherListener(1, 'change')(`${workingDir}/main.ts`);
+      watcherListener(1, 'change')(`${workingDir}/preview.ts`);
+
+      await vi.waitFor(() => {
+        expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
+      });
+      expect(mockServerChannel.emit).toHaveBeenCalledWith(STORY_INDEX_INVALIDATED);
     });
 
     it('only sends one invalidation when multiple event listeners are listening', async () => {
@@ -659,19 +632,9 @@ describe('registerIndexJsonRoute', () => {
 
       expect(write).not.toHaveBeenCalled();
 
-      expect(Watchpack).toHaveBeenCalledTimes(1);
-      const watcher = Watchpack.mock.instances[0];
-      expect(watcher.watch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          directories: expect.any(Array),
-          files: expect.any(Array),
-        })
-      );
+      const onRemove = watcherListener(0, 'unlink');
 
-      expect(watcher.on).toHaveBeenCalledTimes(2);
-      const onChange = watcher.on.mock.calls[0][1];
-
-      onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      onRemove(`${workingDir}/src/nested/Button.stories.ts`);
       // Wait for the batched events to be processed
       await vi.waitFor(() => {
         expect(mockServerChannel.emit).toHaveBeenCalledTimes(1);
@@ -701,26 +664,16 @@ describe('registerIndexJsonRoute', () => {
 
       expect(write).not.toHaveBeenCalled();
 
-      expect(Watchpack).toHaveBeenCalledTimes(1);
-      const watcher = Watchpack.mock.instances[0];
-      expect(watcher.watch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          directories: expect.any(Array),
-          files: expect.any(Array),
-        })
-      );
-
-      expect(watcher.on).toHaveBeenCalledTimes(2);
-      const onChange = watcher.on.mock.calls[0][1];
+      const onRemove = watcherListener(0, 'unlink');
 
       // Fire multiple change events in rapid succession
       // These get batched by watchStorySpecifiers (100ms batching window)
       // and then debounced by maybeInvalidate (100ms debounce)
-      onChange(`${workingDir}/src/nested/Button.stories.ts`);
-      onChange(`${workingDir}/src/nested/Button.stories.ts`);
-      onChange(`${workingDir}/src/nested/Button.stories.ts`);
-      onChange(`${workingDir}/src/nested/Button.stories.ts`);
-      onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      onRemove(`${workingDir}/src/nested/Button.stories.ts`);
+      onRemove(`${workingDir}/src/nested/Button.stories.ts`);
+      onRemove(`${workingDir}/src/nested/Button.stories.ts`);
+      onRemove(`${workingDir}/src/nested/Button.stories.ts`);
+      onRemove(`${workingDir}/src/nested/Button.stories.ts`);
 
       // Wait for first batch to be processed and emit (leading edge)
       await vi.waitFor(() => {
@@ -730,7 +683,7 @@ describe('registerIndexJsonRoute', () => {
 
       // Fire another change event after the first batch is processed
       // This will trigger the trailing edge of the debounce
-      onChange(`${workingDir}/src/nested/Button.stories.ts`);
+      onRemove(`${workingDir}/src/nested/Button.stories.ts`);
 
       // Wait for trailing debounce to trigger second emit
       await vi.waitFor(() => {

@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { logger } from 'storybook/internal/node-logger';
 
 import ansiRegex from 'ansi-regex';
 import { dedent } from 'ts-dedent';
@@ -16,6 +18,10 @@ const tsTransform = async (source: string) =>
   (await _transform({ source, path: 'Component.stories.tsx' })).trim();
 
 describe('csf-2-to-3', () => {
+  beforeEach(() => {
+    vi.mocked(logger.warn).mockClear();
+  });
+
   it('leaves Svelte CSF files unchanged', async () => {
     const source = dedent`
       <script module>
@@ -349,6 +355,120 @@ describe('csf-2-to-3', () => {
           parameters: { foo: 2 },
         };
       `);
+    });
+
+    it('moves the declarations that annotations read above the story', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat' };
+
+          export const A = (args) => <Cat {...args} />;
+          // Shared by every story
+          const base = { name: 'Fluffy' };
+          const withAge = (age) => ({ ...base, age });
+          const defaultArgs = withAge(2);
+          A.args = defaultArgs;
+          A.play = async () => {
+            await meow();
+          };
+          const meow = async () => {};
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat" };
+
+        // Shared by every story
+        const base = { name: "Fluffy" };
+        const withAge = (age) => ({ ...base, age });
+        const defaultArgs = withAge(2);
+        export const A = {
+          render: (args) => <Cat {...args} />,
+          args: defaultArgs,
+          play: async () => {
+            await meow();
+          },
+        };
+        const meow = async () => {};
+      `);
+    });
+
+    it('moves a declaration above the first story that reads it', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat', excludeStories: ['sharedArgs'] };
+          const Template = (args) => <Cat {...args} />;
+
+          export const A = Template.bind({});
+          export const B = Template.bind({});
+
+          export const sharedArgs = { name: 'Fluffy' };
+          class Theme {}
+
+          A.args = sharedArgs;
+          B.args = sharedArgs;
+          B.parameters = { theme: new Theme() };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat", excludeStories: ["sharedArgs"] };
+        const Template = (args) => <Cat {...args} />;
+
+        export const sharedArgs = { name: "Fluffy" };
+        export const A = {
+          render: Template,
+          args: sharedArgs,
+        };
+        class Theme {}
+        export const B = {
+          render: Template,
+          args: sharedArgs,
+          parameters: { theme: new Theme() },
+        };
+      `);
+    });
+
+    it('keeps a story as a function when its annotations read a story below it', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat' };
+          const Template = (args) => <Cat {...args} />;
+          export const A = Template.bind({});
+          export const B = Template.bind({});
+          B.args = { name: 'Fluffy' };
+          A.args = { ...B.args };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat" };
+        const Template = (args) => <Cat {...args} />;
+        export const A = Template.bind({});
+        export const B = {
+          render: Template,
+          args: { name: "Fluffy" },
+        };
+        A.args = { ...B.args };
+      `);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Kept A in Component.stories.jsx as a CSF 2 story')
+      );
+    });
+
+    it('keeps a story as a function when code below it changes what its annotations read', async () => {
+      await expect(
+        jsTransform(dedent`
+          export default { title: 'Cat' };
+          export const A = (args) => <Cat {...args} />;
+          const defaultArgs = { name: 'Fluffy' };
+          defaultArgs.age = 2;
+          A.args = { ...defaultArgs };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        export default { title: "Cat" };
+        export const A = (args) => <Cat {...args} />;
+        const defaultArgs = { name: "Fluffy" };
+        defaultArgs.age = 2;
+        A.args = { ...defaultArgs };
+      `);
+      expect(logger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Kept A in Component.stories.jsx as a CSF 2 story')
+      );
     });
   });
 

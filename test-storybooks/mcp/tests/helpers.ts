@@ -1,7 +1,5 @@
 import { x } from 'tinyexec';
-import { createWriteStream } from 'node:fs';
-import { mkdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, open } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 export const STORYBOOK_DIR = fileURLToPath(new URL('..', import.meta.url));
@@ -87,7 +85,7 @@ export async function killPort(port: number): Promise<void> {
 	}
 }
 
-export const STORYBOOK_LOG_DIR = join(STORYBOOK_DIR, 'storybook-logs');
+const STORYBOOK_LOG_DIR = new URL('../storybook-logs/', import.meta.url);
 
 export async function startStorybook(
 	configDir: string,
@@ -95,15 +93,15 @@ export async function startStorybook(
 	env?: Record<string, string>,
 ): Promise<{ storybookProcess: ReturnType<typeof x> }> {
 	await mkdir(STORYBOOK_LOG_DIR, { recursive: true });
+	const log = await open(new URL(`${configDir.replace(/^\./, '')}-${port}.log`, STORYBOOK_LOG_DIR), 'w');
 	const storybookProcess = x('yarn', ['storybook', '--config-dir', configDir, '--port', String(port)], {
 		nodeOptions: {
 			cwd: STORYBOOK_DIR,
+			stdio: ['pipe', log.fd, log.fd],
 			...(env ? { env: { ...process.env, ...env } } : {}),
 		},
 	});
-	const log = createWriteStream(join(STORYBOOK_LOG_DIR, `${configDir.replace(/^\./, '')}.log`));
-	storybookProcess.process?.stdout?.pipe(log);
-	storybookProcess.process?.stderr?.pipe(log);
+	await log.close();
 	// Wrapped because tinyexec's result is a thenable that resolves when the process exits.
 	return { storybookProcess };
 }

@@ -1,0 +1,512 @@
+
+[90m┌[39m  storybook v11.0.0-beta.1
+[90m│[39m
+[34m●[39m  Starting...
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id 'inputs-button':
+[90m│[39m  - ./src/stories/components/AllButton.stories.svelte
+[90m│[39m  - ./src/stories/components/Button.stories.svelte
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './src/stories/components/Button.stories.svelte' only. If these files
+[90m│[39m  document different components, give each file a unique title so every
+[90m│[39m  component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id 'basic-fileicon':
+[90m│[39m  - ./src/stories/components/AllFileIcons.stories.svelte
+[90m│[39m  - ./src/stories/components/FileIcon.stories.svelte
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './src/stories/components/FileIcon.stories.svelte' only. If these
+[90m│[39m  files document different components, give each file a unique title so
+[90m│[39m  every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'list-items-fileviewheader':
+[90m│[39m  - ./src/stories/components/FileViewHeader.stories.svelte
+[90m│[39m  - ./src/stories/components/FileViewHeaderStickyTest.stories.svelte
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './src/stories/components/FileViewHeaderStickyTest.stories.svelte'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'list-items-simple-commit-row':
+[90m│[39m  - ./src/stories/components/SimpleCommitRow.stories.svelte
+[90m│[39m  - ./src/stories/components/SimpleCommitRowList.stories.svelte
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './src/stories/components/SimpleCommitRowList.stories.svelte' only. If
+[90m│[39m  these files document different components, give each file a unique
+[90m│[39m  title so every component keeps its docs.
+The following Vite config options will be overridden by SvelteKit:
+  - root
+[90m│[39m  [43mVite[49m Forced re-optimization of dependencies
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+│ [38;2;255;71;133m╭[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╮[39m
+│ [38;2;255;71;133m│[39m   Storybook ready!                                                         [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                                            [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - Local:                http://127.0.0.1:6006/                           [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - On your network:      run with --host <ip> to expose to local          [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   network                                                                  [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                                            [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m╰[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╯[39m
+[90m│[39m
+[34m●[39m  [4m599 ms[24m for manager and [4m758 ms[24m for preview
+[90m│[39m
+[31m■[39m  [43mVite[49m Error: The following dependencies are imported but could not be
+[90m│[39m  resolved:
+
+[90m│[39m  [36m@gitbutler/core/context[39m [37m[2m(imported by[22m
+[90m│[39m  [2mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/focus/focusManager.ts)[22m[39m
+
+[90m│[39m  Are they installed?
+[90m│[39m  at
+[90m│[39m  file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:14849:15
+[90m│[39m  at process.processTicksAndRejections
+[90m│[39m  (node:internal/process/task_queues:104:5)
+[90m│[39m  at async
+[90m│[39m  file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:47144:28
+[90m│[39m  [43mVite[49m [32m✨ new dependencies optimized: [33m@storybook/sveltekit[32m[39m
+[90m│[39m  [43mVite[49m [32m✨ optimized dependencies changed. reloading[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mInternal server error: Failed to resolve import[39m
+[90m│[39m  [31m"@gitbutler/core/context" from "src/lib/focus/focusManager.ts". Does[39m
+[90m│[39m  [31mthe file exist?[39m
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/focus/focusManager.ts[39m:7:31
+[90m│[39m  [33m5  |  import { parseHotkey, matchesHotkey } from[39m
+[90m│[39m  [33m"$lib/utils/hotkeySymbols";
+[90m│[39m  6  |  import { mergeUnlisten } from "$lib/utils/mergeUnlisten";
+[90m│[39m  7  |  import { InjectionToken } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  8  |  import { on } from "svelte/events";
+[90m│[39m  9  |  import { writable } from "svelte/store";[39m
+[90m│[39m  at TransformPluginContext._formatLog
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42658:41)
+[90m│[39m  at TransformPluginContext.error
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42655:16)
+[90m│[39m  at normalizeUrl
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40634:23)
+[90m│[39m  at process.processTicksAndRejections
+[90m│[39m  (node:internal/process/task_queues:104:5)
+[90m│[39m  at async
+[90m│[39m  file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40753:37
+[90m│[39m  at async Promise.all (index 6)
+[90m│[39m  at async TransformPluginContext.transform
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40680:7)
+[90m│[39m  at async EnvironmentPluginContainer.transform
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18)
+[90m│[39m  at async loadAndTransform
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27)
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@gitbutler/core/context" from "src/lib/focus/fModeManager.ts". Does
+[90m│[39m  the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/focus/fModeManager.ts[39m:7:31
+[90m│[39m  [33m5  |    removeShortcutOverlay
+[90m│[39m  6  |  } from "$lib/focus/shortcutUtils";
+[90m│[39m  7  |  import { InjectionToken } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  8  |  export const FMODE_MANAGER = new InjectionToken("FModeManager");
+[90m│[39m  9  |  export class FModeManager {[39m
+[90m│[39m  [43mVite[49m [32mhmr update[39m
+[90m│[39m  [32m[39m[2m/@id/__x00__virtual:/@storybook/builder-vite/vite-app.js[22m
+[90m│[39m  [43mVite[49m [32mhmr update[39m
+[90m│[39m  [32m[39m[2m/@id/__x00__virtual:/@storybook/builder-vite/vite-app.js[22m
+[90m│[39m  [43mVite[49m [32mhmr update[39m
+[90m│[39m  [32m[39m[2m/@id/__x00__virtual:/@storybook/builder-vite/vite-app.js[22m
+[90m│[39m  [43mVite[49m [32mhmr update[39m
+[90m│[39m  [32m[39m[2m/@id/__x00__virtual:/@storybook/builder-vite/project-annotations.js[22m
+[90m│[39m  [43mVite[49m [32mhmr update[39m
+[90m│[39m  [32m[39m[2m/@id/__x00__virtual:/@storybook/builder-vite/vite-app.js[22m
+[90m│[39m  [43mVite[49m [32mhmr update[39m
+[90m│[39m  [32m[39m[2m/@id/__x00__virtual:/@storybook/builder-vite/project-annotations.js[22m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@gitbutler/core/context" from "src/lib/focus/focusable.ts". Does the
+[90m│[39m  file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/focus/focusable.ts[39m:2:31
+[90m│[39m  [33m1  |  import { FOCUS_MANAGER } from "$lib/focus/focusManager";
+[90m│[39m  2  |  import { injectOptional } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  3  |  export function focusable(element, options = {}) {
+[90m│[39m  4  |    const focusManager = injectOptional(FOCUS_MANAGER, void 0);[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@gitbutler/core/context" from "src/lib/focus/focusManager.ts". Does
+[90m│[39m  the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/focus/focusManager.ts[39m:7:31
+[90m│[39m  [33m5  |  import { parseHotkey, matchesHotkey } from[39m
+[90m│[39m  [33m"$lib/utils/hotkeySymbols";
+[90m│[39m  6  |  import { mergeUnlisten } from "$lib/utils/mergeUnlisten";
+[90m│[39m  7  |  import { InjectionToken } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  8  |  import { on } from "svelte/events";
+[90m│[39m  9  |  import { writable } from "svelte/store";[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mInternal server error: Failed to resolve import[39m
+[90m│[39m  [31m"@gitbutler/core/context" from "src/lib/focus/focusable.ts". Does the[39m
+[90m│[39m  [31mfile exist?[39m
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/focus/focusable.ts[39m:2:31
+[90m│[39m  [33m1  |  import { FOCUS_MANAGER } from "$lib/focus/focusManager";
+[90m│[39m  2  |  import { injectOptional } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  3  |  export function focusable(element, options = {}) {
+[90m│[39m  4  |    const focusManager = injectOptional(FOCUS_MANAGER, void 0);[39m
+[90m│[39m  at TransformPluginContext._formatLog
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42658:41)
+[90m│[39m  at TransformPluginContext.error
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42655:16)
+[90m│[39m  at normalizeUrl
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40634:23)
+[90m│[39m  at process.processTicksAndRejections
+[90m│[39m  (node:internal/process/task_queues:104:5)
+[90m│[39m  at async
+[90m│[39m  file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40753:37
+[90m│[39m  at async Promise.all (index 1)
+[90m│[39m  at async TransformPluginContext.transform
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40680:7)
+[90m│[39m  at async EnvironmentPluginContainer.transform
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18)
+[90m│[39m  at async loadAndTransform
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27)
+[90m│[39m  at async viteTransformMiddleware
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:37369:24)
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@gitbutler/core/context" from "src/lib/focus/fModeManager.ts". Does
+[90m│[39m  the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/focus/fModeManager.ts[39m:7:31
+[90m│[39m  [33m5  |    removeShortcutOverlay
+[90m│[39m  6  |  } from "$lib/focus/shortcutUtils";
+[90m│[39m  7  |  import { InjectionToken } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  8  |  export const FMODE_MANAGER = new InjectionToken("FModeManager");
+[90m│[39m  9  |  export class FModeManager {[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@gitbutler/core/context" from "src/lib/focus/focusManager.ts". Does
+[90m│[39m  the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/focus/focusManager.ts[39m:7:31
+[90m│[39m  [33m5  |  import { parseHotkey, matchesHotkey } from[39m
+[90m│[39m  [33m"$lib/utils/hotkeySymbols";
+[90m│[39m  6  |  import { mergeUnlisten } from "$lib/utils/mergeUnlisten";
+[90m│[39m  7  |  import { InjectionToken } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  8  |  import { on } from "svelte/events";
+[90m│[39m  9  |  import { writable } from "svelte/store";[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@gitbutler/core/context" from "src/lib/focus/fModeManager.ts". Does
+[90m│[39m  the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/focus/fModeManager.ts[39m:7:31
+[90m│[39m  [33m5  |    removeShortcutOverlay
+[90m│[39m  6  |  } from "$lib/focus/shortcutUtils";
+[90m│[39m  7  |  import { InjectionToken } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  8  |  export const FMODE_MANAGER = new InjectionToken("FModeManager");
+[90m│[39m  9  |  export class FModeManager {[39m
+[90m│[39m  [43mVite[49m [32mhmr update[39m
+[90m│[39m  [32m[39m[2m/@id/__x00__virtual:/@storybook/builder-vite/vite-app.js[22m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@gitbutler/core/context" from "src/lib/components/Tooltip.svelte".
+[90m│[39m  Does the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/components/Tooltip.svelte[39m:16:32
+[90m│[39m  [33m9  |  import { tooltip } from "$lib/utils/tooltipPosition";
+[90m│[39m  10 |  import { flyScale } from "$lib/utils/transitions";
+[90m│[39m  11 |  import { injectOptional } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  12 |  import { untrack } from "svelte";
+[90m│[39m  13 |[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@gitbutler/core/context" from "src/lib/focus/focusable.ts". Does the
+[90m│[39m  file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/focus/focusable.ts[39m:2:31
+[90m│[39m  [33m1  |  import { FOCUS_MANAGER } from "$lib/focus/focusManager";
+[90m│[39m  2  |  import { injectOptional } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  3  |  export function focusable(element, options = {}) {
+[90m│[39m  4  |    const focusManager = injectOptional(FOCUS_MANAGER, void 0);[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@gitbutler/core/context" from
+[90m│[39m  "src/lib/drag/dragStateService.svelte.ts". Does the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/drag/dragStateService.svelte.ts[39m:1:31
+[90m│[39m  [33m1  |  /* dragStateService.svelte.ts generated by Svelte v5.54.0 */
+[90m│[39m  2  |  import * as $ from 'svelte/internal/client';
+[90m│[39m  3  |  import { InjectionToken } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  4  |  import { writable } from "svelte/store";
+[90m│[39m  5  |[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@gitbutler/core/context" from "src/lib/focus/focusManager.ts". Does
+[90m│[39m  the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/focus/focusManager.ts[39m:7:31
+[90m│[39m  [33m5  |  import { parseHotkey, matchesHotkey } from[39m
+[90m│[39m  [33m"$lib/utils/hotkeySymbols";
+[90m│[39m  6  |  import { mergeUnlisten } from "$lib/utils/mergeUnlisten";
+[90m│[39m  7  |  import { InjectionToken } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  8  |  import { on } from "svelte/events";
+[90m│[39m  9  |  import { writable } from "svelte/store";[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@gitbutler/core/context" from "src/lib/focus/fModeManager.ts". Does
+[90m│[39m  the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/focus/fModeManager.ts[39m:7:31
+[90m│[39m  [33m5  |    removeShortcutOverlay
+[90m│[39m  6  |  } from "$lib/focus/shortcutUtils";
+[90m│[39m  7  |  import { InjectionToken } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  8  |  export const FMODE_MANAGER = new InjectionToken("FModeManager");
+[90m│[39m  9  |  export class FModeManager {[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mInternal server error: Failed to resolve import[39m
+[90m│[39m  [31m"@gitbutler/core/context" from "src/lib/components/Tooltip.svelte".[39m
+[90m│[39m  [31mDoes the file exist?[39m
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/components/Tooltip.svelte[39m:16:32
+[90m│[39m  [33m9  |  import { tooltip } from "$lib/utils/tooltipPosition";
+[90m│[39m  10 |  import { flyScale } from "$lib/utils/transitions";
+[90m│[39m  11 |  import { injectOptional } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  12 |  import { untrack } from "svelte";
+[90m│[39m  13 |[39m
+[90m│[39m  at TransformPluginContext._formatLog
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42658:41)
+[90m│[39m  at TransformPluginContext.error
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42655:16)
+[90m│[39m  at normalizeUrl
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40634:23)
+[90m│[39m  at async
+[90m│[39m  file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40753:37
+[90m│[39m  at async Promise.all (index 7)
+[90m│[39m  at async TransformPluginContext.transform
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40680:7)
+[90m│[39m  at async EnvironmentPluginContainer.transform
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18)
+[90m│[39m  at async loadAndTransform
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27)
+[90m│[39m  at async viteTransformMiddleware
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:37369:24)
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mInternal server error: Failed to resolve import[39m
+[90m│[39m  [31m"@gitbutler/core/context" from "src/lib/focus/focusable.ts". Does the[39m
+[90m│[39m  [31mfile exist?[39m
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/focus/focusable.ts[39m:2:31
+[90m│[39m  [33m1  |  import { FOCUS_MANAGER } from "$lib/focus/focusManager";
+[90m│[39m  2  |  import { injectOptional } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  3  |  export function focusable(element, options = {}) {
+[90m│[39m  4  |    const focusManager = injectOptional(FOCUS_MANAGER, void 0);[39m
+[90m│[39m  at TransformPluginContext._formatLog
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42658:41)
+[90m│[39m  at TransformPluginContext.error
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42655:16)
+[90m│[39m  at normalizeUrl
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40634:23)
+[90m│[39m  at process.processTicksAndRejections
+[90m│[39m  (node:internal/process/task_queues:104:5)
+[90m│[39m  at async
+[90m│[39m  file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40753:37
+[90m│[39m  at async Promise.all (index 1)
+[90m│[39m  at async TransformPluginContext.transform
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40680:7)
+[90m│[39m  at async EnvironmentPluginContainer.transform
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18)
+[90m│[39m  at async loadAndTransform
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27)
+[90m│[39m  at async viteTransformMiddleware
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:37369:24)
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@gitbutler/core/context" from
+[90m│[39m  "src/lib/drag/dragStateService.svelte.ts". Does the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/drag/dragStateService.svelte.ts[39m:1:31
+[90m│[39m  [33m1  |  /* dragStateService.svelte.ts generated by Svelte v5.54.0 */
+[90m│[39m  2  |  import * as $ from 'svelte/internal/client';
+[90m│[39m  3  |  import { InjectionToken } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  4  |  import { writable } from "svelte/store";
+[90m│[39m  5  |[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@gitbutler/core/context" from "src/lib/focus/focusManager.ts". Does
+[90m│[39m  the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/focus/focusManager.ts[39m:7:31
+[90m│[39m  [33m5  |  import { parseHotkey, matchesHotkey } from[39m
+[90m│[39m  [33m"$lib/utils/hotkeySymbols";
+[90m│[39m  6  |  import { mergeUnlisten } from "$lib/utils/mergeUnlisten";
+[90m│[39m  7  |  import { InjectionToken } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  8  |  import { on } from "svelte/events";
+[90m│[39m  9  |  import { writable } from "svelte/store";[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@gitbutler/core/context" from "src/lib/focus/fModeManager.ts". Does
+[90m│[39m  the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/focus/fModeManager.ts[39m:7:31
+[90m│[39m  [33m5  |    removeShortcutOverlay
+[90m│[39m  6  |  } from "$lib/focus/shortcutUtils";
+[90m│[39m  7  |  import { InjectionToken } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  8  |  export const FMODE_MANAGER = new InjectionToken("FModeManager");
+[90m│[39m  9  |  export class FModeManager {[39m
+[90m│[39m  [43mVite[49m [32mpage reload [39m[2msrc/stories/components/Textbox.stories.svelte[22m
+[90m│[39m  [43mVite[49m [32mhmr update[39m
+[90m│[39m  [32m[39m[2m/@id/__x00__virtual:/@storybook/builder-vite/vite-app.js[22m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@gitbutler/core/context" from "src/lib/components/Tooltip.svelte".
+[90m│[39m  Does the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/components/Tooltip.svelte[39m:16:32
+[90m│[39m  [33m9  |  import { tooltip } from "$lib/utils/tooltipPosition";
+[90m│[39m  10 |  import { flyScale } from "$lib/utils/transitions";
+[90m│[39m  11 |  import { injectOptional } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  12 |  import { untrack } from "svelte";
+[90m│[39m  13 |[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@gitbutler/core/context" from
+[90m│[39m  "src/lib/drag/dragStateService.svelte.ts". Does the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/drag/dragStateService.svelte.ts[39m:1:31
+[90m│[39m  [33m1  |  /* dragStateService.svelte.ts generated by Svelte v5.54.0 */
+[90m│[39m  2  |  import * as $ from 'svelte/internal/client';
+[90m│[39m  3  |  import { InjectionToken } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  4  |  import { writable } from "svelte/store";
+[90m│[39m  5  |[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mInternal server error: Failed to resolve import[39m
+[90m│[39m  [31m"@gitbutler/core/context" from "src/lib/components/Tooltip.svelte".[39m
+[90m│[39m  [31mDoes the file exist?[39m
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/components/Tooltip.svelte[39m:16:32
+[90m│[39m  [33m9  |  import { tooltip } from "$lib/utils/tooltipPosition";
+[90m│[39m  10 |  import { flyScale } from "$lib/utils/transitions";
+[90m│[39m  11 |  import { injectOptional } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  12 |  import { untrack } from "svelte";
+[90m│[39m  13 |[39m
+[90m│[39m  at TransformPluginContext._formatLog
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42658:41)
+[90m│[39m  at TransformPluginContext.error
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42655:16)
+[90m│[39m  at normalizeUrl
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40634:23)
+[90m│[39m  at async
+[90m│[39m  file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40753:37
+[90m│[39m  at async Promise.all (index 7)
+[90m│[39m  at async TransformPluginContext.transform
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40680:7)
+[90m│[39m  at async EnvironmentPluginContainer.transform
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18)
+[90m│[39m  at async loadAndTransform
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27)
+[90m│[39m  at async viteTransformMiddleware
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:37369:24)
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@gitbutler/core/context" from
+[90m│[39m  "src/lib/drag/dragStateService.svelte.ts". Does the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/drag/dragStateService.svelte.ts[39m:1:31
+[90m│[39m  [33m1  |  /* dragStateService.svelte.ts generated by Svelte v5.54.0 */
+[90m│[39m  2  |  import * as $ from 'svelte/internal/client';
+[90m│[39m  3  |  import { InjectionToken } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  4  |  import { writable } from "svelte/store";
+[90m│[39m  5  |[39m
+[90m│[39m  [43mVite[49m [32mhmr update [39m[2m/src/lib/components/avatar/ProfileButton.svelte[22m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mInternal server error: Failed to resolve import[39m
+[90m│[39m  [31m"@gitbutler/core/context" from "src/lib/components/Tooltip.svelte".[39m
+[90m│[39m  [31mDoes the file exist?[39m
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/components/Tooltip.svelte[39m:16:32
+[90m│[39m  [33m9  |  import { tooltip } from "$lib/utils/tooltipPosition";
+[90m│[39m  10 |  import { flyScale } from "$lib/utils/transitions";
+[90m│[39m  11 |  import { injectOptional } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  12 |  import { untrack } from "svelte";
+[90m│[39m  13 |[39m
+[90m│[39m  at TransformPluginContext._formatLog
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42658:41)
+[90m│[39m  at TransformPluginContext.error
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42655:16)
+[90m│[39m  at normalizeUrl
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40634:23)
+[90m│[39m  at async
+[90m│[39m  file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40753:37
+[90m│[39m  at async Promise.all (index 7)
+[90m│[39m  at async TransformPluginContext.transform
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40680:7)
+[90m│[39m  at async EnvironmentPluginContainer.transform
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18)
+[90m│[39m  at async loadAndTransform
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27)
+[90m│[39m  at async viteTransformMiddleware
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/vite@6.4.3_@types+node@24.1_30a95aa30433db16f09bf678900109d7/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:37369:24)
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@gitbutler/core/context" from
+[90m│[39m  "src/lib/drag/dragStateService.svelte.ts". Does the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File:
+[90m│[39m  [36mD:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/packages/ui-svelte/src/lib/drag/dragStateService.svelte.ts[39m:1:31
+[90m│[39m  [33m1  |  /* dragStateService.svelte.ts generated by Svelte v5.54.0 */
+[90m│[39m  2  |  import * as $ from 'svelte/internal/client';
+[90m│[39m  3  |  import { InjectionToken } from "@gitbutler/core/context";
+[90m│[39m  |                                  ^
+[90m│[39m  4  |  import { writable } from "svelte/store";
+[90m│[39m  5  |[39m
+[90m│[39m  [43mVite[49m [32mhmr update [39m[2m/src/lib/components/avatar/ProfileButton.svelte[22m
+[90m│[39m  [43mVite[49m [32mpage reload [39m[2m_tmp_6688_0d30e7e4[22m
+[90m│[39m  [43mVite[49m [32mpage reload [39m[2mstorybook-static/index.html[22m
+[90m│[39m  [43mVite[49m [32mpage reload [39m[2mstorybook-static/manifests/components.html[22m
+[90m│[39m  [43mVite[49m [32mpage reload [39m[2mstorybook-static/manifests/components.html[22m

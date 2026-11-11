@@ -1,0 +1,78 @@
+
+[90m┌[39m  storybook v11.0.0-beta.1
+[90m│[39m
+[34m●[39m  Starting...
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id 'inputs-button':
+[90m│[39m  - ./src/stories/components/AllButton.stories.svelte
+[90m│[39m  - ./src/stories/components/Button.stories.svelte
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './src/stories/components/Button.stories.svelte' only. If these files
+[90m│[39m  document different components, give each file a unique title so every
+[90m│[39m  component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id 'basic-fileicon':
+[90m│[39m  - ./src/stories/components/AllFileIcons.stories.svelte
+[90m│[39m  - ./src/stories/components/FileIcon.stories.svelte
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './src/stories/components/FileIcon.stories.svelte' only. If these
+[90m│[39m  files document different components, give each file a unique title so
+[90m│[39m  every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'list-items-fileviewheader':
+[90m│[39m  - ./src/stories/components/FileViewHeader.stories.svelte
+[90m│[39m  - ./src/stories/components/FileViewHeaderStickyTest.stories.svelte
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './src/stories/components/FileViewHeaderStickyTest.stories.svelte'
+[90m│[39m  only. If these files document different components, give each file a
+[90m│[39m  unique title so every component keeps its docs.
+[90m│[39m
+[33m▲[39m  Multiple story files share the component id
+[90m│[39m  'list-items-simple-commit-row':
+[90m│[39m  - ./src/stories/components/SimpleCommitRow.stories.svelte
+[90m│[39m  - ./src/stories/components/SimpleCommitRowList.stories.svelte
+[90m│[39m  The props table and description for this id are generated from
+[90m│[39m  './src/stories/components/SimpleCommitRowList.stories.svelte' only. If
+[90m│[39m  these files document different components, give each file a unique
+[90m│[39m  title so every component keeps its docs.
+[90m│[39m
+[31m■[39m  Failed to build the preview
+[90m│[39m
+[31m■[39m  [38;2;241;97;97mSB_FRAMEWORK_SVELTE-VITE_0001 (SvelteViteWithSvelteKitError): We've
+[90m│[39m  detected a SvelteKit project using the @storybook/svelte-vite
+[90m│[39m  framework, which is not supported.
+[90m│[39m  Please use the @storybook/sveltekit framework instead.
+
+[90m│[39m  More info:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-needs-the-storybooksveltekit-framework
+[90m│[39m  [39m
+[90m│[39m  at handleSvelteKit
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/@storybook+svelte-vite@11.0_055ca8ea6385255aa37dea83cc0f58af/node_modules/@storybook/svelte-vite/dist/preset.js:191:11)
+[90m│[39m  at async viteFinal
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/@storybook+svelte-vite@11.0_055ca8ea6385255aa37dea83cc0f58af/node_modules/@storybook/svelte-vite/dist/preset.js:204:200)
+[90m│[39m  at async Object.viteFinal
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/@storybook+sveltekit@11.0.0_30e11e17d1e3b7eecaa7e4508da5f027/node_modules/@storybook/sveltekit/dist/preset.js:117:20)
+[90m│[39m  at async createViteServer
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/@storybook+builder-vite@11._d9bcfc0a035c22f5104c677ff78342ed/node_modules/@storybook/builder-vite/dist/index.js:258:21)
+[90m│[39m  at async Module.start
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/@storybook+builder-vite@11._d9bcfc0a035c22f5104c677ff78342ed/node_modules/@storybook/builder-vite/dist/index.js:291:17)
+[90m│[39m  at async storybookDevServer
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/storybook@11.0.0-beta.1_@ty_fd63a928da418dd76ab8e5012193a84d/node_modules/storybook/dist/core-server/index.js:10433:57)
+[90m│[39m  at async buildOrThrow
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/storybook@11.0.0-beta.1_@ty_fd63a928da418dd76ab8e5012193a84d/node_modules/storybook/dist/core-server/index.js:8691:12)
+[90m│[39m  at async buildDevStandalone
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/storybook@11.0.0-beta.1_@ty_fd63a928da418dd76ab8e5012193a84d/node_modules/storybook/dist/core-server/index.js:11377:41)
+[90m│[39m  at async withTelemetry
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/storybook@11.0.0-beta.1_@ty_fd63a928da418dd76ab8e5012193a84d/node_modules/storybook/dist/_node-chunks/chunk-LBR5YCV6.js:3591:12)
+[90m│[39m  at async dev
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/storybook@11.0.0-beta.1_@ty_fd63a928da418dd76ab8e5012193a84d/node_modules/storybook/dist/bin/core.js:4189:3)
+[90m│[39m
+[33m▲[39m  Broken build, fix the error above.
+[90m│[39m  You may need to refresh the browser.
+[90m│[39m
+[90m│[39m  Debug logs are written to:
+[90m│[39m  D:\a\_temp\qa-work\gitbutler\.sandcastle\worktrees\qa-sb-11.0.0-beta.1-windows-claude\packages\ui-svelte\debug-storybook.log
+[90m│[39m
+[90m└[39m  Storybook exited with an error
+

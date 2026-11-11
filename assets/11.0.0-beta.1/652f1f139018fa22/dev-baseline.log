@@ -1,0 +1,45 @@
+$ storybook dev --no-open -p 6006 "--ci" "--exact-port"
+
+[90m┌[39m  storybook v10.3.3
+[90m│[39m
+[34m●[39m  Starting...
+Browserslist: browsers data (caniuse-lite) is 9 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[90m│[39m
+[31m■[39m  Failed to build the preview
+[90m│[39m
+[31m■[39m  [38;2;241;97;97mSB_FRAMEWORK_SVELTE-VITE_0001 (SvelteViteWithSvelteKitError): We've
+[90m│[39m  detected a SvelteKit project using the @storybook/svelte-vite
+[90m│[39m  framework, which is not supported.
+[90m│[39m  Please use the @storybook/sveltekit framework instead.
+
+[90m│[39m  More info: ]8;;https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-needs-the-storybooksveltekit-frameworkhttps://github.com/storybookjs/storybook/blob/next/MIGRA...]8;;
+[90m│[39m  [39m
+[90m│[39m  at handleSvelteKit
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/@storybook+svelte-vite@10.3_95cef3be48872a3e4a854d013bccd84b/node_modules/@storybook/svelte-vite/dist/preset.js:361:11)
+[90m│[39m  at async viteFinal
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/@storybook+svelte-vite@10.3_95cef3be48872a3e4a854d013bccd84b/node_modules/@storybook/svelte-vite/dist/preset.js:370:125)
+[90m│[39m  at async Object.viteFinal
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/@storybook+sveltekit@10.3.3_0e10bca249e9dfb750bec38148cd69c3/node_modules/@storybook/sveltekit/dist/preset.js:39:20)
+[90m│[39m  at async createViteServer
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/@storybook+builder-vite@10._4d1ff5db4f67fcccd819f45d5686f0fb/node_modules/@storybook/builder-vite/dist/index.js:1532:21)
+[90m│[39m  at async Module.start
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/@storybook+builder-vite@10._4d1ff5db4f67fcccd819f45d5686f0fb/node_modules/@storybook/builder-vite/dist/index.js:1557:17)
+[90m│[39m  at async storybookDevServer
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/storybook@10.3.3_@testing-l_4c0dba04196a604905a570f6c9ee2d6f/node_modules/storybook/dist/core-server/index.js:7502:83)
+[90m│[39m  at async buildOrThrow
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/storybook@10.3.3_@testing-l_4c0dba04196a604905a570f6c9ee2d6f/node_modules/storybook/dist/core-server/index.js:4508:12)
+[90m│[39m  at async buildDevStandalone
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/storybook@10.3.3_@testing-l_4c0dba04196a604905a570f6c9ee2d6f/node_modules/storybook/dist/core-server/index.js:8029:41)
+[90m│[39m  at async withTelemetry
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/storybook@10.3.3_@testing-l_4c0dba04196a604905a570f6c9ee2d6f/node_modules/storybook/dist/_node-chunks/chunk-6PADJQ3N.js:218:12)
+[90m│[39m  at async dev
+[90m│[39m  (file:///D:/a/_temp/qa-work/gitbutler/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/node_modules/.pnpm/storybook@10.3.3_@testing-l_4c0dba04196a604905a570f6c9ee2d6f/node_modules/storybook/dist/bin/core.js:2736:3)
+[90m│[39m
+[33m▲[39m  Broken build, fix the error above.
+[90m│[39m  You may need to refresh the browser.
+[90m│[39m
+[34m●[39m  Storybook collects completely anonymous usage telemetry. We use it to
+[90m│[39m  shape Storybook's roadmap and prioritize features. You can learn more,
+[90m│[39m  including how to opt out, at ]8;;https://storybook.js.org/telemetryhttps://storybook.js.org/telemetry]8;;

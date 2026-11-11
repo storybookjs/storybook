@@ -258,10 +258,11 @@ export class StoryIndexGenerator {
       existingEntry: CacheEntry
     ) => Promise<CacheEntry>,
     overwrite = false,
-    { readsOtherFiles = false } = {}
+    // Results that read other files are stale after any invalidation since `startedAt`
+    { startedAt }: { startedAt?: number } = {}
   ) {
     const version = (absolutePath: Path) =>
-      readsOtherFiles ? this.invalidationCount : this.slotVersion(absolutePath);
+      startedAt === undefined ? this.slotVersion(absolutePath) : this.invalidationCount;
 
     await Promise.all(
       this.specifiers.map(async (specifier) => {
@@ -278,29 +279,48 @@ export class StoryIndexGenerator {
               return;
             }
 
-            const startedAt = version(absolutePath);
+            const before = startedAt ?? version(absolutePath);
             let result: CacheEntry | undefined;
             try {
               result = await updater(specifier, absolutePath, entry[absolutePath]);
             } catch (err) {
-              const exists = await access(absolutePath).then(
-                () => true,
-                () => false
+              const relativePath = `.${sep}${relative(this.options.workingDir, absolutePath)}`;
+
+              result = {
+                type: 'error',
+                err: new IndexingError(
+                  err instanceof Error ? err.message : String(err),
+                  [relativePath],
+                  err instanceof Error ? err.stack : undefined,
+                  err instanceof StorybookError
+                    ? {
+                        code: err.fullErrorCode,
+                        messageWithoutPath: err.message
+                          .replaceAll(pathToFileURL(absolutePath).href, '')
+                          .replaceAll(absolutePath, ''),
+                      }
+                    : undefined
+                ),
+              };
+              const gone = await access(absolutePath).then(
+                () => false,
+                (accessError) => accessError?.code === 'ENOENT' || accessError?.code === 'ENOTDIR'
               );
-              result = exists ? this.toErrorEntry(err, absolutePath) : undefined;
+              if (gone) {
+                result = undefined;
+              }
             }
 
-            // Leave the slot as `invalidate` set it
-            if (version(absolutePath) !== startedAt) {
+            if (version(absolutePath) !== before || !(absolutePath in entry)) {
               return;
             }
 
             if (result === undefined) {
               delete entry[absolutePath];
-              return;
+              this.slotInvalidatedAt.delete(absolutePath);
+            } else {
+              entry[absolutePath] = result;
             }
-
-            entry[absolutePath] = result;
           })
         );
       })
@@ -309,27 +329,6 @@ export class StoryIndexGenerator {
 
   private slotVersion(absolutePath: Path) {
     return Math.max(this.allInvalidatedAt, this.slotInvalidatedAt.get(absolutePath) ?? 0);
-  }
-
-  private toErrorEntry(err: unknown, absolutePath: Path): ErrorEntry {
-    const relativePath = `.${sep}${relative(this.options.workingDir, absolutePath)}`;
-
-    return {
-      type: 'error',
-      err: new IndexingError(
-        err instanceof Error ? err.message : String(err),
-        [relativePath],
-        err instanceof Error ? err.stack : undefined,
-        err instanceof StorybookError
-          ? {
-              code: err.fullErrorCode,
-              messageWithoutPath: err.message
-                .replaceAll(pathToFileURL(absolutePath).href, '')
-                .replaceAll(absolutePath, ''),
-            }
-          : undefined
-      ),
-    };
   }
 
   isDocsMdx(absolutePath: Path) {
@@ -345,21 +344,21 @@ export class StoryIndexGenerator {
     // process the docs files. The reason for this is that the docs
     // files may use the `<Meta of={XStories} />` syntax, which requires
     // that the story file that contains the meta be processed first.
+    const startedAt = this.invalidationCount;
     await this.updateExtracted(async (specifier, absolutePath) =>
       this.isDocsMdx(absolutePath)
         ? false
         : this.extractStories(specifier, absolutePath, projectTags)
     );
 
-    // Docs files read the story files they reference, so any invalidation makes them stale
-    await this.updateExtracted(
-      async (specifier, absolutePath) =>
-        this.isDocsMdx(absolutePath)
-          ? this.extractDocs(specifier, absolutePath, projectTags)
-          : false,
-      false,
-      { readsOtherFiles: true }
-    );
+    // Docs read the story entries, which are stale once anything was invalidated
+    if (this.invalidationCount === startedAt) {
+      await this.updateExtracted(
+        async (specifier, absolutePath) => this.extractDocs(specifier, absolutePath, projectTags),
+        false,
+        { startedAt }
+      );
+    }
 
     const statsSummary = {} as IndexStatsSummary;
     const entries = this.specifiers.flatMap((specifier) => {
@@ -828,11 +827,7 @@ export class StoryIndexGenerator {
     // Extract any entries that are currently missing
     // Pull out each file's stories into a list of stories, to be composed and sorted
     const { entries: storiesList, stats } = await this.ensureExtracted({ projectTags });
-
     const isStale = () => this.invalidationCount !== startedAt;
-    if (isStale()) {
-      return this.getIndexAndStats();
-    }
 
     try {
       const errorEntries = storiesList.filter((entry) => entry.type === 'error');
@@ -891,6 +886,7 @@ export class StoryIndexGenerator {
 
   invalidateAll() {
     this.allInvalidatedAt = ++this.invalidationCount;
+    this.slotInvalidatedAt.clear();
     this.specifierToCache.forEach((cache) => {
       Object.keys(cache).forEach((key) => {
         cache[key] = false;
@@ -920,7 +916,11 @@ export class StoryIndexGenerator {
     );
     const cacheEntry = cache[absolutePath];
     const invalidatedAt = ++this.invalidationCount;
-    this.slotInvalidatedAt.set(absolutePath, invalidatedAt);
+    if (removed) {
+      this.slotInvalidatedAt.delete(absolutePath);
+    } else {
+      this.slotInvalidatedAt.set(absolutePath, invalidatedAt);
+    }
     if (cacheEntry && cacheEntry.type === 'stories') {
       const { dependents } = cacheEntry;
 

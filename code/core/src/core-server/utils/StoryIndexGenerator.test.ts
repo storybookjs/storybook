@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { access } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -31,6 +32,8 @@ vi.mock('../utils/constants', () => {
 });
 
 vi.mock('storybook/internal/csf/csf-utils', { spy: true });
+
+vi.mock('node:fs/promises', { spy: true });
 
 vi.mock('storybook/internal/node-logger');
 
@@ -2696,6 +2699,20 @@ describe('StoryIndexGenerator', () => {
         expect(Object.keys((await generator.getIndex()).entries)).not.toContain('b--story-one');
       });
 
+      it('does not bring back a file removed during its first extraction', async () => {
+        const { indexer, arm } = createIndexerPausingOnB();
+        const generator = new StoryIndexGenerator([specifier], { ...options, indexers: [indexer] });
+
+        const { reached, release } = arm();
+        const initializing = generator.initialize();
+        await reached;
+        generator.invalidate('./src/B.stories.ts', true);
+        release();
+        await initializing;
+
+        expect(Object.keys((await generator.getIndex()).entries)).not.toContain('b--story-one');
+      });
+
       it('extracts a file again when it changes while its extraction is in flight', async () => {
         const { indexer, arm } = createIndexerPausingOnB();
         const createIndexSpy = vi.spyOn(indexer, 'createIndex');
@@ -2789,6 +2806,39 @@ describe('StoryIndexGenerator', () => {
           expect(Object.keys((await pending).entries)).toContain('a--metaof');
         });
 
+        it('re-extracts a docs file after that story file changes while it is extracted', async () => {
+          const reached = Promise.withResolvers<void>();
+          const gate = Promise.withResolvers<void>();
+          let pauseA = false;
+          const indexer: Indexer = {
+            test: csfIndexer.test,
+            createIndex: async (fileName, indexerOptions) => {
+              if (pauseA && fileName.endsWith('A.stories.js')) {
+                pauseA = false;
+                reached.resolve();
+                await gate.promise;
+              }
+              return csfIndexer.createIndex(fileName, indexerOptions);
+            },
+          };
+          const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], {
+            ...options,
+            indexers: [indexer],
+          });
+          await generator.initialize();
+          await generator.getIndex();
+
+          generator.invalidate('./src/A.stories.js', false);
+          pauseA = true;
+          const pending = generator.getIndex();
+          await reached.promise;
+          generator.invalidate('./src/A.stories.js', false);
+          gate.resolve();
+
+          expect(Object.keys((await pending).entries)).toContain('a--metaof');
+          expect(Object.keys((await generator.getIndex()).entries)).toContain('a--metaof');
+        });
+
         it('re-extracts a new docs file not yet registered as a dependent', async () => {
           const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
           await generator.initialize();
@@ -2803,6 +2853,42 @@ describe('StoryIndexGenerator', () => {
           release();
 
           expect(Object.keys((await pending).entries)).toContain('a--metaof');
+        });
+      });
+
+      describe('a story file that fails to index', () => {
+        const failingIndexer: Indexer = {
+          test: csfIndexer.test,
+          createIndex: async (fileName, indexerOptions) => {
+            if (fileName.endsWith('B.stories.ts')) {
+              throw new Error('Unreadable');
+            }
+            return csfIndexer.createIndex(fileName, indexerOptions);
+          },
+        };
+
+        it.each(['ENOENT', 'ENOTDIR'])('is dropped when the file is gone (%s)', async (code) => {
+          vi.mocked(access).mockRejectedValueOnce(Object.assign(new Error(code), { code }));
+          const generator = new StoryIndexGenerator([specifier], {
+            ...options,
+            indexers: [failingIndexer],
+          });
+          await generator.initialize();
+
+          expect(Object.keys((await generator.getIndex()).entries)).not.toContain('b--story-one');
+        });
+
+        it('keeps its indexing error when the file cannot be checked', async () => {
+          vi.mocked(access).mockRejectedValueOnce(
+            Object.assign(new Error('EACCES'), { code: 'EACCES' })
+          );
+          const generator = new StoryIndexGenerator([specifier], {
+            ...options,
+            indexers: [failingIndexer],
+          });
+          await generator.initialize();
+
+          await expect(generator.getIndex()).rejects.toThrow('Unable to index ./src/B.stories.ts');
         });
       });
 

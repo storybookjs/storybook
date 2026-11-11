@@ -1,0 +1,531 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[90m┌[39m  storybook v10.6.6
+[90m│[39m
+[34m●[39m  Starting...
+[90m│[39m
+[33m▲[39m  No story files found for the specified pattern:
+[90m│[39m  [34m../packages/fields/src/**/stories/*.story.@(tsx|mdx)[39m
+│ [38;2;255;71;133m╭[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╮[39m
+│ [38;2;255;71;133m│[39m   Storybook ready!                                                         [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                                            [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - Local:                http://127.0.0.1:6006/                           [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - On your network:      run with --host <ip> to expose to local          [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   network                                                                  [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                                            [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m╰[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╯[39m
+[90m│[39m
+[34m●[39m  [4m2.73 s[24m for manager and [4m331 ms[24m for preview
+[90m│[39m  [43mVite[49m [optimizer] scanning dependencies...
+[90m│[39m
+[31m■[39m  [43mVite[49m [31m(!) Failed to run dependency scan. Skipping dependency[39m
+[90m│[39m  [31mpre-bundling. Error: The following dependencies are imported but could[39m
+[90m│[39m  [31mnot be resolved:
+
+[90m│[39m  [36m@wordpress/element[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/list-view/use-list-view-images.ts)[22m[31m
+[90m│[39m  [36m@wordpress/components[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/block-styles/menu-items.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/ui[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/widget-dashboard/src/components/widget-actions/callback-action.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/i18n[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/widget-dashboard/src/components/widget-footer/widget-footer.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/block-library[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/inserter/stories/index.story.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/icons[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/block-styles/menu-items.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/theme[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/ui/src/utils/theme-provider.ts)[22m[31m
+[90m│[39m  [36m@wordpress/admin-ui[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/widget-dashboard/src/stories/index.story.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/dataviews[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/inserter/media-tab/media-grid.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/keycodes[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/list-view/block-select-button.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/data[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/list-view/use-list-view-images.ts)[22m[31m
+[90m│[39m  [36m@wordpress/blocks[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/block-switcher/utils.ts)[22m[31m
+[90m│[39m  [36m@wordpress/block-library/build-style/style.css?raw[31m [37m[2m(imported by[22m
+[90m│[39m  [2m./stories/playground/editor-styles.js)[22m[31m
+[90m│[39m  [36m@wordpress/widget-primitives[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/widget-dashboard/src/components/widget-footer/widget-footer.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/commands[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/use-block-commands/index.ts)[22m[31m
+[90m│[39m  [36m@wordpress/primitives[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/components/src/guide/icons.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/compose[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/inserter/media-tab/media-search.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/a11y[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/list-view/block.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/deprecated[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/block-card/index.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/route[31m [37m[2m(imported by ./decorators/with-router.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/format-library[31m [37m[2m(imported by[22m
+[90m│[39m  [2m./stories/playground/fullpage/index.jsx)[22m[31m
+[90m│[39m  [36m@wordpress/private-apis[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/ui/src/lock-unlock.ts)[22m[31m
+[90m│[39m  [36m@wordpress/global-styles-engine[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/background-image-control/index.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/hooks[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/image-editor/use-transform-image.ts)[22m[31m
+[90m│[39m  [36m@wordpress/dom[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/list-view/use-list-view-scroll-into-view.ts)[22m[31m
+[90m│[39m  [36m@wordpress/warning[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/inspector-controls/fill.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/react-inert-value[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/widget-dashboard/src/components/widget-footer/widget-footer.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/date[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/dataviews/src/components/dataform-controls/utils/get-timezone-description.ts)[22m[31m
+[90m│[39m  [36m@wordpress/upload-media[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/editor/src/components/upload-progress-snackbar/index.jsx)[22m[31m
+[90m│[39m  [36m@wordpress/html-entities[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/default-block-appender/index.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/notices[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/inserter/media-tab/use-media-insert.ts)[22m[31m
+[90m│[39m  [36m@wordpress/is-shallow-equal[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/hooks/spacing-visualizer.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/escape-html[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/components/src/navigator/navigator-button/hook.ts)[22m[31m
+[90m│[39m  [36m@wordpress/core-data[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/global-styles-ui/src/font-library/font-collection.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/url[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/inserter/media-tab/use-media-insert.ts)[22m[31m
+[90m│[39m  [36m@wordpress/style-runtime[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/components/src/style-provider/index.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/keyboard-shortcuts[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/list-view/block.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/block-library/build-style/theme.css?raw[31m [37m[2m(imported by[22m
+[90m│[39m  [2m./stories/playground/editor-styles.js)[22m[31m
+[90m│[39m  [36m@wordpress/block-library/build-style/theme-rtl.css?raw[31m [37m[2m(imported by[22m
+[90m│[39m  [2m./stories/playground/editor-styles.js)[22m[31m
+[90m│[39m  [36m@wordpress/block-editor/build-style/content.css?raw[31m [37m[2m(imported by[22m
+[90m│[39m  [2m./stories/playground/editor-styles.js)[22m[31m
+[90m│[39m  [36m@wordpress/block-library/build-style/editor-rtl.css?raw[31m [37m[2m(imported by[22m
+[90m│[39m  [2m./stories/playground/editor-styles.js)[22m[31m
+[90m│[39m  [36m@wordpress/block-library/build-style/style-rtl.css?raw[31m [37m[2m(imported by[22m
+[90m│[39m  [2m./stories/playground/editor-styles.js)[22m[31m
+[90m│[39m  [36m@wordpress/components/build-style/style.css?raw[31m [37m[2m(imported by[22m
+[90m│[39m  [2m./stories/playground/editor-styles.js)[22m[31m
+[90m│[39m  [36m@wordpress/block-library/build-style/editor.css?raw[31m [37m[2m(imported by[22m
+[90m│[39m  [2m./stories/playground/editor-styles.js)[22m[31m
+[90m│[39m  [36m@wordpress/components/build-style/style-rtl.css?raw[31m [37m[2m(imported by[22m
+[90m│[39m  [2m./stories/playground/editor-styles.js)[22m[31m
+[90m│[39m  [36m@wordpress/block-editor/build-style/content-rtl.css?raw[31m [37m[2m(imported by[22m
+[90m│[39m  [2m./stories/playground/editor-styles.js)[22m[31m
+[90m│[39m  [36m@wordpress/rich-text[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/rich-text/prevent-event-discovery.ts)[22m[31m
+[90m│[39m  [36m@wordpress/grid[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/widget-dashboard/src/components/widgets/widgets.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/viewport[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/widget-dashboard/src/components/actions/actions.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/priority-queue[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/block-preview/async.ts)[22m[31m
+[90m│[39m  [36m@wordpress/block-serialization-default-parser[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/store/utils.ts)[22m[31m
+[90m│[39m  [36m@wordpress/style-engine[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/global-styles/background-panel.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/kebab-case[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/global-styles-ui/src/font-library/utils/make-families-from-faces.ts)[22m[31m
+[90m│[39m  [36m@wordpress/token-list[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/block-styles/utils.ts)[22m[31m
+[90m│[39m  [36m@wordpress/image-cropper[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/image-editor/use-transform-image.ts)[22m[31m
+[90m│[39m  [36m@wordpress/preferences[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/inspector-controls-tabs/index.tsx)[22m[31m
+[90m│[39m  [36m@wordpress/api-fetch[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/global-styles-ui/src/font-library/api.ts)[22m[31m
+[90m│[39m  [36m@wordpress/blob[31m [37m[2m(imported by[22m
+[90m│[39m  [2m/home/agent/workspace/packages/block-editor/src/components/inserter/media-tab/use-media-insert.ts)[22m[31m
+
+[90m│[39m  Are they installed?
+[90m│[39m  at
+[90m│[39m  file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:28527:33
+[90m│[39m  at async
+[90m│[39m  file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:35879:15[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import "@wordpress/hooks"
+[90m│[39m  from "decorators/with-rtl.jsx". Does the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./decorators/with-rtl.jsx[39m:1:40
+[90m│[39m  [33m1  |  import { addFilter, removeFilter } from "@wordpress/hooks";
+[90m│[39m  |                                           ^
+[90m│[39m  2  |  import { useEffect, useRef, useState } from
+[90m│[39m  "@wordpress/element";
+[90m│[39m  3  |  import CONFIG from "../package-styles/config";[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import "@wordpress/hooks"
+[90m│[39m  from "decorators/with-rtl.jsx". Does the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./decorators/with-rtl.jsx[39m:1:40
+[90m│[39m  [33m1  |  import { addFilter, removeFilter } from "@wordpress/hooks";
+[90m│[39m  |                                           ^
+[90m│[39m  2  |  import { useEffect, useRef, useState } from
+[90m│[39m  "@wordpress/element";
+[90m│[39m  3  |  import CONFIG from "../package-styles/config";[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import "@wordpress/theme"
+[90m│[39m  from "decorators/with-design-system-theme.tsx". Does the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./decorators/with-design-system-theme.tsx[39m:1:30
+[90m│[39m  [33m1  |  import { ThemeProvider } from "@wordpress/theme";
+[90m│[39m  |                                 ^
+[90m│[39m  2  |  import { DARK_THEME_COLORS, getCustomThemeColors,
+[90m│[39m  LIGHT_THEME_COLORS, normalizeColorTheme } from "../addons/design-sy...
+[90m│[39m  3  |  var _jsxFileName = "./decorators/with-design-system-theme.tsx";[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import "@wordpress/theme"
+[90m│[39m  from "decorators/with-design-system-theme.tsx". Does the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./decorators/with-design-system-theme.tsx[39m:1:30
+[90m│[39m  [33m1  |  import { ThemeProvider } from "@wordpress/theme";
+[90m│[39m  |                                 ^
+[90m│[39m  2  |  import { DARK_THEME_COLORS, getCustomThemeColors,
+[90m│[39m  LIGHT_THEME_COLORS, normalizeColorTheme } from "../addons/design-sy...
+[90m│[39m  3  |  var _jsxFileName = "./decorators/with-design-system-theme.tsx";[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@wordpress/element" from "decorators/utils/use-shared-style.ts". Does
+[90m│[39m  the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./decorators/utils/use-shared-style.ts[39m:1:32
+[90m│[39m  [33m1  |  import { useLayoutEffect } from "@wordpress/element";
+[90m│[39m  |                                   ^
+[90m│[39m  2  |  const styleRefs = new Map();
+[90m│[39m  3  |  /**[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@wordpress/element" from "decorators/utils/use-shared-style.ts". Does
+[90m│[39m  the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./decorators/utils/use-shared-style.ts[39m:1:32
+[90m│[39m  [33m1  |  import { useLayoutEffect } from "@wordpress/element";
+[90m│[39m  |                                   ^
+[90m│[39m  2  |  const styleRefs = new Map();
+[90m│[39m  3  |  /**[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/block-editor/build-style/style-rtl.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/block-editor/build-style/style.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/block-library/build-style/style.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/block-library/build-style/style-rtl.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/components/build-style/style-rtl.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/components/build-style/style.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/commands/build-style/style-rtl.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/commands/build-style/style.css"` from ./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/editor/build-style/style.css"` from ./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/editor/build-style/style-rtl.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/format-library/build-style/style.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/edit-site/build-style/style.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/format-library/build-style/style-rtl.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/dataviews/build-style/style.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/edit-site/build-style/style-rtl.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/fields/build-style/style.css"` from ./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/dataviews/build-style/style-rtl.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/image-editor/build-style/style.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/fields/build-style/style-rtl.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/image-editor/build-style/style-rtl.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/media-editor/build-style/style.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/media-editor/build-style/style-rtl.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/media-fields/build-style/style-rtl.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mUnable to resolve `@import[39m
+[90m│[39m  [31m"../../packages/media-fields/build-style/style.css"` from[39m
+[90m│[39m  [31m./package-styles[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/block-editor/build-style/style-rtl.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/block-editor-rtl.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/block-editor/build-style/style.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/block-editor-ltr.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/block-library/build-style/style.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File:
+[90m│[39m  [36m./package-styles/block-library-ltr.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/block-library/build-style/style-rtl.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File:
+[90m│[39m  [36m./package-styles/block-library-rtl.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/components/build-style/style-rtl.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/components-rtl.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/components/build-style/style.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/components-ltr.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/commands/build-style/style-rtl.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/commands-rtl.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/commands/build-style/style.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/commands-ltr.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/editor/build-style/style.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/editor-ltr.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/editor/build-style/style-rtl.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/editor-rtl.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/format-library/build-style/style.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File:
+[90m│[39m  [36m./package-styles/format-library-ltr.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/edit-site/build-style/style.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/edit-site-ltr.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/format-library/build-style/style-rtl.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File:
+[90m│[39m  [36m./package-styles/format-library-rtl.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/dataviews/build-style/style.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/dataviews-ltr.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/edit-site/build-style/style-rtl.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/edit-site-rtl.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/fields/build-style/style.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/fields-ltr.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/dataviews/build-style/style-rtl.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/dataviews-rtl.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/image-editor/build-style/style.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/image-editor-ltr.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/fields/build-style/style-rtl.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/fields-rtl.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/image-editor/build-style/style-rtl.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/image-editor-rtl.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/media-editor/build-style/style.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/media-editor-ltr.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/media-editor/build-style/style-rtl.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/media-editor-rtl.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/media-fields/build-style/style-rtl.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/media-fields-rtl.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: [postcss] ENOENT: no such file or directory,
+[90m│[39m  open '../../packages/media-fields/build-style/style.css'
+[90m│[39m  Plugin: [35mvite:css[39m
+[90m│[39m  File: [36m./package-styles/media-fields-ltr.lazy.scss?inline[39m:undefined:NaN
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import "@wordpress/hooks"
+[90m│[39m  from "decorators/with-rtl.jsx". Does the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./decorators/with-rtl.jsx[39m:1:40
+[90m│[39m  [33m1  |  import { addFilter, removeFilter } from "@wordpress/hooks";
+[90m│[39m  |                                           ^
+[90m│[39m  2  |  import { useEffect, useRef, useState } from
+[90m│[39m  "@wordpress/element";
+[90m│[39m  3  |  import CONFIG from "../package-styles/config";[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mInternal server error: Failed to resolve import[39m
+[90m│[39m  [31m"@wordpress/hooks" from "decorators/with-rtl.jsx". Does the file[39m
+[90m│[39m  [31mexist?[39m
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./decorators/with-rtl.jsx[39m:1:40
+[90m│[39m  [33m1  |  import { addFilter, removeFilter } from "@wordpress/hooks";
+[90m│[39m  |                                           ^
+[90m│[39m  2  |  import { useEffect, useRef, useState } from
+[90m│[39m  "@wordpress/element";
+[90m│[39m  3  |  import CONFIG from "../package-styles/config";[39m
+[90m│[39m  at TransformPluginContext._formatLog
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:8861:39)
+[90m│[39m  at TransformPluginContext.error
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:8858:14)
+[90m│[39m  at resolveId
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:26533:18)
+[90m│[39m  at async
+[90m│[39m  file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:26632:23
+[90m│[39m  at async Promise.all (index 0)
+[90m│[39m  at async TransformPluginContext.transform
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:26605:4)
+[90m│[39m  at async EnvironmentPluginContainer.transform
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:8632:14)
+[90m│[39m  at async loadAndTransform
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:20108:26)
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import "@wordpress/theme"
+[90m│[39m  from "decorators/with-design-system-theme.tsx". Does the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./decorators/with-design-system-theme.tsx[39m:1:30
+[90m│[39m  [33m1  |  import { ThemeProvider } from "@wordpress/theme";
+[90m│[39m  |                                 ^
+[90m│[39m  2  |  import { DARK_THEME_COLORS, getCustomThemeColors,
+[90m│[39m  LIGHT_THEME_COLORS, normalizeColorTheme } from "../addons/design-sy...
+[90m│[39m  3  |  var _jsxFileName = "./decorators/with-design-system-theme.tsx";[39m
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mInternal server error: Failed to resolve import[39m
+[90m│[39m  [31m"@wordpress/theme" from "decorators/with-design-system-theme.tsx".[39m
+[90m│[39m  [31mDoes the file exist?[39m
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./decorators/with-design-system-theme.tsx[39m:1:30
+[90m│[39m  [33m1  |  import { ThemeProvider } from "@wordpress/theme";
+[90m│[39m  |                                 ^
+[90m│[39m  2  |  import { DARK_THEME_COLORS, getCustomThemeColors,
+[90m│[39m  LIGHT_THEME_COLORS, normalizeColorTheme } from "../addons/design-sy...
+[90m│[39m  3  |  var _jsxFileName = "./decorators/with-design-system-theme.tsx";[39m
+[90m│[39m  at TransformPluginContext._formatLog
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:8861:39)
+[90m│[39m  at TransformPluginContext.error
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:8858:14)
+[90m│[39m  at resolveId
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:26533:18)
+[90m│[39m  at async
+[90m│[39m  file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:26632:23
+[90m│[39m  at async Promise.all (index 0)
+[90m│[39m  at async TransformPluginContext.transform
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:26605:4)
+[90m│[39m  at async EnvironmentPluginContainer.transform
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:8632:14)
+[90m│[39m  at async loadAndTransform
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:20108:26)
+[90m│[39m
+[31m■[39m  [43mVite[49m [31mInternal server error: Failed to resolve import[39m
+[90m│[39m  [31m"@wordpress/element" from "decorators/utils/use-shared-style.ts". Does[39m
+[90m│[39m  [31mthe file exist?[39m
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./decorators/utils/use-shared-style.ts[39m:1:32
+[90m│[39m  [33m1  |  import { useLayoutEffect } from "@wordpress/element";
+[90m│[39m  |                                   ^
+[90m│[39m  2  |  const styleRefs = new Map();
+[90m│[39m  3  |  /**[39m
+[90m│[39m  at TransformPluginContext._formatLog
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:8861:39)
+[90m│[39m  at TransformPluginContext.error
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:8858:14)
+[90m│[39m  at resolveId
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:26533:18)
+[90m│[39m  at async
+[90m│[39m  file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:26632:23
+[90m│[39m  at async Promise.all (index 0)
+[90m│[39m  at async TransformPluginContext.transform
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:26605:4)
+[90m│[39m  at async EnvironmentPluginContainer.transform
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:8632:14)
+[90m│[39m  at async loadAndTransform
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:20108:26)
+[90m│[39m
+[31m■[39m  [43mVite[49m Pre-transform error: Failed to resolve import
+[90m│[39m  "@wordpress/element" from "decorators/utils/use-shared-style.ts". Does
+[90m│[39m  the file exist?
+[90m│[39m  Plugin: [35mvite:import-analysis[39m
+[90m│[39m  File: [36m./decorators/utils/use-shared-style.ts[39m:1:32
+[90m│[39m  [33m1  |  import { useLayoutEffect } from "@wordpress/element";
+[90m│[39m  |                                   ^
+[90m│[39m  2  |  const styleRefs = new Map();
+[90m│[39m  3  |  /**[39m
+[90m│[39m  [43mVite[49m [32mdependencies optimized: [33mclsx, storybook/theming/create[32m[39m
+[90m│[39m  [43mVite[49m [32moptimized dependencies changed. reloading[39m

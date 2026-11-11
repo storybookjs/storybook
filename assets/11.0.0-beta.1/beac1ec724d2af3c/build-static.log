@@ -1,0 +1,55 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[90m┌[39m  Building storybook v11.0.0-beta.1
+[90m│[39m
+[32m◇[39m  Cleaning outputDir: [36mstorybook-static[39m
+[90m│[39m
+[32m◇[39m  Loading presets
+[90m│[39m
+[32m◇[39m  Building manager..
+✘ [ERROR] No matching export in "global-externals:storybook/internal/components" for import "WithTooltip"
+
+    ../node_modules/.store/storybook-addon-tag-badges@3.1.0-z9G-fduda2lYFS-68X7qEw/node_modules/storybook-addon-tag-badges/dist/chunk-VQKJDI6E.js:2:9:
+      2 │ import { WithTooltip, TooltipMessage } from 'storybook/internal/com...
+        ╵          ~~~~~~~~~~~
+
+✘ [ERROR] No matching export in "global-externals:storybook/internal/components" for import "TooltipMessage"
+
+    ../node_modules/.store/storybook-addon-tag-badges@3.1.0-z9G-fduda2lYFS-68X7qEw/node_modules/storybook-addon-tag-badges/dist/chunk-VQKJDI6E.js:2:22:
+      2 │ import { WithTooltip, TooltipMessage } from 'storybook/internal/com...
+        ╵                       ~~~~~~~~~~~~~~
+
+[90m│[39m
+[31m■[39m  [38;2;241;97;97mSB_CORE-SERVER_0004 (NoMatchingExportError): There was an exports
+[90m│[39m  mismatch error when trying to build Storybook.
+[90m│[39m  Please check whether the versions of your Storybook packages match
+[90m│[39m  whenever possible, as this might be the cause.
+
+[90m│[39m  Problematic example:
+[90m│[39m  { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.4.5",
+[90m│[39m  "storybook": "7.3.0" }
+
+[90m│[39m  Correct example:
+[90m│[39m  { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.5.3",
+[90m│[39m  "storybook": "7.5.3" }
+
+[90m│[39m  Please run `npx storybook doctor` for guidance on how to fix this
+[90m│[39m  issue.
+
+[90m│[39m  More info:
+[90m│[39m  [39m
+[90m│[39m  at buildOrThrow
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/storybook@11.0.0-beta.1-ZQwupioIv-jXqv9IyPqnQw/node_modules/storybook/dist/core-server/index.js:8696:9)
+[90m│[39m  at process.processTicksAndRejections
+[90m│[39m  (node:internal/process/task_queues:104:5)
+[90m│[39m  at async buildStaticStandalone
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/storybook@11.0.0-beta.1-ZQwupioIv-jXqv9IyPqnQw/node_modules/storybook/dist/core-server/index.js:9014:95)
+[90m│[39m  at async withTelemetry
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/storybook@11.0.0-beta.1-ZQwupioIv-jXqv9IyPqnQw/node_modules/storybook/dist/_node-chunks/chunk-LBR5YCV6.js:3591:12)
+[90m│[39m  at async build
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/storybook@11.0.0-beta.1-ZQwupioIv-jXqv9IyPqnQw/node_modules/storybook/dist/bin/core.js:4135:3)
+[90m│[39m  at async _Command.<anonymous>
+[90m│[39m  (file:///home/agent/workspace/node_modules/.store/storybook@11.0.0-beta.1-ZQwupioIv-jXqv9IyPqnQw/node_modules/storybook/dist/bin/core.js:4306:7)
+[90m│[39m
+[90m└[39m  Storybook exited with an error
+

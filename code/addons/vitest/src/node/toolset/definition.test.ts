@@ -258,6 +258,9 @@ describe('test API', () => {
       expect(resolveToolsetDescription(toolset.methods.run.description, ctx)).toContain(
         'First run npx storybook skills test-stories once and follow it'
       );
+      expect(
+        resolveToolsetDescription(toolset.methods.run.description, { ...ctx, transport: 'sdk' })
+      ).not.toContain('storybook skills');
     });
   });
 

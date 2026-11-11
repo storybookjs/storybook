@@ -91,7 +91,9 @@ describe('resolveSkillsIntent', () => {
   it('keeps --mcp in the command it names for a replaced skill', () => {
     expect(resolveSkillsIntent({ tokens: ['ui-workflow'], mcp: true })).toEqual({
       kind: 'error',
-      message: expect.stringContaining('Run `npx storybook skills <id> --mcp` for the step'),
+      message: expect.stringContaining(
+        'Run `npx storybook skills <id> --mcp` for each of the four now'
+      ),
     });
     expect(resolveSkillsIntent({ tokens: ['write-story'], mcp: true })).toEqual({
       kind: 'error',
@@ -123,12 +125,28 @@ describe('runSkillsCommand', () => {
     expect(d.loadStorybook).not.toHaveBeenCalled();
   });
 
-  it('component-docs prints the same text for every project, without loading config', async () => {
+  it('component-docs prints the docs commands, or says to skip the step without component docs', async () => {
     const d = deps();
+    d.resolveSkillInputs.mockResolvedValue({
+      ...(await d.resolveSkillInputs()),
+      docsEnabledForCli: true,
+    });
     const result = await runSkillsCommand({ tokens: ['component-docs'], target: {} }, d);
     expect(result.output).toContain('# Storybook component docs');
     expect(result.output).toContain('npx storybook tools docs show --id <id>');
-    expect(d.loadStorybook).not.toHaveBeenCalled();
+
+    d.resolveSkillInputs.mockResolvedValue({
+      ...(await d.resolveSkillInputs()),
+      docsEnabledForCli: false,
+    });
+    const without = await runSkillsCommand({ tokens: ['component-docs'], target: {} }, d);
+    expect(without.output).toContain('Skip this step');
+    expect(without.output).not.toContain('npx storybook tools');
+
+    // A composed Storybook serves its docs without local manifests.
+    d.resolveSkillInputs.mockResolvedValue({ ...(await d.resolveSkillInputs()), composed: true });
+    const composed = await runSkillsCommand({ tokens: ['component-docs'], target: {} }, d);
+    expect(composed.output).toContain('npx storybook tools docs list');
   });
 
   it('write-stories prints the story rules of the project, and no command', async () => {
@@ -188,6 +206,10 @@ describe('runSkillsCommand', () => {
 
   it('--mcp names the MCP tools', async () => {
     const d = deps();
+    d.resolveSkillInputs.mockResolvedValue({
+      ...(await d.resolveSkillInputs()),
+      docsEnabled: true,
+    });
     for (const id of ['component-docs', 'test-stories', 'ui-review']) {
       const { output } = await runSkillsCommand({ tokens: [id], mcp: true, target: {} }, d);
       expect(output).toContain('The tools named here are tools of the Storybook MCP server.');

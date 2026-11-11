@@ -76,7 +76,7 @@ const RENAMED_SKILLS: Record<string, SkillId> = { 'write-story': 'write-stories'
 function replacedSkillMessage(id: string, mcp: boolean): string | undefined {
   const run = (skill: string) => `\`npx storybook skills ${skill}${mcp ? ' --mcp' : ''}\``;
   if (SPLIT_SKILLS.includes(id)) {
-    return `The \`${id}\` skill is replaced by one skill per step: \`component-docs\` (look up the components to reuse), \`write-stories\` (the story rules), \`test-stories\` (run the story tests) and \`ui-review\` (publish the review). Run ${run('<id>')} for the step you are on.`;
+    return `The \`${id}\` skill is replaced by one skill per step: \`component-docs\` (look up the components to reuse), \`write-stories\` (the story rules), \`test-stories\` (run the story tests) and \`ui-review\` (publish the review). Run ${run('<id>')} for each of the four now, each in a command of its own, and follow each one at its step.`;
   }
   const renamed = Object.hasOwn(RENAMED_SKILLS, id) ? RENAMED_SKILLS[id] : undefined;
   return renamed && `The \`${id}\` skill is renamed to \`${renamed}\`. Run ${run(renamed)}.`;
@@ -170,9 +170,6 @@ async function serveSkills(
       const setup = await serveSetup(configDir, deps);
       docs.push(setup.markdown);
       setupRun = setup.run;
-    } else if (id === 'component-docs') {
-      // The same text for every project, so it needs no configuration.
-      docs.push(buildComponentDocsSkill(transport));
     } else {
       inputs ??= await loadInputs(configDir, deps);
       docs.push(buildProjectSkill(id, inputs, transport));
@@ -238,7 +235,7 @@ function renderCatalogHelp(): string {
 }
 
 function buildProjectSkill(
-  id: 'write-stories' | 'test-stories' | 'ui-review',
+  id: Exclude<SkillId, 'setup'>,
   inputs: SkillInputs,
   transport: SkillTextTransport
 ): string {
@@ -251,10 +248,13 @@ function buildProjectSkill(
   // composed Storybooks.
   const mcp = transport === 'mcp';
   const toolsets = mcp ? inputs.mcpToolsets : ALL_MCP_TOOLSETS;
-  const docsEnabled =
-    toolsets.docs && ((mcp ? inputs.docsEnabled : inputs.docsEnabledForCli) || inputs.composed);
+  const docsSupported = (mcp ? inputs.docsEnabled : inputs.docsEnabledForCli) || inputs.composed;
+  const docsEnabled = toolsets.docs && docsSupported;
   // A skill names the tools of its own toolset also when `main.ts` turns that toolset off, and
   // says so: a client that turns it on with the `X-MCP-Toolsets` header has those tools.
+  if (id === 'component-docs') {
+    return buildComponentDocsSkill({ transport, docsSupported, toolsetOff: !toolsets.docs });
+  }
   return id === 'test-stories'
     ? buildTestStoriesSkill({
         docsEnabled,

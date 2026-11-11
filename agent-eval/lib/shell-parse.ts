@@ -29,6 +29,17 @@ export function workflowCallMatchesName(call: StorybookWorkflowCall, name: strin
   );
 }
 
+// True when the tool was never called: then there is no step to do without its rules.
+export function skillComesBeforeTool(
+  calls: StorybookWorkflowCall[],
+  skill: string,
+  tool: string
+): boolean {
+  const firstTool = calls.findIndex((call) => workflowCallMatchesName(call, tool));
+  const firstSkill = calls.findIndex((call) => workflowCallMatchesName(call, skill));
+  return firstTool === -1 || (firstSkill !== -1 && firstSkill < firstTool);
+}
+
 export const STORYBOOK_WORKFLOW_TOOL_NAMES = [
   'docs-list',
   'docs-show',

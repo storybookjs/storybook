@@ -162,9 +162,9 @@ export type TestToolset = ToolsetDefinition<
  * promise is dropped from the description rather than made and then broken.
  */
 function describeRun(a11yEnabled: boolean, ctx: ToolsetCtx): string {
+  const skill = getSkillCommand(ctx)('test-stories');
   return (
-    `Run story tests.
-First run ${getSkillCommand(ctx)('test-stories')} once and follow it: it has the rules for running the tests and fixing what fails.
+    `Run story tests.${skill ? `\nFirst run ${skill} once and follow it: it has the rules for running the tests and fixing what fails.` : ''}
 Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
 Provide stories for focused runs (faster while iterating),
 or omit stories to run all tests for full-project verification.

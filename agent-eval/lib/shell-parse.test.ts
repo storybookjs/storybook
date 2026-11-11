@@ -5,6 +5,7 @@ import {
   normalizeStorybookWorkflowName,
   parseStorybookWorkflowShellCommands,
   shellCommandReadsFile,
+  skillComesBeforeTool,
   workflowCallMatchesName,
 } from './shell-parse.ts';
 
@@ -558,5 +559,32 @@ describe('shellCommandReadsFile', () => {
     'cat /tmp/plugin/skills/storybook-init/SKILL.md',
   ])('does not count a command that only names the file: %s', (command) => {
     expect(shellCommandReadsFile(command, skillFile)).toBe(false);
+  });
+});
+
+describe('skillComesBeforeTool', () => {
+  const order = (commands: string[]) =>
+    skillComesBeforeTool(parseStorybookWorkflowShellCommands(commands), 'test-stories', 'test-run');
+
+  test('passes when the skill is opened before the first call of its tool', () => {
+    expect(
+      order([
+        'npx storybook skills test-stories',
+        'npx storybook tools test run',
+        'npx storybook skills test-stories',
+      ])
+    ).toBe(true);
+    expect(order(['npx storybook skills --all', 'npx storybook tools test run'])).toBe(true);
+  });
+
+  test('fails when the tool runs before the skill, or without it', () => {
+    expect(order(['npx storybook tools test run', 'npx storybook skills test-stories'])).toBe(
+      false
+    );
+    expect(order(['npx storybook skills ui-review', 'npx storybook tools test run'])).toBe(false);
+  });
+
+  test('passes when the tool is never called', () => {
+    expect(order(['npx storybook skills ui-review'])).toBe(true);
   });
 });

@@ -14,6 +14,7 @@ import {
   parseJson,
   parseStorybookWorkflowShellCommands,
   shellCommandReadsFile,
+  skillComesBeforeTool,
   workflowCallMatchesName,
 } from './shell-parse.ts';
 import type { StorybookWorkflowCall } from './shell-parse.ts';
@@ -131,7 +132,30 @@ export function expectWorkflowCalls(expectedNames: string[]): void {
       count,
       `Expected ${name} to be called${count === 0 ? describeIgnoredCodexSettings() : ''}`
     ).toBeGreaterThan(0);
+    const tool = STEP_TOOLS[name];
+    if (tool) {
+      expectSkillBeforeItsTool(name, tool);
+    }
   }
+}
+
+// The tool that a step of the workflow runs, by the skill of that step.
+const STEP_TOOLS: Record<string, string> = {
+  'test-stories': 'test-run',
+  'ui-review': 'review-create',
+};
+
+// An agent that opens a skill only after it ran the tool of that step did the step without its
+// rules. On the MCP path the skill commands and the tool calls come from two sources, so their
+// order is unknown there.
+function expectSkillBeforeItsTool(skill: string, tool: string): void {
+  if (getEvalContext().integration !== 'plugin') {
+    return;
+  }
+  expect(
+    skillComesBeforeTool(getStorybookWorkflowCalls(), skill, tool),
+    `Expected the ${skill} skill to be opened before the first ${tool} call`
+  ).toBe(true);
 }
 
 // Codex runs on when it does not know a config setting, and only reports it in an error item. When

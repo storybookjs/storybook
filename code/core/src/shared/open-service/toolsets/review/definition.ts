@@ -73,8 +73,8 @@ export type ReviewCreateOutput = {
 
 function describeCreate(ctx: ToolsetCtx): string {
   const ref = getToolName(ctx);
-  return `Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.
-First run ${getSkillCommand(ctx)('ui-review')} once and follow it.
+  const skill = getSkillCommand(ctx)('ui-review');
+  return `Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.${skill ? `\nFirst run ${skill} once and follow it.` : ''}
 
 ## When to call
 - Visual change (components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers'. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; use ${ref('stories.findByComponent')} only for a file it leaves out, or when it is unavailable. Include changedFiles.

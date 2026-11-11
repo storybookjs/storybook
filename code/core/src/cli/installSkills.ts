@@ -149,8 +149,10 @@ export async function installSkills({
       `The ${formatList(removedSkills)} ${removedSkills.length > 1 ? 'skills are' : 'skill is'} replaced by component-docs, write-stories, test-stories and ui-review. Agent instructions of your own that name ${removedSkills.length > 1 ? 'them' : 'it'} need the new names.`
     );
   }
+  // The `stories` skill had no section yet. `ui-workflow` came with one, so a project without it
+  // removed it.
   await addAgentInstructions(
-    source === 'refresh' && removedSkills.length === 0 ? 'update' : 'install'
+    source === 'refresh' && !removedSkills.includes('stories') ? 'update' : 'install'
   );
 
   logger.log(

@@ -258,6 +258,22 @@ describe('installSkills', () => {
     expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install');
   });
 
+  it('does not add the section back when a refresh replaces the ui-workflow skill', async () => {
+    vol.fromNestedJSON({
+      [LOCK_PATH]: JSON.stringify({
+        version: 1,
+        skills: { 'ui-workflow': { source: 'storybookjs/skills' } },
+      }),
+    });
+
+    await installSkills({ packageManager, source: 'refresh' });
+
+    expect(vi.mocked(packageManager.runPackageCommand).mock.calls[1][0]).toMatchObject({
+      args: ['skills@latest', 'remove', 'ui-workflow', '--yes'],
+    });
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'update');
+  });
+
   it('keeps the installed skills when removing the stories skill fails', async () => {
     vol.fromNestedJSON({
       [LOCK_PATH]: JSON.stringify({

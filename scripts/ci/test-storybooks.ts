@@ -92,6 +92,7 @@ export function defineMcpTestStorybook() {
             command: 'pnpm exec vitest run --project=e2e',
           },
         },
+        artifact.persist('test-storybooks/mcp/storybook-logs', 'storybook-logs'),
         {
           run: {
             name: 'Run internal Storybook story tests',

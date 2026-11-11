@@ -7,7 +7,6 @@ docs/public
 storybook-static
 built-storybooks
 lib/cli/test
-lib/codemod/src/transforms/__testfixtures__
 scripts/storage
 scripts/repros-generator
 *.bundle.js

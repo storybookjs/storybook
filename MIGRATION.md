@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [`@storybook/codemod` is no longer published](#storybookcodemod-is-no-longer-published)
   - [ESLint plugin: `meta-inline-properties` replaced by `static-csf-properties`](#eslint-plugin-meta-inline-properties-replaced-by-static-csf-properties)
   - [Deprecated addon UI APIs removed](#deprecated-addon-ui-apis-removed)
   - [Theming imports](#theming-imports)
@@ -79,6 +80,7 @@
   - [Web Components: `@wc-toolkit/storybook-helpers` is built in](#web-components-wc-toolkitstorybook-helpers-is-built-in)
   - [Web Components: the runtime Custom Elements Manifest API is deprecated](#web-components-the-runtime-custom-elements-manifest-api-is-deprecated)
   - [SvelteKit: Require v3 and up](#sveltekit-require-v3-and-up)
+  - [SvelteKit: `sveltekit_experimental` parameters removed](#sveltekit-sveltekit_experimental-parameters-removed)
   - [Svelte CSF is built into the Svelte frameworks](#svelte-csf-is-built-into-the-svelte-frameworks)
   - [Svelte CSF: legacy story syntax removed](#svelte-csf-legacy-story-syntax-removed)
     - [`<Meta>` component](#meta-component)
@@ -641,6 +643,23 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 10.x to 11.0.0
+
+### `@storybook/codemod` is no longer published
+
+The codemods now ship inside the Storybook CLI, so `@storybook/codemod` has no stable 11.0 release, only 11.0 prereleases. Run the codemods with `storybook migrate`:
+
+```sh
+npx storybook@latest migrate --list
+npx storybook@latest migrate csf-2-to-3 --glob="**/*.stories.tsx"
+```
+
+If your `package.json` lists `@storybook/codemod`, remove it. Left in place, it stays on 10.x and installs its own copy of `storybook`.
+
+The transforms can no longer be run directly with `jscodeshift`. The `--parser` flag of `storybook migrate`, `storybook init` and `create storybook` is still accepted, but ignored.
+
+`storybook migrate` now exits with code 1 when the glob matches no files. Next to `node_modules` and `dist`, it also skips files in `build` and `storybook-static` folders. With `--dry-run`, it no longer renames files.
+
+The `upgrade-hierarchy-separators` codemod has been removed. It replaced `|` and `.` in titles and `storiesOf` calls with `/`, for the move to Storybook 6.0. `storiesOf` was removed in Storybook 8.0, and a `.` in a title is now an ordinary character. The `storybook/hierarchy-separator` ESLint rule still reports a `|` in a title, and `eslint --fix` replaces it.
 
 ### ESLint plugin: `meta-inline-properties` replaced by `static-csf-properties`
 
@@ -2121,27 +2140,205 @@ For the details, see the [SvelteKit 3 migration guide](https://svelte.dev/docs/k
 
 `@storybook/sveltekit` changes with SvelteKit 3:
 
-- SvelteKit 3 removed `$app/stores`, so Storybook no longer mocks it, and `parameters.sveltekit_experimental.stores` is removed. Use `$app/state` in your components, and mock it with `parameters.sveltekit_experimental.state`:
-
-  ```diff
-   parameters: {
-     sveltekit_experimental: {
-  -    stores: {
-  -      page: { data: { test: 'passed' } },
-  -      updated: true,
-  -    },
-  +    state: {
-  +      page: { data: { test: 'passed' } },
-  +      updated: { current: true },
-  +    },
-     },
-   },
-  ```
-
+- SvelteKit 3 removed `$app/stores`, so Storybook no longer mocks it. Use `$app/state` in your components, and mock it as [the next section](#sveltekit-sveltekit_experimental-parameters-removed) shows.
 - Storybook serves the files in your SvelteKit `static` directory at the root, like SvelteKit does. If you added `static` to `staticDirs` for this, you can remove it.
-- The `$app/navigation` mock supports `refreshAll`. Mock it with `parameters.sveltekit_experimental.navigation.refreshAll`.
 - Static variables from `$app/env/public` work in Storybook. Dynamic variables are `undefined`, because Storybook has no server to provide them. This also applies to the deprecated `$env/dynamic/public` module, which used to work in development mode.
 - Storybook fails to load a story that imports `$app/env/private`, `$app/server` or the deprecated `$env/*/private` modules, so private values can't get into the browser. Mock the module that imports them with a [mock file](https://storybook.js.org/docs/writing-stories/mocking-data-and-modules/mocking-modules#mock-files).
+
+### SvelteKit: `sveltekit_experimental` parameters removed
+
+`parameters.sveltekit_experimental` is removed. A story that still sets it, in the story, the meta or `.storybook/preview`, fails with a `SvelteKitMockParametersRemovedError` that lists the keys it found.
+
+Storybook still mocks `$app/forms`, `$app/navigation` and `$app/state`, because they need SvelteKit's router. The mocks now work like every other Storybook mock:
+
+- Every function is a mock function (`fn()`). Import it in the stories file from the same module as the component does, for example `import { goto } from '$app/navigation'`. Assert on it in `play`, and change it with `mocked(goto)` from `storybook/test`.
+- `page`, `navigating` and `updated` from `$app/state` are writable. Assign their properties.
+- `@storybook/sveltekit/navigation.mock` exports `link`, a mock function that link clicks call, and `setAfterNavigate()`, which sets the navigation that `afterNavigate` callbacks receive.
+- `@storybook/sveltekit/forms.mock` exports `formAction`, a mock function that a form with `use:enhance` calls instead of the server. Its result drives the rest of SvelteKit's submit flow.
+- Set up the mocks in `beforeEach`. Storybook resets them before every story.
+
+See [Mocking modules](https://storybook.js.org/docs/get-started/frameworks/sveltekit#mocking-modules) in the SvelteKit docs for the full API.
+
+To migrate your stories, give this prompt to your AI agent, or follow it by hand:
+
+<details>
+<summary>Prompt: migrate SvelteKit stories from <code>sveltekit_experimental</code></summary>
+
+````md
+Migrate this project's Storybook stories from `parameters.sveltekit_experimental` to the SvelteKit mocks of Storybook 11.
+
+## Background
+
+Storybook 11 removed `parameters.sveltekit_experimental`. A story that still sets it fails with `SvelteKitMockParametersRemovedError`. Storybook still replaces `$app/forms`, `$app/navigation` and `$app/state` with mocks, but stories now set them up in `beforeEach`:
+
+- Every function of `$app/navigation` and `$app/forms` is a Storybook mock function (`fn()`). A stories file imports it from the same module as the component, for example `import { goto } from '$app/navigation'`, and gets the same function. It asserts on it in `play`, and changes it with `mocked(goto)` from `storybook/test`.
+- `page`, `navigating` and `updated` from `$app/state` are writable.
+- `@storybook/sveltekit/navigation.mock` exports `link`, a mock function that link clicks call, and `setAfterNavigate()`, which sets the navigation that `afterNavigate` callbacks receive.
+- `@storybook/sveltekit/forms.mock` exports `formAction`, a mock function that a form with `use:enhance` calls instead of the server. Its result drives the rest of SvelteKit's submit flow.
+- Storybook resets all mocks before every story.
+
+Docs: https://storybook.js.org/docs/get-started/frameworks/sveltekit#mocking-modules
+
+## Find the code to migrate
+
+Search the project for `sveltekit_experimental`: in `*.stories.svelte` files, in `*.stories.{js,jsx,ts,tsx,mjs}` files, in `.storybook/preview.*`, and in helper modules that stories import parameters from. Migrate every occurrence.
+
+## Steps for each `sveltekit_experimental`
+
+1. Find the `beforeEach` at the same level as the `parameters`: the `<Story beforeEach={...}>` prop, the `beforeEach` of `defineMeta()` or `preview.meta()`, a CSF story's or meta's `beforeEach`, or the `beforeEach` export of `.storybook/preview`. Add one if there is none. If it already exists, add the new statements at its start.
+2. Replace each key with the code in the table below, inside that `beforeEach`.
+3. Add the imports that the new code needs. In a `.stories.svelte` file, add them to `<script module>`.
+4. Delete the `sveltekit_experimental` key, and the `parameters` prop or property if it is now empty.
+5. If a story passed a `fn()` as a value, for example `navigation: { goto }` with `const goto = fn()`, delete that `fn()` and import the function from the SvelteKit module instead. The `expect(goto)` assertions stay the same.
+6. If the file has a docs page (the `autodocs` tag on the meta or in `.storybook/preview`, or an MDX file with `<Stories>` or `<Story of={...}>` for it), and its stories now set the mocks in `beforeEach`, add `parameters: { docs: { story: { inline: false } } }` to the meta. Inline stories on a docs page share one instance of the mocks, and Storybook fails with `SvelteKitMocksSharedOnDocsPageError` when they set them.
+
+| Old key | Replacement in `beforeEach` | Imports |
+| --- | --- | --- |
+| `state.page: { data: X, url: Y, ... }` | One assignment per property: `page.data = X; page.url = Y;` | `import { page } from '$app/state';` |
+| `state.navigating: { to: X, type: Y, ... }` | One assignment per property: `navigating.to = X; navigating.type = Y;` | `import { navigating } from '$app/state';` |
+| `state.updated: { current: X }` | `Object.assign(updated, { current: X });` | `import { updated } from '$app/state';` |
+| `navigation.goto: callback` | `mocked(goto).mockImplementation(async (...args) => { callback(...args); });` | `import { goto } from '$app/navigation';` and `import { mocked } from 'storybook/test';` |
+| `navigation.goto: goto`, where `const goto = fn()` | Nothing. Delete the `fn()`, and assert on the imported `goto`. | `import { goto } from '$app/navigation';` |
+| `navigation.invalidate`, `invalidateAll`, `refreshAll`, `pushState`, `replaceState` | Same as `navigation.goto`, with that function. | Same as `navigation.goto`, with that function. |
+| `navigation.afterNavigate: X` | `setAfterNavigate(X);` | `import { setAfterNavigate } from '@storybook/sveltekit/navigation.mock';` |
+| `hrefs: { '/a': callback }` | `link.mockImplementation((href, event) => { if (href === '/a') callback(href, event); });` | `import { link } from '@storybook/sveltekit/navigation.mock';` |
+| `hrefs: { 'pattern': { callback, asRegex: true } }` | `link.mockImplementation((href, event) => { if (new RegExp('pattern').test(href)) callback(href, event); });` | `import { link } from '@storybook/sveltekit/navigation.mock';` |
+| `hrefs` with several keys | One `link.mockImplementation()` with one `if` per key. Every matching key runs, as before. | `import { link } from '@storybook/sveltekit/navigation.mock';` |
+| `forms.enhance: callback` | `formAction.mockImplementation(async (submission) => { callback(); return { type: 'success', status: 200 }; });` See the note on `forms.enhance` below. | `import { formAction } from '@storybook/sveltekit/forms.mock';` |
+
+## Behavior that changed
+
+Keep these in mind, and update assertions that depend on the old behavior:
+
+- Every call of a mocked function is logged in the Actions panel, also when a story gives it an implementation. Before, a callback in the parameters replaced the log entry.
+- Link clicks call `link`, not a `navigate` action. Links that open another window, links with `download`, and clicks that the component already handled are left to the browser. An `href` that matched no `hrefs` key logged a `navigate` action. Now every click is a call of `link`, which the Actions panel logs as `$app/navigation::link`.
+- `forms.enhance` received the `SubmitEvent`, and nothing else happened after a submit. Now `use:enhance` runs SvelteKit's submit flow with the result of `formAction`, which receives `{ action, formData, formElement, submitter }`. If the old callback read the event, read `submission.formElement`, `submission.formData` or `submission.submitter` instead. The default result, `{ type: 'success', status: 200 }`, resets the form, calls `refreshAll()` and sets `page.form` to `undefined` and `page.status` to `200`. To keep the form as it is, resolve another result, for example `formAction.mockResolvedValue({ type: 'failure', status: 400, data: { error: 'Invalid email' } })`.
+- Like in SvelteKit, `use:enhance` handles only forms with `method="post"`. The old mock stopped every submit. Now the browser submits other forms, which replaces the story with another page.
+- `setAfterNavigate()` merges its argument into `{ type: 'enter', from: null, to: null, shallow: false, willUnload: false, complete: Promise.resolve() }`, like `navigation.afterNavigate` did.
+
+## TypeScript
+
+The SvelteKit modules have SvelteKit's types:
+
+- `goto` and the other functions are typed as functions, not mocks. Use `mocked(goto)` from `storybook/test` to reach the mock API, for example `mocked(goto).mockImplementation(...)`. `expect(goto)` works as is.
+- `updated.current` is read-only, so `updated.current = true` doesn't type-check. `Object.assign(updated, { current: true })` does, and it sets the mock's property the same way.
+- `page.url` is a read-only URL. To resolve a path against it, pass `page.url.href`, for example `new URL(href, page.url.href)`.
+- `link`, `setAfterNavigate` and `formAction` have their mock types already.
+
+## Example
+
+A Svelte CSF file, before:
+
+```svelte
+<script module>
+  import { defineMeta } from '@storybook/sveltekit';
+  import { expect, fn } from 'storybook/test';
+
+  import Header from './Header.svelte';
+
+  const goto = fn();
+
+  const { Story } = defineMeta({
+    component: Header,
+    parameters: {
+      sveltekit_experimental: {
+        state: { page: { url: new URL('http://localhost/dashboard') } },
+      },
+    },
+  });
+</script>
+
+<Story
+  name="Logged in"
+  parameters={{
+    sveltekit_experimental: {
+      state: { page: { data: { user: { name: 'Ada' } } } },
+      navigation: { goto },
+      hrefs: { '/settings': (to) => console.log(to) },
+    },
+  }}
+  play={async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Log out' }));
+    await expect(goto).toHaveBeenCalledWith('/login');
+  }}
+/>
+```
+
+After:
+
+```svelte
+<script module>
+  import { defineMeta } from '@storybook/sveltekit';
+  import { link } from '@storybook/sveltekit/navigation.mock';
+  import { goto } from '$app/navigation';
+  import { page } from '$app/state';
+  import { expect } from 'storybook/test';
+
+  import Header from './Header.svelte';
+
+  const { Story } = defineMeta({
+    component: Header,
+    beforeEach() {
+      page.url = new URL('http://localhost/dashboard');
+    },
+  });
+</script>
+
+<Story
+  name="Logged in"
+  beforeEach={() => {
+    page.data = { user: { name: 'Ada' } };
+    link.mockImplementation((href, event) => {
+      if (href === '/settings') console.log(href);
+    });
+  }}
+  play={async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Log out' }));
+    await expect(goto).toHaveBeenCalledWith('/login');
+  }}
+/>
+```
+
+The same story in CSF, after:
+
+```js
+import { link } from '@storybook/sveltekit/navigation.mock';
+import { goto } from '$app/navigation';
+import { page } from '$app/state';
+import { expect } from 'storybook/test';
+
+import Header from './Header.svelte';
+
+export default {
+  component: Header,
+  beforeEach() {
+    page.url = new URL('http://localhost/dashboard');
+  },
+};
+
+export const LoggedIn = {
+  beforeEach() {
+    page.data = { user: { name: 'Ada' } };
+    link.mockImplementation((href, event) => {
+      if (href === '/settings') console.log(href);
+    });
+  },
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Log out' }));
+    await expect(goto).toHaveBeenCalledWith('/login');
+  },
+};
+```
+
+## Check your work
+
+1. Search the project for `sveltekit_experimental` again. Nothing should remain.
+2. Type-check the changed files, for example with `npx svelte-check`, if the project uses TypeScript.
+3. Run the changed stories, for example with `npx vitest --project=storybook` if the project uses the Vitest addon. Otherwise, open each changed story and its docs page in Storybook.
+4. List the parameters you couldn't migrate, such as parameters built at runtime or spread from a variable you can't follow, with their file and line. Don't guess a replacement for them.
+````
+
+</details>
 
 ### Svelte CSF is built into the Svelte frameworks
 
@@ -2169,7 +2366,7 @@ Or migrate by hand:
 + import { defineMeta, type Args } from '@storybook/sveltekit'; // or '@storybook/svelte-vite'
 ```
 
-The error codes stay the same. Their docs are in [`code/renderers/svelte/src/svelte-csf/ERRORS.md`](https://github.com/storybookjs/storybook/blob/next/code/renderers/svelte/src/svelte-csf/ERRORS.md).
+The error codes stay the same. Each error message now says how to fix the error.
 
 ### Svelte CSF: legacy story syntax removed
 
@@ -2361,7 +2558,7 @@ After:
 
 Storybook used to run the preprocessors from `svelte.config.js` on a stories file before it indexed the file. It now indexes stories files without preprocessors, so indexing works the same when your Svelte config is in the Vite config, as in SvelteKit 3. The indexer ignores the content of `<style>` blocks, so styles that need a preprocessor, such as SCSS, are fine. Preprocessors still apply when Storybook renders your stories.
 
-If a stories file needs a preprocessor outside of `<style>`, for example for TypeScript enums, indexing fails with [`SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009`](https://github.com/storybookjs/storybook/blob/next/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0009). Move that code to a separate module, and import it into the stories file.
+If a stories file needs a preprocessor outside of `<style>`, for example for TypeScript enums, indexing fails with `SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009`. Move that code to a separate module, and import it into the stories file.
 
 ### Svelte: `parameters.component` removed from the source decorator
 
@@ -8023,7 +8220,7 @@ To help you upgrade your stories, we've created a codemod:
 npx @storybook/cli@latest migrate csf-hoist-story-annotations --glob="**/*.stories.js"
 ```
 
-For more information, [see the documentation](https://github.com/storybookjs/storybook/blob/next/code/lib/codemod/README.md#csf-hoist-story-annotations).
+For more information, [see the documentation](https://github.com/storybookjs/storybook/blob/v10.0.0/code/lib/codemod/README.md#csf-hoist-story-annotations).
 
 ### Zero config typescript
 
@@ -8311,7 +8508,7 @@ The story store no longer emits `renderCurrentStory`/`RENDER_CURRENT_STORY` to t
 
 We've removed the ability to specify the hierarchy separators (how you control the grouping of story kinds in the sidebar). From Storybook 6.0 we have a single separator `/`, which cannot be configured.
 
-If you are currently using custom separators, we encourage you to migrate to using `/` as the sole separator. If you are using `|` or `.` as a separator currently, we provide a codemod, [`upgrade-hierarchy-separators`](https://github.com/storybookjs/storybook/blob/next/code/lib/codemod/README.md#upgrade-hierarchy-separators), that can be used to rename your components. **Note: the codemod will not work for `.mdx` components, you will need to make the changes by hand.**
+If you are currently using custom separators, we encourage you to migrate to using `/` as the sole separator. If you are using `|` or `.` as a separator currently, we provide a codemod, [`upgrade-hierarchy-separators`](https://github.com/storybookjs/storybook/blob/v10.0.0/code/lib/codemod/README.md#upgrade-hierarchy-separators), that can be used to rename your components. **Note: the codemod will not work for `.mdx` components, you will need to make the changes by hand.**
 
 ```
 npx sb@latest migrate upgrade-hierarchy-separators --glob="*/**/*.stories.@(tsx|jsx|ts|js)"
@@ -8801,7 +8998,7 @@ Addon-docs configuration gets simpler in 5.3. In 5.2, each framework had its own
 
 We've deprecated the ability to specify the hierarchy separators (how you control the grouping of story kinds in the sidebar). From Storybook 6.0 we will have a single separator `/`, which cannot be configured.
 
-If you are currently using custom separators, we encourage you to migrate to using `/` as the sole separator. If you are using `|` or `.` as a separator currently, we provide a codemod, [`upgrade-hierarchy-separators`](https://github.com/storybookjs/storybook/blob/next/code/lib/codemod/README.md#upgrade-hierarchy-separators), that can be used to rename all your components.
+If you are currently using custom separators, we encourage you to migrate to using `/` as the sole separator. If you are using `|` or `.` as a separator currently, we provide a codemod, [`upgrade-hierarchy-separators`](https://github.com/storybookjs/storybook/blob/v10.0.0/code/lib/codemod/README.md#upgrade-hierarchy-separators), that can be used to rename all your components.
 
 ```
 yarn sb migrate upgrade-hierarchy-separators --glob="*.stories.js"
@@ -9674,7 +9871,7 @@ The new package names are:
 
 If your codebase is small, it's probably doable to replace them by hand (in your codebase and in `package.json`).
 
-But if you have a lot of occurrences in your codebase, you can use a [codemod we created](./code/lib/codemod) for you.
+But if you have a lot of occurrences in your codebase, you can use a [codemod we created](https://github.com/storybookjs/storybook/tree/v10.0.0/code/lib/codemod) for you.
 
 > A codemod makes automatic changed to your app's code.
 

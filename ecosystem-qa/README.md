@@ -89,7 +89,8 @@ Next to it are `run.log`, `agent-stream.jsonl` (the token counts come from here)
 
 Dry mode is the default.
 The filer writes each proposal, with its full issue body and the evidence it would upload, to the Step Summary and changes nothing.
-Without dry mode it pushes the evidence to the `qa-assets` branch with the job token, pushes the upgraded state to the catalog repo with `ECOSYSTEM_QA_PUSH_TOKEN` from the `ecosystem-qa-file` environment, and files the issue in milestone 11.
+Without dry mode it pushes the evidence to the `qa-assets` branch with the job token, pushes the upgraded state to the catalog repo with the push token of the target's org, and files the issue in milestone 11.
+That is `ECOSYSTEM_QA_PUSH_TOKEN` for `storybookjs` and `ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP` for `storybook-tmp`, both from the `ecosystem-qa-file` environment.
 The upgraded state lands under `refs/qa/`, never as a branch: a branch push would start the catalog repo's own workflows and run the agent's commits with that repo's secrets before anyone read the diff.
 The issue body carries the fetch command, and the one push that turns the ref into a branch once a person has looked at it.
 A fingerprint that is already on an issue becomes a comment, and one on a `qa:known` issue is suppressed.

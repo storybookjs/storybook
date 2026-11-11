@@ -379,6 +379,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           ECOSYSTEM_QA_PUSH_TOKEN: ${{ secrets.ECOSYSTEM_QA_PUSH_TOKEN }}
+          ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP: ${{ secrets.ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP }}
         run: >-
           node ecosystem-qa/file.ts --proposals ecosystem-qa/results/qa-proposals/proposals.json
           --repo "$GITHUB_REPOSITORY"

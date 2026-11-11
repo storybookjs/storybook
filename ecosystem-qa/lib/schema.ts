@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { CHECK_IDS, type CheckId } from '../checks.ts';
+import { PUSH_TOKEN_ENV } from './cycle.ts';
 
 export const RepoClass = z.enum(['owned', 'tier1', 'tier2']);
 export type RepoClass = z.infer<typeof RepoClass>;
@@ -14,10 +15,10 @@ export const Effort = z.enum(['low', 'medium', 'high']);
 export const CatalogEntry = z.strictObject({
   id: z.string().regex(/^[a-z0-9-]+$/),
   repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/),
-  // Where the cycle branch is pushed: a fork under storybookjs for tier 1, the repo itself when owned.
+  // Where the cycle branch is pushed: a fork under storybook-tmp for tier 1, the repo itself when owned.
   pushTo: z
     .string()
-    .regex(/^storybookjs\/[\w.-]+$/)
+    .regex(new RegExp(`^(?:${Object.keys(PUSH_TOKEN_ENV).join('|')})/[\\w.-]+$`))
     .optional(),
   ref: z.string().min(1),
   class: RepoClass,

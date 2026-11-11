@@ -14,24 +14,21 @@ describe('catalog', () => {
     ['a repo without an owner', { ...ENTRY, repo: 'mealdrop' }],
     ['an unsupported package manager', { ...ENTRY, packageManager: 'bun' }],
     ['an unknown field', { ...ENTRY, branch: 'main' }],
-    ['a push target outside storybookjs', { ...ENTRY, pushTo: 'twentyhq/twenty' }],
+    ['a push target outside the orgs with a push token', { ...ENTRY, pushTo: 'twentyhq/twenty' }],
   ])('rejects %s', (_, entry) => {
     expect(() => Catalog.parse([entry])).toThrow();
   });
 
-  it('accepts a fork under storybookjs as the push target of an upstream repo', () => {
-    const [entry] = Catalog.parse([
-      {
-        ...ENTRY,
-        id: 'twenty',
-        repo: 'twentyhq/twenty',
-        class: 'tier1',
-        pushTo: 'storybookjs/twenty',
-      },
-    ]);
+  it.each(['storybook-tmp/twenty', 'storybookjs/twenty'])(
+    'accepts %s as the push target of an upstream repo',
+    (pushTo) => {
+      const [entry] = Catalog.parse([
+        { ...ENTRY, id: 'twenty', repo: 'twentyhq/twenty', class: 'tier1', pushTo },
+      ]);
 
-    expect(entry?.pushTo).toBe('storybookjs/twenty');
-  });
+      expect(entry?.pushTo).toBe(pushTo);
+    }
+  );
 
   it('rejects duplicate ids', () => {
     expect(() => Catalog.parse([ENTRY, ENTRY])).toThrow(/unique/);

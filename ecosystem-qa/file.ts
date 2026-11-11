@@ -16,7 +16,7 @@ import {
   type FilingOutcome,
   type FilingStep,
 } from './lib/filing.ts';
-import { cycleRef } from './lib/cycle.ts';
+import { cycleRef, pushTokenEnv } from './lib/cycle.ts';
 import { ghParse, ghText, searchFingerprint } from './lib/github.ts';
 import { copyRedacted } from './lib/redact.ts';
 import { Proposal } from './lib/schema.ts';
@@ -26,9 +26,10 @@ const HELP = `Usage: node ecosystem-qa/file.ts --proposals <proposals.json> --re
 
 --dry writes each proposal to $GITHUB_STEP_SUMMARY (stdout when unset) and changes nothing.
 Without --dry it checks that the milestones and labels exist, then for each proposal pushes the
-cycle branch to the catalog repo with ECOSYSTEM_QA_PUSH_TOKEN, pushes evidence to the qa-assets
-branch of --repo and creates the issue or comment with GH_TOKEN. A failed proposal does not stop
-the others; the filed and failed table goes to the Step Summary and the exit code is 1 if any failed.
+cycle branch to the catalog repo with the push token of that repo's org, pushes evidence to the
+qa-assets branch of --repo and creates the issue or comment with GH_TOKEN. A failed proposal does
+not stop the others; the filed and failed table goes to the Step Summary and the exit code is 1 if
+any failed.
 Rerunning is safe: a filed fingerprint, an identical comment and pushed evidence are skipped.`;
 
 const EVIDENCE_PUSH_ATTEMPTS = 3;
@@ -91,7 +92,7 @@ const writeBody = (body: string) => {
 };
 
 const pushCycle = (step: Extract<FilingStep, { kind: 'push-cycle' }>) => {
-  const token = requireToken('ECOSYSTEM_QA_PUSH_TOKEN');
+  const token = requireToken(pushTokenEnv(step.repo));
   const dir = mkdtempSync(join(tmpdir(), 'qa-cycle-'));
   const remote = `https://github.com/${step.repo}`;
   git(dir, ['init', '--quiet']);

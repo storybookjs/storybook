@@ -94,7 +94,7 @@ const objectDetail = (
     if (!ts.isPropertySignature(member) || member.type === undefined) {
       continue;
     }
-    const optional = member.questionToken ? '?' : '';
+    const optional = ts.hasQuestionToken(member) ? '?' : '';
     lines.push(
       describedLine(
         context,

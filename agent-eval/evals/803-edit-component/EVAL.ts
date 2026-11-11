@@ -1,32 +1,25 @@
 import {
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
-  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
-  modelRunsTestsOnlyWhenAsked,
 } from '#test-utils';
 import { describe, test } from 'vitest';
 
 describe('editing ReviewCard to add date and optional onReport', () => {
   test('runs story tests after the change and finishes with them passing', async () => {
     await expectStoryTestsRanAndPassed({
-      requireAgentRun: !modelRunsTestsOnlyWhenAsked(),
       covering: ['reviewcard'],
     });
   });
 
   test('uses Storybook story instructions and publishes a display review', () => {
-    expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
+    expectWorkflowCalls(['ui-workflow', 'review-create']);
     expectDisplayReviewForVisualChange();
-  });
-
-  test('opens the review in the in-app browser', () => {
-    expectReviewOpenedInBrowser();
   });
 
   test('the review covers the edited ReviewCard component', () => {
@@ -38,13 +31,11 @@ describe('editing ReviewCard to add date and optional onReport', () => {
   });
 
   describe('depending on the current agent and integration', () => {
-    const { agent, integration } = getEvalContext();
+    const { integration } = getEvalContext();
 
     // The edit pulls in a new Reshaped component (Button), which requires the
-    // docs tools. Skipped for Codex: it omits docs-show under both
-    // instruction shapes (CI 28660377980, 2026-07-03). Re-enable after the
-    // documentation tool call passes on three consecutive scheduled CI runs.
-    test.skipIf(agent === 'codex')('uses the documentation tooling', () => {
+    // docs tools.
+    test('uses the documentation tooling', () => {
       expectWorkflowCalls(['docs-show']);
     });
 

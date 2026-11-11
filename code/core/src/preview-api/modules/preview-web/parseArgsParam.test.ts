@@ -87,6 +87,16 @@ describe('parseArgsParam', () => {
     expect(args).toStrictEqual({ one: 'A', two: 'B', three: 'C' });
   });
 
+  it('parses an empty value as an empty string', () => {
+    const args = parseArgsParam('label:');
+    expect(args).toStrictEqual({ label: '' });
+  });
+
+  it('parses an empty value next to a non-empty one', () => {
+    const args = parseArgsParam('label:;primary:!false');
+    expect(args).toStrictEqual({ label: '', primary: false });
+  });
+
   it('parses arrays', () => {
     const args = parseArgsParam('arr[]:A;arr[]:B;arr[]:C');
     expect(args).toStrictEqual({ arr: ['A', 'B', 'C'] });

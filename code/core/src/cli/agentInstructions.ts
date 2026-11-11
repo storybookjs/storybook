@@ -54,14 +54,16 @@ export type AgentInstructionsMode = 'install' | 'update';
 
 // The section in the line endings of the file it goes into, so a CRLF file stays CRLF and an
 // update of an unchanged section is a no-op there too.
-const sectionFor = (content: string | undefined) =>
-  content?.includes('\r\n')
-    ? STORYBOOK_AGENT_INSTRUCTIONS.replaceAll('\n', '\r\n')
-    : STORYBOOK_AGENT_INSTRUCTIONS;
+const sectionFor = (content: string | undefined, section: string) =>
+  content?.includes('\r\n') ? section.replaceAll('\n', '\r\n') : section;
 
 // The new content of the file, or `undefined` when it needs no change.
-function withSection(content: string | undefined, mode: AgentInstructionsMode): string | undefined {
-  const section = sectionFor(content);
+function withSection(
+  content: string | undefined,
+  mode: AgentInstructionsMode,
+  storybookSection: string
+): string | undefined {
+  const section = sectionFor(content, storybookSection);
   if (content !== undefined && findSection(content) !== undefined) {
     const updated = content.replace(SECTION, () => section);
     return updated === content ? undefined : updated;
@@ -74,13 +76,15 @@ function withSection(content: string | undefined, mode: AgentInstructionsMode): 
 }
 
 // The new content of each file to write, keyed by its path relative to the project root. `read`
-// resolves to `undefined` for a file that does not exist.
+// resolves to `undefined` for a file that does not exist. `section` replaces the skills section,
+// for example with the MCP server instructions in the MCP evals.
 export async function planStorybookAgentInstructions(
   read: (file: string) => Promise<string | undefined>,
-  mode: AgentInstructionsMode = 'install'
+  mode: AgentInstructionsMode = 'install',
+  section = STORYBOOK_AGENT_INSTRUCTIONS
 ): Promise<Record<string, string>> {
   const files: Record<string, string> = {};
-  const agentsMd = withSection(await read('AGENTS.md'), mode);
+  const agentsMd = withSection(await read('AGENTS.md'), mode, section);
   if (agentsMd !== undefined) {
     files['AGENTS.md'] = agentsMd;
   }
@@ -93,13 +97,13 @@ export async function planStorybookAgentInstructions(
     }
   }
   const withMarkers = claudeFiles.filter(({ section }) => section !== undefined);
-  for (const { file, content, importsAgentsMd, section } of withMarkers) {
+  for (const { file, content, importsAgentsMd, section: current } of withMarkers) {
     // A user who replaced the copy with an import of AGENTS.md keeps it (the case nrwl/nx#37181
     // reports Nx gets wrong).
-    if (importsAgentsMd.test(section ?? '')) {
+    if (importsAgentsMd.test(current ?? '')) {
       continue;
     }
-    const updated = withSection(content, mode);
+    const updated = withSection(content, mode, section);
     if (updated !== undefined) {
       files[file] = updated;
     }
@@ -113,7 +117,7 @@ export async function planStorybookAgentInstructions(
   // Claude Code loads every CLAUDE.md, so one copy is enough.
   const [claudeFile] = claudeFiles;
   if (claudeFile && !claudeSeesSection) {
-    const added = withSection(claudeFile.content, mode);
+    const added = withSection(claudeFile.content, mode, section);
     if (added !== undefined) {
       files[claudeFile.file] = added;
     }

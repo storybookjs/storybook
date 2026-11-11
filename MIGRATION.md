@@ -1137,7 +1137,7 @@ The manager resolves `SELECT_STORY` payloads from `storyId` or `title`/`name`, a
 
 The `experimentalDocgenServer` feature is now `docgenServer`, and Storybook no longer reads the old name.
 Server-side component metadata extraction is enabled by default for every React and Vue 3 framework, including Webpack-based ones, for `@storybook/angular-vite`, for `@storybook/web-components-vite`, and for `@storybook/svelte-vite` and `@storybook/sveltekit`.
-Server-side docgen reads components with the TypeScript compiler API, also in JavaScript projects. The default is only on when the `typescript` package is installed and is TypeScript 5.9 or 6, or, for Web Components, when a Custom Elements Manifest is configured. Otherwise Storybook keeps builder docgen and prints a warning that tells you what to install. Set `features.docgenServer: false` in `.storybook/main.ts` to opt out of server-side docgen without that warning.
+Server-side docgen reads components with the TypeScript API, also in JavaScript projects. The default is only on when the `typescript` package is installed and is TypeScript 5.9 or 6 (or, for React and Angular with `@storybook/angular-vite`, also TypeScript 7.1 or newer; `typescript.docgenSpecifier` in `.storybook/main.ts` names another package to read TypeScript from), or, for Web Components, when a Custom Elements Manifest is configured. TypeScript 7.0 has no API that Storybook can use. Otherwise Storybook keeps builder docgen and prints a warning that tells you what to install. Set `features.docgenServer: false` in `.storybook/main.ts` to opt out of server-side docgen without that warning.
 Other frameworks keep builder docgen.
 
 The `docgen-server` automigration renames `experimentalDocgenServer` to `docgenServer` and keeps its value.
@@ -1179,10 +1179,10 @@ Storybook loads them only when builder docgen runs. When your main config sets `
 | `typescript.reactDocgen` | Add to devDependencies |
 | --- | --- |
 | `'react-docgen'` (default) | `react-docgen` |
-| `'react-docgen-typescript'` | Vite: `@joshwooding/vite-plugin-react-docgen-typescript` and `react-docgen-typescript`. Webpack: `@storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0` (this exact version; the `latest` tag is older) and `react-docgen-typescript` |
+| `'react-docgen-typescript'` | Vite: `@joshwooding/vite-plugin-react-docgen-typescript@^0.7.0` (Storybook does not accept a newer version yet) and `react-docgen-typescript`. Webpack: `@storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0` (this exact version; the `latest` tag is older) and `react-docgen-typescript` |
 
-Projects without a usable `typescript` (no `typescript` package, or TypeScript 7 without the [side-by-side setup](#typescript-59-or-newer)) only get docgen from the `react-docgen` fallback when `react-docgen` is installed. <!-- TEMPORARY(ts-7.1): update once Storybook supports TypeScript 7.1. -->
-Until Storybook supports TypeScript 7.1, `storybook init` and the `typescript-7-react-docgen` automigration add `react-docgen` to React projects on TypeScript 7.0 and note that in the Storybook cache in `node_modules`. A later Storybook update offers to remove it again once TypeScript 7 projects can use server-side docgen; without that note it leaves `react-docgen` alone. Setting up TypeScript 6 side by side gives you server-side docgen today.
+Projects without a usable `typescript` (no `typescript` package, or TypeScript 7.0) only get docgen from the `react-docgen` fallback when `react-docgen` is installed. Projects on TypeScript 7.1 or newer use server-side docgen.
+`storybook init` and the `typescript-7-react-docgen` automigration add `react-docgen` to React projects on TypeScript 7.0. Once a project is on TypeScript 7.1 or newer, Storybook no longer uses it, and you can remove `react-docgen` from your devDependencies.
 
 In `react-docgen-typescript` mode, `react-docgen` is optional and only documents JavaScript files. Without it, JavaScript components get no props, and Storybook does not warn about that.
 
@@ -1214,20 +1214,22 @@ Storybook 11 requires TypeScript 5.9 or newer. Upgrade your project's TypeScript
 
 There is no automatic source migration. Updating the compiler can expose errors in application code or dependencies that require project-specific fixes.
 
-`typescript` is now a required peer dependency of the React, Vue 3, Svelte and Web Components renderers and their frameworks, also in JavaScript projects, because server-side docgen uses it to read components and JSDoc. If your project has no `typescript` dependency, add `typescript@^6` to your devDependencies, whatever your package manager. Yarn does not install a missing peer dependency. npm and pnpm do, but they install the newest version in the range, TypeScript 7, which docgen cannot use. The `typescript-dependency` automigration adds `typescript@^6` for you when your project has no TypeScript.
+`typescript` is now a required peer dependency of the React, Vue 3, Svelte and Web Components renderers and their frameworks, also in JavaScript projects, because server-side docgen uses it to read components and JSDoc. If your project has no `typescript` dependency, add `typescript@^6` to your devDependencies, whatever your package manager. Yarn does not install a missing peer dependency. npm and pnpm do, but they install the newest version in the range, which can be TypeScript 7.0, which docgen cannot use. The `typescript-dependency` automigration adds `typescript@^6` for you when your project has no TypeScript.
 
-Svelte and Web Components no longer ship their own TypeScript 6. Before, their docgen also worked in projects on TypeScript 7. Now these projects need the side-by-side setup below, like React and Vue 3 projects.
+Svelte and Web Components no longer ship their own TypeScript 6. Before, their docgen also worked in projects on TypeScript 7. Now these projects need the side-by-side setup below, like Vue 3 and Angular projects.
 
-TypeScript 7 does not include the compiler API that Storybook uses to generate Controls and the Docs args table. Keep TypeScript 7 for `tsc`, and point the `typescript` package at TypeScript 6. npm, Yarn, and pnpm all accept this alias:
+TypeScript 7.0 does not include an API that Storybook can use to generate Controls and the Docs args table. TypeScript 7.1 and newer include one, which React and `@storybook/angular-vite` use. For the other renderers, and for React projects that stay on TypeScript 7.0, keep TypeScript 7 for `tsc`, and point the `typescript` package at TypeScript 6. npm, Yarn, and pnpm all accept this alias:
 
 ```json
 {
   "devDependencies": {
-    "@typescript/native": "npm:typescript@^7.0.2",
+    "@typescript/native": "npm:typescript@^7",
     "typescript": "npm:@typescript/typescript6@^6.0.2"
   }
 }
 ```
+
+With `@storybook/angular-vite`, and in React projects that keep TypeScript 6 for other tools, set `typescript.docgenSpecifier: '@typescript/native'` in `.storybook/main.ts` once that package is TypeScript 7.1 or newer, so docgen reads your components with it.
 
 `npx tsc` stays on TypeScript 7. Replacing only the `typescript` entry removes `tsc` and leaves `tsc6`. This is the [side-by-side setup from the TypeScript team](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0). The same steps are on the [TypeScript page](https://storybook.js.org/docs/configure/integration/typescript#typescript-7).
 

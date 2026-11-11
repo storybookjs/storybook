@@ -34,6 +34,13 @@ import {
   unresolvedWarning,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
+import {
+  type HoleMarks,
+  type SnippetTemplate,
+  createHoleMarks,
+  stripHoles,
+  withHoleSpace,
+} from 'storybook/internal/docs-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 
@@ -45,6 +52,7 @@ import {
 import type { ForwardableSetup } from './transform-template/forward-setup.ts';
 import { printH } from './print-h/print-h.ts';
 import { createRenderContext } from '../shared/render-primitives.ts';
+import type { VueHolePlace } from '../../snippet-values.ts';
 import {
   readTemplateRenderConfig,
   transformTemplate,
@@ -260,7 +268,8 @@ function vueDocgenArgInfo(payload: DocgenPayload): VueDocgenArgInfo {
 }
 
 /**
- * Maps every CSF story export to its StoryDoc, enriched with a snippet or error where possible.
+ * Maps every CSF story export to its StoryDoc, enriched with a snippet or error where
+ * possible.
  */
 function extractStories(csf: ParsedCsf, options: StoryDocsContext): ExtractStoriesResult {
   const stories = Object.fromEntries(
@@ -350,22 +359,58 @@ function enrichStoryDoc(
     return withWarning(noSnippetWarning(unresolved));
   }
 
-  const rendered = renderStaticStorySnippet(
-    renderer,
-    classified,
-    componentName,
-    docgenArgInfo,
-    options
-  );
+  // The snippet, and its template: the same print with each place an arg prints marked as a hole.
+  const print = (mark?: HoleMarks<VueHolePlace>['mark']) =>
+    renderStaticStorySnippet(renderer, classified, componentName, docgenArgInfo, options, mark);
+  const rendered = print();
   if (!rendered) {
     return withWarning(UNRENDERED_WARNINGS[renderer.kind]);
   }
+  // The snippet holds every character the marked print does but the marks, so no code it prints
+  // is read as a mark.
+  const marks = createHoleMarks<VueHolePlace>([rendered.snippet]);
+  const printed = print(marks.mark)?.snippet;
+  const holes = printed === undefined ? undefined : marks.toTemplate(printed);
 
   return {
     ...storyDoc,
     snippet: rendered.snippet,
+    // An attribute a control clears leaves no gap.
+    ...(holes && {
+      template: withHoleSpace(laidOut(holes), (hole) => hole.kind === 'attr'),
+    }),
     ...(unresolved.length > 0 ? { warning: unresolvedWarning(unresolved) } : {}),
   };
+}
+
+// The template with each hole laid out on its line. A hole that prints nothing on a line of its
+// own, which the snippet leaves blank, takes that line's indent as its `space`, and a `slots` hole
+// indents the children it prints as its line, or past it where it opens a tag.
+function laidOut(template: SnippetTemplate<VueHolePlace>): SnippetTemplate<VueHolePlace> {
+  const result: SnippetTemplate<VueHolePlace> = [];
+  for (const [index, segment] of template.entries()) {
+    const previous = result.at(-1);
+    const next = template[index + 1];
+    if (typeof segment === 'string') {
+      result.push(segment);
+    } else if (segment.kind === 'slots') {
+      const line = /[^\n]*$/.exec(stripHoles(result))![0];
+      result.push({ ...segment, indent: /^\s*/.exec(line)![0] + (segment.tag ? '  ' : '') });
+    } else if (
+      typeof previous === 'string' &&
+      /\n[ \t]+$/.test(previous) &&
+      segment.text === '' &&
+      segment.space === undefined &&
+      (next === undefined || (typeof next === 'string' && next.startsWith('\n')))
+    ) {
+      const space = /[ \t]+$/.exec(previous)![0];
+      result[result.length - 1] = previous.slice(0, -space.length);
+      result.push({ ...segment, space });
+    } else {
+      result.push(segment);
+    }
+  }
+  return result;
 }
 
 function staticRendererForRenderFunction(
@@ -428,10 +473,13 @@ function renderStaticStorySnippet(
   classified: ClassifyArgsResult,
   componentName: string,
   docgenArgInfo: VueDocgenArgInfo,
-  options: StoryDocsContext
+  options: StoryDocsContext,
+  mark: HoleMarks<VueHolePlace>['mark'] | undefined
 ): StorySnippetResult | undefined {
   const componentImportStatement = options.snippet?.componentImportStatement;
   const { args } = classified;
+  const ctx = createRenderContext(mark);
+  const slots = docgenArgInfo.slots;
 
   // A story without a render function shows the component receiving the args directly.
   if (renderer.kind === 'sfc') {
@@ -440,7 +488,10 @@ function renderStaticStorySnippet(
           args,
           componentImports: new Map([[componentName, componentImportStatement]]),
           componentName,
+          ctx,
           importBindings: options.importBindings,
+          argsStory: true,
+          slots,
           template: `<${componentName} v-bind="args" />`,
           unsetArgs: classified.unset,
         })
@@ -452,14 +503,15 @@ function renderStaticStorySnippet(
       args,
       componentImports: renderer.componentImports,
       componentName,
+      ctx,
       importBindings: options.importBindings,
       setup: renderer.setup,
+      slots,
       template: renderer.template,
       unsetArgs: classified.unset,
     });
   }
 
-  const ctx = createRenderContext();
   const printed = printH({
     argsParam: renderer.argsParam,
     componentImportStatement,
@@ -479,6 +531,7 @@ function renderStaticStorySnippet(
     componentName,
     ctx,
     importBindings: options.importBindings,
+    slots,
     template: printed.template,
     unsetArgs: classified.unset,
   });

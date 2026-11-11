@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs-vite",
-  "version": "11.0.0-beta.0",
+  "version": "11.0.0-beta.1",
   "description": "Storybook for Next.js and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -28,51 +28,51 @@
   "type": "module",
   "exports": {
     ".": {
-      "code": "./src/index.ts",
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./cache.mock": {
-      "code": "./src/export-mocks/cache/index.ts",
       "types": "./dist/export-mocks/cache/index.d.ts",
+      "code": "./src/export-mocks/cache/index.ts",
       "default": "./dist/export-mocks/cache/index.js"
     },
     "./config/preview": "./dist/config/preview.js",
     "./headers.mock": {
-      "code": "./src/export-mocks/headers/index.ts",
       "types": "./dist/export-mocks/headers/index.d.ts",
+      "code": "./src/export-mocks/headers/index.ts",
       "default": "./dist/export-mocks/headers/index.js"
     },
     "./link.mock": {
-      "code": "./src/export-mocks/link/index.tsx",
       "types": "./dist/export-mocks/link/index.d.ts",
+      "code": "./src/export-mocks/link/index.tsx",
       "default": "./dist/export-mocks/link/index.js"
     },
     "./navigation.mock": {
-      "code": "./src/export-mocks/navigation/index.ts",
       "types": "./dist/export-mocks/navigation/index.d.ts",
+      "code": "./src/export-mocks/navigation/index.ts",
       "default": "./dist/export-mocks/navigation/index.js"
     },
     "./node": {
-      "code": "./src/node/index.ts",
       "types": "./dist/node/index.d.ts",
+      "code": "./src/node/index.ts",
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
     "./preview": {
-      "code": "./src/preview.tsx",
       "types": "./dist/preview.d.ts",
+      "code": "./src/preview.tsx",
       "default": "./dist/preview.js"
     },
     "./router.mock": {
-      "code": "./src/export-mocks/router/index.ts",
       "types": "./dist/export-mocks/router/index.d.ts",
+      "code": "./src/export-mocks/router/index.ts",
       "default": "./dist/export-mocks/router/index.js"
     },
     "./vite-plugin": {
-      "code": "./src/vite-plugin/index.ts",
       "types": "./dist/vite-plugin/index.d.ts",
+      "code": "./src/vite-plugin/index.ts",
       "default": "./dist/vite-plugin/index.js"
     }
   },
@@ -103,7 +103,7 @@
     "typescript": "^6.0.3"
   },
   "peerDependencies": {
-    "@joshwooding/vite-plugin-react-docgen-typescript": "^0.7.0 || ^0.8.0 || ^0.9.0",
+    "@joshwooding/vite-plugin-react-docgen-typescript": "^0.7.0",
     "@types/react": "^18.0.0 || ^19.0.0",
     "@types/react-dom": "^18.0.0 || ^19.0.0",
     "next": "^15.0.0 || ^16.0.0",

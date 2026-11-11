@@ -4,6 +4,8 @@ import { extractArgTypesFromData } from '../extract-arg-types.ts';
 import {
   analyzeInline as analyze,
   byName,
+  checkerOrder,
+  checkerUnion,
   componentIn,
   names,
 } from './__testutils__/inline-source.ts';
@@ -66,13 +68,13 @@ describe('input transforms', () => {
     `);
     const component = soleComponent(meta);
 
-    expect(byName(component.inputsClass, 'size').type).toBe('"sm" | "md"');
+    expect(byName(component.inputsClass, 'size').type).toBe(checkerUnion('"sm"', '"md"'));
 
     const argTypes = extractArgTypesFromData(component, {
       metadataJson: meta,
       ...ANALYZER_EXTRACT_OPTIONS,
     });
-    expect(argTypes.size.type).toEqual({ name: 'enum', value: ['sm', 'md'] });
+    expect(argTypes.size.type).toEqual({ name: 'enum', value: checkerOrder(['sm', 'md']) });
   });
 
   it('keeps the value argument type when the transform accepts unknown', () => {

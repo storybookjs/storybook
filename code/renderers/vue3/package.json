@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3",
-  "version": "11.0.0-beta.0",
+  "version": "11.0.0-beta.1",
   "description": "Storybook Vue 3 renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -26,22 +26,22 @@
   "type": "module",
   "exports": {
     ".": {
-      "code": "./src/index.ts",
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./entry-preview": "./dist/entry-preview.js",
     "./entry-preview-docs": "./dist/entry-preview-docs.js",
     "./internal/docgen": {
-      "code": "./src/docgen/index.ts",
       "types": "./dist/docgen/index.d.ts",
+      "code": "./src/docgen/index.ts",
       "default": "./dist/docgen/index.js"
     },
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./package.json": "./package.json",
     "./preset": {
-      "code": "./src/preset.ts",
       "types": "./dist/preset.d.ts",
+      "code": "./src/preset.ts",
       "default": "./dist/preset.js"
     }
   },

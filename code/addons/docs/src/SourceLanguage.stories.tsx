@@ -59,45 +59,22 @@ const SourcePreview = ({
   return props.code ? <Source {...props} /> : null;
 };
 
-const SourceLanguage = (props: React.ComponentProps<typeof SourcePreview>) => {
+const SourceLanguage = ({
+  children,
+  ...props
+}: React.ComponentProps<typeof SourcePreview> & { children?: React.ReactNode }) => {
   const [channel] = useState(() => new Channel({}));
+  const emit = (source: string, language?: SupportedLanguage) =>
+    channel.emit(SNIPPET_RENDERED, { id: storyId, args: storyArgs, source, language });
   return (
     <SourceContainer channel={channel}>
-      <button
-        onClick={() =>
-          channel.emit(SNIPPET_RENDERED, {
-            id: storyId,
-            args: storyArgs,
-            source: '<p>HTML snippet</p>',
-            language: 'html',
-          })
-        }
-      >
-        Emit HTML
-      </button>
-      <button
-        onClick={() =>
-          channel.emit(SNIPPET_RENDERED, {
-            id: storyId,
-            args: storyArgs,
-            source: '{"message":"JSON snippet"}',
-            language: 'json',
-          })
-        }
-      >
-        Emit JSON
-      </button>
-      <button
-        onClick={() =>
-          channel.emit(SNIPPET_RENDERED, { id: storyId, args: storyArgs, source: 'no language' })
-        }
-      >
-        Emit without language
-      </button>
+      <button onClick={() => emit('<p>HTML snippet</p>', 'html')}>Emit HTML</button>
+      <button onClick={() => emit('{"message":"JSON snippet"}', 'json')}>Emit JSON</button>
+      <button onClick={() => emit('no language')}>Emit without language</button>
       <button onClick={() => channel.emit(SNIPPET_RENDERED, storyId, 'legacy snippet', false)}>
         Emit legacy snippet
       </button>
-      <SourcePreview {...props} />
+      {children ?? <SourcePreview {...props} />}
     </SourceContainer>
   );
 };
@@ -113,6 +90,10 @@ type Story = StoryObj<typeof meta>;
 export const EmittedLanguage: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: 'Emit legacy snippet' }));
+    await waitFor(() => {
+      expect(canvasElement.querySelector('.language-jsx')).toHaveTextContent('legacy snippet');
+    });
     await userEvent.click(canvas.getByRole('button', { name: 'Emit HTML' }));
     await waitFor(() => {
       expect(canvasElement.querySelector('.language-html')).toHaveTextContent('HTML snippet');
@@ -128,84 +109,70 @@ export const EmittedLanguage: Story = {
   },
 };
 
-export const PropOverridesLanguage: Story = {
-  args: { language: 'css', parameterLanguage: 'json' },
-  play: async ({ canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Emit HTML' }));
-    await waitFor(() => {
-      expect(canvasElement.querySelector('.language-css')).toHaveTextContent('HTML snippet');
-    });
+const precedenceCases = [
+  {
+    name: 'Prop overrides parameter and event',
+    props: { language: 'css', parameterLanguage: 'json' },
+    language: 'css',
+    code: 'HTML snippet',
   },
-};
-
-export const ParameterOverridesLanguage: Story = {
-  args: { parameterLanguage: 'json' },
-  play: async ({ canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Emit HTML' }));
-    await waitFor(() => {
-      expect(canvasElement.querySelector('.language-json')).toHaveTextContent('HTML snippet');
-    });
+  {
+    name: 'Parameter overrides event',
+    props: { parameterLanguage: 'json' },
+    language: 'json',
+    code: 'HTML snippet',
   },
-};
-
-export const ExplicitCode: Story = {
-  args: { code: 'explicit code' },
-  play: async ({ canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Emit HTML' }));
-    await waitFor(() => {
-      expect(canvasElement.querySelector('.language-jsx')).toHaveTextContent('explicit code');
-    });
+  {
+    name: 'Explicit code',
+    props: { code: 'explicit code' },
+    language: 'jsx',
+    code: 'explicit code',
   },
-};
-
-export const OriginalSource: Story = {
-  args: { type: SourceType.CODE },
-  play: async ({ canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Emit HTML' }));
-    await waitFor(() => {
-      expect(canvasElement.querySelector('.language-jsx')).toHaveTextContent('original');
-    });
+  { name: 'Original source', props: { type: SourceType.CODE }, language: 'jsx', code: 'original' },
+  {
+    name: 'Synchronous transform',
+    props: { transform: (code: string) => `Transformed: ${code}` },
+    language: 'html',
+    code: 'Transformed:',
   },
-};
-
-export const LegacyEvent: Story = {
-  play: async ({ canvasElement }) => {
-    await userEvent.click(
-      within(canvasElement).getByRole('button', { name: 'Emit legacy snippet' })
-    );
-    await waitFor(() => {
-      expect(canvasElement.querySelector('.language-jsx')).toHaveTextContent('legacy snippet');
-    });
+  {
+    name: 'Service snippet',
+    props: { serviceSnippet: 'service snippet' },
+    language: 'jsx',
+    code: 'service snippet',
   },
-};
-
-export const TransformedSnippet: Story = {
-  args: { transform: (code) => `Transformed: ${code}` },
-  play: async ({ canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Emit HTML' }));
-    await waitFor(() => {
-      expect(canvasElement.querySelector('.language-html')).toHaveTextContent('Transformed:');
-    });
+  {
+    name: 'Parameter code',
+    props: { parameterCode: 'parameter code' },
+    language: 'jsx',
+    code: 'parameter code',
   },
-};
+] satisfies {
+  name: string;
+  props: React.ComponentProps<typeof SourcePreview>;
+  language: SupportedLanguage;
+  code: string;
+}[];
 
-export const ServiceSnippet: Story = {
-  args: { serviceSnippet: 'service snippet' },
+export const SourcePrecedence: Story = {
+  render: () => (
+    <SourceLanguage>
+      {precedenceCases.map(({ name, props }) => (
+        <section key={name} aria-label={name}>
+          <SourcePreview {...props} />
+        </section>
+      ))}
+    </SourceLanguage>
+  ),
   play: async ({ canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Emit HTML' }));
-    await waitFor(() => {
-      expect(canvasElement.querySelector('.language-jsx')).toHaveTextContent('service snippet');
-    });
-  },
-};
-
-export const ParameterCode: Story = {
-  args: { parameterCode: 'parameter code' },
-  play: async ({ canvasElement }) => {
-    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Emit HTML' }));
-    await waitFor(() => {
-      expect(canvasElement.querySelector('.language-jsx')).toHaveTextContent('parameter code');
-    });
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: 'Emit HTML' }));
+    for (const { name, language, code } of precedenceCases) {
+      const region = canvas.getByRole('region', { name });
+      await waitFor(() =>
+        expect(region.querySelector(`.language-${language}`)).toHaveTextContent(code)
+      );
+    }
   },
 };
 
@@ -229,15 +196,8 @@ const DeferredSourceLanguage = ({ sameOutput = false }: { sameOutput?: boolean }
         return code;
       }
       const key = `${context.globals.label}:${code}`;
-      let request = requests.get(key);
-      if (!request) {
-        let resolve!: (code: string) => void;
-        const promise = new Promise<string>((complete) => {
-          resolve = complete;
-        });
-        request = { promise, resolve };
-        requests.set(key, request);
-      }
+      const request = requests.get(key) ?? Promise.withResolvers<string>();
+      requests.set(key, request);
       return request.promise;
     }
   );
@@ -251,7 +211,6 @@ const DeferredSourceLanguage = ({ sameOutput = false }: { sameOutput?: boolean }
     <>
       <button onClick={() => complete(HTML_SNIPPET)}>Resolve HTML</button>
       <button onClick={() => complete(JSON_SNIPPET)}>Resolve JSON</button>
-      <button onClick={() => complete('no language')}>Resolve without language</button>
       <button onClick={() => setMode('sync')}>Use synchronous transform</button>
       <button onClick={() => setMode('none')}>Remove transform</button>
       <button onClick={() => setContextLabel('updated')}>Update context</button>

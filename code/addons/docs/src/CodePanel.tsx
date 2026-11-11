@@ -40,18 +40,9 @@ export const CodePanel = ({
   storyParameters: StoryDocsCodePanelParameters | undefined;
   storyPrepared: boolean | undefined;
 }) => {
-  const lastEventMatchesCurrentStory = lastEvent?.id === currentStoryId;
-  const [codeSnippet, setSourceCode] = useState<{
-    source: string | undefined;
-    format: SyntaxHighlighterFormatTypes | undefined;
-    language: SupportedLanguage | undefined;
-    warning: string | undefined;
-  }>({
-    source: lastEventMatchesCurrentStory ? lastEvent?.source : undefined,
-    format: lastEventMatchesCurrentStory ? (lastEvent?.format ?? undefined) : undefined,
-    language: lastEventMatchesCurrentStory ? lastEvent?.language : undefined,
-    warning: lastEventMatchesCurrentStory ? lastEvent?.warning : undefined,
-  });
+  const [codeSnippet, setSourceCode] = useState<SnippetRenderedEvent>(
+    lastEvent?.id === currentStoryId ? (lastEvent ?? {}) : {}
+  );
 
   const parameter = useParameter(PARAM_KEY, {
     source: { code: '' } as SourceParameters,
@@ -59,12 +50,7 @@ export const CodePanel = ({
   });
 
   useEffect(() => {
-    setSourceCode({
-      source: undefined,
-      format: undefined,
-      warning: undefined,
-      language: undefined,
-    });
+    setSourceCode({});
   }, [currentStoryId]);
 
   useChannel(

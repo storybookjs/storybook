@@ -33,35 +33,14 @@ const CodePanelFixture = () => {
     channel.emit(STORY_PREPARED, { id: storyId });
   };
 
+  const emit = (text: string, language?: 'html' | 'json' | 'css', id = storyId) =>
+    channel.emit(SNIPPET_RENDERED, { id, source: text, language });
+
   return (
     <ManagerContext.Provider value={managerContext}>
-      <button
-        onClick={() =>
-          channel.emit(SNIPPET_RENDERED, {
-            id: storyId,
-            source: '<p>HTML snippet</p>',
-            language: 'html',
-          })
-        }
-      >
-        Emit HTML
-      </button>
-      <button
-        onClick={() =>
-          channel.emit(SNIPPET_RENDERED, {
-            id: storyId,
-            source: '{"message":"JSON snippet"}',
-            language: 'json',
-          })
-        }
-      >
-        Emit JSON
-      </button>
-      <button
-        onClick={() => channel.emit(SNIPPET_RENDERED, { id: storyId, source: 'no language' })}
-      >
-        Emit without language
-      </button>
+      <button onClick={() => emit('<p>HTML snippet</p>', 'html')}>Emit HTML</button>
+      <button onClick={() => emit('{"message":"JSON snippet"}', 'json')}>Emit JSON</button>
+      <button onClick={() => emit('no language')}>Emit without language</button>
       <button onClick={() => updateSource({ ...source.current, language: 'json' })}>
         Set language override
       </button>
@@ -79,15 +58,7 @@ const CodePanelFixture = () => {
       >
         Next story
       </button>
-      <button
-        onClick={() =>
-          channel.emit(SNIPPET_RENDERED, {
-            id: 'example--first',
-            source: 'stale snippet',
-            language: 'css',
-          })
-        }
-      >
+      <button onClick={() => emit('stale snippet', 'css', 'example--first')}>
         Emit previous story
       </button>
       <CodePanel
@@ -109,7 +80,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const LanguageEvents: Story = {
+export const LanguageEventsAndOverrides: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button', { name: 'Emit HTML' }));
@@ -124,28 +95,12 @@ export const LanguageEvents: Story = {
     await waitFor(() =>
       expect(canvasElement.querySelector('.language-jsx')).toHaveTextContent('no language')
     );
-  },
-};
-
-export const ExplicitLanguage: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
     await userEvent.click(canvas.getByRole('button', { name: 'Set language override' }));
     await userEvent.click(canvas.getByRole('button', { name: 'Emit HTML' }));
     await waitFor(() =>
       expect(canvasElement.querySelector('.language-json')).toHaveTextContent('HTML snippet')
     );
     await userEvent.click(canvas.getByRole('button', { name: 'Remove language override' }));
-    await waitFor(() =>
-      expect(canvasElement.querySelector('.language-html')).toHaveTextContent('HTML snippet')
-    );
-  },
-};
-
-export const ExplicitCode: Story = {
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole('button', { name: 'Emit HTML' }));
     await waitFor(() =>
       expect(canvasElement.querySelector('.language-html')).toHaveTextContent('HTML snippet')
     );

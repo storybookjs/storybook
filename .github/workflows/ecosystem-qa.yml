@@ -53,7 +53,8 @@ jobs:
   smoke:
     name: Smoke-test the harness
     if: ${{ github.event_name == 'pull_request' }}
-    runs-on: ubuntu-latest
+    # Not ubuntu-latest: the pinned Playwright has no Chromium build for Ubuntu 26.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
       issues: read # gh search for each fingerprint

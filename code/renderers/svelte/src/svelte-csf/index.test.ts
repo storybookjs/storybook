@@ -1,7 +1,3 @@
-/**
- * @vitest-environment happy-dom
- */
-
 import { createRawSnippet, mount, type ComponentProps, type Snippet } from 'svelte';
 import type { StoryContext as StorybookStoryContext } from 'storybook/internal/types';
 import { describe, expectTypeOf, it } from 'vitest';
@@ -16,10 +12,10 @@ import type {
   SvelteRenderer,
 } from './types.ts';
 
-import Button from '../../template/stories/svelte-csf/button.svelte';
+import Button from '../__test__/svelte-csf/button.svelte';
 
 describe(defineMeta.name, () => {
-  it('works with provided meta entry "component" entry', () => {
+  it('types the args, the play context and the Story component from the meta component', () => {
     const { Story } = defineMeta({
       component: Button,
       args: {

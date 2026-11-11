@@ -1,11 +1,11 @@
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { extractSvelteASTNodes } from './nodes.ts';
 
 import { getSvelteAST } from '../../ast.ts';
 
 describe(extractSvelteASTNodes.name, () => {
-  it('works with a simple example', async ({ expect }) => {
+  it('extracts the module nodes and the Story components', async () => {
     const ast = getSvelteAST({
       code: `
         <script module>
@@ -28,6 +28,12 @@ describe(extractSvelteASTNodes.name, () => {
       `,
     });
 
-    await expect(extractSvelteASTNodes({ ast })).resolves.not.toThrow();
+    const nodes = await extractSvelteASTNodes({ ast });
+
+    expect(nodes.storyNames).toEqual(['Story']);
+    expect(nodes.storyComponents.map(({ component }) => component.name)).toEqual([
+      'Story',
+      'Story',
+    ]);
   });
 });

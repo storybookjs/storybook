@@ -1,0 +1,502 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn exec The following package was not found and will be installed: storybook@11.0.0-beta.1
+npm error code ESTRICTALLOWSCRIPTS
+npm error --strict-allow-scripts: 1 package(s) have install scripts not covered by allowScripts:
+npm error   esbuild@0.28.2 (postinstall: node install.js)
+npm error Pass --allow-scripts=<pkg> for one-off approval, or bypass this check with --dangerously-allow-all-scripts.
+npm error A complete log of this run can be found in: /home/agent/.npm/_logs/2026-11-11T16_14_56_776Z-debug-0.log
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn exec The following package was not found and will be installed: storybook@11.0.0-beta.1
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+node:internal/modules/cjs/loader:1564
+  const err = new Error(message);
+              ^
+
+Error: Cannot find module '@storybook/codemod/package.json'
+Require stack:
+- /home/agent/.npm/_npx/192d7f770c10a1b7/node_modules/.store/storybook@11.0.0-beta.1-Rhh6MjpTQKRs4_hgfzl2Ig/node_modules/storybook/dist/_node-chunks/chunk-VOV4FOTY.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at resolvePackageDir (file:///home/agent/.npm/_npx/192d7f770c10a1b7/node_modules/.store/storybook@11.0.0-beta.1-Rhh6MjpTQKRs4_hgfzl2Ig/node_modules/storybook/dist/_node-chunks/chunk-VOV4FOTY.js:728:26)
+    at file:///home/agent/.npm/_npx/192d7f770c10a1b7/node_modules/.store/@storybook/codemod@11.0.0-beta.1-T5Ygo4Vjlgx2zjHHeovzYA/node_modules/@storybook/codemod/dist/index.js:326:27
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async node:internal/modules/esm/loader:647:26 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/agent/.npm/_npx/192d7f770c10a1b7/node_modules/.store/storybook@11.0.0-beta.1-Rhh6MjpTQKRs4_hgfzl2Ig/node_modules/storybook/dist/_node-chunks/chunk-VOV4FOTY.js'
+  ]
+}
+
+Node.js v24.20.0
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+node:internal/modules/cjs/loader:1564
+  const err = new Error(message);
+              ^
+
+Error: Cannot find module '@storybook/codemod/package.json'
+Require stack:
+- /home/agent/.npm/_npx/192d7f770c10a1b7/node_modules/.store/storybook@11.0.0-beta.1-Rhh6MjpTQKRs4_hgfzl2Ig/node_modules/storybook/dist/_node-chunks/chunk-VOV4FOTY.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+    at require.resolve (node:internal/modules/helpers:175:31)
+    at resolvePackageDir (file:///home/agent/.npm/_npx/192d7f770c10a1b7/node_modules/.store/storybook@11.0.0-beta.1-Rhh6MjpTQKRs4_hgfzl2Ig/node_modules/storybook/dist/_node-chunks/chunk-VOV4FOTY.js:728:26)
+    at file:///home/agent/.npm/_npx/192d7f770c10a1b7/node_modules/.store/@storybook/codemod@11.0.0-beta.1-T5Ygo4Vjlgx2zjHHeovzYA/node_modules/@storybook/codemod/dist/index.js:326:27
+    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async node:internal/modules/esm/loader:647:26 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/home/agent/.npm/_npx/192d7f770c10a1b7/node_modules/.store/storybook@11.0.0-beta.1-Rhh6MjpTQKRs4_hgfzl2Ig/node_modules/storybook/dist/_node-chunks/chunk-VOV4FOTY.js'
+  ]
+}
+
+Node.js v24.20.0
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn exec The following package was not found and will be installed: storybook@11.0.0-beta.1
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+┌  Storybook upgrade - v11.0.0-beta.1
+│
+│  Detecting projects...
+│
+│  No .storybook directory found
+│
+●  Storybook collects completely anonymous usage telemetry. We use it to
+│  shape Storybook's roadmap and prioritize features. You can learn more,
+│  including how to opt out, at https://storybook.js.org/telemetry
+│
+■  SB_CLI_UPGRADE_0006 (UpgradeStorybookConfigDirNotFoundError): No
+│  .storybook directory was found. Pass --config-dir <path> to upgrade a
+│  Storybook whose configuration lives elsewhere.
+│
+│  Debug logs are written to:
+│  /home/agent/workspace/storybook/debug-storybook.log
+│
+└  
+
+npm notice
+npm notice New major version of npm available! 11.19.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+┌  Storybook upgrade - v11.0.0-beta.1
+│
+│  Detecting projects...
+│
+│  Detecting projects: 1 projects
+│
+│  1 project detected
+│
+●  Upgrading from 10.6.6 to 11.0.0-beta.1
+│
+│  /package.json
+│  /storybook/package.json
+│  /packages/widget-primitives/package.json
+│  /packages/widget-dashboard/package.json
+│  /packages/ui/package.json
+│  /packages/theme/package.json
+│  /packages/media-fields/package.json
+│  /packages/media-editor/package.json
+│  /packages/image-editor/package.json
+│  /packages/image-cropper/package.json
+│  /packages/icons/package.json
+│  /packages/grid/package.json
+│  /packages/global-styles-ui/package.json
+│  /packages/editor/package.json
+│  /packages/dataviews/package.json
+│  /packages/data/package.json
+│  /packages/components/package.json
+│  /packages/block-editor/package.json
+│  /packages/admin-ui/package.json
+│
+│  Updated package versions in package.json files
+│
+│  Checking automigrations for ....
+│
+
+│  Automigrations detected:
+│
+│  ✔ eslintPlugin
+│
+│  ✔ argtypes-default-value
+│
+│  ✔ story-sort-to-main
+│
+│  ✔ tag-filter-api
+│
+│  ✔ skills
+│
+│  5 automigration(s) detected
+│
+│  Running all detected automigrations:
+│
+│  - eslintPlugin (.)
+│
+│  - argtypes-default-value (.)
+│
+│  - story-sort-to-main (.)
+│
+│  - tag-filter-api (.)
+│
+│  - skills (.)
+│
+│  npx skills@latest add storybookjs/skills#v11.0.0-beta.1 --yes --agent
+│  claude-code universal --copy
+│
+│  Added a Storybook section to AGENTS.md that tells agents when to use
+│  the skills. Storybook keeps it current on upgrade: remove its markers
+│  to keep your own edits, or remove the section to opt out.
+│
+│  Remove the Storybook skills with: npx skills@latest remove
+│
+│  ✔ eslintPlugin
+│
+│  ✔ argtypes-default-value (2 files skipped)
+│
+│  ✕ story-sort-to-main
+│
+│  main.ts: Cannot automigrate storySort: storySort must be a statically
+│  readable object or array. Storybook no longer reads
+│  parameters.options.storySort from the preview. Move it to storySorts
+│  in the main config manually and remove the preview property.
+│
+│  ✔ tag-filter-api
+│
+│  ✔ skills
+│
+│  1 automigrations failed for .
+│
+▲  3 files could not be migrated automatically. See
+│  ../automigrations-summary.md for which ones and why.
+│
+│  Installing dependencies...
+│
+■  Installation of dependencies failed!
+│
+■  Failed to install dependencies using npm.
+
+│  Command failed with exit code 1: npm install
+│  npm warn Unknown env config "frozen-lockfile". This will stop working
+│  in the next major version of npm. See `npm help npmrc` for supported
+│  config options.
+│  npm error code EALLOWSCRIPTS
+│  npm error --allow-scripts is not allowed in project-scoped installs.
+│  Add the entries to the "allowScripts" field in package.json, or to
+│  .npmrc, instead.
+│  npm error A complete log of this run can be found in:
+│  /tmp/sb11-qa-npm-cache/_logs/2026-11-11T16_17_49_979Z-debug-0.log
+│  Command failed with exit code 1: npm install
+
+│  npm warn Unknown env config "frozen-lockfile". This will stop working
+│  in the next major version of npm. See `npm help npmrc` for supported
+│  config options.
+│  npm error code EALLOWSCRIPTS
+│  npm error --allow-scripts is not allowed in project-scoped installs.
+│  Add the entries to the "allowScripts" field in package.json, or to
+│  .npmrc, instead.
+│  npm error A complete log of this run can be found in:
+│  /tmp/sb11-qa-npm-cache/_logs/2026-11-11T16_17_49_979Z-debug-0.log
+│
+■  [38;2;241;97;97mSB_CLI_INIT_0010 (PackageInstallFailedError): Failed to install
+│  dependencies using npm.
+
+│  Command failed with exit code 1: npm install
+│  npm warn Unknown env config "frozen-lockfile". This will stop working
+│  in the next major version of npm. See `npm help npmrc` for supported
+│  config options.
+│  npm error code EALLOWSCRIPTS
+│  npm error --allow-scripts is not allowed in project-scoped installs.
+│  Add the entries to the "allowScripts" field in package.json, or to
+│  .npmrc, instead.
+│  npm error A complete log of this run can be found in:
+│  /tmp/sb11-qa-npm-cache/_logs/2026-11-11T16_17_49_979Z-debug-0.log
+│  Command failed with exit code 1: npm install
+
+│  npm warn Unknown env config "frozen-lockfile". This will stop working
+│  in the next major version of npm. See `npm help npmrc` for supported
+│  config options.
+│  npm error code EALLOWSCRIPTS
+│  npm error --allow-scripts is not allowed in project-scoped installs.
+│  Add the entries to the "allowScripts" field in package.json, or to
+│  .npmrc, instead.
+│  npm error A complete log of this run can be found in:
+│  /tmp/sb11-qa-npm-cache/_logs/2026-11-11T16_17_49_979Z-debug-0.log[39m
+│  at categorizeExecaError
+│  (file:///tmp/sb11-qa-npm-cache/_npx/192d7f770c10a1b7/node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:7452:717)
+│  at categorize
+│  (file:///tmp/sb11-qa-npm-cache/_npx/192d7f770c10a1b7/node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:7462:31)
+│  at
+│  file:///tmp/sb11-qa-npm-cache/_npx/192d7f770c10a1b7/node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:7465:61
+│
+■  SB_CLI_INIT_0010 (PackageInstallFailedError): Failed to install
+│  dependencies using npm.
+
+│  Command failed with exit code 1: npm install
+│  npm warn Unknown env config "frozen-lockfile". This will stop working
+│  in the next major version of npm. See `npm help npmrc` for supported
+│  config options.
+│  npm error code EALLOWSCRIPTS
+│  npm error --allow-scripts is not allowed in project-scoped installs.
+│  Add the entries to the "allowScripts" field in package.json, or to
+│  .npmrc, instead.
+│  npm error A complete log of this run can be found in:
+│  /tmp/sb11-qa-npm-cache/_logs/2026-11-11T16_17_49_979Z-debug-0.log
+│  Command failed with exit code 1: npm install
+
+│  npm warn Unknown env config "frozen-lockfile". This will stop working
+│  in the next major version of npm. See `npm help npmrc` for supported
+│  config options.
+│  npm error code EALLOWSCRIPTS
+│  npm error --allow-scripts is not allowed in project-scoped installs.
+│  Add the entries to the "allowScripts" field in package.json, or to
+│  .npmrc, instead.
+│  npm error A complete log of this run can be found in:
+│  /tmp/sb11-qa-npm-cache/_logs/2026-11-11T16_17_49_979Z-debug-0.log
+│
+│  Debug logs are written to:
+│  /home/agent/workspace/storybook/debug-storybook.log
+│
+└  
+
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+┌  Storybook upgrade - v11.0.0-beta.1
+│
+│  Detecting projects...
+│
+│  Detecting projects: 1 projects
+│
+│  1 project detected
+│
+●  Upgrading from 10.6.6 to 11.0.0-beta.1
+│
+│  /package.json
+│  /storybook/package.json
+│  /packages/widget-primitives/package.json
+│  /packages/widget-dashboard/package.json
+│  /packages/ui/package.json
+│  /packages/theme/package.json
+│  /packages/media-fields/package.json
+│  /packages/media-editor/package.json
+│  /packages/image-editor/package.json
+│  /packages/image-cropper/package.json
+│  /packages/icons/package.json
+│  /packages/grid/package.json
+│  /packages/global-styles-ui/package.json
+│  /packages/editor/package.json
+│  /packages/dataviews/package.json
+│  /packages/data/package.json
+│  /packages/components/package.json
+│  /packages/block-editor/package.json
+│  /packages/admin-ui/package.json
+│
+│  Updated package versions in package.json files
+│
+│  Checking automigrations for ....
+│
+
+│  Automigrations detected:
+│
+│  ✔ argtypes-default-value
+│
+│  ✔ story-sort-to-main
+│
+│  2 automigration(s) detected
+│
+│  Running all detected automigrations:
+│
+│  - argtypes-default-value (.)
+│
+│  - story-sort-to-main (.)
+│
+│  ✔ argtypes-default-value (2 files skipped)
+│
+│  ✕ story-sort-to-main
+│
+│  main.ts: Cannot automigrate storySort: storySort must be a statically
+│  readable object or array. Storybook no longer reads
+│  parameters.options.storySort from the preview. Move it to storySorts
+│  in the main config manually and remove the preview property.
+│
+│  1 automigrations failed for .
+│
+▲  3 files could not be migrated automatically. See
+│  ../automigrations-summary.md for which ones and why.
+│
+│  Installing dependencies...
+│
+■  Installation of dependencies failed!
+│
+■  npm error @storybook/builder-vite@"11.0.0-beta.1" from
+│  @storybook/react-vite@11.0.0-beta.1
+│  npm error storybook/node_modules/@storybook/react-vite
+│  npm error   dev @storybook/react-vite@"^11.0.0-beta.1" from
+│  @wordpress/storybook@0.0.0
+│  npm error   storybook
+│  npm error     @wordpress/storybook@0.0.0
+│  npm error     node_modules/@wordpress/storybook
+│  npm error       workspace storybook from the root project
+│  npm error       1 more (@wordpress/storybook-playwright)
+│  npm error
+│  npm error Fix the upstream dependency conflict, or retry this command
+│  with --no-strict-peer-deps, --force, or --legacy-peer-deps to accept
+│  an incorrect (and potentially broken) dependency resolution.
+│  npm error
+│  npm error
+│  npm error For a full report see:
+│  npm error
+│  /tmp/sb11-qa-npm-cache/_logs/2026-11-11T16_19_07_394Z-eresolve-report.txt
+│  npm error A complete log of this run can be found in:
+│  /tmp/sb11-qa-npm-cache/_logs/2026-11-11T16_19_07_394Z-debug-0.log
+│
+▲  Peer dependency conflict detected; retrying with --legacy-peer-deps
+│
+│  Installing dependencies...
+│
+■  Installation of dependencies failed!
+│
+■  npm error A complete log of this run can be found in:
+│  /tmp/sb11-qa-npm-cache/_logs/2026-11-11T16_19_14_504Z-debug-0.log
+│  Command failed with exit code 1: npm install --legacy-peer-deps
+
+│  npm warn Unknown env config "frozen-lockfile". This will stop working
+│  in the next major version of npm. See `npm help npmrc` for supported
+│  config options.
+│  npm warn deprecated urix@0.1.0: Please see
+│  https://github.com/lydell/urix#deprecated
+│  npm warn deprecated source-map-url@0.4.0: See
+│  https://github.com/lydell/source-map-url#deprecated
+│  npm warn deprecated resolve-url@0.2.1:
+│  https://github.com/lydell/resolve-url#deprecated
+│  npm warn deprecated source-map-resolve@0.5.2: See
+│  https://github.com/lydell/source-map-resolve#deprecated
+│  npm warn deprecated glob@7.2.3: Old versions of glob are not
+│  supported, and contain widely publicized security vulnerabilities,
+│  which have been fixed in the current version. Please update. Support
+│  for old versions may be purchased (at exorbitant rates) by contacting
+│  i@izs.me
+│  npm warn deprecated figgy-pudding@3.5.2: This module is no longer
+│  supported.
+│  npm warn deprecated chokidar@2.1.8: Chokidar 2 does not receive
+│  security updates since 2019. Upgrade to chokidar 3 with 15x fewer
+│  dependencies
+│  npm warn deprecated glob@10.5.0: Old versions of glob are not
+│  supported, and contain widely publicized security vulnerabilities,
+│  which have been fixed in the current version. Please update. Support
+│  for old versions may be purchased (at exorbitant rates) by contacting
+│  i@izs.me
+│  npm warn deprecated glob@11.1.0: Old versions of glob are not
+│  supported, and contain widely publicized security vulnerabilities,
+│  which have been fixed in the current version. Please update. Support
+│  for old versions may be purchased (at exorbitant rates) by contacting
+│  i@izs.me
+│  npm error Cannot read properties of null (reading 'package')
+│  npm error A complete log of this run can be found in:
+│  /tmp/sb11-qa-npm-cache/_logs/2026-11-11T16_19_14_504Z-debug-0.log
+│
+▲  Retry with --legacy-peer-deps failed; retrying with --force
+│
+│  Installing dependencies...
+│
+■  Installation of dependencies failed!
+│
+■  Failed to install dependencies using npm.
+
+│  Command failed with exit code 1: npm install --force
+│  npm warn using --force Recommended protections disabled.
+│  npm warn Unknown env config "frozen-lockfile". This will stop working
+│  in the next major version of npm. See `npm help npmrc` for supported
+│  config options.
+│  npm warn deprecated @octokit/webhooks-types@7.6.1: Package no longer
+│  supported. Contact Support at https://www.npmjs.com/support for more
+│  info.
+│  npm error Cannot read properties of null (reading 'package')
+│  npm error A complete log of this run can be found in:
+│  /tmp/sb11-qa-npm-cache/_logs/2026-11-11T16_20_20_738Z-debug-0.log
+│  Command failed with exit code 1: npm install --force
+
+│  npm warn using --force Recommended protections disabled.
+│  npm warn Unknown env config "frozen-lockfile". This will stop working
+│  in the next major version of npm. See `npm help npmrc` for supported
+│  config options.
+│  npm warn deprecated @octokit/webhooks-types@7.6.1: Package no longer
+│  supported. Contact Support at https://www.npmjs.com/support for more
+│  info.
+│  npm error Cannot read properties of null (reading 'package')
+│  npm error A complete log of this run can be found in:
+│  /tmp/sb11-qa-npm-cache/_logs/2026-11-11T16_20_20_738Z-debug-0.log
+│
+■  [38;2;241;97;97mSB_CLI_INIT_0010 (PackageInstallFailedError): Failed to install
+│  dependencies using npm.
+
+│  Command failed with exit code 1: npm install --force
+│  npm warn using --force Recommended protections disabled.
+│  npm warn Unknown env config "frozen-lockfile". This will stop working
+│  in the next major version of npm. See `npm help npmrc` for supported
+│  config options.
+│  npm warn deprecated @octokit/webhooks-types@7.6.1: Package no longer
+│  supported. Contact Support at https://www.npmjs.com/support for more
+│  info.
+│  npm error Cannot read properties of null (reading 'package')
+│  npm error A complete log of this run can be found in:
+│  /tmp/sb11-qa-npm-cache/_logs/2026-11-11T16_20_20_738Z-debug-0.log
+│  Command failed with exit code 1: npm install --force
+
+│  npm warn using --force Recommended protections disabled.
+│  npm warn Unknown env config "frozen-lockfile". This will stop working
+│  in the next major version of npm. See `npm help npmrc` for supported
+│  config options.
+│  npm warn deprecated @octokit/webhooks-types@7.6.1: Package no longer
+│  supported. Contact Support at https://www.npmjs.com/support for more
+│  info.
+│  npm error Cannot read properties of null (reading 'package')
+│  npm error A complete log of this run can be found in:
+│  /tmp/sb11-qa-npm-cache/_logs/2026-11-11T16_20_20_738Z-debug-0.log[39m
+│  at categorizeExecaError
+│  (file:///tmp/sb11-qa-npm-cache/_npx/192d7f770c10a1b7/node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:7452:717)
+│  at categorize
+│  (file:///tmp/sb11-qa-npm-cache/_npx/192d7f770c10a1b7/node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:7462:31)
+│  at
+│  file:///tmp/sb11-qa-npm-cache/_npx/192d7f770c10a1b7/node_modules/storybook/dist/_node-chunks/chunk-AFXNOL4H.js:7465:61
+│
+■  SB_CLI_INIT_0010 (PackageInstallFailedError): Failed to install
+│  dependencies using npm.
+
+│  Command failed with exit code 1: npm install --force
+│  npm warn using --force Recommended protections disabled.
+│  npm warn Unknown env config "frozen-lockfile". This will stop working
+│  in the next major version of npm. See `npm help npmrc` for supported
+│  config options.
+│  npm warn deprecated @octokit/webhooks-types@7.6.1: Package no longer
+│  supported. Contact Support at https://www.npmjs.com/support for more
+│  info.
+│  npm error Cannot read properties of null (reading 'package')
+│  npm error A complete log of this run can be found in:
+│  /tmp/sb11-qa-npm-cache/_logs/2026-11-11T16_20_20_738Z-debug-0.log
+│  Command failed with exit code 1: npm install --force
+
+│  npm warn using --force Recommended protections disabled.
+│  npm warn Unknown env config "frozen-lockfile". This will stop working
+│  in the next major version of npm. See `npm help npmrc` for supported
+│  config options.
+│  npm warn deprecated @octokit/webhooks-types@7.6.1: Package no longer
+│  supported. Contact Support at https://www.npmjs.com/support for more
+│  info.
+│  npm error Cannot read properties of null (reading 'package')
+│  npm error A complete log of this run can be found in:
+│  /tmp/sb11-qa-npm-cache/_logs/2026-11-11T16_20_20_738Z-debug-0.log
+│
+│  Debug logs are written to:
+│  /home/agent/workspace/storybook/debug-storybook.log
+│
+└  
+

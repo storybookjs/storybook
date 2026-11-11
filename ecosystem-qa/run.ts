@@ -89,6 +89,11 @@ const UPGRADE_ENV = {
   CI: 'false',
   YARN_ENABLE_IMMUTABLE_INSTALLS: 'false',
   npm_config_frozen_lockfile: 'false',
+  // The version under test is usually days old, and the sandbox exists to run code nobody has
+  // reviewed, so a project's release-age gate must not stop the upgrade.
+  YARN_NPM_MINIMAL_AGE_GATE: '0',
+  pnpm_config_minimum_release_age: '0',
+  npm_config_min_release_age: '0',
 };
 
 // The real path, because git writes real paths into a worktree's gitdir pointer and the sandboxes

@@ -42,6 +42,8 @@ Pick the sandbox for your machine:
 - `--sandbox bwrap` on Linux.
 - `--sandbox none` runs the agent on the host with your environment, so use it only for a trusted owned repo.
 
+Every sandbox runs the agent with the release-age gates of yarn, pnpm and npm set to zero, because the prerelease under test is only days old and the sandbox exists to run fresh packages.
+
 To bill your Claude subscription instead of an API key, run `claude setup-token` once and pass the result as `CLAUDE_CODE_OAUTH_TOKEN` in place of `ANTHROPIC_API_KEY`; the native sandboxes hide the login in `~/.claude`, so the token is the only way in.
 Codex runs read `CODEX_API_KEY` and default to `gpt-6.1-sol`; pass `--model` to change it.
 A Codex ChatGPT login works only with `--sandbox none`, because the sandboxes hide `~/.codex` and the provider knows no login token.

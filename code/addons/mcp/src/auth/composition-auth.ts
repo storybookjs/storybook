@@ -48,7 +48,7 @@ type RefCheckResult = 'public' | NoManifestReason | AuthRequirement;
 // Only `unreachable` is checked again; the other states take a restart to change.
 type RefStatus =
   | { kind: 'public' }
-  | { kind: 'auth'; requirement: AuthRequirement }
+  | { kind: 'auth' }
   | { kind: 'excluded' }
   | { kind: 'unreachable'; failures: number; retryAt: number };
 
@@ -60,7 +60,9 @@ interface RefState {
 const RECHECK_BASE_DELAY = 5 * 1000;
 const RECHECK_MAX_DELAY = 60 * 1000;
 
-const isTransientStatus = (status: number) => status >= 500 || status === 408 || status === 429;
+// 501 is how some static hosts answer the POST to /mcp.
+const isTransientStatus = (status: number) =>
+  status === 408 || status === 429 || (status >= 500 && status !== 501);
 
 const fetchRef = (url: string, init: RequestInit = {}) =>
   fetch(url, { ...init, signal: AbortSignal.timeout(REF_MANIFEST_FETCH_TIMEOUT_MS) });
@@ -98,6 +100,7 @@ export class AuthenticationError extends Error {
 export class CompositionAuth {
   #refStates: RefState[] = [];
   #recheck: Promise<void> | null = null;
+  #authRequirement: AuthRequirement | null = null;
   #manifestCache = new Map<string, CacheEntry>();
   #lastToken: string | null = null;
   #authErrors = new WeakMap<Request, AuthenticationError>();
@@ -171,21 +174,15 @@ export class CompositionAuth {
       return;
     }
 
-    const existingServer = this.#authRequirement?.resourceMetadata.authorization_servers[0];
+    state.status = { kind: 'auth' };
+    this.#authRequirement ??= result;
+    const existingServer = this.#authRequirement.resourceMetadata.authorization_servers[0];
     const newServer = result.resourceMetadata.authorization_servers[0];
-    state.status = { kind: 'auth', requirement: result };
-    if (existingServer && existingServer !== newServer) {
+    if (existingServer !== newServer) {
       logger.warn(
         `[addon-mcp] Composed ref "${ref.title}" uses a different OAuth server (${newServer}) than the first authenticated ref (${existingServer}). Only the first OAuth server will be used for authentication.`
       );
     }
-  }
-
-  get #authRequirement(): AuthRequirement | null {
-    for (const { status } of this.#refStates) {
-      if (status.kind === 'auth') return status.requirement;
-    }
-    return null;
   }
 
   get requiresAuth(): boolean {
@@ -199,6 +196,12 @@ export class CompositionAuth {
   /** Check if a request encountered an auth error during manifest fetching. */
   hadAuthError(request: Request): boolean {
     return this.#authErrors.has(request);
+  }
+
+  #isUnreachable(refUrl: string): boolean {
+    return this.#refStates.some(
+      ({ ref, status }) => ref.url === refUrl && status.kind === 'unreachable'
+    );
   }
 
   /** Check if a URL requires authentication based on discovered auth requirements. */
@@ -248,6 +251,12 @@ export class CompositionAuth {
       const remoteSource: RemoteSource | undefined = source?.url
         ? { ...source, url: source.url }
         : undefined;
+
+      if (remoteSource && this.#isUnreachable(remoteSource.url)) {
+        throw new Error(
+          `"${remoteSource.title}" is temporarily unreachable. It is checked again on later requests.`
+        );
+      }
 
       const baseUrl = remoteSource?.url ?? localBaseUrl;
       const manifestUrl = `${baseUrl}${path.replace(/^\.\//, '/')}`;
@@ -395,11 +404,15 @@ export class CompositionAuth {
 
   /** Check /mcp endpoint for 401 auth requirement. */
   async #checkMcpAuth(refUrl: string): Promise<AuthRequirement | null> {
-    const response = await fetchRef(`${refUrl}/mcp`, {
+    const mcpUrl = `${refUrl}/mcp`;
+    const response = await fetchRef(mcpUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
     });
+    if (isTransientStatus(response.status)) {
+      throw new TransientRefError(mcpUrl, response.status);
+    }
     return this.#parseAuthFromResponse(response);
   }
 

@@ -1,6 +1,6 @@
 import { cycleRef } from './cycle.ts';
 import { fence, renderCommentBody, renderIssueBody } from './proposals.ts';
-import type { EvidenceFile, Proposal } from './schema.ts';
+import type { Cycle, EvidenceFile, Proposal } from './schema.ts';
 
 export const ASSETS_BRANCH = 'qa-assets';
 
@@ -34,13 +34,19 @@ export const planFiling = (proposal: Proposal, options: FilingOptions): FilingSt
   if (proposal.kind === 'suppressed') {
     return [{ kind: 'skip', reason: `#${proposal.existingIssue} is labelled qa:known` }];
   }
+  // The cycle ref is pushed for a comment too: its metadata names this run's head, and a "seen
+  // again" on a new prerelease is when someone wants to fetch the upgraded state.
+  const pushCycle = (cycle: Cycle) =>
+    cycle.headSha && cycle.bundle
+      ? [{ kind: 'push-cycle' as const, ...cycle, headSha: cycle.headSha, bundle: cycle.bundle }]
+      : [];
   if (proposal.kind === 'comment') {
     const body = renderCommentBody(proposal);
     const metadata = body.slice(body.indexOf(METADATA_MARKER)).trim();
     if (options.comments?.some((comment) => comment.includes(metadata))) {
       return [{ kind: 'skip', reason: `#${proposal.existingIssue} already has this comment` }];
     }
-    return [{ kind: 'comment', issue: proposal.existingIssue, body }];
+    return [...pushCycle(proposal.cycle), { kind: 'comment', issue: proposal.existingIssue, body }];
   }
   if (options.filedAs !== undefined) {
     return [{ kind: 'skip', reason: `already filed as #${options.filedAs}` }];
@@ -52,9 +58,7 @@ export const planFiling = (proposal: Proposal, options: FilingOptions): FilingSt
       ? (localPaths.get(name) ?? name)
       : `https://raw.githubusercontent.com/${options.repo}/${ASSETS_BRANCH}/${assetDir}/${name}`;
   return [
-    ...(cycle.headSha && cycle.bundle
-      ? [{ kind: 'push-cycle' as const, ...cycle, headSha: cycle.headSha, bundle: cycle.bundle }]
-      : []),
+    ...pushCycle(cycle),
     ...(evidence.length > 0
       ? [
           {

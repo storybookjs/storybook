@@ -90,9 +90,10 @@ describe('planFiling', () => {
     expect(steps).toEqual([{ kind: 'skip', reason: 'already filed as #12' }]);
   });
 
-  it('comments once on the matching issue', () => {
+  it('pushes the cycle ref, then comments once on the matching issue', () => {
     const proposal = proposalFor({}, [{ number: 9, labels: ['bug'] }]);
-    const [comment] = planFiling(proposal, { repo: REPO, evidenceLinks: 'assets', comments: [] });
+    const steps = planFiling(proposal, { repo: REPO, evidenceLinks: 'assets', comments: [] });
+    const comment = steps.at(-1);
 
     const again = planFiling(proposal, {
       repo: REPO,
@@ -100,6 +101,7 @@ describe('planFiling', () => {
       comments: ['unrelated', comment?.kind === 'comment' ? comment.body : ''],
     });
 
+    expect(kinds(steps)).toEqual(['push-cycle', 'comment']);
     expect(comment).toMatchObject({ kind: 'comment', issue: 9 });
     expect(again).toEqual([{ kind: 'skip', reason: '#9 already has this comment' }]);
   });

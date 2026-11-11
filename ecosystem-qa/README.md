@@ -135,3 +135,5 @@ An issue counts as already filed only while it carries the `internal-qa` label.
 It checks first that the milestone is open and every label exists, and files nothing otherwise.
 A proposal that fails does not stop the others; the job writes a filed and failed table to the Step Summary and fails at the end.
 Rerunning the job is safe: a filed fingerprint and a repeated comment are skipped, and evidence already on `qa-assets` makes no new commit.
+Filing the same results again from another run, for example with `from_runs`, is safe too: a sighting is the same when its fingerprints, version, repo, commit, system and engine match, whichever run collected it, and the issue's own body counts as reporting it.
+A later agent run of the same repo has another commit, so it is a new sighting and gets its comment.

@@ -32,11 +32,15 @@ export interface FilingOptions {
   /** `assets` links evidence on the qa-assets branch of `repo`; `local` links the downloaded files. */
   evidenceLinks: 'assets' | 'local';
   filedAs?: number;
-  /** Bodies of the comments already on the issue a comment proposal targets. */
-  comments?: string[];
+  /** What the issue a comment proposal targets already says: its own body and its comments. */
+  existing?: string[];
 }
 
 const METADATA_MARKER = '<!-- sb-qa-metadata -->';
+
+// The run line names the run that collected. Collecting the same results again gives another run,
+// so the line is not part of what makes two sightings the same.
+const withoutRun = (text: string): string => text.replace(/^run: .*$/gm, '');
 
 const suppressedBecause = ({
   reason,
@@ -60,9 +64,9 @@ export const planFiling = (proposal: Proposal, options: FilingOptions): FilingSt
       : [];
   if (proposal.kind === 'comment') {
     const body = renderCommentBody(proposal);
-    const metadata = body.slice(body.indexOf(METADATA_MARKER)).trim();
-    if (options.comments?.some((comment) => comment.includes(metadata))) {
-      return [{ kind: 'skip', reason: `#${proposal.existingIssue} already has this comment` }];
+    const sighting = withoutRun(body.slice(body.indexOf(METADATA_MARKER)).trim());
+    if (options.existing?.some((text) => withoutRun(text).includes(sighting))) {
+      return [{ kind: 'skip', reason: `#${proposal.existingIssue} already has this sighting` }];
     }
     return [...pushCycle(proposal.cycle), { kind: 'comment', issue: proposal.existingIssue, body }];
   }

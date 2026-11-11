@@ -211,7 +211,16 @@ const fileProposal = (proposal: Proposal, issues: QaIssue[]): FilingOutcome => {
           ),
         }
       : {}),
-    ...(proposal.kind === 'comment' ? { comments: commentsOn(proposal.existingIssue) } : {}),
+    ...(proposal.kind === 'comment'
+      ? {
+          existing: [
+            ...issues
+              .filter((issue) => issue.number === proposal.existingIssue)
+              .map((issue) => issue.body),
+            ...commentsOn(proposal.existingIssue),
+          ],
+        }
+      : {}),
   });
   let detail = '';
   for (const step of steps) {

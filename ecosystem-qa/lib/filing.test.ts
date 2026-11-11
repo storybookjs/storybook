@@ -125,18 +125,51 @@ describe('planFiling', () => {
 
   it('pushes the cycle ref, then comments once on the matching issue', () => {
     const proposal = proposalFor({}, [{ number: 9, labels: ['bug'], state: 'open' }]);
-    const steps = planFiling(proposal, { repo: REPO, evidenceLinks: 'assets', comments: [] });
+    const steps = planFiling(proposal, { repo: REPO, evidenceLinks: 'assets', existing: [] });
     const comment = steps.at(-1);
 
     const again = planFiling(proposal, {
       repo: REPO,
       evidenceLinks: 'assets',
-      comments: ['unrelated', comment?.kind === 'comment' ? comment.body : ''],
+      existing: ['unrelated', comment?.kind === 'comment' ? comment.body : ''],
     });
 
     expect(kinds(steps)).toEqual(['push-cycle', 'comment']);
     expect(comment).toMatchObject({ kind: 'comment', issue: 9 });
-    expect(again).toEqual([{ kind: 'skip', reason: '#9 already has this comment' }]);
+    expect(again).toEqual([{ kind: 'skip', reason: '#9 already has this sighting' }]);
+  });
+
+  it('does not report a sighting again when another run collects the same result', () => {
+    const [group] = groupFindings([loaded('linux', 'claude', [finding()])]);
+    const filed = asIssue(toProposal(single(group), [], { runUrl: RUN_URL }));
+    const body = issueBody(planFiling(filed, { repo: REPO, evidenceLinks: 'assets' }));
+    const collectedAgain = toProposal(
+      single(group),
+      [issueOn(group, { number: 9, labels: ['bug'], state: 'open' })],
+      { runUrl: `${RUN_URL}0` }
+    );
+
+    expect(
+      planFiling(collectedAgain, { repo: REPO, evidenceLinks: 'assets', existing: [body] })
+    ).toEqual([{ kind: 'skip', reason: '#9 already has this sighting' }]);
+  });
+
+  it('reports the sighting of a later run of the same repo', () => {
+    const hit: IssueHit = { number: 9, labels: ['bug'], state: 'open' };
+    const first = planFiling(proposalFor({}, [hit]), {
+      repo: REPO,
+      evidenceLinks: 'assets',
+      existing: [],
+    }).at(-1);
+    const later = proposalFor({}, [hit], 'd'.repeat(40));
+
+    const steps = planFiling(later, {
+      repo: REPO,
+      evidenceLinks: 'assets',
+      existing: [first?.kind === 'comment' ? first.body : ''],
+    });
+
+    expect(kinds(steps)).toEqual(['push-cycle', 'comment']);
   });
 
   it('says that a suppressed bug was fixed after the tested version', () => {

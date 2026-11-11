@@ -2611,6 +2611,36 @@ describe('StoryIndexGenerator', () => {
         expect(Object.keys((await generator.getIndex()).entries)).not.toContain('notitle--docs');
       });
 
+      it('does not include a deleted file that matches two specifiers', async () => {
+        const specifiers = ['./src/**/*.stories.(ts|js|mjs|jsx)', './src/B.stories.ts'].map(
+          (entry) => normalizeStoriesEntry(entry, options)
+        );
+        const generator = new StoryIndexGenerator(specifiers, options);
+        await generator.initialize();
+        expect(Object.keys((await generator.getIndex()).entries)).toContain('b--story-one');
+
+        generator.invalidate('./src/B.stories.ts', true);
+
+        expect(Object.keys((await generator.getIndex()).entries)).not.toContain('b--story-one');
+      });
+
+      it('does not include deleted docs that match two specifiers', async () => {
+        const specifiers = [
+          './src/docs2/*.mdx',
+          './src/docs2/MetaOf.mdx',
+          './src/A.stories.js',
+        ].map((entry) => normalizeStoriesEntry(entry, options));
+        const generator = new StoryIndexGenerator(specifiers, options);
+        await generator.initialize();
+        expect(Object.keys((await generator.getIndex()).entries)).toContain('a--metaof');
+
+        generator.invalidate('./src/docs2/MetaOf.mdx', true);
+
+        expect(Object.keys((await generator.getIndex()).entries)).not.toContain('a--metaof');
+        generator.invalidate('./src/A.stories.js', false);
+        expect(Object.keys((await generator.getIndex()).entries)).not.toContain('a--metaof');
+      });
+
       it('cleans up properly on dependent docs deletion', async () => {
         const storiesSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
           './src/A.stories.(ts|js|mjs|jsx)',
@@ -2729,6 +2759,44 @@ describe('StoryIndexGenerator', () => {
         release();
 
         expect(Object.keys((await pending).entries)).toContain('b--story-one');
+        expect(createIndexSpy).toHaveBeenCalledTimes(2);
+      });
+
+      it('does not bring back a file matching two specifiers removed while both extractions ran', async () => {
+        const { indexer, arm } = createIndexerPausingOnB();
+        const overlapping = normalizeStoriesEntry('./src/B.stories.ts', options);
+        const generator = new StoryIndexGenerator([specifier, overlapping], {
+          ...options,
+          indexers: [indexer],
+        });
+        await generator.initialize();
+        await generator.getIndex();
+
+        const { reached, release } = arm();
+        generator.invalidateAll();
+        const pending = generator.getIndex();
+        await reached;
+        generator.invalidate('./src/B.stories.ts', true);
+        release();
+
+        expect(Object.keys((await pending).entries)).not.toContain('b--story-one');
+        expect(Object.keys((await generator.getIndex()).entries)).not.toContain('b--story-one');
+      });
+
+      it('extracts a changed file again for every specifier it matches', async () => {
+        const { indexer } = createIndexerPausingOnB();
+        const createIndexSpy = vi.spyOn(indexer, 'createIndex');
+        const overlapping = normalizeStoriesEntry('./src/B.stories.ts', options);
+        const generator = new StoryIndexGenerator([specifier, overlapping], {
+          ...options,
+          indexers: [indexer],
+        });
+        await generator.initialize();
+        await generator.getIndex();
+        createIndexSpy.mockClear();
+        generator.invalidate('./src/B.stories.ts', false);
+        await generator.getIndex();
+
         expect(createIndexSpy).toHaveBeenCalledTimes(2);
       });
 

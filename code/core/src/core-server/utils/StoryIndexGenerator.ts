@@ -900,58 +900,51 @@ export class StoryIndexGenerator {
 
   invalidate(importPath: Path, removed: boolean) {
     const absolutePath = slash(resolve(this.options.workingDir, importPath));
-    const specifier = Array.from(this.specifierToCache.keys()).find((ns) =>
-      ns.importPathMatcher.exec(importPath)
-    );
-    if (!specifier) {
+    const caches = Array.from(this.specifierToCache)
+      .filter(([specifier]) => specifier.importPathMatcher.exec(importPath))
+      .map(([, cache]) => cache);
+    if (caches.length === 0) {
       // not a story file
       return;
     }
-    const cache = this.specifierToCache.get(specifier);
-    invariant(
-      cache,
-      `specifier does not have a matching cache entry in specifierToCache: ${JSON.stringify(
-        specifier
-      )}`
-    );
-    const cacheEntry = cache[absolutePath];
     const invalidatedAt = ++this.invalidationCount;
     if (removed) {
       this.slotInvalidatedAt.delete(absolutePath);
     } else {
       this.slotInvalidatedAt.set(absolutePath, invalidatedAt);
     }
-    if (cacheEntry && cacheEntry.type === 'stories') {
-      const { dependents } = cacheEntry;
+    // the same file can match several specifiers
+    caches.forEach((cache) => {
+      const cacheEntry = cache[absolutePath];
+      if (cacheEntry && cacheEntry.type === 'stories') {
+        const { dependents } = cacheEntry;
 
-      const invalidated = new Set();
-      // the dependent can be in ANY cache, so we loop over all of them
-      this.specifierToCache.forEach((otherCache) => {
-        dependents.forEach((dep) => {
-          if (otherCache[dep]) {
-            invalidated.add(dep);
-
-            otherCache[dep] = false;
-            this.slotInvalidatedAt.set(dep, invalidatedAt);
-          }
+        // the dependent can be in ANY cache, so we loop over all of them
+        this.specifierToCache.forEach((otherCache) => {
+          dependents.forEach((dep) => {
+            if (otherCache[dep]) {
+              otherCache[dep] = false;
+              this.slotInvalidatedAt.set(dep, invalidatedAt);
+            }
+          });
         });
-      });
-    }
-
-    if (removed) {
-      if (cacheEntry && cacheEntry.type === 'docs') {
-        const absoluteImports = cacheEntry.storiesImports.map((p) =>
-          resolve(this.options.workingDir, p)
-        );
-        const dependencies = this.findDependencies(absoluteImports);
-        dependencies.forEach((dep) =>
-          dep.dependents.splice(dep.dependents.indexOf(absolutePath), 1)
-        );
       }
-      delete cache[absolutePath];
-    } else {
-      cache[absolutePath] = false;
-    }
+
+      if (removed) {
+        if (cacheEntry && cacheEntry.type === 'docs') {
+          const absoluteImports = cacheEntry.storiesImports.map((p) =>
+            resolve(this.options.workingDir, p)
+          );
+          const dependencies = this.findDependencies(absoluteImports);
+          dependencies.forEach((dep) =>
+            dep.dependents.splice(dep.dependents.indexOf(absolutePath), 1)
+          );
+        }
+        delete cache[absolutePath];
+      } else {
+        cache[absolutePath] = false;
+      }
+    });
     this.lastIndex = null;
     this.lastError = null;
     this.pendingIndexAndStats = undefined;

@@ -1,4 +1,6 @@
 import { cycleBranchName } from './cycle.ts';
+import type { Cluster } from './grouping.ts';
+import type { FindingGroup, IssueHit, QaIssue } from './proposals.ts';
 import type { LoadedResult } from './results.ts';
 import type {
   CatalogEntry,
@@ -86,3 +88,14 @@ export const asIssue = (proposal: Proposal): IssueProposal => {
   }
   return proposal;
 };
+
+export const single = (lead: FindingGroup | undefined): Cluster => ({
+  lead: lead!,
+  members: [lead!],
+});
+
+/** A listed QA issue whose body carries the group's fingerprint, or no fingerprint without a group. */
+export const issueOn = (group: FindingGroup | undefined, hit: IssueHit): QaIssue => ({
+  ...hit,
+  body: group ? `fingerprint: ${group.fingerprint}` : 'fingerprint: 0000000000000000',
+});

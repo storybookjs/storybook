@@ -7,7 +7,7 @@ import {
   renderFilingReport,
   type FilingStep,
 } from './filing.ts';
-import { asIssue, finding, loaded, RUN_URL, VERSION } from './fixtures.ts';
+import { asIssue, finding, issueOn, loaded, RUN_URL, single, VERSION } from './fixtures.ts';
 import { groupFindings, toProposal, type IssueHit } from './proposals.ts';
 import type { Finding } from './schema.ts';
 
@@ -19,7 +19,11 @@ const proposalFor = (
   headSha?: string | null
 ) => {
   const [group] = groupFindings([loaded('linux', 'claude', [finding(findingOverrides)], headSha)]);
-  return toProposal(group!, hits, RUN_URL);
+  return toProposal(
+    single(group),
+    hits.map((hit) => issueOn(group, hit)),
+    { runUrl: RUN_URL }
+  );
 };
 
 const kinds = (steps: FilingStep[]) => steps.map((step) => step.kind);

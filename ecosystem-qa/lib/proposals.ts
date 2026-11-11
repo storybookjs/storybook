@@ -4,6 +4,7 @@ import { join } from 'pathe';
 
 import { cycleRef, versionLine } from './cycle.ts';
 import { fingerprint } from './fingerprint.ts';
+import type { Cluster } from './grouping.ts';
 import type { LoadedResult } from './results.ts';
 import { redactSecrets } from './redact.ts';
 import { sanitizeFinding, sanitizeTitle } from './sanitize.ts';
@@ -15,6 +16,7 @@ import type {
   IssueProposal,
   Os,
   Proposal,
+  Source,
 } from './schema.ts';
 
 export interface FindingGroup {
@@ -36,9 +38,9 @@ export interface QaIssue extends IssueHit {
   body: string;
 }
 
-/** Return the issues whose body carries the fingerprint, in the order given. */
-export const hitsFor = (issues: QaIssue[], fingerprint: string): IssueHit[] =>
-  issues.filter((issue) => issue.body.includes(fingerprint));
+/** Return the issues whose body carries any of the fingerprints, in the order given. */
+export const hitsFor = (issues: QaIssue[], fingerprints: string[]): QaIssue[] =>
+  issues.filter((issue) => fingerprints.some((fingerprint) => issue.body.includes(fingerprint)));
 
 const OS_ORDER: Record<Os, number> = { linux: 0, macos: 1, windows: 2 };
 
@@ -91,6 +93,11 @@ const metadataBlock = (proposal: IssueProposal | CommentProposal): string => {
     '<!-- sb-qa-metadata -->',
     '```yaml',
     `fingerprint: ${proposal.fingerprint}`,
+    ...(proposal.related.length > 0
+      ? [
+          `fingerprints: ${[proposal.fingerprint, ...proposal.related.map((related) => related.fingerprint)].join(', ')}`,
+        ]
+      : []),
     `storybook: ${unique(sources.map((source) => source.version))}`,
     `repo: ${cycle.repo}`,
     `sha: ${cycle.headSha ?? cycle.startSha}`,
@@ -121,6 +128,23 @@ const sourceLines = (proposal: IssueProposal | CommentProposal, withVersion = fa
     const where = `${os}, ${engine} (${model}${fake ? ', fake run' : ''}), sandbox ${sandbox}${versionBefore ? `, upgraded from ${versionBefore}` : ''}`;
     return `- ${withVersion ? `${version}: ` : ''}${where}`;
   });
+
+// A title in a body is inline markdown: a newline would start a block and a lone `<` an HTML comment.
+const inlineTitle = (title: string): string =>
+  sanitizeTitle(title.replace(/\s+/g, ' ')).replaceAll('<', '&lt;');
+
+const relatedLines = (proposal: IssueProposal | CommentProposal): string[] =>
+  proposal.related.length === 0
+    ? []
+    : [
+        'Also seen as:',
+        '',
+        ...proposal.related.map(
+          ({ checkId, title, sources }) =>
+            `- \`${checkId}\` on ${unique(sources.map(({ repo, os, engine }) => `${repo} (${os}, ${engine})`))}: ${inlineTitle(title)}`
+        ),
+        '',
+      ];
 
 const reproductionLink = (cycle: Cycle): string[] => {
   const repoUrl = `https://github.com/${cycle.repo}`;
@@ -211,6 +235,7 @@ export const renderIssueBody = (
     '',
     ...sourceLines(proposal),
     '',
+    ...relatedLines(proposal),
     metadataBlock(proposal),
     '',
   ].join('\n');
@@ -224,24 +249,15 @@ export const renderCommentBody = (proposal: CommentProposal): string =>
     '',
     fence(sanitizeFinding(proposal.finding).actual, 'text'),
     '',
+    ...relatedLines(proposal),
     metadataBlock(proposal),
     '',
   ].join('\n');
 
-export const toProposal = (group: FindingGroup, hits: IssueHit[], runUrl: string): Proposal => {
-  const { primary } = group;
-  const { version } = primary.result.request;
-  const line = versionLine(version);
-  const [major = line] = line.split('.');
-  const allWindows = group.occurrences.every(({ result }) => result.request.os === 'windows');
-  const labels = ['bug', QA_LABEL, `upgrade:${line}`];
-  if (allWindows && group.finding.windowsOnly) {
-    labels.push('windows');
-  }
-  const common = {
-    fingerprint: group.fingerprint,
-    title: `[SB ${major} QA]: ${sanitizeTitle(group.finding.title)}`,
-    sources: group.occurrences.map(({ result, resultPath, cycle }) => ({
+const sourcesOf = (groups: FindingGroup[]): Source[] => {
+  const byPath = new Map<string, Source>();
+  for (const { result, resultPath, cycle } of groups.flatMap((group) => group.occurrences)) {
+    byPath.set(resultPath, {
       resultPath,
       repo: cycle.repo,
       os: result.request.os,
@@ -251,33 +267,96 @@ export const toProposal = (group: FindingGroup, hits: IssueHit[], runUrl: string
       version: result.request.version,
       ...(result.storybookVersionBefore ? { versionBefore: result.storybookVersionBefore } : {}),
       fake: result.request.fake,
-    })),
-  };
-  const known = hits.find((hit) => hit.labels.includes('qa:known'));
+    });
+  }
+  return [...byPath.values()];
+};
+
+type Decision =
+  | { kind: 'suppressed'; issue: number }
+  | { kind: 'comment'; issue: number }
+  | { kind: 'issue'; previousIssue?: number };
+
+// Only an exact fingerprint silences a finding; an issue that is merely similar gets a comment.
+// A closed issue gets no comment: nobody watches it, so the bug that came back is filed again
+// with a link to where it was fixed before.
+const decide = (exact: QaIssue[], similar: QaIssue | undefined): Decision => {
+  const known = exact.find((issue) => issue.labels.includes('qa:known'));
   if (known) {
-    return { kind: 'suppressed', ...common, existingIssue: known.number };
+    return { kind: 'suppressed', issue: known.number };
+  }
+  const open = exact.find((issue) => issue.state === 'open');
+  if (open) {
+    return { kind: 'comment', issue: open.number };
+  }
+  if (similar?.state === 'open') {
+    return { kind: 'comment', issue: similar.number };
+  }
+  const previous = exact[0] ?? similar;
+  return { kind: 'issue', ...(previous ? { previousIssue: previous.number } : {}) };
+};
+
+export interface ProposalOptions {
+  runUrl: string;
+}
+
+/** Build the one proposal for a cluster from its lead, matching `issues` by any member's fingerprint. */
+export const toProposal = (
+  { lead, members, existingIssue }: Cluster,
+  issues: QaIssue[],
+  { runUrl }: ProposalOptions
+): Proposal => {
+  const { primary } = lead;
+  const { version } = primary.result.request;
+  const line = versionLine(version);
+  const [major = line] = line.split('.');
+  const allWindows = members
+    .flatMap((member) => member.occurrences)
+    .every(({ result }) => result.request.os === 'windows');
+  const labels = ['bug', QA_LABEL, `upgrade:${line}`];
+  if (allWindows && lead.finding.windowsOnly) {
+    labels.push('windows');
+  }
+  const common = {
+    fingerprint: lead.fingerprint,
+    title: `[SB ${major} QA]: ${sanitizeTitle(lead.finding.title)}`,
+    sources: sourcesOf(members),
+  };
+  const decision = decide(
+    hitsFor(
+      issues,
+      members.map((member) => member.fingerprint)
+    ),
+    issues.find((issue) => issue.number === existingIssue)
+  );
+  if (decision.kind === 'suppressed') {
+    return { kind: 'suppressed', ...common, existingIssue: decision.issue };
   }
   const report = {
     ...common,
     labels,
     milestone: major,
-    finding: group.finding,
+    finding: lead.finding,
     cycle: primary.cycle,
     runUrl,
+    related: members
+      .filter((member) => member !== lead)
+      .map((member) => ({
+        fingerprint: member.fingerprint,
+        checkId: member.finding.checkId,
+        title: member.finding.title,
+        sources: sourcesOf([member]),
+      })),
   };
-  // A closed issue gets no comment: nobody watches it, so the bug that came back is filed again
-  // with a link to where it was fixed before.
-  const open = hits.find((hit) => hit.state === 'open');
-  if (open) {
-    return { kind: 'comment', ...report, existingIssue: open.number };
+  if (decision.kind === 'comment') {
+    return { kind: 'comment', ...report, existingIssue: decision.issue };
   }
-  const [closed] = hits;
   return {
     kind: 'issue',
     ...report,
-    ...(closed ? { previousIssue: closed.number } : {}),
+    ...(decision.previousIssue !== undefined ? { previousIssue: decision.previousIssue } : {}),
     system: systemText(primary),
-    assetDir: `assets/${version}/${group.fingerprint}`,
-    evidence: evidenceFiles(group),
+    assetDir: `assets/${version}/${lead.fingerprint}`,
+    evidence: evidenceFiles(lead),
   };
 };

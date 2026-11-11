@@ -96,7 +96,12 @@ Without dry mode it pushes the evidence to the `qa-assets` branch with the job t
 That is `ECOSYSTEM_QA_PUSH_TOKEN` for `storybookjs` and `ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP` for `storybook-tmp`, both from the `ecosystem-qa-file` environment.
 The upgraded state lands under `refs/qa/`, never as a branch: a branch push would start the catalog repo's own workflows and run the agent's commits with that repo's secrets before anyone read the diff.
 The issue body carries the fetch command, and the one push that turns the ref into a branch once a person has looked at it.
-A fingerprint that is already on an issue becomes a comment, and one on a `qa:known` issue is suppressed.
+The collector proposes one finding per root cause: `--groups groups.json` lists which fingerprints belong together, and without it every fingerprint is its own group.
+A group only decides which fingerprints merge; the proposal takes its text and evidence from the group's first member and lists the others under "Also seen as".
+A wrong merge is split by editing `groups.json` and collecting again, without rerunning the sweep.
+A group with a fingerprint on an open issue becomes a comment there, and one with a fingerprint on a `qa:known` issue is suppressed.
+A group that matches an issue only by similarity (`existingIssue`) becomes a comment on it while it is open, even when that issue is `qa:known`, because only an exact fingerprint suppresses.
+The metadata of an issue lists every fingerprint of its group, so a later sweep finds it by any of them.
 An issue counts as already filed only while it carries the `internal-qa` label.
 It checks first that the milestone is open and every label exists, and files nothing otherwise.
 A proposal that fails does not stop the others; the job writes a filed and failed table to the Step Summary and fails at the end.

@@ -202,7 +202,14 @@ const fileProposal = (proposal: Proposal, issues: QaIssue[]): FilingOutcome => {
     repo,
     evidenceLinks: 'assets',
     ...(proposal.kind === 'issue'
-      ? { filedAs: alreadyFiled(hitsFor(issues, proposal.fingerprint)) }
+      ? {
+          filedAs: alreadyFiled(
+            hitsFor(issues, [
+              proposal.fingerprint,
+              ...proposal.related.map((related) => related.fingerprint),
+            ])
+          ),
+        }
       : {}),
     ...(proposal.kind === 'comment' ? { comments: commentsOn(proposal.existingIssue) } : {}),
   });

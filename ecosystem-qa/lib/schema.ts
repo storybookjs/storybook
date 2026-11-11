@@ -183,6 +183,7 @@ const Source = z.strictObject({
   versionBefore: Version.optional(),
   fake: z.boolean(),
 });
+export type Source = z.infer<typeof Source>;
 
 // The filer pushes with a write token to the repository, branch and head named here, so they come
 // from the catalog, the run request and the bundle header, never from what result.json says.
@@ -202,11 +203,33 @@ export const EvidenceFile = z.strictObject({
 });
 export type EvidenceFile = z.infer<typeof EvidenceFile>;
 
+const Fingerprint = z.string().regex(/^[0-9a-f]{16}$/);
+
+/** The root-cause grouping a model or a person writes for one collect, as `groups.json`. */
+export const Grouping = z.strictObject({
+  groups: z.array(
+    z.strictObject({
+      // The first member states the cause; the proposal takes its finding, title and evidence.
+      members: z.array(Fingerprint).min(1),
+      // An issue that matches by similarity rather than by fingerprint.
+      existingIssue: z.number().int().optional(),
+    })
+  ),
+});
+export type Grouping = z.infer<typeof Grouping>;
+
 const ProposalBase = {
-  fingerprint: z.string().regex(/^[0-9a-f]{16}$/),
+  fingerprint: Fingerprint,
   title: z.string().min(1),
   sources: z.array(Source).min(1),
 };
+
+const Related = z.strictObject({
+  fingerprint: Fingerprint,
+  checkId: CheckId,
+  title: z.string().min(1),
+  sources: z.array(Source).min(1),
+});
 
 const ReportBase = {
   ...ProposalBase,
@@ -215,6 +238,7 @@ const ReportBase = {
   finding: Finding,
   cycle: Cycle,
   runUrl: z.string(),
+  related: z.array(Related),
 };
 
 export const Proposal = z.discriminatedUnion('kind', [
@@ -224,7 +248,7 @@ export const Proposal = z.discriminatedUnion('kind', [
     system: z.string(),
     assetDir: z.string(),
     evidence: z.array(EvidenceFile),
-    // A closed issue with this fingerprint: the bug came back, so it is filed anew and linked.
+    // A closed issue this cluster matched: the bug came back, so it is filed anew and linked.
     previousIssue: z.number().int().optional(),
   }),
   z.strictObject({ kind: z.literal('comment'), ...ReportBase, existingIssue: z.number().int() }),

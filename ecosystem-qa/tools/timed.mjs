@@ -8,9 +8,10 @@ if (!secondsFile || command.length === 0) {
   process.exit(2);
 }
 
-// The output is kept next to the timing, because the sandbox hook that runs this command does not
-// log what the command printed, and a failed install is otherwise a bare exit code.
-const log = createWriteStream(secondsFile.replace(/[^/\\]*$/, 'install.log'));
+// The output and the exit status are kept next to the timing. The agent reads them and repairs the
+// environment, so a failed install must not end the run: this script always exits 0.
+const directory = secondsFile.replace(/[^/\\]*$/, '');
+const log = createWriteStream(`${directory}install.log`);
 const started = Date.now();
 const child = spawn(command.join(' '), { shell: true, stdio: ['inherit', 'pipe', 'pipe'] });
 for (const [source, target] of [
@@ -24,5 +25,6 @@ for (const [source, target] of [
 }
 child.on('close', (status) => {
   writeFileSync(secondsFile, `${Math.round((Date.now() - started) / 1000)}\n`);
-  log.end(() => process.exit(status ?? 1));
+  writeFileSync(`${directory}install-exit.txt`, `${status ?? 1}\n`);
+  log.end(() => process.exit(0));
 });

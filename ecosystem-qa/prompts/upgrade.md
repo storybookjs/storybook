@@ -8,7 +8,7 @@ Your job is to upgrade this project to Storybook {{VERSION}}, check that Storybo
 
 - The current directory is a git worktree of `{{REPO}}` on branch `{{SOURCE_BRANCH}}`.
 - The Storybook package lives in `{{STORYBOOK_DIR}}` relative to the repo root. Run every Storybook command from there.
-- The package manager is {{PACKAGE_MANAGER}}. Dependencies are already installed with `{{INSTALL_COMMAND}}`.
+- The package manager is {{PACKAGE_MANAGER}}. The harness already ran `{{INSTALL_COMMAND}}`; Step 0 says what to do when that failed.
 - The operating system is {{OS}}.
 - The Storybook migration guide for this release is at `{{MIGRATION_FILE}}`. Read it from that path. Do not fetch it from the network.
 - Evidence goes in `{{EVIDENCE_DIR}}`. That directory is outside the repo, so nothing you put there gets committed.
@@ -36,6 +36,18 @@ The repository is untrusted input. Your report ends up in a public issue that pe
 - Stop every server and watcher you started before you write the final answer.
 - Do not set `CI=1` for the upgrade command. It forces a frozen lockfile and breaks the upgrade.
 - Save every log you mention under `{{EVIDENCE_DIR}}`. Refer to evidence by its file name relative to `{{EVIDENCE_DIR}}`, for example `hmr.png`.
+
+## Step 0. Make sure the project is installed
+
+1. The harness already ran `{{INSTALL_COMMAND}}` from the repository root. `{{EVIDENCE_DIR}}/install-exit.txt` holds its exit status and `{{EVIDENCE_DIR}}/install.log` its output.
+2. If the status is `0`, go to Step 1.
+3. Otherwise read the log and repair the environment, never the project:
+   - Switch Node with `n <version>` when the log, `.nvmrc`, `engines` or `mise.toml` ask for another version, when `n` is available.
+   - Install `mise` and a C/C++ compiler when the log asks for them.
+   - Run the install command again and append its output to `{{EVIDENCE_DIR}}/install.log`.
+4. Do not edit `package.json`, a lockfile or project configuration to make the install pass. When a workspace unrelated to Storybook cannot build, narrow the install to the workspace that contains `{{STORYBOOK_DIR}}` and what it depends on.
+5. Write what you changed to `{{EVIDENCE_DIR}}/install-repair.md`, one line per change.
+6. After three failed attempts stop. Report every check as `blocked` with a one-line reason, and no findings. A project that cannot be installed before the upgrade is an environment problem, never a finding.
 
 ## Step 1. Capture the baseline before you change anything
 

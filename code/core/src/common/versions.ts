@@ -29,7 +29,6 @@ export default {
   '@storybook/web-components-vite': '11.0.0-beta.1',
   sb: '11.0.0-beta.1',
   '@storybook/cli': '11.0.0-beta.1',
-  '@storybook/codemod': '11.0.0-beta.1',
   '@storybook/core-webpack': '11.0.0-beta.1',
   'create-storybook': '11.0.0-beta.1',
   'eslint-plugin-storybook': '11.0.0-beta.1',

@@ -1,9 +1,21 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { formatExistingFile } from 'storybook/internal/common';
+
+import prettier from 'prettier';
 import ansiRegex from 'ansi-regex';
 import { dedent } from 'ts-dedent';
 
 import _transform from '../csf-2-to-3.ts';
+
+vi.mock('storybook/internal/common', { spy: true });
+
+// What a project with a Prettier config gets.
+beforeEach(() => {
+  vi.mocked(formatExistingFile).mockImplementation((path, content) =>
+    prettier.format(content, { filepath: path })
+  );
+});
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -16,6 +28,60 @@ const tsTransform = async (source: string) =>
   (await _transform({ source, path: 'Component.stories.tsx' })).trim();
 
 describe('csf-2-to-3', () => {
+  it('lifts a story whose play function calls a later binding', async () => {
+    const output = await jsTransform(dedent`
+      export default { component: Button };
+      export const Primary = (args) => <Button {...args} />;
+      Primary.play = async () => {
+        await helper();
+      };
+      const helper = async () => {};
+    `);
+
+    expect(output).toBe(dedent`
+      export default { component: Button };
+      export const Primary = {
+        play: async () => {
+          await helper();
+        },
+      };
+      const helper = async () => {};
+    `);
+  });
+
+  it('keeps a story whose args call a function that reads a later binding', async () => {
+    const source = dedent`
+      export default { component: Button };
+      export const Primary = (args) => <Button {...args} />;
+      Primary.args = (() => ({ label }))();
+      const label = 'Button';
+    `;
+
+    expect(await jsTransform(source)).not.toContain('export const Primary = {');
+  });
+
+  it('lifts a story whose keys only share a name with a later binding', async () => {
+    const output = await jsTransform(dedent`
+      export default { component: Button };
+      export const Empty = (args) => <Button {...args} />;
+      Empty.args = { items: [] };
+      const items = ['a'];
+      export const WithItems = (args) => <Button {...args} />;
+      WithItems.args = { items };
+    `);
+
+    expect(output).toBe(dedent`
+      export default { component: Button };
+      export const Empty = {
+        args: { items: [] },
+      };
+      const items = ["a"];
+      export const WithItems = {
+        args: { items },
+      };
+    `);
+  });
+
   it('leaves Svelte CSF files unchanged', async () => {
     const source = dedent`
       <script module>

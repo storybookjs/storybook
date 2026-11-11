@@ -1,3 +1,4 @@
+import { formatExistingFile } from 'storybook/internal/common';
 import {
   type CsfFile,
   type ESTree as E,
@@ -7,16 +8,16 @@ import {
   loadCsf,
   placeableTextOf,
   printCsf,
+  printMembers,
   removeFromList,
   removeStatement,
   walk,
 } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
-import prettier from 'prettier';
 import invariant from 'tiny-invariant';
 
-import type { TransformFile } from '../lib/utils.ts';
+import type { FileInfo } from '../../automigrate/codemod.ts';
 import { upgradeDeprecatedTypes } from './upgrade-deprecated-types.ts';
 
 const renameAnnotation = (annotation: string) => {
@@ -75,6 +76,8 @@ const isSingleConstExport = (stmt: Node | undefined) =>
 const isReactGlobalRenderFn = (csf: CsfFile, storyFn: Node | undefined) => {
   if (
     csf._meta?.component &&
+    // The render of the meta would replace the removed function, and it is not the default one.
+    !csf._metaAnnotations.render &&
     storyFn?.type === 'ArrowFunctionExpression' &&
     storyFn.params.length === 1 &&
     storyFn.body.type === 'JSXElement'
@@ -104,6 +107,72 @@ const isReactGlobalRenderFn = (csf: CsfFile, storyFn: Node | undefined) => {
 // A simple CSF story is a no-arg story without any extra annotations (params, args, etc.)
 const isSimpleCSFStory = (init: Node, annotations: string[]) =>
   annotations.length === 0 && init.type === 'ArrowFunctionExpression' && init.params.length === 0;
+
+// `(() => ({ x }))()`, with or without the parentheses.
+const isCalledRightAway = (editor: SourceEditor, fn: Node) => {
+  let callee: Node = fn;
+  let parent = editor.parentOf(fn);
+  while (parent?.type === 'ParenthesizedExpression') {
+    callee = parent;
+    parent = editor.parentOf(parent);
+  }
+  return (
+    (parent?.type === 'CallExpression' || parent?.type === 'NewExpression') &&
+    parent.callee === callee
+  );
+};
+
+// `A.args = { x }` can follow `const x`, and `const x` can follow `export const A`. Moving those
+// args into the story would read `x` before it is initialized.
+const readsLaterBinding = (editor: SourceEditor, story: Node, annotations: Node[]) => {
+  const later = new Set<string>();
+  for (const statement of editor.program.body) {
+    const declaration =
+      statement.type === 'ExportNamedDeclaration' ? statement.declaration : statement;
+    if (statement.start < story.end) {
+      continue;
+    }
+    if (declaration?.type === 'VariableDeclaration') {
+      for (const { id } of declaration.declarations) {
+        walk(id, (node) => {
+          if (node.type === 'Identifier') {
+            later.add(node.name);
+          }
+        });
+      }
+    } else if (declaration?.type === 'ClassDeclaration' && declaration.id) {
+      later.add(declaration.id.name);
+    }
+  }
+
+  let reads = false;
+  for (const annotation of annotations) {
+    walk(annotation, (node, parent) => {
+      // A function, such as a `play`, only reads its bindings when the story runs, unless it is
+      // called right away.
+      if (
+        (node.type === 'ArrowFunctionExpression' ||
+          node.type === 'FunctionExpression' ||
+          node.type === 'FunctionDeclaration') &&
+        !isCalledRightAway(editor, node)
+      ) {
+        return false;
+      }
+      if (node.type !== 'Identifier' || !later.has(node.name)) {
+        return;
+      }
+      // `{ label: 'a' }` and `args.label` name no binding of the file.
+      const isName =
+        (parent?.type === 'Property' &&
+          parent.key === node &&
+          !parent.computed &&
+          !parent.shorthand) ||
+        (parent?.type === 'MemberExpression' && parent.property === node && !parent.computed);
+      reads ||= !isName;
+    });
+  }
+  return reads;
+};
 
 function removeUnusedTemplates(editor: SourceEditor, templates: string[]) {
   templates.forEach((template) => {
@@ -135,8 +204,12 @@ function removeUnusedTemplates(editor: SourceEditor, templates: string[]) {
   editor.commit();
 }
 
-export default async function transform(info: TransformFile) {
-  // Svelte CSF files are never CSF 2, but the glob of the csf-factories automigration includes them
+export default async function transform(
+  info: FileInfo,
+  // For `csf-factories`, which needs `ComponentMeta<T>` to tell that `T` is a component and not args.
+  { keepStoryTypes = false }: { keepStoryTypes?: boolean } = {}
+) {
+  // Svelte CSF files are never CSF 2, but a broad glob can include them
   if (info.path.endsWith('.svelte')) {
     return info.source;
   }
@@ -172,14 +245,17 @@ export default async function transform(info: TransformFile) {
     if (init.type !== 'ArrowFunctionExpression' && !template) {
       return;
     }
-    const replaceExport = isSingleConstExport(csf._storyStatements[key]);
+    const replaceExport =
+      isSingleConstExport(csf._storyStatements[key]) &&
+      !readsLaterBinding(editor, decl, Object.values(csf._storyAnnotations[key]));
+    const updateType = replaceExport && !keepStoryTypes;
 
     // Do change the type of no-arg stories without annotations to StoryFn when applicable
     if (isSimpleCSFStory(init, annotations)) {
-      importHelper.updateTypeTo(id, 'StoryFn', replaceExport);
+      importHelper.updateTypeTo(id, 'StoryFn', updateType);
       return;
     }
-    importHelper.updateTypeTo(id, 'StoryObj', replaceExport);
+    importHelper.updateTypeTo(id, 'StoryObj', updateType);
     if (!replaceExport) {
       return;
     }
@@ -196,7 +272,7 @@ export default async function transform(info: TransformFile) {
     editor.edits.overwrite(
       init.start,
       init.end,
-      properties.length === 0 ? '{}' : `{\n${properties.map((it) => `  ${it},\n`).join('')}}`
+      printMembers(properties, { indent: editor.indent, trailingComma: true })
     );
   });
 
@@ -207,21 +283,12 @@ export default async function transform(info: TransformFile) {
   }
   editor.commit();
 
-  upgradeDeprecatedTypes(editor);
+  if (!keepStoryTypes) {
+    upgradeDeprecatedTypes(editor);
+  }
   removeUnusedTemplates(editor, templates);
 
-  let output = printCsf(csf).code;
-
-  try {
-    output = await prettier.format(output, {
-      ...(await prettier.resolveConfig(info.path)),
-      filepath: info.path,
-    });
-  } catch (e) {
-    logger.log(`Failed applying prettier to ${info.path}.`);
-  }
-
-  return output;
+  return formatExistingFile(info.path, printCsf(csf).code);
 }
 
 const storyTypes = [
@@ -320,5 +387,3 @@ class StorybookImportHelper {
     }
   };
 }
-
-export const parser = 'tsx';

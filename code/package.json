@@ -61,7 +61,6 @@
     "@storybook/angular-vite": "workspace:*",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/builder-webpack5": "workspace:*",
-    "@storybook/codemod": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
     "@storybook/ember": "workspace:*",
     "@storybook/global": "^5.0.0",

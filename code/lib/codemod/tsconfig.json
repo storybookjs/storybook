@@ -1,8 +1,0 @@
-{
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "allowJs": true
-  },
-  "exclude": ["node_modules", "__testfixtures__", "__tests__"],
-  "include": ["src/**/*"]
-}

@@ -1,9 +1,21 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { formatExistingFile } from 'storybook/internal/common';
+
+import prettier from 'prettier';
 import ansiRegex from 'ansi-regex';
 import { dedent } from 'ts-dedent';
 
 import _transform from '../upgrade-deprecated-types.ts';
+
+vi.mock('storybook/internal/common', { spy: true });
+
+// What a project with a Prettier config gets.
+beforeEach(() => {
+  vi.mocked(formatExistingFile).mockImplementation((path, content) =>
+    prettier.format(content, { filepath: path })
+  );
+});
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),

@@ -12,20 +12,25 @@ export const Os = z.enum(['linux', 'windows', 'macos']);
 export type Os = z.infer<typeof Os>;
 export const Effort = z.enum(['low', 'medium', 'high']);
 
-export const CatalogEntry = z.strictObject({
-  id: z.string().regex(/^[a-z0-9-]+$/),
-  repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/),
-  // Where the cycle branch is pushed: a fork under storybook-tmp for tier 1, the repo itself when owned.
-  pushTo: z
-    .string()
-    .regex(new RegExp(`^(?:${Object.keys(PUSH_TOKEN_ENV).join('|')})/[\\w.-]+$`))
-    .optional(),
-  ref: z.string().min(1),
-  class: RepoClass,
-  packageManager: z.enum(['npm', 'pnpm', 'yarn']),
-  storybookDir: z.string().min(1),
-  windows: z.boolean(),
-});
+export const CatalogEntry = z
+  .strictObject({
+    id: z.string().regex(/^[a-z0-9-]+$/),
+    repo: z.string().regex(/^[\w.-]+\/[\w.-]+$/),
+    // Where the cycle branch is pushed: a fork under storybook-tmp for tier 1, the repo itself when owned.
+    pushTo: z
+      .string()
+      .regex(new RegExp(`^(?:${Object.keys(PUSH_TOKEN_ENV).join('|')})/[\\w.-]+$`))
+      .optional(),
+    ref: z.string().min(1),
+    class: RepoClass,
+    packageManager: z.enum(['npm', 'pnpm', 'yarn']),
+    storybookDir: z.string().min(1),
+    windows: z.boolean(),
+  })
+  .refine((entry) => entry.class !== 'tier1' || entry.pushTo !== undefined, {
+    message: 'a tier 1 entry needs pushTo, the fork that holds its baseline',
+    path: ['pushTo'],
+  });
 export type CatalogEntry = z.infer<typeof CatalogEntry>;
 
 export const Catalog = z

@@ -25,7 +25,7 @@ import { z } from 'zod';
 
 import { checksFor, renderChecklist } from './checks.ts';
 import { loadCatalogEntry } from './lib/catalog.ts';
-import { cycleBranchName, versionLine } from './lib/cycle.ts';
+import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
 import {
   agentOutput,
@@ -179,8 +179,11 @@ const clone = (entry: CatalogEntry, cloneDir: string): string => {
   if (existsSync(cloneDir)) {
     return fail(`${cloneDir} already exists. Delete it or pass another --clone-dir.`);
   }
-  git(process.cwd(), 'clone', '--quiet', `https://github.com/${entry.repo}`, cloneDir);
-  git(cloneDir, 'checkout', '--quiet', '-B', 'qa/start', entry.ref);
+  // The larger catalog repos have several GB of history and a run only needs the start commit.
+  git(process.cwd(), 'init', '--quiet', cloneDir);
+  git(cloneDir, 'remote', 'add', 'origin', `https://github.com/${cycleRepo(entry)}`);
+  git(cloneDir, 'fetch', '--quiet', '--depth', '1', 'origin', entry.ref);
+  git(cloneDir, 'checkout', '--quiet', '-B', 'qa/start', 'FETCH_HEAD');
   git(cloneDir, 'config', 'user.name', 'Storybook Ecosystem QA');
   git(cloneDir, 'config', 'user.email', 'ecosystem-qa@storybook.js.org');
   appendFileSync(join(cloneDir, '.git/info/exclude'), '\n.sandcastle/\nqa-artifacts/\n*.log\n');

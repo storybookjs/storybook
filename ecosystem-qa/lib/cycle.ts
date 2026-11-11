@@ -1,6 +1,6 @@
 import { closeSync, openSync, readSync } from 'node:fs';
 
-import type { Engine, Os } from './schema.ts';
+import type { CatalogEntry, Engine, Os } from './schema.ts';
 
 /** A fine-grained token belongs to one owner, so each org the filer may push to has its own secret. */
 export const PUSH_TOKEN_ENV = {
@@ -20,6 +20,10 @@ export const pushTokenEnv = (repo: string): string => {
   }
   return PUSH_TOKEN_ENV[owner as keyof typeof PUSH_TOKEN_ENV];
 };
+
+/** Return the repository that holds an entry's baseline and receives its cycle refs. */
+export const cycleRepo = (entry: Pick<CatalogEntry, 'repo' | 'pushTo'>): string =>
+  entry.pushTo ?? entry.repo;
 
 const SEMVER = /^(\d+)\.(\d+)\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 const SHA = /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/;

@@ -7,5 +7,115 @@
     "packageManager": "yarn",
     "storybookDir": ".",
     "windows": true
+  },
+  {
+    "id": "twenty",
+    "repo": "twentyhq/twenty",
+    "pushTo": "storybook-tmp/twenty",
+    "ref": "qa/base",
+    "class": "tier1",
+    "packageManager": "yarn",
+    "storybookDir": "packages/twenty-front",
+    "windows": false
+  },
+  {
+    "id": "posthog",
+    "repo": "PostHog/posthog",
+    "pushTo": "storybook-tmp/posthog",
+    "ref": "qa/base",
+    "class": "tier1",
+    "packageManager": "pnpm",
+    "storybookDir": "common/storybook",
+    "windows": false
+  },
+  {
+    "id": "ring-ui",
+    "repo": "JetBrains/ring-ui",
+    "pushTo": "storybook-tmp/ring-ui",
+    "ref": "qa/base",
+    "class": "tier1",
+    "packageManager": "npm",
+    "storybookDir": ".",
+    "windows": false
+  },
+  {
+    "id": "gutenberg",
+    "repo": "WordPress/gutenberg",
+    "pushTo": "storybook-tmp/gutenberg",
+    "ref": "qa/base",
+    "class": "tier1",
+    "packageManager": "npm",
+    "storybookDir": "storybook",
+    "windows": true
+  },
+  {
+    "id": "mantine",
+    "repo": "mantinedev/mantine",
+    "pushTo": "storybook-tmp/mantine",
+    "ref": "qa/base",
+    "class": "tier1",
+    "packageManager": "yarn",
+    "storybookDir": ".",
+    "windows": true
+  },
+  {
+    "id": "n8n",
+    "repo": "n8n-io/n8n",
+    "pushTo": "storybook-tmp/n8n",
+    "ref": "qa/base",
+    "class": "tier1",
+    "packageManager": "pnpm",
+    "storybookDir": "packages/frontend/@n8n/storybook",
+    "windows": false
+  },
+  {
+    "id": "bitwarden-clients",
+    "repo": "bitwarden/clients",
+    "pushTo": "storybook-tmp/bitwarden-clients",
+    "ref": "qa/base",
+    "class": "tier1",
+    "packageManager": "npm",
+    "storybookDir": ".",
+    "windows": false
+  },
+  {
+    "id": "lucca-front",
+    "repo": "LuccaSA/lucca-front",
+    "pushTo": "storybook-tmp/lucca-front",
+    "ref": "qa/base",
+    "class": "tier1",
+    "packageManager": "npm",
+    "storybookDir": ".",
+    "windows": false
+  },
+  {
+    "id": "gitbutler",
+    "repo": "gitbutlerapp/gitbutler",
+    "pushTo": "storybook-tmp/gitbutler",
+    "ref": "qa/base",
+    "class": "tier1",
+    "packageManager": "pnpm",
+    "storybookDir": "packages/ui-svelte",
+    "windows": true
+  },
+  {
+    "id": "calcite-design-system",
+    "repo": "Esri/calcite-design-system",
+    "pushTo": "storybook-tmp/calcite-design-system",
+    "ref": "qa/base",
+    "class": "tier1",
+    "packageManager": "pnpm",
+    "storybookDir": "packages/components",
+    "windows": false
+  },
+  {
+    "id": "metamask-design-system",
+    "repo": "MetaMask/metamask-design-system",
+    "pushTo": "storybook-tmp/metamask-design-system",
+    "ref": "qa/base",
+    "class": "tier1",
+    "packageManager": "yarn",
+    "storybookDir": "apps/storybook-react-native",
+    "windows": false
   }
 ]

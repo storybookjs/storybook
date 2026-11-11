@@ -2,7 +2,7 @@ import { existsSync, lstatSync, readFileSync, realpathSync } from 'node:fs';
 
 import { isAbsolute, join, relative } from 'pathe';
 
-import { cycleBranchName, publishedCycleBranch, readBundleHeader } from './cycle.ts';
+import { cycleBranchName, cycleRepo, publishedCycleBranch, readBundleHeader } from './cycle.ts';
 import {
   Engine,
   Os,
@@ -107,7 +107,7 @@ const readCycle = (
 ): Cycle => {
   const branch = cycleBranchName(key.version, key.os, key.engine);
   const noCommits = {
-    repo: key.entry.pushTo ?? key.entry.repo,
+    repo: cycleRepo(key.entry),
     branch,
     startSha: recordedStartSha,
     headSha: null,

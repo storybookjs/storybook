@@ -96,6 +96,20 @@ describe('loadResults', () => {
     expect(result?.result.request.entry.repo).toBe('storybookjs/mealdrop');
   });
 
+  it('reports the fork that holds the baseline as the cycle repository', () => {
+    const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
+    const fork = { ...ENTRY, class: 'tier1' as const, pushTo: 'storybook-tmp/mealdrop' };
+    writeRun(artifactRun(resultsDir));
+
+    const [result] = loadResults(resultsDir, {
+      version: VERSION,
+      catalog: [fork],
+      warn: () => {},
+    });
+
+    expect(result?.cycle.repo).toBe('storybook-tmp/mealdrop');
+  });
+
   it('rejects a model id that could close the metadata fence in the issue body', () => {
     const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
     const base = record();

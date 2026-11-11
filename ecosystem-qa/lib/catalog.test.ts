@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { loadCatalogEntry } from './catalog.ts';
+import { loadCatalog, loadCatalogEntry } from './catalog.ts';
 import { ENTRY } from './fixtures.ts';
 import { Catalog } from './schema.ts';
 
@@ -9,11 +9,16 @@ describe('catalog', () => {
     expect(loadCatalogEntry('mealdrop').repo).toBe('storybookjs/mealdrop');
   });
 
+  it('parses every checked-in entry', () => {
+    expect(loadCatalog().length).toBeGreaterThan(1);
+  });
+
   it.each([
     ['an unknown repo class', { ...ENTRY, class: 'tier3' }],
     ['a repo without an owner', { ...ENTRY, repo: 'mealdrop' }],
     ['an unsupported package manager', { ...ENTRY, packageManager: 'bun' }],
     ['an unknown field', { ...ENTRY, branch: 'main' }],
+    ['a tier 1 entry without a push target', { ...ENTRY, class: 'tier1' }],
     ['a push target outside the orgs with a push token', { ...ENTRY, pushTo: 'twentyhq/twenty' }],
   ])('rejects %s', (_, entry) => {
     expect(() => Catalog.parse([entry])).toThrow();

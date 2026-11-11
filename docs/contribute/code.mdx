@@ -223,7 +223,7 @@ npx storybook@next link --local /path/to/local-repro-directory
 
 <Callout variant="info" icon="💡">
 
-The `storybook link` command relies on [Yarn linking](https://yarnpkg.com/cli/link/) under the hood, so your reproduction must use [Yarn 2 or higher](https://yarnpkg.com/), even though the Storybook monorepo itself uses pnpm. Reproductions created with the [`storybook sandbox`](./how-to-reproduce.mdx) command already do. The process will fail if you're trying to link a project that doesn't use Yarn 2 or higher.
+The `storybook link` command relies on [Yarn linking](https://yarnpkg.com/cli/link/) under the hood, so your reproduction must use [Yarn 2 or higher](https://yarnpkg.com/), even though the Storybook monorepo itself uses pnpm. Reproductions created with the [`storybook sandbox`](./how-to-reproduce.mdx) command use pnpm, so they cannot be linked this way. The process will fail if you're trying to link a project that doesn't use Yarn 2 or higher.
 
 Unlike a sandbox, a linked reproduction uses Yarn `portal:` links into the `code` directory, so rebuilt packages reach it without reinstalling.
 
@@ -272,8 +272,6 @@ pnpm task --task dev --template <template-key> --start-from=install
 ```
 
 The first time, a template with `inDevelopment` is generated locally, which starts the local registry. The sandbox itself is then linked like any other, unless you pass `--no-link`.
-
-Generating the template needs Yarn as well as pnpm, because published sandboxes are Yarn projects. `yarn` must run the version that `PUBLISHED_SANDBOX_PACKAGE_MANAGER` pins in `scripts/sandbox/utils/yarn.ts`. To get that version, run `corepack enable yarn` once, or run `bash .github/actions/setup-node-and-install/package-managers/install.sh yarn` from the repository root, which installs that release with `npm install --global`.
 
 Once the PR is merged, the template will be generated on a nightly cadence and you can remove the `inDevelopment` flag and the sandbox will pull the code from our templates repository.
 

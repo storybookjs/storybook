@@ -138,6 +138,23 @@ describe('planFiling', () => {
     expect(again).toEqual([{ kind: 'skip', reason: '#9 already has this comment' }]);
   });
 
+  it('says that a suppressed bug was fixed after the tested version', () => {
+    const [group] = groupFindings([loaded('linux', 'claude', [finding()])]);
+    const fixed = {
+      ...issueOn(group, { number: 7, labels: ['bug'], state: 'closed' }),
+      stateReason: 'completed',
+      closedAt: '2026-11-05T10:00:00Z',
+    };
+    const proposal = toProposal(single(group), [fixed], {
+      runUrl: RUN_URL,
+      publishedAt: '2026-11-03T19:32:47Z',
+    });
+
+    expect(planFiling(proposal, { repo: REPO, evidenceLinks: 'assets' })).toEqual([
+      { kind: 'skip', reason: `fixed in #7 after ${VERSION} was published` },
+    ]);
+  });
+
   it('files nothing for a qa:known issue', () => {
     const proposal = proposalFor({}, [{ number: 7, labels: ['qa:known'], state: 'open' }]);
 

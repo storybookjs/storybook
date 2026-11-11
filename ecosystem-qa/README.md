@@ -102,6 +102,8 @@ A wrong merge is split by editing `groups.json` and collecting again, without re
 A group with a fingerprint on an open issue becomes a comment there, and one with a fingerprint on a `qa:known` issue is suppressed.
 A group that matches an issue only by similarity (`existingIssue`) becomes a comment on it while it is open, even when that issue is `qa:known`, because only an exact fingerprint suppresses.
 The metadata of an issue lists every fingerprint of its group, so a later sweep finds it by any of them.
+An issue closed as completed after the tested prerelease was published counts as known for that version, because the fix is not in it yet; the collector reads the publish date from the `v<version>` release of `--repo`.
+An issue closed before that, or closed for any other reason, does not count: the bug came back, so it is filed again with a link to the closed issue.
 An issue counts as already filed only while it carries the `internal-qa` label.
 It checks first that the milestone is open and every label exists, and files nothing otherwise.
 A proposal that fails does not stop the others; the job writes a filed and failed table to the Step Summary and fails at the end.

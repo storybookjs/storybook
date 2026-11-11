@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { loadCatalog } from './lib/catalog.ts';
 import { versionLine } from './lib/cycle.ts';
 import { compareExpected, loadExpected, renderExpectReport } from './lib/expected.ts';
-import { listQaIssues } from './lib/github.ts';
+import { listQaIssues, releasePublishedAt } from './lib/github.ts';
 import { checkGrouping, clusterFindings, identityGrouping } from './lib/grouping.ts';
 import { groupFindings, toProposal } from './lib/proposals.ts';
 import { loadResults, upgraded } from './lib/results.ts';
@@ -64,6 +64,12 @@ const loaded = loadResults(results, {
 const groups = groupFindings(loaded);
 const fingerprints = groups.map((group) => group.fingerprint);
 const issues = listQaIssues(repo);
+const publishedAt = releasePublishedAt(repo, version);
+console.log(
+  publishedAt
+    ? `${version} was published at ${publishedAt}; an issue closed as completed after that counts as known.`
+    : `${repo} has no release v${version}, so a bug fixed after it is filed again.`
+);
 const parsed = values.groups
   ? Grouping.safeParse(JSON.parse(readFileSync(values.groups, 'utf8')))
   : { success: true as const, data: identityGrouping(fingerprints) };
@@ -84,7 +90,7 @@ if (problems.length > 0) {
   process.exit(1);
 }
 const proposals = clusterFindings(groups, grouping).map((cluster) =>
-  toProposal(cluster, issues, { runUrl })
+  toProposal(cluster, issues, { runUrl, publishedAt })
 );
 writeFileSync(out, `${JSON.stringify(proposals, null, 2)}\n`);
 
@@ -95,7 +101,12 @@ for (const { result, resultPath } of loaded) {
   );
 }
 for (const proposal of proposals) {
-  const target = proposal.kind === 'issue' ? '' : ` #${proposal.existingIssue}`;
+  const target =
+    proposal.kind === 'issue'
+      ? ''
+      : proposal.kind === 'suppressed'
+        ? ` (${proposal.reason}) #${proposal.existingIssue}`
+        : ` #${proposal.existingIssue}`;
   console.log(`${proposal.kind}${target} ${proposal.fingerprint} ${proposal.title}`);
 }
 console.log(`${loaded.length} results, ${proposals.length} proposals written to ${out}`);

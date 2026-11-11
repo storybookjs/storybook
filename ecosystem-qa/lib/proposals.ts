@@ -36,6 +36,8 @@ export const QA_LABEL = 'internal-qa';
 
 export interface QaIssue extends IssueHit {
   body: string;
+  closedAt?: string;
+  stateReason?: string;
 }
 
 /** Return the issues whose body carries any of the fingerprints, in the order given. */
@@ -273,21 +275,39 @@ const sourcesOf = (groups: FindingGroup[]): Source[] => {
 };
 
 type Decision =
-  | { kind: 'suppressed'; issue: number }
+  | { kind: 'suppressed'; issue: number; reason: 'known' | 'fixed-later' }
   | { kind: 'comment'; issue: number }
   | { kind: 'issue'; previousIssue?: number };
 
+const fixedAfter = (issue: QaIssue, publishedAt: string | undefined): boolean =>
+  publishedAt !== undefined &&
+  issue.state === 'closed' &&
+  issue.stateReason === 'completed' &&
+  issue.closedAt !== undefined &&
+  Date.parse(issue.closedAt) > Date.parse(publishedAt);
+
 // Only an exact fingerprint silences a finding; an issue that is merely similar gets a comment.
-// A closed issue gets no comment: nobody watches it, so the bug that came back is filed again
-// with a link to where it was fixed before.
-const decide = (exact: QaIssue[], similar: QaIssue | undefined): Decision => {
+// A fix that landed after the tested prerelease was published is not in it, so seeing the bug
+// there is expected. Any other closed issue gets no comment: nobody watches it, so the bug that
+// came back is filed again with a link to where it was fixed before.
+const decide = (
+  exact: QaIssue[],
+  similar: QaIssue | undefined,
+  publishedAt: string | undefined
+): Decision => {
   const known = exact.find((issue) => issue.labels.includes('qa:known'));
   if (known) {
-    return { kind: 'suppressed', issue: known.number };
+    return { kind: 'suppressed', issue: known.number, reason: 'known' };
   }
   const open = exact.find((issue) => issue.state === 'open');
   if (open) {
     return { kind: 'comment', issue: open.number };
+  }
+  const fixed = [...exact, ...(similar ? [similar] : [])].find((issue) =>
+    fixedAfter(issue, publishedAt)
+  );
+  if (fixed) {
+    return { kind: 'suppressed', issue: fixed.number, reason: 'fixed-later' };
   }
   if (similar?.state === 'open') {
     return { kind: 'comment', issue: similar.number };
@@ -298,13 +318,15 @@ const decide = (exact: QaIssue[], similar: QaIssue | undefined): Decision => {
 
 export interface ProposalOptions {
   runUrl: string;
+  /** When the tested version was published; an issue closed as completed after it counts as known. */
+  publishedAt?: string | undefined;
 }
 
 /** Build the one proposal for a cluster from its lead, matching `issues` by any member's fingerprint. */
 export const toProposal = (
   { lead, members, existingIssue }: Cluster,
   issues: QaIssue[],
-  { runUrl }: ProposalOptions
+  { runUrl, publishedAt }: ProposalOptions
 ): Proposal => {
   const { primary } = lead;
   const { version } = primary.result.request;
@@ -327,10 +349,16 @@ export const toProposal = (
       issues,
       members.map((member) => member.fingerprint)
     ),
-    issues.find((issue) => issue.number === existingIssue)
+    issues.find((issue) => issue.number === existingIssue),
+    publishedAt
   );
   if (decision.kind === 'suppressed') {
-    return { kind: 'suppressed', ...common, existingIssue: decision.issue };
+    return {
+      kind: 'suppressed',
+      ...common,
+      existingIssue: decision.issue,
+      reason: decision.reason,
+    };
   }
   const report = {
     ...common,

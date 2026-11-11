@@ -272,6 +272,66 @@ describe('toProposal for a cluster', () => {
   });
 });
 
+describe('toProposal with the publish date of the tested version', () => {
+  const [group] = groupFindings([loaded('linux', 'claude', [finding()])]);
+  const PUBLISHED = '2026-11-03T19:32:47Z';
+  const closed = (number: number, stateReason: string, closedAt: string) => ({
+    ...issueOn(group, { number, labels: ['bug'], state: 'closed' }),
+    stateReason,
+    closedAt,
+  });
+
+  it('suppresses a bug whose issue was closed as completed after the version was published', () => {
+    const proposal = toProposal(single(group), [closed(9, 'completed', '2026-11-05T10:00:00Z')], {
+      ...OPTIONS,
+      publishedAt: PUBLISHED,
+    });
+
+    expect(proposal).toMatchObject({ kind: 'suppressed', existingIssue: 9, reason: 'fixed-later' });
+  });
+
+  it('files a bug again that came back after a fix the version already had', () => {
+    const proposal = toProposal(single(group), [closed(9, 'completed', '2026-11-01T10:00:00Z')], {
+      ...OPTIONS,
+      publishedAt: PUBLISHED,
+    });
+
+    expect(proposal).toMatchObject({ kind: 'issue', previousIssue: 9 });
+  });
+
+  it('files a bug again whose issue was closed as not planned', () => {
+    const proposal = toProposal(single(group), [closed(9, 'not_planned', '2026-11-05T10:00:00Z')], {
+      ...OPTIONS,
+      publishedAt: PUBLISHED,
+    });
+
+    expect(proposal).toMatchObject({ kind: 'issue', previousIssue: 9 });
+  });
+
+  it('files a bug again when the publish date is unknown', () => {
+    const proposal = toProposal(
+      single(group),
+      [closed(9, 'completed', '2026-11-05T10:00:00Z')],
+      OPTIONS
+    );
+
+    expect(proposal).toMatchObject({ kind: 'issue', previousIssue: 9 });
+  });
+
+  it('suppresses a later fix before commenting on an open similar issue', () => {
+    const proposal = toProposal(
+      { ...single(group), existingIssue: 20 },
+      [
+        issueOn(undefined, { number: 20, labels: ['bug'], state: 'open' }),
+        closed(9, 'completed', '2026-11-05T10:00:00Z'),
+      ],
+      { ...OPTIONS, publishedAt: PUBLISHED }
+    );
+
+    expect(proposal).toMatchObject({ kind: 'suppressed', existingIssue: 9, reason: 'fixed-later' });
+  });
+});
+
 describe('renderIssueBody', () => {
   it('uses the bug report template headings in order and ends with the metadata block', () => {
     const template = readFileSync(

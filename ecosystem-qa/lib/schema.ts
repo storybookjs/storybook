@@ -256,6 +256,7 @@ export const Proposal = z.discriminatedUnion('kind', [
     kind: z.literal('suppressed'),
     ...ProposalBase,
     existingIssue: z.number().int(),
+    reason: z.enum(['known', 'fixed-later']),
   }),
 ]);
 export type Proposal = z.infer<typeof Proposal>;

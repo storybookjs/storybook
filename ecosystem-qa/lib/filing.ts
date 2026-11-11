@@ -32,10 +32,19 @@ export interface FilingOptions {
 
 const METADATA_MARKER = '<!-- sb-qa-metadata -->';
 
+const suppressedBecause = ({
+  reason,
+  existingIssue,
+  sources,
+}: Extract<Proposal, { kind: 'suppressed' }>): string =>
+  reason === 'known'
+    ? `#${existingIssue} is labelled qa:known`
+    : `fixed in #${existingIssue} after ${sources[0]!.version} was published`;
+
 /** Return the ordered steps that file one proposal; a skip step is always the only step. */
 export const planFiling = (proposal: Proposal, options: FilingOptions): FilingStep[] => {
   if (proposal.kind === 'suppressed') {
-    return [{ kind: 'skip', reason: `#${proposal.existingIssue} is labelled qa:known` }];
+    return [{ kind: 'skip', reason: suppressedBecause(proposal) }];
   }
   // The cycle ref is pushed for a comment too: its metadata names this run's head, and a "seen
   // again" on a new prerelease is when someone wants to fetch the upgraded state.

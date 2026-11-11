@@ -13,6 +13,8 @@ const IssueListing = z.array(
     state: z.enum(['open', 'closed']),
     labels: z.array(z.object({ name: z.string() })),
     body: z.string().nullable(),
+    closed_at: z.string().nullable().optional(),
+    state_reason: z.string().nullable().optional(),
     pull_request: z.unknown().optional(),
   })
 );
@@ -33,6 +35,8 @@ export const qaIssuesFrom = (items: unknown): QaIssue[] =>
       state: item.state,
       labels: item.labels.map((label) => label.name),
       body: item.body ?? '',
+      ...(item.closed_at ? { closedAt: item.closed_at } : {}),
+      ...(item.state_reason ? { stateReason: item.state_reason } : {}),
     }));
 
 /**
@@ -45,3 +49,24 @@ export const listQaIssues = (repo: string): QaIssue[] =>
   qaIssuesFrom(
     pages(z.unknown(), `repos/${repo}/issues?labels=${QA_LABEL}&state=all&per_page=100`)
   );
+
+const Release = z.object({ published_at: z.string().nullable() });
+
+export const publishedAtFrom = (release: unknown): string | undefined =>
+  Release.parse(release).published_at ?? undefined;
+
+/** Return when the GitHub release `v<version>` of `repo` was published, or nothing when there is no such release. */
+export const releasePublishedAt = (repo: string, version: string): string | undefined => {
+  try {
+    return publishedAtFrom(
+      ghJson(['api', `repos/${repo}/releases/tags/v${version}`], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+      })
+    );
+  } catch (error) {
+    if (String((error as { stderr?: unknown }).stderr).includes('(HTTP 404)')) {
+      return undefined;
+    }
+    throw error;
+  }
+};

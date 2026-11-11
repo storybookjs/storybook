@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [`@storybook/codemod` is no longer published](#storybookcodemod-is-no-longer-published)
   - [ESLint plugin: `meta-inline-properties` replaced by `static-csf-properties`](#eslint-plugin-meta-inline-properties-replaced-by-static-csf-properties)
   - [Deprecated addon UI APIs removed](#deprecated-addon-ui-apis-removed)
   - [Theming imports](#theming-imports)
@@ -641,6 +642,23 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 10.x to 11.0.0
+
+### `@storybook/codemod` is no longer published
+
+The codemods now ship inside the Storybook CLI, so `@storybook/codemod` has no stable 11.0 release, only 11.0 prereleases. Run the codemods with `storybook migrate`:
+
+```sh
+npx storybook@latest migrate --list
+npx storybook@latest migrate csf-2-to-3 --glob="**/*.stories.tsx"
+```
+
+If your `package.json` lists `@storybook/codemod`, remove it. Left in place, it stays on 10.x and installs its own copy of `storybook`.
+
+The transforms can no longer be run directly with `jscodeshift`. The `--parser` flag of `storybook migrate`, `storybook init` and `create storybook` is still accepted, but ignored.
+
+`storybook migrate` now exits with code 1 when the glob matches no files. Next to `node_modules` and `dist`, it also skips files in `build` and `storybook-static` folders. With `--dry-run`, it no longer renames files.
+
+The `upgrade-hierarchy-separators` codemod has been removed. It replaced `|` and `.` in titles and `storiesOf` calls with `/`, for the move to Storybook 6.0. `storiesOf` was removed in Storybook 8.0, and a `.` in a title is now an ordinary character. The `storybook/hierarchy-separator` ESLint rule still reports a `|` in a title, and `eslint --fix` replaces it.
 
 ### ESLint plugin: `meta-inline-properties` replaced by `static-csf-properties`
 
@@ -2178,7 +2196,7 @@ Or migrate by hand:
 + import { defineMeta, type Args } from '@storybook/sveltekit'; // or '@storybook/svelte-vite'
 ```
 
-The error codes stay the same. Their docs are in [`code/renderers/svelte/src/svelte-csf/ERRORS.md`](https://github.com/storybookjs/storybook/blob/next/code/renderers/svelte/src/svelte-csf/ERRORS.md).
+The error codes stay the same. Each error message now says how to fix the error.
 
 ### Svelte CSF: legacy story syntax removed
 
@@ -2370,7 +2388,7 @@ After:
 
 Storybook used to run the preprocessors from `svelte.config.js` on a stories file before it indexed the file. It now indexes stories files without preprocessors, so indexing works the same when your Svelte config is in the Vite config, as in SvelteKit 3. The indexer ignores the content of `<style>` blocks, so styles that need a preprocessor, such as SCSS, are fine. Preprocessors still apply when Storybook renders your stories.
 
-If a stories file needs a preprocessor outside of `<style>`, for example for TypeScript enums, indexing fails with [`SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009`](https://github.com/storybookjs/storybook/blob/next/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0009). Move that code to a separate module, and import it into the stories file.
+If a stories file needs a preprocessor outside of `<style>`, for example for TypeScript enums, indexing fails with `SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009`. Move that code to a separate module, and import it into the stories file.
 
 ### Svelte: `parameters.component` removed from the source decorator
 
@@ -8032,7 +8050,7 @@ To help you upgrade your stories, we've created a codemod:
 npx @storybook/cli@latest migrate csf-hoist-story-annotations --glob="**/*.stories.js"
 ```
 
-For more information, [see the documentation](https://github.com/storybookjs/storybook/blob/next/code/lib/codemod/README.md#csf-hoist-story-annotations).
+For more information, [see the documentation](https://github.com/storybookjs/storybook/blob/v10.0.0/code/lib/codemod/README.md#csf-hoist-story-annotations).
 
 ### Zero config typescript
 
@@ -8320,7 +8338,7 @@ The story store no longer emits `renderCurrentStory`/`RENDER_CURRENT_STORY` to t
 
 We've removed the ability to specify the hierarchy separators (how you control the grouping of story kinds in the sidebar). From Storybook 6.0 we have a single separator `/`, which cannot be configured.
 
-If you are currently using custom separators, we encourage you to migrate to using `/` as the sole separator. If you are using `|` or `.` as a separator currently, we provide a codemod, [`upgrade-hierarchy-separators`](https://github.com/storybookjs/storybook/blob/next/code/lib/codemod/README.md#upgrade-hierarchy-separators), that can be used to rename your components. **Note: the codemod will not work for `.mdx` components, you will need to make the changes by hand.**
+If you are currently using custom separators, we encourage you to migrate to using `/` as the sole separator. If you are using `|` or `.` as a separator currently, we provide a codemod, [`upgrade-hierarchy-separators`](https://github.com/storybookjs/storybook/blob/v10.0.0/code/lib/codemod/README.md#upgrade-hierarchy-separators), that can be used to rename your components. **Note: the codemod will not work for `.mdx` components, you will need to make the changes by hand.**
 
 ```
 npx sb@latest migrate upgrade-hierarchy-separators --glob="*/**/*.stories.@(tsx|jsx|ts|js)"
@@ -8810,7 +8828,7 @@ Addon-docs configuration gets simpler in 5.3. In 5.2, each framework had its own
 
 We've deprecated the ability to specify the hierarchy separators (how you control the grouping of story kinds in the sidebar). From Storybook 6.0 we will have a single separator `/`, which cannot be configured.
 
-If you are currently using custom separators, we encourage you to migrate to using `/` as the sole separator. If you are using `|` or `.` as a separator currently, we provide a codemod, [`upgrade-hierarchy-separators`](https://github.com/storybookjs/storybook/blob/next/code/lib/codemod/README.md#upgrade-hierarchy-separators), that can be used to rename all your components.
+If you are currently using custom separators, we encourage you to migrate to using `/` as the sole separator. If you are using `|` or `.` as a separator currently, we provide a codemod, [`upgrade-hierarchy-separators`](https://github.com/storybookjs/storybook/blob/v10.0.0/code/lib/codemod/README.md#upgrade-hierarchy-separators), that can be used to rename all your components.
 
 ```
 yarn sb migrate upgrade-hierarchy-separators --glob="*.stories.js"
@@ -9683,7 +9701,7 @@ The new package names are:
 
 If your codebase is small, it's probably doable to replace them by hand (in your codebase and in `package.json`).
 
-But if you have a lot of occurrences in your codebase, you can use a [codemod we created](./code/lib/codemod) for you.
+But if you have a lot of occurrences in your codebase, you can use a [codemod we created](https://github.com/storybookjs/storybook/tree/v10.0.0/code/lib/codemod) for you.
 
 > A codemod makes automatic changed to your app's code.
 

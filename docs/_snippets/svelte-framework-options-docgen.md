@@ -1,24 +1,28 @@
 ```js filename=".storybook/main.js" renderer="svelte" language="js"
-// Replace your-framework with svelte-vite or sveltekit
 export default {
+  features: {
+    docgenServer: false, // Turn off server-side docgen
+  },
   framework: {
-    name: '@storybook/your-framework',
+    name: '@storybook/svelte-vite', // or '@storybook/sveltekit'
     options: {
-      docgen: false, // Disable docgen for better performance
+      docgen: false, // Turn off builder docgen
     },
   },
 };
 ```
 
 ```ts filename=".storybook/main.ts" renderer="svelte" language="ts"
-// Replace your-framework with svelte-vite or sveltekit
-import type { StorybookConfig } from '@storybook/your-framework';
+import type { StorybookConfig } from '@storybook/svelte-vite';
 
 const config: StorybookConfig = {
+  features: {
+    docgenServer: false, // Turn off server-side docgen
+  },
   framework: {
-    name: '@storybook/your-framework',
+    name: '@storybook/svelte-vite', // or '@storybook/sveltekit'
     options: {
-      docgen: false, // Disable docgen for better performance
+      docgen: false, // Turn off builder docgen
     },
   },
 };

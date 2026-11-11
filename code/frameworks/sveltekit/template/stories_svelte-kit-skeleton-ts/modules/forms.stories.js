@@ -26,10 +26,10 @@ export const Success = {
   async play({ canvas }) {
     await subscribe(canvas);
     await expect(await canvas.findByText('Subscribed ada@example.com')).toBeInTheDocument();
-    await expect(formAction).toHaveBeenCalledWith(
-      expect.objectContaining({ action: expect.any(URL), formData: expect.any(FormData) })
-    );
+    await expect(formAction).toHaveBeenCalledOnce();
     const [{ action, formData }] = formAction.mock.calls[0];
+    await expect(action).toBeInstanceOf(URL);
+    await expect(formData).toBeInstanceOf(FormData);
     await expect(action.search).toBe('?/subscribe');
     await expect(formData.get('email')).toBe('ada@example.com');
     await expect(refreshAll).toHaveBeenCalled();

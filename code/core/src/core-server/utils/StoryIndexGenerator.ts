@@ -147,9 +147,6 @@ export class StoryIndexGenerator {
   // Settles on the next invalidation, so a computation stops waiting for extractions it no longer needs
   private nextInvalidation = Promise.withResolvers<void>();
 
-  // Every directory that is or was above an indexed file, to tell a removed directory from a removed file
-  private slotDirectories = new Set<Path>();
-
   private invalidationListeners: Set<() => void> = new Set();
 
   constructor(
@@ -255,22 +252,16 @@ export class StoryIndexGenerator {
 
     // We do this in a second step to avoid timing issues with the Promise.all above -- to ensure
     // the keys in `specifierToSlots` are consistent with the order of specifiers.
-    specifiersAndFiles.forEach(([specifier, files]) => {
-      const slots = new Map<Path, Slot>();
-      this.specifierToSlots.set(specifier, slots);
-      Object.keys(files).forEach((absolutePath) => this.addSlot(slots, absolutePath));
-    });
+    specifiersAndFiles.forEach(([specifier, files]) =>
+      this.specifierToSlots.set(
+        specifier,
+        new Map(Object.keys(files).map((absolutePath) => [absolutePath, {}]))
+      )
+    );
 
     const projectTags = this.getProjectTags(await this.getPreviewFile());
 
     await this.extractAll(projectTags);
-  }
-
-  private addSlot(slots: Map<Path, Slot>, absolutePath: Path) {
-    slots.set(absolutePath, {});
-    for (let dir = dirname(absolutePath); !this.slotDirectories.has(dir); dir = dirname(dir)) {
-      this.slotDirectories.add(dir);
-    }
   }
 
   private async extractAll(projectTags: Tag[]): Promise<ExtractedFile[]> {
@@ -831,20 +822,12 @@ export class StoryIndexGenerator {
     // the same file can match several specifiers
     this.specifierToSlots.forEach((slots, specifier) => {
       if (specifier.importPathMatcher.exec(importPath)) {
-        if (!removed) {
-          this.addSlot(slots, absolutePath);
+        if (removed) {
+          slots.delete(absolutePath);
+        } else {
+          slots.set(absolutePath, {});
         }
         invalidated = true;
-      }
-
-      if (removed) {
-        // By path, not by specifier: the watcher does not report every file of a removed directory
-        const below = this.slotDirectories.has(absolutePath)
-          ? [...slots.keys()].filter((path) => path.startsWith(`${absolutePath}/`))
-          : [];
-        [absolutePath, ...below].forEach((path) => {
-          invalidated = slots.delete(path) || invalidated;
-        });
       }
     });
 

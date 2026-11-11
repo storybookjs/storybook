@@ -2686,69 +2686,6 @@ describe('StoryIndexGenerator', () => {
 
         expect(Object.keys((await generator.getIndex()).entries)).not.toContain('a--metaof');
       });
-
-      it('drops the files under a removed directory, but not under one that only shares its name prefix', async () => {
-        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
-          './src/**/*.stories.(ts|js|mjs|jsx)',
-          options
-        );
-        const generator = new StoryIndexGenerator([specifier], options);
-        await generator.initialize();
-        const before = Object.keys((await generator.getIndex()).entries);
-        expect(before).toContain('nested-button--story-one');
-
-        generator.invalidate('./src/nest', true);
-
-        expect(Object.keys((await generator.getIndex()).entries)).toEqual(before);
-
-        generator.invalidate('./src/nested', true);
-
-        expect(Object.keys((await generator.getIndex()).entries)).toEqual(
-          before.filter((id) => id !== 'nested-button--story-one')
-        );
-      });
-
-      it('does not include a deleted file whose path is reported without a leading ./', async () => {
-        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
-          './.hidden/*.stories.ts',
-          options
-        );
-        const indexer: Indexer = {
-          test: csfIndexer.test,
-          createIndex: async (fileName) => [
-            { type: 'story', importPath: fileName, exportName: 'StoryOne', title: 'Hidden' },
-          ],
-        };
-        const generator = new StoryIndexGenerator([specifier], { ...options, indexers: [indexer] });
-        await generator.initialize();
-        generator.invalidate('./.hidden/X.stories.ts', false);
-        expect(Object.keys((await generator.getIndex()).entries)).toContain('hidden--story-one');
-
-        generator.invalidate('.hidden/X.stories.ts', true);
-
-        expect(Object.keys((await generator.getIndex()).entries)).not.toContain(
-          'hidden--story-one'
-        );
-      });
-
-      it('does not search every indexed file for each removed path that holds none', async () => {
-        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
-          './src/**/*.stories.(ts|js|mjs|jsx)',
-          options
-        );
-        const generator = new StoryIndexGenerator([specifier], options);
-        await generator.initialize();
-        for (let i = 0; i < 2000; i += 1) {
-          generator.invalidate(`./src/generated/File${i}.stories.ts`, false);
-        }
-
-        const start = performance.now();
-        for (let i = 0; i < 5000; i += 1) {
-          generator.invalidate(`./src/build/chunk${i}.js`, true);
-        }
-
-        expect(performance.now() - start).toBeLessThan(500);
-      });
     });
 
     describe('file changes while it is being indexed', () => {

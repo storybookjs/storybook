@@ -8,7 +8,7 @@ import {
 	startStorybook,
 	stopStorybook,
 } from './helpers';
-import { startRefFixtures, type RefFixtures } from './ref-fixtures';
+import { startRefFixtures, type RefFixtures } from './ref-fixtures.ts';
 
 const PORT = 6007;
 const MCP_ENDPOINT = `http://localhost:${PORT}/mcp`;

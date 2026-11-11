@@ -61,6 +61,7 @@ A blocked check hides every check after it, so do not stop at the first failure.
 6. When you found the cause, write it to `{{EVIDENCE_DIR}}/<check id>-cause.md`: the file and line, why it fails, and the fix you tried. List that file in the finding's `logs`.
 7. Every later check's note names the workaround it ran with. A failure that exists only because of a workaround is not a finding.
 8. When the time is over without a way past, stop digging. Report the check as before and name what you tried in its note.
+9. A command that ends with exit status 137, or with `Killed`, ran out of memory. Stop every dev server and build you started and run it again on its own. If it is killed again: when the same command ran through before the upgrade, that is a finding; otherwise report the check as `blocked` and say in its note that the machine's memory was not enough.
 
 ## Step 1. Capture the baseline before you change anything
 

@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ResolvedMetaComponent } from 'storybook/internal/common';
 import { createMetaComponentResolver } from 'storybook/internal/common';
-import { resolveStoryComponent } from './resolve-component.ts';
+import { resolveStoryComponents } from './resolve-component.ts';
 
 const resolveMetaComponent = createMetaComponentResolver();
 
@@ -169,21 +169,25 @@ describe('resolveMetaComponent', () => {
   });
 });
 
-describe('resolveStoryComponent', () => {
+describe('resolveStoryComponents', () => {
   it('parses the story file off disk', () => {
-    expect(resolveStoryComponent(storyPath)).toEqual({
+    expect(resolveStoryComponents(storyPath)).toEqual({
       component: {
-        localName: 'ButtonComponent',
-        importId: './button.component',
-        exportName: 'ButtonComponent',
-        path: join(fixtures, 'button.component.ts'),
+        component: {
+          localName: 'ButtonComponent',
+          importId: './button.component',
+          exportName: 'ButtonComponent',
+          path: join(fixtures, 'button.component.ts'),
+        },
       },
+      subcomponents: [],
     });
   });
 
   it('reports no component for a file that cannot be read', () => {
-    expect(resolveStoryComponent(join(fixtures, 'missing.stories.ts'))).toEqual({
-      reason: 'no-meta-component',
+    expect(resolveStoryComponents(join(fixtures, 'missing.stories.ts'))).toEqual({
+      component: { reason: 'no-meta-component' },
+      subcomponents: [],
     });
   });
 });

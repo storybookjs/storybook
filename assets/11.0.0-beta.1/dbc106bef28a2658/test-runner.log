@@ -1,0 +1,10 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm.
+npm warn Unknown project config "min-release-age". This will stop working in the next major version of npm.
+[33m[test-storybook] Detected Vite-based Storybook project: You might benefit from migrating to the Vitest addon. A modern, faster, and more feature-rich testing solution for Storybook:
+https://storybook.js.org/docs/writing-tests/integrations/vitest-addon/migration-guide?ref=test-runner-migration[0m
+[31m[test-storybook][0m previewConfig.getFieldValue is not a function 
+
+TypeError: previewConfig.getFieldValue is not a function
+    at extractTagsFromPreview (file:///home/agent/workspace/node_modules/@storybook/test-runner/dist/test-storybook.js:19038:30)
+    at async main (file:///home/agent/workspace/node_modules/@storybook/test-runner/dist/test-storybook.js:19117:42)
+RUNNER_EXIT=1

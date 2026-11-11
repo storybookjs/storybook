@@ -1,151 +1,92 @@
-import { expect, fn, within } from 'storybook/test';
+import {
+  goto,
+  invalidate,
+  invalidateAll,
+  pushState,
+  refreshAll,
+  replaceState,
+} from '$app/navigation';
+import { setAfterNavigate } from '@storybook/sveltekit/navigation.mock';
+import { expect, fn, userEvent } from 'storybook/test';
 
 import Navigation from './Navigation.svelte';
 
 export default {
   title: 'stories/frameworks/sveltekit/modules/navigation',
   component: Navigation,
+  args: {
+    afterNavigateFn: fn(),
+  },
 };
-
-const goto = fn();
 
 export const Goto = {
-  async play({ canvasElement }) {
-    const canvas = within(canvasElement);
-    const button = canvas.getByText('goto');
-    button.click();
-    expect(goto).toHaveBeenCalledWith('/storybook-goto');
-  },
-  parameters: {
-    sveltekit_experimental: {
-      navigation: {
-        goto,
-      },
-    },
+  async play({ canvas }) {
+    await userEvent.click(canvas.getByRole('button', { name: 'goto' }));
+    await expect(goto).toHaveBeenCalledWith('/storybook-goto');
   },
 };
-
-const replaceState = fn();
 
 export const ReplaceState = {
-  async play({ canvasElement }) {
-    const canvas = within(canvasElement);
-    const button = canvas.getByText('replaceState');
-    button.click();
-    expect(replaceState).toHaveBeenCalledWith('/storybook-replace-state', {});
-  },
-  parameters: {
-    sveltekit_experimental: {
-      navigation: {
-        replaceState,
-      },
-    },
+  async play({ canvas }) {
+    await userEvent.click(canvas.getByRole('button', { name: 'replaceState' }));
+    await expect(replaceState).toHaveBeenCalledWith('/storybook-replace-state', {});
   },
 };
-
-const pushState = fn();
 
 export const PushState = {
-  async play({ canvasElement }) {
-    const canvas = within(canvasElement);
-    const button = canvas.getByText('pushState');
-    button.click();
-    expect(pushState).toHaveBeenCalledWith('/storybook-push-state', {});
-  },
-  parameters: {
-    sveltekit_experimental: {
-      navigation: {
-        pushState,
-      },
-    },
+  async play({ canvas }) {
+    await userEvent.click(canvas.getByRole('button', { name: 'pushState' }));
+    await expect(pushState).toHaveBeenCalledWith('/storybook-push-state', {});
   },
 };
-
-export const DefaultActions = {};
-
-const invalidate = fn();
 
 export const Invalidate = {
-  async play({ canvasElement }) {
-    const canvas = within(canvasElement);
-    const button = canvas.getByText('invalidate', { exact: true });
-    button.click();
-    expect(invalidate).toHaveBeenCalledWith('/storybook-invalidate');
-  },
-  parameters: {
-    sveltekit_experimental: {
-      navigation: {
-        invalidate,
-      },
-    },
+  async play({ canvas }) {
+    await userEvent.click(canvas.getByRole('button', { name: 'invalidate', exact: true }));
+    await expect(invalidate).toHaveBeenCalledWith('/storybook-invalidate');
   },
 };
-
-const invalidateAll = fn();
 
 export const InvalidateAll = {
-  async play({ canvasElement }) {
-    const canvas = within(canvasElement);
-    const button = canvas.getByText('invalidateAll');
-    button.click();
-    expect(invalidateAll).toHaveBeenCalledWith();
-  },
-  parameters: {
-    sveltekit_experimental: {
-      navigation: {
-        invalidateAll,
-      },
-    },
+  async play({ canvas }) {
+    await userEvent.click(canvas.getByRole('button', { name: 'invalidateAll' }));
+    await expect(invalidateAll).toHaveBeenCalledWith();
   },
 };
-
-const refreshAll = fn();
 
 export const RefreshAll = {
-  async play({ canvasElement }) {
-    const canvas = within(canvasElement);
-    const button = canvas.getByText('refreshAll');
-    button.click();
-    expect(refreshAll).toHaveBeenCalledWith();
-  },
-  parameters: {
-    sveltekit_experimental: {
-      navigation: {
-        refreshAll,
-      },
-    },
+  async play({ canvas }) {
+    await userEvent.click(canvas.getByRole('button', { name: 'refreshAll' }));
+    await expect(refreshAll).toHaveBeenCalledWith();
   },
 };
-
-const afterNavigateFn = fn();
 
 export const AfterNavigate = {
-  async play() {
-    expect(afterNavigateFn).toHaveBeenCalledWith(expect.objectContaining({ test: 'passed' }));
+  beforeEach() {
+    setAfterNavigate({ type: 'link', from: { url: new URL('https://storybook.js.org/search') } });
   },
-  args: {
-    afterNavigateFn,
-  },
-  parameters: {
-    sveltekit_experimental: {
-      navigation: {
-        afterNavigate: {
-          test: 'passed',
-        },
-      },
-    },
+  async play({ args }) {
+    await expect(args.afterNavigateFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'link',
+        from: { url: new URL('https://storybook.js.org/search') },
+        to: null,
+        willUnload: false,
+      })
+    );
   },
 };
 
-const defaultAfterNavigateFn = fn();
-
 export const AfterNavigateDefault = {
-  async play() {
-    expect(defaultAfterNavigateFn).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'enter', shallow: false, willUnload: false })
+  async play({ args }) {
+    await expect(args.afterNavigateFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'enter',
+        from: null,
+        to: null,
+        shallow: false,
+        willUnload: false,
+      })
     );
-  },
-  args: {
-    afterNavigateFn: defaultAfterNavigateFn,
   },
 };

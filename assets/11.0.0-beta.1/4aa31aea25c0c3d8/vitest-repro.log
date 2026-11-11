@@ -1,0 +1,17 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+⎯⎯⎯⎯⎯⎯⎯ Startup Error ⎯⎯⎯⎯⎯⎯⎯⎯
+TypeError: previewConfig.inspect is not a function
+    at extractTagsFromPreview (file:///home/agent/workspace/node_modules/.store/@storybook/addon-vitest@11.0.0-beta.1-UW5Yjjn7OOh3vTyUCjq8-A/node_modules/@storybook/addon-vitest/dist/vitest-plugin/index.js:2477:81)
+    at async Promise.all (index 5)
+    at async storybookTest (file:///home/agent/workspace/node_modules/.store/@storybook/addon-vitest@11.0.0-beta.1-UW5Yjjn7OOh3vTyUCjq8-A/node_modules/@storybook/addon-vitest/dist/vitest-plugin/index.js:2566:7)
+    at async Promise.all (index 0)
+    at async asyncFlatten (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:2973:10)
+    at async resolveConfig (file:///home/agent/workspace/node_modules/.store/vite@8.3.6--jxzwCNOKvftIKEWj3copQ/node_modules/vite/dist/node/chunks/node.js:37575:68)
+    at async resolveConfig (file:///home/agent/workspace/node_modules/.store/vitest@5.1.0-MaSZit2wQ6Cte1X9uw4F-g/node_modules/vitest/dist/chunks/index.Di8au7q4.js:9300:25)
+    at async createVitest (file:///home/agent/workspace/node_modules/.store/vitest@5.1.0-MaSZit2wQ6Cte1X9uw4F-g/node_modules/vitest/dist/chunks/cli-api.COfZo8lK.js:13938:17)
+    at async prepareVitest (file:///home/agent/workspace/node_modules/.store/vitest@5.1.0-MaSZit2wQ6Cte1X9uw4F-g/node_modules/vitest/dist/chunks/cli-api.COfZo8lK.js:14625:14)
+    at async startVitest (file:///home/agent/workspace/node_modules/.store/vitest@5.1.0-MaSZit2wQ6Cte1X9uw4F-g/node_modules/vitest/dist/chunks/cli-api.COfZo8lK.js:14543:14)
+
+
+

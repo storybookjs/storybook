@@ -13,3 +13,6 @@ ignoredBuiltDependencies:
   - esbuild
 
 pnpmfile: ../../../scripts/utils/workspace-peers.pnpmfile.cjs
+
+# The scripts use POSIX syntax such as `VAR=value command`, which cmd.exe on Windows cannot run.
+shellEmulator: true

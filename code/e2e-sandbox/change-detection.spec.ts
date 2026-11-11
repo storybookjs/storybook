@@ -120,9 +120,11 @@ test.describe('Change Detection', () => {
       );
 
       // New stories roll up to "Change status: New" on the parent component node
-      await expect(page.locator('[aria-label="Change status: New"]').first()).toBeVisible({
-        timeout: CHANGE_DETECTION_TIMEOUT,
-      });
+      await expect(
+        page.locator(
+          '[data-item-id="example-changedetectionnew"] [aria-label="Change status: New"]'
+        )
+      ).toBeVisible({ timeout: CHANGE_DETECTION_TIMEOUT });
 
       await rm(newStoryPath);
       await expectRemovedFromIndex(page, 'Example/ChangeDetectionNew');
@@ -150,9 +152,11 @@ test.describe('Change Detection', () => {
       );
 
       // New stories roll up to "Change status: New" on the parent component node
-      await expect(page.locator('[aria-label="Change status: New"]').first()).toBeVisible({
-        timeout: CHANGE_DETECTION_TIMEOUT,
-      });
+      await expect(
+        page.locator(
+          '[data-item-id="example-changedetectionnew"] [aria-label="Change status: New"]'
+        )
+      ).toBeVisible({ timeout: CHANGE_DETECTION_TIMEOUT });
 
       await rm(newStoryPath);
       await expectRemovedFromIndex(page, 'Example/ChangeDetectionNew');

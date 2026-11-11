@@ -132,7 +132,7 @@ describe('main.ts under plain Node, as the CircleCI setup job runs it', () => {
     expect(Object.keys(config.workflows)).toEqual([`${workflow}-generated`]);
   });
 
-  it.each(workflows)('runs Yarn in the %s workflow only to generate sandboxes', (workflow) => {
+  it.each(workflows)('never runs Yarn in the %s workflow', (workflow) => {
     const result = generate(
       `--workflow=${workflow}`,
       '--base-ref=HEAD',
@@ -147,9 +147,7 @@ describe('main.ts under plain Node, as the CircleCI setup job runs it', () => {
           .filter((step) => /yarn/i.test(JSON.stringify(step)))
           .map((step) => `${id}: ${step.run?.name ?? JSON.stringify(step)}`)
     );
-    expect(
-      yarnSteps.filter((step) => !step.endsWith(': Enable Yarn for sandbox generation'))
-    ).toEqual([]);
+    expect(yarnSteps).toEqual([]);
   });
 
   it('packs the node_modules of every workspace package', () => {

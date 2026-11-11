@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  # For main while it uses Yarn, and for the Yarn installs inside the generated sandboxes.
+  # For main while it uses Yarn.
   YARN_ENABLE_IMMUTABLE_INSTALLS: 'false'
   CLEANUP_SANDBOX_NODE_MODULES: 'true'
   NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
@@ -88,8 +88,7 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: npm install -g npm@11.17.0
 
-      # main uses Yarn until a release brings pnpm to it. The published sandboxes are Yarn projects,
-      # so a pnpm checkout installs the Yarn they pin too.
+      # main uses Yarn until a release brings pnpm to it.
       - name: Select package manager
         working-directory: ${{ github.workspace }}
         run: |
@@ -97,7 +96,7 @@ jobs:
           case "$package_manager" in
             pnpm@*)
               pinned="${package_manager#pnpm@}"
-              bash .github/actions/setup-node-and-install/package-managers/install.sh "pnpm=${pinned%%+*}" yarn
+              bash .github/actions/setup-node-and-install/package-managers/install.sh "pnpm=${pinned%%+*}"
               echo "PM=pnpm" >> "$GITHUB_ENV"
               ;;
             yarn@*)

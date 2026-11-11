@@ -283,7 +283,7 @@ export const npm = {
 
 const PACKAGE_MANAGERS_DIR = '.github/actions/setup-node-and-install/package-managers';
 
-export const installPackageManagers = (...tools: (`pnpm=${string}` | 'yarn')[]) =>
+export const installPackageManagers = (...tools: `pnpm=${string}`[]) =>
   `bash ${PACKAGE_MANAGERS_DIR}/install.sh ${tools.join(' ')}`;
 
 export const pnpm = {

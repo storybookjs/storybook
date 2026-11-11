@@ -6,7 +6,6 @@ import { build_linux } from './common-jobs.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
   artifact,
-  installPackageManagers,
   npm,
   sandboxArchive,
   server,
@@ -194,13 +193,6 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
               // Node's bundled npm silently ignores NPM_CONFIG_MIN_RELEASE_AGE during scaffold;
               // `ensureNpmSupportsMinReleaseAge` fails the generate task on it.
               npm.installPinnedVersion(),
-              {
-                run: {
-                  // Generation scaffolds with Yarn, like the published sandboxes.
-                  name: 'Enable Yarn for sandbox generation',
-                  command: installPackageManagers('yarn'),
-                },
-              },
               {
                 run: {
                   name: 'Generate Sandbox',

@@ -25,7 +25,7 @@ export const pushTokenEnv = (repo: string): string => {
 export const cycleRepo = (entry: Pick<CatalogEntry, 'repo' | 'pushTo'>): string =>
   entry.pushTo ?? entry.repo;
 
-const SEMVER = /^(\d+)\.(\d+)\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
+export const SEMVER = /^(\d+)\.(\d+)\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 const SHA = /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/;
 
 /**

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { CHECK_IDS, type CheckId } from '../checks.ts';
-import { PUSH_TOKEN_ENV } from './cycle.ts';
+import { PUSH_TOKEN_ENV, SEMVER } from './cycle.ts';
 
 export const RepoClass = z.enum(['owned', 'tier1', 'tier2']);
 export type RepoClass = z.infer<typeof RepoClass>;
@@ -40,6 +40,8 @@ export const Catalog = z
   });
 
 const CheckId = z.enum(CHECK_IDS);
+
+const Version = z.string().regex(SEMVER);
 
 // A model id is letters, digits, dots, colons and hyphens. The value reaches the issue body
 // from result.json, which the Windows cell writes on a host the agent shares, so nothing that
@@ -82,6 +84,7 @@ export const Tier = z.enum(['must', 'extended']);
 export const agentOutput = (ids: readonly CheckId[]) =>
   z
     .strictObject({
+      storybookVersionBefore: Version.nullable(),
       storybookVersionInstalled: z.string().nullable(),
       checks: z.array(CheckResult),
       findings: z.array(Finding),
@@ -126,6 +129,8 @@ export const RunRequestRecord = z.strictObject({
 
 export const RunResultFile = z.strictObject({
   request: RunRequestRecord,
+  // Optional because records written before this field existed must still load.
+  storybookVersionBefore: Version.nullable().optional(),
   storybookVersionInstalled: z.string().nullable(),
   startSha: Sha,
   headSha: Sha.nullable(),
@@ -170,6 +175,7 @@ const Source = z.strictObject({
   model: ModelId,
   sandbox: SandboxKind,
   version: z.string(),
+  versionBefore: Version.optional(),
   fake: z.boolean(),
 });
 

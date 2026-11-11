@@ -156,11 +156,12 @@ The JSON must match this JSON Schema:
 Every check id from the list appears exactly once in `checks`.
 Each finding's `checkId` must be a check whose state is `fail`.
 `storybookVersionInstalled` is the version you read in Step 2, or `null` when you could not read it.
+`storybookVersionBefore` is the version you read in Step 1, or `null` when you could not read it.
 
 Example of the shape:
 
 <qa-result>
-{"storybookVersionInstalled":"{{VERSION}}","checks":[{"id":"upgrade.command","label":"The upgrade command completes without errors","state":"pass"}],"findings":[]}
+{"storybookVersionBefore":"10.6.0","storybookVersionInstalled":"{{VERSION}}","checks":[{"id":"upgrade.command","label":"The upgrade command completes without errors","state":"pass"}],"findings":[]}
 </qa-result>
 
 That example lists one check only to show the shape.

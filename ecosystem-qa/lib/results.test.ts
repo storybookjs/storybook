@@ -110,6 +110,18 @@ describe('loadResults', () => {
     expect(result?.cycle.repo).toBe('storybook-tmp/mealdrop');
   });
 
+  it('loads a record written before the starting version was recorded', () => {
+    const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
+    const { storybookVersionBefore, ...older } = record();
+    writeRun(artifactRun(resultsDir), older);
+
+    const { results, warnings } = load(resultsDir);
+
+    expect(storybookVersionBefore).toBeUndefined();
+    expect(results).toHaveLength(1);
+    expect(warnings).not.toContainEqual(expect.stringMatching(/not a valid result record/));
+  });
+
   it('rejects a model id that could close the metadata fence in the issue body', () => {
     const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
     const base = record();

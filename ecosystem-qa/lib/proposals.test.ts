@@ -211,6 +211,22 @@ describe('renderIssueBody', () => {
     expect(body).toContain(`sha: ${'a'.repeat(40)}\ncycleRef: none`);
   });
 
+  it('names the version a source started on, and omits it when the run recorded none', () => {
+    const base = loaded('linux', 'claude', [finding()]);
+    const withBefore = {
+      ...base,
+      result: { ...base.result, storybookVersionBefore: '10.6.0' },
+    };
+
+    const [started] = groupFindings([withBefore]);
+    const [unknown] = groupFindings([base]);
+
+    expect(renderIssueBody(issueFor(started), byName)).toContain(
+      'sandbox docker, upgraded from 10.6.0'
+    );
+    expect(renderIssueBody(issueFor(unknown), byName)).not.toContain('upgraded from');
+  });
+
   it('lists each occurrence with its own version in a comment', () => {
     const [group] = groupFindings([
       loaded('linux', 'claude', [finding()]),

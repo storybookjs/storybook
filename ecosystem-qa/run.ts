@@ -432,6 +432,7 @@ const writeResult = (request: RunRequest, outcome: Outcome, startedAt: Date) => 
   const { outDir: _out, monorepoDir: _monorepo, ...recorded } = request;
   const result: RunResultFile = {
     request: recorded,
+    storybookVersionBefore: outcome.output?.storybookVersionBefore ?? null,
     storybookVersionInstalled: outcome.output?.storybookVersionInstalled ?? null,
     startSha: outcome.startSha,
     headSha: outcome.headSha,

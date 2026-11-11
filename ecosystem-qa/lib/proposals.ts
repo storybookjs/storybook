@@ -107,8 +107,8 @@ export const fence = (text: string, info = '') => {
 };
 
 const sourceLines = (proposal: IssueProposal | CommentProposal, withVersion = false): string[] =>
-  proposal.sources.map(({ os, engine, model, sandbox, version, fake }) => {
-    const where = `${os}, ${engine} (${model}${fake ? ', fake run' : ''}), sandbox ${sandbox}`;
+  proposal.sources.map(({ os, engine, model, sandbox, version, versionBefore, fake }) => {
+    const where = `${os}, ${engine} (${model}${fake ? ', fake run' : ''}), sandbox ${sandbox}${versionBefore ? `, upgraded from ${versionBefore}` : ''}`;
     return `- ${withVersion ? `${version}: ` : ''}${where}`;
   });
 
@@ -239,6 +239,7 @@ export const toProposal = (group: FindingGroup, hits: IssueHit[], runUrl: string
       model: result.request.model,
       sandbox: result.request.sandbox,
       version: result.request.version,
+      ...(result.storybookVersionBefore ? { versionBefore: result.storybookVersionBefore } : {}),
       fake: result.request.fake,
     })),
   };

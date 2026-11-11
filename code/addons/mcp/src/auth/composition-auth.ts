@@ -45,10 +45,7 @@ interface AuthRequirement {
 type NoManifestReason = 'manifest-not-found' | 'manifest-invalid';
 type RefCheckResult = 'public' | NoManifestReason | AuthRequirement;
 
-/**
- * What is known about a composed ref. `unreachable` is the only state that is checked again: the
- * others describe how the ref is configured, which takes a restart to change.
- */
+// Only `unreachable` is checked again; the other states take a restart to change.
 type RefStatus =
   | { kind: 'public' }
   | { kind: 'auth'; requirement: AuthRequirement }
@@ -60,11 +57,9 @@ interface RefState {
   status: RefStatus;
 }
 
-/** Wait before checking an unreachable ref again, doubling per failure up to the cap. */
 const RECHECK_BASE_DELAY = 5 * 1000;
 const RECHECK_MAX_DELAY = 60 * 1000;
 
-/** A response that says the ref is down right now, rather than how it is configured. */
 const isTransientStatus = (status: number) => status >= 500 || status === 408 || status === 429;
 
 class TransientRefError extends Error {
@@ -115,10 +110,7 @@ export class CompositionAuth {
     this.#warnAboutOtherAuthServers();
   }
 
-  /**
-   * Check again the refs that could not be reached earlier and are due for another try. Concurrent
-   * callers share one round of checks, so every MCP request can call this before it is answered.
-   */
+  // Concurrent callers share one round of checks.
   async recheckUnreachableRefs(): Promise<void> {
     if (!this.#recheck) {
       const due = this.#refStates.filter(
@@ -133,7 +125,6 @@ export class CompositionAuth {
     await this.#recheck;
   }
 
-  /** Check one ref and record what was learned. Never throws. */
   async #check(state: RefState): Promise<void> {
     const { ref } = state;
     const previous = state.status;
@@ -178,7 +169,6 @@ export class CompositionAuth {
     state.status = { kind: 'auth', requirement: result };
   }
 
-  /** Warn once per private ref that names another OAuth server than the first private ref. */
   #warnAboutOtherAuthServers(): void {
     const first = this.#authRequirement?.resourceMetadata.authorization_servers[0];
     for (const { ref, status } of this.#refStates) {
@@ -193,7 +183,6 @@ export class CompositionAuth {
     }
   }
 
-  /** The OAuth requirement of the first private ref, in config order. */
   get #authRequirement(): AuthRequirement | null {
     for (const { status } of this.#refStates) {
       if (status.kind === 'auth') return status.requirement;
@@ -234,10 +223,7 @@ export class CompositionAuth {
     return `Bearer error="unauthorized", error_description="Authorization needed for composed Storybooks", resource_metadata="${baseUrl}/.well-known/oauth-protected-resource"`;
   }
 
-  /**
-   * Build sources configuration: local first, then refs that have manifests. A ref that could not
-   * be reached yet stays listed, so the tools report it as unreachable instead of hiding it.
-   */
+  /** Build sources configuration: local first, then every ref that is not excluded. */
   buildSources(): Source[] {
     return [
       { id: 'local', title: 'Local' },

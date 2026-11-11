@@ -95,11 +95,7 @@ type McpServerHandlerParams = {
   endpoint?: string;
   /** Sources for multi-source mode (when refs are configured) */
   sources?: Source[];
-  /**
-   * Whether the server registers the composition tools. Decided once at boot, because the sources of
-   * a single request can lack a ref that is unreachable for now. Defaults to whether `sources`
-   * includes a remote one.
-   */
+  /** Whether to register the composition tools; defaults to whether `sources` has a remote one */
   multiSource?: boolean;
   /** Optional custom manifest provider, receives source as third param in multi-source mode */
   manifestProvider?: (

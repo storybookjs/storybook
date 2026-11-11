@@ -5,11 +5,7 @@ import { FetchTimeoutError, fetchWithIdleTimeout } from './fetch-with-idle-timeo
 
 const encoder = new TextEncoder();
 
-/**
- * A `fetch` stand-in that answers after `headersAfterMs`, then streams each chunk after its delay
- * and, like the real one, errors the body with the abort reason when the signal fires.
- * `end: false` leaves the body open after the last chunk, as a stalled remote would.
- */
+// `end: false` leaves the body open after the last chunk, as a stalled remote would.
 function streamingFetch({
   headersAfterMs = 0,
   chunks,

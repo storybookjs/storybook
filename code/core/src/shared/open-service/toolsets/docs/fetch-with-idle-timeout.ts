@@ -1,13 +1,3 @@
-/**
- * `fetch` that gives up on a remote that stalls, without capping how long a large but healthy
- * transfer may take.
- *
- * The idle timer runs while waiting for the response headers and again between body chunks, so a
- * multi-megabyte manifest that keeps streaming is never cut off, while a host that accepts the
- * connection and then goes quiet is. `totalMs` is a backstop for a remote that trickles bytes
- * forever.
- */
-
 export type IdleTimeoutOptions = {
   /** Longest wait for the headers, and then between two body chunks. */
   idleMs: number;
@@ -17,7 +7,6 @@ export type IdleTimeoutOptions = {
 
 export const REMOTE_FETCH_TIMEOUTS: IdleTimeoutOptions = { idleMs: 10_000, totalMs: 60_000 };
 
-/** Raised when a remote stops answering; callers can tell it apart from a definitive failure. */
 export class FetchTimeoutError extends Error {
   constructor(url: string, reason: string) {
     super(`Request to ${url} timed out: ${reason}`);
@@ -25,11 +14,7 @@ export class FetchTimeoutError extends Error {
   }
 }
 
-/**
- * Fetches `url`, aborting it once the remote stays silent for `idleMs` or the request outlives
- * `totalMs`. The returned response reads like any other, and its body stays guarded by both timers
- * until it has been consumed.
- */
+/** `fetch` that aborts once the remote sends nothing for `idleMs`, or after `totalMs` in all. */
 export async function fetchWithIdleTimeout(
   url: string,
   init: RequestInit = {},
@@ -77,7 +62,6 @@ export async function fetchWithIdleTimeout(
       flush: clearTimers,
     })
   );
-  // Once the request is aborted, by a timer or by the caller, the timers have nothing left to guard.
   signal.addEventListener('abort', clearTimers, { once: true });
 
   return new Response(guarded, {

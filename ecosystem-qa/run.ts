@@ -360,6 +360,9 @@ const runSandcastle = async (
       },
       output: Output.object({ tag: 'qa-result', schema: answerSchema, maxRetries: 2 }),
       hooks: {
+        ...(request.sandbox === 'docker'
+          ? { host: { onSandboxReady: [{ command: `node "${plan.toolsDir}/cap-memory.mjs"` }] } }
+          : {}),
         sandbox: {
           onSandboxReady: [
             {

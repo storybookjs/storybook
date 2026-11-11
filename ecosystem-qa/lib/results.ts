@@ -210,3 +210,7 @@ export const loadResults = (
       })
     )
   );
+
+/** Whether the installed Storybook is the version the run was asked to upgrade to. */
+export const upgraded = (result: RunResultFile): boolean =>
+  result.storybookVersionInstalled === result.request.version;

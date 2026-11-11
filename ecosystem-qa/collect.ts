@@ -6,7 +6,7 @@ import { versionLine } from './lib/cycle.ts';
 import { compareExpected, loadExpected, renderExpectReport } from './lib/expected.ts';
 import { listQaIssues } from './lib/github.ts';
 import { groupFindings, hitsFor, toProposal } from './lib/proposals.ts';
-import { loadResults } from './lib/results.ts';
+import { loadResults, upgraded } from './lib/results.ts';
 
 const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>] [--expect <expected-findings.json>]
 
@@ -63,7 +63,7 @@ writeFileSync(out, `${JSON.stringify(proposals, null, 2)}\n`);
 for (const { result, resultPath } of loaded) {
   const failed = result.checks.filter((check) => check.state === 'fail').map((check) => check.id);
   console.log(
-    `${resultPath}: ${result.status}, ${result.checks.length} checks, failed: ${failed.join(', ') || 'none'}`
+    `${resultPath}: ${result.status}, ${result.checks.length} checks, failed: ${failed.join(', ') || 'none'}${upgraded(result) ? '' : ', not upgraded'}`
   );
 }
 for (const proposal of proposals) {

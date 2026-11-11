@@ -5,7 +5,7 @@ import { dirname, join } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
 import { ENTRY, finding, loaded, VERSION } from './fixtures.ts';
-import { loadResults } from './results.ts';
+import { loadResults, upgraded } from './results.ts';
 import { Finding, type RunResultFile } from './schema.ts';
 
 const write = (path: string, content: string) => {
@@ -251,5 +251,19 @@ describe('system info', () => {
     const { results } = load(resultsDir);
 
     expect(results[0]?.systemInfo).toBeUndefined();
+  });
+});
+
+describe('upgraded', () => {
+  it('is true when the installed version is the requested one', () => {
+    expect(upgraded(record({ storybookVersionInstalled: VERSION }))).toBe(true);
+  });
+
+  it('is false when another version is installed', () => {
+    expect(upgraded(record({ storybookVersionInstalled: '10.6.3' }))).toBe(false);
+  });
+
+  it('is false when the installed version is unknown', () => {
+    expect(upgraded(record({ storybookVersionInstalled: null }))).toBe(false);
   });
 });

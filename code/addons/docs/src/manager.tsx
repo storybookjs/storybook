@@ -1,122 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
-import {
-  AddonPanel,
-  type SupportedLanguage,
-  type SyntaxHighlighterFormatTypes,
-} from 'storybook/internal/components';
+import { ADDON_ID, PANEL_ID, PARAM_KEY, SNIPPET_RENDERED } from 'storybook/internal/docs-tools';
+import { addons, types } from 'storybook/manager-api';
 
-import { addons, types, useChannel, useParameter } from 'storybook/manager-api';
-import { ignoreSsrWarning, styled, useTheme } from 'storybook/theming/emotion';
-
-import {
-  ADDON_ID,
-  PANEL_ID,
-  PARAM_KEY,
-  type StoryDocsCodePanelParameters,
-  shouldWaitForServiceSnippet,
-  SNIPPET_RENDERED,
-} from 'storybook/internal/docs-tools';
-import type { StoryId } from 'storybook/internal/types';
-import type { SourceParameters } from './blocks/blocks';
-import { SnippetWarning } from './blocks/components/SnippetWarning';
-import { Source } from './blocks/components/Source';
-
-/** Payload emitted on the `SNIPPET_RENDERED` channel event (see `emitTransformCode`). */
-type SnippetRenderedEvent = {
-  id?: StoryId;
-  source?: string;
-  format?: SyntaxHighlighterFormatTypes;
-  language?: SupportedLanguage;
-  warning?: string;
-};
-
-const CodePanel = ({
-  active,
-  lastEvent,
-  currentStoryId,
-  storyParameters,
-  storyPrepared,
-}: {
-  active: boolean | undefined;
-  lastEvent: SnippetRenderedEvent | undefined;
-  currentStoryId: string | undefined;
-  storyParameters: StoryDocsCodePanelParameters | undefined;
-  storyPrepared: boolean | undefined;
-}) => {
-  const lastEventMatchesCurrentStory = lastEvent?.id === currentStoryId;
-  const [codeSnippet, setSourceCode] = useState<{
-    source: string | undefined;
-    format: SyntaxHighlighterFormatTypes | undefined;
-    language: SupportedLanguage | undefined;
-    warning: string | undefined;
-  }>({
-    source: lastEventMatchesCurrentStory ? lastEvent?.source : undefined,
-    format: lastEventMatchesCurrentStory ? (lastEvent?.format ?? undefined) : undefined,
-    language: lastEventMatchesCurrentStory ? lastEvent?.language : undefined,
-    warning: lastEventMatchesCurrentStory ? lastEvent?.warning : undefined,
-  });
-
-  const parameter = useParameter(PARAM_KEY, {
-    source: { code: '' } as SourceParameters,
-    theme: 'dark',
-  });
-
-  useEffect(() => {
-    setSourceCode({
-      source: undefined,
-      format: undefined,
-      warning: undefined,
-      language: undefined,
-    });
-  }, [currentStoryId]);
-
-  useChannel(
-    {
-      [SNIPPET_RENDERED]: ({ id, source, format, language, warning }) => {
-        // Ignore snippets emitted for other stories: a slow extraction for the previously selected
-        // story can resolve after navigation and would otherwise overwrite the current panel.
-        // `useChannel` captures this handler per `deps`, so it must list `currentStoryId` to compare
-        // against the currently selected story rather than the one selected on mount.
-        if (id !== undefined && id !== currentStoryId) {
-          return;
-        }
-        setSourceCode({ source, format, language, warning });
-      },
-    },
-    [currentStoryId]
-  );
-
-  const theme = useTheme();
-  const isDark = theme.base !== 'light';
-
-  const awaitingServiceSnippet = shouldWaitForServiceSnippet(storyParameters, storyPrepared);
-  const code =
-    parameter.source?.code ||
-    codeSnippet.source ||
-    (awaitingServiceSnippet ? '' : parameter.source?.originalSource);
-  // The warning describes the emitted snippet, so a `docs.source.code` override retires it.
-  const warning = parameter.source?.code ? undefined : codeSnippet.warning;
-
-  const language =
-    parameter.source?.language ??
-    (!parameter.source?.code && codeSnippet.source ? codeSnippet.language : undefined);
-
-  return (
-    <AddonPanel active={!!active}>
-      <SourceStyles>
-        <Source
-          {...parameter.source}
-          code={code}
-          language={language}
-          format={codeSnippet.format}
-          dark={isDark}
-        />
-        <PositionedSnippetWarning warning={warning} />
-      </SourceStyles>
-    </AddonPanel>
-  );
-};
+import { CodePanel } from './CodePanel.tsx';
 
 addons.register(ADDON_ID, (api) => {
   addons.add(PANEL_ID, {
@@ -142,20 +29,4 @@ addons.register(ADDON_ID, (api) => {
       );
     },
   });
-});
-
-const SourceStyles = styled.div({
-  height: '100%',
-  position: 'relative',
-  [`> :first-child${ignoreSsrWarning}`]: {
-    margin: 0,
-    height: '100%',
-    boxShadow: 'none',
-  },
-});
-
-const PositionedSnippetWarning = styled(SnippetWarning)({
-  position: 'absolute',
-  top: 8,
-  right: 10,
 });

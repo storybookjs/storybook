@@ -1,10 +1,17 @@
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 
 import { join } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
-import { copyRedacted, redactSecrets } from './redact.ts';
+import { copyRedacted, redactSecrets, redactTree } from './redact.ts';
 
 const token = `github_pat_${'A1b2'.repeat(10)}`;
 const anthropicKey = `sk-ant-api03-${'x'.repeat(40)}`;
@@ -50,5 +57,25 @@ describe('copyRedacted', () => {
     expect(readFileSync(join(dir, 'out.log'), 'utf8')).toBe('started with [redacted]\n');
     expect(readFileSync(join(dir, 'out.csv'), 'utf8')).toBe('step,detail\ninstall,[redacted]\n');
     expect(readFileSync(join(dir, 'out.png'))).toEqual(Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+  });
+});
+
+describe('redactTree', () => {
+  it('redacts nested text files in place and leaves binaries and symlinks alone', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'qa-redact-tree-'));
+    mkdirSync(join(dir, 'evidence'));
+    writeFileSync(join(dir, 'agent-stream.jsonl'), `{"env":"${anthropicKey}"}\n`);
+    writeFileSync(join(dir, 'evidence', 'dev.log'), `key ${anthropicKey}\n`);
+    writeFileSync(join(dir, 'evidence', 'shot.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47, 0]));
+    symlinkSync(join(dir, 'evidence', 'dev.log'), join(dir, 'link.log'));
+
+    redactTree(dir);
+
+    expect(readFileSync(join(dir, 'agent-stream.jsonl'), 'utf8')).toBe('{"env":"[redacted]"}\n');
+    expect(readFileSync(join(dir, 'evidence', 'dev.log'), 'utf8')).toBe('key [redacted]\n');
+    expect(readFileSync(join(dir, 'evidence', 'shot.png'))).toEqual(
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0])
+    );
+    expect(lstatSync(join(dir, 'link.log')).isSymbolicLink()).toBe(true);
   });
 });

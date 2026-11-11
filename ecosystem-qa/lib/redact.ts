@@ -1,4 +1,6 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+
+import { join } from 'pathe';
 
 const REDACTED = '[redacted]';
 
@@ -43,4 +45,16 @@ export const copyRedacted = (source: string, target: string): void => {
   const text = content.toString('utf8');
   const isText = !content.includes(0) && Buffer.from(text, 'utf8').equals(content);
   writeFileSync(target, isText ? redactSecrets(text) : content);
+};
+
+/** Redact every regular text file under `dir` in place; symlinks and binaries are left alone. */
+export const redactTree = (dir: string): void => {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      redactTree(path);
+    } else if (entry.isFile()) {
+      copyRedacted(path, path);
+    }
+  }
 };

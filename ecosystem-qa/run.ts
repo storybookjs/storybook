@@ -37,6 +37,7 @@ import {
 } from './lib/schema.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
 import type { Outcome, RunRequest } from './lib/types.ts';
+import { redactTree } from './lib/redact.ts';
 import { usageFromStream } from './lib/usage.ts';
 
 const HELP = `Usage: node ecosystem-qa/run.ts --repo <catalog id> --version <storybook version> --engine <claude|codex> --sandbox <docker|bwrap|seatbelt|none> --out <dir>
@@ -425,6 +426,9 @@ const startedAt = new Date();
 mkdirSync(join(request.outDir, 'evidence'), { recursive: true });
 const outcome = request.fake ? runFake(request) : await runSandcastle(request, cloneDir, image);
 const result = writeResult(request, outcome, startedAt);
+// The whole output directory becomes a public artifact, agent stream and session included, and the
+// agent holds the provider key, so nothing with a credential shape may stay in it.
+redactTree(request.outDir);
 const summary = summarize(result, relative(process.cwd(), join(request.outDir, 'result.json')));
 console.log(summary);
 if (process.env.GITHUB_STEP_SUMMARY) {

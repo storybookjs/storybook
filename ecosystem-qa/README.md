@@ -104,6 +104,7 @@ The collect job runs `group.ts` with the key from the `ecosystem-qa` environment
 To collect again without running any agent, set `from_runs` to a comma-separated list of earlier run ids: the job fetches their `qa-result-*` artifacts with `tools/fetch-runs.mjs`, a later run winning where two hold the same repo, OS and engine, and groups and collects those.
 It uploads them again as `qa-earlier-results`, so the filing job finds their evidence and cycle bundles.
 To split a wrong merge, or to collect when the model is unavailable, paste a `groups.json` document into `groups`; the job uses it instead of asking the model.
+Two requests over the same findings can group a borderline pair differently, so start the run that files with the `groups.json` of the dry run you reviewed.
 
 A pull request that touches `ecosystem-qa/` or the workflow runs only the smoke job: typecheck, tests and a fake run through collect and a dry filing, with no environment and no secrets.
 

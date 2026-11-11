@@ -1,0 +1,28 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[90m┌[39m  Running vitest-setup-file automigration
+[90m│[39m
+[32m◇[39m  Checking possible migrations..
+[90m│[39m
+[33m▲[39m  No migrations were applicable to your project
+[90m│[39m
+[90m│[39m  If you'd like to run the migrations again, you can do so by running
+[90m│[39m  [36mnpx storybook automigrate[39m
+
+[90m│[39m  The automigrations try to migrate common patterns in your project, but
+[90m│[39m  might not contain everything needed to migrate to the latest version
+[90m│[39m  of Storybook.
+
+[90m│[39m  Please check the changelog and migration guide for manual migrations
+[90m│[39m  and more information:
+[90m│[39m  https://storybook.js.org/docs/releases/migration-guide?ref=upgrade
+[90m│[39m  And reach out on Discord if you need help:
+[90m│[39m  https://discord.gg/storybook
+[90m│[39m
+[32m◇[39m  Checking the health of your Storybook..
+[90m│[39m
+[90m│[39m  Your Storybook project looks good!
+[90m│[39m
+[90m└[39m  Done
+
+Done in 1.3s using pnpm v12.5.1

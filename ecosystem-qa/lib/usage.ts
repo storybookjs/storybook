@@ -65,13 +65,15 @@ interface ClaudeTotals extends Tokens {
   usd: number;
 }
 
-// Claude Code's final `result` line carries the run's totals and its own cost figure per model.
-// It is the authority; the per-message sum below undercounts output tokens on streamed replies.
+// Claude Code writes a `result` line each time it hands control back, with its own cost figure per
+// model for the stretch since the previous one. A run has several when a malformed answer was sent
+// back to the agent, so the lines are summed. They are the authority; the per-message sum below
+// undercounts output tokens on streamed replies.
 const claudeResultTotals = (events: unknown[]): ClaudeTotals | undefined => {
-  const result = ClaudeResult.safeParse(
-    events.findLast((event) => ResultLine.safeParse(event).success)
-  );
-  if (!result.success) {
+  const results = events
+    .filter((event) => ResultLine.safeParse(event).success)
+    .map((event) => ClaudeResult.safeParse(event));
+  if (results.length === 0) {
     return undefined;
   }
   const totals: ClaudeTotals = {
@@ -81,12 +83,17 @@ const claudeResultTotals = (events: unknown[]): ClaudeTotals | undefined => {
     cacheWriteTokens: 0,
     usd: 0,
   };
-  for (const usage of Object.values(result.data.model_usage_since_last_result)) {
-    totals.inputTokens += usage.inputTokens;
-    totals.outputTokens += usage.outputTokens;
-    totals.cacheReadTokens += usage.cacheReadInputTokens;
-    totals.cacheWriteTokens += usage.cacheCreationInputTokens;
-    totals.usd += usage.costUSD;
+  for (const result of results) {
+    if (!result.success) {
+      return undefined;
+    }
+    for (const usage of Object.values(result.data.model_usage_since_last_result)) {
+      totals.inputTokens += usage.inputTokens;
+      totals.outputTokens += usage.outputTokens;
+      totals.cacheReadTokens += usage.cacheReadInputTokens;
+      totals.cacheWriteTokens += usage.cacheCreationInputTokens;
+      totals.usd += usage.costUSD;
+    }
   }
   return totals;
 };

@@ -22,7 +22,7 @@ Some skills aren't available for every framework. See [supported frameworks](#su
 
 ## Install the skills
 
-Skills are short instruction files in your repository. Each one tells your agent when to use it and gets its full instructions from your installed Storybook. Because skills live in your repository, every person and agent working on the project gets the same version, and that version matches your Storybook.
+Skills are short instruction files in your repository. Each one tells your agent what it does and gets its full instructions from your installed Storybook. The [Storybook section in `AGENTS.md`](#tell-your-agent-when-to-use-the-skills) tells your agent when to use them. Because skills live in your repository, every person and agent working on the project gets the same version, and that version matches your Storybook.
 
 When you run [`storybook init`](../api/cli-options.mdx#init), it asks whether to install the skills. The default answer is yes.
 
@@ -69,7 +69,7 @@ For every change to how the UI looks (you create, change, or delete a component,
 
 Storybook replaces the text between the markers when you upgrade. To change the workflow, for example to leave out the review, remove both markers, then edit the steps. Storybook doesn't change a section without markers. To stop your agent from following the workflow, remove the whole section. Your agent then uses a skill only when you ask for it by name, for example "Use the write-stories skill to add stories for the user list", or when it finds one that fits its task.
 
-If your project has a `CLAUDE.md` that doesn't import `AGENTS.md`, Storybook adds the same section to `CLAUDE.md`, so Claude Code sees it too.
+If your project has a `CLAUDE.md`, `.claude/CLAUDE.md`, or `CLAUDE.local.md` that doesn't import `AGENTS.md`, Storybook adds the same section to that file, so Claude Code sees it too.
 
 ## MCP server
 

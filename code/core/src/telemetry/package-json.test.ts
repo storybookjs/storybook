@@ -56,6 +56,29 @@ describe('getActualPackageJson', () => {
     });
   });
 
+  it('reads a package.json that starts with a byte-order mark', async () => {
+    addPackage('with-bom', {});
+    writeFileSync(
+      join(projectDir, 'node_modules', 'with-bom', 'package.json'),
+      '\uFEFF{"name":"with-bom","version":"1.2.3"}'
+    );
+
+    await expect(getActualPackageVersion('with-bom')).resolves.toEqual({
+      name: 'with-bom',
+      version: '1.2.3',
+    });
+  });
+
+  it('returns a null version for a package.json that is not valid JSON', async () => {
+    addPackage('broken', {});
+    writeFileSync(join(projectDir, 'node_modules', 'broken', 'package.json'), '{"version": ');
+
+    await expect(getActualPackageVersion('broken')).resolves.toEqual({
+      name: 'broken',
+      version: null,
+    });
+  });
+
   it('returns a null version for packages that are not installed', async () => {
     await expect(getActualPackageVersion('not-installed')).resolves.toEqual({
       name: 'not-installed',

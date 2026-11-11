@@ -349,9 +349,9 @@ const runGenerators = async (
           // so consumers who clone the published sandbox install a reproducible,
           // non-freshly-quarantined dependency tree.
           //
-          // Stable templates (no allowlist): failure degrades gracefully — the
-          // template's original lockfile is already gone, but the consumer can
-          // still install from package.json.
+          // Stable templates (no allowlist): any failure except a Yarn version
+          // mismatch degrades gracefully — the template's original lockfile is
+          // already gone, but the consumer can still install from package.json.
           //
           // Prerelease templates (allowlist set): a failure here means a package
           // published in lockstep with the prerelease is still quarantined and

@@ -13,14 +13,16 @@ const config: BuildEntries = {
         dts: false,
       },
       {
-        exportEntries: ['./internal/mocks/app/forms'],
+        exportEntries: ['./forms.mock'],
         entryPoint: './src/mocks/app/forms.ts',
-        dts: false,
       },
       {
-        exportEntries: ['./internal/mocks/app/navigation'],
+        exportEntries: ['./internal/mocks/docs-isolation'],
+        entryPoint: './src/mocks/docs-isolation.ts',
+      },
+      {
+        exportEntries: ['./navigation.mock'],
         entryPoint: './src/mocks/app/navigation.ts',
-        dts: false,
       },
     ],
     node: [
@@ -42,7 +44,6 @@ const config: BuildEntries = {
   },
   extraOutputs: {
     './internal/mocks/app/state.svelte.js': './static/app-state-mock.svelte.js',
-    './internal/MockProvider.svelte': './static/MockProvider.svelte',
   },
 };
 

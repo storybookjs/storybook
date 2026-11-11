@@ -323,6 +323,11 @@ const runSandcastle = async (
     const plan = planSandbox(request, cloneDir, evidenceDir, image);
     const agent = agentFor(request, plan.agentEnv);
     const answerSchema = agentOutput(checksFor(request.tier).map((check) => check.id));
+    // Only the Docker image carries `n`.
+    const useNodeFlag =
+      request.sandbox === 'docker'
+        ? `--use-node${request.entry.node ? `=${request.entry.node}` : ''}`
+        : '';
     const result = await run({
       cwd: cloneDir,
       agent,
@@ -350,17 +355,9 @@ const runSandcastle = async (
       hooks: {
         sandbox: {
           onSandboxReady: [
-            ...(request.sandbox === 'docker'
-              ? [
-                  {
-                    command: `node "${plan.toolsDir}/use-node.mjs"${request.entry.node ? ` ${request.entry.node}` : ''}`,
-                    timeoutMs: 5 * 60_000,
-                  },
-                ]
-              : []),
             {
-              command: `node "${plan.toolsDir}/timed.mjs" "${plan.evidenceDir}/install-seconds.txt" ${INSTALL_COMMAND[packageManager]}`,
-              timeoutMs: 20 * 60_000,
+              command: `node "${plan.toolsDir}/timed.mjs" ${useNodeFlag} "${plan.evidenceDir}/install-seconds.txt" ${INSTALL_COMMAND[packageManager]}`,
+              timeoutMs: 25 * 60_000,
             },
           ],
         },

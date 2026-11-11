@@ -2,10 +2,20 @@
 import { spawn } from 'node:child_process';
 import { createWriteStream, writeFileSync } from 'node:fs';
 
-const [secondsFile, ...command] = process.argv.slice(2);
+import { useNode } from './use-node.mjs';
+
+const args = process.argv.slice(2);
+const nodeFlag = args[0]?.startsWith('--use-node') ? args.shift() : undefined;
+const [secondsFile, ...command] = args;
 if (!secondsFile || command.length === 0) {
-  console.error('Usage: node timed.mjs <seconds-file> <command...>');
+  console.error('Usage: node timed.mjs [--use-node[=<version>]] <seconds-file> <command...>');
   process.exit(2);
+}
+
+// Sandcastle starts every sandbox hook at once, so the Node switch cannot be a hook of its own: the
+// install would start on the image's Node.
+if (nodeFlag) {
+  useNode(nodeFlag.split('=')[1]);
 }
 
 // The output and the exit status are kept next to the timing. The agent reads them and repairs the

@@ -2,7 +2,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 
 import { checkGrouping } from './grouping.ts';
-import type { FindingGroup, QaIssue } from './proposals.ts';
+import { openIssueOf, type FindingGroup, type QaIssue } from './proposals.ts';
 import { sanitizeFinding, sanitizeTitle } from './sanitize.ts';
 import type { Engine, Grouping, Os } from './schema.ts';
 
@@ -15,28 +15,38 @@ export interface GroupingInput {
     title: string;
     actual: string;
     errorText?: string;
+    /** The open issue that already carries this fingerprint. */
+    filedAs?: number;
   }[];
   issues: { number: number; state: QaIssue['state']; title: string }[];
 }
 
-export const groupingInput = (groups: FindingGroup[], issues: QaIssue[]): GroupingInput => ({
-  findings: groups.map(({ fingerprint, finding, occurrences }) => {
-    const { actual, errorText } = sanitizeFinding(finding);
-    return {
-      id: fingerprint,
-      check: finding.checkId,
-      seenIn: occurrences.map(({ result: { request } }) => ({
-        repo: request.entry.repo,
-        os: request.os,
-        engine: request.engine,
-      })),
-      title: sanitizeTitle(finding.title),
-      actual,
-      ...(errorText !== undefined ? { errorText } : {}),
-    };
-  }),
-  issues: issues.map(({ number, state, title }) => ({ number, state, title })),
-});
+export const groupingInput = (groups: FindingGroup[], issues: QaIssue[]): GroupingInput => {
+  const filed = openIssueOf(
+    issues,
+    groups.map((group) => group.fingerprint)
+  );
+  return {
+    findings: groups.map(({ fingerprint, finding, occurrences }) => {
+      const { actual, errorText } = sanitizeFinding(finding);
+      const filedAs = filed.get(fingerprint);
+      return {
+        id: fingerprint,
+        check: finding.checkId,
+        seenIn: occurrences.map(({ result: { request } }) => ({
+          repo: request.entry.repo,
+          os: request.os,
+          engine: request.engine,
+        })),
+        title: sanitizeTitle(finding.title),
+        actual,
+        ...(errorText !== undefined ? { errorText } : {}),
+        ...(filedAs !== undefined ? { filedAs } : {}),
+      };
+    }),
+    issues: issues.map(({ number, state, title }) => ({ number, state, title })),
+  };
+};
 
 /** The model's answer; `existingIssue` is nullable rather than optional because structured outputs require every field. */
 export const GroupingAnswer = z.strictObject({
@@ -74,6 +84,8 @@ In each group, list first the finding that states the cause most directly.
 
 Set \`existingIssue\` to the number of an issue from \`issues\` when that issue describes the same defect as the group, and to null otherwise. Use only numbers from the list. Prefer an open issue over a closed one when both fit.
 
+A finding with \`filedAs\` is already reported on that open issue, and it stays there. Never put two findings in one group when they are filed as different issues, even when they are the same defect. A group that holds a filed finding has that issue as its \`existingIssue\`. This comes before every other rule here: where it conflicts with one, split the group.
+
 Every finding id appears in exactly one group. A finding with nothing in common with the others is a group of one.`;
 
 /**
@@ -102,7 +114,12 @@ const review = (answer: unknown, input: GroupingInput): string[] | Grouping => {
   const problems = checkGrouping(
     grouping,
     input.findings.map((finding) => finding.id),
-    input.issues.map((issue) => issue.number)
+    input.issues.map((issue) => issue.number),
+    new Map(
+      input.findings.flatMap(({ id, filedAs }) =>
+        filedAs !== undefined ? [[id, filedAs] as const] : []
+      )
+    )
   );
   return problems.length > 0 ? problems : grouping;
 };

@@ -51,6 +51,33 @@ describe('groupingInput', () => {
     ]);
     expect(issues).toEqual([{ number: 7, state: 'open', title: 'Build fails' }]);
   });
+
+  it('marks a finding whose fingerprint an open issue carries, and not one on a closed issue', () => {
+    const groups = groupFindings([
+      loaded('linux', 'claude', [
+        finding(),
+        finding({ checkId: 'build.static', title: 'Build fails', errorText: 'ENOSPC' }),
+      ]),
+    ]);
+    const [onOpen, onClosed] = groups.map((group) => group.fingerprint);
+    const issue = (number: number, state: QaIssue['state'], body: string): QaIssue => ({
+      number,
+      title: 'Filed before',
+      state,
+      labels: [],
+      body,
+    });
+
+    const { findings } = groupingInput(groups, [
+      issue(7, 'open', `fingerprint: ${onOpen}`),
+      issue(8, 'closed', `fingerprint: ${onClosed}`),
+    ]);
+
+    expect(findings.map(({ id, filedAs }) => ({ id, filedAs }))).toEqual([
+      { id: onOpen, filedAs: 7 },
+      { id: onClosed, filedAs: undefined },
+    ]);
+  });
 });
 
 describe('groupWithModel', () => {
@@ -79,6 +106,32 @@ describe('groupWithModel', () => {
     });
     expect(ask).toHaveBeenCalledTimes(2);
     expect(ask.mock.calls[1]![0].at(-1).content).toContain(`${B} is in no group`);
+  });
+
+  it('asks again when a group pulls a finding away from the open issue it is already on', async () => {
+    const filed: GroupingInput = {
+      findings: input.findings.map((entry) => (entry.id === B ? { ...entry, filedAs: 7 } : entry)),
+      issues: [...input.issues, { number: 9, state: 'open', title: 'Dev server crashes' }],
+    };
+    const ask = vi
+      .fn()
+      .mockResolvedValueOnce({ groups: [{ members: [A, B], existingIssue: 9 }] })
+      .mockResolvedValueOnce({
+        groups: [
+          { members: [A], existingIssue: 9 },
+          { members: [B], existingIssue: 7 },
+        ],
+      });
+
+    await expect(groupWithModel(filed, ask)).resolves.toEqual({
+      groups: [
+        { members: [A], existingIssue: 9 },
+        { members: [B], existingIssue: 7 },
+      ],
+    });
+    expect(ask.mock.calls[1]![0].at(-1).content).toContain(
+      `group 1 names #9, but ${B} is already on #7`
+    );
   });
 
   it('throws with the problems of the last answer when no attempt fits', async () => {

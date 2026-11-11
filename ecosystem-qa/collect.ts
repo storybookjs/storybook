@@ -7,7 +7,7 @@ import { versionLine } from './lib/cycle.ts';
 import { compareExpected, loadExpected, renderExpectReport } from './lib/expected.ts';
 import { listQaIssues, releasePublishedAt } from './lib/github.ts';
 import { checkGrouping, clusterFindings, identityGrouping } from './lib/grouping.ts';
-import { loadFindingGroups, toProposal } from './lib/proposals.ts';
+import { loadFindingGroups, openIssueOf, toProposal } from './lib/proposals.ts';
 import { upgraded } from './lib/results.ts';
 import { Grouping } from './lib/schema.ts';
 
@@ -74,7 +74,8 @@ const grouping = parsed.data;
 const problems = checkGrouping(
   grouping,
   fingerprints,
-  issues.map((issue) => issue.number)
+  issues.map((issue) => issue.number),
+  openIssueOf(issues, fingerprints)
 );
 if (problems.length > 0) {
   console.error(

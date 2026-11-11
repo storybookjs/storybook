@@ -125,6 +125,7 @@ A group only decides which fingerprints merge; the proposal takes its text and e
 A wrong merge is split by editing `groups.json` and collecting again, without rerunning the sweep.
 A group with a fingerprint on an open issue becomes a comment there, and one with a fingerprint on a `qa:known` issue is suppressed.
 A group that matches an issue only by similarity (`existingIssue`) becomes a comment on it while it is open, even when that issue is `qa:known`, because only an exact fingerprint suppresses.
+A fingerprint that an open issue already carries stays on that issue: the collector rejects a grouping that puts it in a group with a fingerprint of another open issue, or in a group that names another issue, and says which group to split.
 The metadata of an issue lists every fingerprint of its group, so a later sweep finds it by any of them.
 An issue closed as completed after the tested prerelease was published counts as known for that version, because the fix is not in it yet; the collector reads the publish date from the `v<version>` release of `--repo`.
 An issue closed before that, or closed for any other reason, does not count: the bug came back, so it is filed again with a link to the closed issue.

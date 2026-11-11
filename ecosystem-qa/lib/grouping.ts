@@ -8,11 +8,37 @@ export interface Cluster {
   existingIssue?: number;
 }
 
-/** Return what is wrong with a grouping for this collect, or nothing when every finding is in exactly one group. */
+const onOtherIssue = (
+  { members, existingIssue }: Grouping['groups'][number],
+  filed: ReadonlyMap<string, number>
+): string | undefined => {
+  const [first, ...rest] = members.flatMap((member) => {
+    const issue = filed.get(member);
+    return issue === undefined ? [] : [{ member, issue }];
+  });
+  if (!first) {
+    return undefined;
+  }
+  const other = rest.find(({ issue }) => issue !== first.issue);
+  if (other) {
+    return `holds ${first.member}, which is already on #${first.issue}, and ${other.member}, which is already on #${other.issue}; split it so that each stays on its issue`;
+  }
+  return existingIssue !== undefined && existingIssue !== first.issue
+    ? `names #${existingIssue}, but ${first.member} is already on #${first.issue}; name #${first.issue} or take ${first.member} out`
+    : undefined;
+};
+
+/**
+ * Return what is wrong with a grouping for this collect, or nothing when every finding is in exactly
+ * one group and no group pulls a fingerprint away from the open issue it is already on.
+ *
+ * @param filed The open issue each already filed fingerprint is on.
+ */
 export const checkGrouping = (
   grouping: Grouping,
   fingerprints: string[],
-  issueNumbers: number[]
+  issueNumbers: number[],
+  filed: ReadonlyMap<string, number>
 ): string[] => {
   const counts = new Map<string, number>();
   for (const member of grouping.groups.flatMap((group) => group.members)) {
@@ -34,6 +60,10 @@ export const checkGrouping = (
         ? [`group ${index + 1} names #${existingIssue}, which is not a listed QA issue`]
         : []
     ),
+    ...grouping.groups.flatMap((group, index) => {
+      const problem = onOtherIssue(group, filed);
+      return problem ? [`group ${index + 1} ${problem}`] : [];
+    }),
   ];
 };
 

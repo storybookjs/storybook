@@ -46,6 +46,15 @@ export interface QaIssue extends IssueHit {
 export const hitsFor = (issues: QaIssue[], fingerprints: string[]): QaIssue[] =>
   issues.filter((issue) => fingerprints.some((fingerprint) => issue.body.includes(fingerprint)));
 
+/** Map each fingerprint that an open issue carries to that issue, the first one in the order given. */
+export const openIssueOf = (issues: QaIssue[], fingerprints: string[]): Map<string, number> =>
+  new Map(
+    fingerprints.flatMap((fingerprint) => {
+      const open = hitsFor(issues, [fingerprint]).find((issue) => issue.state === 'open');
+      return open ? [[fingerprint, open.number] as const] : [];
+    })
+  );
+
 const OS_ORDER: Record<Os, number> = { linux: 0, macos: 1, windows: 2 };
 
 const byPrimaryOrder = (a: LoadedResult, b: LoadedResult): number =>

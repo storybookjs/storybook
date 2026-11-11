@@ -7,6 +7,7 @@ import { groupFindings } from './proposals.ts';
 const A = 'aaaaaaaaaaaaaaaa';
 const B = 'bbbbbbbbbbbbbbbb';
 const C = 'cccccccccccccccc';
+const NOT_FILED = new Map<string, number>();
 
 describe('checkGrouping', () => {
   it('accepts a grouping that puts every fingerprint in exactly one group', () => {
@@ -14,13 +15,14 @@ describe('checkGrouping', () => {
       checkGrouping(
         { groups: [{ members: [B, A], existingIssue: 7 }, { members: [C] }] },
         [A, B, C],
-        [7]
+        [7],
+        NOT_FILED
       )
     ).toEqual([]);
   });
 
   it('names a fingerprint that is in no group', () => {
-    expect(checkGrouping({ groups: [{ members: [A] }] }, [A, B], [])).toEqual([
+    expect(checkGrouping({ groups: [{ members: [A] }] }, [A, B], [], NOT_FILED)).toEqual([
       `${B} is in no group`,
     ]);
   });
@@ -30,21 +32,61 @@ describe('checkGrouping', () => {
       checkGrouping(
         { groups: [{ members: [A, A] }, { members: [B] }, { members: [B] }] },
         [A, B],
-        []
+        [],
+        NOT_FILED
       )
     ).toEqual([`${A} is listed 2 times`, `${B} is listed 2 times`]);
   });
 
   it('names a fingerprint that this collect did not produce', () => {
-    expect(checkGrouping({ groups: [{ members: [A, C] }] }, [A], [])).toEqual([
+    expect(checkGrouping({ groups: [{ members: [A, C] }] }, [A], [], NOT_FILED)).toEqual([
       `${C} is not a finding of this collect`,
     ]);
   });
 
   it('names an existing issue that is not one of the listed QA issues', () => {
-    expect(checkGrouping({ groups: [{ members: [A], existingIssue: 8 }] }, [A], [7])).toEqual([
-      'group 1 names #8, which is not a listed QA issue',
+    expect(
+      checkGrouping({ groups: [{ members: [A], existingIssue: 8 }] }, [A], [7], NOT_FILED)
+    ).toEqual(['group 1 names #8, which is not a listed QA issue']);
+  });
+
+  it('names a group whose members are already on different open issues', () => {
+    expect(
+      checkGrouping(
+        { groups: [{ members: [C, A, B] }] },
+        [A, B, C],
+        [7, 8],
+        new Map([
+          [A, 7],
+          [B, 8],
+        ])
+      )
+    ).toEqual([
+      `group 1 holds ${A}, which is already on #7, and ${B}, which is already on #8; split it so that each stays on its issue`,
     ]);
+  });
+
+  it('names a group that names another issue than the one a member is already on', () => {
+    expect(
+      checkGrouping(
+        { groups: [{ members: [B, A], existingIssue: 8 }] },
+        [A, B],
+        [7, 8],
+        new Map([[A, 7]])
+      )
+    ).toEqual([`group 1 names #8, but ${A} is already on #7; name #7 or take ${A} out`]);
+  });
+
+  it('accepts a group that stays on the issue its members are already on', () => {
+    const filed = new Map([
+      [A, 7],
+      [B, 7],
+    ]);
+
+    expect(
+      checkGrouping({ groups: [{ members: [C, A, B], existingIssue: 7 }] }, [A, B, C], [7], filed)
+    ).toEqual([]);
+    expect(checkGrouping({ groups: [{ members: [C, A, B] }] }, [A, B, C], [7], filed)).toEqual([]);
   });
 });
 
@@ -53,7 +95,7 @@ describe('identityGrouping', () => {
     const grouping = identityGrouping([A, B]);
 
     expect(grouping).toEqual({ groups: [{ members: [A] }, { members: [B] }] });
-    expect(checkGrouping(grouping, [A, B], [])).toEqual([]);
+    expect(checkGrouping(grouping, [A, B], [], NOT_FILED)).toEqual([]);
   });
 });
 

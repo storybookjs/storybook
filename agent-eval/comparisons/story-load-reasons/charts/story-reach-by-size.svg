@@ -1,9 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 628" width="880" height="628" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" role="img">
 <title>How stories reached the agent, by size of the Storybook instance</title>
-<desc>33 stories: Loaded individually 4.2%, Inlined by the first-three rule only 66.1%, Never loaded 29.7%; 111 stories: Loaded individually 0.9%, Inlined by the first-three rule only 57.7%, Never loaded 41.4%; 127 stories: Loaded individually 3.9%, Inlined by the first-three rule only 53.5%, Never loaded 42.5%; 220 stories: Loaded individually 0.9%, Inlined by the first-three rule only 30.0%, Never loaded 69.1%; 400+ stories: Loaded individually 2.6%, Inlined by the first-three rule only 29.7%, Never loaded 67.7%</desc>
+<desc>33 stories: Loaded individually 4.2%, Inlined by the first-three rule only 66.1%, Never loaded 29.7%; 111 stories: Loaded individually 0.9%, Inlined by the first-three rule only 57.7%, Never loaded 41.4%; 127 stories: Loaded individually 3.9%, Inlined by the first-three rule only 53.5%, Never loaded 42.5%; 220 stories: Loaded individually 0.9%, Inlined by the first-three rule only 30.0%, Never loaded 69.1%; 400+ stories: Loaded individually 3.2%, Inlined by the first-three rule only 17.1%, Never loaded 79.7%</desc>
 <rect id="background" width="880" height="628" fill="#ffffff"/>
 <text id="title" x="40" y="44" font-size="20" font-weight="600" fill="#1f1f1e">How stories reached the agent, by size of the Storybook instance</text>
-<text id="subtitle" x="40" y="68" font-size="13.5" fill="#5c5b56">Share of an instance's stories over 50 runs. 12 arms with the Storybook MCP, grouped by story count.</text>
+<text id="subtitle" x="40" y="68" font-size="13.5" fill="#5c5b56">Share of an instance's stories over 50 runs. 11 arms with the Storybook MCP, grouped by story count.</text>
 <g id="legend" font-size="13" fill="#1f1f1e">
 <rect x="40" y="91" width="11" height="11" rx="2" fill="#0072B2"/>
 <text x="57" y="101">Loaded individually</text>
@@ -68,17 +68,17 @@
 </g>
 <g id="row-400plus">
 <text x="40" y="471" font-size="15" font-weight="600" fill="#1f1f1e">400+ stories</text>
-<text x="40" y="488" font-size="12.5" fill="#5c5b56">4 arms</text>
-<rect id="seg-400plus-individually" x="210.0" y="458" width="16.4" height="28" fill="#0072B2" stroke="#ffffff" stroke-width="2"><title>400+ stories, loaded individually: 2.6% (10.5 stories per arm)</title></rect>
-<text x="210.0" y="451" font-size="12.5" fill="#1f1f1e">2.6% · 10.5 stories loaded individually</text>
-<rect id="seg-400plus-first3_only" x="226.4" y="458" width="187.0" height="28" fill="#E69F00" stroke="#ffffff" stroke-width="2"><title>400+ stories, inlined by the first-three rule only: 29.7% (120.2 stories per arm)</title></rect>
-<text x="319.9" y="476" font-size="12.5" fill="#1f1f1e" text-anchor="middle">29.7% · 120.2 stories</text>
-<rect id="seg-400plus-never" x="413.4" y="458" width="426.6" height="28" fill="#b9b8b2" stroke="#ffffff" stroke-width="2"><title>400+ stories, never loaded: 67.7% (273.8 stories per arm)</title></rect>
-<text x="626.7" y="476" font-size="12.5" fill="#1f1f1e" text-anchor="middle">67.7% · 273.8 stories</text>
+<text x="40" y="488" font-size="12.5" fill="#5c5b56">3 arms</text>
+<rect id="seg-400plus-individually" x="210.0" y="458" width="20.3" height="28" fill="#0072B2" stroke="#ffffff" stroke-width="2"><title>400+ stories, loaded individually: 3.2% (13 stories per arm)</title></rect>
+<text x="210.0" y="451" font-size="12.5" fill="#1f1f1e">3.2% · 13 stories loaded individually</text>
+<rect id="seg-400plus-first3_only" x="230.3" y="458" width="107.6" height="28" fill="#E69F00" stroke="#ffffff" stroke-width="2"><title>400+ stories, inlined by the first-three rule only: 17.1% (69 stories per arm)</title></rect>
+<text x="284.1" y="476" font-size="12.5" fill="#1f1f1e" text-anchor="middle">17.1% · 69 stories</text>
+<rect id="seg-400plus-never" x="337.9" y="458" width="502.1" height="28" fill="#b9b8b2" stroke="#ffffff" stroke-width="2"><title>400+ stories, never loaded: 79.7% (322 stories per arm)</title></rect>
+<text x="588.9" y="476" font-size="12.5" fill="#1f1f1e" text-anchor="middle">79.7% · 322 stories</text>
 </g>
 <g id="notes" font-size="12.5" fill="#5c5b56">
 <text x="40" y="542">Each bar is the mean share across the arms of that size; story counts are per arm.</text>
-<text x="40" y="560">The 400+ bar includes purge-docgen, which inlines every story of a fetched component. Without it the bar reads 3% / 17% / 80%.</text>
+<text x="40" y="560">purge-docgen is left out: it inlines every story of a fetched component, so the first-three rule does not apply to it.</text>
 <text x="40" y="578">The 127-story arm never listed its stories, so its total is a lower bound and its "never" share is understated.</text>
 </g>
 </svg>

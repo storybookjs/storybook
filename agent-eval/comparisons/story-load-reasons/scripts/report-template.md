@@ -218,5 +218,5 @@ The safeguard is there to stop a model's reasoning being extracted through its r
 | `clustering/open-*.json`, `clustering/coded-r1-*.json` | The three open clusterings and the three coders' labels |
 | `stats.json`, `stats.txt` | Every test, with group counts |
 | `replay/results.jsonl`, `replay/pilot-calls.json` | The replay pilot: the ten calls, each response, stop reason and token usage |
-| `charts/*.svg` | Four pie charts: reason families, what the agent had seen, name alignment, cited reasons (`scripts/make_pies.py`) |
+| `charts/*.svg` | Seven charts: four pies (reason families, what the agent had seen, name alignment, cited reasons), two loads-per-story distributions and story reach by instance size. All leave out `purge-docgen` (261 loads in 550 runs), because that arm prints every story in its docs output, so its 24 loads are re-loads rather than picks from a list. The tables and tests in this report include it unless stated. |
 | `scripts/` | Extraction, selection metric, agreement, statistics, replay and report scripts |

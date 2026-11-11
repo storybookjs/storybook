@@ -79,14 +79,16 @@ def pie(filename, title, subtitle, slices, caption=()):
     open(os.path.join(OUT, 'charts', filename), 'w').write('\n'.join(out) + '\n')
     print(filename, [(l, n, round(100 * n / total)) for l, n in slices])
 
-calls = [json.loads(l) for l in open(os.path.join(OUT, 'story-loads.final.jsonl'))]
+# purge-docgen prints every story in its docs output, so its loads are re-loads, not picks from a list.
+EXCLUDED_ARMS = ('purge-docgen',)
+calls = [c for c in map(json.loads, open(os.path.join(OUT, 'story-loads.final.jsonl'))) if c['arm'] not in EXCLUDED_ARMS]
 n = len(calls)
 
 FAMILY = [('worked-example', 'Worked example'), ('undocumented-contract', 'Undocumented contract'), ('second-look', 'Second look'),
           ('component-basics', 'Component basics'), ('accessibility', 'Accessibility'), ('component-choice', 'Component choice')]
 fam = collections.Counter(c['cluster_family'] for c in calls)
 pie('reason-families.svg', 'Why agents loaded a specific story',
-    '%d story loads in 600 runs with the Storybook MCP. Reasons reconstructed from transcripts.' % n,
+    '%d story loads in 550 runs across 11 arms. Reasons reconstructed from transcripts.' % n,
     [(label, fam[k]) for k, label in FAMILY])
 
 seen = collections.Counter(('Source already shown' if c['exposure_before'] == 'inlined' else 'Guessed name' if c['exposure_before'] == 'unseen'
@@ -106,8 +108,10 @@ coded = sorted(glob.glob(os.path.join(OUT, 'clustering', 'cited-coded-*.json')))
 if len(coded) == 3:
     key = json.load(open(os.path.join(OUT, 'clustering', 'cited-key.json')))
     votes = [json.load(open(p))['assignments'] for p in coded]
-    cited = collections.Counter()
+    cited, kept = collections.Counter(), {c['call_id'] for c in calls}
     for item in key:
+        if key[item] not in kept:
+            continue
         top, k = collections.Counter(v[item] for v in votes).most_common(1)[0]
         cited[top if k >= 2 else 'other'] += 1
     stated = sum(1 for c in calls if c['evidence'] == 'stated')

@@ -12,7 +12,9 @@ SERIES = [('individually', 'Loaded individually', '#0072B2'), ('first3_only', 'I
 FONT = "Inter, 'Helvetica Neue', Arial, sans-serif"
 W, X0, X1, TOP, ROW, BAR = 880, 210, 840, 150, 72, 28
 
-arms = json.load(open(os.path.join(OUT, 'story-reach-by-arm.json')))
+# purge-docgen inlines every story of a fetched component, so the first-three rule does not apply to it.
+EXCLUDED_ARMS = ('purge-docgen',)
+arms = [a for a in json.load(open(os.path.join(OUT, 'story-reach-by-arm.json'))) if a['arm'] not in EXCLUDED_ARMS]
 groups = collections.defaultdict(list)
 for a in arms:
     groups['400+' if a['stories'] >= 400 else str(a['stories'])].append(a)
@@ -27,7 +29,7 @@ H = TOP + ROW * len(rows) + 118
 num = lambda v: ('%d' % v) if abs(v - round(v)) < 0.05 else ('%.1f' % v)
 
 title = 'How stories reached the agent, by size of the Storybook instance'
-subtitle = 'Share of an instance\'s stories over 50 runs. 12 arms with the Storybook MCP, grouped by story count.'
+subtitle = 'Share of an instance\'s stories over 50 runs. 11 arms with the Storybook MCP, grouped by story count.'
 out = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" width="%d" height="%d" font-family="%s" role="img">' % (W, H, W, H, FONT),
        '<title>%s</title>' % escape(title),
        '<desc>%s</desc>' % escape('; '.join('%s stories: %s' % (g, ', '.join('%s %.1f%%' % (lab, share[k]) for k, lab, _ in SERIES)) for g, _, share, _ in rows)),
@@ -70,7 +72,7 @@ for i, (g, members, share, count) in enumerate(rows):
     out.append('</g>')
 ny = bottom + 48
 notes = ['Each bar is the mean share across the arms of that size; story counts are per arm.',
-         'The 400+ bar includes purge-docgen, which inlines every story of a fetched component. Without it the bar reads 3% / 17% / 80%.',
+         'purge-docgen is left out: it inlines every story of a fetched component, so the first-three rule does not apply to it.',
          'The 127-story arm never listed its stories, so its total is a lower bound and its "never" share is understated.']
 out.append('<g id="notes" font-size="12.5" fill="%s">' % MUTED)
 for j, line in enumerate(notes):

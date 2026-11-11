@@ -7,7 +7,9 @@ INK, MUTED, GRID, BAR = '#1f1f1e', '#5c5b56', '#e4e3df', '#0072B2'
 FONT = "Inter, 'Helvetica Neue', Arial, sans-serif"
 W, H, LEFT, RIGHT, TOP, BASE = 880, 520, 70, 840, 138, 410
 
-calls = [json.loads(l) for l in open(os.path.join(OUT, 'story-loads.final.jsonl'))]
+# purge-docgen prints every story in its docs output, so its loads are re-loads, not picks from a list.
+EXCLUDED_ARMS = ('purge-docgen',)
+calls = [c for c in map(json.loads, open(os.path.join(OUT, 'story-loads.final.jsonl'))) if c['arm'] not in EXCLUDED_ARMS]
 found = [c for c in calls if c['story_found']]
 per_story = collections.Counter(c['story_id'] for c in found)
 label = {c['story_id']: c['story_name'] for c in found}
@@ -20,7 +22,7 @@ band = (RIGHT - LEFT) / len(BINS)
 y = lambda v: BASE - (BASE - TOP) * v / top
 
 title = 'How often each story was loaded'
-subtitle = '%d distinct stories received %d loads in 600 runs. Five stories account for %d%% of them.' % (
+subtitle = '%d distinct stories received %d loads in 550 runs across 11 arms. Five stories account for %d%% of them.' % (
     len(per_story), len(found), round(100 * sum(n for _, n in per_story.most_common(5)) / len(found)))
 out = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %d %d" width="%d" height="%d" font-family="%s" role="img">' % (W, H, W, H, FONT),
        '<title>%s</title>' % escape(title),

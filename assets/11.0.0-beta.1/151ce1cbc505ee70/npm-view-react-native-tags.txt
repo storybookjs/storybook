@@ -1,0 +1,17 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+{
+  alpha: '9.1.2-alpha.0',
+  next: '11.0.0-next.1',
+  canary: '10.7.1-canary-20261021204344',
+  latest: '10.7.1'
+}
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm error code E404
+npm error 404 No match found for version 11.0.0-beta.1
+npm error 404
+npm error 404  The requested resource '@storybook/react-native@11.0.0-beta.1' could not be found or you do not have permission to access it.
+npm error 404
+npm error 404 Note that you can also install from a
+npm error 404 tarball, folder, http url, or git url.
+npm error A complete log of this run can be found in: /home/agent/.npm/_logs/2026-11-11T19_29_52_664Z-debug-0.log
+beta-lookup-exit 1

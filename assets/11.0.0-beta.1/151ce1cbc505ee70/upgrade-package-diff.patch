@@ -1,0 +1,135 @@
+commit ec621a71cf8c81d12133d2757977f53d513b8335
+Author: Storybook Ecosystem QA <ecosystem-qa@storybook.js.org>
+Date:   Wed Nov 11 19:08:06 2026 +0000
+
+    qa: upgrade storybook to 11.0.0-beta.1
+
+diff --git a/apps/storybook-react-native/package.json b/apps/storybook-react-native/package.json
+index 1c11f06..105f874 100644
+--- a/apps/storybook-react-native/package.json
++++ b/apps/storybook-react-native/package.json
+@@ -40,24 +40,24 @@
+   "devDependencies": {
+     "@babel/core": "^7.29.7",
+     "@babel/plugin-transform-class-static-block": "^7.27.1",
+-    "@chromatic-com/storybook": "^5.2.1",
++    "@chromatic-com/storybook": "^5.6.0",
+     "@gorhom/bottom-sheet": "^5.1.3",
+     "@playwright/test": "^1.55.1",
+     "@react-native-async-storage/async-storage": "2.2.0",
+     "@react-native-community/datetimepicker": "^8.5.1",
+     "@react-native-community/slider": "5.2.0",
+     "@rolldown/plugin-babel": "^0.2.3",
+-    "@storybook/addon-a11y": "10.6.2",
+-    "@storybook/addon-docs": "10.6.2",
+-    "@storybook/addon-mcp": "10.6.2",
+-    "@storybook/addon-ondevice-actions": "10.6.2",
+-    "@storybook/addon-ondevice-backgrounds": "10.6.2",
+-    "@storybook/addon-ondevice-controls": "10.6.2",
+-    "@storybook/addon-ondevice-notes": "10.6.2",
+-    "@storybook/addon-vitest": "10.6.2",
+-    "@storybook/react": "10.6.2",
+-    "@storybook/react-native": "10.6.2",
+-    "@storybook/react-native-web-vite": "10.6.2",
++    "@storybook/addon-a11y": "^11.0.0-beta.1",
++    "@storybook/addon-docs": "^11.0.0-beta.1",
++    "@storybook/addon-mcp": "^11.0.0-beta.1",
++    "@storybook/addon-ondevice-actions": "^10.7.1",
++    "@storybook/addon-ondevice-backgrounds": "^10.7.1",
++    "@storybook/addon-ondevice-controls": "^10.7.1",
++    "@storybook/addon-ondevice-notes": "^10.7.1",
++    "@storybook/addon-vitest": "^11.0.0-beta.1",
++    "@storybook/react": "^11.0.0-beta.1",
++    "@storybook/react-native": "^10.7.1",
++    "@storybook/react-native-web-vite": "^11.0.0-beta.1",
+     "@types/react": "^19.2.0",
+     "@types/react-dom": "^19.2.0",
+     "@vitejs/plugin-react": "^6.0.0",
+@@ -70,7 +70,7 @@
+     "react-native-safe-area-context": "~5.8.0",
+     "react-native-svg": "15.15.5",
+     "react-native-svg-transformer": "^1.5.3",
+-    "storybook": "10.6.2",
++    "storybook": "^11.0.0-beta.1",
+     "typescript": "~5.9.3",
+     "vite": "^8.3.4",
+     "vite-plugin-svgr": "^5.2.0",
+diff --git a/apps/storybook-react/package.json b/apps/storybook-react/package.json
+index 2eefbe1..8d84c03 100644
+--- a/apps/storybook-react/package.json
++++ b/apps/storybook-react/package.json
+@@ -11,17 +11,17 @@
+     "test-storybook": "vitest --run"
+   },
+   "devDependencies": {
+-    "@chromatic-com/storybook": "^5.2.1",
++    "@chromatic-com/storybook": "^5.6.0",
+     "@metamask/design-system-react": "workspace:^",
+     "@metamask/design-system-tailwind-preset": "workspace:^",
+     "@metamask/design-tokens": "workspace:^",
+     "@metamask/utils": "^11.12.1",
+     "@playwright/test": "^1.55.1",
+-    "@storybook/addon-a11y": "10.6.2",
+-    "@storybook/addon-docs": "10.6.2",
+-    "@storybook/addon-mcp": "10.6.2",
+-    "@storybook/addon-vitest": "10.6.2",
+-    "@storybook/react-vite": "10.6.2",
++    "@storybook/addon-a11y": "^11.0.0-beta.1",
++    "@storybook/addon-docs": "^11.0.0-beta.1",
++    "@storybook/addon-mcp": "^11.0.0-beta.1",
++    "@storybook/addon-vitest": "^11.0.0-beta.1",
++    "@storybook/react-vite": "^11.0.0-beta.1",
+     "@testing-library/dom": "^10.0.0",
+     "@testing-library/react": "^16.0.1",
+     "@types/prop-types": "^15",
+@@ -34,13 +34,13 @@
+     "axe-playwright": "^2.1.0",
+     "chromatic": "^15.2.0",
+     "eslint": "^9.39.0",
+-    "eslint-plugin-storybook": "10.6.2",
++    "eslint-plugin-storybook": "^11.0.0-beta.1",
+     "playwright": "^1.55.1",
+     "postcss": "^8.4.47",
+     "prop-types": "^15.8.1",
+     "react": "19.2.3",
+     "react-dom": "19.2.3",
+-    "storybook": "10.6.2",
++    "storybook": "^11.0.0-beta.1",
+     "tailwindcss": "^3.0.0",
+     "typescript": "~5.9.3",
+     "vite": "^8.3.4",
+diff --git a/package.json b/package.json
+index 8aace21..11cc3fb 100644
+--- a/package.json
++++ b/package.json
+@@ -100,7 +100,7 @@
+     "eslint-plugin-n": "^17.10.3",
+     "eslint-plugin-prettier": "^5.2.1",
+     "eslint-plugin-promise": "^7.1.0",
+-    "eslint-plugin-storybook": "10.6.2",
++    "eslint-plugin-storybook": "^11.0.0-beta.1",
+     "eslint-plugin-tailwindcss": "^3.18.0",
+     "execa": "^5.0.0",
+     "jest": "^29.7.0",
+diff --git a/packages/design-system-react-native/package.json b/packages/design-system-react-native/package.json
+index 2d44e54..4a05326 100644
+--- a/packages/design-system-react-native/package.json
++++ b/packages/design-system-react-native/package.json
+@@ -64,7 +64,7 @@
+     "@react-native/babel-preset": "0.86.3",
+     "@react-native/jest-preset": "0.86.3",
+     "@react-native/typescript-config": "0.86.3",
+-    "@storybook/react-native": "10.6.2",
++    "@storybook/react-native": "^10.7.1",
+     "@testing-library/react-native": "^13.3.3",
+     "@ts-bridge/cli": "^0.6.3",
+     "@types/babel__preset-env": "^7",
+@@ -85,7 +85,7 @@
+     "react-native-svg-transformer": "^1.5.3",
+     "react-native-worklets": "0.10.4",
+     "react-test-renderer": "19.2.3",
+-    "storybook": "10.6.2",
++    "storybook": "^11.0.0-beta.1",
+     "ts-jest": "^29.2.5",
+     "tsx": "^4.23.15",
+     "typescript": "~5.9.3"

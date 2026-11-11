@@ -1,0 +1,299 @@
+➤ YN0000: · Yarn 4.16.0
+➤ YN0000: ┌ Resolution step
+➤ YN0085: │ + @storybook/cli@npm:11.0.0-beta.1, @babel/code-frame@npm:7.29.7, @babel/compat-data@npm:7.29.7, @babel/core@npm:7.29.13, @babel/generator@npm:7.29.13, and 186 more.
+➤ YN0000: └ Completed in 0s 538ms
+➤ YN0000: ┌ Post-resolution validation
+➤ YN0086: │ Some peer dependencies are incorrectly met by dependencies; run yarn explain peer-requirements for details.
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Fetch step
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Link step
+➤ YN0004: │ esbuild@npm:0.28.2 lists build scripts, but all build scripts have been disabled.
+➤ YN0000: └ Completed in 1s 750ms
+➤ YN0000: · Done with warnings in 2s 454ms
+
+
+[90m┌[39m  Storybook upgrade - v11.0.0-beta.1
+[90m│[39m
+[90m│[39m  Detecting projects...
+[90m│[39m
+[33m▲[39m  One or more extensionless imports detected:
+[90m│[39m  "./vite-plugin-design-system-barrel-imports" in file
+[90m│[39m  "/home/agent/workspace/apps/storybook-react-native/.storybook/main.ts".
+[90m│[39m  For more information on how to resolve the issue:
+[90m│[39m  https://storybook.js.org/docs/faq#extensionless-imports-in-storybookmaints-and-required-ts-extensions
+[90m│[39m
+[33m▲[39m  One or more extensionless imports detected:
+[90m│[39m  "../../../scripts/components-manifest/prop-filter" in file
+[90m│[39m  "/home/agent/workspace/apps/storybook-react-native/.storybook/main.ts".
+[90m│[39m  For more information on how to resolve the issue:
+[90m│[39m  https://storybook.js.org/docs/faq#extensionless-imports-in-storybookmaints-and-required-ts-extensions
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  Detecting projects: 2 projects
+[90m│[39m
+[90m│[39m  2 projects detected
+[90m│[39m
+[90m│[39m  Multiple Storybook projects found. Storybook can only upgrade all
+[90m│[39m  projects at once:
+[90m│[39m  [32m✔[39m [36m/apps/storybook-react-native/.rnstorybook[39m
+[90m│[39m  [32m✔[39m [36m/apps/storybook-react-native/.storybook[39m
+[90m│[39m
+[34m●[39m  Upgrading the following projects:
+[90m│[39m  [36m/apps/storybook-react-native/.rnstorybook[39m: [1m10.6.2[22m -> [1m11.0.0-beta.1[22m
+[90m│[39m  [36m/apps/storybook-react-native/.storybook[39m: [1m10.6.2[22m -> [1m11.0.0-beta.1[22m
+[90m│[39m
+[90m│[39m  /apps/storybook-react-native/package.json
+[90m│[39m  /package.json
+[90m│[39m  /packages/design-system-react-native/package.json
+[90m│[39m  /packages/design-system-react/package.json
+[90m│[39m  /apps/storybook-react/package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for
+[90m│[39m  /apps/storybook-react-native/.rnstorybook...
+[90m│[39m
+[90m│[39m  Checking automigrations for /apps/storybook-react-native/.storybook...
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m upgrade-storybook-related-dependencies[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  3 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running all detected automigrations:
+[90m│[39m
+[90m│[39m  - upgrade-storybook-related-dependencies
+[90m│[39m  (/apps/storybook-react-native/.rnstorybook and 1 more...)
+[90m│[39m
+[90m│[39m  - story-sort-to-main (/apps/storybook-react-native/.rnstorybook and 1
+[90m│[39m  more...)
+[90m│[39m
+[90m│[39m  - skills (/apps/storybook-react-native/.storybook)
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m upgrade-storybook-related-dependencies[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  (1/2) Completed automigrations for
+[90m│[39m  /apps/storybook-react-native/.rnstorybook
+[90m│[39m
+[90m│[39m  [36myarn dlx skills@latest add storybookjs/skills#v11.0.0-beta.1 --yes[39m
+[90m│[39m  [36m--agent claude-code universal --copy[39m
+[90m│[39m
+[90m│[39m  Added a Storybook section to AGENTS.md that tells agents when to use
+[90m│[39m  the skills. Storybook keeps it current on upgrade: remove its markers
+[90m│[39m  to keep your own edits, or remove the section to opt out.
+[90m│[39m
+[90m│[39m  Remove the Storybook skills with: yarn dlx skills@latest remove
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m upgrade-storybook-related-dependencies[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  (2/2) Completed automigrations for
+[90m│[39m  /apps/storybook-react-native/.storybook
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: · Yarn 4.16.0
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: ┌ Resolution st
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0085: │ + @chromatic-
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0085: │ - @chromatic-
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: └ Completed in
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: ┌ Post-resoluti
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0060: │ @metamask/esl
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0002: │ @metamask/des
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: ┌ Fetch step
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0013: │ 33 packages w
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: └ Completed in
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: ┌ Link step
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: └ Completed in
+[90m│[39m
+[90m│[39m  Installing dependencies...: ➤ YN0000: · Done with war
+[90m│[39m
+[90m│[39m  Dependencies installed
+[90m│[39m
+[33m▲[39m  Since you are in a monorepo, we advise you to deduplicate your
+[90m│[39m  dependencies. We can do this for you but it might take some time.
+[90m│[39m
+[90m│[39m  Deduplicating dependencies...
+[90m│[39m
+[90m│[39m  ➤ YN0000: ┌ Deduplication step
+[90m│[39m
+[90m│[39m  ➤ YN0000: │ @rolldown/pluginutils@npm:^1.0.0 can be deduped from
+[90m│[39m  @rolldown/pluginutils@npm:1.0.1 to @rolldown/pluginutils@npm:1.1.0
+[90m│[39m
+[90m│[39m  ➤ YN0000: │ One package can be deduped using the highest strategy
+[90m│[39m
+[90m│[39m  ➤ YN0000: └ Completed
+[90m│[39m  ➤ YN0000: · Yarn 4.16.0
+[90m│[39m
+[90m│[39m  ➤ YN0000: ┌ Resolution step
+[90m│[39m
+[90m│[39m  ➤ YN0085: │ - @rolldown/pluginutils@npm:1.0.1
+[90m│[39m
+[90m│[39m  ➤ YN0000: └ Completed in 0s 239ms
+[90m│[39m
+[90m│[39m  ➤ YN0000: ┌ Post-resolution validation
+[90m│[39m
+[90m│[39m  ➤ YN0060: │ @metamask/eslint-config is listed by your project with
+[90m│[39m  version 15.0.1 (p0d9ead), which doesn't satisfy what
+[90m│[39m  @metamask/eslint-config-jest and other dependencies request (but they
+[90m│[39m  have non-overlapping ranges!).
+[90m│[39m  ➤ YN0060: │ @storybook/react is listed by your project with version
+[90m│[39m  11.0.0-beta.1 (p600be3), which doesn't satisfy what
+[90m│[39m  @storybook/addon-ondevice-notes requests (^10.0.0).
+[90m│[39m  ➤ YN0060: │ react is listed by your project with version 19.2.3
+[90m│[39m  (p1079c4), which doesn't satisfy what react-native-jazzicon (via
+[90m│[39m  @metamask/design-system-react-native) and other dependencies request
+[90m│[39m  (but they have non-overlapping ranges!).
+[90m│[39m  ➤ YN0060: │ react is listed by your project with version 19.2.3
+[90m│[39m  (p1ef617), which doesn't satisfy what react-native-jazzicon and other
+[90m│[39m  dependencies request (but they have non-overlapping ranges!).
+[90m│[39m
+[90m│[39m  ➤ YN0060: │ react-native is listed by your project with version 0.86.3
+[90m│[39m  (p008a03), which doesn't satisfy what react-native-jazzicon (via
+[90m│[39m  @metamask/design-system-react-native) and other dependencies request
+[90m│[39m  (but they have non-overlapping ranges!).
+[90m│[39m  ➤ YN0060: │ react-native is listed by your project with version 0.86.3
+[90m│[39m  (p4265f2), which doesn't satisfy what react-native-jazzicon and other
+[90m│[39m  dependencies request (but they have non-overlapping ranges!).
+[90m│[39m  ➤ YN0060: │ react-native-svg is listed by your project with version
+[90m│[39m  15.15.5 (pe93f4b), which doesn't satisfy what react-native-jazzicon
+[90m│[39m  and other dependencies request (but they have non-overlapping
+[90m│[39m  ranges!).
+[90m│[39m  ➤ YN0060: │ react-native-svg is listed by your project with version
+[90m│[39m  15.15.5 (pef182e), which doesn't satisfy what react-native-jazzicon
+[90m│[39m  and other dependencies request (but they have non-overlapping
+[90m│[39m  ranges!).
+[90m│[39m  ➤ YN0060: │ storybook is listed by your project with version
+[90m│[39m  11.0.0-beta.1 (pd938e2), which doesn't satisfy what
+[90m│[39m  @storybook/react-native and other dependencies request (^10.6.2).
+[90m│[39m  ➤ YN0060: │ storybook is listed by your project with version
+[90m│[39m  11.0.0-beta.1 (peb02fd), which doesn't satisfy what
+[90m│[39m  @storybook/addon-ondevice-actions and other dependencies request (but
+[90m│[39m  they have non-overlapping ranges!).
+[90m│[39m  ➤ YN0060: │ storybook is listed by your project with version
+[90m│[39m  11.0.0-beta.1 (pfbaf98), which doesn't satisfy what
+[90m│[39m  @storybook/react-native and other dependencies request (^10.6.2).
+[90m│[39m  ➤ YN0002: │
+[90m│[39m  @metamask/design-system-react-native@workspace:packages/design-system-react-native
+[90m│[39m  doesn't provide @react-native/metro-config (pdea3f6), requested by
+[90m│[39m  react-native-worklets.
+[90m│[39m  ➤ YN0002: │
+[90m│[39m  @metamask/design-system-react-native@workspace:packages/design-system-react-native
+[90m│[39m  doesn't provide expo (pbabb51), requested by expo-image.
+[90m│[39m  ➤ YN0002: │
+[90m│[39m  @metamask/design-system-react@workspace:packages/design-system-react
+[90m│[39m  doesn't provide @metamask/design-tokens (p7dac7d), requested by
+[90m│[39m  @metamask/design-system-tailwind-preset.
+[90m│[39m  ➤ YN0002: │ @metamask/metamask-design-system@workspace:. doesn't
+[90m│[39m  provide tailwindcss (pe91673), requested by eslint-plugin-tailwindcss.
+[90m│[39m  ➤ YN0002: │
+[90m│[39m  @metamask/storybook-react-native@workspace:apps/storybook-react-native
+[90m│[39m  doesn't provide @react-native/metro-config (p9cc914), requested by
+[90m│[39m  react-native-worklets.
+[90m│[39m  ➤ YN0002: │
+[90m│[39m  @metamask/storybook-react-native@workspace:apps/storybook-react-native
+[90m│[39m  doesn't provide rolldown (p411954), requested by
+[90m│[39m  @rolldown/plugin-babel.
+[90m│[39m  ➤ YN0086: │ Some peer dependencies are incorrectly met by your
+[90m│[39m  project; run yarn explain peer-requirements <hash> for details, where
+[90m│[39m  <hash> is the six-letter p-prefixed code.
+[90m│[39m  ➤ YN0086: │ Some peer dependencies are incorrectly met by
+[90m│[39m  dependencies; run yarn explain peer-requirements for details.
+[90m│[39m  ➤ YN0000: └ Completed
+[90m│[39m  ➤ YN0000: ┌ Fetch step
+[90m│[39m
+[90m│[39m  ➤ YN0013: │ No new packages added to the project, but one was removed
+[90m│[39m  (- 9.87 KiB).
+[90m│[39m
+[90m│[39m  ➤ YN0000: └ Completed in 0s 650ms
+[90m│[39m
+[90m│[39m  ➤ YN0000: ┌ Link step
+[90m│[39m
+[90m│[39m  ➤ YN0000: └ Completed in 0s 423ms
+[90m│[39m
+[90m│[39m  ➤ YN0000: · Done with warnings in 1s 512ms
+[90m│[39m
+[90m│[39m  [32mDependencies deduplicated[39m
+[90m│[39m
+[32m◇[39m  Checking the health of your project(s)..
+[90m│[39m
+[33m▲[39m  Found 1 issue across 2 projects
+│ ┌─[33mIncompatible Packages[39m──────────────────────────────────────────────────────┐
+│ │  You are currently using Storybook [1m11.0.0-beta.1[22m but you have packages     │
+│ │  which are incompatible with it:                                           │
+│ │                                                                            │
+│ │  - @storybook/addon-ondevice-actions@10.7.1 which depends on ^10.5.4       │
+│ │   Repo: https://storybook.js.org/                                          │
+│ │  - @storybook/addon-ondevice-backgrounds@10.7.1 which depends on ^10.5.4   │
+│ │   Repo: https://storybook.js.org                                           │
+│ │  - @storybook/addon-ondevice-controls@10.7.1 which depends on ^10.5.4      │
+│ │  - @storybook/addon-ondevice-notes@10.7.1 which depends on ^10             │
+│ │  - @storybook/react-native@10.7.1 which depends on ^10.6.0                 │
+│ │   Repo: https://storybook.js.org/                                          │
+│ │                                                                            │
+│ │  Please consider updating your packages or contacting the maintainers for  │
+│ │   compatibility details.                                                   │
+│ │                                                                            │
+│ │  For more details on compatibility guidance, see:                          │
+│ │  https://github.com/storybookjs/storybook/issues/32836                     │
+│ │                                                                            │
+│ │  Affected projects: /apps/storybook-react-native/.rnstorybook,             │
+│ │  /apps/storybook-react-native/.storybook                                   │
+│ └────────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[32m◇[39m  Storybook doctor is complete!
+[90m│[39m
+[90m│[39m  You can always recheck the health of your project(s) by running:
+[90m│[39m  [36mnpx storybook doctor[39m
+[90m│[39m
+[32m◇[39m  [33mYour project(s) have been upgraded successfully, but some issues were[39m
+[90m│[39m  [33mfound which need your attention, please check Storybook doctor logs[39m
+[90m│[39m  [33mabove.[39m
+[90m│[39m
+[90m│[39m  If you want to learn more about the automigrations that executed in
+[90m│[39m  your project(s), please check the following links:
+[90m│[39m  • upgrade-storybook-related-dependencies: undefined
+[90m│[39m  • story-sort-to-main:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysort-in-the-preview-replaced-by-storysorts-in-main
+[90m│[39m  • skills: https://github.com/storybookjs/skills
+[90m│[39m
+[90m│[39m  For a full list of changes, please check our migration guide:
+[90m│[39m  [36mhttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade[39m
+[90m│[39m
+[34m●[39m  Storybook collects completely anonymous usage telemetry. We use it to
+[90m│[39m  shape Storybook's roadmap and prioritize features. You can learn more,
+[90m│[39m  including how to opt out, at https://storybook.js.org/telemetry
+[90m│[39m
+[90m└[39m  Storybook upgrade completed!
+
+[90m│[39m
+[90m│[39m  Debug logs are written to:
+[90m│[39m  /home/agent/workspace/apps/storybook-react-native/debug-storybook.log
+[90m│[39m
+[90m└[39m  [32mDone![39m
+

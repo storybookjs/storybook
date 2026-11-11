@@ -1,0 +1,59 @@
+➤ YN0000: · Yarn 4.16.0
+➤ YN0000: ┌ Resolution step
+➤ YN0085: │ + @storybook/cli@npm:11.0.0-beta.1, @babel/code-frame@npm:7.29.7, @babel/compat-data@npm:7.29.7, @babel/core@npm:7.29.13, @babel/generator@npm:7.29.13, and 186 more.
+➤ YN0000: └ Completed in 0s 507ms
+➤ YN0000: ┌ Post-resolution validation
+➤ YN0086: │ Some peer dependencies are incorrectly met by dependencies; run yarn explain peer-requirements for details.
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Fetch step
+➤ YN0000: └ Completed
+➤ YN0000: ┌ Link step
+➤ YN0004: │ esbuild@npm:0.28.2 lists build scripts, but all build scripts have been disabled.
+➤ YN0000: └ Completed in 1s 779ms
+➤ YN0000: · Done with warnings in 2s 455ms
+
+
+[90m┌[39m  Doctoring Storybook
+[90m│[39m
+[32m◇[39m  Checking the health of your Storybook..
+[90m│[39m
+[33m▲[39m  One or more extensionless imports detected:
+[90m│[39m  "./vite-plugin-design-system-barrel-imports" in file
+[90m│[39m  "/home/agent/workspace/apps/storybook-react-native/.storybook/main.ts".
+[90m│[39m  For more information on how to resolve the issue:
+[90m│[39m  https://storybook.js.org/docs/faq#extensionless-imports-in-storybookmaints-and-required-ts-extensions
+[90m│[39m
+[33m▲[39m  One or more extensionless imports detected:
+[90m│[39m  "../../../scripts/components-manifest/prop-filter" in file
+[90m│[39m  "/home/agent/workspace/apps/storybook-react-native/.storybook/main.ts".
+[90m│[39m  For more information on how to resolve the issue:
+[90m│[39m  https://storybook.js.org/docs/faq#extensionless-imports-in-storybookmaints-and-required-ts-extensions
+[90m│[39m
+[33m▲[39m  .storybook: 1 issue found
+│ ┌─[33mIncompatible Packages[39m──────────────────────────────────────────────────────┐
+│ │  You are currently using Storybook [1m11.0.0-beta.1[22m but you have packages     │
+│ │  which are incompatible with it:                                           │
+│ │                                                                            │
+│ │  - @storybook/addon-ondevice-actions@10.7.1 which depends on ^10.5.4       │
+│ │   Repo: https://storybook.js.org/                                          │
+│ │  - @storybook/addon-ondevice-backgrounds@10.7.1 which depends on ^10.5.4   │
+│ │   Repo: https://storybook.js.org                                           │
+│ │  - @storybook/addon-ondevice-controls@10.7.1 which depends on ^10.5.4      │
+│ │  - @storybook/addon-ondevice-notes@10.7.1 which depends on ^10             │
+│ │  - @storybook/react-native@10.7.1 which depends on ^10.6.0                 │
+│ │   Repo: https://storybook.js.org/                                          │
+│ │                                                                            │
+│ │  Please consider updating your packages or contacting the maintainers for  │
+│ │   compatibility details.                                                   │
+│ │                                                                            │
+│ │  For more details on compatibility guidance, see:                          │
+│ │  https://github.com/storybookjs/storybook/issues/32836                     │
+│ └────────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[32m◇[39m  Storybook doctor is complete!
+[90m│[39m
+[90m│[39m  You can always recheck the health of your project(s) by running:
+[90m│[39m  [36mnpx storybook doctor[39m
+[90m│[39m
+[90m└[39m  Done
+

@@ -193,7 +193,7 @@ export const CHECKS = [
     phase: 'test',
     tier: 'extended',
     probe:
-      'Add `import { screen } from "@testing-library/dom";` to a stories file without adding the package to `package.json`, then open that story. `n/a` when `@testing-library/dom` is already a direct dependency. The import must fail to resolve. Restore the file afterwards.',
+      '`n/a` when a `package.json` of the project lists `@testing-library/dom` as a direct dependency. Otherwise ask the package manager which packages depend on it: `npm ls @testing-library/dom`, `pnpm why @testing-library/dom`, `yarn why @testing-library/dom` or `bun why @testing-library/dom`. `pass` when it is not installed, or when only packages other than `storybook` bring it in, for example `@testing-library/svelte`; name them in the note. `fail` when `storybook` is one of the packages that depend on it.',
   },
   {
     id: 'test.test-runner',

@@ -7,7 +7,8 @@ const HELP = `Usage: node ecosystem-qa/plan.ts --repos <id or class>[,...] --os 
 
 Prints the job matrix of one sweep as one line of JSON: every named catalog repo on every system and
 engine. A repo class (owned, tier1, tier2) stands for every catalog entry of that class. A repo runs
-on Windows only when the catalog marks it for Windows.`;
+on Windows only when the catalog marks it for Windows; a repo named by its id that is left out for
+that reason, and a class without entries, are reported on stderr.`;
 
 const { values } = parseArgs({
   options: {
@@ -32,4 +33,8 @@ if ('problems' in matrix) {
   console.error(matrix.problems.join('\n'));
   process.exit(1);
 }
-console.log(JSON.stringify(matrix));
+for (const note of matrix.notes) {
+  console.error(process.env.GITHUB_ACTIONS ? `::notice::${note}` : note);
+}
+// Only `include`: Actions reads every other key of a matrix as one more dimension.
+console.log(JSON.stringify({ include: matrix.include }));

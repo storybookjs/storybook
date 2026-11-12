@@ -22,6 +22,7 @@ describe('sweepMatrix', () => {
     expect(
       sweepMatrix(CATALOG, { repos: 'mealdrop', oses: 'linux,windows', engines: 'claude' })
     ).toEqual({
+      notes: [],
       include: [
         {
           repo: 'mealdrop',
@@ -70,6 +71,33 @@ describe('sweepMatrix', () => {
 
   it('plans a repo once when it is named twice or also through its class', () => {
     expect(jobs('n8n, tier1,n8n')).toEqual(['n8n linux claude', 'mantine linux claude']);
+  });
+
+  it('plans a system and an engine once when the list repeats them', () => {
+    expect(jobs('n8n', 'linux,linux', 'claude, claude')).toEqual(['n8n linux claude']);
+  });
+
+  it('says which named repo it leaves off Windows, and which class is empty', () => {
+    expect(
+      sweepMatrix(CATALOG, {
+        repos: 'n8n,mealdrop,tier2',
+        oses: 'linux,windows',
+        engines: 'claude',
+      })
+    ).toMatchObject({
+      notes: [
+        'n8n is not marked for windows in the catalog, so it does not run there',
+        'No catalog entry has the class tier2',
+      ],
+    });
+  });
+
+  it('has nothing to say about a repo that a class brought in and that stays off Windows', () => {
+    expect(
+      sweepMatrix(CATALOG, { repos: 'tier1', oses: 'linux,windows', engines: 'claude' })
+    ).toMatchObject({
+      notes: [],
+    });
   });
 
   it('names what is neither a catalog id nor a repo class', () => {

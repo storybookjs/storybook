@@ -26,11 +26,14 @@ export interface SweepJob {
   sandbox: 'docker' | 'none';
 }
 
-const listOf = (text: string): string[] =>
-  text
-    .split(',')
-    .map((item) => item.trim())
-    .filter((item) => item !== '');
+const listOf = (text: string): string[] => [
+  ...new Set(
+    text
+      .split(',')
+      .map((item) => item.trim())
+      .filter((item) => item !== '')
+  ),
+];
 
 const pick = <Value extends string>(
   schema: z.ZodType<Value> & { options: readonly string[] },
@@ -64,12 +67,28 @@ const select = (catalog: CatalogEntry[], names: string[]) => {
   };
 };
 
+// What a request names and the plan still leaves out. A repo that only its class brought in stays
+// off Windows by design, so it gets no note.
+const notesFor = (catalog: CatalogEntry[], names: string[], systems: RunnerOs[]): string[] => [
+  ...names.flatMap((name) => {
+    const entry = catalog.find((candidate) => candidate.id === name);
+    return systems.includes('windows') && entry && !entry.windows
+      ? [`${name} is not marked for windows in the catalog, so it does not run there`]
+      : [];
+  }),
+  ...names
+    .filter(
+      (name) => RepoClass.safeParse(name).success && !catalog.some((entry) => entry.class === name)
+    )
+    .map((name) => `No catalog entry has the class ${name}`),
+];
+
 // Plan the jobs of one sweep: every selected repo on every system and engine asked for, with
 // Windows only for the repos the catalog marks for it.
 export const sweepMatrix = (
   catalog: CatalogEntry[],
   { repos, oses, engines }: SweepRequest
-): { include: SweepJob[] } | { problems: string[] } => {
+): { include: SweepJob[]; notes: string[] } | { problems: string[] } => {
   const names = listOf(repos);
   if (names.length === 0) {
     return { problems: ['No repo was named'] };
@@ -94,6 +113,6 @@ export const sweepMatrix = (
       )
   );
   return include.length > 0
-    ? { include }
+    ? { include, notes: notesFor(catalog, names, os.values) }
     : { problems: [`Nothing to run for ${names.join(', ')} on ${oses} with ${engines}`] };
 };

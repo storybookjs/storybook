@@ -28,16 +28,14 @@ const containersOfThisRun = () => {
     );
 };
 
-/**
- * Limit the memory of this run's sandbox container to a share of what the Docker daemon has, and
- * write what happened to `reportFile`, which sits in the run's evidence.
- *
- * Without a limit, a build that takes all the memory starves the host. On a GitHub runner the job
- * then ends with "lost communication" and no result. Under the limit the kernel ends that build
- * inside the container, and the agent sees its exit status.
- *
- * Never throws: a run without the limit is better than no run.
- */
+// Limit the memory of this run's sandbox container to a share of what the Docker daemon has, and
+// write what happened to `reportFile`, which sits in the run's evidence.
+//
+// Without a limit, a build that takes all the memory starves the host. On a GitHub runner the job
+// then ends with "lost communication" and no result. Under the limit the kernel ends that build
+// inside the container, and the agent sees its exit status.
+//
+// Never throws: a run without the limit is better than no run.
 const capMemory = (reportFile) => {
   let report;
   try {

@@ -527,7 +527,7 @@ describe('renderIssueBody', () => {
       `published in storybookjs/mealdrop as \`refs/qa/sb-${VERSION}/linux-claude\` so that no workflow ran it`
     );
     expect(body).toContain(
-      `git push https://github.com/storybookjs/mealdrop refs/qa/sb-${VERSION}/linux-claude:refs/heads/qa/sb-${VERSION}/linux-claude`
+      `git push https://github.com/storybookjs/mealdrop ${'b'.repeat(40)}:refs/heads/qa/sb-${VERSION}/linux-claude`
     );
     expect(body).toContain(`sha: ${'b'.repeat(40)}\ncycleRef: refs/qa/sb-${VERSION}/linux-claude`);
   });

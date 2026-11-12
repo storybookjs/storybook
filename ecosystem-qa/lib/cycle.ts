@@ -2,18 +2,13 @@ import { closeSync, openSync, readSync } from 'node:fs';
 
 import type { Engine, Os } from './schema.ts';
 
-/** Return the repository that holds an entry's baseline and receives its cycle refs. */
+// Return the repository that holds an entry's baseline and receives its cycle refs.
 export const cycleRepo = (entry: { repo: string; pushTo?: string }): string =>
   entry.pushTo ?? entry.repo;
 
 export const SEMVER = /^(\d+)\.(\d+)\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 const SHA = /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/;
 
-/**
- * Return the `major.minor` line of a Storybook version.
- *
- * @throws When the version is not a plain semver string.
- */
 export const versionLine = (version: string): string => {
   const match = SEMVER.exec(version);
   if (!match) {

@@ -29,10 +29,10 @@ export type FilingStep =
 
 export interface FilingOptions {
   repo: string;
-  /** `assets` links evidence on the qa-assets branch of `repo`; `local` links the downloaded files. */
+  // `assets` links evidence on the qa-assets branch of `repo`; `local` links the downloaded files.
   evidenceLinks: 'assets' | 'local';
   filedAs?: number;
-  /** What the issue a comment proposal targets already says: its own body and its comments. */
+  // What the issue a comment proposal targets already says: its own body and its comments.
   existing?: string[];
 }
 
@@ -45,7 +45,7 @@ const suppressedBecause = ({
     ? `#${existingIssue} is labelled qa:known`
     : `fixed in #${existingIssue} after ${sources[0]!.version} was published`;
 
-/** Return the ordered steps that file one proposal; a skip step is always the only step. */
+// Return the ordered steps that file one proposal; a skip step is always the only step.
 export const planFiling = (proposal: Proposal, options: FilingOptions): FilingStep[] => {
   if (proposal.kind === 'suppressed') {
     return [{ kind: 'skip', reason: suppressedBecause(proposal) }];

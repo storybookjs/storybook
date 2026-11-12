@@ -67,6 +67,7 @@ Search open issues with the `upgrade:11.0` label first, and comment on a match i
     When the probe proves only part of the row, `; manual: <rest>` after the id names what a person still checks.
   - `monorepo: <test>` when the monorepo's own unit or E2E tests prove the row and its outcome does not depend on the project, so the agent never spends a run on it.
     The cell names the test file, and that file exists.
+    When the test proves only part of the row, `; manual: <rest>` after it names what a person still checks.
   - `manual: <reason>` when a person has to check it: the pass condition is motion, wording, layout or a click the agent cannot drive, or the row does not depend on the project and no monorepo test covers it yet.
     A manual row that a spec partly automates says so after the reason (`; e2e: <spec>`), so a bug bash can spend its time on the rows nothing automates.
 
@@ -198,7 +199,7 @@ Poll `index.json` for sidebar changes so a slow rebuild is not mistaken for a fa
 | HMR-1 | Change an arg value in a stories file and save. | The canvas updates without a full page reload, and the Controls panel shows the new value. | pre-9 ; source: team practice | manual: bug bash or feature session | Edit a story |
 | HMR-2 | Add a decorator or a global parameter in `.storybook/preview.*` and save. | Every story picks it up without restarting the server. | pre-9 ; source: team practice | core.hmr.preview-file | Edit the preview file |
 | HMR-3 | Add a new named export to an existing stories file. | The new story appears in the sidebar and renders. | pre-9 ; source: team practice | core.hmr.stories-file | Add a story to a file |
-| HMR-4 | Rename an export, or its `name`, in an existing stories file. | The sidebar shows the new name, the old entry is gone, and the selected story still renders. | pre-9 ; source: team practice | monorepo: `core/src/core-server/utils/StoryIndexGenerator.test.ts` | Rename a story |
+| HMR-4 | Rename an export, or its `name`, in an existing stories file. | The sidebar shows the new name, the old entry is gone, and the selected story still renders. | pre-9 ; source: team practice | monorepo: `core/src/core-server/utils/StoryIndexGenerator.test.ts`; manual: the sidebar of an open manager, and that the selected story still renders | Rename a story |
 | HMR-5 | Create a new `*.stories.*` file matched by `stories` in main. | Its component appears in the sidebar and renders, with no error overlay. | pre-9 ; source: team practice | core.hmr.new-file; manual: the sidebar of a manager that was already open | Add a stories file |
 | HMR-6 | Delete a stories file while one of its stories is selected. | Its entries leave the sidebar and the manager shows no crash; a running test watcher does not try to load it. | pre-9 ; source: team practice | core.hmr.delete-file; manual: the open manager that has the story selected, and a running test watcher | Delete a stories file |
 | HMR-7 | Change a component's markup or styles. | The story rerenders with the change; a running `play` function is aborted and restarts. | 9.1 ; CL: 9.1.0 | manual: bug bash or feature session | Edit a component |
@@ -209,7 +210,7 @@ Poll `index.json` for sidebar changes so a slow rebuild is not mistaken for a fa
 
 | Row | Probe | Pass when | Since | Agent | Check |
 | ------ | ----- | --------- | ----- | ----- | ----- |
-| CTL-1 | Open a story with args and change a text, boolean, select and object control. | The story rerenders with each value. | pre-9 ; `docs/essentials/controls.mdx` | monorepo: `e2e-sandbox/addon-controls.spec.ts` | Changing a control rerenders |
+| CTL-1 | Open a story with args and change a text, boolean, select and object control. | The story rerenders with each value. | pre-9 ; `docs/essentials/controls.mdx` | monorepo: `e2e-sandbox/addon-controls.spec.ts`; manual: the object control | Changing a control rerenders |
 | CTL-2 | Change several controls, then click **Reset controls**. | Every value and the story return to the story's args. | pre-9 ; `docs/essentials/controls.mdx` | manual: clicks in the manager or the test widget; e2e: `e2e-sandbox/addon-controls.spec.ts` | Reset |
 | CTL-3 | Open `?path=/story/<id>&args=<name>:<value>`. | The control shows the value and the story renders with it. | pre-9 ; `docs/essentials/controls.mdx` | monorepo: `e2e-sandbox/addon-controls.spec.ts` | Args from the URL |
 | CTL-4 | Change a control in dev. | A bar at the bottom of the panel offers **Update story** and **Create new story**. | pre-9 ; `docs/essentials/controls.mdx` | manual: clicks in the manager or the test widget; e2e: `e2e-tests/save-from-controls.spec.ts` | Save bar appears |
@@ -346,7 +347,7 @@ CSF Next (CSF factories) stories are written as `preview.meta({...})` and `meta.
 
 | Row | Probe | Pass when | Since | Agent | Check |
 | ------ | ----- | --------- | ----- | ----- | ----- |
-| MCP-1 | `npx storybook add @storybook/addon-mcp`, start dev, open `http://localhost:6006/mcp` in a browser. | The page lists the enabled toolsets and links to the manifest debugger. | 10.3 ; CL: 10.3.0 ; `docs/ai/mcp/overview.mdx` | monorepo: `e2e-sandbox/addon-mcp.spec.ts` | Info page |
+| MCP-1 | `npx storybook add @storybook/addon-mcp`, start dev, open `http://localhost:6006/mcp` in a browser. | The page lists the enabled toolsets and links to the manifest debugger. | 10.3 ; CL: 10.3.0 ; `docs/ai/mcp/overview.mdx` | monorepo: `e2e-sandbox/addon-mcp.spec.ts`; manual: the link to the manifest debugger | Info page |
 | MCP-2 | Connect an MCP client and list tools. | The tools are named `stories-preview`, `stories-changed`, `stories-find-by-component`, `review-create`, `test-run`, `docs-list`, `docs-show`, `docs-show-story` and `get-storybook-story-instructions`. | 10.6 ; M: MCP tool names follow toolset.method | manual: bug bash or feature session; e2e: `e2e-sandbox/addon-mcp.spec.ts` | Tool names |
 | MCP-3 | In a React, Vue 3 Vite, Svelte or Angular Vite project, without setting `features.componentsManifest`, call `docs-list` and `docs-show` for one component. | The manifest is on by default, so it lists the components and returns props and example stories. | 11.0 ; CL: 11.0.0-alpha.2 ; `docs/api/main-config/main-config-features.mdx` | core.components-manifest; manual: the `docs-list` and `docs-show` calls | Docs toolset without config |
 | MCP-4 | Open `http://localhost:6006/manifests/components.html`. | It lists the components and docs pages, and the error and warning filters work. | 10.1 ; CL: 10.1.0-alpha.2 ; `docs/ai/manifests.mdx` | core.components-manifest; manual: the docs pages and the error and warning filters | Manifest debugger |

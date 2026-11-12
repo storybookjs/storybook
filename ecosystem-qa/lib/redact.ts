@@ -35,11 +35,9 @@ export const redactSecrets = (text: string): string => {
   return redacted.replace(BASE64_RUN, (run) => (decodesToSecret(run) ? REDACTED : run));
 };
 
-/**
- * Copy an evidence file, redacting credentials when it is text. A file counts as text when it is
- * valid UTF-8 without a NUL byte, whatever its extension; images and other binaries are copied as
- * they are.
- */
+// Copy an evidence file, redacting credentials when it is text. A file counts as text when it is
+// valid UTF-8 without a NUL byte, whatever its extension; images and other binaries are copied as
+// they are.
 export const copyRedacted = (source: string, target: string): void => {
   const content = readFileSync(source);
   const text = content.toString('utf8');
@@ -47,7 +45,7 @@ export const copyRedacted = (source: string, target: string): void => {
   writeFileSync(target, isText ? redactSecrets(text) : content);
 };
 
-/** Redact every regular text file under `dir` in place; symlinks and binaries are left alone. */
+// Redact every regular text file under `dir` in place; symlinks and binaries are left alone.
 export const redactTree = (dir: string): void => {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const path = join(dir, entry.name);

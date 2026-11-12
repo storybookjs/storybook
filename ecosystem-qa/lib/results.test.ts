@@ -1,16 +1,39 @@
-import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import {
+  closeSync,
+  existsSync,
+  lstatSync,
+  openSync,
+  readFileSync,
+  readSync,
+  realpathSync,
+} from 'node:fs';
 
+import { fs as memfs, vol } from 'memfs';
 import { dirname, join } from 'pathe';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ENTRY, finding, loaded, VERSION } from './fixtures.ts';
 import { downloadedRuns, loadResults, upgraded } from './results.ts';
 import { Finding, type RunResultFile } from './schema.ts';
 
+vi.mock('node:fs', { spy: true });
+
+beforeEach(() => {
+  vol.reset();
+  vi.mocked(closeSync).mockImplementation(memfs.closeSync as typeof closeSync);
+  vi.mocked(existsSync).mockImplementation(memfs.existsSync as typeof existsSync);
+  vi.mocked(lstatSync).mockImplementation(memfs.lstatSync as typeof lstatSync);
+  vi.mocked(openSync).mockImplementation(memfs.openSync as typeof openSync);
+  vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as typeof readFileSync);
+  vi.mocked(readSync).mockImplementation(memfs.readSync as typeof readSync);
+  vi.mocked(realpathSync).mockImplementation(memfs.realpathSync as typeof realpathSync);
+});
+
+const resultsDir = '/results';
+
 const write = (path: string, content: string) => {
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, content);
+  memfs.mkdirSync(dirname(path), { recursive: true });
+  memfs.writeFileSync(path, content);
 };
 
 const record = (overrides: Partial<RunResultFile> = {}): RunResultFile => ({
@@ -36,7 +59,6 @@ const artifactRun = (resultsDir: string) =>
 
 describe('loadResults', () => {
   it('reads only the records the runner wrote, never one inside the evidence', () => {
-    const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
     const runDir = artifactRun(resultsDir);
     writeRun(runDir);
     writeRun(join(runDir, 'evidence'));
@@ -55,7 +77,6 @@ describe('loadResults', () => {
   });
 
   it('ignores a record that names another version or os than the place it was found', () => {
-    const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
     writeRun(artifactRun(resultsDir), {
       ...record(),
       request: { ...record().request, version: '11.0.0-beta.1', os: 'windows' },
@@ -68,7 +89,6 @@ describe('loadResults', () => {
   });
 
   it('takes the repository from the catalog and the head from the bundle, not from the record', () => {
-    const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
     const runDir = artifactRun(resultsDir);
     const branch = `qa/sb-${VERSION}/linux-claude`;
     writeRun(runDir, {
@@ -97,7 +117,6 @@ describe('loadResults', () => {
   });
 
   it('reports the fork that holds the baseline as the cycle repository', () => {
-    const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
     const fork = { ...ENTRY, class: 'tier1' as const, pushTo: 'storybook-tmp/mealdrop' };
     writeRun(artifactRun(resultsDir));
 
@@ -111,7 +130,6 @@ describe('loadResults', () => {
   });
 
   it('loads a record written before the starting version was recorded', () => {
-    const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
     const { storybookVersionBefore: _newer, ...older } = record({
       storybookVersionBefore: '10.6.0',
     });
@@ -124,7 +142,6 @@ describe('loadResults', () => {
   });
 
   it('rejects a model id that could close the metadata fence in the issue body', () => {
-    const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
     const base = record();
     writeRun(artifactRun(resultsDir), {
       ...base,
@@ -138,7 +155,6 @@ describe('loadResults', () => {
   });
 
   it('skips a truncated result.json and still collects the other runs', () => {
-    const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
     write(
       join(resultsDir, 'qa-result-linux-codex/mealdrop/linux/codex/result.json'),
       '{"request": {'
@@ -152,7 +168,6 @@ describe('loadResults', () => {
   });
 
   it('treats a bundle without the cycle branch as no commits', () => {
-    const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
     const runDir = artifactRun(resultsDir);
     writeRun(runDir);
     write(
@@ -166,47 +181,42 @@ describe('loadResults', () => {
     expect(warnings).toContainEqual(expect.stringMatching(/has no ref for/));
   });
 
-  // Collect runs on Linux, and creating a symlink on Windows needs a privilege CI does not have.
-  it.skipIf(process.platform === 'win32')(
-    'keeps regular evidence files and drops missing ones, symlinks and escapes',
-    () => {
-      const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
-      const outside = mkdtempSync(join(tmpdir(), 'qa-outside-'));
-      write(join(outside, 'secret.log'), 'token');
-      const runDir = artifactRun(resultsDir);
-      const evidence = join(runDir, 'evidence');
-      write(join(evidence, 'hmr-frames/01.png'), 'png');
-      write(join(evidence, 'dev.log'), 'log');
-      symlinkSync(join(outside, 'secret.log'), join(evidence, 'link.log'));
-      symlinkSync(outside, join(evidence, 'escape'));
-      writeRun(
-        runDir,
-        record({
-          findings: [
-            finding({
-              evidence: {
-                png: 'hmr-frames/01.png',
-                gif: 'missing.gif',
-                logs: ['dev.log', 'link.log', 'escape/secret.log'],
-              },
-            }),
-          ],
-        })
-      );
+  it('keeps regular evidence files and drops missing ones, symlinks and escapes', () => {
+    const outside = '/outside';
+    write(join(outside, 'secret.log'), 'token');
+    const runDir = artifactRun(resultsDir);
+    const evidence = join(runDir, 'evidence');
+    write(join(evidence, 'hmr-frames/01.png'), 'png');
+    write(join(evidence, 'dev.log'), 'log');
+    memfs.symlinkSync(join(outside, 'secret.log'), join(evidence, 'link.log'));
+    memfs.symlinkSync(outside, join(evidence, 'escape'));
+    writeRun(
+      runDir,
+      record({
+        findings: [
+          finding({
+            evidence: {
+              png: 'hmr-frames/01.png',
+              gif: 'missing.gif',
+              logs: ['dev.log', 'link.log', 'escape/secret.log'],
+            },
+          }),
+        ],
+      })
+    );
 
-      const { results, warnings } = load(resultsDir);
+    const { results, warnings } = load(resultsDir);
 
-      expect(results[0]?.result.findings[0]?.evidence).toEqual({
-        png: 'hmr-frames/01.png',
-        logs: ['dev.log'],
-      });
-      expect(warnings).toEqual([
-        expect.stringMatching(/missing\.gif .*does not exist/),
-        expect.stringMatching(/link\.log .*is a symlink/),
-        expect.stringMatching(/escape\/secret\.log .*outside the evidence directory/),
-      ]);
-    }
-  );
+    expect(results[0]?.result.findings[0]?.evidence).toEqual({
+      png: 'hmr-frames/01.png',
+      logs: ['dev.log'],
+    });
+    expect(warnings).toEqual([
+      expect.stringMatching(/missing\.gif .*does not exist/),
+      expect.stringMatching(/link\.log .*is a symlink/),
+      expect.stringMatching(/escape\/secret\.log .*outside the evidence directory/),
+    ]);
+  });
 });
 
 describe('evidence names in a finding', () => {
@@ -227,7 +237,6 @@ describe('evidence names in a finding', () => {
 
 describe('system info', () => {
   it('strips the colour codes and the box prefix the CLI prints', () => {
-    const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
     const runDir = artifactRun(resultsDir);
     writeRun(runDir);
     write(
@@ -241,7 +250,6 @@ describe('system info', () => {
   });
 
   it('treats a capture without the report as no info', () => {
-    const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
     const runDir = artifactRun(resultsDir);
     writeRun(runDir);
     write(
@@ -271,7 +279,7 @@ describe('upgraded', () => {
 
 describe('downloadedRuns', () => {
   it('maps each catalog run of a download to its place in a local results directory', () => {
-    const download = mkdtempSync(join(tmpdir(), 'qa-download-'));
+    const download = '/download';
     writeRun(artifactRun(download));
     writeRun(join(artifactRun(download), 'evidence'));
     writeRun(join(download, 'qa-result-linux-claude/not-in-the-catalog/linux/claude'));

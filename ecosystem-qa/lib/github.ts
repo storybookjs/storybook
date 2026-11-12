@@ -59,13 +59,11 @@ export const qaIssuesFrom = (
         : {}),
     }));
 
-/**
- * List every issue of `repo` that carries `label`, with the comments the harness wrote on it.
- *
- * One listing replaces a search per fingerprint, which the search rate limit of 30 a minute cannot
- * serve for a whole sweep, and a listing sees an issue the moment it exists while the search index lags.
- * The comments take one more request for each issue that has any.
- */
+// List every issue of `repo` that carries `label`, with the comments the harness wrote on it.
+//
+// One listing replaces a search per fingerprint, which the search rate limit of 30 a minute cannot
+// serve for a whole sweep, and a listing sees an issue the moment it exists while the search index lags.
+// The comments take one more request for each issue that has any.
 export const listQaIssues = (repo: string, label: string): QaIssue[] =>
   qaIssuesFrom(
     pages(IssueItem, `repos/${repo}/issues?labels=${label}&state=all&per_page=100`),
@@ -87,12 +85,10 @@ const ReleaseAnswer = z.object({
 export const publishedAtFrom = (answer: unknown): string | undefined =>
   ReleaseAnswer.parse(answer).data.repository.release?.publishedAt ?? undefined;
 
-/**
- * Return when the GitHub release `v<version>` of `repo` was published, or nothing when there is no
- * such release.
- *
- * Asked through GraphQL, which answers a missing release with null where REST answers 404.
- */
+// Return when the GitHub release `v<version>` of `repo` was published, or nothing when there is no
+// such release.
+//
+// Asked through GraphQL, which answers a missing release with null where REST answers 404.
 export const releasePublishedAt = (repo: string, version: string): string | undefined => {
   const [owner = '', name = ''] = repo.split('/');
   const fields = { query: RELEASE_QUERY, owner, name, tag: `v${version}` };

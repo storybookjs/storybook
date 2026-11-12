@@ -224,12 +224,10 @@ const loadRun = (
   };
 };
 
-/**
- * Load every run record of one cycle from the places the runner writes them.
- *
- * The repository, branch and version come from the catalog and the caller, not from the record,
- * and evidence that is missing, a symlink or outside its run's evidence directory is dropped.
- */
+// Load every run record of one cycle from the places the runner writes them.
+//
+// The repository, branch and version come from the catalog and the caller, not from the record,
+// and evidence that is missing, a symlink or outside its run's evidence directory is dropped.
 export const loadResults = (
   resultsDir: string,
   { version, catalog, warn }: LoadOptions
@@ -245,6 +243,6 @@ export const loadResults = (
     )
   );
 
-/** Whether the installed Storybook is the version the run was asked to upgrade to. */
+// Whether the installed Storybook is the version the run was asked to upgrade to.
 export const upgraded = (result: RunResultFile): boolean =>
   result.storybookVersionInstalled === result.request.version;

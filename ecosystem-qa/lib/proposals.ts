@@ -27,12 +27,12 @@ export interface FindingGroup {
   occurrences: LoadedResult[];
 }
 
-/** Fingerprint groups that share one root cause; `members` starts with `lead` and keeps the file's order. */
+// Fingerprint groups that share one root cause; `members` starts with `lead` and keeps the file's order.
 export interface Cluster {
   lead: FindingGroup;
   members: FindingGroup[];
   existingIssue?: number;
-  /** Why a person decided that nothing is filed for this cluster. */
+  // Why a person decided that nothing is filed for this cluster.
   skip?: string;
 }
 
@@ -47,26 +47,24 @@ export const QA_LABEL = 'internal-qa';
 export interface QaIssue extends IssueHit {
   title: string;
   body: string;
-  /** The comments the harness wrote on the issue, oldest first. */
+  // The comments the harness wrote on the issue, oldest first.
   comments: string[];
-  /** When the issue was closed as completed. Absent while it is open or closed for another reason. */
+  // When the issue was closed as completed. Absent while it is open or closed for another reason.
   completedAt?: string;
 }
 
-/** Return what the harness wrote on an issue: its body, then its comments. */
+// Return what the harness wrote on an issue: its body, then its comments.
 export const writtenOn = ({ body, comments }: Pick<QaIssue, 'body' | 'comments'>): string[] => [
   body,
   ...comments,
 ];
 
-/**
- * Return the issues that carry any of the fingerprints, in the order given.
- *
- * An issue carries the fingerprints in the metadata block that ends its body and each comment of the
- * harness, so one that joined through a comment counts like one in the body. The same digits
- * further up do not count: that text can come from an agent, and every fingerprint is public, so a
- * finding could otherwise claim the issue of another one.
- */
+// Return the issues that carry any of the fingerprints, in the order given.
+//
+// An issue carries the fingerprints in the metadata block that ends its body and each comment of the
+// harness, so one that joined through a comment counts like one in the body. The same digits
+// further up do not count: that text can come from an agent, and every fingerprint is public, so a
+// finding could otherwise claim the issue of another one.
 export const hitsFor = (issues: QaIssue[], fingerprints: string[]): QaIssue[] =>
   issues.filter((issue) => {
     const carried = writtenOn(issue).flatMap((text) => {
@@ -81,7 +79,7 @@ export const hitsFor = (issues: QaIssue[], fingerprints: string[]): QaIssue[] =>
 export const openHit = (hits: IssueHit[]): IssueHit | undefined =>
   hits.find((hit) => hit.state === 'open');
 
-/** Map each fingerprint that an open issue carries to that issue, the first one in the order given. */
+// Map each fingerprint that an open issue carries to that issue, the first one in the order given.
 export const openIssueOf = (issues: QaIssue[], fingerprints: string[]): Map<string, number> =>
   new Map(
     fingerprints.flatMap((fingerprint) => {
@@ -115,7 +113,7 @@ export const groupFindings = (results: LoadedResult[]): FindingGroup[] => {
   return [...groups.values()];
 };
 
-/** Load the results of the catalog's runs of `version` under `resultsDir` and merge their findings by fingerprint. */
+// Load the results of the catalog's runs of `version` under `resultsDir` and merge their findings by fingerprint.
 export const loadFindingGroups = (
   resultsDir: string,
   version: string
@@ -148,7 +146,7 @@ const systemText = ({ result, systemInfo }: LoadedResult): string =>
 
 const unique = (values: string[]) => [...new Set(values)].join(', ');
 
-/** Opens the metadata block of every issue and comment the harness writes. */
+// Opens the metadata block of every issue and comment the harness writes.
 export const METADATA_MARKER = '<!-- sb-qa-metadata -->';
 
 const metadataFields = (proposal: IssueProposal | CommentProposal): [string, string][] => {
@@ -215,15 +213,13 @@ const sightingsIn = (text: string): string[] => {
   return fields.get('sightings')?.split(', ') ?? [blockSighting(fields)];
 };
 
-/**
- * Whether the texts the harness wrote on an issue already report everything a proposal would add.
- *
- * A sighting is one finding of the group in one run: its fingerprint with that run's repo, commit,
- * system, engine and version. A proposal is reported when the issue has each of its sightings, so
- * another order or another split of the same group adds no comment, and a member seen in a new repo
- * does. A block written before sightings had keys counts only for a proposal from a single run;
- * for any other, reporting once more is safer than losing a sighting.
- */
+// Whether the texts the harness wrote on an issue already report everything a proposal would add.
+//
+// A sighting is one finding of the group in one run: its fingerprint with that run's repo, commit,
+// system, engine and version. A proposal is reported when the issue has each of its sightings, so
+// another order or another split of the same group adds no comment, and a member seen in a new repo
+// does. A block written before sightings had keys counts only for a proposal from a single run;
+// for any other, reporting once more is safer than losing a sighting.
 export const alreadyReported = (
   proposal: IssueProposal | CommentProposal,
   texts: string[]
@@ -262,7 +258,7 @@ const inlineTitle = (title: string): string =>
 
 const RELATED_HEADING = 'Also seen as:';
 
-/** List the other members of a group under `heading`, or nothing for a group of one. */
+// List the other members of a group under `heading`, or nothing for a group of one.
 export const relatedLines = (related: Proposal['related'], heading = RELATED_HEADING): string[] =>
   related.length === 0
     ? []
@@ -276,13 +272,11 @@ export const relatedLines = (related: Proposal['related'], heading = RELATED_HEA
         '',
       ];
 
-/**
- * Return the entries of the list of other group members in an issue body or a comment of the harness.
- *
- * The harness writes that list directly before its metadata block. Everything further up can hold
- * agent text, so the same heading there is not read: the list counts only when nothing but its own
- * entries stands between the heading and the block.
- */
+// Return the entries of the list of other group members in an issue body or a comment of the harness.
+//
+// The harness writes that list directly before its metadata block. Everything further up can hold
+// agent text, so the same heading there is not read: the list counts only when nothing but its own
+// entries stands between the heading and the block.
 export const relatedIn = (text: string): string[] => {
   const metadata = text.lastIndexOf(METADATA_MARKER);
   const heading = metadata === -1 ? -1 : text.lastIndexOf(`\n${RELATED_HEADING}\n`, metadata);
@@ -303,7 +297,7 @@ const reproductionLink = (cycle: Cycle): string[] => {
     return [
       `${repoUrl}/tree/${cycle.headSha}`,
       '',
-      `That commit holds the upgraded state, published in ${cycle.repo} as \`${ref}\` so that no workflow ran it. To work with it: \`git fetch ${repoUrl} ${ref} && git checkout FETCH_HEAD\`. To turn it into a branch after reading the diff: \`git push ${repoUrl} ${ref}:refs/heads/${cycle.branch}\`.`,
+      `That commit holds the upgraded state, published in ${cycle.repo} as \`${ref}\` so that no workflow ran it. To work with it: \`git fetch ${repoUrl} ${ref} && git checkout FETCH_HEAD\`. To turn it into a branch after reading the diff: \`git push ${repoUrl} ${cycle.headSha}:refs/heads/${cycle.branch}\`.`,
     ];
   }
   return [
@@ -321,12 +315,10 @@ const reproLines = (raw: Finding, capped: Finding): string[] => {
   ];
 };
 
-/**
- * Render the bug-template issue body, linking each evidence file through `evidenceUrl`.
- *
- * Every field the agent wrote is capped and rendered inside a fence, so none of it can mention,
- * reference, link or format anything.
- */
+// Render the bug-template issue body, linking each evidence file through `evidenceUrl`.
+//
+// Every field the agent wrote is capped and rendered inside a fence, so none of it can mention,
+// reference, link or format anything.
 export const renderIssueBody = (
   proposal: IssueProposal,
   evidenceUrl: (name: string) => string | null
@@ -515,11 +507,11 @@ const decide = (
 
 export interface ProposalOptions {
   runUrl: string;
-  /** When the tested version was published; an issue closed as completed after it counts as known. */
+  // When the tested version was published; an issue closed as completed after it counts as known.
   publishedAt?: string | undefined;
 }
 
-/** Build the one proposal for a cluster from its lead, matching `issues` by any member's fingerprint. */
+// Build the one proposal for a cluster from its lead, matching `issues` by any member's fingerprint.
 export const toProposal = (
   { lead, members, existingIssue, skip }: Cluster,
   issues: QaIssue[],

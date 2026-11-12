@@ -166,7 +166,7 @@ it.each([
   'src/stories/frameworks/angular/signal/button.stories.ts',
   'stories/renderers/react/Button.stories.tsx',
   'src/app/button.stories.ts',
-  'src/stories/Button.mdx',
+  'src/Button.stories.ts',
 ])('does not match %s in a sandbox', (file) => {
   expect(posix.matchesGlob(file, SANDBOX_STORIES_GLOB)).toBe(false);
 });

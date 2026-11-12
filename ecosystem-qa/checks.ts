@@ -172,11 +172,11 @@ export const CHECKS = [
   },
   {
     id: 'test.coverage-cli',
-    label: 'Vitest coverage runs and serves its report',
+    label: 'Vitest coverage runs from the CLI and writes its report',
     phase: 'test',
     tier: 'extended',
     probe:
-      'Run `npx vitest run --project storybook --coverage` from the Storybook directory and save the output to `coverage.log`. `n/a` without `@storybook/addon-vitest`. Coverage must report a statement percentage and write `coverage/index.html`.',
+      '`n/a` without `@storybook/addon-vitest`, or when no `package.json` of the project lists a coverage provider (`@vitest/coverage-v8` or `@vitest/coverage-istanbul`). `blocked` when `test.vitest-cli` failed: Vitest writes no report after a failed run. Otherwise run `npx vitest run --project storybook --coverage` from the Storybook directory and save the output to `coverage.log`. The report goes where the Vitest config of the project says, so read `coverage.reporter` and `coverage.reportsDirectory` there. With neither set, the run must print a table with a statement percentage and write `coverage/index.html`. With them set, the configured reporters must write their files into the configured directory.',
   },
   {
     id: 'test.setup-annotations',

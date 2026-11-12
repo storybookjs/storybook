@@ -181,11 +181,11 @@ export const CHECKS = [
   {
     id: 'test.setup-annotations',
     label:
-      '`setProjectAnnotations` in a Vitest setup file is migrated or rejected with `SB_ADDON_VITEST_0002`',
+      '`setProjectAnnotations` in a setup file of the Storybook Vitest project is migrated or rejected with `SB_ADDON_VITEST_0002`',
     phase: 'test',
     tier: 'extended',
     probe:
-      'Search the Vitest setup files for `setProjectAnnotations`. `n/a` when the project never called it (check the baseline too). If it was there before the upgrade, the automigration must have removed it; if it is still there, `vitest run --project storybook` must fail with `SB_ADDON_VITEST_0002`.',
+      'In the Vitest config, find the `setupFiles` of the project that loads the `storybookTest` plugin, its own and the ones it inherits from the root config, and search those files for `setProjectAnnotations`. A call in a setup file that only a Vitest project without the plugin loads is still needed there, the automigration leaves it alone, and it does not count. `n/a` when no setup file of the Storybook project called it before the upgrade (check the baseline too). `pass` when the upgrade removed the call, or when it is still there and `npx vitest run --project storybook` fails with `SB_ADDON_VITEST_0002`. `fail` when it is still there and that run does not raise the error.',
   },
   {
     id: 'test.test-libraries',

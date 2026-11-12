@@ -1249,14 +1249,17 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         if (!index || storyId !== finishedStoryId) {
           return;
         }
-        const ids = Array.from(
+        const toBePreloaded = Array.from(
           new Set([
             api.findSiblingStoryId(storyId, index, 1, true),
             api.findSiblingStoryId(storyId, index, -1, true),
           ])
         ).filter(Boolean);
-        if (ids.length > 0) {
-          provider.channel?.emit(PRELOAD_ENTRIES, { ids, options: { target: refId } });
+        if (toBePreloaded.length > 0) {
+          provider.channel?.emit(PRELOAD_ENTRIES, {
+            ids: toBePreloaded,
+            options: { target: refId },
+          });
         }
       });
     }

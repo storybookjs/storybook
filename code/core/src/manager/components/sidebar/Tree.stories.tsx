@@ -1508,6 +1508,7 @@ export const HoverPreloadsFirstStory: Story = {
     );
     expect(emit).toHaveBeenLastCalledWith(PRELOAD_ENTRIES, {
       ids: ['root-3-child-a2--grandchild-a1-1'],
+      source: 'hover',
       options: { target: DEFAULT_REF_ID },
     });
   },

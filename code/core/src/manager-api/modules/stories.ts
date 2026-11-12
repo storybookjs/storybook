@@ -1257,6 +1257,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         if (toBePreloaded.length > 0) {
           provider.channel?.emit(PRELOAD_ENTRIES, {
             ids: toBePreloaded,
+            source: 'sibling',
             options: { target: refId },
           });
         }

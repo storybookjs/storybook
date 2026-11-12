@@ -558,6 +558,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
       // The preview has then usually started to load by the time the user clicks.
       api.emit(PRELOAD_ENTRIES, {
         ids: [isStoryRow(first) ? first.storyRowOf : first.id],
+        source: 'hover',
         options: { target: refId },
       });
     };

@@ -5,6 +5,8 @@ import {
   GLOBALS_UPDATED,
   NAVIGATE_URL,
   PRELOAD_ENTRIES,
+  type PreloadEntriesPayload,
+  type PreloadSource,
   PREVIEW_KEYDOWN,
   SET_CURRENT_STORY,
   STORY_CHANGED,
@@ -92,7 +94,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
   currentRender?: PossibleRender<TRenderer>;
 
-  private pendingPreload: { ids: string[] } | null = null;
+  private pendingPreloads = new Map<PreloadSource | undefined, PreloadEntriesPayload>();
 
   private preloadsDrained: Promise<void> | null = null;
 
@@ -312,24 +314,30 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     super.onUpdateArgs({ storyId, updatedArgs });
   }
 
-  async onPreloadStories(request: { ids: string[] }) {
-    this.pendingPreload = request;
+  async onPreloadStories(request: PreloadEntriesPayload) {
+    this.pendingPreloads.set(request.source, request);
     this.preloadsDrained ??= this.drainPreloads();
     await this.preloadsDrained;
   }
 
   // Sidebar hovers request preloads faster than a dev server compiles them, so batches run one at
-  // a time and a request received while a batch runs replaces any request still waiting.
+  // a time and a request received while a batch runs replaces the one its source has waiting.
+  // Sibling preloads are a guess, so they wait until no other source has a request waiting.
   private async drainPreloads() {
     await this.storeInitializationPromise;
-    while (this.pendingPreload) {
-      const { ids } = this.pendingPreload;
-      this.pendingPreload = null;
+    for (let request = this.takePreload(); request; request = this.takePreload()) {
       // A targeted ref whose iframe is not loaded yet falls back to the active iframe, where the
       // ids may not exist, so one failed entry must not fail the batch.
-      await Promise.allSettled(ids.map((id) => this.storyStoreValue?.loadEntry(id)));
+      await Promise.allSettled(request.ids.map((id) => this.storyStoreValue?.loadEntry(id)));
     }
     this.preloadsDrained = null;
+  }
+
+  private takePreload() {
+    const waiting = [...this.pendingPreloads];
+    const [source, request] = waiting.find(([key]) => key !== 'sibling') ?? waiting[0] ?? [];
+    this.pendingPreloads.delete(source);
+    return request;
   }
 
   // RENDERING

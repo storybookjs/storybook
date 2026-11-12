@@ -1390,7 +1390,9 @@ describe('stories API', () => {
       expect(preloads).toEqual([]);
 
       requestIdleCallback.mock.calls[0][0]({ didTimeout: false, timeRemaining: () => 50 });
-      expect(preloads).toEqual([{ ids: ['component-b--story-3'], options: { target: undefined } }]);
+      expect(preloads).toEqual([
+        { ids: ['component-b--story-3'], source: 'sibling', options: { target: undefined } },
+      ]);
     });
 
     it('skips the preload when another story was selected before the browser went idle', async () => {

@@ -5,7 +5,7 @@ import { dirname, join } from 'pathe';
 import { describe, expect, it } from 'vitest';
 
 import { ENTRY, finding, loaded, VERSION } from './fixtures.ts';
-import { loadResults, upgraded } from './results.ts';
+import { downloadedRuns, loadResults, upgraded } from './results.ts';
 import { Finding, type RunResultFile } from './schema.ts';
 
 const write = (path: string, content: string) => {
@@ -266,5 +266,23 @@ describe('upgraded', () => {
 
   it('is false when the installed version is unknown', () => {
     expect(upgraded(record({ storybookVersionInstalled: null }))).toBe(false);
+  });
+});
+
+describe('downloadedRuns', () => {
+  it('maps each catalog run of a download to its place in a local results directory', () => {
+    const download = mkdtempSync(join(tmpdir(), 'qa-download-'));
+    writeRun(artifactRun(download));
+    writeRun(join(artifactRun(download), 'evidence'));
+    writeRun(join(download, 'qa-result-linux-claude/not-in-the-catalog/linux/claude'));
+    writeRun(join(download, 'another-artifact/mealdrop/linux/claude'));
+
+    expect(downloadedRuns(download, '/out', [ENTRY])).toEqual([
+      {
+        from: artifactRun(download),
+        to: '/out/mealdrop/linux/claude',
+        label: 'mealdrop linux claude',
+      },
+    ]);
   });
 });

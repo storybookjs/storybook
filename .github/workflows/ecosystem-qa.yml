@@ -334,9 +334,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           QA_FROM_RUNS: ${{ needs.plan.outputs.from_runs }}
-        run: |
-          IFS=, read -ra run_ids <<<"$QA_FROM_RUNS"
-          node ecosystem-qa/tools/fetch-runs.mjs "$QA_RESULTS" "${run_ids[@]}"
+          # Results are taken only from runs on the default branch or on the branch of this run.
+          QA_TRUSTED_BRANCHES: ${{ github.event.repository.default_branch }},${{ github.ref_name }}
+        run: >-
+          node ecosystem-qa/fetch-runs.ts --out "$QA_RESULTS" --runs "$QA_FROM_RUNS"
+          --branches "$QA_TRUSTED_BRANCHES"
 
       - name: Upload the results of earlier runs for the filing jobs
         if: ${{ needs.plan.outputs.from_runs != '' }}

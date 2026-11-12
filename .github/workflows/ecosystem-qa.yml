@@ -132,18 +132,22 @@ jobs:
       from_runs: ${{ steps.matrix.outputs.from_runs }}
       groups: ${{ steps.matrix.outputs.groups }}
     steps:
+      # A run that only collects earlier results starts no agent, so it needs no matrix.
       - name: Checkout
+        if: ${{ inputs.from_runs == '' }}
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Setup Node.js
+        if: ${{ inputs.from_runs == '' }}
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: '.nvmrc'
 
       - name: Install the ecosystem-qa workspace
+        if: ${{ inputs.from_runs == '' }}
         run: |
           corepack enable
           yarn workspaces focus ecosystem-qa
@@ -173,7 +177,9 @@ jobs:
             echo "::error::groups is not one JSON document"
             exit 1
           fi
-          if ! matrix="$(node ecosystem-qa/plan.ts --repos "$QA_REPO" --os "$QA_OS" --engines "$QA_ENGINES")"; then
+          if [[ -n "$QA_FROM_RUNS" ]]; then
+            matrix='{"include":[]}'
+          elif ! matrix="$(node ecosystem-qa/plan.ts --repos "$QA_REPO" --os "$QA_OS" --engines "$QA_ENGINES")"; then
             echo "::error::no job matrix for repo '$QA_REPO', os '$QA_OS', engines '$QA_ENGINES'"
             exit 1
           fi
@@ -438,6 +444,11 @@ jobs:
       contents: write # push evidence to the qa-assets branch
       issues: write # create the issue or the comment
     environment: ecosystem-qa-file
+    # Two filing jobs that list the issues at the same moment would each file what the other is
+    # about to file, and one sweep can now overlap another in the repos it tests.
+    concurrency:
+      group: ecosystem-qa-file
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

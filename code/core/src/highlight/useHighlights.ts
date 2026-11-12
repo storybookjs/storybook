@@ -102,19 +102,31 @@ export const useHighlights = (channel: Channel) => {
       return;
     }
 
-    const updateBoxes = () => requestAnimationFrame(() => boxes.set(mapBoxes(value)));
+    const updateBoxes = () =>
+      requestAnimationFrame(() => {
+        // A frame queued before these elements were replaced or cleared must not restore them.
+        if (elements.get() === value) {
+          boxes.set(mapBoxes(value));
+        }
+      });
     const observer = new ResizeObserver(updateBoxes);
     observer.observe(document.body);
     Array.from(value.keys()).forEach((element) => observer.observe(element));
 
     // Scroll events do not bubble, but a capturing listener on the document receives the scroll of
-    // every element, including scroll containers that appear later.
+    // every element, including scroll containers that appear later. Scrolling the page itself is
+    // left to the sticky handler below, which keeps the other boxes as they are.
+    const onScroll = (event: Event) => {
+      if (event.target !== document) {
+        updateBoxes();
+      }
+    };
     const scrollOptions = { capture: true, passive: true };
-    document.addEventListener('scroll', updateBoxes, scrollOptions);
+    document.addEventListener('scroll', onScroll, scrollOptions);
 
     return () => {
       observer.disconnect();
-      document.removeEventListener('scroll', updateBoxes, scrollOptions);
+      document.removeEventListener('scroll', onScroll, scrollOptions);
     };
   });
 

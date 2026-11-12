@@ -129,6 +129,38 @@ describe('useHighlights', () => {
     expect(highlightBoxes()[0].style.top).toBe('5px');
   });
 
+  it('keeps non-sticky boxes as they are when the page scrolls', async () => {
+    storybookRoot.insertAdjacentHTML('beforeend', '<button id="target">Target</button>');
+    const target = document.getElementById('target')!;
+    channel.emit(HIGHLIGHT, { id: 'test', selectors: ['#target'] });
+    await settle();
+    expect(highlightBoxes()).toHaveLength(1);
+
+    // Page scrolling only moves sticky boxes; rebuilding the others would replace the box objects
+    // that the selected and focused state refer to.
+    const rect = vi.spyOn(target, 'getBoundingClientRect');
+    document.dispatchEvent(new Event('scroll'));
+    await settle();
+
+    expect(rect).not.toHaveBeenCalled();
+  });
+
+  it('does not bring back boxes from a frame queued before a reset', async () => {
+    storybookRoot.insertAdjacentHTML(
+      'beforeend',
+      '<div id="scroller" style="overflow: auto; height: 50px"><button id="target">Target</button></div>'
+    );
+    channel.emit(HIGHLIGHT, { id: 'test', selectors: ['#target'] });
+    await settle();
+    expect(highlightBoxes()).toHaveLength(1);
+
+    document.getElementById('scroller')!.dispatchEvent(new Event('scroll'));
+    channel.emit(RESET_HIGHLIGHT);
+    await settle();
+
+    expect(highlightBoxes()).toHaveLength(0);
+  });
+
   it('removes boxes when the highlights are reset', async () => {
     storybookRoot.insertAdjacentHTML('beforeend', '<button id="target">Target</button>');
     channel.emit(HIGHLIGHT, { id: 'test', selectors: ['#target'] });

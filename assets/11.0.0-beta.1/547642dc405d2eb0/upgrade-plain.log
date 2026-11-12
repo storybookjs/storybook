@@ -1,0 +1,505 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn exec The following package was not found and will be installed: storybook@11.0.0-beta.1
+.../mwcnfuga-sj                          | Progress: resolved 0, reused 1, downloaded 0, added 0
+Packages are copied from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/agent/workspace/.pnpm-store/v11
+  Virtual store is at:             ../../../../../.cache/pnpm/dlx/84fa558e13bacd455510a0151ee90f4a/mwcnfuga-sj/node_modules/.pacquet
+.../mwcnfuga-sj                          | Progress: resolved 124, reused 17, downloaded 112, added 124, done
+.../esbuild@0.28.2/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.28.2/node_modules/esbuild postinstall: Done
+
+dependencies:
++ @storybook/cli 11.0.0-beta.1
+
+
+┌  Storybook upgrade - v11.0.0-beta.1
+│
+│  Detecting projects...
+│
+│  Detecting projects: 1 projects
+│
+│  1 project detected
+│
+●  Upgrading from 10.5.10 to 11.0.0-beta.1
+│
+│  /packages/frontend/@n8n/storybook/package.json
+│  /package.json
+│  /packages/frontend/@n8n/design-system/package.json
+│
+│  Updated package versions in package.json files
+│
+│  Checking automigrations for
+│  /packages/frontend/@n8n/storybook/.storybook...
+│
+
+│  Automigrations detected:
+│
+│  ✔ story-sort-to-main
+│
+│  ✔ skills
+│
+│  ✔ typescript-compiler-api
+│
+│  3 automigration(s) detected
+│
+│  Running all detected automigrations:
+│
+│  - story-sort-to-main (/packages/frontend/@n8n/storybook/.storybook)
+│
+│  - skills (/packages/frontend/@n8n/storybook/.storybook)
+│
+│  - typescript-compiler-api
+│  (/packages/frontend/@n8n/storybook/.storybook)
+│ ┌─typescript-compiler-api (/packages/frontend/@n8n/storybook/.storybook)─────┐
+│ │  TypeScript 7 has no compiler API, so Storybook cannot read your           │
+│ │  component types. In package.json, replace the typescript devDependency    │
+│ │  with "@typescript/native": "npm:typescript@^7.0.2" and "typescript":      │
+│ │  "npm:@typescript/typescript6@^6.0.2". This is not automigrated.           │
+│ └────────────────────────────────────────────────────────────────────────────┘
+│
+│  pnpm --allow-build=esbuild dlx skills@latest add
+│  storybookjs/skills#v11.0.0-beta.1 --yes --agent claude-code universal
+│  --copy
+│
+│  Added a Storybook section to AGENTS.md that tells agents when to use
+│  the skills. Storybook keeps it current on upgrade: remove its markers
+│  to keep your own edits, or remove the section to opt out.
+│
+│  Remove the Storybook skills with: pnpm --allow-build=esbuild dlx
+│  skills@latest remove
+│
+│  ✔ story-sort-to-main
+│
+│  ✔ skills
+│
+│  Completed automigrations for
+│  /packages/frontend/@n8n/storybook/.storybook
+│
+│  Installing dependencies...
+│
+│  Installing dependencies...: Scope: all 100 workspace
+│
+│  Installing dependencies...: ✓ Lockfile at ../../../..
+│
+│  Installing dependencies...: Downloading @biomejs/cli-
+│
+│  Installing dependencies...: ../../../..
+│
+│  Installing dependencies...: Downloading lefthook-linu
+│
+│  Installing dependencies...: Downloading @turbo/linux-
+│
+│  Installing dependencies...: Downloading @typescript/t
+│
+│  Installing dependencies...: ../../../@n8n/agents
+│
+│  Installing dependencies...: Downloading @oxlint-tsgol
+│
+│  Installing dependencies...: Downloading @oxlint/bindi
+│
+│  Installing dependencies...: Downloading @rolldown/bin
+│
+│  Installing dependencies...: Downloading js-tiktoken@1
+│
+│  Installing dependencies...: ../../../@n8n/ai-utilitie
+│
+│  Installing dependencies...: Downloading pdfjs-dist@6.
+│
+│  Installing dependencies...: Downloading @napi-rs/canv
+│
+│  Installing dependencies...: ../../../..
+│
+│  Installing dependencies...: Downloading @rolldown/bin
+│
+│  Installing dependencies...: Downloading typescript@4.
+│
+│  Installing dependencies...: Downloading selenium-webd
+│
+│  Installing dependencies...: ../../../@n8n/engine
+│
+│  Installing dependencies...: ../../../..
+│
+│  Installing dependencies...: Downloading isolated-vm@7
+│
+│  Installing dependencies...: Downloading @rolldown/bin
+│
+│  Installing dependencies...: Downloading agent-browser
+│
+│  Installing dependencies...: Downloading chromadb-js-b
+│
+│  Installing dependencies...: ../../../@n8n/nodes-langc
+│
+│  Installing dependencies...: ../../../@n8n/typeorm
+│
+│  Installing dependencies...: ../../../cli
+│
+│  Installing dependencies...: ../../../cli
+│
+│  Installing dependencies...: ../../../..
+│
+│  Installing dependencies...: Downloading element-plus@
+│
+│  Installing dependencies...: ../../../..
+│
+│  Installing dependencies...: Downloading @iconify/json
+│
+│  Installing dependencies...: ../../../..
+│
+│  Installing dependencies...: Downloading @sentry/cli-l
+│
+│  Installing dependencies...: ../../../nodes-base
+│
+│  Installing dependencies...: ../../../nodes-base
+│
+│  Installing dependencies...: Downloading @napi-rs/imag
+│
+│  Installing dependencies...: ../../../..
+│
+│  Installing dependencies...: ../../../..
+│
+│  Installing dependencies...: [WARN] 48 deprecated subd
+│
+│  Installing dependencies...: ../../../..
+│
+│  Installing dependencies...: ../../../..
+│
+│  Installing dependencies...: ../../../..
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../sqlite3@5.1.7/node_mo
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../sqlite3@5.1.7/node_mo
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../sqlite3@5.1.7/node_mo
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../@confluentinc/kafka-j
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: .../node_modules/isolated
+│
+│  Installing dependencies...: ../../../.. preinstall$ n
+│
+│  Installing dependencies...: ../../../.. preinstall: D
+│
+│  Installing dependencies...: ../../../.. prepare$ node
+│
+│  Installing dependencies...: ../../../.. prepare: Done
+│
+│  Installing dependencies...: [WARN] Issues with peer d
+│
+│  Installing dependencies...: devDependencies:
+│  - @story
+│
+│  Installing dependencies...: Done in 1m 15.8s using pn
+│
+│  Dependencies installed
+│
+▲  Since you are in a monorepo, we advise you to deduplicate your
+│  dependencies. We can do this for you but it might take some time.
+│
+│  Deduplicating dependencies...
+│
+│  ✓ Lockfile at ../../../../pnpm-lock.yaml passes supply-chain policies
+│  (verified 1s ago)
+│
+│  ../../../..                              | [WARN] deprecated
+│  eslint@9.29.0
+│
+│  ../../../@n8n/agents                     | [WARN] deprecated
+│  @opentelemetry/sdk-trace-base@2.10.0
+│
+│  ../../../@n8n/agents                     | [WARN] deprecated
+│  @opentelemetry/sdk-trace-node@2.10.0
+│
+│  ../../../@n8n/ai-utilities               | [WARN] deprecated
+│  @langchain/community@1.1.27
+│
+│  ../../../@n8n/engine                     | [WARN] deprecated
+│  supertest@7.1.1
+│
+│  ../../../@n8n/nodes-langchain            | [WARN] deprecated
+│  @xata.io/client@0.28.4
+│
+│  ../../../@n8n/typeorm                    | [WARN] deprecated
+│  sinon@15.2.0
+│
+│  ../../../cli                             | [WARN] deprecated
+│  @types/uuid@11.0.0
+│
+│  ../../../cli                             | [WARN] deprecated
+│  prom-client@15.1.3
+│
+│  ../../../nodes-base                      | [WARN] deprecated
+│  alasql@4.4.0
+│
+│  ../../../nodes-base                      | [WARN] deprecated gm@1.25.1
+│
+│  [WARN] 47 deprecated subdependencies found:
+│  @aws-sdk/middleware-websocket@3.936.0, @aws-sdk/protocol-http@3.374.0,
+│  @aws-sdk/signature-v4@3.374.0,
+│  @opentelemetry/propagator-jaeger@2.10.0,
+│  @opentelemetry/sdk-trace-base@2.12.0,
+│  @opentelemetry/sdk-trace-web@2.12.0, @otplib/plugin-crypto@12.0.1,
+│  @otplib/plugin-thirty-two@12.0.1, @otplib/preset-default@12.0.1,
+│  @sinonjs/text-encoding@0.7.3, @smithy/core@3.34.1,
+│  @smithy/smithy-client@4.12.7,
+│  @yuku-codegen/binding-darwin-arm64@0.6.1,
+│  @yuku-codegen/binding-darwin-x64@0.6.1,
+│  @yuku-codegen/binding-freebsd-x64@0.6.1,
+│  @yuku-codegen/binding-linux-arm-gnu@0.6.1,
+│  @yuku-codegen/binding-linux-arm-musl@0.6.1,
+│  @yuku-codegen/binding-linux-arm64-gnu@0.6.1,
+│  @yuku-codegen/binding-linux-arm64-musl@0.6.1,
+│  @yuku-codegen/binding-linux-x64-gnu@0.6.1,
+│  @yuku-codegen/binding-linux-x64-musl@0.6.1,
+│  @yuku-codegen/binding-win32-arm64@0.6.1,
+│  @yuku-codegen/binding-win32-x64@0.6.1,
+│  @yuku-parser/binding-darwin-arm64@0.6.1,
+│  @yuku-parser/binding-darwin-x64@0.6.1,
+│  @yuku-parser/binding-freebsd-x64@0.6.1,
+│  @yuku-parser/binding-linux-arm-gnu@0.6.1,
+│  @yuku-parser/binding-linux-arm-musl@0.6.1,
+│  @yuku-parser/binding-linux-arm64-gnu@0.6.1,
+│  @yuku-parser/binding-linux-arm64-musl@0.6.1,
+│  @yuku-parser/binding-linux-x64-gnu@0.6.1,
+│  @yuku-parser/binding-linux-x64-musl@0.6.1,
+│  @yuku-parser/binding-win32-arm64@0.6.1,
+│  @yuku-parser/binding-win32-x64@0.6.1, axios-retry@4.5.0,
+│  cron-parser@4.9.0, crypto-js@4.2.0, glob@10.5.0, glob@11.1.0,
+│  glob@9.3.5, node-domexception@1.0.0, prebuild-install@7.1.3, q@2.0.3,
+│  sourcemap-codec@1.4.8, superagent@10.2.1, whatwg-encoding@3.1.1,
+│  yaeti@0.0.6
+│
+│  ../../../..                              | Progress: resolved 3564,
+│  reused 6196, downloaded 0, added 116, done
+│
+│  ../../../.. preinstall$ node scripts/block-npm-install.js
+│
+│  ../../../.. preinstall: Done
+│
+│  ../../../.. prepare$ node scripts/prepare.mjs
+│
+│  ../../../.. prepare: Done
+│
+│  [WARN] Issues with peer dependencies found. Run "pnpm peers check" to
+│  list them.
+│
+│  Done in 6s using pnpm v12.4.2
+│
+│  Dependencies deduplicated
+│
+◇  Checking the health of your project(s)..
+│
+▲  /packages/frontend/@n8n/storybook/.storybook: 1 issue found
+│ ┌─Incompatible Packages──────────────────────────────────────────────────────┐
+│ │  You are currently using Storybook 11.0.0-beta.1 but you have packages     │
+│ │  which are incompatible with it:                                           │
+│ │                                                                            │
+│ │  - storybook-addon-vue-mdx@3.0.0 which depends on ^10.0.0                  │
+│ │                                                                            │
+│ │  Please consider updating your packages or contacting the maintainers for  │
+│ │   compatibility details.                                                   │
+│ │                                                                            │
+│ │  For more details on compatibility guidance, see:                          │
+│ │  https://github.com/storybookjs/storybook/issues/32836                     │
+│ └────────────────────────────────────────────────────────────────────────────┘
+│
+◇  Storybook doctor is complete!
+│
+│  You can always recheck the health of your project(s) by running:
+│  npx storybook doctor
+│
+◇  Your project(s) have been upgraded successfully, but some issues were
+│  found which need your attention, please check Storybook doctor logs
+│  above.
+│
+│  If you want to learn more about the automigrations that executed in
+│  your project(s), please check the following links:
+│  • story-sort-to-main:
+│  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysort-in-the-preview-replaced-by-storysorts-in-main
+│  • skills: https://github.com/storybookjs/skills
+│
+│  For a full list of changes, please check our migration guide:
+│  https://storybook.js.org/docs/releases/migration-guide?ref=upgrade
+│
+└  Storybook upgrade completed!
+
+│
+│  Debug logs are written to:
+│  /home/agent/workspace/packages/frontend/@n8n/storybook/debug-storybook.log
+│
+└  Done!
+
+Done in 1m 32.6s using pnpm v12.4.2

@@ -1,0 +1,1 @@
+Card({ ...{ heading: 'Head' }, count: 5 }, html`<b>${'Head'}</b>`)

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular-vite",
-  "version": "11.0.0-beta.0",
+  "version": "11.0.0-beta.2",
   "description": "Storybook for Angular: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -26,8 +26,8 @@
   "type": "module",
   "exports": {
     ".": {
-      "code": "./src/index.ts",
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./builders/build-storybook": "./dist/builders/build-storybook/index.js",
@@ -39,15 +39,15 @@
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./internal/vitest-compiler-setup": "./dist/client/vitest-compiler-setup.js",
     "./node": {
-      "code": "./src/node/index.ts",
       "types": "./dist/node/index.d.ts",
+      "code": "./src/node/index.ts",
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
     "./vitest": {
-      "code": "./src/node/vitest.ts",
       "types": "./dist/node/vitest.d.ts",
+      "code": "./src/node/vitest.ts",
       "default": "./dist/node/vitest.js"
     }
   },
@@ -84,6 +84,7 @@
     "@angular/platform-browser-dynamic": "^21.2.14",
     "@storybook/angular-cm": "workspace:*",
     "@storybook/angular-compodoc": "workspace:*",
+    "@storybook/component-meta-typescript": "workspace:*",
     "@types/node": "^22.19.1",
     "empathic": "^2.0.0",
     "memfs": "^4.11.1",

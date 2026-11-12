@@ -40,6 +40,17 @@ describe('DependencyInstallationCommand', () => {
       expect(mockPackageManager.installDependencies).toHaveBeenCalled();
     });
 
+    it('installs without collected packages when init upgraded a dependency', async () => {
+      await command.execute({
+        skipInstall: false,
+        selectedFeatures: new Set(),
+        upgradedDependencies: true,
+      });
+
+      expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
+      expect(mockPackageManager.installDependencies).toHaveBeenCalled();
+    });
+
     it('should skip installation when skipInstall is true and no packages', async () => {
       await command.execute({
         skipInstall: true,

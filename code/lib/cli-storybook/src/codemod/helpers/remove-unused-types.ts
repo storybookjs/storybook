@@ -16,6 +16,8 @@ const typesDisallowList = [
   'Meta',
   'MetaObj',
   'ComponentStory',
+  'ComponentStoryFn',
+  'ComponentStoryObj',
   'ComponentMeta',
 ];
 

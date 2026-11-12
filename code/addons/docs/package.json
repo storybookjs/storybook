@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "11.0.0-beta.0",
+  "version": "11.0.0-beta.2",
   "description": "Storybook Docs: Document UI components automatically with stories and MDX",
   "keywords": [
     "docs",
@@ -39,42 +39,42 @@
   "type": "module",
   "exports": {
     ".": {
-      "code": "./src/index.ts",
       "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
     "./angular": {
-      "code": "./src/angular/index.ts",
       "types": "./dist/angular/index.d.ts",
+      "code": "./src/angular/index.ts",
       "default": "./dist/angular/index.js"
     },
     "./blocks": {
-      "code": "./src/blocks.ts",
       "types": "./dist/blocks.d.ts",
+      "code": "./src/blocks.ts",
       "default": "./dist/blocks.js"
     },
     "./ember": {
-      "code": "./src/ember/index.ts",
       "types": "./dist/ember/index.d.ts",
+      "code": "./src/ember/index.ts",
       "default": "./dist/ember/index.js"
     },
     "./manager": "./dist/manager.js",
     "./mdx-loader": "./dist/mdx-loader.js",
     "./mdx-react-shim": {
-      "code": "./src/mdx-react-shim.ts",
       "types": "./dist/mdx-react-shim.d.ts",
+      "code": "./src/mdx-react-shim.ts",
       "default": "./dist/mdx-react-shim.js"
     },
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
     "./preview": {
-      "code": "./src/preview.ts",
       "types": "./dist/preview.d.ts",
+      "code": "./src/preview.ts",
       "default": "./dist/preview.js"
     },
     "./web-components": {
-      "code": "./src/web-components/index.ts",
       "types": "./dist/web-components/index.d.ts",
+      "code": "./src/web-components/index.ts",
       "default": "./dist/web-components/index.js"
     }
   },

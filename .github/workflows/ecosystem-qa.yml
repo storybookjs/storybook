@@ -222,7 +222,9 @@ jobs:
 
       - name: Install the agent CLIs on the host
         if: ${{ matrix.sandbox == 'none' }}
-        run: npm install -g "@anthropic-ai/claude-code@$CLAUDE_CODE_VERSION" "@openai/codex@$CODEX_VERSION"
+        # Exact versions, pinned in `env` above. A lockfile entry would add both CLIs to every install of
+        # the monorepo, because ecosystem-qa is one of its workspaces.
+        run: npm install -g "@anthropic-ai/claude-code@$CLAUDE_CODE_VERSION" "@openai/codex@$CODEX_VERSION" # zizmor: ignore[adhoc-packages]
 
       - name: Run the QA agent
         env:

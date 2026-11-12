@@ -30,11 +30,9 @@ describe('answerOfFinishedAgent', () => {
     expect(answerOfFinishedAgent(log, schema)).toEqual({ n: 3 });
   });
 
-  it('ignores the answer of an earlier run when the last run failed before its agent started', () => {
-    const earlier = run('Agent started', answer(1), 'Agent stopped');
-    const log = `${earlier}${run('Setting up sandbox')}`;
-
-    expect(answerOfFinishedAgent(log, schema)).toBeUndefined();
+  it('returns undefined when the run failed before its agent started', () => {
+    expect(answerOfFinishedAgent(run('Setting up sandbox'), schema)).toBeUndefined();
+    expect(answerOfFinishedAgent('', schema)).toBeUndefined();
   });
 
   it('returns undefined when the agent printed an answer and never stopped', () => {

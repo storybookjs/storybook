@@ -19323,6 +19323,7 @@ __metadata:
     "@ai-hero/sandcastle": "npm:0.13.0"
     "@types/node": "npm:^22.19.1"
     gifenc: "npm:1.0.3"
+    memfs: "npm:^4.11.1"
     pathe: "npm:^2.0.3"
     playwright: "npm:1.58.2"
     pngjs: "npm:^7.0.0"

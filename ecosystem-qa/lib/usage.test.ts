@@ -1,10 +1,16 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { readFileSync } from 'node:fs';
 
-import { join } from 'pathe';
-import { describe, expect, it } from 'vitest';
+import { fs as memfs, vol } from 'memfs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { usageFromStream } from './usage.ts';
+
+vi.mock('node:fs', { spy: true });
+
+beforeEach(() => {
+  vol.reset();
+  vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as typeof readFileSync);
+});
 
 const PRICES = {
   'claude-test': { input: 2, output: 10, cacheRead: 0.2 },
@@ -12,8 +18,10 @@ const PRICES = {
 };
 
 const streamFile = (events: unknown[]) => {
-  const file = join(mkdtempSync(join(tmpdir(), 'qa-usage-')), 'agent-stream.jsonl');
-  writeFileSync(file, [...events.map((event) => JSON.stringify(event)), 'not json'].join('\n'));
+  const file = '/run/agent-stream.jsonl';
+  vol.fromJSON({
+    [file]: [...events.map((event) => JSON.stringify(event)), 'not json'].join('\n'),
+  });
   return file;
 };
 

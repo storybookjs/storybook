@@ -7,7 +7,6 @@ export const RunOrigin = z.object({
   path: z.string(),
   event: z.string(),
   head_branch: z.string().nullable(),
-  run_started_at: z.string(),
 });
 export type RunOrigin = z.infer<typeof RunOrigin>;
 
@@ -31,7 +30,22 @@ export const untrustedBecause = (
     : `ran on ${head_branch ?? 'no branch'}, not on ${branches.join(' or ')}`;
 };
 
-// The results of a later run replace those of an earlier one, so the order of the runs decides which
-// result of a repo, OS and engine is collected. It follows their start, not the order they were named in.
-export const oldestFirst = <Run extends Pick<RunOrigin, 'run_started_at'>>(runs: Run[]): Run[] =>
-  runs.toSorted((a, b) => Date.parse(a.run_started_at) - Date.parse(b.run_started_at));
+// The artifacts of one workflow run, as the Actions API lists them.
+export const RunArtifacts = z.object({
+  artifacts: z.array(z.object({ name: z.string(), created_at: z.string() })),
+});
+export type RunArtifacts = z.infer<typeof RunArtifacts>;
+
+// A run has no single age: after "Re-run failed jobs" it holds results of two attempts. So the age
+// of a result is the upload of its own artifact, and of two artifacts with one name the newer one.
+export const uploadedAt = ({ artifacts }: RunArtifacts, name: string): string | undefined =>
+  artifacts
+    .filter((artifact) => artifact.name === name)
+    .map((artifact) => artifact.created_at)
+    .toSorted()
+    .at(-1);
+
+// A result copied later replaces the one copied before it, so this order decides which result of a
+// repo, OS and engine is collected: the one uploaded last, whatever order the runs were named in.
+export const oldestFirst = <Result extends { uploadedAt: string }>(results: Result[]): Result[] =>
+  results.toSorted((a, b) => Date.parse(a.uploadedAt) - Date.parse(b.uploadedAt));

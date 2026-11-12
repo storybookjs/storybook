@@ -37,8 +37,11 @@ interface LoadOptions {
 // results/<id>/<os>/<engine> directly. Only these two places hold a record the runner wrote.
 type RunCell = Pick<RunKey, 'entry' | 'os' | 'engine'>;
 
-const artifactRunDir = (resultsDir: string, { entry, os, engine }: RunCell) =>
-  join(resultsDir, `qa-result-${os}-${engine}`, entry.id, os, engine);
+const artifactName = ({ os, engine }: Pick<RunCell, 'os' | 'engine'>) =>
+  `qa-result-${os}-${engine}`;
+
+const artifactRunDir = (resultsDir: string, cell: RunCell) =>
+  join(resultsDir, artifactName(cell), cell.entry.id, cell.os, cell.engine);
 
 const localRunDir = (resultsDir: string, { entry, os, engine }: RunCell) =>
   join(resultsDir, entry.id, os, engine);
@@ -54,7 +57,7 @@ export const downloadedRuns = (
   downloadDir: string,
   resultsDir: string,
   catalog: CatalogEntry[]
-): { from: string; to: string; label: string }[] =>
+): { artifact: string; from: string; to: string; label: string }[] =>
   catalog.flatMap((entry) =>
     Os.options.flatMap((os) =>
       Engine.options.flatMap((engine) => {
@@ -62,6 +65,7 @@ export const downloadedRuns = (
         return existsSync(join(from, 'result.json'))
           ? [
               {
+                artifact: artifactName({ os, engine }),
                 from,
                 to: localRunDir(resultsDir, { entry, os, engine }),
                 label: `${entry.id} ${os} ${engine}`,

@@ -287,6 +287,7 @@ describe('downloadedRuns', () => {
 
     expect(downloadedRuns(download, '/out', [ENTRY])).toEqual([
       {
+        artifact: 'qa-result-linux-claude',
         from: artifactRun(download),
         to: '/out/mealdrop/linux/claude',
         label: 'mealdrop linux claude',

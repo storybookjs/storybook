@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { oldestFirst, untrustedBecause, type RunOrigin } from './earlier-runs.ts';
+import { oldestFirst, untrustedBecause, uploadedAt, type RunOrigin } from './earlier-runs.ts';
 
 const run = (overrides: Partial<RunOrigin> = {}): RunOrigin => ({
   path: '.github/workflows/ecosystem-qa.yml',
   event: 'workflow_dispatch',
   head_branch: 'next',
-  run_started_at: '2026-11-12T12:00:00Z',
   ...overrides,
 });
 const BRANCHES = ['next', 'valentin/collecting'];
@@ -37,14 +36,31 @@ describe('untrustedBecause', () => {
 });
 
 describe('oldestFirst', () => {
-  // The run with the lower id started later, as a run does that was started again.
-  const startedFirst = { id: '2', ...run({ run_started_at: '2026-11-12T12:00:00Z' }) };
-  const startedLast = { id: '1', ...run({ run_started_at: '2026-11-12T13:00:00Z' }) };
+  const first = { id: '2', uploadedAt: '2026-11-12T12:00:00Z' };
+  const last = { id: '1', uploadedAt: '2026-11-12T13:00:00Z' };
 
-  it.each([[[startedFirst, startedLast]], [[startedLast, startedFirst]]])(
-    'puts the run that started last at the end, whatever the order given',
-    (runs) => {
-      expect(oldestFirst(runs).map(({ id }) => id)).toEqual(['2', '1']);
+  it.each([[[first, last]], [[last, first]]])(
+    'puts the result that was uploaded last at the end, whatever the order given',
+    (results) => {
+      expect(oldestFirst(results).map(({ id }) => id)).toEqual(['2', '1']);
     }
   );
+});
+
+describe('uploadedAt', () => {
+  const listing = {
+    artifacts: [
+      { name: 'qa-result-linux-claude', created_at: '2026-11-12T12:16:15Z' },
+      { name: 'qa-result-linux-claude', created_at: '2026-11-13T09:00:00Z' },
+      { name: 'qa-proposals', created_at: '2026-11-14T00:00:00Z' },
+    ],
+  };
+
+  it('takes the newest artifact of that name, which is the one a rerun of the job uploaded', () => {
+    expect(uploadedAt(listing, 'qa-result-linux-claude')).toBe('2026-11-13T09:00:00Z');
+  });
+
+  it('knows no time for an artifact the run does not list', () => {
+    expect(uploadedAt(listing, 'qa-result-windows-claude')).toBeUndefined();
+  });
 });

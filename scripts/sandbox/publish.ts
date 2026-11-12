@@ -6,12 +6,13 @@ import { execaCommand } from 'execa';
 import { existsSync } from 'fs';
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
-import { dirname, join, relative } from 'path';
+import { dirname, join } from 'pathe';
 
 import { temporaryDirectory } from '../../code/core/src/common/utils/cli.ts';
 import { REPROS_DIRECTORY } from '../utils/constants.ts';
 import { commitAllToGit } from './utils/git.ts';
 import {
+  assertPublishedTree,
   ensureLockfilePublishRules,
   sanitizePublishedSandboxes,
 } from './utils/sanitize-published-sandbox.ts';
@@ -43,26 +44,24 @@ const publish = async (options: PublishOptions & { tmpFolder: string }) => {
   await execaCommand(`git clone ${remote} .`, { cwd: tmpFolder, cleanup: true });
   await execaCommand(`git checkout ${branch}`, { cwd: tmpFolder, cleanup: true });
 
-  // otherwise old files will stick around and result inconsistent states
-  logger.log(`🗑 Delete existing template dirs from clone`);
+  // Only templates that generated fully are published, so a failed one keeps its last good
+  // before-storybook and after-storybook pair. after-storybook/README.md is the last file generated,
+  // eg. react-vite/default-ts/after-storybook/README.md
+  const templates = (
+    await glob('**/after-storybook/README.md', {
+      cwd: REPROS_DIRECTORY,
+      ignore: '**/node_modules/**',
+    })
+  ).map((readmePath) => dirname(dirname(readmePath)));
 
-  // empty all existing directories for sandboxes that have a successful after-storybook directory
+  logger.log(`🚚 Replacing ${templates.length} generated template(s) in the repository`);
+  // Emptied first, otherwise old files would stick around next to the new ones
   await Promise.all(
-    // find all successfully generated after-storybook/README.md files
-    // eg. /home/repros/react-vite/default-ts/after-storybook/README.md
-    // README.md being the last file generated, thus representing a successful generation
-    (await glob(join(REPROS_DIRECTORY, '**', 'after-storybook/README.md'))).map((readmePath) => {
-      // get the after-storybook path relative to the source 'repros' directory
-      // eg. ./react-vite/default-ts/after-storybook
-      const pathRelativeToSource = relative(REPROS_DIRECTORY, dirname(readmePath));
-      // get the actual path to the corresponding sandbox directory in the clone
-      // eg. /home/sandboxes-clone/react-vite/default-ts
-      const sandboxDirectoryToEmpty = join(tmpFolder, pathRelativeToSource, '..');
-      return emptyDir(sandboxDirectoryToEmpty);
+    templates.map(async (template) => {
+      await emptyDir(join(tmpFolder, template));
+      await cp(join(REPROS_DIRECTORY, template), join(tmpFolder, template), { recursive: true });
     })
   );
-
-  logger.log(`🚚 Moving template files into the repository`);
 
   const templatePath = join(scriptPath, 'templates', 'root.ejs');
   const templateData = { data: templatesData, version: branch === 'main' ? 'latest' : 'next' };
@@ -71,22 +70,19 @@ const publish = async (options: PublishOptions & { tmpFolder: string }) => {
 
   await writeFile(join(tmpFolder, 'README.md'), output);
 
-  logger.log(`🚛 Moving all the repros into the repository`);
-  await cp(REPROS_DIRECTORY, tmpFolder, { recursive: true });
-
-  logger.log(`🧼 Sanitizing published sandboxes (after-storybook .yarnrc.yml + install artifacts)`);
-  const sanitizeResult = await sanitizePublishedSandboxes(tmpFolder);
-  logger.log(
-    `🧼 Sanitize summary: stripped ${sanitizeResult.strippedKeyCount} key(s) from ` +
-      `${sanitizeResult.filteredYarnrcCount} .yarnrc.yml file(s); removed ${sanitizeResult.removedPaths} excluded path(s)`
-  );
+  logger.log(`🧼 Removing install artifacts from the published sandboxes`);
+  const { removedPaths } = await sanitizePublishedSandboxes(tmpFolder);
+  logger.log(`🧼 Removed ${removedPaths} excluded path(s)`);
 
   const gitignoreUpdated = await ensureLockfilePublishRules(tmpFolder);
   logger.log(
     gitignoreUpdated
-      ? `🧼 Added the before-storybook lockfile exception to .gitignore`
+      ? `🧼 Updated the managed lockfile rules in .gitignore`
       : `🧼 .gitignore already publishes the before-storybook lockfile`
   );
+
+  await execaCommand('git add .', { cwd: tmpFolder, cleanup: true });
+  await assertPublishedTree(tmpFolder, templates);
 
   await commitAllToGit({ cwd: tmpFolder, branch });
 

@@ -29,13 +29,13 @@ export const serve: Task = {
       return false;
     }
   },
-  async run({ builtSandboxDir, key }, { debug, dryRun, link }) {
-    await prepareSandbox({ key, link });
+  async run({ builtSandboxDir, sandboxDir, key }, { debug, dryRun, link }) {
+    await prepareSandbox({ key, link, sandboxDir, dryRun, debug });
     const port = getServePort(key);
 
     const controller = new AbortController();
     exec(
-      `yarn http-server ${builtSandboxDir} --port ${port} -s`,
+      `pnpm exec http-server ${builtSandboxDir} --port ${port} -s`,
       { cwd: ROOT_DIRECTORY },
       { dryRun, debug, signal: controller.signal as AbortSignal }
     ).catch((err) => {

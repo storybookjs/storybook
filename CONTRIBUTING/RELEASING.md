@@ -132,6 +132,15 @@ Sometimes it is desired to pick pull requests back to `main` even if they are no
 
 The preparation workflow sequentially cherry-picks each patch pull request to its branch. If this cherry-picking fails due to conflicts or other reasons, it is ignored and the next pull request is processed. All failing cherry-picks are listed in the release pull request's description, for the Releaser to manually cherry-pick during the release process. This problem occurs more often when `main` and `next` diverge, i.e. the longer it has been since a stable major/minor release.
 
+Until a release brings pnpm to `main`, `main` still uses Yarn while `next` uses pnpm. `main` has no `pnpm-lock.yaml` or `pnpm-workspace.yaml`, so a patch pull request that changes either file fails to cherry-pick with a modify/delete conflict, and the release pull request lists it for a manual cherry-pick. To pick it on the `version-patch-from-<CURRENT-STABLE-VERSION>` branch:
+
+1. Run the `git cherry-pick -m1 -x <merge-commit>` command that the release pull request lists.
+2. Drop the pnpm files from the pick with `git rm pnpm-lock.yaml`, and `git rm pnpm-workspace.yaml` if the conflict lists it too.
+3. If the pull request added or changed an entry in `overrides` in `pnpm-workspace.yaml`, add it to `resolutions` in the root `package.json`. Yarn writes `parent>child` as `parent/child` and `pkg@range` as `pkg@npm:range`.
+4. Run `yarn install` from the repository root to update `yarn.lock`, stage `yarn.lock` and the root `package.json`, and run `git cherry-pick --continue`.
+
+Keep pull requests that change the repository's tooling (`scripts/`, `.github/` or CI config) at "**patch:no**" until `main` uses pnpm. They rely on pnpm, so picking them breaks CI on `main`.
+
 Similar to the non-patch release flow, the preparation workflow for patches will create a new branch from `main` called `version-patch-from-<CURRENT-STABLE-VERSION>`, and open a pull request that targets `latest-release`. When the pull request is merged by the Releaser, the [publish workflow](#publishing) will eventually merge `latest-release` into `main`.
 
 Here is an example of a workflow where a feature and two bug fixes have been merged to `next`. Only the bug fixes have the "**patch:yes**" label, so only those two go into the new `7.0.19` release. Note that it is the merge commits to `next` that are cherry-picked, not the commits on the bugfix branches.
@@ -374,6 +383,8 @@ Done! 🚀
 
 If you need to release a change to an older minor version that is not the latest, you have to do it manually, locally. The process is described below, with an example of releasing a new `v8.3.7` in a situation where `8.4.0` is currently the latest version.
 
+The steps use Yarn, because tags from before the switch to pnpm, like `v8.3.6` here, use Yarn. They vendor their Yarn release through `yarnPath` in `.yarnrc.yml`, so any global Yarn runs it, such as one from `npm install --global yarn`. For a tag whose root `package.json` pins pnpm in its `packageManager` field, run the pnpm equivalents instead, as in [Releasing Locally in an Emergency](#releasing-locally-in-an-emergency-): `pnpm install`, `pnpm task ...`, and the `pnpm release:...` scripts from the `scripts` directory.
+
 1. Checkout the _existing_ tag that matches the latest minor release you want to bump, and create a new branch from it. In this case, we want to do:
     1. `git fetch --all --tags`
     2. `git checkout tags/v8.3.6 -b patch-8-3-7`
@@ -427,49 +438,51 @@ Done. 🎉
 
 Things can fail, code can break, and bugs can exist. When automation is broken, there may be a need for an emergency escape hatch to release new fixes. In such a situation, it's valid to run the whole release process locally instead of relying on pull requests and workflows. You don't need to create pull requests or split preparation and publishing; you can do it all at once, but make sure you still follow the correct branching strategy.
 
-You can either prepare the release locally and use the automatic workflow for publishing it or you can do the whole release workflow locally. If you choose the latter approach, you need a token to the npm registry to publish (set as `YARN_NPM_AUTH_TOKEN`), which you can get from @shilman or @ndelangen.
+You can either prepare the release locally and use the automatic workflow for publishing it or you can do the whole release workflow locally. If you choose the latter approach, you need a token to the npm registry to publish, which you can get from @shilman or @ndelangen. `pnpm publish` uploads through the npm CLI, so add the token to your user npm config by adding the line `//registry.npmjs.org/:_authToken=<NPM_TOKEN>` to `~/.npmrc` (editing the file keeps the token out of your shell history), and remove the line again afterwards.
+
+`main` keeps using Yarn until a release brings the switch to pnpm there. On a branch from `main` that still has a `yarn.lock`, run the Yarn versions of the commands below instead (`yarn install`, `yarn release:...`), and pass the token to the publish step as `YARN_NPM_AUTH_TOKEN=<NPM_TOKEN> yarn release:publish ...`.
 
 You can inspect the workflows to see what they are running and copy that, but here is a general sequence of steps to mimic the automated workflow. Feel free to deviate from this as needed.
 
 Before you start you should make sure that your working tree is clean and the repository is in a clean state by running `git clean -xdf`.
 
+Run every step from the repository root.
+
 1. Create a new branch from either `next` or `main` (patches)
 2. Get all tags: `git fetch --tags origin`
-3. Install dependencies: `yarn task --task=install --start-from=install`
-4. `cd scripts`
-5. (If patch release) Cherry pick:
-   1. `yarn release:pick-patches`
+3. Install dependencies: `pnpm install`
+4. (If patch release) Cherry pick:
+   1. `pnpm --dir scripts release:pick-patches`
    2. Manually cherry pick any necessary patches based on the previous output
-6. Bump versions:
-   1. If you plan on using automatic publishing (ie. stop at step 12), bump with deferred: `yarn release:version --verbose --deferred --release-type <RELEASE_TYPE> --pre-id <PRE_ID>`
-   2. If doing the whole release locally, **do not** defer the bump: `yarn release:version --verbose --release-type <RELEASE_TYPE> --pre-id <PRE_ID>`
-7. To see a list of changes (for your own to-do list), run `yarn release:generate-pr-description --current-version <CURRENT_VERSION> --next-version <NEXT_VERSION_FROM_PREVIOUS_STEP> --verbose`
-8. Write changelogs: `yarn release:write-changelog <NEXT_VERSION_FROM_PREVIOUS_STEP> --verbose`
-9. `git add .`.
-10. Commit changes: `git commit -m "Bump version from <CURRENT_VERSION> to <NEXT_VERSION_FROM_PREVIOUS_STEP> MANUALLY"`
-11. Merge changes to the release branch:
+5. Bump versions:
+   1. If you plan on using automatic publishing (ie. stop at step 11), bump with deferred: `pnpm --dir scripts release:version --verbose --deferred --release-type <RELEASE_TYPE> --pre-id <PRE_ID>`
+   2. If doing the whole release locally, **do not** defer the bump: `pnpm --dir scripts release:version --verbose --release-type <RELEASE_TYPE> --pre-id <PRE_ID>`
+6. To see a list of changes (for your own to-do list), run `pnpm --dir scripts release:generate-pr-description --current-version <CURRENT_VERSION> --next-version <NEXT_VERSION_FROM_PREVIOUS_STEP> --verbose`
+7. Write changelogs: `pnpm --dir scripts release:write-changelog <NEXT_VERSION_FROM_PREVIOUS_STEP> --verbose`
+8. `git add .`.
+9. Commit changes: `git commit -m "Bump version from <CURRENT_VERSION> to <NEXT_VERSION_FROM_PREVIOUS_STEP> MANUALLY"`
+10. Merge changes to the release branch:
     1. `git checkout <"latest-release" | "next-release">`
     2. `git pull`
     3. `git merge <PREVIOUS_BRANCH>`
     4. `git push origin`
-12. (If automatic publishing is still working, it should kick in now and the rest of the steps can be skipped)
-13. `cd ..`
-14. Publish to the registry: `YARN_NPM_AUTH_TOKEN=<NPM_TOKEN> yarn release:publish --tag <"next" OR "latest"> --verbose`
-15. (If patch release) `yarn release:label-patches`
-16. Manually create a GitHub Release with a tag that is the new version and the target being `latest-release` or `next-release`.
-17. Merge to core branch:
+11. (If automatic publishing is still working, it should kick in now and the rest of the steps can be skipped)
+12. Publish to the registry: `pnpm --dir scripts release:publish --tag <"next" OR "latest"> --verbose`
+13. (If patch release) `pnpm --dir scripts release:label-patches`
+14. Manually create a GitHub Release with a tag that is the new version and the target being `latest-release` or `next-release`.
+15. Merge to core branch:
     1. `git checkout <"next"|"main">`
     2. `git pull`
     3. `git merge <"next-release"|"latest-release">`
     4. `git push origin`
-18. (If patch release) Sync `CHANGELOG.md` to `next` with:
+16. (If patch release) Sync `CHANGELOG.md` to `next` with:
     1. `git checkout next`
     2. `git pull`
     3. `git checkout origin/main ./CHANGELOG.md`
     4. `git add ./CHANGELOG.md`
     5. `git commit -m "Update CHANGELOG.md for v<NEXT_VERSION>"`
     6. `git push origin`
-19. Sync the skills by hand, as described in [When the skills were not synced](#when-the-skills-were-not-synced).
+17. Sync the skills by hand, as described in [When the skills were not synced](#when-the-skills-were-not-synced).
 
 ## Canary Releases
 
@@ -538,7 +551,7 @@ This is the default patch release scenario, which cherry picks patches to `main`
 
 ### Patch releases to earlier versions - subset of `7.1.0-alpha.13` -> `6.5.14`
 
-This happens so rarely on a case by case basis, so this is a completely manual process. The Releaser will find the git tag that matches the patch to bump, eg. `v6.5.14`, check it out, make the necessary changes and follow [the manual release process](#releasing-locally-in-case-of-emergency-🚨).
+This happens so rarely on a case by case basis, so this is a completely manual process. The Releaser will find the git tag that matches the patch to bump, eg. `v6.5.14`, check it out, make the necessary changes and follow [the process for releasing changes to older minor versions](#releasing-changes-to-older-minor-versions).
 
 ### Prerelease of upcoming patch release - `7.0.20` -> `7.0.21-alpha.0`
 
@@ -566,7 +579,7 @@ When in doubt ask the core team for their input.
 
 The whole process is based on [GitHub Action workflows](../.github/workflows/) and [scripts](../scripts/release/), so you can modify them if you know what you're doing.
 
-The short answer to "how", is to make changes as a regular pull request that is also patched back to `main`.
+The short answer to "how", is to make changes as a regular pull request that is also patched back to `main`. Until a release brings pnpm to `main`, tooling pull requests stay at "**patch:no**" instead, as explained in [Patch Releases](#patch-releases).
 
 <details>
   <summary>There's a longer answer too, but it's pretty confusing</summary>

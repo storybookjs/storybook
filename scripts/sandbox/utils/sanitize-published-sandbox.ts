@@ -1,23 +1,27 @@
 import { readFile, rm, writeFile } from 'node:fs/promises';
 
-import { join } from 'node:path';
-
+// eslint-disable-next-line depend/ban-dependencies
+import { execa } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
-import yml from 'yaml';
+import { basename, dirname, join } from 'pathe';
 
 /**
  * Git ignore rules the published sandboxes repository must end up with, in this order.
  *
- * The repository ignores `yarn.lock` wholesale, and `commitAllToGit` stages with `git add .`, so
+ * The repository ignores lockfiles wholesale, and `commitAllToGit` stages with `git add .`, so
  * without the negation the generated `before-storybook` lockfile is silently dropped and consumers
  * still resolve whatever is newest at install time.
  *
  * `after-storybook` deliberately stays ignored: it resolves Storybook packages from the local
- * registry, and in link mode its lockfile carries `portal:`/`file:` resolutions pointing back into
- * the monorepo, neither of which a consumer can install from.
+ * registry, and in link mode its lockfile carries `file:` resolutions pointing back into the
+ * monorepo, neither of which a consumer can install from.
  */
-export const GITIGNORE_LOCKFILE_RULES = ['yarn.lock', '!**/before-storybook/yarn.lock'] as const;
+export const GITIGNORE_LOCKFILE_RULES = [
+  'yarn.lock',
+  'pnpm-lock.yaml',
+  '!**/before-storybook/pnpm-lock.yaml',
+] as const;
 
 const MANAGED_BLOCK_HEADER =
   '# Managed by publish-sandboxes: publish only the before-storybook lockfile';
@@ -25,9 +29,9 @@ const MANAGED_BLOCK_HEADER =
 /**
  * Make sure the published tree ships the `before-storybook` lockfile and nothing else lock-shaped.
  *
- * Appends the rules rather than editing existing lines, because git ignore precedence is
- * last-match-wins: appending guarantees the intended outcome regardless of what the repository's
- * own `.gitignore` already says.
+ * Replaces the managed block, the header and the lines up to the next blank line, and writes it at
+ * the end, because git ignore precedence is last-match-wins: the end guarantees the intended
+ * outcome regardless of what the repository's own `.gitignore` already says.
  */
 export const ensureLockfilePublishRules = async (rootDir: string): Promise<boolean> => {
   const gitignorePath = join(rootDir, '.gitignore');
@@ -40,47 +44,34 @@ export const ensureLockfilePublishRules = async (rootDir: string): Promise<boole
     // lockfile does not start getting published by omission.
   }
 
-  const lines = contents.split('\n').map((line) => line.trim());
-  if (GITIGNORE_LOCKFILE_RULES.every((rule) => lines.includes(rule))) {
+  const lines = contents.split('\n');
+  const start = lines.findIndex((line) => line.trim() === MANAGED_BLOCK_HEADER);
+  if (start !== -1) {
+    let end = start + 1;
+    while (end < lines.length && lines[end].trim() !== '') {
+      end++;
+    }
+    // Also drop the blank line that separated the block, so no gap is left behind.
+    if (start === 0 || lines[start - 1].trim() === '') {
+      end++;
+    }
+    lines.splice(start, end - start);
+  }
+
+  const rest = lines.join('\n').trimEnd();
+  const updated = `${rest ? `${rest}\n\n` : ''}${MANAGED_BLOCK_HEADER}\n${GITIGNORE_LOCKFILE_RULES.join('\n')}\n`;
+  if (updated === contents) {
     return false;
   }
 
-  const prefix = contents.length > 0 && !contents.endsWith('\n') ? '\n' : '';
-  await writeFile(
-    gitignorePath,
-    `${contents}${prefix}\n${MANAGED_BLOCK_HEADER}\n${GITIGNORE_LOCKFILE_RULES.join('\n')}\n`
-  );
-
+  await writeFile(gitignorePath, updated);
   return true;
 };
 
 /**
- * Keys stripped from `after-storybook/.yarnrc.yml` before publishing to the public sandboxes
- * repository. These are host-local or Verdaccio-bootstrap settings that would either break a
- * consumer's install (e.g. `npmRegistryServer: http://localhost:6001/`) or weaken their default
- * supply-chain protections (e.g. `npmMinimalAgeGate: 0`).
- *
- * Mutating this list requires a deliberate code review (the integrity test asserts the exact set).
- */
-export const STRIP_KEYS = [
-  'npmRegistryServer',
-  'unsafeHttpWhitelist',
-  'enableImmutableInstalls',
-  'enableMirror',
-  'logFilters',
-  'npmMinimalAgeGate',
-  // `after-storybook` is a copy of `before-storybook`, so it inherits the
-  // prerelease allowlist. Left behind next to a stripped gate it is dead
-  // config, and it would quietly widen a consumer's own gate.
-  'npmPreapprovedPackages',
-  'enableGlobalCache',
-  'checksumBehavior',
-] as const;
-
-/**
  * Paths excluded from the published sandbox copy. These are install artifacts or build outputs
- * that bloat the repo without providing value to consumers (who will re-run `yarn install` against
- * the committed lockfile).
+ * that bloat the repo without providing value to consumers (who will install again from the
+ * committed lockfile).
  */
 export const EXCLUDE_GLOBS = [
   '**/.yarn/cache/**',
@@ -93,54 +84,11 @@ export const EXCLUDE_GLOBS = [
 ] as const;
 
 export type SanitizeResult = {
-  filteredYarnrcCount: number;
-  strippedKeyCount: number;
   removedPaths: number;
 };
 
-/**
- * Sanitize a directory tree that is about to be published to `storybookjs/sandboxes`.
- *
- * - Removes `STRIP_KEYS` from every `**\/after-storybook/.yarnrc.yml` (verdaccio/host config).
- * - Removes paths matching `EXCLUDE_GLOBS` from the tree (install artifacts, build output).
- *
- * `before-storybook/.yarnrc.yml` is intentionally left untouched: it contains only the
- * user-facing Yarn setup we want consumers to reproduce.
- */
+/** Remove the paths matching `EXCLUDE_GLOBS` from a tree about to be published. */
 export const sanitizePublishedSandboxes = async (rootDir: string): Promise<SanitizeResult> => {
-  const yarnrcFiles = await glob('**/after-storybook/.yarnrc.yml', {
-    cwd: rootDir,
-    absolute: true,
-    dot: true,
-  });
-
-  let filteredYarnrcCount = 0;
-  let strippedKeyCount = 0;
-
-  for (const file of yarnrcFiles) {
-    const original = await readFile(file, 'utf-8');
-    if (!original.trim()) {
-      continue;
-    }
-
-    const doc = (yml.parse(original) ?? {}) as Record<string, unknown>;
-    let modified = false;
-
-    for (const key of STRIP_KEYS) {
-      if (key in doc) {
-        delete doc[key];
-        modified = true;
-        strippedKeyCount++;
-      }
-    }
-
-    if (modified) {
-      const updated = Object.keys(doc).length === 0 ? '' : yml.stringify(doc);
-      await writeFile(file, updated);
-      filteredYarnrcCount++;
-    }
-  }
-
   const excluded = await glob([...EXCLUDE_GLOBS], {
     cwd: rootDir,
     absolute: true,
@@ -152,8 +100,82 @@ export const sanitizePublishedSandboxes = async (rootDir: string): Promise<Sanit
   }
 
   return {
-    filteredYarnrcCount,
-    strippedKeyCount,
     removedPaths: excluded.length,
   };
+};
+
+const LOCAL_REGISTRY_HOSTS = [
+  'localhost:6001',
+  'localhost:6002',
+  '127.0.0.1:6001',
+  '127.0.0.1:6002',
+];
+
+const git = (rootDir: string, args: string[]) =>
+  execa('git', args, { cwd: rootDir, reject: false });
+
+/**
+ * Check what `git add .` staged for the templates this run publishes, before it is committed:
+ *
+ * - every `before-storybook/pnpm-lock.yaml` is tracked;
+ * - no tracked file points at the local registry;
+ * - no `before-storybook` lockfile carries `tarball:` URLs, which would pin a registry;
+ * - no folder tracks both a Yarn and a pnpm lockfile.
+ */
+export const assertPublishedTree = async (rootDir: string, templates: string[]) => {
+  if (!templates.length) {
+    return;
+  }
+
+  const listed = await git(rootDir, ['ls-files', '-z', '--', ...templates]);
+  if (listed.exitCode !== 0) {
+    throw new Error(`git ls-files failed: ${listed.stderr}`);
+  }
+  const tracked = new Set(String(listed.stdout).split('\0').filter(Boolean));
+  const problems: string[] = [];
+
+  for (const template of templates) {
+    const lockfile = `${template}/before-storybook/pnpm-lock.yaml`;
+    const contents = await readFile(join(rootDir, lockfile), 'utf-8').catch(() => undefined);
+    if (contents === undefined) {
+      continue;
+    }
+    if (!tracked.has(lockfile)) {
+      problems.push(`${lockfile} is not tracked`);
+    } else if (contents.includes('tarball:')) {
+      problems.push(`${lockfile} has tarball URLs`);
+    }
+  }
+
+  const leaks = await git(rootDir, [
+    'grep',
+    '--cached',
+    '-I',
+    '-l',
+    '-F',
+    ...LOCAL_REGISTRY_HOSTS.flatMap((host) => ['-e', host]),
+    '--',
+    ...templates,
+  ]);
+  if (leaks.exitCode === 0) {
+    problems.push(
+      ...String(leaks.stdout)
+        .split('\n')
+        .filter(Boolean)
+        .map((file) => `${file} points at the local registry`)
+    );
+  } else if (leaks.exitCode !== 1) {
+    throw new Error(`git grep failed: ${leaks.stderr}`);
+  }
+
+  const lockfileDirs = [...tracked]
+    .filter((file) => ['yarn.lock', 'pnpm-lock.yaml'].includes(basename(file)))
+    .map((file) => dirname(file));
+  for (const dir of new Set(lockfileDirs.filter((dir, i) => lockfileDirs.indexOf(dir) !== i))) {
+    problems.push(`${dir} tracks both yarn.lock and pnpm-lock.yaml`);
+  }
+
+  if (problems.length) {
+    throw new Error(`Refusing to publish the sandboxes:\n${problems.join('\n')}`);
+  }
 };

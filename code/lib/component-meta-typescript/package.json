@@ -45,6 +45,7 @@
     "!src/**/*"
   ],
   "devDependencies": {
+    "pathe": "^2.0.3",
     "typescript": "^6.0.3",
     "typescript-native": "npm:typescript@7.1.0-beta"
   },

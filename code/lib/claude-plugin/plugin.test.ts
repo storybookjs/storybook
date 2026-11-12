@@ -73,7 +73,7 @@ const HARNESS_TOOLS = [
   'require_escalated',
 ];
 
-const RENDER_HINT = 'Run `yarn nx compile claude-plugin` and commit the Codex skills.';
+const RENDER_HINT = 'Run `pnpm exec nx compile claude-plugin` and commit the Codex skills.';
 
 const readSkill = (name: string) =>
   readFileSync(resolve(packageRoot, 'skills', name, 'SKILL.md'), 'utf8');

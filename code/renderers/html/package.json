@@ -39,7 +39,9 @@
     "dist/**/*",
     "template/cli/**/*",
     "README.md",
+    "template/**/README.md",
     "*.js",
+    "template/**/*.js",
     "*.d.ts",
     "!src/**/*"
   ],

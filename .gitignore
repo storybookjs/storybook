@@ -25,15 +25,7 @@ tsconfig.dts-tmp-*.json
 
 .env.local
 
-# https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
-
-# For sandboxes
+# Yarn projects such as test-storybooks/server-kitchen-sink and generated sandboxes
 /**/.yarn/*
 !/**/.yarn/patches
 !/**/.yarn/plugins
@@ -53,6 +45,7 @@ coverage/
 /**/LICENSE
 code/docs/public
 package-lock.json
+!/.github/actions/setup-node-and-install/package-managers/package-lock.json
 storybook-static
 .jest-test-results.json
 *.jar

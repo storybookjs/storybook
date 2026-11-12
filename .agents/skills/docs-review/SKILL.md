@@ -139,11 +139,11 @@ For edit modes (`maintenance`, `improve`, `rewrite`, `author`):
 For edit modes only:
 
 ```bash
-yarn fmt:write
-yarn docs:check
+pnpm fmt:write
+pnpm docs:check
 ```
 
-Fix any errors reported by `yarn docs:check`, then run it again to confirm.
+Fix any errors reported by `pnpm docs:check`, then run it again to confirm.
 
 **Do not run validation in `strategy` mode** or when no files were edited.
 

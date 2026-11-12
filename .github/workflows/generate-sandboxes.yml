@@ -10,6 +10,7 @@ on:
   workflow_dispatch:
 
 env:
+  # For main while it uses Yarn.
   YARN_ENABLE_IMMUTABLE_INSTALLS: 'false'
   CLEANUP_SANDBOX_NODE_MODULES: 'true'
   NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
@@ -87,6 +88,26 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: npm install -g npm@11.17.0
 
+      # main uses Yarn until a release brings pnpm to it.
+      - name: Select package manager
+        working-directory: ${{ github.workspace }}
+        run: |
+          package_manager="$(node -p "require('./package.json').packageManager ?? ''")"
+          case "$package_manager" in
+            pnpm@*)
+              pinned="${package_manager#pnpm@}"
+              bash .github/actions/setup-node-and-install/package-managers/install.sh "pnpm=${pinned%%+*}"
+              echo "PM=pnpm" >> "$GITHUB_ENV"
+              ;;
+            yarn@*)
+              echo "PM=yarn" >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "::error::package.json has no pnpm or yarn packageManager field"
+              exit 1
+              ;;
+          esac
+
       - name: Setup git user
         run: |
           git config --global user.name "storybook-bot"
@@ -97,20 +118,25 @@ jobs:
         run: node --experimental-modules ./check-dependencies.js
 
       - name: Compile Storybook libraries
-        run: yarn task --task compile --start-from=auto --no-link
+        run: |
+          "$PM" task --task compile --start-from=auto --no-link
 
       - name: Publish to local registry
-        run: yarn local-registry --publish
+        run: |
+          "$PM" local-registry --publish
 
       - name: Run local registry
-        run: yarn local-registry --open &
+        run: |
+          "$PM" local-registry --open &
 
       - name: Wait for registry
-        run: yarn wait-on tcp:127.0.0.1:6001
+        run: |
+          "$PM" exec wait-on tcp:127.0.0.1:6001
 
       - name: Generate
         id: generate
-        run: yarn generate-sandboxes --local-registry
+        run: |
+          "$PM" generate-sandboxes --local-registry
 
       - name: Publish
         # publish sandboxes even if the generation fails, as some sandboxes might have been generated successfully
@@ -119,7 +145,8 @@ jobs:
         env:
           PAT: ${{ secrets.PAT_STORYBOOK_BOT }}
           BRANCH: ${{ github.event_name == 'workflow_dispatch' && 'next' || matrix.branch }}
-        run: yarn publish-sandboxes --remote="https://storybook-bot:${PAT}@github.com/storybookjs/sandboxes.git" --push --branch="$BRANCH"
+        run: |
+          "$PM" publish-sandboxes --remote="https://storybook-bot:${PAT}@github.com/storybookjs/sandboxes.git" --push --branch="$BRANCH"
 
       - name: Report failure to Discord
         if: failure()

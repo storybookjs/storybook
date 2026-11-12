@@ -6,7 +6,7 @@ import { promisify } from 'node:util';
 import dirSize from 'fast-folder-size';
 
 import { now, saveBench } from '../bench/utils.ts';
-import type { PassedOptionValues, Task, TaskKey, TemplateDetails } from '../task.ts';
+import type { Task, TaskKey } from '../task.ts';
 import { ROOT_DIRECTORY } from '../utils/constants.ts';
 import { exec } from '../utils/exec.ts';
 import { isNxTaskExecution } from '../utils/nx.ts';
@@ -19,23 +19,6 @@ const pathExists = (path: string) => {
     return true;
   } catch {
     return false;
-  }
-};
-
-const sanitizeOptions = (details: TemplateDetails, options: PassedOptionValues) => {
-  if (options.link && !options.forceLink && details.template.inDevelopment) {
-    logger.log(
-      `The ${options.template} has inDevelopment property enabled, therefore the sandbox for that template cannot be linked. Enabling --no-link mode... Pass --force-link to use link mode anyway, but be aware the sandbox may partially or completely not work.`
-    );
-
-    options.link = false;
-  }
-  if (options.link && !options.forceLink && details.template.preferNoLink) {
-    logger.log(
-      `The ${options.template} has preferNoLink property enabled. Defaulting to --no-link mode. Pass --force-link to use link mode anyway, but be aware the sandbox may partially or completely not work.`
-    );
-
-    options.link = false;
   }
 };
 
@@ -60,29 +43,19 @@ const isSandboxReady = (sandboxDir: string, selectedTask: TaskKey) =>
 export const sandbox: Task = {
   description: 'Create the sandbox from a template',
   dependsOn: (details, options) => {
-    // Must sanitize options here too to ensure we run the right prerequisite tasks.
-    sanitizeOptions(details, options);
-
-    if ('inDevelopment' in details.template && details.template.inDevelopment) {
-      if (isSandboxReady(details.sandboxDir, options.task)) {
-        return ['run-registry'];
-      }
-
-      return ['run-registry', 'generate'];
-    }
-
-    if (options.link) {
-      return ['compile'];
-    }
-
-    return ['run-registry'];
+    const install = options.link ? 'compile' : 'run-registry';
+    // An in-development template has no published repro, so `generate` creates it locally, which
+    // needs the local registry even for a linked sandbox.
+    const needsRepro =
+      'inDevelopment' in details.template &&
+      details.template.inDevelopment &&
+      !isSandboxReady(details.sandboxDir, options.task);
+    return needsRepro ? [install, 'generate'] : [install];
   },
   async ready({ sandboxDir }, { task: selectedTask }) {
     return isSandboxReady(sandboxDir, selectedTask);
   },
   async run(details, options) {
-    sanitizeOptions(details, options);
-
     if (!(await this.ready(details, options))) {
       logger.info('🗑  Removing old sandbox dir');
       await rm(details.sandboxDir, { force: true, recursive: true });
@@ -195,30 +168,31 @@ export const sandbox: Task = {
 
     const packageManager = JsPackageManagerFactory.getPackageManager({}, details.sandboxDir);
 
-    await rm(path.join(details.sandboxDir, 'node_modules'), { force: true, recursive: true });
-    await packageManager.installDependencies();
-
     // After sb init the kept before-storybook lockfile can leave nested copies
     // of shared packages (notably react under @storybook/addon-docs). Collapse
-    // those before we cache/run the sandbox.
+    // those before we cache/run the sandbox. The clean install after the dedupe
+    // drops the stray nested packages it leaves in the hoisted layout.
     await exec(
-      'yarn dedupe',
+      'pnpm dedupe',
       { cwd: details.sandboxDir },
       {
         dryRun: options.dryRun,
         debug: options.debug,
-        startMessage: '🧶 Deduplicating dependencies',
-        errorMessage: '🚨 yarn dedupe failed',
+        startMessage: '📦 Deduplicating dependencies',
+        errorMessage: '🚨 pnpm dedupe failed',
       }
     );
+
+    await rm(path.join(details.sandboxDir, 'node_modules'), { force: true, recursive: true });
+    await packageManager.installDependencies();
 
     await runMigrations(details, options);
 
     await extendPreview(details, options);
 
     // For NX we move the sandbox to a directory that can be cached.
-    // We remove node_modules to keep the remote cache small and fast
-    // node_modules are already cached in the global yarn cache
+    // We remove node_modules to keep the remote cache small and fast.
+    // The consuming task restores them from the pnpm store.
     if (isNxTaskExecution()) {
       logger.info('✅ Moving sandbox to cache directory');
       const sandboxDir = join(details.sandboxDir);
@@ -232,18 +206,11 @@ export const sandbox: Task = {
         await cp(sandboxDir, cacheDir, {
           recursive: true,
           force: true,
-          filter: (src) => {
-            const name = path.basename(src);
-            return (
-              name !== 'node_modules' &&
-              !(name === 'cache' && path.basename(path.dirname(src)) === '.yarn')
-            );
-          },
+          filter: (src) => path.basename(src) !== 'node_modules',
         });
       } else {
         logger.info(`✅ Removing node_modules from cache directory ${cacheDir}`);
         await rm(path.join(cacheDir, 'node_modules'), { force: true, recursive: true });
-        await rm(path.join(cacheDir, '.yarn', 'cache'), { force: true, recursive: true });
       }
     }
 

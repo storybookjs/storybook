@@ -85,6 +85,7 @@
     "README.md",
     "*.js",
     "*.d.ts",
+    "template/**/*.d.ts",
     "!src/**/*"
   ],
   "dependencies": {
@@ -96,9 +97,11 @@
   },
   "devDependencies": {
     "@types/node": "^22.19.1",
+    "@types/semver": "^7.7.1",
     "lilconfig": "^3.0.0",
     "next": "^15.2.3",
     "postcss-load-config": "^6.0.1",
+    "react-dom": "^18.2.0",
     "semver": "^7.7.3",
     "typescript": "^6.0.3"
   },

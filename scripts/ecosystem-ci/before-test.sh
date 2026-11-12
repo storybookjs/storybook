@@ -9,4 +9,4 @@ node ./scripts/ecosystem-ci/before-test.js "$TEMPLATE"
 
 # Install dependencies in the sandbox
 cd "../storybook-sandboxes/$SANDBOX_NAME"
-yarn install
+pnpm install

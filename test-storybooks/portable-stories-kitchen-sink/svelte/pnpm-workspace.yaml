@@ -1,0 +1,18 @@
+# Without its own workspace root here, pnpm would install the monorepo's workspace.
+packages:
+  - .
+
+nodeLinker: hoisted
+
+minimumReleaseAge: 10080
+
+# The `cypress` script is a placeholder, so nothing needs the Cypress binary. esbuild works
+# without its postinstall, using its platform package's binary.
+ignoredBuiltDependencies:
+  - cypress
+  - esbuild
+
+pnpmfile: ../../../scripts/utils/workspace-peers.pnpmfile.cjs
+
+# The scripts use POSIX syntax such as `VAR=value command`, which cmd.exe on Windows cannot run.
+shellEmulator: true

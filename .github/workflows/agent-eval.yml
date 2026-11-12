@@ -81,7 +81,6 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version-file: '.nvmrc'
-          cache: 'yarn'
 
       - name: Resolve PR for the eval gate thread
         id: gate_pr
@@ -137,21 +136,37 @@ jobs:
           node agent-eval/scripts/eval-gate-thread.ts ensure
           --pr "$PR_NUMBER" --sha "$EVALUATED_HEAD_SHA" --run-url "$RUN_URL" --scope "$SCOPE_LINE"
 
+      # Loaded from the workflow commit (`$/`) because the PR head checked out above can predate the
+      # pnpm migration.
       - name: Install dependencies
-        run: yarn install --immutable
+        id: install
+        uses: $/.github/actions/setup-node-and-install
+        with:
+          install-code-deps: true
 
       # Sandbox setup compiles these again, but inside each eval's timeout, so warm the nx cache here.
       - name: Compile the Storybook packages the sandboxes install
         if: ${{ steps.conditions.outputs.storybook_latest != '1' }}
+        working-directory: agent-eval
         env:
           NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
-        run: yarn workspace agent-eval run compile:checkout
+          PM: ${{ steps.install.outputs.package-manager }}
+        run: |
+          "$PM" run compile:checkout
 
       - name: Type check agent eval config
-        run: yarn workspace agent-eval run typecheck
+        working-directory: agent-eval
+        env:
+          PM: ${{ steps.install.outputs.package-manager }}
+        run: |
+          "$PM" run typecheck
 
       - name: Check playground route shims
-        run: yarn workspace agent-eval run playground:check-routes
+        working-directory: agent-eval
+        env:
+          PM: ${{ steps.install.outputs.package-manager }}
+        run: |
+          "$PM" run playground:check-routes
 
       - name: Validate Vercel credentials
         shell: bash
@@ -173,6 +188,7 @@ jobs:
 
       - name: Run all experiments
         id: run_evals
+        working-directory: agent-eval
         run: |
           for key in ANTHROPIC_API_KEY OPENAI_API_KEY; do
             if [[ -z "${!key}" ]]; then
@@ -180,8 +196,9 @@ jobs:
               exit 1
             fi
           done
-          yarn workspace agent-eval run eval
+          "$PM" run eval
         env:
+          PM: ${{ steps.install.outputs.package-manager }}
           EVAL_ONLY: ${{ inputs.evals || '' }}
           EVAL_ALL: ${{ steps.conditions.outputs.all_evals }}
           EVAL_STORYBOOK_LATEST: ${{ steps.conditions.outputs.storybook_latest }}
@@ -213,7 +230,11 @@ jobs:
         # Write analysis.json next to each run's result.json so the metrics ride
         # along in the uploaded artifact.
         continue-on-error: true
-        run: yarn workspace agent-eval run results:analyze
+        working-directory: agent-eval
+        env:
+          PM: ${{ steps.install.outputs.package-manager }}
+        run: |
+          "$PM" run results:analyze
 
       - name: Archive eval results
         if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}

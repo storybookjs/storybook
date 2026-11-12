@@ -1,6 +1,7 @@
 import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../../utils/npm-constants.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './constants.ts';
 import { type JobOrNoOpJob } from './types.ts';
+import { getPnpmVersion } from './workspace.ts';
 
 export const cancelWorkflowStep = {
   run: {
@@ -15,7 +16,7 @@ export const compileStep = () => ({
   run: {
     name: 'Compile',
     working_directory: 'code',
-    command: 'yarn task --task compile --start-from=auto --no-link --debug',
+    command: 'pnpm task --task compile --start-from=auto --no-link --debug',
   },
 });
 
@@ -70,9 +71,11 @@ export const workspace = {
         // The exit code lands in a status file (a plain failure would be
         // swallowed by the background shell); awaitPack() consumes it.
         background: true,
-        // Per-package node_modules only exist for packages with unhoistable
-        // dependencies, so they are filtered at runtime; the root trees are
-        // passed straight to tar so a missing one fails the job loudly.
+        // A workspace package without dependencies gets no node_modules, so
+        // the per-package trees are filtered at runtime; the required trees
+        // are passed straight to tar so a missing one fails the job loudly.
+        // Compile writes caches into node_modules/.cache during the pack, and
+        // tar fails on a file that changes while it reads it.
         command: [
           `rm -f ${PACKED_NODE_MODULES_ARCHIVE}.status`,
           'node --version',
@@ -81,7 +84,7 @@ export const workspace = {
           '  if [ -e "$p" ]; then optional="$optional $p"; fi',
           'done',
           'status=1',
-          `if tar --create ${requiredPaths.join(' ')} $optional | node ${ZSTD_STREAM} compress 3 > ${PACKED_NODE_MODULES_ARCHIVE}; then`,
+          `if tar --create --exclude=node_modules/.cache ${requiredPaths.join(' ')} $optional | node ${ZSTD_STREAM} compress 3 > ${PACKED_NODE_MODULES_ARCHIVE}; then`,
           '  status=0',
           'fi',
           `echo "$status" > ${PACKED_NODE_MODULES_ARCHIVE}.status`,
@@ -234,7 +237,7 @@ export const git = {
         command: [
           'if [ -n "$(git status --porcelain)" ]; then',
           '  echo ""',
-          '  echo "Uncommitted changes detected in the working tree. If the build generated files, run \`yarn task --task compile\` locally and commit them."',
+          '  echo "Uncommitted changes detected in the working tree. If the build generated files, run \`pnpm task --task compile\` locally and commit them."',
           '  echo ""',
           '  git status --porcelain',
           '  git --no-pager diff',
@@ -250,14 +253,12 @@ export const node = {
   installOnWindows: () => {
     return {
       run: {
-        name: 'Install Node + Yarn',
+        name: 'Install Node',
         shell: 'powershell.exe',
         command: [
           '$nodeVersion = Get-Content .nvmrc | Select-Object -First 1',
           'nvm install $nodeVersion',
           'nvm use $nodeVersion',
-          'corepack enable',
-          'corepack prepare yarn@stable --activate',
         ].join('\n'),
       },
     };
@@ -278,35 +279,35 @@ export const npm = {
       },
     };
   },
-  installScripts: () => {
+};
+
+const PACKAGE_MANAGERS_DIR = '.github/actions/setup-node-and-install/package-managers';
+
+export const installPackageManagers = (...tools: `pnpm=${string}`[]) =>
+  `bash ${PACKAGE_MANAGERS_DIR}/install.sh ${tools.join(' ')}`;
+
+export const pnpm = {
+  enable: () => {
     return {
       run: {
-        name: 'Install scripts',
-        command: 'yarn workspaces focus @storybook/scripts',
+        name: 'Enable pnpm',
+        command: installPackageManagers(`pnpm=${getPnpmVersion()}`),
       },
     };
   },
-  /**
-   * Runs `yarn install --immutable` and nothing else.
-   *
-   * The orb's own cache is off: its last restore key is the bare prefix `node-deps-{{ arch }}-<v>-`,
-   * which matches whatever `node_modules` any job on any branch saved last, whatever lockfile built
-   * it. Callers restore {@link NODE_MODULES_CACHE_KEY} instead, which cannot degrade that way.
-   */
-  install: (appDir: string, pkgManager: string = 'yarn') => {
+  install: () => {
     return {
-      'node/install-packages': {
-        'app-dir': appDir,
-        'pkg-manager': pkgManager,
-        'with-cache': false,
+      run: {
+        name: 'Install dependencies',
+        command: 'pnpm install --frozen-lockfile',
       },
     };
   },
-  check: () => {
+  dedupeCheck: () => {
     return {
       run: {
         name: 'Check for dedupe',
-        command: 'yarn dedupe --check',
+        command: 'pnpm dedupe --check',
       },
     };
   },
@@ -327,7 +328,7 @@ export const server = {
       run: {
         name: 'Wait on servers',
         working_directory: `code`,
-        command: ports.map((port) => `yarn wait-on tcp:127.0.0.1:${port}`).join('\n'),
+        command: ports.map((port) => `pnpm exec wait-on tcp:127.0.0.1:${port}`).join('\n'),
       },
     };
   },
@@ -340,7 +341,7 @@ export const verdaccio = {
         name: 'Verdaccio',
         working_directory: `code`,
         background: true,
-        command: 'yarn local-registry --open',
+        command: 'pnpm local-registry --open',
       },
     };
   },
@@ -349,7 +350,7 @@ export const verdaccio = {
       run: {
         name: 'Publish to Verdaccio',
         working_directory: `code`,
-        command: 'yarn local-registry --publish',
+        command: 'pnpm local-registry --publish',
       },
     };
   },
@@ -362,6 +363,7 @@ export const workflow = {
     ...checkoutOpts
   }: { forceHttps?: boolean; shallow?: boolean; sandboxId?: string } = {}) => [
     git.checkout(checkoutOpts),
+    pnpm.enable(),
     // Downstream jobs should consume precomputed outputs exclusively from the
     // pipeline workspace to avoid stale cache interference and trust gating.
     workspace.attach(),
@@ -371,51 +373,32 @@ export const workflow = {
   restoreWindows: (at = WINDOWS_ROOT_DIR, checkoutOpts: { shallow?: boolean } = {}) => [
     git.checkout({ ...checkoutOpts, forceHttps: true }),
     node.installOnWindows(),
+    pnpm.enable(),
     workspace.attach(at),
-    /**
-     * I really wish this wasn't needed, but it is. I tried a lot of things to get it to not be
-     * needed, but ultimately, something kept failing. At this point I gave up:
-     * https://app.circleci.com/pipelines/github/storybookjs/storybook/110923/workflows/50076187-a5a7-4955-bff4-30bf9aec465c/jobs/976355
-     *
-     * So if you see a way to debug/solve those failing tests, please do so.
-     */
-    {
-      run: {
-        name: 'Install dependencies',
-        command: 'yarn install',
-      },
-    },
+    // The workspace holds no node_modules for Windows, where pnpm links them with junctions.
+    pnpm.install(),
   ],
   cancelOnFailure: () => [cancelWorkflowStep],
 };
 
-/** Namespaces the cache per executor, so a Linux tree can never be restored on Windows. */
-export type CachePlatform = 'linux' | 'windows';
-
 /**
  * The one key `node_modules` may be restored from.
  *
- * A `node_modules` tree is a layout, not a set of downloads: which copy of a duplicated package
- * gets hoisted to the root falls out of the whole graph. `yarn install` prunes what its state file
- * lists, and a path the current graph never assigns is not in it, so restoring a tree built from
- * another lockfile leaves a stale copy shadowing the right one. Hence no fallback keys: either the
- * tree came from this exact lockfile or it is linked again.
+ * A `node_modules` tree is a layout, not a set of downloads. Hence no fallback keys: either the tree
+ * came from this exact lockfile, workspace config and pnpm, or it is installed again.
  */
-export const NODE_MODULES_CACHE_KEY = (platform: CachePlatform = 'linux') =>
+export const NODE_MODULES_CACHE_KEY = () =>
   [
-    `v11-${platform}-node_modules`,
+    'v12-linux-node_modules',
+    `pnpm-${getPnpmVersion()}`,
     '{{ checksum ".nvmrc" }}',
-    '{{ checksum ".yarnrc.yml" }}',
-    '{{ checksum "yarn.lock" }}',
+    '{{ checksum "pnpm-workspace.yaml" }}',
+    '{{ checksum "pnpm-lock.yaml" }}',
   ].join('/');
 
-export const NODE_MODULES_CACHE_PATHS = [
-  // Yarn's record of what it linked, so only meaningful beside the tree it describes.
-  '.yarn/root-install-state.gz',
-  'node_modules',
-  'code/node_modules',
-  'scripts/node_modules',
-];
+// The root node_modules holds pnpm's virtual store, from which `pnpm install` relinks every
+// package's node_modules in seconds.
+export const NODE_MODULES_CACHE_PATHS = ['node_modules'];
 
 export const testResults = {
   persist: (path: string) => {

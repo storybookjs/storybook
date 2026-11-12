@@ -3,7 +3,7 @@ import path from 'node:path';
 import { BigQuery } from '@google-cloud/bigquery';
 import { InvalidArgumentError, program } from 'commander';
 import detectFreePort from 'detect-port';
-import { mkdir, readdir, rm, stat, writeFile } from 'fs/promises';
+import { mkdir, readdir, rm, writeFile } from 'fs/promises';
 import pLimit from 'p-limit';
 import picocolors from 'picocolors';
 import { x } from 'tinyexec';
@@ -12,6 +12,7 @@ import { dedent } from 'ts-dedent';
 import versions from '../../code/core/src/common/versions.ts';
 import { maxConcurrentTasks } from '../utils/concurrency.ts';
 import { esMain } from '../utils/esmain.ts';
+import { getDirSize } from './dir-size.ts';
 import { safeMetafileArg } from './safe-args.ts';
 
 const METAFILES_DIR = path.join(__dirname, '..', '..', 'code', 'bench', 'esbuild-metafiles');
@@ -147,19 +148,6 @@ export const benchPackage = async (packageName: PackageName) => {
   }
   // -1 of reported packages added because we shouldn't count the actual package as a dependency
   const dependencyCount = installOutput.added - 1;
-
-  const getDirSize = async (dirPath: string) => {
-    const entities = await readdir(dirPath, {
-      recursive: true,
-      withFileTypes: true,
-    });
-    const stats = await Promise.all(
-      entities
-        .filter((entity) => entity.isFile())
-        .map((entity) => stat(path.join(entity.parentPath, entity.name)))
-    );
-    return stats.reduce((acc, { size }) => acc + size, 0);
-  };
 
   const nodeModulesSize = await getDirSize(path.join(tmpBenchPackagePath, 'node_modules'));
   const selfSize = await getDirSize(path.join(tmpBenchPackagePath, 'node_modules', packageName));
@@ -468,8 +456,8 @@ const run = async () => {
 
   if ((await detectFreePort(REGISTRY_PORT)) === REGISTRY_PORT) {
     throw new Error(dedent`The local verdaccio registry must be running in the background for package benching to work,
-      and packages must be published to it in --no-link mode with 'yarn --task publish --no-link'
-      Then run the registry with 'yarn --task run-registry --no-link'`);
+      and packages must be published to it in --no-link mode with 'pnpm task --task publish --no-link'
+      Then run the registry with 'pnpm task --task run-registry --no-link'`);
   }
 
   // The amount of VCPUs for this task in CI is 2 (medium resource)

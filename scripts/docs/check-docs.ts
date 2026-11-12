@@ -438,7 +438,7 @@ export async function checkSnippetCsfOrder(docsDir: string): Promise<DocLineErro
         file,
         line: segment.fenceLine + 1,
         message:
-          'CSF 3 snippet comes before its CSF 4 snippet. Run `yarn --cwd scripts docs:fix-snippets` to fix.',
+          'CSF 3 snippet comes before its CSF 4 snippet. Run `pnpm --dir scripts run docs:fix-snippets` to fix.',
       });
     }
   }
@@ -480,7 +480,7 @@ export async function checkSnippetCsf3Deprecation(docsDir: string): Promise<DocL
       errors.push({
         file,
         line: segment.fenceLine + 1,
-        message: `CSF 3 snippet must start with \`${getCsf3DeprecationComment(segment.syntax)}\`. Run \`yarn --cwd scripts docs:fix-snippets\` to fix.`,
+        message: `CSF 3 snippet must start with \`${getCsf3DeprecationComment(segment.syntax)}\`. Run \`pnpm --dir scripts run docs:fix-snippets\` to fix.`,
       });
     }
   }

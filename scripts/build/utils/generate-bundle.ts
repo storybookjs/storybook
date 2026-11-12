@@ -23,6 +23,7 @@ import {
   type EsbuildContextOptions,
   getExternal,
 } from './entry-utils.ts';
+import { esbuildHoistedModulePaths, rolldownHoistedModulePaths } from './hoisted-module-paths.ts';
 import { tiePreviewRuntimeSetup } from './preview-runtime-entry.ts';
 
 // repo root/bench/esbuild-metafiles/core
@@ -182,6 +183,8 @@ export async function generateBundle({
     },
     plugins: [
       rawPlugin(),
+      // Before `postbuild`, which may read the output.
+      esbuildHoistedModulePaths,
       {
         name: 'postbuild',
         setup(build) {
@@ -268,6 +271,7 @@ export async function generateBundle({
       plugins: [
         rolldownNoDynamicRequireGuard,
         ...(useGlobals ? [rolldownGlobalExternalsPlugin()] : []),
+        rolldownHoistedModulePaths,
       ],
       resolve: {
         alias,

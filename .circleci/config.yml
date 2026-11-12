@@ -66,11 +66,13 @@ jobs:
           name: Generate config
           environment:
             GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
+            GH_PR_NUMBER: << pipeline.parameters.ghPrNumber >>
           command: |
             node --experimental-transform-types ./scripts/ci/main.ts \
               --workflow=<< pipeline.parameters.workflow >> \
               --base-ref="origin/$GH_BASE_BRANCH" \
               --gh-trusted-author=<< pipeline.parameters.ghTrustedAuthor >> \
+              --gh-pr-number="$GH_PR_NUMBER" \
               --branch="<< pipeline.git.branch >>"
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml

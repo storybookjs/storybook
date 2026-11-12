@@ -12,7 +12,6 @@ scripts/repros-generator
 *.bundle.js
 *.js.map
 *.d.ts
-.yarn
 !.remarkrc.js
 !.babelrc.js
 !.eslintrc.js

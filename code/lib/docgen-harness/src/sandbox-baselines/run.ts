@@ -2,11 +2,11 @@
 // change shows up as a reviewable diff instead of being noticed by hand. Which templates are covered
 // is derived from the templates that enable server docgen, so there is no list here to keep in sync.
 //
-// Run from code/lib/docgen-harness, against a sandbox built with
-// `yarn task build --template <template> --start-from auto`:
-//   yarn baselines:sandbox                              # verify every server-docgen template
-//   yarn baselines:sandbox --update                     # re-record after reviewing the diff
-//   yarn baselines:sandbox --template angular-vite/default-ts
+// Run from code/lib/docgen-harness, against a sandbox built from the repository root with
+// `pnpm task build --template <template> --start-from auto`:
+//   pnpm baselines:sandbox                              # verify every server-docgen template
+//   pnpm baselines:sandbox --update                     # re-record after reviewing the diff
+//   pnpm baselines:sandbox --template angular-vite/default-ts
 import {
   existsSync,
   mkdirSync,
@@ -94,7 +94,7 @@ function runTemplate(
   const baselineTemplate = baselineTemplateFor(template);
   if (update && baselineTemplate !== template) {
     console.error(
-      `${template} records no baselines: it is checked against those of ${baselineTemplate}. Record them with:\n  yarn baselines:sandbox --template ${baselineTemplate} --update`
+      `${template} records no baselines: it is checked against those of ${baselineTemplate}. Record them with:\n  pnpm baselines:sandbox --template ${baselineTemplate} --update`
     );
     return false;
   }
@@ -118,7 +118,7 @@ function runTemplate(
   const committed = readCommittedBaselines(baselineDir);
   if (Object.keys(committed).length === 0) {
     console.error(
-      `No baselines committed for ${template}. Record them with:\n  yarn baselines:sandbox --template ${template} --update`
+      `No baselines committed for ${template}. Record them with:\n  pnpm baselines:sandbox --template ${template} --update`
     );
     return false;
   }
@@ -137,7 +137,7 @@ function runTemplate(
     return false;
   }
   console.error(
-    `\nRegressions mean docgen got worse and want a fix, not a re-record. Once the diff is understood:\n  yarn baselines:sandbox --template ${template} --update`
+    `\nRegressions mean docgen got worse and want a fix, not a re-record. Once the diff is understood:\n  pnpm baselines:sandbox --template ${template} --update`
   );
   return false;
 }

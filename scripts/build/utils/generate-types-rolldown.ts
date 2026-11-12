@@ -11,6 +11,7 @@ import type TS from 'typescript';
 
 import type { BuildEntries } from './entry-utils.ts';
 import { createPackageMatcher, getExternal } from './entry-utils.ts';
+import { rolldownHoistedModulePaths } from './hoisted-module-paths.ts';
 
 const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 const DIR_ROOT = join(DIR_CODE, '..');
@@ -535,6 +536,7 @@ export async function generateTypesFiles(
             emitDtsOnly: true,
             resolver: resolver === 'tsc' ? 'tsc' : 'oxc',
           }),
+          rolldownHoistedModulePaths,
         ],
         logLevel: 'warn',
       });

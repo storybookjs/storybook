@@ -452,7 +452,7 @@ async function installAmazonLinuxPackages(sandbox: Sandbox, packageNames: string
   }
 }
 
-// Point every `workspace:*` dependency in the sandbox manifests at a `yarn pack` tarball of this
+// Point every `workspace:*` dependency in the sandbox manifests at a `pnpm pack` tarball of this
 // checkout, and force the packed packages onto their tarballs through the root `overrides`,
 // including the ones only reached through another monorepo package. Returns the packages to pack.
 export async function pointStorybookAtCheckout(
@@ -568,24 +568,22 @@ let storybookWorkspace: Promise<StorybookWorkspace> | undefined;
 
 export function readStorybookWorkspace(): Promise<StorybookWorkspace> {
   storybookWorkspace ??= (async () => {
-    const { stdout } = await execYarn(['workspaces', 'list', '--json'], { cwd: REPO_ROOT });
+    const { stdout } = await execPnpm(['m', 'ls', '--json', '--depth', '-1'], { cwd: REPO_ROOT });
+    const workspacePackages = JSON.parse(stdout) as { path: string }[];
     const manifests = await Promise.all(
-      stdout
-        .trim()
-        .split('\n')
-        .map(async (line) => {
-          const { location } = JSON.parse(line) as { location: string };
-          const manifest = JSON.parse(
-            await fs.readFile(path.join(REPO_ROOT, location, 'package.json'), 'utf8')
-          ) as {
-            name: string;
-            private?: boolean;
-            dependencies?: Record<string, string>;
-            peerDependencies?: Record<string, string>;
-            peerDependenciesMeta?: Record<string, { optional?: boolean }>;
-          };
-          return { location, manifest };
-        })
+      workspacePackages.map(async (workspacePackage) => {
+        const location = path.relative(REPO_ROOT, workspacePackage.path).split(path.sep).join('/');
+        const manifest = JSON.parse(
+          await fs.readFile(path.join(REPO_ROOT, location, 'package.json'), 'utf8')
+        ) as {
+          name: string;
+          private?: boolean;
+          dependencies?: Record<string, string>;
+          peerDependencies?: Record<string, string>;
+          peerDependenciesMeta?: Record<string, { optional?: boolean }>;
+        };
+        return { location, manifest };
+      })
     );
     const published = manifests.filter(({ manifest }) => !manifest.private);
     const names = new Set(published.map(({ manifest }) => manifest.name));
@@ -770,8 +768,8 @@ export async function compileCheckoutPackages(packages: WorkspacePackage[]): Pro
   const projects = packages.map((pkg) => pkg.project).join(',');
   try {
     // Only the production build emits the type declarations a published package ships.
-    await execYarn(
-      ['nx', 'run-many', '-t', 'compile', '-c', 'production', '--projects', projects],
+    await execPnpm(
+      ['exec', 'nx', 'run-many', '-t', 'compile', '-c', 'production', '--projects', projects],
       {
         cwd: REPO_ROOT,
         maxBuffer: 64 * 1024 * 1024,
@@ -788,14 +786,14 @@ export async function compileCheckoutPackages(packages: WorkspacePackage[]): Pro
   }
 }
 
-// `yarn pack` applies the package's `files` list and rewrites its `workspace:` ranges, exactly
+// `pnpm pack` applies the package's `files` list and rewrites its `workspace:` ranges, exactly
 // like a publish. The sandbox only takes text files and core ships binary assets, so the tarball
 // travels base64-encoded.
 async function packCheckoutPackage(pkg: WorkspacePackage): Promise<string> {
   const packDir = await fs.mkdtemp(path.join(os.tmpdir(), 'agent-eval-packages-'));
   try {
     const tarballPath = path.join(packDir, path.posix.basename(checkoutTarballPath(pkg.name)));
-    await execYarn(['pack', '--out', tarballPath], {
+    await execPnpm(['pack', '--out', tarballPath], {
       cwd: path.join(REPO_ROOT, pkg.dir),
     });
     return (await fs.readFile(tarballPath)).toString('base64');
@@ -804,11 +802,11 @@ async function packCheckoutPackage(pkg: WorkspacePackage): Promise<string> {
   }
 }
 
-// Windows only finds `yarn.cmd` through a shell, which then needs paths with spaces quoted.
-function execYarn(args: string[], options: { cwd: string; maxBuffer?: number }) {
+// Windows only finds `pnpm.cmd` through a shell, which then needs paths with spaces quoted.
+function execPnpm(args: string[], options: { cwd: string; maxBuffer?: number }) {
   const isWindows = process.platform === 'win32';
   return execFileAsync(
-    'yarn',
+    'pnpm',
     isWindows ? args.map((arg) => (/\s/.test(arg) ? `"${arg}"` : arg)) : args,
     { ...options, shell: isWindows }
   );

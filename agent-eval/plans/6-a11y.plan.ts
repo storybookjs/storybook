@@ -1,7 +1,7 @@
 // Accessibility guidance branch VS a11y bug fixing workflow.
 //
-//   yarn eval:plan --config plans/6-a11y.plan.ts --dry
-//   yarn eval:plan --config plans/6-a11y.plan.ts
+//   pnpm eval:plan --config plans/6-a11y.plan.ts --dry
+//   pnpm eval:plan --config plans/6-a11y.plan.ts
 import type { RunPlan } from '../lib/agentic-reference/run-plan.ts';
 
 export default {

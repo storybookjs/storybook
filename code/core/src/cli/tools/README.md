@@ -108,8 +108,8 @@ makes UniversalStore a follower before core loads, and local bootstrap must be a
 
 ## Tests
 
-- Unit: `yarn test cli/tools` (memfs for the instance registry; no direct `globalThis` assignment)
-- Attach e2e: `cd code && yarn playwright test -c e2e-internal/playwright.config.ts e2e-internal/tools-attach.spec.ts`
+- Unit: `pnpm test cli/tools` from the repository root (memfs for the instance registry; no direct `globalThis` assignment)
+- Attach e2e: `cd code && pnpm exec playwright test -c e2e-internal/playwright.config.ts e2e-internal/tools-attach.spec.ts`
 
 Run e2e from the same checkout that serves the internal UI. A worktree CLI talking to a
 `/workspace` instance will load the wrong `.storybook` and fail on duplicate `core-server`.

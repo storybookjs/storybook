@@ -26,14 +26,14 @@ Run these in the `code` directory, in order. Substitute `<extra packages>` with 
 
 ```bash
 rm -rf node_modules/.cache
-yarn
-yarn build storybook <extra packages>
+pnpm install
+pnpm build storybook <extra packages>
 ```
 
 Then, run in the background:
 
 ```bash
-NODE_OPTIONS="--preserve-symlinks" yarn storybook:ui
+pnpm storybook:ui
 ```
 
 ### Handle an occupied port

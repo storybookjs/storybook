@@ -2,29 +2,29 @@ version = 1
 name = "storybook"
 
 [setup]
-script = "yarn install && yarn nx run-many -t compile"
+script = "bash .github/actions/setup-node-and-install/package-managers/install.sh pnpm && pnpm install && pnpm exec nx run-many -t compile"
 
 [[actions]]
 name = "Compile"
 icon = "tool"
-command = "yarn nx run-many -t compile"
+command = "pnpm exec nx run-many -t compile"
 
 [[actions]]
 name = "Check"
 icon = "tool"
-command = "yarn nx run-many -t check"
+command = "pnpm exec nx run-many -t check"
 
 [[actions]]
 name = "Unit Tests"
 icon = "test"
-command = "yarn test"
+command = "pnpm test"
 
 [[actions]]
 name = "Internal UI"
 icon = "run"
-command = "yarn --cwd code storybook:ui"
+command = "pnpm --dir code storybook:ui"
 
 [[actions]]
 name = "Format"
 icon = "tool"
-command = "yarn --cwd code fmt:write"
+command = "pnpm fmt:write"

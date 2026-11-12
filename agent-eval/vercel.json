@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "yarn run playground:build",
-  "installCommand": "yarn install --no-immutable",
+  "buildCommand": "pnpm run playground:build",
+  "installCommand": "pnpm install --no-frozen-lockfile",
   "framework": "nextjs"
 }

@@ -4,7 +4,7 @@ Closes #
 
 <!--
 
-Thank you for contributing to Storybook! Please submit all PRs to the `next` branch unless they are specific to the current release. Storybook maintainers cherry-pick bug and documentation fixes into the `main` branch as part of the release process, so you shouldn't need to worry about this. For additional guidance: https://storybook.js.org/docs/contribute
+Thank you for contributing to Storybook! Please submit all PRs to the `next` branch unless they are specific to the current release. Storybook maintainers cherry-pick bug and documentation fixes into the `main` branch as part of the release process, so you shouldn't need to worry about this. For additional guidance: https://github.com/storybookjs/storybook/blob/next/docs/contribute/index.mdx
 
 -->
 
@@ -32,7 +32,7 @@ Thank you for contributing to Storybook! Please submit all PRs to the `next` bra
 
 <!-- Please include the steps that a human maintainer should follow, so they can verify that your changes work. For example:
 
-1. Run a sandbox for template, e.g. `yarn task --task sandbox --start-from auto --template react-vite/default-ts`
+1. Run a sandbox for template, e.g. `pnpm task --task sandbox --start-from auto --template react-vite/default-ts`
 2. Open Storybook in your browser
 3. Access X story
 

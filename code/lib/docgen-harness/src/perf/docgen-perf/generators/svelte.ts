@@ -1,9 +1,8 @@
 // The Svelte flavour of the workspace generator in `./workspace.ts`: runes components whose
 // `$props()` are typed by the workspace's props chain, plus the Svelte runtime types they import.
-import { createRequire } from 'node:module';
-import * as fs from 'node:fs';
 import * as path from 'pathe';
 
+import { copyPackages } from '../../docgen-shared/copy-packages.ts';
 import {
   type GeneratedWorkspaceProject,
   type WorkspaceComponent,
@@ -13,22 +12,11 @@ import {
   grownPropsType,
 } from './workspace.ts';
 
-const require = createRequire(import.meta.url);
-
 // The svelte2tsx output of every component imports `svelte`, so its types must resolve.
 function copySvelteNodeModules(projectDir: string): void {
-  const dest = path.join(projectDir, 'node_modules');
-  fs.mkdirSync(path.join(dest, '@types'), { recursive: true });
-  fs.cpSync(path.dirname(require.resolve('svelte/package.json')), path.join(dest, 'svelte'), {
-    recursive: true,
-    dereference: true,
+  copyPackages(path.join(projectDir, 'node_modules'), {
+    svelte: { '@types/estree': {}, 'magic-string': {} },
   });
-  const svelteRequire = createRequire(require.resolve('svelte/package.json'));
-  fs.cpSync(
-    path.dirname(svelteRequire.resolve('@types/estree/package.json')),
-    path.join(dest, '@types', 'estree'),
-    { recursive: true, dereference: true }
-  );
 }
 
 // A component's source. `extraProps` grows the props type by one optional prop per save, so a

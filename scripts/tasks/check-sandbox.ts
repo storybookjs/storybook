@@ -9,7 +9,7 @@ export const checkSandbox: Task = {
     return false;
   },
   async run({ sandboxDir, key }, { dryRun, debug, link }) {
-    await prepareSandbox({ key, link });
-    await exec(`yarn typecheck`, { cwd: sandboxDir }, { dryRun, debug });
+    await prepareSandbox({ key, link, sandboxDir, dryRun, debug });
+    await exec(`pnpm typecheck`, { cwd: sandboxDir }, { dryRun, debug });
   },
 };

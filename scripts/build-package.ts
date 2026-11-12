@@ -77,7 +77,7 @@ async function run() {
   let prodMode = opts.prod;
 
   Object.keys(tasks).forEach((key) => {
-    // checks if a flag is passed e.g. yarn build addon-docs --watch
+    // checks if a flag is passed e.g. pnpm build addon-docs --watch
     const containsFlag = main.args.includes(tasks[key].suffix);
     tasks[key].value = containsFlag || opts.all;
   });
@@ -107,7 +107,7 @@ async function run() {
     process.exit(1);
   }
 
-  // Workspaces without build-config (e.g. agent-eval) appear in yarn workspaces but
+  // Workspaces without build-config (e.g. agent-eval) appear in pnpm workspaces but
   // cannot be built by this script. Filter --all silently; reject explicit picks.
   const nonBuildable = selection.filter((item) => !hasBuildConfig(item));
   if (nonBuildable.length && !opts.all) {
@@ -148,7 +148,7 @@ async function run() {
           message: 'Select the packages to build',
           name: 'todo',
           min: 1,
-          hint: 'You can also run directly with package name like `yarn build storybook`, or `yarn build --all` for all packages!',
+          hint: 'You can also run directly with package name like `pnpm build storybook`, or `pnpm build --all` for all packages!',
           // @ts-expect-error @types incomplete
           optionsPerPage: windowSize.height - 3, // 3 lines for extra info
           choices: buildablePackages.map(({ name: key }) => ({
@@ -171,7 +171,7 @@ async function run() {
 
   selection.forEach(async (v) => {
     const script = join(ROOT_DIRECTORY, 'scripts', 'build', 'build-package.ts');
-    const command = `yarn exec jiti ${script}`;
+    const command = `pnpm exec jiti ${script}`;
 
     const cwd = resolve(__dirname, '..', 'code', v.location);
     const sub = exec(`${command}${watchMode ? ' --watch' : ''}${prodMode ? ' --prod' : ''}`, {

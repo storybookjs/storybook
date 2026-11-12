@@ -7,8 +7,8 @@ Nothing here ships to npm.
 ## How to use it
 
 ```bash
-yarn test code/lib/docgen-harness      # from the repo root
-yarn test code/lib/docgen-harness -u   # re-record after an intentional change, then review the diff
+pnpm test code/lib/docgen-harness      # from the repo root
+pnpm test code/lib/docgen-harness -u   # re-record after an intentional change, then review the diff
 ```
 
 Each framework has three test files:
@@ -22,7 +22,7 @@ Each framework has three test files:
 The daily CI tier runs it; the root vitest config leaves it out, so it does not run on every pull request:
 
 ```bash
-yarn vitest run --config code/lib/docgen-harness/vitest.config.native-typescript.ts   # from the repo root
+pnpm exec vitest run --config code/lib/docgen-harness/vitest.config.native-typescript.ts   # from the repo root
 ```
 
 vue3 has a second recorder, `vue3-component-meta-baselines.test.ts`, because Vue ships two production docgen engines.
@@ -184,7 +184,7 @@ Compodoc scans everything under the nearest `package.json` and ignores tsconfig 
 1. Copy the component and its supporting sources (never `input.stories.ts`) plus the case `tsconfig.json` into an empty directory, e.g. `$(mktemp -d)`.
 2. Run `npx -y @compodoc/compodoc@2.0.0 -p tsconfig.json -e json -d .` there.
 3. Move the emitted `documentation.json` back as `compodoc-input.json`.
-4. Run `cd code && yarn fmt:write`.
+4. Run `pnpm fmt:write` from the repository root.
 
 Nothing detects drift between a fixture's sources and its committed capture, so editing a component always means re-capturing in the same change.
 
@@ -341,10 +341,10 @@ It is a set of CLIs rather than part of this package's exported API, so nothing 
 All commands run from `code/lib/docgen-harness`:
 
 ```bash
-yarn bench:docgen-perf            # per-engine cold/warm latency and memory, full profile (~1 min)
-yarn bench:docgen-perf --quick    # smoke profile; its numbers are marked non-comparable
-yarn bench:docgen-perf-gate       # the same suite, plus budget assertions - what the CI gate runs
-yarn bench:docgen-memory          # the docgen-server memory regression gate
+pnpm bench:docgen-perf            # per-engine cold/warm latency and memory, full profile (~1 min)
+pnpm bench:docgen-perf --quick    # smoke profile; its numbers are marked non-comparable
+pnpm bench:docgen-perf-gate       # the same suite, plus budget assertions - what the CI gate runs
+pnpm bench:docgen-memory          # the docgen-server memory regression gate
 ```
 
 `bench:docgen-perf` generates synthetic projects under the shared sandbox directory, runs each engine in its own child process, and writes a results JSON next to them.
@@ -355,9 +355,9 @@ That makes two bench runs at once clobber each other - one wipes a tree the othe
 ### Running one engine, or one that is out of the default run
 
 ```bash
-yarn bench:docgen-perf --engine react-osa                       # one engine
-yarn bench:docgen-perf --engine react-legacy --engine react-osa # a control pair, one invocation
-yarn bench:docgen-perf --json /tmp/results.json                 # where the results land
+pnpm bench:docgen-perf --engine react-osa                       # one engine
+pnpm bench:docgen-perf --engine react-legacy --engine react-osa # a control pair, one invocation
+pnpm bench:docgen-perf --json /tmp/results.json                 # where the results land
 ```
 
 The default run is `react-legacy`, `react-osa`, `react-osa-native`, `vue-docgen-api`, `vue-component-meta`, `svelte-legacy`, `svelte-component-meta`, `compodoc`, `angular-cm` and `angular-cm-native`.
@@ -379,10 +379,10 @@ The cold ratio between the React engines is 0.73 over the index and 0.08 over th
 ### Comparing two releases of one engine
 
 `vue-component-meta-next` is an alias in this package's `package.json`, pinned to an exact version.
-Point it at the version you want to test, `yarn install`, then run both sides in one invocation:
+Point it at the version you want to test, `pnpm install`, then run both sides in one invocation:
 
 ```bash
-yarn bench:docgen-perf --engine vue-component-meta --engine vue-component-meta-next
+pnpm bench:docgen-perf --engine vue-component-meta --engine vue-component-meta-next
 ```
 
 Pin the candidate exactly rather than with a range - two caret ranges can resolve to one install, and then the run compares an engine against itself.
@@ -407,7 +407,7 @@ Change one only against numbers measured on CI, and record where they came from 
 Read `src/perf/PERF-METHODOLOGY.md` before changing a metric, a budget, or a version pair.
 It is the contract these numbers are only meaningful under.
 
-The bench also carries unit tests for its own aggregation, reporting and generator logic, so `yarn test code/lib/docgen-harness` runs those alongside the fixture comparisons.
+The bench also carries unit tests for its own aggregation, reporting and generator logic, so `pnpm test code/lib/docgen-harness` runs those alongside the fixture comparisons.
 
 ## What does not live here
 

@@ -161,7 +161,7 @@ describe('getFocusJobs', () => {
     ]);
   });
 
-  it.each(['yarn.lock', 'code/addons/a11y/src/__snapshots__/a11yRunner.test.ts.snap'])(
+  it.each(['pnpm-lock.yaml', 'code/addons/a11y/src/__snapshots__/a11yRunner.test.ts.snap'])(
     'runs the full unit suite instead of the affected tests when %s changed',
     (file) => {
       const ids = jobIds(['code/core/src/manager/App.tsx', file]);
@@ -233,7 +233,7 @@ describe('selectPathTriggeredJobs', () => {
   });
 
   it('adds every path-triggered job when a global input changed', () => {
-    expect(triggeredIds('yarn.lock')).toHaveLength(PATH_TRIGGERED_JOBS.length);
+    expect(triggeredIds('pnpm-lock.yaml')).toHaveLength(PATH_TRIGGERED_JOBS.length);
   });
 
   it('adds both init jobs for a CLI change and only init-features for a docs addon change', () => {
@@ -315,7 +315,7 @@ describe('defineAffectedLintAndFormat', () => {
       ['scripts', scriptsPackage],
     ] as const) {
       const step = steps.find((step) => step.name === `Lint changed ${directory} files`)!;
-      const expanded = step.command.replace('yarn lint:js:cmd', manifest.scripts['lint:js:cmd']);
+      const expanded = step.command.replace('pnpm lint:js:cmd', manifest.scripts['lint:js:cmd']);
       expect(expanded.match(/--no-error-on-unmatched-pattern/g)).toHaveLength(1);
     }
   });
@@ -329,7 +329,7 @@ describe('defineAffectedLintAndFormat', () => {
   it.each([
     ['.oxfmtrc.json', ['Format check', 'Lint changed code files']],
     ['code/.oxlintrc.json', ['Format check changed files', 'Lint code JS', 'Lint scripts']],
-    ['yarn.lock', ['Format check', 'Lint code JS', 'Lint scripts']],
+    ['pnpm-lock.yaml', ['Format check', 'Lint code JS', 'Lint scripts']],
   ])('checks everything it covers when %s changed', (configFile, stepNames) => {
     expect(runSteps('code/core/src/manager/App.tsx', configFile).map(({ name }) => name)).toEqual(
       stepNames
@@ -358,7 +358,7 @@ describe('ci:normal coverage', () => {
 
   const selectableByFocus = new Set(
     [
-      ['yarn.lock'],
+      ['pnpm-lock.yaml'],
       ...FOCUS_TEMPLATES.flatMap((key) =>
         Object.values(templateDirs(key)).flatMap((dirs) =>
           dirs.map((dir) => [`${dir}src/index.ts`])

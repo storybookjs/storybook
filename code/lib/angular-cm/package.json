@@ -40,6 +40,7 @@
     "!src/**/*"
   ],
   "devDependencies": {
+    "@angular/core": "^21.2.14",
     "@storybook/component-meta-typescript": "workspace:*",
     "typescript": "^6.0.3",
     "typescript-native": "npm:typescript@7.1.0-beta"

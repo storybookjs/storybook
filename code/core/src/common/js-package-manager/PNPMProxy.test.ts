@@ -524,6 +524,7 @@ describe('PNPM Proxy', () => {
 
   describe('addDependencies', () => {
     it('with devDep it should run `pnpm add -D storybook`', async () => {
+      vi.spyOn(pnpmProxy, 'detectWorkspaceRoot').mockReturnValue(false);
       const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '6.0.0' } as any);
 
       await pnpmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);

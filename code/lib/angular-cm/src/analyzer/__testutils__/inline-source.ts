@@ -60,7 +60,7 @@ export const ENTRY = `${VIRTUAL_DIR}/component.ts`;
 // unresolvable `@angular/core` would quietly turn most tests into much weaker ones than they read
 // as, rather than failing.
 if (!ts.resolveModuleName('@angular/core', ENTRY, BASE_OPTIONS, ts.sys).resolvedModule) {
-  throw new Error(`@angular/core does not resolve from ${ENTRY}; run \`yarn\` first`);
+  throw new Error(`@angular/core does not resolve from ${ENTRY}; run \`pnpm install\` first`);
 }
 
 // lib.d.ts and `@angular/core` are parsed once and shared, so a program per test stays cheap.

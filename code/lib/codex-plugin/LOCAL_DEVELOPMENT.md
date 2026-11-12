@@ -16,18 +16,18 @@ code/lib/codex-plugin/
 
 This matches the layout Codex expects for bundled marketplaces such as `openai-bundled`: the marketplace root contains `.agents/plugins/marketplace.json`, and each plugin lives under `plugins/<name>/`.
 
-The skills under `plugins/storybook/skills/` are rendered from the Claude plugin's `code/lib/claude-plugin/skills/` by `yarn nx compile claude-plugin`. Do not edit them here; edit the Claude plugin's skill and rerun the render.
+The skills under `plugins/storybook/skills/` are rendered from the Claude plugin's `code/lib/claude-plugin/skills/` by `pnpm exec nx compile claude-plugin` (run from the repository root). Do not edit them here; edit the Claude plugin's skill and rerun the render.
 
 ## Local Testing
 
 Codex exposes marketplace lifecycle and plugin install commands in the CLI.
 
-Run package scripts from the repository root with `yarn workspace @storybook/codex-plugin run <script>`, or from this package directory with `yarn run <script>`.
+Run package scripts from the repository root with `pnpm --filter @storybook/codex-plugin run <script>`, or from this package directory with `pnpm run <script>`.
 
 Run marketplace validation before pushing changes:
 
 ```sh
-yarn workspace @storybook/codex-plugin run validate:marketplace
+pnpm --filter @storybook/codex-plugin run validate:marketplace
 ```
 
 This checks the marketplace/plugin layout and that `codex plugin marketplace add` succeeds against a clean `CODEX_HOME`.
@@ -35,13 +35,13 @@ This checks the marketplace/plugin layout and that `codex plugin marketplace add
 Add this package directory as the local Storybook marketplace:
 
 ```sh
-yarn workspace @storybook/codex-plugin run marketplace:add
+pnpm --filter @storybook/codex-plugin run marketplace:add
 ```
 
 Or from this directory:
 
 ```sh
-yarn run marketplace:add
+pnpm run marketplace:add
 ```
 
 Then test the plugin in the Codex app:
@@ -55,8 +55,8 @@ Then test the plugin in the Codex app:
 If you edit this package while testing, force a clean reinstall:
 
 ```sh
-yarn workspace @storybook/codex-plugin run remove
-yarn workspace @storybook/codex-plugin run marketplace:add
+pnpm --filter @storybook/codex-plugin run remove
+pnpm --filter @storybook/codex-plugin run marketplace:add
 ```
 
 Then reinstall the Storybook plugin in the Codex app and restart Codex. Codex caches plugins under `~/.codex/plugins/cache/` and does not pick up file changes until you reinstall.
@@ -83,7 +83,7 @@ Do **not** use `plugins/codex` — that path does not exist in this repository.
 For day-to-day development, prefer the local marketplace command instead of the Git UI:
 
 ```sh
-yarn workspace @storybook/codex-plugin run marketplace:add
+pnpm --filter @storybook/codex-plugin run marketplace:add
 ```
 
 After installing the plugin, Codex loads it from its plugin cache. If changes do not show up, run `remove` and `marketplace:add`, then reinstall the plugin in Codex.

@@ -3,7 +3,7 @@
 # Root
 # .github/    @JReinhold @yannbf @vanessayuenn
 # .circleci/  @yannbf @kasperpeulen
-# .yarnrc.yml @ndelangen @JReinhold
+# pnpm-workspace.yaml @ndelangen @JReinhold
 
 # Docs
 /docs/ @kylegach @jonniebigodes

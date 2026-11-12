@@ -33,7 +33,7 @@ export const e2eTestsInternal: Task<MonorepoDetails> = {
     }
 
     await exec(
-      'yarn playwright test -c e2e-internal/playwright.config.ts',
+      'pnpm exec playwright test -c e2e-internal/playwright.config.ts',
       {
         env,
         cwd: codeDir,

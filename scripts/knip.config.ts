@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -5,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 import fg from 'fast-glob';
 import type { KnipConfig } from 'knip';
 import { match } from 'minimatch';
+import { parse as parseYaml } from 'yaml';
 
 import sveltekitBuild from '../code/frameworks/sveltekit/build-config.ts';
 import svelteBuild from '../code/renderers/svelte/build-config.ts';
@@ -75,7 +77,7 @@ const baseConfig = {
       entry: ['src/index.ts', 'src/ink/steps/checks/index.tsx'],
       project,
     },
-    // The perf bench is a set of CLIs and spawned child processes, reachable from `yarn
+    // The perf bench is a set of CLIs and spawned child processes, reachable from `pnpm
     // bench:docgen-*` rather than from the package's own entry, so each root is listed here.
     'lib/docgen-harness': {
       entry: [
@@ -122,10 +124,10 @@ export const addBundlerEntries = async (config: KnipConfig) => {
     return config;
   }
   const baseDir = join(__dirname, '..');
-  const rootManifest = await import(pathToFileURL(join(baseDir, 'package.json')).href, {
-    with: { type: 'json' },
-  });
-  const workspaceDirs = await fg(rootManifest.workspaces.packages, {
+  const { packages: workspaceGlobs } = parseYaml(
+    await readFile(join(baseDir, 'pnpm-workspace.yaml'), 'utf-8')
+  );
+  const workspaceDirs = await fg(workspaceGlobs, {
     cwd: baseDir,
     onlyDirectories: true,
   });

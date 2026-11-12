@@ -446,8 +446,8 @@ Registration must not start subscriptions that execute commands, because the att
 
 The internal Storybook config registers an example debug service through a dedicated preset file
 ([`code/.storybook/services-preset.ts`](../../../../.storybook/services-preset.ts)), gated on
-`STORYBOOK_OPEN_SERVICE_DEBUG=true`. The flag stays unset by default so normal `yarn storybook:ui`
-and `yarn storybook:ui:build` runs do not register the debug service.
+`STORYBOOK_OPEN_SERVICE_DEBUG=true`. The flag stays unset by default so normal `pnpm storybook:ui`
+and `pnpm storybook:ui:build` runs in `code/` do not register the debug service.
 
 ## Runtime Flow
 

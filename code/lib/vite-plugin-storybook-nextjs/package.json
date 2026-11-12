@@ -84,9 +84,11 @@
     "@types/probe-image-size": "^7.2.5",
     "@types/react": "^18.0.37",
     "@types/semver": "^7.7.1",
+    "memfs": "^4.11.1",
     "next": "^15.2.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "rollup": "^4.43.0",
     "typescript": "^6.0.3",
     "vite": "^7.0.4"
   },

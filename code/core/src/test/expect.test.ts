@@ -12,7 +12,7 @@ type MatchersObject = { matchers: Record<string, unknown> };
 const matchersOf = (symbol: symbol) =>
   (globalThis as unknown as Record<symbol, MatchersObject>)[symbol].matchers;
 
-// These tests cover the yarn patch of `@vitest/expect` (see `.yarn/patches/@vitest-expect-*`).
+// These tests cover the pnpm patch of `@vitest/expect` (see `patches/@vitest-expect-*`).
 
 it('registers its matchers apart from the jest matchers object of the test runner', () => {
   expect.extend({

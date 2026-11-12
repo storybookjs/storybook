@@ -94,7 +94,7 @@ export async function startStorybook(
 ): Promise<{ storybookProcess: ReturnType<typeof x> }> {
 	await mkdir(STORYBOOK_LOG_DIR, { recursive: true });
 	const log = await open(new URL(`${configDir.replace(/^\./, '')}-${port}.log`, STORYBOOK_LOG_DIR), 'w');
-	const storybookProcess = x('yarn', ['storybook', '--config-dir', configDir, '--port', String(port)], {
+	const storybookProcess = x('pnpm', ['storybook', '--config-dir', configDir, '--port', String(port)], {
 		nodeOptions: {
 			cwd: STORYBOOK_DIR,
 			stdio: ['pipe', log.fd, log.fd],

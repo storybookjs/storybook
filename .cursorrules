@@ -4,35 +4,30 @@ This Storybook repository uses Vitest as the test runner. Here are the key comma
 
 ### Test Scripts
 
-- `yarn test` - Run all tests (from root directory, delegates to `cd code; yarn test`)
-- `yarn test <test-name>` - Run focused tests matching the pattern
-- `yarn test:watch` - Run tests in watch mode
-- `yarn test:watch <test-name>` - Run focused tests in watch mode
+- `pnpm test` - Run all tests (from the root directory)
+- `pnpm test <test-name>` - Run focused tests matching the pattern
+- `pnpm test:watch` - Run tests in watch mode
+- `pnpm test:watch <test-name>` - Run focused tests in watch mode
 
 ### Test Directory Structure
 
-- Tests are located in the `code/` directory
-- Vitest configuration is in `code/vitest.workspace.ts`
+- Tests live under `code/`, `scripts/` and `agent-eval/`
+- Vitest configuration: root `vitest.config.ts` (projects)
 - Test files typically follow the pattern `*.test.ts`, `*.test.tsx`, `*.spec.ts`, or `*.spec.tsx`
 
 ### Running Tests in Cursor
 
-1. Use Cmd+Shift+P (or Ctrl+Shift+P) and search for "Tasks: Run Task"
-2. Select from the available test tasks:
-   - "Run All Tests" - Runs all tests
-   - "Run Test (Watch Mode)" - Runs tests in watch mode
-   - "Run Focused Test" - Prompts for test name/pattern to run specific tests
-   - "Run Focused Test (Watch Mode)" - Runs specific tests in watch mode
+There are no predefined editor tasks. Run the commands under "Test Scripts" (`pnpm test <test-name>`, `pnpm test:watch <test-name>`) from the repository root in the integrated terminal.
 
 ### Vitest Configuration
 
-- Workspace configuration: `./code/vitest.workspace.ts`
-- Command line: `yarn --cwd code test`
-- Root directory for tests: `./code/`
+- Workspace configuration: root `vitest.config.ts` (projects)
+- Command line: `pnpm test` (from the root directory)
+- Root directory for tests: the repository root
 
 ### Test Execution Context
 
-- Tests run from the `code/` directory
+- Tests run from the repository root
 - Use `NODE_OPTIONS=--max_old_space_size=4096` for memory optimization
 - Supports both watch mode and single-run execution
 

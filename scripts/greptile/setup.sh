@@ -24,27 +24,25 @@ node -v
 npm -v
 npm info storybook version
 
-YARN_BIN="$(pwd)/$(awk '/^yarnPath:/ {print $2}' .yarnrc.yml)"
-printf '#!/bin/sh\nexec node "%s" "$@"\n' "$YARN_BIN" | $SUDO tee /usr/local/bin/yarn >/dev/null
-$SUDO chmod +x /usr/local/bin/yarn
-yarn --version
+bash .github/actions/setup-node-and-install/package-managers/install.sh pnpm
+pnpm --version
 
 export HUSKY=0
 export NX_NO_CLOUD=true
 export STORYBOOK_DISABLE_TELEMETRY=1
 export NODE_OPTIONS="--max_old_space_size=8192"
 
-yarn install --immutable
+pnpm install --frozen-lockfile
 
-yarn nx run-many -t compile -c production --no-cloud --outputStyle=stream
+pnpm exec nx run-many -t compile -c production --no-cloud --outputStyle=stream
 
 cd code
 $SUDO mkdir -p "$HOME/.cache/ms-playwright"
 PW_DIR="$(readlink -f "$HOME/.cache/ms-playwright")"
 $SUDO chown -R "$(id -u):$(id -g)" "$HOME/.cache" "$PW_DIR"
 ls -la "$PW_DIR"
-yarn exec playwright install chromium
-$SUDO env "PATH=$PATH" yarn exec playwright install-deps chromium
+pnpm exec playwright install chromium
+$SUDO env "PATH=$PATH" pnpm exec playwright install-deps chromium
 $SUDO chown -R "$(id -u):$(id -g)" "$HOME/.cache" "$PW_DIR"
 cd ..
 

@@ -8,21 +8,21 @@ This document is canonical for testing practice: which kind of test to write, ho
 > Behavior, accessibility, and interaction assertions belong in `*.stories.tsx` co-located with the component, executed via the Storybook Vitest project.
 > Unit tests (`*.test.ts(x)`) are reserved for pure utilities, hooks, and non-React modules where rendering is not involved.
 
-| Suite                     | Command                                                                                                          |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Story tests (components)  | `yarn storybook:vitest`, or `vitest run --config code/vitest.config.ts <story-file>`                             |
-| Unit tests                | `yarn test <pattern>` (e.g. `yarn test csf-tools`); the full suite is large, so run focused patterns while iterating |
-| Unit tests in watch mode  | `yarn test:watch`                                                                                                |
-| Visual validation         | Storybook UI or Chromatic                                                                                        |
-| E2E                       | `yarn task e2e-tests --start-from auto` or `yarn task e2e-tests-dev --start-from auto`                           |
-| Smoke checks              | `yarn task smoke-test --start-from auto`                                                                         |
-| Tools attach coverage     | `cd code && yarn playwright test -c e2e-internal/playwright.config.ts e2e-internal/tools-attach.spec.ts` (same checkout as the running internal UI) |
+| Suite                    | Command                                                                                                                                                  |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Story tests (components) | `pnpm storybook:vitest`, or `pnpm exec vitest run --config code/vitest.config.ts <story-file>`                                                           |
+| Unit tests               | `pnpm test <pattern>` (e.g. `pnpm test csf-tools`); the full suite is large, so run focused patterns while iterating                                     |
+| Unit tests in watch mode | `pnpm test:watch`                                                                                                                                        |
+| Visual validation        | Storybook UI or Chromatic                                                                                                                                |
+| E2E                      | `pnpm task e2e-tests --start-from auto` or `pnpm task e2e-tests-dev --start-from auto`                                                                   |
+| Smoke checks             | `pnpm task smoke-test --start-from auto`                                                                                                                 |
+| Tools attach coverage    | `cd code && pnpm exec playwright test -c e2e-internal/playwright.config.ts e2e-internal/tools-attach.spec.ts` (same checkout as the running internal UI) |
 
 Fork CI compiles with `--no-link` before unit tests to generate the declarations required by distribution contract tests.
 
 Test runs print console output only for failing tests (`silent: 'passed-only'` in the root `vitest.config.ts`).
 In `code/` packages, `code/vitest-setup.ts` routes direct `process.stdout` and `process.stderr` writes, such as `@clack/prompts` output, through the console, so the same rule applies to them.
-Add `--silent=false` to see the logs of passing tests, for example `yarn test csf-tools --silent=false`.
+Add `--silent=false` to see the logs of passing tests, for example `pnpm test csf-tools --silent=false`.
 
 When writing tests for components:
 
@@ -34,7 +34,7 @@ When writing unit tests (utilities, hooks, non-React modules):
 - Export functions that need direct tests
 - Test real behavior, not just syntax patterns
 - Make the input and expected result easy to read together. For a mapper with stable output, prefer `toMatchInlineSnapshot` when it shows the full result more clearly, as in the automigration fix tests.
-- Use coverage when useful: `yarn vitest run --coverage <test-file>`
+- Use coverage when useful: `pnpm exec vitest run --coverage <test-file>`
 - Mock external dependencies like file system access and loggers
 - Use Node's path.resolve to wrap expected FS paths when writing path-related tests, so they work on Windows
 
@@ -65,8 +65,8 @@ This applies to all ambient globals, not just `FEATURES` (e.g. `window`, `docume
 
 ## Type tests (`*.test-d.ts`)
 
-Vitest type-checks `*.test-d.ts` files with the TypeScript 7 native compiler, the same one `yarn task check` uses. They are never executed at runtime.
+Vitest type-checks `*.test-d.ts` files with the TypeScript 7 native compiler, the same one `pnpm task check` uses. They are never executed at runtime.
 
 - A package with type tests sets `test.typecheck.enabled: true` in its `vitest.config.ts`; the checker itself comes from `code/vitest.shared.ts`.
-- Run them from the repo root with `yarn vitest run --project <project> test-d`, where `<project>` is the config's `test.name` or else the package name (e.g. `core`, `@storybook/angular`).
+- Run them from the repo root with `pnpm exec vitest run --project <project> test-d`, where `<project>` is the config's `test.name` or else the package name (e.g. `core`, `@storybook/angular`).
 - Assert with `expectTypeOf` and use `// @ts-expect-error` for inputs that must be rejected; an unused directive fails the test.

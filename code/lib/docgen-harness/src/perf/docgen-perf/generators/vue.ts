@@ -3,14 +3,13 @@
 //
 // Run directly, from code/lib/docgen-harness (--out defaults into the sandbox directory):
 //   node src/perf/docgen-perf/generators/vue.ts --packages 4 --components-per-package 10
-import { createRequire } from 'node:module';
-import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { z } from 'zod';
 
 import { countOption, parseHarnessOptions } from '../../docgen-shared/args.ts';
+import { copyPackages } from '../../docgen-shared/copy-packages.ts';
 import { SANDBOX_DIRECTORY } from '../../docgen-shared/paths.ts';
 import {
   type GeneratedWorkspaceProject,
@@ -24,26 +23,15 @@ import {
   workspaceProjectFiles,
 } from './workspace.ts';
 
-const require = createRequire(import.meta.url);
-
 // Copy the minimal node_modules packages the checker needs for Vue type resolution.
 function copyVueNodeModules(projectDir: string): void {
-  const dest = path.join(projectDir, 'node_modules');
-  const rootNodeModules = path.resolve(require.resolve('vue/package.json'), '../..');
-  fs.mkdirSync(path.join(dest, '@vue'), { recursive: true });
-
-  for (const pkg of ['vue', 'csstype']) {
-    fs.cpSync(path.join(rootNodeModules, pkg), path.join(dest, pkg), {
-      recursive: true,
-      dereference: true,
-    });
-  }
-  for (const pkg of ['runtime-core', 'runtime-dom', 'shared', 'reactivity', 'compiler-dom']) {
-    fs.cpSync(path.join(rootNodeModules, '@vue', pkg), path.join(dest, '@vue', pkg), {
-      recursive: true,
-      dereference: true,
-    });
-  }
+  copyPackages(path.join(projectDir, 'node_modules'), {
+    vue: {
+      '@vue/compiler-dom': {},
+      '@vue/shared': {},
+      '@vue/runtime-dom': { '@vue/runtime-core': {}, '@vue/reactivity': {}, csstype: {} },
+    },
+  });
 }
 
 // An SFC's source. `extraProps` grows the intersection type by one optional prop per save, so a

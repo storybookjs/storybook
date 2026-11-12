@@ -17,10 +17,10 @@ Each change needs other targets, so this skill tells you how to find them, not a
 
 2. **Find the targets.** Pick two or three that show the surface in different setups. Look in this order:
    - **Real projects.** Open-source projects that use the affected framework, package or API with Storybook. Search GitHub (`gh search code`, `gh search repos`) for their `.storybook/main.*` or for the API the change touches. Pick different setups (for example SvelteKit and plain Svelte with Vite). They are low-trust sources: follow the section below.
-   - **Sandboxes.** `yarn task sandbox --template <key>`; see [Sandboxes](../../guidelines/sandboxes.md). Use them when no real project uses the surface yet, or to check one template against another.
+   - **Sandboxes.** `pnpm task sandbox --template <key>`; see [Sandboxes](../../guidelines/sandboxes.md). Use them when no real project uses the surface yet, or to check one template against another.
    - **The repo's own tools.** Some surfaces have a local tool in `scripts/`, for example `scripts/event-log-collector.ts`, which receives telemetry events. Look there before you build your own.
 
-   To put this head into a real project, install a canary (the [`canary` skill](../canary/SKILL.md)), or publish to the local registry (`cd code && yarn local-registry --help`).
+   To put this head into a real project, install a canary (the [`canary` skill](../canary/SKILL.md)), or publish to the local registry (`cd code && pnpm local-registry --help`).
 
 3. **Run the base and this head.** Do the same steps on each, and keep what shows the difference: commands, logs, counts, timings, screenshots. A difference you did not expect is a finding. A finding that a real project shows has its producer: that project.
 

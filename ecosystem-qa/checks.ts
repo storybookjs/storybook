@@ -3,10 +3,14 @@
 // `must` runs on every repo of every sweep; `extended` only when a dispatch asks for it.
 export type Tier = 'must' | 'extended';
 
+// The order the agent works in: each phase uses what the one before it left installed, running
+// or built.
+const PHASES = ['upgrade', 'dev', 'build', 'test'] as const;
+
 interface CheckDefinition {
   readonly id: string;
   readonly label: string;
-  readonly phase: 'upgrade' | 'dev' | 'build' | 'test';
+  readonly phase: (typeof PHASES)[number];
   readonly tier: Tier;
   readonly probe: string;
 }
@@ -123,12 +127,12 @@ export const CHECKS = [
     phase: 'upgrade',
     tier: 'extended',
     probe:
-      'In `upgrade.log` find the `npx skills@latest add storybookjs/skills#v<version> --yes --agent claude-code universal --copy` line and check that `skills-lock.json` lists the Storybook skills. `n/a` when the automigration was skipped because the run was detected as CI.',
+      '`n/a` when the upgrade had no reason to install them: the run was detected as CI, or `skills-lock.json` at the repository root listed no Storybook skills before the upgrade and either the project was already on 11 (a prerelease counts) or its framework after the upgrade is none of React, Svelte, Web Components, Vue 3 Vite and Angular Vite. Otherwise `upgrade.log` must have a line that ends in `skills@latest add storybookjs/skills#v<version> --yes --agent claude-code universal --copy`. What comes before it depends on the package manager (`npx`, `pnpm dlx`, `yarn dlx`, `bunx`) and is not part of the check. After it, `skills-lock.json` at the repository root must list the Storybook skills.',
   },
   {
     id: 'upgrade.index-cli',
     label: '`storybook index` writes the same entries as the dev server without starting one',
-    phase: 'upgrade',
+    phase: 'dev',
     tier: 'extended',
     probe:
       "Run `storybook index` from the Storybook directory (bounded wait) and compare the entry ids of its `index.json` with the dev server's. Save the output to `index-cli.log`.",
@@ -147,40 +151,41 @@ export const CHECKS = [
     phase: 'dev',
     tier: 'extended',
     probe:
-      'Copy one stories file aside, open one of its stories, then delete the file. Poll `/index.json` until its ids are gone, then screenshot the manager at `/` and check its `.errors.json`. Restore the file afterwards.',
+      'Copy one stories file aside, then delete it. Poll `/index.json` until its ids are gone or 60 seconds pass. Then screenshot the manager at `/` with the shot tool: its `.errors.json` must be empty. Restore the file afterwards.',
   },
   {
     id: 'core.hmr.argtypes',
-    label: 'Adding a typed prop to a component updates Controls and the docs args table live',
+    label:
+      'A typed prop added to a component reaches Controls or the docs args table without a restart',
     phase: 'dev',
     tier: 'extended',
     probe:
-      "Add a typed prop with a default to the component of the baseline story and save. Fetch the story's docs page or the Controls panel again: the new prop must appear without navigating away. `n/a` when the framework has no docgen (check `storybook info`). Restore the file afterwards.",
+      "`n/a` unless the `framework` in `.storybook/main.*` is a React, Vue 3, Svelte or Web Components framework or `@storybook/angular-vite`; the others have no docgen that reads the component source while the server runs. Also `n/a` for a Web Components project that takes its props from a Custom Elements Manifest file. While the dev server runs, add a typed prop with a default to the component of the baseline story and save. Then screenshot the story's docs page, or the manager with the Controls panel, again: the new prop must be listed without a restart of the server. Restore the file afterwards.",
   },
   {
     id: 'core.components-manifest',
     label: "The components manifest is on by default and lists the project's components",
-    phase: 'dev',
+    phase: 'build',
     tier: 'extended',
     probe:
-      'Without setting `features.componentsManifest`, fetch `/manifests/components.html` and `/manifests/components.json` from the static build on port 6008, not from the dev server: in dev the JSON answers 404 with "not available in dev when docgenServer is enabled", which is by design and not a finding. `n/a` for a framework without docgen. The page must list components and the JSON must name at least one component with props.',
+      '`n/a` unless the `framework` in `.storybook/main.*` uses the React, Vue 3 or Svelte renderer or is `@storybook/angular-vite`. Only those turn the manifest on by default, so the 404 of any other framework (`@storybook/angular`, Web Components, Preact, HTML, Ember, Server) is correct and not a finding. Also `n/a` when the project sets `features.componentsManifest: false`, or `features.docgenServer: false` with `@storybook/angular-vite`. Otherwise, without setting `features.componentsManifest` yourself, fetch `/manifests/components.html` and `/manifests/components.json` from the static build on port 6008, not from the dev server: in dev the JSON answers 404 with "not available in dev when docgenServer is enabled", which is by design and not a finding. The page must list components and the JSON must name at least one component with props.',
   },
   {
     id: 'test.coverage-cli',
-    label: 'Vitest coverage runs and serves its report',
+    label: 'Vitest coverage runs from the CLI and writes its report',
     phase: 'test',
     tier: 'extended',
     probe:
-      'Run `npx vitest run --project storybook --coverage` from the Storybook directory and save the output to `coverage.log`. `n/a` without `@storybook/addon-vitest`. Coverage must report a statement percentage and write `coverage/index.html`.',
+      '`n/a` without `@storybook/addon-vitest`, or when no `package.json` of the project lists a coverage provider (`@vitest/coverage-v8` or `@vitest/coverage-istanbul`). `blocked` when `test.vitest-cli` failed: Vitest writes no report after a failed run. Otherwise run `npx vitest run --project storybook --coverage` from the Storybook directory and save the output to `coverage.log`. The report goes where the Vitest config of the project says, so read `coverage.reporter` and `coverage.reportsDirectory` there. With neither set, the run must print a table with a statement percentage and write `coverage/index.html`. With them set, the configured reporters must write their files into the configured directory.',
   },
   {
     id: 'test.setup-annotations',
     label:
-      '`setProjectAnnotations` in a Vitest setup file is migrated or rejected with `SB_ADDON_VITEST_0002`',
+      '`setProjectAnnotations` in a setup file of the Storybook Vitest project is migrated or rejected with `SB_ADDON_VITEST_0002`',
     phase: 'test',
     tier: 'extended',
     probe:
-      'Search the Vitest setup files for `setProjectAnnotations`. `n/a` when the project never called it (check the baseline too). If it was there before the upgrade, the automigration must have removed it; if it is still there, `vitest run --project storybook` must fail with `SB_ADDON_VITEST_0002`.',
+      'In the Vitest config, find the `setupFiles` of the project that loads the `storybookTest` plugin, its own and the ones it inherits from the root config, and search those files for `setProjectAnnotations`. A call in a setup file that only a Vitest project without the plugin loads is still needed there, the automigration leaves it alone, and it does not count. `n/a` when no setup file of the Storybook project called it before the upgrade (check the baseline too). `pass` when the upgrade removed the call, or when it is still there and `npx vitest run --project storybook` fails with `SB_ADDON_VITEST_0002`. `fail` when it is still there and that run does not raise the error.',
   },
   {
     id: 'test.test-libraries',
@@ -188,7 +193,7 @@ export const CHECKS = [
     phase: 'test',
     tier: 'extended',
     probe:
-      'Add `import { screen } from "@testing-library/dom";` to a stories file without adding the package to `package.json`, then open that story. `n/a` when `@testing-library/dom` is already a direct dependency. The import must fail to resolve. Restore the file afterwards.',
+      '`n/a` when a `package.json` of the project lists `@testing-library/dom` as a direct dependency. Otherwise ask the package manager which packages depend on it: `npm ls @testing-library/dom`, `pnpm why @testing-library/dom`, `yarn why @testing-library/dom` or `bun why @testing-library/dom`. `pass` when it is not installed, or when only packages other than `storybook` bring it in, for example `@testing-library/svelte`; name them in the note. `fail` when `storybook` is one of the packages that depend on it.',
   },
   {
     id: 'test.test-runner',
@@ -196,7 +201,7 @@ export const CHECKS = [
     phase: 'test',
     tier: 'extended',
     probe:
-      'Check `package.json` for `@storybook/test-runner`. `n/a` when absent. Otherwise run exactly `npx test-storybook --url http://localhost:6008 --ci` against the static build, with a bounded wait, and save the output to `test-runner.log`. Do not add `--index-json`: it skips the preview config that the runner reads. It must finish and print the end-of-support warning.',
+      'Check `package.json` for `@storybook/test-runner`. `n/a` when absent. Otherwise run exactly `npx test-storybook --url http://localhost:6008 --ci` against the static build, with a bounded wait, and save the output to `test-runner.log`. Do not add `--index-json`: it skips the preview config that the runner reads. It must finish and print a warning that says the test runner is no longer supported.',
   },
 ] as const satisfies readonly CheckDefinition[];
 
@@ -205,7 +210,11 @@ export type CheckId = (typeof CHECKS)[number]['id'];
 export const CHECK_IDS = CHECKS.map((check) => check.id) as [CheckId, ...CheckId[]];
 
 export const checksFor = (tier: Tier) =>
-  tier === 'extended' ? CHECKS : CHECKS.filter((check) => check.tier === 'must');
+  PHASES.flatMap((phase) =>
+    CHECKS.filter(
+      (check) => check.phase === phase && (tier === 'extended' || check.tier === 'must')
+    )
+  );
 
 export const renderChecklist = (tier: Tier): string =>
   checksFor(tier)

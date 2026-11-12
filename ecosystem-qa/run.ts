@@ -215,12 +215,8 @@ const planSandbox = (
   // sits under the clone, so the native sandboxes expose those files read-only, one by one: a
   // read-only mount of the whole clone would also deny writes inside the worktree. The home .npmrc
   // stays hidden, it can hold a registry token.
-  // Playwright looks for its browsers under the home it is given, so the host's cache comes along,
-  // read-only, or every browser-backed check in the sandbox reports a missing executable.
   const rcMounts = [
     join(homedir(), '.yarnrc'),
-    join(homedir(), 'Library/Caches/ms-playwright'),
-    join(homedir(), '.cache/ms-playwright'),
     ...['.yarnrc', '.yarnrc.yml', '.npmrc'].map((name) => join(cloneDir, name)),
   ]
     .filter((path) => existsSync(path))

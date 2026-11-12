@@ -202,5 +202,46 @@ describe('Addons API', () => {
       expect(storyIdsDuringCommit).toEqual(['story-2']);
       expect(api.getAddonState('my-addon')).toEqual({ open: true });
     });
+
+    it('does not write a state equal to the current one', async () => {
+      const current = { open: true, results: [{ id: 1 }] };
+      const setState = vi.fn().mockImplementation((patch, callback) => callback());
+      const store = new Store({ setState, getState: () => ({ addons: { 'my-addon': current } }) });
+      const { api } = initAddons({ provider, store });
+
+      const result = await api.setAddonState('my-addon', { open: true, results: [{ id: 1 }] });
+
+      expect(setState).not.toHaveBeenCalled();
+      expect(result).toBe(current);
+    });
+
+    it('does not write when a merger returns a state equal to the current one', async () => {
+      const setState = vi.fn().mockImplementation((patch, callback) => callback());
+      const store = new Store({
+        setState,
+        getState: () => ({ addons: { counter: { count: 0 } } }),
+      });
+      const { api } = initAddons({ provider, store });
+
+      await api.setAddonState('counter', (s) => ({ ...s, count: 0 }));
+
+      expect(setState).not.toHaveBeenCalled();
+    });
+
+    it('writes a changed state', async () => {
+      let state = { addons: { counter: { count: 0 } } };
+      const setState = vi.fn().mockImplementation((patch, callback) => {
+        state = { ...state, ...patch };
+        callback();
+      });
+      const store = new Store({ setState, getState: () => state });
+      const { api } = initAddons({ provider, store });
+
+      const result = await api.setAddonState('counter', (s) => ({ ...s, count: s.count + 1 }));
+
+      expect(setState).toHaveBeenCalledTimes(1);
+      expect(result).toEqual({ count: 1 });
+      expect(api.getAddonState('counter')).toEqual({ count: 1 });
+    });
   });
 });

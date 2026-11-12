@@ -8,6 +8,8 @@ import type {
   Addon_TypesMapping,
 } from 'storybook/internal/types';
 
+import { isEqual } from 'es-toolkit/predicate';
+
 import type { ModuleFn } from '../lib/types.tsx';
 import type { Options } from '../store.ts';
 
@@ -128,10 +130,14 @@ export const init: ModuleFn<SubAPI, SubState> = ({ provider, store, fullAPI }): 
         typeof newStateOrMerger === 'function' ? newStateOrMerger : () => newStateOrMerger
       ) as API_StateMerger<S>;
       return store
-        .setState(
-          (s) => ({ addons: { ...s.addons, [addonId]: merger(s.addons[addonId]) } }),
-          options
-        )
+        .setState((s) => {
+          const current = s.addons[addonId];
+          const next = merger(current);
+          // Addons tend to write their state again on every story change, mostly unchanged. A
+          // write of an equal state would still re-render the whole manager and hand consumers
+          // a new object.
+          return isEqual(next, current) ? {} : { addons: { ...s.addons, [addonId]: next } };
+        }, options)
         .then(() => api.getAddonState(addonId));
     },
     getAddonState: (addonId) => {

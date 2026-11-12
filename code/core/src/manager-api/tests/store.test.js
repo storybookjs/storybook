@@ -172,6 +172,33 @@ describe('store', () => {
         });
       }));
 
+    it('skips React and storage when a patch function changes nothing', async () => {
+      const setState = vi.fn().mockImplementation((x, cb) => cb());
+      const getState = vi.fn().mockReturnValue({ foo: 'bar', other: { a: 1 } });
+      const store = new Store({ setState, getState });
+      const callback = vi.fn();
+
+      const result = await store.setState((s) => ({ foo: s.foo }), callback, {
+        persistence: 'session',
+      });
+
+      expect(setState).not.toHaveBeenCalled();
+      expect(store2.session.set).not.toHaveBeenCalled();
+      expect(result).toEqual({ foo: 'bar', other: { a: 1 } });
+      expect(callback).toHaveBeenCalledWith({ foo: 'bar', other: { a: 1 } });
+    });
+
+    it('skips React and storage for an empty patch', async () => {
+      const setState = vi.fn().mockImplementation((x, cb) => cb());
+      const getState = vi.fn().mockReturnValue({ foo: 'bar' });
+      const store = new Store({ setState, getState });
+
+      await store.setState({}, { persistence: 'permanent' });
+
+      expect(setState).not.toHaveBeenCalled();
+      expect(store2.local.set).not.toHaveBeenCalled();
+    });
+
     it('allows a patch function and persists its results', async () => {
       const setState = vi.fn().mockImplementation((x, cb) => cb());
       const getState = vi.fn().mockReturnValue({ foo: 'OLD' });

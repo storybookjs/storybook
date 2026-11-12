@@ -55,7 +55,7 @@ import type { TestDiscrepancy } from './TestDiscrepancyMessage.tsx';
 // They may still appear in the results and be selectable though.
 const unhighlightedSelectors = ['html', 'body', 'main'];
 
-const SELECTED_HIGHLIGHT_ID = `${ADDON_ID}/selected`;
+export const SELECTED_HIGHLIGHT_ID = `${ADDON_ID}/selected`;
 const OTHERS_HIGHLIGHT_ID = `${ADDON_ID}/others`;
 
 // One object, so that a story without a11y parameters keeps the same `parameters` identity.

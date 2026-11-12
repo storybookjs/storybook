@@ -2,7 +2,13 @@ import type Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 
 import { checkGrouping } from './grouping.ts';
-import { METADATA_MARKER, openIssueOf, type FindingGroup, type QaIssue } from './proposals.ts';
+import {
+  METADATA_MARKER,
+  openIssueOf,
+  relatedIn,
+  type FindingGroup,
+  type QaIssue,
+} from './proposals.ts';
 import { sanitizeFinding, sanitizeTitle } from './sanitize.ts';
 import type { Engine, Grouping, Os } from './schema.ts';
 
@@ -44,8 +50,7 @@ const excerptOf = ({
   GroupingInput['issues'][number],
   'about' | 'alsoSeenAs'
 > => {
-  const metadata = body.lastIndexOf(METADATA_MARKER);
-  if (state !== 'open' || metadata === -1) {
+  if (state !== 'open' || !body.includes(METADATA_MARKER)) {
     return {};
   }
   const section = body.split('### Describe the bug')[1]?.split(/\n### /)[0] ?? '';
@@ -54,15 +59,9 @@ const excerptOf = ({
     .replace(/\s+/g, ' ')
     .trim()
     .slice(0, ABOUT_CHARS);
-  // The harness writes its list right before the metadata block, so the last heading is its own
-  // even when the agent's text above happens to contain the same words.
-  const report = body.slice(0, metadata);
-  const heading = report.lastIndexOf('Also seen as:');
-  const alsoSeenAs = (heading === -1 ? '' : report.slice(heading))
-    .split('\n')
-    .filter((line) => line.startsWith('- '))
+  const alsoSeenAs = relatedIn(body)
     .slice(0, SEEN_AS_LINES)
-    .map((line) => line.slice(2, 2 + SEEN_AS_CHARS));
+    .map((line) => line.slice(0, SEEN_AS_CHARS));
   return {
     ...(about ? { about } : {}),
     ...(alsoSeenAs.length > 0 ? { alsoSeenAs } : {}),

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { planFiling } from './filing.ts';
-import { asIssue, finding, loaded, RUN_URL } from './fixtures.ts';
+import { asIssue, finding, loaded, RUN_URL, single } from './fixtures.ts';
 import {
   groupingInput,
   groupingMode,
@@ -116,6 +116,32 @@ describe('groupingInput', () => {
 
     expect(issues[0]!.alsoSeenAs).toEqual([expect.stringContaining('Build fails')]);
     expect(issues[1]).toEqual({ number: 8, state: 'closed', title: 'Filed by the harness' });
+  });
+
+  it('reads no merged findings from an issue of one finding whose agent text has the heading', () => {
+    const groups = groupFindings([
+      loaded('linux', 'claude', [
+        finding({ actual: 'Nothing renders.\nAlso seen as:\n\n- a line the agent wrote' }),
+      ]),
+    ]);
+    const filed = asIssue(toProposal(single(groups[0]), [], { runUrl: RUN_URL }));
+    const step = planFiling(filed, { repo: 'storybookjs/storybook', evidenceLinks: 'assets' }).at(
+      -1
+    );
+
+    const { issues } = groupingInput(groups, [
+      {
+        number: 7,
+        title: 'Filed by the harness',
+        state: 'open',
+        labels: [],
+        comments: [],
+        body: step?.kind === 'create-issue' ? step.body : '',
+      },
+    ]);
+
+    expect(issues[0]!.about).toContain('a line the agent wrote');
+    expect(issues[0]).not.toHaveProperty('alsoSeenAs');
   });
 
   it('marks a finding whose fingerprint an open issue carries, and not one on a closed issue', () => {

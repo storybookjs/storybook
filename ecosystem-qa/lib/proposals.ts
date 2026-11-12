@@ -190,8 +190,10 @@ const sourceLines = (proposal: IssueProposal | CommentProposal, withVersion = fa
 const inlineTitle = (title: string): string =>
   sanitizeTitle(title.replace(/\s+/g, ' ')).replaceAll('<', '&lt;');
 
+const RELATED_HEADING = 'Also seen as:';
+
 /** List the other members of a group under `heading`, or nothing for a group of one. */
-export const relatedLines = (related: Proposal['related'], heading = 'Also seen as:'): string[] =>
+export const relatedLines = (related: Proposal['related'], heading = RELATED_HEADING): string[] =>
   related.length === 0
     ? []
     : [
@@ -203,6 +205,26 @@ export const relatedLines = (related: Proposal['related'], heading = 'Also seen 
         ),
         '',
       ];
+
+/**
+ * Return the entries of the list of other group members in an issue body or a comment of the harness.
+ *
+ * The harness writes that list directly before its metadata block. Everything further up can hold
+ * agent text, so the same heading there is not read: the list counts only when nothing but its own
+ * entries stands between the heading and the block.
+ */
+export const relatedIn = (text: string): string[] => {
+  const metadata = text.lastIndexOf(METADATA_MARKER);
+  const heading = metadata === -1 ? -1 : text.lastIndexOf(`\n${RELATED_HEADING}\n`, metadata);
+  if (heading === -1) {
+    return [];
+  }
+  const lines = text
+    .slice(heading + RELATED_HEADING.length + 2, metadata)
+    .split('\n')
+    .filter((line) => line !== '');
+  return lines.every((line) => line.startsWith('- ')) ? lines.map((line) => line.slice(2)) : [];
+};
 
 const reproductionLink = (cycle: Cycle): string[] => {
   const repoUrl = `https://github.com/${cycle.repo}`;

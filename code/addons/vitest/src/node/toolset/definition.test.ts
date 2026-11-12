@@ -1,5 +1,9 @@
 import type { StoryIndex } from 'storybook/internal/types';
-import { invokeToolsetMethod, type ToolsetCtx } from 'storybook/open-service';
+import {
+  invokeToolsetMethod,
+  resolveToolsetDescription,
+  type ToolsetCtx,
+} from 'storybook/open-service';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
@@ -234,18 +238,29 @@ describe('test API', () => {
 
   describe('description', () => {
     it('promises accessibility reports when a11y is enabled', () => {
-      expect(toolset.methods.run.description).toContain(
+      expect(resolveToolsetDescription(toolset.methods.run.description, mcpCtx)).toContain(
         'For visual/design accessibility violations (for example color contrast), ask the user before changing styles.'
       );
     });
 
     it('makes no accessibility promise when a11y is disabled', () => {
       const withoutA11y = createTestToolset({ channel, storyIndex, a11yEnabled: false });
+      const description = resolveToolsetDescription(withoutA11y.methods.run.description, mcpCtx);
 
-      expect(withoutA11y.methods.run.description).not.toContain('accessibility');
-      expect(withoutA11y.methods.run.description).toContain(
-        'Results will include passing/failing status.'
+      expect(description).not.toContain('accessibility');
+      expect(description).toContain('Results will include passing/failing status.');
+    });
+
+    it('sends the agent to the test-stories skill of its transport first', () => {
+      expect(resolveToolsetDescription(toolset.methods.run.description, mcpCtx)).toContain(
+        'First run npx storybook skills test-stories --mcp once and follow it'
       );
+      expect(resolveToolsetDescription(toolset.methods.run.description, ctx)).toContain(
+        'First run npx storybook skills test-stories once and follow it'
+      );
+      expect(
+        resolveToolsetDescription(toolset.methods.run.description, { ...ctx, transport: 'sdk' })
+      ).not.toContain('storybook skills');
     });
   });
 

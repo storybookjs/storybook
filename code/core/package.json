@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "11.0.0-beta.0",
+  "version": "11.0.0-beta.2",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -338,6 +338,7 @@
     "bundle-require": "^5.1.0",
     "camelcase": "^9.0.0",
     "chai": "^6.3.0",
+    "chokidar": "^6.0.0",
     "commander": "^14.0.2",
     "comment-parser": "^1.4.1",
     "copy-to-clipboard": "^3.3.1",
@@ -426,7 +427,6 @@
     "unique-string": "^3.0.0",
     "use-resize-observer": "^9.1.0",
     "valibot": "^1.4.0",
-    "watchpack": "^2.5.0",
     "wrap-ansi": "^9.0.2",
     "ws": "^8.21.1",
     "wsl-utils": "^0.1.0",

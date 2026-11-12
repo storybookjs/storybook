@@ -27,12 +27,12 @@ import intersect from './intersect.ts';
 
 const TITLE_PATH_SEPARATOR = /\s*\/\s*/;
 
-export const titleToPathIds = (title: string): string[] =>
+export const titleToPath = (title: string): { name: string; id: string }[] =>
   title
     .trim()
     .split(TITLE_PATH_SEPARATOR)
-    .reduce<string[]>((paths, name) => {
-      const parent = paths.at(-1);
+    .reduce<{ name: string; id: string }[]>((paths, name) => {
+      const parent = paths.at(-1)?.id;
       const id = sanitize(parent ? `${parent}-${name}` : name);
 
       if (name.trim() === '') {
@@ -48,7 +48,7 @@ export const titleToPathIds = (title: string): string[] =>
           `
         );
       }
-      paths.push(id);
+      paths.push({ name, id });
       return paths;
     }, []);
 
@@ -181,8 +181,6 @@ export const transformStoryIndexToStoriesHash = (
   const { sidebar = {} } = provider.getConfig();
   const { showRoots, collapsedRoots = [], renderAriaLabel, renderLabel } = sidebar;
 
-  const setShowRoots = typeof showRoots !== 'undefined';
-
   const includedIds = new Set(entryValues.map((entry) => entry.id));
   const entriesById = new Map<StoryId, API_PreparedIndexEntry>();
   const titleNodes = new Map<StoryId, TitleNode>();
@@ -199,28 +197,23 @@ export const transformStoryIndexToStoriesHash = (
       return;
     }
 
-    // First, split the title into a set of names, separated by '/' and trimmed.
-    const { title } = item;
-    const groups = title.trim().split(TITLE_PATH_SEPARATOR);
-    const root = (!setShowRoots || showRoots) && groups.length > 1 ? [groups.shift()] : [];
-    const names = [...root, ...groups];
+    const paths = titleToPath(item.title);
+    const hasRoot = showRoots !== false && paths.length > 1;
 
-    const paths = titleToPathIds(title);
-
-    paths.forEach((id, idx) => {
+    paths.forEach(({ id, name }, idx) => {
       const node = titleNodes.get(id) ?? {
         id,
         name: '',
-        parent: paths[idx - 1],
+        parent: paths[idx - 1]?.id,
         depth: idx,
         isRoot: false,
         children: [],
       };
       titleNodes.set(id, node);
-      node.name = names[idx]!;
-      node.isRoot ||= root.length > 0 && idx === 0;
+      node.name = name;
+      node.isRoot ||= hasRoot && idx === 0;
 
-      const childId = paths[idx + 1] ?? item.id;
+      const childId = paths[idx + 1]?.id ?? item.id;
       if (!node.children.includes(childId)) {
         node.children.push(childId);
       }

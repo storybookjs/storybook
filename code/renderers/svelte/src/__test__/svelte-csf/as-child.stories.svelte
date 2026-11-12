@@ -3,9 +3,9 @@
   import { tick } from 'svelte';
 
   import { defineMeta } from '@storybook/svelte';
-  import Interactions from '../../../template/stories/svelte-csf/interactions.svelte';
+  import Counter from '../Counter.svelte';
 
-  const { Story } = defineMeta({ component: Interactions });
+  const { Story } = defineMeta({ component: Counter });
 </script>
 
 <script lang="ts">
@@ -21,7 +21,8 @@
 
     isStatic = false;
     await tick();
-    await expect(await canvas.findByText('Increment')).toBeInTheDocument();
+    await expect(await canvas.findByRole('button')).toBeInTheDocument();
+    await expect(canvas.queryByTestId('static')).not.toBeInTheDocument();
     isStatic = true;
   }}
 >

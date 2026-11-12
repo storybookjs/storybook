@@ -1,9 +1,10 @@
-import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import codePackage from '../../code/package.json' with { type: 'json' };
+import scriptsPackage from '../package.json' with { type: 'json' };
+
+import { existsSync } from 'node:fs';
 
 import { join } from 'pathe';
 import { describe, expect, it } from 'vitest';
-import yml from 'yaml';
 
 import { allTemplates, daily, normal } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import {
@@ -281,35 +282,8 @@ describe('defineAffectedLintAndFormat', () => {
     (
       getFocusJobs(changedFiles)
         .find(({ id }) => id === 'lint-and-format--affected')!
-        .implementation('focus') as {
-        steps: { run?: { name: string; command: string; working_directory?: string } }[];
-      }
+        .implementation('focus') as { steps: { run?: { name: string; command: string } }[] }
     ).steps.flatMap(({ run }) => (run && /Format|Lint/.test(run.name) ? [run] : []));
-
-  it.each([
-    ['code', 'core/src/manager-api/lib/stories.ts'],
-    ['code', '__deleted_ci_lint_fixture__.ts'],
-    ['scripts', 'ci/focus.ts'],
-    ['scripts', '__deleted_ci_lint_fixture__.ts'],
-  ])(
-    'runs the generated lint invocation for %s/%s',
-    (dir, file) => {
-      const step = runSteps(`${dir}/${file}`).find(
-        ({ name }) => name === `Lint changed ${dir} files`
-      )!;
-      const invocation = step.command.split('xargs -0 yarn ')[1];
-      const { yarnPath } = yml.parse(readFileSync(join(ROOT, '.yarnrc.yml'), 'utf8'));
-      const result = spawnSync(
-        process.execPath,
-        [join(ROOT, yarnPath), ...invocation.trim().split(/\s+/), file],
-        { cwd: join(ROOT, dir), encoding: 'utf8', timeout: 30_000 }
-      );
-
-      expect(result.error).toBeUndefined();
-      expect(result.status, `${result.stdout}${result.stderr}`).toBe(0);
-    },
-    30_000
-  );
 
   it('checks only the changed files, linting each directory with paths relative to it', () => {
     expect(
@@ -332,6 +306,18 @@ describe('defineAffectedLintAndFormat', () => {
         environment: { FILES: 'ci/focus.ts' },
       }),
     ]);
+  });
+
+  it('passes the unmatched-pattern flag once to each workspace linter', () => {
+    const steps = runSteps('code/core/src/manager/App.tsx', 'scripts/ci/focus.ts');
+    for (const [directory, manifest] of [
+      ['code', codePackage],
+      ['scripts', scriptsPackage],
+    ] as const) {
+      const step = steps.find((step) => step.name === `Lint changed ${directory} files`)!;
+      const expanded = step.command.replace('yarn lint:js:cmd', manifest.scripts['lint:js:cmd']);
+      expect(expanded.match(/--no-error-on-unmatched-pattern/g)).toHaveLength(1);
+    }
   });
 
   it('skips linting when no changed file is under code/ or scripts/', () => {

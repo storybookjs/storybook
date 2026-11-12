@@ -189,7 +189,7 @@ async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> 
     const updated = changes.filter(({ change }) => change === 'updated').map(({ file }) => file);
     if (added.length > 0) {
       logger.log(
-        `Added a Storybook section to ${listFiles(added)} that tells agents when to use the skills. Storybook keeps it current on upgrade: remove its markers to keep your own edits, or remove the section to opt out.`
+        `Added a Storybook section to ${listFiles(added)} that tells agents when to use the skills. Storybook keeps it current on upgrade: remove its markers to keep your own edits, or remove the section to opt out of the workflow.`
       );
     }
     if (updated.length > 0) {

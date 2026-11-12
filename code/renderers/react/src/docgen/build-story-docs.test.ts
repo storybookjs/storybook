@@ -3,6 +3,7 @@ import * as path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { formatTemplate } from 'storybook/internal/docs-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
 
@@ -105,6 +106,38 @@ describe('buildStoryDocsPayload', () => {
       name: 'Primary',
     });
     expect(primaryStory!.snippet).toMatch(/<Button label="hi"/);
+  });
+
+  it('carries a template for the preview to fill next to the static snippet', async () => {
+    tempDir = createTempDir('story-docs-build');
+
+    const files = writeFiles(tempDir, {
+      'Button.tsx': dedent`
+        import React from 'react';
+        export const Button = (_props: { label: string; primary?: boolean }) => <button />;
+      `,
+      'Button.stories.tsx': dedent`
+        import { Button } from './Button';
+        export default { component: Button, title: 'Forms/Button' };
+        export const Primary = { args: { label: 'Save', primary: true } };
+        export const Fixed = () => <Button label="Fixed" />;
+      `,
+    });
+
+    const payload = await buildStoryDocsPayload(
+      { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
+      { resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)) }
+    );
+
+    const { primary, fixed } = Object.fromEntries(
+      Object.values(payload!.stories).map((story) => [story.name.toLowerCase(), story])
+    );
+    expect(primary!.snippet).toBe('const Primary = () => <Button label="Save" primary />;');
+    expect(formatTemplate(primary!.template!)).toMatchInlineSnapshot(
+      `"const Primary = () => <Button⟦attr label ~" "⟫ label="Save"⟧⟦attr primary ~" "⟫ primary⟧⟦attrs * except=["label","primary"]⟫⟧ />;"`
+    );
+    expect(fixed!.snippet).toBe('const Fixed = () => <Button label="Fixed" />;');
+    expect(fixed!.template).toEqual(['const Fixed = () => <Button label="Fixed" />;']);
   });
 
   it('reflects edited story args after the story file changes on disk', async () => {

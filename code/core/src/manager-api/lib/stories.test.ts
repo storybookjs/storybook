@@ -9,32 +9,54 @@ import {
 import type { State } from '../root.tsx';
 import { mockEntries } from '../tests/mockStoriesEntries.ts';
 import {
-  titleToPathIds,
+  titleToPath,
   transformStoryIndexToStoriesHash,
   transformStoryIndexV3toV4,
   transformStoryIndexV4toV5,
   getComponentLookupList,
 } from './stories.ts';
 
-describe('titleToPathIds', () => {
-  it.each<[string, string[]]>([
-    ['Components/Button', ['components', 'components-button']],
-    ['Components\t / \tButton', ['components', 'components-button']],
-    ['Components/Button\t', ['components', 'components-button']],
+describe('titleToPath', () => {
+  it.each<[string, { name: string; id: string }[]]>([
+    [
+      'Components/Button',
+      [
+        { name: 'Components', id: 'components' },
+        { name: 'Button', id: 'components-button' },
+      ],
+    ],
+    [
+      'Components\t / \tButton',
+      [
+        { name: 'Components', id: 'components' },
+        { name: 'Button', id: 'components-button' },
+      ],
+    ],
+    [
+      'Components/Button\t',
+      [
+        { name: 'Components', id: 'components' },
+        { name: 'Button', id: 'components-button' },
+      ],
+    ],
     [
       'Design System/Actions/Button',
-      ['design-system', 'design-system-actions', 'design-system-actions-button'],
+      [
+        { name: 'Design System', id: 'design-system' },
+        { name: 'Actions', id: 'design-system-actions' },
+        { name: 'Button', id: 'design-system-actions-button' },
+      ],
     ],
   ])('builds the title path for %j', (title, expected) => {
-    expect(titleToPathIds(title)).toEqual(expected);
+    expect(titleToPath(title)).toEqual(expected);
   });
 
   it.each(['', 'Components/', 'Components//Button'])('rejects an empty segment in %j', (title) => {
-    expect(() => titleToPathIds(title)).toThrow(`Invalid title ${title} ending in slash.`);
+    expect(() => titleToPath(title)).toThrow(`Invalid title ${title} ending in slash.`);
   });
 
   it('rejects a segment that produces the same ID as its parent', () => {
-    expect(() => titleToPathIds('Components/---')).toThrow(
+    expect(() => titleToPath('Components/---')).toThrow(
       "Invalid part '---', leading to id === parentId ('components')"
     );
   });
@@ -374,6 +396,29 @@ describe('transformStoryIndexToStoriesHash', () => {
         ...index.entries,
       },
     };
+
+    it.each([false, true])(
+      'keeps a title with only nested stories a group (own docs: %s)',
+      (ownDocs) => {
+        const nested = transformStoryIndexToStoriesHash(
+          {
+            v: 5,
+            entries: {
+              'guides-button-icon--primary': nestedIndex.entries['guides-button-icon--primary'],
+              ...(ownDocs ? { 'guides-button--docs': index.entries['guides-button--docs'] } : {}),
+            },
+          },
+          options
+        );
+
+        expect(nested['guides-button']).toMatchObject({
+          type: 'group',
+          children: ownDocs
+            ? ['guides-button-icon', 'guides-button--docs']
+            : ['guides-button-icon'],
+        });
+      }
+    );
 
     it('keeps a component with subcomponents and its own import path', () => {
       const nested = transformStoryIndexToStoriesHash(nestedIndex, options);

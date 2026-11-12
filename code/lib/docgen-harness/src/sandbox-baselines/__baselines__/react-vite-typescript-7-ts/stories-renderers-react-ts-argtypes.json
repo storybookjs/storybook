@@ -1,0 +1,2624 @@
+{
+  "argTypes": {
+    "arrayOptional": {
+      "description": "",
+      "name": "arrayOptional",
+      "table": {
+        "defaultValue": {
+          "summary": "['array', 'optional']"
+        },
+        "type": {
+          "summary": "string[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "string[]"
+      }
+    },
+    "arrayRequired": {
+      "description": "",
+      "name": "arrayRequired",
+      "table": {
+        "type": {
+          "summary": "string[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "string[]"
+      }
+    },
+    "booleanOptional": {
+      "description": "",
+      "name": "booleanOptional",
+      "table": {
+        "defaultValue": {
+          "summary": "false"
+        },
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean",
+        "required": false
+      }
+    },
+    "booleanRequired": {
+      "description": "",
+      "name": "booleanRequired",
+      "table": {
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean",
+        "required": true
+      }
+    },
+    "dateOptional": {
+      "description": "",
+      "name": "dateOptional",
+      "table": {
+        "defaultValue": {
+          "summary": "new Date('20 Jan 1983')"
+        },
+        "type": {
+          "summary": "Date"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "Date"
+      }
+    },
+    "dateRequired": {
+      "description": "",
+      "name": "dateRequired",
+      "table": {
+        "type": {
+          "summary": "Date"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "Date"
+      }
+    },
+    "functionOptional": {
+      "description": "",
+      "name": "functionOptional",
+      "table": {
+        "defaultValue": {
+          "summary": "() => 'foo'"
+        },
+        "type": {
+          "summary": "() => string"
+        }
+      },
+      "type": {
+        "name": "function",
+        "required": false,
+        "value": "() => string"
+      }
+    },
+    "functionRequired": {
+      "description": "",
+      "name": "functionRequired",
+      "table": {
+        "type": {
+          "summary": "() => string"
+        }
+      },
+      "type": {
+        "name": "function",
+        "required": true,
+        "value": "() => string"
+      }
+    },
+    "globalReference": {
+      "description": "",
+      "name": "globalReference",
+      "table": {
+        "defaultValue": {
+          "summary": "Date"
+        },
+        "type": {
+          "summary": "any"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "any"
+      }
+    },
+    "importedReference": {
+      "description": "",
+      "name": "importedReference",
+      "table": {
+        "defaultValue": {
+          "summary": "imported"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "localReference": {
+      "description": "",
+      "name": "localReference",
+      "table": {
+        "defaultValue": {
+          "summary": "'local-value'"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "myClass": {
+      "description": "",
+      "name": "myClass",
+      "table": {
+        "defaultValue": {
+          "summary": "styles.foo"
+        },
+        "type": {
+          "summary": "CSSModuleClasses"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "CSSModuleClasses"
+      }
+    },
+    "numberOptional": {
+      "description": "",
+      "name": "numberOptional",
+      "table": {
+        "defaultValue": {
+          "summary": "1"
+        },
+        "type": {
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "number",
+        "required": false
+      }
+    },
+    "numberRequired": {
+      "description": "Description",
+      "name": "numberRequired",
+      "table": {
+        "type": {
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "number",
+        "required": true
+      }
+    },
+    "objectOptional": {
+      "description": "",
+      "name": "objectOptional",
+      "table": {
+        "defaultValue": {
+          "summary": "{ object: 'optional' }"
+        },
+        "type": {
+          "summary": "Record<string, string>"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "Record<string, string>"
+      }
+    },
+    "objectRequired": {
+      "description": "",
+      "name": "objectRequired",
+      "table": {
+        "type": {
+          "summary": "Record<string, string>"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "Record<string, string>"
+      }
+    },
+    "stringGlobalName": {
+      "description": "",
+      "name": "stringGlobalName",
+      "table": {
+        "defaultValue": {
+          "summary": "'top'"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "stringOptional": {
+      "description": "",
+      "name": "stringOptional",
+      "table": {
+        "defaultValue": {
+          "summary": "'stringOptional'"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "stringRequired": {
+      "description": "",
+      "name": "stringRequired",
+      "table": {
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": true
+      }
+    }
+  },
+  "id": "stories-renderers-react-ts-argtypes",
+  "jsDocTags": {},
+  "name": "TsFunctionComponentComponent",
+  "path": "./src/stories/renderers/react/ts-argtypes.stories.tsx",
+  "subcomponents": {
+    "TsCamelCase": {
+      "argTypes": {
+        "color": {
+          "description": "Button color",
+          "name": "color",
+          "table": {
+            "defaultValue": {
+              "summary": "'primary'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        }
+      },
+      "import": "import { component as TsCamelCaseComponent } from './docgen-components/9575-ts-camel-case/input';",
+      "jsDocTags": {},
+      "name": "TsCamelCase",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9575-ts-camel-case/input.tsx"
+    },
+    "TsComponentProps": {
+      "argTypes": {
+        "children": {
+          "description": "",
+          "name": "children",
+          "table": {
+            "type": {
+              "summary": "ReactNode"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "ReactNode"
+          }
+        },
+        "onClick": {
+          "description": "",
+          "name": "onClick",
+          "table": {
+            "type": {
+              "summary": "MouseEventHandler<HTMLButtonElement>"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "MouseEventHandler<HTMLButtonElement>"
+          }
+        },
+        "spacing": {
+          "description": "",
+          "name": "spacing",
+          "table": {
+            "type": {
+              "summary": "number"
+            }
+          },
+          "type": {
+            "name": "number",
+            "required": true
+          }
+        }
+      },
+      "import": "import { component as TsComponentPropsComponent } from './docgen-components/9922-ts-component-props/input';",
+      "jsDocTags": {},
+      "name": "TsComponentProps",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9922-ts-component-props/input.tsx"
+    },
+    "TsDefaultValues": {
+      "argTypes": {
+        "bar": {
+          "description": "",
+          "name": "bar",
+          "table": {
+            "type": {
+              "summary": "string[]"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "string[]"
+          }
+        },
+        "foo": {
+          "description": "",
+          "name": "foo",
+          "table": {
+            "type": {
+              "summary": "boolean"
+            }
+          },
+          "type": {
+            "name": "boolean",
+            "required": true
+          }
+        },
+        "title": {
+          "description": "",
+          "name": "title",
+          "table": {
+            "defaultValue": {
+              "summary": "'this is the default :)'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": true
+          }
+        }
+      },
+      "import": "import { component as TsDefaultValuesComponent } from './docgen-components/9827-ts-default-values/input';",
+      "jsDocTags": {},
+      "name": "TsDefaultValues",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9827-ts-default-values/input.tsx"
+    },
+    "TsDeprecatedJsdoc": {
+      "argTypes": {
+        "size": {
+          "description": "The size (replaces width)",
+          "name": "size",
+          "table": {
+            "type": {
+              "summary": "{ width: number; height: number; }"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "{ width: number; height: number; }"
+          }
+        }
+      },
+      "import": "import { component as TsDeprecatedJsdocComponent } from './docgen-components/9721-ts-deprecated-jsdoc/input';",
+      "jsDocTags": {},
+      "name": "TsDeprecatedJsdoc",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9721-ts-deprecated-jsdoc/input.tsx"
+    },
+    "TsDisplayName": {
+      "argTypes": {
+        "message": {
+          "description": "A message alerting about Empire activities.",
+          "name": "message",
+          "table": {
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": true
+          }
+        },
+        "title": {
+          "description": "A title that brings attention to the alert.",
+          "name": "title",
+          "table": {
+            "defaultValue": {
+              "summary": "'Code Yellow'"
+            },
+            "type": {
+              "summary": "\"Code Green\" | \"Code Red\" | \"Code Yellow\""
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "\"Code Green\" | \"Code Red\" | \"Code Yellow\"",
+            "required": true,
+            "value": ["Code Green", "Code Red", "Code Yellow"]
+          }
+        }
+      },
+      "import": "import { component as TsDisplayNameComponent } from './docgen-components/9493-ts-display-name/input';",
+      "jsDocTags": {},
+      "name": "TsDisplayName",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9493-ts-display-name/input.tsx"
+    },
+    "TsExtendProps": {
+      "argTypes": {
+        "checked": {
+          "description": "",
+          "name": "checked",
+          "table": {
+            "type": {
+              "summary": "boolean"
+            }
+          },
+          "type": {
+            "name": "boolean",
+            "required": false
+          }
+        },
+        "defaultChecked": {
+          "description": "",
+          "name": "defaultChecked",
+          "table": {
+            "type": {
+              "summary": "boolean"
+            }
+          },
+          "type": {
+            "name": "boolean",
+            "required": false
+          }
+        },
+        "value": {
+          "description": "The input content value",
+          "name": "value",
+          "table": {
+            "type": {
+              "summary": "string | number | undefined"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "string | number | undefined"
+          }
+        }
+      },
+      "import": "import { component as TsExtendPropsComponent } from './docgen-components/9764-ts-extend-props/input';",
+      "jsDocTags": {},
+      "name": "TsExtendProps",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9764-ts-extend-props/input.tsx"
+    },
+    "TsFC": {
+      "argTypes": {
+        "aliasesIntersection": {
+          "description": "",
+          "name": "aliasesIntersection",
+          "table": {
+            "type": {
+              "summary": "never"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "never"
+          }
+        },
+        "aliasesUnion": {
+          "description": "",
+          "name": "aliasesUnion",
+          "table": {
+            "type": {
+              "summary": "AliasesUnion"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "AliasesUnion"
+          }
+        },
+        "any": {
+          "description": "",
+          "name": "any",
+          "table": {
+            "type": {
+              "summary": "any"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "any"
+          }
+        },
+        "arrayOfComplexObject": {
+          "description": "",
+          "name": "arrayOfComplexObject",
+          "table": {
+            "type": {
+              "summary": "ItemInterface[]"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "ItemInterface[]"
+          }
+        },
+        "arrayOfPrimitive": {
+          "description": "",
+          "name": "arrayOfPrimitive",
+          "table": {
+            "type": {
+              "summary": "string[]"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "string[]"
+          }
+        },
+        "bool": {
+          "description": "",
+          "name": "bool",
+          "table": {
+            "type": {
+              "summary": "boolean"
+            }
+          },
+          "type": {
+            "name": "boolean",
+            "required": true
+          }
+        },
+        "defaultEnum": {
+          "description": "",
+          "name": "defaultEnum",
+          "table": {
+            "type": {
+              "summary": "0 | 1 | 2"
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "DefaultEnum.TopLeft | DefaultEnum.TopRight | DefaultEnum.TopCenter",
+            "required": true,
+            "value": [0, 1, 2]
+          }
+        },
+        "enumUnion": {
+          "description": "",
+          "name": "enumUnion",
+          "table": {
+            "type": {
+              "summary": "0 | 1 | 2 | 0 | 1 | 2"
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "DefaultEnum.TopLeft | DefaultEnum.TopRight | DefaultEnum.TopCenter | NumericEnum.TopLeft | NumericEnum.TopRight | NumericEnum.TopCenter",
+            "required": true,
+            "value": [0, 1, 2, 0, 1, 2]
+          }
+        },
+        "funcWithArgsAndReturns": {
+          "description": "",
+          "name": "funcWithArgsAndReturns",
+          "table": {
+            "type": {
+              "summary": "(a: string, b: string) => string"
+            }
+          },
+          "type": {
+            "name": "function",
+            "required": true,
+            "value": "(a: string, b: string) => string"
+          }
+        },
+        "funcWithIndexTypes": {
+          "description": "",
+          "name": "funcWithIndexTypes",
+          "table": {
+            "type": {
+              "summary": "<T, K extends keyof T>(o: T, propertyNames: K[]) => T[K][]"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "<T, K extends keyof T>(o: T, propertyNames: K[]) => T[K][]"
+          }
+        },
+        "funcWithMultipleUnionReturns": {
+          "description": "",
+          "name": "funcWithMultipleUnionReturns",
+          "table": {
+            "type": {
+              "summary": "() => string | ItemInterface"
+            }
+          },
+          "type": {
+            "name": "function",
+            "required": true,
+            "value": "() => string | ItemInterface"
+          }
+        },
+        "funcWithunionArg": {
+          "description": "",
+          "name": "funcWithunionArg",
+          "table": {
+            "type": {
+              "summary": "(a: string | number) => string"
+            }
+          },
+          "type": {
+            "name": "function",
+            "required": true,
+            "value": "(a: string | number) => string"
+          }
+        },
+        "genericAlias": {
+          "description": "",
+          "name": "genericAlias",
+          "table": {
+            "type": {
+              "summary": "GenericAlias<string>"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "GenericAlias<string>"
+          }
+        },
+        "genericInterface": {
+          "description": "",
+          "name": "genericInterface",
+          "table": {
+            "type": {
+              "summary": "GenericInterface<string>"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "GenericInterface<string>"
+          }
+        },
+        "inlinedNumericLiteralUnion": {
+          "description": "",
+          "name": "inlinedNumericLiteralUnion",
+          "table": {
+            "type": {
+              "summary": "0 | 1 | 2"
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "0 | 1 | 2",
+            "required": true,
+            "value": [0, 1, 2]
+          }
+        },
+        "inlinedStringLiteralUnion": {
+          "description": "",
+          "name": "inlinedStringLiteralUnion",
+          "table": {
+            "type": {
+              "summary": "\"bottom-center\" | \"bottom-left\" | \"bottom-right\""
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "\"bottom-center\" | \"bottom-left\" | \"bottom-right\"",
+            "required": true,
+            "value": ["bottom-center", "bottom-left", "bottom-right"]
+          }
+        },
+        "interface": {
+          "description": "",
+          "name": "interface",
+          "table": {
+            "type": {
+              "summary": "ItemInterface"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "ItemInterface"
+          }
+        },
+        "intersectionType": {
+          "description": "",
+          "name": "intersectionType",
+          "table": {
+            "type": {
+              "summary": "InterfaceIntersection"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "InterfaceIntersection"
+          }
+        },
+        "intersectionWithInlineType": {
+          "description": "",
+          "name": "intersectionWithInlineType",
+          "table": {
+            "type": {
+              "summary": "ItemInterface & { inlineValue: string; }"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "ItemInterface & { inlineValue: string; }"
+          }
+        },
+        "namedNumericLiteralUnion": {
+          "description": "",
+          "name": "namedNumericLiteralUnion",
+          "table": {
+            "type": {
+              "summary": "0 | 1 | 2"
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "0 | 1 | 2",
+            "required": true,
+            "value": [0, 1, 2]
+          }
+        },
+        "namedStringLiteralUnion": {
+          "description": "",
+          "name": "namedStringLiteralUnion",
+          "table": {
+            "type": {
+              "summary": "\"top-center\" | \"top-left\" | \"top-right\""
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "\"top-center\" | \"top-left\" | \"top-right\"",
+            "required": true,
+            "value": ["top-center", "top-left", "top-right"]
+          }
+        },
+        "nullableComplexType": {
+          "description": "",
+          "name": "nullableComplexType",
+          "table": {
+            "type": {
+              "summary": "ItemInterface"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "ItemInterface"
+          }
+        },
+        "nullableComplexTypeUndefinedDefaultValue": {
+          "description": "",
+          "name": "nullableComplexTypeUndefinedDefaultValue",
+          "table": {
+            "type": {
+              "summary": "ItemInterface"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "ItemInterface"
+          }
+        },
+        "nullablePrimitive": {
+          "description": "",
+          "name": "nullablePrimitive",
+          "table": {
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        },
+        "number": {
+          "description": "",
+          "name": "number",
+          "table": {
+            "type": {
+              "summary": "number"
+            }
+          },
+          "type": {
+            "name": "number",
+            "required": true
+          }
+        },
+        "numericEnum": {
+          "description": "",
+          "name": "numericEnum",
+          "table": {
+            "type": {
+              "summary": "0 | 1 | 2"
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "NumericEnum.TopLeft | NumericEnum.TopRight | NumericEnum.TopCenter",
+            "required": true,
+            "value": [0, 1, 2]
+          }
+        },
+        "readonlyPrimitive": {
+          "description": "",
+          "name": "readonlyPrimitive",
+          "table": {
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": true
+          }
+        },
+        "recordOfComplexObject": {
+          "description": "",
+          "name": "recordOfComplexObject",
+          "table": {
+            "type": {
+              "summary": "Record<string, ItemInterface>"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "Record<string, ItemInterface>"
+          }
+        },
+        "recordOfPrimitive": {
+          "description": "",
+          "name": "recordOfPrimitive",
+          "table": {
+            "type": {
+              "summary": "Record<string, number>"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "Record<string, number>"
+          }
+        },
+        "string": {
+          "description": "",
+          "name": "string",
+          "table": {
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": true
+          }
+        },
+        "stringEnum": {
+          "description": "",
+          "name": "stringEnum",
+          "table": {
+            "type": {
+              "summary": "\"top-left\" | \"top-right\" | \"top-center\""
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "StringEnum.TopLeft | StringEnum.TopRight | StringEnum.TopCenter",
+            "required": true,
+            "value": ["top-left", "top-right", "top-center"]
+          }
+        },
+        "symbol": {
+          "description": "",
+          "name": "symbol",
+          "table": {
+            "type": {
+              "summary": "symbol"
+            }
+          },
+          "type": {
+            "name": "symbol",
+            "required": true
+          }
+        },
+        "tupleOfPrimitive": {
+          "description": "",
+          "name": "tupleOfPrimitive",
+          "table": {
+            "type": {
+              "summary": "[string, number]"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "[string, number]"
+          }
+        },
+        "tupleWithComplexType": {
+          "description": "",
+          "name": "tupleWithComplexType",
+          "table": {
+            "type": {
+              "summary": "[string, ItemInterface]"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "[string, ItemInterface]"
+          }
+        },
+        "typeAlias": {
+          "description": "",
+          "name": "typeAlias",
+          "table": {
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": true
+          }
+        },
+        "unionOfComplexType": {
+          "description": "",
+          "name": "unionOfComplexType",
+          "table": {
+            "type": {
+              "summary": "ItemInterface | InterfaceIntersection"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "ItemInterface | InterfaceIntersection"
+          }
+        },
+        "unionOfPrimitive": {
+          "description": "",
+          "name": "unionOfPrimitive",
+          "table": {
+            "type": {
+              "summary": "string | number"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "string | number"
+          }
+        },
+        "voidFunc": {
+          "description": "",
+          "name": "voidFunc",
+          "table": {
+            "type": {
+              "summary": "() => void"
+            }
+          },
+          "type": {
+            "name": "function",
+            "required": true,
+            "value": "() => void"
+          }
+        }
+      },
+      "import": "import { component as TsFCComponent } from './docgen-components/ts-react-fc/input';",
+      "jsDocTags": {},
+      "name": "TsFC",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/ts-react-fc/input.tsx"
+    },
+    "TsForwardRef": {
+      "argTypes": {
+        "children": {
+          "description": "Content of the button.",
+          "name": "children",
+          "table": {
+            "type": {
+              "summary": "ReactNode"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "ReactNode"
+          }
+        },
+        "disabled": {
+          "description": "Disables the button.",
+          "name": "disabled",
+          "table": {
+            "defaultValue": {
+              "summary": "false"
+            },
+            "type": {
+              "summary": "boolean"
+            }
+          },
+          "type": {
+            "name": "boolean",
+            "required": false
+          }
+        },
+        "variant": {
+          "description": "Sets the button size.",
+          "name": "variant",
+          "table": {
+            "defaultValue": {
+              "summary": "'small'"
+            },
+            "type": {
+              "summary": "\"large\" | \"small\""
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "\"large\" | \"small\"",
+            "required": false,
+            "value": ["large", "small"]
+          }
+        }
+      },
+      "import": "import { component as TsForwardRefComponent } from './docgen-components/8894-9511-ts-forward-ref/input';",
+      "jsDocTags": {},
+      "name": "TsForwardRef",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/8894-9511-ts-forward-ref/input.tsx"
+    },
+    "TsFunctionComponent": {
+      "argTypes": {
+        "arrayOptional": {
+          "description": "",
+          "name": "arrayOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "['array', 'optional']"
+            },
+            "type": {
+              "summary": "string[]"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "string[]"
+          }
+        },
+        "arrayRequired": {
+          "description": "",
+          "name": "arrayRequired",
+          "table": {
+            "type": {
+              "summary": "string[]"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "string[]"
+          }
+        },
+        "booleanOptional": {
+          "description": "",
+          "name": "booleanOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "false"
+            },
+            "type": {
+              "summary": "boolean"
+            }
+          },
+          "type": {
+            "name": "boolean",
+            "required": false
+          }
+        },
+        "booleanRequired": {
+          "description": "",
+          "name": "booleanRequired",
+          "table": {
+            "type": {
+              "summary": "boolean"
+            }
+          },
+          "type": {
+            "name": "boolean",
+            "required": true
+          }
+        },
+        "dateOptional": {
+          "description": "",
+          "name": "dateOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "new Date('20 Jan 1983')"
+            },
+            "type": {
+              "summary": "Date"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "Date"
+          }
+        },
+        "dateRequired": {
+          "description": "",
+          "name": "dateRequired",
+          "table": {
+            "type": {
+              "summary": "Date"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "Date"
+          }
+        },
+        "functionOptional": {
+          "description": "",
+          "name": "functionOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "() => 'foo'"
+            },
+            "type": {
+              "summary": "() => string"
+            }
+          },
+          "type": {
+            "name": "function",
+            "required": false,
+            "value": "() => string"
+          }
+        },
+        "functionRequired": {
+          "description": "",
+          "name": "functionRequired",
+          "table": {
+            "type": {
+              "summary": "() => string"
+            }
+          },
+          "type": {
+            "name": "function",
+            "required": true,
+            "value": "() => string"
+          }
+        },
+        "globalReference": {
+          "description": "",
+          "name": "globalReference",
+          "table": {
+            "defaultValue": {
+              "summary": "Date"
+            },
+            "type": {
+              "summary": "any"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "any"
+          }
+        },
+        "importedReference": {
+          "description": "",
+          "name": "importedReference",
+          "table": {
+            "defaultValue": {
+              "summary": "imported"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        },
+        "localReference": {
+          "description": "",
+          "name": "localReference",
+          "table": {
+            "defaultValue": {
+              "summary": "'local-value'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        },
+        "myClass": {
+          "description": "",
+          "name": "myClass",
+          "table": {
+            "defaultValue": {
+              "summary": "styles.foo"
+            },
+            "type": {
+              "summary": "CSSModuleClasses"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "CSSModuleClasses"
+          }
+        },
+        "numberOptional": {
+          "description": "",
+          "name": "numberOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "1"
+            },
+            "type": {
+              "summary": "number"
+            }
+          },
+          "type": {
+            "name": "number",
+            "required": false
+          }
+        },
+        "numberRequired": {
+          "description": "Description",
+          "name": "numberRequired",
+          "table": {
+            "type": {
+              "summary": "number"
+            }
+          },
+          "type": {
+            "name": "number",
+            "required": true
+          }
+        },
+        "objectOptional": {
+          "description": "",
+          "name": "objectOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "{ object: 'optional' }"
+            },
+            "type": {
+              "summary": "Record<string, string>"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "Record<string, string>"
+          }
+        },
+        "objectRequired": {
+          "description": "",
+          "name": "objectRequired",
+          "table": {
+            "type": {
+              "summary": "Record<string, string>"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "Record<string, string>"
+          }
+        },
+        "stringGlobalName": {
+          "description": "",
+          "name": "stringGlobalName",
+          "table": {
+            "defaultValue": {
+              "summary": "'top'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        },
+        "stringOptional": {
+          "description": "",
+          "name": "stringOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "'stringOptional'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        },
+        "stringRequired": {
+          "description": "",
+          "name": "stringRequired",
+          "table": {
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": true
+          }
+        }
+      },
+      "import": "import { component as TsFunctionComponentComponent } from './docgen-components/ts-function-component/input';",
+      "jsDocTags": {},
+      "name": "TsFunctionComponent",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/ts-function-component/input.tsx"
+    },
+    "TsFunctionComponentInlineDefaults": {
+      "argTypes": {
+        "arrayOptional": {
+          "description": "",
+          "name": "arrayOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "['array', 'optional']"
+            },
+            "type": {
+              "summary": "string[]"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "string[]"
+          }
+        },
+        "arrayRequired": {
+          "description": "",
+          "name": "arrayRequired",
+          "table": {
+            "type": {
+              "summary": "string[]"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "string[]"
+          }
+        },
+        "booleanOptional": {
+          "description": "",
+          "name": "booleanOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "false"
+            },
+            "type": {
+              "summary": "boolean"
+            }
+          },
+          "type": {
+            "name": "boolean",
+            "required": false
+          }
+        },
+        "booleanRequired": {
+          "description": "",
+          "name": "booleanRequired",
+          "table": {
+            "type": {
+              "summary": "boolean"
+            }
+          },
+          "type": {
+            "name": "boolean",
+            "required": true
+          }
+        },
+        "dateOptional": {
+          "description": "",
+          "name": "dateOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "new Date('20 Jan 1983')"
+            },
+            "type": {
+              "summary": "Date"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "Date"
+          }
+        },
+        "dateRequired": {
+          "description": "",
+          "name": "dateRequired",
+          "table": {
+            "type": {
+              "summary": "Date"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "Date"
+          }
+        },
+        "enumGlobalName": {
+          "description": "",
+          "name": "enumGlobalName",
+          "table": {
+            "defaultValue": {
+              "summary": "'top'"
+            },
+            "type": {
+              "summary": "\"top\" | \"left\""
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "GlobalNames.top | GlobalNames.left",
+            "required": false,
+            "value": ["top", "left"]
+          }
+        },
+        "functionOptional": {
+          "description": "",
+          "name": "functionOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "() => 'foo'"
+            },
+            "type": {
+              "summary": "() => string"
+            }
+          },
+          "type": {
+            "name": "function",
+            "required": false,
+            "value": "() => string"
+          }
+        },
+        "functionRequired": {
+          "description": "",
+          "name": "functionRequired",
+          "table": {
+            "type": {
+              "summary": "() => string"
+            }
+          },
+          "type": {
+            "name": "function",
+            "required": true,
+            "value": "() => string"
+          }
+        },
+        "globalReference": {
+          "description": "",
+          "name": "globalReference",
+          "table": {
+            "defaultValue": {
+              "summary": "Date"
+            },
+            "type": {
+              "summary": "any"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "any"
+          }
+        },
+        "importedReference": {
+          "description": "",
+          "name": "importedReference",
+          "table": {
+            "defaultValue": {
+              "summary": "imported"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        },
+        "localReference": {
+          "description": "",
+          "name": "localReference",
+          "table": {
+            "defaultValue": {
+              "summary": "'local-value'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        },
+        "numberOptional": {
+          "description": "",
+          "name": "numberOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "1"
+            },
+            "type": {
+              "summary": "number"
+            }
+          },
+          "type": {
+            "name": "number",
+            "required": false
+          }
+        },
+        "numberRequired": {
+          "description": "Description",
+          "name": "numberRequired",
+          "table": {
+            "type": {
+              "summary": "number"
+            }
+          },
+          "type": {
+            "name": "number",
+            "required": true
+          }
+        },
+        "objectOptional": {
+          "description": "",
+          "name": "objectOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "{ object: 'optional' }"
+            },
+            "type": {
+              "summary": "Record<string, string>"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "Record<string, string>"
+          }
+        },
+        "objectRequired": {
+          "description": "",
+          "name": "objectRequired",
+          "table": {
+            "type": {
+              "summary": "Record<string, string>"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "Record<string, string>"
+          }
+        },
+        "stringGlobalName": {
+          "description": "",
+          "name": "stringGlobalName",
+          "table": {
+            "defaultValue": {
+              "summary": "'top'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        },
+        "stringOptional": {
+          "description": "",
+          "name": "stringOptional",
+          "table": {
+            "defaultValue": {
+              "summary": "'stringOptional'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        },
+        "stringRequired": {
+          "description": "",
+          "name": "stringRequired",
+          "table": {
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": true
+          }
+        },
+        "unionGlobalName": {
+          "description": "",
+          "name": "unionGlobalName",
+          "table": {
+            "defaultValue": {
+              "summary": "'top'"
+            },
+            "type": {
+              "summary": "\"left\" | \"top\""
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "\"left\" | \"top\"",
+            "required": false,
+            "value": ["left", "top"]
+          }
+        },
+        "unionGlobalNameMixed": {
+          "description": "",
+          "name": "unionGlobalNameMixed",
+          "table": {
+            "type": {
+              "summary": "number | \"top\" | undefined"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "number | \"top\" | undefined"
+          }
+        }
+      },
+      "import": "import { component as TsFunctionComponentInlineDefaultsComponent } from './docgen-components/ts-function-component-inline-defaults/input';",
+      "jsDocTags": {},
+      "name": "TsFunctionComponentInlineDefaults",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/ts-function-component-inline-defaults/input.tsx"
+    },
+    "TsHtml": {
+      "argTypes": {
+        "text": {
+          "description": "",
+          "name": "text",
+          "table": {
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": true
+          }
+        }
+      },
+      "import": "import { component as TsHtmlComponent } from './docgen-components/ts-html/input';",
+      "jsDocTags": {},
+      "name": "TsHtml",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/ts-html/input.tsx"
+    },
+    "TsImportedTypes": {
+      "argTypes": {
+        "bar": {
+          "description": "",
+          "name": "bar",
+          "table": {
+            "type": {
+              "summary": "number"
+            }
+          },
+          "type": {
+            "name": "number",
+            "required": true
+          }
+        }
+      },
+      "import": "import { component as TsImportedTypesComponent } from './docgen-components/8143-ts-imported-types/input';",
+      "jsDocTags": {},
+      "name": "TsImportedTypes",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/8143-ts-imported-types/input.tsx"
+    },
+    "TsImportTypes": {
+      "argTypes": {
+        "foo": {
+          "description": "",
+          "name": "foo",
+          "table": {
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        },
+        "other": {
+          "description": "",
+          "name": "other",
+          "table": {
+            "type": {
+              "summary": "number"
+            }
+          },
+          "type": {
+            "name": "number",
+            "required": false
+          }
+        }
+      },
+      "import": "import { component as TsImportTypesComponent } from './docgen-components/9591-ts-import-types/input';",
+      "jsDocTags": {},
+      "name": "TsImportTypes",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9591-ts-import-types/input.tsx"
+    },
+    "TsJsdoc": {
+      "argTypes": {
+        "case1": {
+          "description": "This is case 1.",
+          "name": "case1",
+          "table": {
+            "type": {
+              "summary": "(event: SyntheticEvent<Element, Event>) => void"
+            }
+          },
+          "type": {
+            "name": "function",
+            "required": true,
+            "value": "(event: SyntheticEvent<Element, Event>) => void"
+          }
+        }
+      },
+      "import": "import { component as TsJsdocComponent } from './docgen-components/ts-jsdoc/input';",
+      "jsDocTags": {},
+      "name": "TsJsdoc",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/ts-jsdoc/input.tsx"
+    },
+    "TsMultiProps": {
+      "argTypes": {
+        "children": {
+          "description": "",
+          "name": "children",
+          "table": {
+            "type": {
+              "summary": "ReactNode"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "ReactNode"
+          }
+        },
+        "size": {
+          "description": "",
+          "name": "size",
+          "table": {
+            "defaultValue": {
+              "summary": "'a'"
+            },
+            "type": {
+              "summary": "\"a\" | \"b\" | \"c\" | \"d\""
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "\"a\" | \"b\" | \"c\" | \"d\"",
+            "required": false,
+            "value": ["a", "b", "c", "d"]
+          }
+        }
+      },
+      "import": "import { component as TsMultiPropsComponent } from './docgen-components/8740-ts-multi-props/input';",
+      "jsDocTags": {},
+      "name": "TsMultiProps",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/8740-ts-multi-props/input.tsx"
+    },
+    "TsReactDefaultExports": {
+      "argTypes": {
+        "isDisabled": {
+          "description": "",
+          "name": "isDisabled",
+          "table": {
+            "defaultValue": {
+              "summary": "false"
+            },
+            "type": {
+              "summary": "boolean"
+            }
+          },
+          "type": {
+            "name": "boolean",
+            "required": false
+          }
+        }
+      },
+      "import": "import { component as TsReactDefaultExportsComponent } from './docgen-components/9556-ts-react-default-exports/input';",
+      "jsDocTags": {},
+      "name": "TsReactDefaultExports",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9556-ts-react-default-exports/input.tsx"
+    },
+    "TsReactFcGenerics": {
+      "argTypes": {
+        "margin": {
+          "description": "",
+          "name": "margin",
+          "table": {
+            "type": {
+              "summary": "number"
+            }
+          },
+          "type": {
+            "name": "number",
+            "required": true
+          }
+        },
+        "padding": {
+          "description": "",
+          "name": "padding",
+          "table": {
+            "defaultValue": {
+              "summary": "'0'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": true
+          }
+        }
+      },
+      "import": "import { component as TsReactFcGenericsComponent } from './docgen-components/8143-ts-react-fc-generics/input';",
+      "jsDocTags": {},
+      "name": "TsReactFcGenerics",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/8143-ts-react-fc-generics/input.tsx"
+    },
+    "TsTypeProps": {
+      "argTypes": {
+        "disabled": {
+          "description": "",
+          "name": "disabled",
+          "table": {
+            "defaultValue": {
+              "summary": "false"
+            },
+            "type": {
+              "summary": "boolean"
+            }
+          },
+          "type": {
+            "name": "boolean",
+            "required": false
+          }
+        }
+      },
+      "import": "import { component as TsTypePropsComponent } from './docgen-components/9465-ts-type-props/input';",
+      "jsDocTags": {},
+      "name": "TsTypeProps",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/9465-ts-type-props/input.tsx"
+    },
+    "TsTypes": {
+      "argTypes": {
+        "aliasesIntersection": {
+          "description": "",
+          "name": "aliasesIntersection",
+          "table": {
+            "type": {
+              "summary": "never"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "never"
+          }
+        },
+        "aliasesUnion": {
+          "description": "",
+          "name": "aliasesUnion",
+          "table": {
+            "defaultValue": {
+              "summary": "'foo'"
+            },
+            "type": {
+              "summary": "AliasesUnion"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "AliasesUnion"
+          }
+        },
+        "any": {
+          "description": "",
+          "name": "any",
+          "table": {
+            "defaultValue": {
+              "summary": "'Any value'"
+            },
+            "type": {
+              "summary": "any"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "any"
+          }
+        },
+        "arrayOfComplexObject": {
+          "description": "",
+          "name": "arrayOfComplexObject",
+          "table": {
+            "defaultValue": {
+              "summary": "[{ text: 'foo', value: 'bar' }]"
+            },
+            "type": {
+              "summary": "ItemInterface[]"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "ItemInterface[]"
+          }
+        },
+        "arrayOfPrimitive": {
+          "description": "",
+          "name": "arrayOfPrimitive",
+          "table": {
+            "defaultValue": {
+              "summary": "['foo', 'bar']"
+            },
+            "type": {
+              "summary": "string[]"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "string[]"
+          }
+        },
+        "bool": {
+          "description": "",
+          "name": "bool",
+          "table": {
+            "defaultValue": {
+              "summary": "true"
+            },
+            "type": {
+              "summary": "boolean"
+            }
+          },
+          "type": {
+            "name": "boolean",
+            "required": true
+          }
+        },
+        "defaultEnum": {
+          "description": "",
+          "name": "defaultEnum",
+          "table": {
+            "defaultValue": {
+              "summary": "DefaultEnum.TopRight"
+            },
+            "type": {
+              "summary": "0 | 1 | 2"
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "DefaultEnum.TopLeft | DefaultEnum.TopRight | DefaultEnum.TopCenter",
+            "required": true,
+            "value": [0, 1, 2]
+          }
+        },
+        "enumUnion": {
+          "description": "",
+          "name": "enumUnion",
+          "table": {
+            "defaultValue": {
+              "summary": "DefaultEnum.TopLeft"
+            },
+            "type": {
+              "summary": "0 | 1 | 2 | 0 | 1 | 2"
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "DefaultEnum.TopLeft | DefaultEnum.TopRight | DefaultEnum.TopCenter | NumericEnum.TopLeft | NumericEnum.TopRight | NumericEnum.TopCenter",
+            "required": true,
+            "value": [0, 1, 2, 0, 1, 2]
+          }
+        },
+        "funcWithArgsAndReturns": {
+          "description": "",
+          "name": "funcWithArgsAndReturns",
+          "table": {
+            "defaultValue": {
+              "summary": "concat"
+            },
+            "type": {
+              "summary": "(a: string, b: string) => string"
+            }
+          },
+          "type": {
+            "name": "function",
+            "required": true,
+            "value": "(a: string, b: string) => string"
+          }
+        },
+        "funcWithIndexTypes": {
+          "description": "",
+          "name": "funcWithIndexTypes",
+          "table": {
+            "type": {
+              "summary": "<T, K extends keyof T>(o: T, propertyNames: K[]) => T[K][]"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "<T, K extends keyof T>(o: T, propertyNames: K[]) => T[K][]"
+          }
+        },
+        "funcWithMultipleUnionReturns": {
+          "description": "",
+          "name": "funcWithMultipleUnionReturns",
+          "table": {
+            "type": {
+              "summary": "() => string | ItemInterface"
+            }
+          },
+          "type": {
+            "name": "function",
+            "required": true,
+            "value": "() => string | ItemInterface"
+          }
+        },
+        "funcWithunionArg": {
+          "description": "",
+          "name": "funcWithunionArg",
+          "table": {
+            "type": {
+              "summary": "(a: string | number) => string"
+            }
+          },
+          "type": {
+            "name": "function",
+            "required": true,
+            "value": "(a: string | number) => string"
+          }
+        },
+        "genericAlias": {
+          "description": "",
+          "name": "genericAlias",
+          "table": {
+            "defaultValue": {
+              "summary": "{ value: 'foo' }"
+            },
+            "type": {
+              "summary": "GenericAlias<string>"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "GenericAlias<string>"
+          }
+        },
+        "genericInterface": {
+          "description": "",
+          "name": "genericInterface",
+          "table": {
+            "defaultValue": {
+              "summary": "{ value: 'A string value' }"
+            },
+            "type": {
+              "summary": "GenericInterface<string>"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "GenericInterface<string>"
+          }
+        },
+        "inlinedNumericLiteralUnion": {
+          "description": "",
+          "name": "inlinedNumericLiteralUnion",
+          "table": {
+            "defaultValue": {
+              "summary": "1"
+            },
+            "type": {
+              "summary": "0 | 1 | 2"
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "0 | 1 | 2",
+            "required": true,
+            "value": [0, 1, 2]
+          }
+        },
+        "inlinedStringLiteralUnion": {
+          "description": "",
+          "name": "inlinedStringLiteralUnion",
+          "table": {
+            "defaultValue": {
+              "summary": "'bottom-right'"
+            },
+            "type": {
+              "summary": "\"bottom-center\" | \"bottom-left\" | \"bottom-right\""
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "\"bottom-center\" | \"bottom-left\" | \"bottom-right\"",
+            "required": true,
+            "value": ["bottom-center", "bottom-left", "bottom-right"]
+          }
+        },
+        "interface": {
+          "description": "",
+          "name": "interface",
+          "table": {
+            "defaultValue": {
+              "summary": "{ text: 'foo', value: 'bar' }"
+            },
+            "type": {
+              "summary": "ItemInterface"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "ItemInterface"
+          }
+        },
+        "intersectionType": {
+          "description": "",
+          "name": "intersectionType",
+          "table": {
+            "defaultValue": {
+              "summary": "{ text: 'foo', value: 'bar', name: 'foo-bar' }"
+            },
+            "type": {
+              "summary": "InterfaceIntersection"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "InterfaceIntersection"
+          }
+        },
+        "intersectionWithInlineType": {
+          "description": "",
+          "name": "intersectionWithInlineType",
+          "table": {
+            "defaultValue": {
+              "detail": "{\n  text: 'foo',\n  value: 'bar',\n  inlineValue: 'this is inlined'\n}",
+              "summary": "object"
+            },
+            "type": {
+              "summary": "ItemInterface & { inlineValue: string; }"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "ItemInterface & { inlineValue: string; }"
+          }
+        },
+        "namedNumericLiteralUnion": {
+          "description": "",
+          "name": "namedNumericLiteralUnion",
+          "table": {
+            "defaultValue": {
+              "summary": "0"
+            },
+            "type": {
+              "summary": "0 | 1 | 2"
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "0 | 1 | 2",
+            "required": true,
+            "value": [0, 1, 2]
+          }
+        },
+        "namedStringLiteralUnion": {
+          "description": "",
+          "name": "namedStringLiteralUnion",
+          "table": {
+            "defaultValue": {
+              "summary": "'top-right'"
+            },
+            "type": {
+              "summary": "\"top-center\" | \"top-left\" | \"top-right\""
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "\"top-center\" | \"top-left\" | \"top-right\"",
+            "required": true,
+            "value": ["top-center", "top-left", "top-right"]
+          }
+        },
+        "nullableComplexType": {
+          "description": "",
+          "name": "nullableComplexType",
+          "table": {
+            "type": {
+              "summary": "ItemInterface"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "ItemInterface"
+          }
+        },
+        "nullableComplexTypeUndefinedDefaultValue": {
+          "description": "",
+          "name": "nullableComplexTypeUndefinedDefaultValue",
+          "table": {
+            "type": {
+              "summary": "ItemInterface"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": false,
+            "value": "ItemInterface"
+          }
+        },
+        "nullablePrimitive": {
+          "description": "",
+          "name": "nullablePrimitive",
+          "table": {
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": false
+          }
+        },
+        "number": {
+          "description": "",
+          "name": "number",
+          "table": {
+            "defaultValue": {
+              "summary": "5"
+            },
+            "type": {
+              "summary": "number"
+            }
+          },
+          "type": {
+            "name": "number",
+            "required": true
+          }
+        },
+        "numericEnum": {
+          "description": "",
+          "name": "numericEnum",
+          "table": {
+            "defaultValue": {
+              "summary": "NumericEnum.TopRight"
+            },
+            "type": {
+              "summary": "0 | 1 | 2"
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "NumericEnum.TopLeft | NumericEnum.TopRight | NumericEnum.TopCenter",
+            "required": true,
+            "value": [0, 1, 2]
+          }
+        },
+        "readonlyPrimitive": {
+          "description": "",
+          "name": "readonlyPrimitive",
+          "table": {
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": true
+          }
+        },
+        "recordOfComplexObject": {
+          "description": "",
+          "name": "recordOfComplexObject",
+          "table": {
+            "defaultValue": {
+              "detail": "{\n  foo: {\n    text: 'bar',\n    value: 'bar2'\n  }\n}",
+              "summary": "object"
+            },
+            "type": {
+              "summary": "Record<string, ItemInterface>"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "Record<string, ItemInterface>"
+          }
+        },
+        "recordOfPrimitive": {
+          "description": "",
+          "name": "recordOfPrimitive",
+          "table": {
+            "defaultValue": {
+              "summary": "{ foo: 1, bar: 2 }"
+            },
+            "type": {
+              "summary": "Record<string, number>"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "Record<string, number>"
+          }
+        },
+        "string": {
+          "description": "",
+          "name": "string",
+          "table": {
+            "defaultValue": {
+              "summary": "'A string value'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": true
+          }
+        },
+        "stringEnum": {
+          "description": "",
+          "name": "stringEnum",
+          "table": {
+            "defaultValue": {
+              "summary": "'top-right'"
+            },
+            "type": {
+              "summary": "\"top-left\" | \"top-right\" | \"top-center\""
+            }
+          },
+          "type": {
+            "name": "enum",
+            "raw": "StringEnum.TopLeft | StringEnum.TopRight | StringEnum.TopCenter",
+            "required": true,
+            "value": ["top-left", "top-right", "top-center"]
+          }
+        },
+        "symbol": {
+          "description": "",
+          "name": "symbol",
+          "table": {
+            "defaultValue": {
+              "summary": "Symbol('Default symbol')"
+            },
+            "type": {
+              "summary": "symbol"
+            }
+          },
+          "type": {
+            "name": "symbol",
+            "required": true
+          }
+        },
+        "tupleOfPrimitive": {
+          "description": "",
+          "name": "tupleOfPrimitive",
+          "table": {
+            "defaultValue": {
+              "summary": "['string value', 5]"
+            },
+            "type": {
+              "summary": "[string, number]"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "[string, number]"
+          }
+        },
+        "tupleWithComplexType": {
+          "description": "",
+          "name": "tupleWithComplexType",
+          "table": {
+            "defaultValue": {
+              "summary": "['string value', { text: 'foo', value: 'bar' }]"
+            },
+            "type": {
+              "summary": "[string, ItemInterface]"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "[string, ItemInterface]"
+          }
+        },
+        "typeAlias": {
+          "description": "",
+          "name": "typeAlias",
+          "table": {
+            "defaultValue": {
+              "summary": "'foo'"
+            },
+            "type": {
+              "summary": "string"
+            }
+          },
+          "type": {
+            "name": "string",
+            "required": true
+          }
+        },
+        "unionOfComplexType": {
+          "description": "",
+          "name": "unionOfComplexType",
+          "table": {
+            "defaultValue": {
+              "summary": "{ text: 'foo', value: 'bar' }"
+            },
+            "type": {
+              "summary": "ItemInterface | InterfaceIntersection"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "ItemInterface | InterfaceIntersection"
+          }
+        },
+        "unionOfPrimitive": {
+          "description": "",
+          "name": "unionOfPrimitive",
+          "table": {
+            "defaultValue": {
+              "summary": "'A string value'"
+            },
+            "type": {
+              "summary": "string | number"
+            }
+          },
+          "type": {
+            "name": "other",
+            "required": true,
+            "value": "string | number"
+          }
+        },
+        "voidFunc": {
+          "description": "",
+          "name": "voidFunc",
+          "table": {
+            "defaultValue": {
+              "summary": "() => {}"
+            },
+            "type": {
+              "summary": "() => void"
+            }
+          },
+          "type": {
+            "name": "function",
+            "required": true,
+            "value": "() => void"
+          }
+        }
+      },
+      "import": "import { component as TsTypesComponent } from './docgen-components/ts-types/input';",
+      "jsDocTags": {},
+      "name": "TsTypes",
+      "path": "<sandbox>/src/stories/renderers/react/docgen-components/ts-types/input.tsx"
+    }
+  }
+}

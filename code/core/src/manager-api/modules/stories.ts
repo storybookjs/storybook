@@ -58,7 +58,7 @@ import {
   addPreparedStories,
   getComponentLookupList,
   getStoriesLookupList,
-  titleToPathIds,
+  titleToPath,
   transformStoryIndexToStoriesHash,
 } from '../lib/stories.ts';
 import type { ModuleFn } from '../lib/types.tsx';
@@ -728,7 +728,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
           .find(
             (child): child is API_LeafEntry =>
               (child?.type === 'docs' || child?.type === 'story') &&
-              titleToPathIds(child.title).at(-1) === entry.id
+              titleToPath(child.title).at(-1)?.id === entry.id
           );
         if (ownEntry) {
           return ownEntry;

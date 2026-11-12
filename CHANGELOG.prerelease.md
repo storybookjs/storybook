@@ -1,3 +1,52 @@
+## 11.0.0-beta.2
+
+- Angular: Destroy root components before the application on story switch - [#37288](https://github.com/storybookjs/storybook/pull/37288), thanks @arturovt!
+- CLI: Remove jscodeshift and Babel, install 13 packages instead of 128 - [#37261](https://github.com/storybookjs/storybook/pull/37261), thanks @kasperpeulen!
+- Core: Fix stories failing to load on Windows with the webpack builder - [#37344](https://github.com/storybookjs/storybook/pull/37344), thanks @valentinpalkovic!
+- Core: Prevent duplicate Run All test runs across manager tabs - [#37160](https://github.com/storybookjs/storybook/pull/37160), thanks @benjavicente!
+- Docgen: Run React and Angular docgen on the TypeScript 7.1 native API - [#37004](https://github.com/storybookjs/storybook/pull/37004), thanks @JReinhold!
+- Docs: Add snippet templates so story snippets can follow the controls - [#37165](https://github.com/storybookjs/storybook/pull/37165), thanks @kasperpeulen!
+- MCP: Publish the composition schema a hosted Storybook actually serves - [#37290](https://github.com/storybookjs/storybook/pull/37290), thanks @Sidnioulz!
+- Manager: Make store reads include writes React has not committed yet - [#37294](https://github.com/storybookjs/storybook/pull/37294), thanks @ndelangen!
+- React: Accept only 0.7 of the docgen Vite plugin until TypeScript 7.1 is stable - [#37292](https://github.com/storybookjs/storybook/pull/37292), thanks @kasperpeulen!
+- React: Separate the items of a compact array or object default with one space - [#37320](https://github.com/storybookjs/storybook/pull/37320), thanks @JReinhold!
+- Skills: Fix what agents get wrong in the evals - [#36820](https://github.com/storybookjs/storybook/pull/36820), thanks @kasperpeulen!
+- Skills: Split ui-workflow into four skills, with AGENTS.md as the workflow - [#37296](https://github.com/storybookjs/storybook/pull/37296), thanks @kasperpeulen!
+- Svelte: Remove the leftovers from the Svelte CSF addon - [#37316](https://github.com/storybookjs/storybook/pull/37316), thanks @JReinhold!
+- SvelteKit: Automigrate sveltekit_experimental to beforeEach - [#37223](https://github.com/storybookjs/storybook/pull/37223), thanks @JReinhold!
+- SvelteKit: Mock $app modules with Storybook's mock API, remove sveltekit_experimental - [#37214](https://github.com/storybookjs/storybook/pull/37214), thanks @JReinhold!
+
+## 11.0.0-beta.1
+
+- Addon Vitest: Run story files Vitest hasn't seen yet - [#37187](https://github.com/storybookjs/storybook/pull/37187), thanks @thelastbackspace!
+- Angular-Vite: Evaluate @angular/compiler once per page under Vitest - [#37133](https://github.com/storybookjs/storybook/pull/37133), thanks @yngvebn!
+- Build(deps): Bump joi from 17.13.3 to 17.13.9 in the npm_and_yarn group across 1 directory - [#37174](https://github.com/storybookjs/storybook/pull/37174), thanks @dependabot!
+- Build(deps): Bump lodash-es from 4.17.21 to 4.18.1 in the npm_and_yarn group across 1 directory - [#37173](https://github.com/storybookjs/storybook/pull/37173), thanks @dependabot!
+- Build(deps): Bump node-forge from 1.3.1 to 1.4.2 in the npm_and_yarn group across 1 directory - [#37175](https://github.com/storybookjs/storybook/pull/37175), thanks @dependabot!
+- CLI: Resolve owner-scoped pkg.pr.new canary specifiers - [#37139](https://github.com/storybookjs/storybook/pull/37139), thanks @Sidnioulz!
+- CLI: Scaffold CSF4 from storybook init - [#37125](https://github.com/storybookjs/storybook/pull/37125), thanks @ndelangen!
+- Community: Support prerelease community frameworks in init - [#37203](https://github.com/storybookjs/storybook/pull/37203), thanks @Sidnioulz!
+- Core: ASCII-safe open-service static-snapshot filenames - [#37136](https://github.com/storybookjs/storybook/pull/37136), thanks @obvious-autobuild!
+- Core: Bundle six small dependencies and require Preact 10.9 - [#37162](https://github.com/storybookjs/storybook/pull/37162), thanks @kasperpeulen!
+- Core: Drop npmlog from node-logger - [#37159](https://github.com/storybookjs/storybook/pull/37159), thanks @kasperpeulen!
+- Core: Fix docgen and story docs for reserved ids, renamed files and selected stories - [#37157](https://github.com/storybookjs/storybook/pull/37157), thanks @JReinhold!
+- Core: Let StackBlitz embed the dev server again - [#37176](https://github.com/storybookjs/storybook/pull/37176), thanks @kasperpeulen!
+- Core: Prebundle `open` to drop 10 installed packages - [#37140](https://github.com/storybookjs/storybook/pull/37140), thanks @kasperpeulen!
+- Core: Show story-docs data that arrives after a subscription starts - [#37156](https://github.com/storybookjs/storybook/pull/37156), thanks @JReinhold!
+- Core: Stop a late ack error clobbering resolved static-load state in the story - [#37199](https://github.com/storybookjs/storybook/pull/37199), thanks @ndelangen!
+- ESLint: Validate mandatory static fields in CSF 3 and 4 - [#36819](https://github.com/storybookjs/storybook/pull/36819), thanks @Sidnioulz!
+- Manager: Remove storybook/test from the manager globals - [#37144](https://github.com/storybookjs/storybook/pull/37144), thanks @kasperpeulen!
+- Next.js: Preserve display option for local fonts - [#37002](https://github.com/storybookjs/storybook/pull/37002), thanks @naveedsajjdawan!
+- Preview API: Skip the landmark navigation listener in RN - [#37183](https://github.com/storybookjs/storybook/pull/37183), thanks @dannyhw!
+- React: Make nested user-event act wrappers re-entrant - [#36754](https://github.com/storybookjs/storybook/pull/36754), thanks @smg99!
+- React: Make react-docgen optional and drop builder docgen deps from the default install - [#37141](https://github.com/storybookjs/storybook/pull/37141), thanks @kasperpeulen!
+- Releases: Update sort-package-json, don't mangle exports fields - [#36609](https://github.com/storybookjs/storybook/pull/36609), thanks @mrginglymus!
+- Svelte: Clearer indexing errors for files without defineMeta, and print each error once - [#37204](https://github.com/storybookjs/storybook/pull/37204), thanks @JReinhold!
+- Svelte: Remove stale CSF type augmentations - [#37137](https://github.com/storybookjs/storybook/pull/37137), thanks @obvious-autobuild!
+- Svelte: Update esrap to 2.x - [#37142](https://github.com/storybookjs/storybook/pull/37142), thanks @JReinhold!
+- Telemetry: Add VRT packages - [#37124](https://github.com/storybookjs/storybook/pull/37124), thanks @shilman!
+- Test: Bundle the test libraries and their types, upgrade to Vitest 5 - [#37143](https://github.com/storybookjs/storybook/pull/37143), thanks @kasperpeulen!
+
 ## 11.0.0-beta.0
 
 - Astro: Add init support, doc mention and ecosystem CI sandbox - [#37122](https://github.com/storybookjs/storybook/pull/37122), thanks @Sidnioulz!

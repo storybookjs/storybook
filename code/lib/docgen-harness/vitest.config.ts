@@ -12,7 +12,13 @@ export default defineConfig(async () =>
   mergeConfig(
     vitestCommonConfig,
     defineConfig({
-      plugins: [vue(), svelte(), await svelteDocgen(), svelteCsf(), svelteTesting()],
+      plugins: [
+        vue(),
+        svelte({ configFile: false }),
+        await svelteDocgen(),
+        svelteCsf(),
+        svelteTesting(),
+      ],
     })
   )
 );

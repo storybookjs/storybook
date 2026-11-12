@@ -45,3 +45,56 @@ describe('focus instrumentation', () => {
     expect(detachedDocument.activeElement).not.toBe(button);
   });
 });
+
+describe('context userEvent', () => {
+  const clipboard = { readText: vi.fn() };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('works in a secure context and keeps the browser clipboard', async () => {
+    // Like browsers, put the clipboard on the prototype, not on the navigator itself.
+    vi.stubGlobal('navigator', Object.create({ clipboard }));
+    const context = { canvasElement: document.body, userEvent: {} } as any;
+
+    await enhanceContext(context);
+
+    expect(context.userEvent.type).toBeTypeOf('function');
+    expect(navigator.clipboard).toBe(clipboard);
+  });
+
+  it('works in an insecure context, where the browser has no clipboard', async () => {
+    // Browsers expose `navigator.clipboard` only in secure contexts (HTTPS or localhost).
+    vi.stubGlobal('navigator', {});
+    const context = { canvasElement: document.body, userEvent: {} } as any;
+
+    await enhanceContext(context);
+
+    expect(context.userEvent.type).toBeTypeOf('function');
+    expect(context.userEvent.click).toBeTypeOf('function');
+    expect('clipboard' in navigator).toBe(false);
+  });
+
+  it('keeps a clipboard that is already on the navigator', async () => {
+    // For example the stub that `userEvent.setup()` attaches when a story calls it.
+    vi.stubGlobal('navigator', {});
+    Object.defineProperty(navigator, 'clipboard', { get: () => clipboard, configurable: true });
+    const context = { canvasElement: document.body, userEvent: {} } as any;
+
+    await enhanceContext(context);
+
+    expect(context.userEvent.type).toBeTypeOf('function');
+    expect(navigator.clipboard).toBe(clipboard);
+  });
+
+  it('is not set up without a DOM, as in React Native', async () => {
+    vi.stubGlobal('document', undefined);
+    vi.stubGlobal('HTMLElement', undefined);
+    const context = { canvasElement: {}, userEvent: {} } as any;
+
+    await expect(enhanceContext(context)).resolves.toBeUndefined();
+
+    expect(context.userEvent).toEqual({});
+  });
+});

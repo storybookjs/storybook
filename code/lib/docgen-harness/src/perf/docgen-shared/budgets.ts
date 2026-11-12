@@ -12,6 +12,9 @@ export interface MemoryBudgets {
 
 const MEMORY_BUDGETS: Partial<Record<EngineId, MemoryBudgets>> = {
   'react-osa': { maxTransientMb: 90, maxRetainedGrowthMb: 60, maxRetainedSlopeMb: 3 },
+  // These figures are the V8 heap of the docgen process only: the TypeScript compiler runs in its
+  // own process, which the gate does not measure.
+  'react-osa-native': { maxTransientMb: 45, maxRetainedGrowthMb: -50, maxRetainedSlopeMb: 0.5 },
 };
 
 export function memoryBudgetsFor(engine: EngineId): MemoryBudgets {
@@ -55,6 +58,12 @@ const SVELTE_COMPONENT_META_MEMORY = {
   maxTransientMb: 30,
   maxRetainedGrowthMb: 10,
   maxRetainedSlopeMb: 1,
+};
+
+const ANGULAR_CM_MEMORY = {
+  maxTransientMb: 10,
+  maxRetainedGrowthMb: 5,
+  maxRetainedSlopeMb: 0.5,
 };
 
 /** Measured on CI with headroom; the run is recorded in PERF-METHODOLOGY.md. */
@@ -142,6 +151,16 @@ export const PERF_BUDGETS: Partial<Record<PerfBudgetKey, PerfBudget>> = {
     maxWarmColdRatio: 0.12,
     memory: SVELTE_COMPONENT_META_MEMORY,
   },
+  'react-osa-native/whole-index': {
+    maxWarmColdRatio: 0.05,
+    memory: { maxTransientMb: 30, maxRetainedGrowthMb: -50, maxRetainedSlopeMb: 0.3 },
+  },
+  'react-osa-native/first-story': {
+    maxWarmColdRatio: 0.6,
+    memory: { maxTransientMb: 15, maxRetainedGrowthMb: 10, maxRetainedSlopeMb: 1 },
+  },
+  'angular-cm/default': { maxWarmColdRatio: 0.06, memory: ANGULAR_CM_MEMORY },
+  'angular-cm-native/default': { maxWarmColdRatio: 0.08, memory: ANGULAR_CM_MEMORY },
   // No incrementality budget: compodoc re-runs the whole project every invocation by design, so its
   // warm figure is its cold figure. Peak memory is what is worth watching.
   //

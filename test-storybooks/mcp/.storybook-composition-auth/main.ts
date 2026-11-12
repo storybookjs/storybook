@@ -10,7 +10,7 @@ const config = defineMain({
 	refs: {
 		'test-private-sb': {
 			title: 'Test Private SB',
-			url: 'https://main--6985a38660050ca8a9e62053.chromatic.com',
+			url: process.env.MCP_TEST_PRIVATE_REF_URL ?? 'https://main--6985a38660050ca8a9e62053.chromatic.com',
 		},
 	},
 });

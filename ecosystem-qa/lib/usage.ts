@@ -132,12 +132,10 @@ const codexTokens = (events: unknown[]): Tokens => {
   return tokens;
 };
 
-/**
- * Count the tokens of one agent run and price them.
- *
- * Claude's own cost line wins when the run finished; otherwise the tokens are priced from the price
- * table agent-eval also uses, and a model missing there gives `usd: null`.
- */
+// Count the tokens of one agent run and price them.
+//
+// Claude's own cost line wins when the run finished; otherwise the tokens are priced from the price
+// table agent-eval also uses, and a model missing there gives `usd: null`.
 export const usageFromStream = (
   streamFile: string,
   engine: Engine,

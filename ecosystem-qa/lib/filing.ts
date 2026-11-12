@@ -23,16 +23,16 @@ export type FilingStep =
 
 export interface FilingOptions {
   repo: string;
-  /** `assets` links evidence on the qa-assets branch of `repo`; `local` links the downloaded files. */
+  // `assets` links evidence on the qa-assets branch of `repo`; `local` links the downloaded files.
   evidenceLinks: 'assets' | 'local';
   filedAs?: number;
-  /** Bodies of the comments already on the issue a comment proposal targets. */
+  // Bodies of the comments already on the issue a comment proposal targets.
   comments?: string[];
 }
 
 const METADATA_MARKER = '<!-- sb-qa-metadata -->';
 
-/** Return the ordered steps that file one proposal; a skip step is always the only step. */
+// Return the ordered steps that file one proposal; a skip step is always the only step.
 export const planFiling = (proposal: Proposal, options: FilingOptions): FilingStep[] => {
   if (proposal.kind === 'suppressed') {
     return [{ kind: 'skip', reason: `#${proposal.existingIssue} is labelled qa:known` }];

@@ -5,11 +5,6 @@ import type { Engine, Os } from './schema.ts';
 const SEMVER = /^(\d+)\.(\d+)\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 const SHA = /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/;
 
-/**
- * Return the `major.minor` line of a Storybook version.
- *
- * @throws When the version is not a plain semver string.
- */
 export const versionLine = (version: string): string => {
   const match = SEMVER.exec(version);
   if (!match) {

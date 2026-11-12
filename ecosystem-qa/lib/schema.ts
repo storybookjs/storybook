@@ -72,7 +72,7 @@ export type Finding = z.infer<typeof Finding>;
 
 export const Tier = z.enum(['must', 'extended']);
 
-/** The answer schema for one run: every check of the tier exactly once, findings only on failures. */
+// The answer schema for one run: every check of the tier exactly once, findings only on failures.
 export const agentOutput = (ids: readonly CheckId[]) =>
   z
     .strictObject({

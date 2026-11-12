@@ -137,12 +137,10 @@ const reproLines = (raw: Finding, capped: Finding): string[] => {
   ];
 };
 
-/**
- * Render the bug-template issue body, linking each evidence file through `evidenceUrl`.
- *
- * Every field the agent wrote is capped and rendered inside a fence, so none of it can mention,
- * reference, link or format anything.
- */
+// Render the bug-template issue body, linking each evidence file through `evidenceUrl`.
+//
+// Every field the agent wrote is capped and rendered inside a fence, so none of it can mention,
+// reference, link or format anything.
 export const renderIssueBody = (
   proposal: IssueProposal,
   evidenceUrl: (name: string) => string | null

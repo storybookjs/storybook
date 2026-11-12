@@ -119,7 +119,7 @@ const reproductionLink = (cycle: Cycle): string[] => {
     return [
       `${repoUrl}/tree/${cycle.headSha}`,
       '',
-      `That commit holds the upgraded state, published in ${cycle.repo} as \`${ref}\` so that no workflow ran it. To work with it: \`git fetch ${repoUrl} ${ref} && git checkout FETCH_HEAD\`. To turn it into a branch after reading the diff: \`git push ${repoUrl} ${ref}:refs/heads/${cycle.branch}\`.`,
+      `That commit holds the upgraded state, published in ${cycle.repo} as \`${ref}\` so that no workflow ran it. To work with it: \`git fetch ${repoUrl} ${ref} && git checkout FETCH_HEAD\`. To turn it into a branch after reading the diff: \`git push ${repoUrl} ${cycle.headSha}:refs/heads/${cycle.branch}\`.`,
     ];
   }
   return [

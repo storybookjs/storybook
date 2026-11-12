@@ -127,7 +127,7 @@ export const CHECKS = [
     phase: 'upgrade',
     tier: 'extended',
     probe:
-      'In `upgrade.log` find the `npx skills@latest add storybookjs/skills#v<version> --yes --agent claude-code universal --copy` line and check that `skills-lock.json` lists the Storybook skills. `n/a` when the automigration was skipped because the run was detected as CI.',
+      '`n/a` when the upgrade had no reason to install them: the run was detected as CI, or `skills-lock.json` at the repository root listed no Storybook skills before the upgrade and either the project was already on 11 (a prerelease counts) or its framework after the upgrade is none of React, Svelte, Web Components, Vue 3 Vite and Angular Vite. Otherwise `upgrade.log` must have a line that ends in `skills@latest add storybookjs/skills#v<version> --yes --agent claude-code universal --copy`. What comes before it depends on the package manager (`npx`, `pnpm dlx`, `yarn dlx`, `bunx`) and is not part of the check. After it, `skills-lock.json` at the repository root must list the Storybook skills.',
   },
   {
     id: 'upgrade.index-cli',

@@ -58,7 +58,7 @@ Writes <out>/result.json and exits 0 whenever it did, findings or not. <out> mus
 Set ECOSYSTEM_QA_FAKE=1 and pass --fake to write a canned result for --engine without running an agent;
 the result records fake: true and costs $0.`;
 
-// The cheapest configuration that found every known mealdrop finding in the bake-off (SB-2504).
+// The cheapest configuration that found every known mealdrop finding in the bake-off.
 const DEFAULT_MODEL: Record<Engine, string> = {
   claude: 'claude-haiku-5-5',
   codex: 'gpt-6.1-sol',

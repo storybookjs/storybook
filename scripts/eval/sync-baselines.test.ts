@@ -14,6 +14,8 @@ vi.setConfig({ testTimeout: 30_000 });
 
 let TMP = '';
 
+const git = (args: string[]) => execFileSync('git', args, { stdio: 'pipe' });
+
 afterEach(() => {
   if (TMP) {
     rmSync(TMP, { recursive: true, force: true });
@@ -501,13 +503,13 @@ describe('syncBaselines', () => {
       });
 
       const targetRemoteWorktree = join(TMP, 'edgy-remote-worktree');
-      execFileSync('git', ['clone', join(remotesRoot, 'edgy.git'), targetRemoteWorktree]);
-      execFileSync('git', ['-C', targetRemoteWorktree, 'config', 'user.name', 'Test User']);
-      execFileSync('git', ['-C', targetRemoteWorktree, 'config', 'user.email', 'test@example.com']);
+      git(['clone', join(remotesRoot, 'edgy.git'), targetRemoteWorktree]);
+      git(['-C', targetRemoteWorktree, 'config', 'user.name', 'Test User']);
+      git(['-C', targetRemoteWorktree, 'config', 'user.email', 'test@example.com']);
       writeFileSync(join(targetRemoteWorktree, 'README.md'), 'updated upstream\n');
-      execFileSync('git', ['-C', targetRemoteWorktree, 'add', '-A']);
-      execFileSync('git', ['-C', targetRemoteWorktree, 'commit', '-m', 'update target upstream']);
-      execFileSync('git', ['-C', targetRemoteWorktree, 'push', 'origin', 'main']);
+      git(['-C', targetRemoteWorktree, 'add', '-A']);
+      git(['-C', targetRemoteWorktree, 'commit', '-m', 'update target upstream']);
+      git(['-C', targetRemoteWorktree, 'push', 'origin', 'main']);
 
       await syncBaselines({
         reposRoot,
@@ -543,10 +545,10 @@ function setupRepo(opts: {
   previewContents: string;
   rootEvalResultsFiles: Record<string, string>;
 }) {
-  execFileSync('git', ['init', '--bare', '--initial-branch=main', opts.remoteRoot]);
-  execFileSync('git', ['init', '--initial-branch=main', opts.repoRoot]);
-  execFileSync('git', ['-C', opts.repoRoot, 'config', 'user.name', 'Test User']);
-  execFileSync('git', ['-C', opts.repoRoot, 'config', 'user.email', 'test@example.com']);
+  git(['init', '--bare', '--initial-branch=main', opts.remoteRoot]);
+  git(['init', '--initial-branch=main', opts.repoRoot]);
+  git(['-C', opts.repoRoot, 'config', 'user.name', 'Test User']);
+  git(['-C', opts.repoRoot, 'config', 'user.email', 'test@example.com']);
 
   const storybookRoot = join(opts.repoRoot, opts.storybookDir);
   const projectRoot = join(opts.repoRoot, dirname(opts.storybookDir));
@@ -564,10 +566,10 @@ function setupRepo(opts: {
     }
   }
 
-  execFileSync('git', ['-C', opts.repoRoot, 'add', '-A']);
-  execFileSync('git', ['-C', opts.repoRoot, 'commit', '-m', 'initial']);
-  execFileSync('git', ['-C', opts.repoRoot, 'remote', 'add', 'origin', opts.remoteRoot]);
-  execFileSync('git', ['-C', opts.repoRoot, 'push', '-u', 'origin', 'main']);
+  git(['-C', opts.repoRoot, 'add', '-A']);
+  git(['-C', opts.repoRoot, 'commit', '-m', 'initial']);
+  git(['-C', opts.repoRoot, 'remote', 'add', 'origin', opts.remoteRoot]);
+  git(['-C', opts.repoRoot, 'push', '-u', 'origin', 'main']);
 }
 
 function mkdirSyncRecursive(path: string) {
@@ -602,16 +604,16 @@ function resultDocTemplate(file: 'transcript.tsx' | 'transcript.types.ts') {
 /** Create a bare remote repo with initial file content (no local clone). */
 function setupBareRemoteWithContent(opts: { remoteRoot: string; files: Record<string, string> }) {
   const staging = mkdtempSync(join(tmpdir(), 'eval-sync-staging-'));
-  execFileSync('git', ['init', '--bare', '--initial-branch=main', opts.remoteRoot]);
-  execFileSync('git', ['clone', opts.remoteRoot, staging]);
-  execFileSync('git', ['-C', staging, 'config', 'user.name', 'Test User']);
-  execFileSync('git', ['-C', staging, 'config', 'user.email', 'test@example.com']);
+  git(['init', '--bare', '--initial-branch=main', opts.remoteRoot]);
+  git(['clone', opts.remoteRoot, staging]);
+  git(['-C', staging, 'config', 'user.name', 'Test User']);
+  git(['-C', staging, 'config', 'user.email', 'test@example.com']);
   for (const [path, contents] of Object.entries(opts.files)) {
     mkdirSyncRecursive(join(staging, dirname(path)));
     writeFileSync(join(staging, path), contents);
   }
-  execFileSync('git', ['-C', staging, 'add', '-A']);
-  execFileSync('git', ['-C', staging, 'commit', '-m', 'initial']);
-  execFileSync('git', ['-C', staging, 'push', 'origin', 'main']);
+  git(['-C', staging, 'add', '-A']);
+  git(['-C', staging, 'commit', '-m', 'initial']);
+  git(['-C', staging, 'push', 'origin', 'main']);
   rmSync(staging, { recursive: true, force: true });
 }

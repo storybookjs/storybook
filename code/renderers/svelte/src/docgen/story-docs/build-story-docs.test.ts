@@ -82,6 +82,23 @@ export const Default = { args: { label: 'Save' } };`,
   });
 });
 
+it('writes a template for a story whose snippet has a warning', async () => {
+  const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
+  vol.fromJSON({
+    [svelteEntry.importPath]: `<script module>
+      import { defineMeta } from '@storybook/svelte';
+      import Button from './Button.svelte';
+      const { Story } = defineMeta({ title: 'Example', component: Button });
+    </script>
+    <Story name="Default" args={{ label: 'Go' }}>
+      {#snippet template(args)}<Button {...args} value={missing} />{/snippet}
+    </Story>`,
+  });
+  const story = (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories['example--default'];
+  expect(story?.template).toBeDefined();
+  expect(story?.warning).toBe('Identifier not resolved: `missing`.');
+});
+
 it('warns about an unknown identifier in the final markup', async () => {
   const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
   vol.fromJSON({
@@ -541,4 +558,135 @@ export const IconBefore = { args: { label: 'Save' } };`,
   });
   const payload = await buildStoryDocsPayload({ entry });
   expect(payload?.stories['example--icon-before']?.name).toBe('Icon Before');
+});
+
+describe('Svelte CSF files that Svelte compiles only after preprocessing', () => {
+  const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
+  const storyDocs = async (file: string) => {
+    vol.fromJSON({ [svelteEntry.importPath]: file });
+    return buildStoryDocsPayload({ entry: svelteEntry });
+  };
+  const storiesFile = ({ lang = '', instanceScript = '', style = '' }) => `<script module${lang}>
+  import { defineMeta } from '@storybook/svelte';
+  import Button from './Button.svelte';
+  const { Story } = defineMeta({ title: 'Example', component: Button });
+</script>
+${instanceScript}
+<Story name="Default" args={{ label: 'Save' }} />
+${style}`;
+
+  it('reads a file with a style block in a preprocessor language', async () => {
+    const style = `<style lang="scss">
+  $gap: 1rem;
+  .story {
+    padding: $gap;
+  }
+</style>`;
+
+    expect(await storyDocs(storiesFile({ style }))).toEqual(await storyDocs(storiesFile({})));
+  });
+
+  it('reads a file with TypeScript that only a preprocessor removes', async () => {
+    const instanceScript = `<script lang="ts">
+  enum Size {
+    Small = 'small',
+  }
+</script>`;
+
+    expect(
+      (await storyDocs(storiesFile({ lang: ' lang="ts"', instanceScript })))?.stories[
+        'example--default'
+      ]?.snippet
+    ).toBe(
+      '<script>\n  import Button from \'./Button.svelte\';\n</script>\n\n<Button label="Save" />'
+    );
+  });
+});
+
+it('reads a Svelte CSF file that starts with a byte order mark', async () => {
+  const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
+  const storyDocs = async (source: string) => {
+    vol.fromJSON({ [svelteEntry.importPath]: source });
+    return buildStoryDocsPayload({ entry: svelteEntry });
+  };
+  const source = `<script module>
+  import { defineMeta } from '@storybook/svelte';
+  import Button from './Button.svelte';
+  const { Story } = defineMeta({ title: 'Example', component: Button });
+</script>
+
+<Story name="Default" args={{ label: 'Save' }} />
+`;
+
+  expect(await storyDocs(`\uFEFF${source}`)).toEqual(await storyDocs(source));
+});
+
+describe('Svelte CSF files with TypeScript expressions', () => {
+  const svelteEntry = { ...entry, importPath: resolve('input.stories.svelte') };
+  const storySnippets = async (wrap: (value: string) => string) => {
+    vol.fromJSON({
+      [svelteEntry.importPath]: `<script module lang="ts">
+  import { defineMeta } from '@storybook/svelte';
+  import Button from './Button.svelte';
+  const { Story } = defineMeta(${wrap(`{ title: 'Example', component: ${wrap('Button')}, render: ${wrap('meta')}, args: ${wrap("{ variant: 'primary' }")} }`)});
+</script>
+
+{#snippet meta(args)}
+  <Button {...args} />
+{/snippet}
+
+{#snippet template(args)}
+  <Button {...args} size="small" />
+{/snippet}
+
+<Story name="Default" args={${wrap("{ label: 'Save' }")}} />
+
+<Story name="Small" template={${wrap('template')}} args={${wrap("{ label: 'Discard' }")}} />
+`,
+    });
+    return (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories;
+  };
+
+  it('reads the values without TypeScript', async () => {
+    const stories = await storySnippets((value) => value);
+
+    expect(stories?.['example--default']?.snippet).toBe(
+      '<script>\n  import Button from \'./Button.svelte\';\n</script>\n\n<Button variant="primary" label="Save" />'
+    );
+    expect(stories?.['example--small']?.snippet).toBe(
+      '<script>\n  import Button from \'./Button.svelte\';\n</script>\n\n<Button variant="primary" label="Discard" size="small" />'
+    );
+  });
+
+  it.for([
+    ['as', (value: string) => `${value} as any`],
+    ['satisfies', (value: string) => `${value} satisfies unknown`],
+    ['a non-null assertion', (value: string) => `${value}!`],
+    ['a type assertion', (value: string) => `<any>${value}`],
+    ['nested TypeScript expressions', (value: string) => `(<any>${value}!) satisfies unknown`],
+  ] as const)('reads values with %s like values without TypeScript', async ([, wrap]) => {
+    expect(await storySnippets(wrap)).toEqual(await storySnippets((value) => value));
+  });
+
+  it('reads a generic component with type arguments like the component', async () => {
+    const snippets = async (component: string) => {
+      vol.fromJSON({
+        [svelteEntry.importPath]: `<script module lang="ts">
+  import { defineMeta } from '@storybook/svelte';
+  import List from './List.svelte';
+  const { Story } = defineMeta({ title: 'Example', component: ${component} });
+</script>
+
+<Story name="Default" args={{ items: ['Save'] }} />
+
+<Story name="Children">
+  <span>Discard</span>
+</Story>
+`,
+      });
+      return (await buildStoryDocsPayload({ entry: svelteEntry }))?.stories;
+    };
+
+    expect(await snippets('List<string>')).toEqual(await snippets('List'));
+  });
 });

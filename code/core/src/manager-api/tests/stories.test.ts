@@ -34,6 +34,7 @@ import { init as initStories } from '../modules/stories.ts';
 import { parseStatusesParam, serializeStatusesParam } from '../modules/statuses.ts';
 import type { API, State } from '../root.tsx';
 import type Store from '../store.ts';
+import { createCommitLaggingStore } from '../test-utils/store.ts';
 import { fullStatusStore } from '../stores/status.ts';
 import {
   docsEntries,
@@ -74,6 +75,9 @@ function createMockStore(initialState: Partial<State> = {}) {
       return Promise.resolve(state);
     }),
   } as any as Store;
+}
+function createLaggingStoriesStore() {
+  return createCommitLaggingStore({ filters: {}, status: {} } as Partial<State>);
 }
 function createMockProvider() {
   return {
@@ -640,6 +644,31 @@ describe('stories API', () => {
 
       const { indexError } = store.getState();
       expect(indexError).toBeDefined();
+    });
+    it('still reports a throwing filter as an index error with a commit-lagging store', async () => {
+      fetch.mockReturnValue(
+        Promise.resolve({ status: 200, json: () => ({ v: 5, entries: mockEntries }) } as any)
+      );
+      const moduleArgs = { ...createMockModuleArgs({}), store: createLaggingStoriesStore() };
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+      await api.fetchIndex();
+      const previousIndex = store.getState().index;
+
+      await store.setState({
+        filters: {
+          broken: () => {
+            throw new Error('filter failed');
+          },
+        },
+      });
+      await api.fetchIndex();
+
+      expect(store.getState().indexError).toEqual(new Error('filter failed'));
+      expect(store.getState().index).toBe(previousIndex);
+
+      // Status updates in later tests would otherwise re-run the throwing filter
+      await store.setState({ filters: {} });
     });
     it('watches for the INVALIDATE event and re-fetches -- and resets the hash', async () => {
       fetch.mockReturnValue(
@@ -1365,6 +1394,83 @@ describe('stories API', () => {
         parameters: { a: 'b' },
         args: { c: 'd' },
       });
+    });
+    it('still makes the update readable synchronously, as `useParameter` needs', async () => {
+      // `useParameter` reads the current story's parameters synchronously on STORY_PREPARED
+      const moduleArgs = {
+        ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }),
+        store: createLaggingStoriesStore(),
+      };
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider, store } = moduleArgs;
+      await api.setIndex({ v: 5, entries: mockEntries });
+
+      provider.channel.emit(STORY_PREPARED, {
+        id: 'component-a--story-1',
+        parameters: { backgrounds: { disable: false } },
+      });
+
+      expect(store.getState().index!['component-a--story-1']).toMatchObject({
+        prepared: true,
+        parameters: { backgrounds: { disable: false } },
+      });
+    });
+    it('still keeps the index and entry references stable on an update', async () => {
+      // The sidebar memoizes on `index`; `useParameter` holds the entry it read synchronously
+      const moduleArgs = {
+        ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }),
+        store: createLaggingStoriesStore(),
+      };
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider, store } = moduleArgs;
+      await api.setIndex({ v: 5, entries: mockEntries });
+      const index = store.getState().index;
+
+      provider.channel.emit(STORY_PREPARED, { id: 'component-a--story-1', parameters: {} });
+      const entry = store.getState().index!['component-a--story-1'];
+      await wait(0);
+
+      expect(store.getState().index).toBe(index);
+      expect(store.getState().index!['component-a--story-1']).toBe(entry);
+    });
+    it('keeps preparing a story that only a not-yet-committed index has', async () => {
+      const moduleArgs = {
+        ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }),
+        store: createLaggingStoriesStore(),
+      };
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider, store } = moduleArgs;
+      const { 'component-b--story-3': newStory, ...oldEntries } = mockEntries;
+      await api.setIndex({ v: 5, entries: oldEntries });
+
+      const firstSet = api.setIndex({ v: 5, entries: mockEntries });
+      provider.channel.emit(STORY_PREPARED, { id: 'component-b--story-3', parameters: {} });
+      const secondSet = api.setIndex({ v: 5, entries: mockEntries });
+      await Promise.all([firstSet, secondSet]);
+
+      expect(store.getState().index!['component-b--story-3']).toMatchObject({ prepared: true });
+    });
+    it('keeps stories added by a not-yet-committed setIndex', async () => {
+      const moduleArgs = {
+        ...createMockModuleArgs({ fullAPI: { setOptions: vi.fn() } }),
+        store: createLaggingStoriesStore(),
+      };
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider, store } = moduleArgs;
+
+      const { 'component-b--story-3': newStory, ...oldEntries } = mockEntries;
+      await api.setIndex({ v: 5, entries: oldEntries });
+
+      // A file write invalidates the index (adding story-3) and HMR re-prepares story-1
+      // before React has committed the new index.
+      const indexSet = api.setIndex({ v: 5, entries: mockEntries });
+      provider.channel.emit(STORY_PREPARED, { id: 'component-a--story-1', parameters: {} });
+      await indexSet;
+      await wait(0);
+
+      expect(store.getState().index).toHaveProperty('component-b--story-3');
+      expect(store.getState().filteredIndex).toHaveProperty('component-b--story-3');
+      expect(store.getState().index!['component-a--story-1']).toMatchObject({ prepared: true });
     });
     it('sets options the first time it is called', async () => {
       const fullAPI = { setOptions: vi.fn() };
@@ -2207,6 +2313,31 @@ describe('stories API', () => {
       } finally {
         vi.useRealTimers();
       }
+    });
+
+    it('keeps a not-yet-committed index when a status change rebuilds it', async () => {
+      fullStatusStore.unset();
+      const moduleArgs = { ...createMockModuleArgs({}), store: createLaggingStoriesStore() };
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+      const { 'component-b--story-3': newStory, ...oldEntries } = mockEntries;
+      await api.setIndex({ v: 5, entries: oldEntries });
+
+      const indexSet = api.setIndex({ v: 5, entries: mockEntries });
+      fullStatusStore.set([
+        {
+          typeId: 'addon-id',
+          storyId: 'component-a--story-1',
+          value: 'status-value:error',
+          title: 'title',
+          description: 'desc',
+        },
+      ]);
+      await indexSet;
+      await wait(600);
+
+      expect(store.getState().index).toHaveProperty('component-b--story-3');
+      expect(store.getState().internal_index!.entries).toHaveProperty('component-b--story-3');
     });
 
     it('applies the last status update after a burst (trailing edge of the throttle)', async () => {

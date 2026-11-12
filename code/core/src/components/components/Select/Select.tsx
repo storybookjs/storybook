@@ -194,7 +194,7 @@ const MinimalistPopover: FC<{
   return (
     <Overlay disableFocusManagement {...overlayProps}>
       <Underlay {...underlayProps} />
-      <Popover hasChrome ref={popoverRef} padding={0} {...positionProps}>
+      <Popover hasChrome ref={popoverRef} padding={0} scrollable={false} {...positionProps}>
         {children}
       </Popover>
     </Overlay>

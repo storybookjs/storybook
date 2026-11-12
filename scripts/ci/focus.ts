@@ -172,7 +172,6 @@ export const PATH_TRIGGERED_JOBS: readonly { job: JobOrNoOpJob; paths: readonly 
   { job: internalStorybookE2e, paths: INTERNAL_STORYBOOK_PATHS },
   { job: internalStorybookBuildE2e, paths: INTERNAL_STORYBOOK_PATHS },
   { job: testsStories_linux, paths: INTERNAL_STORYBOOK_PATHS },
-  { job: storybookChromatic, paths: INTERNAL_STORYBOOK_PATHS },
 ];
 
 export const selectPathTriggeredJobs = (changedFiles: readonly string[]): JobOrNoOpJob[] =>
@@ -200,6 +199,8 @@ export function getFocusJobs(changedFiles: readonly string[]): JobOrNoOpJob[] {
       ? testsUnit_linux
       : defineAffectedUnitTests(changedFiles),
     defineAffectedLintAndFormat(changedFiles),
+    // The internal Storybook loads stories from across `code`, and TurboSnap snapshots only those the diff affects.
+    storybookChromatic,
     ...selectPathTriggeredJobs(changedFiles),
     sandboxesNoOpJob,
     ...focused.flatMap((template) => defineSandboxFlow(template).jobs),

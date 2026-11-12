@@ -44,7 +44,7 @@ export function toCliMethodName(methodName: string): string {
 }
 
 /** `stories.findByComponent` -> `stories find-by-component`. */
-function toCliPath(method: ToolsetMethodId): string {
+export function toCliPath(method: ToolsetMethodId): string {
   const { toolsetId, methodName } = parseToolsetMethodId(method);
   return `${toolsetId} ${toCliMethodName(methodName)}`;
 }
@@ -71,6 +71,28 @@ export function getToolName(context: Pick<ToolsetCtx, 'transport'>) {
         return `npx storybook tools ${toCliPath(method)}`;
       case 'sdk':
         return method;
+      default: {
+        const exhaustive: never = context.transport;
+        return exhaustive;
+      }
+    }
+  };
+}
+
+/**
+ * Renders the command that prints the skill of a workflow step, for the active transport.
+ *
+ * Nothing over `sdk`: the skills name commands and MCP tools, not SDK methods.
+ */
+export function getSkillCommand(context: Pick<ToolsetCtx, 'transport'>) {
+  return (skill: 'test-stories' | 'ui-review'): string | undefined => {
+    switch (context.transport) {
+      case 'mcp':
+        return `npx storybook skills ${skill} --mcp`;
+      case 'cli':
+        return `npx storybook skills ${skill}`;
+      case 'sdk':
+        return undefined;
       default: {
         const exhaustive: never = context.transport;
         return exhaustive;

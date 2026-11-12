@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { analyzeStoryTemplate } from './story-docs-template-analysis.ts';
+import { analyzeStoryTemplate as analyze } from './story-docs-template-analysis.ts';
+
+// The analysis without where it put each expansion, which only the marked print reads.
+const analyzeStoryTemplate = (...input: Parameters<typeof analyze>) => {
+  const { replacements: _, ...analysis } = analyze(...input);
+  return analysis;
+};
 
 describe('analyzeStoryTemplate', () => {
   it('finds component references through control flow and object literals', () => {

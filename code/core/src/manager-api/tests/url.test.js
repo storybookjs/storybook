@@ -11,6 +11,7 @@ import { global } from '@storybook/global';
 import EventEmitter from 'events';
 
 import { init as initURL } from '../modules/url';
+import { createCommitLaggingStore } from '../test-utils/store';
 
 vi.mock('storybook/internal/client-logger');
 vi.mock('@storybook/global', () => ({
@@ -213,6 +214,22 @@ describe('queryParams', () => {
     expect(api.getQueryParam('foo')).toEqual('bar');
 
     expect(listener).toHaveBeenCalledWith({ foo: 'bar' });
+  });
+
+  it('keeps query params set in the same tick before the store commits them', async () => {
+    const store = createCommitLaggingStore({ customQueryParams: {} });
+    const { api } = initURL({
+      state: { location: { search: '' } },
+      navigate: vi.fn(),
+      store,
+      provider: { channel: new EventEmitter() },
+    });
+
+    api.setQueryParams({ foo: 'bar' });
+    api.setQueryParams({ baz: 'qux' });
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(store.getState().customQueryParams).toEqual({ foo: 'bar', baz: 'qux' });
   });
 });
 

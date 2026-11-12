@@ -2,12 +2,14 @@ import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { existsSync, rmSync } from 'node:fs';
 import { chmod, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
-import { homedir, userInfo } from 'node:os';
+import { userInfo } from 'node:os';
 
 import { findStorybookPackageRoot, normalizeAddonName } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import { join, resolve } from 'pathe';
+
+import { getInstanceRegistryDir } from '../../common/utils/storybook-config-dir.ts';
 
 import { CLAUDE_PREVIEW_AGENT_NAME } from '../../shared/constants/agent-provenance.ts';
 import { isClaudePreviewLaunch } from '../../shared/utils/agent-environment.ts';
@@ -97,10 +99,6 @@ export type RuntimeInstanceRegistryCleanupDecision =
   | { action: 'remove' }
   | { action: 'check-pid'; pid: number };
 
-export function getDefaultRuntimeInstanceRegistryDir() {
-  return join(homedir(), '.storybook', 'instances');
-}
-
 export function getStorybookBaseUrl(address: string) {
   const url = new URL(address);
   return `${url.origin}${url.pathname.replace(/\/$/, '')}`;
@@ -184,7 +182,7 @@ export function createRuntimeInstanceRecord({
 
 export async function writeRuntimeInstanceRecord(
   record: RuntimeInstanceRecord,
-  registryDir = getDefaultRuntimeInstanceRegistryDir()
+  registryDir = getInstanceRegistryDir()
 ) {
   await mkdir(registryDir, { recursive: true, mode: REGISTRY_DIR_MODE });
   // `mkdir` ignores `mode` for an existing dir and umask can clear bits, so modes are enforced.

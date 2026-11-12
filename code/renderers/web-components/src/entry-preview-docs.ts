@@ -1,6 +1,7 @@
 import { SourceType } from 'storybook/internal/docs-tools';
 import type { DecoratorFunction } from 'storybook/internal/types';
 
+import { printHole } from './docs/print-hole.ts';
 import { sourceDecorator } from './docs/sourceDecorator.ts';
 import type { WebComponentsRenderer } from './types.ts';
 
@@ -16,6 +17,7 @@ export const parameters = {
     source: {
       type: SourceType.DYNAMIC,
       language: 'html',
+      ...(useStaticServiceSnippets ? { printHole } : {}),
     },
     story: { inline: true },
   },

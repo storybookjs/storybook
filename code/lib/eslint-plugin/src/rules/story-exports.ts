@@ -8,9 +8,11 @@ import type { TSESTree } from '@typescript-eslint/types';
 
 import {
   getAllNamedExports,
-  getDescriptor,
+  getNonStoryExportsConfig,
   getMetaObjectExpression,
+  isFactoryStoryExport,
   isValidStoryExport,
+  parseFactoryMetaCall,
 } from '../utils/index.ts';
 import { isImportDeclaration } from '../utils/ast.ts';
 import { CategoryId } from '../utils/constants.ts';
@@ -54,6 +56,7 @@ export default createStorybookRule({
     let hasStoriesOfImport = false;
     let nonStoryExportsConfig: IncludeExcludeOptions = {};
     let meta: TSESTree.ObjectExpression | null;
+    let metaIsFactory = false;
     const namedExports: TSESTree.Identifier[] = [];
 
     return {
@@ -65,13 +68,16 @@ export default createStorybookRule({
       ExportDefaultDeclaration: function (node) {
         meta = getMetaObjectExpression(node, context);
         if (meta) {
-          try {
-            nonStoryExportsConfig = {
-              excludeStories: getDescriptor(meta, 'excludeStories'),
-              includeStories: getDescriptor(meta, 'includeStories'),
-            };
-          } catch (err) {
-            //
+          nonStoryExportsConfig = getNonStoryExportsConfig(meta);
+        }
+      },
+      CallExpression: function (node) {
+        const factoryMeta = parseFactoryMetaCall(node, context);
+        if (factoryMeta?.validPreviewImport) {
+          metaIsFactory = true;
+          if (factoryMeta.metaObject) {
+            meta = factoryMeta.metaObject;
+            nonStoryExportsConfig = getNonStoryExportsConfig(factoryMeta.metaObject);
           }
         }
       },
@@ -79,12 +85,14 @@ export default createStorybookRule({
         namedExports.push(...getAllNamedExports(node));
       },
       'Program:exit': function (program: TSESTree.Program) {
-        if (hasStoriesOfImport || !meta) {
+        if (hasStoriesOfImport || (!meta && !metaIsFactory)) {
           return;
         }
 
-        const storyExports = namedExports.filter((exp) =>
-          isValidStoryExport(exp, nonStoryExportsConfig)
+        const storyExports = namedExports.filter(
+          (exp) =>
+            isValidStoryExport(exp, nonStoryExportsConfig) &&
+            (!metaIsFactory || isFactoryStoryExport(exp))
         );
 
         if (storyExports.length) {

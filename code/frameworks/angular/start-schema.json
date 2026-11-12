@@ -68,7 +68,7 @@
     "open": {
       "type": "boolean",
       "description": "Whether to open Storybook automatically in the browser.",
-      "default": true
+      "default": false
     },
     "quiet": {
       "type": "boolean",

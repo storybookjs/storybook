@@ -3,11 +3,12 @@ import { relative } from 'node:path';
 import type { Options } from '../../types/index.ts';
 
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
-import type { ToolsetCatalogEntry } from '../tools/sdk/types.ts';
-import { renderCommandReference } from './command-reference.ts';
+import { ALL_MCP_TOOLSETS } from './availability.ts';
 import { buildComponentDocsSkill } from './content/build-component-docs-skill.ts';
-import { buildStoryInstructions } from './content/build-story-instructions.ts';
-import { buildUiWorkflowSkill } from './content/build-ui-workflow-skill.ts';
+import { buildTestStoriesSkill } from './content/build-test-stories-skill.ts';
+import { buildUiReviewSkill } from './content/build-ui-review-skill.ts';
+import { buildWriteStoriesSkill } from './content/build-write-stories-skill.ts';
+import type { SkillTextTransport } from './content/skill-vocabulary.ts';
 import type { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
 import { SKILLS, SKILL_IDS, isSkillId, type SkillId } from './content/skills.ts';
 import type { SkillInputs, resolveSkillInputs } from './inputs.ts';
@@ -21,6 +22,10 @@ export const SKILLS_OPTION_SPECS = [
     description: 'Storybook config directory of the target Storybook',
   },
   { flags: '--all', description: 'Print every skill in full' },
+  {
+    flags: '--mcp',
+    description: 'Name the tools of the Storybook MCP server instead of CLI commands',
+  },
   { flags: '-h, --help', description: 'Show this usage and every skill' },
 ] as const;
 
@@ -28,6 +33,9 @@ export type SkillsRunInput = {
   tokens: string[];
   help?: boolean;
   all?: boolean;
+  // Render the skills for an agent connected to the Storybook MCP server: MCP tool names
+  // instead of `npx storybook tools` commands.
+  mcp?: boolean;
   target: { cwd?: string; configDir?: string };
 };
 
@@ -53,8 +61,6 @@ export type SkillsRunDeps = {
   resolveSkillInputs: typeof resolveSkillInputs;
   getProjectInfo: typeof getProjectInfo;
   getSetupMarkdown: typeof getSetupMarkdownOutput;
-  // Reads the toolsets `loadStorybook` registered, so call it after the configuration has loaded.
-  describeToolsets: () => ToolsetCatalogEntry[];
 };
 
 export type SkillsIntent =
@@ -63,11 +69,24 @@ export type SkillsIntent =
   | { kind: 'get'; id: SkillId }
   | { kind: 'error'; message: string };
 
+// The skill ids of Storybook 10.6, which an `AGENTS.md` or a plugin from then can still name.
+function replacedSkillMessage(id: string, mcp: boolean): string | undefined {
+  const run = (skill: string) => `\`npx storybook skills ${skill}${mcp ? ' --mcp' : ''}\``;
+  if (id === 'stories') {
+    return `The \`stories\` skill is replaced by one skill per step: \`component-docs\` (look up the components to reuse), \`write-stories\` (the story rules), \`test-stories\` (run the story tests) and \`ui-review\` (publish the review). Run ${run('<id>')} for each of the four now, each in a command of its own, and follow each one at its step.`;
+  }
+  if (id === 'write-story') {
+    return `The \`write-story\` skill is renamed to \`write-stories\`. Run ${run('write-stories')}.`;
+  }
+  return undefined;
+}
+
 export function resolveSkillsIntent({
   tokens,
   help,
   all,
-}: Pick<SkillsRunInput, 'tokens' | 'help' | 'all'>): SkillsIntent {
+  mcp = false,
+}: Pick<SkillsRunInput, 'tokens' | 'help' | 'all' | 'mcp'>): SkillsIntent {
   const [id, ...rest] = tokens;
   if (help) {
     return { kind: 'catalog' };
@@ -75,12 +94,9 @@ export function resolveSkillsIntent({
   if (id === undefined) {
     return all ? { kind: 'all' } : { kind: 'catalog' };
   }
-  if (id === 'stories') {
-    return {
-      kind: 'error',
-      message:
-        'The `stories` skill is renamed to `ui-workflow`. Run `npx storybook skills ui-workflow`, or `npx storybook skills component-docs` to look up the components to reuse.',
-    };
+  const replaced = replacedSkillMessage(id, mcp);
+  if (replaced) {
+    return { kind: 'error', message: replaced };
   }
   if (!isSkillId(id)) {
     return {
@@ -119,6 +135,7 @@ export async function runSkillsCommand(
     const { docs, setupRun } = await serveSkills(
       ids,
       resolveStorybookConfigDir(input.target),
+      input.mcp ? 'mcp' : 'cli',
       deps
     );
     return {
@@ -141,10 +158,10 @@ class SkillsError extends Error {}
 async function serveSkills(
   ids: readonly SkillId[],
   configDir: string,
+  transport: SkillTextTransport,
   deps: SkillsRunDeps
 ): Promise<{ docs: string[]; setupRun?: SetupRun }> {
   let inputs: SkillInputs | undefined;
-  let toolsets: ToolsetCatalogEntry[] | undefined;
   let setupRun: SetupRun | undefined;
   const docs: string[] = [];
   for (const id of ids) {
@@ -154,8 +171,7 @@ async function serveSkills(
       setupRun = setup.run;
     } else {
       inputs ??= await loadInputs(configDir, deps);
-      toolsets ??= deps.describeToolsets();
-      docs.push(withCommandReference(id, inputs, toolsets));
+      docs.push(buildProjectSkill(id, inputs, transport));
     }
   }
   return { docs, setupRun };
@@ -217,42 +233,40 @@ function renderCatalogHelp(): string {
   ].join('\n');
 }
 
-function withCommandReference(
+function buildProjectSkill(
   id: Exclude<SkillId, 'setup'>,
   inputs: SkillInputs,
-  toolsets: ToolsetCatalogEntry[]
+  transport: SkillTextTransport
 ): string {
-  const text = assemble(id, inputs);
-  // These two teach each command inline, so a command reference would only repeat them.
-  if (id === 'ui-workflow' || id === 'component-docs') {
-    return text;
+  if (id === 'write-stories') {
+    return buildWriteStoriesSkill(inputs);
   }
-  const reference = renderCommandReference(text, toolsets);
-  return reference ? `${text.trimEnd()}\n\n${reference}` : text;
-}
-
-function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
+  // Over MCP, a skill only names the tools the server registers, with the same gates as
+  // addon-mcp's tool registry: the toolsets `main.ts` turns on, and for the docs tools the
+  // `componentsManifest` opt-in or composed Storybooks. The CLI docs commands need manifests or
+  // composed Storybooks.
+  const mcp = transport === 'mcp';
+  const toolsets = mcp ? inputs.mcpToolsets : ALL_MCP_TOOLSETS;
+  const docsSupported = (mcp ? inputs.docsEnabled : inputs.docsEnabledForCli) || inputs.composed;
+  const docsEnabled = toolsets.docs && docsSupported;
+  // A skill names the tools of its own toolset also when `main.ts` turns that toolset off, and
+  // says so: a client that turns it on with the `X-MCP-Toolsets` header has those tools.
   if (id === 'component-docs') {
-    return buildComponentDocsSkill();
+    return buildComponentDocsSkill({ transport, docsSupported, toolsetOff: !toolsets.docs });
   }
-  if (id === 'ui-workflow') {
-    return buildUiWorkflowSkill({
-      framework: inputs.framework,
-      csfFactories: inputs.csfFactories,
-      previewFile: inputs.previewFile,
-      typescript: inputs.typescript,
-      docsEnabled: inputs.docsEnabledForCli,
-      testSupported: inputs.testSupported,
-      a11yEnabled: inputs.a11yEnabled,
-      moduleGraphSupported: inputs.moduleGraphSupported,
-    });
-  }
-  return buildStoryInstructions({
-    transport: 'cli',
-    framework: inputs.framework,
-    renderer: inputs.renderer,
-    testSupported: inputs.testSupported,
-    a11yEnabled: inputs.a11yEnabled,
-    docsEnabled: inputs.docsEnabledForCli,
-  });
+  return id === 'test-stories'
+    ? buildTestStoriesSkill({
+        docsEnabled,
+        moduleGraphSupported: toolsets.dev && inputs.moduleGraphSupported,
+        transport,
+        testSupported: inputs.testSupported,
+        toolsetOff: !toolsets.test,
+        a11yEnabled: inputs.a11yEnabled,
+      })
+    : buildUiReviewSkill({
+        docsEnabled,
+        moduleGraphSupported: inputs.moduleGraphSupported,
+        transport,
+        toolsetOff: !toolsets.dev,
+      });
 }

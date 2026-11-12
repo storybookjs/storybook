@@ -5,7 +5,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createDocgenProvider } from '../../../../renderers/svelte/src/docgen/docgen-worker.ts';
 import { createIndexer } from '../../../../renderers/svelte/src/svelte-csf/indexer/index.ts';
@@ -60,18 +60,25 @@ const entries = new Map(
 
 const provider = createDocgenProvider()(async () => undefined);
 
-const withoutArgTypes = (
+const withoutOwnSnapshots = (
   payload: DocgenPayload | undefined
-): Omit<DocgenPayload, 'argTypes'> | undefined => {
+): Omit<DocgenPayload, 'argTypes' | 'apiDescription'> | undefined => {
   if (!payload) {
     return payload;
   }
-  const { argTypes: _argTypes, ...rest } = payload;
+  const { argTypes: _argTypes, apiDescription: _apiDescription, ...rest } = payload;
   return rest;
 };
 
 const readFixtureFile = (fixtureCase: string, fileName: string): string =>
   readFileSync(join(fixturesDir, fixtureCase, fileName), 'utf8');
+
+// The provider's first request builds its program; pay that once, outside the per-case timeout.
+beforeAll(async () => {
+  vi.spyOn(process, 'cwd').mockReturnValue(join(fixturesDir, fixtureCases[0]));
+  await provider({ entry: entries.get(fixtureCases[0])! });
+  vi.restoreAllMocks();
+}, 60_000);
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -97,11 +104,14 @@ describe('svelte server-side docgen baselines', () => {
         },
       ],
     });
-    await expect(withoutArgTypes(payload)).toMatchFileSnapshot(
+    await expect(withoutOwnSnapshots(payload)).toMatchFileSnapshot(
       join(testDir, 'osa-payload.snapshot')
     );
     await expect(payload?.description ?? '').toMatchFileSnapshot(
       join(testDir, 'osa-description.snapshot')
+    );
+    await expect(payload?.apiDescription ?? '').toMatchFileSnapshot(
+      join(testDir, 'osa-api-description.snapshot')
     );
   });
 });

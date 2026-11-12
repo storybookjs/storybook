@@ -7,7 +7,16 @@ import {
   renderFilingReport,
   type FilingStep,
 } from './filing.ts';
-import { asIssue, finding, issueOn, loaded, RUN_URL, single, VERSION } from './fixtures.ts';
+import {
+  asIssue,
+  finding,
+  issueOn,
+  loaded,
+  metadata,
+  RUN_URL,
+  single,
+  VERSION,
+} from './fixtures.ts';
 import { groupFindings, toProposal, writtenOn, type Cluster, type IssueHit } from './proposals.ts';
 import type { LoadedResult } from './results.ts';
 import type { Finding } from './schema.ts';
@@ -202,27 +211,29 @@ describe('planFiling', () => {
       expect(stepsFor(single(buildGroup))).toEqual(skipped);
     });
 
+    const elsewhere: LoadedResult = {
+      ...loaded('linux', 'claude', [build], 'e'.repeat(40)),
+      resultPath: 'results/other/linux/claude/result.json',
+    };
+    elsewhere.cycle.repo = 'storybookjs/other';
+    const [hmrAgain, buildTwice] = groupFindings([run, elsewhere]);
+    const withNewRepo: Cluster = { lead: hmrAgain!, members: [hmrAgain!, buildTwice!] };
+    const withoutKeys = issue.body.replace(/^sightings: .*\n/m, '');
+
     it('comments when a member is seen in another repo behind an unchanged lead', () => {
-      const elsewhere: LoadedResult = {
-        ...loaded('linux', 'claude', [build], 'e'.repeat(40)),
-        resultPath: 'results/other/linux/claude/result.json',
-      };
-      elsewhere.cycle.repo = 'storybookjs/other';
-      const [hmrAgain, buildTwice] = groupFindings([run, elsewhere]);
-
-      const steps = stepsFor({ lead: hmrAgain!, members: [hmrAgain!, buildTwice!] });
-
       expect(buildTwice!.occurrences).toHaveLength(2);
-      expect(kinds(steps)).toEqual(['push-cycle', 'comment']);
+      expect(kinds(stepsFor(withNewRepo))).toEqual(['push-cycle', 'comment']);
     });
 
     it('recognises a sighting that was filed before sightings had keys', () => {
-      const withoutKeys = issue.body.replace(/^sightings: .*\n/m, '');
-
       expect(withoutKeys).not.toBe(issue.body);
       expect(
         stepsFor({ lead: buildGroup!, members: [buildGroup!, hmrGroup!] }, [withoutKeys])
       ).toEqual(skipped);
+    });
+
+    it('comments for a member in another repo also when the issue has no sighting keys', () => {
+      expect(kinds(stepsFor(withNewRepo, [withoutKeys]))).toEqual(['push-cycle', 'comment']);
     });
   });
 
@@ -308,7 +319,7 @@ describe('renderDry', () => {
       [
         {
           ...issueOn(hmr, { number: 7, labels: ['qa:known'], state: 'open' }),
-          body: `fingerprints: ${hmr!.fingerprint}, ${build!.fingerprint}`,
+          body: metadata(hmr!.fingerprint, build!.fingerprint),
         },
       ],
       { runUrl: RUN_URL }

@@ -62,13 +62,19 @@ export const writtenOn = ({ body, comments }: Pick<QaIssue, 'body' | 'comments'>
 /**
  * Return the issues that carry any of the fingerprints, in the order given.
  *
- * A fingerprint that joined an issue through a comment counts like one in the body, so a later
- * sweep finds the issue by it.
+ * An issue carries the fingerprints in the metadata block that ends its body and each comment of the
+ * harness, so one that joined through a comment counts like one in the body. The same digits
+ * further up do not count: that text can come from an agent, and every fingerprint is public, so a
+ * finding could otherwise claim the issue of another one.
  */
 export const hitsFor = (issues: QaIssue[], fingerprints: string[]): QaIssue[] =>
-  issues.filter((issue) =>
-    writtenOn(issue).some((text) => fingerprints.some((fingerprint) => text.includes(fingerprint)))
-  );
+  issues.filter((issue) => {
+    const carried = writtenOn(issue).flatMap((text) => {
+      const fields = metadataOf(text);
+      return [fields?.get('fingerprint'), ...(fields?.get('fingerprints')?.split(', ') ?? [])];
+    });
+    return fingerprints.some((fingerprint) => carried.includes(fingerprint));
+  });
 
 // A closed hit is the "came back" case the issue proposal exists for, so only an open one counts as
 // filed.
@@ -215,16 +221,19 @@ const sightingsIn = (text: string): string[] => {
  * A sighting is one finding of the group in one run: its fingerprint with that run's repo, commit,
  * system, engine and version. A proposal is reported when the issue has each of its sightings, so
  * another order or another split of the same group adds no comment, and a member seen in a new repo
- * does.
+ * does. A block written before sightings had keys counts only for a proposal from a single run;
+ * for any other, reporting once more is safer than losing a sighting.
  */
 export const alreadyReported = (
   proposal: IssueProposal | CommentProposal,
   texts: string[]
 ): boolean => {
   const reported = new Set(texts.flatMap(sightingsIn));
+  // A block without keys names one repo and commit, so it can stand only for a proposal from one run.
   return (
     proposal.sightings.every((sighting) => reported.has(sighting)) ||
-    reported.has(blockSighting(new Map(metadataFields(proposal))))
+    (proposal.sources.length === 1 &&
+      reported.has(blockSighting(new Map(metadataFields(proposal)))))
   );
 };
 

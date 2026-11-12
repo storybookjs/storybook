@@ -2,7 +2,16 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
-import { asIssue, finding, issueOn, loaded, RUN_URL, single, VERSION } from './fixtures.ts';
+import {
+  asIssue,
+  finding,
+  issueOn,
+  loaded,
+  metadata,
+  RUN_URL,
+  single,
+  VERSION,
+} from './fixtures.ts';
 import {
   groupFindings,
   hitsFor,
@@ -31,11 +40,11 @@ describe('hitsFor', () => {
     state: 'open',
   });
 
-  it('returns only the issues whose body carries the fingerprint', () => {
+  it('returns only the issues whose metadata carries the fingerprint, alone or in a list', () => {
     const issues = [
-      issue(1, 'fingerprint: 0123456789abcdef'),
-      issue(2, 'fingerprint: fedcba9876543210'),
-      issue(3, 'seen again: 0123456789abcdef'),
+      issue(1, metadata('0123456789abcdef')),
+      issue(2, metadata('fedcba9876543210')),
+      issue(3, `Bug report\n\n${metadata('1111111111111111', '0123456789abcdef')}\n`),
     ];
 
     expect(hitsFor(issues, ['0123456789abcdef']).map((hit) => hit.number)).toEqual([1, 3]);
@@ -43,11 +52,28 @@ describe('hitsFor', () => {
 
   it('finds an issue by a fingerprint that only one of its comments carries', () => {
     const issues = [
-      issue(1, 'fingerprint: fedcba9876543210', ['seen again', 'fingerprints: 0123456789abcdef']),
-      issue(2, 'fingerprint: 1111111111111111'),
+      issue(1, metadata('fedcba9876543210'), [
+        'no metadata here',
+        `Seen again\n\n${metadata('2222222222222222', '0123456789abcdef')}`,
+      ]),
+      issue(2, metadata('1111111111111111')),
     ];
 
     expect(hitsFor(issues, ['0123456789abcdef']).map((hit) => hit.number)).toEqual([1]);
+  });
+
+  it('does not count a fingerprint in the text above the metadata block', () => {
+    const quoted = [
+      '```text',
+      'Same as 0123456789abcdef, see below.',
+      metadata('0123456789abcdef'),
+      '```',
+      '',
+      metadata('fedcba9876543210'),
+    ].join('\n');
+
+    expect(hitsFor([issue(1, quoted)], ['0123456789abcdef'])).toEqual([]);
+    expect(hitsFor([issue(1, quoted)], ['fedcba9876543210'])).toHaveLength(1);
   });
 });
 
@@ -221,7 +247,7 @@ describe('toProposal for a cluster', () => {
 
   const onBoth = (number: number, labels: string[], state: 'open' | 'closed') => ({
     ...issueOn(hmr, { number, labels, state }),
-    body: `fingerprints: ${hmr!.fingerprint}, ${build!.fingerprint}`,
+    body: metadata(hmr!.fingerprint, build!.fingerprint),
   });
 
   it('does not silence a lead that is on no issue because another member is on a qa:known issue', () => {

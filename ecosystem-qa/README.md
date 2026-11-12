@@ -141,6 +141,8 @@ When only some of them are, the whole group is reported, so the other findings a
 A group that matches an issue only by similarity (`existingIssue`) becomes a comment on it while it is open, even when that issue is `qa:known`, because only an exact fingerprint suppresses.
 A fingerprint that an open issue already carries stays on that issue: the collector rejects a grouping that puts it in a group with a fingerprint of another open issue, or in a group that names another issue, and says which group to split.
 The metadata of an issue lists every fingerprint of its group, so a later sweep finds it by any of them.
+Only the metadata block that ends an issue body or a comment counts: the same digits in the text above it tie nothing to the issue, because that text can come from an agent and every fingerprint is public.
+To tie a fingerprint to an issue by hand, add it to the `fingerprints:` line of the block in the issue body.
 A comment lists the fingerprints of its group the same way, and the collector reads the comments that the workflow account wrote on each listed issue, so a fingerprint that joined an issue through a comment is found too.
 A comment by anyone else never ties a fingerprint to an issue.
 An issue closed as completed after the tested prerelease was published counts as known for that version, because the fix is not in it yet; the collector reads the publish date from the `v<version>` release of `--repo`.
@@ -157,3 +159,5 @@ So the same findings in another order, or split into other groups, add nothing, 
 A later agent run of the same repo has another commit, so it is a new sighting and gets its comment.
 A run in which the agent committed nothing looks like the run before it on the same start commit, so it is not reported again.
 An issue or comment written before sightings had keys is compared as a whole, by its fingerprints, version, repo, commit, systems, engines and models.
+Such a block names one repo and commit, so it stands only for a proposal from a single run.
+A group that spans several runs is reported once more on such an issue, which is safer than losing a sighting.

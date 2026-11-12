@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { planFiling } from './filing.ts';
-import { asIssue, finding, loaded, RUN_URL, single } from './fixtures.ts';
+import { asIssue, finding, loaded, metadata, RUN_URL, single } from './fixtures.ts';
 import {
   groupingInput,
   groupingMode,
@@ -162,8 +162,8 @@ describe('groupingInput', () => {
     });
 
     const { findings } = groupingInput(groups, [
-      issue(7, 'open', `fingerprint: ${onOpen}`),
-      issue(8, 'closed', `fingerprint: ${onClosed}`),
+      issue(7, 'open', metadata(onOpen!)),
+      issue(8, 'closed', metadata(onClosed!)),
     ]);
 
     expect(findings.map(({ id, filedAs }) => ({ id, filedAs }))).toEqual([

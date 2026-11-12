@@ -75,7 +75,7 @@ describe('loadResults', () => {
       ...record(),
       request: {
         ...record().request,
-        entry: { ...ENTRY, repo: 'attacker/target' },
+        entry: { ...ENTRY, repo: 'storybookjs/storybook' },
       },
       headSha: 'f'.repeat(40),
     });

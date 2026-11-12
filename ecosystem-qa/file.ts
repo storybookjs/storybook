@@ -17,10 +17,11 @@ import {
   type FilingOutcome,
   type FilingStep,
 } from './lib/filing.ts';
-import { cycleRef, pushTokenEnv } from './lib/cycle.ts';
+import { cycleRef } from './lib/cycle.ts';
 import { listQaIssues, ghText, pages } from './lib/github.ts';
 import { copyRedacted } from './lib/redact.ts';
 import { hitsFor, type QaIssue } from './lib/proposals.ts';
+import { pushTokenEnv } from './lib/push-targets.ts';
 import { Proposal } from './lib/schema.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
 

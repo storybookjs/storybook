@@ -134,7 +134,7 @@ These automigrations are new in Storybook 11. To run one again later, use `npx s
 | `remove-experimental-review`      | Deletes the removed `features.experimentalReview` flag                                                                          |
 | `remove-legacy-feature-flags`     | Deletes the removed `features.argTypeTargetsV7` and `features.disallowImplicitActionsInRenderV8` flags                          |
 | `set-config-layout`               | Moves top-level `addons.setConfig` options into `layout` and `ui`                                                               |
-| `skills`                          | Replaces the `stories` agent skill with `ui-workflow` and `component-docs`                                                      |
+| `skills`                          | Replaces the `stories` agent skill with `component-docs`, `write-stories`, `test-stories` and `ui-review`                       |
 | `story-sort-to-main`              | Moves `parameters.options.storySort` from the preview to [`storySorts`](../api/main-config/main-config-story-sorts.mdx) in main |
 | `tag-filter-api`                  | Renames the tag options `excludeFromSidebar` and `excludeFromDocsStories`, and `experimental_setFilter(s)`                      |
 | `typescript-dependency`           | Adds `typescript@^6` when your project has no TypeScript                                                                        |
@@ -232,7 +232,8 @@ With `@storybook/angular-vite`, `BrowserAnimationsModule` and `NoopAnimationsMod
 
 - Svelte CSF supports only stories defined with `defineMeta` (Svelte CSF 3) or `preview.meta` (Svelte CSF 4). The automigration lists files that use `<Meta>`, `<Template>`, `let:args`, or the `id`, `autodocs`, and `source` props on `<Story>`. Migrate them by hand with the [Svelte CSF notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte-csf-legacy-story-syntax-removed).
 - If a stories file needs a preprocessor outside of `<style>`, for example for TypeScript enums, move that code to a separate module. See the [indexing notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte-csf-stories-files-are-indexed-without-preprocessors).
-- With SvelteKit 3, replace `$app/stores` with `$app/state`, and `parameters.sveltekit_experimental.stores` with `parameters.sveltekit_experimental.state`. See the [SvelteKit notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-require-v3-and-up).
+- With SvelteKit 3, replace `$app/stores` with `$app/state`. See the [SvelteKit notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-require-v3-and-up).
+- `parameters.sveltekit_experimental` is removed, and a story that still sets it fails with an error. Set up the SvelteKit mocks in `beforeEach` instead: import `goto` and the other functions from `$app/navigation`, set `page` from `$app/state`, and use `link`, `setAfterNavigate` and `formAction` from `@storybook/sveltekit/navigation.mock` and `@storybook/sveltekit/forms.mock`. See the [SvelteKit mocking notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-sveltekit_experimental-parameters-removed).
 
 #### Web Components
 

@@ -28,7 +28,12 @@ export type {
   ToolsetTelemetryReport,
   ToolsetTransport,
 } from './toolset-definition.ts';
-export { getToolName, parseToolsetMethodId, toMcpToolName } from './toolset-names.ts';
+export {
+  getSkillCommand,
+  getToolName,
+  parseToolsetMethodId,
+  toMcpToolName,
+} from './toolset-names.ts';
 export type { ToolsetMethodId } from './toolset-names.ts';
 export {
   clearToolsetRegistry,

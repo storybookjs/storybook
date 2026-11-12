@@ -1,6 +1,6 @@
 {
   "name": "@storybook/component-meta-typescript",
-  "version": "11.0.0-alpha.7",
+  "version": "11.0.0-beta.2",
   "private": true,
   "description": "The TypeScript layer of Storybook's component-meta docgen, on the compiler API and the native API of TypeScript 7.1",
   "keywords": [

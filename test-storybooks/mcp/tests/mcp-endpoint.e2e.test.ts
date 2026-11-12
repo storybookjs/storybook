@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { x } from 'tinyexec';
 import {
-	STORYBOOK_DIR,
 	createMCPRequestBody,
 	parseMCPResponse,
 	waitForMcpEndpoint,
 	killPort,
+	startStorybook,
 	stopStorybook,
 } from './helpers';
 
@@ -32,11 +32,7 @@ async function mcpRequest(method: string, params: any = {}, id: number = 1) {
 describe('MCP Endpoint E2E Tests', () => {
 	beforeAll(async () => {
 		await killPort(PORT);
-		storybookProcess = x('yarn', ['storybook'], {
-			nodeOptions: {
-				cwd: STORYBOOK_DIR,
-			},
-		});
+		({ storybookProcess } = await startStorybook('.storybook', PORT));
 
 		await waitForMcpEndpoint(MCP_ENDPOINT);
 	}, STARTUP_TIMEOUT);
@@ -482,6 +478,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				  },
 				  {
 				    "description": "Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.
+				First run npx storybook skills ui-review --mcp once and follow it.
 
 				## When to call
 				- Visual change (components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers'. Skip non-visual refactors unless side-effects are plausible. Start from stories-changed; use stories-find-by-component only for a file it leaves out, or when it is unavailable. Include changedFiles.
@@ -561,6 +558,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				  },
 				  {
 				    "description": "Run story tests.
+				First run npx storybook skills test-stories --mcp once and follow it: it has the rules for running the tests and fixing what fails.
 				Run them after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — shell-level substitutes like typecheck, lint, or package.json test scripts do not replace this.
 				Provide stories for focused runs (faster while iterating),
 				or omit stories to run all tests for full-project verification.

@@ -167,7 +167,7 @@ export const CHECKS = [
     phase: 'dev',
     tier: 'extended',
     probe:
-      'Without setting `features.componentsManifest`, fetch `http://localhost:6006/manifests/components.html` and `/manifests/components.json`. `n/a` for a framework without docgen. The page must list components and the JSON must name at least one component with props.',
+      '`n/a` unless the `framework` in `.storybook/main.*` uses the React, Vue 3 or Svelte renderer or is `@storybook/angular-vite`. Only those turn the manifest on by default, so the 404 of any other framework (`@storybook/angular`, Web Components, Preact, HTML, Ember, Server) is correct and not a finding. Also `n/a` when the project sets `features.componentsManifest: false`, or `features.docgenServer: false` with `@storybook/angular-vite`. Otherwise, without setting `features.componentsManifest` yourself, fetch `http://localhost:6006/manifests/components.html` and `/manifests/components.json`. The page must list components and the JSON must name at least one component with props.',
   },
   {
     id: 'test.coverage-cli',

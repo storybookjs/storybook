@@ -1,0 +1,10 @@
+[
+  {
+    "message": "__STORYBOOK_MODULE_CLIENT_LOGGER__ is not defined",
+    "stack": "ReferenceError: __STORYBOOK_MODULE_CLIENT_LOGGER__ is not defined\n    at node_modules/.cache/sb-vite-plugin-externals/storybook/internal/client-logger.js (http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.1/b124b7c47095b41d5ea618f285d096b0b3bcf3b8444e7fa72f6a80c348532f13/sb-vite/deps/chunk-I76ZU2R4.js?v=fac40dde:8:22)\n    at __require2 (http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.1/b124b7c47095b41d5ea618f285d096b0b3bcf3b8444e7fa72f6a80c348532f13/sb-vite/deps/chunk-WJE6GH6M.js?v=fac40dde:19:52)\n    at http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.1/b124b7c47095b41d5ea618f285d096b0b3bcf3b8444e7fa72f6a80c348532f13/sb-vite/deps/chunk-ZZ7GQLIA.js?v=fac40dde:365:36"
+  },
+  {
+    "message": "__STORYBOOK_MODULE_CLIENT_LOGGER__ is not defined",
+    "stack": "ReferenceError: __STORYBOOK_MODULE_CLIENT_LOGGER__ is not defined\n    at node_modules/.cache/sb-vite-plugin-externals/storybook/internal/client-logger.js (http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.1/b124b7c47095b41d5ea618f285d096b0b3bcf3b8444e7fa72f6a80c348532f13/sb-vite/deps/chunk-I76ZU2R4.js?v=fac40dde:8:22)\n    at __require2 (http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.1/b124b7c47095b41d5ea618f285d096b0b3bcf3b8444e7fa72f6a80c348532f13/sb-vite/deps/chunk-WJE6GH6M.js?v=fac40dde:19:52)\n    at http://localhost:6006/node_modules/.cache/storybook/11.0.0-beta.1/b124b7c47095b41d5ea618f285d096b0b3bcf3b8444e7fa72f6a80c348532f13/sb-vite/deps/chunk-ZZ7GQLIA.js?v=fac40dde:365:36"
+  }
+]

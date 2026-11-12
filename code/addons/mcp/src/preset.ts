@@ -69,7 +69,7 @@ function buildComposition(
   return {
     sources,
     compositionAuth,
-    manifestAccessFor: (_req: IncomingMessage) => ({ manifestProvider, localAccess }),
+    manifestAccess: { manifestProvider, localAccess },
     // Same gates the MCP server uses to register these tools, so the page can't
     // claim a tool is available when it isn't (and vice versa).
     availability: getEffectiveToolAvailability(rawAvailability, { multiSource }),
@@ -194,7 +194,7 @@ export const experimental_devServer: PresetPropertyFn<
 
   app!.post(endpoint, async (req, res) => {
     if (rejectDisallowedOrigin(req, res)) return;
-    const { sources, compositionAuth, manifestAccessFor } = await composition;
+    const { sources, compositionAuth, manifestAccess } = await composition;
     if (requireAuth(req, res, compositionAuth)) return;
     if (rejectNonJsonBody(req, res)) return;
 
@@ -207,7 +207,7 @@ export const experimental_devServer: PresetPropertyFn<
       basePath,
       endpoint,
       sources,
-      ...manifestAccessFor(req),
+      ...manifestAccess,
       compositionAuth,
     });
   });
@@ -216,7 +216,7 @@ export const experimental_devServer: PresetPropertyFn<
 
   app!.get(endpoint, async (req, res) => {
     if (rejectDisallowedOrigin(req, res)) return;
-    const { sources, compositionAuth, manifestAccessFor, availability } = await composition;
+    const { sources, compositionAuth, manifestAccess, availability } = await composition;
     if (!req.headers['accept']?.includes('text/html')) {
       if (requireAuth(req, res, compositionAuth)) return;
 
@@ -229,7 +229,7 @@ export const experimental_devServer: PresetPropertyFn<
         basePath,
         endpoint,
         sources,
-        ...manifestAccessFor(req),
+        ...manifestAccess,
         compositionAuth,
       });
     }

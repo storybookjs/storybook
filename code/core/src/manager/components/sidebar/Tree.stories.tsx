@@ -1469,9 +1469,10 @@ export const KeyboardNavigation: Story = {
 };
 
 /**
- * Hovering a branch asks the preview to load the story a press on it would most likely open: a
- * component's first story, a group's hoisted story, a story with tests itself rather than its
- * "Story" row. A root or group whose first child is another branch has nothing to load.
+ * Hovering a row asks the preview to load the story a press on it would most likely open: a leaf
+ * loads itself, a story with tests and its "Story" row load the story, a branch loads its first
+ * story (a component's first story, a group's hoisted story). A root or group whose first child is
+ * another branch has nothing to load.
  */
 export const HoverPreloadsFirstStory: Story = {
   args: {
@@ -1491,16 +1492,21 @@ export const HoverPreloadsFirstStory: Story = {
 
     await userEvent.hover(row('root-1'));
     await userEvent.hover(row('root-1-child-a1'));
-    await userEvent.hover(row('root-1-child-a2--grandchild-a1-2'));
     expect(preloadedIds()).toEqual([]);
 
+    await userEvent.hover(row('root-1-child-a2--grandchild-a1-2'));
     await userEvent.hover(row('root-1-child-a2--grandchild-a1-1'));
+    await userEvent.hover(row(storyRowId('root-1-child-a2--grandchild-a1-1')));
+    await userEvent.hover(row('root-1-child-a2--grandchild-a1-1:test1'));
     await userEvent.hover(row('group-1'));
     await userEvent.hover(row('root-3'));
     await userEvent.hover(row('root-3-child-a2'));
     await waitFor(() =>
       expect(preloadedIds()).toEqual([
+        ['root-1-child-a2--grandchild-a1-2'],
         ['root-1-child-a2--grandchild-a1-1'],
+        ['root-1-child-a2--grandchild-a1-1'],
+        ['root-1-child-a2--grandchild-a1-1:test1'],
         ['group-1--child-b1'],
         ['root-3--child-a1'],
         ['root-3-child-a2--grandchild-a1-1'],

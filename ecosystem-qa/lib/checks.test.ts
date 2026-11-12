@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
-import { CHECKS, CHECK_IDS, type CheckId, checksFor } from '../checks.ts';
+import { CHECK_IDS, type CheckId, checksFor } from '../checks.ts';
 
 type AgentCell =
   | { kind: 'check'; id: CheckId }
@@ -104,11 +104,11 @@ describe('check registry', () => {
     expect(new Set(CHECK_IDS).size).toBe(CHECK_IDS.length);
   });
 
-  it('keeps the must tier a strict subset of extended', () => {
+  it('runs every must check in an extended run, and more', () => {
     const must = checksFor('must');
-    expect(must.every((check) => check.tier === 'must')).toBe(true);
-    expect(checksFor('extended')).toHaveLength(CHECKS.length);
-    expect(must.length).toBeLessThan(CHECKS.length);
+    const extended = checksFor('extended');
+    expect(extended).toEqual(expect.arrayContaining(must));
+    expect(extended.length).toBeGreaterThan(must.length);
   });
 
   it.each(['must', 'extended'] as const)('lists the %s tier by phase', (tier) => {

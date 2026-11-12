@@ -151,7 +151,7 @@ export const CHECKS = [
     phase: 'dev',
     tier: 'extended',
     probe:
-      'While the dev server runs, copy one stories file to a new name in the same directory, so that the `stories` globs in `.storybook/main.*` match it. If the copy sets a `title`, change it, or its ids collide with the original. Poll `/index.json` until an id of the copy appears or 60 seconds pass. Then screenshot one story of the copy with the shot tool: it must render and its `.errors.json` must be empty. Delete the copy afterwards.',
+      'While the dev server runs, copy one stories file to a new name in the same directory, so that the `stories` globs in `.storybook/main.*` match it. If the copy sets a `title` or an `id` in its meta, or a story sets `parameters.__id`, change each of them in the copy, or its ids collide with the original and the index reports a duplicate. Poll `/index.json` until an id of the copy appears or 60 seconds pass. Then screenshot one story of the copy with the shot tool: it must render and its `.errors.json` must be empty. Delete the copy afterwards.',
   },
   {
     id: 'core.hmr.delete-file',

@@ -29,6 +29,7 @@ import { answerOfFinishedAgent, QA_RESULT_TAG } from './lib/answer.ts';
 import { loadCatalogEntry } from './lib/catalog.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
+import { liveLine } from './lib/live-log.ts';
 import {
   agentOutput,
   Effort,
@@ -41,7 +42,7 @@ import {
 } from './lib/schema.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
 import type { Outcome, RunRequest } from './lib/types.ts';
-import { redactTree } from './lib/redact.ts';
+import { redactSecrets, redactTree } from './lib/redact.ts';
 import { upgraded } from './lib/results.ts';
 import { usageFromStream } from './lib/usage.ts';
 
@@ -402,12 +403,8 @@ const runSandcastle = async (
         onAgentStreamEvent: (event) => {
           if (event.type === 'raw') {
             stream.write(`${event.line}\n`);
-          } else if (event.type === 'text') {
-            console.log(event.message.trim());
-          } else if (event.type === 'toolCall') {
-            console.log(
-              `▶ ${event.name}(${event.formattedArgs.replace(/\s+/g, ' ').slice(0, 300)})`
-            );
+          } else if (event.type === 'text' || event.type === 'toolCall') {
+            console.log(liveLine(event));
           }
         },
       },
@@ -553,7 +550,9 @@ const result = writeResult(request, outcome, startedAt);
 // The whole output directory becomes a public artifact, agent stream and session included, and the
 // agent holds the provider key, so nothing with a credential shape may stay in it.
 redactTree(request.outDir);
-const summary = summarize(result, relative(process.cwd(), join(request.outDir, 'result.json')));
+const summary = redactSecrets(
+  summarize(result, relative(process.cwd(), join(request.outDir, 'result.json')))
+);
 console.log(summary);
 if (process.env.GITHUB_STEP_SUMMARY) {
   writeStepSummary(

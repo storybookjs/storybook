@@ -25,7 +25,7 @@ const parseAgentCell = (cell: string): AgentCell | undefined => {
   if (isCheckId(check?.[1])) {
     return { kind: 'check', id: check[1] };
   }
-  const monorepo = /^monorepo: (\S.*)$/.exec(cell);
+  const monorepo = /^monorepo: (\S.*?)(?:; manual: \S.*)?$/.exec(cell);
   if (monorepo) {
     const paths = backticked(monorepo[1]!);
     return paths.length > 0 ? { kind: 'monorepo', paths } : undefined;
@@ -146,7 +146,8 @@ describe('checklist Agent column', () => {
         'core.docs-render; manual: the rest of the row',
         'monorepo: `lib/a.test.ts` in every job',
         'manual: wording',
-        'manual: wording; e2e: `e2e-sandbox/a.spec.ts`'
+        'manual: wording; e2e: `e2e-sandbox/a.spec.ts`',
+        'monorepo: `lib/a.test.ts`; manual: the `--flag` no test covers'
       )
     );
     expect(problems).toEqual([]);
@@ -156,6 +157,7 @@ describe('checklist Agent column', () => {
       { row: 'ROW-3', agent: { kind: 'monorepo', paths: ['lib/a.test.ts'] } },
       { row: 'ROW-4', agent: { kind: 'manual', paths: [] } },
       { row: 'ROW-5', agent: { kind: 'manual', paths: ['e2e-sandbox/a.spec.ts'] } },
+      { row: 'ROW-6', agent: { kind: 'monorepo', paths: ['lib/a.test.ts'] } },
     ]);
   });
 

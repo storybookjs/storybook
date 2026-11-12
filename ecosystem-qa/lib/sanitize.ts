@@ -25,12 +25,10 @@ const isStorybookLink = (candidate: string): boolean => {
   }
 };
 
-/**
- * Make a line of agent prose safe for an issue title: capped, no HTML, no links off storybookjs,
- * and every mention and issue reference inside a code span.
- *
- * Backticks become quotes first, so the only code spans are the ones added here.
- */
+// Make a line of agent prose safe for an issue title: capped, no HTML, no links off storybookjs,
+// and every mention and issue reference inside a code span.
+//
+// Backticks become quotes first, so the only code spans are the ones added here.
 export const sanitizeTitle = (text: string): string =>
   cap(redactSecrets(text), LIMITS.title)
     .replaceAll('`', "'")
@@ -42,11 +40,9 @@ export const sanitizeTitle = (text: string): string =>
     .replace(/(^|[^\w`])(@[a-z0-9][\w.-]*(?:\/[\w.-]+)?)/gi, '$1`$2`')
     .replace(/(^|[^\w`&/])((?:[\w.-]+\/[\w.-]+)?#\d+)\b/g, '$1`$2`');
 
-/**
- * Cap the prose fields of a finding for an issue body, where each one is rendered inside a fence.
- *
- * Only the first repro steps are kept. The title is left alone; `sanitizeTitle` owns it.
- */
+// Cap the prose fields of a finding for an issue body, where each one is rendered inside a fence.
+//
+// Only the first repro steps are kept. The title is left alone; `sanitizeTitle` owns it.
 export const sanitizeFinding = (finding: Finding): Finding => ({
   ...finding,
   actual: cap(redactSecrets(finding.actual), LIMITS.actual),

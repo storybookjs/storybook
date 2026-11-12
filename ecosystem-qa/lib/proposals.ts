@@ -134,7 +134,7 @@ const reproductionLink = (cycle: Cycle): string[] => {
     return [
       `${repoUrl}/tree/${cycle.headSha}`,
       '',
-      `That commit holds the upgraded state, published in ${cycle.repo} as \`${ref}\` so that no workflow ran it. To work with it: \`git fetch ${repoUrl} ${ref} && git checkout FETCH_HEAD\`. To turn it into a branch after reading the diff: \`git push ${repoUrl} ${ref}:refs/heads/${cycle.branch}\`.`,
+      `That commit holds the upgraded state, published in ${cycle.repo} as \`${ref}\` so that no workflow ran it. To work with it: \`git fetch ${repoUrl} ${ref} && git checkout FETCH_HEAD\`. To turn it into a branch after reading the diff: \`git push ${repoUrl} ${cycle.headSha}:refs/heads/${cycle.branch}\`.`,
     ];
   }
   return [
@@ -152,12 +152,10 @@ const reproLines = (raw: Finding, capped: Finding): string[] => {
   ];
 };
 
-/**
- * Render the bug-template issue body, linking each evidence file through `evidenceUrl`.
- *
- * Every field the agent wrote is capped and rendered inside a fence, so none of it can mention,
- * reference, link or format anything.
- */
+// Render the bug-template issue body, linking each evidence file through `evidenceUrl`.
+//
+// Every field the agent wrote is capped and rendered inside a fence, so none of it can mention,
+// reference, link or format anything.
 export const renderIssueBody = (
   proposal: IssueProposal,
   evidenceUrl: (name: string) => string | null

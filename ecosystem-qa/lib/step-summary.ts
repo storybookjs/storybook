@@ -1,10 +1,12 @@
 import { appendFileSync } from 'node:fs';
 
-/** Append Markdown to the GitHub Actions Step Summary, or print it outside Actions. */
+import { redactSecrets } from './redact.ts';
+
 export const writeStepSummary = (markdown: string) => {
+  const safe = redactSecrets(markdown);
   if (process.env.GITHUB_STEP_SUMMARY) {
-    appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${markdown}\n`);
+    appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${safe}\n`);
   } else {
-    console.log(markdown);
+    console.log(safe);
   }
 };

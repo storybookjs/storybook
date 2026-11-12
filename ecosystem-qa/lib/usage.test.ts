@@ -77,6 +77,36 @@ describe('usageFromStream', () => {
     });
   });
 
+  it('falls back to the per-call sum when one of several result lines lacks per-model totals', () => {
+    const file = streamFile([
+      assistant('msg_1', {
+        input_tokens: 10,
+        output_tokens: 50,
+        cache_read_input_tokens: 0,
+        cache_creation_input_tokens: 0,
+      }),
+      { type: 'result', usage: { input_tokens: 999999, output_tokens: 999999 } },
+      {
+        type: 'result',
+        model_usage_since_last_result: {
+          'claude-test': {
+            inputTokens: 1,
+            outputTokens: 2,
+            cacheReadInputTokens: 0,
+            cacheCreationInputTokens: 0,
+            costUSD: 9,
+          },
+        },
+      },
+    ]);
+
+    expect(usageFromStream(file, 'claude', 'claude-test', PRICES)).toMatchObject({
+      inputTokens: 10,
+      outputTokens: 50,
+      priceSource: 'table',
+    });
+  });
+
   it('counts each Claude call once, using the last copy of its usage, when no result line has per-model totals', () => {
     const file = streamFile([
       assistant('msg_1', {

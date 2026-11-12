@@ -192,27 +192,27 @@ const runStep = (step: FilingStep): string | undefined => {
 const firstLine = (error: unknown) =>
   (error instanceof Error ? error.message : String(error)).split('\n')[0]!.slice(0, 160);
 
+const reportedOn = (proposal: Proposal, issues: QaIssue[]): QaIssue | undefined => {
+  if (proposal.kind === 'issue') {
+    return openHit(
+      hitsFor(issues, [
+        proposal.fingerprint,
+        ...proposal.related.map((related) => related.fingerprint),
+      ])
+    );
+  }
+  return proposal.kind === 'comment'
+    ? issues.find((issue) => issue.number === proposal.existingIssue)
+    : undefined;
+};
+
 const fileProposal = (proposal: Proposal, issues: QaIssue[]): FilingOutcome => {
+  const target = reportedOn(proposal, issues);
   const steps = planFiling(proposal, {
     repo,
     evidenceLinks: 'assets',
-    ...(proposal.kind === 'issue'
-      ? {
-          filedAs: openHit(
-            hitsFor(issues, [
-              proposal.fingerprint,
-              ...proposal.related.map((related) => related.fingerprint),
-            ])
-          )?.number,
-        }
-      : {}),
-    ...(proposal.kind === 'comment'
-      ? {
-          existing: issues
-            .filter((issue) => issue.number === proposal.existingIssue)
-            .flatMap(writtenOn),
-        }
-      : {}),
+    ...(proposal.kind === 'issue' && target ? { filedAs: target.number } : {}),
+    existing: target ? writtenOn(target) : [],
   });
   let detail = '';
   for (const step of steps) {

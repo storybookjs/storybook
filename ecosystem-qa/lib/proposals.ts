@@ -76,7 +76,7 @@ export const hitsFor = (issues: QaIssue[], fingerprints: string[]): QaIssue[] =>
 
 // A closed hit is the "came back" case the issue proposal exists for, so only an open one counts as
 // filed.
-export const openHit = (hits: IssueHit[]): IssueHit | undefined =>
+export const openHit = <Hit extends IssueHit>(hits: Hit[]): Hit | undefined =>
   hits.find((hit) => hit.state === 'open');
 
 // Map each fingerprint that an open issue carries to that issue, the first one in the order given.

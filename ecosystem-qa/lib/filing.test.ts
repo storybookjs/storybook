@@ -122,14 +122,36 @@ describe('planFiling', () => {
     ]);
   });
 
-  it('files nothing for a fingerprint that is already on an issue', () => {
-    const steps = planFiling(asIssue(proposalFor()), {
+  it('files nothing when the issue filed in the meantime has every sighting of the proposal', () => {
+    const proposal = asIssue(proposalFor());
+    const body = issueBody(planFiling(proposal, { repo: REPO, evidenceLinks: 'assets' }));
+
+    expect(
+      planFiling(proposal, { repo: REPO, evidenceLinks: 'assets', filedAs: 12, existing: [body] })
+    ).toEqual([{ kind: 'skip', reason: 'already filed as #12' }]);
+  });
+
+  it('comments on an issue filed in the meantime that lacks a finding of the group', () => {
+    const build = finding({ checkId: 'build.static', title: 'Build fails', errorText: 'ENOSPC' });
+    const [hmrGroup, buildGroup] = groupFindings([loaded('linux', 'claude', [finding(), build])]);
+    const alone = asIssue(toProposal(single(buildGroup), [], { runUrl: RUN_URL }));
+    const both = asIssue(
+      toProposal({ lead: hmrGroup!, members: [hmrGroup!, buildGroup!] }, [], { runUrl: RUN_URL })
+    );
+
+    const steps = planFiling(both, {
       repo: REPO,
       evidenceLinks: 'assets',
       filedAs: 12,
+      existing: [issueBody(planFiling(alone, { repo: REPO, evidenceLinks: 'assets' }))],
     });
 
-    expect(steps).toEqual([{ kind: 'skip', reason: 'already filed as #12' }]);
+    expect(kinds(steps)).toEqual(['push-cycle', 'comment']);
+    expect(steps.at(-1)).toMatchObject({
+      kind: 'comment',
+      issue: 12,
+      body: expect.stringContaining(hmrGroup!.fingerprint),
+    });
   });
 
   it('pushes the cycle ref, then comments once on the matching issue', () => {

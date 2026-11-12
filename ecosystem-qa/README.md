@@ -151,7 +151,8 @@ An issue closed before that, or closed for any other reason, does not count: the
 An issue counts as already filed only while it carries the `internal-qa` label.
 It checks first that the milestone is open and every label exists, and files nothing otherwise.
 A proposal that fails does not stop the others; the job writes a filed and failed table to the Step Summary and fails at the end.
-Rerunning the job is safe: a filed fingerprint and a repeated comment are skipped, and evidence already on `qa-assets` makes no new commit.
+Rerunning the job is safe: an issue it already created and a repeated comment are skipped, and evidence already on `qa-assets` makes no new commit.
+When an open issue with one of a proposal's fingerprints appeared after the collect, for example from another sweep, no second issue is created: what that issue lacks goes on it as a comment.
 Filing the same results again from another run, for example with `from_runs`, is safe too.
 A sighting is one finding of a group in one agent run: its fingerprint with that run's repo, commit, system, engine and version, whichever run collected it.
 The metadata of an issue or comment lists the keys of its sightings, and a proposal adds a comment only when the issue lacks at least one of them.

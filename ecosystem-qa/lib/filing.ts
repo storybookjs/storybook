@@ -6,7 +6,7 @@ import {
   renderCommentBody,
   renderIssueBody,
 } from './proposals.ts';
-import type { Cycle, EvidenceFile, Proposal } from './schema.ts';
+import type { CommentProposal, Cycle, EvidenceFile, Proposal } from './schema.ts';
 
 export const ASSETS_BRANCH = 'qa-assets';
 // Well under GitHub's 100 MB push limit, and small enough that a release cycle's evidence does not
@@ -31,8 +31,9 @@ export interface FilingOptions {
   repo: string;
   // `assets` links evidence on the qa-assets branch of `repo`; `local` links the downloaded files.
   evidenceLinks: 'assets' | 'local';
+  // The open issue that carries a finding of an issue proposal since the collect.
   filedAs?: number;
-  // What the issue a comment proposal targets already says: its own body and its comments.
+  // What the issue named by `filedAs` or by a comment proposal already says: its body and comments.
   existing?: string[];
 }
 
@@ -59,17 +60,23 @@ export const planFiling = (proposal: Proposal, options: FilingOptions): FilingSt
     cycle.headSha && cycle.bundle
       ? [{ kind: 'push-cycle' as const, ...cycle, headSha: cycle.headSha, bundle: cycle.bundle }]
       : [];
+  const commentSteps = (comment: CommentProposal, alreadyThere: string): FilingStep[] =>
+    alreadyReported(comment, options.existing ?? [])
+      ? [{ kind: 'skip', reason: alreadyThere }]
+      : [
+          ...pushCycle(comment.cycle),
+          { kind: 'comment', issue: comment.existingIssue, body: renderCommentBody(comment) },
+        ];
   if (proposal.kind === 'comment') {
-    if (alreadyReported(proposal, options.existing ?? [])) {
-      return [{ kind: 'skip', reason: `#${proposal.existingIssue} already has this sighting` }];
-    }
-    return [
-      ...pushCycle(proposal.cycle),
-      { kind: 'comment', issue: proposal.existingIssue, body: renderCommentBody(proposal) },
-    ];
+    return commentSteps(proposal, `#${proposal.existingIssue} already has this sighting`);
   }
   if (options.filedAs !== undefined) {
-    return [{ kind: 'skip', reason: `already filed as #${options.filedAs}` }];
+    // An issue that appeared since the collect may hold only some of the group, so what it lacks
+    // is reported on it like any later sighting.
+    return commentSteps(
+      { ...proposal, kind: 'comment', existingIssue: options.filedAs },
+      `already filed as #${options.filedAs}`
+    );
   }
   const { cycle, evidence, assetDir } = proposal;
   // A file over the cap stays out of the push, which would otherwise fail and take the issue with

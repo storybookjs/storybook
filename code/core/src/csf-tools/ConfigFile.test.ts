@@ -1,10 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
 import { formatConfig, loadConfig, printConfig } from './ConfigFile.ts';
 import type { CsfExpression } from './CsfObject.ts';
 import { parseExpression, textOf } from './estree/ast.ts';
+
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -29,6 +33,91 @@ const appendToArray = (path: string[], value: any, source: string) => {
 };
 
 describe('ConfigFile', () => {
+  beforeEach(() => {
+    vi.mocked(logger.debug).mockImplementation(() => {});
+    vi.mocked(logger.warn).mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.mocked(logger.debug).mockReset();
+    vi.mocked(logger.warn).mockReset();
+  });
+
+  describe('imported default export diagnostics', () => {
+    it.each([
+      "import { config } from './shared'; export default config;",
+      "import { config as preview } from './shared'; export default preview;",
+      "import config from './shared'; export default config;",
+      "import * as config from './shared'; export default config;",
+      "import config from './shared'; export default config as object;",
+      "import config from './shared'; export default config satisfies object;",
+      "import config from './shared'; export default config!;",
+    ])('explains a direct import without changing config reads or writes: %s', (source) => {
+      const config = loadConfig(source, 'preview.ts');
+      const before = printConfig(config).code;
+      config.parse();
+
+      expect(vi.mocked(logger.debug)).toHaveBeenCalledExactlyOnceWith(dedent`
+        Cannot statically read the default export in 'preview.ts': its value comes from './shared'.
+        Storybook does not follow imports when analyzing this config file.
+      `);
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
+      expect(config.mutationDiagnostics).toEqual([]);
+      expect(config.getValue(['tags'])).toBeUndefined();
+      expect(config.set(['tags'], ['audit'])).toMatchObject({ ok: false, changed: false });
+      expect(config.changed).toBe(false);
+      expect(printConfig(config).code).toBe(before);
+    });
+
+    it('describes the config without inventing a file name', () => {
+      loadConfig("import config from './another-module'; export default config;").parse();
+      expect(vi.mocked(logger.debug)).toHaveBeenCalledExactlyOnceWith(dedent`
+        Cannot statically read the default export in a config file: its value comes from './another-module'.
+        Storybook does not follow imports when analyzing this config file.
+      `);
+    });
+
+    it.each([
+      "import type { config } from './shared'; export default config;",
+      "import { type config } from './shared'; export default config;",
+      'export default unknownConfig;',
+      "import * as config from './shared'; export default config.preview;",
+      "import config from './shared'; export default definePreview(config);",
+      "import config from './shared'; const local = config; export default local;",
+    ])('retains the existing diagnostic for unsupported expressions: %s', (source) => {
+      loadConfig(source).parse();
+      expect(vi.mocked(logger.debug)).toHaveBeenCalledExactlyOnceWith(
+        expect.stringContaining('CSF Parsing error in a config file:')
+      );
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      "import config from './shared'; export { config as default };",
+      "import config from './shared'; export { config as 'default' };",
+      "export { config as default } from './shared';",
+      "export { default } from './shared';",
+    ])('keeps re-exports silent and unmodified: %s', (source) => {
+      const config = loadConfig(source).parse();
+      expect(vi.mocked(logger.debug)).not.toHaveBeenCalled();
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
+      expect(config.changed).toBe(false);
+      expect(printConfig(config).code).toBe(source);
+    });
+
+    it.each([
+      'export default { tags: ["autodocs"] };',
+      'const config = { tags: ["autodocs"] }; export default config;',
+      'const config = { tags: ["autodocs"] }; export { config as default };',
+      'export default definePreview({ tags: ["autodocs"] });',
+    ])('keeps local config values readable without a diagnostic: %s', (source) => {
+      const config = loadConfig(source).parse();
+      expect(config.getValue(['tags'])).toEqual(['autodocs']);
+      expect(vi.mocked(logger.debug)).not.toHaveBeenCalled();
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
+    });
+  });
+
   it('edits its source through editor and program, and their deprecated aliases', () => {
     const config = loadConfig('export default { a: 1 };').parse();
 

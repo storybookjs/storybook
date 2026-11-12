@@ -10,11 +10,11 @@ import {
   renderCommentBody,
   renderIssueBody,
   toProposal,
+  type Cluster,
   type FindingGroup,
   type IssueHit,
   type QaIssue,
 } from './proposals.ts';
-import type { Cluster } from './grouping.ts';
 
 const OPTIONS = { runUrl: RUN_URL };
 const issueFor = (group: FindingGroup | undefined) =>

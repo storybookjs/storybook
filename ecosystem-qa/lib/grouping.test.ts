@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { finding, loaded } from './fixtures.ts';
+import { finding, issueOn, loaded } from './fixtures.ts';
 import { checkGrouping, clusterFindings, identityGrouping } from './grouping.ts';
 import { groupFindings } from './proposals.ts';
 
@@ -110,16 +110,19 @@ describe('clusterFindings', () => {
     ]);
     const [hmr, build, vitest] = groups.map((group) => group.fingerprint);
 
-    const clusters = clusterFindings(groups, {
-      groups: [{ members: [vitest!] }, { members: [build!, hmr!], existingIssue: 7 }],
-    });
+    const clustering = clusterFindings(
+      groups,
+      { groups: [{ members: [vitest!] }, { members: [build!, hmr!], existingIssue: 7 }] },
+      [issueOn(undefined, { number: 7, labels: ['bug'], state: 'open' })]
+    );
 
     expect(
-      clusters.map(({ lead, members, existingIssue }) => ({
-        lead: lead.finding.title,
-        members: members.map((member) => member.finding.title),
-        existingIssue,
-      }))
+      'clusters' in clustering &&
+        clustering.clusters.map(({ lead, members, existingIssue }) => ({
+          lead: lead.finding.title,
+          members: members.map((member) => member.finding.title),
+          existingIssue,
+        }))
     ).toEqual([
       { lead: 'Vitest fails', members: ['Vitest fails'], existingIssue: undefined },
       {
@@ -133,10 +136,38 @@ describe('clusterFindings', () => {
   it('carries the reason of a skipped group to its cluster', () => {
     const groups = groupFindings([loaded('linux', 'claude', [finding()])]);
 
-    const [cluster] = clusterFindings(groups, {
-      groups: [{ members: [groups[0]!.fingerprint], skip: 'by design' }],
-    });
+    const clustering = clusterFindings(
+      groups,
+      { groups: [{ members: [groups[0]!.fingerprint], skip: 'by design' }] },
+      []
+    );
 
-    expect(cluster!.skip).toBe('by design');
+    expect(clustering).toMatchObject({ clusters: [{ skip: 'by design' }] });
+  });
+
+  it('returns the problems of a grouping that does not fit, and no clusters', () => {
+    const groups = groupFindings([
+      loaded('linux', 'claude', [
+        finding(),
+        finding({ checkId: 'build.static', title: 'Build fails', errorText: 'ENOSPC' }),
+      ]),
+    ]);
+    const [hmr, build] = groups;
+
+    const clustering = clusterFindings(
+      groups,
+      { groups: [{ members: [hmr!.fingerprint, build!.fingerprint] }, { members: [C] }] },
+      [
+        issueOn(hmr, { number: 5, labels: ['bug'], state: 'open' }),
+        issueOn(build, { number: 9, labels: ['bug'], state: 'open' }),
+      ]
+    );
+
+    expect(clustering).toEqual({
+      problems: [
+        `${C} is not a finding of this collect`,
+        expect.stringMatching(/^group 1 holds .* already on #5, and .* already on #9/),
+      ],
+    });
   });
 });

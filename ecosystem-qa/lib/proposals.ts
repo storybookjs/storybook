@@ -5,7 +5,6 @@ import { join } from 'pathe';
 import { loadCatalog } from './catalog.ts';
 import { cycleRef, versionLine } from './cycle.ts';
 import { fingerprint } from './fingerprint.ts';
-import type { Cluster } from './grouping.ts';
 import { loadResults, type LoadedResult } from './results.ts';
 import { redactSecrets } from './redact.ts';
 import { sanitizeFinding, sanitizeTitle } from './sanitize.ts';
@@ -25,6 +24,15 @@ export interface FindingGroup {
   finding: Finding;
   primary: LoadedResult;
   occurrences: LoadedResult[];
+}
+
+/** Fingerprint groups that share one root cause; `members` starts with `lead` and keeps the file's order. */
+export interface Cluster {
+  lead: FindingGroup;
+  members: FindingGroup[];
+  existingIssue?: number;
+  /** Why a person decided that nothing is filed for this cluster. */
+  skip?: string;
 }
 
 export interface IssueHit {

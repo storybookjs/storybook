@@ -1,6 +1,5 @@
 import { cycleBranchName } from './cycle.ts';
-import type { Cluster } from './grouping.ts';
-import type { FindingGroup, IssueHit, QaIssue } from './proposals.ts';
+import type { Cluster, FindingGroup, IssueHit, QaIssue } from './proposals.ts';
 import type { LoadedResult } from './results.ts';
 import type {
   CatalogEntry,

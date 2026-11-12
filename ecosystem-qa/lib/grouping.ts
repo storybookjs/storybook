@@ -1,14 +1,5 @@
-import type { FindingGroup } from './proposals.ts';
+import { openIssueOf, type Cluster, type FindingGroup, type QaIssue } from './proposals.ts';
 import type { Grouping } from './schema.ts';
-
-/** Fingerprint groups that share one root cause; `members` starts with `lead` and keeps the file's order. */
-export interface Cluster {
-  lead: FindingGroup;
-  members: FindingGroup[];
-  existingIssue?: number;
-  /** Why a person decided that nothing is filed for this cluster. */
-  skip?: string;
-}
 
 const onOtherIssue = (
   { members, existingIssue }: Grouping['groups'][number],
@@ -74,16 +65,40 @@ export const identityGrouping = (fingerprints: string[]): Grouping => ({
   groups: fingerprints.map((fingerprint) => ({ members: [fingerprint] })),
 });
 
-/** Turn a grouping that passed `checkGrouping` into clusters, in the grouping's order. */
-export const clusterFindings = (groups: FindingGroup[], grouping: Grouping): Cluster[] => {
+/**
+ * Turn a grouping into clusters, in the grouping's order, or return what `checkGrouping` finds wrong
+ * with it for these findings and issues.
+ */
+export const clusterFindings = (
+  groups: FindingGroup[],
+  grouping: Grouping,
+  issues: QaIssue[]
+): { clusters: Cluster[] } | { problems: string[] } => {
+  const fingerprints = groups.map((group) => group.fingerprint);
+  const problems = checkGrouping(
+    grouping,
+    fingerprints,
+    issues.map((issue) => issue.number),
+    openIssueOf(issues, fingerprints)
+  );
+  if (problems.length > 0) {
+    return { problems };
+  }
   const byFingerprint = new Map(groups.map((group) => [group.fingerprint, group]));
-  return grouping.groups.map(({ members, existingIssue, skip }) => {
-    const clustered = members.map((member) => byFingerprint.get(member)!);
-    return {
-      lead: clustered[0]!,
-      members: clustered,
-      ...(existingIssue !== undefined ? { existingIssue } : {}),
-      ...(skip !== undefined ? { skip } : {}),
-    };
-  });
+  return {
+    clusters: grouping.groups.flatMap(({ members, existingIssue, skip }) => {
+      const clustered = members.flatMap((member) => byFingerprint.get(member) ?? []);
+      const [lead] = clustered;
+      return lead
+        ? [
+            {
+              lead,
+              members: clustered,
+              ...(existingIssue !== undefined ? { existingIssue } : {}),
+              ...(skip !== undefined ? { skip } : {}),
+            },
+          ]
+        : [];
+    }),
+  };
 };

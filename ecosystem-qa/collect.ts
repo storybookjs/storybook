@@ -6,8 +6,8 @@ import { z } from 'zod';
 import { versionLine } from './lib/cycle.ts';
 import { compareExpected, loadExpected, renderExpectReport } from './lib/expected.ts';
 import { listQaIssues, releasePublishedAt } from './lib/github.ts';
-import { checkGrouping, clusterFindings, identityGrouping } from './lib/grouping.ts';
-import { loadFindingGroups, openIssueOf, QA_LABEL, toProposal } from './lib/proposals.ts';
+import { clusterFindings, identityGrouping } from './lib/grouping.ts';
+import { loadFindingGroups, QA_LABEL, toProposal } from './lib/proposals.ts';
 import { upgraded } from './lib/results.ts';
 import { Grouping, type Proposal } from './lib/schema.ts';
 
@@ -55,7 +55,6 @@ const runUrl =
     : 'local');
 
 const { loaded, groups } = loadFindingGroups(results, version);
-const fingerprints = groups.map((group) => group.fingerprint);
 const issues = listQaIssues(repo, QA_LABEL);
 const publishedAt = releasePublishedAt(repo, version);
 console.log(
@@ -65,25 +64,19 @@ console.log(
 );
 const parsed = values.groups
   ? Grouping.safeParse(JSON.parse(readFileSync(values.groups, 'utf8')))
-  : { success: true as const, data: identityGrouping(fingerprints) };
+  : { success: true as const, data: identityGrouping(groups.map((group) => group.fingerprint)) };
 if (!parsed.success) {
   console.error(`${values.groups} is not a grouping:\n${z.prettifyError(parsed.error)}`);
   process.exit(1);
 }
-const grouping = parsed.data;
-const problems = checkGrouping(
-  grouping,
-  fingerprints,
-  issues.map((issue) => issue.number),
-  openIssueOf(issues, fingerprints)
-);
-if (problems.length > 0) {
+const clustering = clusterFindings(groups, parsed.data, issues);
+if ('problems' in clustering) {
   console.error(
-    `${values.groups} does not fit this collect:\n${problems.map((problem) => `- ${problem}`).join('\n')}`
+    `${values.groups} does not fit this collect:\n${clustering.problems.map((problem) => `- ${problem}`).join('\n')}`
   );
   process.exit(1);
 }
-const proposals = clusterFindings(groups, grouping).map((cluster) =>
+const proposals = clustering.clusters.map((cluster) =>
   toProposal(cluster, issues, { runUrl, publishedAt })
 );
 writeFileSync(out, `${JSON.stringify(proposals, null, 2)}\n`);

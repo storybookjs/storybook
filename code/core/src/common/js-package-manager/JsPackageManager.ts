@@ -135,7 +135,7 @@ export abstract class JsPackageManager {
     this.instanceDir = options?.configDir
       ? isAbsolute(options?.configDir)
         ? dirname(options?.configDir)
-        : dirname(join(this.cwd, options?.configDir))
+        : resolve(this.cwd, dirname(options?.configDir))
       : this.cwd;
     this.packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(
       this.instanceDir,

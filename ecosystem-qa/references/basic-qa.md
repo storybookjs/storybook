@@ -62,7 +62,15 @@ Search open issues with the `upgrade:11.0` label first, and comment on a match i
   `M:` is a heading in `MIGRATION.md`, `CL:` is a heading in `CHANGELOG.md` or `CHANGELOG.prerelease.md`, and a `docs/` or `code/` path is the file that documents the behaviour.
   `pre-9` marks a behaviour older than 9.0 that still holds in 11.
   `source: team practice` marks a check the team has always run that no repo file describes.
-- **Agent** is the check id when the QA agent runs the row (the `must` tier on every sweep, the rest with `--tier extended`), `planned: <id>` when it is queued for the registry, `monorepo: <test>` when the monorepo's own unit or E2E tests prove the row and its outcome does not depend on the project, so the agent never spends a run on it, or `manual: <reason>` when a person has to judge it, because the pass condition is motion, wording, layout or a click the agent cannot drive. A manual row that a spec partly automates says so after the reason (`; e2e: <spec>`), so a bug bash can spend its time on the rows nothing automates. Test paths are relative to `code/`; `e2e-tests/` paths to `test-storybooks/portable-stories-kitchen-sink/react/`.
+- **Agent** says who covers the row:
+  - The check id when the QA agent runs the row: the `must` tier on every sweep, the rest with `--tier extended`.
+  - `planned: <id>` when it is queued for the registry.
+  - `monorepo: <test>` when the monorepo's own unit or E2E tests prove the row and its outcome does not depend on the project, so the agent never spends a run on it.
+    The cell names the test file, and that file exists.
+  - `manual: <reason>` when a person has to check it: the pass condition is motion, wording, layout or a click the agent cannot drive, or the row does not depend on the project and no monorepo test covers it yet.
+    A manual row that a spec partly automates says so after the reason (`; e2e: <spec>`), so a bug bash can spend its time on the rows nothing automates.
+
+  Test paths are relative to `code/`; `e2e-tests/` paths to `test-storybooks/portable-stories-kitchen-sink/react/`.
   `none` means only a person covers the row; spend your time there first.
 
 ## CLI
@@ -137,9 +145,9 @@ The rows below are the 11.0 automigrations a typical project triggers; mark the 
 
 | Row | Probe | Pass when | Since | Agent | Check |
 | ------ | ----- | --------- | ----- | ----- | ----- |
-| CLI-25 | `npx storybook ai setup` | It exits 1 and says to run `npx storybook skills setup` and `npx storybook tools` instead. | 11.0 ; M: `storybook ai` command removed | monorepo: test gap, follow-up issue | `storybook ai` points at its replacement |
-| CLI-26 | `npx storybook dev --preview-url http://localhost:1234` and `--force-build-preview` | Neither points Storybook at an external preview: the command is rejected, or it starts and loads its own `iframe.html`. | 11.0 ; M: `--preview-url` and `--force-build-preview` removed | monorepo: test gap, follow-up issue | Removed dev flags fail clearly |
-| CLI-27 | `npx storybook automigrate --renderer react` and `npx storybook automigrate remove-essentials` | `--renderer` fails as an unknown option, and the removed id is not found. | 11.0 ; M: Automigrations for Storybook 10 and earlier removed | monorepo: test gap, follow-up issue | Removed automigrate options fail clearly |
+| CLI-25 | `npx storybook ai setup` | It exits 1 and says to run `npx storybook skills setup` and `npx storybook tools` instead. | 11.0 ; M: `storybook ai` command removed | manual: no monorepo test yet | `storybook ai` points at its replacement |
+| CLI-26 | `npx storybook dev --preview-url http://localhost:1234` and `--force-build-preview` | Neither points Storybook at an external preview: the command is rejected, or it starts and loads its own `iframe.html`. | 11.0 ; M: `--preview-url` and `--force-build-preview` removed | manual: no monorepo test yet | Removed dev flags fail clearly |
+| CLI-27 | `npx storybook automigrate --renderer react` and `npx storybook automigrate remove-essentials` | `--renderer` fails as an unknown option, and the removed id is not found. | 11.0 ; M: Automigrations for Storybook 10 and earlier removed | manual: no monorepo test yet | Removed automigrate options fail clearly |
 
 ## Dev server and manager
 
@@ -360,7 +368,7 @@ CSF Next (CSF factories) stories are written as `preview.meta({...})` and `meta.
 | BLD-1 | `npx storybook build -o storybook-static` | It exits 0 and the output has `index.html`, `iframe.html` and `index.json`. | pre-9 ; `docs/sharing/publish-storybook.mdx` | build.static | Build succeeds |
 | BLD-2 | `npx http-server ./storybook-static --port 6008`, then open a story and a docs page. | `index.json` ids match dev, stories and docs render, and there is no testing widget or save bar. | pre-9 ; source: team practice | build.static | Static build serves and renders |
 | BLD-3 | Add a `staticDirs` entry and reference a file from a story. | The file is served at its configured path in dev and in the build. | pre-9 ; `docs/api/main-config/main-config-static-dirs.mdx` | monorepo: `e2e-sandbox/static-dirs.spec.ts` | Static dirs |
-| BLD-4 | `npx storybook build --docs` and serve it. | Only docs pages are in the build, and they render. | pre-9 ; `docs/writing-docs/build-documentation.mdx` | monorepo: test gap, follow-up issue | Docs build |
+| BLD-4 | `npx storybook build --docs` and serve it. | Only docs pages are in the build, and they render. | pre-9 ; `docs/writing-docs/build-documentation.mdx` | manual: no monorepo test yet | Docs build |
 | BLD-5 | `npx storybook build --test` | It succeeds and stories render. | pre-9 ; `docs/api/main-config/main-config-build.mdx` | monorepo: `bench/*-test-build` sandboxes | Test build |
 | BLD-6 | `npx storybook build --stats-json` in a Vite project. | `preview-stats.json` contains virtual and proxy modules. | 11.0 ; M: Vite: `preview-stats.json` contains the full bundler graph | manual: bug bash or feature session | Stats output |
 | BLD-7 | Embed a story from the served build in an `<iframe>` on another origin. | It renders; only the dev server restricts embedding. | 11.0 ; M: `storybook dev` now blocks remote iframe embedding | manual: bug bash or feature session | Embedding a build |

@@ -33,12 +33,11 @@ interface LoadOptions {
   warn: (message: string) => void;
 }
 
-// The runner job uploads results/ as the artifact qa-result-<os>-<engine>; a local run writes
+// The runner job uploads results/ as the artifact qa-result-<id>-<os>-<engine>; a local run writes
 // results/<id>/<os>/<engine> directly. Only these two places hold a record the runner wrote.
 type RunCell = Pick<RunKey, 'entry' | 'os' | 'engine'>;
 
-const artifactName = ({ os, engine }: Pick<RunCell, 'os' | 'engine'>) =>
-  `qa-result-${os}-${engine}`;
+const artifactName = ({ entry, os, engine }: RunCell) => `qa-result-${entry.id}-${os}-${engine}`;
 
 const artifactRunDir = (resultsDir: string, cell: RunCell) =>
   join(resultsDir, artifactName(cell), cell.entry.id, cell.os, cell.engine);
@@ -65,7 +64,7 @@ export const downloadedRuns = (
         return existsSync(join(from, 'result.json'))
           ? [
               {
-                artifact: artifactName({ os, engine }),
+                artifact: artifactName({ entry, os, engine }),
                 from,
                 to: localRunDir(resultsDir, { entry, os, engine }),
                 label: `${entry.id} ${os} ${engine}`,

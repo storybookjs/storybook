@@ -1,0 +1,22 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[90m┌[39m  Doctoring Storybook
+[90m│[39m
+[32m◇[39m  Checking the health of your Storybook..
+[90m│[39m
+[31m■[39m  undefined: 1 problem found
+│ ┌─[31mConfiguration Error[39m────────────────────────────────────────────────────────┐
+│ │  ❌ Unable to determine Storybook version so the command will not          │
+│ │  proceed.                                                                  │
+│ │  🤔 Are you running storybook doctor from your project directory? Please   │
+│ │  specify your Storybook config directory with the --config-dir flag.       │
+│ └────────────────────────────────────────────────────────────────────────────┘
+[90m│[39m
+[32m◇[39m  Storybook doctor is complete!
+[90m│[39m
+[90m│[39m  You can always recheck the health of your project(s) by running:
+[90m│[39m  [36mnpx storybook doctor[39m
+[90m│[39m
+[90m└[39m  Done
+

@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 
 import { compareExpected, loadExpected, renderExpectReport } from './expected.ts';
@@ -44,7 +46,9 @@ describe('compareExpected', () => {
 
 describe('expected-findings.json', () => {
   it('parses and names only catalog repos', () => {
-    const items = loadExpected(new URL('../expected-findings.json', import.meta.url).pathname);
+    const items = loadExpected(
+      fileURLToPath(new URL('../expected-findings.json', import.meta.url))
+    );
     expect(items.length).toBeGreaterThan(0);
     expect(new Set(items.map((item) => item.fingerprint)).size).toBe(items.length);
     expect(items.every((item) => item.repo === 'mealdrop')).toBe(true);

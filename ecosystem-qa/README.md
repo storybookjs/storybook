@@ -107,6 +107,7 @@ Each runner uploads `qa-result-<id>-<os>-<engine>` with `result.json`, the run l
 The collect job runs `group.ts` with the key from the `ecosystem-qa` environment, then collects with its `groups.json` and uploads both files as `qa-proposals`.
 To collect again without running any agent, set `from_runs` to a comma-separated list of earlier run ids: the job fetches their `qa-result-*` artifacts with `fetch-runs.ts`, the result that was uploaded last winning where two runs hold the same repo, OS and engine, and groups and collects those.
 It takes only runs of this workflow that were started by hand, on the default branch or on the branch the collecting run itself runs on, and stops before it downloads anything when one of the ids is anything else.
+It also stops, and collects nothing, when one of the runs holds no result it can read: a run whose agent jobs wrote no `result.json`, or one from before the artifact name carried the repo id.
 Any run of the repository can upload an artifact with the name of a result, also the run of a pull request from a fork, and the filing job pushes and files what the results say.
 It uploads them again as `qa-earlier-results`, so the filing job finds their evidence and cycle bundles.
 To split a wrong merge, or to collect when the model is unavailable, paste a `groups.json` document into `groups`; the job uses it instead of asking the model.

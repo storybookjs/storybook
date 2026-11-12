@@ -36,6 +36,11 @@ export const RunArtifacts = z.object({
 });
 export type RunArtifacts = z.infer<typeof RunArtifacts>;
 
+// Every page of that listing as one: a whole sweep in one run can hold more artifacts than a page.
+export const RunArtifactPages = z
+  .array(RunArtifacts)
+  .transform((pages): RunArtifacts => ({ artifacts: pages.flatMap((page) => page.artifacts) }));
+
 // A run has no single age: after "Re-run failed jobs" it holds results of two attempts. So the age
 // of a result is the upload of its own artifact, and of two artifacts with one name the newer one.
 export const uploadedAt = ({ artifacts }: RunArtifacts, name: string): string | undefined =>

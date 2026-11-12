@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { liveLine } from './live-log.ts';
+import { forJobLog, liveLine } from './live-log.ts';
 
 const anthropicKey = `sk-ant-api03-${'x'.repeat(40)}`;
 const encodedKey = Buffer.from(anthropicKey).toString('base64');
@@ -26,5 +26,25 @@ describe('liveLine', () => {
     const line = liveLine({ type: 'toolCall', name: 'Read', formattedArgs: 'a'.repeat(400) });
 
     expect(line).toBe(`▶ Read(${'a'.repeat(300)})`);
+  });
+});
+
+describe('workflow commands in agent output', () => {
+  it('breaks a line of agent text that Actions would run as a command', () => {
+    expect(
+      liveLine({ type: 'text', message: 'done\n  ::error file=a.ts::spoofed\n##[add-mask]dev.log' })
+    ).toBe('done\n  : :error file=a.ts::spoofed\n## [add-mask]dev.log');
+  });
+
+  it('breaks the bracket form of a command inside a tool argument', () => {
+    expect(
+      liveLine({ type: 'toolCall', name: 'Bash', formattedArgs: 'echo "##[error]spoofed"' })
+    ).toBe('▶ Bash(echo "## [error]spoofed")');
+  });
+
+  it('does the same for the run summary, and redacts it', () => {
+    expect(forJobLog(`status ok. Error: ${anthropicKey}\n::stop-commands::x`)).toBe(
+      'status ok. Error: [redacted]\n: :stop-commands::x'
+    );
   });
 });

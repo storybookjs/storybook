@@ -13,6 +13,8 @@ import {
   normalizeStorybookWorkflowName,
   parseJson,
   parseStorybookWorkflowShellCommands,
+  shellCommandReadsFile,
+  skillComesBeforeTool,
   workflowCallMatchesName,
 } from './shell-parse.ts';
 import type { StorybookWorkflowCall } from './shell-parse.ts';
@@ -130,7 +132,30 @@ export function expectWorkflowCalls(expectedNames: string[]): void {
       count,
       `Expected ${name} to be called${count === 0 ? describeIgnoredCodexSettings() : ''}`
     ).toBeGreaterThan(0);
+    const tool = STEP_TOOLS[name];
+    if (tool) {
+      expectSkillBeforeItsTool(name, tool);
+    }
   }
+}
+
+// The tool that a step of the workflow runs, by the skill of that step.
+const STEP_TOOLS: Record<string, string> = {
+  'test-stories': 'test-run',
+  'ui-review': 'review-create',
+};
+
+// An agent that opens a skill only after it ran the tool of that step did the step without its
+// rules. On the MCP path the skill commands and the tool calls come from two sources, so their
+// order is unknown there.
+function expectSkillBeforeItsTool(skill: string, tool: string): void {
+  if (getEvalContext().integration !== 'plugin') {
+    return;
+  }
+  expect(
+    skillComesBeforeTool(getStorybookWorkflowCalls(), skill, tool),
+    `Expected the ${skill} skill to be opened before the first ${tool} call`
+  ).toBe(true);
 }
 
 // Codex runs on when it does not know a config setting, and only reports it in an error item. When
@@ -713,38 +738,55 @@ export function workflowCallUsesStoryId(call: StorybookWorkflowCall): boolean {
 // false-pass.
 export function expectSkillInvoked(skillName: string): void {
   const { agent } = getEvalContext();
+  expect(
+    isSkillInvoked(skillName),
+    agent === 'claude-code'
+      ? `Expected the ${skillName} skill to be invoked via the Skill tool, or its SKILL.md to be read`
+      : `Expected the ${skillName} skill (skills/${codexSkillName(skillName)}) to be read via a shell command`
+  ).toBe(true);
+}
 
-  if (agent === 'claude-code') {
+const WORKFLOW_SKILLS = ['component-docs', 'write-stories', 'test-stories', 'ui-review'];
+
+// The plugin path: the installed skills are what leads the agent to the workflow. One invoked
+// skill shows that. `expectWorkflowCalls` asserts that the agent opens the text of each step with
+// `storybook skills <id>`; Codex often runs that command for a later step without reading the
+// SKILL.md that names it.
+export function expectAnyWorkflowSkillInvoked(): void {
+  expect(
+    WORKFLOW_SKILLS.some(isSkillInvoked),
+    `Expected one of the ${WORKFLOW_SKILLS.join(', ')} skills to be invoked`
+  ).toBe(true);
+}
+
+// The codex plugin names its skill directories without the storybook-
+// prefix (.agents/skills/init, .agents/skills/ui-review, …).
+const codexSkillName = (skillName: string) => skillName.replace(/^storybook-/, '');
+
+function isSkillInvoked(skillName: string): boolean {
+  if (getEvalContext().agent === 'claude-code') {
     // Match the skill argument exactly — a substring match would credit any
     // Skill invocation whose free-text args merely mention the word. When
     // AGENTS.md names a skill, Claude Code sometimes reads its SKILL.md
-    // instead, which loads the same instructions.
+    // instead, with its Read tool or with a shell command such as `cat`,
+    // which loads the same instructions.
     const skillFile = `/skills/${skillName}/SKILL.md`;
-    const invoked = getTranscript().events.some(
-      (event) =>
-        event.type === 'tool_call' &&
-        isRecord(event.tool?.args) &&
-        ((event.tool.originalName === 'Skill' && event.tool.args.skill === skillName) ||
-          (event.tool.originalName === 'Read' &&
-            typeof event.tool.args.file_path === 'string' &&
-            event.tool.args.file_path.endsWith(skillFile)))
+    return (
+      getShellCommands().some((command) => shellCommandReadsFile(command, skillFile)) ||
+      getTranscript().events.some(
+        (event) =>
+          event.type === 'tool_call' &&
+          isRecord(event.tool?.args) &&
+          ((event.tool.originalName === 'Skill' && event.tool.args.skill === skillName) ||
+            (event.tool.originalName === 'Read' &&
+              typeof event.tool.args.file_path === 'string' &&
+              event.tool.args.file_path.endsWith(skillFile)))
+      )
     );
-    expect(
-      invoked,
-      `Expected the ${skillName} skill to be invoked via the Skill tool, or its SKILL.md to be read`
-    ).toBe(true);
-    return;
   }
 
-  // The codex plugin names its skill directories without the storybook-
-  // prefix (.agents/skills/init, .agents/skills/ui-workflow, …).
-  const codexSkillName = skillName.replace(/^storybook-/, '');
-  const skillPathPattern = new RegExp(`skills/${codexSkillName}\\b`);
-  const read = getShellCommands().some((command) => skillPathPattern.test(command));
-  expect(
-    read,
-    `Expected the ${skillName} skill (skills/${codexSkillName}) to be read via a shell command`
-  ).toBe(true);
+  const skillPathPattern = new RegExp(`skills/${codexSkillName(skillName)}\\b`);
+  return getShellCommands().some((command) => skillPathPattern.test(command));
 }
 
 // Lifecycle-outcome check for the upgrade evals: the given Storybook packages

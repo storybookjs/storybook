@@ -12,7 +12,6 @@ import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
 import { InvalidArgumentError, Option, program } from 'commander';
-import envinfo from 'envinfo';
 import leven from 'leven';
 import picocolors from 'picocolors';
 
@@ -22,6 +21,7 @@ import { doAutomigrate } from '../automigrate/index.ts';
 import { resolveRequestedFeatures } from '../automigrate/fixes/experimental-features.ts';
 import { doctor } from '../doctor/index.ts';
 import { link } from '../link.ts';
+import { info } from '../info.ts';
 import { migrate } from '../migrate.ts';
 import { sandbox } from '../sandbox.ts';
 import { type UpgradeOptions, upgrade } from '../upgrade.ts';
@@ -103,7 +103,7 @@ command('init')
       Object.values(PackageManagerName)
     )
   )
-  .option('-p --parser <babel | babylon | flow | ts | tsx>', 'jscodeshift parser')
+  .addOption(new Option('-p --parser <parser>', 'Ignored').hideHelp())
   .option('-t --type <type>', 'Add Storybook for a specific project type')
   .option('-y --yes', 'Answer yes to all prompts')
   .option('-b --builder <webpack5 | vite>', 'Builder library')
@@ -209,35 +209,17 @@ command('upgrade')
 
 command('info')
   .description('Prints debugging information about the local environment')
-  .action(async () => {
-    logger.log(picocolors.bold('\nStorybook Environment Info:'));
-    const pkgManager = JsPackageManagerFactory.getPackageManager();
-    const activePackageManager = pkgManager.type.replace(/\d/, ''); // 'yarn1' -> 'yarn'
-    const output = await envinfo.run({
-      System: ['OS', 'CPU', 'Shell'],
-      Binaries: ['Node', 'Yarn', 'npm', 'pnpm'],
-      Browsers: ['Chrome', 'Edge', 'Firefox', 'Safari'],
-      npmPackages: '{@storybook/*,*storybook*,sb,chromatic}',
-      npmGlobalPackages: '{@storybook/*,*storybook*,sb,chromatic}',
-    });
-    const activePackageManagerLine = output.match(new RegExp(`${activePackageManager}:.*`, 'i'));
-    logger.log(
-      output.replace(
-        activePackageManagerLine,
-        picocolors.bold(`${activePackageManagerLine} <----- active`)
-      )
-    );
-  });
+  .action((options) => info().catch(handleCommandFailure(options.logfile)));
 
 command('migrate [migration]')
   .description('Run a Storybook codemod migration on your source files')
   .option('-l --list', 'List available migrations')
   .option('-g --glob <glob>', 'Glob for files upon which to apply the migration', '**/*.js')
-  .option('-p --parser <babel | babylon | flow | ts | tsx>', 'jscodeshift parser')
+  .addOption(new Option('-p --parser <parser>', 'Ignored').hideHelp())
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option(
     '-n --dry-run',
-    'Dry run: verify the migration exists and show the files to which it will be applied'
+    'Dry run: verify the migration exists and show how many files it would change'
   )
   .option(
     '-r --rename <from-to>',

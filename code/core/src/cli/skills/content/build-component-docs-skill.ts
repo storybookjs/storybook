@@ -1,16 +1,25 @@
 import { type SkillTextTransport, skillVocabulary } from './skill-vocabulary.ts';
 
-// Tells the agent to call these names as tools, not to run them as commands.
-export const MCP_TOOLS_NOTE = 'The tools named here are tools of the Storybook MCP server.';
+export type ComponentDocsSkillInputs = {
+  transport: SkillTextTransport;
+  // Storybook has component manifests for this project, or composes a Storybook that has them.
+  docsSupported: boolean;
+  // `main.ts` turns the `docs` toolset of the MCP server off. Never for the CLI.
+  toolsetOff?: boolean;
+};
 
-/**
- * How to look up the components to reuse. `ui-workflow` inlines it, so an agent cannot skip the
- * lookup by not invoking `component-docs`. With `--mcp`, both skills render it with the MCP tool
- * names.
- */
-export function componentLookup(transport: SkillTextTransport = 'cli'): string {
-  const v = skillVocabulary(transport);
+export function buildComponentDocsSkill(inputs: ComponentDocsSkillInputs): string {
+  const v = skillVocabulary(inputs.transport);
+  if (!inputs.docsSupported) {
+    return `# Storybook component docs
+
+This Storybook has no component docs to look up. Skip this step, and read the source files of the components you use instead.`;
+  }
   const list = v.name('docs.list');
+  // A client can turn the toolset on for itself with a request header, which this text cannot see.
+  const toolsetOff = inputs.toolsetOff
+    ? `\n\nThe \`main.ts\` of this project turns the \`docs\` toolset of the Storybook MCP server off. When the server does not give you ${list}, skip this step.`
+    : '';
   const show = v.name('docs.show');
   const tools = v.cli
     ? `\`\`\`sh
@@ -27,22 +36,11 @@ ${v.ref('docs.showStory')} --storyId <id>   # the code of a story that docs show
   const sources = v.cli
     ? 'to both commands that show it: `--storybookId acme`'
     : `as \`storybookId: "acme"\` to ${show} and ${v.name('docs.showStory')}`;
-  return `${tools}
-
-Do this before you edit any file: ${v.run} ${list} once and read its ${v.output}, then ${v.run} ${show} with an id from that ${v.output} for every listed component your change uses, even one you only add such as a button, and for each one you are asked about. Never guess an id. Reuse what exists instead of building a duplicate. Use only the props that ${show} documents, never one you assume from a name or another library. ${v.Run} ${show} ${oncePerId}: the props often come after long story examples. Answer props, API and usage questions from these ${v.commands}. Read source files or \`node_modules\` only when the ${v.commands} return nothing relevant. When ${list} groups its entries under sources (\`id: acme\`), pass the source of the entry ${sources}.`;
-}
-
-// How a skill that covers one part of the workflow names `ui-workflow`, the whole of it.
-export function uiWorkflowRef(transport: SkillTextTransport): string {
-  return transport === 'cli'
-    ? "the `ui-workflow` skill when the project's agent instructions (such as `AGENTS.md`) name it"
-    : "`npx storybook skills ui-workflow --mcp` when your agent instructions or the Storybook MCP server's instructions name it";
-}
-
-export function buildComponentDocsSkill(transport: SkillTextTransport = 'cli'): string {
   return `# Storybook component docs
 
-${transport === 'mcp' ? `${MCP_TOOLS_NOTE}\n\n` : ''}${componentLookup(transport)}
+${v.notes}${toolsetOff}
 
-For a change to the UI, and when the user asks to see components or stories, use ${uiWorkflowRef(transport)} instead: it includes this lookup, then writes the stories, runs the tests and publishes the review that shows them to the user.`;
+${tools}
+
+Do this before you edit any file: ${v.run} ${list} once and read its ${v.output}, then ${v.run} ${show} with an id from that ${v.output} for every listed component your change uses, even one you only add such as a button, and for each one you are asked about. Never guess an id. Reuse what exists instead of building a duplicate. Use only the props that ${show} documents, never one you assume from a name or another library. ${v.Run} ${show} ${oncePerId}: the props often come after long story examples. Answer props, API and usage questions from these ${v.commands}. Read source files or \`node_modules\` only when the ${v.commands} return nothing relevant. When ${list} groups its entries under sources (\`id: acme\`), pass the source of the entry ${sources}.`;
 }

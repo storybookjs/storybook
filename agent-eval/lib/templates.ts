@@ -938,7 +938,7 @@ export async function writeMcpAgentInstructions(sandbox: Sandbox): Promise<void>
     path.join(
       AGENT_EVAL_ROOT,
       '..',
-      'code/core/src/cli/skills/content/build-server-instructions.ts'
+      'code/core/src/cli/skills/content/build-workflow-instructions.ts'
     )
   )) as {
     buildServerInstructions: (options: {

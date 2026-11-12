@@ -75,7 +75,8 @@ node ecosystem-qa/collect.ts --results ecosystem-qa/results --version 11.0.0-bet
 ```
 
 It is one Messages API request with a schema-checked answer and no tools, so text the agents wrote inside a third-party repository can at worst produce a wrong grouping.
-A wrong grouping is not harmless: it reports a finding on the issue of another one, or silences it together with a known one, so the dry run lists every member of a group, also of a suppressed one.
+A wrong grouping is not harmless: it reports a finding on the issue of another one, so the dry run lists every member of a group.
+It cannot silence a finding: a group is suppressed only when each member's own fingerprint is on a known issue.
 The model only says which fingerprints belong together; none of its text reaches an issue, and `collect.ts` checks the file again before it uses it.
 It sends the titles, actual results and error texts of the findings, capped, to the Anthropic API.
 Of the QA issues it sends the titles, and for an open issue the harness filed also the start of its bug description and the findings already merged into it: a title names one symptom, and a later run words the same defect differently. Sightings that were added as comments are not sent.
@@ -131,11 +132,14 @@ A group only decides which fingerprints merge; the proposal takes its text and e
 A wrong merge is split by editing `groups.json` and collecting again, without rerunning the sweep.
 To leave a finding out because it is not a bug to file, give its group a `skip` with the reason in `groups.json`: nothing is filed for it, and the dry run and the Step Summary show the reason.
 Only a person can skip a group, the model's answer has no such field.
-A group with a fingerprint on an open issue becomes a comment there, and one with a fingerprint on a `qa:known` issue is suppressed.
+A group with a fingerprint on an open issue becomes a comment there.
+A group is suppressed only when every one of its fingerprints is on a `qa:known` issue, or on an issue that was fixed after the tested prerelease was published: a grouping can merge findings, it can never hide one.
+When only some of them are, the whole group is reported, so the other findings appear on the open issue or in a new one.
 A group that matches an issue only by similarity (`existingIssue`) becomes a comment on it while it is open, even when that issue is `qa:known`, because only an exact fingerprint suppresses.
 A fingerprint that an open issue already carries stays on that issue: the collector rejects a grouping that puts it in a group with a fingerprint of another open issue, or in a group that names another issue, and says which group to split.
 The metadata of an issue lists every fingerprint of its group, so a later sweep finds it by any of them.
 An issue closed as completed after the tested prerelease was published counts as known for that version, because the fix is not in it yet; the collector reads the publish date from the `v<version>` release of `--repo`.
+This too needs the fingerprint: a group that only resembles such an issue is filed as a new issue that links to it.
 An issue closed before that, or closed for any other reason, does not count: the bug came back, so it is filed again with a link to the closed issue.
 An issue counts as already filed only while it carries the `internal-qa` label.
 It checks first that the milestone is open and every label exists, and files nothing otherwise.

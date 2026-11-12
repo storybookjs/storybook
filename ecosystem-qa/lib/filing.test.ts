@@ -264,7 +264,12 @@ describe('renderDry', () => {
     ]);
     const proposal = toProposal(
       { lead: hmr!, members: [hmr!, build!] },
-      [issueOn(hmr, { number: 7, labels: ['qa:known'], state: 'open' })],
+      [
+        {
+          ...issueOn(hmr, { number: 7, labels: ['qa:known'], state: 'open' }),
+          body: `fingerprints: ${hmr!.fingerprint}, ${build!.fingerprint}`,
+        },
+      ],
       { runUrl: RUN_URL }
     );
 

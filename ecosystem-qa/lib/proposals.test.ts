@@ -209,14 +209,25 @@ describe('toProposal for a cluster', () => {
   const similar = (number: number, labels: string[], state: 'open' | 'closed') =>
     issueOn(undefined, { number, labels, state });
 
-  it('suppresses the cluster when a non-lead member is on a qa:known issue', () => {
+  const onBoth = (number: number, labels: string[], state: 'open' | 'closed') => ({
+    ...issueOn(hmr, { number, labels, state }),
+    body: `fingerprints: ${hmr!.fingerprint}, ${build!.fingerprint}`,
+  });
+
+  it('does not silence a lead that is on no issue because another member is on a qa:known issue', () => {
     const proposal = toProposal(
       cluster(),
       [issueOn(build, { number: 7, labels: ['qa:known'], state: 'closed' })],
       OPTIONS
     );
 
-    expect(proposal).toMatchObject({ kind: 'suppressed', existingIssue: 7 });
+    expect(proposal).toMatchObject({ kind: 'issue', previousIssue: 7 });
+  });
+
+  it('suppresses a cluster when every member is on a qa:known issue', () => {
+    const proposal = toProposal(cluster(), [onBoth(7, ['qa:known'], 'closed')], OPTIONS);
+
+    expect(proposal).toMatchObject({ kind: 'suppressed', existingIssue: 7, reason: 'known' });
   });
 
   it('files nothing for a cluster a person skipped, even with a member on an open issue', () => {
@@ -234,11 +245,7 @@ describe('toProposal for a cluster', () => {
   });
 
   it('names the members a suppressed cluster silences along with its lead', () => {
-    const proposal = toProposal(
-      cluster(),
-      [issueOn(hmr, { number: 7, labels: ['qa:known'], state: 'open' })],
-      OPTIONS
-    );
+    const proposal = toProposal(cluster(), [onBoth(7, ['qa:known'], 'open')], OPTIONS);
 
     expect(proposal.kind).toBe('suppressed');
     expect(proposal.related.map(({ fingerprint, checkId }) => ({ fingerprint, checkId }))).toEqual([
@@ -362,6 +369,22 @@ describe('toProposal with the publish date of the tested version', () => {
     );
 
     expect(proposal).toMatchObject({ kind: 'issue', previousIssue: 9 });
+  });
+
+  it('files a new issue when only a similar issue was fixed after the version was published', () => {
+    const proposal = toProposal(
+      { ...single(group), existingIssue: 20 },
+      [
+        {
+          ...issueOn(undefined, { number: 20, labels: ['bug'], state: 'closed' }),
+          stateReason: 'completed',
+          closedAt: '2026-11-05T10:00:00Z',
+        },
+      ],
+      { ...OPTIONS, publishedAt: PUBLISHED }
+    );
+
+    expect(proposal).toMatchObject({ kind: 'issue', previousIssue: 20 });
   });
 
   it('suppresses a later fix before commenting on an open similar issue', () => {

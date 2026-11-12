@@ -315,8 +315,14 @@ const sourcesOf = (groups: FindingGroup[]): Source[] => {
   return [...byPath.values()];
 };
 
+interface Silenced {
+  kind: 'suppressed';
+  issue: number;
+  reason: 'known' | 'fixed-later';
+}
+
 type Decision =
-  | { kind: 'suppressed'; issue: number; reason: 'known' | 'fixed-later' }
+  | Silenced
   | { kind: 'comment'; issue: number }
   | { kind: 'issue'; previousIssue?: number };
 
@@ -327,28 +333,35 @@ const fixedAfter = (issue: QaIssue, publishedAt: string | undefined): boolean =>
   issue.closedAt !== undefined &&
   Date.parse(issue.closedAt) > Date.parse(publishedAt);
 
-// Only an exact fingerprint silences a finding; an issue that is merely similar gets a comment.
 // A fix that landed after the tested prerelease was published is not in it, so seeing the bug
-// there is expected. Any other closed issue gets no comment: nobody watches it, so the bug that
-// came back is filed again with a link to where it was fixed before.
-const decide = (
-  exact: QaIssue[],
-  similar: QaIssue | undefined,
-  publishedAt: string | undefined
-): Decision => {
+// there is expected.
+const silencedBy = (exact: QaIssue[], publishedAt: string | undefined): Silenced | undefined => {
   const known = exact.find((issue) => issue.labels.includes('qa:known'));
   if (known) {
     return { kind: 'suppressed', issue: known.number, reason: 'known' };
   }
+  const fixed = openHit(exact) ? undefined : exact.find((issue) => fixedAfter(issue, publishedAt));
+  return fixed && { kind: 'suppressed', issue: fixed.number, reason: 'fixed-later' };
+};
+
+// A group is silenced only when every member is, each by an issue that carries its own
+// fingerprint: a grouping can merge findings, it can never hide one. An issue that is merely
+// similar gets a comment while it is open. A closed issue gets none: nobody watches it, so the bug
+// that came back is filed again with a link to that issue.
+const decide = (
+  memberHits: QaIssue[][],
+  similar: QaIssue | undefined,
+  publishedAt: string | undefined
+): Decision => {
+  const silenced = memberHits.map((hits) => silencedBy(hits, publishedAt));
+  const [first] = silenced;
+  if (first && silenced.every((entry) => entry !== undefined)) {
+    return first;
+  }
+  const exact = memberHits.flat();
   const open = openHit(exact);
   if (open) {
     return { kind: 'comment', issue: open.number };
-  }
-  const fixed = [...exact, ...(similar ? [similar] : [])].find((issue) =>
-    fixedAfter(issue, publishedAt)
-  );
-  if (fixed) {
-    return { kind: 'suppressed', issue: fixed.number, reason: 'fixed-later' };
   }
   if (similar?.state === 'open') {
     return { kind: 'comment', issue: similar.number };
@@ -397,10 +410,7 @@ export const toProposal = (
     return { kind: 'skipped', ...common, reason: skip };
   }
   const decision = decide(
-    hitsFor(
-      issues,
-      members.map((member) => member.fingerprint)
-    ),
+    members.map((member) => hitsFor(issues, [member.fingerprint])),
     issues.find((issue) => issue.number === existingIssue),
     publishedAt
   );

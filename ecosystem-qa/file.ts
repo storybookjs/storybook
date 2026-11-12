@@ -33,7 +33,9 @@ qa-assets branch of --repo and creates the issue or comment with GH_TOKEN. A fai
 not stop the others; the filed and failed table goes to the Step Summary and the exit code is 1 if
 any failed.
 An issue counts as already filed only while it is open and carries the internal-qa label.
-Rerunning is safe: a filed fingerprint, an identical comment and pushed evidence are skipped.`;
+Rerunning is safe: an issue it already created, an identical comment and pushed evidence are
+skipped. When an open issue with one of a proposal's fingerprints appeared after the collect, what
+that issue lacks goes on it as a comment and no second issue is created.`;
 
 const EVIDENCE_PUSH_ATTEMPTS = 3;
 

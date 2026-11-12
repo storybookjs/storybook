@@ -2,16 +2,14 @@ import { writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
 import Anthropic from '@anthropic-ai/sdk';
-import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 
 import { versionLine } from './lib/cycle.ts';
 import { listQaIssues } from './lib/github.ts';
 import {
-  GroupingAnswer,
+  GROUPING_REQUEST,
   groupingInput,
   groupingMode,
   groupWithModel,
-  SYSTEM_PROMPT,
   type Ask,
 } from './lib/group-model.ts';
 import { identityGrouping } from './lib/grouping.ts';
@@ -54,15 +52,7 @@ const { groups } = loadFindingGroups(results, version);
 const askClaude =
   (client: Anthropic): Ask =>
   async (messages) => {
-    const response = await client.beta.messages.create({
-      model: 'claude-opus-5-5',
-      max_tokens: 16000,
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
-      system: SYSTEM_PROMPT,
-      output_config: { effort: 'high', format: zodOutputFormat(GroupingAnswer) },
-      messages,
-    });
+    const response = await client.beta.messages.create({ ...GROUPING_REQUEST, messages });
     if (response.stop_reason === 'refusal' || response.stop_reason === 'max_tokens') {
       throw new Error(`The model stopped with ${response.stop_reason} instead of answering.`);
     }

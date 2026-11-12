@@ -1,4 +1,5 @@
 import type Anthropic from '@anthropic-ai/sdk';
+import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
 import { z } from 'zod';
 
 import { checkGrouping } from './grouping.ts';
@@ -139,6 +140,16 @@ Set \`existingIssue\` to the number of an issue from \`issues\` when that issue 
 A finding with \`filedAs\` is already reported on that open issue, and it stays there. Never put two findings in one group when they are filed as different issues, even when they are the same defect. A group that holds a filed finding has that issue as its \`existingIssue\`. This comes before every other rule here: where it conflicts with one, split the group.
 
 Every finding id appears in exactly one group. A finding with nothing in common with the others is a group of one.`;
+
+/** Everything of the request but its messages. It lives next to the prompt because the two change together. */
+export const GROUPING_REQUEST = {
+  model: 'claude-opus-5-5',
+  max_tokens: 16000,
+  betas: ['server-side-fallback-2026-07-01'],
+  fallbacks: 'default',
+  system: SYSTEM_PROMPT,
+  output_config: { effort: 'high', format: zodOutputFormat(GroupingAnswer) },
+} satisfies Omit<Anthropic.Beta.MessageCreateParamsNonStreaming, 'messages'>;
 
 /**
  * Decide whether to ask the model: `skip` leaves every fingerprint on its own.

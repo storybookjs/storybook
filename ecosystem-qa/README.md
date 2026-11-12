@@ -126,6 +126,8 @@ The issue body carries the fetch command, and the one push that turns the ref in
 The collector proposes one finding per root cause: `--groups groups.json` lists which fingerprints belong together, and without it every fingerprint is its own group.
 A group only decides which fingerprints merge; the proposal takes its text and evidence from the group's first member and lists the others under "Also seen as".
 A wrong merge is split by editing `groups.json` and collecting again, without rerunning the sweep.
+To leave a finding out because it is not a bug to file, give its group a `skip` with the reason in `groups.json`: nothing is filed for it, and the dry run and the Step Summary show the reason.
+Only a person can skip a group, the model's answer has no such field.
 A group with a fingerprint on an open issue becomes a comment there, and one with a fingerprint on a `qa:known` issue is suppressed.
 A group that matches an issue only by similarity (`existingIssue`) becomes a comment on it while it is open, even when that issue is `qa:known`, because only an exact fingerprint suppresses.
 A fingerprint that an open issue already carries stays on that issue: the collector rejects a grouping that puts it in a group with a fingerprint of another open issue, or in a group that names another issue, and says which group to split.

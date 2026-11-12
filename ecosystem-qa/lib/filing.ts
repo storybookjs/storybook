@@ -65,6 +65,9 @@ export const planFiling = (proposal: Proposal, options: FilingOptions): FilingSt
   if (proposal.kind === 'suppressed') {
     return [{ kind: 'skip', reason: suppressedBecause(proposal) }];
   }
+  if (proposal.kind === 'skipped') {
+    return [{ kind: 'skip', reason: `skipped by hand: ${proposal.reason}` }];
+  }
   // The cycle ref is pushed for a comment too: its metadata names this run's head, and a "seen
   // again" on a new prerelease is when someone wants to fetch the upgraded state.
   const pushCycle = (cycle: Cycle) =>
@@ -141,7 +144,8 @@ export const renderDry = (proposal: Proposal, repo: string): string => {
   );
   // A suppressed group has no body, so without this a finding merged into it by mistake would
   // leave no trace in the dry run.
-  const silenced = proposal.kind === 'suppressed' ? proposal.related : [];
+  const silenced =
+    proposal.kind === 'suppressed' || proposal.kind === 'skipped' ? proposal.related : [];
   return [
     `<details><summary><b>${proposal.kind}</b> ${proposal.title} <code>${proposal.fingerprint}</code>${silenced.length > 0 ? ` and ${silenced.length} more` : ''}</summary>`,
     '',

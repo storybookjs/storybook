@@ -294,6 +294,28 @@ describe('renderDry', () => {
     );
   });
 
+  it('shows the reason and the members of a group a person skipped', () => {
+    const [hmr, build] = groupFindings([
+      loaded('linux', 'claude', [
+        finding(),
+        finding({ checkId: 'build.static', title: 'Build fails', errorText: 'ENOSPC' }),
+      ]),
+    ]);
+    const proposal = toProposal({ lead: hmr!, members: [hmr!, build!], skip: 'by design' }, [], {
+      runUrl: RUN_URL,
+    });
+
+    const summary = renderDry(proposal, REPO);
+
+    expect(planFiling(proposal, { repo: REPO, evidenceLinks: 'assets' })).toEqual([
+      { kind: 'skip', reason: 'skipped by hand: by design' },
+    ]);
+    expect(summary).toContain('Skip: skipped by hand: by design.');
+    expect(summary).toContain(
+      '- `build.static` on storybookjs/mealdrop (linux, claude): Build fails'
+    );
+  });
+
   it('adds nothing for a suppressed finding that stands alone', () => {
     const proposal = proposalFor({}, [{ number: 7, labels: ['qa:known'], state: 'open' }]);
 

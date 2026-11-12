@@ -129,4 +129,14 @@ describe('clusterFindings', () => {
       },
     ]);
   });
+
+  it('carries the reason of a skipped group to its cluster', () => {
+    const groups = groupFindings([loaded('linux', 'claude', [finding()])]);
+
+    const [cluster] = clusterFindings(groups, {
+      groups: [{ members: [groups[0]!.fingerprint], skip: 'by design' }],
+    });
+
+    expect(cluster!.skip).toBe('by design');
+  });
 });

@@ -9,7 +9,7 @@ import { listQaIssues, releasePublishedAt } from './lib/github.ts';
 import { checkGrouping, clusterFindings, identityGrouping } from './lib/grouping.ts';
 import { loadFindingGroups, openIssueOf, toProposal } from './lib/proposals.ts';
 import { upgraded } from './lib/results.ts';
-import { Grouping } from './lib/schema.ts';
+import { Grouping, type Proposal } from './lib/schema.ts';
 
 const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>] [--expect <expected-findings.json>] [--groups <groups.json>]
 
@@ -94,15 +94,23 @@ for (const { result, resultPath } of loaded) {
     `${resultPath}: ${result.status}, ${result.checks.length} checks, failed: ${failed.join(', ') || 'none'}${upgraded(result) ? '' : ', not upgraded'}`
   );
 }
+const targetOf = (proposal: Proposal): string => {
+  switch (proposal.kind) {
+    case 'issue':
+      return '';
+    case 'comment':
+      return ` #${proposal.existingIssue}`;
+    case 'suppressed':
+      return ` (${proposal.reason}) #${proposal.existingIssue}`;
+    case 'skipped':
+      return ` (${proposal.reason})`;
+  }
+};
 for (const proposal of proposals) {
-  const target =
-    proposal.kind === 'issue'
-      ? ''
-      : proposal.kind === 'suppressed'
-        ? ` (${proposal.reason}) #${proposal.existingIssue}`
-        : ` #${proposal.existingIssue}`;
   const more = proposal.related.length > 0 ? ` (+${proposal.related.length} more)` : '';
-  console.log(`${proposal.kind}${target} ${proposal.fingerprint} ${proposal.title}${more}`);
+  console.log(
+    `${proposal.kind}${targetOf(proposal)} ${proposal.fingerprint} ${proposal.title}${more}`
+  );
 }
 console.log(`${loaded.length} results, ${proposals.length} proposals written to ${out}`);
 

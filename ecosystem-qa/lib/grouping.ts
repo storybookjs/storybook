@@ -6,6 +6,8 @@ export interface Cluster {
   lead: FindingGroup;
   members: FindingGroup[];
   existingIssue?: number;
+  /** Why a person decided that nothing is filed for this cluster. */
+  skip?: string;
 }
 
 const onOtherIssue = (
@@ -75,12 +77,13 @@ export const identityGrouping = (fingerprints: string[]): Grouping => ({
 /** Turn a grouping that passed `checkGrouping` into clusters, in the grouping's order. */
 export const clusterFindings = (groups: FindingGroup[], grouping: Grouping): Cluster[] => {
   const byFingerprint = new Map(groups.map((group) => [group.fingerprint, group]));
-  return grouping.groups.map(({ members, existingIssue }) => {
+  return grouping.groups.map(({ members, existingIssue, skip }) => {
     const clustered = members.map((member) => byFingerprint.get(member)!);
     return {
       lead: clustered[0]!,
       members: clustered,
       ...(existingIssue !== undefined ? { existingIssue } : {}),
+      ...(skip !== undefined ? { skip } : {}),
     };
   });
 };

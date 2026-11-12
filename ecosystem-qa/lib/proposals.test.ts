@@ -201,6 +201,20 @@ describe('toProposal for a cluster', () => {
     expect(proposal).toMatchObject({ kind: 'suppressed', existingIssue: 7 });
   });
 
+  it('files nothing for a cluster a person skipped, even with a member on an open issue', () => {
+    const proposal = toProposal(
+      { ...cluster(), skip: 'off by default for this framework' },
+      [issueOn(build, { number: 7, labels: ['bug'], state: 'open' })],
+      OPTIONS
+    );
+
+    expect(proposal).toMatchObject({
+      kind: 'skipped',
+      reason: 'off by default for this framework',
+    });
+    expect(proposal.related).toHaveLength(1);
+  });
+
   it('names the members a suppressed cluster silences along with its lead', () => {
     const proposal = toProposal(
       cluster(),

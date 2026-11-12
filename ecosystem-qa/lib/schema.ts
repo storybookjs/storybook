@@ -213,6 +213,9 @@ export const Grouping = z.strictObject({
       members: z.array(Fingerprint).min(1),
       // An issue that matches by similarity rather than by fingerprint.
       existingIssue: z.number().int().optional(),
+      // A person's verdict that the group is not a bug to file, with the reason. Only a person
+      // writes it: the model's answer has no such field.
+      skip: z.string().min(1).optional(),
     })
   ),
 });
@@ -259,6 +262,7 @@ export const Proposal = z.discriminatedUnion('kind', [
     existingIssue: z.number().int(),
     reason: z.enum(['known', 'fixed-later']),
   }),
+  z.strictObject({ kind: z.literal('skipped'), ...ProposalBase, reason: z.string().min(1) }),
 ]);
 export type Proposal = z.infer<typeof Proposal>;
 export type IssueProposal = Extract<Proposal, { kind: 'issue' }>;

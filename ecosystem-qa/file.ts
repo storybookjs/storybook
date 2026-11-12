@@ -250,7 +250,7 @@ const checkPrerequisites = () => {
 };
 
 if (values.dry) {
-  const counts = ['issue', 'comment', 'suppressed']
+  const counts = ['issue', 'comment', 'suppressed', 'skipped']
     .map((kind) => `${proposals.filter((proposal) => proposal.kind === kind).length} ${kind}`)
     .join(', ');
   writeStepSummary(

@@ -352,7 +352,7 @@ export interface ProposalOptions {
 
 /** Build the one proposal for a cluster from its lead, matching `issues` by any member's fingerprint. */
 export const toProposal = (
-  { lead, members, existingIssue }: Cluster,
+  { lead, members, existingIssue, skip }: Cluster,
   issues: QaIssue[],
   { runUrl, publishedAt }: ProposalOptions
 ): Proposal => {
@@ -380,6 +380,9 @@ export const toProposal = (
         sources: sourcesOf([member]),
       })),
   };
+  if (skip !== undefined) {
+    return { kind: 'skipped', ...common, reason: skip };
+  }
   const decision = decide(
     hitsFor(
       issues,

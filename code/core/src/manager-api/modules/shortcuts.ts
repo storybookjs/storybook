@@ -9,6 +9,7 @@ import {
 import { global } from '@storybook/global';
 
 import copy from 'copy-to-clipboard';
+import { isEqual } from 'es-toolkit/predicate';
 
 import { logger } from 'storybook/internal/client-logger';
 import type { KeyboardEventLike } from '../lib/shortcut.ts';
@@ -264,11 +265,24 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
       return value;
     },
     async setAddonShortcut(addon: string, shortcut: API_AddonShortcut) {
-      await api.setShortcuts((shortcuts) => ({
-        ...shortcuts,
-        [`${addon}-${shortcut.actionName}`]: shortcut.defaultShortcut,
-      }));
-      addonsShortcuts[`${addon}-${shortcut.actionName}`] = shortcut;
+      const id = `${addon}-${shortcut.actionName}`;
+      const previous = addonsShortcuts[id];
+      // The action closure of a tool changes with the story or its globals, so tools re-register
+      // on every story change. The map always takes the latest closure, but the store, which only
+      // holds the key binding, is written when the registration is new or its default binding
+      // changed: every write there re-renders the manager and persists the whole store, and it
+      // would reset a binding the user customised.
+      addonsShortcuts[id] = shortcut;
+      const isRegistered =
+        !!previous &&
+        isEqual(previous.defaultShortcut, shortcut.defaultShortcut) &&
+        id in (store.getState().shortcuts ?? {});
+      if (!isRegistered) {
+        await api.setShortcuts((shortcuts) => ({
+          ...shortcuts,
+          [id]: shortcut.defaultShortcut,
+        }));
+      }
       return shortcut;
     },
     async restoreDefaultShortcut(action) {

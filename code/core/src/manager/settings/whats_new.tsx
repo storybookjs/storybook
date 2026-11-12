@@ -2,6 +2,7 @@ import type { ComponentProps, FC } from 'react';
 import React, { Fragment, useEffect, useState } from 'react';
 
 import { Button, Loader } from 'storybook/internal/components';
+import type { WhatsNewData } from 'storybook/internal/core-events';
 
 import { global } from '@storybook/global';
 import { AlertIcon as AlertIconSvg, EyeCloseIcon, EyeIcon, HeartIcon } from '@storybook/icons';
@@ -166,17 +167,33 @@ const PureWhatsNewScreen: FC<WhatsNewProps> = ({
 
 const MAX_WAIT_TIME = 10000; // 10 seconds
 
+export const canOpenWhatsNew = (whatsNewData?: WhatsNewData) =>
+  whatsNewData?.status === 'SUCCESS' || whatsNewData?.status === 'DISABLED';
+
 const WhatsNewScreen: FC = () => {
   const api = useStorybookApi();
   const state = useStorybookState();
   const { whatsNewData } = state;
   const [isLoaded, setLoaded] = useState(false);
   const [didHitMaxWaitTime, setDidHitMaxWaitTime] = useState(false);
+  const status = whatsNewData?.status;
 
+  // Restarts when the status changes, so fetching the post and loading its page each get the
+  // full wait time.
   useEffect(() => {
     const timer = setTimeout(() => !isLoaded && setDidHitMaxWaitTime(true), MAX_WAIT_TIME);
     return () => clearTimeout(timer);
-  }, [isLoaded]);
+  }, [isLoaded, status]);
+
+  useEffect(() => {
+    if (status === 'DISABLED') {
+      api.loadWhatsNewPost().then((loaded) => !loaded && setDidHitMaxWaitTime(true));
+    }
+  }, [api, status]);
+
+  if (status === 'DISABLED') {
+    return didHitMaxWaitTime ? <MaxWaitTimeMessaging /> : <WhatsNewLoader />;
+  }
 
   if (whatsNewData?.status !== 'SUCCESS') {
     return null;

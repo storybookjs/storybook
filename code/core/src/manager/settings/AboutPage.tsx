@@ -4,6 +4,7 @@ import React, { Component, useCallback } from 'react';
 import { type API, useStorybookApi, useStorybookState } from 'storybook/manager-api';
 
 import { AboutScreen } from './About.tsx';
+import { canOpenWhatsNew } from './whats_new.tsx';
 
 // Clear a notification on mount. This could be exported by core/notifications.js perhaps?
 class NotificationClearer extends Component<
@@ -31,7 +32,7 @@ export const AboutPage: FC = () => {
     <NotificationClearer api={api} notificationId="update">
       <AboutScreen
         onNavigateToWhatsNew={
-          state.whatsNewData?.status === 'SUCCESS' ? onNavigateToWhatsNew : undefined
+          canOpenWhatsNew(state.whatsNewData) ? onNavigateToWhatsNew : undefined
         }
       />
     </NotificationClearer>

@@ -11,7 +11,7 @@ catalog.json ──> run.ts ──> results/<repo>/<os>/<engine>/result.json ─
 ```
 
 The full manual QA checklist for Storybook 11 is `references/basic-qa.md`, derived from this repo's migration guide, changelog, docs and E2E specs; humans use it in a bug bash.
-The checks the agent must report live in `checks.ts`, a subset of that list; the checklist's Agent column says which rows map to which id and which rows come next.
+The checks the agent can run live in `checks.ts`; the checklist's Agent column maps each row to its id, or says which monorepo test already proves it or why a person has to judge it, and `lib/checks.test.ts` keeps the two in sync.
 The same list renders into the prompt and validates the agent's answer, so the agent cannot invent a check id.
 
 ## Why a third agent harness
@@ -37,9 +37,9 @@ ANTHROPIC_API_KEY=... node ecosystem-qa/run.ts --repo mealdrop --version 11.0.0-
 
 Pick the sandbox for your machine:
 
-- `--sandbox seatbelt` on macOS.
+- `--sandbox docker` wherever Docker runs, with the image built first: `docker build --build-arg AGENT_UID=$(id -u) --build-arg AGENT_GID=$(id -g) -t sb-ecosystem-qa ecosystem-qa`. This is the one sandbox that covers every check, and the one CI uses.
+- `--sandbox seatbelt` on macOS covers the upgrade, build and CLI checks only. Its profile denies Chromium the Mach port it registers at launch, so screenshots and HMR checks come back `skip`, and the agent's shells inherit launchd's 256 open-file limit, which breaks the file watcher.
 - `--sandbox bwrap` on Linux.
-- `--sandbox docker` on Linux with the image built first: `docker build --build-arg AGENT_UID=$(id -u) --build-arg AGENT_GID=$(id -g) -t sb-ecosystem-qa ecosystem-qa`.
 - `--sandbox none` runs the agent on the host with your environment, so use it only for a trusted owned repo.
 
 To bill your Claude subscription instead of an API key, run `claude setup-token` once and pass the result as `CLAUDE_CODE_OAUTH_TOKEN` in place of `ANTHROPIC_API_KEY`; the native sandboxes hide the login in `~/.claude`, so the token is the only way in.

@@ -86,16 +86,10 @@ const QUERY_OPTIONS: Partial<Options> = {
 
       const color = str.slice(1).match(COLOR_REGEXP);
       if (color) {
-        if (str.startsWith('!rgba') || str.startsWith('!RGBA')) {
-          return `${color[1]}(${color[2]}, ${color[3]}, ${color[4]}, ${color[5]})`;
-        }
-
-        if (str.startsWith('!hsla') || str.startsWith('!HSLA')) {
-          return `${color[1]}(${color[2]}, ${color[3]}%, ${color[4]}%, ${color[5]})`;
-        }
-        return str.startsWith('!rgb') || str.startsWith('!RGB')
-          ? `${color[1]}(${color[2]}, ${color[3]}, ${color[4]})`
-          : `${color[1]}(${color[2]}, ${color[3]}%, ${color[4]}%)`;
+        const [, space, first, second, third, alpha] = color;
+        const unit = space.toLowerCase().startsWith('hsl') ? '%' : '';
+        const channels = `${first}, ${second}${unit}, ${third}${unit}`;
+        return alpha === undefined ? `${space}(${channels})` : `${space}(${channels}, ${alpha})`;
       }
     }
 

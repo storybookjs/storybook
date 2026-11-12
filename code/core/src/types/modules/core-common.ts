@@ -372,6 +372,17 @@ export interface TypescriptOptions {
    * @default false
    */
   skipCompiler: boolean;
+
+  /**
+   * The TypeScript package that React and Angular (`@storybook/angular-vite`) docgen load, resolved
+   * as if the main config imported it: a package name, a `file:` URL, or a path to the package's
+   * folder, absolute or relative to the config directory. Use it when the `typescript` package must stay on
+   * TypeScript 6 and TypeScript 7.1 or newer is installed under another name, such as
+   * `@typescript/native`.
+   *
+   * @default 'typescript'
+   */
+  docgenSpecifier?: string;
 }
 
 export type Preset =
@@ -622,10 +633,12 @@ export interface StorybookFeatures {
   /**
    * Enable component manifest generation for MCP and other tooling integrations.
    *
-   * `@storybook/react`, `@storybook/vue3`, and `@storybook/angular-vite` default this to `true`.
-   * Set it to `false` to opt out.
+   * `@storybook/react`, `@storybook/vue3`, `@storybook/svelte`, and `@storybook/angular-vite` default
+   * this to `true`. Frameworks built on these renderers inherit it, such as `@storybook/nextjs`,
+   * `@storybook/react-vite`, `@storybook/vue3-vite`, and `@storybook/sveltekit`. Set it to `false`
+   * to opt out.
    *
-   * @default false // `true` for React, Vue 3, and `@storybook/angular-vite`
+   * @default false // `true` for React, Vue 3, and Svelte frameworks, and `@storybook/angular-vite`
    */
   componentsManifest?: boolean;
 

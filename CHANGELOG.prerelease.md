@@ -1,3 +1,21 @@
+## 11.0.0-beta.2
+
+- Angular: Destroy root components before the application on story switch - [#37288](https://github.com/storybookjs/storybook/pull/37288), thanks @arturovt!
+- CLI: Remove jscodeshift and Babel, install 13 packages instead of 128 - [#37261](https://github.com/storybookjs/storybook/pull/37261), thanks @kasperpeulen!
+- Core: Fix stories failing to load on Windows with the webpack builder - [#37344](https://github.com/storybookjs/storybook/pull/37344), thanks @valentinpalkovic!
+- Core: Prevent duplicate Run All test runs across manager tabs - [#37160](https://github.com/storybookjs/storybook/pull/37160), thanks @benjavicente!
+- Docgen: Run React and Angular docgen on the TypeScript 7.1 native API - [#37004](https://github.com/storybookjs/storybook/pull/37004), thanks @JReinhold!
+- Docs: Add snippet templates so story snippets can follow the controls - [#37165](https://github.com/storybookjs/storybook/pull/37165), thanks @kasperpeulen!
+- MCP: Publish the composition schema a hosted Storybook actually serves - [#37290](https://github.com/storybookjs/storybook/pull/37290), thanks @Sidnioulz!
+- Manager: Make store reads include writes React has not committed yet - [#37294](https://github.com/storybookjs/storybook/pull/37294), thanks @ndelangen!
+- React: Accept only 0.7 of the docgen Vite plugin until TypeScript 7.1 is stable - [#37292](https://github.com/storybookjs/storybook/pull/37292), thanks @kasperpeulen!
+- React: Separate the items of a compact array or object default with one space - [#37320](https://github.com/storybookjs/storybook/pull/37320), thanks @JReinhold!
+- Skills: Fix what agents get wrong in the evals - [#36820](https://github.com/storybookjs/storybook/pull/36820), thanks @kasperpeulen!
+- Skills: Split ui-workflow into four skills, with AGENTS.md as the workflow - [#37296](https://github.com/storybookjs/storybook/pull/37296), thanks @kasperpeulen!
+- Svelte: Remove the leftovers from the Svelte CSF addon - [#37316](https://github.com/storybookjs/storybook/pull/37316), thanks @JReinhold!
+- SvelteKit: Automigrate sveltekit_experimental to beforeEach - [#37223](https://github.com/storybookjs/storybook/pull/37223), thanks @JReinhold!
+- SvelteKit: Mock $app modules with Storybook's mock API, remove sveltekit_experimental - [#37214](https://github.com/storybookjs/storybook/pull/37214), thanks @JReinhold!
+
 ## 11.0.0-beta.1
 
 - Addon Vitest: Run story files Vitest hasn't seen yet - [#37187](https://github.com/storybookjs/storybook/pull/37187), thanks @thelastbackspace!

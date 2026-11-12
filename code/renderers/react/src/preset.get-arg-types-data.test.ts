@@ -4,6 +4,7 @@ import { expect, test, vi } from 'vitest';
 
 import type { Options } from 'storybook/internal/types';
 
+import { getSharedComponentMetaManager } from './componentManifest/componentMetaManagerSingleton.ts';
 import { internal_getArgTypesData } from './preset.ts';
 
 // Ghost stories infer the required args of components with this preset. On the docgen server it
@@ -12,6 +13,7 @@ import { internal_getArgTypesData } from './preset.ts';
 vi.mock('react-docgen', () => {
   throw new Error('react-docgen must not load on the docgen server');
 });
+vi.mock('./componentManifest/componentMetaManagerSingleton.ts', { spy: true });
 vi.mock('react-docgen-typescript', () => {
   throw new Error('react-docgen-typescript must not load on the docgen server');
 });
@@ -42,4 +44,26 @@ test('infers required args of a default export', async () => {
 
   expect(argTypes?.name).toMatchObject({ type: { required: true } });
   expect(argTypes?.size).toMatchObject({ type: { required: false } });
+}, 60_000);
+
+test('loads the TypeScript that typescript.docgenSpecifier names', async () => {
+  const configDir = join(import.meta.dirname, '../.storybook');
+  await internal_getArgTypesData(null, {
+    componentFilePath: join(import.meta.dirname, '../template/cli/ts/Button.tsx'),
+    componentExportName: 'Button',
+    configDir,
+    presets: {
+      apply: async (name: string) =>
+        name === 'features'
+          ? { docgenServer: true }
+          : name === 'typescript'
+            ? { docgenSpecifier: '@typescript/native' }
+            : {},
+    } as unknown as Options['presets'],
+  });
+
+  expect(getSharedComponentMetaManager).toHaveBeenLastCalledWith({
+    specifier: '@typescript/native',
+    configDir,
+  });
 }, 60_000);

@@ -9,8 +9,7 @@ import './manager.tsx';
 
 vi.mock('storybook/manager-api', () => ({
   addons: {
-    register: (_id: string, register: (api: unknown) => void) =>
-      register({ getChannel: () => undefined }),
+    register: (_id: string, register: () => void) => register(),
     add: vi.fn(),
   },
   types: { PANEL: 'panel' },

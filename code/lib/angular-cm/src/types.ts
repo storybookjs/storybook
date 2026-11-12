@@ -129,7 +129,6 @@ export interface TypeAlias {
   subtype: string;
   rawtype: string;
   file: string;
-  kind: number;
   description?: Html;
   rawdescription?: string;
 }

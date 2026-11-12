@@ -129,7 +129,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ provider, store, fullAPI }): 
       ) as API_StateMerger<S>;
       return store
         .setState(
-          (s) => ({ ...s, addons: { ...s.addons, [addonId]: merger(s.addons[addonId]) } }),
+          (s) => ({ addons: { ...s.addons, [addonId]: merger(s.addons[addonId]) } }),
           options
         )
         .then(() => api.getAddonState(addonId));

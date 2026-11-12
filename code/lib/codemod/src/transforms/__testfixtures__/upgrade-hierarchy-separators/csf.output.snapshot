@@ -1,7 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`upgrade-hierarchy-separators transforms correctly using "csf.input.js" data 1`] = `
-"export default {
-  title: 'Foo/Bar/baz/whatever',
-};"
-`;

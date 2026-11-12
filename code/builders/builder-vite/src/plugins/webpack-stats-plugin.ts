@@ -29,15 +29,6 @@ type WebpackStatsPluginOptions = {
 
 const ROLLUP_VIRTUAL_PREFIX = '\0';
 
-function getOrCreate<K, V>(map: Map<K, V>, key: K, create: () => V): V {
-  let value = map.get(key);
-  if (value === undefined) {
-    value = create();
-    map.set(key, value);
-  }
-  return value;
-}
-
 function splitQuery(id: string): [path: string, query: string] {
   const queryIndex = id.indexOf('?');
   return queryIndex === -1 ? [id, ''] : [id.slice(0, queryIndex), id.slice(queryIndex)];
@@ -49,9 +40,7 @@ const STYLESHEET_PATH = new RegExp(`\\.(${STYLESHEET_EXTENSIONS})$`);
 const STYLESHEET_QUERY = new RegExp(`[?&]lang\\.(${STYLESHEET_EXTENSIONS})\\b`);
 
 function isStylesheet(id: string) {
-  const [path, query] = splitQuery(
-    id.startsWith(ROLLUP_VIRTUAL_PREFIX) ? id.slice(ROLLUP_VIRTUAL_PREFIX.length) : id
-  );
+  const [path, query] = splitQuery(id);
   return STYLESHEET_PATH.test(path) || STYLESHEET_QUERY.test(query);
 }
 
@@ -84,12 +73,6 @@ function createNormalizer(workingDir: string, ids: Iterable<string>) {
   };
 }
 
-type WatchFileContext = { addWatchFile: (file: string) => void };
-type HookHandler = (this: WatchFileContext, ...args: unknown[]) => unknown;
-
-// The module id is an argument of these hooks: `load(id)` and `transform(code, id)`.
-const MODULE_ID_ARGUMENT = { load: 0, transform: 1 } as const;
-
 export type WebpackStatsPlugin = Plugin & { storybookGetStats: () => BuilderStats };
 
 export function pluginWebpackStats({
@@ -100,58 +83,41 @@ export function pluginWebpackStats({
   const watchFilesById = new Map<string, Set<string>>();
   const isFileById = new Map<string, boolean>();
 
-  // Some files are read by a plugin and only declared with `this.addWatchFile()`, for example a Sass
-  // partial or an Angular `templateUrl`. They are never modules, so the bundler graph has no node
-  // for them. The bundler does not tell which module declared a watch file, so this wraps the
-  // `load` and `transform` hooks to record each call against the id of the module being processed.
-  // The id is captured per call, so hooks of different modules can run concurrently.
-  function interceptWatchFiles(plugin: Plugin, hookName: keyof typeof MODULE_ID_ARGUMENT) {
-    const hook = plugin[hookName] as HookHandler | { handler: HookHandler } | undefined;
-    const handler = typeof hook === 'function' ? hook : hook?.handler;
-    if (!handler) {
+  function interceptWatchFiles(plugin: Plugin, hookName: 'load' | 'transform') {
+    const hook = plugin[hookName];
+    if (!hook) {
       return;
     }
-
-    const wrapped: HookHandler = function (...args) {
-      const id = args[MODULE_ID_ARGUMENT[hookName]] as string;
-      const addWatchFile = (file: string) => {
-        getOrCreate(watchFilesById, id, () => new Set<string>()).add(file);
-        return this.addWatchFile(file);
-      };
+    const handler = typeof hook === 'function' ? hook : hook.handler;
+    const wrapped = function (this: { addWatchFile(file: string): void }, ...args: unknown[]) {
+      const id = args[hookName === 'load' ? 0 : 1] as string;
       const context = new Proxy(this, {
-        get(target, property) {
-          if (property === 'addWatchFile') {
-            return addWatchFile;
+        get(target, key) {
+          if (key === 'addWatchFile') {
+            return (file: string) => {
+              const files = watchFilesById.get(id) ?? new Set<string>();
+              files.add(file);
+              watchFilesById.set(id, files);
+              return target.addWatchFile(file);
+            };
           }
-          const value = Reflect.get(target, property, target);
+          const value = Reflect.get(target, key, target);
           return typeof value === 'function' ? value.bind(target) : value;
         },
       });
-      return handler.apply(context, args);
+      return Reflect.apply(handler, context, args);
     };
-
     try {
-      // Object hooks keep their `filter` and `order`.
       (plugin as Record<typeof hookName, unknown>)[hookName] =
         typeof hook === 'function' ? wrapped : { ...hook, handler: wrapped };
     } catch {
-      // A frozen plugin, or a hook defined as a getter, keeps its hook. Its watch files are not
-      // recorded, but the build does not fail.
+      // Non-writable hooks keep their original behavior.
     }
   }
 
-  // Plugins may also watch a directory, a glob or a relative path, which TurboSnap cannot match to a
-  // changed file. Only absolute paths to existing files are written.
-  function isFile(id: string) {
-    return getOrCreate(
-      isFileById,
-      id,
-      () => isAbsolute(id) && statSync(id, { throwIfNoEntry: false })?.isFile() === true
-    );
-  }
-
   function record(id: string, importer?: string) {
-    const importers = getOrCreate(importersById, id, () => new Set<string>());
+    const importers = importersById.get(id) ?? new Set<string>();
+    importersById.set(id, importers);
     if (importer !== undefined) {
       importers.add(importer);
     }
@@ -166,6 +132,7 @@ export function pluginWebpackStats({
       if (!recordWatchFiles || config.command !== 'build') {
         return;
       }
+      // Capture the owning module here because bundlers expose watch files only globally.
       for (const plugin of config.plugins) {
         interceptWatchFiles(plugin, 'load');
         interceptWatchFiles(plugin, 'transform');
@@ -176,13 +143,17 @@ export function pluginWebpackStats({
       for (const depId of mod.importedIds.concat(mod.dynamicallyImportedIds)) {
         record(depId, mod.id);
       }
-      // A watch file is a dependency of the module that declared it. A stylesheet keeps only the
-      // stylesheets it watches, such as Sass partials. Its other watch files are content sources,
-      // such as the files Tailwind scans for class names: the stories that use those files already
-      // trace to them through their imports.
+      // Tailwind's scanned sources must not become dependencies of a global stylesheet.
       const keepsOnlyStylesheets = isStylesheet(mod.id);
       for (const file of watchFilesById.get(mod.id) ?? []) {
-        if (isFile(file) && (!keepsOnlyStylesheets || isStylesheet(file))) {
+        if (keepsOnlyStylesheets && !isStylesheet(file)) {
+          continue;
+        }
+        const isFile =
+          isFileById.get(file) ??
+          (isAbsolute(file) && statSync(file, { throwIfNoEntry: false })?.isFile() === true);
+        isFileById.set(file, isFile);
+        if (isFile) {
           record(file, mod.id);
         }
       }

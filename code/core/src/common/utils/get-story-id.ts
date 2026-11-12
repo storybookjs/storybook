@@ -1,6 +1,6 @@
 import { relative } from 'node:path';
 
-import { normalizeStories, normalizeStoryPath } from 'storybook/internal/common';
+import { normalizeStories, normalizeStoryPath, toSpecifierPath } from 'storybook/internal/common';
 import { sanitize, storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
 import type { Options, StoriesEntry } from 'storybook/internal/types';
 
@@ -62,6 +62,12 @@ export function getStoryTitle({
   const importPath = posix(normalizeStoryPath(relativePath));
 
   return normalizedStories
-    .map((normalizeStory) => userOrAutoTitleFromSpecifier(importPath, normalizeStory, userTitle))
+    .map((normalizeStory) =>
+      userOrAutoTitleFromSpecifier(
+        toSpecifierPath(normalizeStory, importPath, workingDir),
+        normalizeStory,
+        userTitle
+      )
+    )
     .filter(Boolean)[0];
 }

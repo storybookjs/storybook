@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { realpathSync, writeFileSync } from 'node:fs';
 
 const docker = (...args) => execFileSync('docker', args, { encoding: 'utf8' }).trim();
 
@@ -7,8 +7,29 @@ const docker = (...args) => execFileSync('docker', args, { encoding: 'utf8' }).t
 // run.ts itself.
 const SHARE = 0.85;
 
+const realPath = (path) => {
+  try {
+    return realpathSync(path);
+  } catch {
+    return path;
+  }
+};
+
+// Sandcastle runs a host hook in the worktree of its run, and only that run's container mounts it.
+const containersOfThisRun = () => {
+  const worktree = realPath(process.cwd());
+  return docker('ps', '--filter', 'name=^sandcastle-', '--format', '{{.Names}}')
+    .split('\n')
+    .filter(Boolean)
+    .filter((name) =>
+      docker('inspect', '--format', '{{range .Mounts}}{{println .Source}}{{end}}', name)
+        .split('\n')
+        .some((source) => source && realPath(source) === worktree)
+    );
+};
+
 /**
- * Limit the memory of every running sandbox container to a share of what the Docker daemon has, and
+ * Limit the memory of this run's sandbox container to a share of what the Docker daemon has, and
  * write what happened to `reportFile`, which sits in the run's evidence.
  *
  * Without a limit, a build that takes all the memory starves the host. On a GitHub runner the job
@@ -21,9 +42,7 @@ const capMemory = (reportFile) => {
   let report;
   try {
     const limit = Math.floor(Number(docker('info', '--format', '{{.MemTotal}}')) * SHARE);
-    const names = docker('ps', '--filter', 'name=^sandcastle-', '--format', '{{.Names}}')
-      .split('\n')
-      .filter(Boolean);
+    const names = containersOfThisRun();
     for (const name of names) {
       // Equal values leave the container no swap on top of its memory.
       docker('update', '--memory', String(limit), '--memory-swap', String(limit), name);

@@ -35,7 +35,10 @@ import {
   registerDocgenService,
   subscribeDocgenToModuleGraphChanges,
 } from '../../shared/open-service/services/docgen/server.ts';
-import { createDocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
+import {
+  BUILD_TASK_TIMEOUT_MS,
+  createDocgenWorkerClient,
+} from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
 import {
   registerReviewService,
@@ -453,12 +456,17 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     // without a build) the client is undefined and we skip docgen registration rather than
     // extracting on the main thread.
     const docgenWorker =
-      docgenDescriptors.length > 0 ? createDocgenWorkerClient(docgenDescriptors) : undefined;
+      docgenDescriptors.length > 0
+        ? createDocgenWorkerClient(docgenDescriptors, {
+            taskTimeoutMs: options.configType === 'PRODUCTION' ? BUILD_TASK_TIMEOUT_MS : undefined,
+          })
+        : undefined;
 
     if (docgenWorker) {
       registerDocgenService({
         getIndex,
         docgenProvider: (input) => docgenWorker.extract(input.entry),
+        prepareDocgen: (entries) => docgenWorker.prepare(entries),
       });
       devServerSubscriptions.push(() =>
         subscribeDocgenToModuleGraphChanges({

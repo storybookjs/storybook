@@ -2,6 +2,7 @@ import type {
   DocgenPayload,
   DocgenProviderInput,
   DocgenSubcomponent,
+  IndexEntry,
   StrictArgTypes,
 } from 'storybook/internal/types';
 
@@ -16,7 +17,10 @@ import type {
   StoryRef,
   TypescriptOptions,
 } from '../componentManifest/getComponentImports.ts';
-import { resolveStoryFileComponents } from '../componentManifest/resolveComponents.ts';
+import {
+  type ResolvedStoryFile,
+  resolveStoryFileComponents,
+} from '../componentManifest/resolveComponents.ts';
 import { extractArgTypes } from '../extractArgTypes.ts';
 
 export interface BuildDocgenContext {
@@ -92,6 +96,53 @@ function addArgTypesFromComponentMeta(payload: ReactDocgenPayload): DocgenPayloa
   };
 }
 
+/** The refs extraction needs for one story file: its component and its resolvable subcomponents. */
+export function toStoryRefs(
+  storyPath: string,
+  { component, subcomponents }: Pick<ResolvedStoryFile, 'component' | 'subcomponents'>
+): StoryRef[] {
+  return [component, ...subcomponents.map((sub) => sub.component)]
+    .filter((ref): ref is ComponentRef => ref !== undefined)
+    .map((ref) => ({ storyPath, component: ref }));
+}
+
+/**
+ * Collect the refs of every story file in a run, for {@link ComponentMetaManager.setBatch}.
+ *
+ * A story file that cannot be read or parsed contributes nothing: its own extraction reports it.
+ */
+export async function resolveBatchStoryRefs(
+  entries: readonly IndexEntry[],
+  context: Pick<BuildDocgenContext, 'typescriptOptions' | 'resolvePath'> = {}
+): Promise<StoryRef[]> {
+  const refs = await Promise.all(
+    entries.map(async (entry) => {
+      const storyFilePath = getStoryImportPathFromEntry(entry);
+      if (!storyFilePath) {
+        return [];
+      }
+      const storyPath = resolveStoryPath(storyFilePath, context);
+      try {
+        const resolved = await resolveStoryFileComponents({
+          storyPath,
+          title: entry.title,
+          typescriptOptions: context.typescriptOptions,
+          docgenEngine: 'react-component-meta',
+        });
+        return toStoryRefs(storyPath, resolved);
+      } catch {
+        return [];
+      }
+    })
+  );
+  return refs.flat();
+}
+
+const resolveStoryPath = (
+  storyFilePath: string,
+  { resolvePath }: Pick<BuildDocgenContext, 'resolvePath'>
+) => (resolvePath ? resolvePath(storyFilePath) : path.join(process.cwd(), storyFilePath));
+
 /**
  * Build a {@link DocgenPayload} for the component found in one CSF story file.
  *
@@ -112,9 +163,7 @@ export async function buildDocgenPayload(
     return undefined;
   }
 
-  const resolvePath =
-    context.resolvePath ?? ((importPath: string) => path.join(process.cwd(), importPath));
-  const storyPath = resolvePath(storyFilePath);
+  const storyPath = resolveStoryPath(storyFilePath, context);
 
   let resolved;
   try {
@@ -130,14 +179,7 @@ export async function buildDocgenPayload(
 
   const { csf, componentName, component, subcomponents, storyFile } = resolved;
 
-  const usableSubcomponents = subcomponents.filter(
-    (sub): sub is { name: string; component: ComponentRef } => sub.component !== undefined
-  );
-
-  const storyRefs: StoryRef[] = [
-    ...(component ? [{ storyPath, component }] : []),
-    ...usableSubcomponents.map((sub) => ({ storyPath, component: sub.component })),
-  ];
+  const storyRefs = toStoryRefs(storyPath, resolved);
   if (storyRefs.length > 0) {
     context.componentMetaManager.batchExtract(storyRefs);
   }

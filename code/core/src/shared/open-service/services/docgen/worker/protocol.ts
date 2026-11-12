@@ -27,7 +27,16 @@ export interface DocgenWorkerExtractRequest {
   entry: IndexEntry;
 }
 
-export type DocgenWorkerRequest = DocgenWorkerInitRequest | DocgenWorkerExtractRequest;
+/** Announces the entries about to be extracted; later extract requests carry them as `batch`. */
+export interface DocgenWorkerPrepareRequest {
+  type: 'prepare';
+  entries: IndexEntry[];
+}
+
+export type DocgenWorkerRequest =
+  | DocgenWorkerInitRequest
+  | DocgenWorkerExtractRequest
+  | DocgenWorkerPrepareRequest;
 
 /** Chain composition succeeded; the worker is ready for extract requests. */
 export interface DocgenWorkerInitSuccess {

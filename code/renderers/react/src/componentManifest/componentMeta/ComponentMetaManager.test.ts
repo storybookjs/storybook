@@ -416,6 +416,33 @@ describe('multi-project management', () => {
     }
   );
 
+  it('project references: follows a reference added after the first lookup', () => {
+    tempDir = createTempDir();
+
+    const files = writeFiles(tempDir, {
+      'tsconfig.json': tsconfigJSON({ include: ['unused/**/*'] }),
+      'configs/tsconfig.lib.json': tsconfigJSON({ include: ['../src/**/*'] }),
+      'src/Button.tsx': dedent`
+        import React from 'react';
+        export const Button = (_props: { label: string }) => <button />;
+      `,
+    });
+
+    manager = new ComponentMetaManager(typescript);
+    const inferred = manager.getProjectForFile(files['src/Button.tsx']);
+
+    fs.writeFileSync(
+      files['tsconfig.json'],
+      tsconfigJSON({
+        include: ['unused/**/*'],
+        references: [{ path: './configs/tsconfig.lib.json' }],
+      })
+    );
+    manager.onConfigChanged(files['tsconfig.json'], 'changed');
+
+    expect(manager.getProjectForFile(files['src/Button.tsx'])).not.toBe(inferred);
+  });
+
   it('project references: finds file via referenced project', () => {
     tempDir = createTempDir();
 
@@ -578,6 +605,86 @@ describe('multi-project management', () => {
       expect(after).toBe(before);
     }
   );
+
+  describe('setBatch', () => {
+    const setup = () => {
+      tempDir = createTempDir();
+      const files = Object.fromEntries(
+        ['Button', 'Card'].flatMap((name) => [
+          [
+            `${name}.tsx`,
+            `import React from 'react';\nexport const ${name} = (_props: { label: string }) => <div />;`,
+          ],
+          [`${name}.stories.tsx`, `import { ${name} } from './${name}';\nexport default {};`],
+        ])
+      );
+      writeFiles(tempDir, files);
+      const toRef = (name: string): StoryRef => ({
+        storyPath: path.join(tempDir!, `${name}.stories.tsx`),
+        component: {
+          componentName: name,
+          importId: `./${name}`,
+          importName: name,
+          path: path.join(tempDir!, `${name}.tsx`),
+          isPackage: false,
+        },
+      });
+      manager = new ComponentMetaManager(typescript);
+      return { button: toRef('Button'), card: toRef('Card') };
+    };
+
+    it(
+      'gives a project the files of the whole batch before its first extraction',
+      { timeout: 30_000 },
+      () => {
+        const { button, card } = setup();
+
+        manager.setBatch([button, card]);
+        manager.batchExtract([button]);
+
+        const project = manager.getProjectForFile(button.storyPath);
+        expect(project.hasSourceFile(card.component!.path!)).toBe(true);
+        expect(button.component?.reactComponentMeta).toMatchObject({ displayName: 'Button' });
+      }
+    );
+
+    it(
+      'stops giving projects the batch once holding it forced a heap-pressure recycle',
+      { timeout: 30_000 },
+      () => {
+        const { button, card } = setup();
+        const warn = vi.spyOn(once, 'warn').mockImplementation(() => undefined);
+        const memoryUsage = vi
+          .spyOn(process, 'memoryUsage')
+          .mockReturnValueOnce({ heapUsed: Number.POSITIVE_INFINITY } as NodeJS.MemoryUsage);
+
+        try {
+          manager.setBatch([button, card]);
+          manager.batchExtract([button]);
+          manager.batchExtract([button]);
+
+          const project = manager.getProjectForFile(button.storyPath);
+          expect(project.hasSourceFile(card.component!.path!)).toBe(false);
+        } finally {
+          warn.mockRestore();
+          memoryUsage.mockRestore();
+        }
+      }
+    );
+
+    it(
+      'leaves later files out of the project when no batch is announced',
+      { timeout: 30_000 },
+      () => {
+        const { button, card } = setup();
+
+        manager.batchExtract([button]);
+
+        const project = manager.getProjectForFile(button.storyPath);
+        expect(project.hasSourceFile(card.component!.path!)).toBe(false);
+      }
+    );
+  });
 
   it('extracts via Path 1 (importId + JSX in story file)', { timeout: 30_000 }, () => {
     tempDir = createTempDir();

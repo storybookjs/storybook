@@ -201,7 +201,7 @@ export const CHECKS = [
     phase: 'test',
     tier: 'extended',
     probe:
-      'Check `package.json` for `@storybook/test-runner`. `n/a` when absent. Otherwise run it against the static build on port 6008 with a bounded wait and save the output to `test-runner.log`. It must finish and print the end-of-support warning.',
+      'Check `package.json` for `@storybook/test-runner`. `n/a` when absent. Otherwise run it against the static build on port 6008 with a bounded wait and save the output to `test-runner.log`. It must finish and print a warning that says the test runner is no longer supported.',
   },
 ] as const satisfies readonly CheckDefinition[];
 

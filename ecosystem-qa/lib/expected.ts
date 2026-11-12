@@ -15,25 +15,35 @@ export type ExpectedFinding = z.infer<typeof ExpectedFinding>;
 export const loadExpected = (file: string): ExpectedFinding[] =>
   z.array(ExpectedFinding).parse(JSON.parse(readFileSync(file, 'utf8')));
 
+type SeenFinding = Pick<ExpectedFinding, 'repo' | 'fingerprint' | 'title'>;
+
 export interface ExpectReport {
   found: ExpectedFinding[];
   missed: ExpectedFinding[];
-  extra: FindingGroup[];
+  extra: SeenFinding[];
 }
 
-/** Which expected findings the groups cover, counted only for the repos that ran. */
+// A fingerprint hashes the class of the repo, not the repo, so two repos can share one.
+const key = ({ repo, fingerprint }: SeenFinding) => `${repo} ${fingerprint}`;
+
+/** Which expected findings the groups cover, repo by repo, counted only for the repos that ran. */
 export const compareExpected = (
   expected: ExpectedFinding[],
   groups: FindingGroup[],
   ranRepos: Set<string>
 ): ExpectReport => {
   const relevant = expected.filter((item) => ranRepos.has(item.repo));
-  const seen = new Set(groups.map((group) => group.fingerprint));
-  const known = new Set(relevant.map((item) => item.fingerprint));
+  const seen = groups.flatMap(({ fingerprint, finding, occurrences }) =>
+    [...new Set(occurrences.map(({ result }) => result.request.entry.id))].map(
+      (repo): SeenFinding => ({ repo, fingerprint, title: finding.title })
+    )
+  );
+  const seenKeys = new Set(seen.map(key));
+  const knownKeys = new Set(relevant.map(key));
   return {
-    found: relevant.filter((item) => seen.has(item.fingerprint)),
-    missed: relevant.filter((item) => !seen.has(item.fingerprint)),
-    extra: groups.filter((group) => !known.has(group.fingerprint)),
+    found: relevant.filter((item) => seenKeys.has(key(item))),
+    missed: relevant.filter((item) => !seenKeys.has(key(item))),
+    extra: seen.filter((item) => !knownKeys.has(key(item))),
   };
 };
 
@@ -42,9 +52,10 @@ export const renderExpectReport = (report: ExpectReport): string => {
   const lines = [
     `Expected findings: ${report.found.length}/${total} found, ${report.extra.length} not expected.`,
     ...report.missed.map(
-      (item) => `  missed ${item.fingerprint} ${item.title}${item.issue ? ` (#${item.issue})` : ''}`
+      (item) =>
+        `  missed ${item.repo} ${item.fingerprint} ${item.title}${item.issue ? ` (#${item.issue})` : ''}`
     ),
-    ...report.extra.map((group) => `  extra  ${group.fingerprint} ${group.finding.title}`),
+    ...report.extra.map((item) => `  extra  ${item.repo} ${item.fingerprint} ${item.title}`),
   ];
   return lines.join('\n');
 };

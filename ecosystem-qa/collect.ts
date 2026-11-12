@@ -7,7 +7,7 @@ import { versionLine } from './lib/cycle.ts';
 import { compareExpected, loadExpected, renderExpectReport } from './lib/expected.ts';
 import { listQaIssues, releasePublishedAt } from './lib/github.ts';
 import { clusterFindings, identityGrouping } from './lib/grouping.ts';
-import { loadFindingGroups, QA_LABEL, toProposal } from './lib/proposals.ts';
+import { fence, loadFindingGroups, QA_LABEL, toProposal } from './lib/proposals.ts';
 import { upgraded } from './lib/results.ts';
 import { Grouping, type Proposal } from './lib/schema.ts';
 
@@ -112,6 +112,6 @@ if (values.expect) {
   const report = renderExpectReport(compareExpected(loadExpected(values.expect), groups, ran));
   console.log(report);
   if (process.env.GITHUB_STEP_SUMMARY) {
-    appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n\`\`\`\n${report}\n\`\`\`\n`);
+    appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n${fence(report)}\n`);
   }
 }

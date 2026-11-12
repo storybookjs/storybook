@@ -1,8 +1,17 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 
+const activeNode = () => {
+  try {
+    return `Node ${execFileSync('node', ['--version'], { encoding: 'utf8' }).trim()} is active`;
+  } catch (error) {
+    return `node --version failed: ${error instanceof Error ? error.message : error}`;
+  }
+};
+
 /**
- * Switch to the Node version the project in the current directory asks for, with `n`.
+ * Switch to the Node version the project in the current directory asks for, with `n`, and return one
+ * line that says what happened.
  *
  * Never throws: a project without a version file keeps the image's Node, and the install log shows
  * any engine problem.
@@ -13,9 +22,10 @@ export const useNode = (version) => {
   // support yet.
   const versionFile = ['.node-version', '.nvmrc'].find((name) => existsSync(name));
   const wanted = version ?? (versionFile && readFileSync(versionFile, 'utf8').trim());
-  if (wanted) {
-    spawnSync('n', [wanted.replace(/^v/, '')], { stdio: 'inherit' });
+  if (!wanted) {
+    return `No Node version asked for. ${activeNode()}.`;
   }
-  const active = execFileSync('node', ['--version'], { encoding: 'utf8' }).trim();
-  console.log(`Node ${active} is active`);
+  const { status, error } = spawnSync('n', [wanted.replace(/^v/, '')], { stdio: 'inherit' });
+  const outcome = error ? `could not run: ${error.message}` : `exited with ${status}`;
+  return `\`n ${wanted}\` ${outcome}. ${activeNode()}.`;
 };

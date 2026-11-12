@@ -10,6 +10,9 @@ import { retargetEmotionTypeQueries } from './scripts/retarget-emotion-type-quer
 
 const config: BuildEntries = {
   extraOutputs: {
+    // SB12: Remove this override, restore './theming' to the create entry's exportEntries, and rebuild.
+    // Remove the legacy-browser contract tests and manager alias, and update the migration guidance.
+    // Addons must import Emotion helpers from 'storybook/theming/emotion'.
     './theming': {
       types: './dist/theming/create.d.ts',
       browser: {

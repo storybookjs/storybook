@@ -49,8 +49,8 @@ export interface QaIssue extends IssueHit {
   body: string;
   /** The comments the harness wrote on the issue, oldest first. */
   comments: string[];
-  closedAt?: string;
-  stateReason?: string;
+  /** When the issue was closed as completed. Absent while it is open or closed for another reason. */
+  completedAt?: string;
 }
 
 /** Return what the harness wrote on an issue: its body, then its comments. */
@@ -450,10 +450,8 @@ type Decision =
 
 const fixedAfter = (issue: QaIssue, publishedAt: string | undefined): boolean =>
   publishedAt !== undefined &&
-  issue.state === 'closed' &&
-  issue.stateReason === 'completed' &&
-  issue.closedAt !== undefined &&
-  Date.parse(issue.closedAt) > Date.parse(publishedAt);
+  issue.completedAt !== undefined &&
+  Date.parse(issue.completedAt) > Date.parse(publishedAt);
 
 // A fix that landed after the tested prerelease was published is not in it, so seeing the bug
 // there is expected.

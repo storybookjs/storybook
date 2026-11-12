@@ -42,13 +42,16 @@ describe('qaIssuesFrom', () => {
     expect(issues.map((issue) => issue.comments)).toEqual([[], ['comment on 6']]);
   });
 
-  it('keeps when and why an issue was closed', () => {
-    expect(
-      listed([item({ closed_at: '2026-11-05T10:00:00Z', state_reason: 'completed' })])[0]
-    ).toMatchObject({ closedAt: '2026-11-05T10:00:00Z', stateReason: 'completed' });
-    expect(listed([item({ closed_at: null, state_reason: null })])[0]).not.toHaveProperty(
-      'closedAt'
+  it('keeps when an issue was closed as completed, and nothing for any other reason', () => {
+    const closedAt = '2026-11-05T10:00:00Z';
+    const reasons = ['completed', 'not_planned', 'duplicate', null].map(
+      (state_reason) => listed([item({ closed_at: closedAt, state_reason })])[0]?.completedAt
     );
+
+    expect(reasons).toEqual([closedAt, undefined, undefined, undefined]);
+    expect(
+      listed([item({ state: 'open', closed_at: null, state_reason: 'reopened' })])[0]
+    ).not.toHaveProperty('completedAt');
   });
 
   it('turns a null body into an empty string', () => {

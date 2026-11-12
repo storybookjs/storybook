@@ -230,8 +230,7 @@ describe('planFiling', () => {
     const [group] = groupFindings([loaded('linux', 'claude', [finding()])]);
     const fixed = {
       ...issueOn(group, { number: 7, labels: ['bug'], state: 'closed' }),
-      stateReason: 'completed',
-      closedAt: '2026-11-05T10:00:00Z',
+      completedAt: '2026-11-05T10:00:00Z',
     };
     const proposal = toProposal(single(group), [fixed], {
       runUrl: RUN_URL,

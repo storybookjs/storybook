@@ -54,8 +54,9 @@ export const qaIssuesFrom = (
       labels: item.labels.map((label) => label.name),
       body: item.body ?? '',
       comments: item.comments > 0 ? commentsOf(item.number) : [],
-      ...(item.closed_at ? { closedAt: item.closed_at } : {}),
-      ...(item.state_reason ? { stateReason: item.state_reason } : {}),
+      ...(item.state === 'closed' && item.state_reason === 'completed' && item.closed_at
+        ? { completedAt: item.closed_at }
+        : {}),
     }));
 
 /**

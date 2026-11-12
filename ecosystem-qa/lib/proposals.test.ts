@@ -338,14 +338,13 @@ describe('toProposal for a cluster', () => {
 describe('toProposal with the publish date of the tested version', () => {
   const [group] = groupFindings([loaded('linux', 'claude', [finding()])]);
   const PUBLISHED = '2026-11-03T19:32:47Z';
-  const closed = (number: number, stateReason: string, closedAt: string) => ({
+  const closed = (number: number, completedAt?: string) => ({
     ...issueOn(group, { number, labels: ['bug'], state: 'closed' }),
-    stateReason,
-    closedAt,
+    ...(completedAt ? { completedAt } : {}),
   });
 
   it('suppresses a bug whose issue was closed as completed after the version was published', () => {
-    const proposal = toProposal(single(group), [closed(9, 'completed', '2026-11-05T10:00:00Z')], {
+    const proposal = toProposal(single(group), [closed(9, '2026-11-05T10:00:00Z')], {
       ...OPTIONS,
       publishedAt: PUBLISHED,
     });
@@ -354,7 +353,7 @@ describe('toProposal with the publish date of the tested version', () => {
   });
 
   it('files a bug again that came back after a fix the version already had', () => {
-    const proposal = toProposal(single(group), [closed(9, 'completed', '2026-11-01T10:00:00Z')], {
+    const proposal = toProposal(single(group), [closed(9, '2026-11-01T10:00:00Z')], {
       ...OPTIONS,
       publishedAt: PUBLISHED,
     });
@@ -362,8 +361,8 @@ describe('toProposal with the publish date of the tested version', () => {
     expect(proposal).toMatchObject({ kind: 'issue', previousIssue: 9 });
   });
 
-  it('files a bug again whose issue was closed as not planned', () => {
-    const proposal = toProposal(single(group), [closed(9, 'not_planned', '2026-11-05T10:00:00Z')], {
+  it('files a bug again whose issue was not closed as completed', () => {
+    const proposal = toProposal(single(group), [closed(9)], {
       ...OPTIONS,
       publishedAt: PUBLISHED,
     });
@@ -372,11 +371,7 @@ describe('toProposal with the publish date of the tested version', () => {
   });
 
   it('files a bug again when the publish date is unknown', () => {
-    const proposal = toProposal(
-      single(group),
-      [closed(9, 'completed', '2026-11-05T10:00:00Z')],
-      OPTIONS
-    );
+    const proposal = toProposal(single(group), [closed(9, '2026-11-05T10:00:00Z')], OPTIONS);
 
     expect(proposal).toMatchObject({ kind: 'issue', previousIssue: 9 });
   });
@@ -387,8 +382,7 @@ describe('toProposal with the publish date of the tested version', () => {
       [
         {
           ...issueOn(undefined, { number: 20, labels: ['bug'], state: 'closed' }),
-          stateReason: 'completed',
-          closedAt: '2026-11-05T10:00:00Z',
+          completedAt: '2026-11-05T10:00:00Z',
         },
       ],
       { ...OPTIONS, publishedAt: PUBLISHED }
@@ -402,7 +396,7 @@ describe('toProposal with the publish date of the tested version', () => {
       { ...single(group), existingIssue: 20 },
       [
         issueOn(undefined, { number: 20, labels: ['bug'], state: 'open' }),
-        closed(9, 'completed', '2026-11-05T10:00:00Z'),
+        closed(9, '2026-11-05T10:00:00Z'),
       ],
       { ...OPTIONS, publishedAt: PUBLISHED }
     );

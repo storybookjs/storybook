@@ -5,12 +5,14 @@ import {
   CONFIG_ERROR,
   CURRENT_STORY_WAS_SET,
   DOCS_PREPARED,
+  PRELOAD_ENTRIES,
   RESET_STORY_ARGS,
   SELECT_STORY,
   SET_CONFIG,
   SET_FILTER,
   SET_INDEX,
   STORY_ARGS_UPDATED,
+  STORY_FINISHED,
   STORY_INDEX_INVALIDATED,
   STORY_MISSING,
   STORY_PREPARED,
@@ -45,6 +47,7 @@ import {
 
 const mockGetEntries = vi.fn();
 const fetch = vi.mocked(global.fetch);
+const requestIdleCallback = vi.mocked(global.requestIdleCallback);
 const getEventMetadata = vi.mocked(getEventMetadataOriginal);
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -59,6 +62,7 @@ vi.mock('@storybook/global', () => ({
     ...globalThis,
     fetch: vi.fn(() => ({ json: () => ({ v: 5, entries: mockGetEntries() }) })),
     CONFIG_TYPE: 'DEVELOPMENT',
+    requestIdleCallback: vi.fn(),
   },
 }));
 
@@ -1367,7 +1371,64 @@ describe('stories API', () => {
       });
     });
   });
+  describe('STORY_FINISHED', () => {
+    it('preloads the first story of the neighbouring components once the browser is idle', async () => {
+      const initialState = { storyId: 'component-a--story-1', viewMode: 'story' };
+      const moduleArgs = createMockModuleArgs({ initialState, fullAPI: { setOptions: vi.fn() } });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider } = moduleArgs;
+      await api.setIndex({ v: 5, entries: mockEntries });
+      const preloads: unknown[] = [];
+      provider.channel.on(PRELOAD_ENTRIES, (payload) => preloads.push(payload));
+      requestIdleCallback.mockClear();
+
+      provider.channel.emit(STORY_FINISHED, {
+        storyId: 'component-a--story-1',
+        status: 'success',
+        reporters: [],
+      });
+      expect(preloads).toEqual([]);
+
+      requestIdleCallback.mock.calls[0][0]({ didTimeout: false, timeRemaining: () => 50 });
+      expect(preloads).toEqual([{ ids: ['component-b--story-3'], options: { target: undefined } }]);
+    });
+
+    it('skips the preload when another story was selected before the browser went idle', async () => {
+      const initialState = { storyId: 'component-b--story-3', viewMode: 'story' };
+      const moduleArgs = createMockModuleArgs({ initialState, fullAPI: { setOptions: vi.fn() } });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider } = moduleArgs;
+      await api.setIndex({ v: 5, entries: mockEntries });
+      const preloads: unknown[] = [];
+      provider.channel.on(PRELOAD_ENTRIES, (payload) => preloads.push(payload));
+      requestIdleCallback.mockClear();
+
+      provider.channel.emit(STORY_FINISHED, {
+        storyId: 'component-a--story-1',
+        status: 'success',
+        reporters: [],
+      });
+      requestIdleCallback.mock.calls[0][0]({ didTimeout: false, timeRemaining: () => 50 });
+
+      expect(preloads).toEqual([]);
+    });
+  });
+
   describe('STORY_PREPARED', () => {
+    it('leaves preloading the neighbouring components to the story finishing', async () => {
+      const initialState = { storyId: 'component-a--story-1', viewMode: 'story' };
+      const moduleArgs = createMockModuleArgs({ initialState, fullAPI: { setOptions: vi.fn() } });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider } = moduleArgs;
+      await api.setIndex({ v: 5, entries: mockEntries });
+      const preloads: unknown[] = [];
+      provider.channel.on(PRELOAD_ENTRIES, (payload) => preloads.push(payload));
+
+      provider.channel.emit(STORY_PREPARED, { id: 'component-a--story-1', parameters: {} });
+      await wait(0);
+
+      expect(preloads).toEqual([]);
+    });
     it('prepares the story', async () => {
       const fullAPI = { setOptions: vi.fn() };
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };

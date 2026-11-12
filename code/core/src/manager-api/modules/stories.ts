@@ -13,10 +13,12 @@ import {
   SIDEBAR_FILTER_CHANGED,
   STORY_ARGS_UPDATED,
   STORY_CHANGED,
+  STORY_FINISHED,
   STORY_INDEX_INVALIDATED,
   STORY_MISSING,
   STORY_PREPARED,
   STORY_SPECIFIED,
+  type StoryFinishedPayload,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
 import { sanitize, toId } from 'storybook/internal/csf';
@@ -1219,7 +1221,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   provider.channel?.on(
     STORY_PREPARED,
     function handler(this: any, { id, ...update }: StoryPreparedPayload) {
-      const { ref, sourceType } = getEventMetadata(this, fullAPI)!;
+      const { ref } = getEventMetadata(this, fullAPI)!;
       api.updateStory(id, { ...update, prepared: true }, ref);
 
       if (!ref) {
@@ -1229,27 +1231,34 @@ export const init: ModuleFn<SubAPI, SubState> = ({
           store.setState({ hasCalledSetOptions: true });
         }
       }
+    }
+  );
 
-      if (sourceType === 'local') {
+  // Preloading the neighbouring components is a guess at the next keyboard jump, so it waits for
+  // the story, its play function and the addons to be done and for the browser to be idle, and it
+  // yields to a selection made in the meantime, which preloads on its own.
+  provider.channel?.on(
+    STORY_FINISHED,
+    function handler(this: any, { storyId: finishedStoryId }: StoryFinishedPayload) {
+      const { sourceType } = getEventMetadata(this, fullAPI)!;
+      if (sourceType !== 'local') {
+        return;
+      }
+      global.requestIdleCallback(() => {
         const { storyId, index, refId } = store.getState();
-
-        if (!index) {
+        if (!index || storyId !== finishedStoryId) {
           return;
         }
-
-        // create a list of related stories to be preloaded
-        const toBePreloaded = Array.from(
+        const ids = Array.from(
           new Set([
             api.findSiblingStoryId(storyId, index, 1, true),
             api.findSiblingStoryId(storyId, index, -1, true),
           ])
         ).filter(Boolean);
-
-        provider.channel?.emit(PRELOAD_ENTRIES, {
-          ids: toBePreloaded,
-          options: { target: refId },
-        });
-      }
+        if (ids.length > 0) {
+          provider.channel?.emit(PRELOAD_ENTRIES, { ids, options: { target: refId } });
+        }
+      });
     }
   );
 

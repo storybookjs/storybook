@@ -1,10 +1,26 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import store2 from 'store2';
+
 import { Addon_TypesEnum as types } from 'storybook/internal/types';
 
 import { init as initAddons } from '../modules/addons';
 import Store from '../store';
 import { createLaggingUpstream } from '../test-utils/store';
+
+vi.mock('store2', () => ({
+  default: {
+    local: {
+      set: vi.fn(),
+      get: vi.fn(),
+    },
+    session: {
+      set: vi.fn(),
+      get: vi.fn(),
+    },
+    _: { fn: () => {} },
+  },
+}));
 
 const PANELS = {
   a11y: {
@@ -201,6 +217,59 @@ describe('Addons API', () => {
 
       expect(storyIdsDuringCommit).toEqual(['story-2']);
       expect(api.getAddonState('my-addon')).toEqual({ open: true });
+    });
+
+    it('does not write a state equal to the current one', async () => {
+      const current = { open: true, results: [{ id: 1 }] };
+      const setState = vi.fn().mockImplementation((patch, callback) => callback());
+      const store = new Store({ setState, getState: () => ({ addons: { 'my-addon': current } }) });
+      const { api } = initAddons({ provider, store });
+
+      const result = await api.setAddonState('my-addon', { open: true, results: [{ id: 1 }] });
+
+      expect(setState).not.toHaveBeenCalled();
+      expect(result).toBe(current);
+    });
+
+    it('does not write when a merger returns a state equal to the current one', async () => {
+      const setState = vi.fn().mockImplementation((patch, callback) => callback());
+      const store = new Store({
+        setState,
+        getState: () => ({ addons: { counter: { count: 0 } } }),
+      });
+      const { api } = initAddons({ provider, store });
+
+      await api.setAddonState('counter', (s) => ({ ...s, count: 0 }));
+
+      expect(setState).not.toHaveBeenCalled();
+    });
+
+    it('writes an equal state when persistence is requested', async () => {
+      const current = { open: true };
+      const setState = vi.fn().mockImplementation((patch, callback) => callback());
+      const store = new Store({ setState, getState: () => ({ addons: { 'my-addon': current } }) });
+      const { api } = initAddons({ provider, store });
+
+      await api.setAddonState('my-addon', { open: true }, { persistence: 'session' });
+
+      expect(setState).toHaveBeenCalledTimes(1);
+      expect(store2.session.set).toHaveBeenCalled();
+    });
+
+    it('writes a changed state', async () => {
+      let state = { addons: { counter: { count: 0 } } };
+      const setState = vi.fn().mockImplementation((patch, callback) => {
+        state = { ...state, ...patch };
+        callback();
+      });
+      const store = new Store({ setState, getState: () => state });
+      const { api } = initAddons({ provider, store });
+
+      const result = await api.setAddonState('counter', (s) => ({ ...s, count: s.count + 1 }));
+
+      expect(setState).toHaveBeenCalledTimes(1);
+      expect(result).toEqual({ count: 1 });
+      expect(api.getAddonState('counter')).toEqual({ count: 1 });
     });
   });
 });

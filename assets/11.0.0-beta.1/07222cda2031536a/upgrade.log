@@ -1,0 +1,168 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn exec The following package was not found and will be installed: storybook@11.0.0-beta.1
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[90m┌[39m  Storybook upgrade - v11.0.0-beta.1
+[90m│[39m
+[90m│[39m  Detecting projects...
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[34m●[39m  Upgrading from [1m10.6.0[22m to [1m11.0.0-beta.1[22m
+[90m│[39m
+[90m│[39m  /package.json
+[90m│[39m  /libs/vault/package.json
+[90m│[39m  /libs/tools/send/send-ui/package.json
+[90m│[39m  /libs/subscription/package.json
+[90m│[39m  /libs/storybook/package.json
+[90m│[39m  /libs/pricing/package.json
+[90m│[39m  /libs/importer/package.json
+[90m│[39m  /libs/dirt/card/package.json
+[90m│[39m  /libs/components/package.json
+[90m│[39m  /libs/auth/package.json
+[90m│[39m  /libs/angular/package.json
+[90m│[39m  /apps/web/package.json
+[90m│[39m  /apps/browser/package.json
+[90m│[39m
+[90m│[39m  Updated package versions in package.json files
+[90m│[39m
+[90m│[39m  Checking automigrations for /.storybook...
+[90m│[39m
+
+[90m│[39m  Automigrations detected:
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m angular-to-angular-vite[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  [32m[32m✔[32m skills[39m
+[90m│[39m
+[90m│[39m  3 automigration(s) detected
+[90m│[39m
+[90m│[39m  Running these detected automigrations:
+[90m│[39m
+[90m│[39m  - story-sort-to-main (/.storybook)
+[90m│[39m
+[90m│[39m  - skills (/.storybook)
+[90m│[39m
+[90m│[39m  Not run with --yes because they are opt-in (run `storybook automigrate
+[90m│[39m  <id>` to apply one):
+[90m│[39m
+[90m│[39m  - angular-to-angular-vite (/.storybook)
+[90m│[39m
+[33m▲[39m  The Storybook skills need @storybook/angular-vite, so they were not
+[90m│[39m  installed. Run `npx storybook automigrate angular-to-angular-vite` and
+[90m│[39m  then `npx storybook automigrate skills`.
+[90m│[39m
+[90m│[39m  [31m[31m✕[31m story-sort-to-main[39m
+[90m│[39m
+[90m│[39m  /home/agent/workspace/.storybook/main.ts: Cannot automigrate
+[90m│[39m  storySort: Cannot mutate parameters.options.storySort because the
+[90m│[39m  target contains dynamic key. Storybook no longer reads
+[90m│[39m  parameters.options.storySort from the preview. Move it to storySorts
+[90m│[39m  in the main config manually and remove the preview property.
+[90m│[39m
+[90m│[39m  [33m▲ skills: cancelled[39m
+[90m│[39m
+[90m│[39m  1 automigrations failed for /.storybook
+[90m│[39m
+[33m▲[39m  1 file could not be migrated automatically. See
+[90m│[39m  [36mautomigrations-summary.md[39m for which ones and why.
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[31m■[39m  [31mInstallation of dependencies failed![39m
+[90m│[39m
+[31m■[39m  npm error Could not resolve dependency:
+[90m│[39m  npm error dev @storybook/addon-a11y@"^11.0.0-beta.1" from the root
+[90m│[39m  project
+[90m│[39m  npm error
+[90m│[39m  npm error Conflicting peer dependency: storybook@11.0.0-beta.1
+[90m│[39m  npm error node_modules/storybook
+[90m│[39m  npm error   peer storybook@"^11.0.0-beta.1" from
+[90m│[39m  @storybook/addon-a11y@11.0.0-beta.1
+[90m│[39m  npm error   node_modules/@storybook/addon-a11y
+[90m│[39m  npm error     dev @storybook/addon-a11y@"^11.0.0-beta.1" from the root
+[90m│[39m  project
+[90m│[39m  npm error
+[90m│[39m  npm error Fix the upstream dependency conflict, or retry this command
+[90m│[39m  with --force or --legacy-peer-deps to accept an incorrect (and
+[90m│[39m  potentially broken) dependency resolution.
+[90m│[39m  npm error
+[90m│[39m  npm error
+[90m│[39m  npm error For a full report see:
+[90m│[39m  npm error
+[90m│[39m  /home/agent/.npm/_logs/2026-11-12T07_48_23_376Z-eresolve-report.txt
+[90m│[39m  npm error A complete log of this run can be found in:
+[90m│[39m  /home/agent/.npm/_logs/2026-11-12T07_48_23_376Z-debug-0.log
+[90m│[39m
+[33m▲[39m  Peer dependency conflict detected; retrying with --legacy-peer-deps
+[90m│[39m
+[90m│[39m  Installing dependencies...
+[90m│[39m
+[90m│[39m  Installing dependencies...: > @bitwarden/clients@0.0.
+[90m│[39m
+[90m│[39m  Installing dependencies...: HUSKY=0 skip install
+[90m│[39m
+[90m│[39m  Installing dependencies...: added 8 packages, removed
+[90m│[39m
+[90m│[39m  Installing dependencies...: 579 packages are looking
+[90m│[39m
+[90m│[39m  Installing dependencies...: 101 vulnerabilities (7 lo
+[90m│[39m
+[90m│[39m  Dependencies installed
+[90m│[39m
+[33m▲[39m  Since you are in a monorepo, we advise you to deduplicate your
+[90m│[39m  dependencies. We can do this for you but it might take some time.
+[90m│[39m
+[90m│[39m  Deduplicating dependencies...
+[90m│[39m
+[90m│[39m  added 43 packages, removed 55 packages, changed 144 packages, and
+[90m│[39m  audited 3074 packages in 2m
+[90m│[39m
+[90m│[39m  579 packages are looking for funding
+[90m│[39m  run `npm fund` for details
+[90m│[39m
+[90m│[39m  106 vulnerabilities (6 low, 82 moderate, 13 high, 5 critical)
+
+[90m│[39m  To address issues that do not require attention, run:
+[90m│[39m  npm audit fix
+
+[90m│[39m  To address all issues (including breaking changes), run:
+[90m│[39m  npm audit fix --force
+
+[90m│[39m  Run `npm audit` for details.
+[90m│[39m
+[90m│[39m  [32mDependencies deduplicated[39m
+[90m│[39m
+[32m◇[39m  Checking the health of your project(s)..
+[90m│[39m
+[90m│[39m  Your Storybook project looks good!
+[90m│[39m
+[32m◇[39m  The upgrade is complete, but some projects failed to upgrade or
+[90m│[39m  migrate completely. Please see the debug logs for more details.
+[90m│[39m
+[90m│[39m  [31mFailed to upgrade:[39m
+[90m│[39m  Some automigrations failed or skipped files. Review the upgrade output
+[90m│[39m  for details.
+[90m│[39m  • /.storybook
+[90m│[39m
+[90m│[39m  If you want to learn more about the automigrations that executed in
+[90m│[39m  your project(s), please check the following links:
+[90m│[39m  • story-sort-to-main:
+[90m│[39m  https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysort-in-the-preview-replaced-by-storysorts-in-main
+[90m│[39m
+[90m│[39m  For a full list of changes, please check our migration guide:
+[90m│[39m  [36mhttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade[39m
+[90m│[39m
+[34m●[39m  Storybook collects completely anonymous usage telemetry. We use it to
+[90m│[39m  shape Storybook's roadmap and prioritize features. You can learn more,
+[90m│[39m  including how to opt out, at https://storybook.js.org/telemetry
+[90m│[39m
+[90m│[39m  Debug logs are written to: /home/agent/workspace/debug-storybook.log
+[90m│[39m
+[90m└[39m  
+
+EXIT 1

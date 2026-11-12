@@ -5,6 +5,7 @@ import {
   createWriteStream,
   existsSync,
   mkdirSync,
+  readdirSync,
   readFileSync,
   realpathSync,
   renameSync,
@@ -53,7 +54,7 @@ Options:
   --clone-dir <dir>   Where to clone the catalog repo (default: <tmpdir>/ecosystem-qa/work/<id>)
   --image <name>      Docker image for --sandbox docker (default: sb-ecosystem-qa)
 
-Writes <out>/result.json and exits 0 whenever it did, findings or not.
+Writes <out>/result.json and exits 0 whenever it did, findings or not. <out> must be empty or new.
 Set ECOSYSTEM_QA_FAKE=1 and pass --fake to write a canned result for --engine without running an agent;
 the result records fake: true and costs $0.`;
 
@@ -164,6 +165,11 @@ const parseRequest = () => {
   const engine = Engine.parse(values.engine);
   const entry = loadCatalogEntry(repo);
   const outDir = resolve(out);
+  // A run owns its output directory: the log, the agent stream and the evidence of an earlier run
+  // would otherwise be read as this run's.
+  if (existsSync(outDir) && readdirSync(outDir).length > 0) {
+    return fail(`${outDir} is not empty. Delete it or pass another --out.`);
+  }
   const request: RunRequest = {
     entry,
     version,

@@ -87,7 +87,8 @@ A pull request that touches `ecosystem-qa/` or the workflow runs only the smoke 
 
 `<out>/result.json` is the record of one run, and every later stage reads only these files.
 Next to it are `run.log`, `agent-stream.jsonl` (the token counts come from here), `session.jsonl`, `evidence/` and `cycle.bundle` when the agent committed.
-When the sandbox fails after the agent has finished, for example because its worktree cannot be deleted, the runner reads the answer from this run's part of `run.log`.
+A run needs an output directory of its own: `run.ts` stops when `--out` holds anything, so that the log, the agent stream and the evidence of an earlier run are never read as this run's.
+When the sandbox fails after the agent has finished, for example because its worktree cannot be deleted, the runner reads the answer from `run.log`.
 The record then has status `ok` and names the sandbox error in `recoveredFrom`.
 A run whose agent did not finish is never read this way.
 

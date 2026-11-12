@@ -81,6 +81,12 @@ const makeAbsolute = (otherImport: Path, normalizedPath: Path, workingDir: Path)
     ? slash(resolve(workingDir, normalizeStoryPath(join(dirname(normalizedPath), otherImport))))
     : otherImport;
 
+const isMissing = (absolutePath: Path) =>
+  access(absolutePath).then(
+    () => false,
+    (error) => error?.code === 'ENOENT' || error?.code === 'ENOTDIR'
+  );
+
 /**
  * The StoryIndexGenerator extracts stories and docs entries for each file matching (one or more)
  * stories "specifiers", as defined in main.js.
@@ -127,11 +133,16 @@ export class StoryIndexGenerator {
 
   private invalidationListeners: Set<() => void> = new Set();
 
-  // Results of work started before an invalidation of what it read must not be stored
+  /**
+   * Increments on every invalidation, numbering them. Work compares it before and after an await
+   * so results based on invalidated files are never stored. A counter, not a timestamp.
+   */
   private invalidationCount = 0;
 
+  /** The number of the latest invalidation of each file */
   private slotInvalidatedAt = new Map<Path, number>();
 
+  /** The number of the latest invalidation of every file, e.g. on a config change */
   private allInvalidatedAt = 0;
 
   constructor(
@@ -250,20 +261,20 @@ export class StoryIndexGenerator {
     await this.ensureExtracted({ projectTags });
   }
 
-  /** Run the updater function over all the empty cache entries */
+  /**
+   * Run the updater function over all the empty cache entries. A result is dropped when its file
+   * was invalidated while the updater ran, or when `isStale` returns true.
+   *
+   * @param options.isStale For updaters that read other files' entries
+   */
   async updateExtracted(
     updater: (
       specifier: NormalizedStoriesSpecifier,
       absolutePath: Path,
       existingEntry: CacheEntry
     ) => Promise<CacheEntry>,
-    overwrite = false,
-    // Results that read other files are stale after any invalidation since `startedAt`
-    { startedAt }: { startedAt?: number } = {}
+    { isStale }: { isStale?: () => boolean } = {}
   ) {
-    const version = (absolutePath: Path) =>
-      startedAt === undefined ? this.slotVersion(absolutePath) : this.invalidationCount;
-
     await Promise.all(
       this.specifiers.map(async (specifier) => {
         const entry = this.specifierToCache.get(specifier);
@@ -275,11 +286,11 @@ export class StoryIndexGenerator {
         );
         return Promise.all(
           Object.keys(entry).map(async (absolutePath) => {
-            if (entry[absolutePath] && !overwrite) {
+            if (entry[absolutePath]) {
               return;
             }
 
-            const before = startedAt ?? version(absolutePath);
+            const invalidatedBefore = this.lastInvalidation(absolutePath);
             let result: CacheEntry | undefined;
             try {
               result = await updater(specifier, absolutePath, entry[absolutePath]);
@@ -302,16 +313,17 @@ export class StoryIndexGenerator {
                     : undefined
                 ),
               };
-              const gone = await access(absolutePath).then(
-                () => false,
-                (accessError) => accessError?.code === 'ENOENT' || accessError?.code === 'ENOTDIR'
-              );
-              if (gone) {
+              if (await isMissing(absolutePath)) {
                 result = undefined;
               }
             }
 
-            if (version(absolutePath) !== before || !(absolutePath in entry)) {
+            // `invalidate()` already reset this entry, so the next run redoes it
+            if (
+              isStale?.() ||
+              this.lastInvalidation(absolutePath) !== invalidatedBefore ||
+              !(absolutePath in entry)
+            ) {
               return;
             }
 
@@ -327,7 +339,8 @@ export class StoryIndexGenerator {
     );
   }
 
-  private slotVersion(absolutePath: Path) {
+  /** The number of the latest invalidation that covered this file, or 0 if none did */
+  private lastInvalidation(absolutePath: Path) {
     return Math.max(this.allInvalidatedAt, this.slotInvalidatedAt.get(absolutePath) ?? 0);
   }
 
@@ -344,19 +357,19 @@ export class StoryIndexGenerator {
     // process the docs files. The reason for this is that the docs
     // files may use the `<Meta of={XStories} />` syntax, which requires
     // that the story file that contains the meta be processed first.
-    const startedAt = this.invalidationCount;
+    const invalidationCountAtStart = this.invalidationCount;
+    // Docs read the story entries, which are stale once anything was invalidated
+    const isStale = () => this.invalidationCount !== invalidationCountAtStart;
     await this.updateExtracted(async (specifier, absolutePath) =>
       this.isDocsMdx(absolutePath)
         ? false
         : this.extractStories(specifier, absolutePath, projectTags)
     );
 
-    // Docs read the story entries, which are stale once anything was invalidated
-    if (this.invalidationCount === startedAt) {
+    if (!isStale()) {
       await this.updateExtracted(
         async (specifier, absolutePath) => this.extractDocs(specifier, absolutePath, projectTags),
-        false,
-        { startedAt }
+        { isStale }
       );
     }
 
@@ -821,13 +834,13 @@ export class StoryIndexGenerator {
     storyIndex: StoryIndex;
     stats: IndexStatsSummary;
   }> {
-    const startedAt = this.invalidationCount;
+    const invalidationCountAtStart = this.invalidationCount;
     const projectTags = this.getProjectTags(await this.getPreviewFile());
 
     // Extract any entries that are currently missing
     // Pull out each file's stories into a list of stories, to be composed and sorted
     const { entries: storiesList, stats } = await this.ensureExtracted({ projectTags });
-    const isStale = () => this.invalidationCount !== startedAt;
+    const isStale = () => this.invalidationCount !== invalidationCountAtStart;
 
     try {
       const errorEntries = storiesList.filter((entry) => entry.type === 'error');

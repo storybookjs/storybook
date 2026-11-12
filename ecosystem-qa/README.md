@@ -138,6 +138,8 @@ When only some of them are, the whole group is reported, so the other findings a
 A group that matches an issue only by similarity (`existingIssue`) becomes a comment on it while it is open, even when that issue is `qa:known`, because only an exact fingerprint suppresses.
 A fingerprint that an open issue already carries stays on that issue: the collector rejects a grouping that puts it in a group with a fingerprint of another open issue, or in a group that names another issue, and says which group to split.
 The metadata of an issue lists every fingerprint of its group, so a later sweep finds it by any of them.
+A comment lists the fingerprints of its group the same way, and the collector reads the comments that the workflow account wrote on each listed issue, so a fingerprint that joined an issue through a comment is found too.
+A comment by anyone else never ties a fingerprint to an issue.
 An issue closed as completed after the tested prerelease was published counts as known for that version, because the fix is not in it yet; the collector reads the publish date from the `v<version>` release of `--repo`.
 This too needs the fingerprint: a group that only resembles such an issue is filed as a new issue that links to it.
 An issue closed before that, or closed for any other reason, does not count: the bug came back, so it is filed again with a link to the closed issue.

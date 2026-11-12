@@ -46,13 +46,28 @@ export const QA_LABEL = 'internal-qa';
 export interface QaIssue extends IssueHit {
   title: string;
   body: string;
+  /** The comments the harness wrote on the issue, oldest first. */
+  comments: string[];
   closedAt?: string;
   stateReason?: string;
 }
 
-/** Return the issues whose body carries any of the fingerprints, in the order given. */
+/** Return what the harness wrote on an issue: its body, then its comments. */
+export const writtenOn = ({ body, comments }: Pick<QaIssue, 'body' | 'comments'>): string[] => [
+  body,
+  ...comments,
+];
+
+/**
+ * Return the issues that carry any of the fingerprints, in the order given.
+ *
+ * A fingerprint that joined an issue through a comment counts like one in the body, so a later
+ * sweep finds the issue by it.
+ */
 export const hitsFor = (issues: QaIssue[], fingerprints: string[]): QaIssue[] =>
-  issues.filter((issue) => fingerprints.some((fingerprint) => issue.body.includes(fingerprint)));
+  issues.filter((issue) =>
+    writtenOn(issue).some((text) => fingerprints.some((fingerprint) => text.includes(fingerprint)))
+  );
 
 // A closed hit is the "came back" case the issue proposal exists for, so only an open one counts as
 // filed.

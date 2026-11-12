@@ -38,6 +38,7 @@ describe('groupingInput', () => {
       title: 'Build fails',
       state: 'open',
       labels: [],
+      comments: [],
       body: 'x',
     };
 
@@ -72,6 +73,7 @@ describe('groupingInput', () => {
       title,
       state: 'open',
       labels: [],
+      comments: [],
       body,
     });
 
@@ -106,6 +108,7 @@ describe('groupingInput', () => {
       title: 'Filed by the harness',
       state,
       labels: [],
+      comments: [],
       body,
     });
 
@@ -128,6 +131,7 @@ describe('groupingInput', () => {
       title: 'Filed before',
       state,
       labels: [],
+      comments: [],
       body,
     });
 

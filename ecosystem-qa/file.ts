@@ -13,14 +13,13 @@ import {
   planFiling,
   renderDry,
   renderFilingReport,
-  reportedOn,
   type FilingOutcome,
   type FilingStep,
 } from './lib/filing.ts';
 import { cycleRef } from './lib/cycle.ts';
 import { listQaIssues, ghText, pages } from './lib/github.ts';
 import { copyRedacted } from './lib/redact.ts';
-import { hitsFor, openHit, QA_LABEL, type QaIssue } from './lib/proposals.ts';
+import { hitsFor, openHit, QA_LABEL, writtenOn, type QaIssue } from './lib/proposals.ts';
 import { pushTokenEnv } from './lib/push-targets.ts';
 import { Proposal } from './lib/schema.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
@@ -190,11 +189,6 @@ const runStep = (step: FilingStep): string | undefined => {
   }
 };
 
-const commentsOn = (issue: number): string[] =>
-  pages(z.object({ body: z.string() }), `repos/${repo}/issues/${issue}/comments`).map(
-    (comment) => comment.body
-  );
-
 const firstLine = (error: unknown) =>
   (error instanceof Error ? error.message : String(error)).split('\n')[0]!.slice(0, 160);
 
@@ -214,7 +208,9 @@ const fileProposal = (proposal: Proposal, issues: QaIssue[]): FilingOutcome => {
       : {}),
     ...(proposal.kind === 'comment'
       ? {
-          existing: reportedOn(issues, proposal.existingIssue, commentsOn(proposal.existingIssue)),
+          existing: issues
+            .filter((issue) => issue.number === proposal.existingIssue)
+            .flatMap(writtenOn),
         }
       : {}),
   });

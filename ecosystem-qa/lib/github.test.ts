@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { IssueItem, publishedAtFrom, qaIssuesFrom } from './github.ts';
+import { harnessComments, IssueItem, publishedAtFrom, qaIssuesFrom } from './github.ts';
 
 const item = (extra: object = {}) => ({
   number: 5,
@@ -8,10 +8,12 @@ const item = (extra: object = {}) => ({
   state: 'closed',
   labels: [{ name: 'bug' }, { name: 'internal-qa' }],
   body: 'fingerprint: 0123456789abcdef',
+  comments: 0,
   ...extra,
 });
 
-const listed = (items: unknown[]) => qaIssuesFrom(IssueItem.array().parse(items));
+const listed = (items: unknown[], commentsOf: (issue: number) => string[] = () => []) =>
+  qaIssuesFrom(IssueItem.array().parse(items), commentsOf);
 
 describe('qaIssuesFrom', () => {
   it('keeps the label names and drops pull requests', () => {
@@ -24,8 +26,20 @@ describe('qaIssuesFrom', () => {
         state: 'closed',
         labels: ['bug', 'internal-qa'],
         body: 'fingerprint: 0123456789abcdef',
+        comments: [],
       },
     ]);
+  });
+
+  it('asks for the comments only of an issue that has any', () => {
+    const asked: number[] = [];
+    const issues = listed([item(), item({ number: 6, comments: 2 })], (issue) => {
+      asked.push(issue);
+      return [`comment on ${issue}`];
+    });
+
+    expect(asked).toEqual([6]);
+    expect(issues.map((issue) => issue.comments)).toEqual([[], ['comment on 6']]);
   });
 
   it('keeps when and why an issue was closed', () => {
@@ -43,6 +57,24 @@ describe('qaIssuesFrom', () => {
 
   it('rejects a malformed item', () => {
     expect(() => listed([item({ state: 'merged' })])).toThrow();
+  });
+});
+
+describe('harnessComments', () => {
+  it('keeps only what the workflow account wrote, in order', () => {
+    const comment = (login: string | null, body: string) => ({
+      body,
+      user: login === null ? null : { login },
+    });
+
+    expect(
+      harnessComments([
+        comment('github-actions[bot]', 'first sighting'),
+        comment('someone', 'fingerprint: 0123456789abcdef'),
+        comment(null, 'from a deleted account'),
+        comment('github-actions[bot]', 'second sighting'),
+      ])
+    ).toEqual(['first sighting', 'second sighting']);
   });
 });
 

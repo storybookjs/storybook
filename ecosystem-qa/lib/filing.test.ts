@@ -5,11 +5,10 @@ import {
   planFiling,
   renderDry,
   renderFilingReport,
-  reportedOn,
   type FilingStep,
 } from './filing.ts';
 import { asIssue, finding, issueOn, loaded, RUN_URL, single, VERSION } from './fixtures.ts';
-import { groupFindings, toProposal, type IssueHit } from './proposals.ts';
+import { groupFindings, toProposal, writtenOn, type IssueHit } from './proposals.ts';
 import type { Finding } from './schema.ts';
 
 const REPO = 'storybookjs/storybook';
@@ -152,18 +151,9 @@ describe('planFiling', () => {
       planFiling(collectedAgain, {
         repo: REPO,
         evidenceLinks: 'assets',
-        existing: reportedOn([issue], 9, []),
+        existing: writtenOn(issue),
       })
     ).toEqual([{ kind: 'skip', reason: '#9 already has this sighting' }]);
-  });
-
-  it('takes what an issue already reports from its own body and then its comments', () => {
-    const issues = [
-      { number: 8, body: 'another issue' },
-      { number: 9, body: 'the issue' },
-    ];
-
-    expect(reportedOn(issues, 9, ['first comment'])).toEqual(['the issue', 'first comment']);
   });
 
   it('reports the sighting of a later run of the same repo', () => {

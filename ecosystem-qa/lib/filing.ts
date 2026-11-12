@@ -40,16 +40,6 @@ export interface FilingOptions {
 // so the line is not part of what makes two sightings the same.
 const withoutRun = (text: string): string => text.replace(/^run: .*$/gm, '');
 
-/** Return what an issue already says about its sightings: its own body, then its comments. */
-export const reportedOn = (
-  issues: { number: number; body: string }[],
-  issue: number,
-  comments: string[]
-): string[] => [
-  ...issues.filter((entry) => entry.number === issue).map((entry) => entry.body),
-  ...comments,
-];
-
 const suppressedBecause = ({
   reason,
   existingIssue,

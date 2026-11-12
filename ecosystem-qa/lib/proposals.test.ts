@@ -22,10 +22,11 @@ const issueFor = (group: FindingGroup | undefined) =>
 const byName = (name: string) => `https://assets.example/${name}`;
 
 describe('hitsFor', () => {
-  const issue = (number: number, body: string): QaIssue => ({
+  const issue = (number: number, body: string, comments: string[] = []): QaIssue => ({
     number,
     title: `Issue ${number}`,
     body,
+    comments,
     labels: ['internal-qa'],
     state: 'open',
   });
@@ -38,6 +39,15 @@ describe('hitsFor', () => {
     ];
 
     expect(hitsFor(issues, ['0123456789abcdef']).map((hit) => hit.number)).toEqual([1, 3]);
+  });
+
+  it('finds an issue by a fingerprint that only one of its comments carries', () => {
+    const issues = [
+      issue(1, 'fingerprint: fedcba9876543210', ['seen again', 'fingerprints: 0123456789abcdef']),
+      issue(2, 'fingerprint: 1111111111111111'),
+    ];
+
+    expect(hitsFor(issues, ['0123456789abcdef']).map((hit) => hit.number)).toEqual([1]);
   });
 });
 

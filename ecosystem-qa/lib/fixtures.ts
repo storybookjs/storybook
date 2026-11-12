@@ -98,4 +98,5 @@ export const issueOn = (group: FindingGroup | undefined, hit: IssueHit): QaIssue
   ...hit,
   title: `Issue ${hit.number}`,
   body: group ? `fingerprint: ${group.fingerprint}` : 'fingerprint: 0000000000000000',
+  comments: [],
 });

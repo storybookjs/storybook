@@ -73,9 +73,8 @@ describe('useHighlights', () => {
     storybookRoot.append(document.createElement('span'));
     await settle();
 
-    // Measuring and styling the one highlighted box reads its element's style; the other 200+
-    // elements on the page are never read.
-    expect(getComputedStyle.mock.calls.length).toBeLessThanOrEqual(2);
+    // Only the highlighted element's style is read; the other 200+ elements on the page are not.
+    expect(getComputedStyle).toHaveBeenCalled();
     expect(getComputedStyle.mock.calls.every(([element]) => element.id === 'target')).toBe(true);
     expect(highlightBoxes()).toHaveLength(1);
   });

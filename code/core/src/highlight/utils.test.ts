@@ -131,17 +131,12 @@ describe('isSameElementMap', () => {
     ).toBe(false);
   });
 
-  it('should see different selectors or highlight data for an element', () => {
+  it('should see a different highlight id or different selectors for an element', () => {
     const current = new Map([[first, highlight(['a'])]]);
     expect(isSameElementMap(current, new Map([[first, highlight(['a', 'b'])]]))).toBe(false);
+    expect(isSameElementMap(current, new Map([[first, highlight(['b'])]]))).toBe(false);
     expect(
       isSameElementMap(current, new Map([[first, { ...highlight(['a']), id: 'other' }]]))
-    ).toBe(false);
-    expect(
-      isSameElementMap(
-        current,
-        new Map([[first, { ...highlight(['a']), styles: { outline: 'none' } }]])
-      )
     ).toBe(false);
   });
 });

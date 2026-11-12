@@ -3,10 +3,14 @@
 // `must` runs on every repo of every sweep; `extended` only when a dispatch asks for it.
 export type Tier = 'must' | 'extended';
 
+// The order the agent works in: each phase uses what the one before it left installed, running
+// or built.
+const PHASES = ['upgrade', 'dev', 'build', 'test'] as const;
+
 interface CheckDefinition {
   readonly id: string;
   readonly label: string;
-  readonly phase: 'upgrade' | 'dev' | 'build' | 'test';
+  readonly phase: (typeof PHASES)[number];
   readonly tier: Tier;
   readonly probe: string;
 }
@@ -128,7 +132,7 @@ export const CHECKS = [
   {
     id: 'upgrade.index-cli',
     label: '`storybook index` writes the same entries as the dev server without starting one',
-    phase: 'upgrade',
+    phase: 'dev',
     tier: 'extended',
     probe:
       "Run `storybook index` from the Storybook directory (bounded wait) and compare the entry ids of its `index.json` with the dev server's. Save the output to `index-cli.log`.",
@@ -205,7 +209,11 @@ export type CheckId = (typeof CHECKS)[number]['id'];
 export const CHECK_IDS = CHECKS.map((check) => check.id) as [CheckId, ...CheckId[]];
 
 export const checksFor = (tier: Tier) =>
-  tier === 'extended' ? CHECKS : CHECKS.filter((check) => check.tier === 'must');
+  PHASES.flatMap((phase) =>
+    CHECKS.filter(
+      (check) => check.phase === phase && (tier === 'extended' || check.tier === 'must')
+    )
+  );
 
 export const renderChecklist = (tier: Tier): string =>
   checksFor(tier)

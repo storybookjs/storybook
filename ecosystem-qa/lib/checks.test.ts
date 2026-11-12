@@ -111,6 +111,12 @@ describe('check registry', () => {
     expect(must.length).toBeLessThan(CHECKS.length);
   });
 
+  it.each(['must', 'extended'] as const)('lists the %s tier by phase', (tier) => {
+    const order = ['upgrade', 'dev', 'build', 'test'];
+    const phases = checksFor(tier).map((check) => order.indexOf(check.phase));
+    expect(phases).toEqual(phases.toSorted((a, b) => a - b));
+  });
+
   it('has every id on at least one checklist row', () => {
     const referenced = new Set(
       checklist.rows.flatMap(({ agent }) => (agent.kind === 'check' ? [agent.id] : []))

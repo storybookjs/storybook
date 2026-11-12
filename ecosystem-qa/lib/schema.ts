@@ -212,7 +212,7 @@ export type EvidenceFile = z.infer<typeof EvidenceFile>;
 
 const Fingerprint = z.string().regex(/^[0-9a-f]{16}$/);
 
-/** The root-cause grouping a model or a person writes for one collect, as `groups.json`. */
+// The root-cause grouping a model or a person writes for one collect, as `groups.json`.
 export const Grouping = z.strictObject({
   groups: z.array(
     z.strictObject({
@@ -240,7 +240,7 @@ const ProposalBase = {
   fingerprint: Fingerprint,
   title: z.string().min(1),
   sources: z.array(Source).min(1),
-  /** The other members of the group, which share the fate of the lead: filed with it or silenced with it. */
+  // The other members of the group, which share the fate of the lead: filed with it or silenced with it.
   related: z.array(Related),
 };
 

@@ -48,10 +48,8 @@ const runDirs = (resultsDir: string, cell: RunCell) => [
   localRunDir(resultsDir, cell),
 ];
 
-/**
- * List where the runs of downloaded artifacts go in a local results directory: one entry for each
- * catalog repo, OS and engine that `downloadDir` holds a record of.
- */
+// List where the runs of downloaded artifacts go in a local results directory: one entry for each
+// catalog repo, OS and engine that `downloadDir` holds a record of.
 export const downloadedRuns = (
   downloadDir: string,
   resultsDir: string,

@@ -93,7 +93,7 @@ export const single = (lead: FindingGroup | undefined): Cluster => ({
   members: [lead!],
 });
 
-/** The metadata block the harness ends an issue body or a comment with, for these fingerprints. */
+// The metadata block the harness ends an issue body or a comment with, for these fingerprints.
 export const metadata = (...fingerprints: string[]): string =>
   [
     '<!-- sb-qa-metadata -->',
@@ -103,7 +103,7 @@ export const metadata = (...fingerprints: string[]): string =>
     '```',
   ].join('\n');
 
-/** A listed QA issue whose body carries the group's fingerprint, or another one without a group. */
+// A listed QA issue whose body carries the group's fingerprint, or another one without a group.
 export const issueOn = (group: FindingGroup | undefined, hit: IssueHit): QaIssue => ({
   ...hit,
   title: `Issue ${hit.number}`,

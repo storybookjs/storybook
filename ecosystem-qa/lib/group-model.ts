@@ -13,11 +13,9 @@ import {
 import { sanitizeFinding, sanitizeTitle } from './sanitize.ts';
 import type { Engine, Grouping, Os } from './schema.ts';
 
-/**
- * What the model sees of one collect: the capped findings, and the QA issues by title. An issue the
- * harness filed also shows the start of its bug description and the findings merged into it, because
- * a title alone does not say that a differently worded finding is the same defect.
- */
+// What the model sees of one collect: the capped findings, and the QA issues by title. An issue the
+// harness filed also shows the start of its bug description and the findings merged into it, because
+// a title alone does not say that a differently worded finding is the same defect.
 export interface GroupingInput {
   findings: {
     id: string;
@@ -26,7 +24,7 @@ export interface GroupingInput {
     title: string;
     actual: string;
     errorText?: string;
-    /** The open issue that already carries this fingerprint. */
+    // The open issue that already carries this fingerprint.
     filedAs?: number;
   }[];
   issues: {
@@ -101,7 +99,7 @@ export const groupingInput = (groups: FindingGroup[], issues: QaIssue[]): Groupi
   };
 };
 
-/** The model's answer; `existingIssue` is nullable rather than optional because structured outputs require every field. */
+// The model's answer; `existingIssue` is nullable rather than optional because structured outputs require every field.
 export const GroupingAnswer = z.strictObject({
   groups: z.array(
     z.strictObject({
@@ -141,7 +139,7 @@ A finding with \`filedAs\` is already reported on that open issue, and it stays 
 
 Every finding id appears in exactly one group. A finding with nothing in common with the others is a group of one.`;
 
-/** Everything of the request but its messages. It lives next to the prompt because the two change together. */
+// Everything of the request but its messages. It lives next to the prompt because the two change together.
 export const GROUPING_REQUEST = {
   model: 'claude-opus-5-5',
   max_tokens: 16000,
@@ -151,12 +149,10 @@ export const GROUPING_REQUEST = {
   output_config: { effort: 'high', format: zodOutputFormat(GroupingAnswer) },
 } satisfies Omit<Anthropic.Beta.MessageCreateParamsNonStreaming, 'messages'>;
 
-/**
- * Decide whether to ask the model: `skip` leaves every fingerprint on its own.
- *
- * Without a key a local run skips, but a runner fails: a sweep that files ungrouped creates one
- * issue per fingerprint, which is the over-filing the grouping exists to prevent.
- */
+// Decide whether to ask the model: `skip` leaves every fingerprint on its own.
+//
+// Without a key a local run skips, but a runner fails: a sweep that files ungrouped creates one
+// issue per fingerprint, which is the over-filing the grouping exists to prevent.
 export const groupingMode = (
   env: Record<string, string | undefined>
 ): 'model' | 'skip' | 'fail' => {
@@ -189,12 +185,10 @@ const review = (answer: unknown, input: GroupingInput): string[] | Grouping => {
 
 const bullets = (problems: string[]) => problems.map((problem) => `- ${problem}`).join('\n');
 
-/**
- * Ask the model for a grouping of `input` and return the first answer that puts every finding in
- * exactly one group, asking again with the problems of a rejected answer.
- *
- * @throws When no answer of `attempts` fits, naming the problems of the last one.
- */
+// Ask the model for a grouping of `input` and return the first answer that puts every finding in
+// exactly one group, asking again with the problems of a rejected answer.
+//
+// Throws when no answer of `attempts` fits, naming the problems of the last one.
 export const groupWithModel = async (
   input: GroupingInput,
   ask: Ask,

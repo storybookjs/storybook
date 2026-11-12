@@ -21,12 +21,10 @@ const onOtherIssue = (
     : undefined;
 };
 
-/**
- * Return what is wrong with a grouping for this collect, or nothing when every finding is in exactly
- * one group and no group pulls a fingerprint away from the open issue it is already on.
- *
- * @param filed The open issue each already filed fingerprint is on.
- */
+// Return what is wrong with a grouping for this collect, or nothing when every finding is in exactly
+// one group and no group pulls a fingerprint away from the open issue it is already on.
+//
+// `filed` is the open issue each already filed fingerprint is on.
 export const checkGrouping = (
   grouping: Grouping,
   fingerprints: string[],
@@ -60,15 +58,13 @@ export const checkGrouping = (
   ];
 };
 
-/** Put each fingerprint in a group of its own, which proposes exactly what an ungrouped collect does. */
+// Put each fingerprint in a group of its own, which proposes exactly what an ungrouped collect does.
 export const identityGrouping = (fingerprints: string[]): Grouping => ({
   groups: fingerprints.map((fingerprint) => ({ members: [fingerprint] })),
 });
 
-/**
- * Turn a grouping into clusters, in the grouping's order, or return what `checkGrouping` finds wrong
- * with it for these findings and issues.
- */
+// Turn a grouping into clusters, in the grouping's order, or return what `checkGrouping` finds wrong
+// with it for these findings and issues.
 export const clusterFindings = (
   groups: FindingGroup[],
   grouping: Grouping,

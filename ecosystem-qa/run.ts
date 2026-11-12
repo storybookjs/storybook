@@ -522,13 +522,16 @@ const summarize = (result: RunResultFile, resultPath: string): string => {
     result.usage.usd === null
       ? 'unpriced'
       : `$${result.usage.usd.toFixed(2)}${result.usage.priceSource === 'table' ? ' (priced from the shared price table, not from the agent)' : ''}`;
+  const installed = upgraded(result)
+    ? `Storybook ${result.storybookVersionInstalled} installed`
+    : `The upgrade to ${result.request.version} did not happen; Storybook is on ${result.storybookVersionInstalled ?? 'an unknown version'}`;
+  const installTime =
+    result.timing.installSeconds === undefined
+      ? ''
+      : ` (the project install took ${result.timing.installSeconds}s)`;
   return [
     `${result.request.entry.repo} on ${result.request.os} with ${engineLabel(result)} (${result.request.model}) finished with status ${result.status} in ${result.timing.wallSeconds}s.`,
-    `${
-      upgraded(result)
-        ? `Storybook ${result.storybookVersionInstalled} installed`
-        : `The upgrade to ${result.request.version} did not happen; Storybook is on ${result.storybookVersionInstalled ?? 'an unknown version'}`
-    }${result.timing.installSeconds === undefined ? '' : ` (the project install took ${result.timing.installSeconds}s)`}, ${result.checks.length} checks reported, ${failed} failed, ${result.findings.length} findings.`,
+    `${installed}${installTime}, ${result.checks.length} checks reported, ${failed} failed, ${result.findings.length} findings.`,
     `Usage was ${result.usage.inputTokens} input, ${result.usage.outputTokens} output, ${result.usage.cacheReadTokens ?? 0} cache-read and ${result.usage.cacheWriteTokens ?? 0} cache-write tokens, ${usd}.`,
     `Cycle branch ${cycleBranchName(result.request.version, result.request.os, result.request.engine)} head ${result.headSha ?? 'has no commits'}.${result.machine.freeDiskMbAtEnd === undefined ? '' : ` ${result.machine.freeDiskMbAtEnd} MB disk free at the end.`} Result: ${resultPath}.`,
     ...(result.error ? [`Error: ${result.error}`] : []),

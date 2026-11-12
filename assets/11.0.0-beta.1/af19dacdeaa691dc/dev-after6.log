@@ -1,0 +1,20 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[7m[1m[31m NX [39m[22m[27m  [31m10 tasks: 9 succeeded, 1 stopped[39m
+
+
+[2mStopped before finishing:[22m
+[2m-[22m twenty-front:storybook:serve:dev
+[2m  full log: /home/agent/.nx/741639bdeb7475e0/cache/terminalOutputs/4469044128739389192[22m
+
+[2mRe-run with --output-style=static to inline logs.[22m
+
+  Run duration:      7m 25s
+  Cache:             0/9 hit (0%)
+  Critical path:     7m 24s (6 tasks)
+  Recoverable time:  <1ms
+
+  Recommendations:
+    - Drastically reduce your run duration by sharing a cache across your team and CI → https://cloud.nx.app/connect/NAq8XWrKK7.
+    - Speed up or split the longest tasks on the critical path:
+        twenty-front:storybook:serve:dev    6m 24s

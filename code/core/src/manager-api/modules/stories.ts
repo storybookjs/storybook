@@ -1234,9 +1234,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     }
   );
 
-  // Preloading the neighbouring components is a guess at the next keyboard jump, so it waits for
-  // the story, its play function and the addons to be done and for the browser to be idle, and it
-  // yields to a selection made in the meantime, which preloads on its own.
+  // Preloading sibling components is a speculative performance optimization. It shouldn't compete
+  // with actual story rendering for resources, so delay it until the story is done loading.
   provider.channel?.on(
     STORY_FINISHED,
     function handler(this: any, { storyId: finishedStoryId }: StoryFinishedPayload) {

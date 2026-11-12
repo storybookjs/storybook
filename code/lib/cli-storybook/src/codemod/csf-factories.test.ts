@@ -1,8 +1,10 @@
+import { posix } from 'node:path';
+
 import { expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { storyToCsf4 } from './csf-factories.ts';
+import { SANDBOX_STORIES_GLOB, storyToCsf4 } from './csf-factories.ts';
 
 const options = { previewConfigPath: '#.storybook/preview', useSubPathImports: true };
 const path = 'Button.stories.tsx';
@@ -149,4 +151,22 @@ it('still writes the factory of a story csf-2-to-3 refuses', async () => {
   );
 
   expect(output).toContain('export const Primary = meta.story({');
+});
+
+it.each([
+  'stories/Button.stories.ts',
+  'stories/header.stories.js',
+  'src/stories/Page.stories.tsx',
+  'src/stories/Button.stories.svelte',
+])('matches the starter story %s in a sandbox', (file) => {
+  expect(posix.matchesGlob(file, SANDBOX_STORIES_GLOB)).toBe(true);
+});
+
+it.each([
+  'src/stories/frameworks/angular/signal/button.stories.ts',
+  'stories/renderers/react/Button.stories.tsx',
+  'src/app/button.stories.ts',
+  'src/Button.stories.ts',
+])('does not match %s in a sandbox', (file) => {
+  expect(posix.matchesGlob(file, SANDBOX_STORIES_GLOB)).toBe(false);
 });

@@ -17,6 +17,7 @@ import type { SupportedFramework } from './frameworks.ts';
 import type { Indexer, StoriesEntry } from './indexer.ts';
 import type { SupportedRenderer } from './renderers.ts';
 import type { Addon_StorySortParameterV7 } from './addons.ts';
+import type { TurbosnapOutputDraft } from './builder.ts';
 
 export type {
   DocgenError,
@@ -196,6 +197,7 @@ export interface VersionCheck {
 
 export interface Stats {
   toJson: () => any;
+  turbosnapOutput?: TurbosnapOutputDraft;
 }
 
 export interface BuilderResult {

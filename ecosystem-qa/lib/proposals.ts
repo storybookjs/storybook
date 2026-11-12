@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync, statSync } from 'node:fs';
 
 import { join } from 'pathe';
@@ -144,27 +145,87 @@ const unique = (values: string[]) => [...new Set(values)].join(', ');
 /** Opens the metadata block of every issue and comment the harness writes. */
 export const METADATA_MARKER = '<!-- sb-qa-metadata -->';
 
-const metadataBlock = (proposal: IssueProposal | CommentProposal): string => {
-  const { cycle, sources } = proposal;
+const metadataFields = (proposal: IssueProposal | CommentProposal): [string, string][] => {
+  const { cycle, sources, related } = proposal;
+  const members = [proposal.fingerprint, ...related.map((member) => member.fingerprint)];
   return [
+    ['fingerprint', proposal.fingerprint],
+    ...(related.length > 0 ? [['fingerprints', members.join(', ')] as [string, string]] : []),
+    ['storybook', unique(sources.map((source) => source.version))],
+    ['repo', cycle.repo],
+    ['sha', cycle.headSha ?? cycle.startSha],
+    ['cycleRef', cycle.headSha ? cycleRef(cycle.branch) : 'none'],
+    ['os', unique(sources.map((source) => source.os))],
+    ['engine', unique(sources.map((source) => source.engine))],
+    ['model', unique(sources.map((source) => source.model))],
+    ['sightings', proposal.sightings.join(', ')],
+    ['run', proposal.runUrl],
+  ];
+};
+
+const metadataBlock = (proposal: IssueProposal | CommentProposal): string =>
+  [
     METADATA_MARKER,
     '```yaml',
-    `fingerprint: ${proposal.fingerprint}`,
-    ...(proposal.related.length > 0
-      ? [
-          `fingerprints: ${[proposal.fingerprint, ...proposal.related.map((related) => related.fingerprint)].join(', ')}`,
-        ]
-      : []),
-    `storybook: ${unique(sources.map((source) => source.version))}`,
-    `repo: ${cycle.repo}`,
-    `sha: ${cycle.headSha ?? cycle.startSha}`,
-    `cycleRef: ${cycle.headSha ? cycleRef(cycle.branch) : 'none'}`,
-    `os: ${unique(sources.map((source) => source.os))}`,
-    `engine: ${unique(sources.map((source) => source.engine))}`,
-    `model: ${unique(sources.map((source) => source.model))}`,
-    `run: ${proposal.runUrl}`,
+    ...metadataFields(proposal).map(([key, value]) => `${key}: ${value}`),
     '```',
   ].join('\n');
+
+// The harness ends every text it writes with its metadata block, so the last block is its own even
+// when agent text further up imitates one.
+const metadataOf = (text: string): Map<string, string> | undefined => {
+  const marker = text.lastIndexOf(METADATA_MARKER);
+  if (marker === -1) {
+    return undefined;
+  }
+  const lines = text.slice(marker).split('\n').slice(2);
+  const end = lines.indexOf('```');
+  return new Map(
+    lines.slice(0, end === -1 ? lines.length : end).flatMap((line) => {
+      const at = line.indexOf(': ');
+      return at === -1 ? [] : [[line.slice(0, at), line.slice(at + 2)] as const];
+    })
+  );
+};
+
+const sorted = (list = ''): string => list.split(', ').sort().join(', ');
+
+// A block written before the sightings line existed counts as one sighting: the same when its
+// members, version, repo, commit, systems, engines and models match, whichever run collected it and
+// in whatever order the members are listed.
+const blockSighting = (fields: ReadonlyMap<string, string>): string =>
+  [
+    fields.get('fingerprints') ?? fields.get('fingerprint'),
+    ...['storybook', 'repo', 'sha', 'os', 'engine', 'model'].map((key) => fields.get(key)),
+  ]
+    .map(sorted)
+    .join(' | ');
+
+const sightingsIn = (text: string): string[] => {
+  const fields = metadataOf(text);
+  if (!fields) {
+    return [];
+  }
+  return fields.get('sightings')?.split(', ') ?? [blockSighting(fields)];
+};
+
+/**
+ * Whether the texts the harness wrote on an issue already report everything a proposal would add.
+ *
+ * A sighting is one finding of the group in one run: its fingerprint with that run's repo, commit,
+ * system, engine and version. A proposal is reported when the issue has each of its sightings, so
+ * another order or another split of the same group adds no comment, and a member seen in a new repo
+ * does.
+ */
+export const alreadyReported = (
+  proposal: IssueProposal | CommentProposal,
+  texts: string[]
+): boolean => {
+  const reported = new Set(texts.flatMap(sightingsIn));
+  return (
+    proposal.sightings.every((sighting) => reported.has(sighting)) ||
+    reported.has(blockSighting(new Map(metadataFields(proposal))))
+  );
 };
 
 const BASELINE_TEXT: Record<Finding['baseline'], string> = {
@@ -334,6 +395,30 @@ export const renderCommentBody = (proposal: CommentProposal): string =>
     '',
   ].join('\n');
 
+const sightingOf = (fingerprint: string, { result: { request }, cycle }: LoadedResult): string =>
+  createHash('sha256')
+    .update(
+      [
+        fingerprint,
+        cycle.repo,
+        cycle.headSha ?? cycle.startSha,
+        request.os,
+        request.engine,
+        request.version,
+      ].join('\n')
+    )
+    .digest('hex')
+    .slice(0, 12);
+
+const sightingsOf = (members: FindingGroup[]): string[] =>
+  [
+    ...new Set(
+      members.flatMap((member) =>
+        member.occurrences.map((occurrence) => sightingOf(member.fingerprint, occurrence))
+      )
+    ),
+  ].sort();
+
 const sourcesOf = (groups: FindingGroup[]): Source[] => {
   const byPath = new Map<string, Source>();
   for (const { result, resultPath, cycle } of groups.flatMap((group) => group.occurrences)) {
@@ -461,6 +546,7 @@ export const toProposal = (
   }
   const report = {
     ...common,
+    sightings: sightingsOf(members),
     labels,
     milestone: major,
     finding: lead.finding,

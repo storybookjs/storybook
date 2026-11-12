@@ -245,6 +245,9 @@ const ProposalBase = {
 
 const ReportBase = {
   ...ProposalBase,
+  // One key for each finding of the group in each run that saw it. The filer adds no comment whose
+  // keys the issue already has.
+  sightings: z.array(z.string().regex(/^[0-9a-f]{12}$/)).min(1),
   labels: z.array(z.string()),
   milestone: z.string(),
   finding: Finding,

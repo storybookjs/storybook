@@ -8,7 +8,8 @@ import {
   type FilingStep,
 } from './filing.ts';
 import { asIssue, finding, issueOn, loaded, RUN_URL, single, VERSION } from './fixtures.ts';
-import { groupFindings, toProposal, writtenOn, type IssueHit } from './proposals.ts';
+import { groupFindings, toProposal, writtenOn, type Cluster, type IssueHit } from './proposals.ts';
+import type { LoadedResult } from './results.ts';
 import type { Finding } from './schema.ts';
 
 const REPO = 'storybookjs/storybook';
@@ -172,6 +173,57 @@ describe('planFiling', () => {
     });
 
     expect(kinds(steps)).toEqual(['push-cycle', 'comment']);
+  });
+
+  describe('for a group of two findings that is already filed', () => {
+    const build = finding({ checkId: 'build.static', title: 'Build fails', errorText: 'ENOSPC' });
+    const run = loaded('linux', 'claude', [finding(), build]);
+    const [hmrGroup, buildGroup] = groupFindings([run]);
+    const filed = asIssue(
+      toProposal({ lead: hmrGroup!, members: [hmrGroup!, buildGroup!] }, [], { runUrl: RUN_URL })
+    );
+    const issue = {
+      ...issueOn(hmrGroup, { number: 9, labels: ['bug'], state: 'open' }),
+      body: issueBody(planFiling(filed, { repo: REPO, evidenceLinks: 'assets' })),
+    };
+    const stepsFor = (cluster: Cluster, existing = writtenOn(issue)) =>
+      planFiling(toProposal(cluster, [issue], { runUrl: `${RUN_URL}0` }), {
+        repo: REPO,
+        evidenceLinks: 'assets',
+        existing,
+      });
+    const skipped = [{ kind: 'skip', reason: '#9 already has this sighting' }];
+
+    it('adds no comment when the same findings come back in another order', () => {
+      expect(stepsFor({ lead: buildGroup!, members: [buildGroup!, hmrGroup!] })).toEqual(skipped);
+    });
+
+    it('adds no comment for one of the findings on its own', () => {
+      expect(stepsFor(single(buildGroup))).toEqual(skipped);
+    });
+
+    it('comments when a member is seen in another repo behind an unchanged lead', () => {
+      const elsewhere: LoadedResult = {
+        ...loaded('linux', 'claude', [build], 'e'.repeat(40)),
+        resultPath: 'results/other/linux/claude/result.json',
+      };
+      elsewhere.cycle.repo = 'storybookjs/other';
+      const [hmrAgain, buildTwice] = groupFindings([run, elsewhere]);
+
+      const steps = stepsFor({ lead: hmrAgain!, members: [hmrAgain!, buildTwice!] });
+
+      expect(buildTwice!.occurrences).toHaveLength(2);
+      expect(kinds(steps)).toEqual(['push-cycle', 'comment']);
+    });
+
+    it('recognises a sighting that was filed before sightings had keys', () => {
+      const withoutKeys = issue.body.replace(/^sightings: .*\n/m, '');
+
+      expect(withoutKeys).not.toBe(issue.body);
+      expect(
+        stepsFor({ lead: buildGroup!, members: [buildGroup!, hmrGroup!] }, [withoutKeys])
+      ).toEqual(skipped);
+    });
   });
 
   it('says that a suppressed bug was fixed after the tested version', () => {

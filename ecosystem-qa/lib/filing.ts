@@ -1,7 +1,7 @@
 import { cycleRef } from './cycle.ts';
 import {
+  alreadyReported,
   fence,
-  METADATA_MARKER,
   relatedLines,
   renderCommentBody,
   renderIssueBody,
@@ -36,10 +36,6 @@ export interface FilingOptions {
   existing?: string[];
 }
 
-// The run line names the run that collected. Collecting the same results again gives another run,
-// so the line is not part of what makes two sightings the same.
-const withoutRun = (text: string): string => text.replace(/^run: .*$/gm, '');
-
 const suppressedBecause = ({
   reason,
   existingIssue,
@@ -64,12 +60,13 @@ export const planFiling = (proposal: Proposal, options: FilingOptions): FilingSt
       ? [{ kind: 'push-cycle' as const, ...cycle, headSha: cycle.headSha, bundle: cycle.bundle }]
       : [];
   if (proposal.kind === 'comment') {
-    const body = renderCommentBody(proposal);
-    const sighting = withoutRun(body.slice(body.indexOf(METADATA_MARKER)).trim());
-    if (options.existing?.some((text) => withoutRun(text).includes(sighting))) {
+    if (alreadyReported(proposal, options.existing ?? [])) {
       return [{ kind: 'skip', reason: `#${proposal.existingIssue} already has this sighting` }];
     }
-    return [...pushCycle(proposal.cycle), { kind: 'comment', issue: proposal.existingIssue, body }];
+    return [
+      ...pushCycle(proposal.cycle),
+      { kind: 'comment', issue: proposal.existingIssue, body: renderCommentBody(proposal) },
+    ];
   }
   if (options.filedAs !== undefined) {
     return [{ kind: 'skip', reason: `already filed as #${options.filedAs}` }];

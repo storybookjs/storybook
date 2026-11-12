@@ -1,0 +1,42 @@
+[21:53:25.599] [INFO] Storybook upgrade - v11.0.0-beta.1
+[21:53:25.615] [INFO] Detecting projects...
+[21:53:25.618] [INFO] Detecting projects: 1 projects
+[21:53:25.618] [DEBUG] Getting Storybook data...
+[21:53:25.618] [DEBUG] Getting Storybook info...
+[21:53:25.632] [DEBUG] Getting stories paths...
+[21:53:25.740] [DEBUG] Getting package manager...
+[21:53:26.535] [DEBUG] Getting package.json info for D:/a/_temp/qa-work/gutenberg/.sandcastle/worktrees/qa-sb-11.0.0-beta.1-windows-claude/package.json...
+[21:53:26.535] [DEBUG] Getting Storybook version...
+[21:53:26.536] [DEBUG] Detecting CSF factory usage...
+[21:53:26.559] [DEBUG] . - Validating before version... undefined
+[21:53:26.559] [DEBUG] SB_CLI_UPGRADE_0005 (UpgradeStorybookUnknownCurrentVersionError): We couldn't determine the current version of Storybook in your project.
+
+Are you running the Storybook CLI in a project without Storybook?
+It might help if you specify your Storybook config directory with the --config-dir flag.
+[21:53:26.559] [INFO] 1 project detected
+[21:53:26.559] [DEBUG] Found 0 valid projects and 1 error projects
+[21:53:26.560] [ERROR] Failed to get projects
+[21:53:26.561] [ERROR] Error: ❌ Storybook found errors while collecting data for the following projects:
+.:
+SB_CLI_UPGRADE_0005 (UpgradeStorybookUnknownCurrentVersionError): We couldn't determine the current version of Storybook in your project.
+
+Are you running the Storybook CLI in a project without Storybook?
+It might help if you specify your Storybook config directory with the --config-dir flag.
+    at validateVersion (file:///C:/npm/cache/_npx/192d7f770c10a1b7/node_modules/.store/@storybook/cli@11.0.0-beta.1-psda8X__qgO_LG_ODscV1A/node_modules/@storybook/cli/dist/_node-chunks/chunk-R6HMSGZI.js:181:11)
+    at processProject (file:///C:/npm/cache/_npx/192d7f770c10a1b7/node_modules/.store/@storybook/cli@11.0.0-beta.1-psda8X__qgO_LG_ODscV1A/node_modules/@storybook/cli/dist/_node-chunks/chunk-R6HMSGZI.js:228:81)
+Please fix the errors and run the upgrade command again.
+    at getProjects (file:///C:/npm/cache/_npx/192d7f770c10a1b7/node_modules/.store/@storybook/cli@11.0.0-beta.1-psda8X__qgO_LG_ODscV1A/node_modules/@storybook/cli/dist/_node-chunks/chunk-R6HMSGZI.js:417:13)
+    at async upgrade (file:///C:/npm/cache/_npx/192d7f770c10a1b7/node_modules/.store/@storybook/cli@11.0.0-beta.1-psda8X__qgO_LG_ODscV1A/node_modules/@storybook/cli/dist/_node-chunks/run-GZ5OBPUT.js:11428:91)
+    at async file:///C:/npm/cache/_npx/192d7f770c10a1b7/node_modules/.store/@storybook/cli@11.0.0-beta.1-psda8X__qgO_LG_ODscV1A/node_modules/@storybook/cli/dist/_node-chunks/run-GZ5OBPUT.js:11700:70
+    at async withTelemetry (file:///C:/npm/cache/_npx/192d7f770c10a1b7/node_modules/.store/storybook@11.0.0-beta.1-MYZexe1J9JkDZBmnclJljg/node_modules/storybook/dist/_node-chunks/chunk-LBR5YCV6.js:3591:12)
+    at async Command.<anonymous> (file:///C:/npm/cache/_npx/192d7f770c10a1b7/node_modules/.store/@storybook/cli@11.0.0-beta.1-psda8X__qgO_LG_ODscV1A/node_modules/@storybook/cli/dist/_node-chunks/run-GZ5OBPUT.js:11696:3)
+    at async Command.parseAsync (C:\npm\cache\_npx\192d7f770c10a1b7\node_modules\.store\commander@14.0.3-oiW-ozK8VUXTzxNYcujYcQ\node_modules\commander\lib\command.js:1122:5)
+[21:53:27.111] [ERROR] Error: ❌ Storybook found errors while collecting data for the following projects:
+.:
+SB_CLI_UPGRADE_0005 (UpgradeStorybookUnknownCurrentVersionError): We couldn't determine the current version of Storybook in your project.
+
+Are you running the Storybook CLI in a project without Storybook?
+It might help if you specify your Storybook config directory with the --config-dir flag.
+    at validateVersion (file:///C:/npm/cache/_npx/192d7f770c10a1b7/node_modules/.store/@storybook/cli@11.0.0-beta.1-psda8X__qgO_LG_ODscV1A/node_modules/@storybook/cli/dist/_node-chunks/chunk-R6HMSGZI.js:181:11)
+    at processProject (file:///C:/npm/cache/_npx/192d7f770c10a1b7/node_modules/.store/@storybook/cli@11.0.0-beta.1-psda8X__qgO_LG_ODscV1A/node_modules/@storybook/cli/dist/_node-chunks/chunk-R6HMSGZI.js:228:81)
+Please fix the errors and run the upgrade command again.

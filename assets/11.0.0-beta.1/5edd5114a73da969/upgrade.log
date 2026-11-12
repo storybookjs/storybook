@@ -1,0 +1,60 @@
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "frozen-lockfile". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+[90m┌[39m  Storybook upgrade - v11.0.0-beta.1
+[90m│[39m
+[90m│[39m  Detecting projects...
+[90m│[39m
+[90m│[39m  Detecting projects: 1 projects
+[90m│[39m
+[90m│[39m  1 project detected
+[90m│[39m
+[31m■[39m  Failed to get projects
+[90m│[39m
+[31m■[39m  [38;2;241;97;97mError: ❌ Storybook found errors while collecting data for the
+[90m│[39m  following projects:
+[90m│[39m  .:
+[90m│[39m  SB_CLI_UPGRADE_0005 (UpgradeStorybookUnknownCurrentVersionError): We
+[90m│[39m  couldn't determine the current version of Storybook in your project.
+
+[90m│[39m  Are you running the Storybook CLI in a project without Storybook?
+[90m│[39m  It might help if you specify your Storybook config directory with the
+[90m│[39m  --config-dir flag.
+[90m│[39m  at validateVersion
+[90m│[39m  (file:///C:/npm/cache/_npx/192d7f770c10a1b7/node_modules/.store/@storybook/cli@11.0.0-beta.1-psda8X__qgO_LG_ODscV1A/node_modules/@storybook/cli/dist/_node-chunks/chunk-R6HMSGZI.js:181:11)
+[90m│[39m  at processProject
+[90m│[39m  (file:///C:/npm/cache/_npx/192d7f770c10a1b7/node_modules/.store/@storybook/cli@11.0.0-beta.1-psda8X__qgO_LG_ODscV1A/node_modules/@storybook/cli/dist/_node-chunks/chunk-R6HMSGZI.js:228:81)
+[90m│[39m  Please fix the errors and run the upgrade command again.[39m
+[90m│[39m  at getProjects
+[90m│[39m  (file:///C:/npm/cache/_npx/192d7f770c10a1b7/node_modules/.store/@storybook/cli@11.0.0-beta.1-psda8X__qgO_LG_ODscV1A/node_modules/@storybook/cli/dist/_node-chunks/chunk-R6HMSGZI.js:417:13)
+[90m│[39m  at async upgrade
+[90m│[39m  (file:///C:/npm/cache/_npx/192d7f770c10a1b7/node_modules/.store/@storybook/cli@11.0.0-beta.1-psda8X__qgO_LG_ODscV1A/node_modules/@storybook/cli/dist/_node-chunks/run-GZ5OBPUT.js:11428:91)
+[90m│[39m  at async
+[90m│[39m  file:///C:/npm/cache/_npx/192d7f770c10a1b7/node_modules/.store/@storybook/cli@11.0.0-beta.1-psda8X__qgO_LG_ODscV1A/node_modules/@storybook/cli/dist/_node-chunks/run-GZ5OBPUT.js:11700:70
+[90m│[39m  at async withTelemetry
+[90m│[39m  (file:///C:/npm/cache/_npx/192d7f770c10a1b7/node_modules/.store/storybook@11.0.0-beta.1-MYZexe1J9JkDZBmnclJljg/node_modules/storybook/dist/_node-chunks/chunk-LBR5YCV6.js:3591:12)
+[90m│[39m  at async Command.<anonymous>
+[90m│[39m  (file:///C:/npm/cache/_npx/192d7f770c10a1b7/node_modules/.store/@storybook/cli@11.0.0-beta.1-psda8X__qgO_LG_ODscV1A/node_modules/@storybook/cli/dist/_node-chunks/run-GZ5OBPUT.js:11696:3)
+[90m│[39m  at async Command.parseAsync
+[90m│[39m  (C:\npm\cache\_npx\192d7f770c10a1b7\node_modules\.store\commander@14.0.3-oiW-ozK8VUXTzxNYcujYcQ\node_modules\commander\lib\command.js:1122:5)
+[90m│[39m
+[31m■[39m  Error: ❌ Storybook found errors while collecting data for the
+[90m│[39m  following projects:
+[90m│[39m  .:
+[90m│[39m  SB_CLI_UPGRADE_0005 (UpgradeStorybookUnknownCurrentVersionError): We
+[90m│[39m  couldn't determine the current version of Storybook in your project.
+
+[90m│[39m  Are you running the Storybook CLI in a project without Storybook?
+[90m│[39m  It might help if you specify your Storybook config directory with the
+[90m│[39m  --config-dir flag.
+[90m│[39m  at validateVersion
+[90m│[39m  (file:///C:/npm/cache/_npx/192d7f770c10a1b7/node_modules/.store/@storybook/cli@11.0.0-beta.1-psda8X__qgO_LG_ODscV1A/node_modules/@storybook/cli/dist/_node-chunks/chunk-R6HMSGZI.js:181:11)
+[90m│[39m  at processProject
+[90m│[39m  (file:///C:/npm/cache/_npx/192d7f770c10a1b7/node_modules/.store/@storybook/cli@11.0.0-beta.1-psda8X__qgO_LG_ODscV1A/node_modules/@storybook/cli/dist/_node-chunks/chunk-R6HMSGZI.js:228:81)
+[90m│[39m  Please fix the errors and run the upgrade command again.
+[90m│[39m
+[90m│[39m  Debug logs are written to:
+[90m│[39m  D:\a\_temp\qa-work\gutenberg\.sandcastle\worktrees\qa-sb-11.0.0-beta.1-windows-claude\storybook\debug-storybook.log
+[90m│[39m
+[90m└[39m  
+

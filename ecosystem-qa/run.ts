@@ -206,6 +206,7 @@ interface SandboxPlan {
   evidenceDir: string;
   // Extra variables the agent process needs inside this sandbox.
   agentEnv: Record<string, string>;
+  hooks: NonNullable<Parameters<typeof run>[0]['hooks']>;
 }
 
 const planSandbox = (
@@ -249,6 +250,22 @@ const planSandbox = (
     identity(agentTmp, false),
   ];
   const nativeEnv = { CLAUDE_CODE_TMPDIR: agentTmp };
+  const { packageManager, node } = request.entry;
+  const install = (evidence: string, nodeFlag: string[]) => ({
+    command: [
+      `node "${toolsDir}/timed.mjs"`,
+      ...nodeFlag,
+      `"${evidence}/install-seconds.txt"`,
+      INSTALL_COMMAND[packageManager],
+    ].join(' '),
+    timeoutMs: 25 * 60_000,
+  });
+  const installHooks = { sandbox: { onSandboxReady: [install(evidenceDir, [])] } };
+  if (request.sandbox !== 'docker' && node) {
+    console.warn(
+      `${request.entry.id} asks for Node ${node}, and only the Docker image can switch Node. This run uses the Node of the host.`
+    );
+  }
   switch (request.sandbox) {
     case 'docker': {
       const sandboxMigration = `${DOCKER_HOME}/qa-input/MIGRATION.md`;
@@ -266,6 +283,16 @@ const planSandbox = (
         migrationFile: sandboxMigration,
         evidenceDir: sandboxEvidence,
         agentEnv: {},
+        hooks: {
+          host: {
+            onSandboxReady: [
+              { command: `node "${toolsDir}/cap-memory.mjs" "${evidenceDir}/memory-limit.txt"` },
+            ],
+          },
+          sandbox: {
+            onSandboxReady: [install(sandboxEvidence, [`--use-node${node ? `=${node}` : ''}`])],
+          },
+        },
       };
     }
     case 'bwrap':
@@ -275,6 +302,7 @@ const planSandbox = (
         migrationFile,
         evidenceDir,
         agentEnv: nativeEnv,
+        hooks: installHooks,
       };
     case 'seatbelt':
       return {
@@ -283,9 +311,17 @@ const planSandbox = (
         migrationFile,
         evidenceDir,
         agentEnv: nativeEnv,
+        hooks: installHooks,
       };
     case 'none':
-      return { provider: noSandbox(), toolsDir, migrationFile, evidenceDir, agentEnv: {} };
+      return {
+        provider: noSandbox(),
+        toolsDir,
+        migrationFile,
+        evidenceDir,
+        agentEnv: {},
+        hooks: installHooks,
+      };
   }
 };
 
@@ -332,11 +368,6 @@ const runSandcastle = async (
   try {
     const plan = planSandbox(request, cloneDir, evidenceDir, image);
     const agent = agentFor(request, plan.agentEnv);
-    // Only the Docker image carries `n`.
-    const useNodeFlag =
-      request.sandbox === 'docker'
-        ? `--use-node${request.entry.node ? `=${request.entry.node}` : ''}`
-        : '';
     const result = await run({
       cwd: cloneDir,
       agent,
@@ -361,27 +392,7 @@ const runSandcastle = async (
         OUTPUT_SCHEMA: JSON.stringify(z.toJSONSchema(answerSchema), null, 2),
       },
       output: Output.object({ tag: QA_RESULT_TAG, schema: answerSchema, maxRetries: 2 }),
-      hooks: {
-        ...(request.sandbox === 'docker'
-          ? {
-              host: {
-                onSandboxReady: [
-                  {
-                    command: `node "${plan.toolsDir}/cap-memory.mjs" "${evidenceDir}/memory-limit.txt"`,
-                  },
-                ],
-              },
-            }
-          : {}),
-        sandbox: {
-          onSandboxReady: [
-            {
-              command: `node "${plan.toolsDir}/timed.mjs" ${useNodeFlag} "${plan.evidenceDir}/install-seconds.txt" ${INSTALL_COMMAND[packageManager]}`,
-              timeoutMs: 25 * 60_000,
-            },
-          ],
-        },
-      },
+      hooks: plan.hooks,
       idleTimeoutSeconds: 900,
       logging: {
         type: 'file',

@@ -40,6 +40,11 @@ export interface QaIssue extends IssueHit {
 export const hitsFor = (issues: QaIssue[], fingerprint: string): IssueHit[] =>
   issues.filter((issue) => issue.body.includes(fingerprint));
 
+// A closed hit is the "came back" case the issue proposal exists for, so only an open one counts as
+// filed.
+export const openHit = (hits: IssueHit[]): IssueHit | undefined =>
+  hits.find((hit) => hit.state === 'open');
+
 const OS_ORDER: Record<Os, number> = { linux: 0, macos: 1, windows: 2 };
 
 const byPrimaryOrder = (a: LoadedResult, b: LoadedResult): number =>
@@ -267,7 +272,7 @@ export const toProposal = (group: FindingGroup, hits: IssueHit[], runUrl: string
   };
   // A closed issue gets no comment: nobody watches it, so the bug that came back is filed again
   // with a link to where it was fixed before.
-  const open = hits.find((hit) => hit.state === 'open');
+  const open = openHit(hits);
   if (open) {
     return { kind: 'comment', ...report, existingIssue: open.number };
   }

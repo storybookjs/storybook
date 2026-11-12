@@ -7,7 +7,6 @@ import { dirname, join, resolve } from 'pathe';
 import { z } from 'zod';
 
 import {
-  alreadyFiled,
   ASSETS_BRANCH,
   describeStep,
   missingPrerequisites,
@@ -20,7 +19,7 @@ import {
 import { cycleRef } from './lib/cycle.ts';
 import { listQaIssues, ghText, pages } from './lib/github.ts';
 import { copyRedacted } from './lib/redact.ts';
-import { hitsFor, type QaIssue } from './lib/proposals.ts';
+import { hitsFor, openHit, type QaIssue } from './lib/proposals.ts';
 import { pushTokenEnv } from './lib/push-targets.ts';
 import { Proposal } from './lib/schema.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
@@ -203,7 +202,7 @@ const fileProposal = (proposal: Proposal, issues: QaIssue[]): FilingOutcome => {
     repo,
     evidenceLinks: 'assets',
     ...(proposal.kind === 'issue'
-      ? { filedAs: alreadyFiled(hitsFor(issues, proposal.fingerprint)) }
+      ? { filedAs: openHit(hitsFor(issues, proposal.fingerprint))?.number }
       : {}),
     ...(proposal.kind === 'comment' ? { comments: commentsOn(proposal.existingIssue) } : {}),
   });

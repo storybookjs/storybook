@@ -1,5 +1,14 @@
 import type { Dispatch, SetStateAction } from 'react';
-import React, { Fragment, memo, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  Fragment,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 
 import {
   FORCE_REMOUNT,
@@ -14,7 +23,6 @@ import { global } from '@storybook/global';
 
 import {
   experimental_useStatusStore,
-  useAddonState,
   useChannel,
   useParameter,
   useStorybookApi,
@@ -34,9 +42,10 @@ import {
   type RenderPhase,
   type SyncPayload,
 } from '../../instrumenter/types.ts';
-import { ADDON_ID, INTERNAL_RENDER_CALL_ID } from '../constants.ts';
+import { INTERNAL_RENDER_CALL_ID } from '../constants.ts';
 import { InteractionsPanel, type SerializedError } from './InteractionsPanel.tsx';
 import type { PlayStatus } from './StatusBadge.tsx';
+import { createPanelStore } from './panelStore.ts';
 
 export interface PanelState {
   status: PlayStatus;
@@ -83,14 +92,34 @@ export const getInteractions = ({
   calls,
   collapsed,
   setCollapsed,
+  toggles,
 }: {
   log: LogItem[];
   calls: Map<Call['id'], Call>;
   collapsed: Set<Call['id']>;
   setCollapsed: Dispatch<SetStateAction<Set<string>>>;
+  /** Collapse toggles by call id, reused across calls so that equal inputs give equal interactions. */
+  toggles?: Map<Call['id'], () => void>;
 }) => {
   const callsById = new Map<Call['id'], Call>();
   const childCallMap = new Map<Call['id'], Call['id'][]>();
+  const getToggleCollapsed = (id: Call['id']) => {
+    const cached = toggles?.get(id);
+    if (cached) {
+      return cached;
+    }
+    const toggle = () =>
+      setCollapsed((ids) => {
+        if (ids.has(id)) {
+          ids.delete(id);
+        } else {
+          ids.add(id);
+        }
+        return new Set(ids);
+      });
+    toggles?.set(id, toggle);
+    return toggle;
+  };
 
   const interactions = log
     .map(({ callId, ancestors, status }) => {
@@ -116,15 +145,7 @@ export const getInteractions = ({
         status,
         childCallIds: childCallMap.get(call.id),
         isCollapsed: collapsed.has(call.id),
-        toggleCollapsed: () =>
-          setCollapsed((ids) => {
-            if (ids.has(call.id)) {
-              ids.delete(call.id);
-            } else {
-              ids.add(call.id);
-            }
-            return new Set(ids);
-          }),
+        toggleCollapsed: getToggleCollapsed(call.id),
       };
     });
 
@@ -133,19 +154,9 @@ export const getInteractions = ({
 
 export const getPanelState = (
   state: PanelState,
-  {
-    log,
-    calls,
-    collapsed,
-    setCollapsed,
-  }: {
-    log: LogItem[];
-    calls: Map<Call['id'], Call>;
-    collapsed: Set<Call['id']>;
-    setCollapsed: Dispatch<SetStateAction<Set<string>>>;
-  }
+  options: Parameters<typeof getInteractions>[0]
 ): PanelState =>
-  getInteractions({ log, calls, collapsed, setCollapsed }).reduce(
+  getInteractions(options).reduce(
     (acc, interaction) => {
       if (interaction.id === INTERNAL_RENDER_CALL_ID) {
         acc.interactions.push(interaction);
@@ -219,6 +230,20 @@ const getInternalRenderLogItem = (status: CallStates): LogItem => ({
   ancestors: [],
 });
 
+export const panelStore = createPanelStore<PanelState>({
+  status: 'rendering',
+  controlStates: INITIAL_CONTROL_STATES,
+  interactions: [],
+  interactionsCount: 0,
+  hasException: false,
+  pausedAt: undefined,
+  caughtException: undefined,
+  unhandledErrors: undefined,
+});
+
+export const usePanelState = () =>
+  useSyncExternalStore(panelStore.subscribe, panelStore.getState, panelStore.getState);
+
 export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>(
   function PanelMemoized({ refId, storyId, storyUrl }) {
     const { statusValue, testRunId } = experimental_useStatusStore((state) => {
@@ -236,16 +261,8 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
     const importPath = data?.importPath as string | undefined;
     const canOpenInEditor = global.CONFIG_TYPE === 'DEVELOPMENT' && !state.refId;
 
-    const [panelState, set] = useAddonState<PanelState>(ADDON_ID, {
-      status: 'rendering' as PlayStatus,
-      controlStates: INITIAL_CONTROL_STATES,
-      interactions: [] as ReturnType<typeof getInteractions>,
-      interactionsCount: 0,
-      hasException: false,
-      pausedAt: undefined,
-      caughtException: undefined,
-      unhandledErrors: undefined,
-    });
+    const panelState = usePanelState();
+    const set = panelStore.setState;
 
     // local state
     const [scrollTarget, setScrollTarget] = useState<HTMLElement | undefined>(undefined);
@@ -267,6 +284,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
       new Map([[INTERNAL_RENDER_CALL_ID, getInternalRenderCall(storyId)]])
     );
     const setCall = ({ status, ...call }: Call) => calls.current.set(call.id, call);
+    const toggles = useRef(new Map<Call['id'], () => void>()).current;
 
     const endRef = useRef<HTMLDivElement>();
     useEffect(() => {
@@ -296,7 +314,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           set((state) =>
             getPanelState(
               { ...state, controlStates: payload.controlStates, pausedAt: payload.pausedAt },
-              { log: log.current, calls: calls.current, collapsed, setCollapsed }
+              { log: log.current, calls: calls.current, collapsed, setCollapsed, toggles }
             )
           );
         },
@@ -333,7 +351,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
                   : state.status;
               return getPanelState(
                 { ...state, status, pausedAt: undefined },
-                { log: log.current, calls: calls.current, collapsed, setCollapsed }
+                { log: log.current, calls: calls.current, collapsed, setCollapsed, toggles }
               );
             });
           }
@@ -353,7 +371,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
                 controlStates: INITIAL_CONTROL_STATES,
                 pausedAt: undefined,
               },
-              { log: log.current, calls: calls.current, collapsed, setCollapsed }
+              { log: log.current, calls: calls.current, collapsed, setCollapsed, toggles }
             )
           );
         },
@@ -369,9 +387,15 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
 
     useEffect(() => {
       set((state) =>
-        getPanelState(state, { log: log.current, calls: calls.current, collapsed, setCollapsed })
+        getPanelState(state, {
+          log: log.current,
+          calls: calls.current,
+          collapsed,
+          setCollapsed,
+          toggles,
+        })
       );
-    }, [set, collapsed]);
+    }, [set, collapsed, toggles]);
 
     const controls = useMemo(
       () => ({
@@ -389,7 +413,15 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
 
     const storyFilePath = useParameter('fileName', '');
     const [fileName] = storyFilePath.toString().split('/').slice(-1);
-    const scrollToTarget = () => scrollTarget?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    const scrollToTarget = useCallback(
+      () => scrollTarget?.scrollIntoView({ behavior: 'smooth', block: 'end' }),
+      [scrollTarget]
+    );
+    // Stable props keep the memoized panel from re-rendering its whole list on every commit.
+    const panelControlStates = useMemo(
+      () => ({ ...controlStates, detached: !!refId || controlStates.detached }),
+      [controlStates, refId]
+    );
 
     const hasException =
       !!caughtException ||
@@ -444,7 +476,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           browserTestStatus={browserTestStatus}
           calls={calls.current}
           controls={controls}
-          controlStates={{ ...controlStates, detached: !!refId || controlStates.detached }}
+          controlStates={panelControlStates}
           interactions={interactions}
           fileName={fileName}
           hasException={hasException}
@@ -453,7 +485,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           pausedAt={pausedAt}
           // @ts-expect-error TODO
           endRef={endRef}
-          onScrollToEnd={scrollTarget && scrollToTarget}
+          onScrollToEnd={scrollTarget ? scrollToTarget : undefined}
           importPath={importPath}
           canOpenInEditor={canOpenInEditor}
           api={api}

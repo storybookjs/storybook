@@ -228,6 +228,17 @@ describe('Panel', () => {
       ]);
     });
 
+    it('reuses the collapse toggle of each call from the cache it is given', () => {
+      const toggles = new Map<Call['id'], () => void>();
+
+      const first = getInteractions({ log, calls, collapsed, setCollapsed, toggles });
+      const second = getInteractions({ log, calls, collapsed, setCollapsed, toggles });
+
+      expect(second).toEqual(first);
+      expect(second[1].toggleCollapsed).toBe(first[1].toggleCollapsed);
+      expect(toggles.size).toBe(log.length);
+    });
+
     it('hides calls for which the parent is collapsed', () => {
       const withCollapsed = new Set<Call['id']>(['story--id [6] waitFor']);
 

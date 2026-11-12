@@ -738,6 +738,27 @@ export const docgenPerfGate = defineJob(
   [commonJobsNoOpJob]
 );
 
+export const docgenNativeTypeScriptFixtures = defineJob(
+  'Docgen native TypeScript fixtures',
+  () => ({
+    executor: {
+      name: 'sb_node_22_classic',
+      class: 'medium+',
+    },
+    steps: [
+      ...workflow.restoreLinux(),
+      {
+        run: {
+          name: 'Harness fixtures on TypeScript 7.1',
+          command: `yarn vitest run --config ${DOCGEN_HARNESS_DIR}/vitest.config.native-typescript.ts ${UNIT_TEST_REPORTERS}`,
+        },
+      },
+      testResults.persist(`test-results`),
+    ],
+  }),
+  [commonJobsNoOpJob]
+);
+
 export const benchmarkPackages = defineJob(
   'Benchmark packages',
   () => ({

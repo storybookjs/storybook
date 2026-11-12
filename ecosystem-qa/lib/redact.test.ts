@@ -71,13 +71,14 @@ describe('copyRedacted', () => {
 });
 
 describe('redactTree', () => {
-  it('redacts nested text files in place and leaves binaries and symlinks alone', () => {
+  it('redacts nested text files in place and leaves binaries and symlink targets alone', () => {
     vol.fromJSON({
       '/run/agent-stream.jsonl': `{"env":"${anthropicKey}"}\n`,
       '/run/evidence/dev.log': `key ${anthropicKey}\n`,
+      '/outside/secret.log': `key ${anthropicKey}\n`,
     });
     memfs.writeFileSync('/run/evidence/shot.png', Buffer.from([0x89, 0x50, 0x4e, 0x47, 0]));
-    memfs.symlinkSync('/run/evidence/dev.log', '/run/link.log');
+    memfs.symlinkSync('/outside/secret.log', '/run/link.log');
 
     redactTree('/run');
 
@@ -86,6 +87,6 @@ describe('redactTree', () => {
     expect(memfs.readFileSync('/run/evidence/shot.png')).toEqual(
       Buffer.from([0x89, 0x50, 0x4e, 0x47, 0])
     );
-    expect(memfs.lstatSync('/run/link.log').isSymbolicLink()).toBe(true);
+    expect(memfs.readFileSync('/outside/secret.log', 'utf8')).toBe(`key ${anthropicKey}\n`);
   });
 });

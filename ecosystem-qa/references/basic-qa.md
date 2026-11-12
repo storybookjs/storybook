@@ -70,7 +70,7 @@ Search open issues with the `upgrade:11.0` label first, and comment on a match i
   - `manual: <reason>` when a person has to check it: the pass condition is motion, wording, layout or a click the agent cannot drive, or the row does not depend on the project and no monorepo test covers it yet.
     A manual row that a spec partly automates says so after the reason (`; e2e: <spec>`), so a bug bash can spend its time on the rows nothing automates.
 
-  Test paths are relative to `code/`; `e2e-tests/` paths to `test-storybooks/portable-stories-kitchen-sink/react/`.
+  Paths are relative to `code/`, except `e2e-tests/` paths, which are relative to `test-storybooks/portable-stories-kitchen-sink/react/`, and `scripts/` paths, which are relative to the repository root.
   `none` means only a person covers the row; spend your time there first.
 
 ## CLI
@@ -369,7 +369,7 @@ CSF Next (CSF factories) stories are written as `preview.meta({...})` and `meta.
 | BLD-2 | `npx http-server ./storybook-static --port 6008`, then open a story and a docs page. | `index.json` ids match dev, stories and docs render, and there is no testing widget or save bar. | pre-9 ; source: team practice | build.static | Static build serves and renders |
 | BLD-3 | Add a `staticDirs` entry and reference a file from a story. | The file is served at its configured path in dev and in the build. | pre-9 ; `docs/api/main-config/main-config-static-dirs.mdx` | monorepo: `e2e-sandbox/static-dirs.spec.ts` | Static dirs |
 | BLD-4 | `npx storybook build --docs` and serve it. | Only docs pages are in the build, and they render. | pre-9 ; `docs/writing-docs/build-documentation.mdx` | manual: no monorepo test yet | Docs build |
-| BLD-5 | `npx storybook build --test` | It succeeds and stories render. | pre-9 ; `docs/api/main-config/main-config-build.mdx` | monorepo: `bench/*-test-build` sandboxes | Test build |
+| BLD-5 | `npx storybook build --test` | It succeeds and stories render. | pre-9 ; `docs/api/main-config/main-config-build.mdx` | monorepo: `lib/cli-storybook/src/sandbox-templates.ts`, the bench test-build sandboxes | Test build |
 | BLD-6 | `npx storybook build --stats-json` in a Vite project. | `preview-stats.json` contains virtual and proxy modules. | 11.0 ; M: Vite: `preview-stats.json` contains the full bundler graph | manual: bug bash or feature session | Stats output |
 | BLD-7 | Embed a story from the served build in an `<iframe>` on another origin. | It renders; only the dev server restricts embedding. | 11.0 ; M: `storybook dev` now blocks remote iframe embedding | manual: bug bash or feature session | Embedding a build |
 

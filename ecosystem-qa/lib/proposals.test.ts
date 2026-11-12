@@ -298,7 +298,7 @@ describe('toProposal for a cluster', () => {
       {
         fingerprint: build!.fingerprint,
         checkId: 'build.static',
-        title: 'Build fails @someone\n### Injected <!-- x',
+        title: 'Build fails `@someone` ### Injected &lt;!-- x',
         sources: [expect.objectContaining({ os: 'windows', engine: 'codex' })],
       },
     ]);

@@ -231,6 +231,7 @@ export type Grouping = z.infer<typeof Grouping>;
 const Related = z.strictObject({
   fingerprint: Fingerprint,
   checkId: CheckId,
+  // Already safe to print inline: the agent's title, sanitized when the proposal was built.
   title: z.string().min(1),
   sources: z.array(Source).min(1),
 });

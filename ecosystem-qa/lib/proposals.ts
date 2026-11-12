@@ -262,7 +262,7 @@ export const relatedLines = (related: Proposal['related'], heading = RELATED_HEA
         '',
         ...related.map(
           ({ checkId, title, sources }) =>
-            `- \`${checkId}\` on ${unique(sources.map(({ repo, os, engine }) => `${repo} (${os}, ${engine})`))}: ${inlineTitle(title)}`
+            `- \`${checkId}\` on ${unique(sources.map(({ repo, os, engine }) => `${repo} (${os}, ${engine})`))}: ${title}`
         ),
         '',
       ];
@@ -524,7 +524,7 @@ export const toProposal = (
       .map((member) => ({
         fingerprint: member.fingerprint,
         checkId: member.finding.checkId,
-        title: member.finding.title,
+        title: inlineTitle(member.finding.title),
         sources: sourcesOf([member]),
       })),
   };

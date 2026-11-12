@@ -73,23 +73,37 @@ export const listQaIssues = (repo: string, label: string): QaIssue[] =>
       harnessComments(pages(IssueComment, `repos/${repo}/issues/${issue}/comments?per_page=100`))
   );
 
-const Release = z.object({ published_at: z.string().nullable() });
+const RELEASE_QUERY =
+  'query($owner:String!,$name:String!,$tag:String!){repository(owner:$owner,name:$name){release(tagName:$tag){publishedAt}}}';
 
-export const publishedAtFrom = (release: unknown): string | undefined =>
-  Release.parse(release).published_at ?? undefined;
+const ReleaseAnswer = z.object({
+  data: z.object({
+    repository: z.object({
+      release: z.object({ publishedAt: z.string().nullable() }).nullable(),
+    }),
+  }),
+});
 
-/** Return when the GitHub release `v<version>` of `repo` was published, or nothing when there is no such release. */
+export const publishedAtFrom = (answer: unknown): string | undefined =>
+  ReleaseAnswer.parse(answer).data.repository.release?.publishedAt ?? undefined;
+
+/**
+ * Return when the GitHub release `v<version>` of `repo` was published, or nothing when there is no
+ * such release.
+ *
+ * Asked through GraphQL, which answers a missing release with null where REST answers 404.
+ */
 export const releasePublishedAt = (repo: string, version: string): string | undefined => {
-  try {
-    return publishedAtFrom(
-      ghJson(['api', `repos/${repo}/releases/tags/v${version}`], {
-        stdio: ['ignore', 'pipe', 'pipe'],
-      })
-    );
-  } catch (error) {
-    if (String((error as { stderr?: unknown }).stderr).includes('(HTTP 404)')) {
-      return undefined;
-    }
-    throw error;
-  }
+  const [owner = '', name = ''] = repo.split('/');
+  const fields = { query: RELEASE_QUERY, owner, name, tag: `v${version}` };
+  return publishedAtFrom(
+    ghJson(
+      [
+        'api',
+        'graphql',
+        ...Object.entries(fields).flatMap(([key, value]) => ['-f', `${key}=${value}`]),
+      ],
+      QUIET
+    )
+  );
 };

@@ -82,14 +82,20 @@ describe('harnessComments', () => {
 });
 
 describe('publishedAtFrom', () => {
-  it('reads the publish date of a release, and none for a draft', () => {
-    expect(
-      publishedAtFrom({ tag_name: 'v11.0.0-beta.0', published_at: '2026-11-03T19:32:47Z' })
-    ).toBe('2026-11-03T19:32:47Z');
-    expect(publishedAtFrom({ published_at: null })).toBeUndefined();
+  const answer = (release: unknown) => ({ data: { repository: { release } } });
+
+  it('reads the publish date of a release', () => {
+    expect(publishedAtFrom(answer({ publishedAt: '2026-11-03T19:32:47Z' }))).toBe(
+      '2026-11-03T19:32:47Z'
+    );
   });
 
-  it('rejects a response that is not a release', () => {
+  it('returns nothing for a draft and for a tag without a release', () => {
+    expect(publishedAtFrom(answer({ publishedAt: null }))).toBeUndefined();
+    expect(publishedAtFrom(answer(null))).toBeUndefined();
+  });
+
+  it('rejects an answer that is not about a release', () => {
     expect(() => publishedAtFrom({ message: 'Not Found' })).toThrow();
   });
 });

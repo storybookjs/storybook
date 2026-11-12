@@ -681,12 +681,59 @@ function getAllDeclarationParents(
 // Type serialization
 // ---------------------------------------------------------------------------
 
+// The literals a type node spells out, in source order, following type aliases.
+function getDeclaredLiterals(
+  typescript: DocgenTypeScript,
+  checker: DocgenTypeChecker,
+  node: ts.TypeNode | undefined,
+  depth = 0
+): (string | number)[] {
+  if (!node || depth > MAX_SERIALIZATION_DEPTH) {
+    return [];
+  }
+  if (typescript.isParenthesizedTypeNode(node)) {
+    return getDeclaredLiterals(typescript, checker, node.type, depth);
+  }
+  if (typescript.isUnionTypeNode(node)) {
+    return node.types.flatMap((member) => getDeclaredLiterals(typescript, checker, member, depth));
+  }
+  if (typescript.isLiteralTypeNode(node)) {
+    const { literal } = node;
+    if (typescript.isStringLiteralLike(literal)) {
+      return [literal.text];
+    }
+    return typescript.isNumericLiteral(literal) ? [Number(literal.text)] : [];
+  }
+  if (typescript.isTypeReferenceNode(node)) {
+    const symbol = checker.getSymbolAtLocation(node.typeName);
+    const declarations = symbol
+      ? resolveAliasedSymbol(typescript, checker, symbol).declarations
+      : undefined;
+    return (declarations ?? []).flatMap((declaration) =>
+      typescript.isTypeAliasDeclaration(declaration)
+        ? getDeclaredLiterals(typescript, checker, declaration.type, depth + 1)
+        : []
+    );
+  }
+  return [];
+}
+
+// Code unit order, so the result does not depend on the machine's locale.
+function compareLiteralValues(a: ts.LiteralType['value'], b: ts.LiteralType['value']): number {
+  if (typeof a === 'number' && typeof b === 'number') {
+    return a - b;
+  }
+  const [textA, textB] = [String(a), String(b)];
+  return textA < textB ? -1 : textA > textB ? 1 : 0;
+}
+
 function serializeType(
   typescript: DocgenTypeScript,
   checker: DocgenTypeChecker,
   type: ts.Type,
   isRequired: boolean,
-  depth = 0
+  depth = 0,
+  declaredTypeNode?: ts.TypeNode
 ): PropItemType {
   if (depth > MAX_SERIALIZATION_DEPTH) {
     return { name: checker.typeToString(type) };
@@ -710,7 +757,20 @@ function serializeType(
       return { name: 'boolean' };
     }
 
-    const literalMembers = nonUndefinedTypes.filter(isLiteralType);
+    // TypeScript orders union members by when its checker first met each type, which depends on
+    // what was extracted before. Members the declaration spells out follow the declaration; computed
+    // ones (`keyof`, template literals) have no position of their own and follow by value.
+    const declaredLiterals = getDeclaredLiterals(typescript, checker, declaredTypeNode);
+    const declaredPosition = (member: ts.LiteralType) => {
+      const index = declaredLiterals.indexOf(member.value as string | number);
+      return index === -1 ? declaredLiterals.length : index;
+    };
+    const literalMembers = nonUndefinedTypes
+      .filter(isLiteralType)
+      .toSorted(
+        (a, b) =>
+          declaredPosition(a) - declaredPosition(b) || compareLiteralValues(a.value, b.value)
+      );
 
     if (literalMembers.length > 0 && literalMembers.length === nonUndefinedTypes.length) {
       const rawParts = literalMembers.map((m) => checker.typeToString(m));
@@ -1290,7 +1350,13 @@ function extractPropItem(
 
   // Union props keep one member's metadata but need the merged type.
   const propType = typeOverride ?? checker.getTypeOfSymbolAtLocation(prop, contextNode);
-  const type = serializeType(typescript, checker, propType, isRequired);
+  const declaration = prop.declarations?.[0];
+  const declaredTypeNode =
+    declaration &&
+    (typescript.isPropertySignature(declaration) || typescript.isPropertyDeclaration(declaration))
+      ? declaration.type
+      : undefined;
+  const type = serializeType(typescript, checker, propType, isRequired, 0, declaredTypeNode);
 
   const description = typescript.displayPartsToString(
     prop.getDocumentationComment(checker as ts.TypeChecker)
@@ -1314,6 +1380,20 @@ function extractPropItem(
     parent,
     declarations,
   };
+}
+
+// Props reached through a mapped type (`Omit`, `Pick`) come in the order of a key union, which
+// TypeScript sorts by when its checker first met each key. Props declared together are put back in
+// source order; the groups keep the order TypeScript gave them.
+function orderByDeclaration(properties: ts.Symbol[]): ts.Symbol[] {
+  const groups = new Map<ts.Node | ts.Symbol, ts.Symbol[]>();
+  for (const prop of properties) {
+    const container = prop.declarations?.[0]?.parent ?? prop;
+    groups.set(container, [...(groups.get(container) ?? []), prop]);
+  }
+  return [...groups.values()].flatMap((group) =>
+    group.toSorted((a, b) => (a.declarations?.[0]?.pos ?? 0) - (b.declarations?.[0]?.pos ?? 0))
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -1507,6 +1587,7 @@ export function serializeComponentDoc(
   } else {
     allProperties = propsType.getApparentProperties();
   }
+  allProperties = orderByDeclaration(allProperties);
   const excluded = getBulkSourceExclusions(typescript, allProperties);
 
   // Defaults live on the implementation, not on `export const Button = Inner` re-bindings.

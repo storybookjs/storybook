@@ -194,6 +194,73 @@ describe('prop extraction', () => {
       });
     });
 
+    it('lists enum members in declared order whatever the checker met first', async () => {
+      const entry = await extract(
+        'Button',
+        dedent`
+          import React from 'react';
+          type Tone = 'neutral' | 'info' | 'error';
+          interface Props {
+            first: 'large' | 'error' | 'small';
+            size: 'small' | 'medium' | 'large';
+            tone: Tone | 'custom';
+            columns: 3 | 1 | 2;
+          }
+          export const Button = (props: Props) => <button />;
+        `
+      );
+
+      const props = entry.component?.reactComponentMeta?.props;
+      expect(props?.size.type.raw).toBe('"small" | "medium" | "large"');
+      expect(props?.size.type.value).toEqual([
+        { value: '"small"' },
+        { value: '"medium"' },
+        { value: '"large"' },
+      ]);
+      expect(props?.tone.type.raw).toBe('"neutral" | "info" | "error" | "custom"');
+      expect(props?.columns.type.raw).toBe('3 | 1 | 2');
+    });
+
+    it('lists computed enum members by value', async () => {
+      const entry = await extract(
+        'Button',
+        dedent`
+          import React from 'react';
+          type Side = 'top' | 'bottom';
+          interface Props {
+            first: 'top-start' | 'bottom-end';
+            placement: Side | \`\${Side}-\${'start' | 'end'}\`;
+          }
+          export const Button = (props: Props) => <button />;
+        `
+      );
+
+      expect(entry.component?.reactComponentMeta?.props.placement.type.raw).toBe(
+        '"top" | "bottom" | "bottom-end" | "bottom-start" | "top-end" | "top-start"'
+      );
+    });
+
+    it('lists props picked through a mapped type in source order', async () => {
+      const entry = await extract(
+        'Button',
+        dedent`
+          import React from 'react';
+          type Early = 'gamma' extends string ? { early: string } : never;
+          interface Base { alpha: string; beta: string; gamma: string; delta: string }
+          type Props = Early & Omit<Base, 'delta'> & { own: string };
+          export const Button = (props: Props) => <button />;
+        `
+      );
+
+      expect(Object.keys(entry.component?.reactComponentMeta?.props ?? {})).toEqual([
+        'early',
+        'alpha',
+        'beta',
+        'gamma',
+        'own',
+      ]);
+    });
+
     it('extracts optional string literal union as enum', async () => {
       const entry = await extract(
         'Button',

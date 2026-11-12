@@ -1,26 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import { Badge } from 'storybook/internal/components';
 import { STORY_CHANGED } from 'storybook/internal/core-events';
 
-import { useAddonState, useChannel, useStorybookApi } from 'storybook/manager-api';
+import { useChannel, useStorybookApi } from 'storybook/manager-api';
 
-import { ADDON_ID, CLEAR_ID, EVENT_ID, PANEL_ID } from '../constants.ts';
+import { CLEAR_ID, EVENT_ID, PANEL_ID } from '../constants.ts';
 
 export function Title() {
   const api = useStorybookApi();
   const selectedPanel = api.getSelectedPanel();
-  const [{ count }, setCount] = useAddonState(ADDON_ID, { count: 0 });
+  // Local state: nothing else reads the count, and a write to the shared addon state would
+  // re-render the whole manager on every action.
+  const [count, setCount] = useState(0);
 
   useChannel({
     [EVENT_ID]: () => {
-      setCount((c) => ({ ...c, count: c.count + 1 }));
+      setCount((c) => c + 1);
     },
     [STORY_CHANGED]: () => {
-      setCount((c) => ({ ...c, count: 0 }));
+      setCount(0);
     },
     [CLEAR_ID]: () => {
-      setCount((c) => ({ ...c, count: 0 }));
+      setCount(0);
     },
   });
 

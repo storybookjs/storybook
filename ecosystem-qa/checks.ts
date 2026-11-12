@@ -151,15 +151,16 @@ export const CHECKS = [
     phase: 'dev',
     tier: 'extended',
     probe:
-      'Copy one stories file aside, open one of its stories, then delete the file. Poll `/index.json` until its ids are gone, then screenshot the manager at `/` and check its `.errors.json`. Restore the file afterwards.',
+      'Copy one stories file aside, then delete it. Poll `/index.json` until its ids are gone or 60 seconds pass. Then screenshot the manager at `/` with the shot tool: its `.errors.json` must be empty. Restore the file afterwards.',
   },
   {
     id: 'core.hmr.argtypes',
-    label: 'Adding a typed prop to a component updates Controls and the docs args table live',
+    label:
+      'A typed prop added to a component reaches Controls or the docs args table without a restart',
     phase: 'dev',
     tier: 'extended',
     probe:
-      "Add a typed prop with a default to the component of the baseline story and save. Fetch the story's docs page or the Controls panel again: the new prop must appear without navigating away. `n/a` when the framework has no docgen (check `storybook info`). Restore the file afterwards.",
+      "`n/a` unless the `framework` in `.storybook/main.*` is a React, Vue 3, Svelte or Web Components framework or `@storybook/angular-vite`; the others have no docgen that reads the component source while the server runs. Also `n/a` for a Web Components project that takes its props from a Custom Elements Manifest file. While the dev server runs, add a typed prop with a default to the component of the baseline story and save. Then screenshot the story's docs page, or the manager with the Controls panel, again: the new prop must be listed without a restart of the server. Restore the file afterwards.",
   },
   {
     id: 'core.components-manifest',

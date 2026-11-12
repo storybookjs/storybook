@@ -1,17 +1,16 @@
-import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 
 import { z } from 'zod';
 
 import { versionLine } from './lib/cycle.ts';
-import { compareExpected, loadExpected, renderExpectReport } from './lib/expected.ts';
 import { listQaIssues, releasePublishedAt } from './lib/github.ts';
 import { clusterFindings, identityGrouping } from './lib/grouping.ts';
-import { fence, loadFindingGroups, QA_LABEL, toProposal } from './lib/proposals.ts';
+import { loadFindingGroups, QA_LABEL, toProposal } from './lib/proposals.ts';
 import { upgraded } from './lib/results.ts';
 import { Grouping, type Proposal } from './lib/schema.ts';
 
-const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>] [--expect <expected-findings.json>] [--groups <groups.json>]
+const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>] [--groups <groups.json>]
 
 Reads the result.json of every catalog repo, os and engine under --results, either from a downloaded
 artifact (<results>/qa-result-<os>-<engine>/<id>/<os>/<engine>) or from a local run
@@ -19,7 +18,6 @@ artifact (<results>/qa-result-<os>-<engine>/<id>/<os>/<engine>) or from a local 
 the internal-qa label with gh, and writes one proposal per group to --out.
 --version is the version the cycle ran; a record that names another version is ignored.
 --run-url defaults to this GitHub Actions run, or "local" outside Actions.
---expect compares the findings with the known ones of the repos that ran and prints which were missed.
 --groups merges fingerprints that share a root cause into one proposal, led by each group's first
 member and optionally matched to an existing issue by similarity; without it each fingerprint is its
 own group. Every fingerprint of this collect must be in exactly one group.`;
@@ -31,7 +29,6 @@ const { values } = parseArgs({
     out: { type: 'string' },
     repo: { type: 'string' },
     'run-url': { type: 'string' },
-    expect: { type: 'string' },
     groups: { type: 'string' },
     help: { type: 'boolean', default: false },
   },
@@ -106,12 +103,3 @@ for (const proposal of proposals) {
   );
 }
 console.log(`${loaded.length} results, ${proposals.length} proposals written to ${out}`);
-
-if (values.expect) {
-  const ran = new Set(loaded.map(({ result }) => result.request.entry.id));
-  const report = renderExpectReport(compareExpected(loadExpected(values.expect), groups, ran));
-  console.log(report);
-  if (process.env.GITHUB_STEP_SUMMARY) {
-    appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n${fence(report)}\n`);
-  }
-}

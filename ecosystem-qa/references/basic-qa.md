@@ -65,14 +65,14 @@ Search open issues with the `upgrade:11.0` label first, and comment on a match i
 - **Agent** says who covers the row:
   - The check id when the QA agent runs the row: the `must` tier on every sweep, the rest with `--tier extended`.
     When the probe proves only part of the row, `; manual: <rest>` after the id names what a person still checks.
-  - `planned: <id>` when it is queued for the registry.
   - `monorepo: <test>` when the monorepo's own unit or E2E tests prove the row and its outcome does not depend on the project, so the agent never spends a run on it.
     The cell names the test file, and that file exists.
   - `manual: <reason>` when a person has to check it: the pass condition is motion, wording, layout or a click the agent cannot drive, or the row does not depend on the project and no monorepo test covers it yet.
     A manual row that a spec partly automates says so after the reason (`; e2e: <spec>`), so a bug bash can spend its time on the rows nothing automates.
 
   Paths are relative to `code/`, except `e2e-tests/` paths, which are relative to `test-storybooks/portable-stories-kitchen-sink/react/`, and `scripts/` paths, which are relative to the repository root.
-  `none` means only a person covers the row; spend your time there first.
+  `e2e-sandbox/` specs run against generated sandboxes; `e2e-internal/` specs run only against the monorepo's own Storybook, so they do not prove the behaviour in a user project.
+  Only a person covers a `manual:` row without an `; e2e:` note; spend your time there first.
 
 ## CLI
 
@@ -183,7 +183,7 @@ The rows below are the 11.0 automigrations a typical project triggers; mark the 
 | MGR-27 | In a fresh-init project, open the checklist from the sidebar widget and the Storybook menu; then set `features.sidebarOnboardingChecklist: false`. | Items complete when you do the action they describe; the flag hides the widget. | 10.1 ; CL: 10.1.0 ; `docs/api/main-config/main-config-features.mdx` | manual: interactive prompts and tours | Onboarding checklist |
 | MGR-28 | `npx storybook dev --smoke-test --ci` | It starts, then exits 0. | pre-9 ; `docs/api/cli-options.mdx` | monorepo: `scripts/tasks/smoke-test.ts` in every sandbox dev job | Smoke test |
 | MGR-29 | Add a `refs` entry pointing at a published Storybook and restart. | The ref's stories appear in the sidebar under its title, render, and filter with search. | pre-9 ; `docs/sharing/storybook-composition.mdx` | manual: bug bash or feature session; e2e: `e2e-tests/composition.spec.ts` | Composition |
-| MGR-30 | `curl -sI http://localhost:6006/ \| grep -i content-security-policy`, then embed the dev URL in an `<iframe>` on a page served from a LAN IP. | The header contains `frame-ancestors`; the LAN page shows an empty frame with a `frame-ancestors` console error; a `localhost` page embeds fine; `security.insecureRemoteIframeEmbed: true` lifts it. | 11.0 ; M: `storybook dev` now blocks remote iframe embedding | monorepo: `e2e-internal/internal-storybook.smoke.spec.ts` | Remote embedding is blocked by default |
+| MGR-30 | `curl -sI http://localhost:6006/ \| grep -i content-security-policy`, then embed the dev URL in an `<iframe>` on a page served from a LAN IP. | The header contains `frame-ancestors`; the LAN page shows an empty frame with a `frame-ancestors` console error; a `localhost` page embeds fine; `security.insecureRemoteIframeEmbed: true` lifts it. | 11.0 ; M: `storybook dev` now blocks remote iframe embedding | monorepo: `core/src/core-server/utils/__tests__/getSecurityHeadersMiddleware.test.ts` for the header rules, `e2e-internal/internal-storybook.smoke.spec.ts` for the dev server sending it | Remote embedding is blocked by default |
 | MGR-31 | Compose a live dev Storybook from a non-localhost origin, then a built one. | The live dev ref does not load without `security.insecureIframeMessaging` and `security.insecureRemoteIframeEmbed`; the built ref loads. | 11.0 ; M: Storybook now restricts iframe messaging | manual: bug bash or feature session; e2e: `e2e-internal/iframe-messaging.spec.ts` | Iframe messaging is restricted |
 | MGR-32 | Open the manager in a browser below Chrome 147, Edge 150, Firefox 152 or Safari 26.5; then build with `--preview-only` and open `/iframe.html?navigator=true`. | The supported floors work; the preview-only build renders stories in the older browser. | 11.0 ; M: Raised browser support floors | manual: visual layout and formatting | Old browsers |
 | MGR-33 | Open the settings menu, then the About and keyboard shortcuts pages. | Both open, the About page shows the installed version, and the close button returns to the story. | pre-9 ; `docs/configure/user-interface/features-and-behavior.mdx` | manual: visual layout and formatting; e2e: `e2e-sandbox/manager.spec.ts` | Settings and About pages |

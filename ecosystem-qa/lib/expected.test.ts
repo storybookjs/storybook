@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { compareExpected, loadExpected, renderExpectReport } from './expected.ts';
-import { finding } from './fixtures.ts';
+import { finding, loaded } from './fixtures.ts';
 import type { FindingGroup } from './proposals.ts';
 
-const group = (fingerprint: string, title: string): FindingGroup =>
-  ({ fingerprint, finding: finding({ title }), occurrences: [] }) as unknown as FindingGroup;
+const group = (fingerprint: string, title: string): FindingGroup => {
+  const primary = loaded('linux', 'claude', []);
+  return { fingerprint, finding: finding({ title }), primary, occurrences: [primary] };
+};
 
 const expected = [
   { repo: 'mealdrop', fingerprint: 'a'.repeat(16), issue: 1, title: 'known crash' },

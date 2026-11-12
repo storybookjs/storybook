@@ -386,6 +386,35 @@ describe('experimental_devServer', () => {
     }
   });
 
+  it('answers MCP requests while a background retry is still pending', async () => {
+    vi.useFakeTimers();
+    try {
+      const mcpServerHandler = vi
+        .spyOn(mcpHandlerModule, 'mcpServerHandler')
+        .mockResolvedValue(undefined);
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed')));
+      await (experimental_devServer as any)(mockApp, createOptionsWithPrivateRef());
+      await mcpHandler({ headers: { 'content-type': 'application/json' } }, {});
+
+      let release!: (response: Response) => void;
+      const retryFetch = vi.fn(() => new Promise<Response>((resolve) => (release = resolve)));
+      vi.stubGlobal('fetch', retryFetch);
+      await vi.advanceTimersByTimeAsync(5_000);
+      const first = mcpHandler({ headers: { 'content-type': 'application/json' } }, {});
+      const second = mcpHandler({ headers: { 'content-type': 'application/json' } }, {});
+      try {
+        await vi.waitFor(() => expect(mcpServerHandler).toHaveBeenCalledTimes(3));
+        expect(retryFetch).toHaveBeenCalledTimes(1);
+      } finally {
+        release(Response.json({ v: 1, components: {} }));
+        await Promise.all([first, second]);
+        await vi.advanceTimersByTimeAsync(0);
+      }
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('should advertise the basePath-prefixed resource metadata in the OAuth challenge', async () => {
     vi.spyOn(mcpHandlerModule, 'mcpServerHandler').mockResolvedValue(undefined);
     stubPrivateRefDiscovery();

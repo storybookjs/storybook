@@ -45,6 +45,7 @@ Pick the sandbox for your machine:
 To bill your Claude subscription instead of an API key, run `claude setup-token` once and pass the result as `CLAUDE_CODE_OAUTH_TOKEN` in place of `ANTHROPIC_API_KEY`; the native sandboxes hide the login in `~/.claude`, so the token is the only way in.
 Codex runs read `CODEX_API_KEY` and default to `gpt-6.1-sol`; pass `--model` to change it.
 A Codex ChatGPT login works only with `--sandbox none`, because the sandboxes hide `~/.codex` and the provider knows no login token.
+The default for Claude is Haiku 5.5 at low effort: on mealdrop it found every known finding of the extended tier in two runs for about $0.50 and 18 minutes, where Sonnet 5.5 at medium took $1.01 and 25 minutes for the same five, and Opus 5.5 at low $1.71. Pass `--model` and `--effort` to compare.
 Claude's cost comes from its own result line.
 Codex, and a Claude run that ended without one, is priced from the price table in `agent-eval/lib/usage.ts`, which both harnesses share; a run priced that way says so in its summary.
 A model missing from that table gives `usd: null`.

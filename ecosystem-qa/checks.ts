@@ -189,10 +189,10 @@ export const CHECKS = [
   {
     id: 'core.components-manifest',
     label: "The components manifest is on by default and lists the project's components",
-    phase: 'dev',
+    phase: 'build',
     tier: 'extended',
     probe:
-      '`n/a` unless the `framework` in `.storybook/main.*` uses the React, Vue 3 or Svelte renderer or is `@storybook/angular-vite`. Only those turn the manifest on by default, so the 404 of any other framework (`@storybook/angular`, Web Components, Preact, HTML, Ember, Server) is correct and not a finding. Also `n/a` when the project sets `features.componentsManifest: false`, or `features.docgenServer: false` with `@storybook/angular-vite`. Otherwise, without setting `features.componentsManifest` yourself, fetch `http://localhost:6006/manifests/components.html` and `/manifests/components.json`. The page must list components and the JSON must name at least one component with props.',
+      '`n/a` unless the `framework` in `.storybook/main.*` uses the React, Vue 3 or Svelte renderer or is `@storybook/angular-vite`. Only those turn the manifest on by default, so the 404 of any other framework (`@storybook/angular`, Web Components, Preact, HTML, Ember, Server) is correct and not a finding. Also `n/a` when the project sets `features.componentsManifest: false`, or `features.docgenServer: false` with `@storybook/angular-vite`. Otherwise, without setting `features.componentsManifest` yourself, fetch `/manifests/components.html` and `/manifests/components.json` from the static build on port 6008, not from the dev server: in dev the JSON answers 404 with "not available in dev when docgenServer is enabled", which is by design and not a finding. The page must list components and the JSON must name at least one component with props. With server-side docgen the JSON holds no props itself: a component there has `docgen.$ref`, a path relative to `/manifests/` followed by `#` and a JSON pointer. Fetch that file and look for the props in the `argTypes` of the component the pointer names. One component with props is enough, so try several before you call it a failure.',
   },
   {
     id: 'test.coverage-cli',
@@ -225,7 +225,7 @@ export const CHECKS = [
     phase: 'test',
     tier: 'extended',
     probe:
-      'Check `package.json` for `@storybook/test-runner`. `n/a` when absent. Otherwise run it against the static build on port 6008 with a bounded wait and save the output to `test-runner.log`. It must finish and print a warning that says the test runner is no longer supported.',
+      'Check `package.json` for `@storybook/test-runner`. `n/a` when absent. Otherwise run exactly `npx test-storybook --url http://localhost:6008 --ci` against the static build, with a bounded wait, and save the output to `test-runner.log`. Do not add `--index-json`: it skips the preview config that the runner reads. It must finish and print a warning that says the test runner is no longer supported.',
   },
 ] as const satisfies readonly CheckDefinition[];
 

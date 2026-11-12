@@ -1,64 +1,24 @@
 import { statSync } from 'node:fs';
 
+import { fs, vol } from 'memfs';
 import type { ModuleInfo } from 'rollup';
-import type { Plugin, ResolvedConfig } from 'vite';
-import { describe, expect, it, vi } from 'vitest';
+import { build, type Plugin, type ResolvedConfig } from 'vite';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { pluginWebpackStats } from './webpack-stats-plugin.ts';
 
 vi.mock('node:fs', { spy: true });
 
 const workingDir = '/project';
-const options = { workingDir, recordWatchFiles: true };
-
-// The paths in these tests do not exist on disk. These ones are files, any other path is not.
-const files = new Set([
-  '/project/package.json',
-  '/project/tsconfig.json',
-  '/project/src/Button.html',
-  '/project/src/Button.scss',
-  '/project/src/Button.ts',
-  '/project/src/Button.tsx',
-  '/project/src/Card.test.ts',
-  '/project/src/fonts/Inter.woff2',
-  '/project/src/Card.html',
-  '/project/src/unused.html',
-  '/project/src/styles/_tokens.scss',
-]);
-vi.mocked(statSync).mockImplementation(((path: string) =>
-  files.has(path) ? { isFile: () => true } : undefined) as typeof statSync);
 
 type ParsedModule = Pick<ModuleInfo, 'id' | 'importedIds' | 'dynamicallyImportedIds'>;
 type RawGraph = Record<string, string[] | Omit<ParsedModule, 'id'>>;
-type BuildConfig = Pick<ResolvedConfig, 'command' | 'plugins'>;
 
-function callHook(hook: unknown, context: object | undefined, ...args: unknown[]) {
-  const handler = typeof hook === 'function' ? hook : (hook as { handler?: unknown })?.handler;
-  return typeof handler === 'function' ? handler.apply(context, args) : undefined;
-}
-
-// Each hook call gets its own context, as in the bundler.
-function createContext() {
-  return { addWatchFile: vi.fn() };
-}
-
-// Runs the hooks of `plugins` the way a build does, then parses each module of `graph`.
-function getStats(graph: RawGraph, plugins: Plugin[] = []) {
-  const plugin = pluginWebpackStats(options);
+function getStats(graph: RawGraph) {
+  const plugin = pluginWebpackStats({ workingDir });
   const moduleParsed = plugin.moduleParsed as unknown as (mod: ParsedModule) => void;
-  const config: BuildConfig = { command: 'build', plugins: [...plugins, plugin] };
-  callHook(plugin.configResolved, undefined, config);
-
-  for (const hookedPlugin of plugins) {
-    callHook(hookedPlugin.buildStart, createContext(), {});
-  }
 
   for (const [id, imports] of Object.entries(graph)) {
-    for (const hookedPlugin of plugins) {
-      callHook(hookedPlugin.resolveId, createContext(), id, undefined, {});
-      callHook(hookedPlugin.load, createContext(), id);
-      callHook(hookedPlugin.transform, createContext(), '', id);
-    }
     const mod = Array.isArray(imports)
       ? { importedIds: imports, dynamicallyImportedIds: [] }
       : imports;
@@ -74,13 +34,13 @@ function getModuleNames(graph: RawGraph) {
     .sort();
 }
 
-function getImporters(graph: RawGraph, name: string, plugins: Plugin[] = []) {
-  const module = getStats(graph, plugins).modules.find((m: { name: string }) => m.name === name);
+function getImporters(graph: RawGraph, name: string) {
+  const module = getStats(graph).modules.find((m: { name: string }) => m.name === name);
   return module?.reasons?.map((reason: { moduleName: string }) => reason.moduleName);
 }
 
-function getDependencies(graph: RawGraph, name: string, plugins: Plugin[] = []) {
-  const { modules } = getStats(graph, plugins);
+function getDependencies(graph: RawGraph, name: string) {
+  const { modules } = getStats(graph);
   const found = new Set<string>();
   const queue = [name];
 
@@ -98,34 +58,6 @@ function getDependencies(graph: RawGraph, name: string, plugins: Plugin[] = []) 
   }
 
   return [...found];
-}
-
-// A plugin that reads `file` itself while it loads `moduleId`, like a framework plugin that inlines
-// a component template.
-function watchInLoad(moduleId: string, file: string): Plugin {
-  return {
-    name: 'watch-in-load',
-    load(id) {
-      if (id === moduleId) {
-        this.addWatchFile(file);
-        return 'export default ""';
-      }
-    },
-  };
-}
-
-// A plugin that reads `file` itself while it transforms `moduleId`, like a CSS preprocessor that
-// resolves a partial.
-function watchInTransform(moduleId: string, file: string): Plugin {
-  return {
-    name: 'watch-in-transform',
-    transform(code, id) {
-      if (id === moduleId) {
-        this.addWatchFile(file);
-        return code;
-      }
-    },
-  };
 }
 
 describe('pluginWebpackStats', () => {
@@ -293,344 +225,247 @@ describe('pluginWebpackStats', () => {
   });
 
   describe('files registered with addWatchFile', () => {
-    it('adds a file watched while a virtual module loads, imported by that module', () => {
-      const graph = {
-        '/project/src/Button.stories.ts': ['/project/src/Button.ts'],
-        '/project/src/Button.ts': ['\0virtual:template'],
-        '\0virtual:template': [],
-      };
-      const plugins = [watchInLoad('\0virtual:template', '/project/src/Button.html')];
+    const template = '/project/src/Button.html';
+    const partial = '/project/src/_tokens.scss';
+    const component = '/project/src/Button.tsx';
+    const stylesheet = '/project/src/Button.scss?inline';
+    const virtual = '\0virtual:template';
+    type Context = { addWatchFile: (file: string) => void };
 
-      expect(getImporters(graph, './src/Button.html', plugins)).toEqual(['/virtual:template']);
-      expect(getDependencies(graph, './src/Button.stories.ts', plugins)).toContain(
-        './src/Button.html'
+    beforeEach(() => {
+      vol.reset();
+      vol.fromJSON({ [template]: '', [partial]: '', [component]: '' });
+      vi.mocked(statSync).mockImplementation(fs.statSync as typeof statSync);
+      vi.mocked(statSync).mockClear();
+    });
+
+    function setup(plugin: Plugin, recordWatchFiles = true, command: 'build' | 'serve' = 'build') {
+      const stats = pluginWebpackStats({ workingDir, recordWatchFiles });
+      const configResolved = stats.configResolved as (
+        config: Pick<ResolvedConfig, 'command' | 'plugins'>
+      ) => void;
+      configResolved({ command, plugins: [plugin, stats] });
+      const moduleParsed = stats.moduleParsed as (mod: ParsedModule) => void;
+      return {
+        stats,
+        parse: (id: string) => moduleParsed({ id, importedIds: [], dynamicallyImportedIds: [] }),
+      };
+    }
+
+    function invoke(
+      hook: Plugin['load'] | Plugin['transform'],
+      context: Context,
+      ...args: string[]
+    ) {
+      return Reflect.apply(typeof hook === 'function' ? hook : hook!.handler, context, args);
+    }
+
+    function dependencies(stats: ReturnType<typeof pluginWebpackStats>) {
+      const modules: { name: string; reasons?: { moduleName: string }[] }[] = stats
+        .storybookGetStats()
+        .toJson().modules;
+      const graph = Object.fromEntries(
+        modules.map(({ name, reasons }) => [
+          name,
+          reasons?.map(({ moduleName }) => moduleName) ?? [],
+        ])
       );
-    });
+      expect(Object.keys(graph)).toHaveLength(modules.length);
+      return graph;
+    }
 
-    it('adds a file watched while a stylesheet transforms, imported by that stylesheet', () => {
-      const graph = {
-        '/project/src/Button.ts': ['/project/src/Button.scss?inline'],
-        '/project/src/Button.scss?inline': [],
-      };
-      const plugins = [
-        watchInTransform('/project/src/Button.scss?inline', '/project/src/styles/_tokens.scss'),
-      ];
-
-      expect(getImporters(graph, './src/styles/_tokens.scss', plugins)).toEqual([
-        './src/Button.scss?inline',
-      ]);
-    });
-
-    it('treats the style block of a single-file component as a stylesheet', () => {
-      const graph = {
-        '/project/src/Button.scss?inline': [],
-        '/project/src/Foo.vue?vue&type=style&index=0&lang.scss': [],
-      };
-      const plugin: Plugin = {
-        name: 'watch-partial-and-source',
-        transform(code) {
-          this.addWatchFile('/project/src/styles/_tokens.scss');
-          this.addWatchFile('/project/src/Button.tsx');
-          return code;
+    it.each([
+      ['load', virtual, template, '/virtual:template', './src/Button.html'],
+      ['transform', stylesheet, partial, './src/Button.scss?inline', './src/_tokens.scss'],
+    ] as const)('connects a file watched in %s of %s', (hook, id, file, moduleName, fileName) => {
+      const reader: Plugin = {
+        name: 'resource-reader',
+        [hook]: function (this: Context) {
+          this.addWatchFile(file);
+          this.addWatchFile(file);
+          return 'export default ""';
         },
       };
-      const names = getStats(graph, [plugin]).modules.map(
-        (module: { name: string }) => module.name
+      const { stats, parse } = setup(reader);
+      const context = { addWatchFile: vi.fn() };
+      expect(invoke(reader[hook], context, ...(hook === 'load' ? [id] : ['', id]))).toBe(
+        'export default ""'
       );
-
-      expect(getImporters(graph, './src/styles/_tokens.scss', [plugin])).toEqual([
-        './src/Button.scss?inline',
-        './src/Foo.vue?vue&type=style&index=0&lang.scss',
+      parse(id);
+      expect(context.addWatchFile).toHaveBeenCalledWith(file);
+      expect(stats.storybookGetStats().toJson().modules).toEqual([
+        { id: moduleName, name: moduleName, reasons: [] },
+        { id: fileName, name: fileName, reasons: [{ moduleName }] },
       ]);
-      expect(names).not.toContain('./src/Button.tsx');
     });
 
-    // Tailwind registers every source file it scans for class names, and Vite registers the files
-    // that `url()` references.
-    it('ignores the files a stylesheet watches that are not stylesheets', () => {
-      const plugin: Plugin = {
-        name: 'watch-content-sources',
-        transform(code) {
-          for (const file of [
-            '/project/src/Button.tsx',
-            '/project/src/Card.test.ts',
-            '/project/src/fonts/Inter.woff2',
-          ]) {
+    it('connects watched resources through an actual Vite build', async () => {
+      const stats = pluginWebpackStats({ workingDir, recordWatchFiles: true });
+      const resources: Plugin = {
+        name: 'resource-fixture',
+        resolveId(id) {
+          if (id.startsWith('virtual:')) {
+            return `\0${id}`;
+          }
+        },
+        load(id) {
+          if (id === '\0virtual:entry') {
+            return 'import template from "virtual:template"; import css from "virtual:Button.css?inline"; export default [template, css];';
+          }
+          if (id === virtual) {
+            this.addWatchFile(template);
+            return 'export default "template"';
+          }
+          if (id === '\0virtual:Button.css?inline') {
+            return 'button { color: red; }';
+          }
+        },
+        transform(code, id) {
+          if (id === '\0virtual:Button.css?inline') {
+            this.addWatchFile(partial);
+            this.addWatchFile(component);
+          }
+        },
+      };
+      await build({
+        configFile: false,
+        envFile: false,
+        root: workingDir,
+        logLevel: 'silent',
+        plugins: [resources, stats],
+        build: { write: false, minify: false, rollupOptions: { input: 'virtual:entry' } },
+      });
+      const graph = dependencies(stats);
+      expect(graph).toMatchObject({
+        './src/Button.html': ['/virtual:template'],
+        './src/_tokens.scss': ['/virtual:Button.css?inline'],
+      });
+      expect(graph['./src/Button.tsx']).toBeUndefined();
+    });
+
+    it.each([
+      [stylesheet, './src/Button.scss?inline'],
+      ['/project/src/Foo.vue?vue&type=style&lang.scss', './src/Foo.vue?vue&type=style&lang.scss'],
+    ])('filters content watches of %s before checking the filesystem', (id, moduleName) => {
+      const reader: Plugin = {
+        name: 'content-scanner',
+        transform() {
+          for (const file of [component, template, partial]) {
             this.addWatchFile(file);
           }
-          return code;
         },
       };
-
-      const names = getStats({ '/project/src/tailwind.css': [] }, [plugin]).modules.map(
-        (module: { name: string }) => module.name
-      );
-
-      expect(names).toEqual(['./src/tailwind.css']);
+      const { stats, parse } = setup(reader);
+      invoke(reader.transform, { addWatchFile: vi.fn() }, '', id);
+      parse(id);
+      expect(dependencies(stats)).toEqual({
+        [moduleName]: [],
+        './src/_tokens.scss': [moduleName],
+      });
+      expect(statSync).toHaveBeenCalledTimes(1);
     });
 
-    it('keeps every file watched by a module that is not a stylesheet', () => {
-      const plugin: Plugin = {
-        name: 'watch-in-virtual-module',
-        load(id) {
-          if (id === '\0virtual:template') {
-            this.addWatchFile('/project/src/Button.html');
-            this.addWatchFile('/project/src/styles/_tokens.scss');
-            return 'export default ""';
-          }
-        },
-      };
-
-      const names = getStats({ '\0virtual:template': [] }, [plugin]).modules.map(
-        (module: { name: string }) => module.name
-      );
-
-      expect(names).toEqual([
-        '/virtual:template',
-        './src/Button.html',
-        './src/styles/_tokens.scss',
-      ]);
-    });
-
-    // With Vite 7, `vite:css` also watches the stylesheet that it transforms.
-    it('adds a watch file that is already a module as a dependency of the watching module', () => {
-      const graph = {
-        '/project/src/Button.ts': ['/project/src/Button.scss?inline'],
-        '/project/src/Button.scss?inline': [],
-      };
-      const plugins = [
-        watchInTransform('/project/src/Button.scss?inline', '/project/src/Button.scss'),
-      ];
-
-      expect(getImporters(graph, './src/Button.scss', plugins)).toEqual([
-        './src/Button.scss?inline',
-      ]);
-      expect(getImporters(graph, './src/Button.scss?inline', plugins)).toEqual(['./src/Button.ts']);
-    });
-
-    it('does not list a module that watches itself as its own importer', () => {
-      const plugins = [watchInLoad('/project/src/Button.ts', '/project/src/Button.ts')];
-
-      expect(getStats({ '/project/src/Button.ts': [] }, plugins).modules).toEqual([
-        { id: './src/Button.ts', name: './src/Button.ts', reasons: [] },
-      ]);
-    });
-
-    it('still registers the file with the bundler', () => {
-      const plugin = watchInLoad('/project/src/Button.ts', '/project/src/Button.html');
-      const config: BuildConfig = {
-        command: 'build',
-        plugins: [plugin, pluginWebpackStats(options)],
-      };
-      callHook(config.plugins[1].configResolved, undefined, config);
-      const context = createContext();
-
-      const result = callHook(plugin.load, context, '/project/src/Button.ts');
-
-      expect(context.addWatchFile).toHaveBeenCalledWith('/project/src/Button.html');
-      expect(result).toBe('export default ""');
-    });
-
-    it('keeps the filter and order of an object hook', () => {
+    it('keeps object hook metadata and binds context methods to their receiver', () => {
       const filter = { id: /^\0virtual:/ };
-      const plugin: Plugin = {
+      const reader: Plugin = {
         name: 'object-hook',
         load: {
           filter,
           order: 'pre',
-          // The test harness does not apply the filter.
-          handler(id) {
-            if (filter.id.test(id)) {
-              this.addWatchFile('/project/src/Button.html');
-            }
+          handler() {
+            this.addWatchFile(template);
+            this.warn('warning');
             return null;
           },
         },
       };
-      const graph = { '/project/src/Button.ts': ['\0virtual:template'], '\0virtual:template': [] };
-
-      expect(getImporters(graph, './src/Button.html', [plugin])).toEqual(['/virtual:template']);
-      expect(plugin.load).toMatchObject({ filter, order: 'pre' });
-    });
-
-    it('does not wrap hooks for the dev server', () => {
-      const plugin = watchInLoad('\0virtual:template', '/project/src/Button.html');
-      const load = plugin.load;
-      const statsPlugin = pluginWebpackStats(options);
-      const config: BuildConfig = { command: 'serve', plugins: [plugin, statsPlugin] };
-
-      callHook(statsPlugin.configResolved, undefined, config);
-
-      expect(plugin.load).toBe(load);
-    });
-
-    it('does not wrap hooks when the stats are not requested', () => {
-      const plugin = watchInLoad('\0virtual:template', '/project/src/Button.html');
-      const load = plugin.load;
-      const statsPlugin = pluginWebpackStats({ workingDir });
-      const config: BuildConfig = { command: 'build', plugins: [plugin, statsPlugin] };
-
-      callHook(statsPlugin.configResolved, undefined, config);
-
-      expect(plugin.load).toBe(load);
-    });
-
-    it('leaves the hook of a frozen plugin unwrapped instead of failing the build', () => {
-      const plugin = Object.freeze(
-        watchInLoad('\0virtual:template', '/project/src/Button.html')
-      ) as Plugin;
-      const graph = { '/project/src/Button.ts': ['\0virtual:template'], '\0virtual:template': [] };
-
-      const names = getStats(graph, [plugin]).modules.map(
-        (module: { name: string }) => module.name
-      );
-
-      expect(names).toEqual(['./src/Button.ts', '/virtual:template']);
-    });
-
-    it('ignores watch ids that are not paths to existing files', () => {
-      const plugin: Plugin = {
-        name: 'watch-non-files',
-        load(id) {
-          if (id === '/project/src/Button.ts') {
-            this.addWatchFile('src/Button.html');
-            this.addWatchFile('/project/src/**/*.html');
-            this.addWatchFile('/project/src/styles');
-            this.addWatchFile('/project/src/missing.html');
-            this.addWatchFile('/project/src/Button.html');
-          }
-          return null;
+      const { stats, parse } = setup(reader);
+      const context = {
+        addWatchFile: vi.fn(),
+        warn() {
+          expect(this).toBe(context);
         },
       };
-
-      const names = getStats({ '/project/src/Button.ts': [] }, [plugin]).modules.map(
-        (module: { name: string }) => module.name
-      );
-
-      expect(names).toEqual(['./src/Button.ts', './src/Button.html']);
+      expect(invoke(reader.load, context, virtual)).toBeNull();
+      parse(virtual);
+      expect(reader.load).toMatchObject({ filter, order: 'pre' });
+      expect(stats.storybookGetStats().toJson().modules).toHaveLength(2);
     });
 
-    it('records each watch file against its own module when loads interleave', async () => {
-      let resumeButton = () => {};
-      const plugin: Plugin = {
-        name: 'async-load',
-        async load(id) {
-          if (id === '/project/src/Button.ts') {
-            await new Promise<void>((resolve) => {
-              resumeButton = resolve;
-            });
-          }
-          this.addWatchFile(id.replace(/\.ts$/, '.html'));
-          return null;
-        },
-      };
-      const statsPlugin = pluginWebpackStats(options);
-      const moduleParsed = statsPlugin.moduleParsed as unknown as (mod: ParsedModule) => void;
-      const config: BuildConfig = { command: 'build', plugins: [plugin, statsPlugin] };
-      callHook(statsPlugin.configResolved, undefined, config);
-
-      // Button.ts waits, Card.ts loads and finishes, then Button.ts resumes.
-      const buttonLoad = callHook(plugin.load, createContext(), '/project/src/Button.ts');
-      await callHook(plugin.load, createContext(), '/project/src/Card.ts');
-      resumeButton();
-      await buttonLoad;
-      for (const id of ['/project/src/Button.ts', '/project/src/Card.ts']) {
-        moduleParsed({ id, importedIds: [], dynamicallyImportedIds: [] });
+    it.each([
+      [false, 'build'],
+      [true, 'serve'],
+    ] as const)(
+      'leaves hooks unchanged with recordWatchFiles=%s and command=%s',
+      (enabled, command) => {
+        const reader: Plugin = { name: 'reader', load: () => null };
+        const original = reader.load;
+        setup(reader, enabled, command);
+        expect(reader.load).toBe(original);
       }
+    );
 
-      const { modules } = statsPlugin.storybookGetStats().toJson();
-      const importersOf = (name: string) =>
-        modules
-          .find((module: { name: string }) => module.name === name)
-          ?.reasons?.map((reason: { moduleName: string }) => reason.moduleName);
-
-      expect(importersOf('./src/Button.html')).toEqual(['./src/Button.ts']);
-      expect(importersOf('./src/Card.html')).toEqual(['./src/Card.ts']);
+    it('leaves non-writable hooks unchanged', () => {
+      const reader = Object.freeze({ name: 'frozen', load: () => null });
+      expect(() => setup(reader)).not.toThrow();
     });
 
-    it('writes a file watched several times, by one or more modules, as one node', () => {
-      const plugin: Plugin = {
-        name: 'watch-twice',
-        transform(code) {
-          this.addWatchFile('/project/src/styles/_tokens.scss');
-          this.addWatchFile('/project/src/styles/_tokens.scss');
-          return code;
+    it('ignores invalid files and unparsed modules, deduplicates importers, and omits self edges', () => {
+      const reader: Plugin = {
+        name: 'reader',
+        load() {
+          for (const file of [
+            template,
+            template,
+            component,
+            'src/Button.html',
+            '/project/src',
+            '/project/src/*.html',
+            '/project/missing.html',
+          ]) {
+            this.addWatchFile(file);
+          }
         },
       };
-      const graph = {
-        '/project/src/Button.scss?inline': [],
-        '/project/src/Card.scss?inline': [],
-      };
-
-      const tokens = getStats(graph, [plugin]).modules.filter(
-        (module: { name: string }) => module.name === './src/styles/_tokens.scss'
-      );
-
-      expect(tokens).toEqual([
-        {
-          id: './src/styles/_tokens.scss',
-          name: './src/styles/_tokens.scss',
-          reasons: [
-            { moduleName: './src/Button.scss?inline' },
-            { moduleName: './src/Card.scss?inline' },
-          ],
-        },
-      ]);
+      const { stats, parse } = setup(reader);
+      for (const id of [component, virtual, '/project/unused.ts']) {
+        invoke(reader.load, { addWatchFile: vi.fn() }, id);
+      }
+      parse(component);
+      parse(virtual);
+      expect(dependencies(stats)).toEqual({
+        './src/Button.tsx': ['/virtual:template'],
+        './src/Button.html': ['./src/Button.tsx', '/virtual:template'],
+        '/virtual:template': [],
+      });
+      expect(statSync).toHaveBeenCalledTimes(5);
     });
 
-    it('ignores files watched outside of load and transform', () => {
-      const plugin: Plugin = {
-        name: 'watch-in-other-hooks',
-        buildStart() {
-          this.addWatchFile('/project/package.json');
+    it('keeps watch files attributed to their module when asynchronous hooks interleave', async () => {
+      const resolvers = Promise.withResolvers<void>();
+      const reader: Plugin = {
+        name: 'async-reader',
+        async load(id) {
+          if (id === component) {
+            await resolvers.promise;
+          }
+          this.addWatchFile(id === component ? template : partial);
+          return null;
         },
-        resolveId(source) {
-          this.addWatchFile('/project/tsconfig.json');
-          return source;
-        },
       };
-
-      const names = getStats({ '/project/src/Button.ts': [] }, [plugin]).modules.map(
-        (module: { name: string }) => module.name
-      );
-
-      expect(names).toEqual(['./src/Button.ts']);
-    });
-
-    it('ignores files watched by a module that is never parsed', () => {
-      const plugin = watchInLoad('/project/src/unused.ts', '/project/src/unused.html');
-      const statsPlugin = pluginWebpackStats(options);
-      const moduleParsed = statsPlugin.moduleParsed as unknown as (mod: ParsedModule) => void;
-      const config: BuildConfig = { command: 'build', plugins: [plugin, statsPlugin] };
-      callHook(statsPlugin.configResolved, undefined, config);
-      const context = createContext();
-
-      // The module is loaded, so its watch file is recorded, but it never reaches moduleParsed.
-      callHook(plugin.load, context, '/project/src/unused.ts');
-      moduleParsed({ id: '/project/src/Button.ts', importedIds: [], dynamicallyImportedIds: [] });
-
-      const names = statsPlugin
-        .storybookGetStats()
-        .toJson()
-        .modules.map((module: { name: string }) => module.name);
-
-      expect(context.addWatchFile).toHaveBeenCalledWith('/project/src/unused.html');
-      expect(names).toEqual(['./src/Button.ts']);
-    });
-
-    it('writes the same stats when no plugin watches a file', () => {
-      const graph = {
-        '/project/src/Button.stories.ts': ['/project/src/Button.ts'],
-        '/project/src/Button.ts': ['/project/src/Button.css?inline'],
-        '/project/src/Button.css?inline': [],
-      };
-      const plugin: Plugin = {
-        name: 'no-watch-files',
-        load: () => null,
-        transform: (code) => code,
-      };
-
-      expect(getStats(graph, [plugin])).toEqual(getStats(graph));
+      const { stats, parse } = setup(reader);
+      const first = invoke(reader.load, { addWatchFile: vi.fn() }, component);
+      await invoke(reader.load, { addWatchFile: vi.fn() }, virtual);
+      resolvers.resolve();
+      await first;
+      parse(component);
+      parse(virtual);
+      expect(dependencies(stats)).toEqual({
+        './src/Button.tsx': [],
+        './src/Button.html': ['./src/Button.tsx'],
+        '/virtual:template': [],
+        './src/_tokens.scss': ['/virtual:template'],
+      });
     });
   });
 });

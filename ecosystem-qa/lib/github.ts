@@ -33,11 +33,9 @@ export const qaIssuesFrom = (items: z.infer<typeof IssueItem>[]): QaIssue[] =>
       body: item.body ?? '',
     }));
 
-/**
- * List every issue of `repo` that carries `label`.
- *
- * One listing replaces a search per fingerprint, which the search rate limit of 30 a minute cannot
- * serve for a whole sweep, and a listing sees an issue the moment it exists while the search index lags.
- */
+// List every issue of `repo` that carries `label`.
+//
+// One listing replaces a search per fingerprint, which the search rate limit of 30 a minute cannot
+// serve for a whole sweep, and a listing sees an issue the moment it exists while the search index lags.
 export const listQaIssues = (repo: string, label: string): QaIssue[] =>
   qaIssuesFrom(pages(IssueItem, `repos/${repo}/issues?labels=${label}&state=all&per_page=100`));

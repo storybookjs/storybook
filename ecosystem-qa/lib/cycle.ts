@@ -2,7 +2,7 @@ import { closeSync, openSync, readSync } from 'node:fs';
 
 import type { Engine, Os } from './schema.ts';
 
-/** Return the repository that holds an entry's baseline and receives its cycle refs. */
+// Return the repository that holds an entry's baseline and receives its cycle refs.
 export const cycleRepo = (entry: { repo: string; pushTo?: string }): string =>
   entry.pushTo ?? entry.repo;
 

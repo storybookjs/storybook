@@ -36,7 +36,7 @@ export interface QaIssue extends IssueHit {
   body: string;
 }
 
-/** Return the issues whose body carries the fingerprint, in the order given. */
+// Return the issues whose body carries the fingerprint, in the order given.
 export const hitsFor = (issues: QaIssue[], fingerprint: string): IssueHit[] =>
   issues.filter((issue) => issue.body.includes(fingerprint));
 

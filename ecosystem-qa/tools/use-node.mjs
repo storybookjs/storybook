@@ -9,13 +9,11 @@ const activeNode = () => {
   }
 };
 
-/**
- * Switch to the Node version the project in the current directory asks for, with `n`, and return one
- * line that says what happened.
- *
- * Never throws: a project without a version file keeps the image's Node, and the install log shows
- * any engine problem.
- */
+// Switch to the Node version the project in the current directory asks for, with `n`, and return one
+// line that says what happened.
+//
+// Never throws: a project without a version file keeps the image's Node, and the install log shows
+// any engine problem.
 export const useNode = (version) => {
   // Only a version file switches Node. An `engines` range stays with the image's Node: `n auto`
   // would resolve ">=24" to the newest major, which a project that merely sets a floor may not

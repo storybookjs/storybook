@@ -13,7 +13,7 @@ import type { SourceContextProps, SourceItem } from './SourceContainer';
 import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
 import { useArgs } from './useArgs.ts';
 import { useServiceStoryLiveSnippet } from './use-service-story-docs.ts';
-import { useTransformCode } from './useTransformCode';
+import { useTransformCode } from './useTransformCode.tsx';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
 export type SourceParameters = SourceCodeProps & {
@@ -72,19 +72,19 @@ const useCode = ({
   typeFromProps,
   transformFromProps,
 }: {
-  snippet: string;
+  snippet: SourceItem | null;
   serviceSnippet: string;
   storyContext: ReturnType<DocsContextProps['getStoryContext']>;
   typeFromProps: SourceType;
   transformFromProps?: SourceProps['transform'];
-}): string => {
+}): SourceItem => {
   const parameters = storyContext.parameters ?? {};
   const { __isArgsStory: isArgsStory } = parameters;
   const sourceParameters = (parameters.docs?.source || {}) as SourceParameters;
 
   const type = typeFromProps || sourceParameters.type || SourceType.AUTO;
 
-  const staticSnippet = serviceSnippet || snippet;
+  const staticSnippet = serviceSnippet || snippet?.code;
   const useSnippet =
     // if user has explicitly set this as dynamic, use snippet
     type === SourceType.DYNAMIC ||
@@ -101,25 +101,25 @@ const useCode = ({
     sourceKind === 'service'
       ? serviceSnippet
       : sourceKind === 'emitted'
-        ? snippet
+        ? snippet?.code || ''
         : sourceParameters.originalSource || '';
 
   // The emitted snippet is already transformed by emitTransformCode,
   // so only transformFromProps applies to it.
-  const hasTransformer = Boolean(transformFromProps ?? sourceParameters.transform);
   const activeTransformer =
-    transformFromProps ??
-    (sourceKind === 'emitted' ? (rawCode: string) => rawCode : sourceParameters.transform);
+    transformFromProps ?? (sourceKind === 'emitted' ? undefined : sourceParameters.transform);
 
-  const transformedCode = hasTransformer
-    ? useTransformCode(code, activeTransformer!, storyContext)
-    : code;
+  const transformedSource = useTransformCode(
+    { code, language: sourceKind === 'emitted' ? snippet?.language : undefined },
+    activeTransformer,
+    storyContext
+  );
 
   if (sourceParameters.code !== undefined) {
-    return sourceParameters.code;
+    return { code: sourceParameters.code };
   }
 
-  return transformedCode;
+  return transformedSource;
 };
 
 // state is used by the Canvas block, which also calls useSourceProps
@@ -156,8 +156,8 @@ export const useSourceProps = (
 
   const source = story ? getStorySource(story.id, argsForSource, sourceContext) : null;
 
-  const transformedCode = useCode({
-    snippet: source ? source.code : '',
+  const { code: transformedCode, language: snippetLanguage } = useCode({
+    snippet: source,
     serviceSnippet,
     storyContext: { ...storyContext, args: argsForSource },
     typeFromProps: props.type as SourceType,
@@ -171,7 +171,7 @@ export const useSourceProps = (
   const sourceParameters = (story?.parameters?.docs?.source || {}) as SourceParameters;
   let format = props.format;
 
-  const language = props.language ?? sourceParameters.language ?? 'jsx';
+  const language = props.language ?? sourceParameters.language;
   const dark = props.dark ?? sourceParameters.dark ?? false;
 
   if (props.code === undefined && !story) {
@@ -182,7 +182,7 @@ export const useSourceProps = (
     return {
       code: props.code,
       format,
-      language,
+      language: language ?? 'jsx',
       dark,
     };
   }
@@ -199,7 +199,7 @@ export const useSourceProps = (
   return {
     code: transformedCode,
     format,
-    language,
+    language: language ?? snippetLanguage ?? 'jsx',
     dark,
     warning,
   };

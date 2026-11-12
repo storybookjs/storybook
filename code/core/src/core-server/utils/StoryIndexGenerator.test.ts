@@ -2683,12 +2683,7 @@ describe('StoryIndexGenerator', () => {
               reached();
               await gate;
               if (fail) {
-                throw Object.assign(
-                  new Error(`ENOENT: no such file or directory, open '${fileName}'`),
-                  {
-                    code: 'ENOENT',
-                  }
-                );
+                throw new Error('boom');
               }
             }
             return csfIndexer.createIndex(fileName, indexerOptions);

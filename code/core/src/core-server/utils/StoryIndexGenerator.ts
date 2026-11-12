@@ -875,6 +875,7 @@ export class StoryIndexGenerator {
         combineStorySorts(this.options.storySorts ?? [])
       );
 
+      // Both `lastIndex` and `lastError` are written only when nothing was invalidated meanwhile
       if (isStale()) {
         return this.getIndexAndStats();
       }

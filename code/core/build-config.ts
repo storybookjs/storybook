@@ -9,6 +9,17 @@ import { convertCommonJsNamespaceDeclaration } from '../../scripts/build/utils/g
 import { retargetEmotionTypeQueries } from './scripts/retarget-emotion-type-queries.ts';
 
 const config: BuildEntries = {
+  extraOutputs: {
+    './theming': {
+      types: './dist/theming/create.d.ts',
+      browser: {
+        code: './src/theming/emotion.ts',
+        default: './dist/theming/emotion.js',
+      },
+      code: './src/theming/create.ts',
+      default: './dist/theming/create.js',
+    },
+  },
   // storybook/test inlines the types of the test libraries it bundles, so they need not be installed.
   transformDependencyDeclaration({ id, code }) {
     const posixId = normalize(id);
@@ -204,7 +215,7 @@ const config: BuildEntries = {
         dts: false,
       },
       {
-        exportEntries: ['./theming', './theming/create'],
+        exportEntries: ['./theming/create'],
         entryPoint: './src/theming/create.ts',
       },
       {

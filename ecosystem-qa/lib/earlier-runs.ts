@@ -7,6 +7,7 @@ export const RunOrigin = z.object({
   path: z.string(),
   event: z.string(),
   head_branch: z.string().nullable(),
+  run_started_at: z.string(),
 });
 export type RunOrigin = z.infer<typeof RunOrigin>;
 
@@ -29,3 +30,8 @@ export const untrustedBecause = (
     ? undefined
     : `ran on ${head_branch ?? 'no branch'}, not on ${branches.join(' or ')}`;
 };
+
+// The results of a later run replace those of an earlier one, so the order of the runs decides which
+// result of a repo, OS and engine is collected. It follows their start, not the order they were named in.
+export const oldestFirst = <Run extends Pick<RunOrigin, 'run_started_at'>>(runs: Run[]): Run[] =>
+  runs.toSorted((a, b) => Date.parse(a.run_started_at) - Date.parse(b.run_started_at));

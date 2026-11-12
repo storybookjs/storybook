@@ -146,6 +146,14 @@ export const CHECKS = [
       'While the dev server runs, add a decorator that wraps the story in an element with a visible marker (a red 4px border or a data attribute) to `.storybook/preview.*`. Screenshot the baseline story before and after. The marker must appear without restarting the server. Restore the file afterwards.',
   },
   {
+    id: 'core.hmr.new-file',
+    label: 'A new stories file is picked up while the dev server runs',
+    phase: 'dev',
+    tier: 'extended',
+    probe:
+      'While the dev server runs, copy one stories file to a new name in the same directory, so that the `stories` globs in `.storybook/main.*` match it. If the copy sets a `title`, change it, or its ids collide with the original. Poll `/index.json` until an id of the copy appears or 60 seconds pass. Then screenshot one story of the copy with the shot tool: it must render and its `.errors.json` must be empty. Delete the copy afterwards.',
+  },
+  {
     id: 'core.hmr.delete-file',
     label: 'Deleting a stories file removes its entries without crashing the manager',
     phase: 'dev',
@@ -161,6 +169,22 @@ export const CHECKS = [
     tier: 'extended',
     probe:
       "`n/a` unless the `framework` in `.storybook/main.*` is a React, Vue 3, Svelte or Web Components framework or `@storybook/angular-vite`; the others have no docgen that reads the component source while the server runs. Also `n/a` for a Web Components project that takes its props from a Custom Elements Manifest file. While the dev server runs, add a typed prop with a default to the component of the baseline story and save. Then screenshot the story's docs page, or the manager with the Controls panel, again: the new prop must be listed without a restart of the server. Restore the file afterwards.",
+  },
+  {
+    id: 'core.module-mocking',
+    label: 'A story that loads a module mocked with `sb.mock()` renders',
+    phase: 'dev',
+    tier: 'extended',
+    probe:
+      'Search `.storybook/preview.*` for `sb.mock(`. `n/a` when there is none. Otherwise find a story whose component loads one of the mocked modules, directly or through its imports, and screenshot it with the shot tool. `pass` when it renders and its `.errors.json` is empty. `fail` when it does not render, or when the page errors or the dev server log name the mocked module.',
+  },
+  {
+    id: 'core.static-dirs',
+    label: 'A file from `staticDirs` is served in dev and in the build',
+    phase: 'build',
+    tier: 'extended',
+    probe:
+      'Read `staticDirs` from `.storybook/main.*`. `n/a` when it is missing or empty. Pick one file under a configured directory and work out its served path: its path relative to that directory, below the `to` of the entry when the entry is an object. Fetch that path from the static build on port 6008 and from the dev server on port 6006; start the dev server again when it no longer runs. Both must answer 200 with the file.',
   },
   {
     id: 'core.components-manifest',

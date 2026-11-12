@@ -5,7 +5,7 @@ import { loadCatalog } from './lib/catalog.ts';
 import { versionLine } from './lib/cycle.ts';
 import { compareExpected, loadExpected, renderExpectReport } from './lib/expected.ts';
 import { searchFingerprint } from './lib/github.ts';
-import { groupFindings, toProposal } from './lib/proposals.ts';
+import { fence, groupFindings, toProposal } from './lib/proposals.ts';
 import { loadResults } from './lib/results.ts';
 
 const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>] [--expect <expected-findings.json>]
@@ -76,6 +76,6 @@ if (values.expect) {
   const report = renderExpectReport(compareExpected(loadExpected(values.expect), groups, ran));
   console.log(report);
   if (process.env.GITHUB_STEP_SUMMARY) {
-    appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n\`\`\`\n${report}\n\`\`\`\n`);
+    appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n${fence(report)}\n`);
   }
 }

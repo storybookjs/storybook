@@ -3,19 +3,17 @@ import type { ExecFileSyncOptions } from 'node:child_process';
 import { z } from 'zod';
 
 import { gh, ghJson } from '../../scripts/utils/gh.ts';
-import { QA_LABEL, type QaIssue } from './proposals.ts';
+import type { QaIssue } from './proposals.ts';
 
 const QUIET: ExecFileSyncOptions = { stdio: ['ignore', 'pipe', 'inherit'] };
 
-const IssueListing = z.array(
-  z.object({
-    number: z.number(),
-    state: z.enum(['open', 'closed']),
-    labels: z.array(z.object({ name: z.string() })),
-    body: z.string().nullable(),
-    pull_request: z.unknown().optional(),
-  })
-);
+export const IssueItem = z.object({
+  number: z.number(),
+  state: z.enum(['open', 'closed']),
+  labels: z.array(z.object({ name: z.string() })),
+  body: z.string().nullable(),
+  pull_request: z.unknown().optional(),
+});
 
 export const ghText = (args: string[]): string => gh(args, QUIET).toString();
 
@@ -25,8 +23,8 @@ export const ghParse = <T>(schema: z.ZodType<T>, args: string[]): T =>
 export const pages = <T extends z.ZodType>(item: T, path: string): z.infer<T>[] =>
   ghParse(z.array(z.array(item)), ['api', '--paginate', '--slurp', path]).flat();
 
-export const qaIssuesFrom = (items: unknown): QaIssue[] =>
-  IssueListing.parse(items)
+export const qaIssuesFrom = (items: z.infer<typeof IssueItem>[]): QaIssue[] =>
+  items
     .filter((item) => item.pull_request === undefined)
     .map((item) => ({
       number: item.number,
@@ -36,12 +34,10 @@ export const qaIssuesFrom = (items: unknown): QaIssue[] =>
     }));
 
 /**
- * List every issue of `repo` that carries the QA label.
+ * List every issue of `repo` that carries `label`.
  *
  * One listing replaces a search per fingerprint, which the search rate limit of 30 a minute cannot
  * serve for a whole sweep, and a listing sees an issue the moment it exists while the search index lags.
  */
-export const listQaIssues = (repo: string): QaIssue[] =>
-  qaIssuesFrom(
-    pages(z.unknown(), `repos/${repo}/issues?labels=${QA_LABEL}&state=all&per_page=100`)
-  );
+export const listQaIssues = (repo: string, label: string): QaIssue[] =>
+  qaIssuesFrom(pages(IssueItem, `repos/${repo}/issues?labels=${label}&state=all&per_page=100`));

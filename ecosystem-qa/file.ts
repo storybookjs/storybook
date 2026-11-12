@@ -19,7 +19,7 @@ import {
 import { cycleRef } from './lib/cycle.ts';
 import { listQaIssues, ghText, pages } from './lib/github.ts';
 import { copyRedacted } from './lib/redact.ts';
-import { hitsFor, openHit, type QaIssue } from './lib/proposals.ts';
+import { hitsFor, openHit, QA_LABEL, type QaIssue } from './lib/proposals.ts';
 import { pushTokenEnv } from './lib/push-targets.ts';
 import { Proposal } from './lib/schema.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
@@ -252,7 +252,7 @@ if (values.dry) {
   );
 } else {
   checkPrerequisites();
-  const issues = listQaIssues(repo);
+  const issues = listQaIssues(repo, QA_LABEL);
   const outcomes = proposals.map((proposal): FilingOutcome => {
     try {
       return fileProposal(proposal, issues);

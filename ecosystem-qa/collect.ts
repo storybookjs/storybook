@@ -5,7 +5,7 @@ import { loadCatalog } from './lib/catalog.ts';
 import { versionLine } from './lib/cycle.ts';
 import { compareExpected, loadExpected, renderExpectReport } from './lib/expected.ts';
 import { listQaIssues } from './lib/github.ts';
-import { groupFindings, hitsFor, toProposal } from './lib/proposals.ts';
+import { groupFindings, hitsFor, QA_LABEL, toProposal } from './lib/proposals.ts';
 import { loadResults, upgraded } from './lib/results.ts';
 
 const HELP = `Usage: node ecosystem-qa/collect.ts --results <dir> --version <storybook version> --out <proposals.json> --repo <owner/name> [--run-url <url>] [--expect <expected-findings.json>]
@@ -54,7 +54,7 @@ const loaded = loadResults(results, {
 });
 
 const groups = groupFindings(loaded);
-const issues = listQaIssues(repo);
+const issues = listQaIssues(repo, QA_LABEL);
 const proposals = groups.map((group) =>
   toProposal(group, hitsFor(issues, group.fingerprint), runUrl)
 );

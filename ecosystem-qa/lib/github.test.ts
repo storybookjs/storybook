@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { qaIssuesFrom } from './github.ts';
+import { IssueItem, qaIssuesFrom } from './github.ts';
 
 const item = (extra: object = {}) => ({
   number: 5,
@@ -10,9 +10,11 @@ const item = (extra: object = {}) => ({
   ...extra,
 });
 
+const listed = (items: unknown[]) => qaIssuesFrom(IssueItem.array().parse(items));
+
 describe('qaIssuesFrom', () => {
   it('keeps the label names and drops pull requests', () => {
-    const issues = qaIssuesFrom([item(), item({ number: 6, pull_request: { url: 'x' } })]);
+    const issues = listed([item(), item({ number: 6, pull_request: { url: 'x' } })]);
 
     expect(issues).toEqual([
       {
@@ -25,10 +27,10 @@ describe('qaIssuesFrom', () => {
   });
 
   it('turns a null body into an empty string', () => {
-    expect(qaIssuesFrom([item({ body: null })])[0]?.body).toBe('');
+    expect(listed([item({ body: null })])[0]?.body).toBe('');
   });
 
   it('rejects a malformed item', () => {
-    expect(() => qaIssuesFrom([item({ state: 'merged' })])).toThrow();
+    expect(() => listed([item({ state: 'merged' })])).toThrow();
   });
 });

@@ -15,7 +15,7 @@ import {
   type Ask,
 } from './lib/group-model.ts';
 import { identityGrouping } from './lib/grouping.ts';
-import { loadFindingGroups } from './lib/proposals.ts';
+import { loadFindingGroups, QA_LABEL } from './lib/proposals.ts';
 import type { Grouping } from './lib/schema.ts';
 
 const HELP = `Usage: node ecosystem-qa/group.ts --results <dir> --version <storybook version> --repo <owner/name> --out <groups.json>
@@ -91,7 +91,10 @@ const modelGrouping = async (): Promise<Grouping> => {
     );
     return ungrouped;
   }
-  return groupWithModel(groupingInput(groups, listQaIssues(repo)), askClaude(new Anthropic()));
+  return groupWithModel(
+    groupingInput(groups, listQaIssues(repo, QA_LABEL)),
+    askClaude(new Anthropic())
+  );
 };
 
 let grouping: Grouping;

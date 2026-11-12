@@ -6,10 +6,12 @@ import { asIssue, finding, issueOn, loaded, RUN_URL, single, VERSION } from './f
 import {
   groupFindings,
   hitsFor,
+  openHit,
   renderCommentBody,
   renderIssueBody,
   toProposal,
   type FindingGroup,
+  type IssueHit,
   type QaIssue,
 } from './proposals.ts';
 import type { Cluster } from './grouping.ts';
@@ -36,6 +38,22 @@ describe('hitsFor', () => {
     ];
 
     expect(hitsFor(issues, ['0123456789abcdef']).map((hit) => hit.number)).toEqual([1, 3]);
+  });
+});
+
+describe('openHit', () => {
+  const hit = (number: number, state: IssueHit['state']): IssueHit => ({
+    number,
+    labels: ['internal-qa'],
+    state,
+  });
+
+  it('does not count a closed issue as filed', () => {
+    expect(openHit([hit(7, 'closed')])).toBeUndefined();
+  });
+
+  it('returns the open issue when a closed one exists too', () => {
+    expect(openHit([hit(7, 'closed'), hit(12, 'open')])?.number).toBe(12);
   });
 });
 

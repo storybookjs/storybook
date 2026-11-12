@@ -7,7 +7,7 @@ import { versionLine } from './lib/cycle.ts';
 import { compareExpected, loadExpected, renderExpectReport } from './lib/expected.ts';
 import { listQaIssues, releasePublishedAt } from './lib/github.ts';
 import { checkGrouping, clusterFindings, identityGrouping } from './lib/grouping.ts';
-import { loadFindingGroups, openIssueOf, toProposal } from './lib/proposals.ts';
+import { loadFindingGroups, openIssueOf, QA_LABEL, toProposal } from './lib/proposals.ts';
 import { upgraded } from './lib/results.ts';
 import { Grouping, type Proposal } from './lib/schema.ts';
 
@@ -56,7 +56,7 @@ const runUrl =
 
 const { loaded, groups } = loadFindingGroups(results, version);
 const fingerprints = groups.map((group) => group.fingerprint);
-const issues = listQaIssues(repo);
+const issues = listQaIssues(repo, QA_LABEL);
 const publishedAt = releasePublishedAt(repo, version);
 console.log(
   publishedAt

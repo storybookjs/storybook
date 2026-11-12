@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { cycleBranchName, parseBundleHeader, pushTokenEnv, versionLine } from './cycle.ts';
+import { cycleBranchName, parseBundleHeader, versionLine } from './cycle.ts';
 
 describe('versionLine', () => {
   it('reads major.minor from a release or prerelease', () => {
@@ -36,16 +36,5 @@ describe('parseBundleHeader', () => {
 
   it('rejects a file that is not a bundle', () => {
     expect(() => parseBundleHeader('{"not":"a bundle"}\n\n')).toThrow(/Not a git bundle/);
-  });
-});
-
-describe('pushTokenEnv', () => {
-  it('names the secret of the repo owner', () => {
-    expect(pushTokenEnv('storybookjs/mealdrop')).toBe('ECOSYSTEM_QA_PUSH_TOKEN');
-    expect(pushTokenEnv('storybook-tmp/twenty')).toBe('ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP');
-  });
-
-  it.each(['twentyhq/twenty', 'toString/x'])('throws for %s, whose owner has no secret', (repo) => {
-    expect(() => pushTokenEnv(repo)).toThrow(/No push token is configured/);
   });
 });

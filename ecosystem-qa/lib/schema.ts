@@ -1,7 +1,8 @@
 import { z } from 'zod';
 
 import { CHECK_IDS, type CheckId } from '../checks.ts';
-import { PUSH_TOKEN_ENV, SEMVER } from './cycle.ts';
+import { cycleRepo, SEMVER } from './cycle.ts';
+import { canPushTo } from './push-targets.ts';
 
 export const RepoClass = z.enum(['owned', 'tier1', 'tier2']);
 export type RepoClass = z.infer<typeof RepoClass>;
@@ -19,7 +20,7 @@ export const CatalogEntry = z
     // Where the cycle branch is pushed: a fork under storybook-tmp for tier 1, the repo itself when owned.
     pushTo: z
       .string()
-      .regex(new RegExp(`^(?:${Object.keys(PUSH_TOKEN_ENV).join('|')})/[\\w.-]+$`))
+      .regex(/^[\w.-]+\/[\w.-]+$/)
       .optional(),
     ref: z.string().min(1),
     class: RepoClass,
@@ -34,6 +35,10 @@ export const CatalogEntry = z
   })
   .refine((entry) => entry.class !== 'tier1' || entry.pushTo !== undefined, {
     message: 'a tier 1 entry needs pushTo, the fork that holds its baseline',
+    path: ['pushTo'],
+  })
+  .refine((entry) => canPushTo(cycleRepo(entry)), {
+    message: 'no push token is configured for the owner of the repository that receives the cycle',
     path: ['pushTo'],
   });
 export type CatalogEntry = z.infer<typeof CatalogEntry>;
@@ -169,6 +174,8 @@ export const RunResultFile = z.strictObject({
   }),
   status: z.enum(['ok', 'agent-failed', 'output-invalid', 'timeout']),
   error: z.string().optional(),
+  // The error the sandbox raised after the agent had finished, when the answer came from the run log.
+  recoveredFrom: z.string().optional(),
 });
 export type RunResultFile = z.infer<typeof RunResultFile>;
 

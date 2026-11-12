@@ -1,28 +1,9 @@
 import { closeSync, openSync, readSync } from 'node:fs';
 
-import type { CatalogEntry, Engine, Os } from './schema.ts';
-
-/** A fine-grained token belongs to one owner, so each org the filer may push to has its own secret. */
-export const PUSH_TOKEN_ENV = {
-  storybookjs: 'ECOSYSTEM_QA_PUSH_TOKEN',
-  'storybook-tmp': 'ECOSYSTEM_QA_PUSH_TOKEN_STORYBOOK_TMP',
-} as const;
-
-/**
- * Return the name of the env var that holds the push token for the owner of an `owner/name` repo.
- *
- * @throws When the owner has no push token configured.
- */
-export const pushTokenEnv = (repo: string): string => {
-  const owner = repo.split('/')[0] ?? '';
-  if (!Object.hasOwn(PUSH_TOKEN_ENV, owner)) {
-    throw new Error(`No push token is configured for the owner of "${repo}".`);
-  }
-  return PUSH_TOKEN_ENV[owner as keyof typeof PUSH_TOKEN_ENV];
-};
+import type { Engine, Os } from './schema.ts';
 
 /** Return the repository that holds an entry's baseline and receives its cycle refs. */
-export const cycleRepo = (entry: Pick<CatalogEntry, 'repo' | 'pushTo'>): string =>
+export const cycleRepo = (entry: { repo: string; pushTo?: string }): string =>
   entry.pushTo ?? entry.repo;
 
 export const SEMVER = /^(\d+)\.(\d+)\.\d+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;

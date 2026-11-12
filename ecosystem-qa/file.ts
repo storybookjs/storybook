@@ -7,7 +7,6 @@ import { dirname, join, resolve } from 'pathe';
 import { z } from 'zod';
 
 import {
-  alreadyFiled,
   ASSETS_BRANCH,
   describeStep,
   missingPrerequisites,
@@ -18,10 +17,11 @@ import {
   type FilingOutcome,
   type FilingStep,
 } from './lib/filing.ts';
-import { cycleRef, pushTokenEnv } from './lib/cycle.ts';
+import { cycleRef } from './lib/cycle.ts';
 import { listQaIssues, ghText, pages } from './lib/github.ts';
 import { copyRedacted } from './lib/redact.ts';
-import { hitsFor, type QaIssue } from './lib/proposals.ts';
+import { hitsFor, openHit, QA_LABEL, type QaIssue } from './lib/proposals.ts';
+import { pushTokenEnv } from './lib/push-targets.ts';
 import { Proposal } from './lib/schema.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
 
@@ -204,12 +204,12 @@ const fileProposal = (proposal: Proposal, issues: QaIssue[]): FilingOutcome => {
     evidenceLinks: 'assets',
     ...(proposal.kind === 'issue'
       ? {
-          filedAs: alreadyFiled(
+          filedAs: openHit(
             hitsFor(issues, [
               proposal.fingerprint,
               ...proposal.related.map((related) => related.fingerprint),
             ])
-          ),
+          )?.number,
         }
       : {}),
     ...(proposal.kind === 'comment'
@@ -264,7 +264,7 @@ if (values.dry) {
   );
 } else {
   checkPrerequisites();
-  const issues = listQaIssues(repo);
+  const issues = listQaIssues(repo, QA_LABEL);
   const outcomes = proposals.map((proposal): FilingOutcome => {
     try {
       return fileProposal(proposal, issues);

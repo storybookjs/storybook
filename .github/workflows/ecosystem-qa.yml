@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
-      issues: read # gh search for each fingerprint
+      issues: read # list the internal-qa issues
     env:
       QA_VERSION: '11.0.0-beta.0'
     steps:
@@ -296,7 +296,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       actions: read # download the artifacts of earlier runs
-      issues: read # list the QA issues
+      issues: read # list the internal-qa issues
     # The model key for the grouping lives in this environment; only the grouping step reads it.
     environment: ecosystem-qa
     env:

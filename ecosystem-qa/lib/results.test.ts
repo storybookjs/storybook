@@ -75,7 +75,7 @@ describe('loadResults', () => {
       ...record(),
       request: {
         ...record().request,
-        entry: { ...ENTRY, repo: 'attacker/target' },
+        entry: { ...ENTRY, repo: 'storybookjs/storybook' },
       },
       headSha: 'f'.repeat(40),
     });
@@ -112,12 +112,13 @@ describe('loadResults', () => {
 
   it('loads a record written before the starting version was recorded', () => {
     const resultsDir = mkdtempSync(join(tmpdir(), 'qa-results-'));
-    const { storybookVersionBefore, ...older } = record();
+    const { storybookVersionBefore: _newer, ...older } = record({
+      storybookVersionBefore: '10.6.0',
+    });
     writeRun(artifactRun(resultsDir), older);
 
     const { results, warnings } = load(resultsDir);
 
-    expect(storybookVersionBefore).toBeUndefined();
     expect(results).toHaveLength(1);
     expect(warnings).not.toContainEqual(expect.stringMatching(/not a valid result record/));
   });

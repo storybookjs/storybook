@@ -46,11 +46,16 @@ export interface QaIssue extends IssueHit {
 export const hitsFor = (issues: QaIssue[], fingerprints: string[]): QaIssue[] =>
   issues.filter((issue) => fingerprints.some((fingerprint) => issue.body.includes(fingerprint)));
 
+// A closed hit is the "came back" case the issue proposal exists for, so only an open one counts as
+// filed.
+export const openHit = (hits: IssueHit[]): IssueHit | undefined =>
+  hits.find((hit) => hit.state === 'open');
+
 /** Map each fingerprint that an open issue carries to that issue, the first one in the order given. */
 export const openIssueOf = (issues: QaIssue[], fingerprints: string[]): Map<string, number> =>
   new Map(
     fingerprints.flatMap((fingerprint) => {
-      const open = hitsFor(issues, [fingerprint]).find((issue) => issue.state === 'open');
+      const open = openHit(hitsFor(issues, [fingerprint]));
       return open ? [[fingerprint, open.number] as const] : [];
     })
   );
@@ -327,7 +332,7 @@ const decide = (
   if (known) {
     return { kind: 'suppressed', issue: known.number, reason: 'known' };
   }
-  const open = exact.find((issue) => issue.state === 'open');
+  const open = openHit(exact);
   if (open) {
     return { kind: 'comment', issue: open.number };
   }

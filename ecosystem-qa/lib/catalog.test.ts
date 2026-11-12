@@ -20,6 +20,10 @@ describe('catalog', () => {
     ['an unknown field', { ...ENTRY, branch: 'main' }],
     ['a tier 1 entry without a push target', { ...ENTRY, class: 'tier1' }],
     ['a push target outside the orgs with a push token', { ...ENTRY, pushTo: 'twentyhq/twenty' }],
+    [
+      'a repo that is its own push target and has no push token',
+      { ...ENTRY, repo: 'twentyhq/twenty' },
+    ],
     ['a Node version that is not a plain version', { ...ENTRY, node: 'lts/*' }],
   ])('rejects %s', (_, entry) => {
     expect(() => Catalog.parse([entry])).toThrow();

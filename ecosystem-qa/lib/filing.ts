@@ -5,7 +5,6 @@ import {
   relatedLines,
   renderCommentBody,
   renderIssueBody,
-  type IssueHit,
 } from './proposals.ts';
 import type { Cycle, EvidenceFile, Proposal } from './schema.ts';
 
@@ -117,10 +116,6 @@ export const planFiling = (proposal: Proposal, options: FilingOptions): FilingSt
     },
   ];
 };
-
-// A closed hit is the "came back" case the issue proposal exists for, so only an open one blocks filing.
-export const alreadyFiled = (hits: IssueHit[]): number | undefined =>
-  hits.find((hit) => hit.state === 'open')?.number;
 
 export const describeStep = (step: FilingStep, repo: string): string => {
   switch (step.kind) {

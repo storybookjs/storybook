@@ -24,7 +24,7 @@ import { join, relative, resolve } from 'pathe';
 import { z } from 'zod';
 
 import { checksFor, renderChecklist } from './checks.ts';
-import { answerFromLog } from './lib/answer.ts';
+import { answerOfFinishedAgent, QA_RESULT_TAG } from './lib/answer.ts';
 import { loadCatalogEntry } from './lib/catalog.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
@@ -324,7 +324,9 @@ const runSandcastle = async (
 
   let sessionSource: string | undefined;
   let output: Outcome['output'];
-  let failure: { status: Outcome['status']; error: string } | undefined;
+  let failure: Pick<Outcome, 'status' | 'error'> | undefined;
+  let recoveredFrom: string | undefined;
+  const logFile = join(request.outDir, 'run.log');
   const answerSchema = agentOutput(checksFor(request.tier).map((check) => check.id));
 
   try {
@@ -358,7 +360,7 @@ const runSandcastle = async (
         CHECKLIST: renderChecklist(request.tier),
         OUTPUT_SCHEMA: JSON.stringify(z.toJSONSchema(answerSchema), null, 2),
       },
-      output: Output.object({ tag: 'qa-result', schema: answerSchema, maxRetries: 2 }),
+      output: Output.object({ tag: QA_RESULT_TAG, schema: answerSchema, maxRetries: 2 }),
       hooks: {
         ...(request.sandbox === 'docker'
           ? {
@@ -383,7 +385,7 @@ const runSandcastle = async (
       idleTimeoutSeconds: 900,
       logging: {
         type: 'file',
-        path: join(request.outDir, 'run.log'),
+        path: logFile,
         onAgentStreamEvent: (event) => {
           if (event.type === 'raw') {
             stream.write(`${event.line}\n`);
@@ -400,21 +402,20 @@ const runSandcastle = async (
     output = result.output;
     sessionSource = result.iterations.at(-1)?.sessionFilePath;
   } catch (error) {
-    failure = { status: statusOf(error), error: String(error) };
+    // Sandcastle judged the answer itself when it raises a StructuredOutputError. Any other error
+    // can come from the teardown, after an agent that had already answered.
+    const answer =
+      error instanceof StructuredOutputError || !existsSync(logFile)
+        ? undefined
+        : answerOfFinishedAgent(readFileSync(logFile, 'utf8'), answerSchema);
+    if (answer) {
+      output = answer;
+      recoveredFrom = String(error);
+    } else {
+      failure = { status: statusOf(error), error: String(error) };
+    }
     if (error instanceof StructuredOutputError) {
       sessionSource = error.sessionFilePath;
-    } else {
-      const logFile = join(request.outDir, 'run.log');
-      const answer = existsSync(logFile)
-        ? answerFromLog(readFileSync(logFile, 'utf8'), answerSchema)
-        : undefined;
-      if (answer) {
-        output = answer;
-        failure = {
-          status: 'ok',
-          error: `The agent finished; the sandbox wrapper failed afterwards: ${failure.error}`,
-        };
-      }
     }
   } finally {
     await new Promise((done) => stream.end(done));
@@ -433,8 +434,9 @@ const runSandcastle = async (
     );
   }
   return {
-    status: failure?.status ?? 'ok',
-    ...(failure ? { error: failure.error } : {}),
+    status: 'ok',
+    ...failure,
+    ...(recoveredFrom ? { recoveredFrom } : {}),
     ...(output ? { output } : {}),
     startSha,
     headSha,
@@ -491,6 +493,7 @@ const writeResult = (request: RunRequest, outcome: Outcome, startedAt: Date) => 
     },
     status: outcome.status,
     ...(outcome.error ? { error: outcome.error } : {}),
+    ...(outcome.recoveredFrom ? { recoveredFrom: outcome.recoveredFrom } : {}),
   };
   // Written to a sibling first: an interrupted write must never leave a truncated result.json.
   const resultFile = join(outDir, 'result.json');
@@ -518,6 +521,11 @@ const summarize = (result: RunResultFile, resultPath: string): string => {
     `Usage was ${result.usage.inputTokens} input, ${result.usage.outputTokens} output, ${result.usage.cacheReadTokens ?? 0} cache-read and ${result.usage.cacheWriteTokens ?? 0} cache-write tokens, ${usd}.`,
     `Cycle branch ${cycleBranchName(result.request.version, result.request.os, result.request.engine)} head ${result.headSha ?? 'has no commits'}.${result.machine.freeDiskMbAtEnd === undefined ? '' : ` ${result.machine.freeDiskMbAtEnd} MB disk free at the end.`} Result: ${resultPath}.`,
     ...(result.error ? [`Error: ${result.error}`] : []),
+    ...(result.recoveredFrom
+      ? [
+          `The sandbox failed after the agent had finished, so the answer was read from the run log: ${result.recoveredFrom}`,
+        ]
+      : []),
   ].join(' ');
 };
 

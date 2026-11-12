@@ -169,6 +169,8 @@ export const RunResultFile = z.strictObject({
   }),
   status: z.enum(['ok', 'agent-failed', 'output-invalid', 'timeout']),
   error: z.string().optional(),
+  // The error the sandbox raised after the agent had finished, when the answer came from the run log.
+  recoveredFrom: z.string().optional(),
 });
 export type RunResultFile = z.infer<typeof RunResultFile>;
 

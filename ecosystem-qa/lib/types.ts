@@ -10,6 +10,7 @@ export type RunRequest = z.infer<typeof RunRequestRecord> & {
 export interface Outcome {
   status: RunResultFile['status'];
   error?: string;
+  recoveredFrom?: string;
   output?: z.infer<typeof AgentOutput>;
   startSha: string;
   headSha: string | null;

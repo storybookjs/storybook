@@ -1,25 +1,69 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { answerFromLog } from './answer.ts';
+import { answerOfFinishedAgent } from './answer.ts';
 
 const schema = z.object({ n: z.number() });
 
-describe('answerFromLog', () => {
-  it('returns the last block when two exist', () => {
-    const log = 'a <qa-result>{"n":1}</qa-result> b\n<qa-result>\n{"n":2}\n</qa-result> c';
-    expect(answerFromLog(log, schema)).toEqual({ n: 2 });
+const run = (...lines: string[]) =>
+  ['', '--- Run started: 2026-11-11T15:27:21.062Z ---', 'Sandcastle Run', ...lines, ''].join('\n');
+
+const answer = (n: unknown) => `<qa-result>\n${JSON.stringify({ n })}\n</qa-result>`;
+
+describe('answerOfFinishedAgent', () => {
+  it('returns the answer of an agent that stopped before the sandbox failed', () => {
+    const log = run('Agent started', answer(2), 'Agent stopped', 'Collecting commits');
+
+    expect(answerOfFinishedAgent(log, schema)).toEqual({ n: 2 });
   });
 
-  it('returns undefined without a block', () => {
-    expect(answerFromLog('no answer here', schema)).toBeUndefined();
+  it('returns the last block when the agent printed two', () => {
+    const log = run('Agent started', answer(1), 'more work', answer(2), 'Agent stopped');
+
+    expect(answerOfFinishedAgent(log, schema)).toEqual({ n: 2 });
+  });
+
+  it('reads a block whose JSON sits in a Markdown fence', () => {
+    const fenced = '<qa-result>\n```json\n{"n":3}\n```\n</qa-result>';
+    const log = run('Agent started', fenced, 'Agent stopped');
+
+    expect(answerOfFinishedAgent(log, schema)).toEqual({ n: 3 });
+  });
+
+  it('ignores the answer of an earlier run when the last run failed before its agent started', () => {
+    const earlier = run('Agent started', answer(1), 'Agent stopped');
+    const log = `${earlier}${run('Setting up sandbox')}`;
+
+    expect(answerOfFinishedAgent(log, schema)).toBeUndefined();
+  });
+
+  it('returns undefined when the agent printed an answer and never stopped', () => {
+    const log = run('Agent started', answer(1), 'Agent idle for 15 minutes');
+
+    expect(answerOfFinishedAgent(log, schema)).toBeUndefined();
+  });
+
+  it('returns undefined when the agent was started again and did not stop', () => {
+    const log = run('Agent started', answer(1), 'Agent stopped', 'Agent started', 'working');
+
+    expect(answerOfFinishedAgent(log, schema)).toBeUndefined();
+  });
+
+  it('returns undefined when the agent stopped without a block', () => {
+    const log = run('Agent started', 'no answer here', 'Agent stopped');
+
+    expect(answerOfFinishedAgent(log, schema)).toBeUndefined();
   });
 
   it('returns undefined for broken JSON', () => {
-    expect(answerFromLog('<qa-result>{"n":</qa-result>', schema)).toBeUndefined();
+    const log = run('Agent started', '<qa-result>{"n":</qa-result>', 'Agent stopped');
+
+    expect(answerOfFinishedAgent(log, schema)).toBeUndefined();
   });
 
   it('returns undefined for JSON that fails the schema', () => {
-    expect(answerFromLog('<qa-result>{"n":"x"}</qa-result>', schema)).toBeUndefined();
+    const log = run('Agent started', answer('x'), 'Agent stopped');
+
+    expect(answerOfFinishedAgent(log, schema)).toBeUndefined();
   });
 });

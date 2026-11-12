@@ -146,7 +146,8 @@ To tie a fingerprint to an issue by hand, add it to the `fingerprints:` line of 
 A comment lists the fingerprints of its group the same way, and the collector reads the comments that the workflow account wrote on each listed issue, so a fingerprint that joined an issue through a comment is found too.
 A comment by anyone else never ties a fingerprint to an issue.
 An issue closed as completed after the tested prerelease was published counts as known for that version, because the fix is not in it yet; the collector reads the publish date from the `v<version>` release of `--repo`.
-This too needs the fingerprint: a group that only resembles such an issue is filed as a new issue that links to it.
+Silence needs the fingerprint here too.
+A group that only resembles such an issue, or of which only some findings are on it, becomes a comment on that closed issue: the comment says that the tested version does not have the fix yet, and it ties the group's fingerprints to the issue, so the next sweep of that version is silent by the rule above.
 An issue closed before that, or closed for any other reason, does not count: the bug came back, so it is filed again with a link to the closed issue.
 An issue counts as already filed only while it carries the `internal-qa` label.
 It checks first that the milestone is open and every label exists, and files nothing otherwise.

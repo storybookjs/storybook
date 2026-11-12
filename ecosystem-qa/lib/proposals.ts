@@ -393,6 +393,12 @@ export const renderIssueBody = (
 
 export const renderCommentBody = (proposal: CommentProposal): string =>
   [
+    ...(proposal.reason === 'fixed-later'
+      ? [
+          `This issue was fixed after ${unique(proposal.sources.map((source) => source.version))} was published, so that version does not have the fix yet and the report below is expected. It is recorded here so that later runs recognise these findings. No new issue was filed.`,
+          '',
+        ]
+      : []),
     'Seen again by the ecosystem QA agent on:',
     '',
     ...sourceLines(proposal, true),
@@ -454,7 +460,7 @@ interface Silenced {
 
 type Decision =
   | Silenced
-  | { kind: 'comment'; issue: number }
+  | { kind: 'comment'; issue: number; reason?: 'fixed-later' }
   | { kind: 'issue'; previousIssue?: number };
 
 const fixedAfter = (issue: QaIssue, publishedAt: string | undefined): boolean =>
@@ -475,8 +481,10 @@ const silencedBy = (exact: QaIssue[], publishedAt: string | undefined): Silenced
 
 // A group is silenced only when every member is, each by an issue that carries its own
 // fingerprint: a grouping can merge findings, it can never hide one. An issue that is merely
-// similar gets a comment while it is open. A closed issue gets none: nobody watches it, so the bug
-// that came back is filed again with a link to that issue.
+// similar gets a comment while it is open. So does an issue whose fix landed after the tested
+// version, when the group only resembles it or only some members are on it: the comment says that
+// the report is expected and ties the fingerprints to the issue. Any other closed issue gets no
+// comment: nobody watches it, so the bug that came back is filed again with a link to that issue.
 const decide = (
   memberHits: QaIssue[][],
   similar: QaIssue | undefined,
@@ -494,6 +502,12 @@ const decide = (
   }
   if (similar?.state === 'open') {
     return { kind: 'comment', issue: similar.number };
+  }
+  const fixed = [...exact, ...(similar ? [similar] : [])].find((issue) =>
+    fixedAfter(issue, publishedAt)
+  );
+  if (fixed) {
+    return { kind: 'comment', issue: fixed.number, reason: 'fixed-later' };
   }
   const previous = exact[0] ?? similar;
   return { kind: 'issue', ...(previous ? { previousIssue: previous.number } : {}) };
@@ -561,7 +575,12 @@ export const toProposal = (
     runUrl,
   };
   if (decision.kind === 'comment') {
-    return { kind: 'comment', ...report, existingIssue: decision.issue };
+    return {
+      kind: 'comment',
+      ...report,
+      existingIssue: decision.issue,
+      ...(decision.reason ? { reason: decision.reason } : {}),
+    };
   }
   return {
     kind: 'issue',

@@ -402,7 +402,7 @@ describe('toProposal with the publish date of the tested version', () => {
     expect(proposal).toMatchObject({ kind: 'issue', previousIssue: 9 });
   });
 
-  it('files a new issue when only a similar issue was fixed after the version was published', () => {
+  it('comments on a similar issue that was fixed after the version was published, and says so', () => {
     const proposal = toProposal(
       { ...single(group), existingIssue: 20 },
       [
@@ -414,7 +414,47 @@ describe('toProposal with the publish date of the tested version', () => {
       { ...OPTIONS, publishedAt: PUBLISHED }
     );
 
+    expect(proposal).toMatchObject({ kind: 'comment', existingIssue: 20, reason: 'fixed-later' });
+    expect(proposal.kind === 'comment' && renderCommentBody(proposal)).toMatch(
+      new RegExp(`^This issue was fixed after ${VERSION.replaceAll('.', '\\.')} was published`)
+    );
+  });
+
+  it('files a new issue linked to a similar issue that was closed before the version was published', () => {
+    const proposal = toProposal(
+      { ...single(group), existingIssue: 20 },
+      [
+        {
+          ...issueOn(undefined, { number: 20, labels: ['bug'], state: 'closed' }),
+          completedAt: '2026-11-01T10:00:00Z',
+        },
+      ],
+      { ...OPTIONS, publishedAt: PUBLISHED }
+    );
+
     expect(proposal).toMatchObject({ kind: 'issue', previousIssue: 20 });
+  });
+
+  it('comments on the fixed issue when only one member of a group is on it', () => {
+    const [fixedOne, newOne] = groupFindings([
+      loaded('linux', 'claude', [
+        finding(),
+        finding({ checkId: 'build.static', title: 'Build fails', errorText: 'ENOSPC' }),
+      ]),
+    ]);
+    const proposal = toProposal(
+      { lead: newOne!, members: [newOne!, fixedOne!] },
+      [
+        {
+          ...issueOn(fixedOne, { number: 9, labels: ['bug'], state: 'closed' }),
+          completedAt: '2026-11-05T10:00:00Z',
+        },
+      ],
+      { ...OPTIONS, publishedAt: PUBLISHED }
+    );
+
+    expect(proposal).toMatchObject({ kind: 'comment', existingIssue: 9, reason: 'fixed-later' });
+    expect(proposal.fingerprint).toBe(newOne!.fingerprint);
   });
 
   it('suppresses a later fix before commenting on an open similar issue', () => {

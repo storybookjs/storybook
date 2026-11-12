@@ -92,7 +92,7 @@ const targetOf = (proposal: Proposal): string => {
     case 'issue':
       return '';
     case 'comment':
-      return ` #${proposal.existingIssue}`;
+      return `${proposal.reason ? ` (${proposal.reason})` : ''} #${proposal.existingIssue}`;
     case 'suppressed':
       return ` (${proposal.reason}) #${proposal.existingIssue}`;
     case 'skipped':

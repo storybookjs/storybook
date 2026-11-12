@@ -266,7 +266,13 @@ export const Proposal = z.discriminatedUnion('kind', [
     // A closed issue this cluster matched: the bug came back, so it is filed anew and linked.
     previousIssue: z.number().int().optional(),
   }),
-  z.strictObject({ kind: z.literal('comment'), ...ReportBase, existingIssue: z.number().int() }),
+  z.strictObject({
+    kind: z.literal('comment'),
+    ...ReportBase,
+    existingIssue: z.number().int(),
+    // Set when the issue is closed and its fix landed after the tested version was published.
+    reason: z.literal('fixed-later').optional(),
+  }),
   z.strictObject({
     kind: z.literal('suppressed'),
     ...ProposalBase,

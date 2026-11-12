@@ -1,17 +1,47 @@
 import { Channel } from 'storybook/internal/channels';
 import type { Presets } from 'storybook/internal/types';
 
-import type { InlineConfig, Plugin } from 'vite';
-import { resolveConfig, build as viteBuild } from 'vite';
+import type { InlineConfig, Plugin, ViteBuilder } from 'vite';
+import { createBuilder, resolveConfig, build as viteBuild } from 'vite';
 import { expect, it, vi } from 'vitest';
 
 import { build } from './build.ts';
 
+const buildApp = vi.hoisted(() => vi.fn(async () => {}));
+
 vi.mock(import('vite'), async (importOriginal) => ({
   ...(await importOriginal()),
   build: vi.fn(async () => []),
+  createBuilder: vi.fn(async () => ({ buildApp }) as unknown as ViteBuilder),
   loadConfigFromFile: vi.fn(async () => null),
 }));
+
+const presets = {
+  apply: async (key: string, config: unknown) =>
+    ({ core: { builder: {} }, viteFinal: config })[key],
+} as Presets;
+
+it("builds with Vite's legacy build by default, as before", async () => {
+  await build({ configType: 'PRODUCTION', configDir: '', channel: new Channel({}), presets });
+
+  expect(viteBuild).toHaveBeenCalledOnce();
+  expect(createBuilder).not.toHaveBeenCalled();
+});
+
+it("builds as `vite build` does, with Vite's app builder, when `features.viteAppBuilder` is on", async () => {
+  await build({
+    configType: 'PRODUCTION',
+    configDir: '',
+    channel: new Channel({}),
+    presets,
+    features: { viteAppBuilder: true },
+  });
+
+  // `null` builds only the client environment, unless the config sets `builder`.
+  expect(createBuilder).toHaveBeenCalledWith(expect.any(Object), null);
+  expect(buildApp).toHaveBeenCalledOnce();
+  expect(viteBuild).not.toHaveBeenCalled();
+});
 
 it('keeps Vite from copying the public dir, which Storybook copies through staticDirs', async () => {
   await build({

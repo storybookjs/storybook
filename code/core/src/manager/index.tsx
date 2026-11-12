@@ -66,8 +66,13 @@ export const Main: FC<{ provider: Provider }> = ({ provider }) => {
               [Object.keys(api.getElements(types.experimental_PAGE)).join()]
             );
 
+            // A new theme object would change the emotion theme context on every store commit,
+            // which re-renders every styled component in the manager, the whole sidebar tree
+            // included.
+            const theme = useMemo(() => ensureTheme(state.theme), [state.theme]);
+
             return (
-              <ThemeProvider key="theme.provider" theme={ensureTheme(state.theme)}>
+              <ThemeProvider key="theme.provider" theme={theme}>
                 <LayoutProvider>
                   <App
                     key="app"

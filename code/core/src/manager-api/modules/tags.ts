@@ -72,8 +72,8 @@ export const computeStaticFilterFn = (tagPresets: TagsOptions) => {
     // - autodocs: type `docs`, no `attached-mdx` / `unattached-mdx` (importPath is the CSF file)
     // - attached MDX: `attached-mdx`
     // - unattached MDX: `unattached-mdx`
-    // Autodocs inherit CSF meta tags (e.g. `!dev`) and must stay in the sidebar; MDX should
-    // respect `!dev` like stories. See 15d7ef9149d.
+    // Autodocs inherit CSF meta tags (e.g. `!dev`) and must stay in the sidebar. MDX only loses
+    // `dev` through its own <Meta>; the indexer re-adds it after inherited tags. See 15d7ef9149d.
     const isCsfAutodocsEntry =
       item.type === 'docs' &&
       !tags.includes(TagEnum.ATTACHED_MDX) &&

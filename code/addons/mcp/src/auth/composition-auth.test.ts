@@ -789,36 +789,42 @@ describe('CompositionAuth', () => {
       expect(auth.requiresAuth).toBe(true);
     });
 
-    it('warns when refs use different OAuth servers', async () => {
+    it('keeps config-order OAuth selection when a later ref finishes first', async () => {
       const auth = new CompositionAuth();
       const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
-      vi.stubGlobal(
-        'fetch',
-        routeFetch({
-          'https://private.chromatic.com/manifests/components.json': () =>
-            oauthChallenge('https://chromatic.com/.well-known/oauth-protected-resource'),
-          'https://chromatic.com/.well-known/oauth-protected-resource': () =>
-            Response.json(
-              resourceMetadata('https://chromatic.com/mcp', 'https://www.chromatic.com')
-            ),
-          'https://www.chromatic.com/.well-known/oauth-authorization-server': () =>
-            Response.json(serverMetadata('https://www.chromatic.com')),
-          'https://other.example.com/manifests/components.json': () =>
-            oauthChallenge('https://other.example.com/.well-known/oauth-protected-resource'),
-          'https://other.example.com/.well-known/oauth-protected-resource': () =>
-            Response.json(
-              resourceMetadata('https://other.example.com/mcp', 'https://other.example.com')
-            ),
-          'https://other.example.com/.well-known/oauth-authorization-server': () =>
-            Response.json(serverMetadata('https://other.example.com')),
-        })
-      );
+      let releaseFirst!: (response: Response) => void;
+      const fetchMock = routeFetch({
+        'https://private.chromatic.com/manifests/components.json': () =>
+          new Promise<Response>((resolve) => (releaseFirst = resolve)),
+        'https://chromatic.com/.well-known/oauth-protected-resource': () =>
+          Response.json(resourceMetadata('https://chromatic.com/mcp', 'https://www.chromatic.com')),
+        'https://www.chromatic.com/.well-known/oauth-authorization-server': () =>
+          Response.json(serverMetadata('https://www.chromatic.com')),
+        'https://other.example.com/manifests/components.json': () =>
+          oauthChallenge('https://other.example.com/.well-known/oauth-protected-resource'),
+        'https://other.example.com/.well-known/oauth-protected-resource': () =>
+          Response.json(
+            resourceMetadata('https://other.example.com/mcp', 'https://other.example.com')
+          ),
+        'https://other.example.com/.well-known/oauth-authorization-server': () =>
+          Response.json(serverMetadata('https://other.example.com')),
+      });
+      vi.stubGlobal('fetch', fetchMock);
 
-      await auth.initialize([
+      const pending = auth.initialize([
         { id: 'chromatic', title: 'Chromatic', url: 'https://private.chromatic.com' },
         { id: 'other', title: 'Other', url: 'https://other.example.com' },
       ]);
+
+      await vi.waitFor(() =>
+        expect(fetchMock).toHaveBeenCalledWith(
+          'https://other.example.com/.well-known/oauth-authorization-server',
+          expect.anything()
+        )
+      );
+      releaseFirst(oauthChallenge('https://chromatic.com/.well-known/oauth-protected-resource'));
+      await pending;
 
       expect(warnSpy).toHaveBeenCalledTimes(1);
       expect(warnSpy).toHaveBeenCalledWith(
@@ -829,6 +835,43 @@ describe('CompositionAuth', () => {
       expect(auth.buildWellKnown('http://localhost:6006/mcp')).toMatchObject({
         authorization_servers: ['https://www.chromatic.com'],
       });
+    });
+
+    it('keeps a ref unreachable when its OAuth metadata endpoint times out', async () => {
+      const auth = new CompositionAuth();
+      const warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((url: string, init?: RequestInit) =>
+          url.endsWith('/manifests/components.json')
+            ? Promise.resolve({
+                ok: false,
+                status: 401,
+                headers: new Headers({
+                  'WWW-Authenticate':
+                    'Bearer resource_metadata="https://stalled.example.com/.well-known/oauth-protected-resource"',
+                }),
+              })
+            : new Promise((_resolve, reject) =>
+                init?.signal?.addEventListener('abort', () => reject(init.signal!.reason))
+              )
+        )
+      );
+      // Fake timers do not drive `AbortSignal.timeout`, so the signal it returns is stubbed and
+      // aborted by hand, which also pins the budget it was created with.
+      const controller = new AbortController();
+      const timeoutSpy = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal);
+      const pending = auth.initialize([
+        { id: 'stalled', title: 'Stalled', url: 'https://stalled.example.com' },
+      ]);
+      await vi.waitFor(() => expect(timeoutSpy).toHaveBeenCalledWith(30_000));
+      controller.abort(new DOMException('timed out', 'TimeoutError'));
+      await pending;
+
+      expect(auth.requiresAuth).toBe(false);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringMatching(/"Stalled".*could not be reached.*checked again/)
+      );
     });
 
     it('keeps an unreachable ref listed and says it will be checked again', async () => {

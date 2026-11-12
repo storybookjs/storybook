@@ -13,7 +13,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { type ComponentEntry, type IndexHash, ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 
-import { SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
+import { PRELOAD_ENTRIES, SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
 
 import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import { storyRowId } from '../../utils/tree.ts';
@@ -1465,5 +1465,50 @@ export const KeyboardNavigation: Story = {
 
     await userEvent.keyboard('{ArrowUp}');
     await waitFor(() => expect(focusedId()).toBe('images--marketing-hero'));
+  },
+};
+
+/**
+ * Hovering a branch asks the preview to load the story a press on it would most likely open: a
+ * component's first story, a group's hoisted story, a story with tests itself rather than its
+ * "Story" row. A root or group whose first child is another branch has nothing to load.
+ */
+export const HoverPreloadsFirstStory: Story = {
+  args: {
+    refId: DEFAULT_REF_ID,
+    onSelectStoryId: fn(),
+    data: mockDataset.withRoot as unknown as IndexHash,
+    selectedStoryId: 'root-1-child-a2--grandchild-a1-1',
+  },
+  play: async ({ canvasElement }) => {
+    const row = (id: string) => canvasElement.querySelector<HTMLElement>(`[data-item-id="${id}"]`)!;
+    const emit = managerContext.api.emit;
+    emit.mockClear();
+    const preloadedIds = () =>
+      emit.mock.calls
+        .filter(([event]: [string]) => event === PRELOAD_ENTRIES)
+        .map(([, payload]: [string, { ids: string[] }]) => payload.ids);
+
+    await userEvent.hover(row('root-1'));
+    await userEvent.hover(row('root-1-child-a1'));
+    await userEvent.hover(row('root-1-child-a2--grandchild-a1-2'));
+    expect(preloadedIds()).toEqual([]);
+
+    await userEvent.hover(row('root-1-child-a2--grandchild-a1-1'));
+    await userEvent.hover(row('group-1'));
+    await userEvent.hover(row('root-3'));
+    await userEvent.hover(row('root-3-child-a2'));
+    await waitFor(() =>
+      expect(preloadedIds()).toEqual([
+        ['root-1-child-a2--grandchild-a1-1'],
+        ['group-1--child-b1'],
+        ['root-3--child-a1'],
+        ['root-3-child-a2--grandchild-a1-1'],
+      ])
+    );
+    expect(emit).toHaveBeenLastCalledWith(PRELOAD_ENTRIES, {
+      ids: ['root-3-child-a2--grandchild-a1-1'],
+      options: { target: DEFAULT_REF_ID },
+    });
   },
 };

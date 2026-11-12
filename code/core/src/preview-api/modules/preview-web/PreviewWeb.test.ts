@@ -1422,6 +1422,50 @@ describe('PreviewWeb', () => {
       await preview.onPreloadStories({ ids: ['introduction--docs'] });
       expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js');
     });
+
+    it('starts the newest batch once the one in flight finishes', async () => {
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+      await waitForRender();
+
+      vi.mocked(importFn).mockClear();
+      const [gate, openGate] = createGate();
+      vi.mocked(importFn).mockImplementationOnce(() => gate.then(() => componentTwoExports));
+      const inFlight = preview.onPreloadStories({ ids: ['component-two--c'] });
+      await vi.waitFor(() =>
+        expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js')
+      );
+
+      const next = preview.onPreloadStories({ ids: ['component-one--e'] });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(importFn).not.toHaveBeenCalledWith('./src/ExtraComponentOne.stories.js');
+
+      openGate();
+      await Promise.all([inFlight, next]);
+      expect(importFn).toHaveBeenCalledWith('./src/ExtraComponentOne.stories.js');
+    });
+
+    it('drops a batch superseded before it starts', async () => {
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+      await waitForRender();
+
+      vi.mocked(importFn).mockClear();
+      const [gate, openGate] = createGate();
+      vi.mocked(importFn).mockImplementationOnce(() => gate.then(() => componentTwoExports));
+      const inFlight = preview.onPreloadStories({ ids: ['component-two--c'] });
+      await vi.waitFor(() =>
+        expect(importFn).toHaveBeenCalledWith('./src/ComponentTwo.stories.js')
+      );
+
+      const superseded = preview.onPreloadStories({ ids: ['component-one--e'] });
+      const newest = preview.onPreloadStories({ ids: ['introduction--docs'] });
+      openGate();
+      await Promise.all([inFlight, superseded, newest]);
+
+      expect(importFn).toHaveBeenCalledWith('./src/Introduction.mdx');
+      expect(importFn).not.toHaveBeenCalledWith('./src/ExtraComponentOne.stories.js');
+    });
   });
 
   describe('onResetArgs', () => {

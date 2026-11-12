@@ -92,6 +92,10 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
   currentRender?: PossibleRender<TRenderer>;
 
+  private pendingPreload: { ids: string[] } | null = null;
+
+  private preloadsDrained: Promise<void> | null = null;
+
   constructor(
     public importFn: ModuleImportFn,
 
@@ -308,18 +312,24 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     super.onUpdateArgs({ storyId, updatedArgs });
   }
 
-  async onPreloadStories({ ids }: { ids: string[] }) {
-    await this.storeInitializationPromise;
+  async onPreloadStories(request: { ids: string[] }) {
+    this.pendingPreload = request;
+    this.preloadsDrained ??= this.drainPreloads();
+    await this.preloadsDrained;
+  }
 
-    if (this.storyStoreValue) {
-      /**
-       * It's possible that we're trying to preload a story in a ref we haven't loaded the iframe
-       * for yet. Because of the way the targeting works, if we can't find the targeted iframe,
-       * we'll use the currently active iframe which can cause the event to be targeted to the wrong
-       * iframe, causing an error if the storyId does not exists there.
-       */
+  // Sidebar hovers request preloads faster than a dev server compiles them, so batches run one at
+  // a time and a request received while a batch runs replaces any request still waiting.
+  private async drainPreloads() {
+    await this.storeInitializationPromise;
+    while (this.pendingPreload) {
+      const { ids } = this.pendingPreload;
+      this.pendingPreload = null;
+      // A targeted ref whose iframe is not loaded yet falls back to the active iframe, where the
+      // ids may not exist, so one failed entry must not fail the batch.
       await Promise.allSettled(ids.map((id) => this.storyStoreValue?.loadEntry(id)));
     }
+    this.preloadsDrained = null;
   }
 
   // RENDERING

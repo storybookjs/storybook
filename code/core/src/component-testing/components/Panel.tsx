@@ -418,9 +418,10 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
       [scrollTarget]
     );
     // Stable props keep the memoized panel from re-rendering its whole list on every commit.
-    const panelControlStates = useMemo(
-      () => ({ ...controlStates, detached: !!refId || controlStates.detached }),
-      [controlStates, refId]
+    const { detached, start, back, goto, next, end } = controlStates;
+    const panelControlStates = useMemo<ControlStates>(
+      () => ({ detached: !!refId || detached, start, back, goto, next, end }),
+      [refId, detached, start, back, goto, next, end]
     );
 
     const hasException =

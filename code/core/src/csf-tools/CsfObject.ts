@@ -8,6 +8,7 @@ import {
   isKey,
   listAt,
   locate,
+  overrideAt,
   printCsfPath,
   refusedKey,
   unsafePath,
@@ -42,6 +43,11 @@ import {
 } from './estree/values.ts';
 
 export type { CsfValue };
+
+export interface CsfSetOptions {
+  /** Override a field shadowed by spreads, preserving its effective value on nested edits. */
+  overrideSpreads?: boolean;
+}
 
 export type CsfObjectTarget =
   | { kind: 'config' }
@@ -211,7 +217,7 @@ export interface CsfObject {
    * object.getValue(['parameters']); // { a11y: { test: 'todo', enabled: true } }
    * ```
    */
-  set(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult;
+  set(path: CsfPath, value: CsfValue<CsfExpression>, options?: CsfSetOptions): CsfMutationResult;
   /**
    * Replace a value derived from its current expression. Return a new expression, or `undefined`
    * (or the input) to leave the value unchanged.
@@ -448,11 +454,15 @@ class Editor implements CsfObject {
     return slot ? { kind: 'value', ...slot } : { kind: 'missing' };
   }
 
-  set(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
-    return this.atomic(() => this.setValue(path, value));
+  set(path: CsfPath, value: CsfValue<CsfExpression>, options?: CsfSetOptions): CsfMutationResult {
+    return this.atomic(() => this.setValue(path, value, options));
   }
 
-  private setValue(path: CsfPath, value: CsfValue<CsfExpression>): CsfMutationResult {
+  private setValue(
+    path: CsfPath,
+    value: CsfValue<CsfExpression>,
+    options?: CsfSetOptions
+  ): CsfMutationResult {
     if (path.length === 0 || unsafePath(path)) {
       return this.failure('unsupported-member', path, this.anchor());
     }
@@ -460,12 +470,18 @@ class Editor implements CsfObject {
     if (unprintable) {
       return unprintable;
     }
-    const inspected = this.locate(path, 'set');
-    if (inspected.ok === false) {
-      return this.failure(inspected.code, path, inspected.node);
-    }
     const { quote, indent } = this.editor;
     const text = () => printValue(value, quote, { indent });
+    const inspected = this.locate(path, 'set');
+    if (inspected.ok === false) {
+      if (options?.overrideSpreads && inspected.code === 'spread-field' && inspected.shadowed) {
+        const result = overrideAt(this.editor, inspected.shadowed, path, text());
+        return result.ok
+          ? this.commit(path)
+          : this.failure(result.code, path, result.node, result.message);
+      }
+      return this.failure(inspected.code, path, inspected.node);
+    }
     if (inspected.kind === 'item') {
       inspected.parent.replace(inspected.index, text());
       return this.commit(path);

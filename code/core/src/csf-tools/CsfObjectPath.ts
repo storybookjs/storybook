@@ -3,6 +3,7 @@
 import type { CsfMutationDiagnosticCode } from './CsfObject.ts';
 import {
   type Access,
+  type CarriedSpread,
   carriedSpread,
   carriedSpreads,
   lookupElement,
@@ -16,8 +17,14 @@ import {
   literalRoot,
 } from './ObjectRoot.ts';
 import type { E, Node, Property } from './estree/ast.ts';
-import { type SourceEditor, detachedSource, printKey, printObject } from './estree/editor.ts';
-import { resolveExpression, valueSource } from './estree/values.ts';
+import {
+  type SourceEditor,
+  detachedSource,
+  printKey,
+  printObject,
+  replacedMemberText,
+} from './estree/editor.ts';
+import { isEvaluationInert, resolveExpression, valueSource } from './estree/values.ts';
 
 /**
  * A path to a value: a string addresses a property of an object, a number an element of an array
@@ -48,8 +55,16 @@ const invalidated = () => new Error('CsfObject mutation preflight was invalidate
 // A new array: its items go after the spread it carries forward, or before it when `first`.
 type ArrayInsert = { items: string[]; first: boolean };
 
+type ShadowedProperty = { parent: ObjectRoot; property: Property; index: number };
+
 // Why a path or a write is refused; the message defaults to one for the code.
-type Refusal = { ok: false; code: CsfMutationDiagnosticCode; node: Node; message?: string };
+type Refusal = {
+  ok: false;
+  code: CsfMutationDiagnosticCode;
+  node: Node;
+  message?: string;
+  shadowed?: ShadowedProperty;
+};
 
 // Where a path ends: a property or an item, which is `null` for a hole, or the first segment the
 // source lacks, a key at `missing` of the path or an item past the end of its list or at a hole
@@ -160,7 +175,10 @@ export const locate = (
         last || access === 'set' ? access : 'read'
       );
       if (lookup.ok === false) {
-        return lookup;
+        return {
+          ...lookup,
+          ...(lookup.property ? { shadowed: { parent, property: lookup.property, index } } : {}),
+        };
       }
       const { property } = lookup;
       if (!property) {
@@ -269,27 +287,18 @@ export const listAt = (
   };
 };
 
-// Writes the missing containers at `missing` into `parent`, the first one a member of it, which
-// carry the spreads before them forward.
-const createContainers = (
+const containerMember = (
   editor: SourceEditor,
-  parent: ObjectRoot,
-  missing: CsfPath,
-  content: { members: MemberInsert[] } | ArrayInsert
-) => {
+  missing: readonly string[],
+  content: { members: MemberInsert[] } | ArrayInsert,
+  spread: CarriedSpread | undefined
+): MemberInsert => {
   const { quote, indent } = editor;
-  if (!missing.every(isKey)) {
-    throw invalidated();
-  }
   const [name] = missing;
-  const carried = carriedSpreads(editor, parent.properties, name);
-  if (carried.ok === false) {
-    throw invalidated();
-  }
   const texts = 'members' in content ? content.members.map((member) => member.text) : content.items;
   const forward = (depth: number, into: 'object' | 'array' = 'object') => {
-    const spread = carriedSpread(carried.spread, missing.slice(0, depth + 1), quote, into);
-    return spread ? [spread] : [];
+    const source = carriedSpread(spread, missing.slice(0, depth + 1), quote, into);
+    return source ? [source] : [];
   };
   const last = missing.length - 1;
   let nested: string;
@@ -306,7 +315,58 @@ const createContainers = (
       indent
     );
   }
-  parent.append([{ key: name, value: nested, text: `${printKey(name, quote)}: ${nested}` }]);
+  return { key: name, value: nested, text: `${printKey(name, quote)}: ${nested}` };
+};
+
+export const overrideAt = (
+  editor: SourceEditor,
+  { parent, property, index }: ShadowedProperty,
+  path: CsfPath,
+  value: string
+): { ok: true } | Refusal => {
+  const keys = path.slice(index);
+  if (!keys.every(isKey) || !parent.node?.properties.includes(property) || property.method) {
+    return { ok: false, code: 'unsupported-member', node: property };
+  }
+  const [key] = keys;
+  const carried = carriedSpreads(
+    editor,
+    parent.properties.slice(parent.properties.indexOf(property) + 1),
+    key
+  );
+  if (!carried.ok) {
+    return carried;
+  }
+  let member: MemberInsert = { key, value, text: '' };
+  if (keys.length > 1) {
+    if (!isEvaluationInert(property.value)) {
+      return { ok: false, code: 'evaluation-order', node: property };
+    }
+    let spread = carried.spread;
+    if (!spread) {
+      throw invalidated();
+    }
+    if (!spread.own) {
+      spread = {
+        ...spread,
+        source: `({ ${printKey(key, editor.quote)}: ${valueSource(editor, property)}, ...${spread.source} })`,
+        optional: false,
+      };
+    }
+    const name = keys.at(-1)!;
+    member = containerMember(
+      editor,
+      keys.slice(0, -1),
+      {
+        members: [{ key: name, value, text: `${printKey(name, editor.quote)}: ${value}` }],
+      },
+      spread
+    );
+  }
+  member.text = replacedMemberText(editor, parent.node, property, member.value);
+  parent.remove([property]);
+  parent.append([member]);
+  return { ok: true };
 };
 
 // Writes `content` into the object at `containers`, creating the missing ones, which carry the
@@ -321,7 +381,15 @@ export const insertAt = (
   if (!object) {
     const located = locate(editor, root, containers, 'set');
     if (located.ok && located.kind === 'missing-key') {
-      createContainers(editor, located.parent, containers.slice(located.missing), content);
+      const missing = containers.slice(located.missing);
+      if (!missing.every(isKey)) {
+        throw invalidated();
+      }
+      const carried = carriedSpreads(editor, located.parent.properties, missing[0]);
+      if (!carried.ok) {
+        throw invalidated();
+      }
+      located.parent.append([containerMember(editor, missing, content, carried.spread)]);
       return;
     }
     const slot = located.ok ? valueAt(editor, located) : undefined;

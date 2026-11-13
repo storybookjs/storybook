@@ -66,6 +66,12 @@ A spread of a trusted local object literal known to lack the field is the except
 A local object literal is trusted for its own members only, and only while every reference to it reads it as a type does, such as `typeof Base`; an assignment, `Object.assign`, an alias, a call it is passed to, or code that can run with `this` bound to it makes it unknown.
 Every case is a test in `CsfObject.test.ts` (the `spreads` block).
 
+Pass `{ overrideSpreads: true }` to `set` to place a shadowed field after the spreads that override it.
+The default still refuses that edit, and a spread known to lack the field still leaves it in place.
+For a nested path, the new parent carries the last effective spread value, rather than merging all
+earlier values. If the spread might lack the field, the local value is kept as a fallback. Moving a
+parent that evaluates code, or carrying ambiguous spreads, is refused without changing the file.
+
 For edits that no path addresses, `CsfFile.editor` and `ConfigFile.editor` are the file's `SourceEditor`, and `program` its current parse; `CsfFile.appendStatement(code)` adds a statement that `formatCsf` prints. A commit parses and indexes the file again. The underscored `_editor`, `_program` and `_appendStatement` are deprecated aliases.
 
 `CsfFile.changed` is true once any mutation has been applied, which is the signal for whether the file needs to be written back.

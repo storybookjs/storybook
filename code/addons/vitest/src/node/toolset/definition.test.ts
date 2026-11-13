@@ -422,7 +422,7 @@ Fix or leave out the arguments listed above, then run again.`);
       );
     });
 
-    it('fails a focused run in which none of the selected stories ran', async () => {
+    it('passes a focused run in which none of the selected stories ran, as Vitest does with skipped tests', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({
         ...completed({ storyIds: ['button--primary', 'button--secondary'] }),
         selection: { files: { filters: ['Button'], storyFiles: 1 }, storyCount: 2 },
@@ -430,11 +430,11 @@ Fix or leave out the arguments listed above, then run again.`);
 
       const outcome = await runTests();
 
-      expect(outcome.ok).toBe(false);
+      expect(outcome.ok).toBe(true);
       expect(outcome.markdown).toBe(`## Result
 
 1 story file matches \`Button\`: selected 2 stories; none ran, they are excluded from tests (for example by tags).
-Failed: none of the selected stories ran.
+No component tests ran.
 Accessibility: not checked.`);
     });
 
@@ -469,6 +469,36 @@ File arguments select story files by path, as Vitest filters select test files. 
         .toBe(`No stories are affected by the 2 changed files (uncommitted), so no tests ran.
 To test more, pass a ref (\`--changed main\`) or story files, or leave out every argument to run every story.`);
       expect(mcpOutcome.markdown).toContain('pass a ref (`changed: "main"`)');
+    });
+
+    it('passes when no story file matches the filters under changed, as Vitest does', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue({
+        status: 'no-stories',
+        notFoundMessages: [],
+        selection: { files: { filters: ['src/Button.tsx'], storyFiles: 0 } },
+      });
+
+      const outcome = await runTests();
+
+      expect(outcome.ok).toBe(true);
+      expect(outcome.markdown).toContain(
+        'No story files found for `src/Button.tsx`, so no tests ran.'
+      );
+    });
+
+    it('says when the changes affect none of the stories the other forms selected', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue({
+        status: 'no-stories',
+        notFoundMessages: [],
+        selection: {
+          files: { filters: ['Header'], storyFiles: 1 },
+          changed: { changedFiles: 2, storyFiles: 3 },
+        },
+      });
+
+      expect((await runTests()).markdown).toContain(
+        'None of the selected stories is affected by the 2 changed files (uncommitted), so no tests ran.'
+      );
     });
 
     it('says when git reports no changes at all', async () => {

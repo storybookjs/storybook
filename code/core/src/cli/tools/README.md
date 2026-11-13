@@ -67,8 +67,8 @@ run caller-side (`stories.preview` reads `origin` from the instance record).
 Tool arguments are `--key value` flags spelled exactly like the input schema keys (camelCase, e.g.
 `--storybookId`); there are no kebab-case aliases. A method that declares `fileArguments` also takes bare
 arguments, as test runners take files: `test run src/Button.stories.tsx Card` fills its
-`files` input. The CLI resolves them against the directory the command runs in (not `--cwd`)
-before the call, and appends them to any `--files` value. A bare token right after a flag is that
+`files` input. The CLI resolves those that exist against the directory the command runs in (not
+`--cwd`) before the call, and passes the rest, such as substring filters, as typed, and appends them to any `--files` value. A bare token right after a flag is that
 flag's value, so put files first or after `--`. Other tools reject bare arguments. Toolset inputs are `v.strictObject`, so a flag
 or `--input` key the tool does not declare is an invalid-input error, and the CLI names the flag
 and lists the valid ones.

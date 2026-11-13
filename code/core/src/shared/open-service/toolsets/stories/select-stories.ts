@@ -4,8 +4,7 @@ import type { StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
 import { basename, isAbsolute, join, normalize, relative, resolve } from 'pathe';
 
-import { findStoriesByComponent } from './find-by-component.ts';
-import type { ModuleGraphAccess } from './resolve-component-stories.ts';
+import { reasonForStatus, type ModuleGraphAccess } from './resolve-component-stories.ts';
 
 /** Story files and the stories in them, as story index import paths and entry ids. */
 export type StorySelection = { storyFiles: string[]; storyIds: string[] };
@@ -72,10 +71,15 @@ export function filterStoryFiles({
   return toSelection(matched, byFile);
 }
 
-/** Changes to these rerun every story, as Vitest's default `forceRerunTriggers`. */
+/**
+ * Changes to these rerun every story, as in Vitest: its default `forceRerunTriggers` (`package.json`,
+ * a vite or vitest config) and the env files Vite loads (`.env`, `.env.local`, `.env.<mode>`, …).
+ */
 function isRerunTrigger(file: string): boolean {
   const name = basename(file);
-  return name === 'package.json' || /^(vite|vitest)\.config\./.test(name);
+  return (
+    name === 'package.json' || /^(vite|vitest)\.config\./.test(name) || /^\.env(\..+)?$/.test(name)
+  );
 }
 
 export type ChangedStories =
@@ -124,23 +128,32 @@ export async function findChangedStories({
 
   if (otherFiles.length > 0) {
     const moduleGraph = getModuleGraph();
-    const lookup = await findStoriesByComponent({
-      componentPaths: otherFiles,
-      maxDistance: Number.POSITIVE_INFINITY,
-      index,
-      moduleGraph,
-    });
-    if (!lookup.available) {
-      return { kind: 'unavailable', reason: lookup.reason };
+    if (!moduleGraph) {
+      return {
+        kind: 'unavailable',
+        reason: "Storybook's module graph is not available in this process.",
+      };
+    }
+    const status = await moduleGraph.queries.status.loaded(undefined);
+    if (status.value !== 'ready') {
+      return { kind: 'unavailable', reason: reasonForStatus(status) };
     }
     const previewLoaded = await isLoadedByPreview(moduleGraph, otherFiles);
+    if (previewLoaded === undefined) {
+      return {
+        kind: 'unavailable',
+        reason: 'Storybook could not tell which files its preview loads.',
+      };
+    }
     const previewFile = otherFiles.find((_, position) => previewLoaded[position]);
     if (previewFile) {
       return { kind: 'every-story', trigger: previewFile };
     }
-    for (const result of lookup.results) {
-      for (const match of result.matches) {
-        selected.add(canonical(resolve(workingDir, match.importPath)));
+    // The story files that import each changed file, at any depth, as Vitest's related tests.
+    const hits = await moduleGraph.queries.storiesForFiles.loaded({ files: otherFiles });
+    for (const fileHits of hits) {
+      for (const { storyFile } of fileHits ?? []) {
+        selected.add(canonical(resolve(workingDir, storyFile)));
       }
     }
   }
@@ -149,24 +162,16 @@ export async function findChangedStories({
 }
 
 /**
- * Whether the preview loads each file, asked with both the given and the real path, as the graph
- * keys files by their real path. A graph that cannot answer (an older instance, a preset that
- * throws) leaves every file to the import lookup.
+ * Whether the preview loads each file. `undefined` when the graph cannot answer (an older instance,
+ * a preset that throws): selecting nothing then would read as "no story affected".
  */
 async function isLoadedByPreview(
-  moduleGraph: ModuleGraphAccess | undefined,
+  moduleGraph: ModuleGraphAccess,
   files: string[]
-): Promise<boolean[]> {
-  const query = moduleGraph?.queries.loadedByPreview;
-  if (!query) {
-    return [];
-  }
+): Promise<boolean[] | undefined> {
   try {
-    const answers = await query.loaded({ files: [...files, ...files.map(canonical)] });
-    return files.map((_, position) =>
-      Boolean(answers[position] || answers[files.length + position])
-    );
+    return (await moduleGraph.queries.loadedByPreview?.loaded({ files })) ?? files.map(() => false);
   } catch {
-    return [];
+    return undefined;
   }
 }

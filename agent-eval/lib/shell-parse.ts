@@ -432,19 +432,26 @@ function parseToolArguments(
     flagArgs[key] = value === undefined ? true : coerceValue(value);
   }
 
-  if (positionals.length > 0) {
-    if (!takesFiles) {
-      return undefined;
-    }
-    const given = flagArgs.files;
-    flagArgs.files = [
-      ...(given === undefined ? [] : Array.isArray(given) ? given : [given]),
-      ...positionals,
-    ];
+  if (positionals.length > 0 && !takesFiles) {
+    return undefined;
   }
+  // Bare arguments are appended to `files`, after `--input` and `--files`, as the CLI does.
+  const withFiles = (args: Record<string, unknown>): Record<string, unknown> => {
+    if (positionals.length === 0) {
+      return args;
+    }
+    const given = args.files;
+    return {
+      ...args,
+      files: [
+        ...(given === undefined ? [] : Array.isArray(given) ? given : [given]),
+        ...positionals,
+      ],
+    };
+  };
 
   if (rawInput === undefined) {
-    return flagArgs;
+    return withFiles(flagArgs);
   }
   let input: unknown;
   try {
@@ -452,9 +459,9 @@ function parseToolArguments(
   } catch {
     // The CLI saw what the shell made of this (`$(cat file)` from an earlier
     // command, `$VAR`); keep the raw text so a failing assertion shows it.
-    return unresolved.has(rawInput) ? { input: rawInput, ...flagArgs } : undefined;
+    return unresolved.has(rawInput) ? withFiles({ input: rawInput, ...flagArgs }) : undefined;
   }
-  return isRecord(input) ? { ...input, ...flagArgs } : undefined;
+  return isRecord(input) ? withFiles({ ...input, ...flagArgs }) : undefined;
 }
 
 function coerceValue(value: string): unknown {

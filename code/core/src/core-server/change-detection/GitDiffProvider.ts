@@ -91,24 +91,27 @@ export class GitDiffProvider {
     };
   }
 
-  /** Files deleted in the working tree or the index, which {@link getChangedFiles} leaves out. */
-  async getDeletedFiles(): Promise<Set<string>> {
-    const repoRoot = await this.getRepoRoot();
-    const [staged, unstaged] = await Promise.all([
-      this.runGitCommand(repoRoot, ['diff', '--name-only', '--diff-filter=D', '--cached']),
-      this.runGitCommand(repoRoot, ['diff', '--name-only', '--diff-filter=D']),
-    ]);
-    return new Set([...parseChangedFiles(staged.stdout), ...parseChangedFiles(unstaged.stdout)]);
-  }
-
   /**
-   * Files changed on this branch since it forked from `ref` (`git diff <ref>...HEAD`), as Vitest's
-   * `--changed <ref>` reads them. Repository-relative, deletions included.
+   * The files Vitest's `--changed` reads, with Vitest's own git commands: the staged files and the
+   * unstaged and untracked ones (deletions included), plus, with `since`, the files changed on this
+   * branch since it forked from that ref. Repository-relative. `-z` keeps paths with spaces or
+   * non-ASCII characters intact, where line output would quote them.
    */
-  async getFilesSince(ref: string): Promise<Set<string>> {
+  async getChangedFilesForTests(since?: string): Promise<string[]> {
+    // A ref is passed to git as an argument; one that starts with `-` would be read as an option.
+    if (since?.startsWith('-')) {
+      throw new ChangeDetectionFailureError(`\`${since}\` is not a git ref.`);
+    }
     const repoRoot = await this.getRepoRoot();
-    const { stdout } = await this.runGitCommand(repoRoot, ['diff', '--name-only', `${ref}...HEAD`]);
-    return parseChangedFiles(stdout);
+    const commands = [
+      ['diff', '--cached', '--name-only', '-z'],
+      ['ls-files', '-z', '--other', '--modified', '--exclude-standard'],
+      ...(since ? [['diff', '--name-only', '-z', `${since}...HEAD`]] : []),
+    ];
+    const outputs = await Promise.all(commands.map((args) => this.runGitCommand(repoRoot, args)));
+    return [
+      ...new Set(outputs.flatMap(({ stdout }) => stdout.split('\0').filter((path) => path !== ''))),
+    ];
   }
 
   async getHeadCommit(): Promise<string> {

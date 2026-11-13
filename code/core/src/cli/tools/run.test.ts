@@ -5,7 +5,8 @@
  * everything behind the commander wiring, without spawning processes.
  */
 
-import { resolve } from 'node:path';
+import { dirname, relative, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { logger } from 'storybook/internal/node-logger';
 import type { StoryIndex } from 'storybook/internal/types';
@@ -892,37 +893,44 @@ describe('outcome mapping', () => {
   });
 
   describe('file arguments', () => {
-    it('fills the declared key from bare arguments, resolved against the current directory', async () => {
+    // A file that exists, named relative to the directory the tests run in.
+    const EXISTING = relative(process.cwd(), fileURLToPath(import.meta.url));
+    const EXISTING_DIR = relative(process.cwd(), dirname(fileURLToPath(import.meta.url)));
+
+    it('resolves bare arguments that exist against the current directory, and passes patterns as typed', async () => {
       const { deps } = makeDeps();
 
-      const result = await run(
-        ['echo', 'files', 'src/A.stories.tsx', '/abs/B.tsx', '--json'],
-        deps
-      );
+      const result = await run(['echo', 'files', EXISTING, 'Button', '--json'], deps);
 
       expect(result.exitCode).toBe(0);
-      expect(JSON.parse(result.output)).toEqual({
-        files: [resolve('src/A.stories.tsx'), resolve('/abs/B.tsx')],
-      });
+      expect(JSON.parse(result.output)).toEqual({ files: [resolve(EXISTING), 'Button'] });
+    });
+
+    it('keeps the trailing slash of a directory, so it matches only inside it', async () => {
+      const { deps } = makeDeps();
+
+      const result = await run(['echo', 'files', `${EXISTING_DIR}/`, '--json'], deps);
+
+      expect(JSON.parse(result.output)).toEqual({ files: [`${resolve(EXISTING_DIR)}${sep}`] });
     });
 
     it('appends bare arguments to the files given with the flag', async () => {
       const { deps } = makeDeps();
 
       const result = await run(
-        ['echo', 'files', '--files', '["/abs/A.tsx"]', '--json', '--', 'B.tsx'],
+        ['echo', 'files', '--files', '["/abs/A.tsx"]', '--json', '--', EXISTING],
         deps
       );
 
-      expect(JSON.parse(result.output)).toEqual({ files: ['/abs/A.tsx', resolve('B.tsx')] });
+      expect(JSON.parse(result.output)).toEqual({ files: ['/abs/A.tsx', resolve(EXISTING)] });
     });
 
     it('resolves a single --files path the way it resolves bare arguments', async () => {
       const { deps } = makeDeps();
 
-      const result = await run(['echo', 'files', '--files', 'src/A.tsx', '--json'], deps);
+      const result = await run(['echo', 'files', '--files', EXISTING, '--json'], deps);
 
-      expect(JSON.parse(result.output)).toEqual({ files: [resolve('src/A.tsx')] });
+      expect(JSON.parse(result.output)).toEqual({ files: [resolve(EXISTING)] });
     });
 
     it('rejects bare arguments for a tool that takes no files, without calling it', async () => {

@@ -16,12 +16,7 @@ import {
   type ToolsetTelemetryReport,
 } from 'storybook/open-service';
 
-import {
-  countTestRunFailures,
-  formatTestRun,
-  ranNothingSelected,
-  summarizeTestRun,
-} from './format.ts';
+import { countTestRunFailures, formatTestRun, summarizeTestRun } from './format.ts';
 import { createAsyncQueue, runStoryTests, type TestChannel } from './run.ts';
 
 const errorLikeSchema: v.GenericSchema = v.object({
@@ -89,6 +84,8 @@ const selectionSchema = v.object({
       storyFiles: v.optional(v.number()),
     })
   ),
+  /** How many story ids `stories` gave. */
+  stories: v.optional(v.number()),
   /** Stories the run was asked for; absent when the selection is every story. */
   storyCount: v.optional(v.number()),
 });
@@ -150,7 +147,7 @@ const runInputSchema = v.strictObject({
     v.pipe(
       storyInputArraySchema,
       v.description(
-        `Stories to test for focused feedback. Omit this field and \`files\` to run tests for all available stories.
+        `Stories to test for focused feedback. Omit this field, \`files\` and \`changed\` to run tests for all available stories.
 Prefer running tests for specific stories while developing to get faster feedback,
 and omit it once before you finish, to verify every story.
 Prefer { storyId } when you don't already have story file context, since this avoids filesystem discovery.
@@ -285,8 +282,7 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
     case 'completed':
       return (
         Object.values(countTestRunFailures(data.result, data.a11y)).some((count) => count > 0) ||
-        (data.notFound?.length ?? 0) > 0 ||
-        ranNothingSelected(data.result)
+        (data.notFound?.length ?? 0) > 0
       );
     case 'no-stories':
       // A filter or id that matched nothing fails, as in Vitest; `changed` affecting nothing passes.

@@ -2,7 +2,7 @@ import { Channel } from 'storybook/internal/channels';
 import type { Presets } from 'storybook/internal/types';
 
 import type { InlineConfig, Plugin } from 'vite';
-import { resolveConfig, build as viteBuild } from 'vite';
+import { mergeConfig, resolveConfig, build as viteBuild } from 'vite';
 import { expect, it, vi } from 'vitest';
 
 import { build } from './build.ts';
@@ -28,6 +28,34 @@ it('keeps Vite from copying the public dir, which Storybook copies through stati
     expect.objectContaining({
       build: expect.objectContaining({
         copyPublicDir: false,
+        chunkSizeWarningLimit: 1500,
+      }),
+    })
+  );
+});
+
+it('allows viteFinal to override the default chunk size warning limit', async () => {
+  await build({
+    configType: 'PRODUCTION',
+    configDir: '',
+    channel: new Channel({}),
+    presets: {
+      apply: async (key: string, config?: InlineConfig) => {
+        if (key === 'core') {
+          return { builder: {} };
+        }
+        if (key === 'viteFinal') {
+          return mergeConfig(config ?? {}, { build: { chunkSizeWarningLimit: 2000 } });
+        }
+        return config;
+      },
+    } as Presets,
+  });
+
+  expect(viteBuild).toHaveBeenCalledWith(
+    expect.objectContaining({
+      build: expect.objectContaining({
+        chunkSizeWarningLimit: 2000,
       }),
     })
   );

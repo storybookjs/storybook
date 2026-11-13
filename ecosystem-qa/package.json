@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ai-hero/sandcastle": "0.13.0",
+    "@anthropic-ai/sdk": "1.4.0",
     "gifenc": "1.0.3",
     "pathe": "^2.0.3",
     "playwright": "1.58.2",

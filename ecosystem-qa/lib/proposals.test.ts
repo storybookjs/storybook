@@ -2,7 +2,16 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
-import { asIssue, finding, loaded, RUN_URL, VERSION } from './fixtures.ts';
+import {
+  asIssue,
+  finding,
+  issueOn,
+  loaded,
+  metadata,
+  RUN_URL,
+  single,
+  VERSION,
+} from './fixtures.ts';
 import {
   groupFindings,
   hitsFor,
@@ -10,30 +19,61 @@ import {
   renderCommentBody,
   renderIssueBody,
   toProposal,
+  type Cluster,
   type FindingGroup,
   type IssueHit,
   type QaIssue,
 } from './proposals.ts';
 
-const issueFor = (group: FindingGroup | undefined) => asIssue(toProposal(group!, [], RUN_URL));
+const OPTIONS = { runUrl: RUN_URL };
+const issueFor = (group: FindingGroup | undefined) =>
+  asIssue(toProposal(single(group), [], OPTIONS));
 const byName = (name: string) => `https://assets.example/${name}`;
 
 describe('hitsFor', () => {
-  const issue = (number: number, body: string): QaIssue => ({
+  const issue = (number: number, body: string, comments: string[] = []): QaIssue => ({
     number,
+    title: `Issue ${number}`,
     body,
+    comments,
     labels: ['internal-qa'],
     state: 'open',
   });
 
-  it('returns only the issues whose body carries the fingerprint', () => {
+  it('returns only the issues whose metadata carries the fingerprint, alone or in a list', () => {
     const issues = [
-      issue(1, 'fingerprint: 0123456789abcdef'),
-      issue(2, 'fingerprint: fedcba9876543210'),
-      issue(3, 'seen again: 0123456789abcdef'),
+      issue(1, metadata('0123456789abcdef')),
+      issue(2, metadata('fedcba9876543210')),
+      issue(3, `Bug report\n\n${metadata('1111111111111111', '0123456789abcdef')}\n`),
     ];
 
-    expect(hitsFor(issues, '0123456789abcdef').map((hit) => hit.number)).toEqual([1, 3]);
+    expect(hitsFor(issues, ['0123456789abcdef']).map((hit) => hit.number)).toEqual([1, 3]);
+  });
+
+  it('finds an issue by a fingerprint that only one of its comments carries', () => {
+    const issues = [
+      issue(1, metadata('fedcba9876543210'), [
+        'no metadata here',
+        `Seen again\n\n${metadata('2222222222222222', '0123456789abcdef')}`,
+      ]),
+      issue(2, metadata('1111111111111111')),
+    ];
+
+    expect(hitsFor(issues, ['0123456789abcdef']).map((hit) => hit.number)).toEqual([1]);
+  });
+
+  it('does not count a fingerprint in the text above the metadata block', () => {
+    const quoted = [
+      '```text',
+      'Same as 0123456789abcdef, see below.',
+      metadata('0123456789abcdef'),
+      '```',
+      '',
+      metadata('fedcba9876543210'),
+    ].join('\n');
+
+    expect(hitsFor([issue(1, quoted)], ['0123456789abcdef'])).toEqual([]);
+    expect(hitsFor([issue(1, quoted)], ['fedcba9876543210'])).toHaveLength(1);
   });
 });
 
@@ -66,7 +106,7 @@ describe('groupFindings', () => {
     ]);
 
     const proposals = groupFindings([windowsCodex, linuxClaude]).map((group) =>
-      asIssue(toProposal(group, [], RUN_URL))
+      asIssue(toProposal(single(group), [], OPTIONS))
     );
 
     expect(proposals).toHaveLength(2);
@@ -104,16 +144,20 @@ describe('toProposal', () => {
 
   it('suppresses a finding whose fingerprint is on a qa:known issue', () => {
     const proposal = toProposal(
-      group!,
-      [{ number: 7, labels: ['bug', 'qa:known'], state: 'open' }],
-      RUN_URL
+      single(group),
+      [issueOn(group, { number: 7, labels: ['bug', 'qa:known'], state: 'open' })],
+      OPTIONS
     );
 
     expect(proposal).toMatchObject({ kind: 'suppressed', existingIssue: 7 });
   });
 
   it('turns any other hit into a comment on that issue', () => {
-    const proposal = toProposal(group!, [{ number: 9, labels: ['bug'], state: 'open' }], RUN_URL);
+    const proposal = toProposal(
+      single(group),
+      [issueOn(group, { number: 9, labels: ['bug'], state: 'open' })],
+      OPTIONS
+    );
 
     expect(proposal).toMatchObject({ kind: 'comment', existingIssue: 9 });
     expect(proposal.kind === 'comment' && renderCommentBody(proposal)).toContain(
@@ -123,26 +167,30 @@ describe('toProposal', () => {
 
   it('falls back to the run record when the captured system info is empty', () => {
     const [empty] = groupFindings([{ ...loaded('linux', 'claude', [finding()]), systemInfo: '' }]);
-    const proposal = toProposal(empty!, [], RUN_URL);
+    const proposal = toProposal(single(empty), [], OPTIONS);
 
     expect(proposal.kind === 'issue' && proposal.system).toContain('OS: linux');
   });
 
   it('comments on the open issue when a closed one has the same fingerprint', () => {
     const proposal = toProposal(
-      group!,
+      single(group),
       [
-        { number: 9, labels: ['bug'], state: 'closed' },
-        { number: 12, labels: ['bug'], state: 'open' },
+        issueOn(group, { number: 9, labels: ['bug'], state: 'closed' }),
+        issueOn(group, { number: 12, labels: ['bug'], state: 'open' }),
       ],
-      RUN_URL
+      OPTIONS
     );
 
     expect(proposal).toMatchObject({ kind: 'comment', existingIssue: 12 });
   });
 
   it('files a bug that came back as a new issue linked to the closed one', () => {
-    const proposal = toProposal(group!, [{ number: 9, labels: ['bug'], state: 'closed' }], RUN_URL);
+    const proposal = toProposal(
+      single(group),
+      [issueOn(group, { number: 9, labels: ['bug'], state: 'closed' })],
+      OPTIONS
+    );
 
     expect(proposal).toMatchObject({ kind: 'issue', previousIssue: 9 });
     expect(proposal.kind === 'issue' && renderIssueBody(proposal, (name) => name)).toContain(
@@ -152,9 +200,9 @@ describe('toProposal', () => {
 
   it('keeps a qa:known suppression even when that issue is closed', () => {
     const proposal = toProposal(
-      group!,
-      [{ number: 7, labels: ['bug', 'qa:known'], state: 'closed' }],
-      RUN_URL
+      single(group),
+      [issueOn(group, { number: 7, labels: ['bug', 'qa:known'], state: 'closed' })],
+      OPTIONS
     );
 
     expect(proposal).toMatchObject({ kind: 'suppressed', existingIssue: 7 });
@@ -175,6 +223,251 @@ describe('toProposal', () => {
     expect(proposal.title).toBe('[SB 11 QA]: New story export never reaches the sidebar');
     expect(proposal.milestone).toBe('11');
     expect(proposal.assetDir).toBe(`assets/${VERSION}/${group!.fingerprint}`);
+  });
+});
+
+describe('toProposal for a cluster', () => {
+  const [hmr, build] = groupFindings([
+    loaded('linux', 'claude', [finding()]),
+    loaded('windows', 'codex', [
+      finding({
+        checkId: 'build.static',
+        title: 'Build fails @someone\n### Injected <!-- x',
+        errorText: 'ENOSPC',
+      }),
+    ]),
+  ]);
+  const cluster = (existingIssue?: number): Cluster => ({
+    lead: hmr!,
+    members: [hmr!, build!],
+    ...(existingIssue !== undefined ? { existingIssue } : {}),
+  });
+  const similar = (number: number, labels: string[], state: 'open' | 'closed') =>
+    issueOn(undefined, { number, labels, state });
+
+  const onBoth = (number: number, labels: string[], state: 'open' | 'closed') => ({
+    ...issueOn(hmr, { number, labels, state }),
+    body: metadata(hmr!.fingerprint, build!.fingerprint),
+  });
+
+  it('does not silence a lead that is on no issue because another member is on a qa:known issue', () => {
+    const proposal = toProposal(
+      cluster(),
+      [issueOn(build, { number: 7, labels: ['qa:known'], state: 'closed' })],
+      OPTIONS
+    );
+
+    expect(proposal).toMatchObject({ kind: 'issue', previousIssue: 7 });
+  });
+
+  it('suppresses a cluster when every member is on a qa:known issue', () => {
+    const proposal = toProposal(cluster(), [onBoth(7, ['qa:known'], 'closed')], OPTIONS);
+
+    expect(proposal).toMatchObject({ kind: 'suppressed', existingIssue: 7, reason: 'known' });
+  });
+
+  it('files nothing for a cluster a person skipped, even with a member on an open issue', () => {
+    const proposal = toProposal(
+      { ...cluster(), skip: 'off by default for this framework' },
+      [issueOn(build, { number: 7, labels: ['bug'], state: 'open' })],
+      OPTIONS
+    );
+
+    expect(proposal).toMatchObject({
+      kind: 'skipped',
+      reason: 'off by default for this framework',
+    });
+    expect(proposal.related).toHaveLength(1);
+  });
+
+  it('names the members a suppressed cluster silences along with its lead', () => {
+    const proposal = toProposal(cluster(), [onBoth(7, ['qa:known'], 'open')], OPTIONS);
+
+    expect(proposal.kind).toBe('suppressed');
+    expect(proposal.related.map(({ fingerprint, checkId }) => ({ fingerprint, checkId }))).toEqual([
+      { fingerprint: build!.fingerprint, checkId: 'build.static' },
+    ]);
+  });
+
+  it('comments on an open exact hit before an open similar issue', () => {
+    const proposal = toProposal(
+      cluster(20),
+      [similar(20, ['bug'], 'open'), issueOn(build, { number: 9, labels: ['bug'], state: 'open' })],
+      OPTIONS
+    );
+
+    expect(proposal).toMatchObject({ kind: 'comment', existingIssue: 9 });
+  });
+
+  it('comments on a similar qa:known issue instead of suppressing the cluster', () => {
+    const proposal = toProposal(cluster(20), [similar(20, ['bug', 'qa:known'], 'open')], OPTIONS);
+
+    expect(proposal).toMatchObject({ kind: 'comment', existingIssue: 20 });
+  });
+
+  it('files a new issue linked to a closed similar issue', () => {
+    const proposal = toProposal(cluster(20), [similar(20, ['bug'], 'closed')], OPTIONS);
+
+    expect(proposal).toMatchObject({ kind: 'issue', previousIssue: 20 });
+  });
+
+  it('takes the finding from the lead and the sources from every member', () => {
+    const proposal = asIssue(toProposal(cluster(), [], OPTIONS));
+
+    expect(proposal.fingerprint).toBe(hmr!.fingerprint);
+    expect(proposal.title).toBe('[SB 11 QA]: New story export never reaches the sidebar');
+    expect(proposal.sources.map((source) => `${source.os}/${source.engine}`)).toEqual([
+      'linux/claude',
+      'windows/codex',
+    ]);
+    expect(proposal.related).toEqual([
+      {
+        fingerprint: build!.fingerprint,
+        checkId: 'build.static',
+        title: 'Build fails `@someone` ### Injected &lt;!-- x',
+        sources: [expect.objectContaining({ os: 'windows', engine: 'codex' })],
+      },
+    ]);
+  });
+
+  it('lists the other members inline with a neutralised title in the issue and the comment', () => {
+    const line =
+      'Also seen as:\n\n- `build.static` on storybookjs/mealdrop (windows, codex): Build fails `@someone` ### Injected &lt;!-- x\n';
+    const comment = toProposal(
+      cluster(),
+      [issueOn(hmr, { number: 9, labels: ['bug'], state: 'open' })],
+      OPTIONS
+    );
+
+    expect(renderIssueBody(asIssue(toProposal(cluster(), [], OPTIONS)), byName)).toContain(
+      `windows, codex (gpt-5.4), sandbox none\n\n${line}`
+    );
+    expect(comment.kind === 'comment' && renderCommentBody(comment)).toContain(line);
+  });
+
+  it('names every member fingerprint in the metadata so a later sweep finds the issue by any', () => {
+    const body = renderIssueBody(asIssue(toProposal(cluster(), [], OPTIONS)), byName);
+
+    expect(body).toContain(
+      `fingerprint: ${hmr!.fingerprint}\nfingerprints: ${hmr!.fingerprint}, ${build!.fingerprint}\n`
+    );
+  });
+
+  it('renders a single-member cluster without related findings or a fingerprint list', () => {
+    const body = renderIssueBody(issueFor(hmr), byName);
+
+    expect(body).not.toContain('Also seen as');
+    expect(body).not.toContain('fingerprints:');
+  });
+});
+
+describe('toProposal with the publish date of the tested version', () => {
+  const [group] = groupFindings([loaded('linux', 'claude', [finding()])]);
+  const PUBLISHED = '2026-11-03T19:32:47Z';
+  const closed = (number: number, completedAt?: string) => ({
+    ...issueOn(group, { number, labels: ['bug'], state: 'closed' }),
+    ...(completedAt ? { completedAt } : {}),
+  });
+
+  it('suppresses a bug whose issue was closed as completed after the version was published', () => {
+    const proposal = toProposal(single(group), [closed(9, '2026-11-05T10:00:00Z')], {
+      ...OPTIONS,
+      publishedAt: PUBLISHED,
+    });
+
+    expect(proposal).toMatchObject({ kind: 'suppressed', existingIssue: 9, reason: 'fixed-later' });
+  });
+
+  it('files a bug again that came back after a fix the version already had', () => {
+    const proposal = toProposal(single(group), [closed(9, '2026-11-01T10:00:00Z')], {
+      ...OPTIONS,
+      publishedAt: PUBLISHED,
+    });
+
+    expect(proposal).toMatchObject({ kind: 'issue', previousIssue: 9 });
+  });
+
+  it('files a bug again whose issue was not closed as completed', () => {
+    const proposal = toProposal(single(group), [closed(9)], {
+      ...OPTIONS,
+      publishedAt: PUBLISHED,
+    });
+
+    expect(proposal).toMatchObject({ kind: 'issue', previousIssue: 9 });
+  });
+
+  it('files a bug again when the publish date is unknown', () => {
+    const proposal = toProposal(single(group), [closed(9, '2026-11-05T10:00:00Z')], OPTIONS);
+
+    expect(proposal).toMatchObject({ kind: 'issue', previousIssue: 9 });
+  });
+
+  it('comments on a similar issue that was fixed after the version was published, and says so', () => {
+    const proposal = toProposal(
+      { ...single(group), existingIssue: 20 },
+      [
+        {
+          ...issueOn(undefined, { number: 20, labels: ['bug'], state: 'closed' }),
+          completedAt: '2026-11-05T10:00:00Z',
+        },
+      ],
+      { ...OPTIONS, publishedAt: PUBLISHED }
+    );
+
+    expect(proposal).toMatchObject({ kind: 'comment', existingIssue: 20, reason: 'fixed-later' });
+    expect(proposal.kind === 'comment' && renderCommentBody(proposal)).toMatch(
+      new RegExp(`^This issue was fixed after ${VERSION.replaceAll('.', '\\.')} was published`)
+    );
+  });
+
+  it('files a new issue linked to a similar issue that was closed before the version was published', () => {
+    const proposal = toProposal(
+      { ...single(group), existingIssue: 20 },
+      [
+        {
+          ...issueOn(undefined, { number: 20, labels: ['bug'], state: 'closed' }),
+          completedAt: '2026-11-01T10:00:00Z',
+        },
+      ],
+      { ...OPTIONS, publishedAt: PUBLISHED }
+    );
+
+    expect(proposal).toMatchObject({ kind: 'issue', previousIssue: 20 });
+  });
+
+  it('comments on the fixed issue when only one member of a group is on it', () => {
+    const [fixedOne, newOne] = groupFindings([
+      loaded('linux', 'claude', [
+        finding(),
+        finding({ checkId: 'build.static', title: 'Build fails', errorText: 'ENOSPC' }),
+      ]),
+    ]);
+    const proposal = toProposal(
+      { lead: newOne!, members: [newOne!, fixedOne!] },
+      [
+        {
+          ...issueOn(fixedOne, { number: 9, labels: ['bug'], state: 'closed' }),
+          completedAt: '2026-11-05T10:00:00Z',
+        },
+      ],
+      { ...OPTIONS, publishedAt: PUBLISHED }
+    );
+
+    expect(proposal).toMatchObject({ kind: 'comment', existingIssue: 9, reason: 'fixed-later' });
+    expect(proposal.fingerprint).toBe(newOne!.fingerprint);
+  });
+
+  it('suppresses a later fix before commenting on an open similar issue', () => {
+    const proposal = toProposal(
+      { ...single(group), existingIssue: 20 },
+      [
+        issueOn(undefined, { number: 20, labels: ['bug'], state: 'open' }),
+        closed(9, '2026-11-05T10:00:00Z'),
+      ],
+      { ...OPTIONS, publishedAt: PUBLISHED }
+    );
+
+    expect(proposal).toMatchObject({ kind: 'suppressed', existingIssue: 9, reason: 'fixed-later' });
   });
 });
 
@@ -272,7 +565,11 @@ describe('renderIssueBody', () => {
       loaded('windows', 'codex', [finding()]),
     ]);
 
-    const proposal = toProposal(group!, [{ number: 9, labels: ['bug'], state: 'open' }], RUN_URL);
+    const proposal = toProposal(
+      single(group),
+      [issueOn(group, { number: 9, labels: ['bug'], state: 'open' })],
+      OPTIONS
+    );
     const body = proposal.kind === 'comment' ? renderCommentBody(proposal) : '';
 
     expect(body).toContain(`- ${VERSION}: linux, claude (claude-sonnet-5-5), sandbox docker`);

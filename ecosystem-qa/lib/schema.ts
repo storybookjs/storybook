@@ -176,6 +176,8 @@ export const RunResultFile = z.strictObject({
   error: z.string().optional(),
   // The error the sandbox raised after the agent had finished, when the answer came from the run log.
   recoveredFrom: z.string().optional(),
+  // The tag whose MIGRATION.md the agent read, or `checkout` for a tested version without a tag.
+  migrationGuide: z.string().optional(),
 });
 export type RunResultFile = z.infer<typeof RunResultFile>;
 
@@ -190,6 +192,7 @@ const Source = z.strictObject({
   versionBefore: Version.optional(),
   fake: z.boolean(),
 });
+export type Source = z.infer<typeof Source>;
 
 // The filer pushes with a write token to the repository, branch and head named here, so they come
 // from the catalog, the run request and the bundle header, never from what result.json says.
@@ -209,14 +212,45 @@ export const EvidenceFile = z.strictObject({
 });
 export type EvidenceFile = z.infer<typeof EvidenceFile>;
 
-const ProposalBase = {
-  fingerprint: z.string().regex(/^[0-9a-f]{16}$/),
+const Fingerprint = z.string().regex(/^[0-9a-f]{16}$/);
+
+// The root-cause grouping a model or a person writes for one collect, as `groups.json`.
+export const Grouping = z.strictObject({
+  groups: z.array(
+    z.strictObject({
+      // The first member states the cause; the proposal takes its finding, title and evidence.
+      members: z.array(Fingerprint).min(1),
+      // An issue that matches by similarity rather than by fingerprint.
+      existingIssue: z.number().int().optional(),
+      // A person's verdict that the group is not a bug to file, with the reason. Only a person
+      // writes it: the model's answer has no such field.
+      skip: z.string().min(1).optional(),
+    })
+  ),
+});
+export type Grouping = z.infer<typeof Grouping>;
+
+const Related = z.strictObject({
+  fingerprint: Fingerprint,
+  checkId: CheckId,
+  // Already safe to print inline: the agent's title, sanitized when the proposal was built.
   title: z.string().min(1),
   sources: z.array(Source).min(1),
+});
+
+const ProposalBase = {
+  fingerprint: Fingerprint,
+  title: z.string().min(1),
+  sources: z.array(Source).min(1),
+  // The other members of the group, which share the fate of the lead: filed with it or silenced with it.
+  related: z.array(Related),
 };
 
 const ReportBase = {
   ...ProposalBase,
+  // One key for each finding of the group in each run that saw it. The filer adds no comment whose
+  // keys the issue already has.
+  sightings: z.array(z.string().regex(/^[0-9a-f]{12}$/)).min(1),
   labels: z.array(z.string()),
   milestone: z.string(),
   finding: Finding,
@@ -231,15 +265,23 @@ export const Proposal = z.discriminatedUnion('kind', [
     system: z.string(),
     assetDir: z.string(),
     evidence: z.array(EvidenceFile),
-    // A closed issue with this fingerprint: the bug came back, so it is filed anew and linked.
+    // A closed issue this cluster matched: the bug came back, so it is filed anew and linked.
     previousIssue: z.number().int().optional(),
   }),
-  z.strictObject({ kind: z.literal('comment'), ...ReportBase, existingIssue: z.number().int() }),
+  z.strictObject({
+    kind: z.literal('comment'),
+    ...ReportBase,
+    existingIssue: z.number().int(),
+    // Set when the issue is closed and its fix landed after the tested version was published.
+    reason: z.literal('fixed-later').optional(),
+  }),
   z.strictObject({
     kind: z.literal('suppressed'),
     ...ProposalBase,
     existingIssue: z.number().int(),
+    reason: z.enum(['known', 'fixed-later']),
   }),
+  z.strictObject({ kind: z.literal('skipped'), ...ProposalBase, reason: z.string().min(1) }),
 ]);
 export type Proposal = z.infer<typeof Proposal>;
 export type IssueProposal = Extract<Proposal, { kind: 'issue' }>;

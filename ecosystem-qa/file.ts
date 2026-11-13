@@ -19,7 +19,7 @@ import {
 import { cycleRef } from './lib/cycle.ts';
 import { listQaIssues, ghText, pages } from './lib/github.ts';
 import { copyRedacted } from './lib/redact.ts';
-import { hitsFor, openHit, QA_LABEL, type QaIssue } from './lib/proposals.ts';
+import { hitsFor, openHit, QA_LABEL, writtenOn, type QaIssue } from './lib/proposals.ts';
 import { pushTokenEnv } from './lib/push-targets.ts';
 import { Proposal } from './lib/schema.ts';
 import { writeStepSummary } from './lib/step-summary.ts';
@@ -33,7 +33,9 @@ qa-assets branch of --repo and creates the issue or comment with GH_TOKEN. A fai
 not stop the others; the filed and failed table goes to the Step Summary and the exit code is 1 if
 any failed.
 An issue counts as already filed only while it is open and carries the internal-qa label.
-Rerunning is safe: a filed fingerprint, an identical comment and pushed evidence are skipped.`;
+Rerunning is safe: an issue it already created, an identical comment and pushed evidence are
+skipped. When an open issue with one of a proposal's fingerprints appeared after the collect, what
+that issue lacks goes on it as a comment and no second issue is created.`;
 
 const EVIDENCE_PUSH_ATTEMPTS = 3;
 
@@ -189,22 +191,30 @@ const runStep = (step: FilingStep): string | undefined => {
   }
 };
 
-const commentsOn = (issue: number): string[] =>
-  pages(z.object({ body: z.string() }), `repos/${repo}/issues/${issue}/comments`).map(
-    (comment) => comment.body
-  );
-
 const firstLine = (error: unknown) =>
   (error instanceof Error ? error.message : String(error)).split('\n')[0]!.slice(0, 160);
 
+const reportedOn = (proposal: Proposal, issues: QaIssue[]): QaIssue | undefined => {
+  if (proposal.kind === 'issue') {
+    return openHit(
+      hitsFor(issues, [
+        proposal.fingerprint,
+        ...proposal.related.map((related) => related.fingerprint),
+      ])
+    );
+  }
+  return proposal.kind === 'comment'
+    ? issues.find((issue) => issue.number === proposal.existingIssue)
+    : undefined;
+};
+
 const fileProposal = (proposal: Proposal, issues: QaIssue[]): FilingOutcome => {
+  const target = reportedOn(proposal, issues);
   const steps = planFiling(proposal, {
     repo,
     evidenceLinks: 'assets',
-    ...(proposal.kind === 'issue'
-      ? { filedAs: openHit(hitsFor(issues, proposal.fingerprint))?.number }
-      : {}),
-    ...(proposal.kind === 'comment' ? { comments: commentsOn(proposal.existingIssue) } : {}),
+    ...(proposal.kind === 'issue' && target ? { filedAs: target.number } : {}),
+    existing: target ? writtenOn(target) : [],
   });
   let detail = '';
   for (const step of steps) {
@@ -238,7 +248,7 @@ const checkPrerequisites = () => {
 };
 
 if (values.dry) {
-  const counts = ['issue', 'comment', 'suppressed']
+  const counts = ['issue', 'comment', 'suppressed', 'skipped']
     .map((kind) => `${proposals.filter((proposal) => proposal.kind === kind).length} ${kind}`)
     .join(', ');
   writeStepSummary(

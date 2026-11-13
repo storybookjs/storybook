@@ -648,6 +648,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@anthropic-ai/sdk@npm:1.4.0":
+  version: 1.4.0
+  resolution: "@anthropic-ai/sdk@npm:1.4.0"
+  dependencies:
+    "@opentelemetry/api": "npm:^1.4.1"
+    json-schema-to-ts: "npm:^3.1.1"
+    standardwebhooks: "npm:^1.0.0"
+  peerDependencies:
+    zod: ^3.25.0 || ^4.0.0
+  peerDependenciesMeta:
+    zod:
+      optional: true
+  bin:
+    anthropic-ai-sdk: bin/cli
+  checksum: 10c0/ba6c9623a9954416fe0e9b79d6b67352d646ba3d770366517e92622ebbbbb3cea9ecd09f3dce673c9bb7065a53753e7f0bda03222efbf98e50e2cea63f0506da
+  languageName: node
+  linkType: hard
+
 "@anthropic-ai/sdk@npm:^0.117.1":
   version: 0.117.1
   resolution: "@anthropic-ai/sdk@npm:0.117.1"
@@ -5816,6 +5834,13 @@ __metadata:
   version: 1.9.0
   resolution: "@opentelemetry/api@npm:1.9.0"
   checksum: 10c0/9aae2fe6e8a3a3eeb6c1fdef78e1939cf05a0f37f8a4fae4d6bf2e09eb1e06f966ece85805626e01ba5fab48072b94f19b835449e58b6d26720ee19a58298add
+  languageName: node
+  linkType: hard
+
+"@opentelemetry/api@npm:^1.4.1":
+  version: 1.10.0
+  resolution: "@opentelemetry/api@npm:1.10.0"
+  checksum: 10c0/c666f89d882e2e3ea3780b4e419de3ba7e00a80bf334269c3c8507a5e2b4e453e2bc8368f6230f894d789b206c14dde313ea6f51fa7bc629f0eff8480b5d356b
   languageName: node
   linkType: hard
 
@@ -19321,6 +19346,7 @@ __metadata:
   resolution: "ecosystem-qa@workspace:ecosystem-qa"
   dependencies:
     "@ai-hero/sandcastle": "npm:0.13.0"
+    "@anthropic-ai/sdk": "npm:1.4.0"
     "@types/node": "npm:^22.19.1"
     gifenc: "npm:1.0.3"
     memfs: "npm:^4.11.1"

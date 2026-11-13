@@ -33,12 +33,47 @@ interface LoadOptions {
   warn: (message: string) => void;
 }
 
-// The runner job uploads results/ as the artifact qa-result-<os>-<engine>; a local run writes
+// The runner job uploads results/ as the artifact qa-result-<id>-<os>-<engine>; a local run writes
 // results/<id>/<os>/<engine> directly. Only these two places hold a record the runner wrote.
-const runDirs = (resultsDir: string, { entry, os, engine }: RunKey) => [
-  join(resultsDir, `qa-result-${os}-${engine}`, entry.id, os, engine),
-  join(resultsDir, entry.id, os, engine),
+type RunCell = Pick<RunKey, 'entry' | 'os' | 'engine'>;
+
+const artifactName = ({ entry, os, engine }: RunCell) => `qa-result-${entry.id}-${os}-${engine}`;
+
+const artifactRunDir = (resultsDir: string, cell: RunCell) =>
+  join(resultsDir, artifactName(cell), cell.entry.id, cell.os, cell.engine);
+
+const localRunDir = (resultsDir: string, { entry, os, engine }: RunCell) =>
+  join(resultsDir, entry.id, os, engine);
+
+const runDirs = (resultsDir: string, cell: RunCell) => [
+  artifactRunDir(resultsDir, cell),
+  localRunDir(resultsDir, cell),
 ];
+
+// List where the runs of downloaded artifacts go in a local results directory: one entry for each
+// catalog repo, OS and engine that `downloadDir` holds a record of.
+export const downloadedRuns = (
+  downloadDir: string,
+  resultsDir: string,
+  catalog: CatalogEntry[]
+): { artifact: string; from: string; to: string; label: string }[] =>
+  catalog.flatMap((entry) =>
+    Os.options.flatMap((os) =>
+      Engine.options.flatMap((engine) => {
+        const from = artifactRunDir(downloadDir, { entry, os, engine });
+        return existsSync(join(from, 'result.json'))
+          ? [
+              {
+                artifact: artifactName({ entry, os, engine }),
+                from,
+                to: localRunDir(resultsDir, { entry, os, engine }),
+                label: `${entry.id} ${os} ${engine}`,
+              },
+            ]
+          : [];
+      })
+    )
+  );
 
 const evidenceProblem = (evidenceDir: string, name: string): string | undefined => {
   const path = join(evidenceDir, name);

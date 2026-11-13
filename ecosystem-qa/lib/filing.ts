@@ -1,6 +1,12 @@
 import { cycleRef } from './cycle.ts';
-import { fence, renderCommentBody, renderIssueBody } from './proposals.ts';
-import type { Cycle, EvidenceFile, Proposal } from './schema.ts';
+import {
+  alreadyReported,
+  fence,
+  relatedLines,
+  renderCommentBody,
+  renderIssueBody,
+} from './proposals.ts';
+import type { CommentProposal, Cycle, EvidenceFile, Proposal } from './schema.ts';
 
 export const ASSETS_BRANCH = 'qa-assets';
 // Well under GitHub's 100 MB push limit, and small enough that a release cycle's evidence does not
@@ -25,17 +31,28 @@ export interface FilingOptions {
   repo: string;
   // `assets` links evidence on the qa-assets branch of `repo`; `local` links the downloaded files.
   evidenceLinks: 'assets' | 'local';
+  // The open issue that carries a finding of an issue proposal since the collect.
   filedAs?: number;
-  // Bodies of the comments already on the issue a comment proposal targets.
-  comments?: string[];
+  // What the issue named by `filedAs` or by a comment proposal already says: its body and comments.
+  existing?: string[];
 }
 
-const METADATA_MARKER = '<!-- sb-qa-metadata -->';
+const suppressedBecause = ({
+  reason,
+  existingIssue,
+  sources,
+}: Extract<Proposal, { kind: 'suppressed' }>): string =>
+  reason === 'known'
+    ? `#${existingIssue} is labelled qa:known`
+    : `fixed in #${existingIssue} after ${sources[0]!.version} was published`;
 
 // Return the ordered steps that file one proposal; a skip step is always the only step.
 export const planFiling = (proposal: Proposal, options: FilingOptions): FilingStep[] => {
   if (proposal.kind === 'suppressed') {
-    return [{ kind: 'skip', reason: `#${proposal.existingIssue} is labelled qa:known` }];
+    return [{ kind: 'skip', reason: suppressedBecause(proposal) }];
+  }
+  if (proposal.kind === 'skipped') {
+    return [{ kind: 'skip', reason: `skipped by hand: ${proposal.reason}` }];
   }
   // The cycle ref is pushed for a comment too: its metadata names this run's head, and a "seen
   // again" on a new prerelease is when someone wants to fetch the upgraded state.
@@ -43,16 +60,23 @@ export const planFiling = (proposal: Proposal, options: FilingOptions): FilingSt
     cycle.headSha && cycle.bundle
       ? [{ kind: 'push-cycle' as const, ...cycle, headSha: cycle.headSha, bundle: cycle.bundle }]
       : [];
+  const commentSteps = (comment: CommentProposal, alreadyThere: string): FilingStep[] =>
+    alreadyReported(comment, options.existing ?? [])
+      ? [{ kind: 'skip', reason: alreadyThere }]
+      : [
+          ...pushCycle(comment.cycle),
+          { kind: 'comment', issue: comment.existingIssue, body: renderCommentBody(comment) },
+        ];
   if (proposal.kind === 'comment') {
-    const body = renderCommentBody(proposal);
-    const metadata = body.slice(body.indexOf(METADATA_MARKER)).trim();
-    if (options.comments?.some((comment) => comment.includes(metadata))) {
-      return [{ kind: 'skip', reason: `#${proposal.existingIssue} already has this comment` }];
-    }
-    return [...pushCycle(proposal.cycle), { kind: 'comment', issue: proposal.existingIssue, body }];
+    return commentSteps(proposal, `#${proposal.existingIssue} already has this sighting`);
   }
   if (options.filedAs !== undefined) {
-    return [{ kind: 'skip', reason: `already filed as #${options.filedAs}` }];
+    // An issue that appeared since the collect may hold only some of the group, so what it lacks
+    // is reported on it like any later sighting.
+    return commentSteps(
+      { ...proposal, kind: 'comment', existingIssue: options.filedAs },
+      `already filed as #${options.filedAs}`
+    );
   }
   const { cycle, evidence, assetDir } = proposal;
   // A file over the cap stays out of the push, which would otherwise fail and take the issue with
@@ -107,13 +131,18 @@ export const renderDry = (proposal: Proposal, repo: string): string => {
   const body = steps.flatMap((step) =>
     step.kind === 'create-issue' || step.kind === 'comment' ? [fence(step.body, 'markdown')] : []
   );
+  // A suppressed group has no body, so without this a finding merged into it by mistake would
+  // leave no trace in the dry run.
+  const silenced =
+    proposal.kind === 'suppressed' || proposal.kind === 'skipped' ? proposal.related : [];
   return [
-    `<details><summary><b>${proposal.kind}</b> ${proposal.title} <code>${proposal.fingerprint}</code></summary>`,
+    `<details><summary><b>${proposal.kind}</b> ${proposal.title} <code>${proposal.fingerprint}</code>${silenced.length > 0 ? ` and ${silenced.length} more` : ''}</summary>`,
     '',
     `Sources: ${proposal.sources.map((source) => `${source.os}/${source.engine}${source.fake ? ' (fake)' : ''} (\`${source.resultPath}\`)`).join(', ')}`,
     '',
     ...steps.map((step, index) => `${index + 1}. ${describeStep(step, repo)}`),
     '',
+    ...relatedLines(silenced, 'Silenced with it:'),
     ...body.flatMap((block) => [block, '']),
     '</details>',
     '',

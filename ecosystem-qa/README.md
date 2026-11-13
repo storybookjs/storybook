@@ -133,8 +133,9 @@ A run has a time budget, counted from its start, the clone and the project insta
 The agent reads the clock with `tools/budget.mjs`, which the prompt tells it to run before every check, and is told to report what it did not get to as `skip` once the budget is used up.
 The prompt also tells it to stop a build or test run that has not ended after 15 minutes and not to start it again.
 Fifteen minutes after the budget (`--hard-stop-minutes`), at minute 105 by default, the runner stops the agent and everything it runs.
+It does the same when the agent prints nothing for 15 minutes.
 It then asks the agent once, in the same session, for the answer with what it has, and gives it ten minutes for that.
-The record of such a run has status `ok` and says in `cutShort` that the run was stopped.
+The record of such a run has status `ok` and says in `cutShort` why the run was stopped.
 For that the runner copies the session of the stopped agent out of the sandbox itself, because Sandcastle does so only when a turn ends.
 It can do that in the Docker sandbox with Claude Code, and it needs no copy without a sandbox.
 In every other case, and when the agent gives no answer that can be used then, the record has status `timeout` and no checks; the evidence, the logs and the commits are kept.

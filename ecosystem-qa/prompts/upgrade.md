@@ -45,7 +45,7 @@ It started before the project was installed, so part of it is already used.
 
 1. Run it before every step, before every check of Step 5, and before every new attempt at a blocker.
 2. When it says the budget is used up, stop working. Give every check you did not get to the state `skip` with the note `the run budget was used up`, stop your servers, and write the final answer.
-3. At minute {{HARD_STOP_MINUTES}} the run is stopped from outside. An answer that is not printed by then is lost, with every check and finding in it.
+3. At minute {{HARD_STOP_MINUTES}} the run is stopped from outside. An answer that is not printed by then may be lost, with every check and finding in it.
 4. A build, a test run or another command that is meant to end, and that has not ended 15 minutes after you started it, is stuck for this run. Stop it by its process id and do not start it again.
    - This is not for a dev server or a watcher, which runs until you stop it, and not for a package install, which may take 25 minutes.
    - If the same command ended before the upgrade, that is a finding and its check is `fail`. You do not have to reproduce it a second time. Otherwise report the check as `blocked`. Say in the note how long you waited.

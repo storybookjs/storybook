@@ -1,6 +1,7 @@
 // How long one run may take, in minutes from its start, the clone and the project install included.
 // The agent is asked to answer within `minutes` and reads the clock with `tools/budget.mjs`. At
-// `hardStopMinutes` the runner stops the agent, and an answer that is not printed by then is lost.
+// `hardStopMinutes` the runner stops the agent, and an answer that is not printed by then is lost
+// wherever the runner cannot ask the stopped agent for it.
 export interface RunBudget {
   minutes: number;
   hardStopMinutes: number;

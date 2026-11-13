@@ -203,7 +203,9 @@ jobs:
     needs: plan
     if: ${{ needs.plan.outputs.from_runs == '' }}
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 180
+    # The run stops its agent 15 minutes after the budget and then asks it for its answer. A job
+    # that is cancelled before that writes no result at all.
+    timeout-minutes: ${{ fromJSON(inputs.budget_minutes || '90') + 90 }}
     permissions: {}
     # The agent keys live in this environment. The push token lives in ecosystem-qa-file, which only
     # the file job enters, so no job that runs the agent can read it.
@@ -364,8 +366,6 @@ jobs:
           pattern: qa-result-*
           path: ecosystem-qa/results
 
-      - name: Fetch the results of earlier runs
-        if: ${{ needs.plan.outputs.from_runs != '' }}
       - name: Name the planned runs that left no result
         if: ${{ needs.plan.outputs.from_runs == '' }}
         env:
@@ -374,6 +374,8 @@ jobs:
           node ecosystem-qa/missing-runs.ts --results "$QA_RESULTS" --version "$QA_VERSION"
           --planned "$QA_PLANNED"
 
+      - name: Fetch the results of earlier runs
+        if: ${{ needs.plan.outputs.from_runs != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}

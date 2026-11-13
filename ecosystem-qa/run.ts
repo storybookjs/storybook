@@ -51,7 +51,15 @@ import { upgraded } from './lib/results.ts';
 import { unsandboxedRefusal } from './lib/sandbox-policy.ts';
 import { stopChildren } from './lib/stop-children.ts';
 import { usageFromStream } from './lib/usage.ts';
-import { saveStoppedClaudeSession, WRAP_UP_MINUTES, wrapUpPrompt } from './lib/wrap-up.ts';
+import {
+  saveStoppedClaudeSession,
+  stopAfterSilence,
+  stopAtTimeLimit,
+  within,
+  WRAP_UP_MINUTES,
+  wrapUpPrompt,
+  type Stop,
+} from './lib/wrap-up.ts';
 
 const HELP = `Usage: node ecosystem-qa/run.ts --repo <catalog id> --version <storybook version> --engine <claude|codex> --sandbox <docker|bwrap|seatbelt|none> --out <dir>
 
@@ -62,7 +70,7 @@ Options:
   --clone-dir <dir>   Where to clone the catalog repo (default: <tmpdir>/ecosystem-qa/work/<id>)
   --image <name>      Docker image for --sandbox docker (default: sb-ecosystem-qa)
   --budget-minutes <n>     Minutes the agent is asked to answer within, from the start of the run (default: 90)
-  --hard-stop-minutes <n>  Minute at which the runner stops the agent and records a timeout (default: 15 after the budget)
+  --hard-stop-minutes <n>  Minute at which the runner stops the agent and asks it for its answer (default: 15 after the budget)
 
 Writes <out>/result.json and exits 0 whenever it did, findings or not. <out> must be empty or new.
 Set ECOSYSTEM_QA_FAKE=1 and pass --fake to write a canned result for --engine without running an agent;
@@ -372,10 +380,12 @@ const agentFor = (request: RunRequest, agentEnv: Record<string, string>) => {
     : codex(request.model, options);
 };
 
-const statusOf = (error: unknown): Outcome['status'] =>
-  error instanceof Object && '_tag' in error && error._tag === 'AgentIdleTimeoutError'
-    ? 'timeout'
-    : 'agent-failed';
+const IDLE_MINUTES = 15;
+
+// Sandcastle hands the error of a sandbox run over in a wrapper that ends its name with the name
+// of the error.
+const isIdleTimeout = (error: unknown): boolean =>
+  error instanceof Error && error.name.endsWith('AgentIdleTimeoutError');
 
 const readNumber = (file: string): number | undefined => {
   const value = existsSync(file) ? Number(readFileSync(file, 'utf8')) : Number.NaN;
@@ -402,14 +412,16 @@ const runSandcastle = async (
   let recoveredFrom: string | undefined;
   let migrationGuide: string | undefined;
   let sandbox: Awaited<ReturnType<typeof createSandbox>> | undefined;
-  let hardStop: AbortSignal | undefined;
   let sessionId: string | undefined;
   let cutShort: string | undefined;
-  let askAfterStop:
-    | (() => Promise<{
-        reading: Reading<NonNullable<Outcome['output']>>;
-        turn: { iterations: { sessionFilePath?: string }[] };
-      }>)
+  let stop:
+    | {
+        at: AbortSignal;
+        ask: (why: Stop) => Promise<{
+          reading: Reading<NonNullable<Outcome['output']>>;
+          turn: { iterations: { sessionFilePath?: string }[] };
+        }>;
+      }
     | undefined;
   const logFile = join(request.outDir, 'run.log');
   // Annotations are all that is left of a job whose runner stopped answering.
@@ -448,7 +460,7 @@ const runSandcastle = async (
       );
     }
     // The same signal goes to every repair turn, so the stop is one moment for the whole run.
-    hardStop = AbortSignal.timeout(msUntilHardStop(startedAt, budget));
+    const hardStop = AbortSignal.timeout(msUntilHardStop(startedAt, budget));
     const agent = agentFor(request, plan.agentEnv);
     const name = `${request.entry.id}-${request.os}-${request.engine}`;
     const logging: LoggingOption = {
@@ -471,37 +483,46 @@ const runSandcastle = async (
     const box = sandbox;
     // An agent that is stopped in the middle of a turn has printed no answer. This ends what it
     // runs and asks it once, in the same session, for the answer with what it has.
-    askAfterStop = async () => {
-      const hostFile = sessionId && agent.sessionStorage?.hostSessionFilePath(cloneDir, sessionId);
-      if (request.sandbox === 'docker') {
-        if (request.engine !== 'claude' || !box.sandboxId || !sessionId || !hostFile) {
-          throw new Error('The session of the stopped agent cannot be read out of this sandbox.');
-        }
-        await box.exec('kill -TERM -1; sleep 3; kill -KILL -1; true');
+    const askAfterStop = async (why: Stop) => {
+      if (!sessionId) {
+        throw new Error('it had not started a session.');
+      }
+      const hostFile = agent.sessionStorage?.hostSessionFilePath(cloneDir, sessionId);
+      const container = box.sandboxId;
+      if (request.sandbox === 'docker' && request.engine === 'claude' && hostFile && container) {
+        await within(
+          60,
+          'Ending what the agent ran',
+          box.exec('kill -TERM -1; sleep 3; kill -KILL -1; true')
+        );
         saveStoppedClaudeSession({
-          container: box.sandboxId,
+          container,
           sessionId,
           sandboxCwd: DOCKER_WORKSPACE,
           sandboxHome: DOCKER_HOME,
           hostCwd: cloneDir,
           hostFile,
         });
-      } else if (request.sandbox === 'none' && sessionId) {
+        sessionSource = hostFile;
+      } else if (request.sandbox === 'none') {
         stopChildren();
       } else {
-        throw new Error('A stopped agent cannot be asked again in this sandbox.');
+        throw new Error(
+          'only Claude Code in the Docker sandbox, or an agent without a sandbox, can be asked after a stop.'
+        );
       }
       const turn = await box.run({
         agent,
         name,
         resumeSession: sessionId,
-        prompt: wrapUpPrompt(budget.hardStopMinutes),
+        prompt: wrapUpPrompt(why),
         signal: AbortSignal.timeout(WRAP_UP_MINUTES * 60_000),
         idleTimeoutSeconds: 300,
         logging,
       });
       return answerAfterRepairs(turn, answerSchema);
     };
+    stop = { at: hardStop, ask: askAfterStop };
     const first = await sandbox.run({
       agent,
       signal: hardStop,
@@ -526,7 +547,7 @@ const runSandcastle = async (
         HARD_STOP_MINUTES: String(budget.hardStopMinutes),
         OUTPUT_SCHEMA: JSON.stringify(z.toJSONSchema(answerSchema), null, 2),
       },
-      idleTimeoutSeconds: 900,
+      idleTimeoutSeconds: IDLE_MINUTES * 60,
       logging,
     });
     sessionSource = first.iterations.at(-1)?.sessionFilePath;
@@ -547,25 +568,30 @@ const runSandcastle = async (
     if (answer) {
       output = answer;
       recoveredFrom = String(error);
-    } else if (hardStop?.aborted) {
-      const stopped = `The run reached minute ${budget.hardStopMinutes}, its time limit, and the agent was stopped.`;
-      const asked = await askAfterStop?.().catch((problem: unknown) => ({
-        reading: { problem: String(problem) },
-        turn: undefined,
-      }));
-      const reading = asked?.reading;
-      if (reading && 'answer' in reading) {
-        output = reading.answer;
-        cutShort = `${stopped} Asked for what it had, it gave this answer.`;
-        sessionSource = asked?.turn?.iterations.at(-1)?.sessionFilePath ?? sessionSource;
-      } else {
+    } else if (stop && (stop.at.aborted || isIdleTimeout(error))) {
+      const why = stop.at.aborted
+        ? stopAtTimeLimit(budget.hardStopMinutes)
+        : stopAfterSilence(IDLE_MINUTES);
+      try {
+        const { reading, turn } = await stop.ask(why);
+        sessionSource = turn.iterations.at(-1)?.sessionFilePath ?? sessionSource;
+        if ('answer' in reading) {
+          output = reading.answer;
+          cutShort = `${why.record} Asked for what it had, it gave this answer.`;
+        } else {
+          failure = {
+            status: 'timeout',
+            error: `${why.record} Asked for what it had, it gave no answer that could be used: ${reading.problem}`,
+          };
+        }
+      } catch (problem) {
         failure = {
           status: 'timeout',
-          error: `${stopped} ${reading ? `Asked for what it had, it gave no answer that could be used: ${reading.problem}` : 'It had not started, so there was nothing to ask it for.'}`,
+          error: `${why.record} It could not be asked for what it had: ${problem instanceof Error ? problem.message : String(problem)}`,
         };
       }
     } else {
-      failure = { status: statusOf(error), error: String(error) };
+      failure = { status: 'agent-failed', error: String(error) };
     }
   } finally {
     watch.stop();
@@ -576,9 +602,11 @@ const runSandcastle = async (
       }
     }
     // The answer is already read, so a sandbox that cannot be removed does not fail the run.
-    await sandbox?.close().catch((error: unknown) => {
-      console.warn(forJobLog(`The sandbox could not be closed: ${String(error)}`));
-    });
+    if (sandbox) {
+      await within(600, 'Closing the sandbox', sandbox.close()).catch((error: unknown) => {
+        console.warn(forJobLog(`The sandbox could not be closed: ${String(error)}`));
+      });
+    }
     await new Promise((done) => stream.end(done));
   }
 

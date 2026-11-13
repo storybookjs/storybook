@@ -40,6 +40,9 @@ function getCheckCommand(name: string, cwd: string) {
   return `node ${script} --cwd ${cwd}`;
 }
 
+export const getCheckedWorkspaces = async () =>
+  (await getCodeWorkspaces()).filter((workspace) => workspace.location !== '.');
+
 export const check: Task<MonorepoDetails> = {
   description: 'Typecheck the source code of the monorepo',
   async ready() {
@@ -47,9 +50,7 @@ export const check: Task<MonorepoDetails> = {
   },
   async run(_, {}) {
     const failed: string[] = [];
-    const workspaces = (await getCodeWorkspaces()).filter(
-      (workspace) => workspace.location !== '.'
-    );
+    const workspaces = await getCheckedWorkspaces();
 
     workspaces.sort((a, b) => {
       const rank = (name: string) => {

@@ -212,10 +212,18 @@ export async function runToolsCommand(
       cwd: target.cwd,
       configDir: target.configDir,
       ...(target.port != null ? { port: target.port } : {}),
+      ...(target.host != null ? { host: target.host } : {}),
       mode: requestedMode,
       clientInfo: CLI_CLIENT_INFO,
     });
   } catch (error) {
+    if (isInvalidInputError(error)) {
+      return result({
+        exitCode: 1,
+        output: error.message,
+        outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+      });
+    }
     if (isAttachGateError(error)) {
       return result({
         exitCode: 1,
@@ -442,7 +450,7 @@ type ValidationIssues = ReadonlyArray<{
   path?: ReadonlyArray<PropertyKey | { key?: unknown }>;
 }>;
 
-const TARGET_OPTIONS = ['cwd', 'config-dir', 'port'];
+const TARGET_OPTIONS = ['cwd', 'config-dir', 'port', 'host'];
 
 function formatValidationIssues(
   toolPath: string,

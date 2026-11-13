@@ -86,7 +86,7 @@ describe('attach failure messages', () => {
     ).toMatchInlineSnapshot(`
       "Warning: Multiple Storybook instances match this project. This command used http://localhost:6007 (port \`6007\`, pid \`123\`, cwd \`/apps/web\`, config dir \`/apps/web/.storybook\`).
 
-      Other matching instances — target one with \`--port <port>\`:
+      Other matching instances — target one with \`--port <port> --host <hostname>\`:
       - http://localhost:6006 (port \`6006\`, pid \`456\`, cwd \`/apps/web\`, config dir \`/apps/web/.storybook\`)
 
       If results look unexpected, ask the user whether they want to stop the other instance(s)."

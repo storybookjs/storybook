@@ -246,6 +246,10 @@
     },
     "./theming": {
       "types": "./dist/theming/create.d.ts",
+      "browser": {
+        "code": "./src/theming/emotion.ts",
+        "default": "./dist/theming/emotion.js"
+      },
       "code": "./src/theming/create.ts",
       "default": "./dist/theming/create.js"
     },

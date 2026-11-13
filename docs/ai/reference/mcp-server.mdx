@@ -12,7 +12,7 @@ The Storybook MCP server lets your agent look up your components, write and test
 
 <If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
 
-The Storybook MCP server gives your agent the same capabilities as the [skills](../connect.mdx#install-the-skills) through the [Model Context Protocol](https://modelcontextprotocol.io/). Use it when your agent can't run shell commands. For other agents, we recommend skills.
+The Storybook MCP server gives your agent the same capabilities as the [skills](../connect.mdx#install-the-skills) through the [Model Context Protocol](https://modelcontextprotocol.io/). Use it when you want your agent to call Storybook through MCP tools instead of CLI commands. Your agent still needs to run shell commands: the server tells it to read each step of the workflow with `npx storybook skills <id> --mcp`. For most setups, we recommend skills.
 
 The MCP server runs as part of the Storybook dev server, so Storybook must be running for your agent to use it.
 

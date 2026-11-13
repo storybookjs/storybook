@@ -5,9 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import { resolve } from 'pathe';
 
 import { watch } from 'chokidar';
+import { resolve } from 'pathe';
 
 import { watchStorySpecifiers } from './watch-story-specifiers.ts';
 
@@ -20,7 +20,7 @@ describe('watchStorySpecifiers', () => {
     configDir: join(workingDir, '.storybook'),
     workingDir,
   };
-  const abspath = (filename: string) => resolve(workingDir, filename);
+  const abspath = (filename: string) => join(workingDir, filename);
 
   let listeners: Record<string, (argument: unknown) => void>;
   let close: () => void;
@@ -63,7 +63,12 @@ describe('watchStorySpecifiers', () => {
 
     close = watchStorySpecifiers(specifiers, { workingDir }, vi.fn());
 
-    expect(vi.mocked(watch).mock.calls[0][0]).toEqual([abspath('src'), abspath('src/nested')]);
+    expect(vi.mocked(watch).mock.calls[0][0]).toEqual([
+      // pathe's resolve() produces POSIX-normalized (forward-slash) paths on Windows,
+      // matching the implementation's own resolution of the specifier directories
+      resolve(workingDir, 'src'),
+      resolve(workingDir, 'src/nested'),
+    ]);
   });
 
   it('watches story files only', () => {

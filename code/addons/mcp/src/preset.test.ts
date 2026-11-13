@@ -43,19 +43,21 @@ describe('experimental_devServer', () => {
     vi.unstubAllGlobals();
   });
 
-  const stubPrivateRefDiscovery = () => {
+  const stubPrivateRefDiscovery = (manifestResponse?: Promise<Response>) => {
     vi.stubGlobal(
       'fetch',
       vi
         .fn()
-        .mockResolvedValueOnce({
-          ok: false,
-          status: 401,
-          headers: new Headers({
-            'WWW-Authenticate':
-              'Bearer resource_metadata="https://private.example.com/.well-known/oauth-protected-resource"',
-          }),
-        })
+        .mockResolvedValueOnce(
+          manifestResponse ?? {
+            ok: false,
+            status: 401,
+            headers: new Headers({
+              'WWW-Authenticate':
+                'Bearer resource_metadata="https://private.example.com/.well-known/oauth-protected-resource"',
+            }),
+          }
+        )
         .mockResolvedValueOnce({
           ok: true,
           json: () =>
@@ -341,17 +343,16 @@ describe('experimental_devServer', () => {
     expect(mcpServerHandler).not.toHaveBeenCalled();
   });
 
-  it('challenges for OAuth once a private ref that was down at boot is reachable', async () => {
+  it('answers concurrent requests during a hung retry and challenges for OAuth after recovery', async () => {
     vi.useFakeTimers();
     try {
       const mcpServerHandler = vi
         .spyOn(mcpHandlerModule, 'mcpServerHandler')
         .mockResolvedValue(undefined);
       vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed')));
-
       await (experimental_devServer as any)(mockApp, createOptionsWithPrivateRef());
 
-      const before = { writeHead: vi.fn(), end: vi.fn() } as any;
+      const before = { writeHead: vi.fn(), end: vi.fn() };
       await mcpHandler({ headers: { 'content-type': 'application/json' } }, before);
       expect(before.writeHead).not.toHaveBeenCalledWith(401, expect.anything());
       expect(mcpServerHandler).toHaveBeenCalledWith(
@@ -364,16 +365,30 @@ describe('experimental_devServer', () => {
         })
       );
 
-      stubPrivateRefDiscovery();
+      let release!: (response: Response) => void;
+      stubPrivateRefDiscovery(new Promise<Response>((resolve) => (release = resolve)));
+      const retryFetch = vi.mocked(fetch);
       await vi.advanceTimersByTimeAsync(5_000);
-      // This request starts the re-check in the background; the next one sees its result.
-      await mcpHandler({ headers: { 'content-type': 'application/json' } }, {
-        writeHead: vi.fn(),
-        end: vi.fn(),
-      } as any);
-      await vi.advanceTimersByTimeAsync(0);
+      const first = mcpHandler({ headers: { 'content-type': 'application/json' } }, before);
+      const second = mcpHandler({ headers: { 'content-type': 'application/json' } }, before);
+      try {
+        await vi.waitFor(() => expect(mcpServerHandler).toHaveBeenCalledTimes(3));
+        expect(retryFetch).toHaveBeenCalledTimes(1);
+      } finally {
+        release(
+          new Response(null, {
+            status: 401,
+            headers: {
+              'WWW-Authenticate':
+                'Bearer resource_metadata="https://private.example.com/.well-known/oauth-protected-resource"',
+            },
+          })
+        );
+        await Promise.all([first, second]);
+        await vi.advanceTimersByTimeAsync(0);
+      }
 
-      const after = { writeHead: vi.fn(), end: vi.fn() } as any;
+      const after = { writeHead: vi.fn(), end: vi.fn() };
       await mcpHandler({ headers: { 'content-type': 'application/json' } }, after);
       expect(after.writeHead).toHaveBeenCalledWith(
         401,
@@ -381,35 +396,6 @@ describe('experimental_devServer', () => {
           'WWW-Authenticate': expect.stringContaining('/.well-known/oauth-protected-resource'),
         })
       );
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it('answers MCP requests while a background retry is still pending', async () => {
-    vi.useFakeTimers();
-    try {
-      const mcpServerHandler = vi
-        .spyOn(mcpHandlerModule, 'mcpServerHandler')
-        .mockResolvedValue(undefined);
-      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('fetch failed')));
-      await (experimental_devServer as any)(mockApp, createOptionsWithPrivateRef());
-      await mcpHandler({ headers: { 'content-type': 'application/json' } }, {});
-
-      let release!: (response: Response) => void;
-      const retryFetch = vi.fn(() => new Promise<Response>((resolve) => (release = resolve)));
-      vi.stubGlobal('fetch', retryFetch);
-      await vi.advanceTimersByTimeAsync(5_000);
-      const first = mcpHandler({ headers: { 'content-type': 'application/json' } }, {});
-      const second = mcpHandler({ headers: { 'content-type': 'application/json' } }, {});
-      try {
-        await vi.waitFor(() => expect(mcpServerHandler).toHaveBeenCalledTimes(3));
-        expect(retryFetch).toHaveBeenCalledTimes(1);
-      } finally {
-        release(Response.json({ v: 1, components: {} }));
-        await Promise.all([first, second]);
-        await vi.advanceTimersByTimeAsync(0);
-      }
     } finally {
       vi.useRealTimers();
     }

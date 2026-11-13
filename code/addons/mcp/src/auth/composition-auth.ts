@@ -67,13 +67,6 @@ const isTransientStatus = (status: number) =>
 const fetchRef = (url: string, init: RequestInit = {}) =>
   fetch(url, { ...init, signal: AbortSignal.timeout(REF_MANIFEST_FETCH_TIMEOUT_MS) });
 
-class TransientRefError extends Error {
-  constructor(url: string, status: number) {
-    super(`${url} responded with ${status}`);
-    this.name = 'TransientRefError';
-  }
-}
-
 export type ManifestProvider = (
   request: Request | undefined,
   path: string,
@@ -116,19 +109,14 @@ export class CompositionAuth {
 
   // Concurrent callers share one round of checks.
   async recheckUnreachableRefs(): Promise<void> {
-    if (!this.#recheck) {
-      const due = this.#refStates.filter(
-        ({ status }) => status.kind === 'unreachable' && status.retryAt <= Date.now()
-      );
-      if (due.length === 0) return;
-      this.#recheck = (async () => {
-        try {
-          await this.#checkRefs(due);
-        } finally {
-          this.#recheck = null;
-        }
-      })();
-    }
+    if (this.#recheck) return this.#recheck;
+    const due = this.#refStates.filter(
+      ({ status }) => status.kind === 'unreachable' && status.retryAt <= Date.now()
+    );
+    if (due.length === 0) return;
+    this.#recheck = this.#checkRefs(due).finally(() => {
+      this.#recheck = null;
+    });
     await this.#recheck;
   }
 
@@ -380,7 +368,7 @@ export class CompositionAuth {
       headers: { Accept: 'application/json' },
     });
     if (isTransientStatus(response.status)) {
-      throw new TransientRefError(manifestUrl, response.status);
+      throw new Error(`${manifestUrl} responded with ${response.status}`);
     }
 
     // 401 with WWW-Authenticate = auth needed
@@ -417,7 +405,7 @@ export class CompositionAuth {
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
     });
     if (isTransientStatus(response.status)) {
-      throw new TransientRefError(mcpUrl, response.status);
+      throw new Error(`${mcpUrl} responded with ${response.status}`);
     }
     return this.#parseAuthFromResponse(response);
   }
@@ -448,7 +436,7 @@ export class CompositionAuth {
     const resourceMetadataUrl = match[1];
     const resourceResponse = await fetchRef(resourceMetadataUrl);
     if (isTransientStatus(resourceResponse.status)) {
-      throw new TransientRefError(resourceMetadataUrl, resourceResponse.status);
+      throw new Error(`${resourceMetadataUrl} responded with ${resourceResponse.status}`);
     }
     if (!resourceResponse.ok) {
       logger.warn(
@@ -468,7 +456,7 @@ export class CompositionAuth {
     const serverMetadataUrl = `${authServer}/.well-known/oauth-authorization-server`;
     const serverResponse = await fetchRef(serverMetadataUrl);
     if (isTransientStatus(serverResponse.status)) {
-      throw new TransientRefError(serverMetadataUrl, serverResponse.status);
+      throw new Error(`${serverMetadataUrl} responded with ${serverResponse.status}`);
     }
     if (!serverResponse.ok) {
       logger.warn(

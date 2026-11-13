@@ -68,9 +68,10 @@ export const build_linux = defineJob('Build (linux)', () => ({
         `${WORKING_DIR}/node_modules`,
         `${WORKING_DIR}/code/node_modules`,
         `${WORKING_DIR}/scripts/node_modules`,
-        // agent-eval nests all its dependencies (installConfig.hoistingLimits),
-        // so downstream checks need its node_modules packed explicitly.
+        // agent-eval and ecosystem-qa nest all their dependencies (installConfig.hoistingLimits),
+        // so downstream checks need their node_modules packed explicitly.
         `${WORKING_DIR}/agent-eval/node_modules`,
+        `${WORKING_DIR}/ecosystem-qa/node_modules`,
       ],
       packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`)
     ),

@@ -455,6 +455,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
             if (item.type === 'component' || item.type === 'story') {
               api.emit(PRELOAD_ENTRIES, {
                 ids: [children[0]],
+                source: 'hover',
                 options: { target: refId },
               });
             }

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
-import { type JsPackageManager, isCI } from 'storybook/internal/common';
+import { hasStorybookSkills, installSkills, skipsSkillsInCI } from 'storybook/internal/cli';
+import type { JsPackageManager } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -58,7 +58,7 @@ const runSkills = (result: { afterAngularViteMigration?: boolean } = {}) =>
 describe('skills', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(isCI).mockReturnValue(false);
+    vi.mocked(skipsSkillsInCI).mockReturnValue(false);
     vi.mocked(hasStorybookSkills).mockResolvedValue(false);
     vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'automigration' });
     useDependencies({});
@@ -111,10 +111,18 @@ describe('skills', () => {
       ).resolves.toBeNull();
     });
 
-    it('does not apply in CI, where the skills are never installed', async () => {
-      vi.mocked(isCI).mockReturnValue(true);
+    it('does not apply in CI, where upgrade says that it skipped the skills', async () => {
+      vi.mocked(skipsSkillsInCI).mockReturnValue(true);
 
       await expect(checkFix(skills, checkOptions('@storybook/react-vite'))).resolves.toBeNull();
+    });
+
+    it('applies in CI when requested by id', async () => {
+      vi.mocked(skipsSkillsInCI).mockReturnValue(true);
+
+      await expect(
+        checkFix(skills, checkOptions('@storybook/react-vite', { requested: true }))
+      ).resolves.toEqual({});
     });
 
     it('does not apply when the project has the skills', async () => {
@@ -147,6 +155,7 @@ describe('skills', () => {
         packageManager,
         source: 'automigration',
         stdio: 'pipe',
+        allowCI: true,
       });
     });
 

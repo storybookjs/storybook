@@ -1,7 +1,9 @@
 import {
+  SKILLS_AUTOMIGRATE_COMMAND,
   hasStorybookSkills,
   installSkills,
   refreshAgentInstructions,
+  skipsSkillsInCI,
 } from 'storybook/internal/cli';
 import { PackageManagerName } from 'storybook/internal/common';
 import {
@@ -40,6 +42,7 @@ import {
   type AutomigrationResult,
   runAutomigrations,
 } from './automigrate/multi-project.ts';
+import { offersSkills } from './automigrate/fixes/skills.ts';
 import { FixStatus } from './automigrate/types.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
 import { configureDeferredAddons } from './postinstallAddon.ts';
@@ -562,6 +565,23 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     // the same updates.
     if (!options.dryRun && !hadSkills) {
       await refreshAgentInstructions();
+    }
+    // The `skills` automigration skips CI without a word, inside a task log that clears on success.
+    if (!options.dryRun && !hadSkills && skipsSkillsInCI()) {
+      for (const project of storybookProjects) {
+        const offered = await offersSkills({
+          packageManager: project.packageManager,
+          mainConfig: project.mainConfig,
+          beforeVersion: project.beforeVersion,
+          storybookVersion: project.currentCLIVersion,
+        }).catch(() => null);
+        if (offered) {
+          logger.warn(
+            `Skipped the Storybook skills for AI agents because CI is set. Add them with: ${SKILLS_AUTOMIGRATE_COMMAND}`
+          );
+          break;
+        }
+      }
     }
 
     // Run doctor for each project

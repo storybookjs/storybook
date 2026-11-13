@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
+import { hasStorybookSkills, installSkills, skipsSkillsInCI } from 'storybook/internal/cli';
 import { type JsPackageManager, isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
@@ -175,5 +175,63 @@ describe('upgrade: refreshing the skills', () => {
     await upgrade({ ...baseOptions, dryRun: true });
 
     expect(installSkills).not.toHaveBeenCalled();
+  });
+
+  describe('in CI', () => {
+    beforeEach(() => {
+      vi.mocked(isCI).mockReturnValue(true);
+      vi.mocked(hasStorybookSkills).mockResolvedValue(false);
+    });
+
+    const skippedWarnings = () =>
+      vi
+        .mocked(logger.warn)
+        .mock.calls.filter(([message]) =>
+          String(message).startsWith('Skipped the Storybook skills')
+        );
+
+    it('says once that it skipped the skills, and how to add them', async () => {
+      useProjects(
+        project('/repo/a/.storybook', {
+          mainConfig: { stories: [], framework: '@storybook/react-vite' },
+        }),
+        project('/repo/b/.storybook', {
+          mainConfig: { stories: [], framework: '@storybook/react-vite' },
+        })
+      );
+
+      await upgrade(baseOptions);
+
+      expect(skippedWarnings()).toEqual([
+        [
+          'Skipped the Storybook skills for AI agents because CI is set. Add them with: npx storybook automigrate skills',
+        ],
+      ]);
+    });
+
+    it('says nothing when no project supports the skills', async () => {
+      useProjects(
+        project('/repo/a/.storybook', {
+          mainConfig: { stories: [], framework: '@storybook/html-vite' },
+        })
+      );
+
+      await upgrade(baseOptions);
+
+      expect(skippedWarnings()).toEqual([]);
+    });
+
+    it('says nothing when a coding agent set CI, because the skills automigration runs', async () => {
+      vi.mocked(skipsSkillsInCI).mockReturnValueOnce(false);
+      useProjects(
+        project('/repo/a/.storybook', {
+          mainConfig: { stories: [], framework: '@storybook/react-vite' },
+        })
+      );
+
+      await upgrade(baseOptions);
+
+      expect(skippedWarnings()).toEqual([]);
+    });
   });
 });

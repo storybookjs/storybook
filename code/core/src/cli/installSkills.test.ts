@@ -10,7 +10,7 @@ import {
   ExecaCommandFailedError,
   PackageInstallFailedError,
 } from 'storybook/internal/server-errors';
-import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
+import { detectAgent, isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import { vol } from 'memfs';
@@ -20,6 +20,7 @@ import {
   hasStorybookSkills,
   installSkills,
   refreshAgentInstructions,
+  skipsSkillsInCI,
   supportsSkills,
   supportsAiSetup,
 } from './installSkills.ts';
@@ -47,9 +48,24 @@ beforeEach(async () => {
   vol.reset();
   vi.mocked(getProjectRoot).mockReturnValue(PROJECT_ROOT);
   vi.mocked(isCI).mockReturnValue(false);
+  vi.mocked(detectAgent).mockReturnValue(undefined);
   vi.mocked(addStorybookAgentInstructions).mockResolvedValue([
     { file: 'AGENTS.md', change: 'added' },
   ]);
+});
+
+describe('skipsSkillsInCI', () => {
+  it.each([
+    [false, undefined, false],
+    [true, undefined, true],
+    [true, { name: 'claude' }, false],
+    [false, { name: 'claude' }, false],
+  ])('is %s in CI with agent %o: %s', (ci, agent, expected) => {
+    vi.mocked(isCI).mockReturnValue(ci);
+    vi.mocked(detectAgent).mockReturnValue(agent);
+
+    expect(skipsSkillsInCI()).toBe(expected);
+  });
 });
 
 describe('supportsSkills', () => {
@@ -315,13 +331,41 @@ describe('installSkills', () => {
     );
   });
 
-  it('spawns nothing under CI', async () => {
+  it.each([
+    ['refresh', 'Did not update the Storybook skills because CI is set.'],
+    [
+      'ai-feature',
+      'Skipped the Storybook skills because CI is set. Add them with: npx storybook automigrate skills',
+    ],
+  ] as const)('spawns nothing under CI, and says so (%s)', async (source, message) => {
     vi.mocked(isCI).mockReturnValue(true);
 
-    const result = await installSkills({ packageManager, source: 'refresh' });
+    const result = await installSkills({ packageManager, source });
 
     expect(packageManager.runPackageCommand).not.toHaveBeenCalled();
+    expect(addStorybookAgentInstructions).not.toHaveBeenCalled();
     expect(result).toEqual({ result: 'skipped', source: 'ci' });
+    expect(logger.log).toHaveBeenCalledWith(message);
+  });
+
+  it('installs when a coding agent set CI', async () => {
+    vi.mocked(isCI).mockReturnValue(true);
+    vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
+
+    const result = await installSkills({ packageManager, source: 'automigration' });
+
+    expect(packageManager.runPackageCommand).toHaveBeenCalled();
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'install');
+    expect(result).toEqual({ result: 'installed', source: 'automigration' });
+  });
+
+  it('installs under CI when the caller allows it', async () => {
+    vi.mocked(isCI).mockReturnValue(true);
+
+    const result = await installSkills({ packageManager, source: 'automigration', allowCI: true });
+
+    expect(packageManager.runPackageCommand).toHaveBeenCalled();
+    expect(result).toEqual({ result: 'installed', source: 'automigration' });
   });
 
   it.each([
@@ -364,5 +408,14 @@ describe('refreshAgentInstructions', () => {
     await refreshAgentInstructions();
 
     expect(addStorybookAgentInstructions).not.toHaveBeenCalled();
+  });
+
+  it('updates the section when a coding agent set CI', async () => {
+    vi.mocked(isCI).mockReturnValue(true);
+    vi.mocked(detectAgent).mockReturnValue({ name: 'claude' });
+
+    await refreshAgentInstructions();
+
+    expect(addStorybookAgentInstructions).toHaveBeenCalledWith(PROJECT_ROOT, 'update');
   });
 });

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { getProjectRoot, isCI, versions } from 'storybook/internal/common';
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
-import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
+import { detectAgent, isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import { type AgentInstructionsMode, addStorybookAgentInstructions } from './agentInstructions.ts';
@@ -59,6 +59,18 @@ export function supportsAiSetup(
   );
 }
 
+/**
+ * Whether the skills step skips this run because it runs in CI. Coding agents set `CI=true` on
+ * their own to avoid prompts, so a run that an agent started is not CI here: it is the agent's
+ * project that would end up without the skills.
+ */
+export function skipsSkillsInCI(): boolean {
+  return !!isCI() && !detectAgent();
+}
+
+/** The command that installs the skills, for messages that tell the user how to add them later. */
+export const SKILLS_AUTOMIGRATE_COMMAND = 'npx storybook automigrate skills';
+
 // Matches the repository in any form the lock records (`owner/repo`, a URL, or an SSH remote), but
 // not a fork with a longer name such as `storybookjs/skills-fork`.
 const isSkillsRepo = (source: string) =>
@@ -88,19 +100,28 @@ export async function hasStorybookSkills(): Promise<boolean> {
  *
  * A refresh only updates a section that still has Storybook's markers, so a section without them
  * and a removed section stay that way, unless the refresh replaces the `stories` skill of an 11.0
- * prerelease. Never runs in CI, and a failed install is reported in the result instead of thrown.
+ * prerelease. Skips CI (see {@link skipsSkillsInCI}) unless `allowCI` is set, and a
+ * failed install is reported in the result instead of thrown.
  */
 export async function installSkills({
   packageManager,
   source,
   stdio = 'inherit',
+  allowCI = false,
 }: {
   packageManager: JsPackageManager;
   source: SkillsSource;
   /** `pipe` keeps the `skills` CLI output out of a running task log. */
   stdio?: 'inherit' | 'pipe';
+  /** Install in CI too, because the caller already decided, for example on the user's request. */
+  allowCI?: boolean;
 }): Promise<SkillsInstallResult> {
-  if (isCI()) {
+  if (!allowCI && skipsSkillsInCI()) {
+    logger.log(
+      source === 'refresh'
+        ? 'Did not update the Storybook skills because CI is set.'
+        : `Skipped the Storybook skills because CI is set. Add them with: ${SKILLS_AUTOMIGRATE_COMMAND}`
+    );
     return { result: 'skipped', source: 'ci' };
   }
 
@@ -210,10 +231,10 @@ async function addAgentInstructions(mode: AgentInstructionsMode): Promise<void> 
 /**
  * Bring the section between Storybook's markers in `AGENTS.md` up to date without installing the
  * skills, for `storybook upgrade` in a project that got the skills from a plugin or by hand. Adds
- * nothing, and never runs in CI.
+ * nothing, and skips CI like {@link installSkills}.
  */
 export async function refreshAgentInstructions(): Promise<void> {
-  if (isCI()) {
+  if (skipsSkillsInCI()) {
     return;
   }
   await addAgentInstructions('update');

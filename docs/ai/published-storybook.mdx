@@ -1,0 +1,89 @@
+---
+title: Use a published Storybook
+sidebar:
+  order: 4
+---
+
+<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+
+A published Storybook can share your component docs with agents anywhere, such as the agents of teams that use your design system. It needs a [components manifest](./reference/manifests.mdx), which your framework doesn't generate yet. See [framework support](./reference/manifests.mdx#framework-support).
+
+</If>
+
+<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+
+Your agent can look up components from a Storybook that doesn't run on your machine, such as your team's published design system. A published Storybook can serve an MCP server with the docs tools, so agents anywhere can find your components and their props and usage.
+
+## When to use it
+
+- Teams that build apps with your design system want their agents to reuse its components.
+- Your agent works in a repository that doesn't have the Storybook with the components it needs.
+
+A published Storybook shares only the component docs. To write stories, run tests, and publish reviews, your agent needs a local Storybook with [skills](./connect.mdx#install-the-skills) or the [MCP server](./reference/mcp-server.mdx).
+
+If the app's own Storybook can compose the published one, you can use [composition](../sharing/storybook-composition.mdx) instead. Your agent then finds the components of both Storybooks with the [`component-docs`](./skills/component-docs.mdx) skill.
+
+## Publish with Chromatic
+
+When you [publish your Storybook with Chromatic](../sharing/publish-storybook.mdx#publish-storybook-with-chromatic), Chromatic also [publishes its MCP server](https://chromatic.com/docs/storybook-mcp/). The server is at your published Storybook's URL, followed by `/mcp`.
+
+Each build has its own URL. For a URL that always points to your latest Storybook, use the permalink of your default branch:
+
+```
+https://<branch>--<app-id>.chromatic.com/mcp
+```
+
+For example, `https://main--642d765a7e8afcfb104268dc.chromatic.com/mcp`.
+
+Before you publish, make sure that the [components manifest is on](./reference/manifests.mdx#framework-support).
+
+The published MCP server has the same access as your Storybook. If your Storybook is private, people sign in to Chromatic the first time their agent connects, and only people with access to your Chromatic project can use it. If your Storybook is public, anyone with the URL can use it.
+
+To add the server to an agent, follow [Add the MCP server to your agent](./reference/mcp-server.mdx#3-add-the-mcp-server-to-your-agent) with the [published URL](https://chromatic.com/docs/storybook-mcp/#use-the-mcp-server-without-a-local-storybook).
+
+## Self-host with `@storybook/mcp`
+
+To control the hosting, security, and updates of your MCP server, you can host it yourself.
+
+`@storybook/mcp` is a library that creates a [`tmcp`-based](https://github.com/paoloricciuti/tmcp/) MCP server. The server serves your components and docs from your Storybook's [manifests](./reference/manifests.mdx).
+
+### Prerequisites
+
+- Node.js 22.12+
+- A [manifest](./reference/manifests.mdx) source that contains:
+  - `components.json` (required)
+  - `docs.json` (optional)
+
+### API
+
+See the [package README](https://github.com/storybookjs/storybook/tree/next/code/lib/mcp#api-reference) for the full API of `@storybook/mcp`.
+
+### Example implementation
+
+This is a minimal server that uses `@storybook/mcp`:
+
+```ts title="server.ts"
+import { createStorybookMcpHandler } from '@storybook/mcp';
+
+const storybookMcpHandler = await createStorybookMcpHandler();
+
+export async function handleRequest(request: Request): Promise<Response> {
+  if (new URL(request.url).pathname === '/mcp') {
+    return storybookMcpHandler(request);
+  }
+
+  return new Response('Not found', { status: 404 });
+}
+```
+
+For a Node example, see [`serve.ts`](https://github.com/storybookjs/storybook/blob/next/code/lib/mcp/serve.ts) in the Storybook repository.
+
+</If>
+{/* End supported renderers */}
+
+**More AI resources**
+
+- [Connect your agent](./connect.mdx)
+- [Component docs](./skills/component-docs.mdx)
+- [Manifests](./reference/manifests.mdx)
+- [MCP server](./reference/mcp-server.mdx)

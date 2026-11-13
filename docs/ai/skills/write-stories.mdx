@@ -1,0 +1,47 @@
+---
+title: Write stories
+sidebar:
+  order: 4
+---
+
+<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+
+The `write-stories` skill gives your agent the rules for the stories of your project, so every component it creates or changes gets stories. It isn't available for your framework yet. See [supported frameworks](../connect.mdx#supported-frameworks).
+
+</If>
+
+<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+
+The `write-stories` skill gives your agent the rules for the stories of your project: which states get a story, and how to write the imports, play functions, and mocks. Every component your agent creates or changes gets stories that show its states and test its behavior.
+
+## When your agent uses it
+
+The skill is step 2 of the [UI workflow](./ui-workflow.mdx). With the [Storybook section in `AGENTS.md`](../connect.mdx#tell-your-agent-when-to-use-the-skills), your agent uses it for every component it creates or changes.
+
+You can also ask for the skill by name, for example "Use the write-stories skill to add stories for the user list".
+
+## What the agent writes
+
+- **One story for each state.** The agent writes a story for each state the component can reach, such as variants, loading, empty, error, and disabled, with realistic props.
+- **Play functions.** An interactive component also gets a [play function](../../writing-stories/play-function.mdx) that interacts with it and checks the result.
+- **Network mocks.** A story never calls a real service. The agent mocks [network requests](../../writing-stories/mocking-data-and-modules/mocking-network-requests.mdx) with MSW, and sets up MSW if your project doesn't have it.
+- **Module mocks.** For other dependencies, the agent uses [module mocks](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx).
+
+The agent follows your project's conventions. It writes stories in the [story format](../../writing-stories/csf/index.mdx) that your project uses, and it doesn't rewrite your existing stories to match its own rules.
+
+## Requirements
+
+- Storybook 11 and a [supported framework](../connect.mdx#supported-frameworks)
+- With the [MCP server](../reference/mcp-server.mdx), the [`dev` toolset](../reference/mcp-server.mdx#dev) turned on
+
+</If>
+{/* End supported renderers */}
+
+**More AI resources**
+
+- [Connect your agent](../connect.mdx)
+- [UI workflow](./ui-workflow.mdx)
+- [Component docs](./component-docs.mdx)
+- [Test stories](./test-stories.mdx)
+- [UI review](./ui-review.mdx)
+- [Best practices for using Storybook with AI](../best-practices.mdx)

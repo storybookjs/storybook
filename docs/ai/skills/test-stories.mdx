@@ -1,0 +1,49 @@
+---
+title: Test stories
+sidebar:
+  order: 5
+---
+
+<If notRenderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+
+The `test-stories` skill lets your agent run your story tests, with their accessibility checks, and fix what fails. It isn't available for your framework yet. See [supported frameworks](../connect.mdx#supported-frameworks).
+
+</If>
+
+<If renderer={['react', 'vue', 'angular', 'svelte', 'web-components']}>
+
+The `test-stories` skill lets your agent run your [story tests](../../writing-tests/index.mdx), with their [accessibility checks](../../writing-tests/accessibility-testing.mdx), and fix what fails. Your agent doesn't finish its work with failing tests.
+
+## When your agent uses it
+
+The skill is step 3 of the [UI workflow](./ui-workflow.mdx). With the [Storybook section in `AGENTS.md`](../connect.mdx#tell-your-agent-when-to-use-the-skills), your agent uses it after every UI change, and when you ask it to run or fix the story tests, for example "Fix the failing story tests".
+
+## What the agent does
+
+- **Runs focused tests while it works.** After each change, the agent runs the tests of the stories it changed.
+- **Runs every test before it finishes.** When its work is done, the agent runs all story tests once.
+- **Fixes failures.** The agent fixes what fails and runs the tests again. It changes only what the fix needs.
+
+The agent runs the tests with Storybook's own command, never with a test script from your `package.json` or with `vitest` directly.
+
+### Accessibility issues
+
+If you are using the [accessibility addon](../../writing-tests/accessibility-testing.mdx), the agent fixes semantic accessibility issues, such as missing labels, roles, or alt text. For visual issues, such as low color contrast, it doesn't change your design. It describes the problem, gives you two or three options, and asks you to choose. The agent never changes your accessibility test level to make a test pass.
+
+## Requirements
+
+- The [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx), which needs the Vite builder. Without it, the agent skips this step.
+- With the [MCP server](../reference/mcp-server.mdx), the [`test` toolset](../reference/mcp-server.mdx#test) turned on
+
+To run accessibility checks with the tests, also install the [accessibility addon](../../writing-tests/accessibility-testing.mdx).
+
+</If>
+{/* End supported renderers */}
+
+**More AI resources**
+
+- [Connect your agent](../connect.mdx)
+- [UI workflow](./ui-workflow.mdx)
+- [Write stories](./write-stories.mdx)
+- [UI review](./ui-review.mdx)
+- [Best practices for using Storybook with AI](../best-practices.mdx)

@@ -10,7 +10,7 @@ import type { StoryId, StoryIndexEntry } from 'storybook/internal/types';
 import * as find from 'empathic/find';
 import * as walk from 'empathic/walk';
 import { escapeRegExp } from 'es-toolkit/string';
-import path, { dirname, join, normalize, resolve } from 'pathe';
+import path, { dirname, join, normalize, relative, resolve } from 'pathe';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
@@ -80,13 +80,16 @@ export class VitestManager {
       reportsDirectory: resolvePathInStorybookCache(COVERAGE_DIRECTORY),
     } as CoverageOptions;
 
-    // In monorepos, the Storybook configDir (e.g. packages/web-app/.storybook) identifies
-    // the sub-package. We start the Vitest config search from its parent (the package root)
-    // and traverse upward to the project root, so configs in both sub-packages and the
-    // monorepo root are found. Without this, find.any defaults to process.cwd() which may
-    // be the monorepo root and would miss sub-package configs entirely.
+    // Start at the Storybook package, since cwd may be the workspace root. The Git root
+    // can widen the search past STORYBOOK_PROJECT_ROOT, but must never shrink it.
     const configDir = this.testManager.storybookOptions.configDir;
     const packageRoot = configDir ? dirname(resolve(configDir)) : undefined;
+    const repository = find.up('.git', { cwd: packageRoot || process.cwd() });
+    const projectRoot = getProjectRoot();
+    const searchRoot =
+      repository && !relative(dirname(repository), projectRoot).startsWith('..')
+        ? dirname(repository)
+        : projectRoot;
 
     const configFiles = [
       ...VITEST_CONFIG_FILE_EXTENSIONS.flatMap((ext) => [
@@ -96,7 +99,7 @@ export class VitestManager {
     ];
 
     const potentialConfigFileLocations = walk.up(packageRoot || process.cwd(), {
-      last: getProjectRoot(),
+      last: searchRoot,
     });
 
     let vitestConfigLocation: string | undefined;
@@ -104,11 +107,8 @@ export class VitestManager {
 
     for (const location of potentialConfigFileLocations) {
       for (const file of configFiles) {
-        const maybe = find.any([file], {
-          cwd: location,
-          last: getProjectRoot(),
-        });
-        if (maybe && existsSync(maybe)) {
+        const maybe = join(location, file);
+        if (existsSync(maybe)) {
           firstVitestConfig ??= dirname(maybe);
           const content = readFileSync(maybe, 'utf8');
           if (content.includes('storybookTest') || content.includes('@storybook/addon-vitest')) {

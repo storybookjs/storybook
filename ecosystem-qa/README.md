@@ -64,7 +64,7 @@ node ecosystem-qa/file.ts --proposals ecosystem-qa/results/proposals.json --repo
 
 Only the workflow is dry by default, through its `dry` input. The filer itself files for real unless `--dry` is passed, so keep the flag on a local run.
 
-`collect.ts` lists the issues that carry the `internal-qa` label, so it needs a logged-in `gh`.
+`collect.ts` and the dry run of `file.ts` list the issues that carry the `internal-qa` label, so they need a logged-in `gh`.
 
 ### Group findings by root cause
 
@@ -176,8 +176,13 @@ Filing the same results again from another run, for example with `from_runs`, is
 A sighting is one finding of a group in one agent run: its fingerprint with that run's repo, commit, system, engine and version, whichever run collected it.
 The metadata of an issue or comment lists the keys of its sightings, and a proposal adds a comment only when the issue lacks at least one of them.
 So the same findings in another order, or split into other groups, add nothing, and a finding that a new repo reports gets its comment.
-A later agent run of the same repo has another commit, so it is a new sighting and gets its comment.
-A run in which the agent committed nothing looks like the run before it on the same start commit, so it is not reported again.
 An issue or comment written before sightings had keys is compared as a whole, by its fingerprints, version, repo, commit, systems, engines and models.
 Such a block names one repo and commit, so it stands only for a proposal from a single run.
-A group that spans several runs is reported once more on such an issue, which is safer than losing a sighting.
+A comment is also skipped as a repeat when the issue already has a sighting on every combination of Storybook version, repo, system and engine that the comment reports, of any finding and from any run.
+So a second sweep of the same version adds nothing on an issue that the first sweep reported from the same repos, systems and engines, and a comment with one new version, repo, system or engine is posted whole.
+The cost is that a new aspect of the bug, seen in the same repo on the same version, system and engine, is skipped too.
+The metadata of an issue or comment lists those combinations on its `seen:` line.
+A block written before that line existed records the run its `repo:` and `sha:` name, which is the first value of each of its `storybook:`, `os:` and `engine:` lines.
+When such a block names one version, the `Also seen as:` list directly above it adds the repo, system and engine of each other finding.
+Any other value of such a block does not count, because the block does not say which run it belongs to, and a comment that needs it is posted.
+The dry run lists the issues with `gh` the same way, so it shows every comment it would skip and the reason.

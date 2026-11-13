@@ -19,7 +19,7 @@ import {
 } from './fixtures.ts';
 import { groupFindings, toProposal, writtenOn, type Cluster, type IssueHit } from './proposals.ts';
 import type { LoadedResult } from './results.ts';
-import type { Finding } from './schema.ts';
+import type { Engine, Finding, Os, Proposal } from './schema.ts';
 
 const REPO = 'storybookjs/storybook';
 
@@ -133,7 +133,10 @@ describe('planFiling', () => {
 
   it('comments on an issue filed in the meantime that lacks a finding of the group', () => {
     const build = finding({ checkId: 'build.static', title: 'Build fails', errorText: 'ENOSPC' });
-    const [hmrGroup, buildGroup] = groupFindings([loaded('linux', 'claude', [finding(), build])]);
+    const [buildGroup, hmrGroup] = groupFindings([
+      loaded('linux', 'claude', [build]),
+      loaded('windows', 'claude', [finding()]),
+    ]);
     const alone = asIssue(toProposal(single(buildGroup), [], { runUrl: RUN_URL }));
     const both = asIssue(
       toProposal({ lead: hmrGroup!, members: [hmrGroup!, buildGroup!] }, [], { runUrl: RUN_URL })
@@ -188,22 +191,133 @@ describe('planFiling', () => {
     ).toEqual([{ kind: 'skip', reason: '#9 already has this sighting' }]);
   });
 
-  it('reports the sighting of a later run of the same repo', () => {
+  describe('for a later run of the same finding', () => {
     const hit: IssueHit = { number: 9, labels: ['bug'], state: 'open' };
-    const first = planFiling(proposalFor({}, [hit]), {
-      repo: REPO,
-      evidenceLinks: 'assets',
-      existing: [],
-    }).at(-1);
-    const later = proposalFor({}, [hit], 'd'.repeat(40));
+    const commentFor = (...runs: LoadedResult[]) => {
+      const [group] = groupFindings(runs);
+      return toProposal(single(group), [issueOn(group, hit)], { runUrl: RUN_URL });
+    };
+    const bodyOf = (steps: FilingStep[]) => {
+      const comment = steps.at(-1);
+      return comment?.kind === 'comment' ? comment.body : '';
+    };
+    const firstComment = bodyOf(
+      planFiling(commentFor(loaded('linux', 'claude', [finding()])), {
+        repo: REPO,
+        evidenceLinks: 'assets',
+        existing: [],
+      })
+    );
+    const later = (os: Os, engine: Engine, change: (run: LoadedResult) => void = () => {}) => {
+      const run = loaded(os, engine, [finding()], 'd'.repeat(40));
+      change(run);
+      return commentFor(run);
+    };
+    const stepsOn = (proposal: Proposal, existing: string[]) =>
+      planFiling(proposal, { repo: REPO, evidenceLinks: 'assets', existing });
 
-    const steps = planFiling(later, {
-      repo: REPO,
-      evidenceLinks: 'assets',
-      existing: [first?.kind === 'comment' ? first.body : ''],
+    it('skips it as a repeat when the issue has its version, repo, system and engine', () => {
+      expect(stepsOn(later('linux', 'claude'), [firstComment])).toEqual([
+        {
+          kind: 'skip',
+          reason: `repeat: #9 already has a sighting on every version, repo, system and engine it reports: ${VERSION} on storybookjs/mealdrop (linux, claude)`,
+        },
+      ]);
     });
 
-    expect(kinds(steps)).toEqual(['push-cycle', 'comment']);
+    it.each<[string, () => Proposal]>([
+      [
+        'a new repo',
+        () =>
+          later('linux', 'claude', (run) => {
+            run.cycle.repo = 'storybookjs/other';
+          }),
+      ],
+      [
+        'a new version',
+        () =>
+          later('linux', 'claude', (run) => {
+            run.result.request.version = '11.0.0-beta.1';
+          }),
+      ],
+      ['a new system', () => later('windows', 'claude')],
+      ['a new engine', () => later('linux', 'codex')],
+    ])('comments when the run is on %s', (_, proposal) => {
+      expect(kinds(stepsOn(proposal(), [firstComment]))).toEqual(['push-cycle', 'comment']);
+    });
+
+    it('comments when only one of its runs is new to the issue', () => {
+      const proposal = commentFor(
+        loaded('linux', 'claude', [finding()], 'd'.repeat(40)),
+        loaded('windows', 'claude', [finding()], 'e'.repeat(40))
+      );
+
+      expect(kinds(stepsOn(proposal, [firstComment]))).toEqual(['push-cycle', 'comment']);
+    });
+
+    it('skips a later run of any of the runs that one comment reported', () => {
+      const twoSystems = bodyOf(
+        stepsOn(
+          commentFor(
+            loaded('linux', 'claude', [finding()]),
+            loaded('windows', 'claude', [finding()])
+          ),
+          []
+        )
+      );
+
+      expect(kinds(stepsOn(later('windows', 'claude'), [twoSystems]))).toEqual(['skip']);
+    });
+
+    // As the harness wrote it before blocks had a sightings line, from an issue on GitHub.
+    const oldBlock = (os: string) =>
+      [
+        'Seen again by the ecosystem QA agent on:',
+        '',
+        '<!-- sb-qa-metadata -->',
+        '```yaml',
+        'fingerprint: 5b34acfdc0f977e0',
+        `storybook: ${VERSION}`,
+        'repo: storybookjs/mealdrop',
+        'sha: 8c128505ea4140fd53aa25543b0f0a3b200a9c38',
+        'cycleRef: refs/qa/cycles/qa/sb-11.0.0-beta.0/linux-claude',
+        `os: ${os}`,
+        'engine: claude',
+        'model: claude-haiku-5-5',
+        'run: https://github.com/storybookjs/storybook/actions/runs/2',
+        '```',
+        '',
+      ].join('\n');
+
+    it('skips it as a repeat of a block written before blocks listed what they saw', () => {
+      expect(kinds(stepsOn(later('linux', 'claude'), [oldBlock('linux')]))).toEqual(['skip']);
+    });
+
+    it('reads the repo, system and engine that such a block lists for its other members', () => {
+      const block = oldBlock('linux, windows').replace(
+        '<!-- sb-qa-metadata -->',
+        [
+          'Also seen as:',
+          '',
+          '- `build.static` on storybookjs/mealdrop (windows, claude): Build fails: ENOSPC',
+          '',
+          '<!-- sb-qa-metadata -->',
+        ].join('\n')
+      );
+
+      expect(kinds(stepsOn(later('windows', 'claude'), [block]))).toEqual(['skip']);
+      expect(kinds(stepsOn(later('windows', 'codex'), [block]))).toEqual(['push-cycle', 'comment']);
+    });
+
+    it('reads only the first run of such a block that lists several systems', () => {
+      const block = oldBlock('linux, windows');
+
+      expect(kinds(stepsOn(later('linux', 'claude'), [block]))).toEqual(['skip']);
+      expect(kinds(stepsOn(later('windows', 'claude'), [block]))).toEqual([
+        'push-cycle',
+        'comment',
+      ]);
+    });
   });
 
   describe('for a group of two findings that is already filed', () => {
@@ -376,6 +490,23 @@ describe('renderDry', () => {
     expect(summary).toContain(
       '- `build.static` on storybookjs/mealdrop (linux, claude): Build fails'
     );
+  });
+
+  it('names a comment it skips as a repeat, with the reason', () => {
+    const hit: IssueHit = { number: 9, labels: ['bug'], state: 'open' };
+    const first = proposalFor({}, [hit]);
+    const filed = planFiling(first, { repo: REPO, evidenceLinks: 'assets', existing: [] }).at(-1);
+    const later = proposalFor({}, [hit], 'd'.repeat(40));
+
+    const summary = renderDry(later, REPO, {
+      existing: [filed?.kind === 'comment' ? filed.body : ''],
+    });
+
+    expect(summary).toContain('<summary><b>comment</b>, skipped [SB 11 QA]:');
+    expect(summary).toContain(
+      `1. Skip: repeat: #9 already has a sighting on every version, repo, system and engine it reports: ${VERSION} on storybookjs/mealdrop (linux, claude).`
+    );
+    expect(summary).not.toContain('Seen again by the ecosystem QA agent on:');
   });
 
   it('adds nothing for a suppressed finding that stands alone', () => {

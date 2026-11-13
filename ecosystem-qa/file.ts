@@ -13,8 +13,10 @@ import {
   planFiling,
   renderDry,
   renderFilingReport,
+  skipsReport,
   type FilingOutcome,
   type FilingStep,
+  type KnownIssue,
 } from './lib/filing.ts';
 import { cycleRef } from './lib/cycle.ts';
 import { listQaIssues, ghText, pages } from './lib/github.ts';
@@ -26,7 +28,8 @@ import { writeStepSummary } from './lib/step-summary.ts';
 
 const HELP = `Usage: node ecosystem-qa/file.ts --proposals <proposals.json> --repo <owner/name> [--dry]
 
---dry writes each proposal to $GITHUB_STEP_SUMMARY (stdout when unset) and changes nothing.
+--dry writes each proposal to $GITHUB_STEP_SUMMARY (stdout when unset) and changes nothing. It
+reads the internal-qa issues with gh, so it shows what filing now would do, skips included.
 Without --dry it checks that the milestones and labels exist, then for each proposal pushes the
 cycle branch to the catalog repo with the push token of that repo's org, pushes evidence to the
 qa-assets branch of --repo and creates the issue or comment with GH_TOKEN. A failed proposal does
@@ -35,7 +38,9 @@ any failed.
 An issue counts as already filed only while it is open and carries the internal-qa label.
 Rerunning is safe: an issue it already created, an identical comment and pushed evidence are
 skipped. When an open issue with one of a proposal's fingerprints appeared after the collect, what
-that issue lacks goes on it as a comment and no second issue is created.`;
+that issue lacks goes on it as a comment and no second issue is created. A comment is skipped as a
+repeat when the issue already has a sighting on every Storybook version, repo, system and engine
+that the comment reports.`;
 
 const EVIDENCE_PUSH_ATTEMPTS = 3;
 
@@ -208,13 +213,19 @@ const reportedOn = (proposal: Proposal, issues: QaIssue[]): QaIssue | undefined 
     : undefined;
 };
 
-const fileProposal = (proposal: Proposal, issues: QaIssue[]): FilingOutcome => {
+const knownIssue = (proposal: Proposal, issues: QaIssue[]): KnownIssue => {
   const target = reportedOn(proposal, issues);
+  return {
+    ...(proposal.kind === 'issue' && target ? { filedAs: target.number } : {}),
+    existing: target ? writtenOn(target) : [],
+  };
+};
+
+const fileProposal = (proposal: Proposal, issues: QaIssue[]): FilingOutcome => {
   const steps = planFiling(proposal, {
     repo,
     evidenceLinks: 'assets',
-    ...(proposal.kind === 'issue' && target ? { filedAs: target.number } : {}),
-    existing: target ? writtenOn(target) : [],
+    ...knownIssue(proposal, issues),
   });
   let detail = '';
   for (const step of steps) {
@@ -251,13 +262,20 @@ if (values.dry) {
   const counts = ['issue', 'comment', 'suppressed', 'skipped']
     .map((kind) => `${proposals.filter((proposal) => proposal.kind === kind).length} ${kind}`)
     .join(', ');
+  const issues = listQaIssues(repo, QA_LABEL);
+  const known = proposals.map((proposal) => knownIssue(proposal, issues));
+  const reports = proposals.filter(({ kind }) => kind === 'issue' || kind === 'comment').length;
+  const skipped = proposals.filter((proposal, index) =>
+    skipsReport(proposal, planFiling(proposal, { repo, evidenceLinks: 'local', ...known[index] }))
+  ).length;
   writeStepSummary(
     [
       '## Ecosystem QA proposals (dry run, nothing was filed)',
       '',
       `${proposals.length} proposals: ${counts}.`,
+      `Filing now would skip ${skipped} of the ${reports} issues and comments, each with its reason below.`,
       '',
-      ...proposals.map((proposal) => renderDry(proposal, repo)),
+      ...proposals.map((proposal, index) => renderDry(proposal, repo, known[index])),
     ].join('\n')
   );
 } else {

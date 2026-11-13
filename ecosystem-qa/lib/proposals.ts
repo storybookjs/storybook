@@ -149,6 +149,16 @@ const unique = (values: string[]) => [...new Set(values)].join(', ');
 // Opens the metadata block of every issue and comment the harness writes.
 export const METADATA_MARKER = '<!-- sb-qa-metadata -->';
 
+type Combination = Pick<Source, 'version' | 'repo' | 'os' | 'engine'>;
+
+const combinationKey = ({ version, repo, os, engine }: Combination): string =>
+  [version, repo, os, engine].join(' ');
+
+// Return each Storybook version, repo, system and engine that a proposal reports, once.
+export const combinationsOf = (proposal: IssueProposal | CommentProposal): Combination[] => [
+  ...new Map(proposal.sources.map((source) => [combinationKey(source), source])).values(),
+];
+
 const metadataFields = (proposal: IssueProposal | CommentProposal): [string, string][] => {
   const { cycle, sources, related } = proposal;
   const members = [proposal.fingerprint, ...related.map((member) => member.fingerprint)];
@@ -163,6 +173,7 @@ const metadataFields = (proposal: IssueProposal | CommentProposal): [string, str
     ['engine', unique(sources.map((source) => source.engine))],
     ['model', unique(sources.map((source) => source.model))],
     ['sightings', proposal.sightings.join(', ')],
+    ['seen', combinationsOf(proposal).map(combinationKey).sort().join(', ')],
     ['run', proposal.runUrl],
   ];
 };
@@ -231,6 +242,47 @@ export const alreadyReported = (
     (proposal.sources.length === 1 &&
       reported.has(blockSighting(new Map(metadataFields(proposal)))))
   );
+};
+
+const RELATED_SOURCE = /([^\s,()]+) \(([a-z]+), ([a-z]+)\)/g;
+
+// A block written before the seen line existed records the run its repo and commit name, which the
+// harness lists first in each of storybook, os and engine. When the block names one version, the
+// list of other members above it adds the repo, system and engine each member was seen on.
+const combinationsIn = (text: string): string[] => {
+  const fields = metadataOf(text);
+  if (!fields) {
+    return [];
+  }
+  const seen = fields.get('seen');
+  if (seen !== undefined) {
+    return seen.split(', ');
+  }
+  const versions = fields.get('storybook')?.split(', ') ?? [];
+  const [os, engine] = ['os', 'engine'].map((key) => fields.get(key)?.split(', ')[0]);
+  const repo = fields.get('repo');
+  const run = versions[0] && repo && os && engine ? [[versions[0], repo, os, engine]] : [];
+  const members =
+    versions.length === 1
+      ? relatedIn(text).flatMap((entry) => {
+          const where = entry.slice(entry.indexOf('` on ') + 5).split(': ')[0]!;
+          return [...where.matchAll(RELATED_SOURCE)].map((match) => [
+            versions[0],
+            ...match.slice(1),
+          ]);
+        })
+      : [];
+  return [...run, ...members].map((parts) => parts.join(' '));
+};
+
+// Whether the texts the harness wrote on an issue already have a sighting on every Storybook
+// version, repo, system and engine that a proposal reports, from any run and of any finding.
+export const recordsEveryCombination = (
+  proposal: IssueProposal | CommentProposal,
+  texts: string[]
+): boolean => {
+  const recorded = new Set(texts.flatMap(combinationsIn));
+  return combinationsOf(proposal).every((combination) => recorded.has(combinationKey(combination)));
 };
 
 const BASELINE_TEXT: Record<Finding['baseline'], string> = {

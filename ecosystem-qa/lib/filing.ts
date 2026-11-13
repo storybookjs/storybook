@@ -1,7 +1,9 @@
 import { cycleRef } from './cycle.ts';
 import {
   alreadyReported,
+  combinationsOf,
   fence,
+  recordsEveryCombination,
   relatedLines,
   renderCommentBody,
   renderIssueBody,
@@ -46,6 +48,11 @@ const suppressedBecause = ({
     ? `#${existingIssue} is labelled qa:known`
     : `fixed in #${existingIssue} after ${sources[0]!.version} was published`;
 
+const combinationList = (proposal: CommentProposal): string =>
+  combinationsOf(proposal)
+    .map(({ version, repo, os, engine }) => `${version} on ${repo} (${os}, ${engine})`)
+    .join(', ');
+
 // Return the ordered steps that file one proposal; a skip step is always the only step.
 export const planFiling = (proposal: Proposal, options: FilingOptions): FilingStep[] => {
   if (proposal.kind === 'suppressed') {
@@ -60,22 +67,38 @@ export const planFiling = (proposal: Proposal, options: FilingOptions): FilingSt
     cycle.headSha && cycle.bundle
       ? [{ kind: 'push-cycle' as const, ...cycle, headSha: cycle.headSha, bundle: cycle.bundle }]
       : [];
-  const commentSteps = (comment: CommentProposal, alreadyThere: string): FilingStep[] =>
-    alreadyReported(comment, options.existing ?? [])
-      ? [{ kind: 'skip', reason: alreadyThere }]
-      : [
-          ...pushCycle(comment.cycle),
-          { kind: 'comment', issue: comment.existingIssue, body: renderCommentBody(comment) },
-        ];
+  const commentSteps = (
+    comment: CommentProposal,
+    alreadyThere: string,
+    repeated: string
+  ): FilingStep[] => {
+    const existing = options.existing ?? [];
+    if (alreadyReported(comment, existing)) {
+      return [{ kind: 'skip', reason: alreadyThere }];
+    }
+    if (recordsEveryCombination(comment, existing)) {
+      return [{ kind: 'skip', reason: `${repeated}: ${combinationList(comment)}` }];
+    }
+    return [
+      ...pushCycle(comment.cycle),
+      { kind: 'comment', issue: comment.existingIssue, body: renderCommentBody(comment) },
+    ];
+  };
+  const everyCombination = 'a sighting on every version, repo, system and engine it reports';
   if (proposal.kind === 'comment') {
-    return commentSteps(proposal, `#${proposal.existingIssue} already has this sighting`);
+    return commentSteps(
+      proposal,
+      `#${proposal.existingIssue} already has this sighting`,
+      `repeat: #${proposal.existingIssue} already has ${everyCombination}`
+    );
   }
   if (options.filedAs !== undefined) {
     // An issue that appeared since the collect may hold only some of the group, so what it lacks
     // is reported on it like any later sighting.
     return commentSteps(
       { ...proposal, kind: 'comment', existingIssue: options.filedAs },
-      `already filed as #${options.filedAs}`
+      `already filed as #${options.filedAs}`,
+      `already filed as #${options.filedAs}, which has ${everyCombination}`
     );
   }
   const { cycle, evidence, assetDir } = proposal;
@@ -126,8 +149,14 @@ export const describeStep = (step: FilingStep, repo: string): string => {
   }
 };
 
-export const renderDry = (proposal: Proposal, repo: string): string => {
-  const steps = planFiling(proposal, { repo, evidenceLinks: 'local' });
+export type KnownIssue = Pick<FilingOptions, 'filedAs' | 'existing'>;
+
+// Whether a proposal to file something comes to nothing because the issue already says it all.
+export const skipsReport = (proposal: Proposal, steps: FilingStep[]): boolean =>
+  (proposal.kind === 'comment' || proposal.kind === 'issue') && steps[0]?.kind === 'skip';
+
+export const renderDry = (proposal: Proposal, repo: string, known: KnownIssue = {}): string => {
+  const steps = planFiling(proposal, { repo, evidenceLinks: 'local', ...known });
   const body = steps.flatMap((step) =>
     step.kind === 'create-issue' || step.kind === 'comment' ? [fence(step.body, 'markdown')] : []
   );
@@ -136,7 +165,7 @@ export const renderDry = (proposal: Proposal, repo: string): string => {
   const silenced =
     proposal.kind === 'suppressed' || proposal.kind === 'skipped' ? proposal.related : [];
   return [
-    `<details><summary><b>${proposal.kind}</b> ${proposal.title} <code>${proposal.fingerprint}</code>${silenced.length > 0 ? ` and ${silenced.length} more` : ''}</summary>`,
+    `<details><summary><b>${proposal.kind}</b>${skipsReport(proposal, steps) ? ', skipped' : ''} ${proposal.title} <code>${proposal.fingerprint}</code>${silenced.length > 0 ? ` and ${silenced.length} more` : ''}</summary>`,
     '',
     `Sources: ${proposal.sources.map((source) => `${source.os}/${source.engine}${source.fake ? ' (fake)' : ''} (\`${source.resultPath}\`)`).join(', ')}`,
     '',

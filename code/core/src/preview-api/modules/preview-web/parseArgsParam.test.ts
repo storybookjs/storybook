@@ -245,6 +245,19 @@ describe('parseArgsParam', () => {
       expect(parseArgsParam('key:1.2.3')).toStrictEqual({});
     });
 
+    it('keeps a numeric string when converting it to a number would change it', () => {
+      expect(parseArgsParam('key:007')).toStrictEqual({ key: '007' });
+      expect(parseArgsParam('key:1.0')).toStrictEqual({ key: '1.0' });
+      expect(parseArgsParam('key:9.90')).toStrictEqual({ key: '9.90' });
+      expect(parseArgsParam('key:-0')).toStrictEqual({ key: '-0' });
+      expect(parseArgsParam('key:12345678901234567890')).toStrictEqual({
+        key: '12345678901234567890',
+      });
+      expect(parseArgsParam('key:0')).toStrictEqual({ key: 0 });
+      expect(parseArgsParam('key:0.5')).toStrictEqual({ key: 0.5 });
+      expect(parseArgsParam('key:-10')).toStrictEqual({ key: -10 });
+    });
+
     it('also applies to nested object and array values', () => {
       expect(parseArgsParam('obj.key:a!b')).toStrictEqual({});
       expect(parseArgsParam('arr[0]:a!b')).toStrictEqual({});

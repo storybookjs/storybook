@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 
 import type { Plugin } from 'vitest/config';
-import { mergeConfig } from 'vitest/config';
+import { configDefaults, mergeConfig } from 'vitest/config';
 import type { ViteUserConfig } from 'vitest/config';
 import type {} from '@vitest/browser-playwright';
 
@@ -174,6 +174,30 @@ const createComponentTestTransformPlugin = (presets: Presets, configDir: string)
       },
     },
   };
+};
+
+// Returns the test excludes for the given story globs.
+//
+// Setting `test.exclude` replaces Vitest's default, so this starts from that default when the user
+// set none. Without it, Vitest collects stories inside `node_modules`.
+//
+// Vitest matches excludes against paths relative to its root, and `**` never matches a `..`
+// segment. So `**/node_modules/**` does not apply to story globs outside the root, such as
+// `../../packages/ui/**/*.stories.tsx` in a monorepo, and Vitest crawls every `node_modules` below
+// them. Each exclude that starts with `**/` is also added after the leading `../` segments of such
+// a glob, so it matches every directory below them, as it does inside the root.
+const getTestExclude = (userExclude: string[] | undefined, includeStories: string[]) => {
+  const exclude = userExclude ?? [...configDefaults.exclude];
+
+  const parentPrefixes = new Set(
+    includeStories.flatMap((story) => story.match(/^(?:\.\.\/)+/) ?? [])
+  );
+
+  const rebasedExclude = [...parentPrefixes].flatMap((prefix) =>
+    exclude.filter((pattern) => pattern.startsWith('**/')).map((pattern) => `${prefix}${pattern}`)
+  );
+
+  return [...exclude, ...rebasedExclude];
 };
 
 interface ApiPermissions {
@@ -419,7 +443,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
           include: [...includeStories, ...getComponentTestPaths()],
           exclude: [
-            ...(nonMutableInputConfig.test?.exclude ?? []),
+            ...getTestExclude(nonMutableInputConfig.test?.exclude, includeStories),
             join(relative(finalOptions.vitestRoot, process.cwd()), '**/*.mdx').replaceAll(sep, '/'),
           ],
 

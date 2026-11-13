@@ -1,11 +1,17 @@
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mergeConfig } from 'vitest/config';
+import { configDefaults, mergeConfig } from 'vitest/config';
 import type { InlineConfig } from 'vitest/node';
 
 import { validateConfigurationFiles } from 'storybook/internal/common';
 import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
+
+import { match } from 'micromatch';
+import { dirname, join } from 'pathe';
+import { glob } from 'tinyglobby';
 
 import { storybookTest } from './index.ts';
 
@@ -97,6 +103,90 @@ describe('story test patterns', () => {
 
     expect(config.root).toBe(PACKAGE_ROOT);
     expect(config.test.include).toEqual(['stories/**/*.stories.tsx']);
+  });
+});
+
+describe('test exclude', () => {
+  beforeEach(() => {
+    // The plugin excludes MDX files below the working directory.
+    const cwd = vi.spyOn(process, 'cwd').mockReturnValue(PACKAGE_ROOT);
+    return () => cwd.mockRestore();
+  });
+
+  const useStories = (stories: string[]) => {
+    const applyPreset = presetApply.getMockImplementation()!;
+    presetApply.mockImplementation(async (key: string, fallback?: unknown) =>
+      key === 'stories' ? stories : applyPreset(key, fallback)
+    );
+  };
+
+  it("keeps Vitest's default exclude when the user sets none", async () => {
+    const { test } = await getPluginConfig(PACKAGE_ROOT);
+
+    expect(test.exclude).toEqual([...configDefaults.exclude, '**/*.mdx']);
+  });
+
+  it("uses the user's exclude instead of Vitest's default", async () => {
+    const { test } = await getPluginConfig(PACKAGE_ROOT, { exclude: ['**/legacy/**'] });
+
+    expect(test.exclude).toEqual(['**/legacy/**', '**/*.mdx']);
+  });
+
+  // Vitest matches excludes against root-relative paths, and `**` never matches `..`. Without
+  // the rebased patterns, stories under `node_modules` outside the root are collected.
+  it('applies the exclude below story globs outside the Vitest root', async () => {
+    useStories(['../../../packages/ui/src/**/*.stories.tsx', '../stories/**/*.stories.tsx']);
+
+    const { test } = await getPluginConfig(PACKAGE_ROOT, { exclude: ['**/node_modules/**'] });
+
+    expect(test.include).toEqual([
+      '../../packages/ui/src/**/*.stories.tsx',
+      'stories/**/*.stories.tsx',
+    ]);
+    expect(test.exclude).toEqual(['**/node_modules/**', '../../**/node_modules/**', '**/*.mdx']);
+  });
+
+  // Inside the root, `**/legacy/**` also excludes `legacy/**/*.stories.tsx`. The same must hold
+  // when the excluded directory is in the fixed part of a glob outside the root.
+  it('excludes a directory that is in the fixed part of a story glob outside the root', async () => {
+    useStories(['../../../packages/ui/legacy/**/*.stories.tsx']);
+
+    const { test } = await getPluginConfig(PACKAGE_ROOT, { exclude: ['**/legacy/**'] });
+
+    expect(match(['../../packages/ui/legacy/Old.stories.tsx'], test.exclude!)).toEqual([
+      '../../packages/ui/legacy/Old.stories.tsx',
+    ]);
+  });
+
+  it('does not collect stories inside node_modules outside the Vitest root', async () => {
+    useStories(['../../../packages/ui/**/*.stories.tsx']);
+    // The same layout as REPO_ROOT, on disk.
+    const repoRoot = await mkdtemp(join(tmpdir(), 'storybook-vitest-exclude-'));
+
+    try {
+      for (const file of [
+        'packages/ui/src/Button.stories.tsx',
+        'packages/ui/node_modules/some-dep/Fake.stories.tsx',
+      ]) {
+        await mkdir(dirname(join(repoRoot, file)), { recursive: true });
+        await writeFile(join(repoRoot, file), '');
+      }
+      await mkdir(join(repoRoot, 'apps/storybook'), { recursive: true });
+
+      const { test } = await getPluginConfig(PACKAGE_ROOT);
+
+      // The options Vitest passes to tinyglobby when it collects test files.
+      const files = await glob(test.include!, {
+        cwd: join(repoRoot, 'apps/storybook'),
+        ignore: test.exclude,
+        expandDirectories: false,
+        dot: true,
+      });
+
+      expect(files).toEqual(['../../packages/ui/src/Button.stories.tsx']);
+    } finally {
+      await rm(repoRoot, { recursive: true, force: true });
+    }
   });
 });
 

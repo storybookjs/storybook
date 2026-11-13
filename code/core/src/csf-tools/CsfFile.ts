@@ -57,7 +57,7 @@ import {
   insertStatementAfter,
 } from './estree/editor.ts';
 import { type ImportBindings, removeImport, setImport } from './estree/imports.ts';
-import { generateUid, isDeclared } from './estree/scope.ts';
+import { constantInit, generateUid, isDeclared } from './estree/scope.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
 
 type CsfMutationState = {
@@ -1142,10 +1142,7 @@ export class CsfFile {
             const [argument] = node.arguments;
             const argumentBinding =
               argument?.type === 'Identifier' ? this.editor.scopes.bindingOf(argument) : undefined;
-            const argumentNode =
-              argumentBinding?.constant && argumentBinding.node.type === 'VariableDeclarator'
-                ? argumentBinding.node.init
-                : argument;
+            const argumentNode = argumentBinding ? constantInit(argumentBinding) : argument;
             const unwrappedArgument = argumentNode && unwrapExpression(argumentNode as Node);
             if (unwrappedArgument?.type === 'ObjectExpression') {
               this._parseMeta(unwrappedArgument, this.program);

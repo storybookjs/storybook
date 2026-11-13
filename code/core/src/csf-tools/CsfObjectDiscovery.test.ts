@@ -294,6 +294,10 @@ describe('CsfObject discovery', () => {
         Object.assign(config, { title: 'Changed' });
       `,
     ],
+    [
+      'a destructured binding',
+      `const { config } = { config: { title: 'Example' }, title: 'Outer' };`,
+    ],
     ['a non-const binding', `let config = { title: 'Example' }`],
     ['a non-object binding', `const config = []`],
     ['an unresolved binding', ''],
@@ -1053,5 +1057,55 @@ describe('CsfFile.storyObject', () => {
     expect(csf.storyObject('Missing')).toBeUndefined();
     expect(csf.storyObject('toString')).toBeUndefined();
     expect(csf.mutationDiagnostics).toEqual([]);
+  });
+});
+
+describe('destructured story bindings', () => {
+  it('does not edit the whole initializer a destructured story comes from', () => {
+    const source = `
+      const { A, B } = { A: { args: { label: 'a' } }, B: { args: { label: 'b' } } };
+      export default { title: 'Example' };
+      export { A, B };
+    `;
+    const csf = parse(source);
+
+    expect(csf.objects({ meta: false })).toEqual([]);
+    expect(csf.mutationDiagnostics.map(({ code, target }) => [code, target])).toEqual([
+      ['unsupported-initializer', { kind: 'story', exportName: 'A', localName: 'A' }],
+      ['unsupported-initializer', { kind: 'story', exportName: 'B', localName: 'B' }],
+    ]);
+  });
+
+  it('reports each story destructured from a namespace import on its own', () => {
+    const csf = parse(`
+      import * as stories from './Button.stories';
+      const { Primary, Secondary } = stories;
+      export default { title: 'Example' };
+      export { Primary, Secondary };
+    `);
+
+    expect(csf.objects({ meta: false })).toEqual([]);
+    expect(csf.mutationDiagnostics.map(({ code, target }) => [code, target])).toEqual([
+      ['unsupported-initializer', { kind: 'story', exportName: 'Primary', localName: 'Primary' }],
+      [
+        'unsupported-initializer',
+        { kind: 'story', exportName: 'Secondary', localName: 'Secondary' },
+      ],
+    ]);
+  });
+
+  it('carries the args of a spread destructured from an object literal', () => {
+    const csf = parse(`
+      const { base } = { base: { args: { label: 'a' } } };
+      export default { title: 'Example' };
+      export const S = { ...base };
+    `);
+    const [story] = csf.objects({ meta: false });
+
+    expect(story.set(['args', 'size'], parseExpression("'lg'"))).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toContain('args: { ...base.args, size:');
   });
 });

@@ -1280,6 +1280,18 @@ describe('CsfFile', () => {
       expect(formatCsf(csf)).toBe(source);
     });
 
+    it('does not read the meta of a destructured factory meta configuration', () => {
+      const source = dedent`
+        import preview from './preview';
+        const { config } = { config: { title: 'Inner' }, title: 'Outer' };
+        const meta = preview.meta(config);
+        export const Basic = meta.story({});
+      `;
+      const csf = loadCsf(source, { makeTitle }).parse();
+
+      expect(csf.meta.title).toBe('Default Title');
+    });
+
     it('bad meta', () => {
       expect(() =>
         parse(

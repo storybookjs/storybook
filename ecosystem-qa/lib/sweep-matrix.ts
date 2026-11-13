@@ -38,15 +38,15 @@ const listOf = (text: string): string[] => [
 const pick = <Value extends string>(
   schema: z.ZodType<Value> & { options: readonly string[] },
   items: string[]
-) => ({
-  values: items.flatMap((item) => {
-    const result = schema.safeParse(item);
-    return result.success ? [result.data] : [];
-  }),
-  problems: items
-    .filter((item) => !schema.safeParse(item).success)
-    .map((item) => `"${item}" is not one of ${schema.options.join(', ')}`),
-});
+) => {
+  const parsed = items.map((item) => ({ item, result: schema.safeParse(item) }));
+  return {
+    values: parsed.flatMap(({ result }) => (result.success ? [result.data] : [])),
+    problems: parsed
+      .filter(({ result }) => !result.success)
+      .map(({ item }) => `"${item}" is not one of ${schema.options.join(', ')}`),
+  };
+};
 
 // A name is a catalog id or a repo class, and a class stands for every entry of it.
 const select = (catalog: CatalogEntry[], names: string[]) => {

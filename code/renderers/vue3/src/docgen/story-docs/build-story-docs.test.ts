@@ -2,13 +2,25 @@ import { readFile } from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { babelParseFile } from 'storybook/internal/csf-tools';
-import type { IndexEntry } from 'storybook/internal/types';
+import { SourceEditor } from 'storybook/internal/csf-tools';
+import {
+  type SnippetTemplate,
+  fillTemplate,
+  formatTemplate,
+  printValue,
+} from 'storybook/internal/docs-tools';
+import type { Args, IndexEntry, StoryDoc } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
 import { vol } from 'memfs';
+import * as Vue from 'vue';
+import { compileTemplate, parse } from 'vue/compiler-sfc';
+import { renderToString } from 'vue/server-renderer';
 
+import { printHole } from '../../docs/print-hole.ts';
+import type { VueHolePlace } from '../../snippet-values.ts';
 import { buildStoryDocsPayload } from './build-story-docs.ts';
+import { expectTemplatesStripToSnippets } from './story-template.test-helpers.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 
@@ -22,13 +34,13 @@ const DOCGEN_CATEGORIES: Record<string, string> = {
   size: 'props',
 };
 
-const docgen = (id: string): DocgenPayload => ({
+const docgen = (id: string, categories = DOCGEN_CATEGORIES): DocgenPayload => ({
   id,
   name: 'MyButton',
   path: STORY_PATH,
   jsDocTags: {},
   argTypes: Object.fromEntries(
-    Object.entries(DOCGEN_CATEGORIES).map(([name, category]) => [
+    Object.entries(categories).map(([name, category]) => [
       name,
       { name, table: { category }, type: { name: 'other', value: 'unknown' } },
     ])
@@ -48,13 +60,20 @@ const ENTRY: IndexEntry = {
 const referencesFor = (modules: Record<string, string>) => ({
   resolveModule: (_fromFile: string, specifier: string) => {
     const code = modules[specifier];
-    return code === undefined
-      ? undefined
-      : { program: babelParseFile({ code, filename: specifier }).path, filePath: specifier };
+    if (code === undefined) {
+      return undefined;
+    }
+    const editor = new SourceEditor(code, specifier);
+    editor.parentOf(editor.program);
+    return { editor, filePath: specifier };
   },
 });
 
-async function primaryStory(storySource: string, modules?: Record<string, string>) {
+async function primaryStory(
+  storySource: string,
+  modules?: Record<string, string>,
+  categories = DOCGEN_CATEGORIES
+) {
   vol.fromJSON({
     [STORY_PATH]: `
 import MyButton from './MyButton.vue';
@@ -70,13 +89,14 @@ ${storySource}
   const payload = await buildStoryDocsPayload(
     { entry: ENTRY },
     {
-      readDocgen: async (id) => docgen(id),
+      readDocgen: async (id) => docgen(id, categories),
       ...(modules ? { references: referencesFor(modules) } : {}),
     }
   );
   if (!payload) {
     throw new Error('Expected a story docs payload for the test story file');
   }
+  expectTemplatesStripToSnippets(payload);
   return payload.stories[STORY_ID];
 }
 
@@ -236,3 +256,316 @@ export const Primary = {
     );
   });
 });
+
+// This provider writes the payload's templates, so their holes stand in Vue places.
+const vueTemplate = (template: SnippetTemplate) => template as SnippetTemplate<VueHolePlace>;
+
+describe('template', () => {
+  const filled = (story: StoryDoc | undefined, initialArgs: Args, changed: Args) =>
+    fillTemplate(
+      vueTemplate(story!.template!),
+      { initialArgs, unmappedArgs: { ...initialArgs, ...changed } },
+      printHole
+    );
+  const SLOT_CATEGORIES = { ...DOCGEN_CATEGORIES, default: 'slots', header: 'slots' };
+
+  it('wraps each arg the snippet prints in a hole, and adds the args a control adds', async () => {
+    const story = await primaryStory(`export const Primary = { args: { label: 'Hi', count: 2 } };`);
+    expect(formatTemplate(story!.template!)).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton⟦attr count ~" "⟫ :count="2"⟧⟦attr label ~" "⟫ label="Hi"⟧⟦props * except=["label","count"] ~" "⟫⟧ />
+      </template>"
+    `);
+    const initialArgs = { label: 'Hi', count: 2, theme: 'dark' };
+    expect(filled(story, initialArgs, { label: 'Go', active: true })).toContain(
+      '<MyButton :count="2" label="Go" active />'
+    );
+  });
+
+  it('declares an arg the snippet hoists with a hole for its value', async () => {
+    const story = await primaryStory(`export const Primary = { args: { size: { width: 2 } } };`);
+    expect(formatTemplate(story!.template!)).toContain(
+      'const size = ⟦value size in="script"⟫{ width: 2 }⟧;'
+    );
+    expect(filled(story, { size: { width: 2 } }, { size: { tag: '</d>' } })).toContain(
+      "const size = { tag: '</d>' };"
+    );
+  });
+
+  it('keeps an arg written as code while it is unchanged', async () => {
+    const story = await primaryStory(
+      `export const Primary = { args: { count: 1e3, label: 'Hi' } };`
+    );
+    expect(filled(story, { count: 1000, label: 'Hi' }, { label: 'Go' })).toContain(
+      '<MyButton :count="1e3" label="Go" />'
+    );
+  });
+
+  it('writes a string no attribute quote holds with the entities Vue decodes', async () => {
+    const story = await primaryStory(`export const Primary = { args: { label: 'Hi' } };`);
+    expect(filled(story, { label: 'Hi' }, { label: `a & "b" 'c'` })).toContain(
+      `<MyButton label="a &amp; &quot;b&quot; 'c'" />`
+    );
+  });
+
+  it('follows the arg a prop written before the args binding names, which the binding writes over it with', async () => {
+    const story = await primaryStory(
+      rendered("'Hi'", `<MyButton size="sm" :count="args.label" class="big" v-bind="args" />`)
+    );
+    expect(story?.snippet).toContain('<MyButton size="sm" count="Hi" class="big" label="Hi" />');
+    expect(filled(story, { label: 'Hi' }, { count: 3, size: 'lg', active: true })).toContain(
+      '<MyButton size="lg" :count="3" class="big" label="Hi" active />'
+    );
+    expect(filled(story, { label: 'Hi' }, { class: 'wide' })).toContain(
+      '<MyButton size="sm" count="Hi" class="wide" label="Hi" />'
+    );
+    // The value it reads stays as the story wrote it.
+    expect(filled(story, { label: 'Hi' }, { label: 'Go' })).toContain(
+      '<MyButton size="sm" count="Hi" class="big" label="Go" />'
+    );
+  });
+
+  it('gives a prop before the args binding that the snippet leaves out the space before it', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { label: 'Hi', title: undefined },
+  render: (args) => ({ components: { MyButton }, setup: () => ({ args }), template: \`<MyButton :title="args.title" v-bind="args" />\` }),
+};
+`);
+    expect(filled(story, { label: 'Hi', title: undefined }, { title: 'Top' })).toContain(
+      '<MyButton title="Top" label="Hi" />'
+    );
+  });
+
+  it('follows a class an `h()` spread of the args writes over, as JavaScript does', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => h(MyButton, { class: 'big', ...args }),
+};
+`);
+    expect(story?.snippet).toContain('<MyButton class="big" label="Hi" />');
+    expect(filled(story, { label: 'Hi' }, { class: 'wide' })).toContain(
+      '<MyButton class="wide" label="Hi" />'
+    );
+  });
+
+  it('adds the arg next to a `.prop` binding, which sets a key of its own', async () => {
+    const story = await primaryStory(
+      rendered("'Hi'", '<MyButton :size.prop="args.label" v-bind="args" />')
+    );
+    expect(filled(story, { label: 'Hi' }, { label: 'Go', size: 'lg' })).toContain(
+      `<MyButton :size.prop="'Go'" label="Go" size="lg" />`
+    );
+  });
+
+  it('prints a slot a control sets that the story leaves unset as a story that sets it', async () => {
+    const story = (args: string) =>
+      primaryStory(`export const Primary = { args: { ${args} } };`, undefined, SLOT_CATEGORIES);
+    const unset = await story(`label: 'Hi'`);
+    expect(filled(unset, { label: 'Hi' }, { header: 'Top', default: 'Body' })).toBe(
+      (await story(`label: 'Hi', header: 'Top', default: 'Body'`))?.snippet
+    );
+    expect(filled(unset, { label: 'Hi' }, { label: 'Go' })).toBe(
+      (await story(`label: 'Go'`))?.snippet
+    );
+    const withDefault = await story(`default: 'Body'`);
+    expect(filled(withDefault, { default: 'Body' }, { header: 'Top' })).toBe(
+      (await story(`header: 'Top', default: 'Body'`))?.snippet
+    );
+  });
+
+  it('leaves out a slot a control sets where the render passes the args as props', async () => {
+    const story = await primaryStory(
+      rendered("'Hi'", '<MyButton v-bind="args" />'),
+      undefined,
+      SLOT_CATEGORIES
+    );
+    expect(filled(story, { label: 'Hi' }, { header: 'Top' })).toBe(story?.snippet);
+  });
+
+  it('follows an arg the template prints nothing for on a line of its own', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { label: undefined },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: \`
+      <div>
+        <MyButton />
+        {{ args.label }}
+      </div>\`,
+  }),
+};
+`);
+    expect(story?.snippet).toContain('<MyButton />\n\n  </div>');
+    expect(filled(story, {}, { label: 'Go' })).toContain('<MyButton />\n    Go\n  </div>');
+  });
+
+  it('follows an arg that shares the const of a value its render writes', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { size: { w: 1 } },
+  render: (args) => h('div', [h(MyButton, { size: args.size }), h(MyButton, { size: { w: 1 } })]),
+};
+`);
+    expect(story?.snippet).toContain('<MyButton :size="size" />\n    <MyButton :size="size" />');
+    expect(filled(story, { size: { w: 1 } }, { size: { w: 2 } })).toContain(
+      '<MyButton :size="{ w: 2 }" />\n    <MyButton :size="size" />'
+    );
+  });
+
+  it('follows an arg whose value holds what a formatted hole is written with', async () => {
+    const story = await primaryStory(`export const Primary = { args: { label: '⟦x⟫y⟧' } };`);
+    expect(story?.snippet).toContain('label="⟦x⟫y⟧"');
+    expect(filled(story, { label: '⟦x⟫y⟧' }, { label: 'Go' })).toContain('<MyButton label="Go" />');
+  });
+});
+
+describe('a value a control sets', () => {
+  // Each place an arg prints, as the template a story renders `args` with.
+  const PLACES: Record<string, { arg: string; template: string; render?: true }> = {
+    'an args binding': { arg: 'label', template: '<MyButton v-bind="args" />' },
+    'a bound attribute': {
+      arg: 'label',
+      template: '<MyButton :label="args.label" />',
+      render: true,
+    },
+    'an interpolation': {
+      arg: 'label',
+      template: '<MyButton>{{ args.label }}</MyButton>',
+      render: true,
+    },
+    'an expression': {
+      arg: 'label',
+      template: `<MyButton :title="args.label + '!'" />`,
+      render: true,
+    },
+    'a v-model': { arg: 'label', template: '<MyButton v-model="args.label" />', render: true },
+    'a slot': { arg: 'default', template: '<MyButton>{{ args.default }}</MyButton>' },
+  };
+  const CATEGORIES = { ...DOCGEN_CATEGORIES, default: 'slots', modelValue: 'props' };
+  // The values the snippet of a story that writes them prints as the filled snippet does.
+  const PLAIN: unknown[] = ['Go', 0, 2.5, 1000, true, false];
+  const VALUES: unknown[] = [
+    ...PLAIN,
+    'say "hi"',
+    "it's",
+    `a "b" 'c'`,
+    '{x}',
+    'a{',
+    '{{ x }}',
+    'a}}b',
+    '<b>',
+    'a & b',
+    ' padded ',
+    -3,
+    null,
+    ['a}}b', { c: '&amp;' }],
+  ];
+
+  describe.each(Object.entries(PLACES))('in %s', (_place, { arg, template, render }) => {
+    const story = (value: unknown) => {
+      const label = printValue(value, arg, { quote: "'" });
+      return primaryStory(
+        render
+          ? rendered(label, template)
+          : `export const Primary = { args: { ${arg}: ${label} } };`,
+        undefined,
+        CATEGORIES
+      );
+    };
+
+    it.each(VALUES.map((value) => [value]))(
+      'prints %j as code that renders as the story does',
+      async (value) => {
+        const go = await story('Go');
+        const filled = fillTemplate(
+          vueTemplate(go!.template!),
+          { initialArgs: { [arg]: 'Go' }, unmappedArgs: { [arg]: value } },
+          printHole
+        );
+        expect(await renderSnippet(filled)).toBe(await renderStory(template, { [arg]: value }));
+        if (PLAIN.includes(value)) {
+          expect(filled).toBe((await story(value))?.snippet);
+        }
+      }
+    );
+  });
+
+  it.each<[string, Args]>([
+    [`<MyButton :title="[args.label, '!']" v-bind="args" />`, { title: `a "b" & c` }],
+    [`<MyButton :title="args.label" v-bind="args" />`, { title: 'Top', label: 'Go' }],
+  ])(
+    'prints %s as it renders once a control sets the arg the args bind over it',
+    async (template, changed) => {
+      const story = await primaryStory(rendered("'Hi'", template), undefined, CATEGORIES);
+      const args = { label: 'Hi', ...changed };
+      const filled = fillTemplate(
+        vueTemplate(story!.template!),
+        { initialArgs: { label: 'Hi' }, unmappedArgs: args },
+        printHole
+      );
+      expect(await renderSnippet(filled)).toBe(await renderStory(template, args));
+    }
+  );
+});
+
+function rendered(label: string, template: string) {
+  return `
+export const Primary = {
+  args: { label: ${label} },
+  render: (args) => ({ components: { MyButton }, setup: () => ({ args }), template: \`${template}\` }),
+};
+`;
+}
+
+// A component that shows the props it gets, and its default slot. A bare `label` is `true`.
+const ANY = [Boolean, Number, String, Array, Object, null];
+const MyButton = compiled({
+  props: { label: ANY, title: ANY, modelValue: ANY },
+  template: `<b>{{ JSON.stringify([label, title, modelValue]) }}<slot /></b>`,
+});
+
+// The test build of Vue has no template compiler, so a template is compiled here.
+function compiled<T extends { template: string }>(component: T) {
+  const { code } = compileTemplate({
+    source: component.template,
+    filename: 'Story.vue',
+    id: 'story',
+    compilerOptions: { mode: 'function' },
+  });
+  return { ...component, render: new Function('Vue', code)(Vue) };
+}
+
+// The HTML a component renders, but the whitespace at the edges of its text, which the snippet
+// writes slot text on lines of its own with.
+const renderHtml = async (component: object) =>
+  (await renderToString(Vue.createSSRApp(component))).replace(/>\s+|\s+</g, (edge) => edge.trim());
+
+const renderStory = (template: string, args: Args) =>
+  renderHtml(compiled({ components: { MyButton }, setup: () => ({ args }), template }));
+
+// A snippet as a component: its script, which imports only `MyButton` and `ref`, runs as the
+// `setup` of its template.
+function renderSnippet(code: string) {
+  const { descriptor } = parse(code);
+  const body = (descriptor.scriptSetup?.content ?? '').replace(/^import .*$/gm, '');
+  const names = [...body.matchAll(/^const (\w+)/gm)].map(([, name]) => name);
+  const setup = new Function(
+    'Vue',
+    `const { ref } = Vue;\n${body}\nreturn { ${names.join(', ')} };`
+  );
+  return renderHtml(
+    compiled({
+      components: { MyButton },
+      setup: () => setup(Vue),
+      template: descriptor.template!.content,
+    })
+  );
+}

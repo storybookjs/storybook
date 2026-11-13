@@ -1,0 +1,13 @@
+import { Controls, Meta, Source } from '@storybook/addon-docs/blocks';
+
+import * as CodePanelStories from './index.stories.tsx';
+
+<Meta of={CodePanelStories} name="Live source" />
+
+# Live source
+
+The snippet below follows the controls.
+
+<Controls of={CodePanelStories.Default} />
+
+<Source of={CodePanelStories.Default} />

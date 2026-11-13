@@ -9,6 +9,7 @@ import {
 import { global } from '@storybook/global';
 
 import copy from 'copy-to-clipboard';
+import { isEqual } from 'es-toolkit/predicate';
 
 import { logger } from 'storybook/internal/client-logger';
 import type { KeyboardEventLike } from '../lib/shortcut.ts';
@@ -195,6 +196,30 @@ function shouldSkipShortcut(event: KeyboardEvent) {
 }
 
 export const init: ModuleFn = ({ store, fullAPI, provider }) => {
+  // A shortcut's focus move may have to wait for its target to mount (a region that was just
+  // toggled on, or a button that replaces one toggled off). Only the latest move may complete:
+  // an older one finishing later would pull focus away from wherever the user has moved it since.
+  let pendingFocus: AbortController | undefined;
+  const focusFromShortcut = (
+    elementId: string,
+    {
+      onUnavailable,
+      ...options
+    }: { forceFocus?: boolean; select?: boolean; onUnavailable?: () => void } = {}
+  ) => {
+    pendingFocus?.abort();
+    const controller = new AbortController();
+    pendingFocus = controller;
+
+    Promise.resolve(
+      fullAPI.focusOnUIElement(elementId, { ...options, poll: true, signal: controller.signal })
+    ).then((success) => {
+      if (!success && !controller.signal.aborted) {
+        onUnavailable?.();
+      }
+    });
+  };
+
   const api: SubAPI = {
     // Getting and setting shortcuts
     getShortcutKeys(): API_Shortcuts {
@@ -240,11 +265,21 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
       return value;
     },
     async setAddonShortcut(addon: string, shortcut: API_AddonShortcut) {
-      await api.setShortcuts((shortcuts) => ({
-        ...shortcuts,
-        [`${addon}-${shortcut.actionName}`]: shortcut.defaultShortcut,
-      }));
-      addonsShortcuts[`${addon}-${shortcut.actionName}`] = shortcut;
+      const id = `${addon}-${shortcut.actionName}`;
+      const previous = addonsShortcuts[id];
+      addonsShortcuts[id] = shortcut;
+      // The store holds the key binding, which the user may have customised. A registration writes
+      // it when it is new or its default changed, not to replace the binding with the default.
+      const isRegistered =
+        !!previous &&
+        isEqual(previous.defaultShortcut, shortcut.defaultShortcut) &&
+        id in (store.getState().shortcuts ?? {});
+      if (!isRegistered) {
+        await api.setShortcuts((shortcuts) => ({
+          ...shortcuts,
+          [id]: shortcut.defaultShortcut,
+        }));
+      }
       return shortcut;
     },
     async restoreDefaultShortcut(action) {
@@ -323,7 +358,7 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           if (!fullAPI.getIsNavShown()) {
             fullAPI.toggleNav(true);
           }
-          fullAPI.focusOnUIElement(focusableUIElements.storyListMenu);
+          focusFromShortcut(focusableUIElements.sidebarRegion, { forceFocus: true });
           break;
         }
 
@@ -336,22 +371,13 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           }
 
           setTimeout(() => {
-            fullAPI.focusOnUIElement(focusableUIElements.storySearchField, true);
+            focusFromShortcut(focusableUIElements.storySearchField, { select: true });
           }, 0);
           break;
         }
 
         case 'focusIframe': {
-          const element = document.getElementById('storybook-preview-iframe') as HTMLIFrameElement;
-
-          if (element) {
-            try {
-              // should be like a channel message and all that, but yolo for now
-              element.contentWindow!.focus();
-            } catch (e) {
-              //
-            }
-          }
+          focusFromShortcut(focusableUIElements.previewRegion, { forceFocus: true });
           break;
         }
 
@@ -362,7 +388,7 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           if (!fullAPI.getIsPanelShown()) {
             fullAPI.togglePanel(true);
           }
-          fullAPI.focusOnUIElement(focusableUIElements.storyPanelRoot);
+          focusFromShortcut(focusableUIElements.addonPanel, { forceFocus: true });
           break;
         }
 
@@ -377,12 +403,12 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         }
 
         case 'nextComponent': {
-          fullAPI.jumpToComponent(1);
+          fullAPI.jumpToSubtree(1);
           break;
         }
 
         case 'prevComponent': {
-          fullAPI.jumpToComponent(-1);
+          fullAPI.jumpToSubtree(-1);
           break;
         }
 
@@ -398,24 +424,14 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           fullAPI.togglePanel();
 
           if (wasPanelShown && wasFocusInElement(panelElement)) {
-            // poll: true always returns a Promise.
-            (
-              fullAPI.focusOnUIElement(focusableUIElements.showAddonPanel, {
-                poll: true,
-              }) as Promise<boolean>
-            ).then((success) => {
+            focusFromShortcut(focusableUIElements.showAddonPanel, {
               // Fallback to body for predictable behavior.
-              if (success === false) {
-                document.body.focus();
-              }
+              onUnavailable: () => document.body.focus(),
             });
           }
 
           if (!wasPanelShown) {
-            fullAPI.focusOnUIElement(focusableUIElements.addonPanel, {
-              forceFocus: true,
-              poll: true,
-            });
+            focusFromShortcut(focusableUIElements.addonPanel, { forceFocus: true });
           }
           break;
         }
@@ -431,24 +447,14 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
 
           if (isDesktop) {
             if (wasNavShown && wasFocusInElement(sidebarElement)) {
-              // poll: true always returns a Promise.
-              (
-                fullAPI.focusOnUIElement(focusableUIElements.showSidebar, {
-                  poll: true,
-                }) as Promise<boolean>
-              ).then((success) => {
+              focusFromShortcut(focusableUIElements.showSidebar, {
                 // Fallback to body for predictable behavior.
-                if (success === false) {
-                  document.body.focus();
-                }
+                onUnavailable: () => document.body.focus(),
               });
             }
 
             if (!wasNavShown) {
-              fullAPI.focusOnUIElement(focusableUIElements.sidebarRegion, {
-                forceFocus: true,
-                poll: true,
-              });
+              focusFromShortcut(focusableUIElements.sidebarRegion, { forceFocus: true });
             }
           }
 
@@ -597,6 +603,24 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         fullAPI.getIsFullscreen()
       ) {
         fullAPI.toggleFullscreen(false);
+      }
+
+      // React Aria navigates landmarks on F6 / Shift+F6 (keys no shortcut can be bound to), but
+      // only sees keydowns in the manager document. A press inside the preview is replayed on
+      // the preview landmark, from where React Aria navigates exactly as it would for a press on
+      // the preview iframe.
+      if (data.event.key === 'F6') {
+        const { key, altKey, ctrlKey, metaKey, shiftKey } = data.event;
+        document.getElementById(focusableUIElements.previewRegion)?.dispatchEvent(
+          new KeyboardEvent('keydown', {
+            key,
+            altKey,
+            ctrlKey,
+            metaKey,
+            shiftKey,
+            cancelable: true,
+          })
+        );
       }
     });
   };

@@ -11,7 +11,7 @@ import {
   PnpmNoTtyModulesDirError,
   type ExecaCommandErrorData,
 } from '../../server-errors.ts';
-import { getErrorLogs } from '../js-package-manager/util.ts';
+import { extractPackageManagerErrorCode, getErrorLogs } from '../js-package-manager/util.ts';
 
 export type ExecaErrorContext = {
   command: string;
@@ -49,20 +49,6 @@ export function extractExecaCommandErrorData(
     logs,
     packageManagerErrorCode: extractPackageManagerErrorCode(logs),
   };
-}
-
-export function extractPackageManagerErrorCode(logs: string): string | undefined {
-  const npmMatch = logs.match(/npm\s+(?:ERR!|error)\s+code\s+([A-Z0-9_]+)/i);
-  if (npmMatch) {
-    return npmMatch[1];
-  }
-
-  const pnpmMatch = logs.match(/(ERR_PNPM_[A-Z0-9_]+)/);
-  if (pnpmMatch) {
-    return pnpmMatch[1];
-  }
-
-  return undefined;
 }
 
 function isNuxtModuleAdd(args: string[]) {

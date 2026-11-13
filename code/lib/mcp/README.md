@@ -333,6 +333,8 @@ await addGetStoryDocumentationTool(server);
 
 After registration, wire your own transport and pass `StorybookContext` per request so tools can resolve manifests (`request`, `manifestProvider`, and optional `sources`).
 
+Each tool's input schema follows the `sources` of the request being served: when they compose several Storybooks (at least one source has a `url`), `docs-show` and `docs-show-story` take an optional `storybookId`; otherwise they do not. Pass `options.multiSource` to fix the shape at registration instead.
+
 #### `addListAllDocumentationTool`
 
 Type:
@@ -358,7 +360,7 @@ Type:
 
 Registers [documentation lookup](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-show) by component/docs `id`.
 
-When `options.multiSource` is `true`, the tool schema takes an optional `storybookId` input, defaulting to `local`.
+When `options.multiSource` is `true`, the tool schema takes an optional `storybookId` input, defaulting to `local`. When it is omitted, the schema follows the request's `sources`.
 
 #### `addGetStoryDocumentationTool`
 

@@ -1,28 +1,43 @@
 import { dirname } from 'node:path';
 
-import { type NodePath, types as t } from 'storybook/internal/babel';
 import {
   type CsfFile,
+  type ESTree,
+  type ESTreeNode,
   buildImportStatements,
   collectImportBindings,
   resolveComponentImport,
+  walk,
 } from 'storybook/internal/csf-tools';
+import { isModuleNotFoundError } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { TypescriptOptions as TypescriptOptionsBase } from 'storybook/internal/types';
 
 import type { ParserOptions } from 'react-docgen-typescript';
 
-import { getImportTag, getReactDocgen, matchPath } from './reactDocgen.ts';
+import { getDocgenPackageMissingError, loadReactDocgen } from './loadReactDocgen.ts';
 import {
   type ComponentDocWithExportName,
   getReactDocgenTypescriptError,
   matchComponentDoc,
   parseWithReactDocgenTypescript,
 } from './reactDocgenTypescript.ts';
+import type { ReactDocgenConfig } from './reactDocgen/utils.ts';
+import { getImportTag, matchPath } from './resolveComponentPath.ts';
 import type { ComponentRef } from './types.ts';
 import { cachedResolveImport } from './utils.ts';
 
-export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript' | false;
+/** `react-docgen-typescript` is an optional peer dependency of this package. */
+const isReactDocgenTypescriptResolvable = () => {
+  try {
+    import.meta.resolve('react-docgen-typescript');
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export type { ReactDocgenConfig };
 export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
 
 export interface TypescriptOptions extends TypescriptOptionsBase {
@@ -72,51 +87,44 @@ export const getComponents = async ({
   additionalComponentNames?: string[];
 }): Promise<ComponentRef[]> => {
   const { reactDocgenTypescriptOptions } = typescriptOptions;
-  const program: NodePath<t.Program> = csf._file.path;
 
   const componentSet = new Set<string>();
   /** Minimum JSX nesting depth per component name (1 = outermost JSX element). */
   const componentDepth = new Map<string, number>();
-  const localToImport = collectImportBindings(program);
+  const localToImport = collectImportBindings(csf.program);
 
-  // Gather components from all JSX opening elements, tracking nesting depth incrementally.
-  let jsxDepth = 0;
-  program.traverse({
-    JSXElement: {
-      enter() {
-        jsxDepth++;
-      },
-      exit() {
-        jsxDepth--;
-      },
-    },
-    JSXOpeningElement(p) {
-      const n = p.node.name;
-      let name: string | undefined;
-      if (t.isJSXIdentifier(n)) {
-        name = n.name;
-        if (name && /[A-Z]/.test(name.charAt(0))) {
-          componentSet.add(name);
-        }
-      } else if (t.isJSXMemberExpression(n)) {
-        const jsxNameToString = (nm: t.JSXIdentifier | t.JSXMemberExpression): string =>
-          t.isJSXIdentifier(nm)
-            ? nm.name
-            : `${jsxNameToString(nm.object)}.${jsxNameToString(nm.property)}`;
-        name = jsxNameToString(n);
+  // Gather components from all JSX opening elements, tracking how many JSX elements enclose each.
+  const jsxDepth = new Map<ESTreeNode, number>();
+  walk(csf.program, (node, parent) => {
+    const depth = (parent ? (jsxDepth.get(parent) ?? 0) : 0) + (node.type === 'JSXElement' ? 1 : 0);
+    jsxDepth.set(node, depth);
+    if (node.type !== 'JSXOpeningElement') {
+      return;
+    }
+    const n = node.name;
+    let name: string | undefined;
+    if (n.type === 'JSXIdentifier') {
+      name = n.name;
+      if (name && /[A-Z]/.test(name.charAt(0))) {
         componentSet.add(name);
       }
+    } else if (n.type === 'JSXMemberExpression') {
+      const jsxNameToString = (nm: ESTree.JSXIdentifier | ESTree.JSXMemberExpression): string =>
+        nm.type === 'JSXIdentifier'
+          ? nm.name
+          : `${jsxNameToString(nm.object)}.${jsxNameToString(nm.property)}`;
+      name = jsxNameToString(n);
+      componentSet.add(name);
+    }
 
-      if (name) {
-        // jsxDepth is already incremented by JSXElement.enter for the current element,
-        // so subtract 1 to get the number of *wrapping* JSX ancestors.
-        const depth = jsxDepth - 1;
-        const existing = componentDepth.get(name);
-        if (existing === undefined || depth < existing) {
-          componentDepth.set(name, depth);
-        }
+    if (name) {
+      // The opening element shares its JSXElement's depth, which counts that element itself.
+      const wrappingDepth = depth - 1;
+      const existing = componentDepth.get(name);
+      if (existing === undefined || wrappingDepth < existing) {
+        componentDepth.set(name, wrappingDepth);
       }
-    },
+    }
   });
 
   // Add meta.component if present
@@ -133,17 +141,12 @@ export const getComponents = async ({
 
   // Filter out locally defined components (those whose base identifier has a local, non-import binding)
   const isLocallyDefinedWithoutImport = (base: string): boolean => {
-    const binding = program.scope.getBinding(base);
+    const binding = csf.editor.scopes.program.bindings.get(base);
 
     if (!binding) {
       return false; // missing binding -> keep (will become null import)
     }
-    const isImportBinding = Boolean(
-      binding.path.isImportSpecifier?.() ||
-      binding.path.isImportDefaultSpecifier?.() ||
-      binding.path.isImportNamespaceSpecifier?.()
-    );
-    return !isImportBinding;
+    return binding.kind !== 'import';
   };
 
   const filteredComponents = components.filter(
@@ -193,26 +196,40 @@ export const getComponents = async ({
             } catch (e) {
               const message = e instanceof Error ? e.message : String(e);
               logger.debug(`react-docgen-typescript failed for ${path}: ${message}`);
-              reactDocgenTypescriptError = {
-                name: 'react-docgen-typescript parse error',
-                message: `File: ${path}\n${message}`,
-              };
+              // A missing `typescript` also fails the import, but has its own startup warning.
+              reactDocgenTypescriptError =
+                isModuleNotFoundError(e) && !isReactDocgenTypescriptResolvable()
+                  ? getDocgenPackageMissingError('react-docgen-typescript')
+                  : {
+                      name: 'react-docgen-typescript parse error',
+                      message: `File: ${path}\n${message}`,
+                    };
             }
-            const importOverride = reactDocgenTypescript
-              ? getImportTag(reactDocgenTypescript)
-              : undefined;
+            let reactDocgenTypescriptDoc: ComponentDocWithExportName | undefined;
+            let componentJsDocTags = reactDocgenTypescript?.componentJsDocTags;
+            if (reactDocgenTypescript) {
+              const { componentJsDocTags: _tags, ...doc } = reactDocgenTypescript;
+              reactDocgenTypescriptDoc = doc;
+              componentJsDocTags = _tags;
+            }
 
             return {
               ...componentWithPackage,
               path,
-              ...(reactDocgenTypescript ? { reactDocgenTypescript } : {}),
+              ...(reactDocgenTypescriptDoc
+                ? { reactDocgenTypescript: reactDocgenTypescriptDoc }
+                : {}),
               ...(reactDocgenTypescriptError ? { reactDocgenTypescriptError } : {}),
-              importOverride,
+              ...(componentJsDocTags ? { componentJsDocTags } : {}),
+              importOverride: componentJsDocTags?.import?.[0]?.trim(),
             };
           }
 
           if (docgenEngine === 'react-docgen') {
-            const reactDocgen = getReactDocgen(path, componentWithPackage);
+            const reactDocgenEngine = await loadReactDocgen();
+            const reactDocgen = reactDocgenEngine
+              ? reactDocgenEngine.getReactDocgen(path, componentWithPackage)
+              : { type: 'error' as const, error: getDocgenPackageMissingError('react-docgen') };
             return {
               ...componentWithPackage,
               path,

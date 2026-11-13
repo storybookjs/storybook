@@ -1,20 +1,26 @@
-import { spawnSync } from 'node:child_process';
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { basename, dirname, join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import type { Plugin } from 'rolldown';
-import { rolldown } from 'rolldown';
-import { dts } from 'rolldown-plugin-dts';
-import ts from 'typescript';
+import { x } from 'tinyexec';
+import type TS from 'typescript';
 
 import type { BuildEntries } from './entry-utils.ts';
-import { getExternal } from './entry-utils.ts';
+import { createPackageMatcher, getExternal } from './entry-utils.ts';
 
 const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 const DIR_ROOT = join(DIR_CODE, '..');
+
+const require = createRequire(import.meta.url);
+
+let typescript: typeof TS | undefined;
+// `require` skips the ESM loader's module-format detection and export lexing of this 9 MB
+// CommonJS file, which is most of what `import` costs.
+const getTypeScript = () => (typescript ??= require('typescript') as typeof TS);
 
 const DTS_EXCLUDES = [
   '**/*.test.*',
@@ -81,9 +87,83 @@ function createTextAssetStubPlugin(): Plugin {
   };
 }
 
+/**
+ * rolldown-plugin-dts only bundles ES module declarations, but some dependencies whose types are
+ * inlined ship CommonJS-style ones: `declare namespace X { ... }`, merged with a `declare const X`,
+ * exported with `export = X` (e.g. `@testing-library/jest-dom/matchers`). This rewrites `export = X`
+ * into a default export of `X` plus a named type export for every type declared in the namespace,
+ * which is how TypeScript lets ES modules import them. Returns `null` for any other shape.
+ */
+export function convertCommonJsNamespaceDeclaration(fileName: string, code: string): string | null {
+  const ts = getTypeScript();
+  const sourceFile = ts.createSourceFile(fileName, code, ts.ScriptTarget.Latest, true);
+  const exportAssignment = sourceFile.statements.find(
+    (statement): statement is TS.ExportAssignment =>
+      ts.isExportAssignment(statement) &&
+      statement.isExportEquals === true &&
+      ts.isIdentifier(statement.expression)
+  );
+  if (!exportAssignment) {
+    return null;
+  }
+  const name = (exportAssignment.expression as TS.Identifier).text;
+  const namespace = sourceFile.statements.find(
+    (statement): statement is TS.ModuleDeclaration =>
+      ts.isModuleDeclaration(statement) &&
+      ts.isIdentifier(statement.name) &&
+      statement.name.text === name &&
+      statement.body !== undefined &&
+      ts.isModuleBlock(statement.body)
+  );
+  if (!namespace) {
+    return null;
+  }
+
+  const typeExports = (namespace.body as TS.ModuleBlock).statements.flatMap((statement) => {
+    if (!ts.isInterfaceDeclaration(statement) && !ts.isTypeAliasDeclaration(statement)) {
+      return [];
+    }
+    const typeName = statement.name.text;
+    const parameters = statement.typeParameters ?? [];
+    const declared = parameters.length
+      ? `<${parameters.map((parameter) => parameter.getText(sourceFile)).join(', ')}>`
+      : '';
+    const applied = parameters.length
+      ? `<${parameters.map((parameter) => parameter.name.text).join(', ')}>`
+      : '';
+    return [`export type ${typeName}${declared} = ${name}.${typeName}${applied};`];
+  });
+
+  return [
+    code.slice(0, exportAssignment.getStart(sourceFile)),
+    `export { ${name} as default };`,
+    ...typeExports,
+    code.slice(exportAssignment.getEnd()),
+  ].join('\n');
+}
+
+function createDependencyDeclarationTransformPlugin(
+  transform: NonNullable<BuildEntries['transformDependencyDeclaration']>
+): Plugin {
+  return {
+    name: 'storybook:dts-dependency-transform',
+    load: {
+      order: 'pre',
+      async handler(rawId) {
+        const id = rawId.split('?')[0];
+        if (!RE_DTS_IMPORTER.test(id) || !/[\\/]node_modules[\\/]/.test(id)) {
+          return null;
+        }
+        return transform({ id, code: await readFile(id, 'utf8') });
+      },
+    },
+  };
+}
+
 function createTypesFallbackResolverPlugin(isExternal: (id: string) => boolean): Plugin {
+  const ts = getTypeScript();
   const cache = new Map<string, string | null>();
-  const compilerOptions: ts.CompilerOptions = {
+  const compilerOptions: TS.CompilerOptions = {
     moduleResolution: ts.ModuleResolutionKind.Bundler,
     resolveJsonModule: true,
   };
@@ -141,7 +221,7 @@ function dtsEmitCompilerOptions(outDir: string) {
     rewriteRelativeImportExtensions: true,
     outDir,
     rootDir: DIR_ROOT,
-  } satisfies ts.CompilerOptions;
+  } satisfies TS.CompilerOptions;
 }
 
 /**
@@ -150,6 +230,7 @@ function dtsEmitCompilerOptions(outDir: string) {
  * side-effect imports like `import './typings.d.ts'` resolve in the tree.
  */
 function copyHandwrittenDeclarations(fileNames: readonly string[], outDir: string): void {
+  const ts = getTypeScript();
   for (const fileName of fileNames) {
     if (/\.d\.[cm]?ts$/.test(fileName)) {
       const target = join(outDir, relative(DIR_ROOT, fileName));
@@ -158,7 +239,8 @@ function copyHandwrittenDeclarations(fileNames: readonly string[], outDir: strin
   }
 }
 
-function parseWrapperTsconfig(wrapperTsconfig: string): ts.ParsedCommandLine {
+function parseWrapperTsconfig(wrapperTsconfig: string): TS.ParsedCommandLine {
+  const ts = getTypeScript();
   const parsed = ts.getParsedCommandLineOfConfigFile(wrapperTsconfig, undefined, {
     ...ts.sys,
     onUnRecoverableConfigFileDiagnostic: (diagnostic) => {
@@ -183,6 +265,7 @@ function parseWrapperTsconfig(wrapperTsconfig: string): ts.ParsedCommandLine {
  * load order produces byte-different output across runs.
  */
 function emitPackageDeclarations(wrapperTsconfig: string, outDir: string): void {
+  const ts = getTypeScript();
   const parsed = parseWrapperTsconfig(wrapperTsconfig);
 
   const program = ts.createProgram({
@@ -218,6 +301,34 @@ function emitPackageDeclarations(wrapperTsconfig: string, outDir: string): void 
   copyHandwrittenDeclarations(parsed.fileNames, outDir);
 }
 
+// The package's `exports` map only exposes the new API entry points, so resolve the package root
+// via package.json and use the helper behind its tsc launcher to locate the native binary, which
+// then runs without an intermediate node process.
+async function resolveNativeTscPath(): Promise<string> {
+  const packageRoot = dirname(require.resolve('typescript-native/package.json'));
+  const { default: getExePath } = await import(
+    pathToFileURL(join(packageRoot, 'lib', 'getExePath.js')).href
+  );
+  return getExePath();
+}
+
+/**
+ * Like `Promise.all`, but waits for every operation to settle before rethrowing the first failure,
+ * so the `finally` cleanup never deletes files a still-running native emit reads or writes.
+ */
+async function allSettledOrThrow<T extends readonly unknown[]>(
+  values: T
+): Promise<{ -readonly [K in keyof T]: Awaited<T[K]> }> {
+  const results = await Promise.allSettled(values);
+  const rejected = results.find((result) => result.status === 'rejected');
+  if (rejected) {
+    throw rejected.reason;
+  }
+  return results.map((result) => (result as PromiseFulfilledResult<unknown>).value) as {
+    -readonly [K in keyof T]: Awaited<T[K]>;
+  };
+}
+
 /**
  * Same contract as `emitPackageDeclarations`, but the emit runs on the
  * TypeScript 7 native compiler (the `typescript-native` npm alias). TS 7
@@ -225,36 +336,53 @@ function emitPackageDeclarations(wrapperTsconfig: string, outDir: string): void 
  * tsconfig and the emit is one `tsc -p` child process — still a single
  * whole-program pass over the package, like the TS 6 path.
  */
-function emitPackageDeclarationsNative(
+async function emitPackageDeclarationsNative(
+  tscPath: string,
   emitTsconfig: string,
   wrapperTsconfig: string,
   outDir: string
-): void {
-  const require = createRequire(import.meta.url);
-  // The package's `exports` map only exposes the new API entry points, so
-  // resolve the package root via package.json and spawn its tsc launcher.
-  const tscPath = join(dirname(require.resolve('typescript-native/package.json')), 'bin', 'tsc');
-
-  const result = spawnSync(
-    process.execPath,
-    [tscPath, '--project', emitTsconfig, '--pretty', 'false'],
-    { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }
-  );
-  if (result.error) {
-    throw result.error;
+): Promise<void> {
+  // Spawned before anything else is awaited, so the esbuild bundle, the TypeScript load and the
+  // config parse all overlap with the emit.
+  const emit = x(tscPath, ['--project', emitTsconfig, '--pretty', 'false']);
+  let fileNames: readonly string[];
+  try {
+    ({ fileNames } = parseWrapperTsconfig(wrapperTsconfig));
+  } catch (error) {
+    emit.kill();
+    await Promise.allSettled([emit]);
+    throw error;
   }
-  if (result.status !== 0) {
-    console.error(`${result.stdout ?? ''}${result.stderr ?? ''}`);
+  const result = await emit;
+  if (result.exitCode !== 0) {
+    console.error(`${result.stdout}${result.stderr}`);
     throw new Error(
-      `Native declaration emit failed for ${emitTsconfig} (exit code ${result.status})`
+      `Native declaration emit failed for ${emitTsconfig} (exit code ${result.exitCode})`
     );
   }
-  const emitted = ts.sys.readDirectory(outDir, ['.d.ts', '.d.mts', '.d.cts']);
+  const emitted = getTypeScript().sys.readDirectory(outDir, ['.d.ts', '.d.mts', '.d.cts']);
   if (emitted.length === 0) {
     throw new Error(`Native declaration emit produced no output for ${emitTsconfig}`);
   }
 
-  copyHandwrittenDeclarations(parseWrapperTsconfig(wrapperTsconfig).fileNames, outDir);
+  copyHandwrittenDeclarations(fileNames, outDir);
+}
+
+/** Maps each export of the package at `cwd` that has a `code` condition to that source file. */
+async function selfReferencePaths(cwd: string): Promise<Record<string, string[]>> {
+  const { name, exports } = JSON.parse(await readFile(join(cwd, 'package.json'), 'utf8')) as {
+    name: string;
+    exports?: unknown;
+  };
+  if (!exports || typeof exports !== 'object') {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(exports).flatMap(([subpath, target]) => {
+      const code = (target as { code?: unknown } | null)?.code;
+      return typeof code === 'string' ? [[join(name, subpath), [join(cwd, code)]]] : [];
+    })
+  );
 }
 
 export async function generateTypesFiles(
@@ -275,13 +403,7 @@ export async function generateTypesFiles(
 
   const { typesExternal: external } = await getExternal(cwd);
 
-  const externalFn = (id: string) =>
-    external.some(
-      (dep: string) =>
-        id === dep ||
-        id.startsWith(`${dep}/`) ||
-        id.includes(`${sep}node_modules${sep}${dep}${sep}`)
-    );
+  const externalFn = createPackageMatcher(external, sep);
 
   // ./src/client-logger/index.ts -> client-logger/index
   const entryName = (entryPoint: string) =>
@@ -321,6 +443,13 @@ export async function generateTypesFiles(
   // config.
   const compilerOptions = await resolveTsconfigCompilerOptions(packageTsconfig);
   delete compilerOptions.baseUrl;
+  // tsc emits no declarations for sources it first reaches through node_modules, which is where
+  // the `code` condition sends workspace imports. Other packages resolve to their built `types`;
+  // the package's own exports map straight to its sources.
+  compilerOptions.customConditions = compilerOptions.customConditions?.filter(
+    (condition: string) => condition !== 'code'
+  );
+  compilerOptions.paths = { ...compilerOptions.paths, ...(await selfReferencePaths(cwd)) };
   await writeFile(
     wrapperTsconfig,
     JSON.stringify({
@@ -339,18 +468,34 @@ export async function generateTypesFiles(
   const emitTsconfig = join(DIR_ROOT, `tsconfig.dts-tmp-${basename(cwd)}-emit.json`);
 
   try {
+    let nativeEmit: Promise<void> | undefined;
     if (useTsgo) {
-      await writeFile(
-        emitTsconfig,
-        JSON.stringify({
-          compilerOptions: { ...compilerOptions, ...dtsEmitCompilerOptions(emitDir) },
-          include,
-          exclude,
-        })
-      );
-      emitPackageDeclarationsNative(emitTsconfig, wrapperTsconfig, emitDir);
+      const [tscPath] = await Promise.all([
+        resolveNativeTscPath(),
+        writeFile(
+          emitTsconfig,
+          JSON.stringify({
+            compilerOptions: { ...compilerOptions, ...dtsEmitCompilerOptions(emitDir) },
+            include,
+            exclude,
+          })
+        ),
+      ]);
+      nativeEmit = emitPackageDeclarationsNative(tscPath, emitTsconfig, wrapperTsconfig, emitDir);
     } else {
       emitPackageDeclarations(wrapperTsconfig, emitDir);
+    }
+    const [, { rolldown }, { dts }] = await allSettledOrThrow([
+      nativeEmit,
+      import('rolldown'),
+      import('rolldown-plugin-dts'),
+    ]);
+
+    if (data.transformEmittedDeclarations) {
+      const packageJson = JSON.parse(await readFile(join(cwd, 'package.json'), 'utf8')) as {
+        name: string;
+      };
+      data.transformEmittedDeclarations({ emitDir, packageName: packageJson.name });
     }
 
     const input: Record<string, string> = Object.fromEntries(
@@ -379,6 +524,9 @@ export async function generateTypesFiles(
         external: isExternal,
         plugins: [
           createTextAssetStubPlugin(),
+          ...(data.transformDependencyDeclaration
+            ? [createDependencyDeclarationTransformPlugin(data.transformDependencyDeclaration)]
+            : []),
           ...(resolver === 'hybrid' ? [createTypesFallbackResolverPlugin(isExternal)] : []),
           dts({
             cwd,
@@ -406,8 +554,8 @@ export async function generateTypesFiles(
     // external that nothing in the kept types references is tree-shaken from the output, so the
     // flat file ends up importing only what its closure genuinely uses — which the entry's
     // producer-side guard then asserts is exactly the allowlist.
-    const portableExternalFn = (allowed: string[]) => (id: string) =>
-      externalFn(id) || allowed.some((dep) => id === dep || id.startsWith(`${dep}/`));
+    const portableExternalFn = (allowed: string[]) =>
+      createPackageMatcher([...external, ...allowed], sep);
 
     const outputs = [
       ...(Object.keys(sharedInput).length > 0 ? [await bundleDts(sharedInput, externalFn)] : []),

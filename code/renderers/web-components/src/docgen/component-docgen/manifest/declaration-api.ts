@@ -54,8 +54,26 @@ export function isBackedByAttribute(
   field: ManifestClassField,
   attributes: AttributeApi[]
 ): boolean {
+  return attributes.some((attribute) => isAttributeField(attribute, field));
+}
+
+/** Arg types keep differently named backing fields as their own property rows; only a same-named field merges into the attribute row. */
+export function foldsIntoAttributeRow(
+  field: ManifestClassField,
+  attributes: AttributeApi[]
+): boolean {
   return attributes.some(
-    (attribute) => attribute.field === field || attribute.attribute.name === field.name
+    (attribute) => attribute.attribute.name === field.name && isAttributeField(attribute, field)
+  );
+}
+
+/** Name equality only counts when the attribute names no `fieldName`; otherwise `value` could claim an unrelated `value` field. */
+function isAttributeField(
+  { attribute, field: backingField }: AttributeApi,
+  field: ManifestClassField
+): boolean {
+  return (
+    backingField === field || (attribute.fieldName === undefined && attribute.name === field.name)
   );
 }
 

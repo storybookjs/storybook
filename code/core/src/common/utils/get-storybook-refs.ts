@@ -44,9 +44,17 @@ export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>
   );
 };
 
+// The manager build waits for this check, so a ref that does not answer in time is left `unknown`
+// rather than `server-checked`: the manager then loads it at runtime with credentials, as it does a
+// private ref, which a public host without `Access-Control-Allow-Credentials` refuses, and a failed
+// `index.json` shows "Loading of ref failed" instead of falling back to auto-inject. Before the
+// budget, such a ref held the whole dev server.
+const REF_CHECK_TIMEOUT_MS = 3_000;
+
 export const checkRef = async (url: string) => {
   try {
-    const { ok, status } = await fetch(`${url}/iframe.html`);
+    const signal = AbortSignal.timeout(REF_CHECK_TIMEOUT_MS);
+    const { ok, status } = await fetch(`${url}/iframe.html`, { signal });
     if (!ok || status !== 200) {
       return false;
     }
@@ -54,12 +62,16 @@ export const checkRef = async (url: string) => {
     // so the status is ok, but if we'd ask for JSON we might get a response saying we need to authenticate.
     const data = await fetch(`${url}/iframe.html`, {
       headers: { Accept: 'application/json' },
+      signal,
     });
     if (!data.ok) {
       return true;
     }
     // we might receive non-JSON as a response, because the service ignored our request for JSON response type.
-    const json = await data.json().catch(() => ({}));
+    const json = await data.json().catch(() => {
+      signal.throwIfAborted();
+      return {};
+    });
     return !json.loginUrl;
   } catch {
     return false;
@@ -83,23 +95,28 @@ export async function getRefs(options: Options) {
     return {};
   }
 
-  const refs = await options.presets.apply<Record<string, Ref>>('refs', await getAutoRefs(options));
+  const configured = await options.presets.apply<Record<string, Ref>>(
+    'refs',
+    await getAutoRefs(options)
+  );
 
-  Object.entries(refs).forEach(([key, value]: [string, Ref]) => {
-    if (value.disable) {
-      // Also delete the ref that is disabled in definedRefs
-      delete refs[key];
-
-      return;
-    }
-
-    refs[key.toLowerCase()] = {
-      ...value,
-      id: key.toLowerCase(),
-      title: value.title || toTitle(value.id || key),
-      url: stripTrailingSlash(value.url),
-    };
-  });
+  // Ref ids must be lowercase: the router lowercases the URL before extracting refId (router/utils.ts).
+  const refs: Record<string, Ref> = Object.fromEntries(
+    Object.entries(configured)
+      .filter(([, value]) => !value.disable)
+      .map(([key, value]): [string, Ref] => {
+        const id = key.toLowerCase();
+        return [
+          id,
+          {
+            ...value,
+            id,
+            title: value.title || toTitle(value.id || key),
+            url: stripTrailingSlash(value.url),
+          },
+        ];
+      })
+  );
 
   // verify the refs are publicly reachable, if they are not we'll fetch stories.json at runtime, otherwise the ref won't work
   await Promise.all(

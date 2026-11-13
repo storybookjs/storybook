@@ -1,20 +1,18 @@
 import React from 'react';
 
-import { TooltipLinkList } from 'storybook/internal/components';
-
 import { LinkIcon } from '@storybook/icons';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
-import { styled } from 'storybook/theming';
+import { styled } from 'storybook/theming/emotion';
 
 import { initialState } from '../../../shared/checklist-store/checklistData.state.ts';
 import { useMenu } from '../../container/Menu.tsx';
 import { internal_universalChecklistStore as mockStore } from '../../manager-stores.mock.ts';
 import { LayoutProvider } from '../layout/LayoutProvider.tsx';
-import { type MenuList, SidebarMenu } from './Menu.tsx';
+import { type MenuList, SidebarMenu, SidebarMenuList } from './Menu.tsx';
 
 const getAPIMocks = () => ({
   getShortcutKeys: fn()
@@ -35,7 +33,7 @@ const getAPIMocks = () => ({
   toggleNav: fn().mockName('api::toggleNav'),
   toggleToolbar: fn().mockName('api::toggleToolbar'),
   togglePanel: fn().mockName('api::togglePanel'),
-  jumpToComponent: fn().mockName('api::jumpToComponent'),
+  jumpToSubtree: fn().mockName('api::jumpToSubtree'),
   jumpToStory: fn().mockName('api::jumpToStory'),
   emit: fn().mockName('api::emit'),
 });
@@ -92,7 +90,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Items: Story = {
-  render: () => <TooltipLinkList links={fakemenu} />,
+  render: () => <SidebarMenuList menu={fakemenu} onHide={fn()} />,
 };
 
 export const Real: Story = {

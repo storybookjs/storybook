@@ -28,5 +28,5 @@
     "e2e-tests": {},
     "e2e-tests-dev": {}
   },
-  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+  "tags": ["ci:normal", "ci:daily"]
 }

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular-vite",
-  "version": "11.0.0-alpha.6",
+  "version": "11.0.0-beta.3",
   "description": "Storybook for Angular: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -37,6 +37,7 @@
     "./client/docs/config": "./dist/client/docs/config.js",
     "./client/preview-prod": "./dist/client/preview-prod.js",
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
+    "./internal/vitest-compiler-setup": "./dist/client/vitest-compiler-setup.js",
     "./node": {
       "types": "./dist/node/index.d.ts",
       "code": "./src/node/index.ts",
@@ -81,9 +82,9 @@
     "@angular/forms": "^21.2.14",
     "@angular/platform-browser": "^21.2.14",
     "@angular/platform-browser-dynamic": "^21.2.14",
-    "@babel/types": "^7.28.5",
     "@storybook/angular-cm": "workspace:*",
     "@storybook/angular-compodoc": "workspace:*",
+    "@storybook/component-meta-typescript": "workspace:*",
     "@types/node": "^22.19.1",
     "empathic": "^2.0.0",
     "memfs": "^4.11.1",
@@ -107,7 +108,7 @@
     "sass": "^1.0.0",
     "sass-embedded": "^1.0.0",
     "storybook": "workspace:^",
-    "typescript": "^5.9.0 || ^6.0.0",
+    "typescript": "^5.9.0 || ^6.0.0 || ^7.0.0",
     "vite": ">=8.0.0",
     "zone.js": ">=0.14.0"
   },

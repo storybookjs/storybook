@@ -253,6 +253,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: initReq,
       res: initResponse,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions,
       addonOptions,
       compositionAuth: new CompositionAuth(),
@@ -268,6 +270,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: listReq,
       res: listResponse,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions,
       addonOptions,
       compositionAuth: new CompositionAuth(),
@@ -292,6 +296,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: mockReq,
       res: response,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       addonOptions: {
         toolsets: {
@@ -326,14 +332,14 @@ describe('mcpServerHandler', () => {
     });
     expect(parsedResponse.result.serverInfo.version).toBeDefined();
     expect(parsedResponse.result.instructions).toBeDefined();
+    expect(parsedResponse.result.instructions).toContain('## Storybook');
     expect(parsedResponse.result.instructions).toContain(
-      'Follow these workflows when working with UI and/or Storybook.'
+      '`npx storybook skills ui-review --mcp`: publish a review'
     );
     expect(parsedResponse.result.instructions).toContain(
-      '## UI Building and Story Writing Workflow'
+      'Also when the user asks to run or fix story tests'
     );
-    expect(parsedResponse.result.instructions).toContain('## Validation Workflow');
-    expect(parsedResponse.result.instructions).not.toContain('## Documentation Workflow');
+    expect(parsedResponse.result.instructions).not.toContain('component-docs');
   });
 
   it('should include docs-style instructions when docs toolset is selected and manifest is available', async () => {
@@ -368,6 +374,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: mockReq,
       res: response,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       addonOptions: {
         toolsets: {
@@ -385,19 +393,11 @@ describe('mcpServerHandler', () => {
     const parsedResponse = JSON.parse(responseText);
 
     expect(parsedResponse.result.instructions).toContain(
-      'Follow these workflows when working with UI and/or Storybook.'
+      '1. `npx storybook skills component-docs --mcp`'
     );
-    expect(parsedResponse.result.instructions).toContain('## Documentation Workflow');
-    expect(parsedResponse.result.instructions).toContain(
-      '**CRITICAL: Never hallucinate component properties!**'
-    );
-    expect(parsedResponse.result.instructions).toContain(
-      'scope multi-source requests with `storybookId`'
-    );
-    expect(parsedResponse.result.instructions).not.toContain(
-      '## UI Building and Story Writing Workflow'
-    );
-    expect(parsedResponse.result.instructions).not.toContain('## Validation Workflow');
+    expect(parsedResponse.result.instructions).not.toContain('write-stories');
+    expect(parsedResponse.result.instructions).not.toContain('ui-review');
+    expect(parsedResponse.result.instructions).not.toContain('test-stories');
   });
 
   it('should respect disableTelemetry setting', async () => {
@@ -426,6 +426,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: mockReq,
       res: response,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       addonOptions: {
         toolsets: {
@@ -473,6 +475,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: initReq,
       res: initResponse,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       addonOptions: {
         toolsets: { dev: true, docs: true },
@@ -496,6 +500,8 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: listToolsReq,
       res: listResponse,
+      origin: 'http://localhost:6006',
+      basePath: '/',
       options: mockOptions as any,
       addonOptions: {
         toolsets: { dev: true, docs: true },

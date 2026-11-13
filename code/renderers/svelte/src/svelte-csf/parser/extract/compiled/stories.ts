@@ -15,13 +15,13 @@ export async function extractStoriesNodesFromExportDefaultFn(params: Params) {
   const { walk } = await import('zimmerframe');
 
   const { nodes } = params;
-  const { storiesFunctionDeclaration, storyIdentifier } = nodes;
+  const { storiesFunctionDeclaration, storyNames } = nodes;
   const state: Result = [];
   const visitors: Visitors<ESTreeAST.Node, typeof state> = {
     CallExpression(node, context) {
       const { state } = context;
 
-      if (node.callee.type === 'Identifier' && node.callee.name === storyIdentifier.name) {
+      if (node.callee.type === 'Identifier' && storyNames.includes(node.callee.name)) {
         state.push(node);
       } else {
         context.next();

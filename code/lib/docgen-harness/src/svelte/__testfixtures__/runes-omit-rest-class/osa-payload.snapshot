@@ -1,1 +1,9 @@
-undefined
+{
+  "description": undefined,
+  "id": "sveltefixtures-input",
+  "jsDocTags": {},
+  "name": "Input",
+  "path": "./input.stories.svelte",
+  "renderer": "svelte",
+  "summary": undefined,
+}

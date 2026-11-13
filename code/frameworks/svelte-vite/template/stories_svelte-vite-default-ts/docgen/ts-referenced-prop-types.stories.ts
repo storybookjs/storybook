@@ -5,10 +5,8 @@ import TSReferencedPropTypes from './ts-referenced-prop-types.svelte';
 const meta = {
   component: TSReferencedPropTypes,
   tags: ['autodocs'],
-  render: (args, { argTypes }) => ({
-    Component: TSReferencedPropTypes,
-    props: { ...args, argTypes },
-  }),
+  // These stories exist for the docgen sandbox baselines; the canvas shows no docgen output.
+  parameters: { chromatic: { disableSnapshot: true } },
 } satisfies Meta<typeof TSReferencedPropTypes>;
 
 export default meta;

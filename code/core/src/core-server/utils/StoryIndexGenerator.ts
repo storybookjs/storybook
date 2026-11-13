@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import {
   commonGlobOptions,
@@ -40,29 +41,40 @@ import { userOrAutoTitleFromSpecifier } from '../../shared/story-index/autoTitle
 import { combineStorySorts, sortStoriesV7 } from '../../shared/story-index/sortStories.ts';
 import { Tag } from '../../shared/constants/tags.ts';
 import { isMdxEntry } from '../../shared/utils/story-index-filters.ts';
+import { StorybookError } from '../../storybook-error.ts';
 import { IndexingError, MultipleIndexingError } from './IndexingError.ts';
 import { autoName } from './autoName.ts';
-import { analyzeMdx } from './analyze-mdx.ts';
+import { type MdxAnalysisResult, analyzeMdx } from './analyze-mdx.ts';
 import { type IndexStatsSummary, addStats } from './summarizeStats.ts';
 
-// Extended type to keep track of the csf meta id so we know the component id when referencing docs in `extractDocs`
+// Extended type to keep track of the csf meta id so we know the component id when resolving docs
 type StoryIndexEntryWithExtra = StoryIndexEntry & {
   extra: { metaId?: string; stats: IndexInputStats };
 };
-/** A .mdx file will produce a docs entry */
-type DocsCacheEntry = DocsIndexEntry;
-/** A `_.stories._` file will produce a list of stories and possibly a docs entry */
-type StoriesCacheEntry = {
-  entries: (StoryIndexEntryWithExtra | DocsIndexEntry)[];
-  dependents: Path[];
+type StoriesFile = {
   type: 'stories';
+  entries: (StoryIndexEntryWithExtra | DocsIndexEntry)[];
+};
+// Only what the .mdx file itself says: its docs entry also depends on the stories files it imports
+type DocsFile = {
+  type: 'docs';
+  analysis: MdxAnalysisResult;
 };
 type ErrorEntry = {
   type: 'error';
   err: IndexingError;
 };
-type CacheEntry = false | StoriesCacheEntry | DocsCacheEntry | ErrorEntry;
-type SpecifierStoriesCache = Record<Path, CacheEntry>;
+// `undefined` for a file that adds nothing to the index: an MDX template, or a file that is gone
+type Extracted = StoriesFile | DocsFile | ErrorEntry | undefined;
+// Replaced on every invalidation, so nothing reads what an earlier extraction resolves to
+type Slot = { extracted?: Promise<Extracted> };
+type ExtractedFile = {
+  specifier: NormalizedStoriesSpecifier;
+  absolutePath: Path;
+  extracted: Extracted;
+};
+type MatchingFiles = Record<Path, false>;
+type IndexAndStats = { storyIndex: StoryIndex; stats: IndexStatsSummary };
 
 export type StoryIndexGeneratorOptions = {
   workingDir: Path;
@@ -78,6 +90,23 @@ const makeAbsolute = (otherImport: Path, normalizedPath: Path, workingDir: Path)
   otherImport.startsWith('.')
     ? slash(resolve(workingDir, normalizeStoryPath(join(dirname(normalizedPath), otherImport))))
     : otherImport;
+
+type StoriesFilesByImport = Map<Path, { order: number; storiesFile: StoriesFile }[]>;
+
+// An import names a stories file by its path, with or without the last extension
+const indexStoriesFilesByImport = (files: ExtractedFile[]): StoriesFilesByImport => {
+  const byImport: StoriesFilesByImport = new Map();
+  files.forEach(({ absolutePath, extracted }, order) => {
+    if (extracted?.type !== 'stories') {
+      return;
+    }
+    const match = { order, storiesFile: extracted };
+    new Set([absolutePath, absolutePath.replace(/\.[^.]+$/, '')]).forEach((storyImport) => {
+      byImport.set(storyImport, [...(byImport.get(storyImport) ?? []), match]);
+    });
+  });
+  return byImport;
+};
 
 /**
  * The StoryIndexGenerator extracts stories and docs entries for each file matching (one or more)
@@ -102,32 +131,28 @@ const makeAbsolute = (otherImport: Path, normalizedPath: Path, workingDir: Path)
  * entries are preferred to CSF templates (with warnings).
  */
 export class StoryIndexGenerator {
-  // An internal cache mapping specifiers to a set of path=><set of stories>
-  // Later, we'll combine each of these subsets together to form the full index
-  private specifierToCache: Map<NormalizedStoriesSpecifier, SpecifierStoriesCache>;
+  private specifierToSlots = new Map<NormalizedStoriesSpecifier, Map<Path, Slot>>();
 
   /** Cache for findMatchingFiles results */
-  private static findMatchingFilesCache = new Map<string, SpecifierStoriesCache>();
+  private static findMatchingFilesCache = new Map<string, MatchingFiles>();
 
-  // Cache the last value of `getStoryIndex`. We invalidate (by unsetting) when:
-  //  - any file changes, including deletions
-  //  - the preview changes [not yet implemented]
-  private lastIndex?: StoryIndex | null;
+  // Bumped by every invalidation. An index is only valid for the revision it was built at.
+  private revision = 0;
 
-  // Cache the last value stats calculation, mirroring lastIndex
-  private lastStats?: IndexStatsSummary;
+  private settled?: { revision: number } & ({ value: IndexAndStats } | { error: Error });
 
-  // Same as the above but for the error case
-  private lastError?: Error | null;
+  // Callers that ask while the index is computed share the computation, so its errors log once
+  private pending?: Promise<IndexAndStats>;
+
+  // Settles on the next invalidation, so a computation stops waiting for extractions it no longer needs
+  private nextInvalidation = Promise.withResolvers<void>();
 
   private invalidationListeners: Set<() => void> = new Set();
 
   constructor(
     public readonly specifiers: NormalizedStoriesSpecifier[],
     public readonly options: StoryIndexGeneratorOptions
-  ) {
-    this.specifierToCache = new Map();
-  }
+  ) {}
 
   /** Generate a cache key for findMatchingFiles */
   private static getFindMatchingFilesCacheKey(
@@ -152,7 +177,7 @@ export class StoryIndexGenerator {
     specifier: NormalizedStoriesSpecifier,
     workingDir: Path,
     ignoreWarnings = false
-  ): Promise<SpecifierStoriesCache> {
+  ): Promise<MatchingFiles> {
     // Check cache first
     const cacheKey = this.getFindMatchingFilesCacheKey(specifier, workingDir, ignoreWarnings);
     const cached = this.findMatchingFilesCache.get(cacheKey);
@@ -160,7 +185,7 @@ export class StoryIndexGenerator {
       return cached;
     }
 
-    const pathToSubIndex = {} as SpecifierStoriesCache;
+    const pathToSubIndex = {} as MatchingFiles;
 
     // Calculate a new CWD for each glob to handle paths that go above the workingDir.
     const globCwd = slash(resolve(workingDir, specifier.directory));
@@ -206,7 +231,7 @@ export class StoryIndexGenerator {
     specifiers: NormalizedStoriesSpecifier[],
     workingDir: Path,
     ignoreWarnings = false
-  ): Promise<Array<readonly [NormalizedStoriesSpecifier, SpecifierStoriesCache]>> {
+  ): Promise<Array<readonly [NormalizedStoriesSpecifier, MatchingFiles]>> {
     return Promise.all(
       specifiers.map(async (specifier) => {
         const pathToSubIndex = await StoryIndexGenerator.findMatchingFiles(
@@ -220,158 +245,74 @@ export class StoryIndexGenerator {
   }
 
   async initialize() {
-    // Find all matching paths for each specifier
-    const specifiersAndCaches = await StoryIndexGenerator.findMatchingFilesForSpecifiers(
+    const specifiersAndFiles = await StoryIndexGenerator.findMatchingFilesForSpecifiers(
       this.specifiers,
       this.options.workingDir
     );
 
     // We do this in a second step to avoid timing issues with the Promise.all above -- to ensure
-    // the keys in the `specifierToCache` object are consistent with the order of specifiers.
-    specifiersAndCaches.forEach(([specifier, cache]) =>
-      this.specifierToCache.set(specifier, cache)
+    // the keys in `specifierToSlots` are consistent with the order of specifiers.
+    specifiersAndFiles.forEach(([specifier, files]) =>
+      this.specifierToSlots.set(
+        specifier,
+        new Map(Object.keys(files).map((absolutePath) => [absolutePath, {}]))
+      )
     );
 
-    const previewCode = await this.getPreviewCode();
-    const projectTags = this.getProjectTags(previewCode);
+    const projectTags = this.getProjectTags(await this.getPreviewFile());
 
-    // Extract stories for each file
-    await this.ensureExtracted({ projectTags });
+    await this.extractAll(projectTags);
   }
 
-  /** Run the updater function over all the empty cache entries */
-  async updateExtracted(
-    updater: (
-      specifier: NormalizedStoriesSpecifier,
-      absolutePath: Path,
-      existingEntry: CacheEntry
-    ) => Promise<CacheEntry>,
-    overwrite = false
-  ) {
-    await Promise.all(
-      this.specifiers.map(async (specifier) => {
-        const entry = this.specifierToCache.get(specifier);
-        invariant(
-          entry,
-          `specifier does not have a matching cache entry in specifierToCache: ${JSON.stringify(
-            specifier
-          )}`
-        );
-        return Promise.all(
-          Object.keys(entry).map(async (absolutePath) => {
-            if (entry[absolutePath] && !overwrite) {
-              return;
-            }
+  private async extractAll(projectTags: Tag[]): Promise<ExtractedFile[]> {
+    return Promise.all(
+      [...this.specifierToSlots].flatMap(([specifier, slots]) =>
+        [...slots].map(async ([absolutePath, slot]) => {
+          slot.extracted ??= this.extract(specifier, absolutePath, projectTags);
+          return { specifier, absolutePath, extracted: await slot.extracted };
+        })
+      )
+    );
+  }
 
-            try {
-              entry[absolutePath] = await updater(specifier, absolutePath, entry[absolutePath]);
-            } catch (err) {
-              const relativePath = `.${sep}${relative(this.options.workingDir, absolutePath)}`;
+  private async extract(
+    specifier: NormalizedStoriesSpecifier,
+    absolutePath: Path,
+    projectTags: Tag[]
+  ): Promise<Extracted> {
+    try {
+      return this.isDocsMdx(absolutePath)
+        ? await this.extractDocs(absolutePath)
+        : await this.extractStories(specifier, absolutePath, projectTags);
+    } catch (err) {
+      const isGone = await access(absolutePath).then(
+        () => false,
+        (accessError) => accessError?.code === 'ENOENT' || accessError?.code === 'ENOTDIR'
+      );
+      return isGone ? undefined : { type: 'error', err: this.toIndexingError(err, absolutePath) };
+    }
+  }
 
-              entry[absolutePath] = {
-                type: 'error',
-                err: new IndexingError(
-                  err instanceof Error ? err.message : String(err),
-                  [relativePath],
-                  err instanceof Error ? err.stack : undefined
-                ),
-              };
-            }
-          })
-        );
-      })
+  private toIndexingError(err: unknown, absolutePath: Path) {
+    const relativePath = `.${sep}${relative(this.options.workingDir, absolutePath)}`;
+
+    return new IndexingError(
+      err instanceof Error ? err.message : String(err),
+      [relativePath],
+      err instanceof Error ? err.stack : undefined,
+      err instanceof StorybookError
+        ? {
+            code: err.fullErrorCode,
+            messageWithoutPath: err.message
+              .replaceAll(pathToFileURL(absolutePath).href, '')
+              .replaceAll(absolutePath, ''),
+          }
+        : undefined
     );
   }
 
   isDocsMdx(absolutePath: Path) {
     return /(?<!\.stories)\.mdx$/i.test(absolutePath);
-  }
-
-  async ensureExtracted({
-    projectTags,
-  }: {
-    projectTags?: Tag[];
-  }): Promise<{ entries: (IndexEntry | ErrorEntry)[]; stats: IndexStatsSummary }> {
-    // First process all the story files. Then, in a second pass,
-    // process the docs files. The reason for this is that the docs
-    // files may use the `<Meta of={XStories} />` syntax, which requires
-    // that the story file that contains the meta be processed first.
-    await this.updateExtracted(async (specifier, absolutePath) =>
-      this.isDocsMdx(absolutePath)
-        ? false
-        : this.extractStories(specifier, absolutePath, projectTags)
-    );
-
-    await this.updateExtracted(async (specifier, absolutePath) =>
-      this.extractDocs(specifier, absolutePath, projectTags)
-    );
-
-    const statsSummary = {} as IndexStatsSummary;
-    const entries = this.specifiers.flatMap((specifier) => {
-      const cache = this.specifierToCache.get(specifier);
-      invariant(
-        cache,
-        `specifier does not have a matching cache entry in specifierToCache: ${JSON.stringify(
-          specifier
-        )}`
-      );
-      return Object.values(cache).flatMap((entry): (IndexEntry | ErrorEntry)[] => {
-        if (!entry) {
-          return [];
-        }
-
-        if (entry.type === 'docs') {
-          return [entry];
-        }
-
-        if (entry.type === 'error') {
-          return [entry];
-        }
-
-        return entry.entries.map((item) => {
-          if (item.type === 'docs') {
-            return item;
-          }
-
-          // don't count example stories towards feature usage stats
-          if (!isExampleStoryId(item.id)) {
-            addStats(item.extra.stats, statsSummary);
-          }
-
-          // Drop extra data used for internal bookkeeping
-          const { extra, ...existing } = item;
-          return existing;
-        });
-      });
-    });
-
-    return { entries, stats: statsSummary };
-  }
-
-  findDependencies(absoluteImports: Path[]) {
-    return [...this.specifierToCache.values()].flatMap((cache: SpecifierStoriesCache) =>
-      Object.entries(cache)
-        .filter(([fileName, cacheEntry]) => {
-          /**
-           * We are only interested in stories cache entries (and assume they've been processed
-           * already) If we found a match in the cache that's still null or not a stories file, it
-           * is a docs file and it isn't a dependency / storiesImport.
-           *
-           * @see
-           * https://github.com/storybookjs/storybook/issues/20958
-           */
-          if (!cacheEntry || cacheEntry.type !== 'stories') {
-            return false;
-          }
-
-          return !!absoluteImports.find((storyImport) =>
-            fileName.match(
-              new RegExp(`^${storyImport.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\.[^.]+)?$`)
-            )
-          );
-        })
-        .map(([_, cacheEntry]) => cacheEntry as StoriesCacheEntry)
-    );
   }
 
   /**
@@ -390,7 +331,7 @@ export class StoryIndexGenerator {
     let resolved;
     try {
       resolved = resolveImport(matchedPath, { basedir: dirname(absolutePath) });
-    } catch (_) {
+    } catch {
       return matchedPath;
     }
     const relativePath = relative(this.options.workingDir, resolved);
@@ -401,7 +342,7 @@ export class StoryIndexGenerator {
     specifier: NormalizedStoriesSpecifier,
     absolutePath: Path,
     projectTags: Tag[] = []
-  ): Promise<StoriesCacheEntry | DocsCacheEntry> {
+  ): Promise<StoriesFile> {
     const relativePath = relative(this.options.workingDir, absolutePath);
     const importPath = slash(normalizeStoryPath(relativePath));
     const defaultMakeTitle = (userTitle?: string) => {
@@ -444,7 +385,7 @@ export class StoryIndexGenerator {
       return slash(normalizeStoryPath(relative(this.options.workingDir, path)));
     };
 
-    const storyEntries: ((StoryIndexEntryWithExtra | DocsCacheEntry) & { tags: Tag[] })[] =
+    const storyEntries: ((StoryIndexEntryWithExtra | DocsIndexEntry) & { tags: Tag[] })[] =
       indexInputs.map((input) => {
         const name = input.name ?? storyNameFromExport(input.exportName);
         const componentPath =
@@ -496,7 +437,7 @@ export class StoryIndexGenerator {
       const id = toId(metaId ?? entry.title, name);
       const tags = combineTags(...projectTags, ...(indexInputs[0].tags ?? []));
 
-      const docsEntry: DocsCacheEntry & { tags: Tag[] } = {
+      const docsEntry: DocsIndexEntry & { tags: Tag[] } = {
         id,
         title: entry.title,
         name,
@@ -513,130 +454,25 @@ export class StoryIndexGenerator {
 
       return {
         entries: [docsEntry, ...storyEntries],
-        dependents: [],
         type: 'stories',
       };
     }
 
     return {
       entries: storyEntries,
-      dependents: [],
       type: 'stories',
     };
   }
 
-  async extractDocs(
-    specifier: NormalizedStoriesSpecifier,
-    absolutePath: Path,
-    projectTags: Tag[] = []
-  ) {
-    const relativePath = relative(this.options.workingDir, absolutePath);
+  private async extractDocs(absolutePath: Path): Promise<DocsFile | undefined> {
     try {
-      const normalizedPath = normalizeStoryPath(relativePath);
-      const importPath = slash(normalizedPath);
-
       const content = await readFile(absolutePath, { encoding: 'utf8' });
-      const result = await analyzeMdx(content);
+      const analysis = await analyzeMdx(content);
 
       // Templates are not indexed
-      if (result.isTemplate) {
-        return false;
-      }
-
-      const absoluteImports = (result.imports as string[]).map((p) =>
-        makeAbsolute(p, normalizedPath, this.options.workingDir)
-      );
-
-      // Go through the cache and collect all of the cache entries that this docs file depends on.
-      // We'll use this to make sure this docs cache entry is invalidated when any of its dependents
-      // are invalidated.f
-      const dependencies = this.findDependencies(absoluteImports);
-
-      // To ensure the `<Meta of={}/>` import is always first in the list, we'll bring the dependency
-      // that contains it to the front of the list.
-      let sortedDependencies = dependencies;
-
-      // Also, if `result.of` is set, it means that we're using the `<Meta of={XStories} />` syntax,
-      // so find the `title` defined the file that `meta` points to.
-      let csfEntry: StoryIndexEntryWithExtra | undefined;
-      if (result.of) {
-        const absoluteOf = makeAbsolute(result.of, normalizedPath, this.options.workingDir);
-        let metaDependency: StoriesCacheEntry | undefined;
-
-        dependencies.forEach((dep) => {
-          if (dep.entries.length > 0) {
-            const first = dep.entries.find((e) => e.type !== 'docs') as StoryIndexEntryWithExtra;
-
-            if (
-              normalize(resolve(this.options.workingDir, first.importPath)).startsWith(
-                normalize(absoluteOf)
-              )
-            ) {
-              csfEntry = first;
-              metaDependency = dep;
-            }
-          }
-        });
-
-        if (metaDependency) {
-          sortedDependencies = [
-            metaDependency,
-            ...dependencies.filter((d) => d !== metaDependency),
-          ];
-        }
-
-        invariant(
-          csfEntry,
-          dedent`
-            Could not find or load CSF file at path "${result.of}" referenced by \`of={}\` in docs file "${relativePath}".
-
-            - Does that file exist?
-            - If so, is it a CSF file (\`.stories.*\`)?
-            - If so, is it matched by the \`stories\` glob in \`main.js\`?
-            - If so, has the file successfully loaded in Storybook and are its stories visible?
-          `
-        );
-      }
-
-      // Track that we depend on this for easy invalidation later.
-      dependencies.forEach((dep) => {
-        dep.dependents.push(absolutePath);
-      });
-
-      const title =
-        csfEntry?.title || userOrAutoTitleFromSpecifier(importPath, specifier, result.title);
-      invariant(
-        title,
-        "makeTitle created an undefined title. This happens when a specifier's doesn't have any matches in its fileName"
-      );
-      const defaultName = this.options.docs?.defaultName ?? 'Docs';
-
-      const name =
-        result.name ||
-        (csfEntry ? autoName(importPath, csfEntry.importPath, defaultName) : defaultName);
-
-      const id = toId(csfEntry?.extra.metaId || result.id || title, name);
-
-      const tags = combineTags(
-        ...projectTags,
-        ...(csfEntry?.tags ?? []),
-        ...(result.metaTags ?? []),
-        csfEntry ? Tag.ATTACHED_MDX : Tag.UNATTACHED_MDX
-      );
-
-      const docsEntry: DocsCacheEntry = {
-        id,
-        title,
-        name,
-        importPath,
-        storiesImports: sortedDependencies.map((dep) => dep.entries[0].importPath),
-        type: 'docs',
-        tags,
-        ...(this.options.features?.experimentalSearchDocsHeadings && { anchors: result.anchors }),
-      };
-      return docsEntry;
+      return analysis.isTemplate ? undefined : { type: 'docs', analysis };
     } catch (err) {
-      if (err && (err as { source: any }).source?.match(/mdast-util-mdx-jsx/g)) {
+      if (err && (err as { source?: string }).source?.match(/mdast-util-mdx-jsx/g)) {
         logger.warn(
           `💡 This seems to be an MDX2 syntax error. Please refer to the MDX section in the following resource for assistance on how to fix this: ${picocolors.yellow(
             'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#mdx2-upgrade'
@@ -645,6 +481,108 @@ export class StoryIndexGenerator {
       }
       throw err;
     }
+  }
+
+  // A docs entry lists its stories files in the order they are indexed, not the order it imports them
+  private findDependencies(absoluteImports: Path[], storiesFiles: StoriesFilesByImport) {
+    return [
+      ...new Set(absoluteImports.flatMap((storyImport) => storiesFiles.get(storyImport) ?? [])),
+    ]
+      .sort((a, b) => a.order - b.order)
+      .map(({ storiesFile }) => storiesFile);
+  }
+
+  private resolveDocs(
+    specifier: NormalizedStoriesSpecifier,
+    absolutePath: Path,
+    analysis: MdxAnalysisResult,
+    storiesFiles: StoriesFilesByImport,
+    projectTags: Tag[]
+  ): DocsIndexEntry {
+    const relativePath = relative(this.options.workingDir, absolutePath);
+    const normalizedPath = normalizeStoryPath(relativePath);
+    const importPath = slash(normalizedPath);
+
+    const absoluteImports = analysis.imports.map((p) =>
+      makeAbsolute(p, normalizedPath, this.options.workingDir)
+    );
+
+    const dependencies = this.findDependencies(absoluteImports, storiesFiles);
+
+    // To ensure the `<Meta of={}/>` import is always first in the list, we'll bring the dependency
+    // that contains it to the front of the list.
+    let sortedDependencies = dependencies;
+
+    // Also, if `analysis.of` is set, it means that we're using the `<Meta of={XStories} />` syntax,
+    // so find the `title` defined the file that `meta` points to.
+    let csfEntry: StoryIndexEntryWithExtra | undefined;
+    if (analysis.of) {
+      const absoluteOf = makeAbsolute(analysis.of, normalizedPath, this.options.workingDir);
+      let metaDependency: StoriesFile | undefined;
+
+      dependencies.forEach((dep) => {
+        if (dep.entries.length > 0) {
+          const first = dep.entries.find((e) => e.type !== 'docs') as StoryIndexEntryWithExtra;
+
+          if (
+            normalize(resolve(this.options.workingDir, first.importPath)).startsWith(
+              normalize(absoluteOf)
+            )
+          ) {
+            csfEntry = first;
+            metaDependency = dep;
+          }
+        }
+      });
+
+      if (metaDependency) {
+        sortedDependencies = [metaDependency, ...dependencies.filter((d) => d !== metaDependency)];
+      }
+
+      invariant(
+        csfEntry,
+        dedent`
+          Could not find or load CSF file at path "${analysis.of}" referenced by \`of={}\` in docs file "${relativePath}".
+
+          - Does that file exist?
+          - If so, is it a CSF file (\`.stories.*\`)?
+          - If so, is it matched by the \`stories\` glob in \`main.js\`?
+          - If so, has the file successfully loaded in Storybook and are its stories visible?
+        `
+      );
+    }
+
+    const title =
+      csfEntry?.title || userOrAutoTitleFromSpecifier(importPath, specifier, analysis.title);
+    invariant(
+      title,
+      "makeTitle created an undefined title. This happens when a specifier's doesn't have any matches in its fileName"
+    );
+    const defaultName = this.options.docs?.defaultName ?? 'Docs';
+
+    const name =
+      analysis.name ||
+      (csfEntry ? autoName(importPath, csfEntry.importPath, defaultName) : defaultName);
+
+    const id = toId(csfEntry?.extra.metaId || analysis.id || title, name);
+
+    const tags = combineTags(
+      ...projectTags,
+      ...(csfEntry?.tags ?? []),
+      ...(analysis.metaTags ?? []),
+      csfEntry ? Tag.ATTACHED_MDX : Tag.UNATTACHED_MDX
+    );
+
+    return {
+      id,
+      title,
+      name,
+      importPath,
+      storiesImports: sortedDependencies.map((dep) => dep.entries[0].importPath),
+      type: 'docs',
+      tags,
+      ...(this.options.features?.experimentalSearchDocsHeadings && { anchors: analysis.anchors }),
+    };
   }
 
   chooseDuplicate(firstEntry: IndexEntry, secondEntry: IndexEntry, projectTags: Tag[]): IndexEntry {
@@ -726,7 +664,7 @@ export class StoryIndexGenerator {
 
   async sortStories(entries: StoryIndex['entries'], storySortParameter: any) {
     const sortableStories = Object.values(entries);
-    const fileNameOrder = StoryIndexGenerator.storyFileNames(this.specifierToCache);
+    const fileNameOrder = [...this.specifierToSlots.values()].flatMap((slots) => [...slots.keys()]);
     sortStoriesV7(sortableStories, storySortParameter, fileNameOrder);
 
     return sortableStories.reduce(
@@ -742,130 +680,166 @@ export class StoryIndexGenerator {
     return (await this.getIndexAndStats()).storyIndex;
   }
 
-  async getIndexAndStats(): Promise<{ storyIndex: StoryIndex; stats: IndexStatsSummary }> {
-    if (this.lastIndex && this.lastStats) {
-      return { storyIndex: this.lastIndex, stats: this.lastStats };
+  async getIndexAndStats(): Promise<IndexAndStats> {
+    if (this.settled?.revision === this.revision) {
+      if ('error' in this.settled) {
+        throw this.settled.error;
+      }
+      return this.settled.value;
     }
 
-    if (this.lastError) {
-      throw this.lastError;
-    }
+    this.pending ??= this.computeIndexAndStats();
 
-    const previewCode = await this.getPreviewCode();
-    const projectTags = this.getProjectTags(previewCode);
+    return this.pending;
+  }
 
-    // Extract any entries that are currently missing
-    // Pull out each file's stories into a list of stories, to be composed and sorted
-    const { entries: storiesList, stats } = await this.ensureExtracted({ projectTags });
-
+  private async computeIndexAndStats(): Promise<IndexAndStats> {
     try {
-      const errorEntries = storiesList.filter((entry) => entry.type === 'error');
+      // Starts over until no file was invalidated while the index was built
+      while (true) {
+        const { revision, nextInvalidation } = this;
+        const projectTags = this.getProjectTags(await this.getPreviewFile());
 
-      if (errorEntries.length) {
-        throw new MultipleIndexingError(errorEntries.map((entry) => (entry as ErrorEntry).err));
-      }
-
-      const duplicateErrors: IndexingError[] = [];
-      const indexEntries: StoryIndex['entries'] = {};
-      (storiesList as IndexEntry[]).forEach((entry) => {
-        try {
-          const existing = indexEntries[entry.id];
-          if (existing) {
-            indexEntries[entry.id] = this.chooseDuplicate(existing, entry, projectTags);
-          } else {
-            indexEntries[entry.id] = entry;
-          }
-        } catch (err) {
-          if (err instanceof IndexingError) {
-            duplicateErrors.push(err);
-          }
+        // invalidateAll() emptied the slots during the read, and they need the tags of the next read
+        if (this.revision !== revision) {
+          continue;
         }
-      });
 
-      if (duplicateErrors.length) {
-        throw new MultipleIndexingError(duplicateErrors);
+        const files = await Promise.race([this.extractAll(projectTags), nextInvalidation.promise]);
+
+        if (!files || this.revision !== revision) {
+          continue;
+        }
+
+        const outcome = await this.buildIndex(files, projectTags).then(
+          (value) => ({ value }),
+          (error: unknown) => {
+            invariant(error instanceof Error);
+            return { error };
+          }
+        );
+
+        // buildIndex awaits the sort, so a file can still be invalidated while it runs
+        if (this.revision !== revision) {
+          continue;
+        }
+
+        this.settled = { revision, ...outcome };
+
+        if ('error' in outcome) {
+          logger.warn(`🚨 ${outcome.error.toString()}`);
+          throw outcome.error;
+        }
+
+        return outcome.value;
       }
-
-      const sorted = await this.sortStories(
-        indexEntries,
-        combineStorySorts(this.options.storySorts ?? [])
-      );
-
-      this.lastStats = stats;
-      this.lastIndex = {
-        v: 5,
-        entries: sorted,
-      };
-
-      return { storyIndex: this.lastIndex, stats: this.lastStats };
-    } catch (err) {
-      this.lastError = err == null || err instanceof Error ? err : undefined;
-      invariant(this.lastError);
-      logger.warn(`🚨 ${this.lastError.toString()}`);
-      throw this.lastError;
+    } finally {
+      // Cleared before the promise settles, so no caller joins a computation that is already over
+      this.pending = undefined;
     }
   }
 
-  invalidateAll() {
-    this.specifierToCache.forEach((cache) => {
-      Object.keys(cache).forEach((key) => {
-        cache[key] = false;
-      });
+  private async buildIndex(files: ExtractedFile[], projectTags: Tag[]): Promise<IndexAndStats> {
+    const storiesFiles = indexStoriesFilesByImport(files);
+    const stats = {} as IndexStatsSummary;
+    const errors: IndexingError[] = [];
+    const entries: IndexEntry[] = [];
+
+    files.forEach(({ specifier, absolutePath, extracted }) => {
+      if (extracted?.type === 'error') {
+        errors.push(extracted.err);
+      } else if (extracted?.type === 'docs') {
+        try {
+          entries.push(
+            this.resolveDocs(specifier, absolutePath, extracted.analysis, storiesFiles, projectTags)
+          );
+        } catch (err) {
+          errors.push(this.toIndexingError(err, absolutePath));
+        }
+      } else if (extracted?.type === 'stories') {
+        extracted.entries.forEach((item) => {
+          if (item.type === 'docs') {
+            entries.push(item);
+            return;
+          }
+
+          // don't count example stories towards feature usage stats
+          if (!isExampleStoryId(item.id)) {
+            addStats(item.extra.stats, stats);
+          }
+
+          // Drop extra data used for internal bookkeeping
+          const { extra: _extra, ...entry } = item;
+          entries.push(entry);
+        });
+      }
     });
-    this.lastIndex = null;
-    this.lastError = null;
-    this.invalidationListeners.forEach((listener) => listener());
+
+    if (errors.length) {
+      throw new MultipleIndexingError(errors);
+    }
+
+    const duplicateErrors: IndexingError[] = [];
+    const indexEntries: StoryIndex['entries'] = {};
+    entries.forEach((entry) => {
+      try {
+        const existing = indexEntries[entry.id];
+        if (existing) {
+          indexEntries[entry.id] = this.chooseDuplicate(existing, entry, projectTags);
+        } else {
+          indexEntries[entry.id] = entry;
+        }
+      } catch (err) {
+        if (err instanceof IndexingError) {
+          duplicateErrors.push(err);
+        }
+      }
+    });
+
+    if (duplicateErrors.length) {
+      throw new MultipleIndexingError(duplicateErrors);
+    }
+
+    const sorted = await this.sortStories(
+      indexEntries,
+      combineStorySorts(this.options.storySorts ?? [])
+    );
+
+    return { storyIndex: { v: 5, entries: sorted }, stats };
+  }
+
+  invalidateAll() {
+    this.specifierToSlots.forEach((slots) => {
+      slots.forEach((_, absolutePath) => slots.set(absolutePath, {}));
+    });
+    this.notifyInvalidated();
   }
 
   invalidate(importPath: Path, removed: boolean) {
     const absolutePath = slash(resolve(this.options.workingDir, importPath));
-    const specifier = Array.from(this.specifierToCache.keys()).find((ns) =>
-      ns.importPathMatcher.exec(importPath)
-    );
-    if (!specifier) {
-      // not a story file
-      return;
-    }
-    const cache = this.specifierToCache.get(specifier);
-    invariant(
-      cache,
-      `specifier does not have a matching cache entry in specifierToCache: ${JSON.stringify(
-        specifier
-      )}`
-    );
-    const cacheEntry = cache[absolutePath];
-    if (cacheEntry && cacheEntry.type === 'stories') {
-      const { dependents } = cacheEntry;
+    let invalidated = false;
 
-      const invalidated = new Set();
-      // the dependent can be in ANY cache, so we loop over all of them
-      this.specifierToCache.forEach((otherCache) => {
-        dependents.forEach((dep) => {
-          if (otherCache[dep]) {
-            invalidated.add(dep);
-
-            otherCache[dep] = false;
-          }
-        });
-      });
-    }
-
-    if (removed) {
-      if (cacheEntry && cacheEntry.type === 'docs') {
-        const absoluteImports = cacheEntry.storiesImports.map((p) =>
-          resolve(this.options.workingDir, p)
-        );
-        const dependencies = this.findDependencies(absoluteImports);
-        dependencies.forEach((dep) =>
-          dep.dependents.splice(dep.dependents.indexOf(absolutePath), 1)
-        );
+    // the same file can match several specifiers
+    this.specifierToSlots.forEach((slots, specifier) => {
+      if (specifier.importPathMatcher.exec(importPath)) {
+        if (removed) {
+          slots.delete(absolutePath);
+        } else {
+          slots.set(absolutePath, {});
+        }
+        invalidated = true;
       }
-      delete cache[absolutePath];
-    } else {
-      cache[absolutePath] = false;
+    });
+
+    if (invalidated) {
+      this.notifyInvalidated();
     }
-    this.lastIndex = null;
-    this.lastError = null;
+  }
+
+  private notifyInvalidated() {
+    this.revision += 1;
+    this.nextInvalidation.resolve();
+    this.nextInvalidation = Promise.withResolvers();
     this.invalidationListeners.forEach((listener) => listener());
   }
 
@@ -876,31 +850,32 @@ export class StoryIndexGenerator {
     };
   }
 
-  async getPreviewCode() {
+  async getPreviewFile(): Promise<{ path: string; code: string } | undefined> {
     const previewFile = ['js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'mts']
       .map((ext) => join(this.options.configDir, `preview.${ext}`))
       .find((fname) => existsSync(fname));
 
-    return previewFile && (await readFile(previewFile, { encoding: 'utf8' })).toString();
+    return previewFile
+      ? { path: previewFile, code: (await readFile(previewFile, { encoding: 'utf8' })).toString() }
+      : undefined;
   }
 
-  getProjectTags(previewCode?: string) {
+  getProjectTags(preview?: { path: string; code: string }) {
     let projectTags = [] as Tag[];
     const defaultTags = [Tag.DEV, Tag.TEST, Tag.MANIFEST];
-    if (previewCode) {
+    if (preview) {
       try {
-        const projectAnnotations = loadConfig(previewCode).parse();
-        const tags = projectAnnotations.getValue(['tags']) ?? [];
+        const projectAnnotations = loadConfig(preview.code, preview.path).parse();
+        const tags =
+          projectAnnotations.inspect(['tags']).kind === 'value'
+            ? projectAnnotations.getValue(['tags'])
+            : [];
         invariant(
-          !projectAnnotations.mutationDiagnostics.some(
-            ({ code }) => code === 'unsupported-value'
-          ) &&
-            Array.isArray(tags) &&
-            tags.every((tag) => typeof tag === 'string'),
+          Array.isArray(tags) && tags.every((tag) => typeof tag === 'string'),
           'Preview tags must be a static array of strings'
         );
         projectTags = tags;
-      } catch (err) {
+      } catch {
         once.warn(dedent`
           Unable to parse tags from project configuration. If defined, tags should be specified inline, e.g.
 
@@ -912,7 +887,7 @@ export class StoryIndexGenerator {
 
           Received:
 
-          ${previewCode}
+          ${preview.code}
         `);
       }
     }
@@ -920,7 +895,7 @@ export class StoryIndexGenerator {
   }
 
   // Get the story file names in "imported order"
-  static storyFileNames(specifierToCache: Map<NormalizedStoriesSpecifier, SpecifierStoriesCache>) {
+  static storyFileNames(specifierToCache: Map<NormalizedStoriesSpecifier, MatchingFiles>) {
     return Array.from(specifierToCache.values()).flatMap((r) => Object.keys(r));
   }
 }

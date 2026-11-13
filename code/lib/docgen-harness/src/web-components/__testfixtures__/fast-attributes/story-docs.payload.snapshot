@@ -7,20 +7,52 @@
       "id": "webcomponentsfixtures-fast-attributes--args-default-render",
       "name": "Args Default Render",
       "snippet": "<fast-attributes label="Default count" size="large" max-count="2"></fast-attributes>",
+      "template": "<fast-attributes⟦attr label mode="field" ~" "⟫ label="Default count"⟧⟦attr size mode="field" ~" "⟫ size="large"⟧⟦attr maxCount name="max-count" mode="field" ~" "⟫ max-count="2"⟧⟦attr disabled mode="field" ~" "⟫⟧></fast-attributes>⟦props * properties=[{"arg":"items","name":"items","tag":"fast-attributes"},{"arg":"count","name":"count","tag":"fast-attributes"}] ~"\n"⟫⟧",
       "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
     "webcomponentsfixtures-fast-attributes--dom-node": {
       "id": "webcomponentsfixtures-fast-attributes--dom-node",
       "name": "Dom Node",
-      "snippet": "<fast-attributes label="Count" size="large" max-count="5"></fast-attributes>",
-      "warning": "Incomplete snippet: `args => { const el = document.createElement('fast-attributes'); el.setAttribute('label', String(args.label)); el.setAttribute('size', String(args.size)); if (args.disabled) { el.setAttribute('disabled', ''); } el.setAttribute('max-count', String(args.maxCount)); (el as HTMLElement & { items: string[]; }).items = args.items as string[]; return el; }` could not be resolved statically.
-Incomplete snippet: properties without an attribute: `items`.",
+      "snippet": "const DomNode = () => {
+  const el = document.createElement('fast-attributes');
+  el.setAttribute('label', String('Count'));
+  el.setAttribute('size', String('large'));
+  if (false) {
+    el.setAttribute('disabled', '');
+  }
+  el.setAttribute('max-count', String(5));
+  (el as HTMLElement & { items: string[] }).items = ['a'] as string[];
+  return el;
+};",
+      "template": "const DomNode = () => {
+  const el = document.createElement('fast-attributes');
+  el.setAttribute('label', String(⟦code label⟫'Count'⟧));
+  el.setAttribute('size', String(⟦code size⟫'large'⟧));
+  if (⟦code disabled⟫false⟧) {
+    el.setAttribute('disabled', '');
+  }
+  el.setAttribute('max-count', String(⟦code maxCount⟫5⟧));
+  (el as HTMLElement & { items: string[] }).items = ⟦code items⟫['a']⟧ as string[];
+  return el;
+};",
     },
     "webcomponentsfixtures-fast-attributes--lit-template": {
       "id": "webcomponentsfixtures-fast-attributes--lit-template",
       "name": "Lit Template",
-      "snippet": "<fast-attributes label="Count" size="large" max-count="5"></fast-attributes>",
-      "warning": "Incomplete snippet: properties without an attribute: `items`.",
+      "snippet": "html`<fast-attributes
+  label=${'Count'}
+  size=${'large'}
+  ?disabled=${false}
+  max-count=${5}
+  .items=${['a']}
+></fast-attributes>`",
+      "template": "html`<fast-attributes
+  label=${⟦code label⟫'Count'⟧}
+  size=${⟦code size⟫'large'⟧}
+  ?disabled=${⟦code disabled⟫false⟧}
+  max-count=${⟦code maxCount⟫5⟧}
+  .items=${⟦code items⟫['a']⟧}
+></fast-attributes>`",
     },
   },
 }

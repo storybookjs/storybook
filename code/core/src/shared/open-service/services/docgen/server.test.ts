@@ -1,9 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
+
+import { createTestChannel, type SpiedTestChannel } from '../../../../channels/test-channel.ts';
 import { Tag } from '../../../../shared/constants/tags.ts';
 import type { DocsIndexEntry, IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
 import { buildStaticFiles, clearRegistry, getService } from '../../server.ts';
+import { parseManifestRef } from '../../toolsets/docs/access-provider.ts';
+import { readAllComponents } from '../component-state-key.ts';
 import { registerTestModuleGraphService } from '../module-graph/module-graph.test-helpers.ts';
+import { docgenManifestRef } from './paths.ts';
 import { registerDocgenService, subscribeDocgenToModuleGraphChanges } from './server.ts';
 import type { DocgenPayload, DocgenProvider } from './types.ts';
 
@@ -185,6 +191,40 @@ describe('docgen open service', () => {
     });
   });
 
+  describe('overlapping extractions', () => {
+    it.each(['bulk', 'single'] as const)(
+      'resolves docgenForAllComponents.loaded() with the newer payload when the %s extraction finishes first',
+      async (finishesFirst) => {
+        const bulk = Promise.withResolvers<DocgenPayload>();
+        const single = Promise.withResolvers<DocgenPayload>();
+        const provider = vi
+          .fn<DocgenProvider>()
+          .mockReturnValueOnce(bulk.promise)
+          .mockReturnValueOnce(single.promise);
+        const service = registerDocgenService({
+          getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
+          docgenProvider: provider,
+        });
+
+        const loading = service.queries.docgenForAllComponents.loaded();
+        await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(1));
+        const extracting = service.commands.extractDocgen({ id: 'button' });
+        await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(2));
+        const [first, second] = finishesFirst === 'bulk' ? [bulk, single] : [single, bulk];
+        first.resolve(makeDocgenPayload({ description: finishesFirst === 'bulk' ? 'old' : 'new' }));
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        second.resolve(
+          makeDocgenPayload({ description: finishesFirst === 'bulk' ? 'new' : 'old' })
+        );
+
+        await expect(loading).resolves.toEqual({
+          button: makeDocgenPayload({ description: 'new' }),
+        });
+        await extracting;
+      }
+    );
+  });
+
   describe('docgen query', () => {
     it('returns undefined synchronously when nothing has been extracted yet', async () => {
       const service = registerDocgenService({
@@ -216,12 +256,48 @@ describe('docgen open service', () => {
         /No story or attached docs entry was found for component id "unknown"/
       );
     });
+
+    it.each(['Constructor', 'Prototype'])(
+      'emits and lists the payload of a component titled %s, whose id is a reserved key',
+      async (title) => {
+        const id = title.toLowerCase();
+        const payload = makeDocgenPayload({ id, name: title });
+        const service = registerDocgenService({
+          getIndex: makeGetIndex([makeStoryEntry(`${id}--primary`, title)]),
+          docgenProvider: async () => payload,
+        });
+        const emitted: Array<DocgenPayload | undefined> = [];
+
+        const unsubscribe = service.queries.docgen.subscribe({ id }, (state) =>
+          emitted.push(state.data)
+        );
+
+        await vi.waitFor(() => expect(emitted.at(-1)).toEqual(payload));
+        expect(readAllComponents(service.queries.docgenForAllComponents.get())).toEqual({
+          [id]: payload,
+        });
+        unsubscribe();
+      }
+    );
   });
 
   describe('module graph hot refresh', () => {
+    let channel: SpiedTestChannel;
+
     beforeEach(() => {
+      channel = createTestChannel();
       registerTestModuleGraphService();
     });
+
+    // The module graph reports the changed file, and its refresh reads the index, before the story
+    // index is invalidated.
+    const changeButtonStoryFile = async (applyChange: () => void) => {
+      const moduleGraph = getService('core/module-graph', { internal: true });
+      await moduleGraph.commands._applyGraphUpdate({ bumpedStoryFiles: ['./button.stories.tsx'] });
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      applyChange();
+      channel.emitExternal(STORY_INDEX_INVALIDATED);
+    };
 
     it('does not re-extract on registration alone', async () => {
       const provider = vi.fn<DocgenProvider>(async () => makeDocgenPayload());
@@ -253,7 +329,7 @@ describe('docgen open service', () => {
       );
       const getIndex = makeGetIndex([buttonEntry, cardEntry]);
       const service = registerDocgenService({ getIndex, docgenProvider: provider });
-      subscribeDocgenToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
+      subscribeDocgenToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
 
       await service.queries.docgen.loaded({ id: 'button' });
 
@@ -282,7 +358,7 @@ describe('docgen open service', () => {
       );
       const getIndex = makeGetIndex([buttonEntry, cardEntry]);
       const service = registerDocgenService({ getIndex, docgenProvider: provider });
-      subscribeDocgenToModuleGraphChanges({ getIndex, workingDir: process.cwd() });
+      subscribeDocgenToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
 
       await service.queries.docgen.loaded({ id: 'button' });
 
@@ -298,9 +374,197 @@ describe('docgen open service', () => {
         ])
       );
     });
+
+    it('skips the refresh when the story index cannot be built', async () => {
+      const onUnhandledRejection = vi.fn();
+      process.on('unhandledRejection', onUnhandledRejection);
+      const provider = vi.fn<DocgenProvider>(async () => makeDocgenPayload());
+      const resolveIndex = makeGetIndex([makeStoryEntry('button--primary', 'Button')]);
+      let indexBroken = false;
+      const getIndex = vi.fn(() =>
+        indexBroken
+          ? Promise.reject(new Error('Syntax error in button.stories.tsx'))
+          : resolveIndex()
+      );
+      const service = registerDocgenService({ getIndex, docgenProvider: provider });
+      subscribeDocgenToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+
+      await service.queries.docgen.loaded({ id: 'button' });
+      const callsBeforeUpdate = getIndex.mock.calls.length;
+      indexBroken = true;
+
+      const moduleGraph = getService('core/module-graph', { internal: true });
+      await moduleGraph.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./button.stories.tsx'],
+      });
+
+      await vi.waitFor(() => expect(getIndex.mock.calls.length).toBeGreaterThan(callsBeforeUpdate));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      process.off('unhandledRejection', onUnhandledRejection);
+      expect(onUnhandledRejection).not.toHaveBeenCalled();
+      expect(provider).toHaveBeenCalledTimes(1);
+    });
+
+    it('refreshes a component whose stories changed again after its refresh failed', async () => {
+      let entries = [
+        makeStoryEntry('button--primary', 'Button'),
+        { ...makeStoryEntry('button--secondary', 'Button'), importPath: './more.stories.tsx' },
+      ];
+      const getIndex = () => makeGetIndex(entries)();
+      const provider = vi.fn<DocgenProvider>(async ({ entry }) =>
+        makeDocgenPayload({ path: entry.importPath })
+      );
+      const service = registerDocgenService({ getIndex, docgenProvider: provider });
+      subscribeDocgenToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+      await service.commands.extractDocgen({ id: 'button' });
+      expect(service.queries.docgen.get({ id: 'button' })?.path).toBe('./more.stories.tsx');
+      provider.mockRejectedValueOnce(new Error('The docgen worker exited'));
+
+      entries = [
+        makeStoryEntry('button--primary', 'Button'),
+        { ...makeStoryEntry('buttons--secondary', 'Buttons'), importPath: './more.stories.tsx' },
+      ];
+      channel.emitExternal(STORY_INDEX_INVALIDATED);
+      await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(2));
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(service.queries.docgen.get({ id: 'button' })?.path).toBe('./more.stories.tsx');
+      channel.emitExternal(STORY_INDEX_INVALIDATED);
+
+      await vi.waitFor(() =>
+        expect(service.queries.docgen.get({ id: 'button' })?.path).toBe('./button.stories.tsx')
+      );
+    });
+
+    it('restores and keeps a component that only an attached MDX file names', async () => {
+      const attachedDocs = {
+        id: 'button--docs',
+        name: 'Docs',
+        title: 'Button',
+        type: 'docs',
+        importPath: './button.mdx',
+        storiesImports: ['./button.stories.tsx'],
+        tags: [Tag.ATTACHED_MDX, 'docs'],
+      } satisfies DocsIndexEntry;
+      const original = [makeStoryEntry('custom--primary', 'Custom'), attachedDocs];
+      let entries: IndexEntry[] = original;
+      const getIndex = () => makeGetIndex(entries)();
+      const provider = vi.fn<DocgenProvider>(async () => makeDocgenPayload());
+      const service = registerDocgenService({ getIndex, docgenProvider: provider });
+      subscribeDocgenToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+      await service.commands.extractDocgen({ id: 'button' });
+
+      channel.emitExternal(STORY_INDEX_INVALIDATED);
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(provider).toHaveBeenCalledTimes(1);
+
+      await changeButtonStoryFile(() => {
+        entries = [makeStoryEntry('custom--primary', 'Custom')];
+      });
+      await vi.waitFor(() => expect(service.queries.docgen.get({ id: 'button' })).toBeUndefined());
+      await changeButtonStoryFile(() => {
+        entries = original;
+      });
+
+      await vi.waitFor(() =>
+        expect(service.queries.docgen.get({ id: 'button' })).toEqual(makeDocgenPayload())
+      );
+    });
+
+    it.each([
+      {
+        change: 'its title was renamed',
+        nextEntries: [
+          { ...makeStoryEntry('buttons--primary', 'Buttons'), importPath: './button.stories.tsx' },
+          makeStoryEntry('card--primary', 'Card'),
+        ],
+      },
+      {
+        change: 'its story file was deleted',
+        nextEntries: [makeStoryEntry('card--primary', 'Card')],
+      },
+      {
+        change: 'only an unattached MDX file keeps its title',
+        nextEntries: [
+          {
+            id: 'button--docs',
+            name: 'Docs',
+            title: 'Button',
+            type: 'docs',
+            importPath: './button.mdx',
+            storiesImports: [],
+            tags: [Tag.UNATTACHED_MDX, 'docs'],
+          } satisfies DocsIndexEntry,
+          makeStoryEntry('card--primary', 'Card'),
+        ],
+      },
+    ])('drops the payload of an extracted component when $change', async ({ nextEntries }) => {
+      let entries = [
+        makeStoryEntry('button--primary', 'Button'),
+        makeStoryEntry('card--primary', 'Card'),
+      ];
+      const getIndex = () => makeGetIndex(entries)();
+      const service = registerDocgenService({
+        getIndex,
+        docgenProvider: async ({ entry }) => makeDocgenPayload({ id: entry.id.split('--')[0] }),
+      });
+      subscribeDocgenToModuleGraphChanges({ channel, getIndex, workingDir: process.cwd() });
+      const emitted: Array<DocgenPayload | undefined> = [];
+      const unsubscribe = service.queries.docgen.subscribe({ id: 'button' }, (state) =>
+        emitted.push(state.data)
+      );
+      await vi.waitFor(() => expect(emitted.at(-1)).toEqual(makeDocgenPayload({ id: 'button' })));
+
+      await changeButtonStoryFile(() => {
+        entries = nextEntries;
+      });
+
+      await vi.waitFor(() => expect(emitted.at(-1)).toBeUndefined());
+      expect(service.queries.docgenForAllComponents.get()).not.toHaveProperty('button');
+      unsubscribe();
+    });
   });
 
   describe('static build', () => {
+    it('writes the static snapshot when the dev runtime extracts the same component meanwhile', async () => {
+      const staticExtraction = Promise.withResolvers<DocgenPayload>();
+      const provider = vi
+        .fn<DocgenProvider>(async () => makeDocgenPayload())
+        .mockReturnValueOnce(staticExtraction.promise);
+      const service = registerDocgenService({
+        getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
+        docgenProvider: provider,
+      });
+
+      const building = buildStaticFiles();
+      await vi.waitFor(() => expect(provider).toHaveBeenCalledTimes(1));
+      await service.commands.extractDocgen({ id: 'button' });
+      staticExtraction.resolve(makeDocgenPayload());
+      const store = await building;
+
+      expect(store['core/docgen/button.json']).toEqual({
+        components: { button: makeDocgenPayload() },
+      });
+    });
+
+    it('writes the payload of a component titled Constructor where its manifest ref points', async () => {
+      const payload = makeDocgenPayload({ id: 'constructor', name: 'Constructor' });
+      registerDocgenService({
+        getIndex: makeGetIndex([makeStoryEntry('constructor--primary', 'Constructor')]),
+        docgenProvider: async () => payload,
+      });
+
+      const store = await buildStaticFiles();
+
+      const { path, pointer } = parseManifestRef(docgenManifestRef('constructor'));
+      expect(path).toBe('./services/core/docgen/constructor.json');
+      expect(
+        pointer.reduce<unknown>(
+          (node, segment) => (node as Record<string, unknown>)[segment],
+          store['core/docgen/constructor.json']
+        )
+      ).toEqual(payload);
+    });
+
     it('does not request docgen for component ids that only exist on unattached docs entries', async () => {
       const storyEntry = makeStoryEntry('button--primary', 'Button');
       const unattachedDocs = {

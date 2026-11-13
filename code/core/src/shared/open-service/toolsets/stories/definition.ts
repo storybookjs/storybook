@@ -10,7 +10,6 @@ import type {
   ChangeDetectionReadinessResult,
   ModuleGraphService,
 } from '../../services/module-graph/definition.ts';
-import type { ModuleGraphIndexService } from '../../services/module-graph-index/definition.ts';
 import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
 import { getToolName } from '../../toolset-names.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
@@ -74,6 +73,18 @@ const changedOutputSchema = v.object({
   }),
   unreachableFiles: v.array(v.string()),
   unreachableFilesTruncated: v.boolean(),
+  pendingFiles: v.pipe(
+    v.array(v.string()),
+    v.description(
+      'Changed files that stories render but change detection has not processed yet, so their stories are missing.'
+    )
+  ),
+  unindexedStoryFiles: v.pipe(
+    v.array(v.string()),
+    v.description(
+      'Changed story files that are not in the story index yet, such as one written a moment ago.'
+    )
+  ),
   changedConfigFiles: v.array(v.string()),
 });
 
@@ -141,6 +152,8 @@ export type StorybookDirsAccess = {
   configDir: string;
   /** Absolute paths of the configured static directories. */
   getStaticDirs: () => Promise<string[]>;
+  /** Whether the `stories` globs of the main config match an absolute path. */
+  getStoriesMatcher: () => Promise<(file: string) => boolean>;
 };
 
 export type StoriesChangeStatusesAccess = {
@@ -163,9 +176,15 @@ function emptyChangedStories(): ChangedStoriesOutput {
     counts: { new: 0, modified: 0, affected: 0 },
     unreachableFiles: [],
     unreachableFilesTruncated: false,
+    pendingFiles: [],
+    unindexedStoryFiles: [],
     changedConfigFiles: [],
   };
 }
+
+// How long `stories.changed` waits for the latest edit to reach the index and the statuses.
+const PENDING_SCAN_POLL_MS = 250;
+const PENDING_SCAN_MAX_POLLS = 12;
 
 function reasonForChangeDetectionReadiness(
   readiness: Exclude<ChangeDetectionReadinessResult, { status: 'ready' }>
@@ -215,23 +234,19 @@ Only IDs returned by discovery tools resolve: never derive them from file names,
 Needs a dev server builder with change detection (e.g. Vite); otherwise returns a typed error.`;
 }
 
-// Hot status + cold reverse-index queries, composed for ModuleGraphAccess consumers.
 function moduleGraphAccessFromCtx(
   ctx: ToolsetCtx,
   moduleGraph: ModuleGraphService = ctx.getService<ModuleGraphService>('core/module-graph', {
     internal: true,
   })
 ): ModuleGraphAccess {
-  const moduleGraphIndex = ctx.getService<ModuleGraphIndexService>('core/module-graph-index', {
-    internal: true,
-  });
   return {
     queries: {
       status: {
         loaded: () => moduleGraph.queries.status.loaded(undefined) as Promise<ModuleGraphStatus>,
       },
       storiesForFiles: {
-        loaded: (files) => moduleGraphIndex.queries.storiesForFiles.loaded(files),
+        loaded: (files) => moduleGraph.commands.storiesForFiles(files),
       },
     },
   };
@@ -337,16 +352,33 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             });
           }
 
-          const [statuses, index] = await Promise.all([
-            Promise.resolve(changeStatuses.getAll()),
-            storyIndex.getIndex(),
-          ]);
+          // Files outside the story graph are why an empty or partial result can still be wrong,
+          // so they are part of the answer rather than a separate lookup.
+          const read = async () => {
+            const { reachableFiles, ...filesOutsideStories } =
+              await detectChangedFilesOutsideStories({ git, moduleGraph, storybookDirs });
+            const changed = getChangedStories({
+              statuses: await changeStatuses.getAll(),
+              index: await storyIndex.getIndex(),
+            });
+            return { changed, filesOutsideStories, reachableFiles };
+          };
+          // A new story file reaches the index, and an edit the statuses, only after a debounced
+          // scan: wait for it rather than answer from the state before the edit.
+          const isPending = ({ changed, filesOutsideStories, reachableFiles }: typeof result) =>
+            filesOutsideStories.unindexedStoryFiles.length > 0 ||
+            (changed.stories.length === 0 && reachableFiles.length > 0);
+          let result = await read();
+          for (let poll = 0; isPending(result) && poll < PENDING_SCAN_MAX_POLLS; poll++) {
+            await new Promise((resolve) => setTimeout(resolve, PENDING_SCAN_POLL_MS));
+            result = await read();
+          }
+          const { changed, filesOutsideStories, reachableFiles } = result;
 
           const data = {
-            ...getChangedStories({ statuses, index }),
-            // Files outside the story graph are why an empty or partial result can still be wrong,
-            // so they are part of the answer rather than a separate lookup.
-            ...(await detectChangedFilesOutsideStories({ git, moduleGraph, storybookDirs })),
+            ...changed,
+            ...filesOutsideStories,
+            pendingFiles: changed.stories.length === 0 ? reachableFiles : [],
           };
 
           return {

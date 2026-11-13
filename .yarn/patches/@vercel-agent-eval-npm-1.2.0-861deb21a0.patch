@@ -71,7 +71,28 @@ diff --git a/dist/lib/agents/shared.js b/dist/lib/agents/shared.js
 index 70edef2bf63387b457d39bcfd9122c39fb198593..16cfd112e4982fea59171ec23c9af05e2a2eb444 100644
 --- a/dist/lib/agents/shared.js
 +++ b/dist/lib/agents/shared.js
-@@ -140,7 +140,11 @@ export async function captureGeneratedFiles(sandbox) {
+@@ -62,7 +62,10 @@ env) {
+         // Detect which eval file exists (EVAL.ts or EVAL.tsx)
+         const evalFile = await detectEvalFile(sandbox);
+         // Always run vitest for the eval file (explicitly specify the file)
+-        const testResult = await sandbox.runCommand('npx', ['vitest', 'run', evalFile], env ? { env } : undefined);
++        // NO_COLOR: these outputs are captured to outputs/*.txt, never shown on a
++        // live terminal — ANSI codes only make the saved artifacts unreadable.
++        const outputEnv = { NO_COLOR: '1', ...env };
++        const testResult = await sandbox.runCommand('npx', ['vitest', 'run', evalFile], { env: outputEnv });
+         results.test = {
+             success: testResult.exitCode === 0,
+             output: testResult.stdout + testResult.stderr,
+@@ -73,7 +76,7 @@ env) {
+     }
+     // Run configured scripts
+     for (const script of scripts) {
+-        const scriptResult = await sandbox.runCommand('npm', ['run', script]);
++        const scriptResult = await sandbox.runCommand('npm', ['run', script], { env: { NO_COLOR: '1' } });
+         const result = {
+             success: scriptResult.exitCode === 0,
+             output: scriptResult.stdout + scriptResult.stderr,
+@@ -140,7 +143,11 @@ export async function captureGeneratedFiles(sandbox) {
              }
              else {
                  try {

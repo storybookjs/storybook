@@ -413,9 +413,27 @@ describe('vitestSetupFile', () => {
         "import { MotionGlobalConfig } from 'framer-motion';
 
         // Skip animations
-        MotionGlobalConfig.skipAnimations = true;"
+        MotionGlobalConfig.skipAnimations = true;
+        "
       `);
       expect(readFixture('vitest.config.ts')).toBe(STANDARD_VITEST_CONFIG);
+    });
+
+    it('keeps the line endings of a CRLF setup file it rewrites', async () => {
+      await migrate({
+        '.storybook/vitest.setup.ts': CUSTOM_CODE_SETUP_FILE.replaceAll('\n', '\r\n'),
+        'vitest.config.ts': STANDARD_VITEST_CONFIG,
+      });
+
+      expect(readFixture('.storybook/vitest.setup.ts')).toBe(
+        [
+          "import { MotionGlobalConfig } from 'framer-motion';",
+          '',
+          '// Skip animations',
+          'MotionGlobalConfig.skipAnimations = true;',
+          '',
+        ].join('\r\n')
+      );
     });
 
     it('keeps unrelated setupFiles entries', async () => {
@@ -509,6 +527,32 @@ describe('vitestSetupFile', () => {
       `);
     });
 
+    it('leaves an empty setupFiles array of another project alone', async () => {
+      await migrate({
+        '.storybook/vitest.setup.ts': PREVIEW_ONLY_SETUP_FILE,
+        'vitest.config.ts': dedent`
+          import { defineConfig } from 'vitest/config';
+          import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+
+          export default defineConfig({
+            test: {
+              projects: [
+                {
+                  plugins: [storybookTest({ configDir: '.storybook' })],
+                  test: { setupFiles: ['./.storybook/vitest.setup.ts'] },
+                },
+                { test: { name: 'unit', setupFiles: [] } },
+              ],
+            },
+          });
+        `,
+      });
+
+      expect(readFixture('vitest.config.ts')).toContain(
+        `{ test: { name: 'unit', setupFiles: [] } }`
+      );
+    });
+
     it('resolves path.join(import.meta.dirname, ...) and __dirname entries', async () => {
       const { setupFilePath } = await migrate({
         '.storybook/vitest.setup.ts': PREVIEW_ONLY_SETUP_FILE,
@@ -539,7 +583,9 @@ describe('vitestSetupFile', () => {
         export default defineConfig({
           plugins: [storybookTest({ configDir: '.storybook' })],
           test: {
-            setupFiles: ['./other-setup.ts'],
+            setupFiles: [
+              './other-setup.ts',
+            ],
           },
         });"
       `);
@@ -1037,7 +1083,6 @@ describe('transformSetupFile', () => {
       //
 
       import { setupTests } from './setup';
-
       setupTests();"
     `);
   });
@@ -1062,7 +1107,6 @@ describe('transformSetupFile', () => {
       "// Copyright Example
 
       import { setupTests } from './setup';
-
       setupTests();"
     `);
   });

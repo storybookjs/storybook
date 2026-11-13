@@ -1,7 +1,13 @@
 // @vitest-environment happy-dom
 
 import { vi, assert, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { Component, ɵresetJitOptions } from '@angular/core';
+import {
+  ApplicationRef,
+  Component,
+  EnvironmentInjector,
+  inject,
+  ɵresetJitOptions,
+} from '@angular/core';
 import { platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 
@@ -106,6 +112,40 @@ describe('RendererFactory', () => {
       });
 
       expect(document.body.querySelector('#storybook-root')?.children[0].innerHTML).toBe('🦊');
+    });
+
+    it('should destroy the root components before the application injector', async () => {
+      const injectorReadsOnDestroy: unknown[] = [];
+
+      @Component({ selector: 'foo', template: '🦊' })
+      class FooComponent {
+        private injector = inject(EnvironmentInjector);
+
+        ngOnDestroy() {
+          // Teardown paths like CDK overlay removal read from the injector.
+          injectorReadsOnDestroy.push(this.injector.get(ApplicationRef));
+        }
+      }
+
+      const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
+      await render.render({
+        storyFnAngular: { props: {} },
+        forced: false,
+        component: FooComponent,
+        targetDOMNode: rootTargetDOMNode,
+        storyId: 'first-story',
+      });
+
+      await render.render({
+        storyFnAngular: { template: '🐼', props: {} },
+        forced: false,
+        targetDOMNode: rootTargetDOMNode,
+        storyId: 'second-story',
+      });
+
+      expect(injectorReadsOnDestroy).toEqual([expect.any(ApplicationRef)]);
+      expect(document.body.querySelector('first-story')).toBeNull();
+      expect(document.body.getElementsByTagName('second-story')[0].innerHTML).toBe('🐼');
     });
 
     describe('when forced=true', () => {

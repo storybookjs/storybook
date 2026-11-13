@@ -13,21 +13,14 @@ export type ComponentId = string;
 export type ComponentTitle = string;
 export type StoryName = string;
 
-/** @deprecated */
-export type StoryKind = ComponentTitle;
-
 export type Tag = string;
 
 export interface StoryIdentifier {
   componentId: ComponentId;
   title: ComponentTitle;
-  /** @deprecated */
-  kind: ComponentTitle;
 
   id: StoryId;
   name: StoryName;
-  /** @deprecated */
-  story: StoryName;
 
   tags: Tag[];
 }
@@ -225,9 +218,6 @@ export interface Renderer extends AddonTypes {
   csf4: boolean;
 }
 
-/** @deprecated - Use `Renderer` */
-export type AnyFramework = Renderer;
-
 export interface StoryContextForEnhancers<
   TRenderer extends Renderer = Renderer,
   TArgs = Args,
@@ -259,7 +249,7 @@ export interface StoryContextUpdate<TArgs = Args> {
 export type ViewMode = 'story' | 'docs';
 
 export type LoaderFunction<TRenderer extends Renderer = Renderer, TArgs = Args> = (
-  context: StoryContextForLoaders<TRenderer, TArgs>
+  context: StoryContext<TRenderer, TArgs>
 ) => Promise<Record<string, any> | void> | Record<string, any> | void;
 
 type Awaitable<T> = T | PromiseLike<T>;
@@ -314,18 +304,6 @@ export interface StoryContextForRender<
   argTypes: StrictArgTypes<TArgs>;
 }
 
-/** @deprecated Use {@link StoryContext} instead. */
-export interface StoryContextForLoaders<
-  TRenderer extends Renderer = Renderer,
-  TArgs = Args,
-> extends StoryContext<TRenderer, TArgs> {}
-
-/** @deprecated Use {@link StoryContext} instead. */
-export interface PlayFunctionContext<
-  TRenderer extends Renderer = Renderer,
-  TArgs = Args,
-> extends StoryContext<TRenderer, TArgs> {}
-
 export type StepLabel = string;
 
 export type StepFunction<TRenderer extends Renderer = Renderer, TArgs = Args> = (
@@ -334,7 +312,7 @@ export type StepFunction<TRenderer extends Renderer = Renderer, TArgs = Args> = 
 ) => Promise<void> | void;
 
 export type PlayFunction<TRenderer extends Renderer = Renderer, TArgs = Args> = (
-  context: PlayFunctionContext<TRenderer, TArgs>
+  context: StoryContext<TRenderer, TArgs>
 ) => Promise<void> | void;
 
 export type TestFunction<TRenderer extends Renderer = Renderer, TArgs = TRenderer['args']> = (
@@ -515,7 +493,7 @@ export interface ComponentAnnotations<
    *
    * @example IncludeStories: ['SimpleStory', 'ComplexStory'] includeStories: /.*Story$/
    *
-   * @see [Non-story exports](https://storybook.js.org/docs/api/csf#non-story-exports)
+   * @see [Non-story exports](https://storybook.js.org/docs/writing-stories/csf#non-story-exports)
    */
   includeStories?: StoryDescriptor;
 
@@ -525,7 +503,7 @@ export interface ComponentAnnotations<
    *
    * @example ExcludeStories: ['simpleData', 'complexData'] excludeStories: /.*Data$/
    *
-   * @see [Non-story exports](https://storybook.js.org/docs/api/csf#non-story-exports)
+   * @see [Non-story exports](https://storybook.js.org/docs/writing-stories/csf#non-story-exports)
    */
   excludeStories?: StoryDescriptor;
 

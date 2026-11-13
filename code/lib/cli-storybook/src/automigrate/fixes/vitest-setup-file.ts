@@ -6,15 +6,25 @@ import {
   getAddonNames,
   rendererPackages,
 } from 'storybook/internal/common';
+import {
+  type ESTree as E,
+  type ESTreeNode as Node,
+  SourceEditor,
+  arrayList,
+  isStringLiteral,
+  objectList,
+  objectProperty,
+  removeFromList,
+  removeStatements,
+  setImportSpecifiers,
+  staticKey,
+  walk,
+} from 'storybook/internal/csf-tools';
 
-import jscodeshift from 'jscodeshift';
 import path from 'path';
 import picocolors from 'picocolors';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
-
-import type { types as t } from 'storybook/internal/babel';
-import { getHeaderComments } from 'storybook/internal/csf-tools';
 
 import { findFilesUp } from '../../util.ts';
 import type { Fix } from '../types.ts';
@@ -23,9 +33,6 @@ const VITEST_ADDON_NAME = '@storybook/addon-vitest';
 const VITEST_PLUGIN_MODULE = '@storybook/addon-vitest/vitest-plugin';
 const A11Y_ADDON_NAME = '@storybook/addon-a11y';
 const A11Y_PREVIEW_MODULE = '@storybook/addon-a11y/preview';
-
-// Recast defaults this to `os.EOL`, which would carriage-return printed files on Windows.
-const PRINT_OPTIONS = { lineTerminator: '\n' };
 
 const SETUP_FILE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'];
 const CONFIG_FILE_PATTERNS = [
@@ -276,7 +283,9 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
 
     for (const { path: setupFile, transform } of setupFiles) {
       if (transform.kind === 'rewritten') {
-        files.write(setupFile, await formatExistingFile(setupFile, transform.code));
+        // `check` read the file through another `files`; this read lets the commit keep the
+        // file's line endings and notice when it changed on disk since.
+        await files.edit(setupFile, () => formatExistingFile(setupFile, transform.code));
       }
     }
 
@@ -322,20 +331,19 @@ export function transformSetupFile(
   source: string,
   options: TransformOptions
 ): VitestSetupFileInfo['transform'] {
-  const j = jscodeshift.withParser(/\.[jt]sx$/.test(options.setupFilePath) ? 'tsx' : 'ts');
-  let root: jscodeshift.Collection;
+  let editor: SourceEditor;
 
   try {
-    root = j(source);
+    editor = new SourceEditor(source, options.setupFilePath);
   } catch {
     return { kind: 'manual', reason: 'it could not be parsed' };
   }
 
-  const program: t.Program = root.get().node.program;
+  const { program } = editor;
 
   const bindings = new Map<
     string,
-    { declaration: t.ImportDeclaration; specifier: t.ImportDeclaration['specifiers'][number] }
+    { declaration: E.ImportDeclaration; specifier: E.ImportDeclaration['specifiers'][number] }
   >();
 
   for (const statement of program.body) {
@@ -363,13 +371,13 @@ export function transformSetupFile(
     };
   }
 
-  const unsupportedAnnotation = (node: t.Node | null) => ({
+  const unsupportedAnnotation = (node: Node) => ({
     kind: 'manual' as const,
-    reason: `it passes annotations that are neither your ".storybook/preview" nor "${A11Y_PREVIEW_MODULE}": ${j(node as unknown as jscodeshift.ASTNode).toSource()}`,
+    reason: `it passes annotations that are neither your ".storybook/preview" nor "${A11Y_PREVIEW_MODULE}": ${editor.source(node)}`,
   });
 
   const annotationName = (
-    node: t.Expression | t.SpreadElement | t.ArgumentPlaceholder | null
+    node: E.ArrayExpressionElement
   ): string | { kind: 'manual'; reason: string } => {
     const identifier =
       node?.type === 'MemberExpression' &&
@@ -383,7 +391,7 @@ export function transformSetupFile(
       binding?.specifier.type !== 'ImportNamespaceSpecifier' &&
       binding?.specifier.type !== 'ImportDefaultSpecifier'
     ) {
-      return unsupportedAnnotation(node);
+      return unsupportedAnnotation(node!);
     }
 
     const importSource = String(binding.declaration.source.value);
@@ -398,11 +406,10 @@ export function transformSetupFile(
             reason: `it passes "${A11Y_PREVIEW_MODULE}" annotations, but ${A11Y_ADDON_NAME} is not registered in the "addons" field of your .storybook/main`,
           };
     }
-    return unsupportedAnnotation(node);
+    return unsupportedAnnotation(node!);
   };
 
-  const [firstStatement] = program.body;
-  const removedStatements = new Set<t.Statement>();
+  const removedStatements = new Set<Node>();
   const capturedNames = new Set<string>();
   const annotationNames = new Set<string>();
 
@@ -442,11 +449,11 @@ export function transformSetupFile(
 
     removedStatements.add(statement);
     if (statement.type === 'VariableDeclaration') {
-      capturedNames.add((statement.declarations[0].id as t.Identifier).name);
+      capturedNames.add((statement.declarations[0].id as E.BindingIdentifier).name);
     }
   }
 
-  if (countReferences(j, root, callBinding[0]) !== removedStatements.size) {
+  if (countReferences(program, callBinding[0]) !== removedStatements.size) {
     return {
       kind: 'manual',
       reason:
@@ -457,7 +464,7 @@ export function transformSetupFile(
   for (const name of capturedNames) {
     const forwardings = program.body.filter((statement) => isBeforeAllForwarding(statement, name));
 
-    if (countReferences(j, root, name) !== forwardings.length) {
+    if (countReferences(program, name) !== forwardings.length) {
       return {
         kind: 'manual',
         reason:
@@ -468,39 +475,37 @@ export function transformSetupFile(
     forwardings.forEach((statement) => removedStatements.add(statement));
   }
 
-  program.body = program.body.filter((statement) => !removedStatements.has(statement));
+  const keptSpecifiers = new Map<E.ImportDeclaration, E.ImportDeclaration['specifiers']>();
 
   for (const name of [callBinding[0], ...annotationNames, 'beforeAll']) {
     const binding = bindings.get(name);
 
-    if (!binding || countReferences(j, root, name) > 0) {
+    if (!binding || countReferences(program, name, removedStatements) > 0) {
       continue;
     }
 
-    binding.declaration.specifiers = binding.declaration.specifiers.filter(
+    const kept = (keptSpecifiers.get(binding.declaration) ?? binding.declaration.specifiers).filter(
       (specifier) => specifier !== binding.specifier
     );
+    keptSpecifiers.set(binding.declaration, kept);
 
-    if (binding.declaration.specifiers.length === 0) {
-      program.body = program.body.filter((statement) => statement !== binding.declaration);
+    if (kept.length === 0) {
+      removedStatements.add(binding.declaration);
     }
   }
 
-  if (program.body.length === 0) {
+  if (program.body.every((statement) => removedStatements.has(statement))) {
     return { kind: 'empty' };
   }
 
-  keepHeader(firstStatement, program.body[0]);
-  return { kind: 'rewritten', code: root.toSource(PRINT_OPTIONS) };
-}
-
-function keepHeader(removed: t.Statement | undefined, first: t.Statement) {
-  const header = getHeaderComments(removed);
-  if (removed === first || !header.length) {
-    return;
+  for (const [declaration, kept] of keptSpecifiers) {
+    if (kept.length > 0) {
+      setImportSpecifiers(editor, declaration, kept);
+    }
   }
-  const commented = first as { comments?: t.Comment[] };
-  commented.comments = [...header, ...(commented.comments ?? [])];
+  removeStatements(editor, removedStatements);
+
+  return { kind: 'rewritten', code: editor.toString() };
 }
 
 function resolvesToPreview(importSource: string, options: TransformOptions) {
@@ -513,7 +518,7 @@ function resolvesToPreview(importSource: string, options: TransformOptions) {
   return resolved === path.resolve(options.configDir, 'preview');
 }
 
-function isCallOf(node: t.Node | null | undefined, calleeName: string): node is t.CallExpression {
+function isCallOf(node: Node | null | undefined, calleeName: string): node is E.CallExpression {
   return (
     node?.type === 'CallExpression' &&
     node.callee.type === 'Identifier' &&
@@ -521,7 +526,7 @@ function isCallOf(node: t.Node | null | undefined, calleeName: string): node is 
   );
 }
 
-function isBeforeAllForwarding(statement: t.Statement, resultName: string) {
+function isBeforeAllForwarding(statement: Node, resultName: string) {
   if (statement.type !== 'ExpressionStatement' || !isCallOf(statement.expression, 'beforeAll')) {
     return false;
   }
@@ -538,28 +543,41 @@ function isBeforeAllForwarding(statement: t.Statement, resultName: string) {
 }
 
 /** Counts uses of a binding, ignoring its declaration, member property names and object keys. */
-function countReferences(j: jscodeshift.JSCodeshift, root: jscodeshift.Collection, name: string) {
-  return root
-    .find(j.Identifier, { name })
-    .filter((identifierPath) => {
-      const parent = identifierPath.parent.node;
-      if (
-        parent.type === 'ImportSpecifier' ||
-        parent.type === 'ImportDefaultSpecifier' ||
-        parent.type === 'ImportNamespaceSpecifier' ||
-        (parent.type === 'VariableDeclarator' && parent.id === identifierPath.node)
-      ) {
-        return false;
-      }
-      if (parent.type === 'MemberExpression' && !parent.computed) {
-        return parent.property !== identifierPath.node;
-      }
-      if ((parent.type === 'ObjectProperty' || parent.type === 'Property') && !parent.computed) {
-        return parent.key !== identifierPath.node || parent.shorthand === true;
-      }
-      return true;
-    })
-    .size();
+function countReferences(
+  program: E.Program,
+  name: string,
+  excluded: ReadonlySet<Node> = new Set()
+) {
+  let references = 0;
+  walk(program, (node, parent) => {
+    if (excluded.has(node)) {
+      return false;
+    }
+    if (node.type !== 'Identifier' || node.name !== name || !parent) {
+      return;
+    }
+    if (
+      parent.type === 'ImportSpecifier' ||
+      parent.type === 'ImportDefaultSpecifier' ||
+      parent.type === 'ImportNamespaceSpecifier' ||
+      (parent.type === 'VariableDeclarator' && parent.id === node)
+    ) {
+      return;
+    }
+    if (parent.type === 'MemberExpression' && !parent.computed && parent.property === node) {
+      return;
+    }
+    if (
+      parent.type === 'Property' &&
+      !parent.computed &&
+      parent.key === node &&
+      !parent.shorthand
+    ) {
+      return;
+    }
+    references += 1;
+  });
+  return references;
 }
 
 /**
@@ -576,79 +594,91 @@ function extractSetupFileEntries(
   configFile: string,
   inheritsRootByDefault: ExtendsDefault
 ): SetupFileEntry[] {
-  const j = jscodeshift.withParser('ts');
-  const root = j(source);
-  const pluginNames = getStorybookPluginNames(j, root);
+  const editor = new SourceEditor(source, configFile);
+  const pluginNames = getStorybookPluginNames(editor.program);
   const entries: SetupFileEntry[] = [];
 
-  root
-    .find(j.ObjectProperty)
-    .filter((propertyPath) => isKeyNamed(propertyPath.value.key, 'setupFiles'))
-    .forEach((propertyPath) => {
-      const value = propertyPath.value.value;
-      const nodes = value.type === 'ArrayExpression' ? value.elements : [value];
+  for (const property of findSetupFilesProperties(editor)) {
+    const { value } = property;
+    const nodes: (Node | null)[] = value.type === 'ArrayExpression' ? value.elements : [value];
 
-      // A root-level `setupFiles` is listed once per inheriting project, each resolved against
-      // that project's root, so one inherited by a Storybook and a plain project surfaces as both
-      const owners = getOwningConfigObjects(j, propertyPath, inheritsRootByDefault);
-      const seen = new Set<string>();
-      const collect = (entry: SetupFileEntry) => {
-        const key = `${entry.project}:${entry.kind === 'resolved' ? entry.path : entry.expression}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          entries.push(entry);
-        }
-      };
+    // A root-level `setupFiles` is listed once per inheriting project, each resolved against
+    // that project's root, so one inherited by a Storybook and a plain project surfaces as both
+    const owners = getOwningConfigObjects(editor, property, inheritsRootByDefault);
+    const seen = new Set<string>();
+    const collect = (entry: SetupFileEntry) => {
+      const key = `${entry.project}:${entry.kind === 'resolved' ? entry.path : entry.expression}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        entries.push(entry);
+      }
+    };
 
-      for (const owner of owners === 'unknown' ? [null] : owners) {
-        const project = owner
-          ? classifyConfigObject(j, owner, pluginNames, inheritsRootByDefault)
-          : 'unknown';
-        const base = getSetupFilesBaseDir(propertyPath, owner, configFile);
-        if ('unresolvedRoot' in base) {
-          collect({
-            kind: 'unresolved',
-            expression: `root: ${j(base.unresolvedRoot).toSource()}`,
-            project,
-          });
+    for (const owner of owners === 'unknown' ? [null] : owners) {
+      const project = owner
+        ? classifyConfigObject(editor, owner, pluginNames, inheritsRootByDefault)
+        : 'unknown';
+      const base = getSetupFilesBaseDir(editor, property, owner, configFile);
+      if ('unresolvedRoot' in base) {
+        collect({
+          kind: 'unresolved',
+          expression: `root: ${editor.source(base.unresolvedRoot)}`,
+          project,
+        });
+        continue;
+      }
+      for (const node of nodes) {
+        if (!node) {
           continue;
         }
-        for (const node of nodes) {
-          if (!node) {
-            continue;
-          }
-          const resolved = resolveStaticPath(node, configFile);
-          collect(
-            resolved === null
-              ? { kind: 'unresolved', expression: j(node).toSource(), project }
-              : { kind: 'resolved', path: path.resolve(base.baseDir, resolved), project }
-          );
-        }
+        const resolved = resolveStaticPath(node, configFile);
+        collect(
+          resolved === null
+            ? { kind: 'unresolved', expression: editor.source(node), project }
+            : { kind: 'resolved', path: path.resolve(base.baseDir, resolved), project }
+        );
       }
-    });
+    }
+  }
 
   return entries;
 }
 
-function getStorybookPluginNames(j: jscodeshift.JSCodeshift, root: jscodeshift.Collection) {
-  const names = new Set<string>();
-  root
-    .find(j.ImportDeclaration, { source: { value: VITEST_PLUGIN_MODULE } })
-    .forEach((importPath) => {
-      for (const specifier of importPath.node.specifiers ?? []) {
-        if (specifier.type === 'ImportSpecifier' && specifier.imported.name === 'storybookTest') {
-          const local = specifier.local?.name;
-          names.add(typeof local === 'string' ? local : 'storybookTest');
-        } else if (specifier.type === 'ImportNamespaceSpecifier') {
-          names.add('storybookTest');
-        }
-      }
-    });
-  return names;
+function findSetupFilesProperties(editor: SourceEditor) {
+  const properties: E.ObjectProperty[] = [];
+  walk(editor.program, (node) => {
+    if (node.type === 'ObjectExpression') {
+      properties.push(
+        ...node.properties.filter(
+          (member): member is E.ObjectProperty =>
+            member.type === 'Property' && !member.method && staticKey(member) === 'setupFiles'
+        )
+      );
+    }
+  });
+  return properties;
 }
 
-type ObjectPropertyPath = jscodeshift.ASTPath<jscodeshift.ObjectProperty>;
-type ObjectExpressionPath = jscodeshift.ASTPath<jscodeshift.ObjectExpression>;
+function getStorybookPluginNames(program: E.Program) {
+  const names = new Set<string>();
+  for (const statement of program.body) {
+    if (statement.type !== 'ImportDeclaration' || statement.source.value !== VITEST_PLUGIN_MODULE) {
+      continue;
+    }
+    for (const specifier of statement.specifiers) {
+      if (
+        specifier.type === 'ImportSpecifier' &&
+        specifier.imported.type === 'Identifier' &&
+        specifier.imported.name === 'storybookTest'
+      ) {
+        names.add(specifier.local.name);
+      } else if (specifier.type === 'ImportNamespaceSpecifier') {
+        names.add('storybookTest');
+      }
+    }
+  }
+  return names;
+}
 
 // Vitest never runs a root config's `test` options as a project once `projects` is set; its
 // `setupFiles` only reach the inline projects that inherit it, which therefore own them. A project
@@ -656,79 +686,75 @@ type ObjectExpressionPath = jscodeshift.ASTPath<jscodeshift.ObjectExpression>;
 // Projects the fix can't read (a variable, a call, a spread) make the owners `unknown`; file-based
 // projects (glob strings) don't inherit the root `test` options and are left out.
 function getOwningConfigObjects(
-  j: jscodeshift.JSCodeshift,
-  setupFilesPath: ObjectPropertyPath,
+  editor: SourceEditor,
+  setupFiles: E.ObjectProperty,
   inheritsRootByDefault: ExtendsDefault
-): ObjectExpressionPath[] | 'unknown' {
-  const configObject = getEnclosingConfigObject(setupFilesPath);
+): E.ObjectExpression[] | 'unknown' {
+  const configObject = getEnclosingConfigObject(editor, setupFiles);
   if (configObject === null) {
     return 'unknown';
   }
-  const testValue = findProperty(configObject.node, 'test')?.value;
+  const testValue = objectProperty(configObject, 'test')?.value;
   const projects =
-    testValue?.type === 'ObjectExpression' ? findProperty(testValue, 'projects')?.value : undefined;
-  if (getEnclosingRootConfig(configObject) !== null || projects === undefined) {
+    testValue?.type === 'ObjectExpression'
+      ? objectProperty(testValue, 'projects')?.value
+      : undefined;
+  if (getEnclosingRootConfig(editor, configObject) !== null || projects === undefined) {
     return [configObject];
   }
   if (
     projects.type !== 'ArrayExpression' ||
     projects.elements.some(
-      (element) => element?.type !== 'ObjectExpression' && element?.type !== 'StringLiteral'
+      (element) => element?.type !== 'ObjectExpression' && !isStringLiteral(element)
     )
   ) {
     return 'unknown';
   }
 
-  const inheritingProjects = j(configObject)
-    .find(j.ObjectExpression)
-    .filter(
-      (projectPath) =>
-        projects.elements.includes(projectPath.node) &&
-        inheritsRootConfig(projectPath.node, inheritsRootByDefault) !== false
-    )
-    .paths();
+  const inheritingProjects = projects.elements.filter(
+    (element): element is E.ObjectExpression =>
+      element?.type === 'ObjectExpression' &&
+      inheritsRootConfig(element, inheritsRootByDefault) !== false
+  );
   return inheritingProjects.length > 0 ? inheritingProjects : 'unknown';
 }
 
 // A path in `extends` inherits that file rather than the root config
 function inheritsRootConfig(
-  configObject: jscodeshift.ObjectExpression,
+  configObject: E.ObjectExpression,
   inheritsRootByDefault: ExtendsDefault
 ): boolean | 'path' | 'unknown' {
-  const extendsValue = findProperty(configObject, 'extends')?.value;
+  const extendsValue = objectProperty(configObject, 'extends')?.value;
   if (!extendsValue) {
     return inheritsRootByDefault;
   }
-  return extendsValue.type === 'BooleanLiteral' ? extendsValue.value : 'path';
+  return extendsValue.type === 'Literal' && typeof extendsValue.value === 'boolean'
+    ? extendsValue.value
+    : 'path';
 }
 
 /** Walks from a property of a `test: {}` object up to the project or root config object owning it. */
-function getEnclosingConfigObject(testFieldPath: ObjectPropertyPath): ObjectExpressionPath | null {
-  const testProperty = testFieldPath.parent?.parent;
-  if (
-    !testProperty ||
-    testProperty.node.type !== 'ObjectProperty' ||
-    !isKeyNamed(testProperty.node.key, 'test')
-  ) {
+function getEnclosingConfigObject(
+  editor: SourceEditor,
+  testField: Node
+): E.ObjectExpression | null {
+  const testObject = editor.parentOf(testField);
+  const testProperty = testObject && editor.parentOf(testObject);
+  if (testProperty?.type !== 'Property' || staticKey(testProperty) !== 'test') {
     return null;
   }
-  const configObject = testProperty.parent;
-  return configObject?.node.type === 'ObjectExpression' ? configObject : null;
+  const configObject = editor.parentOf(testProperty);
+  return configObject?.type === 'ObjectExpression' ? configObject : null;
 }
 
 function classifyConfigObject(
-  j: jscodeshift.JSCodeshift,
-  configObject: ObjectExpressionPath,
+  editor: SourceEditor,
+  configObject: E.ObjectExpression,
   pluginNames: Set<string>,
   inheritsRootByDefault: ExtendsDefault
 ): ProjectKind {
-  const plugins = findProperty(configObject.node, 'plugins')?.value;
-  if (
-    plugins &&
-    j(plugins)
-      .find(j.CallExpression)
-      .some((call) => pluginNames.has(calleeName(call.node.callee) ?? ''))
-  ) {
+  const plugins = objectProperty(configObject, 'plugins')?.value;
+  if (plugins && callsStorybookPlugin(plugins, pluginNames)) {
     return 'storybook';
   }
   if (
@@ -739,20 +765,20 @@ function classifyConfigObject(
     return 'unknown';
   }
 
-  const own: ProjectKind = isMergedConfig(configObject) ? 'unknown' : 'plain';
-  const rootConfig = getEnclosingRootConfig(configObject);
+  const own: ProjectKind = isMergedConfig(editor, configObject) ? 'unknown' : 'plain';
+  const rootConfig = getEnclosingRootConfig(editor, configObject);
   if (rootConfig === null) {
     return own;
   }
 
-  const inherits = inheritsRootConfig(configObject.node, inheritsRootByDefault);
+  const inherits = inheritsRootConfig(configObject, inheritsRootByDefault);
   if (inherits === 'path') {
     return 'unknown';
   }
   if (inherits === false) {
     return own;
   }
-  const inherited = classifyConfigObject(j, rootConfig, pluginNames, inheritsRootByDefault);
+  const inherited = classifyConfigObject(editor, rootConfig, pluginNames, inheritsRootByDefault);
   if (inherits === true) {
     return inherited;
   }
@@ -760,19 +786,24 @@ function classifyConfigObject(
   return inherited === own ? own : 'unknown';
 }
 
-function isMergedConfig(configObject: ObjectExpressionPath) {
-  for (let current = configObject.parent; current; current = current.parent) {
-    if (
-      current.node.type === 'CallExpression' &&
-      calleeName(current.node.callee) === 'mergeConfig'
-    ) {
+function callsStorybookPlugin(plugins: Node, pluginNames: Set<string>) {
+  let found = false;
+  walk(plugins, (node) => {
+    found ||= node.type === 'CallExpression' && pluginNames.has(calleeName(node.callee) ?? '');
+  });
+  return found;
+}
+
+function isMergedConfig(editor: SourceEditor, configObject: E.ObjectExpression) {
+  for (let current = editor.parentOf(configObject); current; current = editor.parentOf(current)) {
+    if (current.type === 'CallExpression' && calleeName(current.callee) === 'mergeConfig') {
       return true;
     }
   }
   return false;
 }
 
-function calleeName(callee: jscodeshift.ASTNode) {
+function calleeName(callee: Node) {
   if (callee.type === 'Identifier') {
     return callee.name;
   }
@@ -789,23 +820,24 @@ function calleeName(callee: jscodeshift.ASTNode) {
  * entry unresolvable.
  */
 function getSetupFilesBaseDir(
-  setupFilesPath: ObjectPropertyPath,
-  owner: ObjectExpressionPath | null,
+  editor: SourceEditor,
+  setupFiles: E.ObjectProperty,
+  owner: E.ObjectExpression | null,
   configFile: string
-): { baseDir: string } | { unresolvedRoot: jscodeshift.ASTNode } {
+): { baseDir: string } | { unresolvedRoot: Node } {
   const configDir = path.dirname(configFile);
-  const candidates: (jscodeshift.ASTNode | undefined)[] = [];
-  const testRootOf = (configObject: jscodeshift.ObjectExpression) => {
-    const testValue = findProperty(configObject, 'test')?.value;
+  const candidates: (Node | undefined)[] = [];
+  const testRootOf = (configObject: E.ObjectExpression) => {
+    const testValue = objectProperty(configObject, 'test')?.value;
     return testValue?.type === 'ObjectExpression'
-      ? findProperty(testValue, 'root')?.value
+      ? objectProperty(testValue, 'root')?.value
       : undefined;
   };
 
-  let configObject = owner ?? getEnclosingConfigObject(setupFilesPath);
+  let configObject = owner ?? getEnclosingConfigObject(editor, setupFiles);
   while (configObject) {
-    candidates.push(testRootOf(configObject.node), findProperty(configObject.node, 'root')?.value);
-    configObject = getEnclosingRootConfig(configObject);
+    candidates.push(testRootOf(configObject), objectProperty(configObject, 'root')?.value);
+    configObject = getEnclosingRootConfig(editor, configObject);
   }
 
   const rootNode = candidates.find((candidate) => candidate !== undefined);
@@ -816,39 +848,29 @@ function getSetupFilesBaseDir(
   return root === null ? { unresolvedRoot: rootNode } : { baseDir: path.resolve(configDir, root) };
 }
 
-function findProperty(objectNode: jscodeshift.ObjectExpression, name: string) {
-  return objectNode.properties.find(
-    (property): property is jscodeshift.ObjectProperty =>
-      property.type === 'ObjectProperty' && isKeyNamed(property.key, name)
-  );
-}
-
 /** From a `test.projects[n]` object to the root config object listing it, or null at the top. */
-function getEnclosingRootConfig(configObject: ObjectExpressionPath): ObjectExpressionPath | null {
-  const projectsProperty = configObject.parent?.parent;
+function getEnclosingRootConfig(
+  editor: SourceEditor,
+  configObject: E.ObjectExpression
+): E.ObjectExpression | null {
+  const projectsArray = editor.parentOf(configObject);
+  const projectsProperty = projectsArray && editor.parentOf(projectsArray);
 
-  if (
-    !projectsProperty ||
-    projectsProperty.node.type !== 'ObjectProperty' ||
-    !isKeyNamed(projectsProperty.node.key, 'projects')
-  ) {
+  if (projectsProperty?.type !== 'Property' || staticKey(projectsProperty) !== 'projects') {
     return null;
   }
 
-  return getEnclosingConfigObject(projectsProperty);
+  return getEnclosingConfigObject(editor, projectsProperty);
 }
 
-function resolveStaticPath(
-  node: jscodeshift.ASTNode | null | undefined,
-  configFile: string
-): string | null {
+function resolveStaticPath(node: Node | null | undefined, configFile: string): string | null {
   if (!node) {
     return null;
   }
 
   const configDir = path.dirname(configFile);
 
-  if (node.type === 'StringLiteral') {
+  if (isStringLiteral(node)) {
     return node.value;
   }
 
@@ -916,26 +938,24 @@ function resolveStaticPath(
   return pathMethod === 'join' ? path.join(...segments) : path.resolve(...segments);
 }
 
-function isImportMetaUrl(node: jscodeshift.ASTNode | null | undefined): boolean {
+function isImportMetaUrl(node: Node | null | undefined): boolean {
   return (
     node?.type === 'MemberExpression' &&
     node.object.type === 'MetaProperty' &&
-    node.property?.type === 'Identifier' &&
+    node.property.type === 'Identifier' &&
     node.property.name === 'url'
   );
 }
 
-function getPathMethodName(
-  callee: jscodeshift.ASTNode | null | undefined
-): 'join' | 'resolve' | 'dirname' | null {
-  if (callee?.type !== 'MemberExpression' || callee.property?.type !== 'Identifier') {
+function getPathMethodName(callee: Node): 'join' | 'resolve' | 'dirname' | null {
+  if (callee.type !== 'MemberExpression' || callee.property.type !== 'Identifier') {
     return null;
   }
   const method = callee.property.name;
   if (method !== 'join' && method !== 'resolve' && method !== 'dirname') {
     return null;
   }
-  return callee.object?.type === 'Identifier' ? method : null;
+  return callee.object.type === 'Identifier' ? method : null;
 }
 
 function removeSetupFileEntries(
@@ -944,57 +964,45 @@ function removeSetupFileEntries(
   targets: Set<string>,
   inheritsRootByDefault: ExtendsDefault
 ) {
-  const j = jscodeshift.withParser('ts');
-  const root = j(source);
-  const pluginNames = getStorybookPluginNames(j, root);
-  let changed = false;
+  const editor = new SourceEditor(source, configFile);
+  const pluginNames = getStorybookPluginNames(editor.program);
 
-  root
-    .find(j.ObjectProperty)
-    .filter((propertyPath) => isKeyNamed(propertyPath.value.key, 'setupFiles'))
-    .forEach((propertyPath) => {
-      const owners = getOwningConfigObjects(j, propertyPath, inheritsRootByDefault);
-      const baseDirs = (owners === 'unknown' ? [] : owners)
-        .filter(
-          (owner) =>
-            classifyConfigObject(j, owner, pluginNames, inheritsRootByDefault) === 'storybook'
-        )
-        .map((owner) => getSetupFilesBaseDir(propertyPath, owner, configFile))
-        .flatMap((base) => ('baseDir' in base ? [base.baseDir] : []));
-      const isTarget = (node: jscodeshift.ASTNode | null) => {
-        const resolved = resolveStaticPath(node, configFile);
-        return (
-          resolved !== null &&
-          baseDirs.some((baseDir) => targets.has(path.resolve(baseDir, resolved)))
-        );
-      };
-      const value = propertyPath.value.value;
+  for (const property of findSetupFilesProperties(editor)) {
+    const owners = getOwningConfigObjects(editor, property, inheritsRootByDefault);
+    const baseDirs = (owners === 'unknown' ? [] : owners)
+      .filter(
+        (owner) =>
+          classifyConfigObject(editor, owner, pluginNames, inheritsRootByDefault) === 'storybook'
+      )
+      .map((owner) => getSetupFilesBaseDir(editor, property, owner, configFile))
+      .flatMap((base) => ('baseDir' in base ? [base.baseDir] : []));
+    const isTarget = (node: Node | null) => {
+      const resolved = resolveStaticPath(node, configFile);
+      return (
+        resolved !== null &&
+        baseDirs.some((baseDir) => targets.has(path.resolve(baseDir, resolved)))
+      );
+    };
+    const { value } = property;
+    const removeProperty = () =>
+      removeFromList(editor, objectList(editor, editor.parentOf(property) as E.ObjectExpression), [
+        property,
+      ]);
 
-      if (value.type !== 'ArrayExpression') {
-        if (isTarget(value)) {
-          propertyPath.prune();
-          changed = true;
-        }
-        return;
+    if (value.type !== 'ArrayExpression') {
+      if (isTarget(value)) {
+        removeProperty();
       }
+      continue;
+    }
 
-      const kept = value.elements.filter((element) => !isTarget(element));
-      if (kept.length === value.elements.length) {
-        return;
-      }
-      changed = true;
-      value.elements = kept;
-      if (kept.length === 0) {
-        propertyPath.prune();
-      }
-    });
+    const removed = value.elements.filter((element): element is E.Expression => isTarget(element));
+    if (removed.length > 0 && removed.length === value.elements.length) {
+      removeProperty();
+    } else if (removed.length > 0) {
+      removeFromList(editor, arrayList(editor, value), removed);
+    }
+  }
 
-  return changed ? root.toSource(PRINT_OPTIONS) : null;
-}
-
-function isKeyNamed(key: { type: string; name?: unknown; value?: unknown }, name: string) {
-  return (
-    (key.type === 'Identifier' && key.name === name) ||
-    (key.type === 'StringLiteral' && key.value === name)
-  );
+  return editor.commit() ? editor.toString() : null;
 }

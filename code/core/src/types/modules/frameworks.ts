@@ -18,6 +18,7 @@ export enum SupportedFramework {
   VUE3_VITE = 'vue3-vite',
   WEB_COMPONENTS_VITE = 'web-components-vite',
   // COMMUNITY
+  ASTRO = 'astro',
   HTML_RSBUILD = 'html-rsbuild',
   NUXT = 'nuxt',
   QWIK = 'qwik',

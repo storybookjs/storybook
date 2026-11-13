@@ -36,20 +36,17 @@ const createStorybookProgram = program
   .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
   .option('-f --force', 'Force add Storybook')
   .option('-s --skip-install', 'Skip installing deps')
+  .option(
+    '--install-typescript',
+    'Add TypeScript, which docgen needs, when the project has none, without asking'
+  )
+  .option('--no-install-typescript', 'Do not add TypeScript when the project has none')
   .addOption(
     new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
       Object.values(PackageManagerName)
     )
   )
-  .addOption(
-    new Option('--parser <type>', 'jscodeshift parser').choices([
-      'babel',
-      'babylon',
-      'flow',
-      'ts',
-      'tsx',
-    ])
-  )
+  .addOption(new Option('--parser <type>', 'Ignored').hideHelp())
   .addOption(
     new Option('--type <type>', 'Add Storybook for a specific project type').choices(
       Object.values(ProjectType).filter(

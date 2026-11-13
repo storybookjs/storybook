@@ -159,6 +159,49 @@ describe('Yarn 1 Proxy', () => {
     });
   });
 
+  describe('getPublishedPeerDependencies', () => {
+    const readPeers = () =>
+      yarn1Proxy.getPublishedPeerDependencies('@storybook/react-native', '11.0.0-next.0');
+
+    describe('when the version has peer dependencies', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({
+          stdout: '{"type":"inspect","data":{"storybook":"^10.5.4"}}',
+        } as any);
+      });
+
+      it('reads them through the package manager', async () => {
+        await expect(readPeers()).resolves.toEqual({ storybook: '^10.5.4' });
+        expect(mockedExecuteCommand).toHaveBeenCalledWith(
+          expect.objectContaining({
+            command: 'yarn',
+            args: ['info', '@storybook/react-native@11.0.0-next.0', 'peerDependencies', '--json'],
+          })
+        );
+      });
+    });
+
+    describe('when the version has no peer dependencies', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({ stdout: '{"type":"inspect"}' } as any);
+      });
+
+      it('returns an empty object', async () => {
+        await expect(readPeers()).resolves.toEqual({});
+      });
+    });
+
+    describe('when the lookup fails', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockRejectedValue(new Error('401 Unauthorized'));
+      });
+
+      it('returns null', async () => {
+        await expect(readPeers()).resolves.toBeNull();
+      });
+    });
+  });
+
   describe('latestVersion', () => {
     it('without constraint it returns the latest version', async () => {
       const executeCommandSpy = mockedExecuteCommand.mockReturnValue(

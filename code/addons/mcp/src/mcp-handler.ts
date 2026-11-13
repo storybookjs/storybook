@@ -9,15 +9,14 @@ import { buffer } from 'node:stream/consumers';
 import { collectTelemetry } from './telemetry.ts';
 import type { DocsAccess } from 'storybook/internal/toolsets-docs';
 import type { AddonContext, AddonOptionsOutput } from './types.ts';
-import { logger } from 'storybook/internal/node-logger';
 import { getEffectiveToolAvailability, getToolAvailability } from 'storybook/internal/core-server';
 import { buildServerInstructions } from 'storybook/internal/skills';
 import type { CompositionAuth } from './auth/index.ts';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 import { registerAddonMcpTools } from './tools/tool-registry.ts';
+import { toBaseUrl } from './utils/base-url.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
-let origin: string | undefined;
 // Promise that ensures single initialization, even with concurrent requests
 let initialize: Promise<McpServer<any, AddonContext>> | undefined;
 let disableTelemetry: boolean | undefined;
@@ -41,11 +40,9 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
     adapter: new ValibotJsonSchemaAdapter(),
     get instructions() {
       return buildServerInstructions({
-        transport: 'mcp',
         devEnabled: server?.ctx.custom?.toolsets?.dev ?? true,
         testSupported: (server?.ctx.custom?.toolsets?.test ?? true) && availability.testSupported,
         docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && availability.docsEnabled,
-        moduleGraphSupported: availability.moduleGraphSupported,
       });
     },
     capabilities: {
@@ -73,8 +70,6 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 
   transport = new HttpTransport(server, { path: null });
 
-  origin = `http://localhost:${options.port}`;
-  logger.debug(`MCP server origin: ${origin}`);
   return server;
 };
 
@@ -87,6 +82,10 @@ type McpServerHandlerParams = {
   res: ServerResponse;
   options: Options;
   addonOptions: AddonOptionsOutput;
+  /** Origin of the local Storybook, e.g. `http://localhost:6006`. */
+  origin: string;
+  /** URL path prefix the local Storybook is served from, `/` or `/seg/`. */
+  basePath: string;
   /**
    * The MCP endpoint path (e.g. `/mcp` or a user-configured override).
    * Used to derive the Storybook root from the incoming request URL inside
@@ -117,6 +116,8 @@ export const mcpServerHandler = async ({
   res,
   options,
   addonOptions,
+  origin,
+  basePath,
   endpoint = DEFAULT_MCP_ENDPOINT,
   sources,
   manifestProvider,
@@ -139,7 +140,8 @@ export const mcpServerHandler = async ({
     options,
     endpoint,
     toolsets: getToolsets(webRequest, addonOptions),
-    origin: origin!,
+    origin,
+    basePath,
     disableTelemetry: disableTelemetry!,
     a11yEnabled,
     request: webRequest,
@@ -160,7 +162,7 @@ export const mcpServerHandler = async ({
           status: 401,
           headers: {
             'Content-Type': 'text/plain',
-            'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(origin!),
+            'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(toBaseUrl(origin, basePath)),
           },
         })
       : new Response(body, { status: response.status, headers: response.headers });

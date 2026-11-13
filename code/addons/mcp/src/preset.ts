@@ -1,29 +1,80 @@
 import { mcpServerHandler } from './mcp-handler.ts';
-import type { PresetPropertyFn, StorybookConfigRaw } from 'storybook/internal/types';
+import type { Options, PresetPropertyFn, StorybookConfigRaw } from 'storybook/internal/types';
 import { AddonOptions, type AddonOptionsInput } from './types.ts';
 import * as v from 'valibot';
 import {
+  type ToolAvailability,
   createLocalDocsAccess,
   getEffectiveToolAvailability,
   getToolAvailability,
   isValidHost,
   loadManifests,
+  type McpToolsets,
 } from 'storybook/internal/core-server';
 import { isWebContainer } from 'storybook/internal/common';
 import htmlTemplate from './template.html';
 import path from 'node:path';
-import { extractBearerToken, type ManifestProvider } from './auth/index.ts';
-import { resolveCompositionSources } from './auth/resolve-composition-sources.ts';
+import { type CompositionAuth, extractBearerToken } from './auth/index.ts';
+import {
+  type ResolvedCompositionSources,
+  resolveCompositionSources,
+} from './auth/resolve-composition-sources.ts';
 import { logger } from 'storybook/internal/node-logger';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 import { getStoryIndex } from './utils/get-story-index.ts';
+import { toBaseUrl } from './utils/base-url.ts';
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
   existingAnnotations = []
 ) => {
   return [...existingAnnotations, path.join(import.meta.dirname, 'preview.js')];
 };
+
+/** What the MCP routes need from the probed composition, and how each request reads manifests. */
+function buildComposition(
+  { refs, compositionAuth, sources, multiSource }: ResolvedCompositionSources,
+  {
+    options,
+    baseUrl,
+    rawAvailability,
+  }: { options: Options; baseUrl: string; rawAvailability: ToolAvailability }
+) {
+  // Composition (multi-source) is the only remaining consumer of the manifest-provider plumbing:
+  // single-source docs tools read the registered docs toolset instead. In docgen-server mode core
+  // 404s the local `/manifests/*.json`, so the local source reads this Storybook in-process
+  // through the same registration-based access selection the dev server uses when it is not
+  // composed — the docgen services when they actually registered, the inline manifests otherwise.
+  const localAccess =
+    rawAvailability.docgenServer && refs.length > 0
+      ? createLocalDocsAccess({
+          storyIndex: { getIndex: () => getStoryIndex(options) },
+          getManifests: () => loadManifests(options.presets),
+        })
+      : undefined;
+
+  if (refs.length > 0) {
+    logger.info(`Initialized composition with ${refs.length} remote Storybook(s)`);
+    if (compositionAuth.requiresAuth) {
+      logger.info(`Auth required for: ${compositionAuth.authUrls.join(', ')}`);
+    }
+    logger.info(`Sources: ${(sources ?? []).map((source) => source.id).join(', ')}`);
+  }
+
+  // Remote sources are fetched over HTTP; the local one is read through `localAccess` when
+  // docgen-server mode is on, and over HTTP from this origin otherwise.
+  const manifestProvider =
+    refs.length > 0 ? compositionAuth.createManifestProvider(baseUrl) : undefined;
+
+  return {
+    sources,
+    compositionAuth,
+    manifestAccess: { manifestProvider, localAccess },
+    // Same gates the MCP server uses to register these tools, so the page can't
+    // claim a tool is available when it isn't (and vice versa).
+    availability: getEffectiveToolAvailability(rawAvailability, { multiSource }),
+  };
+}
 
 export const experimental_devServer: PresetPropertyFn<
   'experimental_devServer',
@@ -37,7 +88,10 @@ export const experimental_devServer: PresetPropertyFn<
     toolsets: options.toolsets ?? {},
   });
 
+  const basePath = options.basePath ?? '/';
   const origin = `http://localhost:${options.port}`;
+  const baseUrl = toBaseUrl(origin, basePath);
+  logger.debug(`MCP server base URL: ${baseUrl}`);
   const endpoint = addonOptions.endpoint ?? DEFAULT_MCP_ENDPOINT;
 
   const core = await options.presets.apply('core', {});
@@ -92,45 +146,25 @@ export const experimental_devServer: PresetPropertyFn<
     return true;
   };
 
-  const { refs, compositionAuth, sources, multiSource } = await resolveCompositionSources(options);
-
-  // Composition (multi-source) is the only remaining consumer of the manifest-provider plumbing:
-  // single-source docs tools read the registered docs toolset instead. In docgen-server mode core
-  // 404s the local `/manifests/*.json`, so the local source reads this Storybook in-process
-  // through the same registration-based access selection the dev server uses when it is not
-  // composed — the docgen services when they actually registered, the inline manifests otherwise.
   const rawAvailability = await getToolAvailability(options);
-  const localAccess =
-    rawAvailability.docgenServer && refs.length > 0
-      ? createLocalDocsAccess({
-          storyIndex: { getIndex: () => getStoryIndex(options) },
-          getManifests: () => loadManifests(options.presets),
-        })
-      : undefined;
 
-  let createManifestProvider: ((req: IncomingMessage) => ManifestProvider) | undefined;
-
-  if (refs.length > 0) {
-    logger.info(`Initialized composition with ${refs.length} remote Storybook(s)`);
-    if (compositionAuth.requiresAuth) {
-      logger.info(`Auth required for: ${compositionAuth.authUrls.join(', ')}`);
-    }
-
-    logger.info(`Sources: ${(sources ?? []).map((s) => s.id).join(', ')}`);
-
-    // Remote sources are fetched over HTTP; the local one is read through `localAccess` when
-    // docgen-server mode is on, and over HTTP from this origin otherwise.
-    createManifestProvider = () => compositionAuth.createManifestProvider(origin);
-  }
-
-  const manifestAccessFor = (req: IncomingMessage) => ({
-    manifestProvider: createManifestProvider?.(req),
-    localAccess,
+  // Probing the composed refs is network I/O, so it runs while the builders start instead of
+  // holding up the dev server; the routes below await it, so only a request that arrives before
+  // the probe settles waits for it.
+  const composition = resolveCompositionSources(options).then((resolved) =>
+    buildComposition(resolved, { options, baseUrl, rawAvailability })
+  );
+  // Logged once here; the requests that await it get polka's 500 without a terminal message.
+  composition.catch((error) => {
+    logger.error(
+      `[addon-mcp] Composition setup failed: ${error instanceof Error ? error.message : String(error)}`
+    );
   });
 
   // Serve .well-known/oauth-protected-resource for MCP auth
-  app!.get('/.well-known/oauth-protected-resource', (_req, res) => {
-    const wellKnown = compositionAuth.buildWellKnown(origin);
+  app!.get('/.well-known/oauth-protected-resource', async (_req, res) => {
+    const { compositionAuth } = await composition;
+    const wellKnown = compositionAuth.buildWellKnown(`${baseUrl}${endpoint}`);
     if (!wellKnown) {
       res.writeHead(404);
       res.end('Not found');
@@ -141,12 +175,16 @@ export const experimental_devServer: PresetPropertyFn<
     res.end(JSON.stringify(wellKnown));
   });
 
-  const requireAuth = (req: IncomingMessage, res: ServerResponse): boolean => {
+  const requireAuth = (
+    req: IncomingMessage,
+    res: ServerResponse,
+    compositionAuth: CompositionAuth
+  ): boolean => {
     const token = extractBearerToken(req.headers['authorization']);
     if (compositionAuth.requiresAuth && !token) {
       res.writeHead(401, {
         'Content-Type': 'text/plain',
-        'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(origin),
+        'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(baseUrl),
       });
       res.end('401 - Unauthorized');
       return true;
@@ -154,9 +192,10 @@ export const experimental_devServer: PresetPropertyFn<
     return false;
   };
 
-  app!.post(endpoint, (req, res) => {
+  app!.post(endpoint, async (req, res) => {
     if (rejectDisallowedOrigin(req, res)) return;
-    if (requireAuth(req, res)) return;
+    const { sources, compositionAuth, manifestAccess } = await composition;
+    if (requireAuth(req, res, compositionAuth)) return;
     if (rejectNonJsonBody(req, res)) return;
 
     return mcpServerHandler({
@@ -164,44 +203,47 @@ export const experimental_devServer: PresetPropertyFn<
       res,
       options,
       addonOptions,
+      origin,
+      basePath,
       endpoint,
       sources,
-      ...manifestAccessFor(req),
+      ...manifestAccess,
       compositionAuth,
     });
   });
 
-  // Same gates the MCP server uses to register these tools, so the page can't
-  // claim a tool is available when it isn't (and vice versa).
-  const {
-    moduleGraphSupported,
-    docsEnabled,
-    docsHasManifests,
-    docsFeatureEnabled,
-    testSupported,
-    a11yEnabled,
-  } = getEffectiveToolAvailability(rawAvailability, { multiSource });
-
   const isDevEnabled = addonOptions.toolsets?.dev ?? true;
-  const isDocsEnabled = docsEnabled && (addonOptions.toolsets?.docs ?? true);
-  const isTestEnabled = testSupported && (addonOptions.toolsets?.test ?? true);
 
-  app!.get(endpoint, (req, res) => {
+  app!.get(endpoint, async (req, res) => {
     if (rejectDisallowedOrigin(req, res)) return;
+    const { sources, compositionAuth, manifestAccess, availability } = await composition;
     if (!req.headers['accept']?.includes('text/html')) {
-      if (requireAuth(req, res)) return;
+      if (requireAuth(req, res, compositionAuth)) return;
 
       return mcpServerHandler({
         req,
         res,
         options,
         addonOptions,
+        origin,
+        basePath,
         endpoint,
         sources,
-        ...manifestAccessFor(req),
+        ...manifestAccess,
         compositionAuth,
       });
     }
+
+    const {
+      moduleGraphSupported,
+      docsEnabled,
+      docsHasManifests,
+      docsFeatureEnabled,
+      testSupported,
+      a11yEnabled,
+    } = availability;
+    const isDocsEnabled = docsEnabled && (addonOptions.toolsets?.docs ?? true);
+    const isTestEnabled = testSupported && (addonOptions.toolsets?.test ?? true);
 
     // Browser request - send HTML
     res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -267,7 +309,7 @@ export const experimental_devServer: PresetPropertyFn<
       .replace(
         '{{MANIFEST_DEBUGGER_LINK}}',
         rawAvailability.docsEnabled
-          ? '<p>View the <a href="/manifests/components.html">component manifest debugger</a>.</p>'
+          ? `<p>View the <a href="${basePath}manifests/components.html">component manifest debugger</a>.</p>`
           : ''
       )
       .replace('{{A11Y_BADGE}}', a11yBadge);
@@ -275,6 +317,15 @@ export const experimental_devServer: PresetPropertyFn<
   });
   return app;
 };
+
+/**
+ * The toolsets this server registers, as `main.ts` sets them. `npx storybook skills --mcp` reads
+ * this, so its text names only the tools of this server.
+ */
+export const mcpToolsets = async (
+  _value: unknown,
+  options: AddonOptionsInput
+): Promise<McpToolsets> => v.parse(AddonOptions, { toolsets: options.toolsets ?? {} }).toolsets;
 
 export const features: PresetPropertyFn<'features'> = async (existingFeatures) => {
   return {

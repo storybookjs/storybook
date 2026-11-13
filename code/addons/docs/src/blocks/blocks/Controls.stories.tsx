@@ -1,7 +1,7 @@
 /** Custom docs page: {@link ./Controls.mdx} (attached via `<Meta of={...} />`). */
 import React from 'react';
 
-import type { PlayFunctionContext } from 'storybook/internal/csf';
+import type { StoryContext } from 'storybook/internal/csf';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
@@ -103,7 +103,7 @@ const DOCGEN_TIMEOUT = { timeout: 5000 };
 
 const findSubcomponentTabs = async (
   canvas: ReturnType<typeof within>,
-  step: PlayFunctionContext['step']
+  step: StoryContext['step']
 ) => {
   let subcomponentATab: HTMLElement | null = null;
   let subcomponentBTab: HTMLElement | null = null;

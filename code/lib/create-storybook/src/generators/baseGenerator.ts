@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   type NpmOptions,
+  cliStoriesTargetPath,
   configureEslintPlugin,
   copyTemplateFiles,
   extractEslintInfo,
@@ -14,6 +15,7 @@ import {
   getPackageDetails,
   isCI,
   optionalEnvToBoolean,
+  versions,
 } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
 import { SupportedFramework, SupportedLanguage } from 'storybook/internal/types';
@@ -21,8 +23,10 @@ import { SupportedFramework, SupportedLanguage } from 'storybook/internal/types'
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
+import { communityPackageSpecifier } from '../community-frameworks.ts';
 import { AddonService } from '../services/index.ts';
 import { configureMain, configurePreview } from './configure.ts';
+import { rewriteCopiedStoryPreviewImports, supportsCsfFactories } from './csf-factories.ts';
 import type { FrameworkOptions, GeneratorOptions } from './types.ts';
 
 const defaultOptions = {
@@ -204,9 +208,15 @@ export async function baseGenerator(
     ...(extraPackagesToInstall || []),
   ].filter(Boolean);
 
-  const packagesToInstall = [...new Set(allPackages)].filter(
-    (packageToInstall) =>
-      !installedDependencies.has(getPackageDetails(packageToInstall as string)[0])
+  const packagesToInstall = await Promise.all(
+    [...new Set(allPackages)]
+      .filter(
+        (packageToInstall) =>
+          !installedDependencies.has(getPackageDetails(packageToInstall as string)[0])
+      )
+      .map((packageToInstall) =>
+        communityPackageSpecifier(packageManager, packageToInstall as string, versions.storybook)
+      )
   );
 
   let eslintPluginPackage: string | null = null;
@@ -271,6 +281,7 @@ export async function baseGenerator(
     : [];
 
   const configurationFileExtension = language === SupportedLanguage.TYPESCRIPT ? 'ts' : 'js';
+  const csfFactories = supportsCsfFactories(framework);
 
   taskLog.message(`- Configuring main.${configurationFileExtension}`);
   await configureMain({
@@ -285,18 +296,20 @@ export async function baseGenerator(
       : addons,
     extensions,
     language,
+    csfFactories,
     ...(staticDir ? { staticDirs: [join('..', staticDir)] } : null),
     ...extraMain,
   });
 
   taskLog.message(`- Configuring preview.${configurationFileExtension}`);
 
-  await configurePreview({
+  const { previewConfigPath } = await configurePreview({
     frameworkPreviewParts: _options.frameworkPreviewParts,
     storybookConfigFolder: storybookConfigFolder as string,
     language,
     frameworkPackage,
     renderer,
+    csfFactories,
   });
 
   if (addScripts) {
@@ -309,6 +322,7 @@ export async function baseGenerator(
   if (addComponents) {
     const templateLocation = hasFrameworkTemplates(framework) ? framework : renderer;
     invariant(templateLocation, `Could not find template location for ${framework} or ${renderer}`);
+    const destination = componentsDestinationPath ?? (await cliStoriesTargetPath());
 
     taskLog.message(`- Copying framework templates`);
 
@@ -316,7 +330,7 @@ export async function baseGenerator(
       templateLocation,
       packageManager: packageManager as any,
       language,
-      destination: componentsDestinationPath,
+      destination,
       commonAssetsDir: join(
         dirname(fileURLToPath(import.meta.resolve('create-storybook/package.json'))),
         'rendererAssets',
@@ -324,6 +338,13 @@ export async function baseGenerator(
       ),
       features,
     });
+
+    if (csfFactories) {
+      await rewriteCopiedStoryPreviewImports({
+        destination,
+        previewConfigPath,
+      });
+    }
   }
 
   taskLog.success('Storybook configuration generated', { showLog: true });

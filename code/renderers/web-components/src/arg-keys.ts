@@ -1,6 +1,7 @@
 export const DEFAULT_SLOT_NAME = 'default';
 
 export type ArgKeyCategory =
+  | 'attributes'
   | 'events'
   | 'methods'
   | 'slots'
@@ -8,6 +9,7 @@ export type ArgKeyCategory =
   | 'cssStates'
   | 'cssProperties';
 
+/** The mapper only emits `-attr` when the stem is a declared attribute that shares its name with a property. */
 export function toArgKey(category: ArgKeyCategory, name: string): string {
   if (category === 'cssProperties') {
     return name;
@@ -32,6 +34,7 @@ export function parseArgKey(key: string): { category: ArgKeyCategory; name: stri
 }
 
 const ARG_KEY_SUFFIXES: Record<Exclude<ArgKeyCategory, 'cssProperties'>, string> = {
+  attributes: '-attr',
   events: '-event',
   methods: '-method',
   slots: '-slot',

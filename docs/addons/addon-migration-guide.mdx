@@ -83,7 +83,7 @@ Change your CI to build and test your addon against this version and more recent
      strategy:
        matrix:
 -        node-version: [20.19, 22.12]
-+        node-version: [22.12, 24.21]
++        node-version: [22.12, 24.22]
      steps:
        - name: Checkout
 -        uses: actions/checkout@v4
@@ -115,13 +115,13 @@ The minimum supported TypeScript version is now 5.9. Update your TypeScript depe
 
 #### Preact
 
-If your addon or its development Storybook uses Preact, upgrade Preact before Storybook 11. The supported peer range is `^10.8.0 || >=11.0.0-0` because Storybook relies on `preact/compat/client` roots with `unmount()` support. Preact 10.7.1 roots don't provide that method, which Storybook needs for cleanup and root recreation.
+If your addon or its development Storybook uses Preact, upgrade Preact before Storybook 11. The supported peer range is `^10.9.0 || >=11.0.0-0`. Storybook relies on `preact/compat/client` roots with `unmount()` support, which Preact 10.7.1 roots don't provide, and its UI components call `useSyncExternalStore`, which `preact/compat` exports from Preact 10.9.0.
 
 The official Preact framework is `@storybook/preact-vite`. The same minimum applies to custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack.
 
-### CSF Next support
+### CSF 4 support
 
-[CSF Next](https://storybook.js.org/docs/api/csf/csf-next) becomes the default CSF format in Storybook 11. Your users will need your addon to support CSF Next to get type safety benefits. You will need to update your `src/index.ts` file to export a `definePreviewAddon` callback. Users will call it in their `preview.ts` file to register your addon's preview annotations.
+[CSF 4](../writing-stories/csf/index.mdx) becomes the default CSF format in Storybook 11. Your users will need your addon to support CSF 4 to get type safety benefits. You will need to update your `src/index.ts` file to export a `definePreviewAddon` callback. Users will call it in their `preview.ts` file to register your addon's preview annotations.
 
 If you haven't done so already when porting to Storybook 10, apply the following change:
 
@@ -223,6 +223,25 @@ The `@storybook/icons` package has moved from a default barrel file export to na
 
 Review your usage of the `@storybook/icons` package and ensure you import individual icons via named imports.
 
+#### Theming imports
+
+End users who only create a theme can stay on `storybook/theming`. `ThemeVars` and `ThemeVarsPartial` are exported there too. In Node, `storybook/theming` resolves to the same lightweight module as `storybook/theming/create`, without loading React or Emotion. Use `storybook/theming/create` explicitly when you need that lightweight entry in the browser too.
+
+```ts
+import { create, themes, type ThemeVars, type ThemeVarsPartial } from 'storybook/theming';
+```
+
+Move Emotion and theme-data imports to `storybook/theming/emotion` when you build manager UI or docs blocks. That is the supported entry for `styled`, `css`, `jsx`, `useTheme`, `ThemeProvider`, `color`, `typography`, `background`, `convert`, `ensure`, and the other theme types.
+
+```diff
+-import { styled, css, jsx, useTheme, ThemeProvider, color } from 'storybook/theming';
++import { styled, css, jsx, useTheme, ThemeProvider, color } from 'storybook/theming/emotion';
+```
+
+For backwards runtime compatibility, `storybook/theming` resolves to the same Emotion implementation as `storybook/theming/emotion` in both the manager and browser previews, including docs blocks. The browser compatibility mapping does not affect Node imports. Already-published addons can keep their existing imports. The TypeScript API of `storybook/theming` remains limited to `create`, `themes`, `ThemeVars`, and `ThemeVarsPartial`, so addon source compiled against Storybook 11 must import Emotion and theme-data helpers from `storybook/theming/emotion`.
+
+See the [theming imports migration reference](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#theming-imports).
+
 #### `useThemeParameters` removal
 
 The `useThemeParameters` hook is removed in Storybook 11. You may instead directly access the theme from the `StoryContext` object that the hook took as a parameter:
@@ -234,7 +253,7 @@ The `useThemeParameters` hook is removed in Storybook 11. You may instead direct
 
 ## Optional changes
 
-### Port your local Storybook to use CSF Next
+### Port your local Storybook to use CSF 4
 
 You may load your own preview annotations in your local Storybook instance, to test that they work as intended:
 
@@ -257,7 +276,7 @@ You may load your own preview annotations in your local Storybook instance, to t
 +});
 ```
 
-Change all your stories to use the [factory functions](https://storybook.js.org/docs/api/csf/csf-next) (e.g. `preview.meta()`, `meta.story()`) and check for any type errors that become visible with CSF Next's type safety.
+Change all your stories to use the [factory functions](../writing-stories/csf/api.mdx) (e.g. `preview.meta()`, `meta.story()`) and check for any type errors that become visible with CSF 4's type safety.
 
 ### NPM Trusted Publishing
 

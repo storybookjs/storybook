@@ -10,7 +10,7 @@ import { TrashIcon } from '@storybook/icons';
 import type { ControllerStateAndHelpers } from 'downshift';
 import { transparentize } from 'polished';
 import { useStorybookApi } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming';
+import { styled, type Theme, useTheme } from 'storybook/theming/emotion';
 
 import { matchesKeyCode, matchesModifiers } from '../../keybinding.ts';
 import { getStatus } from '../../utils/status.tsx';
@@ -18,7 +18,6 @@ import { NoResults } from './NoResults.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { DownshiftItem, Match, SearchResult } from './types.ts';
 import { isExpandType } from './types.ts';
-import type { Theme } from '@emotion/react';
 import type { StatusValue } from '../../../types/index.ts';
 
 const { document } = global;
@@ -182,7 +181,11 @@ const Result: FC<
   const api = useStorybookApi();
   useEffect(() => {
     if (api && props.isHighlighted && item.type === 'component') {
-      api.emit(PRELOAD_ENTRIES, { ids: [item.children[0]] }, { options: { target: item.refId } });
+      api.emit(PRELOAD_ENTRIES, {
+        ids: [item.children[0]],
+        source: 'search',
+        options: { target: item.refId },
+      });
     }
   }, [api, props.isHighlighted, item]);
 
@@ -273,6 +276,7 @@ export const SearchResults: FC<{
       api.emit(PRELOAD_ENTRIES, {
         // @ts-expect-error (TODO)
         ids: [item.isLeaf ? item.id : item.children[0]],
+        source: 'search',
         options: { target: refId },
       });
     }
@@ -314,7 +318,7 @@ export const SearchResults: FC<{
           const { key, ...rest } = props;
           return (
             <MoreWrapper key="search-result-expand">
-              <Button key={key} {...rest} size="small">
+              <Button ariaLabel={false} key={key} {...rest} size="small">
                 Show {result.moreCount} more results
               </Button>
             </MoreWrapper>

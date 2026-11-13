@@ -1,7 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
-import { types as t, type NodePath } from 'storybook/internal/babel';
 import {
   STORY_FILE_TEST_REGEXP,
   getComponentIdFromEntry,
@@ -10,29 +9,38 @@ import {
 import { getService } from 'storybook/internal/core-server';
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import {
+  type ESTree as E,
+  type ESTreeNode as Node,
+  type ImportBinding,
+  type RenderFunction,
+  type StoryArgsResolver,
+  type StoryReferenceResolver,
   buildImportStatements,
   collectImportBindings,
   createStoryArgsResolver,
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
-  jsDocTagsForPath,
-  keyOf,
+  jsDocTagsForNode,
+  staticKey,
   loadCsf,
-  metaObjectPath,
+  metaObject,
   noSnippetWarning,
   normalizeStoryDeclaration,
   propertyValue,
   resolveComponentImport,
+  resolveEffectiveRender,
   resolveReturnedObjectExpression,
   returnedExpression,
-  returnedExpressionPath,
   unresolvedWarning,
   unwrapExpression,
-  type ImportBinding,
-  type RenderFunctionPath,
-  type StoryArgsResolver,
-  type StoryReferenceResolver,
 } from 'storybook/internal/csf-tools';
+import {
+  type HoleMarks,
+  type SnippetTemplate,
+  createHoleMarks,
+  stripHoles,
+  withHoleSpace,
+} from 'storybook/internal/docs-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 
@@ -44,12 +52,12 @@ import {
 import type { ForwardableSetup } from './transform-template/forward-setup.ts';
 import { printH } from './print-h/print-h.ts';
 import { createRenderContext } from '../shared/render-primitives.ts';
+import type { VueHolePlace } from '../../snippet-values.ts';
 import {
   readTemplateRenderConfig,
   transformTemplate,
   type TemplateRenderConfig,
 } from './transform-template/transform-template.ts';
-import { resolveEffectiveRender } from '../../../../../core/src/csf-tools/story-shape/render.ts';
 
 export interface BuildStoryDocsContext {
   /** Resolve a CSF import path to an absolute file path. Defaults to `process.cwd()` join. */
@@ -70,7 +78,6 @@ interface StoryDocsContext {
   /** Present only when the component identifier and docgen data can synthesize snippets. */
   snippet: StorySnippetContext | undefined;
   importBindings: Map<string, ImportBinding>;
-  metaPath: NodePath<t.ObjectExpression> | undefined;
   /** Resolves each story's args, following a spread or a name out of the story file. */
   resolver: StoryArgsResolver;
   /** Story file source, for forwarding setup statements verbatim. */
@@ -100,7 +107,7 @@ type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
 type ExtractStoriesResult = { stories: Record<string, StoryDoc> };
 type StaticStoryRenderer =
   | { kind: 'bail'; warning: string }
-  | { kind: 'h'; argsParam?: string; expression: t.Expression }
+  | { kind: 'h'; argsParam?: string; expression: E.Expression }
   | { kind: 'sfc' }
   | {
       kind: 'template';
@@ -142,12 +149,12 @@ export async function buildStoryDocsPayload(
 
   let csf: ParsedCsf;
   try {
-    csf = loadCsf(storyFile, { makeTitle: () => input.entry.title }).parse();
+    csf = loadCsf(storyFile, { makeTitle: () => input.entry.title, fileName: storyPath }).parse();
   } catch {
     return undefined;
   }
 
-  const metaPath = metaObjectPath(csf);
+  const meta = metaObject(csf);
   const id = getComponentIdFromEntry(input.entry);
   let docgenPayload: DocgenPayload | undefined;
   try {
@@ -155,12 +162,12 @@ export async function buildStoryDocsPayload(
   } catch {
     // Docgen is optional here: without it the payload is still built, just without snippets.
   }
-  const componentName = resolveMetaComponentIdentifier(metaPath);
-  const importBindings = collectImportBindings(csf._file.path);
+  const componentName = resolveMetaComponentIdentifier(meta);
+  const importBindings = collectImportBindings(csf.program);
   const importStatement = createImportStatement(
     componentName,
     importBindings,
-    metaPath,
+    jsDocTagsForNode(meta, csf.editor),
     docgenPayload
   );
   const docgenArgInfo =
@@ -172,12 +179,11 @@ export async function buildStoryDocsPayload(
   const extracted = extractStories(csf, {
     snippet,
     importBindings,
-    metaPath,
     resolver: createStoryArgsResolver(csf, {
       filePath: storyPath,
       ...(context.references ?? openStoryReferences()),
     }),
-    source: storyFile,
+    source: csf._code,
   });
 
   return {
@@ -199,11 +205,9 @@ function fallbackTitle(title: string): string {
  *
  * @example `component: MyButton` → `'MyButton'`; `component: UI.Button` → `undefined`
  */
-function resolveMetaComponentIdentifier(
-  metaPath: NodePath<t.ObjectExpression> | undefined
-): string | undefined {
-  const value = propertyValue(metaPath?.node, 'component');
-  return t.isIdentifier(value) ? value.name : undefined;
+function resolveMetaComponentIdentifier(meta: E.ObjectExpression | undefined): string | undefined {
+  const value = propertyValue(meta, 'component');
+  return value?.type === 'Identifier' ? value.name : undefined;
 }
 
 /**
@@ -219,7 +223,7 @@ function resolveMetaComponentIdentifier(
 function createImportStatement(
   componentName: string | undefined,
   importBindings: Map<string, ImportBinding>,
-  metaPath: NodePath<t.ObjectExpression> | undefined,
+  metaJsDocTags: Record<string, string[]>,
   docgenPayload: DocgenPayload | undefined
 ): string | undefined {
   if (!componentName) {
@@ -229,8 +233,7 @@ function createImportStatement(
   // The override supplies the source and specifier kind, but the local name has to stay the one the
   // snippet renders, so the statement and the snippet keep referring to the same identifier.
   const ref = resolveComponentImport(componentName, importBindings);
-  const importOverride =
-    jsDocTagsForPath(metaPath).import?.[0] ?? docgenPayload?.jsDocTags.import?.[0];
+  const importOverride = metaJsDocTags.import?.[0] ?? docgenPayload?.jsDocTags.import?.[0];
   return buildImportStatements({ refs: [{ ...ref, importOverride }] }).join('\n') || undefined;
 }
 
@@ -265,12 +268,16 @@ function vueDocgenArgInfo(payload: DocgenPayload): VueDocgenArgInfo {
 }
 
 /**
- * Maps every CSF story export to its StoryDoc, enriched with a snippet or error where possible.
+ * Maps every CSF story export to its StoryDoc, enriched with a snippet or error where
+ * possible.
  */
 function extractStories(csf: ParsedCsf, options: StoryDocsContext): ExtractStoriesResult {
   const stories = Object.fromEntries(
     Object.entries(csf._stories).map(([storyExport, story]): [string, StoryDoc] => {
-      const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[storyExport]);
+      const { description, summary } = extractStoryJSDocInfo(
+        csf._storyStatements[storyExport],
+        csf.editor
+      );
       const storyDoc: StoryDoc = {
         id: story.id,
         name: story.name ?? storyNameFromExport(storyExport),
@@ -312,7 +319,7 @@ function enrichStoryDoc(
 
   let normalized;
   try {
-    normalized = normalizeStoryDeclaration(csf._storyDeclarationPath[storyExport]);
+    normalized = normalizeStoryDeclaration(csf._storyExports[storyExport], csf.editor);
   } catch {
     return plain;
   }
@@ -324,7 +331,7 @@ function enrichStoryDoc(
   const effectiveRender = resolveEffectiveRender(csf, storyExport, options.resolver.ctx);
   const renderer =
     effectiveRender.kind === 'resolved'
-      ? staticRendererForRenderFunction(effectiveRender.path, options)
+      ? staticRendererForRenderFunction(effectiveRender.node, options)
       : effectiveRender.kind === 'missing'
         ? { kind: 'sfc' as const }
         : undefined;
@@ -352,32 +359,71 @@ function enrichStoryDoc(
     return withWarning(noSnippetWarning(unresolved));
   }
 
-  const rendered = renderStaticStorySnippet(
-    renderer,
-    classified,
-    componentName,
-    docgenArgInfo,
-    options
-  );
+  // The snippet, and its template: the same print with each place an arg prints marked as a hole.
+  const print = (mark?: HoleMarks<VueHolePlace>['mark']) =>
+    renderStaticStorySnippet(renderer, classified, componentName, docgenArgInfo, options, mark);
+  const rendered = print();
   if (!rendered) {
     return withWarning(UNRENDERED_WARNINGS[renderer.kind]);
   }
+  // The snippet holds every character the marked print does but the marks, so no code it prints
+  // is read as a mark.
+  const marks = createHoleMarks<VueHolePlace>([rendered.snippet]);
+  const printed = print(marks.mark)?.snippet;
+  const holes = printed === undefined ? undefined : marks.toTemplate(printed);
 
   return {
     ...storyDoc,
     snippet: rendered.snippet,
+    // An attribute a control clears leaves no gap.
+    ...(holes && {
+      template: withHoleSpace(laidOut(holes), (hole) => hole.kind === 'attr'),
+    }),
     ...(unresolved.length > 0 ? { warning: unresolvedWarning(unresolved) } : {}),
   };
 }
 
+// The template with each hole laid out on its line. A hole that prints nothing on a line of its
+// own, which the snippet leaves blank, takes that line's indent as its `space`, and a `slots` hole
+// indents the children it prints as its line, or past it where it opens a tag.
+function laidOut(template: SnippetTemplate<VueHolePlace>): SnippetTemplate<VueHolePlace> {
+  const result: SnippetTemplate<VueHolePlace> = [];
+  for (const [index, segment] of template.entries()) {
+    const previous = result.at(-1);
+    const next = template[index + 1];
+    if (typeof segment === 'string') {
+      result.push(segment);
+    } else if (segment.kind === 'slots') {
+      const line = /[^\n]*$/.exec(stripHoles(result))![0];
+      result.push({ ...segment, indent: /^\s*/.exec(line)![0] + (segment.tag ? '  ' : '') });
+    } else if (
+      typeof previous === 'string' &&
+      /\n[ \t]+$/.test(previous) &&
+      segment.text === '' &&
+      segment.space === undefined &&
+      (next === undefined || (typeof next === 'string' && next.startsWith('\n')))
+    ) {
+      const space = /[ \t]+$/.exec(previous)![0];
+      result[result.length - 1] = previous.slice(0, -space.length);
+      result.push({ ...segment, space });
+    } else {
+      result.push(segment);
+    }
+  }
+  return result;
+}
+
 function staticRendererForRenderFunction(
-  renderFunction: RenderFunctionPath,
+  renderFunction: RenderFunction,
   options: StoryDocsContext
 ): StaticStoryRenderer | undefined {
-  const renderObject = resolveReturnedObjectExpression(renderFunction);
+  const renderObject = resolveReturnedObjectExpression(
+    renderFunction,
+    options.resolver.ctx.editor.program
+  );
   if (renderObject) {
     const resolution = readTemplateRenderConfig(renderObject, options.importBindings, {
-      argsParam: argsParameterName(renderFunction.node),
+      argsParam: argsParameterName(renderFunction),
       componentImportStatement: options.snippet?.componentImportStatement,
       componentName: options.snippet?.componentName,
       source: options.source,
@@ -392,17 +438,17 @@ function staticRendererForRenderFunction(
     const setupExpression = setupReturnedRenderExpression(renderObject);
     if (setupExpression) {
       return {
-        argsParam: argsParameterName(renderFunction.node),
+        argsParam: argsParameterName(renderFunction),
         expression: setupExpression,
         kind: 'h',
       };
     }
   }
 
-  const hExpression = returnedExpressionPath(renderFunction)?.node;
+  const hExpression = returnedExpression(renderFunction);
   return hExpression
     ? {
-        argsParam: argsParameterName(renderFunction.node),
+        argsParam: argsParameterName(renderFunction),
         expression: hExpression,
         kind: 'h',
       }
@@ -427,10 +473,13 @@ function renderStaticStorySnippet(
   classified: ClassifyArgsResult,
   componentName: string,
   docgenArgInfo: VueDocgenArgInfo,
-  options: StoryDocsContext
+  options: StoryDocsContext,
+  mark: HoleMarks<VueHolePlace>['mark'] | undefined
 ): StorySnippetResult | undefined {
   const componentImportStatement = options.snippet?.componentImportStatement;
   const { args } = classified;
+  const ctx = createRenderContext(mark);
+  const slots = docgenArgInfo.slots;
 
   // A story without a render function shows the component receiving the args directly.
   if (renderer.kind === 'sfc') {
@@ -439,7 +488,10 @@ function renderStaticStorySnippet(
           args,
           componentImports: new Map([[componentName, componentImportStatement]]),
           componentName,
+          ctx,
           importBindings: options.importBindings,
+          argsStory: true,
+          slots,
           template: `<${componentName} v-bind="args" />`,
           unsetArgs: classified.unset,
         })
@@ -451,14 +503,15 @@ function renderStaticStorySnippet(
       args,
       componentImports: renderer.componentImports,
       componentName,
+      ctx,
       importBindings: options.importBindings,
       setup: renderer.setup,
+      slots,
       template: renderer.template,
       unsetArgs: classified.unset,
     });
   }
 
-  const ctx = createRenderContext();
   const printed = printH({
     argsParam: renderer.argsParam,
     componentImportStatement,
@@ -478,6 +531,7 @@ function renderStaticStorySnippet(
     componentName,
     ctx,
     importBindings: options.importBindings,
+    slots,
     template: printed.template,
     unsetArgs: classified.unset,
   });
@@ -489,12 +543,12 @@ function renderStaticStorySnippet(
  *
  * @example `render: (args) => ({ setup: () => () => h(C, { label: args.label }) })` -> the `h(...)` call
  */
-function setupReturnedRenderExpression(renderObject: t.ObjectExpression): t.Expression | undefined {
+function setupReturnedRenderExpression(renderObject: E.ObjectExpression): E.Expression | undefined {
   const supported = renderObject.properties.every((property) => {
-    if (t.isSpreadElement(property)) {
+    if (property.type === 'SpreadElement') {
       return false;
     }
-    const key = keyOf(property);
+    const key = staticKey(property);
     return key === 'setup' || key === 'components' || key === 'inheritAttrs';
   });
   if (!supported) {
@@ -502,28 +556,33 @@ function setupReturnedRenderExpression(renderObject: t.ObjectExpression): t.Expr
   }
 
   const setup = renderObject.properties.find(
-    (property) => !t.isSpreadElement(property) && keyOf(property) === 'setup'
+    (property): property is E.ObjectProperty =>
+      property.type === 'Property' && staticKey(property) === 'setup'
   );
-  const setupFn = t.isObjectMethod(setup)
-    ? setup
-    : t.isObjectProperty(setup)
-      ? unwrapExpression(setup.value)
-      : undefined;
-  if (!setupFn || !t.isFunction(setupFn)) {
+  const setupFn = setup && unwrapExpression(setup.value);
+  if (!setupFn || !isFunction(setupFn)) {
     return undefined;
   }
 
   const renderClosure = returnedExpression(setupFn);
   const closure = renderClosure && unwrapExpression(renderClosure);
   // A render closure with parameters would receive values the snippet cannot reproduce.
-  if (!closure || !t.isFunction(closure) || closure.params.length > 0) {
+  if (!closure || !isFunction(closure) || closure.params.length > 0) {
     return undefined;
   }
 
   return returnedExpression(closure);
 }
 
-function argsParameterName(renderFunction: RenderFunctionPath['node']): string | undefined {
+function isFunction(node: Node): node is RenderFunction {
+  return (
+    node.type === 'ArrowFunctionExpression' ||
+    node.type === 'FunctionExpression' ||
+    node.type === 'FunctionDeclaration'
+  );
+}
+
+function argsParameterName(renderFunction: RenderFunction): string | undefined {
   const [parameter] = renderFunction.params;
-  return t.isIdentifier(parameter) ? parameter.name : undefined;
+  return parameter?.type === 'Identifier' ? parameter.name : undefined;
 }

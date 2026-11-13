@@ -68,7 +68,7 @@
     "open": {
       "type": "boolean",
       "description": "Whether to open Storybook automatically in the browser.",
-      "default": true
+      "default": false
     },
     "quiet": {
       "type": "boolean",
@@ -144,7 +144,7 @@
     "loglevel": {
       "type": "string",
       "description": "Controls level of logging during build. Can be one of: [trace, debug, info (default), warn, error, silent].",
-      "pattern": "(trace|debug|info|warn|error|silent)"
+      "enum": ["trace", "debug", "info", "warn", "error", "silent"]
     },
     "logfile": {
       "type": "string",

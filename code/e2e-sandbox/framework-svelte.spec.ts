@@ -22,8 +22,9 @@ test.describe('Svelte', () => {
     const showCodeButton = (await root.locator('button', { hasText: 'Show Code' }).all())[0];
     await showCodeButton.click();
     const sourceCode = root.locator('pre.prismjs');
-    const expectedSource = '<Button />';
-    await expect(sourceCode).toHaveText(expectedSource);
+    await expect(sourceCode).toHaveText(
+      "<script>\n  import Button from './Button.svelte';\n</script>\n\n<Button />"
+    );
   });
 
   test.describe('SvelteKit', () => {
@@ -32,7 +33,7 @@ test.describe('Svelte', () => {
     test('Links are logged in Actions panel', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
 
-      await sbPage.navigateToStory('stories/frameworks/sveltekit/modules/hrefs', 'default-actions');
+      await sbPage.navigateToStory('stories/frameworks/sveltekit/modules/hrefs', 'links');
       const root = sbPage.previewRoot();
       const link = root.locator('a', { hasText: 'Link to /basic-href' });
       await link.click();
@@ -52,10 +53,7 @@ test.describe('Svelte', () => {
     test('goto are logged in Actions panel', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
 
-      await sbPage.navigateToStory(
-        'stories/frameworks/sveltekit/modules/navigation',
-        'default-actions'
-      );
+      await sbPage.navigateToStory('stories/frameworks/sveltekit/modules/navigation', 'goto');
       const root = sbPage.previewRoot();
       await sbPage.viewAddonPanel('Actions');
 
@@ -79,7 +77,7 @@ test.describe('Svelte', () => {
       await invalidateAll.click();
 
       const invalidateAllLogItem = page.locator('#storybook-panel-root [role="tabpanel"]', {
-        hasText: `"invalidateAll"`,
+        hasText: `$app/navigation::invalidateAll`,
       });
       await expect(invalidateAllLogItem).toBeVisible();
 
@@ -98,6 +96,41 @@ test.describe('Svelte', () => {
         hasText: `/storybook-push-state`,
       });
       await expect(pushStateLogItem).toBeVisible();
+    });
+
+    test('a docs page fails when its inline stories set the mocks', async ({ page }) => {
+      const sbPage = new SbPage(page, expect);
+
+      await sbPage.navigateToStory(
+        'stories/frameworks/sveltekit/modules/docs-page-shared-mocks',
+        'docs'
+      );
+      const root = sbPage.previewRoot();
+
+      await expect(
+        root.getByText('SvelteKitMocksSharedOnDocsPageError', { exact: false }).first()
+      ).toBeVisible();
+      await expect(root.getByText('Welcome, Ada')).toHaveCount(0);
+    });
+
+    test('a docs page renders stories that set the mocks in iframes', async ({ page }) => {
+      const sbPage = new SbPage(page, expect);
+
+      await sbPage.navigateToStory(
+        'stories/frameworks/sveltekit/modules/docs-page-isolated-mocks',
+        'docs'
+      );
+      // The first story also renders as the primary story, so take the first of its iframes
+      const storyFrame = (name: string) =>
+        sbPage
+          .previewIframe()
+          .frameLocator(
+            `#iframe--stories-frameworks-sveltekit-modules-docs-page-isolated-mocks--${name}`
+          )
+          .first();
+
+      await expect(storyFrame('logged-out').getByText('Please log in')).toBeVisible();
+      await expect(storyFrame('logged-in').getByText('Welcome, Ada')).toBeVisible();
     });
   });
 });

@@ -5,16 +5,6 @@ import type {
 
 import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
 
-import type { enhance } from './mocks/app/forms.ts';
-import type {
-  goto,
-  invalidate,
-  invalidateAll,
-  pushState,
-  refreshAll,
-  replaceState,
-} from './mocks/app/navigation.ts';
-
 type FrameworkName = CompatibleString<'@storybook/sveltekit'>;
 type BuilderName = CompatibleString<'@storybook/builder-vite'>;
 
@@ -25,6 +15,7 @@ export type FrameworkOptions = {
    * slots. When disabled, Storybook will skip the docgen processing step during build, which can
    * improve build performance.
    *
+   * @deprecated Builder docgen is removed in Storybook 12. Use `features.docgenServer`.
    * @default true
    */
   docgen?: boolean;
@@ -54,81 +45,13 @@ export type StorybookConfig = Omit<
   StorybookConfigVite &
   StorybookConfigFramework;
 
-export type NormalizedHrefConfig = {
-  callback: (to: string, event: Event) => void;
-  asRegex?: boolean;
-};
-
-export type HrefConfig = NormalizedHrefConfig | NormalizedHrefConfig['callback'];
-
-/**
- * Copied from:
- * {@link https://github.com/sveltejs/kit/blob/7bb41aa4263b057a8912f4cdd35db03755d37342/packages/kit/types/index.d.ts#L1102-L1143}
- */
-interface Page<
-  Params extends Record<string, string> = Record<string, string>,
-  RouteId extends string | null = string | null,
-> {
-  url: URL;
-  params: Params;
-  route: {
-    id: RouteId;
+export interface SvelteKitTypes {
+  parameters: {
+    /**
+     * Removed in Storybook 11. Mock the SvelteKit modules in `beforeEach` instead.
+     *
+     * @deprecated See https://storybook.js.org/docs/get-started/frameworks/sveltekit#mocking-modules
+     */
+    sveltekit_experimental?: never;
   };
-  status: number;
-  error: Error | null;
-  data: Record<string, any>;
-  state: Record<string, any>;
-  form: any;
 }
-
-/**
- * Copied from:
- * {@link https://github.com/sveltejs/kit/blob/7bb41aa4263b057a8912f4cdd35db03755d37342/packages/kit/types/index.d.ts#L988}
- */
-interface NavigationTarget {
-  params: Record<string, string> | null;
-  route: {
-    id: string | null;
-  };
-  url: URL;
-}
-
-/**
- * Copied from:
- * {@link https://github.com/sveltejs/kit/blob/7bb41aa4263b057a8912f4cdd35db03755d37342/packages/kit/types/index.d.ts#L1017C9-L1017C89}
- */
-type NavigationType = 'enter' | 'form' | 'leave' | 'link' | 'goto' | 'popstate';
-
-/**
- * Copied from:
- * {@link https://github.com/sveltejs/kit/blob/7bb41aa4263b057a8912f4cdd35db03755d37342/packages/kit/types/index.d.ts#L1017C9-L1017C89}
- */
-interface Navigation {
-  from: NavigationTarget | null;
-  to: NavigationTarget | null;
-  type: Exclude<NavigationType, 'enter'>;
-  willUnload: boolean;
-  delta?: number;
-  complete: Promise<void>;
-}
-
-export type SvelteKitParameters = Partial<{
-  hrefs: Record<string, HrefConfig>;
-  state: {
-    page: Partial<Page>;
-    navigating: Partial<Navigation>;
-    updated: { current: boolean };
-  };
-  navigation: {
-    goto: typeof goto;
-    invalidate: typeof invalidate;
-    invalidateAll: typeof invalidateAll;
-    refreshAll: typeof refreshAll;
-    pushState: typeof pushState;
-    replaceState: typeof replaceState;
-    afterNavigate: Record<string, any>;
-  };
-  forms: {
-    enhance: typeof enhance;
-  };
-}>;

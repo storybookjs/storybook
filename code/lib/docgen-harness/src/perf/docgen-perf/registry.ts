@@ -11,8 +11,25 @@ import type { EngineId } from './types.ts';
 const reactScenarios = (profile: SuiteProfile): ScenarioSpec[] =>
   profile.react.map((scenario) => ({ name: scenario.shape, params: { ...scenario } }));
 
-const vueScenarios = (profile: SuiteProfile): ScenarioSpec[] =>
-  profile.vue.map((scenario) => ({ name: scenario.name, params: { ...scenario } }));
+const angularScenarios = (profile: SuiteProfile): ScenarioSpec[] => [
+  { name: 'default', params: { ...profile.angular } },
+];
+
+const angularArgs = ({ params }: ScenarioSpec): string[] => [
+  '--components',
+  String(params.components),
+  '--props',
+  String(params.props),
+];
+
+const workspaceScenarios = (profile: SuiteProfile): ScenarioSpec[] =>
+  profile.workspace.map((scenario) => ({ name: scenario.name, params: { ...scenario } }));
+
+const svelteScenarios = (profile: SuiteProfile): ScenarioSpec[] =>
+  [...profile.workspace, ...profile.svelte].map((scenario) => ({
+    name: scenario.name,
+    params: { ...scenario },
+  }));
 
 const reactArgs = ({ params }: ScenarioSpec): string[] => [
   '--shape',
@@ -27,7 +44,7 @@ const reactArgs = ({ params }: ScenarioSpec): string[] => [
   String(params.saves),
 ];
 
-const vueArgs = ({ params }: ScenarioSpec): string[] => [
+const workspaceArgs = ({ params }: ScenarioSpec): string[] => [
   '--scenario',
   String(params.name),
   '--packages',
@@ -39,6 +56,7 @@ const vueArgs = ({ params }: ScenarioSpec): string[] => [
   '--fan-out',
   String(params.fanOut),
   ...(params.heavyLib ? ['--heavy-lib'] : []),
+  ...(params.libModules ? ['--lib-modules', String(params.libModules)] : []),
   '--saves',
   String(params.saves),
 ];
@@ -74,16 +92,31 @@ export const ENGINES: BenchEngine[] = [
     args: (scenario) => [...reactArgs(scenario), '--mode', 'refresh', '--scope', 'changed'],
   }),
   new SeriesChildEngine({
+    id: 'react-osa-native',
+    child: '../docgen-memory/memory-harness.ts',
+    scenarios: reactScenarios,
+    jiti: true,
+    args: (scenario) => [
+      ...reactArgs(scenario),
+      '--mode',
+      'refresh',
+      '--scope',
+      'changed',
+      '--typescript',
+      'native',
+    ],
+  }),
+  new SeriesChildEngine({
     id: 'vue-docgen-api',
     child: 'engines/vue-docgen-api.ts',
-    scenarios: vueScenarios,
-    args: vueArgs,
+    scenarios: workspaceScenarios,
+    args: workspaceArgs,
   }),
   new SeriesChildEngine({
     id: 'vue-component-meta',
     child: 'engines/vue-component-meta.ts',
-    scenarios: vueScenarios,
-    args: vueArgs,
+    scenarios: workspaceScenarios,
+    args: workspaceArgs,
     pin: 'vue-component-meta',
   }),
   // Same child, pinned to a second, explicitly-versioned copy of the package - a version-pair
@@ -92,12 +125,40 @@ export const ENGINES: BenchEngine[] = [
   new SeriesChildEngine({
     id: 'vue-component-meta-next',
     child: 'engines/vue-component-meta.ts',
-    scenarios: vueScenarios,
+    scenarios: workspaceScenarios,
     inDefaultRun: false,
-    args: vueArgs,
+    args: workspaceArgs,
     pin: 'vue-component-meta-next',
   }),
+  // Svelte's svelte2tsx engine as builder docgen runs it, and as the docgen server's component-meta
+  // manager runs it.
+  new SeriesChildEngine({
+    id: 'svelte-legacy',
+    child: 'engines/svelte-docgen.ts',
+    scenarios: svelteScenarios,
+    args: (scenario) => [...workspaceArgs(scenario), '--engine', 'legacy'],
+  }),
+  new SeriesChildEngine({
+    id: 'svelte-component-meta',
+    child: 'engines/svelte-docgen.ts',
+    scenarios: svelteScenarios,
+    args: (scenario) => [...workspaceArgs(scenario), '--engine', 'component-meta'],
+  }),
   new CompodocEngine(),
+  new SeriesChildEngine({
+    id: 'angular-cm',
+    child: 'engines/angular-cm.ts',
+    scenarios: angularScenarios,
+    jiti: true,
+    args: angularArgs,
+  }),
+  new SeriesChildEngine({
+    id: 'angular-cm-native',
+    child: 'engines/angular-cm.ts',
+    scenarios: angularScenarios,
+    jiti: true,
+    args: (scenario) => [...angularArgs(scenario), '--typescript', 'native'],
+  }),
   // Always fails. The gate names it explicitly to prove the gate reports a failing engine as a
   // failure; nothing else ever runs it.
   new SeriesChildEngine({

@@ -1,10 +1,15 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [`@storybook/codemod` is no longer published](#storybookcodemod-is-no-longer-published)
+  - [ESLint plugin: `meta-inline-properties` replaced by `static-csf-properties`](#eslint-plugin-meta-inline-properties-replaced-by-static-csf-properties)
+  - [Deprecated addon UI APIs removed](#deprecated-addon-ui-apis-removed)
+  - [Theming imports](#theming-imports)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging)
   - [Legacy highlight object format removed](#legacy-highlight-object-format-removed)
   - [Tag filtering API](#tag-filtering-api)
+  - [`storybook/test` is no longer a manager global](#storybooktest-is-no-longer-a-manager-global)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`useThemeParameters` removed](#usethemeparameters-removed)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
@@ -14,10 +19,14 @@
   - [Toolbar `globalTypes` entries: index signature and `defaultValue` removed](#toolbar-globaltypes-entries-index-signature-and-defaultvalue-removed)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
   - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
+  - [Deprecated CSF and manager type aliases removed](#deprecated-csf-and-manager-type-aliases-removed)
   - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
+    - [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation)
   - [Builder docgen is deprecated](#builder-docgen-is-deprecated)
+    - [React: `react-docgen` and `react-docgen-typescript` are optional peer dependencies](#react-react-docgen-and-react-docgen-typescript-are-optional-peer-dependencies)
+    - [Svelte](#svelte)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
-  - [TypeScript 5.9 or 6.x](#typescript-59-or-6x)
+  - [TypeScript 5.9 or newer](#typescript-59-or-newer)
   - [CSF Next: meta args no longer need `as const`](#csf-next-meta-args-no-longer-need-as-const)
   - [CSF Next: use `mocked()` for the mock API on args](#csf-next-use-mocked-for-the-mock-api-on-args)
   - [CSF Next: every key in meta args must be an arg](#csf-next-every-key-in-meta-args-must-be-an-arg)
@@ -28,18 +37,27 @@
   - [Sidebar rewrite: manager API changes](#sidebar-rewrite-manager-api-changes)
   - [Escape is no longer a configurable shortcut](#escape-is-no-longer-a-configurable-shortcut)
   - ['Create new story' UI feature removed](#create-new-story-ui-feature-removed)
+  - [Sidebar: standalone docs pages are no longer wrapped in a component](#sidebar-standalone-docs-pages-are-no-longer-wrapped-in-a-component)
   - [Test runner support ended](#test-runner-support-ended)
+  - [`storybook/test` is based on Vitest 5 and no longer installs its test libraries](#storybooktest-is-based-on-vitest-5-and-no-longer-installs-its-test-libraries)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
+  - [Vite: `preview-stats.json` contains the full bundler graph](#vite-preview-statsjson-contains-the-full-bundler-graph)
+  - [Webpack: requires webpack 5.101 or higher](#webpack-requires-webpack-5101-or-higher)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
   - [Next.js: most Node.js built-in polyfills removed from `@storybook/nextjs`](#nextjs-most-nodejs-built-in-polyfills-removed-from-storybooknextjs)
   - [`storySort` in the preview replaced by `storySorts` in main](#storysort-in-the-preview-replaced-by-storysorts-in-main)
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
   - [Next.js: `@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
+  - [`storybook/internal/babel` removed; `csf-tools` uses ESTree](#storybookinternalbabel-removed-csf-tools-uses-estree)
+    - [Behavior that changes for every project](#behavior-that-changes-for-every-project)
+    - [Community packages that need a release](#community-packages-that-need-a-release)
+    - [Changes for tooling that imports Storybook's internal entry points](#changes-for-tooling-that-imports-storybooks-internal-entry-points)
   - [Create React App support removed](#create-react-app-support-removed)
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
+  - [`storybook add` and `storybook remove` leave an `addons` they cannot edit safely](#storybook-add-and-storybook-remove-leave-an-addons-they-cannot-edit-safely)
   - [Internal CSF tools use the unified mutation API](#internal-csf-tools-use-the-unified-mutation-api)
   - [Internal WebSocket heartbeat controls removed](#internal-websocket-heartbeat-controls-removed)
   - [Internal toolset telemetry now returns with the outcome](#internal-toolset-telemetry-now-returns-with-the-outcome)
@@ -49,17 +67,20 @@
   - [`mockChannel` removed from `storybook/preview-api` and `storybook/manager-api`](#mockchannel-removed-from-storybookpreview-api-and-storybookmanager-api)
   - [React: Require v18 and up](#react-require-v18-and-up)
   - [`@storybook/react-dom-shim` removed](#storybookreact-dom-shim-removed)
-  - [Preact: Require v10.8.0 and up](#preact-require-v1080-and-up)
+  - [Preact: Require v10.9.0 and up](#preact-require-v1090-and-up)
   - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
   - [`experimentalReview` feature flag removed](#experimentalreview-feature-flag-removed)
   - [`changeDetection` feature flag removed](#changedetection-feature-flag-removed)
   - [`storybook ai` command removed](#storybook-ai-command-removed)
-  - [`stories` skill renamed to `ui-workflow`](#stories-skill-renamed-to-ui-workflow)
+  - [`stories` skill split into four skills](#stories-skill-split-into-four-skills)
   - [`--preview-url` and `--force-build-preview` removed](#--preview-url-and---force-build-preview-removed)
   - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
   - [Web Components: server-side docgen suffixes event, slot and part argType keys](#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys)
   - [Web Components: the default render binds args by key](#web-components-the-default-render-binds-args-by-key)
+  - [Web Components: `@wc-toolkit/storybook-helpers` is built in](#web-components-wc-toolkitstorybook-helpers-is-built-in)
+  - [Web Components: the runtime Custom Elements Manifest API is deprecated](#web-components-the-runtime-custom-elements-manifest-api-is-deprecated)
   - [SvelteKit: Require v3 and up](#sveltekit-require-v3-and-up)
+  - [SvelteKit: `sveltekit_experimental` parameters removed](#sveltekit-sveltekit_experimental-parameters-removed)
   - [Svelte CSF is built into the Svelte frameworks](#svelte-csf-is-built-into-the-svelte-frameworks)
   - [Svelte CSF: legacy story syntax removed](#svelte-csf-legacy-story-syntax-removed)
     - [`<Meta>` component](#meta-component)
@@ -68,10 +89,14 @@
     - [`<Template>` component](#template-component)
     - [`id`, `autodocs` and `source` props on `<Story>`](#id-autodocs-and-source-props-on-story)
   - [Svelte CSF: stories files are indexed without preprocessors](#svelte-csf-stories-files-are-indexed-without-preprocessors)
+  - [Svelte: `parameters.component` removed from the source decorator](#svelte-parameterscomponent-removed-from-the-source-decorator)
   - [Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`](#highlight-menu-items-emit-a-fixed-highlight_menu_click-event-with-a-mandatory-id)
   - [`core/module-graph` query aliases removed](#coremodule-graph-query-aliases-removed)
   - [ExternalDocs and ExternalDocsContainer are removed](#externaldocs-and-externaldocscontainer-are-removed)
   - [CSF `.story` annotations removed](#csf-story-annotations-removed)
+  - [`argTypeTargetsV7` feature flag removed](#argtypetargetsv7-feature-flag-removed)
+  - [`disallowImplicitActionsInRenderV8` feature flag removed](#disallowimplicitactionsinrenderv8-feature-flag-removed)
+  - [JavaScript init templates use JSDoc types instead of `propTypes`](#javascript-init-templates-use-jsdoc-types-instead-of-proptypes)
 - [From version 10.6.1 to 10.6.2](#from-version-1061-to-1062)
   - [`storybook dev` now blocks remote iframe embedding](#storybook-dev-now-blocks-remote-iframe-embedding-1)
   - [Storybook now restricts iframe messaging](#storybook-now-restricts-iframe-messaging-1)
@@ -265,7 +290,7 @@
       - [Require Vue 3 and up](#require-vue-3-and-up)
     - [Angular](#angular)
       - [Require Angular 15 and up](#require-angular-15-and-up)
-    - [Svelte](#svelte)
+    - [Svelte](#svelte-1)
       - [Require Svelte 4 and up](#require-svelte-4-and-up)
     - [Preact](#preact)
       - [Require Preact 10 and up](#require-preact-10-and-up)
@@ -619,6 +644,156 @@
 
 ## From version 10.x to 11.0.0
 
+### `@storybook/codemod` is no longer published
+
+The codemods now ship inside the Storybook CLI, so `@storybook/codemod` has no stable 11.0 release, only 11.0 prereleases. Run the codemods with `storybook migrate`:
+
+```sh
+npx storybook@latest migrate --list
+npx storybook@latest migrate csf-2-to-3 --glob="**/*.stories.tsx"
+```
+
+If your `package.json` lists `@storybook/codemod`, remove it. Left in place, it stays on 10.x and installs its own copy of `storybook`.
+
+The transforms can no longer be run directly with `jscodeshift`. The `--parser` flag of `storybook migrate`, `storybook init` and `create storybook` is still accepted, but ignored.
+
+`storybook migrate` now exits with code 1 when the glob matches no files. Next to `node_modules` and `dist`, it also skips files in `build` and `storybook-static` folders. With `--dry-run`, it no longer renames files.
+
+The `upgrade-hierarchy-separators` codemod has been removed. It replaced `|` and `.` in titles and `storiesOf` calls with `/`, for the move to Storybook 6.0. `storiesOf` was removed in Storybook 8.0, and a `.` in a title is now an ordinary character. The `storybook/hierarchy-separator` ESLint rule still reports a `|` in a title, and `eslint --fix` replaces it.
+
+### ESLint plugin: `meta-inline-properties` replaced by `static-csf-properties`
+
+The `storybook/meta-inline-properties` rule has been removed from `eslint-plugin-storybook`. It checked a different property set than Storybook statically analyzes. If your ESLint config enables it explicitly, delete that entry, or the config will fail to load.
+
+Its replacement, `storybook/static-csf-properties`, ships at `error` severity in the `recommended`, `csf`, and `csf-strict` configs (flat and legacy). It reports exactly what breaks Storybook's static analysis of a story file: dynamic values for `title`, `id`, `tags`, `includeStories`, and `excludeStories` (on the meta, on stories, and in `preview.meta()` factory files), statically-read properties placed before an object spread that can override them at runtime, a `preview.meta()` argument that cannot be resolved statically, and a `preview` factory imported from a path that is not a `.storybook/preview` file. Every report corresponds to a file that already fails to index or silently diverges from what renders.
+### Deprecated addon UI APIs removed
+
+Storybook 11 removes the deprecated UI APIs from `storybook/internal/components`. Update addons to the replacements below. `TooltipProvider`, `Tooltip`, `TooltipNote`, `PopoverProvider`, `Popover`, `ActionList`, `Select`, and the current tab components remain available.
+
+| Removed API | Replacement |
+| --- | --- |
+| `WithTooltip`, `WithTooltipPure`, and the legacy `WithToolTipState` implementation | `TooltipProvider` for noninteractive content shown on hover or focus |
+| `TooltipMessage` | `PopoverProvider` with `Popover` or custom content |
+| `TooltipLinkList`, `TooltipLinkListLink`, `ListItem` | `PopoverProvider` with `ActionList` for actions; `Select` for choosing a value |
+| `Tabs`, `TabsState`, `TabWrapper` | `TabsView`, or `TabList` and `TabPanel` with `useTabsState` |
+| `TabButton`, `TabBar` | Let `TabsView` or `TabList` render tab controls |
+| `IconButton` | `Button` with `variant="ghost"`, `padding="small"`, and `ariaLabel` |
+| `Button.active` | `ToggleButton.pressed` for a toggle, or `Select` for selection |
+| `FlexBar` | `Bar` with `innerStyle={{ justifyContent: 'space-between' }}` |
+| `Modal.onEscapeKeyDown` | `dismissOnEscape` |
+| `Modal.onInteractOutside` | `dismissOnClickOutside` |
+| `Modal.Dialog.Close`, `Modal.CloseButton` | `Modal.Close` |
+| `Link.isButton` | Omit `href` to render a button; provide `href` to render a link |
+
+`Button.ariaLabel` is now required. Use an action label for icon-only buttons or buttons whose text depends on visual context. Use `ariaLabel={false}` only when the visible text already names the action. `Modal.ariaLabel` and `PopoverProvider.ariaLabel` are also required and must describe the dialog's purpose.
+
+Addons that also support Storybook 10 can adopt these replacements before upgrading.
+`TooltipProvider`, `Tooltip`, `PopoverProvider`, `ActionList`, `TabsView`, `TabList`, `TabPanel`, `ToggleButton`, `Button.ariaLabel`, and `Bar.innerStyle` are available from Storybook 10.1.
+From Storybook 10.3, `Link` renders a button when `href` is absent and `PopoverProvider` accepts `ariaLabel`.
+Storybook 10.1 and 10.2 ignore `PopoverProvider.ariaLabel` and render `Link` without `href` as a plain anchor.
+
+```tsx
+import { Button, ToggleButton } from 'storybook/internal/components';
+import { RefreshIcon } from '@storybook/icons';
+
+<Button variant="ghost" padding="small" ariaLabel="Refresh results" onClick={refresh}>
+  <RefreshIcon />
+</Button>;
+
+<ToggleButton ariaLabel="Show outlines" pressed={showOutlines} onClick={toggleOutlines}>
+  Outlines
+</ToggleButton>;
+```
+
+For tooltips, use `TooltipProvider`, not the transitional `WithTooltipNew` name mentioned in older guidance. Replace `startOpen` with `defaultVisible`. Controlled tooltips use `visible` and `onVisibleChange`.
+
+The legacy props `trigger`, `svg`, `strategy`, `withArrows`, `mutationObserverOptions`, `hasChrome`, `closeOnTriggerHidden`, `followCursor`, `closeOnOutsideClick`, and `interactive` are not supported by `TooltipProvider`. Put tooltip styling on `Tooltip` or use `TooltipNote`. The trigger must be one focusable element that forwards refs. Use `triggerOnFocusOnly` only for keyboard navigation hints. For interactive content or click activation, use `PopoverProvider` instead.
+
+```tsx
+import { TooltipNote, TooltipProvider } from 'storybook/internal/components';
+
+<TooltipProvider tooltip={<TooltipNote note="Inspect the selected story" />} placement="top">
+  <button type="button" onClick={inspectStory}>Inspect story</button>
+</TooltipProvider>;
+```
+
+The current menu replacement is `ActionList`. There are no public `WithMenu` or `MenuItem` components. Convert each old link to an `ActionList.Item` containing an `ActionList.Action` or `ActionList.Link`. Use `ActionList.Icon` and `ActionList.Text` for content. For example, an addon action menu can close after running an action:
+
+```tsx
+import { ActionList, Button, PopoverProvider } from 'storybook/internal/components';
+
+<PopoverProvider
+  ariaLabel="Result actions"
+  padding={0}
+  popover={({ onHide }) => (
+    <ActionList>
+      <ActionList.Item>
+        <ActionList.Action ariaLabel={false} onClick={() => { refresh(); onHide(); }}>
+          <ActionList.Text>Refresh results</ActionList.Text>
+        </ActionList.Action>
+      </ActionList.Item>
+      <ActionList.Item>
+        <ActionList.Link ariaLabel={false} href="https://example.com/help">
+          <ActionList.Text>Help</ActionList.Text>
+        </ActionList.Link>
+      </ActionList.Item>
+    </ActionList>
+  )}
+>
+  <Button ariaLabel={false}>Result actions</Button>
+</PopoverProvider>;
+```
+
+Replace child-based legacy tabs with a `tabs` array. `defaultSelected` sets the initial tab. Use `selected` and `onSelectionChange` for controlled selection. Navigation links cannot be mixed with tabs; put them outside the tab list.
+
+`TabsView` renders only the selected panel, so switching tabs unmounts the others and discards their local state. The legacy `Tabs` kept inactive panels mounted. Pass `panelProps={{ renderAllChildren: true }}` to keep that behavior, for example when a panel holds form input. Omit it when panels are cheap to re-render and hold no state.
+
+```tsx
+import { TabsView } from 'storybook/internal/components';
+
+<TabsView
+  defaultSelected="results"
+  panelProps={{ renderAllChildren: true }}
+  tabs={[
+    { id: 'results', title: 'Results', children: <Results /> },
+    { id: 'settings', title: 'Settings', children: <Settings /> },
+  ]}
+/>;
+```
+
+Modal dismissal callbacks are removed. Replace callback vetoes such as `event.preventDefault()` with `dismissOnEscape={false}` or `dismissOnClickOutside={false}`. Use `onOpenChange` to track visibility. `Modal.Close` closes automatically, including when `asChild` wraps a custom button.
+
+```tsx
+import { Button, Modal } from 'storybook/internal/components';
+
+<Modal ariaLabel="Addon settings" open={open} onOpenChange={setOpen} dismissOnClickOutside={false}>
+  <Modal.Content>
+    <Modal.Header><Modal.Title>Addon settings</Modal.Title></Modal.Header>
+    <Settings />
+    <Modal.Close asChild><Button ariaLabel={false}>Done</Button></Modal.Close>
+  </Modal.Content>
+</Modal>;
+```
+
+`Bar` now applies `backgroundColor` or the theme's bar background regardless of `border`. To keep a transparent bar, set `backgroundColor="transparent"`. Existing serializable toolbar icon names in `globalTypes` remain supported; they do not require importing React components into preview configuration.
+
+### Theming imports
+
+End users who only create a theme can keep `import { create, themes } from 'storybook/theming'`. `ThemeVars` and `ThemeVarsPartial` are exported there too. In Node, `storybook/theming` resolves to the same lightweight module as `storybook/theming/create`, without loading React or Emotion. Use `storybook/theming/create` explicitly when you need that lightweight entry in the browser too.
+
+```ts
+import { create, themes, type ThemeVars, type ThemeVarsPartial } from 'storybook/theming';
+```
+
+Addon authors who build manager UI or docs blocks move Emotion and theme-data imports to `storybook/theming/emotion`. That is the supported entry for `styled`, `css`, `jsx`, `useTheme`, `ThemeProvider`, `color`, `typography`, `background`, `convert`, `ensure`, and the other theme types.
+
+```diff
+-import { styled, css, jsx, useTheme, ThemeProvider, color } from 'storybook/theming';
++import { styled, css, jsx, useTheme, ThemeProvider, color } from 'storybook/theming/emotion';
+```
+
+For backwards runtime compatibility, `storybook/theming` resolves to the same Emotion implementation as `storybook/theming/emotion` in both the manager and browser previews, including docs blocks. The browser compatibility mapping does not affect Node imports. Already-published addons can keep their existing imports. The TypeScript API of `storybook/theming` remains limited to `create`, `themes`, `ThemeVars`, and `ThemeVarsPartial`, so addon source compiled against Storybook 11 must import Emotion and theme-data helpers from `storybook/theming/emotion`.
+
 ### `storybook dev` now blocks remote iframe embedding
 
 `storybook dev` now sends a [`Content-Security-Policy: frame-ancestors`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/frame-ancestors) header with every response, for both the manager and the preview. Only Storybook itself and pages served from `localhost` or `127.0.0.1` can embed the dev server in an `<iframe>`. This prevents a malicious website from embedding your local Storybook and interacting with it.
@@ -628,6 +803,7 @@ These cases keep working without changes:
 - Composing Storybooks that run locally, when the composing Storybook is opened on `localhost` or `127.0.0.1`
 - Tools running on your machine, served from `localhost` or `127.0.0.1`, that embed a running Storybook
 - Built and published Storybooks; Only `storybook dev` sends the header, so a built Storybook can still be embedded and composed from any origin
+- Storybooks running in a WebContainer, such as StackBlitz, from Storybook 11.0; `storybook dev` does not send the header there, because the host shows the dev server in an `<iframe>` on its own page. Earlier versions that send the header (8.6.19, 9.1.21, and 10.6.2 to 10.6.5) need `security.insecureRemoteIframeEmbed` to render in StackBlitz
 
 Pages served from any other origin, including your local network address (for example `http://192.168.1.20:6006`), a tunnel, or a custom hostname are now blocked. The embedded Storybook appears empty, and the browser console of the embedding page reports a `frame-ancestors` violation/
 
@@ -724,6 +900,10 @@ Storybook 11 removes the experimental and undocumented tag filtering names. They
 
 `storybook automigrate` rewrites the tag option keys in `main.ts`, including when the value is an expression, and renames `experimental_setFilter` / `experimental_setFilters` identifiers in `.storybook` and story files. A call written as `api['experimental_setFilters']` is left unchanged. Rename those calls yourself in addon source outside `.storybook` and story files.
 
+### `storybook/test` is no longer a manager global
+
+The manager no longer provides `storybook/test` as a global (`__STORYBOOK_TEST__`), so the browser no longer downloads its test libraries with every manager load. `storybook/test` is for stories and their tests, and no known manager addon imported it. If your addon's manager entry imports `storybook/test` anyway, it still builds, but the addon then bundles its own copy. Move that code to the addon's preview entry, or drop the import.
+
 ### Addon `TAB` registration removed
 
 `addons.add` no longer accepts `type: types.TAB`. Storybook does not render addon tabs beside the canvas. This is an addon-author change. There is no automigration.
@@ -769,6 +949,9 @@ Keep any existing precedence between the theme parameters and your selected them
 Storybook now starts the development server without automatically opening it in a browser. The CLI
 continues to print the local URL, which you can open manually.
 
+The `--no-open` flag has been removed. Remove it from your scripts, otherwise `storybook dev` fails
+with `unknown option '--no-open'`.
+
 To keep opening Storybook automatically, add `--open` to your command or package script:
 
 ```json
@@ -778,6 +961,8 @@ To keep opening Storybook automatically, add `--open` to your command or package
   }
 }
 ```
+
+Angular projects that start Storybook through the `start-storybook` builder of `@storybook/angular` or `@storybook/angular-vite` no longer open a browser by default either. Set `"open": true` in the builder options in `angular.json` to keep opening it.
 
 ### `viewport.defaultViewport` parameter and `responsiveViewport` removed
 
@@ -947,29 +1132,96 @@ export const Primary: Story = {
 
 Decorators and `render` functions keep receiving `argTypes`, because renderers rely on them while rendering. Their context type is the new `StoryContextForRender`; the `StoryContext` type no longer declares `argTypes`. Custom decorator or render helpers that annotate their context parameter as `StoryContext` and read `argTypes` should switch to `StoryContextForRender`.
 
+### Deprecated CSF and manager type aliases removed
+
+The following deprecated type aliases and fields are removed. If your code imports any of them from `storybook` (via `storybook/internal/csf`, `storybook/internal/types`, or `storybook/manager-api`), switch to the supported replacement:
+
+| Deprecated               | Replacement             |
+| ------------------------ | ----------------------- |
+| `StoryKind`              | `ComponentTitle`        |
+| `StoryIdentifier.kind`   | `StoryIdentifier.title` |
+| `StoryIdentifier.story`  | `StoryIdentifier.name`  |
+| `AnyFramework`           | `Renderer`              |
+| `StoryContextForLoaders` | `StoryContext`          |
+| `PlayFunctionContext`    | `StoryContext`          |
+| `StoriesHash`            | `IndexHash`             |
+
+The deprecated `kind` and `story` fields are also gone from `Addon_AddStoryArgs`, `Addon_StoryApi`, and the legacy `setStories` payload type `SetStoriesStory` (the whole interface is removed). The `RenderContext` passed to `renderToCanvas` no longer contains `kind` or `story`; third-party renderers read `title` and `name` instead.
+
+`@storybook/addon-links`' deprecated `LinkTo` `kind` and `story` props are removed; use `title` and `name`. The `data-sb-kind` and `data-sb-story` HTML attributes are unchanged. The provider `StoryMapper` option is removed.
+
+Story context objects passed to loaders and play functions no longer carry the deprecated `kind` and `story` keys; read `title` and `name` instead. The same applies to the context passed to decorators and `render` functions: custom helpers that read `context.kind` or `context.story` must switch to `context.title` and `context.name`. The `extract()` output — the serialized stories that external tools such as the Chromatic CLI read — still includes the deprecated `kind` and `story` fields for compatibility, so tools reading the serialized output keep working.
+
+The manager resolves `SELECT_STORY` payloads from `storyId` or `title`/`name`, and still accepts the deprecated `kind`/`story` payload that composed Storybooks built with Storybook 10.x or earlier send, so cross-story links inside those refs keep navigating. A payload without any of those keys is ignored with a warning. Composed refs must publish a story index (`stories.json`); the v2 format is no longer accepted and the legacy `setStories` event is no longer read.
+
 ### `docgenServer` is stable and enabled by default
 
 The `experimentalDocgenServer` feature is now `docgenServer`, and Storybook no longer reads the old name.
-Server-side component metadata extraction is enabled by default for every React and Vue 3 framework, including Webpack-based ones, for `@storybook/angular-vite`, and for `@storybook/web-components-vite`.
-React and Vue 3 extract component metadata with TypeScript, so for them the default is only on when the `typescript` package is installed; a JavaScript project without it keeps builder docgen.
+Server-side component metadata extraction is enabled by default for every React and Vue 3 framework, including Webpack-based ones, for `@storybook/angular-vite`, for `@storybook/web-components-vite`, and for `@storybook/svelte-vite` and `@storybook/sveltekit`.
+Server-side docgen reads components with the TypeScript API, also in JavaScript projects. The default is only on when the `typescript` package is installed and is TypeScript 5.9 or 6 (or, for React and Angular with `@storybook/angular-vite`, also TypeScript 7.1 or newer; `typescript.docgenSpecifier` in `.storybook/main.ts` names another package to read TypeScript from), or, for Web Components, when a Custom Elements Manifest is configured. TypeScript 7.0 has no API that Storybook can use. Otherwise Storybook keeps builder docgen and prints a warning that tells you what to install. Set `features.docgenServer: false` in `.storybook/main.ts` to opt out of server-side docgen without that warning.
 Other frameworks keep builder docgen.
 
 The `docgen-server` automigration renames `experimentalDocgenServer` to `docgenServer` and keeps its value.
 You can also run it with `storybook automigrate docgen-server`.
 
 Server-side docgen replaces React's `typescript.reactDocgen` and Vue's `framework.options.docgen`.
-For React it reads props from TypeScript types and inline destructuring defaults.
-It does not read `propTypes` or `defaultProps`, so a component that declares its props only through `propTypes` shows no props, and defaults set through `defaultProps` are not shown.
+For React it reads props from TypeScript types, and defaults from inline destructuring and `defaultProps`, with destructuring taking precedence.
+It does not read `propTypes`, so a component that declares its props only through `propTypes` shows no props.
 RDT options such as `propFilter` and a Vue docgen `tsconfig` have no server equivalent.
 Set `features.docgenServer: false` to keep builder extraction.
 For Angular-Vite, `framework.options.compodoc: false` does not disable the docgen server; use the feature flag to opt out.
 
+#### Temporary regressions on source snippet generation
+
+With server-side docgen, React, Angular, Vue 3 and Web Components build story source snippets on the server from the story file.
+
+In Storybook 11.0, server-side source snippets do not update dynamically when you change a story's args. This is a known limitation and it will be fixed in Storybook 11.1 at the latest.
+
+Set `features.docgenServer: false` to restore runtime snippets and runtime docgen, if your Storybook is affected by these limitations.
+
+
 ### Builder docgen is deprecated
 
 Client-side docgen that runs in the builder is deprecated and will be removed in Storybook 12.
-This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`.
-Builder docgen only runs when `features.docgenServer` is `false`, and Storybook now prints a deprecation warning when it does.
-Remove `docgenServer: false` to use server-side docgen.
+This covers React's `react-docgen` and `react-docgen-typescript` (`typescript.reactDocgen` and `typescript.reactDocgenTypescriptOptions`) and the Vue 3 Vite `docgen` framework option, with both `vue-docgen-api` and `vue-component-meta`, and the Svelte `docgen` framework option in `@storybook/svelte-vite` and `@storybook/sveltekit` (including the sveltedoc-shaped `__docgen`).
+Builder docgen only runs when `features.docgenServer` is `false`. Storybook prints a deprecation warning when your `.storybook/main.ts` sets `docgenServer: false`. When server-side docgen is off because TypeScript is missing or unusable, Storybook prints the TypeScript warning instead. For no docgen and no warnings, also turn builder docgen off: `typescript.reactDocgen: false` for React, and the `docgen: false` framework option for Vue 3 and Svelte.
+Install the `typescript` package and remove `docgenServer: false` to use server-side docgen.
+
+#### React: `react-docgen` and `react-docgen-typescript` are optional peer dependencies
+
+The packages that only React builder docgen uses are now optional peer dependencies, so projects on server-side docgen no longer install them, nor the Babel toolchain that `react-docgen` brings along:
+
+- `react-docgen` and `react-docgen-typescript` in `@storybook/react`, `@storybook/react-vite` and `@storybook/preset-react-webpack`
+- `@joshwooding/vite-plugin-react-docgen-typescript` in `@storybook/react-vite`
+- `@storybook/react-docgen-typescript-plugin` in `@storybook/preset-react-webpack`
+
+Storybook loads them only when builder docgen runs. When your main config sets `features.docgenServer: false` and a package is missing, `storybook dev` and `storybook build` fail with the install command for your package manager. Set `typescript.reactDocgen: false` to run without docgen instead, or better, remove `docgenServer: false` to use server-side docgen:
+
+| `typescript.reactDocgen` | Add to devDependencies |
+| --- | --- |
+| `'react-docgen'` (default) | `react-docgen` |
+| `'react-docgen-typescript'` | Vite: `@joshwooding/vite-plugin-react-docgen-typescript@^0.7.0` (Storybook does not accept a newer version yet) and `react-docgen-typescript`. Webpack: `@storybook/react-docgen-typescript-plugin@1.0.6--canary.9.0c3f3b7.0` (this exact version; the `latest` tag is older) and `react-docgen-typescript` |
+
+Projects without a usable `typescript` (no `typescript` package, or TypeScript 7.0) only get docgen from the `react-docgen` fallback when `react-docgen` is installed. Projects on TypeScript 7.1 or newer use server-side docgen.
+`storybook init` and the `typescript-7-react-docgen` automigration add `react-docgen` to React projects on TypeScript 7.0. Once a project is on TypeScript 7.1 or newer, Storybook no longer uses it, and you can remove `react-docgen` from your devDependencies.
+
+In `react-docgen-typescript` mode, `react-docgen` is optional and only documents JavaScript files. Without it, JavaScript components get no props, and Storybook does not warn about that.
+
+Storybook does not add these packages for you when you upgrade. If you keep `features.docgenServer: false`, install the packages from the table yourself.
+
+#### Svelte
+
+Server-side docgen is enabled by default for `@storybook/svelte-vite` and `@storybook/sveltekit`. Like the other frameworks, it needs the `typescript` package in your project. Setting `framework.options.docgen: false` still disables builder docgen without a warning. The deprecated APIs stay available until Storybook 12.
+
+The server output changes the Controls panel:
+
+- `Snippet` props are in the slots category, and callback props are in the events category. Both have no control.
+- Callback props have the type `function`, with their signature as `raw`.
+- Literal unions get an enum control with options. A prop that can also be `null` or `undefined` gets the control of its other type.
+- Props that a component inherits from a whole attribute interface, such as `HTMLButtonAttributes`, are not listed. Props it picks from one, such as `Pick<HTMLButtonAttributes, 'disabled'>`, are.
+- JSDoc tags, the `@component` description and `$bindable` metadata are included.
+
+The Code panel snippet starts with a `<script>` block that imports the components and values it uses, from the paths in the story file. It also copies the story file declarations that the markup reads. Args are printed as you wrote them, for example `onclick={fn()}`.
 
 ### Node.js 22.12 or higher
 
@@ -977,13 +1229,30 @@ Storybook 11 targets Node.js 22.12 or higher. Before upgrading, update Node.js i
 
 Storybook accepts prerelease Node.js builds when their version meets this minimum. For example, Node.js 26.1.0-rc.0 is supported, but 22.12.0-rc.0 is older than 22.12.0 and is not supported.
 
-During the Storybook 11 prerelease cycle, some releases still accept Node.js 20.19. This does not mean Node.js 20 will remain supported in the final release. Use Node.js 22.12 or higher when testing your migration.
+### TypeScript 5.9 or newer
 
-### TypeScript 5.9 or 6.x
+Storybook 11 requires TypeScript 5.9 or newer. Upgrade your project's TypeScript dependency before upgrading Storybook, then run your project's type check.
 
-Storybook 11 requires TypeScript 5.9 or 6.x. Upgrade your project's TypeScript dependency before upgrading Storybook, then run your project's type check.
+There is no automatic source migration. Updating the compiler can expose errors in application code or dependencies that require project-specific fixes.
 
-There is no automatic source migration. Updating the compiler can expose errors in application code or dependencies that require project-specific fixes. JavaScript-only projects do not need to install TypeScript.
+`typescript` is now a required peer dependency of the React, Vue 3, Svelte and Web Components renderers and their frameworks, also in JavaScript projects, because server-side docgen uses it to read components and JSDoc. If your project has no `typescript` dependency, add `typescript@^6` to your devDependencies, whatever your package manager. Yarn does not install a missing peer dependency. npm and pnpm do, but they install the newest version in the range, which can be TypeScript 7.0, which docgen cannot use. The `typescript-dependency` automigration adds `typescript@^6` for you when your project has no TypeScript.
+
+Svelte and Web Components no longer ship their own TypeScript 6. Before, their docgen also worked in projects on TypeScript 7. Now these projects need the side-by-side setup below, like Vue 3 and Angular projects.
+
+TypeScript 7.0 does not include an API that Storybook can use to generate Controls and the Docs args table. TypeScript 7.1 and newer include one, which React and `@storybook/angular-vite` use. For the other renderers, and for React projects that stay on TypeScript 7.0, keep TypeScript 7 for `tsc`, and point the `typescript` package at TypeScript 6. npm, Yarn, and pnpm all accept this alias:
+
+```json
+{
+  "devDependencies": {
+    "@typescript/native": "npm:typescript@^7",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
+  }
+}
+```
+
+With `@storybook/angular-vite`, and in React projects that keep TypeScript 6 for other tools, set `typescript.docgenSpecifier: '@typescript/native'` in `.storybook/main.ts` once that package is TypeScript 7.1 or newer, so docgen reads your components with it.
+
+`npx tsc` stays on TypeScript 7. Replacing only the `typescript` entry removes `tsc` and leaves `tsc6`. This is the [side-by-side setup from the TypeScript team](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0). The same steps are on the [TypeScript page](https://storybook.js.org/docs/configure/integration/typescript#typescript-7).
 
 ### CSF Next: meta args no longer need `as const`
 
@@ -1132,6 +1401,35 @@ Saving a story from the Controls panel is unchanged: you can still adjust contro
 
 The channel events `CREATE_NEW_STORYFILE_REQUEST`, `CREATE_NEW_STORYFILE_RESPONSE`, `FILE_COMPONENT_SEARCH_REQUEST` and `FILE_COMPONENT_SEARCH_RESPONSE`, their payload types in `storybook/internal/core-events`, and the `generateStoryFile` export from `storybook/internal/core-server` are removed too.
 
+### Sidebar: standalone docs pages are no longer wrapped in a component
+
+A docs page that doesn't belong to a component (for example an MDX file with `<Meta title="Introduction" />`) used to appear in the manager index as a component with a single `Docs` child.
+It is now a single `docs` entry.
+Addons that read `useStorybookState().index`, `sidebar.renderLabel` or sidebar filters see that entry directly.
+
+More generally, the manager index (`useStorybookState().index` and `filteredIndex`) used to type every title by its position, so the last segment of a title was always a `component`.
+
+Each title is now typed by everything the story index puts under it:
+
+| Under the title | Entry in the manager index |
+| --- | --- |
+| Other titles | `group` (or `root`) |
+| At least one story | `component` |
+| Exactly one docs page and no stories | the `docs` entry itself, with the title's `name`, `depth` and `parent` (`undefined` at the top level) |
+| Several docs pages and no stories | `group` |
+
+The type comes from the full index, so `index` and `filteredIndex` always agree on it.
+Filters only remove entries: a component whose stories are all filtered out stays a `component` with its docs child in `filteredIndex`.
+The sidebar still shows such a component as a single docs page, for example for [docs-only stories](https://storybook.js.org/docs/writing-stories/tags#docs-only-stories).
+
+Functions passed to `sidebar.renderLabel` and sidebar filters receive the `docs` entry instead of the old wrapper and its `Docs` child.
+Sidebar search lists these pages under their own name, for example `Introduction` instead of `Docs` under `Introduction`.
+`api.selectStory('Introduction')` and `linkTo('Introduction')` still resolve to the docs page.
+
+`api.jumpToComponent` is renamed to `api.jumpToSubtree`, because it now also stops on docs pages that are not attached to a component.
+Its menu entries and shortcut labels read `Previous component or page` and `Next component or page`.
+The shortcut keys `prevComponent` and `nextComponent` keep their names, so customized shortcuts carry over.
+
 ### Test runner support ended
 
 Official support for [`@storybook/test-runner`](https://github.com/storybookjs/test-runner) has ended. The package stays published and accepts Storybook 11 and later as a peer dependency, so existing setups can keep running it at their own risk, but it no longer receives fixes or compatibility updates and prints a warning on every run.
@@ -1146,6 +1444,44 @@ The Vitest addon requires a Vite-based framework. If your Storybook uses Webpack
 - Other Webpack-based frameworks: see [migrating from Webpack to Vite](https://storybook.js.org/docs/builders/vite#migrating-from-webpack).
 
 If you cannot switch to a Vite-based framework and Vitest, you can continue using the test runner without official support. Another option is to switch to plain Playwright with [a minimal setup that generates tests from stories](https://gist.github.com/AriPerkkio/99b9eedc7d8f71ff6e6770f9425a4be4).
+
+### `storybook/test` is based on Vitest 5 and no longer installs its test libraries
+
+`fn`, `spyOn` and `expect` from `storybook/test` are now based on `@vitest/spy` and `@vitest/expect` 5 (previously 3.2.4), and the DOM matchers on `@testing-library/jest-dom` 7. Some mock behavior follows [Vitest 4's changes to mocks](https://vitest.dev/guide/migration.html#vitest-4):
+
+- A mock called with `new` uses its implementation as a constructor, so that implementation must be a `function` or a `class`, not an arrow function. `fn()` also accepts a class.
+- The default name of a mock created with `fn()` is `vi.fn()` instead of `spy`. Calls of mocks with that name are not logged as actions, as before.
+- `mockReset()` also resets the name given with `mockName()`. `resetAllMocks()` and `restoreAllMocks()` from `storybook/test`, which Storybook calls between stories, keep the names.
+- `mockReturnValue()`, `mockResolvedValue()` and similar shorthands throw when the mock is called with `new`. Use `mockImplementation()` with a `class` instead.
+- Type augmentations of `@vitest/expect` or of the global `jest.Matchers` no longer reach the `expect` of `storybook/test`. Augment its `Assertion` interface with `declare module 'storybook/test'` instead. Its matchers return a `Promise`, which you `await` in a `play` function:
+
+  ```ts
+  // Before
+  declare module '@vitest/expect' {
+    interface JestAssertion<T = any> {
+      toBeEven(): void;
+    }
+  }
+  // or
+  declare global {
+    namespace jest {
+      interface Matchers<R, T = {}> {
+        toBeEven(): R;
+      }
+    }
+  }
+
+  // After
+  declare module 'storybook/test' {
+    interface Assertion<T> {
+      toBeEven(): Promise<void>;
+    }
+  }
+  ```
+
+  The `expect.extend()` call that implements the matcher stays the same, and `await expect(2).toBeEven()` type checks again.
+
+`storybook/test` bundles `@testing-library/dom`, `@testing-library/user-event`, `@testing-library/jest-dom`, `@vitest/expect`, `@vitest/spy` and `chai`, including their types, so `storybook` no longer installs them (or `@types/chai`) as dependencies. If your project imports any of these packages directly, add them to your own `devDependencies`. In Vitest browser mode, the queries of `storybook/test` no longer share `configure()` with a `@testing-library/dom` you install yourself: call `configure` from `storybook/test`.
 
 ### Vitest Addon: requires Vitest 4.0 or higher
 
@@ -1216,6 +1552,30 @@ If you're using framework-specific Vite plugins, ensure they are compatible with
 
 For more information on upgrading Vite, see the [Vite Migration Guide](https://vite.dev/guide/migration).
 
+### Vite: `preview-stats.json` contains the full bundler graph
+
+The `preview-stats.json` file that `@storybook/builder-vite` writes for `storybook build --stats-json` now contains the full bundler graph. In previous versions the builder dropped some nodes before it wrote the file. It now also writes:
+
+- Virtual modules such as `/virtual:/@storybook/builder-vite/project-annotations.js` and their edges
+- Proxy modules that Vite and Rollup insert between your code and its dependencies, for example `\0./node_modules/react/index.js?commonjs-es-import`
+- Sub-modules with a query string, for example `./src/Button.vue?vue&type=style&index=0&lang.css` next to `./src/Button.vue`
+- Files that a plugin reads itself and registers with `this.addWatchFile()` while it loads or transforms a module, for example an Angular `templateUrl` or a Sass partial. Each file is listed as a dependency of that module, so a change to it now traces to the stories that use it. Directories, globs and relative paths are left out. A stylesheet keeps only the stylesheets it watches, such as Sass partials and `@import`ed CSS files. A partial of a stylesheet that `.storybook/preview` imports makes TurboSnap capture every story, as any other change to the preview does.
+
+The other files that a stylesheet watches are left out: the source files that Tailwind scans for class names, a Tailwind v3 `tailwind.config.*`, a JavaScript plugin loaded with Tailwind v4's `@plugin`, and the fonts and images that `url()` references. They trace as they did before: a scanned source file through the stories that import it, and the other files to no story. To capture every story when one of these other files changes, pass it to Chromatic's `--externals` option, for example `--externals "tailwind.config.*"`.
+
+Chromatic TurboSnap reads this file. It needs `chromatic-cli` [v18.13.1](https://github.com/chromaui/chromatic-cli/releases/tag/v18.13.1) or later, which merges these nodes into the files they stand for. With an older version, a changed Vue or Svelte component can trace to zero stories. Upgrade `chromatic-cli` to v18.13.1 or later before you upgrade Storybook.
+
+### Webpack: requires webpack 5.101 or higher
+
+`@storybook/builder-webpack5` now uses `webpack-dev-middleware` 8, which requires webpack 5.101.0 or higher. This affects all webpack-based frameworks:
+
+- `@storybook/react-webpack5`
+- `@storybook/nextjs`
+- `@storybook/angular`
+- `@storybook/ember`
+- `@storybook/server-webpack5`
+
+If your project depends on webpack directly, upgrade it to 5.101.0 or higher. Otherwise your package manager can install a second copy of webpack for Storybook, and webpack plugins from your configuration may not work with Storybook's copy.
 
 ### Next.js: Require v15 and up
 
@@ -1313,6 +1673,71 @@ The webpack-based `@storybook/nextjs` framework is deprecated and will be remove
 
 Migrate to [`@storybook/nextjs-vite`](https://www.npmjs.com/package/@storybook/nextjs-vite), which builds with Vite instead of webpack. The `nextjs-to-nextjs-vite` automigration does the work for you: run `storybook upgrade` and accept the fix, or run `storybook automigrate nextjs-to-nextjs-vite` directly.
 
+### `storybook/internal/babel` removed; `csf-tools` uses ESTree
+
+Storybook no longer bundles Babel or recast to read and write story and config files. Both are parsed with OXC, and edits are applied to the source text, so code a migration does not touch keeps its formatting.
+
+#### Behavior that changes for every project
+
+- **Flow syntax is no longer supported in story files.** Babel parsed `// @flow` files with its Flow plugin; OXC does not parse Flow. A `// @flow` file whose syntax is also valid TypeScript still indexes, but Flow-only syntax such as variance (`+readOnly`) or type casts (`(value: Type)`) is a parse error, and the error names Flow. Convert such files to TypeScript or plain JavaScript.
+- `parameters.docs.source.originalSource` is now the story's source text exactly as written, where Babel reprinted it with its own formatting. "Show code" and `docs.source.transform` functions receive the authored text, with line endings normalized to `\n`.
+- Parse errors use OXC's wording, and end with ` in <file>` when the file name is known. Duplicate declarations and legacy octal literals are still rejected.
+- A parse error in a module that `sb.mock()` automocks is no longer recovered from, where Babel used to mock whatever it could parse. Under Vite the error is logged and the real module loads unmocked; under webpack the module's build fails.
+- Code that a migration or `storybook add` inserts follows the file: string quotes and indentation are inferred from it, new imports go after the existing imports in the order they are added, and a statement put first in a file stays below its header comments.
+- The Vitest config that `@storybook/addon-vitest` writes reads the config directory from `import.meta.dirname`.
+- Story files read string-literal keys and ignore computed identifier keys. `export default { 'title': 'X' }` now gives story ids under `X`, where Babel used the automatic title, and `export default { [title]: 'X' }` no longer sets the title.
+- On StackBlitz WebContainers, which have no native `oxc-parser` binding, `oxc-parser` downloads `@oxc-parser/binding-wasm32-wasi` itself with `pnpm`. On any other host without a native binding, Storybook fails with a "Cannot find native binding" error whose cause names the missing packages; install `@oxc-parser/binding-wasm32-wasi` in the project at the exact version of `oxc-parser`.
+
+#### Community packages that need a release
+
+These packages read `storybook/internal/babel` or Babel-shaped `csf-tools` fields such as `_ast`, so they stop loading on Storybook 11 until they publish a release for it. No release with the fix is known yet; upgrade each once it ships:
+
+- `storybook-solidjs-vite`
+- `msw-storybook-addon`, for its migration CLI
+- `storybook-addon-test-codegen`
+- `@storybook/experimental-devtools`
+- `storybook-addon-metadata`
+- `storybook-detox-test-runner`
+- `@parcel/transformer-storybook`, used by `storybook-builder-parcel`
+- `storybook-builder-rsbuild`, which passes the removed `babelParser` to Storybook's mocking utilities
+
+#### Changes for tooling that imports Storybook's internal entry points
+
+An addon that supports both Storybook 10 and 11 can detect the new API with `typeof csfTools.parseModule === 'function'`, where `csfTools` is `import * as csfTools from 'storybook/internal/csf-tools'`.
+
+- `storybook/internal/babel` is removed. Import Babel from your own `@babel/*` dependencies if you still need it.
+- `getBabelDependencies` is removed from `storybook/internal/cli`.
+- The nodes exposed by `storybook/internal/csf-tools` are ESTree (OXC) nodes instead of Babel nodes, for example `Literal` instead of `StringLiteral` and `Property` instead of `ObjectProperty`/`ObjectMethod`. `CsfFile._ast` and the `NodePath` fields are removed; use `CsfFile.program` and `CsfFile.editor`. `ConfigFile._ast` is removed as well; use `ConfigFile.program` and `ConfigFile.editor`. Both `editor`s are a `SourceEditor`: call `editor.commit()` to apply pending edits, after which the file parses the result again. `_program` and `_editor` remain as deprecated aliases in Storybook 11. The editing functions and `source()` throw for nodes of another parse, such as nodes from before a commit; offsets passed to `editor.edits` are not checked.
+- `ConfigFile#_removeImport`, `_removeRequireImport`, `_removeImportSpecifiers`, `_findImports`, `_findRequires` and `_notAnArray` are removed; `removeImport` removes both import and `require` bindings.
+- `CsfObject#get` returns an ESTree expression, and `set`/`transform` accept expressions from `get()`, `parseExpression(code)` or `parseModule(code)`. Use `textOf(node)` to read an expression's source, and `placeableTextOf(node)` to build new code around it. The expressions `get`, `inspect` and `transform` give are frozen snapshots: where a Babel node could be changed in place before passing it to `set`, assigning to an ESTree node's fields throws, as `set` prints a node from its source. Pass a plain value or `parseExpression(text)` instead. The same holds for a node built with `@babel/types`: `set` and `append` refuse one of a type only Babel has, such as `t.stringLiteral('x')`, and write any other, such as `t.identifier('x')`, as a plain object, so use `parseExpression('x')`.
+- An `experimental_enrichCsf` function receives the new `CsfFile`. Add code with `csf.appendStatement(code)` instead of pushing Babel nodes onto `csf._ast`; `_appendStatement` remains as a deprecated alias.
+- `extractSource(node)` is `extractSource(node, code)`, and returns the story's source as written instead of a Babel reprint. Pass the file's `editor.code`, the normalized code its node offsets index. `extractDescription(node)` is `extractDescription(node, editor)`: ESTree nodes carry no `leadingComments`, so it reads the comments before the node from the file's `editor`.
+
+  ```ts
+  // Storybook 10
+  extractSource(csf.getStoryExport('Primary'));
+  extractDescription(csf._storyStatements.Primary);
+
+  // Storybook 11
+  extractSource(csf.getStoryExport('Primary'), csf.editor.code);
+  extractDescription(csf._storyStatements.Primary, csf.editor);
+  ```
+
+- `babelParse` is removed; use `parseModule(code, fileName)` from `storybook/internal/csf-tools`, which returns the ESTree `program` and `comments`. `babelParseFile` is removed as well; read CSF with `loadCsf(code, options)` or `readCsf(fileName, options)`.
+- Parsing normalizes line endings to `\n`. Node offsets from `parseModule`, `CsfFile.program` and `ConfigFile.program` index the normalized `code`/`_code`, not the string you passed in; lines and columns are unchanged.
+- `getHeaderComments(statement)` is removed. The editor keeps a file's header comments in place: `prependStatement` inserts below them, also in a file without statements, and `appendStatement` separates a multi-line statement from its neighbour with a blank line.
+- `CsfObject` mutations index the story file again after every edit, where they used to leave the index as it was and return `{ ok: true }`. An edit whose result is valid JavaScript but not valid CSF, for example a meta `tags` that is no longer an array of string literals, is rolled back and returns `{ ok: false, changed: false, diagnostic }` with code `'invalid-csf'`. A refused mutation always leaves the file as it was, so the index stays readable. An edit whose result does not parse throws, and is rolled back too. The `ok: false` arm of `CsfMutationResult` now carries `changed: false`.
+- `SourceEditor#edits`, the pending edits of an `editor`, is a `SourceEdits`: text edits addressed by offsets into `code`, with `append`, `appendLeft`, `appendRight`, `overwrite`, `remove`, `slice`, `hasChanged`, `generateMap` and `toString`. `SourceEditor#generateMap()` returns a `GeneratedMap`.
+- `getAutomockCode(code, isSpy, fileName)` and `extractMockCalls(options, root, findMockRedirect)` in `storybook/internal/mocking-utils` parse the code themselves and no longer take a parser: drop the parser argument and pass the module's file name to `getAutomockCode`. `rewriteSbMockImportCalls(code, fileName, { inputSourceMap })` requires the file name as well; its map sets `file` to that name and goes through `inputSourceMap` to the original when given, so a loader no longer adds `file` itself and can chain the map it received. The map is still `null` when nothing was rewritten. `babelParser` is no longer exported; builders that passed it, such as `storybook-builder-rsbuild` 3.6, need a release that drops the argument. `automockModule` is no longer exported.
+- The story-shape helpers no longer take Babel paths: `jsDocTagsForPath` is `jsDocTagsForNode`, `metaObjectPath` is `metaObject`, `RenderFunctionPath` is `RenderFunction`, and `pathForNode` and `returnedExpressionPath` are removed in favor of `returnedExpression` and plain nodes. `keyOf` is `staticKey`, which returns `undefined` instead of `null` for a key it cannot read, and reads numeric and template-literal keys as well. `sourceOf` is `oneLineTextOf`: the node's source text with its line breaks collapsed and its comments kept, where `sourceOf` was a concise Babel reprint without comments; it takes nodes of `CsfFile.program`, `ConfigFile.program`, `parseExpression` or `parseModule`.
+- The `getAbsolutePath` wrapper helpers in `storybook/internal/common` produce source text instead of Babel nodes. `getAbsolutePathWrapperAsCallExpression(isTs, names)`, which returned the wrapper's function declaration, is replaced by `getAbsolutePathWrapperDeclaration(config, isTs, names)`, which returns the declaration's source, indented like `config`, for `ConfigFile#setBodyDeclaration`. `getAbsolutePathCall(config, value)` returns the source of a call to the config's wrapper. `wrapValueWithGetAbsolutePathWrapper(config, node)` is replaced by `wrapValuesWithGetAbsolutePathWrapper(config, nodes)`, which wraps every node in the array and commits the edits to `config`.
+- `new CsfFile(code, options)` and `new ConfigFile(code, fileName)` take source code instead of a Babel AST.
+- `formatCsf(csf, { sourceMaps, sourceFileName, inputSourceMap })` replaces the Babel generator options. It is typed `{ code, map }` with `sourceMaps: true` and `string` without it, so a caller no longer casts the result; `printCsf` and `printConfig` take no options, and all three print a file whose first line ends in CRLF with CRLF line endings, and any other file with `\n`. A file that mixes line endings is printed with its first line's ending throughout, and a file with lone CR line endings with `\n`.
+- `ConfigFile#setBodyDeclaration(code)` takes the declaration's source text instead of a Babel node.
+- The Vitest config helpers `canUpdateVitestConfigFile`, `getTargetConfigObject`, `getEffectiveMergeConfigCall`, `getConfigObjectFromMergeArg` and `resolveExpression` moved from `storybook/internal/babel` to `storybook/internal/cli`. `canUpdateVitestConfigFile` still takes the file's source; the others take an ESTree `Program`, such as `parseModule(code, fileName).program`, instead of a Babel `File`, and return ESTree nodes. `isDefineConfigLike` and `isImportedDefineConfigLikeIdentifier` are no longer exported. `unwrapTSExpression` is now `unwrapExpression` in `storybook/internal/csf-tools`, and also unwraps non-null assertions (`value!`).
+
+Babel itself is still used where it compiles your code, for example by `@storybook/nextjs` and the webpack Babel compiler addon.
+
 ### Create React App support removed
 
 Storybook 11 no longer publishes `@storybook/preset-create-react-app`, so Storybook setups that render Create React App projects through the CRA preset stop working, and `storybook upgrade` blocks upgrading while `@storybook/preset-create-react-app` is installed.
@@ -1323,6 +1748,15 @@ Migrating off Create React App is not a hard requirement. To keep using Storyboo
 
 `@storybook/angular-vite` no longer depends on `@angular/animations` and no longer auto-converts `BrowserAnimationsModule`/`NoopAnimationsModule` found in a story's `moduleMetadata.imports` into `provideAnimations()`/`provideNoopAnimations()`. If a story still references one of these modules, Storybook now logs a deprecation warning instead. Migrate to native CSS transitions or the `animate.enter`/`animate.leave` bindings (Angular 20.2+), or continue using the legacy animations API yourself by adding `provideAnimations()`/`provideNoopAnimations()` to the `providers` array of the `applicationConfig` decorator; that path is unaffected by this change.
 
+### `storybook add` and `storybook remove` leave an `addons` they cannot edit safely
+
+`storybook add` installs the addon but then stops with a message instead of adding it to your main config, and `storybook remove` uninstalls it but warns and leaves it listed there, when:
+
+- a later spread could replace `addons`, as in `{ addons: [...], ...shared }` with an imported `shared`
+- `addons` is a constant that other code refers to as well
+
+Add or remove the addon in `addons` by hand in that case.
+
 ### Internal CSF tools use the unified mutation API
 
 If your custom migration tooling imports `ConfigFile` from `storybook/internal/csf-tools`, update its legacy field and call-expression helpers to the unified `CsfObject` mutation API:
@@ -1331,10 +1765,13 @@ If your custom migration tooling imports `ConfigFile` from `storybook/internal/c
 | ------------------------------------ | ------------------------ |
 | `getFieldValue`, `getSafeFieldValue` | `getValue`               |
 | `setFieldNode`, `setFieldValue`      | `set`                    |
+| `removeField`                        | `remove`, which also removes a parent it leaves empty: `export const core = { builder: 'webpack4' }` loses the export instead of becoming `export const core = {}` |
+| `appendValueToArray`, `appendNodeToArray` | `append`, which takes a plain value or an expression. Like these, it refuses a field that holds a call, such as `addons: getAddons()`; it adds an argument only to a call that is an item, such as `['loaders', 0]` for `loaders: [mswLoader()]`. Both are deprecated and still available. |
+| `removeEntryFromArray`               | `remove([...path, index])`, with the entry's `index` in the list `inspectList(path)` returns, which resolves a constant only the config refers to, as `remove` does. It is deprecated and still available. |
 | `findNamedImportMethodCalls`         | `callArguments`          |
 | `FindNamedImportMethodCallsOptions`  | `CallArgumentsOptions`   |
 
-`getValue` reads static values without executing source code. When it cannot resolve a value, it returns `undefined` and adds a diagnostic. Mutation methods return a result that reports whether the edit succeeded and changed the file. `callArguments` returns `CsfObject` editors instead of Babel call expressions, so apply the same `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, and `group` methods you use for story and config objects.
+`getValue` reads static values without executing source code, following any local constant. When it cannot resolve a value, it returns `undefined`; reads add no diagnostics, so they never stop a later write. Use `inspect` to tell a missing field from one that cannot be read statically. Mutation methods return a result that reports whether the edit succeeded and changed the file. `callArguments` returns `CsfObject` editors instead of Babel call expressions, so apply the same `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, `group`, `append`, and `prepend` methods you use for story and config objects. A path addresses an element of an array or an argument of a call by its index in the source, such as `['addons', 0]` or `['framework', 0]`.
 
 Before writing a transformed file, check `changed` and `mutationDiagnostics`. `writeConfig` also rejects files with mutation diagnostics to prevent partial edits.
 
@@ -1356,7 +1793,7 @@ If you implement toolsets using Storybook's internal open-service APIs, declare 
 
 ### Internal `satisfies` helper removed
 
-The `satisfies` function is no longer exported from `storybook/internal/common`. It existed to mimic TypeScript's `satisfies` operator before Storybook required TypeScript 4.9, and Storybook 11 [requires TypeScript 5.9 or higher](#typescript-59-or-6x).
+The `satisfies` function is no longer exported from `storybook/internal/common`. It existed to mimic TypeScript's `satisfies` operator before Storybook required TypeScript 4.9, and Storybook 11 [requires TypeScript 5.9 or newer](#typescript-59-or-newer).
 
 Replace calls with the native operator:
 
@@ -1411,17 +1848,19 @@ There is no supported import-only replacement for third-party code that imports 
 
 If your code renders React elements itself, keep one root for each container and reuse it across renders. Apply root options when you first create the root. On unmount, call `root.unmount()`, remove the stored root, and create a new root if that container renders again. Preserve any promise or `act` semantics that callers use to wait for a committed render. A bare `createRoot(container).render(element)` replacement does not preserve these behaviors.
 
-### Preact: Require v10.8.0 and up
+### Preact: Require v10.9.0 and up
 
-Storybook 11 requires Preact 10.8.0 or newer. Upgrade Preact before you upgrade Storybook:
+Storybook 11 requires Preact 10.9.0 or newer. Upgrade Preact before you upgrade Storybook:
 
 ```sh
-npm install preact@^10.8.0
+npm install preact@^10.9.0
 ```
 
-The accepted peer dependency range is `^10.8.0 || >=11.0.0-0`. Storybook uses the `preact/compat/client` entry and calls `unmount()` on its roots when it cleans up a rendered story. Although Preact 10.7.1 includes that entry, its roots don't provide `unmount()`. Preact 10.8.0 provides the root lifecycle that Storybook needs to clean up and render into the same container again.
+The accepted peer dependency range is `^10.9.0 || >=11.0.0-0`. Storybook uses the `preact/compat/client` entry and calls `unmount()` on its roots when it cleans up a rendered story. Although Preact 10.7.1 includes that entry, its roots don't provide `unmount()`. Preact 10.8.0 provides the root lifecycle that Storybook needs to clean up and render into the same container again.
 
-The official Preact framework is `@storybook/preact-vite`. Custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack must also use Preact 10.8.0 or newer.
+Storybook's UI components, which addon-docs renders in the preview, also call `useSyncExternalStore`. `preact/compat` exports it from Preact 10.9.0.
+
+The official Preact framework is `@storybook/preact-vite`. Custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack must also use Preact 10.9.0 or newer.
 
 ### `features.legacyDecoratorFileOrder` removed
 
@@ -1469,22 +1908,31 @@ When `skills setup` cannot produce the instructions (for example because it find
 
 The experimental `storybook ai <tool>` commands behind the `STORYBOOK_FEATURE_AI_CLI` environment variable are removed as well. Use `npx storybook tools` instead, and run `npx storybook tools --help` to list the available tools.
 
-### `stories` skill renamed to `ui-workflow`
+### `stories` skill split into four skills
 
-The `stories` skill is renamed to `ui-workflow`: it still looks up the components to reuse, writes stories, runs the story tests and publishes a review. A new `component-docs` skill looks up the components to reuse, with their props and usage examples, and answers questions about them. Run `npx storybook skills ui-workflow` instead of `npx storybook skills stories`, which now exits with code 1. The Claude Code and Codex plugins ship `ui-workflow` and `component-docs` instead of `stories`.
+The `stories` skill is split into one skill per step of the workflow:
 
-The skills no longer run for every UI change on their own. A section in `AGENTS.md`, between `<!-- BEGIN:storybook-skills -->` and `<!-- END:storybook-skills -->` markers, tells agents when to use them. `create storybook` and the `skills` automigration add it when they install the skills, and also to a `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` that does not import `AGENTS.md`, because Claude Code reads those instead. `storybook upgrade` replaces the text between the markers when the skills change, and never adds the section back. So remove both markers to keep your own edits, or remove the whole section to opt out, in each file that has it. When `storybook upgrade` updates skills that still include `stories` from an 11.0 prerelease, it removes that skill and adds the section. If you use the Claude Code or Codex plugin, or install the skills yourself, add the section to the `AGENTS.md` of each project yourself:
+- `component-docs` looks up the components to reuse, with their props and usage examples, and answers questions about them.
+- `write-stories` has the rules for the stories of your project.
+- `test-stories` runs the story tests.
+- `ui-review` finds the stories a change affects and publishes a review of them.
+
+Run `npx storybook skills <id>` with one of these ids instead of `npx storybook skills stories`, which now exits with code 1. The Claude Code and Codex plugins ship these four skills instead of `stories`. The `write-story` skill is renamed to `write-stories`.
+
+The skills no longer tell agents to run them for every UI change. A section in `AGENTS.md`, between `<!-- BEGIN:storybook-skills -->` and `<!-- END:storybook-skills -->` markers, is the workflow: it tells agents which skill to use at which step. `create storybook` and the `skills` automigration add it when they install the skills, and also to a `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` that does not import `AGENTS.md`, because Claude Code reads those instead. `storybook upgrade` replaces the text between the markers when the skills change, and never adds the section back. So remove both markers to keep your own edits, for example to leave out the review, or remove the whole section to opt out of the workflow, in each file that has it. Without the section, an agent uses a skill only when you ask for it or when it finds one that fits its task. When `storybook upgrade` updates skills that still include `stories` from an 11.0 prerelease, it removes that skill and adds the section. If you use the Claude Code or Codex plugin, or install the skills yourself, add the section to the `AGENTS.md` of each project yourself:
 
 ```md
 <!-- BEGIN:storybook-skills -->
 <!-- Storybook updates this section on upgrade. Remove both markers to keep your own edits. -->
 
-## Storybook skills
+## Storybook
 
-For each of these tasks, invoke its Storybook skill first, before you edit any file, and follow it:
+For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. Each step has a Storybook skill. First invoke the skills of all the steps, before you edit any file. Then follow each skill at its step.
 
-- `ui-workflow`: you create, change, or delete a component, story, style, theme, or design token, or otherwise change how the UI looks; you run or fix story tests; or the user asks to see components or stories. It looks up the components to reuse, updates your stories, runs the tests, and publishes a review of the results.
-- `component-docs`: you look for an existing component to reuse instead of building a new one, or the user asks about a component's props, API, or usage. It lists the project's components with their props and usage examples.
+1. `component-docs`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
+2. `write-stories`: every component you create or change gets stories.
+3. `test-stories`: run the story tests after every change, the way this skill says, never with a `package.json` test script, and fix what fails. Also when the user asks to run or fix story tests.
+4. `ui-review`: publish a review that shows the user what changed, as your last step. Also when the user asks to see components or stories.
 
 <!-- END:storybook-skills -->
 ```
@@ -1532,6 +1980,7 @@ The `--renderer` flag of `storybook automigrate` is also removed. Only the remov
 ### Web Components: server-side docgen suffixes event, slot and part argType keys
 
 With server-side docgen, which is on by default (see [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)), `@storybook/web-components-vite` builds argTypes from the Custom Elements Manifest on the Storybook server.
+Story source snippets are built on the server too; see [Temporary regressions on source snippet generation](#temporary-regressions-on-source-snippet-generation).
 Events, slots and CSS shadow parts are keyed with their category as a suffix, the same keys `@wc-toolkit/storybook-helpers` uses:
 
 | Manifest item     | Runtime docgen key | Server docgen key |
@@ -1582,7 +2031,7 @@ It never reads argTypes or waits for docgen, so a story renders the same with or
 | `<name>-part`, `<name>-state`                               | `::part(<name>)` / `:state(<name>)` rule scoped to the story |
 | anything else                                               | property                                                     |
 
-Except for properties, `undefined`, `null` and `''` leave an arg unbound.
+`undefined` and `null` leave an arg unbound. `''` reaches a property but never sets an attribute.
 
 An element registered after the story renders, for example by an autoloader or a lazy import, cannot be inspected, so its plain keys fall back to properties; suffixed keys still bind.
 
@@ -1623,6 +2072,77 @@ A decorator that calls element methods on the story result must read the element
 },
 ```
 
+### Web Components: `@wc-toolkit/storybook-helpers` is built in
+
+Server-side docgen for web components is a port of [`@wc-toolkit/storybook-helpers`](https://github.com/wc-toolkit/storybook-helpers).
+The argTypes built from the manifest, the suffixed keys and the default render's bindings are what `getStorybookHelpers` returned as `argTypes` and `template`.
+If you use the library, remove it and let Storybook do the work:
+
+```ts
+// Before
+import { getStorybookHelpers } from '@wc-toolkit/storybook-helpers';
+
+const { args, argTypes, template } = getStorybookHelpers<MyElement>('my-element');
+
+const meta: Meta<MyElement> = {
+  component: 'my-element',
+  args,
+  argTypes,
+  render: (args) => template(args),
+};
+
+// After
+const meta: Meta<MyElement> = {
+  component: 'my-element',
+  args: { variant: 'primary' },
+};
+```
+
+ArgTypes come from the manifest, so keep only the `argTypes` you override.
+Manifest defaults only fill the Default column of the Controls table; they no longer become initial `args`.
+The element still applies its own defaults, but Controls and a `play` function only see the `args` you set, so set explicitly any starting value you rely on.
+Stories that passed slot content as the second argument of `template` pass it as the `default-slot` arg instead.
+Events logged by `logEvent` or the `events` list are logged by passing `fn()` as the `<name>-event` arg.
+Rows hidden with `setStorybookHelpersConfig({ excludeCategories })` are hidden per key with `table: { disable: true }`.
+
+### Web Components: the runtime Custom Elements Manifest API is deprecated
+
+`setCustomElementsManifest()` and `setCustomElements()`, which hand the preview a Custom Elements Manifest from `.storybook/preview.ts`, are deprecated and will be removed in Storybook 12, together with the `getCustomElements()`, `isValidComponent()` and `isValidMetaData()` helpers.
+Calling either setter logs a deprecation warning.
+
+With server-side docgen, which is on by default (see [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)), `@storybook/web-components-vite` reads your elements from your sources, so you no longer need a manifest.
+Remove the call and its import from the preview; there is nothing to add:
+
+```ts
+// Before: .storybook/preview.ts
+import { setCustomElementsManifest } from '@storybook/web-components-vite';
+import customElements from '../custom-elements.json';
+
+setCustomElementsManifest(customElements);
+
+// After: .storybook/preview.ts
+// (nothing; Storybook reads your elements from your sources)
+```
+
+To keep a manifest you generate yourself, point `main` at the file instead:
+
+```ts
+// .storybook/main.ts
+export default {
+  framework: {
+    name: '@storybook/web-components-vite',
+    options: { customElementsManifest: '../custom-elements.json' },
+  },
+};
+```
+
+When the option is not set, Storybook reads the `customElements` field of the nearest `package.json`.
+Elements the manifest does not declare are still read from your sources.
+
+The `web-components-runtime-manifest` automigration removes the setter call and its import from the preview and, when the manifest came from a file the preview imported, keeps it by adding its path to `framework.options.customElementsManifest`.
+It does nothing when `features.docgenServer` is `false`, and it leaves the preview alone with a warning when the manifest it finds is not readable.
+You can also run it with `storybook automigrate web-components-runtime-manifest`.
+
 ### SvelteKit: Require v3 and up
 
 Storybook 11 requires SvelteKit 3, and `@storybook/sveltekit` requires Vite 8, like SvelteKit 3 does. Upgrade SvelteKit before you upgrade Storybook. SvelteKit's migration tool does most of the work:
@@ -1635,27 +2155,211 @@ For the details, see the [SvelteKit 3 migration guide](https://svelte.dev/docs/k
 
 `@storybook/sveltekit` changes with SvelteKit 3:
 
-- SvelteKit 3 removed `$app/stores`, so Storybook no longer mocks it, and `parameters.sveltekit_experimental.stores` is removed. Use `$app/state` in your components, and mock it with `parameters.sveltekit_experimental.state`:
-
-  ```diff
-   parameters: {
-     sveltekit_experimental: {
-  -    stores: {
-  -      page: { data: { test: 'passed' } },
-  -      updated: true,
-  -    },
-  +    state: {
-  +      page: { data: { test: 'passed' } },
-  +      updated: { current: true },
-  +    },
-     },
-   },
-  ```
-
+- SvelteKit 3 removed `$app/stores`, so Storybook no longer mocks it. Use `$app/state` in your components, and mock it as [the next section](#sveltekit-sveltekit_experimental-parameters-removed) shows.
 - Storybook serves the files in your SvelteKit `static` directory at the root, like SvelteKit does. If you added `static` to `staticDirs` for this, you can remove it.
-- The `$app/navigation` mock supports `refreshAll`. Mock it with `parameters.sveltekit_experimental.navigation.refreshAll`.
 - Static variables from `$app/env/public` work in Storybook. Dynamic variables are `undefined`, because Storybook has no server to provide them. This also applies to the deprecated `$env/dynamic/public` module, which used to work in development mode.
 - Storybook fails to load a story that imports `$app/env/private`, `$app/server` or the deprecated `$env/*/private` modules, so private values can't get into the browser. Mock the module that imports them with a [mock file](https://storybook.js.org/docs/writing-stories/mocking-data-and-modules/mocking-modules#mock-files).
+
+### SvelteKit: `sveltekit_experimental` parameters removed
+
+`parameters.sveltekit_experimental` is removed. A story that still sets it, in the story, the meta or `.storybook/preview`, fails with a `SvelteKitMockParametersRemovedError` that lists the keys it found.
+
+Storybook still mocks `$app/forms`, `$app/navigation` and `$app/state`, because they need SvelteKit's router. The mocks now work like every other Storybook mock:
+
+- Every function is a mock function (`fn()`). Import it in the stories file from the same module as the component does, for example `import { goto } from '$app/navigation'`. Assert on it in `play`, and change it with `mocked(goto)` from `storybook/test`.
+- `page`, `navigating` and `updated` from `$app/state` are writable. Assign their properties.
+- `@storybook/sveltekit/navigation.mock` exports `link`, a mock function that link clicks call, and `setAfterNavigate()`, which sets the navigation that `afterNavigate` callbacks receive.
+- `@storybook/sveltekit/forms.mock` exports `formAction`, a mock function that a form with `use:enhance` calls instead of the server. Its result drives the rest of SvelteKit's submit flow.
+- Set up the mocks in `beforeEach`. Storybook resets them before every story.
+
+See [Mocking modules](https://storybook.js.org/docs/get-started/frameworks/sveltekit#mocking-modules) in the SvelteKit docs for the full API.
+
+The `sveltekit-mocking-before-each` automigration migrates most stories files when you upgrade, or when you run `npx storybook automigrate sveltekit-mocking-before-each`. It lists the files that it can't migrate, with the reasons, in `automigrations-summary.md`. For those files, use the prompt below: it runs the automigration first and works from that list.
+
+To migrate your stories, give this prompt to your AI agent, or follow it by hand:
+
+<details>
+<summary>Prompt: migrate SvelteKit stories from <code>sveltekit_experimental</code></summary>
+
+````md
+Migrate this project's Storybook stories from `parameters.sveltekit_experimental` to the SvelteKit mocks of Storybook 11.
+
+## Background
+
+Storybook 11 removed `parameters.sveltekit_experimental`. A story that still sets it fails with `SvelteKitMockParametersRemovedError`. Storybook still replaces `$app/forms`, `$app/navigation` and `$app/state` with mocks, but stories now set them up in `beforeEach`:
+
+- Every function of `$app/navigation` and `$app/forms` is a Storybook mock function (`fn()`). A stories file imports it from the same module as the component, for example `import { goto } from '$app/navigation'`, and gets the same function. It asserts on it in `play`, and changes it with `mocked(goto)` from `storybook/test`.
+- `page`, `navigating` and `updated` from `$app/state` are writable.
+- `@storybook/sveltekit/navigation.mock` exports `link`, a mock function that link clicks call, and `setAfterNavigate()`, which sets the navigation that `afterNavigate` callbacks receive.
+- `@storybook/sveltekit/forms.mock` exports `formAction`, a mock function that a form with `use:enhance` calls instead of the server. Its result drives the rest of SvelteKit's submit flow.
+- Storybook resets all mocks before every story.
+
+Docs: https://storybook.js.org/docs/get-started/frameworks/sveltekit#mocking-modules
+
+## Run the automigration first
+
+Run `npx storybook automigrate sveltekit-mocking-before-each` in the project. It does the steps below for most files. It leaves a file unchanged when it can't migrate every `sveltekit_experimental` in it, and lists that file in `automigrations-summary.md` in the project root, with the line and the reason for each one it couldn't migrate. While that file lists files, the command exits with an error. Fix the files it lists first, and use the reasons: they say what to change, for example a shared variable to inline into each story, or a `play` function that reads `parameters.sveltekit_experimental`. Then run the command again: it migrates the files that it can now read, and it removes `automigrations-summary.md` when no file is left. Migrate by hand what it still lists. If the command doesn't run, for example because the project isn't on Storybook 11 yet, do every step by hand.
+
+## Find the code to migrate
+
+The automigration doesn't migrate parameters that stories import from other modules. It lists the helpers in `.storybook` that hold `sveltekit_experimental`, and it doesn't read the files outside `.storybook`. Search the project for `sveltekit_experimental`: in `*.stories.svelte` files, in `*.stories.{js,jsx,ts,tsx,mjs}` files, in `.storybook/preview.*`, and in helper modules that stories import parameters from. Migrate every occurrence.
+
+## Steps for each `sveltekit_experimental`
+
+1. Find the `beforeEach` at the same level as the `parameters`: the `<Story beforeEach={...}>` prop, the `beforeEach` of `defineMeta()` or `preview.meta()`, a CSF story's or meta's `beforeEach`, or the `beforeEach` export of `.storybook/preview`. Add one if there is none. If it already exists, add the new statements at its start.
+2. Replace each key with the code in the table below, inside that `beforeEach`.
+3. Add the imports that the new code needs. In a `.stories.svelte` file, add them to `<script module>`.
+4. Delete the `sveltekit_experimental` key, and the `parameters` prop or property if it is now empty.
+5. If a story passed a `fn()` as a value, for example `navigation: { goto }` with `const goto = fn()`, delete that `fn()` and import the function from the SvelteKit module instead. The `expect(goto)` assertions stay the same.
+6. If the file has a docs page (the `autodocs` tag on the meta or in `.storybook/preview`, or an MDX file with `<Stories>` or `<Story of={...}>` for it), and its stories now set the mocks in `beforeEach`, add `parameters: { docs: { story: { inline: false } } }` to the meta. Inline stories on a docs page share one instance of the mocks, and Storybook fails with `SvelteKitMocksSharedOnDocsPageError` when they set them.
+
+| Old key | Replacement in `beforeEach` | Imports |
+| --- | --- | --- |
+| `state.page: { data: X, url: Y, ... }` | One assignment per property: `page.data = X; page.url = Y;` | `import { page } from '$app/state';` |
+| `state.navigating: { to: X, type: Y, ... }` | One assignment per property: `navigating.to = X; navigating.type = Y;` | `import { navigating } from '$app/state';` |
+| `state.updated: { current: X }` | `Object.assign(updated, { current: X });` | `import { updated } from '$app/state';` |
+| `navigation.goto: callback` | `mocked(goto).mockImplementation(async (...args) => { callback(...args); });` | `import { goto } from '$app/navigation';` and `import { mocked } from 'storybook/test';` |
+| `navigation.goto: goto`, where `const goto = fn()` | Nothing. Delete the `fn()`, and assert on the imported `goto`. | `import { goto } from '$app/navigation';` |
+| `navigation.invalidate`, `invalidateAll`, `refreshAll`, `pushState`, `replaceState` | Same as `navigation.goto`, with that function. | Same as `navigation.goto`, with that function. |
+| `navigation.afterNavigate: X` | `setAfterNavigate(X);` | `import { setAfterNavigate } from '@storybook/sveltekit/navigation.mock';` |
+| `hrefs: { '/a': callback }` | `link.mockImplementation((href, event) => { if (href === '/a') callback(href, event); });` | `import { link } from '@storybook/sveltekit/navigation.mock';` |
+| `hrefs: { 'pattern': { callback, asRegex: true } }` | `link.mockImplementation((href, event) => { if (new RegExp('pattern').test(href)) callback(href, event); });` | `import { link } from '@storybook/sveltekit/navigation.mock';` |
+| `hrefs` with several keys | One `link.mockImplementation()` with one `if` per key. Every matching key runs, as before. | `import { link } from '@storybook/sveltekit/navigation.mock';` |
+| `forms.enhance: callback` | `formAction.mockImplementation(async (submission) => { callback(); return { type: 'success', status: 200 }; });` See the note on `forms.enhance` below. | `import { formAction } from '@storybook/sveltekit/forms.mock';` |
+
+## Behavior that changed
+
+Keep these in mind, and update assertions that depend on the old behavior:
+
+- Every call of a mocked function is logged in the Actions panel, also when a story gives it an implementation. Before, a callback in the parameters replaced the log entry.
+- Link clicks call `link`, not a `navigate` action. Links that open another window, links with `download`, and clicks that the component already handled are left to the browser. An `href` that matched no `hrefs` key logged a `navigate` action. Now every click is a call of `link`, which the Actions panel logs as `$app/navigation::link`.
+- `forms.enhance` received the `SubmitEvent`, and nothing else happened after a submit. Now `use:enhance` runs SvelteKit's submit flow with the result of `formAction`, which receives `{ action, formData, formElement, submitter }`. If the old callback read the event, read `submission.formElement`, `submission.formData` or `submission.submitter` instead. The default result, `{ type: 'success', status: 200 }`, resets the form, calls `refreshAll()` and sets `page.form` to `undefined` and `page.status` to `200`. To keep the form as it is, resolve another result, for example `formAction.mockResolvedValue({ type: 'failure', status: 400, data: { error: 'Invalid email' } })`.
+- Like in SvelteKit, `use:enhance` handles only forms with `method="post"`. The old mock stopped every submit. Now the browser submits other forms, which replaces the story with another page.
+- `setAfterNavigate()` merges its argument into `{ type: 'enter', from: null, to: null, shallow: false, willUnload: false, complete: Promise.resolve() }`, like `navigation.afterNavigate` did.
+
+## TypeScript
+
+The SvelteKit modules have SvelteKit's types:
+
+- `goto` and the other functions are typed as functions, not mocks. Use `mocked(goto)` from `storybook/test` to reach the mock API, for example `mocked(goto).mockImplementation(...)`. `expect(goto)` works as is.
+- `updated.current` is read-only, so `updated.current = true` doesn't type-check. `Object.assign(updated, { current: true })` does, and it sets the mock's property the same way.
+- `page.url` is a read-only URL. To resolve a path against it, pass `page.url.href`, for example `new URL(href, page.url.href)`.
+- `link`, `setAfterNavigate` and `formAction` have their mock types already.
+
+## Example
+
+A Svelte CSF file, before:
+
+```svelte
+<script module>
+  import { defineMeta } from '@storybook/sveltekit';
+  import { expect, fn } from 'storybook/test';
+
+  import Header from './Header.svelte';
+
+  const goto = fn();
+
+  const { Story } = defineMeta({
+    component: Header,
+    parameters: {
+      sveltekit_experimental: {
+        state: { page: { url: new URL('http://localhost/dashboard') } },
+      },
+    },
+  });
+</script>
+
+<Story
+  name="Logged in"
+  parameters={{
+    sveltekit_experimental: {
+      state: { page: { data: { user: { name: 'Ada' } } } },
+      navigation: { goto },
+      hrefs: { '/settings': (to) => console.log(to) },
+    },
+  }}
+  play={async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Log out' }));
+    await expect(goto).toHaveBeenCalledWith('/login');
+  }}
+/>
+```
+
+After:
+
+```svelte
+<script module>
+  import { defineMeta } from '@storybook/sveltekit';
+  import { link } from '@storybook/sveltekit/navigation.mock';
+  import { goto } from '$app/navigation';
+  import { page } from '$app/state';
+  import { expect } from 'storybook/test';
+
+  import Header from './Header.svelte';
+
+  const { Story } = defineMeta({
+    component: Header,
+    beforeEach() {
+      page.url = new URL('http://localhost/dashboard');
+    },
+  });
+</script>
+
+<Story
+  name="Logged in"
+  beforeEach={() => {
+    page.data = { user: { name: 'Ada' } };
+    link.mockImplementation((href, event) => {
+      if (href === '/settings') console.log(href);
+    });
+  }}
+  play={async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Log out' }));
+    await expect(goto).toHaveBeenCalledWith('/login');
+  }}
+/>
+```
+
+The same story in CSF, after:
+
+```js
+import { link } from '@storybook/sveltekit/navigation.mock';
+import { goto } from '$app/navigation';
+import { page } from '$app/state';
+import { expect } from 'storybook/test';
+
+import Header from './Header.svelte';
+
+export default {
+  component: Header,
+  beforeEach() {
+    page.url = new URL('http://localhost/dashboard');
+  },
+};
+
+export const LoggedIn = {
+  beforeEach() {
+    page.data = { user: { name: 'Ada' } };
+    link.mockImplementation((href, event) => {
+      if (href === '/settings') console.log(href);
+    });
+  },
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Log out' }));
+    await expect(goto).toHaveBeenCalledWith('/login');
+  },
+};
+```
+
+## Check your work
+
+1. Search the project for `sveltekit_experimental` again. Nothing should remain.
+2. Type-check the changed files, for example with `npx svelte-check`, if the project uses TypeScript.
+3. Run the changed stories, for example with `npx vitest --project=storybook` if the project uses the Vitest addon. Otherwise, open each changed story and its docs page in Storybook.
+4. List the parameters you couldn't migrate, such as parameters built at runtime or spread from a variable you can't follow, with their file and line. Don't guess a replacement for them.
+````
+
+</details>
 
 ### Svelte CSF is built into the Svelte frameworks
 
@@ -1683,7 +2387,7 @@ Or migrate by hand:
 + import { defineMeta, type Args } from '@storybook/sveltekit'; // or '@storybook/svelte-vite'
 ```
 
-The error codes stay the same. Their docs are in [`code/renderers/svelte/src/svelte-csf/ERRORS.md`](https://github.com/storybookjs/storybook/blob/next/code/renderers/svelte/src/svelte-csf/ERRORS.md).
+The error codes stay the same. Each error message now says how to fix the error.
 
 ### Svelte CSF: legacy story syntax removed
 
@@ -1875,7 +2579,23 @@ After:
 
 Storybook used to run the preprocessors from `svelte.config.js` on a stories file before it indexed the file. It now indexes stories files without preprocessors, so indexing works the same when your Svelte config is in the Vite config, as in SvelteKit 3. The indexer ignores the content of `<style>` blocks, so styles that need a preprocessor, such as SCSS, are fine. Preprocessors still apply when Storybook renders your stories.
 
-If a stories file needs a preprocessor outside of `<style>`, for example for TypeScript enums, indexing fails with [`SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009`](https://github.com/storybookjs/storybook/blob/next/code/renderers/svelte/src/svelte-csf/ERRORS.md#sb_svelte_csf_parser_extract_svelte_0009). Move that code to a separate module, and import it into the stories file.
+If a stories file needs a preprocessor outside of `<style>`, for example for TypeScript enums, indexing fails with `SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009`. Move that code to a separate module, and import it into the stories file.
+
+### Svelte: `parameters.component` removed from the source decorator
+
+The Svelte docs source decorator no longer reads or warns about `parameters.component`. That path has been deprecated since Storybook 7: for stories whose render result is a `@wrapper` component, generated source already used the story's `component` from meta (`context.component`).
+
+If you still set `parameters.component`, delete it and keep the component on the default export / `meta` instead:
+
+```diff
+ export default {
+   component: Button,
+   parameters: {
+-    component: Button,
+     docs: { description: { component: '...' } },
+   },
+ };
+```
 
 ### Highlight: menu items emit a fixed `HIGHLIGHT_MENU_CLICK` event with a mandatory `id`
 
@@ -1947,6 +2667,50 @@ If the value is not a static object, move the fields yourself. This includes a v
 ```
 
 `storybook migrate csf-2-to-3` still lifts a static `Story.story = { ... }` into a CSF 3 story object. It does not rewrite the dynamic cases above. The old `csf-hoist-story-annotations` codemod no longer ships.
+
+### `argTypeTargetsV7` feature flag removed
+
+The `features.argTypeTargetsV7` flag is removed, and Storybook no longer reads it. Args whose argType declares a `target` are always grouped by target: the render function receives only the untargeted `args`, and the rendering context carries the full `allArgs` plus the grouped `argsByTarget`. This has been the default behavior since Storybook 8. In portable-story runtimes without a `FEATURES` global, such as `composeStories` in Jest or Playwright component tests without the Vitest plugin, the grouping now applies there too; those runtimes previously skipped it.
+
+Delete the `argTypeTargetsV7` key from the `features` object in your `.storybook/main.js` / `main.ts` file:
+
+```diff
+// .storybook/main.ts
+export default {
+  features: {
+-   argTypeTargetsV7: false,
+  },
+};
+```
+
+The `remove-legacy-feature-flags` automigration deletes both it and the `disallowImplicitActionsInRenderV8` flag from your main config, whether they are `true` or `false`. You can also run it with `storybook automigrate remove-legacy-feature-flags`. If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand. A typed main config that still sets the flag fails type-checking until it is removed.
+
+If you had set the flag to `false` to pass targeted args through to the render function unfiltered, that pass-through is gone. Read the targeted values from `argsByTarget` in the rendering context instead of `args`. Args without a `target` on their argType are grouped under the `UNTARGETED` key.
+
+### `disallowImplicitActionsInRenderV8` feature flag removed
+
+The `features.disallowImplicitActionsInRenderV8` flag is removed, and Storybook no longer reads it. An implicit action—one of the handlers Storybook infers from `actions.argTypesRegex`—that gets called while the story is rendering or playing throws `ImplicitActionsDuringRendering`. Handlers created explicitly with `action()` (including through `argTypes.action`) or `fn()` are not affected.
+
+The flag was the opt-out that downgraded that throw to a warning. Delete the `disallowImplicitActionsInRenderV8` key from the `features` object in your `.storybook/main.js` / `main.ts` file:
+
+```diff
+// .storybook/main.ts
+export default {
+  features: {
+-   disallowImplicitActionsInRenderV8: false,
+  },
+};
+```
+
+The `remove-legacy-feature-flags` automigration deletes both it and the `argTypeTargetsV7` flag from your main config, whether they are `true` or `false`. You can also run it with `storybook automigrate remove-legacy-feature-flags`. If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand. A typed main config that still sets the flag fails type-checking until it is removed.
+
+`ImplicitActionsDuringRendering.data` no longer carries a `deprecated` field, so third-party code that inspects the error should read `phase` and `name` instead.
+
+### JavaScript init templates use JSDoc types instead of `propTypes`
+
+`storybook init` for React JavaScript projects now writes `Button.jsx` and `Header.jsx` templates whose props are typed with JSDoc, and no longer adds the `prop-types` package. React 19 no longer checks `propTypes` on function components, and `React.PropTypes` moved to the separate `prop-types` package in React 15.5.
+
+Server-side docgen, the default in Storybook 11, reads the JSDoc types, so a new project's Docs args table shows the same types and descriptions as the TypeScript template. The deprecated builder docgen (`react-docgen`, active only when `features.docgenServer` is `false`) does not: without `propTypes` it reports no prop types or descriptions for these templates and folds the JSDoc `@param` lines into the component description. Install the `typescript` package and remove `docgenServer: false` to use server-side docgen.
 
 ## From version 10.6.1 to 10.6.2
 
@@ -4683,6 +5447,8 @@ export const ButtonClick = {
 
 For more context, see this RFC:
 https://github.com/storybookjs/storybook/discussions/23649
+
+Removed in Storybook 11, see [`disallowImplicitActionsInRenderV8` feature flag removed](#disallowimplicitactionsinrenderv8-feature-flag-removed).
 
 To summarize:
 
@@ -7475,7 +8241,7 @@ To help you upgrade your stories, we've created a codemod:
 npx @storybook/cli@latest migrate csf-hoist-story-annotations --glob="**/*.stories.js"
 ```
 
-For more information, [see the documentation](https://github.com/storybookjs/storybook/blob/next/code/lib/codemod/README.md#csf-hoist-story-annotations).
+For more information, [see the documentation](https://github.com/storybookjs/storybook/blob/v10.0.0/code/lib/codemod/README.md#csf-hoist-story-annotations).
 
 ### Zero config typescript
 
@@ -7763,7 +8529,7 @@ The story store no longer emits `renderCurrentStory`/`RENDER_CURRENT_STORY` to t
 
 We've removed the ability to specify the hierarchy separators (how you control the grouping of story kinds in the sidebar). From Storybook 6.0 we have a single separator `/`, which cannot be configured.
 
-If you are currently using custom separators, we encourage you to migrate to using `/` as the sole separator. If you are using `|` or `.` as a separator currently, we provide a codemod, [`upgrade-hierarchy-separators`](https://github.com/storybookjs/storybook/blob/next/code/lib/codemod/README.md#upgrade-hierarchy-separators), that can be used to rename your components. **Note: the codemod will not work for `.mdx` components, you will need to make the changes by hand.**
+If you are currently using custom separators, we encourage you to migrate to using `/` as the sole separator. If you are using `|` or `.` as a separator currently, we provide a codemod, [`upgrade-hierarchy-separators`](https://github.com/storybookjs/storybook/blob/v10.0.0/code/lib/codemod/README.md#upgrade-hierarchy-separators), that can be used to rename your components. **Note: the codemod will not work for `.mdx` components, you will need to make the changes by hand.**
 
 ```
 npx sb@latest migrate upgrade-hierarchy-separators --glob="*/**/*.stories.@(tsx|jsx|ts|js)"
@@ -8253,7 +9019,7 @@ Addon-docs configuration gets simpler in 5.3. In 5.2, each framework had its own
 
 We've deprecated the ability to specify the hierarchy separators (how you control the grouping of story kinds in the sidebar). From Storybook 6.0 we will have a single separator `/`, which cannot be configured.
 
-If you are currently using custom separators, we encourage you to migrate to using `/` as the sole separator. If you are using `|` or `.` as a separator currently, we provide a codemod, [`upgrade-hierarchy-separators`](https://github.com/storybookjs/storybook/blob/next/code/lib/codemod/README.md#upgrade-hierarchy-separators), that can be used to rename all your components.
+If you are currently using custom separators, we encourage you to migrate to using `/` as the sole separator. If you are using `|` or `.` as a separator currently, we provide a codemod, [`upgrade-hierarchy-separators`](https://github.com/storybookjs/storybook/blob/v10.0.0/code/lib/codemod/README.md#upgrade-hierarchy-separators), that can be used to rename all your components.
 
 ```
 yarn sb migrate upgrade-hierarchy-separators --glob="*.stories.js"
@@ -9126,7 +9892,7 @@ The new package names are:
 
 If your codebase is small, it's probably doable to replace them by hand (in your codebase and in `package.json`).
 
-But if you have a lot of occurrences in your codebase, you can use a [codemod we created](./code/lib/codemod) for you.
+But if you have a lot of occurrences in your codebase, you can use a [codemod we created](https://github.com/storybookjs/storybook/tree/v10.0.0/code/lib/codemod) for you.
 
 > A codemod makes automatic changed to your app's code.
 

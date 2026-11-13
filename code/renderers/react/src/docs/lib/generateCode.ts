@@ -26,23 +26,11 @@ export function generateCode(ast: any, compact = false): string {
 }
 
 export function generateObjectCode(ast: any, compact = false): string {
-  return !compact ? generateCode(ast) : generateCompactObjectCode(ast);
-}
-
-function generateCompactObjectCode(ast: any): string {
-  let result = generateCode(ast, true);
-
-  // Cannot get escodegen to add a space before the last } with the compact mode settings.
-  // Fix it until a better solution is found.
-  if (!result.endsWith(' }')) {
-    result = `${result.slice(0, -1)} }`;
-  }
-
-  return result;
+  return !compact ? generateCode(ast) : generateCompactCode(ast);
 }
 
 export function generateArrayCode(ast: any, compact = false): string {
-  return !compact ? generateMultilineArrayCode(ast) : generateCompactArrayCode(ast);
+  return !compact ? generateMultilineArrayCode(ast) : generateCompactCode(ast);
 }
 
 function generateMultilineArrayCode(ast: any): string {
@@ -57,14 +45,27 @@ function generateMultilineArrayCode(ast: any): string {
   return result;
 }
 
-function generateCompactArrayCode(ast: any): string {
-  let result = generateCode(ast, true);
-
-  // escodegen add extra an extra before the opening bracket of a compact array that contains primitive values.
-  // Fix it until a better solution is found.
-  if (result.startsWith('[    ')) {
-    result = result.replace('[    ', '[');
+// escodegen indents the items of an array or object even without newlines, so the compact form
+// prints them itself, separated by one space.
+function generateCompactCode(ast: any): string {
+  if (ast.type === 'ArrayExpression') {
+    return `[${ast.elements.map(generateCompactCode).join(', ')}]`;
   }
+  if (ast.type === 'ObjectExpression') {
+    return `{ ${ast.properties.map(generateCompactProperty).join(', ')} }`;
+  }
+  return generateCode(ast, true);
+}
 
-  return result;
+function generateCompactProperty(property: any): string {
+  if (
+    property.type !== 'Property' ||
+    property.kind !== 'init' ||
+    property.method ||
+    property.shorthand
+  ) {
+    return generateCode(property, true);
+  }
+  const key = generateCode(property.key, true);
+  return `${property.computed ? `[${key}]` : key}: ${generateCompactCode(property.value)}`;
 }

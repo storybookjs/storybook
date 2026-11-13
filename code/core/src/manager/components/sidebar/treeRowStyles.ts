@@ -1,4 +1,4 @@
-import type { CSSObject } from 'storybook/theming';
+import type { CSSObject } from 'storybook/theming/emotion';
 
 /**
  * Show one icon at rest and another one while the row is active. Mark the resting icon with the

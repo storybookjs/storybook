@@ -2,9 +2,9 @@ import { join } from 'node:path';
 
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
+import { PackageManagerName } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { PackageManagerName } from '../../../core/src/common/index.ts';
 import { add, getVersionSpecifier } from './add.ts';
 
 const MockedConfig = vi.hoisted(() => {
@@ -75,8 +75,9 @@ vi.mock('./automigrate/helpers/mainConfigFile', () => {
   return MockedMainConfigFileHelper;
 });
 vi.mock('./codemod/helpers/csf-factories-utils');
-vi.mock('storybook/internal/common', () => {
+vi.mock('storybook/internal/common', async (importOriginal) => {
   return {
+    ...(await importOriginal<typeof import('storybook/internal/common')>()),
     getStorybookInfo: vi.fn(() => ({ mainConfig: {}, configDir: '' })),
     serverRequire: vi.fn(() => ({})),
     loadMainConfig: vi.fn(() => ({})),

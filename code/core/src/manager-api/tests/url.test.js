@@ -11,6 +11,7 @@ import { global } from '@storybook/global';
 import EventEmitter from 'events';
 
 import { init as initURL } from '../modules/url';
+import { createCommitLaggingStore } from '../test-utils/store';
 
 vi.mock('storybook/internal/client-logger');
 vi.mock('@storybook/global', () => ({
@@ -213,6 +214,22 @@ describe('queryParams', () => {
     expect(api.getQueryParam('foo')).toEqual('bar');
 
     expect(listener).toHaveBeenCalledWith({ foo: 'bar' });
+  });
+
+  it('keeps query params set in the same tick before the store commits them', async () => {
+    const store = createCommitLaggingStore({ customQueryParams: {} });
+    const { api } = initURL({
+      state: { location: { search: '' } },
+      navigate: vi.fn(),
+      store,
+      provider: { channel: new EventEmitter() },
+    });
+
+    api.setQueryParams({ foo: 'bar' });
+    api.setQueryParams({ baz: 'qux' });
+    await new Promise((resolve) => setTimeout(resolve));
+
+    expect(store.getState().customQueryParams).toEqual({ foo: 'bar', baz: 'qux' });
   });
 });
 
@@ -425,6 +442,39 @@ describe('getStoryHrefs', () => {
     });
     expect(managerHref).toContain('&args=a:2;b:2;c:3&globals=c:3;d:5');
     expect(previewHref).toContain('&args=a:2;b:2;c:3&globals=c:3;d:5');
+  });
+
+  it('keeps empty string values when merging args and globals', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=a:;b:2&globals=c:' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', {
+      queryParams: { args: 'd:', globals: 'e:' },
+    });
+    expect(managerHref).toContain('&args=a:;b:2;d:&globals=c:;e:');
+    expect(previewHref).toContain('&args=a:;b:2;d:&globals=c:;e:');
+  });
+
+  it('drops args and globals without a key or without a value separator', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '?args=a:1' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { previewHref } = api.getStoryHrefs('test--story', {
+      queryParams: { args: 'foo;:bar;b:2' },
+    });
+    expect(previewHref).toContain('&args=a:1;b:2');
   });
 
   it('supports additional query params, including nested objects', () => {

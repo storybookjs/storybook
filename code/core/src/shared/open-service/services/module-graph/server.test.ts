@@ -1,3 +1,7 @@
+import { mkdtempSync, realpathSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
@@ -153,6 +157,30 @@ describe('module-graph open service', () => {
           ],
         })
       ).resolves.toEqual([true, false, true, true]);
+    });
+
+    it('counts every file in a directory entry, such as the config directory', async () => {
+      const configDir = mkdtempSync(join(tmpdir(), 'sb-config-'));
+      const realConfigDir = realpathSync.native(configDir);
+      installDependencyGraphMocks(buildReverseIndex([]));
+      const { adapter } = createMockAdapter();
+      const withEntries = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
+        workingDir: '/repo',
+        getAdapter: async () => adapter,
+        getPreviewEntries: async () => [configDir],
+      });
+
+      await expect(
+        withEntries.commands.loadedByPreview({
+          files: [
+            `${realConfigDir}/main.ts`,
+            `${realConfigDir}/vitest.setup.ts`,
+            '/repo/src/A.tsx',
+          ],
+        })
+      ).resolves.toEqual([true, true, false]);
     });
 
     it('reports nothing as loaded when no preview entries are known', async () => {

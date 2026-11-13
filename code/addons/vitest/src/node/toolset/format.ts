@@ -291,39 +291,45 @@ export function displayPath(file: string): string {
  * A focused run whose selected stories all stayed out of the run, for example excluded by tags. It
  * fails, so a run that tested nothing never reads as a pass.
  */
-export function ranNothingSelected(result: TestRunResult): boolean {
-  return (
-    (result.storyIds?.length ?? 0) > 0 &&
-    result.componentTestCount.success + result.componentTestCount.error === 0
-  );
+export function ranNothingSelected(result: TestRunResult, files?: FileSelection[]): boolean {
+  const selected =
+    (result.storyIds?.length ?? 0) > 0 || (files ?? []).some(({ kind }) => kind === 'preview');
+  return selected && result.componentTestCount.success + result.componentTestCount.error === 0;
 }
 
-function ranNote(ran: number, selected: number): string {
+// The likely cause is named only when no error could explain the gap instead.
+function ranNote(ran: number, selected: number, unhandledErrors: number): string {
   if (ran >= selected) {
     return '';
   }
-  return ran === 0
-    ? '; none ran, they are excluded from tests (for example by tags)'
-    : `; only ${ran} ran, the others are excluded from tests (for example by tags)`;
+  const cause =
+    unhandledErrors > 0
+      ? ''
+      : ran === 0
+        ? ', they are excluded from tests (for example by tags)'
+        : ', the others are excluded from tests (for example by tags)';
+  return `; ${ran === 0 ? 'none' : `only ${ran}`} ran${cause}`;
 }
 
 // Says which form each file argument took and what of it ran, since a component file also selects
 // stories elsewhere and tags can keep selected stories out of the run.
 function formatSelection(
   { file, kind, storyIds, storyFiles }: FileSelection,
-  ranStoryIds: Set<string>
+  ranStoryIds: Set<string>,
+  unhandledErrors: number
 ): string {
   const path = `\`${displayPath(file)}\``;
   const stories = pluralize(storyIds.length, 'story', 'stories');
   const ran = storyIds.filter((id) => ranStoryIds.has(id)).length;
   switch (kind) {
     case 'story-file':
-      return `${path} is a story file: selected its ${stories}${ranNote(ran, storyIds.length)}.`;
+      return `${path} is a story file: selected its ${stories}${ranNote(ran, storyIds.length, unhandledErrors)}.`;
     case 'component':
-      return `${path} is not a story file: selected the ${stories} that depend on it, in ${pluralize(storyFiles.length, 'story file')}${ranNote(ran, storyIds.length)}.`;
+      return `${path} is not a story file: selected the ${stories} that depend on it, in ${pluralize(storyFiles.length, 'story file')}${ranNote(ran, storyIds.length, unhandledErrors)}.`;
     case 'preview':
       return `${path} is loaded by the Storybook preview: selected every story.`;
     case 'unrelated':
+      // Collapsed into one line by `formatSelections`.
       return `${path}: no story depends on it.`;
     default: {
       const _exhaustive: never = kind;
@@ -331,6 +337,25 @@ function formatSelection(
     }
   }
 }
+// One line per form, with every file no story depends on in a single line.
+function formatSelections(
+  files: FileSelection[],
+  ranStoryIds: Set<string>,
+  unhandledErrors: number
+): string[] {
+  const unrelated = files.filter(({ kind }) => kind === 'unrelated');
+  const lines = files
+    .filter(({ kind }) => kind !== 'unrelated')
+    .map((selection) => formatSelection(selection, ranStoryIds, unhandledErrors));
+  if (unrelated.length === 1) {
+    lines.push(formatSelection(unrelated[0], ranStoryIds, unhandledErrors));
+  } else if (unrelated.length > 1) {
+    const paths = unrelated.map(({ file }) => `\`${displayPath(file)}\``).join(', ');
+    lines.push(`${paths}: no story depends on them.`);
+  }
+  return lines;
+}
+
 const A11Y_GUIDANCE =
   'Accessibility violations: fix semantic ones yourself (roles, labels, alt text, keyboard access). For visual ones such as color contrast, do not change the design: describe the problem, offer two or three options and ask the user. Never change `parameters.a11y.test` to make a violation pass.';
 
@@ -341,12 +366,19 @@ function formatNextSteps(
     a11y,
     testsFailed,
     notFound,
+    ranNothing,
     ctx,
-  }: { a11y: boolean; testsFailed: boolean; notFound: boolean; ctx: ToolsetCtx }
+  }: {
+    a11y: boolean;
+    testsFailed: boolean;
+    notFound: boolean;
+    ranNothing: boolean;
+    ctx: ToolsetCtx;
+  }
 ): string[] {
   const steps: string[] = [];
   if (notFound) {
-    steps.push('Correct the arguments that matched nothing, then run again.');
+    steps.push('Fix or leave out the arguments listed above, then run again.');
   }
   if (testsFailed) {
     steps.push(
@@ -356,13 +388,7 @@ function formatNextSteps(
   if (a11y && countA11yViolations(getA11yReports(result)) > 0) {
     steps.push(A11Y_GUIDANCE);
   }
-  if (
-    !testsFailed &&
-    !notFound &&
-    !ranNothingSelected(result) &&
-    result.storyIds &&
-    ctx.transport !== 'sdk'
-  ) {
+  if (!testsFailed && !notFound && !ranNothing && result.storyIds && ctx.transport !== 'sdk') {
     const all =
       ctx.transport === 'cli'
         ? `\`${getToolName(ctx)('test.run')}\` without arguments`
@@ -393,26 +419,35 @@ function formatResultSection(
     .filter((key) => failures[key] > 0)
     .map((key) => FAILURE_LABELS[key](failures[key]));
   const failureParts = [
-    ...(notFound.length > 0 ? [`${pluralize(notFound.length, 'argument')} matched nothing`] : []),
+    ...(notFound.length > 0 ? [`${pluralize(notFound.length, 'argument')} not used`] : []),
     ...testFailureParts,
   ];
   const passed = result.componentTestCount.success;
   const verdict =
     failureParts.length > 0
       ? `Failed: ${failureParts.join(', ')}${passed > 0 && testFailureParts.length === 0 ? `; ${pluralize(passed, 'component test')} passed` : ''}.`
-      : ranNothingSelected(result)
+      : ranNothingSelected(result, files)
         ? 'Failed: none of the selected stories ran.'
         : passed === 0
           ? 'No component tests ran.'
           : `Passed: ${pluralize(passed, 'component test')} passed.`;
 
-  const ranStoryIds = new Set(result.componentTestStatuses.map((status) => status.storyId));
+  // Skipped tests are reported too, as `status-value:unknown`; only a verdict means a story ran.
+  const ranStoryIds = new Set(
+    result.componentTestStatuses
+      .filter(
+        (status) =>
+          isPassing(status) || isFailing(status) || status.value === 'status-value:warning'
+      )
+      .map((status) => status.storyId)
+  );
   const lines = [
-    ...(files ?? []).map((selection) => formatSelection(selection, ranStoryIds)),
+    ...formatSelections(files ?? [], ranStoryIds, result.unhandledErrors.length),
     ...notFound,
     verdict,
     formatA11yResult(result, { a11y, a11yEnabled }),
     ...formatNextSteps(result, {
+      ranNothing: ranNothingSelected(result, files),
       a11y,
       testsFailed: testFailureParts.length > 0,
       notFound: notFound.length > 0,

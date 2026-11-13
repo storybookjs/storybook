@@ -1,3 +1,5 @@
+import { realpathSync, statSync } from 'node:fs';
+
 import { normalize } from 'pathe';
 
 import type { ChannelLike } from 'storybook/internal/channels';
@@ -10,12 +12,32 @@ import type { ChangeDetectionAdapter } from './engine/adapters/types.ts';
 import { ModuleGraphEngine, type ModuleGraphEngineOptions } from './engine/module-graph-engine.ts';
 import { errorToErrorLike, lookupStoriesForFiles } from './types.ts';
 
+// The graph keys files by their real path, so a symlinked entry is followed before the walk.
+function canonical(path: string): string {
+  try {
+    return normalize(realpathSync.native(path));
+  } catch {
+    return normalize(path);
+  }
+}
+
+function isDirectory(path: string): boolean {
+  try {
+    return statSync(path).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
 export type RegisterModuleGraphServiceOptions = {
   channel: ChannelLike;
   getIndex: ModuleGraphEngineOptions['getIndex'];
   workingDir?: string;
   presets?: Presets;
-  /** Absolute paths of the preview file and the preview annotations, the roots of what the preview loads. */
+  /**
+   * Absolute paths of what the preview loads: the preview file and the preview annotations, whose
+   * imports count too, and the config directory, whose files all count.
+   */
   getPreviewEntries?: () => Promise<string[]>;
   getAdapter?: () => Promise<ChangeDetectionAdapter | null | undefined>;
   getChangeDetectionReadiness?: () => Promise<
@@ -100,9 +122,15 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
         loadedByPreview: {
           handler: async (input) => {
             await waitForSettledEngine();
-            const entries = (await options.getPreviewEntries?.()) ?? [];
+            const entries = ((await options.getPreviewEntries?.()) ?? []).map(canonical);
+            // A directory entry (the config directory) covers every file in it: `main.ts` and
+            // `vitest.setup.ts` affect every story without being imported by one.
+            const directories = entries.filter(isDirectory).map((dir) => `${dir}/`);
             const loaded = await engine!.filesReachableFrom(entries);
-            return input.files.map((file) => loaded.has(normalize(file)));
+            return input.files.map((file) => {
+              const path = normalize(file);
+              return loaded.has(path) || directories.some((dir) => path.startsWith(dir));
+            });
           },
         },
         _waitForSettledEngine: {

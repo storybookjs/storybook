@@ -236,9 +236,32 @@ describe('findStoriesInFiles', () => {
       { file: BUTTON, kind: 'preview', storyIds: [], storyFiles: [] },
       { file: UNUSED, kind: 'unrelated', storyIds: [], storyFiles: [] },
     ]);
+    // Asked with the given and the real path of each file.
     expect(loadedByPreview).toHaveBeenCalledWith({
-      files: [asGraphPath(BUTTON), asGraphPath(UNUSED)],
+      files: [BUTTON, UNUSED, asGraphPath(BUTTON), asGraphPath(UNUSED)],
     });
+  });
+
+  it('falls back to the import graph when the preview check fails', async () => {
+    const graph = readyGraph([{ storyFile: './src/Button.stories.tsx', depth: 1 }]);
+
+    const [result] = await findStoriesInFiles({
+      files: [BUTTON],
+      index,
+      getModuleGraph: () => ({
+        queries: {
+          ...graph.queries,
+          loadedByPreview: {
+            loaded: async () => {
+              throw new Error('Unknown command `loadedByPreview`');
+            },
+          },
+        },
+      }),
+      workingDir: WORKING_DIR,
+    });
+
+    expect(result).toEqual(expect.objectContaining({ file: BUTTON, kind: 'component' }));
   });
 
   it('reports a missing module graph instead of claiming a component has no stories', async () => {

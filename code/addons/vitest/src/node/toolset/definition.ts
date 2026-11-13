@@ -82,7 +82,7 @@ const fileSelectionSchema = v.object({
   kind: v.pipe(
     v.picklist(['story-file', 'preview', 'component', 'unrelated']),
     v.description(
-      '`story-file`: the stories in that file. `preview`: the Storybook preview loads it, so every story ran. `component`: the stories, in any story file, that depend on it. `unrelated`: no story depends on it, so it selected nothing.'
+      '`story-file`: the stories in that file. `preview`: the Storybook preview loads it, so it selected every story. `component`: the stories, in any story file, that depend on it. `unrelated`: no story depends on it, so it selected nothing.'
     )
   ),
   storyIds: v.array(v.string()),
@@ -239,7 +239,7 @@ function runTelemetry(data: TestRunData, input: RunInput): ToolsetTelemetryRepor
       runA11y: data.a11y,
       inputStoryCount,
       inputFileCount,
-      // A partially resolved selector list never reaches a run, so every input matched by this point.
+      // The stories the run was asked for; a full run falls back to the input count.
       matchedStoryCount: data.result.storyIds?.length ?? inputStoryCount,
       ...summarizeTestRun(data.result, data.a11y),
     },
@@ -255,7 +255,7 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
       return (
         Object.values(countTestRunFailures(data.result, data.a11y)).some((count) => count > 0) ||
         (data.notFound?.length ?? 0) > 0 ||
-        ranNothingSelected(data.result)
+        ranNothingSelected(data.result, data.files)
       );
     case 'no-stories':
       // A selector that matched nothing is a failed request; an empty selector list is not.

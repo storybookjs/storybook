@@ -209,7 +209,9 @@ export async function runStoryTests({
         status: 'no-stories',
         notFoundMessages: [
           ...notFoundMessages,
-          ...selection.map(({ file }) => `No story depends on ${displayPath(file)}.`),
+          ...(selection.length > 0
+            ? [`No story depends on ${selection.map(({ file }) => displayPath(file)).join(', ')}.`]
+            : []),
         ],
       };
     }

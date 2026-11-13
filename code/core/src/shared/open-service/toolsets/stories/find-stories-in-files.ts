@@ -59,6 +59,27 @@ function canonical(absolute: string): string {
   return normalize(realpathSync.native(absolute));
 }
 
+/**
+ * Whether the preview loads each file, asked with both the given and the real path, as the graph
+ * keys files by their real path. A graph that cannot answer (an older instance, a preset that
+ * throws) leaves every file to the component lookup instead of failing the run.
+ */
+async function isLoadedByPreview(
+  moduleGraph: ModuleGraphAccess | undefined,
+  files: string[]
+): Promise<boolean[]> {
+  const query = moduleGraph?.queries.loadedByPreview;
+  if (!query) {
+    return [];
+  }
+  try {
+    const answers = await query.loaded({ files: [...files, ...files.map(canonical)] });
+    return files.map((_, index) => Boolean(answers[index] || answers[files.length + index]));
+  } catch {
+    return [];
+  }
+}
+
 function storyEntriesByFile(index: StoryIndex): Map<string, StoryIndexEntry[]> {
   const byFile = new Map<string, StoryIndexEntry[]>();
   for (const entry of Object.values(index.entries)) {
@@ -148,13 +169,12 @@ export async function findStoriesInFiles({
   });
   // A theme, token or global CSS file reaches stories through the preview, not through imports
   // from story files, so it would otherwise select only its direct importers, or nothing.
-  const loadedByPreview =
-    lookup.available && moduleGraph?.queries.loadedByPreview
-      ? await moduleGraph.queries.loadedByPreview.loaded({
-          // The graph keys files by their real path, as with the story graph lookup.
-          files: componentFiles.map(({ absolute }) => canonical(absolute)),
-        })
-      : [];
+  const loadedByPreview = lookup.available
+    ? await isLoadedByPreview(
+        moduleGraph,
+        componentFiles.map(({ absolute }) => absolute)
+      )
+    : [];
 
   // The paths are distinct, so the lookups answer them one to one and in order.
   componentFiles.forEach(({ position, file, shown }, componentIndex) => {

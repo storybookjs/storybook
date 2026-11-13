@@ -139,7 +139,9 @@ The record of such a run has status `ok` and says in `cutShort` why the run was 
 For that the runner copies the session of the stopped agent out of the sandbox itself, because Sandcastle does so only when a turn ends.
 It can do that in the Docker sandbox with Claude Code, and it needs no copy without a sandbox.
 In every other case, and when the agent gives no answer that can be used then, the record has status `timeout` and no checks; the evidence, the logs and the commits are kept.
-While a run works, the runner writes what the machine looks like to `evidence/host-samples.jsonl` every 30 seconds: host memory and swap, load, free disk, and the memory and process count of the Docker sandbox.
+In CI the job itself is cancelled 90 minutes after the budget, which is after all of that; a cancelled job writes no record.
+While a run works, the runner writes what the machine looks like to `evidence/host-samples.jsonl` every 30 seconds, the project install included: host memory and swap, load, free disk, the memory and process count of the Docker sandbox, how much of the last minute the processes of the sandbox and of a Linux host spent waiting for memory, and how late the reading itself came.
+A Windows runner has no load figure and no account of waiting, so it reports memory and disk.
 On a GitHub runner it also reports through annotations, a warning when the machine first runs short and a reading every twenty minutes, because annotations are all that is left of a job whose runner stops answering.
 When the sandbox fails after the agent has finished, for example while it collects the commits, the runner reads the answer from `run.log`.
 The record then has status `ok` and names the sandbox error in `recoveredFrom`.

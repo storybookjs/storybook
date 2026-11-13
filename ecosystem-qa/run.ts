@@ -328,7 +328,9 @@ const planSandbox = (
         hooks: {
           host: {
             onSandboxReady: [
-              { command: `node "${toolsDir}/cap-memory.mjs" "${evidenceDir}/memory-limit.txt"` },
+              {
+                command: `node "${toolsDir}/cap-memory.mjs" "${evidenceDir}/memory-limit.txt" "${evidenceDir}/sandbox-container.txt"`,
+              },
             ],
           },
           sandbox: {
@@ -424,13 +426,19 @@ const runSandcastle = async (
       }
     | undefined;
   const logFile = join(request.outDir, 'run.log');
+  const sandboxNameFile = join(evidenceDir, 'sandbox-container.txt');
   // Annotations are all that is left of a job whose runner stopped answering.
   const watch = watchHost({
     file: join(evidenceDir, 'host-samples.jsonl'),
     startedAt,
     diskDir: request.outDir,
-    container: () => sandbox?.sandboxId,
-    report: (level, line) => console.log(process.env.GITHUB_ACTIONS ? `::${level}::${line}` : line),
+    // Sandcastle hands the sandbox over only after the project install, and the install is part of
+    // what the watch is for.
+    container: () =>
+      sandbox?.sandboxId ??
+      (existsSync(sandboxNameFile) ? readFileSync(sandboxNameFile, 'utf8').trim() : undefined),
+    report: ({ level, line }) =>
+      console.log(process.env.GITHUB_ACTIONS ? `::${level}::${line}` : line),
   });
   // One list for the schema, the checklist and the count the prompt names.
   const checks = checksFor(request.tier);

@@ -28,15 +28,17 @@ const containersOfThisRun = () => {
     );
 };
 
-// Limit the memory of this run's sandbox container to a share of what the Docker daemon has, and
-// write what happened to `reportFile`, which sits in the run's evidence.
+// Limit the memory of this run's sandbox container to a share of what the Docker daemon has, write
+// what happened to `reportFile`, which sits in the run's evidence, and the name of the container to
+// `nameFile`, because the runner learns it from Sandcastle only after the project install.
 //
 // Without a limit, a build that takes all the memory starves the host. On a GitHub runner the job
 // then ends with "lost communication" and no result. Under the limit the kernel ends that build
-// inside the container, and the agent sees its exit status.
+// inside the container only when it can free nothing at all. A build that leaves it something to
+// free stalls instead: the kernel takes the code of the processes out of memory and reads it back.
 //
 // Never throws: a run without the limit is better than no run.
-const capMemory = (reportFile) => {
+const capMemory = (reportFile, nameFile) => {
   let report;
   try {
     const limit = Math.floor(Number(docker('info', '--format', '{{.MemTotal}}')) * SHARE);
@@ -46,6 +48,9 @@ const capMemory = (reportFile) => {
       docker('update', '--memory', String(limit), '--memory-swap', String(limit), name);
     }
     report = `Memory limit of ${Math.round(limit / 2 ** 20)} MiB set on: ${names.join(', ') || 'no sandbox container'}`;
+    if (nameFile && names.length === 1) {
+      writeFileSync(nameFile, `${names[0]}\n`);
+    }
   } catch (error) {
     report = `The sandbox memory was not limited: ${error instanceof Error ? error.message : error}`;
   }
@@ -59,4 +64,4 @@ const capMemory = (reportFile) => {
   }
 };
 
-capMemory(process.argv[2]);
+capMemory(process.argv[2], process.argv[3]);

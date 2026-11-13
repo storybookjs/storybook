@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import {
   parseDockerStats,
   parseMeminfo,
+  parseStalledPercent,
   pressureOf,
+  reporter,
   sampleLine,
   type HostSample,
 } from './host-watch.ts';
@@ -42,6 +44,22 @@ describe('parseMeminfo', () => {
   it('knows nothing from a text that is not the kernel table', () => {
     expect(parseMeminfo('')).toBeUndefined();
     expect(parseMeminfo('MemTotal: 16373292 kB')).toBeUndefined();
+  });
+});
+
+describe('parseStalledPercent', () => {
+  it('reads the share of the last minute in which everything waited', () => {
+    const pressure = [
+      'some avg10=86.94 avg60=54.73 avg300=19.88 total=71794989',
+      'full avg10=85.15 avg60=53.97 avg300=19.68 total=71179153',
+    ].join('\n');
+
+    expect(parseStalledPercent(pressure)).toBe(53.97);
+  });
+
+  it('knows nothing where the kernel keeps no such account', () => {
+    expect(parseStalledPercent('')).toBeUndefined();
+    expect(parseStalledPercent('some avg10=1.00 avg60=2.00 avg300=3.00 total=4')).toBeUndefined();
   });
 });
 
@@ -93,6 +111,30 @@ describe('pressureOf', () => {
     ).toEqual(['disk', 'load', 'container']);
   });
 
+  it('names a sandbox whose processes wait for memory a quarter of the time', () => {
+    const waiting = (stalledPercent: number) =>
+      pressureOf({ ...healthy, container: { ...healthy.container!, stalledPercent } });
+
+    expect(waiting(53.97)).toEqual({
+      stalled: 'the processes of the sandbox waited for memory in 54% of the last minute',
+    });
+    expect(waiting(24.9)).toEqual({});
+  });
+
+  it('names a reading that came more than a minute late', () => {
+    expect(pressureOf({ ...healthy, lateSeconds: 95 })).toEqual({
+      late: 'this reading came 95 seconds late, so the host stood still or cannot keep up',
+    });
+    expect(pressureOf({ ...healthy, lateSeconds: 60 })).toEqual({});
+  });
+
+  it('does not judge a load that Windows does not have', () => {
+    const { load1: _load1, ...windows } = healthy;
+
+    expect(pressureOf(windows)).toEqual({});
+    expect(sampleLine(windows)).not.toContain('load');
+  });
+
   it('does not judge memory it could not read', () => {
     const unknown = { ...healthy, memTotalMb: 0, memAvailableMb: 0, swapTotalMb: 0, swapFreeMb: 0 };
 
@@ -112,5 +154,50 @@ describe('sampleLine', () => {
     expect(sampleLine(healthy)).toBe(
       'minute 40, host memory 9000 of 15990 MB available, swap 0 of 4096 MB used, load 3.2 on 4 CPUs, disk 80000 MB free, sandbox 5000 of 13585 MB, 60 processes'
     );
+  });
+
+  it('adds how long the host and the sandbox waited, where the kernel says so', () => {
+    expect(
+      sampleLine({
+        ...healthy,
+        stalled: { memory: 41.2, disk: 7.6 },
+        container: { ...healthy.container!, stalledPercent: 53.97 },
+      })
+    ).toBe(
+      'minute 40, host memory 9000 of 15990 MB available, swap 0 of 4096 MB used, load 3.2 on 4 CPUs, host waiting for memory 41% and for the disk 8% of the last minute, disk 80000 MB free, sandbox 5000 of 13585 MB, 60 processes, waiting for memory 54% of the last minute'
+    );
+  });
+});
+
+describe('reporter', () => {
+  const levels = (reports: { level: string }[]) => reports.map(({ level }) => level);
+
+  it('warns once about a condition that holds for a whole run', () => {
+    const reportsOf = reporter();
+    const short = { ...healthy, minute: 5, diskFreeMb: 2000 };
+
+    expect(reportsOf(short)).toEqual([
+      {
+        level: 'warning',
+        line: `The machine is running short: only 2000 MB of disk are free. ${sampleLine(short)}.`,
+      },
+    ]);
+    expect(reportsOf({ ...short, minute: 6 })).toEqual([]);
+    expect(reportsOf({ ...short, minute: 7, load1: 40 }).map(({ line }) => line)).toEqual([
+      expect.stringContaining('the load is 40.0 on 4 CPUs'),
+    ]);
+  });
+
+  it('gives a plain reading every twenty minutes, also after a reading that came late', () => {
+    const reportsOf = reporter();
+    const at = (minute: number) => levels(reportsOf({ ...healthy, minute }));
+
+    expect(at(0)).toEqual([]);
+    expect(at(19)).toEqual([]);
+    expect(at(20)).toEqual(['notice']);
+    expect(at(21)).toEqual([]);
+    expect(at(47)).toEqual(['notice']);
+    expect(at(59)).toEqual([]);
+    expect(at(60)).toEqual(['notice']);
   });
 });

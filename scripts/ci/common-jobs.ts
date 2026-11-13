@@ -570,7 +570,9 @@ export const defineAffectedUnitTests = (changedFiles: readonly string[]) =>
         {
           run: {
             name: 'Run affected tests',
-            command: `NODE_OPTIONS=--max_old_space_size=4096 yarn vitest related --run --project '!storybook-ui' ${UNIT_TEST_REPORTERS} $(cat ${CHANGED_FILES_PATH})`,
+            // ecosystem-qa nests its dependencies and the workspace does not carry them, so here its
+            // tests would load the root's zod 3. Its own workflow runs them with the right install.
+            command: `NODE_OPTIONS=--max_old_space_size=4096 yarn vitest related --run --project '!storybook-ui' --project '!ecosystem-qa' ${UNIT_TEST_REPORTERS} $(cat ${CHANGED_FILES_PATH})`,
           },
         },
         testResults.persist(`test-results`),

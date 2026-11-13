@@ -275,8 +275,15 @@ jobs:
         if: ${{ always() }}
         run: if [[ -d ecosystem-qa/results ]]; then find ecosystem-qa/results -type l -print -delete; fi
 
-      - name: Upload the run result
+      # run.ts redacts its output when it reaches its end. A run that crashed or was cancelled did
+      # not, and the upload publishes whatever is there.
+      - name: Redact credentials in the run result
+        id: redact
         if: ${{ always() }}
+        run: node ecosystem-qa/redact.ts ecosystem-qa/results
+
+      - name: Upload the run result
+        if: ${{ always() && steps.redact.outcome == 'success' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: qa-result-${{ matrix.os }}-${{ matrix.engine }}

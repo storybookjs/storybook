@@ -79,9 +79,9 @@ While we recommend using the skills for most agents, Storybook also provides an 
 
 If you used the [MCP server](./reference/mcp-server.mdx) in Storybook 10, the `skills` automigration installs the skills but keeps your MCP setup. To prevent your agent from getting two sets of instructions for the same work, remove `@storybook/addon-mcp` with [`storybook remove`](../api/cli-options.mdx#remove), and remove the Storybook MCP server from your agent's configuration. Also remove any instructions about the MCP server from `AGENTS.md`.
 
-**Alternative for agents that can't run shell commands**
+**Alternative: the MCP server**
 
-If your agent can't run shell commands, [connect it to the MCP server instead](./reference/mcp-server.mdx). The MCP server gives your agent the same capabilities as the skills, but it needs a running Storybook dev server.
+If you want your agent to call Storybook through MCP tools instead of CLI commands, [connect it to the MCP server instead](./reference/mcp-server.mdx). The MCP server gives your agent the same capabilities as the skills, but it needs a running Storybook dev server. Your agent still needs to run shell commands: the server tells it to read each step of the workflow with `npx storybook skills <id> --mcp`.
 
 ## Connect to a published Storybook
 

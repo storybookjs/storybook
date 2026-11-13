@@ -1,3 +1,7 @@
+## 10.6.8
+
+- Manager: Improve performance of story preloading - [#37389](https://github.com/storybookjs/storybook/pull/37389), thanks @Sidnioulz!
+
 ## 10.6.7
 
 - Community: Support prerelease community frameworks in init - [#37203](https://github.com/storybookjs/storybook/pull/37203), thanks @Sidnioulz!

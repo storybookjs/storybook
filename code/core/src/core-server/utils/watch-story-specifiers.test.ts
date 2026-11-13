@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
+import { resolve } from 'pathe';
 
 import { watch } from 'chokidar';
 
@@ -19,7 +20,7 @@ describe('watchStorySpecifiers', () => {
     configDir: join(workingDir, '.storybook'),
     workingDir,
   };
-  const abspath = (filename: string) => join(workingDir, filename);
+  const abspath = (filename: string) => resolve(workingDir, filename);
 
   let listeners: Record<string, (argument: unknown) => void>;
   let close: () => void;

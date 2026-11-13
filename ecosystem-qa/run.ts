@@ -30,7 +30,7 @@ import { loadCatalogEntry } from './lib/catalog.ts';
 import { shipsSandcastleFiles } from './lib/clone-guard.ts';
 import { cycleBranchName, cycleRepo, versionLine } from './lib/cycle.ts';
 import { runFake } from './lib/fake-run.ts';
-import { outputOf, watchHost, type Report } from './lib/host-watch.ts';
+import { outputOf, sampleLine, watchHost, type Report } from './lib/host-watch.ts';
 import { forJobLog, liveLine } from './lib/live-log.ts';
 import { memoryGuard } from './lib/memory-guard.ts';
 import { CHECKOUT_GUIDE, guideFor } from './lib/migration-guide.ts';
@@ -429,6 +429,13 @@ const runSandcastle = async (
     | undefined;
   const logFile = join(request.outDir, 'run.log');
   const sandboxNameFile = join(evidenceDir, 'sandbox-container.txt');
+  const probeGuard = memoryGuard({
+    agent: request.engine,
+    agentStarted: () => agentStarted,
+    inSandbox: (container, command) => outputOf('docker', ['exec', container, ...command]),
+    logFile: join(evidenceDir, 'memory-guard.log'),
+    report: ({ line }) => console.log(line),
+  });
   const report = ({ level, line }: Report) =>
     console.log(level === 'warning' && process.env.GITHUB_ACTIONS ? `::warning::${line}` : line);
   const watch = watchHost({
@@ -441,13 +448,14 @@ const runSandcastle = async (
       sandbox?.sandboxId ??
       (existsSync(sandboxNameFile) ? readFileSync(sandboxNameFile, 'utf8').trim() : undefined),
     report,
-    onSample: memoryGuard({
-      agent: request.engine,
-      agentStarted: () => agentStarted,
-      inSandbox: (container, command) => outputOf('docker', ['exec', container, ...command]),
-      logFile: join(evidenceDir, 'memory-guard.log'),
-      report,
-    }),
+    onSample: async (sample, container) => {
+      console.log(
+        `reading ${new Date().toISOString().slice(11, 19)}: ${sampleLine(sample)}, waiting now ${sample.container?.stalledNowPercent ?? '-'}%, cpu ${sample.container?.cpuPercent ?? '-'}%, late ${sample.lateSeconds ?? 0}s`
+      );
+      if (process.env.QA_PROBE_GUARD !== 'off') {
+        await probeGuard(sample, container);
+      }
+    },
   });
   // One list for the schema, the checklist and the count the prompt names.
   const checks = checksFor(request.tier);

@@ -1,0 +1,60 @@
+#!/usr/bin/env node
+// A stand-in for the Claude Code CLI inside the sandbox image, for one scenario: an agent that runs
+// the test phase of the real gutenberg run. It builds the project's packages, installs Playwright's
+// Chromium and runs the project's Storybook tests in Vitest browser mode, each in one shell call,
+// and answers with how the calls ended.
+const { spawn } = require('node:child_process');
+const { existsSync, readFileSync } = require('node:fs');
+
+// The runner's guard knows the agent by the name of its program.
+process.title = 'claude stand-in';
+
+const EVIDENCE = '/home/agent/qa-evidence';
+const sessionId = '5t0b0000-0000-4000-8000-000000000006';
+const say = (object) => console.log(JSON.stringify(object));
+const text = (line) => say({ type: 'assistant', message: { content: [{ type: 'text', text: line }] } });
+
+const chunks = [];
+process.stdin
+  .on('data', (chunk) => chunks.push(chunk))
+  .on('end', () => main(Buffer.concat(chunks).toString('utf8')));
+
+const shell = (command) =>
+  new Promise((done) => {
+    const started = Date.now();
+    text(`Running: ${command.slice(0, 140)}`);
+    const child = spawn('/bin/bash', ['-c', command], { stdio: 'ignore' });
+    const beat = setInterval(() => text(`Still waiting for: ${command.slice(0, 60)} (${Math.round((Date.now() - started) / 1000)}s)`), 60_000);
+    child.on('exit', (code, signal) => {
+      clearInterval(beat);
+      const result = { code, signal, seconds: Math.round((Date.now() - started) / 1000) };
+      text(`Ended with code ${code} and signal ${signal} after ${result.seconds}s: ${command.slice(0, 80)}`);
+      done(result);
+    });
+  });
+
+const tail = (file) => (existsSync(file) ? readFileSync(file, 'utf8').replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '').trim().split('\n').slice(-6).join(' | ').slice(-500) : 'no log');
+
+async function main(prompt) {
+  say({ type: 'system', subtype: 'init', session_id: sessionId });
+  const schema = JSON.parse(/```json\n([\s\S]*?)\n```/.exec(prompt.slice(prompt.indexOf('## Final answer')))[1]);
+  const ids = schema.properties.checks.items.properties.id.enum;
+
+  const build = await shell(`cd /home/agent/workspace && timeout 900 npm run build > ${EVIDENCE}/build.log 2>&1`);
+  const install = await shell(`cd /home/agent/workspace/storybook && timeout 600 npx playwright install chromium > ${EVIDENCE}/playwright-install.log 2>&1`);
+  const vitest = await shell(`cd /home/agent/workspace/storybook && timeout 900 npx vitest run --project storybook > ${EVIDENCE}/vitest.log 2>&1`);
+  // The memory the test run leaves behind is the question, so the sandbox stays up for a while.
+  await shell('sleep 120');
+  const note = `stand-in: build ${build.code}/${build.signal} in ${build.seconds}s; playwright install ${install.code}/${install.signal} in ${install.seconds}s; vitest ${vitest.code}/${vitest.signal} in ${vitest.seconds}s: ${tail(`${EVIDENCE}/vitest.log`)}`;
+  text(note);
+  const answer = {
+    storybookVersionBefore: null,
+    storybookVersionInstalled: null,
+    checks: ids.map((id) => ({ id, label: id, state: 'skip', note })),
+    findings: [],
+  };
+  const block = `<qa-result>\n${JSON.stringify(answer)}\n</qa-result>\n`;
+  text(block);
+  say({ type: 'result', subtype: 'success', is_error: false, result: block, session_id: sessionId });
+  process.exit(0);
+}

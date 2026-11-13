@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { realpathSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 
 const docker = (...args) => execFileSync('docker', args, { encoding: 'utf8' }).trim();
 
@@ -42,7 +42,10 @@ const containersOfThisRun = () => {
 const capMemory = (reportFile, nameFile) => {
   let report;
   try {
-    const limit = Math.floor(Number(docker('info', '--format', '{{.MemTotal}}')) * SHARE);
+    const probeLimit = '/tmp/qa-probe-limit-mb';
+    const limit = existsSync(probeLimit)
+      ? Number(readFileSync(probeLimit, 'utf8')) * 2 ** 20
+      : Math.floor(Number(docker('info', '--format', '{{.MemTotal}}')) * SHARE);
     const names = containersOfThisRun();
     for (const name of names) {
       // Equal values leave the container no swap on top of its memory.

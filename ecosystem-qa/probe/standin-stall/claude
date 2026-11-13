@@ -1,0 +1,63 @@
+#!/usr/bin/env node
+// A stand-in for the Claude Code CLI inside the sandbox image, for one scenario: an agent that runs
+// the two commands that filled the sandbox of the real gutenberg run. It starts the project's
+// Storybook dev server in the background, as the agent did, then runs the project's package build
+// in one shell call, waits for it, and answers with how that call ended.
+const { spawn, execSync } = require('node:child_process');
+const { existsSync, readFileSync } = require('node:fs');
+
+// The runner's guard knows the agent by the name of its program.
+process.title = 'claude stand-in';
+
+const EVIDENCE = '/home/agent/qa-evidence';
+const sessionId = '5t0b0000-0000-4000-8000-000000000005';
+const say = (object) => console.log(JSON.stringify(object));
+const text = (line) => say({ type: 'assistant', message: { content: [{ type: 'text', text: line }] } });
+
+const chunks = [];
+process.stdin
+  .on('data', (chunk) => chunks.push(chunk))
+  .on('end', () => main(Buffer.concat(chunks).toString('utf8')));
+
+const shell = (command) =>
+  new Promise((done) => {
+    const started = Date.now();
+    const child = spawn('/bin/bash', ['-c', command], { stdio: 'ignore' });
+    const beat = setInterval(() => text(`Still waiting for: ${command.slice(0, 60)} (${Math.round((Date.now() - started) / 1000)}s)`), 60_000);
+    child.on('exit', (code, signal) => {
+      clearInterval(beat);
+      done({ code, signal, seconds: Math.round((Date.now() - started) / 1000) });
+    });
+  });
+
+async function main(prompt) {
+  say({ type: 'system', subtype: 'init', session_id: sessionId });
+  const schema = JSON.parse(/```json\n([\s\S]*?)\n```/.exec(prompt.slice(prompt.indexOf('## Final answer')))[1]);
+  const ids = schema.properties.checks.items.properties.id.enum;
+
+  text('Starting the dev server in the background.');
+  const dev = await shell(
+    `cd /home/agent/workspace/storybook && (npx storybook dev -c . --ci --exact-port --no-open -p 6006 > ${EVIDENCE}/dev.log 2>&1 &) ; for i in $(seq 1 60); do curl -s -m 5 -o /dev/null http://localhost:6006/index.json && exit 0; sleep 5; done; exit 1`
+  );
+  text(`The dev server ${dev.code === 0 ? 'answers' : 'does not answer'} after ${dev.seconds}s. Running the package build.`);
+  const build = await shell(`cd /home/agent/workspace && timeout 900 npm run build > ${EVIDENCE}/build.log 2>&1`);
+  const guardLog = existsSync(`${EVIDENCE}/memory-guard.log`) ? readFileSync(`${EVIDENCE}/memory-guard.log`, 'utf8').trim() : 'none';
+  let devAlive = 'unknown';
+  try {
+    devAlive = execSync('curl -s -m 5 -o /dev/null -w "%{http_code}" http://localhost:6006/index.json', { encoding: 'utf8' });
+  } catch (error) {
+    devAlive = `no answer (${error.status})`;
+  }
+  const note = `stand-in: the build call ended after ${build.seconds}s with code ${build.code} and signal ${build.signal}; the dev server then answered ${devAlive}; memory-guard.log: ${guardLog.slice(0, 600)}`;
+  text(note);
+  const answer = {
+    storybookVersionBefore: null,
+    storybookVersionInstalled: null,
+    checks: ids.map((id) => ({ id, label: id, state: 'skip', note })),
+    findings: [],
+  };
+  const block = `<qa-result>\n${JSON.stringify(answer)}\n</qa-result>\n`;
+  text(block);
+  say({ type: 'result', subtype: 'success', is_error: false, result: block, session_id: sessionId });
+  process.exit(0);
+}

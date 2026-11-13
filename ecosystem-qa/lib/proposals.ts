@@ -59,20 +59,36 @@ export const writtenOn = ({ body, comments }: Pick<QaIssue, 'body' | 'comments'>
   ...comments,
 ];
 
-// Return the issues that carry any of the fingerprints, in the order given.
+// Where an issue carries a fingerprint: in its body, or only in a comment of the harness.
+export interface Hit<Via extends 'body' | 'comment' = 'body' | 'comment'> {
+  issue: QaIssue;
+  via: Via;
+}
+
+const carriedBy = (text: string): (string | undefined)[] => {
+  const fields = metadataOf(text);
+  return [fields?.get('fingerprint'), ...(fields?.get('fingerprints')?.split(', ') ?? [])];
+};
+
+// Return the issues that carry any of the fingerprints, in the order given, each with where.
 //
 // An issue carries the fingerprints in the metadata block that ends its body and each comment of the
-// harness, so one that joined through a comment counts like one in the body. The same digits
-// further up do not count: that text can come from an agent, and every fingerprint is public, so a
-// finding could otherwise claim the issue of another one.
-export const hitsFor = (issues: QaIssue[], fingerprints: string[]): QaIssue[] =>
-  issues.filter((issue) => {
-    const carried = writtenOn(issue).flatMap((text) => {
-      const fields = metadataOf(text);
-      return [fields?.get('fingerprint'), ...(fields?.get('fingerprints')?.split(', ') ?? [])];
-    });
-    return fingerprints.some((fingerprint) => carried.includes(fingerprint));
+// harness. The same digits further up do not count: that text can come from an agent, and every
+// fingerprint is public, so a finding could otherwise claim the issue of another one.
+export const hitsFor = (issues: QaIssue[], fingerprints: string[]): Hit[] =>
+  issues.flatMap((issue): Hit[] => {
+    const carries = (texts: string[]) =>
+      texts.flatMap(carriedBy).some((carried) => carried && fingerprints.includes(carried));
+    if (carries([issue.body])) {
+      return [{ issue, via: 'body' }];
+    }
+    return carries(issue.comments) ? [{ issue, via: 'comment' }] : [];
   });
+
+// The harness trusts a comment of the workflow account to route a finding, never to silence one:
+// a comment follows from a similarity match or a merge, which only a person may turn into silence.
+export const bodyHits = (hits: Hit[]): Hit<'body'>[] =>
+  hits.filter((hit): hit is Hit<'body'> => hit.via === 'body');
 
 // A closed hit is the "came back" case the issue proposal exists for, so only an open one counts as
 // filed.
@@ -83,7 +99,7 @@ export const openHit = <Hit extends IssueHit>(hits: Hit[]): Hit | undefined =>
 export const openIssueOf = (issues: QaIssue[], fingerprints: string[]): Map<string, number> =>
   new Map(
     fingerprints.flatMap((fingerprint) => {
-      const open = openHit(hitsFor(issues, [fingerprint]));
+      const open = openHit(hitsFor(issues, [fingerprint]).map((hit) => hit.issue));
       return open ? [[fingerprint, open.number] as const] : [];
     })
   );
@@ -514,7 +530,8 @@ const fixedAfter = (issue: QaIssue, publishedAt: string | undefined): boolean =>
 
 // A fix that landed after the tested prerelease was published is not in it, so seeing the bug
 // there is expected.
-const silencedBy = (exact: QaIssue[], publishedAt: string | undefined): Silenced | undefined => {
+const silencedBy = (hits: Hit<'body'>[], publishedAt: string | undefined): Silenced | undefined => {
+  const exact = hits.map((hit) => hit.issue);
   const known = exact.find((issue) => issue.labels.includes('qa:known'));
   if (known) {
     return { kind: 'suppressed', issue: known.number, reason: 'known' };
@@ -523,23 +540,24 @@ const silencedBy = (exact: QaIssue[], publishedAt: string | undefined): Silenced
   return fixed && { kind: 'suppressed', issue: fixed.number, reason: 'fixed-later' };
 };
 
-// A group is silenced only when every member is, each by an issue that carries its own
+// A group is silenced only when every member is, each by an issue whose body carries its own
 // fingerprint: a grouping can merge findings, it can never hide one. An issue that is merely
 // similar gets a comment while it is open. So does an issue whose fix landed after the tested
-// version, when the group only resembles it or only some members are on it: the comment says that
-// the report is expected and ties the fingerprints to the issue. Any other closed issue gets no
-// comment: nobody watches it, so the bug that came back is filed again with a link to that issue.
+// version, when the group only resembles it or only some members are in its body: the comment says
+// that the report is expected and routes later sweeps of the group to the issue. Any other closed
+// issue gets no comment: nobody watches it, so the bug that came back is filed again with a link to
+// that issue.
 const decide = (
-  memberHits: QaIssue[][],
+  memberHits: Hit[][],
   similar: QaIssue | undefined,
   publishedAt: string | undefined
 ): Decision => {
-  const silenced = memberHits.map((hits) => silencedBy(hits, publishedAt));
+  const silenced = memberHits.map((hits) => silencedBy(bodyHits(hits), publishedAt));
   const [first] = silenced;
   if (first && silenced.every((entry) => entry !== undefined)) {
     return first;
   }
-  const exact = memberHits.flat();
+  const exact = memberHits.flat().map((hit) => hit.issue);
   const open = openHit(exact);
   if (open) {
     return { kind: 'comment', issue: open.number };

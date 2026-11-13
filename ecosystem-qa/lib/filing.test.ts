@@ -17,7 +17,14 @@ import {
   single,
   VERSION,
 } from './fixtures.ts';
-import { groupFindings, toProposal, writtenOn, type Cluster, type IssueHit } from './proposals.ts';
+import {
+  groupFindings,
+  toProposal,
+  writtenOn,
+  type Cluster,
+  type IssueHit,
+  type QaIssue,
+} from './proposals.ts';
 import type { LoadedResult } from './results.ts';
 import type { Engine, Finding, Os, Proposal } from './schema.ts';
 
@@ -370,6 +377,53 @@ describe('planFiling', () => {
 
     it('comments for a member in another repo also when the issue has no sighting keys', () => {
       expect(kinds(stepsFor(withNewRepo, [withoutKeys]))).toEqual(['push-cycle', 'comment']);
+    });
+  });
+
+  describe('for a group that only resembles an issue fixed after the tested version', () => {
+    const PUBLISHED = '2026-11-03T19:32:47Z';
+    const fixedIssue: QaIssue = {
+      ...issueOn(undefined, { number: 20, labels: ['bug'], state: 'closed' }),
+      completedAt: '2026-11-05T10:00:00Z',
+    };
+    const sweep = (run: LoadedResult, issue: QaIssue, publishedAt = PUBLISHED) => {
+      const [group] = groupFindings([run]);
+      return toProposal({ ...single(group), existingIssue: 20 }, [issue], {
+        runUrl: RUN_URL,
+        publishedAt,
+      });
+    };
+    const first = sweep(loaded('linux', 'claude', [finding()]), fixedIssue);
+    const firstSteps = planFiling(first, { repo: REPO, evidenceLinks: 'assets', existing: [] });
+    const commented: QaIssue = {
+      ...fixedIssue,
+      comments: firstSteps.flatMap((step) => (step.kind === 'comment' ? [step.body] : [])),
+    };
+
+    it('skips the fixed-later comment of the next sweep of the same version as a repeat', () => {
+      const next = sweep(loaded('linux', 'claude', [finding()], 'd'.repeat(40)), commented);
+
+      expect(first).toMatchObject({ kind: 'comment', reason: 'fixed-later' });
+      expect(kinds(firstSteps)).toEqual(['push-cycle', 'comment']);
+      expect(next).toMatchObject({ kind: 'comment', existingIssue: 20, reason: 'fixed-later' });
+      expect(
+        planFiling(next, { repo: REPO, evidenceLinks: 'assets', existing: writtenOn(commented) })
+      ).toEqual([
+        {
+          kind: 'skip',
+          reason: `repeat: #20 already has a sighting on every version, repo, system and engine it reports: ${VERSION} on storybookjs/mealdrop (linux, claude)`,
+        },
+      ]);
+    });
+
+    it('files a new issue on a version published after the fix', () => {
+      const run = loaded('linux', 'claude', [finding()], 'd'.repeat(40));
+      run.result.request.version = '11.0.0-beta.1';
+
+      expect(sweep(run, commented, '2026-11-10T10:00:00Z')).toMatchObject({
+        kind: 'issue',
+        previousIssue: 20,
+      });
     });
   });
 

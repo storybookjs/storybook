@@ -205,7 +205,7 @@ const reportedOn = (proposal: Proposal, issues: QaIssue[]): QaIssue | undefined 
       hitsFor(issues, [
         proposal.fingerprint,
         ...proposal.related.map((related) => related.fingerprint),
-      ])
+      ]).map((hit) => hit.issue)
     );
   }
   return proposal.kind === 'comment'

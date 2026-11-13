@@ -152,18 +152,23 @@ A wrong merge is split by editing `groups.json` and collecting again, without re
 To leave a finding out because it is not a bug to file, give its group a `skip` with the reason in `groups.json`: nothing is filed for it, and the dry run and the Step Summary show the reason.
 Only a person can skip a group, the model's answer has no such field.
 A group with a fingerprint on an open issue becomes a comment there.
-A group is suppressed only when every one of its fingerprints is on a `qa:known` issue, or on an issue that was fixed after the tested prerelease was published: a grouping can merge findings, it can never hide one.
+A group is suppressed only when every one of its fingerprints is in the body of a `qa:known` issue, or in the body of an issue that was fixed after the tested prerelease was published: a grouping can merge findings, it can never hide one.
 When only some of them are, the whole group is reported, so the other findings appear on the open issue or in a new one.
-A group that matches an issue only by similarity (`existingIssue`) becomes a comment on it while it is open, even when that issue is `qa:known`, because only an exact fingerprint suppresses.
+A group that matches an issue only by similarity (`existingIssue`) becomes a comment on it while it is open, even when that issue is `qa:known`, because only an exact fingerprint in the body suppresses.
 A fingerprint that an open issue already carries stays on that issue: the collector rejects a grouping that puts it in a group with a fingerprint of another open issue, or in a group that names another issue, and says which group to split.
 The metadata of an issue lists every fingerprint of its group, so a later sweep finds it by any of them.
 Only the metadata block that ends an issue body or a comment counts: the same digits in the text above it tie nothing to the issue, because that text can come from an agent and every fingerprint is public.
 To tie a fingerprint to an issue by hand, add it to the `fingerprints:` line of the block in the issue body.
 A comment lists the fingerprints of its group the same way, and the collector reads the comments that the workflow account wrote on each listed issue, so a fingerprint that joined an issue through a comment is found too.
+Such a fingerprint routes its finding: it decides which open issue gets the comment, it counts as filed on that issue, and it stays on that issue.
+It never suppresses its finding, because the comment followed from a merge or a similarity match, which only a person may turn into silence by adding the fingerprint to the body.
+The harness trusts comments of the workflow account for routing only, so another workflow that comments as the same account cannot silence a finding.
 A comment by anyone else never ties a fingerprint to an issue.
 An issue closed as completed after the tested prerelease was published counts as known for that version, because the fix is not in it yet; the collector reads the publish date from the `v<version>` release of `--repo`.
-Silence needs the fingerprint here too.
-A group that only resembles such an issue, or of which only some findings are on it, becomes a comment on that closed issue: the comment says that the tested version does not have the fix yet, and it ties the group's fingerprints to the issue, so the next sweep of that version is silent by the rule above.
+Silence needs the fingerprint in the body here too.
+A group that only resembles such an issue, or of which only some findings are in its body, becomes a comment on that closed issue: the comment says that the tested version does not have the fix yet, and it routes the group's fingerprints to the issue.
+The next sweep of that version proposes the same comment again, and the filer skips it as a repeat when it reports no new version, repo, system or engine.
+A sweep of a version published after the fix files the group as a new issue linked to the closed one, because the bug came back.
 An issue closed before that, or closed for any other reason, does not count: the bug came back, so it is filed again with a link to the closed issue.
 An issue counts as already filed only while it carries the `internal-qa` label.
 It checks first that the milestone is open and every label exists, and files nothing otherwise.

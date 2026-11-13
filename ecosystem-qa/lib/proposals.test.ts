@@ -16,6 +16,7 @@ import {
   groupFindings,
   hitsFor,
   openHit,
+  openIssueOf,
   renderCommentBody,
   renderIssueBody,
   toProposal,
@@ -47,7 +48,7 @@ describe('hitsFor', () => {
       issue(3, `Bug report\n\n${metadata('1111111111111111', '0123456789abcdef')}\n`),
     ];
 
-    expect(hitsFor(issues, ['0123456789abcdef']).map((hit) => hit.number)).toEqual([1, 3]);
+    expect(hitsFor(issues, ['0123456789abcdef']).map((hit) => hit.issue.number)).toEqual([1, 3]);
   });
 
   it('finds an issue by a fingerprint that only one of its comments carries', () => {
@@ -59,7 +60,7 @@ describe('hitsFor', () => {
       issue(2, metadata('1111111111111111')),
     ];
 
-    expect(hitsFor(issues, ['0123456789abcdef']).map((hit) => hit.number)).toEqual([1]);
+    expect(hitsFor(issues, ['0123456789abcdef']).map((hit) => hit.issue.number)).toEqual([1]);
   });
 
   it('does not count a fingerprint in the text above the metadata block', () => {
@@ -468,6 +469,62 @@ describe('toProposal with the publish date of the tested version', () => {
     );
 
     expect(proposal).toMatchObject({ kind: 'suppressed', existingIssue: 9, reason: 'fixed-later' });
+  });
+});
+
+describe('toProposal for a fingerprint that only a comment of the harness carries', () => {
+  const [group] = groupFindings([loaded('linux', 'claude', [finding()])]);
+  const PUBLISHED = '2026-11-03T19:32:47Z';
+  const options = { ...OPTIONS, publishedAt: PUBLISHED };
+  const known: IssueHit = { number: 7, labels: ['bug', 'qa:known'], state: 'open' };
+  const fixed: IssueHit = { number: 9, labels: ['bug'], state: 'closed' };
+  const FIXED_AT = '2026-11-05T10:00:00Z';
+  const joinedByComment = (hit: IssueHit): QaIssue => ({
+    ...issueOn(undefined, hit),
+    comments: [`Seen again\n\n${metadata(group!.fingerprint)}`],
+    ...(hit.state === 'closed' ? { completedAt: FIXED_AT } : {}),
+  });
+  const inBody = (hit: IssueHit): QaIssue => ({
+    ...issueOn(group, hit),
+    ...(hit.state === 'closed' ? { completedAt: FIXED_AT } : {}),
+  });
+
+  it('routes the finding to that issue', () => {
+    const issues = [
+      issueOn(undefined, { number: 3, labels: ['bug'], state: 'open' }),
+      joinedByComment({ number: 9, labels: ['bug'], state: 'open' }),
+    ];
+
+    expect(hitsFor(issues, [group!.fingerprint])).toEqual([{ issue: issues[1], via: 'comment' }]);
+    expect(openIssueOf(issues, [group!.fingerprint])).toEqual(new Map([[group!.fingerprint, 9]]));
+    expect(toProposal(single(group), issues, options)).toMatchObject({
+      kind: 'comment',
+      existingIssue: 9,
+    });
+  });
+
+  it.each<[string, IssueHit, Record<string, unknown>]>([
+    ['a qa:known issue', known, { kind: 'comment', existingIssue: 7 }],
+    [
+      'an issue fixed after the tested version',
+      fixed,
+      { kind: 'comment', existingIssue: 9, reason: 'fixed-later' },
+    ],
+  ])('does not silence it on %s, and comments there instead', (_, hit, expected) => {
+    expect(toProposal(single(group), [joinedByComment(hit)], options)).toMatchObject(expected);
+  });
+
+  it.each<[string, IssueHit, Record<string, unknown>]>([
+    ['a qa:known issue', known, { kind: 'suppressed', existingIssue: 7, reason: 'known' }],
+    [
+      'an issue fixed after the tested version',
+      fixed,
+      { kind: 'suppressed', existingIssue: 9, reason: 'fixed-later' },
+    ],
+  ])('still silences it when the body of %s carries it', (_, hit, expected) => {
+    const issue = { ...inBody(hit), comments: joinedByComment(hit).comments };
+
+    expect(toProposal(single(group), [issue], options)).toMatchObject(expected);
   });
 });
 

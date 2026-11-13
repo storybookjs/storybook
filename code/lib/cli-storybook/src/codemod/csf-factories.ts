@@ -39,6 +39,10 @@ export async function storyToCsf4(
   return output === source ? info.source : output;
 }
 
+// Not recursive: sandboxes symlink the monorepo template stories into these folders.
+export const SANDBOX_STORIES_GLOB =
+  '{stories,src/stories}/{Button,Header,Page,button,header,page}.stories.*';
+
 async function runStoriesCodemod(options: {
   dryRun: boolean | undefined;
   useSubPathImports: boolean;
@@ -53,8 +57,7 @@ async function runStoriesCodemod(options: {
     let globString = glob ?? '**/*.{stories,story}.{js,jsx,ts,tsx,mjs,mjsx,mts,mtsx,svelte}';
 
     if (!glob && inSandbox) {
-      // Sandbox uses limited glob for faster testing (unless glob explicitly provided)
-      globString = '{stories,src}/**/{Button,Header,Page,button,header,page}.stories.*';
+      globString = SANDBOX_STORIES_GLOB;
     } else if (promptsForGlob) {
       logger.log('Please enter the glob for your stories to migrate');
       globString = await prompt.text({

@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getProcessAncestry } from './process-ancestry.ts';
 
+vi.unmock('./process-ancestry.ts');
+
 const { execSyncMock, platformMock } = vi.hoisted(() => ({
   execSyncMock: vi.fn(),
   platformMock: vi.fn(),

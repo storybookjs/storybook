@@ -567,6 +567,25 @@ To test more, pass a ref (${argument(ctx, '--changed main', 'changed: "main"')})
  * Failed and cancelled runs read as `Error: …` because the MCP tool surfaced them by throwing; the
  * `isError` flag that accompanied them belongs to the adapter, not to text.
  */
+/**
+ * The run's error with its cause: a failure to start or run Vitest is reported as a generic message
+ * (such as "Failed to start Vitest") whose cause says what went wrong and what to do about it.
+ */
+function formatRunError(error: Extract<TestRunData, { status: 'error' }>['error']): string {
+  const causes: string[] = [];
+  for (
+    let cause: { message?: unknown; cause?: unknown } | undefined = error.error;
+    cause && causes.length < 3;
+    cause = cause.cause as typeof cause
+  ) {
+    const message = typeof cause.message === 'string' ? cause.message.trim() : '';
+    if (message && message !== error.message && !causes.includes(message)) {
+      causes.push(message);
+    }
+  }
+  return [`Error: ${error.message}`, ...causes].join('\n\n');
+}
+
 export function formatTestRun(
   data: TestRunData,
   ctx: ToolsetCtx,
@@ -584,7 +603,7 @@ export function formatTestRun(
         ctx,
       });
     case 'error':
-      return `Error: ${data.error.message}`;
+      return formatRunError(data.error);
     case 'cancelled':
       return 'Error: Test run was cancelled';
     default: {

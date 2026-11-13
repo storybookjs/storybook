@@ -127,6 +127,37 @@ describe('findStorybookVitestConfig', () => {
     });
   });
 
+  // test-storybooks/mcp: one package, several Storybooks, and the plugin runs only `.storybook`.
+  it('skips a config whose plugin runs another Storybook of the package', () => {
+    write({
+      '.storybook/main.ts': '',
+      '.storybook-no-vitest/main.ts': '',
+      'vitest.config.ts': `import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+export default { test: { projects: [{ plugins: [storybookTest({ configDir: path.join(dirname, '.storybook') })] }] } };`,
+    });
+
+    expect(find('.storybook').configFile).toBe(join(root, 'vitest.config.ts'));
+    const other = find('.storybook-no-vitest');
+    expect(other.configFile).toBeUndefined();
+    expect(other.others).toEqual([join(root, 'vitest.config.ts')]);
+  });
+
+  it('finds a config whose plugin names a config dir of another name', () => {
+    write({
+      'storybook-ui/main.ts': '',
+      'vitest.config.ts': `import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+export default { plugins: [storybookTest({ configDir: './storybook-ui' })] };`,
+    });
+
+    expect(find('storybook-ui').configFile).toBe(join(root, 'vitest.config.ts'));
+  });
+
+  it('does not take a plugin without configDir for a config dir of another name', () => {
+    write({ 'storybook-ui/main.ts': '', 'vitest.config.ts': WITH_PLUGIN });
+
+    expect(find('storybook-ui').configFile).toBeUndefined();
+  });
+
   it('does not look above the project root', () => {
     write({ 'vitest.config.ts': WITH_PLUGIN, 'app/.storybook/main.ts': '' });
 

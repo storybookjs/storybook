@@ -27,7 +27,7 @@ describe('noStorybookProjectMessage', () => {
       [
         `Vitest has no project for the Storybook in \`.storybook\`: Storybook runs the Vitest project \`${projectName}\`, which the \`storybookTest\` plugin of \`@storybook/addon-vitest/vitest-plugin\` adds.`,
         '',
-        'Storybook looked for a Vite or Vitest config (vitest.config.*, vite.config.*, vitest.*.config.*, vite.*.config.*) that uses the plugin in `.`, `.storybook`, and found none; `vitest.config.ts` does not use it. Vitest loaded `vitest.config.ts`.',
+        'Storybook looked for a Vite or Vitest config (vitest.config.*, vite.config.*, vitest.*.config.*, vite.*.config.*) that uses the plugin for this Storybook in `.`, `.storybook`, and found none; `vitest.config.ts` does not use it for this Storybook. Vitest loaded `vitest.config.ts`.',
         '',
         "To run story tests, add `storybookTest({ configDir: '.storybook' })` to the plugins of a Vitest project in one of those configs, or run `npx storybook add @storybook/addon-vitest` to set it up. A config that reaches the plugin only through another file it imports is not recognised: put the config that uses the plugin in one of those places.",
       ].join('\n')

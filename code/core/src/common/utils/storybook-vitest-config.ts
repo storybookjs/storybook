@@ -46,17 +46,37 @@ export type StorybookVitestConfig = {
   loads?: string;
   /** The directories searched, nearest first. */
   searched: string[];
-  /** Vite and Vitest configs found along the way that do not register the plugin. */
+  /** Vite and Vitest configs found along the way that do not register the plugin for it. */
   others: string[];
 };
 
-const registersStorybookPlugin = (file: string) => {
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Whether `file` registers the `storybookTest` plugin for the Storybook in `storybookDir`, read
+ * from its source. A config inside the config dir is for that Storybook. Elsewhere, the plugin's
+ * `configDir` option must name the config dir (its folder name, as a path segment), or be left out
+ * for a config dir with the default name `.storybook`; so a config whose plugin runs another
+ * Storybook of the same package (such as `.storybook-composition`) does not count.
+ */
+const registersStorybookPlugin = (file: string, storybookDir: string) => {
+  let content: string;
   try {
-    const content = readFileSync(file, 'utf8');
-    return content.includes('storybookTest') || content.includes('@storybook/addon-vitest');
+    content = readFileSync(file, 'utf8');
   } catch {
     return false;
   }
+  if (!content.includes('storybookTest') && !content.includes('@storybook/addon-vitest')) {
+    return false;
+  }
+  if (dirname(file) === storybookDir) {
+    return true;
+  }
+  const name = basename(storybookDir);
+  if (!/\bconfigDir\b/.test(content)) {
+    return name === '.storybook';
+  }
+  return new RegExp(`${escapeRegExp(name)}(?![\\w.-])`).test(content);
 };
 
 /** Config files in `directory`, the ones Vitest loads by itself first, in its order. */
@@ -78,7 +98,8 @@ const configFilesIn = (directory: string): string[] => {
 
 /**
  * Finds the Vitest config that runs the stories of the Storybook in `configDir`: the nearest Vite
- * or Vitest config that registers the `storybookTest` plugin of `@storybook/addon-vitest`.
+ * or Vitest config that registers the `storybookTest` plugin of `@storybook/addon-vitest` for that
+ * Storybook.
  *
  * It looks in the package root (the parent of `configDir`) first, then in `configDir` itself,
  * then upward to the project root, so a Storybook-only config next to `main.ts` (such as
@@ -115,7 +136,7 @@ export function findStorybookVitestConfig({
   const others: string[] = [];
   for (const directory of directories) {
     for (const file of configFilesIn(directory)) {
-      if (!registersStorybookPlugin(file)) {
+      if (!registersStorybookPlugin(file, storybookDir)) {
         others.push(file);
         continue;
       }

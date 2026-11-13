@@ -78,9 +78,9 @@ export function noStorybookProjectMessage({
     );
   } else {
     lines.push(
-      `Storybook looked for a Vite or Vitest config (${STORYBOOK_VITEST_CONFIG_NAMES}) that uses the plugin in ${found.searched.map((dir) => `\`${show(dir)}\``).join(', ')}, and found none${
+      `Storybook looked for a Vite or Vitest config (${STORYBOOK_VITEST_CONFIG_NAMES}) that uses the plugin for this Storybook in ${found.searched.map((dir) => `\`${show(dir)}\``).join(', ')}, and found none${
         found.others.length
-          ? `; ${found.others.map((file) => `\`${show(file)}\``).join(', ')} ${found.others.length === 1 ? 'does' : 'do'} not use it`
+          ? `; ${found.others.map((file) => `\`${show(file)}\``).join(', ')} ${found.others.length === 1 ? 'does' : 'do'} not use it for this Storybook`
           : ''
       }.${loaded ? ` Vitest loaded \`${show(loaded)}\`.` : ''}`,
       '',

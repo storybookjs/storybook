@@ -105,11 +105,11 @@ describe('heaviestCommand', () => {
 describe('memoryGuard', () => {
   const reading = (
     stalledNowPercent: number,
-    { minute = 19, memUsedMb = 6716 } = {}
+    { minute = 19, memUsedMb = 6716, memAvailableMb = 650 } = {}
   ): HostSample => ({
     minute,
     memTotalMb: 7932,
-    memAvailableMb: 650,
+    memAvailableMb,
     swapTotalMb: 0,
     swapFreeMb: 0,
     cpus: 4,
@@ -180,8 +180,10 @@ describe('memoryGuard', () => {
   it('ends nothing in a sandbox that waits for memory without being at its own limit', async () => {
     const { guard, kills } = guardWith();
 
-    await guard(reading(85, { memUsedMb: 3000 }), 'sandbox');
-    await guard(reading(85, { memUsedMb: 3000 }), 'sandbox');
+    const waiting = reading(85, { memUsedMb: 3000, memAvailableMb: 4000 });
+
+    await guard(waiting, 'sandbox');
+    await guard(waiting, 'sandbox');
 
     expect(kills()).toEqual([]);
   });
@@ -219,6 +221,39 @@ describe('memoryGuard', () => {
     await guard(reading(85), 'sandbox');
 
     expect(kills()).toEqual([['kill', '-KILL', '52', '60']]);
+  });
+
+  it('ends the heaviest command at once when the machine itself is about to run out', async () => {
+    const { guard, kills, report } = guardWith();
+    const runner = {
+      ...reading(0, { memUsedMb: 5300 }),
+      memTotalMb: 15_983,
+      memAvailableMb: 700,
+      swapTotalMb: 3072,
+      swapFreeMb: 800,
+    };
+
+    await guard({ ...runner, swapFreeMb: 2000 }, 'sandbox');
+    expect(kills()).toEqual([]);
+
+    await guard(runner, 'sandbox');
+
+    expect(kills()).toHaveLength(1);
+    expect(report).toHaveBeenCalledWith({
+      level: 'warning',
+      line: expect.stringMatching(
+        /^Minute 19: the machine had 700 MB of memory and 800 MB of swap left\. The runner ends the command that holds the most, 4935 MB in 9 process\(es\): /
+      ),
+    });
+  });
+
+  it('leaves a machine without swap alone when the sandbox is merely full', async () => {
+    const { guard, kills } = guardWith();
+
+    await guard(reading(0), 'sandbox');
+    await guard(reading(0), 'sandbox');
+
+    expect(kills()).toEqual([]);
   });
 
   it('leaves a run without a sandbox container alone', async () => {

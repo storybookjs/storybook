@@ -221,6 +221,23 @@ describe('prop extraction', () => {
       expect(props?.columns.type.raw).toBe('3 | 1 | 2');
     });
 
+    it('keeps the members of a TypeScript enum', async () => {
+      const entry = await extract(
+        'Row',
+        dedent`
+          import React from 'react';
+          export enum CallStates { DONE = 'done', ERROR = 'error', ACTIVE = 'active' }
+          interface Props { status: CallStates }
+          export const Row = (props: Props) => <div />;
+        `
+      );
+
+      expect(entry.component?.reactComponentMeta?.props.status.type).toMatchObject({
+        name: 'enum',
+        raw: 'CallStates.DONE | CallStates.ERROR | CallStates.ACTIVE',
+      });
+    });
+
     it('lists computed enum members by value', async () => {
       const entry = await extract(
         'Button',

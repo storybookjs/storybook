@@ -69,4 +69,13 @@ export interface DocgenWorkerExtractFailure {
 
 export type DocgenWorkerExtractResponse = DocgenWorkerExtractSuccess | DocgenWorkerExtractFailure;
 
-export type DocgenWorkerResponse = DocgenWorkerInitResponse | DocgenWorkerExtractResponse;
+/** The worker reached this request in its queue and is now extracting it. */
+export interface DocgenWorkerExtractStarted {
+  type: 'started';
+  id: number;
+}
+
+export type DocgenWorkerResponse =
+  | DocgenWorkerInitResponse
+  | DocgenWorkerExtractStarted
+  | DocgenWorkerExtractResponse;

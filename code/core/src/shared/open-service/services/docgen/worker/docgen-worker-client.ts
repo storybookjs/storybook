@@ -19,14 +19,10 @@ const DEFAULT_TASK_TIMEOUT_MS = 120_000;
 // longer before the worker counts as hung.
 export const BUILD_TASK_TIMEOUT_MS = 300_000;
 
-interface Task {
+interface Pending {
   entry: IndexEntry;
   resolve: (payload: DocgenPayload | undefined) => void;
   reject: (error: unknown) => void;
-}
-
-interface ActiveTask extends Task {
-  id: number;
   timer?: NodeJS.Timeout;
 }
 
@@ -59,10 +55,7 @@ function errorLikeToError(errorLike: ErrorLike): Error {
 // threads would only duplicate multi-second program builds and their memory.
 class DocgenWorker implements DocgenWorkerClient {
   private readonly worker: Worker;
-  // The worker gets one task at a time, so a task's time limit covers its own run and not the wait
-  // behind the tasks queued before it.
-  private readonly queue: Task[] = [];
-  private active: ActiveTask | undefined;
+  private readonly pending = new Map<number, Pending>();
   private readonly ready: Promise<void>;
   private rejectReady: (error: unknown) => void = () => undefined;
   private nextId = 0;
@@ -138,42 +131,37 @@ class DocgenWorker implements DocgenWorkerClient {
     }
     await this.ready;
     return new Promise<DocgenPayload | undefined>((resolve, reject) => {
-      this.queue.push({ entry, resolve, reject });
-      this.runNext();
+      const id = this.nextId++;
+      this.pending.set(id, { entry, resolve, reject });
+      this.keepProcessAliveWhileBusy();
+      // Every request goes to the worker right away: it queues them itself, so it keeps working
+      // while this thread is busy with the rest of a build.
+      this.post({ type: 'extract', id, entry });
     });
   }
 
-  private runNext(): void {
-    if (this.active) {
+  // The limit runs from the moment the worker starts a request, so it covers that request's own
+  // work and not the wait behind the requests queued before it.
+  private startTimeLimit(pending: Pending): void {
+    if (this.taskTimeoutMs <= 0) {
       return;
     }
-    const task = this.queue.shift();
-    if (!task) {
-      this.keepProcessAliveWhileBusy();
-      return;
-    }
-    const active: ActiveTask = { ...task, id: this.nextId++ };
-    if (this.taskTimeoutMs > 0) {
-      // The worker cannot be interrupted mid-extraction, so a task past its limit takes the worker
-      // down with it; the next extract spawns a replacement.
-      active.timer = setTimeout(
-        () =>
-          this.fail(
-            new Error(
-              `docgen extraction of "${task.entry.title}" timed out after ${this.taskTimeoutMs}ms`
-            )
-          ),
-        this.taskTimeoutMs
-      );
-      active.timer.unref?.();
-    }
-    this.active = active;
-    this.keepProcessAliveWhileBusy();
-    this.post({ type: 'extract', id: active.id, entry: task.entry });
+    // The worker cannot be interrupted mid-extraction, so a request past its limit takes the worker
+    // down with it; the next extract spawns a replacement.
+    pending.timer = setTimeout(
+      () =>
+        this.fail(
+          new Error(
+            `docgen extraction of "${pending.entry.title}" timed out after ${this.taskTimeoutMs}ms`
+          )
+        ),
+      this.taskTimeoutMs
+    );
+    pending.timer.unref?.();
   }
 
   private keepProcessAliveWhileBusy(): void {
-    if (this.active) {
+    if (this.pending.size > 0) {
       this.worker.ref();
     } else {
       this.worker.unref();
@@ -185,19 +173,26 @@ class DocgenWorker implements DocgenWorkerClient {
   }
 
   private handleMessage(msg: DocgenWorkerResponse): void {
-    const active = this.active;
-    if (msg.type !== 'extract' || msg.id !== active?.id) {
+    if (msg.type === 'init') {
       return;
     }
-    clearTimeout(active.timer);
-    this.active = undefined;
-    this.served = true;
-    if (msg.error) {
-      active.reject(errorLikeToError(msg.error));
-    } else {
-      active.resolve(msg.payload);
+    const pending = this.pending.get(msg.id);
+    if (!pending) {
+      return;
     }
-    this.runNext();
+    if (msg.type === 'started') {
+      this.startTimeLimit(pending);
+      return;
+    }
+    clearTimeout(pending.timer);
+    this.pending.delete(msg.id);
+    this.served = true;
+    this.keepProcessAliveWhileBusy();
+    if (msg.error) {
+      pending.reject(errorLikeToError(msg.error));
+    } else {
+      pending.resolve(msg.payload);
+    }
   }
 
   private fail(error: Error): void {
@@ -213,12 +208,11 @@ class DocgenWorker implements DocgenWorkerClient {
   }
 
   private rejectAllPending(error: Error): void {
-    clearTimeout(this.active?.timer);
-    for (const task of [...(this.active ? [this.active] : []), ...this.queue]) {
-      task.reject(error);
+    for (const pending of this.pending.values()) {
+      clearTimeout(pending.timer);
+      pending.reject(error);
     }
-    this.active = undefined;
-    this.queue.length = 0;
+    this.pending.clear();
     this.worker.unref();
   }
 }

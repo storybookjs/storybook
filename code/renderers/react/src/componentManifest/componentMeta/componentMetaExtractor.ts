@@ -727,6 +727,14 @@ function compareLiteralValues(a: ts.LiteralType['value'], b: ts.LiteralType['val
   return textA < textB ? -1 : textA > textB ? 1 : 0;
 }
 
+// Members of the same `enum` in the order it declares them; 0 for anything else.
+function compareEnumMembers(a: ts.LiteralType, b: ts.LiteralType): number {
+  const [declarationA, declarationB] = [a.symbol?.declarations?.[0], b.symbol?.declarations?.[0]];
+  return declarationA && declarationB && declarationA.parent === declarationB.parent
+    ? declarationA.pos - declarationB.pos
+    : 0;
+}
+
 function serializeType(
   typescript: DocgenTypeScript,
   checker: DocgenTypeChecker,
@@ -769,7 +777,9 @@ function serializeType(
       .filter(isLiteralType)
       .toSorted(
         (a, b) =>
-          declaredPosition(a) - declaredPosition(b) || compareLiteralValues(a.value, b.value)
+          declaredPosition(a) - declaredPosition(b) ||
+          compareEnumMembers(a, b) ||
+          compareLiteralValues(a.value, b.value)
       );
 
     if (literalMembers.length > 0 && literalMembers.length === nonUndefinedTypes.length) {

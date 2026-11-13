@@ -265,12 +265,17 @@ describe('DocgenWorkerClient.extract', () => {
   });
 });
 
-describe('DocgenWorkerClient queue', () => {
+describe('DocgenWorkerClient time limit', () => {
   const entries = ['a', 'b', 'c'].map((id) => ({ id, title: `Example/${id}` }) as any);
   const extractRequests = (worker: FakeWorker) =>
     worker.posted.filter((m) => m.type === 'extract') as { id: number; entry: { id: string } }[];
-  const answerLatest = (worker: FakeWorker) => {
-    const { id, entry } = extractRequests(worker).at(-1)!;
+  const start = (worker: FakeWorker, index: number) =>
+    worker.emit('message', {
+      type: 'started',
+      id: extractRequests(worker)[index].id,
+    } satisfies DocgenWorkerResponse);
+  const answer = (worker: FakeWorker, index: number) => {
+    const { id, entry } = extractRequests(worker)[index];
     worker.emit('message', {
       type: 'extract',
       id,
@@ -286,53 +291,45 @@ describe('DocgenWorkerClient queue', () => {
     vi.useRealTimers();
   });
 
-  it('sends the worker one extraction at a time, in request order', async () => {
+  it('sends every request to the worker without waiting for earlier ones', async () => {
     const { createDocgenWorkerClient } = await loadModule();
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
 
-    const results = entries.map((entry) => client.extract(entry));
-    const worker = fakeWorkers[0];
-    ackInit(worker);
+    entries.forEach((entry) => client.extract(entry).catch(() => undefined));
+    ackInit(fakeWorkers[0]);
     await vi.advanceTimersByTimeAsync(0);
-    expect(extractRequests(worker).map((m) => m.entry.id)).toEqual(['a']);
 
-    answerLatest(worker);
-    expect(extractRequests(worker).map((m) => m.entry.id)).toEqual(['a', 'b']);
-    answerLatest(worker);
-    answerLatest(worker);
-
-    await expect(Promise.all(results)).resolves.toMatchObject([
-      { id: 'a' },
-      { id: 'b' },
-      { id: 'c' },
-    ]);
+    expect(extractRequests(fakeWorkers[0]).map((m) => m.entry.id)).toEqual(['a', 'b', 'c']);
   });
 
-  it('starts the time limit when an extraction is sent, not when it is queued', async () => {
+  it('starts the time limit when the worker starts a request, not when it is sent', async () => {
     const { createDocgenWorkerClient } = await loadModule();
     const client = createDocgenWorkerClient(DESCRIPTORS, { taskTimeoutMs: 1000 })!;
 
     const results = entries.map((entry) => client.extract(entry));
     const worker = fakeWorkers[0];
     ackInit(worker);
+    await vi.advanceTimersByTimeAsync(0);
 
-    for (const _ of entries) {
+    for (const index of entries.keys()) {
+      start(worker, index);
       await vi.advanceTimersByTimeAsync(600);
-      answerLatest(worker);
+      answer(worker, index);
     }
 
     await expect(Promise.all(results)).resolves.toHaveLength(3);
     expect(worker.terminate).not.toHaveBeenCalled();
   });
 
-  it('terminates the worker when an extraction runs past its limit', async () => {
+  it('terminates the worker when a started request runs past its limit', async () => {
     const { createDocgenWorkerClient } = await loadModule();
     const client = createDocgenWorkerClient(DESCRIPTORS, { taskTimeoutMs: 1000 })!;
 
-    const results = entries.map((entry) => client.extract(entry));
-    const settled = Promise.allSettled(results);
+    const settled = Promise.allSettled(entries.map((entry) => client.extract(entry)));
     const worker = fakeWorkers[0];
     ackInit(worker);
+    await vi.advanceTimersByTimeAsync(0);
+    start(worker, 0);
     await vi.advanceTimersByTimeAsync(1000);
 
     const timedOut = 'docgen extraction of "Example/a" timed out after 1000ms';
@@ -342,7 +339,6 @@ describe('DocgenWorkerClient queue', () => {
       { status: 'rejected', reason: { message: timedOut } },
     ]);
     expect(worker.terminate).toHaveBeenCalledOnce();
-    expect(extractRequests(worker).map((m) => m.entry.id)).toEqual(['a']);
   });
 
   it('never times out when the limit is 0', async () => {
@@ -352,8 +348,10 @@ describe('DocgenWorkerClient queue', () => {
     const result = client.extract(entries[0]);
     const worker = fakeWorkers[0];
     ackInit(worker);
+    await vi.advanceTimersByTimeAsync(0);
+    start(worker, 0);
     await vi.advanceTimersByTimeAsync(24 * 60 * 60 * 1000);
-    answerLatest(worker);
+    answer(worker, 0);
 
     await expect(result).resolves.toMatchObject({ id: 'a' });
   });

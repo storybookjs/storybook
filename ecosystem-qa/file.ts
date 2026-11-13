@@ -201,7 +201,11 @@ const fileProposal = (proposal: Proposal): FilingOutcome => {
     repo,
     evidenceLinks: 'assets',
     ...(proposal.kind === 'issue'
-      ? { filedAs: searchFingerprint(repo, proposal.fingerprint)[0]?.number }
+      ? {
+          // A closed hit is why collect proposed a new issue, so only an open one counts as filed.
+          filedAs: searchFingerprint(repo, proposal.fingerprint).find((hit) => hit.state === 'open')
+            ?.number,
+        }
       : {}),
     ...(proposal.kind === 'comment' ? { comments: commentsOn(proposal.existingIssue) } : {}),
   });

@@ -15,9 +15,15 @@ const WORKER_SPECIFIER = 'storybook/internal/docgen-worker';
 
 const DEFAULT_TASK_TIMEOUT_MS = 120_000;
 
-interface Pending {
+interface Job {
+  entry: IndexEntry;
   resolve: (payload: DocgenPayload | undefined) => void;
   reject: (error: unknown) => void;
+}
+
+interface InFlight {
+  id: number;
+  job: Job;
   timer?: NodeJS.Timeout;
 }
 
@@ -38,9 +44,20 @@ function errorLikeToError(errorLike: ErrorLike): Error {
 
 // One worker, never a pool: extraction serializes on a single warm TypeScript program, so extra
 // threads would only duplicate multi-second program builds and their memory.
+//
+// Extracts are posted one at a time and each timeout starts at dispatch. Callers such as the static
+// build fan out every component at once, and a timer started at enqueue would charge each extract
+// for the whole queue ahead of it.
+//
+// A timed-out extract keeps running in the worker, so the next one can still wait out its tail. A
+// second timeout with no answer in between means the worker is stuck rather than slow, so it is
+// stopped: the queue then fails within two timeouts instead of one timeout per queued extract.
 class DocgenWorker implements DocgenWorkerClient {
   private readonly worker: Worker;
-  private readonly pending = new Map<number, Pending>();
+  private inFlight: InFlight | undefined;
+  private readonly queue: Job[] = [];
+  /** Id of the last extract that timed out, cleared by the worker's next answer. */
+  private unansweredTimeoutId: number | undefined;
   private readonly ready: Promise<void>;
   private rejectReady: (error: unknown) => void = () => undefined;
   private nextId = 0;
@@ -97,6 +114,18 @@ class DocgenWorker implements DocgenWorkerClient {
   }
 
   async extract(entry: IndexEntry): Promise<DocgenPayload | undefined> {
+    this.throwIfDead();
+    await this.ready;
+    // The worker can die while `ready` settles, after which nothing would dispatch this extract.
+    this.throwIfDead();
+    return new Promise<DocgenPayload | undefined>((resolve, reject) => {
+      this.queue.push({ entry, resolve, reject });
+      this.dispatchNext();
+      this.keepProcessAliveWhileBusy();
+    });
+  }
+
+  private throwIfDead(): void {
     if (this.death) {
       // Carries the death forward: the crash itself is one event, but every later extract fails on
       // it, so a bare "no longer running" is the only thing anyone downstream ever sees.
@@ -104,26 +133,47 @@ class DocgenWorker implements DocgenWorkerClient {
         cause: this.death,
       });
     }
-    await this.ready;
-    return new Promise<DocgenPayload | undefined>((resolve, reject) => {
-      const id = this.nextId++;
-      const pending: Pending = { resolve, reject };
-      if (this.taskTimeoutMs > 0) {
-        pending.timer = setTimeout(() => {
-          this.pending.delete(id);
-          this.keepProcessAliveWhileBusy();
-          reject(new Error(`docgen worker extract ${id} timed out after ${this.taskTimeoutMs}ms`));
-        }, this.taskTimeoutMs);
-        pending.timer.unref?.();
-      }
-      this.pending.set(id, pending);
-      this.keepProcessAliveWhileBusy();
-      this.post({ type: 'extract', id, entry });
-    });
+  }
+
+  private dispatchNext(): void {
+    if (this.death || this.inFlight) {
+      return;
+    }
+    const job = this.queue.shift();
+    if (!job) {
+      return;
+    }
+    const inFlight: InFlight = { id: this.nextId++, job };
+    if (this.taskTimeoutMs > 0) {
+      inFlight.timer = setTimeout(() => this.timeOut(inFlight), this.taskTimeoutMs);
+      inFlight.timer.unref?.();
+    }
+    this.inFlight = inFlight;
+    this.post({ type: 'extract', id: inFlight.id, entry: job.entry });
+  }
+
+  private timeOut({ id, job }: InFlight): void {
+    const timedOut = `timed out after ${this.taskTimeoutMs}ms`;
+    if (this.unansweredTimeoutId !== undefined) {
+      const ids = `extracts ${this.unansweredTimeoutId} and ${id}`;
+      this.fail(new Error(`docgen worker stopped responding: ${ids} both ${timedOut}`));
+      return;
+    }
+    this.unansweredTimeoutId = id;
+    job.reject(new Error(`docgen worker extract ${id} ${timedOut}`));
+    this.finishInFlight();
+  }
+
+  /** Frees the worker for the next queued extract once the current one has settled. */
+  private finishInFlight(): void {
+    clearTimeout(this.inFlight?.timer);
+    this.inFlight = undefined;
+    this.dispatchNext();
+    this.keepProcessAliveWhileBusy();
   }
 
   private keepProcessAliveWhileBusy(): void {
-    if (this.pending.size > 0) {
+    if (this.inFlight || this.queue.length > 0) {
       this.worker.ref();
     } else {
       this.worker.unref();
@@ -138,21 +188,19 @@ class DocgenWorker implements DocgenWorkerClient {
     if (msg.type !== 'extract') {
       return;
     }
-    const pending = this.pending.get(msg.id);
-    if (!pending) {
+    // Any answer, even a late one for a timed-out extract, shows the worker isn't stuck.
+    this.unansweredTimeoutId = undefined;
+    const inFlight = this.inFlight;
+    if (inFlight?.id !== msg.id) {
       return;
     }
-    if (pending.timer) {
-      clearTimeout(pending.timer);
-    }
-    this.pending.delete(msg.id);
     this.served = true;
-    this.keepProcessAliveWhileBusy();
     if (msg.error) {
-      pending.reject(errorLikeToError(msg.error));
+      inFlight.job.reject(errorLikeToError(msg.error));
     } else {
-      pending.resolve(msg.payload);
+      inFlight.job.resolve(msg.payload);
     }
+    this.finishInFlight();
   }
 
   private fail(error: Error): void {
@@ -168,13 +216,14 @@ class DocgenWorker implements DocgenWorkerClient {
   }
 
   private rejectAllPending(error: Error): void {
-    for (const [, pending] of this.pending) {
-      if (pending.timer) {
-        clearTimeout(pending.timer);
-      }
-      pending.reject(error);
+    if (this.inFlight) {
+      clearTimeout(this.inFlight.timer);
+      this.inFlight.job.reject(error);
+      this.inFlight = undefined;
     }
-    this.pending.clear();
+    for (const job of this.queue.splice(0)) {
+      job.reject(error);
+    }
     this.worker.unref();
   }
 }

@@ -526,7 +526,7 @@ function formatNoStories(
       selection?.files?.storyFiles === 0
         ? `\nFile arguments select story files by path, as Vitest filters select test files. To test the stories that depend on a changed file, use ${argument(ctx, '--changed', 'changed: true')}.`
         : '';
-    return `No stories found matching the provided input, so no tests ran.
+    return `No stories found matching the provided input.
 
 ${notFoundMessages.join('\n')}${filterHint}`;
   }

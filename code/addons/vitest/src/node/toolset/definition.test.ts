@@ -448,7 +448,7 @@ Accessibility: not checked.`);
       const outcome = await runTests();
 
       expect(outcome.ok).toBe(false);
-      expect(outcome.markdown).toBe(`No stories found matching the provided input, so no tests ran.
+      expect(outcome.markdown).toBe(`No stories found matching the provided input.
 
 No story files found for \`src/Button.tsx\`.
 File arguments select story files by path, as Vitest filters select test files. To test the stories that depend on a changed file, use \`--changed\`.`);
@@ -814,7 +814,7 @@ Accessibility: not checked.`);
       });
 
       expect(outcome.ok).toBe(false);
-      expect(outcome.markdown).toBe(`No stories found matching the provided input, so no tests ran.
+      expect(outcome.markdown).toBe(`No stories found matching the provided input.
 
 No story found for story ID "missing--story"
 No story found for story ID "gone--story"`);

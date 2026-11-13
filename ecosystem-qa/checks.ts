@@ -240,7 +240,7 @@ export const checksFor = (tier: Tier) =>
     )
   );
 
-export const renderChecklist = (tier: Tier): string =>
-  checksFor(tier)
+export const renderChecklist = (checks: ReturnType<typeof checksFor>): string =>
+  checks
     .map((check) => `- \`${check.id}\` (${check.phase}): ${check.label}. ${check.probe}`)
     .join('\n');

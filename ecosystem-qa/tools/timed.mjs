@@ -26,7 +26,8 @@ if (!secondsFile || command.length === 0) {
 
 // The output and the exit status are kept next to the timing. The agent reads them and repairs the
 // environment, so a failed install must not end the run: this script always exits 0. An install
-// that outlasts the limit is stopped and recorded with status 124, which the runner reads.
+// that outlasts the limit is stopped, and `install-stopped.txt` tells the runner so. The exit status
+// cannot: an install command may end with 124 on its own.
 const directory = secondsFile.replace(/[^/\\]*$/, '');
 const log = createWriteStream(`${directory}install.log`);
 // One limit for the Node switch and the command together.
@@ -86,5 +87,8 @@ child.on('close', (status, signal) => {
     : (status ?? 128 + (constants.signals[signal] ?? 0));
   writeFileSync(secondsFile, `${Math.round((Date.now() - started) / 1000)}\n`);
   writeFileSync(`${directory}install-exit.txt`, `${exit}\n`);
+  if (stoppedAtLimit) {
+    writeFileSync(`${directory}install-stopped.txt`, `${limitSeconds}\n`);
+  }
   log.end(() => process.exit(0));
 });

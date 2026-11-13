@@ -76,8 +76,6 @@ const CREDENTIAL_ENV: Record<Engine, string[]> = {
 };
 
 const INSTALL_LIMIT_SECONDS = 25 * 60;
-// tools/timed.mjs records this exit status for an install it had to stop at the limit.
-const INSTALL_STOPPED = 124;
 
 const INSTALL_COMMAND: Record<CatalogEntry['packageManager'], string> = {
   npm: 'npm ci',
@@ -388,7 +386,9 @@ const runSandcastle = async (
   let migrationGuide: string | undefined;
   let sandbox: Awaited<ReturnType<typeof createSandbox>> | undefined;
   const logFile = join(request.outDir, 'run.log');
-  const answerSchema = agentOutput(checksFor(request.tier).map((check) => check.id));
+  // One list for the schema, the checklist and the count the prompt names.
+  const checks = checksFor(request.tier);
+  const answerSchema = agentOutput(checks.map((check) => check.id));
 
   try {
     const guide = await guideFor(request.version, {
@@ -408,7 +408,7 @@ const runSandcastle = async (
     if (installExit === undefined) {
       throw new Error('The project install did not run to its end: it left no exit status.');
     }
-    if (installExit === INSTALL_STOPPED) {
+    if (existsSync(join(evidenceDir, 'install-stopped.txt'))) {
       throw new Error(
         `The project install did not finish within ${INSTALL_LIMIT_SECONDS / 60} minutes.`
       );
@@ -430,8 +430,8 @@ const runSandcastle = async (
         MIGRATION_FILE: plan.migrationFile,
         TOOLS_DIR: plan.toolsDir,
         EVIDENCE_DIR: plan.evidenceDir,
-        CHECKLIST: renderChecklist(request.tier),
-        CHECK_COUNT: String(checksFor(request.tier).length),
+        CHECKLIST: renderChecklist(checks),
+        CHECK_COUNT: String(checks.length),
         OUTPUT_SCHEMA: JSON.stringify(z.toJSONSchema(answerSchema), null, 2),
       },
       idleTimeoutSeconds: 900,
@@ -489,8 +489,8 @@ const runSandcastle = async (
     );
   }
   return {
-    status: 'ok',
-    ...failure,
+    status: failure?.status ?? 'ok',
+    ...(failure ? { error: failure.error } : {}),
     ...(recoveredFrom ? { recoveredFrom } : {}),
     ...(migrationGuide ? { migrationGuide } : {}),
     ...(output ? { output } : {}),

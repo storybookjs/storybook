@@ -137,6 +137,7 @@ jobs:
       dry: ${{ steps.matrix.outputs.dry }}
       from_runs: ${{ steps.matrix.outputs.from_runs }}
       groups: ${{ steps.matrix.outputs.groups }}
+      job_minutes: ${{ steps.matrix.outputs.job_minutes }}
     steps:
       # A run that only collects earlier results starts no agent, so it needs no matrix.
       - name: Checkout
@@ -168,6 +169,7 @@ jobs:
           QA_DRY: ${{ inputs.dry }}
           QA_FROM_RUNS: ${{ inputs.from_runs }}
           QA_GROUPS: ${{ inputs.groups }}
+          QA_BUDGET_MINUTES: ${{ inputs.budget_minutes }}
         run: |
           if [[ ! "$QA_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
             echo "::error::version '$QA_VERSION' is not a semver version"
@@ -175,6 +177,10 @@ jobs:
           fi
           if [[ -n "$QA_FROM_RUNS" && ! "$QA_FROM_RUNS" =~ ^[0-9]+(,[0-9]+)*$ ]]; then
             echo "::error::from_runs '$QA_FROM_RUNS' is not a comma-separated list of run ids"
+            exit 1
+          fi
+          if [[ -n "$QA_BUDGET_MINUTES" && ! "$QA_BUDGET_MINUTES" =~ ^[1-9][0-9]{0,2}$ ]]; then
+            echo "::error::budget_minutes '$QA_BUDGET_MINUTES' is not a whole number of minutes"
             exit 1
           fi
           groups=''
@@ -195,6 +201,9 @@ jobs:
             echo "dry=$QA_DRY"
             echo "from_runs=$QA_FROM_RUNS"
             echo "groups=$groups"
+            # A run stops its agent 15 minutes after the budget and then asks it for its answer. A
+            # job that is cancelled before that writes no result at all.
+            echo "job_minutes=$(( ${QA_BUDGET_MINUTES:-90} + 90 ))"
           } >> "$GITHUB_OUTPUT"
           echo "$matrix" | jq .
 
@@ -203,9 +212,7 @@ jobs:
     needs: plan
     if: ${{ needs.plan.outputs.from_runs == '' }}
     runs-on: ${{ matrix.runner }}
-    # The run stops its agent 15 minutes after the budget and then asks it for its answer. A job
-    # that is cancelled before that writes no result at all.
-    timeout-minutes: ${{ fromJSON(inputs.budget_minutes || '90') + 90 }}
+    timeout-minutes: ${{ fromJSON(needs.plan.outputs.job_minutes) }}
     permissions: {}
     # The agent keys live in this environment. The push token lives in ecosystem-qa-file, which only
     # the file job enters, so no job that runs the agent can read it.

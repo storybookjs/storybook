@@ -453,6 +453,8 @@ jobs:
     environment: ecosystem-qa-file
     # Two filing jobs that list the issues at the same moment would each file what the other is
     # about to file, and one sweep can now overlap another in the repos it tests.
+    # A group holds one running and one waiting job. A third filing job cancels the waiting one, so a
+    # cancelled filing job means "collect that run again with from_runs", not "nothing to file".
     concurrency:
       group: ecosystem-qa-file
       cancel-in-progress: false

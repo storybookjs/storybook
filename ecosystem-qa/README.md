@@ -166,6 +166,8 @@ A group that only resembles such an issue, or of which only some findings are on
 An issue closed before that, or closed for any other reason, does not count: the bug came back, so it is filed again with a link to the closed issue.
 An issue counts as already filed only while it carries the `internal-qa` label.
 It checks first that the milestone is open and every label exists, and files nothing otherwise.
+Filing jobs run one at a time, in one concurrency group, which holds one running and one waiting job.
+A third filing job that arrives then cancels the waiting one, so a cancelled filing job means "collect that run again with `from_runs`", not "nothing to file".
 A proposal that fails does not stop the others; the job writes a filed and failed table to the Step Summary and fails at the end.
 Rerunning the job is safe: an issue it already created and a repeated comment are skipped, and evidence already on `qa-assets` makes no new commit.
 When an open issue with one of a proposal's fingerprints appeared after the collect, for example from another sweep, no second issue is created: what that issue lacks goes on it as a comment.

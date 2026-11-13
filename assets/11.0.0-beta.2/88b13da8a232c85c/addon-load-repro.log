@@ -1,0 +1,5 @@
+== 11.0.0-beta.2 core: import used by storybook-addon-mock-date 3.2.1 dist/preview.js
+import { PreviewAddon } from "storybook/internal/csf";
+PreviewAddon runtime export: false
+== @storybook-community/storybook-addon-cookie@5.0.2 preset loaded by file path (as Storybook loads addon presets)
+Error: Cannot find module '/home/agent/workspace/node_modules/@storybook-community/storybook-addon-cookie/dist/preset.js' imported from /home/agent/workspace/node_modules/@storybook-community/storybook-addon-cookie/preset.js

@@ -52,6 +52,20 @@ describe('answerOfFinishedAgent', () => {
     expect(answerOfFinishedAgent(log, schema)).toBeUndefined();
   });
 
+  it('reads only the last turn, not a block that an earlier turn printed', () => {
+    const repaired = run(
+      ...['Agent started', answer(1), 'Agent stopped'],
+      ...['Agent started', answer(2), 'Agent stopped']
+    );
+    const notRepaired = run(
+      ...['Agent started', answer(1), 'Agent stopped'],
+      ...['Agent started', 'I cannot repair it.', 'Agent stopped']
+    );
+
+    expect(answerOfFinishedAgent(repaired, schema)).toEqual({ n: 2 });
+    expect(answerOfFinishedAgent(notRepaired, schema)).toBeUndefined();
+  });
+
   it('returns undefined when the agent was started again and did not stop', () => {
     const log = run('Agent started', answer(1), 'Agent stopped', 'Agent started', 'working');
 

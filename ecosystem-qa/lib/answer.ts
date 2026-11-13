@@ -88,13 +88,15 @@ export const answerAfterRepairs = async <T, Turn extends AgentTurn<Turn>>(
 
 // Read the answer of an agent that ran to its end from the Sandcastle log of one run.
 //
-// The agent must have stopped and not been started again. Returns undefined when the agent did not
-// finish or its answer cannot be used.
+// The agent must have stopped and not been started again. Only its last turn is read: a block of an
+// earlier turn is one the runner has already sent back for repair. Returns undefined when the agent
+// did not finish or its answer cannot be used.
 export const answerOfFinishedAgent = <T>(log: string, schema: z.ZodType<T>): T | undefined => {
   const stopped = log.lastIndexOf(AGENT_STOPPED);
   if (stopped === -1 || log.includes(AGENT_STARTED, stopped)) {
     return undefined;
   }
-  const reading = readAnswer(log.slice(0, stopped), schema);
+  const lastTurn = Math.max(0, log.lastIndexOf(AGENT_STARTED, stopped));
+  const reading = readAnswer(log.slice(lastTurn, stopped), schema);
   return 'answer' in reading ? reading.answer : undefined;
 };

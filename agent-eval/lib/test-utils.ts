@@ -238,8 +238,10 @@ export function expectFocusedTestRunWithFiles(): void {
 
 // Story tests run only through Storybook: never a package.json test script or vitest directly.
 // Only as a command of its own, so `grep vitest package.json` does not count.
+// Workspace flags may sit between the package manager and the script (`npm -w ui run test`,
+// `pnpm --filter ui test`, `yarn workspace ui test`).
 const OTHER_TEST_RUNNER =
-  /(?:^|[;&|(])\s*(?:(?:npm|yarn|pnpm|bun)\s+(?:run\s+)?test[\w:-]*|(?:npx\s+|pnpm\s+(?:exec\s+)?|yarn\s+)?vitest)(?=\s|$|[;&|)])/;
+  /(?:^|[;&|(])\s*(?:(?:npm|yarn|pnpm|bun)(?:\s+(?:-\S+|workspace)(?:\s+(?!run\b|test)[^\s;&|]+)?)*\s+(?:run\s+)?test[\w:-]*|(?:npx\s+|pnpm\s+(?:exec\s+)?|yarn\s+)?vitest)(?=\s|$|[;&|)])/;
 
 export const isOtherTestRunner = (command: string): boolean => OTHER_TEST_RUNNER.test(command);
 

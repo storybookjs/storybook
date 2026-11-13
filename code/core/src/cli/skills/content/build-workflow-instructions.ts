@@ -37,14 +37,15 @@ function workflowSteps({ devEnabled, testSupported, docsEnabled }: ServerInstruc
 function testStep(number: number, transport: SkillTextTransport): string {
   const does = `${number}. Run the story tests after every change, and fix what fails. Also when the user asks to run or fix story tests.`;
   // An agent without this rule runs the test script of the project.
-  const never = 'never a `package.json` test script or `vitest`';
+  const never = 'never with a `package.json` test script or `vitest`';
   if (transport === 'mcp') {
     const run = `\`${getToolName({ transport })('test.run')}\``;
     return `${does} Call ${run} for them, ${never}. Pass the story files or component files you changed in \`files\`: a story file selects the stories in it, any other file every story that depends on it, and no \`files\` every story.`;
   }
-  return `${does} Run them only with this command, from the package where Storybook is installed, ${never}. Pass the files you changed:
-   - \`npx storybook tools test run <Button.stories.tsx>\`: the stories in that story file.
-   - \`npx storybook tools test run <Button.tsx>\`: every story that depends on that file.
+  // Example paths, not placeholders in angle brackets, which a shell reads as a redirect.
+  return `${does} Run them with \`npx storybook tools test run\` from the package where Storybook is installed, ${never}. Pass the files you changed, relative to that package:
+   - \`npx storybook tools test run src/Button.stories.tsx\`: the stories in that story file.
+   - \`npx storybook tools test run src/Button.tsx\`: every story that depends on that file.
    - \`npx storybook tools test run\`: every story.`;
 }
 
@@ -108,7 +109,7 @@ export function buildServerInstructions(inputs: ServerInstructionsInputs): strin
   // review-create result are many calls back, and agents left the review lines out. A review is
   // only published when the user asks for one, through the `ui-review` skill.
   const review = inputs.devEnabled
-    ? `\n\nWhen you publish a review with \`${getToolName({ transport: 'mcp' })('review.create')}\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it.`
+    ? `\n\nWhen the user asks for a review or to see stories, run \`npx storybook skills ui-review --mcp\` first. When you publish a review with \`${getToolName({ transport: 'mcp' })('review.create')}\`, end your final answer with the three lines its result gives you, unchanged, and mention the review link nowhere else in it.`
     : '';
   // The tools are at hand over MCP, so an agent can do a step without its skill. It did for a
   // request that is one step, where no file edit comes first.

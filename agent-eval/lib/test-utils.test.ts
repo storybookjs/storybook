@@ -20,6 +20,10 @@ describe('isOtherTestRunner', () => {
     'cd packages/ui && npx vitest run',
     'pnpm exec vitest --project storybook',
     'yarn test-storybook',
+    'npm -w @acme/ui run test:stories',
+    'npm --prefix packages/ui run test:stories',
+    'yarn workspace @acme/ui test:stories',
+    'pnpm --filter ui test:stories',
   ])('counts %j', (command) => {
     expect(isOtherTestRunner(command)).toBe(true);
   });
@@ -28,6 +32,8 @@ describe('isOtherTestRunner', () => {
     'npx storybook tools test run src/Button.tsx',
     'grep vitest package.json',
     'cat vitest.config.ts',
+    'npm install',
+    'pnpm --filter ui build',
   ])('does not count %j', (command) => {
     expect(isOtherTestRunner(command)).toBe(false);
   });

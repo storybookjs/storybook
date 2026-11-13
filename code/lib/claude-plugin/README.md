@@ -96,7 +96,7 @@ To remove a plugin:
 
 ## Usage
 
-The plugin's [skills](#skills) tell the agent how to work with your Storybook: reuse your components, generate stories, run tests, and preview its work. The `AGENTS.md` section below is the workflow that tells the agent which skill to use at which step. Add it to the `AGENTS.md` of each project where the agent should follow it. When you set up Storybook 11 with AI features, or accept the `skills` automigration when you upgrade, Storybook adds it for you (and to your `CLAUDE.md` or `CLAUDE.local.md`, if it does not import `AGENTS.md`):
+The plugin's [skills](#skills) tell the agent how to work with your Storybook: reuse your components, generate stories, run tests, and preview its work. The `AGENTS.md` section below is the workflow that tells the agent which skills to use and how to run the story tests for every UI change. Add it to the `AGENTS.md` of each project where the agent should follow it. When you set up Storybook 11 with AI features, or accept the `skills` automigration when you upgrade, Storybook adds it for you (and to your `CLAUDE.md` or `CLAUDE.local.md`, if it does not import `AGENTS.md`):
 
 ```md
 <!-- BEGIN:storybook-skills -->
@@ -108,9 +108,9 @@ For every change to how the UI looks (you create, change, or delete a component,
 
 1. `component-docs`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
 2. `write-stories`: every component you create or change gets stories.
-3. Run the story tests after every change, and fix what fails. Also when the user asks to run or fix story tests. Run them only with this command, from the package where Storybook is installed, never a `package.json` test script or `vitest`. Pass the files you changed:
-   - `npx storybook tools test run <Button.stories.tsx>`: the stories in that story file.
-   - `npx storybook tools test run <Button.tsx>`: every story that depends on that file.
+3. Run the story tests after every change, and fix what fails. Also when the user asks to run or fix story tests. Run them with `npx storybook tools test run` from the package where Storybook is installed, never with a `package.json` test script or `vitest`. Pass the files you changed, relative to that package:
+   - `npx storybook tools test run src/Button.stories.tsx`: the stories in that story file.
+   - `npx storybook tools test run src/Button.tsx`: every story that depends on that file.
    - `npx storybook tools test run`: every story.
 
 <!-- END:storybook-skills -->

@@ -13,7 +13,7 @@ describe('changing a shared accent token and testing its consumer stories', () =
   // The edited token file has no stories of its own, so the test run must cover
   // the stories of its *consumers* (Badge and StatusPill).
 
-  // The fallback assertions only count if the token change was actually done.
+  // The test-run assertions only count if the token change was actually done.
   test('changes the accent color token', () => {
     const colors = readFileSync('src/theme/colors.ts', 'utf8');
     expect(colors, 'Expected the accent token to change to #7c3aed').toMatch(/#7c3aed/i);

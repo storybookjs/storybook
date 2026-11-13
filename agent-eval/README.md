@@ -67,7 +67,7 @@ EVAL_ALL=1 yarn eval
 EVAL_ONLY=803-edit-component yarn eval
 ```
 
-A full `EVAL_ALL=1` run (14 workflow evals × 4 experiments + 4
+A full `EVAL_ALL=1` run (15 workflow evals × 4 experiments + 4
 lifecycle evals × 2 plugin experiments) costs roughly **$0.45** in agent
 tokens, as measured in November 2026: about $0.007 per eval on
 Haiku 5.5 low and on gpt-6-luna low with Sol's test rules, against about

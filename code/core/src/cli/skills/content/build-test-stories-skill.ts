@@ -25,9 +25,9 @@ This project cannot run story tests: it has no \`@storybook/addon-vitest\`. Skip
     : '';
   const command = v.cli
     ? `\`\`\`sh
-${v.ref('test.run')} <Button.stories.tsx>   # the stories in that story file
-${v.ref('test.run')} <Button.tsx>           # every story that depends on that file
-${v.ref('test.run')}                        # every story
+${v.ref('test.run')} src/Button.stories.tsx   # the stories in that story file
+${v.ref('test.run')} src/Button.tsx           # every story that depends on that file
+${v.ref('test.run')}                          # every story
 \`\`\``
     : `- ${v.name('test.run')} with \`files: ["src/Button.stories.tsx"]\`: the stories in that story file
 - ${v.name('test.run')} with \`files: ["src/Button.tsx"]\`: every story that depends on that file

@@ -157,7 +157,7 @@ describe('runSkillsCommand', () => {
     const testStories = await runSkillsCommand({ tokens: ['test-stories'], target: {} }, d);
     const uiReview = await runSkillsCommand({ tokens: ['ui-review'], target: {} }, d);
 
-    expect(testStories.output).toContain('npx storybook tools test run <Button.tsx>');
+    expect(testStories.output).toContain('npx storybook tools test run src/Button.tsx');
     expect(testStories.output).not.toContain('review create');
     expect(testStories.output).not.toContain('stories changed');
     expect(uiReview.output).toContain("npx storybook tools review create --input '{");

@@ -42,6 +42,8 @@ const CLAUDE_FILES = [
   { file: 'CLAUDE.local.md', importsAgentsMd: /(^|\s)@(\.\/)?AGENTS\.md\b/m },
 ];
 
+const TEST_COMMAND = 'storybook tools test run';
+
 // Also matches a section the user customized, so it is not added a second time: one written by
 // an 11.0 prerelease, which named every skill, or one that keeps only the test command.
 const NAMES_A_STORYBOOK_SKILL =
@@ -139,21 +141,27 @@ export async function addStorybookAgentInstructions(
   inputs: AgentInstructionsInputs = { testSupported: true }
 ): Promise<AgentInstructionsChange[]> {
   const existing = new Map<string, string | undefined>();
-  const files = await planStorybookAgentInstructions(
-    async (file) => {
-      try {
-        const content = await readFile(join(root, file), 'utf8');
-        existing.set(file, content);
-        return content;
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-          return undefined;
-        }
-        throw error;
+  const read = async (file: string) => {
+    try {
+      const content = await readFile(join(root, file), 'utf8');
+      existing.set(file, content);
+      return content;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return undefined;
       }
-    },
+      throw error;
+    }
+  };
+  // Every Storybook of a monorepo shares this file. An install for one without addon-vitest keeps
+  // the test step another one put there; only an upgrade, which checks every Storybook, drops it.
+  const testSupported =
+    inputs.testSupported ||
+    (mode === 'install' && !!findSection(await read('AGENTS.md'))?.includes(TEST_COMMAND));
+  const files = await planStorybookAgentInstructions(
+    read,
     mode,
-    storybookAgentInstructions(inputs)
+    storybookAgentInstructions({ testSupported })
   );
   const changes: AgentInstructionsChange[] = [];
   for (const [file, content] of Object.entries(files)) {

@@ -246,7 +246,7 @@ describe('stories.preview', () => {
 
       expect(outcome.markdown).toEqual([
         previewUrl,
-        'These preview links are for iterating or sharing a specific story — they are not how a browse request or a requested review ends. The review-create tool is available in this session: when the user asked for a review or to see a set of stories, publish the review with **review-create** and link that instead.',
+        'These preview links are for iterating or sharing a specific story — they are not how a browse request or a requested review ends. The review-create tool is available in this session: when the user (or the agent instructions of the project) asked for a review, or the user asked to see a set of stories, publish the review with **review-create** and link that instead.',
       ]);
       expect(outcome.data.instructions).toContain('publish the review with **review-create**');
     });
@@ -733,7 +733,7 @@ Change detection has not processed these changed files yet, although stories ren
 New stories:
 - \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)
 
-Next: when the user asked for a review or to see the stories of the change, publish the review as your last step, after your remaining tests and checks — run \`npx storybook skills ui-review --mcp\` first if you have not yet, then call **review-create** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it. A change with no visible effect, such as to a callback, tests or types, gets no review: say that nothing visible changed. This list covers your edits so far: run it again only after another edit.`
+Next: when the user (or the agent instructions of the project) asked for a review, or the user asked to see the stories of the change, publish the review as your last step, after your remaining tests and checks — run \`npx storybook skills ui-review --mcp\` first if you have not yet, then call **review-create** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it. A change with no visible effect, such as to a callback, tests or types, gets no review: say that nothing visible changed. This list covers your edits so far: run it again only after another edit.`
       );
     });
 
@@ -755,7 +755,7 @@ Changed files in the Storybook config directory, which can affect every story: \
 
 Coverage sanity check: the working tree also contains modified file(s) that aren't reachable from any story (no static import path connects them), so this result can miss stories they affect: \`${changedThemeFile}\`. A component: write its stories, or tell the user. A file used without an import, such as a CSS-variable token: pass the components that use it to \`stories-find-by-component\`. Anything else, such as an app entry file: leave it out of the review. Never invent story IDs to fill the gap.
 
-Next: when the user asked for a review or to see the stories of the change, publish the review as your last step, after your remaining tests and checks — run \`npx storybook skills ui-review --mcp\` first if you have not yet, then call **review-create** curating these story IDs and any you found for the files listed above. That review link is how you finish; do not substitute individual preview URLs for it. A change with no visible effect, such as to a callback, tests or types, gets no review: say that nothing visible changed. This list covers your edits so far: run it again only after another edit.`
+Next: when the user (or the agent instructions of the project) asked for a review, or the user asked to see the stories of the change, publish the review as your last step, after your remaining tests and checks — run \`npx storybook skills ui-review --mcp\` first if you have not yet, then call **review-create** curating these story IDs and any you found for the files listed above. That review link is how you finish; do not substitute individual preview URLs for it. A change with no visible effect, such as to a callback, tests or types, gets no review: say that nothing visible changed. This list covers your edits so far: run it again only after another edit.`
       );
     });
 
@@ -884,11 +884,11 @@ describe('descriptions', () => {
   it('describes preview as a mid-loop tool', () => {
     expect(resolveToolsetDescription(toolset.methods.preview.description, mcpCtx))
       .toBe(`Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
-Do not end visual work or browse requests with these links — publish a curated review with review-create instead (passing changedFiles: [] when no code changed) and link that.`);
+Do not end browse requests or a review that was asked for with these links — publish a curated review with review-create instead (passing changedFiles: [] when no code changed) and link that.`);
 
     expect(resolveToolsetDescription(toolset.methods.preview.description, cliCtx))
       .toBe(`Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
-Do not end visual work or browse requests with these links — publish a curated review with npx storybook tools review create instead (passing changedFiles: [] when no code changed) and link that.`);
+Do not end browse requests or a review that was asked for with these links — publish a curated review with npx storybook tools review create instead (passing changedFiles: [] when no code changed) and link that.`);
   });
 
   it('keeps review-create out of the static preview output schema', () => {

@@ -47,16 +47,38 @@ describe('addStorybookAgentInstructions', () => {
 
   it('wraps the section in markers, with the heading, the two skills and the test command', () => {
     expect(STORYBOOK_AGENT_INSTRUCTIONS).toMatch(
-      /^<!-- BEGIN:storybook-skills -->\n[\s\S]*## Storybook\n[\s\S]*1\. `component-docs`[\s\S]*2\. `write-stories`[\s\S]*3\. Run the story tests[\s\S]*`npx storybook tools test run <Button\.tsx>`[\s\S]*<!-- END:storybook-skills -->\n$/
+      /^<!-- BEGIN:storybook-skills -->\n[\s\S]*## Storybook\n[\s\S]*1\. `component-docs`[\s\S]*2\. `write-stories`[\s\S]*3\. Run the story tests[\s\S]*`npx storybook tools test run src\/Button\.tsx`[\s\S]*<!-- END:storybook-skills -->\n$/
     );
     expect(STORYBOOK_AGENT_INSTRUCTIONS).not.toContain('ui-review');
   });
+
+  // Plugin users copy the section from these files by hand.
+  it.each(['code/lib/claude-plugin/README.md', 'code/lib/codex-plugin/README.md', 'MIGRATION.md'])(
+    '%s prints the current section',
+    async (file) => {
+      const fs = await vi.importActual<typeof import('node:fs')>('node:fs');
+      const repoRoot = join(import.meta.dirname, '../../../..');
+      expect(fs.readFileSync(join(repoRoot, file), 'utf8')).toContain(STORYBOOK_AGENT_INSTRUCTIONS);
+    }
+  );
 
   it('writes the section without the test step for a project without addon-vitest', async () => {
     await addStorybookAgentInstructions(ROOT, 'install', { testSupported: false });
 
     expect(read('AGENTS.md')).toBe(storybookAgentInstructions({ testSupported: false }));
     expect(read('AGENTS.md')).not.toContain('test run');
+  });
+
+  it('keeps the test step of another Storybook when one without addon-vitest installs', async () => {
+    vol.writeFileSync(join(ROOT, 'AGENTS.md'), STORYBOOK_AGENT_INSTRUCTIONS);
+
+    expect(await addStorybookAgentInstructions(ROOT, 'install', { testSupported: false })).toEqual(
+      []
+    );
+    expect(await addStorybookAgentInstructions(ROOT, 'update', { testSupported: false })).toEqual([
+      { file: 'AGENTS.md', change: 'updated' },
+    ]);
+    expect(read('AGENTS.md')).toBe(storybookAgentInstructions({ testSupported: false }));
   });
 
   // The section that 11.0.0-beta.2 wrote, word for word.

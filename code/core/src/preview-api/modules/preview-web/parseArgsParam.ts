@@ -100,7 +100,8 @@ const QUERY_OPTIONS: Partial<Options> = {
     }
 
     if (NUMBER_REGEXP.test(str)) {
-      return Number(str);
+      const number = Number(str);
+      return String(number) === str ? number : str;
     }
     return str;
   },

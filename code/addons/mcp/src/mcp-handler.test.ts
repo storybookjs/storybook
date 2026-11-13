@@ -336,7 +336,7 @@ describe('mcpServerHandler', () => {
     expect(parsedResponse.result.instructions).toContain(
       '`npx storybook skills write-stories --mcp`: every component'
     );
-    expect(parsedResponse.result.instructions).toContain('Call `test-run` for them');
+    expect(parsedResponse.result.instructions).toContain('Call `test-run` (never a `package.json`');
     // A review is no step: the agent runs ui-review only when the user asks.
     expect(parsedResponse.result.instructions).not.toMatch(
       /^\d\. `npx storybook skills ui-review/m

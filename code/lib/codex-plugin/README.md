@@ -62,7 +62,7 @@ The plugin's [skills](#skills) tell the agent how to work with your Storybook: r
 
 ## Storybook
 
-For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. First invoke the skills of steps 1 and 2, before you edit any file. Then follow each skill at its step.
+For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. First invoke the Storybook skills of steps 1 and 2, before you edit any file. Then follow each skill at its step.
 
 1. `component-docs`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
 2. `write-stories`: every component you create or change gets stories.
@@ -71,10 +71,12 @@ For every change to how the UI looks (you create, change, or delete a component,
    - `npx storybook tools test run src/Button.stories.tsx`: the stories in these story files.
    - `npx storybook tools test run`: every story.
 
+After a change the user can see, end your answer with the line "Use the /ui-review skill to see the changed components in Storybook" for the user. Do not run the review yourself, and leave the line out when you published a review in this task.
+
 <!-- END:storybook-skills -->
 ```
 
-Storybook replaces the text between the markers when you upgrade. The section is the workflow: the first two steps name the skill the agent uses for them, and the third is the test command itself, so the agent runs the tests from that line alone. A project without `@storybook/addon-vitest` cannot run story tests and gets no test step. To change the workflow, for example to have the agent publish a review after every change, remove both markers and edit the section. Remove the whole section to stop the agent from following the workflow: it then uses a skill only when you ask for it, or when it finds one that fits its task. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
+Storybook replaces the text between the markers when you upgrade. The section is the workflow: the first two steps name the skill the agent uses for them, and the third is the test command itself, so the agent runs the tests from that line alone. A project without `@storybook/addon-vitest` cannot run story tests and gets no test step. After a change you can see, the agent ends its answer with a line that offers the `ui-review` skill; it does not publish a review unless you ask. To change the workflow, for example to drop that line or to have the agent publish a review after every change, remove both markers and edit the section. An edit between the markers lasts only until the next upgrade, which writes the section again. Remove the whole section to stop the agent from following the workflow: it then uses a skill only when you ask for it, or when it finds one that fits its task. You can also call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions. See [Skills and plugins](https://storybook.js.org/docs/ai/skills) for more details.
 
 When you ask to see stories or for a review, the agent will use the plugin to open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/agentic-review) in the ADE preview, so you can review the agent's work.
 

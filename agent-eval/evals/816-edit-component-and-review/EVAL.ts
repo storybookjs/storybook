@@ -1,9 +1,10 @@
 import {
-  expectDisplayReviewForVisualChange,
-  expectDevServerLeftRunning,
   expectAnyWorkflowSkillInvoked,
+  expectDevServerLeftRunning,
+  expectDisplayReviewForVisualChange,
   expectFocusedTestRun,
   expectNoOtherTestRunner,
+  expectNoReviewHint,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
@@ -36,6 +37,10 @@ describe('editing ReviewCard and publishing the review the user asks for', () =>
 
   test('discovers stories through the workflow tools before publishing the review', () => {
     expectStoryDiscoveryBeforeReview();
+  });
+
+  test('leaves out the review line after publishing the review', () => {
+    expectNoReviewHint();
   });
 
   describe('depending on the current agent and integration', () => {

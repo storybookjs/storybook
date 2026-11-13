@@ -49,7 +49,7 @@ describe('addStorybookAgentInstructions', () => {
     expect(STORYBOOK_AGENT_INSTRUCTIONS).toMatch(
       /^<!-- BEGIN:storybook-skills -->\n[\s\S]*## Storybook\n[\s\S]*1\. `component-docs`[\s\S]*2\. `write-stories`[\s\S]*3\. Run the story tests[\s\S]*`npx storybook tools test run --changed`[\s\S]*<!-- END:storybook-skills -->\n$/
     );
-    expect(STORYBOOK_AGENT_INSTRUCTIONS).not.toContain('ui-review');
+    expect(STORYBOOK_AGENT_INSTRUCTIONS).not.toMatch(/^\d\. .*ui-review/m);
   });
 
   // Plugin users copy the section from these files by hand.

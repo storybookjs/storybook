@@ -4,6 +4,7 @@ import {
   expectFocusedTestRun,
   expectNoDisplayReview,
   expectNoOtherTestRunner,
+  expectReviewHint,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
@@ -25,6 +26,10 @@ describe('writing stories for an existing AlertBanner', () => {
     expectFocusedTestRun();
     expectNoOtherTestRunner();
     expectNoDisplayReview();
+  });
+
+  test('ends the answer with the line that offers a review', () => {
+    expectReviewHint();
   });
 
   describe('depending on the current agent and integration', () => {

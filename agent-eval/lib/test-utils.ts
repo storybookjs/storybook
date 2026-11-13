@@ -240,14 +240,42 @@ export function expectFocusedTestRun(): void {
   ).toBe(true);
 }
 
-// Story tests run only through Storybook: never a package.json test script or vitest directly.
-// Only as a command of its own, so `grep vitest package.json` does not count.
-// Workspace flags may sit between the package manager and the script (`npm -w ui run test`,
-// `pnpm --filter ui test`, `yarn workspace ui test`).
-const OTHER_TEST_RUNNER =
-  /(?:^|[;&|(])\s*(?:(?:npm|yarn|pnpm|bun)(?:\s+(?:-\S+|workspace)(?:\s+(?!run\b|test)[^\s;&|]+)?)*\s+(?:run\s+)?test[\w:-]*|(?:npx\s+|pnpm\s+(?:exec\s+)?|yarn\s+)?vitest)(?=\s|$|[;&|)])/;
+// The line the workflow asks for at the end of an answer after a visible change, so the user
+// learns they can ask for a review. Any spelling of the skill name counts (\`/storybook:ui-review\`,
+// \`$ui-review\`).
+const REVIEW_HINT = /ui-review\b[^\n]{0,20}skill to see the changed components in Storybook/i;
 
-export const isOtherTestRunner = (command: string): boolean => OTHER_TEST_RUNNER.test(command);
+export function expectReviewHint(): void {
+  expect(
+    getFinalAssistantMessage() ?? '',
+    'Expected the final answer to end with the line that offers the ui-review skill'
+  ).toMatch(REVIEW_HINT);
+}
+
+export function expectNoReviewHint(): void {
+  expect(
+    getFinalAssistantMessage() ?? '',
+    'Expected no ui-review line in the final answer: nothing visible changed, or a review was just published'
+  ).not.toMatch(REVIEW_HINT);
+}
+
+// Story tests run only through Storybook: never a package.json test script or vitest directly.
+// Only as a command of its own, so `grep vitest package.json` does not count. Workspace flags may
+// sit between the package manager and the script (`npm -w ui run test`, `pnpm --filter ui test`,
+// `yarn workspace ui test`), and vitest may come through any runner or `node_modules/.bin`.
+const OTHER_TEST_RUNNER = new RegExp(
+  String.raw`(?:^|[;&|(])\s*(?:\w+=\S*\s+)*(?:` +
+    String.raw`(?:npm|yarn|pnpm|bun)(?:\s+(?:-\S+|workspace)(?:\s+(?!(?:run|test)(?=\s|$))[^\s;&|]+)?)*\s+(?:run\s+)?test[\w:-]*` +
+    '|' +
+    String.raw`(?:npx(?:\s+-\S+)*\s+|bunx\s+|npm\s+exec\s+(?:--\s+)?|pnpm\s+(?:exec|dlx)\s+|yarn\s+(?:exec\s+)?|\S*node_modules/\.bin/)?vitest(?:@\S+)?` +
+    String.raw`)(?=\s|$|[;&|)])`
+);
+
+// A command segment that runs `storybook tools` is the right command, whatever flags precede it.
+export const isOtherTestRunner = (command: string): boolean =>
+  command
+    .split(/&&|\|\||[;|]/)
+    .some((segment) => !segment.includes('storybook tools') && OTHER_TEST_RUNNER.test(segment));
 
 export function expectNoOtherTestRunner(): void {
   const others = getShellCommands().filter(isOtherTestRunner);

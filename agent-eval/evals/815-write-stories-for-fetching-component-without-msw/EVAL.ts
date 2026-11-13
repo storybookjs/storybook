@@ -5,6 +5,7 @@ import {
   expectFocusedTestRun,
   expectNoDisplayReview,
   expectNoOtherTestRunner,
+  expectReviewHint,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
@@ -78,4 +79,7 @@ describe('writing stories for a fetching OrderHistory in a project without MSW',
       expectAnyWorkflowSkillInvoked();
     }
   );
+  test('ends the answer with the line that offers a review', () => {
+    expectReviewHint();
+  });
 });

@@ -18,14 +18,16 @@ describe('buildAgentInstructions', () => {
     expect(buildAgentInstructions()).toMatchInlineSnapshot(`
       "## Storybook
 
-      For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. First invoke the skills of steps 1 and 2, before you edit any file. Then follow each skill at its step.
+      For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. First invoke the Storybook skills of steps 1 and 2, before you edit any file. Then follow each skill at its step.
 
       1. \`component-docs\`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
       2. \`write-stories\`: every component you create or change gets stories.
       3. Run the story tests after every change, and fix what fails. Also when the user asks to run or fix story tests. Run them from the package where Storybook is installed, never with a \`package.json\` test script or \`vitest\`:
          - \`npx storybook tools test run --changed\`: the stories your uncommitted changes reach. Run this after a change.
          - \`npx storybook tools test run src/Button.stories.tsx\`: the stories in these story files.
-         - \`npx storybook tools test run\`: every story."
+         - \`npx storybook tools test run\`: every story.
+
+      After a change the user can see, end your answer with the line "Use the /ui-review skill to see the changed components in Storybook" for the user. Do not run the review yourself, and leave the line out when you published a review in this task."
     `);
   });
 
@@ -37,8 +39,13 @@ describe('buildAgentInstructions', () => {
     expect(instructions).not.toContain('test run');
   });
 
-  it('leaves the review to the user: no ui-review step', () => {
-    expect(buildAgentInstructions()).not.toMatch(/ui-review|review/);
+  it('leaves the review to the user, and ends a visible change with a line that offers it', () => {
+    const instructions = buildAgentInstructions();
+
+    expect(instructions).not.toMatch(/^\d\. .*ui-review/m);
+    expect(instructions.split('\n').at(-1)).toBe(
+      'After a change the user can see, end your answer with the line "Use the /ui-review skill to see the changed components in Storybook" for the user. Do not run the review yourself, and leave the line out when you published a review in this task.'
+    );
   });
 });
 
@@ -60,11 +67,13 @@ describe('buildServerInstructions', () => {
     expect(buildServerInstructions(everything)).toMatchInlineSnapshot(`
       "## Storybook
 
-      For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. First run the skills of steps 1 and 2, before you edit any file: each in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`. Then follow each skill at its step.
+      For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow these steps in order. First run the Storybook skills of steps 1 and 2, before you edit any file: each in a command of its own, from the package where Storybook is installed, and read its whole output, without \`head\` or \`tail\`. Then follow each skill at its step.
 
       1. \`npx storybook skills component-docs --mcp\`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
       2. \`npx storybook skills write-stories --mcp\`: every component you create or change gets stories.
-      3. Run the story tests after every change, and fix what fails. Also when the user asks to run or fix story tests. Call \`test-run\` for them, never with a \`package.json\` test script or \`vitest\`: with \`changed: true\` after a change, for the stories your uncommitted changes reach; with \`files\` for the stories in those story files; with neither for every story.
+      3. Run the story tests after every change, and fix what fails. Also when the user asks to run or fix story tests. Call \`test-run\` (never a \`package.json\` test script or \`vitest\`): with \`changed: true\` after a change, for the stories your uncommitted changes reach; with \`files: ["src/Button.stories.tsx"]\` for the stories in those story files; with neither for every story.
+
+      After a change the user can see, end your answer with the line "Use the /ui-review skill to see the changed components in Storybook" for the user. Do not run the review yourself, and leave the line out when you published a review in this task.
 
       Run the skill of a step before you call a tool of that step, also when the request is only that step.
 
@@ -89,7 +98,7 @@ describe('buildServerInstructions', () => {
     expect(testStep(buildAgentInstructions())).toContain(rules);
     expect(testStep(buildServerInstructions(everything))).toContain(rules);
     expect(testStep(buildServerInstructions(everything))).toContain(
-      'never with a `package.json` test script or `vitest`'
+      'never a `package.json` test script or `vitest`'
     );
   });
 
@@ -111,9 +120,12 @@ describe('buildServerInstructions', () => {
 
     expect(instructions).toContain('1. `npx storybook skills component-docs --mcp`');
     expect(instructions).toContain('2. Run the story tests');
-    expect(instructions).toContain('First run the skill of step 1, before you edit any file');
+    expect(instructions).toContain(
+      'First run the Storybook skill of step 1, before you edit any file'
+    );
     expect(instructions).not.toContain('write-stories');
     expect(instructions).not.toContain('review-create');
+    expect(instructions).not.toContain('ui-review');
   });
 
   it('names one step for one toolset', () => {
@@ -136,7 +148,7 @@ describe('buildServerInstructions', () => {
 
         For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), follow this step.
 
-        1. Run the story tests after every change, and fix what fails. Also when the user asks to run or fix story tests. Call \`test-run\` for them, never with a \`package.json\` test script or \`vitest\`: with \`changed: true\` after a change, for the stories your uncommitted changes reach; with \`files\` for the stories in those story files; with neither for every story."
+        1. Run the story tests after every change, and fix what fails. Also when the user asks to run or fix story tests. Call \`test-run\` (never a \`package.json\` test script or \`vitest\`): with \`changed: true\` after a change, for the stories your uncommitted changes reach; with \`files: ["src/Button.stories.tsx"]\` for the stories in those story files; with neither for every story."
       `);
   });
 

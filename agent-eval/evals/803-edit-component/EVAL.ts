@@ -3,6 +3,7 @@ import {
   expectFocusedTestRun,
   expectNoDisplayReview,
   expectNoOtherTestRunner,
+  expectReviewHint,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
@@ -25,6 +26,10 @@ describe('editing ReviewCard to add date and optional onReport', () => {
     expectFocusedTestRun();
     expectNoOtherTestRunner();
     expectNoDisplayReview();
+  });
+
+  test('ends the answer with the line that offers a review', () => {
+    expectReviewHint();
   });
 
   describe('depending on the current agent and integration', () => {

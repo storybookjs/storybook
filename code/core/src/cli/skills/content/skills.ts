@@ -26,7 +26,8 @@ export const SKILLS: Record<SkillId, { blurb: string }> = {
     blurb: 'Run the story tests, with their accessibility checks, and fix what fails.',
   },
   'ui-review': {
-    blurb: 'Find the stories a change affects and publish a review that shows them to the user.',
+    blurb:
+      'When the user asks for a review: find the stories a change affects and publish a review that shows them.',
   },
   setup: {
     blurb: 'Setup instructions to write stories for the real components in this project.',

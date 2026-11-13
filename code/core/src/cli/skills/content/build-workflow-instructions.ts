@@ -40,7 +40,7 @@ function testStep(number: number, transport: SkillTextTransport): string {
   const never = 'never with a `package.json` test script or `vitest`';
   if (transport === 'mcp') {
     const run = `\`${getToolName({ transport })('test.run')}\``;
-    return `${does} Call ${run} for them, ${never}: with \`changed: true\` after a change, for the stories your uncommitted changes reach; with \`files\` for the stories in those story files; with neither for every story.`;
+    return `${does} Call ${run} (${never.replace('never with', 'never')}): with \`changed: true\` after a change, for the stories your uncommitted changes reach; with \`files: ["src/Button.stories.tsx"]\` for the stories in those story files; with neither for every story.`;
   }
   // Example paths, not placeholders in angle brackets, which a shell reads as a redirect.
   return `${does} Run them from the package where Storybook is installed, ${never}:
@@ -67,12 +67,12 @@ function buildWorkflow(inputs: ServerInstructionsInputs, transport: SkillTextTra
   let open =
     skillSteps.length > 1
       ? cli
-        ? `First invoke the skills of steps ${skillSteps.join(' and ')}, before you edit any file. Then follow each skill at its step.`
-        : `First run the skills of steps ${skillSteps.join(' and ')}, before you edit any file: each ${inOwnCommand}. Then follow each skill at its step.`
+        ? `First invoke the Storybook skills of steps ${skillSteps.join(' and ')}, before you edit any file. Then follow each skill at its step.`
+        : `First run the Storybook skills of steps ${skillSteps.join(' and ')}, before you edit any file: each ${inOwnCommand}. Then follow each skill at its step.`
       : skillSteps.length === 1
         ? cli
-          ? `First invoke the skill of step ${skillSteps[0]}, before you edit any file. Then follow it at its step.`
-          : `First run the skill of step ${skillSteps[0]}, before you edit any file, ${inOwnCommand}. Then follow it at its step.`
+          ? `First invoke the Storybook skill of step ${skillSteps[0]}, before you edit any file. Then follow it at its step.`
+          : `First run the Storybook skill of step ${skillSteps[0]}, before you edit any file, ${inOwnCommand}. Then follow it at its step.`
         : '';
   if (steps.length === 1 && skillSteps.length === 1) {
     open = cli
@@ -80,12 +80,26 @@ function buildWorkflow(inputs: ServerInstructionsInputs, transport: SkillTextTra
       : `It has a Storybook skill. Run it before you edit any file, ${inOwnCommand}, and follow it.`;
   }
   const follow = steps.length > 1 ? 'follow these steps in order.' : 'follow this step.';
+  // Without the `dev` toolset there is no review to point to.
+  const hint = inputs.devEnabled ? `\n\n${REVIEW_HINT}` : '';
   return `## Storybook
 
 For every change to how the UI looks (you create, change, or delete a component, story, style, theme, or design token), ${[follow, open].filter(Boolean).join(' ')}
 
-${lines.join('\n')}`;
+${lines.join('\n')}${hint}`;
 }
+
+/**
+ * A review costs about a thousand tokens and a running dev server, so the agent does not publish
+ * one on its own. This line tells the user they can ask for one, at the cost of a few tokens. It is
+ * in this persistent section, not in a skill or a command output: by the final answer those are
+ * many calls back, and agents left such end-of-answer lines out. One line, so a user who does not
+ * want it removes it in one go. The line itself is quoted, so an agent does not read it as an
+ * instruction to run the review.
+ */
+export const REVIEW_HINT_LINE =
+  'Use the /ui-review skill to see the changed components in Storybook';
+const REVIEW_HINT = `After a change the user can see, end your answer with the line "${REVIEW_HINT_LINE}" for the user. Do not run the review yourself, and leave the line out when you published a review in this task.`;
 
 /**
  * The `## Storybook` section that `create storybook` and `storybook upgrade` write in `AGENTS.md`.

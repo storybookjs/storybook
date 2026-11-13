@@ -29,7 +29,7 @@ describe('buildTestStoriesSkill', () => {
     expect(buildTestStoriesSkill({ ...everything, testSupported: false })).toMatchInlineSnapshot(`
       "# Test the stories
 
-      This project cannot run story tests: it has no \`@storybook/addon-vitest\`. Skip this step."
+      This project cannot run story tests: it has no \`@storybook/addon-vitest\`. Skip the story tests."
     `);
     expect(buildTestStoriesSkill({ ...everything, transport: 'mcp', testSupported: false })).toBe(
       buildTestStoriesSkill({ ...everything, testSupported: false })
@@ -40,11 +40,11 @@ describe('buildTestStoriesSkill', () => {
     const text = buildTestStoriesSkill({ ...everything, transport: 'mcp', toolsetOff: true });
 
     expect(text).toContain(
-      'The `main.ts` of this project turns the `test` toolset of the Storybook MCP server off. When the server does not give you `test-run`, skip this step.'
+      'The `main.ts` of this project turns the `test` toolset of the Storybook MCP server off. When the server does not give you `test-run`, skip the story tests.'
     );
     expect(text).toContain('Call it after every change');
     expect(buildTestStoriesSkill({ ...everything, transport: 'mcp' })).not.toContain(
-      'skip this step'
+      'skip the story tests'
     );
   });
 
@@ -88,7 +88,7 @@ describe('buildTestStoriesSkill', () => {
       - \`test-run\` with \`files: ["src/Button.stories.tsx"]\`: the stories in these story files
       - \`test-run\` with neither: every story
 
-      Call it after every change, with \`changed\` set, and fix what fails. It is the only way to run story tests: never a \`package.json\` test script (such as \`npm run test:stories\`) or \`vitest\` directly, also when the user asks you to run the tests."
+      Call it after every change, with \`changed: true\`, and fix what fails. It is the only way to run story tests: never a \`package.json\` test script (such as \`npm run test:stories\`) or \`vitest\` directly, also when the user asks you to run the tests."
     `);
   });
 });

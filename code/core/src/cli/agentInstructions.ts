@@ -42,7 +42,8 @@ const CLAUDE_FILES = [
   { file: 'CLAUDE.local.md', importsAgentsMd: /(^|\s)@(\.\/)?AGENTS\.md\b/m },
 ];
 
-const TEST_COMMAND = 'storybook tools test run';
+// The test step of this section, or of the 11.0 prereleases, which named the `test-stories` skill.
+const TEST_STEP = /storybook tools test run|`test-stories`/;
 
 // Also matches a section the user customized, so it is not added a second time: one written by
 // an 11.0 prerelease, which named every skill, or one that keeps only the test command.
@@ -157,7 +158,7 @@ export async function addStorybookAgentInstructions(
   // the test step another one put there; only an upgrade, which checks every Storybook, drops it.
   const testSupported =
     inputs.testSupported ||
-    (mode === 'install' && !!findSection(await read('AGENTS.md'))?.includes(TEST_COMMAND));
+    (mode === 'install' && TEST_STEP.test(findSection(await read('AGENTS.md')) ?? ''));
   const files = await planStorybookAgentInstructions(
     read,
     mode,

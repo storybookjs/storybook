@@ -1,7 +1,8 @@
 import {
-  expectDisplayReviewForBrowseRequest,
-  expectDevServerLeftRunning,
   expectAnyWorkflowSkillInvoked,
+  expectDevServerLeftRunning,
+  expectDisplayReviewForBrowseRequest,
+  expectNoReviewHint,
   expectStoryIdsInDisplayReview,
   expectWorkflowCalls,
   getEvalContext,
@@ -21,6 +22,10 @@ describe('browsing existing ReviewCard Storybook states', () => {
       'reviewcard--with-long-comment',
       'reviewcard--low-rating',
     ]);
+  });
+
+  test('leaves out the review line after publishing the review', () => {
+    expectNoReviewHint();
   });
 
   describe('depending on the current agent and integration', () => {

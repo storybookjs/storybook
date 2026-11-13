@@ -3,6 +3,7 @@ import {
   expectFocusedTestRun,
   expectNoDisplayReview,
   expectNoOtherTestRunner,
+  expectReviewHint,
   expectStoryTestsRanAndPassed,
   getEvalContext,
 } from '#test-utils';
@@ -31,6 +32,10 @@ describe('changing a shared accent token and testing its consumer stories', () =
     expectFocusedTestRun();
     expectNoOtherTestRunner();
     expectNoDisplayReview();
+  });
+
+  test('ends the answer with the line that offers a review', () => {
+    expectReviewHint();
   });
 
   describe('depending on the current agent and integration', () => {

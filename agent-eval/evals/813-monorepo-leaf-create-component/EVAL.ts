@@ -5,6 +5,7 @@ import {
   expectFocusedTestRun,
   expectNoDisplayReview,
   expectNoOtherTestRunner,
+  expectReviewHint,
   expectStoryTestsRanAndPassed,
   expectWorkflowCalls,
   getEvalContext,
@@ -39,6 +40,10 @@ describe('creating a Callout in a monorepo UI package', () => {
     expectFocusedTestRun();
     expectNoOtherTestRunner();
     expectNoDisplayReview();
+  });
+
+  test('ends the answer with the line that offers a review', () => {
+    expectReviewHint();
   });
 
   describe('depending on the current agent and integration', () => {

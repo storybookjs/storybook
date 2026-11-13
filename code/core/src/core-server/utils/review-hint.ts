@@ -19,7 +19,10 @@ export async function initializeReviewHint() {
     store.setState({ dismissedAt: settings.value.reviewHint?.dismissedAt, loaded: true });
 
     store.onStateChange(({ dismissedAt }) => {
-      if (dismissedAt === settings.value.reviewHint?.dismissedAt) {
+      // Anything on the channel can set the state. A value the settings schema rejects would make
+      // the next start replace the whole settings file with defaults.
+      const valid = dismissedAt === undefined || typeof dismissedAt === 'number';
+      if (!valid || dismissedAt === settings.value.reviewHint?.dismissedAt) {
         return;
       }
       settings.value.reviewHint = { ...settings.value.reviewHint, dismissedAt };

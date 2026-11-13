@@ -8,6 +8,10 @@ import {
   createChecklistStore,
 } from '../shared/checklist-store/index.ts';
 import {
+  type ReviewHintStoreState,
+  UNIVERSAL_REVIEW_HINT_STORE_OPTIONS,
+} from '../shared/review-hint-store/index.ts';
+import {
   type StatusStoreEvent,
   type StatusesByStoryIdAndTypeId,
   createStatusStore,
@@ -19,10 +23,6 @@ import type {
 } from '../shared/test-provider-store/index.ts';
 import { UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS } from '../shared/test-provider-store/index.ts';
 import { createTestProviderStore } from '../shared/test-provider-store/index.ts';
-import {
-  type ReviewHintStoreState,
-  UNIVERSAL_REVIEW_HINT_STORE_OPTIONS,
-} from '../shared/review-hint-store/index.ts';
 import type { UniversalStore } from '../shared/universal-store/index.ts';
 
 export const {

@@ -244,13 +244,15 @@ export const ReviewActive: Story = {
   },
 };
 
-/** Until the server has read the user settings, the hint does not know whether it was dismissed. */
-export const SettingsLoading: Story = {
+/** Hidden until the server has read the user settings, since only they say whether it was dismissed. */
+export const AppearsOnceSettingsLoad: Story = {
   beforeEach: () => {
     reviewHintStore.setState({});
   },
   play: async ({ canvas }) => {
     await expect(canvas.queryByRole('region')).toBeNull();
+    reviewHintStore.setState({ loaded: true });
+    await expect(await canvas.findByRole('region')).toBeVisible();
   },
 };
 
@@ -258,12 +260,32 @@ export const SettingsLoading: Story = {
  * On a first run the onboarding checklist shows its own "Set up with AI" step with a prompt to
  * copy. The hint waits until that step is done, so the sidebar does not show two prompt cards.
  */
-export const HiddenWhileChecklistShowsAiSetup: Story = {
+export const AppearsOnceChecklistAiSetupIsDone: Story = {
   beforeEach: () => {
     checklistStore.setState({ ...checklistInitialState, loaded: true, aiOptIn: true });
   },
   play: async ({ canvas }) => {
     await expect(canvas.queryByRole('region')).toBeNull();
+    checklistStore.setState((state) => ({
+      ...state,
+      items: { ...state.items, aiSetup: { status: 'done' } },
+    }));
+    await expect(await canvas.findByRole('region')).toBeVisible();
+  },
+};
+
+/** With the onboarding checklist turned off, its "Set up with AI" step does not hold the hint back. */
+export const ChecklistTurnedOff: Story = {
+  beforeEach: () => {
+    checklistStore.setState({ ...checklistInitialState, loaded: true, aiOptIn: true });
+    const features = global.FEATURES;
+    global.FEATURES = { ...features, sidebarOnboardingChecklist: false };
+    return () => {
+      global.FEATURES = features;
+    };
+  },
+  play: async ({ canvas }) => {
+    await expect(await canvas.findByRole('region')).toBeVisible();
   },
 };
 

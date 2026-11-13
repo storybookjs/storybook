@@ -205,6 +205,7 @@ describe('prop extraction', () => {
             size: 'small' | 'medium' | 'large';
             tone: Tone | 'custom';
             columns: 3 | 1 | 2;
+            offset: 2 | -1 | 0;
           }
           export const Button = (props: Props) => <button />;
         `
@@ -219,6 +220,7 @@ describe('prop extraction', () => {
       ]);
       expect(props?.tone.type.raw).toBe('"neutral" | "info" | "error" | "custom"');
       expect(props?.columns.type.raw).toBe('3 | 1 | 2');
+      expect(props?.offset.type.raw).toBe('2 | -1 | 0');
     });
 
     it('keeps the members of a TypeScript enum', async () => {

@@ -4,6 +4,7 @@ import { Worker } from 'node:worker_threads';
 
 import { logger } from 'storybook/internal/node-logger';
 
+import type { Options } from '../../../../../types/modules/core-common.ts';
 import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
 import { importMetaResolve } from '../../../../utils/module.ts';
 import type { ErrorLike } from '../../module-graph/types.ts';
@@ -13,11 +14,11 @@ import type { DocgenWorkerRequest, DocgenWorkerResponse } from './protocol.ts';
 // Resolved via the export map, not a hard-coded dist path, so strict layouts like pnpm's work.
 const WORKER_SPECIFIER = 'storybook/internal/docgen-worker';
 
-const DEFAULT_TASK_TIMEOUT_MS = 120_000;
+const DEV_TASK_TIMEOUT_MS = 120_000;
 
-// A build extracts every component with nobody waiting on a panel, so its slowest component gets
-// longer before the worker counts as hung.
-export const BUILD_TASK_TIMEOUT_MS = 300_000;
+// Builds can occur in CI on slower machines. Increase this timeout if we see reports of bailouts on
+// components that actually need more time to build.
+const BUILD_TASK_TIMEOUT_MS = 300_000;
 
 interface Pending {
   entry: IndexEntry;
@@ -33,11 +34,6 @@ export interface DocgenWorkerClient {
    * share once instead of per component. Optional: extraction works without it.
    */
   prepare(entries: IndexEntry[]): void;
-}
-
-export interface DocgenWorkerClientOptions {
-  /** How long one extraction may run before the worker counts as hung. `0` disables the limit. */
-  taskTimeoutMs?: number;
 }
 
 function errorLikeToError(errorLike: ErrorLike): Error {
@@ -61,6 +57,7 @@ class DocgenWorker implements DocgenWorkerClient {
   private nextId = 0;
   private death: Error | undefined;
   private served = false;
+  private timedOut = false;
 
   constructor(
     scriptPath: string,
@@ -113,12 +110,12 @@ class DocgenWorker implements DocgenWorkerClient {
   /**
    * Whether a fresh worker would be worth spawning in this one's place.
    *
-   * Only once it has served an extract: a worker that died without ever answering died of something
-   * a replacement would hit again, and respawning would rebuild a multi-second TypeScript program
-   * per request to fail the same way.
+   * A worker that died without ever answering died of something a replacement would hit again, and
+   * respawning would rebuild a multi-second TypeScript program per request to fail the same way. A
+   * worker terminated for one slow extraction is different: other components can still be served.
    */
   get replaceable(): boolean {
-    return this.death !== undefined && this.served;
+    return this.death !== undefined && (this.served || this.timedOut);
   }
 
   async extract(entry: IndexEntry): Promise<DocgenPayload | undefined> {
@@ -143,20 +140,16 @@ class DocgenWorker implements DocgenWorkerClient {
   // The limit runs from the moment the worker starts a request, so it covers that request's own
   // work and not the wait behind the requests queued before it.
   private startTimeLimit(pending: Pending): void {
-    if (this.taskTimeoutMs <= 0) {
-      return;
-    }
     // The worker cannot be interrupted mid-extraction, so a request past its limit takes the worker
     // down with it; the next extract spawns a replacement.
-    pending.timer = setTimeout(
-      () =>
-        this.fail(
-          new Error(
-            `docgen extraction of "${pending.entry.title}" timed out after ${this.taskTimeoutMs}ms`
-          )
-        ),
-      this.taskTimeoutMs
-    );
+    pending.timer = setTimeout(() => {
+      this.timedOut = true;
+      this.fail(
+        new Error(
+          `docgen extraction of "${pending.entry.title}" timed out after ${this.taskTimeoutMs}ms`
+        )
+      );
+    }, this.taskTimeoutMs);
     pending.timer.unref?.();
   }
 
@@ -230,8 +223,9 @@ function resolveWorkerScriptPath(): string | undefined {
 // an eager spawn would only contend with the dev server's cold start.
 export function createDocgenWorkerClient(
   descriptors: DocgenProviderDescriptor[],
-  { taskTimeoutMs = DEFAULT_TASK_TIMEOUT_MS }: DocgenWorkerClientOptions = {}
+  configType: Options['configType']
 ): DocgenWorkerClient | undefined {
+  const taskTimeoutMs = configType === 'PRODUCTION' ? BUILD_TASK_TIMEOUT_MS : DEV_TASK_TIMEOUT_MS;
   const scriptPath = resolveWorkerScriptPath();
   if (!scriptPath) {
     logger.debug(

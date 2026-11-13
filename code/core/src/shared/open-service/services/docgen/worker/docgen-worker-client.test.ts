@@ -76,13 +76,13 @@ describe('createDocgenWorkerClient', () => {
     vi.mocked(fs.existsSync).mockReturnValueOnce(false);
 
     const { createDocgenWorkerClient } = await loadModule();
-    expect(createDocgenWorkerClient(DESCRIPTORS)).toBeUndefined();
+    expect(createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')).toBeUndefined();
     expect(fakeWorkers).toHaveLength(0);
   });
 
   it('does not spawn a worker until the first extract', async () => {
     const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS);
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT');
 
     expect(client).toBeDefined();
     expect(fakeWorkers).toHaveLength(0);
@@ -93,7 +93,7 @@ describe('createDocgenWorkerClient', () => {
     vi.mocked(logger.getLogLevel).mockReturnValueOnce('debug');
 
     const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')!;
     client.extract({ id: 'button--primary' } as any).catch(() => undefined);
 
     expect(fakeWorkers[0].posted[0]).toEqual({
@@ -105,7 +105,7 @@ describe('createDocgenWorkerClient', () => {
 
   it('spawns the worker lazily on the first extract and posts init with descriptors', async () => {
     const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')!;
 
     const promise = client.extract({ id: 'button--primary' } as any);
     const worker = fakeWorkers[0];
@@ -137,7 +137,7 @@ describe('createDocgenWorkerClient', () => {
 describe('DocgenWorkerClient.extract', () => {
   it('waits for init, dispatches the entry, and resolves the payload', async () => {
     const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')!;
 
     const entry = { id: 'button--primary', importPath: './button.stories.tsx' } as any;
     const promise = client.extract(entry);
@@ -161,7 +161,7 @@ describe('DocgenWorkerClient.extract', () => {
 
   it('rejects extract calls when init fails', async () => {
     const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')!;
 
     const promise = client.extract({ id: 'x' } as any);
     const worker = fakeWorkers[0];
@@ -172,7 +172,7 @@ describe('DocgenWorkerClient.extract', () => {
 
   it('rejects an extract awaiting init when the worker exits before init', async () => {
     const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')!;
 
     const promise = client.extract({ id: 'x' } as any);
     const worker = fakeWorkers[0];
@@ -183,7 +183,7 @@ describe('DocgenWorkerClient.extract', () => {
 
   it('rejects with the error name/message from a failed extraction', async () => {
     const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')!;
 
     const promise = client.extract({ id: 'x' } as any);
     const worker = fakeWorkers[0];
@@ -204,7 +204,7 @@ describe('DocgenWorkerClient.extract', () => {
 
   it('rejects in-flight extractions when the worker exits unexpectedly', async () => {
     const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')!;
 
     const promise = client.extract({ id: 'x' } as any);
     const worker = fakeWorkers[0];
@@ -218,7 +218,7 @@ describe('DocgenWorkerClient.extract', () => {
 
   it('names the death in every extract that follows it', async () => {
     const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')!;
 
     const first = client.extract({ id: 'x' } as any);
     ackInit(fakeWorkers[0]);
@@ -236,7 +236,7 @@ describe('DocgenWorkerClient.extract', () => {
 
   it('spawns a replacement once a dead worker had served requests', async () => {
     const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')!;
 
     const first = client.extract({ id: 'x' } as any);
     ackInit(fakeWorkers[0]);
@@ -266,6 +266,7 @@ describe('DocgenWorkerClient.extract', () => {
 });
 
 describe('DocgenWorkerClient time limit', () => {
+  const DEV_LIMIT_MS = 120_000;
   const entries = ['a', 'b', 'c'].map((id) => ({ id, title: `Example/${id}` }) as any);
   const extractRequests = (worker: FakeWorker) =>
     worker.posted.filter((m) => m.type === 'extract') as { id: number; entry: { id: string } }[];
@@ -293,7 +294,7 @@ describe('DocgenWorkerClient time limit', () => {
 
   it('sends every request to the worker without waiting for earlier ones', async () => {
     const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')!;
 
     entries.forEach((entry) => client.extract(entry).catch(() => undefined));
     ackInit(fakeWorkers[0]);
@@ -304,7 +305,7 @@ describe('DocgenWorkerClient time limit', () => {
 
   it('starts the time limit when the worker starts a request, not when it is sent', async () => {
     const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS, { taskTimeoutMs: 1000 })!;
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')!;
 
     const results = entries.map((entry) => client.extract(entry));
     const worker = fakeWorkers[0];
@@ -313,7 +314,7 @@ describe('DocgenWorkerClient time limit', () => {
 
     for (const index of entries.keys()) {
       start(worker, index);
-      await vi.advanceTimersByTimeAsync(600);
+      await vi.advanceTimersByTimeAsync(DEV_LIMIT_MS * 0.6);
       answer(worker, index);
     }
 
@@ -323,16 +324,16 @@ describe('DocgenWorkerClient time limit', () => {
 
   it('terminates the worker when a started request runs past its limit', async () => {
     const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS, { taskTimeoutMs: 1000 })!;
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')!;
 
     const settled = Promise.allSettled(entries.map((entry) => client.extract(entry)));
     const worker = fakeWorkers[0];
     ackInit(worker);
     await vi.advanceTimersByTimeAsync(0);
     start(worker, 0);
-    await vi.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(DEV_LIMIT_MS);
 
-    const timedOut = 'docgen extraction of "Example/a" timed out after 1000ms';
+    const timedOut = `docgen extraction of "Example/a" timed out after ${DEV_LIMIT_MS}ms`;
     expect(await settled).toMatchObject([
       { status: 'rejected', reason: { message: timedOut } },
       { status: 'rejected', reason: { message: timedOut } },
@@ -341,26 +342,47 @@ describe('DocgenWorkerClient time limit', () => {
     expect(worker.terminate).toHaveBeenCalledOnce();
   });
 
-  it('never times out when the limit is 0', async () => {
+  it('gives a build extraction longer than a dev one', async () => {
     const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS, { taskTimeoutMs: 0 })!;
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'PRODUCTION')!;
 
     const result = client.extract(entries[0]);
     const worker = fakeWorkers[0];
     ackInit(worker);
     await vi.advanceTimersByTimeAsync(0);
     start(worker, 0);
-    await vi.advanceTimersByTimeAsync(24 * 60 * 60 * 1000);
+    await vi.advanceTimersByTimeAsync(DEV_LIMIT_MS * 2);
     answer(worker, 0);
 
     await expect(result).resolves.toMatchObject({ id: 'a' });
+    expect(worker.terminate).not.toHaveBeenCalled();
+  });
+
+  it('serves later requests from a new worker after the first request timed out', async () => {
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')!;
+
+    const first = client.extract(entries[0]);
+    ackInit(fakeWorkers[0]);
+    await vi.advanceTimersByTimeAsync(0);
+    start(fakeWorkers[0], 0);
+    await vi.advanceTimersByTimeAsync(DEV_LIMIT_MS);
+    await expect(first).rejects.toThrow(/timed out/);
+
+    const second = client.extract(entries[1]);
+    expect(fakeWorkers).toHaveLength(2);
+    ackInit(fakeWorkers[1]);
+    await vi.advanceTimersByTimeAsync(0);
+    answer(fakeWorkers[1], 0);
+
+    await expect(second).resolves.toMatchObject({ id: 'b' });
   });
 });
 
 describe('DocgenWorkerClient.prepare', () => {
   it('sends the announced entries to a worker spawned afterwards, before any extract', async () => {
     const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')!;
     const batch = [{ id: 'a' }, { id: 'b' }] as any;
 
     client.prepare(batch);
@@ -376,7 +398,7 @@ describe('DocgenWorkerClient.prepare', () => {
 
   it('sends the announced entries to a running worker', async () => {
     const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')!;
     const batch = [{ id: 'a' }] as any;
 
     client.extract(batch[0]).catch(() => undefined);
@@ -387,7 +409,7 @@ describe('DocgenWorkerClient.prepare', () => {
 
   it('sends the announced entries again to a replacement worker', async () => {
     const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')!;
     const batch = [{ id: 'a' }] as any;
     client.prepare(batch);
 

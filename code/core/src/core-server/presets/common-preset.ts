@@ -35,10 +35,7 @@ import {
   registerDocgenService,
   subscribeDocgenToModuleGraphChanges,
 } from '../../shared/open-service/services/docgen/server.ts';
-import {
-  BUILD_TASK_TIMEOUT_MS,
-  createDocgenWorkerClient,
-} from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
+import { createDocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
 import {
   registerReviewService,
@@ -457,9 +454,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     // extracting on the main thread.
     const docgenWorker =
       docgenDescriptors.length > 0
-        ? createDocgenWorkerClient(docgenDescriptors, {
-            taskTimeoutMs: options.configType === 'PRODUCTION' ? BUILD_TASK_TIMEOUT_MS : undefined,
-          })
+        ? createDocgenWorkerClient(docgenDescriptors, options.configType)
         : undefined;
 
     if (docgenWorker) {

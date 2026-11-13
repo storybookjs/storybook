@@ -26,6 +26,7 @@ import type ts from 'typescript';
 import { extractComponentJsDocInfo } from 'storybook/internal/component-meta';
 
 import type { ComponentRef, ResolvedComponentTarget } from '../types.ts';
+import { groupByToMap } from '../utils.ts';
 import type { DocgenTypeChecker, DocgenTypeScript } from '@storybook/component-meta-typescript';
 
 // ---------------------------------------------------------------------------
@@ -702,7 +703,14 @@ function getDeclaredLiterals(
     if (typescript.isStringLiteralLike(literal)) {
       return [literal.text];
     }
-    return typescript.isNumericLiteral(literal) ? [Number(literal.text)] : [];
+    if (typescript.isNumericLiteral(literal)) {
+      return [Number(literal.text)];
+    }
+    return typescript.isPrefixUnaryExpression(literal) &&
+      literal.operator === typescript.SyntaxKind.MinusToken &&
+      typescript.isNumericLiteral(literal.operand)
+      ? [-Number(literal.operand.text)]
+      : [];
   }
   if (typescript.isTypeReferenceNode(node)) {
     const symbol = checker.getSymbolAtLocation(node.typeName);
@@ -1396,11 +1404,7 @@ function extractPropItem(
 // TypeScript sorts by when its checker first met each key. Props declared together are put back in
 // source order; the groups keep the order TypeScript gave them.
 function orderByDeclaration(properties: ts.Symbol[]): ts.Symbol[] {
-  const groups = new Map<ts.Node | ts.Symbol, ts.Symbol[]>();
-  for (const prop of properties) {
-    const container = prop.declarations?.[0]?.parent ?? prop;
-    groups.set(container, [...(groups.get(container) ?? []), prop]);
-  }
+  const groups = groupByToMap(properties, (prop) => prop.declarations?.[0]?.parent ?? prop);
   return [...groups.values()].flatMap((group) =>
     group.toSorted((a, b) => (a.declarations?.[0]?.pos ?? 0) - (b.declarations?.[0]?.pos ?? 0))
   );

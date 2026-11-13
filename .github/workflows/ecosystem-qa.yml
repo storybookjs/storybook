@@ -179,8 +179,9 @@ jobs:
             echo "::error::from_runs '$QA_FROM_RUNS' is not a comma-separated list of run ids"
             exit 1
           fi
-          if [[ -n "$QA_BUDGET_MINUTES" && ! "$QA_BUDGET_MINUTES" =~ ^[1-9][0-9]{0,2}$ ]]; then
-            echo "::error::budget_minutes '$QA_BUDGET_MINUTES' is not a whole number of minutes"
+          # A job of a hosted runner ends after six hours whatever it is given.
+          if [[ -n "$QA_BUDGET_MINUTES" ]] && { [[ ! "$QA_BUDGET_MINUTES" =~ ^[1-9][0-9]{0,2}$ ]] || (( QA_BUDGET_MINUTES > 270 )); }; then
+            echo "::error::budget_minutes '$QA_BUDGET_MINUTES' is not a whole number of minutes up to 270"
             exit 1
           fi
           groups=''
@@ -375,6 +376,8 @@ jobs:
 
       - name: Name the planned runs that left no result
         if: ${{ needs.plan.outputs.from_runs == '' }}
+        # It only reports, so it must not keep the results that are there from being collected.
+        continue-on-error: true
         env:
           QA_PLANNED: ${{ needs.plan.outputs.matrix }}
         run: >-

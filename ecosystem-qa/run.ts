@@ -416,6 +416,7 @@ const runSandcastle = async (
   let migrationGuide: string | undefined;
   let sandbox: Awaited<ReturnType<typeof createSandbox>> | undefined;
   let sessionId: string | undefined;
+  let agentStarted = false;
   let cutShort: string | undefined;
   let stop:
     | {
@@ -442,6 +443,7 @@ const runSandcastle = async (
     report,
     onSample: memoryGuard({
       agent: request.engine,
+      agentStarted: () => agentStarted,
       inSandbox: (container, command) => outputOf('docker', ['exec', container, ...command]),
       logFile: join(evidenceDir, 'memory-guard.log'),
       report,
@@ -538,6 +540,7 @@ const runSandcastle = async (
       return answerAfterRepairs(turn, answerSchema);
     };
     stop = { at: hardStop, ask: askAfterStop };
+    agentStarted = true;
     const first = await sandbox.run({
       agent,
       signal: hardStop,
@@ -620,6 +623,9 @@ const runSandcastle = async (
     if (sandbox) {
       await within(600, 'Closing the sandbox', sandbox.close()).catch((error: unknown) => {
         console.warn(forJobLog(`The sandbox could not be closed: ${String(error)}`));
+        // A close that never returns keeps its docker process, and with it this one, alive. The
+        // record is written within seconds from here.
+        setTimeout(() => process.exit(), 60_000).unref();
       });
     }
     await new Promise((done) => stream.end(done));

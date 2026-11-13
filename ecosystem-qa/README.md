@@ -144,7 +144,8 @@ While a run works, the runner writes what the machine looks like to `evidence/ho
 A Windows runner has no load figure and no account of waiting, so it reports memory and disk.
 The Docker sandbox gets 85% of the memory of the Docker daemon and no swap.
 The kernel ends a process of a sandbox at that limit only when it can free nothing at all; as long as it can take the code of the processes out of memory and read it back, it does that, and a build that needs more than the sandbox has neither fails nor moves on.
-So when the processes of the sandbox have waited for memory in a fifth of the last ten seconds in two readings in a row, the runner ends the command that holds the most memory, with everything it started: never the agent, and no command that holds less than a tenth of the memory of the sandbox.
+So when the sandbox is at its limit and its processes have waited for memory in a fifth of the last ten seconds in two readings in a row, the runner ends the command that holds the most memory, with everything it started: never the agent, never the timer of the project install, and no command that holds less than a tenth of the memory of the sandbox.
+It does nothing where the kernel keeps no account of waiting, which is the case with cgroup v1, and nothing once the agent runs and it cannot find the agent among the processes.
 The agent sees that command end as one the kernel ended, and `evidence/memory-guard.log` names it.
 It prints a reading to the job log every twenty minutes, and on a GitHub runner it puts a warning on the page of the run the first time the machine runs short.
 None of this explains a runner that stops answering: such a job hands over no log, no artifact and no warning, because the runner sends them only when a step or the job ends.

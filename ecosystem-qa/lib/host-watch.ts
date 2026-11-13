@@ -5,7 +5,7 @@ import { cpus, freemem, loadavg, platform, totalmem } from 'node:os';
 // What the machine that runs the agent looked like at one moment of a run.
 export interface HostSample {
   minute: number;
-  // How much later than planned this reading was taken. A machine that keeps up is not late.
+  // How much later than it was due this reading began. A machine that keeps up is not late.
   lateSeconds?: number;
   memTotalMb: number;
   memAvailableMb: number;
@@ -241,21 +241,17 @@ interface Watch {
 export const watchHost = (watch: Watch): { stop: () => void } => {
   const intervalMs = watch.intervalMs ?? 30_000;
   const reportsOf = reporter();
-  let busy = false;
-  let last: number | undefined;
+  let stopped = false;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let due: number | undefined;
 
+  // Each reading is due one interval after the one before it ended, so that a reading that takes
+  // long does not make the next one look late.
   const sample = async () => {
-    if (busy) {
-      return;
-    }
-    busy = true;
     try {
       const startedAt = Date.now();
       const lateSeconds =
-        last === undefined
-          ? undefined
-          : Math.max(0, Math.round((startedAt - last - intervalMs) / 1000));
-      last = startedAt;
+        due === undefined ? undefined : Math.max(0, Math.round((startedAt - due) / 1000));
       const name = watch.container();
       const [stats, inside] = name
         ? await Promise.all([
@@ -306,13 +302,19 @@ export const watchHost = (watch: Watch): { stop: () => void } => {
       await watch.onSample?.(current, name);
     } catch {
       // A reading that fails must never end the run it watches.
-    } finally {
-      busy = false;
+    }
+    if (!stopped) {
+      due = Date.now() + intervalMs;
+      timer = setTimeout(() => void sample(), intervalMs);
+      timer.unref();
     }
   };
 
-  const timer = setInterval(() => void sample(), intervalMs);
-  timer.unref();
   void sample();
-  return { stop: () => clearInterval(timer) };
+  return {
+    stop: () => {
+      stopped = true;
+      clearTimeout(timer);
+    },
+  };
 };

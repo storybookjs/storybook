@@ -108,7 +108,8 @@ const DescriptionComponentWithServices: FC<{
   resolvedOf: Extract<ResolvedOf, { type: 'meta' | 'component' }>;
   componentId: string;
 }> = ({ resolvedOf, componentId }) => {
-  const serviceComponentDescription = useServiceDocgen(componentId).data?.description || undefined;
+  const docgen = useServiceDocgen(componentId).data;
+  const serviceComponentDescription = docgen?.docsDescription || docgen?.description || undefined;
   const lang =
     resolvedOf.type === 'meta'
       ? resolvedOf.preparedMeta.parameters.docs?.lang || 'en'

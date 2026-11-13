@@ -17,6 +17,7 @@ function buildContext(props) {
   let playExportName = $state(props.playExportName);
   let asChildExportName = $state(props.asChildExportName);
   let asChild = $state(props.asChild);
+  let argSources = $state.raw(props.argSources);
   let args = $state(props.args);
   let storyContext = $state(props.storyContext);
   let metaRenderSnippet = $state(props.metaRenderSnippet);
@@ -27,6 +28,7 @@ function buildContext(props) {
     playExportName = props.playExportName;
     asChildExportName = props.asChildExportName;
     asChild = props.asChild;
+    argSources = props.argSources;
     args = props.args;
     storyContext = props.storyContext;
     metaRenderSnippet = props.metaRenderSnippet;
@@ -51,6 +53,9 @@ function buildContext(props) {
     get asChild() {
       return asChild;
     },
+    get argSources() {
+      return argSources;
+    },
     get metaRenderSnippet() {
       return metaRenderSnippet;
     },
@@ -68,6 +73,7 @@ function createStoryRendererContext() {
     playExportName: undefined,
     asChildExportName: undefined,
     asChild: false,
+    argSources: {},
     args: {},
     // The renderer sets the real story context before any story reads it
     storyContext: /** @type {StoryContext<Record<string, any>>} */ ({}),

@@ -122,6 +122,48 @@ describe('module-graph open service', () => {
     });
   });
 
+  describe('loadedByPreview command', () => {
+    it('reports, positionally, the files the preview entries reach by import', async () => {
+      const { buildSpy } = installDependencyGraphMocks(buildReverseIndex([]));
+      buildSpy.mockImplementation(async (roots: Iterable<string>) => ({
+        reverseIndex: buildReverseIndex([]),
+        graph: [...roots].includes('/repo/.storybook/preview.tsx')
+          ? new Map([
+              ['/repo/.storybook/preview.tsx', new Set(['/repo/src/theme.ts'])],
+              ['/repo/src/theme.ts', new Set(['/repo/src/tokens.ts'])],
+            ])
+          : new Map(),
+      }));
+      const { adapter } = createMockAdapter();
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue(createStoryIndex([])),
+        workingDir: '/repo',
+        getAdapter: async () => adapter,
+        getPreviewEntries: async () => ['/repo/.storybook/preview.tsx'],
+      });
+
+      await expect(
+        runtime.commands.loadedByPreview({
+          files: [
+            '/repo/src/tokens.ts',
+            '/repo/src/Button.tsx',
+            '/repo/.storybook/preview.tsx',
+            '/repo/src/../src/theme.ts',
+          ],
+        })
+      ).resolves.toEqual([true, false, true, true]);
+    });
+
+    it('reports nothing as loaded when no preview entries are known', async () => {
+      const { runtime } = registerEngineBackedModuleGraph(buildReverseIndex([]));
+
+      await expect(
+        runtime.commands.loadedByPreview({ files: ['/repo/src/theme.ts'] })
+      ).resolves.toEqual([false]);
+    });
+  });
+
   describe('storiesForFiles command', () => {
     it('returns one result array per input file, positionally', async () => {
       const { runtime } = registerEngineBackedModuleGraph(

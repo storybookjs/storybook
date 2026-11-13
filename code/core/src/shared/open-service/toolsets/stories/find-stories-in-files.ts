@@ -8,12 +8,16 @@ import { findStoriesByComponent } from './find-by-component.ts';
 import type { ModuleGraphAccess } from './resolve-component-stories.ts';
 
 /**
- * How a file argument selected its stories.
+ * How an existing file argument selected its stories.
  *
  * - `story-file`: the file is in the story index; every story it declares, and nothing else.
+ * - `preview`: the Storybook preview loads it, so every story depends on it. `storyIds` stays
+ *   empty: it stands for the whole index.
  * - `component`: any other file; every story whose story file imports it, at any depth.
+ * - `unrelated`: an existing file no story depends on (a README, a server file). Not a mistake,
+ *   so it selects nothing without failing the call.
  */
-export type FileSelectionKind = 'story-file' | 'component';
+export type FileSelectionKind = 'story-file' | 'preview' | 'component' | 'unrelated';
 
 export type FoundFileStories = {
   /** The file as the caller passed it. */
@@ -69,7 +73,9 @@ function storyEntriesByFile(index: StoryIndex): Map<string, StoryIndexEntry[]> {
 
 /**
  * Resolves file arguments to the stories they select, the way test runners treat file arguments: a
- * story file selects its own stories, and any other file selects the stories that depend on it.
+ * story file selects its own stories, a file the preview loads selects every story, and any other
+ * file selects the stories that depend on it. Only a missing path, a directory, or a missing module
+ * graph is an error.
  *
  * Relative paths resolve against `workingDir`. Story files need only the story index; the module
  * graph is consulted only for the other files. A file passed twice, in any spelling, gets one
@@ -131,16 +137,26 @@ export async function findStoriesInFiles({
     return results;
   }
 
+  const moduleGraph = getModuleGraph();
   const lookup = await findStoriesByComponent({
     componentPaths: componentFiles.map(({ absolute }) => absolute),
     // Every dependent story, like `vitest related`: a test run that skips distant consumers would
     // pass while they break.
     maxDistance: Number.POSITIVE_INFINITY,
     index,
-    moduleGraph: getModuleGraph(),
+    moduleGraph,
   });
+  // A theme, token or global CSS file reaches stories through the preview, not through imports
+  // from story files, so it would otherwise select only its direct importers, or nothing.
+  const loadedByPreview =
+    lookup.available && moduleGraph?.queries.loadedByPreview
+      ? await moduleGraph.queries.loadedByPreview.loaded({
+          // The graph keys files by their real path, as with the story graph lookup.
+          files: componentFiles.map(({ absolute }) => canonical(absolute)),
+        })
+      : [];
 
-  // The paths are distinct, so the lookup answers them one to one and in order.
+  // The paths are distinct, so the lookups answer them one to one and in order.
   componentFiles.forEach(({ position, file, shown }, componentIndex) => {
     if (!lookup.available) {
       results[position] = {
@@ -149,20 +165,20 @@ export async function findStoriesInFiles({
       };
       return;
     }
-    const matches = lookup.results[componentIndex]?.matches ?? [];
-    if (matches.length === 0) {
-      results[position] = {
-        file,
-        errorMessage: `No stories found for ${shown}: it is not a story file in the Storybook index, and no story imports it. Check the path and the \`stories\` globs in the Storybook config. If the Storybook preview loads it (global styles, theme, decorators), run every story instead.`,
-      };
+    if (loadedByPreview[componentIndex]) {
+      results[position] = { file, kind: 'preview', storyIds: [], storyFiles: [] };
       return;
     }
-    results[position] = {
-      file,
-      kind: 'component',
-      storyIds: matches.map((match) => match.storyId),
-      storyFiles: [...new Set(matches.map((match) => match.importPath))],
-    };
+    const matches = lookup.results[componentIndex]?.matches ?? [];
+    results[position] =
+      matches.length === 0
+        ? { file, kind: 'unrelated', storyIds: [], storyFiles: [] }
+        : {
+            file,
+            kind: 'component',
+            storyIds: matches.map((match) => match.storyId),
+            storyFiles: [...new Set(matches.map((match) => match.importPath))],
+          };
   });
 
   return results;

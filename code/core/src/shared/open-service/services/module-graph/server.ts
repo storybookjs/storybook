@@ -1,3 +1,5 @@
+import { normalize } from 'pathe';
+
 import type { ChannelLike } from 'storybook/internal/channels';
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 import type { Presets } from 'storybook/internal/types';
@@ -13,6 +15,8 @@ export type RegisterModuleGraphServiceOptions = {
   getIndex: ModuleGraphEngineOptions['getIndex'];
   workingDir?: string;
   presets?: Presets;
+  /** Absolute paths of the preview file and the preview annotations, the roots of what the preview loads. */
+  getPreviewEntries?: () => Promise<string[]>;
   getAdapter?: () => Promise<ChangeDetectionAdapter | null | undefined>;
   getChangeDetectionReadiness?: () => Promise<
     Exclude<ChangeDetectionReadinessResult, { status: 'pending' }>
@@ -91,6 +95,14 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
           handler: async (input) => {
             await waitForSettledEngine();
             return lookupStoriesForFiles(engine!, input.files, workingDir);
+          },
+        },
+        loadedByPreview: {
+          handler: async (input) => {
+            await waitForSettledEngine();
+            const entries = (await options.getPreviewEntries?.()) ?? [];
+            const loaded = await engine!.filesReachableFrom(entries);
+            return input.files.map((file) => loaded.has(normalize(file)));
           },
         },
         _waitForSettledEngine: {

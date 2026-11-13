@@ -206,7 +206,7 @@ describe('findStoriesInFiles', () => {
     expect(result).toEqual(expect.objectContaining({ kind: 'story-file' }));
   });
 
-  it('says a file that no story imports has no stories', async () => {
+  it('reports a file that no story depends on as unrelated, not as an error', async () => {
     const [result] = await findStoriesInFiles({
       files: [UNUSED],
       index,
@@ -214,11 +214,30 @@ describe('findStoriesInFiles', () => {
       workingDir: WORKING_DIR,
     });
 
-    expect(result).toEqual({
-      file: UNUSED,
-      errorMessage: expect.stringContaining(
-        'No stories found for src/unused.ts: it is not a story file in the Storybook index, and no story imports it.'
-      ),
+    expect(result).toEqual({ file: UNUSED, kind: 'unrelated', storyIds: [], storyFiles: [] });
+  });
+
+  it('selects every story for a file the preview loads, even when stories import it too', async () => {
+    const loadedByPreview = vi.fn(async ({ files }: { files: string[] }) =>
+      files.map((file) => file === asGraphPath(BUTTON))
+    );
+    const graph = readyGraph([{ storyFile: './src/Button.stories.tsx', depth: 1 }]);
+
+    const results = await findStoriesInFiles({
+      files: [BUTTON, UNUSED],
+      index,
+      getModuleGraph: () => ({
+        queries: { ...graph.queries, loadedByPreview: { loaded: loadedByPreview } },
+      }),
+      workingDir: WORKING_DIR,
+    });
+
+    expect(results).toEqual([
+      { file: BUTTON, kind: 'preview', storyIds: [], storyFiles: [] },
+      { file: UNUSED, kind: 'unrelated', storyIds: [], storyFiles: [] },
+    ]);
+    expect(loadedByPreview).toHaveBeenCalledWith({
+      files: [asGraphPath(BUTTON), asGraphPath(UNUSED)],
     });
   });
 

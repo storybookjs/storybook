@@ -13,6 +13,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from '../../constants.ts';
 import type { TestRunOutput, TestRunResult } from './definition.ts';
+import { displayPath } from './format.ts';
 
 /** Default wait for a matching channel response before failing the queued run. */
 export const DEFAULT_TEST_RUN_TIMEOUT_MS = 30 * 60 * 1000;
@@ -176,6 +177,7 @@ export async function runStoryTests({
 }: RunStoryTestsParams): Promise<TestRunOutput> {
   let storyIds: string[] | undefined;
   let selection: FoundFileStories[] = [];
+  let notFoundMessages: string[] = [];
 
   if (stories || files) {
     const index = await getIndex();
@@ -183,13 +185,16 @@ export async function runStoryTests({
     const found = resolved.filter((story): story is FoundStory => 'entry' in story);
     const fileResults = files ? await findStoriesInFiles({ files, index, getModuleGraph }) : [];
     selection = fileResults.filter((result): result is FoundFileStories => 'kind' in result);
-    const notFoundMessages = [
+    // A wrong story id, a missing path or a directory is a mistake: it fails the call, but the rest
+    // of the selection still runs. A file no story depends on is not a mistake.
+    notFoundMessages = [
       ...resolved
         .filter((story): story is NotFoundStory => !('entry' in story))
         .map((story) => story.errorMessage),
       ...fileResults.flatMap((result) => ('errorMessage' in result ? [result.errorMessage] : [])),
     ];
 
+    const everyStory = selection.some((result) => result.kind === 'preview');
     const ids = [
       ...new Set([
         ...found.map((story) => story.entry.id),
@@ -197,23 +202,20 @@ export async function runStoryTests({
       ]),
     ];
 
-    // Nothing to run: the per-selector failures are the answer, so they travel with the outcome.
-    if (ids.length === 0) {
-      return { status: 'no-stories', notFoundMessages };
-    }
-
-    // Running the matched subset would report a verdict for stories that were never run, so a
-    // partially resolved selector list fails instead.
-    if (notFoundMessages.length > 0) {
+    // Nothing to run: what each argument matched is the answer, and it fails the call, so a run that
+    // ran nothing never reads as a pass.
+    if (!everyStory && ids.length === 0) {
       return {
-        status: 'error',
-        error: {
-          message: `No tests ran, because part of the selection matched nothing.\n\n${notFoundMessages.join('\n')}`,
-        },
+        status: 'no-stories',
+        notFoundMessages: [
+          ...notFoundMessages,
+          ...selection.map(({ file }) => `No story depends on ${displayPath(file)}.`),
+        ],
       };
     }
 
-    storyIds = ids;
+    // A file the preview loads selects every story: a full run, without a list of ids.
+    storyIds = everyStory ? undefined : ids;
   }
 
   let response: TriggerTestRunResponse;
@@ -247,11 +249,8 @@ export async function runStoryTests({
       return {
         status: 'completed',
         result: response.result,
-        ...(selection.length > 0
-          ? {
-              files: selection,
-            }
-          : {}),
+        ...(selection.length > 0 ? { files: selection } : {}),
+        ...(notFoundMessages.length > 0 ? { notFound: notFoundMessages } : {}),
       };
     case 'error':
       return {

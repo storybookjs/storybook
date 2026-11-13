@@ -6,6 +6,8 @@ import {
   storiesForFilesInputSchema,
   storiesForFilesOutputSchema,
   storyIndexPathSchema,
+  loadedByPreviewInputSchema,
+  loadedByPreviewOutputSchema,
 } from './schemas.ts';
 import type { ModuleGraphServiceState } from './types.ts';
 import { toStoryIndexPath } from './types.ts';
@@ -275,6 +277,12 @@ export const moduleGraphServiceDef = defineService({
         'Returns, for each input file (same order), story-index-relative story files that depend on it and their breadth-first-search depth: the shortest number of import edges between the input file and the story file. Waits for in-flight graph updates first.',
       input: storiesForFilesInputSchema,
       output: storiesForFilesOutputSchema,
+    },
+    loadedByPreview: {
+      description:
+        'Returns, for each input file (same order), whether the Storybook preview loads it: the preview file, a preview annotation, or a file they import. Such a file affects every story, though no story file imports it. Waits for in-flight graph updates first.',
+      input: loadedByPreviewInputSchema,
+      output: loadedByPreviewOutputSchema,
     },
     _waitForSettledEngine: {
       internal: true,

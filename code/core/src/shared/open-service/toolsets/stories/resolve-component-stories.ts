@@ -32,6 +32,8 @@ export type ModuleGraphAccess = {
     storiesForFiles: {
       loaded: (input: { files: string[] }) => Promise<Array<ModuleGraphStoryHit[] | undefined>>;
     };
+    /** Positional: whether the preview loads `files[i]`. Optional for callers that never ask. */
+    loadedByPreview?: { loaded: (input: { files: string[] }) => Promise<boolean[]> };
   };
 };
 
@@ -49,6 +51,9 @@ export function moduleGraphAccessFromCtx(
       },
       storiesForFiles: {
         loaded: (files) => moduleGraph.commands.storiesForFiles(files),
+      },
+      loadedByPreview: {
+        loaded: (files) => moduleGraph.commands.loadedByPreview(files),
       },
     },
   };

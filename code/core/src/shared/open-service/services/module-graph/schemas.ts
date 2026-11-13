@@ -26,6 +26,15 @@ export const storiesForFilesInputSchema = v.object({
   ),
 });
 
+export const loadedByPreviewInputSchema = v.object({
+  files: v.pipe(
+    v.array(v.pipe(v.string(), v.description('Absolute source file path.'))),
+    v.description('Source files to check. Output entries match this input order.')
+  ),
+});
+
+export const loadedByPreviewOutputSchema = v.array(v.boolean());
+
 export const storiesForFilesOutputSchema = v.array(
   v.array(
     v.object({

@@ -279,7 +279,7 @@ const FAILURE_LABELS: Record<keyof TestRunFailureCounts, (count: number) => stri
 };
 
 // Short relative paths read better and cost fewer tokens; a path outside the project stays absolute.
-function displayPath(file: string): string {
+export function displayPath(file: string): string {
   if (!isAbsolute(file)) {
     return file;
   }
@@ -287,25 +287,68 @@ function displayPath(file: string): string {
   return fromCwd.startsWith('..') ? file : fromCwd;
 }
 
-// Says which form each file argument took, since a component file also selects stories elsewhere.
-function formatSelection({ file, kind, storyIds, storyFiles }: FileSelection): string {
-  const path = `\`${displayPath(file)}\``;
-  const stories = pluralize(storyIds.length, 'story', 'stories');
-  return kind === 'story-file'
-    ? `${path} is a story file: selected its ${stories}.`
-    : `${path} is not a story file: selected the ${stories} that depend on it, in ${pluralize(storyFiles.length, 'story file')}.`;
+/**
+ * A focused run whose selected stories all stayed out of the run, for example excluded by tags. It
+ * fails, so a run that tested nothing never reads as a pass.
+ */
+export function ranNothingSelected(result: TestRunResult): boolean {
+  return (
+    (result.storyIds?.length ?? 0) > 0 &&
+    result.componentTestCount.success + result.componentTestCount.error === 0
+  );
 }
 
+function ranNote(ran: number, selected: number): string {
+  if (ran >= selected) {
+    return '';
+  }
+  return ran === 0
+    ? '; none ran, they are excluded from tests (for example by tags)'
+    : `; only ${ran} ran, the others are excluded from tests (for example by tags)`;
+}
+
+// Says which form each file argument took and what of it ran, since a component file also selects
+// stories elsewhere and tags can keep selected stories out of the run.
+function formatSelection(
+  { file, kind, storyIds, storyFiles }: FileSelection,
+  ranStoryIds: Set<string>
+): string {
+  const path = `\`${displayPath(file)}\``;
+  const stories = pluralize(storyIds.length, 'story', 'stories');
+  const ran = storyIds.filter((id) => ranStoryIds.has(id)).length;
+  switch (kind) {
+    case 'story-file':
+      return `${path} is a story file: selected its ${stories}${ranNote(ran, storyIds.length)}.`;
+    case 'component':
+      return `${path} is not a story file: selected the ${stories} that depend on it, in ${pluralize(storyFiles.length, 'story file')}${ranNote(ran, storyIds.length)}.`;
+    case 'preview':
+      return `${path} is loaded by the Storybook preview: selected every story.`;
+    case 'unrelated':
+      return `${path}: no story depends on it.`;
+    default: {
+      const _exhaustive: never = kind;
+      return _exhaustive;
+    }
+  }
+}
 const A11Y_GUIDANCE =
   'Accessibility violations: fix semantic ones yourself (roles, labels, alt text, keyboard access). For visual ones such as color contrast, do not change the design: describe the problem, offer two or three options and ask the user. Never change `parameters.a11y.test` to make a violation pass.';
 
 // What the agent needs next for this result, so no skill has to be read first.
 function formatNextSteps(
   result: TestRunResult,
-  { a11y, failed, ctx }: { a11y: boolean; failed: boolean; ctx: ToolsetCtx }
+  {
+    a11y,
+    testsFailed,
+    notFound,
+    ctx,
+  }: { a11y: boolean; testsFailed: boolean; notFound: boolean; ctx: ToolsetCtx }
 ): string[] {
   const steps: string[] = [];
-  if (failed) {
+  if (notFound) {
+    steps.push('Correct the arguments that matched nothing, then run again.');
+  }
+  if (testsFailed) {
     steps.push(
       'Fix what fails and run again, changing only what each failure needs. Do not finish with failing tests.'
     );
@@ -313,7 +356,13 @@ function formatNextSteps(
   if (a11y && countA11yViolations(getA11yReports(result)) > 0) {
     steps.push(A11Y_GUIDANCE);
   }
-  if (!failed && result.storyIds && ctx.transport !== 'sdk') {
+  if (
+    !testsFailed &&
+    !notFound &&
+    !ranNothingSelected(result) &&
+    result.storyIds &&
+    ctx.transport !== 'sdk'
+  ) {
     const all =
       ctx.transport === 'cli'
         ? `\`${getToolName(ctx)('test.run')}\` without arguments`
@@ -329,25 +378,46 @@ function formatResultSection(
     a11y,
     a11yEnabled,
     files,
+    notFound = [],
     ctx,
-  }: { a11y: boolean; a11yEnabled: boolean; files?: FileSelection[]; ctx: ToolsetCtx }
+  }: {
+    a11y: boolean;
+    a11yEnabled: boolean;
+    files?: FileSelection[];
+    notFound?: string[];
+    ctx: ToolsetCtx;
+  }
 ): string {
   const failures = countTestRunFailures(result, a11y);
-  const failureParts = (Object.keys(FAILURE_LABELS) as (keyof TestRunFailureCounts)[])
+  const testFailureParts = (Object.keys(FAILURE_LABELS) as (keyof TestRunFailureCounts)[])
     .filter((key) => failures[key] > 0)
     .map((key) => FAILURE_LABELS[key](failures[key]));
+  const failureParts = [
+    ...(notFound.length > 0 ? [`${pluralize(notFound.length, 'argument')} matched nothing`] : []),
+    ...testFailureParts,
+  ];
+  const passed = result.componentTestCount.success;
   const verdict =
     failureParts.length > 0
-      ? `Failed: ${failureParts.join(', ')}.`
-      : result.componentTestCount.success === 0
-        ? 'No component tests ran.'
-        : `Passed: ${pluralize(result.componentTestCount.success, 'component test')} passed.`;
+      ? `Failed: ${failureParts.join(', ')}${passed > 0 && testFailureParts.length === 0 ? `; ${pluralize(passed, 'component test')} passed` : ''}.`
+      : ranNothingSelected(result)
+        ? 'Failed: none of the selected stories ran.'
+        : passed === 0
+          ? 'No component tests ran.'
+          : `Passed: ${pluralize(passed, 'component test')} passed.`;
 
+  const ranStoryIds = new Set(result.componentTestStatuses.map((status) => status.storyId));
   const lines = [
-    ...(files ?? []).map(formatSelection),
+    ...(files ?? []).map((selection) => formatSelection(selection, ranStoryIds)),
+    ...notFound,
     verdict,
     formatA11yResult(result, { a11y, a11yEnabled }),
-    ...formatNextSteps(result, { a11y, failed: failureParts.length > 0, ctx }),
+    ...formatNextSteps(result, {
+      a11y,
+      testsFailed: testFailureParts.length > 0,
+      notFound: notFound.length > 0,
+      ctx,
+    }),
   ];
   return `## Result
 
@@ -361,8 +431,15 @@ function formatCompletedRun(
     a11y,
     a11yEnabled,
     files,
+    notFound,
     ctx,
-  }: { a11y: boolean; a11yEnabled: boolean; files?: FileSelection[]; ctx: ToolsetCtx }
+  }: {
+    a11y: boolean;
+    a11yEnabled: boolean;
+    files?: FileSelection[];
+    notFound?: string[];
+    ctx: ToolsetCtx;
+  }
 ): string {
   const { origin } = ctx;
   const sections: string[] = [];
@@ -399,7 +476,7 @@ function formatCompletedRun(
   }
 
   // Last, because agents mostly read this report through `tail`.
-  sections.push(formatResultSection(result, { a11y, a11yEnabled, files, ctx }));
+  sections.push(formatResultSection(result, { a11y, a11yEnabled, files, notFound, ctx }));
 
   return sections.join('\n\n');
 }
@@ -427,6 +504,7 @@ ${data.notFoundMessages.join('\n')}`;
         a11y: data.a11y,
         a11yEnabled,
         files: data.files,
+        notFound: data.notFound,
         ctx,
       });
     case 'error':

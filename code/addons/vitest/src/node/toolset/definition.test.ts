@@ -319,6 +319,11 @@ Before you finish, run every story once: test-run without \`files\` or \`stories
         ...completed({
           storyIds: ['button--primary', 'button--secondary', 'header--default'],
           componentTestCount: { success: 3, error: 0 },
+          componentTestStatuses: [
+            componentTest('button--primary', 'status-value:success'),
+            componentTest('button--secondary', 'status-value:success'),
+            componentTest('header--default', 'status-value:success'),
+          ],
         }),
         files: [
           {
@@ -341,6 +346,73 @@ Before you finish, run every story once: test-run without \`files\` or \`stories
 \`src/Button.stories.tsx\` is a story file: selected its 2 stories.
 \`src/Button.tsx\` is not a story file: selected the 3 stories that depend on it, in 2 story files.
 Passed: 3 component tests passed.`);
+    });
+
+    it('names a file the preview loads and a file no story depends on', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue({
+        ...completed({
+          componentTestCount: { success: 1, error: 0 },
+          componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
+        }),
+        files: [
+          { file: 'src/theme.ts', kind: 'preview', storyIds: [], storyFiles: [] },
+          { file: 'README.md', kind: 'unrelated', storyIds: [], storyFiles: [] },
+        ],
+      } as TestRunOutput);
+
+      const outcome = await runTests();
+
+      expect(outcome.ok).toBe(true);
+      expect(outcome.markdown).toContain(`## Result
+
+\`src/theme.ts\` is loaded by the Storybook preview: selected every story.
+\`README.md\`: no story depends on it.
+Passed: 1 component test passed.`);
+    });
+
+    it('fails a run that leaves an argument unmatched, after running the rest', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue({
+        ...completed({
+          storyIds: ['button--primary'],
+          componentTestCount: { success: 1, error: 0 },
+          componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
+        }),
+        notFound: ['No file found at src/Nope.tsx.'],
+      } as TestRunOutput);
+
+      const outcome = await runTests();
+
+      expect(outcome.ok).toBe(false);
+      expect(outcome.markdown).toContain(`## Result
+
+No file found at src/Nope.tsx.
+Failed: 1 argument matched nothing; 1 component test passed.
+Accessibility: not checked.
+Correct the arguments that matched nothing, then run again.`);
+      expect(outcome.markdown).not.toContain('Before you finish');
+    });
+
+    it('fails a focused run in which none of the selected stories ran', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue({
+        ...completed({ storyIds: ['button--primary', 'button--secondary'] }),
+        files: [
+          {
+            file: 'src/Button.stories.tsx',
+            kind: 'story-file',
+            storyIds: ['button--primary', 'button--secondary'],
+            storyFiles: ['./src/Button.stories.tsx'],
+          },
+        ],
+      } as TestRunOutput);
+
+      const outcome = await runTests();
+
+      expect(outcome.ok).toBe(false);
+      expect(outcome.markdown).toBe(`## Result
+
+\`src/Button.stories.tsx\` is a story file: selected its 2 stories; none ran, they are excluded from tests (for example by tags).
+Failed: none of the selected stories ran.
+Accessibility: not checked.`);
     });
 
     it('says why accessibility was not checked when addon-a11y is not enabled', async () => {

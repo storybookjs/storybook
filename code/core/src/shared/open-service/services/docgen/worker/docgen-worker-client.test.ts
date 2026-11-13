@@ -358,16 +358,48 @@ describe('DocgenWorkerClient time limit', () => {
     expect(worker.terminate).not.toHaveBeenCalled();
   });
 
-  it('serves later requests from a new worker after the first request timed out', async () => {
+  it('terminates the worker when a build extraction runs past the build limit', async () => {
     const { createDocgenWorkerClient } = await loadModule();
-    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')!;
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'PRODUCTION')!;
 
-    const first = client.extract(entries[0]);
+    const result = client.extract(entries[0]);
+    const rejection = expect(result).rejects.toThrow(
+      'docgen extraction of "Example/a" timed out after 300000ms'
+    );
+    const worker = fakeWorkers[0];
+    ackInit(worker);
+    await vi.advanceTimersByTimeAsync(0);
+    start(worker, 0);
+    await vi.advanceTimersByTimeAsync(300_000);
+
+    await rejection;
+    expect(worker.terminate).toHaveBeenCalledOnce();
+  });
+
+  it('uses the dev limit when the config type is unknown', async () => {
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS, undefined)!;
+
+    const result = client.extract(entries[0]);
+    const rejection = expect(result).rejects.toThrow(`timed out after ${DEV_LIMIT_MS}ms`);
     ackInit(fakeWorkers[0]);
     await vi.advanceTimersByTimeAsync(0);
     start(fakeWorkers[0], 0);
     await vi.advanceTimersByTimeAsync(DEV_LIMIT_MS);
-    await expect(first).rejects.toThrow(/timed out/);
+
+    await rejection;
+  });
+
+  it('serves later requests from a new worker after the first request timed out', async () => {
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS, 'DEVELOPMENT')!;
+
+    const firstTimesOut = expect(client.extract(entries[0])).rejects.toThrow(/timed out/);
+    ackInit(fakeWorkers[0]);
+    await vi.advanceTimersByTimeAsync(0);
+    start(fakeWorkers[0], 0);
+    await vi.advanceTimersByTimeAsync(DEV_LIMIT_MS);
+    await firstTimesOut;
 
     const second = client.extract(entries[1]);
     expect(fakeWorkers).toHaveLength(2);

@@ -83,7 +83,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			expect(response.error).toMatchInlineSnapshot(`
 				{
-				  "code": 0,
+				  "code": -32602,
 				  "message": "MCP error -32602: Invalid protocol version format",
 				}
 			`);

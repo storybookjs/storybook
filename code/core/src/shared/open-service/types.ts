@@ -310,6 +310,8 @@ export type LoadCtx<
 > = {
   self: LoadSelf<TState, TCommandInputSchemas, TCommandOutputSchemas, TQueries>;
   getService: ServiceRegistryApi['getService'];
+  /** Whether this runs inside `buildStaticFiles`, which loads every static input of a query. */
+  isStaticBuild: boolean;
 };
 
 /** Static input enumerator stored on registered definitions; always receives load context. */
@@ -328,6 +330,8 @@ export type CommandCtx<
 > = {
   self: CommandSelf<TState, TCommandInputSchemas, TCommandOutputSchemas, TQueries>;
   getService: ServiceRegistryApi['getService'];
+  /** Whether this runs inside `buildStaticFiles`, which loads every static input of a query. */
+  isStaticBuild: boolean;
 };
 
 /**

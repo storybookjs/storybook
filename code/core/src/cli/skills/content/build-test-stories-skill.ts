@@ -25,18 +25,18 @@ This project cannot run story tests: it has no \`@storybook/addon-vitest\`. Skip
     : '';
   const command = v.cli
     ? `\`\`\`sh
-${v.ref('test.run')} src/Button.stories.tsx   # the stories in that story file
-${v.ref('test.run')} src/Button.tsx           # every story that depends on that file
+${v.ref('test.run')} --changed                # the stories your uncommitted changes reach
+${v.ref('test.run')} src/Button.stories.tsx   # the stories in these story files
 ${v.ref('test.run')}                          # every story
 \`\`\``
-    : `- ${v.name('test.run')} with \`files: ["src/Button.stories.tsx"]\`: the stories in that story file
-- ${v.name('test.run')} with \`files: ["src/Button.tsx"]\`: every story that depends on that file
-- ${v.name('test.run')} without \`files\`: every story`;
+    : `- ${v.name('test.run')} with \`changed: true\`: the stories your uncommitted changes reach
+- ${v.name('test.run')} with \`files: ["src/Button.stories.tsx"]\`: the stories in these story files
+- ${v.name('test.run')} with neither: every story`;
   return `# Test the stories
 
 ${v.notes}${toolsetOff}
 
 ${command}
 
-${v.Run} it after every change${v.cli ? ', from the package where Storybook is installed' : ''}, with the story files or component files you changed${v.cli ? ' (paths relative to where you run it)' : ''}, and fix what fails. It is the only way to run story tests: never a \`package.json\` test script (such as \`npm run test:stories\`) or \`vitest\` directly, also when the user asks you to run the tests.`;
+${v.Run} it after every change${v.cli ? ', from the package where Storybook is installed' : ''}, with ${v.flag('changed')}${v.cli ? '' : ' set'}, and fix what fails. It is the only way to run story tests: never a \`package.json\` test script (such as \`npm run test:stories\`) or \`vitest\` directly, also when the user asks you to run the tests.`;
 }

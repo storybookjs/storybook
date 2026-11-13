@@ -2,7 +2,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import {
   expectAnyWorkflowSkillInvoked,
-  expectFocusedTestRunWithFiles,
+  expectFocusedTestRun,
   expectNoDisplayReview,
   expectNoOtherTestRunner,
   expectStoryTestsRanAndPassed,
@@ -65,9 +65,9 @@ describe('writing stories for a fetching OrderHistory in a project without MSW',
     ).toBeGreaterThanOrEqual(3);
   });
 
-  test('runs the skills of the workflow, tests the files it changed, and publishes no review unasked', () => {
+  test('runs the skills of the workflow, tests what it changed, and publishes no review unasked', () => {
     expectWorkflowCalls(WORKFLOW_SKILLS);
-    expectFocusedTestRunWithFiles();
+    expectFocusedTestRun();
     expectNoOtherTestRunner();
     expectNoDisplayReview();
   });

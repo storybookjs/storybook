@@ -1,6 +1,6 @@
 import {
   expectAnyWorkflowSkillInvoked,
-  expectFocusedTestRunWithFiles,
+  expectFocusedTestRun,
   expectNoDisplayReview,
   expectNoOtherTestRunner,
   expectStoryTestsRanAndPassed,
@@ -26,10 +26,9 @@ describe('changing a shared accent token and testing its consumer stories', () =
     });
   });
 
-  // The tests of the token file select the stories of its consumers, so the agent needs no story
-  // ids for them.
-  test('tests the files it changed, and publishes no review unasked', () => {
-    expectFocusedTestRunWithFiles();
+  // `--changed` reaches the stories of the token's consumers, so the agent needs no story ids.
+  test('tests what it changed, and publishes no review unasked', () => {
+    expectFocusedTestRun();
     expectNoOtherTestRunner();
     expectNoDisplayReview();
   });

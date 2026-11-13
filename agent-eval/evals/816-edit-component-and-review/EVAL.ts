@@ -2,7 +2,7 @@ import {
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
   expectAnyWorkflowSkillInvoked,
-  expectFocusedTestRunWithFiles,
+  expectFocusedTestRun,
   expectNoOtherTestRunner,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
@@ -23,9 +23,9 @@ describe('editing ReviewCard and publishing the review the user asks for', () =>
     });
   });
 
-  test('runs the skills, tests the files it changed, and publishes the review it was asked for', () => {
+  test('runs the skills, tests what it changed, and publishes the review it was asked for', () => {
     expectWorkflowCalls([...WORKFLOW_SKILLS, 'review-create']);
-    expectFocusedTestRunWithFiles();
+    expectFocusedTestRun();
     expectNoOtherTestRunner();
     expectDisplayReviewForVisualChange();
   });

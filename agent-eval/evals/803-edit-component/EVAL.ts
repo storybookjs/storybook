@@ -1,6 +1,6 @@
 import {
   expectAnyWorkflowSkillInvoked,
-  expectFocusedTestRunWithFiles,
+  expectFocusedTestRun,
   expectNoDisplayReview,
   expectNoOtherTestRunner,
   expectStoryTestsRanAndPassed,
@@ -20,9 +20,9 @@ describe('editing ReviewCard to add date and optional onReport', () => {
     });
   });
 
-  test('runs the skills of the workflow, tests the files it changed, and publishes no review unasked', () => {
+  test('runs the skills of the workflow, tests what it changed, and publishes no review unasked', () => {
     expectWorkflowCalls(WORKFLOW_SKILLS);
-    expectFocusedTestRunWithFiles();
+    expectFocusedTestRun();
     expectNoOtherTestRunner();
     expectNoDisplayReview();
   });

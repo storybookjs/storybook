@@ -66,9 +66,9 @@ For every change to how the UI looks (you create, change, or delete a component,
 
 1. `component-docs`: look up the components to reuse, with their props and usage examples, before you edit any file. Also when the user asks about a component's props, API, or usage.
 2. `write-stories`: every component you create or change gets stories.
-3. Run the story tests after every change, and fix what fails. Also when the user asks to run or fix story tests. Run them with `npx storybook tools test run` from the package where Storybook is installed, never with a `package.json` test script or `vitest`. Pass the files you changed, relative to that package:
-   - `npx storybook tools test run src/Button.stories.tsx`: the stories in that story file.
-   - `npx storybook tools test run src/Button.tsx`: every story that depends on that file.
+3. Run the story tests after every change, and fix what fails. Also when the user asks to run or fix story tests. Run them from the package where Storybook is installed, never with a `package.json` test script or `vitest`:
+   - `npx storybook tools test run --changed`: the stories your uncommitted changes reach. Run this after a change.
+   - `npx storybook tools test run src/Button.stories.tsx`: the stories in these story files.
    - `npx storybook tools test run`: every story.
 
 <!-- END:storybook-skills -->
@@ -100,7 +100,7 @@ The rules for the stories of your project: which states get a story, and how to 
 
 ### `test-stories`
 
-Runs the story tests of the story files or component files you changed, with their accessibility checks, and fixes what fails. The `AGENTS.md` section names the test command itself, so the agent needs this skill only when you call it by name.
+Runs the story tests of what you changed, with their accessibility checks, and fixes what fails. The `AGENTS.md` section names the test command itself, so the agent needs this skill only when you call it by name.
 
 ### `ui-review`
 

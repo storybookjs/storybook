@@ -73,7 +73,7 @@ export type SkillsIntent =
 function replacedSkillMessage(id: string, mcp: boolean): string | undefined {
   const run = (skill: string) => `\`npx storybook skills ${skill}${mcp ? ' --mcp' : ''}\``;
   if (id === 'stories') {
-    return `The \`stories\` skill is replaced by \`component-docs\` (look up the components to reuse) and \`write-stories\` (the story rules). Run ${run('component-docs')} and ${run('write-stories')} now, each in a command of its own, and follow each one at its step. Run the story tests with ${mcp ? 'the `test-run` tool' : '`npx storybook tools test run`'}, passing the story files or component files you changed. When the user asks for a review, run ${run('ui-review')}.`;
+    return `The \`stories\` skill is replaced by \`component-docs\` (look up the components to reuse) and \`write-stories\` (the story rules). Run ${run('component-docs')} and ${run('write-stories')} now, each in a command of its own, and follow each one at its step. After a change, run the story tests with ${mcp ? 'the `test-run` tool and `changed: true`' : '`npx storybook tools test run --changed`'}. When the user asks for a review, run ${run('ui-review')}.`;
   }
   if (id === 'write-story') {
     return `The \`write-story\` skill is renamed to \`write-stories\`. Run ${run('write-stories')}.`;

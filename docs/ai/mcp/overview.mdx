@@ -108,7 +108,7 @@ When working on UI components, always use the `your-project-sb-mcp` MCP tools to
 - Only use properties that are explicitly documented or shown in example stories
 - If a property isn't documented, do not assume properties based on naming conventions or common patterns from other libraries. Check back with the user in these cases.
 - Before you edit any file, run `npx storybook skills write-stories --mcp` in a command of its own for the rules to create or update stories, and follow it.
-- After every change, call `test-run` with the story files or component files you changed in `files`, and fix what fails. Never run story tests with a `package.json` test script or `vitest`.
+- After every change, call `test-run` with `changed: true`, and fix what fails. Never run story tests with a `package.json` test script or `vitest`.
 - When the user asks for a review or to see stories, run `npx storybook skills ui-review --mcp` and follow it.
 
 Remember: A story name might not reflect the property name correctly, so always verify properties through documentation or example stories before using them.
@@ -213,7 +213,7 @@ The testing toolset includes the following tool:
 
 #### `test-run`
 
-Runs the tests of the stories in the story files it is given, of every story that depends on the other files it is given (such as a component), or of every story. Returns the results, including any accessibility issues (if configured), and instructs the agent to interpret the results and resolve any issues found.
+Runs the tests of the stories that the uncommitted changes reach, of the stories in the story files it is given, or of every story. Returns the results, including any accessibility issues (if configured), and instructs the agent to interpret the results and resolve any issues found.
 
 ## Composition
 

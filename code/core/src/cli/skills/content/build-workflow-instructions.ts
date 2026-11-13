@@ -31,21 +31,21 @@ function workflowSteps({ devEnabled, testSupported, docsEnabled }: ServerInstruc
   return steps.filter((step) => step !== false);
 }
 
-// The test step names the command, with one line per file form, so an agent runs the right tests
-// from this text alone. The rules for failures and accessibility violations come with the output
-// of the command, when they apply.
+// The test step names the command, so an agent runs the right tests from this text alone. It
+// leads with `--changed`, which needs no choice of files. The rules for failures and accessibility
+// violations come with the output of the command, when they apply.
 function testStep(number: number, transport: SkillTextTransport): string {
   const does = `${number}. Run the story tests after every change, and fix what fails. Also when the user asks to run or fix story tests.`;
   // An agent without this rule runs the test script of the project.
   const never = 'never with a `package.json` test script or `vitest`';
   if (transport === 'mcp') {
     const run = `\`${getToolName({ transport })('test.run')}\``;
-    return `${does} Call ${run} for them, ${never}. Pass the story files or component files you changed in \`files\`: a story file selects the stories in it, any other file every story that depends on it, and no \`files\` every story.`;
+    return `${does} Call ${run} for them, ${never}: with \`changed: true\` after a change, for the stories your uncommitted changes reach; with \`files\` for the stories in those story files; with neither for every story.`;
   }
   // Example paths, not placeholders in angle brackets, which a shell reads as a redirect.
-  return `${does} Run them with \`npx storybook tools test run\` from the package where Storybook is installed, ${never}. Pass the files you changed, relative to that package:
-   - \`npx storybook tools test run src/Button.stories.tsx\`: the stories in that story file.
-   - \`npx storybook tools test run src/Button.tsx\`: every story that depends on that file.
+  return `${does} Run them from the package where Storybook is installed, ${never}:
+   - \`npx storybook tools test run --changed\`: the stories your uncommitted changes reach. Run this after a change.
+   - \`npx storybook tools test run src/Button.stories.tsx\`: the stories in these story files.
    - \`npx storybook tools test run\`: every story.`;
 }
 

@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import {
   expectAnyWorkflowSkillInvoked,
-  expectFocusedTestRunWithFiles,
+  expectFocusedTestRun,
   expectNoDisplayReview,
   expectNoOtherTestRunner,
   expectStoryTestsRanAndPassed,
@@ -34,9 +34,9 @@ describe('creating a Callout in a monorepo UI package', () => {
     });
   });
 
-  test('runs the skills of the workflow, tests the files it changed, and publishes no review unasked', () => {
+  test('runs the skills of the workflow, tests what it changed, and publishes no review unasked', () => {
     expectWorkflowCalls(WORKFLOW_SKILLS);
-    expectFocusedTestRunWithFiles();
+    expectFocusedTestRun();
     expectNoOtherTestRunner();
     expectNoDisplayReview();
   });

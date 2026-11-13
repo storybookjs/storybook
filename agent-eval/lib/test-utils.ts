@@ -225,14 +225,18 @@ export function expectNoDisplayReview(): void {
   ).not.toMatch(/[?&]path=\/review\//);
 }
 
-// The agent runs the tests of the files it changed: a `test-run` call with `files`, as the
-// workflow names the command. A run of every story alone passes the other assertions, but it is
-// the slow path the file forms replace.
-export function expectFocusedTestRunWithFiles(): void {
+// The agent runs the tests of what it changed: a \`test-run\` call with \`changed\` (the workflow's
+// default after a change) or with story \`files\`. A run of every story alone passes the other
+// assertions, but it is the slow path these forms replace.
+export function expectFocusedTestRun(): void {
   const calls = getWorkflowCalls('test-run');
   expect(
-    calls.some(({ input }) => Array.isArray(input.files) && input.files.length > 0),
-    `Expected a test-run call with files. Received inputs: ${JSON.stringify(calls.map(({ input }) => input))}`
+    calls.some(
+      ({ input }) =>
+        (input.changed !== undefined && input.changed !== false) ||
+        (Array.isArray(input.files) && input.files.length > 0)
+    ),
+    `Expected a test-run call with changed or files. Received inputs: ${JSON.stringify(calls.map(({ input }) => input))}`
   ).toBe(true);
 }
 

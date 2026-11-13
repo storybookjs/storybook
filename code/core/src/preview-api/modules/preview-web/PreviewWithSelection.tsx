@@ -325,9 +325,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   // Sibling preloads are a guess, so they wait until no other source has a request waiting.
   private async drainPreloads() {
     await this.storeInitializationPromise;
-    for (let request = this.takePreload(); request; request = this.takePreload()) {
-      // A targeted ref whose iframe is not loaded yet falls back to the active iframe, where the
-      // ids may not exist, so one failed entry must not fail the batch.
+    while (this.pendingPreloads.size > 0) {
+      const request = this.takePreload();
+      // One unknown id from a ref's fallback iframe must not fail the batch.
       await Promise.allSettled(request.ids.map((id) => this.storyStoreValue?.loadEntry(id)));
     }
     this.preloadsDrained = null;

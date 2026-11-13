@@ -1,6 +1,6 @@
 import type { ChannelLike } from 'storybook/internal/channels';
 import { getStoryImportPathFromEntry } from '../../../../common/utils/select-component-entry.ts';
-import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
+import type { StoryIndex } from '../../../../types/modules/indexer.ts';
 import {
   registerExtractionService,
   subscribeExtractionServiceToModuleGraphChanges,
@@ -16,16 +16,13 @@ export type RegisterDocgenServiceOptions = {
   getIndex: () => Promise<StoryIndex>;
   /** Fully composed docgen provider chain from `presets.apply('experimental_docgenProvider', ...)`. */
   docgenProvider: DocgenProvider;
-  /** Receives the entry of every component before the service extracts all of them. */
-  prepareDocgen?: (entries: IndexEntry[]) => void;
 };
 
 /** Registers the `core/docgen` open service against the process-global registry. */
 export function registerDocgenService(options: RegisterDocgenServiceOptions) {
   return registerExtractionService(docgenServiceDef, {
     getIndex: options.getIndex,
-    provider: ({ entry }) => options.docgenProvider({ entry }),
-    prepare: (inputs) => options.prepareDocgen?.(inputs.map(({ entry }) => entry)),
+    provider: (inputs) => options.docgenProvider(inputs.map(({ entry }) => ({ entry }))),
     buildErrorPayload: ({ id, entry, error }) => ({
       id,
       name: entry.title,

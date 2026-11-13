@@ -1,3 +1,20 @@
+## 11.0.0-beta.3
+
+- Angular: Reject partial loglevel matches - [#37044](https://github.com/storybookjs/storybook/pull/37044), thanks @subhwastaken!
+- Build: List the correct templates that failed to generate outside CI - [#37342](https://github.com/storybookjs/storybook/pull/37342), thanks @HarshRajSinghania!
+- Builder-Vite: Write files registered with addWatchFile to preview-stats.json - [#37032](https://github.com/storybookjs/storybook/pull/37032), thanks @BenjaminMercier19!
+- CLI: Default sandbox command to initializing Storybook - [#37348](https://github.com/storybookjs/storybook/pull/37348), thanks @Sun-Wukhan!
+- CLI: Use current commit hash in sandbox publish commit title - [#37374](https://github.com/storybookjs/storybook/pull/37374), thanks @Sun-Wukhan!
+- Core: Replace the story index's version counters with replaceable file slots - [#37335](https://github.com/storybookjs/storybook/pull/37335), thanks @valentinpalkovic!
+- Core: Stop composed refs from blocking dev-server startup - [#37010](https://github.com/storybookjs/storybook/pull/37010), thanks @EastonShin!
+- Docs: Honor language in emitted source snippets - [#35298](https://github.com/storybookjs/storybook/pull/35298), thanks @mrginglymus!
+- Manager: Cut re-renders and store writes on story change - [#37390](https://github.com/storybookjs/storybook/pull/37390), thanks @Sidnioulz!
+- Manager: Improve performance of story preloading - [#37389](https://github.com/storybookjs/storybook/pull/37389), thanks @Sidnioulz!
+- Nextjs-Vite: Fix Windows paths in static image imports - [#37387](https://github.com/storybookjs/storybook/pull/37387), thanks @ndelangen!
+- Skills: Remove the ui-workflow skill of an 11.0 prerelease on upgrade - [#37346](https://github.com/storybookjs/storybook/pull/37346), thanks @kasperpeulen!
+- Test: Fix the context userEvent in insecure contexts - [#37334](https://github.com/storybookjs/storybook/pull/37334), thanks @JReinhold!
+- Theming: Preserve legacy Emotion imports in browser runtimes - [#37385](https://github.com/storybookjs/storybook/pull/37385), thanks @ndelangen!
+
 ## 11.0.0-beta.2
 
 - Angular: Destroy root components before the application on story switch - [#37288](https://github.com/storybookjs/storybook/pull/37288), thanks @arturovt!

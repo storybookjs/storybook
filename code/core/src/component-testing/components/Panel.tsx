@@ -75,7 +75,6 @@ export const getInteractions = ({
   calls: Map<Call['id'], Call>;
   collapsed: Set<Call['id']>;
   setCollapsed: Dispatch<SetStateAction<Set<string>>>;
-  /** Collapse toggles by call id, reused across calls so that equal inputs give equal interactions. */
   toggles?: Map<Call['id'], () => void>;
 }): Interaction[] => {
   const callsById = new Map<Call['id'], Call>();
